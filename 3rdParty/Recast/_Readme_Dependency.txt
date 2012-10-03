@@ -5,7 +5,7 @@ URLs:
 code.google.com/p/recastnavigation
 
 License:
-MIT License
+See in License.txt in this folder
 
 Current version used:
 Revision 346
