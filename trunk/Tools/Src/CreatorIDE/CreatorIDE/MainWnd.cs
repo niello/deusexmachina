@@ -55,7 +55,8 @@ namespace CreatorIDE
 
         private void MainWnd_Load(object sender, EventArgs e)
 		{
-			if (LoadProject("..\\..\\..\\..\\InsanePoet"))
+            string[] Args = Environment.GetCommandLineArgs();
+            if (Args.Length > 1 && LoadProject(Args[1]))
 			{
                 Text = "Creator IDE (" + EngineAPI.Engine.GetDllName() + " v" + EngineAPI.Engine.GetDllVersion() +
 					") - [" + CurrProject + "]";
@@ -318,7 +319,7 @@ namespace CreatorIDE
         {
             string CmdLineArgs =
                 "-proj " + CurrProject + "\\Content -build " + CurrProject +
-                "\\Build -staticdb static.db3 -gamedb game.db3 -nowait";
+                "\\Bin -staticdb static.db3 -gamedb game.db3 -nowait";
             tOutput.Text = CommandLine.Run("..\\BBuilder\\BBuilder.exe", CmdLineArgs, false);
             MessageBox.Show("Экспорт завершён");
         }
