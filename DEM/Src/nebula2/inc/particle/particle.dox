@@ -1,0 +1,88 @@
+/**
+    @defgroup NebulaParticleSystem Particle System
+
+    This section of the documentation covers Nebula particle system.
+
+    Nebula particle system is consist of particle server, particle emitter and
+    particle shape node.
+
+      - nParticleServer - A class for particle server which is responsible for 
+                          creating and managing of particle emitters.
+      - nParticleEmitter -  A class for particle emitter which generates particles.
+      - nParticleShapeNode - A class for particle scene node which is used for rendering
+                             a created particle emitter.
+
+    You might want to create a nParticleShapeNode to render particles in a scene. 
+    When a rendering context of a nParticleShapeNode is created(done by calling 
+    nParticleShapeNode::RenderContextCreated() function), a new particle emitter is create
+    from nParticleServer and the node saves emitter key to its render context for its later 
+    access. Whenever the node is rendered, it renders emitted particles by calling its emitter's 
+    trigger function(nParticleEmitter::Trigger()) and rendering fuction
+    (nParticleEmitter::Render()).
+
+    Besides above classes, there is nParticle class which represents each particle itself.
+
+    The particle system in Nebula2 is quite different to the one in Nebula1. 
+    It makes heavy use of a new class nEnvelopeCurve to control the particle 
+    attributes. See the next sections for what envelope curvers and attibute are.
+
+
+    @section NebulaParticleSystemEnvelopCurvers Envelope Curves
+
+    Most of the particle attributes are set using envelope curves, these take 
+    a position in the range [0.0, 1.0] and return a value based on the shape 
+    of the curve. The curve is defined by 8 float arguments: 
+
+      - <b>Key Frame 0 - 3</b>: These are the values of the key frames 
+      - <b>Key Frame Position 1 - 2</b>: These control the position of the second and 
+        third key frames. The first and last key frames are at 0.0 and 1.0. 
+      - <b>Frequency</b>: The curve can be altered by an optional cosine/sine wave. 
+        This is the frequency of that sine wave. 1.0 would be one cycle over 
+        the curve, 2.0 would be two cycles over the curve, etc. 
+      - <b>Amplitude</b>: This is the amplitude of the wave. The wave value is added to
+        the curve but remember that the wave value will be negative for half of 
+        a cycle. 
+      - <b>Modulation Func</b>: This sets the wave to be sine or cosine. 0 is sine and 
+        1 is cosine. 
+
+    It seems complicated at first but if you play with it soon makes sense. 
+
+
+    @section NebulaParticleSystemAttribute Attribute
+
+    The attributes are split into two groups according to how their envelopes 
+    are keyed. 
+
+    This first group of attributes change over the course of the particles 
+    emission duration as set by the script command .setemissionduration. 
+    This means that the position on the curve will be 0.0 at the start of the 
+    emission and 1.0 at the end of the emission time. They will loop if loop is 
+    set to true. 
+
+    @note The particle life time should never be less than 0.0, be careful
+    when using waves to make sure that the amplitude is always >= to the
+    lowest key frame value. 
+  
+@verbatim
+    .setemissionfrequency 
+    .setparticlelifetime 
+    .setparticlestartvelocity 
+@endverbatim
+
+    The second group of attributes are all based on each particle's age. 
+    When a particle is born the position on the curve will be 0.0 and 1.0 when 
+    it dies. 
+
+@verbatim
+    .setparticlescale 
+    .setparticlealpha 
+    .setparticlergb 
+    .setparticlerotationvelocity 
+    .setparticleweight 
+    .setparticlesidevelocity1 
+    .setparticlesidevelocity2 
+    .setparticleairresistance 
+    .setparticlevelocityfactor 
+@endverbatim
+
+*/

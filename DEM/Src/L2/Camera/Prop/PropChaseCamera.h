@@ -1,0 +1,69 @@
+#pragma once
+#ifndef __DEM_L2_PROP_CHASE_CAMERA_H__
+#define __DEM_L2_PROP_CHASE_CAMERA_H__
+
+// A chase camera for 3rd person camera control.
+// Based on mangalore CPropChaseCamera (C) 2005 Radon Labs GmbH
+
+#include "PropCamera.h"
+#include <mathlib/polar.h>
+#include <util/npfeedbackloop.h>
+
+namespace Attr
+{
+	DeclareFloat(CameraDistance);
+	DeclareFloat(CameraMinDistance);
+	DeclareFloat(CameraMaxDistance);
+	DeclareFloat(CameraDistanceStep);
+	DeclareFloat(CameraAngularVelocity);	// in degrees per second
+	DeclareVector3(CameraOffset);
+	DeclareFloat(CameraLowStop);			// in degrees
+	DeclareFloat(CameraHighStop);			// in degrees
+	DeclareFloat(CameraLinearGain);
+	DeclareFloat(CameraAngularGain);
+	DeclareFloat(CameraDefaultTheta);		// in degrees
+}
+
+namespace Properties
+{
+
+using namespace Events;
+
+class CPropChaseCamera: public CPropCamera
+{
+	DeclareRTTI;
+	DeclareFactory(CPropChaseCamera);
+
+protected:
+
+	polar2					Angles;
+	float					Distance;
+	nPFeedbackLoop<vector3>	Position;
+	nPFeedbackLoop<vector3>	Lookat;
+
+	virtual vector3 DoCollideCheck(const vector3& from, const vector3& to);
+
+	DECLARE_EVENT_HANDLER(CameraReset, OnCameraReset);
+	DECLARE_EVENT_HANDLER(CameraOrbit, OnCameraOrbit);
+	DECLARE_EVENT_HANDLER(CameraDistance, OnCameraDistanceChange);
+
+	virtual void UpdateCamera();
+	virtual void ResetCamera();
+
+	virtual void OnRender();
+	virtual void OnObtainCameraFocus();
+
+public:
+
+	CPropChaseCamera(): Distance(0.0f) {}
+
+	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
+	virtual void Activate();
+	virtual void Deactivate();
+};
+
+RegisterFactory(CPropChaseCamera);
+
+} // namespace Properties
+
+#endif
