@@ -1,0 +1,104 @@
+/**
+    @defgroup Scene Scene System
+
+    This page describes the scene system and general rendering process of Nebula.
+    
+    A Nebula2 @b scene is a collection of <b>scene node hierarchies</b>, each
+    of which normally represents a visible object in the 3-D world.
+    
+    @ref SceneNodes is the root class of all objects that can be 
+    grouped into such hierarchies.  Read @ref NebulaSceneNodesSceneNodes,
+    @ref NebulaSceneNodesVisualNodes, and @ref NebulaSceneNodesHierarchies now.
+
+    @ref SceneServers set up and optimize the scene before passing
+    it off to the lower-level graphics API (@ref NebulaGraphicsSystem).
+
+    If your application is complicated or large, you will probably need to write
+    you own custom scene server.  This document should help you understand
+    enough to do so.
+
+    @section SceneRenderingLoop
+
+    The rendering loop of Nebula looks roughly like this:
+
+       -# nSceneServer::BeginScene
+       -# nSceneServer::Attach is invoked on each visual hierarchy root
+          object that wants to be rendered.
+       -# nSceneServer::EndScene
+       -# nSceneServer::RenderScene
+       -# nSceneServer::PresentScene
+
+    Step (1) prepares rendering. It contains initializing per frame variables
+    and loading resources if necessary.
+
+    Step (2) determines which visual objects are part of ("attached to") the 
+    scene this frame and what parameters they are using.  The @e application 
+    accomplishes this by passing the @ref SceneRenderContext of every 
+    (potentially) visible object to nSceneServer::Attach.
+
+    A render context contains a pointer to the root of a scene node
+    hierarchy, plus a transform matrix, frame id, shader parameters, 
+    user-defined variables, etc. The additional information is necessary because
+    several game objects may share the same scene node hierarchy (see 
+    @ref NebulaSceneNodesAttachMultipleTimes).
+
+    @note 
+    The scene is completely recreated every frame!  That is, any object that 
+    wishes to be continously visible must be reattached in each render
+    loop iteration.
+
+    Step (3) performs any cleanup needed before continuing.
+
+    Step (4) organizes the scene into an optimal form and then renders it to
+    the back buffer.  What exactly happens here is entirely up the particular
+    nSceneServer subclass being used, but nStdSceneServer illustrates the
+    basic procedure:
+
+       - <b>Validate resources</b>
+         : ensure that all attached nodes have loaded their resources.
+
+       - <b>Split and Sort pass</b>
+         : separate nodes into light and geometry (shape) nodes, then
+           sorted them by shader (to minimize shader switches).
+
+       - <b>Render pass</b> consists of the following stages, each called
+         separately for each node:
+         - <b>Shader pass</b>
+           : specify the shader and (render context-based) shader parameters
+           (usually with nMaterialNode::RenderShader).
+         - <b>Light pass</b>
+           : calculate light data to be passed to the shader.
+         - <b>Geometry pass</b>
+           : update mesh geometry, usually with nShapeNode::RenderGeometry.
+
+    Step (5) finalizes rendering and presents the scene to the user.
+
+    @note
+    nGfxServer2::PresentScene() should be invoked after EndScene().
+
+    That is the basics of Nebula scene system.
+    See nStdSceneServer::RenderScene() for more details of the rendering loop.
+
+    See below sections for more details of each scene system modules:
+
+      - @ref SceneServers
+      - @ref SceneNodes
+      - @ref SceneAnimators
+      - @ref Camera
+
+*/
+
+/**
+    @defgroup SceneServers Scene Servers
+    @ingroup Scene
+*/
+
+/**
+    @defgroup SceneAnimators Scene Animators
+    @ingroup Scene
+*/
+
+/**
+    @defgroup Camera Scene Cameras
+    @ingroup Scene
+*/

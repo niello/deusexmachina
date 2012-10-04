@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- render path for DX9 with 2.0 shaders -->
+<RenderPath name="dx9hdr" shaderPath="renderpath:2.0">
+    <!-- declare shaders and technique aliases -->
+	<Shaders>
+        <!-- declare shaders and technique aliases -->
+        <Shader name="passes" file="shaders:passes.fx" />
+        <Shader name="phases" file="shaders:phases.fx" />
+        <Shader name="compose" file="shaders:hdr.fx" />
+        <Shader name="static" file="shaders:static.fx" />
+        <Shader name="static_atest" file="shaders:static.fx" />
+        <Shader name="environment" file="shaders:environment.fx" />
+        <Shader name="skinned" file="shaders:skinned.fx" />
+        <Shader name="blended" file="shaders:blended.fx" />
+        <Shader name="alpha" file="shaders:static.fx" />
+        <Shader name="alpha_soft" file="shaders:alpha_soft.fx" />
+        <Shader name="skinned_alpha" file="shaders:skinned.fx" />
+        <Shader name="environment_alpha" file="shaders:environment.fx" />
+        <Shader name="leaf" file="shaders:leaf.fx" />
+        <Shader name="tree" file="shaders:tree.fx" />
+        <Shader name="water" file="shaders:water.fx" />
+        <Shader name="skybox" file="shaders:skybox.fx" />
+        <Shader name="particle" file="shaders:particles.fx" />
+        <Shader name="particle2" file="shaders:particles.fx" />
+        <Shader name="hdr" file="shaders:hdr.fx" />
+        <Shader name="copy_stencil" file="shaders:shadow_copy.fx" />
+        <Shader name="waterdepthcompose" file="shaders:compose.fx" />
+        <Shader name="terrain" file="shaders:terrain.fx" />
+        <!-- sky systems -->
+        <Shader name="cubeskybox" file="shaders:skybox.fx" />
+        <Shader name="sky" file="shaders:sky.fx" />
+        <Shader name="sun" file="shaders:sky.fx" />
+        <Shader name="stars" file="shaders:sky.fx" />
+        <Shader name="cloud" file="shaders:sky.fx" />
+        <Shader name="horizon" file="shaders:sky.fx" />
+        <Shader name="copytexture_rgb" file="shaders:sky.fx" />
+	</Shaders>
+    <!-- define render targets -->
+    <RenderTarget name="SkyScene"    	format="X8R8G8B8"  relSize="1.0" />
+    <RenderTarget name="Scene"          format="X8R8G8B8" relSize="1.0" />
+    <RenderTarget name="Shadow"         format="A8R8G8B8" relSize="1.0" />
+    <RenderTarget name="SceneScaled"    format="X8R8G8B8" relSize="0.5" />
+    <RenderTarget name="BrightPass"     format="X8R8G8B8" relSize="0.5" />
+    <RenderTarget name="BloomSource"    format="X8R8G8B8" relSize="0.25" />
+    <RenderTarget name="Bloom0"         format="X8R8G8B8" relSize="0.125" />
+    <RenderTarget name="Bloom1"         format="X8R8G8B8" relSize="0.125" />
+    <RenderTarget name="Bloom2"         format="X8R8G8B8" relSize="0.125" />
+    <RenderTarget name="Depth"          format="R32F"     relSize="1.0" />
+    <RenderTarget name="Reflection"     format="A8R8G8B8" relSize="1.0" />
+    <RenderTarget name="Refraction"     format="A8R8G8B8" relSize="1.0" />
+
+    <!-- declare variables -->
+    <Float4 name="Luminance"              value="0.299 0.587 0.114 0.0" />
+    <Float4 name="Balance"                value="1.0 1.0 1.0 1.0" />
+    <Float  name="Saturation"             value="1.0" />
+    <Float  name="HdrBrightPassThreshold" value="1.0" />
+    <Float  name="HdrBrightPassOffset"    value="1.0" />
+    <Float  name="HdrBloomScale"          value="1.0" />
+    <Float4 name="FogDistances"           value="0.0 200.0 0.0 0.0" />
+    <Float4 name="FogColor"               value="0.5 0.5 0.5 1.0" />
+    <Float4 name="CameraFocus"            value="0.0 200.0 0.0 0.0" />
+    <Float  name="NoiseIntensity"         value="0.0" />
+    <Float  name="NoiseScale"             value="0.0" />
+    <Float  name="NoiseFrequency"         value="0.0" />
+
+    <!-- the default section -->
+    <Section name="default" >
+        <!-- depth pass -->
+        <Pass name="depth" shader="passes" technique="tPassDepth" renderTarget="Depth" clearColor="0.0 0.0 0.0 1.0" clearDepth="1.0" clearStencil="0">
+            <Phase name="depth" shader="phases" technique="tPhaseDepth" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="static"       technique="tStaticDepth" shaderUpdates="Yes" mvpOnly="Yes" />
+                <Sequence shader="environment"  technique="tStaticDepth" shaderUpdates="No" mvpOnly="Yes" />
+                <!-- Sequence shader="terrain"		technique="tStaticDepth" mvpOnly="Yes" / -->
+                <Sequence shader="skinned"      technique="tSkinnedDepth" mvpOnly="Yes" />
+                <Sequence shader="blended"      technique="tBlendedDepth" mvpOnly="Yes" />
+            </Phase>
+            <Phase name="depthAlphaTest" shader="phases" technique="tPhaseATestDepth" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="static_atest" technique="tStaticDepthATest" mvpOnly="Yes" />
+                <Sequence shader="tree" technique="tTreeDepth" mvpOnly="Yes" />
+                <Sequence shader="leaf" technique="tLeafDepth" />
+            </Phase>
+        </Pass>
+		
+        <!-- perform occlusion culling -->
+        <Pass name="occlusionQuery" occlusionQuery="Yes" />
+
+        <!-- render shadow volumes and downscale into blurred buffer -->
+        <Pass name="shadow" shader="copy_stencil" drawShadows="MultiLight" renderTarget="Shadow" />
+
+        <!-- sky systems -->
+        <Pass name="SkyScene" shader="passes" technique="tPassColor" renderTarget="SkyScene" clearColor="0.0 0.0 0.0 0.0">
+            <Phase name="skyscene" shader="phases" technique="tPhaseSky" sort="None" lightMode="Off">
+                <Sequence shader="sky"          technique="tGradientSkyHDR" firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="sun"	        technique="tSunHDR" firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="stars"        technique="tStarsHDR" firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="cloud"        technique="tCloudHDR" firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="horizon"    	technique="tHorizonHDR" firstLightAlpha="No" mvpOnly="Yes" />
+            </Phase>
+        </Pass>
+        <Pass name="CopySky" shader="copytexture_rgb" technique="tCopyTexture_rgb" renderTarget="Scene" drawQuad="Yes" clearColor="0.3 0.3 0.3 0.0" clearDepth="1.0" clearStencil="0">
+            <Texture name="DiffMap0" value="SkyScene" />
+        </Pass>
+
+        <!-- render scene into hdr render target -->
+        <Pass name="SceneOpaque" shader="passes" technique="tPassEnvironment" renderTarget="Scene">
+            <Phase name="nolight" shader="phases" technique="tPhaseNoLight" sort="FrontToBack" lightMode="Off">
+				<Sequence shader="terrain"		technique="tTerrainColorHDR" firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="skybox"     	technique="tSkyboxColorHDR" firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="cubeskybox" 	technique="tCubeSkyboxColorHDR" firstLightAlpha="No" mvpOnly="Yes" />
+            </Phase>
+            <Phase name="opaque" shader="phases" technique="tPhaseOpaque" sort="FrontToBack" lightMode="Shader">
+                <Sequence shader="static" technique="tStaticColorHDRShadow"         firstLightAlpha="No" mvpOnly="Yes">
+                    <Texture name="AmbientMap1" value="Shadow" />
+                </Sequence>
+                <Sequence shader="environment"  technique="tEnvironmentColorHDRShadow"  firstLightAlpha="No" mvpOnly="Yes"/>
+                <Sequence shader="skinned"      technique="tSkinnedColorHDRShadow"        firstLightAlpha="No" mvpOnly="Yes"/>
+                <Sequence shader="blended"      technique="tBlendedColorHDRShadow"        firstLightAlpha="No" mvpOnly="Yes"/>
+            </Phase>
+            <Phase name="opaqueAlphaTest" shader="phases" technique="tPhaseOpaqueATest" sort="FrontToBack" lightMode="Shader">
+                <Sequence shader="static_atest" technique="tStaticColorATestHDRShadow"    firstLightAlpha="No">
+                    <Texture name="AmbientMap1" value="Shadow" />
+                </Sequence>
+                <Sequence shader="leaf"         technique="tLeafColorHDR"           firstLightAlpha="No" />
+                <Sequence shader="tree"         technique="tTreeColorHDRShadow"     firstLightAlpha="No" mvpOnly="Yes"/>
+            </Phase>
+            <Phase name="alpha" shader="phases" technique="tPhaseAlpha" sort="BackToFront" lightMode="Shader">
+                <Sequence shader="alpha" technique="tStaticAlphaColorHDRShadow"   firstLightAlpha="Yes" mvpOnly="Yes">
+                    <Texture name="AmbientMap1" value="Shadow" />
+                </Sequence>
+                <Sequence shader="alpha_soft" technique="tSoftAlphaColorHDRShadow" firstLightAlpha="Yes" mvpOnly="Yes" />
+                <Sequence shader="skinned_alpha" technique="tSkinnedAlphaColorHDRShadow" firstLightAlpha="Yes" mvpOnly="Yes"/>
+                <Sequence shader="environment_alpha" technique="tEnvironmentAlphaColorHDRShadow" firstLightAlpha="Yes" mvpOnly="Yes"/>
+                <Sequence shader="water" technique="tWaterHDR" firstLightAlpha="Yes" mvpOnly="No"/>
+            </Phase>
+        </Pass>
+        <Pass name="SceneOpaque" shader="passes" technique="tPassColor" renderTarget="Scene">
+            <Phase name="alpha" shader="phases" techniqe="tPhaseAlpha" sort="BackToFront" lightMode="Off">
+                <Sequence shader="particle" technique="tParticleColorHDR" firstLightAlpha="Yes">
+                    <Texture name="AmbientMap1" value="Shadow" />
+                </Sequence>
+                <Sequence shader="particle2" technique="tParticle2ColorHDR" firstLightAlpha="Yes" />
+            </Phase>
+        </Pass>
+
+        <!-- downscale scene 4x4 into SceneScaled buffer -->
+        <Pass name="DownscaleScene" shader="hdr" technique="tDownscale4x4" renderTarget="SceneScaled" drawQuad="Yes">
+            <Texture name="DiffMap0" value="Scene" />
+        </Pass>
+
+        <!-- invoke the bright pass filter -->
+        <Pass name="BrightPassFilter" shader="hdr" technique="tBrightPassFilter" renderTarget="BrightPass" drawQuad="Yes">
+            <Texture name="DiffMap0" value="SceneScaled" />
+            <Float name="Intensity1" variable="HdrBrightPassThreshold" />
+            <Float name="Intensity2" variable="HdrBrightPassOffset" />
+        </Pass>
+
+        <!-- create bloom effect -->
+        <Pass name="BrightPassToBloomSource" shader="hdr" technique="tGaussBlur5x5" renderTarget="BloomSource" drawQuad="Yes">
+            <Texture name="DiffMap0" value="BrightPass" />
+        </Pass>
+        <Pass name="Bloom1" shader="hdr" technique="tGaussBlur5x5" renderTarget="Bloom0" drawQuad="Yes">
+            <Texture name="DiffMap0" value="BloomSource" />
+        </Pass>
+        <Pass name="Bloom2" shader="hdr" technique="tBloomHori" renderTarget="Bloom1" drawQuad="Yes">
+            <Texture name="DiffMap0" value="Bloom0" />
+        </Pass>
+        <Pass name="Bloom3" shader="hdr" technique="tBloomVert" renderTarget="Bloom2" drawQuad="Yes">
+            <Texture name="DiffMap0" value="Bloom1" />
+        </Pass>
+
+        <!-- compose the final frame -->
+        <Pass name="compose" shader="hdr" technique="tCompose" drawQuad="Yes">
+            <Texture name="DiffMap0"    value="Scene" />
+            <Texture name="DiffMap2"    value="Bloom2" />
+            <Texture name="DiffMap3"    value="Depth" />
+            <Texture name="DiffMap1"    value="SceneScaled" />
+            <Texture name="SpecMap0"    value="textures:system/noise.dds" />
+            <Float4 name="MatDiffuse"   variable="Balance" />
+            <Float4 name="MatAmbient"   variable="Luminance" />
+            <Float name="Intensity0"    variable="Saturation" />
+            <Float name="Intensity1"    variable="HdrBloomScale" />
+            <Float4 name="FogDistances" variable="FogDistances" />
+            <Float4 name="FogColor"     variable="FogColor" />
+            <Float4 name="CameraFocus"  variable="CameraFocus" />
+            <Float name="Noise"         variable="NoiseIntensity" />
+            <Float name="Scale"         variable="NoiseScale" />
+            <Float name="Frequency"     variable="NoiseFrequency" />
+        </Pass>
+
+        <!-- post-draw stuff -->
+        <Pass name="gui" drawGui="Yes" />
+
+    </Section>
+
+    <!-- the reflection section for camera nodes, this is a simplified version of the default section (no shadows e.g.) -->
+    <Section name="reflection">
+        <!-- depth pass -->
+        <Pass name="depth" shader="passes" technique="tPassDepth" renderTarget="Depth" clearColor="0.0 0.0 0.0 1.0" clearDepth="1.0" clearStencil="0">
+            <Phase name="depth" shader="phases" technique="tPhaseDepth" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="static"       technique="tStaticDepth" shaderUpdates="No" mvpOnly="Yes" />
+                <Sequence shader="environment"  technique="tStaticDepth" shaderUpdates="No" mvpOnly="Yes" />
+                <Sequence shader="skinned"      technique="tSkinnedDepth" mvpOnly="Yes" />
+                <Sequence shader="blended"      technique="tBlendedDepth" mvpOnly="Yes" />
+            </Phase>
+            <Phase name="depthAlphaTest" shader="phases" technique="tPhaseATestDepth" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="static_atest" technique="tStaticDepthATest" mvpOnly="Yes" />
+                <Sequence shader="tree" technique="tTreeDepth" mvpOnly="Yes" />
+                <Sequence shader="leaf" technique="tLeafDepth" />
+            </Phase>
+        </Pass>
+
+        <!-- render the scene into the reflection/refraction render target without HDR & shadow rendering -->
+        <Pass name="SceneOpaque" shader="passes" technique="tPassColor" renderTarget="Reflection" clearColor="0.0 0.0 0.0 1.0">
+            <Phase name="nolight" shader="phases" technique="tPhaseNoLight" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="skybox" technique="tSkyboxColor" firstLightAlpha="No" mvpOnly="Yes" />
+            </Phase>
+            <Phase name="opaque" shader="phases" technique="tPhaseOpaque" sort="FrontToBack" lightMode="Shader">
+                <Sequence shader="static"       technique="tStaticColor"         firstLightAlpha="No" mvpOnly="Yes" />
+                <Sequence shader="environment"  technique="tEnvironmentColor"    firstLightAlpha="No" mvpOnly="Yes"/>
+                <Sequence shader="skinned"      technique="tSkinnedColor"        firstLightAlpha="No" mvpOnly="Yes"/>
+                <Sequence shader="blended"      technique="tBlendedColor"        firstLightAlpha="No" mvpOnly="Yes"/>
+            </Phase>
+            <Phase name="opaqueAlphaTest" shader="phases" technique="tPhaseOpaqueATest" sort="FrontToBack" lightMode="Shader">
+                <Sequence shader="static_atest" technique="tStaticColorATest"    firstLightAlpha="No" />
+                <Sequence shader="leaf"         technique="tLeafColor"           firstLightAlpha="No" />
+                <Sequence shader="tree"         technique="tTreeColor"           firstLightAlpha="No" mvpOnly="Yes"/>
+            </Phase>
+            <Phase name="alpha" shader="phases" technique="tPhaseAlpha" sort="BackToFront" lightMode="Shader">
+                <Sequence shader="alpha" technique="tStaticAlphaColor"   firstLightAlpha="Yes" mvpOnly="Yes" />
+                <Sequence shader="alpha_soft" technique="tSoftAlphaColor" firstLightAlpha="Yes" mvpOnly="Yes" />
+                <Sequence shader="skinned_alpha" technique="tSkinnedAlphaColor" firstLightAlpha="Yes" mvpOnly="Yes"/>
+                <Sequence shader="environment_alpha" technique="tEnvironmentAlphaColor" firstLightAlpha="Yes" mvpOnly="Yes"/>
+            </Phase>
+        </Pass>
+
+        <!-- compose the final frame -->
+        <Pass name="DepthCompose" shader="waterdepthcompose" technique="tWaterDepthCompose" renderTarget="Reflection" drawQuad="Yes">
+            <Texture name="DiffMap0" value="Reflection" />
+            <Texture name="DiffMap1" value="Depth" />
+        </Pass>
+    </Section>
+
+    <!-- the refraction section for camera nodes, this is a simplified version of the default section (no shadows e.g.) -->
+    <Section name="refraction">
+        <!-- depth pass -->
+        <Pass name="depth" shader="passes" technique="tPassDepth" renderTarget="Depth" clearColor="0.0 0.0 0.0 1.0" clearDepth="1.0" clearStencil="0">
+            <Phase name="depth" shader="phases" technique="tPhaseDepth" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="static"       technique="tStaticDepth" shaderUpdates="No" mvpOnly="Yes" />
+                <Sequence shader="environment"  technique="tStaticDepth" shaderUpdates="No" mvpOnly="Yes" />
+                <Sequence shader="skinned"      technique="tSkinnedDepth" mvpOnly="Yes" />
+                <Sequence shader="blended"      technique="tBlendedDepth" mvpOnly="Yes" />
+            </Phase>
+            <Phase name="depthAlphaTest" shader="phases" technique="tPhaseATestDepth" sort="FrontToBack" lightMode="Off">
+                <Sequence shader="static_atest" technique="tStaticDepthATest" mvpOnly="Yes" />
+                <Sequence shader="tree" technique="tTreeDepth" mvpOnly="Yes" />
+                <Sequence shader="leaf" technique="tLeafDepth" />
+            </Phase>
+        </Pass>
+
+        <!-- render the scene into the reflection/refraction render target without HDR & shadow rendering -->
+        <Pass name="SceneOpaque" shader="passes" technique="tPassColor" renderTarget="Refraction" clearColor="0.0 0.0 0.0 1.0">
+        </Pass>
+
+        <!-- compose the final frame -->
+        <Pass name="DepthCompose" shader="waterdepthcompose" technique="tWaterDepthCompose" renderTarget="Refraction" drawQuad="Yes">
+            <Texture name="DiffMap0" value="Refraction" />
+            <Texture name="DiffMap1" value="Depth" />
+        </Pass>
+    </Section>
+
+
+    <!-- fini -->
+</RenderPath>
