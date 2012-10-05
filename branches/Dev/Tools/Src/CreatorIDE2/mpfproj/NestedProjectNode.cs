@@ -219,32 +219,28 @@ namespace Microsoft.VisualStudio.Project
 		/// Gets properties whose values are GUIDs.
 		/// </summary>
 		/// <param name="propid">Identifier of the hierarchy property</param>
-		/// <param name="guid"> Pointer to a GUID property specified in propid</param>
-		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		public override int GetGuidProperty(int propid, out Guid guid)
+        /// <returns>A GUID property specified in propid</returns>
+		public override Guid GetGuidProperty(VsHPropID propid)
 		{
-			guid = Guid.Empty;
-			switch((__VSHPROPID)propid)
+		    Guid result;
+		    switch((__VSHPROPID)propid)
 			{
 				case __VSHPROPID.VSHPROPID_ProjectIDGuid:
-					guid = this.projectInstanceGuid;
-					break;
+			        result = projectInstanceGuid;
+			        break;
 
-				default:
-					return base.GetGuidProperty(propid, out guid);
+			    default:
+					return base.GetGuidProperty(propid);
 			}
 
-			CCITracing.TraceCall(String.Format(CultureInfo.CurrentCulture, "Guid for {0} property", propid));
-			if(guid.CompareTo(Guid.Empty) == 0)
-			{
-				return VSConstants.DISP_E_MEMBERNOTFOUND;
-			}
+            if(result==Guid.Empty)
+                throw new MemberNotFoundException();
 
-			return VSConstants.S_OK;
+		    return result;
 		}
 
 
-		/// <summary>
+	    /// <summary>
 		/// Determines whether the hierarchy item changed.
 		/// </summary>
 		/// <param name="itemId">Item identifier of the hierarchy item contained in VSITEMID</param>
@@ -409,8 +405,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// Delegates the call to the inner hierarchy.
 		/// </summary>
-		/// <param name="reserved">Reserved parameter defined at the IVsPersistHierarchyItem2::ReloadItem parameter.</param>
-		protected internal override void ReloadItem(uint reserved)
+		public override void ReloadItem()
 		{
 			#region precondition
 			if(this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
@@ -430,7 +425,7 @@ namespace Microsoft.VisualStudio.Project
 				throw new InvalidOperationException();
 			}
 
-			ErrorHandler.ThrowOnFailure(persistHierachyItem.ReloadItem(VSConstants.VSITEMID_ROOT, reserved));
+			ErrorHandler.ThrowOnFailure(persistHierachyItem.ReloadItem(VSConstants.VSITEMID_ROOT, 0));
 		}
 
 		/// <summary>

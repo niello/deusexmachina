@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.Win32;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
+using BuildLogger = Microsoft.Build.Utilities.Logger;
 
 namespace Microsoft.VisualStudio.Project
 {
@@ -22,7 +23,7 @@ namespace Microsoft.VisualStudio.Project
 	/// This class implements an MSBuild logger that output events to VS outputwindow and tasklist.
 	/// </summary>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable"), ComVisible(true)]
-	internal sealed class IDEBuildLogger : Logger
+    internal sealed class IDEBuildLogger : BuildLogger
 	{
 		#region fields
 		// TODO: Remove these constants when we have a version that suppoerts getting the verbosity using automation.

@@ -294,16 +294,27 @@ namespace Microsoft.VisualStudio.Project
 			return VSConstants.E_NOTIMPL;
 		}
 
-		public virtual int get_BuildableProjectCfg(out IVsBuildableProjectCfg pb)
+		int IVsDebuggableProjectCfg.get_BuildableProjectCfg(out IVsBuildableProjectCfg pb)
 		{
-			CCITracing.TraceCall();
-			if (buildableCfg == null)
-				buildableCfg = new BuildableProjectConfig(this);
-			pb = buildableCfg;
-			return VSConstants.S_OK;
+		    return ComHelper.WrapFunction(true, GetBuildableProjectCfg, out pb);
 		}
 
-		public virtual int get_CanonicalName(out string name)
+        int IVsProjectCfg.get_BuildableProjectCfg(out IVsBuildableProjectCfg pb)
+        {
+            return ComHelper.WrapFunction(true, GetBuildableProjectCfg, out pb);
+        }
+
+        int IVsProjectCfg2.get_BuildableProjectCfg(out IVsBuildableProjectCfg pb)
+        {
+            return ComHelper.WrapFunction(true, GetBuildableProjectCfg, out pb);
+        }
+
+        public IVsBuildableProjectCfg GetBuildableProjectCfg()
+        {
+            return buildableCfg ?? (buildableCfg = new BuildableProjectConfig(this));
+        }
+
+	    public virtual int get_CanonicalName(out string name)
 		{
 			return ((IVsCfg)this).get_DisplayName(out name);
 		}
@@ -457,18 +468,22 @@ namespace Microsoft.VisualStudio.Project
 		/// For valid grfLaunch values, see __VSDBGLAUNCHFLAGS or __VSDBGLAUNCHFLAGS2.</param>
 		/// <param name="fCanLaunch">true if the debugger can be launched, otherwise false</param>
 		/// <returns>S_OK if the method succeeds, otherwise an error code</returns>
-		public virtual int QueryDebugLaunch(uint flags, out int fCanLaunch)
+		int IVsDebuggableProjectCfg.QueryDebugLaunch(uint flags, out int fCanLaunch)
 		{
-			CCITracing.TraceCall();
-			string assembly = this.project.GetAssemblyName(this.ConfigName);
-			fCanLaunch = (assembly != null && assembly.ToUpperInvariant().EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) ? 1 : 0;
-			if (fCanLaunch == 0)
-			{
-				string property = GetConfigurationProperty("StartProgram", true);
-				fCanLaunch = (property != null && property.Length > 0) ? 1 : 0;
-			}
-			return VSConstants.S_OK;
+		    return ComHelper.WrapFunction(true, CanLaunchDebug, flags, out fCanLaunch, (bool res) => res ? 1 : 0);
 		}
+
+        protected virtual bool CanLaunchDebug(uint flags)
+        {
+            var assembly = project.GetAssemblyName(ConfigName);
+            if(!(assembly != null && assembly.ToUpperInvariant().EndsWith(".exe", StringComparison.OrdinalIgnoreCase)))
+            {
+                var property = GetConfigurationProperty("StartProgram", true);
+                return !string.IsNullOrEmpty(property);
+            }
+
+            return true;
+        }
 		#endregion
 
 		#region IVsProjectCfg2 Members
@@ -496,7 +511,7 @@ namespace Microsoft.VisualStudio.Project
 			return VSConstants.E_NOTIMPL;
 		}
 
-		public virtual int get_CfgType(ref Guid iidCfg, out IntPtr ppCfg)
+	    int IVsProjectCfg2.get_CfgType(ref Guid iidCfg, out IntPtr ppCfg)
 		{
 			// Delegate to the flavored configuration (to enable a flavor to take control)
 			// Since we can be asked for Configuration we don't support, avoid throwing and return the HRESULT directly
@@ -699,24 +714,21 @@ namespace Microsoft.VisualStudio.Project
 		/// <returns>HRESULT</returns>
 		int IVsProjectFlavorCfg.get_CfgType(ref Guid iidCfg, out IntPtr ppCfg)
 		{
-			ppCfg = IntPtr.Zero;
-
-			// See if this is an interface we support
-			if (iidCfg == typeof(IVsDebuggableProjectCfg).GUID)
-				ppCfg = Marshal.GetComInterfaceForObject(this, typeof(IVsDebuggableProjectCfg));
-			else if (iidCfg == typeof(IVsBuildableProjectCfg).GUID)
-			{
-				IVsBuildableProjectCfg buildableConfig;
-				this.get_BuildableProjectCfg(out buildableConfig);
-				ppCfg = Marshal.GetComInterfaceForObject(buildableConfig, typeof(IVsBuildableProjectCfg));
-			}
-
-			// If not supported
-			if (ppCfg == IntPtr.Zero)
-				return VSConstants.E_NOINTERFACE;
-
-			return VSConstants.S_OK;
+		    return ComHelper.WrapFunction(false, GetCfgType, iidCfg, out ppCfg).CheckIfNonZero(ppCfg);
 		}
+
+        protected virtual IntPtr GetCfgType(Guid iidCfg)
+        {
+            // See if this is an interface we support
+            if (iidCfg == typeof(IVsDebuggableProjectCfg).GUID)
+                return ComHelper.GetComInterface<IVsDebuggableProjectCfg>(this);
+
+            if (iidCfg == typeof(IVsBuildableProjectCfg).GUID)
+                return ComHelper.GetComInterface<IVsBuildableProjectCfg>(GetBuildableProjectCfg());
+
+            // If not supported
+            return IntPtr.Zero;
+        }
 
 		#endregion
 	}
@@ -770,16 +782,19 @@ namespace Microsoft.VisualStudio.Project
 			return VSConstants.S_OK;
 		}
 
-		public virtual int QueryStartClean(uint options, int[] supported, int[] ready)
-		{
-			CCITracing.TraceCall();
-			config.PrepareBuild(false);
-			if (supported != null && supported.Length > 0)
-				supported[0] = 1;
-			if (ready != null && ready.Length > 0)
-				ready[0] = (this.config.ProjectMgr.BuildInProgress) ? 0 : 1;
-			return VSConstants.S_OK;
-		}
+	    int IVsBuildableProjectCfg.QueryStartClean(uint options, int[] supported, int[] ready)
+	    {
+            return ComHelper.WrapAction(true, QueryStartClean, options, supported, ready);
+	    }
+
+        public virtual void QueryStartClean(uint options, int[] supported, int[] ready)
+        {
+            config.PrepareBuild(false);
+            if (supported != null && supported.Length > 0)
+                supported[0] = 1;
+            if (ready != null && ready.Length > 0)
+                ready[0] = (config.ProjectMgr.BuildInProgress) ? 0 : 1;
+        }
 
 		public virtual int QueryStartUpToDateCheck(uint options, int[] supported, int[] ready)
 		{

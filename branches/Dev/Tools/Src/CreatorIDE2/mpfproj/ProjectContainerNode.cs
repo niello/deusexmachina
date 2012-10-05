@@ -168,36 +168,27 @@ namespace Microsoft.VisualStudio.Project
 		/// Reloads a project and its nested project nodes.
 		/// </summary>
 		/// <param name="itemId">Specifies itemid from VSITEMID.</param>
-		/// <param name="reserved">Reserved.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
-		public override int ReloadItem(uint itemId, uint reserved)
+		public override void ReloadItem(VsItemID itemId)
 		{
-			#region precondition
-			if(this.IsClosed)
-			{
-				return VSConstants.E_FAIL;
-			}
-			#endregion
+			if(IsClosed)
+			    throw new COMException("Project is closed.");
 
-			NestedProjectNode node = this.NodeFromItemId(itemId) as NestedProjectNode;
+			var node = NodeFromItemId(itemId) as NestedProjectNode;
 
 			if(node != null)
 			{
 				object propertyAsObject = node.GetProperty((int)__VSHPROPID.VSHPROPID_HandlesOwnReload);
 
 				if(propertyAsObject != null && (bool)propertyAsObject)
-				{
-					node.ReloadItem(reserved);
-				}
+					node.ReloadItem();
 				else
-				{
-					this.ReloadNestedProjectNode(node);
-				}
+					ReloadNestedProjectNode(node);
 
-				return VSConstants.S_OK;
+			    return;
 			}
 
-			return base.ReloadItem(itemId, reserved);
+			base.ReloadItem(itemId);
 		}
 
 		/// <summary>
@@ -788,7 +779,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				// We have to use here the interface method call, since it might be that specialized project nodes like the project container item
 				// is owerwriting the default functionality.
-				this.ReloadItem(e.ItemID, 0);
+				this.ReloadItem(e.ItemID);
 			}
 		}
 		#endregion

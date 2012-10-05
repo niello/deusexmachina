@@ -353,33 +353,24 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="propid">Specifies the property identifier for the property to return. For valid propid values, see __VSCFGPROPID.</param>
 		/// <param name="var">The value of the property.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		public virtual int GetCfgProviderProperty(int propid, out object var)
+		int IVsCfgProvider2.GetCfgProviderProperty(int propid, out object var)
 		{
-			var = false;
-			switch((__VSCFGPROPID)propid)
-			{
-				case __VSCFGPROPID.VSCFGPROPID_SupportsCfgAdd:
-					var = true;
-					break;
-
-				case __VSCFGPROPID.VSCFGPROPID_SupportsCfgDelete:
-					var = true;
-					break;
-
-				case __VSCFGPROPID.VSCFGPROPID_SupportsCfgRename:
-					var = true;
-					break;
-
-				case __VSCFGPROPID.VSCFGPROPID_SupportsPlatformAdd:
-					var = false;
-					break;
-
-				case __VSCFGPROPID.VSCFGPROPID_SupportsPlatformDelete:
-					var = false;
-					break;
-			}
-			return VSConstants.S_OK;
+            return ComHelper.WrapFunction(false, IsConfigSupported, (VsConfigPropID)propid, out var, (bool supported) => supported);
 		}
+
+        protected virtual bool IsConfigSupported(VsConfigPropID propID)
+        {
+            switch(propID)
+            {
+                case VsConfigPropID.SupportsConfigAdd:
+                case VsConfigPropID.SupportsConfigDelete:
+                case VsConfigPropID.SupportsConfigRename:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
 
 		/// <summary>
 		/// Returns the per-configuration objects for this object. 
@@ -389,33 +380,36 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="actual">The number of configuration objects actually returned or a null reference, if this information is not necessary.</param>
 		/// <param name="flags">Flags that specify settings for project configurations, or a null reference (Nothing in Visual Basic) if no additional flag settings are required. For valid prgrFlags values, see __VSCFGFLAGS.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		public virtual int GetCfgs(uint celt, IVsCfg[] a, uint[] actual, uint[] flags)
+		public int GetCfgs(uint celt, IVsCfg[] a, uint[] actual, uint[] flags)
 		{
-			if(flags != null)
-				flags[0] = 0;
-
-			int i = 0;
-			string[] configList = this.project.BuildProject.GetConditionedPropertyValues(ProjectFileConstants.Configuration);
-
-			if(a != null)
-			{
-				foreach(string configName in configList)
-				{
-					a[i] = this.GetProjectConfiguration(configName);
-
-					i++;
-					if(i == celt)
-						break;
-				}
-			}
-			else
-				i = configList.Length;
-
-			if(actual != null)
-				actual[0] = (uint)i;
-
-			return VSConstants.S_OK;
+		    return ComHelper.WrapAction(false, GetConfigs, celt, a, actual, flags);
 		}
+
+        protected virtual void GetConfigs(uint celt, IVsCfg[] a, uint[] actual, uint[] flags)
+        {
+            if (flags != null)
+                flags[0] = 0;
+
+            int i = 0;
+            string[] configList = this.project.BuildProject.GetConditionedPropertyValues(ProjectFileConstants.Configuration);
+
+            if (a != null)
+            {
+                foreach (string configName in configList)
+                {
+                    a[i] = this.GetProjectConfiguration(configName);
+
+                    i++;
+                    if (i == celt)
+                        break;
+                }
+            }
+            else
+                i = configList.Length;
+
+            if (actual != null)
+                actual[0] = (uint)i;
+        }
 
 		/// <summary>
 		/// Returns one or more platform names. 
@@ -424,11 +418,16 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="names">On input, an allocated array to hold the number of platform names specified by celt. This parameter can also be a null reference if the celt parameter is zero. On output, names contains platform names.</param>
 		/// <param name="actual">The actual number of platform names returned.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		public virtual int GetPlatformNames(uint celt, string[] names, uint[] actual)
+		int IVsCfgProvider2.GetPlatformNames(uint celt, string[] names, uint[] actual)
 		{
-			string[] platforms = this.GetPlatformsFromProject();
-			return GetPlatforms(celt, names, actual, platforms);
+		    return ComHelper.WrapAction(false, GetPlatforms, celt, names, actual);
 		}
+
+        protected virtual void GetPlatforms(uint celt, string[] names, uint[] actual)
+        {
+            string[] platforms = GetPlatformsFromProject();
+            GetPlatforms(celt, names, actual, platforms);
+        }
 
 		/// <summary>
 		/// Returns the set of platforms that are installed on the user's machine. 
@@ -437,11 +436,16 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="names">On input, an allocated array to hold the number of names specified by celt. This parameter can also be a null reference (Nothing in Visual Basic)if the celt parameter is zero. On output, names contains the names of supported platforms</param>
 		/// <param name="actual">The actual number of platform names returned.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		public virtual int GetSupportedPlatformNames(uint celt, string[] names, uint[] actual)
+		int IVsCfgProvider2.GetSupportedPlatformNames(uint celt, string[] names, uint[] actual)
 		{
-			string[] platforms = this.GetSupportedPlatformsFromProject();
-			return GetPlatforms(celt, names, actual, platforms);
+		    return ComHelper.WrapAction(false, GetSupportedPlatforms, celt, names, actual);
 		}
+
+        protected virtual void  GetSupportedPlatforms(uint celt, string[] names, uint[] actual)
+        {
+            string[] platforms = GetSupportedPlatformsFromProject();
+            GetPlatforms(celt, names, actual, platforms);
+        }
 
 		/// <summary>
 		/// Assigns a new name to a configuration. 
@@ -667,7 +671,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="platforms">An array of available platform names</param>
 		/// <returns>A count of the actual number of platform names returned.</returns>
 		/// <devremark>The platforms array is never null. It is assured by the callers.</devremark>
-		private static int GetPlatforms(uint celt, string[] names, uint[] actual, string[] platforms)
+		protected static void GetPlatforms(uint celt, string[] names, uint[] actual, string[] platforms)
 		{
 			Debug.Assert(platforms != null, "The plaforms array should never be null");
 			if(names == null)
@@ -678,7 +682,7 @@ namespace Microsoft.VisualStudio.Project
 				}
 
 				actual[0] = (uint)platforms.Length;
-				return VSConstants.S_OK;
+				return;
 			}
 
 			//Degenarate case
@@ -689,7 +693,7 @@ namespace Microsoft.VisualStudio.Project
 					actual[0] = (uint)platforms.Length;
 				}
 
-				return VSConstants.S_OK;
+			    return;
 			}
 
 			uint returned = 0;
@@ -706,10 +710,8 @@ namespace Microsoft.VisualStudio.Project
 
 			if(celt > returned)
 			{
-				return VSConstants.S_FALSE;
+			    throw new ComSpecificException(VSConstants.S_FALSE);
 			}
-
-			return VSConstants.S_OK;
 		}
 		#endregion
 	}
