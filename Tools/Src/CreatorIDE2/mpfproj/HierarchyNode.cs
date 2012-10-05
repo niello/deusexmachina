@@ -151,7 +151,6 @@ namespace Microsoft.VisualStudio.Project
 			get { return VsMenus.IDM_VS_CTXT_NOCOMMANDS; }
 		}
 
-
 		/// <summary>
 		/// Return an imageindex
 		/// </summary>
@@ -327,7 +326,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				return this.hierarchyId;
 			}
-			internal set
+			protected set
 			{
 				this.hierarchyId = value;
 			}
@@ -554,8 +553,9 @@ namespace Microsoft.VisualStudio.Project
 			if(!Object.ReferenceEquals(node, nodeWithSameID as HierarchyNode))
 			{
 				if(nodeWithSameID == null && node.ID <= this.ProjectMgr.ItemIdMap.Count)
-				{ // reuse our hierarchy id if possible.
-					this.projectMgr.ItemIdMap.SetAt(node.hierarchyId, this);
+				{ 
+                    // reuse our hierarchy id if possible.
+                    this.projectMgr.ItemIdMap.SetAt(node.hierarchyId, this);
 				}
 				else
 				{
@@ -635,6 +635,23 @@ namespace Microsoft.VisualStudio.Project
 			}
 			throw new InvalidOperationException("Node not found");
 		}
+
+        public void RemoveAllChildren()
+        {
+            var node = this.firstChild;
+            while (node != null)
+            {
+                var next = node.nextSibling;
+
+                node.RemoveAllChildren();
+                node.NextSibling = null;
+                node.Parent = null;
+                
+                node = next;
+                this.firstChild = node;
+            }
+            this.lastChild = null;
+        }
 
 		/// <summary>
 		/// Returns an automation object representing this node
@@ -852,26 +869,21 @@ namespace Microsoft.VisualStudio.Project
 		/// Get a guid property
 		/// </summary>
 		/// <param name="propid">property id for the guid property requested</param>
-		/// <param name="guid">the requested guid</param>
 		/// <returns>S_OK if succeded</returns>
-		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "propid")]
-		public virtual int GetGuidProperty(int propid, out Guid guid)
+        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "propid")]
+        public virtual Guid GetGuidProperty(VsHPropID propid)
 		{
-			guid = Guid.Empty;
-			if(propid == (int)__VSHPROPID.VSHPROPID_TypeGuid)
-			{
-				guid = this.ItemTypeGuid;
-			}
+		    var result = Guid.Empty;
+		    if (propid == VsHPropID.TypeGuid)
+		        result = this.ItemTypeGuid;
 
-			if(guid.CompareTo(Guid.Empty) == 0)
-			{
-				return VSConstants.DISP_E_MEMBERNOTFOUND;
-			}
+		    if (result == Guid.Empty)
+		        throw new MemberNotFoundException();
 
-			return VSConstants.S_OK;
+		    return result;
 		}
 
-		/// <summary>
+	    /// <summary>
 		/// Set a guid property.
 		/// </summary>
 		/// <param name="propid">property id of the guid property to be set</param>
@@ -1286,14 +1298,14 @@ namespace Microsoft.VisualStudio.Project
 		[SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "pointer")]
 		protected virtual int DisplayContextMenu(IList<HierarchyNode> selectedNodes, IntPtr pointerToVariant)
 		{
-			if(selectedNodes == null || selectedNodes.Count == 0 || pointerToVariant == IntPtr.Zero)
-			{
-				return NativeMethods.OLECMDERR_E_NOTSUPPORTED;
-			}
+            if (selectedNodes == null || selectedNodes.Count == 0 || pointerToVariant == IntPtr.Zero)
+            {
+                return NativeMethods.OLECMDERR_E_NOTSUPPORTED;
+            }
 
-			int idmxStoredMenu = 0;
-
-			foreach(HierarchyNode node in selectedNodes)
+		    int idmxStoredMenu = 0;
+		    
+		    foreach(HierarchyNode node in selectedNodes)
 			{
 				// We check here whether we have a multiple selection of
 				// nodes of differing type.
@@ -1302,19 +1314,19 @@ namespace Microsoft.VisualStudio.Project
 					// First time through or single node case
 					idmxStoredMenu = node.MenuCommandId;
 				}
-				else if(idmxStoredMenu != node.MenuCommandId)
-				{
-					// We have different node types. Check if any of the nodes is
-					// the project node and set the menu accordingly.
-					if(node.MenuCommandId == VsMenus.IDM_VS_CTXT_PROJNODE)
-					{
-						idmxStoredMenu = VsMenus.IDM_VS_CTXT_XPROJ_PROJITEM;
-					}
-					else
-					{
-						idmxStoredMenu = VsMenus.IDM_VS_CTXT_XPROJ_MULTIITEM;
-					}
-				}
+                else if (idmxStoredMenu != node.MenuCommandId)
+                {
+                    // We have different node types. Check if any of the nodes is
+                    // the project node and set the menu accordingly.
+                    if (node.MenuCommandId == VsMenus.IDM_VS_CTXT_PROJNODE)
+                    {
+                        idmxStoredMenu = VsMenus.IDM_VS_CTXT_XPROJ_PROJITEM;
+                    }
+                    else
+                    {
+                        idmxStoredMenu = VsMenus.IDM_VS_CTXT_XPROJ_MULTIITEM;
+                    }
+                }
 			}
 
 			object variant = Marshal.GetObjectForNativeVariant(pointerToVariant);
@@ -1326,7 +1338,7 @@ namespace Microsoft.VisualStudio.Project
 			POINTS points = new POINTS();
 			points.x = x;
 			points.y = y;
-			return ShowContextMenu(idmxStoredMenu, VsMenus.guidSHLMainMenu, points);
+		    return ShowContextMenu(idmxStoredMenu, VsMenus.guidSHLMainMenu, points);
 		}
 
 		/// <summary>
@@ -1365,7 +1377,7 @@ namespace Microsoft.VisualStudio.Project
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "pva")]
 		protected virtual int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
-			if(this.projectMgr == null || this.projectMgr.IsClosed)
+            if(this.projectMgr == null || this.projectMgr.IsClosed)
 			{
 				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
 			}
@@ -2199,8 +2211,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// Reloads an item.
 		/// </summary>
-		/// <param name="reserved">Reserved parameter defined at the IVsPersistHierarchyItem2::ReloadItem parameter.</param>
-		protected internal virtual void ReloadItem(uint reserved)
+		public virtual void ReloadItem()
 		{
 
 		}
@@ -2521,24 +2532,28 @@ namespace Microsoft.VisualStudio.Project
 		}
 
 
-		public virtual int GetGuidProperty(uint itemId, int propid, out Guid guid)
+		int IVsHierarchy. GetGuidProperty(uint itemId, int propid, out Guid guid)
 		{
-			guid = Guid.Empty;
-			HierarchyNode n = this.projectMgr.NodeFromItemId(itemId);
-			if(n != null)
-			{
-				int hr = n.GetGuidProperty(propid, out guid);
-				__VSHPROPID vspropId = (__VSHPROPID)propid;
-				CCITracing.TraceCall(vspropId.ToString() + "=" + guid.ToString());
-				return hr;
-			}
-			if(guid == Guid.Empty)
-			{
-				return VSConstants.DISP_E_MEMBERNOTFOUND;
-			}
-			return VSConstants.S_OK;
+		    return ComHelper.WrapFunction(false, GetGuidProperty, (VsItemID)itemId, (VsHPropID) propid, out guid);
 		}
 
+        int IVsUIHierarchy.GetGuidProperty(uint itemId, int propid, out Guid guid)
+        {
+            return ((IVsHierarchy) this).GetGuidProperty(itemId, propid, out guid);
+        }
+
+        public virtual Guid GetGuidProperty(VsItemID itemID, VsHPropID propID)
+        {
+            var node = projectMgr.NodeFromItemId(itemID);
+            if (node != null)
+            {
+                var result = node.GetGuidProperty(propID);
+                CCITracing.TraceCall(propID.ToString() + "=" + result.ToString());
+                return result;
+            }
+
+            throw new MemberNotFoundException();
+        }
 
 		public virtual int GetProperty(uint itemId, int propId, out object propVal)
 		{
@@ -2916,23 +2931,20 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="itemId">Specifies itemid from VSITEMID.</param>
 		/// <param name="reserved">Reserved.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
-		public virtual int ReloadItem(uint itemId, uint reserved)
+		int IVsPersistHierarchyItem2.ReloadItem(uint itemId, uint reserved)
 		{
-			#region precondition
-			if(this.ProjectMgr == null || this.ProjectMgr.IsClosed)
-			{
-				return VSConstants.E_FAIL;
-			}
-			#endregion
-
-			HierarchyNode n = this.ProjectMgr.NodeFromItemId(itemId);
-			if(n != null)
-			{
-				n.ReloadItem(reserved);
-			}
-
-			return VSConstants.S_OK;
+		    return ComHelper.WrapAction(false, ReloadItem, (VsItemID) itemId);
 		}
+
+        public virtual void ReloadItem(VsItemID itemID)
+        {
+            if (ProjectMgr == null || ProjectMgr.IsClosed)
+                throw new COMException("Project manager is closed or doesn't exist.");
+
+            var node = ProjectMgr.NodeFromItemId(itemID);
+            if (node != null)
+                node.ReloadItem();
+        }
 		#endregion
 
 		#region IOleCommandTarget methods

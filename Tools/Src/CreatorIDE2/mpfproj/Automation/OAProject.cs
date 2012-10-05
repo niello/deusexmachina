@@ -447,11 +447,11 @@ namespace Microsoft.VisualStudio.Project.Automation
 							throw new InvalidOperationException();
 						}
 
-						ErrorHandler.ThrowOnFailure(this.project.Save(fullPath, 1, 0));
+						project.Save(fullPath, true, 0);
 					}
 					else
 					{
-						ErrorHandler.ThrowOnFailure(this.project.Save(fullPath, 0, 0));
+						project.Save(fullPath, false, 0);
 					}
 				}
 			}

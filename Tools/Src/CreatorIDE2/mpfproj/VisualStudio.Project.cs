@@ -1,9 +1,11 @@
 ﻿/// Copyright (c) Microsoft Corporation.  All rights reserved.
 
 using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Globalization;
 using System.Resources;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.ComponentModel;
@@ -182,7 +184,11 @@ namespace Microsoft.VisualStudio.Project
 
 		internal SR()
 		{
-			resources = new System.Resources.ResourceManager("Microsoft.VisualStudio.Project", this.GetType().Assembly);
+		    var asm = GetType().Assembly;
+		    const string resorceSetName = "Microsoft.VisualStudio.Project.VisualStudio.Project";
+		    Debug.Assert(asm.GetManifestResourceNames().Contains(resorceSetName + ".resources"), "Resources not found.");
+
+            resources = new ResourceManager(resorceSetName, asm);
 		}
 
 		private static SR GetLoader()

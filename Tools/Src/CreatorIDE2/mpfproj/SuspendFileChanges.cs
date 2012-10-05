@@ -13,7 +13,7 @@ namespace Microsoft.VisualStudio.Project
 	/// <summary>
 	/// helper to make the editor ignore external changes
 	/// </summary>
-	internal class SuspendFileChanges
+	public class SuspendFileChanges
 	{
 		private string documentFileName;
 

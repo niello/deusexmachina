@@ -137,8 +137,7 @@ namespace Microsoft.VisualStudio.Project.Automation
 		{
 			get
 			{
-				Guid guid;
-				ErrorHandler.ThrowOnFailure(this.node.GetGuidProperty((int)__VSHPROPID.VSHPROPID_TypeGuid, out guid));
+			    var guid = this.node.GetGuidProperty(VsHPropID.TypeGuid);
 				return guid.ToString("B");
 			}
 		}
