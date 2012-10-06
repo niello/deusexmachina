@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns = "http://schemas.microsoft.com/developer/msbuild/2003">
+	
+	<PropertyGroup>
+		<CustomAssemblyInfo Condition="'$(CustomAssemblyInfo)'==''">False</CustomAssemblyInfo>
+		<CustomVersion Condition="'$(CustomVersion)'==''">False</CustomVersion>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<!-- Включаем (если есть) в каждый проект файл с общей для всех проектах информацией о сборке-->
+		<Compile Include = "$(SolutionDir)$(SolutionName).AssemblyInfo.cs" Condition="Exists('$(SolutionDir)$(SolutionName).AssemblyInfo.cs') And !'$(CustomAssemblyInfo)'"/>
+		<!-- Включаем (если есть) в каждый проект файл с указанием версий. Таким образом, можно менять версию только в одном файле -->
+		<Compile Include = "$(SolutionDir)$(SolutionName).Version.cs" Condition="Exists('$(SolutionDir)$(SolutionName).Version.cs') And !'$(CustomVersion)'"/>
+	</ItemGroup>
+	
+	<PropertyGroup>
+		<!-- Устанавливаем каталоги для скомпилированных файлов и для объектных файлов (VS, тем не менее, продолжит
+			создавать каталог obj\TempPE в каталоге с проектом -->
+		<OutputPath>$(SolutionDir)..\..\Bin\$(SolutionName)\</OutputPath>
+		<BaseIntermediateOutputPath>$(SolutionDir)..\..\Obj\$(SolutionName)\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+		<!--Добавляем суффикс "_d" к именам всех проектов, собранных в конфигурации "Debug"-->
+		<AssemblyName Condition = "'$(Configuration)' == 'Debug'">$(AssemblyName)_d</AssemblyName>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+		<!-- Определяем переменную с возможным путём к файлу, непосредственно подключаемому к проекту -->
+		<proj_ProjExt>$(MSBuildProjectDirectory)\$(MSBuildProjectName).csproj.targets</proj_ProjExt>
+		
+		<!-- Определяем переменные с возможными путями к настройкам билда для каталогов. Четырёх уровней вложенности должно хватить.
+			Если нет, то можно определить ещё несколько -->
+        <sol_DirExt>$(MSBuildProjectDirectory)\directory.csproj.targets</sol_DirExt>
+        <sol_SuperDirExt>$(MSBuildProjectDirectory)\..\directory.csproj.targets</sol_SuperDirExt>
+		<sol_SuperSuperDirExt>$(MSBuildProjectDirectory)\..\..\directory.csproj.targets</sol_SuperSuperDirExt>
+		<sol_SuperSuperSuperDirExt>$(MSBuildProjectDirectory)\..\..\..\directory.csproj.targets</sol_SuperSuperSuperDirExt>
+	</PropertyGroup>
+	
+	<!-- Подключаем все файлы подряд (если они есть). Таким образом можно настраивать общие свойства для всех проектов, находящихся 
+		в определённом каталоге -->
+	<Import Condition = "Exists( '$(sol_SuperSuperSuperDirExt)')" Project = "$(sol_SuperSuperSuperDirExt)"/>
+	<Import Condition = "Exists( '$(sol_SuperSuperDirExt)')" Project = "$(sol_SuperSuperDirExt)"/>
+	<Import Condition = "Exists( '$(sol_SuperDirExt)')" Project = "$(sol_SuperDirExt)"/>
+	<Import Condition = "Exists( '$(sol_DirExt)')" Project = "$(sol_DirExt)"/>
+	<Import Condition = "Exists( '$(proj_ProjExt)')" Project="$(proj_ProjExt)"/>    
+	
+</Project>
