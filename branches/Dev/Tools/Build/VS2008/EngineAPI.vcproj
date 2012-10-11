@@ -261,14 +261,6 @@
 				RelativePath="..\..\Src\CreatorIDE\EngineAPI\Prop\PropEditorCamera.h"
 				>
 			</File>
-			<File
-				RelativePath="..\..\Src\CreatorIDE\EngineAPI\Prop\PropEditorTfmInput.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\CreatorIDE\EngineAPI\Prop\PropEditorTfmInput.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="API"

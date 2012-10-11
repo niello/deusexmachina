@@ -79,7 +79,7 @@ namespace CreatorIDE
                 if (!_isExisting) return false;
                 if (atMousePosition)
                 {
-                    Transform.SetCurrentEntity(_UID);
+                    Engine.SelectEntity(_UID);
                     Transform.PlaceUnderMouse();
                 }
                 //Update();

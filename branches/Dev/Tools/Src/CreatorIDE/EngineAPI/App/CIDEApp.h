@@ -41,10 +41,9 @@ public:
 	Game::PEntity				CurrentEntity;	// Entity on which entity operations are performed (attr read/write etc)
 	Game::PEntity				SelectedEntity;	// Entity selected in the editor window
 
-	bool						TransformMode;
-	bool						LimitToGround;
-	bool						SnapToGround;
-	nString						OldInputPropClass;
+	// Ground constraints for the selected entity transformation
+	bool						DenyEntityAboveGround;
+	bool						DenyEntityBelowGround;
 
 	CCIDEApp();
 	~CCIDEApp();
@@ -60,6 +59,10 @@ public:
 	void	Close();
 
 	bool	SetEditorTool(LPCSTR Name); //!!!RTTI!
+	bool	SelectEntity(Game::PEntity Entity);
+	void	ClearSelectedEntities();
+
+	void	ApplyGroundConstraints(const Game::CEntity& Entity, vector3& Position);
 
 	CCSharpUIEventHandler* GetUIEventHandler() { return pUIEventHandler; }
 };

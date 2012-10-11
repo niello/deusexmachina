@@ -10,19 +10,24 @@
 #include <SI/SI_L3.h>
 #include <Prop/PropEditorCamera.h>
 #include <Input/Prop/PropInput.h>
+#include <Game/Mgr/EnvQueryManager.h>
 #include <Physics/Prop/PropTransformable.h>
+#include <Physics/Prop/PropAbstractPhysics.h>
+#include <Physics/CharEntity.h>
+#include <Physics/Composite.h>
 #include <gfx2/ngfxserver2.h>
 
 namespace App
 {
 __ImplementSingleton(App::CCIDEApp);
 
+using namespace Properties;
+
 CCIDEApp::CCIDEApp():
 	ParentHwnd(NULL),
 	pUIEventHandler(NULL),
-	TransformMode(false),
-	LimitToGround(false),
-	SnapToGround(false)
+	DenyEntityAboveGround(false),
+	DenyEntityBelowGround(false)
 {
 	__ConstructSingleton;
 }
@@ -144,8 +149,8 @@ void CCIDEApp::Close()
 	n_delete(pUIEventHandler);
 	pUIEventHandler = NULL;
 
+	ClearSelectedEntities();
 	CurrentEntity = NULL;
-	SelectedEntity = NULL;
 	EditorCamera = NULL;
 
 	AttrDescs = NULL;
@@ -166,6 +171,64 @@ bool CCIDEApp::SetEditorTool(LPCSTR Name)
 {
 	CAppStateEditor* pState = (CAppStateEditor*)FSM.FindStateHandlerByID(CStrID("Editor"));
 	return pState && pState->SetTool(Name);
+}
+//---------------------------------------------------------------------
+
+bool CCIDEApp::SelectEntity(Game::PEntity Entity)
+{
+	if (!Entity.isvalid()) FAIL;
+	if (Entity.get_unsafe() != SelectedEntity.get_unsafe())
+		SelectedEntity = Entity;
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CCIDEApp::ClearSelectedEntities()
+{
+	SelectedEntity = NULL;
+}
+//---------------------------------------------------------------------
+
+void CCIDEApp::ApplyGroundConstraints(const Game::CEntity& Entity, vector3& Position)
+{
+	if (!DenyEntityAboveGround && !DenyEntityBelowGround) return;
+
+	int SelfPhysicsID;
+	CPropAbstractPhysics* pPhysProp = Entity.FindProperty<CPropAbstractPhysics>();
+
+	float LocalMinY = 0.f;
+	if (pPhysProp)
+	{
+		Physics::CEntity* pPhysEnt = pPhysProp->GetPhysicsEntity();
+		if (pPhysEnt)
+		{
+			SelfPhysicsID = pPhysEnt->GetUniqueID();
+			
+			bbox3 AABB;
+			pPhysEnt->GetComposite()->GetAABB(AABB);
+
+			//!!!THIS SHOULDN'T BE THERE! Tfm must be adjusted inside entity that fixes it.
+			// I.e. AABB must be translated in GetAABB or smth.
+			float PhysEntY = pPhysEnt->GetTransform().pos_component().y;
+			float AABBPosY = AABB.center().y;
+
+			LocalMinY -= (AABB.extents().y - AABBPosY + PhysEntY);
+
+			//!!!tmp hack, need more general code!
+			if (pPhysEnt->IsA(Physics::CCharEntity::RTTI))
+				LocalMinY -= ((Physics::CCharEntity*)pPhysEnt)->Hover;
+		}
+		else SelfPhysicsID = -1;
+	}
+	else SelfPhysicsID = -1;
+
+	CEnvInfo Info;
+	EnvQueryMgr->GetEnvInfoAt(vector3(Position.x, Position.y + 500.f, Position.z), Info, 1000.f, SelfPhysicsID);
+	
+	float MinY = Position.y + LocalMinY;
+	if ((DenyEntityAboveGround && MinY > Info.WorldHeight) ||
+		(DenyEntityBelowGround && MinY < Info.WorldHeight))
+		Position.y = Info.WorldHeight - LocalMinY;
 }
 //---------------------------------------------------------------------
 

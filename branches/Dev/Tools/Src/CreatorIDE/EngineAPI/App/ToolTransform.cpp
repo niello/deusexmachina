@@ -9,6 +9,7 @@
 #include <Physics/CharEntity.h>
 #include <Physics/Composite.h>
 #include <Game/Mgr/EnvQueryManager.h>
+#include <Game/Mgr/FocusManager.h>
 #include <App/CIDEApp.h>
 #include <gfx2/ngfxserver2.h>
 
@@ -26,6 +27,8 @@ using namespace Properties;
 //???use OnRender or virtual callback?
 void CToolTransform::Activate()
 {
+	FocusMgr->SetInputFocusEntity(NULL);
+
 	if (CIDEApp->SelectedEntity.isvalid()) SUBSCRIBE_PEVENT(OnBeginFrame, CToolTransform, OnBeginFrame);
 }
 //---------------------------------------------------------------------
@@ -33,11 +36,15 @@ void CToolTransform::Activate()
 void CToolTransform::Deactivate()
 {
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
+
+	FocusMgr->SetInputFocusEntity(CIDEApp->EditorCamera);
 }
 //---------------------------------------------------------------------
 
 bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 {
+	if (!CIDEApp->SelectedEntity.isvalid()) OK;
+
 	static const float MoveVelocityXY = 0.33f;
 	static const float MoveVelocityZ = 0.33f;
 	static const float RotateVelocityXY = 4.f;
@@ -50,7 +57,7 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 	vector3 Pos = Evt.Transform.pos_component();
 	
 	float MoveX, MoveY;
-	float MoveZ = (float)InputSrv->GetWheelTotal() * 0.3f;
+	float MoveZ = (float)InputSrv->GetWheelTotal() * -0.3f; //???make distance-dependent?
 
 	//???!!!use raw or cursor?!
 	//???may be reproject ray and intersect with plane instead of adjusting drag speed?
@@ -104,46 +111,7 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 
 	if (TFChanged)
 	{
-		//!!!DUPLICATE CODE!
-		if (CIDEApp->LimitToGround || CIDEApp->SnapToGround)
-		{
-			int SelfPhysicsID;
-			CPropAbstractPhysics* pPhysProp = CIDEApp->SelectedEntity->FindProperty<CPropAbstractPhysics>();
-
-			float LocalMinY = 0.f;
-			if (pPhysProp)
-			{
-				Physics::CEntity* pPhysEnt = pPhysProp->GetPhysicsEntity();
-				if (pPhysEnt)
-				{
-					SelfPhysicsID = pPhysEnt->GetUniqueID();
-					
-					bbox3 AABB;
-					pPhysEnt->GetComposite()->GetAABB(AABB);
-
-					//!!!THIS SHOULDN'T BE THERE! Tfm must be adjusted inside entity that fixes it.
-					// I.e. AABB must be translated in GetAABB or smth.
-					float PhysEntY = pPhysEnt->GetTransform().pos_component().y;
-					float AABBPosY = AABB.center().y;
-
-					LocalMinY -= (AABB.extents().y - AABBPosY + PhysEntY);
-
-					//!!!tmp hack, need more general code!
-					if (pPhysEnt->IsA(Physics::CCharEntity::RTTI))
-						LocalMinY -= ((Physics::CCharEntity*)pPhysEnt)->Hover;
-				}
-				else SelfPhysicsID = -1;
-			}
-			else SelfPhysicsID = -1;
-
-			CEnvInfo Info;
-			EnvQueryMgr->GetEnvInfoAt(vector3(Pos.x, Pos.y + 500.f, Pos.z), Info, 1000.f, SelfPhysicsID);
-			
-			float MinY = Pos.y + LocalMinY;
-			if (Info.WorldHeight > MinY || (CIDEApp->SnapToGround && Info.WorldHeight < MinY))
-				Pos.y = Info.WorldHeight - LocalMinY;
-		}
-
+		CIDEApp->ApplyGroundConstraints(*CIDEApp->SelectedEntity, Pos);
 		Evt.Transform.set_translation(Pos);
 		CIDEApp->SelectedEntity->FireEvent(Evt);
 	}
