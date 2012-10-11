@@ -198,7 +198,55 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CIDEApp_DBAttrs.cpp"
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CSharpUIEventHandler.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CSharpUIEventHandler.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\EditorTool.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolNavGeometry.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolNavGeometry.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolNavOffmesh.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolNavOffmesh.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolNavRegions.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolNavRegions.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolSelect.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolSelect.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolTransform.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\ToolTransform.h"
 				>
 			</File>
 		</Filter>
@@ -243,6 +291,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\CreatorIDE\EngineAPI\API\Transform.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\API\UICallbacks.cpp"
 				>
 			</File>
 			<File

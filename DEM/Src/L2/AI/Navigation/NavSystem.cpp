@@ -62,9 +62,8 @@ void CNavSystem::Init(const Data::CParams* Params)
 		{
 			pActor->NavStatus = AINav_Done;
 			Corridor.reset(Ref, pActor->Position.v);
+			return;
 		}
-
-		return;
 	}
 
 	pActor->NavStatus = AINav_Invalid;

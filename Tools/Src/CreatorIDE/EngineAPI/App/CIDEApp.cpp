@@ -2,21 +2,16 @@
 
 #include "AppStateEditor.h"
 #include <App/Environment.h>
+#include <App/CSharpUIEventHandler.h>
 #include <Loading/EntityFactory.h>
 #include <Loading/EntityLoader.h>
-#include <Loading/EnvironmentLoader.h>
 #include <SI/SI_L1.h>
 #include <SI/SI_L2.h>
 #include <SI/SI_L3.h>
 #include <Prop/PropEditorCamera.h>
 #include <Input/Prop/PropInput.h>
 #include <Physics/Prop/PropTransformable.h>
-#include <DB/StdAttrs.h>
-#include <Game/Mgr/FocusManager.h>
-
 #include <gfx2/ngfxserver2.h>
-
-#include <time.h>
 
 namespace App
 {
@@ -24,7 +19,7 @@ __ImplementSingleton(App::CCIDEApp);
 
 CCIDEApp::CCIDEApp():
 	ParentHwnd(NULL),
-	MouseCB(NULL),
+	pUIEventHandler(NULL),
 	TransformMode(false),
 	LimitToGround(false),
 	SnapToGround(false)
@@ -39,37 +34,18 @@ CCIDEApp::~CCIDEApp()
 }
 //---------------------------------------------------------------------
 
-void CCIDEApp::SetupDisplayMode()
-{
-	CDisplayMode Mode;
-	Mode.PosX = 0;
-	Mode.PosY = 0;
-	Mode.Width = 800;
-	Mode.Height = 600;
-	Mode.VSync = false;
-	AppEnv->SetDisplayMode(Mode);
-
-	//!!!SET FULLSCREEN / WINDOWED! //???to display mode?
-
-	nString WindowTitle = GetVendorName() + " - " + GetAppName() + " - " + GetAppVersion();
-	AppEnv->SetWindowTitle(WindowTitle.Get());
-
-	AppEnv->SetWindowIcon("Icon");
-}
-//---------------------------------------------------------------------
-
 bool CCIDEApp::Open()
 {
+	nString WindowTitle = GetVendorName() + " - " + GetAppName() + " - " + GetAppVersion();
+
+	AppEnv->SetVendorName(GetVendorName());
 	AppEnv->SetAppName(GetAppName());
 	AppEnv->SetAppVersion(GetAppVersion());
-	AppEnv->SetVendorName(GetVendorName());
+	AppEnv->SetDisplayMode(CDisplayMode(0, 0, 800, 600, false));
+	AppEnv->SetWindowTitle(WindowTitle.Get());
+	AppEnv->SetWindowIcon("Icon");
 
-	SetupDisplayMode();
-
-	// Old:
-	//this->SetupFromDefaults();
-	//this->SetupFromProfile();
-	//this->SetupFromCmdLineArgs();
+	//!!!SET FULLSCREEN / WINDOWED! //???to display mode?
 
 	if (!AppEnv->InitCore())
 	{
@@ -77,6 +53,7 @@ bool CCIDEApp::Open()
 		FAIL;
 	}
 
+	//!!!TO HRD SETTINGS!
 	nString Home = DataSrv->ManglePath("home:");
 	nString Proj = DataSrv->ManglePath("proj:");
 	nString Data = Proj + "/Content/Project";
@@ -104,9 +81,10 @@ bool CCIDEApp::Open()
 		FAIL;
 	}
 
+	DbgSrv->AllowUI(false);
+
 	nGfxServer2::Instance()->SetCursorVisibility(nGfxServer2::System);
 
-	//RegisterAttributes();
 	SI::RegisterGlobals();
 	SI::RegisterEventManager();
 	SI::RegisterEntityManager();
@@ -119,18 +97,8 @@ bool CCIDEApp::Open()
 
 	n_printf("Setup input - OK\n");
 
+	// Editor must load all static entities separately, so we don't enable CEnvironmentLoader
 	EntityFct->SetDefaultLoader(Loading::CEntityLoader::Create());
-
-	// Editor must load all static entities separately, so we comment it
-	//EntityFct->SetLoader(CStrID("StaticEnv"), Loading::CEnvironmentLoader::Create());
-
-	// Init UI //!!!fix texture path! add cegui:imagesets/ here! set resgroup for it to imagesets
-	////!!!to HRD params! data/cfg/UI.hrd
-	//UISystem->LoadFont("DejaVuSans-8.font");
-	//UISystem->LoadFont("DejaVuSans-10.font");
-	//UISystem->LoadFont("DejaVuSans-14.font");
-	//UISystem->LoadScheme("TaharezLook.scheme");
-	//UISystem->SetDefaultMouseCursor("TaharezLook", "MouseArrow");
 
 	if (!AppEnv->InitGameSystem())
 	{
@@ -140,7 +108,7 @@ bool CCIDEApp::Open()
 		FAIL;
 	}
 
-	//init gameplay
+	// Init gameplay
 	QuestSystem = Story::CQuestSystem::Create();
 	DlgSystem = Story::CDlgSystem::Create(); //???init into Game::Server as manager?
 	ItemManager = Items::CItemManager::Create(); //???init into Game::Server as manager?
@@ -165,20 +133,19 @@ bool CCIDEApp::Open()
 	Tfm.translate(vector3(300.f, 145.f, 300.f));
 	EditorCamera->Set<matrix44>(Attr::Transform, Tfm);
 
-	OK;
-}
-//---------------------------------------------------------------------
+	pUIEventHandler = n_new(CCSharpUIEventHandler);
 
-bool CCIDEApp::AdvanceFrame()
-{
-	return FSM.Advance();
+	OK;
 }
 //---------------------------------------------------------------------
 
 void CCIDEApp::Close()
 {
+	n_delete(pUIEventHandler);
+	pUIEventHandler = NULL;
+
 	CurrentEntity = NULL;
-	CurrentTfmEntity = NULL;
+	SelectedEntity = NULL;
 	EditorCamera = NULL;
 
 	AttrDescs = NULL;
@@ -194,59 +161,5 @@ void CCIDEApp::Close()
 	AppEnv->ReleaseCore();
 }
 //---------------------------------------------------------------------
-
-/*
-#include "tools/ncmdlineargs.h"
-
-void
-CApplication::SetupFromCmdLineArgs()
-{
-    //// setup optional startup savegame or level paths
-    //this->SetStartupSavegame(this->cmdLineArgs.GetStringArg("-loadgame", 0));
-    //this->SetStartupLevel(this->cmdLineArgs.GetStringArg("-level", 0));
-    //this->SetWorldDb(this->cmdLineArgs.GetStringArg("-db", 0));
-
-    // setup display mode
-    nDisplayMode2 mode = AppEnv->GetDisplayMode();
-    if (this->cmdLineArgs.HasArg("-fullscreen"))
-    {
-        if (this->cmdLineArgs.GetBoolArg("-fullscreen") | this->GetForceFullscreen())
-        {
-            mode.SetType(nDisplayMode2::Fullscreen);
-        }
-        else
-        {
-            mode.SetType(nDisplayMode2::Windowed);
-        }
-    }
-    mode.SetXPos(this->cmdLineArgs.GetIntArg("-x", mode.GetXPos()));
-    mode.SetYPos(this->cmdLineArgs.GetIntArg("-y", mode.GetYPos()));
-    mode.SetWidth(this->cmdLineArgs.GetIntArg("-w", mode.GetWidth()));
-    mode.SetHeight(this->cmdLineArgs.GetIntArg("-h", mode.GetHeight()));
-    mode.SetAntiAliasSamples(this->cmdLineArgs.GetIntArg("-aa", mode.GetAntiAliasSamples()));
-    AppEnv->SetDisplayMode(mode);
-
-    // set project directory override
-    nString projDirArg = this->cmdLineArgs.GetStringArg("-projdir", 0);
-    if (projDirArg.IsValid())
-    {
-        AppEnv->SetProjectDirectory(projDirArg);
-    }
-
-    // set feature set override
-    nString featureSetArg = this->cmdLineArgs.GetStringArg("-featureset", 0);
-    if (featureSetArg.IsValid())
-    {
-        AppEnv->SetFeatureSet(featureSetArg);
-    }
-
-    // set render path override
-    nString renderPathArg = this->cmdLineArgs.GetStringArg("-renderpath", 0);
-    if (renderPathArg.IsValid())
-    {
-        AppEnv->SetRenderPath(renderPathArg);
-    }
-}
-*/
 
 } // namespace App

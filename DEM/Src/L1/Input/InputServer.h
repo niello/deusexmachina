@@ -37,9 +37,9 @@ const int CharBufferSize = 256;
 
 enum EInputPriority
 {
-	InputPriority_Raw		= 1,
+	InputPriority_UI		= 100,	// UI must have high priority
 	InputPriority_Mapping	= 5,
-	InputPriority_UI		= 100	// UI must have high priority
+	InputPriority_Raw		= 1
 };
 
 // Priorities:

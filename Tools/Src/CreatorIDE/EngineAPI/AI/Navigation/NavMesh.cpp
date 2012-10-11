@@ -16,6 +16,17 @@ bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
 {
 	n_assert(!pHF);
 
+	pTfmClass = nKernelServer::Instance()->FindClass("ntransformnode");
+	n_assert(pTfmClass);
+	pCLODClass = nKernelServer::Instance()->FindClass("nterrainnode");
+	n_assert(pCLODClass);
+	pShapeClass = nKernelServer::Instance()->FindClass("nshapenode");
+	n_assert(pShapeClass);
+	pSkinShapeClass = nKernelServer::Instance()->FindClass("nskinshapenode");
+	n_assert(pSkinShapeClass);
+	pSkyClass = nKernelServer::Instance()->FindClass("nskynode");
+	n_assert(pSkyClass);
+
 	Cfg = Config;
 
 	Climb = MaxClimb;
@@ -58,9 +69,48 @@ bool CNavMeshBuilder::AddGeometryNCT2(nChunkLodNode* pNode, nChunkLodTree* pTree
 	{
 		pNode->RequestLoadData(pTree, 1.f);
 		nMesh2* pMesh = pNode->GetChunkLodMesh()->GetMesh();
-		bool Result = pMesh ? AddGeometry(pMesh, pTfm, Area) : true;
+		bool Result = pMesh ? AddGeometry(pMesh, -1, true, pTfm, Area) : true;
 		pNode->RequestUnloadData(pTree);
 		return Result;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CNavMeshBuilder::AddGeometry(nSceneNode* pNode, const matrix44* pTfm, uchar Area)
+{
+	if (pNode->IsA(pCLODClass))
+	{
+		nChunkLodTree* pTree = ((nTerrainNode*)pNode)->GetChunkLodTree();
+		if (!AddGeometryNCT2(pTree->GetRootChunkLodNode(), pTree, pTfm, Area)) FAIL;
+	}
+	else if (pNode->IsA(pSkinShapeClass) || pNode->IsA(pSkyClass))
+	{
+		//!!!NOTE - skinned characters must not be detected as static geometry!
+		// Force skip skinned. Skinned must be processed as collision geometry, not as gfx.
+		// Force skip sky. Sky must not be processed.
+	}
+	else if (pNode->IsA(pShapeClass))
+	{
+		if (!AddGeometry(((nShapeNode*)pNode)->GetMeshObject(), ((nShapeNode*)pNode)->GetGroupIndex(), false, pTfm, Area)) FAIL;
+	}
+	else if (pNode->IsA(pTfmClass))
+	{
+		matrix44 Tmp;
+		const matrix44& NodeTfm = ((nTransformNode*)pNode)->GetTransform();
+		if (NodeTfm != matrix44::identity)
+		{
+			if (pTfm)
+			{
+				Tmp = (*pTfm) * NodeTfm;
+				pTfm = &Tmp;
+			}
+			else pTfm = &NodeTfm;
+		}
+		
+		for (nSceneNode* pCurrNode = (nSceneNode*)pNode->GetHead(); pCurrNode; pCurrNode = (nSceneNode*)pCurrNode->GetSucc())
+			if (!AddGeometry(pCurrNode, pTfm, Area)) FAIL;
 	}
 
 	OK;
@@ -70,6 +120,7 @@ bool CNavMeshBuilder::AddGeometryNCT2(nChunkLodNode* pNode, nChunkLodTree* pTree
 bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 {
 	const matrix44& Tfm = Entity.Get<matrix44>(Attr::Transform);
+	const matrix44* pTfm = (Tfm == matrix44::identity) ? NULL : &Tfm; // Geometry transform optimization
 
 	// Logically must get collision geometry
 
@@ -80,59 +131,50 @@ bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 	CPropAbstractPhysics* pPropPhys = Entity.FindProperty<CPropAbstractPhysics>();
 	if (pPropPhys)
 	{
+		// return, if processed
 	}
 
 	CPropGraphics* pPropGfx = Entity.FindProperty<CPropGraphics>();
 	if (pPropGfx)
 	{
-		nClass* pCLODClass = nKernelServer::Instance()->FindClass("nterrainnode");
-		n_assert(pCLODClass);
-		nClass* pShapeClass = nKernelServer::Instance()->FindClass("nshapenode");
-		n_assert(pShapeClass);
-
 		const CGfxShapeArray& GfxEnts = pPropGfx->GetGfxEntities();
 		for (int i = 0; i < GfxEnts.Size(); ++i)
-		{
-			nTransformNode* pNode = GfxEnts[i]->GetResource().GetNode();
-			nSceneNode* pCurrNode = (nSceneNode*)pNode->GetHead();
-			for (; pCurrNode; pCurrNode = (nSceneNode*)pCurrNode->GetSucc())
-			{
-				if (pCurrNode->IsA(pCLODClass))
-				{
-					nChunkLodTree* pTree = ((nTerrainNode*)pCurrNode)->GetChunkLodTree();
-					if (!AddGeometryNCT2(pTree->GetRootChunkLodNode(), pTree, &Tfm, Area)) FAIL;
-				}
-				else if (pCurrNode->IsA(pShapeClass))
-				{
-					//???force skip skinned? skinned must be processed as collision geometry, not as gfx
-					if (!AddGeometry(((nShapeNode*)pCurrNode)->GetMeshObject(), &Tfm, Area)) FAIL;
-				}
-			}
-		}
+			AddGeometry(GfxEnts[i]->GetResource().GetNode(), pTfm, Area);
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, const matrix44* pTfm, uchar Area)
+bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm, uchar Area)
 {
+	nMeshGroup Group;
+	if (GroupIdx == -1)
+	{
+		Group.FirstVertex = 0;
+		Group.FirstIndex = 0;
+		Group.NumVertices = pMesh->GetNumVertices();
+		Group.NumIndices = pMesh->GetNumIndices();
+	}
+	else if (GroupIdx >= pMesh->GetNumGroups()) FAIL;
+	else Group = pMesh->Group(GroupIdx);
+
 	int OldUsage = pMesh->GetUsage();
 	pMesh->SetUsage(nMesh2::ReadOnly);
 
 	// Copy vertices, position component only, with optional transformation
-	float* pVertices = (float*)n_malloc(3 * sizeof(float) * pMesh->GetNumVertices());
+	float* pVertices = (float*)n_malloc(3 * Group.NumVertices * sizeof(float));
 	float* pCurrVtx = pVertices;
-	float* pVBuf = pMesh->LockVertices();
-	float* pVEnd = pVBuf + pMesh->GetNumVertices() * pMesh->GetVertexWidth();
+	float* pVBuf = pMesh->LockVertices() + Group.FirstVertex * pMesh->GetVertexWidth();
+	float* pVEnd = pVBuf + Group.NumVertices * pMesh->GetVertexWidth();
 	pVBuf += pMesh->GetVertexComponentOffset(nMesh2::Coord);
 	for (; pVBuf < pVEnd; pVBuf += pMesh->GetVertexWidth())
 	{
 		if (pTfm)
 		{
-			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][0] + pVBuf[1] * pTfm->m[1][0] + pVBuf[2] * pTfm->m[2][0];
-			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][1] + pVBuf[1] * pTfm->m[1][1] + pVBuf[2] * pTfm->m[2][1];
-			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][2] + pVBuf[1] * pTfm->m[1][2] + pVBuf[2] * pTfm->m[2][2];
+			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][0] + pVBuf[1] * pTfm->m[1][0] + pVBuf[2] * pTfm->m[2][0] + pTfm->m[3][0];
+			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][1] + pVBuf[1] * pTfm->m[1][1] + pVBuf[2] * pTfm->m[2][1] + pTfm->m[3][1];
+			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][2] + pVBuf[1] * pTfm->m[1][2] + pVBuf[2] * pTfm->m[2][2] + pTfm->m[3][2];
 		}
 		else
 		{
@@ -144,28 +186,50 @@ bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, const matrix44* pTfm, uchar Are
 	pMesh->UnlockVertices();
 
 	// Copy indices with conversion to TriList
-	int TriCount = pMesh->GetNumIndices() - 2;
-	int* pIndices = (int*)n_malloc(3 * sizeof(int) * TriCount);
-	int* pCurrIdx = pIndices;
-	ushort *pIBuf = pMesh->LockIndices();
-	bool Odd = true;
-	for (int i = 0; i < TriCount; ++i, Odd = !Odd)
+	int* pIndices = NULL;
+	int TriCount = 0;
+	ushort *pIBuf = pMesh->LockIndices() + Group.FirstIndex;
+	if (IsStrip)
 	{
-		*pCurrIdx++ = pIBuf[i];
-		if (Odd)
+		//!!!DUPLICATE CODE!
+		TriCount = Group.NumIndices - 2;
+		pIndices = (int*)n_malloc(3 * TriCount * sizeof(int));
+		int* pCurrIdx = pIndices;
+		bool Odd = true;
+		for (int i = 0; i < TriCount; ++i, Odd = !Odd)
 		{
-			*pCurrIdx++ = pIBuf[i + 1];
-			*pCurrIdx++ = pIBuf[i + 2];
+			*pCurrIdx++ = pIBuf[i];
+			if (Odd)
+			{
+				*pCurrIdx++ = pIBuf[i + 1];
+				*pCurrIdx++ = pIBuf[i + 2];
+			}
+			else
+			{
+				*pCurrIdx++ = pIBuf[i + 2];
+				*pCurrIdx++ = pIBuf[i + 1];
+			}
 		}
-		else
-		{
-			*pCurrIdx++ = pIBuf[i + 2];
-			*pCurrIdx++ = pIBuf[i + 1];
-		}
+	}
+	else
+	{
+		TriCount = Group.NumIndices / 3;
+		pIndices = (int*)n_malloc(Group.NumIndices * sizeof(int));
+		int* pCurrIdx = pIndices;
+		for (int i = 0; i < Group.NumIndices; ++i)
+			*pCurrIdx++ = (int)*pIBuf++;
+
+		//// Invert triangles
+		//for (int i = 0; i < TriCount; ++i)
+		//{
+		//	*pCurrIdx++ = (int)pIBuf[i * 3];
+		//	*pCurrIdx++ = (int)pIBuf[i * 3 + 2];
+		//	*pCurrIdx++ = (int)pIBuf[i * 3 + 1];
+		//}
 	}
 	pMesh->UnlockIndices();
 
-	bool Result = AddGeometry(pVertices, pMesh->GetNumVertices(), pIndices, TriCount, Area);
+	bool Result = AddGeometry(pVertices, Group.NumVertices, pIndices, TriCount, Area);
 
 	n_free(pVertices);
 	n_free(pIndices);
@@ -178,7 +242,9 @@ bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, const matrix44* pTfm, uchar Are
 
 bool CNavMeshBuilder::AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area)
 {
-	// Can allocate once and grow as triangle counr exceeds allocated
+	n_assert_dbg(pVerts && pTris && VertexCount > 0 && TriCount > 0);
+
+	// Can allocate once and grow as triangle count exceeds allocated
 	// Or can allocate for the max triangle count once
 	uchar* pAreas = n_new_array(uchar, TriCount);
 	if (!pAreas)
@@ -265,7 +331,7 @@ void CNavMeshBuilder::ApplyConvexVolumeArea()
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool MonotonePartitioning)
+bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bool MonotonePartitioning)
 {
 	if (MonotonePartitioning)
 	{
@@ -322,26 +388,9 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool MonotonePartiti
 		FAIL;
 	}
 
-	n_printf("NavMesh rcBuildPolyMesh done\n");
-
-	rcPolyMeshDetail* pMeshDetail = rcAllocPolyMeshDetail();
-	if (!pMeshDetail)
-	{
-		Ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
-		FAIL;
-	}
-
-	if (!rcBuildPolyMeshDetail(&Ctx, *pMesh, *pCompactHF, Cfg.detailSampleDist, Cfg.detailSampleMaxError, *pMeshDetail))
-	{
-		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
-		FAIL;
-	}
-
-	n_printf("NavMesh rcBuildPolyMeshDetail done\n");
-
-	rcFreeCompactHeightfield(pCompactHF);
-	pCompactHF = NULL;
 	rcFreeContourSet(pContourSet);
+
+	n_printf("NavMesh rcBuildPolyMesh done\n");
 
 	// Update poly flags from areas.
 	for (int i = 0; i < pMesh->npolys; ++i)
@@ -367,11 +416,6 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool MonotonePartiti
 	Params.polyFlags = pMesh->flags;
 	Params.polyCount = pMesh->npolys;
 	Params.nvp = pMesh->nvp;
-	Params.detailMeshes = pMeshDetail->meshes;
-	Params.detailVerts = pMeshDetail->verts;
-	Params.detailVertsCount = pMeshDetail->nverts;
-	Params.detailTris = pMeshDetail->tris;
-	Params.detailTriCount = pMeshDetail->ntris;
 	Params.offMeshConVerts = OffMeshVerts;
 	Params.offMeshConRad = OffMeshRadius;
 	Params.offMeshConDir = OffMeshDir;
@@ -379,6 +423,35 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool MonotonePartiti
 	Params.offMeshConFlags = OffMeshFlags;
 	Params.offMeshConUserID = OffMeshID;
 	Params.offMeshConCount = OffMeshCount;
+
+	rcPolyMeshDetail* pMeshDetail = NULL;
+
+	if (BuildDetail)
+	{
+		rcPolyMeshDetail* pMeshDetail = rcAllocPolyMeshDetail();
+		if (!pMeshDetail)
+		{
+			Ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
+			FAIL;
+		}
+
+		if (!rcBuildPolyMeshDetail(&Ctx, *pMesh, *pCompactHF, Cfg.detailSampleDist, Cfg.detailSampleMaxError, *pMeshDetail))
+		{
+			Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+			FAIL;
+		}
+
+		Params.detailMeshes = pMeshDetail->meshes;
+		Params.detailVerts = pMeshDetail->verts;
+		Params.detailVertsCount = pMeshDetail->nverts;
+		Params.detailTris = pMeshDetail->tris;
+		Params.detailTriCount = pMeshDetail->ntris;
+
+		n_printf("NavMesh rcBuildPolyMeshDetail done\n");
+	}
+
+	rcFreeCompactHeightfield(pCompactHF);
+	pCompactHF = NULL;
 
 	if (!dtCreateNavMeshData(&Params, &pOutData, &OutSize))
 	{
@@ -392,7 +465,7 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool MonotonePartiti
 	Ctx.log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", pMesh->nverts, pMesh->npolys);
 
 	rcFreePolyMesh(pMesh);
-	rcFreePolyMeshDetail(pMeshDetail);
+	if (BuildDetail) rcFreePolyMeshDetail(pMeshDetail);
 
 	OK;
 }

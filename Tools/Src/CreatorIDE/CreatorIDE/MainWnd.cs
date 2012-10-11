@@ -42,7 +42,8 @@ namespace CreatorIDE
 		bool DontFocusOnEntity = false;
 		TreeNode DraggedTpl = null;
 
-        private event MouseButtonCallback MouseCb;
+        private event CCallback_V_S EntitySelectedCB;
+        private event MouseButtonCallback MouseButtonCB;
        
         public MainWnd()
 		{
@@ -117,42 +118,28 @@ namespace CreatorIDE
 		{
 		    if (lbLevels.SelectedItem == null) return;
 		    OnStartLevelLoading();
-		    CurrLevelID = ((LevelRecord) lbLevels.SelectedItem).ID;
+		    CurrLevelID = ((LevelRecord)lbLevels.SelectedItem).ID;
 		    Levels.LoadLevel(CurrLevelID);
 		    OnLevelLoaded();
 		}
         
 		private void EngineViewPanel_MouseCallback(int x, int y, int Button, EMouseAction Action)
 		{
-            if (Button == 0)
+            // Dragging from template list to editor window
+            if (Button == 0 && DraggedTpl != null)
             {
-                if (Action == EngineAPI.EMouseAction.Down)
+                if (Action == EngineAPI.EMouseAction.Down) DraggedTpl = null;
+                else if (Action == EngineAPI.EMouseAction.Up)
                 {
-                    DraggedTpl = null;
-
-                    if (bSelectByMouse.Checked)
-                    {
-                        string UID = EngineAPI.Entities.GetUIDUnderMouse();
-                        if (Entities.ContainsKey(UID))
-                        {
-                            tcLevelsObjects.SelectTab(tpEntities);
-							if (CurrEntity == null || UID != CurrEntity.Uid) DontFocusOnEntity = true;
-                            tvEntities.SelectedNode = Entities[UID].UiNode; // Causes tvEntities_AfterSelect
-                        }
-                    }
-                }
-                else if (Action == EngineAPI.EMouseAction.Up && DraggedTpl != null)
-                {
-                    string TplName = DraggedTpl.Name;
-                    string UIDBase = CurrLevelID + "_" + TplName + "_";
-                    string UID = UIDBase + EngineAPI.Entities.GetNextFreeUIDOnLevel(UIDBase).ToString();
-                    string CatName = DraggedTpl.Parent.Name;
-                    Category Cat = EntityCats[CatName];
+                    String UIDBase = CurrLevelID + "_" + DraggedTpl.Name + "_";
+                    String UID = UIDBase + EngineAPI.Entities.GetNextFreeUIDOnLevel(UIDBase).ToString();
+                    Category Cat = EntityCats[DraggedTpl.Parent.Name];
+                    
                     Entity NewEnt = new Entity(UID, Cat, false);
-                    if (NewEnt.CreateFromTemplate(TplName, CurrLevelID, true))
+                    if (NewEnt.CreateFromTemplate(DraggedTpl.Name, CurrLevelID, true))
                     {
 						AddEntity(NewEnt);
-                        tvEntities.SelectedNode = NewEnt.UiNode;
+                        tvEntities.SelectedNode = NewEnt.UINode;
                     }
                     else MessageBox.Show("Не удалось создать новый объект!");
                     
@@ -161,14 +148,22 @@ namespace CreatorIDE
             }
 		}
 
+        void API_OnEntitySelected(String UID)
+        {
+            tcLevelsObjects.SelectTab(tpEntities);
+            if (CurrEntity == null || UID != CurrEntity.UID) DontFocusOnEntity = true;
+            tvEntities.SelectedNode = Entities[UID].UINode; // Causes tvEntities_AfterSelect
+        }
+
 		bool LoadProject(string ProjectRoot)
 		{
 			if (EngineAPI.Engine.Init(EngineViewPanel.Handle, ProjectRoot) == 0)
 			{
 				CurrProject = ProjectRoot;
 
-                MouseCb = new EngineAPI.MouseButtonCallback(EngineViewPanel_MouseCallback);
-                EngineAPI.Engine.SetMouseButtonCallback(MouseCb);
+                EntitySelectedCB = new EngineAPI.CCallback_V_S(API_OnEntitySelected);
+                MouseButtonCB = new EngineAPI.MouseButtonCallback(EngineViewPanel_MouseCallback);
+                EngineAPI.Engine.SetUICallbacks(EntitySelectedCB, MouseButtonCB);
 
 				int LvlCount = EngineAPI.Levels.GetCount();
                 for (int i = 0; i < LvlCount; i++)
@@ -234,30 +229,30 @@ namespace CreatorIDE
 		private void AddEntity(Entity Ent)
 		{
 			Ent.EntityRenamed += OnEntityRenamed;
-			Entities.Add(Ent.Uid, Ent);
-			Ent.UiNode = EntityCats[Ent.Category].InstNode.Nodes.Add(Ent.Uid);
-			Ent.UiNode.Tag = Ent;
+			Entities.Add(Ent.UID, Ent);
+			Ent.UINode = EntityCats[Ent.Category].InstNode.Nodes.Add(Ent.UID);
+			Ent.UINode.Tag = Ent;
 		}
 
 		private void DeleteEntity(Entity Ent)
 		{
-			Ent.UiNode.Remove();
-			Ent.UiNode = null;
-			Entities.Remove(Ent.Uid);
+			Ent.UINode.Remove();
+			Ent.UINode = null;
+			Entities.Remove(Ent.UID);
 		}
 
 		private void AddEntityTemplate(EntityTemplate Tpl)
 		{
-			EntityTpls.Add(Tpl.Uid, Tpl);
-			Tpl.UiNode = EntityCats[Tpl.Category].TplNode.Nodes.Add(Tpl.Uid, Tpl.Uid);
-			Tpl.UiNode.Tag = Tpl;
+			EntityTpls.Add(Tpl.UID, Tpl);
+			Tpl.UINode = EntityCats[Tpl.Category].TplNode.Nodes.Add(Tpl.UID, Tpl.UID);
+			Tpl.UINode.Tag = Tpl;
 		}
 
 		private void DeleteEntityTemplate(EntityTemplate Tpl)
 		{
-			Tpl.UiNode.Remove();
-			Tpl.UiNode = null;
-			EntityTpls.Remove(Tpl.Uid);
+			Tpl.UINode.Remove();
+			Tpl.UINode = null;
+			EntityTpls.Remove(Tpl.UID);
 		}
 
 		private void OnStartLevelLoading()
@@ -295,7 +290,7 @@ namespace CreatorIDE
         void OnEntityRenamed(Entity Ent, string OldUID)
         {
             Entities.Remove(OldUID);
-            Entities.Add(Ent.Uid, Ent);
+            Entities.Add(Ent.UID, Ent);
             if (Ent == PropGrid.SelectedObject) PropGrid.Refresh();
         }
 
@@ -459,9 +454,9 @@ namespace CreatorIDE
 					if (CurrEntity != null)
 					{
 						CurrEntity.Update();
-						EngineAPI.Transform.SetCurrentEntity(CurrEntity.Uid);
+						EngineAPI.Transform.SetCurrentEntity(CurrEntity.UID);
 						if (DontFocusOnEntity) DontFocusOnEntity = false;
-						else EditorCamera.SetFocusEntity(Ent.Uid);
+						else EditorCamera.SetFocusEntity(Ent.UID);
 					}
 					else EngineAPI.Transform.SetCurrentEntity(null);
 
@@ -495,8 +490,8 @@ namespace CreatorIDE
 			if (CurrEntity != null && CurrEntity.Create(CurrLevelID))
             {
 				AddEntity(CurrEntity);
-                tvEntities.SelectedNode = CurrEntity.UiNode;
-				EngineAPI.EditorCamera.SetFocusEntity(CurrEntity.Uid);
+                tvEntities.SelectedNode = CurrEntity.UINode;
+				EngineAPI.EditorCamera.SetFocusEntity(CurrEntity.UID);
             }
             else MessageBox.Show("Не удалось создать новый объект!");
         }
@@ -519,7 +514,7 @@ namespace CreatorIDE
 					EntityTemplate Tpl =
 						new EntityTemplate(Wnd.UserString, Cat);
 					AddEntityTemplate(Tpl);
-					tvCatsTpls.SelectedNode = Tpl.UiNode;
+					tvCatsTpls.SelectedNode = Tpl.UINode;
 					tcLevelsObjects.SelectedTab = tpEntityCats;
 				}
 				else MessageBox.Show("Не удалось создать новый шаблон!");
@@ -532,7 +527,7 @@ namespace CreatorIDE
             {
                 //if (bTfmMode.Checked) bTfmMode.Checked = false;
                 PropGrid.SelectedObject = null;
-				EngineAPI.Entities.Delete(CurrEntity.Uid);
+				EngineAPI.Entities.Delete(CurrEntity.UID);
 				DeleteEntity(CurrEntity);
             }
         }
@@ -542,7 +537,7 @@ namespace CreatorIDE
 			if (CurrTemplate != null && CurrTemplate.Save())
 			{
 				AddEntityTemplate(CurrTemplate);
-				tvCatsTpls.SelectedNode = CurrTemplate.UiNode;
+				tvCatsTpls.SelectedNode = CurrTemplate.UINode;
 			}
 			else MessageBox.Show("Не удалось создать новый шаблон!");
 		}
@@ -557,14 +552,16 @@ namespace CreatorIDE
 			if (CurrTemplate != null)
 			{
 				PropGrid.SelectedObject = null;
-				EngineAPI.Entities.DeleteTemplate(CurrTemplate.Uid, CurrTemplate.Category);
+				EngineAPI.Entities.DeleteTemplate(CurrTemplate.UID, CurrTemplate.Category);
 				DeleteEntityTemplate(CurrTemplate);
 			}
 		}
 
         private void bBuildNavMesh_Click(object sender, EventArgs e)
         {
-            EngineAPI.Levels.BuildNavMesh("ECCY", 0.29f, 1.74f, 0.6f);
+            EngineAPI.Levels.BuildNavMesh(CurrLevelID, 0.29f, 1.74f, 0.6f);
+            //!!!SET nm resource attr to Levels table, or force nm resource name to be the same as level ID
+            // and remove NavMesh attribute from db
         }
 	}
 }

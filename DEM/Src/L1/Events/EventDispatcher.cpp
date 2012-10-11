@@ -115,7 +115,7 @@ DWORD CEventDispatcher::DispatchEvent(const CEventBase& Event)
 	DWORD HandledCounter = 0;
 	PEventHandler Sub;
 
-	// Look for subscription to this event
+	// Look for subscriptions to this event
 	if (Subscriptions.Get(Event.GetID(), Sub)) do
 	{
 		if (Sub->operator ()(Event))

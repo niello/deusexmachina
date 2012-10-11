@@ -138,20 +138,29 @@ API bool Levels_BuildNavMesh(const char* RsrcName, float AgentRadius, float Agen
 
 	rcConfig Cfg;
 	memset(&Cfg, 0, sizeof(Cfg));
-	Cfg.cs = 0.3f;
+
+	//!!!need to calc from geometry selected!
+	const bbox3& Box = LoaderSrv->GetCurrentLevelBox();
+	rcVcopy(Cfg.bmin, Box.vmin.v);
+	rcVcopy(Cfg.bmax, Box.vmax.v);
+
+	float BoxSizeX = Box.vmax.x - Box.vmin.x;
+	float BoxSizeZ = Box.vmax.z - Box.vmin.z;
+	float BoxSizeMax = n_max(BoxSizeX, BoxSizeZ);
+	Cfg.cs = BoxSizeMax * 0.00029f; // nearly one over 3450.f, empirically detected
 	Cfg.ch = 0.2f;
 	Cfg.walkableSlopeAngle = 45.0f;
 	Cfg.maxEdgeLen = (int)(12.0f / Cfg.cs);
 	Cfg.maxSimplificationError = 1.3f;
-	Cfg.minRegionArea = (int)rcSqr(8);					// Note: area = size*size
+
+	// empirically detected, one over 133.(3)f
+	int Factor = (int)n_floor(BoxSizeMax * 0.0075f + 0.5f); // 0.5f to round 1.5 to 2
+	Cfg.minRegionArea = (int)rcSqr(Factor);					// Note: area = size*size
+
 	Cfg.mergeRegionArea = (int)rcSqr(20);				// Note: area = size*size
 	Cfg.maxVertsPerPoly = DT_VERTS_PER_POLYGON;
 	Cfg.detailSampleDist = 6.0f < 0.9f ? 0.f : Cfg.cs * 6.0f;
 	Cfg.detailSampleMaxError = Cfg.ch * 1.0f;
-
-	const bbox3& Box = LoaderSrv->GetCurrentLevelBox();
-	rcVcopy(Cfg.bmin, Box.vmin.v);
-	rcVcopy(Cfg.bmax, Box.vmax.v);
 
 	n_printf("NavMesh building started\n");
 
