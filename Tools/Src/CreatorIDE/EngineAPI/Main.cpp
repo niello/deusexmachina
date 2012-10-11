@@ -64,3 +64,11 @@ API bool SetEditorTool(LPCSTR Name)
 	return AppInst.SetEditorTool(Name);
 }
 //---------------------------------------------------------------------
+
+API bool SelectEntity(const char* UID)
+{
+	if (UID) return AppInst.SelectEntity(EntityMgr->GetEntityByID(CStrID(UID)));
+	else AppInst.ClearSelectedEntities();
+	OK;
+}
+//---------------------------------------------------------------------

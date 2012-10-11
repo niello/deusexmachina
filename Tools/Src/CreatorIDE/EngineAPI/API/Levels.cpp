@@ -19,8 +19,6 @@ namespace Attr
 	DeclareAttr(NavMesh);
 }
 
-API void Transform_SetCurrentEntity(const char* UID);
-
 //!!!too slow and ugly!
 API int Levels_GetCount()
 {
@@ -52,7 +50,7 @@ API void Levels_GetIDName(int Idx, char* OutID, char* OutName)
 API void Levels_LoadLevel(const char* LevelID)
 {
 	LoaderSrv->CommitChangesToDB();
-	Transform_SetCurrentEntity(NULL);
+	CIDEApp->ClearSelectedEntities();
 	LoaderSrv->UnloadLevel();
 	LoaderSrv->LoadLevel(LevelID);
 	EntityMgr->AttachEntity(CIDEApp->EditorCamera);
@@ -96,7 +94,7 @@ API bool Levels_CreateNew(const char* ID, const char* Name, float Center[3],
 
 API void Levels_RestoreDB(const char* LevelID)
 {
-	Transform_SetCurrentEntity(NULL);
+	CIDEApp->ClearSelectedEntities();
 	LoaderSrv->UnloadLevel();
 	LoaderSrv->NewGame(LevelID);
 	EntityMgr->AttachEntity(CIDEApp->EditorCamera);

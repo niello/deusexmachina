@@ -297,7 +297,6 @@ namespace CreatorIDE
         private void bTfmMode_CheckedChanged(object sender, EventArgs e)
         {
             Engine.SetEditorTool(bTfmMode.Checked ? "Transform" : "Select");
-            Transform.SetEnabled(bTfmMode.Checked); //, (CurrEntity == null) ? "" : CurrEntity.GUID);
         }
 
         private void bNewCategory_Click(object sender, EventArgs e)
@@ -331,11 +330,6 @@ namespace CreatorIDE
         private void bPauseWorld_Click(object sender, EventArgs e)
         {
             EngineAPI.World.TogglePause();
-        }
-
-		private void bLimitToGround_CheckedChanged(object sender, EventArgs e)
-		{
-			EngineAPI.Transform.SetGroundRespectMode(bLimitToGround.Checked, bSnapToGround.Checked);
         }
 
         private void tvEntities_ItemDrag(object sender, ItemDragEventArgs e)
@@ -455,11 +449,11 @@ namespace CreatorIDE
 					if (CurrEntity != null)
 					{
 						CurrEntity.Update();
-						EngineAPI.Transform.SetCurrentEntity(CurrEntity.UID);
+                        Engine.SelectEntity(CurrEntity.UID);
 						if (DontFocusOnEntity) DontFocusOnEntity = false;
 						else EditorCamera.SetFocusEntity(Ent.UID);
 					}
-					else EngineAPI.Transform.SetCurrentEntity(null);
+                    else Engine.SelectEntity(null);
 
 					PropGrid.SelectedObject = CurrEntity;
 				}
@@ -563,6 +557,11 @@ namespace CreatorIDE
             EngineAPI.Levels.BuildNavMesh(CurrLevelID, 0.29f, 1.74f, 0.6f);
             //!!!SET nm resource attr to Levels table, or force nm resource name to be the same as level ID
             // and remove NavMesh attribute from db
+        }
+
+        private void bGroundConstrBtns_CheckedChanged(object sender, EventArgs e)
+        {
+            EngineAPI.Transform.SetGroundConstraints(bNotAbove.Checked, bNotBelow.Checked);
         }
 	}
 }

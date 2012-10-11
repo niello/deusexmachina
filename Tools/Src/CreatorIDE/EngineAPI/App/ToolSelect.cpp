@@ -28,12 +28,12 @@ bool CToolSelect::OnMouseBtnDown(const Events::CEventBase& Event)
 	if (Ev.Button != Input::MBLeft) FAIL;
 
 	Game::CEntity* pEnt = EnvQueryMgr->GetEntityUnderMouse();
-	if (!pEnt) FAIL;
-	CIDEApp->SelectedEntity = pEnt;
-
-	PParams P = n_new(CParams(1));
-	P->Set(CStrID("UID"), pEnt->GetUniqueID());
-	EventMgr->FireEvent(CStrID("OnEntitySelected"), P);
+	if (CIDEApp->SelectEntity(pEnt))
+	{
+		PParams P = n_new(CParams(1));
+		P->Set(CStrID("UID"), pEnt->GetUniqueID());
+		EventMgr->FireEvent(CStrID("OnEntitySelected"), P);
+	}
 
 	OK;
 }

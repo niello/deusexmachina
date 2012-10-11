@@ -42,8 +42,8 @@
             this.bNewCategory = new System.Windows.Forms.ToolStripButton();
             this.bNewLocation = new System.Windows.Forms.ToolStripButton();
             this.bPauseWorld = new System.Windows.Forms.ToolStripButton();
-            this.bLimitToGround = new System.Windows.Forms.ToolStripButton();
-            this.bSnapToGround = new System.Windows.Forms.ToolStripButton();
+            this.bNotAbove = new System.Windows.Forms.ToolStripButton();
+            this.bNotBelow = new System.Windows.Forms.ToolStripButton();
             this.bBuildNavMesh = new System.Windows.Forms.ToolStripButton();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
@@ -154,8 +154,8 @@
             this.bNewCategory,
             this.bNewLocation,
             this.bPauseWorld,
-            this.bLimitToGround,
-            this.bSnapToGround,
+            this.bNotAbove,
+            this.bNotBelow,
             this.bBuildNavMesh});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
@@ -217,27 +217,27 @@
             this.bPauseWorld.Text = "Вкл/выкл паузу";
             this.bPauseWorld.Click += new System.EventHandler(this.bPauseWorld_Click);
             // 
-            // bLimitToGround
+            // bNotAbove
             // 
-            this.bLimitToGround.CheckOnClick = true;
-            this.bLimitToGround.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.bLimitToGround.Image = ((System.Drawing.Image)(resources.GetObject("bLimitToGround.Image")));
-            this.bLimitToGround.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.bLimitToGround.Name = "bLimitToGround";
-            this.bLimitToGround.Size = new System.Drawing.Size(23, 22);
-            this.bLimitToGround.Text = "Не опускать ниже земли";
-            this.bLimitToGround.CheckedChanged += new System.EventHandler(this.bLimitToGround_CheckedChanged);
+            this.bNotAbove.CheckOnClick = true;
+            this.bNotAbove.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.bNotAbove.Image = ((System.Drawing.Image)(resources.GetObject("bNotAbove.Image")));
+            this.bNotAbove.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.bNotAbove.Name = "bNotAbove";
+            this.bNotAbove.Size = new System.Drawing.Size(23, 22);
+            this.bNotAbove.Text = "Не выше земли";
+            this.bNotAbove.CheckedChanged += new System.EventHandler(this.bGroundConstrBtns_CheckedChanged);
             // 
-            // bSnapToGround
+            // bNotBelow
             // 
-            this.bSnapToGround.CheckOnClick = true;
-            this.bSnapToGround.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.bSnapToGround.Image = ((System.Drawing.Image)(resources.GetObject("bSnapToGround.Image")));
-            this.bSnapToGround.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.bSnapToGround.Name = "bSnapToGround";
-            this.bSnapToGround.Size = new System.Drawing.Size(23, 22);
-            this.bSnapToGround.Text = "Привязать к земле";
-            this.bSnapToGround.Click += new System.EventHandler(this.bLimitToGround_CheckedChanged);
+            this.bNotBelow.CheckOnClick = true;
+            this.bNotBelow.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.bNotBelow.Image = ((System.Drawing.Image)(resources.GetObject("bNotBelow.Image")));
+            this.bNotBelow.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.bNotBelow.Name = "bNotBelow";
+            this.bNotBelow.Size = new System.Drawing.Size(23, 22);
+            this.bNotBelow.Text = "Не ниже земли";
+            this.bNotBelow.CheckedChanged += new System.EventHandler(this.bGroundConstrBtns_CheckedChanged);
             // 
             // bBuildNavMesh
             // 
@@ -610,8 +610,8 @@
         private System.Windows.Forms.ToolStripMenuItem mmExport;
 		private System.Windows.Forms.ToolStripButton bNewLocation;
         private System.Windows.Forms.ToolStripButton bPauseWorld;
-		private System.Windows.Forms.ToolStripButton bLimitToGround;
-		private System.Windows.Forms.ToolStripButton bSnapToGround;
+		private System.Windows.Forms.ToolStripButton bNotAbove;
+		private System.Windows.Forms.ToolStripButton bNotBelow;
 		private System.Windows.Forms.ToolStripButton bSelectByMouse;
 		private System.Windows.Forms.SplitContainer splitContainer2;
 		private System.Windows.Forms.Label lCatName;
