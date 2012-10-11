@@ -15,35 +15,35 @@ using namespace Properties;
 
 static void PatchCurrentTfmEntity()
 {
-	if (CIDEApp->CurrentTfmEntity.isvalid())
+	if (CIDEApp->SelectedEntity.isvalid())
 	{
 		n_assert(CIDEApp->OldInputPropClass.IsEmpty());
-		CIDEApp->CurrentTfmEntity->Deactivate();
-		Properties::CPropInput* pInput = CIDEApp->CurrentTfmEntity->FindProperty<Properties::CPropInput>();
+		CIDEApp->SelectedEntity->Deactivate();
+		Properties::CPropInput* pInput = CIDEApp->SelectedEntity->FindProperty<Properties::CPropInput>();
 		if (pInput)
 		{
 			CIDEApp->OldInputPropClass = pInput->GetClassName();
-			EntityFct->DetachProperty(*CIDEApp->CurrentTfmEntity, CIDEApp->OldInputPropClass);
+			EntityFct->DetachProperty(*CIDEApp->SelectedEntity, CIDEApp->OldInputPropClass);
 		}
-		EntityFct->AttachProperty<Properties::CPropEditorTfmInput>(*CIDEApp->CurrentTfmEntity);
-		CIDEApp->CurrentTfmEntity->Activate();
+		EntityFct->AttachProperty<Properties::CPropEditorTfmInput>(*CIDEApp->SelectedEntity);
+		CIDEApp->SelectedEntity->Activate();
 	}
-	FocusMgr->SetInputFocusEntity(CIDEApp->CurrentTfmEntity.get_unsafe());
+	FocusMgr->SetInputFocusEntity(CIDEApp->SelectedEntity.get_unsafe());
 }
 //---------------------------------------------------------------------
 
 static void RestoreCurrentTfmEntity()
 {
-	if (CIDEApp->CurrentTfmEntity.isvalid())
+	if (CIDEApp->SelectedEntity.isvalid())
 	{
-		CIDEApp->CurrentTfmEntity->Deactivate();
-		EntityFct->DetachProperty(*CIDEApp->CurrentTfmEntity, "Properties::CPropInput");
+		CIDEApp->SelectedEntity->Deactivate();
+		EntityFct->DetachProperty(*CIDEApp->SelectedEntity, "Properties::CPropInput");
 		if (CIDEApp->OldInputPropClass.IsValid())
 		{
-			EntityFct->AttachProperty(*CIDEApp->CurrentTfmEntity, CIDEApp->OldInputPropClass);
+			EntityFct->AttachProperty(*CIDEApp->SelectedEntity, CIDEApp->OldInputPropClass);
 			CIDEApp->OldInputPropClass.Clear();
 		}
-		CIDEApp->CurrentTfmEntity->Activate();
+		CIDEApp->SelectedEntity->Activate();
 	}
 }
 //---------------------------------------------------------------------
@@ -66,9 +66,9 @@ API void Transform_SetEnabled(bool Enable)
 API void Transform_SetCurrentEntity(const char* UID)
 {
 	Game::PEntity Ent = EntityMgr->GetEntityByID(CStrID(UID));
-	if (Ent.get_unsafe() == CIDEApp->CurrentTfmEntity.get_unsafe()) return;
+	if (Ent.get_unsafe() == CIDEApp->SelectedEntity.get_unsafe()) return;
 	if (CIDEApp->TransformMode) RestoreCurrentTfmEntity();
-	CIDEApp->CurrentTfmEntity = Ent;
+	CIDEApp->SelectedEntity = Ent;
 	if (CIDEApp->TransformMode) PatchCurrentTfmEntity();
 }
 //---------------------------------------------------------------------
@@ -82,9 +82,9 @@ API void Transform_SetGroundRespectMode(bool Limit, bool Snap)
 
 API void Transform_PlaceUnderMouse()
 {
-	if (!CIDEApp->CurrentTfmEntity.isvalid()) return;
+	if (!CIDEApp->SelectedEntity.isvalid()) return;
 
-	Event::SetTransform Evt(CIDEApp->CurrentTfmEntity->Get<matrix44>(Attr::Transform));
+	Event::SetTransform Evt(CIDEApp->SelectedEntity->Get<matrix44>(Attr::Transform));
 
 	vector3 Pos = EnvQueryMgr->GetMousePos3D();
 
@@ -92,7 +92,7 @@ API void Transform_PlaceUnderMouse()
 	if (CIDEApp->LimitToGround || CIDEApp->SnapToGround)
 	{
 		int SelfPhysicsID;
-		CPropAbstractPhysics* pPhysProp = CIDEApp->CurrentTfmEntity->FindProperty<CPropAbstractPhysics>();
+		CPropAbstractPhysics* pPhysProp = CIDEApp->SelectedEntity->FindProperty<CPropAbstractPhysics>();
 
 		float LocalMinY = 0.f;
 		if (pPhysProp)
@@ -129,7 +129,7 @@ API void Transform_PlaceUnderMouse()
 	}
 
 	Evt.Transform.set_translation(Pos);
-	CIDEApp->CurrentTfmEntity->FireEvent(Evt);
+	CIDEApp->SelectedEntity->FireEvent(Evt);
 }
 //---------------------------------------------------------------------
 

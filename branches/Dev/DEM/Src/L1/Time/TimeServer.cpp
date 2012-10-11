@@ -181,8 +181,7 @@ bool CTimeServer::CreateNamedTimer(CStrID Name, float Time, bool Loop, CStrID Ev
 //---------------------------------------------------------------------
 
 // Update all time sources. This method is called very early in the frame
-// by the current application state handler. This will get the current frame time
-// and call UpdateTime() on all attached time sources.
+// by the current application state handler.
 void CTimeServer::Update()
 {
 	if (LockedFrameTime > 0.0) LockTime += LockedFrameTime;

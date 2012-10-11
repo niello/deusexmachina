@@ -44,7 +44,7 @@ namespace CreatorIDE.EngineAPI
         public static extern int GetDLLVersionCode();
 
         [DllImport(DllName)]
-        public static extern void SetMouseButtonCallback(MouseButtonCallback callback);
+        public static extern void SetUICallbacks(CCallback_V_S EntitySelected, MouseButtonCallback MouseButton);
     }
 
     public enum EMouseAction
@@ -55,5 +55,7 @@ namespace CreatorIDE.EngineAPI
         DoubleClick
     }
 
+    public delegate void CCallback_V_V();
+    public delegate void CCallback_V_S(String Arg1);
     public delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
 }

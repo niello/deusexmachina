@@ -8,6 +8,7 @@
 #include "EventNative.h"
 
 // Event dispatcher receives fired events and dispatches them to subordinate dispatchers and subscribers.
+// Subscribers can specify their priority, and higher priority subscriber receives event first.
 
 namespace Data
 {

@@ -11,7 +11,7 @@ namespace CreatorIDE
 
     public class Entity : CustomTypeDescriptor
     {
-        private string _uid;
+        private string _UID;
         private readonly Category _cat;
         private readonly List<AttrProperty> _attrProps;
         private AttrProperty _guidProp;
@@ -19,11 +19,11 @@ namespace CreatorIDE
 
         public event EntityRenamedCallback EntityRenamed;
 
-        public TreeNode UiNode { get; set; }
+        public TreeNode UINode { get; set; }
 
-        public string Uid
+        public string UID
         {
-            get { return _uid; }
+            get { return _UID; }
         }
 
         //???
@@ -40,7 +40,7 @@ namespace CreatorIDE
 		public Entity(string uid, Category cat, bool existing)
         {
 			_isExisting = (uid.Length > 0) && existing;
-            _uid = uid;
+            _UID = uid;
             _cat = cat;
             _attrProps = new List<AttrProperty>();
             foreach (var id in _cat.AttrIDs)
@@ -58,7 +58,7 @@ namespace CreatorIDE
             if (_guidProp == null || ((string)_guidProp.Value).Length < 1 || _isExisting) return false;
             if (Entities.Create((string)_guidProp.Value, _cat.Name))
             {
-                _uid = (string)_guidProp.Value;
+                _UID = (string)_guidProp.Value;
                 SaveChangedAttrs();
                 Entities.SetString(Categories.GetAttrID("LevelID").ID, levelID);
                 _isExisting = Entities.AttachToWorld();
@@ -69,17 +69,17 @@ namespace CreatorIDE
 
         public bool CreateFromTemplate(string tplName, string levelID, bool atMousePosition)
         {
-            if (_uid.Length < 1 || _isExisting) return false;
-            if (Entities.CreateFromTemplate(_uid, _cat.Name, tplName))
+            if (_UID.Length < 1 || _isExisting) return false;
+            if (Entities.CreateFromTemplate(_UID, _cat.Name, tplName))
             {
-                _guidProp.Value = _uid;
-                Entities.SetStrID(_guidProp.AttrID.ID, _uid);
+                _guidProp.Value = _UID;
+                Entities.SetStrID(_guidProp.AttrID.ID, _UID);
                 Entities.SetString(Categories.GetAttrID("LevelID").ID, levelID);
                 _isExisting = Entities.AttachToWorld();
                 if (!_isExisting) return false;
                 if (atMousePosition)
                 {
-                    Transform.SetCurrentEntity(_uid);
+                    Transform.SetCurrentEntity(_UID);
                     Transform.PlaceUnderMouse();
                 }
                 //Update();
@@ -90,7 +90,7 @@ namespace CreatorIDE
 
 		public void Update()
 		{
-			Entities.SetCurrentEntity(_uid);
+			Entities.SetCurrentEntity(_UID);
 			foreach (var prop in _attrProps)
 			{
 				prop.ReadFromAttr();
@@ -98,10 +98,10 @@ namespace CreatorIDE
 
 				//!!!or special GUIDPropertyDescriptor.SetValue!
 				//or catch onvaluechanged for this prop
-				if (prop == _guidProp && prop.Value as string != _uid)
+				if (prop == _guidProp && prop.Value as string != _UID)
 				{
-					_uid = prop.Value as string;
-                    if (UiNode != null) UiNode.Text = _uid ?? string.Empty;
+					_UID = prop.Value as string;
+                    if (UINode != null) UINode.Text = _UID ?? string.Empty;
 				}
 			}
 		}
@@ -128,18 +128,18 @@ namespace CreatorIDE
 
 		private bool InternalRename(string newUid, bool setCurrent)
 		{
-            if (_uid == newUid) return true;
-			if (setCurrent) Entities.SetCurrentEntity(_uid);
-			if (Entities.SetUID(_uid, newUid))
+            if (_UID == newUid) return true;
+			if (setCurrent) Entities.SetCurrentEntity(_UID);
+			if (Entities.SetUID(_UID, newUid))
 			{
-                string oldUid = _uid;
-				_uid = newUid;
+                string oldUid = _UID;
+				_UID = newUid;
 				if (_guidProp != null)
 				{
-					_guidProp.Value = _uid;
+					_guidProp.Value = _UID;
 					_guidProp.ClearModified();
 				}
-				if (UiNode != null) UiNode.Text = _uid;
+				if (UINode != null) UINode.Text = _UID;
                 OnEntityRenamed(oldUid);
 				return true;
 			}
@@ -154,7 +154,7 @@ namespace CreatorIDE
 
 		protected bool SaveChangedAttrs()
 		{
-			if (_isExisting) Entities.SetCurrentEntity(_uid);
+			if (_isExisting) Entities.SetCurrentEntity(_UID);
 			bool smthChanged = false;
 			foreach (var prop in _attrProps.Where(prop => prop.IsModified))
 			{

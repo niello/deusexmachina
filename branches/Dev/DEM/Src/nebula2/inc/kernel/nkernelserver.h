@@ -22,8 +22,7 @@ private:
 	nRoot*			pRoot;		// the pRoot object of the Nebula object hierarchy
 	nRoot*			pCwd;		// the current working object
 	nStack<nRoot*>	CwdStack;	// stack of previous pCwd's
-
-	class nMutex*	pMutex;                   // the kernel lock pMutex
+	class nMutex*	pMutex;		// the kernel lock mutex
 
 	nRoot* CheckCreatePath(const char* pClassName, const char* path, bool dieOnError);
 	nRoot* NewUnnamedObject(const char* pClassName);

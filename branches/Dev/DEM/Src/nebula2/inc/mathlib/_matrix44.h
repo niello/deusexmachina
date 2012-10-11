@@ -116,7 +116,9 @@ public:
     /// inplace matrix multiply
     void operator *= (const _matrix44& m1);
 	/// comparison
-	bool operator ==(const _matrix44& Other);
+	bool operator ==(const _matrix44& Other) const;
+	/// comparison
+	bool operator !=(const _matrix44& Other) const { return !(*this == Other); }
     /// multiply source vector into target vector, eliminates tmp vector
     void mult(const _vector4& src, _vector4& dst) const;
     /// multiply source vector into target vector, eliminates tmp vector
@@ -764,7 +766,7 @@ _matrix44::operator *= (const _matrix44& m1)
 */
 inline
 bool
-_matrix44::operator == (const _matrix44& Other)
+_matrix44::operator == (const _matrix44& Other) const
 {
 	bool ByHands = true;
 	for (int i=0; i<4; i++)

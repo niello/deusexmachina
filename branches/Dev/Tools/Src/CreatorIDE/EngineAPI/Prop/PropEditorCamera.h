@@ -17,17 +17,17 @@ class CPropEditorCamera: public CPropCamera
 
 private:
 
-	polar2		Angles;
-	float		Distance;
-	vector3		COI;				// Center of interest
-	bool		UpdateFromInside;
+	polar2	Angles;
+	float	Distance;
+	vector3	COI;				// Center of interest
+	bool	UpdateFromInside;
 
-	void			SetupFromTransform();
+	void SetupFromTransform();
 
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
 
-	virtual void	OnObtainCameraFocus();
-	virtual void	OnRender();
+	virtual void OnObtainCameraFocus();
+	virtual void OnRender();
 
 public:
 

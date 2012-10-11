@@ -1,20 +1,14 @@
 #include "AppStateEditor.h"
 
-//#include <Story/Quests/QuestSystem.h>
-//#include <Story/Dlg/DlgSystem.h>
-//#include <UI/UISystem.h>
-//#include <UI/IngameScreen.h>
+#include <App/EditorTool.h>
 #include <Events/EventManager.h>
 #include <Time/TimeServer.h>
-#include <Loading/LoaderServer.h> //???unload level here?
 #include <Game/GameServer.h>
 #include <Audio/AudioServer.h>
 #include <Gfx/GfxServer.h>
 #include <AI/AIServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
-#include <Input/Events/MouseBtnDown.h>
-#include <Input/Events/MouseBtnUp.h>
 #include <particle/nparticleserver.h>
 #include <particle/nparticleserver2.h>
 #include <scene/nsceneserver.h>
@@ -24,42 +18,26 @@
 namespace App
 {
 ImplementRTTI(App::CAppStateEditor, App::CStateHandler);
-//ImplementFactory(App::CAppStateEditor);
 
 CAppStateEditor::CAppStateEditor(CStrID StateID):
 	CStateHandler(StateID),
     RenderDbgAI(false),
     RenderDbgPhysics(false),
     RenderDbgGfx(false),
-    RenderDbgEntities(false)
-{
-	PROFILER_INIT(profCompleteFrame, "profMangaCompleteFrame");
-	PROFILER_INIT(profParticleUpdates, "profMangaParticleUpdates");
-	PROFILER_INIT(profRender, "profMangaRender");
-}
-//---------------------------------------------------------------------
-
-CAppStateEditor::~CAppStateEditor()
+    RenderDbgEntities(false),
+	pActiveTool(NULL)
 {
 }
 //---------------------------------------------------------------------
 
 void CAppStateEditor::OnStateEnter(CStrID PrevState, PParams Params)
 {
-	// Loaded from db, not reset. TimeMgr now auto-reset timers if can't load them.
-	//TimeSrv->ResetAll();
 	TimeSrv->Update();
-
 	GameSrv->PauseGame();
-
-	RenderDbgPhysics = false;
-	RenderDbgGfx = false;
-
-	//InputSrv->EnableContext(CStrID("Game"));
 	InputSrv->EnableContext(CStrID("Editor"));
 
-	SUBSCRIBE_INPUT_EVENT(MouseBtnDown, CAppStateEditor, OnMouseBtnDown, Input::InputPriority_Raw);
-	SUBSCRIBE_INPUT_EVENT(MouseBtnUp, CAppStateEditor, OnMouseBtnUp, Input::InputPriority_Raw);
+	SetTool(&ToolSelect);
+
 	SUBSCRIBE_PEVENT(ToggleGamePause, CAppStateEditor, OnToggleGamePause);
 	SUBSCRIBE_PEVENT(ToggleRenderDbgAI, CAppStateEditor, OnToggleRenderDbgAI);
 	SUBSCRIBE_PEVENT(ToggleRenderDbgPhysics, CAppStateEditor, OnToggleRenderDbgPhysics);
@@ -71,8 +49,6 @@ void CAppStateEditor::OnStateEnter(CStrID PrevState, PParams Params)
 
 void CAppStateEditor::OnStateLeave(CStrID NextState)
 {
-	UNSUBSCRIBE_EVENT(MouseBtnDown);
-	UNSUBSCRIBE_EVENT(MouseBtnUp);
 	UNSUBSCRIBE_EVENT(ToggleGamePause);
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgAI);
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgPhysics);
@@ -80,36 +56,26 @@ void CAppStateEditor::OnStateLeave(CStrID NextState)
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgScene);
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgEntities);
 
-	//InputSrv->DisableContext(CStrID("Game"));
+	SetTool(NULL);
+
 	InputSrv->DisableContext(CStrID("Editor"));
 }
 //---------------------------------------------------------------------
 
 CStrID CAppStateEditor::OnFrame()
 {
-	PROFILER_START(profCompleteFrame);
-	bool Running = true;
-
 	TimeSrv->Update();
-
 	GfxSrv->Trigger();
-
 	EventMgr->ProcessPendingEvents();
-
-	//QuestSys->Trigger();
-	//DlgSys->Trigger();
 
 	AudioSrv->BeginScene();
 	GameSrv->OnFrame();
 	AudioSrv->EndScene();
 
-	PROFILER_START(profParticleUpdates);
 	nParticleServer::Instance()->Trigger();
 	nParticleServer2::Instance()->SetTime(TimeSrv->GetTime());
 	nParticleServer2::Instance()->Trigger();
-	PROFILER_STOP(profParticleUpdates);
 
-	PROFILER_START(profRender);
 	if (GfxSrv->BeginRender())
 	{
 		GfxSrv->Render();
@@ -120,7 +86,6 @@ CStrID CAppStateEditor::OnFrame()
 		if (RenderDbgAI) AISrv->RenderDebug();
 		GfxSrv->EndRender();
 	}
-	PROFILER_STOP(profRender);
 
 	//!!!to some method of memory/core server!
 	nMemoryStats memStats = n_dbgmemgetstats();
@@ -131,26 +96,15 @@ CStrID CAppStateEditor::OnFrame()
 	// Editor window receives window messages outside the frame, so clear input here, not in the beginning
 	InputSrv->Trigger();
 
-	PROFILER_STOP(profCompleteFrame);
-
-	return (Running) ? GetID() : APP_STATE_EXIT;
+	return ID;
 }
 //---------------------------------------------------------------------
 
-bool CAppStateEditor::OnMouseBtnDown(const Events::CEventBase& Event)
+bool CAppStateEditor::SetTool(IEditorTool* pTool)
 {
-	if (!CIDEApp->MouseCB) FAIL;
-	const Event::MouseBtnDown& Ev = ((const Event::MouseBtnDown&)Event);
-	CIDEApp->MouseCB(Ev.X, Ev.Y, (int)Ev.Button, Down);
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CAppStateEditor::OnMouseBtnUp(const Events::CEventBase& Event)
-{
-	if (!CIDEApp->MouseCB) FAIL;
-	const Event::MouseBtnUp& Ev = ((const Event::MouseBtnUp&)Event);
-	CIDEApp->MouseCB(Ev.X, Ev.Y, (int)Ev.Button, Up);
+	if (pActiveTool) pActiveTool->Deactivate();
+	pActiveTool = pTool;
+	if (pActiveTool) pActiveTool->Activate();
 	OK;
 }
 //---------------------------------------------------------------------

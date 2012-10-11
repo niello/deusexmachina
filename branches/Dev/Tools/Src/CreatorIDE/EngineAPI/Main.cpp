@@ -58,9 +58,3 @@ API int GetDLLVersionCode()
 	return DEM_API_VERSION;
 }
 //---------------------------------------------------------------------
-
-API void SetMouseButtonCallback(CMouseButtonCallback Cb)
-{
-	AppInst.MouseCB = Cb;
-}
-//---------------------------------------------------------------------

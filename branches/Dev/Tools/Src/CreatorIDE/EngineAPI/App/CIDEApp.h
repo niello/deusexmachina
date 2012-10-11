@@ -12,22 +12,13 @@
 #undef CopyFile
 #undef CreateDirectory
 
-enum EMouseAction
-{
-    Down = 0,
-    Click,
-    Up,
-    DoubleClick
-};
-
-typedef void (__stdcall *CMouseButtonCallback)(int x, int y, int Button, EMouseAction Action);
-
 namespace App
 {
+class CCSharpUIEventHandler;
 
 #define CIDEApp App::CCIDEApp::Instance()
 
-class CCIDEApp//: public App::CApplication
+class CCIDEApp
 {
 	__DeclareSingleton(CCIDEApp);
 
@@ -40,14 +31,15 @@ private:
 	Ptr<Story::CDlgSystem>		DlgSystem;
 	Ptr<Items::CItemManager>	ItemManager;
 
+	CCSharpUIEventHandler*		pUIEventHandler;
+
 public:
 
-	Game::PEntity				EditorCamera;
-	Game::PEntity				CurrentEntity;
-	Game::PEntity				CurrentTfmEntity;
-	CMouseButtonCallback		MouseCB;
+	Data::PParams				AttrDescs;		// DB attributes additional info for UI and editor
 
-	Data::PParams				AttrDescs;
+	Game::PEntity				EditorCamera;
+	Game::PEntity				CurrentEntity;	// Entity on which entity operations are performed (attr read/write etc)
+	Game::PEntity				SelectedEntity;	// Entity selected in the editor window
 
 	bool						TransformMode;
 	bool						LimitToGround;
@@ -64,10 +56,10 @@ public:
 	void	SetParentWindow(HWND ParentWnd) { ParentHwnd = ParentWnd; }
 
 	bool	Open();
-	void	RegisterAttributes();
-	void	SetupDisplayMode();
-	bool	AdvanceFrame();
+	bool	AdvanceFrame() { return FSM.Advance(); }
 	void	Close();
+
+	CCSharpUIEventHandler* GetUIEventHandler() { return pUIEventHandler; }
 };
 
 inline nString CCIDEApp::GetAppVersion() const

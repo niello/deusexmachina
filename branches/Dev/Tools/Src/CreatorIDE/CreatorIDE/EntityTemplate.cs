@@ -13,9 +13,9 @@ namespace CreatorIDE
         readonly List<AttrProperty> _attrProps;
         readonly AttrProperty _guidProp;
         
-        public TreeNode UiNode { get; set; }
+        public TreeNode UINode { get; set; }
 
-        public string Uid { get; private set; }
+        public string UID { get; private set; }
 
         public string Category
         {
@@ -24,7 +24,7 @@ namespace CreatorIDE
 
 		public EntityTemplate(string uid, Category cat)
         {
-            Uid = uid;
+            UID = uid;
             _cat = cat;
             _attrProps = new List<AttrProperty>();
             foreach (var id in _cat.AttrIDs)
@@ -38,16 +38,16 @@ namespace CreatorIDE
 
 		public void Update()
 		{
-			Entities.BeginTemplate(Uid, _cat.Name, false);
+			Entities.BeginTemplate(UID, _cat.Name, false);
 
 			foreach (var prop in _attrProps)
 			{
 				prop.ReadFromAttr();
 				prop.ClearModified();
 
-			    if (prop != _guidProp || prop.Value as string == Uid) continue;
-			    Uid = prop.Value as string;
-                if (UiNode != null) UiNode.Text = Uid ?? string.Empty;
+			    if (prop != _guidProp || prop.Value as string == UID) continue;
+			    UID = prop.Value as string;
+                if (UINode != null) UINode.Text = UID ?? string.Empty;
 			}
 
 			Entities.EndTemplate();
@@ -56,13 +56,13 @@ namespace CreatorIDE
 		public bool Save()
 		{
             // New template, empty UID
-            if (string.IsNullOrEmpty(Uid))
+            if (string.IsNullOrEmpty(UID))
             {
-                Uid = _guidProp.Value as string;
+                UID = _guidProp.Value as string;
                 _guidProp.ClearModified();
             }
 
-            if (!Entities.BeginTemplate(Uid, _cat.Name, true))
+            if (!Entities.BeginTemplate(UID, _cat.Name, true))
             {
                 Entities.EndTemplate();
                 return false;
@@ -72,7 +72,7 @@ namespace CreatorIDE
             if (_guidProp.IsModified)
             {
                 // Not supported for now
-                _guidProp.Value = Uid;
+                _guidProp.Value = UID;
                 _guidProp.ClearModified();
                 //UID = GUIDProp.Value as string;
                 //if (UINode != null) UINode.Text = UID;
