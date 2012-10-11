@@ -36,7 +36,7 @@ void CAppStateEditor::OnStateEnter(CStrID PrevState, PParams Params)
 	GameSrv->PauseGame();
 	InputSrv->EnableContext(CStrID("Editor"));
 
-	SetTool(&ToolSelect);
+	SetTool("Select");
 
 	SUBSCRIBE_PEVENT(ToggleGamePause, CAppStateEditor, OnToggleGamePause);
 	SUBSCRIBE_PEVENT(ToggleRenderDbgAI, CAppStateEditor, OnToggleRenderDbgAI);
@@ -84,6 +84,7 @@ CStrID CAppStateEditor::OnFrame()
 		if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
 		if (RenderDbgEntities) GameSrv->RenderDebug();
 		if (RenderDbgAI) AISrv->RenderDebug();
+		if (pActiveTool) pActiveTool->Render();
 		GfxSrv->EndRender();
 	}
 
@@ -100,8 +101,16 @@ CStrID CAppStateEditor::OnFrame()
 }
 //---------------------------------------------------------------------
 
-bool CAppStateEditor::SetTool(IEditorTool* pTool)
+bool CAppStateEditor::SetTool(LPCSTR Name)
 {
+	IEditorTool* pTool;
+
+	//!!!USE RTTI!
+	if (!Name) pTool = NULL;
+	else if (!strcmp(Name, "Select")) pTool = &ToolSelect;
+	else if (!strcmp(Name, "Transform")) pTool = &ToolTransform;
+	else pTool = NULL;
+
 	if (pActiveTool) pActiveTool->Deactivate();
 	pActiveTool = pTool;
 	if (pActiveTool) pActiveTool->Activate();

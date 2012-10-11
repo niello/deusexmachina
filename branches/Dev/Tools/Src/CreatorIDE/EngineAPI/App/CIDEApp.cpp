@@ -162,4 +162,11 @@ void CCIDEApp::Close()
 }
 //---------------------------------------------------------------------
 
+bool CCIDEApp::SetEditorTool(LPCSTR Name)
+{
+	CAppStateEditor* pState = (CAppStateEditor*)FSM.FindStateHandlerByID(CStrID("Editor"));
+	return pState && pState->SetTool(Name);
+}
+//---------------------------------------------------------------------
+
 } // namespace App

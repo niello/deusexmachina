@@ -44,6 +44,10 @@ namespace CreatorIDE.EngineAPI
         public static extern int GetDLLVersionCode();
 
         [DllImport(DllName)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool SetEditorTool(String Name);
+
+        [DllImport(DllName)]
         public static extern void SetUICallbacks(CCallback_V_S EntitySelected, MouseButtonCallback MouseButton);
     }
 

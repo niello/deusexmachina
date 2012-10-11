@@ -59,6 +59,8 @@ public:
 	bool	AdvanceFrame() { return FSM.Advance(); }
 	void	Close();
 
+	bool	SetEditorTool(LPCSTR Name); //!!!RTTI!
+
 	CCSharpUIEventHandler* GetUIEventHandler() { return pUIEventHandler; }
 };
 

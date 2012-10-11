@@ -58,3 +58,9 @@ API int GetDLLVersionCode()
 	return DEM_API_VERSION;
 }
 //---------------------------------------------------------------------
+
+API bool SetEditorTool(LPCSTR Name)
+{
+	return AppInst.SetEditorTool(Name);
+}
+//---------------------------------------------------------------------

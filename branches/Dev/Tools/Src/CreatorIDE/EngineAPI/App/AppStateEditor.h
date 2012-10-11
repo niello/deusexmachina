@@ -4,6 +4,7 @@
 
 #include <App/StateHandler.h>
 #include <App/ToolSelect.h>
+#include <App/ToolTransform.h>
 
 // This handler renders scene and debug visuals, updates low-level game state
 // and manages editor tools.
@@ -18,6 +19,7 @@ class CAppStateEditor: public CStateHandler
 protected:
 
 	CToolSelect		ToolSelect;
+	CToolTransform	ToolTransform;
 	IEditorTool*	pActiveTool;
 
 	bool			RenderDbgAI;
@@ -41,7 +43,7 @@ public:
 	virtual void	OnStateLeave(CStrID NextState);
 	virtual CStrID	OnFrame();
 
-	bool			SetTool(IEditorTool* pTool);
+	bool			SetTool(LPCSTR Name); //!!!RTTI!
 };
 
 //RegisterFactory(CAppStateEditor);
