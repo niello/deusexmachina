@@ -296,6 +296,7 @@ namespace CreatorIDE
 
         private void bTfmMode_CheckedChanged(object sender, EventArgs e)
         {
+            Engine.SetEditorTool(bTfmMode.Checked ? "Transform" : "Select");
             Transform.SetEnabled(bTfmMode.Checked); //, (CurrEntity == null) ? "" : CurrEntity.GUID);
         }
 
