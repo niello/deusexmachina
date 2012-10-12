@@ -110,6 +110,7 @@ bool CAppStateEditor::SetTool(LPCSTR Name)
 	else if (!strcmp(Name, "Select")) pTool = &ToolSelect;
 	else if (!strcmp(Name, "Transform")) pTool = &ToolTransform;
 	else if (!strcmp(Name, "NavRegions")) pTool = &ToolNavRegions;
+	else if (!strcmp(Name, "NavOffmesh")) pTool = &ToolNavOffmesh;
 	else pTool = NULL;
 
 	if (pActiveTool) pActiveTool->Deactivate();

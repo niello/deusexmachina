@@ -1,16 +1,12 @@
 #include "ToolTransform.h"
 
+#include <App/CIDEApp.h>
 #include <Events/EventManager.h>
 #include <Physics/Event/SetTransform.h>
 #include <Input/InputServer.h>
 #include <Gfx/GfxServer.h>
 #include <Gfx/CameraEntity.h>
-#include <Physics/Prop/PropAbstractPhysics.h>
-#include <Physics/CharEntity.h>
-#include <Physics/Composite.h>
-#include <Game/Mgr/EnvQueryManager.h>
 #include <Game/Mgr/FocusManager.h>
-#include <App/CIDEApp.h>
 #include <gfx2/ngfxserver2.h>
 
 namespace Attr
@@ -21,8 +17,6 @@ namespace Attr
 namespace App
 {
 //ImplementRTTI(App::CToolSelect, App::IEditorTool);
-
-using namespace Properties;
 
 void CToolTransform::Activate()
 {
@@ -119,11 +113,23 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 
 void CToolTransform::Render()
 {
-	//!!!REALLY NEED only to render entitie's transform (coord frame)! no need in other dbg visuals!
+	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
+	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
+	static const vector4 ColorZ(0.0f, 0.0f, 1.0f, 1.0f);
+
 	if (CIDEApp->SelectedEntity.isvalid())
 	{
+		const matrix44& Tfm = CIDEApp->SelectedEntity->Get<matrix44>(Attr::Transform);
+
+		vector3 Lines[6];
+		Lines[1].x = 1.f;
+		Lines[3].y = 1.f;
+		Lines[5].z = 1.f;
+
 		nGfxServer2::Instance()->BeginShapes();
-		CIDEApp->SelectedEntity->FireEvent(CStrID("OnRenderDebug"));
+		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 0, 3, Tfm, ColorX);
+		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 2, 3, Tfm, ColorY);
+		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 4, 3, Tfm, ColorZ);
 		nGfxServer2::Instance()->EndShapes();
 	}
 }

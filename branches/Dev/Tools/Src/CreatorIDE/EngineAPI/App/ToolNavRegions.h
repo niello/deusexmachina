@@ -4,7 +4,7 @@
 
 #include <App/EditorTool.h>
 #include <Events/Events.h>
-#include <AI/Navigation/NavMesh.h>
+#include <AI/Navigation/NavMesh.h> // For MAX_CONVEXVOL_PTS
 
 // Navigation regions tool. Use it to mark areas (AABB, cylinder, convex volume) on the navmesh
 // and then work with these areas through entities.
@@ -25,6 +25,7 @@ protected:
 	int		PointCount;
 	int		Hull[MAX_CONVEXVOL_PTS];
 	int		HullSize;
+
 	int		MBDownX;
 	int		MBDownY;
 

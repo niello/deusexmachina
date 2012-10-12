@@ -28,6 +28,17 @@ struct CConvexVolume
 	int		UID;
 };
 
+struct COffmeshConnection
+{
+	vector3	From;
+	vector3	To;
+	//float Radius;
+	bool	Bidirectional;
+	uchar	Area;
+	ushort	Flags;
+	int		UID;
+};
+
 class CRecastContext: public rcContext
 {
 protected:
