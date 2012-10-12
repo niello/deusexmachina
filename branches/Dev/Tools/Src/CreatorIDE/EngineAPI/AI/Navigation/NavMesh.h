@@ -17,6 +17,17 @@ class nSceneNode;
 class nChunkLodNode;
 class nChunkLodTree;
 
+static const int MAX_CONVEXVOL_PTS = 12;
+struct CConvexVolume
+{
+	vector3	Vertices[MAX_CONVEXVOL_PTS];
+	int		VertexCount;
+	float	MinY;
+	float	MaxY;
+	uchar	Area;
+	int		UID;
+};
+
 class CRecastContext: public rcContext
 {
 protected:
@@ -89,7 +100,7 @@ public:
 	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area = RC_WALKABLE_AREA);
 	bool AddOffmeshConnection(const float* pStart, const float* pEnd, float Radius, uchar Dir, uchar Area, ushort Flags);
 	bool PrepareGeometry(float AgentRadius, float AgentHeight);
-	void ApplyConvexVolumeArea();
+	void ApplyConvexVolumeArea(CConvexVolume& Volume);
 	bool Build(uchar*& pOutData, int& OutSize, bool BuildDetail = true, bool MonotonePartitioning = false);
 	void Cleanup();
 };

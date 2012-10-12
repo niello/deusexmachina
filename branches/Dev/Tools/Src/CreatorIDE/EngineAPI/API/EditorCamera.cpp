@@ -1,6 +1,5 @@
-#include <StdAPI.h>
-#include <Game/Mgr/EntityManager.h>
 #include <App/CIDEApp.h>
+#include <Game/Mgr/EntityManager.h>
 #include <Physics/Event/SetTransform.h>
 
 namespace Attr

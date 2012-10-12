@@ -70,6 +70,7 @@
             this.tpEntities = new System.Windows.Forms.TabPage();
             this.tvEntities = new System.Windows.Forms.TreeView();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.bNavRegions = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.splitContainer2.Panel1.SuspendLayout();
@@ -156,7 +157,8 @@
             this.bPauseWorld,
             this.bNotAbove,
             this.bNotBelow,
-            this.bBuildNavMesh});
+            this.bBuildNavMesh,
+            this.bNavRegions});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1226, 25);
@@ -555,6 +557,16 @@
             this.splitContainer1.SplitterDistance = 187;
             this.splitContainer1.TabIndex = 5;
             // 
+            // bNavRegions
+            // 
+            this.bNavRegions.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.bNavRegions.Image = ((System.Drawing.Image)(resources.GetObject("bNavRegions.Image")));
+            this.bNavRegions.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.bNavRegions.Name = "bNavRegions";
+            this.bNavRegions.Size = new System.Drawing.Size(23, 22);
+            this.bNavRegions.Text = "Навигация - области";
+            this.bNavRegions.Click += new System.EventHandler(this.bNavRegions_Click);
+            // 
             // MainWnd
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -639,5 +651,6 @@
 		private System.Windows.Forms.Panel EngineViewPanel;
 		private System.Windows.Forms.TextBox tOutput;
         private System.Windows.Forms.ToolStripButton bBuildNavMesh;
+        private System.Windows.Forms.ToolStripButton bNavRegions;
 	}
 }

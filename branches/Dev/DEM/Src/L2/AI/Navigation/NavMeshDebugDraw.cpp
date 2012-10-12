@@ -14,10 +14,8 @@ void CNavMeshDebugDraw::begin(duDebugDrawPrimitives prim, float size)
 		default: n_error("CNavMeshDebugDraw::begin -> unknown primitive type");
 	}
 
+	Size = size;
 	Vertices.Clear();
-
-	// In AISrv
-	//nGfxServer2::Instance()->BeginShapes();
 }
 //---------------------------------------------------------------------
 
@@ -83,13 +81,10 @@ void CNavMeshDebugDraw::end()
 			((CurrColor >> 16) & 0xff) * Coeff,		// B
 			((CurrColor >> 24) & 0xff) * Coeff);	// A
 		nGfxServer2::Instance()->DrawShapePrimitives(
-			PrimType, PrimCount, Vertices.Begin(), 3, matrix44::identity, VColor);
+			PrimType, PrimCount, Vertices.Begin(), 3, matrix44::identity, VColor, Size);
 	}
 
 	Vertices.Clear();
-
-	// In AISrv
-	//nGfxServer2::Instance()->EndShapes();
 }
 //---------------------------------------------------------------------
 

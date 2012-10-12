@@ -383,7 +383,7 @@ public:
     /// draw a shape without shader management
     virtual void DrawShapeNS(ShapeType type, const matrix44& model);
     /// draw direct primitives
-    virtual void DrawShapePrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int vertexWidth, const matrix44& model, const vector4& color);
+	virtual void DrawShapePrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int vertexWidth, const matrix44& model, const vector4& color, float Size = 1.f) {}
     /// draw direct indexed primitives (slow, use for debug visual visualization only!)
     virtual void DrawShapeIndexedPrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int numVertices, int vertexWidth, void* indices, IndexType indexType, const matrix44& model, const vector4& color);
     /// end shape rendering

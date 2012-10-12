@@ -1,4 +1,3 @@
-#include <StdAPI.h>
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <Loading/EntityFactory.h>

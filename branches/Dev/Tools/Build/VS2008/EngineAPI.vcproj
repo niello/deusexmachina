@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\CreatorIDE\EngineAPI;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
+				AdditionalIncludeDirectories="..\..\Src\CreatorIDE\EngineAPI;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_WINDOWS;_USRDLL;CREATORIDE_EXPORTS;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -121,7 +121,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\CreatorIDE\EngineAPI;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
+				AdditionalIncludeDirectories="..\..\Src\CreatorIDE\EngineAPI;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_WINDOWS;_USRDLL;CREATORIDE_EXPORTS;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"

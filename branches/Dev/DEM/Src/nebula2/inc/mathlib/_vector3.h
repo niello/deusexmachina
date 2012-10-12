@@ -30,7 +30,8 @@ public:
 	_vector3(const _vector3& vec): x(vec.x), y(vec.y), z(vec.z) {}
 	_vector3(const float* vec): x(vec[0]), y(vec[1]), z(vec[2]) {}
 
-	static float	Distance(const _vector3& v0, const _vector3& v1);
+	static float	Distance(const _vector3& v0, const _vector3& v1) { return n_sqrt(SqDistance(v0, v1)); }
+	static float	SqDistance(const _vector3& v0, const _vector3& v1);
 	static float	Distance2D(const _vector3& v0, const _vector3& v1) { return n_sqrt(SqDistance2D(v0, v1)); }
 	static float	SqDistance2D(const _vector3& v0, const _vector3& v1);
 	static float	angle(const _vector3& v0, const _vector3& v1);
@@ -186,10 +187,10 @@ inline _vector3 _vector3::findortho() const
 }
 //---------------------------------------------------------------------
 
-inline float _vector3::Distance(const _vector3& v0, const _vector3& v1)
+inline float _vector3::SqDistance(const _vector3& v0, const _vector3& v1)
 {
 	_vector3 v(v1 - v0);
-	return n_sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 //---------------------------------------------------------------------
 

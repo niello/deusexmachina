@@ -865,16 +865,6 @@ nGfxServer2::DrawShapeNS(ShapeType /*type*/, const matrix44& /*model*/)
 
 //------------------------------------------------------------------------------
 /**
-    Draw primitives with the given model matrix with given color.
-*/
-void
-nGfxServer2::DrawShapePrimitives(PrimitiveType /*type*/, int /*numPrimitives*/, const vector3* /*vertexList*/, int /*vertexWidth*/, const matrix44& /*model*/, const vector4& /*color*/)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
     Draw indexed primitives with the given model matrix with given color.
 */
 void
