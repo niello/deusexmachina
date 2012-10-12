@@ -568,5 +568,10 @@ namespace CreatorIDE
         {
             Engine.SetEditorTool("NavRegions");
         }
+
+        private void bNavOffmesh_Click(object sender, EventArgs e)
+        {
+            Engine.SetEditorTool("NavOffmesh");
+        }
 	}
 }

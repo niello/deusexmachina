@@ -48,6 +48,7 @@ public:
 
 	// Navigation params //???to some singleton navmesh builder?
 	nArray<CConvexVolume>		ConvexVolumes;
+	nArray<COffmeshConnection>	OffmeshConnections;
 
 	CCIDEApp();
 	~CCIDEApp();
