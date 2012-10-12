@@ -109,6 +109,7 @@ bool CAppStateEditor::SetTool(LPCSTR Name)
 	if (!Name) pTool = NULL;
 	else if (!strcmp(Name, "Select")) pTool = &ToolSelect;
 	else if (!strcmp(Name, "Transform")) pTool = &ToolTransform;
+	else if (!strcmp(Name, "NavRegions")) pTool = &ToolNavRegions;
 	else pTool = NULL;
 
 	if (pActiveTool) pActiveTool->Deactivate();

@@ -5,6 +5,7 @@
 #include <App/StateHandler.h>
 #include <App/ToolSelect.h>
 #include <App/ToolTransform.h>
+#include <App/ToolNavRegions.h>
 
 // This handler renders scene and debug visuals, updates low-level game state
 // and manages editor tools.
@@ -20,6 +21,7 @@ protected:
 
 	CToolSelect		ToolSelect;
 	CToolTransform	ToolTransform;
+	CToolNavRegions	ToolNavRegions;
 	IEditorTool*	pActiveTool;
 
 	bool			RenderDbgAI;

@@ -292,12 +292,12 @@ nChunkLodTree::ComputeLod(const bbox3& box, const vector3& viewPoint) const
     extent = box.extents();
 
     disp = viewPoint - center;
-	disp.x = n_max(0, fabsf(disp.x) - extent.x);
-	disp.y = n_max(0, fabsf(disp.y) - extent.y);
-	disp.z = n_max(0, fabsf(disp.z) - extent.z);
+	disp.x = n_max(0.f, fabsf(disp.x) - extent.x);
+	disp.y = n_max(0.f, fabsf(disp.y) - extent.y);
+	disp.z = n_max(0.f, fabsf(disp.z) - extent.z);
 
     float d = disp.len();
-    ushort lod = n_iclamp(((this->treeDepth << 8) - 1) - int(n_log2(n_max(1, d / this->distanceLodMax)) * 256), 0, 0xffff);
+    ushort lod = n_iclamp(((this->treeDepth << 8) - 1) - int(n_log2(n_max(1.f, d / this->distanceLodMax)) * 256), 0, 0xffff);
 
     return lod;
 }
@@ -320,12 +320,12 @@ nChunkLodTree::ComputeTextureLod(const bbox3& box, const vector3& viewPoint) con
     extent = box.extents();
     
     disp = viewPoint - center;
-	disp.x = n_max(0, fabsf(disp.x) - extent.x);
-	disp.y = n_max(0, fabsf(disp.y) - extent.y);
-	disp.z = n_max(0, fabsf(disp.z) - extent.z);
+	disp.x = n_max(0.f, fabsf(disp.x) - extent.x);
+	disp.y = n_max(0.f, fabsf(disp.y) - extent.y);
+	disp.z = n_max(0.f, fabsf(disp.z) - extent.z);
 
     float d = disp.len();
-	return (this->treeDepth - 1 - int(n_log2(n_max(1, d / this->textureDistanceLodMax))));
+	return (this->treeDepth - 1 - int(n_log2(n_max(1.f, d / this->textureDistanceLodMax))));
 }
 
 //------------------------------------------------------------------------------

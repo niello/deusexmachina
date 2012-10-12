@@ -17,6 +17,7 @@ struct CNavMeshDebugDraw: public duDebugDraw
 	unsigned int				VPerP;
 	unsigned int				CurrColor;
 	nArray<vector3>				Vertices;
+	float						Size;
 
 	virtual ~CNavMeshDebugDraw() {}
 

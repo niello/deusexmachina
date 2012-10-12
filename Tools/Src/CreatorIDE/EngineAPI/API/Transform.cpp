@@ -1,16 +1,11 @@
-#include <StdAPI.h>
-#include <Game/Mgr/FocusManager.h>
-#include <Game/Mgr/EntityManager.h>
-#include <Game/Mgr/EnvQueryManager.h>
-#include <Loading/EntityFactory.h>
 #include <App/CIDEApp.h>
+#include <Game/Mgr/EnvQueryManager.h>
 #include <Physics/Event/SetTransform.h>
-#include <Input/Prop/PropInput.h>
-#include <Physics/Prop/PropAbstractPhysics.h>
-#include <Physics/CharEntity.h>
-#include <Physics/Composite.h>
 
-using namespace Properties;
+namespace Attr
+{
+	DeclareAttr(Transform);
+}
 
 API void Transform_SetGroundConstraints(bool NotAbove, bool NotBelow)
 {

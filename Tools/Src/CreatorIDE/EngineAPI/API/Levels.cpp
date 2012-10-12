@@ -1,4 +1,3 @@
-#include <StdAPI.h>
 #include <DB/DBServer.h>
 #include <DB/Database.h>
 #include <DB/StdAttrs.h>
@@ -186,10 +185,8 @@ API bool Levels_BuildNavMesh(const char* RsrcName, float AgentRadius, float Agen
 
 	n_printf("NavMesh building PrepareGeometry done\n");
 
-	//while (0)
-	//{
-	//	NMB.ApplyConvexVolumeArea();
-	//}
+	for (int i = 0; i < CIDEApp->ConvexVolumes.Size(); ++i)
+		NMB.ApplyConvexVolumeArea(CIDEApp->ConvexVolumes[i]);
 
 	uchar* pData;
 	int Size;

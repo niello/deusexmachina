@@ -24,19 +24,16 @@ namespace App
 
 using namespace Properties;
 
-//???use OnRender or virtual callback?
 void CToolTransform::Activate()
 {
 	FocusMgr->SetInputFocusEntity(NULL);
-
-	if (CIDEApp->SelectedEntity.isvalid()) SUBSCRIBE_PEVENT(OnBeginFrame, CToolTransform, OnBeginFrame);
+	SUBSCRIBE_PEVENT(OnBeginFrame, CToolTransform, OnBeginFrame);
 }
 //---------------------------------------------------------------------
 
 void CToolTransform::Deactivate()
 {
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
-
 	FocusMgr->SetInputFocusEntity(CIDEApp->EditorCamera);
 }
 //---------------------------------------------------------------------
@@ -50,7 +47,7 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 	static const float RotateVelocityXY = 4.f;
 	static const float RotateVelocityZ = 1.f;
 
-	bool TFChanged = false;
+	bool TfmChanged = false;
 
 	Event::SetTransform Evt(CIDEApp->SelectedEntity->Get<matrix44>(Attr::Transform));
 
@@ -75,7 +72,7 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 		float DistanceToPlane = ProjectedOffset.len();
 		float FOV = n_deg2rad(GfxSrv->GetCamera()->GetCamera().GetAngleOfView());
 		float SizeY = 2 * DistanceToPlane * tanf(FOV);
-		TFChanged = true;
+		TfmChanged = true;
 		if (MoveX)
 		{
 			float SizeX = SizeY * GfxSrv->GetCamera()->GetCamera().GetAspectRatio();
@@ -90,26 +87,26 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 		if (MoveX)
 		{
 			Evt.Transform.rotate(View.y_component(), -MoveX * RotateVelocityXY);
-			TFChanged = true;
+			TfmChanged = true;
 		}
 		if (MoveY)
 		{
 			Evt.Transform.rotate(View.x_component(), MoveY * RotateVelocityXY);
-			TFChanged = true;
+			TfmChanged = true;
 		}
 		if (MoveZ)
 		{
 			Evt.Transform.rotate(View.z_component(), MoveZ * RotateVelocityZ);
-			TFChanged = true;
+			TfmChanged = true;
 		}
 	}
 	else if (MoveZ)
 	{
 		Pos += View.z_component() * (MoveZ * MoveVelocityZ * Offset.len());
-		TFChanged = true;
+		TfmChanged = true;
 	}
 
-	if (TFChanged)
+	if (TfmChanged)
 	{
 		CIDEApp->ApplyGroundConstraints(*CIDEApp->SelectedEntity, Pos);
 		Evt.Transform.set_translation(Pos);

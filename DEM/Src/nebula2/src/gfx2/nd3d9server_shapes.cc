@@ -70,18 +70,21 @@ nD3D9Server::DrawShapeNS(ShapeType type, const matrix44& model)
     debug visualizations. Vertex width is number of float's!
 */
 void
-nD3D9Server::DrawShapePrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int vertexWidth, const matrix44& model, const vector4& color)
+nD3D9Server::DrawShapePrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int vertexWidth, const matrix44& model, const vector4& color, float Size)
 {
-    D3DPRIMITIVETYPE d3dPrimType;
-    switch (type)
-    {
-    case PointList:     d3dPrimType = D3DPT_POINTLIST; break;
-    case LineList:      d3dPrimType = D3DPT_LINELIST; break;
-    case LineStrip:     d3dPrimType = D3DPT_LINESTRIP; break;
-    case TriangleList:  d3dPrimType = D3DPT_TRIANGLELIST; break;
-    case TriangleStrip: d3dPrimType = D3DPT_TRIANGLESTRIP; break;
-    case TriangleFan:   d3dPrimType = D3DPT_TRIANGLEFAN; break;
-    }
+	D3DPRIMITIVETYPE d3dPrimType;
+	switch (type)
+	{
+		case PointList:
+			d3dPrimType = D3DPT_POINTLIST;
+			pD3D9Device->SetRenderState(D3DRS_POINTSIZE, *((DWORD*)&Size));
+			break;
+		case LineList:      d3dPrimType = D3DPT_LINELIST; break;
+		case LineStrip:     d3dPrimType = D3DPT_LINESTRIP; break;
+		case TriangleList:  d3dPrimType = D3DPT_TRIANGLELIST; break;
+		case TriangleStrip: d3dPrimType = D3DPT_TRIANGLESTRIP; break;
+		case TriangleFan:   d3dPrimType = D3DPT_TRIANGLEFAN; break;
+	}
 
     // update color in shader
     nShader2* shd = this->refShapeShader;
@@ -93,10 +96,18 @@ nD3D9Server::DrawShapePrimitives(PrimitiveType type, int numPrimitives, const ve
     // perform rendering
     this->PushTransform(nGfxServer2::Model, model);
     shd->BeginPass(0);
-    HRESULT hr = this->pD3D9Device->DrawPrimitiveUP(d3dPrimType, numPrimitives, vertexList, vertexWidth * 4);
+    HRESULT hr = pD3D9Device->DrawPrimitiveUP(d3dPrimType, numPrimitives, vertexList, vertexWidth * 4);
     n_assert(SUCCEEDED(hr));
     shd->EndPass();
     this->PopTransform(nGfxServer2::Model);
+
+	switch (type)
+	{
+		case PointList:
+			Size = 1.f;
+			pD3D9Device->SetRenderState(D3DRS_POINTSIZE, *((DWORD*)&Size));
+			break;
+	}
 }
 
 //------------------------------------------------------------------------------

@@ -5,6 +5,7 @@
 #include <Game/Entity.h>
 #include <Data/Singleton.h>
 #include <StdAPI.h>
+#include <AI/Navigation/NavMesh.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -44,6 +45,9 @@ public:
 	// Ground constraints for the selected entity transformation
 	bool						DenyEntityAboveGround;
 	bool						DenyEntityBelowGround;
+
+	// Navigation params //???to some singleton navmesh builder?
+	nArray<CConvexVolume>		ConvexVolumes;
 
 	CCIDEApp();
 	~CCIDEApp();

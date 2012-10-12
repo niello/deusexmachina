@@ -30,8 +30,11 @@
 #endif
 #define N_TINY TINY
 
-#define n_max(a,b)      (((a) > (b)) ? (a) : (b))
-#define n_min(a,b)      (((a) < (b)) ? (a) : (b))
+template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
+template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }
+template<class T, class T2> inline T n_min(T a, T2 b) { return a < (T)b ? a : (T)b; }
+template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T)b; }
+
 #define n_abs(a)        (((a)<0.0f) ? (-(a)) : (a))
 #define n_sgn(a)        (((a)<0.0f) ? (-1) : (1))
 #define n_deg2rad(d)    (((d)*PI)/180.0f)

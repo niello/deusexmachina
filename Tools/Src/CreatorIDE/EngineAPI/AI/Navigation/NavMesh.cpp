@@ -324,10 +324,10 @@ bool CNavMeshBuilder::PrepareGeometry(float AgentRadius, float AgentHeight)
 }
 //---------------------------------------------------------------------
 
-void CNavMeshBuilder::ApplyConvexVolumeArea()
+void CNavMeshBuilder::ApplyConvexVolumeArea(CConvexVolume& Volume)
 {
-	//const ConvexVolume* vol;
-	//rcMarkConvexPolyArea(&Ctx, vols[i].pVerts, vols[i].VertexCount, vols[i].hmin, vols[i].hmax, (uchar)vol->area, *pCompactHF);
+	n_assert_dbg(pCompactHF);
+	rcMarkConvexPolyArea(&Ctx, Volume.Vertices->v, Volume.VertexCount, Volume.MinY, Volume.MaxY, Volume.Area, *pCompactHF);
 }
 //---------------------------------------------------------------------
 
@@ -340,6 +340,8 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 			Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build regions.");
 			FAIL;
 		}
+
+		n_printf("NavMesh rcBuildRegionsMonotone done\n");
 	}
 	else
 	{
@@ -349,7 +351,7 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 			FAIL;
 		}
 
-	n_printf("NavMesh rcBuildDistanceField done\n");
+		n_printf("NavMesh rcBuildDistanceField done\n");
 
 		if (!rcBuildRegions(&Ctx, *pCompactHF, 0, Cfg.minRegionArea, Cfg.mergeRegionArea))
 		{
@@ -357,7 +359,7 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 			FAIL;
 		}
 
-	n_printf("NavMesh rcBuildRegions done\n");
+		n_printf("NavMesh rcBuildRegions done\n");
 	}
 
 	rcContourSet* pContourSet = rcAllocContourSet();

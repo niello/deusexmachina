@@ -563,5 +563,10 @@ namespace CreatorIDE
         {
             EngineAPI.Transform.SetGroundConstraints(bNotAbove.Checked, bNotBelow.Checked);
         }
+
+        private void bNavRegions_Click(object sender, EventArgs e)
+        {
+            Engine.SetEditorTool("NavRegions");
+        }
 	}
 }
