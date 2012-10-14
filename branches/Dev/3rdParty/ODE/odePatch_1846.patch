@@ -1,0 +1,971 @@
+Index: ode/src/collision_kernel.cpp
+===================================================================
+--- ode/src/collision_kernel.cpp	(revision 1846)
++++ ode/src/collision_kernel.cpp	(working copy)
+@@ -253,7 +253,7 @@
+ //<-- Convex Collision
+ 
+ //--> dHeightfield Collision
+-  setCollider (dHeightfieldClass,dRayClass,&dCollideHeightfield);
++  setCollider (dHeightfieldClass,dRayClass,&dCollideHeightfieldRay);
+   setCollider (dHeightfieldClass,dSphereClass,&dCollideHeightfield);
+   setCollider (dHeightfieldClass,dBoxClass,&dCollideHeightfield);
+   setCollider (dHeightfieldClass,dCapsuleClass,&dCollideHeightfield);
+Index: ode/src/collision_std.h
+===================================================================
+--- ode/src/collision_std.h	(revision 1846)
++++ ode/src/collision_std.h	(working copy)
+@@ -92,7 +92,9 @@
+ 
+ // dHeightfield
+ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, 
+-						 int flags, dContactGeom *contact, int skip );
++                         int flags, dContactGeom *contact, int skip );
++int dCollideHeightfieldRay( dxGeom *o1, dxGeom *o2, 
++                            int flags, dContactGeom *contact, int skip );
+ 
+ //****************************************************************************
+ // the basic geometry objects
+Index: ode/src/heightfield.cpp
+===================================================================
+--- ode/src/heightfield.cpp	(revision 1846)
++++ ode/src/heightfield.cpp	(working copy)
+@@ -26,6 +26,8 @@
+ #define dMIN(A,B)  ((A)>(B) ? (B) : (A))
+ #define dMAX(A,B)  ((A)>(B) ? (A) : (B))
+ 
++// Node size in cells. Quadtree building is stopped when node size <= this value.
++#define HF_MAX_QUADTREE_NODE_SIZE 32
+ 
+ // Three-way MIN and MAX
+ #define dMIN3(A,B,C)	( (A)<(B) ? dMIN((A),(C)) : dMIN((B),(C)) )
+@@ -98,6 +100,8 @@
+ 											m_pHeightData( NULL ),
+ 											m_pUserData( NULL ),
+ 											
++                                            m_quadTreeNodes( NULL ),
++
+ 											m_pGetHeightCallback( NULL )
+ {
+ 	memset( m_contacts, 0, sizeof( m_contacts ) );
+@@ -146,93 +150,219 @@
+ }
+ 
+ 
+-// recomputes heights bounds
+-void dxHeightfieldData::ComputeHeightBounds()
++// builds local-space quadtree (AABB-tree)
++// NB: this function operates in discrete cell space, not in a world space, so
++// all arguments are measured in cells (quads between 4 neighbour HF samples)
++void dxHeightfieldData::BuildQuadTree(int originX,
++                                      int originZ,
++                                      int nodeWidth,
++                                      int nodeDepth,
++                                      QuadTreeNode* node)
+ {
+-    int i;
+-    dReal h;
+-    unsigned char *data_byte;
+-    short *data_short;
+-    float *data_float;
+-    double *data_double;
+-
+-    switch ( m_nGetHeightMode )
++    if (nodeWidth > HF_MAX_QUADTREE_NODE_SIZE ||
++        nodeDepth > HF_MAX_QUADTREE_NODE_SIZE)
+     {
++        // subdivide further
++        // if cell count in dimension is even, we divide cells fifty-fifty
++        // if it is odd, the central cell is shared between child nodes
++        int halfCellsX = nodeWidth >> 1;
++        int childSizeX = halfCellsX + (nodeWidth & 1);
++        int halfCellsZ = nodeDepth >> 1;
++        int childSizeZ = halfCellsZ + (nodeDepth & 1);
+ 
+-        // callback
+-    case 0:
+-        // change nothing, keep using default or user specified bounds
+-        return;
++        node->child = m_firstFreeNode;
++        m_firstFreeNode += 4;
+ 
+-        // byte
+-    case 1:
+-        data_byte = (unsigned char*)m_pHeightData;
+-        m_fMinHeight = dInfinity;
+-        m_fMaxHeight = -dInfinity;
++        BuildQuadTree(originX,              originZ,              childSizeX, childSizeZ, node->child   );
++        BuildQuadTree(originX + halfCellsX, originZ,              childSizeX, childSizeZ, node->child + 1);
++        BuildQuadTree(originX,              originZ + halfCellsZ, childSizeX, childSizeZ, node->child + 2);
++        BuildQuadTree(originX + halfCellsX, originZ + halfCellsZ, childSizeX, childSizeZ, node->child + 3);
+ 
+-        for (i=0; i<m_nWidthSamples*m_nDepthSamples; i++)
++        // now we select min & max heights of this node from its children
++        node->minHeight = node->child[0].minHeight;
++        node->maxHeight = node->child[0].maxHeight;
++        for (int i = 1; i < 4; i++)
+         {
+-            h = data_byte[i];
+-            if (h < m_fMinHeight)	m_fMinHeight = h;
+-            if (h > m_fMaxHeight)	m_fMaxHeight = h;
++            if (node->minHeight > node->child[i].minHeight)
++                node->minHeight = node->child[i].minHeight;
++            if (node->maxHeight < node->child[i].maxHeight)
++                node->maxHeight = node->child[i].maxHeight;
+         }
++    }
++    else
++    {
++        node->child = NULL;
+ 
+-        break;
++        // calculate local height extremes
+ 
+-        // short
+-    case 2:
+-        data_short = (short*)m_pHeightData;
+-        m_fMinHeight = dInfinity;
+-        m_fMaxHeight = -dInfinity;
++        //???can we use templates here?
+ 
+-        for (i=0; i<m_nWidthSamples*m_nDepthSamples; i++)
++        switch ( m_nGetHeightMode )
+         {
+-            h = data_short[i];
+-            if (h < m_fMinHeight)	m_fMinHeight = h;
+-            if (h > m_fMaxHeight)	m_fMaxHeight = h;
+-        }
+ 
+-        break;
++            // byte
++        case 1:
++            {
++                unsigned char min, max;
++                min = max = ((unsigned char*)m_pHeightData)[originZ * m_nWidthSamples + originX];
+ 
+-        // float
+-    case 3:
+-        data_float = (float*)m_pHeightData;
+-        m_fMinHeight = dInfinity;
+-        m_fMaxHeight = -dInfinity;
++                for (int z = originZ; z <= originZ + nodeDepth; z++)
++                {
++                    unsigned char* currHeight = ((unsigned char*)m_pHeightData) + z * m_nWidthSamples + originX;
++                    unsigned char* lastHeight = currHeight + nodeWidth;
++                    while (currHeight <= lastHeight)
++                    {
++                        unsigned char h = *currHeight;
++                        if (h < min)		min = h;
++                        else if (h > max)	max = h;
++                        ++currHeight;
++                    }
++                }
+ 
+-        for (i=0; i<m_nWidthSamples*m_nDepthSamples; i++)
+-        {
+-            h = data_float[i];
+-            if (h < m_fMinHeight)	m_fMinHeight = h;
+-            if (h > m_fMaxHeight)	m_fMaxHeight = h;
++                node->minHeight = (dReal)min;
++                node->maxHeight = (dReal)max;
++
++                break;
++            }
++
++            // short
++        case 2:
++            {
++                short min, max;
++                min = max = ((short*)m_pHeightData)[originZ * m_nWidthSamples + originX];
++
++                for (int z = originZ; z <= originZ + nodeDepth; z++)
++                {
++                    short* currHeight = ((short*)m_pHeightData) + z * m_nWidthSamples + originX;
++                    short* lastHeight = currHeight + nodeWidth;
++                    while (currHeight <= lastHeight)
++                    {
++                        short h = *currHeight;
++                        if (h < min)		min = h;
++                        else if (h > max)	max = h;
++                        ++currHeight;
++                    }
++                }
++
++                node->minHeight = (dReal)min;
++                node->maxHeight = (dReal)max;
++
++                break;
++            }
++
++            // float
++        case 3:
++            {
++                float min, max;
++                min = max = ((float*)m_pHeightData)[originZ * m_nWidthSamples + originX];
++
++                for (int z = originZ; z <= originZ + nodeDepth; z++)
++                {
++                    float* currHeight = ((float*)m_pHeightData) + z * m_nWidthSamples + originX;
++                    float* lastHeight = currHeight + nodeWidth;
++                    while (currHeight <= lastHeight)
++                    {
++                        float h = *currHeight;
++                        if (h < min)		min = h;
++                        else if (h > max)	max = h;
++                        ++currHeight;
++                    }
++                }
++
++                node->minHeight = (dReal)min;
++                node->maxHeight = (dReal)max;
++
++                break;
++            }
++
++            // double
++        case 4:
++            {
++                double min, max;
++                min = max = ((double*)m_pHeightData)[originZ * m_nWidthSamples + originX];
++
++                for (int z = originZ; z <= originZ + nodeDepth; z++)
++                {
++                    double* currHeight = ((double*)m_pHeightData) + z * m_nWidthSamples + originX;
++                    double* lastHeight = currHeight + nodeWidth;
++                    while (currHeight <= lastHeight)
++                    {
++                        double h = *currHeight;
++                        if (h < min)		min = h;
++                        else if (h > max)	max = h;
++                        ++currHeight;
++                    }
++                }
++
++                node->minHeight = (dReal)min;
++                node->maxHeight = (dReal)max;
++
++                break;
++            }
++
++            // Callback or unknown data type
++            // Should never get here. We never call BuildQuadTree for callback data now.
++        case 0:
++        default:
++            dIASSERT(0);
++            return;
++
+         }
+ 
+-        break;
++        // scale and offset
++        node->minHeight *= m_fScale;
++        node->maxHeight *= m_fScale;
++        node->minHeight += m_fOffset;
++        node->maxHeight += m_fOffset;
++    }
++}
+ 
+-        // double
+-    case 4:
+-        data_double = (double*)m_pHeightData;
+-        m_fMinHeight = dInfinity;
+-        m_fMaxHeight = -dInfinity;
+ 
+-        for (i=0; i<m_nWidthSamples*m_nDepthSamples; i++)
++// recomputes height bounds and quadtree when applicable
++void dxHeightfieldData::ComputeHeightBounds()
++{
++    if (m_quadTreeNodes)
++    {
++        delete [] m_quadTreeNodes;
++        m_quadTreeNodes = NULL;
++    }
++
++    // callback case
++    if (m_nGetHeightMode == 0)
++    {
++        // keep using default or user specified bounds, don't use quadtree
++        m_fMinHeight *= m_fScale;
++        m_fMaxHeight *= m_fScale;
++        m_fMinHeight += m_fOffset;
++        m_fMaxHeight += m_fOffset;
++    }
++    else
++    {
++        // build quadtree
++
++        int quadTreeNodeCount = 1;
++        int currLevelNodeCount = 1;
++        int nodeWidth = m_nWidthSamples - 1;
++        int nodeDepth = m_nDepthSamples - 1;
++        while (nodeWidth > HF_MAX_QUADTREE_NODE_SIZE ||
++               nodeDepth > HF_MAX_QUADTREE_NODE_SIZE)
+         {
+-            h = static_cast< dReal >( data_double[i] );
+-            if (h < m_fMinHeight)	m_fMinHeight = h;
+-            if (h > m_fMaxHeight)	m_fMaxHeight = h;
++            nodeWidth = (nodeWidth >> 1) + (nodeWidth & 1);
++            nodeDepth = (nodeDepth >> 1) + (nodeDepth & 1);
++            currLevelNodeCount <<= 2;
++            quadTreeNodeCount += currLevelNodeCount;
+         }
+ 
+-        break;
++        m_quadTreeNodes = new QuadTreeNode[quadTreeNodeCount];
++        m_firstFreeNode = m_quadTreeNodes + 1;
++        
++        BuildQuadTree(0, 0, m_nWidthSamples - 1, m_nDepthSamples - 1, m_quadTreeNodes);
+ 
++        m_fMinHeight = m_quadTreeNodes[0].minHeight;
++        m_fMaxHeight = m_quadTreeNodes[0].maxHeight;
+     }
+ 
+-    // scale and offset
+-    m_fMinHeight *= m_fScale;
+-    m_fMaxHeight *= m_fScale;
+-    m_fMinHeight += m_fOffset;
+-    m_fMaxHeight += m_fOffset;
+-
+-    // add thickness
++    // add thickness //???here?
+     m_fMinHeight -= m_fThickness;
+ }
+ 
+@@ -299,7 +429,7 @@
+ 
+ 
+ // returns height at given sample coordinates
+-dReal dxHeightfieldData::GetHeight( int x, int z )
++dReal dxHeightfieldData::GetHeight( int x, int z ) const
+ {
+     dReal h=0;
+     unsigned char *data_byte;
+@@ -362,7 +492,7 @@
+ 
+ 
+ // returns height at given coordinates
+-dReal dxHeightfieldData::GetHeight( dReal x, dReal z )
++dReal dxHeightfieldData::GetHeight( dReal x, dReal z ) const
+ {
+ 	dReal dnX = dFloor( x * m_fInvSampleWidth );
+ 	dReal dnZ = dFloor( z * m_fInvSampleDepth );
+@@ -445,6 +575,8 @@
+ 
+         }
+     }
++
++    if (m_quadTreeNodes) delete [] m_quadTreeNodes;
+ }
+ 
+ 
+@@ -946,9 +1078,6 @@
+     return dVector3Length(v);
+ }
+ 
+-
+-
+-
+ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, const int minZ, const int maxZ, 
+                                            dxGeom* o2, const int numMaxContactsPossible,
+                                            int flags, dContactGeom* contact, 
+@@ -1674,6 +1803,545 @@
+     return numTerrainContacts;
+ }
+ 
++static inline bool RayAABBAxisTest(dReal rayPos, dReal invRayDir,
++                                   dReal aabbMin, dReal aabbMax,
++                                   dReal& enter, dReal& exit)
++{
++    // Ray is parallel to the slab
++    if (invRayDir == 0) return (rayPos >= aabbMin && rayPos <= aabbMax);
++
++    // Calculate intersection params
++    dReal t0 = (aabbMin - rayPos) * invRayDir;
++    dReal t1 = (aabbMax - rayPos) * invRayDir;
++
++    // Sort enter & exit
++    if (t0 > t1)
++    {
++        dReal t = t0;
++        t0 = t1;
++        t1 = t;
++    }
++
++    // Intervals are disjoint
++    if (t0 > exit || t1 < enter) return false;
++
++    // Reduce interval
++    if (t0 > enter) enter = t0;
++    if (t1 < exit) exit = t1;
++
++    return true;
++}
++
++// Moller-Trumbore ray-triangle intersection, culling disabled
++static inline bool RayTriangleTest(const dReal* rayEnterPt, const dReal* rayDir,
++                                   const dReal* v0, const dReal* v1, const dReal* v2,
++                                   dReal& outRayFactor, dReal* outNormal)
++{
++    dReal edge1[3], edge2[3], p[3], t[3], q[3];
++
++    dSubtractVectors3(edge1, v1, v0);
++    dSubtractVectors3(edge2, v2, v0);
++    dCalcVectorCross3(p, rayDir, edge2);
++
++    dReal det = dCalcVectorDot3(edge1, p);
++    if (dFabs(det) < dEpsilon) return false;
++    dReal invDet = dRecip(det);
++
++    dSubtractVectors3(t, rayEnterPt, v0);
++    dReal u = dCalcVectorDot3(t, p) * invDet;
++    if (u < REAL(0.0) || u > REAL(1.0)) return false;
++
++    dCalcVectorCross3(q, t, edge1);
++    dReal v = dCalcVectorDot3(rayDir, q) * invDet;
++    if (v < REAL(0.0) || u + v > REAL(1.0)) return false;
++
++    outRayFactor = dCalcVectorDot3(edge2, q) * invDet;
++    //???if (outRayFactor < 0) return false;
++    if (outNormal)
++    {
++        dCalcVectorCross3(outNormal, edge1, edge2);
++        dNormalize3(outNormal);
++    }
++    return true;
++}
++
++// rayDir & invRayDir are the only arguments that never change during the recursion
++int dxHeightfieldData::CollideRayQuadTreeNode(const dReal* rayPos, const dReal* rayDir,
++                                              const dReal* invRayDir, dReal rayLength,
++                                              int originX, int originZ,
++                                              int nodeWidth, int nodeDepth,
++                                              const QuadTreeNode* node,
++                                              int maxContactCount, int flags,
++                                              dContactGeom* contact, int skip) const
++{
++    dIASSERT(rayPos && rayDir && invRayDir && node);
++
++    dReal enter = REAL(0.0), exit = rayLength;
++
++    // Restore AABB min & max per-axis and test against the ray.
++
++    dReal minX = ((dReal)originX) * m_fSampleWidth;
++    dReal maxX = ((dReal)(originX + nodeWidth)) * m_fSampleWidth;
++    if (!RayAABBAxisTest(rayPos[0], invRayDir[0], minX, maxX, enter, exit)) return 0;
++
++    dReal minZ = ((dReal)originZ) * m_fSampleDepth;
++    dReal maxZ = ((dReal)(originZ + nodeDepth)) * m_fSampleDepth;
++    if (!RayAABBAxisTest(rayPos[2], invRayDir[2], minZ, maxZ, enter, exit)) return 0;
++
++    if (!RayAABBAxisTest(rayPos[1], invRayDir[1], node->minHeight, node->maxHeight, enter, exit)) return 0;
++
++    // Get a segment of the ray that is inside a node AABB
++    dReal rayEnterPt[3];
++    rayEnterPt[0] = rayPos[0] + rayDir[0] * enter;
++    rayEnterPt[1] = rayPos[1] + rayDir[1] * enter;
++    rayEnterPt[2] = rayPos[2] + rayDir[2] * enter;
++    rayLength = exit - enter;
++
++    if (node->child)
++    {
++        // Test children
++
++        int halfCellsX = nodeWidth >> 1;
++        int childSizeX = halfCellsX + (nodeWidth & 1);
++        int halfCellsZ = nodeDepth >> 1;
++        int childSizeZ = halfCellsZ + (nodeDepth & 1);
++
++        int             subOriginX[4];
++        int             subOriginZ[4];
++        QuadTreeNode*   child[4];
++
++        bool isTopNearest = rayEnterPt[2] + rayEnterPt[2] < minZ + maxZ;
++
++        // Determine order of testing from the nearest to the farthest
++        if (rayEnterPt[0] + rayEnterPt[0] < minX + maxX)
++        {
++            // Left half is the nearest
++            subOriginX[0] =
++            subOriginX[1] = originX;
++            subOriginX[2] =
++            subOriginX[3] = originX + halfCellsX;
++
++            if (isTopNearest)
++            {
++                // Top half is the nearest
++                child[0] = node->child + 0;
++                child[1] = node->child + 2;
++                child[2] = node->child + 1;
++                child[3] = node->child + 3;
++            }
++            else
++            {
++                // Bottom half is the nearest
++                child[0] = node->child + 2;
++                child[1] = node->child + 0;
++                child[2] = node->child + 3;
++                child[3] = node->child + 1;
++            }
++        }
++        else
++        {
++            // Right half is the nearest
++            subOriginX[0] =
++            subOriginX[1] = originX + halfCellsX;
++            subOriginX[2] =
++            subOriginX[3] = originX;
++
++            if (isTopNearest)
++            {
++                // Top half is the nearest
++                child[0] = node->child + 1;
++                child[1] = node->child + 3;
++                child[2] = node->child + 0;
++                child[3] = node->child + 2;
++            }
++            else
++            {
++                // Bottom half is the nearest
++                child[0] = node->child + 3;
++                child[1] = node->child + 1;
++                child[2] = node->child + 2;
++                child[3] = node->child + 0;
++            }
++        }
++
++        if (isTopNearest)
++        {
++            // Top half is the nearest
++            subOriginZ[0] =
++            subOriginZ[2] = originZ;
++            subOriginZ[1] =
++            subOriginZ[3] = originZ + halfCellsZ;
++        }
++        else
++        {
++            // Bottom half is the nearest
++            subOriginZ[0] =
++            subOriginZ[2] = originZ + halfCellsZ;
++            subOriginZ[1] =
++            subOriginZ[3] = originZ;
++        }
++
++        //???!!!is it worth it to calc here what subnodes are intersected in XZ and discard others?
++
++        int contactCount = 0;
++        for (int i = 0; i < 4; i++)
++        {
++            contactCount += CollideRayQuadTreeNode(rayEnterPt, rayDir, invRayDir, rayLength,
++                                                   subOriginX[i], subOriginZ[i],
++                                                   childSizeX, childSizeZ, child[i],
++                                                   maxContactCount - contactCount, flags,
++                                                   CONTACT(contact, skip * contactCount), skip);
++            dIASSERT(contactCount <= maxContactCount);
++            if (contactCount == maxContactCount) return contactCount;
++        }
++
++        return contactCount;
++    }
++    else
++    {
++        // Perform narrow test on each triangle on which the ray projection falls
++        // May be 2D DDA-like algorithm will perform better, but this one is much
++        // more clear and compact than my attempts to write line rasterizer here :)
++        // NB: as I can see, ODE divides each heightfield cell to two triangles
++        // with a diagonal running from right-top to left-bottom. The code below
++        // relies on this convention and must be rewritten as convention changes.
++
++        int contactCount = 0;
++
++        dReal rayExitPt[3];
++        rayExitPt[0] = rayEnterPt[0] + rayDir[0] * rayLength;
++        rayExitPt[1] = rayEnterPt[1] + rayDir[1] * rayLength;
++        rayExitPt[2] = rayEnterPt[2] + rayDir[2] * rayLength;
++
++        // Determine start & end heightfield grid cells
++        dReal rStartX = rayEnterPt[0] * m_fInvSampleWidth;
++        dReal rStartZ = rayEnterPt[2] * m_fInvSampleDepth;
++        int currX = (int)rStartX;
++        int currZ = (int)rStartZ;
++        dReal rEndX = rayExitPt[0] * m_fInvSampleWidth;
++        dReal rEndZ = rayExitPt[2] * m_fInvSampleDepth;
++        int endX = (int)rEndX;
++        int endZ = (int)rEndZ;
++
++        // Cell vertices: A = lt, B = rt, C = lb, D = rb
++        dReal A[3], B[3], C[3], D[3];
++
++        // Sample heights and construct vertices for a starting triangle
++        B[0] = (currX + 1) * m_fSampleWidth;
++        B[1] = GetHeight(currX + 1, currZ);
++        B[2] = currZ * m_fSampleDepth;
++        C[0] = currX * m_fSampleWidth;
++        C[1] = GetHeight(currX, currZ + 1);
++        C[2] = (currZ + 1) * m_fSampleDepth;
++
++        // Does the ray enter current cell from the right-bottom half? (if yes, use RB triangle, else LT)
++        bool isEnterRightBottom = (rStartX - (dReal)currX + rStartZ - (dReal)currZ > REAL(1.0));
++
++        if (isEnterRightBottom)
++        {
++            D[0] = B[0];
++            D[1] = GetHeight(currX + 1, currZ + 1);
++            D[2] = C[2];
++        }
++        else
++        {
++            A[0] = C[0];
++            A[1] = GetHeight(currX, currZ);
++            A[2] = B[2];
++        }
++
++        // Initialize intersection factor for X & Z to determine cell exit edge.
++        // Delta is a factor amount between two cells, it's added to tX or tZ
++        // each step according to a step direction.
++        // NB: there is no exit edge when we end in the same cell where we start.
++        dReal tX, tZ, deltaX, deltaZ;
++        if (currX != endX || currZ != endZ)
++        {
++            if (invRayDir[0] < 0)
++                tX = (C[0] - rayEnterPt[0]) * invRayDir[0];
++            else if (invRayDir[0] > 0)
++                tX = (B[0] - rayEnterPt[0]) * invRayDir[0];
++            else tX = dInfinity;
++
++            deltaX = m_fSampleWidth * invRayDir[0];
++
++            if (invRayDir[2] < 0)
++                tZ = (B[2] - rayEnterPt[2]) * invRayDir[2];
++            else if (invRayDir[2] > 0)
++                tZ = (C[2] - rayEnterPt[2]) * invRayDir[2];
++            else tZ = dInfinity;
++
++            deltaZ = m_fSampleDepth * invRayDir[2];
++        }
++
++        while (1)
++        {
++            dReal rayFactor;
++            dReal normal[3];            // Side-product, triangle normal, valid only when intersection exists!
++            const dReal *v0, *v1, *v2;
++
++            if (isEnterRightBottom)
++            {
++                v0 = D;
++                v1 = B;
++                v2 = C;
++            }
++            else
++            {
++                v0 = A;
++                v1 = C;
++                v2 = B;
++            }
++
++            if (RayTriangleTest(rayEnterPt, rayDir, v0, v1, v2, rayFactor, normal))
++            {
++                if (rayFactor >= REAL(0.0) && rayFactor <= rayLength)
++                {
++                    dContactGeom* c = CONTACT(contact, skip * contactCount);
++                    c->pos[0] = rayEnterPt[0] + rayDir[0] * rayFactor;
++                    c->pos[1] = rayEnterPt[1] + rayDir[1] * rayFactor;
++                    c->pos[2] = rayEnterPt[2] + rayDir[2] * rayFactor;
++                    dCopyVector3(c->normal, normal);
++                    ++contactCount;
++                    if (contactCount == maxContactCount) return contactCount;
++                }
++            }
++
++            bool isLastCell = (currX == endX && currZ == endZ);
++            bool isExitRightBottom;
++            if (isLastCell)
++                isExitRightBottom = (rEndX - (dReal)endX + rEndZ - (dReal)endZ > REAL(1.0));
++            else
++                isExitRightBottom = (tX < tZ) ? (rayDir[0] > 0) : (rayDir[2] > 0);
++
++            // Does the ray projection intersect a cell diagonal?
++            if (isExitRightBottom != isEnterRightBottom)
++            {
++                // We already have 2 of 3 heights sampled, sample the last now
++                if (isExitRightBottom)
++                {
++                    D[0] = B[0];
++                    D[1] = GetHeight(currX + 1, currZ + 1);
++                    D[2] = C[2];
++                    v0 = D;
++                    v1 = B;
++                    v2 = C;
++                }
++                else
++                {
++                    A[0] = C[0];
++                    A[1] = GetHeight(currX, currZ);
++                    A[2] = B[2];
++                    v0 = A;
++                    v1 = C;
++                    v2 = B;
++                }
++
++                if (RayTriangleTest(rayEnterPt, rayDir, v0, v1, v2, rayFactor, normal))
++                {
++                    if (rayFactor >= REAL(0.0) && rayFactor <= rayLength)
++                    {
++                        dContactGeom* c = CONTACT(contact, skip * contactCount);
++                        c->pos[0] = rayEnterPt[0] + rayDir[0] * rayFactor;
++                        c->pos[1] = rayEnterPt[1] + rayDir[1] * rayFactor;
++                        c->pos[2] = rayEnterPt[2] + rayDir[2] * rayFactor;
++                        dCopyVector3(c->normal, normal);
++                        ++contactCount;
++                        if (contactCount == maxContactCount) return contactCount;
++                    }
++                }
++            }
++
++            if (isLastCell) break;
++
++            // Move to the next cell
++            if (tX < tZ)
++            {
++                if (invRayDir[0] > 0)
++                {
++                    // Go right
++                    ++currX;
++                    if (currX >= originX + nodeWidth) break;
++                    tX += deltaX;
++                    dCopyVector3(A, B);
++                    dCopyVector3(C, D);
++                    B[0] += m_fSampleWidth;
++                    B[1] = GetHeight(currX + 1, currZ);
++                }
++                else
++                {
++                    // Go left
++                    --currX;
++                    if (currX < originX) break;
++                    tX -= deltaX;
++                    dCopyVector3(B, A);
++                    dCopyVector3(D, C);
++                    C[0] -= m_fSampleWidth;
++                    C[1] = GetHeight(currX, currZ + 1);
++                }
++            }
++            else
++            {
++                if (invRayDir[2] > 0)
++                {
++                    // Go down
++                    ++currZ;
++                    if (currZ >= originZ + nodeDepth) break;
++                    tZ += deltaZ;
++                    dCopyVector3(A, C);
++                    dCopyVector3(B, D);
++                    C[1] = GetHeight(currX, currZ + 1);
++                    C[2] += m_fSampleDepth;
++                }
++                else
++                {
++                    // Go up
++                    --currZ;
++                    if (currZ < originZ) break;
++                    tZ -= deltaZ;
++                    dCopyVector3(C, A);
++                    dCopyVector3(D, B);
++                    B[1] = GetHeight(currX + 1, currZ);
++                    B[2] -= m_fSampleDepth;
++                }
++            }
++
++            // The nature of the things is such that when we exit LT triangle,
++            // we enter RB and vice versa.
++            isEnterRightBottom = !isExitRightBottom;
++        }
++
++        return contactCount;
++    }
++}
++
++
++// Ray-heightfield collider by Vladimir "Niello" Orlov, 2011
++int dCollideHeightfieldRay( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact, int skip )
++{
++    dIASSERT( skip >= (int)sizeof(dContactGeom) );
++    dIASSERT( o1->type == dHeightfieldClass );
++    dIASSERT( o2->type == dRayClass );
++    dIASSERT((flags & NUMC_MASK) >= 1);
++
++    dxHeightfield* hf = (dxHeightfield*) o1;
++    dxRay* ray = (dxRay*) o2;
++
++    // You have to implement wrapping support by yourself, I don't plan to add
++    // it in the near future. Anyway it's easy enough:
++    // For a wrapping heightfield divide ray into segments each in it's cell of regular grid
++    // made of heightfields, and test each ray segment against its cell by quadtree test. All
++    // the cells have the same quadtree and the same height data by definition.
++    if (hf->m_p_data->m_bWrapMode != 0)
++        return dCollideHeightfield(o1, o2, flags, contact, skip);
++
++    // This method requires quadtree, use the default one if quadtree isn't built
++    if (!hf->m_p_data->m_quadTreeNodes)
++        return dCollideHeightfield(o1, o2, flags, contact, skip);
++
++    // Transform ray to heightfield space if hf is placeable
++
++    dReal rayPos[3];
++    dReal rayDir[3];
++
++    if (hf->gflags & GEOM_PLACEABLE)
++    {
++        dMatrix3 invHFRotation;
++        // What to do if we can't invert transform?
++        dIASSERT(dInvertPDMatrix(hf->final_posr->R, invHFRotation, 3, NULL) != 0);
++        dReal tmp[3];
++        dGetMatrixColumn3(tmp, ray->final_posr->R, 2);
++        if (tmp[0] == 0 && tmp[1] == 0 && tmp[2] == 0) return 0;
++        dMultiply1_331(rayDir, invHFRotation, tmp);
++
++        dSubtractVectors3(tmp, ray->final_posr->pos, hf->final_posr->pos);
++        dMultiply1_331(rayPos, invHFRotation, tmp);
++    }
++    else
++    {
++        dGetMatrixColumn3(rayDir, ray->final_posr->R, 2);
++        if (rayDir[0] == 0 && rayDir[1] == 0 && rayDir[2] == 0) return 0;
++
++        // dVector3Copy is really misleading with its reverse args!
++        dCopyVector3(rayPos, ray->final_posr->pos);
++    }
++
++#ifndef DHEIGHTFIELD_CORNER_ORIGIN
++    rayPos[0] += hf->m_p_data->m_fHalfWidth;
++    rayPos[2] += hf->m_p_data->m_fHalfDepth;
++#endif // DHEIGHTFIELD_CORNER_ORIGIN
++
++    // Collide ray against AABB tree (quadtree)
++
++    // Calc ray direction inversion, for components near-parallel to axes set 0 here
++    // to replace (dFabs(rd) < dEpsilon) test with (rd == 0) in quadtree node test.
++    // Mb it's better to use some very big value (dInfinity or smth, it's more correct).
++    dReal invRayDir[3];
++    invRayDir[0] = (dFabs(rayDir[0]) > dEpsilon) ? dRecip(rayDir[0]) : 0;
++    invRayDir[1] = (dFabs(rayDir[1]) > dEpsilon) ? dRecip(rayDir[1]) : 0;
++    invRayDir[2] = (dFabs(rayDir[2]) > dEpsilon) ? dRecip(rayDir[2]) : 0;
++
++    int maxContactCount = (flags & NUMC_MASK);
++    int contactCount = hf->m_p_data->CollideRayQuadTreeNode(rayPos, rayDir, invRayDir, ray->length, 0, 0,
++                                                            hf->m_p_data->m_nWidthSamples - 1,
++                                                            hf->m_p_data->m_nDepthSamples - 1,
++                                                            hf->m_p_data->m_quadTreeNodes,
++                                                            maxContactCount, flags, contact, skip);
++    dIASSERT( contactCount <= maxContactCount );
++
++    dContactGeom *pContact;
++    for (int i = 0; i != contactCount; ++i )
++    {
++        pContact = CONTACT(contact, i*skip);
++        pContact->g1 = o1;
++        pContact->g2 = o2;
++        //???sides?
++        dReal tmp[3];
++        dSubtractVectors3(tmp, pContact->pos, ray->final_posr->pos);
++        pContact->depth = dCalcVectorLength3(tmp);
++    }
++
++    //!!!DUPLICATE CODE, see dHeightfieldCollide!
++    //
++    // Transform Contacts to World Space
++    //
++    if ( hf->gflags & GEOM_PLACEABLE )
++    {
++        for (int i = 0; i < contactCount; ++i )
++        {
++            dReal tmp[3];
++            pContact = CONTACT(contact,i*skip);
++            dCopyVector3( tmp, pContact->pos );
++
++#ifndef DHEIGHTFIELD_CORNER_ORIGIN
++            tmp[ 0 ] -= hf->m_p_data->m_fHalfWidth;
++            tmp[ 2 ] -= hf->m_p_data->m_fHalfDepth;
++#endif // !DHEIGHTFIELD_CORNER_ORIGIN
++
++            dMultiply0_331( pContact->pos, hf->final_posr->R, tmp );
++
++            dAddVectors3( pContact->pos, pContact->pos, hf->final_posr->pos );
++            dCopyVector3( tmp, pContact->normal );
++
++            dMultiply0_331( pContact->normal, hf->final_posr->R, tmp );
++        }
++    }
++#ifndef DHEIGHTFIELD_CORNER_ORIGIN
++    else
++    {
++        for (int i = 0; i < contactCount; ++i )
++        {
++            pContact = CONTACT(contact,i*skip);
++            pContact->pos[ 0 ] -= hf->m_p_data->m_fHalfWidth;
++            pContact->pos[ 2 ] -= hf->m_p_data->m_fHalfDepth;
++        }
++    }
++#endif // !DHEIGHTFIELD_CORNER_ORIGIN
++
++    return contactCount;
++}
++
++
+ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact, int skip )
+ {
+     dIASSERT( skip >= (int)sizeof(dContactGeom) );
+@@ -1721,6 +2389,7 @@
+         gflagsbak = o2->gflags;
+     }
+ 
++	//???need to invert heightfield transform matrix?
+     if ( terrain->gflags & GEOM_PLACEABLE )
+     {
+         // Transform o2 into heightfield space.
+Index: ode/src/heightfield.h
+===================================================================
+--- ode/src/heightfield.h	(revision 1846)
++++ ode/src/heightfield.h	(working copy)
+@@ -51,8 +51,19 @@
+     const void* m_pHeightData; // Sample data array
+     void* m_pUserData;         // Callback user data
+ 
+-    dContactGeom            m_contacts[HEIGHTFIELDMAXCONTACTPERCELL];
++    // We save 4 dReals per quadtree node and get XZ node dimensions
++    // recursively inside quadtree test with fast integer math.
++    struct QuadTreeNode
++    {
++        dReal           minHeight; //!!!so no need to store global min & max separately!
++        dReal           maxHeight;
++        QuadTreeNode*   child;      // Points to 4 subnodes of this node in m_quadTreeNodes
++    };
++    QuadTreeNode* m_quadTreeNodes;  // Array of all qt nodes. One allocation, one memory chunk. Root is nodes[0].
++    QuadTreeNode* m_firstFreeNode;  // Needed only during quadtree build process
+ 
++    dContactGeom m_contacts[HEIGHTFIELDMAXCONTACTPERCELL];
++
+     dHeightfieldGetHeight* m_pGetHeightCallback;		// Callback pointer.
+ 
+     dxHeightfieldData();
+@@ -63,13 +74,19 @@
+         dReal fScale, dReal fOffset,
+         dReal fThickness, int bWrapMode );
+ 
++    void BuildQuadTree(int originX, int originZ, int nodeWidth, int nodeDepth, QuadTreeNode* node);
+     void ComputeHeightBounds();
+ 
++    int CollideRayQuadTreeNode(const dReal* rayPos, const dReal* rayDir, const dReal* invRayDir,
++                               dReal rayLength, int originX, int originZ, int nodeWidth, int nodeDepth,
++                               const QuadTreeNode* node, int maxContactCount, int flags,
++                               dContactGeom* contact, int skip) const;
++
+     bool IsOnHeightfield2  ( const HeightFieldVertex * const CellCorner, 
+         const dReal * const pos,  const bool isABC) const;
+ 
+-    dReal GetHeight(int x, int z);
+-    dReal GetHeight(dReal x, dReal z);
++    dReal GetHeight(int x, int z) const;
++    dReal GetHeight(dReal x, dReal z) const;
+ 
+ };
+ 
