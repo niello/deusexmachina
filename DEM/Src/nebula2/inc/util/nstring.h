@@ -1359,7 +1359,7 @@ nString::CheckExtension(const char* ext) const
 {
     n_assert(ext);
     const char* extStr = GetExtension();
-    return extStr && !strcmp(ext, extStr);
+    return extStr && !stricmp(ext, extStr);
 }
 
 //------------------------------------------------------------------------------

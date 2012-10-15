@@ -15,13 +15,11 @@ __ImplementSingleton(Core::CCoreServer);
 
 nList CCoreServer::RefCountedList;
 
-CCoreServer::CCoreServer(const nString& vendor, const nString& app):
-	_IsOpen(false),
-	pKernelServer(NULL)
+CCoreServer::CCoreServer(): _IsOpen(false)
 {
 	__ConstructSingleton;
 	n_dbgmeminit();
-	pKernelServer = n_new(nKernelServer);
+	n_new(nKernelServer);
 }
 //---------------------------------------------------------------------
 
@@ -45,17 +43,14 @@ CCoreServer::~CCoreServer()
 		MessageBox(0, Msg.Get(), "DEM Core Message", MB_OK | MB_APPLMODAL | MB_SETFOREGROUND | MB_TOPMOST | MB_ICONINFORMATION);
 	}
 
-	n_delete(pKernelServer);
-	pKernelServer = NULL;
-
+	n_delete(nKernelServer::Instance());
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
 bool CCoreServer::Open()
 {
-	n_assert(pKernelServer);
-	n_assert(!_IsOpen);
+	n_assert(!_IsOpen && nKernelServer::HasInstance());
 	_IsOpen = true;
 	OK;
 }
@@ -63,8 +58,7 @@ bool CCoreServer::Open()
 
 void CCoreServer::Close()
 {
-	n_assert(_IsOpen);
-	n_assert(pKernelServer);
+	n_assert(_IsOpen && nKernelServer::HasInstance());
 	_IsOpen = false;
 }
 //---------------------------------------------------------------------

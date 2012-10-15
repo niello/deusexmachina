@@ -257,7 +257,8 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 
 	PhysicsSrv->SetLevel(Physics::CLevel::Create());
 
-	Ptr<Graphics::CLevel> GfxLevel = Graphics::CLevel::Create();
+	Ptr<Graphics::CLevel> GfxLevel;
+	GfxLevel.Create();
 	GfxLevel->Init(LevelBox, QuadTreeDepth);
 	GfxSrv->SetLevel(GfxLevel);
 
@@ -270,12 +271,7 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 		{
 			nString NavMeshFileName;
 			NavMeshFileName.Format("export:Nav/%s.nm", NavMeshRsrc.Get());
-			char* pData = NULL;
-			DWORD DataSize = DataSrv->LoadFileToBuffer(NavMeshFileName, pData);
-			n_assert(AISrv->GetLevel()->LoadNavMesh(pData, DataSize));
-			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			//!!!WRITE CORRECT NAVMESH MEMORY MGMT!
-			//!!!!Freed inside: n_delete_array(pData);
+			n_assert(AISrv->GetLevel()->LoadNavMesh(NavMeshFileName));
 		}
 
 		DS = NULL;

@@ -3,6 +3,7 @@
 #define __DEM_L2_AI_LEVEL_H__
 
 #include <StdDEM.h>
+#include <Data/Buffer.h>
 #include <AI/ActorFwd.h>
 #include <AI/Perception/Stimulus.h>
 #include <AI/Navigation/PathRequestQueue.h>
@@ -36,6 +37,7 @@ protected:
 	bbox3							Box;
 	CStimulusQT						StimulusQT;						// Quadtree containing stimuli and other AI hints
 
+	Data::CBuffer					NMFile;
 	nDictionary<float, CNavData>	NavData;						// Mapped to maximum radius of agent
 
 	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus ClipStatus = InvalidClipStatus);
@@ -47,7 +49,7 @@ public:
 
 	bool			Init(const bbox3& LevelBox, uchar QuadTreeDepth);
 
-	bool			LoadNavMesh(char* pData, DWORD Size);
+	bool			LoadNavMesh(const nString& FileName);
 	bool			RegisterNavMesh(float ActorRadius, dtNavMesh* pNavMesh);
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);

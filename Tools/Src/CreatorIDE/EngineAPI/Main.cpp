@@ -34,9 +34,7 @@ API bool Advance()
 API void Release()
 {
 	Initialized = false;
-	LoaderSrv->CommitChangesToDB();
-	//!!!restore current entity here if transform or at least check why this property isn't active!
-	LoaderSrv->UnloadLevel();
+	AppInst.UnloadLevel(true);
 	AppInst.Close();
 }
 //---------------------------------------------------------------------

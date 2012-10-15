@@ -63,10 +63,10 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 		}
 		else
 		{
-			COffmeshConnection& Conn = *CIDEApp->OffmeshConnections.Reserve(1);
+			COffmeshConnection& Conn = *CIDEApp->CurrLevel.OffmeshConnections.Reserve(1);
 			Conn.From = HitPos;
 			Conn.To = Pt;
-			//Conn.Radius = AgentRadius;
+			Conn.Radius = AgentRadius; //!!!SET!
 			Conn.Bidirectional = Bidirectional;
 			Conn.Area = 2; //!!!SET!
 			Conn.Flags = 1; //!!!SET!
@@ -79,9 +79,9 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 		// Find nearest link end-point
 		float NearestDist = FLT_MAX;
 		int NearestIdx = -1;
-		for (int i = 0; i < CIDEApp->OffmeshConnections.Size(); ++i)
+		for (int i = 0; i < CIDEApp->CurrLevel.OffmeshConnections.Size(); ++i)
 		{
-			COffmeshConnection& Conn = CIDEApp->OffmeshConnections[i];
+			COffmeshConnection& Conn = CIDEApp->CurrLevel.OffmeshConnections[i];
 			float Dist = vector3::SqDistance(Pt, Conn.From);
 			if (Dist < NearestDist)
 			{
@@ -97,7 +97,7 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 		}
 
 		if (NearestIdx != -1 && sqrtf(NearestDist) < AgentRadius)
-			CIDEApp->OffmeshConnections.Erase(NearestIdx);
+			CIDEApp->CurrLevel.OffmeshConnections.Erase(NearestIdx);
 	}
 
 	OK;
@@ -121,9 +121,9 @@ void CToolNavOffmesh::Render()
 	DD.depthMask(false);
 
 	DD.begin(DU_DRAW_LINES, 2.0f);
-	for (int i = 0; i < CIDEApp->OffmeshConnections.Size(); ++i)
+	for (int i = 0; i < CIDEApp->CurrLevel.OffmeshConnections.Size(); ++i)
 	{
-		COffmeshConnection& Conn = CIDEApp->OffmeshConnections[i];
+		COffmeshConnection& Conn = CIDEApp->CurrLevel.OffmeshConnections[i];
 
 		DD.vertex(Conn.From.x, Conn.From.y, Conn.From.z, BaseColor);
 		DD.vertex(Conn.From.x, Conn.From.y + 0.2f, Conn.From.z, BaseColor);

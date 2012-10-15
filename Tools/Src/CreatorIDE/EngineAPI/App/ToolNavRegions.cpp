@@ -117,11 +117,11 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 		if (DiffX * DiffX > 2 * 2 || DiffX * DiffX > 2 * 2) FAIL;
 
 		// If clicked on that last pt, create the shape.
-		if (PointCount && vector3::SqDistance(Pt, Points[PointCount - 1]) < 0.04f) // 0.2 * 0.2
+		if (PointCount && vector3::SqDistance(Pt, Points[PointCount - 1]) < 0.01f) // 0.1 * 0.1
 		{
-			if (HullSize > 2) // Create shape.
+			if (HullSize > 2) // Create shape
 			{
-				CConvexVolume& Vol = *CIDEApp->ConvexVolumes.Reserve(1);
+				CConvexVolume& Vol = *CIDEApp->CurrLevel.ConvexVolumes.Reserve(1);
 				Vol.MinY = FLT_MAX;
 				Vol.VertexCount = HullSize;
 
@@ -147,9 +147,8 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 			PointCount = 0;
 			HullSize = 0;
 		}
-		else
+		else // Add new point
 		{
-			// Add new point 
 			if (PointCount < MAX_CONVEXVOL_PTS)
 			{
 				Points[PointCount] = Pt;
@@ -161,13 +160,13 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 	else if (Ev.Button == Input::MBMiddle) // Delete
 	{
 		int NearestIdx = -1;
-		for (int i = 0; i < CIDEApp->ConvexVolumes.Size(); ++i)
+		for (int i = 0; i < CIDEApp->CurrLevel.ConvexVolumes.Size(); ++i)
 		{
-			CConvexVolume& Vol = CIDEApp->ConvexVolumes[i];
+			CConvexVolume& Vol = CIDEApp->CurrLevel.ConvexVolumes[i];
 			if (IsPointInPoly(Vol.VertexCount, Vol.Vertices, Pt) && Pt.y >= Vol.MinY && Pt.y <= Vol.MaxY)
 				NearestIdx = i;
 		}
-		if (NearestIdx != -1) CIDEApp->ConvexVolumes.Erase(NearestIdx);
+		if (NearestIdx != -1) CIDEApp->CurrLevel.ConvexVolumes.Erase(NearestIdx);
 	}
 
 	OK;
@@ -186,9 +185,9 @@ void CToolNavRegions::Render()
 	DD.depthMask(false);
 
 	DD.begin(DU_DRAW_TRIS);
-	for (int i = 0; i < CIDEApp->ConvexVolumes.Size(); ++i)
+	for (int i = 0; i < CIDEApp->CurrLevel.ConvexVolumes.Size(); ++i)
 	{
-		CConvexVolume& Vol = CIDEApp->ConvexVolumes[i];
+		CConvexVolume& Vol = CIDEApp->CurrLevel.ConvexVolumes[i];
 		unsigned int Color = duIntToCol((int)Vol.Area, 32);
 		for (int j = 0, k = Vol.VertexCount - 1; j < Vol.VertexCount; k = j++)
 		{
@@ -208,9 +207,9 @@ void CToolNavRegions::Render()
 	DD.end();
 
 	DD.begin(DU_DRAW_LINES, 2.0f);
-	for (int i = 0; i < CIDEApp->ConvexVolumes.Size(); ++i)
+	for (int i = 0; i < CIDEApp->CurrLevel.ConvexVolumes.Size(); ++i)
 	{
-		CConvexVolume& Vol = CIDEApp->ConvexVolumes[i];
+		CConvexVolume& Vol = CIDEApp->CurrLevel.ConvexVolumes[i];
 		unsigned int Color = duIntToCol(Vol.Area, 220);
 		for (int j = 0, k = Vol.VertexCount - 1; j < Vol.VertexCount; k = j++)
 		{
@@ -227,9 +226,9 @@ void CToolNavRegions::Render()
 	DD.end();
 
 	DD.begin(DU_DRAW_POINTS, 3.0f);
-	for (int i = 0; i < CIDEApp->ConvexVolumes.Size(); ++i)
+	for (int i = 0; i < CIDEApp->CurrLevel.ConvexVolumes.Size(); ++i)
 	{
-		CConvexVolume& Vol = CIDEApp->ConvexVolumes[i];
+		CConvexVolume& Vol = CIDEApp->CurrLevel.ConvexVolumes[i];
 		unsigned int Color = duDarkenCol(duIntToCol(Vol.Area, 255));
 		for (int j = 0; j < Vol.VertexCount; ++j)
 		{

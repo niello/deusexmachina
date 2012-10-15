@@ -2,6 +2,7 @@
 
 #include <AI/AIServer.h>
 #include <AI/Perception/Sensor.h>
+#include <Data/DataServer.h>
 #include <DetourCommon.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourPathCorridor.h>
@@ -39,22 +40,24 @@ bool CAILevel::Init(const bbox3& LevelBox, uchar QuadTreeDepth)
 }
 //---------------------------------------------------------------------
 
-//!!!remove radius hardcode, load all meshes from the data stream!
-bool CAILevel::LoadNavMesh(char* pData, DWORD Size)
+bool CAILevel::LoadNavMesh(const nString& FileName)
 {
-	n_assert(pData && Size);
+	n_assert(DataSrv->LoadFileToBuffer(FileName, NMFile));
+
+	//!!!respect file format!
+
+	const float HACK_Radius = 0.3f;
 
 	dtNavMesh* pNavMesh = dtAllocNavMesh();
-	if (pNavMesh &&
-		dtStatusSucceed(pNavMesh->init((uchar*)pData, Size, DT_TILE_FREE_DATA)) &&
-		RegisterNavMesh(0.3f, pNavMesh))
+	if (!pNavMesh) FAIL;
+	if (dtStatusFailed(pNavMesh->init((uchar*)NMFile.GetPtr(), NMFile.GetSize(), 0)) ||
+		!RegisterNavMesh(HACK_Radius, pNavMesh))
 	{
-		OK;
+		dtFreeNavMesh(pNavMesh);
+		FAIL;
 	}
 
-	if (pNavMesh) dtFreeNavMesh(pNavMesh);
-
-	FAIL;
+	OK;
 }
 //---------------------------------------------------------------------
 

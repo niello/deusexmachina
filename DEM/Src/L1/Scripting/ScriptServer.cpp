@@ -210,13 +210,9 @@ bool CScriptServer::LuaStackToData(CData& Result, int StackIdx, lua_State* l)
 
 EExecStatus CScriptServer::RunScriptFile(const nString& FileName)
 {
-	//???use CBuffer with free mem in destructor? mb inherit SimpleString from it or use it here
-	char* Buffer;
-	int BytesRead = DataSrv->LoadFileToBuffer(FileName, Buffer);
-	if (!BytesRead) return Error;
-	EExecStatus Result = RunScript(Buffer, BytesRead);
-	n_free(Buffer);
-	return Result;
+	CBuffer Buffer;
+	if (!DataSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
+	return RunScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
 

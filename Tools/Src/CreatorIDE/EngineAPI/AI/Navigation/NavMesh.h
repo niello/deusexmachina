@@ -18,26 +18,29 @@ class nChunkLodNode;
 class nChunkLodTree;
 
 static const int MAX_CONVEXVOL_PTS = 12;
+
+#pragma pack(push, 1)
 struct CConvexVolume
 {
 	vector3	Vertices[MAX_CONVEXVOL_PTS];
 	int		VertexCount;
 	float	MinY;
 	float	MaxY;
-	uchar	Area;
 	int		UID;
+	uchar	Area;
 };
 
 struct COffmeshConnection
 {
 	vector3	From;
 	vector3	To;
-	//float Radius;
+	float	Radius;
+	int		UID;
+	ushort	Flags;
 	bool	Bidirectional;
 	uchar	Area;
-	ushort	Flags;
-	int		UID;
 };
+#pragma pack(pop)
 
 class CRecastContext: public rcContext
 {
@@ -109,10 +112,11 @@ public:
 	bool AddGeometry(Game::CEntity& Entity, uchar Area = RC_WALKABLE_AREA);
 	bool AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
 	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area = RC_WALKABLE_AREA);
-	bool AddOffmeshConnection(const float* pStart, const float* pEnd, float Radius, uchar Dir, uchar Area, ushort Flags);
+	bool AddOffmeshConnection(COffmeshConnection& Connection);
 	bool PrepareGeometry(float AgentRadius, float AgentHeight);
 	void ApplyConvexVolumeArea(CConvexVolume& Volume);
 	bool Build(uchar*& pOutData, int& OutSize, bool BuildDetail = true, bool MonotonePartitioning = false);
+	bool BuildShapePolyList(CConvexVolume& Volume, uchar*& pOutData, int& OutSize);
 	void Cleanup();
 };
 //=====================================================================

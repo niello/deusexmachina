@@ -269,19 +269,18 @@ bool CNavMeshBuilder::AddGeometry(const float* pVerts, int VertexCount, const in
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::AddOffmeshConnection(const float* pStart, const float* pEnd, float Radius,
-										   uchar Dir, uchar Area, ushort Flags)
+bool CNavMeshBuilder::AddOffmeshConnection(COffmeshConnection& Connection)
 {
 	if (OffMeshCount >= MAX_OFFMESH_CONNECTIONS) FAIL;
 
 	float* v = &OffMeshVerts[OffMeshCount * 3 * 2];
-	rcVcopy(&v[0], pStart);
-	rcVcopy(&v[3], pEnd);
-	OffMeshRadius[OffMeshCount] = Radius;
-	OffMeshDir[OffMeshCount] = Dir;
-	OffMeshArea[OffMeshCount] = Area;
-	OffMeshFlags[OffMeshCount] = Flags;
-	OffMeshID[OffMeshCount] = 1000 + OffMeshCount;
+	rcVcopy(&v[0], Connection.From.v);
+	rcVcopy(&v[3], Connection.To.v);
+	OffMeshRadius[OffMeshCount] = Connection.Radius;
+	OffMeshDir[OffMeshCount] = Connection.Bidirectional ? 1 : 0;
+	OffMeshArea[OffMeshCount] = Connection.Area;
+	OffMeshFlags[OffMeshCount] = Connection.Flags;
+	OffMeshID[OffMeshCount] = 1000 + OffMeshCount; //???Connection.UID?
 
 	OffMeshCount++;
 	OK;
@@ -469,6 +468,66 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 	rcFreePolyMesh(pMesh);
 	if (BuildDetail) rcFreePolyMeshDetail(pMeshDetail);
 
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CNavMeshBuilder::BuildShapePolyList(CConvexVolume& Volume, uchar*& pOutData, int& OutSize)
+{
+	/*
+	dtNavMesh* pNavMesh = dtAllocNavMesh();
+	if (!pNavMesh) FAIL;
+	if (dtStatusFailed(pNavMesh->init(pData, Size, 0)))
+	{
+		dtFreeNavMesh(pNavMesh);
+		FAIL;
+	}
+	dtNavMeshQuery* pQuery = dtAllocNavMeshQuery();
+	if (!pQuery)
+	{
+		dtFreeNavMesh(pNavMesh);
+		FAIL;
+	}
+	if (dtStatusFailed(pQuery->init(pNavMesh, 512)))
+	{
+		dtFreeNavMeshQuery(pQuery);
+		dtFreeNavMesh(pNavMesh);
+		FAIL;
+	}
+
+	const dtQueryFilter* pNavFilter = AISrv->GetDefaultNavQueryFilter();
+
+	// Detect poly list for each volume
+	for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+	{
+		CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
+
+		const int MAX_POLYS = 256;
+		dtPolyRef	PolyRefs[MAX_POLYS];
+		dtPolyRef	ParentRefs[MAX_POLYS];
+		int			PolyCount;
+
+		//!!!Vertices must be CCW!
+
+		vector3 PointInVolume = (Vol.Vertices[0] + Vol.Vertices[1] + Vol.Vertices[2]) / 3.f;
+		dtPolyRef StartPoly;
+		static const vector3 Probe(0.f, Vol.MaxY - Vol.MinY, 0.f);
+		pQuery->findNearestPoly(PointInVolume.v, Probe.v, pNavFilter, &StartPoly, NULL);
+
+		if (StartPoly &&
+			dtStatusSucceed(pQuery->findPolysAroundShape(StartPoly, Vol.Vertices->v, Vol.VertexCount, pNavFilter,
+				PolyRefs, ParentRefs, NULL, &PolyCount, MAX_POLYS)))
+		{
+			uchar Area;
+			pNavMesh->getPolyArea(PolyRefs[0], &Area);
+			// save
+			int xxx = 0;
+		}
+	}
+
+	dtFreeNavMeshQuery(pQuery);
+	dtFreeNavMesh(pNavMesh);
+*/
 	OK;
 }
 //---------------------------------------------------------------------
