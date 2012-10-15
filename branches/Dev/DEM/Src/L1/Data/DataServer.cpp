@@ -1,15 +1,15 @@
 #include "DataServer.h"
 
-#include "Params.h"
-#include "DataArray.h"
-#include "HRDParser.h"
-#include "HRDWriter.h"
-#include "BinaryReader.h"
-#include "BinaryWriter.h"
-#include "XMLDocument.h"
+#include <Data/Params.h>
+#include <Data/DataArray.h>
+#include <Data/HRDParser.h>
+#include <Data/HRDWriter.h>
+#include <Data/BinaryReader.h>
+#include <Data/BinaryWriter.h>
+#include <Data/XMLDocument.h>
+#include <Data/Buffer.h>
 #include <Data/FS/FileSystemWin32.h>
 #include <Data/FS/FileSystemNPK.h>
-#include <kernel/nkernelserver.h>
 
 namespace Data
 {
@@ -264,26 +264,14 @@ nString CDataServer::ManglePath(const nString& Path)
 }
 //---------------------------------------------------------------------
 
-DWORD CDataServer::LoadFileToBuffer(const nString& FileName, char*& Buffer)
+bool CDataServer::LoadFileToBuffer(const nString& FileName, CBuffer& Buffer)
 {
 	CFileStream File;
-
-	int BytesRead;
-
-	if (File.Open(FileName, SAM_READ, SAP_SEQUENTIAL))
-	{
-		int FileSize = File.GetSize();
-		Buffer = (char*)n_malloc(FileSize);
-		BytesRead = File.Read(Buffer, FileSize);
-		File.Close();
-	}
-	else
-	{
-		Buffer = NULL;
-		BytesRead = 0;
-	}
-
-	return BytesRead;
+	if (!File.Open(FileName, SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	int FileSize = File.GetSize();
+	Buffer.Reserve(FileSize);
+	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
+	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------
 
@@ -297,19 +285,17 @@ PParams CDataServer::LoadHRD(const nString& FileName, bool Cache)
 
 PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
 {
-	char* Buffer;
-	int BytesRead = LoadFileToBuffer(FileName, Buffer);
+	CBuffer Buffer;
+	if (!LoadFileToBuffer(FileName, Buffer)) return NULL;
 
 	PParams Params;
-	if (!pHRDParser.isvalid()) pHRDParser = n_new(CHRDParser);
-	if (pHRDParser->ParseBuffer(Buffer, BytesRead, Params))
+	if (!pHRDParser.isvalid()) pHRDParser = n_new(CHRDParser); //!!!make non-singleton! use on stack
+	if (pHRDParser->ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
 	{
 		n_printf("FileIO: HRD \"%s\" successfully loaded from HDD\n", FileName.Get());
 		if (Cache) HRDCache.Add(FileName.Get(), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
 	else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.Get());
-
-	n_delete_array(Buffer);
 
 	return Params;
 }
@@ -378,11 +364,11 @@ void CDataServer::SavePRM(const nString& FileName, PParams Content)
 
 PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 {
-	char* Buffer;
-	int BytesRead = DataSrv->LoadFileToBuffer(FileName, Buffer);
+	CBuffer Buffer;
+	if (!DataSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
 
 	PXMLDocument XML = n_new(CXMLDocument);
-	if (XML->Parse(Buffer, BytesRead) == tinyxml2::XML_SUCCESS)
+	if (XML->Parse((LPCSTR)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)
 	{
 		n_printf("FileIO: XML \"%s\" successfully loaded from HDD\n", FileName.Get());
 		//if (Cache) XMLCache.Add(FileName.Get(), XML); //!!!???mangle/unmangle path to avoid duplicates?
@@ -392,8 +378,6 @@ PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 		n_printf("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.Get(), XML->GetErrorStr1(), XML->GetErrorStr2());
 		XML = NULL;
 	}
-
-	n_delete_array(Buffer);
 
 	return XML;
 }

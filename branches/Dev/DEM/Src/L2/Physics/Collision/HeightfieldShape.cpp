@@ -1,6 +1,7 @@
 #include "HeightfieldShape.h"
 
 #include <Data/BTFile.h>
+#include <Data/Buffer.h>
 #include <Data/DataServer.h>
 
 namespace Physics
@@ -47,11 +48,11 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 	float WorldW, WorldH;
 	if (FileName.CheckExtension("bt"))
 	{
-		char* Data = NULL;
-		DWORD Size = DataSrv->LoadFileToBuffer(FileName, Data);
+		CBuffer Buffer;
+		DataSrv->LoadFileToBuffer(FileName, Buffer);
 		{
-			CBTFile BTFile(Data);
-			n_assert(BTFile.GetFileSize() == Size);
+			CBTFile BTFile(Buffer.GetPtr());
+			n_assert(BTFile.GetFileSize() == Buffer.GetSize());
 			Width = BTFile.GetWidth();
 			Height = BTFile.GetHeight();
 			WorldW = (float)(BTFile.GetRightExtent() - BTFile.GetLeftExtent());
@@ -59,7 +60,6 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 			pHeights = (float*)n_malloc(BTFile.GetHeightCount() * sizeof(float));
 			BTFile.GetHeights(pHeights);
 		}
-		n_free(Data);
 	}
 	else
 	{

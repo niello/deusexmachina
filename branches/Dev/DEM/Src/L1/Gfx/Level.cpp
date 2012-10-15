@@ -11,7 +11,6 @@
 namespace Graphics
 {
 ImplementRTTI(Graphics::CLevel, Core::CRefCounted);
-ImplementFactory(Graphics::CLevel);
 
 CLevel::CLevel()
 {

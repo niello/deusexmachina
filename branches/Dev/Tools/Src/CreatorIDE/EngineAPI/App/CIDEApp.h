@@ -17,6 +17,13 @@ namespace App
 {
 class CCSharpUIEventHandler;
 
+struct CLevelInfo
+{
+	nString						ID;
+	nArray<CConvexVolume>		ConvexVolumes;
+	nArray<COffmeshConnection>	OffmeshConnections;
+};
+
 #define CIDEApp App::CCIDEApp::Instance()
 
 class CCIDEApp
@@ -27,16 +34,19 @@ private:
 
 	CAppFSM						FSM;
 	HWND						ParentHwnd;
+	CCSharpUIEventHandler*		pUIEventHandler;
+	CNavMeshBuilder				NavMeshBuilder;
 
 	Ptr<Story::CQuestSystem>	QuestSystem;
 	Ptr<Story::CDlgSystem>		DlgSystem;
 	Ptr<Items::CItemManager>	ItemManager;
 
-	CCSharpUIEventHandler*		pUIEventHandler;
-
 public:
 
 	Data::PParams				AttrDescs;		// DB attributes additional info for UI and editor
+
+	DB::PDataset				Levels;
+	CLevelInfo					CurrLevel;
 
 	Game::PEntity				EditorCamera;
 	Game::PEntity				CurrentEntity;	// Entity on which entity operations are performed (attr read/write etc)
@@ -45,10 +55,6 @@ public:
 	// Ground constraints for the selected entity transformation
 	bool						DenyEntityAboveGround;
 	bool						DenyEntityBelowGround;
-
-	// Navigation params //???to some singleton navmesh builder?
-	nArray<CConvexVolume>		ConvexVolumes;
-	nArray<COffmeshConnection>	OffmeshConnections;
 
 	CCIDEApp();
 	~CCIDEApp();
@@ -66,8 +72,12 @@ public:
 	bool	SetEditorTool(LPCSTR Name); //!!!RTTI!
 	bool	SelectEntity(Game::PEntity Entity);
 	void	ClearSelectedEntities();
-
 	void	ApplyGroundConstraints(const Game::CEntity& Entity, vector3& Position);
+
+	bool	LoadLevel(const nString& ID);
+	void	UnloadLevel(bool SaveChanges);
+	int		GetLevelCount() const;
+	bool	BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb);
 
 	CCSharpUIEventHandler* GetUIEventHandler() { return pUIEventHandler; }
 };

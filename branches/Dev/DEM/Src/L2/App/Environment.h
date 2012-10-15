@@ -56,7 +56,6 @@ protected:
 
 	nRef<nResourceServer>			refResourceServer;
 
-	Core::CCoreServer*				CoreServer;
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
 	Ptr<Data::CDataServer>			DataServer;

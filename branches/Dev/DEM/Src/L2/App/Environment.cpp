@@ -20,7 +20,7 @@ nNebulaUsePackage(ndirect3d9);
 namespace App
 {
 
-CEnvironment::CEnvironment(): CoreServer(NULL), AllowMultipleInstances(false)
+CEnvironment::CEnvironment(): AllowMultipleInstances(false)
 {
 }
 //---------------------------------------------------------------------
@@ -43,10 +43,10 @@ bool CEnvironment::InitCore()
 	if (!SC.CheckDirectSound(GetAppName(), "Cannot initialize DirectSound!")) FAIL;
 #endif
 
-	CoreServer = n_new(Core::CCoreServer(AppVendor, AppName));
+	n_new(Core::CCoreServer());
 	nKernelServer::Instance()->AddPackage(nnebula);
 	nKernelServer::Instance()->AddPackage(ndirect3d9);
-	CoreServer->Open();
+	CoreSrv->Open();
 
 	refResourceServer = n_new(nResourceServer);
 	refResourceServer->AddRef();
@@ -76,9 +76,8 @@ void CEnvironment::ReleaseCore()
 	CoreLogger->Close();
 	n_delete(CoreLogger);
 
-	CoreServer->Close();
-	n_delete(CoreServer);
-	CoreServer = NULL;
+	CoreSrv->Close();
+	n_delete(CoreSrv);
 }
 //---------------------------------------------------------------------
 

@@ -59,7 +59,8 @@ public:
 	void			SetAssign(const nString& Assign, const nString& Path);
 	nString			GetAssign(const nString& Assign);
 	nString			ManglePath(const nString& Path);
-	DWORD			LoadFileToBuffer(const nString& FileName, char*& Buffer);
+	//DWORD			LoadFileToBuffer(const nString& FileName, char*& Buffer);
+	bool			LoadFileToBuffer(const nString& FileName, CBuffer& Buffer);
 	
 	PParams			LoadHRD(const nString& FileName, bool Cache = true);
 	PParams			ReloadHRD(const nString& FileName, bool Cache = true);	// Force reloading from file

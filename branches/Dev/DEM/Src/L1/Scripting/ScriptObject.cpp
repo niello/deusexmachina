@@ -176,16 +176,10 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 
 EExecStatus CScriptObject::LoadScriptFile(const nString& FileName)
 {
-	char* Buffer;
-	int BytesRead = DataSrv->LoadFileToBuffer(FileName, Buffer);
-	if (!BytesRead)
-	{
-		BytesRead = DataSrv->LoadFileToBuffer("scripts:" + FileName + ".lua", Buffer);
-		if (!BytesRead) return Error;
-	}
-	EExecStatus Result = LoadScript(Buffer, BytesRead);
-	n_free(Buffer);
-	return Result;
+	CBuffer Buffer;
+	if (!DataSrv->LoadFileToBuffer(FileName, Buffer) &&
+		!DataSrv->LoadFileToBuffer("scripts:" + FileName + ".lua", Buffer)) return Error;
+	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
 

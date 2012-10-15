@@ -20,7 +20,6 @@ class CCameraEntity;
 class CLevel: public Core::CRefCounted
 {
 	DeclareRTTI;
-	DeclareFactory(CLevel);
 
 private:
 
@@ -66,8 +65,6 @@ public:
 	void			SetCamera(CCameraEntity* pCamera);
 	CCameraEntity*	GetCamera() const { return CurrCamera.get_unsafe(); }
 };
-
-RegisterFactory(CLevel);
 
 }
 

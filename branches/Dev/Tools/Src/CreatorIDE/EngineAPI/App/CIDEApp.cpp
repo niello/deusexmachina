@@ -3,6 +3,9 @@
 #include "AppStateEditor.h"
 #include <App/Environment.h>
 #include <App/CSharpUIEventHandler.h>
+#include <Game/Mgr/EntityManager.h>
+#include <Game/Mgr/StaticEnvManager.h>
+#include <Game/Mgr/FocusManager.h>
 #include <Loading/EntityFactory.h>
 #include <Loading/EntityLoader.h>
 #include <SI/SI_L1.h>
@@ -15,7 +18,16 @@
 #include <Physics/Prop/PropAbstractPhysics.h>
 #include <Physics/CharEntity.h>
 #include <Physics/Composite.h>
+#include <Data/Streams/FileStream.h>
 #include <gfx2/ngfxserver2.h>
+
+namespace Attr
+{
+	DeclareAttr(Name);
+	DeclareAttr(Center);
+	DeclareAttr(Extents);
+	DeclareAttr(NavMesh);
+}
 
 namespace App
 {
@@ -140,12 +152,31 @@ bool CCIDEApp::Open()
 
 	pUIEventHandler = n_new(CCSharpUIEventHandler);
 
+	DB::PTable Tbl;
+	int TblIdx = LoaderSrv->GetGameDB()->FindTableIndex("Levels");
+	if (TblIdx == INVALID_INDEX)
+	{
+		Tbl = DB::CTable::Create();
+		Tbl->SetName("Levels");
+		Tbl->AddColumn(DB::CColumn(Attr::GUID, DB::CColumn::Primary));
+		Tbl->AddColumn(Attr::Name);
+		Tbl->AddColumn(Attr::Center);
+		Tbl->AddColumn(Attr::Extents);
+		Tbl->AddColumn(Attr::NavMesh);
+		LoaderSrv->GetGameDB()->AddTable(Tbl);
+	}
+	else Tbl = LoaderSrv->GetGameDB()->GetTable(TblIdx);
+	Levels = Tbl->CreateDataset();
+	Levels->PerformQuery();
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CCIDEApp::Close()
 {
+	Levels = NULL;
+
 	n_delete(pUIEventHandler);
 	pUIEventHandler = NULL;
 
@@ -229,6 +260,154 @@ void CCIDEApp::ApplyGroundConstraints(const Game::CEntity& Entity, vector3& Posi
 	if ((DenyEntityAboveGround && MinY > Info.WorldHeight) ||
 		(DenyEntityBelowGround && MinY < Info.WorldHeight))
 		Position.y = Info.WorldHeight - LocalMinY;
+}
+//---------------------------------------------------------------------
+
+//???!!!CStrID!
+bool CCIDEApp::LoadLevel(const nString& ID)
+{
+	UnloadLevel(true);
+	if (!LoaderSrv->LoadLevel(ID)) FAIL;
+
+	// load level info
+	CurrLevel.ID = ID;
+
+	EntityMgr->AttachEntity(EditorCamera);
+	FocusMgr->SetFocusEntity(EditorCamera);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CCIDEApp::UnloadLevel(bool SaveChanges)
+{
+	ClearSelectedEntities();
+
+	if (SaveChanges)
+	{
+		// save level info
+		// save navigation mesh
+		LoaderSrv->CommitChangesToDB();
+	}
+
+	LoaderSrv->UnloadLevel();
+}
+//---------------------------------------------------------------------
+
+int CCIDEApp::GetLevelCount() const
+{
+	return Levels->GetRowCount();
+}
+//---------------------------------------------------------------------
+
+bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb)
+{
+	//!!!Check if no level is loaded or no geom to process!
+	//if (!m_geom || !m_geom->getMesh())
+	//{
+	//	Ctx.log(RC_LOG_ERROR, "buildNavigation: Input mesh is not specified.");
+	//	FAIL;
+	//}
+
+	//m_cellSize = 0.3f;
+	//m_cellHeight = 0.2f;
+	//m_agentHeight = 2.0f;
+	//m_agentRadius = 0.6f;
+	//m_agentMaxClimb = 0.9f;
+	//m_agentMaxSlope = 45.0f;
+	//m_regionMinSize = 8;
+	//m_regionMergeSize = 20;
+	//m_monotonePartitioning = false;
+	//m_edgeMaxLen = 12.0f;
+	//m_edgeMaxError = 1.3f;
+	//m_vertsPerPoly = 6.0f;
+	//m_detailSampleDist = 6.0f;
+	//m_detailSampleMaxError = 1.0f;
+
+	rcConfig Cfg;
+	memset(&Cfg, 0, sizeof(Cfg));
+
+	//!!!need to calc from geometry selected!
+	const bbox3& Box = LoaderSrv->GetCurrentLevelBox();
+	rcVcopy(Cfg.bmin, Box.vmin.v);
+	rcVcopy(Cfg.bmax, Box.vmax.v);
+
+	float BoxSizeX = Box.vmax.x - Box.vmin.x;
+	float BoxSizeZ = Box.vmax.z - Box.vmin.z;
+	float BoxSizeMax = n_max(BoxSizeX, BoxSizeZ);
+	Cfg.cs = BoxSizeMax * 0.00029f; // nearly one over 3450.f, empirically detected
+	Cfg.ch = 0.2f;
+	Cfg.walkableSlopeAngle = 45.0f;
+	Cfg.maxEdgeLen = (int)(12.0f / Cfg.cs);
+	Cfg.maxSimplificationError = 1.3f;
+
+	// empirically detected, one over 133.(3)f
+	int Factor = (int)n_floor(BoxSizeMax * 0.0075f + 0.5f); // 0.5f to round 1.5 to 2
+	Cfg.minRegionArea = (int)rcSqr(Factor);					// Note: area = size*size
+
+	Cfg.mergeRegionArea = (int)rcSqr(20);				// Note: area = size*size
+	Cfg.maxVertsPerPoly = DT_VERTS_PER_POLYGON;
+	Cfg.detailSampleDist = 6.0f < 0.9f ? 0.f : Cfg.cs * 6.0f;
+	Cfg.detailSampleMaxError = Cfg.ch * 1.0f;
+
+	n_printf("NavMesh building started\n");
+
+	if (!NavMeshBuilder.Init(Cfg, MaxClimb)) FAIL;
+
+	n_printf("NavMesh building Init done\n");
+
+	const nArray<Game::PEntity>& Ents = EntityMgr->GetEntities();
+	for (int i = 0; i < Ents.Size(); ++i)
+	{
+		Game::CEntity& Ent = *Ents[i];
+		if (StaticEnvMgr->IsEntityStatic(Ent))
+			NavMeshBuilder.AddGeometry(Ent);
+	}
+
+	n_printf("NavMesh geom. added\n");
+
+	for (int i = 0; i < CurrLevel.OffmeshConnections.Size(); ++i)
+		NavMeshBuilder.AddOffmeshConnection(CurrLevel.OffmeshConnections[i]);
+
+	if (!NavMeshBuilder.PrepareGeometry(AgentRadius, AgentHeight)) FAIL;
+
+	n_printf("NavMesh building PrepareGeometry done\n");
+
+	for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+		NavMeshBuilder.ApplyConvexVolumeArea(CurrLevel.ConvexVolumes[i]);
+
+	uchar* pData;
+	int Size;
+	if (!NavMeshBuilder.Build(pData, Size)) FAIL;
+
+	n_printf("NavMesh building Build done\n");
+
+	//!!!can ignore volumes that are used only for area type!
+	// Detect poly list for each volume
+	for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+	{
+		CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
+		//NavMeshBuilder.BuildShapePolyList(Vol, ..., ...);
+	}
+
+	nString Path;
+	Path.Format("export:Nav/%s.nm", pRsrcName);
+	n_printf("NavMesh file path: %s\n", DataSrv->ManglePath(Path).Get());
+	if (DataSrv->CreateDirectory(Path.ExtractDirName()))
+	{
+		Data::CFileStream File;
+		if (File.Open(Path.Get(), Data::SAM_WRITE))
+		{
+			//!!!Save data!
+			File.Write(pData, Size);
+			File.Close();
+			n_printf("NavMesh saved\n");
+		}
+	}
+
+	NavMeshBuilder.Cleanup();
+
+	OK;
 }
 //---------------------------------------------------------------------
 
