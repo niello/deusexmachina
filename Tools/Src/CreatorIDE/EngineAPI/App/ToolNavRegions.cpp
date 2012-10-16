@@ -12,53 +12,6 @@ namespace App
 {
 //ImplementRTTI(App::CToolNavRegions, App::IEditorTool);
 
-// Returns true if 'c' is left of line 'a'-'b'.
-inline bool left(const float* a, const float* b, const float* c)
-{ 
-	const float u1 = b[0] - a[0];
-	const float v1 = b[2] - a[2];
-	const float u2 = c[0] - a[0];
-	const float v2 = c[2] - a[2];
-	return u1 * v2 - v1 * u2 < 0;
-}
-//---------------------------------------------------------------------
-
-// Returns true if 'a' is more lower-left than 'b'.
-inline bool cmppt(const float* a, const float* b)
-{
-	if (a[0] < b[0]) return true;
-	if (a[0] > b[0]) return false;
-	if (a[2] < b[2]) return true;
-	if (a[2] > b[2]) return false;
-	return false;
-}
-//---------------------------------------------------------------------
-
-static int ConvexHull(const vector3* pts, int npts, int* out)
-{
-	// Find lower-leftmost point.
-	int hull = 0;
-	for (int i = 1; i < npts; ++i)
-		if (cmppt(pts[i].v, pts[hull].v))
-			hull = i;
-	// Gift wrap hull.
-	int endpt = 0;
-	int i = 0;
-	do
-	{
-		out[i++] = hull;
-		endpt = 0;
-		for (int j = 1; j < npts; ++j)
-			if (hull == endpt || left(pts[hull].v, pts[endpt].v, pts[j].v))
-				endpt = j;
-		hull = endpt;
-	}
-	while (endpt != out[0]);
-	
-	return i;
-}
-//---------------------------------------------------------------------
-
 static int IsPointInPoly(int nvert, const vector3* verts, const vector3& p)
 {
 	int i, j, c = 0;

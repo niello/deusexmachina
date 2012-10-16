@@ -6,6 +6,7 @@
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/StaticEnvManager.h>
 #include <Game/Mgr/FocusManager.h>
+#include <Game/Mgr/EnvQueryManager.h>
 #include <AI/AIServer.h>
 #include <AI/Navigation/NavMesh.h>
 #include <DetourNavMesh.h> // For max verts per poly const
@@ -86,5 +87,18 @@ API void Levels_SaveDB(const char* LevelID)
 API bool Levels_BuildNavMesh(const char* RsrcName, float AgentRadius, float AgentHeight, float MaxClimb)
 {
 	return CIDEApp->BuildNavMesh(RsrcName, AgentRadius, AgentHeight, MaxClimb);
+}
+//---------------------------------------------------------------------
+
+API int Levels_GetNavPolyUnderMouse()
+{
+	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(0.3f);
+	const dtQueryFilter* pNavFilter = AISrv->GetDefaultNavQueryFilter();
+	if (!pNavQuery || !pNavFilter) return 0;
+
+	dtPolyRef Ref;
+	const float Extents[3] = { 0.f, 3.f, 0.f };
+	pNavQuery->findNearestPoly(EnvQueryMgr->GetMousePos3D().v, Extents, pNavFilter, &Ref, NULL);
+	return Ref;
 }
 //---------------------------------------------------------------------

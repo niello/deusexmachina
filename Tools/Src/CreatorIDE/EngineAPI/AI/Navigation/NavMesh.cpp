@@ -11,6 +11,53 @@
 
 using namespace Properties;
 
+// Returns true if 'c' is left of line 'a'-'b'.
+inline bool left(const float* a, const float* b, const float* c)
+{ 
+	const float u1 = b[0] - a[0];
+	const float v1 = b[2] - a[2];
+	const float u2 = c[0] - a[0];
+	const float v2 = c[2] - a[2];
+	return u1 * v2 - v1 * u2 < 0;
+}
+//---------------------------------------------------------------------
+
+// Returns true if 'a' is more lower-left than 'b'.
+inline bool cmppt(const float* a, const float* b)
+{
+	if (a[0] < b[0]) return true;
+	if (a[0] > b[0]) return false;
+	if (a[2] < b[2]) return true;
+	if (a[2] > b[2]) return false;
+	return false;
+}
+//---------------------------------------------------------------------
+
+int ConvexHull(const vector3* pts, int npts, int* out)
+{
+	// Find lower-leftmost point.
+	int hull = 0;
+	for (int i = 1; i < npts; ++i)
+		if (cmppt(pts[i].v, pts[hull].v))
+			hull = i;
+	// Gift wrap hull.
+	int endpt = 0;
+	int i = 0;
+	do
+	{
+		out[i++] = hull;
+		endpt = 0;
+		for (int j = 1; j < npts; ++j)
+			if (hull == endpt || left(pts[hull].v, pts[endpt].v, pts[j].v))
+				endpt = j;
+		hull = endpt;
+	}
+	while (endpt != out[0]);
+	
+	return i;
+}
+//---------------------------------------------------------------------
+
 CNavMeshBuilder::CNavMeshBuilder():
 	pHF(NULL),
 	pCompactHF(NULL),
@@ -458,7 +505,9 @@ bool CNavMeshBuilder::GetNavMeshData(uchar*& pOutData, int& OutSize)
 	// Update poly flags from areas.
 	for (int i = 0; i < pMesh->npolys; ++i)
 	{
-		if (pMesh->areas[i] == RC_WALKABLE_AREA) pMesh->flags[i] = NAV_FLAG_NORMAL;
+		//if (pMesh->areas[i] == RC_WALKABLE_AREA) pMesh->flags[i] = NAV_FLAG_NORMAL;
+		//else if (pMesh->areas[i] == NAV_AREA_NAMED) pMesh->flags[i] = NAV_FLAG_NORMAL;
+		pMesh->flags[i] = (pMesh->areas[i] == RC_NULL_AREA) ? 0 : NAV_FLAG_NORMAL;
 	}
 
 	//!!!Update ofmesh poly flags if not set!
@@ -509,66 +558,6 @@ bool CNavMeshBuilder::GetNavMeshData(uchar*& pOutData, int& OutSize)
 	//duLogBuildTimes(*Ctx, Ctx.getAccumulatedTime(RC_TIMER_TOTAL));
 	Ctx.log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", pMesh->nverts, pMesh->npolys);
 
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CNavMeshBuilder::GetRegionData(CConvexVolume& Volume, Data::CBuffer& OutData)
-{
-	/*
-	dtNavMesh* pNavMesh = dtAllocNavMesh();
-	if (!pNavMesh) FAIL;
-	if (dtStatusFailed(pNavMesh->init(pData, Size, 0)))
-	{
-		dtFreeNavMesh(pNavMesh);
-		FAIL;
-	}
-	dtNavMeshQuery* pQuery = dtAllocNavMeshQuery();
-	if (!pQuery)
-	{
-		dtFreeNavMesh(pNavMesh);
-		FAIL;
-	}
-	if (dtStatusFailed(pQuery->init(pNavMesh, 512)))
-	{
-		dtFreeNavMeshQuery(pQuery);
-		dtFreeNavMesh(pNavMesh);
-		FAIL;
-	}
-
-	const dtQueryFilter* pNavFilter = AISrv->GetDefaultNavQueryFilter();
-
-	// Detect poly list for each volume
-	for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
-	{
-		CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
-
-		const int MAX_POLYS = 256;
-		dtPolyRef	PolyRefs[MAX_POLYS];
-		dtPolyRef	ParentRefs[MAX_POLYS];
-		int			PolyCount;
-
-		//!!!Vertices must be CCW!
-
-		vector3 PointInVolume = (Vol.Vertices[0] + Vol.Vertices[1] + Vol.Vertices[2]) / 3.f;
-		dtPolyRef StartPoly;
-		static const vector3 Probe(0.f, Vol.MaxY - Vol.MinY, 0.f);
-		pQuery->findNearestPoly(PointInVolume.v, Probe.v, pNavFilter, &StartPoly, NULL);
-
-		if (StartPoly &&
-			dtStatusSucceed(pQuery->findPolysAroundShape(StartPoly, Vol.Vertices->v, Vol.VertexCount, pNavFilter,
-				PolyRefs, ParentRefs, NULL, &PolyCount, MAX_POLYS)))
-		{
-			uchar Area;
-			pNavMesh->getPolyArea(PolyRefs[0], &Area);
-			// save
-			int xxx = 0;
-		}
-	}
-
-	dtFreeNavMeshQuery(pQuery);
-	dtFreeNavMesh(pNavMesh);
-*/
 	OK;
 }
 //---------------------------------------------------------------------
