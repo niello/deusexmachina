@@ -12,8 +12,6 @@ namespace App
 {
 //ImplementRTTI(App::CToolNavRegions, App::IEditorTool);
 
-int CToolNavRegions::ConvexUID = 0; //!!!Init to the max existing UID + 1 on level nav data loaded!
-
 // Returns true if 'c' is left of line 'a'-'b'.
 inline bool left(const float* a, const float* b, const float* c)
 { 
@@ -134,7 +132,8 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 				Vol.MinY -= BoxDescent;
 				Vol.MaxY = Vol.MinY + BoxHeight;
 				Vol.Area = Area;
-				Vol.UID = ConvexUID++;
+
+				CIDEApp->CurrLevel.ConvexChanged = true;
 
 				//if (PolyOffset > 0.01f)
 				//{
@@ -166,7 +165,11 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 			if (IsPointInPoly(Vol.VertexCount, Vol.Vertices, Pt) && Pt.y >= Vol.MinY && Pt.y <= Vol.MaxY)
 				NearestIdx = i;
 		}
-		if (NearestIdx != -1) CIDEApp->CurrLevel.ConvexVolumes.Erase(NearestIdx);
+		if (NearestIdx != -1)
+		{
+			CIDEApp->CurrLevel.ConvexVolumes.Erase(NearestIdx);
+			CIDEApp->CurrLevel.ConvexChanged = true;
+		}
 	}
 
 	OK;

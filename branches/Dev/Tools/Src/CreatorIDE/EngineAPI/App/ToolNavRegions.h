@@ -19,8 +19,6 @@ class CToolNavRegions: public IEditorTool
 
 protected:
 
-	static int ConvexUID;
-
 	vector3	Points[MAX_CONVEXVOL_PTS];
 	int		PointCount;
 	int		Hull[MAX_CONVEXVOL_PTS];
@@ -39,7 +37,7 @@ public:
 	float	BoxHeight;
 	float	BoxDescent;
 
-	CToolNavRegions(): Area(1), BoxHeight(6.0f), BoxDescent(1.0f), PointCount(0), HullSize(0) {}
+	CToolNavRegions(): Area(NAV_AREA_NAMED), BoxHeight(6.0f), BoxDescent(1.0f), PointCount(0), HullSize(0) {}
 	//virtual ~CToolNavRegions() {}
 
 	virtual void Activate();

@@ -4,6 +4,7 @@
 
 #include <App/EditorTool.h>
 #include <Events/Events.h>
+#include <Recast.h> // For RC_WALKABLE_AREA
 
 // Offmesh connection tool for the navigation mesh.
 // This tool is based on ConvexVolumeTool from Recast Navigation.
@@ -17,11 +18,10 @@ class CToolNavOffmesh: public IEditorTool
 
 protected:
 
-	static int OffmeshUID;
-
 	vector3	HitPos;
 	bool	HitPosSet;
 	bool	Bidirectional;
+	uchar	Area;
 
 	int		MBDownX;
 	int		MBDownY;
@@ -31,7 +31,7 @@ protected:
 
 public:
 
-	CToolNavOffmesh(): HitPosSet(false), Bidirectional(true) {}
+	CToolNavOffmesh(): HitPosSet(false), Bidirectional(true), Area(RC_WALKABLE_AREA) {}
 	//virtual ~CToolNavOffmesh() {}
 
 	virtual void Activate();

@@ -38,6 +38,7 @@ using namespace Properties;
 CCIDEApp::CCIDEApp():
 	ParentHwnd(NULL),
 	pUIEventHandler(NULL),
+	pNavMeshBuilder(NULL),
 	DenyEntityAboveGround(false),
 	DenyEntityBelowGround(false)
 {
@@ -75,8 +76,10 @@ bool CCIDEApp::Open()
 	nString Proj = DataSrv->ManglePath("proj:");
 	nString Data = Proj + "/Content/Project";
 	nString Export = Proj + "/Content/export";
+	nString Src = Proj + "/Content/Src";
 	DataSrv->SetAssign("data", Data);
 	DataSrv->SetAssign("export", Export);
+	DataSrv->SetAssign("src", Src);
 	DataSrv->SetAssign("renderpath", Home + "/Shaders/");
 	DataSrv->SetAssign("scripts", Home + "/Scripts/");
 	DataSrv->SetAssign("physics", Export + "/physics/");
@@ -151,6 +154,7 @@ bool CCIDEApp::Open()
 	EditorCamera->Set<matrix44>(Attr::Transform, Tfm);
 
 	pUIEventHandler = n_new(CCSharpUIEventHandler);
+	pNavMeshBuilder = n_new(CNavMeshBuilder);
 
 	DB::PTable Tbl;
 	int TblIdx = LoaderSrv->GetGameDB()->FindTableIndex("Levels");
@@ -177,6 +181,8 @@ void CCIDEApp::Close()
 {
 	Levels = NULL;
 
+	n_delete(pNavMeshBuilder);
+	pNavMeshBuilder = NULL;
 	n_delete(pUIEventHandler);
 	pUIEventHandler = NULL;
 
@@ -269,8 +275,19 @@ bool CCIDEApp::LoadLevel(const nString& ID)
 	UnloadLevel(true);
 	if (!LoaderSrv->LoadLevel(ID)) FAIL;
 
-	// load level info
+	Data::CFileStream File;
+	if (File.Open("src:Levels/" + ID + "/Info.lvl", Data::SAM_READ))
+	{
+		int Count = File.Get<int>();
+		if (Count) File.Read(CurrLevel.ConvexVolumes.Reserve(Count), Count * sizeof(CConvexVolume));
+		Count = File.Get<int>();
+		if (Count) File.Read(CurrLevel.OffmeshConnections.Reserve(Count), Count * sizeof(COffmeshConnection));
+		File.Close();
+	}
 	CurrLevel.ID = ID;
+	CurrLevel.ConvexChanged = true;
+	CurrLevel.OffmeshChanged = true;
+	InvalidateNavGeometry();
 
 	EntityMgr->AttachEntity(EditorCamera);
 	FocusMgr->SetFocusEntity(EditorCamera);
@@ -283,12 +300,31 @@ void CCIDEApp::UnloadLevel(bool SaveChanges)
 {
 	ClearSelectedEntities();
 
-	if (SaveChanges)
+	if (SaveChanges && CurrLevel.ID.Length() > 0)
 	{
-		// save level info
-		// save navigation mesh
+		DataSrv->CreateDirectory("src:Levels/" + CurrLevel.ID);
+
+		Data::CFileStream File;
+		if (File.Open("src:Levels/" + CurrLevel.ID + "/Info.lvl", Data::SAM_WRITE))
+		{
+			int Count = CurrLevel.ConvexVolumes.Size();
+			File.Put<int>(Count);
+			if (Count) File.Write(CurrLevel.ConvexVolumes.Begin(), Count * sizeof(CConvexVolume));
+			Count = CurrLevel.OffmeshConnections.Size();
+			File.Put<int>(Count);
+			if (Count) File.Write(CurrLevel.OffmeshConnections.Begin(), Count * sizeof(COffmeshConnection));
+			File.Close();
+		}
+
+		//!!!save navigation mesh, ALSO save on build (export)
+		//don't forget to save level's ref to nav mesh resource
+		
 		LoaderSrv->CommitChangesToDB();
 	}
+
+	CurrLevel.ID = NULL;
+	CurrLevel.ConvexVolumes.Clear();
+	CurrLevel.OffmeshConnections.Clear();
 
 	LoaderSrv->UnloadLevel();
 }
@@ -302,12 +338,7 @@ int CCIDEApp::GetLevelCount() const
 
 bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb)
 {
-	//!!!Check if no level is loaded or no geom to process!
-	//if (!m_geom || !m_geom->getMesh())
-	//{
-	//	Ctx.log(RC_LOG_ERROR, "buildNavigation: Input mesh is not specified.");
-	//	FAIL;
-	//}
+	if (CurrLevel.ID.Length() == 0) FAIL;
 
 	//m_cellSize = 0.3f;
 	//m_cellHeight = 0.2f;
@@ -352,62 +383,111 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 
 	n_printf("NavMesh building started\n");
 
-	if (!NavMeshBuilder.Init(Cfg, MaxClimb)) FAIL;
+	//!!! || bbox changed || settings like cs & ch changed!
+	bool ResetGeometry = CurrLevel.NavGeometryChanged;
 
-	n_printf("NavMesh building Init done\n");
-
-	const nArray<Game::PEntity>& Ents = EntityMgr->GetEntities();
-	for (int i = 0; i < Ents.Size(); ++i)
+	if (ResetGeometry)
 	{
-		Game::CEntity& Ent = *Ents[i];
-		if (StaticEnvMgr->IsEntityStatic(Ent))
-			NavMeshBuilder.AddGeometry(Ent);
-	}
+		if (!pNavMeshBuilder->Init(Cfg, MaxClimb)) FAIL;
 
-	n_printf("NavMesh geom. added\n");
+		n_printf("pNavMeshBuilder->Init OK\n");
 
-	for (int i = 0; i < CurrLevel.OffmeshConnections.Size(); ++i)
-		NavMeshBuilder.AddOffmeshConnection(CurrLevel.OffmeshConnections[i]);
-
-	if (!NavMeshBuilder.PrepareGeometry(AgentRadius, AgentHeight)) FAIL;
-
-	n_printf("NavMesh building PrepareGeometry done\n");
-
-	for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
-		NavMeshBuilder.ApplyConvexVolumeArea(CurrLevel.ConvexVolumes[i]);
-
-	uchar* pData;
-	int Size;
-	if (!NavMeshBuilder.Build(pData, Size)) FAIL;
-
-	n_printf("NavMesh building Build done\n");
-
-	//!!!can ignore volumes that are used only for area type!
-	// Detect poly list for each volume
-	for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
-	{
-		CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
-		//NavMeshBuilder.BuildShapePolyList(Vol, ..., ...);
-	}
-
-	nString Path;
-	Path.Format("export:Nav/%s.nm", pRsrcName);
-	n_printf("NavMesh file path: %s\n", DataSrv->ManglePath(Path).Get());
-	if (DataSrv->CreateDirectory(Path.ExtractDirName()))
-	{
-		Data::CFileStream File;
-		if (File.Open(Path.Get(), Data::SAM_WRITE))
+		const nArray<Game::PEntity>& Ents = EntityMgr->GetEntities();
+		for (int i = 0; i < Ents.Size(); ++i)
 		{
-			//!!!Save data!
-			File.Write(pData, Size);
-			File.Close();
-			n_printf("NavMesh saved\n");
+			Game::CEntity& Ent = *Ents[i];
+			if (StaticEnvMgr->IsEntityStatic(Ent))
+				pNavMeshBuilder->AddGeometry(Ent);
 		}
+
+		CurrLevel.NavGeometryChanged = false;
+
+		n_printf("NavMesh geom. added\n");
 	}
 
-	NavMeshBuilder.Cleanup();
+	// Now only one R+H at a time is allowed, later need a set of pCompactHFs inside an NMB
+	bool ReprepareGeometry =
+		ResetGeometry || AgentRadius != pNavMeshBuilder->GetRadius() || AgentHeight != pNavMeshBuilder->GetHeight();
+
+	if (ReprepareGeometry && !pNavMeshBuilder->PrepareGeometry(AgentRadius, AgentHeight)) FAIL;
+
+	n_printf("pNavMeshBuilder->PrepareGeometry OK\n");
+
+	bool RebuildMesh = ReprepareGeometry || CurrLevel.ConvexChanged;
+
+	if (RebuildMesh)
+	{
+		if (!ReprepareGeometry) pNavMeshBuilder->ResetAllArea();
+
+		for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+			pNavMeshBuilder->ApplyConvexVolumeArea(CurrLevel.ConvexVolumes[i]);
+		CurrLevel.ConvexChanged = false;
+	}
+
+	if (RebuildMesh)
+	{
+		if (!pNavMeshBuilder->BuildNavMesh()) FAIL;
+		if (!pNavMeshBuilder->BuildDetailMesh()) FAIL;
+	}
+
+	bool DataChanged = RebuildMesh | CurrLevel.OffmeshChanged;
+
+	if (CurrLevel.OffmeshChanged)
+	{
+		pNavMeshBuilder->ClearOffmeshConnections();
+		for (int i = 0; i < CurrLevel.OffmeshConnections.Size(); ++i)
+			pNavMeshBuilder->AddOffmeshConnection(CurrLevel.OffmeshConnections[i]);
+		CurrLevel.OffmeshChanged = false;
+	}
+
+	if (DataChanged)
+	{
+		// Can't use CBuffer due to dtCreateNavMeshData implementation
+		uchar* pData;
+		int Size;
+		if (!pNavMeshBuilder->GetNavMeshData(pData, Size)) FAIL;
+
+		//???free pData after writing?
+
+		n_printf("pNavMeshBuilder->GetNavMeshData OK\n");
+
+		// Detect poly list for each volume
+		for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+		{
+			CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
+			if (Vol.Area = NAV_AREA_NAMED)
+			{
+				Data::CBuffer Buffer;
+				pNavMeshBuilder->GetRegionData(Vol, Buffer);
+			}
+		}
+
+		nString Path;
+		Path.Format("export:Nav/%s.nm", pRsrcName);
+		n_printf("NavMesh file path: %s\n", DataSrv->ManglePath(Path).Get());
+		if (DataSrv->CreateDirectory(Path.ExtractDirName()))
+		{
+			Data::CFileStream File;
+			if (File.Open(Path.Get(), Data::SAM_WRITE))
+			{
+				//!!!Save data!
+				File.Write(pData, Size);
+				File.Close();
+				n_printf("NavMesh saved\n");
+			}
+		}
+
+		dtFree(pData);
+	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CCIDEApp::InvalidateNavGeometry()
+{
+	CurrLevel.NavGeometryChanged = true;
+	pNavMeshBuilder->Cleanup();
 }
 //---------------------------------------------------------------------
 

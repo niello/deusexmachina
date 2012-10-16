@@ -35,8 +35,7 @@ CGfxServer::CGfxServer(): _IsOpen(false), FrameID(0)
 
 CGfxServer::~CGfxServer()
 {
-	n_assert(!_IsOpen);
-	n_assert(!CurrLevel.isvalid());
+	n_assert(!_IsOpen && !CurrLevel.isvalid());
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
@@ -203,20 +202,13 @@ void CGfxServer::Trigger()
 bool CGfxServer::BeginRender()
 {
 	n_assert(_IsOpen);
-	n_assert(CurrLevel.isvalid());
+	if (!CurrLevel.isvalid()) FAIL;
 
-	// don't render if currently playing video or display GDI dialog boxes
+	// Don't render if currently playing video or display GDI dialog boxes
 	if (nGfxServer2::Instance()->InDialogBoxMode()) FAIL;
 
-	FrameID++;
-
-	if (!CurrLevel->BeginRender())
-	{
-		//CurrLevel->EndRender();
-		FAIL;
-	}
-
-	OK;
+	++FrameID;
+	return CurrLevel->BeginRender();
 }
 //---------------------------------------------------------------------
 

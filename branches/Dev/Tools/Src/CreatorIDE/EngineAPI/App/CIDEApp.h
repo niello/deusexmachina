@@ -22,6 +22,9 @@ struct CLevelInfo
 	nString						ID;
 	nArray<CConvexVolume>		ConvexVolumes;
 	nArray<COffmeshConnection>	OffmeshConnections;
+	bool						ConvexChanged;
+	bool						OffmeshChanged;
+	bool						NavGeometryChanged;
 };
 
 #define CIDEApp App::CCIDEApp::Instance()
@@ -35,7 +38,7 @@ private:
 	CAppFSM						FSM;
 	HWND						ParentHwnd;
 	CCSharpUIEventHandler*		pUIEventHandler;
-	CNavMeshBuilder				NavMeshBuilder;
+	CNavMeshBuilder*			pNavMeshBuilder;
 
 	Ptr<Story::CQuestSystem>	QuestSystem;
 	Ptr<Story::CDlgSystem>		DlgSystem;
@@ -78,6 +81,7 @@ public:
 	void	UnloadLevel(bool SaveChanges);
 	int		GetLevelCount() const;
 	bool	BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb);
+	void	InvalidateNavGeometry();
 
 	CCSharpUIEventHandler* GetUIEventHandler() { return pUIEventHandler; }
 };

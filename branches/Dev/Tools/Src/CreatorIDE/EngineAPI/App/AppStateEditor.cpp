@@ -13,8 +13,6 @@
 #include <particle/nparticleserver2.h>
 #include <scene/nsceneserver.h>
 
-#include <App/CIDEApp.h> //!!!now only for click cb!
-
 namespace App
 {
 ImplementRTTI(App::CAppStateEditor, App::CStateHandler);
@@ -79,7 +77,6 @@ CStrID CAppStateEditor::OnFrame()
 	if (GfxSrv->BeginRender())
 	{
 		GfxSrv->Render();
-		//UISys->Render();
 		if (RenderDbgGfx) GfxSrv->RenderDebug();
 		if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
 		if (RenderDbgEntities) GameSrv->RenderDebug();

@@ -14,6 +14,7 @@
 
 namespace Data
 {
+class CBuffer;
 typedef Ptr<class CParams> PParams;
 typedef Ptr<class CXMLDocument> PXMLDocument;
 

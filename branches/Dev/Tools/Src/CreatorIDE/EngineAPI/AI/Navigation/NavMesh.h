@@ -5,6 +5,7 @@
 #include <StdDEM.h>
 #include <kernel/nprofiler.h>
 #include <Recast.h>
+#include <DetourNavMeshBuilder.h>
 
 namespace Game
 {
@@ -17,7 +18,13 @@ class nSceneNode;
 class nChunkLodNode;
 class nChunkLodTree;
 
-static const int MAX_CONVEXVOL_PTS = 12;
+const int MAX_CONVEXVOL_PTS = 12;
+
+// Flags
+const ushort NAV_FLAG_NORMAL = 0x01;
+
+// Areas
+const uchar NAV_AREA_NAMED = 1;	// Special area type for named areas
 
 #pragma pack(push, 1)
 struct CConvexVolume
@@ -26,7 +33,6 @@ struct CConvexVolume
 	int		VertexCount;
 	float	MinY;
 	float	MaxY;
-	int		UID;
 	uchar	Area;
 };
 
@@ -35,7 +41,6 @@ struct COffmeshConnection
 	vector3	From;
 	vector3	To;
 	float	Radius;
-	int		UID;
 	ushort	Flags;
 	bool	Bidirectional;
 	uchar	Area;
@@ -77,10 +82,6 @@ class CNavMeshBuilder
 {
 protected:
 
-	rcConfig				Cfg;
-	CRecastContext			Ctx;
-	rcHeightfield*			pHF;
-	rcCompactHeightfield*	pCompactHF;
 	float					Radius;
 	float					Height;
 	float					Climb;
@@ -90,6 +91,15 @@ protected:
 	nClass*					pShapeClass;
 	nClass*					pSkinShapeClass;
 	nClass*					pSkyClass;
+
+	rcConfig				Cfg;
+	CRecastContext			Ctx;
+	rcHeightfield*			pHF;
+	rcCompactHeightfield*	pCompactHF;
+	rcPolyMesh*				pMesh;
+	rcPolyMeshDetail*		pMeshDetail;
+
+	dtNavMeshCreateParams	Params;
 
 	static const int MAX_OFFMESH_CONNECTIONS = 256;
 	float	OffMeshVerts[MAX_OFFMESH_CONNECTIONS * 3 * 2];
@@ -105,19 +115,30 @@ protected:
 
 public:
 
-	CNavMeshBuilder(): pHF(NULL), pCompactHF(NULL), OffMeshCount(0) {}
+	CNavMeshBuilder();
 	~CNavMeshBuilder() { Cleanup(); }
 
 	bool Init(const rcConfig& Config, float MaxClimb);
 	bool AddGeometry(Game::CEntity& Entity, uchar Area = RC_WALKABLE_AREA);
 	bool AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
 	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area = RC_WALKABLE_AREA);
-	bool AddOffmeshConnection(COffmeshConnection& Connection);
 	bool PrepareGeometry(float AgentRadius, float AgentHeight);
+
 	void ApplyConvexVolumeArea(CConvexVolume& Volume);
-	bool Build(uchar*& pOutData, int& OutSize, bool BuildDetail = true, bool MonotonePartitioning = false);
-	bool BuildShapePolyList(CConvexVolume& Volume, uchar*& pOutData, int& OutSize);
+	void ResetAllArea(uchar NewAreaValue = RC_WALKABLE_AREA);
+
+	bool AddOffmeshConnection(COffmeshConnection& Connection);
+	void ClearOffmeshConnections() { OffMeshCount = 0; }
+
+	bool BuildNavMesh(bool MonotonePartitioning = false);
+	bool BuildDetailMesh();
+	bool GetNavMeshData(uchar*& pOutData, int& OutSize);
+	bool GetRegionData(CConvexVolume& Volume, Data::CBuffer& OutData); //???GetRegionPolyList
+
 	void Cleanup();
+
+	float GetRadius() const { return Radius; }
+	float GetHeight() const { return Height; }
 };
 //=====================================================================
 
