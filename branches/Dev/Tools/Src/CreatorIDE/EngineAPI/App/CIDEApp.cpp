@@ -20,6 +20,7 @@
 #include <Physics/Composite.h>
 #include <Data/Streams/FileStream.h>
 #include <gfx2/ngfxserver2.h>
+#include <DetourNavMeshQuery.h>
 
 namespace Attr
 {
@@ -336,9 +337,43 @@ int CCIDEApp::GetLevelCount() const
 }
 //---------------------------------------------------------------------
 
+static int OffsetPoly(const vector3* SrcVerts, int SrcCount, float Offset, vector3* DstVerts, int DstMaxCount)
+{
+	n_assert(SrcVerts && DstVerts && SrcCount > 0 && DstMaxCount > 0);
+
+	vector3 Center;
+	for (int i = 0; i < SrcCount; ++i)
+		Center += SrcVerts[i];
+	Center /= (float)SrcCount;
+
+	vector3* TmpVerts = n_new_array(vector3, SrcCount);
+	for (int i = 0; i < SrcCount; ++i)
+	{
+		TmpVerts[i] = SrcVerts[i] - Center;
+		float Len = TmpVerts[i].len();
+		TmpVerts[i] *= (n_max(0.f, Len + Offset) / Len);
+		TmpVerts[i] += Center;
+	}
+
+	int* Hull = n_new_array(int, SrcCount);
+	int HullSize = ConvexHull(TmpVerts, SrcCount, Hull);
+	if (HullSize > 2 && DstMaxCount >= HullSize)
+	{
+		for (int i = 0; i < HullSize; ++i)
+			DstVerts[i] = TmpVerts[Hull[i]];
+	}
+	else HullSize = 0;
+
+	n_delete_array(Hull);
+	n_delete_array(TmpVerts);
+
+	return HullSize;
+}
+//---------------------------------------------------------------------
+
 bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb)
 {
-	if (CurrLevel.ID.Length() == 0) FAIL;
+	if (!pRsrcName || CurrLevel.ID.Length() == 0) FAIL;
 
 	//m_cellSize = 0.3f;
 	//m_cellHeight = 0.2f;
@@ -389,7 +424,6 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 	if (ResetGeometry)
 	{
 		if (!pNavMeshBuilder->Init(Cfg, MaxClimb)) FAIL;
-
 		n_printf("pNavMeshBuilder->Init OK\n");
 
 		const nArray<Game::PEntity>& Ents = EntityMgr->GetEntities();
@@ -401,7 +435,6 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		}
 
 		CurrLevel.NavGeometryChanged = false;
-
 		n_printf("NavMesh geom. added\n");
 	}
 
@@ -410,7 +443,6 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		ResetGeometry || AgentRadius != pNavMeshBuilder->GetRadius() || AgentHeight != pNavMeshBuilder->GetHeight();
 
 	if (ReprepareGeometry && !pNavMeshBuilder->PrepareGeometry(AgentRadius, AgentHeight)) FAIL;
-
 	n_printf("pNavMeshBuilder->PrepareGeometry OK\n");
 
 	bool RebuildMesh = ReprepareGeometry || CurrLevel.ConvexChanged;
@@ -440,45 +472,117 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		CurrLevel.OffmeshChanged = false;
 	}
 
+	nString Path;
+	Path.Format("export:Nav/%s.nm", pRsrcName);
+	if (!DataSrv->CreateDirectory(Path.ExtractDirName())) FAIL;
+
 	if (DataChanged)
 	{
 		// Can't use CBuffer due to dtCreateNavMeshData implementation
 		uchar* pData;
 		int Size;
 		if (!pNavMeshBuilder->GetNavMeshData(pData, Size)) FAIL;
-
-		//???free pData after writing?
-
 		n_printf("pNavMeshBuilder->GetNavMeshData OK\n");
 
-		// Detect poly list for each volume
+		Data::CFileStream File;
+		if (!File.Open(Path, Data::SAM_WRITE)) FAIL;
+
+		static const int NM_VERSION = 1;
+		File.Put<int>('_NM_');
+		File.Put<int>(NM_VERSION);
+
+		File.Put<int>(1); // NavMesh count
+
+		// Write NavMesh keys & data
+
+		File.Put<float>(AgentRadius);
+		File.Put<float>(AgentHeight);
+		File.Put<int>(Size);
+		File.Write(pData, Size);
+
+		// Detect poly list for each volume and write it
+	
+		//???or use flag, not area? (what if I need named region of grass/water?!
+		DWORD NamedRegionCount = 0;
 		for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+			if (CurrLevel.ConvexVolumes[i].Area == NAV_AREA_NAMED)
+				++NamedRegionCount;
+
+		if (NamedRegionCount)
 		{
-			CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
-			if (Vol.Area = NAV_AREA_NAMED)
+			dtNavMesh* pNavMesh = dtAllocNavMesh();
+			if (!pNavMesh) FAIL;
+			if (dtStatusFailed(pNavMesh->init(pData, Size, 0)))
 			{
-				Data::CBuffer Buffer;
-				pNavMeshBuilder->GetRegionData(Vol, Buffer);
+				dtFreeNavMesh(pNavMesh);
+				FAIL;
 			}
+			dtNavMeshQuery* pQuery = dtAllocNavMeshQuery();
+			if (!pQuery)
+			{
+				dtFreeNavMesh(pNavMesh);
+				FAIL;
+			}
+			if (dtStatusFailed(pQuery->init(pNavMesh, 512)))
+			{
+				dtFreeNavMeshQuery(pQuery);
+				dtFreeNavMesh(pNavMesh);
+				FAIL;
+			}
+
+			const dtQueryFilter* pNavFilter = AISrv->GetDefaultNavQueryFilter();
+
+			File.Put<int>(NamedRegionCount);
+
+			for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
+			{
+				CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
+				if (Vol.Area == NAV_AREA_NAMED)
+				{
+					File.Put<int>(i); // Volume region ID
+
+					const int MAX_POLYS = 256;
+					dtPolyRef	PolyRefs[MAX_POLYS];
+					int			PolyCount;
+
+					// Slightly reduce region to avoid including neighbour polys
+					vector3	VReduced[MAX_CONVEXVOL_PTS];
+					int VCount = OffsetPoly(Vol.Vertices, Vol.VertexCount, -Cfg.cs, VReduced, MAX_CONVEXVOL_PTS);
+
+					// Change Recast CW winding to Detour CCW
+					vector3	Vertices[MAX_CONVEXVOL_PTS];
+					for (int i = 0; i < VCount; ++i)
+						Vertices[i] = VReduced[VCount - i - 1];
+
+					vector3 PointInVolume = (Vertices[0] + Vertices[1] + Vertices[2]) / 3.f;
+
+					dtPolyRef StartPoly;
+					static const vector3 Probe(0.f, Vol.MaxY - Vol.MinY, 0.f); //???or half + small value?
+					pQuery->findNearestPoly(PointInVolume.v, Probe.v, pNavFilter, &StartPoly, NULL);
+
+					if (StartPoly &&
+						dtStatusSucceed(pQuery->findPolysAroundShape(StartPoly, Vertices->v, VCount, pNavFilter,
+							PolyRefs, NULL, NULL, &PolyCount, MAX_POLYS)) &&
+						PolyCount > 0)
+					{
+						File.Put<int>(PolyCount);
+						File.Write(PolyRefs, sizeof(dtPolyRef) * PolyCount);
+					}
+					else File.Put<int>(0); // Poly count
+				}
+			}
+
+			dtFreeNavMeshQuery(pQuery);
+			dtFreeNavMesh(pNavMesh);
 		}
 
-		nString Path;
-		Path.Format("export:Nav/%s.nm", pRsrcName);
-		n_printf("NavMesh file path: %s\n", DataSrv->ManglePath(Path).Get());
-		if (DataSrv->CreateDirectory(Path.ExtractDirName()))
-		{
-			Data::CFileStream File;
-			if (File.Open(Path.Get(), Data::SAM_WRITE))
-			{
-				//!!!Save data!
-				File.Write(pData, Size);
-				File.Close();
-				n_printf("NavMesh saved\n");
-			}
-		}
+		File.Close();
+		n_printf("NavMesh saved\n");
 
 		dtFree(pData);
 	}
+
+	//!!!SET nm resource to the level!
 
 	OK;
 }

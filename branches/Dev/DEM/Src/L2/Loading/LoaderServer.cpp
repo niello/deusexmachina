@@ -271,7 +271,7 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 		{
 			nString NavMeshFileName;
 			NavMeshFileName.Format("export:Nav/%s.nm", NavMeshRsrc.Get());
-			n_assert(AISrv->GetLevel()->LoadNavMesh(NavMeshFileName));
+			AISrv->GetLevel()->LoadNavMesh(NavMeshFileName);
 		}
 
 		DS = NULL;

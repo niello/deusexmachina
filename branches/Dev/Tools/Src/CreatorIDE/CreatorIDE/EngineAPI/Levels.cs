@@ -56,5 +56,7 @@ namespace CreatorIDE.EngineAPI
         [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool BuildNavMesh(string RsrcName, float AgentRadius, float AgentHeight, float MaxClimb);
 
+        [DllImport(Engine.DllName, EntryPoint = "Levels_GetNavPolyUnderMouse")]
+        public static extern int GetNavPolyUnderMouse();
     }
 }

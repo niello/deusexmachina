@@ -37,7 +37,7 @@ protected:
 	bbox3							Box;
 	CStimulusQT						StimulusQT;						// Quadtree containing stimuli and other AI hints
 
-	Data::CBuffer					NMFile;
+	Data::CBuffer					NavMeshData;
 	nDictionary<float, CNavData>	NavData;						// Mapped to maximum radius of agent
 
 	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus ClipStatus = InvalidClipStatus);

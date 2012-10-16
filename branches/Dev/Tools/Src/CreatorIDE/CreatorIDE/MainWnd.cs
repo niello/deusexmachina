@@ -88,7 +88,9 @@ namespace CreatorIDE
 				Close();
 				return;
 			}
-			lEntityUnderMouse.Text = "Объект под курсором: " + EngineAPI.Entities.GetUIDUnderMouse();
+			lEntityUnderMouse.Text =
+                "Объект: " + EngineAPI.Entities.GetUIDUnderMouse() +
+                "; Нав. полигон: " + Levels.GetNavPolyUnderMouse().ToString();
         }
 
 		#region Main menu event callbacks
@@ -554,9 +556,10 @@ namespace CreatorIDE
 
         private void bBuildNavMesh_Click(object sender, EventArgs e)
         {
-            EngineAPI.Levels.BuildNavMesh(CurrLevelID, 0.29f, 1.74f, 0.6f);
+            EngineAPI.Levels.BuildNavMesh(CurrLevelID, 0.3f, 1.75f, 0.6f);
             //!!!SET nm resource attr to Levels table, or force nm resource name to be the same as level ID
             // and remove NavMesh attribute from db
+            //???or in C++?
         }
 
         private void bGroundConstrBtns_CheckedChanged(object sender, EventArgs e)

@@ -47,6 +47,8 @@ struct COffmeshConnection
 };
 #pragma pack(pop)
 
+int ConvexHull(const vector3* pts, int npts, int* out);
+
 class CRecastContext: public rcContext
 {
 protected:
@@ -133,7 +135,6 @@ public:
 	bool BuildNavMesh(bool MonotonePartitioning = false);
 	bool BuildDetailMesh();
 	bool GetNavMeshData(uchar*& pOutData, int& OutSize);
-	bool GetRegionData(CConvexVolume& Volume, Data::CBuffer& OutData); //???GetRegionPolyList
 
 	void Cleanup();
 

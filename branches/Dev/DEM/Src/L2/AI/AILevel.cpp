@@ -2,7 +2,7 @@
 
 #include <AI/AIServer.h>
 #include <AI/Perception/Sensor.h>
-#include <Data/DataServer.h>
+#include <Data/Streams/FileStream.h>
 #include <DetourCommon.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourPathCorridor.h>
@@ -42,19 +42,46 @@ bool CAILevel::Init(const bbox3& LevelBox, uchar QuadTreeDepth)
 
 bool CAILevel::LoadNavMesh(const nString& FileName)
 {
-	n_assert(DataSrv->LoadFileToBuffer(FileName, NMFile));
+	Data::CFileStream File;
+	if (!File.Open(FileName, Data::SAM_READ)) FAIL;
 
-	//!!!respect file format!
+	if (File.Get<int>() != '_NM_') FAIL;
+	int Version = File.Get<int>();
 
-	const float HACK_Radius = 0.3f;
+	int NMCount = File.Get<int>();
 
-	dtNavMesh* pNavMesh = dtAllocNavMesh();
-	if (!pNavMesh) FAIL;
-	if (dtStatusFailed(pNavMesh->init((uchar*)NMFile.GetPtr(), NMFile.GetSize(), 0)) ||
-		!RegisterNavMesh(HACK_Radius, pNavMesh))
+	for (int NMIdx = 0; NMIdx < NMCount; ++NMIdx)
 	{
-		dtFreeNavMesh(pNavMesh);
-		FAIL;
+		float Radius = File.Get<float>();
+		float Height = File.Get<float>();
+
+		int NMDataSize = File.Get<int>();
+		NavMeshData.Reserve(NMDataSize);
+		NavMeshData.Trim(File.Read(NavMeshData.GetPtr(), NMDataSize));
+		n_assert(NavMeshData.GetSize() == NMDataSize);
+
+		dtNavMesh* pNavMesh = dtAllocNavMesh();
+		if (!pNavMesh) FAIL;
+		if (dtStatusFailed(pNavMesh->init((uchar*)NavMeshData.GetPtr(), NMDataSize, 0)) ||
+			!RegisterNavMesh(Radius, pNavMesh)) //!!!height!
+		{
+			dtFreeNavMesh(pNavMesh);
+			NavMeshData.Clear();
+			FAIL;
+		}
+
+		int RegionCount = File.Get<int>();
+		for (int RIdx = 0; RIdx < RegionCount; ++RIdx)
+		{
+			int ID = File.Get<int>();
+			int PolyCount = File.Get<int>();
+
+			//!!!DBG TMP!
+			dtPolyRef Refs[512];
+			File.Read(Refs, sizeof(dtPolyRef) * PolyCount);
+
+			int ForABreakpoint = 0;
+		}
 	}
 
 	OK;
