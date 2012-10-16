@@ -78,7 +78,7 @@ void CPhysicsServer::Close()
 void CPhysicsServer::Trigger()
 {
 	n_assert(isOpen);
-	if (CurrLevel) CurrLevel->Trigger();
+	if (CurrLevel.isvalid()) CurrLevel->Trigger();
 }
 //---------------------------------------------------------------------
 

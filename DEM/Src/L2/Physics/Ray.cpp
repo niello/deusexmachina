@@ -77,6 +77,8 @@ void CRay::OdeRayCallback(void* data, dGeomID o1, dGeomID o2)
 // - 24-Nov-03     floh    dGeomRaySet() was expecting a normalized direction
 int CRay::DoRayCheckAllContacts(const matrix44& Tfm, nArray<CContactPoint>& OutContacts)
 {
+	if (!PhysicsSrv->GetLevel()) return 0;
+
 	int InitialContactCount = OutContacts.Size();
 
 	vector3 GlobalOrig = Tfm * Origin;

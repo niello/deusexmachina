@@ -12,8 +12,6 @@ namespace App
 {
 //ImplementRTTI(App::CToolNavOffmesh, App::IEditorTool);
 
-int CToolNavOffmesh::OffmeshUID = 0; //!!!Init to the max existing UID + 1 on level nav data loaded!
-
 void CToolNavOffmesh::Activate()
 {
 	MBDownX = MBDownY = -50000;
@@ -68,10 +66,10 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 			Conn.To = Pt;
 			Conn.Radius = AgentRadius; //!!!SET!
 			Conn.Bidirectional = Bidirectional;
-			Conn.Area = 2; //!!!SET!
-			Conn.Flags = 1; //!!!SET!
-			Conn.UID = OffmeshUID++;
+			Conn.Area = Area;
+			Conn.Flags = 1; //!!!SET! //???or in navmesh?
 			HitPosSet = false;
+			CIDEApp->CurrLevel.OffmeshChanged = true;
 		}
 	}
 	else if (Ev.Button == Input::MBMiddle) // Delete
@@ -97,7 +95,10 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 		}
 
 		if (NearestIdx != -1 && sqrtf(NearestDist) < AgentRadius)
+		{
 			CIDEApp->CurrLevel.OffmeshConnections.Erase(NearestIdx);
+			CIDEApp->CurrLevel.OffmeshChanged = true;
+		}
 	}
 
 	OK;

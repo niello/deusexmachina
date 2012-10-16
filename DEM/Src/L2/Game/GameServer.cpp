@@ -19,7 +19,7 @@ CGameServer::CGameServer(): IsOpen(false), IsStarted(false)
 	Singleton = this;
 
 	DataSrv->SetAssign("iao", "game:iao");
-	
+
 	GameTimeSrc = Time::CTimeSource::Create();
 
 	PROFILER_INIT(profGameServerFrame, "profMangaGameServerFrame");
@@ -29,9 +29,9 @@ CGameServer::CGameServer(): IsOpen(false), IsStarted(false)
 CGameServer::~CGameServer()
 {
 	n_assert(!IsOpen);
-	
+
 	GameTimeSrc = NULL;
-	
+
 	n_assert(Singleton);
 	Singleton = NULL;
 }
@@ -39,8 +39,7 @@ CGameServer::~CGameServer()
 
 bool CGameServer::Open()
 {
-    n_assert(!IsOpen);
-    n_assert(!IsStarted);
+    n_assert(!IsOpen && !IsStarted);
 	TimeSrv->AttachTimeSource(CStrID("Game"), GameTimeSrc);
     IsOpen = true;
     return true;
@@ -64,8 +63,7 @@ bool CGameServer::Start()
 // Stop the game world, called before the world(current level) is cleaned up.
 void CGameServer::Stop()
 {
-	n_assert(IsOpen);
-	n_assert(IsStarted);
+	n_assert(IsOpen && IsStarted);
 	IsStarted = false;
 	GameTimeSrc->Reset();
 }
@@ -73,8 +71,7 @@ void CGameServer::Stop()
 
 void CGameServer::Close()
 {
-	n_assert(!IsStarted);
-	n_assert(IsOpen);
+	n_assert(!IsStarted && IsOpen);
 
 	TimeSrv->RemoveTimeSource(CStrID("Game"));
 
@@ -105,7 +102,7 @@ void CGameServer::RemoveManager(CManager* pMgr)
 {
 	n_assert(pMgr);
 	int Idx = Managers.FindIndex(pMgr);
-	if (Idx != -1)
+	if (Idx != INVALID_INDEX)
 	{
 		Managers[Idx]->Deactivate();
 		Managers.Erase(Idx);

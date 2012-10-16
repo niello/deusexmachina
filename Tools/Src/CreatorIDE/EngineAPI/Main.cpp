@@ -13,12 +13,8 @@ API int Init(HWND ParentWnd, LPCSTR ProjDir)
 	AppEnv->SetProjectDirectory(ProjDir);
 	if (AppInst.Open()) 
 	{
-		LoaderSrv->LoadEmptyLevel();
-		EntityMgr->AttachEntity(AppInst.EditorCamera);
-		FocusMgr->SetFocusEntity(AppInst.EditorCamera);
-		//!!!error but should not be! LoaderSrv->LoadLevel("Eger_Cathedral_Courtyard");
-		//LoaderSrv->NewGame();
 		Initialized = true;
+		LoaderSrv->LoadEmptyLevel();
 		return 0;
 	}
 	return 1;

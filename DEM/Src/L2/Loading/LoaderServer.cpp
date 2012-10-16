@@ -304,6 +304,8 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 
 void CLoaderServer::UnloadLevel()
 {
+	//!!!correctly handle no level loaded case!
+	//!!!unload AI level!
 	GameSrv->Stop();
 	StaticEnvMgr->ClearStaticEnv();
 	EntityMgr->RemoveAllEntities(); //Cleanup();

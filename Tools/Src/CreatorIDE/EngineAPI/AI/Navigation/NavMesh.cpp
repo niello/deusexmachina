@@ -8,13 +8,19 @@
 #include <ncterrain2/nterrainnode.h>
 #include <ncterrain2/nchunklodnode.h>
 //#include <RecastDump.h>
-#include <DetourNavMeshBuilder.h>
 
 using namespace Properties;
 
-bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
+CNavMeshBuilder::CNavMeshBuilder():
+	pHF(NULL),
+	pCompactHF(NULL),
+	pMesh(NULL),
+	pMeshDetail(NULL),
+	OffMeshCount(0),
+	Radius(0.f),
+	Height(0.f)
 {
-	n_assert(!pHF);
+	memset(&Params, 0, sizeof(Params));
 
 	pTfmClass = nKernelServer::Instance()->FindClass("ntransformnode");
 	n_assert(pTfmClass);
@@ -26,7 +32,11 @@ bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
 	n_assert(pSkinShapeClass);
 	pSkyClass = nKernelServer::Instance()->FindClass("nskynode");
 	n_assert(pSkyClass);
+}
+//---------------------------------------------------------------------
 
+bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
+{
 	Cfg = Config;
 
 	Climb = MaxClimb;
@@ -41,6 +51,7 @@ bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
 	Ctx.log(RC_LOG_PROGRESS, "Building navigation:");
 	Ctx.log(RC_LOG_PROGRESS, " - %d x %d cells", Cfg.width, Cfg.height);
 
+	if (pHF) rcFreeHeightField(pHF);
 	pHF = rcAllocHeightfield();
 	if (!pHF)
 	{
@@ -50,6 +61,8 @@ bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
 
 	if (!rcCreateHeightfield(&Ctx, *pHF, Cfg.width, Cfg.height, Cfg.bmin, Cfg.bmax, Cfg.cs, Cfg.ch))
 	{
+		rcFreeHeightField(pHF);
+		pHF = NULL;
 		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
 		FAIL;
 	}
@@ -269,24 +282,6 @@ bool CNavMeshBuilder::AddGeometry(const float* pVerts, int VertexCount, const in
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::AddOffmeshConnection(COffmeshConnection& Connection)
-{
-	if (OffMeshCount >= MAX_OFFMESH_CONNECTIONS) FAIL;
-
-	float* v = &OffMeshVerts[OffMeshCount * 3 * 2];
-	rcVcopy(&v[0], Connection.From.v);
-	rcVcopy(&v[3], Connection.To.v);
-	OffMeshRadius[OffMeshCount] = Connection.Radius;
-	OffMeshDir[OffMeshCount] = Connection.Bidirectional ? 1 : 0;
-	OffMeshArea[OffMeshCount] = Connection.Area;
-	OffMeshFlags[OffMeshCount] = Connection.Flags;
-	OffMeshID[OffMeshCount] = 1000 + OffMeshCount; //???Connection.UID?
-
-	OffMeshCount++;
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool CNavMeshBuilder::PrepareGeometry(float AgentRadius, float AgentHeight)
 {
 	//	Ctx.log(RC_LOG_PROGRESS, " - %.1fK pVerts, %.1fK pTris", VertexCount/1000.0f, TriCount/1000.0f);
@@ -300,6 +295,7 @@ bool CNavMeshBuilder::PrepareGeometry(float AgentRadius, float AgentHeight)
 	rcFilterLedgeSpans(&Ctx, Cfg.walkableHeight, Cfg.walkableClimb, *pHF);
 	rcFilterWalkableLowHeightSpans(&Ctx, Cfg.walkableHeight, *pHF);
 
+	if (pCompactHF) rcFreeCompactHeightfield(pCompactHF);
 	pCompactHF = rcAllocCompactHeightfield();
 	if (!pCompactHF)
 	{
@@ -309,17 +305,27 @@ bool CNavMeshBuilder::PrepareGeometry(float AgentRadius, float AgentHeight)
 
 	if (!rcBuildCompactHeightfield(&Ctx, Cfg.walkableHeight, Cfg.walkableClimb, *pHF, *pCompactHF))
 	{
+		rcFreeCompactHeightfield(pCompactHF);
+		pCompactHF = NULL;
 		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
 		FAIL;
 	}
-		
+
 	if (!rcErodeWalkableArea(&Ctx, Cfg.walkableRadius, *pCompactHF))
 	{
+		rcFreeCompactHeightfield(pCompactHF);
+		pCompactHF = NULL;
 		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
 		FAIL;
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CNavMeshBuilder::ResetAllArea(uchar NewAreaValue)
+{
+	rcMarkBoxArea(&Ctx, Cfg.bmin, Cfg.bmax, NewAreaValue, *pCompactHF);
 }
 //---------------------------------------------------------------------
 
@@ -330,7 +336,25 @@ void CNavMeshBuilder::ApplyConvexVolumeArea(CConvexVolume& Volume)
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bool MonotonePartitioning)
+bool CNavMeshBuilder::AddOffmeshConnection(COffmeshConnection& Connection)
+{
+	if (OffMeshCount >= MAX_OFFMESH_CONNECTIONS) FAIL;
+
+	float* v = &OffMeshVerts[OffMeshCount * 3 * 2];
+	rcVcopy(&v[0], Connection.From.v);
+	rcVcopy(&v[3], Connection.To.v);
+	OffMeshRadius[OffMeshCount] = Connection.Radius;
+	OffMeshDir[OffMeshCount] = Connection.Bidirectional ? 1 : 0;
+	OffMeshArea[OffMeshCount] = Connection.Area;
+	OffMeshFlags[OffMeshCount] = Connection.Flags;
+	OffMeshID[OffMeshCount] = 1000 + OffMeshCount;
+
+	OffMeshCount++;
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CNavMeshBuilder::BuildNavMesh(bool MonotonePartitioning)
 {
 	if (MonotonePartitioning)
 	{
@@ -370,21 +394,27 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 
 	if (!rcBuildContours(&Ctx, *pCompactHF, Cfg.maxSimplificationError, Cfg.maxEdgeLen, *pContourSet))
 	{
+		rcFreeContourSet(pContourSet);
 		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
 		FAIL;
 	}
 
 	n_printf("NavMesh rcBuildContours done\n");
-	
-	rcPolyMesh* pMesh = rcAllocPolyMesh();
+
+	if (pMesh) rcFreePolyMesh(pMesh);
+	pMesh = rcAllocPolyMesh();
 	if (!pMesh)
 	{
+		rcFreeContourSet(pContourSet);
 		Ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmesh'.");
 		FAIL;
 	}
 
 	if (!rcBuildPolyMesh(&Ctx, *pContourSet, Cfg.maxVertsPerPoly, *pMesh))
 	{
+		rcFreeContourSet(pContourSet);
+		rcFreePolyMesh(pMesh);
+		pMesh = NULL;
 		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
 		FAIL;
 	}
@@ -393,15 +423,46 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 
 	n_printf("NavMesh rcBuildPolyMesh done\n");
 
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CNavMeshBuilder::BuildDetailMesh()
+{
+	if (pMeshDetail) rcFreePolyMeshDetail(pMeshDetail);
+	pMeshDetail = rcAllocPolyMeshDetail();
+	if (!pMeshDetail)
+	{
+		Ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
+		FAIL;
+	}
+
+	if (!rcBuildPolyMeshDetail(&Ctx, *pMesh, *pCompactHF, Cfg.detailSampleDist, Cfg.detailSampleMaxError, *pMeshDetail))
+	{
+		rcFreePolyMeshDetail(pMeshDetail);
+		pMeshDetail = NULL;
+		Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+		FAIL;
+	}
+
+	n_printf("NavMesh rcBuildPolyMeshDetail done\n");
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CNavMeshBuilder::GetNavMeshData(uchar*& pOutData, int& OutSize)
+{
+	if (!pMesh) FAIL;
+
 	// Update poly flags from areas.
 	for (int i = 0; i < pMesh->npolys; ++i)
 	{
-		const ushort NPF_NORMAL = 0x01;
-		if (pMesh->areas[i] == RC_WALKABLE_AREA) pMesh->flags[i] = NPF_NORMAL;
+		if (pMesh->areas[i] == RC_WALKABLE_AREA) pMesh->flags[i] = NAV_FLAG_NORMAL;
 	}
 
-	dtNavMeshCreateParams Params;
-	memset(&Params, 0, sizeof(Params));
+	//!!!Update ofmesh poly flags if not set!
+
 	Params.walkableHeight = Height;
 	Params.walkableRadius = Radius;
 	Params.walkableClimb = Climb;
@@ -410,6 +471,7 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 	Params.buildBvTree = true;
 	rcVcopy(Params.bmin, pMesh->bmin);
 	rcVcopy(Params.bmax, pMesh->bmax);
+
 	Params.verts = pMesh->verts;
 	Params.vertCount = pMesh->nverts;
 	Params.polys = pMesh->polys;
@@ -417,6 +479,16 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 	Params.polyFlags = pMesh->flags;
 	Params.polyCount = pMesh->npolys;
 	Params.nvp = pMesh->nvp;
+
+	if (pMeshDetail)
+	{
+		Params.detailMeshes = pMeshDetail->meshes;
+		Params.detailVerts = pMeshDetail->verts;
+		Params.detailVertsCount = pMeshDetail->nverts;
+		Params.detailTris = pMeshDetail->tris;
+		Params.detailTriCount = pMeshDetail->ntris;
+	}
+
 	Params.offMeshConVerts = OffMeshVerts;
 	Params.offMeshConRad = OffMeshRadius;
 	Params.offMeshConDir = OffMeshDir;
@@ -425,35 +497,7 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 	Params.offMeshConUserID = OffMeshID;
 	Params.offMeshConCount = OffMeshCount;
 
-	rcPolyMeshDetail* pMeshDetail = NULL;
-
-	if (BuildDetail)
-	{
-		rcPolyMeshDetail* pMeshDetail = rcAllocPolyMeshDetail();
-		if (!pMeshDetail)
-		{
-			Ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
-			FAIL;
-		}
-
-		if (!rcBuildPolyMeshDetail(&Ctx, *pMesh, *pCompactHF, Cfg.detailSampleDist, Cfg.detailSampleMaxError, *pMeshDetail))
-		{
-			Ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
-			FAIL;
-		}
-
-		Params.detailMeshes = pMeshDetail->meshes;
-		Params.detailVerts = pMeshDetail->verts;
-		Params.detailVertsCount = pMeshDetail->nverts;
-		Params.detailTris = pMeshDetail->tris;
-		Params.detailTriCount = pMeshDetail->ntris;
-
-		n_printf("NavMesh rcBuildPolyMeshDetail done\n");
-	}
-
-	rcFreeCompactHeightfield(pCompactHF);
-	pCompactHF = NULL;
-
+	//???need to free somewhere?!
 	if (!dtCreateNavMeshData(&Params, &pOutData, &OutSize))
 	{
 		Ctx.log(RC_LOG_ERROR, "Could not build Detour navmesh.");
@@ -465,14 +509,11 @@ bool CNavMeshBuilder::Build(uchar*& pOutData, int& OutSize, bool BuildDetail, bo
 	//duLogBuildTimes(*Ctx, Ctx.getAccumulatedTime(RC_TIMER_TOTAL));
 	Ctx.log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", pMesh->nverts, pMesh->npolys);
 
-	rcFreePolyMesh(pMesh);
-	if (BuildDetail) rcFreePolyMeshDetail(pMeshDetail);
-
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::BuildShapePolyList(CConvexVolume& Volume, uchar*& pOutData, int& OutSize)
+bool CNavMeshBuilder::GetRegionData(CConvexVolume& Volume, Data::CBuffer& OutData)
 {
 	/*
 	dtNavMesh* pNavMesh = dtAllocNavMesh();
@@ -534,11 +575,32 @@ bool CNavMeshBuilder::BuildShapePolyList(CConvexVolume& Volume, uchar*& pOutData
 
 void CNavMeshBuilder::Cleanup()
 {
+	if (pMeshDetail)
+	{
+		rcFreePolyMeshDetail(pMeshDetail);
+		pMeshDetail = NULL;
+	}
+
+	if (pMesh)
+	{
+		rcFreePolyMesh(pMesh);
+		pMesh = NULL;
+	}
+
+	if (pCompactHF)
+	{
+		rcFreeCompactHeightfield(pCompactHF);
+		pCompactHF = NULL;
+	}
+
 	if (pHF)
 	{
 		rcFreeHeightField(pHF);
 		pHF = NULL;
 	}
-	OffMeshCount = 0;
+
+	ClearOffmeshConnections();
+
+	memset(&Params, 0, sizeof(Params));
 }
 //---------------------------------------------------------------------
