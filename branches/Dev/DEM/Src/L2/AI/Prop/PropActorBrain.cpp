@@ -201,6 +201,7 @@ void CPropActorBrain::Activate()
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropActorBrain, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropActorBrain, OnUpdateTransform);
 	PROP_SUBSCRIBE_NEVENT(QueueTask, CPropActorBrain, OnAddTask);
+	PROP_SUBSCRIBE_PEVENT(OnNavMeshDataChanged, CPropActorBrain, OnNavMeshDataChanged);
 }
 //---------------------------------------------------------------------
 
@@ -211,6 +212,7 @@ void CPropActorBrain::Deactivate()
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(UpdateTransform);
 	UNSUBSCRIBE_EVENT(QueueTask);
+	UNSUBSCRIBE_EVENT(OnNavMeshDataChanged);
 
 	NavSystem.Term();
 
@@ -388,6 +390,16 @@ bool CPropActorBrain::OnAddTask(const Events::CEventBase& Event)
 		if (SetPlan(Task->BuildPlan())) Task->OnPlanSet(this);
 	}
 
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
+{
+	//!!!test when actor goes somewhere!
+	NavSystem.SetupState();
+	SetPlan(NULL);
+	RequestGoalUpdate();
 	OK;
 }
 //---------------------------------------------------------------------

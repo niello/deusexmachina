@@ -814,14 +814,6 @@
 			Name="Loading"
 			>
 			<File
-				RelativePath="..\..\Src\L2\Loading\CharacterProfile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\CharacterProfile.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Loading\EntityFactory.cpp"
 				>
 			</File>
@@ -859,14 +851,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L2\Loading\LoaderServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\UserProfile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\UserProfile.h"
 				>
 			</File>
 		</Filter>

@@ -74,14 +74,10 @@ private:
 	CProperty*	AttachProperty(CEntity& Entity, CPropertyStorage* pStorage) const;
 	void		CreateEntityCat(CStrID Name, const Data::PParams& Desc);
 	int			FindTemplate(CStrID UID, const CEntityCat& Cat);
-	
-	DECLARE_EVENT_HANDLER(OnStaticDBClose, OnStaticDBClose);
-	DECLARE_EVENT_HANDLER(OnGameDBClose, OnGameDBClose);
 
 public:
 
-	CEntityFactory();
-	virtual ~CEntityFactory();
+	CEntityFactory(): PropertyMeta(CPropertyInfo(), 64) {}
 
 	static CEntityFactory* Instance() { static CEntityFactory Singleton; return &Singleton; }
 
@@ -90,9 +86,6 @@ public:
 	bool				IsActive() const { return _IsActive; }
 
 	CEntity*			CreateEntityByEntity(CStrID GUID, CEntity* pTplEntity, EntityPool Pool = LivePool) const;
-	CEntity*			CreateEntityByGUID(CStrID GUID, EntityPool Pool = LivePool) const;
-	CEntity*			CreateEntityByKeyAttr(DB::CAttrID AttrID, const Data::CData& Value, EntityPool Pool = LivePool) const;
-	//nArray<CEntity*>	CreateEntitiesByKeyAttrs(const nArray<DB::CAttr>& Keys, const nArray<PEntity>& FilteredEnts, EntityPool Pool = Game::LivePool, bool FailOnDBError = true) const;
 	
 	// Create new entity
 	//!!!tmp not const!
@@ -118,10 +111,12 @@ public:
 	void				RemoveAllLoaders();
 
 	void				LoadEntityTemplates();
+	void				UnloadEntityTemplates();
 	DB::CDataset*		GetTemplate(CStrID UID, CStrID Category, bool CreateIfNotExist);
 	void				DeleteTemplate(CStrID UID, CStrID Category);
 
 	void				LoadEntityInstances(const nString& LevelName);
+	void				UnloadEntityInstances(); //???specify level?
 	void				InitEmptyInstanceDatasets() { LoadEntityInstances(NULL); }
 	void				DeleteEntityInstance(CEntity* pEntity);
 	void				RenameEntityInstance(CEntity* pEntity, CStrID NewID) const;
@@ -137,7 +132,7 @@ public:
 	//const DB::PValueTable& GetInstanceTable(const Util::String& categoryName) const;
 
 //!!!
-//#indef _EDITOR
+//#ifdef _EDITOR
 	int					GetCategoryCount() const { return Categories.Size(); }
 	const char*			GetCategoryName(int Idx) const { return Categories.KeyAtIndex(Idx).CStr(); }
 	const CEntityCat&	GetCategory(int Idx) const { return Categories.ValueAtIndex(Idx); }
@@ -146,12 +141,6 @@ public:
 	void				CreateNewEntityCat(CStrID Name, const Data::PParams& Desc, bool CreateInstDataset);
 //#endif
 };
-//---------------------------------------------------------------------
-
-inline CEntity* CEntityFactory::CreateEntityByGUID(CStrID GUID, EntityPool EntPool) const
-{
-	return CreateEntityByKeyAttr(Attr::GUID, GUID, EntPool);
-}
 //---------------------------------------------------------------------
 
 inline bool CEntityFactory::RegisterPropertyMeta(const Core::CRTTI& RTTI,
@@ -168,11 +157,8 @@ inline bool CEntityFactory::RegisterPropertyMeta(const Core::CRTTI& RTTI,
 
 template<class T> T* CEntityFactory::AttachProperty(Game::CEntity& Entity) const
 {
-	if (T::Pools & Entity.GetEntityPool())
+	if (T::Pools & Entity.GetPool())
 	{
-		//???need?
-		//nString CurrState = Application::App::Instance()->GetCurrentState();
-		//if (Prop->IsActiveInState(CurrState))
 		PProperty Prop;
 		if (!T::Storage.Get(Entity.GetUniqueID(), Prop))
 		{
@@ -180,8 +166,8 @@ template<class T> T* CEntityFactory::AttachProperty(Game::CEntity& Entity) const
 			n_assert(Prop.isvalid());
 			T::Storage.Add(Entity.GetUniqueID(), Prop);
 			Prop->SetEntity(&Entity);
-			return (T*)Prop.get_unsafe();
 		}
+		return (T*)Prop.get_unsafe();
 	}
 
 	return NULL;

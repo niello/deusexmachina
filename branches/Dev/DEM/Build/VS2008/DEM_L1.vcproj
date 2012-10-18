@@ -373,10 +373,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\HashMap.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Data\HRDParser.cpp"
 				>
 			</File>

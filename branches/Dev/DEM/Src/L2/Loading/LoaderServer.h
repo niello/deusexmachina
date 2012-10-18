@@ -6,8 +6,6 @@
 
 #include <Data/StringID.h>
 #include <Data/Singleton.h>
-#include <Loading/UserProfile.h>
-#include <Loading/CharacterProfile.h>
 #include <DB/AttrSet.h>
 #include <util/ndictionary.h>
 #include <Data/DataServer.h>
@@ -31,8 +29,6 @@ namespace Scripting
 
 namespace Loading
 {
-using namespace Profiles;
-
 #define LoaderSrv Loading::CLoaderServer::Instance()
 
 class CLoaderServer: public Core::CRefCounted
@@ -47,8 +43,6 @@ private:
 	bbox3						EmptyLevelBox;
 
 	nString						GameDBName; //???to profile? or game-wide parameter?
-	Ptr<UserProfile>			UserPrf;
-	Ptr<CharacterProfile>		ChrPrf;
 
 	DB::PDatabase				StaticDB;
 	DB::PDatabase				GameDB;
@@ -92,17 +86,9 @@ public:
 	//!!!EnumSavedGames(/*???profile?*/)! or Profile->EnumSavedGames()
 	//EnumSavedGames() to get list of saves for curr profile
 
-	//???need createprofile functions? only to create different profile types through virtual calls!
-	UserProfile*		CreateUserProfile() const { return UserProfile::Create(); }
-	void				SetUserProfile(UserProfile* pPrf) { UserPrf = pPrf; }
-	UserProfile*		GetUserProfile() const { return UserPrf; }
 	nString				GetSaveGameDirectory() const;
 	nString				GetDatabasePath() const;
 	nString				GetSaveGamePath(const nString& SaveGameName) const;
-
-	CharacterProfile*	CreateCharacterProfile() const { return CharacterProfile::Create(); }
-	void				SetCharacterProfile(CharacterProfile* pPrf) { return ChrPrf = pPrf; }
-	CharacterProfile*	GetCharacterProfile() const { return ChrPrf; }
 
 	bool				HasGlobal(DB::CAttrID AttrID) const { return Globals.HasAttr(AttrID); }
 	template<class T>
@@ -132,7 +118,7 @@ RegisterFactory(CLoaderServer);
 // Returns the path to the current world database.
 inline nString CLoaderServer::GetDatabasePath() const
 {
-	return UserPrf->GetProfileDirectory() + "/" + GameDBName + ".db3";
+	return "appdata:profiles/default/" + GameDBName + ".db3";
 }
 //---------------------------------------------------------------------
 
@@ -140,7 +126,7 @@ inline nString CLoaderServer::GetDatabasePath() const
 // directory) using the Nebula2 filesystem path conventions.
 inline nString CLoaderServer::GetSaveGameDirectory() const
 {
-	return UserPrf->GetProfileDirectory() + "/save";
+	return "appdata:profiles/default/save";
 }
 //---------------------------------------------------------------------
 
@@ -156,7 +142,7 @@ inline nString CLoaderServer::GetSaveGamePath(const nString& SaveGameName) const
 // The given StartupLevel will be loaded.
 inline bool CLoaderServer::NewGame(const nString& StartupLevel)
 {
-	DataSrv->CreateDirectory(UserPrf->GetProfileDirectory());
+	DataSrv->CreateDirectory("appdata:profiles/default");
 	if (!OpenGameDB(nString("export:db/") + GameDBName + ".db3")) FAIL;
 	return LoadLevel(StartupLevel.IsValid() ? StartupLevel : GetStartupLevel());
 }

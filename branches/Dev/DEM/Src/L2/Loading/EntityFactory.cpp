@@ -21,16 +21,6 @@ namespace Loading
 {
 using namespace Game;
 
-CEntityFactory::CEntityFactory(): PropertyMeta(CPropertyInfo(), 64)
-{
-}
-//---------------------------------------------------------------------
-
-CEntityFactory::~CEntityFactory()
-{
-}
-//---------------------------------------------------------------------
-
 void CEntityFactory::Init()
 {
 	n_assert(!_IsActive);
@@ -43,17 +33,12 @@ void CEntityFactory::Init()
 
 	for (int i = 0; i < P->GetCount(); i++)
 		CreateEntityCat(P->Get(i).GetName(), P->Get(i).GetValue<PParams>());
-
-	SUBSCRIBE_PEVENT(OnStaticDBClose, CEntityFactory, OnStaticDBClose);
-	SUBSCRIBE_PEVENT(OnGameDBClose, CEntityFactory, OnGameDBClose);
 }
 //---------------------------------------------------------------------
 
 void CEntityFactory::Release()
 {
 	n_assert(_IsActive);
-	UNSUBSCRIBE_EVENT(OnStaticDBClose);
-	UNSUBSCRIBE_EVENT(OnGameDBClose);
 	RemoveAllLoaders();
 	Categories.Clear();
 	_IsActive = false;
@@ -92,7 +77,7 @@ CEntity* CEntityFactory::CreateEntityByCategory(CStrID GUID, CStrID Category, En
 		pEntity->SetUniqueID(GUID);
 
 		for (int i = 0; i < Cat.Properties.Size(); i++)
-			AttachProperty(*pEntity, Cat.Properties[i]);
+			AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
 
 		return pEntity;
 	}
@@ -123,7 +108,7 @@ CEntity* CEntityFactory::CreateEntityByTemplate(CStrID GUID, CStrID Category, CS
 	pEntity->SetUniqueID(GUID);
 
 	for (int i = 0; i < Cat.Properties.Size(); i++)
-		AttachProperty(*pEntity, Cat.Properties[i]);
+		AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
 
 	return pEntity;
 }
@@ -149,102 +134,6 @@ CEntity* CEntityFactory::CreateEntityByEntity(CStrID GUID, CEntity* pTplEntity, 
 	return pEntity;
 }
 //---------------------------------------------------------------------
-
-/**
-    This will 'load' a new entity from the world database (AKA making the
-    entity 'live') and place it in the given entity pool (Live or Sleeping).
-    This will create a new entity, attach properties as described by
-    EntityCats.hrd, and update the entity attributes from the database.
-    Changes to attributes can later be written back to the
-    database by calling the CEntity::Save() method.
-
-    NOTE: this method will not call the CEntity::OnLoad() method, which may be
-    required to finally initialize the entity. The OnLoad() method expects
-    that all other Entities in the level have already been loaded, so this
-    must be done after loading in a separate pass.
-
-    FIXME: This method does 2 complete queries on the database!!
-*/
-CEntity* CEntityFactory::CreateEntityByKeyAttr(DB::CAttrID AttrID, const Data::CData& Value, EntityPool EntPool) const
-{
-	//Ptr<DB::Query> DBQuery = DBSrv->CreateQuery();
-	//DBQuery->SetTableName("_Entities");
-	//DBQuery->AddWhereAttr(Key);
-	//DBQuery->AddWhereAttr(DB::CAttr(Attr::_Type, nString("INSTANCE")));
-	//DBQuery->AddResultAttr(Attr::_Category);
-	//DBQuery->AddResultAttr(Attr::GUID);
-	//DBQuery->BuildSelectStatement();
-	//if (DBQuery->Execute())
-	//{
-	//	if (DBQuery->GetRowCount() != 1)
-	//	{
-	//		n_error("Loading::CEntityFactory::CreateEntityByKeyAttr(): %s Key '%s=%s' in world database!",
-	//			DBQuery->GetRowCount() ? "more then one entry with" : "no", Key.GetName().Get(), Key.AsString().Get());
-	//		return NULL;
-	//	}
-
-	//	//!!!!!!!!!!!!!!GetCategory!
-	//	//!!!!!!!!!!!
-	//	CEntity* pEntity = CreateEntityByCategory(DBQuery->Get<nString>(Attr::GUID, 0),
-	//											  DBQuery->Get<nString>(Attr::_Category, 0),
-	//											  EntPool);
-	//	pEntity->LoadAttributesFromDatabase();
-	//	return pEntity;
-	//}
-
-	//n_error("Loading::CEntityFactory::CreateEntityByKeyAttr(): failed to load entity with Key '%s=%s' from world database!", Key.GetName().Get(), Key.AsString().Get());
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-/**
-    This will 'load' a new Entities from the world database (AKA making the
-    entity 'live') and place it in the given entity pool (Live or Sleeping).
-    This will create new Entities, attach properties as described by
-    EntityCats.hrd, and update the Entities attributes from the database.
-    Changes to attributes can later be written back to the
-    database by calling the CEntity::Save() method.
-
-    NOTE: this method will not call the CEntity::OnLoad() method, which may be
-    required to finally initialize the entity. The OnLoad() method expects
-    that all other Entities in the level have already been loaded, so this
-    must be done after loading in a separate pass.
-
-    FIXME: This method does 1 + numEnities complete queries on the database!!
-*/
-/*
-nArray<CEntity*> CEntityFactory::CreateEntitiesByKeyAttrs(const nArray<DB::CAttr>& Keys,
-														   const nArray<PEntity>& FilteredEnts,
-														   EntityPool EntPool,
-														   bool FailOnDBError) const
-{
-	nArray<CEntity*> Entities;
-
-	//Ptr<DB::Query> DBQuery = DBSrv->CreateQuery();
-	//DBQuery->SetTableName("_Entities");
-	//DBQuery->AddWhereAttr(DB::CAttr(Attr::_Type, nString("INSTANCE")));
-
-	//for (int i = 0; i < Keys.Size(); i++) DBQuery->AddWhereAttr(Keys[i]);
-	//for (int i = 0; i < FilteredEnts.Size(); i++) DBQuery->AddWhereAttr(FilteredEnts[i]->GetAttr(Attr::GUID), true);
-
-	//DBQuery->AddResultAttr(Attr::_Category);
-	//DBQuery->AddResultAttr(Attr::GUID);
-	//DBQuery->BuildSelectStatement();
-
-	//if (DBQuery->Execute(FailOnDBError) && DBQuery->GetRowCount() > 0)
-	//	for (int i = 0; i < DBQuery->GetRowCount(); i++)
-	//	{
-	//		CEntity* pEntity = CreateEntityByCategory(DBQuery->Get<nString>(Attr::GUID, i),
-	//												  DBQuery->Get<nString>(Attr::_Category, i),
-	//												  EntPool);
-	//		pEntity->LoadAttributesFromDatabase();
-	//		Entities.Append(pEntity);
-	//	}
-
-	return Entities;
-}
-//---------------------------------------------------------------------
-*/
 
 CEntity* CEntityFactory::CreateTmpEntity(CStrID GUID, CStrID Category, PValueTable Table, int Row) const
 {
@@ -273,7 +162,7 @@ PEntity CEntityFactory::CreateEntityByCategory(CStrID Category, DB::CValueTable*
 		pEntity->SetCategory(Category);
 
 		for (int i = 0; i < Cat.Properties.Size(); i++)
-			AttachProperty(*pEntity, Cat.Properties[i]);
+			AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
 		
 		return pEntity;
 	}
@@ -289,22 +178,15 @@ PEntity CEntityFactory::CreateEntityByCategory(CStrID Category, DB::CValueTable*
 CProperty* CEntityFactory::AttachProperty(CEntity& Entity, const nString& TypeName) const
 {
 	CPropertyInfo PropInfo;
-	nString Type = TypeName;
-	if (!PropertyMeta.Get(Type.Get(), PropInfo))
-	{
-		Type = StrPropPrefix + TypeName;
-		if (!PropertyMeta.Get(Type.Get(), PropInfo))
-			n_error("No such property \"%s\"", TypeName.Get());
-	}
+	if (!PropertyMeta.Get(TypeName.Get(), PropInfo))
+		n_error("No such property \"%s\"", TypeName.Get());
 
-	n_assert(PropInfo.pStorage);
-
-	if (PropInfo.ActivePools & Entity.GetEntityPool())
+	if (PropInfo.ActivePools & Entity.GetPool())
 	{
 		PProperty Prop;
 		if (!PropInfo.pStorage->Get(Entity.GetUniqueID(), Prop))
 		{
-			Prop = (CProperty*)CoreFct->Create(Type);
+			Prop = (CProperty*)CoreFct->Create(TypeName);
 			PropInfo.pStorage->Add(Entity.GetUniqueID(), Prop);
 			Prop->SetEntity(&Entity);
 		}
@@ -318,21 +200,9 @@ CProperty* CEntityFactory::AttachProperty(CEntity& Entity, const nString& TypeNa
 void CEntityFactory::DetachProperty(CEntity& Entity, const nString& TypeName) const
 {
 	CPropertyInfo PropInfo;
-
-	nString FullType = StrPropPrefix + TypeName;
-	if (!PropertyMeta.Get(FullType.Get(), PropInfo))
-		if (!PropertyMeta.Get(TypeName.Get(), PropInfo))
-			n_error("No such property \"%s\"", TypeName.Get()); //???error?
-
-	n_assert(PropInfo.pStorage);
-
-#ifdef _DEBUG
-	if (!PropInfo.pStorage->Contains(Entity.GetUniqueID()))
-		n_error("CEntity::RemoveProperty: CProperty '%s' does not exist on entity!", TypeName.Get());
-#endif
-
-	(*PropInfo.pStorage)[Entity.GetUniqueID()]->ClearEntity(); //???need or there is always destructor?
-	PropInfo.pStorage->Erase(Entity.GetUniqueID());
+	if (!PropertyMeta.Get(TypeName.Get(), PropInfo))
+		n_error("No such property \"%s\"", TypeName.Get());
+	n_assert_dbg(PropInfo.pStorage->Erase(Entity.GetUniqueID()));
 }
 //---------------------------------------------------------------------
 
@@ -434,6 +304,13 @@ void CEntityFactory::LoadEntityTemplates()
 }
 //---------------------------------------------------------------------
 
+void CEntityFactory::UnloadEntityTemplates()
+{
+	for (int i = 0; i < Categories.Size(); i++)
+		Categories.ValueAtIndex(i).TplDataset = NULL;
+}
+//---------------------------------------------------------------------
+
 DB::CDataset* CEntityFactory::GetTemplate(CStrID UID, CStrID Category, bool CreateIfNotExist)
 {
 	if (!Categories.Contains(Category)) return NULL;
@@ -524,6 +401,13 @@ void CEntityFactory::LoadEntityInstances(const nString& LevelName)
 }
 //---------------------------------------------------------------------
 
+void CEntityFactory::UnloadEntityInstances()
+{
+	for (int i = 0; i < Categories.Size(); i++)
+		Categories.ValueAtIndex(i).InstDataset = NULL;
+}
+//---------------------------------------------------------------------
+
 void CEntityFactory::DeleteEntityInstance(CEntity* pEntity)
 {
 	n_assert(pEntity);
@@ -565,24 +449,6 @@ void CEntityFactory::CommitChangesToDB()
 #endif
 		if (Cat.InstDataset.isvalid()) Cat.InstDataset->CommitChanges();
 	}
-}
-//---------------------------------------------------------------------
-
-bool CEntityFactory::OnStaticDBClose(const Events::CEventBase& Event)
-{
-	//???don't kill, just clear cmds?
-	for (int i = 0; i < Categories.Size(); i++)
-		Categories.ValueAtIndex(i).TplDataset = NULL;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CEntityFactory::OnGameDBClose(const Events::CEventBase& Event)
-{
-	//???don't kill, just clear cmds?
-	for (int i = 0; i < Categories.Size(); i++)
-		Categories.ValueAtIndex(i).InstDataset = NULL;
-	OK;
 }
 //---------------------------------------------------------------------
 

@@ -1,15 +1,10 @@
-#include <DB/DBServer.h>
-#include <DB/Database.h>
 #include <DB/StdAttrs.h>
 #include <Loading/LoaderServer.h>
 #include <App/CIDEApp.h>
 #include <Game/Mgr/EntityManager.h>
-#include <Game/Mgr/StaticEnvManager.h>
 #include <Game/Mgr/FocusManager.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <AI/AIServer.h>
-#include <AI/Navigation/NavMesh.h>
-#include <DetourNavMesh.h> // For max verts per poly const
 #include <DetourNavMeshQuery.h>
 
 namespace Attr
@@ -78,9 +73,9 @@ API void Levels_RestoreDB(const char* LevelID)
 
 API void Levels_SaveDB(const char* LevelID)
 {
+	//!!!Equal to LoaderSrv->SaveGame!
 	LoaderSrv->CommitChangesToDB();
-	nString DBPath = nString("export:db/") + LoaderSrv->GetGameDBName() + ".db3";
-	n_assert(DataSrv->CopyFile(LoaderSrv->GetDatabasePath(), DBPath));
+	n_assert(DataSrv->CopyFile(LoaderSrv->GetDatabasePath(), nString("export:db/") + LoaderSrv->GetGameDBName() + ".db3"));
 }
 //---------------------------------------------------------------------
 
