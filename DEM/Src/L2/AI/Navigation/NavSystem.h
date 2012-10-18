@@ -44,6 +44,7 @@ protected:
 
 	CActor*						pActor;
 
+	dtNavMeshQuery*				pNavQuery;
 	const dtQueryFilter*		pNavFilter;
 	dtPathCorridor				Corridor;
 	dtLocalBoundary*			pBoundary;
@@ -77,7 +78,8 @@ public:
 	void			Init(const Data::CParams* Params);
 	void			Term();
 	void			Update(float FrameTime);
-	void			Reset();
+	void			Reset();							// Stops activity
+	void			SetupState();						// Resets navigation mesh refs, status etc
 
 	void			UpdatePosition();
 	void			EndEdgeTraversal();

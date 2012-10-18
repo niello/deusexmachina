@@ -300,8 +300,9 @@ bool CCIDEApp::LoadLevel(const nString& ID)
 void CCIDEApp::UnloadLevel(bool SaveChanges)
 {
 	ClearSelectedEntities();
+	CurrentEntity = NULL;
 
-	if (SaveChanges && CurrLevel.ID.Length() > 0)
+	if (SaveChanges && CurrLevel.ID.IsValid())
 	{
 		DataSrv->CreateDirectory("src:Levels/" + CurrLevel.ID);
 
@@ -373,22 +374,7 @@ static int OffsetPoly(const vector3* SrcVerts, int SrcCount, float Offset, vecto
 
 bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb)
 {
-	if (!pRsrcName || CurrLevel.ID.Length() == 0) FAIL;
-
-	//m_cellSize = 0.3f;
-	//m_cellHeight = 0.2f;
-	//m_agentHeight = 2.0f;
-	//m_agentRadius = 0.6f;
-	//m_agentMaxClimb = 0.9f;
-	//m_agentMaxSlope = 45.0f;
-	//m_regionMinSize = 8;
-	//m_regionMergeSize = 20;
-	//m_monotonePartitioning = false;
-	//m_edgeMaxLen = 12.0f;
-	//m_edgeMaxError = 1.3f;
-	//m_vertsPerPoly = 6.0f;
-	//m_detailSampleDist = 6.0f;
-	//m_detailSampleMaxError = 1.0f;
+	if (!pRsrcName || CurrLevel.ID.IsEmpty()) FAIL;
 
 	rcConfig Cfg;
 	memset(&Cfg, 0, sizeof(Cfg));
@@ -401,17 +387,16 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 	float BoxSizeX = Box.vmax.x - Box.vmin.x;
 	float BoxSizeZ = Box.vmax.z - Box.vmin.z;
 	float BoxSizeMax = n_max(BoxSizeX, BoxSizeZ);
-	Cfg.cs = BoxSizeMax * 0.00029f; // nearly one over 3450.f, empirically detected
+	Cfg.cs = BoxSizeMax * 0.00029f;
 	Cfg.ch = 0.2f;
 	Cfg.walkableSlopeAngle = 45.0f;
 	Cfg.maxEdgeLen = (int)(12.0f / Cfg.cs);
 	Cfg.maxSimplificationError = 1.3f;
 
-	// empirically detected, one over 133.(3)f
 	int Factor = (int)n_floor(BoxSizeMax * 0.0075f + 0.5f); // 0.5f to round 1.5 to 2
 	Cfg.minRegionArea = (int)rcSqr(Factor);					// Note: area = size*size
 
-	Cfg.mergeRegionArea = (int)rcSqr(20);				// Note: area = size*size
+	Cfg.mergeRegionArea = (int)rcSqr(20);					// Note: area = size*size
 	Cfg.maxVertsPerPoly = DT_VERTS_PER_POLYGON;
 	Cfg.detailSampleDist = 6.0f < 0.9f ? 0.f : Cfg.cs * 6.0f;
 	Cfg.detailSampleMaxError = Cfg.ch * 1.0f;
@@ -501,8 +486,9 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		File.Write(pData, Size);
 
 		// Detect poly list for each volume and write it
-	
-		//???or use flag, not area? (what if I need named region of grass/water?!
+
+		//!!!"Named" must be area-independent bool flag in volume, set on creation.
+		// Can also associate string name with it!
 		DWORD NamedRegionCount = 0;
 		for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
 			if (CurrLevel.ConvexVolumes[i].Area == NAV_AREA_NAMED)
@@ -579,10 +565,23 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		File.Close();
 		n_printf("NavMesh saved\n");
 
+		AISrv->GetLevel()->UnloadNavMesh();
+		AISrv->GetLevel()->LoadNavMesh(Path);
+
+		for (int i = 0; i < Levels->GetRowCount(); ++i)
+		{
+			Levels->SetRowIndex(i);
+			CStrID LvlID = CIDEApp->Levels->Get<CStrID>(Attr::GUID);
+			if (LvlID == CurrLevel.ID.Get())
+			{
+				Levels->Set<CStrID>(Attr::GUID, CStrID(CurrLevel.ID.Get()));
+				Levels->CommitChanges();
+				break;
+			}
+		}
+
 		dtFree(pData);
 	}
-
-	//!!!SET nm resource to the level!
 
 	OK;
 }

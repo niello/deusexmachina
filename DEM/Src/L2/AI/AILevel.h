@@ -37,7 +37,6 @@ protected:
 	bbox3							Box;
 	CStimulusQT						StimulusQT;						// Quadtree containing stimuli and other AI hints
 
-	Data::CBuffer					NavMeshData;
 	nDictionary<float, CNavData>	NavData;						// Mapped to maximum radius of agent
 
 	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus ClipStatus = InvalidClipStatus);
@@ -50,7 +49,7 @@ public:
 	bool			Init(const bbox3& LevelBox, uchar QuadTreeDepth);
 
 	bool			LoadNavMesh(const nString& FileName);
-	bool			RegisterNavMesh(float ActorRadius, dtNavMesh* pNavMesh);
+	void			UnloadNavMesh();
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
 	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);

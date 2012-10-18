@@ -229,7 +229,7 @@ bool CEntityManager::OnFrame(const Events::CEventBase& Event)
 	int numLiveEntities = 0;
 	int numSleepingEntities = 0;
 	for (entityIndex = 0; entityIndex < numEntities; entityIndex++)
-		if (Entities[entityIndex]->GetEntityPool() == LivePool) numLiveEntities++;
+		if (Entities[entityIndex]->GetPool() == LivePool) numLiveEntities++;
 		else numSleepingEntities++;
 	//statsNumEntities->SetValue(numEntities);
 	//statsNumLiveEntities->SetValue(numLiveEntities);
@@ -316,7 +316,7 @@ bool CEntityManager::ExistsEntitiesByAttrs(const nArray<DB::CAttr>& Attrs, bool 
         if (entity)
         {
             // is in the right pool?
-            if (!LiveOnly || entity->GetEntityPool() == LivePool)
+            if (!LiveOnly || entity->GetPool() == LivePool)
             {
                 // has all attribute?
                 int attributeIndex;
@@ -389,7 +389,7 @@ CEntityManager::GetEntitiesByAttrs(const nArray<DB::CAttr>& Attrs, bool LiveOnly
         if (entity)
         {
             // is in the right pool?
-            if (!LiveOnly || entity->GetEntityPool() == LivePool)
+            if (!LiveOnly || entity->GetPool() == LivePool)
             {
                 // has all attribute?
                 int attributeIndex;

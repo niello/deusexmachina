@@ -85,6 +85,7 @@ protected:
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
 	DECLARE_EVENT_HANDLER(QueueTask, OnAddTask);
+	DECLARE_EVENT_HANDLER(OnNavMeshDataChanged, OnNavMeshDataChanged);
 
 	void UpdateDecisionMaking();
 

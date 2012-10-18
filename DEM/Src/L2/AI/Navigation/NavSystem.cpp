@@ -10,6 +10,7 @@ namespace AI
 
 CNavSystem::CNavSystem(CActor* Actor):
 	pActor(Actor),
+	pNavQuery(NULL),
 	pNavFilter(NULL),
 	pBoundary(NULL),
 	DestRef(0),
@@ -39,35 +40,10 @@ void CNavSystem::Init(const Data::CParams* Params)
 	//!!!DBG TMP!
 	EdgeTypeToAction.Add(0, CStrID("SteerToPosition"));
 
-	//???restore from attrs on load?
-	DestPoint = pActor->Position;
-	DestRef = 0;
+	//DestPoint = pActor->Position; //???restore from attrs on load?
+	//DestRef = 0;
 
-	ReplanTime = 0.f;
-	//TopologyOptTime = 0.f;
-
-	if (pBoundary) pBoundary->reset();
-
-	//vector3 Nearest;
-	dtPolyRef Ref;
-	
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius); //???cache?
-	if (pNavQuery)
-	{
-		const float ActorExtents[3] = { 0.f, pActor->Height, 0.f };
-		pNavQuery->findNearestPoly(pActor->Position.v, ActorExtents, pNavFilter, &Ref, NULL);
-
-		if (Ref) // && pActor->Position == Nearest)
-		{
-			pActor->NavStatus = AINav_Done;
-			Corridor.reset(Ref, pActor->Position.v);
-			return;
-		}
-	}
-
-	pActor->NavStatus = AINav_Invalid;
-	Corridor.reset(0, pActor->Position.v);
+	SetupState();
 }
 //---------------------------------------------------------------------
 
@@ -87,20 +63,16 @@ void CNavSystem::Update(float FrameTime)
 {
 	ReplanTime += FrameTime;
 
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius);
-	//n_assert(pNavQuery);
 	if (!pNavQuery) return;
 
-	const float ActorExtents[3] = { 0.f, pActor->Height, 0.f };
+	const float Extents[3] = { 0.f, pActor->Height, 0.f };
 
 	if (pActor->NavStatus == AINav_Invalid)
 	{
-		//vector3 Nearest;
 		dtPolyRef Ref;
-		pNavQuery->findNearestPoly(pActor->Position.v, ActorExtents, pNavFilter, &Ref, NULL);
+		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
 
-		if (Ref) // && pActor->Position == Nearest)
+		if (Ref)
 		{
 			pActor->NavStatus = AINav_Done;
 			Corridor.reset(Ref, pActor->Position.v);
@@ -135,7 +107,7 @@ void CNavSystem::Update(float FrameTime)
 		if (!pNavQuery->isValidPolyRef(DestRef, pNavFilter))
 		{
 			float Nearest[3];
-			pNavQuery->findNearestPoly(DestPoint.v, ActorExtents, pNavFilter, &DestRef, Nearest);
+			pNavQuery->findNearestPoly(DestPoint.v, Extents, pNavFilter, &DestRef, Nearest);
 			dtVcopy(DestPoint.v, Nearest);
 			pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
 			Replan = true; //???can just move target into the corridor?
@@ -369,12 +341,34 @@ void CNavSystem::Reset()
 }
 //---------------------------------------------------------------------
 
+void CNavSystem::SetupState()
+{
+	ReplanTime = 0.f;
+	//TopologyOptTime = 0.f;
+	OffMeshRef = 0;
+	TraversingOffMesh = false;
+	pProcessingQueue = NULL;
+
+	dtPolyRef Ref = 0;
+
+	pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius);
+	if (pNavQuery)
+	{
+		const float Extents[3] = { 0.f, pActor->Height, 0.f };
+		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
+	}
+
+	pActor->NavStatus = Ref ? AINav_Done : AINav_Invalid;
+	Corridor.reset(Ref, pActor->Position.v);
+
+	if (pBoundary) pBoundary->reset();
+}
+//---------------------------------------------------------------------
+
 void CNavSystem::UpdatePosition()
 {
 	if (TraversingOffMesh || pActor->NavStatus == AINav_Invalid) return;
 
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius); //???cache?
 	if (!pNavQuery) return;
 
 	if (OffMeshRef && OffMeshPoint.lensquared() <= OffMeshRadius)
@@ -413,8 +407,6 @@ void CNavSystem::UpdatePosition()
 
 void CNavSystem::SetDestPoint(const vector3& Dest)
 {
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius); //???cache?
 	if (!pNavQuery) return;
 
 	DestPoint = Dest;
@@ -422,9 +414,11 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 	//???!!!when can call Corridor.moveTargetPosition?!
 
 	float Nearest[3];
-	const float TargetExtents[3] = { 0.f, pActor->Height, 0.f };
-	pNavQuery->findNearestPoly(DestPoint.v, TargetExtents, pNavFilter, &DestRef, Nearest);
+	const float Extents[3] = { 0.f, pActor->Height, 0.f };
+	pNavQuery->findNearestPoly(DestPoint.v, Extents, pNavFilter, &DestRef, Nearest);
 	dtVcopy(DestPoint.v, Nearest);
+
+	//???allow partial path (to the navmesh edge)? extend extents, if so!
 
 	pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
 
@@ -453,8 +447,6 @@ bool CNavSystem::GetPathEdges(nArray<CPathEdge>& OutPath, int MaxSize)
 
 	if (pActor->NavStatus != AINav_Following) FAIL;
 
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius); //???cache?
 	if (!pNavQuery) FAIL;
 
 	const dtNavMesh* pNavMesh = pNavQuery->getAttachedNavMesh();
@@ -551,8 +543,6 @@ void CNavSystem::GetObstacles(float Range, dtObstacleAvoidanceQuery& Query)
 {
 	if (!pBoundary) return;
 
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius); //???cache?
 	if (!pNavQuery) return;
 
 	//!!!check threshold & range values!
@@ -574,8 +564,6 @@ bool CNavSystem::GetRandomValidLocation(float Range, vector3& Location)
 {
 	if (pActor->NavStatus == AINav_Invalid) FAIL;
 
-	//???request once and cache?
-	dtNavMeshQuery* pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius); //???cache?
 	if (!pNavQuery) FAIL;
 
 	//!!!Need to clamp to radius!

@@ -64,14 +64,8 @@ bool CLoaderServer::Open()
 
 	EntityFct->LoadEntityTemplates();
 
-	// Setup default user profile
-	UserProfile* UserPrf = CreateUserProfile();
-	UserPrf->SetName("default");
-	UserPrf->Open(); //???where to close?
-	SetUserProfile(UserPrf);
-
 	//???or use lazy init in loadlevel? in what db should store levels?
-	DataSrv->CreateDirectory(UserPrf->GetProfileDirectory());
+	DataSrv->CreateDirectory("appdata:profiles/default");
 	nString Path = GetDatabasePath();
 	if (!DataSrv->FileExists(Path)) Path = nString("export:db/") + GameDBName + ".db3";
 	if (!OpenGameDB(Path)) FAIL;
@@ -84,17 +78,17 @@ bool CLoaderServer::Open()
 void CLoaderServer::Close()
 {
 	n_assert(_IsOpen);
-	UserPrf->Close(); //???need?
 
 	if (GameDB.isvalid())
 	{
 		EventMgr->FireEvent(CStrID("OnGameDBClose"));
+		EntityFct->UnloadEntityInstances();
 		GameDB->Close();
 		n_assert(GameDB->GetRefCount() == 1);
 		GameDB = NULL;
 	}
 	
-	EventMgr->FireEvent(CStrID("OnStaticDBClose"));
+	EntityFct->UnloadEntityTemplates();
 	StaticDB->Close();
 	n_assert(StaticDB->GetRefCount() == 1);
 	StaticDB = NULL;
@@ -237,8 +231,6 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 			FAIL;
 		}
 
-		//!!!run level script here! Attr::Script
-
 		DS->SetRowIndex(0);
 		const vector4& Center = DS->Get<vector4>(Attr::Center);
 		const vector4& Extents = DS->Get<vector4>(Attr::Extents);
@@ -344,25 +336,10 @@ void CLoaderServer::CommitChangesToDB()
 }
 //---------------------------------------------------------------------
 
-// Create a new savegame. This will flush all unwritten data back to the
-// database, and make a copy of the database.
 bool CLoaderServer::SaveGame(const nString& SaveGameName)
 {
 	CommitChangesToDB();
-
-	//!!!check in-memory working db!
-
-	nString DBPath = GetDatabasePath();
-	if (!DataSrv->FileExists(DBPath)) FAIL; //???can it happen?
-
-	nString SaveGamePath = GetSaveGamePath(SaveGameName);
-	if (DataSrv->FileExists(SaveGamePath))
-	{
-		n_assert(DataSrv->DeleteFile(SaveGamePath)); //???need?
-	}
-	else DataSrv->CreateDirectory(GetSaveGameDirectory());
-	n_assert(DataSrv->CopyFile(DBPath, SaveGamePath));
-
+	n_assert(DataSrv->CopyFile(GetDatabasePath(), GetSaveGamePath(SaveGameName)));
 	OK;
 }
 //---------------------------------------------------------------------

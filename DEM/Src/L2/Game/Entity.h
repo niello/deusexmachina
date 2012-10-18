@@ -75,7 +75,7 @@ public:
 	bool			IsInactive() const { return !(Flags & ENT_ACTIVE) && !(Flags & ENT_CHANGING_STATUS); }
 	bool			IsActivating() const { return !(Flags & ENT_ACTIVE) && (Flags & ENT_CHANGING_STATUS); }
 	bool			IsDeactivating() const { return (Flags & ENT_ACTIVE) && (Flags & ENT_CHANGING_STATUS); }
-	EntityPool		GetEntityPool() const { return IsLive() ? LivePool : SleepingPool;}
+	EntityPool		GetPool() const { return IsLive() ? LivePool : SleepingPool;}
 
 	CStrID			GetCategory() const { return Category; }
 	int				GetAttrTableRowIndex() const { return ATRowIdx; }
