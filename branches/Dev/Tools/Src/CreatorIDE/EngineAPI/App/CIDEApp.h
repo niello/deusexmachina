@@ -15,7 +15,7 @@
 
 namespace App
 {
-class CCSharpUIEventHandler;
+class CCSharpUIConnector;
 
 struct CLevelInfo
 {
@@ -37,7 +37,7 @@ private:
 
 	CAppFSM						FSM;
 	HWND						ParentHwnd;
-	CCSharpUIEventHandler*		pUIEventHandler;
+	CCSharpUIConnector*		pUIConnector;
 	CNavMeshBuilder*			pNavMeshBuilder;
 
 	Ptr<Story::CQuestSystem>	QuestSystem;
@@ -83,7 +83,9 @@ public:
 	bool	BuildNavMesh(const char* pRsrcName, float AgentRadius, float AgentHeight, float MaxClimb);
 	void	InvalidateNavGeometry();
 
-	CCSharpUIEventHandler* GetUIEventHandler() { return pUIEventHandler; }
+	nString	GetStringInput(const char* pInitial);
+
+	CCSharpUIConnector* GetUIEventHandler() { return pUIConnector; }
 };
 
 inline nString CCIDEApp::GetAppVersion() const

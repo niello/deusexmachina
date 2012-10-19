@@ -44,7 +44,8 @@ namespace CreatorIDE
 
         private event CCallback_V_S EntitySelectedCB;
         private event MouseButtonCallback MouseButtonCB;
-       
+        private event CCallback_S_S StringInputCB;
+
         public MainWnd()
 		{
 			InitializeComponent();
@@ -157,6 +158,14 @@ namespace CreatorIDE
             tvEntities.SelectedNode = Entities[UID].UINode; // Causes tvEntities_AfterSelect
         }
 
+        String API_StringInput(String Initial)
+        {
+            GetStringWnd Wnd = new GetStringWnd();
+            Wnd.UserString = Initial;
+            Wnd.ShowDialog();
+            return Wnd.UserString;
+        }
+
 		bool LoadProject(string ProjectRoot)
 		{
 			if (EngineAPI.Engine.Init(EngineViewPanel.Handle, ProjectRoot) == 0)
@@ -165,7 +174,8 @@ namespace CreatorIDE
 
                 EntitySelectedCB = new EngineAPI.CCallback_V_S(API_OnEntitySelected);
                 MouseButtonCB = new EngineAPI.MouseButtonCallback(EngineViewPanel_MouseCallback);
-                EngineAPI.Engine.SetUICallbacks(EntitySelectedCB, MouseButtonCB);
+                StringInputCB = new EngineAPI.CCallback_S_S(API_StringInput);
+                EngineAPI.Engine.SetUICallbacks(EntitySelectedCB, MouseButtonCB, StringInputCB);
 
 				int LvlCount = EngineAPI.Levels.GetCount();
                 for (int i = 0; i < LvlCount; i++)

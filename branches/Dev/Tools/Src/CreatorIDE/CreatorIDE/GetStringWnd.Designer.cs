@@ -77,6 +77,7 @@
             this.Controls.Add(this._bOK);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "GetStringWnd";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Введите название";
             this.ResumeLayout(false);
             this.PerformLayout();

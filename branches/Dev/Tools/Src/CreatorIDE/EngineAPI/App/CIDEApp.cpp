@@ -2,7 +2,7 @@
 
 #include "AppStateEditor.h"
 #include <App/Environment.h>
-#include <App/CSharpUIEventHandler.h>
+#include <App/CSharpUIConnector.h>
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/StaticEnvManager.h>
 #include <Game/Mgr/FocusManager.h>
@@ -40,7 +40,7 @@ using namespace Properties;
 
 CCIDEApp::CCIDEApp():
 	ParentHwnd(NULL),
-	pUIEventHandler(NULL),
+	pUIConnector(NULL),
 	pNavMeshBuilder(NULL),
 	DenyEntityAboveGround(false),
 	DenyEntityBelowGround(false)
@@ -156,7 +156,7 @@ bool CCIDEApp::Open()
 	Tfm.translate(vector3(300.f, 145.f, 300.f));
 	EditorCamera->Set<matrix44>(Attr::Transform, Tfm);
 
-	pUIEventHandler = n_new(CCSharpUIEventHandler);
+	pUIConnector = n_new(CCSharpUIConnector);
 	pNavMeshBuilder = n_new(CNavMeshBuilder);
 
 	DB::PTable Tbl;
@@ -186,8 +186,8 @@ void CCIDEApp::Close()
 
 	n_delete(pNavMeshBuilder);
 	pNavMeshBuilder = NULL;
-	n_delete(pUIEventHandler);
-	pUIEventHandler = NULL;
+	n_delete(pUIConnector);
+	pUIConnector = NULL;
 
 	ClearSelectedEntities();
 	CurrentEntity = NULL;
@@ -621,6 +621,13 @@ void CCIDEApp::InvalidateNavGeometry()
 {
 	CurrLevel.NavGeometryChanged = true;
 	pNavMeshBuilder->Cleanup();
+}
+//---------------------------------------------------------------------
+
+nString CCIDEApp::GetStringInput(const char* pInitial)
+{
+	if (!pUIConnector || !pUIConnector->StringInputCB) return nString::Empty;
+	return pUIConnector->StringInputCB(pInitial);
 }
 //---------------------------------------------------------------------
 

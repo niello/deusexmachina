@@ -52,7 +52,9 @@ namespace CreatorIDE.EngineAPI
         public static extern bool SelectEntity(String UID);
 
         [DllImport(DllName)]
-        public static extern void SetUICallbacks(CCallback_V_S EntitySelected, MouseButtonCallback MouseButton);
+        public static extern void SetUICallbacks(CCallback_V_S EntitySelected,
+            MouseButtonCallback MouseButton,
+            CCallback_S_S StringInput);
     }
 
     public enum EMouseAction
@@ -65,5 +67,6 @@ namespace CreatorIDE.EngineAPI
 
     public delegate void CCallback_V_V();
     public delegate void CCallback_V_S(String Arg1);
+    public delegate String CCallback_S_S(String Arg1);
     public delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
 }

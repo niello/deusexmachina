@@ -1,4 +1,4 @@
-#include "CSharpUIEventHandler.h"
+#include "CSharpUIConnector.h"
 
 #include <Events/EventManager.h>
 #include <Input/InputServer.h>
@@ -8,17 +8,18 @@
 namespace App
 {
 
-CCSharpUIEventHandler::CCSharpUIEventHandler():
+CCSharpUIConnector::CCSharpUIConnector():
 	OnEntitySelectedCB(NULL),
-	MouseButtonCB(NULL)
+	MouseButtonCB(NULL),
+	StringInputCB(NULL)
 {
-	SUBSCRIBE_PEVENT(OnEntitySelected, CCSharpUIEventHandler, OnEntitySelected);
-	SUBSCRIBE_INPUT_EVENT(MouseBtnDown, CCSharpUIEventHandler, OnMouseBtnDown, Input::InputPriority_Raw);
-	SUBSCRIBE_INPUT_EVENT(MouseBtnUp, CCSharpUIEventHandler, OnMouseBtnUp, Input::InputPriority_Raw);
+	SUBSCRIBE_PEVENT(OnEntitySelected, CCSharpUIConnector, OnEntitySelected);
+	SUBSCRIBE_INPUT_EVENT(MouseBtnDown, CCSharpUIConnector, OnMouseBtnDown, Input::InputPriority_Raw);
+	SUBSCRIBE_INPUT_EVENT(MouseBtnUp, CCSharpUIConnector, OnMouseBtnUp, Input::InputPriority_Raw);
 }
 //---------------------------------------------------------------------
 
-bool CCSharpUIEventHandler::OnEntitySelected(const Events::CEventBase& Event)
+bool CCSharpUIConnector::OnEntitySelected(const Events::CEventBase& Event)
 {
 	if (!OnEntitySelectedCB) FAIL;
 	OnEntitySelectedCB(((const Events::CEvent&)Event).Params->Get<CStrID>(CStrID("UID"), CStrID::Empty).CStr());
@@ -26,7 +27,7 @@ bool CCSharpUIEventHandler::OnEntitySelected(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CCSharpUIEventHandler::OnMouseBtnDown(const Events::CEventBase& Event)
+bool CCSharpUIConnector::OnMouseBtnDown(const Events::CEventBase& Event)
 {
 	if (!MouseButtonCB) FAIL;
 	const Event::MouseBtnDown& Ev = ((const Event::MouseBtnDown&)Event);
@@ -35,7 +36,7 @@ bool CCSharpUIEventHandler::OnMouseBtnDown(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CCSharpUIEventHandler::OnMouseBtnUp(const Events::CEventBase& Event)
+bool CCSharpUIConnector::OnMouseBtnUp(const Events::CEventBase& Event)
 {
 	if (!MouseButtonCB) FAIL;
 	const Event::MouseBtnUp& Ev = ((const Event::MouseBtnUp&)Event);
