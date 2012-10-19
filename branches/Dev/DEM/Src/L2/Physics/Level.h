@@ -11,7 +11,7 @@
 #include <Core/RefCounted.h>
 #include <Physics/Joints/Joint.h>
 #include <Physics/MaterialTable.h>
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 #include <kernel/nprofiler.h>
 
 namespace Physics
@@ -43,7 +43,7 @@ protected:
 	dJointGroupID			ContactJointGroup;
 
 	//???here?
-	nHashMap2<nTime>		CollisionSounds;
+	CHashMap<nTime>		CollisionSounds;
 
 	PROFILER_DECLARE(profFrameBefore);
 	PROFILER_DECLARE(profFrameAfter);

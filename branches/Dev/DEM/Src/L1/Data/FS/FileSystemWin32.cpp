@@ -80,8 +80,8 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 	{
 		AbsPath.StripTrailingSlash();
 		int LastSepIdx = AbsPath.GetLastDirSeparatorIndex();
-		DirStack.PushBack(AbsPath.ExtractRange(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
-		AbsPath = AbsPath.ExtractRange(0, LastSepIdx);
+		DirStack.PushBack(AbsPath.SubString(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
+		AbsPath = AbsPath.SubString(0, LastSepIdx);
 	}
 
 	while (DirStack.Size())

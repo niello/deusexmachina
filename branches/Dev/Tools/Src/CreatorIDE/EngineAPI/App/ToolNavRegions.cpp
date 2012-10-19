@@ -85,6 +85,9 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 				Vol.MinY -= BoxDescent;
 				Vol.MaxY = Vol.MinY + BoxHeight;
 				Vol.Area = Area;
+				Vol.ID = RegionID;
+
+				RegionID = CStrID::Empty;
 
 				CIDEApp->CurrLevel.ConvexChanged = true;
 

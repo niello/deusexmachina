@@ -26,7 +26,7 @@ LRESULT CALLBACK mmioProc(LPSTR lpstr, UINT uMsg, LPARAM lParam1, LPARAM lParam2
                 {
                     // strip the "X.NEB2+" prefix from the file
                     nString rawName((const char*)lParam1);
-                    nString FileName = rawName.ExtractRange(7, rawName.Length() - 7);
+                    nString FileName = rawName.SubString(7, rawName.Length() - 7);
 
                     // open a Nebula2 file for reading
 					Data::CFileStream* file = n_new(Data::CFileStream);

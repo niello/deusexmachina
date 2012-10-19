@@ -128,7 +128,7 @@ bool CInputServer::SetContextLayout(CStrID Context, CStrID Layout)
 
 	bool WasEnabled;
 
-	PControlLayout* ppCtx = Contexts.Find(Context);
+	PControlLayout* ppCtx = Contexts.Get(Context);
 	if (ppCtx)
 	{
 		WasEnabled = (*ppCtx)->IsEnabled();
@@ -149,7 +149,7 @@ bool CInputServer::SetContextLayout(CStrID Context, CStrID Layout)
 
 CControlLayout* CInputServer::GetContextLayout(CStrID Context) const
 {
-	PControlLayout* ppCtx = Contexts.Find(Context);
+	PControlLayout* ppCtx = Contexts.Get(Context);
 	return (ppCtx) ? *ppCtx : NULL;
 }
 //---------------------------------------------------------------------
@@ -161,7 +161,7 @@ bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 			if (Contexts.KeyAtIndex(i) != Context)
 				Contexts.ValueAtIndex(i)->Disable();
 
-	PControlLayout* ppCtx = Contexts.Find(Context);
+	PControlLayout* ppCtx = Contexts.Get(Context);
 	if (ppCtx)
 	{
 		(*ppCtx)->Enable();
@@ -173,14 +173,14 @@ bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 
 void CInputServer::DisableContext(CStrID Context)
 {
-	PControlLayout* ppCtx = Contexts.Find(Context);
+	PControlLayout* ppCtx = Contexts.Get(Context);
 	if (ppCtx) (*ppCtx)->Disable();
 }
 //---------------------------------------------------------------------
 
 bool CInputServer::IsContextEnabled(CStrID Context) const
 {
-	PControlLayout* ppCtx = Contexts.Find(Context);
+	PControlLayout* ppCtx = Contexts.Get(Context);
 	return (ppCtx) ? (*ppCtx)->IsEnabled() : false;
 }
 //---------------------------------------------------------------------

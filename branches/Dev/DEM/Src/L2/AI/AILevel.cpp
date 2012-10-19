@@ -11,12 +11,6 @@
 namespace AI
 {
 
-CAILevel::CNavData::CNavData(): pNavMesh(NULL)
-{
-	memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery));
-}
-//---------------------------------------------------------------------
-
 CAILevel::~CAILevel()
 {
 	UnloadNavMesh();
@@ -42,59 +36,16 @@ bool CAILevel::LoadNavMesh(const nString& FileName)
 	int Version = File.Get<int>();
 
 	int NMCount = File.Get<int>();
-
 	for (int NMIdx = 0; NMIdx < NMCount; ++NMIdx)
 	{
 		float Radius = File.Get<float>();
-		float Height = File.Get<float>();
-
-		if (NavData.Contains(Radius))
+		CNavData& New = NavData.Add(Radius);
+		New.AgentRadius = Radius;
+		New.AgentHeight = File.Get<float>();
+		if (!New.LoadFromStream(File))
 		{
-			//UnloadNavMesh();
-			FAIL; //!!!height!
-		}
-
-		int NMDataSize = File.Get<int>();
-		uchar* pData = (uchar*)dtAlloc(NMDataSize, DT_ALLOC_PERM);
-		int BytesRead = File.Read(pData, NMDataSize);
-		n_assert(BytesRead == NMDataSize);
-
-		CNavData New;
-
-		New.pNavMesh = dtAllocNavMesh();
-		if (!New.pNavMesh) FAIL;
-		if (dtStatusFailed(New.pNavMesh->init(pData, NMDataSize, DT_TILE_FREE_DATA)))
-		{
-			dtFreeNavMesh(New.pNavMesh);
-			dtFree(pData);
+			UnloadNavMesh();
 			FAIL;
-		}
-
-		for (int i = 0; i < DEM_THREAD_COUNT; ++i)
-		{
-			New.pNavMeshQuery[i] = dtAllocNavMeshQuery();
-			if (!New.pNavMeshQuery[i] ||
-				dtStatusFailed(New.pNavMeshQuery[i]->init(New.pNavMesh, MAX_COMMON_NODES)))
-			{
-				for (int j = 0; j <= i; ++j)
-					if (New.pNavMeshQuery[j])
-						dtFreeNavMeshQuery(New.pNavMeshQuery[j]);
-				dtFreeNavMesh(New.pNavMesh);
-				FAIL;
-			}
-		}
-
-		NavData.Add(Radius, New);
-
-		int RegionCount = File.Get<int>();
-		for (int RIdx = 0; RIdx < RegionCount; ++RIdx)
-		{
-			int ID = File.Get<int>();
-			int PolyCount = File.Get<int>();
-
-			//!!!DBG TMP!
-			dtPolyRef Refs[512];
-			File.Read(Refs, sizeof(dtPolyRef) * PolyCount);
 		}
 	}
 
@@ -108,10 +59,7 @@ void CAILevel::UnloadNavMesh()
 	for (int i = 0; i < NavData.Size(); ++i)
 	{
 		CNavData& Data = NavData.ValueAtIndex(i);
-		for (int j = 0; j < DEM_THREAD_COUNT; ++j)
-			if (Data.pNavMeshQuery[j])
-				dtFreeNavMeshQuery(Data.pNavMeshQuery[j]);
-		if (Data.pNavMesh) dtFreeNavMesh(Data.pNavMesh);
+		Data.Clear();
 	}
 	NavData.Clear();
 	EventMgr->FireEvent(CStrID("OnNavMeshDataChanged"));
@@ -168,7 +116,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 }
 //---------------------------------------------------------------------
 
-CAILevel::CNavData* CAILevel::GetNavDataForRadius(float ActorRadius)
+CNavData* CAILevel::GetNavData(float ActorRadius)
 {
 	// NavData is assumed to be sorted by key (agent radius) in ascending order
 	for (int i = 0; i < NavData.Size(); ++i)
@@ -181,7 +129,7 @@ CAILevel::CNavData* CAILevel::GetNavDataForRadius(float ActorRadius)
 
 bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue)
 {
-	CNavData* pNav = GetNavDataForRadius(ActorRadius);
+	CNavData* pNav = GetNavData(ActorRadius);
 	if (!pNav) FAIL;
 
 	//!!!Select least loaded thread...

@@ -7,7 +7,7 @@
 #include <Loading/EntityLoaderBase.h>
 #include <DB/Dataset.h>
 #include <DB/Database.h>
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 
 // The CEntityFactory is responsible for creating new game entities.
 // CEntityFactory must be extended by Mangalore applications if the
@@ -67,7 +67,7 @@ private:
 	};
 
 	Ptr<CEntityLoaderBase>			DefaultLoader;
-	nHashMap2<CPropertyInfo>		PropertyMeta; //???index by type or by RTTI?
+	CHashMap<CPropertyInfo>		PropertyMeta; //???index by type or by RTTI?
 	nArray<CPropertyStorage*>		PropStorage; //!!!tmp for iteration through all!
 	nDictionary<CStrID, CEntityCat>	Categories;
 

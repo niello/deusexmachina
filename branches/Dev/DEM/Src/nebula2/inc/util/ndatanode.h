@@ -1,15 +1,10 @@
 #ifndef N_DATA_NODE_H
 #define N_DATA_NODE_H
-//------------------------------------------------------------------------------
-/**
-    @class nDataNode
-    @ingroup NebulaDataTypes
 
-    @brief nNode with custom user data pointer.
-
-    (C) 2012 Niello
-*/
 #include "util/nnode.h"
+
+// nNode with custom user data pointer. Whereas nNode is intended to be derived to store user data,
+// this node contains arbitrary user data as a pointer.
 
 class nDataNode: public nNode
 {

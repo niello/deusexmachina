@@ -1,16 +1,11 @@
 #ifndef N_NODE_H
 #define N_NODE_H
-//------------------------------------------------------------------------------
-/**
-    @class nNode
-    @ingroup NebulaDataTypes
 
-    @brief Implement a node in a doubly linked list.
-
-    (C) 2002 RadonLabs GmbH
-*/
 #include "kernel/ntypes.h"
 #include "kernel/ndebug.h"
+
+// Implement a node in a doubly linked list.
+// (C) 2002 RadonLabs GmbH
 
 class nNode
 {

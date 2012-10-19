@@ -32,7 +32,7 @@ private:
 	static CItemManager*	Singleton;
 	static int				LargestItemStackID;
 
-	HashTable<CStrID, Ptr<CItemTpl>>	ItemTplRegistry;
+	CHashTable<CStrID, Ptr<CItemTpl>>	ItemTplRegistry;
 
 	DB::PDataset						DSInv;
 	DB::PDataset						DSEquip;

@@ -369,6 +369,14 @@
 				Name="Navigation"
 				>
 				<File
+					RelativePath="..\..\Src\L2\AI\Navigation\NavData.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L2\AI\Navigation\NavData.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L2\AI\Navigation\NavMeshDebugDraw.cpp"
 					>
 				</File>

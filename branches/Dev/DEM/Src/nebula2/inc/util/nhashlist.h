@@ -1,160 +1,80 @@
 #ifndef N_HASHLIST_H
 #define N_HASHLIST_H
-//------------------------------------------------------------------------------
-/**
-    @class nHashList
-    @ingroup NebulaDataTypes
 
-    @brief A doubly linked list of named nodes with fast hashtable based search.
-
-    (C) 2002 RadonLabs GmbH
-*/
-#include "kernel/ntypes.h"
 #include "util/nhashnode.h"
 
-//------------------------------------------------------------------------------
-class nHashList : public nList
-{
-public:
-    // default constructor
-    nHashList();
-    /// constructor with given hash table size
-    nHashList(int hashsize);
-    /// get first node
-    nHashNode* GetHead() const;
-    /// get last node
-    nHashNode* GetTail() const;
-    /// add node to beginning of list
-    void AddHead(nHashNode* n);
-    /// add node to end of list
-    void AddTail(nHashNode* n);
-    /// remove first node
-    nHashNode* RemHead();
-    /// remove last node
-    nHashNode* RemTail();
-    /// search node by name
-    nHashNode* Find(const char* name) const;
+// A doubly linked list of named nodes with fast hashtable based search.
+// (C) 2002 RadonLabs GmbH
 
+class nHashList: public nList
+{
 private:
-    enum
-    {
-        N_DEFAULT_HASHSIZE = 16,
-    };
-    nHashTable h_table;
+
+	enum { N_DEFAULT_HASHSIZE = 16 };
+
+	nHashTable HashTable;
+
+public:
+
+	nHashList(): HashTable(N_DEFAULT_HASHSIZE) {}
+	nHashList(int HashSize): HashTable(HashSize) {}
+
+	void		AddHead(nHashNode* pNode);
+	void		AddTail(nHashNode* pNode);
+	nHashNode*	RemHead();
+	nHashNode*	RemTail();
+	nHashNode*	GetHead() const { return (nHashNode*)nList::GetHead(); }
+	nHashNode*	GetTail() const { return (nHashNode*)nList::GetTail(); }
+	nHashNode*	Find(const char* pName) const;
 };
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashList::nHashList() :
-    h_table(N_DEFAULT_HASHSIZE)
+inline void nHashList::AddHead(nHashNode* pNode)
 {
-    // empty
+	n_assert(pNode);
+	pNode->SetHashTable(&HashTable);
+	HashTable.Add(&pNode->StrNode);
+	nList::AddHead((nNode*)pNode);
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashList::nHashList(int hashsize) :
-    h_table(hashsize)
+inline void nHashList::AddTail(nHashNode* pNode)
 {
-    // empty
+	n_assert(pNode);
+	pNode->SetHashTable(&HashTable);
+	HashTable.Add(&pNode->StrNode);
+	nList::AddTail((nNode*)pNode);
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashNode*
-nHashList::GetHead() const
+inline nHashNode* nHashList::RemHead()
 {
-    return (nHashNode*)nList::GetHead();
+	nHashNode* pNode = (nHashNode*)nList::RemHead();
+	if (pNode)
+	{
+		pNode->StrNode.Remove();
+		pNode->SetHashTable(NULL);
+	}
+	return pNode;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashNode*
-nHashList::GetTail() const
+inline nHashNode* nHashList::RemTail()
 {
-    return (nHashNode*)nList::GetTail();
+	nHashNode* pNode = (nHashNode*)nList::RemTail();
+	if (pNode)
+	{
+		pNode->StrNode.Remove();
+		pNode->SetHashTable(NULL);
+	}
+	return pNode;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nHashList::AddHead(nHashNode* n)
+inline nHashNode* nHashList::Find(const char* pName) const
 {
-    n_assert(n);
-    n->SetHashTable(&(this->h_table));
-    this->h_table.Add(&(n->str_node));
-    nList::AddHead((nNode*)n);
+	nStrNode* pNode = HashTable.Find(pName);
+	return pNode ? (nHashNode*)pNode->GetPtr() : NULL;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nHashList::AddTail(nHashNode* n)
-{
-    n_assert(n);
-    n->SetHashTable(&(this->h_table));
-    this->h_table.Add(&(n->str_node));
-    nList::AddTail((nNode*)n);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashNode*
-nHashList::RemHead()
-{
-    nHashNode* n = (nHashNode*)nList::RemHead();
-    if (n)
-    {
-        n->str_node.Remove();
-        n->SetHashTable(0);
-    }
-    return n;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashNode*
-nHashList::RemTail()
-{
-    nHashNode* n = (nHashNode*)nList::RemTail();
-    if (n)
-    {
-        n->str_node.Remove();
-        n->SetHashTable(0);
-    }
-    return n;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nHashNode*
-nHashList::Find(const char* name) const
-{
-    nStrNode* sn = this->h_table.Find(name);
-    if (sn)
-    {
-        return (nHashNode*)sn->GetPtr();
-    }
-    return 0;
-}
-
-//------------------------------------------------------------------------------
 #endif

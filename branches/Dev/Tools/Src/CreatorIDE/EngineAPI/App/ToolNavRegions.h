@@ -32,6 +32,7 @@ protected:
 
 public:
 
+	CStrID	RegionID; // ID (name), that will be assigned to the current region. Empty ID produces unnamed regions.
 	uchar	Area;
 	//float	PolyOffset = 0.f;
 	float	BoxHeight;

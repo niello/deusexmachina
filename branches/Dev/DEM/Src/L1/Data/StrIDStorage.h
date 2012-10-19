@@ -4,7 +4,7 @@
 
 #include "StringID.h"
 
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 
 #define STR_BLOCK_COUNT	64
 #define STR_BLOCK_SIZE	8192
@@ -17,7 +17,7 @@ class CStrIDStorage
 protected:
 
 	//???CPool<LPCSTR>					Table;
-	nHashMap2<CStringID>	Map;
+	CHashMap<CStringID>	Map;
 	LPSTR					Block[STR_BLOCK_COUNT];
 	int						BlockIndex,
 							BlockPosition;

@@ -71,7 +71,7 @@ nResourceServer::GetResourceId(const nString& rsrcName)
             numChars += offset;
             offset = 0;
         }
-        str = rsrcName.ExtractRange(offset, numChars);
+        str = rsrcName.SubString(offset, numChars);
         str.ReplaceChars("\\/:*?\"<>|.", '_');
     }
     return str;

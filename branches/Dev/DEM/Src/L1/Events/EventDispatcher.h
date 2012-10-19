@@ -36,7 +36,7 @@ protected:
 	CEventNode* EventsToAdd;
 
 	// can use sorted array instead of nList & implement subscription priority
-	HashTable<CEventID, PEventHandler> Subscriptions;
+	CHashTable<CEventID, PEventHandler> Subscriptions;
 
 	DWORD	ScheduleEvent(CEventBase* Event, float RelTime);
 	DWORD	DispatchEvent(const CEventBase& Event);

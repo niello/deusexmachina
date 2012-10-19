@@ -4,7 +4,7 @@
 
 #include <Resources/ResourceLoader.h>
 #include <util/ndictionary.h>
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 #include <util/HashTable.h>
 
 // Resource wraps a piece of abstract data, used by other systems. It can be loaded and managed by
@@ -24,8 +24,8 @@ protected:
 	static DWORD UIDCounter;
 
 	//???force ID = Filename StrID for loaded (not created) resources
-	nHashMap2<CResource*>								FileNameToResource;
-	HashTable<CStrID, CResource*>						IDToResource;
+	CHashMap<CResource*>								FileNameToResource;
+	CHashTable<CStrID, CResource*>						IDToResource;
 	nDictionary<const Core::CRTTI*, const Core::CRTTI*> Loaders;
 
 public:

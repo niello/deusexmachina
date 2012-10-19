@@ -314,7 +314,7 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 
 	//!!!DBG TMP!
 	int EdgeType = -1; //!!!Some calcs from ?PolyArea? and PolyFlags!
-	if (PolyFlags == 0x01 && PolyArea == 63)
+	//if (PolyFlags == 0x01 && (PolyArea == 63 || PolyArea == 1))
 	{
 		// Normal poly
 		EdgeType = 0;
