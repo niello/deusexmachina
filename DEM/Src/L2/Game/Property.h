@@ -79,7 +79,7 @@ public:
 };
 
 typedef Ptr<CProperty> PProperty;
-typedef HashTable<CStrID, PProperty> CPropertyStorage;
+typedef CHashTable<CStrID, PProperty> CPropertyStorage;
 
 }
 

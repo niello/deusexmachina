@@ -106,7 +106,13 @@ bool CAppStateEditor::SetTool(LPCSTR Name)
 	if (!Name) pTool = NULL;
 	else if (!strcmp(Name, "Select")) pTool = &ToolSelect;
 	else if (!strcmp(Name, "Transform")) pTool = &ToolTransform;
-	else if (!strcmp(Name, "NavRegions")) pTool = &ToolNavRegions;
+	else if (!strcmp(Name, "NavRegions"))
+	{
+		pTool = &ToolNavRegions;
+
+		//!!!DBG TMP!
+		ToolNavRegions.RegionID = CStrID("Test");
+	}
 	else if (!strcmp(Name, "NavOffmesh")) pTool = &ToolNavOffmesh;
 	else pTool = NULL;
 

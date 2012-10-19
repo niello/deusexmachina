@@ -19,6 +19,8 @@
 #include <Physics/CharEntity.h>
 #include <Physics/Composite.h>
 #include <Data/Streams/FileStream.h>
+#include <Data/BinaryReader.h>
+#include <Data/BinaryWriter.h>
 #include <gfx2/ngfxserver2.h>
 #include <DetourNavMeshQuery.h>
 
@@ -279,8 +281,24 @@ bool CCIDEApp::LoadLevel(const nString& ID)
 	Data::CFileStream File;
 	if (File.Open("src:Levels/" + ID + "/Info.lvl", Data::SAM_READ))
 	{
-		int Count = File.Get<int>();
-		if (Count) File.Read(CurrLevel.ConvexVolumes.Reserve(Count), Count * sizeof(CConvexVolume));
+		Data::CBinaryReader Reader(File);
+		int Count = Reader.Read<int>();
+		if (Count > 0)
+		{
+			CConvexVolume* pNew = CurrLevel.ConvexVolumes.Reserve(Count);
+			for (int i = 0; i < Count; ++i)
+			{
+				pNew->ID = Reader.Read<CStrID>();
+				pNew->VertexCount = File.Get<int>();
+				if (pNew->VertexCount > 0)
+					File.Read(pNew->Vertices, sizeof(vector3) * pNew->VertexCount);
+				pNew->MinY = Reader.Read<float>();
+				pNew->MaxY = Reader.Read<float>();
+				pNew->Area = Reader.Read<uchar>();
+				++pNew;
+			}
+		}
+
 		Count = File.Get<int>();
 		if (Count) File.Read(CurrLevel.OffmeshConnections.Reserve(Count), Count * sizeof(COffmeshConnection));
 		File.Close();
@@ -309,9 +327,21 @@ void CCIDEApp::UnloadLevel(bool SaveChanges)
 		Data::CFileStream File;
 		if (File.Open("src:Levels/" + CurrLevel.ID + "/Info.lvl", Data::SAM_WRITE))
 		{
+			Data::CBinaryWriter Writer(File);
 			int Count = CurrLevel.ConvexVolumes.Size();
 			File.Put<int>(Count);
-			if (Count) File.Write(CurrLevel.ConvexVolumes.Begin(), Count * sizeof(CConvexVolume));
+			for (int i = 0; i < Count; ++i)
+			{
+				CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
+				Writer.Write(Vol.ID);
+				File.Put<int>(Vol.VertexCount);
+				if (Vol.VertexCount > 0)
+					File.Write(Vol.Vertices, sizeof(vector3) * Vol.VertexCount);
+				File.Put<float>(Vol.MinY);
+				File.Put<float>(Vol.MaxY);
+				File.Put<uchar>(Vol.Area);
+			}
+
 			Count = CurrLevel.OffmeshConnections.Size();
 			File.Put<int>(Count);
 			if (Count) File.Write(CurrLevel.OffmeshConnections.Begin(), Count * sizeof(COffmeshConnection));
@@ -472,6 +502,8 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		Data::CFileStream File;
 		if (!File.Open(Path, Data::SAM_WRITE)) FAIL;
 
+		Data::CBinaryWriter Writer(File);
+
 		static const int NM_VERSION = 1;
 		File.Put<int>('_NM_');
 		File.Put<int>(NM_VERSION);
@@ -487,11 +519,9 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 
 		// Detect poly list for each volume and write it
 
-		//!!!"Named" must be area-independent bool flag in volume, set on creation.
-		// Can also associate string name with it!
 		DWORD NamedRegionCount = 0;
 		for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
-			if (CurrLevel.ConvexVolumes[i].Area == NAV_AREA_NAMED)
+			if (CurrLevel.ConvexVolumes[i].ID.IsValid())
 				++NamedRegionCount;
 
 		if (NamedRegionCount)
@@ -523,9 +553,9 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 			for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
 			{
 				CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
-				if (Vol.Area == NAV_AREA_NAMED)
+				if (Vol.ID.IsValid())
 				{
-					File.Put<int>(i); // Volume region ID
+					Writer.Write(Vol.ID);
 
 					const int MAX_POLYS = 256;
 					dtPolyRef	PolyRefs[MAX_POLYS];

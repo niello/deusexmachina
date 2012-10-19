@@ -5,7 +5,7 @@
 #include <Data/Singleton.h>
 #include <Data/Data.h>
 #include <util/nlist.h>
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 
 // Core server manages low-level object framework
 
@@ -25,7 +25,7 @@ private:
 
 	bool					_IsOpen;
 	static nList			RefCountedList;
-	nHashMap2<Data::CData>	Globals; //!!!Need iterability!
+	CHashMap<Data::CData>	Globals; //!!!Need iterability!
 
 public:
 

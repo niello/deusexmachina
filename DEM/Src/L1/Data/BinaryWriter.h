@@ -51,7 +51,7 @@ public:
 
 inline bool CBinaryWriter::WriteString(LPCSTR Value)
 {
-	short Len = (short)strlen(Value);
+	short Len = Value ? (short)strlen(Value) : 0;
 	return Write(Len) && (!Len || Stream.Write(Value, Len) == Len);
 }
 //---------------------------------------------------------------------

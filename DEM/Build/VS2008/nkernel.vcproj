@@ -792,6 +792,14 @@
 			Name="util"
 			Filter="cpp;c;cxx;cc;h;hxx;hcc"
 			>
+			<File
+				RelativePath="..\..\Src\nebula2\inc\util\nlinebuffer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\nebula2\inc\util\nringbuffer.h"
+				>
+			</File>
 			<Filter
 				Name="narray"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
@@ -822,19 +830,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="nbuffer"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nlinebuffer.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nringbuffer.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="nhash"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
@@ -843,15 +838,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\nebula2\inc\util\HashMap.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\nebula2\inc\util\HashTable.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nhashmap2.h"
+					RelativePath="..\..\Src\nebula2\inc\util\nhashtable.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nhashtable.h"
+					RelativePath="..\..\Src\nebula2\inc\util\SuperFastHash.h"
 					>
 				</File>
 			</Filter>
@@ -1021,10 +1020,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nkeyvaluepair.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\util\npfeedbackloop.h"
 					>
 				</File>
@@ -1034,6 +1029,10 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\nebula2\inc\util\nthreadvariable.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\util\PairT.h"
 					>
 				</File>
 			</Filter>

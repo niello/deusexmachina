@@ -2,13 +2,33 @@
 #ifndef __DEM_L1_HASH_H__
 #define __DEM_L1_HASH_H__
 
+#include "SuperFastHash.h"
+
 // Hash functions
+
+inline unsigned int Hash(const void* pData, int Length)
+{
+	return SuperFastHash((const char*)pData, Length);
+}
+//---------------------------------------------------------------------
+
+inline unsigned int Hash(const char* pStr)
+{
+	return Hash(pStr, strlen(pStr));
+}
+//---------------------------------------------------------------------
 
 template<class T> inline unsigned int Hash(const T& Key)
 {
 	//???what about smaller then DWORD?
 	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
-	else return OneAtATimeHash(&Key, sizeof(T));
+	else return Hash(&Key, sizeof(T));
+}
+//---------------------------------------------------------------------
+
+template<> inline unsigned int Hash<const char*>(const char * const & Key)
+{
+	return Hash(Key, strlen(Key));
 }
 //---------------------------------------------------------------------
 
@@ -24,12 +44,9 @@ inline int WangIntegerHash(int Key)
 }
 //---------------------------------------------------------------------
 
-//!!!
-/**
-    So called one-at-a-time Hash.
-    @ref http://burtleburtle.net/bob/Hash/doobs.html
-    @todo Implement SuperFastHash from http://www.azillionmonkeys.com/qed/Hash.html
-*/
+/*
+// So called one-at-a-time Hash.
+// http://burtleburtle.net/bob/Hash/doobs.html
 inline unsigned int OneAtATimeHash(const void* Key, size_t Length)
 {
 	unsigned int Hash = 0;
@@ -51,5 +68,6 @@ inline unsigned int OneAtATimeHash(const void* Key, size_t Length)
 	return Hash; // & (~(1 << 31)); // Don't return a negative number (in case IndexT is defined signed)
 }
 //---------------------------------------------------------------------
+*/
 
 #endif

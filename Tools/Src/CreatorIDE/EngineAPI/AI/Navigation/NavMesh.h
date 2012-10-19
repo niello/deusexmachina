@@ -26,9 +26,9 @@ const ushort NAV_FLAG_NORMAL = 0x01;
 // Areas
 const uchar NAV_AREA_NAMED = 1;	// Special area type for named areas
 
-#pragma pack(push, 1)
 struct CConvexVolume
 {
+	CStrID	ID;
 	vector3	Vertices[MAX_CONVEXVOL_PTS];
 	int		VertexCount;
 	float	MinY;
@@ -36,6 +36,7 @@ struct CConvexVolume
 	uchar	Area;
 };
 
+#pragma pack(push, 1)
 struct COffmeshConnection
 {
 	vector3	From;

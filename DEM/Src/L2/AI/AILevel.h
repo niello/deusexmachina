@@ -6,16 +6,12 @@
 #include <Data/Buffer.h>
 #include <AI/ActorFwd.h>
 #include <AI/Perception/Stimulus.h>
+#include <AI/Navigation/NavData.h>
 #include <AI/Navigation/PathRequestQueue.h>
 
 // AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysicsLevel),
 // that contains stimuli, AI hints and other AI-related world info. Also AILevel serves as
 // a navigation manager.
-
-static const int MAX_NAV_PATH = 256;
-static const int MAX_ITERS_PER_UPDATE = 100;
-static const int MAX_PATHQUEUE_NODES = 4096;
-static const int MAX_COMMON_NODES = 512;
 
 namespace AI
 {
@@ -26,21 +22,12 @@ class CAILevel: public Core::CRefCounted
 {
 protected:
 
-	struct CNavData
-	{
-		dtNavMesh*		pNavMesh;
-		dtNavMeshQuery*	pNavMeshQuery[DEM_THREAD_COUNT]; // [0] is sync, main query
-
-		CNavData();
-	};
-
 	bbox3							Box;
-	CStimulusQT						StimulusQT;						// Quadtree containing stimuli and other AI hints
-
-	nDictionary<float, CNavData>	NavData;						// Mapped to maximum radius of agent
+	CStimulusQT						StimulusQT;		// Quadtree containing stimuli and other AI hints
+	nDictionary<float, CNavData>	NavData;		// Mapped to maximum radius of agent
 
 	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus ClipStatus = InvalidClipStatus);
-	CNavData*	GetNavDataForRadius(float ActorRadius);
+	CNavData*	GetNavData(float ActorRadius);
 
 public:
 
@@ -73,14 +60,14 @@ inline void CAILevel::UpdateActorsSense(CActor* pActor, CSensor* pSensor)
 
 inline dtNavMesh* CAILevel::GetNavMesh(float ActorRadius)
 {
-	CNavData* pNav = GetNavDataForRadius(ActorRadius);
+	CNavData* pNav = GetNavData(ActorRadius);
 	return pNav ? pNav->pNavMesh : NULL;
 }
 //---------------------------------------------------------------------
 
 inline dtNavMeshQuery* CAILevel::GetSyncNavQuery(float ActorRadius)
 {
-	CNavData* pNav = GetNavDataForRadius(ActorRadius);
+	CNavData* pNav = GetNavData(ActorRadius);
 	return pNav ? pNav->pNavMeshQuery[0] : NULL;
 }
 //---------------------------------------------------------------------

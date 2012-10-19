@@ -34,7 +34,7 @@ protected:
 	nArray<PEntity>				NewEntities;
 	nArray<PEntity>				RemovedEntities;
 
-	HashTable<CStrID, CEntity*>	EntityRegistry;
+	CHashTable<CStrID, CEntity*>	EntityRegistry;
 	nDictionary<CStrID, CStrID>	Aliases; //???map? of CEntity*?
 
 	PROFILER_DECLARE(profOnBeginFrame);

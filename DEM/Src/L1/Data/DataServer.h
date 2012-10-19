@@ -6,7 +6,7 @@
 #include <Data/FileSystem.h>
 #include <Data/StringID.h>
 #include <Data/DataScheme.h>
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 #include <util/ndictionary.h>
 #include <StdDEM.h>
 
@@ -30,8 +30,8 @@ private:
 	PFileSystem							DefaultFS;
 	nArray<PFileSystem>					FS;
 	Ptr<class CHRDParser>				pHRDParser;
-	nHashMap2<PParams>					HRDCache; //!!!need better hashmap with Clear, Find etc!
-	nHashMap2<nString>					Assigns; //!!!need better hashmap with Clear, Find etc!
+	CHashMap<PParams>					HRDCache; //!!!need better hashmap with Clear, Find etc!
+	CHashMap<nString>					Assigns; //!!!need better hashmap with Clear, Find etc!
 	nDictionary<CStrID, PDataScheme>	DataSchemes;
 
 public:

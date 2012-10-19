@@ -19,7 +19,7 @@ class CDBServer: public Core::CRefCounted
 
 private:
 
-	HashTable<CStrID, CAttributeID>	AttrIDRegistry;
+	CHashTable<CStrID, CAttributeID>	AttrIDRegistry;
 
 public:
 

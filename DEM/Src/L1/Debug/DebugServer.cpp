@@ -101,7 +101,7 @@ bool CDebugServer::OnShowDebugWatcher(const Events::CEventBase& Event)
 
 void CDebugServer::TogglePluginWindow(CStrID Name)
 {
-	CPlugin* pPlugin = Plugins.Find(Name);
+	CPlugin* pPlugin = Plugins.Get(Name);
 	if (!pPlugin) return;
 
 	UI::CWindow& UI = *pPlugin->Window;

@@ -35,7 +35,7 @@ public:
 	void	Reserve(int Size);
 	void	Clear();
 	void	Trim(int Size) { n_assert(Size <= DataSize); DataSize = Size; }
-	int		HashCode() const { OneAtATimeHash(pData, DataSize); }
+	int		HashCode() const { Hash(pData, DataSize); }
 
 	bool	IsValid() const { return !!pData; }
 	void*	GetPtr() const { return pData; }

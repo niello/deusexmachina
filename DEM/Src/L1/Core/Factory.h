@@ -5,7 +5,7 @@
 // Facilities for creating objects by type name to support load/save mechanism.
 
 #include <Core/Ptr.h>
-#include <util/nhashmap2.h>
+#include <util/HashMap.h>
 #include <util/nstring.h>
 
 namespace Core
@@ -21,7 +21,7 @@ class CFactory
 {
 protected:
 
-	nHashMap2<CFactoryFunction> ClassTable;
+	CHashMap<CFactoryFunction> ClassTable;
 
 	CFactory(): ClassTable(NULL, 512) {}
 

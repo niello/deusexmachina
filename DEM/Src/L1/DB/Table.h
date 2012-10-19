@@ -37,7 +37,7 @@ private:
 	PDatabase					Database;
 	nString						Name;
 	nArray<CColumn>				Columns;
-	HashTable<nString, int>		NameIdxMap; //!!!CStrID!
+	CHashTable<nString, int>		NameIdxMap; //!!!CStrID!
 	nDictionary<CAttrID, int>	AttrIDIdxMap;
 	nArray<int>					PKColumnIndices;
 

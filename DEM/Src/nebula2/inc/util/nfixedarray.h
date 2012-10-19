@@ -34,6 +34,9 @@ public:
 
 	void	SetSize(int NewSize) { if (size != NewSize) Allocate(NewSize); }
 	int		Size() const { return size; }
+	TYPE*	GetPtr() { return pData; }
+
+	void	RawCopyFrom(const TYPE* pSrc, uint SrcCount);
 
 	void	operator =(const nFixedArray<TYPE>& Other) { Copy(Other); }
 	TYPE&	operator [](int Index) const;
@@ -81,7 +84,15 @@ template<class TYPE> void nFixedArray<TYPE>::Delete()
 }
 //---------------------------------------------------------------------
 
-template<class TYPE> TYPE& nFixedArray<TYPE>::operator[](int Index) const
+// Doesn't call element constructors
+template<class TYPE> void nFixedArray<TYPE>::RawCopyFrom(const TYPE* pSrc, uint SrcCount)
+{
+	n_assert(pSrc);
+	memcpy(pData, pSrc, n_min(SrcCount, size));
+}
+//---------------------------------------------------------------------
+
+template<class TYPE> TYPE& nFixedArray<TYPE>::operator [](int Index) const
 {
 	n_assert(pData && Index >= 0 && Index < size);
 	return pData[Index];
