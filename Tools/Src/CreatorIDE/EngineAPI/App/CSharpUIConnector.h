@@ -17,12 +17,13 @@ enum EMouseAction
 
 typedef void (__stdcall *CCallback_V_V)();
 typedef void (__stdcall *CCallback_V_S)(const char*);
+typedef char* (__stdcall *CCallback_S_S)(const char*);
 typedef void (__stdcall *CMouseButtonCallback)(int x, int y, int Button, EMouseAction Action);
 
 namespace App
 {
 
-class CCSharpUIEventHandler
+class CCSharpUIConnector
 {
 protected:
 
@@ -35,8 +36,9 @@ public:
 	// Now communication with C# is done through hand-written unmanaged->managed code callbacks
 	CCallback_V_S			OnEntitySelectedCB;
 	CMouseButtonCallback	MouseButtonCB;
+	CCallback_S_S			StringInputCB;
 
-	CCSharpUIEventHandler();
+	CCSharpUIConnector();
 };
 
 }

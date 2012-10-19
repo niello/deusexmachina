@@ -198,11 +198,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CSharpUIEventHandler.cpp"
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CSharpUIConnector.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CSharpUIEventHandler.h"
+				RelativePath="..\..\Src\CreatorIDE\EngineAPI\App\CSharpUIConnector.h"
 				>
 			</File>
 			<File

@@ -85,6 +85,10 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 				Vol.MinY -= BoxDescent;
 				Vol.MaxY = Vol.MinY + BoxHeight;
 				Vol.Area = Area;
+
+				if (!RegionID.IsValid())
+					RegionID = CStrID(CIDEApp->GetStringInput(RegionID.CStr()).Get());
+
 				Vol.ID = RegionID;
 
 				RegionID = CStrID::Empty;

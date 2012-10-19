@@ -19,6 +19,11 @@ namespace CreatorIDE
             DialogResult = DialogResult.Cancel;
         }
 
+        public void SetCaption(String Caption)
+        {
+            Text = Caption;
+        }
+
         private void OnOkButtonClick(object sender, EventArgs e)
         {
             DialogResult = DialogResult.OK;
