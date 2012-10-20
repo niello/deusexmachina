@@ -111,6 +111,8 @@ bool CCIDEApp::Open()
 	SI::RegisterGlobals();
 	SI::RegisterEventManager();
 	SI::RegisterEntityManager();
+	SI::RegisterScriptObjectSIEx();
+	SI::RegisterNavMesh();
 
 	InputSrv->SetContextLayout(CStrID("Debug"), CStrID("Debug"));
 	InputSrv->SetContextLayout(CStrID("Game"), CStrID("Game"));
@@ -305,6 +307,7 @@ bool CCIDEApp::LoadLevel(const nString& ID)
 	}
 	CurrLevel.ID = ID;
 	CurrLevel.ConvexChanged = true;
+	CurrLevel.ConvexIDChanged = true;
 	CurrLevel.OffmeshChanged = true;
 	InvalidateNavGeometry();
 
@@ -347,9 +350,6 @@ void CCIDEApp::UnloadLevel(bool SaveChanges)
 			if (Count) File.Write(CurrLevel.OffmeshConnections.Begin(), Count * sizeof(COffmeshConnection));
 			File.Close();
 		}
-
-		//!!!save navigation mesh, ALSO save on build (export)
-		//don't forget to save level's ref to nav mesh resource
 		
 		LoaderSrv->CommitChangesToDB();
 	}
@@ -433,7 +433,7 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 
 	n_printf("NavMesh building started\n");
 
-	//!!! || bbox changed || settings like cs & ch changed!
+	//!!! || bbox changed(from geometry only, or level's too?) || settings like cs & ch changed!
 	bool ResetGeometry = CurrLevel.NavGeometryChanged;
 
 	if (ResetGeometry)
@@ -477,7 +477,7 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 		if (!pNavMeshBuilder->BuildDetailMesh()) FAIL;
 	}
 
-	bool DataChanged = RebuildMesh | CurrLevel.OffmeshChanged;
+	bool DataChanged = RebuildMesh || CurrLevel.OffmeshChanged;
 
 	if (CurrLevel.OffmeshChanged)
 	{
@@ -491,7 +491,7 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 	Path.Format("export:Nav/%s.nm", pRsrcName);
 	if (!DataSrv->CreateDirectory(Path.ExtractDirName())) FAIL;
 
-	if (DataChanged)
+	if (DataChanged || CurrLevel.ConvexIDChanged)
 	{
 		// Can't use CBuffer due to dtCreateNavMeshData implementation
 		uchar* pData;
@@ -612,6 +612,8 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 
 		dtFree(pData);
 	}
+
+	CurrLevel.ConvexIDChanged = false;
 
 	OK;
 }

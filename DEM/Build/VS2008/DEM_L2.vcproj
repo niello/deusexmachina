@@ -1553,6 +1553,10 @@
 				RelativePath="..\..\Src\L2\SI\SIEntityManager.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L2\SI\SINavMesh.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

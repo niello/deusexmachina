@@ -27,6 +27,9 @@ namespace AI
 {
 typedef nFixedArray<dtPolyRef> CNavRegion;
 
+#define NAV_FLAG_NORMAL	0x01	// Normal poly (poly must have at least 1 flag set to be passable)
+#define NAV_FLAG_LOCKED	0x02	// Poly is locked by door, obstacle or any other physical/collision object 
+
 class CNavData
 {
 public:
