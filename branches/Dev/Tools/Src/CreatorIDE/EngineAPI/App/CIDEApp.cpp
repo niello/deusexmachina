@@ -524,6 +524,8 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 			if (CurrLevel.ConvexVolumes[i].ID.IsValid())
 				++NamedRegionCount;
 
+		File.Put<int>(NamedRegionCount);
+
 		if (NamedRegionCount)
 		{
 			dtNavMesh* pNavMesh = dtAllocNavMesh();
@@ -548,8 +550,6 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 
 			const dtQueryFilter* pNavFilter = AISrv->GetDefaultNavQueryFilter();
 
-			File.Put<int>(NamedRegionCount);
-
 			for (int i = 0; i < CurrLevel.ConvexVolumes.Size(); ++i)
 			{
 				CConvexVolume& Vol = CurrLevel.ConvexVolumes[i];
@@ -563,7 +563,7 @@ bool CCIDEApp::BuildNavMesh(const char* pRsrcName, float AgentRadius, float Agen
 
 					// Slightly reduce region to avoid including neighbour polys
 					vector3	VReduced[MAX_CONVEXVOL_PTS];
-					int VCount = OffsetPoly(Vol.Vertices, Vol.VertexCount, -Cfg.cs, VReduced, MAX_CONVEXVOL_PTS);
+					int VCount = OffsetPoly(Vol.Vertices, Vol.VertexCount, -2.0f * Cfg.cs, VReduced, MAX_CONVEXVOL_PTS);
 
 					// Change Recast CW winding to Detour CCW
 					vector3	Vertices[MAX_CONVEXVOL_PTS];
