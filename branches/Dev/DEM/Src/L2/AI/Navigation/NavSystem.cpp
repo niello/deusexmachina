@@ -16,6 +16,7 @@ CNavSystem::CNavSystem(CActor* Actor):
 	DestRef(0),
 	OffMeshRef(0),
 	pProcessingQueue(NULL),
+	PathRequestID(DT_PATHQ_INVALID),
 	TraversingOffMesh(false)
 {
 	Corridor.init(MAX_NAV_PATH);
@@ -54,8 +55,38 @@ void CNavSystem::Term()
 	{
 		pProcessingQueue->CancelRequest(PathRequestID);
 		pProcessingQueue = NULL;
+		PathRequestID = DT_PATHQ_INVALID;
 	}
 	n_delete(pBoundary);
+}
+//---------------------------------------------------------------------
+
+void CNavSystem::SetupState()
+{
+	ReplanTime = 0.f;
+	//TopologyOptTime = 0.f;
+	OffMeshRef = 0;
+	TraversingOffMesh = false;
+	if (pProcessingQueue)
+	{
+		pProcessingQueue->CancelRequest(PathRequestID);
+		pProcessingQueue = NULL;
+		PathRequestID = DT_PATHQ_INVALID;
+	}
+
+	dtPolyRef Ref = 0;
+
+	pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius);
+	if (pNavQuery)
+	{
+		const float Extents[3] = { 0.f, pActor->Height, 0.f };
+		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
+	}
+
+	pActor->NavStatus = Ref ? AINav_Done : AINav_Invalid;
+	Corridor.reset(Ref, pActor->Position.v);
+
+	if (pBoundary) pBoundary->reset();
 }
 //---------------------------------------------------------------------
 
@@ -274,6 +305,7 @@ void CNavSystem::Update(float FrameTime)
 
 				ReplanTime = 0.f;
 				pProcessingQueue = NULL;
+				PathRequestID = DT_PATHQ_INVALID;
 			}
 		}
 	}
@@ -335,32 +367,9 @@ void CNavSystem::Reset()
 	{
 		pProcessingQueue->CancelRequest(PathRequestID);
 		pProcessingQueue = NULL;
+		PathRequestID = DT_PATHQ_INVALID;
 	}
 	Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
-	if (pBoundary) pBoundary->reset();
-}
-//---------------------------------------------------------------------
-
-void CNavSystem::SetupState()
-{
-	ReplanTime = 0.f;
-	//TopologyOptTime = 0.f;
-	OffMeshRef = 0;
-	TraversingOffMesh = false;
-	pProcessingQueue = NULL;
-
-	dtPolyRef Ref = 0;
-
-	pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius);
-	if (pNavQuery)
-	{
-		const float Extents[3] = { 0.f, pActor->Height, 0.f };
-		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
-	}
-
-	pActor->NavStatus = Ref ? AINav_Done : AINav_Invalid;
-	Corridor.reset(Ref, pActor->Position.v);
-
 	if (pBoundary) pBoundary->reset();
 }
 //---------------------------------------------------------------------

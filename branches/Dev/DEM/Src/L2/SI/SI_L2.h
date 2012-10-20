@@ -7,8 +7,9 @@
 
 namespace SI
 {
-	bool RegisterEntityManager();
 	bool RegisterScriptObjectSIEx();
+	bool RegisterEntityManager();
+	bool RegisterNavMesh();
 }
 
 #endif

@@ -23,6 +23,7 @@ struct CLevelInfo
 	nArray<CConvexVolume>		ConvexVolumes;
 	nArray<COffmeshConnection>	OffmeshConnections;
 	bool						ConvexChanged;
+	bool						ConvexIDChanged;
 	bool						OffmeshChanged;
 	bool						NavGeometryChanged;
 };

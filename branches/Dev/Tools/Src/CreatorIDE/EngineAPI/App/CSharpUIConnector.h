@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __CIDE_CSHARP_UI_EVENT_HANDLER_H__
-#define __CIDE_CSHARP_UI_EVENT_HANDLER_H__
+#ifndef __CIDE_CSHARP_UI_CONNECTOR_H__
+#define __CIDE_CSHARP_UI_CONNECTOR_H__
 
 #include <App/EditorTool.h>
 #include <Events/Events.h>

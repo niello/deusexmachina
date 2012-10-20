@@ -35,7 +35,9 @@ CAIServer::CAIServer()
 	pOAParams->adaptiveDepth = 5;
 	ObstacleAvoidanceParams.Add(CStrID::Empty, pOAParams);
 
-	NavQueryFilters.Add(CStrID::Empty, n_new(dtQueryFilter));
+	dtQueryFilter* pNavFilter = n_new(dtQueryFilter);
+	pNavFilter->setExcludeFlags(NAV_FLAG_LOCKED);
+	NavQueryFilters.Add(CStrID::Empty, pNavFilter);
 
 	for (int i = 0; i < DEM_THREAD_COUNT; ++i)
 		n_assert(PathQueues[i].Init(MAX_NAV_PATH)); //???reinit on each level loading?
@@ -65,6 +67,13 @@ bool CAIServer::SetupLevel(const bbox3& Bounds)
 }
 //---------------------------------------------------------------------
 
+void CAIServer::Trigger()
+{
+	for (int i = 0; i < DEM_THREAD_COUNT; ++i)
+		PathQueues[i].Update(100);
+}
+//---------------------------------------------------------------------
+
 void CAIServer::RenderDebug()
 {
 	// Render the first NavMesh (later render navmesh used by the current actor)
@@ -77,6 +86,7 @@ void CAIServer::RenderDebug()
 
 			nGfxServer2::Instance()->BeginShapes();
 			duDebugDrawNavMesh(&DD, *pNavQuery->getAttachedNavMesh(), DU_DRAWNAVMESH_OFFMESHCONS);
+			duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
 			//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
 			nGfxServer2::Instance()->EndShapes();
 		}

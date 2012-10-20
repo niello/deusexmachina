@@ -47,6 +47,7 @@ public:
 	~CAIServer();
 
 	bool						SetupLevel(const bbox3& Bounds);
+	void						Trigger();
 	void						RenderDebug();
 
 	void						AddSmartObjActionTpl(CStrID ID, const CParams& Desc);

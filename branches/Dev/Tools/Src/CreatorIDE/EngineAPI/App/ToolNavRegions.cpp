@@ -45,11 +45,8 @@ void CToolNavRegions::Deactivate()
 bool CToolNavRegions::OnMBDown(const Events::CEventBase& Event)
 {
 	const Event::MouseBtnDown& Ev = ((const Event::MouseBtnDown&)Event);
-	if (Ev.Button == Input::MBLeft)
-	{
-		MBDownX = Ev.X;
-		MBDownY = Ev.Y;
-	}
+	MBDownX = Ev.X;
+	MBDownY = Ev.Y;
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -58,15 +55,15 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 {
 	const Event::MouseBtnUp& Ev = ((const Event::MouseBtnUp&)Event);
 
+	// Check mouse movement between down and up, for camera handling
+	int DiffX = Ev.X - MBDownX;
+	int DiffY = Ev.Y - MBDownY;
+	if (DiffX * DiffX > 2 * 2 || DiffX * DiffX > 2 * 2) FAIL;
+
 	const vector3& Pt = EnvQueryMgr->GetMousePos3D();
 
 	if (Ev.Button == Input::MBLeft) // Create
 	{
-		// Check mouse movement between down and up, for camera handling
-		int DiffX = Ev.X - MBDownX;
-		int DiffY = Ev.Y - MBDownY;
-		if (DiffX * DiffX > 2 * 2 || DiffX * DiffX > 2 * 2) FAIL;
-
 		// If clicked on that last pt, create the shape.
 		if (PointCount && vector3::SqDistance(Pt, Points[PointCount - 1]) < 0.01f) // 0.1 * 0.1
 		{
@@ -116,19 +113,30 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 			}
 		}
 	}
-	else if (Ev.Button == Input::MBMiddle) // Delete
+	else
 	{
-		int NearestIdx = -1;
+		CConvexVolume* pNearest = NULL;
 		for (int i = 0; i < CIDEApp->CurrLevel.ConvexVolumes.Size(); ++i)
 		{
 			CConvexVolume& Vol = CIDEApp->CurrLevel.ConvexVolumes[i];
 			if (IsPointInPoly(Vol.VertexCount, Vol.Vertices, Pt) && Pt.y >= Vol.MinY && Pt.y <= Vol.MaxY)
-				NearestIdx = i;
+				pNearest = &Vol;
 		}
-		if (NearestIdx != -1)
+
+		if (pNearest)
 		{
-			CIDEApp->CurrLevel.ConvexVolumes.Erase(NearestIdx);
-			CIDEApp->CurrLevel.ConvexChanged = true;
+			if (Ev.Button == Input::MBMiddle) // Delete
+			{
+				CIDEApp->CurrLevel.ConvexVolumes.Erase(pNearest);
+				CIDEApp->CurrLevel.ConvexChanged = true;
+			}
+			else if (Ev.Button == Input::MBRight) // Name
+			{
+				CStrID Old = pNearest->ID;
+				pNearest->ID = CStrID(CIDEApp->GetStringInput(Old.CStr()).Get());
+				if (Old != pNearest->ID)
+					CIDEApp->CurrLevel.ConvexIDChanged = true;
+			}
 		}
 	}
 

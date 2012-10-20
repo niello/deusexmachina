@@ -4,9 +4,6 @@
 #include <AI/Perception/Sensor.h>
 #include <Data/Streams/FileStream.h>
 #include <Events/EventManager.h>
-#include <DetourCommon.h>
-#include <DetourNavMeshQuery.h>
-#include <DetourPathCorridor.h>
 
 namespace AI
 {
@@ -57,12 +54,79 @@ bool CAILevel::LoadNavMesh(const nString& FileName)
 void CAILevel::UnloadNavMesh()
 {
 	for (int i = 0; i < NavData.Size(); ++i)
-	{
-		CNavData& Data = NavData.ValueAtIndex(i);
-		Data.Clear();
-	}
+		NavData.ValueAtIndex(i).Clear();
 	NavData.Clear();
 	EventMgr->FireEvent(CStrID("OnNavMeshDataChanged"));
+}
+//---------------------------------------------------------------------
+
+void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius)
+{
+	bool ProcessAll = ActorRadius <= 0.f;
+	for (int i = 0; i < NavData.Size(); ++i)
+		if (ProcessAll || ActorRadius <= NavData.KeyAtIndex(i))
+		{
+			CNavData& Data = NavData.ValueAtIndex(i);
+			CNavRegion* pRegion = Data.Regions.Get(ID);
+			if (!pRegion) continue;
+
+			for (int j = 0; j < pRegion->Size(); ++j)
+			{
+				dtPolyRef Ref = (*pRegion)[j];
+				ushort PolyFlags;
+				if (dtStatusSucceed(Data.pNavMesh->getPolyFlags(Ref, &PolyFlags)))
+				{
+					if (Set) PolyFlags |= Flags;
+					else PolyFlags &= ~Flags;
+					Data.pNavMesh->setPolyFlags(Ref, PolyFlags);
+				}
+			}
+
+			if (!ProcessAll) break;
+		}
+}
+//---------------------------------------------------------------------
+
+void CAILevel::SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius)
+{
+	bool ProcessAll = ActorRadius <= 0.f;
+	for (int i = 0; i < NavData.Size(); ++i)
+		if (ProcessAll || ActorRadius <= NavData.KeyAtIndex(i))
+		{
+			CNavData& Data = NavData.ValueAtIndex(i);
+			CNavRegion* pRegion = Data.Regions.Get(ID);
+			if (!pRegion) continue;
+
+			for (int j = 0; j < pRegion->Size(); ++j)
+				Data.pNavMesh->setPolyArea((*pRegion)[j], Area);
+
+			if (!ProcessAll) break;
+		}
+}
+//---------------------------------------------------------------------
+
+CNavData* CAILevel::GetNavData(float ActorRadius)
+{
+	// NavData is assumed to be sorted by key (agent radius) in ascending order
+	for (int i = 0; i < NavData.Size(); ++i)
+		if (ActorRadius <= NavData.KeyAtIndex(i))
+			return &NavData.ValueAtIndex(i);
+
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue)
+{
+	CNavData* pNav = GetNavData(ActorRadius);
+	if (!pNav) FAIL;
+
+	//!!!Select least loaded thread...
+	DWORD ThreadID = 0;
+
+	pOutQuery = pNav->pNavMeshQuery[ThreadID];
+	pOutQueue = AISrv->GetPathQueue(ThreadID);
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -113,31 +177,6 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 	if (pNode->HasChildren())
 		for (DWORD i = 0; i < 4; i++)
 			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, ClipStatus);
-}
-//---------------------------------------------------------------------
-
-CNavData* CAILevel::GetNavData(float ActorRadius)
-{
-	// NavData is assumed to be sorted by key (agent radius) in ascending order
-	for (int i = 0; i < NavData.Size(); ++i)
-		if (ActorRadius <= NavData.KeyAtIndex(i))
-			return &NavData.ValueAtIndex(i);
-
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue)
-{
-	CNavData* pNav = GetNavData(ActorRadius);
-	if (!pNav) FAIL;
-
-	//!!!Select least loaded thread...
-	DWORD ThreadID = 0;
-
-	pOutQuery = pNav->pNavMeshQuery[ThreadID];
-	pOutQueue = AISrv->GetPathQueue(ThreadID);
-	OK;
 }
 //---------------------------------------------------------------------
 

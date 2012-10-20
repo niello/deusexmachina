@@ -40,6 +40,10 @@ public:
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
 	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);
+	void			SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius = 0.f);
+	void			SetNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
+	void			ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
+	void			SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius = 0.f);
 
 	CStimulusNode*	RegisterStimulus(CStimulus* pStimulus);
 	CStimulusNode*	UpdateStimulusLocation(CStimulus* pStimulus) { n_assert(pStimulus && pStimulus->GetQuadTreeNode()); return StimulusQT.UpdateObject(pStimulus); }
@@ -69,6 +73,18 @@ inline dtNavMeshQuery* CAILevel::GetSyncNavQuery(float ActorRadius)
 {
 	CNavData* pNav = GetNavData(ActorRadius);
 	return pNav ? pNav->pNavMeshQuery[0] : NULL;
+}
+//---------------------------------------------------------------------
+
+inline void CAILevel::SetNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius)
+{
+	SwitchNavRegionFlags(ID, true, Flags, ActorRadius);
+}
+//---------------------------------------------------------------------
+
+inline void CAILevel::ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius)
+{
+	SwitchNavRegionFlags(ID, false, Flags, ActorRadius);
 }
 //---------------------------------------------------------------------
 
