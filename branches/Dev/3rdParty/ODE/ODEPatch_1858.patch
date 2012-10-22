@@ -2,44 +2,17 @@ Index: build/premake4.lua
 ===================================================================
 --- build/premake4.lua	(revision 1858)
 +++ build/premake4.lua	(working copy)
-@@ -93,8 +93,8 @@
-   }
-   
-   newoption {
--    trigger     = "with-ou",
--    description = "Use TLS for global caches (experimental)"
-+    trigger     = "enable-ou",
-+    description = "Use TLS for global variables (experimental)"
-   }
- 
-   newoption {
-@@ -221,7 +221,7 @@
+@@ -220,8 +220,8 @@
+     configuration { "vs*" }
        defines { "_CRT_SECURE_NO_DEPRECATE" }
  
-     -- don't remember why we had to do this	
+-    -- don't remember why we had to do this	
 -    configuration { "vs2002 or vs2003", "*Lib" }
-+    configuration { "vs2002 or vs2003 or *Lib" }
++    -- use compiler's flag /MT (multi-threaded) instead of /MD (multi-threaded DLL) when building a static library
++    configuration { "vs*", "*Lib" }
        flags  { "StaticRuntime" }
  
  
-@@ -311,7 +311,7 @@
-     configuration { "not no-trimesh", "not with-gimpact" }
-       files   { "../OPCODE/**.h", "../OPCODE/**.cpp" }
-  
--    configuration { "with-ou" }
-+    configuration { "enable-ou" }
-       files   { "../ou/**.h", "../ou/**.cpp" }
-       defines { "_OU_NAMESPACE=odeou" }
-       
-@@ -367,7 +367,7 @@
-       text = string.gsub(text, "#define dTRIMESH_OPCODE 1", "#define dTRIMESH_GIMPACT 1")
-     end
- 
--    if _OPTIONS["with-ou"] then
-+    if _OPTIONS["enable-ou"] then
-       text = string.gsub(text, "/%* #define dOU_ENABLED 1 %*/", "#define dOU_ENABLED 1")
-       text = string.gsub(text, "/%* #define dATOMICS_ENABLED 1 %*/", "#define dATOMICS_ENABLED 1")
-       text = string.gsub(text, "/%* #define dTLS_ENABLED 1 %*/", "#define dTLS_ENABLED 1")
 Index: ode/src/collision_kernel.cpp
 ===================================================================
 --- ode/src/collision_kernel.cpp	(revision 1858)
