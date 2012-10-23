@@ -5,7 +5,7 @@
 #include <App/StateHandler.h>
 #include <kernel/nprofiler.h>
 #include <Events/Events.h>
-#include <App/CIDEApp.h>
+#include "CIDEApp.h"
 
 // The game state handler runs the game loop.
 

@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc\ncterrain2;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
+				AdditionalIncludeDirectories="..\..\Src;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_WINDOWS;_USRDLL;CREATORIDE_EXPORTS;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -64,10 +64,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1_de.lib DEM_L2_de.lib DEM_L3_d.lib lua5.1_d.lib libogg_static_d.lib libvorbis_static_d.lib libtheora_static_d.lib TinyXML2_d.lib Recast_d.lib Detour_d.lib DetourCrowd_d.lib DetourDebug_d.lib ncterrain2lib_d.lib nkernel_d.lib nnebula_d.lib ndirect3d9_d.lib CEGUIBase_Static_d.lib CEGUIDirect3D9Renderer_Static_d.lib CEGUITinyXML2Parser_Static_d.lib CEGUIFalagardWRBase_Static_d.lib CEGUISILLYImageCodec_Static_d.lib SILLY_d.lib libpng_d.lib jpeg_d.lib freetype_d.lib zlib_d.lib pcre_d.lib ode_d.lib d3d9.lib d3dx9.lib dsound.lib dxguid.lib dxerr.lib sqlite_d.lib winmm.lib strmiids.lib rpcrt4.lib"
+				AdditionalDependencies="DEM_L1_de.lib DEM_L2_de.lib DEM_L3_d.lib lua5.1_d.lib libogg_static_d.lib libvorbis_static_d.lib libtheora_static_d.lib TinyXML2_d.lib Recast_d.lib Detour_d.lib DetourCrowd_d.lib DetourDebug_d.lib nkernel_d.lib nnebula_d.lib ndirect3d9_d.lib CEGUIBase_Static_d.lib CEGUIDirect3D9Renderer_Static_d.lib CEGUITinyXML2Parser_Static_d.lib CEGUIFalagardWRBase_Static_d.lib CEGUISILLYImageCodec_Static_d.lib SILLY_d.lib libpng_d.lib jpeg_d.lib freetype_d.lib zlib_d.lib pcre_d.lib ode_singled.lib d3d9.lib d3dx9.lib dsound.lib dxguid.lib dxerr.lib sqlite_d.lib winmm.lib strmiids.lib rpcrt4.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\3rdParty\SQLite\Lib;..\..\..\3rdParty\TinyXML2\Lib;..\..\..\3rdParty\Xiph\ogg\win32\Lib;..\..\..\3rdParty\Xiph\vorbis\win32\Lib;..\..\..\3rdParty\Xiph\theora\win32\Lib;..\..\..\3rdParty\Recast\Lib;..\..\..\3rdParty\Lua\Lib;..\..\..\3rdParty\ODE\lib;..\..\..\3rdParty\NebulaDeps;..\..\..\3rdParty\CEGUI\dependencies\lib\static;..\..\..\3rdParty\CEGUI\lib;..\..\..\..\Engine\Lib"
+				AdditionalLibraryDirectories="..\..\..\3rdParty\SQLite\Lib;..\..\..\3rdParty\TinyXML2\Lib;..\..\..\3rdParty\Xiph\Lib;..\..\..\3rdParty\Recast\Lib;..\..\..\3rdParty\Lua\Lib;..\..\..\3rdParty\ODE\lib\DebugSingleLib;..\..\..\3rdParty\NebulaDeps;..\..\..\3rdParty\CEGUI\dependencies\lib\static;..\..\..\3rdParty\CEGUI\lib;..\..\..\DEM\Lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -121,7 +121,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc\ncterrain2;..\..\..\..\Engine\code\mangalore;..\..\..\..\Engine\code\nebula2;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
+				AdditionalIncludeDirectories="..\..\Src;..\..\..\DEM\Src\L3;..\..\..\DEM\Src\L2;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty\Lua\src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Recast\Recast\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_WINDOWS;_USRDLL;CREATORIDE_EXPORTS;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -143,9 +143,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1_e.lib DEM_L2_e.lib DEM_L3.lib lua5.1.lib libogg_static.lib libvorbis_static.lib libtheora_static_SSE2.lib TinyXML2.lib Recast.lib Detour.lib DetourCrowd.lib DetourDebug.lib ncterrain2lib.lib nkernel.lib nnebula.lib ndirect3d9.lib microtcl.lib CEGUIBase_Static.lib CEGUIDirect3D9Renderer_Static.lib CEGUITinyXML2Parser_Static.lib CEGUIFalagardWRBase_Static.lib CEGUISILLYImageCodec_Static.lib SILLY.lib libpng.lib jpeg.lib freetype.lib zlib.lib pcre.lib ode.lib d3d9.lib d3dx9.lib dsound.lib dxguid.lib dxerr.lib sqlite.lib winmm.lib wsock32.lib strmiids.lib rpcrt4.lib"
+				AdditionalDependencies="DEM_L1_e.lib DEM_L2_e.lib DEM_L3.lib lua5.1.lib libogg_static.lib libvorbis_static.lib libtheora_static_SSE2.lib TinyXML2.lib Recast.lib Detour.lib DetourCrowd.lib DetourDebug.lib nkernel.lib nnebula.lib ndirect3d9.lib CEGUIBase_Static.lib CEGUIDirect3D9Renderer_Static.lib CEGUITinyXML2Parser_Static.lib CEGUIFalagardWRBase_Static.lib CEGUISILLYImageCodec_Static.lib SILLY.lib libpng.lib jpeg.lib freetype.lib zlib.lib pcre.lib ode_single.lib d3d9.lib d3dx9.lib dsound.lib dxguid.lib dxerr.lib sqlite.lib winmm.lib wsock32.lib strmiids.lib rpcrt4.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\3rdParty\SQLite\Lib;..\..\..\3rdParty\TinyXML2\Lib;..\..\..\3rdParty\Xiph\ogg\win32\Lib;..\..\..\3rdParty\Xiph\vorbis\win32\Lib;..\..\..\3rdParty\Xiph\theora\win32\Lib;..\..\..\3rdParty\Recast\Lib;..\..\..\3rdParty\Lua\Lib;..\..\..\3rdParty\ODE\lib;..\..\..\3rdParty\NebulaDeps;..\..\..\3rdParty\CEGUI\dependencies\lib\static;..\..\..\3rdParty\CEGUI\lib;..\..\..\..\Engine\Lib"
+				AdditionalLibraryDirectories="..\..\..\3rdParty\SQLite\Lib;..\..\..\3rdParty\TinyXML2\Lib;..\..\..\3rdParty\Xiph\Lib;..\..\..\3rdParty\Recast\Lib;..\..\..\3rdParty\Lua\Lib;..\..\..\3rdParty\ODE\lib\ReleaseSingleLib;..\..\..\3rdParty\NebulaDeps;..\..\..\3rdParty\CEGUI\dependencies\lib\static;..\..\..\3rdParty\CEGUI\lib;..\..\..\DEM\Lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

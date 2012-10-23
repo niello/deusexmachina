@@ -1,15 +1,15 @@
-#include <StdAPI.h>
+#include "../StdAPI.h"
 #include <Game/Mgr/FocusManager.h>
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <Loading/EntityFactory.h>
-#include <App/CIDEApp.h>
+#include "../App/CIDEApp.h"
 #include <Physics/Event/SetTransform.h>
 #include <Input/Prop/PropInput.h>
 #include <Physics/Prop/PropAbstractPhysics.h>
 #include <Physics/CharEntity.h>
 #include <Physics/Composite.h>
-#include <Prop/PropEditorTfmInput.h>
+#include "../Prop/PropEditorTfmInput.h"
 
 using namespace Properties;
 using namespace App;

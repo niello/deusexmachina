@@ -8,7 +8,7 @@
 #include <Items/ItemManager.h>
 #include <Game/Entity.h>
 #include <Data/Singleton.h>
-#include <StdAPI.h>
+#include "../StdAPI.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

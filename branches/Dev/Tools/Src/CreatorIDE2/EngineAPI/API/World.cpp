@@ -1,4 +1,4 @@
-#include <StdAPI.h>
+#include "../StdAPI.h"
 #include <Game/GameServer.h>
 
 // Time, physics etc control

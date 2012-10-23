@@ -1,14 +1,14 @@
-#include <StdAPI.h>
+#include "../StdAPI.h"
 #include <DB/DBServer.h>
 #include <DB/Database.h>
 #include <DB/StdAttrs.h>
 #include <Data/Streams/FileStream.h>
 #include <Loading/LoaderServer.h>
-#include <App/CIDEApp.h>
+#include "../App/CIDEApp.h"
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/StaticEnvManager.h>
 #include <Game/Mgr/FocusManager.h>
-#include <AI/Navigation/NavMesh.h>
+#include "../AI/Navigation/NavMesh.h"
 #include <DetourNavMesh.h> // For max verts per poly const
 
 namespace Attr

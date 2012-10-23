@@ -27,8 +27,8 @@
 #include <AI/Movement/Actions/ActionGoto.h>
 #include <AI/Movement/Actions/ActionSteerToPosition.h>
 #include <AI/SmartObj/ValidatorScript.h>
-#include <AI/SmartObj/ValidatorContainerUIStatus.h>
-#include <AI/SmartObj/ValidatorPlrOnly.h>
+#include "AI/SmartObj/ValidatorContainerUIStatus.h"
+#include "AI/SmartObj/ValidatorPlrOnly.h"
 #include <AI/SmartObj/ValidatorCanTalk.h>
 #include <AI/SmartObj/ValidatorDlgRuns.h>
 #include <AI/Planning/WorldStateSourceScript.h>
