@@ -1,8 +1,8 @@
-#include <StdAPI.h>
+#include "../StdAPI.h"
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <Loading/EntityFactory.h>
-#include <App/CIDEApp.h>
+#include "../App/CIDEApp.h"
 
 using namespace Game;
 using namespace App;

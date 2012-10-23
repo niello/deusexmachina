@@ -1,7 +1,7 @@
 #include "PropEditorTfmInput.h"
 
 #include <Game/Mgr/EnvQueryManager.h>
-#include <App/CIDEApp.h>
+#include "../App/CIDEApp.h"
 #include <Gfx/GfxServer.h>
 #include <Gfx/CameraEntity.h>
 #include <Input/InputServer.h>

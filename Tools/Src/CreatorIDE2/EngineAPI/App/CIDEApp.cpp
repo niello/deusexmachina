@@ -8,7 +8,7 @@
 #include <SI/SI_L1.h>
 #include <SI/SI_L2.h>
 #include <SI/SI_L3.h>
-#include <Prop/PropEditorCamera.h>
+#include "../Prop/PropEditorCamera.h"
 #include <Input/Prop/PropInput.h>
 #include <Physics/Prop/PropTransformable.h>
 #include <DB/StdAttrs.h>
@@ -18,7 +18,7 @@
 
 #include <time.h>
 
-nNebulaUsePackage(ncterrain2lib);
+//nNebulaUsePackage(ncterrain2lib);
 
 namespace App
 {
@@ -98,9 +98,7 @@ bool CCIDEApp::Open()
 	DataSrv->SetAssign("sound", Export + "/audio/");
 	DataSrv->SetAssign("cegui", Export + "/cegui/");
 
-	nKernelServer::Instance()->SetGlobal("parent_hwnd", (int)ParentHwnd);
-
-	nKernelServer::Instance()->AddPackage(ncterrain2lib);
+	CoreSrv->SetGlobal("parent_hwnd", (int)ParentHwnd);
 
 	if (!AppEnv->InitEngine())
 	{

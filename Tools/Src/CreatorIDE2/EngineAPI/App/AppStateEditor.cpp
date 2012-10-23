@@ -19,7 +19,7 @@
 #include <particle/nparticleserver2.h>
 #include <scene/nsceneserver.h>
 
-#include <App/CIDEApp.h> //!!!now only for click cb!
+#include "CIDEApp.h" //!!!now only for click cb!
 
 namespace App
 {
@@ -122,8 +122,6 @@ CStrID CAppStateEditor::OnFrame()
 		GfxSrv->EndRender();
 	}
 	PROFILER_STOP(profRender);
-
-	nKernelServer::Instance()->Trigger();
 
 	// Editor window receives window messages outside the frame, so clear input here, not in the beginning
 	InputSrv->Trigger();
