@@ -16,7 +16,6 @@
 
 #define VERSION "2.0"
 
-Core::CCoreServer*		CoreServer;
 Ptr<Data::CDataServer>	DataServer;
 Ptr<DB::CDBServer>		DBServer;
 
@@ -65,8 +64,8 @@ int UnregisterN2SQLiteVFS();
 
 bool Init()
 {
-	CoreServer = n_new(Core::CCoreServer("STILL NO TEAM NAME", "BBuilder"));
-	CoreServer->Open();
+	n_new(Core::CCoreServer());
+	CoreSrv->Open();
 	//!!!some unused servers are created inside CoreServer->Open()! refactor!
 
 	DataServer.Create();
@@ -98,9 +97,8 @@ void Release()
 
 	DataServer = NULL;
 
-	CoreServer->Close();
-	n_delete(CoreServer);
-	CoreServer = NULL;
+	CoreSrv->Close();
+	n_delete(CoreSrv);
 }
 //---------------------------------------------------------------------
 
@@ -387,16 +385,13 @@ void CompileAllLua(LPCSTR Dir, LPCSTR ExtRaw, LPCSTR ExtOut, LPCSTR pClassesFold
 				nString FileNoExt = FileName;
 				FileNoExt.StripExtension();
 
-				char* pBuf = NULL;
-				DWORD Size = DataSrv->LoadFileToBuffer(PathSrc + FileName, pBuf);
-				Data::CFileStream In;
-				if (Size)
+				Data::CBuffer Buffer;
+				if (DataSrv->LoadFileToBuffer(PathSrc + FileName, Buffer))
 				{
-					if (!LuaCompile(pBuf, Size, FileNoExt.Get(), (PathExport + FileNoExt + DotExtOut).Get()))
+					if (!LuaCompile((char*)Buffer.GetPtr(), Buffer.GetSize(), FileNoExt.Get(), (PathExport + FileNoExt + DotExtOut).Get()))
 						n_printf("Error, not compiled\n");
-					n_delete_array(pBuf);
 				}
-				else n_printf("Can't open file or file is empty\n");
+				else n_printf("Can't open file\n");
 			}
 		}
 		else if (CurrEntryType == Data::FSE_DIR && (!pClassesFolder || FileName != pClassesFolder))

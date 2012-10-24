@@ -228,15 +228,15 @@ void CPropChaseCamera::UpdateCamera()
 	}
 
 	// feed and update the feedback loops
-	Position.SetGoal(goalPos);
-	Lookat.SetGoal(lookatPoint);
+	Position.Goal = goalPos;
+	Lookat.Goal = lookatPoint;
 	Position.Update(Time);
 	Lookat.Update(Time);
 
 	// construct the new pCamera matrix
 	matrix44 CameraMatrix;
-	CameraMatrix.translate(Position.GetState());
-	CameraMatrix.lookatRh(Lookat.GetState(), upVec);
+	CameraMatrix.translate(Position.State);
+	CameraMatrix.lookatRh(Lookat.State, upVec);
 
 	// update the graphics subsystem pCamera
 	pCamera->SetTransform(CameraMatrix);

@@ -10,18 +10,18 @@
 */
 #include "util/nnode.h"
 
-template <class TYPE>
+template <class T>
 class nObjectNode: public nNode
 {
 public:
 
-	TYPE Object;
+	T Object;
 
 	nObjectNode() {}
-	nObjectNode(const TYPE& object): Object(object) {}
+	nObjectNode(const T& Obj): Object(Obj) {}
 
-	nObjectNode* GetSucc() const { return (nObjectNode<TYPE>*)nNode::GetSucc(); }
-	nObjectNode* GetPred() const { return (nObjectNode<TYPE>*)nNode::GetPred(); }
+	nObjectNode* GetSucc() const { return (nObjectNode<T>*)nNode::GetSucc(); }
+	nObjectNode* GetPred() const { return (nObjectNode<T>*)nNode::GetPred(); }
 };
 
 #endif

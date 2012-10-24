@@ -99,7 +99,7 @@ private:
         nCharJointPalette jointPalette;
     };
 
-    nDynAutoRef<nSkinAnimator> refSkinAnimator;
+	nString SkinAnimatorName;
     const nCharSkeleton* extCharSkeleton;
     nArray<Fragment> fragmentArray;
     nCharSkinRenderer charSkinRenderer;

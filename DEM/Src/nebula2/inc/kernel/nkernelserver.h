@@ -1,7 +1,7 @@
 #ifndef N_KERNELSERVER_H
 #define N_KERNELSERVER_H
 
-#include "util/nstack.h"
+#include "util/Stack.h"
 #include "util/nhashlist.h"
 #include <Data/Singleton.h>
 
@@ -21,7 +21,7 @@ private:
 	nHashList		ClassList;	// list of nClass objects
 	nRoot*			pRoot;		// the pRoot object of the Nebula object hierarchy
 	nRoot*			pCwd;		// the current working object
-	nStack<nRoot*>	CwdStack;	// stack of previous pCwd's
+	CStack<nRoot*>	CwdStack;	// stack of previous pCwd's
 	class nMutex*	pMutex;		// the kernel lock mutex
 
 	nRoot* CheckCreatePath(const char* pClassName, const char* path, bool dieOnError);

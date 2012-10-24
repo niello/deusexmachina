@@ -112,10 +112,8 @@ nSkinShapeNode::RenderGeometry(nSceneServer* sceneServer, nRenderContext* render
 
     // call my skin animator (updates the char skeleton pointer)
     nKernelServer::Instance()->PushCwd(this);
-    if (this->refSkinAnimator.isvalid())
-    {
-        this->refSkinAnimator->Animate(this, renderContext);
-    }
+	nSkinAnimator* pSkinAnimator = (nSkinAnimator*)nKernelServer::Instance()->Lookup(SkinAnimatorName.Get());
+    if (pSkinAnimator) pSkinAnimator->Animate(this, renderContext);
     nKernelServer::Instance()->PopCwd();
 
     // render the skin in several passes (one per skin fragment)
@@ -144,10 +142,8 @@ nSkinShapeNode::RenderDebug(nSceneServer* sceneServer, nRenderContext* renderCon
 
     // call my skin animator (updates the char skeleton pointer)
     nKernelServer::Instance()->PushCwd(this);
-    if (this->refSkinAnimator.isvalid())
-    {
-        this->refSkinAnimator->Animate(this, renderContext);
-    }
+	nSkinAnimator* pSkinAnimator = (nSkinAnimator*)nKernelServer::Instance()->Lookup(SkinAnimatorName.Get());
+    if (pSkinAnimator) pSkinAnimator->Animate(this, renderContext);
     nKernelServer::Instance()->PopCwd();
 
     // render the joints of the skeleton
@@ -196,7 +192,7 @@ void
 nSkinShapeNode::SetSkinAnimator(const char* path)
 {
     n_assert(path);
-    this->refSkinAnimator = path;
+    SkinAnimatorName = path;
 }
 
 //------------------------------------------------------------------------------
@@ -206,7 +202,7 @@ nSkinShapeNode::SetSkinAnimator(const char* path)
 const char*
 nSkinShapeNode::GetSkinAnimator() const
 {
-    return this->refSkinAnimator.getname();
+    return SkinAnimatorName.Get();
 }
 
 //------------------------------------------------------------------------------

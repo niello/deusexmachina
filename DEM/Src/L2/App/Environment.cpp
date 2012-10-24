@@ -8,7 +8,6 @@
 #include <Scripting/EntityScriptObject.h>
 #include <Core/Logger.h>
 
-#include <util/nstartupchecker.h>
 #include <gfx2/ngfxserver2.h>
 #include <resource/nresourceserver.h>
 
@@ -32,17 +31,7 @@ CEnvironment::~CEnvironment()
 
 bool CEnvironment::InitCore()
 {
-	nStartupChecker SC;
-	nString ErrMsg;
-	ErrMsg.Format("Cannot start '%s' because it is already\nrunning in another desktop session!", AppName.Get());
-	if (!AllowMultipleInstances &&
-		SC.CheckAlreadyRunning(AppVendor, AppName, WindowTitle, AppName, ErrMsg)) FAIL;
-
-#ifdef __WIN32__
-	if (!SC.CheckDirect3D(GetAppName(), "Cannot initialize Direct3D!")) FAIL;
-	if (!SC.CheckDirectSound(GetAppName(), "Cannot initialize DirectSound!")) FAIL;
-#endif
-
+	//!!!core server can check is app already running inside the Open method!
 	n_new(Core::CCoreServer());
 	nKernelServer::Instance()->AddPackage(nnebula);
 	nKernelServer::Instance()->AddPackage(ndirect3d9);

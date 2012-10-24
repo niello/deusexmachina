@@ -65,10 +65,6 @@ public:
     /// get maya shader name
     nString GetMayaShaderName() const;
 
-protected:
-    /// recursively append instance parameters to provided instance stream declaration
-    virtual void UpdateInstStreamDecl(nInstanceStream::Declaration& decl);
-
 private:
     /// load the shader resource
     bool LoadShader();

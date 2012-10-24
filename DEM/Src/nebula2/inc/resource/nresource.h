@@ -84,9 +84,9 @@
 */
 #include "kernel/nroot.h"
 #include "util/nstring.h"
-#include "util/nthreadvariable.h"
+#include "util/ThreadVar.h"
 #include "kernel/nthread.h"
-#include "kernel/ndynautoref.h"
+#include "kernel/nref.h"
 
 //------------------------------------------------------------------------------
 class nResourceServer;
@@ -171,7 +171,7 @@ private:
     Type type;
     bool asyncEnabled;
     nDataNode jobNode;      // for linkage into resource server's loader job list
-    nThreadVariable<State> state;
+    CThreadVar<State> state;
     uint uniqueId;
 };
 

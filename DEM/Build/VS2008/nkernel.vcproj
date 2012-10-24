@@ -255,10 +255,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\kernel\ndynautoref.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\kernel\nref.h"
 					>
 				</File>
@@ -817,10 +813,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nipolkeyarray.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\util\nkeyarray.h"
 					>
 				</File>
@@ -934,35 +926,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="nstartupchecker"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\src\util\nstartupchecker.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nstartupchecker;N_NEW=n_new_nstartupchecker;N_INITCMDS=n_initcmds_nstartupchecker"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nstartupchecker;N_NEW=n_new_nstartupchecker;N_INITCMDS=n_initcmds_nstartupchecker"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nstartupchecker.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="nstring"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
@@ -1024,15 +987,15 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nstack.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nthreadvariable.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\util\PairT.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\util\Stack.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\util\ThreadVar.h"
 					>
 				</File>
 			</Filter>
