@@ -9,7 +9,6 @@
 #include "scene/nrendercontext.h"
 #include "scene/nsceneserver.h"
 #include "kernel/ndebug.h"
-#include "scene/nanimator.h"
 #include <Data/BinaryReader.h>
 
 nNebulaClass(nMaterialNode, "nabstractshadernode");
@@ -171,7 +170,7 @@ nMaterialNode::RenderShader(nSceneServer* sceneServer, nRenderContext* renderCon
     // invoke shader manipulators
     //if (this->GetNumAnimators() > 0)
     //{
-        //this->InvokeAnimators(nAnimator::Shader, renderContext);
+	// // Animate here
     //    shader->SetParams(this->shaderParams);
     //}
 

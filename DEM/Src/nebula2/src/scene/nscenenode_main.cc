@@ -1,5 +1,4 @@
 #include "scene/nscenenode.h"
-#include "scene/nanimator.h"
 #include "scene/nrendercontext.h"
 #include "gfx2/ngfxserver2.h"
 #include <Data/BinaryReader.h>

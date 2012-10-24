@@ -25,7 +25,6 @@
 class nSceneServer;
 class nRenderContext;
 class nGfxServer2;
-class nAnimator;
 class nVariableServer;
 
 namespace Data

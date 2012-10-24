@@ -6,7 +6,6 @@
 #include "variable/nvariableserver.h"
 #include "scene/nrendercontext.h"
 #include "scene/nsceneserver.h"
-#include "scene/nanimator.h"
 
 nNebulaClass(nMultiLayeredNode, "nshapenode");
 

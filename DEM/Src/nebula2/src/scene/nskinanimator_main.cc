@@ -13,7 +13,7 @@
 #include "character/ncharacter2set.h"
 #include <Data/BinaryReader.h>
 
-nNebulaClass(nSkinAnimator, "nanimator");
+nNebulaClass(nSkinAnimator, "nscenenode");
 
 //------------------------------------------------------------------------------
 /**
@@ -83,8 +83,41 @@ bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReade
 
 			OK;
 		}
-		default: return nAnimator::LoadDataBlock(FourCC, DataReader);
+		case 'LNHC': // CHNL
+		{
+			char Value[512];
+			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
+			SetChannel(Value);
+			OK;
+		}
+		case 'PTPL': // LPTP
+		{
+			char Value[512];
+			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
+			LoopType = nAnimLoopType::FromString(Value);
+			OK;
+		}
+		default: return nSceneNode::LoadDataBlock(FourCC, DataReader);
 	}
+}
+//---------------------------------------------------------------------
+
+// Sets the "animation channel" which drives this animation.
+// This could be something like "time", but the actual names are totally
+// up to the application. The actual channel value will be pulled from
+// the render context provided in the Animate() method.
+void nSkinAnimator::SetChannel(const char* name)
+{
+	n_assert(name);
+	HChannel = nVariableServer::Instance()->GetVariableHandleByName(name);
+	HChannelOffset = nVariableServer::Instance()->GetVariableHandleByName((nString(name) + "Offset").Get());
+}
+//---------------------------------------------------------------------
+
+// Return the animation channel which drives this animation.
+const char* nSkinAnimator::GetChannel()
+{
+	return HChannel == nVariable::InvalidHandle ? NULL : nVariableServer::Instance()->GetVariableName(HChannel);
 }
 //---------------------------------------------------------------------
 
@@ -161,7 +194,7 @@ nSkinAnimator::UnloadResources()
 void
 nSkinAnimator::RenderContextCreated(nRenderContext* renderContext)
 {
-    nAnimator::RenderContextCreated(renderContext);
+    nSceneNode::RenderContextCreated(renderContext);
 
     // see if resources need to be reloaded
     if (!this->AreResourcesValid())
@@ -280,20 +313,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
         skinShapeNode->SetCharSkeleton(&curCharacter->GetSkeleton());
 
     }
-    //else if (sceneNode->IsA(this->shadowSkinShapeNodeClass))
-    //{
-    //    nShadowSkinShapeNode* shadowSkinShapeNode = (nShadowSkinShapeNode*)sceneNode;
-    //    shadowSkinShapeNode->SetCharSkeleton(&curCharacter->GetSkeleton());
-    //}
-    //else if (sceneNode->IsA(this->attachmentNodeClass))
-    //{
-    //    //HACK: disabled due to make nattachmentnode to call animator function.
-    //    ;
-    //}
-    else
-    {
-        n_error("nSkinAnimator::Animate(): invalid scene node class\n");
-    }
+    else n_error("nSkinAnimator::Animate(): invalid scene node class\n");
 }
 
 //------------------------------------------------------------------------------
