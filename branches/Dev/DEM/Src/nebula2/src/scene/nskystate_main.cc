@@ -31,7 +31,7 @@ nSkyState::~nSkyState()
 void
 nSkyState::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
-    this->InvokeAnimators(nAnimator::Shader, renderContext);
+    //this->InvokeAnimators(nAnimator::Shader, renderContext);
     nTransformNode::Attach(sceneServer, renderContext);
 }
 

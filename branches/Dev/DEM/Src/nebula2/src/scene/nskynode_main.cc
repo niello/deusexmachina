@@ -91,9 +91,9 @@ void
 nSkyNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
     n_assert(renderContext);
-    n_assert(nVariable::InvalidHandle != this->channelVarHandle);
+    n_assert(nVariable::InvalidHandle != this->HChannel);
     // get the sample time from the render context
-    nVariable* var = renderContext->GetVariable(this->channelVarHandle);
+    nVariable* var = renderContext->GetVariable(this->HChannel);
     n_assert(var);
     float time = var->GetFloat();
 
@@ -1059,7 +1059,7 @@ void
 nSkyNode::SetChannel(const char* name)
 {
     n_assert(name);
-    this->channelVarHandle = nVariableServer::Instance()->GetVariableHandleByName(name);
+    this->HChannel = nVariableServer::Instance()->GetVariableHandleByName(name);
 }
 
 //------------------------------------------------------------------------------
@@ -1069,9 +1069,9 @@ nSkyNode::SetChannel(const char* name)
 const char*
 nSkyNode::GetChannel()
 {
-    if (nVariable::InvalidHandle != this->channelVarHandle)
+    if (nVariable::InvalidHandle != this->HChannel)
     {
-        return nVariableServer::Instance()->GetVariableName(this->channelVarHandle);
+        return nVariableServer::Instance()->GetVariableName(this->HChannel);
     }
     return 0;
 }

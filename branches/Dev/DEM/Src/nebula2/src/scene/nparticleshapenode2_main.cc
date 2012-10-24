@@ -54,7 +54,7 @@ nParticleShapeNode2::RenderTransform(nSceneServer* sceneServer,
 {
     n_assert(sceneServer);
     n_assert(renderContext);
-    this->InvokeAnimators(nAnimator::Transform, renderContext);
+    //this->InvokeAnimators(nAnimator::Transform, renderContext);
 
     // get emitter from render context
     nVariable& varEmitter = renderContext->GetLocalVar(this->emitterVarIndex);

@@ -13,7 +13,6 @@
 */
 #include "scene/nmaterialnode.h"
 #include "gfx2/nmesh2.h"
-#include "kernel/ndynautoref.h"
 #include "scene/nshapenode.h"
 #include "scene/nlightnode.h"
 #include "scene/nskystate.h"
@@ -167,7 +166,7 @@ protected:
     float skyTime;
     float worldTime;
     float jumpTime;
-    nVariable::Handle channelVarHandle;
+    nVariable::Handle HChannel;
 };
 
 //------------------------------------------------------------------------------

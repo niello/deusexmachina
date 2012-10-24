@@ -122,7 +122,7 @@ protected:
     uint frameId;
     nClass* skinShapeNodeClass;
     //nClass* shadowSkinShapeNodeClass;
-    nClass* attachmentNodeClass;
+    //nClass* attachmentNodeClass;
 };
 
 //------------------------------------------------------------------------------

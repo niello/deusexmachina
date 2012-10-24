@@ -1,17 +1,12 @@
 #ifndef N_LIST_H
 #define N_LIST_H
-//------------------------------------------------------------------------------
-/**
-    @class nList
-    @ingroup NebulaDataTypes
 
-    @brief Implement a doubly linked list.
-
-    (C) 2002 RadonLabs GmbH
-*/
 #include "kernel/ntypes.h"
 #include "kernel/ndebug.h"
 #include "util/nnode.h"
+
+// Implement a doubly linked list.
+// (C) 2002 RadonLabs GmbH
 
 class nList
 {
@@ -29,8 +24,8 @@ public:
 
 	bool	IsEmpty() const { return !head->succ; }
 
-	void	AddHead(nNode* n) { n->InsertAfter((nNode*)&(head)); }
-	void	AddTail(nNode* n) { n->InsertBefore((nNode*)&(tail)); }
+	void	AddHead(nNode* pNode) { pNode->InsertAfter((nNode*)&(head)); }
+	void	AddTail(nNode* pNode) { pNode->InsertBefore((nNode*)&(tail)); }
 	nNode*	RemHead();
 	nNode*	RemTail();
 
@@ -58,11 +53,11 @@ inline nList::nList(const nList& Other): tail(NULL)
 
 inline nNode* nList::RemHead()
 {
-	nNode* n = head;
-	if (n->succ)
+	nNode* pNode = head;
+	if (pNode->succ)
 	{
-		n->Remove();
-		return n;
+		pNode->Remove();
+		return pNode;
 	}
 	return NULL;
 }
@@ -70,11 +65,11 @@ inline nNode* nList::RemHead()
 
 inline nNode* nList::RemTail()
 {
-	nNode* n = tailpred;
-	if (n->pred)
+	nNode* pNode = tailpred;
+	if (pNode->pred)
 	{
-		n->Remove();
-		return n;
+		pNode->Remove();
+		return pNode;
 	}
 	return NULL;
 }

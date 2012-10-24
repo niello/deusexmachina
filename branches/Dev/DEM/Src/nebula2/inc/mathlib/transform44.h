@@ -251,78 +251,32 @@ transform44::getscalepivot() const
 //------------------------------------------------------------------------------
 /**
 */
-inline
-const matrix44&
-transform44::getmatrix()
+inline const matrix44& transform44::getmatrix()
 {
-    if (this->flags & Locked)
-    {
-        return this->matrix;
-    }
-    else
-    {
-        if (this->flags & Dirty)
-        {
-            if (this->flags & UseEuler)
-            {
-                this->matrix.ident();
-                if (this->flags & HasScalePivot)
-                {
-                    this->matrix.translate(-this->scalePivot);
-                }
-                this->matrix.scale(this->scale);
-                if (this->flags & HasScalePivot)
-                {
-                    this->matrix.translate(this->scalePivot);
-                }
-                if (this->flags & HasRotatePivot)
-                {
-                    this->matrix.translate(-this->rotatePivot);
-                }
-                this->matrix.rotate_x(this->euler.x);
-                this->matrix.rotate_y(this->euler.y);
-                this->matrix.rotate_z(this->euler.z);
-                if (this->flags & HasRotatePivot)
-                {
-                    this->matrix.translate(this->rotatePivot);
-                }
-                if (this->flags & HasRotatePivotTranslation)
-                {
-                    this->matrix.translate(this->rotatePivotTranslation);
-                }
-                this->matrix.translate(this->translation);
-            }
-            else
-            {
-                this->matrix.ident();
-                if (this->flags & HasScalePivot)
-                {
-                    this->matrix.translate(-this->scalePivot);
-                }
-                this->matrix.scale(this->scale);
-                if (this->flags & HasScalePivot)
-                {
-                    this->matrix.translate(this->scalePivot);
-                }
-                if (this->flags & HasRotatePivot)
-                {
-                    this->matrix.translate(-this->rotatePivot);
-                }
-                this->matrix.mult_simple(matrix44(this->quat));
-                if (this->flags & HasRotatePivot)
-                {
-                    this->matrix.translate(this->rotatePivot);
-                }
-                if (this->flags & HasRotatePivotTranslation)
-                {
-                    this->matrix.translate(this->rotatePivotTranslation);
-                }
-                this->matrix.translate(this->translation);
-            }
-            this->flags &= ~Dirty;
-        }
-        return this->matrix;
-    }
+	if (!(flags & Locked) && (flags & Dirty))
+	{
+		matrix.ident();
+		if (flags & HasScalePivot) matrix.translate(-scalePivot);
+		matrix.scale(scale);
+		if (flags & HasScalePivot) matrix.translate(scalePivot);
+		if (flags & HasRotatePivot) matrix.translate(-rotatePivot);
+
+		if (flags & UseEuler)
+		{
+			matrix.rotate_x(euler.x);
+			matrix.rotate_y(euler.y);
+			matrix.rotate_z(euler.z);
+		}
+		else matrix.mult_simple(matrix44(quat));
+
+		if (flags & HasRotatePivot) matrix.translate(rotatePivot);
+		if (flags & HasRotatePivotTranslation) matrix.translate(rotatePivotTranslation);
+		matrix.translate(translation);
+
+		flags &= ~Dirty;
+	}
+
+	return matrix;
 }
 
 //------------------------------------------------------------------------------

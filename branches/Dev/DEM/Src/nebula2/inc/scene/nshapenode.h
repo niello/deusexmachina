@@ -17,7 +17,6 @@
 */
 #include "scene/nmaterialnode.h"
 #include "gfx2/nmesh2.h"
-#include "kernel/ndynautoref.h"
 
 namespace Data
 {

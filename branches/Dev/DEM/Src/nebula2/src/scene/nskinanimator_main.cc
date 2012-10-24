@@ -5,7 +5,7 @@
 #include "scene/nskinanimator.h"
 #include "scene/nskinshapenode.h"
 //#include "scene/nshadowskinshapenode.h"
-#include "scene/nattachmentnode.h"
+//#include "scene/nattachmentnode.h"
 #include "scene/nrendercontext.h"
 #include "anim2/nanimation.h"
 #include "anim2/nanimationserver.h"
@@ -25,10 +25,10 @@ nSkinAnimator::nSkinAnimator() :
 {
     this->skinShapeNodeClass = nKernelServer::Instance()->FindClass("nskinshapenode");
     //this->shadowSkinShapeNodeClass = nKernelServer::Instance()->FindClass("nshadowskinshapenode");
-    this->attachmentNodeClass = nKernelServer::Instance()->FindClass("nattachmentnode");
+    //this->attachmentNodeClass = nKernelServer::Instance()->FindClass("nattachmentnode");
     n_assert(this->skinShapeNodeClass);
     //n_assert(this->shadowSkinShapeNodeClass);
-    n_assert(this->attachmentNodeClass);
+   // n_assert(this->attachmentNodeClass);
 }
 
 bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
@@ -207,7 +207,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
 {
     n_assert(sceneNode);
     n_assert(renderContext);
-    n_assert(nVariable::InvalidHandle != this->channelVarHandle);
+    n_assert(nVariable::InvalidHandle != this->HChannel);
 
     const nVariable& characterVar = renderContext->GetLocalVar(this->characterVarIndex);
     nCharacter2* curCharacter = (nCharacter2*)characterVar.GetObj();
@@ -223,12 +223,12 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
         curCharacter->SetLastEvaluationFrameId(curFrameId);
 
         // get the sample time from the render context
-        nVariable* var = renderContext->GetVariable(this->channelVarHandle);
+        nVariable* var = renderContext->GetVariable(this->HChannel);
         n_assert2(0 != var, "nSkinAnimator::Animate: TimeChannel Variable in RenderContext.\n");
         float curTime = var->GetFloat();
 
         // get the time offset from the render context
-        var = renderContext->GetVariable(this->channelOffsetVarHandle);
+        var = renderContext->GetVariable(this->HChannelOffset);
         float curOffset = 0 != var ? var->GetFloat() : 0.0f;
 
         const nVariable& character2SetVar = renderContext->GetLocalVar(this->characterSetIndex);
@@ -285,11 +285,11 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
     //    nShadowSkinShapeNode* shadowSkinShapeNode = (nShadowSkinShapeNode*)sceneNode;
     //    shadowSkinShapeNode->SetCharSkeleton(&curCharacter->GetSkeleton());
     //}
-    else if (sceneNode->IsA(this->attachmentNodeClass))
-    {
-        //HACK: disabled due to make nattachmentnode to call animator function.
-        ;
-    }
+    //else if (sceneNode->IsA(this->attachmentNodeClass))
+    //{
+    //    //HACK: disabled due to make nattachmentnode to call animator function.
+    //    ;
+    //}
     else
     {
         n_error("nSkinAnimator::Animate(): invalid scene node class\n");
