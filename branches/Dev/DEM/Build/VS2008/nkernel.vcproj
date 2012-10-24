@@ -963,18 +963,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nanimkey.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nanimkeyarray.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nanimlooptype.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\util\nbucket.h"
 					>
 				</File>

@@ -15,6 +15,7 @@ class CSceneNode: public Core::CRefCounted
 {
 private:
 
+	CStrID					Name;
 	CSceneNode*				pParent;
 	nArray<PSceneNode>		Child; //???or list?
 
@@ -23,11 +24,25 @@ private:
 	quaternion				LocalRotation;
 	vector3					LocalScale;
 
-	CFlags					Flags; // IsRoot, IsDirty, ?UniformScale?
-	//nArray<PSceneNodeAttr>	Attrs; //???or list?
+	CFlags					Flags; // IsRoot, IsDirty, ?UniformScale?, LockTransform
+	//nArray<PSceneNodeAttr>	Attrs; //???or list? list is better, cause often only 1 attr is specified
 
 public:
 
+	CSceneNode(): pParent(NULL) {}
+
+	void		AddChild(CSceneNode* pChild);
+	void		RemoveChild(DWORD Idx);
+	CSceneNode*	FindChild(LPCSTR pName); //, bool Recursive = true); //???!!!long names?!
+	DWORD		GetChildCount() const { return Child.Size(); }
+	CSceneNode*	GetChild(DWORD Idx) const { return Child[Idx].get_unsafe(); }
+	CSceneNode*	GetParent() const { return pParent; }
+
+	// Transform evaluation
+
+	// Attribute managenent
+
+	// Animator (controller, animation node) management
 };
 
 }

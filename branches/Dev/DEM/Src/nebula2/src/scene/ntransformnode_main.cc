@@ -1,7 +1,6 @@
 #include "scene/ntransformnode.h"
 #include "scene/nsceneserver.h"
 #include "gfx2/ngfxserver2.h"
-#include "scene/nanimator.h"
 #include <Data/BinaryReader.h>
 
 nNebulaClass(nTransformNode, "nscenenode");
@@ -64,7 +63,8 @@ bool nTransformNode::RenderTransform(nSceneServer* sceneServer,
 {
     n_assert(sceneServer && renderContext);
 
-    //InvokeAnimators(nAnimator::Transform, renderContext);
+	// Animate here
+
     if (GetLockViewer())
     {
         // handle lock to viewer

@@ -6,7 +6,6 @@
 #include "variable/nvariableserver.h"
 #include "scene/nrendercontext.h"
 #include "scene/nsceneserver.h"
-#include "scene/nanimator.h"
 
 nNebulaClass(nParticleShapeNode, "nshapenode");
 
@@ -59,7 +58,7 @@ nParticleShapeNode::RenderTransform(nSceneServer* sceneServer,
 {
     n_assert(sceneServer);
     n_assert(renderContext);
-    //this->InvokeAnimators(nAnimator::Transform, renderContext);
+	// Animate here
 
     // get emitter from render context
     nVariable& varEmitter = renderContext->GetLocalVar(this->emitterVarIndex);

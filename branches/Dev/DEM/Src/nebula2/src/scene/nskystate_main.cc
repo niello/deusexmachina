@@ -4,7 +4,6 @@
 //------------------------------------------------------------------------------
 #include "scene/nskystate.h"
 #include "gfx2/ngfxserver2.h"
-#include "scene/nanimator.h"
 
 nNebulaClass(nSkyState, "nabstractshadernode");
 
@@ -31,7 +30,7 @@ nSkyState::~nSkyState()
 void
 nSkyState::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
-    //this->InvokeAnimators(nAnimator::Shader, renderContext);
+	// Animate here
     nTransformNode::Attach(sceneServer, renderContext);
 }
 

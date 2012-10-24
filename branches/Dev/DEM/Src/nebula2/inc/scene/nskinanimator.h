@@ -16,7 +16,7 @@
 
     (C) 2003 RadonLabs GmbH
 */
-#include "scene/nanimator.h"
+#include "scene/nscenenode.h"
 #include "character/ncharskeleton.h"
 #include "character/ncharacter2.h"
 #include "anim2/nanimstateinfo.h"
@@ -30,11 +30,27 @@ namespace Data
 	class CBinaryReader;
 }
 
-//------------------------------------------------------------------------------
-class nSkinAnimator : public nAnimator
+
+class nAnimLoopType
 {
 public:
-    /// constructor
+
+	enum Type
+    {
+        Loop,
+        Clamp,
+    };
+
+    static nString ToString(nAnimLoopType::Type t);
+    static nAnimLoopType::Type FromString(const nString& s);
+};
+
+class nSkinAnimator: public nSceneNode
+{
+public:
+
+	nAnimLoopType::Type	LoopType;
+
     nSkinAnimator();
 
 	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
@@ -105,12 +121,13 @@ public:
     ///
     int GetJointByName(const char* jointName);
 
+	void				SetChannel(const char* name);
+	const char*			GetChannel();
+
 protected:
 
-    /// load animation resource
-    bool LoadAnim();
-    /// unload animation resource
-    void UnloadAnim();
+	nVariable::Handle	HChannel;
+	nVariable::Handle	HChannelOffset;
 
     nCharacter2 character;          ///< blue print, one copy per render context will be created
     nRef<nAnimation> refAnim;       ///< pointer to loaded animation
@@ -121,13 +138,36 @@ protected:
     int characterSetIndex;
     uint frameId;
     nClass* skinShapeNodeClass;
-    //nClass* shadowSkinShapeNodeClass;
-    //nClass* attachmentNodeClass;
+
+    bool LoadAnim();
+    void UnloadAnim();
 };
 
-//------------------------------------------------------------------------------
-/**
-*/
+inline nString nAnimLoopType::ToString(nAnimLoopType::Type t)
+{
+    switch (t)
+    {
+        case Loop:  return nString("loop");
+        case Clamp: return nString("clamp");
+        default:
+            n_error("nAnimLoopType::ToString(): invalid enum value!");
+            return nString("");
+    }
+}
+//---------------------------------------------------------------------
+
+inline nAnimLoopType::Type nAnimLoopType::FromString(const nString& s)
+{
+    if (s == "loop") return Loop;
+    else if (s == "clamp") return Clamp;
+    else
+    {
+        n_error("nAnimLoopType::ToString(): invalid loop type '%s'\n", s.Get());
+        return Clamp;
+    }
+}
+//---------------------------------------------------------------------
+
 inline
 int
 nSkinAnimator::GetCharacterVarIndexHandle() const
@@ -144,16 +184,6 @@ nSkinAnimator::GetCharacterSetIndexHandle() const
 {
     return this->characterSetIndex;
 }
-
-//------------------------------------------------------------------------------
-/**
-*/
-//inline
-//void
-//nSkinAnimator::SetCharacterSetIndexHandle(int handle)
-//{
-//    this->characterSetIndex = handle;
-//}
 
 //------------------------------------------------------------------------------
 /**
