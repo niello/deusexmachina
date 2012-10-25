@@ -73,7 +73,7 @@ private:
 
     enum
     {
-        MaxJoints = 1024,
+        MaxJoints = 256,
         MaxCurves = MaxJoints * 3,      // translate, rotate, scale per curve
     };
 
