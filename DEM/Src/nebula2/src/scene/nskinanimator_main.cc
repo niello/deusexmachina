@@ -257,12 +257,12 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
 
         // get the sample time from the render context
         nVariable* var = renderContext->GetVariable(this->HChannel);
-        n_assert2(0 != var, "nSkinAnimator::Animate: TimeChannel Variable in RenderContext.\n");
+        n_assert2(var, "nSkinAnimator::Animate: TimeChannel Variable in RenderContext.\n");
         float curTime = var->GetFloat();
 
         // get the time offset from the render context
         var = renderContext->GetVariable(this->HChannelOffset);
-        float curOffset = 0 != var ? var->GetFloat() : 0.0f;
+        float curOffset = var ? var->GetFloat() : 0.0f;
 
         const nVariable& character2SetVar = renderContext->GetLocalVar(this->characterSetIndex);
         nCharacter2Set* characterSet = (nCharacter2Set*)character2SetVar.GetObj();
@@ -276,9 +276,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
 
             float weightSum = 0.0f;
             for (int i = 0; i < numClips; i++)
-            {
                 weightSum += characterSet->GetClipWeightAt(i);
-            }
 
             // add clips
             if (weightSum > 0)
@@ -290,9 +288,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
                 {
                     int index = this->GetClipIndexByName(characterSet->GetClipNameAt(i));
                     if (-1 == index)
-                    {
                         n_error("nSkinAnimator::Animate(): Requested clip \"%s\" does not exist.\n", characterSet->GetClipNameAt(i).Get());
-                    }
                     newState.SetClip(i, this->GetClipAt(index), characterSet->GetClipWeightAt(i) / weightSum);
                 }
                 newState.EndClips();
@@ -308,11 +304,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
 
     // update the source node with the new char skeleton state
     if (sceneNode->IsA(this->skinShapeNodeClass))
-    {
-        nSkinShapeNode* skinShapeNode = (nSkinShapeNode*)sceneNode;
-        skinShapeNode->SetCharSkeleton(&curCharacter->GetSkeleton());
-
-    }
+        ((nSkinShapeNode*)sceneNode)->SetCharSkeleton(&curCharacter->GetSkeleton());
     else n_error("nSkinAnimator::Animate(): invalid scene node class\n");
 }
 

@@ -789,40 +789,7 @@
 						>
 					</File>
 					<File
-						RelativePath="..\..\Src\nebula2\inc\character\ncharjointpalette.h"
-						>
-					</File>
-					<File
 						RelativePath="..\..\Src\nebula2\inc\character\ncharskeleton.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="ncharskinrenderer"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\character\ncharskinrenderer.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ncharskinrenderer;N_NEW=n_new_ncharskinrenderer;N_INITCMDS=n_initcmds_ncharskinrenderer"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ncharskinrenderer;N_NEW=n_new_ncharskinrenderer;N_INITCMDS=n_initcmds_ncharskinrenderer"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\character\ncharskinrenderer.h"
 						>
 					</File>
 				</Filter>

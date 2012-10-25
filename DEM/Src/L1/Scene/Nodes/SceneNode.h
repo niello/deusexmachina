@@ -20,12 +20,15 @@ private:
 	nArray<PSceneNode>		Child; //???or list?
 
 	//!!!Transform info Math::CTransform3D
-	vector3					LocalPosition;
-	quaternion				LocalRotation;
-	vector3					LocalScale;
+	// Could be local or global? Or if global tfm is set by controllers, it is set to another var(s)?
+	vector3					Position;
+	quaternion				Rotation;
+	vector3					Scale;
+	//matrix44 GlobalTfm;
 
-	CFlags					Flags; // IsRoot, IsDirty, ?UniformScale?, LockTransform
+	CFlags					Flags; // IsRoot, IsDirty, IsLocalTfm, ?UniformScale?, LockTransform, TfmChangedLastFrame
 	//nArray<PSceneNodeAttr>	Attrs; //???or list? list is better, cause often only 1 attr is specified
+	// Controller(s)
 
 public:
 
