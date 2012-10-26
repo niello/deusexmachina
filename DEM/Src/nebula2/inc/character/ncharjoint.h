@@ -44,9 +44,6 @@ public:
 	const vector3& GetScale() const { return scale; }
 	void SetLocalMatrix(const matrix44& m) { localScaledMatrix = m; matrixDirty = false; } // Local joint's tfm
 	const matrix44& GetLocalMatrix() const { return localScaledMatrix; }
- 
-	void SetVariationScale(const vector3& s) { variationScale = s; matrixDirty = true; }
-	const vector3& GetVariationScale() const { return variationScale; }
 
 	void SetName(const nString& NewName) { name = NewName; }
 	const nString& GetName() const { return name; }
@@ -70,7 +67,6 @@ private:
     vector3 translate;
     quaternion rotate;
     vector3 scale;
-    vector3 variationScale;
 
     matrix44 poseMatrix;
     matrix44 invPoseMatrix;
@@ -94,7 +90,6 @@ inline nCharJoint::nCharJoint() :
 	parentJointIndex(-1),
 	poseScale(1.0f, 1.0f, 1.0f),
 	scale(1.0f, 1.0f, 1.0f),
-	variationScale(1.0f, 1.0f, 1.0f),
 	matrixDirty(false),
 	lockMatrix(false),
 	isUptodate(false)
@@ -133,24 +128,20 @@ inline void nCharJoint::Evaluate()
     // any changes in position/rotation/etc ?
     if (matrixDirty)
     {
-        localScaledMatrix.ident();
-        localUnscaledMatrix.ident();
+		rotate.normalize();
 
-        rotate.normalize();
-        matrix44 rotateMatrix(rotate);
+		// we need 2 local matrices, one scaled, one unscaled
+		// the unscaled one is for our children, who need a parent matrix with uniform axis
+		// the scaled one is for calculating the correct skin matrix
+		localUnscaledMatrix.ident();
+		localUnscaledMatrix.mult_simple(matrix44(rotate));
+		localUnscaledMatrix.translate(translate);
 
-        // we need 2 local matrices, one scaled, one unscaled
-        // the unscaled one is for our children, who need a parent matrix with uniform axis
-        // the scaled one is for calculating the correct skin matrix
-        localUnscaledMatrix.mult_simple(rotateMatrix);
-        localUnscaledMatrix.translate(translate);
+		localScaledMatrix.ident();
+		localScaledMatrix.scale(scale);
+		localScaledMatrix.mult_simple(localUnscaledMatrix);
 
-        localScaledMatrix.scale(scale);
-        localScaledMatrix.scale(variationScale);
-        localScaledMatrix.mult_simple(rotateMatrix);
-        localScaledMatrix.translate(translate);
-
-        matrixDirty = false;
+		matrixDirty = false;
     }
 
     if (!lockMatrix)
@@ -163,15 +154,8 @@ inline void nCharJoint::Evaluate()
             if (!parentJoint->IsUptodate()) parentJoint->Evaluate();
 
             // joint translation is affected by parent scale while the actual axis are not
-            vector3& trans = worldUnscaledMatrix.pos_component();
-            trans.x *= parentJoint->scale.x * parentJoint->variationScale.x;
-            trans.y *= parentJoint->scale.y * parentJoint->variationScale.y;
-            trans.z *= parentJoint->scale.z * parentJoint->variationScale.z;
-
-            trans = worldScaledMatrix.pos_component();
-            trans.x *= parentJoint->scale.x * parentJoint->variationScale.x;
-            trans.y *= parentJoint->scale.y * parentJoint->variationScale.y;
-            trans.z *= parentJoint->scale.z * parentJoint->variationScale.z;
+            worldUnscaledMatrix.pos_component() *= parentJoint->scale;
+            worldScaledMatrix.pos_component() *= parentJoint->scale;
 
             // we calculate 2 world matrices
             // the unscaled one has uniform axis, which our children need to calculate their matrices

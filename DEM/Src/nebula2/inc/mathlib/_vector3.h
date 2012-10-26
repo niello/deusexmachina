@@ -54,6 +54,8 @@ public:
 
 	void operator +=(const _vector3& v0) { x += v0.x; y += v0.y; z += v0.z; }
 	void operator -=(const _vector3& v0) { x -= v0.x; y -= v0.y; z -= v0.z; }
+	void operator *=(const _vector3& v0) { x *= v0.x; y *= v0.y; z *= v0.z; }
+	void operator /=(const _vector3& v0) { x /= v0.x; y /= v0.y; z /= v0.z; }
 	void operator *=(float s) { x *= s; y *= s; z *= s; }
 	void operator /=(float s) { s = 1.f / s; x *= s; y *= s; z *= s; }
 	bool operator >(const _vector3& rhs) { return x > rhs.x || y > rhs.y || z > rhs.z; }
@@ -93,6 +95,7 @@ static inline _vector3 operator /(const _vector3& v0, float s)
 }
 //---------------------------------------------------------------------
 
+//???force to method? not operator?
 // Dot product.
 static inline float operator %(const _vector3& v0, const _vector3& v1)
 {
@@ -100,6 +103,7 @@ static inline float operator %(const _vector3& v0, const _vector3& v1)
 }
 //---------------------------------------------------------------------
 
+//???force to method? not operator?
 // Cross product.
 static inline _vector3 operator *(const _vector3& v0, const _vector3& v1)
 {

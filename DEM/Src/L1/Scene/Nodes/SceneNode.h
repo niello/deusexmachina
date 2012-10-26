@@ -42,6 +42,10 @@ public:
 	CSceneNode*	GetParent() const { return pParent; }
 
 	// Transform evaluation
+	void		UpdateTransform();
+
+	// Rendering, lighting & debug rendering
+	// (Implement only transforms with debug rendering before writing render connections)
 
 	// Attribute managenent
 

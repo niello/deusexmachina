@@ -5,101 +5,48 @@
 #include "character/ncharacter2.h"
 #include "anim2/nanimeventhandler.h"
 #include "scene/nskinanimator.h"
-#include "variable/nvariablecontext.h"
 
 nArray<nAnimEventTrack> nCharacter2::outAnimEventTracks;
 vector4 nCharacter2::scratchKeyArray[MaxCurves];
 vector4 nCharacter2::keyArray[MaxCurves];
 vector4 nCharacter2::transitionKeyArray[MaxCurves];
 
-//------------------------------------------------------------------------------
-/**
-*/
-nCharacter2::nCharacter2() :
-    animEnabled(true),
-    lastEvaluationFrameId(0),
-    skinAnimator(0),
-    animEventHandler(0)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-nCharacter2::nCharacter2(const nCharacter2& src) :
-    animEnabled(true)
-{
-    *this = src;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
 nCharacter2::~nCharacter2()
 {
-    this->SetSkinAnimator(0);
-    this->SetAnimEventHandler(0);
+	SetSkinAnimator(NULL);
+	SetAnimEventHandler(NULL);
 }
+//---------------------------------------------------------------------
 
-
-//------------------------------------------------------------------------------
-/**
-*/
-void
-nCharacter2::SetSkinAnimator(nSkinAnimator* animator)
+void nCharacter2::SetSkinAnimator(nSkinAnimator* animator)
 {
-    if (this->skinAnimator)
-    {
-        this->skinAnimator->Release();
-        this->skinAnimator = 0;
-    }
-    if (animator)
-    {
-        this->skinAnimator = animator;
-        this->skinAnimator->AddRef();
-    }
+	if (pSkinAnimator) pSkinAnimator->Release();
+	pSkinAnimator = animator;
+	if (pSkinAnimator) pSkinAnimator->AddRef();
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-void
-nCharacter2::SetAnimEventHandler(nAnimEventHandler* handler)
+void nCharacter2::SetAnimEventHandler(nAnimEventHandler* handler)
 {
-    if (this->animEventHandler)
-    {
-        this->animEventHandler->Release();
-        this->animEventHandler = 0;
-    }
-    if (handler)
-    {
-        this->animEventHandler = handler;
-        this->animEventHandler->AddRef();
-    }
+	if (pEvtHandler) pEvtHandler->Release();
+	pEvtHandler = handler;
+	if (pEvtHandler) pEvtHandler->AddRef();
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Set a new animation state, and handle stuff necessary for
-    blending between previous and current state.
-*/
-void
-nCharacter2::SetActiveState(const nAnimStateInfo& newState)
+// Set a new animation state and handle stuff necessary for blending between previous and current state
+void nCharacter2::SetActiveState(const nAnimStateInfo& newState)
 {
-    this->prevStateInfo = this->curStateInfo;
-    this->curStateInfo = newState;
+	prevStateInfo = curStateInfo;
+	curStateInfo = newState;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-void
-nCharacter2::EvaluateSkeleton(float time)
+void nCharacter2::EvaluateSkeleton(float time)
 {
-    if (this->IsAnimEnabled() && this->curStateInfo.IsValid())
+    if (IsAnimEnabled() && curStateInfo.IsValid())
     {
-        n_assert(this->animation);
+        n_assert(animation);
 
         // check if a state transition is necessary
         float curRelTime = time - this->curStateInfo.GetStateStarted();
@@ -112,9 +59,7 @@ nCharacter2::EvaluateSkeleton(float time)
             this->curStateInfo.SetStateStarted(time);
         }
 
-        int numClips = this->curStateInfo.GetNumClips();
-        int clipIndex;
-        for (clipIndex  = 0; clipIndex < numClips; clipIndex++)
+        for (int clipIndex  = 0; clipIndex < curStateInfo.GetNumClips(); clipIndex++)
         {
             if (this->curStateInfo.GetClipAt(clipIndex).GetClipName() != "baseClip")
             {
@@ -178,22 +123,7 @@ nCharacter2::EvaluateSkeleton(float time)
     }
     this->charSkeleton.Evaluate();
 }
-
 //------------------------------------------------------------------------------
-/**
-    Emit animation event for the current animation states.
-*/
-void
-nCharacter2::EmitAnimEvents(float fromTime, float toTime)
-{
-    if (this->animEventHandler && this->curStateInfo.IsValid())
-    {
-        n_assert(this->animation);
-        float relFromTime = (fromTime - this->curStateInfo.GetStateStarted()) + this->curStateInfo.GetStateOffset();
-        float relToTime   = (toTime - this->curStateInfo.GetStateStarted()) + this->curStateInfo.GetStateOffset();
-        this->EmitAnimEvents(this->curStateInfo, relFromTime, relToTime);
-    }
-}
 
 //------------------------------------------------------------------------------
 /**
@@ -210,8 +140,7 @@ nCharacter2::EmitAnimEvents(float fromTime, float toTime)
     @return                 true, if the returned keys are valid (false if all
                             clip weights are zero)
 */
-bool
-nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* keyArray, vector4* scratchKeyArray, int keyArraySize)
+bool nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* keyArray, vector4* scratchKeyArray, int keyArraySize)
 {
     n_assert(keyArray);
     n_assert(keyArraySize >= stateInfo.GetClipAt(0).GetNumCurves());
@@ -354,17 +283,6 @@ nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* keyArr
 }
 
 //------------------------------------------------------------------------------
-/**
-    Begin blended event emission. Transformations of animation events may
-    be blended just as normal animation curves. The rule is that identically
-    named event tracks between several clips will be blended together if
-    their events have the same timestamp.
-*/
-void
-nCharacter2::BeginEmitEvents()
-{
-    nCharacter2::outAnimEventTracks.Clear();
-}
 
 //------------------------------------------------------------------------------
 /**
@@ -377,13 +295,10 @@ nCharacter2::AddEmitEvent(const nAnimEventTrack& track, const nAnimEvent& event,
     int trackIndex;
     int numTracks = nCharacter2::outAnimEventTracks.Size();
     for (trackIndex = 0; trackIndex < numTracks; trackIndex++)
-    {
         if (nCharacter2::outAnimEventTracks[trackIndex].GetName() == track.GetName())
-        {
             break;
-        }
-    }
-    if (trackIndex == numTracks)
+
+	if (trackIndex == numTracks)
     {
         // track didn't exist
         nAnimEventTrack newTrack;
@@ -399,12 +314,10 @@ nCharacter2::AddEmitEvent(const nAnimEventTrack& track, const nAnimEvent& event,
     {
         float time0 = nCharacter2::outAnimEventTracks[trackIndex].GetEvent(eventIndex).GetTime();
         float time1 = event.GetTime();
-        if (n_fequal(time0, time1, 0.01f))
-        {
-            break;
-        }
+        if (n_fequal(time0, time1, 0.01f)) break;
     }
-    if (eventIndex == numEvents)
+
+	if (eventIndex == numEvents)
     {
         // add a new event...
         nAnimEvent newEvent;
@@ -430,29 +343,7 @@ nCharacter2::AddEmitEvent(const nAnimEventTrack& track, const nAnimEvent& event,
         //blendEvent.SetWeightAccum(blendEvent.GetWeightAccum() + weight);
     }
 }
-
 //------------------------------------------------------------------------------
-/**
-    Finish defining animation event emission. This is where the events
-    will actually be transferred to the animation event handler.
-*/
-void
-nCharacter2::EndEmitEvents()
-{
-    n_assert(0 != this->animEventHandler);
-
-    int numTracks = nCharacter2::outAnimEventTracks.Size();
-    int trackIndex;
-    for (trackIndex = 0; trackIndex < numTracks; trackIndex++)
-    {
-        int numEvents = nCharacter2::outAnimEventTracks[trackIndex].GetNumEvents();
-        int eventIndex;
-        for (eventIndex = 0; eventIndex < numEvents; eventIndex++)
-        {
-            this->animEventHandler->HandleEvent(nCharacter2::outAnimEventTracks[trackIndex], eventIndex);
-        }
-    }
-}
 
 //------------------------------------------------------------------------------
 /**
@@ -462,21 +353,20 @@ nCharacter2::EndEmitEvents()
 
     Animation event transformations will be weight-mixed.
 */
-void
-nCharacter2::EmitAnimEvents(const nAnimStateInfo& stateInfo, float fromTime, float toTime)
+void nCharacter2::EmitAnimEvents(const nAnimStateInfo& stateInfo, float fromTime, float toTime)
 {
-    n_assert(this->animation.isvalid());
-    n_assert(0 != this->animEventHandler);
+    n_assert(animation.isvalid() && pEvtHandler);
 
     float timeDiff = toTime - fromTime;
-    if ((timeDiff <= 0.0f) || (timeDiff > 0.25f))
-    {
-        // a time exception, just do nothing
-        return;
-    }
+    if ((timeDiff <= 0.0f) || (timeDiff > 0.25f)) return;
 
-    // for each clip with a weight > 0.0...
-    this->BeginEmitEvents();
+	//Transformations of animation events may
+	//be blended just as normal animation curves. The rule is that identically
+	//named event tracks between several clips will be blended together if
+	//their events have the same timestamp.
+
+	// for each clip with a weight > 0.0...
+    nCharacter2::outAnimEventTracks.Clear();
 
     int clipIndex;
     int numClips = stateInfo.GetNumClips();
@@ -492,21 +382,35 @@ nCharacter2::EmitAnimEvents(const nAnimStateInfo& stateInfo, float fromTime, flo
             for (trackIndex = 0; trackIndex < numTracks; trackIndex++)
             {
                 const nAnimEventTrack& track = clip.GetAnimEventTrackAt(trackIndex);
-                int numEvents = track.GetNumEvents();
-                int eventIndex;
-                for (eventIndex = 0; eventIndex < numEvents; eventIndex++)
+                for (int eventIndex = 0; eventIndex < track.GetNumEvents(); eventIndex++)
                 {
-                    const nAnimEvent& event = track.GetEvent(eventIndex);
-                    if (animGroup.IsInbetween(event.GetTime(), fromTime, toTime))
-                    {
-                        this->AddEmitEvent(track, track.GetEvent(eventIndex), clipWeight);
-                    }
+                    const nAnimEvent& Evt = track.GetEvent(eventIndex);
+                    if (animGroup.IsInbetween(Evt.GetTime(), fromTime, toTime))
+                        AddEmitEvent(track, Evt, clipWeight);
                 }
             }
         }
     }
 
     // handle all events
-    this->EndEmitEvents();
+    for (int trackIndex = 0; trackIndex < nCharacter2::outAnimEventTracks.Size(); trackIndex++)
+    {
+		nAnimEventTrack& Track = nCharacter2::outAnimEventTracks[trackIndex];
+        for (int eventIndex = 0; eventIndex < Track.GetNumEvents(); eventIndex++)
+            pEvtHandler->HandleEvent(Track, eventIndex);
+    }
 }
+//---------------------------------------------------------------------
 
+//Emit animation event for the current animation states.
+void nCharacter2::EmitAnimEvents(float fromTime, float toTime)
+{
+	if (pEvtHandler && curStateInfo.IsValid())
+	{
+		n_assert(animation);
+		float relFromTime = (fromTime - curStateInfo.GetStateStarted()) + curStateInfo.GetStateOffset();
+		float relToTime   = (toTime - curStateInfo.GetStateStarted()) + curStateInfo.GetStateOffset();
+		EmitAnimEvents(curStateInfo, relFromTime, relToTime);
+	}
+}
+//---------------------------------------------------------------------
