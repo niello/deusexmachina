@@ -23,9 +23,9 @@ class nCharacter2: public nRefCounted //Core::CRefCounted
 {
 public:
     /// constructor
-    nCharacter2();
+	nCharacter2(): animEnabled(true), LastEvalFrame(0), pSkinAnimator(NULL), pEvtHandler(NULL) {}
     /// copy constructor
-    nCharacter2(const nCharacter2& src);
+    nCharacter2(const nCharacter2& src): animEnabled(true) { *this = src; }
     /// destructor
     virtual ~nCharacter2();
     /// get the embedded character skeleton
@@ -64,12 +64,8 @@ private:
     bool Sample(const nAnimStateInfo& info, float time, vector4* keyArray, vector4* scratchKeyArray, int keyArraySize);
     /// emit animation events for a given time range
     void EmitAnimEvents(const nAnimStateInfo& info, float fromTime, float toTime);
-    /// begin defining blended animation events
-    void BeginEmitEvents();
     /// add a blended animation event
     void AddEmitEvent(const nAnimEventTrack& track, const nAnimEvent& event, float weight);
-    /// finish defining blended anim events, emit the events
-    void EndEmitEvents();
 
     enum
     {
@@ -79,8 +75,8 @@ private:
 
     nCharSkeleton charSkeleton;
     nRef<nAnimation> animation;
-    nAnimEventHandler* animEventHandler;
-    nSkinAnimator* skinAnimator;
+    nAnimEventHandler* pEvtHandler;
+    nSkinAnimator* pSkinAnimator;
 
     nAnimStateInfo prevStateInfo;
     nAnimStateInfo curStateInfo;
@@ -91,7 +87,7 @@ private:
     static vector4 transitionKeyArray[MaxCurves];
 
     bool animEnabled;
-    uint lastEvaluationFrameId;
+    uint LastEvalFrame;
 };
 
 //------------------------------------------------------------------------------
@@ -111,7 +107,7 @@ inline
 nSkinAnimator*
 nCharacter2::GetSkinAnimator() const
 {
-    return this->skinAnimator;
+    return this->pSkinAnimator;
 }
 
 //------------------------------------------------------------------------------
@@ -162,7 +158,7 @@ inline
 void
 nCharacter2::SetLastEvaluationFrameId(uint id)
 {
-    this->lastEvaluationFrameId = id;
+    this->LastEvalFrame = id;
 }
 
 //------------------------------------------------------------------------------
@@ -172,7 +168,7 @@ inline
 uint
 nCharacter2::GetLastEvaluationFrameId() const
 {
-    return this->lastEvaluationFrameId;
+    return this->LastEvalFrame;
 }
 
 //------------------------------------------------------------------------------
@@ -182,7 +178,7 @@ inline
 nAnimEventHandler*
 nCharacter2::GetAnimEventHandler() const
 {
-    return this->animEventHandler;
+    return this->pEvtHandler;
 }
 
 //------------------------------------------------------------------------------
