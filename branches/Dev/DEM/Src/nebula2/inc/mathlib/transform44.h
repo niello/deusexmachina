@@ -256,11 +256,12 @@ inline const matrix44& transform44::getmatrix()
 	if (!(flags & Locked) && (flags & Dirty))
 	{
 		matrix.ident();
+
 		if (flags & HasScalePivot) matrix.translate(-scalePivot);
 		matrix.scale(scale);
 		if (flags & HasScalePivot) matrix.translate(scalePivot);
-		if (flags & HasRotatePivot) matrix.translate(-rotatePivot);
 
+		if (flags & HasRotatePivot) matrix.translate(-rotatePivot);
 		if (flags & UseEuler)
 		{
 			matrix.rotate_x(euler.x);
@@ -268,9 +269,9 @@ inline const matrix44& transform44::getmatrix()
 			matrix.rotate_z(euler.z);
 		}
 		else matrix.mult_simple(matrix44(quat));
-
 		if (flags & HasRotatePivot) matrix.translate(rotatePivot);
 		if (flags & HasRotatePivotTranslation) matrix.translate(rotatePivotTranslation);
+
 		matrix.translate(translation);
 
 		flags &= ~Dirty;

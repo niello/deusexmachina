@@ -15,9 +15,7 @@ void
 nSceneServer::RenderCameraScene()
 {
     PROFILER_START(this->profRenderCameras);
-    nGfxServer2* gfxServer = nGfxServer2::Instance();
-    int i;
-    for (i = 0; i < this->cameraArray.Size(); i++)
+    for (int i = 0; i < this->cameraArray.Size(); i++)
     {
         // get the camera node
         Group& cameraNodeGroup = this->groupArray[cameraArray[i]];
@@ -34,15 +32,15 @@ nSceneServer::RenderCameraScene()
                                     nGfxServer2::Instance()->GetTransform(nGfxServer2::Projection));
 
             // temp view and projection matrix
-            gfxServer->PushTransform(nGfxServer2::View, cameraNode->GetViewMatrix());
-            gfxServer->PushTransform(nGfxServer2::Projection, cameraNode->GetProjectionMatrix());
+            nGfxServer2::Instance()->PushTransform(nGfxServer2::View, cameraNode->GetViewMatrix());
+            nGfxServer2::Instance()->PushTransform(nGfxServer2::Projection, cameraNode->GetProjectionMatrix());
 
             // perform rendering through the render path
             this->DoRenderPath(this->renderPath.GetSection(sectionIndex));
 
             // restore matrices
-            gfxServer->PopTransform(nGfxServer2::Projection);
-            gfxServer->PopTransform(nGfxServer2::View);
+            nGfxServer2::Instance()->PopTransform(nGfxServer2::Projection);
+            nGfxServer2::Instance()->PopTransform(nGfxServer2::View);
         }
     }
     PROFILER_STOP(this->profRenderCameras);

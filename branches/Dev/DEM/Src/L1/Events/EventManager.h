@@ -4,7 +4,6 @@
 
 #include "EventDispatcher.h"
 #include "EventBase.h"
-
 #include <Data/Pool.h>
 
 // Event manager is a central coordination point for the event processing. It works as:

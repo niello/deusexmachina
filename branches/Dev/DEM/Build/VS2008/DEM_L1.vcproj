@@ -1285,6 +1285,30 @@
 			Name="Scene"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Scene\Scene.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Scene.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\SceneNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\SceneNode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\SceneNodeAttr.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\SceneNodeAttr.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\SceneServer.cpp"
 				>
 			</File>
@@ -1292,18 +1316,18 @@
 				RelativePath="..\..\Src\L1\Scene\SceneServer.h"
 				>
 			</File>
-			<Filter
-				Name="Nodes"
+		</Filter>
+		<Filter
+			Name="Math"
+			>
+			<File
+				RelativePath="..\..\Src\L1\Math\TransformSRT.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L1\Scene\Nodes\SceneNode.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Scene\Nodes\SceneNode.h"
-					>
-				</File>
-			</Filter>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\TransformSRT.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"

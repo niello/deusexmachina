@@ -33,7 +33,6 @@ public:
     enum LightMode
     {
         Off,
-        FFP,
         Shader,
     };
 
@@ -292,7 +291,6 @@ nRpPhase::StringToLightMode(const char* str)
 {
     n_assert(str);
     if (0 == strcmp("Off", str)) return Off;
-    else if (0 == strcmp("FFP", str)) return FFP;
     else if (0 == strcmp("Shader", str)) return Shader;
     else
     {

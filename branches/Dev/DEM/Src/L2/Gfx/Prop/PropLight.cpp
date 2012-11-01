@@ -2,6 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Gfx/GfxServer.h>
+#include <Scene/SceneServer.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
@@ -51,6 +52,9 @@ void CPropLight::GetAttributes(nArray<DB::CAttrID>& Attrs)
 void CPropLight::Activate()
 {
 	CProperty::Activate();
+
+	// Cache scene node
+	//Scene::PSceneNode Node = SceneSrv->GetCurrentScene()->GetNode(Attr::ScenePath);
 
 	pLightEntity = Graphics::CLightEntity::Create();
 

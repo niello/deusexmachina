@@ -14,7 +14,6 @@
 #include "anim2/nanimstateinfo.h"
 #include "kernel/nRefCounted.h"
 
-class nVariableContext;
 class nSkinAnimator;
 class nAnimEventHandler;
 

@@ -2,12 +2,9 @@
 #ifndef __DEM_L1_POOL_H__
 #define __DEM_L1_POOL_H__
 
-//!!!TEST IT!
-
 // Only for n_assert
 #include <kernel/ndebug.h>
 #include <kernel/ntypes.h>
-
 #include <StdDEM.h>
 
 // Simple pool for fast allocation of multiple frequently used objects, typically small.
@@ -24,8 +21,7 @@ protected:
 	{
 		union
 		{
-			//T			Object;
-			char		Object[sizeof(T)];
+			char		Object[sizeof(T)]; // T Object; causes constructor error
 			CRecord<T>*	Next;
 		};
 
@@ -56,7 +52,7 @@ public:
 	~CPool() { Clear(); }
 
 	T*		Construct();
-	T*		CopyConstruct(const T& Other);
+	T*		Construct(const T& Other);
 	void	Destroy(T* Handle);
 
 	//T& Get(int idx);
@@ -132,7 +128,7 @@ inline T* CPool<T, ChunkSize, MaxChunks>::Construct()
 //---------------------------------------------------------------------
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-inline T* CPool<T, ChunkSize, MaxChunks>::CopyConstruct(const T& Other)
+inline T* CPool<T, ChunkSize, MaxChunks>::Construct(const T& Other)
 {
 	T* AllocatedRec = AllocRecord();
 	n_placement_new(AllocatedRec, T)(Other);
@@ -143,6 +139,8 @@ inline T* CPool<T, ChunkSize, MaxChunks>::CopyConstruct(const T& Other)
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
 inline void CPool<T, ChunkSize, MaxChunks>::Destroy(T* Handle)
 {
+	if (!Handle) return;
+
 #ifdef _DEBUG
 	ReleasesCount++;
 #endif

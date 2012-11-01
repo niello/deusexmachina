@@ -69,9 +69,8 @@ void CRenderableEntity::UpdateGlobalBox()
 
 void CRenderableEntity::UpdateRenderContextVariables()
 {
-	float Time = (float)GetEntityTime();
 	RenderCtx.SetTransform(Transform);
-	RenderCtx.GetVariable(TimeVarHandle)->SetFloat(Time);
+	RenderCtx.GetVariable(TimeVarHandle)->SetFloat((float)GetEntityTime());
 }
 //---------------------------------------------------------------------
 

@@ -37,21 +37,7 @@ void
 nD3D9Server::ClearLights()
 {
     n_assert(this->pD3D9Device);
-
     nGfxServer2::ClearLights();
-    if (FFP == this->lightingType)
-    {
-        uint maxLights = this->devCaps.MaxActiveLights;
-        if (maxLights > 8)
-        {
-            maxLights = 8;
-        }
-        for (uint i = 0; i < maxLights; i++)
-        {
-            HRESULT hr = this->pD3D9Device->LightEnable(i, FALSE);
-            n_assert(SUCCEEDED(hr));
-        }
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -82,122 +68,31 @@ nD3D9Server::AddLight(const nLight& light)
     n_assert(light.GetRange() > 0.0f);
     int numLights = nGfxServer2::AddLight(light);
 
-    if (Off == this->lightingType)
+	// even if no lighting, set light transform
+	this->SetTransform(nGfxServer2::Light, light.GetTransform());
+
+    if (Shader == this->lightingType)
     {
-        // no lighting, but set light transform
-        this->SetTransform(nGfxServer2::Light, light.GetTransform());
-    }
-    else if (FFP == this->lightingType)
-    {
-        n_assert(this->pD3D9Device);
-        HRESULT hr;
-
-        // set ambient render state if this is the first light
-        if (1 == numLights)
-        {
-            DWORD amb = D3DCOLOR_COLORVALUE(light.GetAmbient().x, light.GetAmbient().y, light.GetAmbient().z, light.GetAmbient().w);
-            this->pD3D9Device->SetRenderState(D3DRS_AMBIENT, amb);
-        }
-
-        // set light in fixed function pipeline
-        D3DLIGHT9 d3dLight9;
-        memset(&d3dLight9, 0, sizeof(d3dLight9));
-        switch (light.GetType())
-        {
-        case nLight::Point:
-            d3dLight9.Type = D3DLIGHT_POINT;
-            break;
-
-        case nLight::Directional:
-            d3dLight9.Type = D3DLIGHT_DIRECTIONAL;
-            break;
-
-        case nLight::Spot:
-            d3dLight9.Type = D3DLIGHT_SPOT;
-            break;
-        }
-        d3dLight9.Diffuse.r    = light.GetDiffuse().x;
-        d3dLight9.Diffuse.g    = light.GetDiffuse().y;
-        d3dLight9.Diffuse.b    = light.GetDiffuse().z;
-        d3dLight9.Diffuse.a    = light.GetDiffuse().w;
-        d3dLight9.Specular.r   = light.GetSpecular().x;
-        d3dLight9.Specular.g   = light.GetSpecular().y;
-        d3dLight9.Specular.b   = light.GetSpecular().z;
-        d3dLight9.Specular.a   = light.GetSpecular().w;
-        d3dLight9.Ambient.r    = light.GetAmbient().x;
-        d3dLight9.Ambient.g    = light.GetAmbient().y;
-        d3dLight9.Ambient.b    = light.GetAmbient().z;
-        d3dLight9.Ambient.a    = light.GetAmbient().w;
-        d3dLight9.Position.x   = light.GetTransform().pos_component().x;
-        d3dLight9.Position.y   = light.GetTransform().pos_component().y;
-        d3dLight9.Position.z   = light.GetTransform().pos_component().z;
-
-        const vector3& lightDir = -light.GetTransform().z_component();
-        d3dLight9.Direction.x  = lightDir.x;
-        d3dLight9.Direction.y  = lightDir.y;
-        d3dLight9.Direction.z  = lightDir.z;
-        d3dLight9.Range        = light.GetRange();
-        d3dLight9.Falloff      = 1.0f;
-
-        // set the attenuation values so that at the maximum range,
-        // the light intensity is at 20%
-        d3dLight9.Attenuation0 = 0.0f;
-        d3dLight9.Attenuation1 = 5.0f / light.GetRange();
-        d3dLight9.Attenuation2 = 0.0f;
-        d3dLight9.Theta        = 0.0f;
-        d3dLight9.Phi          = N_PI;
-        hr = this->pD3D9Device->SetLight(numLights - 1, &d3dLight9);
-        n_assert(SUCCEEDED(hr));
-        hr = this->pD3D9Device->LightEnable(numLights - 1, TRUE);
-        n_assert(SUCCEEDED(hr));
-    }
-    else if (Shader == this->lightingType)
-    {
-        // set light in shader pipeline
-        this->SetTransform(nGfxServer2::Light, light.GetTransform());
         nShader2* shd = this->refSharedShader.get_unsafe();
 
-        if (light.GetType() == nLight::Directional)
-        {
-            // for directional lights, the light pos shader attributes
-            // actually hold the light direction
-            if (shd->IsParameterUsed(nShaderState::LightPos))
-            {
-                shd->SetVector3(nShaderState::LightPos, this->transform[Light].z_component());
-            }
-        }
-        else
-        {
-            // point light position
-            if (shd->IsParameterUsed(nShaderState::LightPos))
-            {
-                shd->SetVector3(nShaderState::LightPos, this->transform[Light].pos_component());
-            }
-        }
-        if (shd->IsParameterUsed(nShaderState::LightType))
-        {
+        // for directional lights, the light pos shader attributes
+        // actually hold the light direction
+        if (shd->IsParameterUsed(nShaderState::LightPos))
+			shd->SetVector3(nShaderState::LightPos,
+				light.GetType() == nLight::Directional ? transform[Light].z_component() : transform[Light].pos_component());
+
+		if (shd->IsParameterUsed(nShaderState::LightType))
             shd->SetInt(nShaderState::LightType, light.GetType());
-        }
         if (shd->IsParameterUsed(nShaderState::LightRange))
-        {
             shd->SetFloat(nShaderState::LightRange, light.GetRange());
-        }
         if (shd->IsParameterUsed(nShaderState::LightDiffuse))
-        {
             shd->SetVector4(nShaderState::LightDiffuse, light.GetDiffuse());
-        }
         if (shd->IsParameterUsed(nShaderState::LightSpecular))
-        {
             shd->SetVector4(nShaderState::LightSpecular, light.GetSpecular());
-        }
         if (shd->IsParameterUsed(nShaderState::LightAmbient))
-        {
             shd->SetVector4(nShaderState::LightAmbient, light.GetAmbient());
-        }
         if (shd->IsParameterUsed(nShaderState::ShadowIndex))
-        {
             shd->SetVector4(nShaderState::ShadowIndex, light.GetShadowLightMask());
-        }
     }
     return numLights;
 }
@@ -565,11 +460,11 @@ nD3D9Server::SetMesh(nMesh2* vbMesh, nMesh2* ibMesh)
         // n_dxtrace(hr, "SetVertexDeclaration() on D3D device failed!");
 
         // clear vertex stream
-        hr = this->pD3D9Device->SetStreamSource(0, 0, 0, 0);
+        hr = this->pD3D9Device->SetStreamSource(0, NULL, 0, 0);
         n_dxtrace(hr, "SetStreamSource() on D3D device failed!");
 
         // clear the index buffer
-        hr = this->pD3D9Device->SetIndices(0);
+        hr = this->pD3D9Device->SetIndices(NULL);
         n_dxtrace(hr, "SetIndices() on D3D device failed!");
     }
     nGfxServer2::SetMesh(vbMesh, ibMesh);
@@ -646,7 +541,7 @@ nD3D9Server::SetMeshArray(nMeshArray* meshArray)
         int i;
         for (i = 0; i < MaxVertexStreams; i++)
         {
-            hr = this->pD3D9Device->SetStreamSource(i, 0, 0, 0);
+            hr = this->pD3D9Device->SetStreamSource(i, NULL, 0, 0);
             n_dxtrace(hr, "SetStreamSource() on D3D device failed!");
         }
 
@@ -656,7 +551,7 @@ nD3D9Server::SetMeshArray(nMeshArray* meshArray)
         //n_dxtrace(hr, "SetVertexDeclaration() on D3D device failed!");
 
         // clear the index buffer
-        hr = this->pD3D9Device->SetIndices(0);
+        hr = this->pD3D9Device->SetIndices(NULL);
         n_dxtrace(hr, "SetIndices() on D3D device failed!");
     }
     nGfxServer2::SetMeshArray(meshArray);
