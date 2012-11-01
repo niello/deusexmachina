@@ -24,16 +24,13 @@
 
 class nSceneServer;
 class nRenderContext;
-class nGfxServer2;
-class nVariableServer;
 
 namespace Data
 {
 	class CBinaryReader;
 }
 
-//-------------------------------------------------------------------------------
-class nSceneNode : public nRoot
+class nSceneNode: public nRoot
 {
 protected:
 

@@ -53,77 +53,37 @@ bool nLodNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
     FIXME FLOH: NOTE, this method will only be correct if this node and
     its parent nodes are not animated.
 */
-void
-nLodNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
+void nLodNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
     n_assert(sceneServer);
     n_assert(renderContext);
 
-    if (this->CheckFlags(Active))
-    {
-        // get camera distance
-        const matrix44& viewer = nGfxServer2::Instance()->GetTransform(nGfxServer2::InvView);
+    if (!CheckFlags(Active) || !GetHead()) return;
 
-        // get global render context position
-        matrix44 transform = renderContext->GetTransform();
+	const vector3& viewer = nGfxServer2::Instance()->GetTransform(nGfxServer2::InvView).pos_component();
+    vector3 lodViewer = viewer - renderContext->GetTransform().pos_component();
+    float distance = lodViewer.len();
 
-        // compute position by stepping up node hierarchy (Argh)
-        /*
-        nTransformNode* tNode = this;
-        while ((tNode = (nTransformNode*) tNode->GetParent()) && tNode->IsA(this->transformNodeClass))
-        {
-            transform = transform * tNode->GetTransform();
-        }
-        */
+    if (distance <= minDistance || distance >= maxDistance) return;
 
-        vector3 lodViewer = viewer.pos_component() - transform.pos_component();
-        float distance = lodViewer.len();
+	// get number of child nodes
+    int num = 0;
+    for (nSceneNode* pChild = (nSceneNode*)GetHead(); pChild; pChild = (nSceneNode*)pChild->GetSucc())
+        if (pChild->IsA(transformNodeClass))
+            ++num;
 
-        if ((distance > this->minDistance) && (distance < this->maxDistance))
-        {
+    // if there are not enough thresholds, set some default values
+    if (!thresholds.Size()) thresholds.Append(100.0f);
 
-            // get number of child nodes
-            int num = 0;
-            nSceneNode* curChild;
-            for (curChild = (nSceneNode*)this->GetHead();
-                curChild;
-                curChild = (nSceneNode*)curChild->GetSucc())
-            {
-                if (curChild->IsA(this->transformNodeClass))
-                {
-                    num++;
-                }
-            }
+	while (thresholds.Size() < (num - 1))
+        thresholds.Append(thresholds[thresholds.Size()-1] * 2.0f);
 
-            // if there are not enough thresholds, set some default values
-            if (!this->thresholds.Size())
-            {
-                thresholds.Append(100.0f);
-            }
-            while (this->thresholds.Size() < (num - 1))
-            {
-                this->thresholds.Append(thresholds[this->thresholds.Size()-1] * 2.0f);
-            }
-
-            // find the proper child to attach
-            int index = 0;
-            if (this->GetHead())
-            {
-                nSceneNode* childToAttach = (nSceneNode*)this->GetHead();
-                for (curChild = (nSceneNode*)childToAttach->GetSucc();
-                    curChild;
-                    curChild = (nSceneNode*)curChild->GetSucc(), index++)
-                {
-                    if (curChild->IsA(this->transformNodeClass))
-                    {
-                        if (distance >= this->thresholds[index])
-                        {
-                            childToAttach = curChild;
-                        }
-                    }
-                }
-                childToAttach->Attach(sceneServer, renderContext);
-            }
-        }
-    }
+    // find the proper child to attach
+    int i = 0;
+    nSceneNode* pSelChild = (nSceneNode*)GetHead();
+	nSceneNode* pChild = (nSceneNode*)pSelChild->GetSucc();
+    for (; pChild; pChild = (nSceneNode*)pChild->GetSucc(), ++i)
+        if (pChild->IsA(transformNodeClass) && distance >= thresholds[i])
+                pSelChild = pChild;
+    pSelChild->Attach(sceneServer, renderContext);
 }

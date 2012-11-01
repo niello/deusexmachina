@@ -77,16 +77,6 @@ nSceneServer::DoOcclusionQuery()
     {
         nGfxServer2* gfxServer = nGfxServer2::Instance();
 
-        // get current viewer position, NOTE: move the viewer position
-        // into the screen onto the near plane since the occlusion check
-        // needs to check whether the viewer is inside the occlusion bounding box
-        // to check, if we don't account for the near plane then the front plane
-        // of the occlusion plane might be clipped which would return 0 drawn pixels
-        // when the object really isn't occluded (simply turning off back face
-        // culling won't help either in some cases!)
-
-        // FIXME: hmm, this method sucks... better to check viewer position against
-        // a slightly scaled bounding box in IssueOcclusionQuery()!
         const vector3& viewerPos = gfxServer->GetTransform(nGfxServer2::InvView).pos_component();
         if (gfxServer->BeginScene())
         {

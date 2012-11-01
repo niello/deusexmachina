@@ -155,13 +155,13 @@ nSceneServer::ApplyLightClipPlanes(const LightInfo& lightInfo)
 void
 nSceneServer::ResetLightScissorsAndClipPlanes()
 {
-    if (this->clipPlaneFencing)
+    static const rectangle fullScreenRect(vector2::zero, vector2(1.0f, 1.0f));
+    nGfxServer2::Instance()->SetScissorRect(fullScreenRect);
+
+	if (this->clipPlaneFencing)
     {
-        nGfxServer2* gfxServer = nGfxServer2::Instance();
-        static const rectangle fullScreenRect(vector2::zero, vector2(1.0f, 1.0f));
-        gfxServer->SetScissorRect(fullScreenRect);
         nArray<plane> nullArray(0, 0);
-        gfxServer->SetClipPlanes(nullArray);
+        nGfxServer2::Instance()->SetClipPlanes(nullArray);
     }
 }
 

@@ -101,6 +101,8 @@ bool CEnvironment::InitEngine()
 	GfxServer->FeatureSet = FeatureSet; //???store here?
 	GfxServer->Open();
 
+	SceneServer.Create();
+
 	InputServer.Create();
 	InputServer->Open();
 
@@ -131,6 +133,8 @@ void CEnvironment::ReleaseEngine()
 
 	if (AudioServer.isvalid() && AudioServer->IsOpen()) AudioServer->Close();
 	AudioServer = NULL;
+
+	SceneServer = NULL;
 
 	if (GfxServer.isvalid() && GfxServer->IsOpen()) GfxServer->Close();
 	GfxServer = NULL;

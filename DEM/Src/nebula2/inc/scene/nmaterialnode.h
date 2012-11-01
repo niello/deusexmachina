@@ -73,7 +73,6 @@ private:
     /// checks if shader uses texture passed in param
     virtual bool IsTextureUsed(nShaderState::Param param);
 
-    nString mayaShaderName;
     nString shaderName;
     int shaderIndex;
     nRef<nShader2> refShader;
@@ -128,27 +127,5 @@ nMaterialNode::GetShaderIndex()
     return this->shaderIndex;
 }
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nMaterialNode::SetMayaShaderName(nString name)
-{
-    this->mayaShaderName = name;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nString
-nMaterialNode::GetMayaShaderName() const
-{
-    return this->mayaShaderName;
-}
-
-
-//------------------------------------------------------------------------------
 #endif
 

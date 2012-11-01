@@ -42,8 +42,8 @@ public:
 	const quaternion& GetRotate() const { return rotate; }
 	void SetScale(const vector3& s) { scale = s; matrixDirty = true; }
 	const vector3& GetScale() const { return scale; }
-	void SetLocalMatrix(const matrix44& m) { localScaledMatrix = m; matrixDirty = false; } // Local joint's tfm
-	const matrix44& GetLocalMatrix() const { return localScaledMatrix; }
+	void SetLocalMatrix(const matrix44& m) { localMatrix = m; matrixDirty = false; } // Local joint's tfm
+	const matrix44& GetLocalMatrix() const { return localMatrix; }
 
 	void SetName(const nString& NewName) { name = NewName; }
 	const nString& GetName() const { return name; }
@@ -51,8 +51,8 @@ public:
 	void Evaluate();
 
 	// Evaluated values
-	void SetMatrix(const matrix44& m) { worldScaledMatrix = m; lockMatrix = true; } // Sets model space matrix, doesn't mul on parent
-	const matrix44& GetMatrix() const { return worldScaledMatrix; } // Model space matrix
+	void SetMatrix(const matrix44& m) { worldMatrix = m; lockMatrix = true; } // Sets model space matrix, doesn't mul on parent
+	const matrix44& GetMatrix() const { return worldMatrix; } // Model space matrix
 	const matrix44& GetSkinMatrix44() const { return skinMatrix44; } // Multiplied by inverse bind pose
  
 	void ClearUptodateFlag() { isUptodate = false; }
@@ -71,10 +71,8 @@ private:
     matrix44 poseMatrix;
     matrix44 invPoseMatrix;
 
-    matrix44 localUnscaledMatrix;
-    matrix44 localScaledMatrix;
-    matrix44 worldUnscaledMatrix;
-    matrix44 worldScaledMatrix;
+    matrix44 localMatrix;
+    matrix44 worldMatrix;
     matrix44 skinMatrix44;
     int parentJointIndex;
     nCharJoint* parentJoint;
@@ -109,8 +107,8 @@ inline void nCharJoint::SetPose(const vector3& t, const quaternion& q, const vec
 	poseMatrix.translate(poseTranslate);
 
 	// set the initial matrix so that it undoes the pose matrix
-	localScaledMatrix = poseMatrix;
-	worldScaledMatrix = poseMatrix;
+	localMatrix = poseMatrix;
+	worldMatrix = poseMatrix;
 
 	// global pose matrix and compute global inverse pose matrix
 	if (parentJoint) poseMatrix.mult_simple(parentJoint->poseMatrix);
@@ -123,50 +121,34 @@ inline void nCharJoint::SetPose(const vector3& t, const quaternion& q, const vec
 // rotation and the scale of the joint. The parent joint must already be uptodate!
 inline void nCharJoint::Evaluate()
 {
-    if (isUptodate) return;
+	if (isUptodate) return;
 
-    // any changes in position/rotation/etc ?
-    if (matrixDirty)
-    {
-		rotate.normalize();
+	if (!lockMatrix)
+	{
+		if (matrixDirty)
+		{
+			rotate.normalize();
+			localMatrix.set(scale.x,	0.f,		0.f,		0.f,
+							0.f,		scale.y,	0.f,		0.f,
+							0.f,		0.f,		scale.z,	0.f,
+							0.f,		0.f,		0.f,		1.f);
+			localMatrix.mult_simple(matrix44(rotate));
+			localMatrix.translate(translate);
+			matrixDirty = false;
+		}
 
-		// we need 2 local matrices, one scaled, one unscaled
-		// the unscaled one is for our children, who need a parent matrix with uniform axis
-		// the scaled one is for calculating the correct skin matrix
-		localUnscaledMatrix.ident();
-		localUnscaledMatrix.mult_simple(matrix44(rotate));
-		localUnscaledMatrix.translate(translate);
+		worldMatrix = localMatrix;
 
-		localScaledMatrix.ident();
-		localScaledMatrix.scale(scale);
-		localScaledMatrix.mult_simple(localUnscaledMatrix);
+		if (parentJoint)
+		{
+			if (!parentJoint->IsUptodate()) parentJoint->Evaluate();
+			worldMatrix.mult_simple(parentJoint->worldMatrix); //!!!can optimize - write result to m! (binary op or smth)
+		}
+	}
 
-		matrixDirty = false;
-    }
-
-    if (!lockMatrix)
-    {
-        worldScaledMatrix = localScaledMatrix;
-        worldUnscaledMatrix = localUnscaledMatrix;
-
-        if (parentJoint)
-        {
-            if (!parentJoint->IsUptodate()) parentJoint->Evaluate();
-
-            // joint translation is affected by parent scale while the actual axis are not
-            worldUnscaledMatrix.pos_component() *= parentJoint->scale;
-            worldScaledMatrix.pos_component() *= parentJoint->scale;
-
-            // we calculate 2 world matrices
-            // the unscaled one has uniform axis, which our children need to calculate their matrices
-            // the scaled one is the one used to calculate the skin matrix (the applied scaling is the local,
-            // parent scaling which influences the translation of the joint has been handled above)
-            worldUnscaledMatrix.mult_simple(parentJoint->worldUnscaledMatrix);
-            worldScaledMatrix.mult_simple(parentJoint->worldUnscaledMatrix);
-        }
-    }
-
-    skinMatrix44 = invPoseMatrix * worldScaledMatrix;
+	//!!!can optimize - write result to m! (binary op or smth)
+	skinMatrix44 = invPoseMatrix;
+	skinMatrix44.mult_simple(worldMatrix);
 
 	isUptodate = true;
 }

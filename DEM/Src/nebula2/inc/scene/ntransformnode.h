@@ -27,7 +27,6 @@ namespace Data
 	class CBinaryReader;
 }
 
-//------------------------------------------------------------------------------
 class nTransformNode : public nSceneNode
 {
 protected:

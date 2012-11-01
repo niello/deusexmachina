@@ -89,7 +89,6 @@ public:
     enum LightingType
     {
         Off = 0,                ///< no lighting
-        FFP,                    ///< fixed function per-vertex lighting
         Shader,                 ///< shader controlled lighting
     };
 

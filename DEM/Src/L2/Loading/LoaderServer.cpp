@@ -8,6 +8,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/Level.h>
 #include <Gfx/GfxServer.h>
+#include <Scene/SceneServer.h>
 #include <AI/AIServer.h>
 #include <Game/GameServer.h>
 #include <DB/Database.h>
@@ -209,7 +210,9 @@ void CLoaderServer::SaveGlobalAttributes()
 
 bool CLoaderServer::LoadLevel(const nString& LevelName)
 {
-	n_assert(EntityMgr->GetNumEntities() == 0);
+	n_assert(!EntityMgr->GetNumEntities());
+
+	CStrID LevelID(LevelName.Get());
 
 	SetCurrentLevel(LevelName);
 
@@ -243,6 +246,7 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 	}
 	else
 	{
+		LevelID = CStrID("Temp");
 		LevelBox = EmptyLevelBox;
 		QuadTreeDepth = 3;
 	}
@@ -253,6 +257,8 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 	GfxLevel.Create();
 	GfxLevel->Init(LevelBox, QuadTreeDepth);
 	GfxSrv->SetLevel(GfxLevel);
+
+	n_assert(SceneSrv->CreateScene(LevelID, LevelBox, true));
 
 	n_assert(AISrv->SetupLevel(LevelBox));
 
@@ -300,7 +306,8 @@ void CLoaderServer::UnloadLevel()
 	//!!!unload AI level!
 	GameSrv->Stop();
 	StaticEnvMgr->ClearStaticEnv();
-	EntityMgr->RemoveAllEntities(); //Cleanup();
+	EntityMgr->RemoveAllEntities();
+	SceneSrv->RemoveScene(SceneSrv->GetCurrentSceneID());
 	GfxSrv->SetLevel(NULL);
 	PhysicsSrv->SetLevel(NULL);
 	LevelBox.vmin = vector3::Zero;

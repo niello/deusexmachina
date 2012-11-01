@@ -13,6 +13,7 @@
 #include <Resources/ResourceServer.h>
 #include <Loading/LoaderServer.h>
 #include <Gfx/GfxServer.h>
+#include <Scene/SceneServer.h>
 #include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
 #include <Physics/PhysicsServer.h>
@@ -65,6 +66,7 @@ protected:
 	Ptr<Resources::CResourceServer>	RsrcServer;
 	Ptr<Loading::CLoaderServer>		LoaderServer;
 	Ptr<Graphics::CGfxServer>		GfxServer;
+	Ptr<Scene::CSceneServer>		SceneServer;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
 	Ptr<Audio::CAudioServer>		AudioServer;

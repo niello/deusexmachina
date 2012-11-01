@@ -31,14 +31,12 @@ nSceneServer::nSceneServer() :
     inBeginScene(false),
     obeyLightLinks(false),
     gfxServerInBeginScene(false),
-    ffpLightingApplied(false),
     renderDebug(false),
     stackDepth(0),
     shapeBucket(0, 1024),
     occlusionQuery(0),
     occlusionQueryEnabled(true),
     clipPlaneFencing(true),
-    guiEnabled(true),
     camerasEnabled(true),
     perfGuiEnabled(false)
 {
@@ -114,8 +112,7 @@ nSceneServer::Open()
         DataSrv->SetAssign("shaders", this->renderPath.GetShaderPath());
 
         // open the display
-        nGfxServer2* gfxServer = nGfxServer2::Instance();
-        bool displayOpened = gfxServer->OpenDisplay();
+        bool displayOpened = nGfxServer2::Instance()->OpenDisplay();
         n_assert(displayOpened);
 
         // open the shadow server (after opening display!)
@@ -129,7 +126,7 @@ nSceneServer::Open()
         this->renderPath.CloseXml();
 
         // create an occlusion query object
-        this->occlusionQuery = gfxServer->NewOcclusionQuery();
+        this->occlusionQuery = nGfxServer2::Instance()->NewOcclusionQuery();
 		occlusionQuery->AddRef();
 
         this->isOpen = true;
@@ -300,8 +297,6 @@ nSceneServer::EndGroup()
 void
 nSceneServer::RenderScene()
 {
-    nGfxServer2* gfxServer = nGfxServer2::Instance();
-
     // split nodes into shapes and lights
     this->SplitNodes();
 
@@ -339,7 +334,7 @@ nSceneServer::RenderScene()
     PROFILER_STOP(this->profRenderPath);
 
     // HACK...
-    this->gfxServerInBeginScene = gfxServer->BeginScene();
+    this->gfxServerInBeginScene = nGfxServer2::Instance()->BeginScene();
 }
 
 //------------------------------------------------------------------------------
@@ -350,7 +345,6 @@ nSceneServer::RenderScene()
 void
 nSceneServer::PresentScene()
 {
-    nGfxServer2* gfxServer = nGfxServer2::Instance();
     if (this->gfxServerInBeginScene)
     {
         if (this->renderDebug)
@@ -362,11 +356,11 @@ nSceneServer::PresentScene()
         {
             this->DebugRenderPerfGui();
         }
-        gfxServer->DrawTextBuffer();
-        gfxServer->EndScene();
-        gfxServer->PresentScene();
+        nGfxServer2::Instance()->DrawTextBuffer();
+        nGfxServer2::Instance()->EndScene();
+        nGfxServer2::Instance()->PresentScene();
     }
-    gfxServer->EndFrame();
+    nGfxServer2::Instance()->EndFrame();
     PROFILER_STOP(this->profFrame);
 }
 

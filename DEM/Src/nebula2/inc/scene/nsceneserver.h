@@ -86,10 +86,6 @@ public:
     void SetClipPlaneFencing(bool b);
     /// get clip plane fencing mode
     bool GetClipPlaneFencing() const;
-    /// enable/disable GUI rendering
-    void SetGuiEnabled(bool b);
-    /// get GUI rendering state
-    bool GetGuiEnabled() const;
     /// enable/disable camera node rendering
     void SetCamerasEnabled(bool b);
     /// get camera enabled flag
@@ -141,16 +137,8 @@ private:
     void RenderShadow(nRpPass& curPass);
     /// render a complete phase for light mode "Off"
     void RenderPhaseLightModeOff(nRpPhase& curPhase);
-    /// render a complete phase for light mode "FFP"
-    void RenderPhaseLightModeFFP(nRpPhase& curPhase);
     /// render a complete phase for light mode "Shader"
     void RenderPhaseLightModeShader(nRpPhase& curPhase);
-    /// render single shape with light mode "Off"
-    void RenderShapeLightModeOff(const Group& shapeGroup);
-    /// render single shape with light mode "FFP"
-    void RenderShapeLightModeFFP(const Group& shapeGroup);
-    /// render single shape with light mode "Shader"
-    void RenderShapeLightModeShader(Group& shapeGroup, const nRpSequence& seq);
     /// update scissor rectangles for one light source
     void ComputeLightScissor(LightInfo& lightInfo);
     /// update the clip planes for a single light source
@@ -205,10 +193,8 @@ private:
     bool obeyLightLinks;
     bool clipPlaneFencing;
     bool gfxServerInBeginScene; // HACK
-    bool ffpLightingApplied;
     bool renderDebug;
     bool occlusionQueryEnabled;
-    bool guiEnabled;
     bool camerasEnabled;
     bool perfGuiEnabled;
 
@@ -275,26 +261,6 @@ bool
 nSceneServer::GetPerfGuiEnabled() const
 {
     return this->perfGuiEnabled;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nSceneServer::SetGuiEnabled(bool b)
-{
-    this->guiEnabled = b;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-nSceneServer::GetGuiEnabled() const
-{
-    return this->guiEnabled;
 }
 
 //------------------------------------------------------------------------------

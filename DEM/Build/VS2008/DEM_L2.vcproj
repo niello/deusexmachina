@@ -1153,14 +1153,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropPosteffect.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropPosteffect.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\L2\Gfx\Prop\PropSimpleGraphics.cpp"
 					>
 				</File>
