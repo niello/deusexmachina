@@ -21,6 +21,7 @@ namespace Attr
 
 	// New attrs
 	DeclareAttrsModule(ScriptObject)
+	DeclareAttrsModule(PropSceneNode)
 	DeclareAttrsModule(PropUIControl)
 	DeclareAttrsModule(PropSmartObject)
 	DeclareAttrsModule(PropWeapon)
@@ -58,6 +59,7 @@ void CEnvironment::RegisterAttributes()
 
 	// New attrs
 	RegisterAttrs(ScriptObject)
+	RegisterAttrs(PropSceneNode)
 	RegisterAttrs(PropUIControl)
 	RegisterAttrs(PropSmartObject)
 	RegisterAttrs(PropWeapon)

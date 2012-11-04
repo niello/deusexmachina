@@ -46,7 +46,7 @@ nSceneServer::ComputeLightScissor(LightInfo& lightInfo)
     nLightNode* lightNode = (nLightNode*)lightGroup.sceneNode;
     n_assert(0 != lightNode && lightNode->IsA("nlightnode"));
 
-    nLight::Type lightType = lightNode->GetType();
+	nLight::Type lightType = lightNode->GetLight().GetType();
     if (nLight::Point == lightType)
     {
         // compute the point light's projected rectangle on screen
@@ -55,9 +55,7 @@ nSceneServer::ComputeLightScissor(LightInfo& lightInfo)
 
         const matrix44& view = gfxServer->GetTransform(nGfxServer2::View);
         const matrix44& projection = gfxServer->GetTransform(nGfxServer2::Projection);
-        const nCamera2& cam = gfxServer->GetCamera();
-
-        lightInfo.scissorRect = sphere.project_screen_rh(view, projection, cam.GetNearPlane());
+        lightInfo.scissorRect = sphere.project_screen_rh(view, projection, gfxServer->GetCamera().GetNearPlane());
     }
     else if (nLight::Directional == lightType)
     {
@@ -85,7 +83,7 @@ nSceneServer::ComputeLightClipPlanes(LightInfo& lightInfo)
         nLightNode* lightNode = (nLightNode*)lightGroup.sceneNode;
         n_assert(0 != lightNode && lightNode->IsA("nlightnode"));
 
-        nLight::Type lightType = lightNode->GetType();
+		nLight::Type lightType = lightNode->GetLight().GetType();
         if (nLight::Point == lightType)
         {
             // get the point light's global space bounding box
@@ -216,10 +214,10 @@ nSceneServer::GatherShadowLights()
             if (!lightGroup.renderContext->GetFlag(nRenderContext::Occluded))
             {
                 nLightNode* lightNode = (nLightNode*)lightGroup.sceneNode;
-                if (lightNode->GetCastShadows())
+				if (lightNode->GetLight().GetCastShadows())
                 {
                     float priority;
-                    switch (lightNode->GetType())
+                    switch (lightNode->GetLight().GetType())
                     {
                         case nLight::Point:
                             priority = -(lightGroup.modelTransform.pos_component() - viewerPos).len() /

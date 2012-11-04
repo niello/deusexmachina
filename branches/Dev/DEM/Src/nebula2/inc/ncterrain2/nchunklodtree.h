@@ -12,7 +12,6 @@
 */
 #include "resource/nresource.h"
 #include "gfx2/DisplayMode.h"
-#include "gfx2/ncamera2.h"
 #include "ncterrain2/ntexturequadtree.h"
 #include "util/narray.h"
 #include "ncterrain2/nclodeventhandler.h"
@@ -49,10 +48,6 @@ public:
     void SetDisplayMode(const CDisplayMode& mode);
     /// get display parameters
     const CDisplayMode& GetDisplayMode() const;
-    /// set camera parameters
-    void SetCamera(const nCamera2& cam);
-    /// get camera parameters
-    const nCamera2& GetCamera() const;
     /// set the filename of a texture quad tree file
     void SetTqtFilename(const char* filename);
     /// get the filename of the texture quad tree file
@@ -134,7 +129,6 @@ protected:
     nArray<nChunkLodNode*> chunkTable;      // table of chunks, with chunk label as index
 
     CDisplayMode displayMode;
-    nCamera2 camera;
     float maxPixelError;
     float maxTexelSize;
     bool paramsDirty;
@@ -294,27 +288,6 @@ const CDisplayMode&
 nChunkLodTree::GetDisplayMode() const
 {
     return this->displayMode;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nChunkLodTree::SetCamera(const nCamera2& cam)
-{
-    this->camera = cam;
-    this->paramsDirty = true;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-const nCamera2&
-nChunkLodTree::GetCamera() const
-{
-    return this->camera;
 }
 
 //------------------------------------------------------------------------------

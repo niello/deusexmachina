@@ -20,85 +20,25 @@ namespace Data
 	class CBinaryReader;
 }
 
-//------------------------------------------------------------------------------
-class nLightNode : public nAbstractShaderNode
+class nLightNode: public nAbstractShaderNode
 {
+private:
+
+	nLight light;
+
 public:
 
-	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool			LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 
-	/// return true if node provides lighting information
-    virtual bool HasLight() const;
-    /// set per-light states
-    virtual const nLight& ApplyLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform, const vector4& shadowLightMask);
-    /// set per-instance light states
-    virtual const nLight& RenderLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform);
-    /// set light type
-    void SetType(nLight::Type t);
-    /// get light type
-    nLight::Type GetType() const;
-    /// set cast shadows
-    void SetCastShadows(bool b);
-    /// set cast shadows
-    bool GetCastShadows() const;
-    /// get embedded light object
-    const nLight& GetLight() const;
+	virtual bool			HasLight() const { return true; }
+	virtual const nLight&	ApplyLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform, const vector4& shadowLightMask);
+	virtual const nLight&	RenderLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform);
 
-private:
-    nLight light;
+	void					SetType(nLight::Type t) { light.SetType(t); }
+	void					SetCastShadows(bool b) { light.SetCastShadows(b); }
+	const nLight&			GetLight() const { return light; }
 };
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nLightNode::SetType(nLight::Type t)
-{
-    this->light.SetType(t);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nLight::Type
-nLightNode::GetType() const
-{
-    return this->light.GetType();
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nLightNode::SetCastShadows(bool b)
-{
-    this->light.SetCastShadows(b);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-nLightNode::GetCastShadows() const
-{
-    return this->light.GetCastShadows();
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-const nLight&
-nLightNode::GetLight() const
-{
-    return this->light;
-}
-
-//------------------------------------------------------------------------------
 #endif
 
 

@@ -52,7 +52,7 @@ private:
 	matrix44				GlobalTfm;
 
 	Data::CFlags			Flags; // IsRoot, IsDirty, IsLocalTfm, ?UniformScale?, LockTransform, TfmChangedLastFrame
-	nArray<PSceneNodeAttr>	Attrs; //???or list?
+	nArray<PSceneNodeAttr>	Attrs; //???or list? List seems to be better
 	// Controller(s)
 
 	friend class CScene;
@@ -72,8 +72,8 @@ public:
 	DWORD		GetChildCount() const { return Child.Size(); }
 	CSceneNode*	GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
 	PSceneNode	GetChild(CStrID ChildName, bool Create = false);
-	PSceneNode	GetChild(LPCSTR Path, bool Create = false); // Checks long path inside
-	//CSceneNode*	FindChildRecursive(LPCSTR pName); // Search by name (NOT long path), but recursively
+	PSceneNode	GetChild(LPCSTR Path, bool Create = false);
+	CSceneNode*	FindChildRecursively(CStrID ChildName); // Handy to find bones
 
 	bool		IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
 
@@ -81,6 +81,8 @@ public:
 	void		UpdateTransform();
 	void		PrepareToRender();
 
+	const Math::CTransform& GetLocalTransform() { return Tfm; }
+	void SetLocalTransform(const matrix44& Transform) { Tfm.FromMatrix(Transform); }
 	const matrix44& GetWorldTransform() { return GlobalTfm; }
 
 	// Rendering, lighting & debug rendering

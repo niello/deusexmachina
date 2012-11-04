@@ -181,46 +181,46 @@ public:
     /// constructor
     nGfxServer2();
     /// destructor
-    virtual ~nGfxServer2();
+	virtual ~nGfxServer2() { n_assert(Singleton); Singleton = NULL; }
     /// get instance pointer
     static nGfxServer2* Instance();
 	static bool DoesInstanceExist() { return !!Singleton; }
 
     /// create a shared mesh object
-    virtual nMesh2* NewMesh(const nString& RsrcName);
+    virtual nMesh2* NewMesh(const nString& RsrcName) { return NULL; }
     /// create a new mesh array object
-    virtual nMeshArray* NewMeshArray(const nString& RsrcName);
+    virtual nMeshArray* NewMeshArray(const nString& RsrcName) { return NULL; }
     /// create a shared texture object
-    virtual nTexture2* NewTexture(const nString& RsrcName);
+    virtual nTexture2* NewTexture(const nString& RsrcName) { return NULL; }
     /// create a shared shader object
-    virtual nShader2* NewShader(const nString& RsrcName);
+    virtual nShader2* NewShader(const nString& RsrcName) { return NULL; }
     /// create a render target object
-    virtual nTexture2* NewRenderTarget(const nString& RsrcName, int width, int height, nTexture2::Format format, int usageFlags);
+    virtual nTexture2* NewRenderTarget(const nString& RsrcName, int width, int height, nTexture2::Format format, int usageFlags) { return NULL; }
     /// create a new instance stream object
     virtual nInstanceStream* NewInstanceStream(const nString& RsrcName);
     /// create a new occlusion query object
-    virtual nOcclusionQuery* NewOcclusionQuery();
+    virtual nOcclusionQuery* NewOcclusionQuery() { return NULL; }
 
     /// set display mode
-    virtual void SetDisplayMode(const CDisplayMode& mode);
+    virtual void SetDisplayMode(const CDisplayMode& mode) = 0;
     /// get display mode
-    virtual const CDisplayMode& GetDisplayMode() const;
+    virtual const CDisplayMode& GetDisplayMode() const = 0;
     /// set the window title
-    virtual void SetWindowTitle(const char* pTitle);
+    virtual void SetWindowTitle(const char* pTitle) = 0;
     /// set the window icon
 	virtual void SetWindowIcon(const char* pIconName) {}
     /// set the current camera description
-    virtual void SetCamera(nCamera2& cam);
+    virtual void SetCamera(nCamera2& NewCamera);
+    /// get the current camera description
+	nCamera2& GetCamera() { return Camera; }
     /// override the feature set
     void SetFeatureSetOverride(FeatureSet f);
     /// get the best supported feature set
-    virtual FeatureSet GetFeatureSet();
+	virtual FeatureSet GetFeatureSet() { return InvalidFeatureSet; }
     /// return true if vertex shader run in software emulation
-    virtual bool AreVertexShadersEmulated();
-    /// get the current camera description
-    nCamera2& GetCamera();
+    virtual bool AreVertexShadersEmulated() = 0;
     /// set the viewport
-    virtual void SetViewport(nViewport& vp);
+	virtual void SetViewport(nViewport& vp) { viewport = vp; }
     /// get the viewport
     virtual nViewport& GetViewport();
     /// open the display
@@ -230,15 +230,15 @@ public:
     /// trigger the window system message pump
 	virtual void Trigger() {}
     /// returns the number of available stencil bits
-    virtual int GetNumStencilBits() const;
+	virtual int GetNumStencilBits() const { return 0; }
     /// returns the number of available z bits
-    virtual int GetNumDepthBits() const;
-    /// set scissor rect
-    virtual void SetScissorRect(const rectangle& rect);
+    virtual int GetNumDepthBits() const { return 0; }
+    /// set scissor rect, top-left is (0.0f, 0.0f), bottom-right is (1.0f, 1.0f)
+	virtual void SetScissorRect(const rectangle& rect) { scissorRect = rect; }
     /// get scissor rect
     const rectangle& GetScissorRect() const;
     /// set or clear user defined clip planes in clip space
-    virtual void SetClipPlanes(const nArray<plane>& planes);
+	virtual void SetClipPlanes(const nArray<plane>& planes) { clipPlanes = planes; }
     /// get user defined clip planes
     const nArray<plane>& GetClipPlanes() const;
     /// set or delete a render hint
@@ -258,42 +258,40 @@ public:
     /// finish rendering to current render target
     virtual void EndScene();
     /// present the contents of the back buffer
-    virtual void PresentScene();
+	virtual void PresentScene() { n_assert(!inBeginScene); }
     /// end rendering the current frame
     virtual void EndFrame();
     /// Between BeginScene/EndScene?
     bool InBeginScene() const;
     /// clear buffers
-    virtual void Clear(int bufferTypes, float red, float green, float blue, float alpha, float z, int stencil);
+	virtual void Clear(int bufferTypes, float red, float green, float blue, float alpha, float z, int stencil) {}
 
     /// set lighting type
     void SetLightingType(LightingType t);
     /// get lighting type
     LightingType GetLightingType() const;
     /// reset the light array
-    virtual void ClearLights();
-    /// remove all point lights
-    virtual void ClearPointLights();
+	virtual void ClearLights() { lightArray.Reset(); }
     /// remove a light
-    virtual void ClearLight(int index);
+	virtual void ClearLight(int index) { n_assert(index >= 0); lightArray.Erase(index); }
     /// set a light
-    virtual int AddLight(const nLight& light);
+	virtual int AddLight(const nLight& light, const matrix44& Transform) { lightArray.Append(light); return lightArray.Size(); }
     /// access to light array
-    const nArray<nLight>& GetLightArray() const;
+	const nArray<nLight>& GetLightArray() const { return lightArray; }
     /// set current vertex and index buffer mesh
-    virtual void SetMesh(nMesh2* vbMesh, nMesh2* ibMesh);
+	virtual void SetMesh(nMesh2* vbMesh, nMesh2* ibMesh) { refVbMesh = vbMesh; refIbMesh = ibMesh; }
     /// get current mesh
     nMesh2* GetMesh() const;
     /// set current mesh array (for multiple streams)
-    virtual void SetMeshArray(nMeshArray* meshArray);
+	virtual void SetMeshArray(nMeshArray* meshArray) { refMeshArray = meshArray; }
     /// get current mesh array
     nMeshArray* GetMeshArray() const;
     /// set current shader
-    virtual void SetShader(nShader2* shader);
+	virtual void SetShader(nShader2* shader) { refShader = shader; }
     /// get current shader
     nShader2* GetShader() const;
     /// set current instance stream, a valid instance stream triggers instance rendering
-    void SetInstanceStream(nInstanceStream* stream);
+	void SetInstanceStream(nInstanceStream* stream) { refInstanceStream = stream; }
     /// get current instance stream
     nInstanceStream* GetInstanceStream() const;
     /// set transform
@@ -310,31 +308,31 @@ public:
     void SetIndexRange(int firstIndex, int numIndices);
 
     /// draw the current mesh with indexed primitives
-    virtual void DrawIndexed(PrimitiveType primType);
+	virtual void DrawIndexed(PrimitiveType primType) {}
     /// draw the current mesh with non-indexed primitives
-    virtual void Draw(PrimitiveType primType);
+	virtual void Draw(PrimitiveType primType) {}
     /// render indexed primitives without applying shader state (NS == No Shader)
-    virtual void DrawIndexedNS(PrimitiveType primType);
+	virtual void DrawIndexedNS(PrimitiveType primType) {}
     /// render non-indexed primitives without applying shader state (NS == No Shader)
-    virtual void DrawNS(PrimitiveType primType);
+	virtual void DrawNS(PrimitiveType primType) {}
     /// draw text (immediately, or "when the time is right")
-    virtual void DrawText(const nString& text, const vector4& color, const rectangle& rect, uint flags, bool immediate=true);
+	virtual void DrawText(const nString& text, const vector4& color, const rectangle& rect, uint flags, bool immediate=true) {}
     /// get text extents
-    virtual vector2 GetTextExtent(const nString& text);
+	virtual vector2 GetTextExtent(const nString& text) { return vector2::zero; }
 
     /// add text to the text buffer (OLD STYLE)
-    virtual void Text(const nString& text, const vector4& color, float xPos, float yPos);
+	virtual void Text(const nString& text, const vector4& color, float xPos, float yPos) {}
     /// draw the text buffer (OLD STYLE)
-    virtual void DrawTextBuffer();
+	virtual void DrawTextBuffer() {}
 
     /// set mouse cursor image and hotspot
-    virtual void SetMouseCursor(const nMouseCursor& cursor);
+	virtual void SetMouseCursor(const nMouseCursor& cursor) { curMouseCursor = cursor; cursorDirty = true; }
     /// get mouse cursor image
-    virtual const nMouseCursor& GetMouseCursor() const;
+	virtual const nMouseCursor& GetMouseCursor() const { return curMouseCursor; }
     /// show/hide the mouse cursor
-    virtual void SetCursorVisibility(CursorVisibility type);
+	virtual void SetCursorVisibility(CursorVisibility type) { cursorVisibility = type; cursorDirty = true; }
     /// get mouse cursor display status
-    virtual CursorVisibility GetCursorVisibility() const;
+	virtual CursorVisibility GetCursorVisibility() const { return cursorVisibility; }
 
     /// enter dialog box mode (display mode must have DialogBoxMode enabled!)
     virtual void EnterDialogBoxMode();
@@ -344,7 +342,7 @@ public:
 	bool InDialogBoxMode() const { return inDialogBoxMode; }
 
     /// save a screen shot
-    virtual bool SaveScreenshot(const char* filename, nTexture2::FileFormat fileFormat);
+	virtual bool SaveScreenshot(const char* filename, nTexture2::FileFormat fileFormat) { return false; }
 
     /// convert feature set string to enum
     static FeatureSet StringToFeatureSet(const char* str);
@@ -380,20 +378,20 @@ public:
     /// draw a shape with the given model matrix with given color
     virtual void DrawShape(ShapeType type, const matrix44& model, const vector4& color);
     /// draw a shape without shader management
-    virtual void DrawShapeNS(ShapeType type, const matrix44& model);
+	virtual void DrawShapeNS(ShapeType type, const matrix44& model) {}
     /// draw direct primitives
 	virtual void DrawShapePrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int vertexWidth, const matrix44& model, const vector4& color, float Size = 1.f) {}
     /// draw direct indexed primitives (slow, use for debug visual visualization only!)
-    virtual void DrawShapeIndexedPrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int numVertices, int vertexWidth, void* indices, IndexType indexType, const matrix44& model, const vector4& color);
+	virtual void DrawShapeIndexedPrimitives(PrimitiveType type, int numPrimitives, const vector3* vertexList, int numVertices, int vertexWidth, void* indices, IndexType indexType, const matrix44& model, const vector4& color) {}
     /// end shape rendering
     virtual void EndShapes();
 
     /// begin rendering lines
     virtual void BeginLines();
     /// draw 3d lines, using the current transforms
-    virtual void DrawLines3d(const vector3* vertexList, int numVertices, const vector4& color);
+	virtual void DrawLines3d(const vector3* vertexList, int numVertices, const vector4& color) {}
     /// draw 2d lines in screen space
-    virtual void DrawLines2d(const vector2* vertexList, int numVertices, const vector4& color);
+	virtual void DrawLines2d(const vector2* vertexList, int numVertices, const vector4& color) {}
     /// finish line rendering
     virtual void EndLines();
 
@@ -407,7 +405,7 @@ protected:
     bool inBeginLines;
     bool inBeginShapes;
 
-    nCamera2 camera;
+    nCamera2 Camera;
     nViewport viewport;
 
     nFixedArray<nRef<nTexture2> >   refRenderTargets;
@@ -488,16 +486,6 @@ nGfxServer2::GetHint(Hint hint) const
 
 //------------------------------------------------------------------------------
 /**
-*/
-inline
-const nArray<nLight>&
-nGfxServer2::GetLightArray() const
-{
-    return this->lightArray;
-}
-
-//------------------------------------------------------------------------------
-/**
     Convert the given string to its corresponded feature set.
 */
 inline
@@ -552,17 +540,6 @@ nGfxServer2::SetFeatureSetOverride(FeatureSet f)
 {
     this->featureSetOverride = f;
     n_printf("nGfxServer2: set feature set override to '%s'\n", FeatureSetToString(f));
-}
-
-//------------------------------------------------------------------------------
-/**
-    Get the current camera object.
-*/
-inline
-nCamera2&
-nGfxServer2::GetCamera()
-{
-    return this->camera;
 }
 
 //------------------------------------------------------------------------------

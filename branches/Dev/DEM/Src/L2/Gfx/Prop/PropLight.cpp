@@ -10,23 +10,23 @@ namespace Attr
 {
 	DeclareAttr(Transform);
 
-    DefineInt(LightType);
-    DefineVector4(LightColor);
-    DefineVector3(LightPos);
-    DefineFloat(LightRange);
-    DefineVector4(LightRot);    // a quaternion
-    DefineVector4(LightAmbient);
-    DefineBool(LightCastShadows);
+	DefineInt(LightType);
+	DefineVector4(LightColor);
+	DefineVector3(LightPos);
+	DefineFloat(LightRange);
+	DefineVector4(LightRot);    // a quaternion
+	DefineVector4(LightAmbient);
+	DefineBool(LightCastShadows);
 };
 
 BEGIN_ATTRS_REGISTRATION(PropLight)
 	RegisterIntWithDefault(LightType, ReadOnly, (int)nLight::Point);
-    RegisterVector4WithDefault(LightColor, ReadOnly, vector4(1.f, 1.f, 1.f, 1.f));
-    RegisterVector3(LightPos, ReadOnly);
-    RegisterFloatWithDefault(LightRange, ReadOnly, 10.f);
-    RegisterVector4(LightRot, ReadOnly);    // a quaternion
-    RegisterVector4(LightAmbient, ReadOnly);
-    RegisterBool(LightCastShadows, ReadOnly);
+	RegisterVector4WithDefault(LightColor, ReadOnly, vector4(1.f, 1.f, 1.f, 1.f));
+	RegisterVector3(LightPos, ReadOnly);
+	RegisterFloatWithDefault(LightRange, ReadOnly, 10.f);
+	RegisterVector4(LightRot, ReadOnly);    // a quaternion
+	RegisterVector4(LightAmbient, ReadOnly);
+	RegisterBool(LightCastShadows, ReadOnly);
 END_ATTRS_REGISTRATION
 
 namespace Properties
@@ -52,9 +52,6 @@ void CPropLight::GetAttributes(nArray<DB::CAttrID>& Attrs)
 void CPropLight::Activate()
 {
 	CProperty::Activate();
-
-	// Cache scene node
-	//Scene::PSceneNode Node = SceneSrv->GetCurrentScene()->GetNode(Attr::ScenePath);
 
 	pLightEntity = Graphics::CLightEntity::Create();
 

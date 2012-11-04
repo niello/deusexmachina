@@ -112,25 +112,3 @@ void nSceneNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext
     for (nSceneNode* pCurrChild = (nSceneNode*)GetHead(); pCurrChild; pCurrChild = (nSceneNode*) pCurrChild->GetSucc())
         pCurrChild->Attach(sceneServer, renderContext);
 }
-
-//------------------------------------------------------------------------------
-/**
-    Perform per-light of the light source. This method will
-    be called for each light.
-*/
-const nLight& nSceneNode::ApplyLight(nSceneServer* /*sceneServer*/, nRenderContext* /*renderContext*/, const matrix44& /*lightTransform*/, const vector4& /*shadowLightIndex*/)
-{
-    static nLight staticLight;
-    return staticLight;
-}
-
-//------------------------------------------------------------------------------
-/**
-    Perform per-instance-rendering of the light source. This method will
-    be called once for each scene node which is influenced by this light.
-*/
-const nLight& nSceneNode::RenderLight(nSceneServer* /*sceneServer*/, nRenderContext* /*renderContext*/, const matrix44& /*lightTransform*/)
-{
-    static nLight staticLight;
-    return staticLight;
-}

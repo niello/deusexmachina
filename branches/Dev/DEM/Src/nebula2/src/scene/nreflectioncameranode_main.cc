@@ -13,22 +13,6 @@ nNebulaClass(nReflectionCameraNode, "nclippingcameranode");
 //------------------------------------------------------------------------------
 /**
 */
-nReflectionCameraNode::nReflectionCameraNode()
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-nReflectionCameraNode::~nReflectionCameraNode()
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
 bool
 nReflectionCameraNode::RenderCamera(const matrix44& modelWorldMatrix, const matrix44& viewMatrix, const matrix44& projectionMatrix)
 {
@@ -55,24 +39,16 @@ nReflectionCameraNode::RenderCamera(const matrix44& modelWorldMatrix, const matr
                      +_modelWorldMatrix.y_component().y * (camPosWorldSpace.y + modelWorldMatrix.pos_component().y)
                      +_modelWorldMatrix.y_component().z * (camPosWorldSpace.z + modelWorldMatrix.pos_component().z);
 
-    if (distance < 0.0)
-    {
-        //front side of plane
-        isOnFrontSideOfPlane = true;
-    }
+    if (distance < 0.0) isOnFrontSideOfPlane = true;
     else
     {
-        //rotate clipplanenormal
         clipPlaneNormal = -clipPlaneNormal;
-
-        //back side of plane
         isOnFrontSideOfPlane = false;
     }
 
     //viewMatrix
     this->viewMatrix = this->ComputeReflectionViewMatrix(viewMatrix, modelWorldMatrix, isOnFrontSideOfPlane, distance);
 
-    //
     this->projMatrix = this->ComputeProjectionMatrix(this->viewMatrix, projectionMatrix, clipPlaneNormal, clipPlanePoint);
 
     return true;
@@ -95,14 +71,8 @@ nReflectionCameraNode::ComputeReflectionViewMatrix(const matrix44& viewMatrix, c
     //if (reflectionMatrix.z_component().y < 0)
     float test = polar2(reflectionMatrix.z_component()).rho;
 
-    if (viewMatrix.y_component().z > 0)
-    {
-        reflectionMatrix.rotate_x(-2*(angles.theta));
-    }
-    else
-    {
-        reflectionMatrix.rotate_x(2*angles.theta);
-    }
+	float Angle = 2.f * angles.theta;
+    reflectionMatrix.rotate_x(viewMatrix.y_component().z > 0 ? -Angle : Angle);
 
     // compute position
     vector3 posVec = vector3(0.0, -modelMatrix.pos_component().y, 0.0);

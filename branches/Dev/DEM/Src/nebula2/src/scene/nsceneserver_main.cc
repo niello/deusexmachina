@@ -416,10 +416,7 @@ nSceneServer::SplitNodes()
                 }
 
                 int shaderIndex = shapeNode->GetShaderIndex();
-                if (shaderIndex > -1)
-                {
-                    this->shapeBucket[shaderIndex].Append(i);
-                }
+                if (shaderIndex > -1) shapeBucket[shaderIndex].Append(i);
             }
         }
         if (group.sceneNode->HasLight())
@@ -430,13 +427,9 @@ nSceneServer::SplitNodes()
             lightInfo.groupIndex = i;
             this->lightArray.Append(lightInfo);
         }
-        if (group.sceneNode->HasShadow())
-        {
-            if (group.renderContext->GetFlag(nRenderContext::ShadowVisible))
-            {
-                this->shadowArray.Append(i);
-            }
-        }
+
+		if (group.sceneNode->HasShadow() && group.renderContext->GetFlag(nRenderContext::ShadowVisible))
+            shadowArray.Append(i);
 
         if (group.sceneNode->HasCamera())
         {
@@ -465,7 +458,7 @@ nSceneServer::SplitNodes()
                     {
                         Group& group = this->groupArray[this->cameraArray[c]];
                         nAbstractCameraNode* existingCamera = (nAbstractCameraNode*)group.sceneNode;
-                        if (existingCamera->GetRenderPathSection() == newCamera->GetRenderPathSection())
+                        if (existingCamera->RenderPathSection == newCamera->RenderPathSection)
                         {
                             uniqueCamera = false;
                             break;

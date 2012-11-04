@@ -7,43 +7,29 @@
 #include "scene/nclippingcameranode.h"
 #include "scene/nmaterialnode.h"
 
-//------------------------------------------------------------------------------
-/**
-    Render the scenes for each camera
-*/
-void
-nSceneServer::RenderCameraScene()
+// Render the scenes for each camera
+void nSceneServer::RenderCameraScene()
 {
-    PROFILER_START(this->profRenderCameras);
-    for (int i = 0; i < this->cameraArray.Size(); i++)
+    PROFILER_START(profRenderCameras);
+    for (int i = 0; i < cameraArray.Size(); i++)
     {
-        // get the camera node
-        Group& cameraNodeGroup = this->groupArray[cameraArray[i]];
+        Group& cameraNodeGroup = groupArray[cameraArray[i]];
         nAbstractCameraNode* cameraNode = (nAbstractCameraNode*)cameraNodeGroup.sceneNode;
 
-        // check if the render target available
-        const nString& rpSectionName = cameraNode->GetRenderPathSection();
-        int sectionIndex = this->renderPath.FindSectionIndex(rpSectionName);
-        if (-1 != sectionIndex)
-        {
-            // update camera
-            cameraNode->RenderCamera(cameraNodeGroup.modelTransform,
-                                    nGfxServer2::Instance()->GetTransform(nGfxServer2::View),
-                                    nGfxServer2::Instance()->GetTransform(nGfxServer2::Projection));
+        // Check if the render target available
+        int SectionIdx = renderPath.FindSectionIndex(cameraNode->RenderPathSection);
+        if (SectionIdx == -1) continue;
 
-            // temp view and projection matrix
-            nGfxServer2::Instance()->PushTransform(nGfxServer2::View, cameraNode->GetViewMatrix());
-            nGfxServer2::Instance()->PushTransform(nGfxServer2::Projection, cameraNode->GetProjectionMatrix());
-
-            // perform rendering through the render path
-            this->DoRenderPath(this->renderPath.GetSection(sectionIndex));
-
-            // restore matrices
-            nGfxServer2::Instance()->PopTransform(nGfxServer2::Projection);
-            nGfxServer2::Instance()->PopTransform(nGfxServer2::View);
-        }
+		cameraNode->RenderCamera(cameraNodeGroup.modelTransform,
+                                nGfxServer2::Instance()->GetTransform(nGfxServer2::View),
+                                nGfxServer2::Instance()->GetTransform(nGfxServer2::Projection));
+        nGfxServer2::Instance()->PushTransform(nGfxServer2::View, cameraNode->GetViewMatrix());
+        nGfxServer2::Instance()->PushTransform(nGfxServer2::Projection, cameraNode->GetProjectionMatrix());
+        DoRenderPath(renderPath.GetSection(SectionIdx));
+        nGfxServer2::Instance()->PopTransform(nGfxServer2::Projection);
+        nGfxServer2::Instance()->PopTransform(nGfxServer2::View);
     }
-    PROFILER_STOP(this->profRenderCameras);
+    PROFILER_STOP(profRenderCameras);
 }
 
 //------------------------------------------------------------------------------

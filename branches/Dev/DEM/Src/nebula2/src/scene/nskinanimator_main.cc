@@ -8,7 +8,7 @@
 //#include "scene/nattachmentnode.h"
 #include "scene/nrendercontext.h"
 #include "anim2/nanimation.h"
-#include "anim2/nanimationserver.h"
+#include "resource/nresourceserver.h"
 #include "variable/nvariableserver.h"
 #include "character/ncharacter2set.h"
 #include <Data/BinaryReader.h>
@@ -142,9 +142,9 @@ nSkinAnimator::UnloadAnim()
 bool
 nSkinAnimator::LoadAnim()
 {
-    if (!this->refAnim.isvalid() && !this->animName.IsEmpty())
+    if (!this->refAnim.isvalid() && animName.IsValid())
     {
-        nAnimation* anim = nAnimationServer::Instance()->NewMemoryAnimation(this->animName);
+		nAnimation* anim = (nAnimation*)nResourceServer::Instance()->NewResource("nmemoryanimation", animName, nResource::Animation);
         n_assert(anim);
         if (!anim->IsLoaded())
         {

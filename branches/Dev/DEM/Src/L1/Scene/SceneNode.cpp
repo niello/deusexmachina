@@ -91,10 +91,15 @@ PSceneNode CSceneNode::GetChild(LPCSTR Path, bool Create)
 {
 	n_assert(Path && *Path);
 
-	char Name[256];
+	const int MAX_NODE_NAME = 64;
+	char Name[MAX_NODE_NAME];
 	const char* pSrcCurr = Path;
 	char* pDstCurr = Name;
-	while (*pSrcCurr != '.' && *pSrcCurr) *pDstCurr++ = *pSrcCurr++;
+	while (*pSrcCurr != '.' && *pSrcCurr)
+	{
+		*pDstCurr++ = *pSrcCurr++;
+		n_assert(pDstCurr - Name < MAX_NODE_NAME);
+	}
 	n_assert(pDstCurr > Name + 1);
 	*pDstCurr = 0;
 	while (*pSrcCurr == '.') ++pSrcCurr;

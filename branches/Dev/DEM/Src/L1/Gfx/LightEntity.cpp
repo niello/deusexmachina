@@ -59,11 +59,8 @@ void CLightEntity::Deactivate()
 void CLightEntity::Render()
 {
 	if (!GetVisible()) return;
-
 	ValidateResource();
 	UpdateRenderContextVariables();
-
-	RenderCtx.SetFrameId(GfxSrv->GetFrameID());
 	RenderCtx.SetGlobalBox(GetBox());
 	RenderRenderContext(RenderCtx);
 }

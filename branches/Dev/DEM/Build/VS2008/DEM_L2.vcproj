@@ -1550,6 +1550,18 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="Scene"
+			>
+			<File
+				RelativePath="..\..\Src\L2\Scene\PropSceneNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Scene\PropSceneNode.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

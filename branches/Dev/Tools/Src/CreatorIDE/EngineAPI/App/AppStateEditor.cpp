@@ -6,6 +6,7 @@
 #include <Game/GameServer.h>
 #include <Audio/AudioServer.h>
 #include <Gfx/GfxServer.h>
+#include <Scene/SceneServer.h>
 #include <AI/AIServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
@@ -66,6 +67,8 @@ CStrID CAppStateEditor::OnFrame()
 	GfxSrv->Trigger();
 	EventMgr->ProcessPendingEvents();
 
+	SceneSrv->Trigger();
+
 	AudioSrv->BeginScene();
 	GameSrv->OnFrame();
 	AudioSrv->EndScene();
@@ -77,7 +80,11 @@ CStrID CAppStateEditor::OnFrame()
 	if (GfxSrv->BeginRender())
 	{
 		GfxSrv->Render();
-		if (RenderDbgGfx) GfxSrv->RenderDebug();
+		if (RenderDbgGfx)
+		{
+			GfxSrv->RenderDebug();
+			SceneSrv->RenderDebug(); //!!!not under RenderDbgGfx!
+		}
 		if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
 		if (RenderDbgEntities) GameSrv->RenderDebug();
 		if (RenderDbgAI) AISrv->RenderDebug();

@@ -9,7 +9,6 @@
 #include <gfx2/nd3d9server.h>
 #include <scene/nsceneserver.h>
 #include <variable/nvariableserver.h>
-#include <anim2/nanimationserver.h>
 #include <particle/nparticleserver.h>
 #include <particle/nparticleserver2.h>
 
@@ -114,8 +113,6 @@ bool CGfxServer::Open()
 	sceneServer->AddRef();
 	variableServer  = n_new(nVariableServer);
 	variableServer->AddRef();
-	animationServer = n_new(nAnimationServer);
-	animationServer->AddRef();
 	particleServer = n_new(nParticleServer);
 	particleServer->AddRef();
 	particleServer2 = n_new(nParticleServer2);
@@ -180,7 +177,6 @@ void CGfxServer::Close()
 
 	particleServer->Release();
 	particleServer2->Release();
-	if (animationServer.isvalid()) animationServer->Release();
 	if (variableServer.isvalid()) variableServer->Release();
 	if (sceneServer.isvalid()) sceneServer->Release();
 	if (gfxServer.isvalid()) gfxServer->Release();

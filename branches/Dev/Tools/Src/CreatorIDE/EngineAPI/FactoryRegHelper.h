@@ -4,6 +4,7 @@
 #include <AI/Prop/PropActorAnimation.h>
 #include <AI/Prop/PropActorPhysics.h>
 #include <AI/Prop/PropAIHints.h>
+#include <Scene/PropSceneNode.h>
 
 // Sensors, perceptors, stimuli
 #include <AI/Sensors/SensorVision.h>

@@ -6,6 +6,7 @@
 #include "scene/nscenenode.h"
 #include "scene/nrendercontext.h"
 #include "scene/nmaterialnode.h"
+#include "scene/nlightnode.h"
 
 //------------------------------------------------------------------------------
 /**
@@ -93,12 +94,13 @@ nSceneServer::RenderPhaseLightModeShader(nRpPhase& curPhase)
         const Group& lightGroup = this->groupArray[lightInfo.groupIndex];
         nRenderContext* lightRenderContext = lightGroup.renderContext;
         n_assert(lightGroup.sceneNode->HasLight());
+		nLightNode* pLightNode = (nLightNode*)lightGroup.sceneNode;
 
         // do nothing if light is occluded
         if (!lightRenderContext->GetFlag(nRenderContext::Occluded))
         {
             // apply light state
-            lightGroup.sceneNode->ApplyLight(this, lightGroup.renderContext, lightGroup.modelTransform, lightInfo.shadowLightMask);
+            pLightNode->ApplyLight(this, lightGroup.renderContext, lightGroup.modelTransform, lightInfo.shadowLightMask);
 
             // now iterate through sequences...
             int numSeqs = curPhase.Begin();
@@ -158,11 +160,8 @@ nSceneServer::RenderPhaseLightModeShader(nRpPhase& curPhase)
                                     nGfxServer2::Instance()->SetTransform(nGfxServer2::Model, shapeGroup.modelTransform);
 
                                     // set per-instance shader parameters
-                                    if (shaderUpdatesEnabled)
-                                    {
-                                        shapeNode->RenderShader(this, shapeGroup.renderContext);
-                                    }
-                                    lightGroup.sceneNode->RenderLight(this, lightGroup.renderContext, lightGroup.modelTransform);
+                                    if (shaderUpdatesEnabled) shapeNode->RenderShader(this, shapeGroup.renderContext);
+                                    pLightNode->RenderLight(this, lightGroup.renderContext, lightGroup.modelTransform);
 
 									nShader2* shd = nGfxServer2::Instance()->GetShader();
 									shd->SetBool(nShaderState::AlphaBlendEnable, shapeGroup.lightPass ? true : curSeq.GetFirstLightAlphaEnabled());
