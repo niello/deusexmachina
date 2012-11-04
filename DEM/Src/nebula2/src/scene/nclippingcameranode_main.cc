@@ -5,24 +5,9 @@
 //------------------------------------------------------------------------------
 #include "scene/nclippingcameranode.h"
 #include "mathlib/polar.h"
+#include "kernel/nkernelserver.h"
 
 nNebulaClass(nClippingCameraNode, "nabstractcameranode");
-
-//------------------------------------------------------------------------------
-/**
-*/
-nClippingCameraNode::nClippingCameraNode()
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-nClippingCameraNode::~nClippingCameraNode()
-{
-    // empty
-}
 
 //------------------------------------------------------------------------------
 /**

@@ -1285,6 +1285,10 @@
 			Name="Scene"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Scene\Light.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\Scene.cpp"
 				>
 			</File>

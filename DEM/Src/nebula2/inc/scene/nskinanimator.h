@@ -22,7 +22,6 @@
 #include "anim2/nanimstateinfo.h"
 
 class nAnimation;
-class nAnimationServer;
 class nCharacter2Set;
 
 namespace Data

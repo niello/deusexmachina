@@ -6,7 +6,7 @@
 #include <DB/DBServer.h>
 #include <Physics/Prop/PropTransformable.h>
 #include <Physics/Event/SetTransform.h>
-#include <anim2/nanimationserver.h>
+#include <resource/nresourceserver.h>
 
 namespace Attr
 {
@@ -59,8 +59,7 @@ void CPropPathAnim::Activate()
 	const nString& AnimPath = GetEntity()->Get<nString>(Attr::AnimPath);
 	if (AnimPath.IsValid())
 	{
-		// create a Nebula2 animation object
-		nAnimation* Anim = nAnimationServer::Instance()->NewMemoryAnimation(AnimPath);
+		nAnimation* Anim = (nAnimation*)nResourceServer::Instance()->NewResource("nmemoryanimation", AnimPath, nResource::Animation);
 		n_assert(Anim);
 		Anim->SetFilename(AnimPath);
 		if (!Anim->Load())

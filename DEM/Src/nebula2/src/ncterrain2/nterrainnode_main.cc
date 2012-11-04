@@ -92,7 +92,6 @@ nTerrainNode::LoadResources()
                 tree->SetFilename(this->chunkFilename);
                 tree->SetTqtFilename(this->texQuadFile.Get());
                 tree->SetDisplayMode(nGfxServer2::Instance()->GetDisplayMode());
-                tree->SetCamera(nGfxServer2::Instance()->GetCamera());
                 tree->SetMaxPixelError(this->maxPixelError);
                 tree->SetMaxTexelSize(this->maxTexelSize);
                 tree->SetTerrainScale(this->terrainScale);

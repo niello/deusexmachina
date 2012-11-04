@@ -62,14 +62,13 @@ nD3D9Server::ClearLight(int index)
     Add a light to the light array. This will update the shared light
     effect state.
 */
-int
-nD3D9Server::AddLight(const nLight& light)
+int nD3D9Server::AddLight(const nLight& light, const matrix44& Transform)
 {
     n_assert(light.GetRange() > 0.0f);
-    int numLights = nGfxServer2::AddLight(light);
+    int numLights = nGfxServer2::AddLight(light, Transform);
 
 	// even if no lighting, set light transform
-	this->SetTransform(nGfxServer2::Light, light.GetTransform());
+	this->SetTransform(nGfxServer2::Light, Transform);
 
     if (Shader == this->lightingType)
     {

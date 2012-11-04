@@ -124,7 +124,7 @@ public:
     /// remove a light
     virtual void ClearLight(int index);
     /// add a light to the light array (reset in BeginScene)
-    virtual int AddLight(const nLight& light);
+    virtual int AddLight(const nLight& light, const matrix44& Transform);
     /// set current mesh
     virtual void SetMesh(nMesh2* vbMesh, nMesh2* ibMesh);
     /// set current mesh array, clearing the single mesh

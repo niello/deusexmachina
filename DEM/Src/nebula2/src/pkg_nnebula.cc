@@ -42,8 +42,6 @@ extern bool n_init_nlodnode (nClass *, nKernelServer *);
 extern void *n_new_nlodnode (void);
 extern bool n_init_nskynode (nClass *, nKernelServer *);
 extern void *n_new_nskynode (void);
-extern bool n_init_ncombinedanimation (nClass *, nKernelServer *);
-extern void *n_new_ncombinedanimation (void);
 extern bool n_init_ncameranode (nClass *, nKernelServer *);
 extern void *n_new_ncameranode (void);
 extern bool n_init_nclippingcameranode (nClass *, nKernelServer *);
@@ -60,8 +58,6 @@ extern bool n_init_nreflectioncameranode (nClass *, nKernelServer *);
 extern void *n_new_nreflectioncameranode (void);
 extern bool n_init_nshapenode (nClass *, nKernelServer *);
 extern void *n_new_nshapenode (void);
-extern bool n_init_nmultilayerednode (nClass *, nKernelServer *);
-extern void *n_new_nmultilayerednode (void);
 extern bool n_init_nparticleshapenode (nClass *, nKernelServer *);
 extern void *n_new_nparticleshapenode (void);
 extern bool n_init_nparticleshapenode2 (nClass *, nKernelServer *);
@@ -122,9 +118,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nskynode",
                                  n_init_nskynode,
                                  n_new_nskynode);
-    nKernelServer::Instance()->AddModule("ncombinedanimation",
-                                 n_init_ncombinedanimation,
-                                 n_new_ncombinedanimation);
     nKernelServer::Instance()->AddModule("ncameranode",
                                  n_init_ncameranode,
                                  n_new_ncameranode);
@@ -149,9 +142,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nshapenode",
                                  n_init_nshapenode,
                                  n_new_nshapenode);
-    nKernelServer::Instance()->AddModule("nmultilayerednode",
-                                 n_init_nmultilayerednode,
-                                 n_new_nmultilayerednode);
     nKernelServer::Instance()->AddModule("nparticleshapenode",
                                  n_init_nparticleshapenode,
                                  n_new_nparticleshapenode);

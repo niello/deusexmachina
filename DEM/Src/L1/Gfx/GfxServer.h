@@ -20,7 +20,6 @@
 class nGfxServer2;
 class nSceneServer;
 class nVariableServer;
-class nAnimationServer;
 class nParticleServer;
 class nParticleServer2;
 
@@ -59,7 +58,6 @@ private:
 	nRef<nGfxServer2>       gfxServer;
 	nRef<nSceneServer>      sceneServer;
 	nRef<nVariableServer>   variableServer;
-	nRef<nAnimationServer>  animationServer;
 	nRef<nParticleServer>   particleServer;
 	nRef<nParticleServer2>  particleServer2;
 

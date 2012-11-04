@@ -19,7 +19,6 @@
 #include "mathlib/bbox.h"
 #include "gfx2/nshaderparams.h"
 #include "gfx2/ninstancestream.h"
-#include "gfx2/nlight.h"
 #include <Data/Params.h>
 
 class nSceneServer;
@@ -76,11 +75,8 @@ public:
     virtual void RenderDebug(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix) { }
     virtual bool ApplyShader(nSceneServer* sceneServer) { return false; }
     virtual bool RenderShader(nSceneServer* sceneServer, nRenderContext* renderContext) { return false; }
-    virtual const nLight& ApplyLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform, const vector4& shadowLightMask);
-    virtual const nLight& RenderLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform);
     virtual bool ApplyShadow(nSceneServer* sceneServer) { return false; }
     virtual bool RenderShadow(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix) { return false; }
-	virtual bool RenderCamera(const matrix44& modelWorldMatrix, const matrix44& viewMatrix, const matrix44& projectionMatrix) { return false; }
 	void SetLocalBox(const bbox3& b) { this->localBox = b; }
 	const bbox3& GetLocalBox() const { return this->localBox; }
 	void SetRenderPri(int pri) { n_assert((pri >= -127) && (pri <= 127)); renderPri = pri; }

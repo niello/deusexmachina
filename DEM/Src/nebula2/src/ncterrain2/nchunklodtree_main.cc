@@ -5,6 +5,7 @@
 #include "ncterrain2/nchunklodtree.h"
 #include "ncterrain2/nchunklodnode.h"
 #include "gfx2/nshader2.h"
+#include "gfx2/ncamera2.h"
 #include "ncterrain2/nchunklodrenderparams.h"
 #include "ncterrain2/nclodeventhandler.h"
 
@@ -120,7 +121,7 @@ nChunkLodTree::UpdateParams()
     this->paramsDirty = false;
 
     // compute user setting dependend stuff
-    const float tanHalfFov = tanf(n_deg2rad(this->camera.GetAngleOfView() * 0.5f));
+    const float tanHalfFov = tanf(n_deg2rad(nGfxServer2::Instance()->GetCamera().GetAngleOfView() * 0.5f));
     const float K = 640.0f / tanHalfFov;
 
 	// distance_LODmax is the distance below which we need to be

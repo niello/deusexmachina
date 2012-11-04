@@ -16,26 +16,30 @@
 class nLight
 {
 public:
-    /// light types
-    enum Type
-    {
-        Point       = 0,
-        Directional = 1,
-        Spot        = 2,
 
-        NumTypes,
-        InvalidType,
-    };
+	enum Type
+	{
+		Point		= 0,
+		Directional	= 1,
+		Spot		= 2
+	};
+
+private:
+
+	Type type;
+    float range;
+    vector4 diffuse;
+    vector4 specular;
+    vector4 ambient;
+    vector4 shadowLightMask;
+    bool castShadows;
+
+public:
 
     /// constructor
     nLight();
-    /// destructor
-    ~nLight();
-    /// set world space transform
-    void SetTransform(const matrix44& m);
-    /// get world space transform
-    const matrix44& GetTransform() const;
-    /// set light type
+
+	/// set light type
     void SetType(Type t);
     /// get light type
     Type GetType() const;
@@ -67,16 +71,6 @@ public:
     static Type StringToType(const char* str);
     /// convert type enum to string
     static const char* TypeToString(Type t);
-
-private:
-    matrix44 transform;
-    Type type;
-    float range;
-    vector4 diffuse;
-    vector4 specular;
-    vector4 ambient;
-    vector4 shadowLightMask;
-    bool castShadows;
 };
 
 //------------------------------------------------------------------------------
@@ -90,15 +84,6 @@ nLight::nLight() :
     specular(1.0f, 1.0f, 1.0f, 1.0f),
     ambient(0.0f, 0.0f, 0.0f, 0.0f),
     castShadows(false)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nLight::~nLight()
 {
     // empty
 }
@@ -121,26 +106,6 @@ float
 nLight::GetRange() const
 {
     return this->range;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nLight::SetTransform(const matrix44& m)
-{
-    this->transform = m;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-const matrix44&
-nLight::GetTransform() const
-{
-    return this->transform;
 }
 
 //------------------------------------------------------------------------------
@@ -292,7 +257,7 @@ nLight::StringToType(const char* str)
     if (0 == strcmp(str, "Directional")) return Directional;
     if (0 == strcmp(str, "Spot")) return Spot;
     n_error("nLight::StringToType(): invalid light type string '%s'!", str);
-    return InvalidType;
+    return Point;
 }
 
 //------------------------------------------------------------------------------

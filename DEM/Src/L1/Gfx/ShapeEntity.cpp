@@ -57,18 +57,17 @@ void CShapeEntity::ValidateShadowResource()
 
 void CShapeEntity::UpdateRenderContextVariables()
 {
-	float Time = (float)GetEntityTime();
-	RenderCtx.SetTransform(Transform);
-	RenderCtx.GetVariable(TimeVarHandle)->SetFloat(Time);
+	CRenderableEntity::UpdateRenderContextVariables();
 	if (ShadowResource.IsLoaded())
 	{
 		ShadowRenderCtx.SetTransform(Transform);
-		ShadowRenderCtx.GetVariable(TimeVarHandle)->SetFloat(Time);
+		ShadowRenderCtx.GetVariable(TimeVarHandle)->SetFloat((float)GetEntityTime());
+		ShadowRenderCtx.SetFrameId(GfxSrv->GetFrameID());
 	}
 }
 //---------------------------------------------------------------------
 
-// Render the graphics pEntity. This attaches all resource objects of the graphics entity to
+// Render the graphics entity. This attaches all resource objects of the graphics entity to
 // the scene. The method should only be called if the graphics object is actually visible!
 void CShapeEntity::Render()
 {
@@ -76,8 +75,6 @@ void CShapeEntity::Render()
 
 	ValidateResource();
 	UpdateRenderContextVariables();
-	RenderCtx.SetFrameId(GfxSrv->GetFrameID());
-
 	RenderCtx.SetGlobalBox(GetShadowBox());
 	RenderRenderContext(RenderCtx);
 

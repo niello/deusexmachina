@@ -7,12 +7,8 @@
 #include "scene/nlightnode.h"
 #include "gfx2/nocclusionquery.h"
 
-//------------------------------------------------------------------------------
-/**
-    Issue a general occlusion query for a root scene node group.
-*/
-void
-nSceneServer::IssueOcclusionQuery(Group& group, const vector3& viewerPos)
+// Issue a general occlusion query for a root scene node group.
+void nSceneServer::IssueOcclusionQuery(Group& group, const vector3& viewerPos)
 {
     nSceneNode* sceneNode = group.sceneNode;
     n_assert(sceneNode);
@@ -20,16 +16,8 @@ nSceneServer::IssueOcclusionQuery(Group& group, const vector3& viewerPos)
     // initialize occlusion flags
     group.renderContext->SetFlag(nRenderContext::Occluded, false);
 
-    // special case light:
-    if (sceneNode->HasLight())
-    {
-        // don't do occlusion check for directional light
-        nLightNode* lightNode = (nLightNode*)sceneNode;
-        if (nLight::Directional == lightNode->GetType())
-        {
-            return;
-        }
-    }
+    // don't do occlusion check for directional light
+    if (sceneNode->HasLight() && nLight::Directional == ((nLightNode*)sceneNode)->GetLight().GetType()) return;
 
     // get conservative bounding boxes in global space, the first for
     // the occlusion check is grown a little to prevent that the object
@@ -42,10 +30,7 @@ nSceneServer::IssueOcclusionQuery(Group& group, const vector3& viewerPos)
     // case, don't do an occlusion query for this object
     // FIXME: could also be done once at load time in Mangalore...
     vector3 extents = globalBox.extents();
-    if (extents.x < 0.001f || extents.y < 0.001f || extents.z < 0.001f)
-    {
-        return;
-    }
+    if (extents.x < 0.001f || extents.y < 0.001f || extents.z < 0.001f) return;
     
     bbox3 viewerCheckBox(globalBox.center(), globalBox.extents() * 1.2f);
     // check if viewer position is inside current bounding box,

@@ -15,7 +15,10 @@ class CScene: public Core::CRefCounted
 private:
 
 	PSceneNode			RootNode;
+
 	vector4				AmbientLight;
+	//Fog settings
+	//???shadow settings?
 
 	nArray<PSceneNode>	OwnedNodes;
 

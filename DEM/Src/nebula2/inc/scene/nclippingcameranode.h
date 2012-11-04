@@ -16,13 +16,8 @@
 class nClippingCameraNode : public nAbstractCameraNode
 {
 public:
-    /// constructor
-    nClippingCameraNode();
-    /// destructor
-    virtual ~nClippingCameraNode();
 
-    /// function witch updates the camera
-    virtual bool RenderCamera(const matrix44& modelWorldMatrix, const matrix44& viewMatrix, const matrix44& projectionMatrix);
+	virtual bool RenderCamera(const matrix44& modelWorldMatrix, const matrix44& viewMatrix, const matrix44& projectionMatrix);
 
 protected:
     /// compute a reflection projection matrix with clipping

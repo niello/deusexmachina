@@ -71,6 +71,7 @@ void CRenderableEntity::UpdateRenderContextVariables()
 {
 	RenderCtx.SetTransform(Transform);
 	RenderCtx.GetVariable(TimeVarHandle)->SetFloat((float)GetEntityTime());
+	RenderCtx.SetFrameId(GfxSrv->GetFrameID());
 }
 //---------------------------------------------------------------------
 

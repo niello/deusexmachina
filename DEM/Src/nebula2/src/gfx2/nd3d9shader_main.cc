@@ -5,7 +5,7 @@
 #include "gfx2/nd3d9shader.h"
 #include "gfx2/nd3d9server.h"
 #include "gfx2/nd3d9texture.h"
-#include "gfx2/nd3d9shaderinclude.h"
+#include "gfx2/D3DXNebula2Include.h"
 #include "gfx2/nshaderparams.h"
 #include <Data/DataServer.h>
 #include <Data/Streams/FileStream.h>
@@ -109,7 +109,7 @@ nD3D9Shader::LoadResource()
 
     // create include file handler
     nString shaderPath(mangledPath);
-    nD3D9ShaderInclude includeHandler(shaderPath.ExtractDirName());
+    CD3DXNebula2Include includeHandler(shaderPath.ExtractDirName());
 
     // get global effect pool from gfx server
     ID3DXEffectPool* effectPool = nD3D9Server::Instance()->GetEffectPool();

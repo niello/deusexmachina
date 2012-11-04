@@ -44,22 +44,7 @@ struct nFloat2
     float x;
     float y;
 };
-/**
-    An nFourCC is usually represented in textual form in the source code
-    as a character constant comprised of 4 characters:
 
-    @verbatim
-    'HELO'@endverbatim
-
-    These four characters are interpreted as an integer value, making
-    comparisons much faster than using a string identifier, while
-    retaining, roughly, the readability of a string.
-
-    These are used in the script interface when defining a script
-    command via nClass::AddCmd(), as well as identifiers in the
-    nVariableServer (and related nVariableContext and nVariable)
-    classes.
-*/
 typedef unsigned int nFourCC;
 typedef double nTime;
 
