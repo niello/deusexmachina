@@ -44,9 +44,9 @@ namespace Microsoft.VisualStudio.Project
 				string fullPath = this.GetFullPathForDocument();
 				string caption = this.GetOwnerCaption();
 
-				IVsUIHierarchy parentHierarchy = this.Node.ProjectMgr.GetProperty((int)__VSHPROPID.VSHPROPID_ParentHierarchy) as IVsUIHierarchy;
+                IVsUIHierarchy parentHierarchy = this.Node.ProjectMgr.GetProperty(VsHPropID.ParentHierarchy) as IVsUIHierarchy;
 
-				IntPtr parentHierarchyItemId = (IntPtr)this.Node.ProjectMgr.GetProperty((int)__VSHPROPID.VSHPROPID_ParentHierarchyItemid);
+                IntPtr parentHierarchyItemId = (IntPtr)this.Node.ProjectMgr.GetProperty(VsHPropID.ParentHierarchyItemID);
 
 				ErrorHandler.ThrowOnFailure(uiShellOpenDocument.OpenSpecificEditor(editorFlags, fullPath, ref editorType, physicalView, ref logicalView, caption, parentHierarchy, (uint)(parentHierarchyItemId.ToInt32()), docDataExisting, serviceProvider, out frame));
 

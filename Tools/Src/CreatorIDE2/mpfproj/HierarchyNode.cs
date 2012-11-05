@@ -67,7 +67,7 @@ namespace Microsoft.VisualStudio.Project
 		public static readonly Guid SolutionExplorer = new Guid(EnvDTE.Constants.vsWindowKindSolutionExplorer);
 		public const int NoImage = -1;
 #if DEBUG
-		internal static int LastTracedProperty;
+		internal static VsHPropID LastTracedProperty;
 #endif
 		#endregion
 
@@ -668,150 +668,136 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="propId">the property id of the property requested</param>
 		/// <returns>the property object requested</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-		public virtual object GetProperty(int propId)
+		public virtual object GetProperty(VsHPropID propId)
 		{
 			object result = null;
-			switch((__VSHPROPID)propId)
+			switch(propId)
 			{
-				case __VSHPROPID.VSHPROPID_Expandable:
-					result = (this.firstChild != null);
+                case VsHPropID.Expandable:
+                    result = (firstChild != null);
 					break;
 
-				case __VSHPROPID.VSHPROPID_Caption:
-					result = this.Caption;
+                case VsHPropID.Caption:
+                case VsHPropID.Name:
+					result = Caption;
 					break;
 
-				case __VSHPROPID.VSHPROPID_Name:
-					result = this.Caption;
-					break;
-
-				case __VSHPROPID.VSHPROPID_ExpandByDefault:
+                case VsHPropID.ExpandByDefault:
 					result = false;
 					break;
 
-				case __VSHPROPID.VSHPROPID_IconImgList:
-					result = this.ProjectMgr.ImageHandler.ImageList.Handle;
+                case VsHPropID.IconImgList:
+					result = ProjectMgr.ImageHandler.ImageList.Handle;
 					break;
 
-				case __VSHPROPID.VSHPROPID_OpenFolderIconIndex:
-				case __VSHPROPID.VSHPROPID_IconIndex:
-					int index = this.ImageIndex;
+                case VsHPropID.OpenFolderIconIndex:
+                case VsHPropID.IconIndex:
+					int index = ImageIndex;
 					if(index != NoImage)
-					{
 						result = index;
-					}
 					break;
 
-				case __VSHPROPID.VSHPROPID_StateIconIndex:
-					result = (int)this.StateIconIndex;
+                case VsHPropID.StateIconIndex:
+					result = (int)StateIconIndex;
 					break;
 
-				case __VSHPROPID.VSHPROPID_IconHandle:
+                case VsHPropID.IconHandle:
 					result = GetIconHandle(false);
 					break;
 
-				case __VSHPROPID.VSHPROPID_OpenFolderIconHandle:
+                case VsHPropID.OpenFolderIconHandle:
 					result = GetIconHandle(true);
 					break;
 
-				case __VSHPROPID.VSHPROPID_NextVisibleSibling:
-					goto case __VSHPROPID.VSHPROPID_NextSibling;
-
-				case __VSHPROPID.VSHPROPID_NextSibling:
-					result = (int)((this.nextSibling != null) ? this.nextSibling.hierarchyId : VSConstants.VSITEMID_NIL);
+                case VsHPropID.NextVisibleSibling:
+                case VsHPropID.NextSibling:
+					result = (int)(nextSibling != null ? nextSibling.hierarchyId : VSConstants.VSITEMID_NIL);
 					break;
 
-				case __VSHPROPID.VSHPROPID_FirstChild:
-					goto case __VSHPROPID.VSHPROPID_FirstVisibleChild;
-
-				case __VSHPROPID.VSHPROPID_FirstVisibleChild:
-					result = (int)((this.firstChild != null) ? this.firstChild.hierarchyId : VSConstants.VSITEMID_NIL);
+                case VsHPropID.FirstChild:
+                case VsHPropID.FirstVisibleChild:
+					result = (int)(firstChild != null ? firstChild.hierarchyId : VSConstants.VSITEMID_NIL);
 					break;
 
-				case __VSHPROPID.VSHPROPID_Parent:
-					if(null == this.parentNode)
+                case VsHPropID.Parent:
+					if(null == parentNode)
 					{
 						unchecked { result = new IntPtr((int)VSConstants.VSITEMID_NIL); }
 					}
 					else
 					{
-						result = new IntPtr((int)this.parentNode.hierarchyId);  // see bug 176470
+						result = new IntPtr((int)parentNode.hierarchyId);  // see bug 176470
 					}
 					break;
 
-				case __VSHPROPID.VSHPROPID_ParentHierarchyItemid:
+                case VsHPropID.ParentHierarchyItemID:
 					if(parentHierarchy != null)
 					{
 						result = (IntPtr)parentHierarchyItemId; // VS requires VT_I4 | VT_INT_PTR
 					}
 					break;
 
-				case __VSHPROPID.VSHPROPID_ParentHierarchy:
+                case VsHPropID.ParentHierarchy:
 					result = parentHierarchy;
 					break;
 
-				case __VSHPROPID.VSHPROPID_Root:
-					result = Marshal.GetIUnknownForObject(this.projectMgr);
+                case VsHPropID.Root:
+					result = Marshal.GetIUnknownForObject(projectMgr);
 					break;
 
-				case __VSHPROPID.VSHPROPID_Expanded:
-					result = this.isExpanded;
+                case VsHPropID.Expanded:
+					result = isExpanded;
 					break;
 
-				case __VSHPROPID.VSHPROPID_BrowseObject:
-					result = this.NodeProperties;
-					if(result != null) result = new DispatchWrapper(result);
+                case VsHPropID.BrowseObject:
+			        result = NodeProperties ?? (object) new DispatchWrapper(result);
 					break;
 
-				case __VSHPROPID.VSHPROPID_EditLabel:
-					if(this.ProjectMgr != null && !this.ProjectMgr.IsClosed && !this.ProjectMgr.IsCurrentStateASuppressCommandsMode())
+                case VsHPropID.EditLabel:
+					if(ProjectMgr != null && !ProjectMgr.IsClosed && !ProjectMgr.IsCurrentStateASuppressCommandsMode())
 					{
 						result = GetEditLabel();
 					}
 					break;
 
-				case __VSHPROPID.VSHPROPID_SaveName:
+                case VsHPropID.SaveName:
 					//SaveName is the name shown in the Save and the Save Changes dialog boxes.
-					result = this.Caption;
+					result = Caption;
 					break;
 
-				case __VSHPROPID.VSHPROPID_ItemDocCookie:
-					if(this.docCookie != 0) return (IntPtr)this.docCookie; //cast to IntPtr as some callers expect VT_INT
+                case VsHPropID.ItemDocCookie:
+					if(docCookie != 0) return (IntPtr)docCookie; //cast to IntPtr as some callers expect VT_INT
 					break;
 
-				case __VSHPROPID.VSHPROPID_ExtObject:
+                case VsHPropID.ExtObject:
 					result = GetAutomationObject();
 					break;
-			}
 
-			__VSHPROPID2 id2 = (__VSHPROPID2)propId;
-			switch(id2)
-			{
-				case __VSHPROPID2.VSHPROPID_NoDefaultNestedHierSorting:
+                case VsHPropID.NoDefaultNestedHierSorting:
 					return true; // We are doing the sorting ourselves through VSHPROPID_FirstChild and VSHPROPID_NextSibling
-				case __VSHPROPID2.VSHPROPID_BrowseObjectCATID:
+                case VsHPropID.BrowseObjectCATID:
 					{
 						// If there is a browse object and it is a NodeProperties, then get it's CATID
-						object browseObject = this.GetProperty((int)__VSHPROPID.VSHPROPID_BrowseObject);
+                        object browseObject = GetProperty(VsHPropID.BrowseObject);
 						if(browseObject != null)
 						{
 							if(browseObject is DispatchWrapper)
 								browseObject = ((DispatchWrapper)browseObject).WrappedObject;
-							result = this.ProjectMgr.GetCATIDForType(browseObject.GetType()).ToString("B");
+							result = ProjectMgr.GetCATIDForType(browseObject.GetType()).ToString("B");
 							if(String.CompareOrdinal(result as string, Guid.Empty.ToString("B")) == 0)
 								result = null;
 						}
 						break;
 					}
-				case __VSHPROPID2.VSHPROPID_ExtObjectCATID:
+                case VsHPropID.ExtObjectCATID:
 					{
 						// If there is a extensibility object and it is a NodeProperties, then get it's CATID
-						object extObject = this.GetProperty((int)__VSHPROPID.VSHPROPID_ExtObject);
+                        object extObject = GetProperty(VsHPropID.ExtObject);
 						if(extObject != null)
 						{
 							if(extObject is DispatchWrapper)
 								extObject = ((DispatchWrapper)extObject).WrappedObject;
-							result = this.ProjectMgr.GetCATIDForType(extObject.GetType()).ToString("B");
+							result = ProjectMgr.GetCATIDForType(extObject.GetType()).ToString("B");
 							if(String.CompareOrdinal(result as string, Guid.Empty.ToString("B")) == 0)
 								result = null;
 						}
@@ -2555,29 +2541,34 @@ namespace Microsoft.VisualStudio.Project
             throw new MemberNotFoundException();
         }
 
-		public virtual int GetProperty(uint itemId, int propId, out object propVal)
+        int IVsHierarchy.GetProperty(uint itemId, int propId, out object propVal)
+        {
+            return ((IVsUIHierarchy) this).GetProperty(itemId, propId, out propVal);
+        }
+
+        int IVsUIHierarchy.GetProperty(uint itemId, int propId, out object propVal)
+        {
+            return ComHelper.WrapFunction(false, GetProperty, (VsItemID)itemId, (VsHPropID)propId, out propVal);
+        }
+
+		public virtual object GetProperty(VsItemID itemId, VsHPropID propId)
 		{
-			propVal = null;
-			if(itemId != VSConstants.VSITEMID_ROOT && propId == (int)__VSHPROPID.VSHPROPID_IconImgList)
-			{
-				return VSConstants.DISP_E_MEMBERNOTFOUND;
-			}
+			if (itemId != VsItemID.Root && propId == VsHPropID.IconImgList)
+                throw new MemberNotFoundException();
 
 
-			HierarchyNode n = this.projectMgr.NodeFromItemId(itemId);
+			var n = projectMgr.NodeFromItemId(itemId);
+            object propVal = null;
 			if(n != null)
-			{
 				propVal = n.GetProperty(propId);
-			}
-			if(propVal == null)
-			{
-				return VSConstants.DISP_E_MEMBERNOTFOUND;
-			}
-			return VSConstants.S_OK;
+            if (propVal == null)
+                throw new MemberNotFoundException();
+
+		    return propVal;
 		}
 
-
-		public virtual int GetNestedHierarchy(uint itemId, ref Guid iidHierarchyNested, out IntPtr ppHierarchyNested, out uint pItemId)
+        
+        public virtual int GetNestedHierarchy(uint itemId, ref Guid iidHierarchyNested, out IntPtr ppHierarchyNested, out uint pItemId)
 		{
 			ppHierarchyNested = IntPtr.Zero;
 			pItemId = 0;

@@ -1,6 +1,7 @@
 /// Copyright (c) Microsoft Corporation.  All rights reserved.
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -74,10 +75,7 @@ namespace Microsoft.VisualStudio.Project.Automation
 		{
 			get
 			{
-				int dirty;
-
-				ErrorHandler.ThrowOnFailure(project.IsDirty(out dirty));
-				return dirty != 0;
+			    return project.IsDirty();
 			}
 			set
 			{
@@ -307,7 +305,7 @@ namespace Microsoft.VisualStudio.Project.Automation
 		/// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>        
 		public virtual void SaveAs(string fileName)
 		{
-			this.DoSave(true, fileName);
+		    this.DoSave(true, fileName, new CancelEventArgs(false));
 		}
 
 		/// <summary>
@@ -318,7 +316,7 @@ namespace Microsoft.VisualStudio.Project.Automation
 		/// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>        
 		public virtual void Save(string fileName)
 		{
-			this.DoSave(false, fileName);
+		    this.DoSave(false, fileName, new CancelEventArgs(false));
 		}
 
 		/// <summary>
@@ -353,7 +351,7 @@ namespace Microsoft.VisualStudio.Project.Automation
 		/// </summary>
 		/// <param name="isCalledFromSaveAs">Flag determining which Save method called , the SaveAs or the Save.</param>
 		/// <param name="fileName">The name of the project file.</param>        
-		private void DoSave(bool isCalledFromSaveAs, string fileName)
+		private void DoSave(bool isCalledFromSaveAs, string fileName, CancelEventArgs cancel)
 		{
 			if(fileName == null)
 			{
@@ -447,11 +445,11 @@ namespace Microsoft.VisualStudio.Project.Automation
 							throw new InvalidOperationException();
 						}
 
-						project.Save(fullPath, true, 0);
+						project.Save(fullPath, true, 0, cancel);
 					}
 					else
 					{
-						project.Save(fullPath, false, 0);
+						project.Save(fullPath, false, 0, cancel);
 					}
 				}
 			}

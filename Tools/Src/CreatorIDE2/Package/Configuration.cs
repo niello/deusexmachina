@@ -2,6 +2,6 @@
 {
     internal static class Configuration
     {
-        public const string TemplatesDefaultDirectory = @"..\..\Code\CreatorIDE2\Package\Templates";
+        public const string TemplatesDefaultDirectory = @"..\..\Src\CreatorIDE2\Package\Templates";
     }
 }

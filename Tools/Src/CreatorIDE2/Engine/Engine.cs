@@ -6,13 +6,11 @@ namespace CreatorIDE.Engine
 {
     public sealed class CideEngine:IDisposable
     {
-        [Obsolete("Temporary")]
-        //public static readonly CideEngine Instance = new CideEngine();
 
 #if (DEBUG)
-        public const string DllName = "EngineAPI_d.dll";
+        public const string DllName = "EngineAPI2_d.dll";
 #else
-	    public const string DllName = "EngineAPI.dll";
+	    public const string DllName = "EngineAPI2.dll";
 #endif
 
         private AppHandle _engineHandle;
