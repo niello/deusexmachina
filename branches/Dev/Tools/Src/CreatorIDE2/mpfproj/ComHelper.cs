@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.VisualStudio.Project
@@ -207,18 +208,23 @@ namespace Microsoft.VisualStudio.Project
         /// <param name="prevHRes">HResult from previous function</param>
         public static HResult CheckIfNonZero(this HResult prevHRes, IntPtr pointer)
         {
-            return prevHRes == HResult.Ok && pointer == IntPtr.Zero ? (HResult) VSConstants.E_NOTIMPL : prevHRes;
+            return (prevHRes == HResult.Ok || prevHRes == HResult.False) && pointer == IntPtr.Zero
+                       ? (HResult) VSConstants.E_NOTIMPL
+                       : prevHRes;
         }
 
         public static HResult Check(this HResult prevHRes, Func<HResult> check)
         {
-            if (prevHRes != HResult.Ok)
+            if (prevHRes != HResult.Ok && prevHRes != HResult.False)
                 return prevHRes;
 
             HResult result;
             var funcRes = WrapFunction(false, check, out result);
+            Debug.Assert(funcRes != HResult.False);
             if (funcRes != HResult.Ok)
                 result = funcRes;
+            else if (result == HResult.Ok)
+                result = prevHRes; // Prompting S_FALSE result
 
             return result;
         }

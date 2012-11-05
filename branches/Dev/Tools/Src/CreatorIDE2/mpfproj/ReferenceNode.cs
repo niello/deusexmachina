@@ -2,13 +2,11 @@
 
 using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Text;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
@@ -117,9 +115,9 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// Not supported.
 		/// </summary>
-		protected override int ExcludeFromProject()
+		protected override void ExcludeFromProject()
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -148,17 +146,18 @@ namespace Microsoft.VisualStudio.Project
 			return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
 		}
 
-		protected override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 			if(cmdGroup == VsMenus.guidStandardCommandSet2K)
 			{
 				if((VsCommands2K)cmd == VsCommands2K.QUICKOBJECTSEARCH)
 				{
-					return this.ShowObjectBrowser();
+					ShowObjectBrowser();
+				    return;
 				}
 			}
 
-			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+			base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 		#endregion
@@ -261,46 +260,45 @@ namespace Microsoft.VisualStudio.Project
 		/// Shows the Object Browser
 		/// </summary>
 		/// <returns></returns>
-		protected virtual int ShowObjectBrowser()
+		protected virtual void ShowObjectBrowser()
 		{
-			if(String.IsNullOrEmpty(this.Url) || !File.Exists(this.Url))
+			if(String.IsNullOrEmpty(Url) || !File.Exists(Url))
 			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+			    throw new OleCmdNotSupportedException();
 			}
 
 			// Request unmanaged code permission in order to be able to creaet the unmanaged memory representing the guid.
 			new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
 
-			Guid guid = VSConstants.guidCOMPLUSLibrary;
-			IntPtr ptr = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(guid.ToByteArray().Length);
+			var guid = VSConstants.guidCOMPLUSLibrary;
+		    var ptr = IntPtr.Zero;
 
-			System.Runtime.InteropServices.Marshal.StructureToPtr(guid, ptr, false);
-			int returnValue = VSConstants.S_OK;
 			try
 			{
-				VSOBJECTINFO[] objInfo = new VSOBJECTINFO[1];
+                Marshal.AllocCoTaskMem(guid.ToByteArray().Length);
+                Marshal.StructureToPtr(guid, ptr, false);
+
+				var objInfo = new VSOBJECTINFO[1];
 
 				objInfo[0].pguidLib = ptr;
-				objInfo[0].pszLibName = this.Url;
+				objInfo[0].pszLibName = Url;
 
-				IVsObjBrowser objBrowser = this.ProjectMgr.Site.GetService(typeof(SVsObjBrowser)) as IVsObjBrowser;
+				var objBrowser = ProjectMgr.Site.GetService(typeof(SVsObjBrowser)) as IVsObjBrowser;
 
 				ErrorHandler.ThrowOnFailure(objBrowser.NavigateTo(objInfo, 0));
 			}
 			catch(COMException e)
 			{
 				Trace.WriteLine("Exception" + e.ErrorCode);
-				returnValue = e.ErrorCode;
+			    throw;
 			}
 			finally
 			{
 				if(ptr != IntPtr.Zero)
 				{
-					System.Runtime.InteropServices.Marshal.FreeCoTaskMem(ptr);
+					Marshal.FreeCoTaskMem(ptr);
 				}
 			}
-
-			return returnValue;
 		}
 
 		protected override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)

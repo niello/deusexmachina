@@ -11,6 +11,7 @@ using System.Security.Permissions;
 using System.Text;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
+using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using IOleDataObject = Microsoft.VisualStudio.OLE.Interop.IDataObject;
@@ -607,18 +608,17 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// Handle the Cut operation to the clipboard
 		/// </summary>
-		protected internal override int CutToClipboard()
+		protected internal override void CutToClipboard()
 		{
-			int returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
 			try
 			{
-				this.RegisterClipboardNotifications(true);
+				RegisterClipboardNotifications(true);
 
 				// Create our data object and change the selection to show item(s) being cut
-				IOleDataObject dataObject = this.PackageSelectionDataObject(true);
+				IOleDataObject dataObject = PackageSelectionDataObject(true);
 				if(dataObject != null)
 				{
-					this.SourceDraggedOrCutOrCopied = true;
+					SourceDraggedOrCutOrCopied = true;
 
 					// Add our cut item(s) to the clipboard
 					ErrorHandler.ThrowOnFailure(UnsafeNativeMethods.OleSetClipboard(dataObject));
@@ -627,75 +627,72 @@ namespace Microsoft.VisualStudio.Project
 					IVsUIHierWinClipboardHelper clipboardHelper = (IVsUIHierWinClipboardHelper)GetService(typeof(SVsUIHierWinClipboardHelper));
 					if(clipboardHelper == null)
 					{
-						return VSConstants.E_FAIL;
+					    throw new COMException();
 					}
 
-					returnValue = ErrorHandler.ThrowOnFailure(clipboardHelper.Cut(dataObject));
+					ErrorHandler.ThrowOnFailure(clipboardHelper.Cut(dataObject));
 				}
 			}
 			catch(COMException e)
 			{
 				Trace.WriteLine("Exception : " + e.Message);
-				returnValue = e.ErrorCode;
+			    throw;
 			}
 
-			return returnValue;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
 		/// Handle the Copy operation to the clipboard
 		/// </summary>
-		protected internal override int CopyToClipboard()
+		protected internal override void CopyToClipboard()
 		{
-			int returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
 			try
 			{
-				this.RegisterClipboardNotifications(true);
+				RegisterClipboardNotifications(true);
 
 				// Create our data object and change the selection to show item(s) being copy
-				IOleDataObject dataObject = this.PackageSelectionDataObject(false);
+				IOleDataObject dataObject = PackageSelectionDataObject(false);
 				if(dataObject != null)
 				{
-					this.SourceDraggedOrCutOrCopied = true;
+					SourceDraggedOrCutOrCopied = true;
 
 					// Add our copy item(s) to the clipboard
 					ErrorHandler.ThrowOnFailure(UnsafeNativeMethods.OleSetClipboard(dataObject));
 
 					// Inform VS (UiHierarchyWindow) of the copy
-					IVsUIHierWinClipboardHelper clipboardHelper = (IVsUIHierWinClipboardHelper)GetService(typeof(SVsUIHierWinClipboardHelper));
+					var clipboardHelper = (IVsUIHierWinClipboardHelper)GetService(typeof(SVsUIHierWinClipboardHelper));
 					if(clipboardHelper == null)
 					{
-						return VSConstants.E_FAIL;
+					    throw new COMException();
 					}
-					returnValue = ErrorHandler.ThrowOnFailure(clipboardHelper.Copy(dataObject));
+					ErrorHandler.ThrowOnFailure(clipboardHelper.Copy(dataObject));
 				}
 			}
 			catch(COMException e)
 			{
 				Trace.WriteLine("Exception : " + e.Message);
-				returnValue = e.ErrorCode;
+			    throw;
 			}
 			catch(ArgumentException e)
 			{
 				Trace.WriteLine("Exception : " + e.Message);
-				returnValue = Marshal.GetHRForException(e);
+			    throw;
 			}
 
-			return returnValue;
+			throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
 		/// Handle the Paste operation to a targetNode
 		/// </summary>
-		protected internal override int PasteFromClipboard(HierarchyNode targetNode)
+		protected internal override void PasteFromClipboard(HierarchyNode targetNode)
 		{
-			int returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-
 			//Get the clipboardhelper service and use it after processing dataobject
-			IVsUIHierWinClipboardHelper clipboardHelper = (IVsUIHierWinClipboardHelper)GetService(typeof(SVsUIHierWinClipboardHelper));
+			var clipboardHelper = (IVsUIHierWinClipboardHelper)GetService(typeof(SVsUIHierWinClipboardHelper));
 			if(clipboardHelper == null)
 			{
-				return VSConstants.E_FAIL;
+			    throw new COMException();
 			}
 
 			try
@@ -705,15 +702,15 @@ namespace Microsoft.VisualStudio.Project
 				ErrorHandler.ThrowOnFailure(UnsafeNativeMethods.OleGetClipboard(out dataObject));
 				if(dataObject == null)
 				{
-					return VSConstants.E_UNEXPECTED;
+				    throw new ComSpecificException(VSConstants.E_UNEXPECTED);
 				}
 
 				DropEffect dropEffect = DropEffect.None;
 				DropDataType dropDataType = DropDataType.None;
 				try
 				{
-					dropDataType = this.ProcessSelectionDataObject(dataObject, targetNode.GetDragTargetHandlerNode());
-					dropEffect = this.QueryDropEffect(dropDataType, 0);
+					dropDataType = ProcessSelectionDataObject(dataObject, targetNode.GetDragTargetHandlerNode());
+					dropEffect = QueryDropEffect(dropDataType, 0);
 				}
 				catch(ExternalException e)
 				{
@@ -729,17 +726,14 @@ namespace Microsoft.VisualStudio.Project
 				finally
 				{
 					// Inform VS (UiHierarchyWindow) of the paste
-					returnValue = clipboardHelper.Paste(dataObject, (uint)dropEffect);
+				    ErrorHandler.ThrowOnFailure(clipboardHelper.Paste(dataObject, (uint) dropEffect));
 				}
 			}
 			catch(COMException e)
 			{
 				Trace.WriteLine("Exception : " + e.Message);
-
-				returnValue = e.ErrorCode;
+			    throw;
 			}
-
-			return returnValue;
 		}
 
 		/// <summary>

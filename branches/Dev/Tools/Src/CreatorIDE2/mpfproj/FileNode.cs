@@ -8,6 +8,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
@@ -154,7 +155,7 @@ namespace Microsoft.VisualStudio.Project
 		/// Constructor for the FileNode
 		/// </summary>
 		/// <param name="root">Root of the hierarchy</param>
-		/// <param name="e">Associated project element</param>
+		/// <param name="element">Associated project element</param>
 		public FileNode(ProjectNode root, ProjectElement element)
 			: base(root, element)
 		{
@@ -413,31 +414,34 @@ namespace Microsoft.VisualStudio.Project
 			return handlerNode;
 		}
 
-		protected override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
-			if(this.ProjectMgr == null || this.ProjectMgr.IsClosed)
+			if(ProjectMgr == null || ProjectMgr.IsClosed)
 			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+			    throw new OleCmdNotSupportedException();
 			}
 
 			// Exec on special filenode commands
 			if(cmdGroup == VsMenus.guidStandardCommandSet97)
 			{
-				IVsWindowFrame windowFrame = null;
-
+			    var docManager = (FileDocumentManager) GetDocumentManager();
 				switch((VsCommands)cmd)
 				{
 					case VsCommands.ViewCode:
-						return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Code, out windowFrame, WindowFrameShowAction.Show);
+						docManager.Open(false, false, VSConstants.LOGVIEWID_Code, WindowFrameShowAction.Show);
+                        return;
 
 					case VsCommands.ViewForm:
-						return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Designer, out windowFrame, WindowFrameShowAction.Show);
+						docManager.Open(false, false, VSConstants.LOGVIEWID_Designer, WindowFrameShowAction.Show);
+                        return;
 
-					case VsCommands.Open:
-						return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, WindowFrameShowAction.Show);
+                    case VsCommands.Open:
+						docManager.Open(false, false, WindowFrameShowAction.Show);
+                        return;
 
 					case VsCommands.OpenWith:
-						return ((FileDocumentManager)this.GetDocumentManager()).Open(false, true, VSConstants.LOGVIEWID_UserChooseView, out windowFrame, WindowFrameShowAction.Show);
+						docManager.Open(false, true, VSConstants.LOGVIEWID_UserChooseView, WindowFrameShowAction.Show);
+				        return;
 				}
 			}
 
@@ -450,8 +454,8 @@ namespace Microsoft.VisualStudio.Project
 						{
 							try
 							{
-								this.RunGenerator();
-								return VSConstants.S_OK;
+								RunGenerator();
+							    return;
 							}
 							catch(Exception e)
 							{
@@ -462,7 +466,7 @@ namespace Microsoft.VisualStudio.Project
 				}
 			}
 
-			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+			base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 

@@ -15,37 +15,6 @@ namespace CreatorIDE.Package
             base(manager)
         {}
 
-        protected override bool IsConfigSupported(VsConfigPropID propID)
-        {
-            return false;
-        }
-
-        protected override void GetConfigs(uint celt, IVsCfg[] a, uint[] actual, uint[] flags)
-        {
-            if (flags != null)
-                flags[0] = 0;
-
-            int i = 0;
-            string[] configList = new[] {"Release"};
-
-            if (a != null)
-            {
-                foreach (string configName in configList)
-                {
-                    a[i] = GetProjectConfiguration(configName);
-
-                    i++;
-                    if (i == celt)
-                        break;
-                }
-            }
-            else
-                i = configList.Length;
-
-            if (actual != null)
-                actual[0] = (uint)i;
-        }
-
         protected override void GetPlatforms(uint celt, string[] names, uint[] actual)
         {
             GetPlatforms(celt, names, actual, SupportedPlatforms);
