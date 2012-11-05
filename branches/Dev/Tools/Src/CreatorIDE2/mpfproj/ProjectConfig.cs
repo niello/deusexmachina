@@ -185,14 +185,14 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		/// <param name="storageType">Project file or user file</param>
 		/// <returns>0 = not dirty</returns>
-		internal int IsFlavorDirty(_PersistStorageType storageType)
+		internal bool IsFlavorDirty(_PersistStorageType storageType)
 		{
 			int isDirty = 0;
 			if (this.flavoredCfg != null && this.flavoredCfg is IPersistXMLFragment)
 			{
 				ErrorHandler.ThrowOnFailure(((IPersistXMLFragment)this.flavoredCfg).IsFragmentDirty((uint)storageType, out isDirty));
 			}
-			return isDirty;
+		    return isDirty == 0 ? false : true;
 		}
 
 		/// <summary>

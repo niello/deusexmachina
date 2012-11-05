@@ -178,7 +178,7 @@ namespace Microsoft.VisualStudio.Project
 
 			if(node != null)
 			{
-				object propertyAsObject = node.GetProperty((int)__VSHPROPID.VSHPROPID_HandlesOwnReload);
+                object propertyAsObject = node.GetProperty(VsHPropID.HandlesOwnReload);
 
 				if(propertyAsObject != null && (bool)propertyAsObject)
 					node.ReloadItem();
@@ -680,10 +680,7 @@ namespace Microsoft.VisualStudio.Project
 
 				ErrorHandler.ThrowOnFailure(fireSolutionEvents.FireOnBeforeUnloadProject(node.NestedHierarchy));
 
-				int isDirtyAsInt = 0;
-				this.IsDirty(out isDirtyAsInt);
-
-				bool isDirty = (isDirtyAsInt == 0) ? false : true;
+				bool isDirty = IsDirty();
 
 				ProjectElement element = node.ItemNode;
 				node.CloseNestedProjectNode();

@@ -656,13 +656,13 @@ namespace Microsoft.VisualStudio.Project
 		/// Gets the Base Uniform Resource Identifier (URI).
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "URI")]
-		public Microsoft.VisualStudio.Shell.Url BaseURI
+		public Url BaseURI
 		{
 			get
 			{
-			    string path = System.IO.Path.GetDirectoryName(buildProject == null ? FileName : this.buildProject.FullFileName);
-				if(baseUri == null /*&& this.buildProject != null*/)
+				if(baseUri == null && buildProject != null)
 				{
+                    string path = Path.GetDirectoryName(buildProject.FullFileName);
 					// Uri/Url behave differently when you have trailing slash and when you dont
 					if(!path.EndsWith("\\", StringComparison.Ordinal) && !path.EndsWith("/", StringComparison.Ordinal))
 						path += "\\";
@@ -1103,54 +1103,50 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		/// <param name="propId">The __VSHPROPID of the property.</param>
 		/// <returns>A property dependent value. See: <see cref="__VSHPROPID"/> for details.</returns>
-		public override object GetProperty(int propId)
+		public override object GetProperty(VsHPropID propId)
 		{
-			switch((__VSHPROPID)propId)
+			switch(propId)
 			{
-				case __VSHPROPID.VSHPROPID_ConfigurationProvider:
-					return this.ConfigProvider;
+                case VsHPropID.ConfigurationProvider:
+					return ConfigProvider;
 
-				case __VSHPROPID.VSHPROPID_ProjectName:
-					return this.Caption;
+                case VsHPropID.ProjectName:
+					return Caption;
 
-				case __VSHPROPID.VSHPROPID_ProjectDir:
-					return this.ProjectFolder;
+                case VsHPropID.ProjectDir:
+					return ProjectFolder;
 
-				case __VSHPROPID.VSHPROPID_TypeName:
-					return this.ProjectType;
+                case VsHPropID.TypeName:
+					return ProjectType;
 
-				case __VSHPROPID.VSHPROPID_ShowProjInSolutionPage:
-					return this.ShowProjectInSolutionPage;
+                case VsHPropID.ShowProjInSolutionPage:
+					return ShowProjectInSolutionPage;
 
-				case __VSHPROPID.VSHPROPID_ExpandByDefault:
+                case VsHPropID.ExpandByDefault:
 					return true;
 
 				// Use the same icon as if the folder was closed
-				case __VSHPROPID.VSHPROPID_OpenFolderIconIndex:
-					return GetProperty((int)__VSHPROPID.VSHPROPID_IconIndex);
-			}
+                case VsHPropID.OpenFolderIconIndex:
+                    return GetProperty(VsHPropID.IconIndex);
 
-			switch((__VSHPROPID2)propId)
-			{
-				case __VSHPROPID2.VSHPROPID_SupportsProjectDesigner:
-					return this.SupportsProjectDesigner;
+                case VsHPropID.SupportsProjectDesigner:
+					return SupportsProjectDesigner;
 
-				case __VSHPROPID2.VSHPROPID_PropertyPagesCLSIDList:
-					return Utilities.CreateSemicolonDelimitedListOfStringFromGuids(this.GetConfigurationIndependentPropertyPages());
+                case VsHPropID.PropertyPagesCLSIDList:
+					return Utilities.CreateSemicolonDelimitedListOfStringFromGuids(GetConfigurationIndependentPropertyPages());
 
-				case __VSHPROPID2.VSHPROPID_CfgPropertyPagesCLSIDList:
-					return Utilities.CreateSemicolonDelimitedListOfStringFromGuids(this.GetConfigurationDependentPropertyPages());
+                case VsHPropID.CfgPropertyPagesCLSIDList:
+					return Utilities.CreateSemicolonDelimitedListOfStringFromGuids(GetConfigurationDependentPropertyPages());
 
-				case __VSHPROPID2.VSHPROPID_PriorityPropertyPagesCLSIDList:
-					return Utilities.CreateSemicolonDelimitedListOfStringFromGuids(this.GetPriorityProjectDesignerPages());
+                case VsHPropID.PriorityPropertyPagesCLSIDList:
+					return Utilities.CreateSemicolonDelimitedListOfStringFromGuids(GetPriorityProjectDesignerPages());
 
-				case __VSHPROPID2.VSHPROPID_Container:
+                case VsHPropID.Container:
 					return true;
-				default:
-					break;
-			}
 
-			return base.GetProperty(propId);
+				default:
+                    return base.GetProperty(propId);
+			}
 		}
 
 		/// <summary>
@@ -1713,115 +1709,107 @@ namespace Microsoft.VisualStudio.Project
 				}
 
 				// This is almost a No op if the engine has already been instantiated in the factory.
-                if(buildEngine!=null)
-				    this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine, this.Site);
+    		    this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine, this.Site);
 
-				//Debug.Assert(this.globalPropertyHandler != null, "The global property handler should have been initialized at this point");
+				Debug.Assert(this.globalPropertyHandler != null, "The global property handler should have been initialized at this point");
 
 				// Now register with the configuration change event.
-                if(globalPropertyHandler!=null)
-				    this.globalPropertyHandler.ActiveConfigurationChanged += new EventHandler<ActiveConfigurationChangedEventArgs>(this.OnHandleConfigurationRelatedGlobalProperties);
+			    globalPropertyHandler.ActiveConfigurationChanged += OnHandleConfigurationRelatedGlobalProperties;
 
 				// based on the passed in flags, this either reloads/loads a project, or tries to create a new one
 				// now we create a new project... we do that by loading the template and then saving under a new name
 				// we also need to copy all the associated files with it.					
-				if((flags & VsCreateProjFlags.CloneFile) == VsCreateProjFlags.CloneFile)
-				{
-					Debug.Assert(!String.IsNullOrEmpty(fileName) && File.Exists(fileName), "Invalid filename passed to load the project. A valid filename is expected");
+                if ((flags & VsCreateProjFlags.CloneFile) == VsCreateProjFlags.CloneFile)
+                {
+                    Debug.Assert(!String.IsNullOrEmpty(fileName) && File.Exists(fileName),
+                                 "Invalid filename passed to load the project. A valid filename is expected");
 
-					this.isNewProject = true;
+                    this.isNewProject = true;
 
-					// This should be a very fast operation if the build project is already initialized by the Factory.
-                    if (buildEngine != null)
-                        this.buildProject = Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName, this.buildProject);
+                    // This should be a very fast operation if the build project is already initialized by the Factory.
+                    this.buildProject = Utilities.ReinitializeMsBuildProject(this.buildEngine, fileName,
+                                                                             this.buildProject);
 
 
-					// Compute the file name
-					// We try to solve two problems here. When input comes from a wizzard in case of zipped based projects 
-					// the parameters are different.
-					// In that case the filename has the new filename in a temporay path.
+                    // Compute the file name
+                    // We try to solve two problems here. When input comes from a wizzard in case of zipped based projects 
+                    // the parameters are different.
+                    // In that case the filename has the new filename in a temporay path.
 
-					// First get the extension from the template.
-					// Then get the filename from the name.
-					// Then create the new full path of the project.
-					string extension = Path.GetExtension(fileName);
+                    // First get the extension from the template.
+                    // Then get the filename from the name.
+                    // Then create the new full path of the project.
+                    string extension = Path.GetExtension(fileName);
 
-					string tempName = String.Empty;
+                    string tempName = String.Empty;
 
-					// We have to be sure that we are not going to loose data here. If the project name is a.b.c then for a project that was based on a zipped template(the wizzard calls us) GetFileNameWithoutExtension will suppress "c".
-					// We are going to check if the parameter "name" is extension based and the extension is the same as the one from the "filename" parameter.
-					string tempExtension = Path.GetExtension(name);
-					if(!String.IsNullOrEmpty(tempExtension))
-					{
-						bool isSameExtension = (String.Compare(tempExtension, extension, StringComparison.OrdinalIgnoreCase) == 0);
-
-						if(isSameExtension)
-						{
-							tempName = Path.GetFileNameWithoutExtension(name);
-						}
-						// If the tempExtension is not the same as the extension that the project name comes from then assume that the project name is a dotted name.
-						else
-						{
-							tempName = Path.GetFileName(name);
-						}
-					}
-					else
-					{
-						tempName = Path.GetFileName(name);
-					}
-
-					Debug.Assert(!String.IsNullOrEmpty(tempName), "Could not compute project name");
-					string tempProjectFileName = tempName + extension;
-					this.filename = Path.Combine(location, tempProjectFileName);
-
-					// Initialize the common project properties.
-					this.InitializeProjectProperties();
-
-					Save(this.filename, true, 0);
-
-					// now we do have the project file saved. we need to create embedded files.
-                    if (buildProject != null)
+                    // We have to be sure that we are not going to loose data here. If the project name is a.b.c then for a project that was based on a zipped template(the wizzard calls us) GetFileNameWithoutExtension will suppress "c".
+                    // We are going to check if the parameter "name" is extension based and the extension is the same as the one from the "filename" parameter.
+                    string tempExtension = Path.GetExtension(name);
+                    if (!String.IsNullOrEmpty(tempExtension))
                     {
-                        MSBuild.BuildItemGroup projectFiles = this.buildProject.EvaluatedItems;
-                        foreach (MSBuild.BuildItem item in projectFiles)
+                        bool isSameExtension =
+                            (String.Compare(tempExtension, extension, StringComparison.OrdinalIgnoreCase) == 0);
+
+                        if (isSameExtension)
                         {
-                            // Ignore the item if it is a reference or folder
-                            if (this.FilterItemTypeToBeAddedToHierarchy(item.Name))
-                            {
-                                continue;
-                            }
-
-                            // MSBuilds tasks/targets can create items (such as object files),
-                            // such items are not part of the project per say, and should not be displayed.
-                            // so ignore those items.
-                            if (!this.IsItemTypeFileType(item.Name))
-                            {
-                                continue;
-                            }
-
-                            string strRelFilePath = item.FinalItemSpec;
-                            string basePath = Path.GetDirectoryName(fileName);
-                            string strPathToFile;
-                            string newFileName;
-                            // taking the base name from the project template + the relative pathname,
-                            // and you get the filename
-                            strPathToFile = Path.Combine(basePath, strRelFilePath);
-                            // the new path should be the base dir of the new project (location) + the rel path of the file
-                            newFileName = Path.Combine(location, strRelFilePath);
-                            // now the copy file
-                            AddFileFromTemplate(strPathToFile, newFileName);
+                            tempName = Path.GetFileNameWithoutExtension(name);
+                        }
+                            // If the tempExtension is not the same as the extension that the project name comes from then assume that the project name is a dotted name.
+                        else
+                        {
+                            tempName = Path.GetFileName(name);
                         }
                     }
                     else
                     {
-                        var filePath = Path.Combine(location, name);
-                        AddFileFromTemplate(fileName, filePath);
+                        tempName = Path.GetFileName(name);
                     }
-				}
-				else
-				{
-					this.filename = fileName;
-				}
+
+                    Debug.Assert(!String.IsNullOrEmpty(tempName), "Could not compute project name");
+                    string tempProjectFileName = tempName + extension;
+                    this.filename = Path.Combine(location, tempProjectFileName);
+
+                    // Initialize the common project properties.
+                    this.InitializeProjectProperties();
+
+                    Save(this.filename, true, 0, cancelArgs);
+
+                    // now we do have the project file saved. we need to create embedded files.
+
+                    MSBuild.BuildItemGroup projectFiles = this.buildProject.EvaluatedItems;
+                    foreach (MSBuild.BuildItem item in projectFiles)
+                    {
+                        // Ignore the item if it is a reference or folder
+                        if (this.FilterItemTypeToBeAddedToHierarchy(item.Name))
+                        {
+                            continue;
+                        }
+
+                        // MSBuilds tasks/targets can create items (such as object files),
+                        // such items are not part of the project per say, and should not be displayed.
+                        // so ignore those items.
+                        if (!this.IsItemTypeFileType(item.Name))
+                        {
+                            continue;
+                        }
+
+                        string strRelFilePath = item.FinalItemSpec;
+                        string basePath = Path.GetDirectoryName(fileName);
+                        Debug.Assert(basePath != null);
+                        // taking the base name from the project template + the relative pathname,
+                        // and you get the filename
+                        var strPathToFile = Path.Combine(basePath, strRelFilePath);
+                        // the new path should be the base dir of the new project (location) + the rel path of the file
+                        var newFileName = Path.Combine(location, strRelFilePath);
+                        // now the copy file
+                        AddFileFromTemplate(strPathToFile, newFileName);
+                    }
+                }
+                else
+                {
+                    this.filename = fileName;
+                }
 
 				// now reload to fix up references
 				this.Reload();
@@ -3174,8 +3162,7 @@ namespace Microsoft.VisualStudio.Project
 		/// Saves the project file on a new name.
 		/// </summary>
 		/// <param name="newFileName">The new name of the project file.</param>
-		/// <returns>Success value or an error code.</returns>
-		protected virtual void SaveAs(string newFileName)
+		protected virtual void SaveAs(string newFileName, CancelEventArgs cancel)
 		{
 			Debug.Assert(!String.IsNullOrEmpty(newFileName), "Cannot save project file for an empty or null file name");
 
@@ -3235,7 +3222,8 @@ namespace Microsoft.VisualStudio.Project
 					OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
 					OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
 					VsShellUtilities.ShowMessageBox(this.Site, title, errorMessage, icon, buttons, defaultButton);
-                    throw new ComSpecificException(VSConstants.OLE_E_PROMPTSAVECANCELLED);
+				    cancel.Cancel = true;
+                    return;
 				}
 
 				throw new InvalidOperationException(errorMessage);
@@ -3247,7 +3235,8 @@ namespace Microsoft.VisualStudio.Project
 			Debug.Assert(solution != null, "Could not retrieve the solution form the service provider");
 			if(solution == null)
 			{
-				throw new InvalidOperationException();
+			    cancel.Cancel = true;
+			    return;
 			}
 
 			int canRenameContinue = 0;
@@ -3255,7 +3244,8 @@ namespace Microsoft.VisualStudio.Project
 
 			if(canRenameContinue == 0)
 			{
-                throw new ComSpecificException(VSConstants.OLE_E_PROMPTSAVECANCELLED);
+			    cancel.Cancel = true;
+                return;
 			}
 
 			SuspendFileChanges fileChanges = new SuspendFileChanges(this.Site, oldName);
@@ -3574,13 +3564,8 @@ namespace Microsoft.VisualStudio.Project
 				throw new InvalidOperationException(); ;
 			}
 
-            if (buildProject != null)
-            {
-                this.buildProject.GlobalProperties.SetProperty(ProjectFileConstants.Configuration, config);
-                this.currentConfig = this.buildProject.EvaluatedProperties;
-            }
-            else
-                currentConfig = new BuildPropertyGroup {Condition = config};
+            this.buildProject.GlobalProperties.SetProperty(ProjectFileConstants.Configuration, config);
+		    this.currentConfig = this.buildProject.EvaluatedProperties;
 		}
 
 		/// <summary>
@@ -4292,7 +4277,7 @@ namespace Microsoft.VisualStudio.Project
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "XML")]
 		protected void PersistXMLFragments()
 		{
-			if(this.IsFlavorDirty() != 0)
+			if(IsFlavorDirty())
 			{
 				XmlDocument doc = new XmlDocument();
 				XmlElement root = doc.CreateElement("ROOT");
@@ -4412,35 +4397,33 @@ namespace Microsoft.VisualStudio.Project
 			return VSConstants.S_OK;
 		}
 
-		public virtual int IsDirty(out int isDirty)
+		int IPersistFileFormat.IsDirty(out int isDirty)
 		{
-			isDirty = 0;
-			if((buildProject!=null && this.buildProject.IsDirty) || this.IsProjectFileDirty)
-			{
-				isDirty = 1;
-				return VSConstants.S_OK;
-			}
-
-			isDirty = IsFlavorDirty();
-
-			return VSConstants.S_OK;
+		    return ComHelper.WrapFunction(false, IsDirty, out isDirty, (bool res) => res ? 1 : 0);
 		}
 
-		protected int IsFlavorDirty()
+        public virtual bool IsDirty()
+        {
+            return buildProject.IsDirty || IsProjectFileDirty || IsFlavorDirty();
+        }
+
+		protected bool IsFlavorDirty()
 		{
-			int isDirty = 0;
+			bool isDirty = false;
 			// See if one of our flavor consider us dirty
-			IPersistXMLFragment outerHierarchy = HierarchyNode.GetOuterHierarchy(this) as IPersistXMLFragment;
+			var outerHierarchy = GetOuterHierarchy(this) as IPersistXMLFragment;
 			if(outerHierarchy != null)
 			{
-				// First check the project
-				ErrorHandler.ThrowOnFailure(outerHierarchy.IsFragmentDirty((uint)_PersistStorageType.PST_PROJECT_FILE, out isDirty));
+                // First check the project
+			    int isDirtyInt;
+				ErrorHandler.ThrowOnFailure(outerHierarchy.IsFragmentDirty((uint)_PersistStorageType.PST_PROJECT_FILE, out isDirtyInt));
 				// While we don't yet support user files, our flavors might, so we will store that in the project file until then
 				// TODO: Refactor this code when we support user files
-				if(isDirty == 0)
-					ErrorHandler.ThrowOnFailure(outerHierarchy.IsFragmentDirty((uint)_PersistStorageType.PST_USER_FILE, out isDirty));
+				if(isDirtyInt == 0)
+					ErrorHandler.ThrowOnFailure(outerHierarchy.IsFragmentDirty((uint)_PersistStorageType.PST_USER_FILE, out isDirtyInt));
+			    isDirty = isDirtyInt == 0 ? false : true;
 			}
-			if(isDirty == 0)
+			if(!isDirty)
 			{
 				// Then look at the configurations
 				uint[] count = new uint[1];
@@ -4454,7 +4437,7 @@ namespace Microsoft.VisualStudio.Project
 					foreach(IVsCfg config in configs)
 					{
 						isDirty = ((ProjectConfig)config).IsFlavorDirty(_PersistStorageType.PST_PROJECT_FILE);
-						if(isDirty != 0)
+						if(isDirty)
 							break;
 					}
 				}
@@ -4471,10 +4454,13 @@ namespace Microsoft.VisualStudio.Project
 
 	    int IPersistFileFormat.Save(string fileToBeSaved, int remember, uint formatIndex)
 	    {
-	        return ComHelper.WrapAction(true, Save, fileToBeSaved, remember != 0, formatIndex);
+	        CancelEventArgs cancel = null;
+	        return ComHelper.WrapAction(true, (f, r, fi) => Save(f, r, fi, cancel = new CancelEventArgs(false)),
+	                                    fileToBeSaved, remember != 0, formatIndex).
+	            Check(() => cancel.Cancel ? (HResult) VSConstants.OLE_E_PROMPTSAVECANCELLED : HResult.Ok);
 	    }
 
-        public virtual void Save(string fileToBeSaved, bool remember, uint formatIndex)
+        public virtual void Save(string fileToBeSaved, bool remember, uint formatIndex, CancelEventArgs cancel)
         {
             // The file name can be null. Then try to use the Url.
             string tempFileToBeSaved = fileToBeSaved;
@@ -4497,7 +4483,7 @@ namespace Microsoft.VisualStudio.Project
             // Update the project with the latest flavor data (if needed)
             PersistXMLFragments();
 
-            int result = VSConstants.S_OK;
+            //int result = VSConstants.S_OK;
             bool saveAs = true;
             if (NativeMethods.IsSamePath(tempFileToBeSaved, this.filename))
             {
@@ -4519,11 +4505,7 @@ namespace Microsoft.VisualStudio.Project
             }
             else
             {
-                this.SaveAs(tempFileToBeSaved);
-                if (result != VSConstants.OLE_E_PROMPTSAVECANCELLED)
-                    ErrorHandler.ThrowOnFailure(result);
-                else
-                    throw new ComSpecificException(result);
+                this.SaveAs(tempFileToBeSaved, cancel);
             }
 
             if (setProjectFileDirtyAfterSave)
@@ -5555,16 +5537,17 @@ namespace Microsoft.VisualStudio.Project
 
             // In case someone manually removed this from our project file, default to our project without flavors
             var list = GetAggregateProjectTypeGuids();
-            if (list == null || list.Count==0)
+            if (list == null)
                 return string.Empty;
 
             var builder = list.Aggregate(new StringBuilder(), (sb, guid) => sb.AppendFormat("{0:B};", guid));
-            builder.Length--;
+            if (builder.Length > 0)
+                builder.Length--; // There is at least one guid in the collection
 
             return builder.ToString();
         }
 
-        protected virtual List<Guid> GetAggregateProjectTypeGuids()
+        protected virtual IEnumerable<Guid> GetAggregateProjectTypeGuids()
         {
             return new List<Guid> {ProjectGuid};
         }
@@ -5572,18 +5555,30 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// This is where the initialization occurs.
 		/// </summary>
-		public int InitializeForOuter(string filename, string location, string name, uint flags, ref Guid iid, out IntPtr projectPointer, out int canceled)
+        public int InitializeForOuter(string filename, string location, string name, uint flags, ref Guid iid, out IntPtr projectPointer, out int canceled)
 		{
-            var cancel = new CancelEventArgs(false);
-            var hRes = ComHelper.WrapFunction(false, InitializeForOuter, filename, location, name, (VsCreateProjFlags)flags, iid, cancel, out projectPointer).
-                                 Check(() => cancel.Cancel ? (HResult)VSConstants.OLE_E_PROMPTSAVECANCELLED : HResult.Ok);             
-		    canceled = cancel.Cancel ? 1 : 0;
+		    CancelEventArgs cancel = null;
+		    object result;
+		    var ptrToClosure = IntPtr.Zero;
+		    var iidToClosure = iid;
+		    var hRes =
+		        ComHelper.WrapFunction(false,
+		                               (fn, l, n, f, id) =>
+		                               InitializeForOuter(fn, l, n, f, id, cancel = new CancelEventArgs(false)),
+		                               filename, location, name, (VsCreateProjFlags) flags, iid, out result).
+		            Check(() => (HResult) (cancel.Cancel
+		                                       ? VSConstants.OLE_E_PROMPTSAVECANCELLED
+		                                       : Marshal.QueryInterface(Marshal.GetIUnknownForObject(result), ref iidToClosure,
+		                                                                out ptrToClosure)));
+
+		    canceled = cancel != null && cancel.Cancel ? 1 : 0;
+		    projectPointer = ptrToClosure;
 		    return hRes;
 		}
 
-        protected virtual IntPtr InitializeForOuter(string fileName, string location, string name, VsCreateProjFlags flags, Guid iid, CancelEventArgs cancelArgs)
+	    protected virtual object InitializeForOuter(string fileName, string location, string name, VsCreateProjFlags flags, Guid iid, CancelEventArgs cancelArgs)
         {
-            var res = IntPtr.Zero;
+            object res = null;
 
             // Initialize the project
             Load(fileName, location, name, flags, iid, cancelArgs);
@@ -5591,9 +5586,7 @@ namespace Microsoft.VisualStudio.Project
             if (!cancelArgs.Cancel)
             {
                 // Set ourself as the project
-                var hRes = Marshal.QueryInterface(Marshal.GetIUnknownForObject(this), ref iid, out res);
-                if (hRes != HResult.Ok)
-                    throw new ComSpecificException(hRes);
+                res = this;
             }
 
             return res;

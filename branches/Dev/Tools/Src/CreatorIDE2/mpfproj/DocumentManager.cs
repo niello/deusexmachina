@@ -181,8 +181,7 @@ namespace Microsoft.VisualStudio.Project
 		{
 			Debug.Assert(this.node != null, "No node has been initialized for the document manager");
 
-			object pvar;
-			ErrorHandler.ThrowOnFailure(this.node.GetProperty(this.node.ID, (int)__VSHPROPID.VSHPROPID_Caption, out pvar));
+		    object pvar = this.node.GetProperty(this.node.ID, VsHPropID.Caption);
 
 			return (pvar as string);
 		}

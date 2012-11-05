@@ -197,19 +197,18 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		/// <param name="propId">Identifier of the hierarchy property</param>
 		/// <returns>It return an object which type is dependent on the propid.</returns>
-		public override object GetProperty(int propId)
+		public override object GetProperty(VsHPropID propId)
 		{
-			__VSHPROPID vshPropId = (__VSHPROPID)propId;
-			switch(vshPropId)
+			switch(propId)
 			{
 				default:
 					return base.GetProperty(propId);
 
-				case __VSHPROPID.VSHPROPID_Expandable:
+                case VsHPropID.Expandable:
 					return true;
 
-				case __VSHPROPID.VSHPROPID_BrowseObject:
-				case __VSHPROPID.VSHPROPID_HandlesOwnReload:
+                case VsHPropID.BrowseObject:
+                case VsHPropID.HandlesOwnReload:
 					return this.DelegateGetPropertyToNested(propId);
 			}
 		}
@@ -391,7 +390,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <returns>the node cation</returns>
 		public override string GetEditLabel()
 		{
-			return (string)this.DelegateGetPropertyToNested((int)__VSHPROPID.VSHPROPID_EditLabel);
+            return (string)DelegateGetPropertyToNested(VsHPropID.EditLabel);
 		}
 
 		/// <summary>
@@ -1011,7 +1010,7 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		/// <param name="propID">The property to delegate.</param>
 		/// <returns>The return of the GetProperty from nested.</returns>
-		private object DelegateGetPropertyToNested(int propID)
+		private object DelegateGetPropertyToNested(VsHPropID propID)
 		{
 			object returnValue = null;
 			if(!this.ProjectMgr.IsClosed)
@@ -1019,7 +1018,7 @@ namespace Microsoft.VisualStudio.Project
 				Debug.Assert(this.nestedHierarchy != null, "The nested hierarchy object must be created before calling this method");
 
 				// Do not throw since some project types will return E_FAIL if they do not support a property.
-				ErrorHandler.ThrowOnFailure(this.nestedHierarchy.GetProperty(VSConstants.VSITEMID_ROOT, propID, out returnValue));
+				ErrorHandler.ThrowOnFailure(this.nestedHierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int) propID, out returnValue));
 			}
 			return returnValue;
 		}
@@ -1117,7 +1116,7 @@ namespace Microsoft.VisualStudio.Project
 		private IConnectionPoint GetConnectionPointFromPropertySink()
 		{
 			IConnectionPoint connectionPoint = null;
-			object browseObject = this.GetProperty((int)__VSHPROPID.VSHPROPID_BrowseObject);
+            object browseObject = this.GetProperty(VsHPropID.BrowseObject);
 			IConnectionPointContainer connectionPointContainer = browseObject as IConnectionPointContainer;
 
 			if(connectionPointContainer != null)

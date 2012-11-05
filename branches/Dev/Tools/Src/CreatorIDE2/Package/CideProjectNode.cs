@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -59,13 +60,13 @@ namespace CreatorIDE.Package
             get { return ImageListOffset + Images.WhiteBox; }
         }
 
-        protected override void Reload()
-        {
-            using (var fStream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
-                _projectDocument = HrdDocument.Read(fStream);
+        //protected override void Reload()
+        //{
+        //    using (var fStream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
+        //        _projectDocument = HrdDocument.Read(fStream);
 
-            ProcessLevels();
-        }
+        //    ProcessLevels();
+        //}
 
         private void ProcessLevels()
         {
@@ -99,7 +100,7 @@ namespace CreatorIDE.Package
             }
         }
 
-        public override void Save(string fileToBeSaved, bool remember, uint formatIndex)
+        public override void Save(string fileToBeSaved, bool remember, uint formatIndex, CancelEventArgs cancel)
         {
             // The file name can be null. Then try to use the Url.
             var tempFileToBeSaved = fileToBeSaved;
@@ -113,9 +114,9 @@ namespace CreatorIDE.Package
             bool saveAs = true;
             if (NativeMethods.IsSamePath(tempFileToBeSaved, FileName))
                 saveAs = false;
-            
+
             if (saveAs)
-                SaveAs(tempFileToBeSaved);
+                SaveAs(tempFileToBeSaved, cancel);
             else if (_projectDocument != null)
             {
                 using (var fStream = new FileStream(FileName, FileMode.Create, FileAccess.Write))
