@@ -1,21 +1,20 @@
 /// Copyright (c) Microsoft Corporation.  All rights reserved.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
+using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell;
 //#define CCI_TRACING
 using Microsoft.VisualStudio.Shell.Interop;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
-using ShellConstants = Microsoft.VisualStudio.Shell.Interop.Constants;
 using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 
@@ -1101,7 +1100,7 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		/// <returns>S_OK if succeeded, otherwise an error</returns>
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily")]
-		protected virtual int AddNewFolder()
+		protected virtual void AddNewFolder()
 		{
 			// Check out the project file.
 			if(!this.ProjectMgr.QueryEditProjectFile(false))
@@ -1137,7 +1136,7 @@ namespace Microsoft.VisualStudio.Project
 					Debug.Assert(shell != null, "Could not get the ui shell from the project");
 					if(shell == null)
 					{
-						return VSConstants.E_FAIL;
+						throw new COMException();
 					}
 
 					object dummy = null;
@@ -1148,13 +1147,11 @@ namespace Microsoft.VisualStudio.Project
 			catch(COMException e)
 			{
 				Trace.WriteLine("Exception : " + e.Message);
-				return e.ErrorCode;
+			    throw;
 			}
-
-			return VSConstants.S_OK;
 		}
 
-		protected virtual int AddItemToHierarchy(HierarchyAddType addType)
+		protected virtual void AddItemToHierarchy(HierarchyAddType addType)
 		{
 			CCITracing.TraceCall();
 			IVsAddProjectItemDlg addItemDialog;
@@ -1176,8 +1173,6 @@ namespace Microsoft.VisualStudio.Project
 				uiFlags = (uint)(__VSADDITEMFLAGS.VSADDITEM_AddExistingItems | __VSADDITEMFLAGS.VSADDITEM_AllowMultiSelect | __VSADDITEMFLAGS.VSADDITEM_AllowStickyFilter);
 
 			ErrorHandler.ThrowOnFailure(addItemDialog.AddProjectItemDlg(this.hierarchyId, ref projectGuid, project, uiFlags, null, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain)); /*&fDontShowAgain*/
-
-			return VSConstants.S_OK;
 		}
 
 		/// <summary>
@@ -1192,20 +1187,19 @@ namespace Microsoft.VisualStudio.Project
 		/// Handles the exclude from project command.
 		/// </summary>
 		/// <returns></returns>
-		protected virtual int ExcludeFromProject()
+		protected virtual void ExcludeFromProject()
 		{
 			Debug.Assert(this.ProjectMgr != null, "The project item " + this.ToString() + " has not been initialised correctly. It has a null ProjectMgr");
-			this.Remove(false);
-			return VSConstants.S_OK;
+			Remove(false);
 		}
 
 		/// <summary>
 		/// Handles the Show in Designer command.
 		/// </summary>
 		/// <returns></returns>
-		protected virtual int ShowInDesigner(IList<HierarchyNode> selectedNodes)
+		protected virtual void ShowInDesigner(IList<HierarchyNode> selectedNodes)
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+			throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -1282,11 +1276,11 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="selectedNodes">list of selected nodes.</param>
 		/// <param name="pointerToVariant">contains the location (x,y) at which to show the menu.</param>
 		[SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "pointer")]
-		protected virtual int DisplayContextMenu(IList<HierarchyNode> selectedNodes, IntPtr pointerToVariant)
+		protected virtual void DisplayContextMenu(IList<HierarchyNode> selectedNodes, IntPtr pointerToVariant)
 		{
             if (selectedNodes == null || selectedNodes.Count == 0 || pointerToVariant == IntPtr.Zero)
             {
-                return NativeMethods.OLECMDERR_E_NOTSUPPORTED;
+                throw new OleCmdNotSupportedException();
             }
 
 		    int idmxStoredMenu = 0;
@@ -1324,7 +1318,7 @@ namespace Microsoft.VisualStudio.Project
 			POINTS points = new POINTS();
 			points.x = x;
 			points.y = y;
-		    return ShowContextMenu(idmxStoredMenu, VsMenus.guidSHLMainMenu, points);
+		    ShowContextMenu(idmxStoredMenu, VsMenus.guidSHLMainMenu, points);
 		}
 
 		/// <summary>
@@ -1333,19 +1327,19 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="menuId">The context menu ID.</param>
 		/// <param name="groupGuid">The GUID of the menu group.</param>
 		/// <param name="points">The location at which to show the menu.</param>
-		protected virtual int ShowContextMenu(int menuId, Guid menuGroup, POINTS points)
+		protected virtual void ShowContextMenu(int menuId, Guid menuGroup, POINTS points)
 		{
 			IVsUIShell shell = this.projectMgr.Site.GetService(typeof(SVsUIShell)) as IVsUIShell;
 
 			Debug.Assert(shell != null, "Could not get the ui shell from the project");
 			if(shell == null)
 			{
-				return VSConstants.E_FAIL;
+				throw new COMException();
 			}
 			POINTS[] pnts = new POINTS[1];
 			pnts[0].x = points.x;
 			pnts[0].y = points.y;
-			return shell.ShowContextMenu(0, ref menuGroup, menuId, pnts, (Microsoft.VisualStudio.OLE.Interop.IOleCommandTarget)this);
+		    ErrorHandler.ThrowOnFailure(shell.ShowContextMenu(0, ref menuGroup, menuId, pnts, this));
 		}
 
 		#region initiation of command execution
@@ -1361,57 +1355,58 @@ namespace Microsoft.VisualStudio.Project
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Cmdexecopt")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "n")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "pva")]
-		protected virtual int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected virtual void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
-            if(this.projectMgr == null || this.projectMgr.IsClosed)
-			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-			}
+            if (projectMgr == null || projectMgr.IsClosed || cmdGroup == Guid.Empty)
+            {
+                throw new OleCmdNotSupportedException();
+            }
 
-			if(cmdGroup == Guid.Empty)
-			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-			}
-			else if(cmdGroup == VsMenus.guidVsUIHierarchyWindowCmds)
-			{
-				switch(cmd)
-				{
-					case (uint)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick:
-					case (uint)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey:
-						this.DoDefaultAction();
-						return VSConstants.S_OK;
-				}
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-			}
-			else if(cmdGroup == VsMenus.guidStandardCommandSet97)
-			{
-				HierarchyNode nodeToAddTo = this.GetDragTargetHandlerNode();
-				switch((VsCommands)cmd)
-				{
-					case VsCommands.AddNewItem:
-						return nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
+		    if(cmdGroup == VsMenus.guidVsUIHierarchyWindowCmds)
+		    {
+		        switch(cmd)
+		        {
+		            case (uint)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick:
+		            case (uint)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey:
+		                DoDefaultAction();
+		                return;
+		        }
+		        throw new OleCmdNotSupportedException();
+		    }
+		    if(cmdGroup == VsMenus.guidStandardCommandSet97)
+		    {
+		        HierarchyNode nodeToAddTo = GetDragTargetHandlerNode();
+		        switch((VsCommands)cmd)
+		        {
+		            case VsCommands.AddNewItem:
+		                nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
+                        return;
 
-					case VsCommands.AddExistingItem:
-						return nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
+		            case VsCommands.AddExistingItem:
+		                nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
+		                return;
 
-					case VsCommands.NewFolder:
-						return nodeToAddTo.AddNewFolder();
+		            case VsCommands.NewFolder:
+		                nodeToAddTo.AddNewFolder();
+                        return;
 
-					case VsCommands.Paste:
-						return this.ProjectMgr.PasteFromClipboard(this);
-				}
+		            case VsCommands.Paste:
+		                ProjectMgr.PasteFromClipboard(this);
+		                return;
+		        }
 
-			}
-			else if(cmdGroup == VsMenus.guidStandardCommandSet2K)
-			{
-				switch((VsCommands2K)cmd)
-				{
-					case VsCommands2K.EXCLUDEFROMPROJECT:
-						return this.ExcludeFromProject();
-				}
-			}
+		    }
+		    else if(cmdGroup == VsMenus.guidStandardCommandSet2K)
+		    {
+		        switch((VsCommands2K)cmd)
+		        {
+		            case VsCommands2K.EXCLUDEFROMPROJECT:
+		                ExcludeFromProject();
+		                return;
+		        }
+		    }
 
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -1427,7 +1422,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="handled">An out parameter specifying that the command was handled.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
 		[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "vaIn")]
-		protected virtual int ExecCommandThatDependsOnSelectedNodes(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin, IList<HierarchyNode> selectedNodes, out bool handled)
+		protected virtual void ExecCommandThatDependsOnSelectedNodes(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin, IList<HierarchyNode> selectedNodes, out bool handled)
 		{
 			handled = false;
 			if(cmdGroup == VsMenus.guidVsUIHierarchyWindowCmds)
@@ -1447,7 +1442,9 @@ namespace Microsoft.VisualStudio.Project
 						//			memcpy((void*)&pts, &ulPts, sizeof(POINTS));
 						// You then pass that POINTS into DisplayContextMenu.
 						handled = true;
-						return this.DisplayContextMenu(selectedNodes, vaIn);
+						DisplayContextMenu(selectedNodes, vaIn);
+				        return;
+
 					default:
 						break;
 				}
@@ -1458,11 +1455,12 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands2K.ViewInClassDiagram:
 						handled = true;
-						return this.ShowInDesigner(selectedNodes);
+						ShowInDesigner(selectedNodes);
+				        return;
 				}
 			}
 
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -1477,13 +1475,13 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="handled">An out parameter specifying that the command was handled.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
 		[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "vaIn")]
-		protected virtual int ExecCommandIndependentOfSelection(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin, out bool handled)
+		protected virtual void ExecCommandIndependentOfSelection(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin, out bool handled)
 		{
 			handled = false;
 
-			if(this.projectMgr == null || this.projectMgr.IsClosed)
+			if(projectMgr == null || projectMgr.IsClosed)
 			{
-				return VSConstants.E_FAIL;
+			    throw new COMException();
 			}
 
 			if(cmdGroup == VsMenus.guidStandardCommandSet97)
@@ -1496,8 +1494,7 @@ namespace Microsoft.VisualStudio.Project
 						case VsCommands.Copy:
 						case VsCommands.Paste:
 						case VsCommands.Rename:
-							handled = true;
-							return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+					        throw new OleCmdNotSupportedException();
 					}
 				}
 
@@ -1505,19 +1502,17 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands.Copy:
 						handled = true;
-						return this.ProjectMgr.CopyToClipboard();
+						ProjectMgr.CopyToClipboard();
+				        return;
 
 					case VsCommands.Cut:
 						handled = true;
-						return this.ProjectMgr.CutToClipboard();
+						ProjectMgr.CutToClipboard();
+				        return;
 
 					case VsCommands.SolutionCfg:
-						handled = true;
-						return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-
 					case VsCommands.SearchCombo:
-						handled = true;
-						return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+				        throw new OleCmdNotSupportedException();
 
 				}
 			}
@@ -1528,17 +1523,20 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands2K.SHOWALLFILES:
 						handled = true;
-						return this.projectMgr.ShowAllFiles();
+						projectMgr.ShowAllFiles();
+				        return;
 					case VsCommands2K.ADDREFERENCE:
 						handled = true;
-						return this.projectMgr.AddProjectReference();
+						projectMgr.AddProjectReference();
+				        return;
 					case VsCommands2K.ADDWEBREFERENCE:
 						handled = true;
-						return this.projectMgr.AddWebReference();
+						projectMgr.AddWebReference();
+				        return;
 				}
 			}
 
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -1552,72 +1550,50 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="commandOrigin">The origin of the command. From IOleCommandTarget or hierarchy.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
 		[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "vaIn")]
-		protected virtual int InternalExecCommand(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin)
+		protected virtual void InternalExecCommand(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin)
 		{
 			CCITracing.TraceCall(cmdGroup.ToString() + "," + cmdId.ToString());
-			if(this.projectMgr == null || this.projectMgr.IsClosed)
-			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-			}
+            if (projectMgr == null || projectMgr.IsClosed || cmdGroup == Guid.Empty)
+            {
+                throw new OleCmdNotSupportedException();
+            }
 
-			if(cmdGroup == Guid.Empty)
-			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-			}
-
-			IList<HierarchyNode> selectedNodes = this.projectMgr.GetSelectedNodes();
+		    IList<HierarchyNode> selectedNodes = projectMgr.GetSelectedNodes();
 
 			// Check if all nodes can execute a command. If there is at least one that cannot return not handled.
-			foreach(HierarchyNode node in selectedNodes)
+			if (selectedNodes.Any(node => !node.CanExecuteCommand))
 			{
-				if(!node.CanExecuteCommand)
-				{
-					return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-				}
+			    throw new OleCmdNotSupportedException();
 			}
 
 			// Handle commands that are independent of a selection.
-			bool handled = false;
-			int returnValue = this.ExecCommandIndependentOfSelection(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut, commandOrigin, out handled);
+			bool handled;
+			ExecCommandIndependentOfSelection(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut, commandOrigin, out handled);
 			if(handled)
-			{
-				return returnValue;
-			}
-
+			    return;
 
 			// Now handle commands that need the selected nodes as input parameter.
-			returnValue = this.ExecCommandThatDependsOnSelectedNodes(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut, commandOrigin, selectedNodes, out handled);
+			ExecCommandThatDependsOnSelectedNodes(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut, commandOrigin, selectedNodes, out handled);
 			if(handled)
 			{
-				return returnValue;
+			    return;
 			}
-
-			returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
 
 			// Handle commands iteratively. The same action will be executed for all of the selected items.
 			foreach(HierarchyNode node in selectedNodes)
 			{
 				try
 				{
-					returnValue = node.ExecCommandOnNode(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut);
+					node.ExecCommandOnNode(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut);
 				}
 				catch(COMException e)
 				{
 					Trace.WriteLine("Exception : " + e.Message);
-					returnValue = e.ErrorCode;
-				}
-				if(returnValue != VSConstants.S_OK)
-				{
-					break;
+                    if (e.ErrorCode == VSConstants.E_ABORT || e.ErrorCode == VSConstants.OLE_E_PROMPTSAVECANCELLED)
+                        break;
+				    throw;
 				}
 			}
-
-			if(returnValue == VSConstants.E_ABORT || returnValue == VSConstants.OLE_E_PROMPTSAVECANCELLED)
-			{
-				returnValue = VSConstants.S_OK;
-			}
-
-			return returnValue;
 		}
 
 		#endregion
@@ -2206,27 +2182,27 @@ namespace Microsoft.VisualStudio.Project
 		/// Handle the Copy operation to the clipboard
 		/// This method is typically overriden on the project node
 		/// </summary>
-		protected internal virtual int CopyToClipboard()
+		protected internal virtual void CopyToClipboard()
 		{
-			return VSConstants.E_NOTIMPL;
+			throw new NotImplementedException();
 		}
 
 		/// <summary>
 		/// Handle the Cut operation to the clipboard
 		/// This method is typically overriden on the project node
 		/// </summary>
-		protected internal virtual int CutToClipboard()
+		protected internal virtual void CutToClipboard()
 		{
-			return VSConstants.E_NOTIMPL;
+		    throw new NotImplementedException();
 		}
 
 		/// <summary>
 		/// Handle the paste from Clipboard command.
 		/// This method is typically overriden on the project node
 		/// </summary>
-		protected internal virtual int PasteFromClipboard(HierarchyNode targetNode)
+		protected internal virtual void PasteFromClipboard(HierarchyNode targetNode)
 		{
-			return VSConstants.E_NOTIMPL;
+		    throw new NotImplementedException();
 		}
 
 		/// <summary>
@@ -2696,9 +2672,9 @@ namespace Microsoft.VisualStudio.Project
 
 		#region IVsUIHierarchy methods
 
-		public virtual int ExecCommand(uint itemId, ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvain, IntPtr p)
+	    int IVsUIHierarchy.ExecCommand(uint itemId, ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvain, IntPtr p)
 		{
-			return this.InternalExecCommand(guidCmdGroup, nCmdId, nCmdExecOpt, pvain, p, CommandOrigin.UiHierarchy);
+            return ComHelper.WrapAction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvain, p, CommandOrigin.UiHierarchy);
 		}
 
 		public virtual int QueryStatusCommand(uint itemId, ref Guid guidCmdGroup, uint cCmds, OLECMD[] cmds, IntPtr pCmdText)
@@ -2942,9 +2918,9 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// CommandTarget.Exec is called for most major operations if they are NOT UI based. Otherwise IVSUInode::exec is called first
 		/// </summary>
-		public virtual int Exec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvaIn, IntPtr pvaOut)
+		int IOleCommandTarget.Exec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvaIn, IntPtr pvaOut)
 		{
-			return this.InternalExecCommand(guidCmdGroup, nCmdId, nCmdExecOpt, pvaIn, pvaOut, CommandOrigin.OleCommandTarget);
+            return ComHelper.WrapAction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvaIn, pvaOut, CommandOrigin.OleCommandTarget);
 		}
 
 		/// <summary>

@@ -16,6 +16,7 @@ using System.Xml;
 using EnvDTE;
 using Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.OLE.Interop;
+using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
@@ -1393,18 +1394,20 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="pvaIn">Pointer to a VARIANTARG structure containing input arguments. Can be NULL</param>
 		/// <param name="pvaOut">VARIANTARG structure to receive command output. Can be NULL.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		protected override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 			if(cmdGroup == VsMenus.guidStandardCommandSet97)
 			{
 				switch((VsCommands)cmd)
 				{
-
 					case VsCommands.UnloadProject:
-						return this.UnloadProject();
+						UnloadProject();
+                        return;
+
 					case VsCommands.CleanSel:
 					case VsCommands.CleanCtx:
-						return this.CleanProject();
+						CleanProject();
+				        return;
 				}
 			}
 			else if(cmdGroup == VsMenus.guidStandardCommandSet2K)
@@ -1412,15 +1415,17 @@ namespace Microsoft.VisualStudio.Project
 				switch((VsCommands2K)cmd)
 				{
 					case VsCommands2K.ADDREFERENCE:
-						return this.AddProjectReference();
+						AddProjectReference();
+				        return;
 
 					case VsCommands2K.ADDWEBREFERENCE:
 					case VsCommands2K.ADDWEBREFERENCECTX:
-						return this.AddWebReference();
+						AddWebReference();
+				        return;
 				}
 			}
 
-			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+			base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 		/// <summary>
@@ -1585,7 +1590,7 @@ namespace Microsoft.VisualStudio.Project
 		/// By example you could change which pages are visible and which is visible by default.
 		/// </summary>
 		/// <returns></returns>
-		public virtual int AddProjectReference()
+		public virtual void AddProjectReference()
 		{
 			CCITracing.TraceCall();
 
@@ -1634,14 +1639,13 @@ namespace Microsoft.VisualStudio.Project
 			catch(COMException e)
 			{
 				Trace.WriteLine("Exception : " + e.Message);
-				return e.ErrorCode;
+			    throw;
 			}
 			finally
 			{
 				// Let the project know it can show itself in the Add Project Reference Dialog page
 				this.ShowProjectInSolutionPage = true;
 			}
-			return VSConstants.S_OK;
 		}
 
 		/// <summary>
@@ -2791,36 +2795,36 @@ namespace Microsoft.VisualStudio.Project
 		/// Handles the shows all objects command.
 		/// </summary>
 		/// <returns></returns>
-		protected internal virtual int ShowAllFiles()
+		protected internal virtual void ShowAllFiles()
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
 		/// Handles the Add web reference command.
 		/// </summary>
 		/// <returns></returns>
-		protected internal virtual int AddWebReference()
+		protected internal virtual void AddWebReference()
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
 		/// Unloads the project.
 		/// </summary>
 		/// <returns></returns>
-		protected internal virtual int UnloadProject()
+		protected internal virtual void UnloadProject()
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
 		/// Handles the clean project command.
 		/// </summary>
 		/// <returns></returns>
-		protected virtual int CleanProject()
+		protected virtual void CleanProject()
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+            throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>

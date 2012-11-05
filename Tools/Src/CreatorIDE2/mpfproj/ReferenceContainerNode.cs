@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell.Interop;
 using MSBuild = Microsoft.Build.BuildEngine;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
@@ -139,9 +140,9 @@ namespace Microsoft.VisualStudio.Project
 		/// <summary>
 		/// Not supported.
 		/// </summary>
-		protected override int ExcludeFromProject()
+		protected override void ExcludeFromProject()
 		{
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+			throw new OleCmdNotSupportedException();
 		}
 
 		protected override int QueryStatusOnNode(Guid cmdGroup, uint cmd, IntPtr pCmdText, ref QueryStatusResult result)
@@ -171,20 +172,22 @@ namespace Microsoft.VisualStudio.Project
 			return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
 		}
 
-		protected override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
-			if(cmdGroup == VsMenus.guidStandardCommandSet2K)
-			{
-				switch((VsCommands2K)cmd)
-				{
-					case VsCommands2K.ADDREFERENCE:
-						return this.ProjectMgr.AddProjectReference();
-					case VsCommands2K.ADDWEBREFERENCE:
-						return this.ProjectMgr.AddWebReference();
-				}
-			}
+            if (cmdGroup == VsMenus.guidStandardCommandSet2K)
+            {
+                switch ((VsCommands2K) cmd)
+                {
+                    case VsCommands2K.ADDREFERENCE:
+                        ProjectMgr.AddProjectReference();
+                        return;
+                    case VsCommands2K.ADDWEBREFERENCE:
+                        ProjectMgr.AddWebReference();
+                        return;
+                }
+            }
 
-			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+		    base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 		protected override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)

@@ -1,12 +1,9 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using CreatorIDE.Engine;
-using HrdLib;
 using Microsoft.VisualStudio.Project;
 
 namespace CreatorIDE.Package
@@ -20,18 +17,6 @@ namespace CreatorIDE.Package
 
         private readonly int _imageListOffset;
         private readonly CidePackage _package;
-
-        private HrdDocument _projectDocument;
-
-        public override string Caption
-        {
-            get
-            {
-                if (FileName == null)
-                    return "*Error*";
-                return Path.GetFileNameWithoutExtension(FileName);
-            }
-        }
 
         public CideEngine Engine { get { return _package.Engine; } }
 
@@ -60,92 +45,9 @@ namespace CreatorIDE.Package
             get { return ImageListOffset + Images.WhiteBox; }
         }
 
-        //protected override void Reload()
-        //{
-        //    using (var fStream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
-        //        _projectDocument = HrdDocument.Read(fStream);
-
-        //    ProcessLevels();
-        //}
-
-        private void ProcessLevels()
-        {
-            Debug.Assert(_projectDocument != null);
-
-            var levelsAttr = _projectDocument.GetElement<HrdAttribute>("Levels");
-            if(levelsAttr==null)
-            {
-                levelsAttr = new HrdAttribute("Levels");
-                _projectDocument.AddElement(levelsAttr);
-            }
-
-            var levelsNode = new LevelsNode((string) levelsAttr.Value, this);
-            AddChild(levelsNode);
-
-            levelsNode.ReloadItem();
-        }
-
-        protected override ProjectLoadOption IsProjectSecure()
-        {
-            return ProjectLoadOption.LoadNormally;
-        }
-
-        protected override void InitializeProjectProperties()
-        {
-            // Get projectName from project filename. Return if not set
-            string projectName = Path.GetFileNameWithoutExtension(FileName);
-            if (String.IsNullOrEmpty(projectName))
-            {
-                return;
-            }
-        }
-
-        public override void Save(string fileToBeSaved, bool remember, uint formatIndex, CancelEventArgs cancel)
-        {
-            // The file name can be null. Then try to use the Url.
-            var tempFileToBeSaved = fileToBeSaved;
-            if (string.IsNullOrEmpty(tempFileToBeSaved) && !string.IsNullOrEmpty(Url))
-                tempFileToBeSaved = Url;
-
-            bool setProjectFileDirtyAfterSave = false;
-            if (!remember)
-                setProjectFileDirtyAfterSave = IsProjectFileDirty;
-
-            bool saveAs = true;
-            if (NativeMethods.IsSamePath(tempFileToBeSaved, FileName))
-                saveAs = false;
-
-            if (saveAs)
-                SaveAs(tempFileToBeSaved, cancel);
-            else if (_projectDocument != null)
-            {
-                using (var fStream = new FileStream(FileName, FileMode.Create, FileAccess.Write))
-                    _projectDocument.WriteDocument(fStream);
-            }
-
-            if (setProjectFileDirtyAfterSave)
-                SetProjectFileDirty(true);
-        }
-
-        public override ProjectOptions GetProjectOptions(string config)
-        {
-            return options ?? (options = new ProjectOptions());
-        }
-
         protected override ConfigProvider CreateConfigProvider()
         {
             return new CideConfigProvider(this);
-        }
-
-        public override string GetProjectProperty(string propertyName, bool resetCache)
-        {
-            switch (propertyName)
-            {
-                case "ProjectGuid":
-                    return ProjectGuid.ToString("B");
-                default:
-                    return null;
-            }
         }
 
         public override int QueryStatusCommand(uint itemId, ref Guid guidCmdGroup, uint cCmds, Microsoft.VisualStudio.OLE.Interop.OLECMD[] cmds, IntPtr pCmdText)

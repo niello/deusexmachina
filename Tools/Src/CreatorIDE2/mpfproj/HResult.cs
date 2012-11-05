@@ -3,7 +3,8 @@
     public struct HResult
     {
         public static readonly HResult
-            Ok = (HResult) VSConstants.S_OK;
+            Ok = (HResult) VSConstants.S_OK,
+            False = (HResult) VSConstants.S_FALSE;
 
         private readonly int _hResult;
 

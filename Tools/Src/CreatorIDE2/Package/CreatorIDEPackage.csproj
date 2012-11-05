@@ -72,7 +72,6 @@
     <Compile Include="CideProjectFactory.cs" />
     <Compile Include="CideProjectNode.cs" />
     <Compile Include="Images.cs" />
-    <Compile Include="LevelNode.cs" />
     <Compile Include="LevelsNode.cs" />
     <Compile Include="LevelsNodeProperties.cs" />
     <Compile Include="PathHelper.cs" />

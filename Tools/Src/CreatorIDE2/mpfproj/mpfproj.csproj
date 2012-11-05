@@ -121,6 +121,7 @@
     </Compile>
     <Compile Include="EnumDependencies.cs" />
     <Compile Include="Exceptions\MemberNotFoundException.cs" />
+    <Compile Include="Exceptions\OleCmdNotSupportedException.cs" />
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />

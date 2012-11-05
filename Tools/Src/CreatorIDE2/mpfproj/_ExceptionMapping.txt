@@ -1,4 +1,6 @@
 ﻿HResult			VSConstants Alias				General Alias				.NET Exception Type
+0x80020003		DISP_E_MEMBERNOTFOUND										MemberNotFoundException (mpfproj)
 0x80004005		E_FAIL														COMException (System.Runtime.InteropServices)
 0x80004002		E_NOINTERFACE					COR_E_INVALIDCAST			InvalidCastException (System)
-0x80020003		DISP_E_MEMBERNOTFOUND										MemberNotFoundException (mpfproj)
+0x80004001		E_NOTIMPL						E_NOTIMPL					NotImplementedException (System)
+0x80040100		OLECMDERR_E_NOTSUPPORTED									OleNotSupportedException (mpfproj)

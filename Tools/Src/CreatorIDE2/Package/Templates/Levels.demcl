@@ -3,6 +3,9 @@
   <PropertyGroup>
     
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    
+  </PropertyGroup>
   <ItemGroup>
     
   </ItemGroup>
