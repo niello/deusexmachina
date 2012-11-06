@@ -65,6 +65,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SRCategoryAttribute.cs" />
+    <Compile Include="CideFolderNode.cs" />
     <Compile Include="CideProjectConfig.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="Configuration.cs" />
@@ -83,6 +85,8 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="CidePackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SR.cs" />
+    <Compile Include="SRDisplayNameAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">
