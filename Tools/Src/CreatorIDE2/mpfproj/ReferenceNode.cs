@@ -146,18 +146,18 @@ namespace Microsoft.VisualStudio.Project
 			return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
 		}
 
-		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 			if(cmdGroup == VsMenus.guidStandardCommandSet2K)
 			{
 				if((VsCommands2K)cmd == VsCommands2K.QUICKOBJECTSEARCH)
 				{
 					ShowObjectBrowser();
-				    return;
+				    return true;
 				}
 			}
 
-			base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 		#endregion

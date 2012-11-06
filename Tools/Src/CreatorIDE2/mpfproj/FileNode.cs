@@ -414,11 +414,11 @@ namespace Microsoft.VisualStudio.Project
 			return handlerNode;
 		}
 
-		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 			if(ProjectMgr == null || ProjectMgr.IsClosed)
 			{
-			    throw new OleCmdNotSupportedException();
+			    return false;
 			}
 
 			// Exec on special filenode commands
@@ -429,19 +429,19 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands.ViewCode:
 						docManager.Open(false, false, VSConstants.LOGVIEWID_Code, WindowFrameShowAction.Show);
-                        return;
+                        return true;
 
 					case VsCommands.ViewForm:
 						docManager.Open(false, false, VSConstants.LOGVIEWID_Designer, WindowFrameShowAction.Show);
-                        return;
+                        return true;
 
                     case VsCommands.Open:
 						docManager.Open(false, false, WindowFrameShowAction.Show);
-                        return;
+                        return true;
 
 					case VsCommands.OpenWith:
 						docManager.Open(false, true, VSConstants.LOGVIEWID_UserChooseView, WindowFrameShowAction.Show);
-				        return;
+				        return true;
 				}
 			}
 
@@ -455,7 +455,7 @@ namespace Microsoft.VisualStudio.Project
 							try
 							{
 								RunGenerator();
-							    return;
+							    return true;
 							}
 							catch(Exception e)
 							{
@@ -466,7 +466,7 @@ namespace Microsoft.VisualStudio.Project
 				}
 			}
 
-			base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 

@@ -172,7 +172,7 @@ namespace Microsoft.VisualStudio.Project
 			return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
 		}
 
-		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
             if (cmdGroup == VsMenus.guidStandardCommandSet2K)
             {
@@ -180,14 +180,14 @@ namespace Microsoft.VisualStudio.Project
                 {
                     case VsCommands2K.ADDREFERENCE:
                         ProjectMgr.AddProjectReference();
-                        return;
+                        return true;
                     case VsCommands2K.ADDWEBREFERENCE:
                         ProjectMgr.AddWebReference();
-                        return;
+                        return true;
                 }
             }
 
-		    base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+		    return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 		protected override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)

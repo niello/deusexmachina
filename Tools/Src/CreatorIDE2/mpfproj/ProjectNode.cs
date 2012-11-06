@@ -1394,7 +1394,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="pvaIn">Pointer to a VARIANTARG structure containing input arguments. Can be NULL</param>
 		/// <param name="pvaOut">VARIANTARG structure to receive command output. Can be NULL.</param>
 		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-		protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 			if(cmdGroup == VsMenus.guidStandardCommandSet97)
 			{
@@ -1402,12 +1402,12 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands.UnloadProject:
 						UnloadProject();
-                        return;
+                        return true;
 
 					case VsCommands.CleanSel:
 					case VsCommands.CleanCtx:
 						CleanProject();
-				        return;
+				        return true;
 				}
 			}
 			else if(cmdGroup == VsMenus.guidStandardCommandSet2K)
@@ -1416,16 +1416,16 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands2K.ADDREFERENCE:
 						AddProjectReference();
-				        return;
+				        return true;
 
 					case VsCommands2K.ADDWEBREFERENCE:
 					case VsCommands2K.ADDWEBREFERENCECTX:
 						AddWebReference();
-				        return;
+				        return true;
 				}
 			}
 
-			base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+			return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 		}
 
 		/// <summary>

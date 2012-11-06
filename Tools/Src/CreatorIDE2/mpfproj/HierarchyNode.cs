@@ -1351,15 +1351,15 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="nCmdexecopt">Values describe how the object should execute the command.</param>
 		/// <param name="pvaIn">Pointer to a VARIANTARG structure containing input arguments. Can be NULL</param>
 		/// <param name="pvaOut">VARIANTARG structure to receive command output. Can be NULL.</param>
-		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
+		/// <returns>If the command were executed, method returns true, otherwise false.</returns>
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Cmdexecopt")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "n")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "pva")]
-		protected virtual void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+		protected virtual bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
             if (projectMgr == null || projectMgr.IsClosed || cmdGroup == Guid.Empty)
             {
-                throw new OleCmdNotSupportedException();
+                return false;
             }
 
 		    if(cmdGroup == VsMenus.guidVsUIHierarchyWindowCmds)
@@ -1369,7 +1369,7 @@ namespace Microsoft.VisualStudio.Project
 		            case (uint)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick:
 		            case (uint)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey:
 		                DoDefaultAction();
-		                return;
+		                return true;
 		        }
 		        throw new OleCmdNotSupportedException();
 		    }
@@ -1380,19 +1380,19 @@ namespace Microsoft.VisualStudio.Project
 		        {
 		            case VsCommands.AddNewItem:
 		                nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
-                        return;
+                        return true;
 
 		            case VsCommands.AddExistingItem:
 		                nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
-		                return;
+		                return true;
 
 		            case VsCommands.NewFolder:
 		                nodeToAddTo.AddNewFolder();
-                        return;
+                        return true;
 
 		            case VsCommands.Paste:
 		                ProjectMgr.PasteFromClipboard(this);
-		                return;
+		                return true;
 		        }
 
 		    }
@@ -1402,11 +1402,11 @@ namespace Microsoft.VisualStudio.Project
 		        {
 		            case VsCommands2K.EXCLUDEFROMPROJECT:
 		                ExcludeFromProject();
-		                return;
+		                return true;
 		        }
 		    }
 
-		    throw new OleCmdNotSupportedException();
+		    return false;
 		}
 
 		/// <summary>
@@ -1459,8 +1459,6 @@ namespace Microsoft.VisualStudio.Project
 				        return;
 				}
 			}
-
-		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -1494,7 +1492,7 @@ namespace Microsoft.VisualStudio.Project
 						case VsCommands.Copy:
 						case VsCommands.Paste:
 						case VsCommands.Rename:
-					        throw new OleCmdNotSupportedException();
+					        return;
 					}
 				}
 
@@ -1512,7 +1510,7 @@ namespace Microsoft.VisualStudio.Project
 
 					case VsCommands.SolutionCfg:
 					case VsCommands.SearchCombo:
-				        throw new OleCmdNotSupportedException();
+				        return;
 
 				}
 			}
@@ -1535,8 +1533,6 @@ namespace Microsoft.VisualStudio.Project
 				        return;
 				}
 			}
-
-		    throw new OleCmdNotSupportedException();
 		}
 
 		/// <summary>
@@ -1548,14 +1544,14 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="vaIn">Pointer to a VARIANTARG structure containing input arguments. Can be NULL</param>
 		/// <param name="vaOut">VARIANTARG structure to receive command output. Can be NULL.</param>
 		/// <param name="commandOrigin">The origin of the command. From IOleCommandTarget or hierarchy.</param>
-		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
+		/// <returns>If the command were handled by this method, it returns true, otherwise false</returns>
 		[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "vaIn")]
-		protected virtual void InternalExecCommand(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin)
+		protected virtual bool InternalExecCommand(Guid cmdGroup, uint cmdId, uint cmdExecOpt, IntPtr vaIn, IntPtr vaOut, CommandOrigin commandOrigin)
 		{
 			CCITracing.TraceCall(cmdGroup.ToString() + "," + cmdId.ToString());
             if (projectMgr == null || projectMgr.IsClosed || cmdGroup == Guid.Empty)
             {
-                throw new OleCmdNotSupportedException();
+                return false;
             }
 
 		    IList<HierarchyNode> selectedNodes = projectMgr.GetSelectedNodes();
@@ -1563,20 +1559,20 @@ namespace Microsoft.VisualStudio.Project
 			// Check if all nodes can execute a command. If there is at least one that cannot return not handled.
 			if (selectedNodes.Any(node => !node.CanExecuteCommand))
 			{
-			    throw new OleCmdNotSupportedException();
+			    return false;
 			}
 
 			// Handle commands that are independent of a selection.
 			bool handled;
 			ExecCommandIndependentOfSelection(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut, commandOrigin, out handled);
 			if(handled)
-			    return;
+			    return true;
 
 			// Now handle commands that need the selected nodes as input parameter.
 			ExecCommandThatDependsOnSelectedNodes(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut, commandOrigin, selectedNodes, out handled);
 			if(handled)
 			{
-			    return;
+			    return true;
 			}
 
 			// Handle commands iteratively. The same action will be executed for all of the selected items.
@@ -1594,6 +1590,8 @@ namespace Microsoft.VisualStudio.Project
 				    throw;
 				}
 			}
+
+		    return false;
 		}
 
 		#endregion
@@ -2524,7 +2522,12 @@ namespace Microsoft.VisualStudio.Project
 
         int IVsUIHierarchy.GetProperty(uint itemId, int propId, out object propVal)
         {
-            return ComHelper.WrapFunction(false, GetProperty, (VsItemID)itemId, (VsHPropID)propId, out propVal);
+            object result;
+            var hRes =
+                ComHelper.WrapFunction(false, GetProperty, (VsItemID) itemId, (VsHPropID) propId, out result).
+                    Check(() => result == null ? (HResult) VSConstants.DISP_E_MEMBERNOTFOUND : HResult.Ok);
+            propVal = result;
+            return hRes;
         }
 
 		public virtual object GetProperty(VsItemID itemId, VsHPropID propId)
@@ -2537,8 +2540,6 @@ namespace Microsoft.VisualStudio.Project
             object propVal = null;
 			if(n != null)
 				propVal = n.GetProperty(propId);
-            if (propVal == null)
-                throw new MemberNotFoundException();
 
 		    return propVal;
 		}
@@ -2673,9 +2674,14 @@ namespace Microsoft.VisualStudio.Project
 		#region IVsUIHierarchy methods
 
 	    int IVsUIHierarchy.ExecCommand(uint itemId, ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvain, IntPtr p)
-		{
-            return ComHelper.WrapAction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvain, p, CommandOrigin.UiHierarchy);
-		}
+	    {
+	        bool handled;
+	        return
+	            ComHelper.WrapFunction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvain, p,
+	                                   CommandOrigin.UiHierarchy, out handled).Check(
+	                                       () =>
+	                                       handled ? HResult.Ok : (HResult) (int) OleConstants.OLECMDERR_E_NOTSUPPORTED);
+	    }
 
 		public virtual int QueryStatusCommand(uint itemId, ref Guid guidCmdGroup, uint cCmds, OLECMD[] cmds, IntPtr pCmdText)
 		{
@@ -2920,7 +2926,11 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		int IOleCommandTarget.Exec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvaIn, IntPtr pvaOut)
 		{
-            return ComHelper.WrapAction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvaIn, pvaOut, CommandOrigin.OleCommandTarget);
+		    bool handled;
+		    return ComHelper.WrapFunction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvaIn, pvaOut,
+		                                  CommandOrigin.OleCommandTarget, out handled).Check(
+		                                      () =>
+		                                      handled ? HResult.Ok : (HResult) (int) OleConstants.OLECMDERR_E_NOTSUPPORTED);
 		}
 
 		/// <summary>

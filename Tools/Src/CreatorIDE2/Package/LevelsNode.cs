@@ -33,15 +33,15 @@ namespace CreatorIDE.Package
             return base.DisableCmdInCurrentMode(commandGroup, command);
         }
 
-        protected override void ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             if (cmdGroup == Commands.LevelsNodeMenuGuid)
             {
                 ExecNodeCommand(cmd);
-                return;
+                return true;
             }
 
-            base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+            return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
         private void ExecNodeCommand(uint commandID)
