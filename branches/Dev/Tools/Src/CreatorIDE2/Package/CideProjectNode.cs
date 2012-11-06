@@ -70,6 +70,17 @@ namespace CreatorIDE.Package
             }
         }
 
+        protected override void ProcessReferences()
+        {
+            // References is not supported by the project
+        }
+
+        protected override FolderNode CreateFolderNode(string path, ProjectElement element)
+        {
+            var folderNode = new CideFolderNode(this, path, element);
+            return folderNode;
+        }
+
         private void InitializeImageList()
         {
             var asm = Assembly.GetAssembly(typeof (CideProjectNode));

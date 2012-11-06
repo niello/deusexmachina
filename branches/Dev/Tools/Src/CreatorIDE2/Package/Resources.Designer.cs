@@ -79,6 +79,15 @@ namespace CreatorIDE.Package {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Full Path.
+        /// </summary>
+        internal static string FullPathPropertyName {
+            get {
+                return ResourceManager.GetString("FullPathPropertyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Level database file.
         /// </summary>
         internal static string LevelDatabaseFile {
@@ -88,11 +97,29 @@ namespace CreatorIDE.Package {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Misc.
+        /// </summary>
+        internal static string MiscCategoryName {
+            get {
+                return ResourceManager.GetString("MiscCategoryName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open level database file.
         /// </summary>
         internal static string OpenLevelDatabaseFile {
             get {
                 return ResourceManager.GetString("OpenLevelDatabaseFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Relative Path.
+        /// </summary>
+        internal static string RelativePathPropertyName {
+            get {
+                return ResourceManager.GetString("RelativePathPropertyName", resourceCulture);
             }
         }
     }

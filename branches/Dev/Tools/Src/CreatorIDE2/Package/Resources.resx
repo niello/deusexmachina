@@ -123,10 +123,19 @@
   <data name="FileNotFoundFormatString" xml:space="preserve">
     <value>File "{0}" not found.</value>
   </data>
+  <data name="FullPathPropertyName" xml:space="preserve">
+    <value>Full Path</value>
+  </data>
   <data name="LevelDatabaseFile" xml:space="preserve">
     <value>Level database file</value>
   </data>
+  <data name="MiscCategoryName" xml:space="preserve">
+    <value>Misc</value>
+  </data>
   <data name="OpenLevelDatabaseFile" xml:space="preserve">
     <value>Open level database file</value>
+  </data>
+  <data name="RelativePathPropertyName" xml:space="preserve">
+    <value>Relative Path</value>
   </data>
 </root>
