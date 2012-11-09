@@ -70,16 +70,15 @@ namespace CreatorIDE.Core
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref _disposed, 1) != 0)
-                return;
-
             Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         private void Dispose(bool disposing)
         {
-            if (!_autoDispose)
+            if (disposing)
+                GC.SuppressFinalize(this);
+
+            if (Interlocked.Exchange(ref _disposed, 1) != 0 || !_autoDispose)
                 return;
 
             var disposable = _object as IDisposable;
@@ -89,9 +88,6 @@ namespace CreatorIDE.Core
 
         ~Lazy()
         {
-            if (Interlocked.Exchange(ref _disposed, 1) != 0)
-                return;
-
             Dispose(false);
         }
     }

@@ -5948,22 +5948,11 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		private void SetProjectGuidFromProjectFile()
 		{
-			string projectGuid = this.GetProjectProperty(ProjectFileConstants.ProjectGuid);
-			if(String.IsNullOrEmpty(projectGuid))
-			{
-				this.projectIdGuid = Guid.NewGuid();
-			}
-			else
-			{
-				Guid guid = new Guid(projectGuid);
-				if(guid != this.projectIdGuid)
-				{
-					this.projectIdGuid = guid;
-				}
-			}
+		    var projectGuid = GetProjectProperty(ProjectFileConstants.ProjectGuid);
+		    projectIdGuid = string.IsNullOrEmpty(projectGuid) ? Guid.NewGuid() : new Guid(projectGuid);
 		}
 
-		/// <summary>
+	    /// <summary>
 		/// Recusively parses the tree and closes all nodes.
 		/// </summary>
 		/// <param name="node">The subtree to close.</param>

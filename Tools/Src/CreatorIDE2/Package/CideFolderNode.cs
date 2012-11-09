@@ -1,8 +1,11 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Project;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {
@@ -20,6 +23,28 @@ namespace CreatorIDE.Package
         protected override NodeProperties CreatePropertiesObject()
         {
             return new CideFolderNodeProperties(this);
+        }
+
+        protected override void AddItemToHierarchy(HierarchyAddType addType)
+        {
+            string strFilter = String.Empty;
+            int iDontShowAgain;
+            VsAddItemFlags uiFlags;
+
+            var project = ProjectMgr;
+
+            var strBrowseLocations = GetMkDocument();
+
+            var projectGuid = ProjectMgr.ProjectGuid;
+
+            var addItemDialog = (IVsAddProjectItemDlg)GetService(typeof(IVsAddProjectItemDlg));
+
+            if (addType == HierarchyAddType.AddNewItem)
+                uiFlags = VsAddItemFlags.AddNewItems | VsAddItemFlags.SuggestTemplateName | VsAddItemFlags.AllowHiddenTreeView;
+            else
+                uiFlags = VsAddItemFlags.AddExistingItems | VsAddItemFlags.AllowMultiSelect | VsAddItemFlags.ShowLocationField;
+
+            ErrorHandler.ThrowOnFailure(addItemDialog.AddProjectItemDlg(ID, ref projectGuid, project, (uint) uiFlags, strBrowseLocations, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain));
         }
     }
 

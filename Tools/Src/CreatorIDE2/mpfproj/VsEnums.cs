@@ -42,6 +42,29 @@ namespace Microsoft.VisualStudio.Project
         Other = Nil ^ Root ^ Selection
     }
 
+    [Flags]
+    public enum VsAddItemFlags: uint
+    {
+        AllowMultiSelect = __VSADDITEMFLAGS.VSADDITEM_AllowMultiSelect,
+        HideNameField = __VSADDITEMFLAGS.VSADDITEM_HideNameField,
+        SuggestTemplateName = __VSADDITEMFLAGS.VSADDITEM_SuggestTemplateName,
+        ShowLocationField = __VSADDITEMFLAGS.VSADDITEM_ShowLocationField,
+        ShowDontShowAgain = __VSADDITEMFLAGS.VSADDITEM_ShowDontShowAgain,
+        AllowStickyFilter = __VSADDITEMFLAGS.VSADDITEM_AllowStickyFilter,
+        AddNewItems = __VSADDITEMFLAGS.VSADDITEM_AddNewItems,
+        AddExistingItems = __VSADDITEMFLAGS.VSADDITEM_AddExistingItems,
+        ProjectHandlesLinks = __VSADDITEMFLAGS.VSADDITEM_ProjectHandlesLinks,
+        NewDirectoryForItem = __VSADDITEMFLAGS.VSADDITEM_NewDirectoryForItem,
+        AllowHiddenTreeView = __VSADDITEMFLAGS.VSADDITEM_AllowHiddenTreeView,
+        NoOpenButtonDropDown = __VSADDITEMFLAGS.VSADDITEM_NoOpenButtonDropDown,
+        AllowSingleTreeRoot = __VSADDITEMFLAGS.VSADDITEM_AllowSingleTreeRoot,
+        ExpandSingleTreeRoot = __VSADDITEMFLAGS.VSADDITEM_ExpandSingleTreeRoot,
+        ShowProjectTypesOnly = __VSADDITEMFLAGS.VSADDITEM_ShowProjectTypesOnly,
+        AllowOnlyFileSysLocs = __VSADDITEMFLAGS.VSADDITEM_AllowOnlyFileSysLocs,
+        NoUserTemplateFeatures = __VSADDITEMFLAGS2.VSADDITEM_NoUserTemplateFeatures,
+        ShowOpenButtonDropDown = __VSADDITEMFLAGS2.VSADDITEM_ShowOpenButtonDropDown,
+    }
+
     public enum VsHPropID
     {
         DefaultEnableDeployProjectCfg = __VSHPROPID.VSHPROPID_DefaultEnableDeployProjectCfg,

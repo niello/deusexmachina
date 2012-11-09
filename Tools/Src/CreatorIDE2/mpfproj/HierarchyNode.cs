@@ -1154,25 +1154,24 @@ namespace Microsoft.VisualStudio.Project
 		protected virtual void AddItemToHierarchy(HierarchyAddType addType)
 		{
 			CCITracing.TraceCall();
-			IVsAddProjectItemDlg addItemDialog;
 
-			string strFilter = String.Empty;
+		    string strFilter = String.Empty;
 			int iDontShowAgain;
 			uint uiFlags;
-			IVsProject3 project = (IVsProject3)this.projectMgr;
+			IVsProject3 project = projectMgr;
 
-			string strBrowseLocations = Path.GetDirectoryName(this.projectMgr.BaseURI.Uri.LocalPath);
+            var strBrowseLocations = Path.GetDirectoryName(projectMgr.BaseURI.Uri.LocalPath);
 
-			System.Guid projectGuid = this.projectMgr.ProjectGuid;
+			var projectGuid = projectMgr.ProjectGuid;
 
-			addItemDialog = this.GetService(typeof(IVsAddProjectItemDlg)) as IVsAddProjectItemDlg;
+            var addItemDialog = (IVsAddProjectItemDlg)GetService(typeof(IVsAddProjectItemDlg));
 
 			if(addType == HierarchyAddType.AddNewItem)
-				uiFlags = (uint)(__VSADDITEMFLAGS.VSADDITEM_AddNewItems | __VSADDITEMFLAGS.VSADDITEM_SuggestTemplateName | __VSADDITEMFLAGS.VSADDITEM_AllowHiddenTreeView);
+                uiFlags = (uint)(VsAddItemFlags.AddNewItems | VsAddItemFlags.SuggestTemplateName | VsAddItemFlags.AllowHiddenTreeView);
 			else
-				uiFlags = (uint)(__VSADDITEMFLAGS.VSADDITEM_AddExistingItems | __VSADDITEMFLAGS.VSADDITEM_AllowMultiSelect | __VSADDITEMFLAGS.VSADDITEM_AllowStickyFilter);
+                uiFlags = (uint)(VsAddItemFlags.AddExistingItems | VsAddItemFlags.AllowMultiSelect | VsAddItemFlags.AllowStickyFilter);
 
-			ErrorHandler.ThrowOnFailure(addItemDialog.AddProjectItemDlg(this.hierarchyId, ref projectGuid, project, uiFlags, null, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain)); /*&fDontShowAgain*/
+			ErrorHandler.ThrowOnFailure(addItemDialog.AddProjectItemDlg(hierarchyId, ref projectGuid, project, uiFlags, null, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain)); /*&fDontShowAgain*/
 		}
 
 		/// <summary>
@@ -1576,22 +1575,26 @@ namespace Microsoft.VisualStudio.Project
 			}
 
 			// Handle commands iteratively. The same action will be executed for all of the selected items.
+		    handled = false;
 			foreach(HierarchyNode node in selectedNodes)
 			{
 				try
 				{
-					node.ExecCommandOnNode(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut);
+				    handled |= node.ExecCommandOnNode(cmdGroup, cmdId, cmdExecOpt, vaIn, vaOut);
 				}
 				catch(COMException e)
 				{
 					Trace.WriteLine("Exception : " + e.Message);
                     if (e.ErrorCode == VSConstants.E_ABORT || e.ErrorCode == VSConstants.OLE_E_PROMPTSAVECANCELLED)
+                    {
+                        handled = true;
                         break;
+                    }
 				    throw;
 				}
 			}
 
-		    return false;
+		    return handled;
 		}
 
 		#endregion

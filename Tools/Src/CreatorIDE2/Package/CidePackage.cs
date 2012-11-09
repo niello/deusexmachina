@@ -6,6 +6,7 @@ using CreatorIDE.Core;
 using CreatorIDE.Engine;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {

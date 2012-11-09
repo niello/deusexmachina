@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using CreatorIDE.Engine;
@@ -79,6 +80,31 @@ namespace CreatorIDE.Package
         {
             var folderNode = new CideFolderNode(this, path, element);
             return folderNode;
+        }
+
+        public override FileNode CreateFileNode(ProjectElement item)
+        {
+            var ext = item.GetMetadata(ProjectFileConstants.Include);
+            if (ext != null)
+            {
+                int lastDotIdx = ext.LastIndexOf('.');
+                if (lastDotIdx == ext.Length - 1 || lastDotIdx < 0)
+                    ext = null;
+                else
+                    ext = ext.Substring(lastDotIdx + 1);
+            }
+
+            if (ext == null)
+                return base.CreateFileNode(item);
+
+            switch(ext.ToLower(CultureInfo.InvariantCulture))
+            {
+                case LevelsNode.FileExtension:
+                    return new LevelsNode(this, item);
+
+                default:
+                    return base.CreateFileNode(item);
+            }
         }
 
         private void InitializeImageList()
