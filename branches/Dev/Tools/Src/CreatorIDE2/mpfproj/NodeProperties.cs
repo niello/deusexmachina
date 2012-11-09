@@ -440,24 +440,15 @@ namespace Microsoft.VisualStudio.Project
 	public class SingleFileGeneratorNodeProperties : FileNodeProperties
 	{
 		#region fields
-		private EventHandler<HierarchyNodeEventArgs> onCustomToolChanged;
-		private EventHandler<HierarchyNodeEventArgs> onCustomToolNameSpaceChanged;
 		private string _customTool = "";
 		private string _customToolNamespace = "";
 		#endregion
 
 		#region custom tool events
-		internal event EventHandler<HierarchyNodeEventArgs> OnCustomToolChanged
-		{
-			add { onCustomToolChanged += value; }
-			remove { onCustomToolChanged -= value; }
-		}
 
-		internal event EventHandler<HierarchyNodeEventArgs> OnCustomToolNameSpaceChanged
-		{
-			add { onCustomToolNameSpaceChanged += value; }
-			remove { onCustomToolNameSpaceChanged -= value; }
-		}
+	    internal event EventHandler<HierarchyNodeEventArgs> OnCustomToolChanged;
+
+	    internal event EventHandler<HierarchyNodeEventArgs> OnCustomToolNameSpaceChanged;
 
 		#endregion
 
@@ -479,6 +470,7 @@ namespace Microsoft.VisualStudio.Project
 				{
 					this.Node.ItemNode.SetMetadata(ProjectFileConstants.Generator, _customTool);
 					HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(this.Node);
+				    var onCustomToolChanged = OnCustomToolChanged;
 					if(onCustomToolChanged != null)
 					{
 						onCustomToolChanged(this.Node, args);
@@ -504,6 +496,7 @@ namespace Microsoft.VisualStudio.Project
 				{
 					this.Node.ItemNode.SetMetadata(ProjectFileConstants.CustomToolNamespace, _customToolNamespace);
 					HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(this.Node);
+				    var onCustomToolNameSpaceChanged = OnCustomToolNameSpaceChanged;
 					if(onCustomToolNameSpaceChanged != null)
 					{
 						onCustomToolNameSpaceChanged(this.Node, args);

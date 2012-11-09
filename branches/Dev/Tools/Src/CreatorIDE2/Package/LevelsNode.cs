@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Project;
-using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
+using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace CreatorIDE.Package
 {
@@ -10,7 +10,7 @@ namespace CreatorIDE.Package
     public class LevelsNode: FileNode
     {
         private const string GuidString = "0CEA25A5-4799-4461-A7FB-79C77EA04743";
-        private const string DbFileExtension = "db3";
+        public const string FileExtension = "db3";
 
         public LevelsNode(CideProjectNode projectNode, ProjectElement element):
             base(projectNode,element)
@@ -53,7 +53,7 @@ namespace CreatorIDE.Package
                     break;
 
                 default:
-                    throw new ComSpecificException((int) Constants.OLECMDERR_E_NOTSUPPORTED);
+                    throw new ComSpecificException((int) OleConstants.OLECMDERR_E_NOTSUPPORTED);
             }
         }
 
@@ -61,7 +61,7 @@ namespace CreatorIDE.Package
         {
             var ofd = new OpenFileDialog
                           {
-                              Filter = string.Format("{0} (*.{1})|*.{1}", Resources.LevelDatabaseFile, DbFileExtension),
+                              Filter = string.Format("{0} (*.{1})|*.{1}", Resources.LevelDatabaseFile, FileExtension),
                               Title = Resources.OpenLevelDatabaseFile,
                           };
             if (ofd.ShowDialog() != DialogResult.OK)
