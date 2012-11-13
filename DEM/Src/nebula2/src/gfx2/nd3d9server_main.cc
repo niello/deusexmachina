@@ -92,17 +92,8 @@ bool nD3D9Server::OpenDisplay()
 	if (!DeviceOpen()) FAIL;
 	nGfxServer2::OpenDisplay();
 
-	// Clear display
-	if (BeginFrame())
-	{
-		if (BeginScene())
-		{
-			Clear(AllBuffers, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0);
-			EndScene();
-			PresentScene();
-		}
-		EndFrame();
-	}
+	ClearScreen(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0);
+
 	OK;
 }
 //---------------------------------------------------------------------

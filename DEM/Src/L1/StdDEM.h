@@ -65,13 +65,14 @@ enum EExecStatus
 	Error = 3		// Keep Error the last in the list, so you can use return value like (Error + ERRCODE)
 };
 
-enum EClipStatus
-{
-	InvalidClipStatus,
-	Inside,
-	Outside,
-	Clipped
-};
+//// In ntypes.h
+//enum EClipStatus
+//{
+//	Outside,
+//	Inside,
+//	Clipped,
+//	InvalidClipStatus
+//};
 
 #include "StdCfg.h"
 

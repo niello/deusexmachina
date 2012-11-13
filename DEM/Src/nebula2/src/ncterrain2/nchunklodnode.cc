@@ -717,21 +717,21 @@ nChunkLodNode::RenderTexture(nChunkLodRenderParams& renderParams)
 */
 int
 nChunkLodNode::Render(nChunkLodRenderParams& renderParams, 
-                      bbox3::ClipStatus clipStatus,
+                      EClipStatus clipStatus,
                       bool textureBound)
 {
     n_assert(this->IsValid());
-    n_assert(clipStatus != bbox3::Outside);
+    n_assert(clipStatus != Outside);
 
     // view frustum culling (we don't need to check for culling if one
     // of our parents was already fully inside)
-    if (bbox3::Clipped == clipStatus)
+    if (Clipped == clipStatus)
     {
         // cull against view frustum
         static bbox3 box;
         this->ComputeBoundingBox(renderParams.tree, box);
         clipStatus = box.clipstatus(renderParams.modelViewProj);
-        if (bbox3::Outside == clipStatus)
+        if (Outside == clipStatus)
         {
             // fully outside, return and break recursion
             return 0;

@@ -2,12 +2,5 @@
 
 namespace Scene
 {
-//ImplementRTTI(Scripting::CScriptObject, Core::CRefCounted);
-//ImplementFactory(Scripting::CScriptObject);
-
-//void CSceneNodeAttr::Update()
-//{
-//}
-////---------------------------------------------------------------------
-
+ImplementRTTI(Scene::CSceneNodeAttr, Core::CRefCounted);
 }

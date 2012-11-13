@@ -26,12 +26,7 @@ void CCameraEntity::Activate()
 EClipStatus CCameraEntity::GetBoxClipStatus(const bbox3& Box)
 {
 	if (ViewProjDirty) UpdateViewProjection();
-	switch (Box.clipstatus(ViewProjMatrix))
-	{
-		case bbox3::Clipped:	return Clipped;
-		case bbox3::Inside:		return Inside;
-		default:				return Outside;
-	}
+	return Box.clipstatus(ViewProjMatrix);
 }
 //---------------------------------------------------------------------
 
@@ -39,12 +34,7 @@ EClipStatus CCameraEntity::GetBoxClipStatus(const bbox3& Box)
 EClipStatus CCameraEntity::GetViewVolumeClipStatus(const matrix44& Tfm, nCamera2& OtherCamera)
 {
 	if (ViewProjDirty) UpdateViewProjection();
-	switch (OtherCamera.GetClipStatus(Tfm, ViewProjMatrix))
-	{
-		case nCamera2::Clipped:	return Clipped;
-		case nCamera2::Inside:	return Inside;
-		default:				return Outside;
-	}
+	return OtherCamera.GetClipStatus(Tfm, ViewProjMatrix);
 }
 //---------------------------------------------------------------------
 

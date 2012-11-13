@@ -127,13 +127,7 @@ EClipStatus CSensorVision::GetBoxClipStatus(CActor* pActor, const bbox3& Box) co
 {
 	//???check FOV too?
 	sphere Sphere(pActor->Position, Radius);
-	switch (Sphere.clipstatus(Box))
-	{
-		case sphere::Inside:	return Inside;
-		case sphere::Clipped:	return Clipped;
-		case sphere::Outside:
-		default:				return Outside;
-	}
+	return Sphere.clipstatus(Box);
 }
 //---------------------------------------------------------------------
 

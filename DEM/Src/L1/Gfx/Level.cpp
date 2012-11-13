@@ -259,7 +259,7 @@ void CLevel::RenderDebug()
 	nGfxServer2::Instance()->EndShapes();
 }
 //---------------------------------------------------------------------
-	
+
 void CLevel::QTNodeRenderDebug(CGfxQT::CNode* pNode)
 {
 	CGfxEntityListSet::CElement* pCurr = pNode->Data.Entities.GetHead(GFXShape);

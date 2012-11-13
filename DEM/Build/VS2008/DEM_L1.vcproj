@@ -1285,7 +1285,35 @@
 			Name="Scene"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Scene\Bone.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Bone.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Camera.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Camera.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Light.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\Light.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Mesh.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Mesh.h"
 				>
 			</File>
 			<File
@@ -1320,6 +1348,10 @@
 				RelativePath="..\..\Src\L1\Scene\SceneServer.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\SPS.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Math"
@@ -1332,6 +1364,10 @@
 				RelativePath="..\..\Src\L1\Math\TransformSRT.h"
 				>
 			</File>
+		</Filter>
+		<Filter
+			Name="Render"
+			>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"

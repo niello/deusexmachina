@@ -72,13 +72,7 @@ EClipStatus CLightEntity::GetBoxClipStatus(const bbox3& Box)
 	else if (nLight::Point == Light.GetType())
 	{
 		sphere Sphere(Transform.pos_component(), Light.GetRange());
-		switch (Sphere.clipstatus(Box))
-		{
-			case sphere::Inside:	return Inside;
-			case sphere::Clipped:	return Clipped;
-			case sphere::Outside:
-			default:				return Outside;
-		}
+		return Sphere.clipstatus(Box);
 	}
 	else
 	{

@@ -178,13 +178,10 @@ public:
         CountStats = (1<<1),    // statistics counting currently active?
     };
 
-    /// constructor
-    nGfxServer2();
-    /// destructor
+	nGfxServer2();
 	virtual ~nGfxServer2() { n_assert(Singleton); Singleton = NULL; }
-    /// get instance pointer
-    static nGfxServer2* Instance();
-	static bool DoesInstanceExist() { return !!Singleton; }
+	static nGfxServer2* Instance() { n_assert(Singleton); return Singleton; }
+	static bool HasInstance() { return !!Singleton; }
 
     /// create a shared mesh object
     virtual nMesh2* NewMesh(const nString& RsrcName) { return NULL; }
@@ -222,7 +219,7 @@ public:
     /// set the viewport
 	virtual void SetViewport(nViewport& vp) { viewport = vp; }
     /// get the viewport
-    virtual nViewport& GetViewport();
+	virtual nViewport& GetViewport() { return viewport; }
     /// open the display
     virtual bool OpenDisplay();
     /// close the display
@@ -266,19 +263,16 @@ public:
     /// clear buffers
 	virtual void Clear(int bufferTypes, float red, float green, float blue, float alpha, float z, int stencil) {}
 
-    /// set lighting type
-    void SetLightingType(LightingType t);
-    /// get lighting type
-    LightingType GetLightingType() const;
-    /// reset the light array
+	// Clear buffers and present a frame
+	bool ClearScreen(float red, float green, float blue, float alpha, float z, int stencil);
+
+	void SetLightingType(LightingType t) { lightingType = t; }
+	LightingType GetLightingType() const { return lightingType; }
 	virtual void ClearLights() { lightArray.Reset(); }
-    /// remove a light
 	virtual void ClearLight(int index) { n_assert(index >= 0); lightArray.Erase(index); }
-    /// set a light
 	virtual int AddLight(const nLight& light, const matrix44& Transform) { lightArray.Append(light); return lightArray.Size(); }
-    /// access to light array
 	const nArray<nLight>& GetLightArray() const { return lightArray; }
-    /// set current vertex and index buffer mesh
+
 	virtual void SetMesh(nMesh2* vbMesh, nMesh2* ibMesh) { refVbMesh = vbMesh; refIbMesh = ibMesh; }
     /// get current mesh
     nMesh2* GetMesh() const;
@@ -456,17 +450,6 @@ public:
 /**
 */
 inline
-nGfxServer2*
-nGfxServer2::Instance()
-{
-    n_assert(Singleton);
-    return Singleton;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
 void
 nGfxServer2::SetHint(Hint hint, bool enable)
 {
@@ -518,17 +501,6 @@ nGfxServer2::FeatureSetToString(FeatureSet f)
         case nGfxServer2::DX9FLT:       return "dx9flt";
         default:                        return "invalid";
     }
-}
-
-//------------------------------------------------------------------------------
-/**
-    Get the current viewport.
-*/
-inline
-nViewport&
-nGfxServer2::GetViewport()
-{
-    return this->viewport;
 }
 
 //------------------------------------------------------------------------------
@@ -730,26 +702,6 @@ nGfxServer2::DeviceIdentifier
 nGfxServer2::GetDeviceIdentifier() const
 {
     return this->deviceIdentifier;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nGfxServer2::SetLightingType(LightingType t)
-{
-    this->lightingType = t;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nGfxServer2::LightingType
-nGfxServer2::GetLightingType() const
-{
-    return this->lightingType;
 }
 
 //------------------------------------------------------------------------------

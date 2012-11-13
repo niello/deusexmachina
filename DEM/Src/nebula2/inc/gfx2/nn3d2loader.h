@@ -199,8 +199,6 @@ nN3d2Loader::Open()
             meshGroup.NumVertices = atoi(numVertsString);
             meshGroup.FirstIndex = atoi(firstTriString) * 3;
             meshGroup.NumIndices = atoi(numTrisString) * 3;
-            meshGroup.FirstEdge = atoi(firstEdgeString);
-            meshGroup.NumEdges = atoi(numEdgeString);
             this->groupArray.Append(meshGroup);
 
             // if all groups read, set the headerDone flag to true
@@ -410,7 +408,7 @@ nN3d2Loader::ReadEdges(void* buffer, int bufferSize)
     n_assert(bufferSize == (this->numEdges * 4 * int(sizeof(ushort))));
     endOfBuffer = ((ushort*)buffer) + this->numEdges * 4;
 
-    nMesh2::Edge* edgeBuffer = (nMesh2::Edge*)buffer;
+    //nMesh2::Edge* edgeBuffer = (nMesh2::Edge*)buffer;
 
     int edgeIndex;
     int index = 0;
@@ -433,13 +431,13 @@ nN3d2Loader::ReadEdges(void* buffer, int bufferSize)
         ushort v0 = atoi(v0String);
         ushort v1 = atoi(v1String);
 
-        edgeBuffer[index].fIndex[0] = f0;
-        edgeBuffer[index].fIndex[1] = f1;
-        edgeBuffer[index].vIndex[0] = v0;
-        edgeBuffer[index].vIndex[1] = v1;
+        //edgeBuffer[index].fIndex[0] = f0;
+        //edgeBuffer[index].fIndex[1] = f1;
+        //edgeBuffer[index].vIndex[0] = v0;
+        //edgeBuffer[index].vIndex[1] = v1;
         index++;
 
-        n_assert(&(edgeBuffer[index]) <= endOfBuffer);
+        //n_assert(&(edgeBuffer[index]) <= endOfBuffer);
     }
     return true;
 }

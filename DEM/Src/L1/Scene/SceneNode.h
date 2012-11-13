@@ -11,6 +11,8 @@
 // Scene nodes represent hierarchical transform frames and together form a scene graph.
 // Each 3D scene consists of one scene graph starting at the root scene node.
 
+// Skinning, LOD
+
 //???apply scaling ONLY to attributes and not to child nodes?
 
 // Mesh, lighting, camera, material, lod, bones
@@ -29,6 +31,7 @@
 
 namespace Scene
 {
+class CScene;
 typedef Ptr<class CSceneNode> PSceneNode;
 
 class CSceneNode: public Core::CRefCounted //???derive from transform source? for noew PropTfm always contain SceneNode
@@ -43,6 +46,8 @@ public:
 private:
 
 	typedef nDictionary<CStrID, CSceneNode*> CNodeDict;
+
+	//???store scene ptr here? or always pass as param?
 
 	CStrID					Name;
 	PSceneNode				Parent;
@@ -73,12 +78,13 @@ public:
 	CSceneNode*	GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
 	PSceneNode	GetChild(CStrID ChildName, bool Create = false);
 	PSceneNode	GetChild(LPCSTR Path, bool Create = false);
-	CSceneNode*	FindChildRecursively(CStrID ChildName); // Handy to find bones
+	CSceneNode*	FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
 	bool		IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
 
-	// Transform evaluation
-	void		UpdateTransform();
+	void		UpdateTransform(CScene& Scene);
+
+	//???need in node? mb call this only on attrs passed the visibility filter?
 	void		PrepareToRender();
 
 	const Math::CTransform& GetLocalTransform() { return Tfm; }

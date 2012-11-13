@@ -96,12 +96,12 @@ nRenderPath2::Close()
 void
 nRenderPath2::Validate()
 {
-    int sectionIndex;
+    int SectionIdx;
     int numSections = this->sections.Size();
-    for (sectionIndex = 0; sectionIndex < numSections; sectionIndex++)
+    for (SectionIdx = 0; SectionIdx < numSections; SectionIdx++)
     {
-        this->sections[sectionIndex].SetRenderPath(this);
-        this->sections[sectionIndex].Validate();
+        this->sections[SectionIdx].SetRenderPath(this);
+        this->sections[SectionIdx].Validate();
     }
 }
 

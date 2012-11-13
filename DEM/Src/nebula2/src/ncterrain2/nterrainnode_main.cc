@@ -5,31 +5,10 @@
 #include "ncterrain2/nterrainnode.h"
 #include "gfx2/ngfxserver2.h"
 #include "resource/nresourceserver.h"
+#include "scene/nrendercontext.h"
 #include <Data/BinaryReader.h>
 
 nNebulaClass(nTerrainNode, "nmaterialnode");
-
-//------------------------------------------------------------------------------
-/**
-*/
-nTerrainNode::nTerrainNode() :
-    maxPixelError(5.0f),
-    maxTexelSize(1.0f),
-	terrainScale(1.0f)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-nTerrainNode::~nTerrainNode()
-{
-    if (this->AreResourcesValid())
-    {
-        this->UnloadResources();
-    }
-}
 
 bool nTerrainNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
@@ -39,14 +18,14 @@ bool nTerrainNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader
 		{
 			char Value[512];
 			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
-			SetChunkFile(Value);
+			ChunkFileName = Value;
 			OK;
 		}
 		case 'TQTF': // FTQT
 		{
 			char Value[512];
 			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
-			SetTexQuadFile(Value);
+			TQTFileName = Value;
 			OK;
 		}
 		case 'REPM': // MPER
@@ -61,13 +40,11 @@ bool nTerrainNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader
 		}
 		case 'LCST': // TSCL
 		{
-			SetTerrainScale(DataReader.Read<float>());
-			OK;
+			return DataReader.Read<float>(TerrainScale);
 		}
 		case 'IROT': // TORI
 		{
-			SetTerrainOrigin(DataReader.Read<vector3>());
-			OK;
+			return DataReader.Read<vector3>(TerrainOrigin);
 		}
 		default: return nMaterialNode::LoadDataBlock(FourCC, DataReader);
 	}
@@ -83,22 +60,22 @@ nTerrainNode::LoadResources()
 {
     if (nMaterialNode::LoadResources())
     {
-        if ((!this->refChunkLodTree.isvalid()) && (!this->chunkFilename.IsEmpty()))
+        if ((!this->refChunkLodTree.isvalid()) && (!this->ChunkFileName.IsEmpty()))
         {
             nChunkLodTree* tree = (nChunkLodTree*) nResourceServer::Instance()->NewResource("nchunklodtree", 0, nResource::Other);
             n_assert(tree);
             if (!tree->IsValid())
             {
-                tree->SetFilename(this->chunkFilename);
-                tree->SetTqtFilename(this->texQuadFile.Get());
+                tree->SetFilename(this->ChunkFileName);
+                tree->SetTqtFilename(this->TQTFileName.Get());
                 tree->SetDisplayMode(nGfxServer2::Instance()->GetDisplayMode());
                 tree->SetMaxPixelError(this->maxPixelError);
                 tree->SetMaxTexelSize(this->maxTexelSize);
-                tree->SetTerrainScale(this->terrainScale);
-                tree->SetTerrainOrigin(this->terrainOrigin);
+                tree->SetTerrainScale(this->TerrainScale);
+                tree->SetTerrainOrigin(this->TerrainOrigin);
                 if (!tree->Load())
                 {
-                    n_printf("nTerrainNode: Error loading .chu file %s\n", this->chunkFilename.Get());
+                    n_printf("nTerrainNode: Error loading .chu file %s\n", this->ChunkFileName.Get());
                     tree->Release();
                     return false;
                 }
@@ -125,16 +102,14 @@ nTerrainNode::UnloadResources()
         this->refChunkLodTree.invalidate();
     }
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Indicate to scene server that we provide geometry
-*/
-bool
-nTerrainNode::HasGeometry() const
+void nTerrainNode::RenderContextCreated(nRenderContext* renderContext)
 {
-    return true;
+	nMaterialNode::RenderContextCreated(renderContext);
+	renderContext->SetFlag(nRenderContext::DoOcclusionQuery, false);
 }
+//---------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 /**

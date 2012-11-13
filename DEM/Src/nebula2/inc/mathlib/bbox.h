@@ -31,13 +31,6 @@ public:
         ClipNear   = (1<<4),
         ClipFar    = (1<<5),
     };
-    /// clip status
-    enum ClipStatus
-    {
-        Outside,
-        Inside,
-        Clipped,
-    };
 
     enum {
         OUTSIDE     = 0,
@@ -86,9 +79,9 @@ public:
     /// return true if this box contains the position
     bool contains(const vector3& pos) const;
     /// check for intersection with other bounding box
-    ClipStatus clipstatus(const bbox3& other) const;
+    EClipStatus clipstatus(const bbox3& other) const;
     /// check for intersection with projection volume
-    ClipStatus clipstatus(const matrix44& viewProjection) const;
+    EClipStatus clipstatus(const matrix44& viewProjection) const;
     /// create a matrix which transforms an unit cube to this bounding box
     matrix44 to_matrix44() const;
     /// return one of the 8 corner points
@@ -539,7 +532,7 @@ bbox3::contains(const vector3& v) const
     Return box/box clip status.
 */
 inline
-bbox3::ClipStatus
+EClipStatus
 bbox3::clipstatus(const bbox3& other) const
 {
     if (this->contains(other))
@@ -558,16 +551,12 @@ bbox3::clipstatus(const bbox3& other) const
     Check for intersection with a view volume defined by a view-projection
     matrix.
 */
-inline
-bbox3::ClipStatus
-bbox3::clipstatus(const matrix44& viewProjection) const
+inline EClipStatus bbox3::clipstatus(const matrix44& viewProjection) const
 {
     int andFlags = 0xffff;
     int orFlags  = 0;
-    int i;
     static vector4 v0;
-    static vector4 v1;
-    for (i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
         int clip = 0;
         v0.w = 1.0f;
@@ -578,7 +567,7 @@ bbox3::clipstatus(const matrix44& viewProjection) const
         if (i & 4) v0.z = this->vmin.z;
         else       v0.z = this->vmax.z;
 
-        v1 = viewProjection * v0;
+        vector4 v1 = viewProjection * v0;
 
         if (v1.x < -v1.w)       clip |= ClipLeft;
         else if (v1.x > v1.w)   clip |= ClipRight;

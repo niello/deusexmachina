@@ -382,21 +382,16 @@ nD3D9Server::Clear(int bufferTypes, float red, float green, float blue, float al
 /**
     Present the scene.
 */
-void
-nD3D9Server::PresentScene()
+void nD3D9Server::PresentScene()
 {
-    n_assert(!this->inBeginScene);
-    n_assert(this->pD3D9Device);
+    n_assert(pD3D9Device && !inBeginScene);
 
 #if __NEBULA_STATS__
     this->statsFrameCount++;
 #endif
 
-    HRESULT hr = this->pD3D9Device->Present(0, 0, 0, 0);
-    if (FAILED(hr))
-    {
-        n_printf("nD3D9Server::PresentScene(): failed to present scene!\n");
-    }
+    HRESULT hr = pD3D9Device->Present(NULL, NULL, NULL, NULL);
+    if (FAILED(hr)) n_printf("nD3D9Server::PresentScene(): failed to present scene!\n");
     nGfxServer2::PresentScene();
 }
 
@@ -417,10 +412,7 @@ nD3D9Server::SetMesh(nMesh2* vbMesh, nMesh2* ibMesh)
     n_assert(this->pD3D9Device);
 
     // clear any set mesh array
-    if (0 != this->GetMeshArray())
-    {
-        this->SetMeshArray(0);
-    }
+    if (GetMeshArray()) SetMeshArray(NULL);
 
     if (0 != vbMesh)
     {

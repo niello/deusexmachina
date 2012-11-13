@@ -52,6 +52,14 @@ typedef double nTime;
 #define NULL (0L)
 #endif
 
+enum EClipStatus
+{
+	Outside,
+	Inside,
+	Clipped,
+	InvalidClipStatus
+};
+
 //------------------------------------------------------------------------------
 #define N_MAXPATH (512)     // maximum length for complete path
 #define N_MAXNAMELEN (128)   // maximum length for single path component

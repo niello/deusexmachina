@@ -199,20 +199,15 @@ void nSceneServer::DoRenderPath(nRpSection& rpSection)
         // for each phase...
         nRpPass& curPass = rpSection.GetPass(passIndex);
 
-        // don't render gui pass
-        if (curPass.GetDrawGui()) continue;
-
         if (curPass.GetDrawShadows() != nRpPass::NoShadows)
         {
             PROFILER_START(this->profRenderShadow);
             this->GatherShadowLights();
-            this->RenderShadow(curPass);
+            //this->RenderShadow(curPass);
             PROFILER_STOP(this->profRenderShadow);
         }
         else if (curPass.GetOcclusionQuery())
         {
-            // perform light source occlusion query, this
-            // marks the light sources in the scene as occluded or not
             this->DoOcclusionQuery();
         }
         else

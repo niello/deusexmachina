@@ -6,13 +6,7 @@
 #include "renderpath/nrprendertarget.h"
 #include "renderpath/nrenderpath2.h"
 #include "gfx2/ngfxserver2.h"
-//#include "gui/nguiserver.h"
-//#include "misc/nconserver.h"
-//#include "shadow2/nshadowserver2.h"
 
-//------------------------------------------------------------------------------
-/**
-*/
 nRpPass::nRpPass() :
     renderPath(0),
     inBegin(false),
@@ -24,7 +18,6 @@ nRpPass::nRpPass() :
     shadowTechnique(NoShadows),
     occlusionQuery(false),
     drawFullscreenQuad(false),
-    drawGui(false),
     statsEnabled(true),
     shadowEnabledCondition(false),
     renderTargetNames(nGfxServer2::MaxRenderTargets)
@@ -156,21 +149,14 @@ nRpPass::UpdateMeshCoords()
 }
 
 //------------------------------------------------------------------------------
-/**
-    Begin a scene pass. This will set the render target, activate the pass
-    shader and set any shader parameters.
-*/
-int
-nRpPass::Begin()
+
+// Begin a scene pass. This will set the render target, activate the pass shader and set any shader parameters.
+int nRpPass::Begin()
 {
-    n_assert(!this->inBegin);
-    n_assert(this->renderPath);
+    n_assert(renderPath && !inBegin);
 
     #if __NEBULA_STATS__
-    if (!this->GetDrawShadows() && !this->GetOcclusionQuery())
-    {
-        this->prof.Start();
-    }
+    if (!this->GetDrawShadows() && !this->GetOcclusionQuery()) prof.Start();
     #endif
 
     //// only render this pass if shadowing is enabled?
@@ -182,34 +168,17 @@ nRpPass::Begin()
     // gfx stats enabled?
     nGfxServer2::Instance()->SetHint(nGfxServer2::CountStats, this->statsEnabled);
 
-    // set render targets
-    int i;
-    for (i = 0; i < this->renderTargetNames.Size(); i++)
-    {
-        // special case default render target
-        if (this->renderTargetNames[i].IsEmpty())
+    for (int i = 0; i < this->renderTargetNames.Size(); i++)
+        if (renderTargetNames[i].IsValid())
         {
-            if (0 == i)
-            {
-                nGfxServer2::Instance()->SetRenderTarget(i, 0);
-            }
+            int RTIdx = renderPath->FindRenderTargetIndex(this->renderTargetNames[i]);
+            if (RTIdx == -1)
+                n_error("nRpPass: invalid render target name: %s!", renderTargetNames[i].Get());
+            nGfxServer2::Instance()->SetRenderTarget(i, renderPath->GetRenderTarget(RTIdx).GetTexture());
         }
-        else
-        {
-            int renderTargetIndex = this->renderPath->FindRenderTargetIndex(this->renderTargetNames[i]);
-            if (-1 == renderTargetIndex)
-            {
-                n_error("nRpPass: invalid render target name: %s!", this->renderTargetNames[i].Get());
-            }
-            nGfxServer2::Instance()->SetRenderTarget(i, this->renderPath->GetRenderTarget(renderTargetIndex).GetTexture());
-        }
-    }
+		else if (i == 0) nGfxServer2::Instance()->SetRenderTarget(i, NULL); // special case default render target
 
-    // invoke begin scene
-    if (!nGfxServer2::Instance()->BeginScene())
-    {
-        return 0;
-    }
+    if (!nGfxServer2::Instance()->BeginScene()) return 0;
 
     // clear render target?
     if (this->clearFlags != 0)
@@ -228,10 +197,7 @@ nRpPass::Begin()
     if (shd)
     {
         this->UpdateVariableShaderParams();
-        if (!this->technique.IsEmpty())
-        {
-            shd->SetTechnique(this->technique.Get());
-        }
+        if (!technique.IsEmpty()) shd->SetTechnique(this->technique.Get());
         shd->SetParams(this->shaderParams);
         nGfxServer2::Instance()->SetShader(shd);
         int numShaderPasses = shd->Begin(true);
@@ -239,36 +205,19 @@ nRpPass::Begin()
         shd->BeginPass(0);
     }
 
-    // render GUI?
-    if (this->GetDrawGui())
-    {
-        //nGuiServer::Instance()->Render();
-        //nConServer::Instance()->Render();
-    }
-
-    // draw the full-screen quad?
-    if (this->drawFullscreenQuad)
-    {
-        this->DrawFullScreenQuad();
-    }
+    if (drawFullscreenQuad) DrawFullScreenQuad();
 
     this->inBegin = true;
     return this->phases.Size();
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Finish a scene pass.
-*/
-void
-nRpPass::End()
+// Finish a scene pass.
+void nRpPass::End()
 {
     n_assert(this->renderPath);
 
-    if (!this->inBegin)
-    {
-        return;
-    }
+    if (!this->inBegin) return;
 
     if (-1 != this->rpShaderIndex)
     {
@@ -279,21 +228,14 @@ nRpPass::End()
 
     nGfxServer2::Instance()->EndScene();
 
-    if (!this->renderTargetNames[0].IsEmpty())
-    {
-        for (int i=0; i < this->renderTargetNames.Size(); i++)
-        {
-            // Disable used render targets
-            nGfxServer2::Instance()->SetRenderTarget(i, 0);
-        }
-    }
-    this->inBegin = false;
+	// Disable used render targets
+	if (!this->renderTargetNames[0].IsEmpty())
+		for (int i=0; i < this->renderTargetNames.Size(); i++)
+			nGfxServer2::Instance()->SetRenderTarget(i, 0);
+	this->inBegin = false;
 
     #if __NEBULA_STATS__
-    if (!this->GetDrawShadows() && !this->GetOcclusionQuery())
-    {
-        this->prof.Stop();
-    }
+    if (!this->GetDrawShadows() && !this->GetOcclusionQuery()) prof.Stop();
     #endif
 }
 
@@ -378,22 +320,11 @@ nRpPass::UpdateVariableShaderParams()
         this->shaderParams.SetArg(shaderParam, shaderArg);
     }
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-nShader2*
-nRpPass::GetShader() const
+nShader2* nRpPass::GetShader() const
 {
-    if (-1 != this->rpShaderIndex)
-    {
-        const nRpShader& rpShader = this->renderPath->GetShader(this->rpShaderIndex);
-        nShader2* shd = rpShader.GetShader();
-        return shd;
-    }
-    else
-    {
-        return 0;
-    }
+	return (rpShaderIndex == -1) ? NULL : renderPath->GetShader(rpShaderIndex).GetShader();
 }
+//---------------------------------------------------------------------
 

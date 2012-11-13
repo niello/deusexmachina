@@ -5,7 +5,12 @@
 #include <mathlib/bbox.h>
 #include <util/nfixedarray.h>
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 //???write loose quadtree? Current variant is not so good.
+//???create child nodes on demand, using node pool?
 
 // Template quadtree spatial partitioning structure.
 // Define TObject and TStorage classes to get it working.
@@ -13,15 +18,17 @@
 // it can be linked list node, array or smth.
 
 // TObject interface:
-// - const vector2& GetCenter() const;
-// - const vector2& GetHalfSize() const;
-// - CNode* GetQuadTreeNode() const; //???to some wrapper class?
-// - void SetQuadTreeNode(CNode*);
+// - void	GetCenter(vector2& Out) const;
+// - void	GetHalfSize(vector2& Out) const;
+// - CNode*	GetQuadTreeNode() const; //???to some wrapper class?
+// - void	SetQuadTreeNode(CNode*);
 
 // TStorage interface:
 // - typedef CElement (for array - TObject, for linked list - list node etc)
+// - TObject&	CElement::GetObject();
 // - CElement*	Add(const TObject& Object);
 // - void		Remove(const TObject& Object);
+// - void		RemoveElement(CElement* pElement);
 
 namespace Data
 {
@@ -86,7 +93,7 @@ public:
 		CElement*	AddObject(TObject& Object);
 		CElement*	AddObject(TObject& Object, const vector2& Center, const vector2& HalfSize);
 		void		RemoveObject(TObject& Object);
-		void		RemoveObject(CElement* pElement);
+		void		RemoveElement(CElement* pElement);
 
 	public:
 
@@ -114,9 +121,9 @@ public:
 
 	CElement*	AddObject(TObject& Object) { return Nodes[0].AddObject(Object); }
 	CElement*	UpdateObject(TObject& Object);
-	void		UpdateObject(CElement*& pElement);
+	void		UpdateElement(CElement*& pElement);
 	void		RemoveObject(TObject& Object) { ObjTraits<TObject>::GetQuadTreeNode(Object)->RemoveObject(Object); }
-	void		RemoveObject(CElement* pElement) { ObjTraits<TObject>::GetQuadTreeNode(pElement->Object)->RemoveObject(pElement); }
+	void		RemoveElement(CElement* pElement) { ObjTraits<TObject>::GetQuadTreeNode(pElement->Object)->RemoveElement(pElement); }
 
 	//!!!Test against circle & 2d box
 
@@ -196,7 +203,7 @@ typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::Upda
 
 	while (pNewNode->pParent && !pNewNode->Contains(Center, HalfSize))
 	{
-		pNewNode->TotalObjCount--;
+		--pNewNode->TotalObjCount;
 		pNewNode = pNewNode->pParent;
 	}
 
@@ -207,11 +214,11 @@ typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::Upda
 			if (pNewNode->pChild[i].Contains(Center, HalfSize))
 			{
 				pNewNode = pNewNode->pChild + i;
-				pNewNode->TotalObjCount++;
+				++pNewNode->TotalObjCount;
 				break;
 			}
 
-		if (i == 4) break;
+		if (i == 4) break; // No child contains the object, add right to this node
 	}
 
 	return pNewNode;
@@ -241,16 +248,16 @@ typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::U
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-void CQuadTree<TObject, TStorage>::UpdateObject(typename CQuadTree<TObject, TStorage>::CElement*& pElement)
+void CQuadTree<TObject, TStorage>::UpdateElement(typename CQuadTree<TObject, TStorage>::CElement*& pElement)
 {
-	TObject Object = pElement->Object;
+	TObject Object = pElement->GetObject();
 
 	CNode* pCurrNode = ObjTraits<TObject>::GetQuadTreeNode(Object);
 	CNode* pNewNode = UpdateObjectCommon(Object);
 
 	if (pCurrNode != pNewNode)
 	{
-		pCurrNode->Data.Remove(pElement);		
+		pCurrNode->Data.RemoveElement(pElement);		
 		ObjTraits<TObject>::SetQuadTreeNode(Object, pNewNode);
 		pElement = pNewNode->Data.Add(Object);
 	}
@@ -272,7 +279,7 @@ typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::C
 																								const vector2& Center,
 																								const vector2& HalfSize)
 {
-	TotalObjCount++;
+	++TotalObjCount;
 
 	if (pChild)
 		for (DWORD i = 0; i < 4; i++)
@@ -292,21 +299,21 @@ inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
 	CNode* pNode = this;
 	while (pNode)
 	{
-		pNode->TotalObjCount--;
+		--pNode->TotalObjCount;
 		pNode = pNode->pParent;
 	}
 }
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(typename CQuadTree<TObject, TStorage>::CElement* pElement)
+inline void CQuadTree<TObject, TStorage>::CNode::RemoveElement(typename CQuadTree<TObject, TStorage>::CElement* pElement)
 {
 	ObjTraits<TObject>::SetQuadTreeNode(pElement->Object, NULL);
-	Data.Remove(pElement);
+	Data.RemoveElement(pElement);
 	CNode* pNode = this;
 	while (pNode)
 	{
-		pNode->TotalObjCount--;
+		--pNode->TotalObjCount;
 		pNode = pNode->pParent;
 	}
 }
@@ -336,7 +343,6 @@ bool CQuadTree<TObject, TStorage>::CNode::Contains(const vector2& Center, const 
 }
 //---------------------------------------------------------------------
 
-// Returns true if node contains the whole object (not only some its part!)
 template<class TObject, class TStorage>
 void CQuadTree<TObject, TStorage>::CNode::GetBounds(bbox3& Box) const
 {

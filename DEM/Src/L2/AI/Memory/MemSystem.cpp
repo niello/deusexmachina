@@ -56,7 +56,7 @@ void CMemSystem::Update()
 				{
 					CMemFactNode* pRem = pCurr;
 					pCurr = pCurr->GetSucc();
-					Facts.Remove(pRem);
+					Facts.RemoveElement(pRem);
 					continue;
 				}
 

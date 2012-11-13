@@ -20,8 +20,9 @@ public:
 	nObjectNode() {}
 	nObjectNode(const T& Obj): Object(Obj) {}
 
-	nObjectNode* GetSucc() const { return (nObjectNode<T>*)nNode::GetSucc(); }
-	nObjectNode* GetPred() const { return (nObjectNode<T>*)nNode::GetPred(); }
+	nObjectNode*	GetSucc() const { return (nObjectNode<T>*)nNode::GetSucc(); }
+	nObjectNode*	GetPred() const { return (nObjectNode<T>*)nNode::GetPred(); }
+	T&				GetObject() { return Object; }
 };
 
 #endif

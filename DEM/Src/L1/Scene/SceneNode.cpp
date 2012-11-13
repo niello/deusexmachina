@@ -12,7 +12,7 @@ namespace Scene
 //}
 ////---------------------------------------------------------------------
 
-void CSceneNode::UpdateTransform()
+void CSceneNode::UpdateTransform(CScene& Scene)
 {
 	//???use methods SetLocalTfm, SetGlobalTfm by external systems instead?
 	// Run transform controller here
@@ -38,11 +38,17 @@ void CSceneNode::UpdateTransform()
 	GlobalTfm = MLocalTfm;
 	if (Parent.isvalid()) GlobalTfm.mult_simple(Parent->GetWorldTransform()); //???or parent matrix as arg?
 
+	//!!!LOD!
+	// If has LODGroup attribute, test a distance to the MAIN camera
+	// Select child node(s) to activade, deactivate others, update only active ones
+	// Active check must be general, below!
+
 	for (int i = 0; i < Child.Size(); ++i)
-		Child.ValueAtIndex(i)->UpdateTransform();
+		//!!!if Child is Active!
+		Child.ValueAtIndex(i)->UpdateTransform(Scene);
 
 	for (int i = 0; i < Attrs.Size(); ++i)
-		Attrs[i]->Update();
+		Attrs[i]->UpdateTransform(Scene);
 }
 //---------------------------------------------------------------------
 

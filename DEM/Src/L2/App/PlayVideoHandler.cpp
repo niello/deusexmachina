@@ -32,6 +32,7 @@ CStrID CPlayVideoHandler::OnFrame()
 	EventMgr->ProcessPendingEvents();
 
 	nGfxServer2::Instance()->Trigger();
+
 	VideoSrv->Trigger();
 	InputSrv->Trigger();
 

@@ -87,21 +87,9 @@ bool CVideoServer::PlayFile(const char* pFileName)
 	n_assert(pFileName && !pGraphBuilder && !pMediaCtl && !pVideoWnd && !pMediaEvent && !pBasicVideo);
 	if (_IsPlaying) Stop();
 
-	nGfxServer2::Instance()->BeginFrame();
-	nGfxServer2::Instance()->BeginScene();
-	nGfxServer2::Instance()->Clear(nGfxServer2::AllBuffers, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0);
-	nGfxServer2::Instance()->EndScene();
-	nGfxServer2::Instance()->PresentScene();
-	nGfxServer2::Instance()->EndFrame();
-
+	nGfxServer2::Instance()->ClearScreen(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0);
 	nGfxServer2::Instance()->EnterDialogBoxMode();
-
-	nGfxServer2::Instance()->BeginFrame();
-	nGfxServer2::Instance()->BeginScene();
-	nGfxServer2::Instance()->Clear(nGfxServer2::AllBuffers, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0);
-	nGfxServer2::Instance()->EndScene();
-	nGfxServer2::Instance()->PresentScene();
-	nGfxServer2::Instance()->EndFrame();
+	nGfxServer2::Instance()->ClearScreen(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0);
 
 	if (FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
 	{

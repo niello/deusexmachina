@@ -313,10 +313,6 @@ nRpXmlParser::ParsePass(tinyxml2::XMLElement* elm, nRpSection* section)
     {
         newPass.SetOcclusionQuery(this->GetBoolAttr(elm, "occlusionQuery", false));
     }
-    if (this->HasAttr(elm, "drawGui"))
-    {
-        newPass.SetDrawGui(this->GetBoolAttr(elm, "drawGui", false));
-    }
     if (this->HasAttr(elm, "technique"))
     {
         newPass.SetTechnique(elm->Attribute("technique"));
