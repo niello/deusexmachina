@@ -147,24 +147,24 @@ void CAILevel::RemoveStimulus(CStimulus* pStimulus)
 void CAILevel::RemoveStimulus(CStimulusNode* pStimulusNode)
 {
 	n_assert(pStimulusNode && pStimulusNode->Object->GetQuadTreeNode());
-	StimulusQT.RemoveObject(pStimulusNode);
+	StimulusQT.RemoveElement(pStimulusNode);
 }
 //---------------------------------------------------------------------
 
-void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus ClipStatus)
+void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus)
 {
 	if (!pNode->GetTotalObjCount()) return;
 
-	if (ClipStatus == InvalidClipStatus || ClipStatus == Clipped)
+	if (EClipStatus == InvalidClipStatus || EClipStatus == Clipped)
 	{
 		bbox3 BBox;
 		pNode->GetBounds(BBox);
 		BBox.vmin.y = Box.vmin.y;
 		BBox.vmax.y = Box.vmax.y;
-		ClipStatus = pSensor->GetBoxClipStatus(pActor, BBox);
+		EClipStatus = pSensor->GetBoxClipStatus(pActor, BBox);
 	}
 
-	if (ClipStatus == Outside) return;
+	if (EClipStatus == Outside) return;
 
 	for (int i = 0; i < pNode->Data.GetListCount(); ++i)
 		if (pSensor->AcceptsStimulusType(*pNode->Data.GetKeyAt(i)))
@@ -176,7 +176,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 
 	if (pNode->HasChildren())
 		for (DWORD i = 0; i < 4; i++)
-			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, ClipStatus);
+			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, EClipStatus);
 }
 //---------------------------------------------------------------------
 

@@ -23,13 +23,6 @@
 class nCamera2
 {
 public:
-    /// clip status
-    enum ClipStatus
-    {
-        Outside,
-        Inside,
-        Clipped,
-    };
 
     /// type
     enum Type
@@ -90,9 +83,9 @@ public:
     /// get a bounding box enclosing the camera
     const bbox3& GetBox();
     // get the view volume
-    void GetViewVolume(float& minx, float& maxx, float& miny, float& maxy, float& minz, float& maxz) const;
+    void GetViewVolume(bbox3& Vol) const;
     /// check if 2 view volumes intersect
-    ClipStatus GetClipStatus(const matrix44& myTransform, const matrix44& otherViewProjection);
+    EClipStatus GetClipStatus(const matrix44& myTransform, const matrix44& otherViewProjection);
 
 private:
     /// update the internal projection and inverse projection matrices
@@ -376,26 +369,16 @@ nCamera2::GetShadowOffset() const
 }
 
 //------------------------------------------------------------------------------
-/**
-    @brief Get the view volume.
 
-    @param  minx    the left x coord where view volume cuts near plane
-    @param  maxx    the right x coord where view volume cuts near plane
-    @param  miny    the upper y coord where view volume cuts near plane
-    @param  maxy    the lower y coord where view volume cuts near plane
-    @param  minz    distance from eye to near plane of view volume
-    @param  maxz    distance from eye to far plane of view volume
-*/
-inline
-void
-nCamera2::GetViewVolume(float& minx, float& maxx, float& miny, float& maxy, float& minz, float& maxz) const
+// x and y are relative to the near plane
+inline void nCamera2::GetViewVolume(bbox3& Vol) const
 {
-    maxy = this->nearPlane * n_tan(this->angleOfView * 0.5f);
-    miny = -maxy;
-    maxx = this->aspectRatio * maxy;
-    minx = -maxx;
-    minz = this->nearPlane;
-    maxz = this->farPlane;
+	Vol.vmax.y = nearPlane * n_tan(angleOfView * 0.5f);
+	Vol.vmin.y = -Vol.vmax.y;
+	Vol.vmax.x = aspectRatio * Vol.vmax.y;
+	Vol.vmin.x = -Vol.vmax.x;
+	Vol.vmin.z = nearPlane;
+	Vol.vmax.z = farPlane;
 }
 
 //------------------------------------------------------------------------------
@@ -475,9 +458,7 @@ nCamera2::GetShadowProjection()
 /**
     Check if 2 view volumes intersect.
 */
-inline
-nCamera2::ClipStatus
-nCamera2::GetClipStatus(const matrix44& myTransform, const matrix44& otherViewProjection)
+inline EClipStatus nCamera2::GetClipStatus(const matrix44& myTransform, const matrix44& otherViewProjection)
 {
     // compute matrix which transforms my local hull into
     // projection space of the other camera

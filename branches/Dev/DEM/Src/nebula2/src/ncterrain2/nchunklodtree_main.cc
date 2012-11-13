@@ -15,8 +15,8 @@ nNebulaClass(nChunkLodTree, "nresource");
 /**
 */
 nChunkLodTree::nChunkLodTree() :
-    terrainScale(1.0f),
-    terrainOrigin(0.0f, 0.0f, 0.0f),
+    TerrainScale(1.0f),
+    TerrainOrigin(0.0f, 0.0f, 0.0f),
     texQuadTree(0),
     chunksAllocated(0),
     chunks(0),
@@ -190,8 +190,8 @@ nChunkLodTree::LoadResource()
 	chuFile->Read(&errorLodMax, sizeof(float));
 	chuFile->Read(&verticalScale, sizeof(float));
 	chuFile->Read(&baseChunkDimension, sizeof(float));
-    this->verticalScale      *= terrainScale;
-    this->baseChunkDimension *= terrainScale;
+    this->verticalScale      *= TerrainScale;
+    this->baseChunkDimension *= TerrainScale;
 	chuFile->Read(&chunkCount, sizeof(int));
     this->chunkTable.SetFixedSize(this->chunkCount);
     this->chunkTable.Fill(0, this->chunkCount, 0);
@@ -402,7 +402,7 @@ nChunkLodTree::Render(nShader2* shader, const matrix44& projection, const matrix
     int triCount = 0;
     if (this->chunks[0].IsValid())
     {
-        triCount += this->chunks[0].Render(renderParams, bbox3::Clipped, false);
+        triCount += this->chunks[0].Render(renderParams, Clipped, false);
     }
     this->numMeshesRendered = renderParams.numMeshesRendered;
     this->numTexturesRendered = renderParams.numTexturesRendered;

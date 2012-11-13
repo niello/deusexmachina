@@ -33,11 +33,10 @@ void CSceneServer::RemoveScene(CStrID Name)
 void CSceneServer::Trigger()
 {
 	if (!pCurrScene) return;
-	pCurrScene->GetRootNode().UpdateTransform();
-	// Perform visibility check (attrs already added themselves to SPS)
+	pCurrScene->GetRootNode().UpdateTransform(*pCurrScene);
 	pCurrScene->GetRootNode().PrepareToRender();
-	// Renderer must collect lights in separate array
-	// Render scene (request renderer to render its tree)
+	//pCurrScene->Render(); // Default camera, default pass
+	//new objects must be inserted, old must be resorted, or reattach all from scratch every frame
 }
 //---------------------------------------------------------------------
 

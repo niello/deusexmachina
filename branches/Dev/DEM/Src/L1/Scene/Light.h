@@ -9,11 +9,16 @@
 
 //!!!don't forget that most of the light params are regular shader params!
 
+class bbox3;
+
 namespace Scene
 {
+struct CSPSRecord;
 
 class CLight: public CSceneNodeAttr
 {
+	DeclareRTTI;
+
 public:
 
 	enum EType
@@ -39,11 +44,30 @@ public:
 		};
 	};
 
-	//decay type, near and far attenuation, inner cone, outer cone,
+	//decay type(none, lin, quad), near and far attenuation
 	//shadow color(or calc?)
 	//???fog intensity? decay start distance
-	//???bool cast light? volumetric, ground projection
+	//???bool cast light? draw volumetric, draw ground projection
+
+	CSPSRecord*	pSPSRecord;
+
+	CLight(): pSPSRecord(NULL) {}
+
+	virtual void	UpdateTransform(CScene& Scene);
+	void			GetBox(bbox3& OutBox) const;
+
+	//use smallest of possible AABBs (light to model local space before testing)
+	// IsBoxInRange(const bbox3& Box) { if directional yes else real test }
 };
+
+typedef Ptr<CLight> PLight;
+
+inline void CLight::GetBox(bbox3& OutBox) const
+{
+	// If local params changed, recompute AABB
+	// If transform of host node changed, update global space AABB (rotate, scale)
+}
+//---------------------------------------------------------------------
 
 }
 

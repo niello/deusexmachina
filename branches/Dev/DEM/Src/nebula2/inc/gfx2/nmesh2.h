@@ -11,7 +11,6 @@
 
     Internally holds opaque vertex and index data to feed a vertex shader.
     Vertices in a mesh are simply an array of floats.
-    Edges are stored in a system memory array with the Edge type.
     Meshes are generally static and loaded from mesh resource files.
 
     nMesh2 is normally a superclass for Gfx API specific derived classes, like
@@ -122,14 +121,12 @@ struct nMeshGroup
 	int		NumVertices;
 	int		FirstIndex;
 	int		NumIndices;
-	int		FirstEdge;
-	int		NumEdges;
 	bbox3	Box;
 
-	nMeshGroup(): FirstVertex(0), NumVertices(0), FirstIndex(0), NumIndices(0), FirstEdge(0), NumEdges(0) {}
+	nMeshGroup(): FirstVertex(0), NumVertices(0), FirstIndex(0), NumIndices(0) {}
 };
 
-class nMesh2 : public nResource
+class nMesh2: public nResource
 {
 public:
     enum VertexComponent
@@ -178,12 +175,6 @@ public:
         InvalidIndex = 0xffff, // invalid index constant
     };
 
-    struct Edge
-    {
-        ushort fIndex[2];  // face indices - the 2nd face index could be = InvalidIndex when the edge is a geometry border
-        ushort vIndex[2];  // vertex indices
-    };
-
     /// constructor
     nMesh2();
     /// destructor
@@ -199,10 +190,6 @@ public:
     virtual ushort* LockIndices() { return NULL; }
     /// unlock index buffer
 	virtual void UnlockIndices() {}
-    /// lock edge buffer
-	virtual Edge* LockEdges() { n_assert(privEdgeBuffer); return privEdgeBuffer; }
-    /// unlock edge buffer
-	virtual void UnlockEdges() {}
 
     /// set the mesh use type (both vertex and index buffer)
     void SetUsage(int useFlags);
@@ -224,10 +211,6 @@ public:
     void SetNumIndices(int num);
     /// get num indices in mesh
     int GetNumIndices() const;
-    /// set number of edges
-    void SetNumEdges(int num);
-    /// get num edges in mesh
-    int GetNumEdges() const;
     /// set vertex components
     void SetVertexComponents(int compMask);
     /// get vertex components
@@ -253,7 +236,7 @@ public:
     /// returns the byte size of the embedded edge buffer
     int GetEdgeBufferByteSize() const;
     /// get an estimated byte size of the resource data (for memory statistics)
-	virtual int GetByteSize() { return IsValid() ? numEdges * sizeof(Edge) : 0; }
+	virtual int GetByteSize() { return 0; }
 
     /// optimize the mesh (can be redefined for each platform)
 	virtual bool OptimizeMesh(OptimizationFlag flags, float * vertices, int numVertices, ushort * indices, int numIndices) { return true; }
@@ -272,14 +255,10 @@ protected:
     virtual void CreateVertexBuffer();
     /// overload in subclass: create the index buffer
     virtual void CreateIndexBuffer();
-    /// create the edge buffer
-    virtual void CreateEdgeBuffer();
     /// set the byte size of the vertex buffer
     void SetVertexBufferByteSize(int s);
     /// set the byte size of the index buffer
     void SetIndexBufferByteSize(int s);
-    /// set the byte size of the edge buffer
-    void SetEdgeBufferByteSize(int s);
     /// update the group bounding boxes (slow!)
     void UpdateGroupBoundingBoxes(float* vertexBufferData, ushort* indexBufferData);
     /// load file with the provided mesh loader
@@ -290,15 +269,11 @@ protected:
     int vertexComponentMask;
     int vertexWidth;                // depends on vertexComponentMask
     int numVertices;
-    int numEdges;
     int numIndices;
     int numGroups;
     nMeshGroup* groups;
     int vertexBufferByteSize;
     int indexBufferByteSize;
-    int edgeBufferByteSize;
-
-    Edge* privEdgeBuffer;   // valid if numEdges > 0
 };
 
 //------------------------------------------------------------------------------
@@ -390,26 +365,6 @@ int
 nMesh2::GetNumVertices() const
 {
     return this->numVertices;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nMesh2::SetNumEdges(int num)
-{
-    this->numEdges = num;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-int
-nMesh2::GetNumEdges() const
-{
-    return this->numEdges;
 }
 
 //------------------------------------------------------------------------------
@@ -594,17 +549,6 @@ nMesh2::SetIndexBufferByteSize(int s)
 /**
 */
 inline
-void
-nMesh2::SetEdgeBufferByteSize(int s)
-{
-    n_assert(s > 0);
-    this->edgeBufferByteSize = s;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
 int
 nMesh2::GetVertexBufferByteSize() const
 {
@@ -619,16 +563,6 @@ int
 nMesh2::GetIndexBufferByteSize() const
 {
     return this->indexBufferByteSize;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-int
-nMesh2::GetEdgeBufferByteSize() const
-{
-    return this->edgeBufferByteSize;
 }
 
 //------------------------------------------------------------------------------

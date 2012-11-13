@@ -133,8 +133,6 @@ private:
     static int __cdecl CompareShadowLights(const LightInfo* i1, const LightInfo* i2);
     /// do the render path rendering
     void DoRenderPath(nRpSection& rpSection);
-    /// render shadow
-    void RenderShadow(nRpPass& curPass);
     /// render a complete phase for light mode "Off"
     void RenderPhaseLightModeOff(nRpPhase& curPhase);
     /// render a complete phase for light mode "Shader"
@@ -161,8 +159,6 @@ private:
     bool IsShapeLitByLight(const Group& shapeGroup, const Group& lightGroup);
     /// render the cameras
     void RenderCameraScene();
-    /// copy the stencil buffer state to a texture
-    void CopyStencilBufferToTexture(nRpPass& rpPass, const vector4& shadowLightMask);
     /// issue a single general occlusion query
     void IssueOcclusionQuery(Group& group, const vector3& viewerPos);
     /// do a general occlusion query on all root nodes

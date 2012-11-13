@@ -18,13 +18,6 @@
 class sphere
 {
 public:
-    /// clip status
-    enum ClipStatus
-    {
-        Outside,
-        Inside,
-        Clipped,
-    };
 
     /// default constructor
     sphere();
@@ -49,7 +42,7 @@ public:
     /// project sphere to screen rectangle (right handed coordinate system)
     rectangle project_screen_rh(const matrix44& modelView, const matrix44& projection, float nearZ) const;
     /// get clip status of box against sphere
-    ClipStatus clipstatus(const bbox3& box) const;
+    EClipStatus clipstatus(const bbox3& box) const;
 
     vector3 p;  // position
     float   r;  // radius
@@ -209,7 +202,7 @@ sphere::intersects(const bbox3& box) const
     box is completely inside the sphere.
 */
 inline
-sphere::ClipStatus
+EClipStatus
 sphere::clipstatus(const bbox3& box) const
 {
     if (this->inside(box)) return Inside;

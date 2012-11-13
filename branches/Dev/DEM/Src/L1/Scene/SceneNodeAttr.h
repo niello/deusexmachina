@@ -11,21 +11,28 @@
 
 namespace Scene
 {
+class CScene;
 class CSceneNode;
 
 class CSceneNodeAttr: public Core::CRefCounted
 {
+	DeclareRTTI;
+
 private:
 
 	CSceneNode* pNode;
 
 public:
 
-	virtual void Update() = 0;
+	CSceneNodeAttr(): pNode(NULL) {}
+
+	virtual void UpdateTransform(CScene& Scene) = 0;
 	virtual void PrepareToRender() {}
+
+	CSceneNode* GetNode() const { return pNode; }
 };
 
-typedef Ptr<class CSceneNodeAttr> PSceneNodeAttr;
+typedef Ptr<CSceneNodeAttr> PSceneNodeAttr;
 
 }
 

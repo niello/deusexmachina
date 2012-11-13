@@ -113,12 +113,7 @@ bool CEntity::TestLODVisibility()
 
 EClipStatus CEntity::GetBoxClipStatus(const bbox3& Box)
 {
-	switch (GetBox().clipstatus(Box))
-	{
-		case bbox3::Clipped:	return Clipped;
-		case bbox3::Inside:		return Inside;
-		default:				return Outside;
-	}
+	return GetBox().clipstatus(Box);
 }
 //---------------------------------------------------------------------
 
@@ -146,11 +141,11 @@ bool CGfxQTNode::Remove(const PEntity& Object)
 }
 //---------------------------------------------------------------------
 
-void CGfxQTNode::Remove(CElement* pElement)
+void CGfxQTNode::RemoveElement(CElement* pElement)
 {
 	//UpdateNumEntitiesInHierarchy((*ItEntity)->GetType(), -1);
 	//pElement->Object->ClearLinks(AllLinks);
-	Entities.Remove(pElement);
+	Entities.RemoveElement(pElement);
 }
 //---------------------------------------------------------------------
 

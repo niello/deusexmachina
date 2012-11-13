@@ -3,29 +3,38 @@
 #define __DEM_L1_SCENE_H__
 
 #include <Scene/SceneNode.h>
-#include <mathlib/bbox.h>
+#include <Scene/Camera.h>
+#include <Scene/SPS.h>
 
 // 3D scene with node hierarchy and volume subdivided to optimize spatial requests
 
 namespace Scene
 {
+class CLight;
 
 class CScene: public Core::CRefCounted
 {
 private:
 
 	PSceneNode			RootNode;
+	nArray<PSceneNode>	OwnedNodes;
 
 	vector4				AmbientLight;
 	//Fog settings
 	//???shadow settings?
 
-	nArray<PSceneNode>	OwnedNodes;
+	bbox3				Bounds;
+	PCamera				CurrCamera;
 
-	// Curr camera (node or attr or smth?)
-	// Spatial partitioning structure (quadtree, octree or BVH)
+	nArray<CMesh*>		VisibleMeshes;
+	nArray<CLight*>		VisibleLights;
+
+	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
+	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CMesh*>* OutMeshes, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = InvalidClipStatus);
 
 public:
+
+	CSPS				SPS;			// Spatial partitioning structure
 
 	CScene(): OwnedNodes(0, 32), AmbientLight(0.2f, 0.2f, 0.2f, 1.f) { OwnedNodes.SetFlags(nArray<PSceneNode>::DoubleGrowSize); }
 	~CScene() { Clear(); }
@@ -34,6 +43,11 @@ public:
 	void		Activate();
 	void		Deactivate();
 	void		Clear();
+
+	//!!!can add global lights to separate array if necessary!
+	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
+
+	bool		Render(PCamera Camera, CStrID FrameShaderID);
 
 	void		OwnNode(PSceneNode Node);
 	bool		FreeNode(PSceneNode Node);

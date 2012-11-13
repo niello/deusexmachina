@@ -154,14 +154,6 @@ bool CGfxServer::Open()
 	}
 	else n_printf("CGfxServer::Open(): Warning, data:tables/anims.xml doesn't exist!\n");
 
-	// Blank screen
-	nGfxServer2::Instance()->BeginFrame();
-	nGfxServer2::Instance()->BeginScene();
-	nGfxServer2::Instance()->Clear(nGfxServer2::AllBuffers, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0);
-	nGfxServer2::Instance()->EndScene();
-	nGfxServer2::Instance()->PresentScene();
-	nGfxServer2::Instance()->EndFrame();
-
 	OK;
 }
 //---------------------------------------------------------------------

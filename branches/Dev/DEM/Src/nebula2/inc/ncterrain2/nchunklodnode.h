@@ -81,7 +81,7 @@ public:
     /// request to unload textures for this node and all its descendants
     void RequestUnloadTextures(nChunkLodTree* tree);
     /// render the chunk lod node
-    int Render(nChunkLodRenderParams& renderParams, bbox3::ClipStatus clipStatus, bool textureBound);
+    int Render(nChunkLodRenderParams& renderParams, EClipStatus clipStatus, bool textureBound);
     /// return true if contains valid texture
     bool HasValidTexture() const;
     /// get the chunk's texture

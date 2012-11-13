@@ -99,6 +99,21 @@ void nGfxServer2::EndFrame()
 }
 //---------------------------------------------------------------------
 
+bool nGfxServer2::ClearScreen(float red, float green, float blue, float alpha, float z, int stencil)
+{
+	if (!BeginFrame()) FAIL;
+	bool Result = BeginScene();
+	if (Result)
+	{
+		Clear(AllBuffers, red, green, blue, alpha, z, stencil);
+		EndScene();
+		PresentScene();
+	}
+	EndFrame();
+	return Result;
+}
+//---------------------------------------------------------------------
+
 //------------------------------------------------------------------------------
 /**
     Begin rendering to the current render target. This may get called

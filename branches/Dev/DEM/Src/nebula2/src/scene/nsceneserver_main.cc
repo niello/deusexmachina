@@ -311,27 +311,22 @@ nSceneServer::RenderScene()
     this->SortNodes();
 
     // render camera nodes in scene
-    if (this->camerasEnabled)
-    {
-        this->RenderCameraScene();
-    }
+    if (camerasEnabled) RenderCameraScene();
 
     /// reset light passes in shape groups between renderpath
     for (int i = 0; i < this->shapeBucket.Size(); i++)
     {
         const nArray<ushort>& shapeArray = this->shapeBucket[i];
         for (int j = 0; j < shapeArray.Size(); j++)
-        {
-            this->groupArray[shapeArray[j]].lightPass = 0;
-        }
+            groupArray[shapeArray[j]].lightPass = 0;
     }
 
     // render final scene
-    PROFILER_START(this->profRenderPath);
-    int sectionIndex = this->renderPath.FindSectionIndex("default");
-    n_assert(-1 != sectionIndex);
-    this->DoRenderPath(this->renderPath.GetSection(sectionIndex));
-    PROFILER_STOP(this->profRenderPath);
+    PROFILER_START(profRenderPath);
+    int SectionIdx = renderPath.FindSectionIndex("default");
+    n_assert(SectionIdx != -1);
+    DoRenderPath(renderPath.GetSection(SectionIdx));
+    PROFILER_STOP(profRenderPath);
 
     // HACK...
     this->gfxServerInBeginScene = nGfxServer2::Instance()->BeginScene();
@@ -345,17 +340,14 @@ nSceneServer::RenderScene()
 void
 nSceneServer::PresentScene()
 {
-    if (this->gfxServerInBeginScene)
+    if (gfxServerInBeginScene)
     {
-        if (this->renderDebug)
+        if (renderDebug)
         {
-            this->DebugRenderLightScissors();
-            this->DebugRenderShapes();
+            DebugRenderLightScissors();
+            DebugRenderShapes();
         }
-        if (this->perfGuiEnabled)
-        {
-            this->DebugRenderPerfGui();
-        }
+        if (perfGuiEnabled) DebugRenderPerfGui();
         nGfxServer2::Instance()->DrawTextBuffer();
         nGfxServer2::Instance()->EndScene();
         nGfxServer2::Instance()->PresentScene();
@@ -482,33 +474,25 @@ nSceneServer::SplitNodes()
     loaded their resources. This method is available
     as a convenience method for subclasses.
 */
-void
-nSceneServer::ValidateNodeResources()
+void nSceneServer::ValidateNodeResources()
 {
     PROFILER_START(this->profValidateResources);
 
     // need to evaluate camera nodes first, because they create
     // textures used by other nodes
-    ushort i;
-    ushort num = this->cameraArray.Size();
-    for (i = 0; i < num; i++)
+    for (ushort i = 0; i < cameraArray.Size(); i++)
     {
-        Group& group = this->groupArray[this->cameraArray[i]];
-        if (!group.sceneNode->AreResourcesValid())
-        {
-            group.sceneNode->LoadResources();
-        }
+        nSceneNode* pCameraNode = groupArray[cameraArray[i]].sceneNode;
+        if (!pCameraNode->AreResourcesValid())
+            pCameraNode->LoadResources();
     }
 
     // then evaluate the rest
-    num = this->groupArray.Size();
-    for (i = 0; i < num; i++)
+    for (ushort i = 0; i < groupArray.Size(); i++)
     {
-        const Group& group = this->groupArray[i];
-        if (!group.sceneNode->AreResourcesValid())
-        {
-            group.sceneNode->LoadResources();
-        }
+        nSceneNode* pNode = groupArray[i].sceneNode;
+        if (!pNode->AreResourcesValid())
+            pNode->LoadResources();
     }
     PROFILER_STOP(this->profValidateResources);
 }

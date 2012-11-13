@@ -112,8 +112,8 @@ protected:
     /// distrubute an event to the event handlers
     void PutEvent(nCLODEventHandler::Event event, nChunkLodNode* node);
 
-    float terrainScale;
-    vector3 terrainOrigin;
+    float TerrainScale;
+    vector3 TerrainOrigin;
     nString tqtFilename;
     nTextureQuadTree* texQuadTree;
     int chunksAllocated;
@@ -195,7 +195,7 @@ inline
 void
 nChunkLodTree::SetTerrainOrigin(const vector3& orig)
 {
-    this->terrainOrigin = orig;
+    this->TerrainOrigin = orig;
 }
 
 //------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ inline
 const vector3& 
 nChunkLodTree::GetTerrainOrigin() const
 {
-    return this->terrainOrigin;
+    return this->TerrainOrigin;
 }
 
 //------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ inline
 void
 nChunkLodTree::SetTerrainScale(float s)
 {
-    this->terrainScale = s;
+    this->TerrainScale = s;
 }
 
 //------------------------------------------------------------------------------
@@ -225,7 +225,7 @@ inline
 float
 nChunkLodTree::GetTerrainScale() const
 {
-    return this->terrainScale;
+    return this->TerrainScale;
 }
 
 //------------------------------------------------------------------------------

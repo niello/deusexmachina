@@ -94,10 +94,6 @@ public:
     void SetShadowEnabledCondition(bool b);
     /// get the "shadow enabled condition" flag
     bool GetShadowEnabledCondition() const;
-    /// set the "draw gui" flag
-    void SetDrawGui(bool b);
-    /// get the "draw gui" flag
-    bool GetDrawGui() const;
     /// add constant shader parameter value
     void AddConstantShaderParam(nShaderState::Param p, const nShaderArg& arg);
     /// add variable shader parameter value
@@ -168,7 +164,6 @@ private:
     ShadowTechnique shadowTechnique;
 
     bool drawFullscreenQuad;        // true if pass should render a full-screen quad
-    bool drawGui;                   // true if this pass should render the gui
     bool shadowEnabledCondition;
     bool occlusionQuery;            // special flag for occlusion query
     bool statsEnabled;
@@ -207,7 +202,6 @@ nRpPass::operator=(const nRpPass& rhs)
     this->occlusionQuery            = rhs.occlusionQuery;
     this->statsEnabled              = rhs.statsEnabled;
     this->drawFullscreenQuad        = rhs.drawFullscreenQuad;
-    this->drawGui                   = rhs.drawGui;
     this->shadowEnabledCondition    = rhs.shadowEnabledCondition;
     if (this->refQuadMesh.isvalid())
     {
@@ -337,26 +331,6 @@ bool
 nRpPass::GetDrawFullscreenQuad() const
 {
     return this->drawFullscreenQuad;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRpPass::SetDrawGui(bool b)
-{
-    this->drawGui = b;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-nRpPass::GetDrawGui() const
-{
-    return this->drawGui;
 }
 
 //------------------------------------------------------------------------------

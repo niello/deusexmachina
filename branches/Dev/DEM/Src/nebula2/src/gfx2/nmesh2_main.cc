@@ -24,13 +24,10 @@ nMesh2::nMesh2() :
     vertexWidth(0),
     numVertices(0),
     numIndices(0),
-    numEdges(0),
     numGroups(0),
     groups(0),
     vertexBufferByteSize(0),
-    indexBufferByteSize(0),
-    edgeBufferByteSize(0),
-    privEdgeBuffer(0)
+    indexBufferByteSize(0)
 {
     // empty
 }
@@ -59,15 +56,8 @@ nMesh2::UnloadResource()
     // etc. Those values may be needed in a following call to Load()!
     this->vertexBufferByteSize = 0;
     this->indexBufferByteSize  = 0;
-    this->edgeBufferByteSize = 0;
 
-    // release private edge buffer
-    if (this->privEdgeBuffer)
-    {
-        n_free(this->privEdgeBuffer);
-        this->privEdgeBuffer = 0;
-    }
-    this->SetState(Unloaded);
+	this->SetState(Unloaded);
 }
 
 //------------------------------------------------------------------------------
@@ -112,17 +102,6 @@ nMesh2::LoadResource()
 }
 
 //------------------------------------------------------------------------------
-/**
-*/
-void nMesh2::CreateEdgeBuffer()
-{
-    n_assert(0 == this->privEdgeBuffer);
-    n_assert(this->edgeBufferByteSize > 0);
-    this->privEdgeBuffer = (Edge*)n_malloc(this->edgeBufferByteSize);
-    n_assert(this->privEdgeBuffer);
-}
-
-//------------------------------------------------------------------------------
 
 bool nMesh2::CreateNew(DWORD VtxCount, DWORD IdxCount, int Usage, int VtxComponents)
 {
@@ -144,14 +123,6 @@ bool nMesh2::CreateNew(DWORD VtxCount, DWORD IdxCount, int Usage, int VtxCompone
 		SetIndexBufferByteSize(indicesByteSize);
 		CreateIndexBuffer();
 	}
-
-	//// load edges ?
-	//if (GetNumEdges() > 0)
-	//{
-	//	int edgesByteSize = GetNumEdges() * sizeof(Edge);
-	//	SetEdgeBufferByteSize(edgesByteSize);
-	//	CreateEdgeBuffer();
-	//}
 
 	SetState(Valid);
 	return true;
@@ -183,7 +154,6 @@ nMesh2::LoadFile(nMeshLoader* meshLoader)
     this->SetNumVertices(meshLoader->GetNumVertices());
     this->SetVertexComponents(meshLoader->GetVertexComponents());
     this->SetNumIndices(meshLoader->GetNumIndices());
-    this->SetNumEdges(meshLoader->GetNumEdges());
 
     int groupIndex;
     int numGroups = meshLoader->GetNumGroups();
@@ -221,18 +191,6 @@ nMesh2::LoadFile(nMeshLoader* meshLoader)
 
     this->UnlockIndices();
     this->UnlockVertices();
-
-    // if the file contains edges load them
-    if (this->numEdges > 0)
-    {
-        int ebSize = this->numEdges * sizeof(Edge);
-        this->SetEdgeBufferByteSize(ebSize);
-        this->CreateEdgeBuffer();
-        Edge* edgeBufferPtr = this->LockEdges();
-        res = meshLoader->ReadEdges(edgeBufferPtr, ebSize);
-        n_assert(res);
-        this->UnlockEdges();
-    }
 
     // close the mesh loader
     meshLoader->Close();

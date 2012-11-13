@@ -52,7 +52,7 @@ struct CGfxQTNode
 
 	CElement*	Add(const PEntity& Object) { return Entities.Add(Object); } //UpdateNumEntitiesInHierarchy(pEntity->GetType(), 1);
 	bool		Remove(const PEntity& Object);
-	void		Remove(CElement* pElement);
+	void		RemoveElement(CElement* pElement);
 };
 
 typedef Data::CQuadTree<class CEntity*, CGfxQTNode> CGfxQT;

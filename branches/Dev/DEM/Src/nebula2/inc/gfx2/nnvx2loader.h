@@ -89,8 +89,6 @@ nNvx2Loader::Open()
         group.NumVertices = numVertices;
         group.FirstIndex = firstTriangle * 3;
         group.NumIndices = numTriangles * 3;
-        group.FirstEdge = firstEdge;
-        group.NumEdges = numEdges;
         this->groupArray.Append(group);
     }
 
