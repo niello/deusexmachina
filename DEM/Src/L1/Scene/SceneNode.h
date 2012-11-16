@@ -40,7 +40,9 @@ public:
 
 	enum
 	{
-		OwnedByScene = 0x01
+		Active			= 0x01,	// Node must be processed
+		OwnedByScene	= 0x02,	// This node is owned by scene and lives until scene is destroyed
+		RespectsLOD		= 0x04	// This node is affected by parent's LODGroup attribute
 	};
 
 private:
@@ -80,16 +82,7 @@ public:
 	PSceneNode	GetChild(LPCSTR Path, bool Create = false);
 	CSceneNode*	FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
-	bool		IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
-
 	void		UpdateTransform(CScene& Scene);
-
-	//???need in node? mb call this only on attrs passed the visibility filter?
-	void		PrepareToRender();
-
-	const Math::CTransform& GetLocalTransform() { return Tfm; }
-	void SetLocalTransform(const matrix44& Transform) { Tfm.FromMatrix(Transform); }
-	const matrix44& GetWorldTransform() { return GlobalTfm; }
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)
@@ -99,6 +92,17 @@ public:
 	// Attribute managenent
 
 	// Animator (controller, animation node) management
+
+	void					SetLocalTransform(const matrix44& Transform) { Tfm.FromMatrix(Transform); }
+	const Math::CTransform&	GetLocalTransform() { return Tfm; }
+	const matrix44&			GetWorldTransform() { return GlobalTfm; }
+
+	CStrID		GetName() const { return Name; }
+
+	bool		IsActive() const { return Flags.Is(Active); }
+	void		Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
+	bool		IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
+	bool		IsLODDependent() const { return Flags.Is(RespectsLOD); }
 };
 
 inline void CSceneNode::RemoveChild(CSceneNode& Node)

@@ -38,25 +38,13 @@ void CSceneNode::UpdateTransform(CScene& Scene)
 	GlobalTfm = MLocalTfm;
 	if (Parent.isvalid()) GlobalTfm.mult_simple(Parent->GetWorldTransform()); //???or parent matrix as arg?
 
-	//!!!LOD!
-	// If has LODGroup attribute, test a distance to the MAIN camera
-	// Select child node(s) to activade, deactivate others, update only active ones
-	// Active check must be general, below!
-
-	for (int i = 0; i < Child.Size(); ++i)
-		//!!!if Child is Active!
-		Child.ValueAtIndex(i)->UpdateTransform(Scene);
-
+	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.Size(); ++i)
 		Attrs[i]->UpdateTransform(Scene);
-}
-//---------------------------------------------------------------------
 
-//???rename to UpdateShaderParams?
-void CSceneNode::PrepareToRender()
-{
-	for (int i = 0; i < Attrs.Size(); ++i)
-		Attrs[i]->PrepareToRender();
+	for (int i = 0; i < Child.Size(); ++i)
+		if (Child.ValueAtIndex(i)->IsActive())
+			Child.ValueAtIndex(i)->UpdateTransform(Scene);
 }
 //---------------------------------------------------------------------
 

@@ -1309,6 +1309,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\LODGroup.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\LODGroup.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\Mesh.cpp"
 				>
 			</File>

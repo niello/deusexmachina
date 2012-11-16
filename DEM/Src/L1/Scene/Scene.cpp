@@ -9,6 +9,11 @@ void CScene::Init(const bbox3& Bounds)
 {
 	RootNode = SceneSrv->CreateSceneNode(CStrID::Empty);
 	RootNode->Flags.Set(CSceneNode::OwnedByScene);
+
+	SceneBBox = Bounds;
+	vector3 Center = SceneBBox.center();
+	vector3 Size = SceneBBox.size();
+	SPS.Build(Center.x, Center.z, Size.x, Size.z, 5); //???where to get depth?
 }
 //---------------------------------------------------------------------
 
@@ -38,7 +43,7 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 	if (!Camera.isvalid()) Camera = CurrCamera;
 	if (!Camera.isvalid()) FAIL;
 
-	// Get frame shader here
+	// Get frame shader here, if ID is empty, use default frame shader
 
 	//!!!FrameShader OPTIONS!
 	bool FrameShaderUsesLights = true;
@@ -171,8 +176,8 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 	{
 		bbox3 NodeBox;
 		pNode->GetBounds(NodeBox);
-		NodeBox.vmin.y = Bounds.vmin.y;
-		NodeBox.vmax.y = Bounds.vmax.y;
+		NodeBox.vmin.y = SceneBBox.vmin.y;
+		NodeBox.vmax.y = SceneBBox.vmax.y;
 		Clip = NodeBox.clipstatus(ViewProj);
 		if (Clip == Outside) return;
 	}
