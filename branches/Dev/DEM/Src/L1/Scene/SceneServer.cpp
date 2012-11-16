@@ -34,9 +34,7 @@ void CSceneServer::Trigger()
 {
 	if (!pCurrScene) return;
 	pCurrScene->GetRootNode().UpdateTransform(*pCurrScene);
-	pCurrScene->GetRootNode().PrepareToRender();
-	//pCurrScene->Render(); // Default camera, default pass
-	//new objects must be inserted, old must be resorted, or reattach all from scratch every frame
+	pCurrScene->Render();
 }
 //---------------------------------------------------------------------
 

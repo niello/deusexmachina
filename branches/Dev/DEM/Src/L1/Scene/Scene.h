@@ -23,7 +23,7 @@ private:
 	//Fog settings
 	//???shadow settings?
 
-	bbox3				Bounds;
+	bbox3				SceneBBox;
 	PCamera				CurrCamera;
 
 	nArray<CMesh*>		VisibleMeshes;
@@ -47,12 +47,13 @@ public:
 	//!!!can add global lights to separate array if necessary!
 	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
 
-	bool		Render(PCamera Camera, CStrID FrameShaderID);
+	bool		Render(PCamera Camera = NULL, CStrID FrameShaderID = CStrID::Empty);
 
 	void		OwnNode(PSceneNode Node);
 	bool		FreeNode(PSceneNode Node);
 	PSceneNode	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode; }
 	CSceneNode&	GetRootNode() const { return *RootNode.get(); }
+	CCamera*	GetCurrCamera() const { return CurrCamera.get_unsafe(); }
 };
 
 typedef Ptr<CScene> PScene;

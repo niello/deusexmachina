@@ -18,7 +18,7 @@ class CSceneNodeAttr: public Core::CRefCounted
 {
 	DeclareRTTI;
 
-private:
+protected:
 
 	CSceneNode* pNode;
 

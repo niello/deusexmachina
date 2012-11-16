@@ -8,7 +8,7 @@ ImplementRTTI(Scene::CLight, Scene::CSceneNodeAttr);
 
 void CLight::UpdateTransform(CScene& Scene)
 {
-	if (Type == Directional) Scene.AddVisibleLight(*this); // GlobalLights are cleared each frame
+	if (Type == Directional) Scene.AddVisibleLight(*this);
 	else
 	{
 		if (!pSPSRecord)
