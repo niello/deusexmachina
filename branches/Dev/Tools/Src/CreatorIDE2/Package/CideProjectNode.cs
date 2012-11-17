@@ -5,7 +5,10 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using CreatorIDE.Engine;
+using Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.Project;
+using Utilities = Microsoft.VisualStudio.Project.Utilities;
+using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 
 namespace CreatorIDE.Package
 {
@@ -51,12 +54,18 @@ namespace CreatorIDE.Package
             return new CideConfigProvider(this);
         }
 
-        public override int QueryStatusCommand(uint itemId, ref Guid guidCmdGroup, uint cCmds, Microsoft.VisualStudio.OLE.Interop.OLECMD[] cmds, IntPtr pCmdText)
+        protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
         {
-            var node = ProjectMgr.NodeFromItemId(itemId);
-            if (node is LevelsNode)
-                return node.QueryStatusCommand(itemId, ref guidCmdGroup, cCmds, cmds, pCmdText);
-            return base.QueryStatusCommand(itemId, ref guidCmdGroup, cCmds, cmds, pCmdText);
+            if (commandGroup == VsMenus.guidStandardCommandSet2K)
+            {
+                switch ((VsCommands2K)command)
+                {
+                    case VsCommands2K.ADDREFERENCE:
+                        return true;
+                }
+            }
+
+            return base.DisableCmdInCurrentMode(commandGroup, command);
         }
 
         public override Guid GetGuidProperty(VsHPropID propid)
@@ -71,9 +80,42 @@ namespace CreatorIDE.Package
             }
         }
 
+        protected override void ReloadNodes(BuildPropertyGroup projectProperties)
+        {
+            base.ReloadNodes(projectProperties);
+
+            if (FirstChild == null)
+                AddChild(new CideEmptyNode(this));
+        }
+
         protected override void ProcessReferences()
         {
             // References is not supported by the project
+        }
+
+        public override void AddChild(HierarchyNode node)
+        {
+            var emptyNode = FirstChild as CideEmptyNode;
+
+            base.AddChild(node);
+
+            if (emptyNode != null)
+                emptyNode.Remove(false);
+        }
+
+        public override void RemoveChild(HierarchyNode node)
+        {
+            base.RemoveChild(node);
+
+            if (FirstChild == null)
+                AddChild(new CideEmptyNode(this));
+        }
+
+        public override void RemoveAllChildren()
+        {
+            base.RemoveAllChildren();
+
+            AddChild(new CideEmptyNode(this));
         }
 
         protected override FolderNode CreateFolderNode(string path, ProjectElement element)

@@ -1,10 +1,13 @@
-﻿namespace Microsoft.VisualStudio.Project
+﻿using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
+
+namespace Microsoft.VisualStudio.Project
 {
     public struct HResult
     {
         public static readonly HResult
             Ok = (HResult) VSConstants.S_OK,
-            False = (HResult) VSConstants.S_FALSE;
+            False = (HResult) VSConstants.S_FALSE,
+            OleCmdNotSupported = (HResult) (int) OleConstants.OLECMDERR_E_NOTSUPPORTED;
 
         private readonly int _hResult;
 

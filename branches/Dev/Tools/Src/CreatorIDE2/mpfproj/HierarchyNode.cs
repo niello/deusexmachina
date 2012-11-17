@@ -635,7 +635,7 @@ namespace Microsoft.VisualStudio.Project
 			throw new InvalidOperationException("Node not found");
 		}
 
-        public void RemoveAllChildren()
+        public virtual void RemoveAllChildren()
         {
             var node = this.firstChild;
             while (node != null)
@@ -1370,7 +1370,7 @@ namespace Microsoft.VisualStudio.Project
 		                DoDefaultAction();
 		                return true;
 		        }
-		        throw new OleCmdNotSupportedException();
+		        return false;
 		    }
 		    if(cmdGroup == VsMenus.guidStandardCommandSet97)
 		    {
@@ -1625,7 +1625,7 @@ namespace Microsoft.VisualStudio.Project
 					case VsCommands.Cut:
 					case VsCommands.Rename:
 						handled = true;
-						return QueryStatusResult.NOTSUPPORTED;
+						return QueryStatusResult.NotSupported;
 				}
 			}
 			// The reference menu and the web reference menu should always be shown.
@@ -1635,10 +1635,10 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands2K.ADDREFERENCE:
 						handled = true;
-						return QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						return QueryStatusResult.Supported | QueryStatusResult.Enabled;
 				}
 			}
-			return QueryStatusResult.NOTSUPPORTED;
+			return QueryStatusResult.NotSupported;
 		}
 
 		/// <summary>
@@ -1653,7 +1653,7 @@ namespace Microsoft.VisualStudio.Project
 		protected virtual QueryStatusResult DisableCommandOnNodesThatDoNotSupportMultiSelection(Guid cmdGroup, uint cmd, IList<HierarchyNode> selectedNodes, out bool handled)
 		{
 			handled = false;
-			QueryStatusResult queryResult = QueryStatusResult.NOTSUPPORTED;
+			QueryStatusResult queryResult = QueryStatusResult.NotSupported;
 			if(selectedNodes == null || selectedNodes.Count == 1)
 			{
 				return queryResult;
@@ -1668,14 +1668,14 @@ namespace Microsoft.VisualStudio.Project
 						// If the project node is selected then cut and copy is not supported.
 						if(selectedNodes.Contains(this.projectMgr))
 						{
-							queryResult = QueryStatusResult.SUPPORTED | QueryStatusResult.INVISIBLE;
+							queryResult = QueryStatusResult.Supported | QueryStatusResult.Invisible;
 							handled = true;
 						}
 						break;
 
 					case VsCommands.Paste:
 					case VsCommands.NewFolder:
-						queryResult = QueryStatusResult.SUPPORTED | QueryStatusResult.INVISIBLE;
+						queryResult = QueryStatusResult.Supported | QueryStatusResult.Invisible;
 						handled = true;
 						break;
 				}
@@ -1687,7 +1687,7 @@ namespace Microsoft.VisualStudio.Project
 					case VsCommands2K.QUICKOBJECTSEARCH:
 					case VsCommands2K.SETASSTARTPAGE:
 					case VsCommands2K.ViewInClassDiagram:
-						queryResult = QueryStatusResult.SUPPORTED | QueryStatusResult.INVISIBLE;
+						queryResult = QueryStatusResult.Supported | QueryStatusResult.Invisible;
 						handled = true;
 						break;
 				}
@@ -1711,7 +1711,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				if((VsCommands2K)cmd == VsCommands2K.SHOWALLFILES)
 				{
-					result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+					result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 					return VSConstants.S_OK;
 				}
 			}
@@ -1795,25 +1795,20 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="prgCmds">A caller-allocated array of OLECMD structures that indicate the commands for which the caller requires status information. This method fills the cmdf member of each structure with values taken from the OLECMDF enumeration</param>
 		/// <param name="pCmdText">Pointer to an OLECMDTEXT structure in which to return the name and/or status information of a single command. Can be NULL to indicate that the caller does not require this information. </param>
 		/// <param name="commandOrigin">Specifies the origin of the command. Either it was called from the QueryStatusCommand on IVsUIHierarchy or from the IOleCommandTarget</param>
-		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
+		/// <returns>If the command is supported, method returns true, otherwise false.</returns>
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Cmds")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "c")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "p")]
 		[SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "prg")]
-		protected virtual int QueryStatusSelection(Guid cmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText, CommandOrigin commandOrigin)
+		protected virtual bool QueryStatusSelection(Guid cmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText, CommandOrigin commandOrigin)
 		{
-			if(this.projectMgr.IsClosed)
+			if(projectMgr.IsClosed || cmdGroup==Guid.Empty)
 			{
-				return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-			}
-
-			if(cmdGroup == Guid.Empty)
-			{
-				return (int)OleConstants.OLECMDERR_E_UNKNOWNGROUP;
+			    return false;
 			}
 
 			uint cmd = prgCmds[0].cmdID;
-			QueryStatusResult queryResult = QueryStatusResult.NOTSUPPORTED;
+			var queryResult = QueryStatusResult.NotSupported;
 
 			// For now ask this node (that is the project node) to disable or enable a node.
 			// This is an optimization. Why should we ask each node for its current state? They all are in the same state.
@@ -1822,9 +1817,9 @@ namespace Microsoft.VisualStudio.Project
 			// What will happen is that the nested project will show grayed commands that belong to this project and does not belong to the nested project. (like special commands implemented by subclassed projects).
 			// The reason is that a special command comes in that is not handled because we are in debug mode. Then VsCore asks the nested project can you handle it.
 			// The nested project does not know about it, thus it shows it on the nested project as grayed.
-			if(this.DisableCmdInCurrentMode(cmdGroup, cmd))
+			if(DisableCmdInCurrentMode(cmdGroup, cmd))
 			{
-				queryResult = QueryStatusResult.SUPPORTED | QueryStatusResult.INVISIBLE;
+				queryResult = QueryStatusResult.Supported | QueryStatusResult.Invisible;
 			}
 			else
 			{
@@ -1832,53 +1827,39 @@ namespace Microsoft.VisualStudio.Project
 
 				if(commandOrigin == CommandOrigin.OleCommandTarget)
 				{
-					queryResult = this.QueryStatusCommandFromOleCommandTarget(cmdGroup, cmd, out handled);
+					queryResult = QueryStatusCommandFromOleCommandTarget(cmdGroup, cmd, out handled);
 				}
 
 				if(!handled)
 				{
-					IList<HierarchyNode> selectedNodes = this.projectMgr.GetSelectedNodes();
+					var selectedNodes = projectMgr.GetSelectedNodes();
 
 					// Want to disable in multiselect case.
 					if(selectedNodes != null && selectedNodes.Count > 1)
 					{
-						queryResult = this.DisableCommandOnNodesThatDoNotSupportMultiSelection(cmdGroup, cmd, selectedNodes, out handled);
+						queryResult = DisableCommandOnNodesThatDoNotSupportMultiSelection(cmdGroup, cmd, selectedNodes, out handled);
 					}
 
 					// Now go and do the job on the nodes.
 					if(!handled)
 					{
-						queryResult = this.QueryStatusSelectionOnNodes(selectedNodes, cmdGroup, cmd, pCmdText);
+						queryResult = QueryStatusSelectionOnNodes(selectedNodes, cmdGroup, cmd, pCmdText);
 					}
 
 				}
 			}
 
 			// Process the results set in the QueryStatusResult
-			if(queryResult != QueryStatusResult.NOTSUPPORTED)
+			if(queryResult != QueryStatusResult.NotSupported)
 			{
-				// Set initial value
-				prgCmds[0].cmdf = (uint)OLECMDF.OLECMDF_SUPPORTED;
+			    const QueryStatusResult mask =
+			        QueryStatusResult.Enabled | QueryStatusResult.Invisible | QueryStatusResult.Latched;
 
-				if((queryResult & QueryStatusResult.ENABLED) != 0)
-				{
-					prgCmds[0].cmdf |= (uint)OLECMDF.OLECMDF_ENABLED;
-				}
-
-				if((queryResult & QueryStatusResult.INVISIBLE) != 0)
-				{
-					prgCmds[0].cmdf |= (uint)OLECMDF.OLECMDF_INVISIBLE;
-				}
-
-				if((queryResult & QueryStatusResult.LATCHED) != 0)
-				{
-					prgCmds[0].cmdf |= (uint)OLECMDF.OLECMDF_LATCHED;
-				}
-
-				return VSConstants.S_OK;
+			    prgCmds[0].cmdf = (uint) ((queryResult & mask) | QueryStatusResult.Supported);
+				return true;
 			}
 
-			return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+			return false;
 		}
 
 		/// <summary>
@@ -1898,7 +1879,7 @@ namespace Microsoft.VisualStudio.Project
 		{
 			if(selectedNodes == null || selectedNodes.Count == 0)
 			{
-				return QueryStatusResult.NOTSUPPORTED;
+				return QueryStatusResult.NotSupported;
 			}
 
 			int result = 0;
@@ -1906,7 +1887,7 @@ namespace Microsoft.VisualStudio.Project
 			bool enabled = true;
 			bool invisible = false;
 			bool latched = true;
-			QueryStatusResult tempQueryResult = QueryStatusResult.NOTSUPPORTED;
+			QueryStatusResult tempQueryResult = QueryStatusResult.NotSupported;
 
 			foreach(HierarchyNode node in selectedNodes)
 			{
@@ -1920,31 +1901,31 @@ namespace Microsoft.VisualStudio.Project
 				// cmd is enabled iff all nodes enable cmd
 				// cmd is invisible iff any node sets invisibility
 				// cmd is latched only if all are latched.
-				supported = supported || ((tempQueryResult & QueryStatusResult.SUPPORTED) != 0);
-				enabled = enabled && ((tempQueryResult & QueryStatusResult.ENABLED) != 0);
-				invisible = invisible || ((tempQueryResult & QueryStatusResult.INVISIBLE) != 0);
-				latched = latched && ((tempQueryResult & QueryStatusResult.LATCHED) != 0);
+				supported = supported || ((tempQueryResult & QueryStatusResult.Supported) != 0);
+				enabled = enabled && ((tempQueryResult & QueryStatusResult.Enabled) != 0);
+				invisible = invisible || ((tempQueryResult & QueryStatusResult.Invisible) != 0);
+				latched = latched && ((tempQueryResult & QueryStatusResult.Latched) != 0);
 			}
 
-			QueryStatusResult queryResult = QueryStatusResult.NOTSUPPORTED;
+			QueryStatusResult queryResult = QueryStatusResult.NotSupported;
 
 			if(result >= 0 && supported)
 			{
-				queryResult = QueryStatusResult.SUPPORTED;
+				queryResult = QueryStatusResult.Supported;
 
 				if(enabled)
 				{
-					queryResult |= QueryStatusResult.ENABLED;
+					queryResult |= QueryStatusResult.Enabled;
 				}
 
 				if(invisible)
 				{
-					queryResult |= QueryStatusResult.INVISIBLE;
+					queryResult |= QueryStatusResult.Invisible;
 				}
 
 				if(latched)
 				{
-					queryResult |= QueryStatusResult.LATCHED;
+					queryResult |= QueryStatusResult.Latched;
 				}
 			}
 
@@ -2686,9 +2667,12 @@ namespace Microsoft.VisualStudio.Project
 	                                       handled ? HResult.Ok : (HResult) (int) OleConstants.OLECMDERR_E_NOTSUPPORTED);
 	    }
 
-		public virtual int QueryStatusCommand(uint itemId, ref Guid guidCmdGroup, uint cCmds, OLECMD[] cmds, IntPtr pCmdText)
+	    int IVsUIHierarchy.QueryStatusCommand(uint itemId, ref Guid guidCmdGroup, uint cCmds, OLECMD[] cmds, IntPtr pCmdText)
 		{
-			return this.QueryStatusSelection(guidCmdGroup, cCmds, cmds, pCmdText, CommandOrigin.UiHierarchy);
+		    bool handled;
+		    return ComHelper.
+		        WrapFunction(false, QueryStatusSelection, guidCmdGroup, cCmds, cmds, pCmdText, CommandOrigin.UiHierarchy, out handled).
+		        Check(() => handled ? HResult.Ok : HResult.OleCmdNotSupported);
 		}
 		#endregion
 
@@ -2930,19 +2914,23 @@ namespace Microsoft.VisualStudio.Project
 		int IOleCommandTarget.Exec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 		    bool handled;
-		    return ComHelper.WrapFunction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvaIn, pvaOut,
-		                                  CommandOrigin.OleCommandTarget, out handled).Check(
-		                                      () =>
-		                                      handled ? HResult.Ok : (HResult) (int) OleConstants.OLECMDERR_E_NOTSUPPORTED);
+		    return ComHelper.
+		        WrapFunction(false, InternalExecCommand, guidCmdGroup, nCmdId, nCmdExecOpt, pvaIn, pvaOut,
+		                     CommandOrigin.OleCommandTarget, out handled).
+		        Check(() => handled ? HResult.Ok : HResult.OleCmdNotSupported);
 		}
 
 		/// <summary>
 		/// Queries the object for the command status
 		/// </summary>
 		/// <remarks>we only support one command at a time, i.e. the first member in the OLECMD array</remarks>
-		public virtual int QueryStatus(ref Guid guidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
+		int IOleCommandTarget.QueryStatus(ref Guid guidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
 		{
-			return this.QueryStatusSelection(guidCmdGroup, cCmds, prgCmds, pCmdText, CommandOrigin.OleCommandTarget);
+		    bool handled;
+		    return ComHelper.
+		        WrapFunction(false, QueryStatusSelection, guidCmdGroup, cCmds, prgCmds, pCmdText,
+		                     CommandOrigin.OleCommandTarget, out handled).
+		        Check(() => handled ? HResult.Ok : HResult.OleCmdNotSupported);
 		}
 		#endregion
 

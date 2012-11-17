@@ -1333,33 +1333,33 @@ namespace Microsoft.VisualStudio.Project
 					case VsCommands.ProjectSettings:
 					case VsCommands.BuildSln:
 					case VsCommands.UnloadProject:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 
 					case VsCommands.ViewForm:
 						if(this.HasDesigner)
 						{
-							result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+							result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 							return VSConstants.S_OK;
 						}
 						break;
 
 					case VsCommands.CancelBuild:
-						result |= QueryStatusResult.SUPPORTED;
+						result |= QueryStatusResult.Supported;
 						if(this.buildInProcess)
-							result |= QueryStatusResult.ENABLED;
+							result |= QueryStatusResult.Enabled;
 						else
-							result |= QueryStatusResult.INVISIBLE;
+							result |= QueryStatusResult.Invisible;
 						return VSConstants.S_OK;
 
 					case VsCommands.NewFolder:
 					case VsCommands.AddNewItem:
 					case VsCommands.AddExistingItem:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 
 					case VsCommands.SetStartupProject:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 				}
 			}
@@ -1369,11 +1369,11 @@ namespace Microsoft.VisualStudio.Project
 				switch((VsCommands2K)cmd)
 				{
 					case VsCommands2K.ADDREFERENCE:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 
 					case VsCommands2K.EXCLUDEFROMPROJECT:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.INVISIBLE;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Invisible;
 						return VSConstants.S_OK;
 				}
 			}
@@ -1393,7 +1393,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <param name="nCmdexecopt">Values describe how the object should execute the command.</param>
 		/// <param name="pvaIn">Pointer to a VARIANTARG structure containing input arguments. Can be NULL</param>
 		/// <param name="pvaOut">VARIANTARG structure to receive command output. Can be NULL.</param>
-		/// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
+		/// <returns>If the method succeeds, it returns true. If no commands are executed, it returns false.</returns>
 		protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
 		{
 			if(cmdGroup == VsMenus.guidStandardCommandSet97)
@@ -1401,13 +1401,11 @@ namespace Microsoft.VisualStudio.Project
 				switch((VsCommands)cmd)
 				{
 					case VsCommands.UnloadProject:
-						UnloadProject();
-                        return true;
+						return UnloadProject();
 
 					case VsCommands.CleanSel:
 					case VsCommands.CleanCtx:
-						CleanProject();
-				        return true;
+						return CleanProject();
 				}
 			}
 			else if(cmdGroup == VsMenus.guidStandardCommandSet2K)
@@ -1415,13 +1413,11 @@ namespace Microsoft.VisualStudio.Project
 				switch((VsCommands2K)cmd)
 				{
 					case VsCommands2K.ADDREFERENCE:
-						AddProjectReference();
-				        return true;
+						return AddProjectReference();
 
 					case VsCommands2K.ADDWEBREFERENCE:
 					case VsCommands2K.ADDWEBREFERENCECTX:
-						AddWebReference();
-				        return true;
+						return AddWebReference();
 				}
 			}
 
@@ -1590,7 +1586,7 @@ namespace Microsoft.VisualStudio.Project
 		/// By example you could change which pages are visible and which is visible by default.
 		/// </summary>
 		/// <returns></returns>
-		public virtual void AddProjectReference()
+		public virtual bool AddProjectReference()
 		{
 			CCITracing.TraceCall();
 
@@ -1646,6 +1642,8 @@ namespace Microsoft.VisualStudio.Project
 				// Let the project know it can show itself in the Add Project Reference Dialog page
 				this.ShowProjectInSolutionPage = true;
 			}
+
+		    return true;
 		}
 
 		/// <summary>
@@ -2804,27 +2802,27 @@ namespace Microsoft.VisualStudio.Project
 		/// Handles the Add web reference command.
 		/// </summary>
 		/// <returns></returns>
-		protected internal virtual void AddWebReference()
+		protected internal virtual bool AddWebReference()
 		{
-		    throw new OleCmdNotSupportedException();
+		    return false;
 		}
 
 		/// <summary>
 		/// Unloads the project.
 		/// </summary>
-		/// <returns></returns>
-		protected internal virtual void UnloadProject()
+		/// <returns>false if command was not handled, otherwise true</returns>
+		protected internal virtual bool UnloadProject()
 		{
-		    throw new OleCmdNotSupportedException();
+		    return false;
 		}
 
 		/// <summary>
 		/// Handles the clean project command.
 		/// </summary>
 		/// <returns></returns>
-		protected virtual void CleanProject()
+		protected virtual bool CleanProject()
 		{
-            throw new OleCmdNotSupportedException();
+		    return false;
 		}
 
 		/// <summary>

@@ -135,7 +135,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				if((VsCommands2K)cmd == VsCommands2K.QUICKOBJECTSEARCH)
 				{
-					result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+					result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 					return VSConstants.S_OK;
 				}
 			}

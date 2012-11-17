@@ -81,13 +81,13 @@ namespace Microsoft.VisualStudio.Project
 					case VsCommands.Paste:
 					case VsCommands.Cut:
 					case VsCommands.Rename:
-						result |= QueryStatusResult.NOTSUPPORTED;
+						result |= QueryStatusResult.NotSupported;
 						return VSConstants.S_OK;
 
 					case VsCommands.ViewCode:
 					case VsCommands.Open:
 					case VsCommands.OpenWith:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 				}
 			}
@@ -95,7 +95,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				if((VsCommands2K)cmd == VsCommands2K.EXCLUDEFROMPROJECT)
 				{
-					result |= QueryStatusResult.NOTSUPPORTED;
+					result |= QueryStatusResult.NotSupported;
 					return VSConstants.S_OK;
 				}
 			}

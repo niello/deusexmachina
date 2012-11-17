@@ -133,18 +133,36 @@ namespace Microsoft.VisualStudio.Project
 			base.Initialize();
 
 			// Subscribe to the solution events
-			this.solutionListeners.Add(new SolutionListenerForProjectReferenceUpdate(this));
-			this.solutionListeners.Add(new SolutionListenerForProjectOpen(this));
-			this.solutionListeners.Add(new SolutionListenerForBuildDependencyUpdate(this));
-			this.solutionListeners.Add(new SolutionListenerForProjectEvents(this));
+		    AddListener(pckg => new SolutionListenerForProjectReferenceUpdate(pckg));
+            AddListener(pckg => new SolutionListenerForProjectOpen(pckg));
+            AddListener(pckg => new SolutionListenerForBuildDependencyUpdate(pckg));
+            AddListener(pckg => new SolutionListenerForProjectEvents(pckg));
 
-			foreach(SolutionListener solutionListener in this.solutionListeners)
+			foreach(var solutionListener in solutionListeners)
 			{
 				solutionListener.Init();
 			}
 		}
 
-		protected override void Dispose(bool disposing)
+        private void AddListener<TListener>(Func<ProjectPackage, TListener> factoryMethod)
+            where TListener : SolutionListener
+        {
+            TListener listener;
+            if (TryCreateListener(factoryMethod, out listener) && listener != null)
+                solutionListeners.Add(listener);
+        }
+
+        protected virtual bool TryCreateListener<TListener>(Func<ProjectPackage, TListener> factoryMethod, out TListener listener)
+            where TListener : SolutionListener
+        {
+            if (factoryMethod == null)
+                throw new ArgumentNullException("factoryMethod");
+
+            listener = factoryMethod(this);
+            return true;
+        }
+
+	    protected override void Dispose(bool disposing)
 		{
 			// Unadvise solution listeners.
 			try

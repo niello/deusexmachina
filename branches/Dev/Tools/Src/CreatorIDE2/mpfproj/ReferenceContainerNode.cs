@@ -153,7 +153,7 @@ namespace Microsoft.VisualStudio.Project
 				{
 					case VsCommands.AddNewItem:
 					case VsCommands.AddExistingItem:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 				}
 			}
@@ -161,7 +161,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				if((VsCommands2K)cmd == VsCommands2K.ADDREFERENCE)
 				{
-					result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+					result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 					return VSConstants.S_OK;
 				}
 			}

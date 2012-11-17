@@ -480,14 +480,14 @@ namespace Microsoft.VisualStudio.Project
 					case VsCommands.Paste:
 					case VsCommands.Cut:
 					case VsCommands.Rename:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 
 					case VsCommands.ViewCode:
 					//case VsCommands.Delete: goto case VsCommands.OpenWith;
 					case VsCommands.Open:
 					case VsCommands.OpenWith:
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 				}
 			}
@@ -495,14 +495,14 @@ namespace Microsoft.VisualStudio.Project
 			{
 				if((VsCommands2K)cmd == VsCommands2K.EXCLUDEFROMPROJECT)
 				{
-					result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+					result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 					return VSConstants.S_OK;
 				}
 				if((VsCommands2K)cmd == VsCommands2K.RUNCUSTOMTOOL)
 				{
 					if(string.IsNullOrEmpty(this.ItemNode.GetMetadata(ProjectFileConstants.DependentUpon)) && (this.NodeProperties is SingleFileGeneratorNodeProperties))
 					{
-						result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
+						result |= QueryStatusResult.Supported | QueryStatusResult.Enabled;
 						return VSConstants.S_OK;
 					}
 				}

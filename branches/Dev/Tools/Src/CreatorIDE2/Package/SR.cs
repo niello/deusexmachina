@@ -10,7 +10,8 @@ namespace CreatorIDE.Package
                             LevelDatabaseFile = "LevelDatabaseFile",
                             MiscCategoryName = "MiscCategoryName",
                             OpenLevelDatabaseFile = "OpenLevelDatabaseFile",
-                            RelativePathPropertyName = "RelativePathPropertyName";
+                            RelativePathPropertyName = "RelativePathPropertyName",
+                            EmptyNodeCaption = "EmptyNodeCaption";
 
         public static string GetString(string name, CultureInfo cultureInfo)
         {
