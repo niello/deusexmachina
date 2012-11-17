@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Project;
 namespace CreatorIDE.Package
 {
     [ComVisible(true), Guid(GuidString)]
-    public class CideEmptyNode:HierarchyNode
+    public class CideEmptyNode: HierarchyNode
     {
         public const string GuidString = "50D039D2-16F5-4DD5-8CC3-ECDB72854460";
         
@@ -25,11 +25,24 @@ namespace CreatorIDE.Package
             get { return typeof (CideEmptyNode).GUID; }
         }
 
-        public override int ImageIndex { get { return ((CideProjectNode) ProjectMgr).ImageListOffset + Images.Transparent; } }
+        public override int ImageIndex
+        {
+            get { return ((CideProjectNode)ProjectMgr).ImageListOffset + Images.Transparent; }
+        }
+
+        public override bool CanExecuteCommand
+        {
+            get { return false; }
+        }
 
         public CideEmptyNode(CideProjectNode project):
             base(project)
         {
+        }
+
+        public override string GetEditLabel()
+        {
+            return null;
         }
     }
 }
