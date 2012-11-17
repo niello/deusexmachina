@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
 using CreatorIDE.Core;
 using CreatorIDE.Engine;
@@ -80,6 +81,16 @@ namespace CreatorIDE.Package
             base.Initialize();
 
             RegisterProjectFactory(new CideProjectFactory(this));
+        }
+
+        protected override bool TryCreateListener<TListener>(Func<ProjectPackage, TListener> factoryMethod, out TListener listener)
+        {
+            if (typeof(TListener) == typeof(SolutionListenerForProjectReferenceUpdate))
+            {
+                listener = null;
+                return false;
+            }
+            return base.TryCreateListener(factoryMethod, out listener);
         }
 
         protected override void Dispose(bool disposing)

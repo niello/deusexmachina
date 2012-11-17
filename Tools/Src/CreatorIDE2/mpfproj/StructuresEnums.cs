@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Microsoft.VisualStudio.Project
@@ -121,43 +122,43 @@ namespace Microsoft.VisualStudio.Project
 	[Flags]
 	[SuppressMessage("Microsoft.Naming", "CA1714:FlagsEnumsShouldHavePluralNames")]
 	[SuppressMessage("Microsoft.Design", "CA1008:EnumsShouldHaveZeroValue")]
-	public enum QueryStatusResult
+	public enum QueryStatusResult: uint
 	{
 		/// <summary>
 		/// The command is not supported.
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "NOTSUPPORTED")]
-		NOTSUPPORTED = 0,
+        NotSupported = 0,
 
 		/// <summary>
 		/// The command is supported
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SUPPORTED")]
-		SUPPORTED = 1,
+        Supported = OLECMDF.OLECMDF_SUPPORTED,
 
 		/// <summary>
 		/// The command is enabled
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "ENABLED")]
-		ENABLED = 2,
+        Enabled = OLECMDF.OLECMDF_ENABLED,
 
 		/// <summary>
 		/// The command is toggled on
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "LATCHED")]
-		LATCHED = 4,
+        Latched = OLECMDF.OLECMDF_LATCHED,
 
 		/// <summary>
 		/// The command is toggled off (the opposite of LATCHED).
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "NINCHED")]
-		NINCHED = 8,
+        Ninched = OLECMDF.OLECMDF_NINCHED,
 
 		/// <summary>
 		/// The command is invisible.
 		/// </summary>
 		[SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "INVISIBLE")]
-		INVISIBLE = 16
+        Invisible = OLECMDF.OLECMDF_INVISIBLE
 	}
 
 	/// <summary>

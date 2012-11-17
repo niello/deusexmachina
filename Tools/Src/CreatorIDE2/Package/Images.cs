@@ -7,6 +7,7 @@
             House = 1,
             Globe = 2,
             WhiteBox = 3,
-            Link = 4;
+            Link = 4,
+            Transparent = 6;
     }
 }
