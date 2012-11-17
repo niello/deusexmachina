@@ -8,7 +8,12 @@ ImplementRTTI(Scene::CLODGroup, Scene::CSceneNodeAttr);
 
 void CLODGroup::UpdateTransform(CScene& Scene)
 {
+	//???what if camera transform wasn't updated this frame yet?
+	//Update camera branch of scene graph before?
+	//Can use Updated flag and clear each frame, with clearing visible meshes and lights
+
 	if (!pNode || !Scene.GetCurrCamera()) return;
+
 	vector3 DistanceVector = pNode->GetWorldTransform().pos_component() -
 		Scene.GetCurrCamera()->GetNode()->GetWorldTransform().pos_component();
 	float SqDist = DistanceVector.lensquared();

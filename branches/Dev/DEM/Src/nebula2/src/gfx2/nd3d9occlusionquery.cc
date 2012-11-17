@@ -196,7 +196,7 @@ nD3D9OcclusionQuery::GetOcclusionStatus(int queryIndex)
     DWORD numVisiblePixels = 0;
     n_assert(d3dQuery->GetDataSize() == sizeof(DWORD));
 
-    // note: this method may return S_OK, S_FALSE or D3DERR_DEVICELOST.
+	// note: this method may return S_OK, S_FALSE or D3DERR_DEVICELOST.
     // S_FALSE is not considered an error!
     HRESULT hr;
     do

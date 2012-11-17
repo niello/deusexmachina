@@ -151,18 +151,6 @@ nParticleShapeNode::GetMeshUsage() const
 
 //------------------------------------------------------------------------------
 /**
-    Perform pre-instance-rendering of particle system.
-    FIXME: check if this is the optimal setup for the new instance
-    rendering!
-*/
-bool
-nParticleShapeNode::ApplyGeometry(nSceneServer* /*sceneServer*/)
-{
-    return true;
-}
-
-//------------------------------------------------------------------------------
-/**
     - 15-Jan-04     floh    AreResourcesValid()/LoadResource() moved to scene server
 */
 bool
@@ -172,13 +160,12 @@ nParticleShapeNode::RenderGeometry(nSceneServer* sceneServer, nRenderContext* re
     n_assert(renderContext);
 
     const nVariable& varEmitter = renderContext->GetLocalVar(this->emitterVarIndex);
-    int emitterKey = varEmitter.GetInt();
     nVariable* timeVar = renderContext->GetVariable(this->timeHandle);
     n_assert2(timeVar, "No 'time' variable provided by application!");
     float curTime = timeVar->GetFloat();
     n_assert(curTime >= 0.0f);
 
-    nParticleEmitter* emitter = nParticleServer::Instance()->GetParticleEmitter(emitterKey);
+    nParticleEmitter* emitter = nParticleServer::Instance()->GetParticleEmitter(varEmitter.GetInt());
     n_assert(0 != emitter);
     emitter->Trigger(curTime);
     emitter->Render(curTime);

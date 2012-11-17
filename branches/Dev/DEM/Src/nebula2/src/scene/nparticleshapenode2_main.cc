@@ -192,18 +192,6 @@ nParticleShapeNode2::GetMeshUsage() const
 
 //------------------------------------------------------------------------------
 /**
-    Perform pre-instance-rendering of particle system.
-    FIXME: check if this is the optimal setup for the new instance
-    rendering!
-*/
-bool
-nParticleShapeNode2::ApplyGeometry(nSceneServer* sceneServer)
-{
-    return true;
-}
-
-//------------------------------------------------------------------------------
-/**
 */
 bool
 nParticleShapeNode2::RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext)

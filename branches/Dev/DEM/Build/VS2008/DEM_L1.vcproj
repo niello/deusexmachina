@@ -1376,6 +1376,34 @@
 		<Filter
 			Name="Render"
 			>
+			<File
+				RelativePath="..\..\Src\L1\Render\FrameShader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\Pass.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\PassGeometry.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\PassOcclusion.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\PassPosteffect.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\PassShadows.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\Renderer.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"
