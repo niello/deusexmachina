@@ -28,15 +28,15 @@ private:
 
 public:
 
-	virtual bool			LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 
-	virtual bool			HasLight() const { return true; }
-	virtual const nLight&	ApplyLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform, const vector4& shadowLightMask);
-	virtual const nLight&	RenderLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform);
+	virtual bool	HasLight() const { return true; }
+	virtual bool	ApplyLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform, const vector4& shadowLightMask);
+	virtual bool	RenderLight(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& lightTransform);
 
-	void					SetType(nLight::Type t) { light.SetType(t); }
-	void					SetCastShadows(bool b) { light.SetCastShadows(b); }
-	const nLight&			GetLight() const { return light; }
+	void			SetType(nLight::Type t) { light.SetType(t); }
+	void			SetCastShadows(bool b) { light.SetCastShadows(b); }
+	const nLight&	GetLight() const { return light; }
 };
 
 #endif

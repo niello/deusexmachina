@@ -37,7 +37,8 @@ public:
     /// called by nSceneServer when object is attached to scene
     virtual void Attach(nSceneServer* sceneServer, nRenderContext* renderContext);
     /// perform pre-instancing rendering of geometry
-    virtual bool ApplyGeometry(nSceneServer* sceneServer);
+	//FIXME: check if this is the optimal setup for the new instance rendering!
+	virtual bool ApplyGeometry(nSceneServer* sceneServer) { return true; }
     /// render geometry
     virtual bool RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext);
     /// get the mesh usage flags required by this shape node

@@ -44,16 +44,12 @@ bool nSkinShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataRead
 }
 //---------------------------------------------------------------------
 
-bool nSkinShapeNode::ApplyGeometry(nSceneServer* /*sceneServer*/)
-{
-	n_assert(refMesh.isvalid() && refMesh->HasAllVertexComponents(nMesh2::Weights | nMesh2::JIndices));
-	return true;
-}
-//---------------------------------------------------------------------
-
 bool nSkinShapeNode::RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
     n_assert(sceneServer && renderContext);
+
+	//!!!???check once?
+	n_assert(refMesh.isvalid() && refMesh->HasAllVertexComponents(nMesh2::Weights | nMesh2::JIndices));
 
     // call my skin animator (updates the char skeleton pointer)
     nKernelServer::Instance()->PushCwd(this);

@@ -263,16 +263,9 @@ nSceneServer::BeginGroup(nSceneNode* sceneNode, nRenderContext* renderContext)
     this->groupStack[this->stackDepth] = this->groupArray.Size() - 1;
     ++this->stackDepth;
 
-    // immediately call the scene node's RenderTransform method
-    if (isTopLevel)
-    {
-        matrix44 topMatrix = renderContext->GetTransform();
-        sceneNode->RenderTransform(this, renderContext, topMatrix);
-    }
-    else
-    {
-        sceneNode->RenderTransform(this, renderContext, this->groupArray[group.parentIndex].modelTransform);
-    }
+    // immediately update node's transform
+	const matrix44& ParentTfm = isTopLevel ? renderContext->GetTransform() : groupArray[group.parentIndex].modelTransform;
+    ((nTransformNode*)sceneNode)->RenderTransform(this, renderContext, ParentTfm);
 }
 
 //------------------------------------------------------------------------------

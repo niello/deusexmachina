@@ -1,0 +1,1 @@
+// Pass encapsulates rendering to one RT or MRT

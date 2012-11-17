@@ -38,7 +38,7 @@ public:
     virtual void UnloadResources();
 
     /// indicate to scene server that we offer geometry for rendering
-    virtual bool HasGeometry() const;
+	virtual bool HasGeometry() const { return true; }
     /// perform pre-instancing rendering of geometry
     virtual bool ApplyGeometry(nSceneServer* sceneServer);
     /// perform per-instance-rendering of geometry
@@ -77,18 +77,6 @@ protected:
     nString meshName;
     int groupIndex;
 };
-
-
-//------------------------------------------------------------------------------
-/**
-    Indicate to scene server that we provide geometry
-*/
-inline
-bool
-nShapeNode::HasGeometry() const
-{
-    return true;
-}
 
 //------------------------------------------------------------------------------
 /**

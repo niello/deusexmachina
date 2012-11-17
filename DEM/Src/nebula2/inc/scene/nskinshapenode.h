@@ -49,7 +49,7 @@ public:
 
 	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 
-    virtual bool ApplyGeometry(nSceneServer* sceneServer);
+	virtual bool ApplyGeometry(nSceneServer* sceneServer) { return true; }
     virtual bool RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext);
     virtual void RenderDebug(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix);
 	virtual int GetMeshUsage() const { return nMesh2::WriteOnce | nMesh2::NeedsVertexShader; }

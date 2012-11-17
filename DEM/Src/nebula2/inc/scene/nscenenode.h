@@ -63,18 +63,16 @@ public:
     virtual void RenderContextCreated(nRenderContext* renderContext);
     virtual void RenderContextDestroyed(nRenderContext* renderContext);
     virtual void Attach(nSceneServer* sceneServer, nRenderContext* renderContext);
-    virtual bool HasTransform() const { return false; }
+
+	virtual bool HasTransform() const { return false; }
     virtual bool HasGeometry() const { return false; }
     virtual bool HasShader() const { return false; }
     virtual bool HasLight() const { return false; }
     virtual bool HasShadow() const { return false; }
     virtual bool HasCamera() const { return false; }
-    virtual bool RenderTransform(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& parentMatrix) { return false; }
-    virtual bool ApplyGeometry(nSceneServer* sceneServer) { return false; }
-    virtual bool RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext) { return false; }
-    virtual void RenderDebug(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix) { }
-    virtual bool ApplyShader(nSceneServer* sceneServer) { return false; }
-    virtual bool RenderShader(nSceneServer* sceneServer, nRenderContext* renderContext) { return false; }
+
+	virtual void RenderDebug(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix) { }
+
 	void SetLocalBox(const bbox3& b) { this->localBox = b; }
 	const bbox3& GetLocalBox() const { return this->localBox; }
 	void SetRenderPri(int pri) { n_assert((pri >= -127) && (pri <= 127)); renderPri = pri; }

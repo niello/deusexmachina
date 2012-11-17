@@ -13,15 +13,6 @@
 
 nNebulaClass(nMaterialNode, "nabstractshadernode");
 
-//------------------------------------------------------------------------------
-/**
-*/
-nMaterialNode::nMaterialNode() :
-    shaderIndex(-1)
-{
-    // empty
-}
-
 bool nMaterialNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
@@ -79,17 +70,9 @@ nMaterialNode::LoadShader()
 /**
     Load the resources needed by this object.
 */
-bool
-nMaterialNode::LoadResources()
+bool nMaterialNode::LoadResources()
 {
-    if (this->LoadShader())
-    {
-        if (nAbstractShaderNode::LoadResources())
-        {
-            return true;
-        }
-    }
-    return false;
+	return LoadShader() && nAbstractShaderNode::LoadResources();
 }
 
 //------------------------------------------------------------------------------
@@ -101,16 +84,6 @@ nMaterialNode::UnloadResources()
 {
     nAbstractShaderNode::UnloadResources();
     this->UnloadShader();
-}
-
-//------------------------------------------------------------------------------
-/**
-    Indicate to scene server that we provide a shader.
-*/
-bool
-nMaterialNode::HasShader() const
-{
-    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -186,20 +159,4 @@ nMaterialNode::RenderShader(nSceneServer* sceneServer, nRenderContext* renderCon
     shader->SetParams(renderContext->GetShaderOverrides());
 
     return true;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-bool
-nMaterialNode::IsTextureUsed(nShaderState::Param param)
-{
-    if (this->refShader.isvalid())
-    {
-        if (this->refShader->IsParameterUsed(param))
-        {
-            return true;
-        }
-    }
-    return false;
 }
