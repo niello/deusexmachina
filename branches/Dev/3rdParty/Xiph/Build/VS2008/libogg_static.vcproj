@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\..\Lib"
-			IntermediateDirectory="$(SolutionDir)..\..\Obj\$(ConfigurationName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)..\..\ogg\win32\Lib"
+			IntermediateDirectory="$(SolutionDir)..\..\ogg\win32\Obj\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="1"
 			>
@@ -84,8 +84,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\..\Lib"
-			IntermediateDirectory="$(SolutionDir)..\..\Obj\$(ConfigurationName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)..\..\ogg\win32\Lib"
+			IntermediateDirectory="$(SolutionDir)..\..\ogg\win32\obj\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
