@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\..\Lib"
-			IntermediateDirectory="$(SolutionDir)..\..\Obj\$(ConfigurationName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)..\..\vorbis\win32\Lib"
+			IntermediateDirectory="$(SolutionDir)..\..\vorbis\win32\Obj\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
@@ -85,8 +85,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\..\Lib"
-			IntermediateDirectory="$(SolutionDir)..\..\Obj\$(ConfigurationName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)..\..\vorbis\win32\Lib"
+			IntermediateDirectory="$(SolutionDir)..\..\vorbis\win32\Obj\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="1"
