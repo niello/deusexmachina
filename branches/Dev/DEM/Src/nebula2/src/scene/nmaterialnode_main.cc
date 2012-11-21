@@ -54,11 +54,11 @@ nMaterialNode::LoadShader()
 
     if (!this->refShader.isvalid())
     {
-        const nRenderPath2* renderPath = nSceneServer::Instance()->GetRenderPath();
-        n_assert(renderPath);
-        int shaderIndex = renderPath->FindShaderIndex(this->shaderName);
-        n_assert2(-1 != shaderIndex, nString("Shader \"" + this->shaderName + "\" not found in  \"" + renderPath->GetFilename() + "\"").Get());
-        const nRpShader& rpShader = renderPath->GetShader(shaderIndex);
+        const CFrameShader* pFrameShader = nSceneServer::Instance()->GetRenderPath();
+        n_assert(pFrameShader);
+        int shaderIndex = pFrameShader->FindShaderIndex(this->shaderName);
+        n_assert(-1 != shaderIndex);
+        const nRpShader& rpShader = pFrameShader->shaders[shaderIndex];
         this->shaderIndex = rpShader.GetBucketIndex();
         this->refShader = rpShader.GetShader();
         this->refShader->AddRef();

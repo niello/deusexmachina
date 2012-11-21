@@ -2,6 +2,7 @@
 #include "scene/nrendercontext.h"
 #include "scene/nmaterialnode.h"
 #include "scene/nlightnode.h"
+#include "renderpath/nrpphase.h"
 
 void nSceneServer::RenderPhaseLightModeOff(nRpPhase& curPhase)
 {
@@ -79,9 +80,8 @@ void nSceneServer::RenderPhaseLightModeShader(nRpPhase& curPhase)
         // now iterate through sequences...
         int numSeqs = curPhase.Begin();
 
-        // NOTE: nRpPhase::Begin resets the scissor rect, thus this must happen afterwards!
-        this->ApplyLightScissors(lightInfo);
-        this->ApplyLightClipPlanes(lightInfo);
+        nGfxServer2::Instance()->SetScissorRect(lightInfo.scissorRect);
+		if (clipPlaneFencing) nGfxServer2::Instance()->SetClipPlanes(lightInfo.clipPlanes);
 
         for (int seqIndex = 0; seqIndex < numSeqs; seqIndex++)
         {
@@ -137,33 +137,15 @@ void nSceneServer::RenderPhaseLightModeShader(nRpPhase& curPhase)
         }
         curPhase.End();
     }
-    ResetLightScissorsAndClipPlanes();
-}
-//---------------------------------------------------------------------
 
-void nSceneServer::DoRenderPath(nRpSection& rpSection)
-{
-    int numPasses = rpSection.Begin();
-    for (int passIndex = 0; passIndex < numPasses; passIndex++)
+	// Reset light scissors and clip planes
+    static const rectangle fullScreenRect(vector2::zero, vector2(1.0f, 1.0f));
+    nGfxServer2::Instance()->SetScissorRect(fullScreenRect);
+
+	if (this->clipPlaneFencing)
     {
-        nRpPass& curPass = rpSection.GetPass(passIndex);
-
-        if (curPass.GetDrawShadows() != nRpPass::NoShadows) ; // Shadow pass
-		else if (curPass.GetOcclusionQuery()) DoOcclusionQuery();
-        else
-        {
-            int numPhases = curPass.Begin();
-            for (int phaseIndex = 0; phaseIndex < numPhases; phaseIndex++)
-            {
-			//!!!phase sorting curPhase.GetSortingOrder!
-                nRpPhase& curPhase = curPass.GetPhase(phaseIndex);
-                if (curPhase.GetLightMode() == nRpPhase::Off)
-                    RenderPhaseLightModeOff(curPhase);
-                else RenderPhaseLightModeShader(curPhase);
-            }
-            curPass.End();
-        }
+        nArray<plane> nullArray(0, 0);
+        nGfxServer2::Instance()->SetClipPlanes(nullArray);
     }
-    rpSection.End();
 }
 //---------------------------------------------------------------------

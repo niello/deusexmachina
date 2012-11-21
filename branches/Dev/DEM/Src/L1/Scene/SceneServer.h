@@ -3,10 +3,11 @@
 #define __DEM_L1_SCENE_SERVER_H__
 
 #include <Scene/Scene.h>
+#include <Render/FrameShader.h>
 #include <Data/Pool.h>
 #include <util/ndictionary.h>
 
-// Scene server loads and manages all 3D scenes
+// Scene server loads and manages 3D scenes and frame shaders for a scene rendering
 
 namespace Scene
 {
@@ -18,10 +19,12 @@ class CSceneServer: public Core::CRefCounted
 
 private:
 
-	//CPool<CSceneNode>			NodePool;
-	nDictionary<CStrID, PScene>	Scenes;
-	CStrID						CurrSceneID;
-	CScene*						pCurrScene;
+	//CPool<CSceneNode>							NodePool;
+	nDictionary<CStrID, PScene>					Scenes;
+	CStrID										CurrSceneID;
+	CScene*										pCurrScene;
+
+	nDictionary<CStrID, Render::CFrameShader*>	FrameShaders;
 
 public:
 
@@ -37,6 +40,8 @@ public:
 	CScene*		GetScene(CStrID Name);
 
 	PSceneNode	CreateSceneNode(CStrID Name);
+
+	void		AddFrameShader(Render::CFrameShader* pFrameShader); // nRpXmlParser xmlParser;
 
 	void		Trigger();
 	void		RenderDebug();

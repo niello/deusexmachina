@@ -4,7 +4,7 @@
 /**
     @class nRpXmlParser
     @ingroup Scene
-    @brief Configure a nRenderPath2 object from an XML file.
+    @brief Configure a CFrameShader object from an XML file.
 
     (C) 2004 RadonLabs GmbH
 */
@@ -14,11 +14,11 @@
 #include "gfx2/nshaderstate.h"
 #include "util/nstring.h"
 #include "util/narray.h"
+#include <Render/FrameShader.h>
 #include <TinyXML2/Src/tinyxml2.h>
 
-class nRenderPath2;
-class nRpSection;
-class nRpPass;
+using namespace Render;
+
 class nRpPhase;
 class nRpSequence;
 
@@ -31,11 +31,11 @@ public:
     /// destructor
     ~nRpXmlParser();
     /// set pointer to render path object to initialize
-    void SetRenderPath(nRenderPath2* rp);
+    void SetRenderPath(CFrameShader* rp);
     /// get pointer to render path object
-    nRenderPath2* GetRenderPath() const;
+    CFrameShader* GetRenderPath() const;
     /// open the XML document
-    bool OpenXml();
+    bool OpenXml(const nString& FileName);
     /// close the XML document
     void CloseXml();
     /// parse the XML data and initialize the render path object
@@ -56,8 +56,6 @@ private:
     nFloat4 GetFloat4Attr(tinyxml2::XMLElement* elm, const char* name, const nFloat4& defaultValue);
     /// get a bool attribute from an xml element
     bool GetBoolAttr(tinyxml2::XMLElement* elm, const char* name, bool defaultValue);
-    /// parse a shader XML element
-    void ParseShader(tinyxml2::XMLElement* elm, nRenderPath2* renderPath);
     ///
     void ParseShaders(tinyxml2::XMLElement* elm);
     /// parse RenderTarget XML element
@@ -65,22 +63,20 @@ private:
     /// create a variable from an XML element
     nVariable ParseVariable(nVariable::Type dataType, tinyxml2::XMLElement* elm);
     /// parse a global variable under RenderPath
-    void ParseGlobalVariable(nVariable::Type dataType, tinyxml2::XMLElement* elm, nRenderPath2* renderPath);
-    /// parse a Section XML element
-    void ParseSection(tinyxml2::XMLElement* elm, nRenderPath2* renderPath);
+    void ParseGlobalVariable(nVariable::Type dataType, tinyxml2::XMLElement* elm, CFrameShader* pFrameShader);
     /// parse a Pass XML element
-    void ParsePass(tinyxml2::XMLElement* elm, nRpSection* section);
+    void ParsePass(tinyxml2::XMLElement* elm, CFrameShader* pFrameShader);
     /// parse a shader state inside a pass
-    void ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* elm, nRpPass* pass);
+    void ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* elm, CPass* pass);
     /// parse a shader state inside a pass
     void ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* elm, nRpSequence* seq);
     /// parse a phase
-    void ParsePhase(tinyxml2::XMLElement* elm, nRpPass* pass);
+    void ParsePhase(tinyxml2::XMLElement* elm, CPass* pass);
     /// parse a sequence
     void ParseSequence(tinyxml2::XMLElement* elm, nRpPhase* phase);
 
     tinyxml2::XMLDocument* xmlDocument;
-    nRenderPath2* renderPath;
+    PFrameShader FrameShader;
     nString shaderPath;
     nString mangledPath;
 };
@@ -90,20 +86,20 @@ private:
 */
 inline
 void
-nRpXmlParser::SetRenderPath(nRenderPath2* rp)
+nRpXmlParser::SetRenderPath(CFrameShader* rp)
 {
     n_assert(rp);
-    this->renderPath = rp;
+    FrameShader = rp;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-nRenderPath2*
+CFrameShader*
 nRpXmlParser::GetRenderPath() const
 {
-    return this->renderPath;
+    return FrameShader;
 }
 
 //------------------------------------------------------------------------------

@@ -14,10 +14,14 @@
 #include "variable/nvariableserver.h"
 #include "kernel/nprofiler.h"
 
-class nRenderPath2;
-class nRpSection;
-class nRpPass;
 class nRpPhase;
+
+namespace Render
+{
+	class CFrameShader;
+}
+
+using namespace Render;
 
 //------------------------------------------------------------------------------
 class nRpSequence
@@ -25,12 +29,10 @@ class nRpSequence
 public:
     /// constructor
     nRpSequence();
-    /// destructor
-    ~nRpSequence();
     /// set the renderpath
-    void SetRenderPath(nRenderPath2* rp);
+    void SetRenderPath(CFrameShader* rp);
     /// get the renderpath
-    nRenderPath2* GetRenderPath();
+    CFrameShader* GetRenderPath();
     /// set shader alias
     void SetShaderAlias(const nString& p);
     /// get shader alias
@@ -66,30 +68,12 @@ public:
     /// add variable shader parameter value
     void AddVariableShaderParam(const nString& varName, nShaderState::Param p, const nShaderArg& arg);
 
-#if __NEBULA_STATS__
-    /// set the section
-    void SetSection(nRpSection* rp);
-    /// get the section
-    nRpSection* GetSection() const;
-    /// set the pass
-    void SetPass(nRpPass* p);
-    /// get the pass
-    nRpPass* GetPass() const;
-    /// set the phase
-    void SetPhase(nRpPhase* ph);
-    /// get the phase
-    nRpPhase* GetPhase() const;
-#endif
-
 private:
     friend class nRpPhase;
 
-    /// validate the sequence object
     void Validate();
-    /// update the variable shader parameters
-    void UpdateVariableShaderParams();
 
-    nRenderPath2* renderPath;
+    CFrameShader* pFrameShader;
     nString shaderAlias;
     nShaderParams shaderParams;
     nVariableContext varContext;
@@ -98,13 +82,6 @@ private:
     bool firstLightAlphaEnabled;
     bool shaderUpdatesEnabled;
     bool mvpOnly;                   // true if sequence shader only required the ModelViewProjection matrix
-
-#if __NEBULA_STATS__
-//    nProfiler prof;
-    nRpSection* section;
-    nRpPass* pass;
-    nRpPhase* phase;
-#endif
 };
 
 //------------------------------------------------------------------------------
@@ -172,20 +149,20 @@ nRpSequence::GetShaderAlias() const
 */
 inline
 void
-nRpSequence::SetRenderPath(nRenderPath2* rp)
+nRpSequence::SetRenderPath(CFrameShader* rp)
 {
     n_assert(rp);
-    this->renderPath = rp;
+    this->pFrameShader = rp;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-nRenderPath2*
+CFrameShader*
 nRpSequence::GetRenderPath()
 {
-    return this->renderPath;
+    return this->pFrameShader;
 }
 
 //------------------------------------------------------------------------------
@@ -255,70 +232,7 @@ nRpSequence::GetFirstLightAlphaEnabled() const
     return this->firstLightAlphaEnabled;
 }
 
-#if __NEBULA_STATS__
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRpSequence::SetSection(nRpSection* s)
-{
-    n_assert(s);
-    this->section = s;
-}
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nRpSection*
-nRpSequence::GetSection() const
-{
-    return this->section;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRpSequence::SetPass(nRpPass* p)
-{
-    n_assert(p);
-    this->pass = p;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nRpPass*
-nRpSequence::GetPass() const
-{
-    return this->pass;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRpSequence::SetPhase(nRpPhase* ph)
-{
-    n_assert(ph);
-    this->phase = ph;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nRpPhase*
-nRpSequence::GetPhase() const
-{
-    return this->phase;
-}
-#endif
 
 //------------------------------------------------------------------------------
 #endif

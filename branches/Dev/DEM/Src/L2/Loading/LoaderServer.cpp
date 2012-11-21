@@ -16,6 +16,10 @@
 #include <Data/DataServer.h>
 #include <Scripting/ScriptObject.h>
 
+//!!!try to remove when frame shader code will be finished! Some Win32 includes have reached this place.
+#undef CreateDirectory
+#undef CopyFile
+
 namespace Attr
 {
 	DefineString(CurrentLevel);

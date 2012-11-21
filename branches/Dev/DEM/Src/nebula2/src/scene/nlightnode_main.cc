@@ -20,7 +20,7 @@ bool nLightNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			SetCastShadows(DataReader.Read<bool>());
 			OK;
 		}
-		default: return nTransformNode::LoadDataBlock(FourCC, DataReader);
+		default: return nAbstractShaderNode::LoadDataBlock(FourCC, DataReader);
 	}
 }
 //---------------------------------------------------------------------

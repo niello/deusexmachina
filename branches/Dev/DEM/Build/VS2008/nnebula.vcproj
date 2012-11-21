@@ -890,64 +890,6 @@
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
 				<Filter
-					Name="nrenderpath2"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrenderpath2.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrenderpath2;N_NEW=n_new_nrenderpath2;N_INITCMDS=n_initcmds_nrenderpath2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrenderpath2;N_NEW=n_new_nrenderpath2;N_INITCMDS=n_initcmds_nrenderpath2"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrenderpath2.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nrppass"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrppass.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrppass;N_NEW=n_new_nrppass;N_INITCMDS=n_initcmds_nrppass"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrppass;N_NEW=n_new_nrppass;N_INITCMDS=n_initcmds_nrppass"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrppass.h"
-						>
-					</File>
-				</Filter>
-				<Filter
 					Name="nrpphase"
 					Filter="cpp;c;cxx;cc;h;hxx;hcc"
 					>
@@ -1002,35 +944,6 @@
 					</File>
 					<File
 						RelativePath="..\..\Src\nebula2\inc\renderpath\nrprendertarget.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nrpsection"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrpsection.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpsection;N_NEW=n_new_nrpsection;N_INITCMDS=n_initcmds_nrpsection"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpsection;N_NEW=n_new_nrpsection;N_INITCMDS=n_initcmds_nrpsection"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrpsection.h"
 						>
 					</File>
 				</Filter>
@@ -1338,26 +1251,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_occlusion.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_reflection.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"

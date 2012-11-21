@@ -3,10 +3,11 @@
 //  (C) 2004 RadonLabs GmbH
 //------------------------------------------------------------------------------
 #include "renderpath/nrpxmlparser.h"
+#include <Render/PassGeometry.h>
+#include <Render/PassOcclusion.h>
+#include <Render/PassPosteffect.h>
 #include <Data/DataServer.h>
-#include "renderpath/nrenderpath2.h"
 #include "renderpath/nrprendertarget.h"
-#include "renderpath/nrppass.h"
 #include "renderpath/nrpphase.h"
 #include "renderpath/nrpsequence.h"
 #include "gfx2/ngfxserver2.h"
@@ -15,8 +16,7 @@
 /**
 */
 nRpXmlParser::nRpXmlParser() :
-    xmlDocument(0),
-    renderPath(0)
+    xmlDocument(0)
 {
     // empty
 }
@@ -33,20 +33,20 @@ nRpXmlParser::~nRpXmlParser()
 /**
 */
 bool
-nRpXmlParser::OpenXml()
+nRpXmlParser::OpenXml(const nString& FileName)
 {
-    n_assert(this->renderPath);
+    n_assert(FrameShader.isvalid());
     n_assert(0 == this->xmlDocument);
 
-    this->mangledPath = DataSrv->ManglePath(this->renderPath->GetFilename());
+	this->mangledPath = DataSrv->ManglePath(FileName);
     this->xmlDocument = n_new(tinyxml2::XMLDocument);
     if (xmlDocument->LoadFile(mangledPath.Get()) == tinyxml2::XML_SUCCESS)
     {
         tinyxml2::XMLHandle docHandle(this->xmlDocument);
-        tinyxml2::XMLElement* elmRenderPath = docHandle.FirstChildElement("RenderPath").ToElement();
+        tinyxml2::XMLElement* elmRenderPath = docHandle.FirstChildElement("FrameShader").ToElement();
         n_assert(elmRenderPath);
-        this->renderPath->SetName(elmRenderPath->Attribute("name"));
-        this->renderPath->SetShaderPath(elmRenderPath->Attribute("shaderPath"));
+        FrameShader->Name = CStrID(elmRenderPath->Attribute("name"));
+        FrameShader->shaderPath = elmRenderPath->Attribute("shaderPath");
         return true;
     }
     n_delete(this->xmlDocument);
@@ -71,11 +71,11 @@ nRpXmlParser::CloseXml()
 bool
 nRpXmlParser::ParseXml()
 {
-    n_assert(this->renderPath);
+    n_assert(FrameShader.isvalid());
     n_assert(this->xmlDocument);
 
     tinyxml2::XMLHandle docHandle(this->xmlDocument);
-    tinyxml2::XMLElement* elmRenderPath = docHandle.FirstChildElement("RenderPath").ToElement();
+    tinyxml2::XMLElement* elmRenderPath = docHandle.FirstChildElement("FrameShader").ToElement();
     n_assert(elmRenderPath);
 
     // parse child elements
@@ -86,40 +86,27 @@ nRpXmlParser::ParseXml()
         else if (child->Value() == nString("RenderTarget")) ParseRenderTarget(child);
         else if (child->Value() == nString("Float"))
         {
-            this->ParseGlobalVariable(nVariable::Float, child, renderPath);
+            this->ParseGlobalVariable(nVariable::Float, child, FrameShader);
         }
         else if (child->Value() == nString("Float4"))
         {
-            this->ParseGlobalVariable(nVariable::Vector4, child, renderPath);
+            this->ParseGlobalVariable(nVariable::Vector4, child, FrameShader);
         }
         else if (child->Value() == nString("Int"))
         {
-            this->ParseGlobalVariable(nVariable::Int, child, renderPath);
+            this->ParseGlobalVariable(nVariable::Int, child, FrameShader);
         }
         else if (child->Value() == nString("Texture"))
         {
-            this->ParseGlobalVariable(nVariable::Object, child, renderPath);
+            this->ParseGlobalVariable(nVariable::Object, child, FrameShader);
         }
-        else if (child->Value() == nString("Section"))
+        else if (child->Value() == nString("Pass"))
         {
-            this->ParseSection(child, renderPath);
+            //this->ParseSection(child, FrameShader);
+			this->ParsePass(child, FrameShader);
         }
     }
     return true;
-}
-
-//------------------------------------------------------------------------------
-/**
-    Parse Shader xml element.
-*/
-void
-nRpXmlParser::ParseShader(tinyxml2::XMLElement* elm, nRenderPath2* renderPath)
-{
-    n_assert(elm && renderPath);
-    nRpShader newShader;
-    newShader.SetName(elm->Attribute("name"));
-    newShader.SetFilename(elm->Attribute("file"));
-    renderPath->AddShader(newShader);
 }
 
 //------------------------------------------------------------------------------
@@ -133,11 +120,12 @@ nRpXmlParser::ParseShaders(tinyxml2::XMLElement* elm)
     {
         if (HasAttr(pShader, "name") && HasAttr(pShader, "file"))
         {
-            nRpShader newShader;
+			nRpShader& newShader = *FrameShader->shaders.Reserve(1);
             newShader.SetName(pShader->Attribute("name"));
             newShader.SetFilename(pShader->Attribute("file"));
-            renderPath->AddShader(newShader);
-        }
+			newShader.Validate();
+			newShader.SetBucketIndex(FrameShader->shaders.Size() - 1);
+       }
         else break;
     }
 	while (pShader = pShader->NextSiblingElement());
@@ -150,8 +138,8 @@ nRpXmlParser::ParseShaders(tinyxml2::XMLElement* elm)
 void
 nRpXmlParser::ParseRenderTarget(tinyxml2::XMLElement* elm)
 {
-    n_assert(elm && renderPath);
-    nRpRenderTarget newRenderTarget;
+    n_assert(elm && FrameShader.isvalid());
+    nRpRenderTarget& newRenderTarget = *FrameShader->renderTargets.Reserve(1);
     newRenderTarget.SetName(elm->Attribute("name"));
     newRenderTarget.SetFormat(nTexture2::StringToFormat(elm->Attribute("format")));
     newRenderTarget.SetRelSize(this->GetFloatAttr(elm, "relSize", 1.0f));
@@ -163,7 +151,7 @@ nRpXmlParser::ParseRenderTarget(tinyxml2::XMLElement* elm)
     {
         newRenderTarget.SetHeight(this->GetIntAttr(elm, "height", 0));
     }
-    renderPath->AddRenderTarget(newRenderTarget);
+	newRenderTarget.Validate();
 }
 
 //------------------------------------------------------------------------------
@@ -226,101 +214,62 @@ nRpXmlParser::ParseVariable(nVariable::Type dataType, tinyxml2::XMLElement* elm)
     element (these are global variable definitions.
 */
 void
-nRpXmlParser::ParseGlobalVariable(nVariable::Type dataType, tinyxml2::XMLElement* elm, nRenderPath2* renderPath)
+nRpXmlParser::ParseGlobalVariable(nVariable::Type dataType, tinyxml2::XMLElement* elm, CFrameShader* pFrameShader)
 {
-    n_assert(elm && renderPath);
+    n_assert(elm && pFrameShader);
     nVariable var = this->ParseVariable(dataType, elm);
-    renderPath->AddVariable(var);
-}
-
-//------------------------------------------------------------------------------
-/**
-    Parse a Section element inside a RenderPath element.
-*/
-void
-nRpXmlParser::ParseSection(tinyxml2::XMLElement* elm, nRenderPath2* renderPath)
-{
-    n_assert(elm && renderPath);
-
-    // parse attributes
-    nRpSection newSection;
-    newSection.SetName(elm->Attribute("name"));
-
-    // parse children
-    tinyxml2::XMLElement* child;
-    for (child = elm->FirstChildElement(); child; child = child->NextSiblingElement())
-    {
-        if (child->Value() == nString("Pass"))
-        {
-            this->ParsePass(child, &newSection);
-        }
-    }
-    renderPath->AddSection(newSection);
+    nVariableServer::Instance()->SetGlobalVariable(var);
+    pFrameShader->variableHandles.Append(var.GetHandle());
 }
 
 //------------------------------------------------------------------------------
 /**
     Parse a Pass element inside a Section element.
 */
-void
-nRpXmlParser::ParsePass(tinyxml2::XMLElement* elm, nRpSection* section)
+void nRpXmlParser::ParsePass(tinyxml2::XMLElement* elm, CFrameShader* pFrameShader)
 {
-    n_assert(elm && section);
+    n_assert(elm && pFrameShader);
 
-    // parse attributes
-    nRpPass newPass;
-    newPass.SetName(elm->Attribute("name"));
-    newPass.SetShaderAlias(elm->Attribute("shader"));
-    nString renderTargetName("renderTarget");
+	const char* pPassType = elm->Attribute("type");
+
+	PPass Pass;
+	if (!pPassType) Pass = n_new(CPassGeometry);
+	else if (!strcmp(pPassType, "Occlusion")) Pass = n_new(CPassOcclusion);
+	else if (!strcmp(pPassType, "Posteffect")) Pass = n_new(CPassPosteffect);
+	else /*if (!strcmp(pPassType, "Geometry"))*/ Pass = n_new(CPassGeometry);
+
+	Pass->Name = CStrID(elm->Attribute("name"));
+    Pass->shaderAlias = elm->Attribute("shader");
+
+	Pass->pFrameShader = pFrameShader;
+
+	nString renderTargetName("renderTarget");
     int i = 0;
     while (this->HasAttr(elm, renderTargetName.Get()))
     {
-        newPass.SetRenderTargetName(i, elm->Attribute(renderTargetName.Get()));
+        Pass->renderTargetNames[i] = elm->Attribute(renderTargetName.Get());
         renderTargetName.Set("renderTarget");
         renderTargetName.AppendInt(++i);
     }
 
-    if (this->HasAttr(elm, "stats"))
-    {
-        newPass.SetStatsEnabled(this->GetBoolAttr(elm, "stats", true));
-    }
     int clearFlags = 0;
     if (this->HasAttr(elm, "clearColor"))
     {
         clearFlags |= nGfxServer2::ColorBuffer;
-        newPass.SetClearColor(this->GetVector4Attr(elm, "clearColor", vector4(0.0f, 0.0f, 0.0f, 1.0f)));
+        Pass->clearColor = this->GetVector4Attr(elm, "clearColor", vector4(0.0f, 0.0f, 0.0f, 1.0f));
     }
     if (this->HasAttr(elm, "clearDepth"))
     {
         clearFlags |= nGfxServer2::DepthBuffer;
-        newPass.SetClearDepth(this->GetFloatAttr(elm, "clearDepth", 1.0f));
+        Pass->clearDepth = this->GetFloatAttr(elm, "clearDepth", 1.0f);
     }
     if (this->HasAttr(elm, "clearStencil"))
     {
         clearFlags |= nGfxServer2::StencilBuffer;
-        newPass.SetClearStencil(this->GetIntAttr(elm, "clearStencil", 0));
+        Pass->clearStencil = this->GetIntAttr(elm, "clearStencil", 0);
     }
-    newPass.SetClearFlags(clearFlags);
-    if (this->HasAttr(elm, "drawQuad"))
-    {
-        newPass.SetDrawFullscreenQuad(this->GetBoolAttr(elm, "drawQuad", false));
-    }
-    if (this->HasAttr(elm, "drawShadows"))
-    {
-        newPass.SetDrawShadows(nRpPass::StringToShadowTechnique(elm->Attribute("drawShadows")));
-    }
-    if (this->HasAttr(elm, "occlusionQuery"))
-    {
-        newPass.SetOcclusionQuery(this->GetBoolAttr(elm, "occlusionQuery", false));
-    }
-    if (this->HasAttr(elm, "technique"))
-    {
-        newPass.SetTechnique(elm->Attribute("technique"));
-    }
-    if (this->HasAttr(elm, "shadowEnabledCondition"))
-    {
-        newPass.SetShadowEnabledCondition(this->GetBoolAttr(elm, "shadowEnabledCondition", false));
-    }
+    Pass->clearFlags = clearFlags;
+    if (HasAttr(elm, "technique")) Pass->technique = elm->Attribute("technique");
 
     // parse children
     tinyxml2::XMLElement* child;
@@ -328,26 +277,26 @@ nRpXmlParser::ParsePass(tinyxml2::XMLElement* elm, nRpSection* section)
     {
         if (child->Value() == nString("Float"))
         {
-            this->ParseShaderState(nShaderState::Float, child, &newPass);
+            this->ParseShaderState(nShaderState::Float, child, Pass);
         }
         else if (child->Value() == nString("Float4"))
         {
-            this->ParseShaderState(nShaderState::Float4, child, &newPass);
+            this->ParseShaderState(nShaderState::Float4, child, Pass);
         }
         else if (child->Value() == nString("Int"))
         {
-            this->ParseShaderState(nShaderState::Int, child, &newPass);
+            this->ParseShaderState(nShaderState::Int, child, Pass);
         }
         else if (child->Value() == nString("Texture"))
         {
-            this->ParseShaderState(nShaderState::Texture, child, &newPass);
+            this->ParseShaderState(nShaderState::Texture, child, Pass);
         }
         else if (child->Value() == nString("Phase"))
         {
-            this->ParsePhase(child, &newPass);
+            this->ParsePhase(child, Pass);
         }
     }
-    section->AddPass(newPass);
+    pFrameShader->Passes.Append(Pass);
 }
 
 //------------------------------------------------------------------------------
@@ -355,9 +304,9 @@ nRpXmlParser::ParsePass(tinyxml2::XMLElement* elm, nRpSection* section)
     Parse a shader state element inside a Pass XML element.
 */
 void
-nRpXmlParser::ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* elm, nRpPass* pass)
+nRpXmlParser::ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* elm, CPass* pPass)
 {
-    n_assert(elm && pass);
+    n_assert(elm && pPass);
 
     nShaderState::Param p = nShaderState::StringToParam(elm->Attribute("name"));
     nShaderArg arg(type);
@@ -403,12 +352,15 @@ nRpXmlParser::ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* el
             n_error("nRpXmlParser::ParseShaderState(): invalid datatype '%s'!", elm->Attribute("name"));
             break;
         }
-        pass->AddConstantShaderParam(p, arg);
+        pPass->shaderParams.SetArg(p, arg);
     }
     else if (this->HasAttr(elm, "variable"))
     {
         const char* varName = elm->Attribute("variable");
-        pass->AddVariableShaderParam(varName, p, arg);
+		pPass->shaderParams.SetArg(p, arg);
+		nVariable::Handle h = nVariableServer::Instance()->GetVariableHandleByName(varName);
+		nVariable var(h, int(p));
+		pPass->varContext.AddVariable(var);
     }
 }
 
@@ -479,13 +431,14 @@ nRpXmlParser::ParseShaderState(nShaderState::Type type, tinyxml2::XMLElement* el
     Parse a Phase XML element.
 */
 void
-nRpXmlParser::ParsePhase(tinyxml2::XMLElement* elm, nRpPass* pass)
+nRpXmlParser::ParsePhase(tinyxml2::XMLElement* elm, CPass* pPass)
 {
-    n_assert(elm && pass);
+    n_assert(elm && pPass);
 
-    nRpPhase newPhase;
+    nRpPhase& newPhase = *((CPassGeometry*)pPass)->phases.Reserve(1);
 
     // read attributes
+	newPhase.SetRenderPath(pPass->pFrameShader);
     newPhase.SetName(elm->Attribute("name"));
     newPhase.SetShaderAlias(elm->Attribute("shader"));
     newPhase.SetSortingOrder(nRpPhase::StringToSortingOrder(elm->Attribute("sort")));
@@ -501,7 +454,6 @@ nRpXmlParser::ParsePhase(tinyxml2::XMLElement* elm, nRpPass* pass)
     {
         this->ParseSequence(child, &newPhase);
     }
-    pass->AddPhase(newPhase);
 }
 
 //------------------------------------------------------------------------------
@@ -513,6 +465,7 @@ nRpXmlParser::ParseSequence(tinyxml2::XMLElement* elm, nRpPhase* phase)
 {
     n_assert(elm && phase);
     nRpSequence newSequence;
+	newSequence.SetRenderPath(phase->GetRenderPath());
     newSequence.SetShaderAlias(elm->Attribute("shader"));
     if (this->HasAttr(elm, "technique"))
     {
