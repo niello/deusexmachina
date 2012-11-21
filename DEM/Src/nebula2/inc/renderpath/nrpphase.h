@@ -14,10 +14,11 @@
 #include "renderpath/nrpshader.h"
 #include "kernel/nprofiler.h"
 
-class nRenderPath2;
-class nRpSection;
-class nRpPass;
-//------------------------------------------------------------------------------
+namespace Render
+{
+	class CPass;
+}
+
 class nRpPhase
 {
 public:
@@ -38,12 +39,10 @@ public:
 
     /// constructor
     nRpPhase();
-    /// destructor
-    ~nRpPhase();
     /// set the renderpath
-    void SetRenderPath(nRenderPath2* rp);
+    void SetRenderPath(CFrameShader* rp);
     /// get the renderpath
-    nRenderPath2* GetRenderPath() const;
+    CFrameShader* GetRenderPath() const;
     /// set phase name
     void SetName(const nString& n);
     /// get phase name
@@ -79,24 +78,12 @@ public:
     /// convert string to lighting mode
     static LightMode StringToLightMode(const char* str);
 
-#if __NEBULA_STATS__
-    /// set the section
-    void SetSection(nRpSection* rp);
-    /// get the section
-    nRpSection* GetSection() const;
-    /// set the pass
-    void SetPass(nRpPass* p);
-    /// get the pass
-    nRpPass* GetPass() const;
-#endif
-
-private:
-    friend class nRpPass;
-
     /// validate the pass object
     void Validate();
 
-    nRenderPath2* renderPath;
+private:
+
+    CFrameShader* pFrameShader;
     bool inBegin;
     nString name;
     nString shaderAlias;
@@ -105,12 +92,6 @@ private:
     SortingOrder sortingOrder;
     LightMode lightMode;
     nArray<nRpSequence> sequences;
-
-#if __NEBULA_STATS__
-    nProfiler prof;
-    nRpSection* section;
-    nRpPass* pass;
-#endif
 };
 
 //------------------------------------------------------------------------------
@@ -168,20 +149,20 @@ nRpPhase::SetShaderAlias(const nString& p)
 */
 inline
 void
-nRpPhase::SetRenderPath(nRenderPath2* rp)
+nRpPhase::SetRenderPath(CFrameShader* rp)
 {
     n_assert(rp);
-    this->renderPath = rp;
+    this->pFrameShader = rp;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-nRenderPath2*
+CFrameShader*
 nRpPhase::GetRenderPath() const
 {
-    return this->renderPath;
+    return this->pFrameShader;
 }
 
 //------------------------------------------------------------------------------
@@ -298,50 +279,6 @@ nRpPhase::StringToLightMode(const char* str)
         return Off;
     }
 }
-
-#if __NEBULA_STATS__
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRpPhase::SetSection(nRpSection* s)
-{
-    n_assert(s);
-    this->section = s;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nRpSection*
-nRpPhase::GetSection() const
-{
-    return this->section;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRpPhase::SetPass(nRpPass* p)
-{
-    n_assert(p);
-    this->pass = p;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nRpPass*
-nRpPhase::GetPass() const
-{
-    return this->pass;
-}
-#endif
 
 
 //------------------------------------------------------------------------------

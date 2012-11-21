@@ -17,9 +17,12 @@
 #include "mathlib/matrix.h"
 #include "gfx2/nshaderparams.h"
 #include "util/nbucket.h"
-#include "renderpath/nrenderpath2.h"
+//#include "renderpath/nrenderpath2.h"
+#include <Render/FrameShader.h>
 #include "gfx2/nmesh2.h"
 #include "kernel/nprofiler.h"
+
+using namespace Render;
 
 class nRenderContext;
 class nSceneNode;
@@ -69,7 +72,7 @@ public:
     /// get current model matrix
     const matrix44& GetModelTransform() const;
     /// access to current render path object
-    const nRenderPath2* GetRenderPath() const;
+    const CFrameShader* GetRenderPath() const;
     /// enable/disable debug visualization
     void SetRenderDebug(bool b);
     /// get debug visualization flag
@@ -98,6 +101,14 @@ public:
     void SaveProjectionMatrix(const matrix44& m);
     /// get the projection matrix, that was saved
     const matrix44& GetSavedProjectionMatrix() const;
+
+	/// do a general occlusion query on all root nodes
+    void DoOcclusionQuery();
+    /// render a complete phase for light mode "Off"
+    void RenderPhaseLightModeOff(nRpPhase& curPhase);
+    /// render a complete phase for light mode "Shader"
+    void RenderPhaseLightModeShader(nRpPhase& curPhase);
+
 private:
 
     static nSceneServer* Singleton;
@@ -131,24 +142,12 @@ private:
     static int __cdecl CompareNodes(const ushort* i1, const ushort* i2);
     /// static qsort() compare function for shadow light sources
     static int __cdecl CompareShadowLights(const LightInfo* i1, const LightInfo* i2);
-    /// do the render path rendering
-    void DoRenderPath(nRpSection& rpSection);
-    /// render a complete phase for light mode "Off"
-    void RenderPhaseLightModeOff(nRpPhase& curPhase);
-    /// render a complete phase for light mode "Shader"
-    void RenderPhaseLightModeShader(nRpPhase& curPhase);
     /// update scissor rectangles for one light source
     void ComputeLightScissor(LightInfo& lightInfo);
     /// update the clip planes for a single light source
     void ComputeLightClipPlanes(LightInfo& lightInfo);
     /// update scissor rectangles and clip planes once for all lights
     void ComputeLightScissorsAndClipPlanes();
-    /// apply the scissor rectangle for a light group
-    void ApplyLightScissors(const LightInfo& lightInfo);
-    /// the clip planes for a light group
-    void ApplyLightClipPlanes(const LightInfo& lightInfo);
-    /// reset light scissors and clip plane
-    void ResetLightScissorsAndClipPlanes();
     /// render debug visualization of light scissors
     void DebugRenderLightScissors();
     /// render debug visualization of shapes
@@ -157,22 +156,10 @@ private:
     void DebugRenderPerfGui();
     /// return true if a shape's light links contain the given light
     bool IsShapeLitByLight(const Group& shapeGroup, const Group& lightGroup);
-    /// render the cameras
-    void RenderCameraScene();
     /// issue a single general occlusion query
     void IssueOcclusionQuery(Group& group, const vector3& viewerPos);
-    /// do a general occlusion query on all root nodes
-    void DoOcclusionQuery();
     /// find the N most important shadow casting light sources
     void GatherShadowLights();
-    /// checks if this node is a water (with reflection, refraction cameras)
-    bool IsAReflectingShape(const nMaterialNode* shapeNode)  const;
-    /// calculates the distance from the bounding box of this element to viewer
-    float CalculateDistanceToBoundingBox(const Group& groupNode);
-    /// checks if the given shapes bounding box is visible
-    bool IsShapesBBVisible(const Group& groupNode);
-    /// parses the priority of this node (usually a reflection, refracting sea
-    bool ParsePriority(const Group& groupNode);
 
     enum
     {
@@ -196,7 +183,8 @@ private:
 
     nString renderPathFilename;
     uint stackDepth;
-    nRenderPath2 renderPath;
+    
+	Render::PFrameShader FrameShader;
 
     nFixedArray<int> groupStack;
     nArray<Group> groupArray;
@@ -283,10 +271,10 @@ nSceneServer::GetClipPlaneFencing() const
 /**
 */
 inline
-const nRenderPath2*
+const CFrameShader*
 nSceneServer::GetRenderPath() const
 {
-    return &this->renderPath;
+    return FrameShader;
 }
 
 //------------------------------------------------------------------------------
@@ -296,7 +284,7 @@ inline
 void
 nSceneServer::SetRenderPathFilename(const nString& n)
 {
-    this->renderPath.SetFilename(n);
+    renderPathFilename = n;
 }
 
 //------------------------------------------------------------------------------
@@ -306,7 +294,7 @@ inline
 const nString&
 nSceneServer::GetRenderPathFilename() const
 {
-    return this->renderPath.GetFilename();
+    return renderPathFilename;
 }
 
 //------------------------------------------------------------------------------

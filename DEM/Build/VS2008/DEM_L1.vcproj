@@ -1377,7 +1377,15 @@
 			Name="Render"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Render\FrameShader.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Render\FrameShader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\Pass.cpp"
 				>
 			</File>
 			<File
@@ -1385,11 +1393,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Render\PassGeometry.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Render\PassGeometry.h"
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Render\PassOcclusion.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Render\PassOcclusion.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\PassPosteffect.cpp"
 				>
 			</File>
 			<File

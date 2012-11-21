@@ -18,6 +18,8 @@
 #include "scene/nabstractcameranode.h"
 #include "util/npriorityarray.h"
 #include "scene/nshapenode.h"
+#include "renderpath/nrpphase.h"
+#include "renderpath/nrpxmlparser.h"
 
 nSceneServer* nSceneServer::Singleton = 0;
 vector3 nSceneServer::viewerPos;
@@ -105,37 +107,35 @@ nSceneServer::Open()
 {
     n_assert(!this->isOpen);
 
-    // parse renderpath XML file
-    if (this->renderPath.OpenXml())
+	nRpXmlParser xmlParser;
+
+	FrameShader.Create();
+    xmlParser.SetRenderPath(FrameShader);
+    if (!xmlParser.OpenXml(renderPathFilename))
     {
-        // initialize the shaders assign from the render path
-        DataSrv->SetAssign("shaders", this->renderPath.GetShaderPath());
-
-        // open the display
-        bool displayOpened = nGfxServer2::Instance()->OpenDisplay();
-        n_assert(displayOpened);
-
-        // open the shadow server (after opening display!)
-//        nShadowServer2::Instance()->Open();
-
-        // initialize the render path object
-        bool renderPathOpened = this->renderPath.Open();
-        n_assert(renderPathOpened);
-
-        // unload the XML doc
-        this->renderPath.CloseXml();
-
-        // create an occlusion query object
-        this->occlusionQuery = nGfxServer2::Instance()->NewOcclusionQuery();
-		occlusionQuery->AddRef();
-
-        this->isOpen = true;
+       n_error("nSceneServer could not open render path file '%s'!", renderPathFilename.Get());
+       return false;
     }
-    else
-    {
-        n_error("nSceneServer could not open render path file '%s'!", this->renderPath.GetFilename().Get());
-    }
-    return this->isOpen;
+    n_assert(FrameShader->Name.IsValid());
+    n_assert(!FrameShader->shaderPath.IsEmpty());
+
+    // initialize the shaders assign from the render path
+    DataSrv->SetAssign("shaders", FrameShader->shaderPath);
+
+    n_assert(nGfxServer2::Instance()->OpenDisplay());
+
+    n_assert(xmlParser.ParseXml());
+	xmlParser.CloseXml();
+
+    FrameShader->Validate();
+
+    // create an occlusion query object
+    occlusionQuery = nGfxServer2::Instance()->NewOcclusionQuery();
+	occlusionQuery->AddRef();
+
+    this->isOpen = true;
+
+	return this->isOpen;
 }
 
 //------------------------------------------------------------------------------
@@ -151,7 +151,9 @@ nSceneServer::Close()
     this->occlusionQuery->Release();
     this->occlusionQuery = 0;
 
-    this->renderPath.Close();
+    //this->pFrameShader.Close();
+	FrameShader = NULL;
+
 //    nShadowServer2::Instance()->Close();
     nGfxServer2::Instance()->CloseDisplay();
     this->isOpen = false;
@@ -303,9 +305,6 @@ nSceneServer::RenderScene()
     // sort shape nodes for optimal rendering
     this->SortNodes();
 
-    // render camera nodes in scene
-    if (camerasEnabled) RenderCameraScene();
-
     /// reset light passes in shape groups between renderpath
     for (int i = 0; i < this->shapeBucket.Size(); i++)
     {
@@ -316,9 +315,8 @@ nSceneServer::RenderScene()
 
     // render final scene
     PROFILER_START(profRenderPath);
-    int SectionIdx = renderPath.FindSectionIndex("default");
-    n_assert(SectionIdx != -1);
-    DoRenderPath(renderPath.GetSection(SectionIdx));
+	// validation removed
+	FrameShader->Render();
     PROFILER_STOP(profRenderPath);
 
     // HACK...
@@ -385,20 +383,20 @@ nSceneServer::SplitNodes()
                 nMaterialNode* shapeNode = (nMaterialNode*)group.sceneNode;
 
                 // if this is a reflecting shape, parse for render priority
-                if (this->IsAReflectingShape(shapeNode))
-                {
-                    // check if this one is the new (or old) node to be rendered complex
-                    if (this->ParsePriority(group))
-                    {
-                        this->cameraArray.Reset();
-                        group.renderContext->GetShaderOverrides().SetArg(nShaderState::RenderComplexity, 1);
-                    }
-                    else
-                    {
-                        // reset complex flag (we think this one is not the one to be rendered complex)
-                        group.renderContext->GetShaderOverrides().SetArg(nShaderState::RenderComplexity, 0);
-                    }
-                }
+                //if (this->IsAReflectingShape(shapeNode))
+                //{
+                //    // check if this one is the new (or old) node to be rendered complex
+                //    if (this->ParsePriority(group))
+                //    {
+                //        this->cameraArray.Reset();
+                //        group.renderContext->GetShaderOverrides().SetArg(nShaderState::RenderComplexity, 1);
+                //    }
+                //    else
+                //    {
+                //        // reset complex flag (we think this one is not the one to be rendered complex)
+                //        group.renderContext->GetShaderOverrides().SetArg(nShaderState::RenderComplexity, 0);
+                //    }
+                //}
 
                 int shaderIndex = shapeNode->GetShaderIndex();
                 if (shaderIndex > -1) shapeBucket[shaderIndex].Append(i);

@@ -51,7 +51,9 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 
 	const matrix44& ViewProj = matrix44(); // = Camera.GetViewProj();
 
-	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleMeshes, FrameShaderUsesLights ? &VisibleLights : NULL);
+	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
+	nArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
+	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleMeshes, pVisibleLights);
 
 	// Run all passes
 

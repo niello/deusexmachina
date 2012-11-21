@@ -125,46 +125,6 @@ nSceneServer::ComputeLightScissorsAndClipPlanes()
 
 //------------------------------------------------------------------------------
 /**
-*/
-void
-nSceneServer::ApplyLightScissors(const LightInfo& lightInfo)
-{
-    nGfxServer2* gfxServer = nGfxServer2::Instance();
-    gfxServer->SetScissorRect(lightInfo.scissorRect);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-void
-nSceneServer::ApplyLightClipPlanes(const LightInfo& lightInfo)
-{
-    if (this->clipPlaneFencing)
-    {
-        nGfxServer2* gfxServer = nGfxServer2::Instance();
-        gfxServer->SetClipPlanes(lightInfo.clipPlanes);
-    }
-}
-
-//------------------------------------------------------------------------------
-/**
-    Reset the light scissor rect and clip planes.
-*/
-void
-nSceneServer::ResetLightScissorsAndClipPlanes()
-{
-    static const rectangle fullScreenRect(vector2::zero, vector2(1.0f, 1.0f));
-    nGfxServer2::Instance()->SetScissorRect(fullScreenRect);
-
-	if (this->clipPlaneFencing)
-    {
-        nArray<plane> nullArray(0, 0);
-        nGfxServer2::Instance()->SetClipPlanes(nullArray);
-    }
-}
-
-//------------------------------------------------------------------------------
-/**
     This method goes through all attached light sources and decides which
     4 of them should cast shadows. This takes the occlusion status, distance and
     range and intensity into account. The method should be called after

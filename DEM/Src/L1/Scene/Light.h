@@ -31,13 +31,14 @@ public:
 	EType	Type;
 	vector3	Color;
 	float	Intensity;
-	bool	CastShadows; //???to flags?
+
+	// ERenderFlag: ShadowCaster, DoOcclusionCulling (force disable for directionals)
 
 	union
 	{
 		float Range;			// Point //???or use node tfm scale part?
 
-		struct					// Spot
+		struct					// Spot //???need range too?
 		{
 			float ConeInner;
 			float ConeOuter;

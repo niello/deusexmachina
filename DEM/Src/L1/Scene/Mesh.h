@@ -28,8 +28,8 @@ public:
 	// Group (FirstVertex, VertexCount, FirstIndex, IndexCount, Topology (primtype), AABB) //???VB + IB + Group to resource?
 	// Material (shader ref with name-to-handle for vars inside)
 	// PTexture Textures[];
-	// bool CastShadow;
-	//???bool ReceiveShadow;?
+
+	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
 
 	CSPSRecord*	pSPSRecord;
 

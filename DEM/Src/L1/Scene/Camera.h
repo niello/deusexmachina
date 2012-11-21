@@ -28,6 +28,7 @@ public:
 
 	//background color
 	//???clip planes computing?
+	//???bool IsOrtho?
 
 	virtual void UpdateTransform(CScene& Scene);
 };
