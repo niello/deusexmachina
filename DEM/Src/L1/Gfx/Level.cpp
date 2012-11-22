@@ -5,7 +5,6 @@
 #include <Gfx/ShapeEntity.h>
 #include <Gfx/GfxServer.h>
 #include <gfx2/ngfxserver2.h>
-#include <particle/nparticleserver.h>
 #include <scene/nsceneserver.h>
 
 namespace Graphics

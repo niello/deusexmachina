@@ -15,7 +15,6 @@
 #include "mathlib/bbox.h"
 #include "mathlib/sphere.h"
 #include "mathlib/line.h"
-#include "scene/nabstractcameranode.h"
 #include "util/npriorityarray.h"
 #include "scene/nshapenode.h"
 #include "renderpath/nrpphase.h"
@@ -68,22 +67,9 @@ nSceneServer::nSceneServer() :
     this->lightArray.SetFlags(nArray<LightInfo>::DoubleGrowSize);
     this->shadowLightArray.SetFlags(nArray<LightInfo>::DoubleGrowSize);
     this->rootArray.SetFlags(nArray<ushort>::DoubleGrowSize);
-    this->shadowArray.SetFlags(nArray<ushort>::DoubleGrowSize);
 
     this->groupStack.SetSize(MaxHierarchyDepth);
     this->groupStack.Clear(0);
-
-    // dummy far far away value^^
-    this->renderedReflectorDistance = 99999999.9f;
-
-    // default there is no rendered reflector
-    this->renderContextPtr = 0;
-
-     // get class pointer to compare, and check this stuff
-    reqReflectClass = nKernelServer::Instance()->FindClass("nreflectioncameranode");
-    reqRefractClass = nKernelServer::Instance()->FindClass("nclippingcameranode");
-    n_assert(reqReflectClass);
-    n_assert(reqRefractClass);
 }
 
 //------------------------------------------------------------------------------
@@ -297,10 +283,25 @@ nSceneServer::RenderScene()
 
     // NOTE: this must happen after make sure node resources are loaded
     // because the reflection/refraction camera stuff depends on it
-    this->ValidateNodeResources();
+	// Load camera resources before other node resources
+    PROFILER_START(this->profValidateResources);
+    for (ushort i = 0; i < groupArray.Size(); i++)
+    {
+        nSceneNode* pNode = groupArray[i].sceneNode;
+        if (!pNode->AreResourcesValid())
+            pNode->LoadResources();
+    }
+    PROFILER_STOP(this->profValidateResources);
 
     // compute light scissor rectangles and clip planes
-    this->ComputeLightScissorsAndClipPlanes();
+    PROFILER_START(this->profComputeScissors);
+    for (int lightIndex = 0; lightIndex < lightArray.Size(); lightIndex++)
+    {
+        LightInfo& lightInfo = this->lightArray[lightIndex];
+        this->ComputeLightScissor(lightInfo);
+        this->ComputeLightClipPlanes(lightInfo);
+    }
+    PROFILER_STOP(this->profComputeScissors);
 
     // sort shape nodes for optimal rendering
     this->SortNodes();
@@ -353,139 +354,34 @@ nSceneServer::PresentScene()
     the lightArray[] and shapeArray[] members. This method is available
     as a convenience method for subclasses.
 */
-void
-nSceneServer::SplitNodes()
+void nSceneServer::SplitNodes()
 {
     PROFILER_START(this->profSplitNodes);
-
-    // reset complex rendered reflector
-    this->renderContextPtr = 0;
-    this->renderedReflectorDistance = 999999.9f;
 
     // clear arrays which are filled by this method
     this->shapeBucket.Clear();
     this->lightArray.Clear();
     this->shadowLightArray.Clear();
-    this->shadowArray.Reset();
-    this->cameraArray.Reset();
 
-    ushort i;
-    ushort num = this->groupArray.Size();
-    for (i = 0; i < num; i++)
+    for (ushort i = 0; i < groupArray.Size(); i++)
     {
-        Group& group = this->groupArray[i];
+        Group& group = groupArray[i];
         n_assert(group.sceneNode);
 
-        if (group.sceneNode->HasGeometry())
+        if (group.sceneNode->HasGeometry() && group.renderContext->GetFlag(nRenderContext::ShapeVisible))
         {
-            if (group.renderContext->GetFlag(nRenderContext::ShapeVisible))
-            {
-                nMaterialNode* shapeNode = (nMaterialNode*)group.sceneNode;
-
-                // if this is a reflecting shape, parse for render priority
-                //if (this->IsAReflectingShape(shapeNode))
-                //{
-                //    // check if this one is the new (or old) node to be rendered complex
-                //    if (this->ParsePriority(group))
-                //    {
-                //        this->cameraArray.Reset();
-                //        group.renderContext->GetShaderOverrides().SetArg(nShaderState::RenderComplexity, 1);
-                //    }
-                //    else
-                //    {
-                //        // reset complex flag (we think this one is not the one to be rendered complex)
-                //        group.renderContext->GetShaderOverrides().SetArg(nShaderState::RenderComplexity, 0);
-                //    }
-                //}
-
-                int shaderIndex = shapeNode->GetShaderIndex();
-                if (shaderIndex > -1) shapeBucket[shaderIndex].Append(i);
-            }
+            int shaderIndex = ((nMaterialNode*)group.sceneNode)->GetShaderIndex();
+            if (shaderIndex > -1) shapeBucket[shaderIndex].Append(i);
         }
-        if (group.sceneNode->HasLight())
+
+		if (group.sceneNode->HasLight())
         {
-            n_assert(group.sceneNode->IsA("nlightnode"));
-            group.renderContext->SetSceneLightIndex(this->lightArray.Size());
-            LightInfo lightInfo;
+            group.renderContext->SetSceneLightIndex(lightArray.Size());
+            LightInfo& lightInfo = *lightArray.Reserve(1);
             lightInfo.groupIndex = i;
-            this->lightArray.Append(lightInfo);
-        }
-
-		if (group.sceneNode->HasShadow() && group.renderContext->GetFlag(nRenderContext::ShadowVisible))
-            shadowArray.Append(i);
-
-        if (group.sceneNode->HasCamera())
-        {
-            nAbstractCameraNode* newCamera = (nAbstractCameraNode*) group.sceneNode;
-
-            // do the following stuff only if this camera is a child of the nearest seanode
-            const nRenderContext* renderCandidate = (nRenderContext*) group.renderContext;
-
-            // check if one reflecting camera has priority to be rendered
-            if (this->renderContextPtr != 0)
-            {
-
-                // if this is the chosen one to be rendered
-                if (renderCandidate == this->renderContextPtr)
-                {
-                    // HACK!!!: at the moment the cameras are only used for water, and all use
-                    // the same render target (because this is defined in the section, not by the
-                    // camera. Therefor it is useless to render more than one camera per section.
-                    // If later other cameras are used this must be fixed. A way must be found
-                    // to decide if 2 cameras are the same, or creating different rendertarget results.
-
-                    // check if we already have a camera using the same renderpath section
-                    int c;
-                    bool uniqueCamera = true;
-                    for (c = 0; c < this->cameraArray.Size(); c++)
-                    {
-                        Group& group = this->groupArray[this->cameraArray[c]];
-                        nAbstractCameraNode* existingCamera = (nAbstractCameraNode*)group.sceneNode;
-                        if (existingCamera->RenderPathSection == newCamera->RenderPathSection)
-                        {
-                            uniqueCamera = false;
-                            break;
-                        }
-                    }
-
-                    if (uniqueCamera)
-                    {
-                        this->cameraArray.Append(i);
-                    }
-                }
-            }
         }
     }
     PROFILER_STOP(this->profSplitNodes);
-}
-
-//------------------------------------------------------------------------------
-/**
-    This makes sure that all attached shape and light nodes have
-    loaded their resources. This method is available
-    as a convenience method for subclasses.
-*/
-void nSceneServer::ValidateNodeResources()
-{
-    PROFILER_START(this->profValidateResources);
-
-    // need to evaluate camera nodes first, because they create
-    // textures used by other nodes
-    for (ushort i = 0; i < cameraArray.Size(); i++)
-    {
-        nSceneNode* pCameraNode = groupArray[cameraArray[i]].sceneNode;
-        if (!pCameraNode->AreResourcesValid())
-            pCameraNode->LoadResources();
-    }
-
-    // then evaluate the rest
-    for (ushort i = 0; i < groupArray.Size(); i++)
-    {
-        nSceneNode* pNode = groupArray[i].sceneNode;
-        if (!pNode->AreResourcesValid())
-            pNode->LoadResources();
-    }
-    PROFILER_STOP(this->profValidateResources);
 }
 
 //------------------------------------------------------------------------------
