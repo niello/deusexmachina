@@ -229,10 +229,6 @@ private:
     void UpdateCursor();
     /// get a pointer to the global d3dx effect pool
     ID3DXEffectPool* GetEffectPool() const;
-    /// instant version of DrawIndexedNS()
-    void DrawIndexedInstancedNS(PrimitiveType primType);
-    /// instant version of DrawNS()
-    void DrawInstancedNS(PrimitiveType primType);
     /// update shared shader parameters per frame
     void UpdatePerFrameSharedShaderParams();
     /// update shared shader parameters per scene

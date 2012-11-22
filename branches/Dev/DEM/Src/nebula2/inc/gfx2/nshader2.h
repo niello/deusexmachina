@@ -22,7 +22,6 @@
 */
 #include "resource/nresource.h"
 #include "gfx2/nshaderparams.h"
-#include "gfx2/ninstancestream.h"
 
 class nTexture2;
 
@@ -35,7 +34,6 @@ public:
 	virtual bool HasTechnique(const char* t) const { return false; }
 	virtual bool SetTechnique(const char* t) { return false; }
 	virtual const char* GetTechnique() const { return NULL; }
-	virtual int UpdateInstanceStreamDecl(nInstanceStream::Declaration& decl) { return 0; }
 
 	virtual bool IsParameterUsed(nShaderState::Param p) { return false; }
 

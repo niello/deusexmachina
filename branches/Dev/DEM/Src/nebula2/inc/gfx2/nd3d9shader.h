@@ -23,8 +23,6 @@ public:
     nD3D9Shader();
     /// destructor
     virtual ~nD3D9Shader();
-    /// create or append an instance stream declaration for this shader
-    virtual int UpdateInstanceStreamDecl(nInstanceStream::Declaration& decl);
     /// return true if technique exists in shader
     virtual bool HasTechnique(const char* t) const;
     /// set a technique

@@ -134,8 +134,6 @@ private:
 
     /// split scene nodes into light and shape nodes
     void SplitNodes();
-    /// make sure scene node resources are valid
-    void ValidateNodeResources();
     /// sort shape nodes for optimal rendering
     void SortNodes();
     /// static qsort() compare function for scene nodes
@@ -146,8 +144,6 @@ private:
     void ComputeLightScissor(LightInfo& lightInfo);
     /// update the clip planes for a single light source
     void ComputeLightClipPlanes(LightInfo& lightInfo);
-    /// update scissor rectangles and clip planes once for all lights
-    void ComputeLightScissorsAndClipPlanes();
     /// render debug visualization of light scissors
     void DebugRenderLightScissors();
     /// render debug visualization of shapes
@@ -191,15 +187,7 @@ private:
     nArray<LightInfo> lightArray;               // all light sources
     nArray<LightInfo> shadowLightArray;         // shadow casting light sources
     nArray<ushort> rootArray;                   // root nodes
-    nArray<ushort> shadowArray;
-    nArray<ushort> cameraArray;
     nBucket<ushort,NumBuckets> shapeBucket;     // contains indices of shape nodes, bucketsorted by shader
-
-    float renderedReflectorDistance;
-    nRenderContext* renderContextPtr;
-
-    nClass* reqReflectClass;
-    nClass* reqRefractClass;
 
     nOcclusionQuery* occlusionQuery;
     matrix44 savedProjectionMatrix;

@@ -18,7 +18,6 @@
 #include "mathlib/rectangle.h"
 #include "gfx2/nmousecursor.h"
 #include "gfx2/DisplayMode.h"
-#include "gfx2/ninstancestream.h"
 #include "gfx2/nlight.h"
 #include "util/nfixedarray.h"
 #include "mathlib/rectangle.h"
@@ -193,8 +192,6 @@ public:
     virtual nShader2* NewShader(const nString& RsrcName) { return NULL; }
     /// create a render target object
     virtual nTexture2* NewRenderTarget(const nString& RsrcName, int width, int height, nTexture2::Format format, int usageFlags) { return NULL; }
-    /// create a new instance stream object
-    virtual nInstanceStream* NewInstanceStream(const nString& RsrcName);
     /// create a new occlusion query object
     virtual nOcclusionQuery* NewOcclusionQuery() { return NULL; }
 
@@ -284,10 +281,6 @@ public:
 	virtual void SetShader(nShader2* shader) { refShader = shader; }
     /// get current shader
     nShader2* GetShader() const;
-    /// set current instance stream, a valid instance stream triggers instance rendering
-	void SetInstanceStream(nInstanceStream* stream) { refInstanceStream = stream; }
-    /// get current instance stream
-    nInstanceStream* GetInstanceStream() const;
     /// set transform
     virtual void SetTransform(TransformType type, const matrix44& matrix);
     /// get transform
@@ -407,7 +400,6 @@ protected:
     nRef<nMesh2>                    refIbMesh;
     nRef<nMeshArray>                refMeshArray;
     nRef<nShader2>                  refShader;
-    nRef<nInstanceStream>           refInstanceStream;
     nMouseCursor curMouseCursor;
     int vertexRangeFirst;
     int vertexRangeNum;
@@ -527,19 +519,6 @@ nTexture2*
 nGfxServer2::GetRenderTarget(int index) const
 {
     return this->refRenderTargets[index].get_unsafe();
-}
-
-//------------------------------------------------------------------------------
-/**
-    Get current instance stream.
-
-    @return     current instance stream, or 0
-*/
-inline
-nInstanceStream*
-nGfxServer2::GetInstanceStream() const
-{
-    return this->refInstanceStream.isvalid() ? this->refInstanceStream.get() : 0;
 }
 
 //------------------------------------------------------------------------------

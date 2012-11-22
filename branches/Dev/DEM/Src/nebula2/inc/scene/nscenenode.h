@@ -18,7 +18,6 @@
 #include "mathlib/matrix.h"
 #include "mathlib/bbox.h"
 #include "gfx2/nshaderparams.h"
-#include "gfx2/ninstancestream.h"
 #include <Data/Params.h>
 
 class nSceneServer;
@@ -68,8 +67,6 @@ public:
     virtual bool HasGeometry() const { return false; }
     virtual bool HasShader() const { return false; }
     virtual bool HasLight() const { return false; }
-    virtual bool HasShadow() const { return false; }
-    virtual bool HasCamera() const { return false; }
 
 	virtual void RenderDebug(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix) { }
 

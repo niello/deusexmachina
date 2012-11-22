@@ -44,13 +44,6 @@ nGfxServer2::nGfxServer2():
 }
 //---------------------------------------------------------------------
 
-// Create a new shared instance stream object.
-nInstanceStream* nGfxServer2::NewInstanceStream(const nString& RsrcName)
-{
-	return (nInstanceStream*)nResourceServer::Instance()->NewResource("ninstancestream", RsrcName, nResource::Other);
-}
-//---------------------------------------------------------------------
-
 // Set the current camera. Subclasses should adjust their projection matrix accordingly when this method is called
 void nGfxServer2::SetCamera(nCamera2& NewCamera)
 {

@@ -9,8 +9,6 @@
 #include <gfx2/nd3d9server.h>
 #include <scene/nsceneserver.h>
 #include <variable/nvariableserver.h>
-#include <particle/nparticleserver.h>
-#include <particle/nparticleserver2.h>
 
 namespace Load
 {
@@ -113,10 +111,6 @@ bool CGfxServer::Open()
 	sceneServer->AddRef();
 	variableServer  = n_new(nVariableServer);
 	variableServer->AddRef();
-	particleServer = n_new(nParticleServer);
-	particleServer->AddRef();
-	particleServer2 = n_new(nParticleServer2);
-	particleServer2->AddRef();
 
 	GfxRoot = nKernelServer::Instance()->New("nroot", "/res/gfx");
 
@@ -167,8 +161,6 @@ void CGfxServer::Close()
 
 	GfxRoot->Release();
 
-	particleServer->Release();
-	particleServer2->Release();
 	if (variableServer.isvalid()) variableServer->Release();
 	if (sceneServer.isvalid()) sceneServer->Release();
 	if (gfxServer.isvalid()) gfxServer->Release();

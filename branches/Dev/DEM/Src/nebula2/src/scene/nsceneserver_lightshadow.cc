@@ -103,25 +103,6 @@ nSceneServer::ComputeLightClipPlanes(LightInfo& lightInfo)
 }
 
 //------------------------------------------------------------------------------
-/**
-    Iterates through the light groups and computes the scissor rectangle
-    for each light.
-*/
-void
-nSceneServer::ComputeLightScissorsAndClipPlanes()
-{
-    PROFILER_START(this->profComputeScissors);
-    // update lights
-    int lightIndex;
-    int numLights = this->lightArray.Size();
-    for (lightIndex = 0; lightIndex < numLights; lightIndex++)
-    {
-        LightInfo& lightInfo = this->lightArray[lightIndex];
-        this->ComputeLightScissor(lightInfo);
-        this->ComputeLightClipPlanes(lightInfo);
-    }
-    PROFILER_STOP(this->profComputeScissors);
-}
 
 //------------------------------------------------------------------------------
 /**

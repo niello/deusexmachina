@@ -20,8 +20,6 @@
 class nGfxServer2;
 class nSceneServer;
 class nVariableServer;
-class nParticleServer;
-class nParticleServer2;
 
 namespace Graphics
 {
@@ -58,8 +56,6 @@ private:
 	nRef<nGfxServer2>       gfxServer;
 	nRef<nSceneServer>      sceneServer;
 	nRef<nVariableServer>   variableServer;
-	nRef<nParticleServer>   particleServer;
-	nRef<nParticleServer2>  particleServer2;
 
 	nRef<nRoot>							GfxRoot;
 

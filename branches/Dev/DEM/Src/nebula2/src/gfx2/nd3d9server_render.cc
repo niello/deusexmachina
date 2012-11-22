@@ -736,39 +736,31 @@ nD3D9Server::DrawIndexedNS(PrimitiveType primType)
 {
     n_assert(this->pD3D9Device && this->inBeginScene);
 
-    if (this->refInstanceStream.isvalid())
+    // get primitive type and number of primitives
+    D3DPRIMITIVETYPE d3dPrimType;
+    int d3dNumPrimitives = this->GetD3DPrimTypeAndNumIndexed(primType, d3dPrimType);
+
+    this->refShader->CommitChanges();
+
+    // do single instance rendering
+    HRESULT hr = this->pD3D9Device->DrawIndexedPrimitive(
+        d3dPrimType,
+        0,
+        this->vertexRangeFirst,
+        this->vertexRangeNum,
+        this->indexRangeFirst,
+        d3dNumPrimitives);
+
+    n_dxtrace(hr, "DrawIndexedPrimitive() failed!");
+
+    #ifdef __NEBULA_STATS__
+    if (this->GetHint(CountStats))
     {
-        // do instanced rendering
-        this->DrawIndexedInstancedNS(primType);
+        // update statistics
+        this->statsNumDrawCalls++;
+        this->statsNumPrimitives += d3dNumPrimitives;
     }
-    else
-    {
-        // get primitive type and number of primitives
-        D3DPRIMITIVETYPE d3dPrimType;
-        int d3dNumPrimitives = this->GetD3DPrimTypeAndNumIndexed(primType, d3dPrimType);
-
-        this->refShader->CommitChanges();
-
-        // do single instance rendering
-        HRESULT hr = this->pD3D9Device->DrawIndexedPrimitive(
-            d3dPrimType,
-            0,
-            this->vertexRangeFirst,
-            this->vertexRangeNum,
-            this->indexRangeFirst,
-            d3dNumPrimitives);
-
-        n_dxtrace(hr, "DrawIndexedPrimitive() failed!");
-
-        #ifdef __NEBULA_STATS__
-        if (this->GetHint(CountStats))
-        {
-            // update statistics
-            this->statsNumDrawCalls++;
-            this->statsNumPrimitives += d3dNumPrimitives;
-        }
-        #endif
-    }
+    #endif
 }
 
 //------------------------------------------------------------------------------
@@ -780,169 +772,23 @@ nD3D9Server::DrawIndexedNS(PrimitiveType primType)
 void
 nD3D9Server::DrawNS(PrimitiveType primType)
 {
-    if (this->refInstanceStream.isvalid())
-    {
-        // do instanced rendering
-        this->DrawInstancedNS(primType);
-    }
-    else
-    {
-        n_assert(this->pD3D9Device && this->inBeginScene);
-        HRESULT hr;
-
-        // get primitive type and number of primitives
-        D3DPRIMITIVETYPE d3dPrimType;
-        int d3dNumPrimitives = this->GetD3DPrimTypeAndNum(primType, d3dPrimType);
-
-        this->refShader->CommitChanges();
-        hr = this->pD3D9Device->DrawPrimitive(d3dPrimType, this->vertexRangeFirst, d3dNumPrimitives);
-        n_dxtrace(hr, "DrawPrimitive() failed!");
-
-        #ifdef __NEBULA_STATS__
-        if (this->GetHint(CountStats))
-        {
-            // update statistics
-            this->statsNumDrawCalls++;
-            this->statsNumPrimitives += d3dNumPrimitives;
-        }
-        #endif
-    }
-}
-
-//------------------------------------------------------------------------------
-/**
-    Instancing version of DrawIndexedNS().
-*/
-void
-nD3D9Server::DrawIndexedInstancedNS(PrimitiveType primType)
-{
     n_assert(this->pD3D9Device && this->inBeginScene);
-    n_assert(this->refInstanceStream.isvalid());
-
-    HRESULT hr;
-
-    // get primitive type and number of primitives
-    D3DPRIMITIVETYPE d3dPrimType;
-    int d3dNumPrimitives = this->GetD3DPrimTypeAndNumIndexed(primType, d3dPrimType);
-
-    nShader2* curShader = this->GetShader();
-    nInstanceStream* instStream = this->GetInstanceStream();
-    const nInstanceStream::Declaration& decl = instStream->GetDeclaration();
-    const int numInstances = instStream->GetCurrentSize();
-    const int numComps = decl.Size();
-
-    instStream->Lock(nInstanceStream::Read);
-    int curInstIndex;
-    int numDrawCalls = 0;
-    int numPrimitives = 0;
-    for (curInstIndex = 0; curInstIndex < numInstances; curInstIndex++)
-    {
-        // update shader
-        int curCompIndex;
-        for (curCompIndex = 0; curCompIndex < numComps; curCompIndex++)
-        {
-            const nInstanceStream::Component& comp = decl[curCompIndex];
-            nShaderState::Param param = comp.GetParam();
-            switch (comp.GetType())
-            {
-            case nShaderState::Float:
-                curShader->SetFloat(param, instStream->ReadFloat());
-                break;
-
-            case nShaderState::Float4:
-                curShader->SetFloat4(param, instStream->ReadFloat4());
-                break;
-
-            case nShaderState::Matrix44:
-                // FIXME???
-                // if modelview matrix, compute dependent matrices?
-                curShader->SetMatrix(param, instStream->ReadMatrix44());
-                break;
-            }
-        }
-
-        // invoke DrawPrimitive()
-        curShader->CommitChanges();
-        hr = this->pD3D9Device->DrawIndexedPrimitive(d3dPrimType, 0, this->vertexRangeFirst, this->vertexRangeNum, this->indexRangeFirst, d3dNumPrimitives);
-        n_dxtrace(hr, "DrawIndexedPrimitive() failed!");
-    }
-    instStream->Unlock();
-
-    #ifdef __NEBULA_STATS__
-    if (this->GetHint(CountStats))
-    {
-        // update statistics
-        this->statsNumDrawCalls++;
-        this->statsNumPrimitives += d3dNumPrimitives * numInstances;
-    }
-    #endif
-}
-
-//------------------------------------------------------------------------------
-/**
-    Instancing version of DrawNS().
-*/
-void
-nD3D9Server::DrawInstancedNS(PrimitiveType primType)
-{
-    n_assert(this->pD3D9Device && this->inBeginScene);
-    n_assert(this->refInstanceStream.isvalid());
-
     HRESULT hr;
 
     // get primitive type and number of primitives
     D3DPRIMITIVETYPE d3dPrimType;
     int d3dNumPrimitives = this->GetD3DPrimTypeAndNum(primType, d3dPrimType);
 
-    nShader2* curShader = this->GetShader();
-    nInstanceStream* instStream = this->GetInstanceStream();
-    const nInstanceStream::Declaration& decl = instStream->GetDeclaration();
-    const int numInstances = instStream->GetCurrentSize();
-    const int numComps = decl.Size();
-
-    instStream->Lock(nInstanceStream::Read);
-    int curInstIndex;
-    int numDrawCalls = 0;
-    int numPrimitives = 0;
-    for (curInstIndex = 0; curInstIndex < numInstances; curInstIndex++)
-    {
-        // update shader
-        int curCompIndex;
-        for (curCompIndex = 0; curCompIndex < numComps; curCompIndex++)
-        {
-            const nInstanceStream::Component& comp = decl[curCompIndex];
-            nShaderState::Param param = comp.GetParam();
-            switch (comp.GetType())
-            {
-            case nShaderState::Float:
-                curShader->SetFloat(param, instStream->ReadFloat());
-                break;
-
-            case nShaderState::Float4:
-                curShader->SetFloat4(param, instStream->ReadFloat4());
-                break;
-
-            case nShaderState::Matrix44:
-                // FIXME???
-                // if modelview matrix, compute dependent matrices?
-                curShader->SetMatrix(param, instStream->ReadMatrix44());
-                break;
-            }
-        }
-
-        // invoke DrawPrimitive()
-        curShader->CommitChanges();
-        hr = this->pD3D9Device->DrawPrimitive(d3dPrimType, this->vertexRangeFirst, d3dNumPrimitives);
-        n_dxtrace(hr, "DrawPrimitive() failed");
-    }
-    instStream->Unlock();
+    this->refShader->CommitChanges();
+    hr = this->pD3D9Device->DrawPrimitive(d3dPrimType, this->vertexRangeFirst, d3dNumPrimitives);
+    n_dxtrace(hr, "DrawPrimitive() failed!");
 
     #ifdef __NEBULA_STATS__
     if (this->GetHint(CountStats))
     {
         // update statistics
         this->statsNumDrawCalls++;
-        this->statsNumPrimitives += d3dNumPrimitives * numInstances;
+        this->statsNumPrimitives += d3dNumPrimitives;
     }
     #endif
 }
