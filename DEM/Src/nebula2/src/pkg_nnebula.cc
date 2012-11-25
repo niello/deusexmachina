@@ -14,8 +14,6 @@ extern "C" void nnebula();
 
 extern bool n_init_nresource (nClass *, nKernelServer *);
 extern void *n_new_nresource (void);
-extern bool n_init_nscenenode (nClass *, nKernelServer *);
-extern void *n_new_nscenenode (void);
 extern bool n_init_nanimation (nClass *, nKernelServer *);
 extern void *n_new_nanimation (void);
 extern bool n_init_nmesh2 (nClass *, nKernelServer *);
@@ -26,14 +24,14 @@ extern bool n_init_nshader2 (nClass *, nKernelServer *);
 extern void *n_new_nshader2 (void);
 extern bool n_init_ntexture2 (nClass *, nKernelServer *);
 extern void *n_new_ntexture2 (void);
-extern bool n_init_ntransformnode (nClass *, nKernelServer *);
-extern void *n_new_ntransformnode (void);
 extern bool n_init_nmemoryanimation (nClass *, nKernelServer *);
 extern void *n_new_nmemoryanimation (void);
+extern bool n_init_nscenenode (nClass *, nKernelServer *);
+extern void *n_new_nscenenode (void);
 extern bool n_init_nskinanimator (nClass *, nKernelServer *);
 extern void *n_new_nskinanimator (void);
-extern bool n_init_nabstractshadernode (nClass *, nKernelServer *);
-extern void *n_new_nabstractshadernode (void);
+extern bool n_init_ntransformnode (nClass *, nKernelServer *);
+extern void *n_new_ntransformnode (void);
 extern bool n_init_nlodnode (nClass *, nKernelServer *);
 extern void *n_new_nlodnode (void);
 extern bool n_init_nskynode (nClass *, nKernelServer *);
@@ -87,9 +85,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nskinanimator",
                                  n_init_nskinanimator,
                                  n_new_nskinanimator);
-    nKernelServer::Instance()->AddModule("nabstractshadernode",
-                                 n_init_nabstractshadernode,
-                                 n_new_nabstractshadernode);
     nKernelServer::Instance()->AddModule("nlodnode",
                                  n_init_nlodnode,
                                  n_new_nlodnode);

@@ -83,24 +83,9 @@ nChunkLodMesh::Render(const nChunkLodRenderParams& renderParams)
 {
     // set random material color for debugging
     if (renderParams.shader->IsParameterUsed(nShaderState::MatDiffuse))
-    {
         renderParams.shader->SetFloat4(nShaderState::MatDiffuse, this->matDiffuse);
-    }
-/*
-    if (this->refMesh->GetRefillBuffersMode() == nMesh2::NeededNow)
-    {
-        // initiate loading process
-        this->Unload();
-        this->refMesh->SetRefillBuffersMode(nMesh2::DisabledOnce);
-        this->Load();
-        // wait until loading is done
-        while (!this->IsValid())
-        {
-            n_sleep(0.001f);
-        }
-    }
-*/
-    nMesh2* mesh = this->refMesh.get();
+
+	nMesh2* mesh = this->refMesh.get();
     n_assert(mesh->IsValid());
     renderParams.gfxServer->SetMesh(mesh, mesh);
     renderParams.gfxServer->SetVertexRange(0, mesh->GetNumVertices());

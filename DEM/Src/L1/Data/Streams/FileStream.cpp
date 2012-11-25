@@ -29,15 +29,15 @@ void CFileStream::Close()
 
 DWORD CFileStream::Read(void* pData, DWORD Size)
 {
-	n_assert(!IsMapped() && hFile && pData);
+	n_assert(!IsMapped() && hFile && (!Size || pData));
 	return (Size > 0) ? FS->Read(hFile, pData, Size) : 0;
 }
 //---------------------------------------------------------------------
 
 DWORD CFileStream::Write(const void* pData, DWORD Size)
 {
-	n_assert(!IsMapped() && hFile && pData);
-	return Size > 0 ? FS->Write(hFile, pData, Size) : 0;
+	n_assert(!IsMapped() && hFile && (!Size || pData));
+	return (Size > 0) ? FS->Write(hFile, pData, Size) : 0;
 }
 //---------------------------------------------------------------------
 

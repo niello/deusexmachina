@@ -7,7 +7,6 @@
 #include "gfx2/nshader2.h"
 #include "gfx2/ncamera2.h"
 #include "ncterrain2/nchunklodrenderparams.h"
-#include "ncterrain2/nclodeventhandler.h"
 
 nNebulaClass(nChunkLodTree, "nresource");
 
@@ -42,66 +41,10 @@ nChunkLodTree::nChunkLodTree() :
 */
 nChunkLodTree::~nChunkLodTree()
 {
-    // clear remaining event handlers
-    int num = this->eventHandlers.Size();
-    int i;
-    for (i = 0; i < num; i++)
-    {
-        this->eventHandlers[i]->Release();
-        this->eventHandlers[i] = 0;
-    }
-
     // unload resource if valid
     if (this->IsValid())
     {
         this->Unload();
-    }
-}
-
-//------------------------------------------------------------------------------
-/**
-    Add an event handler object to the nChunkLodTree. Event handlers are
-    notified about internal events like loading, unloading or rendering
-    a node in the quad tree. Derive your event handler subclass from
-    nCLODEventHandler and attach to a nChunkLodTree object. The
-    refcount of the event handler object will be incremented.
-*/
-void
-nChunkLodTree::AddEventHandler(nCLODEventHandler* handler)
-{
-    // make sure the handler is not already added
-    n_assert(!this->eventHandlers.Find(handler));
-    this->eventHandlers.Append(handler);
-    handler->AddRef();
-}
-
-//------------------------------------------------------------------------------
-/**
-    Remove an event handler from the nChunkLodTree. The refcount of the
-    event handler object will be decremented.
-*/
-void
-nChunkLodTree::RemEventHandler(nCLODEventHandler* handler)
-{
-    // make sure the handler is found
-    nArray<nCLODEventHandler*>::iterator iter = this->eventHandlers.Find(handler);
-    n_assert(iter);
-    this->eventHandlers.Erase(iter);
-    handler->Release();
-}
-
-//------------------------------------------------------------------------------
-/**
-    Distribute event to event handlers.
-*/
-void
-nChunkLodTree::PutEvent(nCLODEventHandler::Event event, nChunkLodNode* node)
-{
-    int num = this->eventHandlers.Size();
-    int i;
-    for (i = 0; i < num; i++)
-    {
-        this->eventHandlers[i]->OnEvent(event, node);
     }
 }
 
@@ -205,13 +148,6 @@ nChunkLodTree::LoadResource()
     n_assert(this->chunksAllocated == this->chunkCount);
     this->chunks[0].LookupNeighbours(this);
 
-    // distribute chunk create events
-    int i;
-    for (i = 0; i < this->chunkCount; i++)
-    {
-        this->PutEvent(nCLODEventHandler::CreateNode, &(this->chunks[i]));
-    }
-
     // update user dependent parameters
     this->paramsDirty = true;
     this->UpdateParams();
@@ -243,12 +179,6 @@ nChunkLodTree::UnloadResource()
     // delete tree of chunks
     if (this->chunks)
     {
-        // distribute destroy event
-        int i;
-        for (i = 0; i < this->chunkCount; i++)
-        {
-            this->PutEvent(nCLODEventHandler::DestroyNode, &(this->chunks[i]));
-        }
         n_delete_array(this->chunks);
         this->chunks = 0;
     }
@@ -350,7 +280,7 @@ nChunkLodTree::Update(const vector3& viewPoint)
     }
 
     // clear the split status in the tree
-    if (this->chunks[0].GetSplit())
+    if (this->chunks[0].IsSplitNode())
     {
         this->chunks[0].ClearSplits();
     }

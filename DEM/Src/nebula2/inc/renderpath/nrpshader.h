@@ -18,12 +18,15 @@
 class nRpShader
 {
 public:
-    /// constructor
-    nRpShader();
-    /// destructor
+
+	nRpShader();
+	nRpShader(const nRpShader& rhs) { Copy(rhs); }
     ~nRpShader();
+
+	void Copy(const nRpShader& rhs);
+
     /// assignment operator
-    void operator=(const nRpShader& rhs);
+	void operator=(const nRpShader& rhs) { Copy(rhs); }
     /// set shader name
     void SetName(const nString& n);
     /// get shader name
@@ -51,9 +54,7 @@ private:
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-nRpShader::operator=(const nRpShader& rhs)
+inline void nRpShader::Copy(const nRpShader& rhs)
 {
     this->name        = rhs.name;
     this->filename    = rhs.filename;

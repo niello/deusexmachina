@@ -205,7 +205,6 @@ nSkinAnimator::RenderContextCreated(nRenderContext* renderContext)
     // create one character 2 object per instance
     nCharacter2* curCharacter = n_new(nCharacter2(this->character));
     n_assert(0 != curCharacter);
-	//curCharacter->AddRef();
     curCharacter->SetSkinAnimator(this);
 
     // add default clip
@@ -222,7 +221,6 @@ nSkinAnimator::RenderContextCreated(nRenderContext* renderContext)
     // create one character set per instance
     nCharacter2Set* characterSet = n_new(nCharacter2Set);
     n_assert(0 != characterSet);
-	//characterSet->AddRef();
 
     // put frame persistent data in render context
     nVariable::Handle characterSetHandle = nVariableServer::Instance()->GetVariableHandleByName("charSetPointer");

@@ -550,8 +550,6 @@ nChunkLodNode::RequestLoadData(nChunkLodTree* tree, float /*priority*/)
 
     tree->numMeshesAllocated++;
 
-    tree->PutEvent(nCLODEventHandler::RequestLoadData, this);
-
 // n_printf("Loaded mesh %s\n", this->chunkLodMesh->GetMesh()->GetName());
 }
 
@@ -587,7 +585,6 @@ void
 nChunkLodNode::RequestUnloadData(nChunkLodTree* tree)
 {
     n_assert(this->chunkLodMesh);
-    tree->PutEvent(nCLODEventHandler::UnloadData, this);
 //    n_printf("Unload mesh %s\n", this->chunkLodMesh->GetMesh()->GetName());
     this->chunkLodMesh->Release();
     this->chunkLodMesh = 0;
@@ -747,7 +744,7 @@ nChunkLodNode::Render(nChunkLodRenderParams& renderParams,
             // If there's no possibility of binding a
             // texture further down the tree, then bind
             // now.
-            if (!this->GetSplit() ||
+            if (!this->IsSplitNode() ||
                 (!this->children[0]->HasValidTexture()) ||
                 (!this->children[1]->HasValidTexture()) ||
                 (!this->children[2]->HasValidTexture()) ||
@@ -760,22 +757,18 @@ nChunkLodNode::Render(nChunkLodRenderParams& renderParams,
     }
 
     int triCount = 0;
-    if (this->GetSplit())
+    if (this->IsSplitNode())
     {
         n_assert(this->HasChildren());
 
         // a split node, recurse to children
-        int i;
-        for (i = 0; i < 4; i++)
-        {
+        for (int i = 0; i < 4; i++)
             triCount += this->children[i]->Render(renderParams, clipStatus, textureBound);
-        }
     }
     else
     {
         // not split, display our own data
         triCount += this->chunkLodMesh->Render(renderParams);
-        renderParams.tree->PutEvent(nCLODEventHandler::RenderNode, this);
         renderParams.numMeshesRendered++;
     }
     return triCount;

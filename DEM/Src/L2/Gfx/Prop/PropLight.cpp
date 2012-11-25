@@ -53,6 +53,8 @@ void CPropLight::Activate()
 {
 	CProperty::Activate();
 
+	// Get scene graph node, add light attribute, set light params from attrs
+
 	pLightEntity = Graphics::CLightEntity::Create();
 
 	pLightEntity->Light.SetType((nLight::Type)GetEntity()->Get<int>(Attr::LightType));

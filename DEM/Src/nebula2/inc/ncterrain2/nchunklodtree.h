@@ -14,11 +14,11 @@
 #include "gfx2/DisplayMode.h"
 #include "ncterrain2/ntexturequadtree.h"
 #include "util/narray.h"
-#include "ncterrain2/nclodeventhandler.h"
 
 class nResourceServer;
 class nGfxServer2;
 class nShader2;
+class nChunkLodNode;
 
 //------------------------------------------------------------------------------
 class nChunkLodTree : public nResource
@@ -82,10 +82,6 @@ public:
     int GetNumMeshesAllocated() const;
     /// get number of textures currently allocated
     int GetNumTexturesAllocated() const;
-    /// add event handler, incrs refs of event handler
-    void AddEventHandler(nCLODEventHandler* handler);
-    /// remove event handler, decrs ref of event handler
-    void RemEventHandler(nCLODEventHandler* handler);
     /// get a chunk index from its quadtree address
     int GetChunkIndex(int level, int col, int row) const;
     /// get number of nodes in a level, including its child nodes
@@ -109,8 +105,6 @@ protected:
     void UpdateBoundingBox();
     /// update user dependent parameters, clear paramsDirty flag
     void UpdateParams();
-    /// distrubute an event to the event handlers
-    void PutEvent(nCLODEventHandler::Event event, nChunkLodNode* node);
 
     float TerrainScale;
     vector3 TerrainOrigin;
@@ -139,8 +133,6 @@ protected:
     int numMeshesAllocated;
 
     bbox3 boundingBox;                          // computed bounding box
-
-    nArray<nCLODEventHandler*> eventHandlers;   // array of event handlers
 };
 
 //------------------------------------------------------------------------------

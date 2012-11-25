@@ -15,14 +15,10 @@ void CLightEntity::UpdateNebulaLight()
 {
 	if (!refLightNode.isvalid()) return;
 	nLightNode* pLightNode = refLightNode;
-	pLightNode->SetType(Light.GetType());
-	pLightNode->SetCastShadows(Light.GetCastShadows());
-	pLightNode->SetVector(nShaderState::LightDiffuse, Light.GetDiffuse());
-	pLightNode->SetVector(nShaderState::LightSpecular, Light.GetSpecular());
-	pLightNode->SetVector(nShaderState::LightAmbient, Light.GetAmbient());
-	float Range = (nLight::Directional == Light.GetType()) ? 100000.0f : Light.GetRange();
+	if (Light.GetType() == nLight::Directional) Light.SetRange(100000.0f);
+	pLightNode->Light = Light;
+	float Range = Light.GetRange();
 	pLightNode->SetLocalBox(bbox3(vector3(0.0f, 0.0f, 0.0f), vector3(Range, Range, Range)));
-	pLightNode->SetFloat(nShaderState::LightRange, Range);
 }
 //---------------------------------------------------------------------
 

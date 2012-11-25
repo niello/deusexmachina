@@ -35,7 +35,7 @@ private:
     /// construct an element (call placement new)
 	void Construct(T* pElm) { n_placement_new(pElm, T); }
     /// construct an element (call placement new)
-    void Construct(T* pElm, const T& Value);
+	void Construct(T* pElm, const T& Value) { n_placement_new(pElm, T)(Value); }
     /// copy content
     void Copy(const nArray<T>& src);
     /// delete content
@@ -209,23 +209,6 @@ void nArray<T>::Delete()
 	Flags = 0;
 }
 //---------------------------------------------------------------------
-
-/**
-    construct an element (call placement new)
-*/
-template<class T>
-inline void nArray<T>::Construct(T* pElm, const T &Value)
-{
-    //!!!!!!
-	// FIXME: since the nebula2 code have been assuming nArray to have demand on T::operator =
-    // it will be better to keep the assumption to avoid errors
-    // copy constructor will better in efficient
-	//n_placement_new(pElm, T)(Value); //!!!nRef doesn't increase refcount on this operation!
-    n_placement_new(pElm, T);
-    *pElm = Value;
-}
-
-//------------------------------------------------------------------------------
 
 template<class T>
 void nArray<T>::Reallocate(int _Count, int _GrowSize)

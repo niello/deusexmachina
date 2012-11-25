@@ -1,7 +1,3 @@
-//------------------------------------------------------------------------------
-//  nlodnode_main.cc
-//  (C) 2004 RadonLabs GmbH
-//------------------------------------------------------------------------------
 #include "scene/nlodnode.h"
 #include "scene/nsceneserver.h"
 #include "gfx2/ngfxserver2.h"
@@ -9,16 +5,6 @@
 #include <Data/BinaryReader.h>
 
 nNebulaClass(nLodNode, "ntransformnode");
-
-//------------------------------------------------------------------------------
-/**
-*/
-nLodNode::nLodNode() :
-    minDistance(-5000.0f),
-    maxDistance(5000.0f)
-{
-    this->transformNodeClass = nKernelServer::Instance()->FindClass("ntransformnode");
-}
 
 bool nLodNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
@@ -34,12 +20,12 @@ bool nLodNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		}
 		case 'NIMD': // DMIN
 		{
-			SetMinDistance(DataReader.Read<float>());
+			DataReader.Read<float>(minDistance);
 			OK;
 		}
 		case 'XAMD': // DMAX
 		{
-			SetMaxDistance(DataReader.Read<float>());
+			DataReader.Read<float>(maxDistance);
 			OK;
 		}
 		default: return nTransformNode::LoadDataBlock(FourCC, DataReader);
@@ -47,12 +33,7 @@ bool nLodNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Attach to the scene server.
-    FIXME FLOH: NOTE, this method will only be correct if this node and
-    its parent nodes are not animated.
-*/
+// FIXME FLOH: NOTE, this method will only be correct if this node and its parent nodes are not animated.
 void nLodNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
     n_assert(sceneServer);
@@ -65,6 +46,8 @@ void nLodNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
     float distance = lodViewer.len();
 
     if (distance <= minDistance || distance >= maxDistance) return;
+
+	nClass* transformNodeClass = nKernelServer::Instance()->FindClass("ntransformnode");
 
 	// get number of child nodes
     int num = 0;
@@ -87,3 +70,4 @@ void nLodNode::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
                 pSelChild = pChild;
     pSelChild->Attach(sceneServer, renderContext);
 }
+//---------------------------------------------------------------------

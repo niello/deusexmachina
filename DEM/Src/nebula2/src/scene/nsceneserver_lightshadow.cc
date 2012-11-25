@@ -46,7 +46,7 @@ nSceneServer::ComputeLightScissor(LightInfo& lightInfo)
     nLightNode* lightNode = (nLightNode*)lightGroup.sceneNode;
     n_assert(0 != lightNode && lightNode->IsA("nlightnode"));
 
-	nLight::Type lightType = lightNode->GetLight().GetType();
+	nLight::Type lightType = lightNode->Light.GetType();
     if (nLight::Point == lightType)
     {
         // compute the point light's projected rectangle on screen
@@ -83,7 +83,7 @@ nSceneServer::ComputeLightClipPlanes(LightInfo& lightInfo)
         nLightNode* lightNode = (nLightNode*)lightGroup.sceneNode;
         n_assert(0 != lightNode && lightNode->IsA("nlightnode"));
 
-		nLight::Type lightType = lightNode->GetLight().GetType();
+		nLight::Type lightType = lightNode->Light.GetType();
         if (nLight::Point == lightType)
         {
             // get the point light's global space bounding box
@@ -133,14 +133,14 @@ nSceneServer::GatherShadowLights()
             if (!lightGroup.renderContext->GetFlag(nRenderContext::Occluded))
             {
                 nLightNode* lightNode = (nLightNode*)lightGroup.sceneNode;
-				if (lightNode->GetLight().GetCastShadows())
+				if (lightNode->Light.GetCastShadows())
                 {
                     float priority;
-                    switch (lightNode->GetLight().GetType())
+                    switch (lightNode->Light.GetType())
                     {
                         case nLight::Point:
                             priority = -(lightGroup.modelTransform.pos_component() - viewerPos).len() /
-                                lightNode->GetFloat(nShaderState::LightRange);
+								lightNode->Light.GetRange(); //GetFloat(nShaderState::LightRange);
                             break;
                         case nLight::Directional:
                             priority = 100000.0f;

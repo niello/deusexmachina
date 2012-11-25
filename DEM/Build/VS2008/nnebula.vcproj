@@ -330,64 +330,6 @@
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
 				<Filter
-					Name="ndynamicmesh"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\ndynamicmesh.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ndynamicmesh;N_NEW=n_new_ndynamicmesh;N_INITCMDS=n_initcmds_ndynamicmesh"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ndynamicmesh;N_NEW=n_new_ndynamicmesh;N_INITCMDS=n_initcmds_ndynamicmesh"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\ndynamicmesh.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="ndynamicshadermesh"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\ndynamicshadermesh.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ndynamicshadermesh;N_NEW=n_new_ndynamicshadermesh;N_INITCMDS=n_initcmds_ndynamicshadermesh"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ndynamicshadermesh;N_NEW=n_new_ndynamicshadermesh;N_INITCMDS=n_initcmds_ndynamicshadermesh"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\ndynamicshadermesh.h"
-						>
-					</File>
-				</Filter>
-				<Filter
 					Name="ngfxserver2"
 					Filter="cpp;c;cxx;cc;h;hxx;hcc"
 					>
@@ -953,14 +895,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\ncterrain2\nclodeventhandler.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\ncterrain2\nclodeventhandler.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\ncterrain2\nterrainnode.h"
 					>
 				</File>
@@ -1110,35 +1044,6 @@
 			<Filter
 				Name="Nodes"
 				>
-				<Filter
-					Name="nabstractshadernode"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\scene\nabstractshadernode.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\scene\nabstractshadernode_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nabstractshadernode;N_NEW=n_new_nabstractshadernode;N_INITCMDS=n_initcmds_nabstractshadernode"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nabstractshadernode;N_NEW=n_new_nabstractshadernode;N_INITCMDS=n_initcmds_nabstractshadernode"
-							/>
-						</FileConfiguration>
-					</File>
-				</Filter>
 				<Filter
 					Name="nlightnode"
 					Filter="cpp;c;cxx;cc;h;hxx;hcc"

@@ -47,7 +47,6 @@ void CCharEntity::Activate()
 
 	pAnimEventHandler = n_new(CCharAnimEHandler);
 	n_assert(pAnimEventHandler);
-	//pAnimEventHandler->AddRef();
 	pAnimEventHandler->Entity = this;
 
 	// lookup character pointer

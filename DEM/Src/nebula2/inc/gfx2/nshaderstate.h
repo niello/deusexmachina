@@ -205,18 +205,6 @@ enum Param
     InvalidParameter,
 };
 
-enum StencilOperation
-{
-    KEEP = 1,
-    ZERO = 2,
-    REPLACE = 3,
-    INCRSAT = 4,
-    DECRSAT = 5,
-    INVERT = 6,
-    INCR = 7,
-    DECR = 8,
-};
-
 enum CullMode
 {
     NoCull = 1,
