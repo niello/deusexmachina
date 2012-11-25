@@ -10,6 +10,10 @@
 */
 #include "util/nnode.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 template <class T>
 class nObjectNode: public nNode
 {
