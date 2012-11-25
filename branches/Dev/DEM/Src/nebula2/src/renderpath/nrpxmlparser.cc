@@ -125,7 +125,7 @@ nRpXmlParser::ParseShaders(tinyxml2::XMLElement* elm)
             newShader.SetFilename(pShader->Attribute("file"));
 			newShader.Validate();
 			newShader.SetBucketIndex(FrameShader->shaders.Size() - 1);
-       }
+        }
         else break;
     }
 	while (pShader = pShader->NextSiblingElement());

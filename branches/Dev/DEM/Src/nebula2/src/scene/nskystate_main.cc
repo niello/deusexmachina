@@ -1,45 +1,36 @@
-//------------------------------------------------------------------------------
-//  nstatenode_main.cc
-//  (C) 2005 RadonLabs GmbH
-//------------------------------------------------------------------------------
 #include "scene/nskystate.h"
 #include "gfx2/ngfxserver2.h"
+#include <Data/BinaryReader.h>
 
-nNebulaClass(nSkyState, "nabstractshadernode");
+nNebulaClass(nSkyState, "ntransformnode");
 
-//------------------------------------------------------------------------------
-/**
-*/
-nSkyState::nSkyState()
+bool nSkyState::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
-    // empty
-}
+	switch (FourCC)
+	{
+		case 'SRAV': // VARS
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			for (short i = 0; i < Count; ++i)
+			{
+				char Key[256];
+				if (!DataReader.ReadString(Key, sizeof(Key))) FAIL;
+				nShaderState::Param Param = nShaderState::StringToParam(Key);
 
-//------------------------------------------------------------------------------
-/**
-*/
-nSkyState::~nSkyState()
-{
-    // empty
-}
+				char Type;
+				if (!DataReader.Read(Type)) FAIL;
 
-//------------------------------------------------------------------------------
-/**
-    Attach to the scene server.
-*/
-void
-nSkyState::Attach(nSceneServer* sceneServer, nRenderContext* renderContext)
-{
-	// Animate here
-    nTransformNode::Attach(sceneServer, renderContext);
+				if (Type == DATA_TYPE_ID(bool)) SetBool(Param, DataReader.Read<bool>());
+				else if (Type == DATA_TYPE_ID(int)) SetInt(Param, DataReader.Read<int>());
+				else if (Type == DATA_TYPE_ID(float)) SetFloat(Param, DataReader.Read<float>());
+				else if (Type == DATA_TYPE_ID(vector4)) SetVector(Param, DataReader.Read<vector4>()); //???vector3?
+				//else if (Type == DATA_TYPE_ID(matrix44)) SetMatrix(Param, DataReader.Read<matrix44>());
+				else FAIL;
+			}
+			OK;
+		}
+		default: return nTransformNode::LoadDataBlock(FourCC, DataReader);
+	}
 }
-
-//------------------------------------------------------------------------------
-/**
-    nStateNodes doesn't provide transform
-*/
-bool
-nSkyState::HasTransform() const
-{
-    return false;
-}
+//---------------------------------------------------------------------

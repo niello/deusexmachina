@@ -41,7 +41,7 @@ protected:
 public:
 
 	nRef(): pObj(NULL) {}
-	nRef(TYPE* o): pObj(o) { n_assert(o); ((nReferenced*)pObj)->AddObjectRef((nRef<nReferenced>*)this); }
+	nRef(TYPE* obj): pObj(obj) { n_assert(pObj); ((nReferenced*)pObj)->AddObjectRef((nRef<nReferenced>*)this); }
 	nRef(const nRef& rhs): pObj(rhs.get_unsafe()) { if (pObj) ((nReferenced*)pObj)->AddObjectRef((nRef<nReferenced>*)this); }
 	~nRef() { invalidate(); }
 

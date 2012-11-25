@@ -75,7 +75,8 @@ void nSceneServer::RenderPhaseLightModeShader(nRpPhase& curPhase)
 		nLightNode* pLightNode = (nLightNode*)lightGroup.sceneNode;
 
 		// apply light state
-        pLightNode->ApplyLight(this, lightGroup.renderContext, lightGroup.modelTransform, lightInfo.shadowLightMask);
+		pLightNode->Light.SetShadowLightMask(lightInfo.shadowLightMask);
+		nGfxServer2::Instance()->AddLight(pLightNode->Light, lightGroup.modelTransform);
 
         // now iterate through sequences...
         int numSeqs = curPhase.Begin();
@@ -123,9 +124,18 @@ void nSceneServer::RenderPhaseLightModeShader(nRpPhase& curPhase)
 
                     // set per-instance shader parameters
                     if (curSeq.GetShaderUpdatesEnabled()) shapeNode->RenderShader(this, shapeGroup.renderContext);
-                    pLightNode->RenderLight(this, lightGroup.renderContext, lightGroup.modelTransform);
-
+					
+					//nGfxServer2::Instance()->SetTransform(nGfxServer2::Light, lightGroup.modelTransform);
 					nShader2* shd = nGfxServer2::Instance()->GetShader();
+
+					// For directional lights, the light pos shader attributes actually hold the light direction
+					if (shd->IsParameterUsed(nShaderState::ModelLightPos))
+					{
+						const matrix44& Tfm = nGfxServer2::Instance()->GetTransform(nGfxServer2::InvModelLight);
+						const vector3& Value = (pLightNode->Light.GetType() == nLight::Directional) ? Tfm.z_component() : Tfm.pos_component();
+						shd->SetVector3(nShaderState::ModelLightPos, Value);
+					}
+
 					shd->SetBool(nShaderState::AlphaBlendEnable, shapeGroup.lightPass ? true : curSeq.GetFirstLightAlphaEnabled());
 					++shapeGroup.lightPass;
 					shapeNode->RenderGeometry(this, shapeGroup.renderContext);

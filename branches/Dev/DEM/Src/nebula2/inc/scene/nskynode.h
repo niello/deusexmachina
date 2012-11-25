@@ -48,7 +48,7 @@ public:
     } StateGroup;
     typedef struct
     {
-        nRef<nAbstractShaderNode> refElement;
+        nRef<nMaterialNode> refElement;
         nArray<StateGroup> states;
         ElementType type;
         nArray<int> linkTo;
@@ -120,9 +120,9 @@ public:
     /// Get number of states of an element
     int GetNumStates(int elementNr);
     /// Get element (by name)
-    nAbstractShaderNode* GetElement(const nString& name);
+    nMaterialNode* GetElement(const nString& name);
     /// Get element (by number)
-    nAbstractShaderNode* GetElement(int elementNr);
+    nMaterialNode* GetElement(int elementNr);
     /// Get state (by name)
     nSkyState* GetState(const nString& elementName, const nString& stateName);
     /// Get state (by number)

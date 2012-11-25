@@ -67,8 +67,6 @@ public:
     int AddLocalVar(const nVariable& value);
     /// returns local variable at given index
     nVariable& GetLocalVar(int index);
-    /// clear local variables
-    void ClearLocalVars();
     /// find local variable by variable handle
     nVariable* FindLocalVar(nVariable::Handle handle);
     /// set per-context shadow intensity value
@@ -282,16 +280,6 @@ nRenderContext::FindLocalVar(nVariable::Handle handle)
     }
     // fallthrough: not found
     return 0;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nRenderContext::ClearLocalVars()
-{
-    this->localVarArray.Clear();
 }
 
 //------------------------------------------------------------------------------

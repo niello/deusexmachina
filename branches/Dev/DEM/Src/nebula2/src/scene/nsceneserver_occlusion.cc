@@ -17,7 +17,7 @@ void nSceneServer::IssueOcclusionQuery(Group& group, const vector3& viewerPos)
     group.renderContext->SetFlag(nRenderContext::Occluded, false);
 
     // don't do occlusion check for directional light
-    if (sceneNode->HasLight() && nLight::Directional == ((nLightNode*)sceneNode)->GetLight().GetType()) return;
+    if (sceneNode->HasLight() && nLight::Directional == ((nLightNode*)sceneNode)->Light.GetType()) return;
 
     // get conservative bounding boxes in global space, the first for
     // the occlusion check is grown a little to prevent that the object

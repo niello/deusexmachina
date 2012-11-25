@@ -28,7 +28,7 @@ class nShapeNode : public nMaterialNode
 {
 public:
     /// constructor
-    nShapeNode();
+	nShapeNode(): groupIndex(0), meshUsage(nMesh2::WriteOnce) {}
 
 	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 
@@ -43,8 +43,6 @@ public:
     virtual bool ApplyGeometry(nSceneServer* sceneServer);
     /// perform per-instance-rendering of geometry
     virtual bool RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext);
-    /// render debug information
-    virtual void RenderDebug(nSceneServer* sceneServer, nRenderContext* renderContext, const matrix44& modelMatrix);
     /// set the mesh usage flags required by this shape node
     void SetMeshUsage(int usage);
     /// get the mesh usage flags required by this shape node
@@ -57,9 +55,9 @@ public:
     /// set the mesh resource name
     void SetMesh(const nString& name);
     /// get the mesh resource name
-    const nString& GetMesh() const;
+	const nString& GetMesh() const { return meshName; }
     /// get mesh2 object
-    nMesh2* GetMeshObject();
+	nMesh2* GetMeshObject() { if (!refMesh.isvalid()) { n_assert(LoadMesh()); } return refMesh.get(); }
 
     /// set the mesh group index
     void SetGroupIndex(int i);
@@ -125,14 +123,8 @@ inline
 void
 nShapeNode::SetNeedsVertexShader(bool b)
 {
-    if (b)
-    {
-        this->meshUsage |= nMesh2::NeedsVertexShader;
-    }
-    else
-    {
-        this->meshUsage &= ~nMesh2::NeedsVertexShader;
-    }
+    if (b) meshUsage |= nMesh2::NeedsVertexShader;
+    else meshUsage &= ~nMesh2::NeedsVertexShader;
 }
 
 //------------------------------------------------------------------------------

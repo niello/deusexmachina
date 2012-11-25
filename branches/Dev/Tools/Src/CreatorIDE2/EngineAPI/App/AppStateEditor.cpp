@@ -15,8 +15,6 @@
 #include <Input/InputServer.h>
 #include <Input/Events/MouseBtnDown.h>
 #include <Input/Events/MouseBtnUp.h>
-#include <particle/nparticleserver.h>
-#include <particle/nparticleserver2.h>
 #include <scene/nsceneserver.h>
 
 #include "CIDEApp.h" //!!!now only for click cb!
@@ -103,12 +101,6 @@ CStrID CAppStateEditor::OnFrame()
 	AudioSrv->BeginScene();
 	GameSrv->OnFrame();
 	AudioSrv->EndScene();
-
-	PROFILER_START(profParticleUpdates);
-	nParticleServer::Instance()->Trigger();
-	nParticleServer2::Instance()->SetTime(TimeSrv->GetTime());
-	nParticleServer2::Instance()->Trigger();
-	PROFILER_STOP(profParticleUpdates);
 
 	PROFILER_START(profRender);
 	if (GfxSrv->BeginRender())

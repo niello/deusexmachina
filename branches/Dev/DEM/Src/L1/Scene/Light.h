@@ -23,14 +23,14 @@ public:
 
 	enum EType
 	{
-		Point		= 0,
-		Directional	= 1,
+		Directional	= 0,
+		Point		= 1,
 		Spot		= 2
 	};
 
-	EType	Type;
-	vector3	Color;
-	float	Intensity;
+	EType	Type;		//???Static per-instance shader var? MTE vs N3 - count of each type or type in light itself
+	vector3	Color;		// Animable per-instance shaer var
+	float	Intensity;	// Animable per-instance shaer var
 
 	// ERenderFlag: ShadowCaster, DoOcclusionCulling (force disable for directionals)
 
@@ -47,6 +47,7 @@ public:
 
 	//decay type(none, lin, quad), near and far attenuation
 	//shadow color(or calc?)
+	//???light diffuse component in reverse direction? (N2 sky node)
 	//???fog intensity? decay start distance
 	//???bool cast light? draw volumetric, draw ground projection
 

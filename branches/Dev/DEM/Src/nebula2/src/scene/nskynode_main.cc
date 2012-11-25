@@ -203,17 +203,13 @@ nSkyNode::AddElement(nSkyNode::ElementType type, const nString& name)
             n_assert(element->IsInstanceOf("nlightnode"));
             nLightNode* newNode = (nLightNode*)element;
 
-            newNode->SetInt(nShaderState::LightType, nLight::Directional);
-            if (!newNode->HasParam(nShaderState::LightDiffuse))
-                newNode->SetVector(nShaderState::LightDiffuse, vector4(1.0f, 1.0f, 1.0f, 1.0f));
-            if (!newNode->HasParam(nShaderState::LightSpecular))
-                newNode->SetVector(nShaderState::LightSpecular, vector4(0.5f, 0.5f, 0.5f, 1.0f));
-            if (!newNode->HasParam(nShaderState::LightAmbient))
-                newNode->SetVector(nShaderState::LightAmbient, vector4(0.1f, 0.1f, 0.15f, 1.0f));
-            if (!newNode->HasParam(nShaderState::LightDiffuse1))
-                newNode->SetVector(nShaderState::LightDiffuse1, vector4(0.3f, 0.3f, 0.3f, 1.0f));
-            if (!newNode->HasParam(nShaderState::LightRange))
-                newNode->SetFloat(nShaderState::LightRange, 5000.0f);
+			newNode->Light.SetType(nLight::Directional);
+			newNode->Light.SetDiffuse(vector4(1.0f, 1.0f, 1.0f, 1.0f));
+			//newNode->Light.SetDiffuse1(vector4(0.3f, 0.3f, 0.3f, 1.0f));
+			newNode->Light.SetSpecular(vector4(0.5f, 0.5f, 0.5f, 1.0f));
+			newNode->Light.SetAmbient(vector4(0.1f, 0.1f, 0.15f, 1.0f));
+			newNode->Light.SetDiffuse(vector4(1.0f, 1.0f, 1.0f, 1.0f));
+			newNode->Light.SetRange(5000.0f);
             newNode->SetLocalBox(bbox3(vector3::Zero, vector3(5000.0f, 5000.0f, 5000.0f)));
             break;
         }
@@ -304,11 +300,11 @@ nSkyNode::AddElement(nSkyNode::ElementType type, const nString& name)
             break;
         }
     default:
-        n_assert(element->IsA("nabstractshadernode"));
+        n_assert(element->IsA("ntransformnode"));
         newElement.type = nSkyNode::GenericElement;
         break;
     }
-    newElement.refElement.set((nAbstractShaderNode*)element);
+    newElement.refElement.set((nMaterialNode*)element);
     this->elements.Append(newElement);
 }
 
@@ -965,7 +961,7 @@ nSkyNode::GetNumStates(int elementNr)
 /**
     Gets a pointer to an element (by name)
 */
-nAbstractShaderNode*
+nMaterialNode*
 nSkyNode::GetElement(const nString& name)
 {
     return this->elements[this->FindElement(name)].refElement;
@@ -975,7 +971,7 @@ nSkyNode::GetElement(const nString& name)
 /**
     Gets a pointer to an element (by number)
 */
-nAbstractShaderNode*
+nMaterialNode*
 nSkyNode::GetElement(int elementNr)
 {
     return this->elements[elementNr].refElement;

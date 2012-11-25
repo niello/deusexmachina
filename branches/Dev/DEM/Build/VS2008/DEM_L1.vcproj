@@ -1184,18 +1184,6 @@
 					>
 				</File>
 			</Filter>
-			<Filter
-				Name="Rsrc"
-				>
-				<File
-					RelativePath="..\..\Src\L1\Gfx\Rsrc\Texture.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Gfx\Rsrc\Texture.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="Events"
@@ -1357,6 +1345,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\SCNLoader.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\SPS.h"
 				>
 			</File>
@@ -1424,6 +1416,18 @@
 				RelativePath="..\..\Src\L1\Render\Renderer.h"
 				>
 			</File>
+			<Filter
+				Name="Rsrc"
+				>
+				<File
+					RelativePath="..\..\Src\L1\Render\Rsrc\Texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Rsrc\Texture.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"

@@ -14,12 +14,14 @@
 class nRpRenderTarget
 {
 public:
-    /// constructor
-    nRpRenderTarget();
-    /// destructor
+
+	nRpRenderTarget();
+	nRpRenderTarget(const nRpRenderTarget& rhs) { Copy(rhs); }
     ~nRpRenderTarget();
-    /// assignment operator
-    void operator=(const nRpRenderTarget& rhs);
+
+	void Copy(const nRpRenderTarget& rhs);
+		
+	void operator=(const nRpRenderTarget& rhs) { Copy(rhs); }
     /// set the render target's name
     void SetName(const nString& n);
     /// get the render targets name
@@ -57,9 +59,7 @@ private:
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-nRpRenderTarget::operator=(const nRpRenderTarget& rhs)
+inline void nRpRenderTarget::Copy(const nRpRenderTarget& rhs)
 {
     this->name       = rhs.name;
     this->format     = rhs.format;

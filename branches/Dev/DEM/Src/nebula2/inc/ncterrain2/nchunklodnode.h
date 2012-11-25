@@ -13,10 +13,7 @@
 #include "kernel/nref.h"
 #include "ncterrain2/nchunklodmesh.h"
 #include "mathlib/bbox.h"
-#include "ncterrain2/nchunklodrenderparams.h"
 #include "ncterrain2/nchunklodtree.h"
-
-class nChunkLodTree;
 
 //------------------------------------------------------------------------------
 class nChunkLodNode
@@ -51,7 +48,7 @@ public:
     /// return true if node has children
     bool HasChildren() const;
     /// get the status of the split flag
-    bool GetSplit() const;
+	bool IsSplitNode() const { return this->split; }
     /// compute the bounding box of this node
     void ComputeBoundingBox(nChunkLodTree* tree, bbox3& box) const;
     /// clears the split values throughout the quad tree
@@ -260,16 +257,6 @@ nChunkLodNode::IsValid() const
     {
         return false;
     }
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-nChunkLodNode::GetSplit() const
-{
-    return this->split;
 }
 
 //------------------------------------------------------------------------------

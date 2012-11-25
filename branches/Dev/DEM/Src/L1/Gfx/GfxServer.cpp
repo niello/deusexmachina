@@ -107,9 +107,9 @@ bool CGfxServer::Open()
 
 	gfxServer = n_new(nD3D9Server);
 	gfxServer->AddRef();
-	sceneServer  = n_new(nSceneServer);
+	sceneServer = n_new(nSceneServer);
 	sceneServer->AddRef();
-	variableServer  = n_new(nVariableServer);
+	variableServer = n_new(nVariableServer);
 	variableServer->AddRef();
 
 	GfxRoot = nKernelServer::Instance()->New("nroot", "/res/gfx");
