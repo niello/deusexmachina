@@ -50,7 +50,7 @@ void CPropSceneNode::Activate()
 	}
 
 	if (Node->IsOwnedByScene())
-		GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldTransform());
+		GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());
 	else Node->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform)); //???set local? or set global & then calc local?
 }
 //---------------------------------------------------------------------

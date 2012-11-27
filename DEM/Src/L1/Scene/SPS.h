@@ -56,7 +56,7 @@ struct CSPSRecord
 inline void CSPSRecord::GetCenter(vector2& Out) const
 {
 	n_assert(pAttr && pAttr->GetNode());
-	const vector3& Pos = pAttr->GetNode()->GetWorldTransform().pos_component();
+	const vector3& Pos = pAttr->GetNode()->GetWorldMatrix().pos_component();
 	Out.x = Pos.x;
 	Out.y = Pos.z;
 }

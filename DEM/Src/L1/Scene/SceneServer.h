@@ -74,8 +74,8 @@ inline void CSceneServer::SetCurrentScene(CScene* pScene)
 inline PSceneNode CSceneServer::CreateSceneNode(CStrID Name)
 {
 	//return (CSceneNode*)NodePool.Construct();
-	PSceneNode Node = n_new(CSceneNode);
-	Node->Name = Name;
+	PSceneNode Node = n_new(CSceneNode)(Name);
+	//Node->Name = Name;
 	return Node;
 }
 //---------------------------------------------------------------------

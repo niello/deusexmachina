@@ -40,9 +40,10 @@ public:
 
 	enum
 	{
-		Active			= 0x01,	// Node must be processed
-		OwnedByScene	= 0x02,	// This node is owned by scene and lives until scene is destroyed
-		RespectsLOD		= 0x04	// This node is affected by parent's LODGroup attribute
+		Active				= 0x01,	// Node must be processed
+		OwnedByScene		= 0x02,	// This node is owned by scene and lives until scene is destroyed
+		RespectsLOD			= 0x04,	// This node is affected by parent's LODGroup attribute
+		LocalMatrixDirty	= 0x08	// Local transform components were changed, but matrix is not updated
 	};
 
 private:
@@ -55,54 +56,66 @@ private:
 	PSceneNode				Parent;
 	CNodeDict				Child;
 
+	//???!!!need some flag to indicate that node received global tfm directly? or update local tfm from global always?
 	Math::CTransform		Tfm;
-	matrix44				GlobalTfm;
+	matrix44				LocalMatrix;	// For caching only
+	matrix44				WorldMatrix;
 
 	Data::CFlags			Flags; // IsRoot, IsDirty, IsLocalTfm, ?UniformScale?, LockTransform, TfmChangedLastFrame
 	nArray<PSceneNodeAttr>	Attrs; //???or list? List seems to be better
-	// Controller(s)
+	// Controller(s). Can have controller of type Sequensor/Blender/Mixer which will mix output of more than 1 ctlr.
 
 	friend class CScene;
-	friend class CSceneServer;
 
 public:
 
+	CSceneNode(CStrID NodeName): Name(NodeName) {}
 	~CSceneNode() { if (Parent.isvalid()) Parent->RemoveChild(*this); }
 
-	PSceneNode	CreateChild(CStrID ChildName);
-	void		AddChild(CSceneNode& Node);
-	void		RemoveChild(CSceneNode& Node);
-	void		RemoveChild(DWORD Idx);
-	void		RemoveChild(CStrID ChildName);
+	PSceneNode		CreateChild(CStrID ChildName);
+	void			AddChild(CSceneNode& Node);
+	void			RemoveChild(CSceneNode& Node);
+	void			RemoveChild(DWORD Idx);
+	void			RemoveChild(CStrID ChildName);
 
-	CSceneNode*	GetParent() const { return Parent; }
-	DWORD		GetChildCount() const { return Child.Size(); }
-	CSceneNode*	GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
-	PSceneNode	GetChild(CStrID ChildName, bool Create = false);
-	PSceneNode	GetChild(LPCSTR Path, bool Create = false);
-	CSceneNode*	FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
+	CSceneNode*		GetParent() const { return Parent; }
+	DWORD			GetChildCount() const { return Child.Size(); }
+	CSceneNode*		GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
+	PSceneNode		GetChild(CStrID ChildName, bool Create = false);
+	PSceneNode		GetChild(LPCSTR Path, bool Create = false);
+	CSceneNode*		FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
-	void		UpdateTransform(CScene& Scene);
+	void			AddAttr(CSceneNodeAttr& Attr);
+	CSceneNodeAttr*	GetAttr(DWORD Idx) const { return Attrs[Idx]; }
+
+	void			UpdateTransform(CScene& Scene);
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)
 
-	void		RenderDebug();
+	void			RenderDebug();
 
 	// Attribute managenent
 
 	// Animator (controller, animation node) management
 
-	void					SetLocalTransform(const matrix44& Transform) { Tfm.FromMatrix(Transform); }
+	CStrID			GetName() const { return Name; }
+
+	bool			IsActive() const { return Flags.Is(Active); }
+	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
+	bool			IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
+	bool			IsLODDependent() const { return Flags.Is(RespectsLOD); }
+
+	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty); }
+	const vector3&			GetPosition() const { return Tfm.Translation; }
+	void					SetRotation(const quaternion& Rot) { Tfm.Rotation = Rot; Flags.Set(LocalMatrixDirty); }
+	const quaternion&		GetRotation() const { return Tfm.Rotation; }
+	void					SetScale(const vector3& Scale) { Tfm.Scale = Scale; Flags.Set(LocalMatrixDirty); }
+	const vector3&			GetScale() const { return Tfm.Scale; }
+	void					SetLocalTransform(const matrix44& Transform) { LocalMatrix = Transform; Tfm.FromMatrix(LocalMatrix); Flags.Clear(LocalMatrixDirty); }
 	const Math::CTransform&	GetLocalTransform() { return Tfm; }
-	const matrix44&			GetWorldTransform() { return GlobalTfm; }
-
-	CStrID		GetName() const { return Name; }
-
-	bool		IsActive() const { return Flags.Is(Active); }
-	void		Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
-	bool		IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
-	bool		IsLODDependent() const { return Flags.Is(RespectsLOD); }
+	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
+	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
 };
 
 inline void CSceneNode::RemoveChild(CSceneNode& Node)
