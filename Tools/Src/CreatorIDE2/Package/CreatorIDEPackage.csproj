@@ -66,6 +66,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CideEmptyNode.cs" />
+    <Compile Include="CidePathHelper.cs" />
+    <Compile Include="CideProjectElements.cs" />
     <Compile Include="SRCategoryAttribute.cs" />
     <Compile Include="CideFolderNode.cs" />
     <Compile Include="CideProjectConfig.cs" />
