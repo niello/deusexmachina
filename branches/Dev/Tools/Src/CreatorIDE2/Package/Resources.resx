@@ -138,7 +138,13 @@
   <data name="OpenLevelDatabaseFile" xml:space="preserve">
     <value>Open level database file</value>
   </data>
+  <data name="PackagePathPropertyName" xml:space="preserve">
+    <value>Package Path</value>
+  </data>
   <data name="RelativePathPropertyName" xml:space="preserve">
     <value>Relative Path</value>
+  </data>
+  <data name="ScopeNameIsTooShort" xml:space="preserve">
+    <value>A name of resource scope must contain at least two characters.</value>
   </data>
 </root>

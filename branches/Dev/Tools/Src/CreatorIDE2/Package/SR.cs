@@ -4,14 +4,16 @@ namespace CreatorIDE.Package
 {
     internal static class SR
     {
-        public const string FileNotFound = "FileNotFound",
+        public const string EmptyNodeCaption = "EmptyNodeCaption",
+                            FileNotFound = "FileNotFound",
                             FileNotFoundFormatString = "FileNotFoundFormatString",
                             FullPathPropertyName = "FullPathPropertyName",
                             LevelDatabaseFile = "LevelDatabaseFile",
                             MiscCategoryName = "MiscCategoryName",
                             OpenLevelDatabaseFile = "OpenLevelDatabaseFile",
+                            PackagePathPropertyName = "PackagePathPropertyName",
                             RelativePathPropertyName = "RelativePathPropertyName",
-                            EmptyNodeCaption = "EmptyNodeCaption";
+                            ScopeNameIsTooShort = "ScopeNameIsTooShort";
 
         public static string GetString(string name, CultureInfo cultureInfo)
         {

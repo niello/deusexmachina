@@ -242,6 +242,33 @@ namespace Microsoft.VisualStudio.Project
 			return item.GetMetadata(attributeName);
 		}
 
+        public bool TryGetMetadata(string attributeName, out string value)
+        {
+            if(IsVirtual)
+                return virtualProperties.TryGetValue(attributeName, out value);
+
+            // cannot ask MSBuild for Include, so intercept it and return the corresponding property
+            if (String.Compare(attributeName, ProjectFileConstants.Include, StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                value = item.FinalItemSpec;
+            }
+            // Build Action is the type, not a property, so intercept this one as well
+            else if (String.Compare(attributeName, ProjectFileConstants.BuildAction, StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                value = item.Name;
+            }
+            else if(item.HasMetadata(attributeName))
+            {
+                value = item.GetMetadata(attributeName);
+            }
+            else
+            {
+                value = null;
+            }
+
+            return value != null;
+        }
+
 		/// <summary>
 		/// Gets the attribute and throws the handed exception if the exception if the attribute is empty or null.
 		/// </summary>
