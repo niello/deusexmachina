@@ -8,57 +8,72 @@
 namespace Scene
 {
 
-	/*
-bool LoadNodesFromSCN(Data::CStream& In, PSceneNode CurrRoot)
+bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode)
 {
+	if (!RootNode.isvalid()) FAIL;
+
 	Data::CBinaryReader Reader(In);
 
-	char ClassName[256];
-	n_assert(Reader.ReadString(ClassName, sizeof(ClassName)));
-
-	Out = (nSceneNode*)nKernelServer::Instance()->New(ClassName, RootName);
-	if (!Out) FAIL;
-
 	int FourCC;
-	while (DataBlockCount && Reader.Read(FourCC))
+	while (Reader.Read(FourCC))
 	{
-		if (DataBlockCount > 0) --DataBlockCount;
-
-		// Load node params
-		// Load attrs
-		// Recurse into children
-
-		if (FourCC == 'DLHC') // CHLD
+		switch (FourCC)
 		{
-			ushort ChildCount;
-			Reader.Read(ChildCount);
-			for (ushort i = 0; i < ChildCount; ++i)
+			case 'RTTA': // ATTR
 			{
-				char ChildName[256];
-				n_assert(Reader.ReadString(ChildName, sizeof(ChildName)));
+				char ClassName[256];
+				n_assert(Reader.ReadString(ClassName, sizeof(ClassName)));
+				static const nString StrAttr("Scene::C");
 
-				ushort ChildBlockCount;
-				Reader.Read(ChildBlockCount);
-				n_assert(ChildBlockCount);
+				PSceneNodeAttr Attr = (CSceneNodeAttr*)CoreFct->Create(StrAttr + ClassName);
+				RootNode->AddAttr(*Attr);
 
-				PSceneNode Child;
-				LoadNodesFromSCN(In, pChild, ChildName, --ChildBlockCount);
+				// Load all attr data blocks!
+				//if (!Out->LoadDataBlock(FourCC, Reader)) FAIL;
+
+				break;
 			}
+			case 'DLHC': // CHLD
+			{
+				ushort ChildCount;
+				Reader.Read(ChildCount);
+				for (ushort i = 0; i < ChildCount; ++i)
+				{
+					char ChildName[256];
+					n_assert(Reader.ReadString(ChildName, sizeof(ChildName)));
+					LoadNodesFromSCN(In, RootNode->CreateChild(CStrID(ChildName)));
+				}
+				break;
+			}
+			case 'LCSS': // SSCL
+			{
+				RootNode->SetScale(Reader.Read<vector3>());
+				break;
+			}
+			case 'TORS': // SROT
+			{
+				RootNode->SetRotation(Reader.Read<quaternion>());
+				break;
+			}
+			case 'SOPS': // SPOS
+			{
+				RootNode->SetPosition(Reader.Read<vector3>());
+				break;
+			}
+			default: n_error("Unknown scene node data tag!");
 		}
-		else if (!Out->LoadDataBlock(FourCC, Reader)) FAIL;
 	}
 
-	return !DataBlockCount || (DataBlockCount == -1 && In.IsEOF());
+	OK;
 }
 //---------------------------------------------------------------------
 
-bool LoadNodesFromSCN(const nString& FileName, PSceneNode CurrRoot)
+bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode)
 {
 	Data::CFileStream File;
 	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
-		LoadNodesFromSCN(File, CurrRoot);
+		LoadNodesFromSCN(File, RootNode);
 }
 //---------------------------------------------------------------------
-*/
 
 }

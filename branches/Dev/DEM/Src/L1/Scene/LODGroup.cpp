@@ -14,8 +14,8 @@ void CLODGroup::UpdateTransform(CScene& Scene)
 
 	if (!pNode || !Scene.GetCurrCamera()) return;
 
-	vector3 DistanceVector = pNode->GetWorldTransform().pos_component() -
-		Scene.GetCurrCamera()->GetNode()->GetWorldTransform().pos_component();
+	vector3 DistanceVector = pNode->GetWorldMatrix().pos_component() -
+		Scene.GetCurrCamera()->GetNode()->GetWorldMatrix().pos_component();
 	float SqDist = DistanceVector.lensquared();
 
 	CStrID SelectedChild;

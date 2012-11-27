@@ -7,11 +7,6 @@ namespace Scene
 //ImplementRTTI(Scripting::CScriptObject, Core::CRefCounted);
 //ImplementFactory(Scripting::CScriptObject);
 
-//CSceneNode::~CSceneNode()
-//{
-//}
-////---------------------------------------------------------------------
-
 void CSceneNode::UpdateTransform(CScene& Scene)
 {
 	//???use methods SetLocalTfm, SetGlobalTfm by external systems instead?
@@ -26,17 +21,14 @@ void CSceneNode::UpdateTransform(CScene& Scene)
 
 	//!!!NB - completely unscaled nodes/meshes can be rendered through dual quat skinning!
 
-	matrix44 MLocalTfm;
-	bool LocalTfmChanged = true;
-	if (LocalTfmChanged) //???IsDirty?
+	if (Flags.Is(LocalMatrixDirty))
 	{
-		MLocalTfm = Tfm.ToMatrix();
-		LocalTfmChanged = false;
+		LocalMatrix = Tfm.ToMatrix();
+		Flags.Clear(LocalMatrixDirty);
+		//if (!Parent.isvalid()) WorldMatrix = LocalMatrix; //???need non-identity global tfm for root?
 	}
 
-	//!!!need optimization!
-	GlobalTfm = MLocalTfm;
-	if (Parent.isvalid()) GlobalTfm.mult_simple(Parent->GetWorldTransform()); //???or parent matrix as arg?
+	if (Parent.isvalid()) WorldMatrix.mult2_simple(LocalMatrix, Parent->WorldMatrix);
 
 	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.Size(); ++i)
@@ -57,13 +49,13 @@ void CSceneNode::RenderDebug()
 
 	nFixedArray<vector3> lines(2);
 	lines[1].x = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, GlobalTfm, ColorX);
+	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, WorldMatrix, ColorX);
 	lines[1].x = 0.f;
 	lines[1].y = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, GlobalTfm, ColorY);
+	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, WorldMatrix, ColorY);
 	lines[1].y = 0.f;
 	lines[1].z = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, GlobalTfm, ColorZ);
+	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, WorldMatrix, ColorZ);
 
 	for (int i = 0; i < Child.Size(); ++i)
 		Child.ValueAtIndex(i)->RenderDebug();
@@ -73,8 +65,8 @@ void CSceneNode::RenderDebug()
 PSceneNode CSceneNode::CreateChild(CStrID ChildName)
 {
 	//???!!!SceneSrv->CreateSceneNode?!
-	PSceneNode Node = n_new(CSceneNode);
-	Node->Name = ChildName;
+	PSceneNode Node = n_new(CSceneNode)(ChildName);
+	//Node->Name = ChildName;
 	Node->Parent = this;
 	Child.Add(ChildName, Node);
 	return Node;

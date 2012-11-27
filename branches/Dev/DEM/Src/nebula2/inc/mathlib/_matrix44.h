@@ -67,10 +67,14 @@ public:
     float det();
     /// full invert
     void invert();
-    /// quick invert (if 3x3 rotation and translation)
+	///
+	float det_simple();
+	/// quick invert (if 3x3 rotation and translation)
     void invert_simple();
     /// quick multiplication, assumes that M14==M24==M34==0 and M44==1
     void mult_simple(const _matrix44& m1);
+	/// quick multiplication of two matrices (m1*m2) with M14==M24==M34==0 and M44==1
+    void mult2_simple(const _matrix44& m1, const _matrix44& m2);
     /// transform vector3, projecting back into w=1
     _vector3 transform_coord(const _vector3& v) const;
     /// return x component
@@ -392,16 +396,25 @@ _matrix44::invert()
 
 //------------------------------------------------------------------------------
 /**
+    optimized determinant calculation, assumes that M14==M24==M34==0 AND M44==1
+*/
+inline float _matrix44::det_simple()
+{
+	return (M11 * M22 - M12 * M21) * (M33)
+		   -(M11 * M23 - M13 * M21) * (M32)
+		   +(M12 * M23 - M13 * M22) * (M31);
+}
+
+//------------------------------------------------------------------------------
+/**
     inverts a 4x4 matrix consisting of a 3x3 rotation matrix and
     a translation (eg. everything that has [0,0,0,1] as
     the rightmost column) MUCH cheaper then a real 4x4 inversion
 */
-inline
-void
-_matrix44::invert_simple()
+inline void _matrix44::invert_simple()
 {
-    float s = det();
-    if (s == 0.0f) return;
+    float s = det_simple();
+	if (s == 0.0f) return;
     s = 1.0f/s;
     this->set(
         s * ((M22 * M33) - (M23 * M32)),
@@ -430,8 +443,7 @@ inline
 void
 _matrix44::mult_simple(const _matrix44& m1)
 {
-    int i;
-    for (i=0; i<4; i++)
+    for (int i=0; i<4; i++)
     {
         float mi0 = m[i][0];
         float mi1 = m[i][1];
@@ -443,6 +455,26 @@ _matrix44::mult_simple(const _matrix44& m1)
     m[3][0] += m1.m[3][0];
     m[3][1] += m1.m[3][1];
     m[3][2] += m1.m[3][2];
+    m[0][3] = 0.0f;
+    m[1][3] = 0.0f;
+    m[2][3] = 0.0f;
+    m[3][3] = 1.0f;
+}
+
+/// quick multiplication of two matrices (m1*m2) with M14==M24==M34==0 and M44==1
+inline void _matrix44::mult2_simple(const _matrix44& m1, const _matrix44& m2)
+{
+    for (int i=0; i<4; i++)
+    {
+        m[i][0] = m1.m[i][0]*m2.m[0][0] + m1.m[i][1]*m2.m[1][0] + m1.m[i][2]*m2.m[2][0];
+        m[i][1] = m1.m[i][0]*m2.m[0][1] + m1.m[i][1]*m2.m[1][1] + m1.m[i][2]*m2.m[2][1];
+        m[i][2] = m1.m[i][0]*m2.m[0][2] + m1.m[i][1]*m2.m[1][2] + m1.m[i][2]*m2.m[2][2];
+    }
+    m[3][0] = m1.m[3][0] + m2.m[3][0];
+    m[3][1] = m1.m[3][1] + m2.m[3][1];
+    m[3][2] = m1.m[3][2] + m2.m[3][2];
+
+	// Not necessary if matrix was identity or tfm
     m[0][3] = 0.0f;
     m[1][3] = 0.0f;
     m[2][3] = 0.0f;
