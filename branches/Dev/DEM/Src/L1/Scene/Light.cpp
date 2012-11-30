@@ -55,7 +55,7 @@ bool CLight::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CLight::UpdateTransform(CScene& Scene)
+void CLight::Update(CScene& Scene)
 {
 	if (Type == Directional) Scene.AddVisibleLight(*this);
 	else

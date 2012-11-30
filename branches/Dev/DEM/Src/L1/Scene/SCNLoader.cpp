@@ -34,6 +34,8 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 		PSceneNodeAttr Attr = (CSceneNodeAttr*)CoreFct->Create(StrAttr + ClassName);
 		RootNode->AddAttr(*Attr);
 
+		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
+		//may require to read data block count inside, or ignore it for such attrs.
 		for (ushort j = 0; j < DataBlockCount; ++j)
 			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
 

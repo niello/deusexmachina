@@ -36,8 +36,6 @@ bool nSkinShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataRead
 
 				BeginJointPalette(i, PaletteSize);
 				DataReader.GetStream().Read(Palette.Begin(), PaletteSize * sizeof(int));
-				//for (short j = 0; j < PaletteSize; ++j)
-				//	Palette[j] = DataReader.Read<int>(); //!!!memcpy is more effective!
 				EndJointPalette(i);
 			}
 			EndFragments();

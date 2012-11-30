@@ -27,7 +27,7 @@ public:
 	// OnAttach - provide pointer to shader params
 	// OnDetach - remove/clear pointer
 
-	//virtual void	UpdateTransform(CScene& Scene);
+	//virtual void	Update(CScene& Scene);
 
 	//!!!Can be useful for ragdolls!
 	//void			GetBox(bbox3& OutBox) const;

@@ -44,7 +44,7 @@ bool CLODGroup::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CLODGroup::UpdateTransform(CScene& Scene)
+void CLODGroup::Update(CScene& Scene)
 {
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//???what if camera transform wasn't updated this frame yet?

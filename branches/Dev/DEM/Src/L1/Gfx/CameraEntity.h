@@ -29,7 +29,7 @@ private:
 
 public:
 
-	CCameraEntity();
+	CCameraEntity(): Camera(60.0f, 4.0f / 3.0f, 0.1f, 2500.0f), ViewProjDirty(false) {}
 	virtual ~CCameraEntity() {}
 
 	virtual void		Activate();

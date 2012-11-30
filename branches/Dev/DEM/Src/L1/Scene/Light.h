@@ -57,7 +57,7 @@ public:
 	CLight(): Type(Directional), pSPSRecord(NULL), Intensity(1.f) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
-	virtual void	UpdateTransform(CScene& Scene);
+	virtual void	Update(CScene& Scene);
 	void			GetBox(bbox3& OutBox) const;
 
 	//use smallest of possible AABBs (light to model local space before testing)
