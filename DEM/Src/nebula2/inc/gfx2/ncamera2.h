@@ -95,7 +95,6 @@ private:
     float width;
     float height;
     float angleOfView;
-    float vertAngleOfView;
     float aspectRatio;
     float nearPlane;
     float farPlane;
@@ -506,17 +505,7 @@ nCamera2::GetBox()
     if (this->boxDirty)
     {
         this->boxDirty = false;
-        if (Perspective == this->type || ProjMatrixSet == this->type)
-        {
-            float tanAov = n_tan(this->angleOfView * 0.5f);
-            this->box.vmin.z = this->nearPlane;
-            this->box.vmax.z = this->farPlane;
-            this->box.vmax.y = tanAov * this->farPlane;     // ??? -> tanAov * (this->farPlane - this->nearPlane);
-            this->box.vmin.y = -this->box.vmax.y;
-            this->box.vmax.x = this->box.vmax.y * this->aspectRatio;
-            this->box.vmin.x = -this->box.vmax.x;
-        }
-        else
+        if (Orthogonal == this->type)
         {
             this->box.vmin.x = -this->width * 0.5f;
             this->box.vmin.y = -this->height * 0.5f;
@@ -524,6 +513,15 @@ nCamera2::GetBox()
             this->box.vmax.x = this->width * 0.5f;
             this->box.vmax.y = this->height * 0.5f;
             this->box.vmax.z = 1000000.0f;
+        }
+        else
+        {
+            this->box.vmin.z = this->nearPlane;
+            this->box.vmax.z = this->farPlane;
+            this->box.vmax.y = n_tan(angleOfView * 0.5f) * this->farPlane;     // ??? -> tanAov * (this->farPlane - this->nearPlane);
+            this->box.vmin.y = -this->box.vmax.y;
+            this->box.vmax.x = this->box.vmax.y * this->aspectRatio;
+            this->box.vmin.x = -this->box.vmax.x;
         }
     }
     return this->box;

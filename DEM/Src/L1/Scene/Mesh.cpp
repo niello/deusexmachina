@@ -75,7 +75,7 @@ bool CMesh::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CMesh::UpdateTransform(CScene& Scene)
+void CMesh::Update(CScene& Scene)
 {
 	if (!pSPSRecord)
 	{

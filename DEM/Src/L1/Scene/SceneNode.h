@@ -36,7 +36,7 @@ typedef Ptr<class CSceneNode> PSceneNode;
 
 class CSceneNode: public Core::CRefCounted //???derive from transform source? for noew PropTfm always contain SceneNode
 {
-public:
+protected:
 
 	enum
 	{
@@ -45,8 +45,6 @@ public:
 		RespectsLOD			= 0x04,	// This node is affected by parent's LODGroup attribute
 		LocalMatrixDirty	= 0x08	// Local transform components were changed, but matrix is not updated
 	};
-
-private:
 
 	typedef nDictionary<CStrID, CSceneNode*> CNodeDict;
 
@@ -71,7 +69,7 @@ private:
 
 public:
 
-	CSceneNode(CStrID NodeName): Name(NodeName) {}
+	CSceneNode(CStrID NodeName): Name(NodeName), Flags(Active) {}
 	~CSceneNode() { if (Parent.isvalid()) Parent->RemoveChild(*this); }
 
 	PSceneNode		CreateChild(CStrID ChildName);
@@ -90,7 +88,7 @@ public:
 	bool			AddAttr(CSceneNodeAttr& Attr);
 	CSceneNodeAttr*	GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 
-	void			UpdateTransform(CScene& Scene);
+	void			Update(CScene& Scene);
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)

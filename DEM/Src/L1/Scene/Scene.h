@@ -24,7 +24,7 @@ private:
 	//???shadow settings?
 
 	bbox3				SceneBBox;
-	PCamera				CurrCamera;
+	PCamera				CurrCamera; //???or store externally?
 
 	nArray<CMesh*>		VisibleMeshes;
 	nArray<CLight*>		VisibleLights;
@@ -43,6 +43,8 @@ public:
 	void		Activate();
 	void		Deactivate();
 	void		Clear();
+
+	void		CreateDefaultCamera();
 
 	//!!!can add global lights to separate array if necessary!
 	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }

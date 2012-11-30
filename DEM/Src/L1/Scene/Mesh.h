@@ -106,7 +106,7 @@ public:
 	CMesh(): pSPSRecord(NULL), resourcesValid(false), groupIndex(0), meshUsage(nMesh2::WriteOnce) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
-	virtual void	UpdateTransform(CScene& Scene);
+	virtual void	Update(CScene& Scene);
 	void			GetBox(bbox3& OutBox) const;
 };
 

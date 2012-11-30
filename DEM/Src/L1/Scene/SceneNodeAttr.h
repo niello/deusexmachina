@@ -25,19 +25,29 @@ class CSceneNodeAttr: public Core::CRefCounted
 
 protected:
 
+	enum
+	{
+		Active = 0x01	// Attribute must be processed
+	};
+
 	friend class CSceneNode;
 
-	CSceneNode* pNode;
+	CSceneNode*		pNode;
+
+	//???Active flag?
+	Data::CFlags	Flags; //???or in children only?
 
 public:
 
-	CSceneNodeAttr(): pNode(NULL) {}
+	CSceneNodeAttr(): pNode(NULL), Flags(Active) {}
 
-	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader) = 0;
-	virtual void UpdateTransform(CScene& Scene) = 0;
-	virtual void PrepareToRender() {}
+	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader) { FAIL; }
+	virtual void	Update(CScene& Scene) = 0;
+	virtual void	PrepareToRender() {}
 
-	CSceneNode* GetNode() const { return pNode; }
+	bool			IsActive() const { return Flags.Is(Active); }
+	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
+	CSceneNode*		GetNode() const { return pNode; }
 };
 
 typedef Ptr<CSceneNodeAttr> PSceneNodeAttr;

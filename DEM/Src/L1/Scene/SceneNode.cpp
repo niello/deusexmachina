@@ -7,7 +7,7 @@ namespace Scene
 //ImplementRTTI(Scripting::CScriptObject, Core::CRefCounted);
 //ImplementFactory(Scripting::CScriptObject);
 
-void CSceneNode::UpdateTransform(CScene& Scene)
+void CSceneNode::Update(CScene& Scene)
 {
 	//???use methods SetLocalTfm, SetGlobalTfm by external systems instead?
 	// Run transform controller here
@@ -32,11 +32,12 @@ void CSceneNode::UpdateTransform(CScene& Scene)
 
 	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.Size(); ++i)
-		Attrs[i]->UpdateTransform(Scene);
+		if (Attrs[i]->IsActive())
+			Attrs[i]->Update(Scene);
 
 	for (int i = 0; i < Child.Size(); ++i)
 		if (Child.ValueAtIndex(i)->IsActive())
-			Child.ValueAtIndex(i)->UpdateTransform(Scene);
+			Child.ValueAtIndex(i)->Update(Scene);
 }
 //---------------------------------------------------------------------
 

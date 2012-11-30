@@ -38,10 +38,32 @@ void CScene::Clear()
 }
 //---------------------------------------------------------------------
 
+//???or always do externally?
+void CScene::CreateDefaultCamera()
+{
+	if (!RootNode.isvalid() || RootNode->GetChild(CStrID("_DefaultCamera")).isvalid()) return;
+
+	PSceneNode CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
+	OwnNode(CameraNode);
+	PCamera Camera = n_new(CCamera);
+	CameraNode->AddAttr(*Camera);
+
+	//!!!setup camera!
+	//60.0f, 4.0f / 3.0f, 0.1f, 2500.0f
+
+	CurrCamera = Camera;
+}
+//---------------------------------------------------------------------
+
 bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 {
 	if (!Camera.isvalid()) Camera = CurrCamera;
-	if (!Camera.isvalid()) FAIL;
+	if (!Camera.isvalid())
+	{
+		VisibleMeshes.Clear();
+		VisibleLights.Clear();
+		FAIL;
+	}
 
 	// Get frame shader here, if ID is empty, use default frame shader
 
@@ -49,7 +71,7 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 	bool FrameShaderUsesLights = true;
 	//!!!filters (ShadowCasters etc)!
 
-	const matrix44& ViewProj = matrix44(); // = Camera.GetViewProj();
+	const matrix44& ViewProj = Camera->GetViewProjMatrix();
 
 	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
 	nArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;

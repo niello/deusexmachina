@@ -3,12 +3,55 @@
 namespace Scene
 {
 ImplementRTTI(Scene::CCamera, Scene::CSceneNodeAttr);
-//ImplementFactory(Scene::CCamera);
+ImplementFactory(Scene::CCamera);
 
-void CCamera::UpdateTransform(CScene& Scene)
+bool CCamera::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
-	//???here? If local params changed, update projection matrix
-	//???calc view matrix, based on InvView from node?
+	switch (FourCC)
+	{
+		case 'DHSC': // CSHD
+		{
+			//!!!Flags.SetTo(ShadowCaster, DataReader.Read<bool>());!
+			//DataReader.Read<bool>();
+			//OK;
+			FAIL;
+		}
+		default: FAIL;
+	}
+}
+//---------------------------------------------------------------------
+
+void CCamera::Update(CScene& Scene)
+{
+	bool ViewOrProjChanged = false;
+
+	//if proj dirty, update proj
+	if (Flags.Is(ProjDirty))
+	{
+		if (Flags.Is(Orthogonal)) Proj.orthoRh(Width, Height, NearPlane, FarPlane);
+		else Proj.perspFovRh(FOV, Width / Height, NearPlane, FarPlane);
+
+		// Shadow proj was calculated with:
+		//nearPlane - shadowOffset, farPlane - shadowOffset, shadowOffset(0.00007f)
+
+		//!!!avoid copying!
+		InvProj = Proj;
+		InvProj.invert();
+
+		Flags.Clear(ProjDirty);
+		ViewOrProjChanged = true;
+	}
+
+	//!!!
+	//if (GetNode()->TfmChangedThisFrame())
+	//{
+		////!!!avoid copying!
+		View = GetNode()->GetWorldMatrix();
+		View.invert_simple();
+		ViewOrProjChanged = true;
+	//}
+
+	if (ViewOrProjChanged) ViewProj = View * Proj;
 }
 //---------------------------------------------------------------------
 

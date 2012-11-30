@@ -28,7 +28,7 @@ public:
 	CLODGroup(): MinSqDistance(0.f), MaxSqDistance(FLT_MAX) {}
 
 	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
-	virtual void UpdateTransform(CScene& Scene);
+	virtual void Update(CScene& Scene);
 };
 
 RegisterFactory(CLODGroup);
