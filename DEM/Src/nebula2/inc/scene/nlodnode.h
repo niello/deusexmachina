@@ -7,11 +7,6 @@
 // to accomplish different representations with different levels of detail.
 // (C) 2002 RadonLabs GmbH
 
-namespace Data
-{
-	class CBinaryReader;
-}
-
 class nLodNode: public nTransformNode
 {
 protected:
@@ -29,7 +24,6 @@ public:
 
 	virtual void	Attach(nSceneServer* sceneServer, nRenderContext* renderContext);
 
-	void			AppendThreshold(float distance) { thresholds.Append(distance); }
 	float			GetThreshold(int index) const { return thresholds[index]; }
 };
 

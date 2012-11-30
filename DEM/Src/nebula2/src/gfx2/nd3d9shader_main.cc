@@ -791,18 +791,6 @@ nD3D9Shader::SetTechnique(const char* t)
     // case if the 3d device is a mixed vertex processing device, and
     // the current technique includes a vertex shader
     this->curTechniqueNeedsSoftwareVertexProcessing = false;
-    if (nGfxServer2::Instance()->AreVertexShadersEmulated())
-    {
-        D3DXHANDLE hPass = this->effect->GetPass(hTechnique, 0);
-        n_assert(0 != hPass);
-        D3DXPASS_DESC passDesc = { 0 };
-        HRESULT hr = this->effect->GetPassDesc(hPass, &passDesc);
-        n_assert(SUCCEEDED(hr));
-        if (passDesc.pVertexShaderFunction)
-        {
-            this->curTechniqueNeedsSoftwareVertexProcessing = true;
-        }
-    }
 
     // finally, set the technique
     HRESULT hr = this->effect->SetTechnique(hTechnique);

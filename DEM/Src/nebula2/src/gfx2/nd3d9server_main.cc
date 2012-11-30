@@ -169,18 +169,6 @@ void nD3D9Server::LeaveDialogBoxMode()
 }
 //---------------------------------------------------------------------
 
-bool nD3D9Server::AreVertexShadersEmulated()
-{
-	n_assert(pD3D9Device);
-#if N_D3D9_FORCEMIXEDVERTEXPROCESSING
-	OK;
-#else
-	if (DX7 == GetFeatureSet()) OK;
-	return !(deviceBehaviourFlags & D3DCREATE_HARDWARE_VERTEXPROCESSING);
-#endif
-}
-//---------------------------------------------------------------------
-
 bool nD3D9Server::OnSetCursor(const Events::CEventBase& Event)
 {
 	if (!pD3D9Device) FAIL;

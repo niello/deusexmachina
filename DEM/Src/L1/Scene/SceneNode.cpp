@@ -105,4 +105,13 @@ PSceneNode CSceneNode::GetChild(LPCSTR Path, bool Create)
 }
 //---------------------------------------------------------------------
 
+bool CSceneNode::AddAttr(CSceneNodeAttr& Attr)
+{
+	if (Attr.GetNode()) FAIL;
+	Attrs.Append(&Attr);
+	Attr.pNode = this;
+	OK;
+}
+//---------------------------------------------------------------------
+
 }

@@ -211,8 +211,6 @@ public:
     void SetFeatureSetOverride(FeatureSet f);
     /// get the best supported feature set
 	virtual FeatureSet GetFeatureSet() { return InvalidFeatureSet; }
-    /// return true if vertex shader run in software emulation
-    virtual bool AreVertexShadersEmulated() = 0;
     /// set the viewport
 	virtual void SetViewport(nViewport& vp) { viewport = vp; }
     /// get the viewport

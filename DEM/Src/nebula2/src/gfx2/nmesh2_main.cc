@@ -86,13 +86,6 @@ nMesh2::LoadResource()
 
     if (!meshLoader) return false;
 
-	// NOTE: This is a compatibility fix for older DX7 graphics cards which don't
-    // like unknown data (like tangents, etc) between vertices when rendering
-    // with HW T&L.
-    // set valid DX7 vertex components before loading, all others will be removed from the loaded data
-    if (!(vertexUsage & NeedsVertexShader) && nGfxServer2::Instance()->AreVertexShadersEmulated())
-        meshLoader->SetValidVertexComponents(nMesh2::Coord | nMesh2::Normal | nMesh2::Uv0 | nMesh2::Uv1 | nMesh2::Uv2 | nMesh2::Uv3 | nMesh2::Color | nMesh2::JIndices | nMesh2::Weights);
-
 	bool success = LoadFile(meshLoader);
 
 	if (success) SetState(Valid);

@@ -173,16 +173,6 @@ nD3D9Mesh::CreateVertexBuffer()
             d3dUsage |= D3DUSAGE_POINTS;
         }
 
-        // create buffer with software processing flag
-        // if the NeedsVertexShader hint is enabled, and the d3d device
-        // has been created with software or mixed vertex processing
-        if (gfxServer->AreVertexShadersEmulated() && (NeedsVertexShader & this->vertexUsage))
-        {
-            d3dUsage |= D3DUSAGE_SOFTWAREPROCESSING;
-            d3dUsage &= ~D3DUSAGE_WRITEONLY;
-            d3dPool = D3DPOOL_SYSTEMMEM;
-        }
-
         // create the vertex buffer
         HRESULT hr = gfxServer->pD3D9Device->CreateVertexBuffer(
                 this->vertexBufferByteSize,
@@ -237,15 +227,6 @@ nD3D9Mesh::CreateIndexBuffer()
         if (PointSprite & this->indexUsage)
         {
             d3dUsage |= D3DUSAGE_POINTS;
-        }
-        // create buffer with software processing flag
-        // if the NeedsVertexShader hint is enabled, and the d3d device
-        // has been created with software or mixed vertex processing
-        if (gfxServer->AreVertexShadersEmulated() && (NeedsVertexShader & this->vertexUsage))
-        {
-            d3dUsage |= D3DUSAGE_SOFTWAREPROCESSING;
-            d3dUsage &= ~D3DUSAGE_WRITEONLY;
-            d3dPool = D3DPOOL_SYSTEMMEM;
         }
 
         HRESULT hr = gfxServer->pD3D9Device->CreateIndexBuffer(

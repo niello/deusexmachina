@@ -50,6 +50,10 @@ bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReade
 			BeginJoints(Count);
 			for (short i = 0; i < Count; ++i)
 			{
+				//!!!REDUNDANCY! { [ { } ] } problem.
+				// This is { }'s element count, which is always 5 (Parent, T, R, S, Name)
+				n_assert(DataReader.Read<short>() == 5);
+
 				int ParentIdx;
 				if (!DataReader.Read(ParentIdx)) FAIL;
 				vector3 Scale;

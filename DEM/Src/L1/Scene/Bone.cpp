@@ -3,4 +3,5 @@
 namespace Scene
 {
 ImplementRTTI(Scene::CBone, Scene::CSceneNodeAttr);
+//ImplementFactory(Scene::CBone);
 }

@@ -16,6 +16,7 @@
 namespace Attr
 {
 	DeclareString(ScenePath);
+	DeclareString(SceneFile);
 }
 
 namespace Properties

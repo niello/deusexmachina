@@ -23,6 +23,10 @@ bool nSkinShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataRead
 			BeginFragments(Count);
 			for (short i = 0; i < Count; ++i)
 			{
+				//!!!REDUNDANCY! { [ { } ] } problem.
+				// This is { }'s element count, which is always 2 (MeshGroupIndex, JointPalette)
+				n_assert(DataReader.Read<short>() == 2);
+
 				SetFragGroupIndex(i, DataReader.Read<int>());
 
 				nArray<int>& Palette = fragmentArray[i].JointPalette;
@@ -31,8 +35,9 @@ bool nSkinShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataRead
 				if (!DataReader.Read(PaletteSize)) FAIL;
 
 				BeginJointPalette(i, PaletteSize);
-				for (short j = 0; j < PaletteSize; ++j)
-					Palette[j] = DataReader.Read<int>(); //!!!memcpy is more effective!
+				DataReader.GetStream().Read(Palette.Begin(), PaletteSize * sizeof(int));
+				//for (short j = 0; j < PaletteSize; ++j)
+				//	Palette[j] = DataReader.Read<int>(); //!!!memcpy is more effective!
 				EndJointPalette(i);
 			}
 			EndFragments();

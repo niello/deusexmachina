@@ -15,7 +15,7 @@ bool nLodNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
 			for (short i = 0; i < Count; ++i)
-				AppendThreshold(DataReader.Read<float>());
+				thresholds.Append(DataReader.Read<float>());
 			OK;
 		}
 		case 'NIMD': // DMIN

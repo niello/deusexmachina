@@ -63,7 +63,9 @@ private:
 
 	Data::CFlags			Flags; // IsRoot, IsDirty, IsLocalTfm, ?UniformScale?, LockTransform, TfmChangedLastFrame
 	nArray<PSceneNodeAttr>	Attrs; //???or list? List seems to be better
+
 	// Controller(s). Can have controller of type Sequensor/Blender/Mixer which will mix output of more than 1 ctlr.
+	//???Ctlr here or ctlr stores node inside and is owned by its creator/manager class?
 
 	friend class CScene;
 
@@ -85,7 +87,7 @@ public:
 	PSceneNode		GetChild(LPCSTR Path, bool Create = false);
 	CSceneNode*		FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
-	void			AddAttr(CSceneNodeAttr& Attr);
+	bool			AddAttr(CSceneNodeAttr& Attr);
 	CSceneNodeAttr*	GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 
 	void			UpdateTransform(CScene& Scene);
@@ -94,8 +96,6 @@ public:
 	// (Implement only transforms with debug rendering before writing render connections)
 
 	void			RenderDebug();
-
-	// Attribute managenent
 
 	// Animator (controller, animation node) management
 

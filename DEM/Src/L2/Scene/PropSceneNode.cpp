@@ -7,18 +7,18 @@
 
 namespace Attr
 {
-	DeclareAttr(Graphics);
-
 	DefineString(ScenePath);
+	DefineString(SceneFile);
 };
 
 BEGIN_ATTRS_REGISTRATION(PropSceneNode)
 	RegisterString(ScenePath, ReadOnly);
+	RegisterString(SceneFile, ReadOnly);
 END_ATTRS_REGISTRATION
 
 namespace Scene
 {
-	bool LoadNodesFromSCN(const nString& FileName, PSceneNode CurrRoot);
+	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
 }
 
 namespace Properties
@@ -31,7 +31,7 @@ void CPropSceneNode::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
 	CPropTransformable::GetAttributes(Attrs);
 	Attrs.Append(Attr::ScenePath);
-	Attrs.Append(Attr::Graphics); //???Attrs.Append(Attr::SceneResource);? - or completely on other props?
+	Attrs.Append(Attr::SceneFile);
 }
 //---------------------------------------------------------------------
 
@@ -42,12 +42,8 @@ void CPropSceneNode::Activate()
 	Node = SceneSrv->GetCurrentScene()->GetNode(GetEntity()->Get<nString>(Attr::ScenePath).Get(), true);
 	n_assert(Node.isvalid());
 
-	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::Graphics); //???rename attr?
-	if (NodeRsrc.IsValid())
-	{
-		// Load scene resource from file
-		//Scene::LoadNodesFromSCN();
-	}
+	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::SceneFile);
+	if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
 
 	if (Node->IsOwnedByScene())
 		GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());

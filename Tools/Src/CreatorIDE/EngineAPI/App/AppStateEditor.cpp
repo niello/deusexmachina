@@ -10,8 +10,6 @@
 #include <AI/AIServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
-#include <particle/nparticleserver.h>
-#include <particle/nparticleserver2.h>
 #include <scene/nsceneserver.h>
 
 namespace App
@@ -72,10 +70,6 @@ CStrID CAppStateEditor::OnFrame()
 	AudioSrv->BeginScene();
 	GameSrv->OnFrame();
 	AudioSrv->EndScene();
-
-	nParticleServer::Instance()->Trigger();
-	nParticleServer2::Instance()->SetTime(TimeSrv->GetTime());
-	nParticleServer2::Instance()->Trigger();
 
 	if (GfxSrv->BeginRender())
 	{

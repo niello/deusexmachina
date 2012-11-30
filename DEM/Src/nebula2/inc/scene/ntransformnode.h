@@ -22,11 +22,6 @@
 #include "scene/nscenenode.h"
 #include "mathlib/transform44.h"
 
-namespace Data
-{
-	class CBinaryReader;
-}
-
 class nTransformNode : public nSceneNode
 {
 protected:

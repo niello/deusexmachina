@@ -3,6 +3,7 @@
 namespace Scene
 {
 ImplementRTTI(Scene::CCamera, Scene::CSceneNodeAttr);
+//ImplementFactory(Scene::CCamera);
 
 void CCamera::UpdateTransform(CScene& Scene)
 {

@@ -37,6 +37,7 @@ public:
 		CStrID			SchemeID;
 		PDataScheme		Scheme;
 		CFlags			Flags;
+		CData			Default;
 	};
 
 	nArray<CRecord> Records;

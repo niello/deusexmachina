@@ -90,6 +90,7 @@ bool CCIDEApp::Open()
 	DataSrv->SetAssign("textures", Export + "/textures/");
 	DataSrv->SetAssign("anims", Export + "/anims/");
 	DataSrv->SetAssign("gfxlib", Export + "/gfxlib/");
+	DataSrv->SetAssign("scene", Export + "/Scene/");
 	DataSrv->SetAssign("db", Export + "/db/");
 	DataSrv->SetAssign("game", Export + "/game/");
 	DataSrv->SetAssign("sound", Export + "/audio/");

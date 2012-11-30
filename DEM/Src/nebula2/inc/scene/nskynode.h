@@ -19,12 +19,6 @@
 #include "gfx2/ntexture2.h"
 #include "variable/nvariable.h"
 
-namespace Data
-{
-	class CBinaryReader;
-}
-
-//------------------------------------------------------------------------------
 class nSkyNode : public nTransformNode
 {
 public:

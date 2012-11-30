@@ -21,11 +21,6 @@
 class nCharSkeleton;
 class nSkinAnimator;
 
-namespace Data
-{
-	class CBinaryReader;
-}
-
 class nSkinShapeNode: public nShapeNode
 {
 private:
@@ -51,7 +46,6 @@ public:
 
 	virtual bool ApplyGeometry(nSceneServer* sceneServer) { return true; }
     virtual bool RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderContext);
-	virtual int GetMeshUsage() const { return nMesh2::WriteOnce | nMesh2::NeedsVertexShader; }
 
 	void BeginFragments(int num) { n_assert(num > 0); fragmentArray.SetFixedSize(num); }
 	void SetFragGroupIndex(int fragIndex, int MeshGroupIdx) { fragmentArray[fragIndex].MeshGroupIdx = MeshGroupIdx; }

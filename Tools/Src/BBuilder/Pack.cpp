@@ -16,14 +16,20 @@ inline const char* StripRootPath(const char* Path, const char* RootPath)
 
 void FilterByFolder(const nString& Folder, nArray<nString>& In, nArray<nString>& Out)
 {
+	nString FolderL = Folder;
+	FolderL.ToLower();
+
 	for (int i = In.Size() - 1; i >= 0; i--)
 	{
-		if (In[i].IsEmpty())
+		nString& InStr = In[i];
+		InStr.ToLower();
+
+		if (InStr.IsEmpty())
 		{
 			In.Erase(i);
 			continue;
 		}
-		const char* pStripped = StripRootPath(In[i].Get(), Folder.Get());
+		const char* pStripped = StripRootPath(InStr.Get(), FolderL.Get());
 		if (pStripped)
 		{
 			Out.Append(pStripped);
@@ -69,6 +75,7 @@ bool AddFilesToTOC(nArray<nString>& Files, CNpkTOC& TOCObj, int& Offset)
 	while (Files.Size() > 0)
 	{
 		nString DirName = Files[0].SubString(0, Files[0].FindCharIndex('/', 0));
+		DirName.ToLower();
 		
 		n_printf("-> Writing NPK directory '%s'\n", DirName.Get());
 		
