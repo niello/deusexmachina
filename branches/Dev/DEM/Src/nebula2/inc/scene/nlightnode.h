@@ -7,11 +7,6 @@
 // Scene node which provides lighting information.
 // (C) 2003 RadonLabs GmbH
 
-namespace Data
-{
-	class CBinaryReader;
-}
-
 class nLightNode: public nTransformNode
 {
 public:

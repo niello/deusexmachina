@@ -26,6 +26,7 @@ namespace Attr
 	DeclareAttrsModule(StdAttrs);
 	DeclareAttrsModule(Database);
 	DefineString(Graphics);
+	DefineString(SceneFile);
 	DefineString(Physics);
 	DefineString(IAODesc);
 	DefineString(ActorDesc);
@@ -37,6 +38,7 @@ namespace Attr
 
 BEGIN_ATTRS_REGISTRATION(Main)
 	RegisterString(Graphics, ReadOnly);
+	RegisterString(SceneFile, ReadOnly);
 	RegisterString(Physics, ReadOnly);
 	RegisterString(IAODesc, ReadOnly);
 	RegisterString(ActorDesc, ReadOnly);
@@ -171,6 +173,14 @@ bool ParseSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles)
 
 	if (NodeDesc.Get(pValue, CStrID("TQTFile")))
 		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Tqt2Texture");
+
+	// For new nodes
+	if (NodeDesc.Get(pValue, CStrID("Attrs")))
+	{
+		const CDataArray& Attrs = *pValue->GetValue<PDataArray>();
+		for (int i = 0; i < Attrs.Size(); ++i)
+			if (!ParseSceneNode(*Attrs[i].GetValue<PParams>(), ResourceFiles)) FAIL;
+	}
 
 	if (NodeDesc.Get(pValue, CStrID("Children")))
 	{
@@ -461,6 +471,8 @@ int main(int argc, const char** argv)
 	DataSrv->SetAssign("src", Proj + "/src");
 	DataSrv->SetAssign("gfxlib", Export + "/gfxlib");
 	DataSrv->SetAssign("gfxsrc", "src:gfxlib");
+	DataSrv->SetAssign("scene", Export + "/Scene");
+	DataSrv->SetAssign("scenesrc", "src:Scene");
 	DataSrv->SetAssign("dlg", Export + "/game/dlg");
 	DataSrv->SetAssign("dlgsrc", "src:game/dlg");
 	DataSrv->SetAssign("physics", Export + "/physics");
@@ -479,6 +491,7 @@ int main(int argc, const char** argv)
 	// Analyze DB(s) and get names of used resources
 
 	nArray<nString> SceneFiles;
+	nArray<nString> SceneFiles2;
 	nArray<nString> PhysicsFiles;
 	nArray<nString> IAODescFiles;
 	nArray<nString> ActorDescFiles;
@@ -519,6 +532,7 @@ int main(int argc, const char** argv)
 					DS->SetRowIndex(i);
 					
 					AddRsrcIfUnique(DS, Attr::Graphics, SceneFiles);
+					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
 					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
 					AddRsrcIfUnique(DS, Attr::IAODesc, IAODescFiles);
 					AddRsrcIfUnique(DS, Attr::ActorDesc, ActorDescFiles);
@@ -583,6 +597,7 @@ int main(int argc, const char** argv)
 					DS->SetRowIndex(i);
 					
 					AddRsrcIfUnique(DS, Attr::Graphics, SceneFiles);
+					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
 					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
 					AddRsrcIfUnique(DS, Attr::IAODesc, IAODescFiles);
 					AddRsrcIfUnique(DS, Attr::ActorDesc, ActorDescFiles);
@@ -607,6 +622,8 @@ int main(int argc, const char** argv)
 
 	n_printf("\n-----------------------------------------------------\n");
 
+	nArray<nString> ResourceFiles;
+
 	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneRsrc.dss"))
 	{
 		n_error("BBuilder: Failed to read 'home:DataSchemes/SceneRsrc.dss'");
@@ -615,13 +632,11 @@ int main(int argc, const char** argv)
 
 	PDataScheme SceneRsrcScheme = DataSrv->GetDataScheme(CStrID("SceneRsrc"));
 
-	nArray<nString> ResourceFiles;
-
 	for (int i = 0; i < SceneFiles.Size(); i++)
 	{
-		n_printf("\nParsing scene resource '%s'...\n", SceneFiles[i].Get());
-
 		nString& SceneFile = SceneFiles[i];
+
+		n_printf("\nParsing scene resource '%s'...\n", SceneFile.Get());
 
 		nString SceneRsrcName = "gfxsrc:" + SceneFile + ".hrd";
 
@@ -645,10 +660,44 @@ int main(int argc, const char** argv)
 		}
 	}
 
+	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
+	{
+		n_error("BBuilder: Failed to read 'home:DataSchemes/SceneNodes.dss'");
+		return FailApp(WaitKey);
+	}
+
+	SceneRsrcScheme = DataSrv->GetDataScheme(CStrID("SceneNode"));
+
+	for (int i = 0; i < SceneFiles2.Size(); i++)
+	{
+		nString& SceneFile = SceneFiles2[i];
+
+		n_printf("\nParsing scene resource '%s'...\n", SceneFile.Get());
+
+		nString SceneRsrcName = "scenesrc:" + SceneFile + ".hrd";
+
+		PParams SceneRsrc = DataSrv->LoadHRD(SceneRsrcName, false);
+		if (SceneRsrc.isvalid())
+		{
+			if (!ParseSceneNode(*SceneRsrc, ResourceFiles))
+			{
+				n_printf("BBuilder: Failed to parse scene resource '%s'\n", SceneRsrcName.Get());
+				return FailApp(WaitKey);
+			}
+
+			SceneFile = SceneFile + ".scn";
+			CFileStream File;
+			if (File.Open("scene:" + SceneFile, SAM_WRITE))
+			{
+				CBinaryWriter Writer(File);
+				Writer.WriteParams(*SceneRsrc, *SceneRsrcScheme);
+				File.Close();
+			}
+		}
+	}
+
 	SceneRsrcScheme = NULL;
 
-	n_printf("\n-----------------------------------------------------\n");
-	
 	n_printf("\n-----------------------------------------------------\n");
 
 	// Analyze dialogue files for corresponding scripts
@@ -799,6 +848,11 @@ int main(int argc, const char** argv)
 	TOC.BeginDirEntry("gfxlib");
 	FilterByFolder("gfxlib", RsrcFromExport, SceneFiles);
 	AddFilesToTOC(SceneFiles, TOC, Offset);
+	TOC.EndDirEntry();
+
+	TOC.BeginDirEntry("scene");
+	FilterByFolder("scene", RsrcFromExport, SceneFiles2);
+	AddFilesToTOC(SceneFiles2, TOC, Offset);
 	TOC.EndDirEntry();
 
 	TOC.BeginDirEntry("physics");

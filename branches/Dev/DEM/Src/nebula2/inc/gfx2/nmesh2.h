@@ -158,9 +158,6 @@ public:
 
         // use as point sprite buffer?
         PointSprite = (1<<6),
-
-        // needs vertex shader?
-        NeedsVertexShader = (1<<7),
     };
 
     enum OptimizationFlag

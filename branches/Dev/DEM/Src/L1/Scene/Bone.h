@@ -13,6 +13,7 @@ struct CSPSRecord;
 class CBone: public CSceneNodeAttr
 {
 	DeclareRTTI;
+	//DeclareFactory(CBone);
 
 protected:
 
@@ -31,6 +32,8 @@ public:
 	//!!!Can be useful for ragdolls!
 	//void			GetBox(bbox3& OutBox) const;
 };
+
+//RegisterFactory(CBone);
 
 typedef Ptr<CBone> PBone;
 

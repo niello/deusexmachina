@@ -14,11 +14,6 @@
 
 class nResourceServer;
 
-namespace Data
-{
-	class CBinaryReader;
-}
-
 class nTerrainNode : public nMaterialNode
 {
 protected:

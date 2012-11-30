@@ -153,7 +153,7 @@ bool CNavMeshBuilder::AddGeometry(nSceneNode* pNode, const matrix44* pTfm, uchar
 	}
 	else if (pNode->IsA(pShapeClass))
 	{
-		if (!AddGeometry(((nShapeNode*)pNode)->GetMeshObject(), ((nShapeNode*)pNode)->GetGroupIndex(), false, pTfm, Area)) FAIL;
+		if (!AddGeometry(((nShapeNode*)pNode)->GetMeshObject(), ((nShapeNode*)pNode)->groupIndex, false, pTfm, Area)) FAIL;
 	}
 	else if (pNode->IsA(pTfmClass))
 	{

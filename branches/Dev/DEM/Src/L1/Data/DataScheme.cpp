@@ -1,6 +1,7 @@
 #include "DataScheme.h"
 
 #include <Data/DataServer.h>
+#include <Data/DataArray.h>
 
 namespace Data
 {
@@ -66,6 +67,10 @@ bool CDataScheme::Init(const CParams& Desc)
 			else if (SchemeVal->IsA<CStrID>()) Rec.SchemeID = SchemeVal->GetValue<CStrID>();
 			else n_error("CDataScheme::Init -> Wrong type of Scheme param. Must be params or strid.");
 		}
+
+		CParam* pDflt;
+		if (Value.Get(pDflt, CStrID("Default")))
+			Rec.Default = pDflt->GetRawValue();
 
 		Records.Append(Rec);
 	}

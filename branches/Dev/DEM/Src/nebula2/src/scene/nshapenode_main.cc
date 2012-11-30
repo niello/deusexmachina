@@ -22,7 +22,7 @@ bool nShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		}
 		case 'RGSM': // MSGR
 		{
-			SetGroupIndex(DataReader.Read<int>());
+			DataReader.Read(groupIndex);
 			OK;
 		}
 		default: return nMaterialNode::LoadDataBlock(FourCC, DataReader);
@@ -47,7 +47,7 @@ bool nShapeNode::LoadMesh()
     {
         // append mesh usage to mesh resource name
         nString resourceName;
-        resourceName.Format("%s_%d", meshName.Get(), GetMeshUsage());
+        resourceName.Format("%s_%d", meshName.Get(), meshUsage);
 
         // get a new or shared mesh
         nMesh2* mesh = nGfxServer2::Instance()->NewMesh(resourceName);
@@ -55,7 +55,7 @@ bool nShapeNode::LoadMesh()
         if (!mesh->IsLoaded())
         {
             mesh->SetFilename(meshName);
-            mesh->SetUsage(GetMeshUsage());
+            mesh->SetUsage(meshUsage);
 
             if (!mesh->Load())
             {
@@ -101,14 +101,5 @@ bool nShapeNode::RenderGeometry(nSceneServer* /*sceneServer*/, nRenderContext* /
 {
 	nGfxServer2::Instance()->DrawIndexedNS(nGfxServer2::TriangleList);
 	return true;
-}
-//---------------------------------------------------------------------
-
-// Set the resource name. The mesh resource name consists of the filename of the mesh.
-void nShapeNode::SetMesh(const nString& name)
-{
-	n_assert(name.IsValid());
-	UnloadMesh();
-	meshName = name;
 }
 //---------------------------------------------------------------------

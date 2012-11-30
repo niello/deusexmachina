@@ -9,6 +9,11 @@
 // Scene node attributes implement specific logic, attached to 3D transform provided by scene nodes.
 // Common examples are meshes, lights, cameras etc.
 
+namespace Data
+{
+	class CBinaryReader;
+}
+
 namespace Scene
 {
 class CScene;
@@ -20,12 +25,15 @@ class CSceneNodeAttr: public Core::CRefCounted
 
 protected:
 
+	friend class CSceneNode;
+
 	CSceneNode* pNode;
 
 public:
 
 	CSceneNodeAttr(): pNode(NULL) {}
 
+	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader) = 0;
 	virtual void UpdateTransform(CScene& Scene) = 0;
 	virtual void PrepareToRender() {}
 

@@ -131,7 +131,7 @@ nSkyNode::AddElement(nSkyNode::ElementType type, const nString& name)
             if (newNode->GetMesh().IsEmpty())
             {
                 newNode->SetMesh("meshes:examples/skyElements_s_0.n3d2");
-                newNode->SetGroupIndex(0);
+                newNode->groupIndex = 0;
             }
             if (newNode->GetShader().IsEmpty())
             {
@@ -166,7 +166,7 @@ nSkyNode::AddElement(nSkyNode::ElementType type, const nString& name)
             if (newNode->GetMesh().IsEmpty())
             {
                 newNode->SetMesh("meshes:examples/skyElements_s_0.n3d2");
-                newNode->SetGroupIndex(3);
+                newNode->groupIndex = 3;
             }
             if (!newNode->GetTexture(nShaderState::DiffMap0))
                 newNode->SetTexture(nShaderState::DiffMap0, "textures:environment/sun.dds");
@@ -221,7 +221,7 @@ nSkyNode::AddElement(nSkyNode::ElementType type, const nString& name)
             if (newNode->GetMesh().IsEmpty())
             {
                 newNode->SetMesh("meshes:examples/skyElements_s_0.n3d2");
-                newNode->SetGroupIndex(2);
+                newNode->groupIndex = 2;
             }
             if (newNode->GetShader().IsEmpty())
             {
@@ -281,7 +281,7 @@ nSkyNode::AddElement(nSkyNode::ElementType type, const nString& name)
             if (newNode->GetMesh().IsEmpty())
             {
                 newNode->SetMesh("meshes:examples/skyElements_s_0.n3d2");
-                newNode->SetGroupIndex(1);
+                newNode->groupIndex = 1;
             }
             if (newNode->GetShader().IsEmpty())
             {

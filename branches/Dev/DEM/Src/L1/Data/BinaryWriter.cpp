@@ -51,7 +51,11 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 		const CDataScheme::CRecord& Rec = Scheme.Records[i];
 
 		const CData* PrmValue;
-		if (!Value.Get(PrmValue, Rec.ID)) continue; //!!!can write default value here if set!
+		if (!Value.Get(PrmValue, Rec.ID))
+		{
+			if (Rec.Default.IsValid()) PrmValue = &Rec.Default;
+			else continue;
+		}
 
 		++Written;
 
@@ -181,15 +185,16 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 					const CData& Element = PrmArray[j];
 					if (SubScheme.isvalid() && Element.IsA<PParams>())
 					{
-						//!!!WRITE_CHILD_COUNT here too!
+						CParams& SubPrmParams = *Element.GetValue<PParams>();
 
-						//// Write element count of current child
-						//CountPos = Stream.GetPosition();
-						//if (Rec.Flags.Is(CDataScheme::WRITE_CHILD_COUNT))
-						//	if (!Write<short>(SubPrmParams.GetCount())) FAIL;
+						// Write element count of current child
+						//!!!
+						// NB: This may cause some problems. Need clarify behaviour of { [ { } ] } structure.
+						if (Rec.Flags.Is(CDataScheme::WRITE_CHILD_COUNT))
+							if (!Write<short>(SubPrmParams.GetCount())) FAIL;
 
 						// If element is {} and subscheme is declared, save element by subscheme
-						if (!WriteParams(*Element.GetValue<PParams>(), *SubScheme)) FAIL;
+						if (!WriteParams(SubPrmParams, *SubScheme)) FAIL;
 					}
 					else if (!WriteDataAsOfType(Element, Rec.TypeID, Rec.Flags)) FAIL;
 				}

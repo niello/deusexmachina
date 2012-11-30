@@ -15,6 +15,7 @@ struct CSPSRecord;
 class CLODGroup: public CSceneNodeAttr
 {
 	DeclareRTTI;
+	DeclareFactory(CLODGroup);
 
 protected:
 
@@ -26,8 +27,11 @@ public:
 
 	CLODGroup(): MinSqDistance(0.f), MaxSqDistance(FLT_MAX) {}
 
+	virtual bool LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void UpdateTransform(CScene& Scene);
 };
+
+RegisterFactory(CLODGroup);
 
 typedef Ptr<CLODGroup> PLODGroup;
 

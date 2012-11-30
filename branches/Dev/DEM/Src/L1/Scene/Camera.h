@@ -17,6 +17,7 @@ namespace Scene
 class CCamera: public CSceneNodeAttr
 {
 	DeclareRTTI;
+	//DeclareFactory(CCamera);
 
 public:
 
@@ -32,6 +33,8 @@ public:
 
 	virtual void UpdateTransform(CScene& Scene);
 };
+
+//RegisterFactory(CCamera);
 
 typedef Ptr<CCamera> PCamera;
 

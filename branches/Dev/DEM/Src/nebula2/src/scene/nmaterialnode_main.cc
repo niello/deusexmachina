@@ -65,6 +65,47 @@ bool nMaterialNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReade
 }
 //---------------------------------------------------------------------
 
+void nMaterialNode::SetTexture(nShaderState::Param param, const char* texName)
+{
+    n_assert(texName);
+
+    // silently ignore invalid parameters
+    if (nShaderState::InvalidParameter == param)
+    {
+        n_printf("WARNING: invalid shader parameter in object '%s'\n", this->GetName());
+        return;
+    }
+
+    // see if texture variable already exists
+    int i;
+    for (i = 0; i < texNodeArray.Size(); i++)
+        if (this->texNodeArray[i].shaderParameter == param) break;
+    if (i == texNodeArray.Size())
+    {
+        // add new texnode to array
+        CTextureNode newTexNode(param, texName);
+        this->texNodeArray.Append(newTexNode);
+    }
+    else
+    {
+        // invalidate existing texture
+        this->UnloadTexture(i);
+        this->texNodeArray[i].texName = texName;
+    }
+    // flag to load resources
+    this->resourcesValid = false;
+}
+//---------------------------------------------------------------------
+
+const char* nMaterialNode::GetTexture(nShaderState::Param param) const
+{
+    for (int i = 0; i < texNodeArray.Size(); i++)
+        if (texNodeArray[i].shaderParameter == param)
+            return texNodeArray[i].texName.Get();
+    return 0;
+}
+//---------------------------------------------------------------------
+
 void nMaterialNode::UnloadShader()
 {
     if (refShader.isvalid())
@@ -162,8 +203,7 @@ nMaterialNode::UnloadResources()
 /**
     Setup shader attributes before rendering instances of this scene node.
 */
-bool
-nMaterialNode::ApplyShader(nSceneServer* sceneServer)
+bool nMaterialNode::ApplyShader(nSceneServer* sceneServer)
 {
     n_assert(sceneServer);
 
@@ -185,8 +225,7 @@ nMaterialNode::ApplyShader(nSceneServer* sceneServer)
     Perform per-instance rendering of shader. This should just apply
     shader parameters which may change from instance to instance.
 */
-bool
-nMaterialNode::RenderShader(nSceneServer* sceneServer, nRenderContext* renderContext)
+bool nMaterialNode::RenderShader(nSceneServer* sceneServer, nRenderContext* renderContext)
 {
     n_assert(sceneServer && renderContext);
 
@@ -209,50 +248,3 @@ nMaterialNode::RenderShader(nSceneServer* sceneServer, nRenderContext* renderCon
 }
 
 //------------------------------------------------------------------------------
-/**
-*/
-void
-nMaterialNode::SetTexture(nShaderState::Param param, const char* texName)
-{
-    n_assert(texName);
-
-    // silently ignore invalid parameters
-    if (nShaderState::InvalidParameter == param)
-    {
-        n_printf("WARNING: invalid shader parameter in object '%s'\n", this->GetName());
-        return;
-    }
-
-    // see if texture variable already exists
-    int i;
-    int num = this->texNodeArray.Size();
-    for (i = 0; i < texNodeArray.Size(); i++)
-    {
-        if (this->texNodeArray[i].shaderParameter == param) break;
-    }
-    if (i == num)
-    {
-        // add new texnode to array
-        CTextureNode newTexNode(param, texName);
-        this->texNodeArray.Append(newTexNode);
-    }
-    else
-    {
-        // invalidate existing texture
-        this->UnloadTexture(i);
-        this->texNodeArray[i].texName = texName;
-    }
-    // flag to load resources
-    this->resourcesValid = false;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-const char* nMaterialNode::GetTexture(nShaderState::Param param) const
-{
-    for (int i = 0; i < texNodeArray.Size(); i++)
-        if (texNodeArray[i].shaderParameter == param)
-            return texNodeArray[i].texName.Get();
-    return 0;
-}
