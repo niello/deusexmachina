@@ -1,13 +1,30 @@
 using System.Reflection;
 
+namespace CreatorIDE.Settings
+{
+	[assembly: AssemblyConfiguration(Properties.Configuration)]
+	[assembly: AssemblyCompany(Properties.Company)]
+	[assembly: AssemblyProduct(Properties.Product)]
+	[assembly: AssemblyCopyright(Properties.Copyright)]
+	//[assembly: AssemblyTrademark("")]
+	//[assembly: AssemblyCulture("")]
+	
+	static partial class Properties
+	{
+		public const string 
+			Configuration =
 #if DEBUG
-[assembly: AssemblyConfiguration("Debug")]
+				"Debug"
+#elif RELEASE
+				"Release"
+#else
+				"Undefined"
 #endif
-#if RELEASE
-[assembly: AssemblyConfiguration("Release")]
+#if !OVERRIDE_PRODUCT_INFO
+			, Company = "Still No Team Name"
+			, Product = "CreatorIDE"
+			, Copyright = "(c) 2011 - 2012"
 #endif
-[assembly: AssemblyCompany("Still No Team Name")]
-[assembly: AssemblyProduct("CreatorIDE")]
-[assembly: AssemblyCopyright("(c) 2011 - 2012")]
-//[assembly: AssemblyTrademark("")]
-//[assembly: AssemblyCulture("")]
+			;
+	}
+}

@@ -35,7 +35,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <!-- Here we exclude the solution-wide assembly information for current project -->
-    <CustomAssemblyInfo>True</CustomAssemblyInfo>
+    <DefineConstants>$(DefineConstants);OVERRIDE_PRODUCT_INFO</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

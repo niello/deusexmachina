@@ -657,6 +657,11 @@ namespace Microsoft.VisualStudio.Project
 			}
 		}
 
+        /// <summary>
+        /// Override this property to use the specified editor for this file instead of a default editor.
+        /// </summary>
+        internal protected virtual Guid DefaultEditorTypeID { get { return Guid.Empty; } }
+
 		/// <summary>
 		/// Determine if this item is represented physical on disk and shows a messagebox in case that the file is not present and a UI is to be presented.
 		/// </summary>

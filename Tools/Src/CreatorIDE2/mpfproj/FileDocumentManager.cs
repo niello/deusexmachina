@@ -141,7 +141,18 @@ namespace Microsoft.VisualStudio.Project
         /// <returns>A reference to the window frame that is mapped to the file</returns>
         public virtual IVsWindowFrame Open(bool newFile, bool openWith, Guid logicalView, IntPtr docDataExisting, WindowFrameShowAction windowFrameAction)
 		{
-		    return Open(newFile, openWith, 0, Guid.Empty, null, logicalView, docDataExisting, windowFrameAction);
+		    Guid editorID;
+            if (openWith)
+                editorID = Guid.Empty;
+            else
+            {
+                var fileNode = Node as FileNode;
+                if (fileNode == null)
+                    throw new COMException();
+                editorID = fileNode.DefaultEditorTypeID;
+            }
+
+		    return Open(newFile, openWith, 0, editorID, null, logicalView, docDataExisting, windowFrameAction);
 		}
 
 		#endregion

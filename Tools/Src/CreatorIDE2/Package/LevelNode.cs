@@ -7,24 +7,26 @@ using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 namespace CreatorIDE.Package
 {
     [ComVisible(true), Guid(GuidString)]
-    public class LevelsNode: FileNode
+    public class LevelNode: FileNode
     {
         private const string GuidString = "0CEA25A5-4799-4461-A7FB-79C77EA04743";
         public const string FileExtension = "db3";
 
-        public LevelsNode(CideProjectNode projectNode, ProjectElement element):
+        public LevelNode(CideProjectNode projectNode, ProjectElement element):
             base(projectNode,element)
         {}
 
         public override Guid ItemTypeGuid
         {
-            get { return typeof (LevelsNode).GUID; }
+            get { return typeof (LevelNode).GUID; }
         }
 
         public override int ImageIndex
         {
             get { return ((CideProjectNode) ProjectMgr).ImageListOffset + Images.Globe; }
         }
+
+        protected override Guid DefaultEditorTypeID { get { return typeof (LevelEditorFactory).GUID; } }
 
         protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
         {

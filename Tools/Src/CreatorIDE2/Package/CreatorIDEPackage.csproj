@@ -65,9 +65,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CideEditorFactory.cs" />
     <Compile Include="CideEmptyNode.cs" />
     <Compile Include="CidePathHelper.cs" />
     <Compile Include="CideProjectElements.cs" />
+    <Compile Include="EditorPane.cs" />
+    <Compile Include="LevelEditorFactory.cs" />
+    <Compile Include="LevelNode.cs" />
     <Compile Include="SRCategoryAttribute.cs" />
     <Compile Include="CideFolderNode.cs" />
     <Compile Include="CideProjectConfig.cs" />
@@ -77,8 +81,7 @@
     <Compile Include="CideProjectFactory.cs" />
     <Compile Include="CideProjectNode.cs" />
     <Compile Include="Images.cs" />
-    <Compile Include="LevelsNode.cs" />
-    <Compile Include="LevelsNodeProperties.cs" />
+    <Compile Include="LevelNodeProperties.cs" />
     <Compile Include="PathHelper.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -99,6 +102,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@ using CreatorIDE.Engine;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Props = CreatorIDE.Settings.Properties;
 
 namespace CreatorIDE.Package
 {
@@ -31,12 +32,12 @@ namespace CreatorIDE.Package
     [DefaultRegistryRoot("Software\\Microsoft\\VisualStudio\\9.0")]
     // This attribute is used to register the informations needed to show the this package
     // in the Help/About dialog of Visual Studio.
-    [InstalledProductRegistration(false, "#110", "#112", "1.0", IconResourceID = 400)]
+    [InstalledProductRegistration(false, "#110", "#112", Props.Version, IconResourceID = 400)]
     // In order be loaded inside Visual Studio in a machine that has not the VS SDK installed, 
     // package needs to have a valid load key (it can be requested at 
     // http://msdn.microsoft.com/vstudio/extend/). This attributes tells the shell that this 
     // package has a load key embedded in its resources.
-    [ProvideLoadKey("Standard", "0.0.1.0", "DemCreator", "*", 1)]
+    [ProvideLoadKey("Standard", Props.Version, Props.Product, Props.Company, 1)]
     [ProvideProjectFactory(
         typeof(CideProjectFactory),
         CideProjectFactory.ProjectName,
@@ -44,6 +45,7 @@ namespace CreatorIDE.Package
         CideProjectFactory.ProjectExtension,
         CideProjectFactory.ProjectExtension,
         CideProjectFactory.TemplatesDirectory)]
+    [ProvideEditorFactory(typeof(LevelEditorFactory), 113)]
     [ProvideMenuResource(1000, 1)]
     [Guid(GuidString)]
     public sealed class CidePackage : ProjectPackage
@@ -81,6 +83,8 @@ namespace CreatorIDE.Package
             base.Initialize();
 
             RegisterProjectFactory(new CideProjectFactory(this));
+
+            RegisterEditorFactory(new LevelEditorFactory(this));
         }
 
         protected override bool TryCreateListener<TListener>(Func<ProjectPackage, TListener> factoryMethod, out TListener listener)
