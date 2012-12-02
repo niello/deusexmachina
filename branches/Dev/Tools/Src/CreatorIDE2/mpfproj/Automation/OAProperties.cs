@@ -141,6 +141,11 @@ namespace Microsoft.VisualStudio.Project.Automation
 				{
 					return (EnvDTE.Property)this.properties[indexAsString];
 				}
+                if(indexAsString=="URL")
+                {
+                    // For VS built-in xml editor
+                    return null;
+                }
 			}
 			else if(index is int)
 			{

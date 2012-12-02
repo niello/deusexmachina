@@ -141,8 +141,8 @@ namespace CreatorIDE.Package
 
             switch(ext.ToLower(CultureInfo.InvariantCulture))
             {
-                case LevelsNode.FileExtension:
-                    return new LevelsNode(this, item);
+                case LevelNode.FileExtension:
+                    return new LevelNode(this, item);
 
                 default:
                     return base.CreateFileNode(item);

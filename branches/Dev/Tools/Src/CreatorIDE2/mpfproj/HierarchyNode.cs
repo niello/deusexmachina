@@ -26,7 +26,7 @@ namespace Microsoft.VisualStudio.Project
 	/// </summary>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling"), CLSCompliant(false), ComVisible(true)]
 	public abstract class HierarchyNode :
-		IVsUIHierarchy,
+        IVsUIHierarchy,
 		IVsPersistHierarchyItem2,
 		Microsoft.VisualStudio.OLE.Interop.IOleCommandTarget,
 		IVsHierarchyDropDataSource2,
