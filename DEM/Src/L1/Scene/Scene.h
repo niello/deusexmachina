@@ -30,7 +30,7 @@ private:
 	nArray<CLight*>		VisibleLights;
 
 	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
-	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CMesh*>* OutMeshes, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = InvalidClipStatus);
+	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CMesh*>* OutMeshes, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
 public:
 

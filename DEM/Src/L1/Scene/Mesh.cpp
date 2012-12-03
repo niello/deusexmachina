@@ -79,19 +79,29 @@ void CMesh::Update(CScene& Scene)
 {
 	if (!pSPSRecord)
 	{
-		CSPSRecord* pNewRec = n_new(CSPSRecord); //!!!AddObject requires ref-to-ptr, so need to allocate -_-
-		pNewRec->pAttr = this;
-		GetBox(pNewRec->GlobalBox);
-		pSPSRecord = Scene.SPS.AddObject(pNewRec);
+		CSPSRecord NewRec;
+		NewRec.pAttr = this;
+		GetBox(NewRec.GlobalBox);
+		pSPSRecord = Scene.SPS.AddObject(NewRec);
 
 		//!!!on delete attr with valid SPS handle, remove it from SPS!
 	}
-	else
+	else if (GetNode()->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
 	{
-		//!!!only if local box or global tfm changed!
 		GetBox(pSPSRecord->GlobalBox);
 		Scene.SPS.UpdateElement(pSPSRecord);
 	}
+}
+//---------------------------------------------------------------------
+
+//!!!differ between CalcBox - primary source, and GetBox - return cached box from spatial record!
+//???inline?
+void CMesh::GetBox(bbox3& OutBox) const
+{
+	// If local params changed, recompute AABB
+	// If transform of host node changed, update global space AABB (rotate, scale)
+	OutBox = refMesh->Group(groupIndex).Box;
+	OutBox.transform(GetNode()->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
 

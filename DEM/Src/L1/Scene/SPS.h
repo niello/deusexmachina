@@ -13,6 +13,8 @@
 namespace Scene
 {
 struct CSPSRecord;
+//typedef CSPSRecord* CSPSObject;
+typedef CSPSRecord CSPSObject;
 
 struct CSPSCell
 {
@@ -21,12 +23,12 @@ struct CSPSCell
 	nArray<CElement>	Meshes;
 	nArray<CElement>	Lights;
 
-	CElement*	Add(CSPSRecord* const& Object);
-	bool		Remove(CSPSRecord* const& Object); // By value
+	CElement*	Add(const CSPSObject& Object);
+	bool		Remove(const CSPSObject& Object); // By value
 	void		RemoveElement(CElement* pElement); // By iterator
 };
 
-typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;
+typedef Data::CQuadTree<CSPSObject, CSPSCell> CSPS;
 typedef CSPS::CNode CSPSNode;
 
 class CSceneNodeAttr;
@@ -43,7 +45,8 @@ struct CSPSRecord
 	bool		IsMesh() const { return pAttr->IsA(CMesh::RTTI); }
 	bool		IsLight() const { return pAttr->IsA(CLight::RTTI); }
 
-	CSPSRecord*	GetObject() { return this; }
+	//CSPSObject	GetObject() { return this; } // for CSPSRecord*
+	CSPSObject&	GetObject() { return *this; }
 	void		GetCenter(vector2& Out) const;
 	void		GetHalfSize(vector2& Out) const;
 	CSPSNode*	GetQuadTreeNode() const { return pSPSNode; }
@@ -69,22 +72,26 @@ inline void CSPSRecord::GetHalfSize(vector2& Out) const
 }
 //---------------------------------------------------------------------
 
-inline CSPSCell::CElement* CSPSCell::Add(CSPSRecord* const& Object)
+inline CSPSCell::CElement* CSPSCell::Add(const CSPSObject& Object)
 {
-	n_assert(Object);
-	if (Object->IsMesh()) return &Meshes.Append(*Object);
-	if (Object->IsLight()) return &Lights.Append(*Object);
+	//n_assert(Object); // for ptr object
+	//if (Object->IsMesh()) return &Meshes.Append(*Object);
+	//if (Object->IsLight()) return &Lights.Append(*Object);
+	if (Object.IsMesh()) return &Meshes.Append(Object);
+	if (Object.IsLight()) return &Lights.Append(Object);
 	n_assert_dbg(false);
 	return NULL;
 }
 //---------------------------------------------------------------------
 
 // Remove by value
-inline bool CSPSCell::Remove(CSPSRecord* const& Object)
+inline bool CSPSCell::Remove(const CSPSObject& Object)
 {
-	n_assert(Object);
-	if (Object->IsMesh()) return Meshes.EraseElement(*Object);
-	if (Object->IsLight()) return Lights.EraseElement(*Object);
+	//n_assert(Object); // for ptr object
+	//if (Object->IsMesh()) return Meshes.EraseElement(*Object);
+	//if (Object->IsLight()) return Lights.EraseElement(*Object);
+	if (Object.IsMesh()) return Meshes.EraseElement(Object);
+	if (Object.IsLight()) return Lights.EraseElement(Object);
 	FAIL;
 }
 //---------------------------------------------------------------------

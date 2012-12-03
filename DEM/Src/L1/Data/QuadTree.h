@@ -25,7 +25,7 @@
 
 // TStorage interface:
 // - typedef CElement (for array - TObject, for linked list - list node etc)
-// - TObject&	CElement::GetObject();
+// - TObject&	CElement::GetObject(); // or TObject CElement::GetObject();
 // - CElement*	Add(const TObject& Object);
 // - void		Remove(const TObject& Object);
 // - void		RemoveElement(CElement* pElement);
@@ -47,22 +47,34 @@ protected:
 	template <class T>
 	struct ObjTraits
 	{
-		static void		GetCenter(const T& Object, vector2& Out) { return Object.GetCenter(Out); }
-		static void		GetHalfSize(T& Object, vector2& Out) { return Object.GetHalfSize(Out); }
-		static CNode*	GetQuadTreeNode(const T& Object) { return Object.GetQuadTreeNode(); }
-		static void		SetQuadTreeNode(T& Object, CNode* pNode) { Object.SetQuadTreeNode(pNode); }
-		//???or just redefine member access operator?
+		typedef T& Ref;
+		static T*		GetPtr(T& Object) { return &Object; }
+		static const T*	GetPtr(const T& Object) { return &Object; }
+		static T&		GetRef(T& Object) { return Object; }
+		static bool		IsValid(const T& Object) { OK; }
 	};
 
 	template <class T>
 	struct ObjTraits<T*>
 	{
-		static void		GetCenter(const T* Object, vector2& Out) { return Object->GetCenter(Out); }
-		static void		GetHalfSize(T* Object, vector2& Out) { return Object->GetHalfSize(Out); }
-		static CNode*	GetQuadTreeNode(const T* Object) { return Object->GetQuadTreeNode(); }
-		static void		SetQuadTreeNode(T* Object, CNode* pNode) { Object->SetQuadTreeNode(pNode); }
-		//???or just redefine member access operator?
+		typedef T& Ref;
+		static T*		GetPtr(T* Object) { return Object; }
+		static const T*	GetPtr(const T* Object) { return Object; }
+		static T&		GetRef(T* const& Object) { return *Object; }
+		static bool		IsValid(const T* Object) { return Object != NULL; }
 	};
+
+	template <class T, template <class> class SP>
+	struct ObjTraits<SP<T>>
+	{
+		typedef T& Ref;
+		static T*		GetPtr(T* Object) { return Object; }
+		static const T*	GetPtr(const T* Object) { return Object; }
+		static T&		GetRef(T* const& Object) { return *Object; }
+		static bool		IsValid(const T* Object) { return Object.isvalid(); }
+	};
+
+	typedef ObjTraits<TObject> TObjTraits;
 
 	vector2				Center;
 	vector2				Size;
@@ -70,7 +82,7 @@ protected:
 	nFixedArray<CNode>	Nodes;
 
 	void	Build(ushort Col, ushort Row, uchar Level, CNode* pNode, CNode*& pFirstFreeNode);
-	CNode*	UpdateObjectCommon(TObject& Object);
+	CNode*	FindContainingNode(const TObject& Object) const;
 
 public:
 
@@ -122,8 +134,8 @@ public:
 	CElement*	AddObject(TObject& Object) { return Nodes[0].AddObject(Object); }
 	CElement*	UpdateObject(TObject& Object);
 	void		UpdateElement(CElement*& pElement);
-	void		RemoveObject(TObject& Object) { ObjTraits<TObject>::GetQuadTreeNode(Object)->RemoveObject(Object); }
-	void		RemoveElement(CElement* pElement) { ObjTraits<TObject>::GetQuadTreeNode(pElement->Object)->RemoveElement(pElement); }
+	void		RemoveObject(TObject& Object) { TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveObject(Object); }
+	void		RemoveElement(CElement* pElement) { TObjTraits::GetPtr(pElement->Object)->GetQuadTreeNode()->RemoveElement(pElement); }
 
 	//!!!Test against circle & 2d box
 
@@ -192,13 +204,13 @@ inline typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::UpdateObjectCommon(TObject& Object)
+typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::FindContainingNode(const TObject& Object) const
 {
 	vector2 Center, HalfSize;
-	ObjTraits<TObject>::GetCenter(Object, Center);
-	ObjTraits<TObject>::GetHalfSize(Object, HalfSize);
-	
-	CNode* pCurrNode = ObjTraits<TObject>::GetQuadTreeNode(Object);
+	TObjTraits::GetPtr(Object)->GetCenter(Center);
+	TObjTraits::GetPtr(Object)->GetHalfSize(HalfSize);
+
+	CNode* pCurrNode =TObjTraits::GetPtr(Object)->GetQuadTreeNode();
 	CNode* pNewNode = pCurrNode;
 
 	while (pNewNode->pParent && !pNewNode->Contains(Center, HalfSize))
@@ -228,38 +240,35 @@ typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::Upda
 template<class TObject, class TStorage>
 typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::UpdateObject(TObject& Object)
 {
-	CNode* pCurrNode = ObjTraits<TObject>::GetQuadTreeNode(Object);
-	CNode* pNewNode = UpdateObjectCommon(Object);
+	CNode* pCurrNode = TObjTraits::GetPtr(Object)->GetQuadTreeNode();
+	CNode* pNewNode = FindContainingNode(Object);
 
-	if (pCurrNode != pNewNode)
-	{
-		// Here Object can die if it isn't a pointer
-		// If so, try this:
-		// TObject NewObj = Object;
-		// and then operate with NewObj. It causes data copying anyway.
+	if (pCurrNode == pNewNode) return NULL; //???return pCurrNode->Data.GetElementByValue(Object);?
 
-		pCurrNode->Data.Remove(Object);		
-		ObjTraits<TObject>::SetQuadTreeNode(Object, pNewNode);
-		return pNewNode->Data.Add(Object);
-	}
-
-	return NULL;
+	TObjTraits::GetPtr(Object)->SetQuadTreeNode(pNewNode);
+	CElement* pNewElm = pNewNode->Data.Add(Object);
+	pCurrNode->Data.Remove(Object);		
+	return pNewElm;
 }
 //---------------------------------------------------------------------
 
+// NB: pElement is in-out arg
 template<class TObject, class TStorage>
 void CQuadTree<TObject, TStorage>::UpdateElement(typename CQuadTree<TObject, TStorage>::CElement*& pElement)
 {
-	TObject Object = pElement->GetObject();
+	//???is there a better way?
+	const TObject& Object = pElement->GetObject();
+	TObjTraits::Ref ObjRef = TObjTraits::GetRef(pElement->GetObject());
 
-	CNode* pCurrNode = ObjTraits<TObject>::GetQuadTreeNode(Object);
-	CNode* pNewNode = UpdateObjectCommon(Object);
+	CNode* pCurrNode = ObjRef.GetQuadTreeNode();
+	CNode* pNewNode = FindContainingNode(Object);
 
 	if (pCurrNode != pNewNode)
 	{
+		ObjRef.SetQuadTreeNode(pNewNode);
+		CElement* pNewElm = pNewNode->Data.Add(Object);
 		pCurrNode->Data.RemoveElement(pElement);		
-		ObjTraits<TObject>::SetQuadTreeNode(Object, pNewNode);
-		pElement = pNewNode->Data.Add(Object);
+		pElement = pNewElm;
 	}
 }
 //---------------------------------------------------------------------
@@ -268,8 +277,8 @@ template<class TObject, class TStorage>
 inline typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::CNode::AddObject(TObject& Object)
 {
 	vector2 Center, HalfSize;
-	ObjTraits<TObject>::GetCenter(Object, Center);
-	ObjTraits<TObject>::GetHalfSize(Object, HalfSize);
+	TObjTraits::GetPtr(Object)->GetCenter(Center);
+	TObjTraits::GetPtr(Object)->GetHalfSize(HalfSize);
 	return AddObject(Object, Center, HalfSize);
 }
 //---------------------------------------------------------------------
@@ -286,7 +295,7 @@ typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::C
 			if (pChild[i].Contains(Center, HalfSize))
 				return pChild[i].AddObject(Object, Center, HalfSize);
 
-	ObjTraits<TObject>::SetQuadTreeNode(Object, this);
+	TObjTraits::GetPtr(Object)->SetQuadTreeNode(this);
 	return Data.Add(Object);
 }
 //---------------------------------------------------------------------
@@ -294,7 +303,7 @@ typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::C
 template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
 {
-	ObjTraits<TObject>::SetQuadTreeNode(Object, NULL);
+	TObjTraits::GetPtr(Object)->SetQuadTreeNode(NULL);
 	Data.Remove(Object);
 	CNode* pNode = this;
 	while (pNode)
@@ -308,7 +317,7 @@ inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
 template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::CNode::RemoveElement(typename CQuadTree<TObject, TStorage>::CElement* pElement)
 {
-	ObjTraits<TObject>::SetQuadTreeNode(pElement->Object, NULL);
+	TObjTraits::GetPtr(pElement->Object)->SetQuadTreeNode(NULL);
 	Data.RemoveElement(pElement);
 	CNode* pNode = this;
 	while (pNode)
@@ -324,8 +333,8 @@ template<class TObject, class TStorage>
 inline bool CQuadTree<TObject, TStorage>::CNode::Contains(const TObject& Object) const
 {
 	vector2 Center, HalfSize;
-	ObjTraits<TObject>::GetCenter(Object, Center);
-	ObjTraits<TObject>::GetHalfSize(Object, HalfSize);
+	TObjTraits::GetPtr(Object)->GetCenter(Center);
+	TObjTraits::GetPtr(Object)->GetHalfSize(HalfSize);
 	return Contains(Center, HalfSize);
 }
 //---------------------------------------------------------------------

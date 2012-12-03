@@ -26,7 +26,7 @@ protected:
 	CStimulusQT						StimulusQT;		// Quadtree containing stimuli and other AI hints
 	nDictionary<float, CNavData>	NavData;		// Mapped to maximum radius of agent
 
-	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = InvalidClipStatus);
+	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = Clipped);
 	CNavData*	GetNavData(float ActorRadius);
 
 public:

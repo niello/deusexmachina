@@ -114,14 +114,6 @@ RegisterFactory(CMesh);
 
 typedef Ptr<CMesh> PMesh;
 
-//!!!differ between CalcBox - primary source, and GetBox - return cached box from spatial record!
-inline void CMesh::GetBox(bbox3& OutBox) const
-{
-	// If local params changed, recompute AABB
-	// If transform of host node changed, update global space AABB (rotate, scale)
-}
-//---------------------------------------------------------------------
-
 //!!!OLD!
 inline nShader2* CMesh::GetShaderObject()
 {

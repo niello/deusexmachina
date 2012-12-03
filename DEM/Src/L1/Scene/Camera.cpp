@@ -9,10 +9,9 @@ bool CCamera::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
-		case 'DHSC': // CSHD
+		case 'XXXX': // XXXX
 		{
-			//!!!Flags.SetTo(ShadowCaster, DataReader.Read<bool>());!
-			//DataReader.Read<bool>();
+			//DataReader.Read();
 			//OK;
 			FAIL;
 		}
