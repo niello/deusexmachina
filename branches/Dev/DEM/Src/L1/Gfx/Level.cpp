@@ -158,7 +158,7 @@ void CLevel::QTNodeUpdateLinks(CGfxQT::CNode* pNode, CEntity& Observer, EEntityT
 	//	numCellsVisitedCamera->SetValue<int>(numCellsVisitedCamera->GetValue<int>() + 1);
 
 	// if clip status unknown or clipped, get clip status of this cell against observer entity
-	if (Clip == InvalidClipStatus || Clip == Clipped)
+	if (Clip == Clipped)
 	{
 		bbox3 BBox;
 		pNode->GetBounds(BBox);

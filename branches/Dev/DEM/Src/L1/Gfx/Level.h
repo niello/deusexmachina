@@ -30,7 +30,7 @@ private:
 	Ptr<CCameraEntity>	CurrCamera;
 
 	void QTNodeClearLinks(CGfxQT::CNode* pNode, ELinkType LinkType);
-	void QTNodeUpdateLinks(CGfxQT::CNode* pNode, CEntity& Observer, EEntityType ObservedType, ELinkType LinkType, EClipStatus Clip = InvalidClipStatus);
+	void QTNodeUpdateLinks(CGfxQT::CNode* pNode, CEntity& Observer, EEntityType ObservedType, ELinkType LinkType, EClipStatus Clip = Clipped);
 	void QTNodeRenderDebug(CGfxQT::CNode* pNode);
 
 	PROFILER_DECLARE(profFindVisibleLights);

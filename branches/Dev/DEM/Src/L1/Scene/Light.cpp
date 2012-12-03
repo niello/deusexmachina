@@ -62,10 +62,10 @@ void CLight::Update(CScene& Scene)
 	{
 		if (!pSPSRecord)
 		{
-			CSPSRecord* pNewRec = n_new(CSPSRecord); //!!!AddObject requires ref-to-ptr, so need to allocate -_-
-			pNewRec->pAttr = this;
-			GetBox(pNewRec->GlobalBox);
-			pSPSRecord = Scene.SPS.AddObject(pNewRec);
+			CSPSRecord NewRec;
+			NewRec.pAttr = this;
+			GetBox(NewRec.GlobalBox);
+			pSPSRecord = Scene.SPS.AddObject(NewRec);
 
 			//!!!on delete attr with valid SPS handle, remove it from SPS!
 		}

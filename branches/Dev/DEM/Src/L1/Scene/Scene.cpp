@@ -47,10 +47,6 @@ void CScene::CreateDefaultCamera()
 	OwnNode(CameraNode);
 	PCamera Camera = n_new(CCamera);
 	CameraNode->AddAttr(*Camera);
-
-	//!!!setup camera!
-	//60.0f, 4.0f / 3.0f, 0.1f, 2500.0f
-
 	CurrCamera = Camera;
 }
 //---------------------------------------------------------------------
@@ -196,7 +192,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 {
 	if (!pNode->GetTotalObjCount() || (!OutMeshes && !OutLights)) return;
 
-	if (Clip == InvalidClipStatus || Clip == Clipped)
+	if (Clip == Clipped)
 	{
 		bbox3 NodeBox;
 		pNode->GetBounds(NodeBox);

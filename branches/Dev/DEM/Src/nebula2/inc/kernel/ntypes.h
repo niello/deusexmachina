@@ -57,7 +57,7 @@ enum EClipStatus
 	Outside,
 	Inside,
 	Clipped,
-	InvalidClipStatus
+	//InvalidClipStatus - Clipped is used instead now
 };
 
 //------------------------------------------------------------------------------

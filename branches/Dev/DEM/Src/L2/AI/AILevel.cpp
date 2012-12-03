@@ -155,7 +155,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 {
 	if (!pNode->GetTotalObjCount()) return;
 
-	if (EClipStatus == InvalidClipStatus || EClipStatus == Clipped)
+	if (EClipStatus == Clipped)
 	{
 		bbox3 BBox;
 		pNode->GetBounds(BBox);
