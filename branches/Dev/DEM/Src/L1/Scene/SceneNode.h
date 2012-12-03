@@ -43,7 +43,9 @@ protected:
 		Active				= 0x01,	// Node must be processed
 		OwnedByScene		= 0x02,	// This node is owned by scene and lives until scene is destroyed
 		RespectsLOD			= 0x04,	// This node is affected by parent's LODGroup attribute
-		LocalMatrixDirty	= 0x08	// Local transform components were changed, but matrix is not updated
+		LocalMatrixDirty	= 0x08,	// Local transform components were changed, but matrix is not updated
+		WorldMatrixDirty	= 0x10,	// Local matrix changed, and world matrix need to be updated
+		WorldMatrixChanged	= 0x20	// World matrix of this node changed this frame
 	};
 
 	typedef nDictionary<CStrID, CSceneNode*> CNodeDict;
@@ -69,40 +71,41 @@ protected:
 
 public:
 
-	CSceneNode(CStrID NodeName): Name(NodeName), Flags(Active) {}
+	CSceneNode(CStrID NodeName): Name(NodeName), Flags(Active | LocalMatrixDirty) {}
 	~CSceneNode() { if (Parent.isvalid()) Parent->RemoveChild(*this); }
 
-	PSceneNode		CreateChild(CStrID ChildName);
-	void			AddChild(CSceneNode& Node);
-	void			RemoveChild(CSceneNode& Node);
-	void			RemoveChild(DWORD Idx);
-	void			RemoveChild(CStrID ChildName);
+	PSceneNode				CreateChild(CStrID ChildName);
+	void					AddChild(CSceneNode& Node);
+	void					RemoveChild(CSceneNode& Node);
+	void					RemoveChild(DWORD Idx);
+	void					RemoveChild(CStrID ChildName);
 
-	CSceneNode*		GetParent() const { return Parent; }
-	DWORD			GetChildCount() const { return Child.Size(); }
-	CSceneNode*		GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
-	PSceneNode		GetChild(CStrID ChildName, bool Create = false);
-	PSceneNode		GetChild(LPCSTR Path, bool Create = false);
-	CSceneNode*		FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
+	CSceneNode*				GetParent() const { return Parent; }
+	DWORD					GetChildCount() const { return Child.Size(); }
+	CSceneNode*				GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
+	PSceneNode				GetChild(CStrID ChildName, bool Create = false);
+	PSceneNode				GetChild(LPCSTR Path, bool Create = false);
+	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
-	bool			AddAttr(CSceneNodeAttr& Attr);
-	CSceneNodeAttr*	GetAttr(DWORD Idx) const { return Attrs[Idx]; }
+	bool					AddAttr(CSceneNodeAttr& Attr);
+	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 
-	void			Update(CScene& Scene);
+	void					Update(CScene& Scene);
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)
 
-	void			RenderDebug();
+	void					RenderDebug();
 
 	// Animator (controller, animation node) management
 
-	CStrID			GetName() const { return Name; }
+	CStrID					GetName() const { return Name; }
 
-	bool			IsActive() const { return Flags.Is(Active); }
-	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
-	bool			IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
-	bool			IsLODDependent() const { return Flags.Is(RespectsLOD); }
+	bool					IsActive() const { return Flags.Is(Active); }
+	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
+	bool					IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
+	bool					IsLODDependent() const { return Flags.Is(RespectsLOD); }
+	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
 
 	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty); }
 	const vector3&			GetPosition() const { return Tfm.Translation; }
@@ -110,7 +113,7 @@ public:
 	const quaternion&		GetRotation() const { return Tfm.Rotation; }
 	void					SetScale(const vector3& Scale) { Tfm.Scale = Scale; Flags.Set(LocalMatrixDirty); }
 	const vector3&			GetScale() const { return Tfm.Scale; }
-	void					SetLocalTransform(const matrix44& Transform) { LocalMatrix = Transform; Tfm.FromMatrix(LocalMatrix); Flags.Clear(LocalMatrixDirty); }
+	void					SetLocalTransform(const matrix44& Transform);
 	const Math::CTransform&	GetLocalTransform() { return Tfm; }
 	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
 	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
@@ -128,6 +131,15 @@ inline PSceneNode CSceneNode::GetChild(CStrID ChildName, bool Create)
 	int Idx = Child.FindIndex(ChildName);
 	if (Idx == INVALID_INDEX) return Create ? CreateChild(ChildName) : NULL;
 	return GetChild(Idx);
+}
+//---------------------------------------------------------------------
+
+inline void CSceneNode::SetLocalTransform(const matrix44& Transform)
+{
+	LocalMatrix = Transform;
+	Tfm.FromMatrix(LocalMatrix);
+	Flags.Clear(LocalMatrixDirty);
+	Flags.Set(WorldMatrixDirty);
 }
 //---------------------------------------------------------------------
 

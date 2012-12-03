@@ -25,7 +25,6 @@ void CCamera::Update(CScene& Scene)
 {
 	bool ViewOrProjChanged = false;
 
-	//if proj dirty, update proj
 	if (Flags.Is(ProjDirty))
 	{
 		if (Flags.Is(Orthogonal)) Proj.orthoRh(Width, Height, NearPlane, FarPlane);
@@ -42,14 +41,13 @@ void CCamera::Update(CScene& Scene)
 		ViewOrProjChanged = true;
 	}
 
-	//!!!
-	//if (GetNode()->TfmChangedThisFrame())
-	//{
-		////!!!avoid copying!
+	if (GetNode()->IsWorldMatrixChanged())
+	{
+		//!!!avoid copying!
 		View = GetNode()->GetWorldMatrix();
 		View.invert_simple();
 		ViewOrProjChanged = true;
-	//}
+	}
 
 	if (ViewOrProjChanged) ViewProj = View * Proj;
 }

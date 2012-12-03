@@ -30,11 +30,10 @@ typedef CTransformSRT CTransform;
 inline matrix44 CTransformSRT::ToMatrix() const
 {
 	//Rotation.normalize();
-	matrix44 Tfm;
-	Tfm.set(Scale.x,	0.f,		0.f,		0.f,
-			0.f,		Scale.y,	0.f,		0.f,
-			0.f,		0.f,		Scale.z,	0.f,
-			0.f,		0.f,		0.f,		1.f);
+	matrix44 Tfm(Scale.x,	0.f,		0.f,		0.f,
+				0.f,		Scale.y,	0.f,		0.f,
+				0.f,		0.f,		Scale.z,	0.f,
+				0.f,		0.f,		0.f,		1.f);
 	Tfm.mult_simple(matrix44(Rotation)); //???is there better way?
 	Tfm.set_translation(Translation);
 	return Tfm;

@@ -25,10 +25,17 @@ void CSceneNode::Update(CScene& Scene)
 	{
 		LocalMatrix = Tfm.ToMatrix();
 		Flags.Clear(LocalMatrixDirty);
-		//if (!Parent.isvalid()) WorldMatrix = LocalMatrix; //???need non-identity global tfm for root?
+		Flags.Set(WorldMatrixDirty);
 	}
 
-	if (Parent.isvalid()) WorldMatrix.mult2_simple(LocalMatrix, Parent->WorldMatrix);
+	if (Flags.Is(WorldMatrixDirty) || (Parent.isvalid() && Parent->IsWorldMatrixChanged()))
+	{
+		if (Parent.isvalid()) WorldMatrix.mult2_simple(LocalMatrix, Parent->WorldMatrix);
+		else WorldMatrix = LocalMatrix;
+		Flags.Clear(WorldMatrixDirty);
+		Flags.Set(WorldMatrixChanged);
+	}
+	else Flags.Clear(WorldMatrixChanged);
 
 	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.Size(); ++i)
