@@ -40,6 +40,7 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
 
 		// If false, resources will be loaded at first access (first time node attrs are visible or smth)
+		//!!!visibility requires some AABB! 
 		if (PreloadResources)
 		{
 			//!!!HACKY FOR NOW! But mb this is a good way, if NO other attrs have resources
