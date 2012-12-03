@@ -7,7 +7,7 @@ namespace Scene
 //ImplementRTTI(Scripting::CScriptObject, Core::CRefCounted);
 //ImplementFactory(Scripting::CScriptObject);
 
-void CSceneNode::Update(CScene& Scene)
+void CSceneNode::Update()
 {
 	//???use methods SetLocalTfm, SetGlobalTfm by external systems instead?
 	// Run transform controller here
@@ -40,11 +40,11 @@ void CSceneNode::Update(CScene& Scene)
 	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.Size(); ++i)
 		if (Attrs[i]->IsActive())
-			Attrs[i]->Update(Scene);
+			Attrs[i]->Update();
 
 	for (int i = 0; i < Child.Size(); ++i)
 		if (Child.ValueAtIndex(i)->IsActive())
-			Child.ValueAtIndex(i)->Update(Scene);
+			Child.ValueAtIndex(i)->Update();
 }
 //---------------------------------------------------------------------
 
@@ -73,8 +73,7 @@ void CSceneNode::RenderDebug()
 PSceneNode CSceneNode::CreateChild(CStrID ChildName)
 {
 	//???!!!SceneSrv->CreateSceneNode?!
-	PSceneNode Node = n_new(CSceneNode)(ChildName);
-	//Node->Name = ChildName;
+	PSceneNode Node = n_new(CSceneNode)(*pScene, ChildName);
 	Node->Parent = this;
 	Child.Add(ChildName, Node);
 	return Node;
@@ -119,6 +118,15 @@ bool CSceneNode::AddAttr(CSceneNodeAttr& Attr)
 	Attrs.Append(&Attr);
 	Attr.pNode = this;
 	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!need to call OnRemove on destruction!
+void CSceneNode::RemoveAttr(CSceneNodeAttr& Attr)
+{
+	//Attrs.Erase();
+	//!!!only if attr of this node!
+	Attr.OnRemove();
 }
 //---------------------------------------------------------------------
 

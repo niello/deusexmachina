@@ -7,7 +7,7 @@ namespace Scene
 
 void CScene::Init(const bbox3& Bounds)
 {
-	RootNode = SceneSrv->CreateSceneNode(CStrID::Empty);
+	RootNode = SceneSrv->CreateSceneNode(*this, CStrID::Empty);
 	RootNode->Flags.Set(CSceneNode::OwnedByScene);
 
 	SceneBBox = Bounds;
@@ -209,14 +209,14 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		{
 			CMesh** ppMesh = OutMeshes->Reserve(pNode->Data.Meshes.Size());
 			for (; ItMesh != pNode->Data.Meshes.End(); ++ItMesh, ++ppMesh)
-				*ppMesh = (CMesh*)ItMesh->pAttr;
+				*ppMesh = (CMesh*)&ItMesh->Attr;
 		}
 		else // Clipped
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItMesh != pNode->Data.Meshes.End(); ++ItMesh)
 				if (ItMesh->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutMeshes->Append((CMesh*)ItMesh->pAttr);
+					OutMeshes->Append((CMesh*)&ItMesh->Attr);
 		}
 	}
 
@@ -227,14 +227,14 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		{
 			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.Size());
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight, ++ppLight)
-				*ppLight = (CLight*)ItLight->pAttr;
+				*ppLight = (CLight*)&ItLight->Attr;
 		}
 		else // Clipped
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
 				if (ItLight->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutLights->Append((CLight*)ItLight->pAttr);
+					OutLights->Append((CLight*)&ItLight->Attr);
 		}
 	}
 

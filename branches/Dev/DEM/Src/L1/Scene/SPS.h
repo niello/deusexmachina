@@ -13,53 +13,51 @@
 namespace Scene
 {
 struct CSPSRecord;
-//typedef CSPSRecord* CSPSObject;
-typedef CSPSRecord CSPSObject;
 
 struct CSPSCell
 {
 	typedef CSPSRecord CElement;
 
-	nArray<CElement>	Meshes;
-	nArray<CElement>	Lights;
+	nArray<CElement> Meshes;
+	nArray<CElement> Lights;
 
-	CElement*	Add(const CSPSObject& Object);
-	bool		Remove(const CSPSObject& Object); // By value
+	CElement*	Add(const CSPSRecord& Object);
+	bool		Remove(const CSPSRecord& Object); // By value
 	void		RemoveElement(CElement* pElement); // By iterator
 };
 
-typedef Data::CQuadTree<CSPSObject, CSPSCell> CSPS;
+typedef Data::CQuadTree<CSPSRecord, CSPSCell> CSPS;
 typedef CSPS::CNode CSPSNode;
 
 class CSceneNodeAttr;
 
 struct CSPSRecord
 {
-	//CSceneNodeAttr&	Attr; // nArray<T>::Construct needs default constructor, change it to copy constructor!
-	CSceneNodeAttr*	pAttr;
-	bbox3			GlobalBox; // AABB in global space. Get position from scene node.
+	CSceneNodeAttr&	Attr;
+	bbox3			GlobalBox;
 	CSPSNode*		pSPSNode;
 
-	CSPSRecord(): pAttr(NULL), pSPSNode(NULL) {}
+	CSPSRecord(CSceneNodeAttr& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
+	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {} 
 
-	bool		IsMesh() const { return pAttr->IsA(CMesh::RTTI); }
-	bool		IsLight() const { return pAttr->IsA(CLight::RTTI); }
+	bool		IsMesh() const { return Attr.IsA(CMesh::RTTI); }
+	bool		IsLight() const { return Attr.IsA(CLight::RTTI); }
 
-	//CSPSObject	GetObject() { return this; } // for CSPSRecord*
-	CSPSObject&	GetObject() { return *this; }
+	CSPSRecord&	GetObject() { return *this; }
 	void		GetCenter(vector2& Out) const;
 	void		GetHalfSize(vector2& Out) const;
 	CSPSNode*	GetQuadTreeNode() const { return pSPSNode; }
 	void		SetQuadTreeNode(CSPSNode* pNode) { pSPSNode = pNode; }
 
-	bool operator ==(const CSPSRecord& Other) const { return pAttr == Other.pAttr; }
-	bool operator !=(const CSPSRecord& Other) const { return pAttr != Other.pAttr; }
+	CSPSRecord&	operator =(const CSPSRecord& Other);
+	bool		operator ==(const CSPSRecord& Other) const { return &Attr == &Other.Attr; }
+	bool		operator !=(const CSPSRecord& Other) const { return &Attr != &Other.Attr; }
 };
 
 inline void CSPSRecord::GetCenter(vector2& Out) const
 {
-	n_assert(pAttr && pAttr->GetNode());
-	const vector3& Pos = pAttr->GetNode()->GetWorldMatrix().pos_component();
+	n_assert(Attr.GetNode());
+	const vector3& Pos = Attr.GetNode()->GetWorldMatrix().pos_component();
 	Out.x = Pos.x;
 	Out.y = Pos.z;
 }
@@ -72,11 +70,17 @@ inline void CSPSRecord::GetHalfSize(vector2& Out) const
 }
 //---------------------------------------------------------------------
 
-inline CSPSCell::CElement* CSPSCell::Add(const CSPSObject& Object)
+inline CSPSRecord& CSPSRecord::operator =(const CSPSRecord& Other)
 {
-	//n_assert(Object); // for ptr object
-	//if (Object->IsMesh()) return &Meshes.Append(*Object);
-	//if (Object->IsLight()) return &Lights.Append(*Object);
+	Attr = Other.Attr;
+	GlobalBox = Other.GlobalBox;
+	pSPSNode = Other.pSPSNode;
+	return *this;
+}
+//---------------------------------------------------------------------
+
+inline CSPSCell::CElement* CSPSCell::Add(const CSPSRecord& Object)
+{
 	if (Object.IsMesh()) return &Meshes.Append(Object);
 	if (Object.IsLight()) return &Lights.Append(Object);
 	n_assert_dbg(false);
@@ -85,11 +89,8 @@ inline CSPSCell::CElement* CSPSCell::Add(const CSPSObject& Object)
 //---------------------------------------------------------------------
 
 // Remove by value
-inline bool CSPSCell::Remove(const CSPSObject& Object)
+inline bool CSPSCell::Remove(const CSPSRecord& Object)
 {
-	//n_assert(Object); // for ptr object
-	//if (Object->IsMesh()) return Meshes.EraseElement(*Object);
-	//if (Object->IsLight()) return Lights.EraseElement(*Object);
 	if (Object.IsMesh()) return Meshes.EraseElement(Object);
 	if (Object.IsLight()) return Lights.EraseElement(Object);
 	FAIL;
@@ -101,7 +102,7 @@ inline void CSPSCell::RemoveElement(CSPSCell::CElement* pElement)
 {
 	if (!pElement) return;
 	if (pElement->IsMesh()) Meshes.Erase(pElement);
-	if (pElement->IsLight()) Lights.Erase(pElement);
+	else if (pElement->IsLight()) Lights.Erase(pElement);
 }
 //---------------------------------------------------------------------
 

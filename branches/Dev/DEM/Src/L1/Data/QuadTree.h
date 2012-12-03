@@ -135,7 +135,7 @@ public:
 	CElement*	UpdateObject(TObject& Object);
 	void		UpdateElement(CElement*& pElement);
 	void		RemoveObject(TObject& Object) { TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveObject(Object); }
-	void		RemoveElement(CElement* pElement) { TObjTraits::GetPtr(pElement->Object)->GetQuadTreeNode()->RemoveElement(pElement); }
+	void		RemoveElement(CElement* pElement) { TObjTraits::GetPtr(pElement->GetObject())->GetQuadTreeNode()->RemoveElement(pElement); }
 
 	//!!!Test against circle & 2d box
 
@@ -317,7 +317,7 @@ inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
 template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::CNode::RemoveElement(typename CQuadTree<TObject, TStorage>::CElement* pElement)
 {
-	TObjTraits::GetPtr(pElement->Object)->SetQuadTreeNode(NULL);
+	TObjTraits::GetPtr(pElement->GetObject())->SetQuadTreeNode(NULL);
 	Data.RemoveElement(pElement);
 	CNode* pNode = this;
 	while (pNode)

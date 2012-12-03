@@ -55,6 +55,7 @@ protected:
 	CStrID					Name;
 	PSceneNode				Parent;
 	CNodeDict				Child;
+	CScene*					pScene;
 
 	//???!!!need some flag to indicate that node received global tfm directly? or update local tfm from global always?
 	Math::CTransform		Tfm;
@@ -71,7 +72,7 @@ protected:
 
 public:
 
-	CSceneNode(CStrID NodeName): Name(NodeName), Flags(Active | LocalMatrixDirty) {}
+	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
 	~CSceneNode() { if (Parent.isvalid()) Parent->RemoveChild(*this); }
 
 	PSceneNode				CreateChild(CStrID ChildName);
@@ -89,8 +90,9 @@ public:
 
 	bool					AddAttr(CSceneNodeAttr& Attr);
 	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
+	void					RemoveAttr(CSceneNodeAttr& Attr);
 
-	void					Update(CScene& Scene);
+	void					Update();
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)
@@ -100,6 +102,7 @@ public:
 	// Animator (controller, animation node) management
 
 	CStrID					GetName() const { return Name; }
+	CScene*					GetScene() const { return pScene; }
 
 	bool					IsActive() const { return Flags.Is(Active); }
 	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }

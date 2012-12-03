@@ -46,7 +46,7 @@ public:
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
-	virtual void	Update(CScene& Scene);
+	virtual void	Update();
 
 	void			SetPerspectiveMode() { if (Flags.Is(Orthogonal)) { Flags.Clear(Orthogonal); Flags.Set(ProjDirty); } }
 	void			SetOrthogonalMode() { if (!Flags.Is(Orthogonal)) { Flags.Set(Orthogonal); Flags.Set(ProjDirty); } }
@@ -62,7 +62,7 @@ public:
 	void			SetFarPlane(float Far) { if (FarPlane != Far) { FarPlane = Far; Flags.Set(ProjDirty); } }
 	float			GetFarPlane() const { return FarPlane; }
 	const matrix44&	GetViewMatrix() const { return View; }
-	const matrix44&	GetInvViewMatrix() const { return GetNode()->GetWorldMatrix(); }
+	const matrix44&	GetInvViewMatrix() const { return pNode->GetWorldMatrix(); }
 	const matrix44&	GetProjMatrix() const { return Proj; }
 	const matrix44&	GetInvProjMatrix() const { return InvProj; }
 	const matrix44&	GetViewProjMatrix() const { return ViewProj; }

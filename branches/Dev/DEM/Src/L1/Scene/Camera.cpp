@@ -20,7 +20,7 @@ bool CCamera::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CCamera::Update(CScene& Scene)
+void CCamera::Update()
 {
 	bool ViewOrProjChanged = false;
 
@@ -40,10 +40,10 @@ void CCamera::Update(CScene& Scene)
 		ViewOrProjChanged = true;
 	}
 
-	if (GetNode()->IsWorldMatrixChanged())
+	if (pNode->IsWorldMatrixChanged())
 	{
 		//!!!avoid copying!
-		View = GetNode()->GetWorldMatrix();
+		View = pNode->GetWorldMatrix();
 		View.invert_simple();
 		ViewOrProjChanged = true;
 	}

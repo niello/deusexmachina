@@ -44,7 +44,7 @@ bool CLODGroup::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CLODGroup::Update(CScene& Scene)
+void CLODGroup::Update()
 {
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//???what if camera transform wasn't updated this frame yet?
@@ -52,10 +52,10 @@ void CLODGroup::Update(CScene& Scene)
 	//Can use Updated(ThisFrame) flag and clear at each frame ending, with clearing visible meshes and lights
 	//Flag Changed(ThisFrame) is smth different but may be usable too
 
-	if (!pNode || !Scene.GetCurrCamera()) return;
+	if (!pNode || !pNode->GetScene()->GetCurrCamera()) return;
 
 	vector3 DistanceVector = pNode->GetWorldMatrix().pos_component() -
-		Scene.GetCurrCamera()->GetNode()->GetWorldMatrix().pos_component();
+		pNode->GetScene()->GetCurrCamera()->GetNode()->GetWorldMatrix().pos_component();
 	float SqDist = DistanceVector.lensquared();
 
 	CStrID SelectedChild;
