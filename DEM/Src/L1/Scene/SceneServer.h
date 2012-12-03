@@ -39,7 +39,7 @@ public:
 	CScene*		GetCurrentScene() const { return pCurrScene; }
 	CScene*		GetScene(CStrID Name);
 
-	PSceneNode	CreateSceneNode(CStrID Name);
+	PSceneNode	CreateSceneNode(CScene& Scene, CStrID Name);
 
 	void		AddFrameShader(Render::CFrameShader* pFrameShader); // nRpXmlParser xmlParser;
 
@@ -71,12 +71,10 @@ inline void CSceneServer::SetCurrentScene(CScene* pScene)
 }
 //---------------------------------------------------------------------
 
-inline PSceneNode CSceneServer::CreateSceneNode(CStrID Name)
+inline PSceneNode CSceneServer::CreateSceneNode(CScene& Scene, CStrID Name)
 {
 	//return (CSceneNode*)NodePool.Construct();
-	PSceneNode Node = n_new(CSceneNode)(Name);
-	//Node->Name = Name;
-	return Node;
+	return n_new(CSceneNode)(Scene, Name);
 }
 //---------------------------------------------------------------------
 

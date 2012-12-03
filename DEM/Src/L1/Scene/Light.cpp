@@ -55,25 +55,31 @@ bool CLight::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CLight::Update(CScene& Scene)
+void CLight::OnRemove()
 {
-	if (Type == Directional) Scene.AddVisibleLight(*this);
+	if (pSPSRecord)
+	{
+		pNode->GetScene()->SPS.RemoveElement(pSPSRecord);
+		pSPSRecord = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+void CLight::Update()
+{
+	if (Type == Directional) pNode->GetScene()->AddVisibleLight(*this);
 	else
 	{
 		if (!pSPSRecord)
 		{
-			CSPSRecord NewRec;
-			NewRec.pAttr = this;
+			CSPSRecord NewRec(*this);
 			GetBox(NewRec.GlobalBox);
-			pSPSRecord = Scene.SPS.AddObject(NewRec);
-
-			//!!!on delete attr with valid SPS handle, remove it from SPS!
+			pSPSRecord = pNode->GetScene()->SPS.AddObject(NewRec);
 		}
-		else
+		else if (pNode->IsWorldMatrixChanged()) //!!! || Range/Cone changed
 		{
-			//!!!only if local box or global tfm changed!
 			GetBox(pSPSRecord->GlobalBox);
-			Scene.SPS.UpdateElement(pSPSRecord);
+			pNode->GetScene()->SPS.UpdateElement(pSPSRecord);
 		}
 	}
 }

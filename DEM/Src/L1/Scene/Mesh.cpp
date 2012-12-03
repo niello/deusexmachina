@@ -75,21 +75,28 @@ bool CMesh::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CMesh::Update(CScene& Scene)
+void CMesh::OnRemove()
+{
+	if (pSPSRecord)
+	{
+		pNode->GetScene()->SPS.RemoveElement(pSPSRecord);
+		pSPSRecord = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+void CMesh::Update()
 {
 	if (!pSPSRecord)
 	{
-		CSPSRecord NewRec;
-		NewRec.pAttr = this;
+		CSPSRecord NewRec(*this);
 		GetBox(NewRec.GlobalBox);
-		pSPSRecord = Scene.SPS.AddObject(NewRec);
-
-		//!!!on delete attr with valid SPS handle, remove it from SPS!
+		pSPSRecord = pNode->GetScene()->SPS.AddObject(NewRec);
 	}
-	else if (GetNode()->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
+	else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
 	{
 		GetBox(pSPSRecord->GlobalBox);
-		Scene.SPS.UpdateElement(pSPSRecord);
+		pNode->GetScene()->SPS.UpdateElement(pSPSRecord);
 	}
 }
 //---------------------------------------------------------------------
@@ -101,7 +108,7 @@ void CMesh::GetBox(bbox3& OutBox) const
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
 	OutBox = refMesh->Group(groupIndex).Box;
-	OutBox.transform(GetNode()->GetWorldMatrix());
+	OutBox.transform(pNode->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
 

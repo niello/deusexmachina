@@ -33,7 +33,7 @@ void CSceneServer::RemoveScene(CStrID Name)
 void CSceneServer::Trigger()
 {
 	if (!pCurrScene) return;
-	pCurrScene->GetRootNode().Update(*pCurrScene);
+	pCurrScene->GetRootNode().Update();
 	pCurrScene->Render();
 }
 //---------------------------------------------------------------------
