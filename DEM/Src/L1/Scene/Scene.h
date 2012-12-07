@@ -26,11 +26,11 @@ private:
 	bbox3				SceneBBox;
 	PCamera				CurrCamera; //???or store externally?
 
-	nArray<CMesh*>		VisibleMeshes;
+	nArray<CModel*>		VisibleMeshes;
 	nArray<CLight*>		VisibleLights;
 
 	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
-	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CMesh*>* OutMeshes, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
+	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CModel*>* OutMeshes, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
 public:
 
@@ -73,7 +73,7 @@ inline void CScene::OwnNode(PSceneNode Node)
 
 inline bool CScene::FreeNode(PSceneNode Node)
 {
-	if (!Node.isvalid() || !Node->IsOwnedByScene() || !OwnedNodes.EraseElement(Node)) FAIL;
+	if (!Node.isvalid() || !Node->IsOwnedByScene() || !OwnedNodes.RemoveByValue(Node)) FAIL;
 	Node->Flags.Clear(CSceneNode::OwnedByScene);
 	OK;
 }

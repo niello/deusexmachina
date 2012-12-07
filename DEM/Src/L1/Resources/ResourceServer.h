@@ -7,8 +7,7 @@
 #include <util/HashMap.h>
 #include <util/HashTable.h>
 
-// Resource wraps a piece of abstract data, used by other systems. It can be loaded and managed by
-// resource system, so clients needn't to care about loading, unloading and LOD of resources.
+// ...
 
 namespace Resources
 {
@@ -23,8 +22,6 @@ protected:
 
 	static DWORD UIDCounter;
 
-	//???force ID = Filename StrID for loaded (not created) resources
-	CHashMap<CResource*>								FileNameToResource;
 	CHashTable<CStrID, CResource*>						IDToResource;
 	nDictionary<const Core::CRTTI*, const Core::CRTTI*> Loaders;
 

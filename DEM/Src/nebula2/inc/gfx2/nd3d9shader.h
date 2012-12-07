@@ -11,7 +11,7 @@
 */
 #include "gfx2/nshader2.h"
 #include "gfx2/nshaderparams.h"
-#include <d3dx9.h>
+#include <d3dx9effect.h>
 
 class nD3D9Server;
 

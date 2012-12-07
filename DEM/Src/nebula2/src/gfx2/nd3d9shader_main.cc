@@ -101,10 +101,9 @@ nD3D9Shader::LoadResource()
     File.Close();
 
     ID3DXBuffer* errorBuffer = 0;
+	DWORD compileFlags = D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
     #if N_D3D9_DEBUG
-        DWORD compileFlags = D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION | D3DXSHADER_USE_LEGACY_D3DX9_31_DLL;
-    #else
-        DWORD compileFlags = D3DXSHADER_USE_LEGACY_D3DX9_31_DLL;
+        compileFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
     #endif
 
     // create include file handler
@@ -140,43 +139,25 @@ nD3D9Shader::LoadResource()
         { 0, 0 },
     };
 
-    // create effect
-    if (compileFlags)
-    {
-        hr = D3DXCreateEffectFromFile(
-            d3d9Dev,            // pDevice
-            shaderPath.Get(),   // File name
-            defines,            // pDefines
-            &includeHandler,    // pInclude
-            compileFlags,       // Flags
-            effectPool,         // pPool
-            &(this->effect),    // ppEffect
-            &errorBuffer);      // ppCompilationErrors
-    }
-    else
-    {
-        hr = D3DXCreateEffect(
-            d3d9Dev,            // pDevice
-            buffer,             // pFileData
-            fileSize,           // DataSize
-            defines,            // pDefines
-            &includeHandler,    // pInclude
-            compileFlags,       // Flags
-            effectPool,         // pPool
-            &(this->effect),    // ppEffect
-            &errorBuffer);      // ppCompilationErrors
-    }
-    n_free(buffer);
+	hr = D3DXCreateEffect(
+		d3d9Dev,            // pDevice
+		buffer,             // pFileData
+		fileSize,           // DataSize
+		defines,            // pDefines
+		&includeHandler,    // pInclude
+		compileFlags,       // Flags
+		effectPool,         // pPool
+		&(this->effect),    // ppEffect
+		&errorBuffer);      // ppCompilationErrors
+
+	n_free(buffer);
 
     if (FAILED(hr))
     {
         n_error("nD3D9Shader: failed to load fx file '%s' with:\n\n%s\n",
                 mangledPath.Get(),
                 errorBuffer ? errorBuffer->GetBufferPointer() : "No D3DX error message.");
-        if (errorBuffer)
-        {
-            errorBuffer->Release();
-        }
+        if (errorBuffer) errorBuffer->Release();
         return false;
     }
     n_assert(this->effect);
@@ -566,7 +547,6 @@ nD3D9Shader::ValidateEffect()
 {
     n_assert(!this->hasBeenValidated);
     n_assert(this->effect);
-    n_assert(nD3D9Server::Instance()->pD3D9Device);
     IDirect3DDevice9* pD3D9Device = nD3D9Server::Instance()->pD3D9Device;
     n_assert(pD3D9Device);
     HRESULT hr;

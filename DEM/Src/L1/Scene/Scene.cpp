@@ -187,7 +187,7 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 //---------------------------------------------------------------------
 
 void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
-									  nArray<CMesh*>* OutMeshes, nArray<CLight*>* OutLights,
+									  nArray<CModel*>* OutMeshes, nArray<CLight*>* OutLights,
 									  EClipStatus Clip)
 {
 	if (!pNode->GetTotalObjCount() || (!OutMeshes && !OutLights)) return;
@@ -207,16 +207,16 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		nArray<CSPSRecord>::iterator ItMesh = pNode->Data.Meshes.Begin();
 		if (Clip == Inside)
 		{
-			CMesh** ppMesh = OutMeshes->Reserve(pNode->Data.Meshes.Size());
+			CModel** ppMesh = OutMeshes->Reserve(pNode->Data.Meshes.Size());
 			for (; ItMesh != pNode->Data.Meshes.End(); ++ItMesh, ++ppMesh)
-				*ppMesh = (CMesh*)&ItMesh->Attr;
+				*ppMesh = (CModel*)&ItMesh->Attr;
 		}
 		else // Clipped
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItMesh != pNode->Data.Meshes.End(); ++ItMesh)
 				if (ItMesh->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutMeshes->Append((CMesh*)&ItMesh->Attr);
+					OutMeshes->Append((CModel*)&ItMesh->Attr);
 		}
 	}
 

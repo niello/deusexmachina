@@ -1,10 +1,11 @@
 #include "Texture.h"
 
 #include <Resources/ResourceServer.h>
+#include <d3d9.h>
 
-namespace Gfx
+namespace Render
 {
-__ImplementClass(Gfx::CTexture, 'RTEX', Resources::CResource);
+ImplementRTTI(Render::CTexture, Resources::CResource);
 
 //CTexture::~CTexture()
 //{
@@ -30,6 +31,14 @@ inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 			LockFlags |= D3DLOCK_DISCARD;
 			break;
 	}
+}
+//---------------------------------------------------------------------
+
+void CTexture::Unload()
+{
+	n_assert(!LockCount);
+	SAFE_RELEASE(pD3D9Tex);
+	CResource::Unload();
 }
 //---------------------------------------------------------------------
 

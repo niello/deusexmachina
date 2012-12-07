@@ -1,6 +1,7 @@
-#include "Mesh.h"
+#include "Model.h"
 
 #include <Scene/Scene.h>
+#include <Render/Renderer.h>
 #include <Data/BinaryReader.h>
 
 //!!!OLD!
@@ -8,18 +9,28 @@
 
 namespace Scene
 {
-ImplementRTTI(Scene::CMesh, Scene::CSceneNodeAttr);
-ImplementFactory(Scene::CMesh);
+ImplementRTTI(Scene::CModel, Scene::CSceneNodeAttr);
+ImplementFactory(Scene::CModel);
 
-bool CMesh::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
 		case 'RDHS': // SHDR
 		{
-			char Value[512];
-			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
-			SetShader(Value);
+			CStrID ShaderID;
+			DataReader.Read(ShaderID);
+
+			SetShader(ShaderID.CStr());
+
+			//RenderSrv->MaterialMgr.GetResource(MaterialID);
+
+			//!!!TMP!
+			// For now - create material, find shader by ID and set to material
+			//Material = n_new(Render::CMaterial(Renderer->GetShader(Value)));
+			Material = RenderSrv->MaterialMgr.GetResource(ShaderID);
+			Material->SetShader(RenderSrv->ShaderMgr.GetResource(ShaderID));
+
 			OK;
 		}
 		case 'SRAV': // VARS
@@ -28,19 +39,11 @@ bool CMesh::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			if (!DataReader.Read(Count)) FAIL;
 			for (short i = 0; i < Count; ++i)
 			{
-				char Key[256];
-				if (!DataReader.ReadString(Key, sizeof(Key))) FAIL;
-				nShaderState::Param Param = nShaderState::StringToParam(Key);
-
-				char Type;
-				if (!DataReader.Read(Type)) FAIL;
-
-				if (Type == DATA_TYPE_ID(bool)) SetBool(Param, DataReader.Read<bool>());
-				else if (Type == DATA_TYPE_ID(int)) SetInt(Param, DataReader.Read<int>());
-				else if (Type == DATA_TYPE_ID(float)) SetFloat(Param, DataReader.Read<float>());
-				else if (Type == DATA_TYPE_ID(vector4)) SetVector(Param, DataReader.Read<vector4>()); //???vector3?
-				//else if (Type == DATA_TYPE_ID(matrix44)) SetMatrix(Param, DataReader.Read<matrix44>());
-				else FAIL;
+				CStrID VarName;
+				DataReader.Read(VarName);
+				CShaderVar& Var = ShaderVars.Add(VarName);
+				DataReader.Read(Var.Value);
+				if (Material.isvalid()) Var.Bind(*Material->GetShader());
 			}
 			OK;
 		}
@@ -55,14 +58,20 @@ bool CMesh::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				nShaderState::Param Param = nShaderState::StringToParam(Value);
 				if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
 				SetTexture(Param, Value);
+
+				// Create texture resource, set loader/file path
 			}
 			OK;
 		}
 		case 'HSEM': // MESH
 		{
-			char Value[512];
-			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
-			SetMesh(Value);
+			CStrID MeshID;
+			DataReader.Read(MeshID);
+
+			SetMesh(MeshID.CStr());
+
+			Mesh = RenderSrv->MeshMgr.GetResource(MeshID);
+
 			OK;
 		}
 		case 'RGSM': // MSGR
@@ -75,7 +84,7 @@ bool CMesh::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CMesh::OnRemove()
+void CModel::OnRemove()
 {
 	if (pSPSRecord)
 	{
@@ -85,7 +94,7 @@ void CMesh::OnRemove()
 }
 //---------------------------------------------------------------------
 
-void CMesh::Update()
+void CModel::Update()
 {
 	if (!pSPSRecord)
 	{
@@ -103,7 +112,7 @@ void CMesh::Update()
 
 //!!!differ between CalcBox - primary source, and GetBox - return cached box from spatial record!
 //???inline?
-void CMesh::GetBox(bbox3& OutBox) const
+void CModel::GetBox(bbox3& OutBox) const
 {
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
@@ -116,7 +125,7 @@ void CMesh::GetBox(bbox3& OutBox) const
 // ==================== OLD ===========================================
 //!!!
 
-void CMesh::SetTexture(nShaderState::Param param, const char* texName)
+void CModel::SetTexture(nShaderState::Param param, const char* texName)
 {
     n_assert(texName);
 
@@ -148,7 +157,7 @@ void CMesh::SetTexture(nShaderState::Param param, const char* texName)
 }
 //---------------------------------------------------------------------
 
-const char* CMesh::GetTexture(nShaderState::Param param) const
+const char* CModel::GetTexture(nShaderState::Param param) const
 {
     for (int i = 0; i < texNodeArray.Size(); i++)
         if (texNodeArray[i].shaderParameter == param)
@@ -157,7 +166,7 @@ const char* CMesh::GetTexture(nShaderState::Param param) const
 }
 //---------------------------------------------------------------------
 
-void CMesh::UnloadShader()
+void CModel::UnloadShader()
 {
     if (refShader.isvalid())
     {
@@ -167,7 +176,7 @@ void CMesh::UnloadShader()
 }
 //---------------------------------------------------------------------
 
-bool CMesh::LoadShader()
+bool CModel::LoadShader()
 {
     n_assert(!shaderName.IsEmpty());
 
@@ -186,7 +195,7 @@ bool CMesh::LoadShader()
 }
 //---------------------------------------------------------------------
 
-void CMesh::UnloadTexture(int index)
+void CModel::UnloadTexture(int index)
 {
 	CTextureNode& texNode = texNodeArray[index];
 	if (texNode.refTexture.isvalid())
@@ -197,7 +206,7 @@ void CMesh::UnloadTexture(int index)
 }
 //---------------------------------------------------------------------
 
-bool CMesh::LoadTexture(int index)
+bool CModel::LoadTexture(int index)
 {
     CTextureNode& texNode = texNodeArray[index];
     if ((!texNode.refTexture.isvalid()) && (!texNode.texName.IsEmpty()))
@@ -224,7 +233,7 @@ bool CMesh::LoadTexture(int index)
 }
 //---------------------------------------------------------------------
 
-void CMesh::UnloadMesh()
+void CModel::UnloadMesh()
 {
 	if (refMesh.isvalid())
 	{
@@ -235,7 +244,7 @@ void CMesh::UnloadMesh()
 //---------------------------------------------------------------------
 
 // Load new mesh, release old one if valid. Also initializes the groupIndex member.
-bool CMesh::LoadMesh()
+bool CModel::LoadMesh()
 {
     if (!refMesh.isvalid() && meshName.IsValid())
     {
@@ -265,7 +274,7 @@ bool CMesh::LoadMesh()
 }
 //---------------------------------------------------------------------
 
-bool CMesh::LoadResources()
+bool CModel::LoadResources()
 {
 	//if (!nTransformNode::LoadResources()) return false;
 	if (!LoadShader()) return false;
@@ -276,7 +285,7 @@ bool CMesh::LoadResources()
 }
 //---------------------------------------------------------------------
 
-void CMesh::UnloadResources()
+void CModel::UnloadResources()
 {
     //nTransformNode::UnloadResources();
     for (int i = 0; i < texNodeArray.Size(); i++)

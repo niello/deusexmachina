@@ -2,7 +2,7 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Scene/SceneNode.h>
-#include <Scene/Mesh.h> // For resource preloading only, mb HACK
+#include <Scene/Model.h> // For resource preloading only, mb HACK
 #include <Data/BinaryReader.h>
 #include <Data/Streams/FileStream.h>
 
@@ -45,9 +45,9 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 		{
 			//!!!HACKY FOR NOW! But mb this is a good way, if NO other attrs have resources
 			// Else here must be virtual function call
-			if (Attr->IsA(CMesh::RTTI))
+			if (Attr->IsA(CModel::RTTI))
 			{
-				CMesh* pMesh = (CMesh*)Attr.get_unsafe();
+				CModel* pMesh = (CModel*)Attr.get_unsafe();
 				if (!pMesh->AreResourcesValid() && !pMesh->LoadResources()) FAIL;
 			}
 		}

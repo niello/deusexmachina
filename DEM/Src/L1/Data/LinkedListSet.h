@@ -51,7 +51,7 @@ public:
 	~CLinkedListSet();
 
 	CElement*	Add(const TObject& Object);
-	bool		Remove(const TObject& Object);
+	bool		RemoveByValue(const TObject& Object);
 	void		RemoveElement(CElement* pElement);
 
 	int			GetListCount() const { return Lists.Size(); }
@@ -98,7 +98,7 @@ typename CLinkedListSet<TKey, TObject>::CElement* CLinkedListSet<TKey,TObject>::
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-bool CLinkedListSet<TKey, TObject>::Remove(const TObject& Object)
+bool CLinkedListSet<TKey, TObject>::RemoveByValue(const TObject& Object)
 {	
 	TKey Key = Object->GetKey();
 	int Idx = Lists.FindIndex(Key);
