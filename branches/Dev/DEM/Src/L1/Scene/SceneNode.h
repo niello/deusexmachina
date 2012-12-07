@@ -73,7 +73,7 @@ protected:
 public:
 
 	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
-	~CSceneNode() { if (Parent.isvalid()) Parent->RemoveChild(*this); }
+	~CSceneNode();
 
 	PSceneNode				CreateChild(CStrID ChildName);
 	void					AddChild(CSceneNode& Node);
@@ -91,6 +91,7 @@ public:
 	bool					AddAttr(CSceneNodeAttr& Attr);
 	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 	void					RemoveAttr(CSceneNodeAttr& Attr);
+	void					RemoveAttr(DWORD Idx);
 
 	void					Update();
 
@@ -121,6 +122,14 @@ public:
 	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
 	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
 };
+
+inline CSceneNode::~CSceneNode()
+{
+	n_assert_dbg(!Child.Size());
+	while (Attrs.Size()) RemoveAttr(0);
+	if (Parent.isvalid()) Parent->RemoveChild(*this);
+}
+//---------------------------------------------------------------------
 
 inline void CSceneNode::RemoveChild(CSceneNode& Node)
 {

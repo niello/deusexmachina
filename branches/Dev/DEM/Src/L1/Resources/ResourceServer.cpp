@@ -39,9 +39,7 @@ PResource CResourceServer::CreateResource(const Core::CRTTI& RsrcClass, CStrID U
 		char ID[32];
 		sprintf(ID, "Rsrc%d", UIDCounter++);
 		UID = CStrID(ID);
-#ifdef _DEBUG
-		n_assert(!IDToResource.Contains(UID));
-#endif
+		n_assert_dbg(!IDToResource.Contains(UID));
 	}
 
 	if (IDToResource.Contains(UID)) return NULL;

@@ -3,14 +3,11 @@
 #define __DEM_L1_GFX_TEXTURE_H__
 
 #include <Resources/Resource.h>
-#include <d3d9.h>
 
 #define D3D9_ONLY
 
 #ifdef D3D9_ONLY
-typedef D3DFORMAT EPixelFormat;
-#define InvalidPixelFormat D3DFMT_UNKNOWN
-#define AsNebulaPixelFormat
+#include <Render/D3D9Fwd.h>
 #else
 #include <Gfx/PixelFormat.h>
 #endif
@@ -19,12 +16,12 @@ typedef D3DFORMAT EPixelFormat;
 
 //!!!OnDeviceLost, OnDeviceReset!
 
-namespace Gfx
+namespace Render
 {
 
 class CTexture: public Resources::CResource
 {
-	__DeclareClass(CTexture);
+	DeclareRTTI;
 
 public:
 
@@ -109,10 +106,10 @@ public:
 	EAccessMode				AccessMode;
 	//int						SkippedMips;
 
-	CTexture();
+	CTexture(CStrID ID);
 	virtual ~CTexture() { n_assert(!pD3D9Tex); }
 
-	virtual void	Unload() { n_assert(!LockCount); SAFE_RELEASE(pD3D9Tex); CResource::Unload(); }
+	virtual void	Unload();
 
 	bool			Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
 	void			Unmap(int MipLevel);
@@ -136,11 +133,10 @@ public:
 	IDirect3DVolumeTexture9*	GetD3D9VolumeTexture() const;
 };
 
-RegisterFactory(CTexture);
-
 typedef Ptr<CTexture> PTexture;
 
-inline CTexture::CTexture():
+inline CTexture::CTexture(CStrID ID):
+	CResource(ID),
 	Usage(UsageImmutable),
 	AccessMode(AccessNone),
 	Type(InvalidType),

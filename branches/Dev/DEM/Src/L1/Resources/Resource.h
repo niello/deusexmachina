@@ -30,10 +30,9 @@ protected:
 
 	CStrID			UID;
 	EResourceState	State;
-	nString			FileName;
-	PResourceLoader	Loader; //???store filename inside a loader, if it is needed?
+	//PResourceLoader	Loader; //???store filename inside a loader, if it is needed?
 
-	CResource(): State(Rsrc_NotLoaded) {} // Create only by RsrcSrv
+	CResource(CStrID ID): UID(ID), State(Rsrc_NotLoaded) {} // Create only by manager
 
 public:
 

@@ -37,7 +37,7 @@ public:
 	//template<> bool		Read<CParams>(const CParams& OutValue) { return WriteParams(OutValue); }
 	//template<> bool		Read<PParams>(const PParams& OutValue) { return OutValue.isvalid() ? WriteParams(*OutValue) : true; }
 	//template<> bool		Read<CParam>(const CParam& OutValue) { return WriteParam(OutValue); }
-	//template<> bool		Read<CData>(const CData& OutValue) { return WriteData(OutValue); }
+	template<> bool		Read<CData>(CData& OutValue) { return ReadData(OutValue); }
 };
 
 template<> inline bool CBinaryReader::Read<CStrID>(CStrID& OutValue)

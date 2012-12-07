@@ -51,7 +51,7 @@ struct CGfxQTNode
 	~CGfxQTNode();
 
 	CElement*	Add(const PEntity& Object) { return Entities.Add(Object); } //UpdateNumEntitiesInHierarchy(pEntity->GetType(), 1);
-	bool		Remove(const PEntity& Object);
+	bool		RemoveByValue(const PEntity& Object);
 	void		RemoveElement(CElement* pElement);
 };
 

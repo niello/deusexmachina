@@ -28,7 +28,7 @@ void CMemStream::Close()
 
 DWORD CMemStream::Read(void* pData, DWORD Size)
 {
-	n_assert(pBuffer && !IsMapped() && (AccessMode & SAM_READ));
+	n_assert(IsOpen() && pBuffer && !IsMapped() && (AccessMode & SAM_READ));
 	DWORD BytesToRead = n_min(Size, DataSize - Pos);
 	if (BytesToRead > 0)
 	{
@@ -41,7 +41,7 @@ DWORD CMemStream::Read(void* pData, DWORD Size)
 
 DWORD CMemStream::Write(const void* pData, DWORD Size)
 {
-	n_assert(!IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
+	n_assert(IsOpen() && !IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
 
 	if (Pos + Size > AllocSize)
 	{

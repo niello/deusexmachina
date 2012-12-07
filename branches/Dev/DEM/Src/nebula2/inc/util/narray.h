@@ -88,7 +88,7 @@ public:
     /// return true if array empty
 	bool Empty() const { return !Count; }
     /// erase element equal to arg
-    bool EraseElement(const T& pElm);
+    bool RemoveByValue(const T& pElm);
     /// erase element at Idx
     void Erase(int Idx);
     /// quick erase, does not call operator= or destructor
@@ -470,7 +470,7 @@ bool nArray<T>::operator ==(const nArray<T>& Other) const
 //---------------------------------------------------------------------
 
 template<class T>
-bool nArray<T>::EraseElement(const T& pElm)
+bool nArray<T>::RemoveByValue(const T& pElm)
 {
 	int Idx = FindIndex(pElm);
 	if (Idx == -1) return false;

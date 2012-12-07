@@ -114,19 +114,30 @@ PSceneNode CSceneNode::GetChild(LPCSTR Path, bool Create)
 
 bool CSceneNode::AddAttr(CSceneNodeAttr& Attr)
 {
-	if (Attr.GetNode()) FAIL;
+	if (Attr.pNode) FAIL;
 	Attrs.Append(&Attr);
 	Attr.pNode = this;
+	Attr.OnAdd();
 	OK;
 }
 //---------------------------------------------------------------------
 
-//!!!need to call OnRemove on destruction!
 void CSceneNode::RemoveAttr(CSceneNodeAttr& Attr)
 {
-	//Attrs.Erase();
-	//!!!only if attr of this node!
+	n_assert(Attr.pNode == this);
 	Attr.OnRemove();
+	Attr.pNode = NULL;
+	Attrs.RemoveByValue(&Attr);
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::RemoveAttr(DWORD Idx)
+{
+	n_assert(Idx < (DWORD)Attrs.Size());
+	CSceneNodeAttr& Attr = *Attrs[Idx];
+	Attr.OnRemove();
+	Attr.pNode = NULL;
+	Attrs.Erase(Idx);
 }
 //---------------------------------------------------------------------
 

@@ -1,9 +1,12 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_MESH_H__
-#define __DEM_L1_SCENE_MESH_H__
+#ifndef __DEM_L1_SCENE_MODEL_H__
+#define __DEM_L1_SCENE_MODEL_H__
 
 #include <Scene/SceneNodeAttr.h>
+#include <Render/Materials/Material.h>
+#include <Render/Geometry/Mesh.h>
 
+//!!!OLD!
 #include "gfx2/nmesh2.h"
 #include "gfx2/nshader2.h"
 
@@ -20,10 +23,10 @@ namespace Scene
 {
 struct CSPSRecord;
 
-class CMesh: public CSceneNodeAttr
+class CModel: public CSceneNodeAttr
 {
 	DeclareRTTI;
-	DeclareFactory(CMesh);
+	DeclareFactory(CModel);
 
 public:
 
@@ -93,17 +96,16 @@ public:
 	nMesh2* GetMeshObject() { if (!refMesh.isvalid()) { n_assert(LoadMesh()); } return refMesh.get(); }
 //!!!OLD!
 
-	// PVertexBuffer VB; // Format inside
-	// PIndexBuffer IB;
-	// Group (FirstVertex, VertexCount, FirstIndex, IndexCount, Topology (primtype), AABB) //???VB + IB + Group to resource?
-	// Material (shader ref with name-to-handle for vars inside)
-	// PTexture Textures[];
+	Render::PMesh			Mesh;
+	DWORD					MeshGroupIndex;
+	Render::PMaterial		Material;
+	Render::CShaderVarMap	ShaderVars;	// Animable per-object vars, also can store geom. vars like CullMode
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
 
 	CSPSRecord*	pSPSRecord;
 
-	CMesh(): pSPSRecord(NULL), resourcesValid(false), groupIndex(0), meshUsage(nMesh2::WriteOnce) {}
+	CModel(): pSPSRecord(NULL), resourcesValid(false), groupIndex(0), meshUsage(nMesh2::WriteOnce) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void	OnRemove();
@@ -111,47 +113,47 @@ public:
 	void			GetBox(bbox3& OutBox) const;
 };
 
-RegisterFactory(CMesh);
+RegisterFactory(CModel);
 
-typedef Ptr<CMesh> PMesh;
+typedef Ptr<CModel> PModel;
 
 //!!!OLD!
-inline nShader2* CMesh::GetShaderObject()
+inline nShader2* CModel::GetShaderObject()
 {
 	if (!AreResourcesValid()) LoadResources();
 	return refShader.get_unsafe();
 }
 //---------------------------------------------------------------------
 
-inline int CMesh::GetShaderIndex()
+inline int CModel::GetShaderIndex()
 {
 	if (!AreResourcesValid()) LoadResources();
 	return shaderIndex;
 }
 //---------------------------------------------------------------------
 
-inline void CMesh::SetInt(nShaderState::Param param, int val)
+inline void CModel::SetInt(nShaderState::Param param, int val)
 {
 	if (nShaderState::InvalidParameter != param)
 		shaderParams.SetArg(param, nShaderArg(val));
 }
 //---------------------------------------------------------------------
 
-inline void CMesh::SetBool(nShaderState::Param param, bool val)
+inline void CModel::SetBool(nShaderState::Param param, bool val)
 {
 	if (nShaderState::InvalidParameter != param)
 		shaderParams.SetArg(param, nShaderArg(val));
 }
 //---------------------------------------------------------------------
 
-inline void CMesh::SetFloat(nShaderState::Param param, float val)
+inline void CModel::SetFloat(nShaderState::Param param, float val)
 {
 	if (nShaderState::InvalidParameter != param)
 		shaderParams.SetArg(param, nShaderArg(val));
 }
 //---------------------------------------------------------------------
 
-inline void CMesh::SetVector(nShaderState::Param param, const vector4& val)
+inline void CModel::SetVector(nShaderState::Param param, const vector4& val)
 {
 	if (nShaderState::InvalidParameter != param)
 		shaderParams.SetArg(param, nShaderArg(val));

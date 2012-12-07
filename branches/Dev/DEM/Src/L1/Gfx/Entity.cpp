@@ -133,11 +133,11 @@ CGfxQTNode::~CGfxQTNode()
 }
 //---------------------------------------------------------------------
 
-bool CGfxQTNode::Remove(const PEntity& Object)
+bool CGfxQTNode::RemoveByValue(const PEntity& Object)
 {
 	//UpdateNumEntitiesInHierarchy((*ItEntity)->GetType(), -1);
 	//Object->ClearLinks(AllLinks);
-	return Entities.Remove(Object);
+	return Entities.RemoveByValue(Object);
 }
 //---------------------------------------------------------------------
 

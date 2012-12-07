@@ -27,7 +27,7 @@
 // - typedef CElement (for array - TObject, for linked list - list node etc)
 // - TObject&	CElement::GetObject(); // or TObject CElement::GetObject();
 // - CElement*	Add(const TObject& Object);
-// - void		Remove(const TObject& Object);
+// - void		RemoveByValue(const TObject& Object);
 // - void		RemoveElement(CElement* pElement);
 
 namespace Data
@@ -247,7 +247,7 @@ typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::U
 
 	TObjTraits::GetPtr(Object)->SetQuadTreeNode(pNewNode);
 	CElement* pNewElm = pNewNode->Data.Add(Object);
-	pCurrNode->Data.Remove(Object);		
+	pCurrNode->Data.RemoveByValue(Object);		
 	return pNewElm;
 }
 //---------------------------------------------------------------------
@@ -304,7 +304,7 @@ template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
 {
 	TObjTraits::GetPtr(Object)->SetQuadTreeNode(NULL);
-	Data.Remove(Object);
+	Data.RemoveByValue(Object);
 	CNode* pNode = this;
 	while (pNode)
 	{
