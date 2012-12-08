@@ -16,54 +16,43 @@
 
 namespace Resources
 {
+typedef Ptr<class CResource> PResource;
 
-template<class TRsrc>
-class CResourceManager
+class IResourceManager
 {
-public:
-
-	typedef Ptr<TRsrc> PTRsrc;
-
 protected:
 
-	static DWORD UIDCounter;
+	friend class CResource; // For ReleaseResource
+
+	DWORD UIDCounter;
 
 	//!!!???some pool?! if pool, hash table can store weak ptrs
-	CHashTable<CStrID, PTRsrc>	IDToResource;
+
+	CHashTable<CStrID, PResource>	IDToResource;
+
+	//PResource Placeholder;
+
+	virtual PResource	CreateResource(CStrID UID) = 0;
+	void				ReleaseResource(CResource* pResource);
 
 public:
 
-	PTRsrc	GetResource(CStrID UID);
-	//bool	LoadResource(CStrID UID, bool ForceReload = true); //???here or in resource only?
+	IResourceManager(): UIDCounter (0) {}
+
+	PResource	GetResource(CStrID UID);
 };
 
 template<class TRsrc>
-DWORD CResourceManager<TRsrc>::UIDCounter = 0;
-
-template<class TRsrc>
-Ptr<TRsrc> CResourceManager<TRsrc>::GetResource(CStrID UID)
+class CResourceManager: public IResourceManager
 {
-	PTRsrc* ppRsrc = IDToResource.Get(UID);
+protected:
 
-	if (ppRsrc) return *ppRsrc;
+	virtual PResource	CreateResource(CStrID UID) { return n_new(TRsrc)(UID, this); }
 
-	//n_assert(RsrcClass.IsDerivedFrom(CResource::RTTI));
+public:
 
-	if (!UID.IsValid())
-	{
-		char ID[20];
-		sprintf(ID, "Rsrc%d", UIDCounter++);
-		UID = CStrID(ID);
-		n_assert_dbg(!IDToResource.Contains(UID));
-	}
-
-	if (IDToResource.Contains(UID)) return NULL;
-
-	Ptr<TRsrc> New = n_new(TRsrc)(UID);
-	IDToResource.Add(UID, New);
-	return New;
-}
-//---------------------------------------------------------------------
+	Ptr<TRsrc>			GetTypedResource(CStrID UID) { return (TRsrc*)GetResource(UID).get_unsafe(); }
+};
 
 }
 

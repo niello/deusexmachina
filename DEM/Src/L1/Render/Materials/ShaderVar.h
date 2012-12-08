@@ -6,6 +6,9 @@
 #include <Data/Data.h>
 
 // This is used to apply value to a named shader variable through var handle obtained on binding to shader.
+// Values of these types are good:
+// bool, int, float, vector4, /*vector3*/, matrix, texture
+// May be later arrays of these types, including matrix pointer array, will be added.
 
 namespace Render
 {
@@ -23,14 +26,23 @@ public:
 
 	CShaderVar(): hVar(0) {}
 
-	bool			Bind(const CShader& Shader) { hVar = Shader.GetVarHandleByName(Name); return hVar != 0; }
 	void			SetName(CStrID NewName) { if (Name != NewName) { Name = NewName; hVar = 0; } }
 	CStrID			GetName() const { return Name; }
 	CShader::HVar	GetVarHandle() const { return hVar; }
 	bool			IsBound() const { return hVar != 0; }
+	bool			Bind(const CShader& Shader) { hVar = Shader.GetVarHandleByName(Name); return hVar != 0; }
+	bool			Apply(const CShader& Shader);
 };
 
 typedef nDictionary<CStrID, CShaderVar> CShaderVarMap;
+
+inline bool CShaderVar::Apply(const CShader& Shader)
+{
+	if (!IsBound()) FAIL; //???or try to bind?
+	//if var type = TBool, return Shader->SetBool etc
+	FAIL;
+}
+//---------------------------------------------------------------------
 
 }
 

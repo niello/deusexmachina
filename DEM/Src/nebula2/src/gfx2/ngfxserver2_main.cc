@@ -8,7 +8,6 @@
 #include "gfx2/nmesh2.h"
 #include "gfx2/nshader2.h"
 #include "gfx2/nmesharray.h"
-#include <Resources/ResourceServer.h>
 
 nGfxServer2* nGfxServer2::Singleton = NULL;
 

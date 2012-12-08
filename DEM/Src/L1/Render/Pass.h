@@ -2,8 +2,7 @@
 #ifndef __DEM_L1_RENDER_PASS_H__
 #define __DEM_L1_RENDER_PASS_H__
 
-#include <Core/RefCounted.h>
-#include <Data/StringID.h>
+#include <Render/Materials/Shader.h>
 
 //!!!OLD!
 #include <gfx2/nshaderparams.h>
@@ -24,9 +23,12 @@ class CPass: public Core::CRefCounted
 //protected:
 public:
 
-	CStrID Name;
-	// Shader, RT/MRT, shader vars, batches
-	// RT clear flags, color & values
+	CStrID			Name;
+	PShader			Shader;
+	//CShaderVarMap	ShaderVars;
+	// RT/MRT, batches
+	// RT clear flags, color & values //???set into RT? or can use shared RT but with own clear flags?
+	//???store clear values in RT or always set externally?
 
 	//bool Profile;
 

@@ -1,16 +1,33 @@
 #include "Texture.h"
 
-#include <Resources/ResourceServer.h>
+#define WIN32_LEAN_AND_MEAN
 #include <d3d9.h>
+
+namespace Data
+{
+DEFINE_TYPE_EX(Render::PTexture, PTexture)
+}
 
 namespace Render
 {
 ImplementRTTI(Render::CTexture, Resources::CResource);
 
-//CTexture::~CTexture()
-//{
-//}
-////---------------------------------------------------------------------
+CTexture::~CTexture()
+{
+	// if (IsLoaded()) Unload();
+	// OR SAFE_RELEASE(pD3D9Tex);
+	// OR n_assert(!pD3D9Tex);
+
+	//!!!it was Unload() code!
+	switch (Type)
+	{
+		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
+		case Texture3D:		SAFE_RELEASE(pD3D9Tex3D); break;
+		case TextureCube:	SAFE_RELEASE(pD3D9TexCube); break;
+	}
+	SAFE_RELEASE(pD3D9Tex);
+}
+//---------------------------------------------------------------------
 
 inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 {
@@ -118,6 +135,7 @@ void CTexture::SetupFromD3D9Texture(IDirect3DTexture9* pTex, bool SetLoaded)
 {
 	n_assert(pTex);    
 
+	//???really can't just cast ptr?
 	// Need to query for base interface under Win32
 	pD3D9Tex2D = pTex;
 	n_assert(SUCCEEDED(pD3D9Tex2D->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
@@ -130,7 +148,7 @@ void CTexture::SetupFromD3D9Texture(IDirect3DTexture9* pTex, bool SetLoaded)
 	Height = Desc.Height;
 	Depth = 1;
 	MipCount = pTex->GetLevelCount();
-	PixelFormat = AsNebulaPixelFormat(Desc.Format);
+	PixelFormat = Desc.Format;
 	if (SetLoaded) State = Resources::Rsrc_Loaded;
 }
 //---------------------------------------------------------------------
@@ -150,7 +168,7 @@ void CTexture::SetupFromD3D9VolumeTexture(IDirect3DVolumeTexture9* pTex, bool Se
 	Height = Desc.Height;
 	Depth = Desc.Depth;
 	MipCount = pTex->GetLevelCount();
-	PixelFormat = AsNebulaPixelFormat(Desc.Format);
+	PixelFormat = Desc.Format;
 	if (SetLoaded) State = Resources::Rsrc_Loaded;
 }
 //---------------------------------------------------------------------
@@ -169,7 +187,7 @@ void CTexture::SetupFromD3D9CubeTexture(IDirect3DCubeTexture9* pTex, bool SetLoa
 	Width = Desc.Width;
 	Height = Desc.Height;
 	MipCount = pTex->GetLevelCount();
-	PixelFormat = AsNebulaPixelFormat(Desc.Format);
+	PixelFormat = Desc.Format;
 	if (SetLoaded) State = Resources::Rsrc_Loaded;
 }
 //---------------------------------------------------------------------

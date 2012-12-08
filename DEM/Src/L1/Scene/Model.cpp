@@ -23,13 +23,13 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 
 			SetShader(ShaderID.CStr());
 
-			//RenderSrv->MaterialMgr.GetResource(MaterialID);
+			//Material = RenderSrv->MaterialMgr.GetResource(MaterialID);
 
 			//!!!TMP!
 			// For now - create material, find shader by ID and set to material
 			//Material = n_new(Render::CMaterial(Renderer->GetShader(Value)));
-			Material = RenderSrv->MaterialMgr.GetResource(ShaderID);
-			Material->SetShader(RenderSrv->ShaderMgr.GetResource(ShaderID));
+			Material = RenderSrv->MaterialMgr.GetTypedResource(ShaderID);
+			Material->SetShader(RenderSrv->ShaderMgr.GetTypedResource(ShaderID));
 
 			OK;
 		}
@@ -42,8 +42,9 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				CStrID VarName;
 				DataReader.Read(VarName);
 				CShaderVar& Var = ShaderVars.Add(VarName);
-				DataReader.Read(Var.Value);
 				if (Material.isvalid()) Var.Bind(*Material->GetShader());
+				DataReader.Read(Var.Value);
+				//???check type if bound? use SetValue for it?
 			}
 			OK;
 		}
@@ -53,13 +54,17 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			if (!DataReader.Read(Count)) FAIL;
 			for (short i = 0; i < Count; ++i)
 			{
-				char Value[512];
-				if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
-				nShaderState::Param Param = nShaderState::StringToParam(Value);
-				if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
-				SetTexture(Param, Value);
+				CStrID VarName;
+				DataReader.Read(VarName);
+				CShaderVar& Var = ShaderVars.Add(VarName);
+				if (Material.isvalid()) Var.Bind(*Material->GetShader());
 
-				// Create texture resource, set loader/file path
+				CStrID TextureID;
+				DataReader.Read(TextureID);
+
+				SetTexture(nShaderState::StringToParam(VarName.CStr()), TextureID.CStr());
+
+				Var.Value = (Render::PTexture)RenderSrv->TextureMgr.GetTypedResource(TextureID);
 			}
 			OK;
 		}
@@ -70,14 +75,13 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 
 			SetMesh(MeshID.CStr());
 
-			Mesh = RenderSrv->MeshMgr.GetResource(MeshID);
+			Mesh = RenderSrv->MeshMgr.GetTypedResource(MeshID);
 
 			OK;
 		}
 		case 'RGSM': // MSGR
 		{
-			DataReader.Read(groupIndex);
-			OK;
+			return DataReader.Read(MeshGroupIndex);
 		}
 		default: FAIL;
 	}
@@ -116,7 +120,7 @@ void CModel::GetBox(bbox3& OutBox) const
 {
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
-	OutBox = refMesh->Group(groupIndex).Box;
+	OutBox = refMesh->Group(MeshGroupIndex).Box;
 	OutBox.transform(pNode->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
