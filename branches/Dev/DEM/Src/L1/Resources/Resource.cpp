@@ -1,15 +1,15 @@
 #include "Resource.h"
 
-#include <Resources/ResourceServer.h>
+#include <Resources/ResourceManager.h>
 
 namespace Resources
 {
 ImplementRTTI(Resources::CResource, Core::CRefCounted);
 
-CResource::~CResource()
-{
-	RsrcSrv->ReleaseResource(this);
-}
-//---------------------------------------------------------------------
+//CResource::~CResource()
+//{
+//	pManager->ReleaseResource(this);
+//}
+////---------------------------------------------------------------------
 
 }

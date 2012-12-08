@@ -10,6 +10,7 @@
 
 namespace Resources
 {
+class IResourceManager;
 typedef Ptr<class CResourceLoader> PResourceLoader;
 
 enum EResourceState
@@ -26,21 +27,19 @@ class CResource: public Core::CRefCounted
 
 protected:
 
-	friend class CResourceServer; // To set UID
+	CStrID				UID;
+	EResourceState		State;
+	IResourceManager*	pManager;
 
-	CStrID			UID;
-	EResourceState	State;
-	//PResourceLoader	Loader; //???store filename inside a loader, if it is needed?
-
-	CResource(CStrID ID): UID(ID), State(Rsrc_NotLoaded) {} // Create only by manager
+	CResource(CStrID ID, IResourceManager* pHost): UID(ID), pManager(pHost), State(Rsrc_NotLoaded) {} // Create only by manager
 
 public:
 
-	virtual ~CResource();
+	virtual ~CResource() {}
 
-	bool			Load(LPCSTR pFileName, CResourceLoader* pLoader);
+	bool			Load(LPCSTR pFileName, CResourceLoader* pLoader); //???or request mgr to load?
 	bool			Reload();
-	void			Unload();
+	void			Unload() { State = Rsrc_NotLoaded; }
 
 	CStrID			GetUID() const { return UID; }
 	EResourceState	GetState() const { return State; }

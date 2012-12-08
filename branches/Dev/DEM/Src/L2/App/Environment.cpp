@@ -85,8 +85,6 @@ bool CEnvironment::InitEngine()
 	DBServer.Create();
 	RegisterAttributes();
 
-	RsrcServer.Create();
-
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
 	EntityFct->Init();
 
@@ -102,7 +100,7 @@ bool CEnvironment::InitEngine()
 	GfxServer->Open();
 
 	Renderer.Create();
-	//!!!Renderer->Open();
+	Renderer->Open();
 
 	SceneServer.Create();
 
@@ -139,7 +137,7 @@ void CEnvironment::ReleaseEngine()
 
 	SceneServer = NULL;
 
-	//!!!if (Renderer.isvalid() && Renderer->IsOpen()) Renderer->Close();
+	if (Renderer.isvalid() && Renderer->IsOpen()) Renderer->Close();
 	Renderer = NULL;
 
 	if (GfxServer.isvalid() && GfxServer->IsOpen()) GfxServer->Close();
@@ -152,8 +150,6 @@ void CEnvironment::ReleaseEngine()
 	LoaderServer = NULL;
 
 	EntityFct->Release();
-
-	RsrcServer = NULL;
 
 	DBServer = NULL;
 	DebugServer = NULL;

@@ -1261,15 +1261,11 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Resources\ResourceManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Resources\ResourceManager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Resources\ResourceServer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Resources\ResourceServer.h"
 				>
 			</File>
 		</Filter>
@@ -1385,6 +1381,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Render\GPUResourceDefs.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Render\Pass.cpp"
 				>
 			</File>
@@ -1429,24 +1429,8 @@
 				>
 			</File>
 			<Filter
-				Name="Rsrc"
-				>
-				<File
-					RelativePath="..\..\Src\L1\Render\Rsrc\Texture.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Render\Rsrc\Texture.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="Materials"
 				>
-				<File
-					RelativePath="..\..\Src\L1\Render\Materials\Material.cpp"
-					>
-				</File>
 				<File
 					RelativePath="..\..\Src\L1\Render\Materials\Material.h"
 					>
@@ -1463,10 +1447,22 @@
 					RelativePath="..\..\Src\L1\Render\Materials\ShaderVar.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Materials\Texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Materials\Texture.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Geometry"
 				>
+				<File
+					RelativePath="..\..\Src\L1\Render\Geometry\IndexBuffer.cpp"
+					>
+				</File>
 				<File
 					RelativePath="..\..\Src\L1\Render\Geometry\IndexBuffer.h"
 					>
@@ -1476,7 +1472,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\L1\Render\Geometry\VertexBuffer.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L1\Render\Geometry\VertexBuffer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Geometry\VertexLayout.cpp"
 					>
 				</File>
 				<File

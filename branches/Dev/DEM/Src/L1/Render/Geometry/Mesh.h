@@ -3,6 +3,8 @@
 #define __DEM_L1_RENDER_MESH_H__
 
 #include <Resources/Resource.h>
+#include <Render/Geometry/VertexBuffer.h>
+#include <Render/Geometry/IndexBuffer.h>
 #include <mathlib/bbox.h>
 
 // Mesh represents complete geometry information about a 3D model. It stores vertex buffer,
@@ -34,15 +36,14 @@ class CMesh: public Resources::CResource
 {
 protected:
 
-	// PVertexBuffer VB; // Format inside
-	// PIndexBuffer IB;
 	//!!!if VB & IB are shared, need to store offset (and mb total size) here!
+	PVertexBuffer		VB;
+	PIndexBuffer		IB;
 	nArray<CMeshGroup>	Groups;
 
 public:
 
-	CMesh(CStrID ID): CResource(ID) {}
-
+	CMesh(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost) {}
 };
 
 typedef Ptr<CMesh> PMesh;

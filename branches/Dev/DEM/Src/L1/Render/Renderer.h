@@ -4,6 +4,7 @@
 
 #include <Resources/ResourceManager.h>
 #include <Render/Materials/Material.h>
+#include <Render/Materials/Texture.h>
 #include <Render/Geometry/Mesh.h>
 #include <Data/Data.h>
 
@@ -21,17 +22,28 @@ class CRenderer: public Core::CRefCounted
 
 protected:
 
+	bool				_IsOpen;
 	IDirect3DDevice9*	pD3DDevice;
 	ID3DXEffectPool*	pEffectPool;
 
 public:
 
+	enum
+	{
+		MaxVertexStreamCount = 2 // Not sure why 2, N3 value
+	};
+
+	Resources::CResourceManager<CMesh>		MeshMgr;
+	Resources::CResourceManager<CTexture>	TextureMgr;
 	Resources::CResourceManager<CShader>	ShaderMgr;
 	Resources::CResourceManager<CMaterial>	MaterialMgr;
-	Resources::CResourceManager<CMesh>		MeshMgr;
 
-	CRenderer(): pEffectPool(NULL) { __ConstructSingleton; }
+	CRenderer(): _IsOpen(false), pEffectPool(NULL) { __ConstructSingleton; }
 	~CRenderer() { __DestructSingleton; }
+
+	bool				Open();
+	void				Close();
+	bool				IsOpen() const { return _IsOpen; }
 
 	IDirect3DDevice9*	GetD3DDevice() const { return pD3DDevice; }
 	ID3DXEffectPool*	GetD3DEffectPool() const { return pEffectPool; }

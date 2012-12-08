@@ -23,7 +23,7 @@ protected:
 
 public:
 
-	CMaterial(CStrID ID): CResource(ID), FeatureFlags(0) {}
+	CMaterial(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), FeatureFlags(0) {}
 
 	void		SetShader(CShader* pShader);
 	CShader*	GetShader() const { return Shader.get_unsafe(); }

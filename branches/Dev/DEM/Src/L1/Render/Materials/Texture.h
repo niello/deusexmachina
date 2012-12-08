@@ -3,18 +3,12 @@
 #define __DEM_L1_GFX_TEXTURE_H__
 
 #include <Resources/Resource.h>
-
-#define D3D9_ONLY
-
-#ifdef D3D9_ONLY
+#include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
-#else
-#include <Gfx/PixelFormat.h>
-#endif
 
 // Texture resource, usable by renderer
 
-//!!!OnDeviceLost, OnDeviceReset!
+//???!!!OnDeviceLost, OnDeviceReset! destroy & recreate
 
 namespace Render
 {
@@ -24,32 +18,6 @@ class CTexture: public Resources::CResource
 	DeclareRTTI;
 
 public:
-
-	//!!!GfxResource flags!
-	enum EUsage
-	{
-		UsageImmutable,      //> can only be read by GPU, not written, cannot be accessed by CPU
-		UsageDynamic,        //> can only be read by GPU, can only be written by CPU
-		UsageCpu,            //> a resource which is only accessible by the CPU and can't be used for rendering
-	};
-
-	//!!!GfxResource flags!
-	enum EAccessMode
-	{
-		AccessNone,         // CPU does not require access to the resource (best)
-		AccessWrite,        // CPU has write access
-		AccessRead,         // CPU has read access
-		AccessReadWrite,    // CPU has read/write access
-	};
-
-	enum EMapType
-	{
-		MapRead,                // gain read access, must be UsageDynamic and AccessRead
-		MapWrite,               // gain write access, must be UsageDynamic and AccessWrite
-		MapReadWrite,           // gain read/write access, must be UsageDynamic and AccessReadWrite
-		MapWriteDiscard,        // gain write access, discard previous content, must be UsageDynamic and AccessWrite
-		MapWriteNoOverwrite,    // gain write access, must be UsageDynamic and AccessWrite, see D3D10 docs for details
-	};
 
 	enum EType
 	{
@@ -103,11 +71,11 @@ protected:
 public:
 
 	EUsage					Usage;
-	EAccessMode				AccessMode;
+	ECPUAccess				AccessMode;
 	//int						SkippedMips;
 
-	CTexture(CStrID ID);
-	virtual ~CTexture() { n_assert(!pD3D9Tex); }
+	CTexture(CStrID ID, Resources::IResourceManager* pHost);
+	virtual ~CTexture();
 
 	virtual void	Unload();
 
@@ -128,15 +96,15 @@ public:
 	EPixelFormat				GetPixelFormat() const { return PixelFormat; }
 
 	IDirect3DBaseTexture9*		GetD3D9BaseTexture() const { n_assert(!LockCount); return pD3D9Tex; }
-	IDirect3DTexture9*			GetD3D9Texture() const;
-	IDirect3DCubeTexture9*		GetD3D9CubeTexture() const;
-	IDirect3DVolumeTexture9*	GetD3D9VolumeTexture() const;
+	IDirect3DTexture9*			GetD3D9Texture() const { n_assert(!LockCount && Type == Texture2D); return pD3D9Tex2D; }
+	IDirect3DCubeTexture9*		GetD3D9CubeTexture() const { n_assert(!LockCount && Type == TextureCube); return pD3D9TexCube; }
+	IDirect3DVolumeTexture9*	GetD3D9VolumeTexture() const { n_assert(!LockCount && Type == Texture3D); return pD3D9Tex3D; }
 };
 
 typedef Ptr<CTexture> PTexture;
 
-inline CTexture::CTexture(CStrID ID):
-	CResource(ID),
+inline CTexture::CTexture(CStrID ID, Resources::IResourceManager* pHost):
+	CResource(ID, pHost),
 	Usage(UsageImmutable),
 	AccessMode(AccessNone),
 	Type(InvalidType),
@@ -147,11 +115,15 @@ inline CTexture::CTexture(CStrID ID):
 	//skippedMips(0),
 	PixelFormat(InvalidPixelFormat),
 	LockCount(0),
-	pD3D9Tex(NULL)
+	pD3D9Tex(NULL),
+	pD3D9Tex2D(NULL)
 {
 }
 //---------------------------------------------------------------------
 
 }
+
+DECLARE_TYPE(Render::PTexture, 14)
+#define TTexture DATA_TYPE(Render::PTexture)
 
 #endif

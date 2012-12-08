@@ -15,7 +15,6 @@ namespace Data
 
 namespace Render
 {
-class CShaderVar;
 
 class CShader: public Resources::CResource
 {
@@ -43,7 +42,7 @@ protected:
 
 public:
 
-	CShader(CStrID ID): CResource(ID), pEffect(NULL) {}
+	CShader(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pEffect(NULL) {}
 
 	bool			SetActiveFeatures(DWORD FeatureFlags);
 	DWORD			Begin(); //bool SaveState);
@@ -59,7 +58,6 @@ public:
 	ID3DXEffect*	GetD3D9Effect() const { return pEffect; }
 
 	//!!!SetInt etc!!!
-	void			SetVar(const CShaderVar& Var);
 };
 
 typedef Ptr<CShader> PShader;

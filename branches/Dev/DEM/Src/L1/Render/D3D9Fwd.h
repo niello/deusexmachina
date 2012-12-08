@@ -7,7 +7,6 @@
 typedef enum _D3DFORMAT D3DFORMAT;
 typedef D3DFORMAT EPixelFormat;
 #define InvalidPixelFormat ((D3DFORMAT)0)
-#define AsNebulaPixelFormat
 
 #ifndef D3DXFX_LARGEADDRESS_HANDLE
 typedef LPCSTR D3DXHANDLE;
@@ -16,6 +15,10 @@ typedef UINT_PTR D3DXHANDLE;
 #endif
 
 struct IDirect3DDevice9;
+
+struct IDirect3DVertexBuffer9;
+struct IDirect3DIndexBuffer9;
+struct IDirect3DVertexDeclaration9;
 
 struct IDirect3DBaseTexture9;
 struct IDirect3DTexture9;

@@ -51,7 +51,6 @@ public:
     nRef<nMesh2> refMesh;
     nString meshName;
 	int meshUsage;
-    int groupIndex;
 
 	bool resourcesValid;
 
@@ -105,7 +104,7 @@ public:
 
 	CSPSRecord*	pSPSRecord;
 
-	CModel(): pSPSRecord(NULL), resourcesValid(false), groupIndex(0), meshUsage(nMesh2::WriteOnce) {}
+	CModel(): pSPSRecord(NULL), resourcesValid(false), MeshGroupIndex(0), meshUsage(nMesh2::WriteOnce) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void	OnRemove();

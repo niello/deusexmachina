@@ -8,6 +8,9 @@
 namespace Render
 {
 
+//void CShader::SetupFromD3DX9Effect(ID3DXEffect* pEff)
+	// assert validity, set eff, setup mappings
+
 //!!!LOADER!
 bool CShader::SetupFromStream(Data::CStream& Stream)
 {
@@ -16,6 +19,7 @@ bool CShader::SetupFromStream(Data::CStream& Stream)
 	n_assert(Stream.Read(Buffer.GetPtr(), FileSize) == FileSize);
 
 //!!!Many of things below affect only compilation from source. For release, can be omitted!
+	//Also can have two different loaders for different extensions
 
 	ID3DXBuffer* pErrorBuffer = NULL;
 	DWORD D3DEffFlags = D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
@@ -54,6 +58,8 @@ bool CShader::SetupFromStream(Data::CStream& Stream)
 	OK;
 }
 //---------------------------------------------------------------------
+
+// D3DXFX_DONOTSAVESTATE | D3DXFX_DONOTSAVESAMPLERSTATE | D3DXFX_DONOTSAVESHADERSTATE
 
 //!!!inline!
 void CShader::BeginPass(DWORD PassIdx)

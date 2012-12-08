@@ -10,7 +10,6 @@
 #include <Events/EventManager.h>
 #include <Scripting/ScriptServer.h>
 #include <DB/DBServer.h>
-#include <Resources/ResourceServer.h>
 #include <Loading/LoaderServer.h>
 #include <Gfx/GfxServer.h>
 #include <Render/Renderer.h>
@@ -64,7 +63,6 @@ protected:
 	Ptr<Scripting::CScriptServer>	ScriptServer;
 	Ptr<Events::CEventManager>		EventManager;
 	Ptr<DB::CDBServer>				DBServer;
-	Ptr<Resources::CResourceServer>	RsrcServer;
 	Ptr<Loading::CLoaderServer>		LoaderServer;
 	Ptr<Graphics::CGfxServer>		GfxServer;
 	Ptr<Render::CRenderer>			Renderer;
