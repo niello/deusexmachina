@@ -4,6 +4,26 @@ using Microsoft.VisualStudio.Shell.Interop;
 namespace Microsoft.VisualStudio.Project
 {
     [Flags]
+    public enum VsEditorCreateDocWinFlags
+    {
+        None = 0,
+        UserCanceled = __VSEDITORCREATEDOCWIN.ECDW_UserCanceled,
+        AltDocData = __VSCREATEDOCWIN.CDW_fAltDocData & __VSEDITORCREATEDOCWIN.ECDW_CDWFLAGS_MASK,
+        CreateNewWindow = __VSCREATEDOCWIN.CDW_fCreateNewWindow & __VSEDITORCREATEDOCWIN.ECDW_CDWFLAGS_MASK,
+        Dockable = __VSCREATEDOCWIN.CDW_fDockable & __VSEDITORCREATEDOCWIN.ECDW_CDWFLAGS_MASK,
+    }
+
+    [Flags]
+    public enum VsCreateEditorFlags : uint
+    {
+        CloneFile = __VSCREATEEDITORFLAGS.CEF_CLONEFILE,
+        OpenAsNew = __VSCREATEEDITORFLAGS.CEF_OPENASNEW,
+        OpenFile = __VSCREATEEDITORFLAGS.CEF_OPENFILE,
+        Silent = __VSCREATEEDITORFLAGS.CEF_SILENT,
+        OpenSpecific = __VSCREATEEDITORFLAGS2.CEF_OPENSPECIFIC,
+    }
+
+    [Flags]
     public enum VsCreateProjFlags : uint
     {
         CloneFile = __VSCREATEPROJFLAGS.CPF_CLONEFILE,

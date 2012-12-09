@@ -69,7 +69,7 @@
     <Compile Include="CideEmptyNode.cs" />
     <Compile Include="CidePathHelper.cs" />
     <Compile Include="CideProjectElements.cs" />
-    <Compile Include="EditorPane.cs" />
+    <Compile Include="LevelEditorPane.cs" />
     <Compile Include="LevelEditorFactory.cs" />
     <Compile Include="LevelNode.cs" />
     <Compile Include="SRCategoryAttribute.cs" />
@@ -108,7 +108,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\ImageList24.bmp" />
     <Content Include="Resources\Package.ico" />
-    <Content Include="_Readme_Debug.txt" />
+    <None Include="_Readme_Debug.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Templates\Levels.demcl" />

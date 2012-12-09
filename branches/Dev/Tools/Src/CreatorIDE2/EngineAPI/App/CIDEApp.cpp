@@ -28,6 +28,7 @@ PCIDEApp AppInst = NULL;
 CCIDEApp::CCIDEApp():
 	ParentHwnd(NULL),
 	MouseCB(NULL),
+	DataPathCB(NULL),
 	TransformMode(false),
 	LimitToGround(false),
 	SnapToGround(false)
@@ -73,12 +74,15 @@ bool CCIDEApp::Open()
 	//this->SetupFromDefaults();
 	//this->SetupFromProfile();
 	//this->SetupFromCmdLineArgs();
-
+	
 	if (!AppEnv->InitCore())
 	{
 		AppEnv->ReleaseCore();
 		FAIL;
 	}
+
+	DataSrv->DataPathCB = DataPathCB;
+	DataPathCB = NULL;
 
 	nString Home = DataSrv->ManglePath("home:");
 	nString Proj = DataSrv->ManglePath("proj:");
@@ -195,6 +199,14 @@ void CCIDEApp::Close()
 	AppEnv->ReleaseGameSystem();
 	AppEnv->ReleaseEngine();
 	AppEnv->ReleaseCore();
+}
+//---------------------------------------------------------------------
+
+void CCIDEApp::SetDataPathCB(Data::CDataPathCallback Cb)
+{
+	if(Data::CDataServer::HasInstance())
+		DataSrv->DataPathCB = Cb;
+	else DataPathCB = Cb;
 }
 //---------------------------------------------------------------------
 

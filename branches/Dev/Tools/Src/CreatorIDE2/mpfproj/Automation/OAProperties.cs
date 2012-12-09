@@ -137,22 +137,15 @@ namespace Microsoft.VisualStudio.Project.Automation
 			if(index is string)
 			{
 				string indexAsString = (string)index;
-				if(this.properties.ContainsKey(indexAsString))
-				{
-					return (EnvDTE.Property)this.properties[indexAsString];
-				}
-                if(indexAsString=="URL")
-                {
-                    // For VS built-in xml editor
-                    return null;
-                }
+				if(properties.ContainsKey(indexAsString))
+					return properties[indexAsString];
 			}
 			else if(index is int)
 			{
 				int realIndex = (int)index - 1;
-				if(realIndex >= 0 && realIndex < this.properties.Count)
+				if(realIndex >= 0 && realIndex < properties.Count)
 				{
-					IEnumerator enumerator = this.properties.Values.GetEnumerator();
+					IEnumerator enumerator = properties.Values.GetEnumerator();
 
 					int i = 0;
 					while(enumerator.MoveNext())
@@ -165,6 +158,7 @@ namespace Microsoft.VisualStudio.Project.Automation
 				}
 			}
 
+		    return null;
 			throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "index");
 		}
 		/// <summary>

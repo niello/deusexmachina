@@ -1,13 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.InteropServices;
 using CreatorIDE.Core;
 using CreatorIDE.Engine;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Props = CreatorIDE.Settings.Properties;
 
 namespace CreatorIDE.Package
@@ -53,6 +52,7 @@ namespace CreatorIDE.Package
         public const string GuidString = "dcc26fbc-ef0a-4431-a4eb-84842197c818";
 
         private readonly Lazy<CideEngine> _engine = new Lazy<CideEngine>(() => new CideEngine());
+        private readonly Dictionary<Guid, CideProjectNode> _registeredProjects = new Dictionary<Guid, CideProjectNode>();
 
         public CideEngine Engine { get { return _engine.Value; } }
 
@@ -106,5 +106,54 @@ namespace CreatorIDE.Package
         }
 
         #endregion
+
+        internal void RegisterProject(CideProjectNode projectNode)
+        {
+            if (projectNode == null)
+                throw new ArgumentNullException("projectNode");
+            lock (_registeredProjects)
+            {
+                _registeredProjects.Add(projectNode.ProjectIDGuid, projectNode);
+            }
+        }
+
+        internal bool UnregisterProject(CideProjectNode projectNode)
+        {
+            if (projectNode == null)
+                return false;
+            
+            lock(_registeredProjects)
+            {
+                CideProjectNode existingProject;
+                if (!_registeredProjects.TryGetValue(projectNode.ProjectIDGuid, out existingProject) || !ReferenceEquals(existingProject, projectNode))
+                {
+                    Debug.Assert(existingProject == null);
+                    return false;
+                }
+                return _registeredProjects.Remove(projectNode.ProjectGuid);
+            }
+        }
+
+        public bool TryGetProjectNode(Guid projectID, out CideProjectNode projectNode)
+        {
+            lock(_registeredProjects)
+            {
+                return _registeredProjects.TryGetValue(projectID, out projectNode);
+            }
+        }
+
+        public bool TryGetNode<TNode>(Guid projectID, VsItemID itemID, out TNode node)
+            where TNode : HierarchyNode
+        {
+            CideProjectNode projectNode;
+            if (!TryGetProjectNode(projectID, out projectNode) || projectNode == null)
+            {
+                node = null;
+                return false;
+            }
+
+            node = projectNode.NodeFromItemId(itemID) as TNode;
+            return node != null;
+        }
     }
 }

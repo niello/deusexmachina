@@ -26,6 +26,23 @@ namespace CreatorIDE.Package
 
         public int ImageListOffset { get { return _imageListOffset; } }
 
+        public sealed override Guid ProjectIDGuid
+        {
+            get { return base.ProjectIDGuid; }
+            set
+            {
+                if (ProjectIDGuid == value)
+                    base.ProjectIDGuid = value;
+                else
+                {
+                    // Every project registers itself in the package
+                    _package.UnregisterProject(this);
+                    base.ProjectIDGuid = value;
+                    _package.RegisterProject(this);
+                }
+            }
+        }
+
         public CideProjectNode(CidePackage package)
         {
             _imageListOffset = ImageHandler.ImageList.Images.Count;

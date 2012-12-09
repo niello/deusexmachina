@@ -1,14 +1,14 @@
 using System.Reflection;
 
+[assembly: AssemblyConfiguration(CreatorIDE.Settings.Properties.Configuration)]
+[assembly: AssemblyCompany(CreatorIDE.Settings.Properties.Company)]
+[assembly: AssemblyProduct(CreatorIDE.Settings.Properties.Product)]
+[assembly: AssemblyCopyright(CreatorIDE.Settings.Properties.Copyright)]
+//[assembly: AssemblyTrademark("")]
+//[assembly: AssemblyCulture("")]
+
 namespace CreatorIDE.Settings
 {
-	[assembly: AssemblyConfiguration(Properties.Configuration)]
-	[assembly: AssemblyCompany(Properties.Company)]
-	[assembly: AssemblyProduct(Properties.Product)]
-	[assembly: AssemblyCopyright(Properties.Copyright)]
-	//[assembly: AssemblyTrademark("")]
-	//[assembly: AssemblyCulture("")]
-	
 	static partial class Properties
 	{
 		public const string 
@@ -22,7 +22,7 @@ namespace CreatorIDE.Settings
 #endif
 #if !OVERRIDE_PRODUCT_INFO
 			, Company = "Still No Team Name"
-			, Product = "CreatorIDE"
+			, Product = "DemCreator"
 			, Copyright = "(c) 2011 - 2012"
 #endif
 			;

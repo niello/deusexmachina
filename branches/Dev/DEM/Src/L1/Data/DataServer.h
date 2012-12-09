@@ -18,6 +18,10 @@ class CBuffer;
 typedef Ptr<class CParams> PParams;
 typedef Ptr<class CXMLDocument> PXMLDocument;
 
+#ifdef _EDITOR
+typedef bool (__stdcall *CDataPathCallback)(LPCSTR DataPath, LPCSTR* MangledPath);
+#endif
+
 #define DataSrv Data::CDataServer::Instance()
 
 class CDataServer: public Core::CRefCounted
@@ -35,6 +39,10 @@ private:
 	nDictionary<CStrID, PDataScheme>	DataSchemes;
 
 public:
+
+#ifdef _EDITOR
+	CDataPathCallback					DataPathCB;
+#endif
 
 	CDataServer();
 	~CDataServer();

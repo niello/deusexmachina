@@ -12,21 +12,23 @@ namespace CreatorIDE.Package
         private const string GuidString = "0CEA25A5-4799-4461-A7FB-79C77EA04743";
         public const string FileExtension = "db3";
 
-        public LevelNode(CideProjectNode projectNode, ProjectElement element):
-            base(projectNode,element)
-        {}
-
         public override Guid ItemTypeGuid
         {
-            get { return typeof (LevelNode).GUID; }
+            get { return typeof(LevelNode).GUID; }
         }
 
         public override int ImageIndex
         {
-            get { return ((CideProjectNode) ProjectMgr).ImageListOffset + Images.Globe; }
+            get { return ProjectMgr.ImageListOffset + Images.Globe; }
         }
 
-        protected override Guid DefaultEditorTypeID { get { return typeof (LevelEditorFactory).GUID; } }
+        protected override Guid DefaultEditorTypeID { get { return typeof(LevelEditorFactory).GUID; } }
+
+        public new CideProjectNode ProjectMgr { get { return (CideProjectNode)base.ProjectMgr; } }
+
+        public LevelNode(CideProjectNode projectNode, ProjectElement element):
+            base(projectNode,element)
+        {}
 
         protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
         {

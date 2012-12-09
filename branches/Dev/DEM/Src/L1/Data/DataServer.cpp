@@ -22,6 +22,10 @@ CDataServer::CDataServer(): HRDCache(PParams()), Assigns(nString())
 	n_assert(!Singleton);
 	Singleton = this;
 
+#ifdef _EDITOR
+	DataPathCB = NULL;
+#endif
+
 	DefaultFS = n_new(CFileSystemWin32);
 
 	nString SysFolder;
