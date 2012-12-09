@@ -15,6 +15,10 @@ namespace CreatorIDE.Engine
 
         private AppHandle _engineHandle;
 
+        public event EventHandler<EnginePathRequestEventArgs> PathRequest;
+
+        public event EventHandler<EngineMouseClickEventArgs> MouseClick;
+
         public CideEngine()
         {
             _engineHandle = new AppHandle(CreateEngine());
@@ -22,8 +26,47 @@ namespace CreatorIDE.Engine
 
         public int Init(IntPtr parentHwnd, string projDir)
         {
+            SetDataPathCallback(_engineHandle.Handle, OnDataPathCallback);
+            SetMouseButtonCallback(_engineHandle.Handle, OnMouseButtonCallback);
+
             return Init(_engineHandle.Handle, parentHwnd, projDir);
         }
+
+        private void OnMouseButtonCallback(int x, int y, int button, EMouseAction action)
+        {
+            var h = MouseClick;
+            if (h == null)
+                return;
+
+            var args = new EngineMouseClickEventArgs(x, y, button, action);
+            h(this, args);
+        }
+
+        private bool OnDataPathCallback(string dataPath, out string mangledPath)
+        {
+            var h = PathRequest;
+            if (h != null)
+            {
+                var args = new EnginePathRequestEventArgs(dataPath);
+                h(this, args);
+
+                if(args.Handled)
+                {
+                    var path = args.NormalizedPath;
+                    if (path != null)
+                        path = path.Trim();
+                    if(!string.IsNullOrEmpty(path))
+                    {
+                        mangledPath = path;
+                        return true;
+                    }
+                }
+            }
+
+            mangledPath = null;
+            return false;
+        }
+
 
         public void Dispose()
         {
@@ -31,7 +74,7 @@ namespace CreatorIDE.Engine
             if (handle == AppHandle.Zero)
                 return;
             
-            Release(handle);
+            Release(handle.Handle);
         }
 
         ~CideEngine()
@@ -45,7 +88,7 @@ namespace CreatorIDE.Engine
         private static extern int Init(IntPtr handle, IntPtr parentHwnd, string projDir);
 
         [DllImport(DllName)]
-        private static extern void Release([MarshalAs(AppHandle.MarshalAs)] AppHandle handle);
+        private static extern void Release(IntPtr handle);
 
         [DllImport(DllName)]
         [return: MarshalAs(UnmanagedType.I1)]
@@ -73,10 +116,13 @@ namespace CreatorIDE.Engine
         private static extern int GetDLLVersionCode();
 
         [DllImport(DllName)]
-        private static extern void SetMouseButtonCallback([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, MouseButtonCallback callback);
+        private static extern void SetMouseButtonCallback(IntPtr handle, MouseButtonCallback callback);
 
         [DllImport(DllName)]
         private static extern IntPtr CreateEngine();
+
+        [DllImport(DllName)]
+        private static extern void SetDataPathCallback(IntPtr handle, DataPathCallback callback);
 
         #endregion
     }
@@ -89,5 +135,7 @@ namespace CreatorIDE.Engine
         DoubleClick
     }
 
-    public delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
+    internal delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
+
+    internal delegate bool DataPathCallback(string dataPath, out string mangledPath);
 }

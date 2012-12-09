@@ -81,3 +81,10 @@ API void SetMouseButtonCallback(CIDEAppHandle Handle, CMouseButtonCallback Cb)
 	CIDEApp->MouseCB = Cb;
 }
 //---------------------------------------------------------------------
+
+API void SetDataPathCallback(CIDEAppHandle Handle, Data::CDataPathCallback Cb)
+{
+	DeclareCIDEApp(Handle);
+	CIDEApp->SetDataPathCB(Cb);
+}
+//---------------------------------------------------------------------

@@ -40,6 +40,7 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -57,6 +58,8 @@
     <Compile Include="DataTypes.cs" />
     <Compile Include="EditorCamera.cs" />
     <Compile Include="Engine.cs" />
+    <Compile Include="EngineMouseClickEventArgs.cs" />
+    <Compile Include="EnginePathRequestEventArgs.cs" />
     <Compile Include="Entities.cs" />
     <Compile Include="Levels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -347,21 +347,23 @@ namespace Microsoft.VisualStudio.Project
 		{
 			get
 			{
-				return this.projectIdGuid;
+				return projectIdGuid;
 			}
 			set
 			{
-				if(this.projectIdGuid != value)
-				{
-					this.projectIdGuid = value;
-					if(this.buildProject != null)
-					{
-						this.SetProjectProperty("ProjectGuid", this.projectIdGuid.ToString("B"));
-					}
-				}
+			    if (projectIdGuid == value)
+                    return;
+
+			    var oldValue = projectIdGuid;
+			    projectIdGuid = value;
+			    if(buildProject != null)
+			    {
+			        SetProjectProperty("ProjectGuid", projectIdGuid.ToString("B"));
+			    }
 			}
 		}
-		#endregion
+
+	    #endregion
 
 		#region properties
 
@@ -1692,7 +1694,7 @@ namespace Microsoft.VisualStudio.Project
 				if((flags & VsCreateProjFlags.CloneFile) == VsCreateProjFlags.CloneFile)
 				{
 					// we need to generate a new guid for the project
-					this.projectIdGuid = Guid.NewGuid();
+					ProjectIDGuid = Guid.NewGuid();
 				}
 				else
 				{
@@ -2406,7 +2408,7 @@ namespace Microsoft.VisualStudio.Project
 
 			// If the project is trusted because it has been checked previously and marked as such in
 			// the .SUO file, then no need to go through all this.
-			ProjectTrustLevel projectTrustLevel = this.package.GetProjectTrustLevel(this.projectIdGuid);
+			ProjectTrustLevel projectTrustLevel = this.package.GetProjectTrustLevel(this.ProjectIDGuid);
 			if(projectTrustLevel == ProjectTrustLevel.Trusted)
 			{
 				return ProjectLoadOption.LoadNormally;
@@ -2468,7 +2470,7 @@ namespace Microsoft.VisualStudio.Project
 						// The project was unsafe, and the user has opted to treat it as safe.
 						// Mark the project as "Trusted" in the .SUO file, so we never have to
 						// go through all this again.
-						this.package.SetProjectTrustLevel(this.projectIdGuid, ProjectTrustLevel.Trusted);
+						this.package.SetProjectTrustLevel(this.ProjectIDGuid, ProjectTrustLevel.Trusted);
 					}
 					else
 					{
@@ -2477,7 +2479,7 @@ namespace Microsoft.VisualStudio.Project
 
 						if(projectLoadOption == ProjectLoadOption.LoadNormally)
 						{
-							this.package.SetProjectTrustLevel(this.projectIdGuid, ProjectTrustLevel.Trusted);
+							this.package.SetProjectTrustLevel(this.ProjectIDGuid, ProjectTrustLevel.Trusted);
 						}
 					}
 				}
@@ -5947,7 +5949,7 @@ namespace Microsoft.VisualStudio.Project
 		private void SetProjectGuidFromProjectFile()
 		{
 		    var projectGuid = GetProjectProperty(ProjectFileConstants.ProjectGuid);
-		    projectIdGuid = string.IsNullOrEmpty(projectGuid) ? Guid.NewGuid() : new Guid(projectGuid);
+		    ProjectIDGuid = string.IsNullOrEmpty(projectGuid) ? Guid.NewGuid() : new Guid(projectGuid);
 		}
 
 	    /// <summary>

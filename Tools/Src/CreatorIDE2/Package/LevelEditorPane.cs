@@ -24,11 +24,18 @@ namespace CreatorIDE.Package
                                 IExtensibleObject  //so we can get the automation object
     {
         private readonly Control _control;
+        private readonly LevelNode _levelNode;
 
-        public LevelEditorPane(IServiceProvider provider):
+        public LevelEditorPane(IServiceProvider provider, LevelNode levelNode):
             base(provider)
         {
+            if (levelNode == null)
+                throw new ArgumentNullException("levelNode");
+
             _control = new Control();
+            _levelNode = levelNode;
+            var engine = _levelNode.ProjectMgr.Engine;
+            engine.Init(_control.Handle, @"E:\Victor\Projects\IPG\Shantara\InsanePoet\Bin");
         }
 
         #region Overrides of WindowPane

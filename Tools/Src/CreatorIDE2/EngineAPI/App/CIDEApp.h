@@ -8,6 +8,7 @@
 #include <Items/ItemManager.h>
 #include <Game/Entity.h>
 #include <Data/Singleton.h>
+#include <Data/DataServer.h>
 #include "../StdAPI.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -46,6 +47,9 @@ private:
 	Ptr<Story::CDlgSystem>		DlgSystem;
 	Ptr<Items::CItemManager>	ItemManager;
 
+	// We may subscribe to this callback before CDataServer is initialized. So it's temporary stored here.
+	Data::CDataPathCallback		DataPathCB;
+
 public:
 
 	Game::PEntity				EditorCamera;
@@ -74,6 +78,7 @@ public:
 	void	SetupDisplayMode();
 	bool	AdvanceFrame();
 	void	Close();
+	void	SetDataPathCB(Data::CDataPathCallback Cb);
 };
 
 typedef CCIDEApp* PCIDEApp;
