@@ -1432,6 +1432,14 @@
 				Name="Materials"
 				>
 				<File
+					RelativePath="..\..\Src\L1\Render\Materials\FXLoader.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Materials\FXOLoader.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L1\Render\Materials\Material.h"
 					>
 				</File>
@@ -1468,7 +1476,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\L1\Render\Geometry\Mesh.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L1\Render\Geometry\Mesh.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Geometry\NVX2Loader.cpp"
 					>
 				</File>
 				<File

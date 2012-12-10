@@ -39,8 +39,7 @@ bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage
 		default: n_error("Invalid IndexBuffer usage!");
 	}
 
-	HRESULT hr = RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL);
-	if (FAILED(hr)) FAIL;
+	if (FAILED(RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL))) FAIL;
 
 	if (D3DPool == D3DPOOL_DEFAULT)
 	{
@@ -66,6 +65,9 @@ void* CVertexBuffer::Map(EMapType MapType)
 	DWORD LockFlags = 0;
 	switch (MapType)
 	{
+		case MapSetup:
+			LockFlags |= D3DLOCK_NOSYSLOCK;
+			break;
 		case MapRead:
 			//n_assert((Usage == UsageDynamic || Usage == UsageCPU) && (Access == AccessRead));
 			break;

@@ -75,7 +75,7 @@ public:
 	//int						SkippedMips;
 
 	CTexture(CStrID ID, Resources::IResourceManager* pHost);
-	virtual ~CTexture();
+	virtual ~CTexture() { if (IsLoaded()) Unload(); }
 
 	virtual void	Unload();
 

@@ -35,9 +35,10 @@ protected:
 public:
 
 	CIndexBuffer(): pBuffer(NULL), Type(Index16), Count(0), LockCount(0) {}
+	~CIndexBuffer() { Destroy(); }
 
 	bool	Create(EType IndexType, DWORD IndexCount, EUsage BufferUsage, ECPUAccess BufferAccess);
-	void	Destroy(); //!!!destructor must call!
+	void	Destroy();
 	void*	Map(EMapType MapType);
 	void	Unmap();
 

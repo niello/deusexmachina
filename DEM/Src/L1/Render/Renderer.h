@@ -22,9 +22,13 @@ class CRenderer: public Core::CRefCounted
 
 protected:
 
-	bool				_IsOpen;
-	IDirect3DDevice9*	pD3DDevice;
-	ID3DXEffectPool*	pEffectPool;
+	enum { MaxShaderFeatureCount = sizeof(DWORD) * 4 };
+
+	bool								_IsOpen;
+	nDictionary<CStrID, PVertexLayout>	VertexLayouts;
+	nDictionary<CStrID, int>			ShaderFeatures;
+	IDirect3DDevice9*					pD3DDevice;
+	ID3DXEffectPool*					pEffectPool;
 
 public:
 
@@ -38,13 +42,15 @@ public:
 	Resources::CResourceManager<CShader>	ShaderMgr;
 	Resources::CResourceManager<CMaterial>	MaterialMgr;
 
-	CRenderer(): _IsOpen(false), pEffectPool(NULL) { __ConstructSingleton; }
+	CRenderer(): _IsOpen(false), pD3DDevice(NULL), pEffectPool(NULL) { __ConstructSingleton; }
 	~CRenderer() { __DestructSingleton; }
 
 	bool				Open();
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
 
+	PVertexLayout		GetVertexLayout(const nArray<CVertexComponent>& Components);
+	DWORD				ShaderFeatureStringToMask(const nString& FeatureString);
 	IDirect3DDevice9*	GetD3DDevice() const { return pD3DDevice; }
 	ID3DXEffectPool*	GetD3DEffectPool() const { return pEffectPool; }
 };

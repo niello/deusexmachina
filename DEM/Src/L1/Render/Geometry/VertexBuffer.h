@@ -26,9 +26,10 @@ protected:
 public:
 
 	CVertexBuffer(): pBuffer(NULL), Count(0), LockCount(0) {}
+	~CVertexBuffer() { Destroy(); }
 
 	bool	Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage BufferUsage, ECPUAccess BufferAccess);
-	void	Destroy(); //!!!destructor must call!
+	void	Destroy();
 	void*	Map(EMapType MapType);
 	void	Unmap();
 

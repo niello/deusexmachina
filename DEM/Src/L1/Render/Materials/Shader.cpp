@@ -1,61 +1,61 @@
 #include "Shader.h"
 
 #include <Render/Renderer.h>
-#include <Data/Stream.h>
-#include <Data/Buffer.h>
-#include <d3dx9effect.h>
+#include <d3dx9.h>
 
 namespace Render
 {
 
-//void CShader::SetupFromD3DX9Effect(ID3DXEffect* pEff)
-	// assert validity, set eff, setup mappings
-
-//!!!LOADER!
-bool CShader::SetupFromStream(Data::CStream& Stream)
+bool CShader::Setup(ID3DXEffect* pFX)
 {
-	DWORD FileSize = Stream.GetSize();
-	Data::CBuffer Buffer(FileSize);
-	n_assert(Stream.Read(Buffer.GetPtr(), FileSize) == FileSize);
+	if (!pFX) FAIL;
 
-//!!!Many of things below affect only compilation from source. For release, can be omitted!
-	//Also can have two different loaders for different extensions
+	pEffect = pFX;
 
-	ID3DXBuffer* pErrorBuffer = NULL;
-	DWORD D3DEffFlags = D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
-#if N_D3D9_DEBUG
-	D3DEffFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
-#endif
+	D3DXEFFECT_DESC Desc = { 0 };    
+	n_assert(SUCCEEDED(pEffect->GetDesc(&Desc)));
 
-//???TMP OLD?
-	//CD3DXNebula2Include IncludeHandler(shaderPath.ExtractDirName());
-
-	LPCSTR VSProfile = D3DXGetVertexShaderProfile(RenderSrv->GetD3DDevice());
-	LPCSTR PSProfile = D3DXGetPixelShaderProfile(RenderSrv->GetD3DDevice());
-	if (!VSProfile) VSProfile = "vs_2_0";
-	if (!PSProfile) PSProfile = "ps_2_0";
-
-	D3DXMACRO Defines[] =
+	n_assert(Desc.Techniques > 0);
+	for (UINT i = 0; i < Desc.Techniques; ++i)
 	{
-		{ "VS_PROFILE", VSProfile },
-		{ "PS_PROFILE", PSProfile },
-		{ NULL, NULL }
-	};
-// end OLD
+		D3DXHANDLE hTech = pEffect->GetTechnique(i);
+		D3DXTECHNIQUE_DESC TechDesc;
+		n_assert(SUCCEEDED(pEffect->GetTechniqueDesc(hTech, &TechDesc)));
+		//NameToTech.Add(CStrID(TechDesc.Name), hTech);
 
-	HRESULT hr = D3DXCreateEffect(RenderSrv->GetD3DDevice(), Buffer.GetPtr(), FileSize, Defines, NULL, D3DEffFlags,
-		RenderSrv->GetD3DEffectPool(), &pEffect, &pErrorBuffer);
-
-	if (FAILED(hr) || !pEffect)
-	{
-		n_error("CShader: failed to load fx file '%s' with:\n\n%s\n",
-			"<path>",
-			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
-		if (pErrorBuffer) pErrorBuffer->Release();
-		FAIL;
+		D3DXHANDLE hFeatureAnnotation = pEffect->GetAnnotationByName(hTech, "Mask");
+		if (hFeatureAnnotation)
+		{
+			LPCSTR pFeatMask = NULL;
+			n_assert(SUCCEEDED(pEffect->GetString(hFeatureAnnotation, &pFeatMask)));
+			DWORD Mask = RenderSrv->ShaderFeatureStringToMask(pFeatMask);
+			FlagsToTech.Add(Mask, hTech);
+		}
+		else n_printf("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}
 
+	for (UINT i = 0; i < Desc.Parameters; ++i)
+	{
+		HVar hVar = pEffect->GetParameter(NULL, i);
+		D3DXPARAMETER_DESC ParamDesc = { 0 };
+		n_assert(SUCCEEDED(pEffect->GetParameterDesc(hVar, &ParamDesc)));
+		NameToHVar.Add(CStrID(ParamDesc.Name), hVar);
+		SemanticToHVar.Add(CStrID(ParamDesc.Semantic), hVar);
+		// Can also check type, if needed
+	}
+
+	//!!!subscribe lost & reset!
+
+	State = Resources::Rsrc_Loaded;
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CShader::Unload()
+{
+	//!!!unsubscribe lost & reset!
+	SAFE_RELEASE(pEffect);
+	State = Resources::Rsrc_NotLoaded;
 }
 //---------------------------------------------------------------------
 

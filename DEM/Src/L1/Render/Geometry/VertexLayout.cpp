@@ -31,6 +31,20 @@ BYTE SemanticD3DUsages[] =
 	D3DDECLUSAGE_BLENDINDICES
 };
 
+LPCSTR FormatNames[] =
+{
+	"F",
+	"F2",
+	"F3",
+	"F4",
+	"UB4",        
+	"S2",        
+	"S4",        
+	"UB4N",
+	"S2N",
+	"S4N"
+};
+
 BYTE FormatD3DTypes[] =
 {
 	D3DDECLTYPE_FLOAT1,
@@ -87,6 +101,21 @@ void CVertexLayout::Destroy()
 	SAFE_RELEASE(pDecl);
 	Components.Clear();
 	VertexSize = 0;
+}
+//---------------------------------------------------------------------
+
+CStrID CVertexLayout::BuildSignature(const nArray<CVertexComponent>& Components)
+{
+	if (!Components.Size()) return CStrID::Empty;
+	nString UID;
+	for (int i = 0; i < Components.Size(); ++i)
+	{
+		const CVertexComponent& Cmp = Components[i];
+		UID += Cmp.GetSemanticString();
+		if (Cmp.Index > 0) UID.AppendInt(Cmp.Index);
+		UID += Cmp.GetFormatString();
+	}
+	return CStrID(UID.Get());
 }
 //---------------------------------------------------------------------
 
