@@ -24,6 +24,7 @@ enum ECPUAccess
 
 enum EMapType
 {
+	MapSetup,               // gain write access for the initial filling of the buffer. Don't misuse!
 	MapRead,                // gain read access, must be UsageDynamic and AccessRead
 	MapWrite,               // gain write access, must be UsageDynamic and AccessWrite
 	MapReadWrite,           // gain read/write access, must be UsageDynamic and AccessReadWrite

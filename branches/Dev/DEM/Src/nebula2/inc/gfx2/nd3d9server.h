@@ -190,7 +190,9 @@ public:
     virtual void RestoreGamma();
 	
 	void			GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const { Display.GetRelativeXY(XAbs, YAbs, XRel, YRel); }
-
+    /// get a pointer to the global d3dx effect pool
+    ID3DXEffectPool* GetEffectPool() const;
+ 
 private:
 
 	/// check for lost device, and reset if possible
@@ -225,9 +227,7 @@ private:
     int GetD3DPrimTypeAndNum(PrimitiveType primType, D3DPRIMITIVETYPE& d3dPrimType) const;
     /// update the mouse cursor image and visibility
     void UpdateCursor();
-    /// get a pointer to the global d3dx effect pool
-    ID3DXEffectPool* GetEffectPool() const;
-    /// update shared shader parameters per frame
+   /// update shared shader parameters per frame
     void UpdatePerFrameSharedShaderParams();
     /// update shared shader parameters per scene
     void UpdatePerSceneSharedShaderParams();

@@ -12,23 +12,6 @@ namespace Render
 {
 ImplementRTTI(Render::CTexture, Resources::CResource);
 
-CTexture::~CTexture()
-{
-	// if (IsLoaded()) Unload();
-	// OR SAFE_RELEASE(pD3D9Tex);
-	// OR n_assert(!pD3D9Tex);
-
-	//!!!it was Unload() code!
-	switch (Type)
-	{
-		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
-		case Texture3D:		SAFE_RELEASE(pD3D9Tex3D); break;
-		case TextureCube:	SAFE_RELEASE(pD3D9TexCube); break;
-	}
-	SAFE_RELEASE(pD3D9Tex);
-}
-//---------------------------------------------------------------------
-
 inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 {
 	switch (MapType)
@@ -54,8 +37,14 @@ inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 void CTexture::Unload()
 {
 	n_assert(!LockCount);
+	switch (Type)
+	{
+		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
+		case Texture3D:		SAFE_RELEASE(pD3D9Tex3D); break;
+		case TextureCube:	SAFE_RELEASE(pD3D9TexCube); break;
+	}
 	SAFE_RELEASE(pD3D9Tex);
-	CResource::Unload();
+	State = Resources::Rsrc_NotLoaded; //CResource::Unload();
 }
 //---------------------------------------------------------------------
 

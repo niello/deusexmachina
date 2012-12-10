@@ -39,7 +39,7 @@ public:
 
 	bool			Load(LPCSTR pFileName, CResourceLoader* pLoader); //???or request mgr to load?
 	bool			Reload();
-	void			Unload() { State = Rsrc_NotLoaded; }
+	virtual void	Unload() { State = Rsrc_NotLoaded; }
 
 	CStrID			GetUID() const { return UID; }
 	EResourceState	GetState() const { return State; }

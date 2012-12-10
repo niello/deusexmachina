@@ -50,8 +50,9 @@ struct CVertexComponent
 	CVertexComponent(ESemantic Sem, EFormat Fmt, DWORD Idx = 0, DWORD StreamIdx = 0):
 		Semantic(Sem), Format(Fmt), Index(Idx), Stream(StreamIdx) {}
 
-	LPCSTR	GetSemanticString() const;
+	LPCSTR	GetFormatString() const;
 	BYTE	GetD3DDeclType() const;
+	LPCSTR	GetSemanticString() const;
 	BYTE	GetD3DUsage() const;
 	DWORD	GetSize() const;
 };
@@ -67,25 +68,28 @@ protected:
 public:
 
 	CVertexLayout(): pDecl(NULL), VertexSize(0) {}
+	~CVertexLayout() { Destroy(); }
 
 	bool	Create(const nArray<CVertexComponent>& VertexComponents);
-	void	Destroy(); //!!!destructor must call!
+	void	Destroy();
 
 	DWORD	GetVertexSize() const { return VertexSize; }
 
-	IDirect3DVertexDeclaration9* GetD3DVertexDeclaration() const { return pDecl; }
+	static CStrID					BuildSignature(const nArray<CVertexComponent>& Components);
+	IDirect3DVertexDeclaration9*	GetD3DVertexDeclaration() const { return pDecl; }
 };
 
 typedef Ptr<CVertexLayout> PVertexLayout;
 
 extern LPCSTR SemanticNames[];
 extern BYTE SemanticD3DUsages[];
+extern LPCSTR FormatNames[];
 extern BYTE FormatD3DTypes[];
 
-inline LPCSTR CVertexComponent::GetSemanticString() const
+inline LPCSTR CVertexComponent::GetFormatString() const
 {
-	n_assert_dbg(Semantic < Invalid);
-	return SemanticNames[Semantic]; //???add index here?
+	n_assert_dbg(Format < FORMAT_COUNT);
+	return FormatNames[Format];
 }
 //---------------------------------------------------------------------
 
@@ -93,6 +97,13 @@ inline BYTE CVertexComponent::GetD3DDeclType() const
 {
 	n_assert_dbg(Format < FORMAT_COUNT);
 	return FormatD3DTypes[Format];
+}
+//---------------------------------------------------------------------
+
+inline LPCSTR CVertexComponent::GetSemanticString() const
+{
+	n_assert_dbg(Semantic < Invalid);
+	return SemanticNames[Semantic];
 }
 //---------------------------------------------------------------------
 

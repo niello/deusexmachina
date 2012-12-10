@@ -29,6 +29,7 @@ protected:
 
 	ID3DXEffect*					pEffect;
 
+	//nDictionary<CStrID, D3DXHANDLE>	NameToTech;
 	nDictionary<DWORD, D3DXHANDLE>	FlagsToTech;
 	//!!!store current tech to avoid resetting tech already active!
 
@@ -38,11 +39,13 @@ protected:
 
 	//!!!OnDeviceLost, OnDeviceReset events!
 
-	bool			SetupFromStream(Data::CStream& Stream);
-
 public:
 
 	CShader(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pEffect(NULL) {}
+	virtual ~CShader() { if (IsLoaded()) Unload(); }
+
+	bool			Setup(ID3DXEffect* pFX);
+	virtual void	Unload();
 
 	bool			SetActiveFeatures(DWORD FeatureFlags);
 	DWORD			Begin(); //bool SaveState);

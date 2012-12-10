@@ -7,6 +7,11 @@
 //!!!OLD!
 #include "scene/nsceneserver.h"
 
+namespace Render
+{
+	bool LoadMeshFromNVX2(const nString& FileName, PMesh OutMesh);
+}
+
 namespace Scene
 {
 ImplementRTTI(Scene::CModel, Scene::CSceneNodeAttr);
@@ -285,6 +290,7 @@ bool CModel::LoadResources()
 	for (int i = 0; i < texNodeArray.Size(); i++)
 		if (!LoadTexture(i)) return false;
 	if (!LoadMesh()) return false;
+	if (!Render::LoadMeshFromNVX2(meshName, Mesh)) return false; //!!!usage & access!
 	return true;
 }
 //---------------------------------------------------------------------
