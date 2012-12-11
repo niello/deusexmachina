@@ -3,13 +3,21 @@
 #define __DEM_L1_RENDER_MATERIAL_H__
 
 #include <Render/Materials/ShaderVar.h>
+//#include <Resources/Resource.h>
+//#include <Data/StringID.h>
+//#include <util/ndictionary.h>
 
 // Material consists of material shader (typically phong, cook-torrance or smth), feature flags that specify
 // additional features (light, alpha etc) and variable info. Textures are managed as all other variables.
 // Material is all that is needed to render geometry.
 
+// NB: Material is dependent on other resource, Shader
+//???load textures? some vars can be PTexture
+
 namespace Render
 {
+//typedef Ptr<class CShader> PShader;
+//typedef nDictionary<CStrID, class CShaderVar> CShaderVarMap;
 
 class CMaterial: public Resources::CResource
 {
@@ -19,32 +27,17 @@ protected:
 	DWORD			FeatureFlags;
 	CShaderVarMap	StaticVars;
 
-	//!!!mb Loaded, but definitely Invalid until shader is Loaded!
-
 public:
 
 	CMaterial(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), FeatureFlags(0) {}
 
-	void		SetShader(CShader* pShader);
-	CShader*	GetShader() const { return Shader.get_unsafe(); }
+	bool			Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars);
+	virtual void	Unload();
+
+	CShader*		GetShader() const { return Shader.get_unsafe(); }
 };
 
 typedef Ptr<CMaterial> PMaterial;
-
-inline void CMaterial::SetShader(CShader* pShader)
-{
-	n_assert(pShader);
-	Shader = pShader;
-
-	if (Shader->IsLoaded())
-	{
-		//???set active feature for test? mb it is never used with these flags, always adding Skinned etc
-
-		for (int i = 0; i < StaticVars.Size(); ++i)
-			StaticVars.ValueAtIndex(i).Bind(*pShader);
-	}
-}
-//---------------------------------------------------------------------
 
 }
 

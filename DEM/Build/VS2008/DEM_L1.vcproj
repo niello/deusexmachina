@@ -1297,6 +1297,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\LoadNodesFromSCN.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\LODGroup.cpp"
 				>
 			</File>
@@ -1342,10 +1346,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Scene\SceneServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Scene\SCNLoader.cpp"
 				>
 			</File>
 			<File
@@ -1432,11 +1432,19 @@
 				Name="Materials"
 				>
 				<File
-					RelativePath="..\..\Src\L1\Render\Materials\FXLoader.cpp"
+					RelativePath="..\..\Src\L1\Render\Materials\LoadMaterialFromPRM.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L1\Render\Materials\FXOLoader.cpp"
+					RelativePath="..\..\Src\L1\Render\Materials\LoadShaderFromFX.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Materials\LoadShaderFromFXO.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Materials\Material.cpp"
 					>
 				</File>
 				<File
@@ -1476,15 +1484,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\L1\Render\Geometry\LoadMeshFromNVX2.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L1\Render\Geometry\Mesh.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\..\Src\L1\Render\Geometry\Mesh.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Render\Geometry\NVX2Loader.cpp"
 					>
 				</File>
 				<File

@@ -9,6 +9,7 @@
 
 namespace Render
 {
+	bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial);
 	bool LoadMeshFromNVX2(const nString& FileName, PMesh OutMesh);
 }
 
@@ -21,21 +22,9 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
-		case 'RDHS': // SHDR
+		case 'LRTM': // MTRL
 		{
-			CStrID ShaderID;
-			DataReader.Read(ShaderID);
-
-			SetShader(ShaderID.CStr());
-
-			//Material = RenderSrv->MaterialMgr.GetResource(MaterialID);
-
-			//!!!TMP!
-			// For now - create material, find shader by ID and set to material
-			//Material = n_new(Render::CMaterial(Renderer->GetShader(Value)));
-			Material = RenderSrv->MaterialMgr.GetTypedResource(ShaderID);
-			Material->SetShader(RenderSrv->ShaderMgr.GetTypedResource(ShaderID));
-
+			Material = RenderSrv->MaterialMgr.GetTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
 		case 'SRAV': // VARS
@@ -47,9 +36,10 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				CStrID VarName;
 				DataReader.Read(VarName);
 				CShaderVar& Var = ShaderVars.Add(VarName);
-				if (Material.isvalid()) Var.Bind(*Material->GetShader());
+				//if (Material.isvalid() && Material->IsLoaded()) Var.Bind(*Material->GetShader());
 				DataReader.Read(Var.Value);
 				//???check type if bound? use SetValue for it?
+				//Can set CData type at var creation and set value to it by SetValue, so type will be asserted
 			}
 			OK;
 		}
@@ -75,13 +65,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		}
 		case 'HSEM': // MESH
 		{
-			CStrID MeshID;
-			DataReader.Read(MeshID);
-
-			SetMesh(MeshID.CStr());
-
-			Mesh = RenderSrv->MeshMgr.GetTypedResource(MeshID);
-
+			Mesh = RenderSrv->MeshMgr.GetTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
 		case 'RGSM': // MSGR
@@ -125,7 +109,7 @@ void CModel::GetBox(bbox3& OutBox) const
 {
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
-	OutBox = refMesh->Group(MeshGroupIndex).Box;
+	OutBox = Mesh->GetGroup(MeshGroupIndex).AABB;
 	OutBox.transform(pNode->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
@@ -242,66 +226,30 @@ bool CModel::LoadTexture(int index)
 }
 //---------------------------------------------------------------------
 
-void CModel::UnloadMesh()
-{
-	if (refMesh.isvalid())
-	{
-		refMesh->Release();
-		refMesh.invalidate();
-	}
-}
-//---------------------------------------------------------------------
-
-// Load new mesh, release old one if valid. Also initializes the groupIndex member.
-bool CModel::LoadMesh()
-{
-    if (!refMesh.isvalid() && meshName.IsValid())
-    {
-        // append mesh usage to mesh resource name
-        nString resourceName;
-        resourceName.Format("%s_%d", meshName.Get(), meshUsage);
-
-        // get a new or shared mesh
-        nMesh2* mesh = nGfxServer2::Instance()->NewMesh(resourceName);
-        n_assert(mesh);
-        if (!mesh->IsLoaded())
-        {
-            mesh->SetFilename(meshName);
-            mesh->SetUsage(meshUsage);
-
-            if (!mesh->Load())
-            {
-                n_printf("nMeshNode: Error loading mesh '%s'\n", meshName.Get());
-                mesh->Release();
-                return false;
-            }
-        }
-        refMesh = mesh;
-        //SetLocalBox(refMesh->Group(groupIndex).Box);
-    }
-    return true;
-}
-//---------------------------------------------------------------------
-
 bool CModel::LoadResources()
 {
-	//if (!nTransformNode::LoadResources()) return false;
-	if (!LoadShader()) return false;
+	//!!!TMP! write more elegant! Hide LoadSmthFromFMT calls somewhere in Loaders or smth.
+
+	if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(Material->GetUID().CStr(), Material)) FAIL;
+
+	// Load local textures (static textures must be loaded when material is loaded?)
 	for (int i = 0; i < texNodeArray.Size(); i++)
-		if (!LoadTexture(i)) return false;
-	if (!LoadMesh()) return false;
-	if (!Render::LoadMeshFromNVX2(meshName, Mesh)) return false; //!!!usage & access!
-	return true;
+		if (!LoadTexture(i)) FAIL;
+
+	if (!Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL; //!!!usage & access!
+
+	OK;
 }
 //---------------------------------------------------------------------
 
 void CModel::UnloadResources()
 {
-    //nTransformNode::UnloadResources();
-    for (int i = 0; i < texNodeArray.Size(); i++)
+	for (int i = 0; i < texNodeArray.Size(); i++)
 		UnloadTexture(i);
-    UnloadShader();
-	UnloadMesh();
+
+	// Now resources are shared and aren't unloaded
+	// If it is necessary to unload resources (decrement refcount), resource IDs must be saved,
+	// so pointers can be cleared, but model is able to reload resources from IDs
 }
 //---------------------------------------------------------------------
 
