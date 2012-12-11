@@ -19,7 +19,11 @@ typedef Ptr<class CParams> PParams;
 typedef Ptr<class CXMLDocument> PXMLDocument;
 
 #ifdef _EDITOR
-typedef bool (__stdcall *CDataPathCallback)(const LPCSTR DataPath, LPCSTR* MangledPath);
+
+typedef bool (__stdcall *CDataPathCallback)(LPCSTR DataPath, LPSTR* MangledPath);
+
+typedef void (__stdcall *CReleaseMemoryCallback)(void* p);
+
 #endif
 
 #define DataSrv Data::CDataServer::Instance()
@@ -42,6 +46,7 @@ public:
 
 #ifdef _EDITOR
 	CDataPathCallback					DataPathCB;
+	CReleaseMemoryCallback				ReleaseMemoryCB;
 #endif
 
 	CDataServer();

@@ -40,29 +40,30 @@ class CCIDEApp//: public App::CApplication
 
 private:
 
-	CAppFSM						FSM;
-	HWND						ParentHwnd;
+	CAppFSM							FSM;
+	HWND							ParentHwnd;
 
-	Ptr<Story::CQuestSystem>	QuestSystem;
-	Ptr<Story::CDlgSystem>		DlgSystem;
-	Ptr<Items::CItemManager>	ItemManager;
+	Ptr<Story::CQuestSystem>		QuestSystem;
+	Ptr<Story::CDlgSystem>			DlgSystem;
+	Ptr<Items::CItemManager>		ItemManager;
 
-	// We may subscribe to this callback before CDataServer is initialized. So it's temporary stored here.
-	Data::CDataPathCallback		DataPathCB;
+	// We may subscribe to this callbacks before CDataServer is initialized. So it's temporary stored here.
+	Data::CDataPathCallback			DataPathCB;
+	Data::CReleaseMemoryCallback	ReleaseMemoryCB;
 
 public:
 
-	Game::PEntity				EditorCamera;
-	Game::PEntity				CurrentEntity;
-	Game::PEntity				CurrentTfmEntity;
-	CMouseButtonCallback		MouseCB;
+	Game::PEntity					EditorCamera;
+	Game::PEntity					CurrentEntity;
+	Game::PEntity					CurrentTfmEntity;
+	CMouseButtonCallback			MouseCB;
 
-	Data::PParams				AttrDescs;
+	Data::PParams					AttrDescs;
 
-	bool						TransformMode;
-	bool						LimitToGround;
-	bool						SnapToGround;
-	nString						OldInputPropClass;
+	bool							TransformMode;
+	bool							LimitToGround;
+	bool							SnapToGround;
+	nString							OldInputPropClass;
 
 	CCIDEApp();
 	~CCIDEApp();
@@ -78,7 +79,7 @@ public:
 	void	SetupDisplayMode();
 	bool	AdvanceFrame();
 	void	Close();
-	void	SetDataPathCB(Data::CDataPathCallback Cb);
+	void	SetDataPathCB(Data::CDataPathCallback Cb, Data::CReleaseMemoryCallback ReleaseCb);
 };
 
 typedef CCIDEApp* PCIDEApp;

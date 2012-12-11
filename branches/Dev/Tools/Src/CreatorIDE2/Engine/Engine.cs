@@ -26,7 +26,7 @@ namespace CreatorIDE.Engine
 
         public int Init(IntPtr parentHwnd, string projDir)
         {
-            SetDataPathCallback(_engineHandle.Handle, OnDataPathCallback);
+            SetDataPathCallback(_engineHandle.Handle, OnDataPathCallback, FreeHGlobal);
             SetMouseButtonCallback(_engineHandle.Handle, OnMouseButtonCallback);
 
             return Init(_engineHandle.Handle, parentHwnd, projDir);
@@ -42,7 +42,7 @@ namespace CreatorIDE.Engine
             h(this, args);
         }
 
-        private bool OnDataPathCallback(string dataPath, out string mangledPath)
+        private bool OnDataPathCallback(string dataPath, out IntPtr mangledPath)
         {
             var h = PathRequest;
             if (h != null)
@@ -57,16 +57,20 @@ namespace CreatorIDE.Engine
                         path = path.Trim();
                     if(!string.IsNullOrEmpty(path))
                     {
-                        mangledPath = path;
+                        mangledPath = Marshal.StringToHGlobalAnsi(path);
                         return true;
                     }
                 }
             }
 
-            mangledPath = null;
+            mangledPath = IntPtr.Zero;
             return false;
         }
 
+        private static void FreeHGlobal(IntPtr hGlobal)
+        {
+            Marshal.FreeHGlobal(hGlobal);
+        }
 
         public void Dispose()
         {
@@ -122,7 +126,7 @@ namespace CreatorIDE.Engine
         private static extern IntPtr CreateEngine();
 
         [DllImport(DllName)]
-        private static extern void SetDataPathCallback(IntPtr handle, DataPathCallback callback);
+        private static extern void SetDataPathCallback(IntPtr handle, DataPathCallback callback, ReleaseMemoryCallback releaseMemory);
 
         #endregion
     }
@@ -137,5 +141,7 @@ namespace CreatorIDE.Engine
 
     internal delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
 
-    internal delegate bool DataPathCallback(string dataPath, out string mangledPath);
+    internal delegate bool DataPathCallback(string dataPath, out IntPtr mangledPath);
+
+    internal delegate void ReleaseMemoryCallback(IntPtr ptr);
 }

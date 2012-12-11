@@ -439,13 +439,21 @@ bool CDataServer::QueryMangledPath(const nString& FileName, nString& MangledFile
 	if(!DataPathCB)
 		FAIL;
 	
-	LPCSTR MangledStr = NULL;
+	LPSTR MangledStr = NULL;
 	if(!DataPathCB(FileName.Get(), &MangledStr))
+	{
+		if(MangledStr && ReleaseMemoryCB)
+			ReleaseMemoryCB(MangledStr);
 		FAIL;
+	}
 
 	MangledFileName.Clear();
 	if(MangledStr)
+	{
 		MangledFileName.Set(MangledStr);
+		if(ReleaseMemoryCB)
+			ReleaseMemoryCB(MangledStr);
+	}
 	OK;
 }
 #endif

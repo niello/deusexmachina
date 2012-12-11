@@ -80,8 +80,10 @@ bool CCIDEApp::Open()
 		AppEnv->ReleaseCore();
 		FAIL;
 	}
-
+	
+	DataSrv->ReleaseMemoryCB = ReleaseMemoryCB;
 	DataSrv->DataPathCB = DataPathCB;
+	ReleaseMemoryCB = NULL;
 	DataPathCB = NULL;
 
 	nString Home = DataSrv->ManglePath("home:");
@@ -202,11 +204,18 @@ void CCIDEApp::Close()
 }
 //---------------------------------------------------------------------
 
-void CCIDEApp::SetDataPathCB(Data::CDataPathCallback Cb)
+void CCIDEApp::SetDataPathCB(Data::CDataPathCallback Cb, Data::CReleaseMemoryCallback ReleaseCb)
 {
 	if(Data::CDataServer::HasInstance())
+	{
+		DataSrv->ReleaseMemoryCB = ReleaseCb;
 		DataSrv->DataPathCB = Cb;
-	else DataPathCB = Cb;
+	}
+	else
+	{	
+		DataPathCB = Cb;
+		ReleaseMemoryCB = ReleaseCb;
+	}
 }
 //---------------------------------------------------------------------
 
