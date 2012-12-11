@@ -44,10 +44,11 @@ protected:
 public:
 
 	CMesh(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost) {}
-	//virtual ~CMesh() { if (IsLoaded()) Unload(); } - no need for mesh
 
-	bool			Setup(PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, const nArray<CMeshGroup>& MeshGroups);
-	virtual void	Unload() { VB = NULL; IB = NULL; Groups.Clear(); State = Resources::Rsrc_NotLoaded; }
+	bool				Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups);
+	virtual void		Unload();
+
+	const CMeshGroup&	GetGroup(DWORD Idx) const { return Groups[Idx]; }
 };
 
 typedef Ptr<CMesh> PMesh;

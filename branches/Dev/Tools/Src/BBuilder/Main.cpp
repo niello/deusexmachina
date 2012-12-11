@@ -162,6 +162,9 @@ bool ParseSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles)
 		}
 	}
 
+	if (NodeDesc.Get(pValue, CStrID("Material")))
+		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Material");
+
 	if (NodeDesc.Get(pValue, CStrID("Mesh")))
 		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Mesh");
 
@@ -477,6 +480,8 @@ int main(int argc, const char** argv)
 	DataSrv->SetAssign("dlgsrc", "src:game/dlg");
 	DataSrv->SetAssign("physics", Export + "/physics");
 	DataSrv->SetAssign("meshes", Export + "/meshes");
+	DataSrv->SetAssign("materials", Export + "/materials");
+	DataSrv->SetAssign("mtlsrc", Export + "/materials");
 	DataSrv->SetAssign("textures", Export + "/textures");
 	DataSrv->SetAssign("anims", Export + "/anims");
 
@@ -810,6 +815,7 @@ int main(int argc, const char** argv)
 	BatchCompileHRD(ActorDescFiles, "game/ai/actors", ".hrd", ".prm");
 	BatchCompileHRD(AIHintsDescFiles, "game/ai/hints", ".hrd", ".prm");
 	BatchCompileHRD(SmartObjDescFiles, "game/ai/smarts", ".hrd", ".prm");
+	CompileAllHRD("materials", "hrd", "prm");
 	CompileAllLua("game/dlg", "lua", "lua", NULL);
 	CompileAllLua("game/quests", "lua", "lua", NULL);
 	CompileAllLua("game/scripts", "lua", "lua", "classes");
@@ -912,7 +918,6 @@ int main(int argc, const char** argv)
 		CompileAllHRD("game/quests", "hrd", "prm");
 		if (!AddDirectoryToTOC("quests", TOC, Offset)) goto error;
 
-		//CompileAllHRD("game/scripts", "hrd", "prm");
 		if (!AddDirectoryToTOC("scripts", TOC, Offset)) goto error;
 		
 		AddFilesToTOC(GameFiles, TOC, Offset);
