@@ -77,16 +77,14 @@ public:
 	CTexture(CStrID ID, Resources::IResourceManager* pHost);
 	virtual ~CTexture() { if (IsLoaded()) Unload(); }
 
+	//???Create(size, format etc), will setup itself inside to Loaded state?
+	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TextureType);
 	virtual void	Unload();
 
 	bool			Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
 	void			Unmap(int MipLevel);
 	bool			MapCubeFace(ECubeFace Face, int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
 	void			UnmapCubeFace(ECubeFace Face, int MipLevel);
-
-	void			SetupFromD3D9Texture(IDirect3DTexture9* pTex, bool SetLoaded = true);
-	void			SetupFromD3D9CubeTexture(IDirect3DCubeTexture9* pTex, bool SetLoaded = true);
-	void			SetupFromD3D9VolumeTexture(IDirect3DVolumeTexture9* pTex, bool SetLoaded = true);
 
 	EType						GetType() const { return Type; }
 	DWORD						GetWidth() const { return Width; }

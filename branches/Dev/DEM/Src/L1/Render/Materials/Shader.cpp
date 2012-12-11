@@ -1,7 +1,6 @@
 #include "Shader.h"
 
 #include <Render/Renderer.h>
-#include <d3dx9.h>
 
 namespace Render
 {
@@ -56,16 +55,6 @@ void CShader::Unload()
 	//!!!unsubscribe lost & reset!
 	SAFE_RELEASE(pEffect);
 	State = Resources::Rsrc_NotLoaded;
-}
-//---------------------------------------------------------------------
-
-// D3DXFX_DONOTSAVESTATE | D3DXFX_DONOTSAVESAMPLERSTATE | D3DXFX_DONOTSAVESHADERSTATE
-
-//!!!inline!
-void CShader::BeginPass(DWORD PassIdx)
-{
-	n_assert(SUCCEEDED(pEffect->BeginPass(PassIdx)));
-	//n_dxtrace(pEffect->BeginPass(PassIdx), "nD3D9Shader:BeginPass() failed on effect");
 }
 //---------------------------------------------------------------------
 

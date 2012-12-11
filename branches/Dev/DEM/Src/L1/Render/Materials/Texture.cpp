@@ -12,6 +12,80 @@ namespace Render
 {
 ImplementRTTI(Render::CTexture, Resources::CResource);
 
+bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TextureType)
+{
+	n_assert(pTextureCastToBase);
+
+	Type = TextureType;
+
+	//???really can't just cast ptr?
+	// Need to query for base interface under Win32
+	//???move query from switch?
+	if (Type == Texture2D)
+	{
+		pD3D9Tex2D = (IDirect3DTexture9*)pTextureCastToBase;
+		n_assert(SUCCEEDED(pD3D9Tex2D->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
+
+		D3DSURFACE_DESC Desc;
+		memset(&Desc, 0, sizeof(Desc));
+		n_assert(SUCCEEDED(pD3D9Tex2D->GetLevelDesc(0, &Desc)));
+		Width = Desc.Width;
+		Height = Desc.Height;
+		Depth = 1;
+		PixelFormat = Desc.Format;
+	}
+	else if (Type == Texture3D)
+	{
+		pD3D9Tex3D = (IDirect3DVolumeTexture9*)pTextureCastToBase;
+		n_assert(SUCCEEDED(pD3D9Tex3D->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
+
+		D3DVOLUME_DESC Desc;
+		memset(&Desc, 0, sizeof(Desc));
+		n_assert(SUCCEEDED(pD3D9Tex3D->GetLevelDesc(0, &Desc)));
+		Width = Desc.Width;
+		Height = Desc.Height;
+		Depth = Desc.Depth;
+		PixelFormat = Desc.Format;
+	}
+	else if (Type == TextureCube)
+	{
+		pD3D9TexCube = (IDirect3DCubeTexture9*)pTextureCastToBase;
+		n_assert(SUCCEEDED(pD3D9TexCube->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
+
+		D3DSURFACE_DESC Desc;
+		memset(&Desc, 0, sizeof(Desc));
+		n_assert(SUCCEEDED(pD3D9TexCube->GetLevelDesc(0, &Desc)));
+		Width = Desc.Width;
+		Height = Desc.Height;
+		PixelFormat = Desc.Format;
+	}
+	else
+	{
+		State = Resources::Rsrc_Failed;
+		FAIL;
+	}
+
+	MipCount = pTextureCastToBase->GetLevelCount();
+
+	State = Resources::Rsrc_Loaded;
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CTexture::Unload()
+{
+	n_assert(!LockCount);
+	switch (Type)
+	{
+		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
+		case Texture3D:		SAFE_RELEASE(pD3D9Tex3D); break;
+		case TextureCube:	SAFE_RELEASE(pD3D9TexCube); break;
+	}
+	SAFE_RELEASE(pD3D9Tex);
+	State = Resources::Rsrc_NotLoaded; //CResource::Unload();
+}
+//---------------------------------------------------------------------
+
 inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 {
 	switch (MapType)
@@ -31,20 +105,6 @@ inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 			LockFlags |= D3DLOCK_DISCARD;
 			break;
 	}
-}
-//---------------------------------------------------------------------
-
-void CTexture::Unload()
-{
-	n_assert(!LockCount);
-	switch (Type)
-	{
-		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
-		case Texture3D:		SAFE_RELEASE(pD3D9Tex3D); break;
-		case TextureCube:	SAFE_RELEASE(pD3D9TexCube); break;
-	}
-	SAFE_RELEASE(pD3D9Tex);
-	State = Resources::Rsrc_NotLoaded; //CResource::Unload();
 }
 //---------------------------------------------------------------------
 
@@ -117,67 +177,6 @@ void CTexture::UnmapCubeFace(ECubeFace Face, int MipLevel)
 	n_assert(Type == TextureCube && LockCount > 0);
 	GetD3D9CubeTexture()->UnlockRect((D3DCUBEMAP_FACES)Face, MipLevel);
 	LockCount--;
-}
-//---------------------------------------------------------------------
-
-void CTexture::SetupFromD3D9Texture(IDirect3DTexture9* pTex, bool SetLoaded)
-{
-	n_assert(pTex);    
-
-	//???really can't just cast ptr?
-	// Need to query for base interface under Win32
-	pD3D9Tex2D = pTex;
-	n_assert(SUCCEEDED(pD3D9Tex2D->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
-
-	Type = Texture2D;
-	D3DSURFACE_DESC Desc;
-	memset(&Desc, 0, sizeof(Desc));
-	n_assert(SUCCEEDED(pTex->GetLevelDesc(0, &Desc)));
-	Width = Desc.Width;
-	Height = Desc.Height;
-	Depth = 1;
-	MipCount = pTex->GetLevelCount();
-	PixelFormat = Desc.Format;
-	if (SetLoaded) State = Resources::Rsrc_Loaded;
-}
-//---------------------------------------------------------------------
-
-void CTexture::SetupFromD3D9VolumeTexture(IDirect3DVolumeTexture9* pTex, bool SetLoaded)
-{
-	n_assert(pTex);
-
-	pD3D9Tex3D = pTex;
-	n_assert(SUCCEEDED(pTex->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
-
-	Type = Texture3D;
-	D3DVOLUME_DESC Desc;
-	memset(&Desc, 0, sizeof(Desc));
-	n_assert(SUCCEEDED(pTex->GetLevelDesc(0, &Desc)));
-	Width = Desc.Width;
-	Height = Desc.Height;
-	Depth = Desc.Depth;
-	MipCount = pTex->GetLevelCount();
-	PixelFormat = Desc.Format;
-	if (SetLoaded) State = Resources::Rsrc_Loaded;
-}
-//---------------------------------------------------------------------
-
-void CTexture::SetupFromD3D9CubeTexture(IDirect3DCubeTexture9* pTex, bool SetLoaded)
-{
-	n_assert(pTex);
-
-	pD3D9TexCube = pTex;
-	n_assert(SUCCEEDED(pTex->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
-
-	Type = TextureCube;
-	D3DSURFACE_DESC Desc;
-	memset(&Desc, 0, sizeof(Desc));
-	n_assert(SUCCEEDED(pTex->GetLevelDesc(0, &Desc)));
-	Width = Desc.Width;
-	Height = Desc.Height;
-	MipCount = pTex->GetLevelCount();
-	PixelFormat = Desc.Format;
-	if (SetLoaded) State = Resources::Rsrc_Loaded;
 }
 //---------------------------------------------------------------------
 

@@ -7,6 +7,7 @@ namespace Render
 //!!!TMP! write more elegant!
 bool LoadShaderFromFX(const nString& FileName, PShader OutShader);
 bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
+bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
 
 bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
 {
@@ -34,7 +35,18 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 
 	StaticVars = StaticShaderVars;
 	for (int i = 0; i < StaticVars.Size(); ++i)
-		StaticVars.ValueAtIndex(i).Bind(*pShader);
+	{
+		CShaderVar& Var = StaticVars.ValueAtIndex(i);
+		Var.Bind(*pShader);
+
+		//!!!non-file textures (forex RTs) will fail to load here! ensure they are
+		// in loaded state or they load themselvef properly!
+		if (Var.Value.IsA<PTexture>())
+		{
+			PTexture Tex = Var.Value.GetValue<PTexture>();
+			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+		}
+	}
 
 	//???load textures?
 

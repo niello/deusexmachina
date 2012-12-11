@@ -6,7 +6,6 @@
 #include <Data/Streams/FileStream.h>
 #include <Data/Buffer.h>
 #include <gfx2/D3DXNebula2Include.h>
-#include <d3dx9.h>
 
 namespace Render
 {

@@ -89,9 +89,6 @@ public:
 	int GetNumParams() const { return shaderParams.GetNumValidParams(); }
 	nShaderParams& GetShaderParams() { return shaderParams; }
 	bool HasParam(nShaderState::Param param) { return shaderParams.IsParameterValid(param); }
-
-	int GetNumTextures() const { return texNodeArray.Size(); }
-	const char* GetTextureAt(int index) const { return texNodeArray[index].texName.Get(); }
 };
 
 inline nShader2* nMaterialNode::GetShaderObject()
