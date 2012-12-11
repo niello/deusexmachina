@@ -4,7 +4,6 @@
 #include <Render/Renderer.h>
 #include <Data/Streams/FileStream.h>
 #include <Data/Buffer.h>
-#include <d3dx9.h>
 
 namespace Render
 {

@@ -31,18 +31,10 @@ public:
 	CShader::HVar	GetVarHandle() const { return hVar; }
 	bool			IsBound() const { return hVar != 0; }
 	bool			Bind(const CShader& Shader) { hVar = Shader.GetVarHandleByName(Name); return hVar != 0; }
-	bool			Apply(const CShader& Shader);
+	bool			Apply(CShader& Shader) { return IsBound() && Value.IsValid() && Shader.Set(hVar, Value); }
 };
 
 typedef nDictionary<CStrID, CShaderVar> CShaderVarMap;
-
-inline bool CShaderVar::Apply(const CShader& Shader)
-{
-	if (!IsBound()) FAIL; //???or try to bind?
-	//if var type = TBool, return Shader->SetBool etc
-	FAIL;
-}
-//---------------------------------------------------------------------
 
 }
 

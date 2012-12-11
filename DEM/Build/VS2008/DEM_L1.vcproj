@@ -1444,6 +1444,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\L1\Render\Materials\LoadTextureUsingD3DX.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L1\Render\Materials\Material.cpp"
 					>
 				</File>
