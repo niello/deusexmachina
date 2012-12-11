@@ -19,7 +19,7 @@ typedef Ptr<class CParams> PParams;
 typedef Ptr<class CXMLDocument> PXMLDocument;
 
 #ifdef _EDITOR
-typedef bool (__stdcall *CDataPathCallback)(LPCSTR DataPath, LPCSTR* MangledPath);
+typedef bool (__stdcall *CDataPathCallback)(const LPCSTR DataPath, LPCSTR* MangledPath);
 #endif
 
 #define DataSrv Data::CDataServer::Instance()
@@ -88,6 +88,10 @@ public:
 
 	bool			LoadDataSchemes(const nString& FileName);
 	CDataScheme*	GetDataScheme(CStrID ID);
+
+#ifdef _EDITOR
+	bool			QueryMangledPath(const nString& FileName, nString& MangledFileName);
+#endif
 };
 
 inline CDataScheme* CDataServer::GetDataScheme(CStrID ID)

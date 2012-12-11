@@ -247,7 +247,13 @@ nString CDataServer::GetAssign(const nString& Assign)
 
 nString CDataServer::ManglePath(const nString& Path)
 {
+#ifdef _EDITOR
+	nString PathString;
+	if(!this->QueryMangledPath(Path, PathString))
+		PathString = Path;
+#else
 	nString PathString = Path;
+#endif
 
 	int ColonIdx;
 	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 0)
@@ -426,5 +432,22 @@ bool CDataServer::LoadDataSchemes(const nString& FileName)
 	OK;
 }
 //---------------------------------------------------------------------
+
+#ifdef _EDITOR
+bool CDataServer::QueryMangledPath(const nString& FileName, nString& MangledFileName)
+{
+	if(!DataPathCB)
+		FAIL;
+	
+	LPCSTR MangledStr = NULL;
+	if(!DataPathCB(FileName.Get(), &MangledStr))
+		FAIL;
+
+	MangledFileName.Clear();
+	if(MangledStr)
+		MangledFileName.Set(MangledStr);
+	OK;
+}
+#endif
 
 } //namespace Data
