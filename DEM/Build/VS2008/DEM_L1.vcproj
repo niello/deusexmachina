@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="DEM_L1"
 	ProjectGUID="{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}"
 	RootNamespace="DEM_L1"
