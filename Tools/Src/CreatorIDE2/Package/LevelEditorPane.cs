@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Windows.Forms;
+using CreatorIDE.Engine;
 using EnvDTE;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Project;
@@ -35,7 +37,21 @@ namespace CreatorIDE.Package
             _control = new Control();
             _levelNode = levelNode;
             var engine = _levelNode.ProjectMgr.Engine;
-            engine.Init(_control.Handle, @"E:\Victor\Projects\IPG\Shantara\InsanePoet\Bin");
+            engine.PathRequest += OnEnginePathRequest;
+            engine.Init(_control.Handle, @"..\..\..\..\InsanePoet\Bin\data");
+        }
+
+        private void OnEnginePathRequest(object sender, EnginePathRequestEventArgs e)
+        {
+            const string basePath = "data:";
+            if (e.Handled || e.Path == null || !e.Path.StartsWith(basePath))
+                return;
+
+            var path = e.Path.Substring(basePath.Length).TrimStart(Path.DirectorySeparatorChar,Path.AltDirectorySeparatorChar);
+            path = Path.Combine(@"..\..\..\..\InsanePoet\Bin\data", path);
+            path = Path.GetFullPath(path);
+            e.NormalizedPath = path;
+            e.Handled = true;
         }
 
         #region Overrides of WindowPane
