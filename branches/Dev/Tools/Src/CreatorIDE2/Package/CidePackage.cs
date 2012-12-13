@@ -56,6 +56,13 @@ namespace CreatorIDE.Package
 
         public CideEngine Engine { get { return _engine.Value; } }
 
+        static CidePackage()
+        {
+            CideResourceManager.RegisterProvider(new ResourceProvider());
+            CideResourceManager.RegisterProvider(new Engine.ResourceProvider());
+            CideResourceManager.RegisterProvider(new Core.ResourceProvider());
+        }
+
         /// <summary>
         /// Default constructor of the package.
         /// Inside this method you can place any initialization code that does not require 
