@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using CreatorIDE.Core;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -94,7 +95,7 @@ namespace CreatorIDE.Package
     {
         private const string GuidString = "54EA3431-FC2E-42AC-8C3F-C6A2266D224B";
 
-        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.MiscCategoryName), SRDisplayName(SR.FullPathPropertyName)]
+        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.FullPathPropertyName)]
         public new string FullPath
         {
             get
@@ -106,14 +107,14 @@ namespace CreatorIDE.Package
             }
         }
 
-        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.MiscCategoryName), SRDisplayName(SR.PackagePathPropertyName)]
+        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.PackagePathPropertyName)]
         public string PackagePath
         {
             get { return ((CideFolderNode) Node).PackagePath; }
             set { ((CideFolderNode) Node).PackagePath = value; }
         }
 
-        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.MiscCategoryName), SRDisplayName(SR.RelativePathPropertyName)]
+        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.RelativePathPropertyName)]
         public string RelativePath
         {
             get { return Node.VirtualNodeName; }

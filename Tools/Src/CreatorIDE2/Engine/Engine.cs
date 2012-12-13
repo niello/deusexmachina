@@ -6,12 +6,21 @@ namespace CreatorIDE.Engine
 {
     public sealed class CideEngine:IDisposable
     {
+        private delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
+
+        private delegate bool DataPathCallback(string dataPath, out IntPtr mangledPath);
+
+        private delegate void ReleaseMemoryCallback(IntPtr ptr);
 
 #if (DEBUG)
-        public const string DllName = "EngineAPI2_d.dll";
+        internal const string DllName = "EngineAPI2_d.dll";
 #else
-	    public const string DllName = "EngineAPI2.dll";
+	    internal const string DllName = "EngineAPI2.dll";
 #endif
+
+        private readonly MouseButtonCallback _mouseButtonCalback;
+        private readonly DataPathCallback _dataPathCallback;
+        private readonly ReleaseMemoryCallback _releaseMemoryCallback;
 
         private AppHandle _engineHandle;
 
@@ -21,15 +30,22 @@ namespace CreatorIDE.Engine
 
         public CideEngine()
         {
+            // Keeping callbacks in the CideEngine to prevent garbage collection
+            _mouseButtonCalback = OnMouseButtonCallback;
+            _dataPathCallback = OnDataPathCallback;
+            _releaseMemoryCallback = FreeHGlobal;
+
             _engineHandle = new AppHandle(CreateEngine());
         }
 
-        public int Init(IntPtr parentHwnd, string projDir)
+        public void Init(IntPtr parentHwnd, string projDir)
         {
-            SetDataPathCallback(_engineHandle.Handle, OnDataPathCallback, FreeHGlobal);
-            SetMouseButtonCallback(_engineHandle.Handle, OnMouseButtonCallback);
+            SetDataPathCallback(_engineHandle.Handle, _dataPathCallback, _releaseMemoryCallback);
+            SetMouseButtonCallback(_engineHandle.Handle, _mouseButtonCalback);
 
-            return Init(_engineHandle.Handle, parentHwnd, projDir);
+            int code = Init(_engineHandle.Handle, parentHwnd, projDir);
+            if (code != 0)
+                throw new EngineInitializationException(string.Format(SR.GetString(SR.EngineInitFailFormat), code));
         }
 
         private void OnMouseButtonCallback(int x, int y, int button, EMouseAction action)
@@ -138,10 +154,4 @@ namespace CreatorIDE.Engine
         Up,
         DoubleClick
     }
-
-    internal delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
-
-    internal delegate bool DataPathCallback(string dataPath, out IntPtr mangledPath);
-
-    internal delegate void ReleaseMemoryCallback(IntPtr ptr);
 }
