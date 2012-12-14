@@ -7,6 +7,8 @@
 #include "gfx2/nd3d9shader.h"
 #include "resource/nresourceserver.h"
 
+#include <Render/RenderServer.h>
+
 //------------------------------------------------------------------------------
 /**
     Initialize the device identifier fields. This should be called from
@@ -129,7 +131,7 @@ nD3D9Server::CheckMultiSampleType(D3DFORMAT backbufferFormat,
 {
     n_assert(this->pD3D9);
     HRESULT hr;
-    D3DMULTISAMPLE_TYPE d3dMsType = (D3DMULTISAMPLE_TYPE) this->GetDisplayMode().GetAntiAliasSamples();
+    D3DMULTISAMPLE_TYPE d3dMsType = (D3DMULTISAMPLE_TYPE)0;
     if (D3DMULTISAMPLE_NONE != d3dMsType)
     {
         // need to check both back buffer and zbuffer
@@ -213,7 +215,7 @@ nD3D9Server::GetD3DFormatNumBits(D3DFORMAT fmt)
     fail hard if no matching buffer formats could be found!
 */
 void
-nD3D9Server::FindBufferFormats(CDisplayMode::Bpp bpp, D3DFORMAT& dispFormat, D3DFORMAT& backFormat, D3DFORMAT& zbufFormat)
+nD3D9Server::FindBufferFormats(CDisplayMode::EBitDepth bpp, D3DFORMAT& dispFormat, D3DFORMAT& backFormat, D3DFORMAT& zbufFormat)
 {
     HRESULT hr;
 
@@ -228,7 +230,7 @@ nD3D9Server::FindBufferFormats(CDisplayMode::Bpp bpp, D3DFORMAT& dispFormat, D3D
         { D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN,  D3DFMT_UNKNOWN },
     };
 
-    if (Display.Fullscreen)
+    if (RenderSrv->GetDisplay().Fullscreen)
     {
         // find full-screen buffer formats
         dispFormat = D3DFMT_UNKNOWN;
@@ -242,7 +244,7 @@ nD3D9Server::FindBufferFormats(CDisplayMode::Bpp bpp, D3DFORMAT& dispFormat, D3D
             zbufFormat = formatTable[i][2];
 
             // skip 32 bit formats?
-            if ((CDisplayMode::Bpp16 == bpp) && (this->GetD3DFormatNumBits(formatTable[i][0]) > 16))
+            if ((CDisplayMode::BPP_16 == bpp) && (this->GetD3DFormatNumBits(formatTable[i][0]) > 16))
             {
                 continue;
             }
@@ -350,6 +352,11 @@ nD3D9Server::UpdateFeatureSet()
 bool
 nD3D9Server::DeviceOpen()
 {
+	pD3D9 = RenderSrv->GetD3D();
+
+	UpdateFeatureSet();
+	InitDeviceIdentifier();
+
     n_assert(pD3D9);
     n_assert(!pD3D9Device);
     n_assert(!inBeginScene);
@@ -372,113 +379,14 @@ nD3D9Server::DeviceOpen()
     this->FindBufferFormats(this->GetDisplayMode().BPP, dispFormat, backFormat, zbufFormat);
 
     // get d3d multisample type
-    D3DMULTISAMPLE_TYPE d3dMultiSampleType = CheckMultiSampleType(backFormat, zbufFormat, !Display.Fullscreen);
+    D3DMULTISAMPLE_TYPE d3dMultiSampleType = CheckMultiSampleType(backFormat, zbufFormat, !RenderSrv->GetDisplay().Fullscreen);
 
-    // define device behavior flags
-    this->deviceBehaviourFlags = D3DCREATE_FPU_PRESERVE;
+    //this->presentParams.BackBufferFormat                = backFormat;
+    //this->presentParams.MultiSampleType                 = d3dMultiSampleType;
+    //this->presentParams.AutoDepthStencilFormat          = zbufFormat;
 
-    #if N_D3D9_DEBUG
-        this->deviceBehaviourFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-        this->presentParams.Flags = D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL | D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
-        n_printf("nD3D9Server: using enforced software vertex processing\n");
-    #else
-        // check if hardware vertex shaders are supported, if not,
-        // activate mixed vertex processing
-        #if N_D3D9_FORCEMIXEDVERTEXPROCESSING
-            this->deviceBehaviourFlags |= D3DCREATE_MIXED_VERTEXPROCESSING;
-            n_printf("nD3D9Server: using FORCED mixed vertex processing\n");
-        #elif N_D3D9_FORCESOFTWAREVERTEXPROCESSING
-            this->deviceBehaviourFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-            n_printf("nD3D9Server: using FORCED software vertex processing\n");
-        #else
-            if (this->devCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT)
-            {
-                if (this->GetFeatureSet() >= DX9)
-                {
-                    this->deviceBehaviourFlags |= D3DCREATE_HARDWARE_VERTEXPROCESSING;
-                    n_printf("nD3D9Server: using hardware vertex processing\n");
-                }
-                else
-                {
-                    this->deviceBehaviourFlags |= D3DCREATE_MIXED_VERTEXPROCESSING;
-                    n_printf("nD3D9Server: using mixed vertex processing\n");
-                }
-            }
-            else
-            {
-                this->deviceBehaviourFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-                n_printf("nD3D9Server: using software vertex processing\n");
-            }
-        #endif
-        this->presentParams.Flags = D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
-    #endif
-
-    // check for dialog box mode
-/*
-    if (Display.GetDisplayMode().GetDialogBoxMode())
-    {
-        this->presentParams.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
-    }
-*/
-
-    // define presentation parameters
-    if (Display.Fullscreen)
-    {
-        this->presentParams.BackBufferCount  = 1;
-        this->presentParams.Windowed         = FALSE;
-    }
-    else
-    {
-        this->presentParams.BackBufferCount  = 1;
-        this->presentParams.Windowed         = TRUE;
-    }
-
-    if (Display.GetDisplayMode().VSync)
-    {
-        this->presentParams.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
-    }
-    else
-    {
-        this->presentParams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    }
-
-    this->presentParams.BackBufferWidth                 = Display.GetDisplayMode().Width;
-    this->presentParams.BackBufferHeight                = Display.GetDisplayMode().Height;
-    this->presentParams.BackBufferFormat                = backFormat;
-    this->presentParams.MultiSampleType                 = d3dMultiSampleType;
-    this->presentParams.MultiSampleQuality              = 0;
-    this->presentParams.SwapEffect                      = D3DSWAPEFFECT_DISCARD;
-    this->presentParams.hDeviceWindow                   = Display.GetAppHwnd();
-    this->presentParams.EnableAutoDepthStencil          = TRUE;
-    this->presentParams.AutoDepthStencilFormat          = zbufFormat;
-    this->presentParams.FullScreen_RefreshRateInHz      = D3DPRESENT_RATE_DEFAULT;
-
-    // create d3d device
-    hr = this->pD3D9->CreateDevice(N_D3D9_ADAPTER,
-                                  N_D3D9_DEVICETYPE,
-                                  Display.GetAppHwnd(),
-                                  this->deviceBehaviourFlags,
-                                  &(this->presentParams),
-                                  &(this->pD3D9Device));
-    if (FAILED(hr))
-    {
-        n_error("nD3D9Server: Could not create d3d device!\nDirectX Error is: %s\n", DXGetErrorString(hr));
-        return false;
-    }
-    n_assert(this->pD3D9Device);
-
-    // create effect pool
-    hr = D3DXCreateEffectPool(&this->effectPool);
-    if (FAILED(hr))
-    {
-        n_error("nD3D9Server: Could not create effect pool!\nDirectX Error is: %s\n", DXGetErrorString(hr));
-        return false;
-    }
-
-    // fill display mode structure
-    memset(&(this->d3dDisplayMode), 0, sizeof(this->d3dDisplayMode));
-    hr = this->pD3D9Device->GetDisplayMode(0, &(this->d3dDisplayMode));
-    n_dxtrace(hr, "nD3D9Server::DeviceOpen(): GetDisplayMode() failed!");
+	pD3D9Device = RenderSrv->GetD3DDevice();
+	pEffectPool = RenderSrv->GetD3DEffectPool();
 
     // create line object
     hr = D3DXCreateLine(this->pD3D9Device, &this->d3dxLine);
@@ -496,16 +404,10 @@ nD3D9Server::DeviceOpen()
     hr = D3DXCreateTeapot(this->pD3D9Device, &this->shapeMeshes[Teapot], NULL);
     n_dxtrace(hr, "nD3D9Server::DeviceOpen(): D3DXCreateTeapot() failed!");
 
-    // reload any resources if necessary
     this->OnDeviceInit(true);
-
-    // initialize d3d device state
     this->InitDeviceState();
 
-    // restore window
-    //Display.RestoreWindow();
-
-    return true;
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -517,9 +419,8 @@ nD3D9Server::DeviceClose()
 {
     n_assert(this->pD3D9);
     n_assert(this->pD3D9Device);
-    n_assert(this->effectPool);
+    n_assert(this->pEffectPool);
     n_assert(this->d3dxLine);
-    n_assert(Display.IsWindowOpen());
 
     n_printf("nD3D9Server::DeviceClose()\n");
 
@@ -540,17 +441,6 @@ nD3D9Server::DeviceClose()
     // destroy d3dx line object
     this->d3dxLine->Release();
     this->d3dxLine = 0;
-
-    // destroy the effect pool
-    this->effectPool->Release();
-    this->effectPool = 0;
-
-    // destroy d3d device
-    this->pD3D9Device->Release();
-    this->pD3D9Device = 0;
-
-    // minimize the app window
-    //Display.MinimizeWindow();
 }
 
 //------------------------------------------------------------------------------
@@ -651,52 +541,6 @@ nD3D9Server::QueryStatistics()
     this->statsNumTextureChanges = 0;
     this->statsNumDrawCalls = 0;
     this->statsNumPrimitives = 0;
-
-    // no resource manager query if not running the debug runtime
-/*
-    if (0 == this->queryResourceManager)
-    {
-        return;
-    }
-
-    HRESULT hr = this->queryResourceManager->Issue(D3DISSUE_END);
-    if (SUCCEEDED(hr))
-    {
-        D3DDEVINFO_RESOURCEMANAGER result;
-        hr = this->queryResourceManager->GetData(&result, sizeof(result), 0);
-        if (SUCCEEDED(hr))
-        {
-            D3DRESOURCESTATS stats;
-
-            // sum texture and cube texture stats
-            memcpy(&stats, &(result.stats[D3DRTYPE_TEXTURE]), sizeof(stats));
-            stats.bThrashing            |= result.stats[D3DRTYPE_CUBETEXTURE].bThrashing;
-            stats.ApproxBytesDownloaded += result.stats[D3DRTYPE_CUBETEXTURE].ApproxBytesDownloaded;
-            stats.NumEvicts             += result.stats[D3DRTYPE_CUBETEXTURE].NumEvicts;
-            stats.NumVidCreates         += result.stats[D3DRTYPE_CUBETEXTURE].NumVidCreates;
-            stats.LastPri               += result.stats[D3DRTYPE_CUBETEXTURE].LastPri;
-            stats.NumUsed               += result.stats[D3DRTYPE_CUBETEXTURE].NumUsed;
-            stats.NumUsedInVidMem       += result.stats[D3DRTYPE_CUBETEXTURE].NumUsedInVidMem;
-            stats.WorkingSet            += result.stats[D3DRTYPE_CUBETEXTURE].WorkingSet;
-            stats.WorkingSetBytes       += result.stats[D3DRTYPE_CUBETEXTURE].WorkingSetBytes;
-            stats.TotalManaged          += result.stats[D3DRTYPE_CUBETEXTURE].TotalManaged;
-            stats.TotalBytes            += result.stats[D3DRTYPE_CUBETEXTURE].TotalBytes;
-
-            // fill watcher variables
-            this->dbgQueryTextureTrashing->SetB(stats.bThrashing ? true : false);
-            this->dbgQueryTextureApproxBytesDownloaded->SetI(stats.ApproxBytesDownloaded);
-            this->dbgQueryTextureNumEvicts->SetI(stats.NumEvicts);
-            this->dbgQueryTextureNumVidCreates->SetI(stats.NumVidCreates);
-            this->dbgQueryTextureLastPri->SetI(stats.LastPri);
-            this->dbgQueryTextureNumUsed->SetI(stats.NumUsed);
-            this->dbgQueryTextureNumUsedInVidMem->SetI(stats.NumUsedInVidMem);
-            this->dbgQueryTextureWorkingSet->SetI(stats.WorkingSet);
-            this->dbgQueryTextureWorkingSetBytes->SetI(stats.WorkingSetBytes);
-            this->dbgQueryTextureTotalManaged->SetI(stats.TotalManaged);
-            this->dbgQueryTextureTotalBytes->SetI(stats.TotalBytes);
-        }
-    }
-*/
 }
 #endif
 
@@ -907,6 +751,8 @@ nD3D9Server::OnDeviceInit(bool startup)
     n_dxtrace(hr, "GetDepthStencilSurface() on device failed.");
     n_assert(this->depthStencilSurface);
 
+	presentParams = RenderSrv->D3DPresentParams;
+
     // create an offscreen surface for capturing data
     hr = this->pD3D9Device->CreateOffscreenPlainSurface(this->presentParams.BackBufferWidth,
                                                        this->presentParams.BackBufferHeight,
@@ -1016,21 +862,21 @@ nD3D9Server::SetSoftwareVertexProcessing(bool b)
 bool
 nD3D9Server::GetSoftwareVertexProcessing()
 {
-    n_assert(this->pD3D9Device);
-    if (this->deviceBehaviourFlags & D3DCREATE_HARDWARE_VERTEXPROCESSING)
-    {
-        return false;
-    }
-    if (this->deviceBehaviourFlags & D3DCREATE_SOFTWARE_VERTEXPROCESSING)
-    {
-        return true;
-    }
-    if (this->deviceBehaviourFlags & D3DCREATE_MIXED_VERTEXPROCESSING)
-    {
-        BOOL b = this->pD3D9Device->GetSoftwareVertexProcessing();
-        return b ? true : false;
-    }
-    n_error("nD3D9Server::GetSoftwareProcessing(): can't happen!");
+    //n_assert(this->pD3D9Device);
+    //if (this->deviceBehaviourFlags & D3DCREATE_HARDWARE_VERTEXPROCESSING)
+    //{
+    //    return false;
+    //}
+    //if (this->deviceBehaviourFlags & D3DCREATE_SOFTWARE_VERTEXPROCESSING)
+    //{
+    //    return true;
+    //}
+    //if (this->deviceBehaviourFlags & D3DCREATE_MIXED_VERTEXPROCESSING)
+    //{
+    //    BOOL b = this->pD3D9Device->GetSoftwareVertexProcessing();
+    //    return b ? true : false;
+    //}
+    //n_error("nD3D9Server::GetSoftwareProcessing(): can't happen!");
     return false;
 }
 
@@ -1146,13 +992,13 @@ void nD3D9Server::AdjustGamma()
         ramp.red[i] = ramp.green[i] = ramp.blue[i] = n_iclamp(val, 0, 65535);
     }
 
-    if (Display.Fullscreen && pD3D9Device && (devCaps.Caps2 & D3DCAPS2_FULLSCREENGAMMA))
+    if (RenderSrv->GetDisplay().Fullscreen && pD3D9Device && (devCaps.Caps2 & D3DCAPS2_FULLSCREENGAMMA))
     {
         this->pD3D9Device->SetGammaRamp(0, D3DSGR_CALIBRATE, &ramp);
     }
     else
     {
-        HWND hwnd = Display.GetAppHwnd();
+        HWND hwnd = RenderSrv->GetDisplay().GetAppHwnd();
         HDC hdc = GetDC(hwnd);
         SetDeviceGammaRamp(hdc, &ramp);
         ReleaseDC(hwnd, hdc);
@@ -1173,7 +1019,7 @@ void nD3D9Server::RestoreGamma()
     for (int i = 0; i < 256; i++)
         ramp.red[i] = ramp.green[i] = ramp.blue[i] = i << 8;
 
-    if (Display.Fullscreen && pD3D9Device && (devCaps.Caps2 & D3DCAPS2_FULLSCREENGAMMA))
+    if (RenderSrv->GetDisplay().Fullscreen && pD3D9Device && (devCaps.Caps2 & D3DCAPS2_FULLSCREENGAMMA))
     {
         this->pD3D9Device->SetGammaRamp(0, D3DSGR_CALIBRATE, &ramp);
     }

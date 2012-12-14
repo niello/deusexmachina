@@ -1,9 +1,10 @@
-#ifdef __WIN32__
-#include "gfx2/Win32Display.h"
+//#ifdef __WIN32__
+#include "Display.h"
 
+#include <Render/RenderServer.h>
 #include <Events/EventManager.h>
 #include <Gfx/Events/DisplayInput.h>
-#include "kernel/nkernelserver.h"
+//#include "kernel/nkernelserver.h"
 
 //???in what header?
 #ifndef HID_USAGE_PAGE_GENERIC
@@ -13,12 +14,17 @@
 #define HID_USAGE_GENERIC_MOUSE	((USHORT) 0x02)
 #endif
 
-CWin32Display::CWin32Display():
-	WindowTitle("Nebula 2 - Untitled"),
+CDisplay::CDisplay():
+	WindowTitle("DeusExMachina - Untitled"),
 	IsWndOpen(false),
 	Fullscreen(false),
+	VSync(false),
 	AlwaysOnTop(false),
 	AutoAdjustSize(true),
+	DisplayModeSwitchEnabled(true),
+	TripleBuffering(false),
+	Adapter(Adapter_Primary),
+	AntiAliasQuality(MSAA_None),
 	hInst(NULL),
 	hWnd(NULL),
 	hWndParent(NULL),
@@ -32,7 +38,7 @@ CWin32Display::CWin32Display():
 }
 //---------------------------------------------------------------------
 
-CWin32Display::~CWin32Display()
+CDisplay::~CDisplay()
 {
 	if (IsWndOpen) CloseWindow();
 
@@ -45,16 +51,13 @@ CWin32Display::~CWin32Display()
 	if (aWndClass)
 	{
 		if (!UnregisterClass((LPCSTR)aWndClass, hInst))
-			n_error("CWin32Display::CloseWindow(): UnregisterClass() failed!\n");
+			n_error("CDisplay::CloseWindow(): UnregisterClass() failed!\n");
 		aWndClass = 0;
 	}
 }
 //---------------------------------------------------------------------
 
-// Open the application window. Override this method in a platform specific subclass. The window
-// will live during the entire life span of the graphics server. It should be opened in a minimized
-// or invisible state, until nGfxServer2::OpenDisplay() calls AdjustWindowForChange() and RestoreWindow().
-bool CWin32Display::OpenWindow()
+bool CDisplay::OpenWindow()
 {
 	n_assert(!IsWndOpen && hInst && !hWnd);
 
@@ -101,7 +104,7 @@ bool CWin32Display::OpenWindow()
 		WndClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
 		WndClass.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 		WndClass.lpszMenuName  = NULL;
-		WndClass.lpszClassName = NEBULA2_WINDOW_CLASS;
+		WndClass.lpszClassName = DEM_WINDOW_CLASS;
 		WndClass.hIconSm       = NULL;
 		aWndClass = RegisterClassEx(&WndClass);
 		n_assert(aWndClass);
@@ -112,11 +115,11 @@ bool CWin32Display::OpenWindow()
 	else if (Fullscreen) WndStyle = StyleFullscreen;
 	else WndStyle = StyleWindowed;
 
-	int W, H;
-	CalcWindowRect(W, H);
+	int X, Y, W, H;
+	CalcWindowRect(X, Y, W, H);
 
 	hWnd = CreateWindow((LPCSTR)aWndClass, WindowTitle.Get(), WndStyle,
-						DisplayMode.PosX, DisplayMode.PosY, W, H,
+						X, Y, W, H,
 						hWndParent, NULL, hInst, NULL);
 	n_assert(hWnd);
 
@@ -126,24 +129,22 @@ bool CWin32Display::OpenWindow()
 
 	CoreSrv->SetGlobal("hwnd", (int)hWnd);
 
-	RAWINPUTDEVICE RavInputDevices[1];
-	RavInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC; 
-	RavInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE; 
-	RavInputDevices[0].dwFlags = RIDEV_INPUTSINK;
-	RavInputDevices[0].hwndTarget = hWnd;
+	RAWINPUTDEVICE RawInputDevices[1];
+	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC; 
+	RawInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE; 
+	RawInputDevices[0].dwFlags = RIDEV_INPUTSINK;
+	RawInputDevices[0].hwndTarget = hWnd;
 
-	if (RegisterRawInputDevices(RavInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-		n_printf("CWin32Display: High-definition (raw) mouse device registration failed!\n");
+	if (RegisterRawInputDevices(RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
+		n_printf("CDisplay: High-definition (raw) mouse device registration failed!\n");
 
 	IsWndOpen = true;
 	IsWndMinimized = false;
-	return true;
+	OK;
 }
 //---------------------------------------------------------------------
 
-// Close the application window. This method will be called from the gfx server's destructor.
-// Override this method in a platform specific subclass.
-void CWin32Display::CloseWindow()
+void CDisplay::CloseWindow()
 {
 	n_assert(IsWndOpen && hInst);
 
@@ -163,7 +164,7 @@ void CWin32Display::CloseWindow()
 // Polls for and processes window messages. Call this message once per
 // frame in your render loop. If the user clicks the window close
 // button, or hits Alt-F4, a CloseRequested input event will be sent.
-void CWin32Display::ProcessWindowMessages()
+void CDisplay::ProcessWindowMessages()
 {
 	n_assert(IsWndOpen);
 
@@ -181,14 +182,14 @@ void CWin32Display::ProcessWindowMessages()
 }
 //---------------------------------------------------------------------
 
-void CWin32Display::SetWindowTitle(const char* pTitle)
+void CDisplay::SetWindowTitle(const char* pTitle)
 {
 	WindowTitle = pTitle;
 	if (hWnd) SetWindowText(hWnd, pTitle);
 }
 //---------------------------------------------------------------------
 
-void CWin32Display::SetWindowIcon(const char* pIconName)
+void CDisplay::SetWindowIcon(const char* pIconName)
 {
 	IconName = pIconName;
 	if (hWnd && IconName.IsValid())
@@ -199,59 +200,82 @@ void CWin32Display::SetWindowIcon(const char* pIconName)
 }
 //---------------------------------------------------------------------
 
-void CWin32Display::CalcWindowRect(int& W, int& H)
+void CDisplay::CalcWindowRect(int& X, int& Y, int& W, int& H)
 {
 	if (hWndParent)
 	{
+		X = 0;
+		Y = 0;
+
 		RECT r;
 		GetClientRect(hWndParent, &r);
-		AdjustWindowRect(&r, StyleChild, 0);
-		DisplayMode.PosX = 0;
-		DisplayMode.PosY = 0;
-		DisplayMode.Width = (ushort)(r.right - r.left); //???clamp w & h to parent rect?
-		DisplayMode.Height = (ushort)(r.bottom - r.top);
-		W = DisplayMode.Width;
-		H = DisplayMode.Height;
-	}
-	else if (Fullscreen)
-	{
-		W = DisplayMode.Width;
-		H = DisplayMode.Height;
+		AdjustWindowRect(&r, StyleChild, FALSE);
+		W = (ushort)(r.right - r.left); //???clamp w & h to parent rect?
+		H = (ushort)(r.bottom - r.top);
+
+		// Child window adjusts display mode values
+		DisplayMode.PosX = X;
+		DisplayMode.PosY = Y;
+		DisplayMode.Width = W;
+		DisplayMode.Height = H;
 	}
 	else
 	{
-		RECT r = {0, 0, DisplayMode.Width, DisplayMode.Height};
-		AdjustWindowRect(&r, StyleWindowed, 0);
-		W = r.right - r.left;
-		H = r.bottom - r.top;
+		CMonitorInfo MonitorInfo;
+		GetAdapterMonitorInfo(Adapter, MonitorInfo);
+
+		if (Fullscreen)
+		{
+			if (DisplayModeSwitchEnabled)
+			{
+				X = MonitorInfo.Left;
+				Y = MonitorInfo.Top;
+			}
+			else
+			{
+				X = MonitorInfo.Left + ((MonitorInfo.Width - DisplayMode.Width) / 2);
+				Y = MonitorInfo.Top + ((MonitorInfo.Height - DisplayMode.Height) / 2);
+			}
+			W = DisplayMode.Width;
+			H = DisplayMode.Height;
+		}
+		else
+		{
+			X = MonitorInfo.Left + DisplayMode.PosX;
+			Y = MonitorInfo.Top + DisplayMode.PosY;
+			RECT r = { X, Y, X + DisplayMode.Width, Y + DisplayMode.Height };
+			AdjustWindowRect(&r, StyleWindowed, FALSE);
+			W = r.right - r.left;
+			H = r.bottom - r.top;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CWin32Display::RestoreWindow()
+void CDisplay::RestoreWindow()
 {
 	n_assert(hWnd && IsWndOpen);
 
 	ShowWindow(hWnd, SW_RESTORE);
 
-	int W, H;
-	CalcWindowRect(W, H);
+	int X, Y, W, H;
+	CalcWindowRect(X, Y, W, H);
 
-	HWND hWndPlacement;
-	if (AlwaysOnTop) hWndPlacement = HWND_TOPMOST;
-	else if (hWndParent) hWndPlacement = hWndParent;
-	else hWndPlacement = HWND_NOTOPMOST;
+	HWND hWndInsertAfter;
+	if (AlwaysOnTop) hWndInsertAfter = HWND_TOPMOST;
+	else if (hWndParent) hWndInsertAfter = hWndParent;
+	else hWndInsertAfter = HWND_NOTOPMOST;
 
-	SetWindowPos(hWnd, hWndPlacement, DisplayMode.PosX, DisplayMode.PosY, W, H, SWP_SHOWWINDOW);
+	SetWindowPos(hWnd, hWndInsertAfter, X, Y, W, H, SWP_SHOWWINDOW);
 
 	//!!!IF WM_SIZE IS CALLED, REMOVE STRING BELOW!  (see WM_SIZE)
 	// Manually change window size in child mode
-	if (hWndParent) MoveWindow(hWnd, DisplayMode.PosX, DisplayMode.PosY, W, H, TRUE);
+	if (hWndParent) MoveWindow(hWnd, X, Y, W, H, TRUE);
 	IsWndMinimized = false;
 }
 //---------------------------------------------------------------------
 
-void CWin32Display::MinimizeWindow()
+void CDisplay::MinimizeWindow()
 {
 	n_assert(hWnd && IsWndOpen);
 	if (!IsWndMinimized)
@@ -262,9 +286,91 @@ void CWin32Display::MinimizeWindow()
 }
 //---------------------------------------------------------------------
 
-LONG WINAPI CWin32Display::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+bool CDisplay::AdapterExists(EAdapter Adapter)
 {
-	CWin32Display* pDisp = (CWin32Display*)GetWindowLong(hWnd, 0);
+	return ((UINT)Adapter) < RenderSrv->GetD3D()->GetAdapterCount();
+}
+//---------------------------------------------------------------------
+
+void CDisplay::GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, nArray<CDisplayMode>& OutModes)
+{
+	n_assert(AdapterExists(Adapter));
+	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
+	UINT ModeCount = RenderSrv->GetD3D()->GetAdapterModeCount(Adapter, Format);
+	for (UINT i = 0; i < ModeCount; i++)
+	{
+		//HRESULT hr =
+		RenderSrv->GetD3D()->EnumAdapterModes(Adapter, Format, i, &D3DDisplayMode);
+		CDisplayMode Mode(D3DDisplayMode.Width, D3DDisplayMode.Height, D3DDisplayMode.Format);
+		if (OutModes.FindIndex(Mode) == INVALID_INDEX)
+			OutModes.Append(Mode);
+	}
+}
+//---------------------------------------------------------------------
+
+bool CDisplay::SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode)
+{
+	nArray<CDisplayMode> Modes;
+	GetAvailableDisplayModes(Adapter, Mode.PixelFormat, Modes);
+	return Modes.FindIndex(Mode) != INVALID_INDEX;
+}
+//---------------------------------------------------------------------
+
+void CDisplay::GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode)
+{
+	n_assert(AdapterExists(Adapter));
+	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
+	HRESULT hr = RenderSrv->GetD3D()->GetAdapterDisplayMode((UINT)Adapter, &D3DDisplayMode);
+	n_assert(SUCCEEDED(hr));
+	OutMode.PosX = 0;
+	OutMode.PosY = 0;
+	OutMode.Width = D3DDisplayMode.Width;
+	OutMode.Height = D3DDisplayMode.Height;
+	OutMode.PixelFormat = D3DDisplayMode.Format;
+}
+//---------------------------------------------------------------------
+
+/*
+AdapterInfo D3D9DisplayDevice::GetAdapterInfo(Adapter::Code adapter)
+{
+    n_assert(this->AdapterExists(adapter));
+    IDirect3D9* d3d9 = D3D9RenderDevice::GetDirect3D();
+    D3DADAPTER_IDENTIFIER9 d3dInfo = { 0 };
+    HRESULT hr = d3d9->GetAdapterIdentifier((UINT) adapter, 0, &d3dInfo);
+    n_assert(SUCCEEDED(hr));
+
+    AdapterInfo info;
+    info.SetDriverName(d3dInfo.Driver);
+    info.SetDescription(d3dInfo.Description);
+    info.SetDeviceName(d3dInfo.DeviceName);
+    info.SetDriverVersionLowPart(d3dInfo.DriverVersion.LowPart);
+    info.SetDriverVersionHighPart(d3dInfo.DriverVersion.HighPart);
+    info.SetVendorId(d3dInfo.VendorId);
+    info.SetDeviceId(d3dInfo.DeviceId);
+    info.SetSubSystemId(d3dInfo.SubSysId);
+    info.SetRevision(d3dInfo.Revision);
+    info.SetGuid(Guid((const unsigned char*) &(d3dInfo.DeviceIdentifier), sizeof(d3dInfo.DeviceIdentifier)));
+    return info;
+}
+*/
+
+void CDisplay::GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo)
+{
+	n_assert(AdapterExists(Adapter));
+	HMONITOR hMonitor = RenderSrv->GetD3D()->GetAdapterMonitor(Adapter);
+	MONITORINFO Win32MonitorInfo = { sizeof(Win32MonitorInfo), 0 };
+	GetMonitorInfo(hMonitor, &Win32MonitorInfo);
+	OutInfo.Left = (ushort)Win32MonitorInfo.rcMonitor.left;
+	OutInfo.Top = (ushort)Win32MonitorInfo.rcMonitor.top;
+	OutInfo.Width = (ushort)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Height = (ushort)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
+	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
+}
+//---------------------------------------------------------------------
+
+LONG WINAPI CDisplay::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CDisplay* pDisp = (CDisplay*)GetWindowLong(hWnd, 0);
 	LONG Result = 0;
 	if (pDisp->HandleWindowMessage(hWnd, uMsg, wParam, lParam, Result)) return Result;
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -272,7 +378,7 @@ LONG WINAPI CWin32Display::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 //---------------------------------------------------------------------
 
 //???need _hWnd param?
-bool CWin32Display::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result)
+bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result)
 {
 	switch (uMsg)
 	{
@@ -288,7 +394,7 @@ bool CWin32Display::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LP
 					case SC_KEYMENU:
 					case SC_MONITORPOWER:
 						Result = 1;
-						return true;
+						OK;
 				}
 			}
 			break;
@@ -296,7 +402,7 @@ bool CWin32Display::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LP
 		case WM_ERASEBKGND:
 			// Prevent Windows from erasing the background
 			Result = 1;
-			return true;
+			OK;
 
 		case WM_SIZE:
 			if (wParam == SIZE_MAXHIDE || wParam == SIZE_MINIMIZED)
@@ -322,7 +428,7 @@ bool CWin32Display::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LP
 			if (EventMgr->FireEvent(CStrID("OnDisplaySetCursor")))
 			{
 				Result = TRUE;
-				return true;
+				OK;
 			}
 			break;
 
@@ -396,7 +502,7 @@ bool CWin32Display::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LP
 
 			DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
 			Result = 0;
-			return true;
+			OK;
 		}
 
 		case WM_LBUTTONDBLCLK:
@@ -483,81 +589,28 @@ bool CWin32Display::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LP
 		}
 	}
 
-	return false;
+	FAIL;
 }
 //---------------------------------------------------------------------
 
 //???change here & listen event in D3D9 handler, compare D3D9 settings with curr display mode & reset device if needed>?
-void CWin32Display::AdjustSize()
+void CDisplay::AdjustSize()
 {
 	n_assert(hWnd);
+
+	float OldW = DisplayMode.Width;
+	float OldH = DisplayMode.Height;
+
 	RECT r;
 	GetClientRect(hWnd, &r);
 	DisplayMode.Width = (ushort)r.right;
 	DisplayMode.Height = (ushort)r.bottom;
+
+	if (DisplayMode.Width != OldW || DisplayMode.Height != OldH)
+		RenderSrv->ResetDevice();
+
+	//???EventMgr->FireEvent(CStrID("OnDisplaySizeChanged")); and handle in device?
 }
 //---------------------------------------------------------------------
 
-//void D3D9DisplayDevice::AdjustSize()
-//{
-//	CDisplayMode oldDisplayMode = DisplayMode;
-//	Win32DisplayDevice::AdjustSize();
-//	if (oldDisplayMode != DisplayMode && D3D9RenderDevice::Instance()->IsOpen()) D3D9RenderDevice::Instance()->ResetDevice();
-//}
-////---------------------------------------------------------------------
-//DisplayMode
-//D3D9DisplayDevice::ComputeAdjustedWindowRect()
-//{
-//    if (0 != this->parentWindow)
-//    {
-//        // if we're a child window, let parent class handle it
-//        return Win32DisplayDevice::ComputeAdjustedWindowRect();
-//    }
-//    else
-//    {
-//        // get monitor handle of selected adapter
-//        IDirect3D9* pD3D9 = D3D9RenderDevice::GetDirect3D();
-//        n_assert(this->AdapterExists(this->adapter));
-//        HMONITOR hMonitor = pD3D9->GetAdapterMonitor(this->adapter);
-//        MONITORINFO monitorInfo = { sizeof(monitorInfo), 0 };
-//        GetMonitorInfo(hMonitor, &monitorInfo);
-//        int monitorOriginX = monitorInfo.rcMonitor.left;
-//        int monitorOriginY = monitorInfo.rcMonitor.top;
-//        
-//        if (this->fullscreen)
-//        {
-//            // running in fullscreen mode
-//            if (!this->IsDisplayModeSwitchEnabled())
-//            {
-//                // running in "fake" fullscreen mode center the window on the desktop
-//                int monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
-//                int monitorHeight = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
-//                int x = monitorOriginX + ((monitorWidth - this->displayMode.GetWidth()) / 2);
-//                int y = monitorOriginY + ((monitorHeight - this->displayMode.GetHeight()) / 2);
-//                return DisplayMode(x, y, this->displayMode.GetWidth(), this->displayMode.GetHeight(), this->displayMode.GetPixelFormat());
-//            }
-//            else
-//            {
-//                // running in normal fullscreen mode
-//                return DisplayMode(monitorOriginX, monitorOriginY, this->displayMode.GetWidth(), this->displayMode.GetHeight(), this->displayMode.GetPixelFormat());
-//            }
-//        }
-//        else
-//        {
-//            // need to make sure that the window client area is the requested width
-//            int adjXPos = monitorOriginX + displayMode.GetXPos();
-//            int adjYPos = monitorOriginY + displayMode.GetYPos();
-//            RECT adjRect;
-//            adjRect.left   = adjXPos;
-//            adjRect.right  = adjXPos + displayMode.GetWidth();
-//            adjRect.top    = adjYPos;
-//            adjRect.bottom = adjYPos + displayMode.GetHeight();
-//            AdjustWindowRect(&adjRect, this->windowedStyle, 0);
-//            int adjWidth = adjRect.right - adjRect.left;
-//            int adjHeight = adjRect.bottom - adjRect.top;
-//            return DisplayMode(adjXPos, adjYPos, adjWidth, adjHeight, displayMode.GetPixelFormat());
-//        }
-//    }
-//}
-
-#endif __WIN32__
+//#endif //__WIN32__

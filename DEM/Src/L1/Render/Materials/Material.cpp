@@ -45,6 +45,11 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 		{
 			PTexture Tex = Var.Value.GetValue<PTexture>();
 			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+			//if (!Tex->IsLoaded() && !LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex))
+			//{
+			//	State = Resources::Rsrc_Failed;
+			//	FAIL;
+			//}
 		}
 	}
 

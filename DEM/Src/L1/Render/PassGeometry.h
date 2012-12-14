@@ -38,6 +38,8 @@ public:
 //
 //???System UI, Depth buffer resolve to tex, mouse ptrs, lights for prepass
 
+	// BatchRenderer list
+
 //!!!OLD!
 	nArray<nRpPhase> phases;
 

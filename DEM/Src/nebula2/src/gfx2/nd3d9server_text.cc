@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 #include "gfx2/nd3d9server.h"
 #include "gfx2/nd3d9texture.h"
+#include <Render/RenderServer.h>
 
 //------------------------------------------------------------------------------
 /**
@@ -50,8 +51,8 @@ nD3D9Server::DrawTextImmediate(const nString& text, const vector4& color, const 
         return;
     }
 
-    float dispWidth  = (float)Display.GetDisplayMode().Width;
-    float dispHeight = (float)Display.GetDisplayMode().Height;
+    float dispWidth  = (float)RenderSrv->GetDisplay().GetDisplayMode().Width;
+    float dispHeight = (float)RenderSrv->GetDisplay().GetDisplayMode().Height;
     RECT r;
     r.left   = (LONG)(rect.v0.x * dispWidth);
     r.top    = (LONG)(rect.v0.y * dispHeight);
@@ -89,8 +90,8 @@ nD3D9Server::GetTextExtent(const nString& text)
 {
     int width = 0;
     int height = 0;
-    float dispWidth  = (float)Display.GetDisplayMode().Width;
-    float dispHeight = (float)Display.GetDisplayMode().Height;
+    float dispWidth  = (float)RenderSrv->GetDisplay().GetDisplayMode().Width;
+    float dispHeight = (float)RenderSrv->GetDisplay().GetDisplayMode().Height;
 
 	RECT rect = { 0 };
     if (text.IsValid()) pD3DFont->DrawTextA(NULL, text.Get(), -1, &rect, DT_LEFT | DT_NOCLIP | DT_CALCRECT, 0);

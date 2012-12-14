@@ -2,7 +2,7 @@
 // There is only version for loading from file, cause FX source with includes is meaningful only as files.
 // Use function declaration instead of header file where you want to call this loader.
 
-#include <Render/Renderer.h>
+#include <Render/RenderServer.h>
 #include <Data/Streams/FileStream.h>
 #include <Data/Buffer.h>
 #include <gfx2/D3DXNebula2Include.h>
@@ -22,7 +22,7 @@ bool LoadShaderFromFX(const nString& FileName, PShader OutShader)
 	n_assert(File.Read(Buffer.GetPtr(), FileSize) == FileSize);
 
 	DWORD D3DEffFlags = D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY | D3DXFX_NOT_CLONEABLE;
-#if N_D3D9_DEBUG
+#if DEM_D3D_DEBUG
 	D3DEffFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
 #endif
 

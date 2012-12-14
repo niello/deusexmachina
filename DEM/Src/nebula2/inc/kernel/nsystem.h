@@ -41,6 +41,20 @@
 #   define NOMCX
 #endif
 
+// extralean flags
+/*
+ NOSERVICE
+   NOMCX
+   NOIME
+   NOSOUND
+   NOCOMM
+   NOKANJI
+   NORPC
+   NOPROXYSTUB
+   NOIMAGE
+   NOTAPE
+   */
+
 //------------------------------------------------------------------------------
 //  compiler identification:
 //  __VC__      -> Visual C

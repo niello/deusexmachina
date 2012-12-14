@@ -1,7 +1,6 @@
 #include "VertexLayout.h"
 
-#include <Render/Renderer.h>
-#include <d3d9.h>
+#include <Render/RenderServer.h>
 
 namespace Render
 {
@@ -74,13 +73,13 @@ bool CVertexLayout::Create(const nArray<CVertexComponent>& VertexComponents)
 	const DWORD MAX_VERTEX_COMPONENTS = 32;
 	n_assert(Components.Size() < MAX_VERTEX_COMPONENTS);
 	D3DVERTEXELEMENT9 DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
-	DWORD StreamOffset[CRenderer::MaxVertexStreamCount] = { 0 };
+	DWORD StreamOffset[CRenderServer::MaxVertexStreamCount] = { 0 };
 	int i = 0;
 	for (i = 0; i < Components.Size(); i++)
 	{
 		const CVertexComponent& Component = Components[i];
 		WORD StreamIndex = (WORD)Component.Stream;
-		n_assert(StreamIndex < CRenderer::MaxVertexStreamCount);
+		n_assert(StreamIndex < CRenderServer::MaxVertexStreamCount);
 		DeclData[i].Stream = StreamIndex;
 		DeclData[i].Offset = (WORD)StreamOffset[StreamIndex];
 		DeclData[i].Type = Component.GetD3DDeclType();

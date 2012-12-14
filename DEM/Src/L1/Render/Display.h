@@ -1,22 +1,31 @@
-#ifndef N_WIN32WINDOWHANDLER_H
-#define N_WIN32WINDOWHANDLER_H
-#ifdef __WIN32__
+#pragma once
+#ifndef __DEM_L1_RENDER_DISPLAY_H__
+#define __DEM_L1_RENDER_DISPLAY_H__
+//#ifdef __WIN32__
 
-#include <gfx2/DisplayMode.h>
+#include <Render/DisplayMode.h>
 
-#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#endif
 #include <windows.h>
 
-// A window handler for Win32 platforms. Contains the window handling code both for the
-// Direct3D and OpenGL graphics servers (if running under Windows).
-// (C) 2004 RadonLabs GmbH
+// A window handler for Win32 platforms.
 
-#define NEBULA2_WINDOW_CLASS "Nebula2::MainWindow"
+#define DEM_WINDOW_CLASS "DeusExMachina::MainWindow"
 
-class CWin32Display //???event dispatcher? or can send through EventMgr!
+using namespace Render;
+
+class CDisplay
 {
+public:
+
+	//???UINT and defines for primary & secondary instead of enum?
+	enum EAdapter
+	{
+		Adapter_None = -1,
+		Adapter_Primary = 0,
+		Adapter_Secondary = 1
+	};
+
 protected:
 
 	enum
@@ -40,18 +49,23 @@ protected:
 	DWORD			StyleChild;			///< WS_* flags for child mode
 
 	bool				HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result);
-	void				CalcWindowRect(int& W, int& H);
+	void				CalcWindowRect(int& X, int& Y, int& W, int& H);
 
 	static LONG WINAPI	WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 public:
 
+	EAdapter		Adapter;
 	bool			Fullscreen;
+	bool			VSync;
 	bool			AlwaysOnTop;
-	bool			AutoAdjustSize;
+	bool			AutoAdjustSize;				// Autoadjust viewport to window size when window changes
+	bool			DisplayModeSwitchEnabled;	// Fullscreen only
+	bool			TripleBuffering;			// Use double or triple buffering when fullscreen
+	EMSAAQuality	AntiAliasQuality;
 
-	CWin32Display();
-	~CWin32Display();
+	CDisplay();
+	~CDisplay();
 
 	bool				OpenWindow();
 	void				CloseWindow();
@@ -59,6 +73,13 @@ public:
 	void				RestoreWindow();
 	void				MinimizeWindow();
 	void				AdjustSize();
+
+	bool				AdapterExists(EAdapter Adapter);
+	void				GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, nArray<CDisplayMode>& OutModes);
+	bool				SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode);
+	void				GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode);
+	//CAdapterInfo		GetAdapterInfo(EAdapter Adapter);
+	void				GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo);
 
 	void				SetWindowTitle(const char* pTitle);
 	const nString&		GetWindowTitle() const { return WindowTitle; }
@@ -77,7 +98,7 @@ public:
 	ATOM				GetWndClass() const { return aWndClass; }
 };
 
-inline void CWin32Display::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
+inline void CDisplay::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
 {
 	RECT r;
 	if (hWnd && GetClientRect(hWnd, &r))
@@ -93,5 +114,5 @@ inline void CWin32Display::GetRelativeXY(int XAbs, int YAbs, float& XRel, float&
 }
 //---------------------------------------------------------------------
 
-#endif // __WIN32__
+//#endif // __WIN32__
 #endif

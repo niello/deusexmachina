@@ -1,7 +1,6 @@
 #include "IndexBuffer.h"
 
-#include <Render/Renderer.h>
-#include <d3d9.h>
+#include <Render/RenderServer.h>
 
 namespace Render
 {

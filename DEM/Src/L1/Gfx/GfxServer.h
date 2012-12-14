@@ -7,7 +7,7 @@
 #include <Gfx/Level.h>
 #include <Gfx/Entity.h>
 #include <Time/TimeSource.h>
-#include <gfx2/DisplayMode.h>
+#include <Render/DisplayMode.h>
 #include <util/ndictionary.h>
 
 // The Graphics::CGfxServer is the central object of the graphics subsystem.

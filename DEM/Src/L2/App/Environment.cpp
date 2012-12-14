@@ -91,16 +91,16 @@ bool CEnvironment::InitEngine()
 	LoaderServer.Create();
 	if (!LoaderServer->Open()) FAIL;
 
+	RenderServer.Create();
+	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.Get());
+	RenderServer->GetDisplay().SetWindowIcon(IconName.Get());
+	RenderServer->GetDisplay().SetDisplayMode(DisplayMode);
+	RenderServer->Open();
+
 	GfxServer.Create();
-	GfxServer->WindowTitle = WindowTitle;
-	GfxServer->WindowIcon = IconName;
-	GfxServer->DisplayMode = DisplayMode;
 	GfxServer->RenderPath = RenderPath; //???store here?
 	GfxServer->FeatureSet = FeatureSet; //???store here?
 	GfxServer->Open();
-
-	Renderer.Create();
-	Renderer->Open();
 
 	SceneServer.Create();
 
@@ -137,11 +137,11 @@ void CEnvironment::ReleaseEngine()
 
 	SceneServer = NULL;
 
-	if (Renderer.isvalid() && Renderer->IsOpen()) Renderer->Close();
-	Renderer = NULL;
-
 	if (GfxServer.isvalid() && GfxServer->IsOpen()) GfxServer->Close();
 	GfxServer = NULL;
+
+	if (RenderServer.isvalid() && RenderServer->IsOpen()) RenderServer->Close();
+	RenderServer = NULL;
 
 	if (InputServer.isvalid() && InputServer->IsOpen()) InputServer->Close();
 	InputServer = NULL;

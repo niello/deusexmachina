@@ -334,10 +334,6 @@
 					Filter="cpp;c;cxx;cc;h;hxx;hcc"
 					>
 					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\DisplayMode.h"
-						>
-					</File>
-					<File
 						RelativePath="..\..\Src\nebula2\inc\gfx2\ncamera2.h"
 						>
 					</File>
@@ -571,35 +567,6 @@
 								PreprocessorDefinitions="N_INIT=n_init_ntexture2;N_NEW=n_new_ntexture2;N_INITCMDS=n_initcmds_ntexture2"
 							/>
 						</FileConfiguration>
-					</File>
-				</Filter>
-				<Filter
-					Name="Win32Display"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\Win32Display.cpp"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nwin32windowhandler;N_NEW=n_new_nwin32windowhandler;N_INITCMDS=n_initcmds_nwin32windowhandler"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nwin32windowhandler;N_NEW=n_new_nwin32windowhandler;N_INITCMDS=n_initcmds_nwin32windowhandler"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\Win32Display.h"
-						>
 					</File>
 				</Filter>
 			</Filter>

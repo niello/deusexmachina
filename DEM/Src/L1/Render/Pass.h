@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_PASS_H__
 
 #include <Render/Materials/Shader.h>
+//#include <Render/RenderTarget.h>
 
 //!!!OLD!
 #include <gfx2/nshaderparams.h>

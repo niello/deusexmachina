@@ -111,8 +111,8 @@ nD3D9Shader::LoadResource()
     CD3DXNebula2Include includeHandler(shaderPath.ExtractDirName());
 
     // get global effect pool from gfx server
-    ID3DXEffectPool* effectPool = nD3D9Server::Instance()->GetEffectPool();
-    n_assert(effectPool);
+    ID3DXEffectPool* pEffectPool = nD3D9Server::Instance()->GetEffectPool();
+    n_assert(pEffectPool);
 
     // get the highest supported shader profiles
     LPCSTR vsProfile = D3DXGetVertexShaderProfile(d3d9Dev);
@@ -146,7 +146,7 @@ nD3D9Shader::LoadResource()
 		defines,            // pDefines
 		&includeHandler,    // pInclude
 		compileFlags,       // Flags
-		effectPool,         // pPool
+		pEffectPool,         // pPool
 		&(this->effect),    // ppEffect
 		&errorBuffer);      // ppCompilationErrors
 

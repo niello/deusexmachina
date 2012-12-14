@@ -7,6 +7,7 @@
 #include "gfx2/nd3d9texture.h"
 #include <Events/EventManager.h>
 #include <Gfx/Events/DisplayInput.h>
+#include <Render/RenderServer.h>
 
 nD3D9Server* nD3D9Server::Singleton = 0;
 
@@ -19,7 +20,7 @@ nD3D9Server::nD3D9Server():
 	depthStencilSurface(0),
 	backBufferSurface(0),
 	captureSurface(0),
-	effectPool(0),
+	pEffectPool(0),
 	featureSet(InvalidFeatureSet),
 	textElements(64, 64),
 #if __NEBULA_STATS__
@@ -44,36 +45,38 @@ nD3D9Server::nD3D9Server():
 	memset(&devCaps, 0, sizeof(devCaps));
 	memset(&presentParams, 0, sizeof(presentParams));
 	memset(&shapeMeshes, 0, sizeof(shapeMeshes));
-
-	D3dOpen();
-	InitDeviceIdentifier();
 }
 //---------------------------------------------------------------------
 
 nD3D9Server::~nD3D9Server()
 {
 	if (displayOpen) CloseDisplay();
-	D3dClose();
 	n_assert(Singleton);
 	Singleton = NULL;
 }
 //---------------------------------------------------------------------
 
-void nD3D9Server::D3dOpen()
+const CDisplayMode& nD3D9Server::GetDisplayMode() const
 {
-	n_assert(!pD3D9);
-	pD3D9 = Direct3DCreate9(D3D_SDK_VERSION);
-	n_assert2(pD3D9, "nD3D9Server: could not initialize Direct3D!\n");
-	UpdateFeatureSet();
+	return RenderSrv->GetDisplay().GetDisplayMode();
 }
 //---------------------------------------------------------------------
 
-void nD3D9Server::D3dClose()
+void nD3D9Server::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
 {
-	n_assert(pD3D9 && !pD3D9Device);
-	int refCount = pD3D9->Release();
-	if (refCount > 0) n_printf("WARNING: Direct3D9 interface was still referenced (count = %d)\n", refCount);
-	pD3D9 = NULL;
+	RenderSrv->GetDisplay().GetRelativeXY(XAbs, YAbs, XRel, YRel);
+}
+//---------------------------------------------------------------------
+
+HWND nD3D9Server::GetAppHwnd() const
+{
+    return RenderSrv->GetDisplay().GetAppHwnd();
+}
+//---------------------------------------------------------------------
+
+HWND nD3D9Server::GetParentHwnd() const
+{
+    return RenderSrv->GetDisplay().GetParentHwnd();
 }
 //---------------------------------------------------------------------
 
@@ -85,9 +88,6 @@ bool nD3D9Server::OpenDisplay()
 	SUBSCRIBE_PEVENT(OnDisplayPaint, nD3D9Server, OnPaint);
 	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, nD3D9Server, OnToggleFullscreenWindowed);
 	SUBSCRIBE_NEVENT(DisplayInput, nD3D9Server, OnDisplayInput);
-
-	// Don't do this in the constructor because the window's name and icon won't have been set at that time.
-	if (!Display.IsWindowOpen()) Display.OpenWindow();
 
 	if (!DeviceOpen()) FAIL;
 	nGfxServer2::OpenDisplay();
@@ -108,7 +108,6 @@ void nD3D9Server::CloseDisplay()
 	UNSUBSCRIBE_EVENT(DisplayInput);
 
 	DeviceClose();
-	if (Display.IsWindowOpen()) Display.CloseWindow();
 	nGfxServer2::CloseDisplay();
 }
 //---------------------------------------------------------------------
@@ -116,7 +115,7 @@ void nD3D9Server::CloseDisplay()
 // Implements the Windows message pump. Must be called once a frame OUTSIDE of BeginScene() / EndScene().
 void nD3D9Server::Trigger()
 {
-	Display.ProcessWindowMessages();
+	RenderSrv->GetDisplay().ProcessWindowMessages();
 }
 //---------------------------------------------------------------------
 
@@ -197,7 +196,7 @@ bool nD3D9Server::OnSetCursor(const Events::CEventBase& Event)
 
 bool nD3D9Server::OnPaint(const Events::CEventBase& Event)
 {
-	if (Display.Fullscreen && pD3D9Device && !inDialogBoxMode)
+	if (RenderSrv->GetDisplay().Fullscreen && pD3D9Device && !inDialogBoxMode)
 		pD3D9Device->Present(0, 0, 0, 0);
 	OK;
 }
@@ -205,7 +204,7 @@ bool nD3D9Server::OnPaint(const Events::CEventBase& Event)
 
 bool nD3D9Server::OnToggleFullscreenWindowed(const Events::CEventBase& Event)
 {
-	Display.Fullscreen = !Display.Fullscreen;
+	RenderSrv->GetDisplay().Fullscreen = !RenderSrv->GetDisplay().Fullscreen;
 	CloseDisplay();
 	OpenDisplay();
 	OK;
@@ -217,7 +216,7 @@ bool nD3D9Server::OnDisplayInput(const Events::CEventBase& Event)
 {
 	const Event::DisplayInput& Ev = (const Event::DisplayInput&)Event;
 
-	if (Display.Fullscreen && Ev.Type == Event::DisplayInput::MouseMove)
+	if (RenderSrv->GetDisplay().Fullscreen && Ev.Type == Event::DisplayInput::MouseMove)
 		pD3D9Device->SetCursorPosition(Ev.MouseInfo.x, Ev.MouseInfo.y, 0);
 	OK;
 }

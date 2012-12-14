@@ -1,7 +1,7 @@
 // Loads shader effect in object form from .fxo file
 // Use function declaration instead of header file where you want to call this loader.
 
-#include <Render/Renderer.h>
+#include <Render/RenderServer.h>
 #include <Data/Streams/FileStream.h>
 #include <Data/Buffer.h>
 
