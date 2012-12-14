@@ -71,20 +71,23 @@ protected:
 public:
 
 	EUsage					Usage;
-	ECPUAccess				AccessMode;
+	ECPUAccess				Access;
 	//int						SkippedMips;
 
 	CTexture(CStrID ID, Resources::IResourceManager* pHost);
 	virtual ~CTexture() { if (IsLoaded()) Unload(); }
 
 	//???Create(size, format etc), will setup itself inside to Loaded state?
-	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TextureType);
+	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType);
 	virtual void	Unload();
 
+	bool			Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips, EUsage _Usage, ECPUAccess _Access);
+	bool			CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height);
 	bool			Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
 	void			Unmap(int MipLevel);
 	bool			MapCubeFace(ECubeFace Face, int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
 	void			UnmapCubeFace(ECubeFace Face, int MipLevel);
+	void			GenerateMipLevels();
 
 	EType						GetType() const { return Type; }
 	DWORD						GetWidth() const { return Width; }
@@ -104,14 +107,14 @@ typedef Ptr<CTexture> PTexture;
 inline CTexture::CTexture(CStrID ID, Resources::IResourceManager* pHost):
 	CResource(ID, pHost),
 	Usage(UsageImmutable),
-	AccessMode(AccessNone),
+	Access(AccessNone),
 	Type(InvalidType),
 	Width(0),
 	Height(0),
 	Depth(0),
 	MipCount(0),
 	//skippedMips(0),
-	PixelFormat(InvalidPixelFormat),
+	PixelFormat(PixelFormat_Invalid),
 	LockCount(0),
 	pD3D9Tex(NULL),
 	pD3D9Tex2D(NULL)

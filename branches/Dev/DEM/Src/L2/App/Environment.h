@@ -12,7 +12,7 @@
 #include <DB/DBServer.h>
 #include <Loading/LoaderServer.h>
 #include <Gfx/GfxServer.h>
-#include <Render/Renderer.h>
+#include <Render/RenderServer.h>
 #include <Scene/SceneServer.h>
 #include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
@@ -21,7 +21,7 @@
 #include <Game/GameServer.h>
 #include <AI/AIServer.h>
 #include <UI/UIServer.h>
-#include <gfx2/DisplayMode.h>
+#include <Render/DisplayMode.h>
 
 // Environment class helps to setup and stores ptrs to engine subsystems. Use it to implement
 // application classes faster. Init & shutdown processes are split into parts
@@ -65,7 +65,7 @@ protected:
 	Ptr<DB::CDBServer>				DBServer;
 	Ptr<Loading::CLoaderServer>		LoaderServer;
 	Ptr<Graphics::CGfxServer>		GfxServer;
-	Ptr<Render::CRenderer>			Renderer;
+	Ptr<Render::CRenderServer>		RenderServer;
 	Ptr<Scene::CSceneServer>		SceneServer;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;

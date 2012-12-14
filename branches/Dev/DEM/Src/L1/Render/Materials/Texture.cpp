@@ -1,7 +1,6 @@
 #include "Texture.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <d3d9.h>
+#include <Render/RenderServer.h>
 
 namespace Data
 {
@@ -12,11 +11,11 @@ namespace Render
 {
 ImplementRTTI(Render::CTexture, Resources::CResource);
 
-bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TextureType)
+bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 {
 	n_assert(pTextureCastToBase);
 
-	Type = TextureType;
+	Type = TexType;
 
 	//???really can't just cast ptr?
 	// Need to query for base interface under Win32
@@ -86,22 +85,105 @@ void CTexture::Unload()
 }
 //---------------------------------------------------------------------
 
+bool CTexture::Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips,
+					  EUsage _Usage, ECPUAccess _Access)
+{
+	if (!_Width || !_Height) FAIL;
+
+	n_assert(!pD3D9Tex); //???or unload old?
+
+	Usage = _Usage;
+	Access = _Access;
+
+	D3DPOOL D3DPool;
+	DWORD D3DUsage;
+	switch (Usage)
+	{
+		case UsageImmutable:
+			n_assert(Access == AccessNone);
+			D3DPool = D3DPOOL_MANAGED;
+			D3DUsage = 0;
+			break;
+		case UsageDynamic:
+			n_assert(Access == AccessWrite);
+			D3DPool = D3DPOOL_DEFAULT;
+			D3DUsage = D3DUSAGE_DYNAMIC;
+			break;
+		case UsageCPU:
+			D3DPool = D3DPOOL_SYSTEMMEM;
+			D3DUsage = D3DUSAGE_DYNAMIC;
+			break;
+		default: n_error("Invalid Texture usage!");
+	}
+
+	if (_Type == Texture2D)
+	{
+		HRESULT hr =
+			RenderSrv->GetD3DDevice()->CreateTexture(_Width, _Height, Mips, D3DUsage, _Format, D3DPool, &pD3D9Tex2D, NULL);
+		n_assert(SUCCEEDED(hr));
+		return Setup(pD3D9Tex2D, _Type);
+	}
+	else if (_Type == Texture3D)
+	{
+		HRESULT hr =
+			RenderSrv->GetD3DDevice()->CreateVolumeTexture(_Width, _Height, _Depth, Mips, D3DUsage, _Format, D3DPool, &pD3D9Tex3D, NULL);
+		n_assert(SUCCEEDED(hr));
+		return Setup(pD3D9Tex3D, _Type);
+	}
+	else if (_Type == TextureCube)
+	{
+		HRESULT hr =
+			RenderSrv->GetD3DDevice()->CreateCubeTexture(_Width, Mips, D3DUsage, _Format, D3DPool, &pD3D9TexCube, NULL);
+		n_assert(SUCCEEDED(hr));
+		return Setup(pD3D9TexCube, _Type);
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CTexture::CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height)
+{
+	if (!_Width || !_Height) FAIL;
+
+	n_assert(!pD3D9Tex); //???or unload old?
+
+	Usage = UsageImmutable;
+	Access = AccessNone;
+
+	HRESULT hr = RenderSrv->GetD3DDevice()->CreateTexture(
+		_Width,
+		_Height,
+		1,
+		D3DUSAGE_RENDERTARGET,
+		_Format,
+		D3DPOOL_DEFAULT,
+		&pD3D9Tex2D,
+		NULL);
+	n_assert(SUCCEEDED(hr));
+
+	return Setup(pD3D9Tex2D, Texture2D);
+}
+//---------------------------------------------------------------------
+
 inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 {
 	switch (MapType)
 	{
+		//!!!MapSetup!
+
 		case MapRead:
-			n_assert((UsageDynamic == Usage) && (AccessRead == AccessMode));
+			n_assert((UsageDynamic == Usage) && (AccessRead == Access));
 			LockFlags |= D3DLOCK_READONLY;
 			break;
 		case MapWrite:
-			n_assert((UsageDynamic == Usage) && (AccessWrite == AccessMode));
+			n_assert((UsageDynamic == Usage) && (AccessWrite == Access));
 			break;
 		case MapReadWrite:
-			n_assert((UsageDynamic == Usage) && (AccessReadWrite == AccessMode));
+			n_assert((UsageDynamic == Usage) && (AccessReadWrite == Access));
 			break;
 		case MapWriteDiscard:
-			n_assert((UsageDynamic == Usage) && (AccessWrite == AccessMode));
+			n_assert((UsageDynamic == Usage) && (AccessWrite == Access));
 			LockFlags |= D3DLOCK_DISCARD;
 			break;
 	}
@@ -177,6 +259,15 @@ void CTexture::UnmapCubeFace(ECubeFace Face, int MipLevel)
 	n_assert(Type == TextureCube && LockCount > 0);
 	GetD3D9CubeTexture()->UnlockRect((D3DCUBEMAP_FACES)Face, MipLevel);
 	LockCount--;
+}
+//---------------------------------------------------------------------
+
+void CTexture::GenerateMipLevels()
+{
+	// To have mipmap sublevels generated automatically at texture
+	// creation time, specify D3DUSAGE_AUTOGENMIPMAP (c) D3D9 docs
+	n_assert(pD3D9Tex);
+	pD3D9Tex->GenerateMipSubLevels();
 }
 //---------------------------------------------------------------------
 

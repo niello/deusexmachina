@@ -1,7 +1,7 @@
 #include "Model.h"
 
 #include <Scene/Scene.h>
-#include <Render/Renderer.h>
+#include <Render/RenderServer.h>
 #include <Data/BinaryReader.h>
 
 //!!!OLD!

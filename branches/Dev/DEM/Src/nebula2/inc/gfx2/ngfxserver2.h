@@ -17,7 +17,7 @@
 #include "gfx2/ntexture2.h"
 #include "mathlib/rectangle.h"
 #include "gfx2/nmousecursor.h"
-#include "gfx2/DisplayMode.h"
+#include "Render/DisplayMode.h"
 #include "gfx2/nlight.h"
 #include "util/nfixedarray.h"
 #include "mathlib/rectangle.h"
@@ -195,14 +195,7 @@ public:
     /// create a new occlusion query object
     virtual nOcclusionQuery* NewOcclusionQuery() { return NULL; }
 
-    /// set display mode
-    virtual void SetDisplayMode(const CDisplayMode& mode) = 0;
-    /// get display mode
     virtual const CDisplayMode& GetDisplayMode() const = 0;
-    /// set the window title
-    virtual void SetWindowTitle(const char* pTitle) = 0;
-    /// set the window icon
-	virtual void SetWindowIcon(const char* pIconName) {}
     /// set the current camera description
     virtual void SetCamera(nCamera2& NewCamera);
     /// get the current camera description

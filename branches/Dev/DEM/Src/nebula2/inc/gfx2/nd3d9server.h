@@ -10,19 +10,13 @@
     (C) 2002 RadonLabs GmbH
 */
 #include "gfx2/ngfxserver2.h"
-#include "gfx2/Win32Display.h"
 #include <Events/Events.h>
 #include <Events/Subscription.h>
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 
 #ifdef _DEBUG
 #define D3D_DEBUG_INFO
 #endif
 
-#include <d3d9.h>
 #include <d3dx9.h>
 #include <dxerr.h>
 
@@ -72,14 +66,8 @@ public:
     /// create a new occlusion query object
     virtual nOcclusionQuery* NewOcclusionQuery();
 
-    /// set display mode. This will not take effect until OpenDisplay() has been called!
-	virtual void SetDisplayMode(const CDisplayMode& mode) { Display.SetDisplayMode(mode); }
     /// get display mode
-	virtual const CDisplayMode& GetDisplayMode() const { return Display.GetDisplayMode(); }
-    /// set the window title
-	virtual void SetWindowTitle(const char* pTitle) { Display.SetWindowTitle(pTitle); }
-     /// set the window icon
-	virtual void SetWindowIcon(const char* pIconName) { Display.SetWindowIcon(pIconName); }
+	virtual const CDisplayMode& GetDisplayMode() const;
    /// set the viewport
     virtual void SetViewport(nViewport& vp);
     /// open the display
@@ -189,7 +177,7 @@ public:
     /// restore gamma.
     virtual void RestoreGamma();
 	
-	void			GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const { Display.GetRelativeXY(XAbs, YAbs, XRel, YRel); }
+	void			GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
     /// get a pointer to the global d3dx effect pool
     ID3DXEffectPool* GetEffectPool() const;
  
@@ -200,11 +188,7 @@ private:
     /// check a buffer format combination for compatibility
     bool CheckDepthFormat(D3DFORMAT adapterFormat, D3DFORMAT backbufferFormat, D3DFORMAT depthFormat);
     /// find the best possible buffer format combination
-    void FindBufferFormats(CDisplayMode::Bpp bpp, D3DFORMAT& dispFormat, D3DFORMAT& backFormat, D3DFORMAT& zbufFormat);
-    /// open d3d
-    void D3dOpen();
-    /// close d3d
-    void D3dClose();
+    void FindBufferFormats(CDisplayMode::EBitDepth bpp, D3DFORMAT& dispFormat, D3DFORMAT& backFormat, D3DFORMAT& zbufFormat);
     /// create the d3d device
     bool DeviceOpen();
     /// release the d3d device
@@ -259,8 +243,6 @@ private:
 
     static nD3D9Server* Singleton;
 
-    CWin32Display Display;			///< a Win32 window handler object
-
     DWORD deviceBehaviourFlags;     ///< the behavior flags at device creation time
     D3DCAPS9 devCaps;               ///< device caps
     D3DDISPLAYMODE d3dDisplayMode;  ///< the current d3d display mode
@@ -290,7 +272,7 @@ private:
     IDirect3DSurface9* backBufferSurface;       ///< the original back buffer surface
     IDirect3DSurface9* depthStencilSurface;     ///< the original depth stencil surface
     IDirect3DSurface9* captureSurface;          ///< an offscreen surface for fast screenshot capture
-    ID3DXEffectPool* effectPool;                ///< global pool for shared effect parameters
+    ID3DXEffectPool* pEffectPool;                ///< global pool for shared effect parameters
     nRef<nD3D9Shader> refSharedShader;          ///< reference shader for shared effect parameters
 
     nKeyArray<IDirect3DVertexDeclaration9*> vertexDeclarationCache; ///< indexed by vertexCompFlags
@@ -431,30 +413,10 @@ nD3D9Server::GetD3DPrimTypeAndNum(PrimitiveType primType, D3DPRIMITIVETYPE& d3dP
 /**
 */
 inline
-HWND
-nD3D9Server::GetAppHwnd() const
-{
-    return this->Display.GetAppHwnd();
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-HWND
-nD3D9Server::GetParentHwnd() const
-{
-    return this->Display.GetParentHwnd();
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
 ID3DXEffectPool*
 nD3D9Server::GetEffectPool() const
 {
-    return this->effectPool;
+    return this->pEffectPool;
 }
 
 //------------------------------------------------------------------------------

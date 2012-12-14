@@ -1,7 +1,7 @@
 // Loads mesh vertices, indices and primitive groups from .nvx2 file
 // Use function declaration instead of header file where you want to call this loader.
 
-#include <Render/Renderer.h>
+#include <Render/RenderServer.h>
 #include <Data/BinaryReader.h>
 #include <Data/Streams/FileStream.h>
 

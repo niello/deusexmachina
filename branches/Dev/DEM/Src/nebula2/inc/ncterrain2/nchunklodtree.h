@@ -11,7 +11,7 @@
     (C) 2003 RadonLabs GmbH
 */
 #include "resource/nresource.h"
-#include "gfx2/DisplayMode.h"
+#include "Render/DisplayMode.h"
 #include "ncterrain2/ntexturequadtree.h"
 #include "util/narray.h"
 

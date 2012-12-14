@@ -114,22 +114,11 @@ bool CGfxServer::Open()
 
 	GfxRoot = nKernelServer::Instance()->New("nroot", "/res/gfx");
 
-	nGfxServer2::Instance()->SetWindowTitle(WindowTitle.Get());
-	nGfxServer2::Instance()->SetWindowIcon(WindowIcon.Get());
-
 	if (FeatureSet.IsValid())
 		nGfxServer2::Instance()->SetFeatureSetOverride(nGfxServer2::StringToFeatureSet(FeatureSet.Get()));
 
 	if (RenderPath.IsValid()) nSceneServer::Instance()->SetRenderPathFilename(RenderPath);
-	else
-	{
-		const nGfxServer2::FeatureSet& FeatSet = nGfxServer2::Instance()->GetFeatureSet();
-		if (FeatSet == nGfxServer2::DX9 || FeatSet == nGfxServer2::DX9FLT)
-			nSceneServer::Instance()->SetRenderPathFilename("renderpath:dx9hdr_renderpath.xml");
-		else nSceneServer::Instance()->SetRenderPathFilename("renderpath:dx7_renderpath.xml");
-	}
-
-	nGfxServer2::Instance()->SetDisplayMode(DisplayMode);
+	else nSceneServer::Instance()->SetRenderPathFilename("renderpath:dx9hdr_renderpath.xml");
 
 	// Open the scene server (will also open the display server)
 	nSceneServer::Instance()->SetObeyLightLinks(true);
