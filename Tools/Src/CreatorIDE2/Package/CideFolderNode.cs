@@ -15,39 +15,75 @@ namespace CreatorIDE.Package
     {
         private const string GuidString = "F13A5C9F-C62E-4FDA-954F-7537BC28228C";
 
+        public new CideProjectNode ProjectMgr { get { return (CideProjectNode) base.ProjectMgr; } }
+
         public string PackagePath
         {
             get
             {
-                var packagePath = ItemNode.GetMetadata(CideProjectElements.FolderPackagePath);
-                if (packagePath != null)
-                    packagePath = packagePath.Trim();
-                
-                return !string.IsNullOrEmpty(packagePath) ? packagePath : GetDefaultPackagePath();
+                if (IsScopeRoot)
+                    return Scope + CidePathHelper.ScopeSeparatorChar;
+
+                var parent = Parent as CideFolderNode;
+                string parentPath = parent == null
+                                        ? Configuration.GlobalScope + CidePathHelper.ScopeSeparatorChar
+                                        : parent.PackagePath;
+                return Path.Combine(parentPath, Caption);
+            }
+        }
+
+        public string Scope
+        {
+            get
+            {
+                var scope = ItemNode.GetMetadata(CideProjectElements.FolderScope);
+                if (scope != null)
+                    scope = scope.Trim().ToLowerInvariant();
+
+                return string.IsNullOrEmpty(scope) ? GetDefaultScope() : scope;
             }
             set
             {
                 if (value != null)
-                    value = value.Trim();
+                    value = value.Trim().ToLowerInvariant();
 
-                if (string.IsNullOrEmpty(value))
+                if (string.IsNullOrEmpty(value) || value == GetDefaultScope())
                     value = null;
 
-                if (value != null && value.ToLowerInvariant() == GetDefaultPackagePath().ToLowerInvariant())
-                    value = null;
-
-                string packagePath;
-                if (!ItemNode.TryGetMetadata(CideProjectElements.FolderPackagePath, out packagePath))
+                string currentScope;
+                if (ItemNode.TryGetMetadata(CideProjectElements.FolderScope, out currentScope) && currentScope != null)
                 {
-                    if (value == null)
-                        return;
+                    currentScope = currentScope.Trim().ToLowerInvariant();
+                    if (string.IsNullOrEmpty(currentScope))
+                        currentScope = null;
                 }
-                else if (packagePath == value)
+
+                if (currentScope == value)
                     return;
 
-                ItemNode.SetMetadata(CideProjectElements.FolderPackagePath, value);
+                if (currentScope != null && !string.IsNullOrEmpty(currentScope.Trim().ToLowerInvariant()))
+                {
+                    bool removed = ProjectMgr.RemoveFromScopeMap(this);
+                    Debug.Assert(removed);
+                }
+
+                if (value != null)
+                    ProjectMgr.AddToScopeMap(value, this);
+
+                ItemNode.SetMetadata(CideProjectElements.FolderScope, value);
             }
         }
+
+        public bool IsScopeRoot
+        {
+            get
+            {
+                string scope;
+                return ItemNode.TryGetMetadata(CideProjectElements.FolderScope, out scope) && scope != null &&
+                       !string.IsNullOrEmpty(scope.Trim());
+            }
+        }
+
         public CideFolderNode(CideProjectNode root, string relativePath, ProjectElement element):
             base(root, relativePath, element)
         {
@@ -80,13 +116,10 @@ namespace CreatorIDE.Package
             ErrorHandler.ThrowOnFailure(addItemDialog.AddProjectItemDlg(ID, ref projectGuid, project, (uint) uiFlags, strBrowseLocations, null, ref strBrowseLocations, ref strFilter, out iDontShowAgain));
         }
 
-        private string GetDefaultPackagePath()
+        private string GetDefaultScope()
         {
             var parentFolder = Parent as CideFolderNode;
-            Debug.Assert(Caption != null);
-            return parentFolder != null
-                       ? Path.Combine(parentFolder.PackagePath, Caption)
-                       : CidePathHelper.AddScope(Configuration.GlobalScope, Caption);
+            return parentFolder == null ? Configuration.GlobalScope : parentFolder.Scope;
         }
     }
 
@@ -111,13 +144,19 @@ namespace CreatorIDE.Package
         public string PackagePath
         {
             get { return ((CideFolderNode) Node).PackagePath; }
-            set { ((CideFolderNode) Node).PackagePath = value; }
         }
 
         [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.RelativePathPropertyName)]
         public string RelativePath
         {
             get { return Node.VirtualNodeName; }
+        }
+
+        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.ScopePropertyName)]
+        public string Scope
+        {
+            get { return ((CideFolderNode) Node).Scope; }
+            set { ((CideFolderNode) Node).Scope = value; }
         }
 
         public CideFolderNodeProperties(CideFolderNode node):

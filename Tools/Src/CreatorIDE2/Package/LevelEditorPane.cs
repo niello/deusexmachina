@@ -43,13 +43,13 @@ namespace CreatorIDE.Package
 
         private void OnEnginePathRequest(object sender, EnginePathRequestEventArgs e)
         {
-            const string basePath = "data:";
-            if (e.Handled || e.Path == null || !e.Path.StartsWith(basePath))
+            if (e.Handled)
                 return;
 
-            var path = e.Path.Substring(basePath.Length).TrimStart(Path.DirectorySeparatorChar,Path.AltDirectorySeparatorChar);
-            path = Path.Combine(@"..\..\..\..\InsanePoet\Bin\data", path);
-            path = Path.GetFullPath(path);
+            string path;
+            if (!_levelNode.TryResolvePath(e.Path, out path))
+                return;
+
             e.NormalizedPath = path;
             e.Handled = true;
         }

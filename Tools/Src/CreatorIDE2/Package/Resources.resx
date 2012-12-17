@@ -144,7 +144,16 @@
   <data name="RelativePathPropertyName" xml:space="preserve">
     <value>Relative Path</value>
   </data>
+  <data name="ScopeIsAlreadyDeclaredFormatString" xml:space="preserve">
+    <value>Scope "{0}" is already deaclared as the default scope for folder "{1}".</value>
+  </data>
+  <data name="ScopeNameIsInvalidFormatString" xml:space="preserve">
+    <value>"{0}" is not a valid name for a resource scope.</value>
+  </data>
   <data name="ScopeNameIsTooShort" xml:space="preserve">
     <value>A name of resource scope must contain at least two characters.</value>
+  </data>
+  <data name="ScopePropertyName" xml:space="preserve">
+    <value>Package Scope</value>
   </data>
 </root>
