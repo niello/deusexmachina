@@ -17,11 +17,26 @@ namespace CreatorIDE.Package
                             OpenLevelDatabaseFile = "OpenLevelDatabaseFile",
                             PackagePathPropertyName = "PackagePathPropertyName",
                             RelativePathPropertyName = "RelativePathPropertyName",
-                            ScopeNameIsTooShort = "ScopeNameIsTooShort";
+                            ScopeIsAlreadyDeclaredFormatString = "ScopeIsAlreadyDeclaredFormatString",
+                            ScopeNameIsInvalidFormatString = "ScopeNameIsInvalidFormatString",
+                            ScopeNameIsTooShort = "ScopeNameIsTooShort",
+                            ScopePropertyName = "ScopePropertyName";
 
-        public static string GetString(string name, CultureInfo cultureInfo)
+        public static string GetFormatString(CultureInfo cultureInfo, string name, params object[] args)
+        {
+            var formatString = Resources.ResourceManager.GetString(name, cultureInfo);
+            return formatString == null ? null : string.Format(formatString, args);
+        }
+
+        public static string GetString(CultureInfo cultureInfo, string name)
         {
             return Resources.ResourceManager.GetString(name, cultureInfo);
+        }
+
+        public static string GetFormatString(string name, params object[] args)
+        {
+            var formatString = Resources.ResourceManager.GetString(name);
+            return formatString == null ? null : string.Format(formatString, args);
         }
 
         public static string GetString(string name)

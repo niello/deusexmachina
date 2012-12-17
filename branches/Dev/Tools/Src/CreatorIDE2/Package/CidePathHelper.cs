@@ -33,7 +33,18 @@ namespace CreatorIDE.Package
             scope = scope.Trim();
             if(scope.Length<2)
                 throw new ArgumentException(SR.GetString(SR.ScopeNameIsTooShort), "scope");
+            if (!IsValidScopeName(scope))
+                throw new ArgumentException(string.Format(SR.GetString(SR.ScopeNameIsInvalidFormatString), scope), "scope");
             return string.Format("{0}{1}{2}", scope, ScopeSeparatorChar, path);
+        }
+
+        public static bool IsValidScopeName(string scope)
+        {
+            if (scope == null)
+                return false;
+
+            var invalidChars = Path.GetInvalidFileNameChars();
+            return scope.IndexOfAny(invalidChars) >= 0;
         }
     }
 }

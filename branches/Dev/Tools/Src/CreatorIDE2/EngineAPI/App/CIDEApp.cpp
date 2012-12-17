@@ -88,10 +88,15 @@ bool CCIDEApp::Open()
 
 	nString Home = DataSrv->ManglePath("home:");
 	nString Proj = DataSrv->ManglePath("proj:");
-	nString Data = Proj + "/Content/Project";
-	nString Export = Proj + "/Content/export";
+	nString Data = Proj + "/Project";
+	nString Export = Proj + "/export";
+
+	// Path may be redefined by an external editor, so we need to query it after assignement
 	DataSrv->SetAssign("data", Data);
+	Data = DataSrv->ManglePath("data:");
 	DataSrv->SetAssign("export", Export);
+	Export = DataSrv->ManglePath("export:");
+
 	DataSrv->SetAssign("renderpath", Home + "/Shaders/");
 	DataSrv->SetAssign("scripts", Home + "/Scripts/");
 	DataSrv->SetAssign("physics", Export + "/physics/");

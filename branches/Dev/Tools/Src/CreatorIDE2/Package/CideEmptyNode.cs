@@ -17,7 +17,7 @@ namespace CreatorIDE.Package
 
         public override string Caption
         {
-            get { return SR.GetString(SR.EmptyNodeCaption, CultureInfo.CurrentCulture); }
+            get { return SR.GetString(CultureInfo.CurrentCulture, SR.EmptyNodeCaption); }
         }
 
         public override Guid ItemTypeGuid

@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="CideEditorFactory.cs" />
     <Compile Include="CideEmptyNode.cs" />
+    <Compile Include="CideFileNode.cs" />
     <Compile Include="CidePathHelper.cs" />
     <Compile Include="CideProjectElements.cs" />
     <Compile Include="LevelEditorPane.cs" />
@@ -133,6 +134,9 @@
       <Project>{D59E549B-6C7D-4653-8F72-15276D107914}</Project>
       <Name>mpfproj</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="EditorData\" />
   </ItemGroup>
   <PropertyGroup>
     <!--

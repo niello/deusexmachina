@@ -247,13 +247,7 @@ nString CDataServer::GetAssign(const nString& Assign)
 
 nString CDataServer::ManglePath(const nString& Path)
 {
-#ifdef _EDITOR
-	nString PathString;
-	if(!this->QueryMangledPath(Path, PathString))
-		PathString = Path;
-#else
 	nString PathString = Path;
-#endif
 
 	int ColonIdx;
 	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 0)
@@ -261,6 +255,10 @@ nString CDataServer::ManglePath(const nString& Path)
 		// Special case: ignore one character "assigns" because they are really DOS drive letters
 		if (ColonIdx > 1)
 		{
+#ifdef _EDITOR
+			if(this->QueryMangledPath(PathString, PathString))
+				continue;
+#endif
 			nString Assign = GetAssign(PathString.SubString(0, ColonIdx));
 			if (Assign.IsEmpty()) return nString::Empty;
 			Assign.Append(PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1)));

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -21,6 +22,7 @@ namespace CreatorIDE.Package
 
         private readonly int _imageListOffset;
         private readonly CidePackage _package;
+        private readonly Dictionary<string, CideFolderNode> _scopeMap = new Dictionary<string, CideFolderNode>();
 
         public CideEngine Engine { get { return _package.Engine; } }
 
@@ -138,6 +140,8 @@ namespace CreatorIDE.Package
         protected override FolderNode CreateFolderNode(string path, ProjectElement element)
         {
             var folderNode = new CideFolderNode(this, path, element);
+            if (folderNode.IsScopeRoot)
+                AddToScopeMap(folderNode.Scope, folderNode);
             return folderNode;
         }
 
@@ -162,7 +166,7 @@ namespace CreatorIDE.Package
                     return new LevelNode(this, item);
 
                 default:
-                    return base.CreateFileNode(item);
+                    return new CideFileNode(this, item);
             }
         }
 
@@ -175,6 +179,57 @@ namespace CreatorIDE.Package
 
             foreach (Image img in customImageList.Images)
                 ImageHandler.AddImage(img);
+        }
+
+        public bool RemoveFromScopeMap(CideFolderNode folder)
+        {
+            if (folder == null)
+                return false;
+
+            if (!folder.IsScopeRoot)
+                return false;
+
+#if DEBUG
+            CideFolderNode originalFolder;
+            if (_scopeMap.TryGetValue(folder.Scope, out originalFolder))
+                Debug.Assert(ReferenceEquals(folder, originalFolder));
+#endif
+
+            return _scopeMap.Remove(folder.Scope);
+        }
+
+        public void AddToScopeMap(string scope, CideFolderNode folder)
+        {
+            if (scope == null)
+                throw new ArgumentNullException("scope");
+            if(folder==null)
+                throw new ArgumentException("folder");
+            if (scope.Length < 2)
+                throw new ArgumentException(SR.GetString(SR.ScopeNameIsTooShort), "scope");
+            if (scope == Configuration.GlobalScope && !CidePathHelper.IsValidScopeName(scope))
+                throw new ArgumentException(SR.GetFormatString(SR.ScopeNameIsInvalidFormatString, scope), "scope");
+
+            CideFolderNode exisitngNode;
+            if (_scopeMap.TryGetValue(scope, out exisitngNode))
+            {
+                if (ReferenceEquals(exisitngNode, folder))
+                    return;
+
+                throw new InvalidOperationException(SR.GetFormatString(SR.ScopeIsAlreadyDeclaredFormatString, scope,
+                                                                       exisitngNode.VirtualNodeName));
+            }
+
+            _scopeMap.Add(scope, folder);
+        }
+
+        public bool TryGetFromScopeMap(string scope, out CideFolderNode folder)
+        {
+            if (scope == null)
+            {
+                folder = null;
+                return false;
+            }
+            return _scopeMap.TryGetValue(scope, out folder);
         }
     }
 }

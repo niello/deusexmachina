@@ -3,6 +3,7 @@
     public static class CideProjectElements
     {
         public const string
-            FolderPackagePath = "PackagePath";
+            FolderPackagePath = "PackagePath",
+            FolderScope = "Scope";
     }
 }
