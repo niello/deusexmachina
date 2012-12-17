@@ -98,6 +98,12 @@ namespace CreatorIDE.Package
 
             switch(key)
             {
+                case "home":
+                    fullPath = ProjectMgr.GetProjectProperty(CideProjectElements.HomeFolder);
+                    if (fullPath == null)
+                        return false;
+                    break;
+
                 case "proj":
                     fullPath = Path.GetDirectoryName(ProjectMgr.Url);
                     break;
@@ -117,6 +123,12 @@ namespace CreatorIDE.Package
             Debug.Assert(fullPath != null);
             if (idx < path.Length - 1)
                 fullPath = Path.Combine(fullPath, path.Substring(idx + 1));
+            if (!Path.IsPathRooted(fullPath) && !CidePathHelper.IsInScope(fullPath))
+            {
+                var projectDir = Path.GetDirectoryName(ProjectMgr.GetMkDocument());
+                Debug.Assert(projectDir != null);
+                fullPath = Path.Combine(projectDir, fullPath);
+            }
             fullPath = Path.GetFullPath(fullPath);
             return true;
         }

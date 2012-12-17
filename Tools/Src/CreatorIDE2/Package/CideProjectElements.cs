@@ -4,6 +4,7 @@
     {
         public const string
             FolderPackagePath = "PackagePath",
-            FolderScope = "Scope";
+            FolderScope = "Scope",
+            HomeFolder = "HomePath";
     }
 }
