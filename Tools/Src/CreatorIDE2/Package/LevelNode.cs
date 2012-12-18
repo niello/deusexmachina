@@ -98,7 +98,7 @@ namespace CreatorIDE.Package
 
             switch(key)
             {
-                case "home":
+                case Configuration.HomeScope:
                     fullPath = ProjectMgr.GetProjectProperty(CideProjectElements.HomeFolder);
                     if (fullPath == null)
                         return false;

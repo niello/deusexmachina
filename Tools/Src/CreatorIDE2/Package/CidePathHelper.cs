@@ -6,7 +6,7 @@ namespace CreatorIDE.Package
 {
     public class CidePathHelper
     {
-        public const char ScopeSeparatorChar = ':';
+        public const char ScopeSeparatorChar = Configuration.ScopeDelimiterChar;
 
         public static bool IsInScope(string path)
         {

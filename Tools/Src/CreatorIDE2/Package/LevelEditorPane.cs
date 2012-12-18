@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
@@ -35,10 +36,27 @@ namespace CreatorIDE.Package
                 throw new ArgumentNullException("levelNode");
 
             _control = new Control();
+            _control.SizeChanged += OnControlSizeChanged;
             _levelNode = levelNode;
             var engine = _levelNode.ProjectMgr.Engine;
             engine.PathRequest += OnEnginePathRequest;
-            engine.Init(_control.Handle, @"..\..\..\..\InsanePoet\Bin\data");
+        }
+
+        private void OnControlSizeChanged(object sender, EventArgs e)
+        {
+            var control = (Control) sender;
+            Debug.Assert(ReferenceEquals(control, _control));
+
+            var engine = _levelNode.ProjectMgr.Engine;
+            if (control.Width == 0 || control.Height == 0 || engine.IsInitialized)
+                return;
+
+            string path;
+            var homePath = CidePathHelper.AddScope(Configuration.HomeScope, string.Empty);
+            if (!_levelNode.TryResolvePath(homePath, out path))
+                path = Configuration.AppFolder;
+
+            engine.Init(control.Handle, path);
         }
 
         private void OnEnginePathRequest(object sender, EnginePathRequestEventArgs e)

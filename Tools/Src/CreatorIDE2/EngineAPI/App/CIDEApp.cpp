@@ -50,7 +50,7 @@ void CCIDEApp::SetupDisplayMode()
 	Mode.PosY = 0;
 	Mode.Width = 800;
 	Mode.Height = 600;
-	Mode.VSync = false;
+	//Mode.VSync = false;
 	AppEnv->SetDisplayMode(Mode);
 
 	//!!!SET FULLSCREEN / WINDOWED! //???to display mode?
