@@ -21,12 +21,16 @@ namespace CreatorIDE.Engine
         private readonly MouseButtonCallback _mouseButtonCalback;
         private readonly DataPathCallback _dataPathCallback;
         private readonly ReleaseMemoryCallback _releaseMemoryCallback;
+        
+        private bool _isInitialized;
 
         private AppHandle _engineHandle;
 
         public event EventHandler<EnginePathRequestEventArgs> PathRequest;
 
         public event EventHandler<EngineMouseClickEventArgs> MouseClick;
+
+        public bool IsInitialized{get { return _isInitialized; }}
 
         public CideEngine()
         {
@@ -46,6 +50,8 @@ namespace CreatorIDE.Engine
             int code = Init(_engineHandle.Handle, parentHwnd, projDir);
             if (code != 0)
                 throw new EngineInitializationException(string.Format(SR.GetString(SR.EngineInitFailFormat), code));
+
+            _isInitialized = true;
         }
 
         private void OnMouseButtonCallback(int x, int y, int button, EMouseAction action)
