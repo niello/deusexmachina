@@ -34,7 +34,7 @@ public:
 
 public:
 
-	void Render();
+	void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
 
 	//!!!OLD!
 	void Validate();
@@ -44,10 +44,10 @@ public:
 
 typedef Ptr<CFrameShader> PFrameShader;
 
-inline void CFrameShader::Render()
+inline void CFrameShader::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
 	for (int i = 0; i < Passes.Size(); ++i)
-		Passes[i]->Render();
+		Passes[i]->Render(pObjects, pLights);
 }
 //---------------------------------------------------------------------
 

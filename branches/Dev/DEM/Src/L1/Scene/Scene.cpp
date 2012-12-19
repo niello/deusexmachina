@@ -56,7 +56,7 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 	if (!Camera.isvalid()) Camera = CurrCamera;
 	if (!Camera.isvalid())
 	{
-		VisibleMeshes.Clear();
+		VisibleObjects.Clear();
 		VisibleLights.Clear();
 		FAIL;
 	}
@@ -69,9 +69,12 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 
 	const matrix44& ViewProj = Camera->GetViewProjMatrix();
 
+	//???need base class for models, particle systems, terrain patches etc?
+	// so gather there CRenderObject* and CLight* arrays and feed renderers
+
 	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
 	nArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
-	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleMeshes, pVisibleLights);
+	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleObjects, pVisibleLights);
 
 	// Run all passes
 
@@ -179,7 +182,7 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 	// Nebula treats all them as different batches or render plugins, it is good idea maybe...
 	// Then backbuffer is present
 
-	VisibleMeshes.Clear();
+	VisibleObjects.Clear();
 	VisibleLights.Clear();
 
 	OK;
@@ -187,10 +190,10 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 //---------------------------------------------------------------------
 
 void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
-									  nArray<CModel*>* OutMeshes, nArray<CLight*>* OutLights,
+									  nArray<CRenderObject*>* OutObjects, nArray<CLight*>* OutLights,
 									  EClipStatus Clip)
 {
-	if (!pNode->GetTotalObjCount() || (!OutMeshes && !OutLights)) return;
+	if (!pNode->GetTotalObjCount() || (!OutObjects && !OutLights)) return;
 
 	if (Clip == Clipped)
 	{
@@ -202,21 +205,21 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		if (Clip == Outside) return;
 	}
 
-	if (OutMeshes && pNode->Data.Meshes.Size())
+	if (OutObjects && pNode->Data.Objects.Size())
 	{
-		nArray<CSPSRecord>::iterator ItMesh = pNode->Data.Meshes.Begin();
+		nArray<CSPSRecord>::iterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
-			CModel** ppMesh = OutMeshes->Reserve(pNode->Data.Meshes.Size());
-			for (; ItMesh != pNode->Data.Meshes.End(); ++ItMesh, ++ppMesh)
-				*ppMesh = (CModel*)&ItMesh->Attr;
+			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.Size());
+			for (; ItObj != pNode->Data.Objects.End(); ++ItObj, ++ppObj)
+				*ppObj = (CRenderObject*)&ItObj->Attr;
 		}
 		else // Clipped
 		{
 			//???test against global box or transform to model space and test against local box?
-			for (; ItMesh != pNode->Data.Meshes.End(); ++ItMesh)
-				if (ItMesh->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutMeshes->Append((CModel*)&ItMesh->Attr);
+			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
+				if (ItObj->GlobalBox.clipstatus(ViewProj) != Outside)
+					OutObjects->Append((CRenderObject*)&ItObj->Attr);
 		}
 	}
 
@@ -240,7 +243,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 
 	if (pNode->HasChildren())
 		for (DWORD i = 0; i < 4; i++)
-			SPSCollectVisibleObjects(pNode->GetChild(i), ViewProj, OutMeshes, OutLights, Clip);
+			SPSCollectVisibleObjects(pNode->GetChild(i), ViewProj, OutObjects, OutLights, Clip);
 }
 //---------------------------------------------------------------------
 

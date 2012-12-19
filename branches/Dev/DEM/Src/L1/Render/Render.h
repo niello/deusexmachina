@@ -10,6 +10,13 @@
 namespace Render
 {
 
+enum EClearFlag
+{
+	Clear_Color		= 0x01,
+	Clear_Depth		= 0x02,
+	Clear_Stencil	= 0x04
+};
+
 enum EMSAAQuality
 {
 	MSAA_None	= 0,
@@ -25,6 +32,15 @@ struct CMonitorInfo
 	ushort	Width;
 	ushort	Height;
 	bool	IsPrimary;
+};
+
+enum EPrimitiveTopology
+{
+	PointList,
+	LineList,
+	LineStrip,
+	TriList,
+	TriStrip
 };
 
 }

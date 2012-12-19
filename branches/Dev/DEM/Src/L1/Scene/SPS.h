@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_SPS_H__
 #define __DEM_L1_SCENE_SPS_H__
 
-#include <Scene/Model.h>
+#include <Scene/RenderObject.h>
 #include <Scene/Light.h>
 #include <Scene/SceneNode.h>
 #include <Data/QuadTree.h>
@@ -18,7 +18,7 @@ struct CSPSCell
 {
 	typedef CSPSRecord CElement;
 
-	nArray<CElement> Meshes;
+	nArray<CElement> Objects;
 	nArray<CElement> Lights;
 
 	CElement*	Add(const CSPSRecord& Object);
@@ -40,7 +40,7 @@ struct CSPSRecord
 	CSPSRecord(CSceneNodeAttr& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
 	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {} 
 
-	bool		IsModel() const { return Attr.IsA(CModel::RTTI); }
+	bool		IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }
 	bool		IsLight() const { return Attr.IsA(CLight::RTTI); }
 
 	CSPSRecord&	GetObject() { return *this; }
@@ -81,7 +81,7 @@ inline CSPSRecord& CSPSRecord::operator =(const CSPSRecord& Other)
 
 inline CSPSCell::CElement* CSPSCell::Add(const CSPSRecord& Object)
 {
-	if (Object.IsModel()) return &Meshes.Append(Object);
+	if (Object.IsRenderObject()) return &Objects.Append(Object);
 	if (Object.IsLight()) return &Lights.Append(Object);
 	n_assert_dbg(false);
 	return NULL;
@@ -91,7 +91,7 @@ inline CSPSCell::CElement* CSPSCell::Add(const CSPSRecord& Object)
 // Remove by value
 inline bool CSPSCell::RemoveByValue(const CSPSRecord& Object)
 {
-	if (Object.IsModel()) return Meshes.RemoveByValue(Object);
+	if (Object.IsRenderObject()) return Objects.RemoveByValue(Object);
 	if (Object.IsLight()) return Lights.RemoveByValue(Object);
 	FAIL;
 }
@@ -101,7 +101,7 @@ inline bool CSPSCell::RemoveByValue(const CSPSRecord& Object)
 inline void CSPSCell::RemoveElement(CSPSCell::CElement* pElement)
 {
 	if (!pElement) return;
-	if (pElement->IsModel()) Meshes.Erase(pElement);
+	if (pElement->IsRenderObject()) Objects.Erase(pElement);
 	else if (pElement->IsLight()) Lights.Erase(pElement);
 }
 //---------------------------------------------------------------------

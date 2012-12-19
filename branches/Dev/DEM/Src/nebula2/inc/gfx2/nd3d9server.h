@@ -143,9 +143,6 @@ public:
     /// leave dialog box mode
     virtual void LeaveDialogBoxMode();
 
-    /// save a screen shot
-    virtual bool SaveScreenshot(const char* fileName, nTexture2::FileFormat fileFormat);
-
     /// begin rendering lines
     virtual void BeginLines();
     /// draw 3d lines, using the current transforms
@@ -271,7 +268,6 @@ private:
     D3DPRESENT_PARAMETERS presentParams;        ///< current presentation parameters
     IDirect3DSurface9* backBufferSurface;       ///< the original back buffer surface
     IDirect3DSurface9* depthStencilSurface;     ///< the original depth stencil surface
-    IDirect3DSurface9* captureSurface;          ///< an offscreen surface for fast screenshot capture
     ID3DXEffectPool* pEffectPool;                ///< global pool for shared effect parameters
     nRef<nD3D9Shader> refSharedShader;          ///< reference shader for shared effect parameters
 

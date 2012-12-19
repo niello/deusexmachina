@@ -363,7 +363,6 @@ nD3D9Server::DeviceOpen()
     n_assert(!d3dxLine);
     n_assert(!depthStencilSurface);
     n_assert(!backBufferSurface);
-    n_assert(!captureSurface);
     #ifdef __NEBULA_STATS__
     n_assert(!queryResourceManager);
     #endif
@@ -372,18 +371,8 @@ nD3D9Server::DeviceOpen()
 
     HRESULT hr;
 
-    // find a valid combination of buffer formats
-    D3DFORMAT dispFormat;
-    D3DFORMAT backFormat;
-    D3DFORMAT zbufFormat;
-    this->FindBufferFormats(this->GetDisplayMode().BPP, dispFormat, backFormat, zbufFormat);
-
-    // get d3d multisample type
-    D3DMULTISAMPLE_TYPE d3dMultiSampleType = CheckMultiSampleType(backFormat, zbufFormat, !RenderSrv->GetDisplay().Fullscreen);
-
-    //this->presentParams.BackBufferFormat                = backFormat;
-    //this->presentParams.MultiSampleType                 = d3dMultiSampleType;
-    //this->presentParams.AutoDepthStencilFormat          = zbufFormat;
+	//!!!was set as backbuffer MSAA!
+	//D3DMULTISAMPLE_TYPE d3dMultiSampleType = CheckMultiSampleType(backFormat, zbufFormat, !RenderSrv->GetDisplay().Fullscreen);
 
 	pD3D9Device = RenderSrv->GetD3DDevice();
 	pEffectPool = RenderSrv->GetD3DEffectPool();
@@ -693,11 +682,6 @@ nD3D9Server::OnDeviceCleanup(bool shutdown)
     }
 
     // release refs on original backbuffer and depth/stencil surfaces
-    if (this->captureSurface)
-    {
-        this->captureSurface->Release();
-        this->captureSurface = 0;
-    }
     if (this->backBufferSurface)
     {
         this->backBufferSurface->Release();
@@ -740,7 +724,6 @@ nD3D9Server::OnDeviceInit(bool startup)
     n_assert(!this->refSharedShader.isvalid());
     n_assert(0 == this->depthStencilSurface);
     n_assert(0 == this->backBufferSurface);
-    n_assert(0 == this->captureSurface);
 
     // get a pointer to the back buffer and depth/stencil surface
     HRESULT hr = this->pD3D9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &this->backBufferSurface);
@@ -752,15 +735,6 @@ nD3D9Server::OnDeviceInit(bool startup)
     n_assert(this->depthStencilSurface);
 
 	presentParams = RenderSrv->D3DPresentParams;
-
-    // create an offscreen surface for capturing data
-    hr = this->pD3D9Device->CreateOffscreenPlainSurface(this->presentParams.BackBufferWidth,
-                                                       this->presentParams.BackBufferHeight,
-                                                       this->presentParams.BackBufferFormat,
-                                                       D3DPOOL_SYSTEMMEM,
-                                                       &(this->captureSurface), NULL);
-    n_dxtrace(hr, "CreateOffscreenPlainSurface() failed.");
-    n_assert(this->captureSurface);
 
     #ifdef __NEBULA_STATS__
     // create a query object for resource manager queries

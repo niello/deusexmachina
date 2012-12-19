@@ -19,7 +19,6 @@ nD3D9Server::nD3D9Server():
 	pD3D9Device(0),
 	depthStencilSurface(0),
 	backBufferSurface(0),
-	captureSurface(0),
 	pEffectPool(0),
 	featureSet(InvalidFeatureSet),
 	textElements(64, 64),
@@ -116,18 +115,6 @@ void nD3D9Server::CloseDisplay()
 void nD3D9Server::Trigger()
 {
 	RenderSrv->GetDisplay().ProcessWindowMessages();
-}
-//---------------------------------------------------------------------
-
-bool nD3D9Server::SaveScreenshot(const char* fileName, nTexture2::FileFormat fileFormat)
-{
-	n_assert(fileName);
-	n_assert(pD3D9Device);
-	n_assert(SUCCEEDED(pD3D9Device->GetRenderTargetData(backBufferSurface, captureSurface)));
-	nString mangledPath = DataSrv->ManglePath(fileName);
-	D3DXIMAGE_FILEFORMAT d3dxFormat = nD3D9Texture::FileFormatToD3DX(fileFormat);
-	n_assert(SUCCEEDED(D3DXSaveSurfaceToFile(mangledPath.Get(), d3dxFormat, captureSurface, NULL, NULL)));
-	OK;
 }
 //---------------------------------------------------------------------
 

@@ -2,8 +2,7 @@
 #ifndef __DEM_L1_RENDER_PASS_H__
 #define __DEM_L1_RENDER_PASS_H__
 
-#include <Render/Materials/Shader.h>
-//#include <Render/RenderTarget.h>
+#include <Render/RenderServer.h>
 
 //!!!OLD!
 #include <gfx2/nshaderparams.h>
@@ -11,6 +10,12 @@
 #include <variable/nvariablecontext.h>
 
 // Pass encapsulates rendering to one RT or MRT
+
+namespace Scene
+{
+	class CRenderObject;
+	class CLight;
+}
 
 namespace Render
 {
@@ -26,10 +31,13 @@ public:
 
 	CStrID			Name;
 	PShader			Shader;
-	//CShaderVarMap	ShaderVars;
-	// RT/MRT, batches
-	// RT clear flags, color & values //???set into RT? or can use shared RT but with own clear flags?
-	//???store clear values in RT or always set externally?
+	CShaderVarMap	ShaderVars;
+	PRenderTarget	RT[CRenderServer::MaxRenderTargetCount];
+	// batches
+	DWORD			ClearFlags;
+	DWORD			ClearColor;
+	float			ClearDepth;
+	uchar			ClearStencil;
 
 	//bool Profile;
 
@@ -56,7 +64,7 @@ public:
 
 public:
 
-	CPass():
+	CPass(): ClearFlags(0), ClearDepth(1.f), ClearStencil(0), 
 		pFrameShader(NULL),
 		rpShaderIndex(-1),
 		clearFlags(0),
@@ -68,7 +76,7 @@ public:
 
 	virtual ~CPass() {}
 
-	virtual void Render() = 0;
+	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights) = 0;
 
 	//!!!OLD!
 	virtual void Validate();

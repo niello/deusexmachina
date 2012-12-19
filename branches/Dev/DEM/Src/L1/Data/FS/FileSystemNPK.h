@@ -28,7 +28,7 @@ protected:
 	};
 
 	CNpkTOC		TOC;
-	CFileStream NPKData;
+	CFileStream NPKData; //!!!can use MMF and create views when big files are read!
 
 public:
 

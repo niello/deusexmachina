@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_MODEL_H__
 #define __DEM_L1_SCENE_MODEL_H__
 
-#include <Scene/SceneNodeAttr.h>
+#include <Scene/RenderObject.h>
 #include <Render/Materials/Material.h>
 #include <Render/Geometry/Mesh.h>
 
@@ -19,7 +19,7 @@ namespace Scene
 {
 struct CSPSRecord;
 
-class CModel: public CSceneNodeAttr
+class CModel: public CRenderObject
 {
 	DeclareRTTI;
 	DeclareFactory(CModel);

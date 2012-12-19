@@ -317,7 +317,7 @@ nSceneServer::RenderScene()
     // render final scene
     PROFILER_START(profRenderPath);
 	// validation removed
-	FrameShader->Render();
+	FrameShader->Render(NULL, NULL);
     PROFILER_STOP(profRenderPath);
 
     // HACK...

@@ -24,6 +24,7 @@ bool CLODGroup::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				DataReader.Read<float>(SqThreshold);
 				SqThreshold *= SqThreshold;
 				//SqThresholds.Add(SqThreshold, ChildID);
+				//!!!it is normal to have CStrID::Empty as ID - LOD assumes no children!
 			}
 			OK;
 		}
