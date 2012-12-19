@@ -256,8 +256,7 @@ nString CDataServer::ManglePath(const nString& Path)
 		if (ColonIdx > 1)
 		{
 #ifdef _EDITOR
-			if(this->QueryMangledPath(PathString, PathString))
-				continue;
+			if (QueryMangledPath(PathString, PathString)) continue;
 #endif
 			nString Assign = GetAssign(PathString.SubString(0, ColonIdx));
 			if (Assign.IsEmpty()) return nString::Empty;
@@ -434,23 +433,20 @@ bool CDataServer::LoadDataSchemes(const nString& FileName)
 #ifdef _EDITOR
 bool CDataServer::QueryMangledPath(const nString& FileName, nString& MangledFileName)
 {
-	if(!DataPathCB)
-		FAIL;
-	
-	LPSTR MangledStr = NULL;
-	if(!DataPathCB(FileName.Get(), &MangledStr))
+	if (!DataPathCB) FAIL;
+
+	LPSTR pMangledStr = NULL;
+	if (!DataPathCB(FileName.Get(), &pMangledStr))
 	{
-		if(MangledStr && ReleaseMemoryCB)
-			ReleaseMemoryCB(MangledStr);
+		if (pMangledStr && ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
 		FAIL;
 	}
 
 	MangledFileName.Clear();
-	if(MangledStr)
+	if (pMangledStr)
 	{
-		MangledFileName.Set(MangledStr);
-		if(ReleaseMemoryCB)
-			ReleaseMemoryCB(MangledStr);
+		MangledFileName.Set(pMangledStr);
+		if (ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
 	}
 	OK;
 }
