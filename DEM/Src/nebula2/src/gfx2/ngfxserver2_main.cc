@@ -91,13 +91,13 @@ void nGfxServer2::EndFrame()
 }
 //---------------------------------------------------------------------
 
-bool nGfxServer2::ClearScreen(float red, float green, float blue, float alpha, float z, int stencil)
+bool nGfxServer2::ClearScreen(int Color, float z, int stencil)
 {
 	if (!BeginFrame()) FAIL;
 	bool Result = BeginScene();
 	if (Result)
 	{
-		Clear(AllBuffers, red, green, blue, alpha, z, stencil);
+		Clear(AllBuffers, Color, z, stencil);
 		EndScene();
 		PresentScene();
 	}

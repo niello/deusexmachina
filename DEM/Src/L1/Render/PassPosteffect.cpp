@@ -43,16 +43,7 @@ void CPassPosteffect::Render(const nArray<Scene::CRenderObject*>* pObjects, cons
     n_assert(nGfxServer2::Instance()->BeginScene());
 
     // clear render target?
-    if (clearFlags != 0)
-    {
-        nGfxServer2::Instance()->Clear(clearFlags,
-                         clearColor.x,
-                         clearColor.y,
-                         clearColor.z,
-                         clearColor.w,
-                         clearDepth,
-                         clearStencil);
-    }
+    nGfxServer2::Instance()->Clear(ClearFlags, ClearColor, ClearDepth, ClearStencil);
 
     // apply shader (note: save/restore all shader state for pass shaders!)
 	if (rpShaderIndex != -1)

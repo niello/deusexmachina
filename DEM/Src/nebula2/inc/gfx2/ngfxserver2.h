@@ -249,10 +249,10 @@ public:
     /// Between BeginScene/EndScene?
     bool InBeginScene() const;
     /// clear buffers
-	virtual void Clear(int bufferTypes, float red, float green, float blue, float alpha, float z, int stencil) {}
+	virtual void Clear(int bufferTypes, int ARGB, float z, int stencil) {}
 
 	// Clear buffers and present a frame
-	bool ClearScreen(float red, float green, float blue, float alpha, float z, int stencil);
+	bool ClearScreen(int Color, float z, int stencil);
 
 	void SetLightingType(LightingType t) { lightingType = t; }
 	LightingType GetLightingType() const { return lightingType; }

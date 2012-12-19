@@ -352,9 +352,10 @@ nD3D9Server::EndScene()
     @param  z               the z value to write into the depth buffer
     @param  stencil         the stencil value to write into the stencil buffer
 */
-void
-nD3D9Server::Clear(int bufferTypes, float red, float green, float blue, float alpha, float z, int stencil)
+void nD3D9Server::Clear(int bufferTypes, int ARGB, float z, int stencil)
 {
+	if (bufferTypes == 0) return;
+
     DWORD flags = 0;
     if (bufferTypes & ColorBuffer)
     {
@@ -371,10 +372,8 @@ nD3D9Server::Clear(int bufferTypes, float red, float green, float blue, float al
         flags |= D3DCLEAR_STENCIL;
     }
 
-    DWORD d3dColor = D3DCOLOR_COLORVALUE(red, green, blue, alpha);
-
     // no stencil buffer
-    HRESULT hr = this->pD3D9Device->Clear(0, NULL, flags, d3dColor, z, stencil);
+    HRESULT hr = this->pD3D9Device->Clear(0, NULL, flags, ARGB, z, stencil);
     n_dxtrace(hr, "In nD3D9Server::Clear(): Clear() on D3D device failed!");
 }
 

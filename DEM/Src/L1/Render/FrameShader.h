@@ -15,25 +15,24 @@ namespace Render
 
 class CFrameShader: public Core::CRefCounted
 {
-	//DeclareRTTI;
-
 //protected:
 public:
 
 	CStrID			Name;
-	nArray<PPass>	Passes; //???smartptr?
+	nArray<PPass>	Passes;		//???smartptr?
+	nString			ShaderPath;	//???need or OLD? in fact can add to any shader references in this frame shader on load!
 
-// Name, MainRT, [RT/MRT mgmt], Pass mgmt, Textures and shader vars
+// Pass mgmt, Textures and shader vars
 //!!!can store required sorting, light usage etc here, as summary of each pass/batch requirements!
 
 //!!!OLD!
-	nString shaderPath;
 	nArray<nRpRenderTarget> renderTargets;
 	nArray<nRpShader> shaders;
 	nArray<nVariable::Handle> variableHandles;
 
 public:
 
+	bool Init(const Data::CParams& Desc);
 	void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
 
 	//!!!OLD!

@@ -103,7 +103,7 @@ public:
     /// end rendering the current frame
     virtual void EndFrame();
     /// clear buffers
-    virtual void Clear(int bufferTypes, float red, float green, float blue, float alpha, float z, int stencil);
+    virtual void Clear(int bufferTypes, int ARGB, float z, int stencil);
 
     /// reset the light array
     virtual void ClearLights();

@@ -46,7 +46,7 @@ nRpXmlParser::OpenXml(const nString& FileName)
         tinyxml2::XMLElement* elmRenderPath = docHandle.FirstChildElement("FrameShader").ToElement();
         n_assert(elmRenderPath);
         FrameShader->Name = CStrID(elmRenderPath->Attribute("name"));
-        FrameShader->shaderPath = elmRenderPath->Attribute("shaderPath");
+        FrameShader->ShaderPath = elmRenderPath->Attribute("shaderPath");
         return true;
     }
     n_delete(this->xmlDocument);
@@ -252,23 +252,23 @@ void nRpXmlParser::ParsePass(tinyxml2::XMLElement* elm, CFrameShader* pFrameShad
         renderTargetName.AppendInt(++i);
     }
 
-    int clearFlags = 0;
+    Pass->ClearFlags = 0;
     if (this->HasAttr(elm, "clearColor"))
     {
-        clearFlags |= nGfxServer2::ColorBuffer;
-        Pass->clearColor = this->GetVector4Attr(elm, "clearColor", vector4(0.0f, 0.0f, 0.0f, 1.0f));
+        Pass->ClearFlags |= nGfxServer2::ColorBuffer;
+        vector4 Color = this->GetVector4Attr(elm, "clearColor", vector4(0.0f, 0.0f, 0.0f, 1.0f));
+		Pass->ClearColor = N_COLORVALUE(Color.x, Color.y, Color.z, Color.w);
     }
     if (this->HasAttr(elm, "clearDepth"))
     {
-        clearFlags |= nGfxServer2::DepthBuffer;
-        Pass->clearDepth = this->GetFloatAttr(elm, "clearDepth", 1.0f);
+        Pass->ClearFlags |= nGfxServer2::DepthBuffer;
+        Pass->ClearDepth = this->GetFloatAttr(elm, "clearDepth", 1.0f);
     }
     if (this->HasAttr(elm, "clearStencil"))
     {
-        clearFlags |= nGfxServer2::StencilBuffer;
-        Pass->clearStencil = this->GetIntAttr(elm, "clearStencil", 0);
+        Pass->ClearFlags |= nGfxServer2::StencilBuffer;
+        Pass->ClearStencil = this->GetIntAttr(elm, "clearStencil", 0);
     }
-    Pass->clearFlags = clearFlags;
     if (HasAttr(elm, "technique")) Pass->technique = elm->Attribute("technique");
 
     // parse children

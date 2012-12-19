@@ -7,6 +7,16 @@
 namespace Render
 {
 
+bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets)
+{
+	if (!CPass::Init(PassName, Desc, RenderTargets)) FAIL;
+
+//Batches []
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
 	if (Shader.isvalid())
@@ -18,12 +28,13 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	}
 
 	for (int i = 0; i < CRenderServer::MaxRenderTargetCount; ++i)
-		//if (RT[i].isvalid()) // Now sets NULL RTs too to clear unused RTs from prev. passes
+		//if (RT[i].isvalid()) // Now sets NULL RTs too to clear unused RTs from prev. passes. See alternative below.
 			RenderSrv->SetRenderTarget(i, RT[i].get_unsafe());
 
 	RenderSrv->Clear(ClearFlags, ClearColor, ClearDepth, ClearStencil);
 
-	// N3: set pixel size and half pixel size shader vars //???why not committed in N3?
+	// N3: set pixel size and half pixel size shared shader vars //???why not committed in N3?
+	//???mb only in PassPosteffect?
 
 	for (int i = 0; i < BatchRenderers.Size(); ++i)
 	{
@@ -37,7 +48,7 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 		if (RT[i].isvalid())
 		{
 			RT[i]->Resolve();
-			// N3: set RTs of Index > 0 to NULL
+			// N3: if (i > 0) RenderSrv->SetRenderTarget(i, NULL);
 		}
 
 	if (Shader.isvalid())
@@ -72,16 +83,7 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
     n_assert(nGfxServer2::Instance()->BeginScene());
 
     // clear render target?
-    if (clearFlags != 0)
-    {
-        nGfxServer2::Instance()->Clear(clearFlags,
-                         clearColor.x,
-                         clearColor.y,
-                         clearColor.z,
-                         clearColor.w,
-                         clearDepth,
-                         clearStencil);
-    }
+    nGfxServer2::Instance()->Clear(ClearFlags, ClearColor, ClearDepth, ClearStencil);
 
     // apply shader (note: save/restore all shader state for pass shaders!)
 	if (rpShaderIndex != -1)

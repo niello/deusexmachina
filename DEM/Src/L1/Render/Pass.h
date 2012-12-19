@@ -33,11 +33,12 @@ public:
 	PShader			Shader;
 	CShaderVarMap	ShaderVars;
 	PRenderTarget	RT[CRenderServer::MaxRenderTargetCount];
-	// batches
 	DWORD			ClearFlags;
-	DWORD			ClearColor;
+	DWORD			ClearColor;		// ARGB
 	float			ClearDepth;
 	uchar			ClearStencil;
+
+	// batches - now only in PassGeometry
 
 	//bool Profile;
 
@@ -56,26 +57,18 @@ public:
 	int rpShaderIndex;
 	nShaderParams shaderParams;
 	nFixedArray<nString> renderTargetNames;
-	int clearFlags;
-	vector4 clearColor;
-	float clearDepth;
-	int clearStencil;
 	nVariableContext varContext;
 
 public:
 
-	CPass(): ClearFlags(0), ClearDepth(1.f), ClearStencil(0), 
+	CPass(): ClearFlags(0), ClearColor(0xff000000), ClearDepth(1.f), ClearStencil(0), 
 		pFrameShader(NULL),
 		rpShaderIndex(-1),
-		clearFlags(0),
-		clearColor(0.0f, 0.0f, 0.0f, 1.0f),
-		clearDepth(1.0f),
-		clearStencil(0),
-		renderTargetNames(4 /*nGfxServer2::MaxRenderTargets*/) {}
-
+		renderTargetNames(CRenderServer::MaxRenderTargetCount) {}
 
 	virtual ~CPass() {}
 
+	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets);
 	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights) = 0;
 
 	//!!!OLD!

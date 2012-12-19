@@ -109,7 +109,7 @@ void CUIServer::Trigger()
 void CUIServer::Render()
 {
 	//???need? check what if don't clear buffer!
-	nGfxServer2::Instance()->Clear(nGfxServer2::DepthBuffer, 0, 0, 0, 0, 1, 0);
+	nGfxServer2::Instance()->Clear(nGfxServer2::DepthBuffer, 0, 1.f, 0);
 	CEGUI::System::getSingleton().renderGUI();
 }
 //---------------------------------------------------------------------
