@@ -7,8 +7,47 @@
 namespace Render
 {
 
-void CPassGeometry::Render()
+void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
+	if (Shader.isvalid())
+	{
+		for (int i = 0; i < ShaderVars.Size(); ++i)
+			ShaderVars.ValueAtIndex(i).Apply(*Shader.get_unsafe());
+		n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
+		Shader->BeginPass(0);
+	}
+
+	for (int i = 0; i < CRenderServer::MaxRenderTargetCount; ++i)
+		//if (RT[i].isvalid()) // Now sets NULL RTs too to clear unused RTs from prev. passes
+			RenderSrv->SetRenderTarget(i, RT[i].get_unsafe());
+
+	RenderSrv->Clear(ClearFlags, ClearColor, ClearDepth, ClearStencil);
+
+	// N3: set pixel size and half pixel size shader vars //???why not committed in N3?
+
+	for (int i = 0; i < BatchRenderers.Size(); ++i)
+	{
+		IRenderer* pRenderer = BatchRenderers[i];
+		if (pObjects) pRenderer->AddRenderObjects(*pObjects);
+		if (pLights) pRenderer->AddLights(*pLights);
+		pRenderer->Render();
+	}
+
+	for (int i = 0; i < CRenderServer::MaxRenderTargetCount; ++i)
+		if (RT[i].isvalid())
+		{
+			RT[i]->Resolve();
+			// N3: set RTs of Index > 0 to NULL
+		}
+
+	if (Shader.isvalid())
+	{
+		Shader->EndPass();
+		Shader->End();
+	}
+
+	//!!!OLD! ==============================================================
+
     // gfx stats enabled?
     nGfxServer2::Instance()->SetHint(nGfxServer2::CountStats, true); //statsEnabled);
 

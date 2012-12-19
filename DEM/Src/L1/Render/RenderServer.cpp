@@ -1,6 +1,7 @@
 #include "RenderServer.h"
 
 #include <Events/EventManager.h>
+#include <Data/Stream.h>
 #include <dxerr.h>
 
 namespace Render
@@ -37,6 +38,10 @@ bool CRenderServer::Open()
 	// cause say if 2 shape renderers, they will not share shapes etc
 	// elements -> renderer -> commands to RenderSrv
 	// regular lights and models are filtered and added to model renderers per-batch
+	//???register renderers into dictionary CStrID -> CRenderer?
+	// UI, Text, Shape, NoLight, MultiLightOnePass, OneLightMultiPass, Particle
+	// particle shadows - smth like ShadowPass->ParticleRenderer->RenderShadows
+	//???soft shadows, transparent shadows (for semitranslucent objects)?
 
 	//???load frame shader(s)? on level View created (on default camera or scene creation?)
 
@@ -97,6 +102,8 @@ bool CRenderServer::CreateDevice()
 	D3DPresentParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	D3DPresentParams.hDeviceWindow = Display.GetAppHwnd();
 	D3DPresentParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+
+	//???!!!get from Display settings?
 	D3DPresentParams.MultiSampleType = D3DMULTISAMPLE_NONE;
 	D3DPresentParams.MultiSampleQuality = 0;
 
@@ -112,6 +119,9 @@ bool CRenderServer::CreateDevice()
 		n_error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
 		FAIL;
 	}
+
+	CurrDepthStencilFormat =
+		D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
 
 	//pD3DDevice->GetDeviceCaps(&d3d9DeviceCaps);
 
@@ -147,6 +157,7 @@ void CRenderServer::ResetDevice()
 	HRESULT hr = pD3DDevice->TestCooperativeLevel();
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
 	{
+		// NB: In single-threaded app, engine will stuck here until device can be reset
 		n_sleep(0.01);
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
@@ -248,32 +259,30 @@ void CRenderServer::SetupBufferFormats()
 
 bool CRenderServer::BeginFrame()
 {
+	n_assert(!IsInsideFrame);
+
 	// Assert stream VBs, IB and VLayout aren't set
 
-	return SUCCEEDED(pD3DDevice->BeginScene());
+	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
+	return IsInsideFrame;
 }
 //---------------------------------------------------------------------
 
 void CRenderServer::EndFrame()
 {
+	n_assert(IsInsideFrame);
 	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
 
 	//???is all below necessary?
-	//UnbindD3D9Resources
-
-	//d3d9Device->SetVertexShader(NULL);
-	//d3d9Device->SetPixelShader(NULL);
-	//for (int i = 0; i < 8; i++)
-	//{
-	//	d3d9Device->SetTexture(i, NULL);
-	//}
-	//for (int i = 0; i < MaxNumVertexStreams; i++)
-	//{
-	//	d3d9Device->SetStreamSource(i, NULL, 0, 0);
-	//	streamVertexBuffers[i] = 0;
-	//}
-	//d3d9Device->SetIndices(NULL);
-	//indexBuffer = 0;
+    //inBeginFrame = false;
+    //IndexT i;
+    //for (i = 0; i < MaxNumVertexStreams; i++)
+    //{
+    //    streamVertexBuffers[i] = 0;
+    //}
+    //vertexLayout = 0;
+    //indexBuffer = 0;
+	//!!!UnbindD3D9Resources()
 }
 //---------------------------------------------------------------------
 
@@ -281,7 +290,7 @@ void CRenderServer::EndFrame()
 // to improve parallelism between the GPU and the CPU
 void CRenderServer::Present()
 {
-	n_assert(pD3DDevice);
+	n_assert(pD3DDevice && !IsInsideFrame);
 	if (Display.GetAppHwnd())
 	{
 		HRESULT hr = pD3DDevice->Present(NULL, NULL, NULL, NULL);
@@ -289,16 +298,204 @@ void CRenderServer::Present()
 		else n_assert(SUCCEEDED(hr));
 	}    
 
+	++FrameID;
+
 	//// Sync CPU thread with GPU
-	//SyncGPU();
-	/*
-	//{
-		gpuSyncQuery[frameId % numSyncQueries]->Issue(D3DISSUE_END);                              
-		frameId++;
-		// wait till gpu has finsihed rendering the previous frame
-		while (S_FALSE == gpuSyncQuery[frameId % numSyncQueries]->GetData(NULL, 0, D3DGETDATA_FLUSH)) ;
-	//}
-	*/
+	//// wait till gpu has finsihed rendering the previous frame
+	//gpuSyncQuery[frameId % numSyncQueries]->Issue(D3DISSUE_END);                              
+	//++FrameID; //???why here?
+	//while (S_FALSE == gpuSyncQuery[frameId % numSyncQueries]->GetData(NULL, 0, D3DGETDATA_FLUSH)) ;
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, Data::CStream& OutStream)
+{
+	n_assert(pD3DDevice && !IsInsideFrame);
+
+	IDirect3DSurface9* pCaptureSurface = NULL;
+	HRESULT hr = pD3DDevice->CreateOffscreenPlainSurface(	D3DPresentParams.BackBufferWidth,
+															D3DPresentParams.BackBufferHeight,
+															D3DPresentParams.BackBufferFormat,
+															D3DPOOL_SYSTEMMEM,
+															&pCaptureSurface,
+															NULL);
+	n_assert(SUCCEEDED(hr) && pCaptureSurface);
+
+	// If BackBuffer(0) surface ptr changes, need to update DefaultRT RTSurface ptr every frame
+	// Capturing DefaultRT is better since we always get actual data even if don't render to swap chain
+	n_assert(SUCCEEDED(pD3DDevice->GetRenderTargetData(DefaultRT->GetD3DRenderTargetSurface(), pCaptureSurface)));
+
+	ID3DXBuffer* pBuf = NULL;    
+	hr = D3DXSaveSurfaceToFileInMemory(&pBuf, ImageFormat, pCaptureSurface, NULL, NULL);
+	n_assert(SUCCEEDED(hr));
+	pCaptureSurface->Release();
+
+	if (OutStream.Open(Data::SAM_WRITE, Data::SAP_SEQUENTIAL)) //???or open outside? here assert IsOpen and write access
+	{
+		OutStream.Write(pBuf->GetBufferPointer(), pBuf->GetBufferSize());
+		OutStream.Close();
+	}
+	pBuf->Release();
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
+{
+	n_assert(Index < MaxRenderTargetCount);
+	if (CurrRT[Index].get_unsafe() == pRT) return;
+
+	// Restore main RT to backbuffer and autodepthstencil (or NULL if no auto)
+	if (!pRT && Index == 0) pRT = DefaultRT.get_unsafe();
+
+	IDirect3DSurface9* pRTSurface = pRT ? pRT->GetD3DRenderTargetSurface() : NULL;
+	IDirect3DSurface9* pDSSurface = pRT ? pRT->GetD3DDepthStencilSurface() : NULL;
+
+	n_assert(SUCCEEDED(pD3DDevice->SetRenderTarget(Index, pRTSurface)));
+
+	//!!!TEST IT! DS can be set to NULL only by main RT (index 0)
+	//???mb set DS only from main RT?
+	if (pDSSurface || Index == 0)
+	{
+		CurrDepthStencilFormat = pRT ? pRT->GetDepthStencilFormat() : D3DFMT_UNKNOWN;
+		n_assert(SUCCEEDED(pD3DDevice->SetDepthStencilSurface(pDSSurface)));
+	}
+
+	CurrRT[Index] = pRT;
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
+{
+	n_assert(Index < MaxVertexStreamCount && OffsetVertex < pVB->GetVertexCount());
+	if (CurrVB[Index].get_unsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) return;
+	IDirect3DVertexBuffer9* pD3DVB = pVB ? pVB->GetD3DBuffer() : NULL;
+	DWORD VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSize() : 0;
+	n_assert(SUCCEEDED(pD3DDevice->SetStreamSource(Index, pD3DVB, VertexSize * OffsetVertex, VertexSize)));
+	CurrVB[Index] = pVB;
+	CurrVBOffset[Index] = OffsetVertex;
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SetVertexLayout(CVertexLayout* pVLayout)
+{
+	if (CurrVLayout.get_unsafe() == pVLayout) return;
+	IDirect3DVertexDeclaration9* pDecl = pVLayout ? pVLayout->GetD3DVertexDeclaration() : NULL;
+	n_assert(SUCCEEDED(pD3DDevice->SetVertexDeclaration(pDecl)));
+	CurrVLayout = pVLayout;
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SetIndexBuffer(CIndexBuffer* pIB)
+{
+	if (CurrIB.get_unsafe() == pIB) return;
+	IDirect3DIndexBuffer9* pD3DIB = pIB ? pIB->GetD3DBuffer() : NULL;
+	n_assert(SUCCEEDED(pD3DDevice->SetIndices(pD3DIB)));
+	CurrIB = pIB;
+}
+//---------------------------------------------------------------------
+
+// Docs: Note that D3DSTREAMSOURCE_INDEXEDDATA and the number of instances to draw must always be set in stream zero.
+void CRenderServer::SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex)
+{
+	n_assert2(pVB && !Instances, "CRenderServer::SetInstanceBuffer() -> Specify 1 or more instances!");
+	n_assert(Index > 0); //???force instance buffer Index to be always the same (1 or smth)?
+
+	SetVertexBuffer(Index, pVB, OffsetVertex);
+
+	InstanceCount = pVB ? Instances : 0;
+
+	if (InstanceCount > 0)
+	{
+		pD3DDevice->SetStreamSourceFreq(0, D3DSTREAMSOURCE_INDEXEDDATA | InstanceCount);
+		pD3DDevice->SetStreamSourceFreq(Index, D3DSTREAMSOURCE_INSTANCEDATA | 1);
+	}
+	else
+	{
+		pD3DDevice->SetStreamSourceFreq(0, 1);
+		pD3DDevice->SetStreamSourceFreq(Index, 1);
+	}
+}
+//---------------------------------------------------------------------
+
+inline DWORD CRenderServer::CalcPrimitiveCount(EPrimitiveTopology Topology, DWORD VertexCount)
+{
+	switch (Topology)
+	{
+		case PointList:	return VertexCount;
+		case LineList:	return VertexCount / 2;
+		case LineStrip:	return VertexCount - 1;
+		case TriList:	return VertexCount / 3;
+		case TriStrip:	return VertexCount - 2;
+		default:		return 0;
+	}
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil)
+{
+	if (!Flags) return;
+
+	DWORD D3DFlags = 0;
+
+	if (Flags & Clear_Color) D3DFlags |= D3DCLEAR_TARGET;
+
+	if (CurrDepthStencilFormat != PixelFormat_Invalid)
+	{
+		if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
+
+		if (Flags & Clear_Stencil)
+		{
+			bool HasStencil =
+				CurrDepthStencilFormat == D3DFMT_D24S8 ||
+				CurrDepthStencilFormat == D3DFMT_D24X4S4 ||
+				CurrDepthStencilFormat == D3DFMT_D24FS8 ||
+				CurrDepthStencilFormat == D3DFMT_D15S1;
+			if (HasStencil) D3DFlags |= D3DCLEAR_STENCIL;
+		}
+	}
+
+	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, Color, Depth, Stencil)));
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::Draw()
+{
+	n_assert(pD3DDevice && IsInsideFrame);
+
+	//???map enum to constants defined in platform-specific file like D3D9Fwd?
+	D3DPRIMITIVETYPE D3DPrimType;
+	switch (CurrPrimGroup.Topology)
+	{
+		case PointList:	D3DPrimType = D3DPT_POINTLIST; break;
+		case LineList:	D3DPrimType = D3DPT_LINELIST; break;
+		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; break;
+		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; break;
+		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; break;
+		default:		n_error("CRenderServer::Draw() -> Invalid primitive topology!");
+	}
+
+	DWORD PrimCount = CalcPrimitiveCount(CurrPrimGroup.Topology, CurrPrimGroup.VertexCount);
+
+	HRESULT hr;
+	if (CurrPrimGroup.IndexCount > 0)
+	{
+		n_assert_dbg(CurrIB.isvalid());
+		if (InstanceCount > 0) { n_assert_dbg(CurrVB[0].isvalid()); }
+		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
+												0,
+												CurrPrimGroup.FirstVertex,
+												CurrPrimGroup.VertexCount,
+												CurrPrimGroup.FirstIndex,
+												PrimCount);
+	}
+	else
+	{
+		n_assert2_dbg(!InstanceCount, "Non-indexed instanced rendereng is not supported by design!");
+		hr = pD3DDevice->DrawPrimitive(D3DPrimType, CurrPrimGroup.FirstVertex, PrimCount);
+	}
+	n_assert(SUCCEEDED(hr));
+
+	//!!!update Primitive and DIP/DP counters! if instanced, mul Primitive counter to number of instances
 }
 //---------------------------------------------------------------------
 
@@ -343,52 +540,35 @@ DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
 //---------------------------------------------------------------------
 
 /*
-void
-D3D9RenderDevice::UnbindD3D9Resources()
+void D3D9RenderDevice::UnbindD3D9Resources()
 {
-    this->d3d9Device->SetVertexShader(NULL);
-    this->d3d9Device->SetPixelShader(NULL);
-    this->d3d9Device->SetIndices(NULL);
-    IndexT i;
-    for (i = 0; i < 8; i++)
-    {
-        this->d3d9Device->SetTexture(i, NULL);
-    }
-    for (i = 0; i < MaxNumVertexStreams; i++)
-    {
-        this->d3d9Device->SetStreamSource(i, NULL, 0, 0);
-        this->streamVertexBuffers[i] = 0;
-    }
-    this->indexBuffer = 0;
+    d3d9Device->SetVertexShader(NULL);
+    d3d9Device->SetPixelShader(NULL);
+    for (int i = 0; i < MaxTextureStageCount; ++i)
+        d3d9Device->SetTexture(i, NULL);
+    for (int i = 0; i < MaxNumVertexStreams; ++i)
+		SetVertexBuffer(i, NULL);
+    SetIndexBuffer(NULL);
 }
-
+//---------------------------------------------------------------------
+//!!!my device has no EndPass!
 D3D9RenderDevice::EndPass()
 {
 	UnbindD3D9Resources();
 	RenderDeviceBase::EndPass();
 }
 //---------------------------------------------------------------------
-
-void
-D3D9RenderDevice::DiscardQueries()
+void D3D9RenderDevice::DiscardQueries()
 {
 	for (IndexT i = 0; i < numSyncQueries; ++i)
-	{
-		this->gpuSyncQuery[i]->Release();  	
-		this->gpuSyncQuery[i] = NULL;
-	}
+		SAFE_RELEASE(gpuSyncQuery[i]);  	
 }
-
 //------------------------------------------------------------------------------
-void
-D3D9RenderDevice::SetupQueries()
+void D3D9RenderDevice::SetupQueries()
 {
 	// create double buffer query to avoid gpu to render more than 1 frame ahead
-	IndexT i;
-	for (i = 0; i < numSyncQueries; ++i)
-	{
-		this->d3d9Device->CreateQuery(D3DQUERYTYPE_EVENT, &this->gpuSyncQuery[i]);  	
-	}
+	for (int i = 0; i < numSyncQueries; ++i)
+		d3d9Device->CreateQuery(D3DQUERYTYPE_EVENT, &gpuSyncQuery[i]);  	
 }
 */
 }

@@ -1,0 +1,1 @@
+// Singleton, creates resources for a fullscreen quad and renders it on request

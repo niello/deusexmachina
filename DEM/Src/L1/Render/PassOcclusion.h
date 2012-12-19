@@ -22,7 +22,7 @@ protected:
 
 public:
 
-	virtual void Render();
+	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
 };
 
 //typedef Ptr<CPass> PPass;

@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_MESH_H__
 
 #include <Resources/Resource.h>
+#include <Render/Render.h>
 #include <Render/Geometry/VertexBuffer.h>
 #include <Render/Geometry/IndexBuffer.h>
 #include <mathlib/bbox.h>
@@ -12,15 +13,6 @@
 
 namespace Render
 {
-
-enum EPrimitiveTopology
-{
-	PointList,
-	LineList,
-	LineStrip,
-	TriList,
-	TriStrip
-};
 
 struct CMeshGroup
 {

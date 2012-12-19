@@ -218,6 +218,8 @@ void* CFileSystemWin32::OpenFile(const nString& Path, EStreamAccessMode Mode, ES
 	if ((Mode & SAM_READ) || (Mode & SAM_APPEND)) Access |= GENERIC_READ;
 	if ((Mode & SAM_WRITE) || (Mode & SAM_APPEND)) Access |= GENERIC_WRITE;
 
+	//!!!MSDN recommends MMF to be opened exclusively!
+	//???mb set ShareMode = 0 for release builds? is there any PERF gain?
 	DWORD ShareMode = FILE_SHARE_READ;
 	if (!(Mode & SAM_WRITE) || (Mode & SAM_READ)) ShareMode |= FILE_SHARE_WRITE;
 

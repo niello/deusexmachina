@@ -16,21 +16,21 @@ class CScene: public Core::CRefCounted
 {
 private:
 
-	PSceneNode			RootNode;
-	nArray<PSceneNode>	OwnedNodes;
+	PSceneNode				RootNode;
+	nArray<PSceneNode>		OwnedNodes;
 
-	vector4				AmbientLight;
+	vector4					AmbientLight;
 	//Fog settings
 	//???shadow settings?
 
-	bbox3				SceneBBox;
-	PCamera				CurrCamera; //???or store externally?
+	bbox3					SceneBBox;
+	PCamera					CurrCamera; //???or store externally?
 
-	nArray<CModel*>		VisibleMeshes;
-	nArray<CLight*>		VisibleLights;
+	nArray<CRenderObject*>	VisibleObjects;
+	nArray<CLight*>			VisibleLights;
 
 	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
-	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CModel*>* OutMeshes, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
+	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CRenderObject*>* OutObjects, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
 public:
 

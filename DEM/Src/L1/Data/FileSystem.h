@@ -57,8 +57,12 @@ public:
 	virtual DWORD	GetFileSize(void* hFile) const = 0;
 	virtual bool	Seek(void* hFile, int Offset, ESeekOrigin Origin) = 0;
 	virtual DWORD	Tell(void* hFile) const = 0;
-	virtual void	Flush(void* hFile) = 0;
+	virtual void	Flush(void* hFile) = 0; //???flush MMF views too right here?
 	virtual bool	IsEOF(void* hFile) const = 0;
+
+	//!!!can reuse view if second request of already mapped & viewed region. Adjust returned pointer!
+	//virtual void*	MapFile(void* hFile, DWORD Offset = 0, DWORD Size = 0) = 0; //!!!need int64 for offset & size everywhere!
+	//virtual void	UnmapFile(void* hFile) = 0; //!!!if multiview, need to specify view handle!
 };
 
 typedef Ptr<IFileSystem> PFileSystem;

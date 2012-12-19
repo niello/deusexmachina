@@ -17,7 +17,10 @@
 
 typedef enum _D3DFORMAT D3DFORMAT;
 typedef D3DFORMAT EPixelFormat;
-#define PixelFormat_Invalid ((D3DFORMAT)0) // D3DFMT_UNKNOWN
+#define PixelFormat_Invalid ((EPixelFormat)0) // D3DFMT_UNKNOWN
+
+typedef enum _D3DXIMAGE_FILEFORMAT D3DXIMAGE_FILEFORMAT;
+typedef D3DXIMAGE_FILEFORMAT EImageFormat;
 
 typedef enum _D3DMULTISAMPLE_TYPE D3DMULTISAMPLE_TYPE;
 

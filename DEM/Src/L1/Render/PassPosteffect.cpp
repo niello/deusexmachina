@@ -17,7 +17,7 @@ CPassPosteffect::~CPassPosteffect()
 }
 //---------------------------------------------------------------------
 
-void CPassPosteffect::Render()
+void CPassPosteffect::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
     // gfx stats enabled?
     nGfxServer2::Instance()->SetHint(nGfxServer2::CountStats, true); //statsEnabled);

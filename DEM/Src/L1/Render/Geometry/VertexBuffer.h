@@ -33,7 +33,10 @@ public:
 	void*	Map(EMapType MapType);
 	void	Unmap();
 
-	IDirect3DVertexBuffer9* GetD3DBuffer() const { return pBuffer; }
+	PVertexLayout			GetVertexLayout() const { return Layout; }
+	DWORD					GetVertexCount() const { return Count; }
+	DWORD					GetByteSize() const { return Layout.isvalid() ? Layout->GetVertexSize() * Count : 0; }
+	IDirect3DVertexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 };
 
 typedef Ptr<CVertexBuffer> PVertexBuffer;

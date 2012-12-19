@@ -319,9 +319,6 @@ public:
     /// return true if currently in dialog box mode
 	bool InDialogBoxMode() const { return inDialogBoxMode; }
 
-    /// save a screen shot
-	virtual bool SaveScreenshot(const char* filename, nTexture2::FileFormat fileFormat) { return false; }
-
     /// convert feature set string to enum
     static FeatureSet StringToFeatureSet(const char* str);
     /// convert feature set enum to string

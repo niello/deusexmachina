@@ -16,7 +16,7 @@ namespace Render
 
 namespace Scene
 {
-ImplementRTTI(Scene::CModel, Scene::CSceneNodeAttr);
+ImplementRTTI(Scene::CModel, Scene::CRenderObject);
 ImplementFactory(Scene::CModel);
 
 bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
