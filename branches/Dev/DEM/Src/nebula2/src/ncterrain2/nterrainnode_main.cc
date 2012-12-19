@@ -142,7 +142,7 @@ nTerrainNode::RenderGeometry(nSceneServer* sceneServer, nRenderContext* renderCo
     nGfxServer2::Instance()->SetCamera(camera);
     chunkLodTree->Render(nGfxServer2::Instance()->GetShader(), nGfxServer2::Instance()->GetTransform(nGfxServer2::Projection), nGfxServer2::Instance()->GetTransform(nGfxServer2::ModelViewProjection));
 
-    nGfxServer2::Instance()->Clear(nGfxServer2::DepthBuffer, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0);
+    nGfxServer2::Instance()->Clear(nGfxServer2::DepthBuffer, 0xff000000, 1.0f, 0);
     camera.SetNearPlane(origCamera.GetNearPlane());
     camera.SetFarPlane(origCamera.GetFarPlane());
     nGfxServer2::Instance()->SetCamera(camera);

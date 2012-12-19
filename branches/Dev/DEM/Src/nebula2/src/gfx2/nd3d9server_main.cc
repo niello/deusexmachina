@@ -91,7 +91,7 @@ bool nD3D9Server::OpenDisplay()
 	if (!DeviceOpen()) FAIL;
 	nGfxServer2::OpenDisplay();
 
-	ClearScreen(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0);
+	ClearScreen(0xff000000, 1.0f, 0);
 
 	OK;
 }
