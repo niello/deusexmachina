@@ -21,8 +21,9 @@ public:
 	CStrID			Name;
 	nArray<PPass>	Passes;		//???smartptr?
 	nString			ShaderPath;	//???need or OLD? in fact can add to any shader references in this frame shader on load!
+	CShaderVarMap	ShaderVars;
 
-// Pass mgmt, Textures and shader vars
+// Pass mgmt
 //!!!can store required sorting, light usage etc here, as summary of each pass/batch requirements!
 
 //!!!OLD!
@@ -45,6 +46,7 @@ typedef Ptr<CFrameShader> PFrameShader;
 
 inline void CFrameShader::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
+	//!!!PERF: for passes and batches - if shader is the same as set, don't reset it!
 	for (int i = 0; i < Passes.Size(); ++i)
 		Passes[i]->Render(pObjects, pLights);
 }

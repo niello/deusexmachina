@@ -10,6 +10,7 @@
 // particles, terrain patches, debug shapes, text, UI etc. Renderer can be fed directly
 // and by frame shader (with visible scene node attributes). Renderer should use RenderSrv
 // methods to access hardware graphics device functionality.
+// Use renderers to implement different rendering strategies on CPU, and use shader for GPU variations.
 
 namespace Scene
 {

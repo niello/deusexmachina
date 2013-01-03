@@ -31,7 +31,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 	VarMap.BeginAdd();
 
 	Data::CParam* pPrmVars;
-	if (In.Get(pPrmVars, CStrID("Vars")))
+	if (In.Get(pPrmVars, CStrID("ShaderVars")))
 	{
 		Data::CParams& Vars = *pPrmVars->GetValue<Data::PParams>();
 		for (int i = 0; i < Vars.GetCount(); ++i)

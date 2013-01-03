@@ -25,6 +25,7 @@ protected:
 
 	PShader			Shader;
 	DWORD			FeatureFlags;
+	DWORD			BatchType;	//???to model? //???CStrID? DWORD - max 32 types, but combining and faster checks
 	CShaderVarMap	StaticVars;
 
 public:
@@ -35,6 +36,8 @@ public:
 	virtual void	Unload();
 
 	CShader*		GetShader() const { return Shader.get_unsafe(); }
+	DWORD			GetFeatureFlags() const { return FeatureFlags; }
+	DWORD			GetBatchType() const { return BatchType; }
 };
 
 typedef Ptr<CMaterial> PMaterial;

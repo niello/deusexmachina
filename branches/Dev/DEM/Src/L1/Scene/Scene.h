@@ -8,6 +8,11 @@
 
 // 3D scene with node hierarchy and volume subdivided to optimize spatial requests
 
+namespace Render
+{
+	class CFrameShader;
+}
+
 namespace Scene
 {
 class CLight;
@@ -49,7 +54,7 @@ public:
 	//!!!can add global lights to separate array if necessary!
 	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
 
-	bool		Render(PCamera Camera = NULL, CStrID FrameShaderID = CStrID::Empty);
+	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader); // CStrID FrameShaderID = CStrID::Empty);
 
 	void		OwnNode(PSceneNode Node);
 	bool		FreeNode(PSceneNode Node);

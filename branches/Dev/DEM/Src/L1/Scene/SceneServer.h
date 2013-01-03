@@ -24,7 +24,8 @@ private:
 	CStrID										CurrSceneID;
 	CScene*										pCurrScene;
 
-	nDictionary<CStrID, Render::CFrameShader*>	FrameShaders;
+	nDictionary<CStrID, Render::PFrameShader>	FrameShaders;	//???to RenderServer?
+	CStrID										ScreenFrameShaderID;
 
 public:
 
@@ -41,7 +42,9 @@ public:
 
 	PSceneNode	CreateSceneNode(CScene& Scene, CStrID Name);
 
-	void		AddFrameShader(Render::CFrameShader* pFrameShader); // nRpXmlParser xmlParser;
+	//???AddFrameShader to RenderServer?
+	void		AddFrameShader(CStrID ID, Render::PFrameShader FrameShader); //???or always load internally?
+	void		SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
 
 	void		Trigger();
 	void		RenderDebug();
@@ -75,6 +78,13 @@ inline PSceneNode CSceneServer::CreateSceneNode(CScene& Scene, CStrID Name)
 {
 	//return (CSceneNode*)NodePool.Construct();
 	return n_new(CSceneNode)(Scene, Name);
+}
+//---------------------------------------------------------------------
+
+inline void CSceneServer::AddFrameShader(CStrID ID, Render::PFrameShader FrameShader)
+{
+	n_assert(ID.IsValid() && FrameShader.isvalid());
+	FrameShaders.Add(ID, FrameShader);
 }
 //---------------------------------------------------------------------
 

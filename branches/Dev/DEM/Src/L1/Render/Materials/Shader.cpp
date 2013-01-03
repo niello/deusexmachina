@@ -27,14 +27,18 @@ bool CShader::Setup(ID3DXEffect* pFX)
 		{
 			LPCSTR pFeatMask = NULL;
 			n_assert(SUCCEEDED(pEffect->GetString(hFeatureAnnotation, &pFeatMask)));
-			DWORD Mask = RenderSrv->ShaderFeatureStringToMask(pFeatMask);
-			FlagsToTech.Add(Mask, hTech);
+			nString FeatAnnotation(pFeatMask);
+			nArray<nString> FeatureMasks;
+			FeatAnnotation.Tokenize(",", FeatureMasks);
+			n_assert_dbg(FeatureMasks.Size());
+			for (int MaskIdx = 0; MaskIdx < FeatureMasks.Size(); ++MaskIdx)
+				FlagsToTech.Add(RenderSrv->ShaderFeatureStringToMask(FeatureMasks[MaskIdx]), hTech);
 		}
 		else n_printf("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}
 
 	// It is good for pass and batch shaders with only one tech
-	//!!!DGomment this line. It fails until I add feature masks to techs!
+	//!!!Uncomment this line. It fails until I add feature masks to techs!
 	//n_assert(SUCCEEDED(pEffect->SetTechnique(FlagsToTech.ValueAtIndex(0))));
 
 	for (UINT i = 0; i < Desc.Parameters; ++i)

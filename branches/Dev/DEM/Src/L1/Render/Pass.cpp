@@ -6,20 +6,36 @@
 
 namespace Render
 {
+//!!!TMP! write more elegant!
+bool LoadShaderFromFX(const nString& FileName, PShader OutShader);
+bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
 
 bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets)
 {
 	Name = PassName;
 
 	CStrID ShaderID = Desc.Get(CStrID("Shader"), CStrID::Empty);
-	if (ShaderID.IsValid()) Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+	if (ShaderID.IsValid())
+	{
+		Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+		if (!Shader->IsLoaded())
+		{
+			//!!!TMP! write more elegant! Hide actual shader loading logic somewhere in Loader or smth.
+			nString ShaderFile = ShaderID;
+			if (ShaderFile.CheckExtension("fxo"))
+				LoadShaderFromFXO(ShaderFile, Shader);
+			else
+				LoadShaderFromFX(ShaderFile, Shader);
+
+			if (!Shader->IsLoaded()) FAIL;
+		}
+	}
 
 	ClearFlags = 0;
 
 	Data::CParam* pPrm;
 	if (Desc.Get(pPrm, CStrID("ClearColor")))
 	{
-		ClearFlags |= Clear_Depth;
 		if (pPrm->IsA<int>()) ClearColor = pPrm->GetValue<int>();
 		else if (pPrm->IsA<vector4>())
 		{
@@ -27,6 +43,7 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 			ClearColor = N_COLORVALUE(Color.x, Color.y, Color.z, Color.w);
 		}
 		else n_error("CPass::Init() -> Invalid type of ClearColor");
+		ClearFlags |= Clear_Color;
 	}
 
 	if (Desc.Get(ClearDepth, CStrID("ClearDepth"))) ClearFlags |= Clear_Depth;
@@ -38,7 +55,35 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 		ClearFlags |= Clear_Stencil;
 	}
 
-//!!!ShaderVars!
+	//!!!DUPLICATE CODE!+
+	ShaderVars.BeginAdd();
+
+	if (Desc.Get(pPrm, CStrID("ShaderVars")))
+	{
+		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < Vars.GetCount(); ++i)
+		{
+			Data::CParam& PrmVar = Vars.Get(i);
+			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
+			Var.SetName(PrmVar.GetName());
+			Var.Value = PrmVar.GetRawValue();
+		}
+	}
+
+	if (Desc.Get(pPrm, CStrID("Textures")))
+	{
+		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < Vars.GetCount(); ++i)
+		{
+			Data::CParam& PrmVar = Vars.Get(i);
+			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
+			Var.SetName(PrmVar.GetName());
+			Var.Value = RenderSrv->TextureMgr.GetTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+		}
+	}
+
+	ShaderVars.EndAdd();
+	//!!!DUPLICATE CODE!-
 
 	Data::PDataArray RTNames;
 	if (Desc.Get<Data::PDataArray>(RTNames, CStrID("RenderTargets")))

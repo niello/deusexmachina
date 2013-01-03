@@ -11,6 +11,11 @@
 
 // Pass encapsulates rendering to one RT or MRT
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace Scene
 {
 	class CRenderObject;

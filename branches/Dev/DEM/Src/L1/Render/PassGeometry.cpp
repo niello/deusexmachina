@@ -34,7 +34,7 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	RenderSrv->Clear(ClearFlags, ClearColor, ClearDepth, ClearStencil);
 
 	// N3: set pixel size and half pixel size shared shader vars //???why not committed in N3?
-	//???mb only in PassPosteffect?
+	//!!!soft particles use it to sample depth!
 
 	for (int i = 0; i < BatchRenderers.Size(); ++i)
 	{
