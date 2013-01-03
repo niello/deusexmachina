@@ -37,9 +37,12 @@ public:
 	Render::PMesh			Mesh;
 	DWORD					MeshGroupIndex;
 	Render::PMaterial		Material;
-	Render::CShaderVarMap	ShaderVars;	// Animable per-object vars, also can store geom. vars like CullMode
+	DWORD					FeatureFlags;	// Model shader flags like Skinned, must be ORed with material flags before use
+	Render::CShaderVarMap	ShaderVars;		// Animable per-object vars, also can store geom. vars like CullMode
 
+	//May be add to material BatchType?
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
+	//can use Flags field of CSceneNodeAttr
 
 	CSPSRecord*				pSPSRecord;
 

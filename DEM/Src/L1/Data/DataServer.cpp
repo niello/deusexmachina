@@ -278,6 +278,7 @@ bool CDataServer::LoadFileToBuffer(const nString& FileName, CBuffer& Buffer)
 	int FileSize = File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
+	n_printf("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.Get());
 	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------
@@ -299,7 +300,6 @@ PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
 	if (!pHRDParser.isvalid()) pHRDParser = n_new(CHRDParser); //!!!make non-singleton! use on stack
 	if (pHRDParser->ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
 	{
-		n_printf("FileIO: HRD \"%s\" successfully loaded from HDD\n", FileName.Get());
 		if (Cache) HRDCache.Add(FileName.Get(), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
 	else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.Get());
@@ -345,7 +345,6 @@ PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 	if (Reader.ReadParams(*Params))
 	{
 		if (Cache) HRDCache.Add(FileName.Get(), Params); //!!!???mangle path to avoid duplicates?
-		n_printf("FileIO: PRM \"%s\" successfully loaded from HDD\n", FileName.Get());
 	}
 	else
 	{
@@ -377,7 +376,6 @@ PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 	PXMLDocument XML = n_new(CXMLDocument);
 	if (XML->Parse((LPCSTR)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)
 	{
-		n_printf("FileIO: XML \"%s\" successfully loaded from HDD\n", FileName.Get());
 		//if (Cache) XMLCache.Add(FileName.Get(), XML); //!!!???mangle/unmangle path to avoid duplicates?
 	}
 	else

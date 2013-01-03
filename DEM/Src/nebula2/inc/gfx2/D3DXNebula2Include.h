@@ -2,6 +2,8 @@
 #define N_D3D9SHADERINCLUDE_H
 
 #include "util/nstring.h"
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
 #include <d3dx9.h>
 
 // Override default include handling in D3DX FX files.

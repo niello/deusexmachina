@@ -51,7 +51,7 @@ void CScene::CreateDefaultCamera()
 }
 //---------------------------------------------------------------------
 
-bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
+bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrID FrameShaderID)
 {
 	if (!Camera.isvalid()) Camera = CurrCamera;
 	if (!Camera.isvalid())
@@ -60,8 +60,6 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 		VisibleLights.Clear();
 		FAIL;
 	}
-
-	// Get frame shader here, if ID is empty, use default frame shader
 
 	//!!!FrameShader OPTIONS!
 	bool FrameShaderUsesLights = true;
@@ -76,28 +74,10 @@ bool CScene::Render(PCamera Camera, CStrID FrameShaderID)
 	nArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
 	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleObjects, pVisibleLights);
 
-	// Run all passes
-
-	// RT = Camera.GetRenderTarget() ? Camera.GetRenderTarget() : Pass.GetRenderTarget();
-	// Renderer.SetRenderTarget(RT);
-
-//!!!OPTIONAL! Some passes may not clear render target
-	// Camera->ClearFlags (override)
-	// Color = Camera.GetClearColor() ? Camera.GetClearColor() : Pass.GetClearColor();
-	// Depth = Camera.GetClearDepth() ? Camera.GetClearDepth() : Pass.GetClearDepth();
-	// Stencil = Camera.GetClearStencil() ? Camera.GetClearStencil() : Pass.GetClearStencil();
-	// Renderer.ClearRenderTarget(Color, Depth, Stencil); //???or may be inside the renderer? set overrides from camera?
-
 	// Renderer.SetView(Camera.GetView());
 	// Renderer.SetProjection(Camera.GetProjection());
 
-// SEPARATE PASS:
-	// Pass may request occlusion culling after the depth buffer is filled
-	//???Occlusion culling as separate pass, that marks shapes and lights as occluded?
-
-// SEPARATE PASS:
-	// Pass may request shadow rendering (recurse with camera from light, fill shadow texture)
-	// The best way is to dedicate a separate pass for shadow rendering, and in later passes use
+	FrameShader.Render(&VisibleObjects, pVisibleLights);
 
 // Dependent cameras:
 	// Some shapes may request textures that are RTs of specific cameras

@@ -100,6 +100,7 @@ public:
 	void				Draw();
 
 	PVertexLayout		GetVertexLayout(const nArray<CVertexComponent>& Components);
+	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
 	DWORD				ShaderFeatureStringToMask(const nString& FeatureString);
 	DWORD				CalcPrimitiveCount(EPrimitiveTopology Topology, DWORD VertexCount);
 

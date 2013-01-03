@@ -14,29 +14,69 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 {
 	Desc.Get(ShaderPath, CStrID("ShaderPath"));
 
-//!!!ShaderVars!
+	//!!!DUPLICATE CODE!+
+	ShaderVars.BeginAdd();
 
-	nDictionary<CStrID, PRenderTarget> RT;
-
-	Data::CParam* pParam;
-	if (Desc.Get(pParam, CStrID("RenderTargets")))
+	Data::CParam* pPrm;
+	if (Desc.Get(pPrm, CStrID("ShaderVars")))
 	{
-		Data::CParams& RTList = *pParam->GetValue<Data::PParams>();
-		for (int i = 0; i < RTList.GetCount(); ++i)
+		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < Vars.GetCount(); ++i)
 		{
-			const Data::CParam& RTPrm = RTList[i];
-			// Create RT (name, rtformat, dsformat, size/relsize, msaa)
+			Data::CParam& PrmVar = Vars.Get(i);
+			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
+			Var.SetName(PrmVar.GetName());
+			Var.Value = PrmVar.GetRawValue();
 		}
 	}
 
-	if (Desc.Get(pParam, CStrID("Passes")))
+	if (Desc.Get(pPrm, CStrID("Textures")))
 	{
-		Data::CParams& PassList = *pParam->GetValue<Data::PParams>();
+		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < Vars.GetCount(); ++i)
+		{
+			Data::CParam& PrmVar = Vars.Get(i);
+			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
+			Var.SetName(PrmVar.GetName());
+			Var.Value = RenderSrv->TextureMgr.GetTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+		}
+	}
+
+	ShaderVars.EndAdd();
+	//!!!DUPLICATE CODE!-
+
+	nDictionary<CStrID, PRenderTarget> RenderTargets;
+
+	if (Desc.Get(pPrm, CStrID("RenderTargets")))
+	{
+		Data::CParams& RTList = *pPrm->GetValue<Data::PParams>();
+		RenderTargets.BeginAdd(RTList.GetCount());
+		for (int i = 0; i < RTList.GetCount(); ++i)
+		{
+			const Data::CParam& RTPrm = RTList[i];
+			Data::CParams& RTDesc = *RTPrm.GetValue<Data::PParams>();
+
+			EPixelFormat RTFmt = RenderSrv->GetPixelFormat(RTDesc.Get<nString>(CStrID("RTFormat"))); //???CStrID?
+			EPixelFormat DSFmt = RenderSrv->GetPixelFormat(RTDesc.Get<nString>(CStrID("DSFormat"), NULL)); //???CStrID?
+			float W = RTDesc.Get<float>(CStrID("Width"), 1.f);
+			float H = RTDesc.Get<float>(CStrID("Height"), 1.f);
+			bool IsWHAbs = RTDesc.Get<bool>(CStrID("IsSizeAbsolute"), false);
+
+			PRenderTarget& RT = RenderTargets.Add(RTPrm.GetName());
+			RT.Create();
+			if (!RT->Create(RTPrm.GetName(), RTFmt, DSFmt, W, H, IsWHAbs /*MSAA, TexW, TexH*/)) FAIL;
+		}
+		RenderTargets.EndAdd();
+	}
+
+	if (Desc.Get(pPrm, CStrID("Passes")))
+	{
+		Data::CParams& PassList = *pPrm->GetValue<Data::PParams>();
 		PPass* pCurrPass = Passes.Reserve(PassList.GetCount());
 		for (int i = 0; i < PassList.GetCount(); ++i, ++pCurrPass)
 		{
 			const Data::CParam& PassPrm = PassList[i];
-			Data::CParams PassDesc = *PassPrm.GetValue<Data::PParams>();
+			Data::CParams& PassDesc = *PassPrm.GetValue<Data::PParams>();
 
 			//!!!???Use factory?!
 			const nString& PassType = PassDesc.Get<nString>(CStrID("Type"), NULL);
@@ -45,7 +85,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			else if (PassType == "Posteffect") *pCurrPass = n_new(CPassPosteffect);
 			else /*if (PassType == "Geometry")*/ *pCurrPass = n_new(CPassGeometry);
 
-			if (!(*pCurrPass)->Init(PassPrm.GetName(), PassDesc, RT)) FAIL;
+			if (!(*pCurrPass)->Init(PassPrm.GetName(), PassDesc, RenderTargets)) FAIL;
 		}
 	}
 

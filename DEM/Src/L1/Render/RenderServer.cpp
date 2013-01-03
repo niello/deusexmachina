@@ -512,6 +512,32 @@ PVertexLayout CRenderServer::GetVertexLayout(const nArray<CVertexComponent>& Com
 }
 //---------------------------------------------------------------------
 
+EPixelFormat CRenderServer::GetPixelFormat(const nString& String)
+{
+	if (String.IsEmpty()) return PixelFormat_Invalid;
+
+	//!!!PERF!
+	//!!!REWRITE in more elegant and optimal way!
+	if (String == "X8R8G8B8") return D3DFMT_X8R8G8B8;
+	if (String == "A8R8G8B8") return D3DFMT_A8R8G8B8;
+	if (String == "R5G6B5") return D3DFMT_R5G6B5;
+	if (String == "R16F") return D3DFMT_R16F;
+	if (String == "G16R16F") return D3DFMT_G16R16F;
+	if (String == "A16B16G16R16F") return D3DFMT_A16B16G16R16F;
+	if (String == "R32F") return D3DFMT_R32F;
+	if (String == "G32R32F") return D3DFMT_G32R32F;
+	if (String == "A32B32G32R32F") return D3DFMT_A32B32G32R32F;
+	if (String == "D32") return D3DFMT_D32;
+	if (String == "D15S1") return D3DFMT_D15S1;
+	if (String == "D24S8") return D3DFMT_D24S8;
+	if (String == "D24X8") return D3DFMT_D24X8;
+	if (String == "D24X4S4") return D3DFMT_D24X4S4;
+
+	n_error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.Get());
+	return PixelFormat_Invalid;
+}
+//---------------------------------------------------------------------
+
 DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
 {
 	DWORD Mask = 0;

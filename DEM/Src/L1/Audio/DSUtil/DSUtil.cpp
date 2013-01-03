@@ -13,6 +13,7 @@
 #include <StdDEM.h>
 #include <Audio/WAVFile.h>
 #include <Audio/OGGFile.h>
+#define WIN32_LEAN_AND_MEAN
 #include <mmreg.h>
 #include <msacm.h>
 #include <dxerr.h>

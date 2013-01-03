@@ -34,7 +34,12 @@ void CSceneServer::Trigger()
 {
 	if (!pCurrScene) return;
 	pCurrScene->GetRootNode().Update();
-	pCurrScene->Render();
+	int Idx = FrameShaders.FindIndex(ScreenFrameShaderID);
+	if (Idx != INVALID_INDEX)
+	{
+		Render::PFrameShader ScreenFrameShader = FrameShaders.ValueAtIndex(Idx);
+		if (ScreenFrameShader.isvalid()) pCurrScene->Render(NULL, *ScreenFrameShader);
+	}
 }
 //---------------------------------------------------------------------
 
