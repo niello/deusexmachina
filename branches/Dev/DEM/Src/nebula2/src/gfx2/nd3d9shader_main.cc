@@ -102,9 +102,7 @@ nD3D9Shader::LoadResource()
 
     ID3DXBuffer* errorBuffer = 0;
 	DWORD compileFlags = D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
-    #if N_D3D9_DEBUG
-        compileFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
-    #endif
+    compileFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
 
     // create include file handler
     nString shaderPath(mangledPath);

@@ -7,18 +7,25 @@ ImplementFactory(Render::CModelRendererNoLight);
 
 void CModelRendererNoLight::Render()
 {
-	//!!!if requires sorting by distance, sort all objects once!
-	//mb set in FrameShader flag "sort by distance to camera", if at least one batch requires it?
-	//check is it better than sorting only subsets collected by renderers, but many times
+	//???sort here or in add?
 
-	// sort collected models by shader, by shader features, by material
+	// -loop-
+		// SetTech
+		// Begin
+		// BeginPass
+			// -loop-
+			// DIP (instanced if possible)
+			// [Set new mtl params, commit changes, if they were]
+		// -end loop-
+		// EndPass
+		// End
+	// -end loop-
 
 	for (int i = 0; i < Models.Size(); ++i)
 	{
 	}
 
 	Models.Clear();
-	//pLights = NULL; // In lighting renderers
 }
 //---------------------------------------------------------------------
 

@@ -31,8 +31,6 @@
 //------------------------------------------------------------------------------
 #define N_D3D9_USENVPERFHUD (0)
 
-#define N_D3D9_DEBUG (0)
-
 #if N_D3D9_USENVPERFHUD
 #define N_D3D9_DEVICETYPE D3DDEVTYPE_REF
 #define N_D3D9_ADAPTER (nD3D9Server::Instance()->pD3D9->GetAdapterCount() - 1)
