@@ -6,6 +6,8 @@
 
 // Model renderer, that implements rendering single-pass lighting with multiple lights per pass
 
+//!!!light scissors or clip planes!
+
 namespace Render
 {
 

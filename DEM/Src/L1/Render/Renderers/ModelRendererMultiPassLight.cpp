@@ -9,7 +9,8 @@ void CModelRendererMultiPassLight::Render()
 {
 	//
 
-	// clear model list
+	Models.Clear();
+	pLights = NULL;
 }
 //---------------------------------------------------------------------
 

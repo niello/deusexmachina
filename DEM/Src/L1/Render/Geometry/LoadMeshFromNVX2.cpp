@@ -240,6 +240,7 @@ static void SetupVertexComponents(uint Mask, nArray<CVertexComponent>& Component
 		Cmp.Stream = 0;
 	}
 
+	//???use ubyte4 for my geometry?
 	if (Mask & JIndices)
 	{
 		CVertexComponent& Cmp = *Components.Reserve(1);
