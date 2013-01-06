@@ -70,6 +70,9 @@
     <Compile Include="CideFileNode.cs" />
     <Compile Include="CidePathHelper.cs" />
     <Compile Include="CideProjectElements.cs" />
+    <Compile Include="EngineHostControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="LevelEditorPane.cs" />
     <Compile Include="LevelEditorFactory.cs" />
     <Compile Include="LevelNode.cs" />

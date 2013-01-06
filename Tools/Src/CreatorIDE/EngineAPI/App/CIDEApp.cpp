@@ -62,7 +62,7 @@ bool CCIDEApp::Open()
 	AppEnv->SetVendorName(GetVendorName());
 	AppEnv->SetAppName(GetAppName());
 	AppEnv->SetAppVersion(GetAppVersion());
-	AppEnv->SetDisplayMode(CDisplayMode(0, 0, 800, 600, false));
+	AppEnv->SetDisplayMode(CDisplayMode(0, 0, 800, 600));
 	AppEnv->SetWindowTitle(WindowTitle.Get());
 	AppEnv->SetWindowIcon("Icon");
 

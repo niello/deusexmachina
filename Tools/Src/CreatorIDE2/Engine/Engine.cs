@@ -89,6 +89,30 @@ namespace CreatorIDE.Engine
             return false;
         }
 
+        public void LoadLevel(string levelID)
+        {
+            LoadLevel(_engineHandle.Handle, levelID);
+        }
+
+        public bool Advance()
+        {
+            return Advance(_engineHandle.Handle);
+        }
+
+        public int GetLevelCount()
+        {
+            return GetLevelCount(_engineHandle.Handle);
+        }
+
+        public LevelRecord GetLevelRecord(int index)
+        {
+            StringBuilder sb = new StringBuilder(256),
+                          sb2 = new StringBuilder(256);
+
+            GetLevelID(_engineHandle.Handle, index, sb, sb2);
+            return new LevelRecord(sb.ToString(), sb2.ToString());
+        }
+
         private static void FreeHGlobal(IntPtr hGlobal)
         {
             Marshal.FreeHGlobal(hGlobal);
@@ -118,7 +142,7 @@ namespace CreatorIDE.Engine
 
         [DllImport(DllName)]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool Advance([MarshalAs(AppHandle.MarshalAs)] AppHandle handle);
+        private static extern bool Advance(IntPtr handle);
 
         [DllImport(DllName, EntryPoint = "GetDLLName")]
         private static extern void _GetDllName([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, StringBuilder name);
@@ -149,6 +173,30 @@ namespace CreatorIDE.Engine
 
         [DllImport(DllName)]
         private static extern void SetDataPathCallback(IntPtr handle, DataPathCallback callback, ReleaseMemoryCallback releaseMemory);
+
+        #endregion
+
+        #region DLL Import - Levels
+
+        [DllImport(DllName, EntryPoint = "Levels_GetCount")]
+        public static extern int GetLevelCount(IntPtr handle);
+
+        [DllImport(DllName, EntryPoint = "Levels_GetIDName")]
+        private static extern void GetLevelID(IntPtr handle, int idx, StringBuilder id, StringBuilder name);
+
+        [DllImport(DllName, EntryPoint = "Levels_LoadLevel")]
+        private static extern void LoadLevel(IntPtr handle, string levelID);
+
+        [DllImport(CideEngine.DllName, EntryPoint = "Levels_CreateNew")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool CreateNew(string id, string name, float[] center, float[] extents,
+                                            string navMesh);
+
+        [DllImport(CideEngine.DllName, EntryPoint = "Levels_RestoreDB")]
+        public static extern void RestoreDB([MarshalAs(AppHandle.MarshalAs)] int handle, string startLevelID);
+
+        [DllImport(CideEngine.DllName, EntryPoint = "Levels_SaveDB")]
+        public static extern void SaveDB();
 
         #endregion
     }

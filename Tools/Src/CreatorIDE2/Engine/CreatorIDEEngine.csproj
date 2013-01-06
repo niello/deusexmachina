@@ -62,7 +62,7 @@
     <Compile Include="EngineMouseClickEventArgs.cs" />
     <Compile Include="EnginePathRequestEventArgs.cs" />
     <Compile Include="Entities.cs" />
-    <Compile Include="Levels.cs" />
+    <Compile Include="LevelRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
