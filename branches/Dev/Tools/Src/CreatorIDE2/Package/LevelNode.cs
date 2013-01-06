@@ -104,7 +104,7 @@ namespace CreatorIDE.Package
                         return false;
                     break;
 
-                case "proj":
+                case Configuration.ProjectScope:
                     fullPath = Path.GetDirectoryName(ProjectMgr.Url);
                     break;
 

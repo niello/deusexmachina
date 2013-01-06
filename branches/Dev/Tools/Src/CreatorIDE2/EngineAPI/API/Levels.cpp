@@ -21,11 +21,13 @@ namespace Attr
 
 using namespace App;
 
-API void Transform_SetCurrentEntity(const char* UID);
+API void Transform_SetCurrentEntity(CIDEAppHandle Handle, const char* UID);
 
 //!!!too slow and ugly!
-API int Levels_GetCount()
+API int Levels_GetCount(CIDEAppHandle Handle)
 {
+	DeclareCIDEApp(Handle);
+
 	int TblIdx = LoaderSrv->GetGameDB()->FindTableIndex("Levels");
 	
 	if (TblIdx == INVALID_INDEX) return 0;
@@ -37,8 +39,10 @@ API int Levels_GetCount()
 //---------------------------------------------------------------------
 
 //!!!too slow and ugly!
-API void Levels_GetIDName(int Idx, char* OutID, char* OutName)
+API void Levels_GetIDName(CIDEAppHandle Handle, int Idx, char* OutID, char* OutName)
 {
+	DeclareCIDEApp(Handle);
+
 	DB::PDataset DS = LoaderSrv->GetGameDB()->GetTable("Levels")->CreateDataset();
 	DS->AddColumn(Attr::GUID);
 	DS->AddColumn(Attr::Name);
@@ -55,7 +59,7 @@ API void Levels_LoadLevel(CIDEAppHandle Handle, const char* LevelID)
 {
 	DeclareCIDEApp(Handle);
 	LoaderSrv->CommitChangesToDB();
-	Transform_SetCurrentEntity(NULL);
+	Transform_SetCurrentEntity(Handle, NULL);
 	LoaderSrv->UnloadLevel();
 	LoaderSrv->LoadLevel(LevelID);
 	EntityMgr->AttachEntity(CIDEApp->EditorCamera);
@@ -100,7 +104,7 @@ API bool Levels_CreateNew(const char* ID, const char* Name, float Center[3],
 API void Levels_RestoreDB(CIDEAppHandle Handle, const char* LevelID)
 {
 	DeclareCIDEApp(Handle);
-	Transform_SetCurrentEntity(NULL);
+	Transform_SetCurrentEntity(Handle, NULL);
 	LoaderSrv->UnloadLevel();
 	LoaderSrv->NewGame(LevelID);
 	EntityMgr->AttachEntity(CIDEApp->EditorCamera);

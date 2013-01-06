@@ -51,6 +51,7 @@ namespace CreatorIDE.EngineAPI
         }
 
         [DllImport(Engine.DllName, EntryPoint = "Categories_ParseAttrDescs")]
+        [return:MarshalAs(UnmanagedType.I1)]
         public static extern bool ParseAttrDescs(string fileName);
 
         [DllImport(Engine.DllName, EntryPoint = "Categories_GetAttrDescCount")]

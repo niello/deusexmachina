@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
+using System.Drawing;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
 using EnvDTE;
@@ -27,6 +26,7 @@ namespace CreatorIDE.Package
                                 IExtensibleObject  //so we can get the automation object
     {
         private readonly Control _control;
+        private readonly EngineHostControl _engineHostControl;
         private readonly LevelNode _levelNode;
 
         public LevelEditorPane(IServiceProvider provider, LevelNode levelNode):
@@ -35,28 +35,29 @@ namespace CreatorIDE.Package
             if (levelNode == null)
                 throw new ArgumentNullException("levelNode");
 
-            _control = new Control();
-            _control.SizeChanged += OnControlSizeChanged;
+            _control = new Control {BackColor = Color.CornflowerBlue, Dock = DockStyle.Fill};
+            _engineHostControl = new EngineHostControl {Width = 800, Height = 600, Location = new Point(3, 3), Parent = _control};
+            _engineHostControl.Load += OnEngineHostControlLoad;
             _levelNode = levelNode;
-            var engine = _levelNode.ProjectMgr.Engine;
-            engine.PathRequest += OnEnginePathRequest;
         }
 
-        private void OnControlSizeChanged(object sender, EventArgs e)
+        private void OnEngineHostControlLoad(object sender, EventArgs e)
         {
-            var control = (Control) sender;
-            Debug.Assert(ReferenceEquals(control, _control));
-
             var engine = _levelNode.ProjectMgr.Engine;
-            if (control.Width == 0 || control.Height == 0 || engine.IsInitialized)
-                return;
+            engine.PathRequest += OnEnginePathRequest;
+            engine.MouseClick += OnEngineMouseClick;
+            engine.Init(_engineHostControl.Handle, @"..\..\..\..\InsanePoet\Bin\data");
+            if (engine.GetLevelCount() > 0)
+            {
+                var level = engine.GetLevelRecord(0);
+                engine.LoadLevel(level.ID);
+            }
+            _engineHostControl.Engine = engine;
+        }
 
-            string path;
-            var homePath = CidePathHelper.AddScope(Configuration.HomeScope, string.Empty);
-            if (!_levelNode.TryResolvePath(homePath, out path))
-                path = Configuration.AppFolder;
-
-            engine.Init(control.Handle, path);
+        private void OnEngineMouseClick(object sender, EngineMouseClickEventArgs e)
+        {
+            // TODO: Process mouse click
         }
 
         private void OnEnginePathRequest(object sender, EnginePathRequestEventArgs e)

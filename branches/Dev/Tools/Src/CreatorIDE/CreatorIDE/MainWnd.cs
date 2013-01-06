@@ -194,6 +194,8 @@ namespace CreatorIDE
                         AttrDesc.DescList.Add(Name, Desc);
                     }
                 }
+                else
+                    AttrDesc.DescList = new Dictionary<string, AttrDesc>();
 
 				EntityCats.Clear();
 				EntityTpls.Clear();
