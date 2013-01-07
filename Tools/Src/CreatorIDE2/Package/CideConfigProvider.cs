@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Project;
-using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {

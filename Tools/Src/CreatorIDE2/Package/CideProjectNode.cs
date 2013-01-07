@@ -4,11 +4,12 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using CreatorIDE.Engine;
 using Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.Project;
-using Utilities = Microsoft.VisualStudio.Project.Utilities;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 
 namespace CreatorIDE.Package
@@ -173,9 +174,18 @@ namespace CreatorIDE.Package
         private void InitializeImageList()
         {
             var asm = Assembly.GetAssembly(typeof (CideProjectNode));
-            var resourceStream = asm.GetManifestResourceStream("CreatorIDE.Package.Resources.ImageList24.bmp");
-            Debug.Assert(resourceStream != null);
-            var customImageList = Utilities.GetImageList(resourceStream);
+            var resourceManager = new ResourceManager("CreatorIDE.Package.VSPackage", asm);
+            var bitmap = resourceManager.GetObject(Images.ImageStripResID.ToString(CultureInfo.InvariantCulture)) as Bitmap;
+            Debug.Assert(bitmap != null);
+
+            var customImageList = new ImageList
+                                      {
+                                          ColorDepth = ColorDepth.Depth24Bit,
+                                          ImageSize = new Size(16, 16),
+                                          TransparentColor = Color.Magenta
+                                      };
+
+            customImageList.Images.AddStrip(bitmap);
 
             foreach (Image img in customImageList.Images)
                 ImageHandler.AddImage(img);

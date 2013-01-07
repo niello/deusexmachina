@@ -32,6 +32,8 @@ namespace CreatorIDE.Package
         private readonly EngineHostControl _engineHostControl;
         private readonly LevelNode _levelNode;
 
+        public LevelNode LevelNode{get { return _levelNode; }}
+
         public LevelEditorPane(IServiceProvider provider, LevelNode levelNode):
             base(provider)
         {

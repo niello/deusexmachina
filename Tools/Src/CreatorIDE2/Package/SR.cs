@@ -13,6 +13,7 @@ namespace CreatorIDE.Package
                             FileNotFoundFormatString = "FileNotFoundFormatString",
                             FullPathPropertyName = "FullPathPropertyName",
                             LevelDatabaseFile = "LevelDatabaseFile",
+                            LevelObjectBrowserCaption = "LevelObjectBrowserCaption",
                             MiscCategoryName = "MiscCategoryName",
                             OpenLevelDatabaseFile = "OpenLevelDatabaseFile",
                             PackagePathPropertyName = "PackagePathPropertyName",
