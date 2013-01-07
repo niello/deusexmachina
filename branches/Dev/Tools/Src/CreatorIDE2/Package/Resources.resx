@@ -132,6 +132,9 @@
   <data name="LevelDatabaseFile" xml:space="preserve">
     <value>Level database file</value>
   </data>
+  <data name="LevelObjectBrowserCaption" xml:space="preserve">
+    <value>Level Browser</value>
+  </data>
   <data name="MiscCategoryName" xml:space="preserve">
     <value>Misc</value>
   </data>

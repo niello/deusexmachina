@@ -106,6 +106,15 @@ namespace CreatorIDE.Package {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Level Browser.
+        /// </summary>
+        internal static string LevelObjectBrowserCaption {
+            get {
+                return ResourceManager.GetString("LevelObjectBrowserCaption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Misc.
         /// </summary>
         internal static string MiscCategoryName {

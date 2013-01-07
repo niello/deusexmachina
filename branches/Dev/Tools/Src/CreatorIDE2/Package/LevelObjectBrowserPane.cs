@@ -14,7 +14,10 @@ namespace CreatorIDE.Package
         public LevelObjectBrowserPane() :
             base(null)
         {
-            Caption = "Here shall be caption of the window.";
+            Caption = SR.GetString(SR.LevelObjectBrowserCaption);
+            BitmapResourceID = Images.ImageStripResID;
+            BitmapIndex = Images.GlobeView;
+
             _l = new Label { Text = @"Your ad here!" };
         }
 

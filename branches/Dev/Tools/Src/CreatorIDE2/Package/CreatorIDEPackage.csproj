@@ -110,7 +110,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\ImageList24.bmp" />
+    <None Include="Resources\ImageList24.bmp" />
     <Content Include="Resources\Package.ico" />
     <None Include="_Readme_Debug.txt" />
   </ItemGroup>
