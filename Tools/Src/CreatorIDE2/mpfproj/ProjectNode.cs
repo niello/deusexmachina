@@ -14,7 +14,6 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
-using Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Project.Exceptions;
 using Microsoft.VisualStudio.Shell;
@@ -306,12 +305,7 @@ namespace Microsoft.VisualStudio.Project
 		/// </summary>
 		private bool hasPassedSecurityChecks;
 
-		/// <summary>
-		/// The internal package implementation.
-		/// </summary>
-		private ProjectPackage package;
-
-		// Has the object been disposed.
+	    // Has the object been disposed.
 		private bool isDisposed;
 		#endregion
 
@@ -931,22 +925,13 @@ namespace Microsoft.VisualStudio.Project
 			}
 		}
 
-		/// <summary>
-		/// The internal package implementation.
-		/// </summary>
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-		protected internal ProjectPackage Package
-		{
-			get
-			{
-				return this.package;
-			}
-			set
-			{
-				this.package = value;
-			}
-		}
-		#endregion
+	    /// <summary>
+	    /// The internal package implementation.
+	    /// </summary>
+	    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+	    public ProjectPackage Package { get; protected internal set; }
+
+	    #endregion
 
 		#region ctor
 
@@ -2404,11 +2389,11 @@ namespace Microsoft.VisualStudio.Project
 			}
 
 			// Make sure we've first read the project trust information out of the .SUO, if we haven't already.
-			this.package.ReadProjectTrustInformation();
+			this.Package.ReadProjectTrustInformation();
 
 			// If the project is trusted because it has been checked previously and marked as such in
 			// the .SUO file, then no need to go through all this.
-			ProjectTrustLevel projectTrustLevel = this.package.GetProjectTrustLevel(this.ProjectIDGuid);
+			ProjectTrustLevel projectTrustLevel = this.Package.GetProjectTrustLevel(this.ProjectIDGuid);
 			if(projectTrustLevel == ProjectTrustLevel.Trusted)
 			{
 				return ProjectLoadOption.LoadNormally;
@@ -2470,7 +2455,7 @@ namespace Microsoft.VisualStudio.Project
 						// The project was unsafe, and the user has opted to treat it as safe.
 						// Mark the project as "Trusted" in the .SUO file, so we never have to
 						// go through all this again.
-						this.package.SetProjectTrustLevel(this.ProjectIDGuid, ProjectTrustLevel.Trusted);
+						this.Package.SetProjectTrustLevel(this.ProjectIDGuid, ProjectTrustLevel.Trusted);
 					}
 					else
 					{
@@ -2479,7 +2464,7 @@ namespace Microsoft.VisualStudio.Project
 
 						if(projectLoadOption == ProjectLoadOption.LoadNormally)
 						{
-							this.package.SetProjectTrustLevel(this.ProjectIDGuid, ProjectTrustLevel.Trusted);
+							this.Package.SetProjectTrustLevel(this.ProjectIDGuid, ProjectTrustLevel.Trusted);
 						}
 					}
 				}

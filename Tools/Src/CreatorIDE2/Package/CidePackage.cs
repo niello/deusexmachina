@@ -45,6 +45,7 @@ namespace CreatorIDE.Package
         CideProjectFactory.ProjectExtension,
         CideProjectFactory.TemplatesDirectory)]
     [ProvideEditorFactory(typeof(LevelEditorFactory), 113)]
+    [ProvideToolWindow(typeof(LevelObjectBrowserPane), MultiInstances = false, Transient = true)]
     [ProvideMenuResource(1000, 1)]
     [Guid(GuidString)]
     public sealed class CidePackage : ProjectPackage
