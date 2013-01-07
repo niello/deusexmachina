@@ -73,6 +73,7 @@
     <Compile Include="EngineHostControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ILevelEditorToolPane.cs" />
     <Compile Include="LevelEditorPane.cs" />
     <Compile Include="LevelEditorFactory.cs" />
     <Compile Include="LevelNode.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="CideProjectNode.cs" />
     <Compile Include="Images.cs" />
     <Compile Include="LevelNodeProperties.cs" />
+    <Compile Include="LevelObjectBrowserPane.cs" />
     <Compile Include="PathHelper.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>

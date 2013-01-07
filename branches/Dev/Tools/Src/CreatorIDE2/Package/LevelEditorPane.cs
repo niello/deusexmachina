@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
 using EnvDTE;
@@ -53,6 +56,27 @@ namespace CreatorIDE.Package
                 engine.LoadLevel(level.ID);
             }
             _engineHostControl.Engine = engine;
+
+            LoadEditorTools();
+        }
+
+        private void LoadEditorTools()
+        {
+            var pkgType = _levelNode.ProjectMgr.Package.GetType();
+            var attrs = pkgType.GetCustomAttributes(typeof (ProvideToolWindowAttribute), true);
+            foreach(ProvideToolWindowAttribute attr in attrs)
+            {
+                if (attr.ToolType == null || !typeof(ILevelEditorToolPane).IsAssignableFrom(attr.ToolType))
+                    continue;
+
+                var pane = _levelNode.ProjectMgr.Package.FindToolWindow(attr.ToolType, 0, true);
+                Debug.Assert(pane != null);
+                ((ILevelEditorToolPane) pane).Initialize(this);
+
+                var frame = pane.Frame as IVsWindowFrame;
+                if (frame != null)
+                    frame.ShowNoActivate();
+            }
         }
 
         private void OnEngineMouseClick(object sender, EngineMouseClickEventArgs e)
