@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Reflection;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
 using EnvDTE;
@@ -73,7 +71,8 @@ namespace CreatorIDE.Package
 
                 var pane = _levelNode.ProjectMgr.Package.FindToolWindow(attr.ToolType, 0, true);
                 Debug.Assert(pane != null);
-                ((ILevelEditorToolPane) pane).Initialize(this);
+                var tool = ((ILevelEditorToolPane) pane).GetTool();
+                tool.Initialize(_levelNode);
 
                 var frame = pane.Frame as IVsWindowFrame;
                 if (frame != null)

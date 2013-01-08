@@ -53,15 +53,14 @@
   <ItemGroup>
     <Compile Include="AppHandle.cs" />
     <Compile Include="AttrProperty.cs" />
-    <Compile Include="Categories.cs" />
+    <Compile Include="CideEngine.Categories.cs" />
     <Compile Include="AttrID.cs" />
     <Compile Include="DataTypes.cs" />
-    <Compile Include="EditorCamera.cs" />
-    <Compile Include="Engine.cs" />
+    <Compile Include="CideEngine.cs" />
     <Compile Include="EngineInitializationException.cs" />
     <Compile Include="EngineMouseClickEventArgs.cs" />
     <Compile Include="EnginePathRequestEventArgs.cs" />
-    <Compile Include="Entities.cs" />
+    <Compile Include="CideEngine.Entities.cs" />
     <Compile Include="LevelRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 
@@ -9,7 +10,7 @@ namespace CreatorIDE.Package
     {
         private const string GuidString = "EEAF75AC-A373-4979-84F3-5A4C1228DFBA";
 
-        private readonly Label _l;
+        private readonly LevelObjectBrowserControl _objectBrowser;
 
         public LevelObjectBrowserPane() :
             base(null)
@@ -18,16 +19,17 @@ namespace CreatorIDE.Package
             BitmapResourceID = Images.ImageStripResID;
             BitmapIndex = Images.GlobeView;
 
-            _l = new Label { Text = @"Your ad here!" };
+            _objectBrowser = new LevelObjectBrowserControl();
         }
 
         public override IWin32Window Window
         {
-            get { return _l; }
+            get { return _objectBrowser; }
         }
 
-        public void Initialize(LevelEditorPane pane)
+        public ILevelEditorTool GetTool()
         {
+            return _objectBrowser;
         }
     }
 }

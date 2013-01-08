@@ -73,6 +73,7 @@
     <Compile Include="EngineHostControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ILevelEditorTool.cs" />
     <Compile Include="ILevelEditorToolPane.cs" />
     <Compile Include="LevelEditorPane.cs" />
     <Compile Include="LevelEditorFactory.cs" />
@@ -86,6 +87,12 @@
     <Compile Include="CideProjectNode.cs" />
     <Compile Include="Images.cs" />
     <Compile Include="LevelNodeProperties.cs" />
+    <Compile Include="LevelObjectBrowserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="LevelObjectBrowserControl.Designer.cs">
+      <DependentUpon>LevelObjectBrowserControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="LevelObjectBrowserPane.cs" />
     <Compile Include="PathHelper.cs" />
     <Compile Include="Resources.Designer.cs">
@@ -99,6 +106,9 @@
     <Compile Include="SR.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="LevelObjectBrowserControl.resx">
+      <DependentUpon>LevelObjectBrowserControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

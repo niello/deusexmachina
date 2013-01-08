@@ -54,6 +54,8 @@ namespace CreatorIDE.Package
             InitializeImageList();
         }
 
+        public new CidePackage Package { get { return (CidePackage)base.Package; } protected set { base.Package = value; } }
+
         public override Guid ProjectGuid
         {
             get { return typeof (CideProjectNode).GUID; }

@@ -8,15 +8,18 @@
 
 using namespace App;
 
-API int Categories_GetCount()
+API int Categories_GetCount(CIDEAppHandle Handle)
 {
+	DeclareCIDEApp(Handle);
 	return EntityFct->GetCategoryCount();
 }
 //---------------------------------------------------------------------
 
-API const char* Categories_GetName(int Idx)
+API void Categories_GetName(CIDEAppHandle Handle, int Idx, char* OutCatName)
 {
-	return EntityFct->GetCategoryName(Idx);
+	DeclareCIDEApp(Handle);
+	const char* Res = EntityFct->GetCategoryName(Idx);
+	strcpy_s(OutCatName, 255, Res);
 }
 //---------------------------------------------------------------------
 
@@ -27,8 +30,9 @@ API int Categories_GetTplAttrCount(int Idx)
 }
 //---------------------------------------------------------------------
 
-API int Categories_GetInstAttrCount(int Idx)
+API int Categories_GetInstAttrCount(CIDEAppHandle Handle, int Idx)
 {
+	DeclareCIDEApp(Handle);
 	DB::PDataset DS = EntityFct->GetCategory(Idx).InstDataset;
 	return DS.isvalid() ? DS->GetValueTable()->GetNumColumns() : 0;
 }

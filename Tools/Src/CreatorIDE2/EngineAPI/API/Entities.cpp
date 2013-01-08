@@ -7,15 +7,18 @@
 using namespace Game;
 using namespace App;
 
-API int Entities_GetCount()
+API int Entities_GetCount(CIDEAppHandle Handle)
 {
+	DeclareCIDEApp(Handle);
 	return EntityMgr->GetNumEntities();
 }
 //---------------------------------------------------------------------
 
-API const char* Entities_GetUIDByIndex(int Idx)
+API void Entities_GetUIDByIndex(CIDEAppHandle Handle, int Idx, char* OutUID)
 {
-	return EntityMgr->GetEntityAt(Idx)->GetUniqueID().CStr();
+	DeclareCIDEApp(Handle);
+	const char* Res = EntityMgr->GetEntityAt(Idx)->GetUniqueID().CStr();
+	strcpy_s(OutUID, 255, Res);
 }
 //---------------------------------------------------------------------
 
@@ -30,9 +33,11 @@ API int Entities_GetNextFreeUIDOnLevel(const char* Base)
 }
 //---------------------------------------------------------------------
 
-API const char* Entities_GetCatByIndex(int Idx)
+API void Entities_GetCatByIndex(CIDEAppHandle Handle, int Idx, char* OutCategory)
 {
-	return EntityMgr->GetEntityAt(Idx)->GetCategory().CStr();
+	DeclareCIDEApp(Handle);
+	const char* Res = EntityMgr->GetEntityAt(Idx)->GetCategory().CStr();
+	strcpy_s(OutCategory, 255, Res);
 }
 //---------------------------------------------------------------------
 
