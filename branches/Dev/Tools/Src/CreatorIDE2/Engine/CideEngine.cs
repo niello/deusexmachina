@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CreatorIDE.Engine
 {
-    public sealed class CideEngine:IDisposable
+    public sealed partial class CideEngine: IDisposable
     {
         private delegate void MouseButtonCallback(int x, int y, int button, EMouseAction action);
 
@@ -21,7 +21,7 @@ namespace CreatorIDE.Engine
         private readonly MouseButtonCallback _mouseButtonCalback;
         private readonly DataPathCallback _dataPathCallback;
         private readonly ReleaseMemoryCallback _releaseMemoryCallback;
-        
+
         private bool _isInitialized;
 
         private AppHandle _engineHandle;
@@ -30,7 +30,7 @@ namespace CreatorIDE.Engine
 
         public event EventHandler<EngineMouseClickEventArgs> MouseClick;
 
-        public bool IsInitialized{get { return _isInitialized; }}
+        public bool IsInitialized { get { return _isInitialized; } }
 
         public CideEngine()
         {
@@ -72,12 +72,12 @@ namespace CreatorIDE.Engine
                 var args = new EnginePathRequestEventArgs(dataPath);
                 h(this, args);
 
-                if(args.Handled)
+                if (args.Handled)
                 {
                     var path = args.NormalizedPath;
                     if (path != null)
                         path = path.Trim();
-                    if(!string.IsNullOrEmpty(path))
+                    if (!string.IsNullOrEmpty(path))
                     {
                         mangledPath = Marshal.StringToHGlobalAnsi(path);
                         return true;
@@ -113,6 +113,11 @@ namespace CreatorIDE.Engine
             return new LevelRecord(sb.ToString(), sb2.ToString());
         }
 
+        public void SetFocusEntity(string uid)
+        {
+            SetFocusEntity(_engineHandle.Handle, uid);
+        }
+
         private static void FreeHGlobal(IntPtr hGlobal)
         {
             Marshal.FreeHGlobal(hGlobal);
@@ -123,7 +128,7 @@ namespace CreatorIDE.Engine
             var handle = AppHandle.InterlockedExchange(ref _engineHandle, AppHandle.Zero);
             if (handle == AppHandle.Zero)
                 return;
-            
+
             Release(handle.Handle);
         }
 
@@ -174,12 +179,15 @@ namespace CreatorIDE.Engine
         [DllImport(DllName)]
         private static extern void SetDataPathCallback(IntPtr handle, DataPathCallback callback, ReleaseMemoryCallback releaseMemory);
 
+        [DllImport(DllName, EntryPoint = "EditorCamera_SetFocusEntity")]
+        private static extern void SetFocusEntity(IntPtr handle, [MarshalAs(UnmanagedType.LPStr)] string uid);
+
         #endregion
 
         #region DLL Import - Levels
 
         [DllImport(DllName, EntryPoint = "Levels_GetCount")]
-        public static extern int GetLevelCount(IntPtr handle);
+        private static extern int GetLevelCount(IntPtr handle);
 
         [DllImport(DllName, EntryPoint = "Levels_GetIDName")]
         private static extern void GetLevelID(IntPtr handle, int idx, StringBuilder id, StringBuilder name);
@@ -189,14 +197,14 @@ namespace CreatorIDE.Engine
 
         [DllImport(CideEngine.DllName, EntryPoint = "Levels_CreateNew")]
         [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool CreateNew(string id, string name, float[] center, float[] extents,
+        private static extern bool CreateNew(string id, string name, float[] center, float[] extents,
                                             string navMesh);
 
         [DllImport(CideEngine.DllName, EntryPoint = "Levels_RestoreDB")]
-        public static extern void RestoreDB([MarshalAs(AppHandle.MarshalAs)] int handle, string startLevelID);
+        private static extern void RestoreDB([MarshalAs(AppHandle.MarshalAs)] int handle, string startLevelID);
 
         [DllImport(CideEngine.DllName, EntryPoint = "Levels_SaveDB")]
-        public static extern void SaveDB();
+        private static extern void SaveDB();
 
         #endregion
     }

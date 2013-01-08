@@ -8,7 +8,7 @@ namespace Attr
 	DeclareAttr(Transform);
 }
 
-API void EditorCamera_SetFocusEntity(void* pHandle, const char* UID)
+API void EditorCamera_SetFocusEntity(App::CIDEAppHandle pHandle, const char* UID)
 {
 	DeclareCIDEApp(pHandle);
 
