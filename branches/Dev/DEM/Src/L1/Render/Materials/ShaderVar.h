@@ -31,7 +31,7 @@ public:
 	CShader::HVar	GetVarHandle() const { return hVar; }
 	bool			IsBound() const { return hVar != 0; }
 	bool			Bind(const CShader& Shader) { hVar = Shader.GetVarHandleByName(Name); return hVar != 0; }
-	bool			Apply(CShader& Shader) { return IsBound() && Value.IsValid() && Shader.Set(hVar, Value); }
+	bool			Apply(CShader& Shader) const { return IsBound() && Value.IsValid() && Shader.Set(hVar, Value); }
 };
 
 typedef nDictionary<CStrID, CShaderVar> CShaderVarMap;

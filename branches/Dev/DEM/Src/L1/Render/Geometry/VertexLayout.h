@@ -57,6 +57,8 @@ struct CVertexComponent
 	DWORD	GetSize() const;
 };
 
+typedef Ptr<class CVertexLayout> PVertexLayout;
+
 class CVertexLayout: public Core::CRefCounted
 {
 protected:
@@ -76,10 +78,9 @@ public:
 	DWORD	GetVertexSize() const { return VertexSize; }
 
 	static CStrID					BuildSignature(const nArray<CVertexComponent>& Components);
+	const nArray<CVertexComponent>&	GetComponents() const { return Components; }
 	IDirect3DVertexDeclaration9*	GetD3DVertexDeclaration() const { return pDecl; }
 };
-
-typedef Ptr<CVertexLayout> PVertexLayout;
 
 extern LPCSTR SemanticNames[];
 extern BYTE SemanticD3DUsages[];

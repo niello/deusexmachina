@@ -397,12 +397,14 @@ void CRenderServer::SetIndexBuffer(CIndexBuffer* pIB)
 // Docs: Note that D3DSTREAMSOURCE_INDEXEDDATA and the number of instances to draw must always be set in stream zero.
 void CRenderServer::SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex)
 {
-	n_assert2(pVB && !Instances, "CRenderServer::SetInstanceBuffer() -> Specify 1 or more instances!");
+	n_assert2(!pVB || Instances, "CRenderServer::SetInstanceBuffer() -> Specify 1 or more instances!");
 	n_assert(Index > 0); //???force instance buffer Index to be always the same (1 or smth)?
 
 	SetVertexBuffer(Index, pVB, OffsetVertex);
 
-	InstanceCount = pVB ? Instances : 0;
+	DWORD NewInstanceCount = pVB ? Instances : 0;
+	if (NewInstanceCount == InstanceCount) return;
+	InstanceCount = NewInstanceCount;
 
 	if (InstanceCount > 0)
 	{
@@ -413,20 +415,6 @@ void CRenderServer::SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Ins
 	{
 		pD3DDevice->SetStreamSourceFreq(0, 1);
 		pD3DDevice->SetStreamSourceFreq(Index, 1);
-	}
-}
-//---------------------------------------------------------------------
-
-inline DWORD CRenderServer::CalcPrimitiveCount(EPrimitiveTopology Topology, DWORD VertexCount)
-{
-	switch (Topology)
-	{
-		case PointList:	return VertexCount;
-		case LineList:	return VertexCount / 2;
-		case LineStrip:	return VertexCount - 1;
-		case TriList:	return VertexCount / 3;
-		case TriStrip:	return VertexCount - 2;
-		default:		return 0;
 	}
 }
 //---------------------------------------------------------------------
@@ -460,27 +448,26 @@ void CRenderServer::Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil)
 
 void CRenderServer::Draw()
 {
-	n_assert(pD3DDevice && IsInsideFrame);
+	n_assert_dbg(pD3DDevice && IsInsideFrame);
 
 	//???map enum to constants defined in platform-specific file like D3D9Fwd?
 	D3DPRIMITIVETYPE D3DPrimType;
+	DWORD PrimCount;
 	switch (CurrPrimGroup.Topology)
 	{
-		case PointList:	D3DPrimType = D3DPT_POINTLIST; break;
-		case LineList:	D3DPrimType = D3DPT_LINELIST; break;
-		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; break;
-		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; break;
-		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; break;
-		default:		n_error("CRenderServer::Draw() -> Invalid primitive topology!");
+		case PointList:	D3DPrimType = D3DPT_POINTLIST; PrimCount = CurrPrimGroup.VertexCount; break;
+		case LineList:	D3DPrimType = D3DPT_LINELIST; PrimCount = CurrPrimGroup.VertexCount / 2; break;
+		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; PrimCount = CurrPrimGroup.VertexCount - 1; break;
+		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; PrimCount = CurrPrimGroup.VertexCount / 3; break;
+		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount = CurrPrimGroup.VertexCount - 2; break;
+		default:		n_error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
 	}
-
-	DWORD PrimCount = CalcPrimitiveCount(CurrPrimGroup.Topology, CurrPrimGroup.VertexCount);
 
 	HRESULT hr;
 	if (CurrPrimGroup.IndexCount > 0)
 	{
 		n_assert_dbg(CurrIB.isvalid());
-		if (InstanceCount > 0) { n_assert_dbg(CurrVB[0].isvalid()); }
+		n_assert_dbg(!InstanceCount || CurrVB[0].isvalid());
 		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
 												0,
 												CurrPrimGroup.FirstVertex,

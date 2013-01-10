@@ -4,6 +4,7 @@
 
 #include <Render/Materials/Texture.h>
 #include <util/ndictionary.h>
+//#include <mathlib/matrix.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3dx9.h>
@@ -27,25 +28,25 @@ class CShader: public Resources::CResource
 public:
 
 	typedef D3DXHANDLE HVar;
-	//enum { InvalidVar = 0xffffffff };
+	typedef D3DXHANDLE HTech;
 
 protected:
 
 	ID3DXEffect*					pEffect;
 
-	//nDictionary<CStrID, D3DXHANDLE>	NameToTech;
-	nDictionary<DWORD, D3DXHANDLE>	FlagsToTech;
-	//!!!store current tech to avoid resetting tech already active!
+	//nDictionary<CStrID, HTech>	NameToTech;
+	nDictionary<DWORD, HTech>	FlagsToTech;
+	HTech						hCurrTech;
 
 	//???!!!need both?!
-	nDictionary<CStrID, HVar>		NameToHVar;
-	nDictionary<CStrID, HVar>		SemanticToHVar;
+	nDictionary<CStrID, HVar>	NameToHVar;
+	nDictionary<CStrID, HVar>	SemanticToHVar;
 
 	//!!!OnDeviceLost, OnDeviceReset events!
 
 public:
 
-	CShader(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pEffect(NULL) {}
+	CShader(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pEffect(NULL), hCurrTech(NULL) {}
 	virtual ~CShader() { if (IsLoaded()) Unload(); }
 
 	bool			Setup(ID3DXEffect* pFX);
@@ -62,17 +63,20 @@ public:
 	void			SetTexture(HVar Var, const CTexture& Value) { n_assert(SUCCEEDED(pEffect->SetTexture(Var, Value.GetD3D9BaseTexture()))); }
 	//pEffect->SetRawValue
 
-	bool			SetActiveFeatures(DWORD FeatureFlags);
 	DWORD			Begin(bool SaveState);
 	void			BeginPass(DWORD PassIdx) { n_assert(SUCCEEDED(pEffect->BeginPass(PassIdx))); }
 	void			CommitChanges() { n_assert(SUCCEEDED(pEffect->CommitChanges())); } // For changes inside a pass
 	void			EndPass() { n_assert(SUCCEEDED(pEffect->EndPass())); }
 	void			End() { n_assert(SUCCEEDED(pEffect->End())); }
 
+	HTech			GetTechByFeatures(DWORD FeatureFlags) const;
+	HTech			GetCurrentTech() const { return hCurrTech; }
+	bool			SetTech(HTech hTech);
 	HVar			GetVarHandleByName(CStrID Name) const;
 	HVar			GetVarHandleBySemantic(CStrID Semantic) const;
 	bool			HasVarByName(CStrID Name) const { return NameToHVar.FindIndex(Name) != INVALID_INDEX; }
 	bool			HasVarBySemantic(CStrID Semantic) const { return SemanticToHVar.FindIndex(Semantic) != INVALID_INDEX; }
+	bool			IsVarUsed(HVar hVar) const { return hCurrTech && pEffect->IsParameterUsed(hVar, hCurrTech); } //!!!can use lookup 2D table to eliminate virtual call and hidden complexity!
 	ID3DXEffect*	GetD3D9Effect() const { return pEffect; }
 };
 
@@ -87,6 +91,11 @@ inline bool CShader::Set(HVar Var, const Data::CData& Value)
 	else if (Value.IsA<float>()) SetFloat(Var, Value);
 	else if (Value.IsA<vector4>()) SetFloat4(Var, Value);
 	else if (Value.IsA<matrix44>()) SetMatrix(Var, Value);
+	else if (Value.IsA<CMatrixPtrArray>())
+	{
+		const CMatrixPtrArray& Array = Value.GetValue<CMatrixPtrArray>();
+		SetMatrixPointerArray(Var, Array.Begin(), Array.Size());
+	}
 	else if (Value.IsA<PTexture>()) SetTexture(Var, *Value.GetValue<PTexture>());
 	else FAIL;
 	OK;
@@ -102,17 +111,35 @@ inline DWORD CShader::Begin(bool SaveState)
 }
 //---------------------------------------------------------------------
 
+inline CShader::HTech CShader::GetTechByFeatures(DWORD FeatureFlags) const
+{
+	int Idx = FlagsToTech.FindIndex(FeatureFlags);
+	return(Idx == INVALID_INDEX) ? NULL : FlagsToTech.ValueAtIndex(Idx);
+}
+//---------------------------------------------------------------------
+
 inline CShader::HVar CShader::GetVarHandleByName(CStrID Name) const
 {
 	int Idx = NameToHVar.FindIndex(Name);
-	return (Idx == INVALID_INDEX) ? 0 : NameToHVar.ValueAtIndex(Idx);
+	return (Idx == INVALID_INDEX) ? NULL : NameToHVar.ValueAtIndex(Idx);
 }
 //---------------------------------------------------------------------
 
 inline CShader::HVar CShader::GetVarHandleBySemantic(CStrID Semantic) const
 {
 	int Idx = NameToHVar.FindIndex(Semantic);
-	return (Idx == INVALID_INDEX) ? 0 : SemanticToHVar.ValueAtIndex(Idx);
+	return (Idx == INVALID_INDEX) ? NULL : SemanticToHVar.ValueAtIndex(Idx);
+}
+//---------------------------------------------------------------------
+
+inline bool CShader::SetTech(CShader::HTech hTech)
+{
+	if (hTech != hCurrTech)
+	{
+		hCurrTech = hTech;
+		n_assert(SUCCEEDED(pEffect->SetTechnique(hCurrTech)));
+	}
+	return !!hCurrTech;
 }
 //---------------------------------------------------------------------
 

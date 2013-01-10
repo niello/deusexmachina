@@ -95,14 +95,14 @@ public:
 	void				SetVertexLayout(CVertexLayout* pVLayout);
 	void				SetIndexBuffer(CIndexBuffer* pIB);
 	void				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
-	void				SetPrimitiveGroup(CMeshGroup& Group) { CurrPrimGroup = Group; }
+	void				SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
 	void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
 	void				Draw();
 
 	PVertexLayout		GetVertexLayout(const nArray<CVertexComponent>& Components);
+	//???PVertexLayout		GetVertexLayout(const nString& Signature);
 	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
 	DWORD				ShaderFeatureStringToMask(const nString& FeatureString);
-	DWORD				CalcPrimitiveCount(EPrimitiveTopology Topology, DWORD VertexCount);
 
 	CDisplay&			GetDisplay() { return Display; }
 	DWORD				GetFrameID() const { return FrameID; }

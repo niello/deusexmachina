@@ -36,11 +36,6 @@ nD3D9Server::nD3D9Server():
 	n_assert(!Singleton);
 	Singleton = this;
 
-	//WATCHER_INIT(watchNumPrimitives, "watchGfxNumPrimitives", DATA_TYPE(int));
-	//WATCHER_INIT(watchFPS, "watchGfxFPS", DATA_TYPE(float));
-	//WATCHER_INIT(watchNumDrawCalls, "watchGfxDrawCalls", DATA_TYPE(int));
-	//WATCHER_INIT(watchNumRenderStateChanges, "watchGfxRSChanges", DATA_TYPE(int));
-
 	memset(&devCaps, 0, sizeof(devCaps));
 	memset(&presentParams, 0, sizeof(presentParams));
 	memset(&shapeMeshes, 0, sizeof(shapeMeshes));

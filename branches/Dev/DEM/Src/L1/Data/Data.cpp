@@ -13,6 +13,7 @@ DEFINE_TYPE(CStrID)
 DEFINE_TYPE(PVOID)
 DEFINE_TYPE(vector4)
 DEFINE_TYPE(matrix44)
+DEFINE_TYPE(CMatrixPtrArray)
 
 void CData::SetType(const CType* SrcType)
 {

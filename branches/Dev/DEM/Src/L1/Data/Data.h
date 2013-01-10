@@ -205,6 +205,7 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 };
 
 typedef Data::CStringID CStrID;
+typedef nArray<const matrix44*> CMatrixPtrArray;	// Shader parameter type
 
 // Std types
 //DECLARE_TYPE(void) //!!!can use struct CVoid {};
@@ -216,15 +217,17 @@ DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(PVOID, 6)
 DECLARE_TYPE(vector4, 7)
 DECLARE_TYPE(matrix44, 8)
+DECLARE_TYPE(CMatrixPtrArray, 15)
 
 //#define TVoid	DATA_TYPE(void)
-#define TBool		DATA_TYPE(bool)
-#define TInt		DATA_TYPE(int)
-#define TFloat		DATA_TYPE(float)
-#define TString		DATA_TYPE(nString)
-#define TStrID		DATA_TYPE(CStrID)
-#define TPtr		DATA_TYPE(PVOID)
-#define TVector4	DATA_TYPE(vector4)
-#define TMatrix44	DATA_TYPE(matrix44)
+#define TBool			DATA_TYPE(bool)
+#define TInt			DATA_TYPE(int)
+#define TFloat			DATA_TYPE(float)
+#define TString			DATA_TYPE(nString)
+#define TStrID			DATA_TYPE(CStrID)
+#define TPtr			DATA_TYPE(PVOID)
+#define TVector4		DATA_TYPE(vector4)
+#define TMatrix44		DATA_TYPE(matrix44)
+#define TMatrixPtrArray	DATA_TYPE(CMatrixPtrArray)
 
 #endif

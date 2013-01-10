@@ -55,14 +55,6 @@ nSceneServer::nSceneServer() :
     PROFILER_INIT(profRenderPath, "profSceneRenderPath");
     PROFILER_INIT(profRenderCameras, "profSceneRenderCameras");
 
-    //WATCHER_INIT(watchNumInstanceGroups, "watchSceneNumInstanceGroups", DATA_TYPE(int));
-    //WATCHER_INIT(watchNumInstances, "watchSceneNumInstances", DATA_TYPE(int));
-    //WATCHER_INIT(watchNumOccluded, "watchSceneNumOccluded", DATA_TYPE(int));
-    //WATCHER_INIT(watchNumNotOccluded, "watchSceneNumNotOccluded", DATA_TYPE(int));
-    //WATCHER_INIT(watchNumPrimitives, "watchGfxNumPrimitives", DATA_TYPE(int));
-    //WATCHER_INIT(watchFPS, "watchGfxFPS", DATA_TYPE(float));
-    //WATCHER_INIT(watchNumDrawCalls, "watchGfxDrawCalls", DATA_TYPE(int));
-
     this->groupArray.SetFlags(nArray<Group>::DoubleGrowSize);
     this->lightArray.SetFlags(nArray<LightInfo>::DoubleGrowSize);
     this->shadowLightArray.SetFlags(nArray<LightInfo>::DoubleGrowSize);
