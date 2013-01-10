@@ -1,6 +1,8 @@
 #include "ModelRenderer.h"
 
 #include <Scene/Model.h>
+#include <Render/RenderServer.h>
+#include <Data/Params.h>
 
 namespace Render
 {
@@ -21,26 +23,55 @@ ImplementRTTI(Render::IModelRenderer, Render::IRenderer);
 //!!!rendering front-to-back with existing z-buffer has no point!
 //z-pass FtB has meaning, if pixel shader is not empty!
 
+void IModelRenderer::Init(const Data::CParams& Desc)
+{
+	//???add AllowGrowInstanceBuffer or MaxInstanceCount or both?
+	DWORD InitialInstanceCount = Desc.Get<int>(CStrID("InitialInstanceCount"), 0);
+	if (InitialInstanceCount)
+	{
+		nArray<CVertexComponent> InstCmps(4, 0);
+		for (int i = 0; i < 4; ++i)
+		{
+			CVertexComponent& Cmp = InstCmps[i];
+			Cmp.Format = CVertexComponent::Float4;
+			Cmp.Semantic = CVertexComponent::TexCoord;
+			Cmp.Index = i + 1;
+			Cmp.Stream = 1;
+		}
+		InstanceBuffer.Create();
+		n_assert(InstanceBuffer->Create(RenderSrv->GetVertexLayout(InstCmps), InitialInstanceCount, UsageDynamic, AccessWrite));
+	}
+}
+//---------------------------------------------------------------------
+
 void IModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects)
 {
+	n_assert_dbg(BatchType.IsValid());
+
 	for (int i = 0; i < Objects.Size(); ++i)
 	{
 		if (!Objects[i]->IsA(Scene::CModel::RTTI)) continue;
 		Scene::CModel* pModel = (Scene::CModel*)Objects[i];
-		if (!(pModel->Material->GetBatchType() & AllowedBatchTypes)) continue;
+
+		n_assert_dbg(pModel->BatchType.IsValid());
+		if (pModel->BatchType != BatchType) continue;
+
+		//!!!in light renderers must collect lights here!
 
 		// Find desired tech:
 		// Get object feature flags (material + geometry)
+		// Add renderer feature flags (mode, light in light renderers)
 		// If renderer has optional flags, remove them in object's feature flags
 		// Else if tech has optional flags, it handles them in shader dictionary (all possible combinations)
 
 		DWORD FeatFlags = pModel->FeatureFlags | pModel->Material->GetFeatureFlags();
 
-		// Model renderer will add render mode flags itself (forex Depth)
+		CShader::HTech hTech = pModel->Material->GetShader()->GetTechByFeatures(FeatFlags);
+		n_assert(hTech);
 
-		// Sort tech, then material
-
-		Models.Append(pModel);
+		CModelRecord* pRec = Models.Reserve(1);
+		pRec->pModel = pModel;
+		pRec->hTech = hTech;
 	}
 }
 //---------------------------------------------------------------------

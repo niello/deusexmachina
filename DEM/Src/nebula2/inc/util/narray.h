@@ -125,6 +125,8 @@ public:
     nArray<T> Difference(const nArray<T>& Other) const;
     /// sort the array
 	void Sort() { std::sort(Begin(), End()); }
+    /// sort the array
+	template<class TCmp> void Sort() { std::sort(Begin(), End(), TCmp()); }
     /// do a binary search, requires a sorted array
     int BinarySearchIndex(const T& pElm) const;
 

@@ -40,6 +40,8 @@ public:
 	bool				Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups);
 	virtual void		Unload();
 
+	PVertexBuffer		GetVertexBuffer() const { return VB; }
+	PIndexBuffer		GetIndexBuffer() const { return IB; }
 	const CMeshGroup&	GetGroup(DWORD Idx) const { return Groups[Idx]; }
 };
 
