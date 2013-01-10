@@ -31,25 +31,15 @@ public:
 
 	CMaterial(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), FeatureFlags(0) {}
 
-	bool			Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars);
-	virtual void	Unload();
+	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars);
+	virtual void			Unload();
 
-	bool			ApplyStaticVars() const;
-
-	CShader*		GetShader() const { return Shader.get_unsafe(); }
-	DWORD			GetFeatureFlags() const { return FeatureFlags; }
+	CShader*				GetShader() const { return Shader.get_unsafe(); }
+	DWORD					GetFeatureFlags() const { return FeatureFlags; }
+	const CShaderVarMap&	GetStaticVars() const { return StaticVars; }
 };
 
 typedef Ptr<CMaterial> PMaterial;
-
-inline bool CMaterial::ApplyStaticVars() const
-{
-	if (!Shader.isvalid()) FAIL;
-	for (int i = 0; i < StaticVars.Size(); ++i)
-		if (!StaticVars.ValueAtIndex(i).Apply(*Shader.get_unsafe())) FAIL;
-	OK;
-}
-//---------------------------------------------------------------------
 
 }
 
