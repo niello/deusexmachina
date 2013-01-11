@@ -118,7 +118,7 @@ bool CGfxServer::Open()
 		nGfxServer2::Instance()->SetFeatureSetOverride(nGfxServer2::StringToFeatureSet(FeatureSet.Get()));
 
 	if (RenderPath.IsValid()) nSceneServer::Instance()->SetRenderPathFilename(RenderPath);
-	else nSceneServer::Instance()->SetRenderPathFilename("renderpath:dx9hdr_renderpath.xml");
+	else nSceneServer::Instance()->SetRenderPathFilename("data:shaders/dx9hdr_renderpath.xml");
 
 	// Open the scene server (will also open the display server)
 	nSceneServer::Instance()->SetObeyLightLinks(true);

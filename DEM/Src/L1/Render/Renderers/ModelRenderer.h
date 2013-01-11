@@ -21,6 +21,7 @@ protected:
 	struct CModelRecord
 	{
 		Scene::CModel*	pModel;
+		DWORD			FeatFlags;
 		CShader::HTech	hTech;
 	};
 

@@ -46,6 +46,8 @@ protected:
 
 	nDictionary<CStrID, PVertexLayout>	VertexLayouts;
 	nDictionary<CStrID, int>			ShaderFeatures;
+	DWORD								FFlagSkinned;
+	DWORD								FFlagInstanced;
 
 	CDisplay							Display;
 	PRenderTarget						DefaultRT;
@@ -103,6 +105,8 @@ public:
 	//???PVertexLayout		GetVertexLayout(const nString& Signature);
 	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
 	DWORD				ShaderFeatureStringToMask(const nString& FeatureString);
+	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
+	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }
 
 	CDisplay&			GetDisplay() { return Display; }
 	DWORD				GetFrameID() const { return FrameID; }
