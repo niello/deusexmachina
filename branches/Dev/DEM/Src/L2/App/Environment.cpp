@@ -104,10 +104,10 @@ bool CEnvironment::InitEngine()
 
 	SceneServer.Create();
 	//???do it in Open()?
-	//Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
-	//n_assert(DefaultFrameShader->Init(*DataSrv->LoadHRD("renderpath:Default.hrd")));
-	//SceneServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
-	//SceneServer->SetScreenFrameShaderID(CStrID("Default"));
+	Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
+	n_assert(DefaultFrameShader->Init(*DataSrv->LoadHRD("data:shaders/Default.hrd")));
+	SceneServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
+	SceneServer->SetScreenFrameShaderID(CStrID("Default"));
 
 	InputServer.Create();
 	InputServer->Open();

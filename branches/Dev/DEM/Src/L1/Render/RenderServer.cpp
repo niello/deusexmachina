@@ -20,6 +20,9 @@ bool CRenderServer::Open()
 
 	if (!CreateDevice()) FAIL;
 
+	FFlagSkinned = ShaderFeatureStringToMask("Skinned");
+	FFlagInstanced = ShaderFeatureStringToMask("Instanced");
+
 	if (!DefaultRT.isvalid())
 	{
 		DefaultRT.Create();

@@ -35,7 +35,7 @@ void IModelRenderer::Init(const Data::CParams& Desc)
 			CVertexComponent& Cmp = InstCmps[i];
 			Cmp.Format = CVertexComponent::Float4;
 			Cmp.Semantic = CVertexComponent::TexCoord;
-			Cmp.Index = i + 1;
+			Cmp.Index = i + 4; // TEXCOORD 4, 5, 6, 7 are used
 			Cmp.Stream = 1;
 		}
 		InstanceBuffer.Create();
@@ -71,6 +71,7 @@ void IModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 
 		CModelRecord* pRec = Models.Reserve(1);
 		pRec->pModel = pModel;
+		pRec->FeatFlags = FeatFlags;
 		pRec->hTech = hTech;
 	}
 }
