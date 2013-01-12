@@ -1,7 +1,7 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {
@@ -12,6 +12,12 @@ namespace CreatorIDE.Package
 
         private readonly LevelObjectBrowserControl _objectBrowser;
 
+        private ITrackSelection _trackSelection;
+        public ITrackSelection TrackSelection
+        {
+            get { return _trackSelection ?? (_trackSelection = (ITrackSelection) GetService(typeof (ITrackSelection))); }
+        }
+
         public LevelObjectBrowserPane() :
             base(null)
         {
@@ -19,7 +25,7 @@ namespace CreatorIDE.Package
             BitmapResourceID = Images.ImageStripResID;
             BitmapIndex = Images.GlobeView;
 
-            _objectBrowser = new LevelObjectBrowserControl();
+            _objectBrowser = new LevelObjectBrowserControl {Pane = this};
         }
 
         public override IWin32Window Window

@@ -17,6 +17,7 @@ namespace CreatorIDE.Engine
 #else
 	    internal const string DllName = "EngineAPI2.dll";
 #endif
+        private readonly IAttrEditorProvider _attrEditorProvider;
 
         private readonly MouseButtonCallback _mouseButtonCalback;
         private readonly DataPathCallback _dataPathCallback;
@@ -32,12 +33,16 @@ namespace CreatorIDE.Engine
 
         public bool IsInitialized { get { return _isInitialized; } }
 
-        public CideEngine()
+        public IAttrEditorProvider AttrEditorProvider { get { return _attrEditorProvider; } }
+
+        public CideEngine(IAttrEditorProvider attrEditorProvider)
         {
             // Keeping callbacks in the CideEngine to prevent garbage collection
             _mouseButtonCalback = OnMouseButtonCallback;
             _dataPathCallback = OnDataPathCallback;
             _releaseMemoryCallback = FreeHGlobal;
+
+            _attrEditorProvider = attrEditorProvider;
 
             _engineHandle = new AppHandle(CreateEngine());
         }

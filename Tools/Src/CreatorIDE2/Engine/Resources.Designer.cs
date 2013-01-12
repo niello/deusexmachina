@@ -68,5 +68,14 @@ namespace CreatorIDE.Engine {
                 return ResourceManager.GetString("EngineInitFailFormat", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Value &apos;{0}&apos; is not supported..
+        /// </summary>
+        internal static string ValueNotSupportedFormat {
+            get {
+                return ResourceManager.GetString("ValueNotSupportedFormat", resourceCulture);
+            }
+        }
     }
 }

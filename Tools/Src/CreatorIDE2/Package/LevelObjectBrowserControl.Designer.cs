@@ -39,6 +39,7 @@
             this._treeView.Size = new System.Drawing.Size(150, 150);
             this._treeView.TabIndex = 0;
             this._treeView.NodeMouseDoubleClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.OnTreeNodeDoubleClick);
+            this._treeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.OnTreeAfterSelect);
             // 
             // LevelObjectBrowserControl
             // 

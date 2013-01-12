@@ -25,12 +25,55 @@ namespace CreatorIDE.Engine
             return uid.ToString();
         }
 
+        public bool GetBool(int attrID)
+        {
+            return GetBool(_engineHandle.Handle, attrID);
+        }
+
+        public float GetFloat(int attrID)
+        {
+            return GetFloat(_engineHandle.Handle, attrID);
+        }
+
+        public int GetInt(int attrID)
+        {
+            return GetInt(_engineHandle.Handle, attrID);
+        }
+
+        public Matrix44Ref GetMatrix44(int attrID)
+        {
+            var data = new float[16];
+            GetMatrix44(_engineHandle.Handle, attrID, data);
+            return new Matrix44Ref(data);
+        }
+
+        public string GetStrID(int attrID)
+        {
+            var sb = new StringBuilder(256);
+            GetStrID(_engineHandle.Handle, attrID, sb);
+            return sb.ToString();
+        }
+
+        public string GetString(int attrID)
+        {
+            var sb = new StringBuilder(1024);
+            GetString(_engineHandle.Handle, attrID, sb);
+            return sb.ToString();
+        }
+
+        public Vector4 GetVector4(int attrID)
+        {
+            var data = new float[4];
+            GetVector4(_engineHandle.Handle, attrID, data);
+            return new Vector4(data);
+        }
+
         #region DLL Import
 
         [DllImport(DllName, EntryPoint = "Entities_GetCount")]
         private static extern int GetEntityCount(IntPtr handle);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetUIDByIndex")]
+        [DllImport(DllName, EntryPoint = "Entities_GetUIDByIndex")]
         private static extern void GetEntityUID(
             IntPtr handle,
             int idx,
@@ -82,60 +125,33 @@ namespace CreatorIDE.Engine
 
         #region Get attribute value
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetBool")]
+        [DllImport(DllName, EntryPoint = "Entities_GetBool")]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool GetBool([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID);
+        private static extern bool GetBool(IntPtr handle, int attrID);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetInt")]
-        private static extern int GetInt([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID);
+        [DllImport(DllName, EntryPoint = "Entities_GetInt")]
+        private static extern int GetInt(IntPtr handle, int attrID);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetFloat")]
-        private static extern float GetFloat([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID);
+        [DllImport(DllName, EntryPoint = "Entities_GetFloat")]
+        private static extern float GetFloat(IntPtr handle, int attrID);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetString")]
-        private static extern void _GetString([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, StringBuilder sb);
-        //public static string GetString(AppHandle handle, int attrID)
-        //{
-        //    var sb = new StringBuilder(1024);
-        //    _GetString(handle, attrID, sb);
-        //    byte[] value = Encoding.Convert(Encoding.UTF8, Encoding.Default, Encoding.Default.GetBytes(sb.ToString()));
-        //    return Encoding.Default.GetString(value);
-        //}
+        [DllImport(DllName, EntryPoint = "Entities_GetString")]
+        private static extern void GetString(
+            IntPtr handle,
+            int attrID,
+            [MarshalAs(UnmanagedType.LPStr)] StringBuilder sb);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetStrID")]
-        private static extern void _GetStrID([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, StringBuilder sb);
-        private static string GetStrID(AppHandle handle, int attrID)
-        {
-            var sb = new StringBuilder(1024);
-            try
-            {
-                _GetStrID(handle, attrID, sb);
-            }
-            catch
-            {
-                //??? Is it right?
-            }
-            byte[] value = Encoding.Convert(Encoding.UTF8, Encoding.Default, Encoding.Default.GetBytes(sb.ToString()));
-            return Encoding.Default.GetString(value);
-        }
+        [DllImport(DllName, EntryPoint = "Entities_GetStrID")]
+        private static extern void GetStrID(
+            IntPtr handle,
+            int attrID,
+            [MarshalAs(UnmanagedType.LPStr)] StringBuilder sb);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetVector4")]
-        private static extern void _GetVector4([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, float[] @out);
-        private static Vector4 GetVector4(AppHandle handle, int attrID)
-        {
-            var data = new float[4];
-            _GetVector4(handle, attrID, data);
-            return new Vector4(data);
-        }
+        [DllImport(DllName, EntryPoint = "Entities_GetVector4")]
+        private static extern void GetVector4(IntPtr handle, int attrID, float[] @out);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_GetMatrix44")]
-        private static extern void _GetMatrix44([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, float[] @out);
-        //private static Matrix44Ref GetMatrix44(AppHandle handle, int attrID)
-        //{
-        //    var data = new float[16];
-        //    _GetMatrix44(handle, attrID, data);
-        //    return new Matrix44Ref(data);
-        //}
+        [DllImport(DllName, EntryPoint = "Entities_GetMatrix44")]
+        private static extern void GetMatrix44(IntPtr handle, int attrID, float[] @out);
 
         #endregion
 

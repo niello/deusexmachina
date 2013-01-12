@@ -74,10 +74,23 @@ namespace CreatorIDE.Package
                 var tool = ((ILevelEditorToolPane) pane).GetTool();
                 tool.Initialize(_levelNode);
 
+                tool.SelectionChanged += OnToolWindowSelectionChanged;
+
                 var frame = pane.Frame as IVsWindowFrame;
                 if (frame != null)
                     frame.ShowNoActivate();
             }
+        }
+
+        private static void OnToolWindowSelectionChanged(object sender, EventArgs e)
+        {
+            var tool = sender as ILevelEditorTool;
+            if (tool == null || tool.Pane == null)
+                return;
+
+            var trackSelection = tool.Pane.TrackSelection;
+            if (trackSelection != null)
+                trackSelection.OnSelectChange(tool.Selection);
         }
 
         private void OnEngineMouseClick(object sender, EngineMouseClickEventArgs e)

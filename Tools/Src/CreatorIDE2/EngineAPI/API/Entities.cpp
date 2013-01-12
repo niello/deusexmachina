@@ -184,7 +184,7 @@ API void Entities_GetString(CIDEAppHandle Handle, int AttrID, char* Out)
 			CIDEApp->CurrentEntity->Get<nString>((DB::CAttrID)AttrID) :
 			((DB::CAttrID)AttrID)->GetDefaultValue().GetValue<nString>();
 	LPCSTR OutStr = Tmp.Get();
-	if(OutStr) strcpy(Out, OutStr);
+	if(OutStr) strcpy_s(Out, 1023, OutStr);
 }
 //---------------------------------------------------------------------
 
@@ -202,7 +202,7 @@ API void Entities_GetStrID(CIDEAppHandle Handle, int AttrID, char* Out)
 			CIDEApp->CurrentEntity->Get<CStrID>((DB::CAttrID)AttrID) :
 			((DB::CAttrID)AttrID)->GetDefaultValue().GetValue<CStrID>();
 	LPCSTR OutStr = Tmp.CStr();
-	if(OutStr) strcpy(Out, OutStr);
+	if(OutStr) strcpy_s(Out, 255, OutStr);
 }
 //---------------------------------------------------------------------
 

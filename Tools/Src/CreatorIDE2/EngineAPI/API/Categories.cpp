@@ -38,18 +38,20 @@ API int Categories_GetInstAttrCount(CIDEAppHandle Handle, int Idx)
 }
 //---------------------------------------------------------------------
 
-API const char* Categories_GetAttrID(int CatIdx, int AttrIdx, int* Type, int* AttrID, bool* IsReadWrite)
+API void Categories_GetAttrID(CIDEAppHandle Handle, int CatIdx, int AttrIdx, int* Type, int* AttrID, bool* IsReadWrite, char* OutName)
 {
+	DeclareCIDEApp(Handle);
 	DB::PDataset DS = EntityFct->GetCategory(CatIdx).InstDataset;
+	const char* Res = "";
 	if (DS.isvalid())
 	{
 		DB::CAttrID ID = DS->GetValueTable()->GetColumnID(AttrIdx);
 		*Type = ID->GetType()->GetID();
 		*AttrID = (int)ID;
 		*IsReadWrite = (ID->GetAccessMode() == DB::ReadWrite);
-		return ID->GetName().CStr();
+		Res = ID->GetName().CStr();
 	}
-	return "";
+	strcpy_s(OutName, 255, Res);
 }
 //---------------------------------------------------------------------
 
@@ -78,7 +80,10 @@ API bool Categories_ParseAttrDescs(CIDEAppHandle Handle, const char* FileName)
 API int Categories_GetAttrDescCount(CIDEAppHandle Handle)
 {
 	DeclareCIDEApp(Handle);
-	return CIDEApp->AttrDescs->GetCount();
+	Data::PParams AttrDescs = CIDEApp->AttrDescs;
+	if(!AttrDescs.isvalid())
+		return 0;
+	return AttrDescs->GetCount();
 }
 //---------------------------------------------------------------------
 
@@ -88,9 +93,9 @@ API const char* Categories_GetAttrDesc(CIDEAppHandle Handle, int Idx, char* Cat,
 	DeclareCIDEApp(Handle);
 	const Data::CParam& DescParam = CIDEApp->AttrDescs->Get(Idx);
 	Data::PParams AttrDesc = DescParam.GetValue<Data::PParams>();
-	sprintf_s(Cat, 255, AttrDesc->Get<nString>(CStrID("Cat"), NULL).Get());
-	sprintf_s(Desc, 1023, AttrDesc->Get<nString>(CStrID("Desc"), NULL).Get());
-	sprintf_s(ResFilter, 1023, AttrDesc->Get<nString>(CStrID("ResourceFilter"), NULL).Get());
+	strcpy_s(Cat, 255, AttrDesc->Get<nString>(CStrID("Cat"), NULL).Get());
+	strcpy_s(Desc, 1023, AttrDesc->Get<nString>(CStrID("Desc"), NULL).Get());
+	strcpy_s(ResFilter, 1023, AttrDesc->Get<nString>(CStrID("ResourceFilter"), NULL).Get());
 	*ReadOnly = AttrDesc->Get<bool>(CStrID("ReadOnly"), false);
 	*ShowInList = AttrDesc->Get<bool>(CStrID("ShowInList"), true);
 	*InstanceOnly = AttrDesc->Get<bool>(CStrID("InstanceOnly"), false);

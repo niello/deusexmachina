@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace CreatorIDE.Engine
 {
@@ -20,30 +19,25 @@ namespace CreatorIDE.Engine
             ShowInList = true;
             ResourceDir = ResourceExt = string.Empty;
         }
-
-        // Static, stores parsed HRD
-        public static Dictionary<string, AttrDesc> DescList;
     }
 
     public class AttrProperty
     {
+        private readonly IAttrEditorProvider _provider;
         private AttrID _attrID;
         private readonly AttrDesc _desc;
         private object _valueObj;
         private bool _modified;
 
-        public AttrProperty(AttrID id, AttrDesc desc)
+        public AttrProperty(AttrID id, AttrDesc desc, CideEngine engine)
         {
-            _attrID = id;
-            _desc = desc;
-            _modified = false;
-        }
+            if (engine == null)
+                throw new ArgumentException("engine");
 
-        public AttrProperty(AttrID id, AttrDesc desc, object value)
-        {
             _attrID = id;
             _desc = desc;
-            _valueObj = value;
+            _valueObj = ReadFromAttr(engine);
+            _provider = engine.AttrEditorProvider;
             _modified = false;
         }
 
@@ -55,6 +49,37 @@ namespace CreatorIDE.Engine
         public string Name
         {
             get { return _attrID.Name; }
+        }
+
+        public Type Type
+        {
+            get
+            {
+                switch(_attrID.Type)
+                {
+                    case EDataType.Bool:
+                        return typeof (bool);
+                    case EDataType.Float:
+                        return typeof (float);
+                    case EDataType.Int:
+                        return typeof (int);
+                    case EDataType.Matrix44:
+                        return typeof (Matrix44Ref);
+                    case EDataType.String:
+                    case EDataType.StrID:
+                        return typeof (string);
+                    case EDataType.Vector4:
+                        return typeof (Vector4);
+
+                    case EDataType.Array:
+                    case EDataType.Blob:
+                    case EDataType.Params:
+                        return typeof (object);
+
+                    default:
+                        throw new NotSupportedException(SR.GetFormatString(SR.ValueNotSupportedFormat, _attrID.Type));
+                }
+            }
         }
 
         public object Value
@@ -114,24 +139,41 @@ namespace CreatorIDE.Engine
             get { return _desc.ResourceExt; }
         }
 
+        public IAttrEditorProvider EditorProvider { get { return _provider; } }
+
         public void ClearModified() { _modified = false; }
 
-        public void ReadFromAttr()
+        private object ReadFromAttr(CideEngine engine)
         {
-            throw new NotImplementedException();
-            //switch (AttrID.Type)
-            //{
-            //    case EDataType.Bool: Value = Entities.GetBool(AttrID.ID); break;
-            //    case EDataType.Int: Value = Entities.GetInt(AttrID.ID); break;
-            //    case EDataType.Float: Value = Entities.GetFloat(AttrID.ID); break;
-            //    case EDataType.String: Value = Entities.GetString(AttrID.ID); break;
-            //    case EDataType.StrID: Value = Entities.GetStrID(AttrID.ID); break;
-            //    case EDataType.Vector4: Value = Entities.GetVector4(AttrID.ID); break;
-            //    case EDataType.Matrix44: Value = Entities.GetMatrix44(AttrID.ID); break;
-            //}
+            switch (AttrID.Type)
+            {
+                case EDataType.Bool: 
+                    return engine.GetBool(AttrID.ID);
+
+                case EDataType.Int: 
+                    return engine.GetInt(AttrID.ID);
+
+                case EDataType.Float: 
+                    return engine.GetFloat(AttrID.ID);
+
+                case EDataType.String: 
+                    return engine.GetString(AttrID.ID);
+
+                case EDataType.StrID: 
+                    return engine.GetStrID(AttrID.ID);
+
+                case EDataType.Vector4: 
+                    return engine.GetVector4(AttrID.ID);
+
+                case EDataType.Matrix44: 
+                    return   engine.GetMatrix44(AttrID.ID);
+
+                default:
+                    return null;
+            }
         }
 
-        public void WriteToAttr()
+        private void WriteToAttr()
         {
             throw new NotImplementedException();
             //switch (AttrID.Type)
