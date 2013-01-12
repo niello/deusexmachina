@@ -88,6 +88,12 @@ namespace CreatorIDE.Package
                 var category = (Category) e.Node.Tag;
                 selectedObject = new CideEntity(engine, category);
             }
+            else if(e.Node.Tag is string)
+            {
+                var entityID = (string) e.Node.Tag;
+                var category = (Category) e.Node.Parent.Tag;
+                selectedObject = new CideEntity(engine, category, entityID, true);
+            }
             else
                 selectedObject = null;
 

@@ -45,6 +45,7 @@ namespace CreatorIDE.Engine
             UID = uid;
             _category = category;
             _attrProps = new List<AttrProperty>();
+            engine.SetCurrentEntity(UID);
             foreach (var id in _category.AttrIDs)
             {
                 var desc = engine.GetAttrDesc(id.Name) ?? new AttrDesc();
