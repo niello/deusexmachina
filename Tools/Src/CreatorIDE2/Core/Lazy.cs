@@ -75,11 +75,14 @@ namespace CreatorIDE.Core
 
         private void Dispose(bool disposing)
         {
-            if (Interlocked.Exchange(ref _disposed, 1) != 0 || !_autoDispose)
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 return;
 
             if (disposing)
                 GC.SuppressFinalize(this);
+
+            if (!_autoDispose)
+                return;
 
             var disposable = _object as IDisposable;
             if (disposable != null)
