@@ -120,7 +120,9 @@ API void Entities_DeleteTemplate(const char* UID, const char* Category)
 API bool Entities_SetCurrentByUID(CIDEAppHandle Handle, const char* UID)
 {
 	DeclareCIDEApp(Handle);
-	CIDEApp->CurrentEntity = EntityMgr->GetEntityByID(CStrID(UID));
+	if(UID)
+		CIDEApp->CurrentEntity = EntityMgr->GetEntityByID(CStrID(UID));
+	else CIDEApp->CurrentEntity = NULL;
 	return CIDEApp->CurrentEntity.isvalid();
 }
 //---------------------------------------------------------------------

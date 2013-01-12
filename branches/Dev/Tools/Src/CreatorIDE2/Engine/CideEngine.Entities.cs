@@ -25,6 +25,11 @@ namespace CreatorIDE.Engine
             return uid.ToString();
         }
 
+        public bool SetCurrentEntity(string entityUID)
+        {
+            return SetCurrentEntity(_engineHandle.Handle, entityUID);
+        }
+
         public bool GetBool(int attrID)
         {
             return GetBool(_engineHandle.Handle, attrID);
@@ -49,16 +54,31 @@ namespace CreatorIDE.Engine
 
         public string GetStrID(int attrID)
         {
-            var sb = new StringBuilder(256);
-            GetStrID(_engineHandle.Handle, attrID, sb);
-            return sb.ToString();
+            var buffer = new byte[256];
+            GetStrID(_engineHandle.Handle, attrID, buffer);
+            var str = GetUtf8String(buffer);
+            return str;
         }
 
         public string GetString(int attrID)
         {
-            var sb = new StringBuilder(1024);
-            GetString(_engineHandle.Handle, attrID, sb);
-            return sb.ToString();
+            var buffer = new byte[1024];
+            GetString(_engineHandle.Handle, attrID, buffer);
+            var str = GetUtf8String(buffer);
+            return str;
+        }
+
+        private static string GetUtf8String(byte[] buffer)
+        {
+            // It's possible to get offset as a parameter
+            const int offset = 0;
+
+            int strLen = offset, len = buffer.Length;
+            while (strLen < buffer.Length && buffer[strLen] != 0)
+                strLen++;
+            if (strLen > len)
+                strLen = offset; // String is not terminated with zero
+            return Encoding.UTF8.GetString(buffer, 0, strLen);
         }
 
         public Vector4 GetVector4(int attrID)
@@ -119,9 +139,9 @@ namespace CreatorIDE.Engine
         [DllImport(CideEngine.DllName, EntryPoint = "Entities_DeleteTemplate")]
         private static extern void DeleteTemplate(string uid, string category);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetCurrentByUID")]
+        [DllImport(DllName, EntryPoint = "Entities_SetCurrentByUID")]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool SetCurrentEntity([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, string uid);
+        private static extern bool SetCurrentEntity(IntPtr handle, string uid);
 
         #region Get attribute value
 
@@ -139,13 +159,13 @@ namespace CreatorIDE.Engine
         private static extern void GetString(
             IntPtr handle,
             int attrID,
-            [MarshalAs(UnmanagedType.LPStr)] StringBuilder sb);
+            [MarshalAs(UnmanagedType.LPArray)] byte[] val);
 
         [DllImport(DllName, EntryPoint = "Entities_GetStrID")]
         private static extern void GetStrID(
             IntPtr handle,
             int attrID,
-            [MarshalAs(UnmanagedType.LPStr)] StringBuilder sb);
+            [MarshalAs(UnmanagedType.LPArray)] byte[] sb);
 
         [DllImport(DllName, EntryPoint = "Entities_GetVector4")]
         private static extern void GetVector4(IntPtr handle, int attrID, float[] @out);
