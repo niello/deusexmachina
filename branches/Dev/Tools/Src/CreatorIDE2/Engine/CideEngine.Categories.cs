@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
@@ -9,6 +10,8 @@ namespace CreatorIDE.Engine
     /// </summary>
     partial class CideEngine
     {
+        public Dictionary<string, AttrDesc> _attrCache;
+
         public int GetCategoryCount()
         {
             return GetCategoryCount(_engineHandle.Handle);
@@ -26,6 +29,62 @@ namespace CreatorIDE.Engine
             return name.ToString();
         }
 
+        public AttrID GetAttrID(int categoryIdx, int attrIdx)
+        {
+            int typeID, id;
+            bool isReadWrite;
+            var attrName = new StringBuilder(256);
+            GetCategoryAttrID(_engineHandle.Handle, categoryIdx, attrIdx, out typeID, out id, out isReadWrite, attrName);
+            return new AttrID(id, attrName.ToString(), (EDataType) typeID, isReadWrite);
+        }
+
+        public AttrDesc GetAttrDesc(string name)
+        {
+            if(_attrCache==null)
+            {
+                int count = GetAttrDescCount(_engineHandle.Handle);
+                _attrCache = new Dictionary<string, AttrDesc>(count);
+                for(int i=0; i<count; i++)
+                {
+                    AttrDesc attrDesc;
+                    var attrName = GetAttrDesc(i, out attrDesc);
+                    _attrCache.Add(attrName, attrDesc);
+                }
+            }
+
+            AttrDesc result;
+            return _attrCache.TryGetValue(name, out result) ? result : null;
+        }
+
+        private string GetAttrDesc(int idx, out AttrDesc desc)
+        {
+            desc = new AttrDesc();
+            var sbCat = new StringBuilder(256);
+            var sbDesc = new StringBuilder(1024);
+            var sbResFilter = new StringBuilder(1024);
+
+            bool isReadOnly, showInList, instanceOnly;
+            string name = GetAttrDesc(_engineHandle.Handle, idx, sbCat, sbDesc, sbResFilter,
+                out isReadOnly, out showInList, out instanceOnly);
+
+            var resFilter = sbResFilter.ToString().Trim().ToLower().Split(';');
+            if (resFilter.Length > 1)
+            {
+                desc.ResourceDir = resFilter[0];
+                desc.ResourceExt = resFilter[1];
+            }
+            string category = sbCat.ToString().Trim();
+            string description = sbDesc.ToString().Trim();
+            if (category.Length > 0) desc.Category = category;
+            if (description.Length > 0) desc.Description = description;
+            return name;
+        }
+
+        public Category GetCategory(int categoryIdx)
+        {
+            return new Category(this, categoryIdx);
+        }
+
         #region DLL Import
 
         [DllImport(DllName, EntryPoint = "Categories_GetCount")]
@@ -39,80 +98,56 @@ namespace CreatorIDE.Engine
         [DllImport(CideEngine.DllName, EntryPoint = "Categories_Delete")]
         private static extern void Delete(string name);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetInstAttrCount")]
+        [DllImport(DllName, EntryPoint = "Categories_GetInstAttrCount")]
         private static extern int GetCategoryInstantAttrCount(IntPtr handle, int idx);
 
         [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetTplAttrCount")]
         private static extern int GetTplAttrCount(int idx);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetAttrID")]
-        private static extern string _GetAttrID(int catIdx,
-                                                int attrIdx,
-                                                ref int type,
-                                                ref int attrId,
-                                                [MarshalAs(UnmanagedType.I1)]ref bool isReadWrite);
-        public static AttrID GetAttrID(int catIdx, int attrIdx)
-        {
-            int typeID = 0, id = 0;
-            bool isReadWrite = false;
-            var attrName = _GetAttrID(catIdx, attrIdx, ref typeID, ref id, ref isReadWrite);
-            return new AttrID(id, attrName, (EDataType) typeID, isReadWrite);
-        }
+        [DllImport(DllName, EntryPoint = "Categories_GetAttrID")]
+        private static extern void GetCategoryAttrID(
+            IntPtr handle,
+            int catIdx,
+            int attrIdx,
+            out int type,
+            out int attrId,
+            [MarshalAs(UnmanagedType.I1)] out bool isReadWrite,
+            [MarshalAs(UnmanagedType.LPStr)] StringBuilder attrName);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetAttrIDByName")]
-        private static extern string _GetAttrID(string name,
-                                                ref int type,
-                                                ref int attrID,
-                                                [MarshalAs(UnmanagedType.I1)]ref bool isReadWrite);
-        //public static AttrID GetAttrID(string name)
+        [DllImport(DllName, EntryPoint = "Categories_GetAttrIDByName")]
+        private static extern void GetCategoryAttrID(
+            IntPtr handle,
+            [MarshalAs(UnmanagedType.LPStr)] string name,
+            out int type,
+            out int attrID,
+            [MarshalAs(UnmanagedType.I1)] out bool isReadWrite,
+            [MarshalAs(UnmanagedType.LPStr)] StringBuilder attrName);
+        //public static AttrID GetAttrID(int categoryIdx, int attrIdx)
         //{
-        //    int typeID = 0, id=0;
+        //    int typeID = 0, id = 0;
         //    bool isReadWrite = false;
         //    var attrName = _GetAttrID(name, ref typeID, ref id, ref isReadWrite);
-        //    return new AttrID(id, attrName, (EDataType) typeID, isReadWrite);
+        //    return new AttrID(id, attrName, (EDataType)typeID, isReadWrite);
         //}
-
+        
         [DllImport(CideEngine.DllName, EntryPoint = "Categories_ParseAttrDescs")]
         private static extern bool ParseAttrDescs([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, string fileName);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetAttrDescCount")]
-        private static extern int GetAttrDescCount([MarshalAs(AppHandle.MarshalAs)] AppHandle handle);
+        [DllImport(DllName, EntryPoint = "Categories_GetAttrDescCount")]
+        private static extern int GetAttrDescCount(IntPtr handle);
 
         //!!!need C# HRD reader!
-        [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetAttrDesc")]
-        private static extern string _GetAttrDesc([MarshalAs(AppHandle.MarshalAs)] AppHandle handle,
-                                                  int idx,
-                                                  StringBuilder cat,
-                                                  StringBuilder desc,
-                                                  StringBuilder resourceFilter,
-                                                  [MarshalAs(UnmanagedType.I1)]ref bool isReadOnly,
-                                                  [MarshalAs(UnmanagedType.I1)]ref bool showInList,
-                                                  [MarshalAs(UnmanagedType.I1)]ref bool instanceOnly);
+        [DllImport(DllName, EntryPoint = "Categories_GetAttrDesc")]
+        private static extern string GetAttrDesc(
+            IntPtr handle,
+            int idx,
+            [MarshalAs(UnmanagedType.LPStr)]StringBuilder cat,
+            [MarshalAs(UnmanagedType.LPStr)]StringBuilder desc,
+            [MarshalAs(UnmanagedType.LPStr)]StringBuilder resourceFilter,
+            [MarshalAs(UnmanagedType.I1)]out bool isReadOnly,
+            [MarshalAs(UnmanagedType.I1)]out bool showInList,
+            [MarshalAs(UnmanagedType.I1)]out bool instanceOnly);
         
-        //public static string GetAttrDesc(AppHandle handle, int idx, out AttrDesc desc)
-        //{
-        //    desc = new AttrDesc();
-        //    StringBuilder sbCat = new StringBuilder(256);
-        //    StringBuilder sbDesc = new StringBuilder(1024);
-        //    StringBuilder sbResFilter = new StringBuilder(1024);
-
-        //    bool isReadOnly = false, showInList = false, instanceOnly = false;
-        //    string name = _GetAttrDesc(handle, idx, sbCat, sbDesc, sbResFilter,
-        //        ref isReadOnly, ref showInList, ref instanceOnly);
-
-        //    var resFilter = sbResFilter.ToString().Trim().ToLower().Split(';');
-        //    if (resFilter.Length > 1)
-        //    {
-        //        desc.ResourceDir = resFilter[0];
-        //        desc.ResourceExt = resFilter[1];
-        //    }
-        //    string category = sbCat.ToString().Trim();
-        //    string description = sbDesc.ToString().Trim();
-        //    if (category.Length > 0) desc.Category = category;
-        //    if (description.Length > 0) desc.Description = description;
-        //    return name;
-        //}
-
         [DllImport(CideEngine.DllName, EntryPoint = "Categories_GetTemplateCount")]
         private static extern int GetTemplateCount(string catName);
 

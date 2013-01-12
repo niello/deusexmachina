@@ -46,6 +46,7 @@
             this.bNotBelow = new System.Windows.Forms.ToolStripButton();
             this.bBuildNavMesh = new System.Windows.Forms.ToolStripButton();
             this.bNavRegions = new System.Windows.Forms.ToolStripButton();
+            this.bNavOffmesh = new System.Windows.Forms.ToolStripButton();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.lEntityUnderMouse = new System.Windows.Forms.Label();
@@ -71,7 +72,6 @@
             this.tpEntities = new System.Windows.Forms.TabPage();
             this.tvEntities = new System.Windows.Forms.TreeView();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.bNavOffmesh = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.splitContainer2.Panel1.SuspendLayout();
@@ -262,6 +262,16 @@
             this.bNavRegions.Size = new System.Drawing.Size(23, 22);
             this.bNavRegions.Text = "Навигация - области";
             this.bNavRegions.Click += new System.EventHandler(this.bNavRegions_Click);
+            // 
+            // bNavOffmesh
+            // 
+            this.bNavOffmesh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.bNavOffmesh.Image = ((System.Drawing.Image)(resources.GetObject("bNavOffmesh.Image")));
+            this.bNavOffmesh.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.bNavOffmesh.Name = "bNavOffmesh";
+            this.bNavOffmesh.Size = new System.Drawing.Size(23, 22);
+            this.bNavOffmesh.Text = "Навигация - связи (offmesh)";
+            this.bNavOffmesh.Click += new System.EventHandler(this.bNavOffmesh_Click);
             // 
             // splitContainer2
             // 
@@ -568,16 +578,6 @@
             this.splitContainer1.Size = new System.Drawing.Size(1226, 668);
             this.splitContainer1.SplitterDistance = 187;
             this.splitContainer1.TabIndex = 5;
-            // 
-            // bNavOffmesh
-            // 
-            this.bNavOffmesh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.bNavOffmesh.Image = ((System.Drawing.Image)(resources.GetObject("bNavOffmesh.Image")));
-            this.bNavOffmesh.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.bNavOffmesh.Name = "bNavOffmesh";
-            this.bNavOffmesh.Size = new System.Drawing.Size(23, 22);
-            this.bNavOffmesh.Text = "Навигация - связи (offmesh)";
-            this.bNavOffmesh.Click += new System.EventHandler(this.bNavOffmesh_Click);
             // 
             // MainWnd
             // 

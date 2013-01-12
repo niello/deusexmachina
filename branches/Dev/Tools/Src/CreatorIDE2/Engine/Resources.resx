@@ -120,4 +120,7 @@
   <data name="EngineInitFailFormat" xml:space="preserve">
     <value>Engine initialization has failed with code {0}.</value>
   </data>
+  <data name="ValueNotSupportedFormat" xml:space="preserve">
+    <value>Value '{0}' is not supported.</value>
+  </data>
 </root>

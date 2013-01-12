@@ -52,7 +52,7 @@ namespace CreatorIDE.Package
     {
         public const string GuidString = "dcc26fbc-ef0a-4431-a4eb-84842197c818";
 
-        private readonly Lazy<CideEngine> _engine = new Lazy<CideEngine>(() => new CideEngine());
+        private readonly Lazy<CideEngine> _engine = new Lazy<CideEngine>(() => new CideEngine(new AttrEditorProvider()));
         private readonly Dictionary<Guid, CideProjectNode> _registeredProjects = new Dictionary<Guid, CideProjectNode>();
 
         public CideEngine Engine { get { return _engine.Value; } }
