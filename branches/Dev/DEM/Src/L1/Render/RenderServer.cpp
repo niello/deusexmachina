@@ -275,6 +275,7 @@ void CRenderServer::EndFrame()
 {
 	n_assert(IsInsideFrame);
 	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
+	IsInsideFrame = false;
 
 	//???is all below necessary?
     //inBeginFrame = false;

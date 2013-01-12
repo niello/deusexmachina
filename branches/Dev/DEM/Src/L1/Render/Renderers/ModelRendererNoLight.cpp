@@ -89,17 +89,18 @@ void CModelRendererNoLight::Render()
 
 		bool ShaderVarsChanged = false;
 
+		//!!!vars not bound to shader now abort application!
 		if (NeedToApplyStaticVars)
 		{
 			//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
-			//???check IsVarUsed?
+			//???check IsVarUsed? IsBound too
 			for (int VarIdx = 0; VarIdx < pMaterial->GetStaticVars().Size(); ++VarIdx)
 				n_assert_dbg(pMaterial->GetStaticVars().ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
 			ShaderVarsChanged = (pMaterial->GetStaticVars().Size() > 0);
 		}
 
 		//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
-		//???check IsVarUsed?
+		//???check IsVarUsed? IsBound too
 		for (int VarIdx = 0; VarIdx < Rec.pModel->ShaderVars.Size(); ++VarIdx)
 			n_assert_dbg(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
 		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.Size() > 0);
@@ -174,6 +175,12 @@ void CModelRendererNoLight::Render()
 		RenderSrv->SetIndexBuffer(pMesh->GetIndexBuffer());
 		RenderSrv->SetPrimitiveGroup(pMesh->GetGroup(GroupIdx));
 		RenderSrv->Draw();
+	}
+
+	if (pMaterial)
+	{
+		pMaterial->GetShader()->EndPass();
+		pMaterial->GetShader()->End();
 	}
 
 	Models.Clear();

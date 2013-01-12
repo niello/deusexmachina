@@ -1,5 +1,8 @@
 #include "PassGeometry.h"
 
+#include <Data/Params.h>
+#include <Data/DataArray.h>
+
 #include <scene/nsceneserver.h>
 #include <gfx2/ngfxserver2.h>
 #include <Render/FrameShader.h> //!!!TMP for shader!
@@ -11,7 +14,14 @@ bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const nDict
 {
 	if (!CPass::Init(PassName, Desc, RenderTargets)) FAIL;
 
-//Batches []
+	Data::CDataArray& Batches = *Desc.Get<Data::PDataArray>(CStrID("Batches"));
+	for (int i = 0; i < Batches.Size(); ++i)
+	{
+		Data::CParams& BatchDesc = *(Data::PParams)Batches[i];
+		PRenderer& Renderer = BatchRenderers.At(i);
+		Renderer = (IRenderer*)CoreFct->Create(BatchDesc.Get<nString>(CStrID("Renderer")));
+		if (!Renderer->Init(BatchDesc)) FAIL;
+	}
 
 	OK;
 }
@@ -45,7 +55,7 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	}
 
 	for (int i = 0; i < CRenderServer::MaxRenderTargetCount; ++i)
-		if (RT[i].isvalid())
+		if (RT[i].isvalid()) //???break on first invalid? RTs must be set in order
 		{
 			RT[i]->Resolve();
 			// N3: if (i > 0) RenderSrv->SetRenderTarget(i, NULL);
@@ -58,6 +68,8 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	}
 
 	//!!!OLD! ==============================================================
+
+	if (BatchRenderers.Size()) return;
 
     // gfx stats enabled?
     nGfxServer2::Instance()->SetHint(nGfxServer2::CountStats, true); //statsEnabled);

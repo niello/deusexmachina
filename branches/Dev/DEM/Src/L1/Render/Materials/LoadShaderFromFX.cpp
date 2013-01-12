@@ -10,7 +10,7 @@
 namespace Render
 {
 
-bool LoadShaderFromFX(const nString& FileName, PShader OutShader)
+bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PShader OutShader)
 {
 	if (!OutShader.isvalid()) FAIL;
 
@@ -29,17 +29,15 @@ bool LoadShaderFromFX(const nString& FileName, PShader OutShader)
 //!!!OLD+
 	LPCSTR VSProfile = D3DXGetVertexShaderProfile(RenderSrv->GetD3DDevice());
 	LPCSTR PSProfile = D3DXGetPixelShaderProfile(RenderSrv->GetD3DDevice());
-	if (!VSProfile) VSProfile = "vs_2_0";
-	if (!PSProfile) PSProfile = "ps_2_0";
 
 	D3DXMACRO Defines[] =
 	{
-		{ "VS_PROFILE", VSProfile },
-		{ "PS_PROFILE", PSProfile },
+		{ "CompileTargetVS", VSProfile ? VSProfile : "vs_2_0" },
+		{ "CompileTargetPS", PSProfile ? PSProfile : "ps_2_0" },
 		{ NULL, NULL }
 	};
 
-	CD3DXNebula2Include IncludeHandler(FileName.ExtractDirName());
+	CD3DXNebula2Include IncludeHandler(FileName.ExtractDirName(), ShaderRootDir);
 //!!!OLD-
 
 	ID3DXBuffer* pErrorBuffer = NULL;
@@ -58,11 +56,16 @@ bool LoadShaderFromFX(const nString& FileName, PShader OutShader)
 
 	if (FAILED(hr) || !pEffect)
 	{
-		n_printf("FXLoader: failed to load fx file '%s' with:\n\n%s\n",
+		n_message("FXLoader: failed to load fx file '%s' with:\n\n%s\n",
 			FileName.Get(),
 			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
 		if (pErrorBuffer) pErrorBuffer->Release();
 		FAIL;
+	}
+	else if (pErrorBuffer)
+	{
+		n_printf("FXLoader: fx file '%s' loaded with:\n\n%s\n", FileName.Get(), pErrorBuffer->GetBufferPointer());
+		if (pErrorBuffer) pErrorBuffer->Release();
 	}
 
 	return OutShader->Setup(pEffect);

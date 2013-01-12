@@ -47,7 +47,7 @@ bool CShader::Setup(ID3DXEffect* pFX)
 		D3DXPARAMETER_DESC ParamDesc = { 0 };
 		n_assert(SUCCEEDED(pEffect->GetParameterDesc(hVar, &ParamDesc)));
 		NameToHVar.Add(CStrID(ParamDesc.Name), hVar);
-		SemanticToHVar.Add(CStrID(ParamDesc.Semantic), hVar);
+		if (ParamDesc.Semantic) SemanticToHVar.Add(CStrID(ParamDesc.Semantic), hVar);
 		// Can also check type, if needed
 	}
 

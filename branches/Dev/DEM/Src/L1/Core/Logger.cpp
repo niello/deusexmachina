@@ -9,6 +9,8 @@
 
 #undef CreateDirectory
 
+#define MAX_MSG_SIZE 8192 //!!!trims long messages like shader compiler output!
+
 namespace Core
 {
 __ImplementSingleton(CLogger);
@@ -56,6 +58,7 @@ void CLogger::PrintInternal(char* pOutStr, int BufLen, EMsgType Type, const char
 	if (!pMsg || !pOutStr) return;
 
 	vsnprintf(pOutStr, BufLen - 1, pMsg, Args);
+	pOutStr[BufLen - 1] = 0;
 	LineBuffer.Put(pOutStr);
 
 	if (pLogFile && pLogFile->IsOpen()) pLogFile->Write(pOutStr, strlen(pOutStr));
@@ -71,23 +74,23 @@ void CLogger::PrintInternal(char* pOutStr, int BufLen, EMsgType Type, const char
 
 void CLogger::Print(const char* pMsg, va_list Args)
 {
-	char pLine[2048];
-	PrintInternal(pLine, 2048, MsgTypeMessage, pMsg, Args);
+	char pLine[MAX_MSG_SIZE];
+	PrintInternal(pLine, MAX_MSG_SIZE, MsgTypeMessage, pMsg, Args);
 }
 //---------------------------------------------------------------------
 
 void CLogger::Message(const char* pMsg, va_list Args)
 {
-	char pLine[2048];
-	PrintInternal(pLine, 2048, MsgTypeMessage, pMsg, Args);
+	char pLine[MAX_MSG_SIZE];
+	PrintInternal(pLine, MAX_MSG_SIZE, MsgTypeMessage, pMsg, Args);
 	ShowMessageBox(MsgTypeMessage, pLine);
 }
 //---------------------------------------------------------------------
 
 void CLogger::Error(const char* pMsg, va_list Args)
 {
-	char pLine[2048];
-	PrintInternal(pLine, 2048, MsgTypeError, pMsg, Args);
+	char pLine[MAX_MSG_SIZE];
+	PrintInternal(pLine, MAX_MSG_SIZE, MsgTypeError, pMsg, Args);
 	ShowMessageBox(MsgTypeError, pLine);
 	CLogger::~CLogger(); // Kill self on error
 }
@@ -95,8 +98,8 @@ void CLogger::Error(const char* pMsg, va_list Args)
 
 void CLogger::OutputDebug(const char* pMsg, va_list Args)
 {
-	char pLine[2048];
-	PrintInternal(pLine, 2048, MsgTypeMessage, pMsg, Args);
+	char pLine[MAX_MSG_SIZE];
+	PrintInternal(pLine, MAX_MSG_SIZE, MsgTypeMessage, pMsg, Args);
 	OutputDebugString(pLine);
 }
 //---------------------------------------------------------------------

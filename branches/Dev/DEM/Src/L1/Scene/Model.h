@@ -39,14 +39,14 @@ public:
 	Render::PMaterial		Material;
 	DWORD					FeatureFlags;	// Model shader flags like Skinned, must be ORed with material flags before use
 	Render::CShaderVarMap	ShaderVars;		// Animable per-object vars, also can store geom. vars like CullMode
-	CStrID					BatchType; //!!!LOAD IT (ATTR)! //???use in CRenderObject and don't check RTTI at all?
+	CStrID					BatchType; //???use in CRenderObject and don't check RTTI at all?
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
 	//can use Flags field of CSceneNodeAttr
 
 	CSPSRecord*				pSPSRecord;
 
-	CModel(): pSPSRecord(NULL), resourcesValid(false), MeshGroupIndex(0) {}
+	CModel(): pSPSRecord(NULL), resourcesValid(false), MeshGroupIndex(0), FeatureFlags(0) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void	OnRemove();

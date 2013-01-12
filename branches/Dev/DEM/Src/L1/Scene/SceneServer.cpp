@@ -38,7 +38,14 @@ void CSceneServer::Trigger()
 	if (Idx != INVALID_INDEX)
 	{
 		Render::PFrameShader ScreenFrameShader = FrameShaders.ValueAtIndex(Idx);
-		if (ScreenFrameShader.isvalid()) pCurrScene->Render(NULL, *ScreenFrameShader);
+		if (ScreenFrameShader.isvalid())
+		{
+			if (RenderSrv->BeginFrame()) //???or for each RT change?
+			{
+				pCurrScene->Render(NULL, *ScreenFrameShader);
+				RenderSrv->EndFrame();
+			}
+		}
 	}
 }
 //---------------------------------------------------------------------

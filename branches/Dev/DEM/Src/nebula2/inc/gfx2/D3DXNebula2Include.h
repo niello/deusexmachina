@@ -13,13 +13,26 @@ class CD3DXNebula2Include: public ID3DXInclude
 {
 private:
 
-	nString shaderDir;
+	nString ShaderDir;
+	nString ShaderRootDir;
 
 public:
 
-	CD3DXNebula2Include(const nString& sDir): shaderDir(sDir + "/") {}
+	CD3DXNebula2Include(const nString& ShdDir, const nString& ShdRootDir);
+
 	STDMETHOD(Open)(D3DXINCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes);
 	STDMETHOD(Close)(LPCVOID pData) { n_free((void*)pData); return S_OK; }
 };
+
+inline CD3DXNebula2Include::CD3DXNebula2Include(const nString& ShdDir, const nString& ShdRootDir):
+	ShaderDir(ShdDir),
+	ShaderRootDir(ShdRootDir)
+{
+	ShaderDir.StripTrailingSlash();
+	ShaderDir += "/";
+	ShaderRootDir.StripTrailingSlash();
+	ShaderRootDir += "/";
+}
+//---------------------------------------------------------------------
 
 #endif

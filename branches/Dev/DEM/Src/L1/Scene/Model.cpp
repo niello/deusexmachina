@@ -68,6 +68,10 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		{
 			return DataReader.Read(MeshGroupIndex);
 		}
+		case 'PYTB': // BTYP
+		{
+			return DataReader.Read(BatchType);
+		}
 		default: FAIL;
 	}
 }

@@ -397,7 +397,7 @@
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
 				<File
-					RelativePath="..\..\Src\nebula2\src\gfx2\D3DXNebula2Include.cc"
+					RelativePath="..\..\Src\nebula2\src\gfx2\D3DXNebula2Include.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
