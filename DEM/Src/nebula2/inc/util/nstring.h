@@ -479,7 +479,8 @@ nString::ANSItoUTF8()
 // Returns pointer to extension (without the dot), or NULL
 inline const char* nString::GetExtension() const
 {
-	const char* pStr = strrchr(Get(), '.');
+	char* pLastDirSep = GetLastDirSeparator();
+	const char* pStr = strrchr(pLastDirSep ? pLastDirSep + 1 : Get(), '.');
 	return (pStr && *(++pStr)) ? pStr : NULL;
 }
 //---------------------------------------------------------------------

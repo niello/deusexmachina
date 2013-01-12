@@ -47,16 +47,19 @@ protected:
 	};
 
 	CStrID							BatchType;
+	DWORD							FeatFlags;
+
 	nArray<CModelRecord>			Models;
 	const nArray<Scene::CLight*>*	pLights;
+
 	PVertexBuffer					InstanceBuffer;
+	DWORD							MaxInstanceCount;
 
 public:
 
-	IModelRenderer(): pLights(NULL) {}
+	IModelRenderer(): pLights(NULL), FeatFlags(0) {}
 
-	virtual void Init(const Data::CParams& Desc);
-
+	virtual bool Init(const Data::CParams& Desc);
 	virtual void AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);
 	virtual void AddLights(const nArray<Scene::CLight*>& Lights);
 };

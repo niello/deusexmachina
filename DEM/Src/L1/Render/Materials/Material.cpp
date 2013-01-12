@@ -4,9 +4,6 @@
 
 namespace Render
 {
-//!!!TMP! write more elegant!
-bool LoadShaderFromFX(const nString& FileName, PShader OutShader);
-bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
 bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
 
 bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
@@ -14,20 +11,11 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 	if (!pShader) FAIL;
 	Shader = pShader;
 
+	//???try dynamic shader loading here? anyway without frame shader set this has no meaning
 	if (!pShader->IsLoaded())
 	{
-		//!!!TMP! write more elegant! Hide actual shader loading logic somewhere in Loader or smth.
-		nString ShaderFile = pShader->GetUID();
-		if (ShaderFile.CheckExtension("fxo"))
-			LoadShaderFromFXO(ShaderFile, Shader);
-		else
-			LoadShaderFromFX(ShaderFile, Shader);
-
-		if (!pShader->IsLoaded())
-		{
-			State = Resources::Rsrc_Failed;
-			FAIL;
-		}
+		State = Resources::Rsrc_Failed;
+		FAIL;
 	}
 
 	FeatureFlags = ShaderFeatureFlags;

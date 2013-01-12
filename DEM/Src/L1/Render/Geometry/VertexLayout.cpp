@@ -113,6 +113,11 @@ CStrID CVertexLayout::BuildSignature(const nArray<CVertexComponent>& Components)
 		UID += Cmp.GetSemanticString();
 		if (Cmp.Index > 0) UID.AppendInt(Cmp.Index);
 		UID += Cmp.GetFormatString();
+		if (Cmp.Stream > 0)
+		{
+			UID += "s";
+			UID.AppendInt(Cmp.Stream);
+		}
 	}
 	return CStrID(UID.Get());
 }

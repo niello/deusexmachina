@@ -1,6 +1,6 @@
 #include "FrameShader.h"
 
-#include <Data/Params.h>
+#include <Data/DataServer.h>
 
 //!!!while no factory!
 #include <Render/PassGeometry.h>
@@ -9,15 +9,46 @@
 
 namespace Render
 {
+bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PShader OutShader);
+bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
 
 bool CFrameShader::Init(const Data::CParams& Desc)
 {
 	Desc.Get(ShaderPath, CStrID("ShaderPath"));
 
+	Data::CParam* pPrm;
+	if (Desc.Get(pPrm, CStrID("Shaders")))
+	{
+		nString ShaderPathMangled = DataSrv->ManglePath(ShaderPath) + "/";
+		Data::CParams& List = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < List.GetCount(); ++i)
+		{
+			CStrID ShaderID = List[i].GetName();
+			nString FileName = ShaderPathMangled + List[i].GetValue<nString>();
+
+			PShader Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+			n_assert(!Shader->IsLoaded()); //!!!now just to check!
+
+			const char* pExt = FileName.GetExtension();
+			if (pExt)
+			{
+				if (!stricmp(pExt, "fx")) LoadShaderFromFX(FileName, ShaderPath, Shader);
+				else LoadShaderFromFXO(FileName, Shader);
+			}
+			else
+			{
+				if (!LoadShaderFromFXO(FileName + ".fxo", Shader))
+					if (!LoadShaderFromFX(FileName + ".fx", ShaderPath, Shader))
+						if (!LoadShaderFromFXO(FileName, Shader)) FAIL;
+			}
+
+			if (!Shader->IsLoaded()) FAIL;
+		}
+	}
+
 	//!!!DUPLICATE CODE!+
 	ShaderVars.BeginAdd();
 
-	Data::CParam* pPrm;
 	if (Desc.Get(pPrm, CStrID("ShaderVars")))
 	{
 		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
@@ -30,7 +61,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 		}
 	}
 
-	if (Desc.Get(pPrm, CStrID("Textures")))
+	if (Desc.Get(pPrm, CStrID("Textures"))) //!!!can init above from string values!
 	{
 		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
 		for (int i = 0; i < Vars.GetCount(); ++i)

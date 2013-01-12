@@ -106,7 +106,7 @@ nD3D9Shader::LoadResource()
 
     // create include file handler
     nString shaderPath(mangledPath);
-    CD3DXNebula2Include includeHandler(shaderPath.ExtractDirName());
+    CD3DXNebula2Include includeHandler(shaderPath.ExtractDirName(), NULL);
 
     // get global effect pool from gfx server
     ID3DXEffectPool* pEffectPool = nD3D9Server::Instance()->GetEffectPool();

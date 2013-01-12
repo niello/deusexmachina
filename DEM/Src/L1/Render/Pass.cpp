@@ -6,9 +6,6 @@
 
 namespace Render
 {
-//!!!TMP! write more elegant!
-bool LoadShaderFromFX(const nString& FileName, PShader OutShader);
-bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
 
 bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets)
 {
@@ -18,46 +15,13 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 	if (ShaderID.IsValid())
 	{
 		Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
-		if (!Shader->IsLoaded())
-		{
-			//!!!TMP! write more elegant! Hide actual shader loading logic somewhere in Loader or smth.
-			nString ShaderFile = ShaderID;
-			if (ShaderFile.CheckExtension("fxo"))
-				LoadShaderFromFXO(ShaderFile, Shader);
-			else
-				LoadShaderFromFX(ShaderFile, Shader);
-
-			if (!Shader->IsLoaded()) FAIL;
-		}
-	}
-
-	ClearFlags = 0;
-
-	Data::CParam* pPrm;
-	if (Desc.Get(pPrm, CStrID("ClearColor")))
-	{
-		if (pPrm->IsA<int>()) ClearColor = pPrm->GetValue<int>();
-		else if (pPrm->IsA<vector4>())
-		{
-			const vector4& Color = pPrm->GetValue<vector4>();
-			ClearColor = N_COLORVALUE(Color.x, Color.y, Color.z, Color.w);
-		}
-		else n_error("CPass::Init() -> Invalid type of ClearColor");
-		ClearFlags |= Clear_Color;
-	}
-
-	if (Desc.Get(ClearDepth, CStrID("ClearDepth"))) ClearFlags |= Clear_Depth;
-
-	int StencilVal;
-	if (Desc.Get(StencilVal, CStrID("ClearStencil")))
-	{
-		ClearStencil = (uchar)StencilVal;
-		ClearFlags |= Clear_Stencil;
+		if (!Shader->IsLoaded()) FAIL;
 	}
 
 	//!!!DUPLICATE CODE!+
 	ShaderVars.BeginAdd();
 
+	Data::CParam* pPrm;
 	if (Desc.Get(pPrm, CStrID("ShaderVars")))
 	{
 		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
@@ -89,6 +53,29 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 	if (Desc.Get<Data::PDataArray>(RTNames, CStrID("RenderTargets")))
 		for (int i = 0; i < RTNames->Size() && i < CRenderServer::MaxRenderTargetCount; ++i)
 			RT[i] = RenderTargets[RTNames->At(i).GetValue<CStrID>()];
+
+	ClearFlags = 0;
+
+	if (Desc.Get(pPrm, CStrID("ClearColor")))
+	{
+		if (pPrm->IsA<int>()) ClearColor = pPrm->GetValue<int>();
+		else if (pPrm->IsA<vector4>())
+		{
+			const vector4& Color = pPrm->GetValue<vector4>();
+			ClearColor = N_COLORVALUE(Color.x, Color.y, Color.z, Color.w);
+		}
+		else n_error("CPass::Init() -> Invalid type of ClearColor");
+		ClearFlags |= Clear_Color;
+	}
+
+	if (Desc.Get(ClearDepth, CStrID("ClearDepth"))) ClearFlags |= Clear_Depth;
+
+	int StencilVal;
+	if (Desc.Get(StencilVal, CStrID("ClearStencil")))
+	{
+		ClearStencil = (uchar)StencilVal;
+		ClearFlags |= Clear_Stencil;
+	}
 
 	OK;
 }
