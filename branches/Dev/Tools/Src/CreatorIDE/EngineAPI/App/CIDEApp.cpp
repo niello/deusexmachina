@@ -83,18 +83,18 @@ bool CCIDEApp::Open()
 	DataSrv->SetAssign("data", Data);
 	DataSrv->SetAssign("export", Export);
 	DataSrv->SetAssign("src", Src);
-	DataSrv->SetAssign("renderpath", Home + "/Shaders/");
-	DataSrv->SetAssign("scripts", Home + "/Scripts/");
-	DataSrv->SetAssign("physics", Export + "/physics/");
-	DataSrv->SetAssign("meshes", Export + "/meshes/");
-	DataSrv->SetAssign("textures", Export + "/textures/");
-	DataSrv->SetAssign("anims", Export + "/anims/");
-	DataSrv->SetAssign("gfxlib", Export + "/gfxlib/");
-	DataSrv->SetAssign("scene", Export + "/Scene/");
-	DataSrv->SetAssign("db", Export + "/db/");
-	DataSrv->SetAssign("game", Export + "/game/");
-	DataSrv->SetAssign("sound", Export + "/audio/");
-	DataSrv->SetAssign("cegui", Export + "/cegui/");
+	DataSrv->SetAssign("scripts", Home + "/Scripts");
+	DataSrv->SetAssign("physics", Export + "/physics");
+	DataSrv->SetAssign("meshes", Export + "/meshes");
+	DataSrv->SetAssign("materials", Export + "/materials");
+	DataSrv->SetAssign("textures", Export + "/textures");
+	DataSrv->SetAssign("anims", Export + "/anims");
+	DataSrv->SetAssign("gfxlib", Export + "/gfxlib");
+	DataSrv->SetAssign("scene", Export + "/Scene");
+	DataSrv->SetAssign("db", Export + "/db");
+	DataSrv->SetAssign("game", Export + "/game");
+	DataSrv->SetAssign("sound", Export + "/audio");
+	DataSrv->SetAssign("cegui", Export + "/cegui");
 
 	CoreSrv->SetGlobal("parent_hwnd", (int)ParentHwnd);
 

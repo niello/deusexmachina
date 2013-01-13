@@ -45,6 +45,10 @@
 #include <Items/Prop/PropItem.h>
 #include <Chr/Prop/PropEquipment.h>
 
+// RENDERERS =======================================
+
+#include <Render/Renderers/ModelRendererNoLight.h>
+
 // OTHER ===========================================
 
 #include <Physics/Collision/Shape.h>

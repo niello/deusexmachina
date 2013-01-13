@@ -368,30 +368,6 @@
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
 				<File
-					RelativePath="..\..\Src\nebula2\src\gfx2\D3DXNebula2Include.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nd3d9shaderinclude;N_NEW=n_new_nd3d9shaderinclude;N_INITCMDS=n_initcmds_nd3d9shaderinclude"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nd3d9shaderinclude;N_NEW=n_new_nd3d9shaderinclude;N_INITCMDS=n_initcmds_nd3d9shaderinclude"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\gfx2\D3DXNebula2Include.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\gfx2\nd3d9shader.h"
 					>
 				</File>

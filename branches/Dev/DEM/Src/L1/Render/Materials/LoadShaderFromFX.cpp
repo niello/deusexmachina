@@ -3,9 +3,9 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Render/RenderServer.h>
+#include <Render/D3DXNebula2Include.h>
 #include <Data/Streams/FileStream.h>
 #include <Data/Buffer.h>
-#include <gfx2/D3DXNebula2Include.h>
 
 namespace Render
 {
