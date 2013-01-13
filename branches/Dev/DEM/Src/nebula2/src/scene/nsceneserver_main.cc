@@ -95,10 +95,9 @@ nSceneServer::Open()
        return false;
     }
     n_assert(FrameShader->Name.IsValid());
-    n_assert(!FrameShader->ShaderPath.IsEmpty());
 
     // initialize the shaders assign from the render path
-    DataSrv->SetAssign("shaders", FrameShader->ShaderPath);
+    DataSrv->SetAssign("shaders", "data:shaders/2.0");
 
     n_assert(nGfxServer2::Instance()->OpenDisplay());
 

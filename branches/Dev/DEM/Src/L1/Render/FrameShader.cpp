@@ -14,6 +14,7 @@ bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
 
 bool CFrameShader::Init(const Data::CParams& Desc)
 {
+	nString ShaderPath;
 	Desc.Get(ShaderPath, CStrID("ShaderPath"));
 
 	Data::CParam* pPrm;
@@ -92,10 +93,13 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			float W = RTDesc.Get<float>(CStrID("Width"), 1.f);
 			float H = RTDesc.Get<float>(CStrID("Height"), 1.f);
 			bool IsWHAbs = RTDesc.Get<bool>(CStrID("IsSizeAbsolute"), false);
+			bool UseAutoDS = RTDesc.Get<bool>(CStrID("UseAutoDepthStencil"), false);
+
+			//!!!read msaa, texture sizes!
 
 			PRenderTarget& RT = RenderTargets.Add(RTPrm.GetName());
 			RT.Create();
-			if (!RT->Create(RTPrm.GetName(), RTFmt, DSFmt, W, H, IsWHAbs /*MSAA, TexW, TexH*/)) FAIL;
+			if (!RT->Create(RTPrm.GetName(), RTFmt, DSFmt, W, H, IsWHAbs, MSAA_None, 0, 0, UseAutoDS)) FAIL;
 		}
 		RenderTargets.EndAdd();
 	}

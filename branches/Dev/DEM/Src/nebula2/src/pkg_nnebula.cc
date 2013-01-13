@@ -18,8 +18,6 @@ extern bool n_init_nanimation (nClass *, nKernelServer *);
 extern void *n_new_nanimation (void);
 extern bool n_init_nmesh2 (nClass *, nKernelServer *);
 extern void *n_new_nmesh2 (void);
-extern bool n_init_nmesharray (nClass *, nKernelServer *);
-extern void *n_new_nmesharray (void);
 extern bool n_init_nshader2 (nClass *, nKernelServer *);
 extern void *n_new_nshader2 (void);
 extern bool n_init_ntexture2 (nClass *, nKernelServer *);
@@ -67,9 +65,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nmesh2",
                                  n_init_nmesh2,
                                  n_new_nmesh2);
-    nKernelServer::Instance()->AddModule("nmesharray",
-                                 n_init_nmesharray,
-                                 n_new_nmesharray);
     nKernelServer::Instance()->AddModule("nshader2",
                                  n_init_nshader2,
                                  n_new_nshader2);

@@ -18,18 +18,28 @@ class IModelRenderer: public IRenderer
 
 protected:
 
+	enum ESortingType
+	{
+		Sort_None,
+		Sort_FrontToBack,
+		Sort_BackToFront
+	};
+
 	struct CModelRecord
 	{
 		Scene::CModel*	pModel;
 		DWORD			FeatFlags;
 		CShader::HTech	hTech;
+		float			SqDistanceToCamera;
 	};
 
-	struct CCmpRecords
+	struct CRecCmp_TechMtlGeom
 	{
 		// Sort tech, then material, then geometry
-		inline bool operator() (const CModelRecord& R1, const CModelRecord& R2) const
+		inline bool operator()(const CModelRecord& R1, const CModelRecord& R2) const
 		{
+			//!!!sort by distance if required!
+
 			if (R1.hTech == R2.hTech)
 			{
 				if (R1.pModel->Material.get_unsafe() == R2.pModel->Material.get_unsafe())
@@ -46,8 +56,27 @@ protected:
 		}
 	};
 
+	struct CRecCmp_DistFtB
+	{
+		inline bool operator()(const CModelRecord& R1, const CModelRecord& R2) const
+		{
+			return (int)R1.SqDistanceToCamera < (int)R2.SqDistanceToCamera;
+		}
+	};
+
+	struct CRecCmp_DistBtF
+	{
+		inline bool operator()(const CModelRecord& R1, const CModelRecord& R2) const
+		{
+			return (int)R1.SqDistanceToCamera > (int)R2.SqDistanceToCamera;
+		}
+	};
+
+	PShader							Shader;
+	CShaderVarMap					ShaderVars;
 	CStrID							BatchType;
 	DWORD							FeatFlags;
+	ESortingType					DistanceSorting;
 
 	nArray<CModelRecord>			Models;
 	const nArray<Scene::CLight*>*	pLights;
@@ -57,7 +86,7 @@ protected:
 
 public:
 
-	IModelRenderer(): pLights(NULL), FeatFlags(0) {}
+	IModelRenderer(): pLights(NULL), FeatFlags(0), DistanceSorting(Sort_None) {}
 
 	virtual bool Init(const Data::CParams& Desc);
 	virtual void AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);

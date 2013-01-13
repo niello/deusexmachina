@@ -5,9 +5,17 @@
 #include "scene/nshapenode.h"
 #include "gfx2/nmesh2.h"
 #include "gfx2/ngfxserver2.h"
+#include <Render/RenderServer.h>
 #include <Data/BinaryReader.h>
 
 nNebulaClass(nShapeNode, "nmaterialnode");
+
+namespace Render
+{
+	//bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial);
+	//bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
+	bool LoadMeshFromNVX2(const nString& FileName, PMesh OutMesh);
+}
 
 bool nShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
@@ -18,6 +26,9 @@ bool nShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			char Value[512];
 			if (!DataReader.ReadString(Value, sizeof(Value))) FAIL;
 			SetMesh(Value);
+
+			Mesh = RenderSrv->MeshMgr.GetTypedResource(CStrID(Value));
+
 			OK;
 		}
 		case 'RGSM': // MSGR
@@ -32,6 +43,8 @@ bool nShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 
 void nShapeNode::UnloadMesh()
 {
+	Mesh = NULL;
+
 	if (refMesh.isvalid())
 	{
 		refMesh->Release();
@@ -67,7 +80,11 @@ bool nShapeNode::LoadMesh()
         refMesh = mesh;
         SetLocalBox(refMesh->Group(groupIndex).Box);
     }
-    return true;
+
+	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
+	SetLocalBox(Mesh->GetGroup(groupIndex).AABB);
+
+	return true;
 }
 //---------------------------------------------------------------------
 

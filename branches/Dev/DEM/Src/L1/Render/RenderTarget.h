@@ -44,7 +44,8 @@ public:
 
 	bool				CreateDefaultRT();
 	bool				Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat DSFormat, float Width, float Height,
-							   bool AbsWH, EMSAAQuality MSAA = MSAA_None, DWORD TexWidth = 0, DWORD TexHeight = 0);
+							   bool AbsWH, EMSAAQuality MSAA = MSAA_None, DWORD TexWidth = 0, DWORD TexHeight = 0,
+							   bool UseAutoDS = false);
 	void				Destroy();
 
 	//void				Set/ClearResolveRect();

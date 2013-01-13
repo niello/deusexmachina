@@ -6,7 +6,6 @@
 #include "gfx2/nd3d9mesh.h"
 #include "gfx2/nd3d9texture.h"
 #include "gfx2/nd3d9shader.h"
-#include "gfx2/nd3d9mesharray.h"
 
 //------------------------------------------------------------------------------
 /**
@@ -410,9 +409,6 @@ nD3D9Server::SetMesh(nMesh2* vbMesh, nMesh2* ibMesh)
     HRESULT hr;
     n_assert(this->pD3D9Device);
 
-    // clear any set mesh array
-    if (GetMeshArray()) SetMeshArray(NULL);
-
     if (0 != vbMesh)
     {
         if ((this->refVbMesh.get_unsafe() != vbMesh) || (this->refIbMesh.get_unsafe() != ibMesh))
@@ -458,93 +454,6 @@ nD3D9Server::SetMesh(nMesh2* vbMesh, nMesh2* ibMesh)
         n_dxtrace(hr, "SetIndices() on D3D device failed!");
     }
     nGfxServer2::SetMesh(vbMesh, ibMesh);
-}
-
-//------------------------------------------------------------------------------
-/**
-    Set a mesh array for multiple vertex streams. Must be a nD3D9MeshArray
-    The mesh in the array at stream 0 must provide a index buffer!
-
-    - 26-Sep-04     floh    moved the software vertex processing stuff to
-                            SetShader()
-
-    @param  meshArray   pointer to a nD3D9MeshArray object or 0 to clear the
-                        current stream and index buffer
-*/
-void
-nD3D9Server::SetMeshArray(nMeshArray* meshArray)
-{
-    HRESULT hr;
-    n_assert(this->pD3D9Device);
-
-    if (0 != meshArray)
-    {
-        if (0 != this->refVbMesh.get_unsafe())
-        {
-            this->SetMesh(0, 0);
-        }
-
-        if (this->GetMeshArray() != meshArray)
-        {
-            // clear old mesh array before settings new one
-            this->SetMeshArray(0);
-
-            // set the vertex stream source
-            IDirect3DVertexBuffer9* d3dVBuf = 0;
-            UINT stride = 0;
-            int i;
-            for (i = 0; i < MaxVertexStreams; i++)
-            {
-                nMesh2* mesh = meshArray->GetMeshAt(i);
-                if (0 != mesh)
-                {
-                    if (mesh->GetNumVertices())
-                    {
-                        d3dVBuf = ((nD3D9Mesh*)mesh)->GetVertexBuffer();
-                    }
-
-                    if (0 != d3dVBuf)
-                    {
-                        stride = ((nD3D9Mesh*)mesh)->GetVertexWidth() << 2;
-                        hr = this->pD3D9Device->SetStreamSource(i, d3dVBuf, 0, stride);
-                        n_dxtrace(hr, "SetStreamSource() on D3D device failed!");
-                    }
-                }
-            }
-
-            // set the vertex declaration
-            IDirect3DVertexDeclaration9* d3dVDecl = ((nD3D9MeshArray*)meshArray)->GetVertexDeclaration();
-            n_assert(d3dVDecl);
-            hr = this->pD3D9Device->SetVertexDeclaration(d3dVDecl);
-            n_dxtrace(hr, "SetVertexDeclaration() on D3D device failed!");
-
-            // indices are provided by the mesh associated with stream 0!
-            IDirect3DIndexBuffer9* d3dIBuf = ((nD3D9MeshArray*)meshArray)->GetIndexBuffer();
-            n_assert2(d3dIBuf, "The mesh at stream 0 must provide a valid IndexBuffer!\n");
-            hr = this->pD3D9Device->SetIndices(d3dIBuf);
-            n_dxtrace(hr, "SetIndices() on D3D device failed!");
-        }
-    }
-    else
-    {
-        // clear vertex streams
-        int i;
-        for (i = 0; i < MaxVertexStreams; i++)
-        {
-            hr = this->pD3D9Device->SetStreamSource(i, NULL, 0, 0);
-            n_dxtrace(hr, "SetStreamSource() on D3D device failed!");
-        }
-
-        // clear the vertex declaration
-        // FIXME FLOH: Uncommented because this generates a D3D warning
-        //hr = this->pD3D9Device->SetVertexDeclaration(0);
-        //n_dxtrace(hr, "SetVertexDeclaration() on D3D device failed!");
-
-        // clear the index buffer
-        hr = this->pD3D9Device->SetIndices(NULL);
-        n_dxtrace(hr, "SetIndices() on D3D device failed!");
-    }
-    nGfxServer2::SetMeshArray(meshArray);
 }
 
 //------------------------------------------------------------------------------

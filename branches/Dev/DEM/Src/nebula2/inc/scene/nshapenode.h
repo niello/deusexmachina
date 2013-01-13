@@ -17,10 +17,13 @@
 */
 #include "scene/nmaterialnode.h"
 #include "gfx2/nmesh2.h"
+#include <Render/Geometry/Mesh.h>
 
 class nShapeNode : public nMaterialNode
 {
 protected:
+
+	Render::PMesh Mesh;
 
     nRef<nMesh2> refMesh;
     nString meshName;

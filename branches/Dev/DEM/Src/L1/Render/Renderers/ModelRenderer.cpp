@@ -1,6 +1,7 @@
 #include "ModelRenderer.h"
 
 #include <Scene/Model.h>
+#include <Scene/SceneNode.h>
 #include <Render/RenderServer.h>
 #include <Data/Params.h>
 
@@ -22,15 +23,62 @@ ImplementRTTI(Render::IModelRenderer, Render::IRenderer);
 
 bool IModelRenderer::Init(const Data::CParams& Desc)
 {
-	//{
-	//	Shader = 'BatchSolid'
-	//	Sort = "FrontToBack"
-	//},
+	CStrID ShaderID = Desc.Get(CStrID("Shader"), CStrID::Empty);
+	if (ShaderID.IsValid())
+	{
+		Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+		if (!Shader->IsLoaded()) FAIL;
+	}
+
+	//!!!DUPLICATE CODE!+
+	ShaderVars.BeginAdd();
+
+	//???to shadervarmap method?
+	Data::CParam* pPrm;
+	if (Desc.Get(pPrm, CStrID("ShaderVars")))
+	{
+		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < Vars.GetCount(); ++i)
+		{
+			Data::CParam& PrmVar = Vars.Get(i);
+			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
+			Var.SetName(PrmVar.GetName());
+			Var.Value = PrmVar.GetRawValue();
+		}
+	}
+
+	//???to shadervarmap method?
+	if (Desc.Get(pPrm, CStrID("Textures"))) //!!!can use string vars in main block instead!
+	{
+		Data::CParams& Vars = *pPrm->GetValue<Data::PParams>();
+		for (int i = 0; i < Vars.GetCount(); ++i)
+		{
+			Data::CParam& PrmVar = Vars.Get(i);
+			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
+			Var.SetName(PrmVar.GetName());
+			Var.Value = RenderSrv->TextureMgr.GetTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+		}
+	}
+
+	ShaderVars.EndAdd();
+	//!!!DUPLICATE CODE!-
 
 	BatchType = Desc.Get<CStrID>(CStrID("BatchType"));
 	n_assert(BatchType.IsValid());
 
 	FeatFlags = RenderSrv->ShaderFeatureStringToMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
+
+	nString SortType;
+	if (Desc.Get<nString>(SortType, CStrID("Sort")))
+	{
+		SortType = SortType.Trim(N_WHITESPACE);
+		SortType.ToLower();
+		if (SortType == "fronttoback" || SortType == "ftb")
+			DistanceSorting = Sort_FrontToBack;
+		else if (SortType == "backtofront" || SortType == "btf")
+			DistanceSorting = Sort_BackToFront;
+		else DistanceSorting = Sort_None;
+	}
 
 	//???add InitialInstanceCount + AllowGrowInstanceBuffer or MaxInstanceCount or both?
 	MaxInstanceCount = Desc.Get<int>(CStrID("MaxInstanceCount"), 0);
@@ -70,6 +118,16 @@ void IModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 		pRec->FeatFlags = pModel->FeatureFlags | pModel->Material->GetFeatureFlags() | FeatFlags;
 		pRec->hTech = pModel->Material->GetShader()->GetTechByFeatures(pRec->FeatFlags);
 		n_assert(pRec->hTech);
+	}
+
+	if (DistanceSorting != Sort_None && Models.Size() > 1)
+	{
+		vector3 EyePos = RenderSrv->GetCameraPosition();
+		for (int i = 0; i < Models.Size(); ++i)
+		{
+			CModelRecord& Rec = Models[i];
+			Rec.SqDistanceToCamera = vector3::SqDistance(Rec.pModel->GetNode()->GetWorldMatrix().pos_component(), EyePos);
+		}
 	}
 }
 //---------------------------------------------------------------------

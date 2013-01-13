@@ -38,7 +38,7 @@ nRpXmlParser::OpenXml(const nString& FileName)
     n_assert(FrameShader.isvalid());
     n_assert(0 == this->xmlDocument);
 
-	this->mangledPath = DataSrv->ManglePath(FileName);
+	nString mangledPath = DataSrv->ManglePath(FileName);
     this->xmlDocument = n_new(tinyxml2::XMLDocument);
     if (xmlDocument->LoadFile(mangledPath.Get()) == tinyxml2::XML_SUCCESS)
     {
@@ -46,7 +46,6 @@ nRpXmlParser::OpenXml(const nString& FileName)
         tinyxml2::XMLElement* elmRenderPath = docHandle.FirstChildElement("FrameShader").ToElement();
         n_assert(elmRenderPath);
         FrameShader->Name = CStrID(elmRenderPath->Attribute("name"));
-        FrameShader->ShaderPath = elmRenderPath->Attribute("shaderPath");
         return true;
     }
     n_delete(this->xmlDocument);

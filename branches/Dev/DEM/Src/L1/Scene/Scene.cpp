@@ -74,8 +74,9 @@ bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrI
 	nArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
 	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleObjects, pVisibleLights);
 
-	// Renderer.SetView(Camera.GetView());
-	// Renderer.SetProjection(Camera.GetProjection());
+	RenderSrv->SetAmbientLight(AmbientLight);
+	RenderSrv->SetCameraPosition(Camera->GetPosition());
+	RenderSrv->SetViewProjection(ViewProj);
 
 	FrameShader.Render(&VisibleObjects, pVisibleLights);
 

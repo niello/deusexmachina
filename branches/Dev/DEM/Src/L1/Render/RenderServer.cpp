@@ -28,6 +28,7 @@ bool CRenderServer::Open()
 		DefaultRT.Create();
 		if (!DefaultRT->CreateDefaultRT()) FAIL;
 	}
+	pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
 
 	n_assert(SUCCEEDED(D3DXCreateEffectPool(&pEffectPool)));
 
@@ -57,6 +58,7 @@ void CRenderServer::Close()
 {
 	n_assert(_IsOpen);
 
+	pCurrDSSurface = NULL;
 	DefaultRT->Destroy();
 	DefaultRT = NULL;
 
@@ -266,6 +268,16 @@ bool CRenderServer::BeginFrame()
 
 	// Assert stream VBs, IB and VLayout aren't set
 
+	//???where? once per frame shader change
+	if (!SharedShader.isvalid())
+	{
+		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
+		n_assert(SharedShader->IsLoaded());
+		hLightAmbient = SharedShader->GetVarHandleByName(CStrID("LightAmbient"));
+		hEyePos = SharedShader->GetVarHandleByName(CStrID("EyePos"));
+		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
+	}
+
 	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
 	return IsInsideFrame;
 }
@@ -277,15 +289,11 @@ void CRenderServer::EndFrame()
 	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
 	IsInsideFrame = false;
 
-	//???is all below necessary?
-    //inBeginFrame = false;
-    //IndexT i;
-    //for (i = 0; i < MaxNumVertexStreams; i++)
-    //{
-    //    streamVertexBuffers[i] = 0;
-    //}
-    //vertexLayout = 0;
-    //indexBuffer = 0;
+	//???is all below necessary? PIX requires it for debugging frame
+	for (int i = 0; i < MaxVertexStreamCount; ++i)
+		CurrVB[i] = NULL;
+	CurrVLayout = NULL;
+	CurrIB = NULL;
 	//!!!UnbindD3D9Resources()
 }
 //---------------------------------------------------------------------
@@ -358,9 +366,10 @@ void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 
 	//!!!TEST IT! DS can be set to NULL only by main RT (index 0)
 	//???mb set DS only from main RT?
-	if (pDSSurface || Index == 0)
+	if ((pDSSurface || Index == 0) && pDSSurface != pCurrDSSurface)
 	{
 		CurrDepthStencilFormat = pRT ? pRT->GetDepthStencilFormat() : D3DFMT_UNKNOWN;
+		pCurrDSSurface = pDSSurface;
 		n_assert(SUCCEEDED(pD3DDevice->SetDepthStencilSurface(pDSSurface)));
 	}
 

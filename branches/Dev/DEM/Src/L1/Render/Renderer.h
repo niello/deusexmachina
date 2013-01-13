@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_RENDERER_H__
 
 #include <Core/RefCounted.h>
-//#include <Data/StringID.h>
+#include <Data/Params.h>
 //#include <Render/Render.h>
 
 // Renderer is responsible for rendering certain type of graphics elements, like meshes,

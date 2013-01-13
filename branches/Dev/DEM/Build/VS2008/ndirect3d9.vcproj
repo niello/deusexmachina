@@ -186,35 +186,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="nd3d9mesharray"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\gfx2\nd3d9mesharray.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\gfx2\nd3d9mesharray_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nd3d9mesharray;N_NEW=n_new_nd3d9mesharray;N_INITCMDS=n_initcmds_nd3d9mesharray"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nd3d9mesharray;N_NEW=n_new_nd3d9mesharray;N_INITCMDS=n_initcmds_nd3d9mesharray"
-						/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-			<Filter
 				Name="nd3d9occlusionquery"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>

@@ -77,8 +77,6 @@ private:
 
     tinyxml2::XMLDocument* xmlDocument;
     PFrameShader FrameShader;
-    nString shaderPath;
-    nString mangledPath;
 };
 
 //------------------------------------------------------------------------------

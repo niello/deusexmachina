@@ -20,7 +20,6 @@ public:
 
 	CStrID			Name;
 	nArray<PPass>	Passes;		//???smartptr?
-	nString			ShaderPath;	//???need or OLD? in fact can add to any shader references in this frame shader on load!
 	CShaderVarMap	ShaderVars;
 
 // Pass mgmt

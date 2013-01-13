@@ -5,7 +5,6 @@
 #include "gfx2/nd3d9server.h"
 #include "resource/nresourceserver.h"
 #include "gfx2/nmesh2.h"
-#include "gfx2/nd3d9mesharray.h"
 #include "gfx2/nd3d9shader.h"
 #include "gfx2/nd3d9occlusionquery.h"
 
@@ -21,18 +20,6 @@ nMesh2*
 nD3D9Server::NewMesh(const nString& RsrcName)
 {
     return (nMesh2*)nResourceServer::Instance()->NewResource("nd3d9mesh", RsrcName, nResource::Mesh);
-}
-
-//------------------------------------------------------------------------------
-/**
-    Create a new mesh array object.
-
-    @return             pointer to a nD3D9MeshArray object
-*/
-nMeshArray*
-nD3D9Server::NewMeshArray(const nString& RsrcName)
-{
-    return (nMeshArray*)nResourceServer::Instance()->NewResource("nd3d9mesharray", RsrcName, nResource::Mesh);
 }
 
 //------------------------------------------------------------------------------
