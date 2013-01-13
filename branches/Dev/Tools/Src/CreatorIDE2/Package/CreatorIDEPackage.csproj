@@ -71,6 +71,7 @@
     <Compile Include="CideFileNode.cs" />
     <Compile Include="CidePathHelper.cs" />
     <Compile Include="CideProjectElements.cs" />
+    <Compile Include="CideSelectionEvents.cs" />
     <Compile Include="EngineHostControl.cs">
       <SubType>Component</SubType>
     </Compile>

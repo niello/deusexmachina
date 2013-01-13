@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using CreatorIDE.Core;
 using CreatorIDE.Engine;
+using EnvDTE;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Props = CreatorIDE.Settings.Properties;
 
 namespace CreatorIDE.Package
@@ -46,6 +49,7 @@ namespace CreatorIDE.Package
         CideProjectFactory.TemplatesDirectory)]
     [ProvideEditorFactory(typeof(LevelEditorFactory), 113)]
     [ProvideToolWindow(typeof(LevelObjectBrowserPane), MultiInstances = false, Transient = true)]
+    [ProvideToolWindowVisibility(typeof(LevelObjectBrowserPane), Commands.LevelEditorCmdGuidString)]
     [ProvideMenuResource(1000, 1)]
     [Guid(GuidString)]
     public sealed class CidePackage : ProjectPackage
@@ -54,6 +58,8 @@ namespace CreatorIDE.Package
 
         private readonly Lazy<CideEngine> _engine = new Lazy<CideEngine>(() => new CideEngine(new AttrEditorProvider()));
         private readonly Dictionary<Guid, CideProjectNode> _registeredProjects = new Dictionary<Guid, CideProjectNode>();
+
+        private CideSelectionEvents _selectionEvents;
 
         public CideEngine Engine { get { return _engine.Value; } }
 
@@ -93,6 +99,8 @@ namespace CreatorIDE.Package
             RegisterProjectFactory(new CideProjectFactory(this));
 
             RegisterEditorFactory(new LevelEditorFactory(this));
+
+            _selectionEvents = new CideSelectionEvents(this, new[] {Commands.LevelEditorCmdGuid});
         }
 
         protected override bool TryCreateListener<TListener>(Func<ProjectPackage, TListener> factoryMethod, out TListener listener)
@@ -107,13 +115,45 @@ namespace CreatorIDE.Package
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-                _engine.Dispose();
+            if (_selectionEvents != null)
+                _selectionEvents.Unadvise(this);
+
+            _engine.Dispose();
 
             base.Dispose(disposing);
         }
 
         #endregion
+
+        internal void AddCommand(MenuCommand cmd)
+        {
+            var menuService = (IMenuCommandService)GetService(typeof(IMenuCommandService));
+            menuService.AddCommand(cmd);
+        }
+
+        internal MenuCommand FindCommand(CommandID cmdID)
+        {
+            var menuService = (IMenuCommandService) GetService(typeof (IMenuCommandService));
+            return menuService.FindCommand(cmdID);
+        }
+
+        internal void RemoveCommand(MenuCommand command)
+        {
+            var menuService = (IMenuCommandService)GetService(typeof(IMenuCommandService));
+            menuService.RemoveCommand(command);
+        }
+
+        /// <summary>
+        /// Check if the UI context is active.
+        /// </summary>
+        /// <param name="uiContextID">ID of the UI context</param>
+        /// <returns>Returns true, if the UI context is active, false if it isn't active and null if it isn't tracked.</returns>
+        internal bool? IsActive(Guid uiContextID)
+        {
+            if (_selectionEvents == null)
+                return null;
+            return _selectionEvents.IsActive(uiContextID);
+        }
 
         internal void RegisterProject(CideProjectNode projectNode)
         {

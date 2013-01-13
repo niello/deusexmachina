@@ -51,6 +51,7 @@
     <Compile Include="AppContextManager.cs" />
     <Compile Include="IAppConfiguration.cs" />
     <Compile Include="IAppContextManager.cs" />
+    <Compile Include="ServiceProviderExtension.cs" />
     <Compile Include="SR.cs" />
     <Compile Include="ResourceProviderBase.cs" />
     <Compile Include="IWindowManager.cs" />

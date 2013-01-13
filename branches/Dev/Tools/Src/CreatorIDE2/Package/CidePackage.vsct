@@ -25,8 +25,6 @@
   <Extern href="msobtnid.h"/>
 
 
-
-
   <!--The Commands section is where we the commands, menus and menu groups are defined.
       This section uses a Guid to identify the package that provides the command defined inside it. -->
   <Commands package="guidCidePkg">
@@ -39,15 +37,24 @@
     with command ids defined by other packages. -->
 
 
-    <!--<Menus>
-      <Menu guid="guidLevelsNodeMenu" id="root" priority="0x100" type="Context">
+    <Menus>
+      <!--<Menu guid="guidLevelsNodeMenu" id="root" priority="0x100" type="Context">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_PROJWIN"/>
         <Strings>
           <ButtonText>Levels Context Menu</ButtonText>
           <CommandName>Levels Context Menu</CommandName>
         </Strings>
+      </Menu>-->
+
+      <Menu guid="guidLevelToolbar" id="toolbar" type="Toolbar">
+        <CommandFlag>DefaultDocked</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>CIDE Level Editor</ButtonText>
+        </Strings>
       </Menu>
-    </Menus>-->
+      
+    </Menus>
 
 
     <!-- In this section you can define new menu groups. A menu group is a container for 
@@ -58,6 +65,10 @@
 
       <Group guid="guidLevelsNodeMenu" id="root" priority="0x100">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+      </Group>
+
+      <Group guid="guidLevelToolbar" id="toolbarGroup" priority="0x0000">
+        <Parent guid="guidLevelToolbar" id="toolbar"/>
       </Group>
 
     </Groups>
@@ -109,11 +120,21 @@
 
       <Button guid="guidLevelsNodeMenu" id="link" type="Button" priority="0x0100">
         <Parent guid="guidLevelsNodeMenu" id="root"/>
-        <CommandFlag>IconAndText</CommandFlag>
         <Icon guid="guidImages" id="bmpPicLink"/>
+        <CommandFlag>IconAndText</CommandFlag>
         <Strings>
           <CommandName>cmdidLinkLevelsNode</CommandName>
           <ButtonText>Link File</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidLevelToolbar" id="objectBrowser" type="Button" priority="0x0001">
+        <Parent guid="guidLevelToolbar" id="toolbarGroup"/>
+        <Icon guid="guidImages" id="bmpPicGlobeView"/>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Strings>
+          <CommandName>cmdLevelObjectBrowser</CommandName>
+          <ButtonText>Level Browser</ButtonText>
         </Strings>
       </Button>
 
@@ -130,11 +151,15 @@
             must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
       
       <!-- TODO: Make 32bit file ImageList32.bmp -->
-      <Bitmap guid="guidImages" href="Resources\ImageList24.bmp" usedList="bmpPicTree, bmpPicGlobe, bmpPicWhiteBox, bmpPicLink"/>
+      <Bitmap guid="guidImages" href="Resources\ImageList24.bmp" usedList="bmpPicTree, bmpPicHouse, bmpPicGlobe, bmpPicWhiteBox, bmpPicLink, bmpPicTransparent, bmpPicGlobeView"/>
 
     </Bitmaps>
  
   </Commands>
+  
+  <VisibilityConstraints>
+    <VisibilityItem  guid="guidLevelToolbar" id="toolbar" context="guidLevelEditorCmd"/>
+  </VisibilityConstraints>
 
   <!--<KeyBindings>
     <KeyBinding guid="guidCSVSToolWindowCmdSet"
@@ -147,13 +172,19 @@
   <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidCidePkg" value="{dcc26fbc-ef0a-4431-a4eb-84842197c818}" />
+
+    <GuidSymbol name="guidLevelEditorCmd" value="{D6552A71-C621-42BD-B61C-C84EA444F9A0}"/>
+
+    <GuidSymbol name="guidLevelToolbar" value="{85875C5F-1ED7-4559-B63D-D16BF7678DB8}">
+      <IDSymbol name="toolbar" value="0x1000"/>
+      <IDSymbol name="objectBrowser" value="0x1001"/>
+      <IDSymbol name="toolbarGroup" value="0x1050"/>
+    </GuidSymbol>
     
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidLevelsNodeMenu" value="{E96304E9-FE54-4ac7-9AC2-13EA54F29E82}">
-
       <IDSymbol name="root" value="0x4200"/>
       <IDSymbol name="link" value="0x4201"/>
-
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{1890DE8D-A7A8-4420-8293-9CD5802DEB38}" >
@@ -162,6 +193,8 @@
       <IDSymbol name="bmpPicGlobe" value="3" />
       <IDSymbol name="bmpPicWhiteBox" value="4" />
       <IDSymbol name="bmpPicLink" value="5"/>
+      <IDSymbol name="bmpPicTransparent" value="6"/>
+      <IDSymbol name="bmpPicGlobeView" value="7"/>
     </GuidSymbol>
     
   </Symbols>
