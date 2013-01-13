@@ -463,16 +463,15 @@ void CRenderServer::Draw()
 {
 	n_assert_dbg(pD3DDevice && IsInsideFrame);
 
-	//???map enum to constants defined in platform-specific file like D3D9Fwd?
 	D3DPRIMITIVETYPE D3DPrimType;
-	DWORD PrimCount;
+	DWORD PrimCount = (CurrPrimGroup.IndexCount > 0) ? CurrPrimGroup.IndexCount : CurrPrimGroup.VertexCount;
 	switch (CurrPrimGroup.Topology)
 	{
-		case PointList:	D3DPrimType = D3DPT_POINTLIST; PrimCount = CurrPrimGroup.VertexCount; break;
-		case LineList:	D3DPrimType = D3DPT_LINELIST; PrimCount = CurrPrimGroup.VertexCount / 2; break;
-		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; PrimCount = CurrPrimGroup.VertexCount - 1; break;
-		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; PrimCount = CurrPrimGroup.VertexCount / 3; break;
-		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount = CurrPrimGroup.VertexCount - 2; break;
+		case PointList:	D3DPrimType = D3DPT_POINTLIST; break;
+		case LineList:	D3DPrimType = D3DPT_LINELIST; PrimCount /= 2; break;
+		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
+		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
+		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
 		default:		n_error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
 	}
 

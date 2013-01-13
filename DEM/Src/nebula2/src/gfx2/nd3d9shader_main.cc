@@ -5,8 +5,8 @@
 #include "gfx2/nd3d9shader.h"
 #include "gfx2/nd3d9server.h"
 #include "gfx2/nd3d9texture.h"
-#include "gfx2/D3DXNebula2Include.h"
 #include "gfx2/nshaderparams.h"
+#include <Render/D3DXNebula2Include.h>
 #include <Data/DataServer.h>
 #include <Data/Streams/FileStream.h>
 

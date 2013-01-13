@@ -1,4 +1,4 @@
-#include "gfx2/D3DXNebula2Include.h"
+#include "D3DXNebula2Include.h"
 #include <Data/Streams/FileStream.h>
 
 HRESULT CD3DXNebula2Include::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
