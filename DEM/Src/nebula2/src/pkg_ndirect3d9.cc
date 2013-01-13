@@ -18,11 +18,6 @@ extern void *n_new_nd3d9mesh (void);
 #endif //__WIN32__
 
 #ifdef __WIN32__
-extern bool n_init_nd3d9mesharray (nClass *, nKernelServer *);
-extern void *n_new_nd3d9mesharray (void);
-#endif //__WIN32__
-
-#ifdef __WIN32__
 extern bool n_init_nd3d9shader (nClass *, nKernelServer *);
 extern void *n_new_nd3d9shader (void);
 #endif //__WIN32__
@@ -39,11 +34,6 @@ void ndirect3d9()
     nKernelServer::Instance()->AddModule("nd3d9mesh",
                                  n_init_nd3d9mesh,
                                  n_new_nd3d9mesh);
-#endif //__WIN32__
-#ifdef __WIN32__
-    nKernelServer::Instance()->AddModule("nd3d9mesharray",
-                                 n_init_nd3d9mesharray,
-                                 n_new_nd3d9mesharray);
 #endif //__WIN32__
 #ifdef __WIN32__
     nKernelServer::Instance()->AddModule("nd3d9shader",

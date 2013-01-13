@@ -10,7 +10,15 @@ ImplementFactory(Render::CModelRendererNoLight);
 
 void CModelRendererNoLight::Render()
 {
-	Models.Sort<CCmpRecords>();
+	if (!Models.Size()) return;
+
+	if (Models.Size() > 1)
+		switch (DistanceSorting)
+		{
+			case Sort_None:			Models.Sort<CRecCmp_TechMtlGeom>(); break;
+			case Sort_FrontToBack:	Models.Sort<CRecCmp_DistFtB>(); break;
+			case Sort_BackToFront:	Models.Sort<CRecCmp_DistBtF>(); break;
+		}
 
 	CShader::HTech	hTech = NULL;
 	CMaterial*		pMaterial = NULL;
@@ -18,6 +26,14 @@ void CModelRendererNoLight::Render()
 	bool			InstancingIsActive = false;
 	CShader::HVar	hWorld;
 	CShader::HVar	hWVP;
+
+	if (Shader.isvalid())
+	{
+		for (int i = 0; i < ShaderVars.Size(); ++i)
+			ShaderVars.ValueAtIndex(i).Apply(*Shader.get_unsafe());
+		n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
+		Shader->BeginPass(0);
+	}
 
 	for (int i = 0; i < Models.Size(); /*NB: i is incremented inside*/)
 	{
@@ -95,20 +111,25 @@ void CModelRendererNoLight::Render()
 			//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
 			//???check IsVarUsed? IsBound too
 			for (int VarIdx = 0; VarIdx < pMaterial->GetStaticVars().Size(); ++VarIdx)
-				n_assert_dbg(pMaterial->GetStaticVars().ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
+				if (pMaterial->GetStaticVars().ValueAtIndex(VarIdx).IsBound())
+					n_assert(pMaterial->GetStaticVars().ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
 			ShaderVarsChanged = (pMaterial->GetStaticVars().Size() > 0);
 		}
 
 		//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
 		//???check IsVarUsed? IsBound too
 		for (int VarIdx = 0; VarIdx < Rec.pModel->ShaderVars.Size(); ++VarIdx)
-			n_assert_dbg(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
+			if (Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).IsBound())
+				n_assert(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
 		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.Size() > 0);
 
 		// Setup or disable instancing, setup World transform
 
 		if (InstanceCount > 1)
 		{
+			//!!!if > MaxInstanceCount, split!
+			n_assert(InstanceCount <= MaxInstanceCount);
+
 			//!!!can supply WVP when more appropriate!
 			matrix44* pInstData = (matrix44*)InstanceBuffer->Map(MapWriteDiscard);
 			n_assert_dbg(pInstData);
@@ -139,13 +160,7 @@ void CModelRendererNoLight::Render()
 			const matrix44& World = Rec.pModel->GetNode()->GetWorldMatrix();
 
 			if (hWorld) pMaterial->GetShader()->SetMatrix(hWorld, World);
-
-			if (hWVP)
-			{
-				//!!!get VP from render srv!
-				matrix44 ViewProj;
-				pMaterial->GetShader()->SetMatrix(hWVP, World * ViewProj);
-			}
+			if (hWVP) pMaterial->GetShader()->SetMatrix(hWVP, World * RenderSrv->GetViewProjection());
 
 			ShaderVarsChanged = ShaderVarsChanged || hWorld || hWVP;
 
@@ -181,6 +196,12 @@ void CModelRendererNoLight::Render()
 	{
 		pMaterial->GetShader()->EndPass();
 		pMaterial->GetShader()->End();
+	}
+
+	if (Shader.isvalid())
+	{
+		Shader->EndPass();
+		Shader->End();
 	}
 
 	Models.Clear();

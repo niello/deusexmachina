@@ -408,35 +408,6 @@
 					</File>
 				</Filter>
 				<Filter
-					Name="nmesharray"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nmesharray.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\nmesharray_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmesharray;N_NEW=n_new_nmesharray;N_INITCMDS=n_initcmds_nmesharray"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmesharray;N_NEW=n_new_nmesharray;N_INITCMDS=n_initcmds_nmesharray"
-							/>
-						</FileConfiguration>
-					</File>
-				</Filter>
-				<Filter
 					Name="nmousecursor"
 					Filter="cpp;c;cxx;cc;h;hxx;hcc"
 					>

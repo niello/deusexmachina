@@ -55,8 +55,6 @@ public:
 
     /// create a shared mesh object
     virtual nMesh2* NewMesh(const nString& RsrcName);
-    /// create a mesh array object
-    virtual nMeshArray* NewMeshArray(const nString& RsrcName);
     /// create a shared texture object
     virtual nTexture2* NewTexture(const nString& RsrcName);
     /// create a shared shader object
@@ -113,8 +111,6 @@ public:
     virtual int AddLight(const nLight& light, const matrix44& Transform);
     /// set current mesh
     virtual void SetMesh(nMesh2* vbMesh, nMesh2* ibMesh);
-    /// set current mesh array, clearing the single mesh
-    virtual void SetMeshArray(nMeshArray* meshArray);
     /// set current shader
     virtual void SetShader(nShader2* shader);
     /// set transform

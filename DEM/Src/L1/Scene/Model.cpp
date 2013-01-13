@@ -114,10 +114,6 @@ void CModel::GetBox(bbox3& OutBox) const
 }
 //---------------------------------------------------------------------
 
-//!!!
-// ==================== OLD ===========================================
-//!!!
-
 bool CModel::LoadResources()
 {
 	//!!!TMP! write more elegant! Hide LoadSmthFromFMT calls somewhere in Loaders or smth.

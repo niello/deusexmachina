@@ -14,18 +14,9 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 {
 	if (!OutMaterial.isvalid()) FAIL;
 
-	CStrID ShaderID = CStrID(In.Get<nString>(CStrID("Shader")).Get()); //???is optional?
-	PShader Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID); //!!!will be actually loaded on Material->Setup()!
-
-	DWORD FeatFlags;
-	Data::CParam& FFlags = In.Get(CStrID("FeatureFlags"));
-	if (FFlags.IsA<int>()) FeatFlags = FFlags.GetValue<int>();
-	else if (FFlags.IsA<nString>()) FeatFlags = RenderSrv->ShaderFeatureStringToMask(FFlags.GetValue<nString>());
-	else
-	{
-		n_printf("LoadMaterialFromPRM() -> Invalid FeatureFlags type!");
-		FAIL;
-	}
+	CStrID ShaderID = In.Get<CStrID>(CStrID("Shader"));
+	PShader Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+	DWORD FeatFlags = RenderSrv->ShaderFeatureStringToMask(In.Get<nString>(CStrID("FeatureFlags")));
 
 	CShaderVarMap VarMap;
 	VarMap.BeginAdd();

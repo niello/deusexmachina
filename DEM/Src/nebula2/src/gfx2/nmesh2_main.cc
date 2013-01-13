@@ -6,7 +6,6 @@
 #include "kernel/nkernelserver.h"
 #include "gfx2/nn3d2loader.h"
 #include "gfx2/nnvx2loader.h"
-#include "gfx2/nmesharray.h"
 
 nNebulaClass(nMesh2, "nresource");
 
@@ -44,7 +43,6 @@ nMesh2::UnloadResource()
     // make sure we're not set in the gfx server
     // this is kind of rude...
     nGfxServer2::Instance()->SetMesh(0, 0);
-    nGfxServer2::Instance()->SetMeshArray(0);
 
     if (this->groups)
     {

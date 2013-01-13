@@ -38,8 +38,8 @@ bool CShader::Setup(ID3DXEffect* pFX)
 	}
 
 	// It is good for pass and batch shaders with only one tech
-	//!!!Uncomment this line. It fails until I add feature masks to techs!
-	//n_assert(SUCCEEDED(pEffect->SetTechnique(FlagsToTech.ValueAtIndex(0))));
+	// It seems, pass shaders use the only tech without setting it
+	//n_assert(SetTech(FlagsToTech.ValueAtIndex(0)));
 
 	for (UINT i = 0; i < Desc.Parameters; ++i)
 	{
@@ -61,6 +61,10 @@ bool CShader::Setup(ID3DXEffect* pFX)
 void CShader::Unload()
 {
 	//!!!unsubscribe lost & reset!
+	hCurrTech = NULL;
+	FlagsToTech.Clear();
+	NameToHVar.Clear();
+	SemanticToHVar.Clear();
 	SAFE_RELEASE(pEffect);
 	State = Resources::Rsrc_NotLoaded;
 }

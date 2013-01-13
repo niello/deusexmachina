@@ -52,6 +52,14 @@ protected:
 	CDisplay							Display;
 	PRenderTarget						DefaultRT;
 
+	//???can write better?
+	PShader								SharedShader;
+	CShader::HVar						hLightAmbient;
+	CShader::HVar						hEyePos;
+	CShader::HVar						hViewProj;
+	vector3								CurrCameraPos;
+	matrix44							CurrViewProj; //???or store camera ref?
+
 	DWORD								FrameID;
 	PRenderTarget						CurrRT[MaxRenderTargetCount];
 	PVertexBuffer						CurrVB[MaxVertexStreamCount];
@@ -60,6 +68,7 @@ protected:
 	PIndexBuffer						CurrIB;
 	CMeshGroup							CurrPrimGroup;
 	EPixelFormat						CurrDepthStencilFormat;
+	IDirect3DSurface9*					pCurrDSSurface;
 
 	UINT								D3DAdapter;
 	D3DPRESENT_PARAMETERS				D3DPresentParams;
@@ -91,7 +100,10 @@ public:
 	void				Present();
 	void				SaveScreenshot(EImageFormat ImageFormat, Data::CStream& OutStream);
 
-	//!!!set transforms (MVP, Light etc)! here or where? mb in passes?
+	void				SetAmbientLight(const vector4& Color);
+	void				SetCameraPosition(const vector3& Pos);
+	void				SetViewProjection(const matrix44& VP);
+
 	void				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	void				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
 	void				SetVertexLayout(CVertexLayout* pVLayout);
@@ -114,20 +126,47 @@ public:
 	IDirect3D9*			GetD3D() const { return pD3D; } //!!!static method in N3, creates D3D!
 	IDirect3DDevice9*	GetD3DDevice() const { return pD3DDevice; }
 	ID3DXEffectPool*	GetD3DEffectPool() const { return pEffectPool; }
+
+	const vector3&		GetCameraPosition() const { return CurrCameraPos; }
+	const matrix44&		GetViewProjection() const { return CurrViewProj; }
 };
 
 inline CRenderServer::CRenderServer():
 	_IsOpen(false),
 	IsInsideFrame(false),
 	InstanceCount(0),
+	hLightAmbient(NULL),
+	hEyePos(NULL),
+	hViewProj(NULL),
 	FrameID(0),
 	pD3D(NULL),
 	pD3DDevice(NULL),
 	pEffectPool(NULL),
-	CurrDepthStencilFormat(PixelFormat_Invalid)
+	CurrDepthStencilFormat(PixelFormat_Invalid),
+	pCurrDSSurface(NULL)
 {
 	__ConstructSingleton;
 	memset(CurrVBOffset, 0, sizeof(CurrVBOffset));
+}
+//---------------------------------------------------------------------
+
+inline void CRenderServer::SetAmbientLight(const vector4& Color)
+{
+	if (hLightAmbient) SharedShader->SetFloat4(hLightAmbient, Color);
+}
+//---------------------------------------------------------------------
+
+inline void CRenderServer::SetCameraPosition(const vector3& Pos)
+{
+	CurrCameraPos = Pos;
+	if (hEyePos) SharedShader->SetFloat4(hEyePos, vector4(Pos));
+}
+//---------------------------------------------------------------------
+
+inline void CRenderServer::SetViewProjection(const matrix44& VP)
+{
+	CurrViewProj = VP;
+	if (hViewProj) SharedShader->SetMatrix(hViewProj, CurrViewProj);
 }
 //---------------------------------------------------------------------
 

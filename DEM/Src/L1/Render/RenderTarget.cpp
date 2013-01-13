@@ -89,8 +89,8 @@ bool CRenderTarget::CreateDefaultRT()
 //---------------------------------------------------------------------
 
 bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat DSFormat, float Width, float Height,
-						   bool AbsWH, EMSAAQuality MSAA, DWORD TexWidth, DWORD TexHeight
-						   /*, use mips, shared DS*/)
+						   bool AbsWH, EMSAAQuality MSAA, DWORD TexWidth, DWORD TexHeight, bool UseAutoDS
+						   /*, use mips*/)
 {
 	if (!TextureID.IsValid() || RTFormat == D3DFMT_UNKNOWN) FAIL;
 
@@ -144,15 +144,25 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 
 	RTFmt = RTFormat;
 
-	if (DSFormat != D3DFMT_UNKNOWN)
+	if (UseAutoDS)
 	{
-		HRESULT hr = RenderSrv->GetD3DDevice()->CreateDepthStencilSurface(AbsWidth, AbsHeight, DSFormat,
-																		  D3DMSAAType, D3DMSAAQuality, TRUE,
-																		  &pDSSurface, NULL);
-		n_assert(SUCCEEDED(hr));
+		n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->GetDepthStencilSurface(&pDSSurface)));
+		DSFmt = D3DFMT_UNKNOWN;
 	}
+	else if (DSFormat != D3DFMT_UNKNOWN)
+	{
+		n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->CreateDepthStencilSurface(
+			AbsWidth,
+			AbsHeight,
+			DSFormat,
+			D3DMSAAType,
+			D3DMSAAQuality,
+			TRUE,
+			&pDSSurface,
+			NULL)));
 
-	DSFmt = DSFormat;
+		DSFmt = DSFormat;
+	}
 
 	OK;
 }

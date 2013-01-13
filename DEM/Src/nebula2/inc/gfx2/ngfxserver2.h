@@ -31,7 +31,6 @@ class nMesh2;
 class nShader2;
 class nResourceServer;
 class nFontDesc;
-class nMeshArray;
 class nOcclusionQuery;
 class nViewport
 {
@@ -184,8 +183,6 @@ public:
 
     /// create a shared mesh object
     virtual nMesh2* NewMesh(const nString& RsrcName) { return NULL; }
-    /// create a new mesh array object
-    virtual nMeshArray* NewMeshArray(const nString& RsrcName) { return NULL; }
     /// create a shared texture object
     virtual nTexture2* NewTexture(const nString& RsrcName) { return NULL; }
     /// create a shared shader object
@@ -264,11 +261,7 @@ public:
 	virtual void SetMesh(nMesh2* vbMesh, nMesh2* ibMesh) { refVbMesh = vbMesh; refIbMesh = ibMesh; }
     /// get current mesh
     nMesh2* GetMesh() const;
-    /// set current mesh array (for multiple streams)
-	virtual void SetMeshArray(nMeshArray* meshArray) { refMeshArray = meshArray; }
-    /// get current mesh array
-    nMeshArray* GetMeshArray() const;
-    /// set current shader
+	/// set current shader
 	virtual void SetShader(nShader2* shader) { refShader = shader; }
     /// get current shader
     nShader2* GetShader() const;
@@ -386,7 +379,6 @@ protected:
     nFixedArray<nRef<nTexture2> >   refRenderTargets;
     nRef<nMesh2>                    refVbMesh;
     nRef<nMesh2>                    refIbMesh;
-    nRef<nMeshArray>                refMeshArray;
     nRef<nShader2>                  refShader;
     nMouseCursor curMouseCursor;
     int vertexRangeFirst;
@@ -507,19 +499,6 @@ nTexture2*
 nGfxServer2::GetRenderTarget(int index) const
 {
     return this->refRenderTargets[index].get_unsafe();
-}
-
-//------------------------------------------------------------------------------
-/**
-    Get the current mesh array.
-
-    @return             pointer to current nMeshArray object
-*/
-inline
-nMeshArray*
-nGfxServer2::GetMeshArray() const
-{
-    return this->refMeshArray.isvalid() ? this->refMeshArray.get() : 0;
 }
 
 //------------------------------------------------------------------------------
