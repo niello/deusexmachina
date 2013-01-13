@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
-using EnvDTE;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
@@ -23,9 +24,9 @@ namespace CreatorIDE.Package
                                 IVsFileBackup,      //to support backup of files. Visual Studio File Recovery 
         //backs up all objects in the Running Document Table that 
         //support IVsFileBackup and have unsaved changes.
-                                IVsStatusbarUser,   //support updating the status bar
-                                IExtensibleObject  //so we can get the automation object
+                                IVsStatusbarUser   //support updating the status bar
     {
+        private readonly List<CommandID> _editorCommands = new List<CommandID>();
         private readonly Control _control;
         private readonly EngineHostControl _engineHostControl;
         private readonly LevelNode _levelNode;
@@ -75,10 +76,6 @@ namespace CreatorIDE.Package
                 tool.Initialize(_levelNode);
 
                 tool.SelectionChanged += OnToolWindowSelectionChanged;
-
-                var frame = pane.Frame as IVsWindowFrame;
-                if (frame != null)
-                    frame.ShowNoActivate();
             }
         }
 
@@ -116,6 +113,49 @@ namespace CreatorIDE.Package
         public override IWin32Window Window
         {
             get { return _control; }
+        }
+
+        protected override void Initialize()
+        {
+            base.Initialize();
+
+            AddCommand(Commands.LevelToolbarObjectBrowser, OnObjectBrowserCommand);
+        }
+
+        private void AddCommand(int levelToolbarCommandID, EventHandler handler)
+        {
+            var pkg = _levelNode.ProjectMgr.Package;
+            var cmdID = new CommandID(Commands.LevelToolbarGuid, levelToolbarCommandID);
+            var cmd = new OleMenuCommand(handler, cmdID);
+            cmd.BeforeQueryStatus += OnBeforeQueryCommandStatus;
+            pkg.AddCommand(cmd);
+            _editorCommands.Add(cmdID);
+        }
+
+        private void OnBeforeQueryCommandStatus(object sender, EventArgs e)
+        {
+            var command = sender as OleMenuCommand;
+            if (command != null)
+                command.Enabled = _levelNode.ProjectMgr.Package.IsActive(Commands.LevelEditorCmdGuid) == true;
+        }
+
+        private void OnObjectBrowserCommand(object sender, EventArgs e)
+        {
+            
+        }
+
+        protected override void OnClose()
+        {
+            base.OnClose();
+
+            var pkg = _levelNode.ProjectMgr.Package;
+
+            foreach(var cmdID in _editorCommands)
+            {
+                var cmd = pkg.FindCommand(cmdID);
+                if (cmd != null)
+                    pkg.RemoveCommand(cmd);
+            }
         }
 
         #endregion
@@ -281,15 +321,6 @@ namespace CreatorIDE.Package
         int IVsStatusbarUser.SetInfo()
         {
             return HResult.False;
-        }
-
-        #endregion
-
-        #region Implementation of IExtensibleObject
-
-        void IExtensibleObject.GetAutomationObject(string Name, IExtensibleObjectSite pParent, out object ppDisp)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion

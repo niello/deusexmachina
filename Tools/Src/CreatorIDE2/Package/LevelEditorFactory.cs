@@ -21,7 +21,8 @@ namespace CreatorIDE.Package
                              {
                                  DocData = pane,
                                  DocView = pane,
-                                 Flags = VsEditorCreateDocWinFlags.CreateNewWindow | VsEditorCreateDocWinFlags.Dockable
+                                 Flags = VsEditorCreateDocWinFlags.CreateNewWindow | VsEditorCreateDocWinFlags.Dockable,
+                                 CmdID = Commands.LevelEditorCmdGuid
                              };
             return result;
         }
