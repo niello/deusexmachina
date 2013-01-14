@@ -125,24 +125,6 @@ namespace CreatorIDE.Package
 
         #endregion
 
-        internal void AddCommand(MenuCommand cmd)
-        {
-            var menuService = (IMenuCommandService)GetService(typeof(IMenuCommandService));
-            menuService.AddCommand(cmd);
-        }
-
-        internal MenuCommand FindCommand(CommandID cmdID)
-        {
-            var menuService = (IMenuCommandService) GetService(typeof (IMenuCommandService));
-            return menuService.FindCommand(cmdID);
-        }
-
-        internal void RemoveCommand(MenuCommand command)
-        {
-            var menuService = (IMenuCommandService)GetService(typeof(IMenuCommandService));
-            menuService.RemoveCommand(command);
-        }
-
         /// <summary>
         /// Check if the UI context is active.
         /// </summary>

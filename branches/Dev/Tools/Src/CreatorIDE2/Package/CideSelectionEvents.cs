@@ -75,6 +75,9 @@ namespace CreatorIDE.Package
             if (cookie == 0)
                 return;
 
+            _contextMap.Clear();
+            _stateMap.Clear();
+
             var monitor = package.GetService<IVsMonitorSelection>(typeof(SVsShellMonitorSelection));
             monitor.UnadviseSelectionEvents(cookie);
         }
