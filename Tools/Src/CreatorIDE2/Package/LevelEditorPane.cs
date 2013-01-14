@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
+using CreatorIDE.Core;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
@@ -119,16 +121,19 @@ namespace CreatorIDE.Package
         {
             base.Initialize();
 
-            AddCommand(Commands.LevelToolbarObjectBrowser, OnObjectBrowserCommand);
+            var menuGlobalService = _levelNode.ProjectMgr.Package.GetService<IMenuCommandService>();
+            AddCommand(menuGlobalService, Commands.LevelToolbarObjectBrowser, OnObjectBrowserCommand);
         }
 
-        private void AddCommand(int levelToolbarCommandID, EventHandler handler)
+        private void AddCommand(IMenuCommandService commandService, int levelToolbarCommandID, EventHandler handler)
         {
-            var pkg = _levelNode.ProjectMgr.Package;
+            if (commandService == null)
+                throw new ArgumentNullException("commandService");
+
             var cmdID = new CommandID(Commands.LevelToolbarGuid, levelToolbarCommandID);
             var cmd = new OleMenuCommand(handler, cmdID);
             cmd.BeforeQueryStatus += OnBeforeQueryCommandStatus;
-            pkg.AddCommand(cmd);
+            commandService.AddCommand(cmd);
             _editorCommands.Add(cmdID);
         }
 
@@ -141,20 +146,25 @@ namespace CreatorIDE.Package
 
         private void OnObjectBrowserCommand(object sender, EventArgs e)
         {
-            
+            var pkg = _levelNode.ProjectMgr.Package;
+            var wnd = pkg.FindToolWindow(typeof (LevelObjectBrowserPane), 0, false);
+            var frame = wnd == null ? null : wnd.Frame as IVsWindowFrame;
+            if(frame!=null)
+                ErrorHandler.ThrowOnFailure(frame.Show());
         }
 
         protected override void OnClose()
         {
             base.OnClose();
 
-            var pkg = _levelNode.ProjectMgr.Package;
+            var cmdService = _levelNode.ProjectMgr.Package.GetService<IMenuCommandService>();
+            Debug.Assert(cmdService != null);
 
             foreach(var cmdID in _editorCommands)
             {
-                var cmd = pkg.FindCommand(cmdID);
+                var cmd = cmdService.FindCommand(cmdID);
                 if (cmd != null)
-                    pkg.RemoveCommand(cmd);
+                    cmdService.RemoveCommand(cmd);
             }
         }
 
