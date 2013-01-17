@@ -673,31 +673,25 @@ _matrix44::lookatLh(const _vector3& at, const _vector3& up)
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-_matrix44::perspFovLh(float fovY, float aspect, float zn, float zf)
+inline void _matrix44::perspFovLh(float fovY, float aspect, float zn, float zf)
 {
-    float h = float(1.0 / tan(fovY * 0.5f));
-    float w = h / aspect;
-    M11 = w;    M12 = 0.0f; M13 = 0.0f;                   M14 = 0.0f;
-    M21 = 0.0f; M22 = h;    M23 = 0.0f;                   M24 = 0.0f;
-    M31 = 0.0f; M32 = 0.0f; M33 = zf / (zf - zn);         M34 = 1.0f;
-    M41 = 0.0f; M42 = 0.0f; M43 = -zn * (zf / (zf - zn)); M44 = 0.0f;
+	float h = float(1.0 / tan(fovY * 0.5f));
+	M11 = h / aspect;	M12 = 0.0f; M13 = 0.0f;				M14 = 0.0f;
+	M21 = 0.0f;			M22 = h;    M23 = 0.0f;				M24 = 0.0f;
+	M31 = 0.0f;			M32 = 0.0f; M33 = zf / (zf - zn);	M34 = 1.0f;
+	M41 = 0.0f;			M42 = 0.0f; M43 = -zn * M33;		M44 = 0.0f;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-_matrix44::perspFovRh(float fovY, float aspect, float zn, float zf)
+inline void _matrix44::perspFovRh(float fovY, float aspect, float zn, float zf)
 {
-    float h = float(1.0 / tan(fovY * 0.5f));
-    float w = h / aspect;
-    M11 = w;    M12 = 0.0f; M13 = 0.0f;                  M14 = 0.0f;
-    M21 = 0.0f; M22 = h;    M23 = 0.0f;                  M24 = 0.0f;
-    M31 = 0.0f; M32 = 0.0f; M33 = zf / (zn - zf);        M34 = -1.0f;
-    M41 = 0.0f; M42 = 0.0f; M43 = zn * (zf / (zn - zf)); M44 = 0.0f;
+	float h = float(1.0 / tan(fovY * 0.5f));
+	M11 = h / aspect;	M12 = 0.0f; M13 = 0.0f;             M14 = 0.0f;
+	M21 = 0.0f;			M22 = h;    M23 = 0.0f;             M24 = 0.0f;
+	M31 = 0.0f;			M32 = 0.0f; M33 = zf / (zn - zf);   M34 = -1.0f;
+	M41 = 0.0f;			M42 = 0.0f; M43 = zn * M33;			M44 = 0.0f;
 }
 
 //------------------------------------------------------------------------------

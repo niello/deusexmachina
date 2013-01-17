@@ -49,8 +49,8 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	for (int i = 0; i < BatchRenderers.Size(); ++i)
 	{
 		IRenderer* pRenderer = BatchRenderers[i];
-		if (pObjects) pRenderer->AddRenderObjects(*pObjects);
 		if (pLights) pRenderer->AddLights(*pLights);
+		if (pObjects) pRenderer->AddRenderObjects(*pObjects);
 		pRenderer->Render();
 	}
 

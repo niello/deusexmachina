@@ -61,7 +61,7 @@ public:
 	float			GetNearPlane() const { return NearPlane; }
 	void			SetFarPlane(float Far) { if (FarPlane != Far) { FarPlane = Far; Flags.Set(ProjDirty); } }
 	float			GetFarPlane() const { return FarPlane; }
-	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().pos_component(); }
+	const vector3&	GetPosition() const { return pNode->GetWorldPosition(); }
 	const matrix44&	GetViewMatrix() const { return View; }
 	const matrix44&	GetInvViewMatrix() const { return pNode->GetWorldMatrix(); }
 	const matrix44&	GetProjMatrix() const { return Proj; }

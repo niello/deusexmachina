@@ -9,18 +9,6 @@ namespace Render
 {
 ImplementRTTI(Render::IModelRenderer, Render::IRenderer);
 
-// Forward rendering:
-// - Render solid objects to depth buffer, front to back (only if render to texture?)
-// - Render atest objects to depth buffer, front to back (only if render to texture?)
-// - Occlusion (against z-buffer filled by 1 and 2)
-// - Render sky without zwrite and mb without ztest //???better to render sky after all other non-alpha/additive geometry?
-// - Render terrain (lightmapped/unlit/...?) FTB //???render after all opaque except skybox?
-// - Render opaque geometry (static, skinned, blended, envmapped) FTB
-// - Render alpha-tested geometry (static, leaf, tree) FTB
-// - Render alpha-blended geometry (alpha, alpha_soft, skinned_alpha, env_alpha, water) BTF
-// - Render particles (alpha, then additive) BTF?
-// - HDR
-
 bool IModelRenderer::Init(const Data::CParams& Desc)
 {
 	CStrID ShaderID = Desc.Get(CStrID("Shader"), CStrID::Empty);
@@ -111,23 +99,10 @@ void IModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 		n_assert_dbg(pModel->BatchType.IsValid());
 		if (pModel->BatchType != BatchType) continue;
 
-		//!!!in light renderers must collect lights here and add Ln feat flags to models!
-
 		CModelRecord* pRec = Models.Reserve(1);
 		pRec->pModel = pModel;
 		pRec->FeatFlags = pModel->FeatureFlags | pModel->Material->GetFeatureFlags() | FeatFlags;
-		pRec->hTech = pModel->Material->GetShader()->GetTechByFeatures(pRec->FeatFlags);
-		n_assert(pRec->hTech);
-	}
-
-	if (DistanceSorting != Sort_None && Models.Size() > 1)
-	{
-		vector3 EyePos = RenderSrv->GetCameraPosition();
-		for (int i = 0; i < Models.Size(); ++i)
-		{
-			CModelRecord& Rec = Models[i];
-			Rec.SqDistanceToCamera = vector3::SqDistance(Rec.pModel->GetNode()->GetWorldMatrix().pos_component(), EyePos);
-		}
+		pRec->LightCount = 0;
 	}
 }
 //---------------------------------------------------------------------

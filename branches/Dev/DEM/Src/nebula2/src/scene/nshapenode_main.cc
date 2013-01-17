@@ -81,8 +81,8 @@ bool nShapeNode::LoadMesh()
         SetLocalBox(refMesh->Group(groupIndex).Box);
     }
 
-	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
-	SetLocalBox(Mesh->GetGroup(groupIndex).AABB);
+	//if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
+	//SetLocalBox(Mesh->GetGroup(groupIndex).AABB);
 
 	return true;
 }

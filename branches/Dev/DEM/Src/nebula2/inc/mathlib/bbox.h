@@ -555,20 +555,17 @@ inline EClipStatus bbox3::clipstatus(const matrix44& viewProjection) const
 {
     int andFlags = 0xffff;
     int orFlags  = 0;
-    static vector4 v0;
     for (int i = 0; i < 8; i++)
     {
-        int clip = 0;
-        v0.w = 1.0f;
-        if (i & 1) v0.x = this->vmin.x;
-        else       v0.x = this->vmax.x;
-        if (i & 2) v0.y = this->vmin.y;
-        else       v0.y = this->vmax.y;
-        if (i & 4) v0.z = this->vmin.z;
-        else       v0.z = this->vmax.z;
+		vector4 v0(	(i & 1) ? vmin.x : vmax.x,
+					(i & 2) ? vmin.y : vmax.y,
+					(i & 4) ? vmin.z : vmax.z,
+					1.0f);
 
+		// Get position in projection space
         vector4 v1 = viewProjection * v0;
 
+        int clip = 0;
         if (v1.x < -v1.w)       clip |= ClipLeft;
         else if (v1.x > v1.w)   clip |= ClipRight;
         if (v1.y < -v1.w)       clip |= ClipBottom;
@@ -576,10 +573,10 @@ inline EClipStatus bbox3::clipstatus(const matrix44& viewProjection) const
         if (v1.z < -v1.w)       clip |= ClipFar;
         else if (v1.z > v1.w)   clip |= ClipNear;
         andFlags &= clip;
-        orFlags  |= clip;
+        orFlags |= clip;
     }
-    if (0 == orFlags) return Inside;
-    if (0 != andFlags) return Outside;
+    if (!orFlags) return Inside;
+    if (andFlags) return Outside;
     return Clipped;
 }
 
