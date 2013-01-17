@@ -16,11 +16,15 @@ class CModelRendererSinglePassLight: public IModelRenderer
 
 protected:
 
+	DWORD			LightFeatFlags[MaxLightsPerObject];
+
 	//???both to light?
 	bool			IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light);
 	float			CalcLightPriority(Scene::CModel& Model, Scene::CLight& Light);
 
 public:
+
+	CModelRendererSinglePassLight();
 
 	virtual void	Render();
 };

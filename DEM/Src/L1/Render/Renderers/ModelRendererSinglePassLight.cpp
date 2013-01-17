@@ -13,6 +13,17 @@ namespace Render
 ImplementRTTI(Render::CModelRendererSinglePassLight, Render::IModelRenderer);
 ImplementFactory(Render::CModelRendererSinglePassLight);
 
+CModelRendererSinglePassLight::CModelRendererSinglePassLight()
+{
+	for (DWORD i = 0; i < MaxLightsPerObject; ++i)
+	{
+		nString Mask;
+		Mask.Format("L%d", i + 1);
+		LightFeatFlags[i] = RenderSrv->ShaderFeatureStringToMask(Mask);
+	}
+}
+//---------------------------------------------------------------------
+
 //!!!pass const refs! all calculations must be done earlier in scene or externally!
 bool CModelRendererSinglePassLight::IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light)
 {
@@ -122,6 +133,7 @@ void CModelRendererSinglePassLight::Render()
 			}
 		}
 		n_assert_dbg(Rec.LightCount <= MaxLightsPerObject);
+		Rec.FeatFlags |= LightFeatFlags[Rec.LightCount - 1];
 		//LIGHTS-
 
 		Rec.hTech = Rec.pModel->Material->GetShader()->GetTechByFeatures(Rec.FeatFlags);
@@ -240,6 +252,31 @@ void CModelRendererSinglePassLight::Render()
 			if (Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).IsBound())
 				n_assert(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
 		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.Size() > 0);
+
+		//LIGHTS+
+		//!!!if need to apply static vars and not using shared, need to reset all!
+		//!!!remember shared handles for light params!
+		//!!!Need redundancy check, may be even "does this light now set at ANY index"! mb store index in light rec
+		int LightType[MaxLightsPerObject];
+		//vector4 LightPos[MaxLightsPerObject];
+		vector4 LightDir[MaxLightsPerObject];
+		vector4 LightColor[MaxLightsPerObject];
+		vector4 LightParams[MaxLightsPerObject];
+		for (DWORD LightIdx = 0; LightIdx < Rec.LightCount; ++LightIdx)
+		{
+			LightType[LightIdx] = (int)Rec.Lights[LightIdx]->Type;
+			//LightPos[LightIdx] = Rec.Lights[LightIdx]->GetPosition();
+			LightDir[LightIdx] = Rec.Lights[LightIdx]->GetDirection();
+			LightColor[LightIdx] = Rec.Lights[LightIdx]->Color;
+			//LightParams[LightIdx] = Rec.Lights[LightIdx]->GetDirection();
+		}
+		CShader::HVar hLightVar = pMaterial->GetShader()->GetVarHandleByName(CStrID("LightType"));
+		pMaterial->GetShader()->SetIntArray(hLightVar, LightType, Rec.LightCount);
+		hLightVar = pMaterial->GetShader()->GetVarHandleByName(CStrID("LightDir"));
+		pMaterial->GetShader()->SetFloat4Array(hLightVar, LightDir, Rec.LightCount);
+		hLightVar = pMaterial->GetShader()->GetVarHandleByName(CStrID("LightColor"));
+		pMaterial->GetShader()->SetFloat4Array(hLightVar, LightColor, Rec.LightCount);
+		//LIGHTS-
 
 		// Setup or disable instancing, setup World transform
 
