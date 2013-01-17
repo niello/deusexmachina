@@ -3,6 +3,7 @@
 #define __DEM_L1_SCENE_LIGHT_H__
 
 #include <Scene/SceneNodeAttr.h>
+#include <Scene/SceneNode.h>
 
 // Light is a scene node attribute describing light source properties, including type,
 // color, range, shadow casting flags etc
@@ -20,6 +21,18 @@ class CLight: public CSceneNodeAttr
 	DeclareRTTI;
 	DeclareFactory(CLight);
 
+protected:
+
+	// Point & Spot
+	float		Range;
+	float		InvRange;
+
+	// Spot
+	float		ConeInner;	// In radians, full angle (not half), Theta
+	float		ConeOuter;	// In radians, full angle (not half), Phi
+	float		CosHalfInner;
+	float		CosHalfOuter;
+
 public:
 
 	enum EType
@@ -29,50 +42,88 @@ public:
 		Spot		= 2
 	};
 
-	EType	Type;		//???Static per-instance shader var? MTE vs N3 - count of each type or type in light itself
-	vector3	Color;		// Animable per-instance shaer var
-	float	Intensity;	// Animable per-instance shaer var
-
 	// ERenderFlag: ShadowCaster, DoOcclusionCulling (force disable for directionals)
 
-	union
-	{
-		float Range;			// Point //???or use node tfm scale part?
+	EType		Type;		//???Static per-instance shader var? MTE vs N3 - count of each type or type in light itself
+	vector3		Color;		// Animable per-instance shaer var
+	float		Intensity;	// Animable per-instance shaer var
 
-		struct					// Spot //???need range too?
-		{
-			float ConeInner;
-			float ConeOuter;
-		};
-	};
-
-	//decay type(none, lin, quad), near and far attenuation
 	//shadow color(or calc?)
 	//???light diffuse component in reverse direction? (N2 sky node)
-	//???fog intensity? decay start distance
+	//???fog intensity?
 	//???bool cast light? draw volumetric, draw ground projection
 
 	CSPSRecord*	pSPSRecord;
 
-	CLight(): Type(Directional), pSPSRecord(NULL), Intensity(1.f) {}
+	CLight();
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void	OnRemove();
 	virtual void	Update();
+	void			CalcFrustum(matrix44& OutFrustum);
 	void			GetBox(bbox3& OutBox) const;
 
-	//use smallest of possible AABBs (light to model local space before testing)
-	// IsBoxInRange(const bbox3& Box) { if directional yes else real test }
+	void			SetRange(float NewRange);
+	void			SetSpotInnerAngle(float NewAngle);
+	void			SetSpotOuterAngle(float NewAngle);
+	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().pos_component(); }
+	const vector3&	GetDirection() const { return pNode->GetWorldMatrix().z_component(); } //!!!for some lights need -z!
+	float			GetRange() const { return Range; }
+	float			GetInvRange() const { return InvRange; }
+	float			GetSpotInnerAngle() const { return ConeInner; }
+	float			GetSpotOuterAngle() const { return ConeOuter; }
+	float			GetCosHalfTheta() const { return CosHalfInner; }
+	float			GetCosHalfPhi() const { return CosHalfOuter; }
 };
 
 RegisterFactory(CLight);
 
 typedef Ptr<CLight> PLight;
 
+inline CLight::CLight():
+	Type(Directional),
+	pSPSRecord(NULL),
+	Color(1.f, 1.f, 1.f),
+	Range(1.f),
+	InvRange(1.f),
+	ConeInner(N_PI * .5f),
+	ConeOuter(N_PI / 3.f)
+{
+	CosHalfInner = n_cos(ConeInner * 0.5f);
+	CosHalfOuter = n_cos(ConeOuter * 0.5f);
+}
+//---------------------------------------------------------------------
+
+//!!!GetBox & CalcBox must be separate!
 inline void CLight::GetBox(bbox3& OutBox) const
 {
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
+}
+//---------------------------------------------------------------------
+
+inline void CLight::SetRange(float NewRange)
+{
+	n_assert(NewRange > 0.f);
+	Range = NewRange;
+	InvRange = 1.f / Range;
+}
+//---------------------------------------------------------------------
+
+inline void CLight::SetSpotInnerAngle(float NewAngle)
+{
+	n_assert(NewAngle > 0.f && NewAngle < N_PI);
+	n_assert_dbg(NewAngle < ConeOuter);
+	ConeInner = NewAngle;
+	CosHalfInner = n_cos(ConeInner * 0.5f);
+}
+//---------------------------------------------------------------------
+
+inline void CLight::SetSpotOuterAngle(float NewAngle)
+{
+	n_assert(NewAngle > 0.f && NewAngle < N_PI);
+	ConeOuter = NewAngle;
+	CosHalfOuter = n_cos(ConeOuter * 0.5f);
 }
 //---------------------------------------------------------------------
 

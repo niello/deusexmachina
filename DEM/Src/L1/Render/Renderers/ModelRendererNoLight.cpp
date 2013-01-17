@@ -12,6 +12,19 @@ void CModelRendererNoLight::Render()
 {
 	if (!Models.Size()) return;
 
+	vector3 EyePos = RenderSrv->GetCameraPosition();
+	for (int i = 0; i < Models.Size(); ++i)
+	{
+		CModelRecord& Rec = Models[i];
+
+		Rec.hTech = Rec.pModel->Material->GetShader()->GetTechByFeatures(Rec.FeatFlags);
+		n_assert(Rec.hTech);
+
+		//???need distance to BBox? May be critical for Alpha geometry!
+		if (DistanceSorting != Sort_None)
+			Rec.SqDistanceToCamera = vector3::SqDistance(Rec.pModel->GetNode()->GetWorldPosition(), EyePos);
+	}
+
 	if (Models.Size() > 1)
 		switch (DistanceSorting)
 		{
@@ -22,7 +35,6 @@ void CModelRendererNoLight::Render()
 
 	CShader::HTech	hTech = NULL;
 	CMaterial*		pMaterial = NULL;
-	CMesh*			pMesh = NULL;
 	bool			InstancingIsActive = false;
 	CShader::HVar	hWorld;
 	CShader::HVar	hWVP;
@@ -105,11 +117,10 @@ void CModelRendererNoLight::Render()
 
 		bool ShaderVarsChanged = false;
 
-		//!!!vars not bound to shader now abort application!
 		if (NeedToApplyStaticVars)
 		{
 			//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
-			//???check IsVarUsed? IsBound too
+			//???check IsVarUsed?
 			for (int VarIdx = 0; VarIdx < pMaterial->GetStaticVars().Size(); ++VarIdx)
 				if (pMaterial->GetStaticVars().ValueAtIndex(VarIdx).IsBound())
 					n_assert(pMaterial->GetStaticVars().ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
@@ -117,7 +128,7 @@ void CModelRendererNoLight::Render()
 		}
 
 		//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
-		//???check IsVarUsed? IsBound too
+		//???check IsVarUsed?
 		for (int VarIdx = 0; VarIdx < Rec.pModel->ShaderVars.Size(); ++VarIdx)
 			if (Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).IsBound())
 				n_assert(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));

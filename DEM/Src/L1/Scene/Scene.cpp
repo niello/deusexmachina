@@ -174,7 +174,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 									  nArray<CRenderObject*>* OutObjects, nArray<CLight*>* OutLights,
 									  EClipStatus Clip)
 {
-	if (!pNode->GetTotalObjCount() || (!OutObjects && !OutLights)) return;
+	if (!pNode || !pNode->GetTotalObjCount() || (!OutObjects && !OutLights)) return;
 
 	if (Clip == Clipped)
 	{

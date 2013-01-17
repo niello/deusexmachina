@@ -55,8 +55,8 @@ void CLODGroup::Update()
 
 	if (!pNode || !pNode->GetScene()->GetCurrCamera()) return;
 
-	vector3 DistanceVector = pNode->GetWorldMatrix().pos_component() -
-		pNode->GetScene()->GetCurrCamera()->GetNode()->GetWorldMatrix().pos_component();
+	vector3 DistanceVector = pNode->GetWorldPosition() -
+		pNode->GetScene()->GetCurrCamera()->GetNode()->GetWorldPosition();
 	float SqDist = DistanceVector.lensquared();
 
 	CStrID SelectedChild;

@@ -115,8 +115,10 @@ public:
 
 		bool		Contains(const TObject& Object) const;
 		bool		Contains(const vector2& Center, const vector2& HalfSize) const;
+		bool		SharesSpaceWith(const CNode& Other) const;
 		void		GetBounds(bbox3& Box) const;
 
+		uchar		GetLevel() const { return Level; }
 		CNode*		GetParent() const { return pParent; }
 		CNode*		GetChild(DWORD Index) const { n_assert(Index < 4); return pChild + Index; }
 		DWORD		GetTotalObjCount() const { return TotalObjCount; }
@@ -341,7 +343,7 @@ inline bool CQuadTree<TObject, TStorage>::CNode::Contains(const TObject& Object)
 
 // Returns true if node contains the whole object (not only some its part!)
 template<class TObject, class TStorage>
-bool CQuadTree<TObject, TStorage>::CNode::Contains(const vector2& Center, const vector2& HalfSize) const
+inline bool CQuadTree<TObject, TStorage>::CNode::Contains(const vector2& Center, const vector2& HalfSize) const
 {
 	bbox3 Box;
 	GetBounds(Box);
@@ -349,6 +351,34 @@ bool CQuadTree<TObject, TStorage>::CNode::Contains(const vector2& Center, const 
 			Center.x + HalfSize.x <= Box.vmax.x &&
 			Center.y - HalfSize.y >= Box.vmin.z &&
 			Center.y + HalfSize.y <= Box.vmax.z;
+}
+//---------------------------------------------------------------------
+
+// Returns true if nodes share common space (intersect)
+template<class TObject, class TStorage>
+inline bool CQuadTree<TObject, TStorage>::CNode::SharesSpaceWith(const CNode& Other) const
+{
+	if (this == &Other) OK;
+	if (Level == Other.Level) FAIL;
+
+	// If not the same node and not at equal levels, check if one node is a N-level parent of another
+	const Scene::CSPSNode* pMin;
+	const Scene::CSPSNode* pMax;
+	if (Level < Other.Level)
+	{
+		pMin = this;
+		pMax = &Other;
+	}
+	else
+	{
+		pMin = &Other;
+		pMax = this;
+	}
+
+	while (pMax->Level > pMin->Level)
+		pMax = pMax->pParent;
+
+	return pMax == pMin;
 }
 //---------------------------------------------------------------------
 

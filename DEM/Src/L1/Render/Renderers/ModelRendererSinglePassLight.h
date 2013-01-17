@@ -6,8 +6,6 @@
 
 // Model renderer, that implements rendering single-pass lighting with multiple lights per pass
 
-//!!!light scissors or clip planes!
-
 namespace Render
 {
 
@@ -16,9 +14,15 @@ class CModelRendererSinglePassLight: public IModelRenderer
 	DeclareRTTI;
 	DeclareFactory(CModelRendererSinglePassLight);
 
+protected:
+
+	//???both to light?
+	bool			IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light);
+	float			CalcLightPriority(Scene::CModel& Model, Scene::CLight& Light);
+
 public:
 
-	virtual void Render();
+	virtual void	Render();
 };
 
 RegisterFactory(CModelRendererSinglePassLight);

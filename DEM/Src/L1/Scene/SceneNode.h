@@ -121,6 +121,7 @@ public:
 	const Math::CTransform&	GetLocalTransform() { return Tfm; }
 	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
 	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
+	const vector3&			GetWorldPosition() { return WorldMatrix.pos_component(); }
 };
 
 inline CSceneNode::~CSceneNode()
