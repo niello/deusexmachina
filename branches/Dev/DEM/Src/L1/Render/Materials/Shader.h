@@ -55,11 +55,13 @@ public:
 	bool			Set(HVar Var, const Data::CData& Value);
 	void			SetBool(HVar Var, bool Value) { n_assert(SUCCEEDED(pEffect->SetBool(Var, Value))); }
 	void			SetInt(HVar Var, int Value) { n_assert(SUCCEEDED(pEffect->SetInt(Var, Value))); }
+	void			SetIntArray(HVar Var, const int* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetIntArray(Var, pArray, Count))); }
 	void			SetFloat(HVar Var, float Value) { n_assert(SUCCEEDED(pEffect->SetFloat(Var, Value))); }
 	void			SetFloat4(HVar Var, const vector4& Value) { n_assert(SUCCEEDED(pEffect->SetVector(Var, (CONST D3DXVECTOR4*)&Value))); }
+	void			SetFloat4Array(HVar Var, const vector4* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetVectorArray(Var, (CONST D3DXVECTOR4*)pArray, Count))); }
 	void			SetMatrix(HVar Var, const matrix44& Value) { n_assert(SUCCEEDED(pEffect->SetMatrix(Var, (CONST D3DXMATRIX*)&Value))); }
-	void			SetMatrixArray(HVar Var, const matrix44* pArray, int Count) { n_assert(SUCCEEDED(pEffect->SetMatrixArray(Var, (CONST D3DXMATRIX*)pArray, Count))); }
-	void			SetMatrixPointerArray(HVar Var, const matrix44** pArray, int Count) { n_assert(SUCCEEDED(pEffect->SetMatrixPointerArray(Var, (CONST D3DXMATRIX**)pArray, Count))); }
+	void			SetMatrixArray(HVar Var, const matrix44* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetMatrixArray(Var, (CONST D3DXMATRIX*)pArray, Count))); }
+	void			SetMatrixPointerArray(HVar Var, const matrix44** pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetMatrixPointerArray(Var, (CONST D3DXMATRIX**)pArray, Count))); }
 	void			SetTexture(HVar Var, const CTexture& Value) { n_assert(SUCCEEDED(pEffect->SetTexture(Var, Value.GetD3D9BaseTexture()))); }
 	//pEffect->SetRawValue
 

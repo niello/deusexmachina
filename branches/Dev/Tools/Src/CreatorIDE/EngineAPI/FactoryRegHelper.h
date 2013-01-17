@@ -48,6 +48,7 @@
 // RENDERERS =======================================
 
 #include <Render/Renderers/ModelRendererNoLight.h>
+#include <Render/Renderers/ModelRendererSinglePassLight.h>
 
 // OTHER ===========================================
 
