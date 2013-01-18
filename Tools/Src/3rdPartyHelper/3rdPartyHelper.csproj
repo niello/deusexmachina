@@ -49,18 +49,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DownloadInfo.cs" />
+    <Compile Include="Folder.cs" />
+    <Compile Include="FolderItem.cs" />
+    <Compile Include="FolderItems.cs" />
+    <Compile Include="FolderItemVerb.cs" />
+    <Compile Include="FolderItemVerbs.cs" />
+    <Compile Include="IShellDispatch.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="Shell32">
-      <Guid>{50A7E9B0-70EF-11D1-B75A-00A0C90564FE}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-    </COMReference>
+    <Compile Include="Shell.cs" />
+    <Compile Include="ShellClass.cs" />
   </ItemGroup>
   <Import Condition="Exists('$(SolutionDir)$(SolutionName).csproj.targets')" Project="$(SolutionDir)$(SolutionName).csproj.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

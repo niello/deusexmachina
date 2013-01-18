@@ -12,15 +12,16 @@ namespace ThirdPartyHelper
         public string HashCode { get; set; }
         public string SourcePath { get; set; }
         public string DestinationPath { get; set; }
+        public string CacheFileName { get; set; }
 
         public static DownloadInfo Parse(string str)
         {
             var matches = StringPattern.Matches(str).Cast<Match>().Where(m => m.Length > 0).ToArray();
-            if (matches.Length != 4)
-                throw new InvalidOperationException(string.Format("String '{0}' does not match the following pattern: '\"Uri\" \"HashCode\" \"SourcePath\" \"DestinationPath\"", str));
+            if (matches.Length != 4 && matches.Length != 5)
+                throw new InvalidOperationException(string.Format("String '{0}' does not match the following pattern: '\"Uri\" \"HashCode\" \"SourcePath\" \"DestinationPath\" [\"CacheFileName\"]'", str));
 
             var result = new DownloadInfo();
-            for(int i=0; i<4; i++)
+            for (int i = 0; i < matches.Length; i++)
             {
                 var value = matches[i].Value.Trim(' ', '"');
                 switch (i)
@@ -36,6 +37,9 @@ namespace ThirdPartyHelper
                         break;
                     case 3:
                         result.DestinationPath = value;
+                        break;
+                    case 4:
+                        result.CacheFileName = value;
                         break;
                 }
             }
