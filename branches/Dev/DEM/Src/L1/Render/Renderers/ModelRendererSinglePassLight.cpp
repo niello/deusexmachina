@@ -15,6 +15,14 @@ ImplementFactory(Render::CModelRendererSinglePassLight);
 
 CModelRendererSinglePassLight::CModelRendererSinglePassLight()
 {
+	SharedShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shared"));
+	n_assert(SharedShader.isvalid());
+	hLightType = SharedShader->GetVarHandleByName(CStrID("LightType"));
+	hLightPos = SharedShader->GetVarHandleByName(CStrID("LightPos"));
+	hLightDir = SharedShader->GetVarHandleByName(CStrID("LightDir"));
+	hLightColor = SharedShader->GetVarHandleByName(CStrID("LightColor"));
+	hLightParams = SharedShader->GetVarHandleByName(CStrID("LightParams"));
+
 	for (DWORD i = 0; i < MaxLightsPerObject; ++i)
 	{
 		nString Mask;
@@ -119,10 +127,13 @@ void CModelRendererSinglePassLight::Render()
 
 				if (NewLightPriority > MinPriority)
 				{
-					for (DWORD k = MinIdx; k < MaxLightsPerObject - 1; ++k)
-						Rec.Lights[k] = Rec.Lights[k + 1];
-					Rec.Lights[MaxLightsPerObject - 1] = pLight;
-					Rec.LightPriorities[MaxLightsPerObject - 1] = NewLightPriority;
+					//!!!since now I reset the whole light array, order doesn't matter!
+					//for (DWORD k = MinIdx; k < MaxLightsPerObject - 1; ++k)
+					//	Rec.Lights[k] = Rec.Lights[k + 1];
+					//Rec.Lights[MaxLightsPerObject - 1] = pLight;
+					//Rec.LightPriorities[MaxLightsPerObject - 1] = NewLightPriority;
+					Rec.Lights[MinIdx] = pLight;
+					Rec.LightPriorities[MinIdx] = NewLightPriority;
 				}
 			}
 			else
@@ -254,28 +265,54 @@ void CModelRendererSinglePassLight::Render()
 		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.Size() > 0);
 
 		//LIGHTS+
-		//!!!if need to apply static vars and not using shared, need to reset all!
-		//!!!remember shared handles for light params!
 		//!!!Need redundancy check, may be even "does this light now set at ANY index"! mb store index in light rec
-		int LightType[MaxLightsPerObject];
-		//vector4 LightPos[MaxLightsPerObject];
-		vector4 LightDir[MaxLightsPerObject];
-		vector4 LightColor[MaxLightsPerObject];
-		vector4 LightParams[MaxLightsPerObject];
-		for (DWORD LightIdx = 0; LightIdx < Rec.LightCount; ++LightIdx)
+		//!!!light param arrays are local because now I don't know how to set only part of shader var array,
+		// so, I reset whole array each time!
+		if (Rec.LightCount)
 		{
-			LightType[LightIdx] = (int)Rec.Lights[LightIdx]->Type;
-			//LightPos[LightIdx] = Rec.Lights[LightIdx]->GetPosition();
-			LightDir[LightIdx] = Rec.Lights[LightIdx]->GetDirection();
-			LightColor[LightIdx] = Rec.Lights[LightIdx]->Color;
-			//LightParams[LightIdx] = Rec.Lights[LightIdx]->GetDirection();
+			//!!!can skip if all lights are the same as at the previous set (no matter in what order)!
+			int LightType[MaxLightsPerObject];
+			vector4 LightPos[MaxLightsPerObject];
+			vector4 LightDir[MaxLightsPerObject];
+			vector4 LightColor[MaxLightsPerObject];
+			vector4 LightParams[MaxLightsPerObject];
+			bool HasPointOrSpotLights = false;
+			bool HasDirOrSpotLights = false;
+			for (DWORD LightIdx = 0; LightIdx < Rec.LightCount; ++LightIdx)
+			{
+				Scene::CLight& Light = *Rec.Lights[LightIdx];
+				LightType[LightIdx] = (int)Light.Type;
+				LightColor[LightIdx] = Light.Color * Light.Intensity;
+				if (Light.Type == Scene::CLight::Directional)
+				{
+					HasDirOrSpotLights = true;
+					LightDir[LightIdx] = Light.GetReverseDirection();
+				}
+				else
+				{
+					HasPointOrSpotLights = true;
+					LightPos[LightIdx] = Light.GetPosition();
+					LightParams[LightIdx].x = Light.GetRange(); //!!!set inverse range!
+					if (Light.Type == Scene::CLight::Spot)
+					{
+						HasDirOrSpotLights = true;
+						LightDir[LightIdx] = Light.GetDirection();
+						//???precalculate 1/(cosT/2 - cosP/2) here?
+						LightParams[LightIdx].y = Light.GetCosHalfTheta();
+						LightParams[LightIdx].z = Light.GetCosHalfPhi();
+					}
+				}
+			}
+
+			if (hLightType) SharedShader->SetIntArray(hLightType, LightType, Rec.LightCount);
+			if (hLightColor) SharedShader->SetFloat4Array(hLightColor, LightColor, Rec.LightCount);
+			if (HasDirOrSpotLights && hLightDir) SharedShader->SetFloat4Array(hLightDir, LightDir, Rec.LightCount);
+			if (HasPointOrSpotLights)
+			{
+				if (hLightPos) SharedShader->SetFloat4Array(hLightPos, LightPos, Rec.LightCount);
+				if (hLightParams) SharedShader->SetFloat4Array(hLightParams, LightParams, Rec.LightCount);
+			}
 		}
-		CShader::HVar hLightVar = pMaterial->GetShader()->GetVarHandleByName(CStrID("LightType"));
-		pMaterial->GetShader()->SetIntArray(hLightVar, LightType, Rec.LightCount);
-		hLightVar = pMaterial->GetShader()->GetVarHandleByName(CStrID("LightDir"));
-		pMaterial->GetShader()->SetFloat4Array(hLightVar, LightDir, Rec.LightCount);
-		hLightVar = pMaterial->GetShader()->GetVarHandleByName(CStrID("LightColor"));
-		pMaterial->GetShader()->SetFloat4Array(hLightVar, LightColor, Rec.LightCount);
 		//LIGHTS-
 
 		// Setup or disable instancing, setup World transform
