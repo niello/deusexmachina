@@ -15,43 +15,27 @@ bool CLight::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
-		case 'SRAV': // VARS
-		{
-			short Count;
-			if (!DataReader.Read(Count)) FAIL;
-			for (short i = 0; i < Count; ++i)
-			{
-				char Key[256];
-				if (!DataReader.ReadString(Key, sizeof(Key))) FAIL;
-				nShaderState::Param Param = nShaderState::StringToParam(Key);
-
-				char Type;
-				if (!DataReader.Read(Type)) FAIL;
-
-				//if (Type == DATA_TYPE_ID(bool)) SetBool(Param, DataReader.Read<bool>());
-				//else if (Type == DATA_TYPE_ID(int)) SetInt(Param, DataReader.Read<int>());
-				//else if (Type == DATA_TYPE_ID(float)) SetFloat(Param, DataReader.Read<float>());
-				//else if (Type == DATA_TYPE_ID(vector4)) SetVector(Param, DataReader.Read<vector4>()); //???vector3?
-				////else if (Type == DATA_TYPE_ID(matrix44)) SetMatrix(Param, DataReader.Read<matrix44>());
-				//else FAIL;
-				if (Type == DATA_TYPE_ID(bool)) DataReader.Read<bool>();
-				else if (Type == DATA_TYPE_ID(int)) DataReader.Read<int>();
-				else if (Type == DATA_TYPE_ID(float)) DataReader.Read<float>();
-				else if (Type == DATA_TYPE_ID(vector4)) DataReader.Read<vector4>();
-				else FAIL;
-			}
-			OK;
-		}
 		case 'THGL': // LGHT
 		{
-			DataReader.Read<int>((int&)Type); // To force size
-			OK;
+			return DataReader.Read<int>((int&)Type); // To force size
 		}
 		case 'DHSC': // CSHD
 		{
 			//!!!Flags.SetTo(ShadowCaster, DataReader.Read<bool>());!
 			DataReader.Read<bool>();
 			OK;
+		}
+		case 'TNIL': // LINT
+		{
+			return DataReader.Read(Intensity);
+		}
+		case 'RLCL': // LCLR
+		{
+			return DataReader.Read(Color);
+		}
+		case 'GNRL': // LRNG
+		{
+			return DataReader.Read(Range);
 		}
 		default: FAIL;
 	}
@@ -85,6 +69,16 @@ void CLight::Update()
 			pNode->GetScene()->SPS.UpdateElement(pSPSRecord);
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+//!!!GetBox & CalcBox must be separate!
+void CLight::GetBox(bbox3& OutBox) const
+{
+	n_assert2(Type != Directional && Type != Spot, "IMPLEMENT SPOTLIGHT AABB!!!");
+	// If local params changed, recompute AABB
+	// If transform of host node changed, update global space AABB (rotate, scale)
+	OutBox.set(GetPosition(), vector3(Range, Range, Range));
 }
 //---------------------------------------------------------------------
 

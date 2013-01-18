@@ -16,6 +16,13 @@ class CModelRendererSinglePassLight: public IModelRenderer
 
 protected:
 
+	PShader			SharedShader;
+	CShader::HVar	hLightType;
+	CShader::HVar	hLightPos;
+	CShader::HVar	hLightDir;
+	CShader::HVar	hLightColor;
+	CShader::HVar	hLightParams;
+
 	DWORD			LightFeatFlags[MaxLightsPerObject];
 
 	//???both to light?

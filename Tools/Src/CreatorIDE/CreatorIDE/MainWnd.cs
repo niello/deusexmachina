@@ -58,7 +58,14 @@ namespace CreatorIDE
         private void MainWnd_Load(object sender, EventArgs e)
 		{
             string[] Args = Environment.GetCommandLineArgs();
-            if (Args.Length > 1 && LoadProject(Args[1]))
+            if (Args.Length < 2)
+            {
+                MessageBox.Show("Первым параметром командной строки должен быть путь к проекту!");
+                Close();
+                return;
+            }
+           
+            if (LoadProject(Args[1]))
 			{
                 Text = "Creator IDE (" + EngineAPI.Engine.GetDllName() + " v" + EngineAPI.Engine.GetDllVersion() +
 					") - [" + CurrProject + "]";

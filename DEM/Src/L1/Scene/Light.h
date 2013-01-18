@@ -44,9 +44,9 @@ public:
 
 	// ERenderFlag: ShadowCaster, DoOcclusionCulling (force disable for directionals)
 
-	EType		Type;		//???Static per-instance shader var? MTE vs N3 - count of each type or type in light itself
-	vector3		Color;		// Animable per-instance shaer var
-	float		Intensity;	// Animable per-instance shaer var
+	EType		Type;
+	vector3		Color;		//???What with alpha color?
+	float		Intensity;
 
 	//shadow color(or calc?)
 	//???light diffuse component in reverse direction? (N2 sky node)
@@ -67,7 +67,8 @@ public:
 	void			SetSpotInnerAngle(float NewAngle);
 	void			SetSpotOuterAngle(float NewAngle);
 	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().pos_component(); }
-	const vector3&	GetDirection() const { return pNode->GetWorldMatrix().z_component(); } //!!!for some lights need -z!
+	vector3			GetDirection() const { return -pNode->GetWorldMatrix().z_component(); }
+	const vector3&	GetReverseDirection() const { return pNode->GetWorldMatrix().z_component(); }
 	float			GetRange() const { return Range; }
 	float			GetInvRange() const { return InvRange; }
 	float			GetSpotInnerAngle() const { return ConeInner; }
@@ -84,6 +85,7 @@ inline CLight::CLight():
 	Type(Directional),
 	pSPSRecord(NULL),
 	Color(1.f, 1.f, 1.f),
+	Intensity(0.5f),
 	Range(1.f),
 	InvRange(1.f),
 	ConeInner(N_PI * .5f),
@@ -91,14 +93,6 @@ inline CLight::CLight():
 {
 	CosHalfInner = n_cos(ConeInner * 0.5f);
 	CosHalfOuter = n_cos(ConeOuter * 0.5f);
-}
-//---------------------------------------------------------------------
-
-//!!!GetBox & CalcBox must be separate!
-inline void CLight::GetBox(bbox3& OutBox) const
-{
-	// If local params changed, recompute AABB
-	// If transform of host node changed, update global space AABB (rotate, scale)
 }
 //---------------------------------------------------------------------
 
