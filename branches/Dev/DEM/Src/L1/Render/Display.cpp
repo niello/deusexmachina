@@ -118,7 +118,7 @@ bool CDisplay::OpenWindow()
 	int X, Y, W, H;
 	CalcWindowRect(X, Y, W, H);
 
-	hWnd = CreateWindow((LPCSTR)aWndClass, WindowTitle.Get(), WndStyle,
+	hWnd = CreateWindow((LPCSTR)(DWORD_PTR)aWndClass, WindowTitle.Get(), WndStyle,
 						X, Y, W, H,
 						hWndParent, NULL, hInst, NULL);
 	n_assert(hWnd);
