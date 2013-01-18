@@ -372,7 +372,7 @@ LONG WINAPI CDisplay::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 {
 	CDisplay* pDisp = (CDisplay*)GetWindowLong(hWnd, 0);
 	LONG Result = 0;
-	if (pDisp->HandleWindowMessage(hWnd, uMsg, wParam, lParam, Result)) return Result;
+	if (pDisp && pDisp->HandleWindowMessage(hWnd, uMsg, wParam, lParam, Result)) return Result;
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 //---------------------------------------------------------------------
