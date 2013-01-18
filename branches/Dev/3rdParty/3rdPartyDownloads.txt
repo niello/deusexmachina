@@ -1,17 +1,17 @@
-http://deusexmachina.googlecode.com/files/CEGUI-0.7.7.zip 5f50a2ed6bf97143d62e9ee3d427914c CEGUI-0.7.7 ..\CEGUI
+http://deusexmachina.googlecode.com/files/CEGUI-0.7.7.zip 5f50a2ed6bf97143d62e9ee3d427914c CEGUI-0.7.7 ..\CEGUI CEGUI.zip
 
-http://deusexmachina.googlecode.com/files/CEGUI-DEPS-0.7.x-r2-vc9.zip a8c010247f4f44c4215d43a84aaab1c9 dependencies ..\CEGUI\dependencies
+http://deusexmachina.googlecode.com/files/CEGUI-DEPS-0.7.x-r2-vc9.zip a8c010247f4f44c4215d43a84aaab1c9 dependencies ..\CEGUI\dependencies CEGUIDeps.zip
 
-http://deusexmachina.googlecode.com/files/CEGUI-0.7.7-TinyXML2.zip b1bd625b4e362400c8573e9d45d2e625 CEGUI ..\CEGUI
+http://deusexmachina.googlecode.com/files/CEGUI-0.7.7-TinyXML2.zip b1bd625b4e362400c8573e9d45d2e625 CEGUI ..\CEGUI CEGUITinyXml.zip
 
-http://deusexmachina.googlecode.com/files/DevIL-SDK-x86-1.7.8.zip 322d759b7ecbf5b8aa67f3245c32d01b "" ..\DevIL
+http://deusexmachina.googlecode.com/files/DevIL-SDK-x86-1.7.8.zip 322d759b7ecbf5b8aa67f3245c32d01b "" ..\DevIL DevIL.zip
 
-http://deusexmachina.googlecode.com/files/SDL-devel-1.2.15-VC.zip 3ed8fc7ab05c4ad2b839cd39e1febcf5 SDL-1.2.15 ..\SDL
+http://deusexmachina.googlecode.com/files/SDL-devel-1.2.15-VC.zip 3ed8fc7ab05c4ad2b839cd39e1febcf5 SDL-1.2.15 ..\SDL SDL.zip
 
-http://deusexmachina.googlecode.com/files/ODE_rev1858_patched.zip a5f41e2dfac2a8381506e644beb1992f ODE ..\ODE
+http://deusexmachina.googlecode.com/files/ODE_rev1858_patched.zip a5f41e2dfac2a8381506e644beb1992f ODE ..\ODE ODE.zip
 
-http://deusexmachina.googlecode.com/files/libvorbis-1.3.3.zip 1913c028236e0a6d3e99fec07ce624c7 libvorbis-1.3.3 ..\Xiph\vorbis
+http://deusexmachina.googlecode.com/files/libvorbis-1.3.3.zip 1913c028236e0a6d3e99fec07ce624c7 libvorbis-1.3.3 ..\Xiph\vorbis Vorbis.zip
 
-http://deusexmachina.googlecode.com/files/libtheora-1.1.1.zip 5d29b56dbebe02c9667e92790ab72698 libtheora-1.1.1 ..\Xiph\theora
+http://deusexmachina.googlecode.com/files/libtheora-1.1.1.zip 5d29b56dbebe02c9667e92790ab72698 libtheora-1.1.1 ..\Xiph\theora Theora.zip
 
-http://deusexmachina.googlecode.com/files/libogg-1.3.0.zip 54e31beee990ab80d6ea75517c8616c8 libogg-1.3.0 ..\Xiph\ogg
+http://deusexmachina.googlecode.com/files/libogg-1.3.0.zip 54e31beee990ab80d6ea75517c8616c8 libogg-1.3.0 ..\Xiph\ogg Ogg.zip
