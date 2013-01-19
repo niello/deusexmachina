@@ -52,6 +52,7 @@ namespace CreatorIDE.Engine
         {
             //Have to implement
             //???use default values?
+            throw new NotSupportedException();
         }
 
         public override bool ShouldSerializeValue(object component)
@@ -61,7 +62,9 @@ namespace CreatorIDE.Engine
 
         public override void SetValue(object component, object value)
         {
+            var oldValue = _prop.Value;
             _prop.Value = value;
+            ((CideEntity) component).RaisePropertyChanged(_prop.Name, value, oldValue);
         }
 
         public override Type PropertyType

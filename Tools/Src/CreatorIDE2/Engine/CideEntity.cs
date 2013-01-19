@@ -5,38 +5,33 @@ using System.Linq;
 
 namespace CreatorIDE.Engine
 {
-    public delegate void EntityRenamedCallback(CideEntity ent, string oldUid);
-
     public class CideEntity : CustomTypeDescriptor, INotifyPropertyChanged
     {
+        internal const string UIDPropertyName = "GUID";
+
         private readonly CideEntityCategory _category;
         private readonly List<AttrProperty> _attrProps;
         private readonly AttrProperty _guidProp;
+        
         private bool _exists;
 
-        public event EventHandler<PropertyChangingCancelEventArgs<string>> EntityRenaming;
+        public event EventHandler<PropertyChangingCancelEventArgs<string>> UIDChanging;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public string UID { get; private set; }
+        public string UID { get { return (string) _guidProp.Value; } }
 
-        //???
-        public string GuidPropValue
+        public string CategoryUID
         {
-            get { return (string)_guidProp.Value; }
+            get { return _category.UID; }
         }
 
-        public string Category
-        {
-            get { return _category.Name; }
-        }
-
-        public CideEntity(CideEngine engine, CideEntityCategory category):
+        internal CideEntity(CideEngine engine, CideEntityCategory category):
             this(engine, category, null, false)
         {
         }
 
-        public CideEntity(CideEngine engine, CideEntityCategory category, string uid, bool exists)
+        internal CideEntity(CideEngine engine, CideEntityCategory category, string uid, bool exists)
         {
             if(engine==null)
                 throw new ArgumentNullException("engine");
@@ -44,15 +39,14 @@ namespace CreatorIDE.Engine
                 throw new ArgumentNullException("category");
 
             _exists = !string.IsNullOrEmpty(uid) && exists;
-            UID = uid;
             _category = category;
             _attrProps = new List<AttrProperty>();
-            engine.SetCurrentEntity(UID);
+            engine.SetCurrentEntity(uid);
             foreach (var id in _category.AttrIDs)
             {
                 var desc = engine.GetAttrDesc(id.Name) ?? new AttrDesc();
                 _attrProps.Add(new AttrProperty(id, desc, engine));
-                if (id.Name == "GUID") _guidProp = _attrProps.Last();
+                if (id.Name == UIDPropertyName) _guidProp = _attrProps.Last();
             }
         }
 
@@ -171,6 +165,16 @@ namespace CreatorIDE.Engine
 
             return smthChanged;
         }*/
+
+        internal void RaisePropertyChanged(string propertyName, object newValue, object oldValue)
+        {
+            var h = PropertyChanged;
+            if (h == null)
+                return;
+
+            var args = new CideEntityPropertyChangedEventArgs(this, propertyName, newValue, oldValue);
+            h(this, args);
+        }
 
         #region CustomTypeDescriptor
 

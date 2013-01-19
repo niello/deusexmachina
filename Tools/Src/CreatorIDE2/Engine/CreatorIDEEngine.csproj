@@ -58,6 +58,7 @@
     <Compile Include="CideEngine.Categories.cs" />
     <Compile Include="AttrID.cs" />
     <Compile Include="CideEntity.cs" />
+    <Compile Include="CideEntityPropertyChangedEventArgs.cs" />
     <Compile Include="DataTypes.cs" />
     <Compile Include="CideEngine.cs" />
     <Compile Include="EngineInitializationException.cs" />
