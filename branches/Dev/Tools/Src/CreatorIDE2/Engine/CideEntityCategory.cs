@@ -7,18 +7,18 @@ namespace CreatorIDE.Engine
     public class CideEntityCategory
     {
         private readonly ReadOnlyCollection<AttrID> _attrIDs;
-        private readonly string _name;
+        private readonly string _uid;
 
-        public string Name { get { return _name; } }
+        public string UID { get { return _uid; } }
 
         public ReadOnlyCollection<AttrID> AttrIDs { get { return _attrIDs; } }
 
-        public CideEntityCategory(CideEngine engine, int categoryIdx)
+        internal CideEntityCategory(CideEngine engine, int categoryIdx)
         {
             if (engine == null)
                 throw new ArgumentNullException("engine");
 
-            _name = engine.GetCategoryName(categoryIdx);
+            _uid = engine.GetCategoryName(categoryIdx);
             var attrCount = engine.GetCategoryInstantAttrCount(categoryIdx);
             if (attrCount < 0)
                 attrCount = 0;

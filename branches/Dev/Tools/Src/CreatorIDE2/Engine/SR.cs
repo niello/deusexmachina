@@ -9,8 +9,10 @@ namespace CreatorIDE.Engine
         public const string GuidString = "37DC84A8-E2F7-4108-B52B-BABC0A43DC5D";
 
         public const string CategoryWithNameExistsFormat = "CategoryWithNameExistsFormat",
+                            EmptyEntityNameDisallowed = "EmptyEntityNameDisallowed",
                             EmptyCategoryNameDisallowed = "EmptyCategoryNameDisallowed",
                             EngineInitFailFormat = "EngineInitFailFormat",
+                            EntityWithNameExistsFormat = "EntityWithNameExistsFormat",
                             NewEntityDefaultName = "NewEntityDefaultName",
                             ValueNotSupportedFormat = "ValueNotSupportedFormat";
 

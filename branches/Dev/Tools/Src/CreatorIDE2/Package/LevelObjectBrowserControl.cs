@@ -36,22 +36,20 @@ namespace CreatorIDE.Package
             var categories = new Dictionary<string, TreeNode>();
             foreach (var category in engine.GetCategories())
             {
-                var categoryNode = _treeView.Nodes.Add(category.Name);
+                var categoryNode = _treeView.Nodes.Add(category.UID);
                 categoryNode.Tag = category;
-                categories.Add(category.Name, categoryNode);
+                categories.Add(category.UID, categoryNode);
             }
 
-            int entCount = engine.GetEntityCount();
-            for (int i = 0; i < entCount; i++)
+            foreach(var entity in engine.GetEntities())
             {
-                var category = engine.GetEntityCategory(i);
+                var category = entity.CategoryUID;
                 TreeNode categoryNode;
                 if (category == null || !categories.TryGetValue(category, out categoryNode))
                     continue;
 
-                var uid = engine.GetEntityUID(i);
-                var entityNode = categoryNode.Nodes.Add(uid);
-                entityNode.Tag = uid;
+                var entityNode = categoryNode.Nodes.Add(entity.UID);
+                entityNode.Tag = entity;
             }
         }
 
@@ -79,19 +77,15 @@ namespace CreatorIDE.Package
         {
             object selectedObject;
             CideEngine engine;
-            if(!TryGetEngine(out engine))
+            if (!TryGetEngine(out engine))
                 selectedObject = null;
             else if (e.Node.Tag is CideEntityCategory)
             {
                 var category = (CideEntityCategory) e.Node.Tag;
-                selectedObject = new CideEntity(engine, category);
+                selectedObject = engine.GetCategoryEntity(category);
             }
-            else if(e.Node.Tag is string)
-            {
-                var entityID = (string) e.Node.Tag;
-                var category = (CideEntityCategory) e.Node.Parent.Tag;
-                selectedObject = new CideEntity(engine, category, entityID, true);
-            }
+            else if (e.Node.Tag is CideEntity)
+                selectedObject = e.Node.Tag;
             else
                 selectedObject = null;
 

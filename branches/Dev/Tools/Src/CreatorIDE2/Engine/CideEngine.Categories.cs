@@ -10,7 +10,7 @@ namespace CreatorIDE.Engine
     /// </summary>
     partial class CideEngine
     {
-        public Dictionary<string, AttrDesc> _attrCache;
+        private Dictionary<string, AttrDesc> _attrDescriptors;
 
         internal int GetCategoryCount()
         {
@@ -34,6 +34,16 @@ namespace CreatorIDE.Engine
             return _entityCache.GetCategories(this);
         }
 
+        public CideEntity GetCategoryEntity(CideEntityCategory category)
+        {
+            return GetCategoryEntity(category.UID);
+        }
+
+        public CideEntity GetCategoryEntity(string uid)
+        {
+            return _entityCache.GetCategory(this, uid);
+        }
+
         internal AttrID GetAttrID(int categoryIdx, int attrIdx)
         {
             int typeID, id;
@@ -45,20 +55,20 @@ namespace CreatorIDE.Engine
 
         internal AttrDesc GetAttrDesc(string name)
         {
-            if(_attrCache==null)
+            if (_attrDescriptors == null)
             {
                 int count = GetAttrDescCount(_engineHandle.Handle);
-                _attrCache = new Dictionary<string, AttrDesc>(count);
-                for(int i=0; i<count; i++)
+                _attrDescriptors = new Dictionary<string, AttrDesc>(count);
+                for (int i = 0; i < count; i++)
                 {
                     AttrDesc attrDesc;
                     var attrName = GetAttrDesc(i, out attrDesc);
-                    _attrCache.Add(attrName, attrDesc);
+                    _attrDescriptors.Add(attrName, attrDesc);
                 }
             }
 
             AttrDesc result;
-            return _attrCache.TryGetValue(name, out result) ? result : null;
+            return _attrDescriptors.TryGetValue(name, out result) ? result : null;
         }
 
         private string GetAttrDesc(int idx, out AttrDesc desc)
@@ -83,11 +93,6 @@ namespace CreatorIDE.Engine
             if (category.Length > 0) desc.Category = category;
             if (description.Length > 0) desc.Description = description;
             return name;
-        }
-
-        public CideEntityCategory GetCategory(int categoryIdx)
-        {
-            return new CideEntityCategory(this, categoryIdx);
         }
 
         #region DLL Import

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
@@ -6,53 +7,58 @@ namespace CreatorIDE.Engine
 {
     partial class CideEngine
     {
-        public int GetEntityCount()
+        public List<CideEntity> GetEntities()
+        {
+            return _entityCache.GetEntities(this);
+        }
+
+        internal int GetEntityCount()
         {
             return GetEntityCount(_engineHandle.Handle);
         }
 
-        public string GetEntityCategory(int entityIdx)
+        internal string GetEntityCategory(int entityIdx)
         {
             var category = new StringBuilder(256);
             GetEntityCategory(_engineHandle.Handle, entityIdx, category);
             return category.ToString();
         }
 
-        public string GetEntityUID(int entityIndex)
+        internal string GetEntityUID(int entityIndex)
         {
             var uid = new StringBuilder(256);
             GetEntityUID(_engineHandle.Handle, entityIndex, uid);
             return uid.ToString();
         }
 
-        public bool SetCurrentEntity(string entityUID)
+        internal bool SetCurrentEntity(string entityUID)
         {
             return SetCurrentEntity(_engineHandle.Handle, entityUID);
         }
 
-        public bool GetBool(int attrID)
+        internal bool GetBool(int attrID)
         {
             return GetBool(_engineHandle.Handle, attrID);
         }
 
-        public float GetFloat(int attrID)
+        internal float GetFloat(int attrID)
         {
             return GetFloat(_engineHandle.Handle, attrID);
         }
 
-        public int GetInt(int attrID)
+        internal int GetInt(int attrID)
         {
             return GetInt(_engineHandle.Handle, attrID);
         }
 
-        public Matrix44Ref GetMatrix44(int attrID)
+        internal Matrix44Ref GetMatrix44(int attrID)
         {
             var data = new float[16];
             GetMatrix44(_engineHandle.Handle, attrID, data);
             return new Matrix44Ref(data);
         }
 
-        public string GetStrID(int attrID)
+        internal string GetStrID(int attrID)
         {
             var buffer = new byte[256];
             GetStrID(_engineHandle.Handle, attrID, buffer);
@@ -60,7 +66,7 @@ namespace CreatorIDE.Engine
             return str;
         }
 
-        public string GetString(int attrID)
+        internal string GetString(int attrID)
         {
             var buffer = new byte[1024];
             GetString(_engineHandle.Handle, attrID, buffer);
@@ -81,7 +87,7 @@ namespace CreatorIDE.Engine
             return Encoding.UTF8.GetString(buffer, 0, strLen);
         }
 
-        public Vector4 GetVector4(int attrID)
+        internal Vector4 GetVector4(int attrID)
         {
             var data = new float[4];
             GetVector4(_engineHandle.Handle, attrID, data);

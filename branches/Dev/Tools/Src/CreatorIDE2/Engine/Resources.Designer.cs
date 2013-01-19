@@ -79,11 +79,29 @@ namespace CreatorIDE.Engine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An empty string is not a valid name for an entity..
+        /// </summary>
+        internal static string EmptyEntityNameDisallowed {
+            get {
+                return ResourceManager.GetString("EmptyEntityNameDisallowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Engine initialization has failed with code {0}..
         /// </summary>
         internal static string EngineInitFailFormat {
             get {
                 return ResourceManager.GetString("EngineInitFailFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An entity with the name &apos;{0}&apos; allready exists..
+        /// </summary>
+        internal static string EntityWithNameExistsFormat {
+            get {
+                return ResourceManager.GetString("EntityWithNameExistsFormat", resourceCulture);
             }
         }
         
