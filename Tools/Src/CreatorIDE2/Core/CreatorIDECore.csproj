@@ -53,7 +53,7 @@
     <Compile Include="IAppContextManager.cs" />
     <Compile Include="ServiceProviderExtension.cs" />
     <Compile Include="SR.cs" />
-    <Compile Include="ResourceProviderBase.cs" />
+    <Compile Include="IResourceProvider.cs" />
     <Compile Include="IWindowManager.cs" />
     <Compile Include="Lazy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -65,6 +65,7 @@
     </Compile>
     <Compile Include="SRCategoryAttribute.cs" />
     <Compile Include="SRDisplayNameAttribute.cs" />
+    <Compile Include="StringResources.cs" />
     <Compile Include="TypeDictionary.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -33,11 +33,9 @@ namespace CreatorIDE.Package
             if (!TryGetEngine(out engine))
                 return;
 
-            int catCount = engine.GetCategoryCount();
             var categories = new Dictionary<string, TreeNode>();
-            for (int i = 0; i < catCount; i++)
+            foreach (var category in engine.GetCategories())
             {
-                var category = engine.GetCategory(i);
                 var categoryNode = _treeView.Nodes.Add(category.Name);
                 categoryNode.Tag = category;
                 categories.Add(category.Name, categoryNode);
@@ -83,15 +81,15 @@ namespace CreatorIDE.Package
             CideEngine engine;
             if(!TryGetEngine(out engine))
                 selectedObject = null;
-            else if (e.Node.Tag is Category)
+            else if (e.Node.Tag is CideEntityCategory)
             {
-                var category = (Category) e.Node.Tag;
+                var category = (CideEntityCategory) e.Node.Tag;
                 selectedObject = new CideEntity(engine, category);
             }
             else if(e.Node.Tag is string)
             {
                 var entityID = (string) e.Node.Tag;
-                var category = (Category) e.Node.Parent.Tag;
+                var category = (CideEntityCategory) e.Node.Parent.Tag;
                 selectedObject = new CideEntity(engine, category, entityID, true);
             }
             else

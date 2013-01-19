@@ -54,7 +54,7 @@
     <Compile Include="AppHandle.cs" />
     <Compile Include="AttrProperty.cs" />
     <Compile Include="AttrPropertyDescriptor.cs" />
-    <Compile Include="Category.cs" />
+    <Compile Include="CideEntityCategory.cs" />
     <Compile Include="CideEngine.Categories.cs" />
     <Compile Include="AttrID.cs" />
     <Compile Include="CideEntity.cs" />
@@ -64,9 +64,11 @@
     <Compile Include="EngineMouseClickEventArgs.cs" />
     <Compile Include="EnginePathRequestEventArgs.cs" />
     <Compile Include="CideEngine.Entities.cs" />
+    <Compile Include="CideEntityCache.cs" />
     <Compile Include="IAttrEditorProvider.cs" />
     <Compile Include="LevelRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertyChangingCancelEventArgs.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
