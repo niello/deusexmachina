@@ -1,49 +1,30 @@
 ﻿using System;
-using System.Globalization;
+using System.Resources;
 using CreatorIDE.Core;
 
 namespace CreatorIDE.Engine
 {
-    internal static class SR
+    internal sealed class SR: StringResources<ResourceProvider>
     {
         public const string GuidString = "37DC84A8-E2F7-4108-B52B-BABC0A43DC5D";
 
-        public const string EngineInitFailFormat = "EngineInitFailFormat",
+        public const string CategoryWithNameExistsFormat = "CategoryWithNameExistsFormat",
+                            EmptyCategoryNameDisallowed = "EmptyCategoryNameDisallowed",
+                            EngineInitFailFormat = "EngineInitFailFormat",
+                            NewEntityDefaultName = "NewEntityDefaultName",
                             ValueNotSupportedFormat = "ValueNotSupportedFormat";
 
-        public static string GetString(string name, CultureInfo cultureInfo)
+        private SR()
         {
-            return Resources.ResourceManager.GetString(name, cultureInfo);
-        }
-
-        public static string GetFormatString(CultureInfo cultureInfo, string name, params object[] args)
-        {
-            var formatString = Resources.ResourceManager.GetString(name, cultureInfo);
-            return formatString == null ? null : string.Format(formatString, args);
-        }
-
-        public static string GetString(CultureInfo cultureInfo, string name)
-        {
-            return Resources.ResourceManager.GetString(name, cultureInfo);
-        }
-
-        public static string GetFormatString(string name, params object[] args)
-        {
-            var formatString = Resources.ResourceManager.GetString(name);
-            return formatString == null ? null : string.Format(formatString, args);
-        }
-
-        public static string GetString(string name)
-        {
-            return Resources.ResourceManager.GetString(name, CultureInfo.CurrentCulture);
         }
     }
 
-    public class ResourceProvider : ResourceProviderBase
+    public class ResourceProvider : IResourceProvider
     {
-        public ResourceProvider() :
-            base(new Guid(SR.GuidString), Resources.ResourceManager)
-        {
-        }
+        public static ResourceProvider Instance { get { return SR.Provider; } }
+
+        public Guid TypeID { get { return new Guid(SR.GuidString); } }
+
+        public ResourceManager ResourceManager { get { return Resources.ResourceManager; } }
     }
 }

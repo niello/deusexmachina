@@ -7,14 +7,16 @@ namespace CreatorIDE.Engine
 {
     public delegate void EntityRenamedCallback(CideEntity ent, string oldUid);
 
-    public class CideEntity : CustomTypeDescriptor
+    public class CideEntity : CustomTypeDescriptor, INotifyPropertyChanged
     {
-        private readonly Category _category;
+        private readonly CideEntityCategory _category;
         private readonly List<AttrProperty> _attrProps;
         private readonly AttrProperty _guidProp;
         private bool _exists;
 
-        public event EntityRenamedCallback EntityRenamed;
+        public event EventHandler<PropertyChangingCancelEventArgs<string>> EntityRenaming;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public string UID { get; private set; }
 
@@ -29,12 +31,12 @@ namespace CreatorIDE.Engine
             get { return _category.Name; }
         }
 
-        public CideEntity(CideEngine engine, Category category):
+        public CideEntity(CideEngine engine, CideEntityCategory category):
             this(engine, category, null, false)
         {
         }
 
-        public CideEntity(CideEngine engine, Category category, string uid, bool exists)
+        public CideEntity(CideEngine engine, CideEntityCategory category, string uid, bool exists)
         {
             if(engine==null)
                 throw new ArgumentNullException("engine");

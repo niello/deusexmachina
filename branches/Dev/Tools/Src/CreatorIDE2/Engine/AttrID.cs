@@ -22,6 +22,4 @@
             _isReadWrite = isReadWrite;
         }
 	}
-
-	
 }

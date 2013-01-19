@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using CreatorIDE.Core;
 using CreatorIDE.Engine;
-using EnvDTE;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Props = CreatorIDE.Settings.Properties;
 
 namespace CreatorIDE.Package
@@ -65,9 +62,9 @@ namespace CreatorIDE.Package
 
         static CidePackage()
         {
-            CideResourceManager.RegisterProvider(new ResourceProvider());
-            CideResourceManager.RegisterProvider(new Engine.ResourceProvider());
-            CideResourceManager.RegisterProvider(new Core.ResourceProvider());
+            CideResourceManager.RegisterProvider(ResourceProvider.Instance);
+            CideResourceManager.RegisterProvider(CreatorIDE.Engine.ResourceProvider.Instance);
+            CideResourceManager.RegisterProvider(Core.ResourceProvider.Instance);
         }
 
         /// <summary>

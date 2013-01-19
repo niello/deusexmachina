@@ -61,11 +61,38 @@ namespace CreatorIDE.Engine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A category with the name &apos;{0}&apos; allready exists..
+        /// </summary>
+        internal static string CategoryWithNameExistsFormat {
+            get {
+                return ResourceManager.GetString("CategoryWithNameExistsFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An empty string is not a valid name for a category..
+        /// </summary>
+        internal static string EmptyCategoryNameDisallowed {
+            get {
+                return ResourceManager.GetString("EmptyCategoryNameDisallowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Engine initialization has failed with code {0}..
         /// </summary>
         internal static string EngineInitFailFormat {
             get {
                 return ResourceManager.GetString("EngineInitFailFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entity.
+        /// </summary>
+        internal static string NewEntityDefaultName {
+            get {
+                return ResourceManager.GetString("NewEntityDefaultName", resourceCulture);
             }
         }
         

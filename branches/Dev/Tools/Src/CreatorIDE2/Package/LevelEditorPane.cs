@@ -122,7 +122,7 @@ namespace CreatorIDE.Package
             base.Initialize();
 
             var menuGlobalService = _levelNode.ProjectMgr.Package.GetService<IMenuCommandService>();
-            AddCommand(menuGlobalService, Commands.LevelToolbarObjectBrowser, OnObjectBrowserCommand);
+            AddCommand(menuGlobalService, Commands.LevelToolbarObjectBrowser, (o, e) => ShowToolWindow<LevelObjectBrowserPane>());
         }
 
         private void AddCommand(IMenuCommandService commandService, int levelToolbarCommandID, EventHandler handler)
@@ -144,12 +144,12 @@ namespace CreatorIDE.Package
                 command.Enabled = _levelNode.ProjectMgr.Package.IsActive(Commands.LevelEditorCmdGuid) == true;
         }
 
-        private void OnObjectBrowserCommand(object sender, EventArgs e)
+        private void ShowToolWindow<T>()
         {
             var pkg = _levelNode.ProjectMgr.Package;
-            var wnd = pkg.FindToolWindow(typeof (LevelObjectBrowserPane), 0, false);
+            var wnd = pkg.FindToolWindow(typeof(T), 0, false);
             var frame = wnd == null ? null : wnd.Frame as IVsWindowFrame;
-            if(frame!=null)
+            if (frame != null)
                 ErrorHandler.ThrowOnFailure(frame.Show());
         }
 

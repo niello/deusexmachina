@@ -23,6 +23,8 @@ namespace CreatorIDE.Engine
         private readonly DataPathCallback _dataPathCallback;
         private readonly ReleaseMemoryCallback _releaseMemoryCallback;
 
+        private readonly CideEntityCache _entityCache = new CideEntityCache();
+
         private bool _isInitialized;
 
         private AppHandle _engineHandle;

@@ -12,24 +12,29 @@ namespace CreatorIDE.Engine
     {
         public Dictionary<string, AttrDesc> _attrCache;
 
-        public int GetCategoryCount()
+        internal int GetCategoryCount()
         {
             return GetCategoryCount(_engineHandle.Handle);
         }
 
-        public int GetCategoryInstantAttrCount(int categoryIdx)
+        internal int GetCategoryInstantAttrCount(int categoryIdx)
         {
             return GetCategoryInstantAttrCount(_engineHandle.Handle, categoryIdx);
         }
 
-        public string GetCategoryName(int categoryIdx)
+        internal string GetCategoryName(int categoryIdx)
         {
             var name = new StringBuilder(256);
             GetCategoryName(_engineHandle.Handle, categoryIdx, name);
             return name.ToString();
         }
 
-        public AttrID GetAttrID(int categoryIdx, int attrIdx)
+        public List<CideEntityCategory> GetCategories()
+        {
+            return _entityCache.GetCategories(this);
+        }
+
+        internal AttrID GetAttrID(int categoryIdx, int attrIdx)
         {
             int typeID, id;
             bool isReadWrite;
@@ -38,7 +43,7 @@ namespace CreatorIDE.Engine
             return new AttrID(id, attrName.ToString(), (EDataType) typeID, isReadWrite);
         }
 
-        public AttrDesc GetAttrDesc(string name)
+        internal AttrDesc GetAttrDesc(string name)
         {
             if(_attrCache==null)
             {
@@ -80,9 +85,9 @@ namespace CreatorIDE.Engine
             return name;
         }
 
-        public Category GetCategory(int categoryIdx)
+        public CideEntityCategory GetCategory(int categoryIdx)
         {
-            return new Category(this, categoryIdx);
+            return new CideEntityCategory(this, categoryIdx);
         }
 
         #region DLL Import

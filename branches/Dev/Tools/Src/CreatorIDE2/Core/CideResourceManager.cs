@@ -7,10 +7,10 @@ namespace CreatorIDE.Core
 {
     public static class CideResourceManager
     {
-        private static readonly Dictionary<Guid, ResourceProviderBase> Providers =
-            new Dictionary<Guid, ResourceProviderBase>();
+        private static readonly Dictionary<Guid, IResourceProvider> Providers =
+            new Dictionary<Guid, IResourceProvider>();
 
-        public static void RegisterProvider(ResourceProviderBase provider)
+        public static void RegisterProvider(IResourceProvider provider)
         {
             if (provider == null)
                 throw new ArgumentNullException("provider");
@@ -33,7 +33,7 @@ namespace CreatorIDE.Core
 
         private static ResourceManager GetManager(Guid typeID)
         {
-            ResourceProviderBase provider;
+            IResourceProvider provider;
             var mgr = Providers.TryGetValue(typeID, out provider) ? provider.ResourceManager : null;
             return mgr;
         }
