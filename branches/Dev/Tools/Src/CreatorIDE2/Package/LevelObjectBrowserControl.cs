@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
 using Microsoft.VisualStudio.Shell;
@@ -25,6 +26,28 @@ namespace CreatorIDE.Package
         {
             _level = level;
             LoadCategories();
+
+            CideEngine engine;
+            if (!TryGetEngine(out engine))
+                return;
+
+            engine.EntityPropertyChanged += OnEntityPropertyChanged;
+        }
+
+        private void OnEntityPropertyChanged(object sender, CideEntityPropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != CideEntity.UIDPropertyName)
+                return;
+
+            var category = e.Entity.CategoryUID;
+            var catNode = _treeView.Nodes.Cast<TreeNode>().FirstOrDefault(n => n.Text == category);
+            if (catNode == null)
+                return;
+
+            var oldUID = (string)e.OldValue;
+            var entNode = catNode.Nodes.Cast<TreeNode>().FirstOrDefault(n => n.Text == oldUID);
+            if (entNode != null)
+                entNode.Text = (string) e.NewValue;
         }
 
         private void LoadCategories()

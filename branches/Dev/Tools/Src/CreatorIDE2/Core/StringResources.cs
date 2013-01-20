@@ -23,15 +23,9 @@ namespace CreatorIDE.Core
             ResourceManager = Provider.ResourceManager;
         }
 
-        public static string GetString(string name, CultureInfo cultureInfo)
+        public static string GetString(string name)
         {
-            return ResourceManager.GetString(name, cultureInfo);
-        }
-
-        public static string GetFormatString(CultureInfo cultureInfo, string name, params object[] args)
-        {
-            var formatString = ResourceManager.GetString(name, cultureInfo);
-            return formatString == null ? null : string.Format(formatString, args);
+            return ResourceManager.GetString(name, CultureInfo.CurrentCulture);
         }
 
         public static string GetString(CultureInfo cultureInfo, string name)
@@ -41,13 +35,14 @@ namespace CreatorIDE.Core
 
         public static string GetFormatString(string name, params object[] args)
         {
-            var formatString = ResourceManager.GetString(name);
+            var formatString = ResourceManager.GetString(name, CultureInfo.CurrentCulture);
             return formatString == null ? null : string.Format(formatString, args);
         }
 
-        public static string GetString(string name)
+        public static string GetFormatString(CultureInfo cultureInfo, string name, params object[] args)
         {
-            return ResourceManager.GetString(name, CultureInfo.CurrentCulture);
+            var formatString = ResourceManager.GetString(name, cultureInfo);
+            return formatString == null ? null : string.Format(formatString, args);
         }
     }
 }

@@ -34,6 +34,11 @@ namespace CreatorIDE.Engine
             return _entityCache.GetCategories(this);
         }
 
+        public CideEntityCategory GetCategory(string uid)
+        {
+            return _entityCache.GetCategory(this, uid);
+        }
+
         public CideEntity GetCategoryEntity(CideEntityCategory category)
         {
             return GetCategoryEntity(category.UID);
@@ -41,7 +46,7 @@ namespace CreatorIDE.Engine
 
         public CideEntity GetCategoryEntity(string uid)
         {
-            return _entityCache.GetCategory(this, uid);
+            return _entityCache.GetCategoryEntity(this, uid);
         }
 
         internal AttrID GetAttrID(int categoryIdx, int attrIdx)
@@ -93,6 +98,20 @@ namespace CreatorIDE.Engine
             if (category.Length > 0) desc.Category = category;
             if (description.Length > 0) desc.Description = description;
             return name;
+        }
+
+        private void OnCategoryPropertyChanged(object sender, CideEntityPropertyChangedEventArgs e)
+        {
+            SetEntityProperty(e.PropertyName, null, e.Entity.CategoryUID, e.NewValue);
+
+            var action = new ActionRecord
+                             {
+                                 IsCategory = true,
+                                 NewValue = e.NewValue,
+                                 OldValue = e.OldValue,
+                                 UID = e.Entity.CategoryUID
+                             };
+            _actionList.Push(action);
         }
 
         #region DLL Import

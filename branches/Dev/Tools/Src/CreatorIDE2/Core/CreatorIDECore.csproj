@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppContextManager.cs" />
+    <Compile Include="CircularBuffer.cs" />
     <Compile Include="IAppConfiguration.cs" />
     <Compile Include="IAppContextManager.cs" />
     <Compile Include="ServiceProviderExtension.cs" />

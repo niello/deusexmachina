@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActionRecord.cs" />
     <Compile Include="AppHandle.cs" />
     <Compile Include="AttrProperty.cs" />
     <Compile Include="AttrPropertyDescriptor.cs" />

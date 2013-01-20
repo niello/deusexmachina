@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using CreatorIDE.Core;
 
 namespace CreatorIDE.Engine
 {
@@ -23,11 +24,14 @@ namespace CreatorIDE.Engine
         private readonly DataPathCallback _dataPathCallback;
         private readonly ReleaseMemoryCallback _releaseMemoryCallback;
 
-        private readonly CideEntityCache _entityCache = new CideEntityCache();
+        private readonly CideEntityCache _entityCache;
+        private readonly CircularBuffer<ActionRecord> _actionList; 
 
         private bool _isInitialized;
 
         private AppHandle _engineHandle;
+
+        public event EventHandler<CideEntityPropertyChangedEventArgs> EntityPropertyChanged;
 
         public event EventHandler<EnginePathRequestEventArgs> PathRequest;
 
@@ -45,6 +49,12 @@ namespace CreatorIDE.Engine
             _releaseMemoryCallback = FreeHGlobal;
 
             _attrEditorProvider = attrEditorProvider;
+
+            _entityCache=new CideEntityCache();
+            _entityCache.CategoryPropertyChanged += OnCategoryPropertyChanged;
+            _entityCache.EntityPropertyChanged += OnEntityPropertyChanged;
+
+            _actionList = new CircularBuffer<ActionRecord>(2048);
 
             _engineHandle = new AppHandle(CreateEngine());
         }

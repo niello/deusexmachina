@@ -115,6 +115,15 @@ namespace CreatorIDE.Engine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to String is too long. Maximal buffer size has been exceeded..
+        /// </summary>
+        internal static string StringBufferExceeded {
+            get {
+                return ResourceManager.GetString("StringBufferExceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Value &apos;{0}&apos; is not supported..
         /// </summary>
         internal static string ValueNotSupportedFormat {

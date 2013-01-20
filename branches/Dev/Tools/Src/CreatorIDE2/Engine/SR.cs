@@ -14,6 +14,7 @@ namespace CreatorIDE.Engine
                             EngineInitFailFormat = "EngineInitFailFormat",
                             EntityWithNameExistsFormat = "EntityWithNameExistsFormat",
                             NewEntityDefaultName = "NewEntityDefaultName",
+                            StringBufferExceeded = "StringBufferExceeded",
                             ValueNotSupportedFormat = "ValueNotSupportedFormat";
 
         private SR()
