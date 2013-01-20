@@ -59,5 +59,32 @@ namespace CreatorIDE.Core {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Buffer is empty..
+        /// </summary>
+        internal static string CircularBufferEmpty {
+            get {
+                return ResourceManager.GetString("CircularBufferEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Capacity must be a positive number greather than zero..
+        /// </summary>
+        internal static string CircularBufferInvalidCapacity {
+            get {
+                return ResourceManager.GetString("CircularBufferInvalidCapacity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Position must be greather than zero but less than the length of a buffer..
+        /// </summary>
+        internal static string CircularBufferInvalidPosition {
+            get {
+                return ResourceManager.GetString("CircularBufferInvalidPosition", resourceCulture);
+            }
+        }
     }
 }

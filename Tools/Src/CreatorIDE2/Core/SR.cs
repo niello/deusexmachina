@@ -7,6 +7,11 @@ namespace CreatorIDE.Core
     {
         public const string GuidString = "BD7D4810-548B-431E-AFF6-DBEB09D1050F";
 
+        public const string
+            CircularBufferEmpty = "CircularBufferEmpty",
+            CircularBufferInvalidCapacity = "CircularBufferInvalidCapacity",
+            CircularBufferInvalidPosition = "CircularBufferInvalidPosition";
+
         private SR()
         {
         }

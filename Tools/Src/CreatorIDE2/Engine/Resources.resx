@@ -135,6 +135,9 @@
   <data name="NewEntityDefaultName" xml:space="preserve">
     <value>Entity</value>
   </data>
+  <data name="StringBufferExceeded" xml:space="preserve">
+    <value>String is too long. Maximal buffer size has been exceeded.</value>
+  </data>
   <data name="ValueNotSupportedFormat" xml:space="preserve">
     <value>Value '{0}' is not supported.</value>
   </data>

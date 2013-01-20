@@ -7,7 +7,7 @@ namespace CreatorIDE.Engine
 {
     public class CideEntity : CustomTypeDescriptor, INotifyPropertyChanged
     {
-        internal const string UIDPropertyName = "GUID";
+        public const string UIDPropertyName = "GUID";
 
         private readonly CideEntityCategory _category;
         private readonly List<AttrProperty> _attrProps;

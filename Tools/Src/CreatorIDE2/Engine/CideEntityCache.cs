@@ -28,7 +28,7 @@ namespace CreatorIDE.Engine
         public event EventHandler<CideEntityPropertyChangedEventArgs> EntityPropertyChanged;
         public event EventHandler<CideEntityPropertyChangedEventArgs> CategoryPropertyChanged;
 
-        public CideEntity GetCategory(CideEngine engine, string uid)
+        public CideEntity GetCategoryEntity(CideEngine engine, string uid)
         {
             Debug.Assert(engine != null);
             if (string.IsNullOrEmpty(uid))
@@ -45,6 +45,16 @@ namespace CreatorIDE.Engine
             cat.Entity.PropertyChanged += OnCategoryPropertyChanged;
 
             return cat.Entity;
+        }
+
+        public CideEntityCategory GetCategory(CideEngine engine, string uid)
+        {
+            Debug.Assert(engine != null);
+            if (string.IsNullOrEmpty(uid))
+                return null;
+
+            EntityCategory cat;
+            return LoadCategories(engine).TryGetValue(uid, out cat) ? cat.Category : null;
         }
 
         private void OnCategoryPropertyChanged(object sender, PropertyChangedEventArgs eArgs)

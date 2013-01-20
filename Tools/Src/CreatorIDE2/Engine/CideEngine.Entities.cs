@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
@@ -94,6 +95,117 @@ namespace CreatorIDE.Engine
             return new Vector4(data);
         }
 
+        private void OnEntityPropertyChanged(object sender, CideEntityPropertyChangedEventArgs e)
+        {
+            string uid;
+            if (e.PropertyName == CideEntity.UIDPropertyName)
+                uid = (string)e.OldValue;
+            else
+                uid = e.Entity.UID;
+            SetEntityProperty(e.PropertyName, uid, e.Entity.CategoryUID, e.NewValue);
+
+            var action = new ActionRecord {IsCategory = false, NewValue = e.NewValue, OldValue = e.OldValue, UID = uid};
+            _actionList.Push(action);
+
+            var h = EntityPropertyChanged;
+            if (h != null)
+                h(this, e);
+        }
+
+        private void SetEntityProperty(string propertyName, string uid, string categoryUID, object value)
+        {
+            var category = GetCategory(categoryUID);
+            var attr = category.AttrIDs.First(a => a.Name == propertyName);
+
+            SetCurrentEntity(uid);
+            switch (attr.Type)
+            {
+                case EDataType.Bool:
+                    SetBool(attr.ID, (bool) value);
+                    break;
+
+                case EDataType.Int:
+                    SetInt(attr.ID, (int) value);
+                    break;
+
+                case EDataType.Float:
+                    SetFloat(attr.ID, (float) value);
+                    break;
+
+                case EDataType.String:
+                    SetString(attr.ID, (string)value);
+                    break;
+
+                case EDataType.StrID:
+                    SetStrID(attr.ID, (string) value);
+                    break;
+
+                case EDataType.Vector4:
+                    SetVector4(attr.ID, (Vector4) value);
+                    break;
+
+                case EDataType.Matrix44:
+                    SetMatrix44(attr.ID, (Matrix44Ref) value);
+                    break;
+
+                default:
+                    throw new NotSupportedException(SR.GetFormatString(SR.ValueNotSupportedFormat, attr.Type));
+            }
+        }
+
+        private void SetBool(int attrID, bool value)
+        {
+            SetBool(_engineHandle.Handle, attrID, value);
+        }
+
+        private void SetInt(int attrID, int value)
+        {
+            SetInt(_engineHandle.Handle, attrID, value);
+        }
+
+        private void SetFloat(int attrID, float value)
+        {
+            SetFloat(_engineHandle.Handle, attrID, value);
+        }
+
+        private void SetString(int attrID, string value)
+        {
+            var bytes = GetUtf8Bytes(value, 1024);
+            SetString(_engineHandle.Handle, attrID, bytes);
+        }
+
+        private void SetStrID(int attrID, string value)
+        {
+            var bytes = GetUtf8Bytes(value, 256);
+            SetStrID(_engineHandle.Handle, attrID, bytes);
+        }
+
+        private static byte[] GetUtf8Bytes(string value, int maxBufferSize)
+        {
+            if (value == null)
+                return new byte[] {0};
+
+            var bytes = Encoding.UTF8.GetBytes(value);
+            if (bytes.Length >= maxBufferSize)
+                throw new ArgumentException(SR.StringBufferExceeded, "value");
+
+            Array.Resize(ref bytes, bytes.Length + 1);
+
+            return bytes;
+        }
+
+        private void SetVector4(int attrID, Vector4 value)
+        {
+            float[] data = {value.X, value.Y, value.Z, value.W};
+            SetVector4(_engineHandle.Handle, attrID, data);
+        }
+
+        private void SetMatrix44(int attrID, Matrix44Ref value)
+        {
+            float[] data = value.ToArray();
+            SetMatrix44(_engineHandle.Handle, attrID, data);
+        }
+
         #region DLL Import
 
         [DllImport(DllName, EntryPoint = "Entities_GetCount")]
@@ -183,50 +295,26 @@ namespace CreatorIDE.Engine
 
         #region Set attribute value
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetBool")]
-        private static extern void SetBool([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, bool value);
+        [DllImport(DllName, EntryPoint = "Entities_SetBool")]
+        private static extern void SetBool(IntPtr handle, int attrID, [MarshalAs(UnmanagedType.I1)] bool value);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetInt")]
-        private static extern void SetInt([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, int value);
+        [DllImport(DllName, EntryPoint = "Entities_SetInt")]
+        private static extern void SetInt(IntPtr handle, int attrID, int value);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetFloat")]
-        private static extern void SetFloat([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, float value);
+        [DllImport(DllName, EntryPoint = "Entities_SetFloat")]
+        private static extern void SetFloat(IntPtr handle, int attrID, float value);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetString")]
-        private static extern void _SetString([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, string value);
-        private static void SetString(AppHandle handle, int attrID, string value)
-        {
-            byte[] utfValue = Encoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(value));
-            _SetString(handle, attrID, Encoding.Default.GetString(utfValue));
-        }
+        [DllImport(DllName, EntryPoint = "Entities_SetString")]
+        private static extern void SetString(IntPtr handle, int attrID, [MarshalAs(UnmanagedType.LPArray)] byte[] value);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetStrID")]
-        private static extern void _SetStrID([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, string value);
-        private static void SetStrID(AppHandle handle, int attrID, string value)
-        {
-            byte[] utfValue = Encoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(value));
-            _SetStrID(handle, attrID, Encoding.Default.GetString(utfValue));
-        }
+        [DllImport(DllName, EntryPoint = "Entities_SetStrID")]
+        private static extern void SetStrID(IntPtr handle, int attrID, [MarshalAs(UnmanagedType.LPArray)] byte[] value);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetVector4")]
-        private static extern void _SetVector4([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, float[] value);
-        private static void SetVector4(AppHandle handle, int attrID, Vector4 value)
-        {
-            float[] data = new float[4];
-            data[0] = value.X;
-            data[1] = value.Y;
-            data[2] = value.Z;
-            data[3] = value.W;
-            _SetVector4(handle, attrID, data);
-        }
+        [DllImport(DllName, EntryPoint = "Entities_SetVector4")]
+        private static extern void SetVector4(IntPtr handle, int attrID, float[] value);
 
-        [DllImport(CideEngine.DllName, EntryPoint = "Entities_SetMatrix44")]
-        private static extern void _SetMatrix44([MarshalAs(AppHandle.MarshalAs)] AppHandle handle, int attrID, float[] value);
-        private static void SetMatrix44(AppHandle handle, int attrID, Matrix44Ref value)
-        {
-            float[] data = value.ToArray();
-            _SetMatrix44(handle, attrID, data);
-        }
+        [DllImport(DllName, EntryPoint = "Entities_SetMatrix44")]
+        private static extern void SetMatrix44(IntPtr handle, int attrID, float[] value);
 
         #endregion
 
