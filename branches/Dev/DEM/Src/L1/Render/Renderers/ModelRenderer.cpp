@@ -110,6 +110,8 @@ void IModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 // NB: It is overriden to empty method in CModelRendererNoLight
 void IModelRenderer::AddLights(const nArray<Scene::CLight*>& Lights)
 {
+	//!!!skip black lights or lights with 0 intensity!
+
 	pLights = &Lights;
 	//for (int i = 0; i < Lights.Size(); ++i)
 	//{

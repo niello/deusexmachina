@@ -162,9 +162,6 @@ bool ParseSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles)
 		}
 	}
 
-	if (NodeDesc.Get(pValue, CStrID("Material")))
-		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Material");
-
 	if (NodeDesc.Get(pValue, CStrID("Mesh")))
 		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Mesh");
 
@@ -177,19 +174,51 @@ bool ParseSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles)
 	if (NodeDesc.Get(pValue, CStrID("TQTFile")))
 		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Tqt2Texture");
 
-	// For new nodes
+	if (NodeDesc.Get(pValue, CStrID("Children")))
+	{
+		const CParams& Children = *pValue->GetValue<PParams>();
+		for (int i = 0; i < Children.GetCount(); ++i)
+			if (!ParseSceneNode(*Children[i].GetValue<PParams>(), ResourceFiles)) FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ParseDEMSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles, nArray<nString>& MaterialFiles)
+{
+	CData* pValue;
+	if (NodeDesc.Get(pValue, CStrID("Textures")))
+	{
+		if (pValue->IsA<PParams>())
+		{
+			const CParams& Textures = *pValue->GetValue<PParams>();
+			for (int i = 0; i < Textures.GetCount(); ++i)
+				AddRsrcIfUnique(Textures.Get(i).GetValue<nString>(), ResourceFiles, "Texture");
+		}
+	}
+
+	if (NodeDesc.Get(pValue, CStrID("Material")))
+		AddRsrcIfUnique(pValue->GetValue<nString>(), MaterialFiles, "Material");
+
+	if (NodeDesc.Get(pValue, CStrID("Mesh")))
+		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Mesh");
+
+	if (NodeDesc.Get(pValue, CStrID("Anim")))
+		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Animation");
+
 	if (NodeDesc.Get(pValue, CStrID("Attrs")))
 	{
 		const CDataArray& Attrs = *pValue->GetValue<PDataArray>();
 		for (int i = 0; i < Attrs.Size(); ++i)
-			if (!ParseSceneNode(*Attrs[i].GetValue<PParams>(), ResourceFiles)) FAIL;
+			if (!ParseDEMSceneNode(*Attrs[i].GetValue<PParams>(), ResourceFiles, MaterialFiles)) FAIL;
 	}
 
 	if (NodeDesc.Get(pValue, CStrID("Children")))
 	{
 		const CParams& Children = *pValue->GetValue<PParams>();
 		for (int i = 0; i < Children.GetCount(); ++i)
-			if (!ParseSceneNode(*Children[i].GetValue<PParams>(), ResourceFiles)) FAIL;
+			if (!ParseDEMSceneNode(*Children[i].GetValue<PParams>(), ResourceFiles, MaterialFiles)) FAIL;
 	}
 
 	OK;
@@ -504,6 +533,7 @@ int main(int argc, const char** argv)
 	nArray<nString> SmartObjDescFiles;
 	nArray<nString> DlgFiles;
 	nArray<nString> NavMeshFiles;
+	nArray<nString> MaterialFiles;
 
 	RegisterN2SQLiteVFS();
 
@@ -684,7 +714,7 @@ int main(int argc, const char** argv)
 		PParams SceneRsrc = DataSrv->LoadHRD(SceneRsrcName, false);
 		if (SceneRsrc.isvalid())
 		{
-			if (!ParseSceneNode(*SceneRsrc, ResourceFiles))
+			if (!ParseDEMSceneNode(*SceneRsrc, ResourceFiles, MaterialFiles))
 			{
 				n_printf("BBuilder: Failed to parse scene resource '%s'\n", SceneRsrcName.Get());
 				return FailApp(WaitKey);
@@ -820,6 +850,39 @@ int main(int argc, const char** argv)
 	CompileAllLua("game/quests", "lua", "lua", NULL);
 	CompileAllLua("game/scripts", "lua", "lua", "classes");
 	CompileAllLuaClasses("game/scripts/classes", "lua", "cls");
+
+	n_printf("\n-----------------------------------------------------\n");
+
+	// Analyze materials for textures
+
+	for (int i = MaterialFiles.Size() - 1; i >= 0; i--)
+	{
+		nString& FileName = MaterialFiles[i];
+		n_printf("\nParsing material '%s'...\n", FileName.Get());
+
+		PParams Mtl = DataSrv->LoadPRM(FileName, false);
+
+		if (!Mtl.isvalid())
+		{
+			n_printf("WARNING: material not found, builder deleted it from the list.\nBuild may be invalid!\n");
+			MaterialFiles.Erase(i);
+			continue;
+		}
+
+		CData* pValue;
+		if (Mtl->Get(pValue, CStrID("Textures")))
+		{
+			if (pValue->IsA<PParams>())
+			{
+				const CParams& Textures = *pValue->GetValue<PParams>();
+				for (int i = 0; i < Textures.GetCount(); ++i)
+					AddRsrcIfUnique(Textures.Get(i).GetValue<nString>(), ResourceFiles, "Texture");
+			}
+		}
+	}
+
+	ResourceFiles.AppendArray(MaterialFiles);
+	MaterialFiles.Clear();
 
 	n_printf("\n-----------------------------------------------------\n");
 
