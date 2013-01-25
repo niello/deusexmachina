@@ -30,8 +30,6 @@ extern bool n_init_nskinanimator (nClass *, nKernelServer *);
 extern void *n_new_nskinanimator (void);
 extern bool n_init_ntransformnode (nClass *, nKernelServer *);
 extern void *n_new_ntransformnode (void);
-extern bool n_init_nlodnode (nClass *, nKernelServer *);
-extern void *n_new_nlodnode (void);
 extern bool n_init_nskynode (nClass *, nKernelServer *);
 extern void *n_new_nskynode (void);
 extern bool n_init_nlightnode (nClass *, nKernelServer *);
@@ -80,9 +78,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nskinanimator",
                                  n_init_nskinanimator,
                                  n_new_nskinanimator);
-    nKernelServer::Instance()->AddModule("nlodnode",
-                                 n_init_nlodnode,
-                                 n_new_nlodnode);
     nKernelServer::Instance()->AddModule("nskynode",
                                  n_init_nskynode,
                                  n_new_nskynode);

@@ -245,7 +245,7 @@ void CGfxServer::CreateGfxEntities(const nString& RsrcName, const matrix44& Worl
 		n_assert(pTfmNodeClass);
 		nTransformNode* pCurrNode = (nTransformNode*)pModelNode->GetHead();
 		for (; pCurrNode; pCurrNode = (nTransformNode*)pCurrNode->GetSucc())
-			if (pCurrNode->IsA(pTfmNodeClass) && pCurrNode->HasHints(nSceneNode::LevelSegment))
+			if (pCurrNode->IsA(pTfmNodeClass) && false) // && pCurrNode->HasHints(nSceneNode::LevelSegment))
 				Segments.Append(pCurrNode);
 
 		if (Segments.Size() > 0)
