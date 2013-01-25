@@ -19,7 +19,7 @@ bool nSceneNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		}
 		case 'TNIH': // HINT
 		{
-			AddHints(DataReader.Read<int>());
+			DataReader.Read<int>();
 			OK;
 		}
 		default:
@@ -27,7 +27,8 @@ bool nSceneNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			char FourCCStr[5];
 			memcpy(FourCCStr, (char*)&FourCC, 4);
 			FourCCStr[4] = 0;
-			n_printf("Processing object '%s', FOURCC '%s' failed\n", name.Get(), FourCCStr);
+			//n_printf("Processing object '%s', FOURCC '%s' failed\n", name.Get(), FourCCStr);
+			n_message("Processing object '%s', FOURCC '%s' failed\n", name.Get(), FourCCStr);
 			FAIL;
 		}
 	}

@@ -389,7 +389,7 @@ nSceneServer::CompareNodes(const ushort* i1, const ushort* i2)
     const nSceneServer::Group& g2 = sceneServer->groupArray[*i2];
 
     // by render priority
-    int cmp = g1.sceneNode->GetRenderPri() - g2.sceneNode->GetRenderPri();
+    int cmp = 0; //g1.sceneNode->GetRenderPri() - g2.sceneNode->GetRenderPri();
     if (cmp != 0)
     {
         return cmp;

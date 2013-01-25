@@ -34,18 +34,11 @@ protected:
 
 	bbox3 localBox;
 	Data::CParams attrs;
-	int renderPri;
 	bool resourcesValid;
-	ushort hints;
 
 public:
-    /// scene node hints
-    enum
-    {
-        LevelSegment = (1<<2)       // this was exported as level segment from Maya
-    };
 
-	nSceneNode(): resourcesValid(false), renderPri(0), hints(0) {}
+	nSceneNode(): resourcesValid(false) {}
 
 	virtual bool Release() { if (RefCount == 1) UnloadResources(); return nRoot::Release(); }
 
@@ -55,10 +48,6 @@ public:
 	virtual void UnloadResources() { resourcesValid = false; }
 	bool AreResourcesValid() const { return resourcesValid; }
     void PreloadResources();
-	void AddHints(ushort h) { this->hints |= h; }
-	void ClearHints(ushort h) { this->hints &= ~h; }
-	ushort GetHints() const { return this->hints; }
-	bool HasHints(ushort h) const { return h == (this->hints & h); }
     virtual void RenderContextCreated(nRenderContext* renderContext);
     virtual void RenderContextDestroyed(nRenderContext* renderContext);
     virtual void Attach(nSceneServer* sceneServer, nRenderContext* renderContext);
@@ -72,8 +61,6 @@ public:
 
 	void SetLocalBox(const bbox3& b) { this->localBox = b; }
 	const bbox3& GetLocalBox() const { return this->localBox; }
-	void SetRenderPri(int pri) { n_assert((pri >= -127) && (pri <= 127)); renderPri = pri; }
-	int GetRenderPri() const { return this->renderPri; }
 	bool HasAttr(CStrID name) const { return attrs.Has(name); }
 	const Data::CParam& GetAttr(CStrID name) const { return this->attrs[name]; }
 	template<class T> const T& GetAttr(CStrID name) const { return attrs[name].GetValue<T>(); }
@@ -88,13 +75,6 @@ nSceneNode::SetLocalBox(const bbox3& b)
     bounding boxes for other nodes. This may be useful for higher level
     code like game frameworks. Nebula itself only uses bounding boxes
     defined on shape nodes.
-*/
-
-//------------------------------------------------------------------------------
-/**
-inline void nSceneNode::SetRenderPri(int pri)
-    Set the render priority. This should be a number between -127 and +127,
-    the default is 0. Smaller numbers will render first.
 */
 
 #endif

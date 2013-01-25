@@ -25,7 +25,7 @@
 class nShader2;
 class nGfxServer2;
 
-class nMaterialNode: public nTransformNode //nMaterialNode
+class nMaterialNode: public nTransformNode
 {
 private:
 

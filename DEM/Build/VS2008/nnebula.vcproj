@@ -1007,30 +1007,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nlodnode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nlodnode_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nlodnode;N_NEW=n_new_nlodnode;N_INITCMDS=n_initcmds_nlodnode"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nlodnode;N_NEW=n_new_nlodnode;N_INITCMDS=n_initcmds_nlodnode"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\scene\nmaterialnode.h"
 					>
 				</File>
