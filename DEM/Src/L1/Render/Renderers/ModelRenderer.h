@@ -30,9 +30,10 @@
 namespace Render
 {
 
-class IModelRenderer: public IRenderer
+class CModelRenderer: public IRenderer
 {
 	DeclareRTTI;
+	DeclareFactory(CModelRenderer);
 
 public:
 
@@ -104,6 +105,7 @@ protected:
 	CStrID							BatchType;
 	DWORD							FeatFlags;
 	ESortingType					DistanceSorting;
+	bool							EnableLighting;
 
 	nArray<CModelRecord>			Models;
 	const nArray<Scene::CLight*>*	pLights; //???!!!not ptr?!
@@ -111,16 +113,32 @@ protected:
 	PVertexBuffer					InstanceBuffer;
 	DWORD							MaxInstanceCount;
 
+	PShader							SharedShader;
+	CShader::HVar					hLightType;
+	CShader::HVar					hLightPos;
+	CShader::HVar					hLightDir;
+	CShader::HVar					hLightColor;
+	CShader::HVar					hLightParams;
+
+	DWORD							LightFeatFlags[MaxLightsPerObject];
+
+	//???both to light?
+	bool			IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light);
+	float			CalcLightPriority(Scene::CModel& Model, Scene::CLight& Light);
+
 public:
 
-	IModelRenderer(): pLights(NULL), FeatFlags(0), DistanceSorting(Sort_None) {}
+	CModelRenderer(): pLights(NULL), FeatFlags(0), DistanceSorting(Sort_None), EnableLighting(false) {}
 
-	virtual bool Init(const Data::CParams& Desc);
-	virtual void AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);
-	virtual void AddLights(const nArray<Scene::CLight*>& Lights);
+	virtual bool	Init(const Data::CParams& Desc);
+	virtual void	AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);
+	virtual void	AddLights(const nArray<Scene::CLight*>& Lights);
+	virtual void	Render();
 };
 
-typedef Ptr<IModelRenderer> PModelRenderer;
+RegisterFactory(CModelRenderer);
+
+typedef Ptr<CModelRenderer> PModelRenderer;
 
 }
 

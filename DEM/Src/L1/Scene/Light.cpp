@@ -37,6 +37,18 @@ bool CLight::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		{
 			return DataReader.Read(Range);
 		}
+		case 'NICL': // LCIN
+		{
+			if (!DataReader.Read(ConeInner)) FAIL;
+			SetSpotInnerAngle(n_deg2rad(ConeInner));
+			OK;
+		}
+		case 'UOCL': // LCOU
+		{
+			if (!DataReader.Read(ConeOuter)) FAIL;
+			SetSpotOuterAngle(n_deg2rad(ConeOuter));
+			OK;
+		}
 		default: FAIL;
 	}
 }
@@ -75,10 +87,23 @@ void CLight::Update()
 //!!!GetBox & CalcBox must be separate!
 void CLight::GetBox(bbox3& OutBox) const
 {
-	n_assert2(Type != Directional && Type != Spot, "IMPLEMENT SPOTLIGHT AABB!!!");
-	// If local params changed, recompute AABB
-	// If transform of host node changed, update global space AABB (rotate, scale)
-	OutBox.set(GetPosition(), vector3(Range, Range, Range));
+	//!!!If local params changed, recompute AABB
+	//!!!If transform of host node changed, update global space AABB (rotate, scale)
+	switch (Type)
+	{
+		case Directional:	n_error("No AABB for directional lights, must not be requested!"); return;
+		case Point:			OutBox.set(GetPosition(), vector3(Range, Range, Range)); return;
+		case Spot:
+		{
+			//!!!can cache local box!
+			float HalfFarExtent = Range * n_tan(ConeOuter / 2.f);
+			OutBox.vmin.set(-HalfFarExtent, -HalfFarExtent, -Range);
+			OutBox.vmax.set(HalfFarExtent, HalfFarExtent, 0.f);
+			OutBox.transform(pNode->GetWorldMatrix());
+			return;
+		}
+		default:			n_error("Invalid light type!");
+	};
 }
 //---------------------------------------------------------------------
 
