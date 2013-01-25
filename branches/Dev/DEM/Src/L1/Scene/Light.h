@@ -88,8 +88,8 @@ inline CLight::CLight():
 	Intensity(0.5f),
 	Range(1.f),
 	InvRange(1.f),
-	ConeInner(N_PI * .5f),
-	ConeOuter(N_PI / 3.f)
+	ConeInner(N_PI / 3.f),
+	ConeOuter(N_PI / 2.f)
 {
 	CosHalfInner = n_cos(ConeInner * 0.5f);
 	CosHalfOuter = n_cos(ConeOuter * 0.5f);
