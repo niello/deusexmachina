@@ -56,8 +56,7 @@ inline void CCameraEntity::UpdateViewProjection()
 {
 	n_assert(ViewProjDirty);
 	ViewProjDirty = false;
-	ViewMatrix = GetTransform();
-	ViewMatrix.invert_simple();
+	GetTransform().invert_simple(ViewMatrix);
 	ViewProjMatrix = ViewMatrix;
 	ViewProjMatrix *= Camera.GetProjection();
 }

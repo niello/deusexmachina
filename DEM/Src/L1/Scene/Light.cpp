@@ -111,8 +111,7 @@ void CLight::CalcFrustum(matrix44& OutFrustum)
 {
 	matrix44 LocalFrustum;
 	LocalFrustum.perspFovRh(ConeOuter, 1.f, 0.f, Range);
-	OutFrustum = pNode->GetWorldMatrix();
-	OutFrustum.invert_simple();
+	pNode->GetWorldMatrix().invert_simple(OutFrustum);
 	OutFrustum *= LocalFrustum;
 }
 //---------------------------------------------------------------------

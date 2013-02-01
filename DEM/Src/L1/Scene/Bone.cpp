@@ -51,14 +51,14 @@ void CBone::OnAdd()
 
 	// Since SkinMatrix is identity and node position doesn't change, it is not necessary:
 	// To undo inv. bind pose in initial state
-	//pNode->SetLocalTransform(BindPoseLocal);
+	pNode->SetLocalTransform(BindPoseLocal);
 
-	BindPoseLocal.ToMatrix(InvBindPose);
+	BindPoseLocal.ToMatrix(BindPoseWorld);
 
 	CBone* pParentBone = GetParentBone();
-	if (pParentBone) InvBindPose.mult_simple(pParentBone->GetBindPoseMatrix());
+	if (pParentBone) BindPoseWorld.mult_simple(pParentBone->GetBindPoseMatrix());
 
-	InvBindPose.invert_simple();
+	BindPoseWorld.invert_simple(InvBindPose);
 
 	CBone* pRootBone = GetRootBone();
 	CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;

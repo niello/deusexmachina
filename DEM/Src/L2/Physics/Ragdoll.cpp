@@ -182,8 +182,8 @@ void CRagdoll::WriteJoints()
 	const nCharSkeleton& Skeleton = pNCharacter->GetSkeleton();
 
 	// get our inverse world space matrix
-	matrix44 InvRagdollWorld = GetTransform();
-	InvRagdollWorld.invert_simple();
+	matrix44 InvRagdollWorld;
+	GetTransform().invert_simple(InvRagdollWorld);
 
 	for (int i = 0; i < Bodies.Size(); i++)
 	{
@@ -253,7 +253,7 @@ void CRagdoll::ReadJoints()
 		// Compute the difference matrix between the pJoint's bind pose
 		// and the rigid pBody's bind pose position
 		matrix44 DiffMatrix = CharJoint.GetPoseMatrix() * pBody->GetInvInitialTransform();
-		DiffMatrix.invert_simple();
+		DiffMatrix.invert_simple(DiffMatrix);
 
 		// Compute the new pBody's model space position from the current character joint matrix,
 		// than translate body to world space

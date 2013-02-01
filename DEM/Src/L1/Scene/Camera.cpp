@@ -42,9 +42,7 @@ void CCamera::Update()
 
 	if (pNode->IsWorldMatrixChanged())
 	{
-		//!!!avoid copying!
-		View = pNode->GetWorldMatrix();
-		View.invert_simple();
+		pNode->GetWorldMatrix().invert_simple(View);
 		ViewOrProjChanged = true;
 	}
 

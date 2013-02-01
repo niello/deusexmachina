@@ -148,8 +148,7 @@ inline void CRigidBody::SetInitialTransform(const matrix44& Tfm)
 {
 	InitialTfm = Tfm;
 	InvInitialTfm = Tfm;
-	//InvInitialTfm.invert();
-	InvInitialTfm.invert_simple();
+	Tfm.invert_simple(InvInitialTfm);
 }
 //---------------------------------------------------------------------
 
