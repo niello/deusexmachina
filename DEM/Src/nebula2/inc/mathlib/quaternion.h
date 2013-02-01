@@ -97,11 +97,11 @@ public:
     }
 
     //-- operators --------------------------------------------------
-    bool operator==(const quaternion& q) {
+    bool operator==(const quaternion& q) const {
         return ((x==q.x) && (y==q.y) && (z==q.z) && (w==q.w)) ? true : false;
     }
 
-    bool operator!=(const quaternion& q) {
+    bool operator!=(const quaternion& q) const {
         return ((x!=q.x) || (y!=q.y) || (z!=q.z) || (w!=q.w)) ? true : false;
     }
 

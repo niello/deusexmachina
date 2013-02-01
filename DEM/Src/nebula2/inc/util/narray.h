@@ -68,6 +68,7 @@ public:
 	int GetFlags() const { return Flags; }
     /// clear contents and set a fixed size
     void SetFixedSize(int size);
+	void SetGrowSize(int Grow) { GrowSize = Grow; }
 
 	T&		PushBack(const T& pElm) { return Append(pElm); }
     T&		Append(const T& pElm);

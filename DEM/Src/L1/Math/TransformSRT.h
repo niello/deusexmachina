@@ -20,23 +20,22 @@ public:
 	CTransformSRT(): Scale(1.f, 1.f, 1.f) {}
 	CTransformSRT(const matrix44& Tfm) { FromMatrix(Tfm); }
 
-	bool		FromMatrix(const matrix44& Tfm);
-	matrix44	ToMatrix() const;
+	bool	FromMatrix(const matrix44& Tfm);
+	void	ToMatrix(matrix44& Out) const;
 };
 
 // Default transform to this class
 typedef CTransformSRT CTransform;
 
-inline matrix44 CTransformSRT::ToMatrix() const
+inline void CTransformSRT::ToMatrix(matrix44& Out) const
 {
 	//Rotation.normalize();
-	matrix44 Tfm(Scale.x,	0.f,		0.f,		0.f,
-				0.f,		Scale.y,	0.f,		0.f,
-				0.f,		0.f,		Scale.z,	0.f,
-				0.f,		0.f,		0.f,		1.f);
-	Tfm.mult_simple(matrix44(Rotation)); //???is there better way?
-	Tfm.set_translation(Translation);
-	return Tfm;
+	Out.set(Scale.x,	0.f,		0.f,		0.f,
+			0.f,		Scale.y,	0.f,		0.f,
+			0.f,		0.f,		Scale.z,	0.f,
+			0.f,		0.f,		0.f,		1.f);
+	Out.mult_simple(matrix44(Rotation)); //???is there better way?
+	Out.set_translation(Translation);
 }
 //---------------------------------------------------------------------
 

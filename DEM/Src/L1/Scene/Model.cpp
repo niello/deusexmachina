@@ -59,6 +59,13 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 			}
 			OK;
 		}
+		case 'TLPJ': // JPLT
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			BoneIndices.SetSize(Count);
+			return DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) == Count * sizeof(int);
+		}
 		case 'HSEM': // MESH
 		{
 			Mesh = RenderSrv->MeshMgr.GetTypedResource(DataReader.Read<CStrID>());
@@ -72,7 +79,14 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		{
 			return DataReader.Read(BatchType);
 		}
-		default: FAIL;
+		case 'GLFF': // FFLG
+		{
+			nString FeatFlagsStr;
+			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;
+			FeatureFlags = RenderSrv->ShaderFeatureStringToMask(FeatFlagsStr);
+			OK;
+		}
+		default: return CSceneNodeAttr::LoadDataBlock(FourCC, DataReader);
 	}
 }
 //---------------------------------------------------------------------

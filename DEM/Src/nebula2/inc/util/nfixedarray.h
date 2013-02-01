@@ -5,7 +5,7 @@
     @class nFixedArray
     @ingroup NebulaDataTypes
 
-    @brief A fixed size, bounds checked array.
+    @brief A fixed Count, bounds checked array.
 
     (C) 2004 RadonLabs GmbH
 */
@@ -15,8 +15,8 @@ template<class TYPE> class nFixedArray
 {
 private:
 
-	int		size;
 	TYPE*	pData;
+	int		Count;
 
 	void	Allocate(int NewSize);
 	void	Copy(const nFixedArray<TYPE>& src);
@@ -24,16 +24,16 @@ private:
 
 public:
 
-	nFixedArray(): size(0), pData(NULL) {}
-	nFixedArray(int _Size): size(0), pData(NULL) { Allocate(_Size); }
-	nFixedArray(const nFixedArray<TYPE>& Other): size(0), pData(NULL) { Copy(Other); }
+	nFixedArray(): Count(0), pData(NULL) {}
+	nFixedArray(int _Size): Count(0), pData(NULL) { Allocate(_Size); }
+	nFixedArray(const nFixedArray<TYPE>& Other): Count(0), pData(NULL) { Copy(Other); }
 	~nFixedArray();
 
-	void	Clear(TYPE Elm) { for (int i = 0; i < size; i++) pData[i] = Elm; }
+	void	Clear(TYPE Elm) { for (int i = 0; i < Count; i++) pData[i] = Elm; }
 	int		Find(const TYPE& Elm) const;
 
-	void	SetSize(int NewSize) { if (size != NewSize) Allocate(NewSize); }
-	int		Size() const { return size; }
+	void	SetSize(int NewSize) { if (Count != NewSize) Allocate(NewSize); }
+	int		Size() const { return Count; }
 	TYPE*	GetPtr() { return pData; }
 
 	void	RawCopyFrom(const TYPE* pSrc, uint SrcCount);
@@ -58,7 +58,7 @@ template<class TYPE> void nFixedArray<TYPE>::Allocate(int NewSize)
 	if (NewSize > 0)
 	{
 		pData = n_new_array(TYPE, NewSize);
-		size = NewSize;
+		Count = NewSize;
 	}
 }
 //---------------------------------------------------------------------
@@ -67,8 +67,8 @@ template<class TYPE> void nFixedArray<TYPE>::Copy(const nFixedArray<TYPE>& rhs)
 {
 	if (this != &rhs)
 	{
-		Allocate(rhs.size);
-		for (int i = 0; i < size; i++) pData[i] = rhs.pData[i];
+		Allocate(rhs.Count);
+		for (int i = 0; i < Count; i++) pData[i] = rhs.pData[i];
 	}
 }
 //---------------------------------------------------------------------
@@ -80,7 +80,7 @@ template<class TYPE> void nFixedArray<TYPE>::Delete()
 		n_delete_array(pData);
 		pData = NULL;
 	}
-	size = 0;
+	Count = 0;
 }
 //---------------------------------------------------------------------
 
@@ -88,20 +88,20 @@ template<class TYPE> void nFixedArray<TYPE>::Delete()
 template<class TYPE> void nFixedArray<TYPE>::RawCopyFrom(const TYPE* pSrc, uint SrcCount)
 {
 	n_assert(pSrc);
-	memcpy(pData, pSrc, n_min(SrcCount, size));
+	memcpy(pData, pSrc, n_min(SrcCount, Count));
 }
 //---------------------------------------------------------------------
 
 template<class TYPE> TYPE& nFixedArray<TYPE>::operator [](int Index) const
 {
-	n_assert(pData && Index >= 0 && Index < size);
+	n_assert(pData && Index >= 0 && Index < Count);
 	return pData[Index];
 }
 //---------------------------------------------------------------------
 
 template<class TYPE> int nFixedArray<TYPE>::Find(const TYPE& Elm) const
 {
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < Count; i++)
 		if (Elm == pData[i]) return i;
 	return -1;
 }

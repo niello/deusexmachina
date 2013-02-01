@@ -23,7 +23,7 @@ void CSceneNode::Update()
 
 	if (Flags.Is(LocalMatrixDirty))
 	{
-		LocalMatrix = Tfm.ToMatrix();
+		Tfm.ToMatrix(LocalMatrix);
 		Flags.Clear(LocalMatrixDirty);
 		Flags.Set(WorldMatrixDirty);
 	}

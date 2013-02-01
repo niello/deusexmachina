@@ -24,8 +24,9 @@ bool CHRDWriter::WriteParams(PParams Value)
 
 bool CHRDWriter::WriteParam(const CParam& Value)
 {
-	if (WriteCharString(Value.GetName().CStr())) FAIL;
-	WRITE_STATIC_STRING(" = ")
+	if (!WriteCharString(Value.GetName().CStr())) FAIL;
+	if (Value.IsA<PParams>() || Value.IsA<PDataArray>()) WRITE_STATIC_STRING("\n")
+	else WRITE_STATIC_STRING(" = ")
 	if (!WriteData(Value.GetRawValue())) FAIL;
 	WRITE_STATIC_STRING("\n")
 	OK;
@@ -108,14 +109,15 @@ bool CHRDWriter::WriteData(const CData& Value)
 	}
 	else if (Value.IsA<PDataArray>())
 	{
-		WRITE_STATIC_STRING("\n")
 		if (!WriteIndent()) FAIL;
 		WRITE_STATIC_STRING("[\n")
 		++CurrTabLevel;
 		const CDataArray& A = *Value.GetValue<PDataArray>();
 		for (int i = 0; i < A.Size(); i++)
 		{
-			if (!WriteIndent()) FAIL;
+			const CData& Elm = A[i];
+			if (!Elm.IsA<PParams>() && !Elm.IsA<PDataArray>())
+				if (!WriteIndent()) FAIL;
 			if (!WriteData(A[i])) FAIL;
 			if (i < A.Size() - 1) WRITE_STATIC_STRING(",\n")
 			else WRITE_STATIC_STRING("\n")
@@ -126,7 +128,6 @@ bool CHRDWriter::WriteData(const CData& Value)
 	}
 	else if (Value.IsA<PParams>())
 	{
-		WRITE_STATIC_STRING("\n")
 		if (!WriteIndent()) FAIL;
 		WRITE_STATIC_STRING("{\n")
 		++CurrTabLevel;
