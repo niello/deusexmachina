@@ -45,7 +45,6 @@ public:
 	virtual void	OnAdd() {}
 	virtual void	OnRemove() {}
 	virtual void	Update() = 0;
-	virtual void	PrepareToRender() {}
 
 	bool			IsActive() const { return Flags.Is(Active); }
 	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }

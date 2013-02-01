@@ -80,12 +80,8 @@ public:
     /// get name of an animation resource
     const nString& GetAnim() const;
 
-    /// begin adding clips
-    void BeginClips(int numClips);
     /// add an animation clip
     void SetClip(int clipIndex, int animGroupIndex, const nString& clipName);
-    /// finish adding clips
-    void EndClips();
     /// get number of clips in the animation
     int GetNumClips() const;
     /// get clip at index
@@ -102,9 +98,9 @@ public:
     /// set an animation event in a track
     void SetAnimEvent(int clipIndex, int trackIndex, int eventIndex, float time, const vector3& translate, const quaternion& rotate, const vector3& scale);
     /// end the current event track
-    void EndAnimEventTrack(int clipIndex, int trackIndex);
+	void EndAnimEventTrack(int clipIndex, int trackIndex){}
     /// end adding animation event tracks to current clip
-    void EndAnimEventTracks(int clipIndex);
+	void EndAnimEventTracks(int clipIndex){}
 
     /// enable/disable animation
     void SetAnimEnabled(bool b);

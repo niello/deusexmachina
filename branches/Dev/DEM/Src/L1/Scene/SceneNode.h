@@ -89,6 +89,7 @@ public:
 	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
 	bool					AddAttr(CSceneNodeAttr& Attr);
+	DWORD					GetAttrCount() const { return Attrs.Size(); }
 	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 	void					RemoveAttr(CSceneNodeAttr& Attr);
 	void					RemoveAttr(DWORD Idx);
@@ -117,6 +118,7 @@ public:
 	const quaternion&		GetRotation() const { return Tfm.Rotation; }
 	void					SetScale(const vector3& Scale) { Tfm.Scale = Scale; Flags.Set(LocalMatrixDirty); }
 	const vector3&			GetScale() const { return Tfm.Scale; }
+	void					SetLocalTransform(const Math::CTransform& NewTfm) { Tfm = NewTfm; Flags.Set(LocalMatrixDirty); }
 	void					SetLocalTransform(const matrix44& Transform);
 	const Math::CTransform&	GetLocalTransform() { return Tfm; }
 	const matrix44&			GetLocalMatrix() { return LocalMatrix; }

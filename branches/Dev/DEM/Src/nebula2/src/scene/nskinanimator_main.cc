@@ -4,8 +4,6 @@
 //------------------------------------------------------------------------------
 #include "scene/nskinanimator.h"
 #include "scene/nskinshapenode.h"
-//#include "scene/nshadowskinshapenode.h"
-//#include "scene/nattachmentnode.h"
 #include "scene/nrendercontext.h"
 #include "anim2/nanimation.h"
 #include "resource/nresourceserver.h"
@@ -24,11 +22,7 @@ nSkinAnimator::nSkinAnimator() :
     animEnabled(true)
 {
     this->skinShapeNodeClass = nKernelServer::Instance()->FindClass("nskinshapenode");
-    //this->shadowSkinShapeNodeClass = nKernelServer::Instance()->FindClass("nshadowskinshapenode");
-    //this->attachmentNodeClass = nKernelServer::Instance()->FindClass("nattachmentnode");
     n_assert(this->skinShapeNodeClass);
-    //n_assert(this->shadowSkinShapeNodeClass);
-   // n_assert(this->attachmentNodeClass);
 }
 
 bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
@@ -68,6 +62,10 @@ bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReade
 			}
 			EndJoints();
 
+			//!!!TMP! Save skeleton in new format
+			//Data::PParams Desc = character.GetSkeleton().CreateBoneHierarchyDesc(-1);
+			//DataSrv->SaveHRD("home:Kila.hrd", Desc);
+
 			OK;
 		}
 		case 'PILC': // CLIP
@@ -77,13 +75,12 @@ bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReade
 
 			char Key[256];
 
-			BeginClips(Count);
+			clips.SetFixedSize(Count);
 			for (short i = 0; i < Count; ++i)
 			{
 				if (!DataReader.ReadString(Key, sizeof(Key))) FAIL;
 				SetClip(i, DataReader.Read<int>(), Key);
 			}
-			EndClips();
 
 			OK;
 		}
@@ -125,19 +122,15 @@ const char* nSkinAnimator::GetChannel()
 }
 //---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Unload the animation resource file.
-*/
-void
-nSkinAnimator::UnloadAnim()
+void nSkinAnimator::UnloadAnim()
 {
-    if (this->refAnim.isvalid())
-    {
-        this->refAnim->Release();
-        this->refAnim.invalidate();
-    }
+	if (refAnim.isvalid())
+	{
+		refAnim->Release();
+		refAnim.invalidate();
+	}
 }
+//---------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 /**
@@ -224,7 +217,7 @@ nSkinAnimator::RenderContextCreated(nRenderContext* renderContext)
 
     // create one character set per instance
     nCharacter2Set* characterSet = n_new(nCharacter2Set);
-    n_assert(0 != characterSet);
+    n_assert(characterSet);
 
     // put frame persistent data in render context
     nVariable::Handle characterSetHandle = nVariableServer::Instance()->GetVariableHandleByName("charSetPointer");
@@ -334,15 +327,6 @@ nSkinAnimator::RenderContextDestroyed(nRenderContext* renderContext)
 /**
 */
 void
-nSkinAnimator::BeginClips(int numClips)
-{
-    this->clips.SetFixedSize(numClips);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-void
 nSkinAnimator::SetClip(int clipIndex, int animGroupIndex, const nString& clipName)
 {
     // number of anim curves in a clip is identical to number of (joints * 3)
@@ -352,15 +336,6 @@ nSkinAnimator::SetClip(int clipIndex, int animGroupIndex, const nString& clipNam
 
     nAnimClip newClip(clipName, animGroupIndex, numCurves);
     this->clips.At(clipIndex) = newClip;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-void
-nSkinAnimator::EndClips()
-{
-    // empty
 }
 
 //------------------------------------------------------------------------------
@@ -449,27 +424,6 @@ nSkinAnimator::SetAnimEvent(int clipIndex, int trackIndex, int eventIndex, float
     e.SetScale(scale);
     t.SetEvent(eventIndex, e);
 }
-
-//------------------------------------------------------------------------------
-/**
-    End adding animation events.
-*/
-void
-nSkinAnimator::EndAnimEventTrack(int clipIndex, int trackIndex)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-    End adding animation event tracks.
-*/
-void
-nSkinAnimator::EndAnimEventTracks(int clipIndex)
-{
-    // empty
-}
-
 
 //------------------------------------------------------------------------------
 /**
