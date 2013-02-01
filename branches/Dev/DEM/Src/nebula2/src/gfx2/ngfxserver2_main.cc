@@ -182,15 +182,14 @@ nGfxServer2::SetTransform(TransformType type, const matrix44& matrix)
         case Model:
             this->transform[Model] = matrix;
             this->transform[InvModel] = matrix;
-            this->transform[InvModel].invert_simple();
+            matrix.invert_simple(transform[InvModel]);
             updModelView = true;
             updModelLight = true;
             break;
 
         case View:
             this->transform[View] = matrix;
-            this->transform[InvView] = matrix;
-            this->transform[InvView].invert_simple();
+            matrix.invert_simple(transform[InvView]);
             updModelView = true;
             updViewProjection = true;
             break;

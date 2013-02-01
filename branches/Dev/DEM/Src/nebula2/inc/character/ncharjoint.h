@@ -112,8 +112,7 @@ inline void nCharJoint::SetPose(const vector3& t, const quaternion& q, const vec
 
 	// global pose matrix and compute global inverse pose matrix
 	if (parentJoint) poseMatrix.mult_simple(parentJoint->poseMatrix);
-	invPoseMatrix = poseMatrix;
-	invPoseMatrix.invert_simple();
+	poseMatrix.invert_simple(invPoseMatrix);
 }
 //---------------------------------------------------------------------
 
@@ -146,9 +145,7 @@ inline void nCharJoint::Evaluate()
 		}
 	}
 
-	//!!!can optimize - write result to m! (binary op or smth)
-	skinMatrix44 = invPoseMatrix;
-	skinMatrix44.mult_simple(worldMatrix);
+	skinMatrix44.mult2_simple(invPoseMatrix, worldMatrix);
 
 	isUptodate = true;
 }

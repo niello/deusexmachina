@@ -157,8 +157,8 @@ nSceneServer::BeginScene(const matrix44& invView)
     this->groupArray.Reset();
     this->rootArray.Reset();
 
-    matrix44 view = invView;
-    view.invert_simple();
+    matrix44 view;
+    invView.invert_simple(view);
     nGfxServer2::Instance()->SetTransform(nGfxServer2::View, view);
 
     CoreSrv->SetGlobal<int>("NumInstanceGroups", 0);
