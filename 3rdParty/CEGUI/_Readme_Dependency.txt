@@ -10,3 +10,4 @@ Use CEGUI SDK, do not forget it's dependencies
 
 Purpose in DEM:
 Main and debug GUI
+
