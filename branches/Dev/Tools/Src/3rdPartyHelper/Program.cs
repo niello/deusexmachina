@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace ThirdPartyHelper
@@ -23,8 +24,10 @@ namespace ThirdPartyHelper
             try
             {
                 var downloadCaheFolder = args.Length > 1 ? args[1] : null;
-                if (downloadCaheFolder != null)
+                int flagIdx = 1;
+                if (downloadCaheFolder != null && !downloadCaheFolder.StartsWith("--"))
                 {
+                    flagIdx++;
                     try
                     {
                         var folder = Path.GetFullPath(downloadCaheFolder);
@@ -40,7 +43,19 @@ namespace ThirdPartyHelper
                         downloadCaheFolder = null;
                     }
                 }
-                DownloadAndExtract(args[0], downloadCaheFolder);
+
+                bool cleanup = false;
+                for (; flagIdx < args.Length; flagIdx++ )
+                {
+                    var flag = args[flagIdx];
+                    if (flag == null || !flag.StartsWith("--"))
+                        continue;
+
+                    if (string.Compare(flag, "--cleanup", StringComparison.InvariantCultureIgnoreCase) == 0)
+                        cleanup = true;
+                }
+
+                DownloadAndExtract(args[0], downloadCaheFolder, cleanup);
             }
             catch(Exception ex)
             {
@@ -55,7 +70,7 @@ namespace ThirdPartyHelper
 #endif
         }
 
-        static void DownloadAndExtract(string fileName, string caheFolder)
+        static void DownloadAndExtract(string fileName, string caheFolder, bool cleanup)
         {   
             var file = Path.GetFullPath(fileName);
             if (!File.Exists(file))
@@ -75,6 +90,9 @@ namespace ThirdPartyHelper
                     downloadList.Add(downloadInfo);
                 }
             }
+
+            if (cleanup)
+                Cleanup(downloadList);
 
             var shell = new ShellClass();
             var md5 = MD5.Create();
@@ -151,6 +169,100 @@ namespace ThirdPartyHelper
 
         }
 
+        private static void Cleanup(ICollection<DownloadInfo> downloadList)
+        {
+            var folderList = new List<string>(downloadList.Count);
+            foreach(var download in downloadList)
+            {
+                var folderPath =
+                    Path.GetFullPath(download.DestinationPath).ToLower().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                bool ignore = false;
+                for(int i=0; i<folderList.Count; i++)
+                {
+                    if (folderList[i] == null)
+                        continue;
+
+                    if(folderPath.StartsWith(folderList[i]))
+                    {
+                        ignore = true;
+                        break;
+                    }
+                    if (!folderList[i].StartsWith(folderPath))
+                        continue;
+
+                    folderList[i] = ignore ? null : folderPath;
+                    ignore = true;
+                }
+                if (!ignore)
+                    folderList.Add(folderPath);
+            }
+
+            var svnProcessStart =
+                new ProcessStartInfo("svn.exe", "status --no-ignore")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    };
+
+            foreach(var folder in folderList.Where(f=>f!=null && Directory.Exists(f)))
+            {
+                svnProcessStart.Arguments = string.Format("status \"{0}\" --no-ignore", folder);
+                using (var process = new Process())
+                {
+                    process.StartInfo = svnProcessStart;
+                    var currentFolder = folder;
+
+                    process.OutputDataReceived +=
+                        (o, e) =>
+                            {
+                                var line = e.Data;
+                                if (line == null)
+                                    return;
+
+                                if (!line.StartsWith("I") || line.Length < 1)
+                                    return;
+
+                                line = line.Substring(1).Trim();
+                                if (string.IsNullOrEmpty(line))
+                                    return;
+
+                                if (File.Exists(line))
+                                {
+                                    File.Delete(line);
+                                    Console.WriteLine("Cleanup: file '{0}' was deleted.", line);
+                                }
+                                else if (Directory.Exists(line))
+                                {
+                                    Directory.Delete(line, true);
+                                    Console.WriteLine("Cleanup: directory '{0}' was deleted with an all its content.", line);
+                                }
+                            };
+
+                    process.ErrorDataReceived +=
+                        (o, e) =>
+                            {
+                                if (e.Data == null)
+                                    return;
+
+                                var color = Console.ForegroundColor;
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.WriteLine(
+                                    "WARNING. Can't cleanup folder '{0}' because of the following svn error:",
+                                    currentFolder);
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine(e.Data);
+                                Console.ForegroundColor = color;
+                            };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+                    process.WaitForExit();
+                }
+            }
+        }
+
         static void HttpGet(string uri, string destination)
         {
             Console.WriteLine("Downloading file from {0}", uri);
@@ -190,7 +302,7 @@ namespace ThirdPartyHelper
             var from = shell.NameSpace(source);
             var to = shell.NameSpace(destinationPath);
 
-            to.CopyHere(from.Items(), 0);
+            to.CopyHere(from.Items(), FileOperationFlag.NoConfirmation);
         }
     }
 }

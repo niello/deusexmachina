@@ -54,6 +54,15 @@ Index: ode/src/heightfield.cpp
  
  // Three-way MIN and MAX
  #define dMIN3(A,B,C)	( (A)<(B) ? dMIN((A),(C)) : dMIN((B),(C)) )
+@@ -60,7 +62,7 @@
+ // but as it does not match the way all other geometries work, so for constancy it
+ // was changed to work like this.
+ 
+-// #define DHEIGHTFIELD_CORNER_ORIGIN
++#define DHEIGHTFIELD_CORNER_ORIGIN
+ 
+ 
+ // Uncomment this #define to add heightfield triangles edge colliding
 @@ -98,6 +100,8 @@
  											m_pHeightData( NULL ),
  											m_pUserData( NULL ),
