@@ -213,6 +213,7 @@ namespace ThirdPartyHelper
                     process.StartInfo = svnProcessStart;
                     var currentFolder = folder;
 
+                    var toDelete = new List<string>();
                     process.OutputDataReceived +=
                         (o, e) =>
                             {
@@ -224,19 +225,8 @@ namespace ThirdPartyHelper
                                     return;
 
                                 line = line.Substring(1).Trim();
-                                if (string.IsNullOrEmpty(line))
-                                    return;
-
-                                if (File.Exists(line))
-                                {
-                                    File.Delete(line);
-                                    Console.WriteLine("Cleanup: file '{0}' was deleted.", line);
-                                }
-                                else if (Directory.Exists(line))
-                                {
-                                    Directory.Delete(line, true);
-                                    Console.WriteLine("Cleanup: directory '{0}' was deleted with an all its content.", line);
-                                }
+                                if (!string.IsNullOrEmpty(line))
+                                    toDelete.Add(line);
                             };
 
                     process.ErrorDataReceived +=
@@ -259,6 +249,20 @@ namespace ThirdPartyHelper
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
                     process.WaitForExit();
+
+                    foreach (var path in toDelete)
+                    {
+                        if (File.Exists(path))
+                        {
+                            File.Delete(path);
+                            Console.WriteLine("Cleanup: file '{0}' was deleted.", path);
+                        }
+                        else if (Directory.Exists(path))
+                        {
+                            Directory.Delete(path, true);
+                            Console.WriteLine("Cleanup: directory '{0}' was deleted with an all its content.", path);
+                        }
+                    }
                 }
             }
         }
