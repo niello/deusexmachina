@@ -22,14 +22,12 @@ class CScene: public Core::CRefCounted
 private:
 
 	PSceneNode				RootNode;
-	nArray<PSceneNode>		OwnedNodes;
+	bbox3					SceneBBox;
+	PCamera					CurrCamera; //???or store externally?
 
 	vector4					AmbientLight;
 	//Fog settings
 	//???shadow settings?
-
-	bbox3					SceneBBox;
-	PCamera					CurrCamera; //???or store externally?
 
 	nArray<CRenderObject*>	VisibleObjects;
 	nArray<CLight*>			VisibleLights;
@@ -41,7 +39,7 @@ public:
 
 	CSPS				SPS;			// Spatial partitioning structure
 
-	CScene(): OwnedNodes(0, 32), AmbientLight(0.2f, 0.2f, 0.2f, 1.f) { OwnedNodes.SetFlags(nArray<PSceneNode>::DoubleGrowSize); }
+	CScene(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f) {  }
 	~CScene() { Clear(); }
 
 	void		Init(const bbox3& Bounds);
@@ -56,33 +54,12 @@ public:
 
 	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader); // CStrID FrameShaderID = CStrID::Empty);
 
-	void		OwnNode(PSceneNode Node);
-	bool		FreeNode(PSceneNode Node);
-	PSceneNode	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode; }
-	CSceneNode&	GetRootNode() const { return *RootNode.get(); }
+	CSceneNode*	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode.get_unsafe(); }
+	CSceneNode&	GetRootNode() { return *RootNode.get_unsafe(); }
 	CCamera*	GetCurrCamera() const { return CurrCamera.get_unsafe(); }
 };
 
 typedef Ptr<CScene> PScene;
-
-// Scene-owned nodes die only on scene destruction, whereas object-owned nodes die on owner object destruction
-inline void CScene::OwnNode(PSceneNode Node)
-{
-	if (Node.isvalid() && !Node->IsOwnedByScene())
-	{
-		OwnedNodes.Append(Node);
-		Node->Flags.Set(CSceneNode::OwnedByScene);
-	}
-}
-//---------------------------------------------------------------------
-
-inline bool CScene::FreeNode(PSceneNode Node)
-{
-	if (!Node.isvalid() || !Node->IsOwnedByScene() || !OwnedNodes.RemoveByValue(Node)) FAIL;
-	Node->Flags.Clear(CSceneNode::OwnedByScene);
-	OK;
-}
-//---------------------------------------------------------------------
 
 }
 

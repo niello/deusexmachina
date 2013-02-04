@@ -21,9 +21,9 @@ class nMemoryAnimation : public nAnimation
 {
 public:
     /// constructor
-    nMemoryAnimation();
+	nMemoryAnimation(): keyArray(0, 0) {}
     /// destructor
-    virtual ~nMemoryAnimation();
+	virtual ~nMemoryAnimation() { if (!IsUnloaded()) Unload(); }
     /// sample value of given curve at given time
     virtual void SampleCurves(float time, int groupIndex, int firstCurveIndex, int numCurves, vector4* keyArray);
     /// get an estimated byte size of the resource data (for memory statistics)

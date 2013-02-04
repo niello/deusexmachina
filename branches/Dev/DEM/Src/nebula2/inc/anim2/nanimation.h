@@ -107,8 +107,6 @@ public:
 
         /// constructor
         Curve();
-        /// destructor
-        ~Curve();
         /// set the interpolation type
         void SetIpolType(IpolType t);
         /// get the interpolation type
@@ -159,8 +157,6 @@ public:
 
         /// constructor
         Group();
-        /// destructor
-        ~Group();
         /// set number of curves in group
         void SetNumCurves(int c);
         /// get number of curves in group
@@ -211,13 +207,13 @@ public:
     };
 
     /// constructor
-    nAnimation();
+	nAnimation(): groupArray(0, 0) {}
     /// destructor
-    virtual ~nAnimation();
+	virtual ~nAnimation() { if (!IsUnloaded()) Unload(); }
     /// sample values from curve range
-    virtual void SampleCurves(float time, int groupIndex, int firstCurveIndex, int numCurves, vector4* keyArray);
+	virtual void SampleCurves(float time, int groupIndex, int firstCurveIndex, int numCurves, vector4* keyArray) {}
     /// get duration of entire animation
-    nTime GetDuration(int groupIndex) const;
+	nTime GetDuration(int groupIndex) const { return groupArray[groupIndex].GetDuration(); }
     /// set number of groups in animation
     void SetNumGroups(int g);
     /// get number of groups in animation
@@ -226,9 +222,8 @@ public:
     Group& GetGroupAt(int i) const;
 
 protected:
-    /// unload the resource (clears the valid flag)
-    virtual void UnloadResource();
-    /// fix the firstKeyIndex and keyStride members in the contained animation curve objects
+
+	virtual void UnloadResource() { groupArray.Clear(); }
     void FixKeyOffsets();
 
     nArray<Group> groupArray;
@@ -244,15 +239,6 @@ nAnimation::Curve::Curve() :
     isAnimated(1),
     startValue(0.0f, 0.0f, 0.0f, 0.0f),
     firstClipValue(0.0f, 0.0f, 0.0f, 0.0f)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nAnimation::Curve::~Curve()
 {
     // empty
 }
@@ -404,15 +390,6 @@ nAnimation::Group::Group() :
     loopType(Repeat),
     fadeInFrames(0),
     curveArray(0, 0)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nAnimation::Group::~Group()
 {
     // empty
 }

@@ -64,11 +64,7 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 		//!!!REDUNDANCY! { [ { } ] } problem.
 		short SMTH = Reader.Read<short>();
 
-		//!!!revisit it! pinning all child nodes is smth strange!
-		//also they won't be unloaded when root node is unloaded!
-		PSceneNode Child = RootNode->CreateChild(CStrID(ChildName));
-		RootNode->GetScene()->OwnNode(Child);
-		if (!LoadNodesFromSCN(In, Child, PreloadResources)) FAIL;
+		if (!LoadNodesFromSCN(In, RootNode->CreateChild(CStrID(ChildName)), PreloadResources)) FAIL;
 	}
 
 	OK;

@@ -28,9 +28,9 @@ void CSceneNode::Update()
 		Flags.Set(WorldMatrixDirty);
 	}
 
-	if (Flags.Is(WorldMatrixDirty) || (Parent.isvalid() && Parent->IsWorldMatrixChanged()))
+	if (Flags.Is(WorldMatrixDirty) || (pParent && pParent->IsWorldMatrixChanged()))
 	{
-		if (Parent.isvalid()) WorldMatrix.mult2_simple(LocalMatrix, Parent->WorldMatrix);
+		if (pParent) WorldMatrix.mult2_simple(LocalMatrix, pParent->WorldMatrix);
 		else WorldMatrix = LocalMatrix;
 		Flags.Clear(WorldMatrixDirty);
 		Flags.Set(WorldMatrixChanged);
@@ -70,17 +70,17 @@ void CSceneNode::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-PSceneNode CSceneNode::CreateChild(CStrID ChildName)
+CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 {
 	//???!!!SceneSrv->CreateSceneNode?!
 	PSceneNode Node = n_new(CSceneNode)(*pScene, ChildName);
-	Node->Parent = this;
+	Node->pParent = this;
 	Child.Add(ChildName, Node);
 	return Node;
 }
 //---------------------------------------------------------------------
 
-PSceneNode CSceneNode::GetChild(LPCSTR Path, bool Create)
+CSceneNode* CSceneNode::GetChild(LPCSTR Path, bool Create)
 {
 	n_assert(Path && *Path);
 

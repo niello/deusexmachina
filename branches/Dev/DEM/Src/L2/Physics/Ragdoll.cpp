@@ -40,7 +40,7 @@ void CRagdoll::Detach()
 {
 	n_assert(pNCharacter);
 	CComposite::Detach();
-	pNCharacter->SetAnimEnabled(true);
+	pNCharacter->animEnabled = true;
 }
 //---------------------------------------------------------------------
 
@@ -178,7 +178,7 @@ void CRagdoll::Bind()
 void CRagdoll::WriteJoints()
 {
 	n_assert(pNCharacter);
-	pNCharacter->SetAnimEnabled(false);
+	pNCharacter->animEnabled = false;
 	const nCharSkeleton& Skeleton = pNCharacter->GetSkeleton();
 
 	// get our inverse world space matrix

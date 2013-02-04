@@ -69,8 +69,6 @@ public:
     void BeginJoints(int numJoints);
     /// add a joint to the skeleton
     void SetJoint(int index, int parentJointIndex, const vector3& poseTranslate, const quaternion& poseRotate, const vector3& poseScale, const nString& name);
-    /// finish adding joints
-    void EndJoints();
     /// get number of joints in skeleton
     int GetNumJoints();
     /// get joint attributes
@@ -220,17 +218,6 @@ void
 nSkinAnimator::SetJoint(int jointIndex, int parentJointIndex, const vector3& poseTranslate, const quaternion& poseRotate, const vector3& poseScale, const nString& name)
 {
     this->character.GetSkeleton().SetJoint(jointIndex, parentJointIndex, poseTranslate, poseRotate, poseScale, name);
-}
-
-//------------------------------------------------------------------------------
-/**
-    Finish adding joints to the joint skeleton.
-*/
-inline
-void
-nSkinAnimator::EndJoints()
-{
-    this->character.GetSkeleton().EndJoints();
 }
 
 //------------------------------------------------------------------------------

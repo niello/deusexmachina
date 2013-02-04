@@ -47,11 +47,11 @@
 
 // RENDERERS =======================================
 
-#include <Render/Renderers/ModelRendererNoLight.h>
-#include <Render/Renderers/ModelRendererSinglePassLight.h>
+#include <Render/Renderers/ModelRenderer.h>
 
 // OTHER ===========================================
 
+#include <Scene/Bone.h>
 #include <Physics/Collision/Shape.h>
 #include <Items/ItemTplWeapon.h>
 #include <Debug/LuaConsole.h>

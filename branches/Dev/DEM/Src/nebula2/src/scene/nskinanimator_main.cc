@@ -60,7 +60,6 @@ bool nSkinAnimator::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReade
 				if (!DataReader.ReadString(Name, sizeof(Name))) FAIL;
 				SetJoint(i, ParentIdx, Translation, Rotation, Scale, Name);
 			}
-			EndJoints();
 
 			//!!!TMP! Save skeleton in new format
 			//Data::PParams Desc = character.GetSkeleton().CreateBoneHierarchyDesc(-1);
@@ -242,13 +241,13 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
     n_assert(curCharacter);
 
     // update the animation enabled flag
-    curCharacter->SetAnimEnabled(this->animEnabled);
+    curCharacter->animEnabled = animEnabled;
 
     // check if I am already uptodate for this frame
     uint curFrameId = renderContext->GetFrameId();
-    if (curCharacter->GetLastEvaluationFrameId() != curFrameId)
+    if (curCharacter->LastEvalFrame != curFrameId)
     {
-        curCharacter->SetLastEvaluationFrameId(curFrameId);
+        curCharacter->LastEvalFrame = curFrameId;
 
         // get the sample time from the render context
         nVariable* var = renderContext->GetVariable(this->HChannel);
@@ -264,7 +263,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
         n_assert(characterSet);
 
         // get character 2 set from render context and check if animation state needs to be updated
-        if (characterSet->IsDirty())
+        if (characterSet->dirty)
         {
             nAnimStateInfo newState;
             int numClips = characterSet->GetNumClips();
@@ -277,7 +276,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
             if (weightSum > 0)
             {
                 newState.SetStateStarted(curTime);
-                newState.SetFadeInTime(characterSet->GetFadeInTime());
+                newState.SetFadeInTime(characterSet->fadeInTime);
                 newState.BeginClips(numClips);
                 for (int i = 0; i < numClips; i++)
                 {
@@ -290,7 +289,7 @@ nSkinAnimator::Animate(nSceneNode* sceneNode, nRenderContext* renderContext)
             }
 
             curCharacter->SetActiveState(newState);
-            characterSet->SetDirty(false);
+            characterSet->dirty = false;
         }
 
         // evaluate the current state of the character skeleton

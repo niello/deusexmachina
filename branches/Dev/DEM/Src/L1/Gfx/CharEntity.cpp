@@ -233,7 +233,7 @@ void CCharEntity::ActivateAnimations(const nArray<nString>& AnimNames, const nAr
 	n_assert(pNCharacter->GetSkinAnimator());
 
 	pCharacterSet->ClearClips();
-	pCharacterSet->SetFadeInTime((float)FadeIn);
+	pCharacterSet->fadeInTime = (float)FadeIn;
 
 	//!!!optimize not to lookup! internal function, can use mapped data from above funcs!
 	for (int i = 0; i < AnimNames.Size(); i++)

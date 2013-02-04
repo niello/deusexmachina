@@ -9,48 +9,15 @@
 
 nNebulaClass(nMemoryAnimation, "nanimation");
 
-//------------------------------------------------------------------------------
-/**
-*/
-nMemoryAnimation::nMemoryAnimation() :
-    keyArray(0, 0)
+bool nMemoryAnimation::LoadResource()
 {
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-nMemoryAnimation::~nMemoryAnimation()
-{
-    if (!this->IsUnloaded())
-    {
-        this->Unload();
-    }
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-bool
-nMemoryAnimation::LoadResource()
-{
-    n_assert(this->IsUnloaded());
+    n_assert(IsUnloaded());
 
     bool success = false;
-    nString filename = this->GetFilename();
-    if (filename.CheckExtension("nax2"))
-    {
-        success = this->LoadNax2(filename);
-    }
-    else if (filename.CheckExtension("nanim2"))
-    {
-        success = this->LoadNanim2(filename);
-    }
-    if (success)
-    {
-        this->SetState(Valid);
-    }
+    nString filename = GetFilename();
+    if (filename.CheckExtension("nax2")) success = LoadNax2(filename);
+    else if (filename.CheckExtension("nanim2")) success = LoadNanim2(filename);
+    if (success) SetState(Valid);
     return success;
 }
 
@@ -60,11 +27,11 @@ nMemoryAnimation::LoadResource()
 void
 nMemoryAnimation::UnloadResource()
 {
-    if (!this->IsUnloaded())
+    if (!IsUnloaded())
     {
         nAnimation::UnloadResource();
-        this->keyArray.Clear();
-        this->SetState(Unloaded);
+        keyArray.Clear();
+        SetState(Unloaded);
     }
 }
 
@@ -124,7 +91,7 @@ static inline bool GetS(Data::CFileStream* file, char* buf, int bufSize)
 bool
 nMemoryAnimation::LoadNanim2(const nString& filename)
 {
-    n_assert(this->IsUnloaded())
+    n_assert(IsUnloaded())
 
 	Data::CFileStream File;
 
@@ -176,13 +143,13 @@ nMemoryAnimation::LoadNanim2(const nString& filename)
                 return false;
             }
 
-            this->SetNumGroups(numGroups);
+            SetNumGroups(numGroups);
         }
         else if (0 == strcmp(keyWord, "numkeys"))
         {
             const char* numKeysString = strtok(0, N_WHITESPACE);
             n_assert(numKeysString);
-            this->keyArray.SetFixedSize(atoi(numKeysString));
+            keyArray.SetFixedSize(atoi(numKeysString));
         }
         else if (0 == strcmp(keyWord, "group"))
         {
@@ -196,7 +163,7 @@ nMemoryAnimation::LoadNanim2(const nString& filename)
             n_assert(numCurvesString && startKeyString && keyStrideString && numKeysString && keyTimeString && fadeInFramesString && loopTypeString);
 
             curveIndex = 0;
-            curGroup = &(this->GetGroupAt(groupIndex++));
+            curGroup = &(GetGroupAt(groupIndex++));
             curGroup->SetNumCurves(atoi(numCurvesString));
             curGroup->SetStartKey(atoi(startKeyString));
             curGroup->SetNumKeys(atoi(numKeysString));
@@ -239,7 +206,7 @@ nMemoryAnimation::LoadNanim2(const nString& filename)
             vec4.y = float(atof(keyYString));
             vec4.z = float(atof(keyZString));
             vec4.w = float(atof(keyWString));
-            this->keyArray[keyIndex++] = vec4;
+            keyArray[keyIndex++] = vec4;
         }
         else
         {
@@ -263,7 +230,7 @@ nMemoryAnimation::LoadNanim2(const nString& filename)
 bool
 nMemoryAnimation::LoadNax2(const nString& filename)
 {
-    n_assert(this->IsUnloaded());
+    n_assert(IsUnloaded());
 
 	Data::CFileStream File;
 
@@ -295,8 +262,8 @@ nMemoryAnimation::LoadNax2(const nString& filename)
     int numKeys;
 	File.Read(&numKeys, sizeof(int));
 
-    this->SetNumGroups(numGroups);
-    this->keyArray.SetFixedSize(numKeys);
+    SetNumGroups(numGroups);
+    keyArray.SetFixedSize(numKeys);
 
     // read groups
     int groupIndex = 0;
@@ -317,7 +284,7 @@ nMemoryAnimation::LoadNax2(const nString& filename)
 		File.Read(&fadeInFrames, sizeof(float));
 		File.Read(&loopType, sizeof(int));
 
-        Group& group = this->GetGroupAt(groupIndex);
+        Group& group = GetGroupAt(groupIndex);
         group.SetNumCurves(numCurves);
         group.SetStartKey(startKey);
         group.SetNumKeys(numKeys);
@@ -330,7 +297,7 @@ nMemoryAnimation::LoadNax2(const nString& filename)
     // read curves
     for (groupIndex = 0; groupIndex < numGroups; groupIndex++)
     {
-        Group& group = this->GetGroupAt(groupIndex);
+        Group& group = GetGroupAt(groupIndex);
         int numCurves = group.GetNumCurves();
         int curveIndex;
         for (curveIndex = 0; curveIndex < numCurves; curveIndex++)
@@ -359,7 +326,7 @@ nMemoryAnimation::LoadNax2(const nString& filename)
     if (numKeys > 0)
     {
         int keyArraySize = numKeys * sizeof(vector4);
-        File.Read(&(this->keyArray[0]), keyArraySize);
+        File.Read(&(keyArray[0]), keyArraySize);
     }
 
     // cleanup
@@ -390,7 +357,7 @@ void
 nMemoryAnimation::SampleCurves(float time, int groupIndex, int firstCurveIndex, int numCurves, vector4* dstKeyArray)
 {
     // convert the time into 2 global key indexes and an inbetween value
-    const Group& group = this->GetGroupAt(groupIndex);
+    const Group& group = GetGroupAt(groupIndex);
     int startKey = group.GetStartKey();
     double frameTime = startKey * group.GetKeyTime();
     int keyIndex[2];
@@ -423,10 +390,10 @@ nMemoryAnimation::SampleCurves(float time, int groupIndex, int firstCurveIndex, 
                case Curve::Step:
                {
                    int index0 = curve.GetFirstKeyIndex() + keyIndex[0];
-                   dstKeyArray[i] = this->keyArray[index0];
+                   dstKeyArray[i] = keyArray[index0];
 
                    index0 = curve.GetFirstKeyIndex();
-                   curve.SetStartValue(this->keyArray[index0]);
+                   curve.SetStartValue(keyArray[index0]);
                }
                break;
 
@@ -435,15 +402,15 @@ nMemoryAnimation::SampleCurves(float time, int groupIndex, int firstCurveIndex, 
                    int curveFirstKeyIndex = curve.GetFirstKeyIndex();
                    int index0 = curveFirstKeyIndex + keyIndex[0];
                    int index1 = curveFirstKeyIndex + keyIndex[1];
-                   q0.set(this->keyArray[index0].x, this->keyArray[index0].y, this->keyArray[index0].z, this->keyArray[index0].w);
-                   q1.set(this->keyArray[index1].x, this->keyArray[index1].y, this->keyArray[index1].z, this->keyArray[index1].w);
+                   q0.set(keyArray[index0].x, keyArray[index0].y, keyArray[index0].z, keyArray[index0].w);
+                   q1.set(keyArray[index1].x, keyArray[index1].y, keyArray[index1].z, keyArray[index1].w);
                    q.slerp(q0, q1, inbetween);
                    dstKeyArray[i].set(q.x, q.y, q.z, q.w);
 
                    index0 = curveFirstKeyIndex + startKeyIndex[0];
                    index1 = curveFirstKeyIndex + startKeyIndex[1];
-                   q0.set(this->keyArray[index0].x, this->keyArray[index0].y, this->keyArray[index0].z, this->keyArray[index0].w);
-                   q1.set(this->keyArray[index1].x, this->keyArray[index1].y, this->keyArray[index1].z, this->keyArray[index1].w);
+                   q0.set(keyArray[index0].x, keyArray[index0].y, keyArray[index0].z, keyArray[index0].w);
+                   q1.set(keyArray[index1].x, keyArray[index1].y, keyArray[index1].z, keyArray[index1].w);
                    q.slerp(q0, q1, startInbetween);
                    vector4 val(q.x, q.y, q.z, q.w);
                    curve.SetStartValue(val);
@@ -455,14 +422,14 @@ nMemoryAnimation::SampleCurves(float time, int groupIndex, int firstCurveIndex, 
                    int curveFirstKeyIndex = curve.GetFirstKeyIndex();
                    int index0 = curveFirstKeyIndex + keyIndex[0];
                    int index1 = curveFirstKeyIndex + keyIndex[1];
-                   const vector4& v0 = this->keyArray[index0];
-                   const vector4& v1 = this->keyArray[index1];
+                   const vector4& v0 = keyArray[index0];
+                   const vector4& v1 = keyArray[index1];
                    dstKeyArray[i] = v0 + ((v1 - v0) * inbetween);
 
                    index0 = curveFirstKeyIndex + startKeyIndex[0];
                    index1 = curveFirstKeyIndex + startKeyIndex[1];
-                   vector4& v2 = this->keyArray[index0];
-                   vector4& v3 = this->keyArray[index1];
+                   vector4& v2 = keyArray[index0];
+                   vector4& v3 = keyArray[index1];
                    curve.SetStartValue(v2 + ((v3 - v2) * startInbetween));
                }
                break;
@@ -481,5 +448,5 @@ nMemoryAnimation::SampleCurves(float time, int groupIndex, int firstCurveIndex, 
 int
 nMemoryAnimation::GetByteSize()
 {
-    return this->keyArray.Size() * sizeof(vector4);
+    return keyArray.Size() * sizeof(vector4);
 }

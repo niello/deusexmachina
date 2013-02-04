@@ -39,13 +39,17 @@ void CPropSceneNode::Activate()
 {
 	CPropTransformable::Activate();
 
-	Node = SceneSrv->GetCurrentScene()->GetNode(GetEntity()->Get<nString>(Attr::ScenePath).Get(), true);
+	//???optimize duplicate search?
+	LPCSTR pPath = GetEntity()->Get<nString>(Attr::ScenePath).Get();
+	Node = SceneSrv->GetCurrentScene()->GetNode(pPath, false);
+	bool NodeExists = Node.isvalid();
+	if (!NodeExists) Node = SceneSrv->GetCurrentScene()->GetNode(pPath, true);
 	n_assert(Node.isvalid());
 
 	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::SceneFile);
 	if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
 
-	if (Node->IsOwnedByScene())
+	if (NodeExists)
 		GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());
 	else Node->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform)); //???set local? or set global & then calc local?
 }

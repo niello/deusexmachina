@@ -7,8 +7,7 @@ namespace Scene
 
 void CScene::Init(const bbox3& Bounds)
 {
-	RootNode = SceneSrv->CreateSceneNode(*this, CStrID::Empty);
-	RootNode->Flags.Set(CSceneNode::OwnedByScene);
+	RootNode = n_new(CSceneNode(*this, CStrID::Empty));
 
 	SceneBBox = Bounds;
 	vector3 Center = SceneBBox.center();
@@ -27,13 +26,8 @@ void CScene::Deactivate()
 }
 //---------------------------------------------------------------------
 
-// NB: Nodes owned by external objects and their hierarchy will persist until owner objects are destroyed
 void CScene::Clear()
 {
-	for (int i = 0; i < OwnedNodes.Size(); ++i)
-		OwnedNodes[i]->Flags.Clear(CSceneNode::OwnedByScene);
-	OwnedNodes.Clear();
-	RootNode->Flags.Clear(CSceneNode::OwnedByScene);
 	RootNode = NULL;
 }
 //---------------------------------------------------------------------
@@ -41,13 +35,11 @@ void CScene::Clear()
 //???or always do externally?
 void CScene::CreateDefaultCamera()
 {
-	if (!RootNode.isvalid() || RootNode->GetChild(CStrID("_DefaultCamera")).isvalid()) return;
+	if (RootNode->GetChild(CStrID("_DefaultCamera"))) return;
 
-	PSceneNode CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
-	OwnNode(CameraNode);
-	PCamera Camera = n_new(CCamera);
-	CameraNode->AddAttr(*Camera);
-	CurrCamera = Camera;
+	CSceneNode* CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
+	CurrCamera = n_new(CCamera);
+	CameraNode->AddAttr(*CurrCamera);
 }
 //---------------------------------------------------------------------
 
@@ -188,37 +180,37 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 
 	if (OutObjects && pNode->Data.Objects.Size())
 	{
-		nArray<CSPSRecord>::iterator ItObj = pNode->Data.Objects.Begin();
+		nArray<CSPSRecord*>::iterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
 			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.Size());
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj, ++ppObj)
-				*ppObj = (CRenderObject*)&ItObj->Attr;
+				*ppObj = (CRenderObject*)&(*ItObj)->Attr;
 		}
 		else // Clipped
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
-				if (ItObj->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutObjects->Append((CRenderObject*)&ItObj->Attr);
+				if ((*ItObj)->GlobalBox.clipstatus(ViewProj) != Outside)
+					OutObjects->Append((CRenderObject*)&(*ItObj)->Attr);
 		}
 	}
 
 	if (OutLights && pNode->Data.Lights.Size())
 	{
-		nArray<CSPSRecord>::iterator ItLight = pNode->Data.Lights.Begin();
+		nArray<CSPSRecord*>::iterator ItLight = pNode->Data.Lights.Begin();
 		if (Clip == Inside)
 		{
 			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.Size());
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight, ++ppLight)
-				*ppLight = (CLight*)&ItLight->Attr;
+				*ppLight = (CLight*)&(*ItLight)->Attr;
 		}
 		else // Clipped
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
-				if (ItLight->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutLights->Append((CLight*)&ItLight->Attr);
+				if ((*ItLight)->GlobalBox.clipstatus(ViewProj) != Outside)
+					OutLights->Append((CLight*)&(*ItLight)->Attr);
 		}
 	}
 

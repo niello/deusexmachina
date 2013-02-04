@@ -41,19 +41,18 @@ protected:
 	enum
 	{
 		Active				= 0x01,	// Node must be processed
-		OwnedByScene		= 0x02,	// This node is owned by scene and lives until scene is destroyed
 		RespectsLOD			= 0x04,	// This node is affected by parent's LODGroup attribute
 		LocalMatrixDirty	= 0x08,	// Local transform components were changed, but matrix is not updated
 		WorldMatrixDirty	= 0x10,	// Local matrix changed, and world matrix need to be updated
 		WorldMatrixChanged	= 0x20	// World matrix of this node changed this frame
 	};
 
-	typedef nDictionary<CStrID, CSceneNode*> CNodeDict;
+	typedef nDictionary<CStrID, PSceneNode> CNodeDict;
 
 	//???store scene ptr here? or always pass as param?
 
 	CStrID					Name;
-	PSceneNode				Parent;
+	CSceneNode*				pParent;
 	CNodeDict				Child;
 	CScene*					pScene;
 
@@ -72,20 +71,20 @@ protected:
 
 public:
 
-	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
+	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), pParent(NULL), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
 	~CSceneNode();
 
-	PSceneNode				CreateChild(CStrID ChildName);
+	CSceneNode*				CreateChild(CStrID ChildName);
 	void					AddChild(CSceneNode& Node);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(DWORD Idx);
 	void					RemoveChild(CStrID ChildName);
 
-	CSceneNode*				GetParent() const { return Parent; }
+	CSceneNode*				GetParent() const { return pParent; }
 	DWORD					GetChildCount() const { return Child.Size(); }
 	CSceneNode*				GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
-	PSceneNode				GetChild(CStrID ChildName, bool Create = false);
-	PSceneNode				GetChild(LPCSTR Path, bool Create = false);
+	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
+	CSceneNode*				GetChild(LPCSTR Path, bool Create = false);
 	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
 	bool					AddAttr(CSceneNodeAttr& Attr);
@@ -108,7 +107,6 @@ public:
 
 	bool					IsActive() const { return Flags.Is(Active); }
 	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
-	bool					IsOwnedByScene() const { return Flags.Is(OwnedByScene); }
 	bool					IsLODDependent() const { return Flags.Is(RespectsLOD); }
 	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
 
@@ -128,20 +126,19 @@ public:
 
 inline CSceneNode::~CSceneNode()
 {
-	n_assert_dbg(!Child.Size());
+	Child.Clear();
 	while (Attrs.Size()) RemoveAttr(0);
-	if (Parent.isvalid()) Parent->RemoveChild(*this);
 }
 //---------------------------------------------------------------------
 
 inline void CSceneNode::RemoveChild(CSceneNode& Node)
 {
-	n_assert(Node.Parent.get_unsafe() == this && Child.Erase(Node.Name));
-	Node.Parent = NULL;
+	n_assert(Node.pParent == this && Child.Erase(Node.Name));
+	Node.pParent = NULL;
 }
 //---------------------------------------------------------------------
 
-inline PSceneNode CSceneNode::GetChild(CStrID ChildName, bool Create)
+inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
 {
 	int Idx = Child.FindIndex(ChildName);
 	if (Idx == INVALID_INDEX) return Create ? CreateChild(ChildName) : NULL;
