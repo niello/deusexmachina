@@ -11,13 +11,6 @@ vector4 nCharacter2::scratchKeyArray[MaxCurves];
 vector4 nCharacter2::keyArray[MaxCurves];
 vector4 nCharacter2::transitionKeyArray[MaxCurves];
 
-nCharacter2::~nCharacter2()
-{
-	SetSkinAnimator(NULL);
-	SetAnimEventHandler(NULL);
-}
-//---------------------------------------------------------------------
-
 void nCharacter2::SetSkinAnimator(nSkinAnimator* animator)
 {
 	if (pSkinAnimator) pSkinAnimator->Release();
@@ -44,38 +37,38 @@ void nCharacter2::SetActiveState(const nAnimStateInfo& newState)
 
 void nCharacter2::EvaluateSkeleton(float time)
 {
-    if (IsAnimEnabled() && curStateInfo.IsValid())
+    if (animEnabled && curStateInfo.IsValid())
     {
         n_assert(animation);
 
         // check if a state transition is necessary
-        float curRelTime = time - this->curStateInfo.GetStateStarted();
+        float curRelTime = time - curStateInfo.GetStateStarted();
 
         // handle time exception (this happens when time is reset to a smaller value
         // since the last animation state switch)
         if (curRelTime < 0.0f)
         {
             curRelTime = 0.0f;
-            this->curStateInfo.SetStateStarted(time);
+            curStateInfo.SetStateStarted(time);
         }
 
         for (int clipIndex  = 0; clipIndex < curStateInfo.GetNumClips(); clipIndex++)
         {
-            if (this->curStateInfo.GetClipAt(clipIndex).GetClipName() != "baseClip")
+            if (curStateInfo.GetClipAt(clipIndex).GetClipName() != "baseClip")
             {
-                int index = this->curStateInfo.GetClipAt(clipIndex).GetAnimGroupIndex();
-                const nAnimation::Group& group = this->animation->GetGroupAt(0);
+                int index = curStateInfo.GetClipAt(clipIndex).GetAnimGroupIndex();
+                const nAnimation::Group& group = animation->GetGroupAt(0);
 
-                float fadeInTime = this->curStateInfo.GetFadeInTime();
+                float fadeInTime = curStateInfo.GetFadeInTime();
                 float lerp = 1.0f;
                 bool transition = false;
-                if ((fadeInTime > 0.0f) && (curRelTime < fadeInTime) && this->prevStateInfo.IsValid())
+                if ((fadeInTime > 0.0f) && (curRelTime < fadeInTime) && prevStateInfo.IsValid())
                 {
                     // state transition is necessary, compute a lerp value
                     // and sample the previous animation state
-                    float prevRelTime = time - this->prevStateInfo.GetStateStarted();
-                    float sampleTime = prevRelTime + this->prevStateInfo.GetStateOffset();
-                    if (this->Sample(this->prevStateInfo, sampleTime, nCharacter2::transitionKeyArray, nCharacter2::scratchKeyArray, nCharacter2::MaxCurves))
+                    float prevRelTime = time - prevStateInfo.GetStateStarted();
+                    float sampleTime = prevRelTime + prevStateInfo.GetStateOffset();
+                    if (Sample(prevStateInfo, sampleTime, nCharacter2::transitionKeyArray, nCharacter2::scratchKeyArray, nCharacter2::MaxCurves))
                     {
                          transition = true;
                          lerp = curRelTime / fadeInTime;
@@ -83,19 +76,18 @@ void nCharacter2::EvaluateSkeleton(float time)
                 }
 
                // get samples from current animation state
-               float sampleTime = curRelTime + this->curStateInfo.GetStateOffset();
-               if (this->Sample(this->curStateInfo, sampleTime, nCharacter2::keyArray, nCharacter2::scratchKeyArray, nCharacter2::MaxCurves))
+               float sampleTime = curRelTime + curStateInfo.GetStateOffset();
+               if (Sample(curStateInfo, sampleTime, nCharacter2::keyArray, nCharacter2::scratchKeyArray, nCharacter2::MaxCurves))
                {
                      // transfer the sampled animation values into the character skeleton
-                     int numJoints = this->charSkeleton.GetNumJoints();
-                     int jointIndex;
+                     int numJoints = charSkeleton.GetNumJoints();
                      const vector4* keyPtr = keyArray;
                      const vector4* prevKeyPtr = transitionKeyArray;
 
                      vector3 translate, prevTranslate;
                      quaternion rotate, prevRotate;
                      vector3 scale, prevScale;
-                     for (jointIndex = 0; jointIndex < numJoints; jointIndex++)
+                     for (int jointIndex = 0; jointIndex < numJoints; jointIndex++)
                      {
                           // read sampled translation, rotation and scale
                           translate.set(keyPtr->x, keyPtr->y, keyPtr->z);          keyPtr++;
@@ -112,7 +104,7 @@ void nCharacter2::EvaluateSkeleton(float time)
                                scale.lerp(prevScale, lerp);
                            }
 
-                           nCharJoint& joint = this->charSkeleton.GetJointAt(jointIndex);
+                           nCharJoint& joint = charSkeleton.GetJointAt(jointIndex);
                            joint.SetTranslate(translate);
                            joint.SetRotate(rotate);
                            joint.SetScale(scale);
@@ -121,7 +113,7 @@ void nCharacter2::EvaluateSkeleton(float time)
             }
         }
     }
-    this->charSkeleton.Evaluate();
+    charSkeleton.Evaluate();
 }
 //------------------------------------------------------------------------------
 
@@ -144,7 +136,7 @@ bool nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* k
 {
     n_assert(keyArray);
     n_assert(keyArraySize >= stateInfo.GetClipAt(0).GetNumCurves());
-    n_assert(this->animation.isvalid());
+    n_assert(animation.isvalid());
 
     // some static helper objects
     static quaternion quatCurrent;
@@ -161,11 +153,11 @@ bool nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* k
         const float clipWeight = stateInfo.GetClipWeightAt(clipIndex);
         const float scaledWeight = clipWeight / (weightAccum + clipWeight); // scale weightAccum so that 1 == (weightAccum + weight)
         const int animGroupIndex = clip.GetAnimGroupIndex();
-        const nAnimation::Group& group = this->animation->GetGroupAt(animGroupIndex);
+        const nAnimation::Group& group = animation->GetGroupAt(animGroupIndex);
         const int numCurves = group.GetNumCurves();
 
         // obtain sampled curve value for the clip's animation curve range
-        this->animation->SampleCurves(time, animGroupIndex, 0, numCurves, scratchKeyArray);
+        animation->SampleCurves(time, animGroupIndex, 0, numCurves, scratchKeyArray);
 
         int curveIndex;
         for (curveIndex = 0; curveIndex < numCurves; curveIndex++)
@@ -174,7 +166,7 @@ bool nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* k
             const vector4& curSampleKey = scratchKeyArray[curveIndex];
 
             // perform weighted blending
-            nAnimation::Curve& animCurve = this->animation->GetGroupAt(animGroupIndex).GetCurveAt(curveIndex);
+            nAnimation::Curve& animCurve = animation->GetGroupAt(animGroupIndex).GetCurveAt(curveIndex);
             if (animCurve.IsAnimated() && clipWeight > 0.0f)
             {
                 // FIXME: (for cases with more than two clips) maybe all weights of animated curves
@@ -187,7 +179,7 @@ bool nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* k
                 {
                     nAnimClip& clip = stateInfo.GetClipAt(i);
                     int animGroupIndex = clip.GetAnimGroupIndex();
-                    nAnimation::Curve& prevClipCurve = this->animation->GetGroupAt(animGroupIndex).GetCurveAt(curveIndex);
+                    nAnimation::Curve& prevClipCurve = animation->GetGroupAt(animGroupIndex).GetCurveAt(curveIndex);
                     if (prevClipCurve.IsAnimated())
                     {
                         animFlag = true;
@@ -238,7 +230,7 @@ bool nCharacter2::Sample(const nAnimStateInfo& stateInfo, float time, vector4* k
                  {
                      nAnimClip& clip = stateInfo.GetClipAt(i);
                      int animGroupIndex = clip.GetAnimGroupIndex();
-                     nAnimation::Curve& prevClipCurve = this->animation->GetGroupAt(animGroupIndex).GetCurveAt(curveIndex);
+                     nAnimation::Curve& prevClipCurve = animation->GetGroupAt(animGroupIndex).GetCurveAt(curveIndex);
                      if (prevClipCurve.IsAnimated())
                      {
                          // start value from prev animated curve taken
@@ -374,7 +366,7 @@ void nCharacter2::EmitAnimEvents(const nAnimStateInfo& stateInfo, float fromTime
     {
         const nAnimClip& clip = stateInfo.GetClipAt(clipIndex);
         const float clipWeight = stateInfo.GetClipWeightAt(clipIndex);
-        const nAnimation::Group& animGroup = this->animation->GetGroupAt(stateInfo.GetClipAt(clipIndex).GetAnimGroupIndex());
+        const nAnimation::Group& animGroup = animation->GetGroupAt(stateInfo.GetClipAt(clipIndex).GetAnimGroupIndex());
         if (clipWeight > 0.0f)
         {
             int numTracks = clip.GetNumAnimEventTracks();

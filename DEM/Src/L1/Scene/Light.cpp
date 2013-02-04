@@ -58,7 +58,8 @@ void CLight::OnRemove()
 {
 	if (pSPSRecord)
 	{
-		pNode->GetScene()->SPS.RemoveElement(pSPSRecord);
+		pNode->GetScene()->SPS.RemoveObject(pSPSRecord);
+		n_delete(pSPSRecord);
 		pSPSRecord = NULL;
 	}
 }
@@ -71,14 +72,14 @@ void CLight::Update()
 	{
 		if (!pSPSRecord)
 		{
-			CSPSRecord NewRec(*this);
-			GetBox(NewRec.GlobalBox);
-			pSPSRecord = pNode->GetScene()->SPS.AddObject(NewRec);
+			pSPSRecord = n_new(CSPSRecord)(*this);
+			GetBox(pSPSRecord->GlobalBox);
+			pNode->GetScene()->SPS.AddObject(pSPSRecord);
 		}
 		else if (pNode->IsWorldMatrixChanged()) //!!! || Range/Cone changed
 		{
 			GetBox(pSPSRecord->GlobalBox);
-			pNode->GetScene()->SPS.UpdateElement(pSPSRecord);
+			pNode->GetScene()->SPS.UpdateObject(pSPSRecord);
 		}
 	}
 }

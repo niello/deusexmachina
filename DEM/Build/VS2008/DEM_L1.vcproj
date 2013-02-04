@@ -1585,6 +1585,10 @@
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="Animation"
+			>
+		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"
 			>

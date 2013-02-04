@@ -17,46 +17,40 @@
 class nSkinAnimator;
 class nAnimEventHandler;
 
-//------------------------------------------------------------------------------
-class nCharacter2: public nRefCounted //Core::CRefCounted
+class nCharacter2: public nRefCounted
 {
 public:
-    /// constructor
+
+	bool animEnabled;
+    uint LastEvalFrame;
+
 	nCharacter2(): animEnabled(true), LastEvalFrame(0), pSkinAnimator(NULL), pEvtHandler(NULL) {}
     /// copy constructor
     nCharacter2(const nCharacter2& src): animEnabled(true) { *this = src; }
     /// destructor
-    virtual ~nCharacter2();
+	virtual ~nCharacter2() { SetSkinAnimator(NULL); SetAnimEventHandler(NULL); }
     /// get the embedded character skeleton
-    nCharSkeleton& GetSkeleton();
+	nCharSkeleton& GetSkeleton() { return charSkeleton; }
     /// set pointer to an animation source which delivers the source data (not owned)
-    void SetAnimation(nAnimation* anim);
+	void SetAnimation(nAnimation* anim) { n_assert(anim); animation = anim; }
     /// get pointer to animation source (not owned)
-    const nAnimation* GetAnimation() const;
+	const nAnimation* GetAnimation() const { return animation; }
     /// set pointer to the skin animator
     void SetSkinAnimator(nSkinAnimator* animator);
     /// get pointer to the skin animator
-    nSkinAnimator* GetSkinAnimator() const;
+	nSkinAnimator* GetSkinAnimator() const { return pSkinAnimator; }
     /// set optional anim event handler (increase refcount of handler)
     void SetAnimEventHandler(nAnimEventHandler* handler);
     /// get optional anim event handler
-    nAnimEventHandler* GetAnimEventHandler() const;
+	nAnimEventHandler* GetAnimEventHandler() const { return pEvtHandler; }
     /// set the currently active state
     void SetActiveState(const nAnimStateInfo& newState);
     /// get the currently active state
-    const nAnimStateInfo& GetActiveState() const;
+	const nAnimStateInfo& GetActiveState() const { return curStateInfo; }
     /// evaluate the joint skeleton
     void EvaluateSkeleton(float time);
     /// emit animation events between 2 times
     void EmitAnimEvents(float startTime, float stopTime);
-    /// enable/disable animation
-    void SetAnimEnabled(bool b);
-    /// get manual joint animation
-    bool IsAnimEnabled() const;
-    /// set the frame id when the character was last evaluated
-    void SetLastEvaluationFrameId(uint id);
-    /// get the frame id when the character was last evaluated
-    uint GetLastEvaluationFrameId() const;
 
 private:
     /// sample weighted values at a given time from nAnimation object
@@ -84,113 +78,8 @@ private:
     static vector4 scratchKeyArray[MaxCurves];
     static vector4 keyArray[MaxCurves];
     static vector4 transitionKeyArray[MaxCurves];
-
-    bool animEnabled;
-    uint LastEvalFrame;
 };
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nCharSkeleton&
-nCharacter2::GetSkeleton()
-{
-    return this->charSkeleton;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nSkinAnimator*
-nCharacter2::GetSkinAnimator() const
-{
-    return this->pSkinAnimator;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nCharacter2::SetAnimation(nAnimation* anim)
-{
-    n_assert(anim);
-    this->animation = anim;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-const nAnimation*
-nCharacter2::GetAnimation() const
-{
-    return this->animation;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nCharacter2::SetAnimEnabled(bool b)
-{
-    this->animEnabled = b;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-nCharacter2::IsAnimEnabled() const
-{
-    return this->animEnabled;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-nCharacter2::SetLastEvaluationFrameId(uint id)
-{
-    this->LastEvalFrame = id;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-uint
-nCharacter2::GetLastEvaluationFrameId() const
-{
-    return this->LastEvalFrame;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-nAnimEventHandler*
-nCharacter2::GetAnimEventHandler() const
-{
-    return this->pEvtHandler;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-const nAnimStateInfo&
-nCharacter2::GetActiveState() const
-{
-    return this->curStateInfo;
-}
-
-//------------------------------------------------------------------------------
 #endif
 
 

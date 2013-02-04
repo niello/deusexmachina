@@ -16,17 +16,17 @@ struct CSPSRecord;
 
 struct CSPSCell
 {
-	typedef CSPSRecord CElement;
+	typedef CSPSRecord* CElement;
 
 	nArray<CElement> Objects;
 	nArray<CElement> Lights;
 
-	CElement*	Add(const CSPSRecord& Object);
-	bool		RemoveByValue(const CSPSRecord& Object); // By value
-	void		RemoveElement(CElement* pElement); // By iterator
+	CElement*	Add(CSPSRecord* const & Object);
+	bool		RemoveByValue(CSPSRecord* const & Object); // By value
+	void		RemoveElement(CElement* pElement) { n_error("No persistent handles for arrays!"); } // By iterator
 };
 
-typedef Data::CQuadTree<CSPSRecord, CSPSCell> CSPS;
+typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;
 typedef CSPS::CNode CSPSNode;
 
 class CSceneNodeAttr;
@@ -43,15 +43,10 @@ struct CSPSRecord
 	bool		IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }
 	bool		IsLight() const { return Attr.IsA(CLight::RTTI); }
 
-	CSPSRecord&	GetObject() { return *this; }
 	void		GetCenter(vector2& Out) const;
 	void		GetHalfSize(vector2& Out) const;
 	CSPSNode*	GetQuadTreeNode() const { return pSPSNode; }
 	void		SetQuadTreeNode(CSPSNode* pNode) { pSPSNode = pNode; }
-
-	CSPSRecord&	operator =(const CSPSRecord& Other);
-	bool		operator ==(const CSPSRecord& Other) const { return &Attr == &Other.Attr; }
-	bool		operator !=(const CSPSRecord& Other) const { return &Attr != &Other.Attr; }
 };
 
 inline void CSPSRecord::GetCenter(vector2& Out) const
@@ -70,39 +65,30 @@ inline void CSPSRecord::GetHalfSize(vector2& Out) const
 }
 //---------------------------------------------------------------------
 
-inline CSPSRecord& CSPSRecord::operator =(const CSPSRecord& Other)
+// NB: no persistent handle for arrays
+inline CSPSCell::CElement* CSPSCell::Add(CSPSRecord* const & Object)
 {
-	Attr = Other.Attr;
-	GlobalBox = Other.GlobalBox;
-	pSPSNode = Other.pSPSNode;
-	return *this;
-}
-//---------------------------------------------------------------------
-
-inline CSPSCell::CElement* CSPSCell::Add(const CSPSRecord& Object)
-{
-	if (Object.IsRenderObject()) return &Objects.Append(Object);
-	if (Object.IsLight()) return &Lights.Append(Object);
+	if (Object->IsRenderObject())
+	{
+		Objects.Append(Object);
+		return NULL;
+	}
+	if (Object->IsLight())
+	{
+		Lights.Append(Object);
+		return NULL;
+	}
 	n_assert_dbg(false);
 	return NULL;
 }
 //---------------------------------------------------------------------
 
 // Remove by value
-inline bool CSPSCell::RemoveByValue(const CSPSRecord& Object)
+inline bool CSPSCell::RemoveByValue(CSPSRecord* const & Object)
 {
-	if (Object.IsRenderObject()) return Objects.RemoveByValue(Object);
-	if (Object.IsLight()) return Lights.RemoveByValue(Object);
+	if (Object->IsRenderObject()) return Objects.RemoveByValue(Object);
+	if (Object->IsLight()) return Lights.RemoveByValue(Object);
 	FAIL;
-}
-//---------------------------------------------------------------------
-
-// Remove by iterator
-inline void CSPSCell::RemoveElement(CSPSCell::CElement* pElement)
-{
-	if (!pElement) return;
-	if (pElement->IsRenderObject()) Objects.Erase(pElement);
-	else if (pElement->IsLight()) Lights.Erase(pElement);
 }
 //---------------------------------------------------------------------
 

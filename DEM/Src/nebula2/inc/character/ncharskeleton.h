@@ -27,7 +27,6 @@ public:
 
 	void		BeginJoints(int num) { n_assert(num > 0); Joints.SetSize(num); }
 	void		SetJoint(int index, int parentIndex, const vector3& poseTranslate, const quaternion& poseRotate, const vector3& poseScale, const nString& name);
-	void		EndJoints() {}
 	int			GetNumJoints() const { return Joints.Size(); }
 	nCharJoint&	GetJointAt(int index) const { return Joints[index]; }
 	int			GetJointIndexByName(const nString& name) const;
