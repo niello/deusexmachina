@@ -205,14 +205,8 @@ void CRigidBody::OnStepBefore()
 void CRigidBody::OnStepAfter()
 {
 	n_assert(IsAttached());
-	const dReal* Pos = dBodyGetPosition(ODEBodyID);
-	const dReal* Rot = dBodyGetRotation(ODEBodyID);
-	vector3 PosVector;
-	CPhysicsServer::OdeToMatrix44(*(dMatrix3*)Rot, Transform);
-	CPhysicsServer::OdeToVector3(*(dVector3*)Pos, PosVector);
-	Transform.M41 = PosVector.x;
-	Transform.M42 = PosVector.y;
-	Transform.M43 = PosVector.z;
+	CPhysicsServer::OdeToMatrix44(*(dMatrix3*)dBodyGetRotation(ODEBodyID), Transform);
+	CPhysicsServer::OdeToVector3(*(dVector3*)dBodyGetPosition(ODEBodyID), Transform.pos_component());
 }
 //---------------------------------------------------------------------
 

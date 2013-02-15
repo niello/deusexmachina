@@ -4,23 +4,9 @@
 
 namespace Scene
 {
-//ImplementRTTI(Scripting::CScriptObject, Core::CRefCounted);
-//ImplementFactory(Scripting::CScriptObject);
 
-void CSceneNode::Update()
+void CSceneNode::UpdateWorldFromLocal()
 {
-	//???use methods SetLocalTfm, SetGlobalTfm by external systems instead?
-	// Run transform controller here
-	// Skip local tfm setup if controller set global (world) transform directly
-
-	// Entity transform and node transform ARE NOT the same!
-	// Entity transform typically corresponds to it's root node transform.
-
-	// Can extract scale of bone nodes to bone info and so force skeleton nodes
-	// to be unscaled. Scale will be applied on skin matrix calculation.
-
-	//!!!NB - completely unscaled nodes/meshes can be rendered through dual quat skinning!
-
 	if (Flags.Is(LocalMatrixDirty))
 	{
 		Tfm.ToMatrix(LocalMatrix);
@@ -36,6 +22,64 @@ void CSceneNode::Update()
 		Flags.Set(WorldMatrixChanged);
 	}
 	else Flags.Clear(WorldMatrixChanged);
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::UpdateLocalFromWorld()
+{
+	//!!!be careful with flags!
+	//!!! Restore LS from WS using parent WS
+}
+//---------------------------------------------------------------------
+
+// Update local transform of the node, if it has local controller.
+// Also try to update world matrix of this node to provide correct world matrix to children
+// and possibly as a constraint to the physics simulation. Once we meet node with a world
+// controller, we update only local transform, because we can't rely on parent world matrix
+// which will be calculated by physics. UpdateWorldSpace is called after the physics and
+// there we can finish updating dependent parts of the hierarchy.
+void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
+{
+	if (Controller.isvalid() && Controller->IsActive())
+	{
+		if (Controller->IsLocalSpace())
+		{
+			if (Controller->ApplyTo(Tfm)) Flags.Set(LocalMatrixDirty);
+		}
+		else UpdateWorldMatrix = false;
+	}
+
+	if (UpdateWorldMatrix)
+	{
+		UpdateWorldFromLocal();
+		Flags.Set(WorldMatrixUpdated);
+	}
+	else Flags.Clear(WorldMatrixUpdated);
+
+	for (int i = 0; i < Child.Size(); ++i)
+		if (Child.ValueAtIndex(i)->IsActive())
+			Child.ValueAtIndex(i)->UpdateLocalSpace(UpdateWorldMatrix);
+}
+//---------------------------------------------------------------------
+
+// After UpdateLocalSpace provided possible constraints etc to physics, and simulation
+// was performed, we can finally update world-controlled nodes and their children.
+// After world transform is up-to-date, we update scene node attributes.
+void CSceneNode::UpdateWorldSpace()
+{
+	if (Controller.isvalid() && Controller->IsActive() && !Controller->IsLocalSpace())
+	{
+		Math::CTransformSRT WorldSRT;
+		if (Controller->ApplyTo(WorldSRT))
+		{
+			WorldSRT.ToMatrix(WorldMatrix);
+			Flags.Clear(WorldMatrixDirty);
+			Flags.Set(WorldMatrixChanged);
+			if (Controller->NeedToUpdateLocalSpace()) UpdateLocalFromWorld();
+		}
+		else Flags.Clear(WorldMatrixChanged);
+	}
+	else if (!Flags.Is(WorldMatrixUpdated)) UpdateWorldFromLocal();
 
 	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.Size(); ++i)
@@ -44,7 +88,7 @@ void CSceneNode::Update()
 
 	for (int i = 0; i < Child.Size(); ++i)
 		if (Child.ValueAtIndex(i)->IsActive())
-			Child.ValueAtIndex(i)->Update();
+			Child.ValueAtIndex(i)->UpdateWorldSpace();
 }
 //---------------------------------------------------------------------
 

@@ -1273,6 +1273,10 @@
 			Name="Scene"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Scene\AnimController.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\Bone.cpp"
 				>
 			</File>
@@ -1588,6 +1592,42 @@
 		<Filter
 			Name="Animation"
 			>
+			<File
+				RelativePath="..\..\Src\L1\Animation\Anim.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\AnimClip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\AnimControllerClip.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\AnimControllerClip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\AnimTrack.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\LoadMocapClipFromNAX2.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\MocapClip.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\MocapClip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\MocapTrack.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"

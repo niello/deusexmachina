@@ -33,8 +33,8 @@ public:
 
 inline void nCharacter2Set::AddClip(const nString& clipName, float clipWeight)
 {
-    clipNames.PushBack(clipName);
-    clipWeights.PushBack(clipWeight);
+    clipNames.Append(clipName);
+    clipWeights.Append(clipWeight);
     dirty = true;
 }
 

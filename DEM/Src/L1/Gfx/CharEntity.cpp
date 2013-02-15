@@ -119,9 +119,9 @@ void CCharEntity::SetBaseAnimation(const nString& AnimName, nTime FadeIn, nTime 
 
 	//???can avoid?
 	nArray<nString> Anims;
-	Anims.PushBack(AnimName);
+	Anims.Append(AnimName);
 	nArray<float> Weights;
-	Weights.PushBack(1.0f);
+	Weights.Append(1.0f);
 
 	SetBaseAnimationMix(Anims, Weights, FadeIn, Offset);
 }
@@ -175,9 +175,9 @@ void CCharEntity::SetOverlayAnimation(const nString& AnimName, nTime FadeIn, nTi
 	if (OnlyIfInactive && !OverlayAnimNames.Empty() && OverlayAnimNames[0] == AnimName) return;
 
 	nArray<nString> Anims;
-	Anims.PushBack(AnimName);
+	Anims.Append(AnimName);
 	nArray<float> Weights;
-	Weights.PushBack(1.0f);
+	Weights.Append(1.0f);
 
 	SetOverlayAnimationMix(Anims, Weights, FadeIn, OverrideDuration);
 }
