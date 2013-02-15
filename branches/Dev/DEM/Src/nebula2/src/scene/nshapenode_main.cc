@@ -10,13 +10,6 @@
 
 nNebulaClass(nShapeNode, "nmaterialnode");
 
-namespace Render
-{
-	//bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial);
-	//bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
-	bool LoadMeshFromNVX2(const nString& FileName, PMesh OutMesh);
-}
-
 bool nShapeNode::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
@@ -80,9 +73,6 @@ bool nShapeNode::LoadMesh()
         refMesh = mesh;
         SetLocalBox(refMesh->Group(groupIndex).Box);
     }
-
-	//if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
-	//SetLocalBox(Mesh->GetGroup(groupIndex).AABB);
 
 	return true;
 }

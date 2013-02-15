@@ -4,10 +4,14 @@
 
 #include <Scene/Scene.h>
 #include <Render/FrameShader.h>
+#include <Animation/MocapClip.h>
+#include <Resources/ResourceManager.h>
 #include <Data/Pool.h>
 #include <util/ndictionary.h>
 
-// Scene server loads and manages 3D scenes and frame shaders for a scene rendering
+// Scene server loads and manages 3D scenes and frame shaders for a scene rendering.
+// Also scene server holds animation resource manager, which stores data, used for
+// animation of scene nodes (including character bones).
 
 namespace Scene
 {
@@ -29,6 +33,9 @@ private:
 
 public:
 
+	//!!!need mgr for both anim & mocap clips, they should have the same base class!
+	Resources::CResourceManager<Anim::CMocapClip>	AnimationMgr;
+
 	CSceneServer(): pCurrScene(NULL) { __ConstructSingleton; }
 	~CSceneServer() { __DestructSingleton; }
 
@@ -46,7 +53,8 @@ public:
 	void		AddFrameShader(CStrID ID, Render::PFrameShader FrameShader); //???or always load internally?
 	void		SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
 
-	void		Trigger();
+	void		TriggerBeforePhysics();
+	void		TriggerAfterPhysics();
 	void		RenderDebug();
 };
 

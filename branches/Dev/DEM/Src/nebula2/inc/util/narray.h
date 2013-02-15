@@ -30,19 +30,13 @@ private:
     int Flags;
     T* pData;         // pointer to element array
 
-    /// check if Idx is in valid range, and _GrowSize array if necessary
+    /// check if Idx is in valid range, and array grow if necessary
     void CheckIndex(int);
-    /// construct an element (call placement new)
 	void Construct(T* pElm) { n_placement_new(pElm, T); }
-    /// construct an element (call placement new)
 	void Construct(T* pElm, const T& Value) { n_placement_new(pElm, T)(Value); }
-    /// copy content
     void Copy(const nArray<T>& src);
-    /// delete content
     void Delete();
-    /// _GrowSize array
     void Grow();
-    /// move pData, grows array if needed
     void Move(int fromIndex, int toIndex);
     /// unsafe quick move, does not call operator= or destructor
     void MoveQuick(int fromIndex, int toIndex);
@@ -51,10 +45,7 @@ public:
 
 	typedef T* iterator;
 
-    enum
-    {
-        DoubleGrowSize = (1<<0),    // when set, _GrowSize size doubles each turn
-    };
+    enum { DoubleGrowSize = (1 << 0) };
 
 	nArray(): GrowSize(16), Allocated(0), Count(0), Flags(0), pData(NULL) {}
     nArray(int _Count, int _GrowSize);
@@ -62,22 +53,16 @@ public:
 	nArray(const nArray<T>& Other): GrowSize(0), Allocated(0), Count(0), pData(0), Flags(0) { Copy(Other); }
 	~nArray() { Delete(); }
 
-    /// set behavior Flags
 	void SetFlags(int f) { Flags = f; }
-    /// get behavior Flags
 	int GetFlags() const { return Flags; }
-    /// clear contents and set a fixed size
-    void SetFixedSize(int size);
+    void SetFixedSize(int size); //???need to clear all content?
 	void SetGrowSize(int Grow) { GrowSize = Grow; }
 
-	T&		PushBack(const T& pElm) { return Append(pElm); }
-    T&		Append(const T& pElm);
-    void	AppendArray(const nArray<T>& Other);
-	iterator Reserve(int num, bool Grow = true);
-    /// get number of pData in array
-	int Size() const { return Count; }
-    /// get overall allocated size of array in number of pData
-	int AllocSize() const { return Allocated; }
+    T&			Append(const T& pElm);
+    void		AppendArray(const nArray<T>& Other);
+	iterator	Reserve(int num, bool Grow = true);
+	int			Size() const { return Count; }
+	int			AllocSize() const { return Allocated; }
     /// set element at Idx, _GrowSize array if necessary
     T& Set(int Idx, const T& pElm);
     /// return reference to nth element in array
@@ -137,27 +122,21 @@ public:
 	bool		operator !=(const nArray<T>& Other) const { return !(*this == Other); }
 };
 
-//------------------------------------------------------------------------------
-/**
-    Note: '_GrowSize' can be zero to create a static preallocated array.
-*/
+// NB: '_GrowSize' can be zero to create a static preallocated array.
 template<class T>
-nArray<T>::nArray(int _Count, int _GrowSize) :
-    GrowSize(_GrowSize),
-    Allocated(_Count),
-    Count(0),
-    Flags(0)
+nArray<T>::nArray(int _Count, int _GrowSize):
+	GrowSize(_GrowSize),
+	Allocated(_Count),
+	Count(0),
+	Flags(0)
 {
 	n_assert(_Count >= 0);
-	pData = (_Count > 0) ? (T*)n_malloc(sizeof(T) * this->Allocated) : 0;
+	pData = (_Count > 0) ? (T*)n_malloc(sizeof(T) * this->Allocated) : NULL;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Note: '_GrowSize' can be zero to create a static preallocated array.
-*/
 template<class T>
-nArray<T>::nArray(int _Count, int _GrowSize, const T& Value) :
+nArray<T>::nArray(int _Count, int _GrowSize, const T& Value):
 	GrowSize(_GrowSize),
 	Allocated(_Count),
 	Count(_Count),
@@ -174,27 +153,23 @@ nArray<T>::nArray(int _Count, int _GrowSize, const T& Value) :
 }
 //---------------------------------------------------------------------
 
-/**
-*/
 template<class T>
-void
-nArray<T>::Copy(const nArray<T>& src)
+void nArray<T>::Copy(const nArray<T>& src)
 {
-    n_assert(!pData);
+	n_assert(!pData);
 
-    this->GrowSize    = src.GrowSize;
-    this->Allocated   = src.Allocated;
-    this->Count = src.Count;
-    this->Flags       = src.Flags;
-    if (this->Allocated > 0)
-    {
-        pData = (T*)n_malloc(sizeof(T) * this->Allocated);
-        for (int i = 0; i < this->Count; i++)
-            this->Construct(pData + i, src.pData[i]);
-    }
+	this->GrowSize    = src.GrowSize;
+	this->Allocated   = src.Allocated;
+	this->Count = src.Count;
+	this->Flags       = src.Flags;
+	if (this->Allocated > 0)
+	{
+		pData = (T*)n_malloc(sizeof(T) * Allocated);
+		for (int i = 0; i < Count; i++)
+			Construct(pData + i, src.pData[i]);
+	}
 }
-
-//------------------------------------------------------------------------------
+//---------------------------------------------------------------------
 
 template<class T>
 void nArray<T>::Delete()
@@ -532,7 +507,7 @@ template<class T>
 T& nArray<T>::Insert(int Idx, const T& pElm)
 {
 	n_assert(Idx >= 0 && Idx <= Count);
-	if (Idx == Count) return PushBack(pElm);
+	if (Idx == Count) return Append(pElm);
 	else
 	{
 		Move(Idx, Idx + 1);

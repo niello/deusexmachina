@@ -69,7 +69,7 @@ void CEnvQueryManager::GetEntitiesUnderMouseDragDropRect(const rectangle& DragDr
 		if (UID.IsValid())
 		{
 			n_assert(EntityMgr->ExistsEntityByID(UID));
-			Entities.PushBack(EntityMgr->GetEntityByID(UID));
+			Entities.Append(EntityMgr->GetEntityByID(UID));
 		}
 	}
 }

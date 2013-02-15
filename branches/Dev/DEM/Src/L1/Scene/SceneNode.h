@@ -3,6 +3,7 @@
 #define __DEM_L1_SCENE_NODE_H__
 
 #include <Scene/SceneNodeAttr.h>
+#include <Scene/AnimController.h>
 #include <Math/TransformSRT.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
@@ -11,21 +12,11 @@
 // Scene nodes represent hierarchical transform frames and together form a scene graph.
 // Each 3D scene consists of one scene graph starting at the root scene node.
 
-// Skinning, LOD
-
-//???apply scaling ONLY to attributes and not to child nodes?
-
-// Mesh, lighting, camera, material, lod, bones
-// controllers
 // ?Line, subdiv, deformer?
 // shadow & its visibility
-// Ctlrs: animation with blending, physics (from rigid body), ai and targeting, ?input?
-//???allow blending between any controllers? Blend code scope.
-///matrix vs quaternion blending. what is dual quaternion?
-//what is quat squad?
-// Rendering from camera to RT in general, before the final scene is processed, separate visibility checks
+//!!!NB - completely unscaled nodes/meshes can be rendered through dual quat skinning!
+//???apply scaling ONLY to attributes and not to child nodes?
 
-// Rigid body could be a controller, it drives transform
 // Collision shape is attr? it receives transform
 // DON'T FORGET, now physics & graphics are separated at entity level
 
@@ -34,7 +25,7 @@ namespace Scene
 class CScene;
 typedef Ptr<class CSceneNode> PSceneNode;
 
-class CSceneNode: public Core::CRefCounted //???derive from transform source? for noew PropTfm always contain SceneNode
+class CSceneNode: public Core::CRefCounted
 {
 protected:
 
@@ -44,7 +35,8 @@ protected:
 		RespectsLOD			= 0x04,	// This node is affected by parent's LODGroup attribute
 		LocalMatrixDirty	= 0x08,	// Local transform components were changed, but matrix is not updated
 		WorldMatrixDirty	= 0x10,	// Local matrix changed, and world matrix need to be updated
-		WorldMatrixChanged	= 0x20	// World matrix of this node changed this frame
+		WorldMatrixChanged	= 0x20,	// World matrix of this node was changed this frame
+		WorldMatrixUpdated	= 0x40	// World matrix of this node was already updated this frame
 	};
 
 	typedef nDictionary<CStrID, PSceneNode> CNodeDict;
@@ -56,18 +48,19 @@ protected:
 	CNodeDict				Child;
 	CScene*					pScene;
 
-	//???!!!need some flag to indicate that node received global tfm directly? or update local tfm from global always?
 	Math::CTransform		Tfm;
 	matrix44				LocalMatrix;	// For caching only
 	matrix44				WorldMatrix;
 
-	Data::CFlags			Flags; // IsRoot, IsDirty, IsLocalTfm, ?UniformScale?, LockTransform, TfmChangedLastFrame
+	Data::CFlags			Flags; // ?UniformScale?, LockTransform
 	nArray<PSceneNodeAttr>	Attrs; //???or list? List seems to be better
 
-	// Controller(s). Can have controller of type Sequensor/Blender/Mixer which will mix output of more than 1 ctlr.
-	//???Ctlr here or ctlr stores node inside and is owned by its creator/manager class?
+	PAnimController			Controller; //???weak ptr? detach itself on death?
 
 	friend class CScene;
+
+	void					UpdateWorldFromLocal();
+	void					UpdateLocalFromWorld();
 
 public:
 
@@ -93,7 +86,8 @@ public:
 	void					RemoveAttr(CSceneNodeAttr& Attr);
 	void					RemoveAttr(DWORD Idx);
 
-	void					Update();
+	void					UpdateLocalSpace(bool UpdateWorldMatrix = true);
+	void					UpdateWorldSpace();
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)

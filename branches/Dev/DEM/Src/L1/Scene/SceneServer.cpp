@@ -30,10 +30,20 @@ void CSceneServer::RemoveScene(CStrID Name)
 //---------------------------------------------------------------------
 
 //???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
-void CSceneServer::Trigger()
+void CSceneServer::TriggerBeforePhysics()
 {
 	if (!pCurrScene) return;
-	pCurrScene->GetRootNode().Update();
+	pCurrScene->GetRootNode().UpdateLocalSpace();
+}
+//---------------------------------------------------------------------
+
+//???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
+void CSceneServer::TriggerAfterPhysics()
+{
+	if (!pCurrScene) return;
+
+	pCurrScene->GetRootNode().UpdateWorldSpace();
+
 	int Idx = FrameShaders.FindIndex(ScreenFrameShaderID);
 	if (Idx != INVALID_INDEX)
 	{
