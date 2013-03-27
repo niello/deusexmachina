@@ -65,7 +65,9 @@ CStrID CAppStateEditor::OnFrame()
 	GfxSrv->Trigger();
 	EventMgr->ProcessPendingEvents();
 
-	SceneSrv->Trigger();
+	SceneSrv->TriggerBeforePhysics();
+	//!!!call physics simulation!
+	SceneSrv->TriggerAfterPhysics(); //???why rendering is here?
 
 	AudioSrv->BeginScene();
 	GameSrv->OnFrame();
