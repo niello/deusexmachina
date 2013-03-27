@@ -46,15 +46,10 @@ private:
 	nCharacter2Set*		pCharacterSet;
 	CCharAnimEHandler*	pAnimEventHandler;
 
-	bool				IsChar3Mode;
-	nString				Char3SetFileName;
-	//nCharacter3Node*	pCharacter3Node;
-
 	virtual void	UpdateRenderContextVariables();
 	void			UpdateTime();
 	void			ActivateAnimations(const nArray<nString>& AnimNames, const nArray<float>& Weights, nTime FadeIn);
 	int				GetNumAnimations() const;
-	//nRoot*			FindFirstInstance(nRoot* pNode, nClass* pClass);
 
 public:
 
@@ -84,8 +79,6 @@ public:
 	nCharJoint*			GetJoint(int Idx) const;
 	const matrix44&		GetJointMatrix(int Idx) const;
 	CCharAnimEHandler*	GetAnimationEventHandler() const { return pAnimEventHandler; }
-	//bool				HasCharacter3Set() const { return IsChar3Mode; }
-	//void				LoadCharacter3Set(const nString& FileName);
 	nCharacter2*		GetCharacterPointer() const { return pNCharacter; }
 	nCharacter2Set*		GetCharacterSet() const { return pCharacterSet; }
 };

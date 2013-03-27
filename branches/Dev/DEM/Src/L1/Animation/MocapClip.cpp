@@ -12,35 +12,34 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& Tr
 	pKeys = _pKeys;
 	Tracks = _Tracks;
 
+	InvKeyTime = (float)(KeysPerCurve - 1) / Duration;
+
 	for (int i = 0; i < Tracks.Size(); ++i)
 	{
-		int NodeID = TrackMapping[i];
-		int CtlrIdx = NodeToCtlr.FindIndex(NodeID);
-		PAnimControllerClip Ctlr;
-		if (CtlrIdx == INVALID_INDEX)
+		Tracks[i].pOwnerClip = this;
+		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
+		switch (Tracks[i].Channel)
 		{
-			Ctlr.Create();
-			NodeToCtlr.Add(NodeID, Ctlr);
-		}
-		else Ctlr = NodeToCtlr.ValueAtIndex(CtlrIdx);
-		Ctlr->SetTrack(&Tracks[i], Tracks[i].Channel);
+			case Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
+			case Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
+			case Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
+			default: n_error("CMocapClip::Setup() -> Unsupported channel for an SRT sampler track!");
+		};
 	}
 
+	State = Resources::Rsrc_Loaded;
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CMocapClip::Unload()
 {
-	// Leave users with strong refs and clear controllers, so that
-	// they no more reference the data of this resource
-	for (int i = 0; i < NodeToCtlr.Size(); ++i)
-	{
-		NodeToCtlr.ValueAtIndex(i)->Activate(false);
-		NodeToCtlr.ValueAtIndex(i)->Clear();
-	}
+	State = Resources::Rsrc_NotLoaded;
 
-	NodeToCtlr.Clear();
+	//!!!sampler pointers will become invalid! use smartptrs?
+	// or in controller store clip ptr and clear sampler if clip becomes unloaded
+
+	Samplers.Clear();
 	Tracks.Clear();
 	SAFE_DELETE_ARRAY(pKeys);
 }

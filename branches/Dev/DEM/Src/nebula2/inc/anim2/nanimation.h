@@ -575,8 +575,8 @@ nAnimation::Group::IsInbetween(float time, float startTime, float stopTime) cons
         return ((time >= startTime) && (time <= stopTime));
     }
     float dur = float(this->GetDuration());
-    float normStartTime = fmodf(startTime, dur);
-    float normStopTime  = fmodf(stopTime, dur);
+    float normStartTime = n_fmod(startTime, dur);
+    float normStopTime  = n_fmod(stopTime, dur);
     if (normStartTime < normStopTime)
     {
         return time >= normStartTime && time <= normStopTime;
@@ -611,14 +611,8 @@ nAnimation::Group::TimeToIndex(float time, int& keyIndex0, int& keyIndex1, float
         // 'repeat' loop type
         keyIndex0 %= this->numKeys;
         keyIndex1 %= this->numKeys;
-        if (keyIndex0 < 0)
-        {
-            keyIndex0 += this->numKeys;
-        }
-        if (keyIndex1 < 0)
-        {
-            keyIndex1 += this->numKeys;
-        }
+        if (keyIndex0 < 0) keyIndex0 += this->numKeys;
+        if (keyIndex1 < 0) keyIndex1 += this->numKeys;
     }
     n_assert((keyIndex0 >= 0) && (keyIndex0 < this->numKeys));
     n_assert((keyIndex1 >= 0) && (keyIndex1 < this->numKeys));

@@ -1562,6 +1562,18 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="Animation"
+			>
+			<File
+				RelativePath="..\..\Src\L2\Animation\PropAnimation.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Animation\PropAnimation.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

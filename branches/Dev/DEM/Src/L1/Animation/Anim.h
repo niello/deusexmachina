@@ -14,6 +14,14 @@ enum EChannel
 	Chnl_Scaling		= 0x04
 };
 
+/*
+enum ELoopType
+{
+	LoopType_Clamp,
+	LoopType_Loop
+};
+*/
+
 }
 
 #endif

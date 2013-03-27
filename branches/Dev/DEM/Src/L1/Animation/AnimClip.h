@@ -20,7 +20,7 @@ protected:
 
 	// bone&channel-to-track mapping (to curve track indices)
 	float					Duration;
-	//bool					Looping;
+	//bool					Loop;
 	nFixedArray<CAnimTrack>	Tracks;
 
 public:
@@ -31,7 +31,7 @@ public:
 	virtual void		Unload();
 };
 
-typedef Ptr<CMesh> PMesh;
+typedef Ptr<CAnimClip> PAnimClip;
 
 }
 
