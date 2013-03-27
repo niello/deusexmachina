@@ -3,7 +3,6 @@
 #include <Gfx/GfxServer.h>
 #include <variable/nvariableserver.h>
 #include <character/ncharacter2.h>
-//#include <scene/ncharacter3node.h>
 #include <scene/nskinanimator.h>
 
 extern const matrix44 Rotate180;
@@ -25,8 +24,6 @@ CCharEntity::CCharEntity():
 	pNCharacter(NULL),
 	pCharacterSet(NULL),
 	pAnimEventHandler(NULL),
-	IsChar3Mode(false),
-	//pCharacter3Node(NULL),
 	ActivateNewBaseAnim(false)
 {
 	HCharacter = nVariableServer::Instance()->GetVariableHandleByName("charPointer");
@@ -62,21 +59,6 @@ void CCharEntity::Activate()
 	HCharacterSet = pNCharacter->GetSkinAnimator()->GetCharacterSetIndexHandle();
 	const nVariable& CharacterSetVar = RenderCtx.GetLocalVar(HCharacterSet);
 	pCharacterSet = (nCharacter2Set*)CharacterSetVar.GetObj();
-
-	//nClass* nCharacter3SkinAnimatorClass = nKernelServer::Instance()->FindClass("ncharacter3skinanimator");
-	//n_assert(nCharacter3SkinAnimatorClass);
-	//if (pNCharacter->GetSkinAnimator()->IsA(nCharacter3SkinAnimatorClass))
-	//{
-	//	nClass* nCharacter3NodeClass = nKernelServer::Instance()->FindClass("ncharacter3node");
-	//	n_assert(nCharacter3NodeClass);
-	//	nTransformNode* pCharParentNode = GetResource().GetNode();
-	//	n_assert(pCharParentNode);
-	//	nCharacter3Node* pCharNode = (nCharacter3Node*)FindFirstInstance(pCharParentNode, nCharacter3NodeClass);
-	//	n_assert(pCharNode);
-
-	//	pCharacter3Node = pCharNode;
-	//	IsChar3Mode = true;
-	//}
 }
 //---------------------------------------------------------------------
 
@@ -303,44 +285,5 @@ void CCharEntity::OnRenderBefore()
 	//}
 }
 //---------------------------------------------------------------------
-
-/*
-void CCharEntity::LoadCharacter3Set(const nString& FileName)
-{
-	n_assert(FileName.IsValid());
-	n_assert2(IsChar3Mode && pCharacter3Node, "CCharEntity has Character 3 Resource");
-
-	if (!pCharacter3Node->AreResourcesValid()) pCharacter3Node->LoadResources();
-
-	nCharacter3Set* pNewCharacter3Set = n_new(nCharacter3Set);
-	pNewCharacter3Set->Init(pCharacter3Node);
-	pNewCharacter3Set->LoadCharacterSetFromXML(pCharacter3Node, FileName);
-	pCharacterSet = pNewCharacter3Set;
-
-	nVariable& pVar = RenderCtx.GetLocalVar(HCharacterSet);
-	nCharacter3Set* pOldCharacterSet = (nCharacter3Set*)pVar.GetObj();
-	pOldCharacterSet->Release();
-	pVar.SetObj(pCharacterSet);
-
-	Char3SetFileName = FileName;
-}
-//---------------------------------------------------------------------
-
-// Recursively Find instance of nClass, used to search for lights, skin animators, etc...
-nRoot* CCharEntity::FindFirstInstance(nRoot* pNode, nClass* pClass)
-{
-	if (pNode == NULL) return NULL;
-	else
-	{
-		if (pNode->IsInstanceOf(pClass)) return pNode;
-		else
-		{
-			nRoot* pResultNode = FindFirstInstance(pNode->GetSucc(), pClass);
-			return pResultNode ? pResultNode : FindFirstInstance(pNode->GetHead(), pClass);
-		}
-	}
-}
-//---------------------------------------------------------------------
-*/
 
 } // namespace Graphics

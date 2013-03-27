@@ -52,6 +52,7 @@ public:
 	void			EraseAt(int Idx) { n_assert(!IsInBeginAdd); Pairs.Erase(Idx); }
 	int				FindIndex(const TKey& Key) const { n_assert(!IsInBeginAdd); return Pairs.BinarySearchIndex(Key); }
 	TValue*			Get(const TKey& Key) const;
+	TValue&			GetOrAdd(const TKey& Key);
 	bool			Contains(const TKey& Key) const { return Pairs.BinarySearchIndex(Key) != -1; }
 	int				Size() const { return Pairs.Size(); }
 	void			Clear() { Pairs.Clear(); IsInBeginAdd = false; }
@@ -95,6 +96,15 @@ TValue* nDictionary<TKey, TValue>::Get(const TKey& Key) const
 	n_assert(!IsInBeginAdd);
 	int Idx = Pairs.BinarySearchIndex(Key);
 	return (Idx == -1) ? NULL : &Pairs[Idx].GetValue();
+}
+//---------------------------------------------------------------------
+
+template<class TKey, class TValue>
+TValue& nDictionary<TKey, TValue>::GetOrAdd(const TKey& Key)
+{
+	n_assert(!IsInBeginAdd);
+	int Idx = Pairs.BinarySearchIndex(Key);
+	return (Idx == -1) ? Add(Key) : Pairs[Idx].GetValue();
 }
 //---------------------------------------------------------------------
 
