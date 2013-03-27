@@ -15,7 +15,7 @@ bool CHRDWriter::WriteParams(PParams Value)
 	for (int i = 0; i < Value->GetCount(); i++)
 	{
 		const CParam& Prm = Value->Get(i);
-		if (WriteParam(Prm)) FAIL;
+		if (!WriteParam(Prm)) FAIL;
 		if (Prm.IsA<PParams>()) WRITE_STATIC_STRING("\n")
 	}
 	OK;

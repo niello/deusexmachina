@@ -36,6 +36,7 @@
 
 // PROPS ===========================================
 
+#include <Animation/PropAnimation.h>
 #include <Gfx/Prop/PropCharGraphics.h>
 #include <Plr/Prop/PropPlrCharacterInput.h>
 #include <Physics/Prop/PropTrigger.h>
