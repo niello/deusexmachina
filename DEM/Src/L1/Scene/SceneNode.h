@@ -55,14 +55,14 @@ protected:
 	Data::CFlags			Flags; // ?UniformScale?, LockTransform
 	nArray<PSceneNodeAttr>	Attrs; //???or list? List seems to be better
 
-	PAnimController			Controller; //???weak ptr? detach itself on death?
-
 	friend class CScene;
 
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
 public:
+
+	PAnimController			Controller; //???weak ptr? detach itself on death?
 
 	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), pParent(NULL), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
 	~CSceneNode();
@@ -85,6 +85,7 @@ public:
 	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 	void					RemoveAttr(CSceneNodeAttr& Attr);
 	void					RemoveAttr(DWORD Idx);
+	template<class T> T*	FindFirstAttr() const;
 
 	void					UpdateLocalSpace(bool UpdateWorldMatrix = true);
 	void					UpdateWorldSpace();
@@ -137,6 +138,17 @@ inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
 	int Idx = Child.FindIndex(ChildName);
 	if (Idx == INVALID_INDEX) return Create ? CreateChild(ChildName) : NULL;
 	return GetChild(Idx);
+}
+//---------------------------------------------------------------------
+
+template<class T> inline T* CSceneNode::FindFirstAttr() const
+{
+	for (int i = 0; i < Attrs.Size(); ++i)
+	{
+		CSceneNodeAttr* pAttr = Attrs[i];
+		if (pAttr->IsA(T::RTTI)) return (T*)pAttr;
+	}
+	return NULL;
 }
 //---------------------------------------------------------------------
 

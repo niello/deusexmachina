@@ -8,6 +8,8 @@
 // Queue of pathfinding requests.
 // Based on dtPathQueue, but allows each request to have its own dtNavMeshQuery ptr.
 
+//???write template queue?
+
 class dtNavMeshQuery;
 class dtQueryFilter;
 

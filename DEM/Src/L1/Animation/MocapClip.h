@@ -27,29 +27,32 @@ public:
 		CMocapTrack*	pTrackS;
 	};
 
+	typedef nDictionary<CBoneID, CSampler> CSamplerList;
+
 protected:
 
-	vector4*						pKeys;
-	nArray<CMocapTrack>				Tracks;
-	nDictionary<CBoneID, CSampler>	Samplers;
+	vector4*			pKeys;
+	nArray<CMocapTrack>	Tracks;
+	CSamplerList		Samplers;
 
-	float							Duration;
-	float							InvKeyTime;
-	DWORD							KeysPerCurve;
-	DWORD							KeyStride;
+	float				Duration;
+	float				InvKeyTime;
+	DWORD				KeysPerCurve;
+	DWORD				KeyStride;
 
 	//???WrapIfBefore, WrapIfAfter? Loop?
 
 public:
 
-	CMocapClip(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost) {}
+	CMocapClip(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pKeys(NULL) {}
 
 	bool			Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CBoneID>& TrackMapping, vector4* _pKeys);
 	virtual void	Unload();
 
-	const CSampler*	GetSampler(CBoneID NodeID) const { return Samplers.Get(NodeID); }
-	void			GetSamplingParams(float Time, bool Loop, int& KeyIndex, float& IpolFactor) const;
-	const vector4&	GetKey(int FirstKey, int Index) const;
+	const CSamplerList&	GetSamplerList() const { return Samplers; }
+	//const CSampler*		GetSampler(CBoneID NodeID) const { return Samplers.Get(NodeID); }
+	void				GetSamplingParams(float Time, bool Loop, int& KeyIndex, float& IpolFactor) const;
+	const vector4&		GetKey(int FirstKey, int Index) const;
 
 	//!!!move to base animclip class!
 	float			AdjustTime(float Time, bool Loop) const;

@@ -148,14 +148,7 @@ CBone* CBone::GetParentBone() const
 {
 	n_assert_dbg(pNode);
 	if (Flags.Is(Bone_Root) || !pNode->GetParent()) return NULL;
-
-	for (DWORD i = 0; i < pNode->GetParent()->GetAttrCount(); ++i)
-	{
-		CSceneNodeAttr* pAttr = pNode->GetParent()->GetAttr(i);
-		if (pAttr->IsA(CBone::RTTI)) return (CBone*)pAttr;
-	}
-
-	return NULL;
+	return pNode->GetParent()->FindFirstAttr<CBone>();
 }
 //---------------------------------------------------------------------
 

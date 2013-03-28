@@ -1,7 +1,10 @@
 #include "PropAnimation.h"
 
 #include <Game/Entity.h>
+#include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
+#include <Scene/Bone.h>
+#include <Animation/AnimControllerMocap.h> //???virtualize controller creation in clip later?
 #include <Data/DataServer.h>
 
 #include <Loading/EntityFactory.h>
@@ -57,21 +60,52 @@ void CPropAnimation::Activate()
 		}
 	}
 
-	//!!!MAP bone IDs to scene nodes!
-
+	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAnimation, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
 }
 //---------------------------------------------------------------------
 
 void CPropAnimation::Deactivate()
 {
+	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
-	// Cleanup mappings, release resources
-
 	Clips.Clear();
+	Nodes.Clear();
 
 	Game::CProperty::Deactivate();
+}
+//---------------------------------------------------------------------
+
+bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
+{
+	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	if (!pProp || !pProp->GetNode()) OK; // Nothing to animate
+
+	//Nodes.Add(CStrID::Empty, pProp->GetNode());
+	Nodes.Add(-1, pProp->GetNode());
+	AddChildrenToMapping(pProp->GetNode());
+
+	//!!!DBG TMP!
+	//StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParentNode)
+{
+	for (DWORD i = 0; i < pParentNode->GetChildCount(); ++i)
+	{
+		Scene::CSceneNode* pNode = pParentNode->GetChild(i);
+		Scene::CBone* pBone = pNode->FindFirstAttr<Scene::CBone>();
+		if (pBone)
+		{
+			//Nodes.Add(pNode->GetName(), pNode);
+			Nodes.Add(pBone->GetIndex(), pNode);
+			if (!pBone->IsTerminal()) AddChildrenToMapping(pNode);
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -87,22 +121,39 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-DWORD CPropAnimation::StartAnim(CStrID Clip, bool Loop, float Offset, float Speed, DWORD Priority,
+DWORD CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
 								float Weight, float FadeInTime, float FadeOutTime)
 {
-	// For each output of this clip
-	// Get corresponding node
-	// If no node, skip
-	// If node has no controller, attach new controller to it
-	// If node has controller
-	// Check priority and weight of curr & new controllers
-	// Reject controllers above W = 1.0f in order of decreasing priority (the same as in blend ctlr, how to merge?)
-	// If one controller is accepted, attach it to node
-	// If more than one, create blend controller, setup it and attach
-	// If blend controller exists, add new controller to it and it will decide what to do
+	//!!!SEPARATE TO MOCAP AND KF CODE!
+	//???virtual Clip->CreateController(NodeID/Sampler)?
 
-	//!!!weights of least-priority tasks must not be clamped, since higher-priority task may be paused
-	// and then resumed
+	int ClipIdx = Clips.FindIndex(ClipID);
+	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
+	Anim::PMocapClip Clip = Clips.ValueAtIndex(ClipIdx);
+
+	const Anim::CMocapClip::CSamplerList& Samplers = Clip->GetSamplerList();
+	if (!Samplers.Size()) return INVALID_INDEX; // Invalid task ID
+
+	for (int i = 0; i < Samplers.Size(); ++i)
+	{
+		int NodeIdx = Nodes.FindIndex(Samplers.KeyAtIndex(i));
+		if (NodeIdx == INVALID_INDEX) continue;
+		Scene::CSceneNode* pNode = Nodes.ValueAtIndex(NodeIdx);
+
+		//???virtual Clip->CreateController(NodeID/Sampler)?
+		Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
+		Ctlr->SetSampler(&Samplers.ValueAtIndex(i));
+
+		// If still no blend controller, create and setup
+		// Add child controller
+
+		// Set controller to node (fast debug code)
+		pNode->Controller = Ctlr;
+	}
+
+	// Obtain free task slot
+	// Fill task record
+	// Return correct task ID
 
 	return INVALID_INDEX;
 }

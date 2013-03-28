@@ -31,7 +31,7 @@ public:
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };
 
-typedef Ptr<CAnimControllerMocap> PAnimControllerClip;
+typedef Ptr<CAnimControllerMocap> PAnimControllerMocap;
 
 }
 
