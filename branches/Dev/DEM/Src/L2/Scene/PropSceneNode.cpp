@@ -39,19 +39,26 @@ void CPropSceneNode::Activate()
 {
 	CPropTransformable::Activate();
 
-	//???optimize duplicate search?
-	LPCSTR pPath = GetEntity()->Get<nString>(Attr::ScenePath).Get();
-	Node = SceneSrv->GetCurrentScene()->GetNode(pPath, false);
-	bool NodeExists = Node.isvalid();
-	if (!NodeExists) Node = SceneSrv->GetCurrentScene()->GetNode(pPath, true);
-	n_assert(Node.isvalid());
-
+	nString NodePath = GetEntity()->Get<nString>(Attr::ScenePath);
 	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::SceneFile);
-	if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
 
-	if (NodeExists)
-		GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());
-	else Node->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform)); //???set local? or set global & then calc local?
+	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
+		NodePath = GetEntity()->GetUniqueID().CStr();
+	
+	if (NodePath.IsValid())
+	{
+		//???optimize duplicate search?
+		Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), false);
+		bool NodeExists = Node.isvalid();
+		if (!NodeExists) Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), true);
+		n_assert(Node.isvalid());
+
+		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
+
+		if (NodeExists)
+			GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());
+		else Node->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform)); //???set local? or set global & then calc local?
+	}
 }
 //---------------------------------------------------------------------
 
