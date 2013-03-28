@@ -22,9 +22,11 @@ public:
 
 	struct CSampler
 	{
-		CMocapTrack*	pTrackT;
-		CMocapTrack*	pTrackR;
-		CMocapTrack*	pTrackS;
+		CMocapTrack* pTrackT;
+		CMocapTrack* pTrackR;
+		CMocapTrack* pTrackS;
+
+		CSampler(): pTrackT(NULL), pTrackR(NULL), pTrackS(NULL) {}
 	};
 
 	typedef nDictionary<CBoneID, CSampler> CSamplerList;
@@ -46,7 +48,8 @@ public:
 
 	CMocapClip(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pKeys(NULL) {}
 
-	bool			Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CBoneID>& TrackMapping, vector4* _pKeys);
+	bool			Setup(	const nArray<CMocapTrack>& _Tracks, const nArray<CBoneID>& TrackMapping, vector4* _pKeys,
+							DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
 	virtual void	Unload();
 
 	const CSamplerList&	GetSamplerList() const { return Samplers; }

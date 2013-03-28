@@ -70,6 +70,9 @@ void CPropAnimation::Deactivate()
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
+	//!!!abort all tasks and destroy controllers!
+	//Tasks.Clear();
+
 	Clips.Clear();
 	Nodes.Clear();
 
@@ -86,8 +89,8 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 	Nodes.Add(-1, pProp->GetNode());
 	AddChildrenToMapping(pProp->GetNode());
 
-	//!!!DBG TMP!
-	//StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
+//!!!DBG TMP!
+	StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
 
 	OK;
 }
@@ -109,20 +112,34 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParentNode)
 }
 //---------------------------------------------------------------------
 
+//!!!fading for non-looping anims
+//!!!stopping
 bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 {
-//foreach task
-//if this task uses mocap clip
-//	KeyFrame, Factor = TimeToIndex(Time, Loop(?))
-//	Init all mocap controllers of this task with KeyFrame & Factor
-//else
-//	Init all clip controllers of this task with Time & Loop(?)
+	for (int i = 0; i < Tasks.Size(); ++i)
+	{
+		CAnimTask& Task = Tasks[i];
+		if (Task.IsPaused) continue;
+
+		//!!!DBG TMP!
+		Task.CurrTime += 0.01f * Task.Speed;
+
+		//!!!if not mocap clip, set time directly!
+
+		int KeyIndex;
+		float IpolFactor;
+		Task.Clip->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
+
+		for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+			((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingState(KeyIndex, IpolFactor);
+	}
+
 	OK;
 }
 //---------------------------------------------------------------------
 
-DWORD CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
-								float Weight, float FadeInTime, float FadeOutTime)
+int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
+							  float Weight, float FadeInTime, float FadeOutTime)
 {
 	//!!!SEPARATE TO MOCAP AND KF CODE!
 	//???virtual Clip->CreateController(NodeID/Sampler)?
@@ -134,6 +151,31 @@ DWORD CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Sp
 	const Anim::CMocapClip::CSamplerList& Samplers = Clip->GetSamplerList();
 	if (!Samplers.Size()) return INVALID_INDEX; // Invalid task ID
 
+	int TaskID = INVALID_INDEX;
+	CAnimTask* pTask = NULL;
+	for (int i = 0; i < Tasks.Size(); ++i)
+		if (!Tasks[i].ClipID.IsValid())
+		{
+			pTask = &Tasks[i];
+			TaskID = i;
+			break;
+		}
+
+	if (!pTask)
+	{
+		TaskID = Tasks.Size();
+		pTask = Tasks.Reserve(1);
+	}
+
+	pTask->ClipID = ClipID;
+	pTask->Clip = Clip;
+	pTask->CurrTime = Offset;
+	pTask->FadeInTime = FadeInTime;
+	pTask->FadeOutTime = FadeOutTime;
+	pTask->IsPaused = false;
+	pTask->Loop = Loop;
+	pTask->Speed = Speed;
+
 	for (int i = 0; i < Samplers.Size(); ++i)
 	{
 		int NodeIdx = Nodes.FindIndex(Samplers.KeyAtIndex(i));
@@ -143,19 +185,21 @@ DWORD CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Sp
 		//???virtual Clip->CreateController(NodeID/Sampler)?
 		Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
 		Ctlr->SetSampler(&Samplers.ValueAtIndex(i));
+		Ctlr->Activate(true);
 
+		//!!!DBG TMP!
+		Ctlr->SetSamplingState(0, 0.f);
+
+		pNode->Controller = Ctlr;
+
+		pTask->Ctlrs.Append(Ctlr.get_unsafe());
+
+		//!!!
 		// If still no blend controller, create and setup
 		// Add child controller
-
-		// Set controller to node (fast debug code)
-		pNode->Controller = Ctlr;
 	}
 
-	// Obtain free task slot
-	// Fill task record
-	// Return correct task ID
-
-	return INVALID_INDEX;
+	return TaskID;
 }
 //---------------------------------------------------------------------
 

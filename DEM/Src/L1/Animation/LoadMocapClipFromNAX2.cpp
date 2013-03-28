@@ -105,9 +105,9 @@ bool LoadMocapClipFromNAX2(Data::CStream& In, PMocapClip OutClip)
 
 	DWORD KeyCount = Group.numKeys * Group.keyStride;
 	vector4* pKeys = n_new_array(vector4, KeyCount);
-	Reader.GetStream().Read(pKeys, KeyCount);
+	Reader.GetStream().Read(pKeys, KeyCount * sizeof(vector4));
 
-	return OutClip->Setup(Tracks, TrackMapping, pKeys);
+	return OutClip->Setup(Tracks, TrackMapping, pKeys, Group.numKeys, Group.keyStride, Group.keyTime);
 }
 //---------------------------------------------------------------------
 

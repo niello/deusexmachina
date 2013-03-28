@@ -3,7 +3,8 @@
 namespace Anim
 {
 
-bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& TrackMapping, vector4* _pKeys)
+bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& TrackMapping, vector4* _pKeys,
+					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
 {
 	n_assert(_pKeys);
 
@@ -12,7 +13,10 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& Tr
 	pKeys = _pKeys;
 	Tracks = _Tracks;
 
-	InvKeyTime = (float)(KeysPerCurve - 1) / Duration;
+	KeysPerCurve = _KeysPerCurve;
+	KeyStride = _KeyStride;
+	InvKeyTime = 1.f / _KeyTime;
+	Duration = (KeysPerCurve - 1) * _KeyTime;
 
 	for (int i = 0; i < Tracks.Size(); ++i)
 	{
