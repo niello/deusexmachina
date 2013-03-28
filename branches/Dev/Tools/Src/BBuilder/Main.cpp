@@ -27,6 +27,7 @@ namespace Attr
 	DeclareAttrsModule(Database);
 	DefineString(Graphics);
 	DefineString(SceneFile);
+	DefineString(AnimDesc);
 	DefineString(Physics);
 	DefineString(IAODesc);
 	DefineString(ActorDesc);
@@ -39,6 +40,7 @@ namespace Attr
 BEGIN_ATTRS_REGISTRATION(Main)
 	RegisterString(Graphics, ReadOnly);
 	RegisterString(SceneFile, ReadOnly);
+	RegisterString(AnimDesc, ReadOnly);
 	RegisterString(Physics, ReadOnly);
 	RegisterString(IAODesc, ReadOnly);
 	RegisterString(ActorDesc, ReadOnly);
@@ -280,8 +282,12 @@ void BatchCompileHRD(nArray<nString>& Files, LPCSTR Dir, LPCSTR ExtRaw, LPCSTR E
 
 		FileName += ExtOut;
 
+		FullName = PathExport + FileName;
+		nString FullPath = FullName.ExtractDirName();
+		if (!DataSrv->DirectoryExists(FullPath)) DataSrv->CreateDirectory(FullPath);
+
 		//???!!!use scheme?!
-		DataSrv->SavePRM(PathExport + FileName, Params);
+		DataSrv->SavePRM(FullName, Params);
 	}
 }
 //---------------------------------------------------------------------
@@ -526,6 +532,7 @@ int main(int argc, const char** argv)
 
 	nArray<nString> SceneFiles;
 	nArray<nString> SceneFiles2;
+	nArray<nString> AnimDescFiles;
 	nArray<nString> PhysicsFiles;
 	nArray<nString> IAODescFiles;
 	nArray<nString> ActorDescFiles;
@@ -568,6 +575,7 @@ int main(int argc, const char** argv)
 					
 					AddRsrcIfUnique(DS, Attr::Graphics, SceneFiles);
 					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
+					AddRsrcIfUnique(DS, Attr::AnimDesc, AnimDescFiles);
 					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
 					AddRsrcIfUnique(DS, Attr::IAODesc, IAODescFiles);
 					AddRsrcIfUnique(DS, Attr::ActorDesc, ActorDescFiles);
@@ -633,6 +641,7 @@ int main(int argc, const char** argv)
 					
 					AddRsrcIfUnique(DS, Attr::Graphics, SceneFiles);
 					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
+					AddRsrcIfUnique(DS, Attr::AnimDesc, AnimDescFiles);
 					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
 					AddRsrcIfUnique(DS, Attr::IAODesc, IAODescFiles);
 					AddRsrcIfUnique(DS, Attr::ActorDesc, ActorDescFiles);
@@ -841,6 +850,7 @@ int main(int argc, const char** argv)
 	n_printf("\n-----------------------------------------------------\n");
 
 	n_printf("\nCompiling HRD & Lua sources:\n");
+	BatchCompileHRD(AnimDescFiles, "game/Anim", ".hrd", ".prm");
 	BatchCompileHRD(IAODescFiles, "game/iao", ".hrd", ".prm");
 	BatchCompileHRD(ActorDescFiles, "game/ai/actors", ".hrd", ".prm");
 	BatchCompileHRD(AIHintsDescFiles, "game/ai/hints", ".hrd", ".prm");
@@ -938,6 +948,11 @@ int main(int argc, const char** argv)
 	{
 		nArray<nString> GameFiles;
 		FilterByFolder("game", RsrcFromExport, GameFiles);
+
+		TOC.BeginDirEntry("anim");
+		FilterByFolder("anim", GameFiles, AnimDescFiles);
+		AddFilesToTOC(AnimDescFiles, TOC, Offset);
+		TOC.EndDirEntry();
 
 		TOC.BeginDirEntry("iao");
 		FilterByFolder("iao", GameFiles, IAODescFiles);

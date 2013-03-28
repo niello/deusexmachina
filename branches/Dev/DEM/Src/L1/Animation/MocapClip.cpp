@@ -7,7 +7,7 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& Tr
 {
 	n_assert(_pKeys);
 
-	Unload();
+	if (State == Resources::Rsrc_Loaded) Unload();
 
 	pKeys = _pKeys;
 	Tracks = _Tracks;

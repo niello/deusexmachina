@@ -41,6 +41,9 @@ public:
 	//!!!Can be useful for ragdolls!
 	//void			GetBox(bbox3& OutBox) const;
 
+	DWORD			GetIndex() const { return Index; }
+	bool			IsRoot() const { return Flags.Is(Bone_Root); }
+	bool			IsTerminal() const { return Flags.Is(Bone_Term); }
 	const matrix44&	GetBindPoseMatrix() const { return BindPoseWorld; }
 	const matrix44&	GetInvBindPoseMatrix() const { return InvBindPose; }
 

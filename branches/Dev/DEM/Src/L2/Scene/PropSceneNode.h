@@ -35,9 +35,11 @@ public:
 
 	//virtual ~CPropSceneNode() {}
 
-	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
-	virtual void Activate();
-	virtual void Deactivate();
+	virtual void		GetAttributes(nArray<DB::CAttrID>& Attrs);
+	virtual void		Activate();
+	virtual void		Deactivate();
+
+	Scene::CSceneNode*	GetNode() const { return Node.get_unsafe(); }
 };
 
 RegisterFactory(CPropSceneNode);
