@@ -16,6 +16,7 @@ namespace Attr
 namespace Scene
 {
 	class CSceneNode;
+	class CAnimController;
 }
 
 namespace Properties
@@ -32,25 +33,26 @@ private:
 
 	struct CAnimTask
 	{
-		CStrID	ClipID;
-		//???store cached clip? only if per-frame lookup
+		CStrID				ClipID;
+		Anim::PMocapClip	Clip;
 
-		//dictionary/array of controllers created by this task
+		nArray<Scene::CAnimController*> Ctlrs;
 
-		float	Speed;
-		float	FadeInTime;
-		float	FadeOutTime;
+		float				Speed;
+		float				FadeInTime;
+		float				FadeOutTime;
 		//DWORD Priority, float Weight
 
-		float	CurrTime;
+		float				CurrTime;
 
-		bool	Loop;
-		bool	IsPaused;
+		bool				Loop;
+		bool				IsPaused;
 	};
 
 	nDictionary<CStrID, Anim::PMocapClip>			Clips;
 	nDictionary<Anim::CBoneID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
 
+	nArray<CAnimTask>								Tasks;
 	// Anim task list with IDs. Dictionary or array of slots with freeing slots.
 	// Can grow array by 1 and allocate 1 slot at the beginning, since it is not
 	// too frequent operation to add new animation tasks.
@@ -66,7 +68,7 @@ public:
 	virtual void	Activate();
 	virtual void	Deactivate();
 
-	DWORD			StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority, float Weight, float FadeInTime, float FadeOutTime);
+	int				StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority, float Weight, float FadeInTime, float FadeOutTime);
 	void			PauseAnim(DWORD TaskID, bool Pause);
 	void			StopAnim(DWORD TaskID, float FadeOutTime);
 };

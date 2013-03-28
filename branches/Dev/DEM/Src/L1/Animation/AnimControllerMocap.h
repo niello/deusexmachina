@@ -23,7 +23,7 @@ protected:
 
 public:
 
-	CAnimControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) {}
+	CAnimControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
 
 	void			SetSampler(const CMocapClip::CSampler* _pSampler);
 	void			SetSamplingState(int KeyIdx, float Factor) { KeyIndex = KeyIdx; IpolFactor = Factor; }
