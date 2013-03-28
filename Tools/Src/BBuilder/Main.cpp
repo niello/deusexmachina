@@ -730,6 +730,10 @@ int main(int argc, const char** argv)
 			}
 
 			SceneFile = SceneFile + ".scn";
+
+			nString FullPath = ("scene:" + SceneFile).ExtractDirName();
+			if (!DataSrv->DirectoryExists(FullPath)) DataSrv->CreateDirectory(FullPath);
+
 			CFileStream File;
 			if (File.Open("scene:" + SceneFile, SAM_WRITE))
 			{
