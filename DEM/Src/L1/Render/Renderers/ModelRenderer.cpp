@@ -219,6 +219,7 @@ void CModelRenderer::Render()
 
 		if (EnableLighting)
 		{
+			n_assert_dbg(pLights);
 			for (int j = 0; j < pLights->Size(); ++j)
 			{
 				Scene::CLight* pLight = (*pLights)[j];
@@ -266,8 +267,12 @@ void CModelRenderer::Render()
 					++Rec.LightCount;
 				}
 			}
-			n_assert_dbg(Rec.LightCount <= MaxLightsPerObject);
-			Rec.FeatFlags |= LightFeatFlags[Rec.LightCount - 1];
+
+			if (Rec.LightCount > 0)
+			{
+				n_assert_dbg(Rec.LightCount <= MaxLightsPerObject);
+				Rec.FeatFlags |= LightFeatFlags[Rec.LightCount - 1];
+			}
 		}
 
 		Rec.hTech = Rec.pModel->Material->GetShader()->GetTechByFeatures(Rec.FeatFlags);
