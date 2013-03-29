@@ -25,11 +25,13 @@ namespace Properties
 {
 ImplementRTTI(Properties::CPropSceneNode, CPropTransformable);
 ImplementFactory(Properties::CPropSceneNode);
+ImplementPropertyStorage(CPropSceneNode, 256); //!!!remove if : public CPropTransformable
 RegisterProperty(CPropSceneNode);
 
 void CPropSceneNode::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
-	CPropTransformable::GetAttributes(Attrs);
+	//CPropTransformable::GetAttributes(Attrs);
+	CProperty::GetAttributes(Attrs);
 	Attrs.Append(Attr::ScenePath);
 	Attrs.Append(Attr::SceneFile);
 }
@@ -37,7 +39,8 @@ void CPropSceneNode::GetAttributes(nArray<DB::CAttrID>& Attrs)
 
 void CPropSceneNode::Activate()
 {
-	CPropTransformable::Activate();
+	//CPropTransformable::Activate();
+	CProperty::Activate();
 
 	nString NodePath = GetEntity()->Get<nString>(Attr::ScenePath);
 	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::SceneFile);
@@ -65,7 +68,8 @@ void CPropSceneNode::Activate()
 void CPropSceneNode::Deactivate()
 {
 	Node = NULL;
-	CPropTransformable::Deactivate();
+	//CPropTransformable::Deactivate();
+	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

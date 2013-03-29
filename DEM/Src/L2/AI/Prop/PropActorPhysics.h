@@ -39,9 +39,6 @@ protected:
 
 public:
 
-	CPropActorPhysics();
-	virtual ~CPropActorPhysics();
-
 	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void Activate();
 	virtual void Deactivate();

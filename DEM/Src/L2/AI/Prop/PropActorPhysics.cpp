@@ -20,16 +20,6 @@ ImplementRTTI(Properties::CPropActorPhysics, Properties::CPropAbstractPhysics);
 ImplementFactory(Properties::CPropActorPhysics);
 RegisterProperty(CPropActorPhysics);
 
-CPropActorPhysics::CPropActorPhysics()
-{
-}
-//------------------------------------------------------------------------------
-
-CPropActorPhysics::~CPropActorPhysics()
-{
-}
-//------------------------------------------------------------------------------
-
 void CPropActorPhysics::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
 	CPropAbstractPhysics::GetAttributes(Attrs);

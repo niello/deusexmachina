@@ -101,7 +101,7 @@ void CMotorSystem::Update()
 				const float SlowDownRadius = Speed * 0.5f; // Distance actor moves by at 0.5 sec
 
 				if (DistToNavDest < SlowDownRadius)
-					Speed *= ((2 * SlowDownRadius - DistToNavDest) * DistToNavDest) / (SlowDownRadius * SlowDownRadius);
+					Speed *= ((2.f * SlowDownRadius - DistToNavDest) * DistToNavDest) / (SlowDownRadius * SlowDownRadius);
 			}
 
 			vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
