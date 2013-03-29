@@ -22,10 +22,14 @@ namespace Attr
 namespace Properties
 {
 
-class CPropSceneNode: public CPropTransformable
+class CPropSceneNode: public Game::CProperty //CPropTransformable
 {
 	DeclareRTTI;
 	DeclareFactory(CPropSceneNode);
+
+	//!!!remove if : public CPropTransformable
+	DeclarePropertyStorage;
+	DeclarePropertyPools(Game::LivePool);
 
 protected:
 
