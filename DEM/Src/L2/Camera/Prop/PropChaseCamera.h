@@ -6,6 +6,8 @@
 // Based on mangalore CPropChaseCamera (C) 2005 Radon Labs GmbH
 
 #include "PropCamera.h"
+#include <Scene/AnimControllerThirdPerson.h>
+#include <Scene/Camera.h>
 #include <mathlib/polar.h>
 #include <util/npfeedbackloop.h>
 
@@ -36,13 +38,18 @@ class CPropChaseCamera: public CPropCamera
 
 protected:
 
-	polar2					Angles;
-	float					Distance;
-	nPFeedbackLoop<vector3>	Position;
-	nPFeedbackLoop<vector3>	Lookat;
+	polar2								Angles;
+	float								Distance;
+	nPFeedbackLoop<vector3>				Position;
+	nPFeedbackLoop<vector3>				Lookat;
+
+	Scene::PSceneNode					Node;
+	Scene::PCamera						Camera;
+	Scene::PAnimControllerThirdPerson	Ctlr;
 
 	virtual vector3 DoCollideCheck(const vector3& from, const vector3& to);
 
+	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(CameraReset, OnCameraReset);
 	DECLARE_EVENT_HANDLER(CameraOrbit, OnCameraOrbit);
 	DECLARE_EVENT_HANDLER(CameraDistance, OnCameraDistanceChange);

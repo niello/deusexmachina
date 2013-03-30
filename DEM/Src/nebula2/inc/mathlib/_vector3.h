@@ -17,7 +17,11 @@ class _vector3
 public:
 
 	static const _vector3 Zero;
+	static const _vector3 One;
 	static const _vector3 Up;
+	static const _vector3 AxisX;
+	static const _vector3 AxisY;
+	static const _vector3 AxisZ;
 
 	union
 	{
@@ -141,9 +145,7 @@ inline void _vector3::rotate(const _vector3& axis, float angle)
 	// rotation with matrices, but these aren't defined yet!
 	float rotM[9];
 	float sa, ca;
-
-	sa = (float) sin(angle);
-	ca = (float) cos(angle);
+	n_sincos(angle, sa, ca);
 
 	// build a rotation matrix
 	rotM[0] = ca + (1 - ca) * axis.x * axis.x;

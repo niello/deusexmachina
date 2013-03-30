@@ -547,10 +547,10 @@ inline
 void
 _matrix44::rotate_x(const float a)
 {
-    float c = n_cos(a);
-    float s = n_sin(a);
-    int i;
-    for (i=0; i<4; i++) {
+    float c, s;
+	n_sincos(a, s, c);
+    for (int i = 0; i < 4; ++i)
+	{
         float mi1 = m[i][1];
         float mi2 = m[i][2];
         m[i][1] = mi1*c + mi2*-s;
@@ -565,10 +565,10 @@ inline
 void
 _matrix44::rotate_y(const float a)
 {
-    float c = n_cos(a);
-    float s = n_sin(a);
-    int i;
-    for (i=0; i<4; i++) {
+    float c, s;
+	n_sincos(a, s, c);
+    for (int i = 0; i < 4; ++i)
+	{
         float mi0 = m[i][0];
         float mi2 = m[i][2];
         m[i][0] = mi0*c + mi2*s;
@@ -583,10 +583,10 @@ inline
 void
 _matrix44::rotate_z(const float a)
 {
-    float c = n_cos(a);
-    float s = n_sin(a);
-    int i;
-    for (i=0; i<4; i++) {
+    float c, s;
+	n_sincos(a, s, c);
+    for (int i = 0; i < 4; ++i)
+	{
         float mi0 = m[i][0];
         float mi1 = m[i][1];
         m[i][0] = mi0*c + mi1*-s;

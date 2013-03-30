@@ -131,7 +131,7 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 		Task.Clip->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
 
 		for (int j = 0; j < Task.Ctlrs.Size(); ++j)
-			((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingState(KeyIndex, IpolFactor);
+			((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 
 	OK;
@@ -188,7 +188,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		Ctlr->Activate(true);
 
 		//!!!DBG TMP!
-		Ctlr->SetSamplingState(0, 0.f);
+		Ctlr->SetSamplingParams(0, 0.f);
 
 		pNode->Controller = Ctlr;
 

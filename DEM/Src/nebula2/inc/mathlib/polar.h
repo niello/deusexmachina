@@ -20,122 +20,43 @@
 
 #include "mathlib/vector.h"
 
-//------------------------------------------------------------------------------
 class polar2
 {
-public:
-    /// the default constructor
-    polar2();
-    /// constructor, theta and rho args
-    polar2(float t, float r);
-    /// constructor, normalized cartesian vector as arg
-    polar2(const vector3& v);
-    /// the copy constructor
-    polar2(const polar2& src);
-    /// the assignment operator
-    polar2& operator=(const polar2& rhs);
-    /// convert to normalized cartesian coords
-    vector3 get_cartesian() const;
-    /// set to polar object
-    void set(const polar2& p);
-    /// set to theta and rho
-    void set(float t, float r);
-    /// set to cartesian
-    void set(const vector3& vec);
-    /// fuzzy equality check
-    bool isequal(const polar2& rhs, float tol) const;
-
-    float theta;
-    float rho;
-
 private:
-    /// the equal operator is not allowed, use isequal() with tolerance!
-    bool operator==(const polar2& /*rhs*/) { return false; }
+
+	// the equal operator is not allowed, use isequal() with tolerance!
+	bool operator==(const polar2& /*rhs*/) { return false; }
+
+public:
+
+	float theta;
+	float rho;
+
+	polar2(): theta(0.0f), rho(0.0f) {}
+	polar2(float t, float r): theta(t), rho(r) {}
+	polar2(const vector3& v) { set(v); }
+	polar2(const polar2& src): theta(src.theta), rho(src.rho) {}
+
+	polar2& operator =(const polar2& rhs);
+
+	vector3	get_cartesian_y() const;
+	vector3	get_cartesian_z() const;
+	//matrix33 get_matrix() const;
+	void	set(const polar2& p) { theta = p.theta; rho = p.rho; }
+	void	set(float t, float r) { theta = t; rho = r; }
+	void	set(const vector3& vec);
+	bool	isequal(const polar2& rhs, float tol) const;
 };
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-polar2::polar2() :
-    theta(0.0f),
-    rho(0.0f)
+inline polar2& polar2::operator=(const polar2& rhs)
 {
-    // empty
+	theta = rhs.theta;
+	rho = rhs.rho;
+	return *this;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-polar2::polar2(float t, float r) :
-    theta(t),
-    rho(r)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-polar2::polar2(const vector3& v)
-{
-    this->set(v);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-polar2::polar2(const polar2& src) :
-    theta(src.theta),
-    rho(src.rho)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-polar2&
-polar2::operator=(const polar2& rhs)
-{
-    this->theta = rhs.theta;
-    this->rho = rhs.rho;
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-polar2::set(const polar2& p)
-{
-    this->theta = p.theta;
-    this->rho = p.rho;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-polar2::set(float t, float r)
-{
-    this->theta = t;
-    this->rho = r;
-}
-
-//------------------------------------------------------------------------------
-/**
-    Convert cartesian to polar.
-*/
-inline
-void
-polar2::set(const vector3& vec)
+inline void polar2::set(const vector3& vec)
 {
     vector3 v3(vec);
     v3.norm();
@@ -169,41 +90,35 @@ polar2::set(const vector3& vec)
         dRho = asin(-v2.y) + n_deg2rad(90.0f);
     }
 
-    this->theta = (float) dTheta;
-    this->rho   = (float) dRho;
+    theta = (float) dTheta;
+    rho   = (float) dRho;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Convert polar to cartesian.
-*/
-inline
-vector3
-polar2::get_cartesian() const
+// Rotate by theta around x (inclination), than by rho around y (azimuth), then get y axis
+inline vector3 polar2::get_cartesian_y() const
 {
-    vector3 v;
-    double sin_theta = sin(this->theta);
-    double cos_theta = cos(this->theta);
-    double sin_rho   = sin(this->rho);
-    double cos_rho   = cos(this->rho);
-    float x = (float)(sin_theta * sin_rho);
-    float y = (float)cos_theta;
-    float z = (float)(sin_theta * cos_rho);
-    v.set(x, y, z);
-    return v;
+	float sin_theta, cos_theta, sin_rho, cos_rho;
+	n_sincos(theta, sin_theta, cos_theta);
+	n_sincos(rho, sin_rho, cos_rho);
+	return vector3(sin_theta * sin_rho, cos_theta, -sin_theta * cos_rho);
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-polar2::isequal(const polar2& rhs, float tol) const
+// Rotate by theta around x (inclination), than by rho around y (azimuth), then get z axis
+inline vector3 polar2::get_cartesian_z() const
 {
-    float dt = n_abs(rhs.theta - this->theta);
-    float dr = n_abs(rhs.rho - this->rho);
-
-    return (dt <= tol) && (dr <= tol);
+	float sin_theta, cos_theta, sin_rho, cos_rho;
+	n_sincos(theta, sin_theta, cos_theta);
+	n_sincos(rho, sin_rho, cos_rho);
+	return vector3(-sin_rho * cos_theta, sin_theta, cos_theta * cos_rho);
 }
-//------------------------------------------------------------------------------
+//---------------------------------------------------------------------
+
+inline bool polar2::isequal(const polar2& rhs, float tol) const
+{
+	return (n_abs(rhs.theta - theta) <= tol) && (n_abs(rhs.rho - rho) <= tol);
+}
+//---------------------------------------------------------------------
+
 #endif

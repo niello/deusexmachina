@@ -21,6 +21,7 @@
 
 #ifndef PI
 #define PI (3.1415926535897932384626433832795028841971693993751f)
+#define INV_PI (0.31830988618379067153776752677335f)
 #endif
 
 #define N_PI PI
@@ -49,7 +50,6 @@ template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T
 #define n_ceil(x)       (float(ceil(x)))
 #define n_pow(x,y)      (float(pow(x,y)))
 
-//------------------------------------------------------------------------------
 /**
     log2() function.
 */
@@ -307,6 +307,23 @@ lerp<float>(float & result, const float & val0, const float & val1, float lerpVa
 {
     result = val0 + ((val1 - val0) * lerpVal);
 }
+
+inline void n_sincos(float Angle, float& Sin, float& Cos)
+{
+	Sin = n_sin(Angle);
+	Cos = n_sqrt(1.f - Sin * Sin);
+	float Quarter = n_fmod(n_fabs(Angle), 2.f * PI);
+	if (Quarter > 0.5f * PI && Quarter < 1.5f * PI) Cos = -Cos;
+}
+//---------------------------------------------------------------------
+
+inline void n_sincos_square(float Angle, float& SqSin, float& SqCos)
+{
+	SqSin = n_sin(Angle);
+	SqSin *= SqSin;
+	SqCos = 1.f - SqSin;
+}
+//---------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 /**

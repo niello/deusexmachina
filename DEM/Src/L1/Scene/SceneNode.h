@@ -72,6 +72,7 @@ public:
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(DWORD Idx);
 	void					RemoveChild(CStrID ChildName);
+	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
 
 	CSceneNode*				GetParent() const { return pParent; }
 	DWORD					GetChildCount() const { return Child.Size(); }
