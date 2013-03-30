@@ -25,7 +25,7 @@ void CAnimControllerMocap::Clear()
 
 bool CAnimControllerMocap::ApplyTo(Math::CTransformSRT& DestTfm)
 {
-	if (!pSampler) FAIL;
+	if (!pSampler || (!pSampler->pTrackT && !pSampler->pTrackR && !pSampler->pTrackS)) FAIL;
 
 	if (pSampler->pTrackT) pSampler->pTrackT->Sample(KeyIndex, IpolFactor, DestTfm.Translation);
 	if (pSampler->pTrackR) pSampler->pTrackR->Sample(KeyIndex, IpolFactor, DestTfm.Rotation);

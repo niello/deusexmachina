@@ -26,7 +26,7 @@ public:
 	CAnimControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
 
 	void			SetSampler(const CMocapClip::CSampler* _pSampler);
-	void			SetSamplingState(int KeyIdx, float Factor) { KeyIndex = KeyIdx; IpolFactor = Factor; }
+	void			SetSamplingParams(int KeyIdx, float Factor) { KeyIndex = KeyIdx; IpolFactor = Factor; }
 	void			Clear();
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };

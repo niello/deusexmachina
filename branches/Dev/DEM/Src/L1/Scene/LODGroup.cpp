@@ -53,10 +53,10 @@ void CLODGroup::Update()
 	//Can use Updated(ThisFrame) flag and clear at each frame ending, with clearing visible meshes and lights
 	//Flag Changed(ThisFrame) is smth different but may be usable too
 
-	if (!pNode || !pNode->GetScene()->GetCurrCamera()) return;
+	if (!pNode || !pNode->GetScene()->GetMainCamera()) return;
 
 	vector3 DistanceVector = pNode->GetWorldPosition() -
-		pNode->GetScene()->GetCurrCamera()->GetNode()->GetWorldPosition();
+		pNode->GetScene()->GetMainCamera()->GetNode()->GetWorldPosition();
 	float SqDist = DistanceVector.lensquared();
 
 	CStrID SelectedChild;

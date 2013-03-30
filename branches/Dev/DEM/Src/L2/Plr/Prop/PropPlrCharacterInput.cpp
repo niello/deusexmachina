@@ -76,7 +76,7 @@ bool CPropPlrCharacterInput::OnMouseDoubleClick(const Events::CEventBase& Event)
 bool CPropPlrCharacterInput::OnMouseMoveRaw(const Events::CEventBase& Event)
 {
 	//!!!TO SETTINGS!
-	static const float PlrCameraSens = -0.05f;
+	static const float PlrCameraSens = 0.05f;
 
 	const Event::MouseMoveRaw& Ev = (const Event::MouseMoveRaw&)Event;
 	GetEntity()->FireEvent(Event::CameraOrbit(Ev.X * PlrCameraSens, Ev.Y * PlrCameraSens));

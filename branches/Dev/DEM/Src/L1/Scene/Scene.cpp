@@ -38,14 +38,16 @@ void CScene::CreateDefaultCamera()
 	if (RootNode->GetChild(CStrID("_DefaultCamera"))) return;
 
 	CSceneNode* CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
-	CurrCamera = n_new(CCamera);
-	CameraNode->AddAttr(*CurrCamera);
+	DefaultCamera = n_new(CCamera);
+	CameraNode->AddAttr(*DefaultCamera);
+	MainCamera = DefaultCamera;
 }
 //---------------------------------------------------------------------
 
 bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrID FrameShaderID)
 {
-	if (!Camera.isvalid()) Camera = CurrCamera;
+	if (!Camera.isvalid()) Camera = MainCamera;
+	if (!Camera.isvalid()) Camera = DefaultCamera;
 	if (!Camera.isvalid())
 	{
 		VisibleObjects.Clear();

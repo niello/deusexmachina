@@ -23,7 +23,8 @@ private:
 
 	PSceneNode				RootNode;
 	bbox3					SceneBBox;
-	PCamera					CurrCamera; //???or store externally?
+	PCamera					DefaultCamera;
+	PCamera					MainCamera;
 
 	vector4					AmbientLight;
 	//Fog settings
@@ -52,11 +53,12 @@ public:
 	//!!!can add global lights to separate array if necessary!
 	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
 
-	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader); // CStrID FrameShaderID = CStrID::Empty);
+	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader);
 
 	CSceneNode*	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode.get_unsafe(); }
 	CSceneNode&	GetRootNode() { return *RootNode.get_unsafe(); }
-	CCamera*	GetCurrCamera() const { return CurrCamera.get_unsafe(); }
+	void		SetMainCamera(CCamera* pNewCamera) { MainCamera = pNewCamera ? pNewCamera : DefaultCamera; }
+	CCamera*	GetMainCamera() const { return MainCamera.get_unsafe(); }
 };
 
 typedef Ptr<CScene> PScene;

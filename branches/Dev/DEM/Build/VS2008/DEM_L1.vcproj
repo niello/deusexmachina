@@ -1277,6 +1277,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\AnimControllerThirdPerson.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\AnimControllerThirdPerson.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\Bone.cpp"
 				>
 			</File>
