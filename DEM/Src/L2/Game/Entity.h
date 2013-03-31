@@ -64,7 +64,7 @@ public:
 	template<class T> bool	HasProperty() const { return FindProperty<T>() != NULL; }
 
 	void			SetUniqueID(CStrID NewUID);
-	CStrID			GetUniqueID() const { n_assert(UID.IsValid()); return UID; } //!!!DBG assert!
+	CStrID			GetUniqueID() const { n_assert_dbg(UID.IsValid()); return UID; }
 
 	// Status getters
 	//!!!check it!

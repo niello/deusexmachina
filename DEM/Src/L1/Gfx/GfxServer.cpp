@@ -198,7 +198,6 @@ void CGfxServer::RenderDebug()
 // Finish rendering and present the scene.
 void CGfxServer::EndRender()
 {
-	//CurrLevel->EndRender();
 	nSceneServer::Instance()->PresentScene();
 }
 //---------------------------------------------------------------------

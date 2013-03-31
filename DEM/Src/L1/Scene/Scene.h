@@ -48,8 +48,6 @@ public:
 	void		Deactivate();
 	void		Clear();
 
-	void		CreateDefaultCamera();
-
 	//!!!can add global lights to separate array if necessary!
 	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
 

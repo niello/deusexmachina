@@ -263,10 +263,6 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 	GfxSrv->SetLevel(GfxLevel);
 
 	n_assert(SceneSrv->CreateScene(LevelID, LevelBox, true));
-	SceneSrv->GetCurrentScene()->CreateDefaultCamera();
-
-	//!!!TMP!
-	SceneSrv->GetCurrentScene()->GetRootNode().GetChild(CStrID("_DefaultCamera"))->SetPosition(vector3(0.f, 0.f, 4.f));
 
 	n_assert(AISrv->SetupLevel(LevelBox));
 

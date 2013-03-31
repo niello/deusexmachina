@@ -74,18 +74,6 @@ bool CLevel::BeginRender()
 	//n_assert(QuadTree.IsInitialized());
 	n_assert(CurrCamera.isvalid());
 
-#if __NEBULA_STATS__
-	//numShapesVisible->SetValue<int>(0);
-	//numLightsVisible->SetValue<int>(0);
-	//numShapesLit->SetValue<int>(0);
-	//numCellsVisitedCamera->SetValue<int>(0);
-	//numCellsVisitedLight->SetValue<int>(0);
-	//numCellsOutsideCamera->SetValue<int>(0);
-	//numCellsOutsideLight->SetValue<int>(0);
-	//numCellsVisibleCamera->SetValue<int>(0);
-	//numCellsVisibleLight->SetValue<int>(0);
-#endif
-
 	PROFILER_START(profClearLinks);
 	QTNodeClearLinks(QuadTree.GetRootNode(), CameraLink);
 	QTNodeClearLinks(QuadTree.GetRootNode(), LightLink);
