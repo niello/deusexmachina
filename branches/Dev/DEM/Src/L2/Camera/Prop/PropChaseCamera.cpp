@@ -271,7 +271,7 @@ void CPropChaseCamera::UpdateCamera()
 	Position.Update(Time);
 	Lookat.Update(Time);
 
-	// construct the new pCamera matrix
+	// construct the new camera matrix
 	matrix44 CameraMatrix;
 	CameraMatrix.translate(Position.State);
 	CameraMatrix.lookatRh(Lookat.State, vector3::Up);

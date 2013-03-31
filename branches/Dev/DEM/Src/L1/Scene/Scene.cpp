@@ -9,6 +9,12 @@ void CScene::Init(const bbox3& Bounds)
 {
 	RootNode = n_new(CSceneNode(*this, CStrID::Empty));
 
+	//???is always needed?
+	CSceneNode* CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
+	DefaultCamera = n_new(CCamera);
+	CameraNode->AddAttr(*DefaultCamera);
+	MainCamera = DefaultCamera;
+
 	SceneBBox = Bounds;
 	vector3 Center = SceneBBox.center();
 	vector3 Size = SceneBBox.size();
@@ -29,18 +35,6 @@ void CScene::Deactivate()
 void CScene::Clear()
 {
 	RootNode = NULL;
-}
-//---------------------------------------------------------------------
-
-//???or always do externally?
-void CScene::CreateDefaultCamera()
-{
-	if (RootNode->GetChild(CStrID("_DefaultCamera"))) return;
-
-	CSceneNode* CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
-	DefaultCamera = n_new(CCamera);
-	CameraNode->AddAttr(*DefaultCamera);
-	MainCamera = DefaultCamera;
 }
 //---------------------------------------------------------------------
 
