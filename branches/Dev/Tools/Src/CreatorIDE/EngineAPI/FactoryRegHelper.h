@@ -49,6 +49,7 @@
 // RENDERERS =======================================
 
 #include <Render/Renderers/ModelRenderer.h>
+#include <UI/UIRenderer.h>
 
 // OTHER ===========================================
 

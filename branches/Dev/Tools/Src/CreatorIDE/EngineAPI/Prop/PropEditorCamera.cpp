@@ -76,7 +76,7 @@ void CPropEditorCamera::OnRender()
 			{
 				const float LookVel = 0.25f;
 				Angles.theta -= MoveVert * LookVel;
-				Angles.rho += MoveHoriz * LookVel;
+				Angles.phi += MoveHoriz * LookVel;
 				Changed = true;
 			}
 
@@ -105,7 +105,7 @@ void CPropEditorCamera::OnRender()
 		{
 			View.translate(vector3(0.0f, 0.0f, Distance));
 			View.rotate_x(Angles.theta);
-			View.rotate_y(Angles.rho);
+			View.rotate_y(Angles.phi);
 			View.translate(COI);
 		}
 	}

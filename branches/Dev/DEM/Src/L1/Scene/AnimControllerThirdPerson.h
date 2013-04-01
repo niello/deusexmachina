@@ -81,7 +81,7 @@ inline void CAnimControllerThirdPerson::SetDistanceLimits(float Min, float Max)
 inline void CAnimControllerThirdPerson::SetAngles(float Vertical, float Horizontal)
 {
 	Angles.theta = n_clamp(Vertical, MinVertAngle, MaxVertAngle);
-	Angles.rho = Horizontal;
+	Angles.phi = Horizontal;
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -102,7 +102,7 @@ inline void CAnimControllerThirdPerson::OrbitVertical(float Angle)
 
 inline void CAnimControllerThirdPerson::OrbitHorizontal(float Angle)
 {
-	Angles.rho += Angle;
+	Angles.phi += Angle;
 	Dirty = true;
 }
 //---------------------------------------------------------------------

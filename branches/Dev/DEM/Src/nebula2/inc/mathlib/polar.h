@@ -6,10 +6,10 @@
     @ingroup NebulaMathDataTypes
 
     A polar coordinate inline class, consisting of 2 angles theta (latitude)
-    and rho (longitude). Also offers conversion between cartesian and
+    and phi (longitude). Also offers conversion between cartesian and
     polar space.
 
-    Allowed range for theta is 0..180 degree (in rad!) and for rho 0..360 degree
+    Allowed range for theta is 0..180 degree (in rad!) and for phi 0..360 degree
     (in rad).
 
     (C) 2004 RadonLabs GmbH
@@ -30,20 +30,20 @@ private:
 public:
 
 	float theta;
-	float rho;
+	float phi;
 
-	polar2(): theta(0.0f), rho(0.0f) {}
-	polar2(float t, float r): theta(t), rho(r) {}
+	polar2(): theta(0.0f), phi(0.0f) {}
+	polar2(float t, float r): theta(t), phi(r) {}
 	polar2(const vector3& v) { set(v); }
-	polar2(const polar2& src): theta(src.theta), rho(src.rho) {}
+	polar2(const polar2& src): theta(src.theta), phi(src.phi) {}
 
 	polar2& operator =(const polar2& rhs);
 
 	vector3	get_cartesian_y() const;
 	vector3	get_cartesian_z() const;
 	//matrix33 get_matrix() const;
-	void	set(const polar2& p) { theta = p.theta; rho = p.rho; }
-	void	set(float t, float r) { theta = t; rho = r; }
+	void	set(const polar2& p) { theta = p.theta; phi = p.phi; }
+	void	set(float t, float r) { theta = t; phi = r; }
 	void	set(const vector3& vec);
 	bool	isequal(const polar2& rhs, float tol) const;
 };
@@ -51,7 +51,7 @@ public:
 inline polar2& polar2::operator=(const polar2& rhs)
 {
 	theta = rhs.theta;
-	rho = rhs.rho;
+	phi = rhs.phi;
 	return *this;
 }
 //---------------------------------------------------------------------
@@ -91,33 +91,33 @@ inline void polar2::set(const vector3& vec)
     }
 
     theta = (float) dTheta;
-    rho   = (float) dRho;
+    phi   = (float) dRho;
 }
 //---------------------------------------------------------------------
 
-// Rotate by theta around x (inclination), than by rho around y (azimuth), then get y axis
+// Rotate by theta around x (inclination), than by phi around y (azimuth), then get y axis
 inline vector3 polar2::get_cartesian_y() const
 {
 	float sin_theta, cos_theta, sin_rho, cos_rho;
 	n_sincos(theta, sin_theta, cos_theta);
-	n_sincos(rho, sin_rho, cos_rho);
+	n_sincos(phi, sin_rho, cos_rho);
 	return vector3(sin_theta * sin_rho, cos_theta, -sin_theta * cos_rho);
 }
 //---------------------------------------------------------------------
 
-// Rotate by theta around x (inclination), than by rho around y (azimuth), then get z axis
+// Rotate by theta around x (inclination), than by phi around y (azimuth), then get z axis
 inline vector3 polar2::get_cartesian_z() const
 {
 	float sin_theta, cos_theta, sin_rho, cos_rho;
 	n_sincos(theta, sin_theta, cos_theta);
-	n_sincos(rho, sin_rho, cos_rho);
+	n_sincos(phi, sin_rho, cos_rho);
 	return vector3(-sin_rho * cos_theta, sin_theta, cos_theta * cos_rho);
 }
 //---------------------------------------------------------------------
 
 inline bool polar2::isequal(const polar2& rhs, float tol) const
 {
-	return (n_abs(rhs.theta - theta) <= tol) && (n_abs(rhs.rho - rho) <= tol);
+	return (n_abs(rhs.theta - theta) <= tol) && (n_abs(rhs.phi - phi) <= tol);
 }
 //---------------------------------------------------------------------
 

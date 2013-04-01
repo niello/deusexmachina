@@ -55,6 +55,7 @@ public:
 
 	void		TriggerBeforePhysics();
 	void		TriggerAfterPhysics();
+	void		RenderCurrentScene();
 	void		RenderDebug();
 };
 
@@ -93,6 +94,20 @@ inline void CSceneServer::AddFrameShader(CStrID ID, Render::PFrameShader FrameSh
 {
 	n_assert(ID.IsValid() && FrameShader.isvalid());
 	FrameShaders.Add(ID, FrameShader);
+}
+//---------------------------------------------------------------------
+
+//???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
+inline void CSceneServer::TriggerBeforePhysics()
+{
+	if (pCurrScene) pCurrScene->GetRootNode().UpdateLocalSpace();
+}
+//---------------------------------------------------------------------
+
+//???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
+inline void CSceneServer::TriggerAfterPhysics()
+{
+	if (pCurrScene) pCurrScene->GetRootNode().UpdateWorldSpace();
 }
 //---------------------------------------------------------------------
 
