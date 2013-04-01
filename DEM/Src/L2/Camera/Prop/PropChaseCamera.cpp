@@ -119,7 +119,7 @@ bool CPropChaseCamera::OnPropsActivated(const Events::CEventBase& Event)
 		n_deg2rad(GetEntity()->Get<float>(Attr::CameraHighStop)));
 	Ctlr->SetDistanceLimits(GetEntity()->Get<float>(Attr::CameraMinDistance),
 		GetEntity()->Get<float>(Attr::CameraMaxDistance));
-	Ctlr->SetAngles(Angles.theta, Angles.rho);
+	Ctlr->SetAngles(Angles.theta, Angles.phi);
 	Ctlr->SetDistance(Distance);
 
 	OK;
@@ -163,11 +163,11 @@ bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
 	float AngVel = n_deg2rad(GetEntity()->Get<float>(Attr::CameraAngularVelocity));
 
 	if (e.DirHoriz != 0)
-		Angles.rho += AngVel * dt * (float)e.DirHoriz;
+		Angles.phi += AngVel * dt * (float)e.DirHoriz;
 	if (e.DirVert != 0)
 		Angles.theta += AngVel * dt * (float)e.DirVert;
 
-	Angles.rho += e.AngleHoriz;
+	Angles.phi += e.AngleHoriz;
 	Angles.theta = n_clamp(Angles.theta + e.AngleVert,
 						n_deg2rad(GetEntity()->Get<float>(Attr::CameraLowStop)),
 						n_deg2rad(GetEntity()->Get<float>(Attr::CameraHighStop)));
@@ -247,8 +247,7 @@ void CPropChaseCamera::UpdateCamera()
 	vector3 lookatPoint = m44.pos_component() + m33 * Offset;
 
 	// compute the collided goal position
-	vector3 CartesianZ = Angles.get_cartesian_z();
-	vector3 goalPos = lookatPoint + CartesianZ * Distance;
+	vector3 goalPos = lookatPoint + Angles.get_cartesian_z() * Distance;
 	vector3 CorrectedGoalPos = DoCollideCheck(lookatPoint, goalPos);
 
 	//!!!define constant somewhere!

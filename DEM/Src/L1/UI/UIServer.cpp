@@ -23,7 +23,6 @@
 #include <falagard/CEGUIFalWidgetLookManager.h>
 #include <CEGUIWindowManager.h>
 #include <CEGUIFontManager.h>
-//#include <CEGUIScriptModule.h> //???need?
 #include <RendererModules/Direct3D9/CEGUIDirect3D9Renderer.h> //!!!use N2 renderer!
 #include <XMLParserModules/TinyXML2Parser/CEGUITinyXML2Parser.h>
 
@@ -79,6 +78,8 @@ CUIServer::CUIServer()
 
 CUIServer::~CUIServer()
 {
+	n_assert(Singleton);
+
 	Screens.Clear();
 
 	CEGUI::System::destroy();
@@ -88,7 +89,6 @@ CUIServer::~CUIServer()
 	CEGUI::Direct3D9Renderer::destroy(*Renderer);
 	n_delete(Logger);
 
-	n_assert(Singleton);
 	Singleton = NULL;
 }
 //---------------------------------------------------------------------
@@ -108,8 +108,6 @@ void CUIServer::Trigger()
 
 void CUIServer::Render()
 {
-	//???need? check what if don't clear buffer!
-	nGfxServer2::Instance()->Clear(nGfxServer2::DepthBuffer, 0, 1.f, 0);
 	CEGUI::System::getSingleton().renderGUI();
 }
 //---------------------------------------------------------------------

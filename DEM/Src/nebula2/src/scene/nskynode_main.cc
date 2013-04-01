@@ -838,7 +838,7 @@ nSkyNode::SetFaceToViewer(int element)
     viewerAngles.theta -= N_PI*0.5f;
     matrix44 m;
     m.rotate_x(viewerAngles.theta);
-    m.rotate_y(viewerAngles.rho);
+    m.rotate_y(viewerAngles.phi);
     this->elements[element].refElement->SetQuat(m.get_quaternion());
 }
 

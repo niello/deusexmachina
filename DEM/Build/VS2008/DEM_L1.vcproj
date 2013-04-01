@@ -733,6 +733,14 @@
 			Name="UI"
 			>
 			<File
+				RelativePath="..\..\Src\L1\UI\UIRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\UI\UIRenderer.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\UI\UIServer.cpp"
 				>
 			</File>

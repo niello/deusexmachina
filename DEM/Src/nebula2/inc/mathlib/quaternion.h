@@ -200,8 +200,10 @@ public:
 
     //-- convert from euler angles ----------------------------------
     void set_rotate_axis_angle(const vector3& v, float a) {
-        float sin_a = n_sin(a * 0.5f);
-        float cos_a = n_cos(a * 0.5f);
+        //float sin_a = n_sin(a * 0.5f);
+        //float cos_a = n_cos(a * 0.5f);
+		float sin_a, cos_a;
+ 		n_sincos(a * 0.5f, sin_a, cos_a);
         x = v.x * sin_a;
         y = v.y * sin_a;
         z = v.z * sin_a;
@@ -209,38 +211,29 @@ public:
     }
 
     void set_rotate_x(float a) {
-        float sin_a = n_sin(a * 0.5f);
-        float cos_a = n_cos(a * 0.5f);
-        x = sin_a;
-        y = 0.0f;
-        z = 0.0f;
-        w = cos_a;
+        //float sin_a = n_sin(a * 0.5f);
+        //float cos_a = n_cos(a * 0.5f);
+        //x = sin_a;
+        //y = 0.0f;
+        //z = 0.0f;
+        //w = cos_a;
+		n_sincos(a * 0.5f, x, w);
     }
 
     void set_rotate_y(float a) {
-        float sin_a = n_sin(a * 0.5f);
-        float cos_a = n_cos(a * 0.5f);
-        x = 0.0f;
-        y = sin_a;
-        z = 0.0f;
-        w = cos_a;
+		n_sincos(a * 0.5f, y, w);
     }
 
     void set_rotate_z(float a) {
-        float sin_a = n_sin(a * 0.5f);
-        float cos_a = n_cos(a * 0.5f);
-        x = 0.0f;
-        y = 0.0f;
-        z = sin_a;
-        w = cos_a;
+		n_sincos(a * 0.5f, z, w);
     }
 
+	//!!!can avoid calculating parts for 0 angles!
     void set_rotate_xyz(float ax, float ay, float az) {
-        quaternion qx, qy, qz;
-        qx.set_rotate_x(ax);
+        quaternion qy, qz;
+        set_rotate_x(ax);
         qy.set_rotate_y(ay);
         qz.set_rotate_z(az);
-        *this = qx;
         *this *= qy;
         *this *= qz;
     }
