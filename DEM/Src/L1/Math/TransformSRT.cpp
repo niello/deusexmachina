@@ -62,20 +62,16 @@ bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 {
 	Translation = Tfm.pos_component();
 
-	//!!!TO static V3 fields!
-	vector3 VX(1.f, 0.f, 0.f);
-	vector3 VY(0.f, 1.f, 0.f);
-	vector3 VZ(0.f, 0.f, 1.f);
-	static vector3* pCanonicalBasis[3] = { &VX, &VY, &VZ };
-
-	vector3* pBasis[3];
-	pBasis[0] = &Tfm.x_component();
-	pBasis[1] = &Tfm.y_component();
-	pBasis[2] = &Tfm.z_component();
+	static const vector3* pCanonicalBasis[3] = { &vector3::AxisX, &vector3::AxisY, &vector3::AxisZ };
 
 	matrix44 Tmp(Tfm);
 	Tmp.pos_component().set(0.f, 0.f, 0.f);
 	Tmp.m[3][3] = 1.f;
+
+	vector3* pBasis[3];
+	pBasis[0] = &Tmp.x_component();
+	pBasis[1] = &Tmp.y_component();
+	pBasis[2] = &Tmp.z_component();
 
 	float* pScales = (float*)&Scale;
 
@@ -88,12 +84,12 @@ bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 
 	const float DECOMPOSE_EPSILON = 0.0001f;
 
-	if (pScales[a] < DECOMPOSE_EPSILON) pBasis[a] = pCanonicalBasis[a];
+	if (pScales[a] < DECOMPOSE_EPSILON) *pBasis[a] = *pCanonicalBasis[a];
 	else pBasis[a]->norm();
 
 	if (pScales[b] < DECOMPOSE_EPSILON)
 	{
-		FLOAT BasisAAbs[3];
+		float BasisAAbs[3];
 		BasisAAbs[0] = n_fabs(pBasis[a]->x);
 		BasisAAbs[1] = n_fabs(pBasis[a]->y);
 		BasisAAbs[2] = n_fabs(pBasis[a]->z);
@@ -117,11 +113,11 @@ bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 	if (Det < 0.0f)
 	{
 		pScales[a] = -pScales[a];
-		(*pBasis[a]) *= -1;
+		(*pBasis[a]) *= -1.f;
 		Det = -Det;
 	}
 
-	Det -= 1.0f;
+	Det -= 1.f;
 	Det *= Det;
 
 	if (Det > DECOMPOSE_EPSILON) FAIL; // Non-SRT matrix encountered

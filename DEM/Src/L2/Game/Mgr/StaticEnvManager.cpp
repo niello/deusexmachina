@@ -4,6 +4,7 @@
 #include <Physics/Event/SetTransform.h>
 #include <Gfx/GfxServer.h>
 #include <Gfx/ShapeEntity.h>
+#include <Scene/SceneServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Game/Mgr/EntityManager.h>
@@ -16,6 +17,13 @@ namespace Attr
 	DeclareAttr(Graphics);
 	DeclareAttr(Transform);
 	DeclareAttr(AnimPath);
+	DeclareAttr(ScenePath);
+	DeclareAttr(SceneFile);
+}
+
+namespace Scene
+{
+	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
 }
 
 namespace Game
@@ -110,6 +118,32 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 		}
 	}
 
+	nString NodePath = Table->Get<nString>(Attr::ScenePath, RowIdx);
+	const nString& NodeRsrc = Table->Get<nString>(Attr::SceneFile, RowIdx);
+
+	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
+		NodePath = Table->Get<CStrID>(Attr::GUID, RowIdx).CStr();
+	
+	if (NodePath.IsValid())
+	{
+		if (!pObj)
+		{
+			CStrID UID = Table->Get<CStrID>(Attr::GUID, RowIdx);
+			EnvObjects.Add(UID, CEnvObject()); //!!!unnecessary copying!
+			pObj = &EnvObjects[UID];
+		}
+
+		//???optimize duplicate search?
+		pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), false);
+		pObj->ExistingNode = pObj->Node.isvalid();
+		if (!pObj->ExistingNode) pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), true);
+		n_assert(pObj->Node.isvalid());
+
+		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", pObj->Node));
+
+		if (!pObj->ExistingNode) pObj->Node->SetLocalTransform(Table->Get<matrix44>(Attr::Transform, RowIdx)); //???set local? or set global & then calc local?
+	}
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -160,6 +194,7 @@ void CStaticEnvManager::SetEnvObjectTransform(CStrID ID, const matrix44& Tfm)
 			Obj.Collision[i]->SetTransform(Obj.CollLocalTfm[i] * Tfm);
 		for (int i = 0; i < Obj.Collision.Size(); i++)
 			Obj.Gfx[i]->SetTransform(Obj.GfxLocalTfm[i] * Tfm);
+		//if (Obj.Node.isvalid()) Obj.Node->SetLocalTransform(Tfm); //???!!!setglobal!
 	}
 	else
 	{
@@ -183,6 +218,7 @@ void CStaticEnvManager::DeleteEnvObject(CStrID ID)
 			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
 		for (int j = 0; j < Obj.Collision.Size(); j++)
 			GfxSrv->GetLevel()->RemoveEntity(Obj.Gfx[j]);
+		if (Obj.Node.isvalid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 		EnvObjects.EraseAt(Idx);
 	}
 	else
@@ -202,6 +238,7 @@ void CStaticEnvManager::ClearStaticEnv()
 			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
 		for (int j = 0; j < Obj.Collision.Size(); j++)
 			GfxSrv->GetLevel()->RemoveEntity(Obj.Gfx[j]);
+		if (Obj.Node.isvalid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 	}
 	EnvObjects.Clear();
 }
