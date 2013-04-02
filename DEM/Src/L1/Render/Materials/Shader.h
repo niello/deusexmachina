@@ -32,7 +32,7 @@ public:
 
 protected:
 
-	ID3DXEffect*					pEffect;
+	ID3DXEffect*				pEffect;
 
 	//nDictionary<CStrID, HTech>	NameToTech;
 	nDictionary<DWORD, HTech>	FlagsToTech;

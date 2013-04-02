@@ -371,7 +371,7 @@ void CModelRenderer::Render()
 			}
 
 			hTech = hNewTech;
-			n_assert_dbg(pMaterial->GetShader()->SetTech(hTech));
+			n_verify_dbg(pMaterial->GetShader()->SetTech(hTech));
 			NeedToApplyStaticVars = true;
 		}
 
