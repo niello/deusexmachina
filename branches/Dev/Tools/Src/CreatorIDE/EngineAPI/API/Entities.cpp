@@ -1,5 +1,6 @@
 #include <Game/Mgr/EntityManager.h>
 #include <Game/Mgr/EnvQueryManager.h>
+#include <Physics/Event/SetTransform.h>
 #include <Loading/EntityFactory.h>
 #include <App/CIDEApp.h>
 
@@ -274,7 +275,14 @@ API void Entities_SetMatrix44(int AttrID, float Value[16])
 	
 	if (InTemplate) pDS->ForceSet<matrix44>((DB::CAttrID)AttrID, Mtx);
 	else if (CIDEApp->CurrentEntity.isvalid())
-		CIDEApp->CurrentEntity->Set<matrix44>((DB::CAttrID)AttrID, Mtx);
+	{
+		if (((DB::CAttrID)AttrID)->GetName() == CStrID("Transform"))
+		{
+			Event::SetTransform Evt(Mtx);
+			CIDEApp->SelectedEntity->FireEvent(Evt);
+		}
+		else CIDEApp->CurrentEntity->Set<matrix44>((DB::CAttrID)AttrID, Mtx);
+	}
 }
 //---------------------------------------------------------------------
 

@@ -22,6 +22,11 @@ namespace Physics
 	typedef Ptr<class CShape> PShape;
 }
 
+namespace Scene
+{
+	typedef Ptr<class CSceneNode> PSceneNode;
+}
+
 namespace DB
 {
 	typedef Ptr<class CValueTable> PValueTable;
@@ -48,6 +53,8 @@ private:
 		nArray<Physics::PShape>			Collision;
 		nArray<matrix44>				GfxLocalTfm;
 		nArray<matrix44>				CollLocalTfm;
+		Scene::PSceneNode				Node;
+		bool							ExistingNode;
 	};
 
 	nDictionary<CStrID, CEnvObject>	EnvObjects;

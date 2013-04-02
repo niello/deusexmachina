@@ -52,13 +52,13 @@ void CPropSceneNode::Activate()
 	{
 		//???optimize duplicate search?
 		Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), false);
-		bool NodeExists = Node.isvalid();
-		if (!NodeExists) Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), true);
+		ExistingNode = Node.isvalid();
+		if (!ExistingNode) Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), true);
 		n_assert(Node.isvalid());
 
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
 
-		if (NodeExists)
+		if (ExistingNode)
 			GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());
 		else Node->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform)); //???set local? or set global & then calc local?
 	}
@@ -67,7 +67,11 @@ void CPropSceneNode::Activate()
 
 void CPropSceneNode::Deactivate()
 {
-	Node = NULL;
+	if (Node.isvalid() && !ExistingNode)
+	{
+		Node->RemoveFromParent();
+		Node = NULL;
+	}
 	//CPropTransformable::Deactivate();
 	CProperty::Deactivate();
 }

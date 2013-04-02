@@ -33,7 +33,8 @@ class CPropSceneNode: public Game::CProperty //CPropTransformable
 
 protected:
 
-	Scene::PSceneNode Node;
+	Scene::PSceneNode	Node;
+	bool				ExistingNode;
 
 public:
 
