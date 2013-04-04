@@ -27,7 +27,6 @@ CCharEntity::CCharEntity():
 	Hover(0.2f),
 	DesiredAngularVel(0.f),
 	MaxHorizAccel(30.f),
-	pNCharacter(NULL),
 	GroundMtl(InvalidMaterial)
 {
 }
@@ -83,7 +82,7 @@ void CCharEntity::CreateRagdollComposite()
 		RagdollComposite = (Physics::CRagdoll*)PhysicsSrv->LoadCompositeFromPRM(CompositeName);
 		n_assert(RagdollComposite->IsA(CRagdoll::RTTI));
 		RagdollComposite->SetTransform(Transform);
-		RagdollComposite->SetCharacter(pNCharacter);
+		//RagdollComposite->SetCharacter(pNCharacter);
 		RagdollComposite->Bind();
 	}
 }
@@ -116,7 +115,7 @@ void CCharEntity::Deactivate()
 	DefaultComposite = NULL;
 	RagdollComposite = NULL;
 	pRagdollImpulse = NULL;
-	SetCharacter(NULL);
+	//SetCharacter(NULL);
 }
 //---------------------------------------------------------------------
 
@@ -223,7 +222,7 @@ void CCharEntity::OnStepBefore()
 
 void CCharEntity::ActivateRagdoll()
 {
-	n_assert(pNCharacter);
+//	n_assert(pNCharacter);
 	n_assert(!IsRagdollActive());
 
 	//!!!many unnecessary matrix copyings!

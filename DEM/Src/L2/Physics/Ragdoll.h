@@ -4,7 +4,6 @@
 
 #include "Composite.h"
 #include <Physics/Joints/JointAxis.h>
-#include <character/ncharacter2.h>
 
 // A specialized physics composite, which binds physics joints contained
 // in the composite to the character joints of a Nebula2 character.
@@ -35,12 +34,11 @@ private:
 	void FixJointStops(CJointAxis& jointAxis, const vector3& Anchor, const vector3& Body1Pos,
 					   const vector3& Body2Pos, float BindAngle, const CJointAxis& BindJointAxis);
 
-	nCharacter2* pNCharacter;
 	nArray<CJointInfo> BindPoseInfo;
 
 public:
 
-	CRagdoll(): pNCharacter(NULL), BindPoseInfo(24, 16) {}
+	CRagdoll(): BindPoseInfo(24, 16) {}
 	virtual ~CRagdoll();
 
 	virtual void	Attach(dWorldID WorldID, dSpaceID DynamicSpaceID, dSpaceID StaticSpaceID);
@@ -48,21 +46,9 @@ public:
 	void			Bind();
 	void			WriteJoints();
 	void			ReadJoints();
-
-	void			SetCharacter(nCharacter2* pChr);
-	nCharacter2*	GetCharacter() const { return pNCharacter; }
 };
-//---------------------------------------------------------------------
 
 RegisterFactory(CRagdoll);
-
-inline void CRagdoll::SetCharacter(nCharacter2* pChr)
-{
-	if (pNCharacter) pNCharacter->Release();
-	pNCharacter = pChr;
-	if (pNCharacter) pNCharacter->AddRef();
-}
-//---------------------------------------------------------------------
 
 }
 

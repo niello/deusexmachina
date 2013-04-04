@@ -1105,22 +1105,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Gfx\CharAnimEventHandler.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\CharAnimEventHandler.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\CharEntity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\CharEntity.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Gfx\Entity.cpp"
 				>
 			</File>

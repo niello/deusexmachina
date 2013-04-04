@@ -1,7 +1,7 @@
 #include "FocusManager.h"
 
 #include <Input/Prop/PropInput.h>
-#include <Camera/Prop/PropVideoCamera.h>
+#include <Camera/Prop/PropCamera.h>
 #include <Game/Mgr/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Input/InputServer.h>

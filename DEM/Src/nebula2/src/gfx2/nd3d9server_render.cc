@@ -262,9 +262,6 @@ nD3D9Server::BeginFrame()
             return false;
         }
 
-        // update mouse cursor image if necessary
-        this->UpdateCursor();
-
         // update shared shader parameters
         this->UpdatePerFrameSharedShaderParams();
 

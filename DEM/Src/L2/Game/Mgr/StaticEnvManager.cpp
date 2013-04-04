@@ -16,7 +16,6 @@ namespace Attr
 	DeclareAttr(Physics);
 	DeclareAttr(Graphics);
 	DeclareAttr(Transform);
-	DeclareAttr(AnimPath);
 	DeclareAttr(ScenePath);
 	DeclareAttr(SceneFile);
 }
@@ -49,9 +48,6 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 {
 	n_assert(Table.isvalid());
 	n_assert(RowIdx != INVALID_INDEX);
-
-	// If the AnimPath attribute exists, create an animated entity
-	if (Table->Get<nString>(Attr::AnimPath, RowIdx).IsValid()) FAIL;
 
 	CEnvObject* pObj = NULL;
 	const matrix44& EntityTfm = Table->Get<matrix44>(Attr::Transform, RowIdx);
@@ -168,7 +164,6 @@ bool CStaticEnvManager::IsEntityStatic(CEntity& Entity) const
 {
 	//!!!unnecessary data copying!
 	nString Value;
-	if (Entity.Get<nString>(Attr::AnimPath, Value) && Value.IsValid()) FAIL;
 
 	if (Entity.Get<nString>(Attr::Physics, Value) && Value.IsValid())
 	{
