@@ -4,7 +4,6 @@
 #include <Gfx/GfxServer.h>
 #include <Gfx/CameraEntity.h>
 #include <Audio/AudioServer.h>
-#include <Physics/Prop/PropPathAnim.h>
 #include <DB/DBServer.h>
 #include <Loading/EntityFactory.h>
 

@@ -848,6 +848,27 @@ int main(int argc, const char** argv)
 	}
 
 	n_printf("\n-----------------------------------------------------\n");
+	
+	for (int i = AnimDescFiles.Size() - 1; i >= 0; i--)
+	{
+		nString& FileName = AnimDescFiles[i];
+		n_printf("\nParsing animation descriptor '%s'...\n", FileName.Get());
+
+		nString FullName = "src:Game/Anim/" + FileName + ".hrd";
+		PParams Desc = DataSrv->LoadHRD(FullName, false);
+
+		if (!Desc.isvalid())
+		{
+			n_printf("WARNING: animation descriptor not found, builder deleted it from the list.\nBuild may be invalid!\n");
+			AnimDescFiles.Erase(i);
+			continue;
+		}
+
+		for (int i = 0; i < Desc->GetCount(); ++i)
+			AddRsrcIfUnique(Desc->Get(i).GetValue<CStrID>().CStr(), ResourceFiles, "Animation");
+	}
+
+	n_printf("\n-----------------------------------------------------\n");
 
 	//???!!!parse descs to include parent descs? or load all /Game/ data?
 

@@ -16,7 +16,6 @@
 #include "mathlib/matrix.h"
 #include "gfx2/ntexture2.h"
 #include "mathlib/rectangle.h"
-#include "gfx2/nmousecursor.h"
 #include "Render/DisplayMode.h"
 #include "gfx2/nlight.h"
 #include "util/nfixedarray.h"
@@ -296,15 +295,6 @@ public:
     /// draw the text buffer (OLD STYLE)
 	virtual void DrawTextBuffer() {}
 
-    /// set mouse cursor image and hotspot
-	virtual void SetMouseCursor(const nMouseCursor& cursor) { curMouseCursor = cursor; cursorDirty = true; }
-    /// get mouse cursor image
-	virtual const nMouseCursor& GetMouseCursor() const { return curMouseCursor; }
-    /// show/hide the mouse cursor
-	virtual void SetCursorVisibility(CursorVisibility type) { cursorVisibility = type; cursorDirty = true; }
-    /// get mouse cursor display status
-	virtual CursorVisibility GetCursorVisibility() const { return cursorVisibility; }
-
     /// enter dialog box mode (display mode must have DialogBoxMode enabled!)
     virtual void EnterDialogBoxMode();
     /// leave dialog box mode
@@ -380,7 +370,6 @@ protected:
     nRef<nMesh2>                    refVbMesh;
     nRef<nMesh2>                    refIbMesh;
     nRef<nShader2>                  refShader;
-    nMouseCursor curMouseCursor;
     int vertexRangeFirst;
     int vertexRangeNum;
     int indexRangeFirst;
@@ -390,7 +379,6 @@ protected:
     matrix44 transform[NumTransformTypes];
     int transformTopOfStack[NumTransformTypes];
     matrix44 transformStack[NumTransformTypes][MaxTransformStackDepth];
-    bool cursorDirty;
     bool inDialogBoxMode;
 
     nArray<nLight> lightArray;
@@ -413,9 +401,6 @@ protected:
     nProfiler profGUIGetTextExtent;
     nProfiler profGUIDrawText;
 #endif
-public:
-    /// note: this stuff is public because WinProcs may need to access it
-    CursorVisibility cursorVisibility;
 };
 
 //------------------------------------------------------------------------------

@@ -202,8 +202,6 @@ private:
     int GetD3DPrimTypeAndNumIndexed(PrimitiveType primType, D3DPRIMITIVETYPE& d3dPrimType) const;
     /// get d3d primitive type and num primitives
     int GetD3DPrimTypeAndNum(PrimitiveType primType, D3DPRIMITIVETYPE& d3dPrimType) const;
-    /// update the mouse cursor image and visibility
-    void UpdateCursor();
    /// update shared shader parameters per frame
     void UpdatePerFrameSharedShaderParams();
     /// update shared shader parameters per scene
@@ -285,7 +283,6 @@ private:
     IDirect3DDevice9* pD3D9Device;               ///< pointer to device object
     IDirect3D9* pD3D9;                           ///< pointer to D3D9 object
 
-	DECLARE_EVENT_HANDLER(OnDisplaySetCursor, OnSetCursor);
 	DECLARE_EVENT_HANDLER(OnDisplayPaint, OnPaint);
 	DECLARE_EVENT_HANDLER(OnDisplayToggleFullscreen, OnToggleFullscreenWindowed);
 	DECLARE_EVENT_HANDLER(DisplayInput, OnDisplayInput);

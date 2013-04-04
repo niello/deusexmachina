@@ -21,8 +21,6 @@ nGfxServer2::nGfxServer2():
 	indexRangeFirst(0),
 	indexRangeNum(0),
 	featureSetOverride(InvalidFeatureSet),
-	cursorVisibility(System),
-	cursorDirty(true),
 	inDialogBoxMode(false),
 	gamma(1.0f),
 	brightness(0.5f),

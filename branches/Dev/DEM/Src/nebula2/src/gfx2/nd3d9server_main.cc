@@ -78,7 +78,6 @@ bool nD3D9Server::OpenDisplay()
 {
 	n_assert(!displayOpen);
 
-	SUBSCRIBE_PEVENT(OnDisplaySetCursor, nD3D9Server, OnSetCursor);
 	SUBSCRIBE_PEVENT(OnDisplayPaint, nD3D9Server, OnPaint);
 	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, nD3D9Server, OnToggleFullscreenWindowed);
 	SUBSCRIBE_NEVENT(DisplayInput, nD3D9Server, OnDisplayInput);
@@ -96,7 +95,6 @@ void nD3D9Server::CloseDisplay()
 {
 	n_assert(displayOpen);
 
-	UNSUBSCRIBE_EVENT(OnDisplaySetCursor);
 	UNSUBSCRIBE_EVENT(OnDisplayPaint);
 	UNSUBSCRIBE_EVENT(OnDisplayToggleFullscreen);
 	UNSUBSCRIBE_EVENT(DisplayInput);
@@ -147,32 +145,6 @@ void nD3D9Server::LeaveDialogBoxMode()
 		InitDeviceState();
 		OnDeviceInit(false);
 	}
-}
-//---------------------------------------------------------------------
-
-bool nD3D9Server::OnSetCursor(const Events::CEventBase& Event)
-{
-	if (!pD3D9Device) FAIL;
-
-	switch (cursorVisibility)
-	{
-		case nGfxServer2::None:
-		case nGfxServer2::Gui:
-			SetCursor(NULL);
-			pD3D9Device->ShowCursor(FALSE);
-			OK;
-
-		case nGfxServer2::System:
-			pD3D9Device->ShowCursor(FALSE);
-			FAIL;
-
-		case nGfxServer2::Custom:
-			SetCursor(NULL);
-			pD3D9Device->ShowCursor(TRUE);
-			OK;
-	}
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 

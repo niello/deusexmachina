@@ -7,7 +7,6 @@
 #include <Physics/FilterSet.h>
 #include <Physics/AreaImpulse.h>
 #include <Data/Flags.h>
-#include <character/ncharacter2.h>
 
 // Character physics controller. Supports default state in which actor is a capsule
 // aligned along Up vector and hovered by a spring force, and ragdoll state.
@@ -31,7 +30,6 @@ protected:
 	float			DesiredAngularVel;
 	PComposite		DefaultComposite;
 	PRagdoll		RagdollComposite;
-	nCharacter2*	pNCharacter;
 	CMaterialType	GroundMtl;
 	PAreaImpulse	pRagdollImpulse;
 	float			MaxHorizAccel;
@@ -65,29 +63,14 @@ public:
 	const vector3&		GetDesiredLinearVelocity() const { return DesiredLinearVel; }
 	void				SetDesiredAngularVelocity(float Velocity) { DesiredAngularVel = Velocity; }
 	float				GetDesiredAngularVelocity() const { return DesiredAngularVel; }
-	void				SetCharacter(nCharacter2* pNewChr);
-	nCharacter2*		GetCharacter() const { return pNCharacter; }
 	void				SetRagdollImpulse(CAreaImpulse* pImpulse) { pRagdollImpulse = pImpulse; }
 	bool				IsRagdollActive() const { return Flags.Is(RAGDOLL_ACTIVE); }
 	CMaterialType		GetGroundMaterial() const { return GroundMtl; }
 };
-//---------------------------------------------------------------------
 
 RegisterFactory(CCharEntity);
 
 typedef Ptr<CCharEntity> PCharEntity;
-
-//!!!revisit!
-inline void CCharEntity::SetCharacter(nCharacter2* pNewChr)
-{
-	if (pNCharacter != pNewChr)
-	{
-		if (pNCharacter) pNCharacter->Release();
-		pNCharacter = pNewChr;
-		if (pNCharacter) pNCharacter->AddRef();
-	}
-}
-//---------------------------------------------------------------------
 
 }
 

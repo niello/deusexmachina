@@ -62,7 +62,6 @@ CUIServer::CUIServer()
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
 	//CEGUI::ScriptModule::setDefaultResourceGroup("lua_scripts");
-	nGfxServer2::Instance()->SetCursorVisibility(nGfxServer2::Custom);
 
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
 	// as layout root with the MousePassThroughEnabled property set to true.

@@ -1,7 +1,7 @@
 #include "PhysicsGfxUtil.h"
 
 #include <Gfx/GfxServer.h>
-#include <Gfx/CharEntity.h>
+#include <Gfx/ShapeEntity.h>
 #include <Physics/Ragdoll.h>
 #include <scene/ntransformnode.h>
 
@@ -11,10 +11,7 @@ namespace Graphics
 void CPhysicsGfxUtil::CreateGraphics(Physics::CEntity* pPhysEntity, CGfxShapeArray& OutEntities)
 {
 	n_assert(pPhysEntity);
-	if (pPhysEntity->GetComposite()->IsA(Physics::CRagdoll::RTTI))
-		OutEntities.Append(Graphics::CCharEntity::Create());
-	else
-		CreateCompositeGraphics(pPhysEntity->GetComposite(), OutEntities);
+	CreateCompositeGraphics(pPhysEntity->GetComposite(), OutEntities);
 }
 //---------------------------------------------------------------------
 
@@ -154,16 +151,16 @@ bool CPhysicsGfxUtil::SetupRagdollGraphics(const nString& RsrcName,
 										  Physics::CEntity* pPhysEnt,
 										  Graphics::CCharEntity* pGfxEnt)
 {
-	n_assert(pPhysEnt && pPhysEnt->GetComposite() && pPhysEnt->GetComposite()->IsA(Physics::CRagdoll::RTTI));
-	n_assert(pGfxEnt && pGfxEnt->IsA(Graphics::CCharEntity::RTTI));
+	//n_assert(pPhysEnt && pPhysEnt->GetComposite() && pPhysEnt->GetComposite()->IsA(Physics::CRagdoll::RTTI));
+	//n_assert(pGfxEnt && pGfxEnt->IsA(Graphics::CCharEntity::RTTI));
 
-	pGfxEnt->SetTransform(pPhysEnt->GetTransform());
-	pGfxEnt->SetResourceName(RsrcName);
-	GfxSrv->GetLevel()->AttachEntity(pGfxEnt);
+	//pGfxEnt->SetTransform(pPhysEnt->GetTransform());
+	//pGfxEnt->SetResourceName(RsrcName);
+	//GfxSrv->GetLevel()->AttachEntity(pGfxEnt);
 
-	Physics::CRagdoll* pRagdoll = (Physics::CRagdoll*)pPhysEnt->GetComposite();
-	pRagdoll->SetCharacter(pGfxEnt->GetCharacterPointer());
-	pRagdoll->Bind();
+	//Physics::CRagdoll* pRagdoll = (Physics::CRagdoll*)pPhysEnt->GetComposite();
+	//pRagdoll->SetCharacter(pGfxEnt->GetCharacterPointer());
+	//pRagdoll->Bind();
 
 	OK;
 }
@@ -171,13 +168,13 @@ bool CPhysicsGfxUtil::SetupRagdollGraphics(const nString& RsrcName,
 
 bool CPhysicsGfxUtil::TransferRagdollTransforms(Physics::CEntity* pPhysEnt, Graphics::CCharEntity* pGfxEnt)
 {
-	n_assert(pPhysEnt && pPhysEnt->GetComposite() && pPhysEnt->GetComposite()->IsA(Physics::CRagdoll::RTTI));
-	n_assert(pGfxEnt && pGfxEnt->IsA(Graphics::CCharEntity::RTTI));
+	//n_assert(pPhysEnt && pPhysEnt->GetComposite() && pPhysEnt->GetComposite()->IsA(Physics::CRagdoll::RTTI));
+	//n_assert(pGfxEnt && pGfxEnt->IsA(Graphics::CCharEntity::RTTI));
 
-	pGfxEnt->SetTransform(pPhysEnt->GetTransform());
+	//pGfxEnt->SetTransform(pPhysEnt->GetTransform());
 
-	Physics::CRagdoll* pRagdoll = (Physics::CRagdoll*)pPhysEnt->GetComposite();
-	pRagdoll->WriteJoints();
+	//Physics::CRagdoll* pRagdoll = (Physics::CRagdoll*)pPhysEnt->GetComposite();
+	//pRagdoll->WriteJoints();
 
 	OK;
 }

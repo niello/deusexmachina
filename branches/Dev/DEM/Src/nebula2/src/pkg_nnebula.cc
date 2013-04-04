@@ -14,8 +14,6 @@ extern "C" void nnebula();
 
 extern bool n_init_nresource (nClass *, nKernelServer *);
 extern void *n_new_nresource (void);
-extern bool n_init_nanimation (nClass *, nKernelServer *);
-extern void *n_new_nanimation (void);
 extern bool n_init_nmesh2 (nClass *, nKernelServer *);
 extern void *n_new_nmesh2 (void);
 extern bool n_init_nshader2 (nClass *, nKernelServer *);
@@ -26,8 +24,6 @@ extern bool n_init_nmemoryanimation (nClass *, nKernelServer *);
 extern void *n_new_nmemoryanimation (void);
 extern bool n_init_nscenenode (nClass *, nKernelServer *);
 extern void *n_new_nscenenode (void);
-extern bool n_init_nskinanimator (nClass *, nKernelServer *);
-extern void *n_new_nskinanimator (void);
 extern bool n_init_ntransformnode (nClass *, nKernelServer *);
 extern void *n_new_ntransformnode (void);
 extern bool n_init_nskynode (nClass *, nKernelServer *);
@@ -40,8 +36,6 @@ extern bool n_init_nskystate (nClass *, nKernelServer *);
 extern void *n_new_nskystate (void);
 extern bool n_init_nshapenode (nClass *, nKernelServer *);
 extern void *n_new_nshapenode (void);
-extern bool n_init_nskinshapenode (nClass *, nKernelServer *);
-extern void *n_new_nskinshapenode (void);
 extern bool n_init_nchunklodmesh (nClass *, nKernelServer *);
 extern void *n_new_nchunklodmesh (void);
 extern bool n_init_nchunklodtree (nClass *, nKernelServer *);
@@ -57,9 +51,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nscenenode",
                                  n_init_nscenenode,
                                  n_new_nscenenode);
-    nKernelServer::Instance()->AddModule("nanimation",
-                                 n_init_nanimation,
-                                 n_new_nanimation);
     nKernelServer::Instance()->AddModule("nmesh2",
                                  n_init_nmesh2,
                                  n_new_nmesh2);
@@ -72,12 +63,6 @@ void nnebula()
     nKernelServer::Instance()->AddModule("ntransformnode",
                                  n_init_ntransformnode,
                                  n_new_ntransformnode);
-    nKernelServer::Instance()->AddModule("nmemoryanimation",
-                                 n_init_nmemoryanimation,
-                                 n_new_nmemoryanimation);
-    nKernelServer::Instance()->AddModule("nskinanimator",
-                                 n_init_nskinanimator,
-                                 n_new_nskinanimator);
     nKernelServer::Instance()->AddModule("nskynode",
                                  n_init_nskynode,
                                  n_new_nskynode);
@@ -93,10 +78,7 @@ void nnebula()
     nKernelServer::Instance()->AddModule("nshapenode",
                                  n_init_nshapenode,
                                  n_new_nshapenode);
-    nKernelServer::Instance()->AddModule("nskinshapenode",
-                                 n_init_nskinshapenode,
-                                 n_new_nskinshapenode);
-    nKernelServer::Instance()->AddModule("nchunklodmesh",
+   nKernelServer::Instance()->AddModule("nchunklodmesh",
                                  n_init_nchunklodmesh,
                                  n_new_nchunklodmesh);
     nKernelServer::Instance()->AddModule("nchunklodtree",

@@ -535,67 +535,6 @@ nD3D9Server::QueryStatistics()
 
 //------------------------------------------------------------------------------
 /**
-    Updates the mouse cursor image and visibility. Should be called
-    once per frame.
-
-    11-Jul-05   floh    fixed cursor visibility bug
-*/
-void
-nD3D9Server::UpdateCursor()
-{
-    if (this->cursorDirty)
-    {
-        this->cursorDirty = false;
-
-        nTexture2* tex = this->curMouseCursor.GetTexture();
-        if (tex)
-        {
-            if (!tex->IsLoaded())
-            {
-                bool mouseCursorLoaded = tex->Load();
-                n_assert(mouseCursorLoaded);
-                this->cursorDirty = true;
-            }
-
-            HRESULT hr;
-            IDirect3DTexture9* d3d9Tex = ((nD3D9Texture*)tex)->GetTexture2D();
-            n_assert(d3d9Tex);
-
-            IDirect3DSurface9* surfPtr = 0;
-            hr = d3d9Tex->GetSurfaceLevel(0, &surfPtr);
-            n_dxtrace(hr, "In nD3D9Server::UpdateCursor(): GetSurfaceLevel() failed!");
-            n_assert(surfPtr);
-
-            int hotspotX = this->curMouseCursor.GetHotspotX();
-            int hotspotY = this->curMouseCursor.GetHotspotY();
-            hr = this->pD3D9Device->SetCursorProperties(hotspotX, hotspotY, surfPtr);
-            n_dxtrace(hr, "In nD3D9Server::UpdateCursor(): SetCursorProperties() failed!");
-            surfPtr->Release();
-        }
-
-        switch (this->cursorVisibility)
-        {
-            case nGfxServer2::None:
-            case nGfxServer2::Gui:
-                SetCursor(NULL);
-                this->pD3D9Device->ShowCursor(FALSE);
-                break;
-
-            case nGfxServer2::System:
-                this->pD3D9Device->ShowCursor(FALSE);
-                break;
-
-            case nGfxServer2::Custom:
-                SetCursor(NULL);
-                this->pD3D9Device->ShowCursor(TRUE);
-                break;
-        }
-    }
-    // NOTE: cursor visibility is handled inside WinProc!
-}
-
-//------------------------------------------------------------------------------
-/**
     This method should return the number of currently available stencil bits
     (override in subclass).
 */
@@ -779,10 +718,6 @@ nD3D9Server::OnDeviceInit(bool startup)
     // inform line renderer
     hr = this->d3dxLine->OnResetDevice();
     n_dxtrace(hr, "OnResetDevice() on d3dxLine failed");
-
-    // update mouse cursor
-    this->cursorDirty = true;
-    this->UpdateCursor();
 
     // create the shape shader
     this->refShapeShader = (nD3D9Shader*)this->NewShader("shape");

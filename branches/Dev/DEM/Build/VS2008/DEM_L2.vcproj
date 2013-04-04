@@ -313,14 +313,6 @@
 				Name="Prop"
 				>
 				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorAnimation.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorAnimation.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\L2\AI\Prop\PropActorBrain.cpp"
 					>
 				</File>
@@ -1040,22 +1032,6 @@
 					RelativePath="..\..\Src\L2\Camera\Prop\PropSimpleCamera.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropVideoCamera.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropVideoCamera.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropVideoCamera2.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropVideoCamera2.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Event"
@@ -1090,34 +1066,6 @@
 				>
 			</File>
 			<Filter
-				Name="Event"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Event\GfxAddAttachment.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Event\GfxAddAttachment.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Event\GfxRemoveAttachment.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Event\GfxRemoveAttachment.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Event\GfxSetAnimation.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Event\GfxSetAnimation.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="Prop"
 				>
 				<File
@@ -1126,14 +1074,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\Gfx\Prop\PropAbstractGraphics.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropCharGraphics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropCharGraphics.h"
 					>
 				</File>
 				<File
@@ -1370,14 +1310,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\Physics\Prop\PropAbstractPhysics.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropPathAnim.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropPathAnim.h"
 					>
 				</File>
 				<File

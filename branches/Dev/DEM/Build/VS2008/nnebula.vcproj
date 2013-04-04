@@ -206,125 +206,8 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Gfx &amp; Anim"
+			Name="Gfx"
 			>
-			<Filter
-				Name="anim2"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<Filter
-					Name="nanimation"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimation.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\anim2\nanimation_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nanimation;N_NEW=n_new_nanimation;N_INITCMDS=n_initcmds_nanimation"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nanimation;N_NEW=n_new_nanimation;N_INITCMDS=n_initcmds_nanimation"
-							/>
-						</FileConfiguration>
-					</File>
-				</Filter>
-				<Filter
-					Name="nanimeventhandler"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimevent.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\anim2\nanimeventhandler.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nanimeventhandler;N_NEW=n_new_nanimeventhandler;N_INITCMDS=n_initcmds_nanimeventhandler"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nanimeventhandler;N_NEW=n_new_nanimeventhandler;N_INITCMDS=n_initcmds_nanimeventhandler"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimeventhandler.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimeventtrack.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nanimstate"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimclip.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimstatearray.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nanimstateinfo.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nmemoryanimation"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\anim2\nmemoryanimation.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\anim2\nmemoryanimation_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmemoryanimation;N_NEW=n_new_nmemoryanimation;N_INITCMDS=n_initcmds_nmemoryanimation"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmemoryanimation;N_NEW=n_new_nmemoryanimation;N_INITCMDS=n_initcmds_nmemoryanimation"
-							/>
-						</FileConfiguration>
-					</File>
-				</Filter>
-			</Filter>
 			<Filter
 				Name="gfx2"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
@@ -404,35 +287,6 @@
 					</File>
 					<File
 						RelativePath="..\..\Src\nebula2\inc\gfx2\nnvx2loader.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nmousecursor"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\nmousecursor.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmousecursor;N_NEW=n_new_nmousecursor;N_INITCMDS=n_initcmds_nmousecursor"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmousecursor;N_NEW=n_new_nmousecursor;N_INITCMDS=n_initcmds_nmousecursor"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nmousecursor.h"
 						>
 					</File>
 				</Filter>
@@ -540,47 +394,6 @@
 						</FileConfiguration>
 					</File>
 				</Filter>
-			</Filter>
-			<Filter
-				Name="character"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\src\character\ncharacter2.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_ncharacter2;N_NEW=n_new_ncharacter2;N_INITCMDS=n_initcmds_ncharacter2"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_ncharacter2;N_NEW=n_new_ncharacter2;N_INITCMDS=n_initcmds_ncharacter2"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\character\ncharacter2.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\character\ncharacter2set.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\character\ncharjoint.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\character\ncharskeleton.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="renderpath"
@@ -1079,30 +892,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nskinshapenode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nskinshapenode_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskinshapenode;N_NEW=n_new_nskinshapenode;N_INITCMDS=n_initcmds_nskinshapenode"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskinshapenode;N_NEW=n_new_nskinshapenode;N_INITCMDS=n_initcmds_nskinshapenode"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\scene\nskynode.h"
 					>
 				</File>
@@ -1171,35 +960,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="N_INIT=n_init_ntransformnode;N_NEW=n_new_ntransformnode;N_INITCMDS=n_initcmds_ntransformnode"
-						/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-			<Filter
-				Name="nskinanimator"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nskinanimator.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nskinanimator_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskinanimator;N_NEW=n_new_nskinanimator;N_INITCMDS=n_initcmds_nskinanimator"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskinanimator;N_NEW=n_new_nskinanimator;N_INITCMDS=n_initcmds_nskinanimator"
 						/>
 					</FileConfiguration>
 				</File>
