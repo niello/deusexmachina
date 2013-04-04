@@ -34,7 +34,7 @@ protected:
 public:
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
-	virtual void	OnAdd();
+	virtual bool	OnAdd();
 	virtual void	OnRemove();
 	virtual void	Update();
 

@@ -42,7 +42,7 @@ public:
 	CSceneNodeAttr(): pNode(NULL), Flags(Active) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader) { FAIL; }
-	virtual void	OnAdd() {}
+	virtual bool	OnAdd() { OK; }
 	virtual void	OnRemove() {}
 	virtual void	Update() = 0;
 

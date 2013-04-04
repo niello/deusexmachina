@@ -65,6 +65,7 @@ protected:
 		matrix44		Frustum;
 	};
 
+	//???sort by distance at the end? or separate sorting mode. may be good. at least for a early Z pass!
 	struct CRecCmp_TechMtlGeom
 	{
 		// Sort tech, then material, then geometry

@@ -3,7 +3,6 @@
 
 #include <Scene/Scene.h> // For owning (pinning) created child nodes, likely to be HACK!
 #include <Scene/SceneNode.h>
-#include <Scene/Model.h> // For resource preloading only, mb HACK
 #include <Data/BinaryReader.h>
 #include <Data/Streams/FileStream.h>
 
@@ -39,20 +38,10 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 		for (ushort j = 0; j < DataBlockCount; ++j)
 			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
 
-		RootNode->AddAttr(*Attr);
-
+		//!!!CModel used PreloadResources, can pass as parameter!
 		// If false, resources will be loaded at first access (first time node attrs are visible or smth)
-		//!!!visibility requires some AABB! 
-		if (PreloadResources)
-		{
-			//!!!HACKY FOR NOW! But mb this is a good way, if NO other attrs have resources
-			// Else here must be virtual function call
-			if (Attr->IsA(CModel::RTTI))
-			{
-				CModel* pMesh = (CModel*)Attr.get_unsafe();
-				if (!pMesh->AreResourcesValid() && !pMesh->LoadResources()) FAIL;
-			}
-		}
+
+		RootNode->AddAttr(*Attr);
 	}
 
 	Reader.Read(Count);

@@ -159,9 +159,13 @@ CSceneNode* CSceneNode::GetChild(LPCSTR Path, bool Create)
 bool CSceneNode::AddAttr(CSceneNodeAttr& Attr)
 {
 	if (Attr.pNode) FAIL;
-	Attrs.Append(&Attr);
 	Attr.pNode = this;
-	Attr.OnAdd();
+	if (!Attr.OnAdd())
+	{
+		Attr.pNode = NULL;
+		FAIL;
+	}
+	Attrs.Append(&Attr);
 	OK;
 }
 //---------------------------------------------------------------------

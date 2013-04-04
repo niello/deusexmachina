@@ -91,6 +91,39 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
+bool CModel::OnAdd()
+{
+	//!!!TMP! write more elegant! Hide LoadSmthFromFMT calls somewhere in Loaders or smth.
+
+	if (Material.isvalid())
+	{
+		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(Material->GetUID().CStr(), Material)) FAIL;
+
+		for (int i = 0; i < ShaderVars.Size(); ++i)
+		{
+			CShaderVar& Var = ShaderVars.ValueAtIndex(i);
+			Var.Bind(*Material->GetShader());
+
+			//!!!non-file textures (forex RTs) will fail to load here! ensure they are
+			// in loaded state or they load themselvef properly!
+			if (Var.Value.IsA<PTexture>())
+			{
+				PTexture Tex = Var.Value.GetValue<PTexture>();
+				if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+			}
+		}
+	}
+
+	//!!!usage & access! //???set in mesh before loading?
+	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Now resources are shared and aren't unloaded
+// If it is necessary to unload resources (decrement refcount), resource IDs must be saved,
+// so pointers can be cleared, but model is able to reload resources from IDs
 void CModel::OnRemove()
 {
 	if (pSPSRecord)
@@ -126,44 +159,6 @@ void CModel::GetBox(bbox3& OutBox) const
 	// If transform of host node changed, update global space AABB (rotate, scale)
 	OutBox = Mesh->GetGroup(MeshGroupIndex).AABB;
 	OutBox.transform(pNode->GetWorldMatrix());
-}
-//---------------------------------------------------------------------
-
-bool CModel::LoadResources()
-{
-	//!!!TMP! write more elegant! Hide LoadSmthFromFMT calls somewhere in Loaders or smth.
-
-	if (Material.isvalid())
-	{
-		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(Material->GetUID().CStr(), Material)) FAIL;
-
-		for (int i = 0; i < ShaderVars.Size(); ++i)
-		{
-			CShaderVar& Var = ShaderVars.ValueAtIndex(i);
-			Var.Bind(*Material->GetShader());
-
-			//!!!non-file textures (forex RTs) will fail to load here! ensure they are
-			// in loaded state or they load themselvef properly!
-			if (Var.Value.IsA<PTexture>())
-			{
-				PTexture Tex = Var.Value.GetValue<PTexture>();
-				if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
-			}
-		}
-	}
-
-	//!!!usage & access! //???set in mesh before loading?
-	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CModel::UnloadResources()
-{
-	// Now resources are shared and aren't unloaded
-	// If it is necessary to unload resources (decrement refcount), resource IDs must be saved,
-	// so pointers can be cleared, but model is able to reload resources from IDs
 }
 //---------------------------------------------------------------------
 

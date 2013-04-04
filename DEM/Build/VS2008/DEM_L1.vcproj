@@ -1380,6 +1380,14 @@
 				RelativePath="..\..\Src\L1\Scene\SPS.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Terrain.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\Terrain.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Math"

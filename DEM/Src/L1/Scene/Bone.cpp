@@ -44,7 +44,7 @@ bool CBone::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CBone::OnAdd()
+bool CBone::OnAdd()
 {
 	// Constructed as identity, no need to set explicitly now
 	//SkinMatrix.ident();
@@ -97,6 +97,8 @@ void CBone::OnAdd()
 					}
 		}
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
