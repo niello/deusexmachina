@@ -27,14 +27,6 @@ class CModel: public CRenderObject
 
 public:
 
-//!!!OLD!
-	bool resourcesValid;
-
-    virtual bool LoadResources();
-    virtual void UnloadResources();
-	bool AreResourcesValid() const { return resourcesValid; }
-//!!!OLD!
-
 	Render::PMesh			Mesh;
 	DWORD					MeshGroupIndex;
 	Render::PMaterial		Material;
@@ -48,9 +40,10 @@ public:
 
 	CSPSRecord*				pSPSRecord;
 
-	CModel(): pSPSRecord(NULL), resourcesValid(false), MeshGroupIndex(0), FeatureFlags(0) {}
+	CModel(): pSPSRecord(NULL), MeshGroupIndex(0), FeatureFlags(0) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool	OnAdd();
 	virtual void	OnRemove();
 	virtual void	Update();
 	void			GetBox(bbox3& OutBox) const;

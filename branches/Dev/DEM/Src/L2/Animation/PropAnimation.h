@@ -31,12 +31,22 @@ class CPropAnimation: public Game::CProperty
 
 private:
 
+	enum ETaskState
+	{
+		Task_Starting,
+		Task_Active,
+		Task_Paused,
+		Task_Stopping
+	};
+
 	struct CAnimTask
 	{
 		CStrID				ClipID;
 		Anim::PMocapClip	Clip;
 
 		nArray<Scene::CAnimController*> Ctlrs;
+
+		ETaskState			State;
 
 		float				Speed;
 		float				FadeInTime;
@@ -46,7 +56,6 @@ private:
 		float				CurrTime;
 
 		bool				Loop;
-		bool				IsPaused;
 	};
 
 	nDictionary<CStrID, Anim::PMocapClip>			Clips;

@@ -26,6 +26,7 @@ protected:
 
 	virtual void EnablePhysics();
 	virtual void DisablePhysics();
+	virtual void SetTransform(const matrix44& NewTF);
 
 public:
 

@@ -1,6 +1,7 @@
 #include "PropAnimation.h"
 
 #include <Game/Entity.h>
+#include <Game/GameServer.h> // For the time
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Bone.h>
@@ -119,19 +120,32 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 	for (int i = 0; i < Tasks.Size(); ++i)
 	{
 		CAnimTask& Task = Tasks[i];
-		if (Task.IsPaused) continue;
 
-		//!!!DBG TMP!
-		Task.CurrTime += 0.01f * Task.Speed;
+		if (Task.State == Task_Starting)
+		{
+			for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+				Task.Ctlrs[j]->Activate(true);
+			Task.State = Task_Active;
+		}
+		else if (Task.State == Task_Active)
+		{
+			Task.CurrTime += (float)GameSrv->GetFrameTime() * Task.Speed;
+		}
 
-		//!!!if not mocap clip, set time directly!
+		//if time is in fade in sector, calc fade in weight
 
-		int KeyIndex;
-		float IpolFactor;
-		Task.Clip->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
+		//if not looping, check fadeout sector or stop
 
-		for (int j = 0; j < Task.Ctlrs.Size(); ++j)
-			((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
+		if (Task.State == Task_Active)
+		{
+			int KeyIndex;
+			float IpolFactor;
+			Task.Clip->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
+
+			//!!!if not mocap clip, set time directly to controllers!
+			for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+				((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
+		}
 	}
 
 	OK;
@@ -172,9 +186,12 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	pTask->CurrTime = Offset;
 	pTask->FadeInTime = FadeInTime;
 	pTask->FadeOutTime = FadeOutTime;
-	pTask->IsPaused = false;
+	pTask->State = Task_Starting;
 	pTask->Loop = Loop;
 	pTask->Speed = Speed;
+
+	//???If task is not looping, clamp fadeout time to fit into the clip length (with speed factor)
+	//see StopAnim
 
 	for (int i = 0; i < Samplers.Size(); ++i)
 	{
@@ -185,18 +202,14 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		//???virtual Clip->CreateController(NodeID/Sampler)?
 		Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
 		Ctlr->SetSampler(&Samplers.ValueAtIndex(i));
-		Ctlr->Activate(true);
-
-		//!!!DBG TMP!
-		Ctlr->SetSamplingParams(0, 0.f);
-
 		pNode->Controller = Ctlr;
-
 		pTask->Ctlrs.Append(Ctlr.get_unsafe());
 
 		//!!!
 		// If still no blend controller, create and setup
 		// Add child controller
+		// Only blend controller allows to tune weight
+		//????or weight to controller?
 	}
 
 	return TaskID;
@@ -205,7 +218,11 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 void CPropAnimation::PauseAnim(DWORD TaskID, bool Pause)
 {
-	// Activate/deactivate all controllers of the task
+	CAnimTask& Task = Tasks[TaskID];
+	if (Pause == (Task.State == Task_Paused)) return;
+	for (int i = 0; i < Task.Ctlrs.Size(); ++i)
+		Task.Ctlrs[i]->Activate(!Pause);
+	Task.State = Pause ? Task_Paused : Task_Active;
 }
 //---------------------------------------------------------------------
 
