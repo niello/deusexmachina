@@ -77,8 +77,9 @@ public:
 	CTexture(CStrID ID, Resources::IResourceManager* pHost);
 	virtual ~CTexture() { if (IsLoaded()) Unload(); }
 
-	//???Create(size, format etc), will setup itself inside to Loaded state?
 	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType);
+	bool			Setup(void* pData, DWORD DataSize);
+	bool			Setup() { State = Resources::Rsrc_Loaded; OK; }
 	virtual void	Unload();
 
 	bool			Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips, EUsage _Usage, ECPUAccess _Access);
@@ -106,8 +107,8 @@ typedef Ptr<CTexture> PTexture;
 
 inline CTexture::CTexture(CStrID ID, Resources::IResourceManager* pHost):
 	CResource(ID, pHost),
-	Usage(UsageImmutable),
-	Access(AccessNone),
+	Usage(Usage_Immutable),
+	Access(CPU_NoAccess),
 	Type(InvalidType),
 	Width(0),
 	Height(0),

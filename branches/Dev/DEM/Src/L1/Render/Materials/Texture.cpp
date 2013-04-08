@@ -71,6 +71,18 @@ bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 }
 //---------------------------------------------------------------------
 
+bool CTexture::Setup(void* pData, DWORD DataSize)
+{
+	//!!!n_assert(DataSize <= Width * Height * GetPixelSize())!
+	CMapInfo MapInfo;
+	if (!Map(0, Map_Setup, MapInfo)) FAIL;
+	memcpy(MapInfo.pData, pData, DataSize);
+	Unmap(0);
+	State = Resources::Rsrc_Loaded;
+	OK;
+}
+//---------------------------------------------------------------------
+
 void CTexture::Unload()
 {
 	n_assert(!LockCount);
@@ -99,17 +111,17 @@ bool CTexture::Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Heigh
 	DWORD D3DUsage;
 	switch (Usage)
 	{
-		case UsageImmutable:
-			n_assert(Access == AccessNone);
+		case Usage_Immutable:
+			n_assert(Access == CPU_NoAccess);
 			D3DPool = D3DPOOL_MANAGED;
 			D3DUsage = 0;
 			break;
-		case UsageDynamic:
-			n_assert(Access == AccessWrite);
+		case Usage_Dynamic:
+			n_assert(Access == CPU_Write);
 			D3DPool = D3DPOOL_DEFAULT;
 			D3DUsage = D3DUSAGE_DYNAMIC;
 			break;
-		case UsageCPU:
+		case Usage_CPU:
 			D3DPool = D3DPOOL_SYSTEMMEM;
 			D3DUsage = D3DUSAGE_DYNAMIC;
 			break;
@@ -148,8 +160,8 @@ bool CTexture::CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height
 
 	n_assert(!pD3D9Tex); //???or unload old?
 
-	Usage = UsageImmutable;
-	Access = AccessNone;
+	Usage = Usage_Immutable;
+	Access = CPU_NoAccess;
 
 	HRESULT hr = RenderSrv->GetD3DDevice()->CreateTexture(
 		_Width,
@@ -170,20 +182,20 @@ inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 {
 	switch (MapType)
 	{
-		//!!!MapSetup!
+		//!!!Map_Setup!
 
-		case MapRead:
-			n_assert((UsageDynamic == Usage) && (AccessRead == Access));
+		case Map_Read:
+			n_assert((Usage_Dynamic == Usage) && (CPU_Read == Access));
 			LockFlags |= D3DLOCK_READONLY;
 			break;
-		case MapWrite:
-			n_assert((UsageDynamic == Usage) && (AccessWrite == Access));
+		case Map_Write:
+			n_assert((Usage_Dynamic == Usage) && (CPU_Write == Access));
 			break;
-		case MapReadWrite:
-			n_assert((UsageDynamic == Usage) && (AccessReadWrite == Access));
+		case Map_ReadWrite:
+			n_assert((Usage_Dynamic == Usage) && (CPU_ReadWrite == Access));
 			break;
-		case MapWriteDiscard:
-			n_assert((UsageDynamic == Usage) && (AccessWrite == Access));
+		case Map_WriteDiscard:
+			n_assert((Usage_Dynamic == Usage) && (CPU_Write == Access));
 			LockFlags |= D3DLOCK_DISCARD;
 			break;
 	}
@@ -192,7 +204,7 @@ inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 
 bool CTexture::Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo)
 {
-	n_assert((Type == Texture2D || Type == Texture3D) && MapType != MapWriteNoOverwrite);
+	n_assert((Type == Texture2D || Type == Texture3D) && MapType != Map_WriteNoOverwrite);
 
 	DWORD LockFlags = 0;
 	MapTypeToLockFlags(MapType, LockFlags);
@@ -238,7 +250,7 @@ void CTexture::Unmap(int MipLevel)
 
 bool CTexture::MapCubeFace(ECubeFace Face, int MipLevel, EMapType MapType, CMapInfo& OutMapInfo)
 {
-	n_assert(Type == TextureCube && MapType != MapWriteNoOverwrite);
+	n_assert(Type == TextureCube && MapType != Map_WriteNoOverwrite);
 
 	DWORD LockFlags = D3DLOCK_NO_DIRTY_UPDATE | D3DLOCK_NOSYSLOCK;
 	MapTypeToLockFlags(MapType, LockFlags);

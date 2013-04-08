@@ -185,6 +185,7 @@ nMeshBuilder::Transform(const matrix44& m44)
 void
 nMeshBuilder::CreateEdges()
 {
+	/*
     n_assert(0 == this->GetNumEdges());
     n_assert(this->GetNumTriangles() > 0);
 
@@ -322,6 +323,7 @@ nMeshBuilder::CreateEdges()
         this->edgeArray.PushBack(e1);
     }
     n_delete_array(groupedEdgeArray);
+	*/
 }
 
 //------------------------------------------------------------------------------
@@ -341,6 +343,7 @@ int
 __cdecl
 nMeshBuilder::TempEdgeSorter(const void* elm0, const void* elm1)
 {
+	/*
     TempEdge e0 = *(TempEdge*)elm0;
     TempEdge e1 = *(TempEdge*)elm1;
 
@@ -383,7 +386,7 @@ nMeshBuilder::TempEdgeSorter(const void* elm0, const void* elm1)
                 else if (e0.vIndex[0] > e1.vIndex[0])   return +1;
             }
         }
-    }
+    }*/
     return 0;
 }
 
@@ -1465,9 +1468,9 @@ nMeshBuilder::SearchDuplicatedFaces()
         else
         {
             // otherwise we store a reference to this triangle in the lists at the indices
-            triangleReferences[index0].PushBack(&this->triangleArray[i]);
-            triangleReferences[index1].PushBack(&this->triangleArray[i]);
-            triangleReferences[index2].PushBack(&this->triangleArray[i]);
+            triangleReferences[index0].Append(&this->triangleArray[i]);
+            triangleReferences[index1].Append(&this->triangleArray[i]);
+            triangleReferences[index2].Append(&this->triangleArray[i]);
         }
     }
 
