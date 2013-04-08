@@ -106,7 +106,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 			Cmp.Stream = 1;
 		}
 		InstanceBuffer.Create();
-		n_assert(InstanceBuffer->Create(RenderSrv->GetVertexLayout(InstCmps), MaxInstanceCount, UsageDynamic, AccessWrite));
+		n_assert(InstanceBuffer->Create(RenderSrv->GetVertexLayout(InstCmps), MaxInstanceCount, Usage_Dynamic, CPU_Write));
 	}
 
 	OK;
@@ -453,7 +453,7 @@ void CModelRenderer::Render()
 			n_assert(InstanceCount <= MaxInstanceCount);
 
 			//!!!can supply WVP when more appropriate!
-			matrix44* pInstData = (matrix44*)InstanceBuffer->Map(MapWriteDiscard);
+			matrix44* pInstData = (matrix44*)InstanceBuffer->Map(Map_WriteDiscard);
 			n_assert_dbg(pInstData);
 			for (int InstIdx = i; InstIdx < j; ++InstIdx)
 				*pInstData++ = Models[InstIdx].pModel->GetNode()->GetWorldMatrix();

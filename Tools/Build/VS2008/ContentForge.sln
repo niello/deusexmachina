@@ -14,6 +14,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConvMdl", "ConvMdl.vcproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEM_L1", "..\..\..\DEM\Build\VS2008\DEM_L1.vcproj", "{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConvHF", "ConvHF.vcproj", "{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC} = {4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +87,16 @@ Global
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.Release|Win32.ActiveCfg = Release|Win32
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.Release|Win32.Build.0 = Release|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Debug|Win32.ActiveCfg = Debug|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Debug|Win32.Build.0 = Debug|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Release|Any CPU.ActiveCfg = Release|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Release|Win32.ActiveCfg = Release|Win32
+		{195958F9-6F0C-4ECA-B4E8-29FFFA46F553}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -130,20 +130,20 @@ void CBTFile::GetHeights(float* OutFloats, DWORD X, DWORD Z, DWORD W, DWORD H)
 	{
 		n_assert(Header->DataSize == sizeof(float));
 		for (DWORD Row = Z; Row < Z + H; Row++)
-		    for (DWORD Col = X; Col < X + W; Col++)
-                Dest[Row * Header->Width + Col] =
-                    HeightsF[Col * Header->Height + Header->Height - 1 - Row];
+			for (DWORD Col = X; Col < X + W; Col++)
+				Dest[Row * Header->Width + Col] =
+					HeightsF[Col * Header->Height + Header->Height - 1 - Row];
 	}
 	else
 	{
 		n_assert(Header->DataSize == sizeof(short));
 		float VScale = GetVerticalScale();
 		for (DWORD Row = Z; Row < Z + H; Row++)
-		    for (DWORD Col = X; Col < X + W; Col++)
-            {
-                short Src = HeightsS[Col * Header->Height + Header->Height - 1 - Row];
-                Dest[Row * Header->Width + Col] = (Src == NoDataS) ? NoDataF : Src * VScale;
-            }
+			for (DWORD Col = X; Col < X + W; Col++)
+			{
+				short Src = HeightsS[Col * Header->Height + Header->Height - 1 - Row];
+				Dest[Row * Header->Width + Col] = (Src == NoDataS) ? NoDataF : Src * VScale;
+			}
     }
 }
 //---------------------------------------------------------------------

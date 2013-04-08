@@ -240,25 +240,6 @@ nMeshBuilder::SaveNvx2(Data::CFileStream* file)
     n_delete_array(ushortBuffer);
     ushortBuffer = 0;
 
-    // write edge block
-    if (numEdges > 0)
-    {
-        nMesh2::Edge* edgeBuffer = n_new_array(nMesh2::Edge, numEdges);
-        int curEdgeIndex;
-        for (curEdgeIndex = 0; curEdgeIndex < numEdges; curEdgeIndex++)
-        {
-            const GroupedEdge& srcEdge = this->GetEdgeAt(curEdgeIndex);
-            nMesh2::Edge* dstEdge = (edgeBuffer + curEdgeIndex);
-            dstEdge->fIndex[0] = srcEdge.fIndex[0];
-            dstEdge->fIndex[1] = srcEdge.fIndex[1];
-            dstEdge->vIndex[0] = srcEdge.vIndex[0];
-            dstEdge->vIndex[1] = srcEdge.vIndex[1];
-        }
-        file->Write((ushort*)edgeBuffer, numEdges * sizeof(nMesh2::Edge));
-        //DEBUG
-        n_delete_array(edgeBuffer);
-    }
-
     return true;
 }
 

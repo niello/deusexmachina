@@ -89,14 +89,14 @@ bool LoadMeshFromNVX2(Data::CStream& In, PMesh OutMesh)
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	PVertexBuffer VB = n_new(CVertexBuffer);
-	if (!VB->Create(VertexLayout, Header.numVertices, UsageImmutable, AccessNone)) FAIL;
-	void* pData = VB->Map(MapSetup);
+	if (!VB->Create(VertexLayout, Header.numVertices, Usage_Immutable, CPU_NoAccess)) FAIL;
+	void* pData = VB->Map(Map_Setup);
 	In.Read(pData, Header.numVertices * Header.vertexWidth * sizeof(float));
 	VB->Unmap();
 
 	PIndexBuffer IB = n_new(CIndexBuffer);
-	if (!IB->Create(CIndexBuffer::Index16, Header.numIndices, UsageImmutable, AccessNone)) FAIL;
-	pData = IB->Map(MapSetup);
+	if (!IB->Create(CIndexBuffer::Index16, Header.numIndices, Usage_Immutable, CPU_NoAccess)) FAIL;
+	pData = IB->Map(Map_Setup);
 	In.Read(pData, Header.numIndices * sizeof(short));
 	IB->Unmap();
 

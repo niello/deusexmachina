@@ -57,6 +57,8 @@ const int DEM_THREAD_COUNT = 1;
 
 template <class T> inline T Clamp(T Value, T Min, T Max){return (Value<Min)?Min:((Value>Max)?Max:Value);}
 
+inline bool IsPow2(int Value) { return Value >= 1 && (Value & (Value - 1)) == 0; }
+
 enum EExecStatus
 {
 	Failure = 0,

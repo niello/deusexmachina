@@ -61,6 +61,11 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 			BTFile.GetHeights(pHeights);
 		}
 	}
+	else if (FileName.CheckExtension("cdlod"))
+	{
+		//!!!Load from CDLOD heightmap!
+		FAIL;
+	}
 	else
 	{
 		n_error("CHeightfieldShape: invalid file extension in '%s'", FileName.Get());

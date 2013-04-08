@@ -4,9 +4,6 @@
 #include <Render/RenderServer.h>
 #include <Data/BinaryReader.h>
 
-//!!!OLD!
-#include "scene/nsceneserver.h"
-
 namespace Render
 {
 	bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial);

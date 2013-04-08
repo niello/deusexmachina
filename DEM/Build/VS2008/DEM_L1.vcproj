@@ -1595,6 +1595,10 @@
 					RelativePath="..\..\Src\L1\Render\Renderers\ShapeRenderer.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Renderers\TerrainRenderer.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

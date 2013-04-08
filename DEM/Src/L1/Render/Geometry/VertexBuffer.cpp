@@ -21,17 +21,17 @@ bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage
 	DWORD D3DUsage;
 	switch (Usage)
 	{
-		case UsageImmutable:
-			n_assert(Access == AccessNone);
+		case Usage_Immutable:
+			n_assert(Access == CPU_NoAccess);
 			D3DPool = D3DPOOL_MANAGED;
 			D3DUsage = D3DUSAGE_WRITEONLY;
 			break;
-		case UsageDynamic:
-			n_assert(Access == AccessWrite);
+		case Usage_Dynamic:
+			n_assert(Access == CPU_Write);
 			D3DPool = D3DPOOL_DEFAULT;
 			D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
 			break;
-		case UsageCPU:
+		case Usage_CPU:
 			D3DPool = D3DPOOL_SYSTEMMEM;
 			D3DUsage = D3DUSAGE_DYNAMIC;
 			break;
@@ -64,24 +64,24 @@ void* CVertexBuffer::Map(EMapType MapType)
 	DWORD LockFlags = 0;
 	switch (MapType)
 	{
-		case MapSetup:
+		case Map_Setup:
 			LockFlags |= D3DLOCK_NOSYSLOCK;
 			break;
-		case MapRead:
-			//n_assert((Usage == UsageDynamic || Usage == UsageCPU) && (Access == AccessRead));
+		case Map_Read:
+			//n_assert((Usage == Usage_Dynamic || Usage == Usage_CPU) && (Access == CPU_Read));
 			break;
-		case MapWrite:
-			n_assert((Usage == UsageDynamic || Usage == UsageCPU) && (Access == AccessWrite));
+		case Map_Write:
+			n_assert((Usage == Usage_Dynamic || Usage == Usage_CPU) && (Access == CPU_Write));
 			break;
-		case MapReadWrite:
-			n_assert((Usage == UsageDynamic || Usage == UsageCPU) && (Access == AccessReadWrite));
+		case Map_ReadWrite:
+			n_assert((Usage == Usage_Dynamic || Usage == Usage_CPU) && (Access == CPU_ReadWrite));
 			break;
-		case MapWriteDiscard:
-			n_assert((Usage == UsageDynamic) && (Access == AccessWrite));
+		case Map_WriteDiscard:
+			n_assert((Usage == Usage_Dynamic) && (Access == CPU_Write));
 			LockFlags |= D3DLOCK_DISCARD;
 			break;
-		case MapWriteNoOverwrite:
-			n_assert((Usage == UsageDynamic) && (Access == AccessWrite));
+		case Map_WriteNoOverwrite:
+			n_assert((Usage == Usage_Dynamic) && (Access == CPU_Write));
 			LockFlags |= D3DLOCK_NOOVERWRITE;
 			break;
 	}

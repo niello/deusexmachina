@@ -109,6 +109,8 @@ public:
 	short		GetHeightS(DWORD X, DWORD Z) const { return HeightsS[Z * Header->Width + X]; }
 	float		GetHeight(DWORD X, DWORD Z) const;
 	void		GetHeights(float* OutFloats, DWORD X = 0, DWORD Z = 0, DWORD W = 0, DWORD H = 0);
+
+	const short*	GetHeightsS() { n_assert(!IsFloatData()); return HeightsS; }
 };
 
 }

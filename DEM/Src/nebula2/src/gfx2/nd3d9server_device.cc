@@ -515,12 +515,7 @@ nD3D9Server::QueryStatistics()
 {
     // compute frames per second
     nTime curTime = TimeSrv->GetTime();
-    nTime diff = curTime - this->timeStamp;
-    if (diff <= 0.000001f)
-    {
-        diff = 0.000001f;
-    }
-    CoreSrv->SetGlobal<float>("FPS", float(1.0f / diff));
+
     CoreSrv->SetGlobal<int>("NumPrimitives", this->statsNumPrimitives);
     CoreSrv->SetGlobal<int>("NumDrawCalls", this->statsNumDrawCalls);
     CoreSrv->SetGlobal<int>("NumRenderStateChanges", this->statsNumRenderStateChanges);
