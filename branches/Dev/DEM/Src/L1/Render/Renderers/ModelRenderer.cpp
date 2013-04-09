@@ -1,8 +1,6 @@
 #include "ModelRenderer.h"
 
 #include <Scene/SPS.h>
-#include <Scene/Model.h>
-#include <Scene/SceneNode.h>
 #include <Render/RenderServer.h>
 #include <Data/Params.h>
 #include <mathlib/sphere.h>
@@ -117,6 +115,7 @@ void CModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 {
 	for (int i = 0; i < Objects.Size(); ++i)
 	{
+		//???use buckets instead?
 		if (!Objects[i]->IsA(Scene::CModel::RTTI)) continue;
 		Scene::CModel* pModel = (Scene::CModel*)Objects[i];
 
@@ -131,22 +130,10 @@ void CModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 }
 //---------------------------------------------------------------------
 
-// NB: It is overriden to empty method in CModelRendererNoLight
+//!!!skip black lights or lights with 0 intensity!
 void CModelRenderer::AddLights(const nArray<Scene::CLight*>& Lights)
 {
-	if (!EnableLighting)
-	{
-		pLights = NULL;
-		return;
-	}
-
-	//!!!skip black lights or lights with 0 intensity!
-
-	pLights = &Lights;
-	//for (int i = 0; i < Lights.Size(); ++i)
-	//{
-	//	// Perform something with lights or just store array ref
-	//}
+	pLights = EnableLighting ? &Lights : NULL;
 }
 //---------------------------------------------------------------------
 

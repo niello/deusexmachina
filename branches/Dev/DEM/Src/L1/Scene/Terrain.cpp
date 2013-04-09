@@ -1,6 +1,6 @@
 #include "Terrain.h"
 
-#include <Scene/SceneNode.h>
+#include <Scene/Scene.h>
 #include <Render/RenderServer.h>
 #include <Data/Streams/FileStream.h>
 #include <Data/DataServer.h>
@@ -17,9 +17,10 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
-		case 'MHRT': // TRHM
+		case 'DLDC': // CDLD
 		{
-			FAIL;
+			HeightMap = RenderSrv->TextureMgr.GetTypedResource(DataReader.Read<CStrID>());
+			OK;
 		}
 		default: FAIL;
 	}
@@ -28,11 +29,8 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 
 bool CTerrain::OnAdd()
 {
-	//!!!
-	CStrID RsrcID;
-
 	Data::CFileStream CDLODFile;
-	if (!CDLODFile.Open(RsrcID.CStr(), Data::SAM_READ, Data::SAP_SEQUENTIAL)) FAIL;
+	if (!CDLODFile.Open(HeightMap->GetUID().CStr(), Data::SAM_READ, Data::SAP_SEQUENTIAL)) FAIL;
 	Data::CBinaryReader Reader(CDLODFile);
 
 	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
@@ -51,7 +49,6 @@ bool CTerrain::OnAdd()
 	Reader.Read(Box.vmax.y);
 	Reader.Read(Box.vmax.z);
 
-	HeightMap = RenderSrv->TextureMgr.GetTypedResource(RsrcID);
 	if (!HeightMap->IsLoaded())
 	{
 		if (!HeightMap->Create(Render::CTexture::Texture2D, D3DFMT_L16, HFWidth, HFHeight, 0, 1, Render::Usage_Immutable, Render::CPU_NoAccess))
@@ -96,10 +93,13 @@ void CTerrain::OnRemove()
 
 void CTerrain::Update()
 {
-	if (pNode->IsWorldMatrixChanged())
+	/*if (pNode->IsWorldMatrixChanged())
 	{
 		//pNode->GetWorldMatrix();
-	}
+	}*/
+
+	//!!!can check global Box before adding!
+	pNode->GetScene()->AddVisibleObject(*this);
 }
 //---------------------------------------------------------------------
 

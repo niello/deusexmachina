@@ -30,7 +30,7 @@ private:
 	//Fog settings
 	//???shadow settings?
 
-	nArray<CRenderObject*>	VisibleObjects;
+	nArray<CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
 	nArray<CLight*>			VisibleLights;
 
 	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
@@ -49,6 +49,7 @@ public:
 	void		Clear();
 
 	//!!!can add global lights to separate array if necessary!
+	void		AddVisibleObject(CRenderObject& Obj) { VisibleObjects.Append(&Obj); }
 	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
 
 	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader);
