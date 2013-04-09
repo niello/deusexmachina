@@ -209,6 +209,9 @@ bool ParseDEMSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles, 
 	if (NodeDesc.Get(pValue, CStrID("Anim")))
 		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Animation");
 
+	if (NodeDesc.Get(pValue, CStrID("CDLODFile")))
+		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "CDLOD");
+
 	if (NodeDesc.Get(pValue, CStrID("Attrs")))
 	{
 		const CDataArray& Attrs = *pValue->GetValue<PDataArray>();

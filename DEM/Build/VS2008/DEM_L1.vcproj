@@ -1596,6 +1596,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\L1\Render\Renderers\TerrainRenderer.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L1\Render\Renderers\TerrainRenderer.h"
 					>
 				</File>

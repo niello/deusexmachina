@@ -6,8 +6,9 @@
 #include <Render/Materials/Shader.h>
 #include <Scene/Model.h>
 
-// Model renderer is an abstract class for different model renderers. This is intended
-// for different lighting implementations.
+// Model renderer is suited for rendering different 3D models, either static or skinned.
+// It is the most common renderer, which is used when some special LOD or rendering
+// techniques aren't needed.
 
 //!!!============================================================
 // Unity batch types: Background, Geometry, AlphaTest, Transparent, Overlay
@@ -108,9 +109,6 @@ protected:
 	ESortingType					DistanceSorting;
 	bool							EnableLighting;
 
-	nArray<CModelRecord>			Models;
-	const nArray<Scene::CLight*>*	pLights; //???!!!not ptr?!
-
 	PVertexBuffer					InstanceBuffer;
 	DWORD							MaxInstanceCount;
 
@@ -122,6 +120,9 @@ protected:
 	CShader::HVar					hLightParams;
 
 	DWORD							LightFeatFlags[MaxLightsPerObject];
+
+	nArray<CModelRecord>			Models;
+	const nArray<Scene::CLight*>*	pLights; //???!!!not ptr?!
 
 	//???both to light?
 	bool			IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light);

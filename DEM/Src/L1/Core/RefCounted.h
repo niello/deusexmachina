@@ -36,10 +36,21 @@ public:
 	int				GetRefCount() const { return RefCount; }
 	bool			IsInstanceOf(const CRTTI& Other) const { return GetRTTI() == &Other; }
 	bool			IsInstanceOf(const nString& Other) const { return GetRTTI()->GetName() == Other; }
+	template<class T>
+	bool			IsA() const;
 	bool			IsA(const CRTTI& Other) const;
 	bool			IsA(const nString& Other) const;
 	const nString&	GetClassName() const { return GetRTTI()->GetName(); }
 };
+//---------------------------------------------------------------------
+
+template<class T> inline bool CRefCounted::IsA() const
+{
+	for (const CRTTI* i = GetRTTI(); i != NULL; i = i->GetParent())
+		if (i == &T::RTTI)
+			return true;
+	return false;
+}
 //---------------------------------------------------------------------
 
 inline bool CRefCounted::IsA(const CRTTI& Other) const

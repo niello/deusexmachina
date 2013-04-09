@@ -241,8 +241,8 @@ bool CTexture::Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo)
 void CTexture::Unmap(int MipLevel)
 {
 	n_assert(LockCount > 0);
-	if (Texture2D == Type) GetD3D9Texture()->UnlockRect(MipLevel);
-	else if (Texture3D == Type) GetD3D9VolumeTexture()->UnlockBox(MipLevel);
+	if (Texture2D == Type) pD3D9Tex2D->UnlockRect(MipLevel);
+	else if (Texture3D == Type) pD3D9Tex3D->UnlockBox(MipLevel);
 	else n_error("CTexture::Unmap -> Cube texture, use UnmapCubeFace");
 	LockCount--;
 }

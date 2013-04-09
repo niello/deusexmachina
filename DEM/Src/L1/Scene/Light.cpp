@@ -3,9 +3,6 @@
 #include <Scene/Scene.h>
 #include <Data/BinaryReader.h>
 
-//!!!OLD!
-#include <gfx2/nshaderstate.h>
-
 namespace Scene
 {
 ImplementRTTI(Scene::CLight, Scene::CSceneNodeAttr);
