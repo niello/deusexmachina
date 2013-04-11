@@ -24,11 +24,20 @@ protected:
 	DWORD				HFHeight;
 	DWORD				PatchSize;
 	DWORD				LODCount;
+	DWORD				TopPatchCountX;
+	DWORD				TopPatchCountZ;
 	float				VerticalScale;
 	bbox3				Box;
 
+	struct CMinMaxMap
+	{
+		DWORD	PatchesW;
+		DWORD	PatchesH;
+		short*	pData;
+	};
+
 	short*				pMinMaxData;
-	nArray<short*>		MinMaxMaps;
+	nArray<CMinMaxMap>	MinMaxMaps;
 
 	Render::PTexture	HeightMap;
 
@@ -41,13 +50,38 @@ public:
 	virtual void		OnRemove();
 	virtual void		Update();
 
+	DWORD				GetHeightMapWidth() const { return HFWidth; }
+	DWORD				GetHeightMapHeight() const { return HFHeight; }
 	DWORD				GetPatchSize() const { return PatchSize; }
+	DWORD				GetLODCount() const { return LODCount; }
+	DWORD				GetTopPatchCountX() const { return TopPatchCountX; }
+	DWORD				GetTopPatchCountZ() const { return TopPatchCountZ; }
+	float				GetVerticalScale() const { return VerticalScale; }
+	const bbox3&		GetLocalAABB() const { return Box; }
 	Render::CTexture*	GetHeightMap() const { return HeightMap.get_unsafe(); }
+	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
+	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;
 };
 
 RegisterFactory(CTerrain);
 
 typedef Ptr<CTerrain> PTerrain;
+
+inline void CTerrain::GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const
+{
+	CMinMaxMap& MMMap = MinMaxMaps[LOD];
+	const short* pMMRec = MMMap.pData + ((Z * MMMap.PatchesW + X) << 1);
+	MinY = *pMMRec;
+	MaxY = *(pMMRec + 1);
+}
+//---------------------------------------------------------------------
+
+inline bool CTerrain::HasNode(DWORD X, DWORD Z, DWORD LOD) const
+{
+	CMinMaxMap& MMMap = MinMaxMaps[LOD];
+	return X < MMMap.PatchesW && Z < MMMap.PatchesH;
+}
+//---------------------------------------------------------------------
 
 }
 

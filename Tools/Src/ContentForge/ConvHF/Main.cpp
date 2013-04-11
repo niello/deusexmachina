@@ -4,11 +4,6 @@
 #include <Data/Streams/FileStream.h>
 #include <Data/BinaryWriter.h>
 #include "ncmdlineargs.h"
-#include <IL/il.h>
-#include <IL/ilu.h>
-
-#undef CreateDirectory
-#undef CopyFile
 
 using namespace Data;
 
@@ -146,8 +141,8 @@ int main(int argc, const char** argv)
 			{
 				DWORD StopAtX = n_min((Col + 1) * PatchSize + 1, Width);
 
-				short MinHeight = 32767;
-				short MaxHeight = -32767;
+				short MinHeight = pHeights[Row * PatchSize * Width + Col * PatchSize];
+				short MaxHeight = MinHeight;
 				for (DWORD Z = Row * PatchSize; Z < StopAtZ; ++Z)
 					for (DWORD X = Col * PatchSize; X < StopAtX; ++X)
 					{
@@ -192,16 +187,16 @@ int main(int argc, const char** argv)
 				pMinMaxBuffer[i + 1] = -32767;
 			}
 
-			for (DWORD y = 0; y < PrevPatchesH; ++y)
+			for (DWORD Z = 0; Z < PrevPatchesH; ++Z)
 			{
-				for (DWORD x = 0; x < PrevPatchesW; ++x)
+				for (DWORD X = 0; X < PrevPatchesW; ++X)
 				{
-					const int Idx = x / 2;
-					pDst[Idx * 2] = n_min(pDst[Idx * 2], pSrc[x * 2]);
-					pDst[Idx * 2 + 1] = n_max(pDst[Idx * 2 + 1], pSrc[x * 2]);
+					const int Idx = (X / 2) * 2;
+					pDst[Idx] = n_min(pDst[Idx], pSrc[X * 2]);
+					pDst[Idx + 1] = n_max(pDst[Idx + 1], pSrc[X * 2 + 1]);
 				}
 				pSrc += PrevPatchesW * 2;
-				if (y % 2 == 1) pDst += PatchesW * 2;
+				if (Z % 2 == 1) pDst += PatchesW * 2;
 			}
 
 			OutFile.Write(pMinMaxBuffer, MinMaxDataSize);
@@ -231,6 +226,8 @@ int main(int argc, const char** argv)
 	else if (HFFileName.CheckExtension("png"))
 	{
 		// IT IS NOT A CODE, IT IS AN EXAMPLE OF IL USAGE
+//#include <IL/il.h>
+//#include <IL/ilu.h>
 
 		ilInit();
 		iluInit();
