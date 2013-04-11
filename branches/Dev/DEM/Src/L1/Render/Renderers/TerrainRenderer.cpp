@@ -1,6 +1,5 @@
 #include "TerrainRenderer.h"
 
-#include <Scene/SPS.h>
 #include <Render/RenderServer.h>
 #include <Data/Params.h>
 #include <mathlib/sphere.h>
@@ -130,6 +129,145 @@ void CTerrainRenderer::AddLights(const nArray<Scene::CLight*>& Lights)
 }
 //---------------------------------------------------------------------
 
+CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z,
+															DWORD LOD, float LODRange, DWORD& PatchCount,
+															DWORD& QPatchCount, EClipStatus Clip)
+{
+	short MinY, MaxY;
+	Terrain.GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
+
+	// Node has no data, skip it completely
+	if (MaxY < MinY) return Node_Invisible;
+
+	DWORD NodeSize = Terrain.GetPatchSize() << LOD;
+	const bbox3& TerrainAABB = Terrain.GetLocalAABB();
+	float ScaleX = NodeSize * (TerrainAABB.vmax.x - TerrainAABB.vmin.x) / (float)(Terrain.GetHeightMapWidth() - 1);
+	float ScaleZ = NodeSize * (TerrainAABB.vmax.z - TerrainAABB.vmin.z) / (float)(Terrain.GetHeightMapHeight() - 1);
+
+	bbox3 AABB;
+	AABB.vmin.x = TerrainAABB.vmin.x + X * ScaleX;
+	AABB.vmax.x = TerrainAABB.vmin.x + (X + 1) * ScaleX;
+	AABB.vmin.y = MinY * Terrain.GetVerticalScale();
+	AABB.vmax.y = MaxY * Terrain.GetVerticalScale();
+	AABB.vmin.z = TerrainAABB.vmin.z + Z * ScaleZ;
+	AABB.vmax.z = TerrainAABB.vmin.z + (Z + 1) * ScaleZ;
+
+	//???!!!use World tfm on AABB (get from Terrain.GetNode())?!
+
+	if (Clip == Clipped)
+	{
+		Clip = AABB.clipstatus(RenderSrv->GetViewProjection());
+		if (Clip == Outside) return Node_Invisible;
+	}
+
+	//!!!don't create sphere object for test!
+	sphere LODSphere(RenderSrv->GetCameraPosition(), LODRange); //!!!Always must check the Main camera!
+	if (LODSphere.clipstatus(AABB) == Outside) return Node_NotInLOD;
+
+	// Flags identifying what children we need to add
+	bool TL = true, TR = true, BL = true, BR = true, AddWhole, IsVisible;
+
+	if (LOD > 0)
+	{
+		// Hack, see original CDLOD code. LOD 0 range is 0.9 of what is expected.
+		float NextLODRange = LODRange * ((LOD == 1) ? 0.45f : 0.5f);
+
+		IsVisible = false;
+
+		//!!!don't create sphere object for test!
+		sphere LODSphere(RenderSrv->GetCameraPosition(), NextLODRange); //!!!Always must check the Main camera!
+		EClipStatus NextClip = LODSphere.clipstatus(AABB);
+		if (NextClip != Outside)
+		{
+			DWORD XNext = X << 1, ZNext = Z << 1;
+
+			ENodeStatus Status = ProcessNode(Terrain, XNext, ZNext, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+			TL = (Status == Node_NotInLOD);
+			IsVisible |= (Status != Node_Invisible);
+
+			TR = Terrain.HasNode(XNext + 1, ZNext, LOD - 1);
+			if (TR)
+			{
+				Status = ProcessNode(Terrain, XNext + 1, ZNext, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+				TR = (Status == Node_NotInLOD);
+				IsVisible |= (Status != Node_Invisible);
+			}
+
+			BL = Terrain.HasNode(XNext, ZNext + 1, LOD - 1);
+			if (BL)
+			{
+				Status = ProcessNode(Terrain, XNext, ZNext + 1, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+				BL = (Status == Node_NotInLOD);
+				IsVisible |= (Status != Node_Invisible);
+			}
+
+			BR = Terrain.HasNode(XNext + 1, ZNext + 1, LOD - 1);
+			if (BR)
+			{
+				Status = ProcessNode(Terrain, XNext + 1, ZNext + 1, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+				BR = (Status == Node_NotInLOD);
+				IsVisible |= (Status != Node_Invisible);
+			}
+		}
+
+		AddWhole = TL && TR && BL && BR;
+	}
+	else
+	{
+		AddWhole = true;
+		IsVisible = true;
+	}
+
+	if (!TL && !TR && !BL && !BR) return IsVisible ? Node_Processed : Node_Invisible;
+
+	//calculate offset & scale
+
+	if (AddWhole)
+	{
+		// Add patch
+		++PatchCount;
+	}
+	else
+	{
+		// Add quarterpatches
+
+		if (TL)
+		{
+			++QPatchCount;
+		}
+
+		if (TR)
+		{
+			++QPatchCount;
+		}
+
+		if (BL)
+		{
+			++QPatchCount;
+		}
+
+		if (BR)
+		{
+			++QPatchCount;
+		}
+	}
+
+// Morphing artifacts test (from the original CDLOD code)
+/*
+	if (LOD != Terrain.GetLODCount() - 1)
+	{
+		//!!!Always must check the Main camera!
+		float maxDistFromCamSq = AABB.MaxDistFromPointSq(RenderSrv->GetCameraPosition());
+		float morphStartRange = m_morphStart[LODLevel+1];
+		if (maxDistFromCamSq > morphStartRange * morphStartRange)
+			m_visDistTooSmall = true;
+	}
+*/
+
+	return Node_Processed;
+}
+//---------------------------------------------------------------------
+
 void CTerrainRenderer::Render()
 {
 	if (!TerrainObjects.Size()) return;
@@ -144,12 +282,56 @@ void CTerrainRenderer::Render()
 
 	for (int i = 0; i < TerrainObjects.Size(); ++i)
 	{
-		Scene::CTerrain* pTerrain = TerrainObjects[i];
+		Scene::CTerrain& Terrain = *TerrainObjects[i];
 
 		DWORD PatchCount = 0, QuarterPatchCount = 0;
 
-	// Collect patches and quarterpatches to instance buffer, remember offset and counts
-		//???patches from begin, quarterpatches from end? or two instance buffers? or tmp instance storage?
+		//!!!TMP DBG! Read far plane! or some setting?
+		float VisDistance = 5000.f;
+
+		DWORD TopLOD = Terrain.GetLODCount() - 1;
+		for (DWORD Z = 0; Z < Terrain.GetTopPatchCountZ(); ++Z)
+			for (DWORD X = 0; X < Terrain.GetTopPatchCountX(); ++X)
+				ProcessNode(Terrain, X, Z, TopLOD, VisDistance, PatchCount, QuarterPatchCount);
+
+		//!!!DBG!
+		CoreSrv->SetGlobal<int>("Terrain_PatchCount", PatchCount);
+		CoreSrv->SetGlobal<int>("Terrain_QPatchCount", QuarterPatchCount);
+
+/*
+	float prevPos = 0;
+	for (int i=0; i<LODLevelCount; i++)
+	{
+		m_morphEnd[i] = selectionObj->m_visibilityRanges[i];
+		m_morphStart[i] = prevPos + (selectionObj->m_morphEnd[i] - prevPos) * m_morphStartRatio; //0.667f
+		prevPos = selectionObj->m_morphStart[i];
+	}
+*/
+
+/*
+   selectionObj->m_maxSelectedLODLevel = 0;
+   selectionObj->m_minSelectedLODLevel = c_maxLODLevels;
+
+   for( int i = 0; i < lodSelInfo.SelectionCount; i++ )
+   {
+      AABB naabb;
+      selectionObj->m_selectionBuffer[i].GetAABB(naabb, m_rasterSizeX, m_rasterSizeY, m_desc.MapDims);
+
+      if( (selectionObj->m_flags | LODSelection::SortByDistance) != 0 )
+         selectionObj->m_selectionBuffer[i].MinDistToCamera = sqrtf( naabb.MinDistanceFromPointSq( cameraPos ) );
+      else
+         selectionObj->m_selectionBuffer[i].MinDistToCamera = 0;
+
+      selectionObj->m_minSelectedLODLevel = ::min( selectionObj->m_minSelectedLODLevel, selectionObj->m_selectionBuffer[i].LODLevel );
+      selectionObj->m_maxSelectedLODLevel = ::max( selectionObj->m_maxSelectedLODLevel, selectionObj->m_selectionBuffer[i].LODLevel );
+   }
+*/
+
+//====================
+
+	//!!!can sort by distance (min dist to camera) before rendering!
+	//if so, don't write instance data into the video memory directly,
+	//write to tmp storage, sort, then send to GPU
 
 		//matrix44* pInstData = (matrix44*)InstanceBuffer->Map(Map_WriteDiscard);
 		//n_assert_dbg(pInstData);
@@ -158,14 +340,16 @@ void CTerrainRenderer::Render()
 		//InstanceBuffer->Unmap();
 
 	// Apply not-instanced CDLOD shader vars for the batch
-		Shader->SetTexture(hHeightMap, *pTerrain->GetHeightMap());
+		Shader->SetTexture(hHeightMap, *Terrain.GetHeightMap());
+		//Shader->SetFloat(VerticalScale, VerticalOffset)
 
 		if (i == 0) Shader->BeginPass(0);
-		else Shader->CommitChanges(); //???!!!check ShaderVarsChanged?!
+		else Shader->CommitChanges();
 
+		/*
 		if (PatchCount)
 		{
-			CMesh* pPatch = GetPatchMesh(pTerrain->GetPatchSize());
+			CMesh* pPatch = GetPatchMesh(Terrain.GetPatchSize());
 			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, PatchCount);
 			RenderSrv->SetVertexBuffer(0, pPatch->GetVertexBuffer());
 			RenderSrv->SetIndexBuffer(pPatch->GetIndexBuffer());
@@ -175,13 +359,14 @@ void CTerrainRenderer::Render()
 
 		if (QuarterPatchCount)
 		{
-			CMesh* pPatch = GetPatchMesh(pTerrain->GetPatchSize() << 1);
+			CMesh* pPatch = GetPatchMesh(Terrain.GetPatchSize() >> 1);
 			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, QuarterPatchCount, MaxInstanceCount - QuarterPatchCount);
 			RenderSrv->SetVertexBuffer(0, pPatch->GetVertexBuffer());
 			RenderSrv->SetIndexBuffer(pPatch->GetIndexBuffer());
 			RenderSrv->SetPrimitiveGroup(pPatch->GetGroup(0));
 			RenderSrv->Draw();
 		}
+		*/
 	}
 
 	Shader->EndPass();

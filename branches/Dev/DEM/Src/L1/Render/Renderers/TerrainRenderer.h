@@ -21,6 +21,13 @@ class CTerrainRenderer: public IRenderer
 
 protected:
 
+	enum ENodeStatus
+	{
+		Node_Invisible,
+		Node_NotInLOD,
+		Node_Processed
+	};
+
 	PShader							Shader;
 	CShaderVarMap					ShaderVars;
 	DWORD							FeatFlags;
@@ -46,6 +53,8 @@ protected:
 
 	bool			CreatePatchMesh(DWORD Size);
 	CMesh*			GetPatchMesh(DWORD Size);
+
+	ENodeStatus		ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
 
 public:
 

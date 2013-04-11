@@ -69,13 +69,20 @@ bool CTerrain::OnAdd()
 	DWORD PatchesW = (HFWidth - 1 + PatchSize - 1) / PatchSize;
 	DWORD PatchesH = (HFHeight - 1 + PatchSize - 1) / PatchSize;
 	DWORD Offset = 0;
-	for (DWORD LOD = 0; LOD < LODCount; ++LOD)
+	CMinMaxMap* pMMMap = MinMaxMaps.Reserve(LODCount);
+	for (DWORD LOD = 0; LOD < LODCount; ++LOD, ++pMMMap)
 	{
-		MinMaxMaps.Append(pMinMaxData + Offset);
-		Offset += PatchesW * PatchesH * 2 * sizeof(short);
+		pMMMap->PatchesW = PatchesW;
+		pMMMap->PatchesH = PatchesH;
+		pMMMap->pData = pMinMaxData + Offset;
+		Offset += PatchesW * PatchesH * 2;
 		PatchesW = (PatchesW + 1) / 2;
 		PatchesH = (PatchesH + 1) / 2;
 	}
+
+	DWORD TopPatchSize = PatchSize << (LODCount - 1);
+	TopPatchCountX = (HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
+	TopPatchCountZ = (HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
 
 	// Calculate final scale and offset, maybe also other constants
 
