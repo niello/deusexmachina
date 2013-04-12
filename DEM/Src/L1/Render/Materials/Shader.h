@@ -57,6 +57,7 @@ public:
 	void			SetInt(HVar Var, int Value) { n_assert(SUCCEEDED(pEffect->SetInt(Var, Value))); }
 	void			SetIntArray(HVar Var, const int* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetIntArray(Var, pArray, Count))); }
 	void			SetFloat(HVar Var, float Value) { n_assert(SUCCEEDED(pEffect->SetFloat(Var, Value))); }
+	void			SetFloatArray(HVar Var, const float* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetFloatArray(Var, pArray, Count))); }
 	void			SetFloat4(HVar Var, const vector4& Value) { n_assert(SUCCEEDED(pEffect->SetVector(Var, (CONST D3DXVECTOR4*)&Value))); }
 	void			SetFloat4Array(HVar Var, const vector4* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetVectorArray(Var, (CONST D3DXVECTOR4*)pArray, Count))); }
 	void			SetMatrix(HVar Var, const matrix44& Value) { n_assert(SUCCEEDED(pEffect->SetMatrix(Var, (CONST D3DXMATRIX*)&Value))); }

@@ -28,12 +28,34 @@ protected:
 		Node_Processed
 	};
 
+	struct CMorphInfo
+	{
+		float Start;
+		float End;
+		float Const1;	// end / (end - start)
+		float Const2;	// 1 / (end - start)
+	};
+
+	struct CPatchInstance
+	{
+		vector4 ScaleOffset;
+		vector4 GridToHM;
+		float	MorphConsts[2];
+	};
+
 	PShader							Shader;
 	CShaderVarMap					ShaderVars;
 	DWORD							FeatFlags;
 	bool							EnableLighting;
 
+	float							VisibilityRange;
+	float							MorphStartRatio;
+	nArray<CMorphInfo>				MorphConsts;
+
 	CShader::HVar					hHeightMap;
+	CShader::HVar					hTerrainY;
+	CShader::HVar					hGridConsts;
+	CShader::HVar					hHMTexInfo;
 
 	nDictionary<DWORD, CMesh*>		PatchMeshes;
 	PVertexLayout					PatchVertexLayout;
@@ -58,17 +80,29 @@ protected:
 
 public:
 
-	CTerrainRenderer(): pLights(NULL), FeatFlags(0), EnableLighting(false) {}
+	CTerrainRenderer();
 
 	virtual bool	Init(const Data::CParams& Desc);
 	virtual void	AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);
 	virtual void	AddLights(const nArray<Scene::CLight*>& Lights);
 	virtual void	Render();
+
+	void			SetVisibilityRange(float Range) { n_assert(Range > 0.f); VisibilityRange = Range; }
 };
 
 RegisterFactory(CTerrainRenderer);
 
 typedef Ptr<CTerrainRenderer> PTerrainRenderer;
+
+inline CTerrainRenderer::CTerrainRenderer():
+	pLights(NULL),
+	FeatFlags(0),
+	EnableLighting(false),
+	VisibilityRange(1000.f),
+	MorphStartRatio(0.7f)
+{
+}
+//---------------------------------------------------------------------
 
 }
 
