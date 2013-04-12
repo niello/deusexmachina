@@ -88,7 +88,6 @@ bool CRenderServer::CreateDevice()
 
 	SetupBufferFormats();
 
-	D3DCAPS9 D3DCaps;
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
 	n_assert(SUCCEEDED(pD3D->GetDeviceCaps(D3DAdapter, DEM_D3D_DEVICETYPE, &D3DCaps)));
 
@@ -259,6 +258,19 @@ void CRenderServer::SetupBufferFormats()
 	D3DPresentParams.EnableAutoDepthStencil = TRUE; //FALSE; - N3
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_D24S8;
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
+}
+//---------------------------------------------------------------------
+
+bool CRenderServer::CheckCaps(ECaps Cap)
+{
+	n_assert(pD3D && pD3DDevice);
+
+	switch (Cap)
+	{
+		case Caps_VSTexFiltering_Linear:
+			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
+		default: FAIL;
+	}
 }
 //---------------------------------------------------------------------
 

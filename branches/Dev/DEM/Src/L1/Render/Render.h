@@ -43,6 +43,11 @@ enum EPrimitiveTopology
 	TriStrip
 };
 
+enum ECaps
+{
+	Caps_VSTexFiltering_Linear
+};
+
 }
 
 #endif

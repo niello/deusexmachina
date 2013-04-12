@@ -71,6 +71,7 @@ protected:
 	IDirect3DSurface9*					pCurrDSSurface;
 
 	UINT								D3DAdapter;
+	D3DCAPS9							D3DCaps;
 	D3DPRESENT_PARAMETERS				D3DPresentParams;
 	IDirect3D9*							pD3D;
 	IDirect3DDevice9*					pD3DDevice;
@@ -94,6 +95,8 @@ public:
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
 	void				ResetDevice(); // If display size changed or device lost
+
+	bool				CheckCaps(ECaps Cap);
 
 	bool				BeginFrame();
 	void				EndFrame();
