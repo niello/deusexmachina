@@ -1,6 +1,6 @@
 #include "TerrainRenderer.h"
 
-#include <Scene/SceneNode.h>
+#include <Scene/Light.h>
 #include <Render/RenderServer.h>
 #include <Data/Params.h>
 #include <mathlib/sphere.h>
@@ -62,7 +62,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 
 	hHeightMap = Shader->GetVarHandleByName(CStrID("HeightMap"));
 	hWorldToHM = Shader->GetVarHandleByName(CStrID("WorldToHM"));
-	hTerrainY = Shader->GetVarHandleByName(CStrID("TerrainY"));
+	hTerrainYInvSplat = Shader->GetVarHandleByName(CStrID("TerrainYInvSplat"));
 	hGridConsts = Shader->GetVarHandleByName(CStrID("GridConsts"));
 	hHMTexInfo = Shader->GetVarHandleByName(CStrID("HMTexInfo"));
 
@@ -70,15 +70,12 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 
 	if (EnableLighting)
 	{
-		/*
 		SharedShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shared"));
 		n_assert(SharedShader.isvalid());
 
 		hLightType = SharedShader->GetVarHandleByName(CStrID("LightType"));
-		hLightPos = SharedShader->GetVarHandleByName(CStrID("LightPos"));
 		hLightDir = SharedShader->GetVarHandleByName(CStrID("LightDir"));
 		hLightColor = SharedShader->GetVarHandleByName(CStrID("LightColor"));
-		hLightParams = SharedShader->GetVarHandleByName(CStrID("LightParams"));
 
 		for (DWORD i = 0; i < MaxLightsPerObject; ++i)
 		{
@@ -86,8 +83,10 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 			Mask.Format("L%d", i + 1);
 			LightFeatFlags[i] = RenderSrv->ShaderFeatureStringToMask(Mask);
 		}
-		*/
 	}
+
+	FeatFlagDefault = RenderSrv->ShaderFeatureStringToMask("Default");
+	if (!FeatFlags && !EnableLighting) FeatFlags = FeatFlagDefault;
 
 	nArray<CVertexComponent> PatchVC;
 	CVertexComponent& Cmp = *PatchVC.Reserve(1);
@@ -332,11 +331,10 @@ void CTerrainRenderer::Render()
 {
 	if (!TerrainObjects.Size()) return;
 
-	n_verify_dbg(Shader->SetTech(Shader->GetTechByFeatures(FeatFlags)));
+	CShader::HTech hCurrTech = NULL;
 
 	for (int i = 0; i < ShaderVars.Size(); ++i)
 		ShaderVars.ValueAtIndex(i).Apply(*Shader.get_unsafe());
-	n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
 
 	RenderSrv->SetVertexLayout(FinalVertexLayout);
 
@@ -379,12 +377,49 @@ void CTerrainRenderer::Render()
 
 		InstanceBuffer->Unmap();
 
+		if (!PatchCount && !QuarterPatchCount) continue;
+
 		// SORTING ======================================================
 		//
 		//!!!can sort by distance (min dist to camera) before rendering!
 		//or can sort by LOD!
 		//if so, don't write instance data into the video memory directly,
 		//write to tmp storage (with additional fields for sorting), sort, then send to GPU
+
+		// Setup lighting
+
+		DWORD ActualFF = FeatFlags;
+
+		Scene::CLight* pLight = NULL;
+
+		if (EnableLighting)
+		{
+			n_assert_dbg(pLights);
+			for (int j = 0; j < pLights->Size(); ++j)
+			{
+				Scene::CLight& CurrLight = *(*pLights)[j];
+				if ((*pLights)[j]->Type == Scene::CLight::Directional || (*pLights)[j]->Intensity == 0.f)
+				{
+					pLight = (*pLights)[j];
+					break; // Now only one directional light is supported by this renderer
+				}
+			}
+
+			ActualFF |= pLight ? LightFeatFlags[0] : FeatFlagDefault;
+		}
+
+		CShader::HTech hNewTech = Shader->GetTechByFeatures(ActualFF);
+		if (hCurrTech != hNewTech)
+		{
+			if (hCurrTech)
+			{
+				Shader->EndPass();
+				Shader->End();
+			}
+			n_verify_dbg(Shader->SetTech(hNewTech));
+			n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
+			hCurrTech = hNewTech;
+		}
 
 		// Setup shader consts
 
@@ -399,15 +434,33 @@ void CTerrainRenderer::Render()
 		WorldToHM[3] = -TerrainAABB.vmin.z * WorldToHM[1];
 		Shader->SetFloatArray(hWorldToHM, WorldToHM, 4);
 
-		float TerrainY[2];
-		TerrainY[0] = 65535.f * Terrain.GetVerticalScale();
-		TerrainY[1] = -32767.f * Terrain.GetVerticalScale() + Terrain.GetNode()->GetWorldPosition().y;
-		Shader->SetFloatArray(hTerrainY, TerrainY, 2);
+		float TerrainYInvSplat[4];
+		TerrainYInvSplat[0] = 65535.f * Terrain.GetVerticalScale();
+		TerrainYInvSplat[1] = -32767.f * Terrain.GetVerticalScale() + Terrain.GetNode()->GetWorldPosition().y;
+		TerrainYInvSplat[2] = Terrain.GetInvSplatSizeX();
+		TerrainYInvSplat[3] = Terrain.GetInvSplatSizeZ();
+		Shader->SetFloatArray(hTerrainYInvSplat, TerrainYInvSplat, 4);
 
 		float HMTexInfo[2];
 		HMTexInfo[0] = 1.f / (float)Terrain.GetHeightMapWidth();
 		HMTexInfo[1] = 1.f / (float)Terrain.GetHeightMapHeight();
 		Shader->SetFloatArray(hHMTexInfo, HMTexInfo, 2);
+
+		for (int VarIdx = 0; VarIdx < Terrain.ShaderVars.Size(); ++VarIdx)
+		{
+			CShaderVar& Var = Terrain.ShaderVars.ValueAtIndex(VarIdx);
+			if (!Var.IsBound()) Var.Bind(*Shader);
+			if (Var.IsBound()) n_assert(Var.Apply(*Shader));
+		}
+
+		if (pLight)
+		{
+			vector4 LightColor = pLight->Color * pLight->Intensity;
+			vector4 LightDir = pLight->GetReverseDirection();
+			if (hLightType) SharedShader->SetIntArray(hLightType, (int*)&pLight->Type, 1);
+			if (hLightColor) SharedShader->SetFloat4Array(hLightColor, &LightColor, 1);
+			if (hLightDir) SharedShader->SetFloat4Array(hLightDir, &LightDir, 1);
+		}
 
 		// Render gathered patches
 
@@ -450,8 +503,11 @@ void CTerrainRenderer::Render()
 
 	RenderSrv->SetInstanceBuffer(1, NULL, 0);
 
-	Shader->EndPass();
-	Shader->End();
+	if (hCurrTech)
+	{
+		Shader->EndPass();
+		Shader->End();
+	}
 
 	TerrainObjects.Clear();
 	pLights = NULL;

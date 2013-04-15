@@ -22,6 +22,10 @@ class CTerrainRenderer: public IRenderer
 	DeclareRTTI;
 	DeclareFactory(CTerrainRenderer);
 
+public:
+
+	enum { MaxLightsPerObject = 1 };
+
 protected:
 
 	enum ENodeStatus
@@ -56,7 +60,7 @@ protected:
 
 	CShader::HVar					hHeightMap;
 	CShader::HVar					hWorldToHM;
-	CShader::HVar					hTerrainY;
+	CShader::HVar					hTerrainYInvSplat;
 	CShader::HVar					hGridConsts;
 	CShader::HVar					hHMTexInfo;
 
@@ -75,6 +79,13 @@ protected:
 
 	nArray<Scene::CTerrain*>		TerrainObjects;
 	const nArray<Scene::CLight*>*	pLights;
+
+	PShader							SharedShader;
+	CShader::HVar					hLightType;
+	CShader::HVar					hLightDir;
+	CShader::HVar					hLightColor;
+	DWORD							LightFeatFlags[MaxLightsPerObject];
+	DWORD							FeatFlagDefault;
 
 	bool			CreatePatchMesh(DWORD Size);
 	CMesh*			GetPatchMesh(DWORD Size);
