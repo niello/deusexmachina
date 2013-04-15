@@ -501,6 +501,12 @@ void CModelRenderer::Render()
 		RenderSrv->Draw();
 	}
 
+	if (InstancingIsActive)
+	{
+		RenderSrv->SetInstanceBuffer(1, NULL, 0); //???don't hardcode instance stream index?
+		InstancingIsActive = false;
+	}
+
 	if (pMaterial)
 	{
 		pMaterial->GetShader()->EndPass();

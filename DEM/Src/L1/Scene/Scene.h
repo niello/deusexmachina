@@ -47,6 +47,7 @@ public:
 	void		Activate();
 	void		Deactivate();
 	void		Clear();
+	void		ClearVisibleLists() { VisibleObjects.Clear(); VisibleLights.Clear(); }
 
 	//!!!can add global lights to separate array if necessary!
 	void		AddVisibleObject(CRenderObject& Obj) { VisibleObjects.Append(&Obj); }

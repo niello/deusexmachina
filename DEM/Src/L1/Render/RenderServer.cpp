@@ -269,6 +269,13 @@ bool CRenderServer::CheckCaps(ECaps Cap)
 	{
 		case Caps_VSTexFiltering_Linear:
 			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
+		case Caps_VSTex_L16:
+			return SUCCEEDED(pD3D->CheckDeviceFormat(	D3DAdapter,
+														DEM_D3D_DEVICETYPE,
+														D3DPresentParams.BackBufferFormat,
+														D3DUSAGE_QUERY_VERTEXTEXTURE,
+														D3DRTYPE_TEXTURE,
+														D3DFMT_L16));
 		default: FAIL;
 	}
 }
@@ -277,6 +284,9 @@ bool CRenderServer::CheckCaps(ECaps Cap)
 bool CRenderServer::BeginFrame()
 {
 	n_assert(!IsInsideFrame);
+
+	PrimsRendered = 0;
+	DIPsRendered = 0;
 
 	// Assert stream VBs, IB and VLayout aren't set
 
@@ -307,6 +317,9 @@ void CRenderServer::EndFrame()
 	CurrVLayout = NULL;
 	CurrIB = NULL;
 	//!!!UnbindD3D9Resources()
+
+	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
+	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
 }
 //---------------------------------------------------------------------
 
@@ -391,7 +404,7 @@ void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 
 void CRenderServer::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
 {
-	n_assert(Index < MaxVertexStreamCount && OffsetVertex < pVB->GetVertexCount());
+	n_assert(Index < MaxVertexStreamCount && (!pVB || OffsetVertex < pVB->GetVertexCount()));
 	if (CurrVB[Index].get_unsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) return;
 	IDirect3DVertexBuffer9* pD3DVB = pVB ? pVB->GetD3DBuffer() : NULL;
 	DWORD VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSize() : 0;
@@ -506,7 +519,8 @@ void CRenderServer::Draw()
 	}
 	n_assert(SUCCEEDED(hr));
 
-	//!!!update Primitive and DIP/DP counters! if instanced, mul Primitive counter to number of instances
+	PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
+	++DIPsRendered;
 }
 //---------------------------------------------------------------------
 

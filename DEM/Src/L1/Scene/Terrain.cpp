@@ -51,6 +51,9 @@ bool CTerrain::OnAdd()
 
 	if (!HeightMap->IsLoaded())
 	{
+		//!!!write R32F variant!
+		n_assert(RenderSrv->CheckCaps(Render::Caps_VSTex_L16));
+
 		if (!HeightMap->Create(Render::CTexture::Texture2D, D3DFMT_L16, HFWidth, HFHeight, 0, 1, Render::Usage_Immutable, Render::CPU_NoAccess))
 			FAIL;
 
@@ -107,6 +110,14 @@ void CTerrain::Update()
 
 	//!!!can check global Box before adding!
 	pNode->GetScene()->AddVisibleObject(*this);
+}
+//---------------------------------------------------------------------
+
+void CTerrain::GetGlobalAABB(bbox3& Out) const
+{
+	const vector3& Translation = GetNode()->GetWorldPosition();
+	Out.vmin = Box.vmin + Translation;
+	Out.vmax = Box.vmax + Translation;
 }
 //---------------------------------------------------------------------
 

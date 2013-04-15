@@ -77,6 +77,9 @@ protected:
 	IDirect3DDevice9*					pD3DDevice;
 	ID3DXEffectPool*					pEffectPool;
 
+	DWORD								PrimsRendered;
+	DWORD								DIPsRendered;
+
 	bool				CreateDevice();
 	void				ReleaseDevice();
 	void				SetupBufferFormats();

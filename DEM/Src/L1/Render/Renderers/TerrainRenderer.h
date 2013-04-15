@@ -8,6 +8,9 @@
 
 // This terrain renderer implements CDLOD technique. It is paired with Scene::CTerrain
 // object, that feeds the renderer with a necessary data.
+// NB: now it supports only the translation from the owner node transform.
+
+//!!!TWO RENDERERS DO THE SAME CALCULATIONS IN THE SAME FRAME! (Depth pass)
 
 //!!!Terrain lighting!
 
@@ -39,7 +42,6 @@ protected:
 	struct CPatchInstance
 	{
 		vector4 ScaleOffset;
-		vector4 GridToHM;
 		float	MorphConsts[2];
 	};
 
@@ -53,6 +55,7 @@ protected:
 	nArray<CMorphInfo>				MorphConsts;
 
 	CShader::HVar					hHeightMap;
+	CShader::HVar					hWorldToHM;
 	CShader::HVar					hTerrainY;
 	CShader::HVar					hGridConsts;
 	CShader::HVar					hHMTexInfo;
@@ -76,7 +79,7 @@ protected:
 	bool			CreatePatchMesh(DWORD Size);
 	CMesh*			GetPatchMesh(DWORD Size);
 
-	ENodeStatus		ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
+	ENodeStatus		ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, CPatchInstance* pInstances, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
 
 public:
 

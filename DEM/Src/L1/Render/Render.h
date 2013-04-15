@@ -45,7 +45,8 @@ enum EPrimitiveTopology
 
 enum ECaps
 {
-	Caps_VSTexFiltering_Linear
+	Caps_VSTex_L16,				// Unsigned short 16-bit texture as a vertex texture
+	Caps_VSTexFiltering_Linear	// Bilinear min & mag filtering for vertex textures
 };
 
 }
