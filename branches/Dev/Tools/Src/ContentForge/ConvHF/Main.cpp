@@ -10,7 +10,7 @@ using namespace Data;
 int main(int argc, const char** argv)
 {
 	// Debug cmd line
-	// -patch 16 -lod 4 -in "..\..\..\..\InsanePoet\Content\Src\Terrain\Eger Cathedral Courtyard\ECCY_HF.bt" -out ECCY/ECCY -proj ..\..\..\..\InsanePoet\Content\
+	// -patch 8 -lod 6 -in "..\..\..\..\InsanePoet\Content\Src\Terrain\Eger Cathedral Courtyard\ECCY_HF.bt" -out ECCY/ECCY -proj ..\..\..\..\InsanePoet\Content\
 
 	nCmdLineArgs Args(argc, argv);
 	bool Help = Args.GetBoolArg("-help");

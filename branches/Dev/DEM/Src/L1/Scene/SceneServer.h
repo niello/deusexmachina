@@ -100,7 +100,11 @@ inline void CSceneServer::AddFrameShader(CStrID ID, Render::PFrameShader FrameSh
 //???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
 inline void CSceneServer::TriggerBeforePhysics()
 {
-	if (pCurrScene) pCurrScene->GetRootNode().UpdateLocalSpace();
+	if (pCurrScene)
+	{
+		pCurrScene->ClearVisibleLists();
+		pCurrScene->GetRootNode().UpdateLocalSpace();
+	}
 }
 //---------------------------------------------------------------------
 

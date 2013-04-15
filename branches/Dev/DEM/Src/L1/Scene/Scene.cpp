@@ -44,8 +44,7 @@ bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrI
 	if (!Camera.isvalid()) Camera = DefaultCamera;
 	if (!Camera.isvalid())
 	{
-		VisibleObjects.Clear();
-		VisibleLights.Clear();
+		ClearVisibleLists();
 		FAIL;
 	}
 
@@ -151,8 +150,7 @@ bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrI
 	// Nebula treats all them as different batches or render plugins, it is good idea maybe...
 	// Then backbuffer is present
 
-	VisibleObjects.Clear();
-	VisibleLights.Clear();
+	ClearVisibleLists();
 
 	OK;
 }
