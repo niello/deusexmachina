@@ -2,9 +2,8 @@
 #ifndef __DEM_L1_SCENE_TERRAIN_H__
 #define __DEM_L1_SCENE_TERRAIN_H__
 
-//#include <Scene/SceneNodeAttr.h>
 #include <Scene/RenderObject.h>
-#include <Render/Materials/Texture.h>
+#include <Render/Materials/ShaderVar.h>
 #include <Render/Geometry/Mesh.h>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
@@ -13,21 +12,21 @@
 namespace Scene
 {
 
-class CTerrain: public CRenderObject //CSceneNodeAttr
+class CTerrain: public CRenderObject
 {
 	DeclareRTTI;
 	DeclareFactory(CTerrain);
 
 protected:
 
-	DWORD				HFWidth;
-	DWORD				HFHeight;
-	DWORD				PatchSize;
-	DWORD				LODCount;
-	DWORD				TopPatchCountX;
-	DWORD				TopPatchCountZ;
-	float				VerticalScale;
-	bbox3				Box;
+	DWORD					HFWidth;
+	DWORD					HFHeight;
+	DWORD					PatchSize;
+	DWORD					LODCount;
+	DWORD					TopPatchCountX;
+	DWORD					TopPatchCountZ;
+	float					VerticalScale;
+	bbox3					Box;
 
 	struct CMinMaxMap
 	{
@@ -36,14 +35,19 @@ protected:
 		short*	pData;
 	};
 
-	short*				pMinMaxData;
-	nArray<CMinMaxMap>	MinMaxMaps;
+	short*					pMinMaxData;
+	nArray<CMinMaxMap>		MinMaxMaps;
 
-	Render::PTexture	HeightMap;
+	Render::PTexture		HeightMap;
+
+	float					InvSplatSizeX;
+	float					InvSplatSizeZ;
 
 public:
 
-	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL) { }
+	Render::CShaderVarMap	ShaderVars;
+
+	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) { }
 
 	virtual bool		LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual bool		OnAdd();
@@ -62,6 +66,8 @@ public:
 	Render::CTexture*	GetHeightMap() const { return HeightMap.get_unsafe(); }
 	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
 	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;
+	float				GetInvSplatSizeX() const { return InvSplatSizeX; }
+	float				GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };
 
 RegisterFactory(CTerrain);

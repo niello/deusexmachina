@@ -7,12 +7,16 @@
 #include <Data/BinaryReader.h>
 #include <d3d9.h> //!!!for a texture format only!
 
+namespace Render
+{
+	bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
+}
+
 namespace Scene
 {
 ImplementRTTI(Scene::CTerrain, Scene::CSceneNodeAttr);
 ImplementFactory(Scene::CTerrain);
 
-//!!!when reading patch size, assert it is >=2 and is pow2!
 bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
@@ -20,6 +24,44 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		case 'DLDC': // CDLD
 		{
 			HeightMap = RenderSrv->TextureMgr.GetTypedResource(DataReader.Read<CStrID>());
+			OK;
+		}
+		case 'XSST': // TSSX
+		{
+			InvSplatSizeX = 1.f / DataReader.Read<float>();
+			OK;
+		}
+		case 'ZSST': // TSSZ
+		{
+			InvSplatSizeZ = 1.f / DataReader.Read<float>();
+			OK;
+		}
+		case 'SRAV': // VARS
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			for (short i = 0; i < Count; ++i)
+			{
+				CStrID VarName;
+				DataReader.Read(VarName);
+				CShaderVar& Var = ShaderVars.Add(VarName);
+				Var.SetName(VarName);
+				DataReader.Read(Var.Value);
+			}
+			OK;
+		}
+		case 'SXET': // TEXS
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			for (short i = 0; i < Count; ++i)
+			{
+				CStrID VarName;
+				DataReader.Read(VarName);
+				CShaderVar& Var = ShaderVars.Add(VarName);
+				Var.SetName(VarName);
+				Var.Value = RenderSrv->TextureMgr.GetTypedResource(DataReader.Read<CStrID>());
+			}
 			OK;
 		}
 		default: FAIL;
@@ -87,7 +129,15 @@ bool CTerrain::OnAdd()
 	TopPatchCountX = (HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
 	TopPatchCountZ = (HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
 
-	// Calculate final scale and offset, maybe also other constants
+	for (int i = 0; i < ShaderVars.Size(); ++i)
+	{
+		CShaderVar& Var = ShaderVars.ValueAtIndex(i);
+		if (Var.Value.IsA<PTexture>())
+		{
+			PTexture Tex = Var.Value.GetValue<PTexture>();
+			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+		}
+	}
 
 	OK;
 }
