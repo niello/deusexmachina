@@ -2,14 +2,12 @@
 
 #include <UI/UIServer.h>
 #include <Data/Params.h>
-#include <Gfx/GfxServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
 #include <Game/Mgr/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Physics/Prop/PropAbstractPhysics.h>
 #include <gfx2/ngfxserver2.h>
-#include <Gfx/Prop/PropGraphics.h>
 
 namespace Game
 {
@@ -51,6 +49,7 @@ CEntity* CEnvQueryManager::GetEntityUnderMouse() const
 }
 //---------------------------------------------------------------------
 
+/*
 void CEnvQueryManager::GetEntitiesUnderMouseDragDropRect(const rectangle& DragDropRect,
 														 nArray<PEntity>& Entities)
 {
@@ -58,10 +57,28 @@ void CEnvQueryManager::GetEntitiesUnderMouseDragDropRect(const rectangle& DragDr
 	float angleOfView = nGfxServer2::Instance()->GetCamera().GetAngleOfView();
 
 	nArray<Graphics::PEntity> GfxEntities;
-	GfxSrv->DragDropSelect(Ray.end(),
-		nGfxServer2::Instance()->GetCamera().GetAngleOfView() * DragDropRect.width(),
-		DragDropRect.width() / DragDropRect.height(),
-		GfxEntities);
+	//RenderSrv->GetDisplay().DragDropSelect(Ray.end(),
+	//	nGfxServer2::Instance()->GetCamera().GetAngleOfView() * DragDropRect.width(),
+	//	DragDropRect.width() / DragDropRect.height(),
+	//	GfxEntities);
+
+		CCameraEntity* cameraEntity = CurrLevel->GetCamera();
+		matrix44 transform = cameraEntity->GetTransform();
+		transform.lookatRh(lookAt, vector3(0.0f, 1.0f, 0.0f));
+		nCamera2 camera = cameraEntity->GetCamera();
+		camera.SetAngleOfView(angleOfView);
+		camera.SetAspectRatio(aspectRatio);
+
+		Ptr<CCameraEntity> dragDropCameraEntity = CCameraEntity::Create();
+		dragDropCameraEntity->SetTransform(transform);
+		dragDropCameraEntity->SetCamera(camera);
+
+		//!!!uncomment & rewrite after new quadtree start working!
+
+		//CurrLevel->GetRootCell()->ClearLinks(CEntity::PickupLink);
+		//CurrLevel->GetRootCell()->UpdateLinks(dragDropCameraEntity, CEntity::GFXShape, CEntity::PickupLink);
+		//for (int i = 0; i < dragDropCameraEntity->GetNumLinks(CEntity::PickupLink); i++)
+		//	entities.PushBack(dragDropCameraEntity->GetLinkAt(CEntity::PickupLink, i));
 
 	for (int i = 0; i < GfxEntities.Size(); i++)
 	{
@@ -104,6 +121,7 @@ nArray<PEntity> CEnvQueryManager::GetEntitiesInBox(const vector3& Scale, const m
 	return GameEntities;
 }
 //---------------------------------------------------------------------
+*/
 
 vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& pEntity, const vector3* Offset)
 {
@@ -119,19 +137,22 @@ vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& pEntit
 
 vector2 CEnvQueryManager::GetEntityScreenPositionUpper(const Game::CEntity& pEntity)
 {
-	Properties::CPropGraphics* pGraphics = pEntity.FindProperty<Properties::CPropGraphics>();
-	n_assert(pGraphics);
+	//GFX
+	//Properties::CPropGraphics* pGraphics = pEntity.FindProperty<Properties::CPropGraphics>();
+	//n_assert(pGraphics);
 
-	bbox3 AABB;
-	pGraphics->GetAABB(AABB);
+	//bbox3 AABB;
+	//pGraphics->GetAABB(AABB);
 
-	vector3 Offset(0.0f, AABB.size().y, 0.0f);
-	return GetEntityScreenPositionRel(pEntity, &Offset);
+	//vector3 Offset(0.0f, AABB.size().y, 0.0f);
+	return GetEntityScreenPositionRel(pEntity, NULL); //&Offset);
 }
 //---------------------------------------------------------------------
 
 rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity, const vector3* const Offset)
 {
+	//GFX
+	/*
 	bbox3 AABB;
 
 	Properties::CPropGraphics* pGraphics = Entity.FindProperty<Properties::CPropGraphics>();
@@ -151,8 +172,10 @@ rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity
 	AABB.transform(nGfxServer2::Instance()->GetTransform(nGfxServer2::View));
 
 	const matrix44& Projection = nGfxServer2::Instance()->GetCamera().GetProjection();
+	*/
 	rectangle Result;
 
+	/*
 	for (int i = 0; i < 6; i++)
 	{
 		vector3 Corner = AABB.corner_point(i);
@@ -175,7 +198,7 @@ rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity
 		}
 		else Result.v0 = Result.v1 = ScreenPos;
 	}
-
+*/
 	return Result;
 
 	/*AABB.transform(nGfxServer2::Instance()->GetCamera().GetProjection());

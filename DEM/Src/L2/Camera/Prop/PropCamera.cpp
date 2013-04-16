@@ -1,8 +1,6 @@
 #include "PropCamera.h"
 
 #include <Game/Mgr/FocusManager.h>
-#include <Gfx/GfxServer.h>
-#include <Gfx/CameraEntity.h>
 #include <Audio/AudioServer.h>
 #include <DB/DBServer.h>
 #include <Loading/EntityFactory.h>
@@ -72,7 +70,6 @@ void CPropCamera::Deactivate()
 
 void CPropCamera::OnObtainCameraFocus()
 {
-	GfxSrv->GetCamera()->GetCamera().SetAngleOfView(GetEntity()->Get<float>(Attr::FieldOfView));
 	PROP_SUBSCRIBE_PEVENT(OnRender, CPropCamera, OnRenderProc);
 }
 //---------------------------------------------------------------------
@@ -85,10 +82,10 @@ void CPropCamera::OnLoseCameraFocus()
 
 void CPropCamera::OnRender()
 {
-	//ShakeFxHelper.SetCameraTransform(GfxSrv->GetCamera()->GetTransform());
+	//ShakeFxHelper.SetCameraTransform(RenderSrv->GetDisplay().GetCamera()->GetTransform());
 	//ShakeFxHelper.Update();
-	//GfxSrv->GetCamera()->SetTransform(ShakeFxHelper.GetShakeCameraTransform());
-	AudioSrv->ListenerTransform = GfxSrv->GetCamera()->GetTransform();
+	//GetCamera()->SetTransform(ShakeFxHelper.GetShakeCameraTransform());
+	//AudioSrv->ListenerTransform = GetCamera()->GetTransform();
 }
 //---------------------------------------------------------------------
 

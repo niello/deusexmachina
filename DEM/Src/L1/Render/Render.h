@@ -14,7 +14,8 @@ enum EClearFlag
 {
 	Clear_Color		= 0x01,
 	Clear_Depth		= 0x02,
-	Clear_Stencil	= 0x04
+	Clear_Stencil	= 0x04,
+	Clear_All		= (Clear_Color | Clear_Depth | Clear_Stencil)
 };
 
 enum EMSAAQuality

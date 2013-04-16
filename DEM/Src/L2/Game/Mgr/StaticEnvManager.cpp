@@ -2,8 +2,6 @@
 
 #include <Physics/Level.h>
 #include <Physics/Event/SetTransform.h>
-#include <Gfx/GfxServer.h>
-#include <Gfx/ShapeEntity.h>
 #include <Scene/SceneServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
@@ -14,7 +12,6 @@ namespace Attr
 {
 	DeclareAttr(GUID);
 	DeclareAttr(Physics);
-	DeclareAttr(Graphics);
 	DeclareAttr(Transform);
 	DeclareAttr(ScenePath);
 	DeclareAttr(SceneFile);
@@ -82,34 +79,6 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 					pObj->Collision.Append(pShape);
 					PhysicsSrv->GetLevel()->AttachShape(pShape);
 				}
-			}
-		}
-	}
-
-	const nString& GfxResName = Table->Get<nString>(Attr::Graphics, RowIdx);    
-	if (GfxResName.IsValid())
-	{
-		nArray<Graphics::PShapeEntity> GfxEntities;
-		GfxSrv->CreateGfxEntities(GfxResName, EntityTfm, GfxEntities);
-		
-		if (GfxEntities.Size() > 0)
-		{
-			if (!pObj)
-			{
-				CStrID UID = Table->Get<CStrID>(Attr::GUID, RowIdx);
-				EnvObjects.Add(UID, CEnvObject()); //!!!unnecessary copying!
-				pObj = &EnvObjects[UID];
-			}
-
-			matrix44 InvEntityTfm = EntityTfm;
-			InvEntityTfm.invert();
-
-			for (int i = 0; i < GfxEntities.Size(); i++)
-			{
-				Graphics::PShapeEntity pEnt = GfxEntities[i];
-				pObj->Gfx.Append(pEnt);
-				pObj->GfxLocalTfm.Append(pEnt->GetTransform() * InvEntityTfm);
-				GfxSrv->GetLevel()->AttachEntity(pEnt);
 			}
 		}
 	}
@@ -187,8 +156,6 @@ void CStaticEnvManager::SetEnvObjectTransform(CStrID ID, const matrix44& Tfm)
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(Idx);
 		for (int i = 0; i < Obj.Collision.Size(); i++)
 			Obj.Collision[i]->SetTransform(Obj.CollLocalTfm[i] * Tfm);
-		for (int i = 0; i < Obj.Gfx.Size(); i++)
-			Obj.Gfx[i]->SetTransform(Obj.GfxLocalTfm[i] * Tfm);
 		//if (Obj.Node.isvalid()) Obj.Node->SetLocalTransform(Tfm); //???!!!setglobal!
 	}
 	else
@@ -211,8 +178,6 @@ void CStaticEnvManager::DeleteEnvObject(CStrID ID)
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(Idx);
 		for (int j = 0; j < Obj.Collision.Size(); j++)
 			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
-		for (int j = 0; j < Obj.Gfx.Size(); j++)
-			GfxSrv->GetLevel()->RemoveEntity(Obj.Gfx[j]);
 		if (Obj.Node.isvalid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 		EnvObjects.EraseAt(Idx);
 	}
@@ -231,8 +196,6 @@ void CStaticEnvManager::ClearStaticEnv()
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(i);
 		for (int j = 0; j < Obj.Collision.Size(); j++)
 			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
-		for (int j = 0; j < Obj.Gfx.Size(); j++)
-			GfxSrv->GetLevel()->RemoveEntity(Obj.Gfx[j]);
 		if (Obj.Node.isvalid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 	}
 	EnvObjects.Clear();

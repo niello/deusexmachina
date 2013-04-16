@@ -1,6 +1,7 @@
 #include "UIServer.h"
 
 #include "Window.h"
+#include <Render/RenderServer.h>
 #include <Events/EventManager.h>
 #include <Input/InputServer.h>
 #include <Input/Events/KeyDown.h>
@@ -10,8 +11,6 @@
 #include <Input/Events/MouseBtnDown.h>
 #include <Input/Events/MouseBtnUp.h>
 #include <Input/Events/MouseWheel.h>
-//#include <gfx2/ngfxserver2.h> //!!!when N2 renderer!
-#include <gfx2/nd3d9server.h>
 
 #include <UI/CEGUI/CEGUINebula2Logger.h>
 #include <UI/CEGUI/CEGUINebula2ResourceProvider.h>
@@ -36,11 +35,9 @@ CUIServer::CUIServer()
 	n_assert(!Singleton);
 	Singleton = this;
 
-	n_assert2(nD3D9Server::Instance(), "There is no initialized nD3D9Server, can't use default renderer");
-
 	Logger = n_new(CEGUI::CNebula2Logger);
 	//!!!N2 renderer!
-	Renderer = &CEGUI::Direct3D9Renderer::create(nD3D9Server::Instance()->GetD3DDevice());
+	Renderer = &CEGUI::Direct3D9Renderer::create(RenderSrv->GetD3DDevice());
 	ResourceProvider = n_new(CEGUI::CNebula2ResourceProvider);
 	Parser = n_new(CEGUI::TinyXML2Parser); //???delete?
 
@@ -105,6 +102,7 @@ void CUIServer::Trigger()
 }
 //---------------------------------------------------------------------
 
+//???need this method? see UIRenderer
 void CUIServer::Render()
 {
 	CEGUI::System::getSingleton().renderGUI();

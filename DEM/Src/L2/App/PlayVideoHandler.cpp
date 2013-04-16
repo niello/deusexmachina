@@ -1,5 +1,6 @@
 #include "PlayVideoHandler.h"
 
+#include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
 #include <Debug/DebugServer.h>
 #include <Events/EventManager.h>
@@ -31,7 +32,7 @@ CStrID CPlayVideoHandler::OnFrame()
 	DbgSrv->Trigger();
 	EventMgr->ProcessPendingEvents();
 
-	nGfxServer2::Instance()->Trigger();
+	RenderSrv->GetDisplay().ProcessWindowMessages();
 
 	VideoSrv->Trigger();
 	InputSrv->Trigger();

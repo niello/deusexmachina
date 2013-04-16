@@ -8,7 +8,7 @@
 #include <Scripting/EntityScriptObject.h>
 #include <Core/Logger.h>
 
-#include <gfx2/ngfxserver2.h>
+#include <gfx2/nd3d9server.h>
 #include <resource/nresourceserver.h>
 
 #undef DeleteFile
@@ -97,10 +97,10 @@ bool CEnvironment::InitEngine()
 	RenderServer->GetDisplay().SetDisplayMode(DisplayMode);
 	RenderServer->Open();
 
-	GfxServer.Create();
-	GfxServer->RenderPath = RenderPath; //???store here?
-	GfxServer->FeatureSet = FeatureSet; //???store here?
-	GfxServer->Open();
+	DataSrv->SetAssign("shaders", "data:shaders/2.0");
+	gfxServer = n_new(nD3D9Server);
+	gfxServer->AddRef();
+	gfxServer->OpenDisplay();
 
 	SceneServer.Create();
 	//???do it in Open()?
@@ -142,8 +142,11 @@ void CEnvironment::ReleaseEngine()
 
 	SceneServer = NULL;
 
-	if (GfxServer.isvalid() && GfxServer->IsOpen()) GfxServer->Close();
-	GfxServer = NULL;
+	if (gfxServer.isvalid())
+	{
+		gfxServer->CloseDisplay();
+		gfxServer->Release();
+	}
 
 	if (RenderServer.isvalid() && RenderServer->IsOpen()) RenderServer->Close();
 	RenderServer = NULL;
@@ -202,8 +205,6 @@ bool CEnvironment::InitGameSystem()
 			const Data::CParam& Prm = SOActTpls->Get(i);
 			AISrv->AddSmartObjActionTpl(Prm.GetName(), *Prm.GetValue<Data::PParams>());
 		}
-	
-	GfxServer->EntityTimeSrc = TimeServer->GetTimeSource(CStrID("Game"));
 
 	OK;
 }

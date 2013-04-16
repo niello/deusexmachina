@@ -25,7 +25,6 @@ namespace Attr
 {
 	DeclareAttrsModule(StdAttrs);
 	DeclareAttrsModule(Database);
-	DefineString(Graphics);
 	DefineString(SceneFile);
 	DefineString(AnimDesc);
 	DefineString(Physics);
@@ -38,7 +37,6 @@ namespace Attr
 }
 
 BEGIN_ATTRS_REGISTRATION(Main)
-	RegisterString(Graphics, ReadOnly);
 	RegisterString(SceneFile, ReadOnly);
 	RegisterString(AnimDesc, ReadOnly);
 	RegisterString(Physics, ReadOnly);
@@ -510,8 +508,6 @@ int main(int argc, const char** argv)
 	DataSrv->SetAssign("renderpath", "home:shaders");
 	DataSrv->SetAssign("export", Export);
 	DataSrv->SetAssign("src", Proj + "/src");
-	DataSrv->SetAssign("gfxlib", Export + "/gfxlib");
-	DataSrv->SetAssign("gfxsrc", "src:gfxlib");
 	DataSrv->SetAssign("scene", Export + "/Scene");
 	DataSrv->SetAssign("scenesrc", "src:Scene");
 	DataSrv->SetAssign("dlg", Export + "/game/dlg");
@@ -533,7 +529,6 @@ int main(int argc, const char** argv)
 
 	// Analyze DB(s) and get names of used resources
 
-	nArray<nString> SceneFiles;
 	nArray<nString> SceneFiles2;
 	nArray<nString> AnimDescFiles;
 	nArray<nString> PhysicsFiles;
@@ -576,7 +571,6 @@ int main(int argc, const char** argv)
 				{
 					DS->SetRowIndex(i);
 					
-					AddRsrcIfUnique(DS, Attr::Graphics, SceneFiles);
 					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
 					AddRsrcIfUnique(DS, Attr::AnimDesc, AnimDescFiles);
 					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
@@ -642,7 +636,6 @@ int main(int argc, const char** argv)
 				{
 					DS->SetRowIndex(i);
 					
-					AddRsrcIfUnique(DS, Attr::Graphics, SceneFiles);
 					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
 					AddRsrcIfUnique(DS, Attr::AnimDesc, AnimDescFiles);
 					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
@@ -671,49 +664,13 @@ int main(int argc, const char** argv)
 
 	nArray<nString> ResourceFiles;
 
-	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneRsrc.dss"))
-	{
-		n_error("BBuilder: Failed to read 'home:DataSchemes/SceneRsrc.dss'");
-		return FailApp(WaitKey);
-	}
-
-	PDataScheme SceneRsrcScheme = DataSrv->GetDataScheme(CStrID("SceneRsrc"));
-
-	for (int i = 0; i < SceneFiles.Size(); i++)
-	{
-		nString& SceneFile = SceneFiles[i];
-
-		n_printf("\nParsing scene resource '%s'...\n", SceneFile.Get());
-
-		nString SceneRsrcName = "gfxsrc:" + SceneFile + ".hrd";
-
-		PParams SceneRsrc = DataSrv->LoadHRD(SceneRsrcName, false);
-		if (SceneRsrc.isvalid())
-		{
-			if (!ParseSceneNode(*SceneRsrc, ResourceFiles))
-			{
-				n_printf("BBuilder: Failed to parse scene resource '%s'\n", SceneRsrcName.Get());
-				return FailApp(WaitKey);
-			}
-
-			SceneFile = SceneFile + ".scn";
-			CFileStream File;
-			if (File.Open("gfxlib:" + SceneFile, SAM_WRITE))
-			{
-				CBinaryWriter Writer(File);
-				Writer.WriteParams(*SceneRsrc, *SceneRsrcScheme);
-				File.Close();
-			}
-		}
-	}
-
 	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
 	{
 		n_error("BBuilder: Failed to read 'home:DataSchemes/SceneNodes.dss'");
 		return FailApp(WaitKey);
 	}
 
-	SceneRsrcScheme = DataSrv->GetDataScheme(CStrID("SceneNode"));
+	Data::PDataScheme SceneRsrcScheme = DataSrv->GetDataScheme(CStrID("SceneNode"));
 
 	for (int i = 0; i < SceneFiles2.Size(); i++)
 	{
@@ -951,11 +908,6 @@ int main(int argc, const char** argv)
 	if (!AddDirectoryToTOC("db", TOC, Offset)) goto error;
 
 	// FilterByFolder _appends_ recs within a folder from In arrray to Out array
-
-	TOC.BeginDirEntry("gfxlib");
-	FilterByFolder("gfxlib", RsrcFromExport, SceneFiles);
-	AddFilesToTOC(SceneFiles, TOC, Offset);
-	TOC.EndDirEntry();
 
 	TOC.BeginDirEntry("scene");
 	FilterByFolder("scene", RsrcFromExport, SceneFiles2);

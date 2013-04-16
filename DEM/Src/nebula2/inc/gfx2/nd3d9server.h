@@ -123,10 +123,6 @@ public:
     virtual void DrawIndexedNS(PrimitiveType primType);
     /// render non-indexed primitives without applying shader state (NS == No Shader)
     virtual void DrawNS(PrimitiveType primType);
-
-    /// trigger the window system message pump
-    virtual void Trigger();
-
     /// draw text (immediately)
     virtual void DrawText(const nString& text, const vector4& color, const rectangle& rect, uint flags, bool immediate = true);
     /// get text extents

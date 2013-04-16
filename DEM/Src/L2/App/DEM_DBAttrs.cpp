@@ -10,9 +10,7 @@ namespace Attr
 	DeclareAttrsModule(TimeServer)
 	DeclareAttrsModule(LoaderServer)
 	DeclareAttrsModule(FocusManager)
-	DeclareAttrsModule(PropAbstractGraphics)
 	DeclareAttrsModule(PropPhysics)
-	DeclareAttrsModule(PropLight)
 	DeclareAttrsModule(PropTime)
 
 	// New attrs
@@ -45,9 +43,7 @@ void CEnvironment::RegisterAttributes()
 	RegisterAttrs(TimeServer)
 	RegisterAttrs(LoaderServer)
 	RegisterAttrs(FocusManager)
-	RegisterAttrs(PropAbstractGraphics)
 	RegisterAttrs(PropPhysics)
-	RegisterAttrs(PropLight)
 	RegisterAttrs(PropTime)
 
 	// New attrs
