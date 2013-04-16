@@ -15,6 +15,9 @@
 
 //!!!need FrameLog - logging of rendering calls for one particular frame!
 
+//!!!OLD!
+class nD3D9Server;
+
 namespace Render
 {
 #define RenderSrv Render::CRenderServer::Instance()
@@ -36,7 +39,7 @@ public:
 protected:
 
 	//!!!OLD!
-	friend class nD3D9Server;
+	friend class ::nD3D9Server;
 
 	enum { MaxShaderFeatureCount = sizeof(DWORD) * 8 };
 

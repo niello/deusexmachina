@@ -206,408 +206,30 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Gfx"
-			>
-			<Filter
-				Name="gfx2"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<Filter
-					Name="ngfxserver2"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\ncamera2.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\ngfxserver2.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\ngfxserver2_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ngfxserver2;N_NEW=n_new_ngfxserver2;N_INITCMDS=n_initcmds_ngfxserver2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ngfxserver2;N_NEW=n_new_ngfxserver2;N_INITCMDS=n_initcmds_ngfxserver2"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nlight.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nmesh2"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nmesh2.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\nmesh2_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmesh2;N_NEW=n_new_nmesh2;N_INITCMDS=n_initcmds_nmesh2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nmesh2;N_NEW=n_new_nmesh2;N_INITCMDS=n_initcmds_nmesh2"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nmeshloader.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nn3d2loader.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nnvx2loader.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nocclusionquery"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nocclusionquery.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nshader2"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nshader2.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\nshader2_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nshader2;N_NEW=n_new_nshader2;N_INITCMDS=n_initcmds_nshader2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nshader2;N_NEW=n_new_nshader2;N_INITCMDS=n_initcmds_nshader2"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nshaderarg.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nshaderparams.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nshaderstate"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\nshaderstate.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nshaderstate;N_NEW=n_new_nshaderstate;N_INITCMDS=n_initcmds_nshaderstate"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nshaderstate;N_NEW=n_new_nshaderstate;N_INITCMDS=n_initcmds_nshaderstate"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\nshaderstate.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="ntexture2"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\gfx2\ntexture2.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\src\gfx2\ntexture2_main.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ntexture2;N_NEW=n_new_ntexture2;N_INITCMDS=n_initcmds_ntexture2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_ntexture2;N_NEW=n_new_ntexture2;N_INITCMDS=n_initcmds_ntexture2"
-							/>
-						</FileConfiguration>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
-				Name="renderpath"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<Filter
-					Name="nrpphase"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrpphase.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpphase;N_NEW=n_new_nrpphase;N_INITCMDS=n_initcmds_nrpphase"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpphase;N_NEW=n_new_nrpphase;N_INITCMDS=n_initcmds_nrpphase"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrpphase.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nrprendertarget"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrprendertarget.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrprendertarget;N_NEW=n_new_nrprendertarget;N_INITCMDS=n_initcmds_nrprendertarget"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrprendertarget;N_NEW=n_new_nrprendertarget;N_INITCMDS=n_initcmds_nrprendertarget"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrprendertarget.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nrpsequence"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrpsequence.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpsequence;N_NEW=n_new_nrpsequence;N_INITCMDS=n_initcmds_nrpsequence"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpsequence;N_NEW=n_new_nrpsequence;N_INITCMDS=n_initcmds_nrpsequence"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrpsequence.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nrpshader"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrpshader.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpshader;N_NEW=n_new_nrpshader;N_INITCMDS=n_initcmds_nrpshader"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpshader;N_NEW=n_new_nrpshader;N_INITCMDS=n_initcmds_nrpshader"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrpshader.h"
-						>
-					</File>
-				</Filter>
-				<Filter
-					Name="nrpxmlparser"
-					Filter="cpp;c;cxx;cc;h;hxx;hcc"
-					>
-					<File
-						RelativePath="..\..\Src\nebula2\src\renderpath\nrpxmlparser.cc"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpxmlparser;N_NEW=n_new_nrpxmlparser;N_INITCMDS=n_initcmds_nrpxmlparser"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions="N_INIT=n_init_nrpxmlparser;N_NEW=n_new_nrpxmlparser;N_INITCMDS=n_initcmds_nrpxmlparser"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Src\nebula2\inc\renderpath\nrpxmlparser.h"
-						>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
-				Name="nvariableserver"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\variable\nvariable.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\variable\nvariablecontext.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\variable\nvariableserver.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\variable\nvariableserver_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nvariableserver;N_NEW=n_new_nvariableserver;N_INITCMDS=n_initcmds_nvariableserver"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nvariableserver;N_NEW=n_new_nvariableserver;N_INITCMDS=n_initcmds_nvariableserver"
-						/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Scene"
+			Name="gfx2"
 			Filter="cpp;c;cxx;cc;h;hxx;hcc"
 			>
 			<Filter
-				Name="nsceneserver"
+				Name="ngfxserver2"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nrendercontext.h"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\ncamera2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nsceneserver.h"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\ngfxserver2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_debug.cc"
+					RelativePath="..\..\Src\nebula2\src\gfx2\ngfxserver2_main.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
+							PreprocessorDefinitions="N_INIT=n_init_ngfxserver2;N_NEW=n_new_ngfxserver2;N_INITCMDS=n_initcmds_ngfxserver2"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -615,107 +237,32 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
+							PreprocessorDefinitions="N_INIT=n_init_ngfxserver2;N_NEW=n_new_ngfxserver2;N_INITCMDS=n_initcmds_ngfxserver2"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_lightshadow.cc"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nlight.h"
 					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_occlusion.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nsceneserver_render.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nsceneserver;N_NEW=n_new_nsceneserver;N_INITCMDS=n_initcmds_nsceneserver"
-						/>
-					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
-				Name="Nodes"
+				Name="nmesh2"
+				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nlightnode.h"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nmesh2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nlightnode_main.cc"
+					RelativePath="..\..\Src\nebula2\src\gfx2\nmesh2_main.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nlightnode;N_NEW=n_new_nlightnode;N_INITCMDS=n_initcmds_nlightnode"
+							PreprocessorDefinitions="N_INIT=n_init_nmesh2;N_NEW=n_new_nmesh2;N_INITCMDS=n_initcmds_nmesh2"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -723,23 +270,49 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nlightnode;N_NEW=n_new_nlightnode;N_INITCMDS=n_initcmds_nlightnode"
+							PreprocessorDefinitions="N_INIT=n_init_nmesh2;N_NEW=n_new_nmesh2;N_INITCMDS=n_initcmds_nmesh2"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nmaterialnode.h"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nmeshloader.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nmaterialnode_main.cc"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nn3d2loader.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nnvx2loader.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="nocclusionquery"
+				Filter="cpp;c;cxx;cc;h;hxx;hcc"
+				>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nocclusionquery.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="nshader2"
+				Filter="cpp;c;cxx;cc;h;hxx;hcc"
+				>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nshader2.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\nebula2\src\gfx2\nshader2_main.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nmaterialnode;N_NEW=n_new_nmaterialnode;N_INITCMDS=n_initcmds_nmaterialnode"
+							PreprocessorDefinitions="N_INIT=n_init_nshader2;N_NEW=n_new_nshader2;N_INITCMDS=n_initcmds_nshader2"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -747,23 +320,32 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nmaterialnode;N_NEW=n_new_nmaterialnode;N_INITCMDS=n_initcmds_nmaterialnode"
+							PreprocessorDefinitions="N_INIT=n_init_nshader2;N_NEW=n_new_nshader2;N_INITCMDS=n_initcmds_nshader2"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nscenenode.h"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nshaderarg.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nscenenode_main.cc"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nshaderparams.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="nshaderstate"
+				Filter="cpp;c;cxx;cc;h;hxx;hcc"
+				>
+				<File
+					RelativePath="..\..\Src\nebula2\src\gfx2\nshaderstate.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nscenenode;N_NEW=n_new_nscenenode;N_INITCMDS=n_initcmds_nscenenode"
+							PreprocessorDefinitions="N_INIT=n_init_nshaderstate;N_NEW=n_new_nshaderstate;N_INITCMDS=n_initcmds_nshaderstate"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -771,23 +353,32 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nscenenode;N_NEW=n_new_nscenenode;N_INITCMDS=n_initcmds_nscenenode"
+							PreprocessorDefinitions="N_INIT=n_init_nshaderstate;N_NEW=n_new_nshaderstate;N_INITCMDS=n_initcmds_nshaderstate"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nshapenode.h"
+					RelativePath="..\..\Src\nebula2\inc\gfx2\nshaderstate.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="ntexture2"
+				Filter="cpp;c;cxx;cc;h;hxx;hcc"
+				>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\gfx2\ntexture2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nshapenode_main.cc"
+					RelativePath="..\..\Src\nebula2\src\gfx2\ntexture2_main.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nshapenode;N_NEW=n_new_nshapenode;N_INITCMDS=n_initcmds_nshapenode"
+							PreprocessorDefinitions="N_INIT=n_init_ntexture2;N_NEW=n_new_ntexture2;N_INITCMDS=n_initcmds_ntexture2"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -795,79 +386,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nshapenode;N_NEW=n_new_nshapenode;N_INITCMDS=n_initcmds_nshapenode"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nskynode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nskynode_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskynode;N_NEW=n_new_nskynode;N_INITCMDS=n_initcmds_nskynode"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskynode;N_NEW=n_new_nskynode;N_INITCMDS=n_initcmds_nskynode"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\nskystate.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\nskystate_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskystate;N_NEW=n_new_nskystate;N_INITCMDS=n_initcmds_nskystate"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nskystate;N_NEW=n_new_nskystate;N_INITCMDS=n_initcmds_nskystate"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\scene\ntransformnode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\scene\ntransformnode_main.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_ntransformnode;N_NEW=n_new_ntransformnode;N_INITCMDS=n_initcmds_ntransformnode"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_ntransformnode;N_NEW=n_new_ntransformnode;N_INITCMDS=n_initcmds_ntransformnode"
+							PreprocessorDefinitions="N_INIT=n_init_ntexture2;N_NEW=n_new_ntexture2;N_INITCMDS=n_initcmds_ntexture2"
 						/>
 					</FileConfiguration>
 				</File>

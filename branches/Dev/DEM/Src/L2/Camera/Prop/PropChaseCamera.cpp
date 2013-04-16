@@ -2,8 +2,6 @@
 
 #include <Time/TimeServer.h>
 #include <Game/Entity.h>
-#include <Gfx/GfxServer.h>
-#include <Gfx/CameraEntity.h>
 #include <Camera/Event/CameraOrbit.h>
 #include <Camera/Event/CameraDistance.h>
 #include <Physics/Prop/PropPhysics.h>
@@ -130,11 +128,11 @@ void CPropChaseCamera::OnObtainCameraFocus()
 {
 	// initialize the feedback loops with the current pCamera values so
 	// that we get a smooth interpolation to the new position
-	Graphics::CCameraEntity* pCamera = GfxSrv->GetCamera();
-	const matrix44& Tfm = pCamera->GetTransform();
-	Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), Tfm.pos_component());
-	Lookat.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain),
-		Tfm.pos_component() - (Tfm.z_component() * 10.0f));
+	//Graphics::CCameraEntity* pCamera = RenderSrv->GetDisplay().GetCamera();
+	//const matrix44& Tfm = pCamera->GetTransform();
+	//Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), Tfm.pos_component());
+	//Lookat.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain),
+	//	Tfm.pos_component() - (Tfm.z_component() * 10.0f));
 
 	SceneSrv->GetCurrentScene()->SetMainCamera(Camera);
 
@@ -236,9 +234,6 @@ vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
 
 void CPropChaseCamera::UpdateCamera()
 {
-	Graphics::CCameraEntity* pCamera = GfxSrv->GetCamera();
-	n_assert(pCamera);
-
 	// compute the lookat point in global space
 	const matrix44& m44 = GetEntity()->Get<matrix44>(Attr::Transform);
 	matrix33 m33 = matrix33(m44.x_component(), m44.y_component(), m44.z_component());
@@ -257,12 +252,12 @@ void CPropChaseCamera::UpdateCamera()
 
 	// check if the pCamera is currently at the origin, if yes it is in its initial
 	// position and should not interpolate towards its target position
-	const vector3& camPos = pCamera->GetTransform().pos_component();
-	if (camPos.isequal(vector3::Zero, 0.0f))
-	{
-		Position.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), goalPos);
-		Lookat.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain), lookatPoint);
-	}
+	//const vector3& camPos = pCamera->GetTransform().pos_component();
+	//if (camPos.isequal(vector3::Zero, 0.0f))
+	//{
+	//	Position.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), goalPos);
+	//	Lookat.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain), lookatPoint);
+	//}
 
 	// feed and update the feedback loops
 	Position.Goal = goalPos;
@@ -276,7 +271,7 @@ void CPropChaseCamera::UpdateCamera()
 	CameraMatrix.lookatRh(Lookat.State, vector3::Up);
 
 	// update the graphics subsystem pCamera
-	pCamera->SetTransform(CameraMatrix);
+	//pCamera->SetTransform(CameraMatrix);
 }
 //---------------------------------------------------------------------
 

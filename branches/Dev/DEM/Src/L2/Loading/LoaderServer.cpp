@@ -7,7 +7,6 @@
 #include <Time/TimeServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/Level.h>
-#include <Gfx/GfxServer.h>
 #include <Scene/SceneServer.h>
 #include <AI/AIServer.h>
 #include <Game/GameServer.h>
@@ -257,11 +256,6 @@ bool CLoaderServer::LoadLevel(const nString& LevelName)
 
 	PhysicsSrv->SetLevel(Physics::CLevel::Create());
 
-	Ptr<Graphics::CLevel> GfxLevel;
-	GfxLevel.Create();
-	GfxLevel->Init(LevelBox, QuadTreeDepth);
-	GfxSrv->SetLevel(GfxLevel);
-
 	n_assert(SceneSrv->CreateScene(LevelID, LevelBox, true));
 
 	n_assert(AISrv->SetupLevel(LevelBox));
@@ -312,7 +306,6 @@ void CLoaderServer::UnloadLevel()
 	StaticEnvMgr->ClearStaticEnv();
 	EntityMgr->RemoveAllEntities();
 	SceneSrv->RemoveScene(SceneSrv->GetCurrentSceneID());
-	GfxSrv->SetLevel(NULL);
 	PhysicsSrv->SetLevel(NULL);
 	LevelBox.vmin = vector3::Zero;
 	LevelBox.vmax = vector3::Zero;

@@ -81,19 +81,4 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 }
 //---------------------------------------------------------------------
 
-//!!!OLD!
-void CPass::Validate()
-{
-	n_assert(pFrameShader);
-
-	// find shader
-	if (rpShaderIndex == -1 && shaderAlias.IsValid())
-	{
-		rpShaderIndex = pFrameShader->FindShaderIndex(shaderAlias);
-		if (rpShaderIndex == -1)
-			n_error("nRpPass::Validate(): couldn't find shader alias '%s' in render path xml file!", shaderAlias.Get());
-	}
-}
-//---------------------------------------------------------------------
-
 }

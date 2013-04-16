@@ -4,9 +4,6 @@
 
 #include <Render/Pass.h>
 
-//!!!OLD!
-#include "gfx2/nmesh2.h"
-
 // Renders fullscreen quad, using some source textures and posteffect shader
 
 namespace Render
@@ -25,19 +22,10 @@ public:
 // Output:
 // RT with a postprocessed image
 
-//!!!OLD!
-    nRef<nMesh2> refQuadMesh;
-
 public:
-
-	~CPassPosteffect();
 
 	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
 	// Render: apply shader vars, clear RT, if necessary, begin pass, render batches, end pass
-
-	//!!!OLD!
-	virtual void Validate();
-	void UpdateMeshCoords();
 };
 
 typedef Ptr<CPassPosteffect> PPassPosteffect;

@@ -476,10 +476,6 @@
 				Name="Loaders"
 				>
 				<File
-					RelativePath="..\..\Src\L1\Data\Loaders\SceneFromSCN.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp"
 					>
 				</File>
@@ -1094,90 +1090,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Gfx"
-			>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\CameraEntity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\CameraEntity.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\Entity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\Entity.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\GfxServer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\GfxServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\Level.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\Level.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\LightEntity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\LightEntity.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\PixelFormat.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\RenderableEntity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\RenderableEntity.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\SceneResource.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\SceneResource.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\ShapeEntity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Gfx\ShapeEntity.h"
-				>
-			</File>
-			<Filter
-				Name="Events"
-				>
-				<File
-					RelativePath="..\..\Src\L1\Gfx\Events\DisplayInput.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Gfx\Events\DisplayInput.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
 			Name="Events"
 			>
 			<File
@@ -1601,6 +1513,18 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L1\Render\Renderers\TerrainRenderer.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Events"
+				>
+				<File
+					RelativePath="..\..\Src\L1\Render\Events\DisplayInput.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\Render\Events\DisplayInput.h"
 					>
 				</File>
 			</Filter>

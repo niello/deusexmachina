@@ -1,7 +1,7 @@
 #include "InputServer.h"
 
-#include <Gfx/GfxServer.h>
-#include <Gfx/Events/DisplayInput.h>
+#include <Render/RenderServer.h>
+#include <Render/Events/DisplayInput.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
 #include <Input/Events/CharInput.h>
@@ -235,7 +235,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 		case Event::DisplayInput::MouseMove:
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			GfxSrv->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseMove(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -250,7 +250,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			MouseBtnState[Ev.MouseInfo.Button] |= (KEY_IS_DOWN | KEY_IS_PRESSED);
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			GfxSrv->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseBtnDown(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -259,7 +259,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_UP;
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			GfxSrv->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseBtnUp(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -268,7 +268,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_DBL_CLICKED;
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			GfxSrv->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseDoubleClick(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 

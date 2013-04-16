@@ -1024,14 +1024,6 @@
 					RelativePath="..\..\Src\L2\Camera\Prop\PropChaseCamera.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropSimpleCamera.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropSimpleCamera.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Event"
@@ -1050,54 +1042,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\Camera\Event\CameraOrbit.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Gfx"
-			>
-			<File
-				RelativePath="..\..\Src\L2\Gfx\PhysicsGfxUtil.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Gfx\PhysicsGfxUtil.h"
-				>
-			</File>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropAbstractGraphics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropAbstractGraphics.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropGraphics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropGraphics.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropLight.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropLight.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropSimpleGraphics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Gfx\Prop\PropSimpleGraphics.h"
 					>
 				</File>
 			</Filter>

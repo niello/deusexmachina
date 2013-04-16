@@ -5,9 +5,6 @@
 #include <Render/Pass.h>
 #include <Render/Renderer.h>
 
-//!!!OLD!
-#include "renderpath/nrpphase.h"
-
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
 // Batches are designed to minimize shader state switches.
 
@@ -33,16 +30,10 @@ public:
 // lighting type (some geoms are rendered unlit)
 // sorting type
 
-//!!!OLD!
-	nArray<nRpPhase> phases;
-
 public:
 
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets);
 	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
-
-	//!!!OLD!
-	virtual void Validate();
 };
 
 //typedef Ptr<CPass> PPass;

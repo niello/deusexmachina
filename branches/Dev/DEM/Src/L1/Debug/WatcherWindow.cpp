@@ -112,11 +112,11 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 
 void CWatcherWindow::AddAllVars()
 {
+	//!!!get all globals!
+	/*
 	nRoot* pVars = nKernelServer::Instance()->Lookup("/sys/var");
 	if (!pVars) return;
 
-	//!!!get all globals!
-	/*
 	int i = Watched.Size();
 	for (nEnv* pCurrVar = (nEnv*)pVars->GetHead(); pCurrVar; pCurrVar = (nEnv*)pCurrVar->GetSucc())
 		if (pCurrVar->nRoot::IsA(pNEnvClass))

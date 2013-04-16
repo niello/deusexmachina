@@ -12,11 +12,6 @@
 
 //!!!NEED DEBUG RENDERING OF COLLIDE SHAPES! foreach Shape->RenderDebug(). Gfx entities too?
 
-namespace Graphics
-{
-	typedef Ptr<class CShapeEntity> PShapeEntity;
-}
-
 namespace Physics
 {
 	typedef Ptr<class CShape> PShape;
@@ -49,7 +44,6 @@ private:
 
 	struct CEnvObject
 	{
-		nArray<Graphics::PShapeEntity>	Gfx;
 		nArray<Physics::PShape>			Collision;
 		nArray<matrix44>				GfxLocalTfm;
 		nArray<matrix44>				CollLocalTfm;

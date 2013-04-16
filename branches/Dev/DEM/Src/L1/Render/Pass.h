@@ -4,11 +4,6 @@
 
 #include <Render/RenderServer.h>
 
-//!!!OLD!
-#include <gfx2/nshaderparams.h>
-#include <util/nfixedarray.h>
-#include <variable/nvariablecontext.h>
-
 // Pass encapsulates rendering to one RT or MRT
 
 namespace Data
@@ -25,7 +20,7 @@ namespace Scene
 namespace Render
 {
 //!!!TMP!
-class CFrameShader;
+//class CFrameShader;
 
 class CPass: public Core::CRefCounted
 {
@@ -48,36 +43,17 @@ public:
 	//bool Profile;
 
 	//!!TMP!
-	CFrameShader* pFrameShader;
-
-//!!!OLD!
-	struct ShaderParam
-	{
-		nShaderState::Type type;
-		nString stateName;
-		nString value;
-	};
-	nString shaderAlias;
-	nString technique;
-	int rpShaderIndex;
-	nShaderParams shaderParams;
-	nFixedArray<nString> renderTargetNames;
-	nVariableContext varContext;
+	//CFrameShader* pFrameShader;
 
 public:
 
-	CPass(): ClearFlags(0), ClearColor(0xff000000), ClearDepth(1.f), ClearStencil(0), 
-		pFrameShader(NULL),
-		rpShaderIndex(-1),
-		renderTargetNames(CRenderServer::MaxRenderTargetCount) {}
+	CPass(): ClearFlags(0), ClearColor(0xff000000), ClearDepth(1.f), ClearStencil(0) {}
+		//pFrameShader(NULL) {}
 
 	virtual ~CPass() {}
 
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets);
 	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights) = 0;
-
-	//!!!OLD!
-	virtual void Validate();
 };
 
 typedef Ptr<CPass> PPass;

@@ -104,13 +104,6 @@ void nD3D9Server::CloseDisplay()
 }
 //---------------------------------------------------------------------
 
-// Implements the Windows message pump. Must be called once a frame OUTSIDE of BeginScene() / EndScene().
-void nD3D9Server::Trigger()
-{
-	RenderSrv->GetDisplay().ProcessWindowMessages();
-}
-//---------------------------------------------------------------------
-
 void nD3D9Server::EnterDialogBoxMode()
 {
 	n_assert(pD3D9Device);

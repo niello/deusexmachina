@@ -11,7 +11,6 @@
 #include <Scripting/ScriptServer.h>
 #include <DB/DBServer.h>
 #include <Loading/LoaderServer.h>
-#include <Gfx/GfxServer.h>
 #include <Render/RenderServer.h>
 #include <Scene/SceneServer.h>
 #include <Audio/AudioServer.h>
@@ -32,6 +31,7 @@
 // your L3 lib or application framework or initialize/release L3 systems manually in application.
 
 class nResourceServer;
+class nGfxServer2;
 
 namespace App
 {
@@ -52,10 +52,9 @@ protected:
 	nString							WindowTitle;
 	nString							IconName;
 	CDisplayMode					DisplayMode;
-	nString							RenderPath;
-	nString							FeatureSet;
 
 	nRef<nResourceServer>			refResourceServer;
+	nRef<nGfxServer2>				gfxServer;
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
@@ -64,17 +63,25 @@ protected:
 	Ptr<Events::CEventManager>		EventManager;
 	Ptr<DB::CDBServer>				DBServer;
 	Ptr<Loading::CLoaderServer>		LoaderServer;
-	Ptr<Graphics::CGfxServer>		GfxServer;
 	Ptr<Render::CRenderServer>		RenderServer;
 	Ptr<Scene::CSceneServer>		SceneServer;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
 	Ptr<Audio::CAudioServer>		AudioServer;
 	Ptr<Video::CVideoServer>		VideoServer;
-	//Ptr<VFX::Server>				VFXServer;
 	Ptr<Game::CGameServer>			GameServer;
 	Ptr<AI::CAIServer>				AIServer;
 	Ptr<UI::CUIServer>				UIServer;
+
+/*
+	gfxServer = n_new(nD3D9Server);
+	gfxServer->AddRef();
+
+	if (gfxServer.isvalid()) gfxServer->Release();
+
+	nGfxServer2::Instance()->Trigger();
+			RenderSrv->GetDisplay().ProcessWindowMessages();
+*/
 
 	void RegisterAttributes();
 
@@ -100,10 +107,6 @@ public:
 	const nString&			GetWindowIcon() const { return IconName; }
 	void					SetDisplayMode(const CDisplayMode& DispMode) { DisplayMode = DispMode; }
 	const CDisplayMode&		GetDisplayMode() const { return DisplayMode; }
-	void					SetRenderPath(const nString& RP) { RenderPath = RP; }
-	const nString&			GetRenderPath() const { return RenderPath; }
-	void					SetFeatureSet(const nString& FS) { FeatureSet = FS; }
-	const nString&			GetFeatureSet() const { return FeatureSet; }
 	void					SetAppName(const nString& ApplicationName) { AppName = ApplicationName; }
 	const nString&			GetAppName() const { return AppName; }
 	void					SetAppVersion(const nString& Version) { AppVersion = Version; }

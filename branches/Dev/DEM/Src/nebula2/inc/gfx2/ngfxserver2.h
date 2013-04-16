@@ -208,8 +208,6 @@ public:
     virtual bool OpenDisplay();
     /// close the display
     virtual void CloseDisplay();
-    /// trigger the window system message pump
-	virtual void Trigger() {}
     /// returns the number of available stencil bits
 	virtual int GetNumStencilBits() const { return 0; }
     /// returns the number of available z bits
