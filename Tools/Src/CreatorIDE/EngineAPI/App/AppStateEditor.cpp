@@ -5,12 +5,11 @@
 #include <Time/TimeServer.h>
 #include <Game/GameServer.h>
 #include <Audio/AudioServer.h>
-#include <Gfx/GfxServer.h>
 #include <Scene/SceneServer.h>
+#include <Render/RenderServer.h>
 #include <AI/AIServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
-#include <scene/nsceneserver.h>
 
 namespace App
 {
@@ -39,7 +38,6 @@ void CAppStateEditor::OnStateEnter(CStrID PrevState, PParams Params)
 	SUBSCRIBE_PEVENT(ToggleRenderDbgAI, CAppStateEditor, OnToggleRenderDbgAI);
 	SUBSCRIBE_PEVENT(ToggleRenderDbgPhysics, CAppStateEditor, OnToggleRenderDbgPhysics);
 	SUBSCRIBE_PEVENT(ToggleRenderDbgGfx, CAppStateEditor, OnToggleRenderDbgGfx);
-	SUBSCRIBE_PEVENT(ToggleRenderDbgScene, CAppStateEditor, OnToggleRenderDbgScene);
 	SUBSCRIBE_PEVENT(ToggleRenderDbgEntities, CAppStateEditor, OnToggleRenderDbgEntities);
 }
 //---------------------------------------------------------------------
@@ -50,7 +48,6 @@ void CAppStateEditor::OnStateLeave(CStrID NextState)
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgAI);
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgPhysics);
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgGfx);
-	UNSUBSCRIBE_EVENT(ToggleRenderDbgScene);
 	UNSUBSCRIBE_EVENT(ToggleRenderDbgEntities);
 
 	SetTool(NULL);
@@ -62,7 +59,7 @@ void CAppStateEditor::OnStateLeave(CStrID NextState)
 CStrID CAppStateEditor::OnFrame()
 {
 	TimeSrv->Update();
-	GfxSrv->Trigger();
+	RenderSrv->GetDisplay().ProcessWindowMessages();
 	EventMgr->ProcessPendingEvents();
 
 	SceneSrv->TriggerBeforePhysics();
@@ -73,19 +70,15 @@ CStrID CAppStateEditor::OnFrame()
 	GameSrv->OnFrame();
 	AudioSrv->EndScene();
 
-	if (GfxSrv->BeginRender())
+	if (RenderSrv->BeginFrame())
 	{
-		GfxSrv->Render();
-		if (RenderDbgGfx)
-		{
-			GfxSrv->RenderDebug();
-			SceneSrv->RenderDebug(); //!!!not under RenderDbgGfx!
-		}
+		SceneSrv->RenderCurrentScene();
+		if (RenderDbgGfx) SceneSrv->RenderDebug();
 		if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
 		if (RenderDbgEntities) GameSrv->RenderDebug();
 		if (RenderDbgAI) AISrv->RenderDebug();
-		if (pActiveTool) pActiveTool->Render();
-		GfxSrv->EndRender();
+		RenderSrv->EndFrame();
+		RenderSrv->Present();
 	}
 
 	//!!!to some method of memory/core server!
@@ -144,13 +137,6 @@ bool CAppStateEditor::OnToggleRenderDbgPhysics(const Events::CEventBase& Event)
 bool CAppStateEditor::OnToggleRenderDbgGfx(const Events::CEventBase& Event)
 {
 	RenderDbgGfx = !RenderDbgGfx;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CAppStateEditor::OnToggleRenderDbgScene(const Events::CEventBase& Event)
-{
-	nSceneServer::Instance()->SetRenderDebug(!nSceneServer::Instance()->GetRenderDebug());
 	OK;
 }
 //---------------------------------------------------------------------

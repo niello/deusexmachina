@@ -12,12 +12,6 @@ namespace Game
 	class CEntity;
 }
 
-class nClass;
-class nMesh2;
-class nSceneNode;
-class nChunkLodNode;
-class nChunkLodTree;
-
 const int MAX_CONVEXVOL_PTS = 12;
 
 // Flags
@@ -89,12 +83,6 @@ protected:
 	float					Height;
 	float					Climb;
 
-	nClass*					pTfmClass;
-	nClass*					pCLODClass;
-	nClass*					pShapeClass;
-	nClass*					pSkinShapeClass;
-	nClass*					pSkyClass;
-
 	rcConfig				Cfg;
 	CRecastContext			Ctx;
 	rcHeightfield*			pHF;
@@ -113,8 +101,7 @@ protected:
 	uint	OffMeshID[MAX_OFFMESH_CONNECTIONS];
 	int		OffMeshCount;
 
-	bool AddGeometryNCT2(nChunkLodNode* pNode, nChunkLodTree* pTree, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
-	bool AddGeometry(nSceneNode* pNode, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
+	//bool AddGeometry(nSceneNode* pNode, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
 
 public:
 
@@ -123,7 +110,7 @@ public:
 
 	bool Init(const rcConfig& Config, float MaxClimb);
 	bool AddGeometry(Game::CEntity& Entity, uchar Area = RC_WALKABLE_AREA);
-	bool AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
+	//bool AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
 	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area = RC_WALKABLE_AREA);
 	bool PrepareGeometry(float AgentRadius, float AgentHeight);
 

@@ -5,7 +5,6 @@
 #include <Input/Events/MouseBtnUp.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <App/CIDEApp.h>
-#include <gfx2/ngfxserver2.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 
 namespace App
@@ -108,6 +107,8 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 // Partially copied from InputGeom::drawOffMeshConnections
 void CToolNavOffmesh::Render()
 {
+	//GFX
+	/*
 	nGfxServer2::Instance()->BeginShapes();
 
 	AI::CNavMeshDebugDraw DD;
@@ -131,8 +132,9 @@ void CToolNavOffmesh::Render()
 		DD.vertex(Conn.To.x, Conn.To.y, Conn.To.z, BaseColor);
 		DD.vertex(Conn.To.x, Conn.To.y + 0.2f, Conn.To.z, BaseColor);
 		
-		duAppendCircle(&DD, Conn.From.x, Conn.From.y + 0.1f, Conn.From.z, AgentRadius /*Conn.Radius*/, BaseColor);
-		duAppendCircle(&DD, Conn.To.x, Conn.To.y + 0.1f, Conn.To.z, AgentRadius /*Conn.Radius*/, BaseColor);
+		// AgentRadius -> Conn.Radius
+		duAppendCircle(&DD, Conn.From.x, Conn.From.y + 0.1f, Conn.From.z, AgentRadius, BaseColor);
+		duAppendCircle(&DD, Conn.To.x, Conn.To.y + 0.1f, Conn.To.z, AgentRadius, BaseColor);
 
 		//if (hilight)
 			duAppendArc(&DD, Conn.From.x, Conn.From.y, Conn.From.z, Conn.To.x, Conn.To.y, Conn.To.z, 0.25f,
@@ -143,6 +145,7 @@ void CToolNavOffmesh::Render()
 	DD.depthMask(true);
 
 	nGfxServer2::Instance()->EndShapes();
+	*/
 }
 //---------------------------------------------------------------------
 

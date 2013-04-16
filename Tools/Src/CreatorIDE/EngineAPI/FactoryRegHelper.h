@@ -1,7 +1,6 @@
 // AI ==============================================
 
 //Props
-#include <AI/Prop/PropActorAnimation.h>
 #include <AI/Prop/PropActorPhysics.h>
 #include <AI/Prop/PropAIHints.h>
 #include <Scene/PropSceneNode.h>
@@ -37,7 +36,6 @@
 // PROPS ===========================================
 
 #include <Animation/PropAnimation.h>
-#include <Gfx/Prop/PropCharGraphics.h>
 #include <Plr/Prop/PropPlrCharacterInput.h>
 #include <Physics/Prop/PropTrigger.h>
 #include <Scripting/Prop/PropScriptable.h>
@@ -49,6 +47,7 @@
 // RENDERERS =======================================
 
 #include <Render/Renderers/ModelRenderer.h>
+#include <Render/Renderers/TerrainRenderer.h>
 #include <UI/UIRenderer.h>
 
 // OTHER ===========================================

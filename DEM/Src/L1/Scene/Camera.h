@@ -57,6 +57,7 @@ public:
 	float			GetWidth() const { return Width; }
 	void			SetHeight(float H) { if (Height != H) { Height = H; Flags.Set(ProjDirty); } }
 	float			GetHeight() const { return Height; }
+	float			GetAspectRatio() const { return Width / Height; }
 	void			SetNearPlane(float Near) { if (NearPlane != Near) { NearPlane = Near; Flags.Set(ProjDirty); } }
 	float			GetNearPlane() const { return NearPlane; }
 	void			SetFarPlane(float Far) { if (FarPlane != Far) { FarPlane = Far; Flags.Set(ProjDirty); } }

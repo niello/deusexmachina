@@ -21,7 +21,6 @@
 #include <Data/Streams/FileStream.h>
 #include <Data/BinaryReader.h>
 #include <Data/BinaryWriter.h>
-#include <gfx2/ngfxserver2.h>
 #include <DetourNavMeshQuery.h>
 
 namespace Attr
@@ -107,7 +106,8 @@ bool CCIDEApp::Open()
 
 	DbgSrv->AllowUI(false);
 
-	nGfxServer2::Instance()->SetCursorVisibility(nGfxServer2::System);
+	//GFX
+	//nGfxServer2::Instance()->SetCursorVisibility(nGfxServer2::System);
 
 	SI::RegisterGlobals();
 	SI::RegisterEventManager();

@@ -5,7 +5,6 @@
 #include <Input/Events/MouseBtnUp.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <App/CIDEApp.h>
-#include <gfx2/ngfxserver2.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 
 namespace App
@@ -147,6 +146,8 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 // Partially copied from InputGeom::drawConvexVolumes
 void CToolNavRegions::Render()
 {
+	//GFX
+	/*
 	nGfxServer2::Instance()->BeginShapes();
 
 	AI::CNavMeshDebugDraw DD;
@@ -247,6 +248,7 @@ void CToolNavRegions::Render()
 	}
 
 	nGfxServer2::Instance()->EndShapes();
+	*/
 }
 //---------------------------------------------------------------------
 
