@@ -1,8 +1,7 @@
 #include "PropEditorCamera.h"
 
 #include <Game/Mgr/FocusManager.h>
-#include <Gfx/GfxServer.h>
-#include <Gfx/CameraEntity.h>
+#include <Scene/SceneServer.h>
 #include <Input/InputServer.h>
 #include <Physics/Event/SetTransform.h>
 #include <Physics/Prop/PropTransformable.h>
@@ -43,7 +42,9 @@ void CPropEditorCamera::SetupFromTransform()
 void CPropEditorCamera::OnObtainCameraFocus()
 {
 	CPropCamera::OnObtainCameraFocus();
-	GfxSrv->GetCamera()->SetTransform(GetEntity()->Get<matrix44>(Attr::Transform));
+
+	//???!!!set world transform?!
+	SceneSrv->GetCurrentScene()->GetMainCamera()->GetNode()->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform));
 	//AudioSrv->GetListener()->SetTransform(GfxSrv->GetCamera()->GetTransform());
 }
 //---------------------------------------------------------------------
@@ -125,7 +126,8 @@ bool CPropEditorCamera::OnUpdateTransform(const Events::CEventBase& Event)
 
 	if (FocusMgr->GetCameraFocusEntity() == GetEntity())
 	{
-		GfxSrv->GetCamera()->SetTransform(GetEntity()->Get<matrix44>(Attr::Transform));
+		//???!!!set world transform?!
+		SceneSrv->GetCurrentScene()->GetMainCamera()->GetNode()->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform));
 		//AudioSrv->GetListener()->SetTransform(GfxSrv->GetCamera()->GetTransform());
 	}
 

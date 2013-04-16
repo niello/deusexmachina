@@ -36,14 +36,7 @@ void CSceneServer::RenderCurrentScene()
 	{
 		Render::PFrameShader ScreenFrameShader = FrameShaders.ValueAtIndex(Idx);
 		if (ScreenFrameShader.isvalid())
-		{
-			if (RenderSrv->BeginFrame()) //???or for each RT change?
-			{
-				pCurrScene->Render(NULL, *ScreenFrameShader);
-				RenderSrv->EndFrame();
-				RenderSrv->Present();
-			}
-		}
+			pCurrScene->Render(NULL, *ScreenFrameShader);
 	}
 }
 //---------------------------------------------------------------------

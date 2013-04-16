@@ -1,12 +1,7 @@
 #include "NavMesh.h"
 
-#include <Gfx/Prop/PropGraphics.h>
-#include <Gfx/ShapeEntity.h>
 #include <Physics/Prop/PropAbstractPhysics.h>
 #include <Game/Entity.h>
-#include <scene/nshapenode.h>
-#include <ncterrain2/nterrainnode.h>
-#include <ncterrain2/nchunklodnode.h>
 //#include <RecastDump.h>
 
 using namespace Properties;
@@ -68,17 +63,6 @@ CNavMeshBuilder::CNavMeshBuilder():
 	Height(0.f)
 {
 	memset(&Params, 0, sizeof(Params));
-
-	pTfmClass = nKernelServer::Instance()->FindClass("ntransformnode");
-	n_assert(pTfmClass);
-	pCLODClass = nKernelServer::Instance()->FindClass("nterrainnode");
-	n_assert(pCLODClass);
-	pShapeClass = nKernelServer::Instance()->FindClass("nshapenode");
-	n_assert(pShapeClass);
-	pSkinShapeClass = nKernelServer::Instance()->FindClass("nskinshapenode");
-	n_assert(pSkinShapeClass);
-	pSkyClass = nKernelServer::Instance()->FindClass("nskynode");
-	n_assert(pSkyClass);
 }
 //---------------------------------------------------------------------
 
@@ -118,26 +102,7 @@ bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
 }
 //---------------------------------------------------------------------
 
-bool CNavMeshBuilder::AddGeometryNCT2(nChunkLodNode* pNode, nChunkLodTree* pTree, const matrix44* pTfm, uchar Area)
-{
-	if (pNode->HasChildren())
-	{
-		for (int i = 0; i < 4; ++i)
-			if (!AddGeometryNCT2(pNode->GetChild(i), pTree, pTfm, Area)) FAIL;
-	}
-	else
-	{
-		pNode->RequestLoadData(pTree, 1.f);
-		nMesh2* pMesh = pNode->GetChunkLodMesh()->GetMesh();
-		bool Result = pMesh ? AddGeometry(pMesh, -1, true, pTfm, Area) : true;
-		pNode->RequestUnloadData(pTree);
-		return Result;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
+/*
 bool CNavMeshBuilder::AddGeometry(nSceneNode* pNode, const matrix44* pTfm, uchar Area)
 {
 	if (pNode->IsA(pCLODClass))
@@ -176,6 +141,7 @@ bool CNavMeshBuilder::AddGeometry(nSceneNode* pNode, const matrix44* pTfm, uchar
 	OK;
 }
 //---------------------------------------------------------------------
+*/
 
 bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 {
@@ -194,6 +160,8 @@ bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 		// return, if processed
 	}
 
+	//GFX //!!!parse scene nodes!
+	/*
 	CPropGraphics* pPropGfx = Entity.FindProperty<CPropGraphics>();
 	if (pPropGfx)
 	{
@@ -201,11 +169,13 @@ bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 		for (int i = 0; i < GfxEnts.Size(); ++i)
 			AddGeometry(GfxEnts[i]->GetResource().GetNode(), pTfm, Area);
 	}
+	*/
 
 	OK;
 }
 //---------------------------------------------------------------------
 
+/*
 bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm, uchar Area)
 {
 	nMeshGroup Group;
@@ -299,6 +269,7 @@ bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, con
 	return Result;
 }
 //---------------------------------------------------------------------
+*/
 
 bool CNavMeshBuilder::AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area)
 {

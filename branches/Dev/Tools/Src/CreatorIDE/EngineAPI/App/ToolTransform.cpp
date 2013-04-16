@@ -4,10 +4,9 @@
 #include <Events/EventManager.h>
 #include <Physics/Event/SetTransform.h>
 #include <Input/InputServer.h>
-#include <Gfx/GfxServer.h>
-#include <Gfx/CameraEntity.h>
+#include <Render/RenderServer.h>
+#include <Scene/SceneServer.h>
 #include <Game/Mgr/FocusManager.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Attr
 {
@@ -52,9 +51,10 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 
 	//???!!!use raw or cursor?!
 	//???may be reproject ray and intersect with plane instead of adjusting drag speed?
-	GfxSrv->GetRelativeXY(InputSrv->GetRawMouseMoveX(), -InputSrv->GetRawMouseMoveY(), MoveX, MoveY);
+	RenderSrv->GetDisplay().GetRelativeXY(InputSrv->GetRawMouseMoveX(), -InputSrv->GetRawMouseMoveY(), MoveX, MoveY);
 
-	const matrix44& View = GfxSrv->GetCamera()->GetTransform(); //???GetView()?
+	Scene::CCamera& Camera = *SceneSrv->GetCurrentScene()->GetMainCamera();
+	const matrix44& View = Camera.GetInvViewMatrix(); //???inv?
 	
 	vector3 Offset = View.pos_component() - Pos;
 
@@ -64,12 +64,12 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 		const vector3& Axis = View.z_component();
 		vector3 ProjectedOffset = Axis * (Offset % Axis);
 		float DistanceToPlane = ProjectedOffset.len();
-		float FOV = n_deg2rad(GfxSrv->GetCamera()->GetCamera().GetAngleOfView());
+		float FOV = Camera.GetFOV();
 		float SizeY = 2 * DistanceToPlane * tanf(FOV);
 		TfmChanged = true;
 		if (MoveX)
 		{
-			float SizeX = SizeY * GfxSrv->GetCamera()->GetCamera().GetAspectRatio();
+			float SizeX = SizeY * Camera.GetAspectRatio();
 			Pos += View.x_component() * (SizeX * MoveX * MoveVelocityXY);
 		}
 		if (MoveY) Pos += View.y_component() * (SizeY * MoveY * MoveVelocityXY);
@@ -126,11 +126,14 @@ void CToolTransform::Render()
 		Lines[3].y = 1.f;
 		Lines[5].z = 1.f;
 
+		//GFX
+		/*
 		nGfxServer2::Instance()->BeginShapes();
 		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 0, 3, Tfm, ColorX);
 		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 2, 3, Tfm, ColorY);
 		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 4, 3, Tfm, ColorZ);
 		nGfxServer2::Instance()->EndShapes();
+		*/
 	}
 }
 //---------------------------------------------------------------------
