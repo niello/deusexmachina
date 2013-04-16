@@ -38,7 +38,6 @@ private:
 	nTime					FadeOutTime;
 	matrix44				Transform;
 	vector3					Velocity;
-	nRef<CSoundResource>	refRsrc;
 	DWORD					SoundIdx;
 	DS3DBUFFER				DS3DProps;
 	float					minDist;
@@ -84,8 +83,8 @@ public:
 	void			FadeOut(nTime Time);
 
 	
-	CDSSound*			GetCSoundPtr() const { return refRsrc->GetCSoundPtr(); }
-	CSoundResource*	GetSoundResource() const { return refRsrc.get(); }
+	//CDSSound*			GetCSoundPtr() const { return refRsrc->GetCSoundPtr(); }
+	//CSoundResource*	GetSoundResource() const { return refRsrc.get(); }
 
 	void			SetTransform(const matrix44& m) { Transform = m; Props3DDirty = true; }
 	const matrix44&	GetTransform() const { return Transform; }
@@ -121,7 +120,7 @@ inline bool CAudioEntity::IsPlaying() const
 	// but the sound will start in the next frame
 	if (Flags.Is(IS_FIRST_FRAME)) OK;
 	if (SoundIdx == -1) return false;
-	return (Streaming ? GetCSoundPtr()->IsSoundPlaying() : GetCSoundPtr()->IsSoundPlaying(SoundIdx)) != 0;
+	return false; // (Streaming ? GetCSoundPtr()->IsSoundPlaying() : GetCSoundPtr()->IsSoundPlaying(SoundIdx)) != 0;
 }
 //---------------------------------------------------------------------
 

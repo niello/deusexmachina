@@ -4,7 +4,6 @@
 
 #include <Render/Materials/Texture.h>
 #include <util/ndictionary.h>
-//#include <mathlib/matrix.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3dx9.h>

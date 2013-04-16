@@ -4,7 +4,6 @@
 #include <Physics/Level.h>
 #include <Physics/CharEntity.h>
 #include <Loading/EntityFactory.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Attr
 {
@@ -149,6 +148,8 @@ void CPropActorPhysics::OnRenderDebug()
 
 	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
 
+	//GFX
+	/*
 	// Coordinate frame
 	nFixedArray<vector3> lines(2);
 	lines[1].x = -1.f;
@@ -190,6 +191,7 @@ void CPropActorPhysics::OnRenderDebug()
 		uint textFlags = Top | Left | NoClip | ExpandTabs;
 		nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

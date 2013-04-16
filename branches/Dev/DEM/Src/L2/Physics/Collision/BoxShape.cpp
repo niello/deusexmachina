@@ -1,7 +1,6 @@
 #include "BoxShape.h"
 
-#include <Physics/rigidbody.h>
-#include <gfx2/ngfxserver2.h>
+//#include <Physics/RigidBody.h>
 
 namespace Physics
 {
@@ -45,6 +44,8 @@ bool CBoxShape::Attach(dSpaceID SpaceID)
 
 void CBoxShape::RenderDebug(const matrix44& ParentTfm)
 {
+	//GFX
+	/*
 	if (IsAttached())
 	{
 		matrix44 Tfm;
@@ -53,6 +54,7 @@ void CBoxShape::RenderDebug(const matrix44& ParentTfm)
 		Tfm *= ParentTfm;
 		nGfxServer2::Instance()->DrawShape(nGfxServer2::Box, Tfm, GetDebugVisualizationColor());
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

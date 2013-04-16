@@ -20,7 +20,8 @@
 
     (C) 2003 RadonLabs GmbH
 */
-#include <resource/nresource.h>
+
+#include <StdDEM.h>
 
 class CDSSound;
 
@@ -28,7 +29,7 @@ namespace Audio
 {
 
 //???split to static & streaming here?
-class CSoundResource: public nResource
+class CSoundResource
 {
 protected:
 
@@ -45,10 +46,11 @@ public:
 	bool	Looping;
 
 	CSoundResource(): NumTracks(5), Ambient(false), Streaming(false), Looping(false), pDSSound(NULL) {}
-	virtual ~CSoundResource() { if (IsLoaded()) Unload(); }
+	virtual ~CSoundResource() {} //{ if (IsLoaded()) Unload(); }
 
 	CDSSound*	GetCSoundPtr() { return pDSSound; }
-	HANDLE	GetNotifyEvent();
+	//HANDLE		GetNotifyEvent();
+	void*		GetNotifyEvent();
 };
 
 }

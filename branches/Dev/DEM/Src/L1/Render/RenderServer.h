@@ -120,6 +120,7 @@ public:
 	void				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
 	void				SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
 	void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
+	void				ClearScreen(DWORD Color);
 	void				Draw();
 
 	PVertexLayout		GetVertexLayout(const nArray<CVertexComponent>& Components);
@@ -176,6 +177,17 @@ inline void CRenderServer::SetViewProjection(const matrix44& VP)
 {
 	CurrViewProj = VP;
 	if (hViewProj) SharedShader->SetMatrix(hViewProj, CurrViewProj);
+}
+//---------------------------------------------------------------------
+
+inline void CRenderServer::ClearScreen(DWORD Color)
+{
+	if (BeginFrame())
+	{
+		Clear(Clear_Color, Color, 1.f, 0);
+		EndFrame();
+		Present();
+	}
 }
 //---------------------------------------------------------------------
 

@@ -5,7 +5,6 @@
 #include <Game/Entity.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Attr
 {
@@ -65,6 +64,8 @@ void CPropTransformable::SetTransform(const matrix44& NewTF)
 
 void CPropTransformable::OnRenderDebug()
 {
+	//GFX
+	/*
 	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
 	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
 	static const vector4 ColorZ(0.0f, 0.0f, 1.0f, 1.0f);
@@ -80,6 +81,7 @@ void CPropTransformable::OnRenderDebug()
 	lines[1].y = 0.f;
 	lines[1].z = 1.f;
 	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorZ);
+	*/
 }
 //---------------------------------------------------------------------
 

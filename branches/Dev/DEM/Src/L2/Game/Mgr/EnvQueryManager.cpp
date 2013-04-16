@@ -7,7 +7,6 @@
 #include <Game/Mgr/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Physics/Prop/PropAbstractPhysics.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Game
 {
@@ -125,11 +124,12 @@ nArray<PEntity> CEnvQueryManager::GetEntitiesInBox(const vector3& Scale, const m
 
 vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& pEntity, const vector3* Offset)
 {
+	//GFX
 	vector3 EntityPos = pEntity.Get<matrix44>(Attr::Transform).pos_component();
 	if (Offset) EntityPos += *Offset;
-	vector4 WorldPos = nGfxServer2::Instance()->GetTransform(nGfxServer2::View) * EntityPos;
+	vector4 WorldPos; //= nGfxServer2::Instance()->GetTransform(nGfxServer2::View) * EntityPos;
 	WorldPos.w = 0;
-	WorldPos = nGfxServer2::Instance()->GetCamera().GetProjection() * WorldPos;
+	//WorldPos = nGfxServer2::Instance()->GetCamera().GetProjection() * WorldPos;
 	WorldPos = WorldPos * (1.f / WorldPos.w);
 	return vector2(WorldPos.x * 0.5f + 0.5f, 0.5f - WorldPos.y * 0.5f);
 }

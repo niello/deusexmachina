@@ -225,7 +225,7 @@ bool CEntityManager::OnFrame(const Events::CEventBase& Event)
 	int entityIndex;
 	int numEntities = Entities.Size();
 
-#if __NEBULA_STATS__
+#if DEM_STATS
 	int numLiveEntities = 0;
 	int numSleepingEntities = 0;
 	for (entityIndex = 0; entityIndex < numEntities; entityIndex++)

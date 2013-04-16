@@ -11,16 +11,6 @@ class CDisplayMode
 {
 public:
 
-	//!!!OLD!
-	enum EBitDepth
-	{
-		BPP_16 = 16,
-		BPP_32 = 32
-	};
-
-	EBitDepth		BPP;	//???pixel format instead?
-	//!!!OLD!
-
 	ushort			PosX;
 	ushort			PosY;
 	ushort			Width;
@@ -42,7 +32,6 @@ inline CDisplayMode::CDisplayMode():
 	PosY(0),
 	Width(1024),
 	Height(768),
-	BPP(BPP_32),
 	PixelFormat(PixelFormat_Invalid) //X8R8G8B8)
 {
 }
@@ -53,7 +42,6 @@ inline CDisplayMode::CDisplayMode(ushort x, ushort y, ushort w, ushort h):
 	PosY(y),
 	Width(w),
 	Height(h),
-	BPP(BPP_32),
 	PixelFormat(PixelFormat_Invalid)
 {
 }
@@ -64,7 +52,6 @@ inline CDisplayMode::CDisplayMode(ushort w, ushort h, EPixelFormat Format):
 	PosY(0),
 	Width(w),
 	Height(h),
-	BPP(BPP_32),
 	PixelFormat(Format)
 {
 }

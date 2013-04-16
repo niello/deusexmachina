@@ -1,7 +1,5 @@
 #include "CapsuleShape.h"
 
-#include <gfx2/ngfxserver2.h>
-
 namespace Physics
 {
 ImplementRTTI(Physics::CCapsuleShape, Physics::CShape);
@@ -41,6 +39,8 @@ bool CCapsuleShape::Attach(dSpaceID SpaceID)
 
 void CCapsuleShape::RenderDebug(const matrix44& ParentTfm)
 {
+	//GFX
+	/*
 	if (IsAttached())
 	{
 		vector4 Color = GetDebugVisualizationColor();
@@ -57,6 +57,7 @@ void CCapsuleShape::RenderDebug(const matrix44& ParentTfm)
 		CylTfm.scale(vector3(Radius, Radius, Length));
 		nGfxServer2::Instance()->DrawShape(nGfxServer2::Cylinder, CylTfm * WorldTfm, Color);
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

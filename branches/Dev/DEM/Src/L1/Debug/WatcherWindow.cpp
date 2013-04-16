@@ -3,7 +3,6 @@
 #include <Scripting/ScriptServer.h>
 #include <Events/EventManager.h>
 #include <Data/DataArray.h>
-#include <kernel/nkernelserver.h>
 
 #include <elements/CEGUIEditbox.h>
 #include <elements/CEGUIMultiColumnList.h>
@@ -114,9 +113,6 @@ void CWatcherWindow::AddAllVars()
 {
 	//!!!get all globals!
 	/*
-	nRoot* pVars = nKernelServer::Instance()->Lookup("/sys/var");
-	if (!pVars) return;
-
 	int i = Watched.Size();
 	for (nEnv* pCurrVar = (nEnv*)pVars->GetHead(); pCurrVar; pCurrVar = (nEnv*)pCurrVar->GetSucc())
 		if (pCurrVar->nRoot::IsA(pNEnvClass))
@@ -199,8 +195,6 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 {
 	const char* pPattern = pPatternEdit->getText().c_str();
 	bool CheckMatch = (pPattern && *pPattern && strcmp(pPattern, "*"));
-
-	nRoot* pVars = nKernelServer::Instance()->Lookup("/sys/var");
 
 	int i = 0;
 	for (nArray<CWatched>::iterator It = Watched.Begin(); It != Watched.End(); It++, ++i)

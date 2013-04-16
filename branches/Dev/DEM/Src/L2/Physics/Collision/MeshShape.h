@@ -3,7 +3,6 @@
 #define __DEM_L2_PHYS_MESH_SHAPE_H__
 
 #include "Shape.h"
-#include <gfx2/nmesh2.h>
 //#include <mathlib/sphere.h>
 //#include <mathlib/line.h>
 //#ifdef MAX_SDWORD
@@ -44,8 +43,6 @@ protected:
 	dTriMeshDataID	ODETriMeshDataID;
 	dGeomID			ODETriMeshID;
 
-	bool			LoadFromFile(nMeshLoader& MeshLoader);
-
 public:
 
 	CMeshShape();
@@ -59,7 +56,7 @@ public:
 	//int				DoSphereCollide(const sphere& Sphere, uint*& OutFaceIndices);
 	//bool			DoRayCheck(const line3& Line, vector3& Contact);
 
-	void			SetMesh(nMesh2* pMesh) { n_assert(pMesh->IsValid()); pInitMesh = pMesh; }
+	//void			SetMesh(nMesh2* pMesh) { n_assert(pMesh->IsValid()); pInitMesh = pMesh; }
 	void			SetFileName(const nString& Name) { FileName = Name; }
 	const nString&	GetFileName() const { return FileName; }
 	const float*	GetVertexBuffer() const { return pVBuffer; }

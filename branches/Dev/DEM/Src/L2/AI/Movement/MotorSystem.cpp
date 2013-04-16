@@ -5,7 +5,6 @@
 #include <AI/Prop/PropActorPhysics.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Physics/Entity.h>
-#include <gfx2/ngfxserver2.h>
 #include <DetourObstacleAvoidance.h>
 
 #define OBSTACTLE_DETECTOR_MIN		0.1f
@@ -369,6 +368,8 @@ void CMotorSystem::RenderDebug()
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
 	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
 
+	//GFX
+	/*
 	if (pActor->MvmtStatus == AIMvmt_DestSet || pActor->MvmtStatus == AIMvmt_Stuck)
 	{
 		nFixedArray<vector3> lines(2);
@@ -387,7 +388,7 @@ void CMotorSystem::RenderDebug()
 	{
 		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.get();
 		matrix44 Tfm;
-		Tfm.scale(vector3(pObstacle->Radius, pObstacle->Radius, 1.f /*pObstacle->Height*/));
+		Tfm.scale(vector3(pObstacle->Radius, pObstacle->Radius, 1.f)); // pObstacle->Height));
 		Tfm.rotate_x(PI * 0.5f);
 		Tfm.set_translation(pObstacle->Position);
 		vector4 Color(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
@@ -434,6 +435,7 @@ void CMotorSystem::RenderDebug()
 	rectangle textRect(vector2(0.05f, 0.1f), vector2(1.0f, 1.0f));
 	uint textFlags = Top | Left | NoClip | ExpandTabs;
 	nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
+	*/
 }
 //---------------------------------------------------------------------
 

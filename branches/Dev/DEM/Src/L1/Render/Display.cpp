@@ -2,9 +2,8 @@
 #include "Display.h"
 
 #include <Render/RenderServer.h>
+#include <Render/Events/DisplayInput.h>
 #include <Events/EventManager.h>
-#include <Gfx/Events/DisplayInput.h>
-//#include "kernel/nkernelserver.h"
 
 //???in what header?
 #ifndef HID_USAGE_PAGE_GENERIC
@@ -102,7 +101,7 @@ bool CDisplay::OpenWindow()
 		WndClass.hInstance     = hInst;
 		WndClass.hIcon         = hIcon;
 		WndClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
-		WndClass.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
+		WndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 		WndClass.lpszMenuName  = NULL;
 		WndClass.lpszClassName = DEM_WINDOW_CLASS;
 		WndClass.hIconSm       = NULL;

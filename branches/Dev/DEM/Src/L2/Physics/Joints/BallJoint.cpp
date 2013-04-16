@@ -1,7 +1,5 @@
 #include "BallJoint.h"
 
-#include <gfx2/ngfxserver2.h>
-
 namespace Physics
 {
 ImplementRTTI(Physics::CBallJoint, Physics::CJoint);
@@ -34,6 +32,8 @@ void CBallJoint::UpdateTransform(const matrix44& Tfm)
 
 void CBallJoint::RenderDebug()
 {
+	//GFX
+	/*
 	if (IsAttached())
 	{
 		matrix44 Tfm;
@@ -43,6 +43,7 @@ void CBallJoint::RenderDebug()
 		Tfm.translate(vector3(CurrAnchor[0], CurrAnchor[1], CurrAnchor[2]));
 		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, GetDebugVisualizationColor());
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

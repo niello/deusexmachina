@@ -6,8 +6,6 @@
 
 // An abstract player for videos
 
-class nTexture2;
-
 namespace Video
 {
 
@@ -17,7 +15,7 @@ protected:
 
 	bool		_IsOpen;
 	nString		FileName;
-	nTexture2*	pTexture;
+	//nTexture2*	pTexture;
 
 	uint		videoWidth;
 	uint		videoHeight;
@@ -52,8 +50,8 @@ public:
 	uint			GetFrameCount() const { return videoFrameCount; }
 	void			SetFilename(const nString& _FileName);
 	const nString&	GetFilename() const { return FileName; }
-	void			SetTexture(nTexture2* pTex) { pTexture = pTex; }
-	nTexture2*		GetTexture() const { return pTexture; }
+	//void			SetTexture(nTexture2* pTex) { pTexture = pTex; }
+	//nTexture2*		GetTexture() const { return pTexture; }
 };
 
 }

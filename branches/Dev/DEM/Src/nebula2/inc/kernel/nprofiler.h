@@ -8,8 +8,6 @@
 
     (C) 2002 RadonLabs GmbH
 */
-#include "kernel/nkernelserver.h"
-#include "kernel/nref.h"
 #include <Time/TimeServer.h>
 
 //------------------------------------------------------------------------------
@@ -38,7 +36,7 @@ public:
 	nTime GetTime() { return (TimeSrv->GetTrueTime() - startTime) * 1000.0f; }
 };
 
-#if __NEBULA_STATS__
+#if DEM_STATS
 #define PROFILER_DECLARE(prof) nProfiler prof;
 #define PROFILER_INIT(prof,name) prof.Initialize(name);
 #define PROFILER_START(prof) prof.Start();

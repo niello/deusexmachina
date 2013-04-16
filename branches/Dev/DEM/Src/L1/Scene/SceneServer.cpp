@@ -1,7 +1,5 @@
 #include "SceneServer.h"
 
-#include <gfx2/ngfxserver2.h>
-
 namespace Scene
 {
 __ImplementSingleton(Scene::CSceneServer);
@@ -53,9 +51,11 @@ void CSceneServer::RenderCurrentScene()
 void CSceneServer::RenderDebug()
 {
 	if (!pCurrScene) return;
-	nGfxServer2::Instance()->BeginShapes();
-	pCurrScene->GetRootNode().RenderDebug();
-	nGfxServer2::Instance()->EndShapes();
+
+	//GFX
+	//nGfxServer2::Instance()->BeginShapes();
+	//pCurrScene->GetRootNode().RenderDebug();
+	//nGfxServer2::Instance()->EndShapes();
 }
 //---------------------------------------------------------------------
 

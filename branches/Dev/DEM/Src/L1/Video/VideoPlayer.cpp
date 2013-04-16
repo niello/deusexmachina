@@ -1,7 +1,6 @@
 #include "VideoPlayer.h"
 
 #include <Data/DataServer.h>
-#include <gfx2/ntexture2.h>
 
 namespace Video
 {
@@ -9,7 +8,7 @@ namespace Video
 CVideoPlayer::CVideoPlayer():
 	_IsOpen(false),
 	FileName(""),
-	pTexture(0),
+	//pTexture(NULL),
 	loopType(Repeat)
 {
 }

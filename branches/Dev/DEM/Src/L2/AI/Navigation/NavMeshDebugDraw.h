@@ -3,8 +3,10 @@
 #define __DEM_L2_NAV_MESH_DEBUG_DRAW_H__
 
 #include <StdDEM.h>
+#include <Render/Render.h>
 #include <DebugDraw.h>
-#include <gfx2/ngfxserver2.h>
+#include <util/narray.h>
+#include <mathlib/vector.h>
 
 // Debug draw interface implementation for Detour navigation mesh.
 
@@ -13,7 +15,7 @@ namespace AI
 
 struct CNavMeshDebugDraw: public duDebugDraw
 {
-	nGfxServer2::PrimitiveType	PrimType;
+	Render::EPrimitiveTopology	PrimType;
 	unsigned int				VPerP;
 	unsigned int				CurrColor;
 	nArray<vector3>				Vertices;

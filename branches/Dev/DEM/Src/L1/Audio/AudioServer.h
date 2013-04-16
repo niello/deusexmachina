@@ -85,8 +85,6 @@ public:
 	bool			IsOpen() const { return _IsOpen; }
 	bool			IsMuted() const { return _IsMuted; }
 
-	CSoundResource*	NewSoundResource(LPCSTR RsrcName);
-
 	inline LPDIRECTSOUND8 GetDirectSound() const { return pDS; }
 };
 

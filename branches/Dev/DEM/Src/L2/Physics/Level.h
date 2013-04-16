@@ -53,7 +53,7 @@ protected:
 	PROFILER_DECLARE(profStep);
 	PROFILER_DECLARE(profJointGroupEmpty);
 
-#ifdef __NEBULA_STATS__
+#ifdef DEM_STATS
 	int statsNumSpaceCollideCalled;              // number of times dSpaceCollide has been invoked
 	int statsNumNearCallbackCalled;              // number of times the near callback has been invoked
 	int statsNumCollideCalled;                   // number of times the collide function has been invoked

@@ -8,7 +8,6 @@
 #include <Events/Subscription.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Attr
 {
@@ -218,6 +217,8 @@ bool CPropTrigger::OnSave(const CEventBase& Event)
 
 bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 {
+	//GFX
+	/*
 	static const vector4 ColorOn(0.9f, 0.58f, 1.0f, 0.3f); // purple
 	static const vector4 ColorOff(0.0f, 0.0f, 0.0f, 0.08f); // black
 	
@@ -237,7 +238,8 @@ bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 			break;
 		default: break; //!!!capsule rendering!
 	}
-	
+	*/
+
 	OK;
 }
 //---------------------------------------------------------------------

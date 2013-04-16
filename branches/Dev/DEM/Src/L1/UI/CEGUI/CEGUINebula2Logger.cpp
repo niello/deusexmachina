@@ -1,7 +1,6 @@
 #include <StdCfg.h>
 #include "CEGUINebula2Logger.h"
-
-#include <kernel/nkernelserver.h>
+#include <kernel/ntypes.h>
 
 namespace CEGUI
 {
@@ -12,7 +11,7 @@ void CNebula2Logger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel 
 		switch (level) 
 		{
 			case CEGUI::Errors:
-				//nKernelServer::Instance()->Error("%s\n", message.c_str()); ///!!! TODO
+				//n_error("%s\n", message.c_str());
 				//break;
 			case CEGUI::Standard:
 			case CEGUI::Informative:

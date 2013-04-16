@@ -4,7 +4,6 @@
 #include <Data/DataServer.h>
 #include <Time/TimeServer.h>
 #include <Events/EventManager.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Game
 {
@@ -119,9 +118,12 @@ void CGameServer::RemoveAllManagers()
 
 void CGameServer::RenderDebug()
 {
+	//GFX
+	/*
 	nGfxServer2::Instance()->BeginShapes();
 	EventMgr->FireEvent(CStrID("OnRenderDebug"));
 	nGfxServer2::Instance()->EndShapes();
+	*/
 }
 //---------------------------------------------------------------------
 
