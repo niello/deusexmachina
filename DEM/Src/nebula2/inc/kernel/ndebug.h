@@ -5,7 +5,7 @@
 // n_assert()  - the vanilla assert() Macro
 // n_assert2() - an assert() plus a message from the programmer
 
-#ifdef __NEBULA_NO_ASSERT__
+#ifdef DEM_NO_ASSERT
 	#define n_verify(exp) (exp)
 	#define n_assert(exp)
 	#define n_assert2(exp, msg)

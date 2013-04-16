@@ -1,8 +1,5 @@
 #include "MeshShape.h"
 
-#include <gfx2/nn3d2loader.h>
-#include <gfx2/nnvx2loader.h>
-
 namespace Physics
 {
 ImplementRTTI(Physics::CMeshShape, Physics::CShape);
@@ -64,6 +61,7 @@ bool CMeshShape::Attach(dSpaceID SpaceID)
 	//!!!REVISIT IT! Now it's copypaste from A. Sysoev's code
 	if (pInitMesh)
 	{
+		/*
 		// load the vertices and indices
 		VertexCount = pInitMesh->GetNumVertices();
 		IndexCount  = 3 * pInitMesh->GetNumIndices() - 6;
@@ -95,9 +93,11 @@ bool CMeshShape::Attach(dSpaceID SpaceID)
 			pIBuffer[++j] = pIBuf[i];
 		}
 		pInitMesh->UnlockIndices();
+		*/
 	}
 	else
 	{
+		/*
 		n_assert(FileName.IsValid());
 
 		if (FileName.CheckExtension("nvx2"))
@@ -115,6 +115,7 @@ bool CMeshShape::Attach(dSpaceID SpaceID)
 			n_error("CMeshShape: invalid file extension in '%Sphere'", FileName.Get());
 			FAIL;
 		}
+		*/
     }
 
 	// fix my collide bits, we don't need to collide against other static and disabled entities
@@ -160,43 +161,6 @@ void CMeshShape::Detach()
 
 	CShape::Detach();
 };
-//---------------------------------------------------------------------
-
-bool CMeshShape::LoadFromFile(nMeshLoader& MeshLoader)
-{
-	n_assert(FileName.IsValid());
-	n_assert(pVBuffer);
-	n_assert(pIBuffer);
-
-	// open file and read header data
-	MeshLoader.SetFilename(FileName.Get());
-	MeshLoader.SetIndexType(nMeshLoader::Index32);
-	if (!MeshLoader.Open())
-	{
-		n_error("CMeshShape: Failed to open file '%Sphere'!", FileName.Get());
-		FAIL;
-	}
-
-	// transfer mesh attributes
-	VertexCount = MeshLoader.GetNumVertices();
-	IndexCount  = MeshLoader.GetNumIndices();
-	VertexWidth = MeshLoader.GetVertexWidth();
-
-	// allocate vertex and index buffer
-	int VBSize = MeshLoader.GetNumVertices() * MeshLoader.GetVertexWidth() * sizeof(float);
-	int IBSize = MeshLoader.GetNumIndices() * sizeof(uint);
-	pVBuffer = (float*)n_malloc(VBSize);
-	pIBuffer = (int*)n_malloc(IBSize);
-
-	// read vertices and indices
-	MeshLoader.ReadVertices(pVBuffer, VBSize);
-	MeshLoader.ReadIndices(pIBuffer, IBSize);
-
-	// close mesh loader
-	MeshLoader.Close();
-
-	OK;
-}
 //---------------------------------------------------------------------
 
 /*
@@ -247,6 +211,8 @@ bool CMeshShape::DoRayCheck(const line3& Line, vector3& Contact)
 
 void CMeshShape::RenderDebug(const matrix44& ParentTfm)
 {
+	//GFX
+	/*
 	if (!IsAttached()) return;
 	matrix44 Tfm = Transform * ParentTfm;
 	nGfxServer2::Instance()->DrawShapeIndexedPrimitives(nGfxServer2::TriangleList,
@@ -258,6 +224,7 @@ void CMeshShape::RenderDebug(const matrix44& ParentTfm)
 														nGfxServer2::Index32,
 														Tfm,
 														GetDebugVisualizationColor());
+	*/
 }
 //---------------------------------------------------------------------
 

@@ -7,18 +7,13 @@
 #include <Audio/DSUtil/DSUtil.h>
 #include <Events/EventManager.h>
 #include <Time/TimeServer.h>
-#include <kernel/nkernelserver.h>
 #include <Data/DataServer.h>
-#include <resource/nresourceserver.h>
 
 namespace Audio
 {
 ImplementRTTI(Audio::CAudioServer, Core::CRefCounted);
 
 __ImplementSingleton(Audio::CAudioServer);
-
-extern bool n_init_csoundresource (nClass *, nKernelServer *);
-extern void *n_new_csoundresource (void);
 
 CAudioServer::CAudioServer():
 	_IsOpen(false),
@@ -32,10 +27,6 @@ CAudioServer::CAudioServer():
 	ListenerDopplerFactor(1.0f)
 {
 	__ConstructSingleton;
-
-	nKernelServer::Instance()->AddModule(	"csoundresource",
-											n_init_csoundresource,
-											n_new_csoundresource);
 }
 //---------------------------------------------------------------------
 
@@ -123,8 +114,6 @@ void CAudioServer::Close()
 
 	//if (WaveBank.isvalid()) CloseWaveBank();
 
-	nResourceServer::Instance()->UnloadResources(nResource::SoundResource);
-
 	SAFE_RELEASE(pDSListener);
 	SAFE_RELEASE(pDS);
 
@@ -188,15 +177,10 @@ void CAudioServer::EndScene()
 	{
 		LastStreamUpdate = CurrTime;
 
-		nRoot* pRsrcPool = nResourceServer::Instance()->GetResourcePool(nResource::SoundResource);
-		CSoundResource* pSndRsrc = (CSoundResource*)pRsrcPool->GetHead();
-		for ( ; pSndRsrc; pSndRsrc = (CSoundResource*)pSndRsrc->GetSucc())
-			if (pSndRsrc->Streaming)
-			{
-				CDSStreamingSound* pSound = (CDSStreamingSound*)pSndRsrc->GetCSoundPtr();
-				if (pSound->IsSoundPlaying() && pSound->CheckStreamUpdate())
-					pSound->HandleWaveStreamNotification(pSndRsrc->Looping);
-			}
+		// For each resource
+				//CDSStreamingSound* pSound = (CDSStreamingSound*)pSndRsrc->GetCSoundPtr();
+				//if (pSound->IsSoundPlaying() && pSound->CheckStreamUpdate())
+				//	pSound->HandleWaveStreamNotification(pSndRsrc->Looping);
 	}
 
 	for (int i = 0; i < Entities.Size(); i++) Entities[i]->Update();
@@ -298,12 +282,6 @@ void CAudioServer::Unmute()
 	for (int i = 0; i < SoundCategoryCount; ++i)
 		SetMasterVolume((ESoundCategory)i, VolumeRec[i].MutedVolume);
 	_IsMuted = false;
-}
-//---------------------------------------------------------------------
-
-CSoundResource* CAudioServer::NewSoundResource(const char* rsrcName)
-{
-	return (CSoundResource*)nResourceServer::Instance()->NewResource("csoundresource", rsrcName, nResource::SoundResource);
 }
 //---------------------------------------------------------------------
 

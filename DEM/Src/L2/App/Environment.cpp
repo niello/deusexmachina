@@ -8,13 +8,7 @@
 #include <Scripting/EntityScriptObject.h>
 #include <Core/Logger.h>
 
-#include <gfx2/nd3d9server.h>
-#include <resource/nresourceserver.h>
-
 #undef DeleteFile
-
-nNebulaUsePackage(nnebula);
-nNebulaUsePackage(ndirect3d9);
 
 namespace App
 {
@@ -33,12 +27,7 @@ bool CEnvironment::InitCore()
 {
 	//!!!core server can check is app already running inside the Open method!
 	n_new(Core::CCoreServer());
-	nKernelServer::Instance()->AddPackage(nnebula);
-	nKernelServer::Instance()->AddPackage(ndirect3d9);
 	CoreSrv->Open();
-
-	refResourceServer = n_new(nResourceServer);
-	refResourceServer->AddRef();
 
 	DataServer.Create();
 
@@ -59,8 +48,6 @@ bool CEnvironment::InitCore()
 void CEnvironment::ReleaseCore()
 {
 	DataServer = NULL;
-
-	if (refResourceServer.isvalid()) refResourceServer->Release();
 
 	CoreLogger->Close();
 	n_delete(CoreLogger);
@@ -96,11 +83,6 @@ bool CEnvironment::InitEngine()
 	RenderServer->GetDisplay().SetWindowIcon(IconName.Get());
 	RenderServer->GetDisplay().SetDisplayMode(DisplayMode);
 	RenderServer->Open();
-
-	DataSrv->SetAssign("shaders", "data:shaders/2.0");
-	gfxServer = n_new(nD3D9Server);
-	gfxServer->AddRef();
-	gfxServer->OpenDisplay();
 
 	SceneServer.Create();
 	//???do it in Open()?
@@ -141,12 +123,6 @@ void CEnvironment::ReleaseEngine()
 	AudioServer = NULL;
 
 	SceneServer = NULL;
-
-	if (gfxServer.isvalid())
-	{
-		gfxServer->CloseDisplay();
-		gfxServer->Release();
-	}
 
 	if (RenderServer.isvalid() && RenderServer->IsOpen()) RenderServer->Close();
 	RenderServer = NULL;

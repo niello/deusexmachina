@@ -1,6 +1,6 @@
 #include "Window.h"
 
-#include <gfx2/ngfxserver2.h>
+#include <Render/RenderServer.h>
 #include <CEGUIWindowManager.h>
 
 namespace UI
@@ -35,7 +35,7 @@ vector2 CWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 	CEGUI::Window* pWndParent = pWindow->getParent();
 	if (!pWndParent)
 	{
-		const CDisplayMode& Disp = nGfxServer2::Instance()->GetDisplayMode();
+		const CDisplayMode& Disp = RenderSrv->GetDisplay().GetDisplayMode();
 		return vector2((float)Disp.Width, (float)Disp.Height);
 	}
 

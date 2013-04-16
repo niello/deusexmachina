@@ -4,14 +4,13 @@
 #include <Audio/AudioServer.h>
 #include <Audio/WAVFile.h>
 #include <Audio/OGGFile.h>
-#include <kernel/nkernelserver.h>
 
 namespace Audio
 {
-nNebulaClass(CSoundResource, "nresource");
 
 bool CSoundResource::LoadResource()
 {
+	/*
 	n_assert(!IsLoaded() && !pDSSound);
 
 	LPDIRECTSOUND8 pDS = AudioSrv->GetDirectSound();
@@ -94,19 +93,20 @@ bool CSoundResource::LoadResource()
 	n_assert(pDSSound);
 
 	SetState(Valid);
+	*/
 	return true;
 }
 //---------------------------------------------------------------------
 
 void CSoundResource::UnloadResource()
 {
-	n_assert(IsLoaded());
+//	n_assert(IsLoaded());
 	if (pDSSound)
 	{
 		n_delete(pDSSound);
 		pDSSound = NULL;
 	}
-	SetState(Unloaded);
+//	SetState(Unloaded);
 }
 //---------------------------------------------------------------------
 

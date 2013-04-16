@@ -3,9 +3,6 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 
-#include <gfx2/ngfxserver2.h>
-#include <Render/FrameShader.h> //!!!TMP for shader!
-
 namespace Render
 {
 

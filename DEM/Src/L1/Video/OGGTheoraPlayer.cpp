@@ -1,7 +1,6 @@
 #include "OGGTheoraPlayer.h"
 
 #include <Data/Streams/FileStream.h>
-#include <gfx2/ntexture2.h>
 
 namespace Video
 {
@@ -286,6 +285,8 @@ COGGTheoraPlayer::DecodeYUV(yuv_buffer& yuv,unsigned char* rgbBuffer)
 void
 COGGTheoraPlayer::UpdateTexture()
 {
+	//GFX
+	/*
     n_assert(pTexture != 0);
     // Decode Theora Frame
     theora_decode_YUVout(&td,&yuv);
@@ -306,6 +307,7 @@ COGGTheoraPlayer::UpdateTexture()
         memcpy(&surfPtr[i*info.surfPitch],&rgbBuffer[i*videoWidth*4],line*4);
     // and unlock it
     pTexture->Unlock(0);
+	*/
 };
 
 //------------------------------------------------------------------------------

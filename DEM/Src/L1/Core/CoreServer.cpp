@@ -1,7 +1,6 @@
 #include "CoreServer.h"
 
 #include <Core/RefCounted.h>
-#include <kernel/nkernelserver.h>
 
 //!!!only for msg box!
 #define WIN32_LEAN_AND_MEAN
@@ -19,7 +18,6 @@ CCoreServer::CCoreServer(): _IsOpen(false)
 {
 	__ConstructSingleton;
 	n_dbgmeminit();
-	n_new(nKernelServer);
 }
 //---------------------------------------------------------------------
 
@@ -43,14 +41,13 @@ CCoreServer::~CCoreServer()
 		MessageBox(0, Msg.Get(), "DEM Core Message", MB_OK | MB_APPLMODAL | MB_SETFOREGROUND | MB_TOPMOST | MB_ICONINFORMATION);
 	}
 
-	n_delete(nKernelServer::Instance());
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
 bool CCoreServer::Open()
 {
-	n_assert(!_IsOpen && nKernelServer::HasInstance());
+	n_assert(!_IsOpen);
 	_IsOpen = true;
 	OK;
 }
@@ -58,7 +55,7 @@ bool CCoreServer::Open()
 
 void CCoreServer::Close()
 {
-	n_assert(_IsOpen && nKernelServer::HasInstance());
+	n_assert(_IsOpen);
 	_IsOpen = false;
 }
 //---------------------------------------------------------------------

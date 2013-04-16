@@ -1,7 +1,5 @@
 #include "UniversalJoint.h"
 
-#include <gfx2/ngfxserver2.h>
-
 namespace Physics
 {
 ImplementRTTI(Physics::CUniversalJoint, Physics::CJoint);
@@ -67,6 +65,8 @@ void CUniversalJoint::UpdateTransform(const matrix44& Tfm)
 
 void CUniversalJoint::RenderDebug()
 {
+	//GFX
+	/*
 	if (IsAttached())
 	{
 		matrix44 Tfm;
@@ -76,6 +76,7 @@ void CUniversalJoint::RenderDebug()
 		Tfm.translate(vector3(CurrAnchor[0], CurrAnchor[1], CurrAnchor[2]));
 		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, GetDebugVisualizationColor());
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

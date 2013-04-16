@@ -65,7 +65,6 @@ enum EClipStatus
 #define N_MAXNAMELEN (128)   // maximum length for single path component
 
 //------------------------------------------------------------------------------
-#define nID(a, b, c, d) ((a << 24) | (b << 16) | (c << 8) | (d))
 #define MAKE_FOURCC(c0, c1, c2, c3) ((c0) | (c1 << 8) | (c2 << 16) | (c3 << 24))
 #define FOURCC(i) (((i & 0xff000000) >> 24) | ((i & 0x00ff0000) >> 8) | ((i & 0x0000ff00) << 8) | ((i & 0x000000ff) << 24))
 #define N_WHITESPACE " \r\n\t"
@@ -184,26 +183,5 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #define n_free(memblock) free(memblock)
 #endif
 
-#define nNebulaUsePackage(PACKAGE) extern "C" void PACKAGE()
 
-#define nNebulaClass(CLASS, SUPERCLASSNAME) \
-    extern bool n_init(nClass* clazz, nKernelServer* kernelServer); \
-    extern void* n_create(); \
-    bool n_init(nClass* clazz, nKernelServer* kernelServer) {\
-        clazz->SetProperName(#CLASS); \
-		nKernelServer::Instance()->AddClass(SUPERCLASSNAME, clazz); \
-        return true; \
-    } \
-    void* n_create() { return n_new(CLASS()); }
-
-#define nNebulaRootClass(CLASS) \
-    extern bool n_init(nClass* clazz, nKernelServer* kernelServer); \
-    extern void* n_create(); \
-    bool n_init(nClass* clazz, nKernelServer* kernelServer) {\
-        clazz->SetProperName(#CLASS); \
-        return true; \
-    } \
-    void* n_create() { return n_new(CLASS()); }
-
-//--------------------------------------------------------------------
 #endif

@@ -1,9 +1,9 @@
 #include "VideoServer.h"
 
 #include <Video/OGGTheoraPlayer.h>
+#include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
 #include <Data/DataServer.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Video
 {
@@ -87,9 +87,10 @@ bool CVideoServer::PlayFile(const char* pFileName)
 	n_assert(pFileName && !pGraphBuilder && !pMediaCtl && !pVideoWnd && !pMediaEvent && !pBasicVideo);
 	if (_IsPlaying) Stop();
 
-	nGfxServer2::Instance()->ClearScreen(0, 1.0f, 0);
-	nGfxServer2::Instance()->EnterDialogBoxMode();
-	nGfxServer2::Instance()->ClearScreen(0, 1.0f, 0);
+	RenderSrv->ClearScreen(0);
+	//GFX
+	//nGfxServer2::Instance()->EnterDialogBoxMode();
+	//RenderSrv->ClearScreen(0);
 
 	if (FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
 	{
@@ -152,7 +153,8 @@ void CVideoServer::Stop()
 {
     n_assert(_IsPlaying);
 
-	nGfxServer2::Instance()->LeaveDialogBoxMode();
+	//GFX
+	//nGfxServer2::Instance()->LeaveDialogBoxMode();
 	SAFE_RELEASE(pBasicVideo);
 	SAFE_RELEASE(pVideoWnd);
 	SAFE_RELEASE(pMediaCtl);

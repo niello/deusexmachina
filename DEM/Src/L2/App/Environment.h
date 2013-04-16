@@ -30,9 +30,6 @@
 // NOTE: this class doesn't handle L3 initialization since it belongs to L2. Derive from it into
 // your L3 lib or application framework or initialize/release L3 systems manually in application.
 
-class nResourceServer;
-class nGfxServer2;
-
 namespace App
 {
 
@@ -52,9 +49,6 @@ protected:
 	nString							WindowTitle;
 	nString							IconName;
 	CDisplayMode					DisplayMode;
-
-	nRef<nResourceServer>			refResourceServer;
-	nRef<nGfxServer2>				gfxServer;
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;

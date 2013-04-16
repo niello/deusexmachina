@@ -7,9 +7,9 @@ void CNavMeshDebugDraw::begin(duDebugDrawPrimitives prim, float size)
 {
 	switch (prim)
 	{
-		case DU_DRAW_POINTS:	PrimType = nGfxServer2::PointList; VPerP = 1; break;
-		case DU_DRAW_LINES:		PrimType = nGfxServer2::LineList; VPerP = 2; break;
-		case DU_DRAW_TRIS:		PrimType = nGfxServer2::TriangleList; VPerP = 3; break;
+		case DU_DRAW_POINTS:	PrimType = Render::PointList; VPerP = 1; break;
+		case DU_DRAW_LINES:		PrimType = Render::LineList; VPerP = 2; break;
+		case DU_DRAW_TRIS:		PrimType = Render::TriList; VPerP = 3; break;
 		case DU_DRAW_QUADS:		n_error("CNavMeshDebugDraw::begin -> DU_DRAW_QUADS is not supported for now!"); //N2PrimType = nGfxServer2::TriangleList;
 		default: n_error("CNavMeshDebugDraw::begin -> unknown primitive type");
 	}
@@ -40,8 +40,9 @@ void CNavMeshDebugDraw::vertex(const float x, const float y, const float z, unsi
 			((CurrColor >> 8) & 0xff) * Coeff,		// G
 			((CurrColor >> 16) & 0xff) * Coeff,		// B
 			((CurrColor >> 24) & 0xff) * Coeff);	// A
-		nGfxServer2::Instance()->DrawShapePrimitives(
-			PrimType, PrimCount, Vertices.Begin(), 3, matrix44::identity, VColor);
+		//GFX
+		//nGfxServer2::Instance()->DrawShapePrimitives(
+		//	PrimType, PrimCount, Vertices.Begin(), 3, matrix44::identity, VColor);
 		Vertices.Clear();
 		CurrColor = color;
 	}
@@ -80,8 +81,9 @@ void CNavMeshDebugDraw::end()
 			((CurrColor >> 8) & 0xff) * Coeff,		// G
 			((CurrColor >> 16) & 0xff) * Coeff,		// B
 			((CurrColor >> 24) & 0xff) * Coeff);	// A
-		nGfxServer2::Instance()->DrawShapePrimitives(
-			PrimType, PrimCount, Vertices.Begin(), 3, matrix44::identity, VColor, Size);
+		//GFX
+		//nGfxServer2::Instance()->DrawShapePrimitives(
+		//	PrimType, PrimCount, Vertices.Begin(), 3, matrix44::identity, VColor, Size);
 	}
 
 	Vertices.Clear();

@@ -1,7 +1,5 @@
 #include "Hinge2Joint.h"
 
-#include <gfx2/ngfxserver2.h>
-
 namespace Physics
 {
 ImplementRTTI(Physics::CHinge2Joint, Physics::CJoint);
@@ -71,6 +69,8 @@ void CHinge2Joint::UpdateTransform(const matrix44& Tfm)
 
 void CHinge2Joint::RenderDebug()
 {
+	//GFX
+	/*
 	if (IsAttached())
 	{
 		matrix44 Tfm;
@@ -80,6 +80,7 @@ void CHinge2Joint::RenderDebug()
 		Tfm.translate(vector3(CurrAnchor[0], CurrAnchor[1], CurrAnchor[2]));
 		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, GetDebugVisualizationColor());
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

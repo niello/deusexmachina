@@ -17,7 +17,7 @@ ImplementRTTI(Physics::CLevel, Core::CRefCounted);
 ImplementFactory(Physics::CLevel);
 
 CLevel::CLevel() :
-#ifdef __NEBULA_STATS__
+#ifdef DEM_STATS
     statsNumSpaceCollideCalled(0),
     statsNumNearCallbackCalled(0),
     statsNumCollideCalled(0),
@@ -339,7 +339,7 @@ void CLevel::Trigger()
 	PROFILER_RESET(profStep);
 	PROFILER_RESET(profJointGroupEmpty);
 
-#ifdef __NEBULA_STATS__
+#ifdef DEM_STATS
 	statsNumNearCallbackCalled = 0;
 	statsNumCollideCalled = 0;
 	statsNumCollided = 0;
@@ -380,7 +380,7 @@ void CLevel::Trigger()
     }
 
 	// export statistics
-#ifdef __NEBULA_STATS__
+#ifdef DEM_STATS
 	//nWatched watchSpaceCollideCalled("statsMangaPhysicsSpaceCollideCalled", DATA_TYPE(int));
 	//nWatched watchNearCallbackCalled("statsMangaPhysicsNearCallbackCalled", DATA_TYPE(int));
 	//nWatched watchCollideCalled("statsMangaPhysicsCollideCalled", DATA_TYPE(int));

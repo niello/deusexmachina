@@ -10,7 +10,6 @@
 #include <Physics/Ray.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Physics
 {
@@ -278,8 +277,10 @@ const CContactPoint* CPhysicsServer::GetClosestContactUnderMouse(const vector2& 
 																 float Length,
 																 const CFilterSet* ExcludeSet)
 {
-	line3 WorldMouseRay = nGfxServer2::Instance()->ComputeWorldMouseRay(MousePosRel, Length);
-	return GetClosestContactAlongRay(WorldMouseRay.start(), WorldMouseRay.vec(), ExcludeSet);
+	//GFX
+	//line3 WorldMouseRay = nGfxServer2::Instance()->ComputeWorldMouseRay(MousePosRel, Length);
+	//return GetClosestContactAlongRay(WorldMouseRay.start(), WorldMouseRay.vec(), ExcludeSet);
+	return NULL;
 }
 //---------------------------------------------------------------------
 
@@ -306,9 +307,12 @@ bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir
 void CPhysicsServer::RenderDebug()
 {
 	n_assert(CurrLevel);
+	//GFX
+	/*
 	nGfxServer2::Instance()->BeginShapes();
 	CurrLevel->RenderDebug();
 	nGfxServer2::Instance()->EndShapes();
+	*/
 }
 //---------------------------------------------------------------------
 

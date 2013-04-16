@@ -6,7 +6,6 @@
 #include <AI/AIServer.h>
 #include <Data/DataServer.h>
 #include <DB/DBServer.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace Attr
 {
@@ -201,6 +200,8 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 		Tfm.scale(vector3(0.2f, 0.2f, 0.2f));
 		Tfm.set_translation(Rec.Stimulus->Position);
 
+		//GFX
+		/*
 		if (Rec.pNode) //???else draw grey or more pale/transparent sphere?
 		{
 			if (Rec.Stimulus->GetRTTI()->GetName() == "AI::CStimulusVisible")
@@ -211,6 +212,7 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 				nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, ColorOther);
 		}
 		else nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, ColorDisabled);
+		*/
 	}
 
 	OK;

@@ -31,26 +31,26 @@ void CAudioEntity::Activate()
 {
 	n_assert(!Flags.Is(IS_ACTIVE));
 	n_assert(RsrcName.IsValid());
-	n_assert(!refRsrc.isvalid());
+	//n_assert(!refRsrc.isvalid());
 
 	//???!!!rename to GetSoundResource?!
-	refRsrc = (CSoundResource*)AudioSrv->NewSoundResource(RsrcName.Get());
-	n_assert(refRsrc.isvalid());
+	//refRsrc = (CSoundResource*)AudioSrv->NewSoundResource(RsrcName.Get());
+	//n_assert(refRsrc.isvalid());
 
-	if (!refRsrc->IsLoaded())
-	{
-		refRsrc->SetFilename(RsrcName);
-		refRsrc->NumTracks = NumTracks;
-		refRsrc->Ambient = Ambient;
-		refRsrc->Streaming = Streaming;
-		refRsrc->Looping = Looping;
-		if (!refRsrc->Load())
-		{
-			refRsrc->Release();
-			refRsrc.invalidate();
-			return;
-		}
-	}
+	//if (!refRsrc->IsLoaded())
+	//{
+	//	refRsrc->SetFilename(RsrcName);
+	//	refRsrc->NumTracks = NumTracks;
+	//	refRsrc->Ambient = Ambient;
+	//	refRsrc->Streaming = Streaming;
+	//	refRsrc->Looping = Looping;
+	//	if (!refRsrc->Load())
+	//	{
+	//		refRsrc->Release();
+	//		refRsrc.invalidate();
+	//		return;
+	//	}
+	//}
 
 	Volume = 1.0f;
 	Flags.Set(IS_ACTIVE);
@@ -60,12 +60,12 @@ void CAudioEntity::Activate()
 void CAudioEntity::Deactivate()
 {
 	n_assert(Flags.Is(IS_ACTIVE));
-	n_assert(refRsrc.isvalid());
+	//n_assert(refRsrc.isvalid());
 
 	if (IsPlaying()) Stop();
 
-	refRsrc->Release();
-	refRsrc.invalidate();
+	//refRsrc->Release();
+	//refRsrc.invalidate();
 
 	Flags.Clear(IS_ACTIVE);
 }
@@ -74,7 +74,7 @@ void CAudioEntity::Deactivate()
 void CAudioEntity::Start()
 {
 	//!!!only if has sound device!
-	CDSSound* pSound = GetCSoundPtr();
+	CDSSound* pSound = NULL; //GetCSoundPtr();
 	n_assert(pSound);
 
 	if (Streaming)
@@ -113,7 +113,7 @@ void CAudioEntity::Stop()
 {
 	//!!!only if has sound device!
 	if (SoundIdx == -1) return;
-	CDSSound* pSound = GetCSoundPtr();
+	CDSSound* pSound = NULL; //GetCSoundPtr();
 	n_assert(pSound);
 	n_assert(SoundIdx >= 0);
 	pSound->Stop(SoundIdx);
@@ -142,7 +142,7 @@ void CAudioEntity::Update()
 		if (SoundIdx != -1)
 		{
 			//??? N2: FIXME! CDSSound needs update method!
-			CDSSound* pSound = GetCSoundPtr();
+			CDSSound* pSound = NULL; //GetCSoundPtr();
 			n_assert(pSound);
 			if (pSound->IsSoundPlaying())
 				pSound->GetBuffer(Streaming ? 0 : SoundIdx)->SetVolume(GetDSVolume());

@@ -1,7 +1,5 @@
 #include "SceneNode.h"
 
-#include <gfx2/ngfxserver2.h>
-
 namespace Scene
 {
 
@@ -94,6 +92,7 @@ void CSceneNode::UpdateWorldSpace()
 
 void CSceneNode::RenderDebug()
 {
+	/*
 	//!!!To some DebugRenderer / ShapeRenderer as method DrawCoordFrame(matrix44)!
 	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
 	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
@@ -111,6 +110,7 @@ void CSceneNode::RenderDebug()
 
 	for (int i = 0; i < Child.Size(); ++i)
 		Child.ValueAtIndex(i)->RenderDebug();
+	*/
 }
 //---------------------------------------------------------------------
 

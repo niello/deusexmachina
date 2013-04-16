@@ -3,7 +3,6 @@
 #include <Data/DataServer.h>
 #include <Data/Streams/FileStream.h>
 #include <Events/EventManager.h>
-#include <kernel/nkernelserver.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 

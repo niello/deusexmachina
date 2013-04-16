@@ -6,7 +6,6 @@
 #include <Events/EventManager.h>
 #include <Video/VideoServer.h>
 #include <Input/InputServer.h>
-#include <gfx2/ngfxserver2.h>
 
 namespace App
 {

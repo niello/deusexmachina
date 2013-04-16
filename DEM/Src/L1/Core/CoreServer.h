@@ -9,8 +9,6 @@
 
 // Core server manages low-level object framework
 
-class nKernelServer;
-
 namespace Core
 {
 #define CoreSrv Core::CCoreServer::Instance()

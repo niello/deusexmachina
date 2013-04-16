@@ -84,11 +84,14 @@ void CAIServer::RenderDebug()
 		{
 			CNavMeshDebugDraw DD;
 
+			//GFX
+			/*
 			nGfxServer2::Instance()->BeginShapes();
 			duDebugDrawNavMesh(&DD, *pNavQuery->getAttachedNavMesh(), DU_DRAWNAVMESH_OFFMESHCONS);
 			duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
 			//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
 			nGfxServer2::Instance()->EndShapes();
+			*/
 		}
 	}
 }

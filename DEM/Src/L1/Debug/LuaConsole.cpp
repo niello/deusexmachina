@@ -4,7 +4,6 @@
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
 #include <Core/Logger.h>
-#include <kernel/nkernelserver.h>
 
 #include <UI/CEGUI/CEGUIFmtLbTextItem.h>
 #include <elements/CEGUIEditbox.h>

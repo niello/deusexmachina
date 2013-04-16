@@ -4,10 +4,8 @@
 // Platform specific macros and defines.
 
 //#define __USE_SSE__ (1)
-
-#define __NEBULA_STATS__ (1)
-//#define __NEBULA_NO_THREADS__ (1)
-//#define __NEBULA_NO_ASSERT__ (1)
+#define DEM_STATS (1)
+//#define DEM_NO_ASSERT (1)
 
 #ifdef __WIN32__
 #undef __WIN32__
@@ -82,22 +80,6 @@
 //------------------------------------------------------------------------------
 #ifndef __GNUC__
 #  define  __attribute__(x)  /**/
-#endif
-
-//------------------------------------------------------------------------------
-// magically make the Nebula class module callbacks work (provide
-// the N_INIT, N_FINI, N_NEW and N_VERSION per-source file
-// via compiler command line switches, this is taken care of when
-// updsrc.tcl mechanism is used to create build files).
-//------------------------------------------------------------------------------
-#ifdef N_INIT
-#   define n_init N_INIT
-#endif
-#ifdef N_NEW
-#   define n_create N_NEW
-#endif
-#ifdef N_INITCMDS
-#   define n_initcmds N_INITCMDS
 #endif
 
 #endif
