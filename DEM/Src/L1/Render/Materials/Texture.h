@@ -96,6 +96,7 @@ public:
 	DWORD						GetDepth() const { return Depth; }
 	DWORD						GetMipLevelCount() const { return MipCount; }
 	EPixelFormat				GetPixelFormat() const { return PixelFormat; }
+	DWORD						GetPixelCount(bool IncludeMips) const;
 
 	IDirect3DBaseTexture9*		GetD3D9BaseTexture() const { n_assert(!LockCount); return pD3D9Tex; }
 	IDirect3DTexture9*			GetD3D9Texture() const { n_assert(!LockCount && Type == Texture2D); return pD3D9Tex2D; }

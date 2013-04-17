@@ -1,6 +1,7 @@
 #include "PropAIHints.h"
 
 #include <Game/Entity.h>
+#include <Scene/PropSceneNode.h>
 #include <Physics/Prop/PropPhysics.h>
 #include <Loading/EntityFactory.h>
 #include <AI/AIServer.h>
@@ -102,18 +103,15 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			}
 			else if (SizeStr == "Box" || SizeStr == "GfxBox")
 			{
-				//GFX
-				//!!!from scene node!
-
-				//CPropGraphics* pPropGfx = GetEntity()->FindProperty<CPropGraphics>();
-				//if (pPropGfx)
-				//{
-				//	bbox3 AABB;
-				//	pPropGfx->GetAABB(AABB);
-				//	vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
-				//	Rec.Stimulus->Radius = HorizDiag.len() * 0.5f;
-				//	//!!!Rec.Stimulus->Height = AABB.vmax.y - AABB.vmin.y;
-				//}
+				CPropSceneNode* pNode = GetEntity()->FindProperty<CPropSceneNode>();
+				if (pNode)
+				{
+					bbox3 AABB;
+					pNode->GetAABB(AABB);
+					vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
+					Rec.Stimulus->Radius = HorizDiag.len() * 0.5f;
+					//!!!Rec.Stimulus->Height = AABB.vmax.y - AABB.vmin.y;
+				}
 			}
 			else if (SizeStr == "PhysBox")
 			{

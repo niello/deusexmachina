@@ -1,6 +1,7 @@
 #include "RenderServer.h"
 
 #include <Events/EventManager.h>
+#include <Render/Events/DisplayInput.h>
 #include <Data/Stream.h>
 #include <dxerr.h>
 
@@ -49,6 +50,10 @@ bool CRenderServer::Open()
 
 	//???load frame shader(s)? on level View created (on default camera or scene creation?)
 
+	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnPaint);
+	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, CRenderServer, OnToggleFullscreenWindowed);
+	SUBSCRIBE_NEVENT(DisplayInput, CRenderServer, OnDisplayInput);
+
 	_IsOpen = true;
 	OK;
 }
@@ -57,6 +62,10 @@ bool CRenderServer::Open()
 void CRenderServer::Close()
 {
 	n_assert(_IsOpen);
+
+	UNSUBSCRIBE_EVENT(OnDisplayPaint);
+	UNSUBSCRIBE_EVENT(OnDisplayToggleFullscreen);
+	UNSUBSCRIBE_EVENT(DisplayInput);
 
 	pCurrDSSurface = NULL;
 	DefaultRT->Destroy();
@@ -86,7 +95,7 @@ bool CRenderServer::CreateDevice()
 	D3DAdapter = (UINT)Display.Adapter;
 #endif
 
-	SetupBufferFormats();
+	SetupPresentParams();
 
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
 	n_assert(SUCCEEDED(pD3D->GetDeviceCaps(D3DAdapter, DEM_D3D_DEVICETYPE, &D3DCaps)));
@@ -156,7 +165,7 @@ void CRenderServer::ResetDevice()
 	//!!!ReleaseQueries();
 
 	// In windowed mode the cause may be a desktop display mode switch, so find new buffer formats
-	if (D3DPresentParams.Windowed) SetupBufferFormats();
+	if (D3DPresentParams.Windowed) SetupPresentParams();
 
 	HRESULT hr = pD3DDevice->TestCooperativeLevel();
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
@@ -203,7 +212,7 @@ void CRenderServer::ReleaseDevice()
 }
 //---------------------------------------------------------------------
 
-void CRenderServer::SetupBufferFormats()
+void CRenderServer::SetupPresentParams()
 {
 	n_assert(pD3D);
 
@@ -226,6 +235,8 @@ void CRenderServer::SetupBufferFormats()
 		BackBufFormat = DesktopMode.PixelFormat;
 	}
 	else BackBufFormat = Display.GetDisplayMode().PixelFormat;
+
+	//!!!check display mode WH & fullscreen compatibility, override with closest!
 
 	// Make sure the device supports a D24S8 depth buffers
 	HRESULT hr = pD3D->CheckDeviceFormat(	D3DAdapter,
@@ -563,6 +574,65 @@ EPixelFormat CRenderServer::GetPixelFormat(const nString& String)
 }
 //---------------------------------------------------------------------
 
+//!!!copied from N2, some formats may be missing! Update it!
+int CRenderServer::GetFormatBits(EPixelFormat Format)
+{
+	switch (Format)
+	{
+		case D3DFMT_A32B32G32R32F:
+			return 128;
+
+		case D3DFMT_A16B16G16R16F:
+		case D3DFMT_G32R32F:
+			return 64;
+
+		case D3DFMT_R8G8B8:
+		case D3DFMT_A8R8G8B8:
+		case D3DFMT_X8R8G8B8:
+		case D3DFMT_G16R16:
+		case D3DFMT_A4L4:
+		case D3DFMT_X8L8V8U8:
+		case D3DFMT_Q8W8V8U8:
+		case D3DFMT_V16U16:
+		case D3DFMT_A2B10G10R10:
+		case D3DFMT_A2W10V10U10:
+		case D3DFMT_R32F:
+		case D3DFMT_G16R16F:
+			return 32;
+
+		case D3DFMT_R5G6B5:
+		case D3DFMT_X1R5G5B5:
+		case D3DFMT_A1R5G5B5:
+		case D3DFMT_A4R4G4B4:
+		case D3DFMT_A8R3G3B2:
+		case D3DFMT_X4R4G4B4:
+		case D3DFMT_A8P8:
+		case D3DFMT_A8L8:
+		case D3DFMT_V8U8:
+		case D3DFMT_L6V5U5:
+		case D3DFMT_L16:
+		case D3DFMT_R16F:
+			return 16;
+
+		case D3DFMT_P8:
+		case D3DFMT_A8:
+		case D3DFMT_L8:
+		case D3DFMT_R3G3B2:
+		case D3DFMT_DXT2:
+		case D3DFMT_DXT3:
+		case D3DFMT_DXT4:
+		case D3DFMT_DXT5:
+			return 8;
+
+		case D3DFMT_DXT1:
+			return 4;
+
+		default:
+			return -1;
+	}
+}
+//---------------------------------------------------------------------
+
 DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
 {
 	DWORD Mask = 0;
@@ -587,6 +657,35 @@ DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
 		}
 	}
 	return Mask;
+}
+//---------------------------------------------------------------------
+
+bool CRenderServer::OnPaint(const Events::CEventBase& Event)
+{
+	if (Display.Fullscreen && pD3DDevice) //!!! && !InDialogBoxMode)
+		pD3DDevice->Present(0, 0, 0, 0);
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!almost 100% won't work, write appropriate toggle!
+bool CRenderServer::OnToggleFullscreenWindowed(const Events::CEventBase& Event)
+{
+	Display.Fullscreen = !Display.Fullscreen;
+	ReleaseDevice();
+	CreateDevice();
+	OK;
+}
+//---------------------------------------------------------------------
+
+// In full-screen mode, update the cursor position myself
+bool CRenderServer::OnDisplayInput(const Events::CEventBase& Event)
+{
+	const Event::DisplayInput& Ev = (const Event::DisplayInput&)Event;
+
+	if (Display.Fullscreen && Ev.Type == Event::DisplayInput::MouseMove)
+		pD3DDevice->SetCursorPosition(Ev.MouseInfo.x, Ev.MouseInfo.y, 0);
+	OK;
 }
 //---------------------------------------------------------------------
 

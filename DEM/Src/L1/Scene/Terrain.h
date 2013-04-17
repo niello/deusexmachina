@@ -54,6 +54,9 @@ public:
 	virtual void		OnRemove();
 	virtual void		Update();
 
+	const bbox3&		GetLocalAABB() const { return Box; }
+	void				GetGlobalAABB(bbox3& Out) const;
+
 	DWORD				GetHeightMapWidth() const { return HFWidth; }
 	DWORD				GetHeightMapHeight() const { return HFHeight; }
 	DWORD				GetPatchSize() const { return PatchSize; }
@@ -61,8 +64,6 @@ public:
 	DWORD				GetTopPatchCountX() const { return TopPatchCountX; }
 	DWORD				GetTopPatchCountZ() const { return TopPatchCountZ; }
 	float				GetVerticalScale() const { return VerticalScale; }
-	const bbox3&		GetLocalAABB() const { return Box; }
-	void				GetGlobalAABB(bbox3& Out) const;
 	Render::CTexture*	GetHeightMap() const { return HeightMap.get_unsafe(); }
 	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
 	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;

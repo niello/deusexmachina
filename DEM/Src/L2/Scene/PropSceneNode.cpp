@@ -2,6 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Scene/SceneServer.h>
+#include <Scene/Model.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
@@ -74,6 +75,25 @@ void CPropSceneNode::Deactivate()
 	}
 	//CPropTransformable::Deactivate();
 	CProperty::Deactivate();
+}
+//---------------------------------------------------------------------
+
+void CPropSceneNode::GetAABB(bbox3& OutBox) const
+{
+	if (!Node.isvalid() || !Node->GetAttrCount()) return;
+
+	OutBox.begin_extend();
+	for (DWORD i = 0; i < Node->GetAttrCount(); ++i)
+	{
+		Scene::CSceneNodeAttr& Attr = *Node->GetAttr(i);
+		if (Attr.IsA<Scene::CModel>())
+		{
+			bbox3 AttrBox;
+			((Scene::CModel&)Attr).GetGlobalAABB(AttrBox);
+			OutBox.extend(AttrBox);
+		}
+	}
+	OutBox.end_extend();
 }
 //---------------------------------------------------------------------
 

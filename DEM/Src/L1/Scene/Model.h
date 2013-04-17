@@ -46,7 +46,9 @@ public:
 	virtual bool	OnAdd();
 	virtual void	OnRemove();
 	virtual void	Update();
-	void			GetBox(bbox3& OutBox) const;
+
+	const bbox3&	GetLocalAABB() const { return Mesh->GetGroup(MeshGroupIndex).AABB; }
+	void			GetGlobalAABB(bbox3& OutBox) const;
 };
 
 RegisterFactory(CModel);

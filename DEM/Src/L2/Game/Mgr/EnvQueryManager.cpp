@@ -6,6 +6,8 @@
 #include <Input/InputServer.h>
 #include <Game/Mgr/EntityManager.h>
 #include <Events/EventManager.h>
+#include <Scene/PropSceneNode.h>
+#include <Scene/SceneServer.h>
 #include <Physics/Prop/PropAbstractPhysics.h>
 
 namespace Game
@@ -56,7 +58,7 @@ void CEnvQueryManager::GetEntitiesUnderMouseDragDropRect(const rectangle& DragDr
 	float angleOfView = nGfxServer2::Instance()->GetCamera().GetAngleOfView();
 
 	nArray<Graphics::PEntity> GfxEntities;
-	//RenderSrv->GetDisplay().DragDropSelect(Ray.end(),
+	//DragDropSelect(Ray.end(),
 	//	nGfxServer2::Instance()->GetCamera().GetAngleOfView() * DragDropRect.width(),
 	//	DragDropRect.width() / DragDropRect.height(),
 	//	GfxEntities);
@@ -90,6 +92,7 @@ void CEnvQueryManager::GetEntitiesUnderMouseDragDropRect(const rectangle& DragDr
 	}
 }
 //---------------------------------------------------------------------
+*/
 
 nArray<PEntity> CEnvQueryManager::GetEntitiesInSphere(const vector3& MidPoint, float Radius)
 {
@@ -120,43 +123,40 @@ nArray<PEntity> CEnvQueryManager::GetEntitiesInBox(const vector3& Scale, const m
 	return GameEntities;
 }
 //---------------------------------------------------------------------
-*/
 
-vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& pEntity, const vector3* Offset)
+vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& Entity, const vector3* Offset)
 {
-	//GFX
-	vector3 EntityPos = pEntity.Get<matrix44>(Attr::Transform).pos_component();
+	Scene::CCamera& Camera = *SceneSrv->GetCurrentScene()->GetMainCamera();
+
+	vector3 EntityPos = Entity.Get<matrix44>(Attr::Transform).pos_component();
 	if (Offset) EntityPos += *Offset;
-	vector4 WorldPos; //= nGfxServer2::Instance()->GetTransform(nGfxServer2::View) * EntityPos;
-	WorldPos.w = 0;
-	//WorldPos = nGfxServer2::Instance()->GetCamera().GetProjection() * WorldPos;
+	vector4 WorldPos = Camera.GetViewMatrix() * EntityPos;
+	WorldPos.w = 0.f;
+	WorldPos = Camera.GetProjMatrix() * WorldPos;
 	WorldPos = WorldPos * (1.f / WorldPos.w);
 	return vector2(WorldPos.x * 0.5f + 0.5f, 0.5f - WorldPos.y * 0.5f);
 }
 //---------------------------------------------------------------------
 
-vector2 CEnvQueryManager::GetEntityScreenPositionUpper(const Game::CEntity& pEntity)
+vector2 CEnvQueryManager::GetEntityScreenPositionUpper(const Game::CEntity& Entity)
 {
-	//GFX
-	//Properties::CPropGraphics* pGraphics = pEntity.FindProperty<Properties::CPropGraphics>();
-	//n_assert(pGraphics);
+	Properties::CPropSceneNode* pNode = Entity.FindProperty<Properties::CPropSceneNode>();
+	if (!pNode) return vector2::zero;
 
-	//bbox3 AABB;
-	//pGraphics->GetAABB(AABB);
+	bbox3 AABB;
+	pNode->GetAABB(AABB);
 
-	//vector3 Offset(0.0f, AABB.size().y, 0.0f);
-	return GetEntityScreenPositionRel(pEntity, NULL); //&Offset);
+	vector3 Offset(0.0f, AABB.size().y, 0.0f);
+	return GetEntityScreenPositionRel(Entity, &Offset);
 }
 //---------------------------------------------------------------------
 
 rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity, const vector3* const Offset)
 {
-	//GFX
-	/*
 	bbox3 AABB;
 
-	Properties::CPropGraphics* pGraphics = Entity.FindProperty<Properties::CPropGraphics>();
-	if (pGraphics) pGraphics->GetAABB(AABB);
+	Properties::CPropSceneNode* pNode = Entity.FindProperty<Properties::CPropSceneNode>();
+	if (pNode) pNode->GetAABB(AABB);
 	else
 	{
 		Properties::CPropAbstractPhysics* pPhysics = Entity.FindProperty<Properties::CPropAbstractPhysics>();
@@ -169,18 +169,16 @@ rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity
 		AABB.vmin += *Offset;
 	}
 
-	AABB.transform(nGfxServer2::Instance()->GetTransform(nGfxServer2::View));
+	Scene::CCamera& Camera = *SceneSrv->GetCurrentScene()->GetMainCamera();
+	AABB.transform(Camera.GetViewMatrix());
 
-	const matrix44& Projection = nGfxServer2::Instance()->GetCamera().GetProjection();
-	*/
 	rectangle Result;
 
-	/*
 	for (int i = 0; i < 6; i++)
 	{
 		vector3 Corner = AABB.corner_point(i);
 		vector4 Pos(Corner.x, Corner.y, Corner.z, 0.0f);
-		Pos = Projection * Pos;
+		Pos = Camera.GetProjMatrix() * Pos;
 		Pos /= Pos.w;
 		
 		vector2 ScreenPos = vector2(Pos.x * 0.5f + 0.5f, 0.5f - Pos.y * 0.5f);
@@ -198,7 +196,7 @@ rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity
 		}
 		else Result.v0 = Result.v1 = ScreenPos;
 	}
-*/
+
 	return Result;
 
 	/*AABB.transform(nGfxServer2::Instance()->GetCamera().GetProjection());

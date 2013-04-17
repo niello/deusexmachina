@@ -145,9 +145,9 @@ bool CModelRenderer::IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Ligh
 	// Check whether this light potentially touches the model
 	if (!Model.pSPSRecord->pSPSNode->SharesSpaceWith(*Light.pSPSRecord->pSPSNode)) FAIL;
 
-	//!!!GetBox must return cached box, scene updates it!
+	//!!!GetGlobalAABB must return cached box, scene updates it!
 	bbox3 ModelBox;
-	Model.GetBox(ModelBox);
+	Model.GetGlobalAABB(ModelBox);
 
 	// Now test spotlight too. In fact spotlight sphere is much less.
 	sphere LightSphere(Light.GetNode()->GetWorldPosition(), Light.GetRange());

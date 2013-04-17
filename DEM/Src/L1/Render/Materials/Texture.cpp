@@ -280,6 +280,33 @@ void CTexture::GenerateMipLevels()
 	// creation time, specify D3DUSAGE_AUTOGENMIPMAP (c) D3D9 docs
 	n_assert(pD3D9Tex);
 	pD3D9Tex->GenerateMipSubLevels();
+
+	// Doesn't work on pool = DEFAULT & usage != DYNAMIC
+	//n_assert(SUCCEEDED(D3DXFilterTexture(pD3D9Tex, NULL, 0, D3DX_FILTER_LINEAR)));
+}
+//---------------------------------------------------------------------
+
+DWORD CTexture::GetPixelCount(bool IncludeMips) const
+{
+	DWORD BaseCount;
+	switch (Type)
+	{
+		case Texture2D:		BaseCount = Width * Height;
+		case Texture3D:		BaseCount = Width * Height * Depth;
+		case TextureCube:	BaseCount = Width * Height * 6;
+		default: return 0;
+	}
+
+	if (!IncludeMips) return BaseCount;
+
+	DWORD Accum = BaseCount;
+	for (DWORD i = 1; i < MipCount; ++i)
+	{
+		BaseCount /= (Type == Texture3D) ? 8 : 4;
+		Accum += BaseCount;
+	}
+
+	return Accum;
 }
 //---------------------------------------------------------------------
 

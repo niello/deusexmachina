@@ -9,14 +9,13 @@
 #include <Render/Geometry/Mesh.h>
 #include <Resources/ResourceManager.h>
 #include <Data/Data.h>
+#include <Events/Events.h>
+#include <Events/Subscription.h>
 
 // Render device interface (currently D3D9). Renderer manages shaders, shader state, shared variables,
 // render targets, model, view and projection transforms, and performs actual rendering
 
 //!!!need FrameLog - logging of rendering calls for one particular frame!
-
-//!!!OLD!
-class nD3D9Server;
 
 namespace Render
 {
@@ -31,15 +30,12 @@ public:
 
 	enum
 	{
-		MaxTextureStageCount = 8,
+		MaxTextureStageCount = 8, //???16?
 		MaxRenderTargetCount = 4,
 		MaxVertexStreamCount = 2 // Not sure why 2, N3 value
 	};
 
 protected:
-
-	//!!!OLD!
-	friend class ::nD3D9Server;
 
 	enum { MaxShaderFeatureCount = sizeof(DWORD) * 8 };
 
@@ -85,7 +81,11 @@ protected:
 
 	bool				CreateDevice();
 	void				ReleaseDevice();
-	void				SetupBufferFormats();
+	void				SetupPresentParams();
+
+	DECLARE_EVENT_HANDLER(OnDisplayPaint, OnPaint);
+	DECLARE_EVENT_HANDLER(OnDisplayToggleFullscreen, OnToggleFullscreenWindowed);
+	DECLARE_EVENT_HANDLER(DisplayInput, OnDisplayInput);
 
 public:
 
@@ -126,6 +126,7 @@ public:
 	PVertexLayout		GetVertexLayout(const nArray<CVertexComponent>& Components);
 	//???PVertexLayout		GetVertexLayout(const nString& Signature);
 	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
+	int					GetFormatBits(EPixelFormat Format);
 	DWORD				ShaderFeatureStringToMask(const nString& FeatureString);
 	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
 	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }

@@ -60,7 +60,7 @@ public:
 	bool			VSync;
 	bool			AlwaysOnTop;
 	bool			AutoAdjustSize;				// Autoadjust viewport to window size when window changes
-	bool			DisplayModeSwitchEnabled;	// Fullscreen only
+	bool			DisplayModeSwitchEnabled;	//???
 	bool			TripleBuffering;			// Use double or triple buffering when fullscreen
 	EMSAAQuality	AntiAliasQuality;
 

@@ -50,4 +50,15 @@ void CCamera::Update()
 }
 //---------------------------------------------------------------------
 
+void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay)
+{
+	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
+	vector3 LocalMousePos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
+	LocalMousePos.y = -LocalMousePos.y;
+	OutRay.b = pNode->GetWorldMatrix() * LocalMousePos;
+	OutRay.m = OutRay.b - pNode->GetWorldMatrix().pos_component();
+	OutRay.m *= (Length / OutRay.m.len());
+}
+//---------------------------------------------------------------------
+
 }

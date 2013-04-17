@@ -60,8 +60,9 @@ public:
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void	OnRemove();
 	virtual void	Update();
+
 	void			CalcFrustum(matrix44& OutFrustum);
-	void			GetBox(bbox3& OutBox) const;
+	void			GetGlobalAABB(bbox3& OutBox) const;
 
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);

@@ -11,7 +11,6 @@ ImplementFactory(Physics::CMeshShape);
 
 CMeshShape::CMeshShape():
 	CShape(Mesh),
-	pInitMesh(NULL),
 	pVBuffer(NULL),
 	pIBuffer(NULL),
 	VertexCount(0),
@@ -59,7 +58,7 @@ bool CMeshShape::Attach(dSpaceID SpaceID)
 	n_assert(!pIBuffer);
 
 	//!!!REVISIT IT! Now it's copypaste from A. Sysoev's code
-	if (pInitMesh)
+	if (NULL) //pInitMesh)
 	{
 		/*
 		// load the vertices and indices

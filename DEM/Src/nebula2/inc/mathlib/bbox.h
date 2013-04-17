@@ -265,16 +265,13 @@ bbox3::begin_extend()
     This just checks whether the extend() method has actually been called after
     begin_extend() and just sets vmin and vmax to the null vector if it hasn't.
 */
-inline
-void
-bbox3::end_extend()
+inline void bbox3::end_extend()
 {
-    if (vmin.isequal(vector3( 1000000.0f,  1000000.0f,  1000000.0f), TINY) &&
-        vmax.isequal(vector3(-1000000.0f, -1000000.0f, -1000000.0f), TINY))
-    {
-        vmin.set(0.0f, 0.0f, 0.0f);
-        vmax.set(0.0f, 0.0f, 0.0f);
-    }
+	if (vmin.x > vmax.x || vmin.y > vmax.y || vmin.z > vmax.z)
+	{
+		vmin.set(0.0f, 0.0f, 0.0f);
+		vmax.set(0.0f, 0.0f, 0.0f);
+	}
 }
 
 //------------------------------------------------------------------------------

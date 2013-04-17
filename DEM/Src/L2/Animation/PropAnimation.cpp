@@ -72,7 +72,7 @@ void CPropAnimation::Deactivate()
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
 	//!!!abort all tasks and destroy controllers!
-	//Tasks.Clear();
+	Tasks.Clear();
 
 	Clips.Clear();
 	Nodes.Clear();
