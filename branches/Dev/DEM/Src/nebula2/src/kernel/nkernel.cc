@@ -1,12 +1,4 @@
-//------------------------------------------------------------------------------
-//  nkernel.cc
-//  (C) 2002 RadonLabs GmbH
-//------------------------------------------------------------------------------
 #include <Core/Logger.h>
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

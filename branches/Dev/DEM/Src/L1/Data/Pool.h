@@ -3,7 +3,6 @@
 #define __DEM_L1_POOL_H__
 
 // Only for n_assert
-#include <kernel/ndebug.h>
 #include <kernel/ntypes.h>
 #include <StdDEM.h>
 

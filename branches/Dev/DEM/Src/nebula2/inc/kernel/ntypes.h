@@ -6,16 +6,40 @@
 
     (C) 2002 RadonLabs GmbH
 */
-#ifndef __XBxX__
 #include <errno.h>
 #include <stdio.h>
 #include <new>
+
+#include "StdCfg.h"
+
+//---------------------------------------------------------------------
+//  Debug macros
+//---------------------------------------------------------------------
+#ifdef DEM_NO_ASSERT
+	#define n_verify(exp) (exp)
+	#define n_assert(exp)
+	#define n_assert2(exp, msg)
+	#define n_assert_dbg(exp)
+	#define n_assert2_dbg(exp, msg)
+#else
+	#define n_verify(exp)				{ if (!(exp)) n_barf(#exp, __FILE__, __LINE__); }
+	#define n_assert(exp)				{ if (!(exp)) n_barf(#exp, __FILE__, __LINE__); }
+	#define n_assert2(exp, msg)			{ if (!(exp)) n_barf2(#exp, msg, __FILE__, __LINE__); }
+
+	#ifdef _DEBUG
+		#define n_verify_dbg(exp)		n_verify(exp)
+		#define n_assert_dbg(exp)		n_assert(exp)
+		#define n_assert2_dbg(exp, msg)	n_assert2(exp, msg)
+	#else
+		#define n_verify_dbg(exp)		(exp)
+		#define n_assert_dbg(exp)
+		#define n_assert2_dbg(exp, msg)
+	#endif
 #endif
 
-#include "kernel/nsystem.h"
-#include "kernel/ndebug.h"
-
-// Shortcut Typedefs
+//---------------------------------------------------------------------
+//  Shortcut typedefs
+//---------------------------------------------------------------------
 typedef unsigned long  ulong;
 typedef unsigned int   uint;
 typedef unsigned short ushort;
@@ -125,7 +149,7 @@ const char* n_fourcctostr(nFourCC);
 //------------------------------------------------------------------------------
 //  Nebula memory management and debugging stuff.
 //------------------------------------------------------------------------------
-extern bool nMemoryLoggingEnabled;
+extern bool DEM_LogMemory;
 struct nMemoryStats
 {
     int highWaterSize;      // max allocated size so far

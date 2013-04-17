@@ -6,7 +6,6 @@
 #include <Scene/Light.h>
 #include <Scene/SceneNode.h>
 #include <Data/QuadTree.h>
-#include <kernel/ndebug.h>
 
 // Scene spatial partitioning structure stuff
 

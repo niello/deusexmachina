@@ -3,7 +3,6 @@
 #define __DEM_L1_DATA_TYPE_H__
 
 // Only for n_assert
-#include <kernel/ndebug.h>
 #include <kernel/ntypes.h>
 
 #define DECLARE_TYPE(T, ID)		namespace Data { template<> class CTypeID<T> { public: enum { TypeID = ID }; enum { IsDeclared = true }; }; }

@@ -4,7 +4,7 @@
 
 #include <Core/RefCounted.h>
 #include <Time/TimeSource.h>
-#include <kernel/nprofiler.h>
+#include <Debug/Profiler.h>
 
 // The game server setups and runs the game world, consisting of a number
 // of active "game entities". Functionality and queries on the game world

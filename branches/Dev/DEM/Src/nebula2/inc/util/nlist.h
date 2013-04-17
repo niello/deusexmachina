@@ -2,7 +2,6 @@
 #define N_LIST_H
 
 #include "kernel/ntypes.h"
-#include "kernel/ndebug.h"
 #include "util/nnode.h"
 
 // Implement a doubly linked list.

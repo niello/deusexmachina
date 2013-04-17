@@ -12,7 +12,7 @@
 #include <Physics/Joints/Joint.h>
 #include <Physics/MaterialTable.h>
 #include <util/HashMap.h>
-#include <kernel/nprofiler.h>
+#include <Debug/Profiler.h>
 
 namespace Physics
 {

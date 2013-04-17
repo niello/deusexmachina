@@ -809,6 +809,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Debug\Profiler.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Debug\StackTraceWin32.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Debug\StackTraceWin32.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Debug\WatcherWindow.cpp"
 				>
 			</File>

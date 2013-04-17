@@ -157,6 +157,26 @@
 			Filter="cpp;c;cxx;cc;h;hxx;hcc"
 			>
 			<File
+				RelativePath="..\..\Src\nebula2\src\kernel\ndbgalloc.cc"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\Src\nebula2\src\kernel\nkernel.cc"
 				>
 				<FileConfiguration
@@ -184,62 +204,6 @@
 				RelativePath="..\..\Src\nebula2\inc\kernel\ntypes.h"
 				>
 			</File>
-			<Filter
-				Name="Debug"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\src\kernel\ndbgalloc.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\kernel\ndebug.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\kernel\nprofiler.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\kernel\nwin32stacktrace.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nwin32stacktrace;N_NEW=n_new_nwin32stacktrace;N_INITCMDS=n_initcmds_nwin32stacktrace"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions="N_INIT=n_init_nwin32stacktrace;N_NEW=n_new_nwin32stacktrace;N_INITCMDS=n_initcmds_nwin32stacktrace"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\kernel\nwin32stacktrace.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="mathlib"
