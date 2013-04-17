@@ -4,6 +4,7 @@
 
 #include <Scene/SceneNodeAttr.h>
 #include <Scene/SceneNode.h>
+#include <mathlib/line.h>
 
 // Camera is a scene node attribute describing camera properties.
 // Note - W and H are necessary for orthogonal projection matrix,
@@ -47,6 +48,8 @@ public:
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
 	virtual void	Update();
+
+	void			GetRay3D(float RelX, float RelY, float Length, line3& OutRay);
 
 	void			SetPerspectiveMode() { if (Flags.Is(Orthogonal)) { Flags.Clear(Orthogonal); Flags.Set(ProjDirty); } }
 	void			SetOrthogonalMode() { if (!Flags.Is(Orthogonal)) { Flags.Set(Orthogonal); Flags.Set(ProjDirty); } }

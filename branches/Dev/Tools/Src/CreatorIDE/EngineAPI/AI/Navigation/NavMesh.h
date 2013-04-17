@@ -3,7 +3,7 @@
 #define __CIDE_NAV_MESH_H__
 
 #include <StdDEM.h>
-#include <kernel/nprofiler.h>
+#include <Debug/Profiler.h>
 #include <Recast.h>
 #include <DetourNavMeshBuilder.h>
 

@@ -8,6 +8,7 @@
 #include <Physics/Collision/MeshShape.h>
 #include <Physics/Collision/HeightfieldShape.h>
 #include <Physics/Ray.h>
+#include <Scene/SceneServer.h> // For 3D ray picking. To EnvQuaryMgr?
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -271,16 +272,14 @@ const CContactPoint* CPhysicsServer::GetClosestContactAlongRay(const vector3& Po
 }
 //---------------------------------------------------------------------
 
-// NOTE: This gets the current view matrix from the Nebula gfx server. This means
-// the check could be one frame off, if the "previous" view matrix is used.
+// NB: Camera must be updated before this check
 const CContactPoint* CPhysicsServer::GetClosestContactUnderMouse(const vector2& MousePosRel,
 																 float Length,
 																 const CFilterSet* ExcludeSet)
 {
-	//GFX
-	//line3 WorldMouseRay = nGfxServer2::Instance()->ComputeWorldMouseRay(MousePosRel, Length);
-	//return GetClosestContactAlongRay(WorldMouseRay.start(), WorldMouseRay.vec(), ExcludeSet);
-	return NULL;
+	line3 Ray;
+	SceneSrv->GetCurrentScene()->GetMainCamera()->GetRay3D(MousePosRel.x, MousePosRel.y, Length, Ray);
+	return GetClosestContactAlongRay(Ray.start(), Ray.vec(), ExcludeSet);
 }
 //---------------------------------------------------------------------
 

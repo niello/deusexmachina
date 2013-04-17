@@ -26,20 +26,7 @@ bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PSh
 	D3DEffFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
 #endif
 
-//!!!OLD+
-	LPCSTR VSProfile = D3DXGetVertexShaderProfile(RenderSrv->GetD3DDevice());
-	LPCSTR PSProfile = D3DXGetPixelShaderProfile(RenderSrv->GetD3DDevice());
-
-	D3DXMACRO Defines[] =
-	{
-		{ "CompileTargetVS", VSProfile ? VSProfile : "vs_2_0" },
-		{ "CompileTargetPS", PSProfile ? PSProfile : "ps_2_0" },
-		{ NULL, NULL }
-	};
-
 	CD3DXNebula2Include IncludeHandler(FileName.ExtractDirName(), ShaderRootDir);
-//!!!OLD-
-
 	ID3DXBuffer* pErrorBuffer = NULL;
 	ID3DXEffect* pEffect = NULL;
 
@@ -47,7 +34,7 @@ bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PSh
 		RenderSrv->GetD3DDevice(),
 		Buffer.GetPtr(),
 		FileSize,
-		Defines,
+		NULL,
 		&IncludeHandler,
 		D3DEffFlags,
 		RenderSrv->GetD3DEffectPool(),

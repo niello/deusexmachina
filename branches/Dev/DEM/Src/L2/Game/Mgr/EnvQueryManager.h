@@ -57,9 +57,9 @@ public:
 	void			GetEntitiesUnderMouseDragDropRect(const rectangle& dragDropRect, nArray<Ptr<Game::CEntity> >& entities);
 	nArray<PEntity>	GetEntitiesInSphere(const vector3& midPoint, float radius);
 	nArray<PEntity>	GetEntitiesInBox(const vector3& scale, const matrix44& m);
-	vector2			GetEntityScreenPositionUpper(const Game::CEntity& pEntity);
-	vector2			GetEntityScreenPositionRel(const Game::CEntity& pEntity, const vector3* Offset = NULL);
-	rectangle		GetEntityScreenRectangle(const Game::CEntity& PEntity, const vector3* const Offset = NULL);
+	vector2			GetEntityScreenPositionUpper(const Game::CEntity& Entity);
+	vector2			GetEntityScreenPositionRel(const Game::CEntity& Entity, const vector3* Offset = NULL);
+	rectangle		GetEntityScreenRectangle(const Game::CEntity& Entity, const vector3* const Offset = NULL);
 
 	bool			GetEnvInfoAt(const vector3& Position, CEnvInfo& Info, float ProbeLength = 1000.f, int SelfPhysicsID = -1) const;
 

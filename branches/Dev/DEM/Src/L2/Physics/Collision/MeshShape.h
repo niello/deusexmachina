@@ -14,8 +14,6 @@
 // An shape containing a triangle mesh. Can be initialized from in-memory nMesh2.
 // Based on CMeshShape (C) 2003 RadonLabs GmbH and A.Sysoev's tutorial
 
-class nMesh2;
-
 namespace Physics
 {
 
@@ -34,7 +32,6 @@ protected:
 	//static Opcode::CollisionFaces	OPCFaces;			// face cache for ray collider
 
 	nString			FileName;
-	nMesh2*			pInitMesh;
 	float*			pVBuffer;
 	int*			pIBuffer;
 	int				VertexCount;

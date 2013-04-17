@@ -4,6 +4,7 @@
 
 #include <Physics/Prop/PropTransformable.h> //!!!not in physics!
 #include <Scene/SceneNode.h>
+#include <mathlib/bbox.h>
 
 // Scene node property associates entity transform with scene graph node
 
@@ -45,6 +46,7 @@ public:
 	virtual void		Deactivate();
 
 	Scene::CSceneNode*	GetNode() const { return Node.get_unsafe(); }
+	void				GetAABB(bbox3& OutBox) const;
 };
 
 RegisterFactory(CPropSceneNode);

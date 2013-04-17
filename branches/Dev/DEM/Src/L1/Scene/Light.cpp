@@ -70,20 +70,20 @@ void CLight::Update()
 		if (!pSPSRecord)
 		{
 			pSPSRecord = n_new(CSPSRecord)(*this);
-			GetBox(pSPSRecord->GlobalBox);
+			GetGlobalAABB(pSPSRecord->GlobalBox);
 			pNode->GetScene()->SPS.AddObject(pSPSRecord);
 		}
 		else if (pNode->IsWorldMatrixChanged()) //!!! || Range/Cone changed
 		{
-			GetBox(pSPSRecord->GlobalBox);
+			GetGlobalAABB(pSPSRecord->GlobalBox);
 			pNode->GetScene()->SPS.UpdateObject(pSPSRecord);
 		}
 	}
 }
 //---------------------------------------------------------------------
 
-//!!!GetBox & CalcBox must be separate!
-void CLight::GetBox(bbox3& OutBox) const
+//!!!GetGlobalAABB & CalcBox must be separate!
+void CLight::GetGlobalAABB(bbox3& OutBox) const
 {
 	//!!!If local params changed, recompute AABB
 	//!!!If transform of host node changed, update global space AABB (rotate, scale)

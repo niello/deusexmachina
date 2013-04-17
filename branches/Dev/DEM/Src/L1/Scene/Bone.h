@@ -39,7 +39,7 @@ public:
 	virtual void	Update();
 
 	//!!!Can be useful for ragdolls!
-	//void			GetBox(bbox3& OutBox) const;
+	//void			GetGlobalAABB(bbox3& OutBox) const;
 
 	DWORD			GetIndex() const { return Index; }
 	bool			IsRoot() const { return Flags.Is(Bone_Root); }
