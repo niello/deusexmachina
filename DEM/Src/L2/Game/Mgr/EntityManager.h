@@ -6,7 +6,7 @@
 #include <Game/Entity.h>
 #include <Events/Events.h>
 #include <util/ndictionary.h>
-#include <kernel/nprofiler.h>
+#include <Debug/Profiler.h>
 
 // The entity manager object keeps track of all active game entities
 // and fires per-frame-update events to keep them alive. It

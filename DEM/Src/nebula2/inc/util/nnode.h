@@ -2,7 +2,6 @@
 #define N_NODE_H
 
 #include "kernel/ntypes.h"
-#include "kernel/ndebug.h"
 
 // Implement a node in a doubly linked list.
 // (C) 2002 RadonLabs GmbH
