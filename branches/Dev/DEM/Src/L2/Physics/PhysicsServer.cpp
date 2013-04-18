@@ -8,7 +8,6 @@
 #include <Physics/Collision/MeshShape.h>
 #include <Physics/Collision/HeightfieldShape.h>
 #include <Physics/Ray.h>
-#include <Scene/SceneServer.h> // For 3D ray picking. To EnvQuaryMgr?
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -269,17 +268,6 @@ const CContactPoint* CPhysicsServer::GetClosestContactAlongRay(const vector3& Po
 		}
 	}
 	return (Idx != INVALID_INDEX) ? &Contacts[Idx] : NULL;
-}
-//---------------------------------------------------------------------
-
-// NB: Camera must be updated before this check
-const CContactPoint* CPhysicsServer::GetClosestContactUnderMouse(const vector2& MousePosRel,
-																 float Length,
-																 const CFilterSet* ExcludeSet)
-{
-	line3 Ray;
-	SceneSrv->GetCurrentScene()->GetMainCamera()->GetRay3D(MousePosRel.x, MousePosRel.y, Length, Ray);
-	return GetClosestContactAlongRay(Ray.start(), Ray.vec(), ExcludeSet);
 }
 //---------------------------------------------------------------------
 

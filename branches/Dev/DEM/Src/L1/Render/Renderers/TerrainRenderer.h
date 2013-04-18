@@ -58,27 +58,21 @@ protected:
 	float							MorphStartRatio;
 	nArray<CMorphInfo>				MorphConsts;
 
+	nDictionary<DWORD, CMesh*>		PatchMeshes;
+	PVertexLayout					PatchVertexLayout;
+	PVertexLayout					InstanceVertexLayout;
+	PVertexLayout					FinalVertexLayout;
+	PVertexBuffer					InstanceBuffer;
+	DWORD							MaxInstanceCount;
+
+	nArray<Scene::CTerrain*>		TerrainObjects;
+	const nArray<Scene::CLight*>*	pLights;
+
 	CShader::HVar					hHeightMap;
 	CShader::HVar					hWorldToHM;
 	CShader::HVar					hTerrainYInvSplat;
 	CShader::HVar					hGridConsts;
 	CShader::HVar					hHMTexInfo;
-
-	nDictionary<DWORD, CMesh*>		PatchMeshes;
-	PVertexLayout					PatchVertexLayout;
-	PVertexLayout					FinalVertexLayout;
-	PVertexBuffer					InstanceBuffer;
-	DWORD							MaxInstanceCount;
-
-	//PShader							SharedShader;
-	//CShader::HVar					hLightType;
-	//CShader::HVar					hLightPos;
-	//CShader::HVar					hLightDir;
-	//CShader::HVar					hLightColor;
-	//CShader::HVar					hLightParams;
-
-	nArray<Scene::CTerrain*>		TerrainObjects;
-	const nArray<Scene::CLight*>*	pLights;
 
 	PShader							SharedShader;
 	CShader::HVar					hLightType;
@@ -87,9 +81,7 @@ protected:
 	DWORD							LightFeatFlags[MaxLightsPerObject];
 	DWORD							FeatFlagDefault;
 
-	bool			CreatePatchMesh(DWORD Size);
 	CMesh*			GetPatchMesh(DWORD Size);
-
 	ENodeStatus		ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, CPatchInstance* pInstances, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
 
 public:

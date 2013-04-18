@@ -5,10 +5,9 @@
 #include <Resources/Resource.h>
 #include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
+#include <Events/Events.h>
 
 // Texture resource, usable by renderer
-
-//???!!!OnDeviceLost, OnDeviceReset! destroy & recreate
 
 namespace Render
 {
@@ -68,6 +67,9 @@ protected:
 
 	void MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags);
 
+	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
+	//DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
+
 public:
 
 	EUsage					Usage;
@@ -78,8 +80,6 @@ public:
 	virtual ~CTexture() { if (IsLoaded()) Unload(); }
 
 	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType);
-	bool			Setup(void* pData, DWORD DataSize);
-	bool			Setup() { State = Resources::Rsrc_Loaded; OK; }
 	virtual void	Unload();
 
 	bool			Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips, EUsage _Usage, ECPUAccess _Access);

@@ -59,6 +59,8 @@ private:
 	DECLARE_EVENT_HANDLER(MouseBtnDown, OnMouseBtnDown);
 	DECLARE_EVENT_HANDLER(MouseBtnUp, OnMouseBtnUp);
 	DECLARE_EVENT_HANDLER(MouseWheel, OnMouseWheel);
+	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
+	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
 public:
 

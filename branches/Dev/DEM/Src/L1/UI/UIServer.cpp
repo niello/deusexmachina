@@ -69,6 +69,8 @@ CUIServer::CUIServer()
 	SUBSCRIBE_INPUT_EVENT(MouseBtnDown, CUIServer, OnMouseBtnDown, Input::InputPriority_UI);
 	SUBSCRIBE_INPUT_EVENT(MouseBtnUp, CUIServer, OnMouseBtnUp, Input::InputPriority_UI);
 	SUBSCRIBE_INPUT_EVENT(MouseWheel, CUIServer, OnMouseWheel, Input::InputPriority_UI);
+	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
+	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);
 }
 //---------------------------------------------------------------------
 
@@ -153,6 +155,20 @@ bool CUIServer::OnMouseWheel(const Events::CEventBase& Event)
 {
 	//???!!!mul by some coeff!?
 	return CEGUISystem->injectMouseWheelChange((float)((const Event::MouseWheel&)Event).Delta);
+}
+//---------------------------------------------------------------------
+
+bool CUIServer::OnDeviceLost(const Events::CEventBase& Ev)
+{
+	Renderer->preD3DReset();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CUIServer::OnDeviceReset(const Events::CEventBase& Ev)
+{
+	Renderer->postD3DReset();
+	OK;
 }
 //---------------------------------------------------------------------
 

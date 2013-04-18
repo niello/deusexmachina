@@ -103,7 +103,6 @@ bool CTerrain::OnAdd()
 		if (!HeightMap->Map(0, Map_Setup, MapInfo)) FAIL;
 		CDLODFile.Read(MapInfo.pData, HFWidth * HFHeight * sizeof(unsigned short));
 		HeightMap->Unmap(0);
-		HeightMap->Setup();
 	}
 	else CDLODFile.Seek(HFWidth * HFHeight * sizeof(unsigned short), Data::SSO_CURRENT);
 

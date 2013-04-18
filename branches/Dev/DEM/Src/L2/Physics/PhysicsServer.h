@@ -88,10 +88,9 @@ public:
 	static void		Vector3ToOde(const vector3& from, dVector3& to);
 	static void		OdeToVector3(const dVector3& from, vector3& to);
 
-	bool					RayCheck(const vector3& pos, const vector3& dir, const CFilterSet* ExcludeSet = NULL);
+	bool					RayCheck(const vector3& Pos, const vector3& Dir, const CFilterSet* ExcludeSet = NULL);
 	const CContacts&		GetContactPoints() const { return Contacts; }
-	const CContactPoint*	GetClosestContactUnderMouse(const vector2& MousePosRel, float Length, const CFilterSet* ExcludeSet = NULL);
-	const CContactPoint*	GetClosestContactAlongRay(const vector3& pos, const vector3& dir, const CFilterSet* ExcludeSet = NULL);
+	const CContactPoint*	GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir, const CFilterSet* ExcludeSet = NULL);
 
 	static uint		GetUniqueStamp() { return ++UniqueStamp; }
 

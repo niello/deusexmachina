@@ -5,6 +5,7 @@
 #include <Core/RefCounted.h>
 #include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
+#include <Events/Events.h>
 
 // Storage of geometry index array for corresponding vertex array.
 
@@ -30,7 +31,7 @@ protected:
 	DWORD					Count;
 	DWORD					LockCount;
 
-	//!!!lost, reset!
+	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 
 public:
 
@@ -42,7 +43,9 @@ public:
 	void*	Map(EMapType MapType);
 	void	Unmap();
 
-	IDirect3DIndexBuffer9* GetD3DBuffer() const { return pBuffer; }
+	EUsage					GetUsage() const { return Usage; }
+	ECPUAccess				GetAccess() const { return Access; }
+	IDirect3DIndexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 };
 
 typedef Ptr<CIndexBuffer> PIndexBuffer;

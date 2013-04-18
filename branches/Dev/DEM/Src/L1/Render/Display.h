@@ -59,7 +59,7 @@ public:
 	bool			Fullscreen;
 	bool			VSync;
 	bool			AlwaysOnTop;
-	bool			AutoAdjustSize;				// Autoadjust viewport to window size when window changes
+	bool			AutoAdjustSize;				// Autoadjust viewport (display mode W & H) when window size changes
 	bool			DisplayModeSwitchEnabled;	//???
 	bool			TripleBuffering;			// Use double or triple buffering when fullscreen
 	EMSAAQuality	AntiAliasQuality;
@@ -70,6 +70,7 @@ public:
 	bool				OpenWindow();
 	void				CloseWindow();
 	void				ProcessWindowMessages();
+	void				ResetWindow();
 	void				RestoreWindow();
 	void				MinimizeWindow();
 	void				AdjustSize();
@@ -77,7 +78,7 @@ public:
 	bool				AdapterExists(EAdapter Adapter);
 	void				GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, nArray<CDisplayMode>& OutModes);
 	bool				SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode);
-	void				GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode);
+	bool				GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode);
 	//CAdapterInfo		GetAdapterInfo(EAdapter Adapter);
 	void				GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo);
 

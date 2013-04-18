@@ -11,7 +11,6 @@
 
 #if DEM_D3D_USENVPERFHUD
 #define DEM_D3D_DEVICETYPE D3DDEVTYPE_REF
-//DEM_D3D_ADAPTER (RenderSrv->GetD3D9()->GetAdapterCount() - 1)
 #else
 #define DEM_D3D_DEVICETYPE D3DDEVTYPE_HAL
 #endif

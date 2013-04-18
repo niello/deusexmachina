@@ -1,6 +1,7 @@
 #include "Shader.h"
 
 #include <Render/RenderServer.h>
+#include <Events/EventManager.h>
 
 namespace Render
 {
@@ -51,7 +52,8 @@ bool CShader::Setup(ID3DXEffect* pFX)
 		// Can also check type, if needed
 	}
 
-	//!!!subscribe lost & reset!
+	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CShader, OnDeviceLost);
+	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CShader, OnDeviceReset);
 
 	State = Resources::Rsrc_Loaded;
 	OK;
@@ -60,13 +62,29 @@ bool CShader::Setup(ID3DXEffect* pFX)
 
 void CShader::Unload()
 {
-	//!!!unsubscribe lost & reset!
+	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
+	UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
+
 	hCurrTech = NULL;
 	FlagsToTech.Clear();
 	NameToHVar.Clear();
 	SemanticToHVar.Clear();
 	SAFE_RELEASE(pEffect);
 	State = Resources::Rsrc_NotLoaded;
+}
+//---------------------------------------------------------------------
+
+bool CShader::OnDeviceLost(const Events::CEventBase& Ev)
+{
+	pEffect->OnLostDevice();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShader::OnDeviceReset(const Events::CEventBase& Ev)
+{
+	pEffect->OnResetDevice();
+	OK;
 }
 //---------------------------------------------------------------------
 

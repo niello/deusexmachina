@@ -4,6 +4,7 @@
 
 #include <Render/Geometry/VertexLayout.h>
 #include <Render/GPUResourceDefs.h>
+#include <Events/Events.h>
 
 // Storage of geometry vertices
 
@@ -21,7 +22,7 @@ protected:
 	DWORD					Count;
 	DWORD					LockCount;
 
-	//!!!lost, reset!
+	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 
 public:
 
@@ -35,7 +36,10 @@ public:
 
 	PVertexLayout			GetVertexLayout() const { return Layout; }
 	DWORD					GetVertexCount() const { return Count; }
+	EUsage					GetUsage() const { return Usage; }
+	ECPUAccess				GetAccess() const { return Access; }
 	DWORD					GetByteSize() const { return Layout.isvalid() ? Layout->GetVertexSize() * Count : 0; }
+	bool					IsValid() const { return !!pBuffer; }
 	IDirect3DVertexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 };
 

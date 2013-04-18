@@ -3,6 +3,8 @@
 #define __DEM_L1_RENDER_SHADER_H__
 
 #include <Render/Materials/Texture.h>
+#include <Events/Events.h>
+#include <Events/Subscription.h>
 #include <util/ndictionary.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -22,8 +24,6 @@ namespace Render
 
 class CShader: public Resources::CResource
 {
-	//DeclareRTTI;
-
 public:
 
 	typedef D3DXHANDLE HVar;
@@ -41,7 +41,8 @@ protected:
 	nDictionary<CStrID, HVar>	NameToHVar;
 	nDictionary<CStrID, HVar>	SemanticToHVar;
 
-	//!!!OnDeviceLost, OnDeviceReset events!
+	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
+	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
 public:
 

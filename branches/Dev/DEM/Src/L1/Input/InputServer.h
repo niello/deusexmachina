@@ -131,9 +131,7 @@ public:
 	bool			CheckMouseBtnState(EMouseButton Btn, uchar StateFlags) const { return !!(MouseBtnState[Btn] & StateFlags); }
 	int				GetMousePosX() const { return MouseXAbs; }
 	int				GetMousePosY() const { return MouseYAbs; }
-	vector2			GetMousePos() const { return vector2((float)MouseXAbs, (float)MouseYAbs); }
 	void			GetMousePos(int& X, int& Y) const { X = MouseXAbs; Y = MouseYAbs; }
-	vector2			GetMousePosRel() const { return vector2(MouseXRel, MouseYRel); }
 	void			GetMousePosRel(float& X, float& Y) const { X = MouseXRel; Y = MouseYRel; }
 	int				GetRawMouseMoveX() const { return RawMouseMoveX; }
 	int				GetRawMouseMoveY() const { return RawMouseMoveY; }

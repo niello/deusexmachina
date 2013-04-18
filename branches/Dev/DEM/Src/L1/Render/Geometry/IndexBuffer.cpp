@@ -1,6 +1,7 @@
 #include "IndexBuffer.h"
 
 #include <Render/RenderServer.h>
+#include <Events/EventManager.h>
 
 namespace Render
 {
@@ -51,9 +52,7 @@ bool CIndexBuffer::Create(EType IndexType, DWORD IndexCount, EUsage BufferUsage,
 	if (FAILED(RenderSrv->GetD3DDevice()->CreateIndexBuffer(Size, D3DUsage, D3DFormat, D3DPool, &pBuffer, NULL))) FAIL;
 
 	if (D3DPool == D3DPOOL_DEFAULT)
-	{
-		//!!!subscribe lost & reset!
-	}
+		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CIndexBuffer, OnDeviceLost);
 
 	OK;
 }
@@ -62,7 +61,9 @@ bool CIndexBuffer::Create(EType IndexType, DWORD IndexCount, EUsage BufferUsage,
 void CIndexBuffer::Destroy()
 {
 	n_assert(!LockCount);
-	//!!!unsubscribe lost & reset!
+
+	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
+
 	SAFE_RELEASE(pBuffer);
 }
 //---------------------------------------------------------------------
@@ -108,6 +109,13 @@ void CIndexBuffer::Unmap()
 	n_assert(pBuffer && LockCount);
 	n_assert(SUCCEEDED(pBuffer->Unlock()));
 	--LockCount;
+}
+//---------------------------------------------------------------------
+
+bool CIndexBuffer::OnDeviceLost(const Events::CEventBase& Ev)
+{
+	Destroy();
+	OK;
 }
 //---------------------------------------------------------------------
 

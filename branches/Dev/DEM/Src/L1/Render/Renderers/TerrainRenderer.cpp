@@ -120,7 +120,8 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	MaxInstanceCount = Desc.Get<int>(CStrID("MaxInstanceCount"), 256);
 	n_assert(MaxInstanceCount);
 	InstanceBuffer.Create();
-	n_assert(InstanceBuffer->Create(RenderSrv->GetVertexLayout(InstCmps), MaxInstanceCount, Usage_Dynamic, CPU_Write));
+	InstanceVertexLayout = RenderSrv->GetVertexLayout(InstCmps);
+	n_assert(InstanceBuffer->Create(InstanceVertexLayout, MaxInstanceCount, Usage_Dynamic, CPU_Write));
 
 	OK;
 }
@@ -331,6 +332,9 @@ void CTerrainRenderer::Render()
 {
 	if (!TerrainObjects.Size()) return;
 
+	if (!InstanceBuffer->IsValid())
+		n_assert(InstanceBuffer->Create(InstanceVertexLayout, MaxInstanceCount, Usage_Dynamic, CPU_Write));
+
 	CShader::HTech hCurrTech = NULL;
 
 	for (int i = 0; i < ShaderVars.Size(); ++i)
@@ -514,13 +518,22 @@ void CTerrainRenderer::Render()
 }
 //---------------------------------------------------------------------
 
-bool CTerrainRenderer::CreatePatchMesh(DWORD Size)
+CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
 {
-	if (!IsPow2(Size) || Size < 2) FAIL;
+	if (!IsPow2(Size) || Size < 2) return NULL;
 
-	nString PatchName;
-	PatchName.Format("Patch%dx%d", Size, Size);
-	PMesh Patch = RenderSrv->MeshMgr.GetTypedResource(CStrID(PatchName.Get()));
+	PMesh Patch;
+
+	int Idx = PatchMeshes.FindIndex(Size);
+	if (Idx == INVALID_INDEX)
+	{
+		nString PatchName;
+		PatchName.Format("Patch%dx%d", Size, Size);
+		Patch = RenderSrv->MeshMgr.GetTypedResource(CStrID(PatchName.Get()));
+		PatchMeshes.Add(Size, Patch.get());
+	}
+	else Patch = PatchMeshes.ValueAtIndex(Idx);
+
 	if (!Patch->IsLoaded())
 	{
 		float InvEdgeSize = 1.f / (float)Size;
@@ -529,7 +542,7 @@ bool CTerrainRenderer::CreatePatchMesh(DWORD Size)
 		n_assert(VertexCount <= 65535); // because of 16-bit index buffer
 
 		PVertexBuffer VB = n_new(CVertexBuffer);
-		if (!VB->Create(PatchVertexLayout, VertexCount, Usage_Immutable, CPU_NoAccess)) FAIL;
+		n_assert(VB->Create(PatchVertexLayout, VertexCount, Usage_Immutable, CPU_NoAccess));
 		vector2* pVBData = (vector2*)VB->Map(Map_Setup);
 		for (DWORD z = 0; z < VerticesPerEdge; ++z)
 			for (DWORD x = 0; x < VerticesPerEdge; ++x)
@@ -540,7 +553,7 @@ bool CTerrainRenderer::CreatePatchMesh(DWORD Size)
 		DWORD IndexCount = Size * Size * 6;
 
 		PIndexBuffer IB = n_new(CIndexBuffer);
-		if (!IB->Create(CIndexBuffer::Index16, IndexCount, Usage_Immutable, CPU_NoAccess)) FAIL;
+		n_assert(IB->Create(CIndexBuffer::Index16, IndexCount, Usage_Immutable, CPU_NoAccess));
 		ushort* pIBData = (ushort*)IB->Map(Map_Setup);
 		for (DWORD z = 0; z < Size; ++z)
 			for (DWORD x = 0; x < Size; ++x)
@@ -564,23 +577,10 @@ bool CTerrainRenderer::CreatePatchMesh(DWORD Size)
 		Group.AABB.vmin = vector3::Zero;
 		Group.AABB.vmax.set(1.f, 0.f, 1.f);
 
-		if (!Patch->Setup(VB, IB, MeshGroups)) FAIL;
+		n_assert(Patch->Setup(VB, IB, MeshGroups));
 	}
 
-	PatchMeshes.Add(Size, Patch.get());
-	OK;
-}
-//---------------------------------------------------------------------
-
-CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
-{
-	int Idx = PatchMeshes.FindIndex(Size);
-	if (Idx == INVALID_INDEX)
-	{
-		n_assert(CreatePatchMesh(Size));
-		Idx = PatchMeshes.FindIndex(Size);
-	}
-	return PatchMeshes.ValueAtIndex(Idx);
+	return Patch;
 }
 //---------------------------------------------------------------------
 

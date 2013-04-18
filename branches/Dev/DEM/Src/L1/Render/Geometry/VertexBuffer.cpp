@@ -1,6 +1,7 @@
 #include "IndexBuffer.h"
 
 #include <Render/RenderServer.h>
+#include <Events/EventManager.h>
 
 namespace Render
 {
@@ -41,9 +42,7 @@ bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage
 	if (FAILED(RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL))) FAIL;
 
 	if (D3DPool == D3DPOOL_DEFAULT)
-	{
-		//!!!subscribe lost & reset!
-	}
+		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CVertexBuffer, OnDeviceLost);
 
 	OK;
 }
@@ -52,7 +51,9 @@ bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage
 void CVertexBuffer::Destroy()
 {
 	n_assert(!LockCount);
-	//!!!unsubscribe lost & reset!
+
+	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
+
 	SAFE_RELEASE(pBuffer);
 }
 //---------------------------------------------------------------------
@@ -98,6 +99,13 @@ void CVertexBuffer::Unmap()
 	n_assert(pBuffer && LockCount);
 	n_assert(SUCCEEDED(pBuffer->Unlock()));
 	--LockCount;
+}
+//---------------------------------------------------------------------
+
+bool CVertexBuffer::OnDeviceLost(const Events::CEventBase& Ev)
+{
+	Destroy();
+	OK;
 }
 //---------------------------------------------------------------------
 
