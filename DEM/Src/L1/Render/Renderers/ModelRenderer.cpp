@@ -92,20 +92,8 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 
 	//???add InitialInstanceCount + AllowGrowInstanceBuffer or MaxInstanceCount or both?
 	MaxInstanceCount = Desc.Get<int>(CStrID("MaxInstanceCount"), 0);
-	if (MaxInstanceCount)
-	{
-		nArray<CVertexComponent> InstCmps(4, 0);
-		for (int i = 0; i < 4; ++i)
-		{
-			CVertexComponent& Cmp = InstCmps.At(i);
-			Cmp.Format = CVertexComponent::Float4;
-			Cmp.Semantic = CVertexComponent::TexCoord;
-			Cmp.Index = i + 4; // TEXCOORD 4, 5, 6, 7 are used
-			Cmp.Stream = 1;
-		}
-		InstanceBuffer.Create();
-		n_assert(InstanceBuffer->Create(RenderSrv->GetVertexLayout(InstCmps), MaxInstanceCount, Usage_Dynamic, CPU_Write));
-	}
+	if (MaxInstanceCount) InstanceBuffer.Create();
+	//!!!InstanceBuffer is created lazy in Render() not to duplicate code!
 
 	OK;
 }
@@ -194,6 +182,20 @@ float CModelRenderer::CalcLightPriority(Scene::CModel& Model, Scene::CLight& Lig
 void CModelRenderer::Render()
 {
 	if (!Models.Size()) return;
+
+	if (MaxInstanceCount && !InstanceBuffer->IsValid())
+	{
+		nArray<CVertexComponent> InstCmps(4, 0);
+		for (int i = 0; i < 4; ++i)
+		{
+			CVertexComponent& Cmp = InstCmps.At(i);
+			Cmp.Format = CVertexComponent::Float4;
+			Cmp.Semantic = CVertexComponent::TexCoord;
+			Cmp.Index = i + 4; // TEXCOORD 4, 5, 6, 7 are used
+			Cmp.Stream = 1;
+		}
+		n_assert(InstanceBuffer->Create(RenderSrv->GetVertexLayout(InstCmps), MaxInstanceCount, Usage_Dynamic, CPU_Write));
+	}
 
 	// Prepare to sorting
 

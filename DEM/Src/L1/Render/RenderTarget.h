@@ -5,16 +5,11 @@
 #include <Core/RefCounted.h>
 #include <Data/StringID.h>
 #include <Render/Render.h>
+#include <Events/Events.h>
 
 // A surface render server renders to. Can be used as texture.
 // If resolve texture and RT surface are identical, this class uses one RT texture,
 // else it uses RT surface & resolve texture.
-
-//!!!Need also MRT! or manage MTR in render server?
-
-//// get the actual render target surface of the texture
-//hr = this->d3d9ResolveTexture->GetSurfaceLevel(0, &(this->d3d9RenderTarget));
-//n_assert(SUCCEEDED(hr));
 
 namespace Render
 {
@@ -30,13 +25,20 @@ protected:
 	D3DFORMAT			RTFmt;
 	D3DFORMAT			DSFmt;
 
+	float				W;
+	float				H;
+	bool				AbsoluteWH;			//???flags?
+	EMSAAQuality		MSAAQuality;
+
 	PTexture			RTTexture;
 	IDirect3DSurface9*	pRTSurface;
 	IDirect3DSurface9*	pDSSurface;
 
 	void				GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality);
 
-	//!!!lost, reset!
+	DECLARE_EVENT_HANDLER(OnRenderDeviceRelease, OnDeviceRelease);
+	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
+	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
 public:
 

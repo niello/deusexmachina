@@ -5,6 +5,8 @@
 #include <Render/Events/DisplayInput.h>
 #include <Events/EventManager.h>
 
+#include <Uxtheme.h>
+
 //???in what header?
 #ifndef HID_USAGE_PAGE_GENERIC
 #define HID_USAGE_PAGE_GENERIC	((USHORT) 0x01)
@@ -124,7 +126,7 @@ bool CDisplay::OpenWindow()
 
 	if (AlwaysOnTop) SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 
-	SetWindowLong(hWnd, 0, (LONG)this);
+	SetWindowLongPtr(hWnd, 0, (LONG)this);
 
 	CoreSrv->SetGlobal("hwnd", (int)hWnd);
 
@@ -251,11 +253,12 @@ void CDisplay::CalcWindowRect(int& X, int& Y, int& W, int& H)
 }
 //---------------------------------------------------------------------
 
-void CDisplay::RestoreWindow()
+void CDisplay::ResetWindow()
 {
 	n_assert(hWnd && IsWndOpen);
 
-	ShowWindow(hWnd, SW_RESTORE);
+	// Fullscreen mode breaks theme (at least aero glass) on Win7, so restore it
+	if (!hWndParent && !Fullscreen) SetWindowTheme(hWnd, NULL, NULL);
 
 	int X, Y, W, H;
 	CalcWindowRect(X, Y, W, H);
@@ -265,11 +268,15 @@ void CDisplay::RestoreWindow()
 	else if (hWndParent) hWndInsertAfter = hWndParent;
 	else hWndInsertAfter = HWND_NOTOPMOST;
 
-	SetWindowPos(hWnd, hWndInsertAfter, X, Y, W, H, SWP_SHOWWINDOW);
+	SetWindowPos(hWnd, hWndInsertAfter, X, Y, W, H, SWP_NOACTIVATE | SWP_NOMOVE);
+}
+//---------------------------------------------------------------------
 
-	//!!!IF WM_SIZE IS CALLED, REMOVE STRING BELOW!  (see WM_SIZE)
-	// Manually change window size in child mode
-	if (hWndParent) MoveWindow(hWnd, X, Y, W, H, TRUE);
+void CDisplay::RestoreWindow()
+{
+	n_assert(hWnd && IsWndOpen);
+	::ShowWindow(hWnd, SW_RESTORE);
+	ResetWindow();
 	IsWndMinimized = false;
 }
 //---------------------------------------------------------------------
@@ -282,6 +289,22 @@ void CDisplay::MinimizeWindow()
 		if (!hWndParent) ShowWindow(hWnd, SW_MINIMIZE);
 		IsWndMinimized = true;
 	}
+}
+//---------------------------------------------------------------------
+
+void CDisplay::AdjustSize()
+{
+	n_assert(hWnd);
+
+	float OldW = DisplayMode.Width;
+	float OldH = DisplayMode.Height;
+
+	RECT r;
+	GetClientRect(hWnd, &r);
+	DisplayMode.Width = (ushort)r.right;
+	DisplayMode.Height = (ushort)r.bottom;
+
+	EventMgr->FireEvent(CStrID("OnDisplaySizeChanged"));
 }
 //---------------------------------------------------------------------
 
@@ -315,43 +338,21 @@ bool CDisplay::SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode)
 }
 //---------------------------------------------------------------------
 
-void CDisplay::GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode)
+bool CDisplay::GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode)
 {
 	n_assert(AdapterExists(Adapter));
 	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
 	HRESULT hr = RenderSrv->GetD3D()->GetAdapterDisplayMode((UINT)Adapter, &D3DDisplayMode);
+	if (hr == D3DERR_DEVICELOST) FAIL;
 	n_assert(SUCCEEDED(hr));
 	OutMode.PosX = 0;
 	OutMode.PosY = 0;
 	OutMode.Width = D3DDisplayMode.Width;
 	OutMode.Height = D3DDisplayMode.Height;
 	OutMode.PixelFormat = D3DDisplayMode.Format;
+	OK;
 }
 //---------------------------------------------------------------------
-
-/*
-AdapterInfo D3D9DisplayDevice::GetAdapterInfo(Adapter::Code adapter)
-{
-    n_assert(this->AdapterExists(adapter));
-    IDirect3D9* d3d9 = D3D9RenderDevice::GetDirect3D();
-    D3DADAPTER_IDENTIFIER9 d3dInfo = { 0 };
-    HRESULT hr = d3d9->GetAdapterIdentifier((UINT) adapter, 0, &d3dInfo);
-    n_assert(SUCCEEDED(hr));
-
-    AdapterInfo info;
-    info.SetDriverName(d3dInfo.Driver);
-    info.SetDescription(d3dInfo.Description);
-    info.SetDeviceName(d3dInfo.DeviceName);
-    info.SetDriverVersionLowPart(d3dInfo.DriverVersion.LowPart);
-    info.SetDriverVersionHighPart(d3dInfo.DriverVersion.HighPart);
-    info.SetVendorId(d3dInfo.VendorId);
-    info.SetDeviceId(d3dInfo.DeviceId);
-    info.SetSubSystemId(d3dInfo.SubSysId);
-    info.SetRevision(d3dInfo.Revision);
-    info.SetGuid(Guid((const unsigned char*) &(d3dInfo.DeviceIdentifier), sizeof(d3dInfo.DeviceIdentifier)));
-    return info;
-}
-*/
 
 void CDisplay::GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo)
 {
@@ -406,20 +407,24 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		case WM_SIZE:
 			if (wParam == SIZE_MAXHIDE || wParam == SIZE_MINIMIZED)
 			{
-				IsWndMinimized = true;
-				EventMgr->FireEvent(CStrID("OnDisplayMinimized"));
-				ReleaseCapture();
+				if (!IsWndMinimized)
+				{
+					IsWndMinimized = true;
+					EventMgr->FireEvent(CStrID("OnDisplayMinimized"));
+					ReleaseCapture();
+				}
 			}
 			else
 			{
-				IsWndMinimized = false;
-				EventMgr->FireEvent(CStrID("OnDisplayRestored"));
-				// As a child window, do not release capture, because it would block the resizing
-				if (!hWndParent) ReleaseCapture();
+				if (IsWndMinimized)
+				{
+					IsWndMinimized = false;
+					EventMgr->FireEvent(CStrID("OnDisplayRestored"));
+					ReleaseCapture();
+				}
 				if (hWnd && AutoAdjustSize) AdjustSize();
 			}
 			// Manually change window size in child mode
-			//!!!x & y were 0
 			if (hWndParent) MoveWindow(hWnd, DisplayMode.PosX, DisplayMode.PosY, LOWORD(lParam), HIWORD(lParam), TRUE);
 			break;
 
@@ -589,26 +594,6 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	}
 
 	FAIL;
-}
-//---------------------------------------------------------------------
-
-//???change here & listen event in D3D9 handler, compare D3D9 settings with curr display mode & reset device if needed>?
-void CDisplay::AdjustSize()
-{
-	n_assert(hWnd);
-
-	float OldW = DisplayMode.Width;
-	float OldH = DisplayMode.Height;
-
-	RECT r;
-	GetClientRect(hWnd, &r);
-	DisplayMode.Width = (ushort)r.right;
-	DisplayMode.Height = (ushort)r.bottom;
-
-	if (DisplayMode.Width != OldW || DisplayMode.Height != OldH)
-		RenderSrv->ResetDevice();
-
-	//???EventMgr->FireEvent(CStrID("OnDisplaySizeChanged")); and handle in device?
 }
 //---------------------------------------------------------------------
 

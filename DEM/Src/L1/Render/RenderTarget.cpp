@@ -1,6 +1,7 @@
 #include "RenderTarget.h"
 
 #include <Render/RenderServer.h>
+#include <Events/EventManager.h>
 
 namespace Render
 {
@@ -84,6 +85,10 @@ bool CRenderTarget::CreateDefaultRT()
 	}
 	else DSFmt = PixelFormat_Invalid;
 
+	SUBSCRIBE_PEVENT(OnRenderDeviceRelease, CRenderTarget, OnDeviceRelease);
+	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CRenderTarget, OnDeviceLost);
+	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CRenderTarget, OnDeviceReset);
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -97,6 +102,11 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 	//???assert not created?
 
 	IsDefaultRT = false;
+
+	W = Width;
+	H = Height;
+	AbsoluteWH = AbsWH;
+	MSAAQuality = MSAA;
 
 	//???members?
 	DWORD AbsWidth;
@@ -164,12 +174,20 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 		DSFmt = DSFormat;
 	}
 
+	SUBSCRIBE_PEVENT(OnRenderDeviceRelease, CRenderTarget, OnDeviceRelease);
+	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CRenderTarget, OnDeviceLost);
+	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CRenderTarget, OnDeviceReset);
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CRenderTarget::Destroy()
 {
+	UNSUBSCRIBE_EVENT(OnRenderDeviceRelease);
+	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
+	UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
+
 	SAFE_RELEASE(pRTSurface);
 	SAFE_RELEASE(pDSSurface); //???what if shared? may AddRef in Create
 	if (RTTexture.isvalid() && RTTexture->IsLoaded()) RTTexture->Unload();
@@ -188,28 +206,34 @@ void CRenderTarget::Resolve()
 }
 //---------------------------------------------------------------------
 
-/*
-
-void
-D3D9RenderTarget::OnLostDevice()
+bool CRenderTarget::OnDeviceRelease(const Events::CEventBase& Ev)
 {
-	if (!this->isLosted)
-	{
-		this->isLosted = true;
-		this->Discard();
-	}
+	Destroy();
+	OK;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-void
-D3D9RenderTarget::OnResetDevice()
+bool CRenderTarget::OnDeviceLost(const Events::CEventBase& Ev)
 {
-	if (this->isLosted)
-	{
-		this->Setup();
-		this->isLosted = false;
-	}
-}
+	UNSUBSCRIBE_EVENT(OnRenderDeviceRelease);
+	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
 
-*/
+	SAFE_RELEASE(pRTSurface);
+	SAFE_RELEASE(pDSSurface); //???what if shared? may AddRef in Create
+	if (RTTexture.isvalid() && RTTexture->IsLoaded()) RTTexture->Unload();
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CRenderTarget::OnDeviceReset(const Events::CEventBase& Ev)
+{
+	if (IsDefaultRT) { n_assert(CreateDefaultRT()); }
+	else n_assert(Create(	RTTexture->GetUID(), RTFmt, DSFmt, W, H,
+							AbsoluteWH, MSAAQuality, RTTexture->GetWidth(),
+							RTTexture->GetHeight(), (DSFmt == D3DFMT_UNKNOWN)));
+	OK;
+}
+//---------------------------------------------------------------------
+
 }

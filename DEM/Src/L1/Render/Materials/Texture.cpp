@@ -1,6 +1,7 @@
 #include "Texture.h"
 
 #include <Render/RenderServer.h>
+#include <Events/EventManager.h>
 
 namespace Data
 {
@@ -17,6 +18,8 @@ bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 
 	Type = TexType;
 
+	bool IsVideoMem;
+
 	//???really can't just cast ptr?
 	// Need to query for base interface under Win32
 	//???move query from switch?
@@ -32,6 +35,8 @@ bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 		Height = Desc.Height;
 		Depth = 1;
 		PixelFormat = Desc.Format;
+		IsVideoMem = (Desc.Pool == D3DPOOL_DEFAULT);
+		//!!!fill usage, access!
 	}
 	else if (Type == Texture3D)
 	{
@@ -45,6 +50,8 @@ bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 		Height = Desc.Height;
 		Depth = Desc.Depth;
 		PixelFormat = Desc.Format;
+		IsVideoMem = (Desc.Pool == D3DPOOL_DEFAULT);
+		//!!!fill usage, access!
 	}
 	else if (Type == TextureCube)
 	{
@@ -57,6 +64,8 @@ bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 		Width = Desc.Width;
 		Height = Desc.Height;
 		PixelFormat = Desc.Format;
+		IsVideoMem = (Desc.Pool == D3DPOOL_DEFAULT);
+		//!!!fill usage, access!
 	}
 	else
 	{
@@ -66,18 +75,12 @@ bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 
 	MipCount = pTextureCastToBase->GetLevelCount();
 
-	State = Resources::Rsrc_Loaded;
-	OK;
-}
-//---------------------------------------------------------------------
+	if (IsVideoMem)
+	{
+		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CTexture, OnDeviceLost);
+		//SUBSCRIBE_PEVENT(OnRenderDeviceReset, CTexture, OnDeviceReset);
+	}
 
-bool CTexture::Setup(void* pData, DWORD DataSize)
-{
-	//!!!n_assert(DataSize <= Width * Height * GetPixelSize())!
-	CMapInfo MapInfo;
-	if (!Map(0, Map_Setup, MapInfo)) FAIL;
-	memcpy(MapInfo.pData, pData, DataSize);
-	Unmap(0);
 	State = Resources::Rsrc_Loaded;
 	OK;
 }
@@ -86,6 +89,10 @@ bool CTexture::Setup(void* pData, DWORD DataSize)
 void CTexture::Unload()
 {
 	n_assert(!LockCount);
+
+	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
+	//UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
+
 	switch (Type)
 	{
 		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
@@ -128,29 +135,30 @@ bool CTexture::Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Heigh
 		default: n_error("Invalid Texture usage!");
 	}
 
+	bool Result = false;
 	if (_Type == Texture2D)
 	{
 		HRESULT hr =
 			RenderSrv->GetD3DDevice()->CreateTexture(_Width, _Height, Mips, D3DUsage, _Format, D3DPool, &pD3D9Tex2D, NULL);
 		n_assert(SUCCEEDED(hr));
-		return Setup(pD3D9Tex2D, _Type);
+		Result = Setup(pD3D9Tex2D, _Type);
 	}
 	else if (_Type == Texture3D)
 	{
 		HRESULT hr =
 			RenderSrv->GetD3DDevice()->CreateVolumeTexture(_Width, _Height, _Depth, Mips, D3DUsage, _Format, D3DPool, &pD3D9Tex3D, NULL);
 		n_assert(SUCCEEDED(hr));
-		return Setup(pD3D9Tex3D, _Type);
+		Result = Setup(pD3D9Tex3D, _Type);
 	}
 	else if (_Type == TextureCube)
 	{
 		HRESULT hr =
 			RenderSrv->GetD3DDevice()->CreateCubeTexture(_Width, Mips, D3DUsage, _Format, D3DPool, &pD3D9TexCube, NULL);
 		n_assert(SUCCEEDED(hr));
-		return Setup(pD3D9TexCube, _Type);
+		Result = Setup(pD3D9TexCube, _Type);
 	}
 
-	FAIL;
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -174,7 +182,9 @@ bool CTexture::CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height
 		NULL);
 	n_assert(SUCCEEDED(hr));
 
-	return Setup(pD3D9Tex2D, Texture2D);
+	bool Result = Setup(pD3D9Tex2D, Texture2D);
+
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -309,5 +319,21 @@ DWORD CTexture::GetPixelCount(bool IncludeMips) const
 	return Accum;
 }
 //---------------------------------------------------------------------
+
+bool CTexture::OnDeviceLost(const Events::CEventBase& Ev)
+{
+	if (IsLoaded()) Unload(); //!!!will unsubscribe OnDeviceReset!
+	OK;
+}
+//---------------------------------------------------------------------
+
+/*
+bool CTexture::OnDeviceReset(const Events::CEventBase& Ev)
+{
+	//???reload? or recreate, need to set flag 'I am valid, but empty'. Or leave recreation to the resource owner.
+	OK;
+}
+//---------------------------------------------------------------------
+*/
 
 }

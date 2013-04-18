@@ -50,8 +50,9 @@ bool CRenderServer::Open()
 
 	//???load frame shader(s)? on level View created (on default camera or scene creation?)
 
-	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnPaint);
+	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnDisplayPaint);
 	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, CRenderServer, OnToggleFullscreenWindowed);
+	SUBSCRIBE_PEVENT(OnDisplaySizeChanged, CRenderServer, OnDisplaySizeChanged);
 	SUBSCRIBE_NEVENT(DisplayInput, CRenderServer, OnDisplayInput);
 
 	_IsOpen = true;
@@ -65,9 +66,10 @@ void CRenderServer::Close()
 
 	UNSUBSCRIBE_EVENT(OnDisplayPaint);
 	UNSUBSCRIBE_EVENT(OnDisplayToggleFullscreen);
+	UNSUBSCRIBE_EVENT(OnDisplaySizeChanged);
 	UNSUBSCRIBE_EVENT(DisplayInput);
 
-	pCurrDSSurface = NULL;
+	SAFE_RELEASE(pCurrDSSurface);
 	DefaultRT->Destroy();
 	DefaultRT = NULL;
 
@@ -95,8 +97,6 @@ bool CRenderServer::CreateDevice()
 	D3DAdapter = (UINT)Display.Adapter;
 #endif
 
-	SetupPresentParams();
-
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
 	n_assert(SUCCEEDED(pD3D->GetDeviceCaps(D3DAdapter, DEM_D3D_DEVICETYPE, &D3DCaps)));
 
@@ -120,6 +120,8 @@ bool CRenderServer::CreateDevice()
 	D3DPresentParams.MultiSampleType = D3DMULTISAMPLE_NONE;
 	D3DPresentParams.MultiSampleQuality = 0;
 
+	SetupPresentParams();
+
 	// NB: May fail if can't create requested number of backbuffers
 	HRESULT hr = pD3D->CreateDevice(D3DAdapter, 
 									DEM_D3D_DEVICETYPE,
@@ -127,30 +129,17 @@ bool CRenderServer::CreateDevice()
 									BhvFlags,
 									&D3DPresentParams,
 									&pD3DDevice);
+
 	if (FAILED(hr))
 	{
 		n_error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
 		FAIL;
 	}
 
+	SetupDevice();
+
 	CurrDepthStencilFormat =
 		D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
-
-	//pD3DDevice->GetDeviceCaps(&d3d9DeviceCaps);
-
-	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
-	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-
-	D3DVIEWPORT9 ViewPort;
-	ViewPort.Width = D3DPresentParams.BackBufferWidth;
-	ViewPort.Height = D3DPresentParams.BackBufferHeight;
-	ViewPort.X = 0;
-	ViewPort.Y = 0;
-	ViewPort.MinZ = 0.0f;
-	ViewPort.MaxZ = 1.0f;
-	pD3DDevice->SetViewport(&ViewPort);
-
-	//!!!CreateQueries();
 
 	OK;
 }
@@ -161,11 +150,9 @@ void CRenderServer::ResetDevice()
 	n_assert(pD3DDevice);
 
 	EventMgr->FireEvent(CStrID("OnRenderDeviceLost"));
-	
-	//!!!ReleaseQueries();
 
-	// In windowed mode the cause may be a desktop display mode switch, so find new buffer formats
-	if (D3DPresentParams.Windowed) SetupPresentParams();
+	//!!!ReleaseQueries();
+	SAFE_RELEASE(pCurrDSSurface);
 
 	HRESULT hr = pD3DDevice->TestCooperativeLevel();
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
@@ -175,23 +162,15 @@ void CRenderServer::ResetDevice()
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
 
-	n_assert(SUCCEEDED(pD3DDevice->Reset(&D3DPresentParams)));
+	SetupPresentParams();
 
-	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
-	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+	hr = pD3DDevice->Reset(&D3DPresentParams);
+	if (FAILED(hr))
+		n_error("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
 
-	D3DVIEWPORT9 ViewPort;
-	ViewPort.Width = D3DPresentParams.BackBufferWidth;
-	ViewPort.Height = D3DPresentParams.BackBufferHeight;
-	ViewPort.X = 0;
-	ViewPort.Y = 0;
-	ViewPort.MinZ = 0.0f;
-	ViewPort.MaxZ = 1.0f;
-	pD3DDevice->SetViewport(&ViewPort);
+	SetupDevice();
 
 	EventMgr->FireEvent(CStrID("OnRenderDeviceReset"));
-
-	//!!!CreateQueries();
 }
 //---------------------------------------------------------------------
 
@@ -205,10 +184,30 @@ void CRenderServer::ReleaseDevice()
 		pD3DDevice->SetRenderTarget(i, NULL);
 	pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
 
+	EventMgr->FireEvent(CStrID("OnRenderDeviceRelease"));
+
 	//!!!ReleaseQueries();
 
 	pD3DDevice->Release();
 	pD3DDevice = NULL;
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SetupDevice()
+{
+	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
+	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
+	D3DVIEWPORT9 ViewPort;
+	ViewPort.Width = D3DPresentParams.BackBufferWidth;
+	ViewPort.Height = D3DPresentParams.BackBufferHeight;
+	ViewPort.X = 0;
+	ViewPort.Y = 0;
+	ViewPort.MinZ = 0.0f;
+	ViewPort.MaxZ = 1.0f;
+	pD3DDevice->SetViewport(&ViewPort);
+
+	//!!!CreateQueries();
 }
 //---------------------------------------------------------------------
 
@@ -227,21 +226,64 @@ void CRenderServer::SetupPresentParams()
 		D3DPresentParams.Windowed = TRUE;
 	}
 
-	D3DFORMAT BackBufFormat;
 	if (D3DPresentParams.Windowed)
 	{
 		CDisplayMode DesktopMode;
-		Display.GetCurrentAdapterDisplayMode((CDisplay::EAdapter)D3DAdapter, DesktopMode);
-		BackBufFormat = DesktopMode.PixelFormat;
-	}
-	else BackBufFormat = Display.GetDisplayMode().PixelFormat;
+		n_assert(Display.GetCurrentAdapterDisplayMode((CDisplay::EAdapter)D3DAdapter, DesktopMode));
+		D3DPresentParams.BackBufferFormat = DesktopMode.PixelFormat;
+		//!!!D3DFMT_UNKNOWN is allowed in windowed mode, but CheckDeviceFormat calls below fail!
 
-	//!!!check display mode WH & fullscreen compatibility, override with closest!
+		D3DPresentParams.BackBufferWidth = Display.GetDisplayMode().Width;
+		D3DPresentParams.BackBufferHeight = Display.GetDisplayMode().Height;
+	}
+	else
+	{
+		if (Display.GetDisplayMode().PixelFormat == D3DFMT_UNKNOWN)
+		{
+			//???make it a public member?
+			CDisplayMode Mode = Display.GetDisplayMode();
+			Mode.PixelFormat = D3DFMT_X8R8G8B8;
+			Display.SetDisplayMode(Mode);
+		}
+
+		D3DPresentParams.BackBufferFormat = Display.GetDisplayMode().PixelFormat;
+
+		nArray<CDisplayMode> Modes;
+		Display.GetAvailableDisplayModes((CDisplay::EAdapter)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
+		if (Modes.FindIndex(Display.GetDisplayMode()) == INVALID_INDEX)
+		{
+			// Find available mode the most close to the requested one
+			float IdealAspect = Display.GetDisplayMode().GetAspectRatio();
+			float IdealResolution = (float)Display.GetDisplayMode().Width * Display.GetDisplayMode().Height;
+			float MinMetric = FLT_MAX;
+			int MinIdx = INVALID_INDEX;
+			for (int i = 0; i < Modes.Size(); ++i)
+			{
+				const CDisplayMode& Mode = Modes[i];
+				float AspectDiff = Mode.GetAspectRatio() - IdealAspect;
+				float ResolutionDiff = (float)(Mode.Width * Mode.Height) - IdealResolution;
+				float Metric = AspectDiff * AspectDiff + ResolutionDiff * ResolutionDiff;
+				if (Metric < MinMetric)
+				{
+					MinMetric = Metric;
+					MinIdx = i;
+				}
+			}
+			n_assert(MinIdx != INVALID_INDEX);
+			D3DPresentParams.BackBufferWidth = Modes[MinIdx].Width;
+			D3DPresentParams.BackBufferHeight = Modes[MinIdx].Height;
+		}
+		else 
+		{
+			D3DPresentParams.BackBufferWidth = Display.GetDisplayMode().Width;
+			D3DPresentParams.BackBufferHeight = Display.GetDisplayMode().Height;
+		}
+	}
 
 	// Make sure the device supports a D24S8 depth buffers
 	HRESULT hr = pD3D->CheckDeviceFormat(	D3DAdapter,
 											DEM_D3D_DEVICETYPE,
-											BackBufFormat,
+											D3DPresentParams.BackBufferFormat,
 											D3DUSAGE_DEPTHSTENCIL,
 											D3DRTYPE_SURFACE,
 											D3DFMT_D24S8);
@@ -254,8 +296,8 @@ void CRenderServer::SetupPresentParams()
 	// Check that the depth buffer format is compatible with the backbuffer format
 	hr = pD3D->CheckDepthStencilMatch(	D3DAdapter,
 										DEM_D3D_DEVICETYPE,
-										BackBufFormat,
-										BackBufFormat,
+										D3DPresentParams.BackBufferFormat,
+										D3DPresentParams.BackBufferFormat,
 										D3DFMT_D24S8);
 	if (FAILED(hr))
 	{
@@ -263,9 +305,6 @@ void CRenderServer::SetupPresentParams()
 		return;
 	}
 
-	D3DPresentParams.BackBufferFormat = BackBufFormat;
-	D3DPresentParams.BackBufferWidth = Display.GetDisplayMode().Width;
-	D3DPresentParams.BackBufferHeight = Display.GetDisplayMode().Height;
 	D3DPresentParams.EnableAutoDepthStencil = TRUE; //FALSE; - N3
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_D24S8;
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
@@ -343,7 +382,11 @@ void CRenderServer::Present()
 	{
 		HRESULT hr = pD3DDevice->Present(NULL, NULL, NULL, NULL);
 		if (hr == D3DERR_DEVICELOST) ResetDevice();
-		else n_assert(SUCCEEDED(hr));
+		else if (FAILED(hr))
+		{
+			ReleaseDevice();
+			CreateDevice();
+		}
 	}    
 
 	++FrameID;
@@ -400,11 +443,12 @@ void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 
 	n_assert(SUCCEEDED(pD3DDevice->SetRenderTarget(Index, pRTSurface)));
 
-	//!!!TEST IT! DS can be set to NULL only by main RT (index 0)
+	// NB: DS can be set to NULL only by main RT (index 0)
 	//???mb set DS only from main RT?
 	if ((pDSSurface || Index == 0) && pDSSurface != pCurrDSSurface)
 	{
 		CurrDepthStencilFormat = pRT ? pRT->GetDepthStencilFormat() : D3DFMT_UNKNOWN;
+		SAFE_RELEASE(pCurrDSSurface);
 		pCurrDSSurface = pDSSurface;
 		n_assert(SUCCEEDED(pD3DDevice->SetDepthStencilSurface(pDSSurface)));
 	}
@@ -660,7 +704,7 @@ DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
 }
 //---------------------------------------------------------------------
 
-bool CRenderServer::OnPaint(const Events::CEventBase& Event)
+bool CRenderServer::OnDisplayPaint(const Events::CEventBase& Event)
 {
 	if (Display.Fullscreen && pD3DDevice) //!!! && !InDialogBoxMode)
 		pD3DDevice->Present(0, 0, 0, 0);
@@ -668,12 +712,21 @@ bool CRenderServer::OnPaint(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-//!!!almost 100% won't work, write appropriate toggle!
 bool CRenderServer::OnToggleFullscreenWindowed(const Events::CEventBase& Event)
 {
 	Display.Fullscreen = !Display.Fullscreen;
-	ReleaseDevice();
-	CreateDevice();
+	ResetDevice();
+	if (!Display.Fullscreen) Display.ResetWindow();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CRenderServer::OnDisplaySizeChanged(const Events::CEventBase& Event)
+{
+	if (Display.Fullscreen) FAIL;
+	if (Display.GetDisplayMode().Width != D3DPresentParams.BackBufferWidth ||
+		Display.GetDisplayMode().Height != D3DPresentParams.BackBufferHeight)
+		ResetDevice();
 	OK;
 }
 //---------------------------------------------------------------------

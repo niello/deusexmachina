@@ -230,8 +230,11 @@ bool CEnvQueryManager::OnFrame(const Events::CEventBase& Event)
     // Get 3d contact under mouse
     if (!UISrv->IsMouseOverGUI())
 	{
-        const Physics::CContactPoint* pContact =
-			PhysicsSrv->GetClosestContactUnderMouse(InputSrv->GetMousePosRel(), 5000.0f);
+		float XRel, YRel;
+		InputSrv->GetMousePosRel(XRel, YRel);
+		line3 Ray;
+		SceneSrv->GetCurrentScene()->GetMainCamera()->GetRay3D(XRel, YRel, 5000.f, Ray);
+		const Physics::CContactPoint* pContact = PhysicsSrv->GetClosestContactAlongRay(Ray.start(), Ray.vec());
         MouseIntersection = (pContact != NULL);
         if (MouseIntersection)
         {
