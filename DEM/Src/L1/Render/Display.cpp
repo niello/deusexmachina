@@ -425,7 +425,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 					EventMgr->FireEvent(CStrID("OnDisplayRestored"));
 					ReleaseCapture();
 				}
-				if (hWnd && AutoAdjustSize) AdjustSize();
+				if (hWnd && AutoAdjustSize && !Fullscreen) AdjustSize();
 			}
 			// Manually change window size in child mode
 			if (hWndParent) MoveWindow(hWnd, DisplayMode.PosX, DisplayMode.PosY, LOWORD(lParam), HIWORD(lParam), TRUE);

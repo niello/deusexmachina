@@ -19,13 +19,9 @@ namespace Scene
 
 namespace Render
 {
-//!!!TMP!
-//class CFrameShader;
 
 class CPass: public Core::CRefCounted
 {
-	//DeclareRTTI;
-
 //protected:
 public:
 
@@ -41,9 +37,6 @@ public:
 	// batches - now only in PassGeometry
 
 	//bool Profile;
-
-	//!!TMP!
-	//CFrameShader* pFrameShader;
 
 public:
 

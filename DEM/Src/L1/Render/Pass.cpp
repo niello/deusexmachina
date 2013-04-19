@@ -1,6 +1,5 @@
 #include "Pass.h"
 
-#include <Render/FrameShader.h> //!!!TMP for Validate!
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 
