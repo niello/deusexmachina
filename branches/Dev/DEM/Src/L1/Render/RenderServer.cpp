@@ -156,6 +156,7 @@ void CRenderServer::ResetDevice()
 	{
 		// NB: In single-threaded app, engine will stuck here until device can be reset
 		n_sleep(0.01);
+		Display.ProcessWindowMessages();
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
 
