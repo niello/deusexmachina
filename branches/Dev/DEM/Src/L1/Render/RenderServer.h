@@ -135,6 +135,8 @@ public:
 
 	CDisplay&			GetDisplay() { return Display; }
 	DWORD				GetFrameID() const { return FrameID; }
+	DWORD				GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
+	DWORD				GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
 	UINT				GetD3DAdapter() const { return D3DAdapter; }
 	IDirect3D9*			GetD3D() const { return pD3D; } //!!!static method in N3, creates D3D!
 	IDirect3DDevice9*	GetD3DDevice() const { return pD3DDevice; }
