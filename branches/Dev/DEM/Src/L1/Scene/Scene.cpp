@@ -1,6 +1,7 @@
 #include "Scene.h"
 
 #include <Scene/SceneServer.h>
+#include <Events/EventManager.h>
 
 namespace Scene
 {
@@ -15,10 +16,16 @@ void CScene::Init(const bbox3& Bounds)
 	CameraNode->AddAttr(*DefaultCamera);
 	MainCamera = DefaultCamera;
 
+	MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
+	MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
+
 	SceneBBox = Bounds;
 	vector3 Center = SceneBBox.center();
 	vector3 Size = SceneBBox.size();
 	SPS.Build(Center.x, Center.z, Size.x, Size.z, 5); //???where to get depth?
+
+	//!!!could subscribe only when AutoAdjustCameraAspect is set to true!
+	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CScene, OnRenderDeviceReset);
 }
 //---------------------------------------------------------------------
 
@@ -34,6 +41,7 @@ void CScene::Deactivate()
 
 void CScene::Clear()
 {
+	UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
 	RootNode = NULL;
 }
 //---------------------------------------------------------------------
@@ -211,6 +219,15 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 	if (pNode->HasChildren())
 		for (DWORD i = 0; i < 4; i++)
 			SPSCollectVisibleObjects(pNode->GetChild(i), ViewProj, OutObjects, OutLights, Clip);
+}
+//---------------------------------------------------------------------
+
+bool CScene::OnRenderDeviceReset(const Events::CEventBase& Event)
+{
+	if (!AutoAdjustCameraAspect) FAIL;
+	MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
+	MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
+	OK;
 }
 //---------------------------------------------------------------------
 

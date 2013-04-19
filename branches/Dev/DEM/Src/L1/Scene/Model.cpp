@@ -88,10 +88,8 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-bool CModel::OnAdd()
+bool CModel::ValidateResources()
 {
-	//!!!TMP! write more elegant! Hide LoadSmthFromFMT calls somewhere in Loaders or smth.
-
 	if (Material.isvalid())
 	{
 		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(Material->GetUID().CStr(), Material)) FAIL;
@@ -99,7 +97,7 @@ bool CModel::OnAdd()
 		for (int i = 0; i < ShaderVars.Size(); ++i)
 		{
 			CShaderVar& Var = ShaderVars.ValueAtIndex(i);
-			Var.Bind(*Material->GetShader());
+			if (!Var.IsBound()) Var.Bind(*Material->GetShader());
 
 			//!!!non-file textures (forex RTs) will fail to load here! ensure they are
 			// in loaded state or they load themselvef properly!
@@ -115,6 +113,12 @@ bool CModel::OnAdd()
 	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CModel::OnAdd()
+{
+	return ValidateResources();
 }
 //---------------------------------------------------------------------
 
@@ -134,6 +138,8 @@ void CModel::OnRemove()
 
 void CModel::Update()
 {
+	//ValidateResources();
+
 	if (!pSPSRecord)
 	{
 		pSPSRecord = n_new(CSPSRecord)(*this);

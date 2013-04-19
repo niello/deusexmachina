@@ -5,6 +5,8 @@
 #include <Scene/SceneNode.h>
 #include <Scene/Camera.h>
 #include <Scene/SPS.h>
+#include <Events/Events.h>
+#include <Events/Subscription.h>
 
 // 3D scene with node hierarchy and volume subdivided to optimize spatial requests
 
@@ -36,11 +38,14 @@ private:
 	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
 	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CRenderObject*>* OutObjects, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
+	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnRenderDeviceReset);
+
 public:
 
-	CSPS				SPS;			// Spatial partitioning structure
+	CSPS				SPS;						// Spatial partitioning structure
+	bool				AutoAdjustCameraAspect;
 
-	CScene(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f) {  }
+	CScene(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f), AutoAdjustCameraAspect(true) {  }
 	~CScene() { Clear(); }
 
 	void		Init(const bbox3& Bounds);
