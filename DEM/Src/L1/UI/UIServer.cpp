@@ -131,7 +131,6 @@ bool CUIServer::OnCharInput(const Events::CEventBase& Event)
 
 bool CUIServer::OnMouseMove(const Events::CEventBase& Event)
 {
-	//CEGUISystem->injectMouseLeaves
 	const Event::MouseMove& Ev = (const Event::MouseMove&)Event;
 	return CEGUISystem->injectMousePosition((float)Ev.X, (float)Ev.Y);
 }

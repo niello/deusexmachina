@@ -87,7 +87,6 @@ protected:
 	DECLARE_EVENT_HANDLER(OnDisplayPaint, OnDisplayPaint);
 	DECLARE_EVENT_HANDLER(OnDisplayToggleFullscreen, OnToggleFullscreenWindowed);
 	DECLARE_EVENT_HANDLER(OnDisplaySizeChanged, OnDisplaySizeChanged);
-	DECLARE_EVENT_HANDLER(DisplayInput, OnDisplayInput);
 
 public:
 

@@ -1,7 +1,6 @@
 #include "RenderServer.h"
 
 #include <Events/EventManager.h>
-#include <Render/Events/DisplayInput.h>
 #include <Data/Stream.h>
 #include <dxerr.h>
 
@@ -53,7 +52,6 @@ bool CRenderServer::Open()
 	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnDisplayPaint);
 	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, CRenderServer, OnToggleFullscreenWindowed);
 	SUBSCRIBE_PEVENT(OnDisplaySizeChanged, CRenderServer, OnDisplaySizeChanged);
-	SUBSCRIBE_NEVENT(DisplayInput, CRenderServer, OnDisplayInput);
 
 	_IsOpen = true;
 	OK;
@@ -67,7 +65,6 @@ void CRenderServer::Close()
 	UNSUBSCRIBE_EVENT(OnDisplayPaint);
 	UNSUBSCRIBE_EVENT(OnDisplayToggleFullscreen);
 	UNSUBSCRIBE_EVENT(OnDisplaySizeChanged);
-	UNSUBSCRIBE_EVENT(DisplayInput);
 
 	SAFE_RELEASE(pCurrDSSurface);
 	DefaultRT->Destroy();
@@ -719,7 +716,7 @@ bool CRenderServer::OnToggleFullscreenWindowed(const Events::CEventBase& Event)
 {
 	Display.Fullscreen = !Display.Fullscreen;
 	ResetDevice();
-	if (!Display.Fullscreen) Display.ResetWindow();
+	Display.ResetWindow();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -730,17 +727,6 @@ bool CRenderServer::OnDisplaySizeChanged(const Events::CEventBase& Event)
 	if (Display.GetDisplayMode().Width != D3DPresentParams.BackBufferWidth ||
 		Display.GetDisplayMode().Height != D3DPresentParams.BackBufferHeight)
 		ResetDevice();
-	OK;
-}
-//---------------------------------------------------------------------
-
-// In full-screen mode, update the cursor position myself
-bool CRenderServer::OnDisplayInput(const Events::CEventBase& Event)
-{
-	const Event::DisplayInput& Ev = (const Event::DisplayInput&)Event;
-
-	if (Display.Fullscreen && Ev.Type == Event::DisplayInput::MouseMove)
-		pD3DDevice->SetCursorPosition(Ev.MouseInfo.x, Ev.MouseInfo.y, 0);
 	OK;
 }
 //---------------------------------------------------------------------

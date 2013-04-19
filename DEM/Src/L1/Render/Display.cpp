@@ -6,6 +6,7 @@
 #include <Events/EventManager.h>
 
 #include <Uxtheme.h>
+#include <WindowsX.h>
 
 //???in what header?
 #ifndef HID_USAGE_PAGE_GENERIC
@@ -111,7 +112,7 @@ bool CDisplay::OpenWindow()
 		n_assert(aWndClass);
 	}
 
-	DWORD WndStyle;
+	LONG WndStyle;
 	if (hWndParent) WndStyle = StyleChild;
 	else if (Fullscreen) WndStyle = StyleFullscreen;
 	else WndStyle = StyleWindowed;
@@ -260,6 +261,8 @@ void CDisplay::ResetWindow()
 	// Fullscreen mode breaks theme (at least aero glass) on Win7, so restore it
 	if (!hWndParent && !Fullscreen) SetWindowTheme(hWnd, NULL, NULL);
 
+	if (!hWndParent) SetWindowLongPtr(hWnd, GWL_STYLE, Fullscreen ? StyleFullscreen : StyleWindowed);
+
 	int X, Y, W, H;
 	CalcWindowRect(X, Y, W, H);
 
@@ -393,7 +396,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 					case SC_MAXIMIZE:
 					case SC_KEYMENU:
 					case SC_MONITORPOWER:
-						Result = 1;
+						Result = 0; //1
 						OK;
 				}
 			}
@@ -567,8 +570,8 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 					break;
 			}
 
-			Ev.MouseInfo.x = LOWORD(lParam);
-			Ev.MouseInfo.y = HIWORD(lParam);
+			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
+			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
 			EventMgr->FireEvent(Ev);
 			break;
 		}
@@ -577,8 +580,8 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		{
 			Event::DisplayInput Ev;
 			Ev.Type = Event::DisplayInput::MouseMove;
-			Ev.MouseInfo.x = LOWORD(lParam);
-			Ev.MouseInfo.y = HIWORD(lParam);
+			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
+			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
 			EventMgr->FireEvent(Ev);
 			break;
 		}
