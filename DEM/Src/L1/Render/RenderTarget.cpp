@@ -66,8 +66,8 @@ bool CRenderTarget::CreateDefaultRT()
 	IsDefaultRT = true;
 
 	const CDisplayMode& DispMode = RenderSrv->GetDisplay().GetDisplayMode();
-	//float Width = DispMode.Width;
-	//float Height = DispMode.Height;
+	//float Width = RenderSrv->GetBackBufferWidth();
+	//float Height = RenderSrv->GetBackBufferHeight();
 	//EMSAAQuality MSAA = RenderSrv->GetDisplay().AntiAliasQuality;
 	RTFmt = DispMode.PixelFormat;
 
@@ -107,6 +107,8 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 	H = Height;
 	AbsoluteWH = AbsWH;
 	MSAAQuality = MSAA;
+	TexW = TexWidth;
+	TexH = TexHeight;
 
 	//???members?
 	DWORD AbsWidth;
@@ -119,9 +121,11 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 	}
 	else
 	{
-		const CDisplayMode& DispMode = RenderSrv->GetDisplay().GetDisplayMode();
-		AbsWidth = (DWORD)(Width * (float)DispMode.Width);
-		AbsHeight = (DWORD)(Height * (float)DispMode.Height);
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//???instead store windowed display mode and fullscreen display mode?
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		AbsWidth = (DWORD)(Width * (float)RenderSrv->GetBackBufferWidth());
+		AbsHeight = (DWORD)(Height * (float)RenderSrv->GetBackBufferHeight());
 	}
 
 	RTTexture = RenderSrv->TextureMgr.GetTypedResource(TextureID);
@@ -229,9 +233,8 @@ bool CRenderTarget::OnDeviceLost(const Events::CEventBase& Ev)
 bool CRenderTarget::OnDeviceReset(const Events::CEventBase& Ev)
 {
 	if (IsDefaultRT) { n_assert(CreateDefaultRT()); }
-	else n_assert(Create(	RTTexture->GetUID(), RTFmt, DSFmt, W, H,
-							AbsoluteWH, MSAAQuality, RTTexture->GetWidth(),
-							RTTexture->GetHeight(), (DSFmt == D3DFMT_UNKNOWN)));
+	else n_assert(Create(	RTTexture->GetUID(), RTFmt, DSFmt, W, H, AbsoluteWH,
+							MSAAQuality, TexW, TexH, (DSFmt == D3DFMT_UNKNOWN)));
 	OK;
 }
 //---------------------------------------------------------------------

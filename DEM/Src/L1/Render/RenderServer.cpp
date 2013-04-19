@@ -171,6 +171,8 @@ void CRenderServer::ResetDevice()
 	SetupDevice();
 
 	EventMgr->FireEvent(CStrID("OnRenderDeviceReset"));
+
+	pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
 }
 //---------------------------------------------------------------------
 
@@ -445,6 +447,7 @@ void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 
 	// NB: DS can be set to NULL only by main RT (index 0)
 	//???mb set DS only from main RT?
+	//???doesn't this kill an auto DS surface?
 	if ((pDSSurface || Index == 0) && pDSSurface != pCurrDSSurface)
 	{
 		CurrDepthStencilFormat = pRT ? pRT->GetDepthStencilFormat() : D3DFMT_UNKNOWN;

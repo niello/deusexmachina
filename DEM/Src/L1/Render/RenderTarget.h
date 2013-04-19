@@ -25,10 +25,13 @@ protected:
 	D3DFORMAT			RTFmt;
 	D3DFORMAT			DSFmt;
 
+	// Info for recreation after device is restored
 	float				W;
 	float				H;
 	bool				AbsoluteWH;			//???flags?
 	EMSAAQuality		MSAAQuality;
+	DWORD				TexW;
+	DWORD				TexH;
 
 	PTexture			RTTexture;
 	IDirect3DSurface9*	pRTSurface;
