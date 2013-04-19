@@ -44,9 +44,9 @@ protected:
 	HWND			hWndParent;
 	HACCEL			hAccel;
 	ATOM			aWndClass;
-	DWORD			StyleWindowed;		///< WS_* flags for windowed mode
-	DWORD			StyleFullscreen;	///< WS_* flags for full-screen mode
-	DWORD			StyleChild;			///< WS_* flags for child mode
+	LONG			StyleWindowed;		///< WS_* flags for windowed mode
+	LONG			StyleFullscreen;	///< WS_* flags for full-screen mode
+	LONG			StyleChild;			///< WS_* flags for child mode
 
 	bool				HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result);
 	void				CalcWindowRect(int& X, int& Y, int& W, int& H);
