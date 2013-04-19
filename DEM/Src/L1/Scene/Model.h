@@ -25,6 +25,10 @@ class CModel: public CRenderObject
 	DeclareRTTI;
 	DeclareFactory(CModel);
 
+protected:
+
+	bool ValidateResources();
+
 public:
 
 	Render::PMesh			Mesh;
