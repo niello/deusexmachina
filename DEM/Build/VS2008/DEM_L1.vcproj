@@ -1325,6 +1325,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Render\DebugDraw.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\DebugDraw.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Render\Display.cpp"
 				>
 			</File>
@@ -1513,10 +1521,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L1\Render\Renderers\ModelRenderer.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Render\Renderers\ShapeRenderer.h"
 					>
 				</File>
 				<File

@@ -81,7 +81,7 @@ bool CEnvironment::InitEngine()
 	RenderServer.Create();
 	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.Get());
 	RenderServer->GetDisplay().SetWindowIcon(IconName.Get());
-	RenderServer->GetDisplay().SetDisplayMode(DisplayMode);
+	RenderServer->GetDisplay().RequestDisplayMode(DisplayMode);
 	RenderServer->Open();
 
 	SceneServer.Create();

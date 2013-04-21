@@ -7,6 +7,7 @@
 #include <Render/Geometry/VertexBuffer.h>
 #include <Render/Geometry/IndexBuffer.h>
 #include <Events/Events.h>
+#include <Events/Subscription.h>
 #include <mathlib/bbox.h>
 
 // Mesh represents complete geometry information about a 3D model. It stores vertex buffer,

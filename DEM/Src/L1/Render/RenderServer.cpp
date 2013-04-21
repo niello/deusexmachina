@@ -4,6 +4,8 @@
 #include <Data/Stream.h>
 #include <dxerr.h>
 
+#include <Render/DebugDraw.h> //!!!DBG TMP! make singleton!
+
 namespace Render
 {
 ImplementRTTI(Render::CRenderServer, Core::CRefCounted);
@@ -16,9 +18,12 @@ bool CRenderServer::Open()
 	pD3D = Direct3DCreate9(D3D_SDK_VERSION); //!!!in N3 opened in constructor! static Get, CanCreate etc!
 	if (!pD3D) FAIL;
 
+	Display.SetDisplayMode(Display.GetRequestedDisplayMode());
 	if (!Display.OpenWindow()) FAIL;
 
+	CDisplayMode OldMode = Display.GetDisplayMode();
 	if (!CreateDevice()) FAIL;
+	if (Display.GetDisplayMode() != OldMode) Display.ResetWindow();
 
 	FFlagSkinned = ShaderFeatureStringToMask("Skinned");
 	FFlagInstanced = ShaderFeatureStringToMask("Instanced");
@@ -52,6 +57,10 @@ bool CRenderServer::Open()
 	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnDisplayPaint);
 	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, CRenderServer, OnToggleFullscreenWindowed);
 	SUBSCRIBE_PEVENT(OnDisplaySizeChanged, CRenderServer, OnDisplaySizeChanged);
+
+	//!!!DBG TMP!
+	CDebugDraw DD;
+	DD.Open();
 
 	_IsOpen = true;
 	OK;
@@ -135,9 +144,6 @@ bool CRenderServer::CreateDevice()
 
 	SetupDevice();
 
-	CurrDepthStencilFormat =
-		D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
-
 	OK;
 }
 //---------------------------------------------------------------------
@@ -207,6 +213,9 @@ void CRenderServer::SetupDevice()
 	ViewPort.MaxZ = 1.0f;
 	pD3DDevice->SetViewport(&ViewPort);
 
+	CurrDepthStencilFormat =
+		D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
+
 	//!!!CreateQueries();
 }
 //---------------------------------------------------------------------
@@ -226,31 +235,21 @@ void CRenderServer::SetupPresentParams()
 		D3DPresentParams.Windowed = TRUE;
 	}
 
+	CDisplayMode DisplayMode = Display.GetRequestedDisplayMode();
 	if (D3DPresentParams.Windowed)
 	{
 		CDisplayMode DesktopMode;
 		n_assert(Display.GetCurrentAdapterDisplayMode((CDisplay::EAdapter)D3DAdapter, DesktopMode));
-		D3DPresentParams.BackBufferFormat = DesktopMode.PixelFormat;
-		//!!!D3DFMT_UNKNOWN is allowed in windowed mode, but CheckDeviceFormat calls below fail!
-
-		D3DPresentParams.BackBufferWidth = Display.GetDisplayMode().Width;
-		D3DPresentParams.BackBufferHeight = Display.GetDisplayMode().Height;
+		DisplayMode.PixelFormat = DesktopMode.PixelFormat;
 	}
 	else
 	{
-		if (Display.GetDisplayMode().PixelFormat == D3DFMT_UNKNOWN)
-		{
-			//???make it a public member?
-			CDisplayMode Mode = Display.GetDisplayMode();
-			Mode.PixelFormat = D3DFMT_X8R8G8B8;
-			Display.SetDisplayMode(Mode);
-		}
-
-		D3DPresentParams.BackBufferFormat = Display.GetDisplayMode().PixelFormat;
+		if (DisplayMode.PixelFormat == D3DFMT_UNKNOWN)
+			DisplayMode.PixelFormat = D3DFMT_X8R8G8B8;
 
 		nArray<CDisplayMode> Modes;
 		Display.GetAvailableDisplayModes((CDisplay::EAdapter)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
-		if (Modes.FindIndex(Display.GetDisplayMode()) == INVALID_INDEX)
+		if (Modes.FindIndex(DisplayMode) == INVALID_INDEX)
 		{
 			// Find available mode the most close to the requested one
 			float IdealAspect = Display.GetDisplayMode().GetAspectRatio();
@@ -270,20 +269,17 @@ void CRenderServer::SetupPresentParams()
 				}
 			}
 			n_assert(MinIdx != INVALID_INDEX);
-			D3DPresentParams.BackBufferWidth = Modes[MinIdx].Width;
-			D3DPresentParams.BackBufferHeight = Modes[MinIdx].Height;
-		}
-		else 
-		{
-			D3DPresentParams.BackBufferWidth = Display.GetDisplayMode().Width;
-			D3DPresentParams.BackBufferHeight = Display.GetDisplayMode().Height;
+			DisplayMode.Width = Modes[MinIdx].Width;
+			DisplayMode.Height = Modes[MinIdx].Height;
 		}
 	}
+
+	Display.SetDisplayMode(DisplayMode);
 
 	// Make sure the device supports a D24S8 depth buffers
 	HRESULT hr = pD3D->CheckDeviceFormat(	D3DAdapter,
 											DEM_D3D_DEVICETYPE,
-											D3DPresentParams.BackBufferFormat,
+											DisplayMode.PixelFormat,
 											D3DUSAGE_DEPTHSTENCIL,
 											D3DRTYPE_SURFACE,
 											D3DFMT_D24S8);
@@ -296,8 +292,8 @@ void CRenderServer::SetupPresentParams()
 	// Check that the depth buffer format is compatible with the backbuffer format
 	hr = pD3D->CheckDepthStencilMatch(	D3DAdapter,
 										DEM_D3D_DEVICETYPE,
-										D3DPresentParams.BackBufferFormat,
-										D3DPresentParams.BackBufferFormat,
+										DisplayMode.PixelFormat,
+										DisplayMode.PixelFormat,
 										D3DFMT_D24S8);
 	if (FAILED(hr))
 	{
@@ -305,7 +301,10 @@ void CRenderServer::SetupPresentParams()
 		return;
 	}
 
-	D3DPresentParams.EnableAutoDepthStencil = TRUE; //FALSE; - N3
+	D3DPresentParams.BackBufferWidth = DisplayMode.Width;
+	D3DPresentParams.BackBufferHeight = DisplayMode.Height;
+	D3DPresentParams.BackBufferFormat = DisplayMode.PixelFormat;
+	D3DPresentParams.EnableAutoDepthStencil = TRUE;
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_D24S8;
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
 }
@@ -337,8 +336,6 @@ bool CRenderServer::BeginFrame()
 
 	PrimsRendered = 0;
 	DIPsRendered = 0;
-
-	// Assert stream VBs, IB and VLayout aren't set
 
 	//???where? once per frame shader change
 	if (!SharedShader.isvalid())
@@ -381,11 +378,16 @@ void CRenderServer::Present()
 	if (Display.GetAppHwnd())
 	{
 		HRESULT hr = pD3DDevice->Present(NULL, NULL, NULL, NULL);
-		if (hr == D3DERR_DEVICELOST) ResetDevice();
-		else if (FAILED(hr))
+		if (FAILED(hr))
 		{
-			ReleaseDevice();
-			CreateDevice();
+			CDisplayMode OldMode = Display.GetDisplayMode();
+			if (hr == D3DERR_DEVICELOST) ResetDevice();
+			else
+			{
+				ReleaseDevice();
+				if (!CreateDevice()) return;
+			}
+			if (Display.GetDisplayMode() != OldMode) Display.ResetWindow();
 		}
 	}    
 

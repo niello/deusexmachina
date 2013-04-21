@@ -10,6 +10,8 @@
 
 // Debug draw interface implementation for Detour navigation mesh.
 
+//!!!use calls to lowlevel methods of my debug draw!
+
 namespace AI
 {
 
@@ -24,7 +26,7 @@ struct CNavMeshDebugDraw: public duDebugDraw
 	virtual ~CNavMeshDebugDraw() {}
 
 	virtual void	depthMask(bool state) {}
-	virtual void	texture(bool state) { 	/*We ignore texture*/ }
+	virtual void	texture(bool state) { /*We ignore texture*/ }
 	virtual void	begin(duDebugDrawPrimitives prim, float size = 1.0f);
 	virtual void	vertex(const float* pos, unsigned int color);
 	virtual void	vertex(const float x, const float y, const float z, unsigned int color);

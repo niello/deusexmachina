@@ -24,6 +24,7 @@ public:
 	float	GetAspectRatio() const { return Width / (float)Height; }
 
 	bool	operator ==(const CDisplayMode& Other) const;
+	bool	operator !=(const CDisplayMode& Other) const { return !(*this == Other); }
 };
 //---------------------------------------------------------------------
 

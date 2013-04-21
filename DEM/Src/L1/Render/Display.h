@@ -8,11 +8,13 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-// A window handler for Win32 platforms.
+// Display handles a viewport (in the Win32 it is a window of the host OS)
+// and a display mode that is used by the render device.
 
 #define DEM_WINDOW_CLASS "DeusExMachina::MainWindow"
 
-using namespace Render;
+namespace Render
+{
 
 class CDisplay
 {
@@ -36,6 +38,7 @@ protected:
 	nString			WindowTitle;
 	nString			IconName;
 	CDisplayMode	DisplayMode;
+	CDisplayMode	RequestedMode;
 	bool			IsWndOpen;
 	bool			IsWndMinimized;
 
@@ -52,6 +55,10 @@ protected:
 	void				CalcWindowRect(int& X, int& Y, int& W, int& H);
 
 	static LONG WINAPI	WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	friend class CRenderServer;
+
+	void				SetDisplayMode(const CDisplayMode& RealMode) { DisplayMode = RealMode; }
 
 public:
 
@@ -86,8 +93,9 @@ public:
 	const nString&		GetWindowTitle() const { return WindowTitle; }
 	void				SetWindowIcon(const char* pIconName);
 	const nString&		GetWindowIcon() const { return IconName; }
-	void				SetDisplayMode(const CDisplayMode& DispMode) { DisplayMode = DispMode; }
+	void				RequestDisplayMode(const CDisplayMode& Mode) { RequestedMode = Mode; }
 	const CDisplayMode&	GetDisplayMode() const { return DisplayMode; }
+	const CDisplayMode&	GetRequestedDisplayMode() const { return RequestedMode; }
 
 	void				GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
@@ -114,6 +122,8 @@ inline void CDisplay::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel
 	}
 }
 //---------------------------------------------------------------------
+
+}
 
 //#endif // __WIN32__
 #endif
