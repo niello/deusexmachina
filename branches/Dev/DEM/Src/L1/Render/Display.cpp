@@ -16,6 +16,9 @@
 #define HID_USAGE_GENERIC_MOUSE	((USHORT) 0x02)
 #endif
 
+namespace Render
+{
+
 CDisplay::CDisplay():
 	WindowTitle("DeusExMachina - Untitled"),
 	IsWndOpen(false),
@@ -599,5 +602,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	FAIL;
 }
 //---------------------------------------------------------------------
+
+}
 
 //#endif //__WIN32__

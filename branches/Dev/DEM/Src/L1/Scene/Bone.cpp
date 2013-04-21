@@ -10,6 +10,8 @@ namespace Scene
 ImplementRTTI(Scene::CBone, Scene::CSceneNodeAttr);
 ImplementFactory(Scene::CBone);
 
+using namespace Render;
+
 bool CBone::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)

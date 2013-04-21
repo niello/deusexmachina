@@ -17,6 +17,8 @@ namespace Scene
 ImplementRTTI(Scene::CTerrain, Scene::CSceneNodeAttr);
 ImplementFactory(Scene::CTerrain);
 
+using namespace Render;
+
 bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 {
 	switch (FourCC)
