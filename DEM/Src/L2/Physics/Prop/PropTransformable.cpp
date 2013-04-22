@@ -3,6 +3,7 @@
 #include <Physics/Event/SetTransform.h>
 #include <Events/EventBase.h>
 #include <Game/Entity.h>
+#include <Render/DebugDraw.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
@@ -64,24 +65,7 @@ void CPropTransformable::SetTransform(const matrix44& NewTF)
 
 void CPropTransformable::OnRenderDebug()
 {
-	//GFX
-	/*
-	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
-	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
-	static const vector4 ColorZ(0.0f, 0.0f, 1.0f, 1.0f);
-
-	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
-
-	nFixedArray<vector3> lines(2);
-	lines[1].x = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorX);
-	lines[1].x = 0.f;
-	lines[1].y = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorY);
-	lines[1].y = 0.f;
-	lines[1].z = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorZ);
-	*/
+	DebugDraw->DrawCoordAxes(GetEntity()->Get<matrix44>(Attr::Transform));
 }
 //---------------------------------------------------------------------
 

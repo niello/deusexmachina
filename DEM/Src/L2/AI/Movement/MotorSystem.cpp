@@ -5,6 +5,7 @@
 #include <AI/Prop/PropActorPhysics.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Physics/Entity.h>
+#include <Render/DebugDraw.h>
 #include <DetourObstacleAvoidance.h>
 
 #define OBSTACTLE_DETECTOR_MIN		0.1f
@@ -289,7 +290,7 @@ void CMotorSystem::Update()
 		// We want to turn
 		if (AngleAbs > 0.005f)
 		{
-			if (AngleAbs > BigTurnThreshold) LinearVel = vector4::zero;
+			if (AngleAbs > BigTurnThreshold) LinearVel = vector4::Zero;
 
 			static const float InvAngularArrive = 1.f / n_deg2rad(20.f);
 			AngularVel = MaxAngularSpeed * AngleAbs * InvAngularArrive;
@@ -325,7 +326,7 @@ void CMotorSystem::ResetMovement()
 {
 	pActor->MvmtStatus = AIMvmt_Done;
 	PParams PLinearVel = n_new(CParams);
-	PLinearVel->Set(CStrID("Velocity"), vector4::zero);
+	PLinearVel->Set(CStrID("Velocity"), vector4::Zero);
 	pActor->GetEntity()->FireEvent(CStrID("AIBodyRequestLVelocity"), PLinearVel);
 }
 //---------------------------------------------------------------------
@@ -368,8 +369,6 @@ void CMotorSystem::RenderDebug()
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
 	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
 
-	//GFX
-	/*
 	if (pActor->MvmtStatus == AIMvmt_DestSet || pActor->MvmtStatus == AIMvmt_Stuck)
 	{
 		nFixedArray<vector3> lines(2);
@@ -378,9 +377,9 @@ void CMotorSystem::RenderDebug()
 		lines[1] = DestPoint;
 		//lines[1].y += 1.f;
 		lines[1].y = pActor->Position.y + 1.f;
-		nGfxServer2::Instance()->DrawShapePrimitives(
-			nGfxServer2::LineList, 1, &(lines[0]), 3, matrix44::identity,
-			pActor->MvmtStatus == AIMvmt_DestSet ? ColorNormal : ColorStuck);
+		//nGfxServer2::Instance()->DrawShapePrimitives(
+		//	nGfxServer2::LineList, 1, &(lines[0]), 3, matrix44::identity,
+		//	pActor->MvmtStatus == AIMvmt_DestSet ? ColorNormal : ColorStuck);
 	}
 
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
@@ -388,7 +387,6 @@ void CMotorSystem::RenderDebug()
 	{
 		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.get();
 		matrix44 Tfm;
-		Tfm.scale(vector3(pObstacle->Radius, pObstacle->Radius, 1.f)); // pObstacle->Height));
 		Tfm.rotate_x(PI * 0.5f);
 		Tfm.set_translation(pObstacle->Position);
 		vector4 Color(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
@@ -397,7 +395,7 @@ void CMotorSystem::RenderDebug()
 			Color.x = 0.4f;
 			Color.z = 0.9f;
 		}
-		nGfxServer2::Instance()->DrawShape(nGfxServer2::Cylinder, Tfm, Color);
+		DebugDraw->DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
 	}
 
 	LPCSTR pMvmt = NULL;
@@ -432,10 +430,9 @@ void CMotorSystem::RenderDebug()
 		text += text2;
 	}
 
-	rectangle textRect(vector2(0.05f, 0.1f), vector2(1.0f, 1.0f));
-	uint textFlags = Top | Left | NoClip | ExpandTabs;
-	nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
-	*/
+	//rectangle textRect(vector2(0.05f, 0.1f), vector2(1.0f, 1.0f));
+	//uint textFlags = Top | Left | NoClip | ExpandTabs;
+	//nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
 }
 //---------------------------------------------------------------------
 

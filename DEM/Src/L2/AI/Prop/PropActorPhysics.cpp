@@ -3,6 +3,7 @@
 #include <Game/Entity.h>
 #include <Physics/Level.h>
 #include <Physics/CharEntity.h>
+#include <Render/DebugDraw.h>
 #include <Loading/EntityFactory.h>
 
 namespace Attr
@@ -92,7 +93,7 @@ void CPropActorPhysics::DisablePhysics()
 void CPropActorPhysics::Stop()
 {
 	PhysEntity->SetDesiredLinearVelocity(vector3::Zero);
-	GetEntity()->Set<vector4>(Attr::VelocityVector, vector4::zero);
+	GetEntity()->Set<vector4>(Attr::VelocityVector, vector4::Zero);
 }
 //------------------------------------------------------------------------------
 
@@ -140,37 +141,14 @@ bool CPropActorPhysics::OnRequestAngularVelocity(const Events::CEventBase& Event
 
 void CPropActorPhysics::OnRenderDebug()
 {
-	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
-	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
-	static const vector4 ColorZ(0.0f, 0.0f, 1.0f, 1.0f);
 	static const vector4 ColorVel(1.0f, 0.5f, 0.0f, 1.0f);
 	static const vector4 ColorDesVel(0.0f, 1.0f, 1.0f, 1.0f);
 
 	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
 
-	//GFX
-	/*
-	// Coordinate frame
-	nFixedArray<vector3> lines(2);
-	lines[1].x = -1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorX);
-	lines[1].x = 0.f;
-	lines[1].y = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorY);
-	lines[1].y = 0.f;
-	lines[1].z = -1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, Tfm, ColorZ);
-
-	matrix44 TranslateOnly;
-	TranslateOnly.set_translation(Tfm.pos_component());
-
-	// Linear velocity
-	lines[1] = PhysEntity->GetVelocity();
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, TranslateOnly, ColorVel);
-
-	// Desired linear velocity
-	lines[1] = PhysEntity->GetDesiredLinearVelocity();
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, TranslateOnly, ColorDesVel);
+	DebugDraw->DrawCoordAxes(Tfm);
+	DebugDraw->DrawLine(Tfm.pos_component(), Tfm.pos_component() + PhysEntity->GetVelocity(), ColorVel);
+	DebugDraw->DrawLine(Tfm.pos_component(), Tfm.pos_component() + PhysEntity->GetDesiredLinearVelocity(), ColorDesVel);
 
 	if (GetEntity()->GetUniqueID() == CStrID("GG"))
 	{
@@ -187,11 +165,11 @@ void CPropActorPhysics::OnRenderDebug()
 			PhysEntity->GetVelocity().len(),
 			PhysEntity->GetDesiredLinearVelocity().len());
 		vector4 textColor(1.0f, 1.0f, 1.0f, 1.0f);
-		rectangle textRect(vector2(0.5f, 0.0f), vector2(1.0f, 1.0f));
-		uint textFlags = Top | Left | NoClip | ExpandTabs;
-		nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
+		//rectangle textRect(vector2(0.5f, 0.0f), vector2(1.0f, 1.0f));
+		//uint textFlags = Top | Left | NoClip | ExpandTabs;
+		//GFX
+		//nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
 	}
-	*/
 }
 //---------------------------------------------------------------------
 

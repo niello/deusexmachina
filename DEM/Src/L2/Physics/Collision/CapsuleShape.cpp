@@ -1,5 +1,7 @@
 #include "CapsuleShape.h"
 
+#include <Render/DebugDraw.h>
+
 namespace Physics
 {
 ImplementRTTI(Physics::CCapsuleShape, Physics::CShape);
@@ -39,25 +41,8 @@ bool CCapsuleShape::Attach(dSpaceID SpaceID)
 
 void CCapsuleShape::RenderDebug(const matrix44& ParentTfm)
 {
-	//GFX
-	/*
 	if (IsAttached())
-	{
-		vector4 Color = GetDebugVisualizationColor();
-		matrix44 WorldTfm = Transform * ParentTfm;
-
-		matrix44 CapTfm;
-		CapTfm.scale(vector3(Radius, Radius, Radius));
-		CapTfm.set_translation(vector3(0.0f, 0.0f, Length * 0.5f));
-		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, CapTfm * WorldTfm, Color);
-		CapTfm.pos_component().z -= Length;
-		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, CapTfm * WorldTfm, Color);
-
-		matrix44 CylTfm;
-		CylTfm.scale(vector3(Radius, Radius, Length));
-		nGfxServer2::Instance()->DrawShape(nGfxServer2::Cylinder, CylTfm * WorldTfm, Color);
-	}
-	*/
+		DebugDraw->DrawCapsule(Transform * ParentTfm, Radius, Length, GetDebugVisualizationColor());
 }
 //---------------------------------------------------------------------
 

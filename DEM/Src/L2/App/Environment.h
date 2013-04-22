@@ -12,6 +12,7 @@
 #include <DB/DBServer.h>
 #include <Loading/LoaderServer.h>
 #include <Render/RenderServer.h>
+#include <Render/DebugDraw.h>
 #include <Scene/SceneServer.h>
 #include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
@@ -58,6 +59,7 @@ protected:
 	Ptr<DB::CDBServer>				DBServer;
 	Ptr<Loading::CLoaderServer>		LoaderServer;
 	Ptr<Render::CRenderServer>		RenderServer;
+	Ptr<Render::CDebugDraw>			DD;
 	Ptr<Scene::CSceneServer>		SceneServer;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;

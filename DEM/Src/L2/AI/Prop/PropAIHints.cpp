@@ -5,6 +5,7 @@
 #include <Physics/Prop/PropPhysics.h>
 #include <Loading/EntityFactory.h>
 #include <AI/AIServer.h>
+#include <Render/DebugDraw.h>
 #include <Data/DataServer.h>
 #include <DB/DBServer.h>
 
@@ -194,23 +195,16 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(i);
 
-		matrix44 Tfm;
-		Tfm.scale(vector3(0.2f, 0.2f, 0.2f));
-		Tfm.set_translation(Rec.Stimulus->Position);
-
-		//GFX
-		/*
 		if (Rec.pNode) //???else draw grey or more pale/transparent sphere?
 		{
 			if (Rec.Stimulus->GetRTTI()->GetName() == "AI::CStimulusVisible")
-				nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, ColorVisible);
+				DebugDraw->DrawSphere(Rec.Stimulus->Position, 0.2f, ColorVisible);
 			else if (Rec.Stimulus->GetRTTI()->GetName() == "AI::CStimulusSound")
-				nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, ColorSound);
+				DebugDraw->DrawSphere(Rec.Stimulus->Position, 0.2f, ColorSound);
 			else
-				nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, ColorOther);
+				DebugDraw->DrawSphere(Rec.Stimulus->Position, 0.2f, ColorOther);
 		}
-		else nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, ColorDisabled);
-		*/
+		else DebugDraw->DrawSphere(Rec.Stimulus->Position, 0.2f, ColorDisabled);
 	}
 
 	OK;

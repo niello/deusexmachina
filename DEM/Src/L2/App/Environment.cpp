@@ -82,7 +82,7 @@ bool CEnvironment::InitEngine()
 	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.Get());
 	RenderServer->GetDisplay().SetWindowIcon(IconName.Get());
 	RenderServer->GetDisplay().RequestDisplayMode(DisplayMode);
-	RenderServer->Open();
+	if (!RenderServer->Open()) FAIL;
 
 	SceneServer.Create();
 	//???do it in Open()?
@@ -90,6 +90,9 @@ bool CEnvironment::InitEngine()
 	n_assert(DefaultFrameShader->Init(*DataSrv->LoadHRD("data:shaders/Default.hrd")));
 	SceneServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
 	SceneServer->SetScreenFrameShaderID(CStrID("Default"));
+
+	DD.Create();
+	if (!DD->Open()) FAIL;
 
 	InputServer.Create();
 	InputServer->Open();
@@ -121,6 +124,9 @@ void CEnvironment::ReleaseEngine()
 
 	if (AudioServer.isvalid() && AudioServer->IsOpen()) AudioServer->Close();
 	AudioServer = NULL;
+
+	DD->Close();
+	DD = NULL;
 
 	SceneServer = NULL;
 
