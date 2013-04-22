@@ -12,7 +12,7 @@
 
 //!!!TWO RENDERERS DO THE SAME CALCULATIONS IN THE SAME FRAME! (Depth pass)
 
-//!!!Terrain lighting!
+//!!!TEST! Terrain lighting!
 
 namespace Render
 {

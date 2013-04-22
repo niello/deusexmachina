@@ -45,4 +45,7 @@ struct IDirect3DCubeTexture9;
 struct ID3DXEffect;
 struct ID3DXEffectPool;
 
+struct ID3DXFont;
+struct ID3DXSprite;
+
 #endif

@@ -164,11 +164,7 @@ void CPropActorPhysics::OnRenderDebug()
 			PhysEntity->GetDesiredAngularVelocity(),
 			PhysEntity->GetVelocity().len(),
 			PhysEntity->GetDesiredLinearVelocity().len());
-		vector4 textColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//rectangle textRect(vector2(0.5f, 0.0f), vector2(1.0f, 1.0f));
-		//uint textFlags = Top | Left | NoClip | ExpandTabs;
-		//GFX
-		//nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
+		DebugDraw->DrawText(text.Get(), 0.5f, 0.0f);
 	}
 }
 //---------------------------------------------------------------------

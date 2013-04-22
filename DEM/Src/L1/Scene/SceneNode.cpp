@@ -1,5 +1,7 @@
 #include "SceneNode.h"
 
+#include <Render/DebugDraw.h>
+
 namespace Scene
 {
 
@@ -92,25 +94,10 @@ void CSceneNode::UpdateWorldSpace()
 
 void CSceneNode::RenderDebug()
 {
-	/*
-	//!!!To some DebugRenderer / ShapeRenderer as method DrawCoordFrame(matrix44)!
-	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
-	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
-	static const vector4 ColorZ(0.0f, 0.0f, 1.0f, 1.0f);
-
-	nFixedArray<vector3> lines(2);
-	lines[1].x = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, WorldMatrix, ColorX);
-	lines[1].x = 0.f;
-	lines[1].y = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, WorldMatrix, ColorY);
-	lines[1].y = 0.f;
-	lines[1].z = 1.f;
-	nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, &(lines[0]), 3, WorldMatrix, ColorZ);
+	DebugDraw->DrawCoordAxes(WorldMatrix);
 
 	for (int i = 0; i < Child.Size(); ++i)
 		Child.ValueAtIndex(i)->RenderDebug();
-	*/
 }
 //---------------------------------------------------------------------
 

@@ -370,17 +370,10 @@ void CMotorSystem::RenderDebug()
 	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
 
 	if (pActor->MvmtStatus == AIMvmt_DestSet || pActor->MvmtStatus == AIMvmt_Stuck)
-	{
-		nFixedArray<vector3> lines(2);
-		lines[0] = DestPoint;
-		lines[0].y = pActor->Position.y;
-		lines[1] = DestPoint;
-		//lines[1].y += 1.f;
-		lines[1].y = pActor->Position.y + 1.f;
-		//nGfxServer2::Instance()->DrawShapePrimitives(
-		//	nGfxServer2::LineList, 1, &(lines[0]), 3, matrix44::identity,
-		//	pActor->MvmtStatus == AIMvmt_DestSet ? ColorNormal : ColorStuck);
-	}
+		DebugDraw->DrawLine(
+			vector3(DestPoint.x, pActor->Position.y, DestPoint.z),
+			vector3(DestPoint.x, pActor->Position.y + 1.f, DestPoint.z),
+			pActor->MvmtStatus == AIMvmt_DestSet ? ColorNormal : ColorStuck);
 
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
@@ -406,7 +399,6 @@ void CMotorSystem::RenderDebug()
 
 	nString text;
 	text.Format("Mvmt status: %s\nFace direction set: %s\n", pMvmt, pActor->FacingStatus == AIFacing_DirSet ? "true" : "false");
-	vector4 textColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	if (pActor->MvmtStatus == AIMvmt_DestSet)
 	{
@@ -430,9 +422,7 @@ void CMotorSystem::RenderDebug()
 		text += text2;
 	}
 
-	//rectangle textRect(vector2(0.05f, 0.1f), vector2(1.0f, 1.0f));
-	//uint textFlags = Top | Left | NoClip | ExpandTabs;
-	//nGfxServer2::Instance()->DrawText(text, textColor, textRect, textFlags, false);
+	DebugDraw->DrawText(text.Get(), 0.05f, 0.1f);
 }
 //---------------------------------------------------------------------
 
