@@ -9,6 +9,10 @@ __ImplementSingleton(CDebugDraw);
 
 bool CDebugDraw::Open()
 {
+	D3DXCreateSprite(RenderSrv->GetD3DDevice(), &pD3DXSprite);
+	D3DXCreateFont(RenderSrv->GetD3DDevice(), 16, 0, FW_NORMAL, 1, FALSE, RUSSIAN_CHARSET,
+		OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_MODERN | DEFAULT_PITCH, "Courier New", &pD3DXFont);
+
 	ShapeShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shapes"));
 	if (!ShapeShader->IsLoaded()) FAIL;
 
@@ -151,7 +155,7 @@ void CDebugDraw::Close()
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::Render()
+void CDebugDraw::RenderGeometry()
 {
 	if (!InstanceBuffer->IsValid())
 		n_assert(InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write));
@@ -166,7 +170,7 @@ void CDebugDraw::Render()
 	RenderSrv->SetIndexBuffer(Shapes->GetIndexBuffer());
 	for (int i = 0; i < ShapeCount; ++i)
 	{
-		nArray<CShapeInst>& Insts = ShapeInsts[i];
+		nArray<CDDShapeInst>& Insts = ShapeInsts[i];
 		if (!Insts.Size()) continue;
 
 		RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
@@ -177,7 +181,7 @@ void CDebugDraw::Render()
 			DWORD Count = n_min(MaxShapesPerDIP, Remain);
 			Remain -= Count;
 			void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
-			memcpy(pInstData, Insts.Begin(), Count * sizeof(CShapeInst));
+			memcpy(pInstData, Insts.Begin(), Count * sizeof(CDDShapeInst));
 			InstanceBuffer->Unmap();
 
 			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, Count);
@@ -205,13 +209,13 @@ void CDebugDraw::Render()
 
 		if (Tris.Size())
 		{
-			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST, Tris.Size() / 3, Tris.Begin(), sizeof(CVertex));
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST, Tris.Size() / 3, Tris.Begin(), sizeof(CDDVertex));
 			Tris.Clear();
 		}
 
 		if (Lines.Size())
 		{
-			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_LINELIST, Lines.Size() / 2, Lines.Begin(), sizeof(CVertex));
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_LINELIST, Lines.Size() / 2, Lines.Begin(), sizeof(CDDVertex));
 			Lines.Clear();
 		}
 
@@ -227,12 +231,59 @@ void CDebugDraw::Render()
 		n_assert(ShapeShader->Begin(true) == 1);
 		ShapeShader->BeginPass(0);
 
-		RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.Size(), Points.Begin(), sizeof(CVertex));
+		RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.Size(), Points.Begin(), sizeof(CDDVertex));
 		Points.Clear();
 
 		ShapeShader->EndPass();
 		ShapeShader->End();
 	}
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::RenderText()
+{
+	if (!Texts.Size() || !pD3DXFont) return;
+
+	pD3DXSprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE);
+
+	RECT r;
+	for (int i = 0; i < Texts.Size(); ++i)
+	{
+		const CDDText& Text = Texts[i];
+
+		DWORD Fmt = DT_NOCLIP | DT_EXPANDTABS;
+		if (Text.Wrap) Fmt |= DT_WORDBREAK;
+
+		switch (Text.HAlign)
+		{
+			case Align_Left:	Fmt |= DT_LEFT; break;
+			case Align_Center:	Fmt |= DT_CENTER; break;
+			case Align_Right:	Fmt |= DT_RIGHT; break;
+		}
+
+		switch (Text.VAlign)
+		{
+			case Align_Top:		Fmt |= DT_TOP; break;
+			case Align_VCenter:	Fmt |= DT_VCENTER; break;
+			case Align_Bottom:	Fmt |= DT_BOTTOM; break;
+		}
+
+		int X, Y;
+		RenderSrv->GetDisplay().GetAbsoluteXY(Text.Left, Text.Top, X, Y);
+		r.left = X;
+		r.top = Y;
+		RenderSrv->GetDisplay().GetAbsoluteXY(n_min(Text.Left + Text.Width, 1.f), 1.f, X, Y);
+		r.right = X;
+		r.bottom = Y;
+
+		D3DCOLOR Color = D3DCOLOR_COLORVALUE(Text.Color.x, Text.Color.y, Text.Color.z, Text.Color.w);
+
+		pD3DXFont->DrawTextA(pD3DXSprite, Text.Text.Get(), -1, &r, Fmt, Color);
+	}
+
+	pD3DXSprite->End();
+
+	Texts.Clear();
 }
 //---------------------------------------------------------------------
 

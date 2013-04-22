@@ -22,6 +22,7 @@ public:
 	static const _vector4 Red;
 	static const _vector4 Green;
 	static const _vector4 Blue;
+	static const _vector4 White;
 
 public:
     enum component

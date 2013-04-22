@@ -97,6 +97,7 @@ public:
 	const CDisplayMode&	GetDisplayMode() const { return DisplayMode; }
 	const CDisplayMode&	GetRequestedDisplayMode() const { return RequestedMode; }
 
+	void				GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
 	void				GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
 	bool				IsWindowOpen() const { return IsWndOpen; }
@@ -106,6 +107,22 @@ public:
 	HWND				GetParentHwnd() const { return hWndParent; }
 	ATOM				GetWndClass() const { return aWndClass; }
 };
+
+inline void CDisplay::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
+{
+	RECT r;
+	if (hWnd && GetClientRect(hWnd, &r))
+	{
+		XAbs = (int)(XRel * n_max(r.right - r.left, 1));
+		YAbs = (int)(YRel * n_max(r.bottom - r.top, 1));
+	}
+	else
+	{
+		XAbs = (int)(XRel * DisplayMode.Width);
+		YAbs = (int)(YRel * DisplayMode.Height);
+	}
+}
+//---------------------------------------------------------------------
 
 inline void CDisplay::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
 {

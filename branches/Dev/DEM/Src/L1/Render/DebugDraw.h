@@ -6,6 +6,8 @@
 #include <Render/Geometry/Mesh.h>
 #include <Render/Materials/Shader.h>
 
+#undef DrawText
+
 // Utility class for drawing common debug shapes
 
 //!!!MOVE LOWLEVEL code from CNavMeshDebugDraw!
@@ -16,13 +18,55 @@ namespace Render
 {
 #define DebugDraw Render::CDebugDraw::Instance()
 
+#pragma pack(push, 1)
+struct CDDShapeInst
+{
+	matrix44	World;
+	vector4		Color;
+};
+
+struct CDDVertex
+{
+	vector4		Pos;		// w - point size
+	vector4		Color;
+};
+#pragma pack(pop)
+
+enum EHAlign
+{
+	Align_Left,
+	Align_Center,
+	Align_Right,
+	Align_Justify
+};
+
+enum EVAlign
+{
+	Align_Top,
+	Align_VCenter,
+	Align_Bottom
+};
+
+struct CDDText
+{
+	nString	Text;
+	vector4	Color;
+	float	Left;
+	float	Top;
+	float	Width;
+	EHAlign	HAlign;
+	EVAlign	VAlign;
+	bool	Wrap;
+};
+
 class CDebugDraw: public Core::CRefCounted
 {
 	__DeclareSingleton(CDebugDraw);
 
-protected:
+public:
 
 	enum { MaxShapesPerDIP = 128 };
+
 	enum EShape
 	{
 		Box = 0,
@@ -31,32 +75,24 @@ protected:
 		ShapeCount
 	};
 
-	#pragma pack(push, 1)
-	struct CShapeInst
-	{
-		matrix44	World;
-		vector4		Color;
-	};
+protected:
 
-	struct CVertex
-	{
-		vector4		Pos;		// w - point size
-		vector4		Color;
-	};
-	#pragma pack(pop)
+	PVertexLayout			ShapeInstVL;
+	PVertexLayout			InstVL;
+	PVertexLayout			PrimVL;
+	PMesh					Shapes;
+	PVertexBuffer			InstanceBuffer;
 
-	PVertexLayout		ShapeInstVL;
-	PVertexLayout		InstVL;
-	PVertexLayout		PrimVL;
-	PMesh				Shapes;
-	PVertexBuffer		InstanceBuffer;
+	PShader					ShapeShader;
 
-	PShader				ShapeShader;
+	ID3DXFont*				pD3DXFont;
+	ID3DXSprite*			pD3DXSprite;
 
-	nArray<CShapeInst>	ShapeInsts[ShapeCount];
-	nArray<CVertex>		Points;
-	nArray<CVertex>		Lines;
-	nArray<CVertex>		Tris;
+	nArray<CDDShapeInst>	ShapeInsts[ShapeCount];
+	nArray<CDDVertex>		Points;
+	nArray<CDDVertex>		Lines;
+	nArray<CDDVertex>		Tris;
+	nArray<CDDText>			Texts;
 
 public:
 
@@ -65,7 +101,10 @@ public:
 
 	bool	Open();
 	void	Close();
-	void	Render();
+
+	//???!!!move code to renderers?!
+	void	RenderGeometry();
+	void	RenderText();
 
 	bool	DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color);
 	bool	DrawBox(const matrix44& Tfm, const vector4& Color);
@@ -87,7 +126,7 @@ public:
 	void	AddLineVertex(const vector3& Pos, const vector4& Color);
 	void	AddTriangleVertex(const vector3& Pos, const vector4& Color);
 
-	//???DrawText();?
+	bool	DrawText(const char* pText, float Left, float Top, const vector4& Color = vector4::White, float Width = 1.f, bool Wrap = true, EHAlign HAlign = Align_Left, EVAlign VAlign = Align_Top);
 	//???GetTextExtent();?
 };
 
@@ -102,7 +141,7 @@ inline bool CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const
 
 inline bool CDebugDraw::DrawBox(const matrix44& Tfm, const vector4& Color)
 {
-	CShapeInst& Inst = *ShapeInsts[Box].Reserve(1);
+	CDDShapeInst& Inst = *ShapeInsts[Box].Reserve(1);
 	Inst.World = Tfm;
 	Inst.Color = Color;
 	OK;
@@ -111,7 +150,7 @@ inline bool CDebugDraw::DrawBox(const matrix44& Tfm, const vector4& Color)
 
 inline bool CDebugDraw::DrawSphere(vector3 Pos, float R, const vector4& Color)
 {
-	CShapeInst& Inst = *ShapeInsts[Sphere].Reserve(1);
+	CDDShapeInst& Inst = *ShapeInsts[Sphere].Reserve(1);
 	Inst.World.set(	R, 0.f, 0.f, 0.f,
 					0.f, R, 0.f, 0.f,
 					0.f, 0.f, R, 0.f,
@@ -123,7 +162,7 @@ inline bool CDebugDraw::DrawSphere(vector3 Pos, float R, const vector4& Color)
 
 inline bool CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color)
 {
-	CShapeInst& Inst = *ShapeInsts[Cylinder].Reserve(1);
+	CDDShapeInst& Inst = *ShapeInsts[Cylinder].Reserve(1);
 	Inst.World.set(	R, 0.f, 0.f, 0.f,
 					0.f, R, 0.f, 0.f,
 					0.f, 0.f, Length, 0.f,
@@ -162,7 +201,7 @@ inline bool CDebugDraw::DrawCoordAxes(const matrix44& Tfm, bool DrawX, bool Draw
 
 inline bool CDebugDraw::DrawPoint(const vector3& Pos, const vector4& Color, float Size)
 {
-	CVertex* pV = Points.Reserve(1);
+	CDDVertex* pV = Points.Reserve(1);
 	pV->Pos = Pos;
 	pV->Pos.w = Size;
 	pV->Color = Color;
@@ -172,7 +211,7 @@ inline bool CDebugDraw::DrawPoint(const vector3& Pos, const vector4& Color, floa
 
 inline void CDebugDraw::AddLineVertex(const vector3& Pos, const vector4& Color)
 {
-	CVertex* pV = Lines.Reserve(1);
+	CDDVertex* pV = Lines.Reserve(1);
 	pV->Pos = Pos;
 	pV->Color = Color;
 }
@@ -180,9 +219,24 @@ inline void CDebugDraw::AddLineVertex(const vector3& Pos, const vector4& Color)
 
 inline void CDebugDraw::AddTriangleVertex(const vector3& Pos, const vector4& Color)
 {
-	CVertex* pV = Tris.Reserve(1);
+	CDDVertex* pV = Tris.Reserve(1);
 	pV->Pos = Pos;
 	pV->Color = Color;
+}
+//---------------------------------------------------------------------
+
+inline bool CDebugDraw::DrawText(const char* pText, float Left, float Top, const vector4& Color, float Width, bool Wrap, EHAlign HAlign, EVAlign VAlign)
+{
+	CDDText* pT = Texts.Reserve(1);
+	pT->Text = pText;
+	pT->Color = Color;
+	pT->Left = Left;
+	pT->Top = Top;
+	pT->Width = Width;
+	pT->Wrap = Wrap;
+	pT->HAlign = HAlign;
+	pT->VAlign = VAlign;
+	OK;
 }
 //---------------------------------------------------------------------
 

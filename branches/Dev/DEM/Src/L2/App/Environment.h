@@ -69,16 +69,6 @@ protected:
 	Ptr<AI::CAIServer>				AIServer;
 	Ptr<UI::CUIServer>				UIServer;
 
-/*
-	gfxServer = n_new(nD3D9Server);
-	gfxServer->AddRef();
-
-	if (gfxServer.isvalid()) gfxServer->Release();
-
-	nGfxServer2::Instance()->Trigger();
-			RenderSrv->GetDisplay().ProcessWindowMessages();
-*/
-
 	void RegisterAttributes();
 
 public:

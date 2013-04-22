@@ -44,30 +44,6 @@ typedef unsigned long  ulong;
 typedef unsigned int   uint;
 typedef unsigned short ushort;
 typedef unsigned char  uchar;
-typedef float float2[2];
-typedef float float3[3];
-typedef float float4[4];
-
-struct nFloat4
-{
-    float x;
-    float y;
-    float z;
-    float w;
-};
-
-struct nFloat3
-{
-    float x;
-    float y;
-    float z;
-};
-
-struct nFloat2
-{
-    float x;
-    float y;
-};
 
 typedef unsigned int nFourCC;
 typedef double nTime;
