@@ -4,8 +4,6 @@
 #include <Data/Stream.h>
 #include <dxerr.h>
 
-#include <Render/DebugDraw.h> //!!!DBG TMP! make singleton!
-
 namespace Render
 {
 ImplementRTTI(Render::CRenderServer, Core::CRefCounted);
@@ -15,7 +13,7 @@ bool CRenderServer::Open()
 {
 	n_assert(!_IsOpen);
 
-	pD3D = Direct3DCreate9(D3D_SDK_VERSION); //!!!in N3 opened in constructor! static Get, CanCreate etc!
+	pD3D = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!pD3D) FAIL;
 
 	Display.SetDisplayMode(Display.GetRequestedDisplayMode());
@@ -37,30 +35,9 @@ bool CRenderServer::Open()
 
 	n_assert(SUCCEEDED(D3DXCreateEffectPool(&pEffectPool)));
 
-	//!!!load shared shader!
-	//also load shaders from list
-
-	// get shared shader vars for transforms
-
-	// init renderers requested
-	// renderers must be singletons
-	// cause say if 2 shape renderers, they will not share shapes etc
-	// elements -> renderer -> commands to RenderSrv
-	// regular lights and models are filtered and added to model renderers per-batch
-	//???register renderers into dictionary CStrID -> CRenderer?
-	// UI, Text, Shape, NoLight, MultiLightOnePass, OneLightMultiPass, Particle
-	// particle shadows - smth like ShadowPass->ParticleRenderer->RenderShadows
-	//???soft shadows, transparent shadows (for semitranslucent objects)?
-
-	//???load frame shader(s)? on level View created (on default camera or scene creation?)
-
 	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnDisplayPaint);
 	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, CRenderServer, OnToggleFullscreenWindowed);
 	SUBSCRIBE_PEVENT(OnDisplaySizeChanged, CRenderServer, OnDisplaySizeChanged);
-
-	//!!!DBG TMP!
-	CDebugDraw DD;
-	DD.Open();
 
 	_IsOpen = true;
 	OK;

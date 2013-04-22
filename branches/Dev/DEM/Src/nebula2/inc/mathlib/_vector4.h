@@ -17,7 +17,11 @@
 class _vector4
 {
 public:
-    static const _vector4 zero;
+
+	static const _vector4 Zero;
+	static const _vector4 Red;
+	static const _vector4 Green;
+	static const _vector4 Blue;
 
 public:
     enum component

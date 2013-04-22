@@ -6,6 +6,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/Level.h>
 #include <Events/Subscription.h>
+#include <Render/DebugDraw.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
@@ -217,8 +218,6 @@ bool CPropTrigger::OnSave(const CEventBase& Event)
 
 bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 {
-	//GFX
-	/*
 	static const vector4 ColorOn(0.9f, 0.58f, 1.0f, 0.3f); // purple
 	static const vector4 ColorOff(0.0f, 0.0f, 0.0f, 0.08f); // black
 	
@@ -229,16 +228,13 @@ bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 		case CShape::Box:
 			Tfm.scale(vector3(ShapeParams.x, ShapeParams.y, ShapeParams.z));
 			Tfm *= GetEntity()->Get<matrix44>(Attr::Transform);
-			nGfxServer2::Instance()->DrawShape(nGfxServer2::Box, Tfm, Enabled ? ColorOn : ColorOff);
+			DebugDraw->DrawBox(Tfm, Enabled ? ColorOn : ColorOff);
 			break;
 		case CShape::Sphere:
-			Tfm.scale(vector3(ShapeParams.x, ShapeParams.x, ShapeParams.x));
-			Tfm *= GetEntity()->Get<matrix44>(Attr::Transform);
-			nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, Enabled ? ColorOn : ColorOff);
+			DebugDraw->DrawSphere(GetEntity()->Get<matrix44>(Attr::Transform).pos_component(), ShapeParams.x, Enabled ? ColorOn : ColorOff);
 			break;
 		default: break; //!!!capsule rendering!
 	}
-	*/
 
 	OK;
 }

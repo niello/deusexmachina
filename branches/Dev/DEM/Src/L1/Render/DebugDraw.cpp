@@ -1,15 +1,17 @@
 #include "DebugDraw.h"
 
 #include <Render/RenderServer.h>
-
-//!!!TMP!
 #include <d3dx9.h>
 
 namespace Render
 {
+__ImplementSingleton(CDebugDraw);
 
 bool CDebugDraw::Open()
 {
+	ShapeShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shapes"));
+	if (!ShapeShader->IsLoaded()) FAIL;
+
 	nArray<CVertexComponent> VC(1, 1);
 	CVertexComponent* pCmp = VC.Reserve(1);
 	pCmp->Format = CVertexComponent::Float3;
@@ -39,7 +41,20 @@ bool CDebugDraw::Open()
 	VC.Erase(0);
 	InstVL = RenderSrv->GetVertexLayout(VC);
 	InstanceBuffer.Create();
-	if (!InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write)) FAIL;
+
+	VC.Clear();
+	pCmp = VC.Reserve(2);
+	pCmp->Format = CVertexComponent::Float4;
+	pCmp->Semantic = CVertexComponent::Position;
+	pCmp->Index = 0;
+	pCmp->Stream = 0;
+	++pCmp;
+	pCmp->Format = CVertexComponent::Float4;
+	pCmp->Semantic = CVertexComponent::Color;
+	pCmp->Index = 0;
+	pCmp->Stream = 0;
+
+	PrimVL = RenderSrv->GetVertexLayout(VC);
 
 	Shapes = RenderSrv->MeshMgr.GetTypedResource(CStrID("DebugShapes"));
 	if (Shapes->IsLoaded()) OK;
@@ -124,11 +139,100 @@ void CDebugDraw::Close()
 {
 	for (int i = 0; i < ShapeCount; ++i)
 		ShapeInsts[i].Clear();
+	Tris.Clear();
+	Lines.Clear();
+	Points.Clear();
 
 	ShapeInstVL = NULL;
 	InstVL = NULL;
+	PrimVL = NULL;
 	Shapes = NULL;
 	InstanceBuffer = NULL;
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::Render()
+{
+	if (!InstanceBuffer->IsValid())
+		n_assert(InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write));
+
+	ShapeShader->SetTech(ShapeShader->GetTechByFeatures(RenderSrv->GetFeatureFlagInstanced()));
+
+	n_assert(ShapeShader->Begin(true) == 1);
+	ShapeShader->BeginPass(0);
+
+	RenderSrv->SetVertexBuffer(0, Shapes->GetVertexBuffer());
+	RenderSrv->SetVertexLayout(ShapeInstVL);
+	RenderSrv->SetIndexBuffer(Shapes->GetIndexBuffer());
+	for (int i = 0; i < ShapeCount; ++i)
+	{
+		nArray<CShapeInst>& Insts = ShapeInsts[i];
+		if (!Insts.Size()) continue;
+
+		RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
+
+		DWORD Remain = Insts.Size();
+		while (Remain > 0)
+		{
+			DWORD Count = n_min(MaxShapesPerDIP, Remain);
+			Remain -= Count;
+			void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
+			memcpy(pInstData, Insts.Begin(), Count * sizeof(CShapeInst));
+			InstanceBuffer->Unmap();
+
+			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, Count);
+			RenderSrv->Draw();
+		}
+	}
+
+	RenderSrv->SetInstanceBuffer(1, NULL, 0);
+
+	ShapeShader->EndPass();
+	ShapeShader->End();
+
+	for (int i = 0; i < ShapeCount; ++i)
+		ShapeInsts[i].Clear();
+
+	RenderSrv->SetVertexLayout(PrimVL);
+
+	if (Lines.Size() || Tris.Size())
+	{
+		DWORD FeatFlagDefault = RenderSrv->ShaderFeatureStringToMask("Default");
+		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlagDefault));
+
+		n_assert(ShapeShader->Begin(true) == 1);
+		ShapeShader->BeginPass(0);
+
+		if (Tris.Size())
+		{
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST, Tris.Size() / 3, Tris.Begin(), sizeof(CVertex));
+			Tris.Clear();
+		}
+
+		if (Lines.Size())
+		{
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_LINELIST, Lines.Size() / 2, Lines.Begin(), sizeof(CVertex));
+			Lines.Clear();
+		}
+
+		ShapeShader->EndPass();
+		ShapeShader->End();
+	}
+
+	if (Points.Size())
+	{
+		DWORD FeatFlag = RenderSrv->ShaderFeatureStringToMask("Point");
+		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlag));
+
+		n_assert(ShapeShader->Begin(true) == 1);
+		ShapeShader->BeginPass(0);
+
+		RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.Size(), Points.Begin(), sizeof(CVertex));
+		Points.Clear();
+
+		ShapeShader->EndPass();
+		ShapeShader->End();
+	}
 }
 //---------------------------------------------------------------------
 

@@ -78,7 +78,7 @@ void CHinge2Joint::RenderDebug()
 		dJointGetHinge2Anchor(ODEJointID, CurrAnchor);
 		Tfm.scale(vector3(0.1f, 0.1f, 0.1f));
 		Tfm.translate(vector3(CurrAnchor[0], CurrAnchor[1], CurrAnchor[2]));
-		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, GetDebugVisualizationColor());
+		DebugDraw->DrawSphere(Tfm, GetDebugVisualizationColor());
 	}
 	*/
 }

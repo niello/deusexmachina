@@ -1,5 +1,7 @@
 #include "SphereShape.h"
 
+#include <Render/DebugDraw.h>
+
 namespace Physics
 {
 ImplementRTTI(Physics::CSphereShape, Physics::CShape);
@@ -34,17 +36,8 @@ bool CSphereShape::Attach(dSpaceID SpaceID)
 
 void CSphereShape::RenderDebug(const matrix44& ParentTfm)
 {
-	//GFX
-	/*
 	if (IsAttached())
-	{
-		matrix44 Tfm;
-		Tfm.scale(vector3(Radius, Radius, Radius));
-		Tfm *= Transform;
-		Tfm *= ParentTfm;
-		nGfxServer2::Instance()->DrawShape(nGfxServer2::Sphere, Tfm, GetDebugVisualizationColor());
-	}
-	*/
+		DebugDraw->DrawSphere(Transform.pos_component() + ParentTfm.pos_component(), Radius, GetDebugVisualizationColor());
 }
 //---------------------------------------------------------------------
 

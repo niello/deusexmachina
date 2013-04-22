@@ -294,12 +294,7 @@ bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir
 void CPhysicsServer::RenderDebug()
 {
 	n_assert(CurrLevel);
-	//GFX
-	/*
-	nGfxServer2::Instance()->BeginShapes();
 	CurrLevel->RenderDebug();
-	nGfxServer2::Instance()->EndShapes();
-	*/
 }
 //---------------------------------------------------------------------
 

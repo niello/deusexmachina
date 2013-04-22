@@ -118,12 +118,7 @@ void CGameServer::RemoveAllManagers()
 
 void CGameServer::RenderDebug()
 {
-	//GFX
-	/*
-	nGfxServer2::Instance()->BeginShapes();
 	EventMgr->FireEvent(CStrID("OnRenderDebug"));
-	nGfxServer2::Instance()->EndShapes();
-	*/
 }
 //---------------------------------------------------------------------
 

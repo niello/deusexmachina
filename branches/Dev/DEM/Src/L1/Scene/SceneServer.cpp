@@ -44,11 +44,7 @@ void CSceneServer::RenderCurrentScene()
 void CSceneServer::RenderDebug()
 {
 	if (!pCurrScene) return;
-
-	//GFX
-	//nGfxServer2::Instance()->BeginShapes();
-	//pCurrScene->GetRootNode().RenderDebug();
-	//nGfxServer2::Instance()->EndShapes();
+	pCurrScene->GetRootNode().RenderDebug();
 }
 //---------------------------------------------------------------------
 
