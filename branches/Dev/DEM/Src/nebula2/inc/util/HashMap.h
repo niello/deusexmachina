@@ -75,6 +75,31 @@ protected:
 
 public:
 
+	class CIterator
+	{
+	private:
+
+		CHashMap<TVal>*	pMap;
+		size_t			BucketIdx;
+		Node*			pNode;
+
+	public:
+
+		CIterator(CHashMap<TVal>* Map): BucketIdx(0), pMap(Map) { n_assert(pMap); pNode = (pMap->buckets && pMap->capacity > 0) ? pMap->buckets[0] : NULL; }
+
+		const char*	GetKey() const { n_assert(pNode); return (const char*)pNode->key; }
+		size_t		GetKeyLength() const { n_assert(pNode); return pNode->len; }
+		const TVal&	GetValue() const { n_assert(pNode); return pNode->value; }
+		bool		IsEnd() const { return !pNode; }
+		CIterator&	operator ++()
+		{
+			pNode = pNode->next;
+			while (!pNode && ++BucketIdx < pMap->capacity)
+				pNode = pMap->buckets[BucketIdx];
+			return *this;
+		}
+	};
+
 	CHashMap(const TVal& defaultValue = TVal(), int capacity = DEFAULT_SIZE);
     ~CHashMap();
 
@@ -91,6 +116,8 @@ public:
     TVal&		At(const void* key, size_t len);
     void		Remove(const void* key, size_t len);
 	bool		Contains(const void* key, size_t len) const { return !!Find(Hash(key, len), key, len); }
+
+	CIterator	Begin() { return CIterator(this); }
 
 	int			Size() const { return count; }
 

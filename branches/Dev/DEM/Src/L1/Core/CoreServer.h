@@ -23,9 +23,10 @@ private:
 
 	bool					_IsOpen;
 	static nList			RefCountedList;
-	CHashMap<Data::CData>	Globals; //!!!Need iterability!
 
 public:
+
+	CHashMap<Data::CData>	Globals;
 
 	CCoreServer();
 	~CCoreServer();

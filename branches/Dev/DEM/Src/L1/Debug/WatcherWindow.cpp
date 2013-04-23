@@ -109,22 +109,18 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 }
 //---------------------------------------------------------------------
 
-void CWatcherWindow::AddAllVars()
+void CWatcherWindow::AddAllGlobals()
 {
-	//!!!get all globals!
-	/*
 	int i = Watched.Size();
-	for (nEnv* pCurrVar = (nEnv*)pVars->GetHead(); pCurrVar; pCurrVar = (nEnv*)pCurrVar->GetSucc())
-		if (pCurrVar->nRoot::IsA(pNEnvClass))
-		{
-			AddWatched(NEnv, pCurrVar->GetName());
-			++i;
-		}
+	for (CHashMap<CData>::CIterator It = CoreSrv->Globals.Begin(); !It.IsEnd(); ++It, ++i)
+	{
+		nString Str(It.GetKey(), It.GetKeyLength());
+		AddWatched(DEM, Str.Get());
+	}
 
 	for (int j = i; j < Watched.Size(); ++j)
 		Watched[j].Clear();
 	Watched.Resize(i);
-	*/
 }
 //---------------------------------------------------------------------
 
@@ -134,7 +130,7 @@ bool CWatcherWindow::OnNewWatchedAccept(const CEGUI::EventArgs& e)
 	if (!pName || !*pName) OK;
 
 	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild(pWnd->getName() + "/RBNEnv");
-	AddWatched(pRBNEnv->isSelected() ? NEnv : Lua, pName);
+	AddWatched(pRBNEnv->isSelected() ? DEM : Lua, pName);
 
 	OK;
 }
@@ -186,7 +182,7 @@ bool CWatcherWindow::OnClearClick(const CEGUI::EventArgs& e)
 
 bool CWatcherWindow::OnAddVarsClick(const CEGUI::EventArgs& e)
 {
-	AddAllVars();
+	AddAllGlobals();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -201,7 +197,7 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 	{
 		if (!CheckMatch || n_strmatch(It->VarName, pPattern))
 		{
-			if (It->Type == NEnv)
+			if (It->Type == DEM)
 			{
 				CData CurrVar;
 
@@ -209,39 +205,39 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 				{
 					if (CurrVar.IsA<bool>())
 					{
-						It->pTypeItem->setText("N2 bool");
+						It->pTypeItem->setText("DEM bool");
 						It->pValueItem->setText(nString::FromBool(CurrVar.GetValue<bool>()).Get());
 					}
 					else if (CurrVar.IsA<int>())
 					{
-						It->pTypeItem->setText("N2 int");
+						It->pTypeItem->setText("DEM int");
 						It->pValueItem->setText(nString::FromInt(CurrVar.GetValue<int>()).Get());
 					}
 					else if (CurrVar.IsA<float>())
 					{
-						It->pTypeItem->setText("N2 float");
+						It->pTypeItem->setText("DEM float");
 						It->pValueItem->setText(nString::FromFloat(CurrVar.GetValue<float>()).Get());
 					}
 					else if (CurrVar.IsA<nString>())
 					{
-						It->pTypeItem->setText("N2 string");
+						It->pTypeItem->setText("DEM string");
 						It->pValueItem->setText((CEGUI::utf8*)CurrVar.GetValue<nString>().Get());
 					}
 					else if (CurrVar.IsA<vector4>())
 					{
-						It->pTypeItem->setText("N2 vector4");
+						It->pTypeItem->setText("DEM vector4");
 						It->pValueItem->setText(nString::FromVector4(CurrVar.GetValue<vector4>()).Get());
 					}
 					else
 					{
-						It->pTypeItem->setText("N2 <unknown>");
+						It->pTypeItem->setText("DEM <unknown>");
 						It->pValueItem->setText("<unknown>");
 					}
 					//}
 				}
 				else
 				{
-					It->pTypeItem->setText("N2");
+					It->pTypeItem->setText("DEM");
 					It->pValueItem->setText("<not found in /sys/var>");
 				}
 			}
