@@ -37,6 +37,7 @@ public:
 
 	nString(): pString(NULL), Len(0), LocalLen(0) {}
 	nString(const char* pSrc): pString(NULL), Len(0), LocalLen(0) { Set(pSrc); }
+	nString(const char* pSrc, uint SrcLength): pString(NULL), Len(0), LocalLen(0) { Set(pSrc, SrcLength); }
 	nString(const nString& Other): pString(NULL), Len(0) { pLocalString[0] = 0; Set(Other.Get(), Other.Length()); }
 	~nString() { Clear(); }
 
