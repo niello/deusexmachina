@@ -69,7 +69,7 @@ void CMotorSystem::Update()
 		}
 		case AIMvmt_DestSet:
 		{
-			if (pActor->IsAtPoint(DestPoint))
+			if (pActor->IsAtPoint(DestPoint, false))
 			{
 				ResetMovement();
 				break;
@@ -428,10 +428,14 @@ void CMotorSystem::RenderDebug()
 
 void CMotorSystem::SetDest(const vector3& Dest)
 {
-	DestPoint = Dest;
-	pActor->MvmtStatus = AIMvmt_DestSet;
-	FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
-	//pLastClosestObstacle = NULL;
+	if (pActor->IsAtPoint(Dest, false)) ResetMovement();
+	else
+	{
+		DestPoint = Dest;
+		pActor->MvmtStatus = AIMvmt_DestSet;
+		FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
+		//pLastClosestObstacle = NULL;
+	}
 }
 //---------------------------------------------------------------------
 

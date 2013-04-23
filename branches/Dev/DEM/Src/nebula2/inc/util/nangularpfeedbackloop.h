@@ -179,7 +179,7 @@ nAngularPFeedbackLoop::Update(nTime curTime)
     {
         // get angular distance error
         float error = n_angulardistance(this->state, this->goal);
-        if (n_abs(error) > N_TINY)
+        if (n_abs(error) > TINY)
         {
             this->state = n_normangle(this->state - (error * this->gain * this->stepSize));
             this->time += this->stepSize;

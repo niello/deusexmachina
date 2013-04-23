@@ -89,8 +89,8 @@ inline CLight::CLight():
 	Intensity(0.5f),
 	Range(1.f),
 	InvRange(1.f),
-	ConeInner(N_PI / 3.f),
-	ConeOuter(N_PI / 2.f)
+	ConeInner(PI / 3.f),
+	ConeOuter(PI / 2.f)
 {
 	CosHalfInner = n_cos(ConeInner * 0.5f);
 	CosHalfOuter = n_cos(ConeOuter * 0.5f);
@@ -107,7 +107,7 @@ inline void CLight::SetRange(float NewRange)
 
 inline void CLight::SetSpotInnerAngle(float NewAngle)
 {
-	n_assert(NewAngle > 0.f && NewAngle < N_PI);
+	n_assert(NewAngle > 0.f && NewAngle < PI);
 	n_assert_dbg(NewAngle < ConeOuter);
 	ConeInner = NewAngle;
 	CosHalfInner = n_cos(ConeInner * 0.5f);
@@ -116,7 +116,7 @@ inline void CLight::SetSpotInnerAngle(float NewAngle)
 
 inline void CLight::SetSpotOuterAngle(float NewAngle)
 {
-	n_assert(NewAngle > 0.f && NewAngle < N_PI);
+	n_assert(NewAngle > 0.f && NewAngle < PI);
 	ConeOuter = NewAngle;
 	CosHalfOuter = n_cos(ConeOuter * 0.5f);
 }

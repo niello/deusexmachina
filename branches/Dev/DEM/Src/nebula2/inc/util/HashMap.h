@@ -74,11 +74,8 @@ protected:
     Node** buckets; //???lists or sorted arrays?
 
 public:
-    /// default constructor
-    //CHashMap(const TVal& defaultValue = TVal());
-    /// constructor with initial hash capacity
-    CHashMap(const TVal& defaultValue = TVal(), int capacity = DEFAULT_SIZE);
-    /// destructor
+
+	CHashMap(const TVal& defaultValue = TVal(), int capacity = DEFAULT_SIZE);
     ~CHashMap();
 
 	void		Add(const char* key, const TVal& value) { Add(key, strlen(key), value); }
