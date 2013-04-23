@@ -129,7 +129,7 @@ public:
 
 	void			RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
 
-	bool			IsAtPoint(const vector3& Point) const;
+	bool			IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
 
 	CMemSystem&		GetMemSystem() { return MemSystem; }
 	CNavSystem&		GetNavSystem() { return NavSystem; }
@@ -149,10 +149,10 @@ inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 }
 //---------------------------------------------------------------------
 
-inline bool CPropActorBrain::IsAtPoint(const vector3& Point) const
+inline bool CPropActorBrain::IsAtPoint(const vector3& Point, bool RespectReachDistances) const
 {
-	const float MinReach = MinReachDist - ArrivalTolerance;
-	const float MaxReach = MaxReachDist + ArrivalTolerance;
+	const float MinReach = (RespectReachDistances ? MinReachDist : 0.f) - ArrivalTolerance;
+	const float MaxReach = (RespectReachDistances ? MaxReachDist : 0.f) + ArrivalTolerance;
 	const float OffsetX = Position.x - Point.x;
 	const float OffsetZ = Position.z - Point.z;
 	const float SqDistToDest2D = OffsetX * OffsetX + OffsetZ * OffsetZ;

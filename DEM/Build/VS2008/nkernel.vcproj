@@ -153,59 +153,6 @@
 	</References>
 	<Files>
 		<Filter
-			Name="kernel"
-			Filter="cpp;c;cxx;cc;h;hxx;hcc"
-			>
-			<File
-				RelativePath="..\..\Src\nebula2\src\kernel\ndbgalloc.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\src\kernel\nkernel.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_nkernelserver;N_NEW=n_new_nkernelserver;N_INITCMDS=n_initcmds_nkernelserver"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_nkernelserver;N_NEW=n_new_nkernelserver;N_INITCMDS=n_initcmds_nkernelserver"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\kernel\nsystem.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\kernel\ntypes.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="mathlib"
 			Filter="cpp;c;cxx;cc;h;hxx;hcc"
 			>
@@ -364,14 +311,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\nebula2\inc\mathlib\sphere.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\transform33.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\transform44.h"
 					>
 				</File>
 				<File
@@ -576,11 +515,35 @@
 			Filter="cpp;c;cxx;cc;h;hxx;hcc"
 			>
 			<File
+				RelativePath="..\..\Src\nebula2\inc\util\nangularpfeedbackloop.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\nebula2\inc\util\nbucket.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\nebula2\inc\util\ndictionary.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\nebula2\inc\util\nlinebuffer.h"
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\nebula2\inc\util\npfeedbackloop.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\nebula2\inc\util\nringbuffer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\nebula2\inc\util\PairT.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\nebula2\inc\util\Stack.h"
 				>
 			</File>
 			<Filter
@@ -696,10 +659,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nmsgnode.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\nebula2\inc\util\nnode.h"
 					>
 				</File>
@@ -742,39 +701,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="utils"
-				Filter="cpp;c;cxx;cc;h;hxx;hcc"
-				>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nangularpfeedbackloop.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nbucket.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\ndictionary.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\npfeedbackloop.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\PairT.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\Stack.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\ThreadVar.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="ncrc"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
@@ -804,6 +730,50 @@
 				</File>
 			</Filter>
 		</Filter>
+		<File
+			RelativePath="..\..\Src\nebula2\src\kernel\ndbgalloc.cc"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					PreprocessorDefinitions="N_INIT=n_init_ndebug;N_NEW=n_new_ndebug;N_INITCMDS=n_initcmds_ndebug"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\Src\nebula2\src\kernel\nkernel.cc"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					PreprocessorDefinitions="N_INIT=n_init_nkernelserver;N_NEW=n_new_nkernelserver;N_INITCMDS=n_initcmds_nkernelserver"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					PreprocessorDefinitions="N_INIT=n_init_nkernelserver;N_NEW=n_new_nkernelserver;N_INITCMDS=n_initcmds_nkernelserver"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\Src\nebula2\inc\kernel\ntypes.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

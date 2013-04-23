@@ -47,7 +47,6 @@ void CActionGoto::Deactivate(CActor* pActor)
 	{
 		SubAction->Deactivate(pActor);
 		SubAction = NULL;
-		//SubActionID = CStrID::Empty;
 	}
 
 	if (pActor->NavStatus != AINav_Done &&
@@ -84,7 +83,6 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 		if (!SubAction->Activate(pActor))				
 		{
 			SubAction = NULL;
-			//SubActionID = CStrID::Empty;
 			pActor->GetNavSystem().Reset();
 			return Failure;
 		}
@@ -96,6 +94,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 	{
 		SubAction->Deactivate(pActor);
 		SubAction = NULL;
+		SubActionID = CStrID::Empty;
 		if (Result == Success)
 		{
 			pActor->GetNavSystem().EndEdgeTraversal();

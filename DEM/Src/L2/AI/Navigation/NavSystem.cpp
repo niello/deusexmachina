@@ -319,8 +319,10 @@ void CNavSystem::Update(float FrameTime)
 			//nqueue = addToOptQueue(ag, queue, nqueue, OPT_MAX_AGENTS);
 			TopologyOptTime += FrameTime;
 			if (TopologyOptTime >= OPT_TIME_THR)
+			{
 				Corridor.optimizePathTopology(pNavQuery, pNavFilter);
-			TopologyOptTime = 0.f;
+				TopologyOptTime = 0.f;
+			}
 		}
 
 		//???here or in action?
@@ -331,7 +333,7 @@ void CNavSystem::Update(float FrameTime)
 		pActor->NavStatus != AINav_Failed &&
 		pActor->NavStatus != AINav_Invalid)
 	{
-		if (pActor->IsAtPoint(DestPoint)) Reset();
+		if (pActor->IsAtPoint(DestPoint, true)) Reset();
 	}
 }
 //---------------------------------------------------------------------

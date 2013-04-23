@@ -162,11 +162,11 @@ float nEnvelopeCurve::GetValue(float pos) const
     {
         if (Sine == this->modulationFunc)
         {
-            value += n_sin(pos * N_PI * 2 * this->frequency) * this->amplitude;
+            value += n_sin(pos * PI * 2 * this->frequency) * this->amplitude;
         }
         else
         {
-            value += n_cos(pos * N_PI * 2 * this->frequency) * this->amplitude;
+            value += n_cos(pos * PI * 2 * this->frequency) * this->amplitude;
         }
     }
 

@@ -24,12 +24,9 @@
 #define INV_PI (0.31830988618379067153776752677335f)
 #endif
 
-#define N_PI PI
-
 #ifndef TINY
 #define TINY (0.0000001f)
 #endif
-#define N_TINY TINY
 
 template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
 template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }

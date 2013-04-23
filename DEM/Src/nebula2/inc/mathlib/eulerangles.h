@@ -121,13 +121,13 @@ public:
         {
             x = 0;
             y = 2.0f * n_atan2(q.x, q.w);
-            z = N_PI * 0.5f;
+            z = PI * 0.5f;
         }
         else if (f_test < -0.49999)
         {
             x = 0;
             y = - 2.0f * n_atan2(q.x, q.w);
-            z = - N_PI * 0.5f;
+            z = - PI * 0.5f;
         }
         else
         {
