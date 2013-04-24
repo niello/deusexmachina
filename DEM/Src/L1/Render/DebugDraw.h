@@ -115,7 +115,7 @@ public:
 	bool	DrawLine(const vector3& P1, const vector3& P2, const vector4& Color);
 	bool	DrawArrow();
 	bool	DrawCross();
-	bool	DrawBoxWireframe();
+	bool	DrawBoxWireframe(const bbox3& Box, const vector4& Color);
 	bool	DrawArc();
 	bool	DrawCircle();
 	bool	DrawGridXZ();
@@ -186,6 +186,32 @@ inline bool CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, const vec
 {
 	AddLineVertex(P1, Color);
 	AddLineVertex(P2, Color);
+	OK;
+}
+//---------------------------------------------------------------------
+
+inline bool CDebugDraw::DrawBoxWireframe(const bbox3& Box, const vector4& Color)
+{
+	vector3 mmm = Box.corner_point(0);
+	vector3 mMm = Box.corner_point(1);
+	vector3 MMm = Box.corner_point(2);
+	vector3 Mmm = Box.corner_point(3);
+	vector3 MMM = Box.corner_point(4);
+	vector3 mMM = Box.corner_point(5);
+	vector3 mmM = Box.corner_point(6);
+	vector3 MmM = Box.corner_point(7);
+	DrawLine(mmm, Mmm, Color);
+	DrawLine(mmm, mMm, Color);
+	DrawLine(mmm, mmM, Color);
+	DrawLine(MMM, MMm, Color);
+	DrawLine(MMM, mMM, Color);
+	DrawLine(MMM, MmM, Color);
+	DrawLine(mMm, mMM, Color);
+	DrawLine(mMm, MMm, Color);
+	DrawLine(mMM, mmM, Color);
+	DrawLine(Mmm, MmM, Color);
+	DrawLine(mmM, MmM, Color);
+	DrawLine(MMm, Mmm, Color);
 	OK;
 }
 //---------------------------------------------------------------------

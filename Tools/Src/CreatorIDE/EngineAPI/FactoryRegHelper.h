@@ -48,6 +48,8 @@
 
 #include <Render/Renderers/ModelRenderer.h>
 #include <Render/Renderers/TerrainRenderer.h>
+#include <Render/Renderers/DebugGeomRenderer.h>
+#include <Render/Renderers/DebugTextRenderer.h>
 #include <UI/UIRenderer.h>
 
 // OTHER ===========================================

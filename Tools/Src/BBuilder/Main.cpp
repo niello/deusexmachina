@@ -725,6 +725,9 @@ int main(int argc, const char** argv)
 			continue;
 		}
 
+		nString FullPath = ("dlg:" + FileName).ExtractDirName();
+		if (!DataSrv->DirectoryExists(FullPath)) DataSrv->CreateDirectory(FullPath);
+
 		//???!!!use scheme?!
 		DataSrv->SavePRM("dlg:" + FileName + ".prm", Params);
 		
@@ -771,6 +774,9 @@ int main(int argc, const char** argv)
 		}
 
 		FileName += ".prm";
+
+		nString FullPath = ("physics:" + FileName).ExtractDirName();
+		if (!DataSrv->DirectoryExists(FullPath)) DataSrv->CreateDirectory(FullPath);
 
 		//???!!!use scheme?!
 		DataSrv->SavePRM("physics:" + FileName, Desc);
