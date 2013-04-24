@@ -146,10 +146,6 @@ bool CToolNavRegions::OnClick(const Events::CEventBase& Event)
 // Partially copied from InputGeom::drawConvexVolumes
 void CToolNavRegions::Render()
 {
-	//GFX
-	/*
-	nGfxServer2::Instance()->BeginShapes();
-
 	AI::CNavMeshDebugDraw DD;
 
 	// Created
@@ -246,9 +242,6 @@ void CToolNavRegions::Render()
 		}
 		DD.end();
 	}
-
-	nGfxServer2::Instance()->EndShapes();
-	*/
 }
 //---------------------------------------------------------------------
 

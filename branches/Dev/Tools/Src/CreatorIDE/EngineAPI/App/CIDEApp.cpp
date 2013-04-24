@@ -14,7 +14,6 @@
 #include <Prop/PropEditorCamera.h>
 #include <Input/Prop/PropInput.h>
 #include <Game/Mgr/EnvQueryManager.h>
-#include <Physics/Prop/PropTransformable.h>
 #include <Physics/Prop/PropAbstractPhysics.h>
 #include <Physics/CharEntity.h>
 #include <Physics/Composite.h>

@@ -107,10 +107,6 @@ bool CToolNavOffmesh::OnClick(const Events::CEventBase& Event)
 // Partially copied from InputGeom::drawOffMeshConnections
 void CToolNavOffmesh::Render()
 {
-	//GFX
-	/*
-	nGfxServer2::Instance()->BeginShapes();
-
 	AI::CNavMeshDebugDraw DD;
 
 	const float AgentRadius = 0.3f; //!!!m_sample->getAgentRadius();
@@ -143,9 +139,6 @@ void CToolNavOffmesh::Render()
 	DD.end();
 
 	DD.depthMask(true);
-
-	nGfxServer2::Instance()->EndShapes();
-	*/
 }
 //---------------------------------------------------------------------
 

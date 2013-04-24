@@ -34,7 +34,7 @@ void CPropEditorCamera::SetupFromTransform()
 	vector3 ViewerDir = Tfm.pos_component() - COI;
 	ViewerDir.norm();
 	Angles.set(ViewerDir);
-	Angles.theta -= N_PI * 0.5f;
+	Angles.theta -= PI * 0.5f;
 	if (ViewerDir.y < 0) Angles.theta = -Angles.theta;
 }
 //---------------------------------------------------------------------

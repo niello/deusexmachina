@@ -3,8 +3,10 @@
 #include <App/CIDEApp.h>
 #include <Events/EventManager.h>
 #include <Physics/Event/SetTransform.h>
+#include <Physics/Prop/PropAbstractPhysics.h>
 #include <Input/InputServer.h>
 #include <Render/RenderServer.h>
+#include <Render/DebugDraw.h>
 #include <Scene/SceneServer.h>
 #include <Game/Mgr/FocusManager.h>
 
@@ -113,27 +115,17 @@ bool CToolTransform::OnBeginFrame(const Events::CEventBase& Event)
 
 void CToolTransform::Render()
 {
-	static const vector4 ColorX(1.0f, 0.0f, 0.0f, 1.0f);
-	static const vector4 ColorY(0.0f, 1.0f, 0.0f, 1.0f);
-	static const vector4 ColorZ(0.0f, 0.0f, 1.0f, 1.0f);
-
 	if (CIDEApp->SelectedEntity.isvalid())
 	{
-		const matrix44& Tfm = CIDEApp->SelectedEntity->Get<matrix44>(Attr::Transform);
+		DebugDraw->DrawCoordAxes(CIDEApp->SelectedEntity->Get<matrix44>(Attr::Transform));
 
-		vector3 Lines[6];
-		Lines[1].x = 1.f;
-		Lines[3].y = 1.f;
-		Lines[5].z = 1.f;
-
-		//GFX
-		/*
-		nGfxServer2::Instance()->BeginShapes();
-		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 0, 3, Tfm, ColorX);
-		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 2, 3, Tfm, ColorY);
-		nGfxServer2::Instance()->DrawShapePrimitives(nGfxServer2::LineList, 1, Lines + 4, 3, Tfm, ColorZ);
-		nGfxServer2::Instance()->EndShapes();
-		*/
+		Properties::CPropAbstractPhysics* pPhysProp = CIDEApp->SelectedEntity->FindProperty<Properties::CPropAbstractPhysics>();
+		if (pPhysProp)
+		{
+			bbox3 AABB;
+			pPhysProp->GetAABB(AABB);
+			DebugDraw->DrawBoxWireframe(AABB, vector4::White);
+		}
 	}
 }
 //---------------------------------------------------------------------

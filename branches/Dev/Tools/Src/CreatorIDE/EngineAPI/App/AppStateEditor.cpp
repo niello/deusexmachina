@@ -72,6 +72,7 @@ CStrID CAppStateEditor::OnFrame()
 
 	if (RenderSrv->BeginFrame())
 	{
+		if (pActiveTool) pActiveTool->Render();
 		SceneSrv->RenderCurrentScene();
 		if (RenderDbgGfx) SceneSrv->RenderDebug();
 		if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
