@@ -5,7 +5,10 @@
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Bone.h>
-#include <Animation/AnimControllerMocap.h> //???virtualize controller creation in clip later?
+#include <Animation/KeyframeClip.h>
+#include <Animation/MocapClip.h>
+#include <Animation/AnimControllerKeyframe.h>
+#include <Animation/AnimControllerMocap.h>
 #include <Data/DataServer.h>
 
 #include <Loading/EntityFactory.h>
@@ -23,6 +26,7 @@ END_ATTRS_REGISTRATION
 namespace Anim
 {
 	bool LoadMocapClipFromNAX2(const nString& FileName, PMocapClip OutClip);
+	bool LoadKeyframeClipFromKFA(const nString& FileName, PKeyframeClip OutClip);
 }
 
 namespace Properties
@@ -55,8 +59,25 @@ void CPropAnimation::Activate()
 		{
 			CParam& Prm = Desc->Get(i);
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
-			Anim::PMocapClip Clip = SceneSrv->AnimationMgr.GetTypedResource(ClipRsrcID);
-			if (!Clip->IsLoaded()) n_assert(LoadMocapClipFromNAX2(Clip->GetUID().CStr(), Clip));
+			Anim::PAnimClip Clip = SceneSrv->AnimationMgr.GetTypedResource(ClipRsrcID);
+			if (!Clip.isvalid())
+			{
+				nString FileName = ClipRsrcID.CStr();
+				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
+					Clip = n_new(Anim::CMocapClip(ClipRsrcID));
+				else if (FileName.CheckExtension("kfa"))
+					Clip = n_new(Anim::CKeyframeClip(ClipRsrcID));
+				n_verify(SceneSrv->AnimationMgr.AddResource(Clip));
+			}
+			if (!Clip->IsLoaded())
+			{
+				nString FileName = Clip->GetUID().CStr();
+				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
+					LoadMocapClipFromNAX2(FileName, (Anim::CMocapClip*)Clip.get_unsafe());
+				else if (FileName.CheckExtension("kfa"))
+					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.get_unsafe());
+			}
+			n_assert(Clip->IsLoaded());
 			Clips.Add(Prm.GetName(), Clip);
 		}
 	}
@@ -138,13 +159,21 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 
 		if (Task.State == Task_Active)
 		{
-			int KeyIndex;
-			float IpolFactor;
-			Task.Clip->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
+			if (Task.Clip->IsA<Anim::CMocapClip>())
+			{
+				int KeyIndex;
+				float IpolFactor;
+				((Anim::CMocapClip*)Task.Clip.get())->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
 
-			//!!!if not mocap clip, set time directly to controllers!
-			for (int j = 0; j < Task.Ctlrs.Size(); ++j)
-				((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
+				for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+					((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
+			}
+			else
+			{
+				float Time = Task.Clip->AdjustTime(Task.CurrTime, Task.Loop);
+				for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+					((Anim::CAnimControllerKeyframe*)Task.Ctlrs[j])->SetTime(Time);
+			}
 		}
 	}
 
@@ -155,15 +184,10 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
 							  float Weight, float FadeInTime, float FadeOutTime)
 {
-	//!!!SEPARATE TO MOCAP AND KF CODE!
-	//???virtual Clip->CreateController(NodeID/Sampler)?
-
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
-	Anim::PMocapClip Clip = Clips.ValueAtIndex(ClipIdx);
-
-	const Anim::CMocapClip::CSamplerList& Samplers = Clip->GetSamplerList();
-	if (!Samplers.Size()) return INVALID_INDEX; // Invalid task ID
+	Anim::PAnimClip Clip = Clips.ValueAtIndex(ClipIdx);
+	if (!Clip->GetSamplerCount()) return INVALID_INDEX;
 
 	int TaskID = INVALID_INDEX;
 	CAnimTask* pTask = NULL;
@@ -193,17 +217,14 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	//???If task is not looping, clamp fadeout time to fit into the clip length (with speed factor)
 	//see StopAnim
 
-	for (int i = 0; i < Samplers.Size(); ++i)
+	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
 	{
-		int NodeIdx = Nodes.FindIndex(Samplers.KeyAtIndex(i));
+		Anim::CBoneID Target = Clip->GetSamplerTarget(i);
+		int NodeIdx = Nodes.FindIndex(Target);
 		if (NodeIdx == INVALID_INDEX) continue;
 		Scene::CSceneNode* pNode = Nodes.ValueAtIndex(NodeIdx);
-
-		//???virtual Clip->CreateController(NodeID/Sampler)?
-		Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
-		Ctlr->SetSampler(&Samplers.ValueAtIndex(i));
-		pNode->Controller = Ctlr;
-		pTask->Ctlrs.Append(Ctlr.get_unsafe());
+		pNode->Controller = Clip->CreateController(i);
+		pTask->Ctlrs.Append(pNode->Controller.get_unsafe());
 
 		//!!!
 		// If still no blend controller, create and setup

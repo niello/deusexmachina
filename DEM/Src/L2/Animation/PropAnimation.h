@@ -3,10 +3,13 @@
 #define __DEM_L2_PROP_ANIM_H__
 
 #include <Game/Property.h>
-#include <Animation/MocapClip.h>
+#include <Animation/Anim.h>
+#include <Animation/AnimClip.h>
 #include <DB/AttrID.h>
+#include <util/ndictionary.h>
 
-// Animation property manages node animation controllers, clip playback and blending
+// Animation property manages node animation controllers, clip playback and blending.
+// This variation supports bones and mocap clips.
 
 namespace Attr
 {
@@ -41,24 +44,26 @@ private:
 
 	struct CAnimTask
 	{
-		CStrID				ClipID;
-		Anim::PMocapClip	Clip;
+		typedef nArray<Scene::CAnimController*> CCtlrList;
 
-		nArray<Scene::CAnimController*> Ctlrs;
+		CStrID			ClipID;
+		Anim::PAnimClip	Clip;
 
-		ETaskState			State;
+		CCtlrList		Ctlrs;
 
-		float				Speed;
-		float				FadeInTime;
-		float				FadeOutTime;
+		ETaskState		State;
+
+		float			Speed;
+		float			FadeInTime;
+		float			FadeOutTime;
 		//DWORD Priority, float Weight
 
-		float				CurrTime;
+		float			CurrTime;
 
-		bool				Loop;
+		bool			Loop;
 	};
 
-	nDictionary<CStrID, Anim::PMocapClip>			Clips;
+	nDictionary<CStrID, Anim::PAnimClip>			Clips;
 	nDictionary<Anim::CBoneID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
 
 	nArray<CAnimTask>								Tasks;

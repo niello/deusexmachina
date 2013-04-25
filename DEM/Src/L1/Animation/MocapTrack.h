@@ -13,7 +13,7 @@ namespace Anim
 {
 class CMocapClip;
 
-class CMocapTrack
+class CMocapTrack: public CAnimTrack
 {
 public:
 

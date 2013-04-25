@@ -566,10 +566,6 @@
 					RelativePath="..\..\Src\nebula2\inc\util\nkeyarray.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\npriorityarray.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="nhash"

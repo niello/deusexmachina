@@ -1173,10 +1173,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Resources\ResourceLoader.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Resources\ResourceManager.cpp"
 				>
 			</File>
@@ -1569,7 +1565,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Animation\AnimClip.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Animation\AnimClip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\AnimControllerKeyframe.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\AnimControllerKeyframe.h"
 				>
 			</File>
 			<File
@@ -1589,7 +1597,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Animation\AnimTrack.h"
+				RelativePath="..\..\Src\L1\Animation\KeyframeClip.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\KeyframeClip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\KeyframeTrack.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\KeyframeTrack.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\LoadKeyframeClipFromKFA.cpp"
 				>
 			</File>
 			<File

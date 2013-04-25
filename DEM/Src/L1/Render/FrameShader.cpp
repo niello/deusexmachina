@@ -27,7 +27,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			CStrID ShaderID = List[i].GetName();
 			nString FileName = ShaderPathMangled + List[i].GetValue<nString>();
 
-			PShader Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+			PShader Shader = RenderSrv->ShaderMgr.GetOrCreateTypedResource(ShaderID);
 			n_assert(!Shader->IsLoaded()); //!!!now just to check!
 
 			const char* pExt = FileName.GetExtension();
@@ -70,7 +70,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
 		}
 	}
 

@@ -76,7 +76,7 @@ public:
 	ECPUAccess				Access;
 	//int						SkippedMips;
 
-	CTexture(CStrID ID, Resources::IResourceManager* pHost);
+	CTexture(CStrID ID);
 	virtual ~CTexture() { if (IsLoaded()) Unload(); }
 
 	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType);
@@ -106,8 +106,8 @@ public:
 
 typedef Ptr<CTexture> PTexture;
 
-inline CTexture::CTexture(CStrID ID, Resources::IResourceManager* pHost):
-	CResource(ID, pHost),
+inline CTexture::CTexture(CStrID ID):
+	CResource(ID),
 	Usage(Usage_Immutable),
 	Access(CPU_NoAccess),
 	Type(InvalidType),

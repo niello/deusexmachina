@@ -16,7 +16,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	if (ShaderID.IsValid())
 	{
 		Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
-		if (!Shader->IsLoaded()) FAIL;
+		if (!Shader.isvalid() || !Shader->IsLoaded()) FAIL;
 	}
 	else FAIL;
 
@@ -46,7 +46,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
 		}
 	}
 
@@ -529,7 +529,7 @@ CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
 	{
 		nString PatchName;
 		PatchName.Format("Patch%dx%d", Size, Size);
-		Patch = RenderSrv->MeshMgr.GetTypedResource(CStrID(PatchName.Get()));
+		Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.Get()));
 		PatchMeshes.Add(Size, Patch.get());
 	}
 	else Patch = PatchMeshes.ValueAtIndex(Idx);

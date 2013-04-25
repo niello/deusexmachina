@@ -3,35 +3,64 @@
 #define __DEM_L1_ANIM_CLIP_H__
 
 #include <Resources/Resource.h>
-#include <Animation/AnimTrack.h>
+#include <Animation/Anim.h>
+#include <util/ndictionary.h>
 
 // Animation clip is a set of tracks (curves), which defines single animation for a set of points
 // in space. Typically it consists of up to 3 tracks * number of animated bones in target sceleton.
 // Clip can have any number of tracks and target bones, so it can animate a single scene node as well.
+// Tracks are grouped in samplers. One sampler affects one target, referencing it by a node relative
+// path or by a bone ID. TODO: revisit & generalize.
+
+namespace Scene
+{
+	class CSceneNode;
+	typedef Ptr<class CAnimController> PAnimController;
+}
 
 namespace Anim
 {
 
-//!!!can subclass CAnimClipKeyframed & CAnimClipMocap! allow the first to load both formats
-
 class CAnimClip: public Resources::CResource
 {
+	DeclareRTTI;
+
 protected:
 
-	// bone&channel-to-track mapping (to curve track indices)
-	float					Duration;
-	//bool					Loop;
-	nFixedArray<CAnimTrack>	Tracks;
+	CSamplerList	Samplers;
+
+	bool			RefByBone;	// If false, references target nodes by path. Later only by nodes?
+	float			Duration;
 
 public:
 
-	CAnimClip(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost) {}
+	CAnimClip(CStrID ID): CResource(ID) {}
 
-	bool				Setup();
-	virtual void		Unload();
+	virtual Scene::PAnimController	CreateController(DWORD SamplerIdx) const = 0;
+	float							AdjustTime(float Time, bool Loop) const;
+	DWORD							GetSamplerCount() const { return Samplers.Size(); }
+	CBoneID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAtIndex(Idx); }
+	float							GetDuration() const { return Duration; }
 };
 
 typedef Ptr<CAnimClip> PAnimClip;
+
+inline float CAnimClip::AdjustTime(float Time, bool Loop) const
+{
+	if (Loop)
+	{
+		Time = n_fmod(Time, Duration);
+		if (Time < 0.f) Time += Duration;
+	}
+	else
+	{
+		if (Time < 0.f) Time = 0.f;
+		else if (Time > Duration) Time = Duration;
+	}
+
+	return Time;
+}
+//---------------------------------------------------------------------
 
 }
 

@@ -39,7 +39,7 @@ protected:
 
 public:
 
-	CMesh(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost) {}
+	CMesh(CStrID ID): CResource(ID) {}
 
 	bool				Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups);
 	virtual void		Unload();

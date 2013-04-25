@@ -4,7 +4,7 @@
 
 #include <Scene/Scene.h>
 #include <Render/FrameShader.h>
-#include <Animation/MocapClip.h>
+#include <Animation/AnimClip.h>
 #include <Resources/ResourceManager.h>
 #include <Data/Pool.h>
 #include <util/ndictionary.h>
@@ -34,7 +34,7 @@ private:
 public:
 
 	//!!!need mgr for both anim & mocap clips, they should have the same base class!
-	Resources::CResourceManager<Anim::CMocapClip>	AnimationMgr;
+	Resources::CResourceManager<Anim::CAnimClip>	AnimationMgr;
 
 	CSceneServer(): pCurrScene(NULL) { __ConstructSingleton; }
 	~CSceneServer() { __DestructSingleton; }

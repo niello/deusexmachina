@@ -24,7 +24,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 	{
 		case 'LRTM': // MTRL
 		{
-			Material = RenderSrv->MaterialMgr.GetTypedResource(DataReader.Read<CStrID>());
+			Material = RenderSrv->MaterialMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
 		case 'SRAV': // VARS
@@ -54,7 +54,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				DataReader.Read(VarName);
 				CShaderVar& Var = ShaderVars.Add(VarName);
 				Var.SetName(VarName);
-				Var.Value = RenderSrv->TextureMgr.GetTypedResource(DataReader.Read<CStrID>());
+				Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			}
 			OK;
 		}
@@ -67,7 +67,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 		}
 		case 'HSEM': // MESH
 		{
-			Mesh = RenderSrv->MeshMgr.GetTypedResource(DataReader.Read<CStrID>());
+			Mesh = RenderSrv->MeshMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
 		case 'RGSM': // MSGR

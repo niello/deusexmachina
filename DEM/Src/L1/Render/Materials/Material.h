@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	CMaterial(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), FeatureFlags(0) {}
+	CMaterial(CStrID ID): CResource(ID), FeatureFlags(0) {}
 
 	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars);
 	virtual void			Unload();
