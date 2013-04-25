@@ -46,7 +46,7 @@ protected:
 
 public:
 
-	CShader(CStrID ID, Resources::IResourceManager* pHost): CResource(ID, pHost), pEffect(NULL), hCurrTech(NULL) {}
+	CShader(CStrID ID): CResource(ID), pEffect(NULL), hCurrTech(NULL) {}
 	virtual ~CShader() { if (IsLoaded()) Unload(); }
 
 	bool			Setup(ID3DXEffect* pFX);

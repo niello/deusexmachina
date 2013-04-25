@@ -128,7 +128,7 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 		AbsHeight = (DWORD)(Height * (float)RenderSrv->GetBackBufferHeight());
 	}
 
-	RTTexture = RenderSrv->TextureMgr.GetTypedResource(TextureID);
+	RTTexture = RenderSrv->TextureMgr.GetOrCreateTypedResource(TextureID);
 	n_assert2(!RTTexture->IsLoaded(), "Render target specifies TextureID of already loaded texture");
 
 	D3DMULTISAMPLE_TYPE D3DMSAAType;

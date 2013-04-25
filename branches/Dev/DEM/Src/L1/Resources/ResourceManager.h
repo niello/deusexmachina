@@ -22,8 +22,6 @@ class IResourceManager
 {
 protected:
 
-	friend class CResource; // For ReleaseResource
-
 	DWORD UIDCounter;
 
 	//!!!???some pool?! if pool, hash table can store weak ptrs
@@ -32,27 +30,53 @@ protected:
 
 	//PResource Placeholder;
 
-	virtual PResource	CreateResource(CStrID UID) = 0;
-	void				ReleaseResource(CResource* pResource);
-
 public:
 
-	IResourceManager(): UIDCounter (0) {}
+	IResourceManager(): UIDCounter(0) {}
 
-	PResource	GetResource(CStrID UID);
+	PResource GetResource(CStrID UID);
 };
 
 template<class TRsrc>
 class CResourceManager: public IResourceManager
 {
-protected:
-
-	virtual PResource	CreateResource(CStrID UID) { return n_new(TRsrc)(UID, this); }
-
 public:
 
+	bool				AddResource(Ptr<TRsrc> NewRsrc);
 	Ptr<TRsrc>			GetTypedResource(CStrID UID) { return (TRsrc*)GetResource(UID).get_unsafe(); }
+	Ptr<TRsrc>			GetOrCreateTypedResource(CStrID UID);
 };
+
+template<class TRsrc>
+bool CResourceManager<TRsrc>::AddResource(Ptr<TRsrc> NewRsrc)
+{
+	if (!NewRsrc.isvalid() || !NewRsrc->GetUID().IsValid()) FAIL;
+	IDToResource.Add(NewRsrc->GetUID(), (CResource*)NewRsrc.get_unsafe());
+	OK;
+}
+//---------------------------------------------------------------------
+
+template<class TRsrc>
+Ptr<TRsrc> CResourceManager<TRsrc>::GetOrCreateTypedResource(CStrID UID)
+{
+	PResource* ppRsrc = IDToResource.Get(UID);
+	if (ppRsrc) return (TRsrc*)(*ppRsrc).get_unsafe();
+
+	if (!UID.IsValid())
+	{
+		char ID[20];
+		sprintf(ID, "Rsrc%d", UIDCounter++);
+		UID = CStrID(ID);
+		n_assert_dbg(!IDToResource.Contains(UID));
+	}
+
+	if (IDToResource.Contains(UID)) return NULL;
+
+	Ptr<TRsrc> New = n_new(TRsrc)(UID);
+	IDToResource.Add(UID, New.get_unsafe());
+	return New;
+}
+//---------------------------------------------------------------------
 
 }
 

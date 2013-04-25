@@ -39,6 +39,10 @@ public:
 
 	bool operator ==(LPCSTR Str) const { return !strcmp(String, Str); }
 	bool operator !=(LPCSTR Str) const { return !!strcmp(String, Str); }
+	bool operator >(LPCSTR Str) const { return strcmp(String, Str) > 0; }
+	bool operator <(LPCSTR Str) const { return strcmp(String, Str) < 0; }
+	bool operator >=(LPCSTR Str) const { return strcmp(String, Str) >= 0; }
+	bool operator <=(LPCSTR Str) const { return strcmp(String, Str) <= 0; }
 	CSimpleString& operator =(LPCSTR Str) { Set(Str); return *this; }
 	CSimpleString& operator =(const CSimpleString& Str) { Set((LPCSTR)Str); return *this; }
 };

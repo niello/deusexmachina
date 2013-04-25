@@ -60,7 +60,7 @@ bool CDebugDraw::Open()
 
 	PrimVL = RenderSrv->GetVertexLayout(VC);
 
-	Shapes = RenderSrv->MeshMgr.GetTypedResource(CStrID("DebugShapes"));
+	Shapes = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID("DebugShapes"));
 	if (Shapes->IsLoaded()) OK;
 
 	ID3DXMesh* pDXMesh[ShapeCount];

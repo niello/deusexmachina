@@ -5,11 +5,4 @@
 namespace Resources
 {
 ImplementRTTI(Resources::CResource, Core::CRefCounted);
-
-//CResource::~CResource()
-//{
-//	pManager->ReleaseResource(this);
-//}
-////---------------------------------------------------------------------
-
 }

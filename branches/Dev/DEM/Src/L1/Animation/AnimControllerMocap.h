@@ -3,7 +3,6 @@
 #define __DEM_L1_ANIM_CTLR_MOCAP_H__
 
 #include <Scene/AnimController.h>
-#include <Animation/MocapClip.h>
 
 // Animation controller, that samples transform from mocap clip tracks.
 // It involves mocap-specific optimization of calculating keyframes from
@@ -17,15 +16,15 @@ class CAnimControllerMocap: public Scene::CAnimController
 protected:
 
 	//???store clip ptr? sampler of invalid clip will cause crash! sampler ptr can be used as a cache
-	const CMocapClip::CSampler*	pSampler;
-	int							KeyIndex;
-	float						IpolFactor;
+	const CSampler*	pSampler;
+	int				KeyIndex;
+	float			IpolFactor;
 
 public:
 
 	CAnimControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
 
-	void			SetSampler(const CMocapClip::CSampler* _pSampler);
+	void			SetSampler(const CSampler* _pSampler);
 	void			SetSamplingParams(int KeyIdx, float Factor) { KeyIndex = KeyIdx; IpolFactor = Factor; }
 	void			Clear();
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);

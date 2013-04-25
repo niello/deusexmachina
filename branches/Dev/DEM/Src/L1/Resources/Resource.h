@@ -11,7 +11,6 @@
 namespace Resources
 {
 class IResourceManager;
-typedef Ptr<class CResourceLoader> PResourceLoader;
 
 enum EResourceState
 {
@@ -29,16 +28,12 @@ protected:
 
 	CStrID				UID;
 	EResourceState		State;
-	IResourceManager*	pManager;
-
-	CResource(CStrID ID, IResourceManager* pHost): UID(ID), pManager(pHost), State(Rsrc_NotLoaded) {} // Create only by manager
 
 public:
 
+	CResource(CStrID ID): UID(ID), State(Rsrc_NotLoaded) {} // Create only by manager
 	virtual ~CResource() {}
 
-	bool			Load(LPCSTR pFileName, CResourceLoader* pLoader); //???or request mgr to load?
-	bool			Reload();
 	virtual void	Unload() { State = Rsrc_NotLoaded; }
 
 	CStrID			GetUID() const { return UID; }

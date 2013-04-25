@@ -25,7 +25,7 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 	{
 		case 'DLDC': // CDLD
 		{
-			HeightMap = RenderSrv->TextureMgr.GetTypedResource(DataReader.Read<CStrID>());
+			HeightMap = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
 		case 'XSST': // TSSX
@@ -62,7 +62,7 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				DataReader.Read(VarName);
 				CShaderVar& Var = ShaderVars.Add(VarName);
 				Var.SetName(VarName);
-				Var.Value = RenderSrv->TextureMgr.GetTypedResource(DataReader.Read<CStrID>());
+				Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			}
 			OK;
 		}

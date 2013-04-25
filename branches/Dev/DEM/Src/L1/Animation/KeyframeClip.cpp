@@ -1,36 +1,28 @@
-#include "MocapClip.h"
+#include "KeyframeClip.h"
 
-#include <Animation/AnimControllerMocap.h>
+#include <Animation/AnimControllerKeyframe.h>
 
 namespace Anim
 {
-ImplementRTTI(Anim::CMocapClip, Anim::CAnimClip);
+ImplementRTTI(Anim::CKeyframeClip, Anim::CAnimClip);
 
-bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& TrackMapping, vector4* _pKeys,
-					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
+bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<Data::CSimpleString>& TrackMapping, float Length)
 {
-	n_assert(_pKeys);
-
 	if (State == Resources::Rsrc_Loaded) Unload();
 
-	pKeys = _pKeys;
 	Tracks = _Tracks;
 
-	KeysPerCurve = _KeysPerCurve;
-	KeyStride = _KeyStride;
-	InvKeyTime = 1.f / _KeyTime;
-	Duration = (KeysPerCurve - 1) * _KeyTime;
+	Duration = Length;
 
 	for (int i = 0; i < Tracks.Size(); ++i)
 	{
-		Tracks[i].pOwnerClip = this;
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
 		switch (Tracks[i].Channel)
 		{
 			case Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
 			case Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
 			case Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
-			default: n_error("CMocapClip::Setup() -> Unsupported channel for an SRT sampler track!");
+			default: n_error("CKeyframeClip::Setup() -> Unsupported channel for an SRT sampler track!");
 		};
 	}
 
@@ -39,7 +31,7 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<int>& Tr
 }
 //---------------------------------------------------------------------
 
-void CMocapClip::Unload()
+void CKeyframeClip::Unload()
 {
 	State = Resources::Rsrc_NotLoaded;
 
@@ -48,13 +40,12 @@ void CMocapClip::Unload()
 
 	Samplers.Clear();
 	Tracks.Clear();
-	SAFE_DELETE_ARRAY(pKeys);
 }
 //---------------------------------------------------------------------
 
-Scene::PAnimController CMocapClip::CreateController(DWORD SamplerIdx) const
+Scene::PAnimController CKeyframeClip::CreateController(DWORD SamplerIdx) const
 {
-	Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
+	Anim::PAnimControllerKeyframe Ctlr = n_new(Anim::CAnimControllerKeyframe);
 	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
 	return Ctlr.get_unsafe();
 }

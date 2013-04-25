@@ -15,7 +15,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 	if (!OutMaterial.isvalid()) FAIL;
 
 	CStrID ShaderID = In.Get<CStrID>(CStrID("Shader"));
-	PShader Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
+	PShader Shader = RenderSrv->ShaderMgr.GetOrCreateTypedResource(ShaderID);
 	DWORD FeatFlags = RenderSrv->ShaderFeatureStringToMask(In.Get<nString>(CStrID("FeatureFlags")));
 
 	CShaderVarMap VarMap;
@@ -42,7 +42,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = VarMap.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
 		}
 	}
 

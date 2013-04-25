@@ -94,7 +94,8 @@ void CSceneNode::UpdateWorldSpace()
 
 void CSceneNode::RenderDebug()
 {
-	DebugDraw->DrawCoordAxes(WorldMatrix);
+	if (pParent)
+		DebugDraw->DrawLine(pParent->WorldMatrix.pos_component(), WorldMatrix.pos_component(), vector4::White);
 
 	for (int i = 0; i < Child.Size(); ++i)
 		Child.ValueAtIndex(i)->RenderDebug();
