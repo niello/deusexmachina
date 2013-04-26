@@ -62,7 +62,7 @@ public:
 
 	CSceneNode*	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode.get_unsafe(); }
 	CSceneNode&	GetRootNode() { return *RootNode.get_unsafe(); }
-	void		SetMainCamera(CCamera* pNewCamera) { MainCamera = pNewCamera ? pNewCamera : DefaultCamera; }
+	void		SetMainCamera(CCamera* pNewCamera);
 	CCamera*	GetMainCamera() const { return MainCamera.get_unsafe(); }
 };
 

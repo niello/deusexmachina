@@ -3,11 +3,13 @@
 #define __DEM_L1_ANIM_MOCAP_TRACK_H__
 
 #include <Animation/Anim.h>
-#include <StdDEM.h>
 #include <mathlib/quaternion.h>
 
-// Mocap track is almost the same as animation track, but stores a bit less data, since some
-// values are shared among all tracks of the same mocap clip.
+// Animation track is a set of float4 keys, forming a curve. Being sampled in a certain time,
+// it returns single interpolated float4 value, that can be used as any transformation component
+// or as any other value that changes in time.
+// Mocap track references key data stored in a clip. Mocap keys use relatively more memory than
+// regular keyframe data, but some calculations may be performed once per frame for all tracks.
 
 namespace Anim
 {
@@ -18,9 +20,7 @@ class CMocapTrack: public CAnimTrack
 public:
 
 	CMocapClip*	pOwnerClip;
-	vector4		ConstValue;
 	int			FirstKey;
-	EChannel	Channel;
 
 	CMocapTrack(): pOwnerClip(NULL), FirstKey(INVALID_INDEX) {}
 

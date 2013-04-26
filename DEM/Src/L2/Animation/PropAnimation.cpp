@@ -25,7 +25,7 @@ END_ATTRS_REGISTRATION
 
 namespace Anim
 {
-	bool LoadMocapClipFromNAX2(const nString& FileName, PMocapClip OutClip);
+	bool LoadMocapClipFromNAX2(const nString& FileName, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip);
 	bool LoadKeyframeClipFromKFA(const nString& FileName, PKeyframeClip OutClip);
 }
 
@@ -49,6 +49,39 @@ void CPropAnimation::Activate()
 {
 	Game::CProperty::Activate();
 
+	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAnimation, OnPropsActivated);
+	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAnimation, ExposeSI);
+	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
+}
+//---------------------------------------------------------------------
+
+void CPropAnimation::Deactivate()
+{
+	UNSUBSCRIBE_EVENT(OnPropsActivated);
+	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnBeginFrame);
+
+	//!!!abort all tasks and destroy controllers!
+	Tasks.Clear();
+
+	Clips.Clear();
+	Nodes.Clear();
+
+	Game::CProperty::Deactivate();
+}
+//---------------------------------------------------------------------
+
+bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
+{
+	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	if (!pProp || !pProp->GetNode()) OK; // Nothing to animate
+
+	// Remap bone indices to node relative pathes
+	nDictionary<int, CStrID> Bones;
+	Bones.Add(-1, CStrID::Empty);
+	AddChildrenToMapping(pProp->GetNode(), pProp->GetNode(), Bones);
+
+//!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	PParams Desc;
 	const nString& AnimDesc = GetEntity()->Get<nString>(Attr::AnimDesc);
 	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("game:Anim/") + AnimDesc + ".prm");
@@ -73,7 +106,7 @@ void CPropAnimation::Activate()
 			{
 				nString FileName = Clip->GetUID().CStr();
 				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
-					LoadMocapClipFromNAX2(FileName, (Anim::CMocapClip*)Clip.get_unsafe());
+					LoadMocapClipFromNAX2(FileName, Bones, (Anim::CMocapClip*)Clip.get_unsafe());
 				else if (FileName.CheckExtension("kfa"))
 					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.get_unsafe());
 			}
@@ -81,54 +114,34 @@ void CPropAnimation::Activate()
 			Clips.Add(Prm.GetName(), Clip);
 		}
 	}
-
-	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAnimation, OnPropsActivated);
-	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
-}
-//---------------------------------------------------------------------
-
-void CPropAnimation::Deactivate()
-{
-	UNSUBSCRIBE_EVENT(OnPropsActivated);
-	UNSUBSCRIBE_EVENT(OnBeginFrame);
-
-	//!!!abort all tasks and destroy controllers!
-	Tasks.Clear();
-
-	Clips.Clear();
-	Nodes.Clear();
-
-	Game::CProperty::Deactivate();
-}
-//---------------------------------------------------------------------
-
-bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
-{
-	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
-	if (!pProp || !pProp->GetNode()) OK; // Nothing to animate
-
-	//Nodes.Add(CStrID::Empty, pProp->GetNode());
-	Nodes.Add(-1, pProp->GetNode());
-	AddChildrenToMapping(pProp->GetNode());
+//!!!to Activate() -
 
 //!!!DBG TMP!
-	StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
+	if (Clips.Size())
+		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParentNode)
+void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones)
 {
-	for (DWORD i = 0; i < pParentNode->GetChildCount(); ++i)
+	for (DWORD i = 0; i < pParent->GetChildCount(); ++i)
 	{
-		Scene::CSceneNode* pNode = pParentNode->GetChild(i);
+		Scene::CSceneNode* pNode = pParent->GetChild(i);
 		Scene::CBone* pBone = pNode->FindFirstAttr<Scene::CBone>();
 		if (pBone)
 		{
-			//Nodes.Add(pNode->GetName(), pNode);
-			Nodes.Add(pBone->GetIndex(), pNode);
-			if (!pBone->IsTerminal()) AddChildrenToMapping(pNode);
+			static const nString StrDot(".");
+			nString Name = pNode->GetName().CStr();
+			Scene::CSceneNode* pCurrParent = pParent;
+			while (pCurrParent && pCurrParent != pRoot)
+			{
+				Name = pCurrParent->GetName().CStr() + StrDot + Name;
+				pCurrParent = pCurrParent->GetParent();
+			}
+			Bones.Add(pBone->GetIndex(), CStrID(Name.Get()));
+			if (!pBone->IsTerminal()) AddChildrenToMapping(pNode, pRoot, Bones);
 		}
 	}
 }
@@ -189,6 +202,10 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	Anim::PAnimClip Clip = Clips.ValueAtIndex(ClipIdx);
 	if (!Clip->GetSamplerCount()) return INVALID_INDEX;
 
+	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	if (!pProp || !pProp->GetNode()) return INVALID_INDEX; // Nothing to animate
+	Scene::CSceneNode* pRoot = pProp->GetNode();
+
 	int TaskID = INVALID_INDEX;
 	CAnimTask* pTask = NULL;
 	for (int i = 0; i < Tasks.Size(); ++i)
@@ -209,10 +226,16 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
 	{
-		Anim::CBoneID Target = Clip->GetSamplerTarget(i);
+		Scene::CSceneNode* pNode;
+		CStrID Target = Clip->GetSamplerTarget(i);
 		int NodeIdx = Nodes.FindIndex(Target);
-		if (NodeIdx == INVALID_INDEX) continue;
-		Scene::CSceneNode* pNode = Nodes.ValueAtIndex(NodeIdx);
+		if (NodeIdx == INVALID_INDEX)
+		{
+			pNode = pRoot->GetChild(Target.CStr());
+			if (pNode) Nodes.Add(Target, pNode);
+			else continue;
+		}
+		else pNode = Nodes.ValueAtIndex(NodeIdx);
 		pNode->Controller = Clip->CreateController(i);
 		pTask->Ctlrs.Append(pNode->Controller.get_unsafe());
 
@@ -259,6 +282,14 @@ void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
 	// else stop right here:
 	// Deactivate and destroy all controllers of the task
 	// If it leaves some blend controller with one controller inside, collapse it
+}
+//---------------------------------------------------------------------
+
+float CPropAnimation::GetAnimLength(CStrID ClipID) const
+{
+	int ClipIdx = Clips.FindIndex(ClipID);
+	if (ClipIdx == INVALID_INDEX) return 0.f;
+	return Clips.ValueAtIndex(ClipIdx)->GetDuration();
 }
 //---------------------------------------------------------------------
 

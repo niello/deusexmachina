@@ -5,7 +5,7 @@ namespace Anim
 
 void CKeyframeTrack::Sample(float Time, vector3& Out)
 {
-	n_assert(Time > 0.f); // && Time <= Clip->Duration
+	n_assert(Time >= 0.f); // && Time <= Clip->Duration
 
 	if (!Keys.Size())
 	{
@@ -38,7 +38,7 @@ void CKeyframeTrack::Sample(float Time, vector3& Out)
 
 void CKeyframeTrack::Sample(float Time, vector4& Out)
 {
-	n_assert(Time > 0.f); // && Time <= Clip->Duration
+	n_assert(Time >= 0.f); // && Time <= Clip->Duration
 
 	if (!Keys.Size())
 	{
@@ -71,7 +71,7 @@ void CKeyframeTrack::Sample(float Time, vector4& Out)
 
 void CKeyframeTrack::Sample(float Time, quaternion& Out)
 {
-	n_assert(Time > 0.f); // && Time <= Clip->Duration
+	n_assert(Time >= 0.f); // && Time <= Clip->Duration
 
 	if (!Keys.Size())
 	{

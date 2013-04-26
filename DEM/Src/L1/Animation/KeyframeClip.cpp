@@ -6,7 +6,7 @@ namespace Anim
 {
 ImplementRTTI(Anim::CKeyframeClip, Anim::CAnimClip);
 
-bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<Data::CSimpleString>& TrackMapping, float Length)
+bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping, float Length)
 {
 	if (State == Resources::Rsrc_Loaded) Unload();
 
