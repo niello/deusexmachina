@@ -62,18 +62,11 @@ namespace HrdLib
                         _linePosition = idx;
                     }
 
-                    var st = new Statement();
-                    int intVal;
-                    if (int.TryParse(str, out intVal))
-                    {
+                    var st = new Statement {Value = str};
+                    if (str[0] >= '0' && str[0] <= '9')
                         st.Type = StatementType.Value;
-                        st.IntValue = intVal;
-                    }
                     else
-                    {
                         st.Type = StatementType.Name;
-                        st.Value = str;
-                    }
                     return st;
                 }
 
@@ -146,7 +139,7 @@ namespace HrdLib
                             str += statement.Value;
                         else
                             _nextStatement = statement;
-                        return new Statement(StatementType.Value, str);
+                        return new Statement(StatementType.StringValue, str);
 
                     case ',':
                         _linePosition = idx + 1;
@@ -262,9 +255,9 @@ namespace HrdLib
             private char[] _tabChars;
             private int _level;
 
-            public StreamWriter(Stream stream)
+            public StreamWriter(Stream stream, bool disposable)
             {
-                _innerWriter = new System.IO.StreamWriter(stream, Encoding.UTF8);
+                _innerWriter = disposable ? new System.IO.StreamWriter(stream, Encoding.UTF8) : new NotDisposingStreamWriter(stream, Encoding.UTF8);
                 _tabChars = new char[4];
                 for (int i = 0; i < _tabChars.Length; i++)
                     _tabChars[i] = '\t';
@@ -334,10 +327,11 @@ namespace HrdLib
                         break;
 
                     case StatementType.Value:
-                        if (statement.Value == null)
-                            _innerWriter.Write(statement.IntValue.ToString());
-                        else
-                            WriteString(statement.Value);
+                        _innerWriter.Write(statement.Value);
+                        break;
+
+                    case StatementType.StringValue:
+                        WriteString(statement.Value);
                         break;
 
                     default:
@@ -403,11 +397,11 @@ namespace HrdLib
             }
         }
 
-        private class Statement
+        internal class Statement
         {
             public StatementType Type { get; set; }
             public string Value { get; set; }
-            public int IntValue { get; set; }
+            public bool IsQuoted { get; set; }
 
             public Statement() { }
 
@@ -418,7 +412,7 @@ namespace HrdLib
             }
         }
 
-        private enum StatementType
+        internal enum StatementType
         {
             Unknown,
             Value,
@@ -428,7 +422,8 @@ namespace HrdLib
             BraceOpened,
             BraceClosed,
             Comma,
-            EqualsSign
+            EqualsSign,
+            StringValue
         }
     }
 }

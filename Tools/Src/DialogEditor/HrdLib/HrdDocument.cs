@@ -46,7 +46,8 @@ namespace HrdLib
                         switch (first.Type)
                         {
                             case StatementType.Value:
-                                var attr = new HrdAttribute {Value = first.Value ?? (object)first.IntValue};
+                            case StatementType.StringValue:
+                                var attr = new HrdAttribute {Value = first.Value};
                                 var elt = Peek(elementStack);
                                 elt.AddElement(attr);
                                 statQueue.Dequeue();
@@ -79,14 +80,9 @@ namespace HrdLib
                                             {
                                                 goto case StatementType.BraceOpened;
                                             }
-                                            else if (nextNextStat.Type == StatementType.Value)
+                                            else if (nextNextStat.Type == StatementType.Value || nextNextStat.Type == StatementType.StringValue)
                                             {
-                                                newElement = new HrdAttribute(name.Value)
-                                                                 {
-                                                                     Value =
-                                                                         nextNextStat.Value ??
-                                                                         (object) nextNextStat.IntValue
-                                                                 };
+                                                newElement = new HrdAttribute(name.Value, nextNextStat.Value);
                                             }
                                             else
                                                 throw new Exception(string.Format("Unrecognized statement '{0}'.",
@@ -193,7 +189,7 @@ namespace HrdLib
 
         public void WriteDocument(Stream stream)
         {
-            using(var writer=new StreamWriter(stream))
+            using (var writer = new StreamWriter(stream, false))
             {
                 foreach (var element in GetElements())
                     WriteElement(element, writer);
@@ -213,17 +209,9 @@ namespace HrdLib
 
             if (element is HrdAttribute)
             {
-                statement.Type = StatementType.Value;
-                var val = ((HrdAttribute)element).Value;
-                if (val is int)
-                {
-                    statement.Value = null;
-                    statement.IntValue = (int)val;
-                }
-                else
-                {
-                    statement.Value = val == null ? string.Empty : val.ToString();
-                }
+                var attr = (HrdAttribute) element;
+                statement.Value = attr.Value;
+                statement.Type = attr.SerializeAsQuotedString ? StatementType.StringValue : StatementType.Value;
                 writer.WriteStatement(statement);
             }
             else if (element is HrdArray)

@@ -8,15 +8,16 @@ namespace HrdLib
     {
         protected readonly List<HrdElement> _elements = new List<HrdElement>();
 
-        private readonly string _name;
-        public string Name
+        public string Name { get; set; }
+
+        public int ChildrenCount
         {
-            get { return _name; }
+            get { return _elements.Count; }
         }
 
         protected HrdElement(string name)
         {
-            _name = name;
+            Name = name;
         }
 
         public virtual void AddElement(HrdElement elementBase)
