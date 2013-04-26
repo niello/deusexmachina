@@ -35,7 +35,7 @@ struct CNAX2Curve
 };
 #pragma pack(pop)
 
-bool LoadMocapClipFromNAX2(Data::CStream& In, PMocapClip OutClip)
+bool LoadMocapClipFromNAX2(Data::CStream& In, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
 	if (!OutClip.isvalid()) FAIL;
 
@@ -57,7 +57,7 @@ bool LoadMocapClipFromNAX2(Data::CStream& In, PMocapClip OutClip)
 	}
 
 	nArray<CMocapTrack> Tracks;
-	nArray<int> TrackMapping; //!!!mapping will be bone names in the new format!
+	nArray<CStrID> TrackMapping;
 	for (uint i = 0; i < Group.numCurves; ++i)
 	{
 		CNAX2Curve Curve;
@@ -93,11 +93,15 @@ bool LoadMocapClipFromNAX2(Data::CStream& In, PMocapClip OutClip)
 			}
 		}
 
+		int RemapIdx = BoneToNode.FindIndex(i / 3);
+		if (RemapIdx == INVALID_INDEX) continue; // No such bone in a target skeleton
+		CStrID RelNodePath = BoneToNode.ValueAtIndex(RemapIdx);
+
 		CMocapTrack& Track = *Tracks.Reserve(1);
 		Track.FirstKey = Curve.firstKeyIndex;
 		Track.ConstValue = Curve.collapsedKey;
 		Track.Channel = Channel;
-		TrackMapping.Append(i / 3);
+		TrackMapping.Append(RelNodePath);
 	}
 
 	for (uint i = Group.numCurves; i < TotalCurves; ++i)
@@ -111,11 +115,11 @@ bool LoadMocapClipFromNAX2(Data::CStream& In, PMocapClip OutClip)
 }
 //---------------------------------------------------------------------
 
-bool LoadMocapClipFromNAX2(const nString& FileName, PMocapClip OutClip)
+bool LoadMocapClipFromNAX2(const nString& FileName, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
 	Data::CFileStream File;
 	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
-		LoadMocapClipFromNAX2(File, OutClip);
+		LoadMocapClipFromNAX2(File, BoneToNode, OutClip);
 }
 //---------------------------------------------------------------------
 

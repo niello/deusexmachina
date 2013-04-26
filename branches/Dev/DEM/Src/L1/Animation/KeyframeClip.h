@@ -4,7 +4,6 @@
 
 #include <Animation/AnimClip.h>
 #include <Animation/KeyframeTrack.h>
-#include <Data/SimpleString.h>
 #include <util/ndictionary.h>
 
 // This clip stores keyframe data per-track and, unlike the CMocapClip, has no specific optimizations.
@@ -25,7 +24,7 @@ public:
 
 	CKeyframeClip(CStrID ID): CAnimClip(ID) {}
 
-	bool							Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<Data::CSimpleString>& _TrackMapping, float Length);
+	bool							Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& _TrackMapping, float Length);
 	virtual void					Unload();
 
 	virtual Scene::PAnimController	CreateController(DWORD SamplerIdx) const;

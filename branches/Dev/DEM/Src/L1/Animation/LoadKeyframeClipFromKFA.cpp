@@ -20,15 +20,13 @@ bool LoadKeyframeClipFromKFA(Data::CStream& In, PKeyframeClip OutClip)
 	float Duration = Reader.Read<float>();
 
 	nArray<CKeyframeTrack> Tracks;
-	nArray<CSimpleString> TrackMapping;
+	nArray<CStrID> TrackMapping;
 
 	DWORD TrackCount = Reader.Read<DWORD>();
-	CSimpleString* pMap = TrackMapping.Reserve(TrackCount);
+	CStrID* pMap = TrackMapping.Reserve(TrackCount);
 	for (DWORD i = 0; i < TrackCount; ++i)
 	{
-		nString NodePath;
-		Reader.Read(NodePath); //!!!need CSimpleString reader method!
-		*pMap++ = NodePath.Get();
+		Reader.Read(*pMap++);
 
 		CKeyframeTrack& Track = *Tracks.Reserve(1);
 		Track.Channel = (EChannel)Reader.Read<int>();

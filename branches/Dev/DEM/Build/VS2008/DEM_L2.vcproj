@@ -1449,6 +1449,10 @@
 				RelativePath="..\..\Src\L2\Animation\PropAnimation.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L2\Animation\PropAnimationSI.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

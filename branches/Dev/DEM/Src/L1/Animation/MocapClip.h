@@ -31,7 +31,7 @@ public:
 
 	CMocapClip(CStrID ID): CAnimClip(ID), pKeys(NULL) {}
 
-	bool							Setup(	const nArray<CMocapTrack>& _Tracks, const nArray<CBoneID>& TrackMapping,
+	bool							Setup(	const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
 											vector4* _pKeys, DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
 	virtual void					Unload();
 

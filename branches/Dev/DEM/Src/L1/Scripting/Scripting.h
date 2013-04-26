@@ -11,7 +11,7 @@
 		lua_settop(l, 0);				\
 		return 0;						\
 	}									\
-	CEntityScriptObject* This = (CEntityScriptObject*)CScriptObject::GetFromStack(l, 1);	\
+	Scripting::CEntityScriptObject* This = (Scripting::CEntityScriptObject*)CScriptObject::GetFromStack(l, 1);	\
 	if (!This) return 0;
 
 #endif

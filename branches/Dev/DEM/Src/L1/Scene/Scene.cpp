@@ -46,6 +46,17 @@ void CScene::Clear()
 }
 //---------------------------------------------------------------------
 
+void CScene::SetMainCamera(CCamera* pNewCamera)
+{
+	MainCamera = pNewCamera ? pNewCamera : DefaultCamera;
+	if (AutoAdjustCameraAspect)
+	{
+		MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
+		MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
+	}
+}
+//---------------------------------------------------------------------
+
 bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrID FrameShaderID)
 {
 	if (!Camera.isvalid()) Camera = MainCamera;

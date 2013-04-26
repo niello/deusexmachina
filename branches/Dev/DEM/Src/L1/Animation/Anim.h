@@ -3,6 +3,7 @@
 #define __DEM_L1_ANIM_H__
 
 #include <StdDEM.h>
+#include <mathlib/vector.h>
 
 // Animation system constants and forward declarations
 
@@ -10,9 +11,6 @@ template<class TKey, class TVal> class nDictionary;
 
 namespace Anim
 {
-
-//!!!temporarily ID is a bone index! (to make Kila move)
-typedef int CBoneID;
 
 enum EChannel
 {
@@ -29,7 +27,13 @@ enum ELoopType
 };
 */
 
-class CAnimTrack {};
+class CAnimTrack
+{
+public:
+
+	vector4		ConstValue;
+	EChannel	Channel; //!!!???can avoid storing it? needed only at Setup() time, move to loader?
+};
 
 struct CSampler
 {
@@ -39,8 +43,6 @@ struct CSampler
 
 	CSampler(): pTrackT(NULL), pTrackR(NULL), pTrackS(NULL) {}
 };
-
-typedef nDictionary<CBoneID, CSampler> CSamplerList;
 
 }
 

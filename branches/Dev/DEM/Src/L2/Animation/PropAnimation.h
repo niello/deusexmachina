@@ -63,17 +63,14 @@ private:
 		bool			Loop;
 	};
 
-	nDictionary<CStrID, Anim::PAnimClip>			Clips;
-	nDictionary<Anim::CBoneID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
+	nDictionary<CStrID, Anim::PAnimClip>	Clips;
+	nDictionary<CStrID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
+	nArray<CAnimTask>						Tasks;
 
-	nArray<CAnimTask>								Tasks;
-	// Anim task list with IDs. Dictionary or array of slots with freeing slots.
-	// Can grow array by 1 and allocate 1 slot at the beginning, since it is not
-	// too frequent operation to add new animation tasks.
-
-	void			AddChildrenToMapping(Scene::CSceneNode* pNode);
+	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones);
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
+	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame); //???OnMoveBefore?
 
 public:
@@ -82,9 +79,10 @@ public:
 	virtual void	Activate();
 	virtual void	Deactivate();
 
-	int				StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority, float Weight, float FadeInTime, float FadeOutTime);
+	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause);
 	void			StopAnim(DWORD TaskID, float FadeOutTime);
+	float			GetAnimLength(CStrID ClipID) const;
 };
 
 RegisterFactory(CPropAnimation);
