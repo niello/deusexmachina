@@ -4,14 +4,18 @@ namespace HrdLib
 {
     public class HrdAttribute:HrdElement
     {
-        public object Value { get; set; }
+        public string Value { get; set; }
 
-        public HrdAttribute(string name):
-            base(name)
-        {}
+        public bool SerializeAsQuotedString { get; set; }
 
-        public HrdAttribute(string name,object value):
+        public HrdAttribute(string name) :
             base(name)
+        {
+            SerializeAsQuotedString = true;
+        }
+
+        public HrdAttribute(string name, string value) :
+            this(name)
         {
             Value = value;
         }
