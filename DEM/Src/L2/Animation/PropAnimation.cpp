@@ -155,38 +155,66 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 	{
 		CAnimTask& Task = Tasks[i];
 
+		//???to CAnimTask? there are "Task." _anywhere_!
+		//we need to supply time only to the call
+
+		if (Task.State == Task_Paused) continue;
+
 		if (Task.State == Task_Starting)
 		{
 			for (int j = 0; j < Task.Ctlrs.Size(); ++j)
 				Task.Ctlrs[j]->Activate(true);
-			Task.State = Task_Active;
+			Task.State = Task_Running;
 		}
-		else if (Task.State == Task_Active)
-		{
+		else if (Task.State == Task_Running)
 			Task.CurrTime += (float)GameSrv->GetFrameTime() * Task.Speed;
+
+		// Stop non-looping clips automatically
+		if (!Task.Loop && Task.State == Task_Running)
+		{
+			//if ((Speed > 0.f && Task.CurrTime > Task.StopTimeBase) || (Speed < 0.f && Task.CurrTime < Task.StopTimeBase))
+			if (Task.Speed * (Task.CurrTime - Task.StopTimeBase) > 0.f)
+				Task.State = Task_Stopping;
 		}
 
-		//if time is in fade in sector, calc fade in weight
-
-		//if not looping, check fadeout sector or stop
-
-		if (Task.State == Task_Active)
+		// Apply optional fadein / fadeout, check for the end
+		float RealWeight = Task.Weight;
+		if (Task.State == Task_Stopping)
 		{
-			if (Task.Clip->IsA<Anim::CMocapClip>())
+			float CurrFadeOutTime = Task.CurrTime - Task.StopTimeBase;
+			// if ((Speed > 0.f && CurrFadeOutTime >= Task.FadeOutTime) || (Speed < 0.f && CurrFadeOutTime <= Task.FadeOutTime))
+			if (Task.Speed * (CurrFadeOutTime - Task.FadeOutTime) >= 0.f)
 			{
-				int KeyIndex;
-				float IpolFactor;
-				((Anim::CMocapClip*)Task.Clip.get())->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
+				//!!!Task.Clear();
+				Task.ClipID = CStrID::Empty;
+				Task.Clip = NULL;
+				Task.Ctlrs.Clear();
+				continue;
+			}
 
-				for (int j = 0; j < Task.Ctlrs.Size(); ++j)
-					((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
-			}
-			else
-			{
-				float Time = Task.Clip->AdjustTime(Task.CurrTime, Task.Loop);
-				for (int j = 0; j < Task.Ctlrs.Size(); ++j)
-					((Anim::CAnimControllerKeyframe*)Task.Ctlrs[j])->SetTime(Time);
-			}
+			RealWeight *= CurrFadeOutTime / Task.FadeOutTime;
+		}
+		else
+		{
+			//if ((Speed > 0.f && Task.CurrTime < Task.FadeInTime) || (Speed < 0.f && Task.CurrTime > Task.FadeInTime))
+			if (Task.Speed * (Task.CurrTime - Task.FadeInTime) < 0.f)
+				RealWeight *= (Task.CurrTime - Task.Offset) / (Task.FadeInTime - Task.Offset);
+		}
+
+		// Feed node controllers
+		if (Task.Clip->IsA<Anim::CMocapClip>())
+		{
+			int KeyIndex;
+			float IpolFactor;
+			((Anim::CMocapClip*)Task.Clip.get())->GetSamplingParams(Task.CurrTime, Task.Loop, KeyIndex, IpolFactor);
+			for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+				((Anim::CAnimControllerMocap*)Task.Ctlrs[j])->SetSamplingParams(KeyIndex, IpolFactor);
+		}
+		else if (Task.Clip->IsA<Anim::CKeyframeClip>())
+		{
+			float Time = Task.Clip->AdjustTime(Task.CurrTime, Task.Loop);
+			for (int j = 0; j < Task.Ctlrs.Size(); ++j)
+				((Anim::CAnimControllerKeyframe*)Task.Ctlrs[j])->SetTime(Time);
 		}
 	}
 
@@ -197,10 +225,12 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
 							  float Weight, float FadeInTime, float FadeOutTime)
 {
+	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f) return INVALID_INDEX;
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
 	Anim::PAnimClip Clip = Clips.ValueAtIndex(ClipIdx);
-	if (!Clip->GetSamplerCount()) return INVALID_INDEX;
+	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) return INVALID_INDEX;
+	if (!Loop && (Offset < 0.f || Offset > Clip->GetDuration())) return INVALID_INDEX;
 
 	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
 	if (!pProp || !pProp->GetNode()) return INVALID_INDEX; // Nothing to animate
@@ -248,17 +278,32 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 	if (!pTask->Ctlrs.Size()) return INVALID_INDEX;
 
+	if (!Loop)
+	{
+		float RealDuration = Clip->GetDuration() / n_fabs(Speed);
+		if (FadeInTime + FadeOutTime > RealDuration)
+		{
+			FadeOutTime = n_max(0.f, RealDuration - FadeInTime);
+			FadeInTime = RealDuration - FadeOutTime;
+		}
+	}
+
+	FadeInTime *= Speed;
+	FadeOutTime *= Speed;
+
+	if (!Loop) pTask->StopTimeBase = ((Speed > 0.f) ? Clip->GetDuration() : 0.f) - FadeOutTime;
+
 	pTask->ClipID = ClipID;
 	pTask->Clip = Clip;
 	pTask->CurrTime = Offset;
-	pTask->FadeInTime = FadeInTime;
-	pTask->FadeOutTime = FadeOutTime;
+	pTask->Offset = Offset;
+	pTask->Speed = Speed;
+	pTask->Priority = Priority;
+	pTask->Weight = Weight;
+	pTask->FadeInTime = Offset + FadeInTime;	// Get a point in time becuse we know the start time
+	pTask->FadeOutTime = FadeOutTime;			// Remember only the length, because we don't know the end time
 	pTask->State = Task_Starting;
 	pTask->Loop = Loop;
-	pTask->Speed = Speed;
-
-	//???If task is not looping, clamp fadeout time to fit into the clip length (with speed factor)
-	//see StopAnim
 
 	return TaskID;
 }
@@ -267,21 +312,36 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 void CPropAnimation::PauseAnim(DWORD TaskID, bool Pause)
 {
 	CAnimTask& Task = Tasks[TaskID];
+	if (Task.State == Task_Stopping) return; //???what to do with Starting?
 	if (Pause == (Task.State == Task_Paused)) return;
 	for (int i = 0; i < Task.Ctlrs.Size(); ++i)
 		Task.Ctlrs[i]->Activate(!Pause);
-	Task.State = Pause ? Task_Paused : Task_Active;
+	Task.State = Pause ? Task_Paused : Task_Running;
 }
 //---------------------------------------------------------------------
 
 void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
 {
-	// If task is not looping, clamp fadeout time to fit into the clip length (with speed factor)
-	// If no more time, set fadeout time to 0
-	// If fadeout time > 0, schedule stop for this task and disallow pause on it
-	// else stop right here:
-	// Deactivate and destroy all controllers of the task
-	// If it leaves some blend controller with one controller inside, collapse it
+	CAnimTask& Task = Tasks[TaskID];
+	if (Task.State == Task_Stopping) return; //???what to do with Starting?
+
+	if (FadeOutTime < 0.f) FadeOutTime = Task.FadeOutTime;
+
+	if (!Task.Loop && FadeOutTime > Task.Clip->GetDuration() - Task.CurrTime)
+		FadeOutTime = Task.Clip->GetDuration() - Task.CurrTime;
+
+	if (FadeOutTime <= 0.f)
+	{
+		//!!!Task.Clear();
+		Task.ClipID = CStrID::Empty;
+		Task.Clip = NULL;
+		Task.Ctlrs.Clear();
+	}
+	else
+	{
+		Task.State = Task_Stopping;
+		Task.StopTimeBase = Task.CurrTime;
+	}
 }
 //---------------------------------------------------------------------
 
