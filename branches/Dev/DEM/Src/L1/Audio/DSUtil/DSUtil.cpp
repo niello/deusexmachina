@@ -25,7 +25,7 @@
 CDSSound::CDSSound(LPDIRECTSOUNDBUFFER* apDSBuffer, DWORD DSBufferSize,
 			   DWORD dwNumBuffers, Audio::CAudioFile* pWaveFile, DWORD dwCreationFlags)
 {
-	m_apDSBuffer = new LPDIRECTSOUNDBUFFER[dwNumBuffers];
+	m_apDSBuffer = n_new(LPDIRECTSOUNDBUFFER[dwNumBuffers]);
 	n_assert(m_apDSBuffer);
 	for (DWORD i = 0; i < dwNumBuffers; ++i)
 		m_apDSBuffer[i] = apDSBuffer[i];

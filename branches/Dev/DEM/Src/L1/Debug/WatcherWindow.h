@@ -51,6 +51,7 @@ protected:
 		CEGUI::ListboxTextItem*	pValueItem;
 
 		CWatched(): RowID(-1), pNameItem(NULL), pTypeItem(NULL), pValueItem(NULL) {}
+		//~CWatched() { Clear(); } - leave it commented while tere is no copy constructor which clones text items
 		void Clear();
 	};
 
@@ -66,7 +67,7 @@ protected:
 public:
 
 	//CWatcherWindow() {}
-	//virtual ~CWatcherWindow() {}
+	virtual ~CWatcherWindow() { for (int i = 0; i < Watched.Size(); ++i) Watched[i].Clear(); }
 
 	virtual void	Init(CEGUI::Window* pWindow);
 	virtual void	Term();

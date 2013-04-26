@@ -40,6 +40,7 @@ protected:
 public:
 
 	CMesh(CStrID ID): CResource(ID) {}
+	virtual ~CMesh() { if (IsLoaded()) Unload(); }
 
 	bool				Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups);
 	virtual void		Unload();

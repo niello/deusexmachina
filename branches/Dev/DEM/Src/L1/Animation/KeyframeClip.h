@@ -23,6 +23,7 @@ protected:
 public:
 
 	CKeyframeClip(CStrID ID): CAnimClip(ID) {}
+	virtual ~CKeyframeClip() { if (IsLoaded()) Unload(); }
 
 	bool							Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& _TrackMapping, float Length);
 	virtual void					Unload();
