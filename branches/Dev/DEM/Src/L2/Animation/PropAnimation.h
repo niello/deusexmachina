@@ -37,7 +37,7 @@ private:
 	enum ETaskState
 	{
 		Task_Starting,
-		Task_Active,
+		Task_Running,
 		Task_Paused,
 		Task_Stopping
 	};
@@ -48,18 +48,17 @@ private:
 
 		CStrID			ClipID;
 		Anim::PAnimClip	Clip;
-
 		CCtlrList		Ctlrs;
-
 		ETaskState		State;
+		float			CurrTime;
+		float			StopTimeBase;
 
+		float			Offset;
 		float			Speed;
+		DWORD			Priority;
+		float			Weight;
 		float			FadeInTime;
 		float			FadeOutTime;
-		//DWORD Priority, float Weight
-
-		float			CurrTime;
-
 		bool			Loop;
 	};
 
@@ -81,7 +80,7 @@ public:
 
 	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause);
-	void			StopAnim(DWORD TaskID, float FadeOutTime);
+	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f); // Use negative value to avoid override
 	float			GetAnimLength(CStrID ClipID) const;
 };
 

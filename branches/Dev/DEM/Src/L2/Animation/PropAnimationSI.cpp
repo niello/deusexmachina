@@ -28,7 +28,7 @@ int CPropAnimation_GetAnimLength(lua_State* l)
 
 int CPropAnimation_StartAnim(lua_State* l)
 {
-	//args: EntityScriptObject's this table, Clip ID, [Loop, ]
+	//args: EntityScriptObject's this table, Clip ID, [see below]
 	//ret: int task ID
 	SETUP_ENT_SI_ARGS(2);
 	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
@@ -49,10 +49,38 @@ int CPropAnimation_StartAnim(lua_State* l)
 }
 //---------------------------------------------------------------------
 
+int CPropAnimation_PauseAnim(lua_State* l)
+{
+	//args: EntityScriptObject's this table, Task ID, bool Pause
+	//ret: int task ID
+	SETUP_ENT_SI_ARGS(3);
+	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
+	if (pProp) pProp->PauseAnim(lua_tointeger(l, 2), !!lua_toboolean(l, 3));
+	return 0;
+}
+//---------------------------------------------------------------------
+
+int CPropAnimation_StopAnim(lua_State* l)
+{
+	//args: EntityScriptObject's this table, Task ID, [fadeout time]
+	//ret: int task ID
+	SETUP_ENT_SI_ARGS(2);
+	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
+	if (!pProp) return 0;
+
+	float FadeOutTime = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : -1.f;
+
+	pProp->StopAnim(lua_tointeger(l, 2), FadeOutTime);
+	return 0;
+}
+//---------------------------------------------------------------------
+
 bool CPropAnimation::ExposeSI(const CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("GetAnimLength", CPropAnimation_GetAnimLength);
 	ScriptSrv->ExportCFunction("StartAnim", CPropAnimation_StartAnim);
+	ScriptSrv->ExportCFunction("PauseAnim", CPropAnimation_PauseAnim);
+	ScriptSrv->ExportCFunction("StopAnim", CPropAnimation_StopAnim);
 	OK;
 }
 //---------------------------------------------------------------------
