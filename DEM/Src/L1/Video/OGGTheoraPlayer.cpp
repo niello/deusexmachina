@@ -236,7 +236,7 @@ COGGTheoraPlayer::Open()
     // rewind
     Rewind();
     // setup framebuffer
-    rgbBuffer = new unsigned char[ti.frame_width*ti.frame_height*4];
+    rgbBuffer = n_new_array(unsigned char, ti.frame_width*ti.frame_height*4);
     memset(rgbBuffer,255,ti.frame_width*ti.frame_height*4);
     // we don't have a frame yet
     frameNr = -1;
@@ -413,7 +413,7 @@ COGGTheoraPlayer::Close()
 	infile = NULL;
     if (theoraLoaded)
         StopTheora();
-    delete rgbBuffer;
+    n_delete_array(rgbBuffer);
     rgbBuffer = 0;
     _IsOpen = false;
 };

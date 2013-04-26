@@ -76,9 +76,9 @@ void CLuaConsole::Print(LPCSTR pMsg, DWORD Color)
 	else
 	{
 		//!!!NEED TO DELETE AFTER USE!
-		pNewItem = new CEGUI::FormattedListboxTextItem(
-			(CEGUI::utf8*)pMsg, CEGUI::HTF_WORDWRAP_LEFT_ALIGNED, 0, 0, true, false);
-		//pNewItem = new CEGUI::ListboxTextItem((CEGUI::utf8*)pMsg, 0, 0, true, false);
+		pNewItem = n_new(CEGUI::FormattedListboxTextItem(
+			(CEGUI::utf8*)pMsg, CEGUI::HTF_WORDWRAP_LEFT_ALIGNED, 0, 0, true, false));
+		//pNewItem = n_new(CEGUI::ListboxTextItem((CEGUI::utf8*)pMsg, 0, 0, true, false));
 		n_assert(pNewItem);
 		pNewItem->setTextParsingEnabled(false);
 	}

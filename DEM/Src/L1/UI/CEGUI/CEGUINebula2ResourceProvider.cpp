@@ -42,7 +42,7 @@ void CNebula2ResourceProvider::loadRawDataContainer(const String& filename, RawD
 void CNebula2ResourceProvider::unloadRawDataContainer(RawDataContainer& data)
 {
 	uint8* const ptr = data.getDataPtr();
-	delete[] ptr;
+	n_delete_array(ptr);
 	data.setData(0);
 	data.setSize(0);
 }

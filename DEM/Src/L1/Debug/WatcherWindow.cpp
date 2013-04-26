@@ -93,7 +93,7 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 
 	if (!Curr.pTypeItem)
 	{
-		Curr.pTypeItem = new CEGUI::ListboxTextItem("", 0, 0, false, false);
+		Curr.pTypeItem = n_new(CEGUI::ListboxTextItem("", 0, 0, false, false));
 		Curr.pTypeItem->setSelectionBrushImage("TaharezLook", "MultiListSelectionBrush");
 		Curr.pTypeItem->setSelectionColours(CEGUI::colour(0xff606099));
 		Curr.pTypeItem->setTextParsingEnabled(false);
@@ -101,7 +101,7 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 
 	if (!Curr.pValueItem)
 	{
-		Curr.pValueItem = new CEGUI::ListboxTextItem("", 0, 0, false, false);
+		Curr.pValueItem = n_new(CEGUI::ListboxTextItem("", 0, 0, false, false));
 		Curr.pValueItem->setSelectionBrushImage("TaharezLook", "MultiListSelectionBrush");
 		Curr.pValueItem->setSelectionColours(CEGUI::colour(0xff606099));
 		Curr.pValueItem->setTextParsingEnabled(false);

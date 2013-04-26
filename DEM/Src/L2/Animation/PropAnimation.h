@@ -5,6 +5,7 @@
 #include <Game/Property.h>
 #include <Animation/Anim.h>
 #include <Animation/AnimClip.h>
+#include <Animation/AnimTask.h>
 #include <DB/AttrID.h>
 #include <util/ndictionary.h>
 
@@ -34,37 +35,9 @@ class CPropAnimation: public Game::CProperty
 
 private:
 
-	enum ETaskState
-	{
-		Task_Starting,
-		Task_Running,
-		Task_Paused,
-		Task_Stopping
-	};
-
-	struct CAnimTask
-	{
-		typedef nArray<Scene::CAnimController*> CCtlrList;
-
-		CStrID			ClipID;
-		Anim::PAnimClip	Clip;
-		CCtlrList		Ctlrs;
-		ETaskState		State;
-		float			CurrTime;
-		float			StopTimeBase;
-
-		float			Offset;
-		float			Speed;
-		DWORD			Priority;
-		float			Weight;
-		float			FadeInTime;
-		float			FadeOutTime;
-		bool			Loop;
-	};
-
 	nDictionary<CStrID, Anim::PAnimClip>	Clips;
 	nDictionary<CStrID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
-	nArray<CAnimTask>						Tasks;
+	nArray<Anim::CAnimTask>					Tasks;
 
 	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones);
 
@@ -74,13 +47,15 @@ private:
 
 public:
 
+	CPropAnimation(): Tasks(1, 1) {}
+
 	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void	Activate();
 	virtual void	Deactivate();
 
 	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
-	void			PauseAnim(DWORD TaskID, bool Pause);
-	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f); // Use negative value to avoid override
+	void			PauseAnim(DWORD TaskID, bool Pause) { Tasks[TaskID].SetPause(Pause); }
+	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f) { Tasks[TaskID].Stop(FadeOutTime); }
 	float			GetAnimLength(CStrID ClipID) const;
 };
 

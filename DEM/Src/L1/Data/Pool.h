@@ -32,7 +32,7 @@ protected:
 	{
 		CChunkNode<T>*	Next;
 		CRecord<T>*		ChunkRecords;
-		~CChunkNode() { if (Next) delete Next; delete[] ChunkRecords; }
+		~CChunkNode() { if (Next) n_delete(Next); n_delete_array(ChunkRecords); }
 	};
 
 	CChunkNode<T>*	Chunks;
@@ -89,8 +89,8 @@ T* CPool<T, ChunkSize, MaxChunks>::AllocRecord()
 	}
 	else
 	{
-		CChunkNode<T>* NewChunk = new CChunkNode<T>();
-		NewChunk->ChunkRecords = new CRecord<T>[ChunkSize];
+		CChunkNode<T>* NewChunk = n_new(CChunkNode<T>());
+		NewChunk->ChunkRecords = n_new(CRecord<T>[ChunkSize]);
 		NewChunk->Next = Chunks;
 		Chunks = NewChunk;
 
@@ -159,7 +159,7 @@ inline void CPool<T, ChunkSize, MaxChunks>::Clear()
 		n_error("Pool reports %d allocations and %d releases", AllocationsCount, ReleasesCount);
 #endif
 
-	if (Chunks) delete Chunks;
+	if (Chunks) n_delete(Chunks);
 }
 //---------------------------------------------------------------------
 

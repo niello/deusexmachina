@@ -40,6 +40,7 @@ private:
 public:
 
 	nDictionary(): IsInBeginAdd(false) {}
+	nDictionary(int Alloc, int Grow, bool DoubleGrow): Pairs(Alloc, Grow), IsInBeginAdd(false) { Pairs.SetFlags(nArray<CPair>::DoubleGrowSize); }
 	nDictionary(const nDictionary<TKey, TValue>& Other): Pairs(Other.Pairs), IsInBeginAdd(Other.IsInBeginAdd) {}
 
 	void			BeginAdd() { n_assert(!IsInBeginAdd); IsInBeginAdd = true; }

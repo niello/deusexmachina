@@ -5,7 +5,7 @@ namespace Data //???need?
 {
 static CStrIDStorage StrIDStorage;
 
-//CStrIDStorage* CStringID::Storage = new CStrIDStorage(); //???!!!where to delete and is it needed?
+//CStrIDStorage* CStringID::Storage = n_new(CStrIDStorage()); //???!!!where to delete and is it needed?
 CStrIDStorage* CStringID::Storage = &StrIDStorage;
 
 const CStringID CStringID::Empty;
