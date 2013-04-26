@@ -10,6 +10,8 @@
 #include <Data/BinaryWriter.h>
 #include <conio.h>
 
+//#include <Animation/Anim.h> //!!!DBG .kfa creation
+
 #undef CreateDirectory
 #undef DeleteFile
 #undef CopyFile
@@ -518,6 +520,28 @@ int main(int argc, const char** argv)
 	DataSrv->SetAssign("mtlsrc", Export + "/materials");
 	DataSrv->SetAssign("textures", Export + "/textures");
 	DataSrv->SetAssign("anims", Export + "/anims");
+
+	//!!!DBG TMP!
+	/*{
+		Data::CFileStream File;
+		if (File.Open("anims:examples/Door.kfa", Data::SAM_WRITE))
+		{
+			Data::CBinaryWriter Wr(File);
+			Wr.Write('KFAN');
+			Wr.Write(0.5f);
+			Wr.Write<DWORD>(1);
+			Wr.Write<LPCSTR>("DoorBody");
+			Wr.Write((int)Anim::Chnl_Rotation);
+			Wr.Write<DWORD>(2);
+			quaternion q;
+			Wr.Write(q);
+			Wr.Write(0.f);
+			q.set_rotate_y(PI / 2.f);
+			Wr.Write(q);
+			Wr.Write(0.5f);
+			File.Close();
+		}
+	}*/
 
 	PParams Cats = DataSrv->LoadHRD("proj:Project/tables/EntityCats.hrd", false);
 

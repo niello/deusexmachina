@@ -10,7 +10,9 @@
 // in space. Typically it consists of up to 3 tracks * number of animated bones in target sceleton.
 // Clip can have any number of tracks and target bones, so it can animate a single scene node as well.
 // Tracks are grouped in samplers. One sampler affects one target, referencing it by a node relative
-// path or by a bone ID. TODO: revisit & generalize.
+// path or by a bone ID.
+
+//!!!TODO: unify MCA & KFA mapping. Map to node relative path, CPropAnimation can cache CStrID with the path -> Node.
 
 namespace Scene
 {
@@ -28,8 +30,6 @@ class CAnimClip: public Resources::CResource
 protected:
 
 	CSamplerList	Samplers;
-
-	bool			RefByBone;	// If false, references target nodes by path. Later only by nodes?
 	float			Duration;
 
 public:

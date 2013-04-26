@@ -205,17 +205,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		pTask = Tasks.Reserve(1);
 	}
 
-	pTask->ClipID = ClipID;
-	pTask->Clip = Clip;
-	pTask->CurrTime = Offset;
-	pTask->FadeInTime = FadeInTime;
-	pTask->FadeOutTime = FadeOutTime;
-	pTask->State = Task_Starting;
-	pTask->Loop = Loop;
-	pTask->Speed = Speed;
-
-	//???If task is not looping, clamp fadeout time to fit into the clip length (with speed factor)
-	//see StopAnim
+	n_assert_dbg(!pTask->Ctlrs.Size());
 
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
 	{
@@ -232,6 +222,20 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		// Only blend controller allows to tune weight
 		//????or weight to controller?
 	}
+
+	if (!pTask->Ctlrs.Size()) return INVALID_INDEX;
+
+	pTask->ClipID = ClipID;
+	pTask->Clip = Clip;
+	pTask->CurrTime = Offset;
+	pTask->FadeInTime = FadeInTime;
+	pTask->FadeOutTime = FadeOutTime;
+	pTask->State = Task_Starting;
+	pTask->Loop = Loop;
+	pTask->Speed = Speed;
+
+	//???If task is not looping, clamp fadeout time to fit into the clip length (with speed factor)
+	//see StopAnim
 
 	return TaskID;
 }

@@ -17,9 +17,6 @@ bool LoadKeyframeClipFromKFA(Data::CStream& In, PKeyframeClip OutClip)
 
 	if (Reader.Read<DWORD>() != 'KFAN') FAIL;
 
-	bool ForBones = Reader.Read<bool>();
-	n_assert(!ForBones); // Only for nodes for now
-
 	float Duration = Reader.Read<float>();
 
 	nArray<CKeyframeTrack> Tracks;
