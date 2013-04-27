@@ -12,6 +12,13 @@ namespace Game
 	class CEntity;
 }
 
+namespace Scene
+{
+	class CSceneNode;
+	class CModel;
+	class CTerrain;
+}
+
 const int MAX_CONVEXVOL_PTS = 12;
 
 // Flags
@@ -101,7 +108,7 @@ protected:
 	uint	OffMeshID[MAX_OFFMESH_CONNECTIONS];
 	int		OffMeshCount;
 
-	//bool AddGeometry(nSceneNode* pNode, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
+	bool AddGeometry(Scene::CSceneNode& Node, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
 
 public:
 
@@ -110,7 +117,8 @@ public:
 
 	bool Init(const rcConfig& Config, float MaxClimb);
 	bool AddGeometry(Game::CEntity& Entity, uchar Area = RC_WALKABLE_AREA);
-	//bool AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
+	bool AddGeometry(Scene::CModel& Model, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
+	bool AddGeometry(Scene::CTerrain& Terrain, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
 	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area = RC_WALKABLE_AREA);
 	bool PrepareGeometry(float AgentRadius, float AgentHeight);
 

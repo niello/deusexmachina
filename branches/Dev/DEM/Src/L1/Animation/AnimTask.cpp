@@ -68,7 +68,7 @@ void CAnimTask::Update(float FrameTime)
 
 void CAnimTask::SetPause(bool Pause)
 {
-	if (State == Task_Stopping) return; //???what to do with Starting?
+	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
 	if (Pause == (State == Task_Paused)) return;
 	for (int i = 0; i < Ctlrs.Size(); ++i)
 		Ctlrs.ValueAtIndex(i)->Activate(!Pause);
@@ -78,7 +78,7 @@ void CAnimTask::SetPause(bool Pause)
 
 void CAnimTask::Stop(float OverrideFadeOutTime)
 {
-	if (State == Task_Stopping) return; //???what to do with Starting?
+	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
 
 	if (OverrideFadeOutTime < 0.f) OverrideFadeOutTime = FadeOutTime;
 	else OverrideFadeOutTime *= Speed;

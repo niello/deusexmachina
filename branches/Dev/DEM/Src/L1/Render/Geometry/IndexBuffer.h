@@ -44,6 +44,7 @@ public:
 	void	Unmap();
 
 	DWORD					GetIndexCount() const { return Count; }
+	EType					GetIndexType() const { return Type; }
 	EUsage					GetUsage() const { return Usage; }
 	ECPUAccess				GetAccess() const { return Access; }
 	IDirect3DIndexBuffer9*	GetD3DBuffer() const { return pBuffer; }
