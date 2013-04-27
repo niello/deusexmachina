@@ -53,8 +53,7 @@ static void SetupVertexComponents(uint Mask, nArray<CVertexComponent>& Component
 
 //!!!can write/use as default mapped reading, when file is read as its whole
 //so there will be two loaders, memory and stream. Memory is faster, stream allows to load very big files.
-//!!!usage & access!
-bool LoadMeshFromNVX2(Data::CStream& In, PMesh OutMesh)
+bool LoadMeshFromNVX2(Data::CStream& In, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
 {
 	if (!OutMesh.isvalid()) FAIL;
 
@@ -89,13 +88,13 @@ bool LoadMeshFromNVX2(Data::CStream& In, PMesh OutMesh)
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	PVertexBuffer VB = n_new(CVertexBuffer);
-	if (!VB->Create(VertexLayout, Header.numVertices, Usage_Immutable, CPU_NoAccess)) FAIL;
+	if (!VB->Create(VertexLayout, Header.numVertices, Usage, Access)) FAIL;
 	void* pData = VB->Map(Map_Setup);
 	In.Read(pData, Header.numVertices * Header.vertexWidth * sizeof(float));
 	VB->Unmap();
 
 	PIndexBuffer IB = n_new(CIndexBuffer);
-	if (!IB->Create(CIndexBuffer::Index16, Header.numIndices, Usage_Immutable, CPU_NoAccess)) FAIL;
+	if (!IB->Create(CIndexBuffer::Index16, Header.numIndices, Usage, Access)) FAIL;
 	pData = IB->Map(Map_Setup);
 	In.Read(pData, Header.numIndices * sizeof(short));
 	IB->Unmap();
@@ -131,12 +130,11 @@ bool LoadMeshFromNVX2(Data::CStream& In, PMesh OutMesh)
 }
 //---------------------------------------------------------------------
 
-//!!!usage & access!
-bool LoadMeshFromNVX2(const nString& FileName, PMesh OutMesh)
+bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
 {
 	Data::CFileStream File;
 	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
-		LoadMeshFromNVX2(File, OutMesh);
+		LoadMeshFromNVX2(File, Usage, Access, OutMesh);
 }
 //---------------------------------------------------------------------
 

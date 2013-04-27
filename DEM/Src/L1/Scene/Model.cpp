@@ -8,7 +8,7 @@ namespace Render
 {
 	bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial);
 	bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
-	bool LoadMeshFromNVX2(const nString& FileName, PMesh OutMesh);
+	bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh);
 }
 
 namespace Scene
@@ -111,8 +111,7 @@ bool CModel::ValidateResources()
 		}
 	}
 
-	//!!!usage & access! //???set in mesh before loading?
-	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Mesh)) FAIL;
+	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Usage_Immutable, CPU_NoAccess, Mesh)) FAIL;
 
 	OK;
 }

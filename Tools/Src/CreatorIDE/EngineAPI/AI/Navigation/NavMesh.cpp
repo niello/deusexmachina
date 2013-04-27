@@ -1,10 +1,20 @@
 #include "NavMesh.h"
 
 #include <Physics/Prop/PropAbstractPhysics.h>
+#include <Scene/PropSceneNode.h>
+#include <Scene/Model.h>
+#include <Scene/Terrain.h>
 #include <Game/Entity.h>
+#include <Data/Streams/FileStream.h>
+#include <Data/BinaryReader.h>
 //#include <RecastDump.h>
 
 using namespace Properties;
+
+namespace Render
+{
+	bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh);
+}
 
 // Returns true if 'c' is left of line 'a'-'b'.
 inline bool left(const float* a, const float* b, const float* c)
@@ -102,47 +112,6 @@ bool CNavMeshBuilder::Init(const rcConfig& Config, float MaxClimb)
 }
 //---------------------------------------------------------------------
 
-/*
-bool CNavMeshBuilder::AddGeometry(nSceneNode* pNode, const matrix44* pTfm, uchar Area)
-{
-	if (pNode->IsA(pCLODClass))
-	{
-		nChunkLodTree* pTree = ((nTerrainNode*)pNode)->GetChunkLodTree();
-		if (!AddGeometryNCT2(pTree->GetRootChunkLodNode(), pTree, pTfm, Area)) FAIL;
-	}
-	else if (pNode->IsA(pSkinShapeClass) || pNode->IsA(pSkyClass))
-	{
-		//!!!NOTE - skinned characters must not be detected as static geometry!
-		// Force skip skinned. Skinned must be processed as collision geometry, not as gfx.
-		// Force skip sky. Sky must not be processed.
-	}
-	else if (pNode->IsA(pShapeClass))
-	{
-		if (!AddGeometry(((nShapeNode*)pNode)->GetMeshObject(), ((nShapeNode*)pNode)->groupIndex, false, pTfm, Area)) FAIL;
-	}
-	else if (pNode->IsA(pTfmClass))
-	{
-		matrix44 Tmp;
-		const matrix44& NodeTfm = ((nTransformNode*)pNode)->GetTransform();
-		if (NodeTfm != matrix44::identity)
-		{
-			if (pTfm)
-			{
-				Tmp = (*pTfm) * NodeTfm;
-				pTfm = &Tmp;
-			}
-			else pTfm = &NodeTfm;
-		}
-		
-		for (nSceneNode* pCurrNode = (nSceneNode*)pNode->GetHead(); pCurrNode; pCurrNode = (nSceneNode*)pCurrNode->GetSucc())
-			if (!AddGeometry(pCurrNode, pTfm, Area)) FAIL;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-*/
-
 bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 {
 	const matrix44& Tfm = Entity.Get<matrix44>(Attr::Transform);
@@ -160,69 +129,95 @@ bool CNavMeshBuilder::AddGeometry(Game::CEntity& Entity, uchar Area)
 		// return, if processed
 	}
 
-	//GFX //!!!parse scene nodes!
-	/*
-	CPropGraphics* pPropGfx = Entity.FindProperty<CPropGraphics>();
-	if (pPropGfx)
-	{
-		const CGfxShapeArray& GfxEnts = pPropGfx->GetGfxEntities();
-		for (int i = 0; i < GfxEnts.Size(); ++i)
-			AddGeometry(GfxEnts[i]->GetResource().GetNode(), pTfm, Area);
-	}
-	*/
+	CPropSceneNode* pPropNode = Entity.FindProperty<CPropSceneNode>();
+	if (pPropNode && pPropNode->GetNode())
+		AddGeometry(*pPropNode->GetNode(), pTfm, Area);
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-/*
-bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, const matrix44* pTfm, uchar Area)
+bool CNavMeshBuilder::AddGeometry(Scene::CSceneNode& Node, const matrix44* pTfm, uchar Area)
 {
-	nMeshGroup Group;
-	if (GroupIdx == -1)
-	{
-		Group.FirstVertex = 0;
-		Group.FirstIndex = 0;
-		Group.NumVertices = pMesh->GetNumVertices();
-		Group.NumIndices = pMesh->GetNumIndices();
-	}
-	else if (GroupIdx >= pMesh->GetNumGroups()) FAIL;
-	else Group = pMesh->Group(GroupIdx);
+	for (DWORD i = 0; i < Node.GetAttrCount(); ++i)
+		if (Node.GetAttr(i)->IsA<Scene::CModel>())
+		{
+			if (!AddGeometry(*(Scene::CModel*)Node.GetAttr(i), pTfm, Area)) FAIL;
+		}
+		else if (Node.GetAttr(i)->IsA<Scene::CTerrain>())
+		{
+			if (!AddGeometry(*(Scene::CTerrain*)Node.GetAttr(i), pTfm, Area)) FAIL;
+		}
+	
+	for (DWORD i = 0; i < Node.GetChildCount(); ++i)
+		if (!AddGeometry(*Node.GetChild(i), pTfm, Area)) FAIL;
 
-	int OldUsage = pMesh->GetUsage();
-	pMesh->SetUsage(nMesh2::ReadOnly);
+	OK;
+}
+//---------------------------------------------------------------------
 
-	// Copy vertices, position component only, with optional transformation
-	float* pVertices = (float*)n_malloc(3 * Group.NumVertices * sizeof(float));
+bool CNavMeshBuilder::AddGeometry(Scene::CModel& Model, const matrix44* pTfm, uchar Area)
+{
+	if (!Model.GetNode()) FAIL;
+
+	const Render::CMeshGroup& Group = Model.Mesh->GetGroup(Model.MeshGroupIndex);
+	if (Group.Topology != Render::TriList && Group.Topology != Render::TriStrip) FAIL;
+
+	nString FileName = Model.Mesh->GetUID().CStr();
+
+	Render::PMesh RAMMesh = n_new(Render::CMesh(CStrID::Empty));
+	if (!LoadMeshFromNVX2(FileName, Render::Usage_CPU, Render::CPU_Read, RAMMesh)) FAIL;
+
+	if (Model.GetNode()->GetWorldMatrix() != matrix44::identity)
+		pTfm = &Model.GetNode()->GetWorldMatrix();
+
+	float* pVertices = (float*)n_malloc(3 * Group.VertexCount * sizeof(float));
 	float* pCurrVtx = pVertices;
-	float* pVBuf = pMesh->LockVertices() + Group.FirstVertex * pMesh->GetVertexWidth();
-	float* pVEnd = pVBuf + Group.NumVertices * pMesh->GetVertexWidth();
-	pVBuf += pMesh->GetVertexComponentOffset(nMesh2::Coord);
-	for (; pVBuf < pVEnd; pVBuf += pMesh->GetVertexWidth())
+	Render::CVertexLayout& VL = *RAMMesh->GetVertexBuffer()->GetVertexLayout();
+
+	DWORD PosOffset = -1;
+	for (int i = 0; i < VL.GetComponents().Size(); ++i)
 	{
+		Render::CVertexComponent& Cmp = VL.GetComponents()[i];
+		if (Cmp.Semantic == Render::CVertexComponent::Position &&
+			(Cmp.Format == Render::CVertexComponent::Float3 || Cmp.Format == Render::CVertexComponent::Float4))
+		{
+			PosOffset = Cmp.OffsetInVertex;
+			break;
+		}
+	}
+	if (PosOffset < 0) FAIL;
+
+	char* pVBuf = (char*)RAMMesh->GetVertexBuffer()->Map(Render::Map_Read) + Group.FirstVertex * VL.GetVertexSize();
+	char* pVEnd = pVBuf + Group.VertexCount * VL.GetVertexSize();
+	pVBuf += PosOffset;
+	for (; pVBuf < pVEnd; pVBuf += VL.GetVertexSize())
+	{
+		vector3* pPos = (vector3*)pVBuf;
 		if (pTfm)
 		{
-			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][0] + pVBuf[1] * pTfm->m[1][0] + pVBuf[2] * pTfm->m[2][0] + pTfm->m[3][0];
-			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][1] + pVBuf[1] * pTfm->m[1][1] + pVBuf[2] * pTfm->m[2][1] + pTfm->m[3][1];
-			*pCurrVtx++ = pVBuf[0] * pTfm->m[0][2] + pVBuf[1] * pTfm->m[1][2] + pVBuf[2] * pTfm->m[2][2] + pTfm->m[3][2];
+			*pCurrVtx++ = pPos->x * pTfm->m[0][0] + pPos->y * pTfm->m[1][0] + pPos->z * pTfm->m[2][0] + pTfm->m[3][0];
+			*pCurrVtx++ = pPos->x * pTfm->m[0][1] + pPos->y * pTfm->m[1][1] + pPos->z * pTfm->m[2][1] + pTfm->m[3][1];
+			*pCurrVtx++ = pPos->x * pTfm->m[0][2] + pPos->y * pTfm->m[1][2] + pPos->z * pTfm->m[2][2] + pTfm->m[3][2];
 		}
 		else
 		{
-			*pCurrVtx++ = pVBuf[0];
-			*pCurrVtx++ = pVBuf[1];
-			*pCurrVtx++ = pVBuf[2];
+			*pCurrVtx++ = pPos->x;
+			*pCurrVtx++ = pPos->y;
+			*pCurrVtx++ = pPos->z;
 		}
 	}
-	pMesh->UnlockVertices();
+	RAMMesh->GetVertexBuffer()->Unmap();
 
 	// Copy indices with conversion to TriList
+	n_assert(RAMMesh->GetIndexBuffer()->GetIndexType() == Render::CIndexBuffer::Index16); //!!!write 32bit support!
 	int* pIndices = NULL;
 	int TriCount = 0;
-	ushort *pIBuf = pMesh->LockIndices() + Group.FirstIndex;
-	if (IsStrip)
+	ushort *pIBuf = (ushort*)RAMMesh->GetIndexBuffer()->Map(Render::Map_Read) + Group.FirstIndex;
+	if (Group.Topology == Render::TriStrip)
 	{
 		//!!!DUPLICATE CODE!
-		TriCount = Group.NumIndices - 2;
+		TriCount = Group.IndexCount - 2;
 		pIndices = (int*)n_malloc(3 * TriCount * sizeof(int));
 		int* pCurrIdx = pIndices;
 		bool Odd = true;
@@ -241,12 +236,12 @@ bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, con
 			}
 		}
 	}
-	else
+	else if (Group.Topology == Render::TriList)
 	{
-		TriCount = Group.NumIndices / 3;
-		pIndices = (int*)n_malloc(Group.NumIndices * sizeof(int));
+		TriCount = Group.IndexCount / 3;
+		pIndices = (int*)n_malloc(Group.IndexCount * sizeof(int));
 		int* pCurrIdx = pIndices;
-		for (int i = 0; i < Group.NumIndices; ++i)
+		for (DWORD i = 0; i < Group.IndexCount; ++i)
 			*pCurrIdx++ = (int)*pIBuf++;
 
 		//// Invert triangles
@@ -257,19 +252,88 @@ bool CNavMeshBuilder::AddGeometry(nMesh2* pMesh, int GroupIdx, bool IsStrip, con
 		//	*pCurrIdx++ = (int)pIBuf[i * 3 + 1];
 		//}
 	}
-	pMesh->UnlockIndices();
+	RAMMesh->GetIndexBuffer()->Unmap();
+	RAMMesh = NULL;
 
-	bool Result = AddGeometry(pVertices, Group.NumVertices, pIndices, TriCount, Area);
+	bool Result = AddGeometry(pVertices, Group.VertexCount, pIndices, TriCount, Area);
 
 	n_free(pVertices);
 	n_free(pIndices);
 
-	pMesh->SetUsage(OldUsage);
+	return Result;
+}
+//---------------------------------------------------------------------
+
+bool CNavMeshBuilder::AddGeometry(Scene::CTerrain& Terrain, const matrix44* pTfm, uchar Area)
+{
+	bbox3 AABB;
+	Terrain.GetGlobalAABB(AABB);
+	float SizeX = AABB.vmax.x - AABB.vmin.x;
+	float SizeZ = AABB.vmax.z - AABB.vmin.z;
+	float OffsetY = Terrain.GetNode()->GetWorldPosition().y;
+
+	if (SizeX <= 0 || SizeZ <= 0) FAIL;
+	if (Terrain.GetHeightMapWidth() < 2 || Terrain.GetHeightMapHeight() < 2) FAIL;
+
+	Data::CFileStream CDLODFile;
+	if (!CDLODFile.Open(Terrain.GetHeightMap()->GetUID().CStr(), Data::SAM_READ, Data::SAP_SEQUENTIAL)) FAIL;
+	Data::CBinaryReader Reader(CDLODFile);
+	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
+	n_assert(Reader.Read<int>() == 1);		// Version
+
+	// Skip 48 bytes of the header
+	//!!!WILL CRASH if format changes.
+	//!!!Set fixed header size with the reserve, say, 128 bytes inc magic & version!
+	char Skip[48];
+	CDLODFile.Read(Skip, 48);
+
+	DWORD VCount = Terrain.GetHeightMapWidth() * Terrain.GetHeightMapHeight();
+	ushort* pHeights = n_new_array(ushort, VCount);
+	CDLODFile.Read(pHeights, VCount * sizeof(ushort));
+	CDLODFile.Close();
+
+	DWORD QuadCountX = Terrain.GetHeightMapWidth() - 1;
+	DWORD QuadCountZ = Terrain.GetHeightMapHeight() - 1;
+	float QuadSizeX = SizeX / (float)QuadCountX;
+	float QuadSizeZ = SizeZ / (float)QuadCountZ;
+
+	DWORD TriCount = QuadCountX * QuadCountZ * 2;
+	float* pVertices = n_new_array(float, 3 * VCount);
+	int* pIndices = n_new_array(int, TriCount * 3);
+
+	// Fill vertices
+	float* pCurrVtx = pVertices;
+	for (DWORD j = 0; j < Terrain.GetHeightMapHeight(); ++j)
+		for (DWORD i = 0; i < Terrain.GetHeightMapWidth(); ++i)
+		{
+			*pCurrVtx++ = AABB.vmin.x + i * QuadSizeX;
+			*pCurrVtx++ = ((int)pHeights[j * Terrain.GetHeightMapWidth() + i] - 32767) * Terrain.GetVerticalScale() + OffsetY;
+			*pCurrVtx++ = AABB.vmin.z + j * QuadSizeZ;
+		}
+
+	n_delete_array(pHeights);
+
+	// Fill indices
+	int* pCurrIdx = pIndices;
+	for (DWORD j = 0; j < QuadCountZ; ++j)
+		for (DWORD i = 0; i < QuadCountX; ++i)
+		{
+			*pCurrIdx++ = j * Terrain.GetHeightMapWidth() + i;
+			*pCurrIdx++ = (j + 1) * Terrain.GetHeightMapWidth() + i;
+			*pCurrIdx++ = j * Terrain.GetHeightMapWidth() + (i + 1);
+			*pCurrIdx++ = j * Terrain.GetHeightMapWidth() + (i + 1);
+			*pCurrIdx++ = (j + 1) * Terrain.GetHeightMapWidth() + i;
+			*pCurrIdx++ = (j + 1) * Terrain.GetHeightMapWidth() + (i + 1);
+		}
+
+	bool Result = AddGeometry(pVertices, VCount, pIndices, TriCount, Area);
+
+	n_delete_array(pVertices);
+	n_delete_array(pIndices);
 
 	return Result;
 }
 //---------------------------------------------------------------------
-*/
 
 bool CNavMeshBuilder::AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area)
 {

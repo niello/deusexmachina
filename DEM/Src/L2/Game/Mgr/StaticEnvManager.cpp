@@ -12,6 +12,7 @@ namespace Attr
 {
 	DeclareAttr(GUID);
 	DeclareAttr(Physics);
+	DeclareAttr(AnimDesc);
 	DeclareAttr(Transform);
 	DeclareAttr(ScenePath);
 	DeclareAttr(SceneFile);
@@ -134,6 +135,7 @@ bool CStaticEnvManager::IsEntityStatic(CEntity& Entity) const
 	//!!!unnecessary data copying!
 	nString Value;
 
+	// We have physics bodies that can move us
 	if (Entity.Get<nString>(Attr::Physics, Value) && Value.IsValid())
 	{
 		// It uses HRD cache, so it isn't so slow
@@ -141,6 +143,10 @@ bool CStaticEnvManager::IsEntityStatic(CEntity& Entity) const
 		int Idx = Desc->IndexOf(CStrID("Bodies"));
 		if (Idx != INVALID_INDEX && Desc->Get<PDataArray>(Idx)->Size() > 0) FAIL;
 	}
+
+	// We have animations that can move us
+	if (Entity.Get<nString>(Attr::AnimDesc, Value) && Value.IsValid())
+		FAIL;
 
 	OK;
 }
