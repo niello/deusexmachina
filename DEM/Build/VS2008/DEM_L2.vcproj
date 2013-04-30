@@ -931,22 +931,6 @@
 			</Filter>
 		</Filter>
 		<Filter
-			Name="Time"
-			>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Time\Prop\PropTime.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Time\Prop\PropTime.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
 			Name="App"
 			>
 			<File

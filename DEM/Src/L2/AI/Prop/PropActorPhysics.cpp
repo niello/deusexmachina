@@ -61,7 +61,7 @@ void CPropActorPhysics::EnablePhysics()
 	n_assert(!IsEnabled());
 
 	PhysEntity = Physics::CCharEntity::Create();
-	PhysEntity->SetUserData(GetEntity()->GetUniqueID());
+	PhysEntity->SetUserData(GetEntity()->GetUID());
 	PhysEntity->SetTransform(GetEntity()->Get<matrix44>(Attr::Transform));
 	PhysEntity->CompositeName = GetEntity()->Get<nString>(Attr::Physics);
 	PhysEntity->Radius = GetEntity()->Get<float>(Attr::Radius);
@@ -119,7 +119,7 @@ bool CPropActorPhysics::OnMoveAfter(const Events::CEventBase& Event)
 
 bool CPropActorPhysics::OnEntityRenamed(const Events::CEventBase& Event)
 {
-	if (PhysEntity.isvalid()) PhysEntity->SetUserData(GetEntity()->GetUniqueID());
+	if (PhysEntity.isvalid()) PhysEntity->SetUserData(GetEntity()->GetUID());
 	OK;
 }
 //---------------------------------------------------------------------
@@ -150,7 +150,7 @@ void CPropActorPhysics::OnRenderDebug()
 	DebugDraw->DrawLine(Tfm.pos_component(), Tfm.pos_component() + PhysEntity->GetVelocity(), ColorVel);
 	DebugDraw->DrawLine(Tfm.pos_component(), Tfm.pos_component() + PhysEntity->GetDesiredLinearVelocity(), ColorDesVel);
 
-	if (GetEntity()->GetUniqueID() == CStrID("GG"))
+	if (GetEntity()->GetUID() == CStrID("GG"))
 	{
 		nString text;
 		text.Format("Velocity: %.4f, %.4f, %.4f\nDesired velocity: %.4f, %.4f, %.4f\nAngular desired: %.5f\n"

@@ -74,7 +74,7 @@ CEntity* CEntityFactory::CreateEntityByCategory(CStrID GUID, CStrID Category, En
 		pEntity->SetAttrTable(Cat.InstDataset->GetValueTable());
 		pEntity->SetAttrTableRowIndex(Cat.InstDataset->GetValueTable()->AddRow());
 		pEntity->SetCategory(Category);
-		pEntity->SetUniqueID(GUID);
+		pEntity->SetUID(GUID);
 
 		for (int i = 0; i < Cat.Properties.Size(); i++)
 			AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
@@ -105,7 +105,7 @@ CEntity* CEntityFactory::CreateEntityByTemplate(CStrID GUID, CStrID Category, CS
 	pEntity->SetAttrTable(Cat.InstDataset->GetValueTable());
 	pEntity->SetAttrTableRowIndex(Cat.InstDataset->GetValueTable()->CopyExtRow(Cat.TplDataset->GetValueTable(), TplIdx, true));
 	pEntity->SetCategory(Category);
-	pEntity->SetUniqueID(GUID);
+	pEntity->SetUID(GUID);
 
 	for (int i = 0; i < Cat.Properties.Size(); i++)
 		AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
@@ -141,7 +141,7 @@ CEntity* CEntityFactory::CreateTmpEntity(CStrID GUID, CStrID Category, PValueTab
 	pEntity->SetCategory(Category); //???add to dummy table all attrs if category exists?
 	pEntity->SetAttrTable(Table);
 	pEntity->SetAttrTableRowIndex(Row);
-	pEntity->SetUniqueID(GUID);
+	pEntity->SetUID(GUID);
 	pEntity->SetLive(true);
 	return pEntity;
 }
@@ -184,10 +184,10 @@ CProperty* CEntityFactory::AttachProperty(CEntity& Entity, const nString& TypeNa
 	if (PropInfo.ActivePools & Entity.GetPool())
 	{
 		PProperty Prop;
-		if (!PropInfo.pStorage->Get(Entity.GetUniqueID(), Prop))
+		if (!PropInfo.pStorage->Get(Entity.GetUID(), Prop))
 		{
 			Prop = (CProperty*)CoreFct->Create(TypeName);
-			PropInfo.pStorage->Add(Entity.GetUniqueID(), Prop);
+			PropInfo.pStorage->Add(Entity.GetUID(), Prop);
 			Prop->SetEntity(&Entity);
 		}
 		return Prop.get_unsafe();
@@ -202,14 +202,14 @@ void CEntityFactory::DetachProperty(CEntity& Entity, const nString& TypeName) co
 	CPropertyInfo PropInfo;
 	if (!PropertyMeta.Get(TypeName.Get(), PropInfo))
 		n_error("No such property \"%s\"", TypeName.Get());
-	n_assert_dbg(PropInfo.pStorage->Erase(Entity.GetUniqueID()));
+	n_assert_dbg(PropInfo.pStorage->Erase(Entity.GetUID()));
 }
 //---------------------------------------------------------------------
 
 void CEntityFactory::DetachAllProperties(CEntity& Entity) const
 {
 	for (int i = 0; i < PropStorage.Size(); i++)
-		PropStorage[i]->Erase(Entity.GetUniqueID());
+		PropStorage[i]->Erase(Entity.GetUID());
 }
 //---------------------------------------------------------------------
 
@@ -421,7 +421,7 @@ void CEntityFactory::RenameEntityInstance(CEntity* pEntity, CStrID NewID) const
 {
 	n_assert(pEntity);
 
-	CStrID OldID = pEntity->GetUniqueID();
+	CStrID OldID = pEntity->GetUID();
 
 	nString SQL;
 	SQL.Format("UPDATE %s SET GUID='%s' WHERE GUID='%s'",

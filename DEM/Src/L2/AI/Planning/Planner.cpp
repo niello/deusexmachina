@@ -307,7 +307,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	PActionSequence Seq;
 
 #ifdef _DEBUG
-	n_printf("Planner -> '%s' Begin plan\n", pActor->GetEntity()->GetUniqueID());
+	n_printf("Planner -> '%s' Begin plan\n", pActor->GetEntity()->GetUID());
 #endif
 
 	while (pCurrNode && pCurrNode->pAction)
@@ -320,7 +320,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 			nString DbgString;
 			CurrAction->GetDebugString(DbgString);
 			n_printf("Planner -> '%s'     Action added: '%s'\n",
-				pActor->GetEntity()->GetUniqueID(), DbgString.Get());
+				pActor->GetEntity()->GetUID(), DbgString.Get());
 #endif
 
 			if (!Plan.isvalid()) Plan = CurrAction;
@@ -340,7 +340,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	}
 
 #ifdef _DEBUG
-	n_printf("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUniqueID());
+	n_printf("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUID());
 #endif
 
 	while (CNode* pNode = (CNode*)OpenList.RemHead()) NodePool.Destroy(pNode);

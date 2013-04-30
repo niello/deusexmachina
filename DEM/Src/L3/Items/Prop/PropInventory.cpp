@@ -82,7 +82,7 @@ void CPropInventory::Save()
 	PValueTable VT = DS->GetValueTable();
 	int RowCount = ItemMgr->GetInventoriesRowCount();
 
-	CStrID EntID = GetEntity()->GetUniqueID();
+	CStrID EntID = GetEntity()->GetUID();
 
 	// Cause VT column order never changes we use indices directly, without lookup
 	// VT is sorted by ItemOwner. We can't guarantee asc/desc order of CStrIDs, so we use linear search,
@@ -164,7 +164,7 @@ void CPropInventory::Load()
 
 	if (!VT.isvalid() || !VT->GetRowCount()) return;
 
-	CStrID EntID = GetEntity()->GetUniqueID();
+	CStrID EntID = GetEntity()->GetUID();
 
 	int RowIdx;
 	for (RowIdx = 0; RowIdx < VT->GetRowCount(); ++RowIdx)
@@ -215,7 +215,7 @@ bool CPropInventory::AddItem(PItem NewItem, WORD Count)
 		PParams P = n_new(CParams);
 		P->Set(CStrID("Item"), nString(NewItem->GetID().CStr()));
 		P->Set(CStrID("Count"), (int)Count);
-		P->Set(CStrID("Entity"), nString(GetEntity()->GetUniqueID().CStr()));
+		P->Set(CStrID("Entity"), nString(GetEntity()->GetUID().CStr()));
 		EventMgr->FireEvent(CStrID("OnItemAdded"), P);
 
 		OK;
@@ -223,7 +223,7 @@ bool CPropInventory::AddItem(PItem NewItem, WORD Count)
 
 #ifdef _DEBUG
 	n_printf("CEntity \"%s\": Item \"%s\" is too big or heavy\n",
-		GetEntity()->GetUniqueID(),
+		GetEntity()->GetUID(),
 		NewItem->GetID());
 #endif
 
@@ -248,7 +248,7 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 	PParams P = n_new(CParams);
 	P->Set(CStrID("Item"), nString(Stack->GetItemID().CStr()));
 	P->Set(CStrID("Count"), (int)ToRemove);
-	P->Set(CStrID("Entity"), nString(GetEntity()->GetUniqueID().CStr()));
+	P->Set(CStrID("Entity"), nString(GetEntity()->GetUID().CStr()));
 
 	if (Stack->GetCount() > ToRemove)
 	{

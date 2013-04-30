@@ -28,10 +28,10 @@ PAction CTaskUseSmartObj::BuildPlan()
 	n_assert(pSO);
 
 	PActionGotoSmartObj ActGoto = n_new(CActionGotoSmartObj);
-	ActGoto->Init(pSO->GetEntity()->GetUniqueID(), ActionID);
+	ActGoto->Init(pSO->GetEntity()->GetUID(), ActionID);
 
 	PActionUseSmartObj ActUse = n_new(CActionUseSmartObj);
-	ActUse->Init(pSO->GetEntity()->GetUniqueID(), ActionID);
+	ActUse->Init(pSO->GetEntity()->GetUID(), ActionID);
 
 	PActionSequence Plan = n_new(CActionSequence);
 	Plan->AddChild(ActGoto);

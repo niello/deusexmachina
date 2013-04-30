@@ -90,7 +90,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			
 			Rec.Stimulus = (CStimulus*)CoreFct->Create(StrStimulusPrefix + PrmVal->Get<nString>(CStrID("Type"), NULL));
 
-			Rec.Stimulus->SourceEntityID = GetEntity()->GetUniqueID();
+			Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
 			Rec.Stimulus->Position = Pos; //!!!offset * tfm!
 			Rec.Stimulus->Intensity = PrmVal->Get<float>(CStrID("Intensity"), 1.f);
 			Rec.Stimulus->ExpireTime = PrmVal->Get<float>(CStrID("ExpireTime"), -1.f);

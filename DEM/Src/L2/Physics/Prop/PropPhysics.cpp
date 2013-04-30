@@ -71,7 +71,7 @@ void CPropPhysics::EnablePhysics()
 		PhysicsEntity = CreatePhysicsEntity();
 		n_assert(PhysicsEntity.isvalid());
 		PhysicsEntity->CompositeName = GetEntity()->Get<nString>(Attr::Physics);
-		PhysicsEntity->SetUserData(GetEntity()->GetUniqueID());
+		PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	}
 
 	// Attach physics entity to physics level
@@ -110,7 +110,7 @@ bool CPropPhysics::OnMoveAfter(const CEventBase& Event)
 
 bool CPropPhysics::OnEntityRenamed(const CEventBase& Event)
 {
-	if (PhysicsEntity.isvalid()) PhysicsEntity->SetUserData(GetEntity()->GetUniqueID());
+	if (PhysicsEntity.isvalid()) PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	OK;
 }
 //---------------------------------------------------------------------

@@ -128,7 +128,7 @@ void CCharEntity::OnStepBefore()
 		Pos.y += Height;
 
 		float DistanceToGround;
-		if (EnvQueryMgr->GetEnvInfoAt(Pos, EnvInfo, Height + 0.1f, GetUniqueID()))
+		if (EnvQueryMgr->GetEnvInfoAt(Pos, EnvInfo, Height + 0.1f, GetUID()))
 		{
 			DistanceToGround = Pos.y - Height - EnvInfo.WorldHeight;
 			GroundMtl = EnvInfo.Material;

@@ -189,8 +189,8 @@ void CDlgSystem::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool Foreg
 	n_assert(pTarget && pInitiator);
 
 	//!!!USE PARTY MGR! FactionMgr->GetParty()->GetLeaderID() or smth.
-	bool TargetIsPlr = pTarget->GetUniqueID() == "GG";
-	bool InitiatorIsPlr = pInitiator->GetUniqueID() == "GG";
+	bool TargetIsPlr = pTarget->GetUID() == "GG";
+	bool InitiatorIsPlr = pInitiator->GetUID() == "GG";
 
 	CActiveDlg NewDlg;
 
@@ -199,16 +199,16 @@ void CDlgSystem::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool Foreg
 		NewDlg.Dlg = pTarget->FindProperty<Properties::CPropTalking>()->GetDialogue();
 		if (NewDlg.Dlg.isvalid())
 		{
-			NewDlg.DlgOwner = pTarget->GetUniqueID();
-			if (InitiatorIsPlr) NewDlg.PlrSpeaker = pInitiator->GetUniqueID();
+			NewDlg.DlgOwner = pTarget->GetUID();
+			if (InitiatorIsPlr) NewDlg.PlrSpeaker = pInitiator->GetUID();
 		}
 		else
 		{
 			NewDlg.Dlg = pInitiator->FindProperty<Properties::CPropTalking>()->GetDialogue();
 			if (NewDlg.Dlg.isvalid())
 			{
-				NewDlg.DlgOwner = pInitiator->GetUniqueID();
-				if (TargetIsPlr) NewDlg.PlrSpeaker = pTarget->GetUniqueID();
+				NewDlg.DlgOwner = pInitiator->GetUID();
+				if (TargetIsPlr) NewDlg.PlrSpeaker = pTarget->GetUID();
 			}
 		}
 	}
@@ -219,16 +219,16 @@ void CDlgSystem::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool Foreg
 		NewDlg.Dlg = pNPC->FindProperty<Properties::CPropTalking>()->GetDialogue();
 		if (NewDlg.Dlg.isvalid())
 		{
-			NewDlg.DlgOwner = pNPC->GetUniqueID();
-			NewDlg.PlrSpeaker = pPlr->GetUniqueID();
+			NewDlg.DlgOwner = pNPC->GetUID();
+			NewDlg.PlrSpeaker = pPlr->GetUID();
 		}
 		else //???need?
 		{
 			NewDlg.Dlg = pPlr->FindProperty<Properties::CPropTalking>()->GetDialogue();
 			if (NewDlg.Dlg.isvalid())
 			{
-				NewDlg.DlgOwner = pPlr->GetUniqueID();
-				NewDlg.PlrSpeaker = pNPC->GetUniqueID();
+				NewDlg.DlgOwner = pPlr->GetUID();
+				NewDlg.PlrSpeaker = pNPC->GetUID();
 			}
 		}
 	}

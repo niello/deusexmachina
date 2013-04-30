@@ -22,7 +22,7 @@ using namespace Properties;
 void CActionUseSmartObj::StartSOAction(CActor* pActor)
 {
 	PParams P = n_new(CParams);
-	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUniqueID());
+	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("IAO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 	if (Action->OnStartCmd.IsValid()) pSO->GetEntity()->FireEvent(Action->OnStartCmd, P);
@@ -101,7 +101,7 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 		bool EndOnDone = Action->EndOnDone();
 
 		PParams P = n_new(CParams);
-		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUniqueID());
+		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 		P->Set(CStrID("IAO"), TargetID);
 		P->Set(CStrID("Action"), ActionID);
 		if (Action->OnDoneCmd.IsValid()) pSO->GetEntity()->FireEvent(Action->OnDoneCmd, P);
@@ -128,7 +128,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	if (Action->FreeUserSlots >= 0) Action->FreeUserSlots++;
 	
 	PParams P = n_new(CParams);
-	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUniqueID());
+	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("IAO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 

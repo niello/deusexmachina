@@ -155,7 +155,7 @@ void CFocusManager::SwitchFocusEntities()
 		InputFocusEntity = NewInputFocusEntity;
 		NewInputFocusEntity = NULL;
 #ifndef _EDITOR
-		LoaderSrv->SetGlobal(Attr::InputFocus, (CStrID)InputFocusEntity->GetUniqueID());
+		LoaderSrv->SetGlobal(Attr::InputFocus, (CStrID)InputFocusEntity->GetUID());
 #endif
 		InputFocusEntity->FireEvent(CStrID("OnObtainInputFocus"));
 	}
@@ -166,7 +166,7 @@ void CFocusManager::SwitchFocusEntities()
 		CameraFocusEntity = NewCameraFocusEntity;
 		NewCameraFocusEntity = NULL;
 #ifndef _EDITOR
-		LoaderSrv->SetGlobal(Attr::CameraFocus, (CStrID)CameraFocusEntity->GetUniqueID());
+		LoaderSrv->SetGlobal(Attr::CameraFocus, (CStrID)CameraFocusEntity->GetUID());
 #endif
 		CameraFocusEntity->FireEvent(CStrID("OnObtainCameraFocus"));
 	}

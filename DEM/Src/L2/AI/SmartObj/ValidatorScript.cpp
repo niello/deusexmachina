@@ -25,7 +25,7 @@ bool CValidatorScript::IsValid(const CActor* pActor, const CPropSmartObject* pSO
 	{
 		CPropScriptable* pScriptable = pSO->GetEntity()->FindProperty<CPropScriptable>();
 		CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
-		if (pScriptObj && pScriptObj->RunFunctionData(ConditionFunc, pActor->GetEntity()->GetUniqueID()) != Success) FAIL;
+		if (pScriptObj && pScriptObj->RunFunctionData(ConditionFunc, pActor->GetEntity()->GetUID()) != Success) FAIL;
 	}
 	OK;
 }

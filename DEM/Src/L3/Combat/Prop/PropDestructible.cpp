@@ -35,7 +35,7 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 
 	HP -= e.Amount;
 	n_printf("CEntity \"%s\": Fucking shit! I was damaged. HP:%d/%d\n",
-		GetEntity()->GetUniqueID(),
+		GetEntity()->GetUID(),
 		HP,
 		HPMax);
 
@@ -43,7 +43,7 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 	{
 		//!!!send ObjDie/ObjDestructed msg!
 		//???notify killer entity about success to gain exp?
-		n_printf("CEntity \"%s\": I'm dead!\n", GetEntity()->GetUniqueID());
+		n_printf("CEntity \"%s\": I'm dead!\n", GetEntity()->GetUID());
 	}
 
 	OK;

@@ -26,7 +26,7 @@ CEntity::~CEntity()
 }
 //---------------------------------------------------------------------
 
-void CEntity::SetUniqueID(CStrID NewUID)
+void CEntity::SetUID(CStrID NewUID)
 {
 	n_assert(NewUID.IsValid()); //!!!check is valid UID (contains only allowed characters)!
 	if (UID == NewUID) return;
