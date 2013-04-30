@@ -88,7 +88,7 @@ public:
 	CShape*			GetShapeAt(int Idx) const { return Shapes[Idx]; }
 
 	bool			IsAttached() const { return ODEBodyID != NULL; }
-	Id				GetUniqueID() const { return UID; }
+	Id				GetUID() const { return UID; }
 	void			SetEntity(CEntity* pEnt);
 	CEntity*		GetEntity() const { return pEntity; }
 	void			SetEnabled(bool Enable);

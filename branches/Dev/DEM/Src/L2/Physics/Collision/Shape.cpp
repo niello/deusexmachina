@@ -229,9 +229,9 @@ void CShape::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 		ContactPt.Material = pOtherShape->GetMaterialType();
 		ContactPt.Depth = ODEContact.depth;
 		CEntity* pEntity = pOtherShape->GetEntity();
-		if (pEntity) ContactPt.EntityID = pEntity->GetUniqueID();
+		if (pEntity) ContactPt.EntityID = pEntity->GetUID();
 		CRigidBody* pRigidBody = pOtherShape->GetRigidBody();
-		if (pRigidBody) ContactPt.RigidBodyID = pRigidBody->GetUniqueID();
+		if (pRigidBody) ContactPt.RigidBodyID = pRigidBody->GetUID();
 		CShape::CollideContacts->Append(ContactPt);
 	}
 }

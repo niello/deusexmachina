@@ -63,7 +63,7 @@ void CEntityManager::AddEntityToReqistry(CEntity* pEntity)
 	else
 	{
 		Entities.Append(pEntity);
-		EntityRegistry.Add(pEntity->GetUniqueID(), pEntity);
+		EntityRegistry.Add(pEntity->GetUID(), pEntity);
 	}
 }
 //---------------------------------------------------------------------
@@ -86,8 +86,8 @@ void CEntityManager::RemoveEntityFromRegistry(CEntity* pEntity)
 			// save removed entity in array (to make sure the entity does not get destroyed until end of frame)
 			// inside OnFrame, just set the ptrs to 0, so the entity is not longer triggered
 			RemovedEntities.Append(pEntity);
-			EntityRegistry.Erase(pEntity->GetUniqueID());
-			//EntityRegistry[pEntity->GetUniqueID()] = NULL;
+			EntityRegistry.Erase(pEntity->GetUID());
+			//EntityRegistry[pEntity->GetUID()] = NULL;
 			Iter = Entities.Find(pEntity);
 			n_assert(Iter);
 			(*Iter) = NULL;
@@ -96,7 +96,7 @@ void CEntityManager::RemoveEntityFromRegistry(CEntity* pEntity)
 	else
 	{
 		// directly remove entity from arrays
-		EntityRegistry.Erase(pEntity->GetUniqueID());
+		EntityRegistry.Erase(pEntity->GetUID());
 		nArray<PEntity>::iterator Iter = Entities.Find(pEntity);
 		n_assert(Iter);
 		Entities.Erase(Iter);
@@ -123,7 +123,7 @@ void CEntityManager::UpdateRegistry()
 				// move one of the new entity at this 0 ptr
 				Entities[i] = NewEntities.Back();
 				NewEntities.Erase(NewEntities.Size() - 1);
-				EntityRegistry.Add(Entities[i]->GetUniqueID(), Entities[i]);
+				EntityRegistry.Add(Entities[i]->GetUID(), Entities[i]);
 				i++;
 			}
 			else Entities.Erase(i);
@@ -134,14 +134,14 @@ void CEntityManager::UpdateRegistry()
 	{
 		Entities.Append(NewEntities.Back());
 		NewEntities.Erase(NewEntities.Size() - 1);
-		EntityRegistry.Add(Entities.Back()->GetUniqueID(), Entities.Back());
+		EntityRegistry.Add(Entities.Back()->GetUID(), Entities.Back());
 	}
 }
 //---------------------------------------------------------------------
 
 void CEntityManager::AttachEntity(CEntity* pEntity, bool AutoActivate)
 {
-	n_assert(pEntity && pEntity->GetUniqueID().IsValid());
+	n_assert(pEntity && pEntity->GetUID().IsValid());
 	AddEntityToReqistry(pEntity);
 	if (AutoActivate) ActivateEntity(pEntity);
 }
@@ -150,7 +150,7 @@ void CEntityManager::AttachEntity(CEntity* pEntity, bool AutoActivate)
 void CEntityManager::ActivateEntity(CEntity* pEntity)
 {
 	//???!!!assert is added?!
-	n_assert(pEntity && pEntity->GetUniqueID().IsValid());
+	n_assert(pEntity && pEntity->GetUID().IsValid());
 	pEntity->Activate();
 	if (GameSrv->HasStarted()) pEntity->FireEvent(CStrID("OnStart"));
 }
@@ -182,11 +182,11 @@ void CEntityManager::DeleteEntity(CEntity* pEntity)
 bool CEntityManager::ChangeEntityID(PEntity Entity, CStrID NewID)
 {
 	if (!Entity.isvalid() || !NewID.IsValid()) FAIL;
-	if (Entity->GetUniqueID() == NewID) OK;
+	if (Entity->GetUID() == NewID) OK;
 	if (ExistsEntityByID(NewID)) FAIL;
 	RemoveEntityFromRegistry(Entity);
 	EntityFct->RenameEntityInstance(Entity, NewID);
-	Entity->SetUniqueID(NewID);
+	Entity->SetUID(NewID);
 	AddEntityToReqistry(Entity);
 	OK;
 }

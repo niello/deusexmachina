@@ -85,7 +85,7 @@ public:
 	void			SetEnabled(bool Enabled);
 	void			SetComposite(CComposite* pNew);
 	CComposite*		GetComposite() const { return Composite.get_unsafe(); }
-	DWORD			GetUniqueID() const { return UID; }
+	DWORD			GetUID() const { return UID; }
 	void			SetUserData(CStrID Data) { UserData = Data; }
 	CStrID			GetUserData() const { return UserData; }
 	void			SetStamp(uint s) { Stamp = s; }

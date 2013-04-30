@@ -57,11 +57,11 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 
 	//!!! Try to find the phrase by it's ID before saying it.
 	P->Set(CStrID("Text"), nString(PhraseID.CStr()));
-	P->Set(CStrID("EntityID"), GetEntity()->GetUniqueID());
+	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	EventMgr->FireEvent(CStrID("ShowPhrase"), P);
 
 	P = n_new(CParams);
-	P->Set(CStrID("EntityID"), GetEntity()->GetUniqueID());
+	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	//!!! TODO: Calculate time
 	EventMgr->FireEvent(CStrID("HidePhrase"), P, 0, 5.f);
 }

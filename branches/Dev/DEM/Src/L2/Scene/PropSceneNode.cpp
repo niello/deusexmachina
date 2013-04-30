@@ -47,7 +47,7 @@ void CPropSceneNode::Activate()
 	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::SceneFile);
 
 	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
-		NodePath = GetEntity()->GetUniqueID().CStr();
+		NodePath = GetEntity()->GetUID().CStr();
 	
 	if (NodePath.IsValid())
 	{

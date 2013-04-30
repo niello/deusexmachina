@@ -63,9 +63,9 @@ void CRay::OdeRayCallback(void* data, dGeomID o1, dGeomID o2)
 		ContactPt.UpVector.set(ODEContact[i].normal[0], ODEContact[i].normal[1], ODEContact[i].normal[2]);
 		ContactPt.Depth = ODEContact[i].depth;
 		CEntity* pOtherEntity = pOtherShape->GetEntity();
-		ContactPt.EntityID = pOtherEntity ? pOtherEntity->GetUniqueID() : 0;
+		ContactPt.EntityID = pOtherEntity ? pOtherEntity->GetUID() : 0;
 		CRigidBody* pOtherRB = pOtherShape->GetRigidBody();
-		ContactPt.RigidBodyID = pOtherRB ? pOtherRB->GetUniqueID() : 0;
+		ContactPt.RigidBodyID = pOtherRB ? pOtherRB->GetUID() : 0;
 		ContactPt.Material = pOtherShape->GetMaterialType();
 		CRay::Contacts->Append(ContactPt);
 	}

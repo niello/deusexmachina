@@ -220,7 +220,7 @@ vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
 	if (physProp && physProp->IsEnabled())
 	{
 		Physics::CEntity* physEntity = physProp->GetPhysicsEntity();
-		if (physEntity) ExcludeSet.AddEntityID(physEntity->GetUniqueID());
+		if (physEntity) ExcludeSet.AddEntityID(physEntity->GetUID());
 	}
 	Physics::CPhysicsUtil::RayBundleCheck(from, to, up, m.x_component(), 0.25f, outContactDist, &ExcludeSet);
 

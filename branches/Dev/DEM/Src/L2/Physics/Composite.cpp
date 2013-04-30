@@ -336,7 +336,7 @@ CRigidBody* CComposite::FindBodyByUniqueID(int ID) const
 	for (int i = 0; i < Bodies.Size(); i++)
 	{
 		CRigidBody* pBody = Bodies[i];
-		if (ID == pBody->GetUniqueID()) return pBody;
+		if (ID == pBody->GetUID()) return pBody;
 	}
 	return NULL;
 }

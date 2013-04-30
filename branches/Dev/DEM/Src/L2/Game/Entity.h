@@ -63,12 +63,10 @@ public:
 	template<class T> T*	FindProperty() const;
 	template<class T> bool	HasProperty() const { return FindProperty<T>() != NULL; }
 
-	void			SetUniqueID(CStrID NewUID);
-	CStrID			GetUniqueID() const { n_assert_dbg(UID.IsValid()); return UID; }
+	void			SetUID(CStrID NewUID);
+	CStrID			GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
 
 	// Status getters
-	//!!!check it!
-	//???what's faster? (x & (a | b)) == (a | b) OR (x & a) && (x & b)
 	bool			IsLive() const { return Flags & ENT_LIVE; }
 	void			SetLive(bool Live) { if (Live != IsLive()) Flags ^= ENT_LIVE; }
 	bool			IsActive() const { return (Flags & ENT_ACTIVE) && !(Flags & ENT_CHANGING_STATUS); }

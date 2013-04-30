@@ -103,7 +103,7 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 	//!!!check hit (accurecy etc)!
 
 	Ptr<ObjDamageDone> Event = ObjDamageDone::Create();
-	Event->EntDamager = GetEntity()->GetUniqueID();
+	Event->EntDamager = GetEntity()->GetUID();
 	Event->Type = DmgType;
 
 	//!!!calc damage with all modifiers etc based on calculation rule!
@@ -117,8 +117,8 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 
 #ifdef _DEBUG
 	n_printf("CEntity \"%s\" : Hits entity \"%s\"; Damage = %d\n",
-		GetEntity()->GetUniqueID(),
-		Target.GetUniqueID(),
+		GetEntity()->GetUID(),
+		Target.GetUID(),
 		Event->Amount);
 #endif
 

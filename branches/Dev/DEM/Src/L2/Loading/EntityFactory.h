@@ -160,11 +160,11 @@ template<class T> T* CEntityFactory::AttachProperty(Game::CEntity& Entity) const
 	if (T::Pools & Entity.GetPool())
 	{
 		PProperty Prop;
-		if (!T::Storage.Get(Entity.GetUniqueID(), Prop))
+		if (!T::Storage.Get(Entity.GetUID(), Prop))
 		{
 			Prop = T::Create();
 			n_assert(Prop.isvalid());
-			T::Storage.Add(Entity.GetUniqueID(), Prop);
+			T::Storage.Add(Entity.GetUID(), Prop);
 			Prop->SetEntity(&Entity);
 		}
 		return (T*)Prop.get_unsafe();

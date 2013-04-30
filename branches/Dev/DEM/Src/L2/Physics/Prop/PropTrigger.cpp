@@ -78,7 +78,7 @@ void CPropTrigger::Activate()
 				InvalidMaterial, ShapeParams.x, ShapeParams.y);
 			break;
 		default: n_error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
-					 GetEntity()->GetUniqueID().CStr(),
+					 GetEntity()->GetUID().CStr(),
 					 GetEntity()->Get<int>(Attr::TrgShapeType));
 	}
 
@@ -177,9 +177,9 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 					if (pScriptObj)
 					{
 						//???notify pEnt too by local or even global event?
-						pScriptObj->RunFunctionData(OnTriggerEnter.Get(), nString(pEnt->GetUniqueID().CStr()));
+						pScriptObj->RunFunctionData(OnTriggerEnter.Get(), nString(pEnt->GetUID().CStr()));
 						//???here or from OnTriggerEnter if needed for this trigger?
-						//pScriptObj->RunFunctionData(OnTriggerApply, nString(pEnt->GetUniqueID().CStr()))
+						//pScriptObj->RunFunctionData(OnTriggerApply, nString(pEnt->GetUID().CStr()))
 					}
 				}
 			}
@@ -191,14 +191,14 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		Game::CEntity* pEnt = pInsideLastFrame->At(i);
 		if (!pInsideNow->Contains(pEnt) && pEnt->IsActive())
 			if (pScriptObj)
-				pScriptObj->RunFunctionData(OnTriggerLeave.Get(), nString(pEnt->GetUniqueID().CStr()));
+				pScriptObj->RunFunctionData(OnTriggerLeave.Get(), nString(pEnt->GetUID().CStr()));
 	}
 
 	if (Period > 0.f && GameSrv->GetTime() - TimeLastTriggered >= Period)
 	{
 		for (int i = 0; i < pInsideNow->Size(); i++)
 			if (pScriptObj)
-				pScriptObj->RunFunctionData(OnTriggerLeave.Get(), nString(pInsideNow->At(i)->GetUniqueID().CStr()));
+				pScriptObj->RunFunctionData(OnTriggerLeave.Get(), nString(pInsideNow->At(i)->GetUID().CStr()));
 		TimeLastTriggered = (float)GameSrv->GetTime();
 	}
 

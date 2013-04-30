@@ -117,8 +117,8 @@ bool CPropUIControl::OnObjMouseOver(const Events::CEventBase& Event)
 	if ((*((Events::CEvent&)Event).Params).Get<bool>(CStrID("IsOver"), false))
 	{
 		PParams P = n_new(CParams);
-		P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUniqueID().CStr()));
-		P->Set(CStrID("EntityID"), GetEntity()->GetUniqueID());
+		P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUID().CStr()));
+		P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 		EventMgr->FireEvent(CStrID("ShowIAOTip"), P);
 	}
 	else EventMgr->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!

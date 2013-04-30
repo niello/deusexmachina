@@ -11,7 +11,6 @@ namespace Attr
 	DeclareAttrsModule(LoaderServer)
 	DeclareAttrsModule(FocusManager)
 	DeclareAttrsModule(PropPhysics)
-	DeclareAttrsModule(PropTime)
 
 	// New attrs
 	DeclareAttrsModule(ScriptObject)
@@ -44,7 +43,6 @@ void CEnvironment::RegisterAttributes()
 	RegisterAttrs(LoaderServer)
 	RegisterAttrs(FocusManager)
 	RegisterAttrs(PropPhysics)
-	RegisterAttrs(PropTime)
 
 	// New attrs
 	RegisterAttrs(ScriptObject)

@@ -38,7 +38,7 @@ void CPropScriptable::Activate()
 
 	//???to OnLoad?
 
-	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUniqueID().CStr(), "Entities"));
+	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUID().CStr(), "Entities"));
 	n_assert(Obj->Init(LuaClass.IsValid() ? LuaClass.Get() : "CEntityScriptObject"));
 
 	const nString& ScriptFile = GetEntity()->Get<nString>(Attr::Script);
@@ -73,7 +73,7 @@ bool CPropScriptable::OnPropsActivated(const CEventBase& Event)
 		ScriptSrv->EndMixin();
 		Obj->RunFunction("OnPropInit");
 	}
-	else n_printf("Entity \"%s\": error when mixing-in script object\n", GetEntity()->GetUniqueID().CStr());
+	else n_printf("Entity \"%s\": error when mixing-in script object\n", GetEntity()->GetUID().CStr());
 	OK;
 }
 //---------------------------------------------------------------------

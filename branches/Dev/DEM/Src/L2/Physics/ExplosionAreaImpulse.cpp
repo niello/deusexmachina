@@ -46,7 +46,7 @@ bool CExplosionAreaImpulse::HandleRigidBody(CRigidBody* pBody, const vector3& Po
 {
 	// Do line of sight check to position of body
 	//CFilterSet ExcludeSet;
-	//ExcludeSet.AddRigidBodyId(pBody->GetUniqueID());
+	//ExcludeSet.AddRigidBodyId(pBody->GetUID());
 	vector3 Dir = Position - Position;
 	//if (0 == PhysicsSrv->GetClosestContactAlongRay(Position, Dir, ExcludeSet))
 	//{

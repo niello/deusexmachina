@@ -148,7 +148,7 @@ void CPropActorBrain::Activate()
 						if (!Found)
 							n_printf("Warning, AI: perceptor '%s' not found in '%s' on activation\n",
 									 ItPercName->GetValue<nString>().Get(),
-									 GetEntity()->GetUniqueID().CStr());
+									 GetEntity()->GetUID().CStr());
 					}
 				}
 			}

@@ -42,8 +42,8 @@ protected:
 
 	bool					isOpen;
 
-	void RegisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Add(pEnt->GetUniqueID(), pEnt); }
-	void UnregisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Rem(pEnt->GetUniqueID()); }
+	void RegisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Add(pEnt->GetUID(), pEnt); }
+	void UnregisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Rem(pEnt->GetUID()); }
 
 	friend class CLevel;
 	friend class CRigidBody;
