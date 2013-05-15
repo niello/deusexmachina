@@ -11,8 +11,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTplWander, AI::CActionTpl);
-ImplementFactory(AI::CActionTplWander);
+__ImplementClassNoFactory(AI::CActionTplWander, AI::CActionTpl);
+__ImplementClass(AI::CActionTplWander);
 
 void CActionTplWander::Init(PParams Params)
 {

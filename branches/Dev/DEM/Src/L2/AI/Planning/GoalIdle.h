@@ -13,8 +13,7 @@ namespace AI
 
 class CGoalIdle: public CGoal
 {
-	DeclareRTTI;
-	DeclareFactory(CGoalIdle);
+	__DeclareClass(CGoalIdle);
 
 public:
 
@@ -22,7 +21,7 @@ public:
 	virtual void GetDesiredProps(CWorldState& Dest);
 };
 
-RegisterFactory(CGoalIdle);
+__RegisterClassInFactory(CGoalIdle);
 
 }
 

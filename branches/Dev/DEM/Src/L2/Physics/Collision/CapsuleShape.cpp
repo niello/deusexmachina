@@ -4,8 +4,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CCapsuleShape, Physics::CShape);
-ImplementFactory(Physics::CCapsuleShape);
+__ImplementClassNoFactory(Physics::CCapsuleShape, Physics::CShape);
+__ImplementClass(Physics::CCapsuleShape);
 
 void CCapsuleShape::Init(Data::PParams Desc)
 {

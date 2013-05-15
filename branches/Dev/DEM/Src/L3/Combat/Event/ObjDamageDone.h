@@ -13,8 +13,7 @@ namespace Event
 
 class ObjDamageDone: public Events::CEventNative
 {
-	DeclareRTTI;
-	DeclareFactory(ObjDamageDone);
+	__DeclareClass(ObjDamageDone);
 
 public:
 
@@ -23,7 +22,7 @@ public:
 	CStrID			EntDamager;
 };
 
-RegisterFactory(ObjDamageDone);
+__RegisterClassInFactory(ObjDamageDone);
 
 }
 

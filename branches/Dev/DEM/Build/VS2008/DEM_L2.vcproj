@@ -822,30 +822,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Loading\EntityLoader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\EntityLoader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\EntityLoaderBase.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\EntityLoaderBase.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\EnvironmentLoader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\EnvironmentLoader.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Loading\LoaderServer.cpp"
 				>
 			</File>
@@ -866,7 +842,43 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Game\EntityFwd.h"
+				RelativePath="..\..\Src\L2\Game\EntityLoader.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityLoader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityLoaderCommon.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityLoaderCommon.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityLoaderStatic.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityLoaderStatic.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\EntityManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\GameLevel.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\GameLevel.h"
 				>
 			</File>
 			<File
@@ -875,14 +887,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L2\Game\GameServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Game\Manager.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Game\Manager.h"
 				>
 			</File>
 			<File
@@ -896,14 +900,6 @@
 			<Filter
 				Name="Mgr"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\EntityManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\EntityManager.h"
-					>
-				</File>
 				<File
 					RelativePath="..\..\Src\L2\Game\Mgr\EnvQueryManager.cpp"
 					>
@@ -1122,14 +1118,22 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\Level.cpp"
+				RelativePath="..\..\Src\L2\Physics\MaterialTable.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\MaterialTable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PhysicsLevel.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Level_Phys.obj"
+						ObjectFile="$(IntDir)\"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1137,7 +1141,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Level_Phys.obj"
+						ObjectFile="$(IntDir)\"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1145,7 +1149,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Level_Phys.obj"
+						ObjectFile="$(IntDir)\"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1153,20 +1157,12 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Level_Phys.obj"
+						ObjectFile="$(IntDir)\"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\Level.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\MaterialTable.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\MaterialTable.h"
+				RelativePath="..\..\Src\L2\Physics\PhysicsLevel.h"
 				>
 			</File>
 			<File
@@ -1389,10 +1385,6 @@
 					>
 				</File>
 			</Filter>
-		</Filter>
-		<Filter
-			Name="Audio"
-			>
 		</Filter>
 		<Filter
 			Name="SI"

@@ -42,6 +42,7 @@ protected:
 		const CBuffer*					As_CBuffer;
 		struct { float x, y, z; }*		As_vector3;
 		struct { float x, y, z, w; }*	As_vector4;
+		struct { float m[4][4]; }*		As_matrix44;
 	};
 #else
 	void*			Value;
@@ -75,7 +76,6 @@ public:
 	// Keeps type, uses conversion
 	template<class T> void		SetValue(const T& Src);			
 	void						SetValue(const CData& Src);
-	//void						SetValue(void* const* pSrcObj); //???SetValueObjectPtr?
 	
 	template<class T> bool		GetValue(T& Dest) const;
 	template<class T> T&		GetValue();

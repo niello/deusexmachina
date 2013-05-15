@@ -9,11 +9,11 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTpl, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CActionTpl, Core::CRefCounted);
 
 void CActionTpl::Init(PParams Params)
 {
-	if (Params.isvalid())
+	if (Params.IsValid())
 	{
 		Precedence = Params->Get(CStrID("Precedence"), 1);
 		Cost = Params->Get(CStrID("Cost"), 1);

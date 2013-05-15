@@ -2,18 +2,7 @@
 
 namespace Time
 {
-ImplementRTTI(Time::CTimeSource, Core::CRefCounted);
-ImplementFactory(Time::CTimeSource);
-
-CTimeSource::CTimeSource():
-	FrameTime(0.001f),
-	Time(0.0),
-	PauseCounter(0),
-	TimeFactor(1.0f),
-	FrameID(0)
-{
-}
-//---------------------------------------------------------------------
+__ImplementClassNoFactory(Time::CTimeSource, Core::CRefCounted);
 
 void CTimeSource::Update(nTime _FrameTime)
 {

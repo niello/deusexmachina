@@ -40,7 +40,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
 {
-	if (!Doc.isvalid() || Doc->Error()) FAIL;
+	if (!Doc.IsValid() || Doc->Error()) FAIL;
 
 	tinyxml2::XMLHandle hDoc(Doc);
 	tinyxml2::XMLElement* pSheet = hDoc.FirstChildElement("Workbook").FirstChildElement("Worksheet").ToElement();
@@ -79,7 +79,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 			if (FirstRowAsColNames)
 			{
 				GetTextFromCell(pCell, CellText);
-				if (CellText.IsValid()) Out.ColMap.Add(CStrID(CellText.Get()), TableW);
+				if (CellText.IsValid()) Out.ColMap.Add(CStrID(CellText.CStr()), TableW);
 			}
 			++ColCount;
 			++TableW;
@@ -124,7 +124,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 		if (FirstColAsRowNames)
 		{
 			GetTextFromCell(pCell, CellText);
-			if (CellText.IsValid()) Out.RowMap.Add(CStrID(CellText.Get()), CurrRow);
+			if (CellText.IsValid()) Out.RowMap.Add(CStrID(CellText.CStr()), CurrRow);
 			pCell = pCell->NextSiblingElement("Cell");
 			++CurrCol;
 		}

@@ -4,7 +4,7 @@
 #include <Data/Params.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
@@ -12,8 +12,8 @@
 
 namespace Game
 {
-ImplementRTTI(Game::CEnvQueryManager, Game::CManager);
-ImplementFactory(Game::CEnvQueryManager);
+__ImplementClassNoFactory(Game::CEnvQueryManager, Game::CManager);
+__ImplementClass(Game::CEnvQueryManager);
 __ImplementSingleton(CEnvQueryManager);
 
 CEnvQueryManager::CEnvQueryManager():
@@ -46,7 +46,7 @@ void CEnvQueryManager::Deactivate()
 
 CEntity* CEnvQueryManager::GetEntityUnderMouse() const
 {
-	return EntityMgr->GetEntityByID(EntityUnderMouse);
+	return EntityMgr->GetEntity(EntityUnderMouse);
 }
 //---------------------------------------------------------------------
 
@@ -81,13 +81,13 @@ void CEnvQueryManager::GetEntitiesUnderMouseDragDropRect(const rectangle& DragDr
 		//for (int i = 0; i < dragDropCameraEntity->GetNumLinks(CEntity::PickupLink); i++)
 		//	entities.PushBack(dragDropCameraEntity->GetLinkAt(CEntity::PickupLink, i));
 
-	for (int i = 0; i < GfxEntities.Size(); i++)
+	for (int i = 0; i < GfxEntities.GetCount(); i++)
 	{
 		CStrID UID = GfxEntities[i]->GetUserData();
 		if (UID.IsValid())
 		{
 			n_assert(EntityMgr->ExistsEntityByID(UID));
-			Entities.Append(EntityMgr->GetEntityByID(UID));
+			Entities.Append(EntityMgr->GetEntity(UID));
 		}
 	}
 }
@@ -101,9 +101,9 @@ nArray<PEntity> CEnvQueryManager::GetEntitiesInSphere(const vector3& MidPoint, f
 	nArray<Ptr<Physics::CEntity>> PhysEntities;
     PhysicsSrv->GetEntitiesInSphere(MidPoint, Radius, ExcludeSet, PhysEntities);
 
-	for (int i = 0; i < PhysEntities.Size(); i++)
+	for (int i = 0; i < PhysEntities.GetCount(); i++)
 		if (EntityMgr->ExistsEntityByID(PhysEntities[i]->GetUserData()))
-			GameEntities.Append(EntityMgr->GetEntityByID(PhysEntities[i]->GetUserData()));
+			GameEntities.Append(EntityMgr->GetEntity(PhysEntities[i]->GetUserData()));
 
 	return GameEntities;
 }
@@ -116,9 +116,9 @@ nArray<PEntity> CEnvQueryManager::GetEntitiesInBox(const vector3& Scale, const m
 	nArray<Ptr<Physics::CEntity>> PhysEntities;
 	PhysicsSrv->GetEntitiesInBox(Scale, m, ExcludeSet, PhysEntities);
 
-	for (int i = 0; i < PhysEntities.Size(); i++)
+	for (int i = 0; i < PhysEntities.GetCount(); i++)
 		if (EntityMgr->ExistsEntityByID(PhysEntities[i]->GetUserData()))
-			GameEntities.Append(EntityMgr->GetEntityByID(PhysEntities[i]->GetUserData()));
+			GameEntities.Append(EntityMgr->GetEntity(PhysEntities[i]->GetUserData()));
 
 	return GameEntities;
 }
@@ -128,7 +128,7 @@ vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& Entity
 {
 	Scene::CCamera& Camera = *SceneSrv->GetCurrentScene()->GetMainCamera();
 
-	vector3 EntityPos = Entity.Get<matrix44>(Attr::Transform).pos_component();
+	vector3 EntityPos = Entity.Get<matrix44>(Attr::Transform).Translation();
 	if (Offset) EntityPos += *Offset;
 	vector4 WorldPos = Camera.GetViewMatrix() * EntityPos;
 	WorldPos.w = 0.f;
@@ -140,7 +140,7 @@ vector2 CEnvQueryManager::GetEntityScreenPositionRel(const Game::CEntity& Entity
 
 vector2 CEnvQueryManager::GetEntityScreenPositionUpper(const Game::CEntity& Entity)
 {
-	Properties::CPropSceneNode* pNode = Entity.FindProperty<Properties::CPropSceneNode>();
+	Properties::CPropSceneNode* pNode = Entity.GetProperty<Properties::CPropSceneNode>();
 	if (!pNode) return vector2::zero;
 
 	bbox3 AABB;
@@ -155,11 +155,11 @@ rectangle CEnvQueryManager::GetEntityScreenRectangle(const Game::CEntity& Entity
 {
 	bbox3 AABB;
 
-	Properties::CPropSceneNode* pNode = Entity.FindProperty<Properties::CPropSceneNode>();
+	Properties::CPropSceneNode* pNode = Entity.GetProperty<Properties::CPropSceneNode>();
 	if (pNode) pNode->GetAABB(AABB);
 	else
 	{
-		Properties::CPropAbstractPhysics* pPhysics = Entity.FindProperty<Properties::CPropAbstractPhysics>();
+		Properties::CPropAbstractPhysics* pPhysics = Entity.GetProperty<Properties::CPropAbstractPhysics>();
 		pPhysics->GetAABB(AABB);
 	}
 
@@ -262,7 +262,7 @@ bool CEnvQueryManager::OnFrame(const Events::CEventBase& Event)
 
 	if (OldEntityUnderMouse != EntityUnderMouse)
 	{
-		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntityByID(OldEntityUnderMouse);
+		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
 		if (pEntityUnderMouse)
 		{
 			PParams P = n_new(CParams);

@@ -2,5 +2,5 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTraversePathEdge, AI::CAction);
+__ImplementClassNoFactory(AI::CActionTraversePathEdge, AI::CAction);
 }

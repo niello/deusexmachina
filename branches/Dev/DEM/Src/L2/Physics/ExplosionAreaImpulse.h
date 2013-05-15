@@ -18,8 +18,7 @@ class CRigidBody;
 
 class CExplosionAreaImpulse: public CAreaImpulse
 {
-	DeclareRTTI;
-	DeclareFactory(CExplosionAreaImpulse);
+	__DeclareClass(CExplosionAreaImpulse);
 
 private:
 
@@ -39,7 +38,7 @@ public:
 	void Apply();
 };
 
-RegisterFactory(CExplosionAreaImpulse);
+__RegisterClassInFactory(CExplosionAreaImpulse);
 
 }
 

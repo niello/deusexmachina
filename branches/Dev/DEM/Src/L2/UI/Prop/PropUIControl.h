@@ -29,9 +29,8 @@ namespace Properties
 
 class CPropUIControl: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropUIControl);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropUIControl);
+	__DeclarePropertyStorage;
 
 public:
 
@@ -52,7 +51,7 @@ public:
 		CAction(): Enabled(true), Visible(true), AutoAdded(false) {}
 		CAction(CStrID _ID, LPCSTR Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority), Enabled(true), Visible(true) {}
 
-		LPCSTR	GetUIName() const { return UIName.IsValid() ? UIName.Get() : ID.CStr(); }
+		LPCSTR	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
 		bool	operator <(const CAction& Other) const { return (Enabled && !Other.Enabled) || (Priority > Other.Priority); }
 		bool	operator >(const CAction& Other) const { return (!Enabled && Other.Enabled) || (Priority < Other.Priority); }
 	};
@@ -99,7 +98,7 @@ public:
 	void					ShowPopup(Game::CEntity* pActorEnt);
 };
 
-RegisterFactory(CPropUIControl);
+__RegisterClassInFactory(CPropUIControl);
 
 inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
 											 bool (*Callback)(const Events::CEventBase&),

@@ -1,7 +1,7 @@
 #include "Database.h"
 
 #include "DBServer.h"
-#include "Data/DataServer.h"
+#include "IO/IOServer.h"
 #include <sqlite3.h>
 
 namespace Attr
@@ -39,7 +39,7 @@ END_ATTRS_REGISTRATION
 namespace DB
 {
 //__ImplementClass(DB::CDatabase, 'DBAS', Core::CRefCounted);
-ImplementRTTI(DB::CDatabase, Core::CRefCounted);
+__ImplementClassNoFactory(DB::CDatabase, Core::CRefCounted);
 
 CDatabase::CDatabase():        
 	AccessMode(DBAM_ReadWriteExisting),
@@ -77,7 +77,7 @@ bool CDatabase::Open()
 
 	int Error;
 	if (Flags.Is(InMemoryDB)) Error = sqlite3_open(":memory:", &SQLiteHandle);
-	else Error = sqlite3_open_v2(URI.Get(), &SQLiteHandle, SQLiteOpenFlags, "Nebula2");
+	else Error = sqlite3_open_v2(URI.CStr(), &SQLiteHandle, SQLiteOpenFlags, "Nebula2");
 
 	if (Error != SQLITE_OK)
 	{
@@ -133,7 +133,7 @@ bool CDatabase::Open()
 			SQL.Append(TblName);
 			SQL.Append(" AS SELECT * FROM fileDB.");
 			SQL.Append(TblName);
-			sqlite3_exec(SQLiteHandle, SQL.Get(), NULL, NULL, NULL);        
+			sqlite3_exec(SQLiteHandle, SQL.CStr(), NULL, NULL, NULL);        
 		}
 		DetachDatabase("fileDB");
 	}
@@ -150,7 +150,7 @@ void CDatabase::Close()
 	n_assert(SQLiteHandle);
 	n_assert(!TransactionDepth);
 
-	for (int i = 0; i < Tables.Size(); i++)
+	for (int i = 0; i < Tables.GetCount(); i++)
 		Tables[i]->Disconnect(false);
 	Tables.Clear();
 
@@ -161,7 +161,7 @@ void CDatabase::Close()
 	{
 		SetError(sqlite3_errmsg(SQLiteHandle));
 		n_error("CDatabase::Close(): Failed to close db '%s' with ErrorStr '%s'\n", 
-			URI.Get(), ErrorStr.Get());
+			URI.CStr(), ErrorStr.CStr());
 	}
 	SQLiteHandle = NULL;
 	Flags.Clear(_IsOpen);
@@ -199,7 +199,7 @@ void CDatabase::ReadTableLayouts()
 		// connect the attributes Table as usual...
 		Ptr<CTable> attrsTable = CTable::Create();
 		attrsTable->SetName(Result->Get<nString>(Attr::name, attrTableRowIndices[0]));
-		Tables.Append(attrsTable.get());
+		Tables.Append(attrsTable.CStr());
 		attrsTable->Connect(this, Table::AssumeExists, ignoreUnknownColumns);
 
 		// register all attributes in the Table...
@@ -215,7 +215,7 @@ void CDatabase::ReadTableLayouts()
 		{
 			PTable Table = CTable::Create();
 			Table->SetName(Result->Get<nString>(Attr::name, RowIdx));
-			Tables.Append(Table.get());
+			Tables.Append(Table.Get());
 			Table->Connect(this, CTable::AssumeExists, DoesIgnoreUnknownColumns());
 		}
 }
@@ -224,7 +224,7 @@ void CDatabase::ReadTableLayouts()
 void CDatabase::AddTable(const PTable& Table)
 {
 	n_assert(IsOpen());
-	n_assert(Table.isvalid());
+	n_assert(Table.IsValid());
 	n_assert(!HasTable(Table->GetName()));
 	Tables.Append(Table);
 	Table->Connect(this, CTable::ForceCreate);
@@ -246,7 +246,7 @@ int CDatabase::FindTableIndex(const nString& TableName) const
 {
 	n_assert(TableName.IsValid());
 	n_assert(IsOpen());
-	for (int i = 0; i < Tables.Size(); i++)
+	for (int i = 0; i < Tables.GetCount(); i++)
 		if (Tables[i]->GetName() == TableName) return i;
 	return INVALID_INDEX;
 }
@@ -257,20 +257,20 @@ bool CDatabase::AttachDatabase(const nString& URI, const nString& DBName)
 	n_assert(IsOpen());
 	n_assert(DBName.IsValid());
 
-	if (DataSrv->FileExists(URI))
+	if (IOSrv->FileExists(URI))
 	{
 		nString SQL;
-		SQL.Format("ATTACH DATABASE 'file:%s?vfs=Nebula2' AS '%s'", URI.Get(), DBName.Get());
+		SQL.Format("ATTACH DATABASE 'file:%s?vfs=Nebula2' AS '%s'", URI.CStr(), DBName.CStr());
 		PCommand Cmd = CCommand::Create();
 		if (!Cmd->Execute(this, SQL))
 		{
 			n_error("CDatabase::AttachDatabase(%s, %s) failed with sqlite ErrorStr: %s",
-				URI.Get(), DBName.Get(), Cmd->GetError().Get());
+				URI.CStr(), DBName.CStr(), Cmd->GetError().CStr());
 			FAIL;
 		}
 		OK;
 	}
-	else n_error("CDatabase::AttachDatabase: file '%s' doesn't exist!", URI.Get());
+	else n_error("CDatabase::AttachDatabase: file '%s' doesn't exist!", URI.CStr());
 
 	FAIL;
 }
@@ -281,11 +281,11 @@ void CDatabase::DetachDatabase(const nString& DBName)
 	n_assert(IsOpen());
 	n_assert(DBName.IsValid());
 	nString SQL;
-	SQL.Format("DETACH DATABASE '%s'", DBName.Get());
+	SQL.Format("DETACH DATABASE '%s'", DBName.CStr());
 	PCommand Cmd = CCommand::Create();
 	if (!Cmd->Execute(this, SQL))
 		n_error("CDatabase::AttachDatabase(%s, %s) failed with sqlite ErrorStr: %s",
-			URI.Get(), DBName.Get(), Cmd->GetError().Get());
+			URI.CStr(), DBName.CStr(), Cmd->GetError().CStr());
 }
 //---------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ void CDatabase::CopyInMemoryDatabaseToFile(const nString& FileURI)
 		SQL.Append(Result->Get<nString>(Attr::name, i));
 		SQL.Append(" AS SELECT * FROM ");
 		SQL.Append(Result->Get<nString>(Attr::name, i));
-		sqlite3_exec(SQLiteHandle, SQL.Get(), NULL, NULL, NULL);
+		sqlite3_exec(SQLiteHandle, SQL.CStr(), NULL, NULL, NULL);
 	}
 	DetachDatabase("fileDB");
 }

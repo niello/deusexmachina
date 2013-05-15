@@ -11,15 +11,14 @@ namespace AI
 
 class CPerceptorIAO: public CPerceptor
 {
-	DeclareRTTI;
-	DeclareFactory(CPerceptorIAO);
+	__DeclareClass(CPerceptorIAO);
 
 public:
 
 	virtual void ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence = 1.f);
 };
 
-RegisterFactory(CPerceptorIAO);
+__RegisterClassInFactory(CPerceptorIAO);
 
 }
 

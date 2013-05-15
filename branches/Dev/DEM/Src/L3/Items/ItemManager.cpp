@@ -12,8 +12,8 @@ extern const nString CommaFrag;
 
 namespace Items
 {
-ImplementRTTI(Items::CItemManager, Core::CRefCounted);
-ImplementFactory(Items::CItemManager);
+__ImplementClassNoFactory(Items::CItemManager, Core::CRefCounted);
+__ImplementClass(Items::CItemManager);
 
 CItemManager* CItemManager::Singleton = NULL;
 int CItemManager::LargestItemStackID = 0;
@@ -22,7 +22,7 @@ CItemManager::CItemManager(): InitialVTRowCount(0)
 {
 	n_assert(!Singleton);
 	Singleton = this;
-	DataSrv->SetAssign("items", "game:items");
+	IOSrv->SetAssign("items", "game:items");
 	if (LoaderSrv->HasGlobal(Attr::LargestItemStackID))
 		LargestItemStackID = LoaderSrv->GetGlobal<int>(Attr::LargestItemStackID);
 
@@ -45,8 +45,8 @@ CItemManager::~CItemManager()
 Ptr<CItemTpl> CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
 {
 	Ptr<CItemTpl> Tpl =
-		(CItemTpl*)CoreFct->Create(nString("Items::CItemTpl") + Params.Get<nString>(CStrID("Type"), NULL));
-	n_assert(Tpl.isvalid());
+		(CItemTpl*)Factory->Create(nString("Items::CItemTpl") + Params.Get<nString>(CStrID("Type"), NULL));
+	n_assert(Tpl.IsValid());
 	Tpl->Init(ID, Params);
 	return Tpl;
 }
@@ -59,10 +59,10 @@ Ptr<CItemTpl> CItemManager::GetItemTpl(CStrID ID)
 	else
 	{
 		PParams HRD = DataSrv->LoadPRM(nString("items:") + ID.CStr() + ".prm", false);
-		if (HRD.isvalid())
+		if (HRD.IsValid())
 		{
 			Tpl = CreateItemTpl(ID, *HRD);
-			n_assert(Tpl.isvalid());
+			n_assert(Tpl.IsValid());
 			ItemTplRegistry.Add(ID, Tpl);
 			return Tpl;
 		}
@@ -75,7 +75,7 @@ bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 {
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
-	if (!DSInv.isvalid())
+	if (!DSInv.IsValid())
 	{
 		int TableIdx = pDB->FindTableIndex("Inventories");
 		if (TableIdx == INVALID_INDEX)
@@ -112,7 +112,7 @@ bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 
 	InitialVTRowCount = DSInv->GetRowCount();
 
-	if (!DSEquip.isvalid())
+	if (!DSEquip.IsValid())
 	{
 		DB::PTable Tbl;
 		int TableIdx = pDB->FindTableIndex("Equipment");
@@ -173,7 +173,7 @@ bool CItemManager::OnLoadBefore(const Events::CEventBase& Event)
 {
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
-	if (!DSInv.isvalid())
+	if (!DSInv.IsValid())
 	{
 		int TableIdx = pDB->FindTableIndex("Inventories");
 		if (TableIdx == INVALID_INDEX)
@@ -206,7 +206,7 @@ bool CItemManager::OnLoadBefore(const Events::CEventBase& Event)
 
 	if (DSInv->GetRowCount())
 	{
-		if (!DSEquip.isvalid())
+		if (!DSEquip.IsValid())
 		{
 			DB::PTable Tbl;
 			int TableIdx = pDB->FindTableIndex("Equipment");
@@ -237,7 +237,7 @@ bool CItemManager::OnLoadBefore(const Events::CEventBase& Event)
 
 bool CItemManager::OnLoadAfter(const Events::CEventBase& Event)
 {
-	if (DSInv.isvalid() && DSInv->GetRowCount() > 0)
+	if (DSInv.IsValid() && DSInv->GetRowCount() > 0)
 	{
 		DSInv->Clear();
 		if (DSEquip->GetRowCount() > 0) DSEquip->Clear();

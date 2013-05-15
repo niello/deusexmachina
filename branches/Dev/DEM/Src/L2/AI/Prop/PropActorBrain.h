@@ -41,9 +41,8 @@ using namespace AI;
 
 class CPropActorBrain: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropActorBrain);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropActorBrain);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -139,7 +138,7 @@ public:
 };
 //---------------------------------------------------------------------
 
-RegisterFactory(CPropActorBrain);
+__RegisterClassInFactory(CPropActorBrain);
 
 inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 {

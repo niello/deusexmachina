@@ -17,8 +17,7 @@ namespace Time
 
 class CTimeSource: public Core::CRefCounted //???need?
 {
-	DeclareRTTI;
-	DeclareFactory(CTimeSource);
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -48,6 +47,16 @@ public:
 };
 
 typedef Ptr<CTimeSource> PTimeSource;
+
+inline CTimeSource::CTimeSource():
+	FrameTime(0.001f),
+	Time(0.0),
+	PauseCounter(0),
+	TimeFactor(1.0f),
+	FrameID(0)
+{
+}
+//---------------------------------------------------------------------
 
 }
 

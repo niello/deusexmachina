@@ -19,7 +19,7 @@ class CContactPoint;
 
 class CShape: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 
@@ -40,7 +40,7 @@ protected:
 	enum { MaxContacts = 64 };
 
 	friend class CRigidBody;
-	friend class CLevel;
+	friend class CPhysicsLevel;
 	friend class CRay;
 
 	static nArray<CContactPoint>*	CollideContacts;

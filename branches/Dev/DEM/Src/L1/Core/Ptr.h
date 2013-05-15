@@ -2,115 +2,92 @@
 #ifndef __DEM_L1_PTR_H__
 #define __DEM_L1_PTR_H__
 
+#include <StdDEM.h>
 #include <kernel/ntypes.h>
 
-// Implements a smart pointer for CRefCounted objects. Can be used like
-// a normal C++ pointer in most cases.
-// Based on mangalore Ptr (C) 2003 RadonLabs GmbH
+// Smart pointer class which manages the life time of CRefCounted objects.
+// Can be used like a normal C++ pointer in most cases.
 
 template<class T>
 class Ptr
 {
 private:
 
-	T* ptr;
+	T* pObj;
 
 public:
 
-	Ptr(): ptr(NULL) {}
-	Ptr(T* p): ptr(p) { if (ptr) ptr->AddRef(); }
-	Ptr(const Ptr<T>& p): ptr(p.ptr) { if (ptr) ptr->AddRef(); }
-	~Ptr();
+	Ptr(): pObj(NULL) {}
+	Ptr(T* pSrcObj): pObj(pSrcObj) { if (pObj) pObj->AddRef(); }
+	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) pObj->AddRef(); }
+	~Ptr() { SAFE_RELEASE(pObj); }
 
-	void	Create();
-	bool	isvalid() const { return ptr != NULL; }
-	T*		get() const;
-	T*		get_unsafe() const { return ptr; }
+	bool	IsValid() const { return !!pObj; }
+	T*		Get() const;
+	T*		GetUnsafe() const { return pObj; }
 
-	void	operator =(const Ptr<T>& rhs);
-	void	operator =(T* rhs);
-	bool	operator ==(const Ptr<T>& rhs) const { return ptr == rhs.ptr; }
-	bool	operator !=(const Ptr<T>& rhs) const { return ptr != rhs.ptr; }
-	bool	operator ==(const T* rhs) const { return ptr == rhs; }
-	bool	operator !=(const T* rhs) const { return ptr != rhs; }
+	void	operator =(const Ptr<T>& Other);
+	void	operator =(T* Other);
+	bool	operator ==(const Ptr<T>& Other) const { return pObj == Other.pObj; }
+	bool	operator !=(const Ptr<T>& Other) const { return pObj != Other.pObj; }
+	bool	operator ==(const T* pOtherObj) const { return pObj == pOtherObj; }
+	bool	operator !=(const T* pOtherObj) const { return pObj != pOtherObj; }
 	T*		operator ->() const;
 	T&		operator *() const;
-	operator T*() const;
+			operator T*() const;
 };
 //---------------------------------------------------------------------
 
-template<class T> Ptr<T>::~Ptr()
-{
-	if (ptr)
-	{
-		ptr->Release();
-		ptr = NULL;
-	}
-}
-//---------------------------------------------------------------------
-
 template<class T>
-//Ptr<T>&
 void Ptr<T>::operator =(const Ptr<T>& Other)
 {
-	if (ptr != Other.ptr)
+	if (pObj != Other.pObj)
 	{
-		T* NewPtr = Other.ptr;
+		T* NewPtr = Other.pObj;
 		if (NewPtr) NewPtr->AddRef();
-		if (ptr) ptr->Release();		// Here Other can be destructed so we remember it's Ptr before
-		ptr = NewPtr;
+		if (pObj) pObj->Release();		// Here Other can be destructed so we remember it's Ptr before
+		pObj = NewPtr;
 	}
-	//return *this;
 }
 //---------------------------------------------------------------------
 
 template<class T>
-//Ptr<T>&
 void Ptr<T>::operator =(T* Ptr)
 {
-	if (ptr != Ptr)
+	if (pObj != Ptr)
 	{
 		if (Ptr) Ptr->AddRef();
-		if (ptr) ptr->Release();
-		ptr = Ptr;
+		if (pObj) pObj->Release();
+		pObj = Ptr;
 	}
-	//return *this;
 }
 //---------------------------------------------------------------------
 
 template<class T> inline T* Ptr<T>::operator->() const
 {
-	n_assert2(ptr, "NULL pointer access in Ptr::operator->()!");
-	return ptr;
+	n_assert2(pObj, "NULL pointer access in Ptr::operator->()!");
+	return pObj;
 }
 //---------------------------------------------------------------------
 
 template<class T> inline T& Ptr<T>::operator*() const
 {
-	n_assert2(ptr, "NULL pointer access in Ptr::operator*()!");
-	return *ptr;
+	n_assert2(pObj, "NULL pointer access in Ptr::operator*()!");
+	return *pObj;
 }
 //---------------------------------------------------------------------
 
 template<class T> inline Ptr<T>::operator T*() const
 {
-	n_assert2(ptr, "NULL pointer access in Ptr::operator T*()!");
-	return ptr;
+	n_assert2(pObj, "NULL pointer access in Ptr::operator T*()!");
+	return pObj;
 }
 //---------------------------------------------------------------------
 
-template<class T> void Ptr<T>::Create()
+template<class T> inline T* Ptr<T>::Get() const
 {
-	n_assert(!ptr);
-	ptr = n_new(T);
-	ptr->AddRef();
-}
-//---------------------------------------------------------------------
-
-template<class T> inline T* Ptr<T>::get() const
-{
-	n_assert2(ptr, "NULL pointer access in Ptr::get()!");
-	return ptr;
+	n_assert2(pObj, "NULL pointer access in Ptr::Get()!");
+	return pObj;
 }
 //---------------------------------------------------------------------
 

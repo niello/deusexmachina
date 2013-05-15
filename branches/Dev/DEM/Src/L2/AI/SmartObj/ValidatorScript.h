@@ -12,8 +12,7 @@ namespace AI
 
 class CValidatorScript: public CValidator
 {
-	DeclareRTTI;
-	DeclareFactory(CValidatorScript);
+	__DeclareClass(CValidatorScript);
 
 protected:
 
@@ -27,7 +26,7 @@ public:
 	virtual float	GetRelevance(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction);
 };
 
-RegisterFactory(CValidatorScript);
+__RegisterClassInFactory(CValidatorScript);
 
 typedef Ptr<CValidatorScript> PValidatorScript;
 

@@ -13,7 +13,7 @@ namespace Events
 
 class CEvent: public CEventBase
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

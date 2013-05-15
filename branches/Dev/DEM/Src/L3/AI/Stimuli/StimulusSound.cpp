@@ -2,6 +2,6 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CStimulusSound, AI::CStimulus);
-ImplementFactory(AI::CStimulusSound);
+__ImplementClassNoFactory(AI::CStimulusSound, AI::CStimulus);
+__ImplementClass(AI::CStimulusSound);
 }

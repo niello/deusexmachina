@@ -10,7 +10,7 @@
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropAbstractPhysics, CPropTransformable);
+__ImplementClassNoFactory(Properties::CPropAbstractPhysics, CPropTransformable);
 
 CPropAbstractPhysics::~CPropAbstractPhysics()
 {
@@ -62,7 +62,7 @@ void CPropAbstractPhysics::DisablePhysics()
 
 void CPropAbstractPhysics::SetTransform(const matrix44& NewTF)
 {
-	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	Physics::CEntity* pPhysEnt = GetPhysicsEntity();
 	if (pPhysEnt && pProp && pProp->GetNode())
 	{

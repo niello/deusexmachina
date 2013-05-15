@@ -4,8 +4,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CSphereShape, Physics::CShape);
-ImplementFactory(Physics::CSphereShape);
+__ImplementClassNoFactory(Physics::CSphereShape, Physics::CShape);
+__ImplementClass(Physics::CSphereShape);
 
 void CSphereShape::Init(Data::PParams Desc)
 {
@@ -37,7 +37,7 @@ bool CSphereShape::Attach(dSpaceID SpaceID)
 void CSphereShape::RenderDebug(const matrix44& ParentTfm)
 {
 	if (IsAttached())
-		DebugDraw->DrawSphere(Transform.pos_component() + ParentTfm.pos_component(), Radius, GetDebugVisualizationColor());
+		DebugDraw->DrawSphere(Transform.Translation() + ParentTfm.Translation(), Radius, GetDebugVisualizationColor());
 }
 //---------------------------------------------------------------------
 

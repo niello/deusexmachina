@@ -11,8 +11,7 @@ namespace Event
 
 class CameraOrbit: public Events::CEventNative
 {
-    DeclareRTTI;
-    DeclareFactory(CameraOrbit);
+    __DeclareClass(CameraOrbit);
 
 public:
 
@@ -25,7 +24,7 @@ public:
 	CameraOrbit(float AngleH, float AngleV): AngleHoriz(AngleH), AngleVert(AngleV), DirHoriz(0), DirVert(0) { }
 };
 
-RegisterFactory(CameraOrbit);
+__RegisterClassInFactory(CameraOrbit);
 
 }
 

@@ -6,6 +6,7 @@
 #include <AI/Planning/ActionTpl.h>
 #include <AI/ActorFwd.h>
 #include <Data/Pool.h>
+#include <util/nnode.h>
 
 // Planner receives goal as input and builds plan (action sequence) that will satisfy
 // the goal when is completed.
@@ -68,7 +69,7 @@ inline const CActionTpl* CPlanner::FindActionTpl(LPCSTR Name) const
 	nString ClassName = StrActTplPrefix + Name;
 	for (nArray<PActionTpl>::iterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
 		if ((*ppTpl)->IsInstanceOf(ClassName))
-			return (*ppTpl).get_unsafe();
+			return (*ppTpl).GetUnsafe();
 	return NULL;
 }
 //---------------------------------------------------------------------

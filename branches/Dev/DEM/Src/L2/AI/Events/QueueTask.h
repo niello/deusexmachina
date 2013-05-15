@@ -12,8 +12,7 @@ namespace Event
 
 class QueueTask: public Events::CEventNative
 {
-	DeclareRTTI;
-	DeclareFactory(QueueTask);
+	__DeclareClass(QueueTask);
 
 public:
 
@@ -22,7 +21,7 @@ public:
 	QueueTask(AI::CTask* pTask = NULL): Task(pTask) {}
 };
 
-RegisterFactory(QueueTask);
+__RegisterClassInFactory(QueueTask);
 
 }
 

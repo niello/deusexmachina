@@ -11,8 +11,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTplIdle, AI::CActionTpl);
-ImplementFactory(AI::CActionTplIdle);
+__ImplementClassNoFactory(AI::CActionTplIdle, AI::CActionTpl);
+__ImplementClass(AI::CActionTplIdle);
 
 void CActionTplIdle::Init(PParams Params)
 {

@@ -7,18 +7,18 @@
 #include <Audio/DSUtil/DSUtil.h>
 #include <Events/EventManager.h>
 #include <Time/TimeServer.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
+#include <Core/CoreServer.h>
 
 namespace Audio
 {
-ImplementRTTI(Audio::CAudioServer, Core::CRefCounted);
+__ImplementClassNoFactory(Audio::CAudioServer, Core::CRefCounted);
 
 __ImplementSingleton(Audio::CAudioServer);
 
 CAudioServer::CAudioServer():
 	_IsOpen(false),
 	_IsMuted(false),
-	_IsInBeginScene(false),
 	pDS(NULL),
 	pDSListener(NULL),
 	LastStreamUpdate(0.f),
@@ -35,7 +35,7 @@ CAudioServer::~CAudioServer()
 	n_assert(!pDS);
 	n_assert(!pDSListener);
 	n_assert(!_IsOpen);
-	//n_assert(!WaveBank.isvalid());
+	//n_assert(!WaveBank.IsValid());
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
@@ -46,7 +46,7 @@ bool CAudioServer::Open()
 	n_assert(!pDS);
 	n_assert(!pDSListener);
 
-	DataSrv->SetAssign("audio", DataSrv->ManglePath("proj:export/audio"));
+	IOSrv->SetAssign("audio", IOSrv->ManglePath("proj:export/audio"));
 
 	float CurrTime = (float)TimeSrv->GetTime();
 	for (int i = 0; i < SoundCategoryCount; ++i)
@@ -110,9 +110,9 @@ void CAudioServer::Close()
 
 	UNSUBSCRIBE_EVENT(PlaySound);
 
-	while (Entities.Size()) RemoveEntity(Entities.Back());
+	while (Entities.GetCount()) RemoveEntity(Entities.Back());
 
-	//if (WaveBank.isvalid()) CloseWaveBank();
+	//if (WaveBank.IsValid()) CloseWaveBank();
 
 	SAFE_RELEASE(pDSListener);
 	SAFE_RELEASE(pDS);
@@ -141,7 +141,7 @@ void CAudioServer::RemoveEntity(CAudioEntity* pEntity)
 
 //bool CAudioServer::OpenWaveBank(const nString& Name)
 //{
-	//n_assert(!WaveBank.isvalid());
+	//n_assert(!WaveBank.IsValid());
 	//WaveBank = CWaveBank::Create();
 	//WaveBank->SetFilename(Name);
 	//return WaveBank->Open();
@@ -151,22 +151,13 @@ void CAudioServer::RemoveEntity(CAudioEntity* pEntity)
 
 //void CAudioServer::CloseWaveBank()
 //{
-//	n_assert(WaveBank.isvalid());
+//	n_assert(WaveBank.IsValid());
 //	WaveBank->Close();
 //	WaveBank = NULL;
 //}
 ////---------------------------------------------------------------------
 
-void CAudioServer::BeginScene()
-{
-	if (NoSoundDevice) return;
-	n_assert(_IsOpen);
-	n_assert(!_IsInBeginScene);
-	_IsInBeginScene = true;
-}
-//---------------------------------------------------------------------
-
-void CAudioServer::EndScene()
+void CAudioServer::Trigger()
 {
 	if (NoSoundDevice) return;
 
@@ -183,7 +174,7 @@ void CAudioServer::EndScene()
 				//	pSound->HandleWaveStreamNotification(pSndRsrc->Looping);
 	}
 
-	for (int i = 0; i < Entities.Size(); i++) Entities[i]->Update();
+	for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->Update();
 
 	//for (int Cat = 0; Cat < SoundCategoryCount; Cat++)
 	//	if (VolumeRec[Cat].IsDirty)
@@ -217,8 +208,6 @@ void CAudioServer::EndScene()
 	n_assert(SUCCEEDED(pDSListener->SetAllParameters(&DSListenerProps, DS3D_IMMEDIATE)));
 
 	n_assert(_IsOpen);
-	n_assert(_IsInBeginScene);
-	_IsInBeginScene = false;
 }
 //---------------------------------------------------------------------
 

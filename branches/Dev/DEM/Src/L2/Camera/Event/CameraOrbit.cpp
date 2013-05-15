@@ -2,6 +2,6 @@
 
 namespace Event
 {
-ImplementRTTI(Event::CameraOrbit, Events::CEventNative);
-ImplementFactory(Event::CameraOrbit);
+__ImplementClassNoFactory(Event::CameraOrbit, Events::CEventNative);
+__ImplementClass(Event::CameraOrbit);
 } // namespace Event

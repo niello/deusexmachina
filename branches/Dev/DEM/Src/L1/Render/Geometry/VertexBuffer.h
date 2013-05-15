@@ -38,7 +38,7 @@ public:
 	DWORD					GetVertexCount() const { return Count; }
 	EUsage					GetUsage() const { return Usage; }
 	ECPUAccess				GetAccess() const { return Access; }
-	DWORD					GetByteSize() const { return Layout.isvalid() ? Layout->GetVertexSize() * Count : 0; }
+	DWORD					GetByteSize() const { return Layout.IsValid() ? Layout->GetVertexSize() * Count : 0; }
 	bool					IsValid() const { return !!pBuffer; }
 	IDirect3DVertexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 };

@@ -27,7 +27,7 @@ using namespace Properties;
 
 class CValidator: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

@@ -2,5 +2,5 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CTask, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CTask, Core::CRefCounted);
 } //namespace AI

@@ -2,11 +2,11 @@
 #ifndef __DEM_L1_LOGGER_H__
 #define __DEM_L1_LOGGER_H__
 
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <util/nlinebuffer.h>
 #include <util/nstring.h>
 
-namespace Data
+namespace IO
 {
 	class CFileStream;
 }
@@ -32,7 +32,7 @@ private:
 
 	bool				_IsOpen;
 	nString				AppName;
-	Data::CFileStream*	pLogFile;
+	IO::CFileStream*	pLogFile;
 	nLineBuffer			LineBuffer;
 
 	//void PutLineBuffer(const char* msg, va_list argList);

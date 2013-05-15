@@ -4,8 +4,7 @@
 
 namespace Render
 {
-ImplementRTTI(Render::CDebugTextRenderer, Render::IRenderer);
-ImplementFactory(Render::CDebugTextRenderer);
+__ImplementClass(Render::CDebugTextRenderer, 'DBTR', Render::IRenderer);
 
 void CDebugTextRenderer::Render()
 {

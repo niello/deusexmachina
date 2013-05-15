@@ -12,7 +12,7 @@ namespace Render
 
 bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 {
-	if (!OutMaterial.isvalid()) FAIL;
+	if (!OutMaterial.IsValid()) FAIL;
 
 	CStrID ShaderID = In.Get<CStrID>(CStrID("Shader"));
 	PShader Shader = RenderSrv->ShaderMgr.GetOrCreateTypedResource(ShaderID);
@@ -42,7 +42,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = VarMap.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
 		}
 	}
 
@@ -55,7 +55,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial)
 {
 	Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
-	return Desc.isvalid() && LoadMaterialFromPRM(*Desc, OutMaterial);
+	return Desc.IsValid() && LoadMaterialFromPRM(*Desc, OutMaterial);
 }
 //---------------------------------------------------------------------
 

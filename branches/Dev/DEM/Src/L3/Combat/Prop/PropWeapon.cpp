@@ -3,7 +3,7 @@
 #include <AI/Prop/PropActorBrain.h>
 #include <Combat/Event/ObjDamageDone.h>
 #include <AI/AIServer.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
@@ -25,9 +25,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropWeapon, Game::CProperty);
-ImplementFactory(Properties::CPropWeapon);
-ImplementPropertyStorage(CPropWeapon, 64);
+__ImplementClassNoFactory(Properties::CPropWeapon, Game::CProperty);
+__ImplementClass(Properties::CPropWeapon);
+__ImplementPropertyStorage(CPropWeapon, 64);
 RegisterProperty(CPropWeapon);
 
 using namespace Event;
@@ -89,7 +89,7 @@ bool CPropWeapon::OnChrStrike(const CEventBase& Event)
 	//CStrID TargetEntityID = (*((CEvent&)Event).Params).Get<CStrID>(CStrID("TargetEntityID"));
 	//
 	//if (EntityMgr->ExistsEntityByID(TargetEntityID))
-	//	Strike(*EntityMgr->GetEntityByID(TargetEntityID));
+	//	Strike(*EntityMgr->GetEntity(TargetEntityID));
 
 	OK;
 }

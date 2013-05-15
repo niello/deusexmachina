@@ -12,8 +12,7 @@ namespace AI
 
 class CActionTplEquipItem: public CActionTpl
 {
-	DeclareRTTI;
-	DeclareFactory(CActionTplEquipItem);
+	__DeclareClass(CActionTplEquipItem);
 
 public:
 
@@ -23,7 +22,7 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-RegisterFactory(CActionTplEquipItem);
+__RegisterClassInFactory(CActionTplEquipItem);
 
 typedef Ptr<CActionTplEquipItem> PActionTplEquipItem;
 

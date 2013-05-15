@@ -64,8 +64,8 @@ public:
 	// INSERT, UPDATE, DELETE queries interface
 	void				CommitChanges(bool UseTransaction = true);
 	void				CommitDeletedRows(bool UseTransaction = true);
-	void				DeleteWhere(const nString& WhereSQL) const { if (Table.isvalid()) Table->DeleteWhere(WhereSQL); }
-	void				TruncateTable() const { if (Table.isvalid()) Table->Truncate(); }
+	void				DeleteWhere(const nString& WhereSQL) const { if (Table.IsValid()) Table->DeleteWhere(WhereSQL); }
+	void				TruncateTable() const { if (Table.IsValid()) Table->Truncate(); }
 
 	// Read interface
 	const PValueTable&	GetValueTable() { return VT; }
@@ -87,11 +87,11 @@ public:
 	void				ForceSet(CAttrID AttrID, const T& Value);
 	void				SetValue(CAttrID AttrID, const CData& Value);
 	void				SetValueTable(const PValueTable& NewVT);
-	void				Clear() { if (VT.isvalid()) VT->Clear(); }
+	void				Clear() { if (VT.IsValid()) VT->Clear(); }
 
 	void				SetRowIndex(int Idx) { n_assert(Idx > -1 && Idx < VT->GetRowCount()); RowIdx = Idx; }
 	int					GetRowIndex() const { return RowIdx; }
-	int					GetRowCount() const { return VT.isvalid() ? VT->GetRowCount() : 0; }
+	int					GetRowCount() const { return VT.IsValid() ? VT->GetRowCount() : 0; }
 
 	const PTable&		GetTable() const { return Table; }
 };
@@ -103,21 +103,21 @@ inline void CDataset::SetSelectSQL(const nString& SQL)
 {
 	SelectSQL = SQL;
 	VT = CValueTable::Create();
-	if (CmdSelect.isvalid() && CmdSelect->IsValid()) CmdSelect->Clear();
+	if (CmdSelect.IsValid() && CmdSelect->IsValid()) CmdSelect->Clear();
 }
 //---------------------------------------------------------------------
 
 inline void CDataset::ClearSelectSQL()
 {
 	SelectSQL = NULL;
-	if (CmdSelect.isvalid() && CmdSelect->IsValid()) CmdSelect->Clear();
+	if (CmdSelect.IsValid() && CmdSelect->IsValid()) CmdSelect->Clear();
 }
 //---------------------------------------------------------------------
 
 inline void CDataset::SetWhereClause(const nString& SQL)
 {
 	WhereSQL = SQL;
-	if (CmdSelect.isvalid() && CmdSelect->IsValid()) CmdSelect->Clear();
+	if (CmdSelect.IsValid() && CmdSelect->IsValid()) CmdSelect->Clear();
 }
 //---------------------------------------------------------------------
 
@@ -161,7 +161,7 @@ inline void CDataset::SetValue(CAttrID AttrID, const CData& Value)
 
 inline void CDataset::SetValueTable(const PValueTable& NewVT)
 {
-	n_assert(NewVT.isvalid());
+	n_assert(NewVT.IsValid());
 	if (NewVT != VT)
 	{
 		VT = NewVT;

@@ -14,15 +14,14 @@ namespace AI
 
 class CPerceptorObstacle: public CPerceptor
 {
-	DeclareRTTI;
-	DeclareFactory(CPerceptorObstacle);
+	__DeclareClass(CPerceptorObstacle);
 
 public:
 
 	virtual void ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence = 1.f);
 };
 
-RegisterFactory(CPerceptorObstacle);
+__RegisterClassInFactory(CPerceptorObstacle);
 
 }
 

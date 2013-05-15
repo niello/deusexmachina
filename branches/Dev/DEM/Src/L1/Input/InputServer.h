@@ -4,7 +4,7 @@
 
 #include <Events/EventDispatcher.h>
 #include <Events/Events.h>
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <Input/Keys.h>
 #include <Input/ControlLayout.h>
 #include <util/ndictionary.h>
@@ -60,7 +60,7 @@ enum EInputPriority
 
 class CInputServer: public CEventDispatcher //!!!CPriorityEventDispatcher!
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CInputServer);
 
 private:

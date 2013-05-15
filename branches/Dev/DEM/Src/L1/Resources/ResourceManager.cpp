@@ -7,7 +7,7 @@ namespace Resources
 
 PResource IResourceManager::GetResource(CStrID UID)
 {
-	PResource* ppRsrc = IDToResource.Get(UID);
+	PResource* ppRsrc = UIDToResource.Get(UID);
 	return ppRsrc ? *ppRsrc : NULL;
 }
 //---------------------------------------------------------------------

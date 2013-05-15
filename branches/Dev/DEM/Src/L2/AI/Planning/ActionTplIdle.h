@@ -13,10 +13,7 @@ namespace AI
 
 class CActionTplIdle: public CActionTpl
 {
-	DeclareRTTI;
-	DeclareFactory(CActionTplIdle);
-
-private:
+	__DeclareClass(CActionTplIdle);
 
 public:
 
@@ -24,7 +21,7 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-RegisterFactory(CActionTplIdle);
+__RegisterClassInFactory(CActionTplIdle);
 
 typedef Ptr<CActionTplIdle> PActionTplIdle;
 

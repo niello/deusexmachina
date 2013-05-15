@@ -2,8 +2,7 @@
 
 namespace Data
 {
-ImplementRTTI(Data::CParams, Core::CRefCounted);
-ImplementFactory(Data::CParams);
+__ImplementClass(Data::CParams, 'PRMS', Core::CRefCounted);
 
 DEFINE_TYPE(PParams)
 

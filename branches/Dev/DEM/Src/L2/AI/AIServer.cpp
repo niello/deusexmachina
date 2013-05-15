@@ -3,7 +3,7 @@
 #include <AI/Planning/ActionTpl.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <Data/Params.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 #include <Events/EventManager.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourObstacleAvoidance.h>
@@ -11,16 +11,15 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CAIServer, Core::CRefCounted);
-ImplementFactory(AI::CAIServer);
+__ImplementClassNoFactory(AI::CAIServer, Core::CRefCounted);
 __ImplementSingleton(AI::CAIServer);
 
 CAIServer::CAIServer()
 {
 	__ConstructSingleton;
-	DataSrv->SetAssign("actors", "game:ai/actors"); //!!!unwind!
-	DataSrv->SetAssign("aihints", "game:ai/hints");
-	DataSrv->SetAssign("smarts", "game:ai/smarts");
+	IOSrv->SetAssign("actors", "game:ai/actors"); //!!!unwind!
+	IOSrv->SetAssign("aihints", "game:ai/hints");
+	IOSrv->SetAssign("smarts", "game:ai/smarts");
 
 	dtObstacleAvoidanceParams* pOAParams = n_new(dtObstacleAvoidanceParams);
 	pOAParams->velBias = 0.4f;
@@ -46,24 +45,13 @@ CAIServer::CAIServer()
 
 CAIServer::~CAIServer()
 {
-	for (int i = 0; i < NavQueryFilters.Size(); ++i)
+	for (int i = 0; i < NavQueryFilters.GetCount(); ++i)
 		n_delete(NavQueryFilters.ValueAtIndex(i));
 
-	for (int i = 0; i < ObstacleAvoidanceParams.Size(); ++i)
+	for (int i = 0; i < ObstacleAvoidanceParams.GetCount(); ++i)
 		n_delete(ObstacleAvoidanceParams.ValueAtIndex(i));
 
 	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
-bool CAIServer::SetupLevel(const bbox3& Bounds)
-{
-	//!!!kill prev level if was!
-
-	CurrLevel = n_new(CAILevel);
-
-	//!!!calc depth based on level size or read from settings!
-	return CurrLevel->Init(Bounds, 5);
 }
 //---------------------------------------------------------------------
 
@@ -77,7 +65,7 @@ void CAIServer::Trigger()
 void CAIServer::RenderDebug()
 {
 	// Render the first NavMesh (later render navmesh used by the current actor)
-	if (CurrLevel.isvalid())
+	if (CurrLevel.IsValid())
 	{
 		dtNavMeshQuery* pNavQuery = CurrLevel->GetSyncNavQuery(0.f);
 		if (pNavQuery)

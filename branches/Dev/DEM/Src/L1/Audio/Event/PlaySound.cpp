@@ -2,6 +2,5 @@
 
 namespace Event
 {
-ImplementRTTI(Event::PlaySound, Events::CEventNative);
-ImplementFactory(Event::PlaySound);
+__ImplementClass(Event::PlaySound, 'PLSN', Events::CEventNative);
 } // namespace Event

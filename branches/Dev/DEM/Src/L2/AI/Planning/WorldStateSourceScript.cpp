@@ -13,13 +13,13 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CWorldStateSourceScript, AI::CWorldStateSource);
-ImplementFactory(AI::CWorldStateSourceScript);
+__ImplementClassNoFactory(AI::CWorldStateSourceScript, AI::CWorldStateSource);
+__ImplementClass(AI::CWorldStateSourceScript);
 
 void CWorldStateSourceScript::Init(Data::PParams Desc)
 {
-	n_assert(Desc.isvalid());
-	Func = Desc->Get<nString>(CStrID("Func")).Get();
+	n_assert(Desc.IsValid());
+	Func = Desc->Get<nString>(CStrID("Func")).CStr();
 }
 //---------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 {
 	if (!Func.IsValid()) OK;
 
-	CPropScriptable* pScriptable = pSO->GetEntity()->FindProperty<CPropScriptable>();
+	CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	if (!pScriptObj) OK;
 
@@ -60,7 +60,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 					// Conversion from nString to CStrID may be wrong, fix if so
 					if (Prm.IsA<nString>())
 					{
-						LPCSTR Str = Prm.GetValue<nString>().Get();
+						LPCSTR Str = Prm.GetValue<nString>().CStr();
 						EWSProp Value = GetPropKeyByName(Str);
 						WS.SetProp(Key, (Value != WSP_Invalid) ? CData(Value) : CData(CStrID(Str)));
 					}

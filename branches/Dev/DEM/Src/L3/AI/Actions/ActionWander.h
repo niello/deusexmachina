@@ -12,8 +12,7 @@ namespace AI
 
 class CActionWander: public CAction //Sequence
 {
-	DeclareRTTI;
-	DeclareFactory(CActionWander);
+	__DeclareClass(CActionWander);
 
 protected:
 
@@ -34,7 +33,7 @@ public:
 	//virtual bool		IsValid() const { return ppCurrChild && (*ppCurrChild)->IsValid(); }
 };
 
-RegisterFactory(CActionWander);
+__RegisterClassInFactory(CActionWander);
 
 typedef Ptr<CActionWander> PActionWander;
 

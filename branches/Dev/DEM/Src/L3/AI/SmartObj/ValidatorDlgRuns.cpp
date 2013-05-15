@@ -1,15 +1,15 @@
 #include "ValidatorDlgRuns.h"
 
-#include <Story/Dlg/DlgSystem.h>
+#include <Story/Dlg/DialogueManager.h>
 
 namespace AI
 {
-ImplementRTTI(AI::CValidatorDlgRuns, AI::CValidator);
-ImplementFactory(AI::CValidatorDlgRuns);
+__ImplementClassNoFactory(AI::CValidatorDlgRuns, AI::CValidator);
+__ImplementClass(AI::CValidatorDlgRuns);
 
 bool CValidatorDlgRuns::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {
-	return DlgSys->IsDialogueActive();
+	return DlgMgr->IsDialogueActive();
 }
 //---------------------------------------------------------------------
 

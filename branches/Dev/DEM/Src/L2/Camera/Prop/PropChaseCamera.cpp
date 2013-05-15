@@ -43,8 +43,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropChaseCamera, Properties::CPropCamera);
-ImplementFactory(Properties::CPropChaseCamera);
+__ImplementClassNoFactory(Properties::CPropChaseCamera, Properties::CPropCamera);
+__ImplementClass(Properties::CPropChaseCamera);
 RegisterProperty(CPropChaseCamera);
 
 using namespace Game;
@@ -85,12 +85,12 @@ void CPropChaseCamera::Deactivate()
 	UNSUBSCRIBE_EVENT(CameraOrbit);
 	UNSUBSCRIBE_EVENT(CameraDistance);
 
-	if (Ctlr.isvalid())
+	if (Ctlr.IsValid())
 	{
 		Ctlr->Activate(false);
 		Ctlr = NULL;
 	}
-	if (Node.isvalid())
+	if (Node.IsValid())
 	{
 		Node->RemoveFromParent();
 		Node = NULL;
@@ -102,7 +102,7 @@ void CPropChaseCamera::Deactivate()
 
 bool CPropChaseCamera::OnPropsActivated(const Events::CEventBase& Event)
 {
-	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (!pProp || !pProp->GetNode()) OK; // No node to chase
 
 	Node = pProp->GetNode()->CreateChild(CStrID("ChaseCamera"));
@@ -130,9 +130,9 @@ void CPropChaseCamera::OnObtainCameraFocus()
 	// that we get a smooth interpolation to the new position
 	//Graphics::CCameraEntity* pCamera = RenderSrv->GetDisplay().GetCamera();
 	//const matrix44& Tfm = pCamera->GetTransform();
-	//Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), Tfm.pos_component());
+	//Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), Tfm.Translation());
 	//Lookat.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain),
-	//	Tfm.pos_component() - (Tfm.z_component() * 10.0f));
+	//	Tfm.Translation() - (Tfm.AxisZ() * 10.0f));
 
 	SceneSrv->GetCurrentScene()->SetMainCamera(Camera);
 
@@ -170,7 +170,7 @@ bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
 						n_deg2rad(GetEntity()->Get<float>(Attr::CameraLowStop)),
 						n_deg2rad(GetEntity()->Get<float>(Attr::CameraHighStop)));
 
-	if (Ctlr.isvalid())
+	if (Ctlr.IsValid())
 	{
 		Ctlr->OrbitHorizontal(e.AngleHoriz);
 		Ctlr->OrbitVertical(e.AngleVert);
@@ -187,7 +187,7 @@ bool CPropChaseCamera::OnCameraDistanceChange(const CEventBase& Event)
 		GetEntity()->Get<float>(Attr::CameraMinDistance),
 		GetEntity()->Get<float>(Attr::CameraMaxDistance));
 
-	if (Ctlr.isvalid())
+	if (Ctlr.IsValid())
 		Ctlr->Zoom(((const Event::CameraDistance&)Event).RelChange * GetEntity()->Get<float>(Attr::CameraDistanceStep));
 
 	OK;
@@ -216,13 +216,13 @@ vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
 	// Setup the exclude set for the ray check
 	float outContactDist;
 	Physics::CFilterSet ExcludeSet;
-	CPropAbstractPhysics* physProp = GetEntity()->FindProperty<CPropAbstractPhysics>();
+	CPropAbstractPhysics* physProp = GetEntity()->GetProperty<CPropAbstractPhysics>();
 	if (physProp && physProp->IsEnabled())
 	{
 		Physics::CEntity* physEntity = physProp->GetPhysicsEntity();
 		if (physEntity) ExcludeSet.AddEntityID(physEntity->GetUID());
 	}
-	Physics::CPhysicsUtil::RayBundleCheck(from, to, up, m.x_component(), 0.25f, outContactDist, &ExcludeSet);
+	Physics::CPhysicsUtil::RayBundleCheck(from, to, up, m.AxisX(), 0.25f, outContactDist, &ExcludeSet);
 
 	vector3 vec = to - from;
 	vec.norm();
@@ -236,10 +236,10 @@ void CPropChaseCamera::UpdateCamera()
 {
 	// compute the lookat point in global space
 	const matrix44& m44 = GetEntity()->Get<matrix44>(Attr::Transform);
-	matrix33 m33 = matrix33(m44.x_component(), m44.y_component(), m44.z_component());
+	matrix33 m33 = matrix33(m44.AxisX(), m44.AxisY(), m44.AxisZ());
 	vector3 Offset;
 	GetEntity()->Get<vector3>(Attr::CameraOffset, Offset);
-	vector3 lookatPoint = m44.pos_component() + m33 * Offset;
+	vector3 lookatPoint = m44.Translation() + m33 * Offset;
 
 	// compute the collided goal position
 	vector3 goalPos = lookatPoint + Angles.get_cartesian_z() * Distance;
@@ -252,7 +252,7 @@ void CPropChaseCamera::UpdateCamera()
 
 	// check if the pCamera is currently at the origin, if yes it is in its initial
 	// position and should not interpolate towards its target position
-	//const vector3& camPos = pCamera->GetTransform().pos_component();
+	//const vector3& camPos = pCamera->GetTransform().Translation();
 	//if (camPos.isequal(vector3::Zero, 0.0f))
 	//{
 	//	Position.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), goalPos);
@@ -277,7 +277,7 @@ void CPropChaseCamera::UpdateCamera()
 
 void CPropChaseCamera::ResetCamera()
 {
-	Angles.set(GetEntity()->Get<matrix44>(Attr::Transform).z_component());
+	Angles.set(GetEntity()->Get<matrix44>(Attr::Transform).AxisZ());
 	Angles.theta = n_deg2rad(GetEntity()->Get<float>(Attr::CameraDefaultTheta));
 	Distance = GetEntity()->Get<float>(Attr::CameraDistance);
 }

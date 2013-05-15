@@ -36,7 +36,7 @@ void CAppFSM::Clear()
 	CurrStateHandler = NULL;
 	TransitionParams = NULL;
 
-	for (int i = 0; i < StateHandlers.Size(); i++)
+	for (int i = 0; i < StateHandlers.GetCount(); i++)
 		StateHandlers[i]->OnRemoveFromApplication();
 	StateHandlers.Clear();
 }

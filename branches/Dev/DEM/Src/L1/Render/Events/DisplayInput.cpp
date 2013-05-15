@@ -2,6 +2,5 @@
 
 namespace Event
 {
-ImplementRTTI(Event::DisplayInput, Events::CEventNative);
-ImplementFactory(Event::DisplayInput);
+__ImplementClass(Event::DisplayInput, 'EDIN', Events::CEventNative);
 } // namespace Event

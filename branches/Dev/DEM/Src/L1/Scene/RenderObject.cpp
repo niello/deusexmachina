@@ -2,5 +2,5 @@
 
 namespace Scene
 {
-ImplementRTTI(Scene::CRenderObject, Scene::CSceneNodeAttr);
+__ImplementClassNoFactory(Scene::CRenderObject, Scene::CSceneNodeAttr);
 }

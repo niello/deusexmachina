@@ -2,8 +2,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CMeshShape, Physics::CShape);
-ImplementFactory(Physics::CMeshShape);
+__ImplementClassNoFactory(Physics::CMeshShape, Physics::CShape);
+__ImplementClass(Physics::CMeshShape);
 
 //Opcode::SphereCollider CMeshShape::OPCSphereCollider;
 //Opcode::RayCollider CMeshShape::OPCRayCollider;
@@ -111,7 +111,7 @@ bool CMeshShape::Attach(dSpaceID SpaceID)
 		}
 		else
 		{
-			n_error("CMeshShape: invalid file extension in '%Sphere'", FileName.Get());
+			n_error("CMeshShape: invalid file extension in '%Sphere'", FileName.CStr());
 			FAIL;
 		}
 		*/

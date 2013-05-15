@@ -2,73 +2,73 @@
 #ifndef __DEM_L2_GAME_SERVER_H__
 #define __DEM_L2_GAME_SERVER_H__
 
-#include <Core/RefCounted.h>
 #include <Time/TimeSource.h>
-#include <Debug/Profiler.h>
+#include <Game/GameLevel.h>
+#include <Game/EntityManager.h>
+#include <Game/EntityLoader.h>
 
-// The game server setups and runs the game world, consisting of a number
-// of active "game entities". Functionality and queries on the game world
-// are divided amongst several Manager objects, which are created as
-// Singletons during the game server's Open() method. This keeps the
-// game server's interface small and clean, and lets Mangalore applications
-// easily extend functionality by implementing new, or deriving from
-// existing managers.
-//
-// Based on mangalore Game::CGameServer (C) 2003 RadonLabs GmbH
+// Central game engine object. It drives level loading, updating, game saving and loading, entities
+// and the main game timer. The server uses events to trigger entities and custom gameplay systems
+// from L2 & L3 (like dialogue, quest and item managers).
+
+//???env queries to CGameLevel?
+//???entity quadtree?
 
 namespace Game
 {
 class Entity;
-class CManager;
 
 #define GameSrv Game::CGameServer::Instance()
 
 class CGameServer: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CGameServer);
+	__DeclareClassNoFactory;
+	__DeclareSingleton(CGameServer);
 
 protected:
 
-	static CGameServer* Singleton;
+	bool								IsOpen;
+	Time::PTimeSource					GameTimeSrc;
+	PEntityManager						EntityManager;
+	nDictionary<CStrID, PGameLevel>		Levels;
+	PGameLevel							ActiveLevel;
 
-	//???to char flags?
-	bool					IsOpen;
-	bool					IsStarted;
-	Time::PTimeSource		GameTimeSrc;
-	nArray<Ptr<CManager>>	Managers;
-
-	PROFILER_DECLARE(profGameServerFrame);
+	PEntityLoader						DefaultLoader;
+	nDictionary<CStrID, PEntityLoader>	Loaders;
 
 public:
 
 	CGameServer();
-	virtual ~CGameServer();
-
-	static CGameServer* Instance() { n_assert(Singleton); return Singleton; }
+	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
 
 	bool	Open();
-	bool	Start();
-	void	Stop();
 	void	Close();
-	void	OnFrame();
-	void	RenderDebug();
+	void	Trigger();
+	void	RenderCurrentLevel() { if (ActiveLevel.IsValid()) ActiveLevel->RenderScene(); }
+	void	RenderCurrentLevelDebug() { if (ActiveLevel.IsValid()) ActiveLevel->RenderDebug(); }
 
-	void	AttachManager(CManager* pMgr);
-	void	RemoveManager(CManager* pMgr);
-	void	RemoveAllManagers();
+	void	SetEntityLoader(CStrID Group, PEntityLoader Loader);
+	void	ClearEntityLoader(CStrID Group);
 
-	bool	HasStarted() const { return IsStarted; }
-	//void	SetTime(nTime NewTime) { Time = NewTime; }
-	nTime	GetTime() const { return GameTimeSrc->GetTime(); } // return Time; }
-	//void	SetFrameTime(nTime NewFrameTime) { FrameTime = NewFrameTime; }
-	nTime	GetFrameTime() const { return GameTimeSrc->GetFrameTime(); } //return FrameTime; }
-	void	ToggleGamePause() const { if (GameTimeSrc->IsPaused()) GameTimeSrc->Unpause(); else GameTimeSrc->Pause(); }
+	bool	LoadLevel(CStrID ID, const Data::CParams& Desc);
+	void	UnloadLevel(CStrID ID);
+	void	SetActiveLevel(CStrID ID);
+	bool	StartGame(const nString& FileName);
+	bool	SaveGame(const nString& Name);
+	bool	LoadGame(const nString& Name);
+	//???EnumSavedGames?
+	//???Profile->GetSaveGamePath?
+
+	//Global attributes
+
+	//Transition service - to move entities from level to level, including store-unload level 1-load level 2-restore case
+
+	nTime	GetTime() const { return GameTimeSrc->GetTime(); }
+	nTime	GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
 	bool	IsGamePaused() const { return GameTimeSrc->IsPaused(); }
-	void	PauseGame(bool Pause = true) const { if (Pause) GameTimeSrc->Pause(); else GameTimeSrc->Unpause(); }
+	void	PauseGame(bool Pause = true) const;
+	void	ToggleGamePause() const { PauseGame(!IsGamePaused()); }
 };
-
-RegisterFactory(CGameServer);
 
 }
 

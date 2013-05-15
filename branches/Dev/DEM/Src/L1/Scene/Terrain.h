@@ -14,8 +14,7 @@ namespace Scene
 
 class CTerrain: public CRenderObject
 {
-	DeclareRTTI;
-	DeclareFactory(CTerrain);
+	__DeclareClass(CTerrain);
 
 protected:
 
@@ -49,7 +48,7 @@ public:
 
 	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) { }
 
-	virtual bool		LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool		LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual bool		OnAdd();
 	virtual void		OnRemove();
 	virtual void		Update();
@@ -64,14 +63,14 @@ public:
 	DWORD				GetTopPatchCountX() const { return TopPatchCountX; }
 	DWORD				GetTopPatchCountZ() const { return TopPatchCountZ; }
 	float				GetVerticalScale() const { return VerticalScale; }
-	Render::CTexture*	GetHeightMap() const { return HeightMap.get_unsafe(); }
+	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
 	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
 	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;
 	float				GetInvSplatSizeX() const { return InvSplatSizeX; }
 	float				GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };
 
-RegisterFactory(CTerrain);
+__RegisterClassInFactory(CTerrain);
 
 typedef Ptr<CTerrain> PTerrain;
 

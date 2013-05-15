@@ -2,6 +2,6 @@
 
 namespace Event
 {
-ImplementRTTI(Event::ObjDamageDone, Events::CEventNative);
-ImplementFactory(Event::ObjDamageDone);
+__ImplementClassNoFactory(Event::ObjDamageDone, Events::CEventNative);
+__ImplementClass(Event::ObjDamageDone);
 } // namespace Event

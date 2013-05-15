@@ -15,8 +15,7 @@ namespace Physics
 
 class CRay: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CRay);
+	__DeclareClass(CRay);
 
 private:
 
@@ -51,7 +50,7 @@ public:
 };
 //---------------------------------------------------------------------
 
-RegisterFactory(CRay);
+__RegisterClassInFactory(CRay);
 
 inline void CRay::SetDirection(const vector3& Dir)
 {

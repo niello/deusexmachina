@@ -60,7 +60,7 @@ inline void CRenderTarget::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTForma
 
 bool CRenderTarget::CreateDefaultRT()
 {
-	n_assert(!RTTexture.isvalid());
+	n_assert(!RTTexture.IsValid());
 	//???assert not created? empty texture is not enough!
 
 	IsDefaultRT = true;
@@ -194,7 +194,7 @@ void CRenderTarget::Destroy()
 
 	SAFE_RELEASE(pRTSurface);
 	SAFE_RELEASE(pDSSurface); //???what if shared? may AddRef in Create
-	if (RTTexture.isvalid() && RTTexture->IsLoaded()) RTTexture->Unload();
+	if (RTTexture.IsValid() && RTTexture->IsLoaded()) RTTexture->Unload();
 	RTTexture = NULL;
 }
 //---------------------------------------------------------------------
@@ -224,7 +224,7 @@ bool CRenderTarget::OnDeviceLost(const Events::CEventBase& Ev)
 
 	SAFE_RELEASE(pRTSurface);
 	SAFE_RELEASE(pDSSurface); //???what if shared? may AddRef in Create
-	if (RTTexture.isvalid() && RTTexture->IsLoaded()) RTTexture->Unload();
+	if (RTTexture.IsValid() && RTTexture->IsLoaded()) RTTexture->Unload();
 
 	OK;
 }

@@ -25,7 +25,7 @@ namespace Attr
 	DeclareAttrsModule(PropScriptable)
 	DeclareAttrsModule(PropTrigger)
 	DeclareAttrsModule(PropTransitionZone)
-	DeclareAttrsModule(QuestSystem)
+	DeclareAttrsModule(QuestManager)
 	DeclareAttrsModule(ItemAttrs)
 };
 
@@ -57,7 +57,7 @@ void CEnvironment::RegisterAttributes()
 	RegisterAttrs(PropScriptable)
 	RegisterAttrs(PropTrigger)
 	RegisterAttrs(PropTransitionZone)
-	RegisterAttrs(QuestSystem)
+	RegisterAttrs(QuestManager)
 	RegisterAttrs(ItemAttrs)
 }
 //---------------------------------------------------------------------

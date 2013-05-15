@@ -4,8 +4,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CSliderJoint, Physics::CJoint);
-ImplementFactory(Physics::CSliderJoint);
+__ImplementClassNoFactory(Physics::CSliderJoint, Physics::CJoint);
+__ImplementClass(Physics::CSliderJoint);
 
 CSliderJoint::CSliderJoint()
 {
@@ -45,7 +45,7 @@ void CSliderJoint::Attach(dWorldID WorldID, dJointGroupID GroupID, const matrix4
 
 void CSliderJoint::UpdateTransform(const matrix44& Tfm)
 {
-	matrix33 m33(Tfm.x_component(), Tfm.y_component(), Tfm.z_component());
+	matrix33 m33(Tfm.AxisX(), Tfm.AxisY(), Tfm.AxisZ());
 	vector3 a = m33 * AxisParams.Axis;
 	dJointSetSliderAxis(ODEJointID, a.x, a.y, a.z);
 }

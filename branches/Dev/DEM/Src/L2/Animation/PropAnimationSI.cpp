@@ -20,7 +20,7 @@ int CPropAnimation_GetAnimLength(lua_State* l)
 	//args: EntityScriptObject's this table, Clip ID
 	//ret: float length in seconds
 	SETUP_ENT_SI_ARGS(2);
-	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
+	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
 	lua_pushnumber(l, pProp ? (lua_Number)pProp->GetAnimLength(CStrID(lua_tostring(l, 2))) : 0.f);
 	return 1;
 }
@@ -31,7 +31,7 @@ int CPropAnimation_StartAnim(lua_State* l)
 	//args: EntityScriptObject's this table, Clip ID, [see below]
 	//ret: int task ID
 	SETUP_ENT_SI_ARGS(2);
-	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
+	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
 	if (!pProp) return 0;
 
 	CStrID ClipID = CStrID(lua_tostring(l, 2));
@@ -54,7 +54,7 @@ int CPropAnimation_PauseAnim(lua_State* l)
 	//args: EntityScriptObject's this table, Task ID, bool Pause
 	//ret: int task ID
 	SETUP_ENT_SI_ARGS(3);
-	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
+	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
 	if (pProp) pProp->PauseAnim(lua_tointeger(l, 2), !!lua_toboolean(l, 3));
 	return 0;
 }
@@ -65,7 +65,7 @@ int CPropAnimation_StopAnim(lua_State* l)
 	//args: EntityScriptObject's this table, Task ID, [fadeout time]
 	//ret: int task ID
 	SETUP_ENT_SI_ARGS(2);
-	CPropAnimation* pProp = This->GetEntity()->FindProperty<CPropAnimation>();
+	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
 	if (!pProp) return 0;
 
 	float FadeOutTime = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : -1.f;

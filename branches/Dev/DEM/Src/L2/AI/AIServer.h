@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_AI_SERVER_H__
 #define __DEM_L2_AI_SERVER_H__
 
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/Events.h>
 #include <AI/Planning/Planner.h>
@@ -28,8 +28,7 @@ using namespace Data;
 
 class CAIServer: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CAIServer);
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CAIServer);
 
 private:
@@ -46,7 +45,6 @@ public:
 	CAIServer();
 	~CAIServer();
 
-	bool						SetupLevel(const bbox3& Bounds);
 	void						Trigger();
 	void						RenderDebug();
 
@@ -64,10 +62,8 @@ public:
 	CPathRequestQueue*			GetPathQueue(DWORD ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
 
 	CPlanner&					GetPlanner() { return Planner; } //???or singleton?
-	CAILevel*					GetLevel() const { return CurrLevel.get_unsafe(); }
+	CAILevel*					GetLevel() const { return CurrLevel.GetUnsafe(); }
 };
-
-RegisterFactory(CAIServer);
 
 inline const dtQueryFilter* CAIServer::GetNavQueryFilter(CStrID ID) const
 {

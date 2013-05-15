@@ -289,30 +289,6 @@
 			Name="Data"
 			>
 			<File
-				RelativePath="..\..\Src\L1\Data\BinaryReader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\BinaryReader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\BinaryWriter.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\BinaryWriter.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\BTFile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\BTFile.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Data\Buffer.cpp"
 				>
 			</File>
@@ -353,23 +329,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\FileSystem.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Data\Flags.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\FSBrowser.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\FSBrowser.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\Functor.h"
 				>
 			</File>
 			<File
@@ -381,15 +341,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\HRDWriter.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\HRDWriter.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Data\LinkedListSet.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\List.h"
 				>
 			</File>
 			<File
@@ -417,26 +373,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\Singleton.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\Stream.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\Stream.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\StreamReader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\StreamWriter.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Data\StrIDStorage.cpp"
 				>
 			</File>
@@ -450,14 +386,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Data\StringID.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\TextReader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\TextReader.h"
 				>
 			</File>
 			<File
@@ -477,54 +405,6 @@
 				>
 				<File
 					RelativePath="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Streams"
-				>
-				<File
-					RelativePath="..\..\Src\L1\Data\Streams\FileStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\Streams\FileStream.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\Streams\MemStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\Streams\MemStream.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="FS"
-				>
-				<File
-					RelativePath="..\..\Src\L1\Data\FS\FileSystemNPK.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\FS\FileSystemNPK.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\FS\FileSystemWin32.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\FS\FileSystemWin32.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\FS\NpkTOC.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L1\Data\FS\NpkTOCEntry.h"
 					>
 				</File>
 			</Filter>
@@ -690,6 +570,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Core\RTTI.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Core\Singleton.h"
 				>
 			</File>
 		</Filter>
@@ -1644,6 +1528,138 @@
 				RelativePath="..\..\Src\L1\Animation\MocapTrack.h"
 				>
 			</File>
+		</Filter>
+		<Filter
+			Name="IO"
+			>
+			<File
+				RelativePath="..\..\Src\L1\IO\BinaryReader.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\BinaryReader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\BinaryWriter.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\BinaryWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\BTFile.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\BTFile.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\FileSystem.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\FSBrowser.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\FSBrowser.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\HRDWriter.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\HRDWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\IO.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\IOServer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\IOServer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\Stream.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\Stream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\StreamReader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\StreamWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\TextReader.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\IO\TextReader.h"
+				>
+			</File>
+			<Filter
+				Name="Streams"
+				>
+				<File
+					RelativePath="..\..\Src\L1\IO\Streams\FileStream.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\Streams\FileStream.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\Streams\MemStream.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\Streams\MemStream.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="FS"
+				>
+				<File
+					RelativePath="..\..\Src\L1\IO\FS\FileSystemNPK.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\FS\FileSystemNPK.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\FS\FileSystemWin32.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\FS\FileSystemWin32.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\FS\NpkTOC.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L1\IO\FS\NpkTOCEntry.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"

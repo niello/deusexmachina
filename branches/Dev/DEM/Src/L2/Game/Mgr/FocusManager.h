@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_FOCUS_MANAGER_H__
 #define __DEM_L2_FOCUS_MANAGER_H__
 
-#include <Game/Manager.h>
+#include <Core/RefCounted.h>
 #include <Events/Events.h>
 #include <Data/StringID.h>
 
@@ -28,10 +28,9 @@ namespace Game
 {
 #define FocusMgr Game::CFocusManager::Instance()
 
-class CFocusManager: public CManager
+class CFocusManager: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CFocusManager);
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -58,25 +57,19 @@ public:
 	virtual void	Activate();
 	virtual void	Deactivate();
 
-	//!!!was protected. see gamestatehandler!
-	void			SwitchFocusEntities();
-
 	void			SetFocusEntity(CEntity* pEntity);
 	CEntity*		GetFocusEntity() const;
 	void			SetFocusToNextEntity() { SetToNextEntity(true, true); }
 	void			SetDefaultFocus() { SwitchToFirstCameraFocusEntity(); }
 
 	void			SetInputFocusEntity(Game::CEntity* pEntity);
-	CEntity*		GetInputFocusEntity() const { return InputFocusEntity.get_unsafe(); }
+	CEntity*		GetInputFocusEntity() const { return InputFocusEntity.GetUnsafe(); }
 	void			SetInputFocusToNextEntity() { SetToNextEntity(false, true); }
 
 	void			SetCameraFocusEntity(Game::CEntity* pEntity);
-	CEntity*		GetCameraFocusEntity() const { return CameraFocusEntity.get_unsafe(); }
+	CEntity*		GetCameraFocusEntity() const { return CameraFocusEntity.GetUnsafe(); }
 	void			SetCameraFocusToNextEntity() { SetToNextEntity(true, false); }
 };
-//---------------------------------------------------------------------
-
-RegisterFactory(CFocusManager);
 
 // Sets the input and camera focus to the given pEntity. The pEntity pointer may be 0 to clear
 // the input and camera focus. The pEntity must have both a CPropInput and CPropCamera
@@ -90,8 +83,8 @@ inline void CFocusManager::SetFocusEntity(CEntity* pEntity)
 
 inline CEntity* CFocusManager::GetFocusEntity() const
 {
-	return (CameraFocusEntity.get_unsafe() == InputFocusEntity.get_unsafe()) ?
-		CameraFocusEntity.get_unsafe() :
+	return (CameraFocusEntity.GetUnsafe() == InputFocusEntity.GetUnsafe()) ?
+		CameraFocusEntity.GetUnsafe() :
 		NULL;
 }
 //---------------------------------------------------------------------

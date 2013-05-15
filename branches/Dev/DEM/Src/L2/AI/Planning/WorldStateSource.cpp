@@ -2,5 +2,5 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CWorldStateSource, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CWorldStateSource, Core::CRefCounted);
 } //namespace AI

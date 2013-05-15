@@ -17,8 +17,6 @@ namespace Events
 
 class CEventBase: public Core::CRefCounted
 {
-	//???DeclareRTTI;
-
 protected:
 
 public:

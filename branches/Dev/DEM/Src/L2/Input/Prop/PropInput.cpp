@@ -5,10 +5,8 @@
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropInput, Game::CProperty);
-ImplementFactory(Properties::CPropInput);
-ImplementPropertyStorage(CPropInput, 16);
-RegisterProperty(CPropInput);
+__ImplementClass(Properties::CPropInput, 'PRIN', Game::CProperty);
+__ImplementPropertyStorage(CPropInput);
 
 void CPropInput::Activate()
 {

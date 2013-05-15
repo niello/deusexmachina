@@ -12,8 +12,7 @@ namespace Physics
 
 class CHeightfieldShape: public CShape
 {
-	DeclareRTTI;
-	DeclareFactory(CHeightfieldShape);
+	__DeclareClass(CHeightfieldShape);
 
 protected:
 
@@ -41,7 +40,7 @@ public:
 	DWORD			GetHFHeight() const { return Height; }
 };
 
-RegisterFactory(CHeightfieldShape);
+__RegisterClassInFactory(CHeightfieldShape);
 
 }
 

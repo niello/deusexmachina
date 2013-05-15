@@ -11,8 +11,7 @@ namespace AI
 
 class CActionTplUseSmartObj: public CActionTpl
 {
-	DeclareRTTI;
-	DeclareFactory(CActionTplUseSmartObj);
+	__DeclareClass(CActionTplUseSmartObj);
 
 protected:
 
@@ -26,7 +25,7 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-RegisterFactory(CActionTplUseSmartObj);
+__RegisterClassInFactory(CActionTplUseSmartObj);
 
 typedef Ptr<CActionTplUseSmartObj> PActionTplUseSmartObj;
 

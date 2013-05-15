@@ -3,11 +3,11 @@
 #include <Physics/RigidBody.h>
 #include <Physics/FilterSet.h>
 #include <Physics/ContactPoint.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 
 namespace Physics
 {
-ImplementRTTI(Physics::CShape, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CShape, Core::CRefCounted);
 
 nArray<CContactPoint>* CShape::CollideContacts = NULL;
 const CFilterSet* CShape::CollideFilterSet = NULL;
@@ -96,7 +96,7 @@ void CShape::AttachGeom(dGeomID GeomId, dSpaceID SpaceID)
 	n_assert(!IsAttached());
 
 	// set the geom's local Transform
-	const vector3& Pos = Transform.pos_component();
+	const vector3& Pos = Transform.Translation();
 	dGeomSetPosition(GeomId, Pos.x, Pos.y, Pos.z);
 	dMatrix3 ODERotation;
 	CPhysicsServer::Matrix44ToOde(Transform, ODERotation);
@@ -126,7 +126,7 @@ void CShape::TransformMass()
 	dMatrix3 ODERotation;
 	CPhysicsServer::Matrix44ToOde(Transform, ODERotation);
 	dMassRotate(&ODEMass, ODERotation);
-	const vector3& Pos = Transform.pos_component();
+	const vector3& Pos = Transform.Translation();
 	dMassTranslate(&ODEMass, Pos.x, Pos.y, Pos.z);
 }
 //---------------------------------------------------------------------
@@ -165,7 +165,7 @@ void CShape::SetTransform(const matrix44& Tfm)
 	if (!pRigidBody && ODEGeomID)
 	{
 		//!!!DUPLICATE CODE!
-		const vector3& Pos = Transform.pos_component();
+		const vector3& Pos = Transform.Translation();
 		dGeomSetPosition(ODEGeomID, Pos.x, Pos.y, Pos.z);
 		dMatrix3 ODERotation;
 		CPhysicsServer::Matrix44ToOde(Transform, ODERotation);

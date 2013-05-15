@@ -22,9 +22,9 @@ bool CSoundResource::LoadResource()
 	Audio::CAudioFile* pWaveFile;
 	if (FileName.CheckExtension("wav")) pWaveFile = n_new(Audio::CWAVFile);
 	else if (FileName.CheckExtension("ogg")) pWaveFile = n_new(Audio::COGGFile);
-	else n_error("Audio file format not supported: %s\n", FileName.Get());
+	else n_error("Audio file format not supported: %s\n", FileName.CStr());
 	n_assert(pWaveFile);
-	pWaveFile->Open(FileName.Get());
+	pWaveFile->Open(FileName.CStr());
 
 	DSBUFFERDESC DSBufDesc;
 	ZeroMemory(&DSBufDesc, sizeof(DSBUFFERDESC));
@@ -38,13 +38,13 @@ bool CSoundResource::LoadResource()
 	if (Streaming) // create a streaming sound object (with a 128 KByte streaming buffer)
 	{
 		DSBufDesc.dwFlags |= DSBCAPS_GETCURRENTPOSITION2;
-		//hr = pSoundMgr->CreateStreaming(&pDSSound, .Get(), CreationFlags, DS3DALG_DEFAULT, 4, (1 << 15));
+		//hr = pSoundMgr->CreateStreaming(&pDSSound, .CStr(), CreationFlags, DS3DALG_DEFAULT, 4, (1 << 15));
 
 		DSBufDesc.dwBufferBytes = (1 << 17);
 
 		LPDIRECTSOUNDBUFFER pDSBuffer = NULL;
 		if (FAILED(pDS->CreateSoundBuffer(&DSBufDesc, &pDSBuffer, NULL)))
-			n_error("CSoundResource::LoadResource(): CreateSoundBuffer for '%s' failed!", FileName.Get());
+			n_error("CSoundResource::LoadResource(): CreateSoundBuffer for '%s' failed!", FileName.CStr());
 
 		pDSSound = n_new(CDSStreamingSound(pDSBuffer, DSBufDesc.dwBufferBytes, pWaveFile, (1 << 15), DSBufDesc.dwFlags));
 	}
@@ -66,7 +66,7 @@ bool CSoundResource::LoadResource()
 			// b) DSERR_BUFFERTOOSMALL, if BufSize < DSBSIZE_FX_MIN && DSBCAPS_CTRLFX flag is set
 			// c) Hardware buffer mixing was requested on a device that doesn't support it
 			n_error("CSoundResource::LoadResource(): CreateSoundBuffer for '%s' failed!"
-				"Make sure you do not try to play a stereo sound as 3D sound!", FileName.Get());
+				"Make sure you do not try to play a stereo sound as 3D sound!", FileName.CStr());
 			return false;
 		}
 

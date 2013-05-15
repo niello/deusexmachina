@@ -3,6 +3,7 @@
 #define __DEM_L1_UI_SERVER_H__
 
 #include <UI/Window.h>
+#include <Core/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/Events.h>
 #include <util/ndictionary.h>
@@ -34,7 +35,7 @@ typedef Ptr<class CWindow> PWindow;
 
 class CUIServer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CUIServer);
 
 private:
@@ -44,8 +45,6 @@ private:
 	CEGUI::System*						CEGUISystem;
 	CEGUI::CNebula2Logger*				Logger;
 	CEGUI::CNebula2ResourceProvider*	ResourceProvider;
-
-	nTime								FrameTime;
 
 	nDictionary<CStrID, PWindow>		Screens;
 	CWindow*							CurrRootScreen;
@@ -74,7 +73,7 @@ public:
 	//!!!create dynamic fonts! see article!
 
 	//bool Init(PParams Cfg);
-	void Trigger();
+	void Trigger(float FrameTime);
 	void Render();
 
 	// Interface
@@ -94,9 +93,6 @@ public:
 	void			HideGUI();
 	bool			IsGUIVisible() const;
 	bool			IsMouseOverGUI() const;
-
-	void			SetFrameTime(nTime f) { FrameTime = f; }
-	nTime			GetFrameTime() const { return FrameTime; }
 
 	// Internal use by UI system & windows
 	CEGUI::UVector2	GetMousePositionU() const;

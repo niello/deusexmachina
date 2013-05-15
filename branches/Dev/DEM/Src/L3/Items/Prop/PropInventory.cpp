@@ -3,7 +3,7 @@
 #include <Items/ItemAttrs.h>
 #include <Items/ItemManager.h>
 #include <Events/EventManager.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Loading/EntityFactory.h>
 
 const nString StrInventories("Inventories");
@@ -15,9 +15,9 @@ namespace Attr
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropInventory, Game::CProperty);
-ImplementFactory(Properties::CPropInventory);
-ImplementPropertyStorage(CPropInventory, 96);
+__ImplementClassNoFactory(Properties::CPropInventory, Game::CProperty);
+__ImplementClass(Properties::CPropInventory);
+__ImplementPropertyStorage(CPropInventory, 96);
 RegisterProperty(CPropInventory);
 
 using namespace DB;
@@ -155,14 +155,14 @@ void CPropInventory::Save()
 void CPropInventory::Load()
 {
 	//Items.Clear();
-	n_assert(Items.Size() == 0);
+	n_assert(Items.GetCount() == 0);
 
 	CDataset* DS = ItemMgr->GetInventoriesDataset();
 	if (!DS) return;
 
 	PValueTable VT = DS->GetValueTable();
 
-	if (!VT.isvalid() || !VT->GetRowCount()) return;
+	if (!VT.IsValid() || !VT->GetRowCount()) return;
 
 	CStrID EntID = GetEntity()->GetUID();
 
@@ -329,7 +329,7 @@ void CPropInventory::MergeItems(PItem Item)
 
 	if (MainStack == Items.End()) return;
 
-	for (int i = Items.Size() - 1; i >= 0; i--)
+	for (int i = Items.GetCount() - 1; i >= 0; i--)
 		if (Items[i].GetItem()->IsEqual(Item))
 		{
 			MainStack->Add(Items[i].GetCount());

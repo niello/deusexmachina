@@ -194,7 +194,7 @@ bbox3::set(const matrix44& m)
     float zExtent = n_max(n_max(n_abs(m.M13), n_abs(m.M23)), n_abs(m.M33));
     vector3 extent(xExtent, yExtent, zExtent);
 
-    vector3 center = m.pos_component();
+    vector3 center = m.Translation();
     this->vmin = center - extent;
     this->vmax = center + extent;
 }

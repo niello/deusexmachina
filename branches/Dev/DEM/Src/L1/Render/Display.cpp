@@ -4,6 +4,7 @@
 #include <Render/RenderServer.h>
 #include <Render/Events/DisplayInput.h>
 #include <Events/EventManager.h>
+#include <Core/CoreServer.h>
 
 #include <Uxtheme.h>
 #include <WindowsX.h>
@@ -94,7 +95,7 @@ bool CDisplay::OpenWindow()
 	if (!aWndClass)
 	{
 		HICON hIcon = NULL;
-		if (IconName.IsValid()) hIcon = LoadIcon(hInst, IconName.Get());
+		if (IconName.IsValid()) hIcon = LoadIcon(hInst, IconName.CStr());
 		if (!hIcon) hIcon = LoadIcon(NULL, IDI_APPLICATION);
 
 		WNDCLASSEX WndClass;
@@ -123,7 +124,7 @@ bool CDisplay::OpenWindow()
 	int X, Y, W, H;
 	CalcWindowRect(X, Y, W, H);
 
-	hWnd = CreateWindow((LPCSTR)(DWORD_PTR)aWndClass, WindowTitle.Get(), WndStyle,
+	hWnd = CreateWindow((LPCSTR)(DWORD_PTR)aWndClass, WindowTitle.CStr(), WndStyle,
 						X, Y, W, H,
 						hWndParent, NULL, hInst, NULL);
 	n_assert(hWnd);
@@ -199,7 +200,7 @@ void CDisplay::SetWindowIcon(const char* pIconName)
 	IconName = pIconName;
 	if (hWnd && IconName.IsValid())
 	{
-		HICON hIcon = LoadIcon(hInst, IconName.Get());
+		HICON hIcon = LoadIcon(hInst, IconName.CStr());
 		if (hIcon) SetClassLong(hWnd, GCL_HICON, (LONG)hIcon);
 	}
 }

@@ -4,8 +4,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionGoto, AI::CAction);
-ImplementFactory(AI::CActionGoto);
+__ImplementClassNoFactory(AI::CActionGoto, AI::CAction);
+__ImplementClass(AI::CActionGoto);
 
 //bool CActionGoto::Activate(CActor* pActor)
 //{
@@ -43,7 +43,7 @@ EExecStatus CActionGoto::Update(CActor* pActor)
 
 void CActionGoto::Deactivate(CActor* pActor)
 {
-	if (SubAction.isvalid())
+	if (SubAction.IsValid())
 	{
 		SubAction->Deactivate(pActor);
 		SubAction = NULL;
@@ -67,19 +67,19 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 	bool OffMesh = pActor->GetNavSystem().IsTraversingOffMesh();
 	if (!pActor->GetNavSystem().GetPathEdges(Path, OffMesh ? 1 : 2)) return Failure;
 
-	if (Path.Size() < 1) return Running;
+	if (Path.GetCount() < 1) return Running;
 
 	CStrID NewActionID = Path[0].Action;
 	n_assert(NewActionID.IsValid());
 
 	if (NewActionID != SubActionID)
 	{
-		if (SubAction.isvalid()) SubAction->Deactivate(pActor);
+		if (SubAction.IsValid()) SubAction->Deactivate(pActor);
 
 		SubActionID = NewActionID;
 
 		static const nString ActNameBase("AI::CAction");
-		SubAction = (CActionTraversePathEdge*)CoreFct->Create(ActNameBase + SubActionID.CStr());
+		SubAction = (CActionTraversePathEdge*)Factory->Create(ActNameBase + SubActionID.CStr());
 		if (!SubAction->Activate(pActor))				
 		{
 			SubAction = NULL;
@@ -88,7 +88,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 		}
 	}
 
-	SubAction->UpdatePathEdge(pActor, &Path[0], (Path.Size() > 1) ? &Path[1] : NULL);
+	SubAction->UpdatePathEdge(pActor, &Path[0], (Path.GetCount() > 1) ? &Path[1] : NULL);
 	EExecStatus Result = SubAction->Update(pActor);
 	if (Result != Running)
 	{

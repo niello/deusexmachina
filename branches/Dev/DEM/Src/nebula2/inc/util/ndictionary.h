@@ -54,15 +54,15 @@ public:
 	int				FindIndex(const TKey& Key) const { n_assert(!IsInBeginAdd); return Pairs.BinarySearchIndex(Key); }
 	TValue*			Get(const TKey& Key) const;
 	TValue&			GetOrAdd(const TKey& Key);
+	void			Set(const TKey& Key, const TValue& Value);
 	bool			Contains(const TKey& Key) const { return Pairs.BinarySearchIndex(Key) != -1; }
-	int				Size() const { return Pairs.Size(); }
+	int				GetCount() const { return Pairs.GetCount(); }
 	void			Clear() { Pairs.Clear(); IsInBeginAdd = false; }
-	bool			IsEmpty() const { return !Pairs.Size(); }
+	bool			IsEmpty() const { return !Pairs.GetCount(); }
 
 	const TKey&		KeyAtIndex(int Idx) const { return Pairs[Idx].GetKey(); }
 	TValue&			ValueAtIndex(int Idx) { return Pairs[Idx].GetValue(); }
 	const TValue&	ValueAtIndex(int Idx) const { return Pairs[Idx].GetValue(); }
-	CPair&			PairAtIndex(int Idx) { return Pairs[Idx]; }
 
 	void			CopyToArray(nArray<TValue>& Out) const;
 
@@ -75,7 +75,7 @@ template<class TKey, class TValue>
 void nDictionary<TKey, TValue>::BeginAdd(int num)
 {
 	n_assert(!IsInBeginAdd);
-	Pairs.Resize(Pairs.Size() + num);
+	Pairs.Resize(Pairs.GetCount() + num);
 	IsInBeginAdd = true;
 }
 //---------------------------------------------------------------------
@@ -110,9 +110,19 @@ TValue& nDictionary<TKey, TValue>::GetOrAdd(const TKey& Key)
 //---------------------------------------------------------------------
 
 template<class TKey, class TValue>
+void nDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
+{
+	n_assert(!IsInBeginAdd);
+	int Idx = Pairs.BinarySearchIndex(Key);
+	if (Idx == -1) Add(Key, Value);
+	else ValueAtIndex(Idx) = Value;
+}
+//---------------------------------------------------------------------
+
+template<class TKey, class TValue>
 void nDictionary<TKey, TValue>::CopyToArray(nArray<TValue>& Out) const
 {
-	for (int i = 0; i < Pairs.Size(); i++)
+	for (int i = 0; i < Pairs.GetCount(); i++)
 		Out.Append(Pairs[i].GetValue());
 }
 //---------------------------------------------------------------------

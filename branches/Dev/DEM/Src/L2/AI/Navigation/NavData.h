@@ -18,7 +18,7 @@ static const int MAX_COMMON_NODES = 512;
 
 class dtNavMeshQuery;
 
-namespace Data
+namespace IO
 {
 	class CStream;
 }
@@ -44,7 +44,7 @@ public:
 
 	CNavData(): pNavMesh(NULL) { memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery)); }
 
-	bool LoadFromStream(Data::CStream& Stream);
+	bool LoadFromStream(IO::CStream& Stream);
 	void Clear();
 };
 

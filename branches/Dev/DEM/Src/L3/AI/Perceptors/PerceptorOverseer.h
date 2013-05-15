@@ -12,8 +12,7 @@ namespace AI
 
 class CPerceptorOverseer: public CPerceptor
 {
-	DeclareRTTI;
-	DeclareFactory(CPerceptorOverseer);
+	__DeclareClass(CPerceptorOverseer);
 
 protected:
 
@@ -27,7 +26,7 @@ public:
 	virtual void ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence = 1.f);
 };
 
-RegisterFactory(CPerceptorOverseer);
+__RegisterClassInFactory(CPerceptorOverseer);
 
 }
 

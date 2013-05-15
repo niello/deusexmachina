@@ -13,8 +13,7 @@ namespace Physics
 
 class CUniversalJoint: public CJoint
 {
-	DeclareRTTI;
-	DeclareFactory(CUniversalJoint);
+	__DeclareClass(CUniversalJoint);
 
 public:
 
@@ -30,7 +29,7 @@ public:
 	virtual void RenderDebug();
 };
 
-RegisterFactory(CUniversalJoint);
+__RegisterClassInFactory(CUniversalJoint);
 
 }
 

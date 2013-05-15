@@ -15,9 +15,8 @@ namespace Properties
 
 class CPropItem: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropItem);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropItem);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -34,7 +33,7 @@ public:
 	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 };
 
-RegisterFactory(CPropItem);
+__RegisterClassInFactory(CPropItem);
 
 }
 

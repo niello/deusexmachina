@@ -44,7 +44,7 @@ nString nString::Replace(const char* pMatch, const char* pReplaceWith) const
 {
 	n_assert(pMatch && pReplaceWith);
 
-	const char* pStr = Get();
+	const char* pStr = CStr();
 	int MatchLen = strlen(pMatch);
 	nString Result;
 
@@ -85,7 +85,7 @@ nString nString::TrimLeft(const char* CharSet) const
         if (!match) stopped = true;
         else ++thisIndex;
     }
-    nString trimmedString(&(Get()[thisIndex]));
+    nString trimmedString(&(CStr()[thisIndex]));
     return trimmedString;
 }
 //---------------------------------------------------------------------
@@ -116,7 +116,7 @@ nString nString::TrimRight(const char* CharSet) const
         else --thisIndex;
     }
     nString trimmedString;
-    trimmedString.Set(Get(), thisIndex + 1);
+    trimmedString.Set(CStr(), thisIndex + 1);
     return trimmedString;
 }
 //---------------------------------------------------------------------

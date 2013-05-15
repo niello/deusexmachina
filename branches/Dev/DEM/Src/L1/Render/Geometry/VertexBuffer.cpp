@@ -8,7 +8,7 @@ namespace Render
 
 bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage BufferUsage, ECPUAccess BufferAccess)
 {
-	n_assert(VertexCount && VertexLayout.isvalid());
+	n_assert(VertexCount && VertexLayout.IsValid());
 
 	Layout = VertexLayout;
 	Count = VertexCount;

@@ -44,10 +44,10 @@ public:
 	virtual void		Deactivate(CActor* pActor);
 	virtual bool		IsValid(CActor* pActor) const;
 
-	virtual void		GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().Get(), TargetID.CStr(), ActionID.CStr()); }
+	virtual void		GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };
 
-RegisterFactory(CActionUseSmartObj);
+__RegisterClassInFactory(CActionUseSmartObj);
 
 typedef Ptr<CActionUseSmartObj> PActionUseSmartObj;
 

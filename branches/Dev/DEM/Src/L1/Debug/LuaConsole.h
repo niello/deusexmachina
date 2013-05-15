@@ -22,8 +22,7 @@ namespace Debug
 
 class CLuaConsole: public UI::CWindow
 {
-	DeclareRTTI;
-	DeclareFactory(CLuaConsole);
+	__DeclareClass(CLuaConsole);
 
 protected:
 
@@ -56,7 +55,7 @@ public:
 	void			SetInputFocus() { ((CEGUI::Window*)pInputLine)->activate(); }
 };
 
-RegisterFactory(CLuaConsole);
+__RegisterClassInFactory(CLuaConsole);
 
 typedef Ptr<CLuaConsole> PLuaConsole;
 

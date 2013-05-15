@@ -4,8 +4,7 @@
 
 namespace Render
 {
-ImplementRTTI(Render::CUIRenderer, Render::IRenderer);
-ImplementFactory(Render::CUIRenderer);
+__ImplementClass(Render::CUIRenderer, 'UIRN', Render::IRenderer);
 
 void CUIRenderer::Render()
 {

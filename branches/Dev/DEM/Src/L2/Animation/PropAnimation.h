@@ -28,10 +28,8 @@ namespace Properties
 
 class CPropAnimation: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropAnimation);
-	DeclarePropertyStorage;
-	DeclarePropertyPools(Game::LivePool);
+	__DeclareClass(CPropAnimation);
+	__DeclarePropertyStorage;
 
 private:
 
@@ -59,7 +57,7 @@ public:
 	float			GetAnimLength(CStrID ClipID) const;
 };
 
-RegisterFactory(CPropAnimation);
+__RegisterClassInFactory(CPropAnimation);
 
 }
 

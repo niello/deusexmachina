@@ -2,9 +2,8 @@
 #ifndef __DEM_L1_CORE_SERVER_H__
 #define __DEM_L1_CORE_SERVER_H__
 
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <Data/Data.h>
-#include <util/nlist.h>
 #include <util/HashMap.h>
 
 // Core server manages low-level object framework
@@ -19,14 +18,11 @@ class CCoreServer
 
 private:
 
-	friend class CRefCounted;
-
-	bool					_IsOpen;
-	static nList			RefCountedList;
+	bool _IsOpen;
 
 public:
 
-	CHashMap<Data::CData>	Globals;
+	CHashMap<Data::CData> Globals;
 
 	CCoreServer();
 	~CCoreServer();
@@ -34,16 +30,16 @@ public:
 	bool Open();
 	void Close();
 
-	template<class T> void		SetGlobal(const nString& Name, const T& Value) { Globals.At(Name.Get()) = Value; }
-	template<class T> T&		GetGlobal(const nString& Name) { return Globals[Name.Get()].GetValue<T>(); }
+	template<class T> void		SetGlobal(const nString& Name, const T& Value) { Globals.At(Name.CStr()) = Value; }
+	template<class T> T&		GetGlobal(const nString& Name) { return Globals[Name.CStr()].GetValue<T>(); }
 	template<class T> bool		GetGlobal(const nString& Name, T& OutValue) const;
-	bool						GetGlobal(const nString& Name, Data::CData& OutValue) const { return Globals.Get(Name.Get(), OutValue); }
+	template<> bool				GetGlobal(const nString& Name, Data::CData& OutValue) const { return Globals.Get(Name.CStr(), OutValue); }
 };
 
 template<class T> inline bool CCoreServer::GetGlobal(const nString& Name, T& OutValue) const
 {
 	Data::CData Data;
-	return Globals.Get(Name.Get(), Data) ? Data.GetValue<T>(OutValue) : false;
+	return Globals.Get(Name.CStr(), Data) ? Data.GetValue<T>(OutValue) : false;
 }
 //---------------------------------------------------------------------
 

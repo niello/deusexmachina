@@ -8,8 +8,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CTaskUseSmartObj, AI::CTask);
-ImplementFactory(AI::CTaskUseSmartObj);
+__ImplementClassNoFactory(AI::CTaskUseSmartObj, AI::CTask);
+__ImplementClass(AI::CTaskUseSmartObj);
 
 bool CTaskUseSmartObj::IsAvailableTo(const CActor* pActor)
 {
@@ -19,7 +19,7 @@ bool CTaskUseSmartObj::IsAvailableTo(const CActor* pActor)
 	PSmartObjAction Action = pSO->GetAction(ActionID);
 
 	//???also validate GotoSO action?
-	return Action.isvalid() && Action->IsValid(pActor, pSO);
+	return Action.IsValid() && Action->IsValid(pActor, pSO);
 }
 //---------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ PAction CTaskUseSmartObj::BuildPlan()
 	Plan->AddChild(ActGoto);
 	Plan->AddChild(ActUse);
 
-	return Plan.get_unsafe();
+	return Plan.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

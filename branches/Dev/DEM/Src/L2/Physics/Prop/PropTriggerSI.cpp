@@ -20,7 +20,7 @@ int CPropTrigger_EnableTrigger(lua_State* l)
 {
 	//args: EntityScriptObject's this table
 	SETUP_ENT_SI_ARGS(1);
-	This->GetEntity()->FindProperty<CPropTrigger>()->SetEnabled(true);
+	This->GetEntity()->GetProperty<CPropTrigger>()->SetEnabled(true);
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -29,7 +29,7 @@ int CPropTrigger_DisableTrigger(lua_State* l)
 {
 	//args: EntityScriptObject's this table
 	SETUP_ENT_SI_ARGS(1);
-	This->GetEntity()->FindProperty<CPropTrigger>()->SetEnabled(false);
+	This->GetEntity()->GetProperty<CPropTrigger>()->SetEnabled(false);
 	return 0;
 }
 //---------------------------------------------------------------------

@@ -4,7 +4,7 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CJoint, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CJoint, Core::CRefCounted);
 
 CJoint::~CJoint()
 {
@@ -41,8 +41,8 @@ void CJoint::InitAxis(CJointAxis* pAxis, PParams Desc)
 void CJoint::Attach(dWorldID WorldID, dJointGroupID GroupID, const matrix44& ParentTfm)
 {
 	dJointAttach(ODEJointID,
-		pBody1.isvalid() ? pBody1->GetODEBodyID() : NULL,
-		pBody2.isvalid() ? pBody2->GetODEBodyID() : NULL);
+		pBody1.IsValid() ? pBody1->GetODEBodyID() : NULL,
+		pBody2.IsValid() ? pBody2->GetODEBodyID() : NULL);
 }
 //---------------------------------------------------------------------
 

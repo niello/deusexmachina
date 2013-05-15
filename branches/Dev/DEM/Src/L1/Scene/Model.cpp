@@ -2,7 +2,7 @@
 
 #include <Scene/Scene.h>
 #include <Render/RenderServer.h>
-#include <Data/BinaryReader.h>
+#include <IO/BinaryReader.h>
 
 namespace Render
 {
@@ -13,12 +13,11 @@ namespace Render
 
 namespace Scene
 {
-ImplementRTTI(Scene::CModel, Scene::CRenderObject);
-ImplementFactory(Scene::CModel);
+__ImplementClass(Scene::CModel, 'MODL', Scene::CRenderObject);
 
 using namespace Render;
 
-bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CModel::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
@@ -40,7 +39,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 				DataReader.Read(Var.Value);
 				//???check type if bound? use SetValue for it?
 				//Can set CData type at var creation and set value to it by SetValue, so type will be asserted
-				//???WHERE? if (Material.isvalid()) Var.Bind(*Material->GetShader());
+				//???WHERE? if (Material.IsValid()) Var.Bind(*Material->GetShader());
 			}
 			OK;
 		}
@@ -92,11 +91,11 @@ bool CModel::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 
 bool CModel::ValidateResources()
 {
-	if (Material.isvalid())
+	if (Material.IsValid())
 	{
 		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(Material->GetUID().CStr(), Material)) FAIL;
 
-		for (int i = 0; i < ShaderVars.Size(); ++i)
+		for (int i = 0; i < ShaderVars.GetCount(); ++i)
 		{
 			CShaderVar& Var = ShaderVars.ValueAtIndex(i);
 			if (!Var.IsBound()) Var.Bind(*Material->GetShader());
@@ -111,7 +110,7 @@ bool CModel::ValidateResources()
 		}
 	}
 
-	if (Mesh.isvalid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Usage_Immutable, CPU_NoAccess, Mesh)) FAIL;
+	if (Mesh.IsValid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Usage_Immutable, CPU_NoAccess, Mesh)) FAIL;
 
 	OK;
 }

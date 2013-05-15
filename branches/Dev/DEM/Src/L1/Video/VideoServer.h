@@ -3,6 +3,7 @@
 #define __DEM_L1_VIDEO_SERVER_H__
 
 #include <Core/RefCounted.h>
+#include <Core/Singleton.h>
 #include <dshow.h>
 
 // Server object to playback video streams.
@@ -16,7 +17,7 @@ class CVideoPlayer;
 
 class CVideoServer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CVideoServer);
 
 protected:

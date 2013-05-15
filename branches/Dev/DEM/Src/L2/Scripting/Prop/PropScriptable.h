@@ -20,9 +20,8 @@ using namespace Scripting;
 
 class CPropScriptable: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropScriptable);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropScriptable);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -48,7 +47,7 @@ public:
 	PEntityScriptObject GetScriptObject() const { return Obj; }
 };
 
-RegisterFactory(CPropScriptable);
+__RegisterClassInFactory(CPropScriptable);
 
 }
 

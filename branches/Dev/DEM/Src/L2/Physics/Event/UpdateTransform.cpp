@@ -2,6 +2,6 @@
 
 namespace Event
 {
-ImplementRTTI(Event::UpdateTransform, Events::CEventNative);
-ImplementFactory(Event::UpdateTransform);
+__ImplementClassNoFactory(Event::UpdateTransform, Events::CEventNative);
+__ImplementClass(Event::UpdateTransform);
 } // namespace Event

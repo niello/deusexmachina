@@ -26,7 +26,7 @@ END_ATTRS_REGISTRATION
 
 namespace Time
 {
-ImplementRTTI(Time::CTimeServer, Core::CRefCounted);
+__ImplementClassNoFactory(Time::CTimeServer, Core::CRefCounted);
 __ImplementSingleton(Time::CTimeServer);
 
 CTimeServer::CTimeServer(): _IsOpen(false), Time(0.0), FrameTime(0.0), TimeScale(1.f), LockTime(0.0), LockedFrameTime(0.0)
@@ -80,7 +80,7 @@ nTime CTimeServer::GetTrueTime()
 
 void CTimeServer::AttachTimeSource(CStrID Name, PTimeSource TimeSrc)
 {
-	n_assert(TimeSrc.isvalid());
+	n_assert(TimeSrc.IsValid());
 	n_assert(!TimeSources.Contains(Name));
 	TimeSrc->Reset();
 	//TimeSrc->ForceUnpause(); //???needed?
@@ -110,7 +110,7 @@ bool CTimeServer::OnLoad(const Events::CEventBase& Event)
 		for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
 		{
 			DS->SetRowIndex(i);
-			CTimeSource* Src = GetTimeSource(CStrID(DS->Get<nString>(Attr::TimeSourceID).Get()));
+			CTimeSource* Src = GetTimeSource(CStrID(DS->Get<nString>(Attr::TimeSourceID).CStr()));
 			//if (Src) Src->OnLoad(DS);
 	//Time			= pVT->Get<float>(Attr::TimeSourceTime);
 	//TimeFactor		= pVT->Get<float>(Attr::TimeSourceFactor);
@@ -148,7 +148,7 @@ bool CTimeServer::OnSave(const Events::CEventBase& Event)
 
 	DB::PDataset DS = Tbl->CreateDataset();
 	DS->AddColumnsFromTable();
-	//for (int i = 0; i < TimeSources.Size(); i++)
+	//for (int i = 0; i < TimeSources.GetCount(); i++)
 	//	TimeSources.ValueAtIndex(i)->OnSave(DS);
 	//pVT->Set<nString>(Attr::TimeSourceID, GetClassName());
 	//pVT->Set<float>(Attr::TimeSourceTime, float(Time));
@@ -182,7 +182,7 @@ bool CTimeServer::CreateNamedTimer(CStrID Name, float Time, bool Loop, CStrID Ev
 
 // Update all time sources. This method is called very early in the frame
 // by the current application state handler.
-void CTimeServer::Update()
+void CTimeServer::Trigger()
 {
 	if (LockedFrameTime > 0.0) LockTime += LockedFrameTime;
 
@@ -196,10 +196,10 @@ void CTimeServer::Update()
 	PrevTime = CurrTime;
 	Time += FrameTime;
 
-	for (int i = 0; i < TimeSources.Size(); i++)
+	for (int i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAtIndex(i)->Update(FrameTime);
 
-	for (int i = 0; i < Timers.Size(); i++)
+	for (int i = 0; i < Timers.GetCount(); i++)
 	{
 		CTimer& Timer = Timers.ValueAtIndex(i);
 		if (Timer.Active && !IsPaused(Timer.TimeSrc))

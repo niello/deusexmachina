@@ -27,7 +27,7 @@ public:
     /// reset all contained arrays
     void Reset();
     /// get number of bucket arrays
-    int Size() const;
+    int GetCount() const;
 
 private:
     /// default constructor is private
@@ -130,7 +130,7 @@ nBucket<TYPE, NUMBUCKETS>::Reset()
 */
 template<class TYPE, uint NUMBUCKETS>
 int
-nBucket<TYPE, NUMBUCKETS>::Size() const
+nBucket<TYPE, NUMBUCKETS>::GetCount() const
 {
     return NUMBUCKETS;
 }

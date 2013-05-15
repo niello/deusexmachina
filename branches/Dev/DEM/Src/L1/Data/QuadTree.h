@@ -71,7 +71,7 @@ protected:
 		static T*		GetPtr(T* Object) { return Object; }
 		static const T*	GetPtr(const T* Object) { return Object; }
 		static T&		GetRef(T* const& Object) { return *Object; }
-		static bool		IsValid(const T* Object) { return Object.isvalid(); }
+		static bool		IsValid(const T* Object) { return Object.IsValid(); }
 	};
 
 	typedef ObjTraits<TObject> TObjTraits;
@@ -148,7 +148,7 @@ public:
 template<class TObject, class TStorage>
 void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth)
 {
-	n_assert(!Nodes.Size() && SizeX > 0.f && SizeZ > 0.f && TreeDepth > 0);
+	n_assert(!Nodes.GetCount() && SizeX > 0.f && SizeZ > 0.f && TreeDepth > 0);
 
 	Center.x = CenterX;
 	Center.y = CenterZ;
@@ -158,7 +158,7 @@ void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float Siz
 
 	Nodes.SetSize(0x55555555 & ((1 << (Depth << 1)) - 1));
 
-	for (int i = 0; i < Nodes.Size(); i++) Nodes[i].pOwner = this;
+	for (int i = 0; i < Nodes.GetCount(); i++) Nodes[i].pOwner = this;
 
 	CNode* pFirstFreeNode = &Nodes[1];
 	Nodes[0].pParent = NULL;

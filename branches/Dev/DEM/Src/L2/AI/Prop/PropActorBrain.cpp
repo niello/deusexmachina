@@ -8,7 +8,7 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Game/Mgr/FocusManager.h>	// For dbg rendering
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
@@ -38,10 +38,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropActorBrain, Game::CProperty);
-ImplementFactory(Properties::CPropActorBrain);
-ImplementPropertyStorage(CPropActorBrain, 64);
-RegisterProperty(CPropActorBrain);
+__ImplementClass(Properties::CPropActorBrain, 'PRAB', Game::CProperty);
+__ImplementPropertyStorage(CPropActorBrain);
 
 static const nString StrPercPrefix("AI::CPerceptor");
 static const nString StrSensorPrefix("AI::CSensor");
@@ -76,8 +74,8 @@ void CPropActorBrain::Activate()
 // Blackboard
 
 	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
-	Position = Tfm.pos_component();
-	LookatDir = -Tfm.z_component();
+	Position = Tfm.Translation();
+	LookatDir = -Tfm.AxisZ();
 
 	//!!!update on R/H attrs change!
 	Radius = GetEntity()->Get<float>(Attr::Radius);
@@ -107,7 +105,7 @@ void CPropActorBrain::Activate()
 			for (int i = 0; i < DescSection->GetCount(); i++)
 			{
 				const CParam& DescParam = DescSection->Get(i);
-				PPerceptor New = (CPerceptor*)CoreFct->Create(StrPercPrefix + DescParam.GetName().CStr());
+				PPerceptor New = (CPerceptor*)Factory->Create(StrPercPrefix + DescParam.GetName().CStr());
 				New->Init(*DescParam.GetValue<PParams>());
 				Perceptors.Append(New);
 			}
@@ -119,13 +117,13 @@ void CPropActorBrain::Activate()
 			for (int i = 0; i < DescSection->GetCount(); i++)
 			{
 				const CParam& DescParam = DescSection->Get(i);
-				PSensor New = (CSensor*)CoreFct->Create(StrSensorPrefix + DescParam.GetName().CStr());
+				PSensor New = (CSensor*)Factory->Create(StrSensorPrefix + DescParam.GetName().CStr());
 				PParams NewDesc = DescParam.GetValue<PParams>();
 				New->Init(*NewDesc);
 				Sensors.Append(New);
 				
 				PDataArray Percs = NewDesc->Get<PDataArray>(CStrID("Perceptors"), NULL);
-				if (Percs.isvalid())
+				if (Percs.IsValid())
 				{
 					CDataArray::iterator ItPercName;
 					for (ItPercName = Percs->Begin(); ItPercName != Percs->End(); ItPercName++)
@@ -147,7 +145,7 @@ void CPropActorBrain::Activate()
 
 						if (!Found)
 							n_printf("Warning, AI: perceptor '%s' not found in '%s' on activation\n",
-									 ItPercName->GetValue<nString>().Get(),
+									 ItPercName->GetValue<nString>().CStr(),
 									 GetEntity()->GetUID().CStr());
 					}
 				}
@@ -162,7 +160,7 @@ void CPropActorBrain::Activate()
 			for (int i = 0; i < DescSection->GetCount(); i++)
 			{
 				const CParam& DescParam = DescSection->Get(i);
-				PGoal New = (CGoal*)CoreFct->Create(StrGoalPrefix + DescParam.GetName().CStr());
+				PGoal New = (CGoal*)Factory->Create(StrGoalPrefix + DescParam.GetName().CStr());
 				New->Init(DescParam.GetValue<PParams>());
 				Goals.Append(New);
 			}
@@ -178,10 +176,10 @@ void CPropActorBrain::Activate()
 		PDataArray ActionArray;
 		if (Desc->Get<PDataArray>(ActionArray, CStrID("Actions")))
 		{
-			Actions.Reallocate(ActionArray->Size(), 0);
-			for (int i = 0; i < ActionArray->Size(); i++)
+			Actions.Reallocate(ActionArray->GetCount(), 0);
+			for (int i = 0; i < ActionArray->GetCount(); i++)
 			{
-				LPCSTR pActionName = ActionArray->At(i).GetValue<nString>().Get();
+				LPCSTR pActionName = ActionArray->At(i).GetValue<nString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
 				if (pTpl) Actions.Append(pTpl);
 				else n_printf("Warning, AI: action template '%s' is not registered\n", pActionName);
@@ -192,8 +190,8 @@ void CPropActorBrain::Activate()
 		Flags.SetTo(AIMind_EnableDecisionMaking, DecMaking);
 		Flags.SetTo(AIMind_UpdateGoal, DecMaking);
 		
-		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), NULL).get_unsafe());
-		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).get_unsafe());
+		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), NULL).GetUnsafe());
+		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).GetUnsafe());
 	}
 
 	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropActorBrain, OnBeginFrameProc);
@@ -231,7 +229,7 @@ void CPropActorBrain::UpdateDecisionMaking()
 {
 	bool NeedToReplan =
 		Flags.Is(AIMind_InvalidatePlan) ||
-		(CurrGoal.isvalid() && (!CurrPlan.isvalid() || CurrGoal->IsSatisfied()));
+		(CurrGoal.IsValid() && (!CurrPlan.IsValid() || CurrGoal->IsSatisfied()));
 	bool UpdateGoals = Flags.Is(AIMind_UpdateGoal) || NeedToReplan;
 
 	Flags.Clear(AIMind_UpdateGoal | AIMind_InvalidatePlan);
@@ -252,29 +250,29 @@ void CPropActorBrain::UpdateDecisionMaking()
 	//???or sort by priority?
 	while (true)
 	{
-		CGoal* pTopGoal = CurrGoal.get_unsafe();
-		float MaxRelevance = CurrGoal.isvalid() ? CurrGoal->GetRelevance() : 0.f;
+		CGoal* pTopGoal = CurrGoal.GetUnsafe();
+		float MaxRelevance = CurrGoal.IsValid() ? CurrGoal->GetRelevance() : 0.f;
 
 		for (nArray<PGoal>::iterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
 			if ((*ppGoal)->GetRelevance() > MaxRelevance)
 			{
 				MaxRelevance = (*ppGoal)->GetRelevance();
-				pTopGoal = (*ppGoal).get_unsafe();
+				pTopGoal = (*ppGoal).GetUnsafe();
 			}
 
 		n_assert2(pTopGoal, "Actor has no goal, even GoalIdle");
 
-		if (CurrGoal.get_unsafe() == pTopGoal && !NeedToReplan && !CurrGoal->IsReplanningNeeded()) break;
+		if (CurrGoal.GetUnsafe() == pTopGoal && !NeedToReplan && !CurrGoal->IsReplanningNeeded()) break;
 
 		// If need to interrupt, but can't, invalidate relevance and continue
 		// [Test against probability, if fails, invalidate relevance and continue]
 
 		PAction Plan = AISrv->GetPlanner().BuildPlan(this, pTopGoal);
-		if (Plan.isvalid())
+		if (Plan.IsValid())
 		{
 			//???!!!use SetPlan here?
 
-			if (CurrPlan.isvalid()) CurrPlan->Deactivate(this);
+			if (CurrPlan.IsValid()) CurrPlan->Deactivate(this);
 
 			// [Deactivate curr goal]
 			CurrGoal = pTopGoal;
@@ -299,7 +297,7 @@ void CPropActorBrain::UpdateDecisionMaking()
 
 bool CPropActorBrain::SetPlan(CAction* pNewPlan)
 {
-	if (CurrPlan.isvalid()) CurrPlan->Deactivate(this);
+	if (CurrPlan.IsValid()) CurrPlan->Deactivate(this);
 	//???deactivate and clear current goal, if has?
 	CurrPlan = pNewPlan;
 	if (pNewPlan && !pNewPlan->Activate(this))
@@ -341,19 +339,19 @@ void CPropActorBrain::OnBeginFrame()
 
 	MemSystem.Update();
 
-	if (CurrPlan.isvalid() && (!CurrPlan->IsValid(this) || CurrPlan->Update(this) != Running))
+	if (CurrPlan.IsValid() && (!CurrPlan->IsValid(this) || CurrPlan->Update(this) != Running))
 	{
 		SetPlan(NULL);
-		//if (CurrTask.isvalid()) CurrTask->OnPlanDone(this, BhvResult);
+		//if (CurrTask.IsValid()) CurrTask->OnPlanDone(this, BhvResult);
 	}
 
-	if (CurrTask.isvalid() && CurrTask->IsSatisfied()) CurrTask = NULL;
+	if (CurrTask.IsValid() && CurrTask->IsSatisfied()) CurrTask = NULL;
 
 	// Disable this flag for player- or script-controlled actors
 	//???mb some goals can abort command (as interrupt behaviours)? so check/clear cmd inside in interruption
 //!!!???tmp?!
 #ifndef _EDITOR
-	if (Flags.Is(AIMind_EnableDecisionMaking) && !CurrTask.isvalid()) UpdateDecisionMaking();
+	if (Flags.Is(AIMind_EnableDecisionMaking) && !CurrTask.IsValid()) UpdateDecisionMaking();
 #endif
 }
 //---------------------------------------------------------------------
@@ -372,8 +370,8 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
-	Position = Tfm.pos_component();
-	LookatDir = -Tfm.z_component();
+	Position = Tfm.Translation();
+	LookatDir = -Tfm.AxisZ();
 	NavSystem.UpdatePosition();
 	OK;
 }
@@ -385,7 +383,7 @@ bool CPropActorBrain::OnAddTask(const Events::CEventBase& Event)
 	if (Task->IsAvailableTo(this))
 	{
 		//!!!now task is erased, can queue it instead! bool ClearQueue in event.
-		if (CurrTask.isvalid()) CurrTask->Abort(this);
+		if (CurrTask.IsValid()) CurrTask->Abort(this);
 		CurrTask = Task;
 		if (SetPlan(Task->BuildPlan())) Task->OnPlanSet(this);
 	}

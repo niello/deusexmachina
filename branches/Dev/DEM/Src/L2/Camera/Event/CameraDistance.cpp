@@ -2,6 +2,5 @@
 
 namespace Event
 {
-ImplementRTTI(Event::CameraDistance, Events::CEventNative);
-ImplementFactory(Event::CameraDistance);
+__ImplementClass(Event::CameraDistance, 'CADI', Events::CEventNative);
 } // namespace Event

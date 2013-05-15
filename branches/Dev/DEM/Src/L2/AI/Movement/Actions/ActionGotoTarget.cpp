@@ -1,7 +1,7 @@
 #include "ActionGotoTarget.h"
 
 #include <AI/Prop/PropActorBrain.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 namespace Attr
 {
@@ -10,15 +10,15 @@ namespace Attr
 
 namespace AI
 {
-ImplementRTTI(AI::CActionGotoTarget, AI::CActionGoto)
-ImplementFactory(AI::CActionGotoTarget);
+__ImplementClassNoFactory(AI::CActionGotoTarget, AI::CActionGoto)
+__ImplementClass(AI::CActionGotoTarget);
 
 bool CActionGotoTarget::Activate(CActor* pActor)
 {
-	Game::CEntity* pEnt = EntityMgr->GetEntityByID(TargetID);
+	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
 
-	pActor->GetNavSystem().SetDestPoint(pEnt->Get<matrix44>(Attr::Transform).pos_component());
+	pActor->GetNavSystem().SetDestPoint(pEnt->Get<matrix44>(Attr::Transform).Translation());
 
 	//!!!Get IsDynamic as (BB->WantToFollow && IsTargetMovable)!
 	IsDynamic = false;
@@ -45,9 +45,9 @@ EExecStatus CActionGotoTarget::Update(CActor* pActor)
 		{
 			if (IsDynamic)
 			{
-				Game::CEntity* pEnt = EntityMgr->GetEntityByID(TargetID);
+				Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 				if (!pEnt) return Failure;
-				pActor->GetNavSystem().SetDestPoint(pEnt->Get<matrix44>(Attr::Transform).pos_component());
+				pActor->GetNavSystem().SetDestPoint(pEnt->Get<matrix44>(Attr::Transform).Translation());
 			}
 			return AdvancePath(pActor);
 		}

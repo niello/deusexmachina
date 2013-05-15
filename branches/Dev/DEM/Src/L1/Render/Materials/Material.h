@@ -35,7 +35,7 @@ public:
 	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars);
 	virtual void			Unload();
 
-	CShader*				GetShader() const { return Shader.get_unsafe(); }
+	CShader*				GetShader() const { return Shader.GetUnsafe(); }
 	DWORD					GetFeatureFlags() const { return FeatureFlags; }
 	const CShaderVarMap&	GetStaticVars() const { return StaticVars; }
 };

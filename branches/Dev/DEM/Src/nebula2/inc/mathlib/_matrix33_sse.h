@@ -81,11 +81,11 @@ public:
     /// rotate about any axis
     void rotate(const _vector3_sse& vec, float a);
     /// get x component
-    _vector3_sse x_component() const;
+    _vector3_sse AxisX() const;
     /// get y component
-    _vector3_sse y_component() const;
+    _vector3_sse AxisY() const;
     /// get z component
-    _vector3_sse z_component() const;
+    _vector3_sse AxisZ() const;
     // inplace matrix multiply
     void operator *= (const _matrix33_sse& m1);
     /// multiply source vector into target vector
@@ -632,7 +632,7 @@ _matrix33_sse::rotate(const _vector3_sse& vec, float a)
 */
 inline
 _vector3_sse
-_matrix33_sse::x_component() const
+_matrix33_sse::AxisX() const
 {
     return _vector3_sse(m1);
 }
@@ -642,7 +642,7 @@ _matrix33_sse::x_component() const
 */
 inline
 _vector3_sse
-_matrix33_sse::y_component() const
+_matrix33_sse::AxisY() const
 {
     return _vector3_sse(m2);
 }
@@ -652,7 +652,7 @@ _matrix33_sse::y_component() const
 */
 inline
 _vector3_sse
-_matrix33_sse::z_component() const
+_matrix33_sse::AxisZ() const
 {
     return _vector3_sse(m3);
 };

@@ -24,10 +24,8 @@ namespace Properties
 
 class CPropInput: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropInput);
-	DeclarePropertyStorage;
-	DeclarePropertyPools(Game::LivePool);
+	__DeclareClass(CPropInput);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -51,7 +49,7 @@ public:
 	void			EnableInput(bool Enable);
 };
 
-RegisterFactory(CPropInput);
+__RegisterClassInFactory(CPropInput);
 
 }
 

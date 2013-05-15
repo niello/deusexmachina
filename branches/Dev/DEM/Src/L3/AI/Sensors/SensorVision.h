@@ -11,8 +11,7 @@ namespace AI
 
 class CSensorVision: public CSensor
 {
-	DeclareRTTI;
-	DeclareFactory(CSensorVision);
+	__DeclareClass(CSensorVision);
 
 protected:
 
@@ -30,7 +29,7 @@ public:
 	virtual EClipStatus	GetBoxClipStatus(CActor* pActor, const bbox3& Box) const;
 };
 
-RegisterFactory(CSensorVision);
+__RegisterClassInFactory(CSensorVision);
 
 }
 

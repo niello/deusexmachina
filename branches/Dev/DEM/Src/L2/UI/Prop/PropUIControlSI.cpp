@@ -2,7 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 extern "C"
 {
@@ -20,7 +20,7 @@ int CPropUIControl_AddActionHandler(lua_State* l)
 	//args: EntityScriptObject's this table, action ID, action UI name, handler function name, [priority]
 	SETUP_ENT_SI_ARGS(4);
 
-	CPropUIControl* pCtl = This->GetEntity()->FindProperty<CPropUIControl>();
+	CPropUIControl* pCtl = This->GetEntity()->GetProperty<CPropUIControl>();
 	lua_pushboolean(l,
 		pCtl->AddActionHandler(
 			CStrID(lua_tostring(l, 2)),
@@ -36,7 +36,7 @@ int CPropUIControl_RemoveActionHandler(lua_State* l)
 	//args: EntityScriptObject's this table, action ID
 	SETUP_ENT_SI_ARGS(4);
 	
-	CPropUIControl* pCtl = This->GetEntity()->FindProperty<CPropUIControl>();
+	CPropUIControl* pCtl = This->GetEntity()->GetProperty<CPropUIControl>();
 	pCtl->RemoveActionHandler(CStrID(lua_tostring(l, 2)));
 	return 0;
 }

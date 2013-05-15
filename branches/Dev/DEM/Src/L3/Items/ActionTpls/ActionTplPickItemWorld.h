@@ -12,8 +12,7 @@ namespace AI
 
 class CActionTplPickItemWorld: public CActionTpl
 {
-	DeclareRTTI;
-	DeclareFactory(CActionTplPickItemWorld);
+	__DeclareClass(CActionTplPickItemWorld);
 
 private:
 
@@ -28,7 +27,7 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-RegisterFactory(CActionTplPickItemWorld);
+__RegisterClassInFactory(CActionTplPickItemWorld);
 
 typedef Ptr<CActionTplPickItemWorld> PActionTplPickItemWorld;
 

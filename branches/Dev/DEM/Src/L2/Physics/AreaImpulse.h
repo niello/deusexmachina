@@ -13,7 +13,7 @@ namespace Physics
 
 class CAreaImpulse: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

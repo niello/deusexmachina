@@ -3,7 +3,7 @@
 #define __DEM_L1_HRD_PARSER_H__
 
 #include <Core/RefCounted.h>
-#include "Data.h"
+#include <Data/Data.h>
 
 // Parser for HRD files
 
@@ -12,16 +12,11 @@ namespace Data
 typedef Ptr<class CDataArray> PDataArray;
 typedef Ptr<class CParams> PParams;
 
-#define HRDParser Data::CHRDParser::Instance()
-
 class CHRDParser: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CHRDParser);
+	__DeclareClassNoFactory;
 
 private:
-
-	static CHRDParser*	Singleton;
 
 	enum ETable
 	{
@@ -37,7 +32,7 @@ private:
 		int		Index;
 		int		Ln, Cl;
 		CToken() {}
-		CToken(ETable Tbl, int Idx): Table(Tbl), Index(Idx), Ln(HRDParser->Line), Cl(HRDParser->Col) {}
+		CToken(ETable Tbl, int Idx, int Line, int Col): Table(Tbl), Index(Idx), Ln(Line), Cl(Col) {}
 		bool IsA(ETable Tbl, int Idx) { return Table == Tbl && Index == Idx; }
 	};
 			
@@ -97,12 +92,8 @@ public:
 	CHRDParser();
 	~CHRDParser();
 
-	static CHRDParser* Instance() { n_assert(Singleton); return Singleton; }
-
 	bool ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result);
 };
-
-RegisterFactory(CHRDParser);
 
 }
 

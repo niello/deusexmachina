@@ -3,7 +3,7 @@
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/Prop/PropSmartObject.h>
 #include <AI/Movement/Actions/ActionFace.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Events/EventManager.h>
 
@@ -14,8 +14,8 @@ namespace Attr
 
 namespace AI
 {
-ImplementRTTI(AI::CActionUseSmartObj, AI::CAction)
-ImplementFactory(AI::CActionUseSmartObj);
+__ImplementClassNoFactory(AI::CActionUseSmartObj, AI::CAction)
+__ImplementClass(AI::CActionUseSmartObj);
 
 using namespace Properties;
 
@@ -36,10 +36,10 @@ void CActionUseSmartObj::StartSOAction(CActor* pActor)
 
 bool CActionUseSmartObj::Activate(CActor* pActor)
 {
-	Game::CEntity* pSOEntity = EntityMgr->GetEntityByID(TargetID);
+	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity) FAIL;
 
-	pSO = pSOEntity->FindProperty<CPropSmartObject>();
+	pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
 	Action = pSO->GetAction(ActionID);
 
@@ -49,7 +49,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 
 	if (Action->FaceObject())
 	{
-		vector3 FaceDir = pSO->GetEntity()->Get<matrix44>(Attr::Transform).pos_component() - pActor->Position;
+		vector3 FaceDir = pSO->GetEntity()->Get<matrix44>(Attr::Transform).Translation() - pActor->Position;
 		FaceDir.norm();
 		pActor->GetMotorSystem().SetFaceDirection(FaceDir);
 		SubActFace = n_new(CActionFace);
@@ -64,7 +64,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 {
 	// Finish SO facing if started
-	if (SubActFace.isvalid())
+	if (SubActFace.IsValid())
 	{
 		EExecStatus Status = SubActFace->Update(pActor);
 		switch (Status)
@@ -122,7 +122,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	if (pActor->FacingStatus == AIFacing_DirSet)
 		pActor->GetMotorSystem().ResetRotation();
 
-	Game::CEntity* pSOEntity = EntityMgr->GetEntityByID(TargetID);
+	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity) return;
 
 	if (Action->FreeUserSlots >= 0) Action->FreeUserSlots++;
@@ -152,8 +152,8 @@ bool CActionUseSmartObj::IsValid(CActor* pActor) const
 	return	EntityMgr->ExistsEntityByID(TargetID) &&
 			Action->Enabled &&
 			(WasDone || Action->Resource) &&
-			((SubActFace.isvalid() && SubActFace->IsValid(pActor)) ||
-			 (!Action->UpdateValidator.isvalid() || Action->UpdateValidator->IsValid(pActor, pSO, Action)));
+			((SubActFace.IsValid() && SubActFace->IsValid(pActor)) ||
+			 (!Action->UpdateValidator.IsValid() || Action->UpdateValidator->IsValid(pActor, pSO, Action)));
 }
 //---------------------------------------------------------------------
 

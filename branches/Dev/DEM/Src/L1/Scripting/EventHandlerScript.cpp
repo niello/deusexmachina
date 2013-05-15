@@ -18,7 +18,7 @@ bool CEventHandlerScript::operator()(const CEventBase& Event)
 {
 	const CEvent& e = (const CEvent&)Event;
 
-	if (e.Params.isvalid() && e.Params->GetCount())
+	if (e.Params.IsValid() && e.Params->GetCount())
 	{
 		//!!!now only parametrized events are supported!
 
@@ -43,13 +43,13 @@ bool CEventHandlerScript::operator()(const CEventBase& Event)
 		//}
 		//lua_pop(l, 1);
 
-		if (pObject) pObject->RunFunction(Func.Get(), "CurrEventParams");
-		//!!!else ScriptSrv->RunFunction(Func.Get());! (global func call)
+		if (pObject) pObject->RunFunction(Func.CStr(), "CurrEventParams");
+		//!!!else ScriptSrv->RunFunction(Func.CStr());! (global func call)
 	}
 	else
 	{
-		if (pObject) pObject->RunFunction(Func.Get());
-		//!!!else ScriptSrv->RunFunction(Func.Get());! (global func call)
+		if (pObject) pObject->RunFunction(Func.CStr());
+		//!!!else ScriptSrv->RunFunction(Func.CStr());! (global func call)
 	}
 
 	OK; //!!!real return value needed!

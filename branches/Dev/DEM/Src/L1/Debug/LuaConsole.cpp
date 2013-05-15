@@ -15,8 +15,7 @@
 
 namespace Debug
 {
-ImplementRTTI(Debug::CLuaConsole, UI::CWindow);
-ImplementFactory(Debug::CLuaConsole);
+__ImplementClass(Debug::CLuaConsole, 'DLUA', UI::CWindow);
 
 void CLuaConsole::Init(CEGUI::Window* pWindow)
 {
@@ -145,8 +144,8 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		{
 			ScriptSrv->GetTableFieldsDebug(Contents);
 			n_printf("----------\n");
-			for (int i = 0; i < Contents.Size(); ++i)
-				Print(Contents[i].Get(), 0xffb0b0b0);
+			for (int i = 0; i < Contents.GetCount(); ++i)
+				Print(Contents[i].CStr(), 0xffb0b0b0);
 			n_printf("----------\n");
 		}
 		else n_printf("Lua table not found\n");
@@ -158,9 +157,9 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	//}
 	else ScriptSrv->RunScript(pCmd); //!!!use sandbox!
 
-	if (CmdHistory.Size() > 32) CmdHistory.Erase(0);
+	if (CmdHistory.GetCount() > 32) CmdHistory.Erase(0);
 	CmdHistory.Append(pCmd);
-	CmdHistoryCursor = CmdHistory.Size();
+	CmdHistoryCursor = CmdHistory.GetCount();
 
 	pInputLine->setText("");
 
@@ -174,10 +173,10 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 
 	if (ke.scancode == CEGUI::Key::ArrowDown)
 	{
-		if (CmdHistory.Size())
+		if (CmdHistory.GetCount())
 		{
-			if (++CmdHistoryCursor >= CmdHistory.Size())
-				CmdHistoryCursor = CmdHistory.Size() - 1;
+			if (++CmdHistoryCursor >= CmdHistory.GetCount())
+				CmdHistoryCursor = CmdHistory.GetCount() - 1;
 			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
 			pInputLine->setCaratIndex(pInputLine->getText().length());
 		}
@@ -185,7 +184,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 	}
 	else if (ke.scancode == CEGUI::Key::ArrowUp)
 	{
-		if (CmdHistory.Size())
+		if (CmdHistory.GetCount())
 		{
 			if (--CmdHistoryCursor < 0)
 				CmdHistoryCursor = 0;

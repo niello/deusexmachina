@@ -4,7 +4,7 @@
 
 namespace Events
 {
-ImplementRTTI(Events::CEventManager, Core::CRefCounted);
+__ImplementClassNoFactory(Events::CEventManager, Core::CRefCounted);
 __ImplementSingleton(Events::CEventManager);
 
 CEventManager::CEventManager(): CEventDispatcher(256)

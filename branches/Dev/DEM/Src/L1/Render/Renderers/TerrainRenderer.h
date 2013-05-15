@@ -19,8 +19,7 @@ namespace Render
 
 class CTerrainRenderer: public IRenderer
 {
-	DeclareRTTI;
-	DeclareFactory(CTerrainRenderer);
+	__DeclareClass(CTerrainRenderer);
 
 public:
 
@@ -96,7 +95,7 @@ public:
 	void			SetVisibilityRange(float Range) { n_assert(Range > 0.f); VisibilityRange = Range; }
 };
 
-RegisterFactory(CTerrainRenderer);
+__RegisterClassInFactory(CTerrainRenderer);
 
 typedef Ptr<CTerrainRenderer> PTerrainRenderer;
 

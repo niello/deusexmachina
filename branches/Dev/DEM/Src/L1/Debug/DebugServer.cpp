@@ -26,7 +26,7 @@
 
 namespace Debug
 {
-ImplementRTTI(Debug::CDebugServer, Core::CRefCounted);
+__ImplementClassNoFactory(Debug::CDebugServer, Core::CRefCounted);
 __ImplementSingleton(Debug::CDebugServer);
 
 CDebugServer::CDebugServer(): UIAllowed(false)
@@ -47,8 +47,8 @@ bool CDebugServer::RegisterPlugin(CStrID Name, LPCSTR CppClassName, LPCSTR UIRes
 {
 	CPlugin New;
 	New.UIResource = UIResource;
-	New.Window = (UI::CWindow*)CoreFct->Create(CppClassName);
-	n_assert(New.Window.isvalid());
+	New.Window = (UI::CWindow*)Factory->Create(CppClassName);
+	n_assert(New.Window.IsValid());
 	//!!!call InitPlugin or write all Init code in the virtual CWindow::Init!
 	Plugins.Add(Name, New);
 	OK;
@@ -69,7 +69,7 @@ void CDebugServer::AllowUI(bool Allow)
 		UNSUBSCRIBE_EVENT(ShowDebugConsole);
 		UNSUBSCRIBE_EVENT(ShowDebugWatcher);
 
-		for (int i = 0; i < Plugins.Size(); ++i)
+		for (int i = 0; i < Plugins.GetCount(); ++i)
 			if (Plugins.ValueAtIndex(i).UIResource.IsValid())
 				Plugins.ValueAtIndex(i).Window->Term();
 	}

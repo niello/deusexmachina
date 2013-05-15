@@ -1,12 +1,12 @@
 #include "Entity.h"
 
 #include <Physics/Composite.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 
 namespace Physics
 {
-ImplementRTTI(Physics::CEntity, Core::CRefCounted);
-ImplementFactory(Physics::CEntity);
+__ImplementClassNoFactory(Physics::CEntity, Core::CRefCounted);
+__ImplementClass(Physics::CEntity);
 
 DWORD CEntity::UIDCounter = 1;
 
@@ -29,7 +29,7 @@ CEntity::~CEntity()
 void CEntity::Activate()
 {
 	n_assert(!IsActive());
-	if (!Composite.isvalid())
+	if (!Composite.IsValid())
 	{
 		if (CompositeName.IsValid())
 			SetComposite(PhysicsSrv->LoadCompositeFromPRM(CompositeName));
@@ -51,7 +51,7 @@ void CEntity::Deactivate()
 }
 //---------------------------------------------------------------------
 
-void CEntity::OnAttachedToLevel(CLevel* pLevel)
+void CEntity::OnAttachedToLevel(CPhysicsLevel* pLevel)
 {
 	n_assert(pLevel && !Level);
 	Level = pLevel;
@@ -80,7 +80,7 @@ bool CEntity::OnCollide(CShape* pCollidee)
 // of a physics object is to COMPUTE the transformation for a game entity.
 void CEntity::SetTransform(const matrix44& Tfm)
 {
-	if (Composite.isvalid()) Composite->SetTransform(Tfm);
+	if (Composite.IsValid()) Composite->SetTransform(Tfm);
 	Transform = Tfm;
 }
 //---------------------------------------------------------------------
@@ -89,7 +89,7 @@ void CEntity::SetTransform(const matrix44& Tfm)
 // The transformation is updated during Physics::Server::Trigger().
 matrix44 CEntity::GetTransform() const
 {
-	return (Composite.isvalid()) ? Composite->GetTransform() : Transform;
+	return (Composite.IsValid()) ? Composite->GetTransform() : Transform;
 }
 //---------------------------------------------------------------------
 
@@ -97,14 +97,14 @@ matrix44 CEntity::GetTransform() const
 // Return true if the transformation has changed during the frame.
 bool CEntity::HasTransformChanged() const
 {
-	return Composite.isvalid() && Composite->HasTransformChanged();
+	return Composite.IsValid() && Composite->HasTransformChanged();
 }
 //---------------------------------------------------------------------
 
 //???INLINE?
 vector3 CEntity::GetVelocity() const
 {
-	return (Composite.isvalid() && Composite->GetMasterBody()) ?
+	return (Composite.IsValid() && Composite->GetMasterBody()) ?
 		Composite->GetMasterBody()->GetLinearVelocity() :
 		vector3::Zero;
 }
@@ -113,13 +113,13 @@ vector3 CEntity::GetVelocity() const
 //???INLINE?
 void CEntity::OnStepBefore()
 {
-	if (Composite.isvalid()) Composite->OnStepBefore();
+	if (Composite.IsValid()) Composite->OnStepBefore();
 }
 //---------------------------------------------------------------------
 
 void CEntity::OnStepAfter()
 {
-	if (Composite.isvalid()) Composite->OnStepAfter();
+	if (Composite.IsValid()) Composite->OnStepAfter();
 	if (IsLocked() && IsEnabled())
 	{
 		SetTransform(LockedTfm);
@@ -132,34 +132,34 @@ void CEntity::OnStepAfter()
 void CEntity::OnFrameBefore()
 {
 	CollidedShapes.Clear();
-	if (Composite.isvalid()) Composite->OnFrameBefore();
+	if (Composite.IsValid()) Composite->OnFrameBefore();
 }
 //---------------------------------------------------------------------
 
 void CEntity::OnFrameAfter()
 {
-	if (Composite.isvalid()) Composite->OnFrameAfter();
+	if (Composite.IsValid()) Composite->OnFrameAfter();
 }
 //---------------------------------------------------------------------
 
 //???INLINE?
 void CEntity::Reset()
 {
-	if (Composite.isvalid()) Composite->Reset();
+	if (Composite.IsValid()) Composite->Reset();
 }
 //---------------------------------------------------------------------
 
 //???INLINE?
 int CEntity::GetNumCollisions() const
 {
-	return (Composite.isvalid()) ? Composite->GetNumCollisions() : 0;
+	return (Composite.IsValid()) ? Composite->GetNumCollisions() : 0;
 }
 //---------------------------------------------------------------------
 
 //???INLINE?
 bool CEntity::IsHorizontalCollided() const
 {
-	return Composite.isvalid() && Composite->IsHorizontalCollided();
+	return Composite.IsValid() && Composite->IsHorizontalCollided();
 }
 //---------------------------------------------------------------------
 
@@ -167,13 +167,13 @@ bool CEntity::IsHorizontalCollided() const
 // A disabled entity will enable itself automatically on contact with other enabled entities.
 void CEntity::SetEnabled(bool Enabled)
 {
-	if (Composite.isvalid()) Composite->SetEnabled(Enabled);
+	if (Composite.IsValid()) Composite->SetEnabled(Enabled);
 }
 //---------------------------------------------------------------------
 
 bool CEntity::IsEnabled() const
 {
-	return Composite.isvalid() && Composite->IsEnabled();
+	return Composite.IsValid() && Composite->IsEnabled();
 }
 //---------------------------------------------------------------------
 
@@ -215,14 +215,14 @@ void CEntity::SetComposite(CComposite* pNew)
 //???INLINE?
 void CEntity::RenderDebug()
 {
-	if (Composite.isvalid()) Composite->RenderDebug();
+	if (Composite.IsValid()) Composite->RenderDebug();
 }
 //---------------------------------------------------------------------
 
 //???rename?
 void CEntity::EnableCollision()
 {
-	if (!IsCollisionEnabled() && Composite.isvalid())
+	if (!IsCollisionEnabled() && Composite.IsValid())
 	{
 		Composite->Attach(Level->GetODEWorldID(), Level->GetODEDynamicSpaceID(), Level->GetODEStaticSpaceID());
 		Flags.Set(PHYS_ENT_COLLISION_ENABLED);
@@ -233,7 +233,7 @@ void CEntity::EnableCollision()
 //???rename?
 void CEntity::DisableCollision()
 {
-	if (IsCollisionEnabled() && Composite.isvalid())
+	if (IsCollisionEnabled() && Composite.IsValid())
 	{
 		Composite->Detach();
 		Flags.Clear(PHYS_ENT_COLLISION_ENABLED);

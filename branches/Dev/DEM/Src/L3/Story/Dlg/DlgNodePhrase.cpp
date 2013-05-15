@@ -1,24 +1,24 @@
 #include "DlgNodePhrase.h"
 
-#include "DlgSystem.h"
+#include "DialogueManager.h"
 #include "DlgLink.h"
 #include <Game/GameServer.h>
 #include <Events/EventManager.h>
 
 namespace Story
 {
-ImplementRTTI(Story::CDlgNodePhrase, Story::CDlgNode);
-ImplementFactory(Story::CDlgNodePhrase);
+__ImplementClassNoFactory(Story::CDlgNodePhrase, Story::CDlgNode);
+__ImplementClass(Story::CDlgNodePhrase);
 
 void CDlgNodePhrase::OnEnter(CActiveDlg& Dlg)
 {
-	DlgSys->SayPhrase(SpeakerEntity, Phrase, Dlg);
+	DlgMgr->SayPhrase(SpeakerEntity, Phrase, Dlg);
 }
 //---------------------------------------------------------------------
 
 CDlgNode* CDlgNodePhrase::Trigger(CActiveDlg& Dlg)
 {
-	while (Dlg.IsCheckingConditions && Dlg.LinkIdx < Links.Size())
+	while (Dlg.IsCheckingConditions && Dlg.LinkIdx < Links.GetCount())
 	{
 		EExecStatus Status = Links[Dlg.LinkIdx]->Validate(Dlg);
 		if (Status == Success)
@@ -43,7 +43,7 @@ CDlgNode* CDlgNodePhrase::Trigger(CActiveDlg& Dlg)
 
 	if (!Dlg.Continued && (Timeout < 0.f || Dlg.NodeEnterTime + Timeout > GameSrv->GetTime())) return this;
 
-	return (Dlg.LinkIdx == Links.Size()) ? NULL : Links[Dlg.LinkIdx]->DoTransition(Dlg);
+	return (Dlg.LinkIdx == Links.GetCount()) ? NULL : Links[Dlg.LinkIdx]->DoTransition(Dlg);
 }
 //---------------------------------------------------------------------
 

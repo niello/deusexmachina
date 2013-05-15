@@ -12,8 +12,7 @@ namespace AI
 
 class CWorldStateSourceScript: public CWorldStateSource
 {
-	DeclareRTTI;
-	DeclareFactory(CWorldStateSourceScript);
+	__DeclareClass(CWorldStateSourceScript);
 
 protected:
 
@@ -25,7 +24,7 @@ public:
 	virtual bool FillWorldState(const CActor* pActor, const CPropSmartObject* pSO, CWorldState& WS);
 };
 
-RegisterFactory(CWorldStateSourceScript);
+__RegisterClassInFactory(CWorldStateSourceScript);
 
 typedef Ptr<CWorldStateSourceScript> PWorldStateSourceScript;
 

@@ -12,8 +12,7 @@ namespace Event
 
 class DisplayInput: public Events::CEventNative
 {
-	DeclareRTTI;
-	DeclareFactory(DisplayInput);
+	__DeclareClass(DisplayInput);
 
 protected:
 
@@ -51,7 +50,7 @@ public:
 	};
 };
 
-RegisterFactory(DisplayInput);
+__RegisterClassInFactory(DisplayInput);
 
 }
 

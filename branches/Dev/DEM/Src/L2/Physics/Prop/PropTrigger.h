@@ -46,8 +46,7 @@ using namespace Scripting;
 
 class CPropTrigger: public CPropTransformable
 {
-	DeclareRTTI;
-	DeclareFactory(CPropTrigger);
+	__DeclareClass(CPropTrigger);
 
 protected:
 
@@ -79,7 +78,7 @@ public:
 	bool			IsEnabled() const { return Enabled; }
 };
 
-RegisterFactory(CPropTrigger);
+__RegisterClassInFactory(CPropTrigger);
 
 }
 

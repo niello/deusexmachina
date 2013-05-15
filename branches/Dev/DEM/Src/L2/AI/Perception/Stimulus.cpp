@@ -2,6 +2,6 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CStimulus, Core::CRefCounted);
-ImplementFactory(AI::CStimulus);
+__ImplementClassNoFactory(AI::CStimulus, Core::CRefCounted);
+__ImplementClass(AI::CStimulus);
 }

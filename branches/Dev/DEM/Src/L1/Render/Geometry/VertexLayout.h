@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_VERTEX_LAYOUT_H__
 
 #include <Core/RefCounted.h>
+#include <Data/StringID.h>
 #include <Render/D3D9Fwd.h>
 
 // Vertex layout describes components of vertex buffer element

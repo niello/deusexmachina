@@ -16,7 +16,7 @@ typedef Ptr<class CAction> PAction;
 
 class CTask: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

@@ -1,6 +1,6 @@
 #include "FrameShader.h"
 
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 
 //!!!while no factory!
 #include <Render/PassGeometry.h>
@@ -20,7 +20,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 	Data::CParam* pPrm;
 	if (Desc.Get(pPrm, CStrID("Shaders")))
 	{
-		nString ShaderPathMangled = DataSrv->ManglePath(ShaderPath) + "/";
+		nString ShaderPathMangled = IOSrv->ManglePath(ShaderPath) + "/";
 		Data::CParams& List = *pPrm->GetValue<Data::PParams>();
 		for (int i = 0; i < List.GetCount(); ++i)
 		{
@@ -70,7 +70,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
 		}
 	}
 
@@ -98,7 +98,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			//!!!read msaa, texture sizes!
 
 			PRenderTarget& RT = RenderTargets.Add(RTPrm.GetName());
-			RT.Create();
+			RT = n_new(CRenderTarget);
 			if (!RT->Create(RTPrm.GetName(), RTFmt, DSFmt, W, H, IsWHAbs, MSAA_None, 0, 0, UseAutoDS)) FAIL;
 		}
 		RenderTargets.EndAdd();

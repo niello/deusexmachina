@@ -30,9 +30,8 @@ using namespace Events;
 
 class CPropWeapon: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropWeapon);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropWeapon);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -80,7 +79,7 @@ public:
 	void			Strike(Game::CEntity& Target); //???destructible prop as arg?
 };
 
-RegisterFactory(CPropWeapon);
+__RegisterClassInFactory(CPropWeapon);
 
 }
 

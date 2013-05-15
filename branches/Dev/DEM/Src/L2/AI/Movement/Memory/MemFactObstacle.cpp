@@ -4,8 +4,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CMemFactObstacle, AI::CMemFact);
-ImplementFactory(AI::CMemFactObstacle);
+__ImplementClassNoFactory(AI::CMemFactObstacle, AI::CMemFact);
+__ImplementClass(AI::CMemFactObstacle);
 
 bool CMemFactObstacle::Match(const CMemFact& Pattern, CFlags FieldMask) const
 {
@@ -13,7 +13,7 @@ bool CMemFactObstacle::Match(const CMemFact& Pattern, CFlags FieldMask) const
 
 	const CMemFactObstacle& PatternCast = (const CMemFactObstacle&)Pattern;
 
-	if (pSourceStimulus.isvalid() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
+	if (pSourceStimulus.IsValid() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
 
 	OK;
 }

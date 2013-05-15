@@ -11,8 +11,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTplGotoSmartObj, AI::CActionTpl);
-ImplementFactory(AI::CActionTplGotoSmartObj);
+__ImplementClassNoFactory(AI::CActionTplGotoSmartObj, AI::CActionTpl);
+__ImplementClass(AI::CActionTplGotoSmartObj);
 
 void CActionTplGotoSmartObj::Init(PParams Params)
 {
@@ -32,7 +32,7 @@ PAction CActionTplGotoSmartObj::CreateInstance(const CWorldState& Context) const
 {
 	PActionGotoSmartObj Act = n_new(CActionGotoSmartObj);
 	Act->Init(Context.GetProp(WSP_AtEntityPos), Context.GetProp(WSP_Action));
-	return Act.get_unsafe();
+	return Act.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

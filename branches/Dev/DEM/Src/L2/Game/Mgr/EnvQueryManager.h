@@ -32,8 +32,7 @@ namespace Game
 
 class CEnvQueryManager: public CManager
 {
-	DeclareRTTI;
-	DeclareFactory(CEnvQueryManager);
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CEnvQueryManager);
 
 protected:
@@ -61,14 +60,14 @@ public:
 	vector2			GetEntityScreenPositionRel(const Game::CEntity& Entity, const vector3* Offset = NULL);
 	rectangle		GetEntityScreenRectangle(const Game::CEntity& Entity, const vector3* const Offset = NULL);
 
+	//!!!GetEntityAABB(bool Gfx, bool Physics) or flags AABB_Gfx, AABB_Physics
+
 	bool			GetEnvInfoAt(const vector3& Position, CEnvInfo& Info, float ProbeLength = 1000.f, int SelfPhysicsID = -1) const;
 
 	bool			HasMouseIntersection() const { return MouseIntersection; }
 	const vector3&	GetMousePos3D() const { return MousePos3D; }
 	const vector3&	GetUpVector() const { return UpVector; }
 };
-
-RegisterFactory(CEnvQueryManager);
 
 }
 

@@ -1,7 +1,7 @@
 #include "WAVFile.h"
 
-#include <Data/Streams/FileStream.h>
-#include <Data/DataServer.h>
+#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
 
 namespace Audio
 {
@@ -29,8 +29,8 @@ LRESULT CALLBACK mmioProc(LPSTR lpstr, UINT uMsg, LPARAM lParam1, LPARAM lParam2
                     nString FileName = rawName.SubString(7, rawName.Length() - 7);
 
                     // open a Nebula2 file for reading
-					Data::CFileStream* file = n_new(Data::CFileStream);
-					if (file->Open(FileName, Data::SAM_READ))
+					IO::CFileStream* file = n_new(IO::CFileStream);
+					if (file->Open(FileName, IO::SAM_READ))
                     {
                         // store nebula file object in mmio struct
                         lpMMIOInfo->adwInfo[0] = (DWORD)file;
@@ -45,7 +45,7 @@ LRESULT CALLBACK mmioProc(LPSTR lpstr, UINT uMsg, LPARAM lParam1, LPARAM lParam2
 
         case MMIOM_CLOSE:
             {
-                Data::CFileStream* file = (Data::CFileStream*)lpMMIOInfo->adwInfo[0];
+                IO::CFileStream* file = (IO::CFileStream*)lpMMIOInfo->adwInfo[0];
                 n_assert(0 != file);
 
                 file->Close();
@@ -57,7 +57,7 @@ LRESULT CALLBACK mmioProc(LPSTR lpstr, UINT uMsg, LPARAM lParam1, LPARAM lParam2
 
         case MMIOM_READ:
             {
-                Data::CFileStream* file = (Data::CFileStream*)lpMMIOInfo->adwInfo[0];
+                IO::CFileStream* file = (IO::CFileStream*)lpMMIOInfo->adwInfo[0];
                 n_assert(0 != file && file->IsOpen());
 
                 int bytesRead = file->Read((HPSTR)lParam1, (LONG)lParam2);
@@ -68,15 +68,15 @@ LRESULT CALLBACK mmioProc(LPSTR lpstr, UINT uMsg, LPARAM lParam1, LPARAM lParam2
 
         case MMIOM_SEEK:
             {
-                Data::CFileStream* file = (Data::CFileStream*)lpMMIOInfo->adwInfo[0];
+                IO::CFileStream* file = (IO::CFileStream*)lpMMIOInfo->adwInfo[0];
                 n_assert(0 != file && file->IsOpen());
 
-				Data::ESeekOrigin seekType;
+				IO::ESeekOrigin seekType;
                 switch ((int)lParam2)
                 {
-					case SEEK_CUR: seekType = Data::SSO_CURRENT; break;
-					case SEEK_END: seekType = Data::SSO_END; break;
-					default:       seekType = Data::SSO_BEGIN; break;
+					case SEEK_CUR: seekType = IO::Seek_Current; break;
+					case SEEK_END: seekType = IO::Seek_End; break;
+					default:       seekType = IO::Seek_Begin; break;
                 }
 
                 if (file->Seek((LONG)lParam1, seekType))
@@ -117,21 +117,21 @@ bool CWAVFile::Open(const nString& FileName)
 	n_assert(FileName.IsValid());
 
 	// Modify FileName so that MMIO will invoke our custom file function
-	nString Path = DataSrv->ManglePath(FileName);
+	nString Path = IOSrv->ManglePath(FileName);
 	nString MMIOFileName("X.NEB2+");
 	MMIOFileName.Append(Path);
 
-	m_hmmio = mmioOpen((LPSTR)MMIOFileName.Get(), NULL, MMIO_ALLOCBUF | MMIO_READ);
+	m_hmmio = mmioOpen((LPSTR)MMIOFileName.CStr(), NULL, MMIO_ALLOCBUF | MMIO_READ);
 	if (!m_hmmio)
 	{
-		n_error("CWAVFile::Open(): failed to open file '%s'!", FileName.Get());
+		n_error("CWAVFile::Open(): failed to open file '%s'!", FileName.CStr());
 		return false;
 	}
 
 	if (!ReadMMIO())
 	{
 		mmioClose(m_hmmio, 0);
-		n_error("CWAVFile::Open(): not a wav file (%s)!", FileName.Get());
+		n_error("CWAVFile::Open(): not a wav file (%s)!", FileName.CStr());
 		return false;
 	}
 

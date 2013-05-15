@@ -17,8 +17,7 @@ namespace DB
 
 class CDatabase: public Core::CRefCounted
 {
-	//__DeclareClass(CDatabase);
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -82,7 +81,7 @@ public:
 	void			AddTable(const PTable& Table);
 	void			DeleteTable(const nString& TableName);
 	bool			HasTable(const nString& TableName) const;
-	int				GetNumTables() const { n_assert(IsOpen()); return Tables.Size(); }
+	int				GetNumTables() const { n_assert(IsOpen()); return Tables.GetCount(); }
 	const PTable&	GetTable(int Idx) const { n_assert(IsOpen()); return Tables[Idx]; }
 	const PTable&	GetTable(const nString& TableName) const { return Tables[FindTableIndex(TableName)]; }
 	int				FindTableIndex(const nString& TableName) const;

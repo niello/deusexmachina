@@ -13,8 +13,7 @@ namespace Render
 
 class CUIRenderer: public IRenderer
 {
-	DeclareRTTI;
-	DeclareFactory(CUIRenderer);
+	__DeclareClass(CUIRenderer);
 
 protected:
 
@@ -28,7 +27,7 @@ public:
 	virtual void	Render();
 };
 
-RegisterFactory(CUIRenderer);
+__RegisterClassInFactory(CUIRenderer);
 
 typedef Ptr<CUIRenderer> PUIRenderer;
 

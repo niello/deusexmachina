@@ -11,8 +11,7 @@ namespace Physics
 
 class CCapsuleShape: public CShape
 {
-	DeclareRTTI;
-	DeclareFactory(CCapsuleShape);
+	__DeclareClass(CCapsuleShape);
 
 private:
 
@@ -34,7 +33,7 @@ public:
 	float			GetLength() const { return Length; }
 };
 
-RegisterFactory(CCapsuleShape);
+__RegisterClassInFactory(CCapsuleShape);
 
 }
 

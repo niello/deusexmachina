@@ -27,7 +27,7 @@ void CNavSystem::Init(const Data::CParams* Params)
 {
 	if (Params)
 	{
-		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<nString>(CStrID("NavFilterID"), NULL).Get()));
+		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<nString>(CStrID("NavFilterID"), NULL).CStr()));
 		
 		//!!!if avoid obstacles
 		pBoundary = n_new(dtLocalBoundary);
@@ -472,7 +472,7 @@ bool CNavSystem::GetPathEdges(nArray<CPathEdge>& OutPath, int MaxSize)
 		pNode->IsLast = false; //???can offmesh connection be the last edge?
 	}
 
-	if (OutPath.Size() >= MaxSize) OK;
+	if (OutPath.GetCount() >= MaxSize) OK;
 
 	// Make buffers larger if more edges are required, can limit MaxSize value and set MAX_CORNERS = MaxMaxSize + 1
 	const int MAX_CORNERS = 3;
@@ -494,7 +494,7 @@ bool CNavSystem::GetPathEdges(nArray<CPathEdge>& OutPath, int MaxSize)
 	const dtPolyRef* pLastPoly = Corridor.getPath() + Corridor.getPathCount();
 	CPathEdge* pNode;
 	int i;
-	for (i = 0; (i < CornerCount) && (OutPath.Size() < MaxSize); ++i)
+	for (i = 0; (i < CornerCount) && (OutPath.GetCount() < MaxSize); ++i)
 	{
 		pNode = OutPath.Reserve(1);
 		pNode->Action = CStrID::Empty;
@@ -513,7 +513,7 @@ bool CNavSystem::GetPathEdges(nArray<CPathEdge>& OutPath, int MaxSize)
 				//or get height from physics
 				//or check xz distance & height difference instead of 3D distance (or 2D with equal height)
 
-				if (OutPath.Size() >= MaxSize) OK;
+				if (OutPath.GetCount() >= MaxSize) OK;
 
 				CPathEdge* pNode = OutPath.Reserve(1);
 				pNode->Action = Action;

@@ -20,15 +20,15 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropPhysics, CPropAbstractPhysics);
-ImplementFactory(Properties::CPropPhysics);
+__ImplementClassNoFactory(Properties::CPropPhysics, CPropAbstractPhysics);
+__ImplementClass(Properties::CPropPhysics);
 RegisterProperty(CPropPhysics);
 
 using namespace Game;
 
 CPropPhysics::~CPropPhysics()
 {
-	n_assert(!PhysicsEntity.isvalid());
+	n_assert(!PhysicsEntity.IsValid());
 }
 //---------------------------------------------------------------------
 
@@ -65,11 +65,11 @@ void CPropPhysics::EnablePhysics()
 
 	if (GetEntity()->Get<nString>(Attr::Physics).IsEmpty()) return;
 
-	if (!PhysicsEntity.isvalid())
+	if (!PhysicsEntity.IsValid())
 	{
 		// Create and setup physics entity
 		PhysicsEntity = CreatePhysicsEntity();
-		n_assert(PhysicsEntity.isvalid());
+		n_assert(PhysicsEntity.IsValid());
 		PhysicsEntity->CompositeName = GetEntity()->Get<nString>(Attr::Physics);
 		PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	}
@@ -110,7 +110,7 @@ bool CPropPhysics::OnMoveAfter(const CEventBase& Event)
 
 bool CPropPhysics::OnEntityRenamed(const CEventBase& Event)
 {
-	if (PhysicsEntity.isvalid()) PhysicsEntity->SetUserData(GetEntity()->GetUID());
+	if (PhysicsEntity.IsValid()) PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	OK;
 }
 //---------------------------------------------------------------------

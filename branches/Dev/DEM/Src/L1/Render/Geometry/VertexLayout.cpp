@@ -60,22 +60,22 @@ BYTE FormatD3DTypes[] =
 
 bool CVertexLayout::Create(const nArray<CVertexComponent>& VertexComponents)
 {
-	n_assert(!pDecl && VertexComponents.Size());
+	n_assert(!pDecl && VertexComponents.GetCount());
 
 	Components = VertexComponents;
 	VertexSize = 0;
-	for (int i = 0; i < Components.Size(); ++i)
+	for (int i = 0; i < Components.GetCount(); ++i)
 	{
 		Components[i].OffsetInVertex = VertexSize;
 		VertexSize += Components[i].GetSize();
 	}
 
 	const DWORD MAX_VERTEX_COMPONENTS = 32;
-	n_assert(Components.Size() < MAX_VERTEX_COMPONENTS);
+	n_assert(Components.GetCount() < MAX_VERTEX_COMPONENTS);
 	D3DVERTEXELEMENT9 DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
 	DWORD StreamOffset[CRenderServer::MaxVertexStreamCount] = { 0 };
 	int i = 0;
-	for (i = 0; i < Components.Size(); i++)
+	for (i = 0; i < Components.GetCount(); i++)
 	{
 		const CVertexComponent& Component = Components[i];
 		WORD StreamIndex = (WORD)Component.Stream;
@@ -105,9 +105,9 @@ void CVertexLayout::Destroy()
 
 CStrID CVertexLayout::BuildSignature(const nArray<CVertexComponent>& Components)
 {
-	if (!Components.Size()) return CStrID::Empty;
+	if (!Components.GetCount()) return CStrID::Empty;
 	nString UID;
-	for (int i = 0; i < Components.Size(); ++i)
+	for (int i = 0; i < Components.GetCount(); ++i)
 	{
 		const CVertexComponent& Cmp = Components[i];
 		UID += Cmp.GetSemanticString();
@@ -119,7 +119,7 @@ CStrID CVertexLayout::BuildSignature(const nArray<CVertexComponent>& Components)
 			UID.AppendInt(Cmp.Stream);
 		}
 	}
-	return CStrID(UID.Get());
+	return CStrID(UID.CStr());
 }
 //---------------------------------------------------------------------
 

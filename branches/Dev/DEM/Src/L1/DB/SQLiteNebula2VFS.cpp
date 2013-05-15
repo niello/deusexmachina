@@ -1,5 +1,5 @@
-#include <Data/DataServer.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/IOServer.h>
+#include <IO/Streams/FileStream.h>
 #include <sqlite3.h>
 
 //!!!move functions used to FS wrapper!
@@ -9,7 +9,7 @@
 #undef DeleteFile
 #undef CreateDirectory
 
-using namespace Data;
+using namespace IO;
 
 struct CN2File
 {
@@ -30,7 +30,7 @@ static int N2Close(sqlite3_file *pFile)
 static int N2Read(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst)
 {
 	CN2File* pN2File = (CN2File*)pFile;
-	pN2File->pFile->Seek((int)iOfst, SSO_BEGIN); //???pre-check with Tell?
+	pN2File->pFile->Seek((int)iOfst, Seek_Begin); //???pre-check with Tell?
 	return (pN2File->pFile->Read(zBuf, iAmt) == iAmt) ? SQLITE_OK : SQLITE_IOERR_WRITE;
 }
 //---------------------------------------------------------------------
@@ -38,7 +38,7 @@ static int N2Read(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst)
 static int N2Write(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int64 iOfst)
 {
 	CN2File* pN2File = (CN2File*)pFile;
-	pN2File->pFile->Seek((int)iOfst, SSO_BEGIN); //???pre-check with Tell?
+	pN2File->pFile->Seek((int)iOfst, Seek_Begin); //???pre-check with Tell?
 	return (pN2File->pFile->Write(zBuf, iAmt) == iAmt) ? SQLITE_OK : SQLITE_IOERR_WRITE;
 }
 //---------------------------------------------------------------------
@@ -130,19 +130,19 @@ static int N2Open(sqlite3_vfs *pVfs, const char *zName, sqlite3_file *pFile, int
 	
 	bool IsReadOnly;
 
-	bool FileExists = DataSrv->FileExists(FileName);
+	bool FileExists = IOSrv->FileExists(FileName);
 	if (!FileExists)
 	{
 		if (Flags & SQLITE_OPEN_READONLY ||
 			!(Flags & SQLITE_OPEN_CREATE) ||
-			!DataSrv->CreateDirectory(FileName.ExtractDirName()))
+			!IOSrv->CreateDirectory(FileName.ExtractDirName()))
 		{
 			n_delete(pN2File);
 			return SQLITE_CANTOPEN;
 		}
 		IsReadOnly = false;
 	}
-	else IsReadOnly = DataSrv->IsFileReadOnly(FileName);
+	else IsReadOnly = IOSrv->IsFileReadOnly(FileName);
 
 	EStreamAccessMode AccessMode;
 	if (Flags & SQLITE_OPEN_READWRITE)
@@ -170,7 +170,7 @@ static int N2Open(sqlite3_vfs *pVfs, const char *zName, sqlite3_file *pFile, int
 
 static int N2Delete(sqlite3_vfs *pVfs, const char *zPath, int dirSync)
 {
-	return DataSrv->DeleteFile(zPath) ? SQLITE_OK : SQLITE_IOERR_DELETE;
+	return IOSrv->DeleteFile(zPath) ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
 //---------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ static int N2Access(sqlite3_vfs *pVfs, const char *zPath, int Flags, int *pResOu
 
 	const nString FileName = zPath;
 
-	bool FileExists = DataSrv->FileExists(FileName);
+	bool FileExists = IOSrv->FileExists(FileName);
 
 	if (Flags == SQLITE_ACCESS_EXISTS)
 	{
@@ -197,7 +197,7 @@ static int N2Access(sqlite3_vfs *pVfs, const char *zPath, int Flags, int *pResOu
 		}
 		else if (Flags == SQLITE_ACCESS_READWRITE)
 		{
-			*pResOut = !DataSrv->IsFileReadOnly(FileName);
+			*pResOut = !IOSrv->IsFileReadOnly(FileName);
 			return SQLITE_OK;
 		}
 	}
@@ -208,16 +208,16 @@ static int N2Access(sqlite3_vfs *pVfs, const char *zPath, int Flags, int *pResOu
 
 static int N2FullPathname(sqlite3_vfs *pVfs, const char *zPath, int nPathOut, char *zPathOut)
 {
-	nString AbsPath = DataSrv->ManglePath(zPath);
+	nString AbsPath = IOSrv->ManglePath(zPath);
 
 	if (AbsPath.Length() > 1 && AbsPath[1] != ':')
 	{
-		int Written = (int)GetFullPathName(AbsPath.Get(), nPathOut, zPathOut, NULL);
+		int Written = (int)GetFullPathName(AbsPath.CStr(), nPathOut, zPathOut, NULL);
 		n_assert(Written <= nPathOut && Written > 0);
 	}
 	else
 	{
-		sqlite3_snprintf(nPathOut, zPathOut, "%s", AbsPath.Get());
+		sqlite3_snprintf(nPathOut, zPathOut, "%s", AbsPath.CStr());
 		zPathOut[nPathOut - 1] = '\0';
 	}
 

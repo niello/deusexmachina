@@ -1,7 +1,7 @@
 #include "PropActorPhysics.h"
 
 #include <Game/Entity.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/CharEntity.h>
 #include <Render/DebugDraw.h>
 #include <Loading/EntityFactory.h>
@@ -16,8 +16,8 @@ namespace Attr
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropActorPhysics, Properties::CPropAbstractPhysics);
-ImplementFactory(Properties::CPropActorPhysics);
+__ImplementClassNoFactory(Properties::CPropActorPhysics, Properties::CPropAbstractPhysics);
+__ImplementClass(Properties::CPropActorPhysics);
 RegisterProperty(CPropActorPhysics);
 
 void CPropActorPhysics::GetAttributes(nArray<DB::CAttrID>& Attrs)
@@ -119,7 +119,7 @@ bool CPropActorPhysics::OnMoveAfter(const Events::CEventBase& Event)
 
 bool CPropActorPhysics::OnEntityRenamed(const Events::CEventBase& Event)
 {
-	if (PhysEntity.isvalid()) PhysEntity->SetUserData(GetEntity()->GetUID());
+	if (PhysEntity.IsValid()) PhysEntity->SetUserData(GetEntity()->GetUID());
 	OK;
 }
 //---------------------------------------------------------------------
@@ -147,8 +147,8 @@ void CPropActorPhysics::OnRenderDebug()
 	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
 
 	DebugDraw->DrawCoordAxes(Tfm);
-	DebugDraw->DrawLine(Tfm.pos_component(), Tfm.pos_component() + PhysEntity->GetVelocity(), ColorVel);
-	DebugDraw->DrawLine(Tfm.pos_component(), Tfm.pos_component() + PhysEntity->GetDesiredLinearVelocity(), ColorDesVel);
+	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + PhysEntity->GetVelocity(), ColorVel);
+	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + PhysEntity->GetDesiredLinearVelocity(), ColorDesVel);
 
 	if (GetEntity()->GetUID() == CStrID("GG"))
 	{
@@ -164,7 +164,7 @@ void CPropActorPhysics::OnRenderDebug()
 			PhysEntity->GetDesiredAngularVelocity(),
 			PhysEntity->GetVelocity().len(),
 			PhysEntity->GetDesiredLinearVelocity().len());
-		DebugDraw->DrawText(text.Get(), 0.5f, 0.0f);
+		DebugDraw->DrawText(text.CStr(), 0.5f, 0.0f);
 	}
 }
 //---------------------------------------------------------------------

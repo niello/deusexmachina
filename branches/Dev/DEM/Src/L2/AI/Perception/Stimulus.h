@@ -18,8 +18,7 @@ typedef CStimulusQT::CElement CStimulusNode;
 
 class CStimulus: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CStimulus);
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -51,8 +50,6 @@ public:
 	CStimulusQT::CNode*	GetQuadTreeNode() const { return pQTNode; }
 	void				SetQuadTreeNode(CStimulusQT::CNode* pNode) { pQTNode = pNode; }
 };
-
-RegisterFactory(CStimulus);
 
 typedef Ptr<CStimulus> PStimulus;
 

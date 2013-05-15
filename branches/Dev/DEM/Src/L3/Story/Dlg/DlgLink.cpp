@@ -1,20 +1,20 @@
 #include "DlgLink.h"
 
-#include "DlgSystem.h"
+#include "DialogueManager.h"
 
 namespace Story
 {
 
 EExecStatus CDlgLink::Validate(CActiveDlg& Dlg)
 {
-	return Condition.IsValid() ? Dlg.Dlg->ScriptObj->RunFunction(Condition.Get()) : Success;
+	return Condition.IsValid() ? Dlg.Dlg->ScriptObj->RunFunction(Condition.CStr()) : Success;
 }
 //---------------------------------------------------------------------
 
 CDlgNode* CDlgLink::DoTransition(CActiveDlg& Dlg)
 {
 	if (Action.IsEmpty()) return pTargetNode;
-	switch (Dlg.Dlg->ScriptObj->RunFunction(Action.Get()))
+	switch (Dlg.Dlg->ScriptObj->RunFunction(Action.CStr()))
 	{
 		case Success:	return pTargetNode;
 		case Running:	return Dlg.pCurrNode;

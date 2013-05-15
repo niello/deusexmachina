@@ -1,14 +1,13 @@
 #include "LODGroup.h"
 
 #include <Scene/Scene.h>
-#include <Data/BinaryReader.h>
+#include <IO/BinaryReader.h>
 
 namespace Scene
 {
-ImplementRTTI(Scene::CLODGroup, Scene::CSceneNodeAttr);
-ImplementFactory(Scene::CLODGroup);
+__ImplementClass(Scene::CLODGroup, 'LODG', Scene::CSceneNodeAttr);
 
-bool CLODGroup::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CLODGroup::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
@@ -61,7 +60,7 @@ void CLODGroup::Update()
 
 	CStrID SelectedChild;
 	if (SqDist >= MinSqDistance && SqDist <= MaxSqDistance)
-		for (int i = 0; i < SqThresholds.Size(); ++i)
+		for (int i = 0; i < SqThresholds.GetCount(); ++i)
 			if (SqThresholds.KeyAtIndex(i) > SqDist) SelectedChild = SqThresholds.ValueAtIndex(i);
 			else break;
 

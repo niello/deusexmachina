@@ -15,7 +15,7 @@ namespace AI
 
 class CGoal: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

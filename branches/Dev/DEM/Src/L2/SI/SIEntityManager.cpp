@@ -1,5 +1,5 @@
 #include <Scripting/ScriptServer.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 extern "C"
 {

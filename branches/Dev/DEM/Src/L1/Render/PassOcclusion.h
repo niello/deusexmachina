@@ -11,8 +11,6 @@ namespace Render
 
 class CPassOcclusion: public CPass
 {
-	//DeclareRTTI;
-
 protected:
 
 // Input:
@@ -24,8 +22,6 @@ public:
 
 	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
 };
-
-//typedef Ptr<CPass> PPass;
 
 }
 

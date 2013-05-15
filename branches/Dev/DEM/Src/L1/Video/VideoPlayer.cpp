@@ -1,6 +1,6 @@
 #include "VideoPlayer.h"
 
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 
 namespace Video
 {
@@ -31,7 +31,7 @@ void CVideoPlayer::Close()
 
 void CVideoPlayer::SetFilename(const nString& _FileName)
 {
-	FileName = DataSrv->ManglePath(_FileName);
+	FileName = IOSrv->ManglePath(_FileName);
 }
 //---------------------------------------------------------------------
 

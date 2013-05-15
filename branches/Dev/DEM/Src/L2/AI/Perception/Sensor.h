@@ -20,7 +20,7 @@ class CMemFact;
 
 class CSensor: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -51,7 +51,7 @@ typedef Ptr<CSensor> PSensor;
 inline void CSensor::AddPerceptor(CPerceptor* pPerceptor)
 {
 	for (nArray<PPerceptor>::iterator It = Perceptors.Begin(); It != Perceptors.End(); It++)
-		if ((*It).get_unsafe() == pPerceptor) return;
+		if ((*It).GetUnsafe() == pPerceptor) return;
 	Perceptors.Append(pPerceptor);
 }
 //---------------------------------------------------------------------
@@ -59,7 +59,7 @@ inline void CSensor::AddPerceptor(CPerceptor* pPerceptor)
 inline void CSensor::RemovePerceptor(const CPerceptor* pPerceptor)
 {
 	for (nArray<PPerceptor>::iterator It = Perceptors.Begin(); It != Perceptors.End(); It++)
-		if ((*It).get_unsafe() == pPerceptor)
+		if ((*It).GetUnsafe() == pPerceptor)
 		{
 			Perceptors.Erase(It);
 			return;

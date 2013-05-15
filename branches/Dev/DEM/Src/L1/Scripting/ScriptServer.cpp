@@ -4,6 +4,7 @@
 #include <Events/EventManager.h>
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
+#include <IO/IOServer.h>
 #include <DB/Database.h>
 
 extern const nString StrLuaObjects;
@@ -20,7 +21,7 @@ extern "C"
 
 namespace Scripting
 {
-ImplementRTTI(Scripting::CScriptServer, Core::CRefCounted);
+__ImplementClassNoFactory(Scripting::CScriptServer, Core::CRefCounted);
 __ImplementSingleton(CScriptServer);
 
 CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)
@@ -32,8 +33,8 @@ CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)
 
 	luaL_openlibs(l);
 
-	DataSrv->SetAssign("scripts", "game:scripts");
-	DataSrv->SetAssign("classes", "game:scripts/classes");
+	IOSrv->SetAssign("scripts", "game:scripts");
+	IOSrv->SetAssign("classes", "game:scripts/classes");
 
 	// Create base class for scripted objects
 
@@ -81,14 +82,14 @@ int CScriptServer::DataToLuaStack(const CData& Data)
 	else if (Data.IsA<bool>()) lua_pushboolean(l, Data.GetValue<bool>());
 	else if (Data.IsA<int>()) lua_pushinteger(l, Data.GetValue<int>());
 	else if (Data.IsA<float>()) lua_pushnumber(l, Data.GetValue<float>());
-	else if (Data.IsA<nString>()) lua_pushstring(l, Data.GetValue<nString>().Get());
+	else if (Data.IsA<nString>()) lua_pushstring(l, Data.GetValue<nString>().CStr());
 	else if (Data.IsA<CStrID>()) lua_pushstring(l, Data.GetValue<CStrID>().CStr());
 	else if (Data.IsA<PVOID>()) lua_pushlightuserdata(l, Data.GetValue<PVOID>());
 	else if (Data.IsA<PDataArray>())
 	{
 		const CDataArray& A = *Data.GetValue<PDataArray>();
-		lua_createtable(l, A.Size(), 0);
-		for (int i = 0; i < A.Size();)
+		lua_createtable(l, A.GetCount(), 0);
+		for (int i = 0; i < A.GetCount();)
 			if (DataToLuaStack(A[i]) == 1)
 				lua_rawseti(l, -2, ++i);
 	}
@@ -211,7 +212,7 @@ bool CScriptServer::LuaStackToData(CData& Result, int StackIdx, lua_State* l)
 EExecStatus CScriptServer::RunScriptFile(const nString& FileName)
 {
 	CBuffer Buffer;
-	if (!DataSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
+	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
 	return RunScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
@@ -269,8 +270,8 @@ bool CScriptServer::BeginClass(const nString& Name, const nString& BaseClass)
 	n_assert2(CurrClass.IsEmpty(), "Already in class registration process!");
 	n_assert2(!CurrObj, "Already in mixing-in process!");
 
-	if (ClassExists(Name.Get())) FAIL;
-	if (!ClassExists(BaseClass.Get()) && !LoadClass(BaseClass)) FAIL;
+	if (ClassExists(Name.CStr())) FAIL;
+	if (!ClassExists(BaseClass.CStr()) && !LoadClass(BaseClass)) FAIL;
 
 	CurrClass = Name;
 
@@ -280,7 +281,7 @@ bool CScriptServer::BeginClass(const nString& Name, const nString& BaseClass)
 	lua_createtable(l, 0, 4); //!!!can pass fields count as arg!
 
 	// Setup base class
-	lua_getfield(l, -2, BaseClass.Get());
+	lua_getfield(l, -2, BaseClass.CStr());
 	lua_setmetatable(l, -2);
 
 	OK;
@@ -305,7 +306,7 @@ bool CScriptServer::BeginExistingClass(LPCSTR Name)
 void CScriptServer::EndClass()
 {
 	n_assert(CurrClass.IsValid());
-	lua_setfield(l, -2, CurrClass.Get());
+	lua_setfield(l, -2, CurrClass.CStr());
 	lua_pop(l, 1); // Classes table
 	CurrClass = NULL;
 }
@@ -317,7 +318,7 @@ bool CScriptServer::BeginMixin(CScriptObject* pObj)
 	n_assert2(!CurrObj, "Already in mixing-in process!");
 	n_assert2(CurrClass.IsEmpty(), "Already in class registration process!");
 	CurrObj = pObj;
-	return PlaceObjectOnStack(pObj->GetName().Get(), pObj->GetTable().Get());
+	return PlaceObjectOnStack(pObj->GetName().CStr(), pObj->GetTable().CStr());
 }
 //---------------------------------------------------------------------
 
@@ -350,7 +351,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
 	PParams ClassDesc = DataSrv->LoadPRM("classes:" + Name + ".cls", false);
 
-	if (ClassDesc.isvalid() &&
+	if (ClassDesc.IsValid() &&
 		BeginClass(Name, ClassDesc->Get<nString>(CStrID("Base"), "CScriptObject")))
 	{
 		// Here we don't know C++ class, because it's an object, not a Lua class property.
@@ -373,16 +374,16 @@ bool CScriptServer::LoadClass(const nString& Name)
 			else if (pCodePrm->IsA<nString>())
 			{
 				const nString& Code = pCodePrm->GetValue<nString>();
-				pData = Code.Get();
+				pData = Code.CStr();
 				Size = Code.Length();
 			}
 		}
 
 		if (pData && Size)
 		{
-			if (luaL_loadbuffer(l, pData, Size, Name.Get()) != 0)
+			if (luaL_loadbuffer(l, pData, Size, Name.CStr()) != 0)
 			{
-				n_printf("Error parsing script for class %s: %s\n", Name.Get(), lua_tostring(l, -1));
+				n_printf("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
 				if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
 				lua_pop(l, 2);
 				FAIL;
@@ -393,7 +394,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 
 			if (lua_pcall(l, 0, 0, 0))
 			{
-				n_printf("Error running script for class %s: %s\n", Name.Get(), lua_tostring(l, -1));
+				n_printf("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
 				if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
 				lua_pop(l, 2); // Error msg, class table
 				FAIL;
@@ -420,7 +421,7 @@ bool CScriptServer::ClassExists(LPCSTR Name)
 
 bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 {
-	n_assert(Obj.Name.IsValid() && Obj.Table != TBL_CLASSES && !ObjectExists(Obj.Name.Get(), Obj.Table.Get()));
+	n_assert(Obj.Name.IsValid() && Obj.Table != TBL_CLASSES && !ObjectExists(Obj.Name.CStr(), Obj.Table.CStr()));
 	n_assert(LuaClassName && *LuaClassName && (ClassExists(LuaClassName) || LoadClass(LuaClassName)));
 
 	// Create object table
@@ -450,7 +451,7 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 		if (lua_pcall(l, 0, 0, 0))
 		{
 			n_printf("Error running %s class constructor for %s: %s\n",
-				LuaClassName, Obj.Name.Get(), lua_tostring(l, -1));
+				LuaClassName, Obj.Name.CStr(), lua_tostring(l, -1));
 			lua_pop(l, 2);
 			FAIL;
 		}
@@ -461,28 +462,28 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 	if (Obj.Table.IsValid())
 	{
 		// Get table that contains object. Now search only in globals.
-		lua_getglobal(l, Obj.Table.Get());
+		lua_getglobal(l, Obj.Table.CStr());
 		if (lua_isnil(l, -1))
 		{
 			// Create required table if !exist. Now adds only to globals.
 			lua_pop(l, 1);
 			lua_createtable(l, 0, INITIAL_OBJ_TABLE_SIZE);
 			lua_pushvalue(l, -1);
-			lua_setglobal(l, Obj.Table.Get());
+			lua_setglobal(l, Obj.Table.CStr());
 		}
 		else if (!lua_istable(l, -1))
 		{
 			//???assert?
-			n_printf("Error: table name \"%s\" is used by other non-table object\n", Obj.Table.Get());
+			n_printf("Error: table name \"%s\" is used by other non-table object\n", Obj.Table.CStr());
 			lua_pop(l, 2);
 			FAIL;
 		}
 
 		lua_pushvalue(l, -2);
-		lua_setfield(l, -2, Obj.Name.Get());
+		lua_setfield(l, -2, Obj.Name.CStr());
 		lua_pop(l, 2);
 	}
-	else lua_setglobal(l, Obj.Name.Get());
+	else lua_setglobal(l, Obj.Name.CStr());
 
 	OK;
 }

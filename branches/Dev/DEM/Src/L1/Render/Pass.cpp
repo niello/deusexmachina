@@ -41,7 +41,7 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
 		}
 	}
 
@@ -50,7 +50,7 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<C
 
 	Data::PDataArray RTNames;
 	if (Desc.Get<Data::PDataArray>(RTNames, CStrID("RenderTargets")))
-		for (int i = 0; i < RTNames->Size() && i < CRenderServer::MaxRenderTargetCount; ++i)
+		for (int i = 0; i < RTNames->GetCount() && i < CRenderServer::MaxRenderTargetCount; ++i)
 			RT[i] = RenderTargets[RTNames->At(i).GetValue<CStrID>()];
 
 	ClearFlags = 0;

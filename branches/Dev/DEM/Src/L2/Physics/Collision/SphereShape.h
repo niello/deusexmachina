@@ -10,8 +10,7 @@ namespace Physics
 {
 class CSphereShape: public CShape
 {
-	DeclareRTTI;
-	DeclareFactory(CSphereShape);
+	__DeclareClass(CSphereShape);
 
 private:
 
@@ -30,7 +29,7 @@ public:
 	float			GetRadius() const { return Radius; }
 };
 
-RegisterFactory(CSphereShape);
+__RegisterClassInFactory(CSphereShape);
 
 }
 

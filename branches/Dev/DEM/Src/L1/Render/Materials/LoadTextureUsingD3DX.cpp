@@ -2,15 +2,15 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Render/RenderServer.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/Streams/FileStream.h>
 #include <Data/Buffer.h>
 
 namespace Render
 {
 
-bool LoadTextureUsingD3DX(Data::CStream& In, PTexture OutTexture)
+bool LoadTextureUsingD3DX(IO::CStream& In, PTexture OutTexture)
 {
-	if (!OutTexture.isvalid()) FAIL;
+	if (!OutTexture.IsValid()) FAIL;
 
 	DWORD DataSize = In.GetSize();
 	Data::CBuffer Buffer(DataSize);
@@ -45,8 +45,8 @@ bool LoadTextureUsingD3DX(Data::CStream& In, PTexture OutTexture)
 
 bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture)
 {
-	Data::CFileStream File;
-	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
+	IO::CFileStream File;
+	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadTextureUsingD3DX(File, OutTexture);
 }
 //---------------------------------------------------------------------

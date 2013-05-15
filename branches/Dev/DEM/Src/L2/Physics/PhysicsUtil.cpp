@@ -13,7 +13,7 @@ bool CPhysicsUtil::RayCheck(const vector3& From, const vector3& To, CContactPoin
 	float MinSqDist = 10000000000.0f;
 	const nArray<CContactPoint>& Contacts = PhysicsSrv->GetContactPoints();
 	int Idx = INVALID_INDEX;
-	for (int i = 0; i < PhysicsSrv->GetContactPoints().Size(); i++)
+	for (int i = 0; i < PhysicsSrv->GetContactPoints().GetCount(); i++)
 	{
 		float SqDist = vector3(Contacts[i].Position - From).lensquared();
 		if (SqDist < MinSqDist)
@@ -59,7 +59,7 @@ bool CPhysicsUtil::RayBundleCheck(const vector3& From, const vector3& To, const 
 		PhysicsSrv->RayCheck(RayPos, StabDir, ExcludeSet);
 
 		const nArray<CContactPoint>& Contacts = PhysicsSrv->GetContactPoints();
-		for (int j = 0; j < PhysicsSrv->GetContactPoints().Size(); j++)
+		for (int j = 0; j < PhysicsSrv->GetContactPoints().GetCount(); j++)
 		{
 			float SqDist = vector3(Contacts[j].Position - From).lensquared();
 			if (SqDist < OutContactDist)

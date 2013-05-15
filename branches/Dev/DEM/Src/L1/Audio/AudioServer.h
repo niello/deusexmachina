@@ -3,6 +3,7 @@
 #define __DEM_L1_AUDIO_SERVER_H__
 
 #include <Core/RefCounted.h>
+#include <Core/Singleton.h>
 #include <Events/Events.h>
 #include <Audio/Audio.h>
 #define WIN32_LEAN_AND_MEAN
@@ -26,14 +27,13 @@ class CSoundResource;
 
 class CAudioServer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CAudioServer);
 
 private:
 
 	bool						_IsOpen;
 	bool						_IsMuted;
-	bool						_IsInBeginScene;
 	//PWaveBank					WaveBank;
 	nArray<PAudioEntity>		Entities;
 
@@ -64,18 +64,17 @@ public:
 
 	bool			Open();
 	void			Close();
-	void			BeginScene();
-	void			EndScene();
+	void			Trigger();
 
 	//bool			OpenWaveBank(const nString& Name);
 	//void			CloseWaveBank();
-	//CWaveBank*		GetWaveBank() const { return WaveBank.get_unsafe(); }
+	//CWaveBank*		GetWaveBank() const { return WaveBank.GetUnsafe(); }
 	
 	void			PlaySoundEffect(const nString& FXName, const vector3& Pos, const vector3& Vel, float Volume);
 	
 	void			AttachEntity(CAudioEntity* e);
 	void			RemoveEntity(CAudioEntity* e);
-	int				GetNumEntities() const { return Entities.Size(); }
+	int				GetNumEntities() const { return Entities.GetCount(); }
 	CAudioEntity*	GetEntityAt(int Idx) const { return Entities[Idx]; }
 
 	void			SetMasterVolume(ESoundCategory Cat, float Volume);
@@ -91,7 +90,7 @@ public:
 /*
 CDSSound* CAudioServer::CreateSoundFromResourceName(const nString& Name)
 {
-	n_assert(WaveBank.isvalid());
+	n_assert(WaveBank.IsValid());
 	CWaveResource* pResource = WaveBank->FindResource(Name);
 	if (pResource)
 	{

@@ -5,9 +5,9 @@
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropDestructible, Game::CProperty);
-ImplementFactory(Properties::CPropDestructible);
-ImplementPropertyStorage(CPropDestructible, 128);
+__ImplementClassNoFactory(Properties::CPropDestructible, Game::CProperty);
+__ImplementClass(Properties::CPropDestructible);
+__ImplementPropertyStorage(CPropDestructible, 128);
 RegisterProperty(CPropDestructible);
 
 using namespace Event;

@@ -14,8 +14,7 @@ typedef Ptr<class CStimulus> PStimulus;
 
 class CMemFactObstacle: public CMemFact
 {
-	DeclareRTTI;
-	DeclareFactory(CMemFactObstacle);
+	__DeclareClass(CMemFactObstacle);
 
 protected:
 
@@ -31,7 +30,7 @@ public:
 	virtual bool Match(const CMemFact& Pattern, CFlags FieldMask) const;
 };
 
-RegisterFactory(CMemFactObstacle);
+__RegisterClassInFactory(CMemFactObstacle);
 
 typedef Ptr<CMemFactObstacle> PMemFactObstacle;
 

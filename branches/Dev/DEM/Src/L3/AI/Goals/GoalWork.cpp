@@ -5,7 +5,7 @@
 #include <AI/Perception/Stimulus.h>
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Memory/MemFactOverseer.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp
@@ -16,8 +16,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CGoalWork, AI::CGoal);
-ImplementFactory(AI::CGoalWork);
+__ImplementClassNoFactory(AI::CGoalWork, AI::CGoal);
+__ImplementClass(AI::CGoalWork);
 
 using namespace Properties;
 
@@ -26,11 +26,11 @@ void CGoalWork::Init(PParams Params)
 	WorkActionMap.Add(CStrID::Empty, CStrID("Work")); // Default, may move to params too
 
 	PParams Map = Params->Get<PParams>(CStrID("ActionMap"), NULL);
-	if (Map.isvalid())
+	if (Map.IsValid())
 		for (int i = 0; i < Map->GetCount(); ++i)
 		{
 			const CParam& Prm = Map->Get(i);
-			WorkActionMap.Add(Prm.GetName(), CStrID(Prm.GetValue<nString>().Get()));
+			WorkActionMap.Add(Prm.GetName(), CStrID(Prm.GetValue<nString>().CStr()));
 		}
 
 	CGoal::Init(Params);
@@ -50,12 +50,12 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
 	{
-		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.get();
+		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.CStr();
 		int Idx = WorkActionMap.FindIndex(pSOFact->TypeID);
 		if (Idx != INVALID_INDEX)
 		{
-			Game::PEntity Ent = EntityMgr->GetEntityByID(pSOFact->pSourceStimulus->SourceEntityID);
-			CPropSmartObject* pSO = Ent->FindProperty<CPropSmartObject>();
+			Game::PEntity Ent = EntityMgr->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);
+			CPropSmartObject* pSO = Ent->GetProperty<CPropSmartObject>();
 			n_assert(pSO);
 
 			//!!!check not only HasAction, but also is action available for this actor in this SO state now!
@@ -76,7 +76,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	
 	pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactOverseer::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
-		TotalOverseersConf += ((CMemFactOverseer*)pCurr->Object.get())->Confidence;
+		TotalOverseersConf += ((CMemFactOverseer*)pCurr->Object.CStr())->Confidence;
 
 	IAO = pBest->pSourceStimulus->SourceEntityID;
 	Relevance *= (1.f + TotalOverseersConf) * PersonalityFactor;

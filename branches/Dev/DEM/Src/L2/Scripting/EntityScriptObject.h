@@ -18,8 +18,7 @@ namespace Scripting
 
 class CEntityScriptObject: public CScriptObject
 {
-	DeclareRTTI;
-	DeclareFactory(CEntityScriptObject);
+	__DeclareClass(CEntityScriptObject);
 
 protected:
 
@@ -47,7 +46,7 @@ public:
 	Game::CEntity*	GetEntity() const { return pEntity; }
 };
 
-RegisterFactory(CEntityScriptObject);
+__RegisterClassInFactory(CEntityScriptObject);
 
 typedef Ptr<CEntityScriptObject> PEntityScriptObject;
 

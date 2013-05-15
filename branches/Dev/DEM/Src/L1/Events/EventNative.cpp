@@ -2,5 +2,5 @@
 
 namespace Events
 {
-ImplementRTTI(Events::CEventNative, Core::CRefCounted);
+__ImplementClassNoFactory(Events::CEventNative, Core::CRefCounted);
 }

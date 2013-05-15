@@ -6,6 +6,7 @@
 #include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
 #include <Events/Events.h>
+#include <Data/Type.h>
 
 // Texture resource, usable by renderer
 
@@ -14,7 +15,7 @@ namespace Render
 
 class CTexture: public Resources::CResource
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

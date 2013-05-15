@@ -16,7 +16,7 @@ class CJointAxis;
 
 class CJoint: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -46,8 +46,8 @@ public:
 	void				SetBodies(CRigidBody* pRigidBody1, CRigidBody* pRigidBody2);
 	void				SetBody1(CRigidBody* pBody);
 	void				SetBody2(CRigidBody* pBody);
-	const CRigidBody*	GetBody1() const { return pBody1.get_unsafe(); }
-	const CRigidBody*	GetBody2() const { return pBody2.get_unsafe(); }
+	const CRigidBody*	GetBody1() const { return pBody1.GetUnsafe(); }
+	const CRigidBody*	GetBody2() const { return pBody2.GetUnsafe(); }
 	bool				IsLinkValid() const { return LinkName.IsValid(); }
 	dJointID			GetJointId() const { return ODEJointID; }
 };

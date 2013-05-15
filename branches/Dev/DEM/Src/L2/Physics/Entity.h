@@ -11,14 +11,13 @@ namespace Physics
 {
 using namespace Data;
 
-class CLevel;
+class CPhysicsLevel;
 typedef Ptr<class CComposite> PComposite; //???all such things to PhysicsFwd.h?
 typedef Ptr<class CShape> PShape; //???all such things to PhysicsFwd.h?
 
 class CEntity: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CEntity);
+	__DeclareClass(CEntity);
 	
 public:
 
@@ -28,7 +27,7 @@ protected:
 
 	DWORD			UID;
 	CFlags			Flags;
-	CLevel*			Level;				// currently attached to this Level
+	CPhysicsLevel*			Level;				// currently attached to this Level
 	PComposite		Composite;			// the Composite of this entity
 	nArray<PShape>	CollidedShapes;
 	matrix44		Transform;			// the backup Transform matrix
@@ -55,7 +54,7 @@ public:
 	virtual void Activate();
 	virtual void Deactivate();
 	
-	virtual void OnAttachedToLevel(CLevel* pLevel);
+	virtual void OnAttachedToLevel(CPhysicsLevel* pLevel);
 	virtual void OnRemovedFromLevel();
 	virtual void OnStepBefore();
 	virtual void OnStepAfter();
@@ -84,18 +83,18 @@ public:
 
 	void			SetEnabled(bool Enabled);
 	void			SetComposite(CComposite* pNew);
-	CComposite*		GetComposite() const { return Composite.get_unsafe(); }
+	CComposite*		GetComposite() const { return Composite.GetUnsafe(); }
 	DWORD			GetUID() const { return UID; }
 	void			SetUserData(CStrID Data) { UserData = Data; }
 	CStrID			GetUserData() const { return UserData; }
 	void			SetStamp(uint s) { Stamp = s; }
 	uint			GetStamp() const { return Stamp; }
-	CLevel*			GetLevel() const { return Level; }
+	CPhysicsLevel*			GetLevel() const { return Level; }
 	int				GetNumCollisions() const;
 	const nArray<Ptr<CShape>>& GetCollidedShapes() const { return CollidedShapes; }
 };
 
-RegisterFactory(CEntity);
+__RegisterClassInFactory(CEntity);
 
 typedef Ptr<CEntity> PEntity;
 

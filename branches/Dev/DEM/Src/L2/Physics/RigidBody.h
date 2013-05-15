@@ -22,8 +22,7 @@ class CEntity;
 
 class CRigidBody: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CRigidBody);
+	__DeclareClass(CRigidBody);
 
 public:
 
@@ -84,7 +83,7 @@ public:
 	void			BeginShapes(int Count);
 	void			AddShape(CShape* pShape);
 	void			EndShapes();
-	int				GetNumShapes() const { return Shapes.Size(); }
+	int				GetNumShapes() const { return Shapes.GetCount(); }
 	CShape*			GetShapeAt(int Idx) const { return Shapes[Idx]; }
 
 	bool			IsAttached() const { return ODEBodyID != NULL; }
@@ -123,7 +122,7 @@ public:
 };
 //---------------------------------------------------------------------
 
-RegisterFactory(CRigidBody);
+__RegisterClassInFactory(CRigidBody);
 
 typedef Ptr<CRigidBody> PRigidBody;
 

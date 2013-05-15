@@ -18,9 +18,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropScriptable, Game::CProperty);
-ImplementFactory(Properties::CPropScriptable);
-ImplementPropertyStorage(CPropScriptable, 256);
+__ImplementClassNoFactory(Properties::CPropScriptable, Game::CProperty);
+__ImplementClass(Properties::CPropScriptable);
+__ImplementPropertyStorage(CPropScriptable, 256);
 RegisterProperty(CPropScriptable);
 
 void CPropScriptable::GetAttributes(nArray<DB::CAttrID>& Attrs)
@@ -39,7 +39,7 @@ void CPropScriptable::Activate()
 	//???to OnLoad?
 
 	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUID().CStr(), "Entities"));
-	n_assert(Obj->Init(LuaClass.IsValid() ? LuaClass.Get() : "CEntityScriptObject"));
+	n_assert(Obj->Init(LuaClass.IsValid() ? LuaClass.CStr() : "CEntityScriptObject"));
 
 	const nString& ScriptFile = GetEntity()->Get<nString>(Attr::Script);
 	if (ScriptFile.IsValid()) Obj->LoadScriptFile("scripts:" + ScriptFile + ".lua");
@@ -67,7 +67,7 @@ void CPropScriptable::Deactivate()
 
 bool CPropScriptable::OnPropsActivated(const CEventBase& Event)
 {
-	if (ScriptSrv->BeginMixin(Obj.get_unsafe()))
+	if (ScriptSrv->BeginMixin(Obj.GetUnsafe()))
 	{
 		GetEntity()->FireEvent(CStrID("ExposeSI"));
 		ScriptSrv->EndMixin();

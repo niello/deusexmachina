@@ -2,8 +2,8 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Animation/MocapClip.h>
-#include <Data/BinaryReader.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/BinaryReader.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Anim
 {
@@ -35,11 +35,11 @@ struct CNAX2Curve
 };
 #pragma pack(pop)
 
-bool LoadMocapClipFromNAX2(Data::CStream& In, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
+bool LoadMocapClipFromNAX2(IO::CStream& In, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
-	if (!OutClip.isvalid()) FAIL;
+	if (!OutClip.IsValid()) FAIL;
 
-	Data::CBinaryReader Reader(In);
+	IO::CBinaryReader Reader(In);
 
 	CNAX2Header Header;
 	Reader.Read(Header);
@@ -117,8 +117,8 @@ bool LoadMocapClipFromNAX2(Data::CStream& In, const nDictionary<int, CStrID>& Bo
 
 bool LoadMocapClipFromNAX2(const nString& FileName, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
-	Data::CFileStream File;
-	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
+	IO::CFileStream File;
+	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadMocapClipFromNAX2(File, BoneToNode, OutClip);
 }
 //---------------------------------------------------------------------

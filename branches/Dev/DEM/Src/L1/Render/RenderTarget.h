@@ -56,7 +56,7 @@ public:
 	//void				Set/ClearResolveRect();
 	void				Resolve();
 
-	CTexture*			GetTexture() const { RTTexture.get_unsafe(); }
+	CTexture*			GetTexture() const { RTTexture.GetUnsafe(); }
 	EPixelFormat		GetRenderTargetFormat() const { return RTFmt; }
 	EPixelFormat		GetDepthStencilFormat() const { return DSFmt; }
 	IDirect3DSurface9*	GetD3DRenderTargetSurface() const { return pRTSurface; }

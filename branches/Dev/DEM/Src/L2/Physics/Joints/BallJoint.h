@@ -11,8 +11,7 @@ namespace Physics
 
 class CBallJoint: public CJoint
 {
-	DeclareRTTI;
-	DeclareFactory(CBallJoint);
+	__DeclareClass(CBallJoint);
 
 public:
 
@@ -26,7 +25,7 @@ public:
 	virtual void RenderDebug();
 };
 
-RegisterFactory(CBallJoint);
+__RegisterClassInFactory(CBallJoint);
 
 }
 

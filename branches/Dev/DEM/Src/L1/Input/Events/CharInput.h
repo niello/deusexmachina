@@ -12,7 +12,7 @@ namespace Event
 //???inherit from InputEvent where DeviceID is stored?
 class CharInput: public Events::CEventNative
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

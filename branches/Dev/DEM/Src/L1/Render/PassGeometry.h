@@ -13,10 +13,7 @@ namespace Render
 
 class CPassGeometry: public CPass
 {
-	//DeclareRTTI;
-
-//protected:
-public:
+protected:
 
 	nArray<PRenderer>	BatchRenderers;
 
@@ -35,8 +32,6 @@ public:
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets);
 	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
 };
-
-//typedef Ptr<CPass> PPass;
 
 }
 

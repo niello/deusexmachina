@@ -4,7 +4,7 @@
 
 #include <Render/RenderServer.h>
 #include <Render/D3DXNebula2Include.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/Streams/FileStream.h>
 #include <Data/Buffer.h>
 
 namespace Render
@@ -12,10 +12,10 @@ namespace Render
 
 bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PShader OutShader)
 {
-	if (!OutShader.isvalid()) FAIL;
+	if (!OutShader.IsValid()) FAIL;
 
-	Data::CFileStream File;
-	if (!File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL)) FAIL;
+	IO::CFileStream File;
+	if (!File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
 
 	DWORD FileSize = File.GetSize();
 	Data::CBuffer Buffer(FileSize);
@@ -44,14 +44,14 @@ bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PSh
 	if (FAILED(hr) || !pEffect)
 	{
 		n_message("FXLoader: failed to load fx file '%s' with:\n\n%s\n",
-			FileName.Get(),
+			FileName.CStr(),
 			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
 		if (pErrorBuffer) pErrorBuffer->Release();
 		FAIL;
 	}
 	else if (pErrorBuffer)
 	{
-		n_printf("FXLoader: fx file '%s' loaded with:\n\n%s\n", FileName.Get(), pErrorBuffer->GetBufferPointer());
+		n_printf("FXLoader: fx file '%s' loaded with:\n\n%s\n", FileName.CStr(), pErrorBuffer->GetBufferPointer());
 		if (pErrorBuffer) pErrorBuffer->Release();
 	}
 

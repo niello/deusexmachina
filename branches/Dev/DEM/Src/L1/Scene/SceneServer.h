@@ -23,65 +23,24 @@ class CSceneServer: public Core::CRefCounted
 
 private:
 
-	//CPool<CSceneNode>							NodePool;
-	nDictionary<CStrID, PScene>					Scenes;
-	CStrID										CurrSceneID;
-	CScene*										pCurrScene;
-
-	nDictionary<CStrID, Render::PFrameShader>	FrameShaders;	//???to RenderServer?
-	CStrID										ScreenFrameShaderID;
+	//CPool<CSceneNode>								NodePool;
+	nDictionary<CStrID, Render::PFrameShader>		FrameShaders;	//???to RenderServer?
+	CStrID											ScreenFrameShaderID;
 
 public:
 
-	//!!!need mgr for both anim & mocap clips, they should have the same base class!
 	Resources::CResourceManager<Anim::CAnimClip>	AnimationMgr;
 
-	CSceneServer(): pCurrScene(NULL) { __ConstructSingleton; }
+	CSceneServer() { __ConstructSingleton; }
 	~CSceneServer() { __DestructSingleton; }
 
-	bool		CreateScene(CStrID Name, const bbox3& Bounds, bool SetCurrent = false);
-	void		RemoveScene(CStrID Name);
-	bool		SetCurrentScene(CStrID Name);
-	void		SetCurrentScene(CScene* pScene);
-	CStrID		GetCurrentSceneID() const { return CurrSceneID; }
-	CScene*		GetCurrentScene() const { return pCurrScene; }
-	CScene*		GetScene(CStrID Name);
-
-	PSceneNode	CreateSceneNode(CScene& Scene, CStrID Name);
+	PSceneNode				CreateSceneNode(CScene& Scene, CStrID Name);
 
 	//???AddFrameShader to RenderServer?
-	void		AddFrameShader(CStrID ID, Render::PFrameShader FrameShader); //???or always load internally?
-	void		SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
-
-	void		TriggerBeforePhysics();
-	void		TriggerAfterPhysics();
-	void		RenderCurrentScene();
-	void		RenderDebug();
+	void					AddFrameShader(CStrID ID, Render::PFrameShader FrameShader); //???or always load internally?
+	void					SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
+	Render::CFrameShader*	GetScreenFrameShader() const;
 };
-
-inline CScene* CSceneServer::GetScene(CStrID Name)
-{
-	int Idx = Scenes.FindIndex(Name);
-	return (Idx == INVALID_INDEX) ? NULL : Scenes.ValueAtIndex(Idx);
-}
-//---------------------------------------------------------------------
-
-inline bool CSceneServer::SetCurrentScene(CStrID Name)
-{
-	int Idx = Scenes.FindIndex(Name);
-	if (Idx == INVALID_INDEX) FAIL;
-	SetCurrentScene(Scenes.ValueAtIndex(Idx));
-	OK;
-}
-//---------------------------------------------------------------------
-
-inline void CSceneServer::SetCurrentScene(CScene* pScene)
-{
-	if (pCurrScene) pCurrScene->Deactivate();
-	pCurrScene = pScene;
-	if (pCurrScene) pCurrScene->Activate();
-}
-//---------------------------------------------------------------------
 
 inline PSceneNode CSceneServer::CreateSceneNode(CScene& Scene, CStrID Name)
 {
@@ -92,26 +51,15 @@ inline PSceneNode CSceneServer::CreateSceneNode(CScene& Scene, CStrID Name)
 
 inline void CSceneServer::AddFrameShader(CStrID ID, Render::PFrameShader FrameShader)
 {
-	n_assert(ID.IsValid() && FrameShader.isvalid());
+	n_assert(ID.IsValid() && FrameShader.IsValid());
 	FrameShaders.Add(ID, FrameShader);
 }
 //---------------------------------------------------------------------
 
-//???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
-inline void CSceneServer::TriggerBeforePhysics()
+inline Render::CFrameShader* CSceneServer::GetScreenFrameShader() const
 {
-	if (pCurrScene)
-	{
-		pCurrScene->ClearVisibleLists();
-		pCurrScene->GetRootNode().UpdateLocalSpace();
-	}
-}
-//---------------------------------------------------------------------
-
-//???what with non-current scenes? should transform be updated, or only accumulate time diff & maybe process some collision?
-inline void CSceneServer::TriggerAfterPhysics()
-{
-	if (pCurrScene) pCurrScene->GetRootNode().UpdateWorldSpace();
+	int Idx = FrameShaders.FindIndex(ScreenFrameShaderID);
+	return (Idx != INVALID_INDEX) ? FrameShaders.ValueAtIndex(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

@@ -2,6 +2,6 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CStimulusVisible, AI::CStimulus);
-ImplementFactory(AI::CStimulusVisible);
+__ImplementClassNoFactory(AI::CStimulusVisible, AI::CStimulus);
+__ImplementClass(AI::CStimulusVisible);
 }

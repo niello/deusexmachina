@@ -13,8 +13,7 @@ namespace Physics
 
 class CRagdoll: public CComposite
 {
-	DeclareRTTI;
-	DeclareFactory(CRagdoll);
+	__DeclareClass(CRagdoll);
 
 private:
 
@@ -48,7 +47,7 @@ public:
 	void			ReadJoints();
 };
 
-RegisterFactory(CRagdoll);
+__RegisterClassInFactory(CRagdoll);
 
 }
 

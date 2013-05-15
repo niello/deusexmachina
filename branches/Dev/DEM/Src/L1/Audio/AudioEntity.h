@@ -20,8 +20,7 @@ class CSoundResource;
 
 class CAudioEntity: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CAudioEntity);
+	__DeclareClass(CAudioEntity);
 
 private:
 
@@ -84,7 +83,7 @@ public:
 
 	
 	//CDSSound*			GetCSoundPtr() const { return refRsrc->GetCSoundPtr(); }
-	//CSoundResource*	GetSoundResource() const { return refRsrc.get(); }
+	//CSoundResource*	GetSoundResource() const { return refRsrc.CStr(); }
 
 	void			SetTransform(const matrix44& m) { Transform = m; Props3DDirty = true; }
 	const matrix44&	GetTransform() const { return Transform; }
@@ -105,7 +104,7 @@ public:
 };
 //---------------------------------------------------------------------
 
-RegisterFactory(CAudioEntity);
+__RegisterClassInFactory(CAudioEntity);
 
 inline void CAudioEntity::CopyFrom(const CAudioEntity& Other)
 {

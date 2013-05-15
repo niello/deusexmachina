@@ -25,9 +25,8 @@ using namespace Items;
 
 class CPropInventory: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropInventory);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropInventory);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -75,7 +74,7 @@ public:
 };
 //---------------------------------------------------------------------
 
-RegisterFactory(CPropInventory);
+__RegisterClassInFactory(CPropInventory);
 
 inline bool CPropInventory::AddItem(CStrID ItemID, WORD Count)
 {

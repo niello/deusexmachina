@@ -4,14 +4,14 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CAMotor, Physics::CJoint);
-ImplementFactory(Physics::CAMotor);
+__ImplementClassNoFactory(Physics::CAMotor, Physics::CJoint);
+__ImplementClass(Physics::CAMotor);
 
 void CAMotor::Init(PParams Desc)
 {
 	CDataArray& Axes = *Desc->Get<PDataArray>(CStrID("Axes"));
-	SetNumAxes(Axes.Size());
-	for (int i = 0; i < Axes.Size(); i++)
+	SetNumAxes(Axes.GetCount());
+	for (int i = 0; i < Axes.GetCount(); i++)
 		InitAxis(&AxisParams[i], Axes[i]);
 }
 //---------------------------------------------------------------------
@@ -23,8 +23,8 @@ void CAMotor::Attach(dWorldID WorldID, dJointGroupID GroupID, const matrix44& Pa
 	ODEJointID = dJointCreateAMotor(WorldID, GroupID);
 
 	dJointSetAMotorMode(ODEJointID, dAMotorUser);
-	dJointSetAMotorNumAxes(ODEJointID, AxisParams.Size());
-	for (int i = 0; i < AxisParams.Size(); i++)
+	dJointSetAMotorNumAxes(ODEJointID, AxisParams.GetCount());
+	for (int i = 0; i < AxisParams.GetCount(); i++)
 	{
 		const CJointAxis& CurrAxis = AxisParams[i];
 		dJointSetAMotorAngle(ODEJointID, i, CurrAxis.Angle);
@@ -48,15 +48,15 @@ void CAMotor::Attach(dWorldID WorldID, dJointGroupID GroupID, const matrix44& Pa
 
 void CAMotor::UpdateVelocity(uint AxisIdx)
 {
-	n_assert((uint)AxisParams.Size() > AxisIdx);
+	n_assert((uint)AxisParams.GetCount() > AxisIdx);
 	dJointSetAMotorParam(ODEJointID, dParamVel + dParamGroup * AxisIdx, AxisParams[AxisIdx].Velocity);
 }
 //---------------------------------------------------------------------
 
 void CAMotor::UpdateTransform(const matrix44& Tfm)
 {
-	matrix33 m33(Tfm.x_component(), Tfm.y_component(), Tfm.z_component());
-	for (int i = 0; i < AxisParams.Size(); i++)
+	matrix33 m33(Tfm.AxisX(), Tfm.AxisY(), Tfm.AxisZ());
+	for (int i = 0; i < AxisParams.GetCount(); i++)
 	{
 		vector3 a = m33 * AxisParams[i].Axis;
 		dJointSetAMotorAxis(ODEJointID, i, 0, a.x, a.y, a.z);

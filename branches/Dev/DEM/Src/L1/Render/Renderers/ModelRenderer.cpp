@@ -7,8 +7,7 @@
 
 namespace Render
 {
-ImplementRTTI(Render::CModelRenderer, Render::IRenderer);
-ImplementFactory(Render::CModelRenderer);
+__ImplementClass(Render::CModelRenderer, 'MLRN', Render::IRenderer);
 
 bool CModelRenderer::Init(const Data::CParams& Desc)
 {
@@ -45,7 +44,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
 		}
 	}
 
@@ -74,7 +73,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 	if (EnableLighting)
 	{
 		SharedShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shared"));
-		n_assert(SharedShader.isvalid());
+		n_assert(SharedShader.IsValid());
 
 		hLightType = SharedShader->GetVarHandleByName(CStrID("LightType"));
 		hLightPos = SharedShader->GetVarHandleByName(CStrID("LightPos"));
@@ -92,7 +91,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 
 	//???add InitialInstanceCount + AllowGrowInstanceBuffer or MaxInstanceCount or both?
 	MaxInstanceCount = Desc.Get<int>(CStrID("MaxInstanceCount"), 0);
-	if (MaxInstanceCount) InstanceBuffer.Create();
+	if (MaxInstanceCount) InstanceBuffer = n_new(CVertexBuffer);
 	//!!!InstanceBuffer is created lazy in Render() not to duplicate code!
 
 	OK;
@@ -101,7 +100,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 
 void CModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects)
 {
-	for (int i = 0; i < Objects.Size(); ++i)
+	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
 		//???use buckets instead?
 		if (!Objects[i]->IsA(Scene::CModel::RTTI)) continue;
@@ -181,7 +180,7 @@ float CModelRenderer::CalcLightPriority(Scene::CModel& Model, Scene::CLight& Lig
 
 void CModelRenderer::Render()
 {
-	if (!Models.Size()) return;
+	if (!Models.GetCount()) return;
 
 	if (MaxInstanceCount && !InstanceBuffer->IsValid())
 	{
@@ -200,7 +199,7 @@ void CModelRenderer::Render()
 	// Prepare to sorting
 
 	vector3 EyePos = RenderSrv->GetCameraPosition();
-	for (int i = 0; i < Models.Size(); ++i)
+	for (int i = 0; i < Models.GetCount(); ++i)
 	{
 		CModelRecord& Rec = Models[i];
 
@@ -209,7 +208,7 @@ void CModelRenderer::Render()
 		if (EnableLighting)
 		{
 			n_assert_dbg(pLights);
-			for (int j = 0; j < pLights->Size(); ++j)
+			for (int j = 0; j < pLights->GetCount(); ++j)
 			{
 				Scene::CLight* pLight = (*pLights)[j];
 
@@ -274,7 +273,7 @@ void CModelRenderer::Render()
 
 	// Sort models
 
-	if (Models.Size() > 1)
+	if (Models.GetCount() > 1)
 		switch (DistanceSorting)
 		{
 			case Sort_None:			Models.Sort<CRecCmp_TechMtlGeom>(); break;
@@ -290,15 +289,15 @@ void CModelRenderer::Render()
 
 	// Render models one by one
 
-	if (Shader.isvalid())
+	if (Shader.IsValid())
 	{
-		for (int i = 0; i < ShaderVars.Size(); ++i)
-			ShaderVars.ValueAtIndex(i).Apply(*Shader.get_unsafe());
+		for (int i = 0; i < ShaderVars.GetCount(); ++i)
+			ShaderVars.ValueAtIndex(i).Apply(*Shader.GetUnsafe());
 		n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
 		Shader->BeginPass(0);
 	}
 
-	for (int i = 0; i < Models.Size(); /*NB: i is incremented inside*/)
+	for (int i = 0; i < Models.GetCount(); /*NB: i is incremented inside*/)
 	{
 		CModelRecord& Rec = Models[i];
 
@@ -308,7 +307,7 @@ void CModelRenderer::Render()
 		CMaterial* pPrevMaterial = pMaterial;
 		if (pMaterial != Rec.pModel->Material)
 		{
-			pMaterial = Rec.pModel->Material.get_unsafe();
+			pMaterial = Rec.pModel->Material.GetUnsafe();
 			NeedToApplyStaticVars = true;
 		}
 		n_assert_dbg(pMaterial);
@@ -324,7 +323,7 @@ void CModelRenderer::Render()
 		// without per-object vars. Maybe per-variable value comparison will lead to performance
 		// hit because of additional work that brings no significant effect. Needs profiling.
 
-		CMesh* pMesh = Rec.pModel->Mesh.get_unsafe();
+		CMesh* pMesh = Rec.pModel->Mesh.GetUnsafe();
 		n_assert_dbg(pMesh);
 		DWORD GroupIdx = Rec.pModel->MeshGroupIndex;
 
@@ -334,11 +333,11 @@ void CModelRenderer::Render()
 
 		int j = i + 1;
 
-		if (hInstancedTech && InstanceBuffer.isvalid() && !Rec.pModel->ShaderVars.Size())
-			while (	j < Models.Size() &&
+		if (hInstancedTech && InstanceBuffer.IsValid() && !Rec.pModel->ShaderVars.GetCount())
+			while (	j < Models.GetCount() &&
 					Models[j].pModel->MeshGroupIndex == GroupIdx &&
-					Models[j].pModel->Mesh.get_unsafe() == pMesh &&
-					Models[j].pModel->Material.get_unsafe() == pMaterial &&
+					Models[j].pModel->Mesh.GetUnsafe() == pMesh &&
+					Models[j].pModel->Material.GetUnsafe() == pMaterial &&
 					Models[j].hTech == Rec.hTech)
 				++j;
 
@@ -372,18 +371,18 @@ void CModelRenderer::Render()
 		{
 			//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
 			//???check IsVarUsed?
-			for (int VarIdx = 0; VarIdx < pMaterial->GetStaticVars().Size(); ++VarIdx)
+			for (int VarIdx = 0; VarIdx < pMaterial->GetStaticVars().GetCount(); ++VarIdx)
 				if (pMaterial->GetStaticVars().ValueAtIndex(VarIdx).IsBound())
 					n_assert(pMaterial->GetStaticVars().ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
-			ShaderVarsChanged = (pMaterial->GetStaticVars().Size() > 0);
+			ShaderVarsChanged = (pMaterial->GetStaticVars().GetCount() > 0);
 		}
 
 		//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
 		//???check IsVarUsed?
-		for (int VarIdx = 0; VarIdx < Rec.pModel->ShaderVars.Size(); ++VarIdx)
+		for (int VarIdx = 0; VarIdx < Rec.pModel->ShaderVars.GetCount(); ++VarIdx)
 			if (Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).IsBound())
 				n_assert(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
-		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.Size() > 0);
+		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.GetCount() > 0);
 
 		//!!!Need redundancy check, may be even "does this light now set at ANY index"! mb store index in light rec
 		//!!!light param arrays are local because now I don't know how to set only part of shader var array,
@@ -515,7 +514,7 @@ void CModelRenderer::Render()
 		pMaterial->GetShader()->End();
 	}
 
-	if (Shader.isvalid())
+	if (Shader.IsValid())
 	{
 		Shader->EndPass();
 		Shader->End();

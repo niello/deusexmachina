@@ -11,16 +11,13 @@ namespace AI
 
 class CStimulusVisible: public CStimulus
 {
-	DeclareRTTI;
-	DeclareFactory(CStimulusVisible);
-
-protected:
+	__DeclareClass(CStimulusVisible);
 
 public:
 
 };
 
-RegisterFactory(CStimulusVisible);
+__RegisterClassInFactory(CStimulusVisible);
 
 typedef Ptr<CStimulusVisible> PStimulusVisible;
 

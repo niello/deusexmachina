@@ -2,8 +2,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CHinge2Joint, Physics::CJoint);
-ImplementFactory(Physics::CHinge2Joint);
+__ImplementClassNoFactory(Physics::CHinge2Joint, Physics::CJoint);
+__ImplementClass(Physics::CHinge2Joint);
 
 CHinge2Joint::CHinge2Joint():
 	SuspensionERP(0.2f),
@@ -59,7 +59,7 @@ void CHinge2Joint::UpdateTransform(const matrix44& Tfm)
 	vector3 p = Tfm * Anchor;
 	dJointSetHinge2Anchor(ODEJointID, p.x, p.y, p.z);
 	
-	matrix33 m33(Tfm.x_component(), Tfm.y_component(), Tfm.z_component());
+	matrix33 m33(Tfm.AxisX(), Tfm.AxisY(), Tfm.AxisZ());
 	vector3 a0 = m33 * AxisParams[0].Axis;
 	vector3 a1 = m33 * AxisParams[1].Axis;
 	dJointSetHinge2Axis1(ODEJointID, a0.x, a0.y, a0.z);

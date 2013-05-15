@@ -25,43 +25,78 @@ protected:
 
 public:
 
+	class CIterator
+	{
+	private:
+
+		CHashTable<TKey, TVal>*		pTable;
+		int							ChainIdx;
+		typename CChain::iterator	It;
+
+	public:
+
+		CIterator(CHashTable<TKey, TVal>* Tbl): pTable(Tbl), ChainIdx(0)
+		{
+			n_assert(Tbl);
+			while (ChainIdx < pTable->Chains.GetCount() && !pTable->Chains[ChainIdx].GetCount()) ++ChainIdx;
+			It = ChainIdx < pTable->Chains.GetCount() ? pTable->Chains[ChainIdx].Begin() : NULL;
+		}
+
+		const TKey&	GetKey() const { n_assert(It); return It->GetKey(); }
+		const TVal&	GetValue() const { n_assert(It); return It->GetValue(); }
+		bool		IsEnd() const { return !It; }
+		CIterator&	operator ++()
+		{
+			n_assert(It);
+			++It;
+			if (It == pTable->Chains[ChainIdx].End())
+			{
+				while (ChainIdx < pTable->Chains.GetCount() && !pTable->Chains[ChainIdx].GetCount()) ++ChainIdx;
+				It = ChainIdx < pTable->Chains.GetCount() ? pTable->Chains[ChainIdx].Begin() : NULL;
+			}
+			return *this;
+		}
+	};
+
 	CHashTable(): Chains(128), Count(0) {}
     CHashTable(int Capacity): Chains(Capacity), Count(0) {}
 	CHashTable(const CHashTable<TKey, TVal>& Other): Chains(Other.Chains), Count(Other.Count) {}
 
-    void	Add(const CPairT<TKey, TVal>& Pair);
-	void	Add(const TKey& Key, const TVal& value) { Add(CPair(Key, value)); }
-    bool	Erase(const TKey& Key);
-	void	Clear();
-    bool	Contains(const TKey& Key) const;
-	bool	Get(const TKey& Key, TVal& Value) const;
-	TVal*	Get(const TKey& Key) const;
-    void	CopyToArray(nArray<CPairT<TKey, TVal>>& OutData) const;
+    void		Add(const CPairT<TKey, TVal>& Pair);
+	void		Add(const TKey& Key, const TVal& value) { Add(CPair(Key, value)); }
+    bool		Erase(const TKey& Key);
+	void		Clear();
+    bool		Contains(const TKey& Key) const;
+	bool		Get(const TKey& Key, TVal& Value) const;
+	TVal*		Get(const TKey& Key) const;
+    void		CopyToArray(nArray<CPairT<TKey, TVal>>& OutData) const;
 
-	int		Size() const { return Count; }
-	int		Capacity() const { return Chains.Size(); }
-	bool	IsEmpty() const { return !Count; }
+	CIterator	Begin() { return CIterator(this); }
 
-	void	operator =(const CHashTable<TKey, TVal>& Other) { if (this != &Other) { Chains = Other.Chains; Count = Other.Count; } }
-	TVal&	operator [](const TKey& Key) const { TVal* pVal = Get(Key); n_assert(pVal); return *pVal; }
+	int			GetCount() const { return Count; }
+	int			Capacity() const { return Chains.GetCount(); }
+	bool		IsEmpty() const { return !Count; }
+
+	void		operator =(const CHashTable<TKey, TVal>& Other) { if (this != &Other) { Chains = Other.Chains; Count = Other.Count; } }
+	TVal&		operator [](const TKey& Key) const { TVal* pVal = Get(Key); n_assert(pVal); return *pVal; }
 };
 
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Add(const CPairT<TKey, TVal>& Pair)
 {
-	CChain& Chain = Chains[Hash(Pair.GetKey()) % Chains.Size()];
+	CChain& Chain = Chains[Hash(Pair.GetKey()) % Chains.GetCount()];
 	n_assert(!Count || Chain.BinarySearchIndex(Pair.GetKey()) == INVALID_INDEX);
 	Chain.InsertSorted(Pair);
 	++Count;
 }
 //---------------------------------------------------------------------
 
-// Returns true if element war really erased
+// Returns true if element really has been erased
 template<class TKey, class TVal>
 bool CHashTable<TKey, TVal>::Erase(const TKey& Key)
 {
 	if (!Count) FAIL;
-	CChain& Chain = Chains[Hash(Key) % Chains.Size()];
+	CChain& Chain = Chains[Hash(Key) % Chains.GetCount()];
 	int ElmIdx = Chain.BinarySearchIndex(Key);
 	if (ElmIdx == INVALID_INDEX) FAIL;
 	Chain.Erase(ElmIdx);
@@ -73,7 +108,7 @@ bool CHashTable<TKey, TVal>::Erase(const TKey& Key)
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Clear()
 {
-	for (int i = 0; i < Chains.Size(); i++)
+	for (int i = 0; i < Chains.GetCount(); i++)
 		Chains[i].Clear();
 	Count = 0;
 }
@@ -82,7 +117,7 @@ void CHashTable<TKey, TVal>::Clear()
 template<class TKey, class TVal>
 inline bool CHashTable<TKey, TVal>::Contains(const TKey& Key) const
 {
-	return Count && (Chains[Hash(Key) % Chains.Size()].BinarySearchIndex(Key) != INVALID_INDEX);
+	return Count && (Chains[Hash(Key) % Chains.GetCount()].BinarySearchIndex(Key) != INVALID_INDEX);
 }
 //---------------------------------------------------------------------
 
@@ -101,12 +136,12 @@ TVal* CHashTable<TKey, TVal>::Get(const TKey& Key) const
 {
 	if (Count > 0)
 	{
-		CChain& Chain = Chains[Hash(Key) % Chains.Size()];
-		if (Chain.Size() == 1)
+		CChain& Chain = Chains[Hash(Key) % Chains.GetCount()];
+		if (Chain.GetCount() == 1)
 		{
 			if (Chain[0].GetKey() == Key) return &Chain[0].GetValue();
 		}
-		else if (Chain.Size() > 1)
+		else if (Chain.GetCount() > 1)
 		{
 			int ElmIdx = Chain.BinarySearchIndex(Key);
 			if (ElmIdx != INVALID_INDEX) return &Chain[ElmIdx].GetValue();
@@ -116,12 +151,10 @@ TVal* CHashTable<TKey, TVal>::Get(const TKey& Key) const
 }
 //---------------------------------------------------------------------
 
-//!!!
-// Too slow. Need iterator.
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::CopyToArray(nArray<CPairT<TKey, TVal>>& OutData) const
 {
-	for (int i = 0; i < Chains.Size(); i++)
+	for (int i = 0; i < Chains.GetCount(); i++)
 		OutData.AppendArray(Chains[i]);
 }
 //---------------------------------------------------------------------

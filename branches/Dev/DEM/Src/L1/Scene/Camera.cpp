@@ -2,10 +2,9 @@
 
 namespace Scene
 {
-ImplementRTTI(Scene::CCamera, Scene::CSceneNodeAttr);
-ImplementFactory(Scene::CCamera);
+__ImplementClass(Scene::CCamera, 'CAMR', Scene::CSceneNodeAttr);
 
-bool CCamera::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CCamera::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
@@ -56,7 +55,7 @@ void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay)
 	vector3 LocalMousePos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
 	LocalMousePos.y = -LocalMousePos.y;
 	OutRay.b = pNode->GetWorldMatrix() * LocalMousePos;
-	OutRay.m = OutRay.b - pNode->GetWorldMatrix().pos_component();
+	OutRay.m = OutRay.b - pNode->GetWorldMatrix().Translation();
 	OutRay.m *= (Length / OutRay.m.len());
 }
 //---------------------------------------------------------------------

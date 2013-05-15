@@ -4,7 +4,7 @@
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/Perception/Stimulus.h>
 #include <AI/Memory/MemFactSmartObj.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Items/Prop/PropItem.h>
 
 #ifdef __WIN32__
@@ -16,8 +16,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTplPickItemWorld, AI::CActionTpl);
-ImplementFactory(AI::CActionTplPickItemWorld);
+__ImplementClassNoFactory(AI::CActionTplPickItemWorld, AI::CActionTpl);
+__ImplementClass(AI::CActionTplPickItemWorld);
 
 using namespace Properties;
 
@@ -44,11 +44,11 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
 	{
-		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.get();
+		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.CStr();
 		if (pSOFact->TypeID == CStrID("Item"))
 		{
-			Game::CEntity* pEnt = EntityMgr->GetEntityByID(pSOFact->pSourceStimulus->SourceEntityID);
-			CPropItem* pItemProp = pEnt ? pEnt->FindProperty<CPropItem>() : NULL;
+			Game::CEntity* pEnt = EntityMgr->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);
+			CPropItem* pItemProp = pEnt ? pEnt->GetProperty<CPropItem>() : NULL;
 			if (pItemProp &&
 				pSOFact->Confidence > MaxConf &&
 				pItemProp->Items.GetItemID() == (CStrID)WSGoal.GetProp(WSP_HasItem))

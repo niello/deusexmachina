@@ -122,7 +122,7 @@ public:
 	void				EndAddColumns();
 	bool				HasColumn(CAttrID ID) const { return ColumnIndexMap.Contains(ID); }
 	int					GetColumnIndex(CAttrID ID) const;
-	int					GetNumColumns() const { return Columns.Size(); }
+	int					GetNumColumns() const { return Columns.GetCount(); }
 	CAttrID				GetColumnID(int ColIdx) const { return Columns[ColIdx].AttrID; }
 	CStrID				GetColumnName(int ColIdx) const { return Columns[ColIdx].AttrID->GetName(); }
 	AccessMode			GetColumnAccessMode(int ColIdx) const { return Columns[ColIdx].AttrID->GetAccessMode(); }
@@ -272,7 +272,7 @@ inline int CValueTable::GetColumnIndex(CAttrID ID) const
 
 inline void** CValueTable::GetValuePtr(int ColIdx, int RowIdx) const
 {
-	n_assert(ColIdx < Columns.Size() && RowIdx > -1 && RowIdx < NumRows);
+	n_assert(ColIdx < Columns.GetCount() && RowIdx > -1 && RowIdx < NumRows);
 	return (void**)((char*)ValueBuffer + RowIdx * RowPitch + Columns[ColIdx].ByteOffset);
 }
 //---------------------------------------------------------------------
@@ -343,7 +343,7 @@ inline nArray<int> CValueTable::FindRowIndicesByAttr(CAttrID AttrID, const CData
 inline int CValueTable::FindRowIndexByAttr(CAttrID AttrID, const CData& Value) const
 {
 	nArray<int> RowIndices = InternalFindRowIndicesByAttr(AttrID, Value, true);
-	return (RowIndices.Size() == 1) ? RowIndices[0] : INVALID_INDEX; //???or if > 0?
+	return (RowIndices.GetCount() == 1) ? RowIndices[0] : INVALID_INDEX; //???or if > 0?
 }
 //---------------------------------------------------------------------
 
@@ -352,7 +352,7 @@ inline int CValueTable::FindRowIndexByAttr(CAttrID AttrID, const CData& Value) c
 //inline int CValueTable::FindRowIndexByAttrs(const nArray<CAttr>& Attrs) const
 //{
 //	nArray<int> RowIndices = InternalFindRowIndicesByAttrs(Attrs, true);
-//	return (RowIndices.Size() == 1) ? RowIndices[0] : INVALID_INDEX; //???or if > 0?
+//	return (RowIndices.GetCount() == 1) ? RowIndices[0] : INVALID_INDEX; //???or if > 0?
 //}
 ////---------------------------------------------------------------------
 

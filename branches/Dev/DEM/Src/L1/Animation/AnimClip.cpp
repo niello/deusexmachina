@@ -2,5 +2,5 @@
 
 namespace Anim
 {
-ImplementRTTI(Anim::CAnimClip, Resources::CResource);
+__ImplementClassNoFactory(Anim::CAnimClip, Resources::CResource);
 }

@@ -22,7 +22,7 @@ enum EResourceState
 
 class CResource: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

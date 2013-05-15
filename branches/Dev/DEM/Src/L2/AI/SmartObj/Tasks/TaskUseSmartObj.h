@@ -17,8 +17,7 @@ using namespace Properties;
 
 class CTaskUseSmartObj: public CTask
 {
-	DeclareRTTI;
-	DeclareFactory(CTaskUseSmartObj);
+	__DeclareClass(CTaskUseSmartObj);
 
 protected:
 
@@ -36,7 +35,7 @@ public:
 	void			SetActionID(CStrID ID) { ActionID = ID; }
 };
 
-RegisterFactory(CTaskUseSmartObj);
+__RegisterClassInFactory(CTaskUseSmartObj);
 
 typedef Ptr<CTaskUseSmartObj> PTaskUseSmartObj;
 

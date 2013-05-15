@@ -2,7 +2,7 @@
 
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/Prop/PropSmartObject.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 namespace Attr
 {
@@ -11,17 +11,17 @@ namespace Attr
 
 namespace AI
 {
-ImplementRTTI(AI::CActionGotoSmartObj, AI::CActionGoto)
-ImplementFactory(AI::CActionGotoSmartObj);
+__ImplementClassNoFactory(AI::CActionGotoSmartObj, AI::CActionGoto)
+__ImplementClass(AI::CActionGotoSmartObj);
 
 using namespace Properties;
 
 bool CActionGotoSmartObj::Activate(CActor* pActor)
 {
-	Game::CEntity* pEnt = EntityMgr->GetEntityByID(TargetID);
+	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
 
-	CPropSmartObject* pSO = pEnt->FindProperty<CPropSmartObject>();
+	CPropSmartObject* pSO = pEnt->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
 
 	vector3 Dest;

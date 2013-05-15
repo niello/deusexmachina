@@ -3,14 +3,14 @@
 #include <Items/ItemAttrs.h>
 #include <Items/ItemManager.h>
 #include <Items/Prop/PropInventory.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Loading/EntityFactory.h>
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropItem, Game::CProperty);
-ImplementFactory(Properties::CPropItem);
-ImplementPropertyStorage(CPropItem, 128);
+__ImplementClassNoFactory(Properties::CPropItem, Game::CProperty);
+__ImplementClass(Properties::CPropItem);
+__ImplementPropertyStorage(CPropItem, 128);
 RegisterProperty(CPropItem);
 
 using namespace Items;
@@ -92,8 +92,8 @@ bool CPropItem::OnPickItem(const Events::CEventBase& Event)
 	{
 		PParams P = ((const Events::CEvent&)Event).Params;
 
-		Game::CEntity* pActorEnt = EntityMgr->GetEntityByID(P->Get<CStrID>(CStrID("Actor")));
-		CPropInventory* pInv = pActorEnt ? pActorEnt->FindProperty<CPropInventory>() : NULL;
+		Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
+		CPropInventory* pInv = pActorEnt ? pActorEnt->GetProperty<CPropInventory>() : NULL;
 		if (pInv)
 		{
 			pInv->AddItem(Items);

@@ -7,7 +7,7 @@ void CKeyframeTrack::Sample(float Time, vector3& Out)
 {
 	n_assert(Time >= 0.f); // && Time <= Clip->Duration
 
-	if (!Keys.Size())
+	if (!Keys.GetCount())
 	{
 		Out.set(ConstValue.x, ConstValue.y, ConstValue.z);
 		return;
@@ -16,12 +16,12 @@ void CKeyframeTrack::Sample(float Time, vector3& Out)
 	//!!!perform binary search for the closest less or equal
 	//???or search from last key in direction dependent on Time - LastTime sign?
 	int i = 0;
-	for (; i < Keys.Size(); ++i)
+	for (; i < Keys.GetCount(); ++i)
 		if (Keys[i].Time > Time) break;
 	--i;
 
 	// Extend the first key back to the 0 and the last key forward to the clip duration
-	if (i < 0 || i == Keys.Size() - 1 || Keys[i].Time == Time)
+	if (i < 0 || i == Keys.GetCount() - 1 || Keys[i].Time == Time)
 	{
 		const CKey& Key = Keys[i];
 		Out.set(Key.Value.x, Key.Value.y, Key.Value.z);
@@ -40,7 +40,7 @@ void CKeyframeTrack::Sample(float Time, vector4& Out)
 {
 	n_assert(Time >= 0.f); // && Time <= Clip->Duration
 
-	if (!Keys.Size())
+	if (!Keys.GetCount())
 	{
 		Out.set(ConstValue.x, ConstValue.y, ConstValue.z, ConstValue.w);
 		return;
@@ -49,12 +49,12 @@ void CKeyframeTrack::Sample(float Time, vector4& Out)
 	//!!!perform binary search for the closest less or equal
 	//???or search from last key in direction dependent on Time - LastTime sign?
 	int i = 0;
-	for (; i < Keys.Size(); ++i)
+	for (; i < Keys.GetCount(); ++i)
 		if (Keys[i].Time > Time) break;
 	--i;
 
 	// Extend the first key back to the 0 and the last key forward to the clip duration
-	if (i < 0 || i == Keys.Size() - 1 || Keys[i].Time == Time)
+	if (i < 0 || i == Keys.GetCount() - 1 || Keys[i].Time == Time)
 	{
 		const CKey& Key = Keys[i];
 		Out.set(Key.Value.x, Key.Value.y, Key.Value.z, Key.Value.w);
@@ -73,7 +73,7 @@ void CKeyframeTrack::Sample(float Time, quaternion& Out)
 {
 	n_assert(Time >= 0.f); // && Time <= Clip->Duration
 
-	if (!Keys.Size())
+	if (!Keys.GetCount())
 	{
 		Out.set(ConstValue.x, ConstValue.y, ConstValue.z, ConstValue.w);
 		return;
@@ -82,12 +82,12 @@ void CKeyframeTrack::Sample(float Time, quaternion& Out)
 	//!!!perform binary search for the closest less or equal
 	//???or search from last key in direction dependent on Time - LastTime sign?
 	int i = 0;
-	for (; i < Keys.Size(); ++i)
+	for (; i < Keys.GetCount(); ++i)
 		if (Keys[i].Time > Time) break;
 	--i;
 
 	// Extend the first key back to the 0 and the last key forward to the clip duration
-	if (i < 0 || i == Keys.Size() - 1 || Keys[i].Time == Time)
+	if (i < 0 || i == Keys.GetCount() - 1 || Keys[i].Time == Time)
 	{
 		const CKey& Key = Keys[i];
 		Out.set(Key.Value.x, Key.Value.y, Key.Value.z, Key.Value.w);

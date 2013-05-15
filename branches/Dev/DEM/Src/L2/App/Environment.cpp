@@ -1,6 +1,6 @@
 #include "Environment.h"
 
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Game/Mgr/EnvQueryManager.h>
 #include <Game/Mgr/FocusManager.h>
 #include <Game/Mgr/StaticEnvManager.h>
@@ -32,14 +32,14 @@ bool CEnvironment::InitCore()
 	DataServer.Create();
 
 	n_new(Core::CLogger);
-	CoreLogger->Open((AppName + " - " + AppVersion).Get());
+	CoreLogger->Open((AppName + " - " + AppVersion).CStr());
 
 	if (!ProjDir.IsValid()) ProjDir = DataSrv->GetAssign("home");
-	DataSrv->SetAssign("proj", ProjDir);
+	IOSrv->SetAssign("proj", ProjDir);
 
 	nString AppData;
-	AppData.Format("appdata:%s/%s", AppVendor.Get(), AppName.Get());
-	DataSrv->SetAssign("appdata", DataSrv->ManglePath(AppData));
+	AppData.Format("appdata:%s/%s", AppVendor.CStr(), AppName.CStr());
+	IOSrv->SetAssign("appdata", IOSrv->ManglePath(AppData));
 
 	OK;
 }
@@ -79,8 +79,8 @@ bool CEnvironment::InitEngine()
 	if (!LoaderServer->Open()) FAIL;
 
 	RenderServer.Create();
-	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.Get());
-	RenderServer->GetDisplay().SetWindowIcon(IconName.Get());
+	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.CStr());
+	RenderServer->GetDisplay().SetWindowIcon(IconName.CStr());
 	RenderServer->GetDisplay().RequestDisplayMode(DisplayMode);
 	if (!RenderServer->Open()) FAIL;
 
@@ -100,9 +100,9 @@ bool CEnvironment::InitEngine()
 	AudioServer.Create();
 	AudioServer->Open();
 	//nString TablePath = "data:tables/sound.xml";
-	//if (DataSrv->FileExists(TablePath))
+	//if (IOSrv->FileExists(TablePath))
 	//	AudioServer->OpenWaveBank(TablePath);
-	//else n_printf("Warning: '%s' doesn't exist!\n", TablePath.Get());
+	//else n_printf("Warning: '%s' doesn't exist!\n", TablePath.CStr());
 
 	VideoServer.Create();
 	VideoServer->Open();
@@ -119,10 +119,10 @@ void CEnvironment::ReleaseEngine()
 	DbgSrv->AllowUI(false);
 	UIServer = NULL;
 
-	if (VideoServer.isvalid() && VideoServer->IsOpen()) VideoServer->Close();
+	if (VideoServer.IsValid() && VideoServer->IsOpen()) VideoServer->Close();
 	VideoServer = NULL;
 
-	if (AudioServer.isvalid() && AudioServer->IsOpen()) AudioServer->Close();
+	if (AudioServer.IsValid() && AudioServer->IsOpen()) AudioServer->Close();
 	AudioServer = NULL;
 
 	DD->Close();
@@ -130,13 +130,13 @@ void CEnvironment::ReleaseEngine()
 
 	SceneServer = NULL;
 
-	if (RenderServer.isvalid() && RenderServer->IsOpen()) RenderServer->Close();
+	if (RenderServer.IsValid() && RenderServer->IsOpen()) RenderServer->Close();
 	RenderServer = NULL;
 
-	if (InputServer.isvalid() && InputServer->IsOpen()) InputServer->Close();
+	if (InputServer.IsValid() && InputServer->IsOpen()) InputServer->Close();
 	InputServer = NULL;
 
-	if (LoaderServer.isvalid() && LoaderServer->IsOpen()) LoaderServer->Close();
+	if (LoaderServer.IsValid() && LoaderServer->IsOpen()) LoaderServer->Close();
 	LoaderServer = NULL;
 
 	EntityFct->Release();
@@ -144,7 +144,7 @@ void CEnvironment::ReleaseEngine()
 	DBServer = NULL;
 	DebugServer = NULL;
 
-	if (TimeServer.isvalid() && TimeServer->IsOpen()) TimeServer->Close();
+	if (TimeServer.IsValid() && TimeServer->IsOpen()) TimeServer->Close();
 	TimeServer = NULL;
 
 	ScriptServer = NULL;
@@ -154,21 +154,16 @@ void CEnvironment::ReleaseEngine()
 
 bool CEnvironment::InitGameSystem()
 {
-	PhysicsServer = Physics::CPhysicsServer::Create();
+	PhysicsServer.Create();
 	PhysicsServer->Open();
 	
-	GameServer = Game::CGameServer::Create();
+	GameServer.Create();
 	GameServer->Open();
-
-	GameServer->AttachManager(Game::CEntityManager::Create());
-	GameServer->AttachManager(Game::CStaticEnvManager::Create());
-	GameServer->AttachManager(Game::CEnvQueryManager::Create());
-	GameServer->AttachManager(Game::CFocusManager::Create());
 
 	AIServer = AI::CAIServer::Create();
 
 	Data::PParams ActTpls = DataSrv->LoadHRD("data:tables/AIActionTpls.hrd");
-	if (ActTpls.isvalid())
+	if (ActTpls.IsValid())
 	{
 		for (int i = 0; i < ActTpls->GetCount(); ++i)
 		{
@@ -181,7 +176,7 @@ bool CEnvironment::InitGameSystem()
 	// Smart object actions
 	//???Load from DB?
 	Data::PParams SOActTpls = DataSrv->LoadHRD("data:tables/AISOActionTpls.hrd");
-	if (SOActTpls.isvalid())
+	if (SOActTpls.IsValid())
 		for (int i = 0; i < SOActTpls->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SOActTpls->Get(i);
@@ -196,7 +191,6 @@ void CEnvironment::ReleaseGameSystem()
 {
 	AIServer = NULL;
 	
-	GameServer->RemoveAllManagers();
 	GameServer->Close();
 	GameServer = NULL;
 

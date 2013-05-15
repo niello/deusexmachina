@@ -3,11 +3,12 @@
 #include <Video/OGGTheoraPlayer.h>
 #include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
+#include <Core/CoreServer.h>
 
 namespace Video
 {
-ImplementRTTI(Video::CVideoServer, Core::CRefCounted);
+__ImplementClassNoFactory(Video::CVideoServer, Core::CRefCounted);
 __ImplementSingleton(Video::CVideoServer);
 
 CVideoServer::CVideoServer():
@@ -45,7 +46,7 @@ bool CVideoServer::Open()
 void CVideoServer::Close()
 {
 	n_assert(_IsOpen);
-	while (Players.Size() > 0) DeleteVideoPlayer(Players.Back());
+	while (Players.GetCount() > 0) DeleteVideoPlayer(Players.Back());
 	if (_IsPlaying) Stop();
 	_IsOpen = false;
 }
@@ -60,11 +61,11 @@ void CVideoServer::Trigger()
 	// Rewind players on time reset
 	// Now can't happen due to the wrapping in the TimeSrv
 	if (FrameTime < 0.f)
-		for (int i = 0; i < Players.Size(); ++i)
+		for (int i = 0; i < Players.GetCount(); ++i)
 			if (Players[i]->IsOpen()) Players[i]->Rewind();
 
 	//???else? see right above.
-	for (int i = 0; i < Players.Size(); ++i)
+	for (int i = 0; i < Players.GetCount(); ++i)
 		if (Players[i]->IsOpen()) Players[i]->Decode(FrameTime);
 
 	if (_IsPlaying)
@@ -99,12 +100,12 @@ bool CVideoServer::PlayFile(const char* pFileName)
 	}
 
 	wchar_t WidePath[N_MAXPATH];
-	nString Path = DataSrv->ManglePath(pFileName);
-	mbstowcs(WidePath, Path.Get(), Path.Length() + 1);
+	nString Path = IOSrv->ManglePath(pFileName);
+	mbstowcs(WidePath, Path.CStr(), Path.Length() + 1);
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, NULL)))
 	{
-		n_error("CVideoServer::PlayFile(): could not render file '%s'", Path.Get());
+		n_error("CVideoServer::PlayFile(): could not render file '%s'", Path.CStr());
 		FAIL;
 	}
 
@@ -181,7 +182,7 @@ CVideoPlayer* CVideoServer::NewVideoPlayer(const nString& Name)
 void CVideoServer::DeleteVideoPlayer(CVideoPlayer* pPlayer)
 {
 	n_assert(pPlayer);
-	for (int i = 0; i < Players.Size(); i++)
+	for (int i = 0; i < Players.GetCount(); i++)
 		if (Players[i] == pPlayer)
 		{
 			Players.Erase(i);

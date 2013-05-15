@@ -1,6 +1,6 @@
 #include "PropTransitionZone.h"
 
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Loading/LoaderServer.h>
 #include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
@@ -24,10 +24,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropTransitionZone, Game::CProperty);
-ImplementFactory(Properties::CPropTransitionZone);
-ImplementPropertyStorage(CPropTransitionZone, 8);
-RegisterProperty(CPropTransitionZone);
+__ImplementClass(Properties::CPropTransitionZone, 'PRTZ', Game::CProperty);
+__ImplementPropertyStorage(CPropTransitionZone);
 
 void CPropTransitionZone::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
@@ -55,7 +53,7 @@ void CPropTransitionZone::Deactivate()
 bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CEntity* pActorEnt = EntityMgr->GetEntityByID(P->Get<CStrID>(CStrID("Actor")));
+	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
 	n_assert(pActorEnt);
 
 	const nString& LevelID = GetEntity()->Get<nString>(Attr::TargetLevelID);
@@ -68,7 +66,7 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 		matrix44 Tfm;
 		if (EntityFct->GetEntityAttribute<matrix44>(DestPt, Attr::Transform, Tfm))
 			pActorEnt->Set<matrix44>(Attr::Transform, Rotate180 * Tfm); //???or fire SetTransform?
-		else n_printf("Travel, Warning: destination point '%s' not found\n", DestPt.Get());
+		else n_printf("Travel, Warning: destination point '%s' not found\n", DestPt.CStr());
 	}
 
 	pActorEnt->Set<nString>(Attr::LevelID, LevelID);

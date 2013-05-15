@@ -44,8 +44,7 @@ using namespace Data;
 
 class CScriptObject: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CScriptObject);
+	__DeclareClass(CScriptObject);
 
 protected:
 
@@ -100,7 +99,7 @@ public:
 	virtual bool	SetField(LPCSTR Key, const CData& Value) { FAIL; }
 };
 
-RegisterFactory(CScriptObject);
+__RegisterClassInFactory(CScriptObject);
 
 typedef Ptr<CScriptObject> PScriptObject;
 

@@ -11,8 +11,7 @@ namespace Story
 
 class CDlgNodeRandom: public CDlgNode
 {
-	DeclareRTTI;
-	DeclareFactory(CDlgNodeRandom);
+	__DeclareClass(CDlgNodeRandom);
 
 public:
 
@@ -20,7 +19,7 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-RegisterFactory(CDlgNodeRandom);
+__RegisterClassInFactory(CDlgNodeRandom);
 
 }
 
