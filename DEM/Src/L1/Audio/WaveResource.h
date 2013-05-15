@@ -13,8 +13,8 @@
 //
 //class CWaveResource: public Core::CRefCounted
 //{
-//	DeclareRTTI;
-//	DeclareFactory(CWaveResource);
+//	__DeclareClassNoFactory;
+//	__DeclareClass(CWaveResource);
 //
 //private:
 //
@@ -31,13 +31,13 @@
 //	void			SetName(const nString& NewName) { n_assert(NewName.IsValid()); Name = NewName; }
 //	const nString&	GetName() const { return Name; }
 //	void			AddSoundObject(nSound3* pSound) { n_assert(pSound); Sounds.Append(pSound); }
-//	int				GetNumSoundObjects() const { return Sounds.Size(); }
+//	int				GetNumSoundObjects() const { return Sounds.GetCount(); }
 //	nSound3*			GetSoundObjectAt(int Idx) const { return Sounds[Idx]; }
-//	nSound3*			GetRandomSoundObject() const { return Sounds[rand() % Sounds.Size()]; }
+//	nSound3*			GetRandomSoundObject() const { return Sounds[rand() % Sounds.GetCount()]; }
 //	bool			IsPlaying() const;
 //};
 //
-//RegisterFactory(CWaveResource);
+//__RegisterClassInFactory(CWaveResource);
 //
 //}
 //

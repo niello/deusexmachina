@@ -19,7 +19,7 @@ int CPropSmartObject_SetState(lua_State* l)
 {
 	//args: EntityScriptObject's this table, State ID
 	SETUP_ENT_SI_ARGS(2);
-	This->GetEntity()->FindProperty<CPropSmartObject>()->SetState(CStrID(lua_tostring(l, 2)));
+	This->GetEntity()->GetProperty<CPropSmartObject>()->SetState(CStrID(lua_tostring(l, 2)));
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -29,7 +29,7 @@ int CPropSmartObject_GetState(lua_State* l)
 	//args: EntityScriptObject's this table
 	//ret:  State ID
 	SETUP_ENT_SI_ARGS(1);
-	lua_pushstring(l, This->GetEntity()->FindProperty<CPropSmartObject>()->GetCurrState().CStr());
+	lua_pushstring(l, This->GetEntity()->GetProperty<CPropSmartObject>()->GetCurrState().CStr());
 	return 1;
 }
 //---------------------------------------------------------------------
@@ -39,7 +39,7 @@ int CPropSmartObject_IsInState(lua_State* l)
 	//args: EntityScriptObject's this table, State ID
 	//ret:  bool is in state
 	SETUP_ENT_SI_ARGS(1);
-	CStrID State = This->GetEntity()->FindProperty<CPropSmartObject>()->GetCurrState();
+	CStrID State = This->GetEntity()->GetProperty<CPropSmartObject>()->GetCurrState();
 	lua_pushboolean(l, State == lua_tostring(l, 2));
 	return 1;
 }
@@ -50,7 +50,7 @@ int CPropSmartObject_EnableAction(lua_State* l)
 	//args: EntityScriptObject's this table, Action ID, [Enabled = true]
 	SETUP_ENT_SI_ARGS(2);
 	bool Enable = (ArgCount > 2) ? !!lua_toboolean(l, 3) : true;
-	This->GetEntity()->FindProperty<CPropSmartObject>()->EnableAction(CStrID(lua_tostring(l, 2)), Enable);
+	This->GetEntity()->GetProperty<CPropSmartObject>()->EnableAction(CStrID(lua_tostring(l, 2)), Enable);
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -60,7 +60,7 @@ int CPropSmartObject_IsActionEnabled(lua_State* l)
 	//args: EntityScriptObject's this table, Action ID
 	//ret:  bool is enabled
 	SETUP_ENT_SI_ARGS(2);
-	lua_pushboolean(l, This->GetEntity()->FindProperty<CPropSmartObject>()->IsActionEnabled(CStrID(lua_tostring(l, 2))));
+	lua_pushboolean(l, This->GetEntity()->GetProperty<CPropSmartObject>()->IsActionEnabled(CStrID(lua_tostring(l, 2))));
 	return 1;
 }
 //---------------------------------------------------------------------

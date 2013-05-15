@@ -12,8 +12,7 @@ namespace Physics
 
 class ÑHingeJoint: public CJoint
 {
-	DeclareRTTI;
-	DeclareFactory(ÑHingeJoint);
+	__DeclareClass(ÑHingeJoint);
 
 public:
 
@@ -29,7 +28,7 @@ public:
 	virtual void RenderDebug();
 };
 
-RegisterFactory(ÑHingeJoint);
+__RegisterClassInFactory(ÑHingeJoint);
 
 }
 

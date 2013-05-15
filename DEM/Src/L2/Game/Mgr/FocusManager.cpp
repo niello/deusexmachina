@@ -2,7 +2,7 @@
 
 #include <Input/Prop/PropInput.h>
 #include <Camera/Prop/PropCamera.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Input/InputServer.h>
 #include <Loading/LoaderServer.h>
@@ -21,8 +21,8 @@ END_ATTRS_REGISTRATION
 
 namespace Game
 {
-ImplementRTTI(Game::CFocusManager, Game::CManager);
-ImplementFactory(Game::CFocusManager);
+__ImplementClassNoFactory(Game::CFocusManager, Game::CManager);
+__ImplementClass(Game::CFocusManager);
 
 CFocusManager* CFocusManager::Singleton = NULL;
 
@@ -37,10 +37,10 @@ CFocusManager::CFocusManager()
 
 CFocusManager::~CFocusManager()
 {
-	n_assert(!InputFocusEntity.isvalid());
-	n_assert(!CameraFocusEntity.isvalid());
-	n_assert(!NewInputFocusEntity.isvalid());
-	n_assert(!NewCameraFocusEntity.isvalid());
+	n_assert(!InputFocusEntity.IsValid());
+	n_assert(!CameraFocusEntity.IsValid());
+	n_assert(!NewInputFocusEntity.IsValid());
+	n_assert(!NewCameraFocusEntity.IsValid());
 	n_assert(Singleton);
 	Singleton = NULL;
 }
@@ -64,9 +64,33 @@ void CFocusManager::Deactivate()
 }
 //---------------------------------------------------------------------
 
+// Actually switch focus entities. A focus entity switch doesn't happen immediately, but only once per frame.
+// This is to prevent chain-reactions and circular reactions when 2 or more entities think they have the
+// focus in a single frame.
 bool CFocusManager::OnFrame(const Events::CEventBase& Event)
 {
-	SwitchFocusEntities();
+	if (NewInputFocusEntity.IsValid())
+	{
+		n_assert(NewInputFocusEntity->HasProperty<CPropInput>());
+		InputFocusEntity = NewInputFocusEntity;
+		NewInputFocusEntity = NULL;
+#ifndef _EDITOR
+		LoaderSrv->SetGlobal(Attr::InputFocus, (CStrID)InputFocusEntity->GetUID());
+#endif
+		InputFocusEntity->FireEvent(CStrID("OnObtainInputFocus"));
+	}
+
+	if (NewCameraFocusEntity.IsValid())
+	{
+		n_assert(NewCameraFocusEntity->HasProperty<CPropCamera>());
+		CameraFocusEntity = NewCameraFocusEntity;
+		NewCameraFocusEntity = NULL;
+#ifndef _EDITOR
+		LoaderSrv->SetGlobal(Attr::CameraFocus, (CStrID)CameraFocusEntity->GetUID());
+#endif
+		CameraFocusEntity->FireEvent(CStrID("OnObtainCameraFocus"));
+	}
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -74,8 +98,8 @@ bool CFocusManager::OnFrame(const Events::CEventBase& Event)
 bool CFocusManager::OnLoad(const Events::CEventBase& Event)
 {
 #ifndef _EDITOR
-	SetInputFocusEntity(EntityMgr->GetEntityByID(LoaderSrv->GetGlobal<CStrID>(Attr::InputFocus), true));
-	SetCameraFocusEntity(EntityMgr->GetEntityByID(LoaderSrv->GetGlobal<CStrID>(Attr::CameraFocus), true));
+	SetInputFocusEntity(EntityMgr->GetEntity(LoaderSrv->GetGlobal<CStrID>(Attr::InputFocus), true));
+	SetCameraFocusEntity(EntityMgr->GetEntity(LoaderSrv->GetGlobal<CStrID>(Attr::CameraFocus), true));
 #endif
 	OK;
 }
@@ -90,9 +114,9 @@ void CFocusManager::SetToNextEntity(bool CameraFocus, bool InputFocus)
 	nArray<PEntity>::iterator Iter = Entities.Begin();
 	if (CameraFocus)
 	{
-		if (CameraFocusEntity.isvalid()) Iter = Entities.Find(CameraFocusEntity);
+		if (CameraFocusEntity.IsValid()) Iter = Entities.Find(CameraFocusEntity);
 	}
-	else if (InputFocusEntity.isvalid()) Iter = Entities.Find(InputFocusEntity);
+	else if (InputFocusEntity.IsValid()) Iter = Entities.Find(InputFocusEntity);
 
 	nArray<PEntity>::iterator Start = Iter;
     if (Iter) do
@@ -144,41 +168,12 @@ bool CFocusManager::SwitchToFirstCameraFocusEntity()
 }
 //---------------------------------------------------------------------
 
-// Actually switch focus entities. A focus entity switch doesn't happen immediately, but only once per frame.
-// This is to prevent chain-reactions and circular reactions when 2 or more entities think they have the
-// focus in a single frame.
-void CFocusManager::SwitchFocusEntities()
-{
-	if (NewInputFocusEntity.isvalid())
-	{
-		n_assert(NewInputFocusEntity->HasProperty<CPropInput>());
-		InputFocusEntity = NewInputFocusEntity;
-		NewInputFocusEntity = NULL;
-#ifndef _EDITOR
-		LoaderSrv->SetGlobal(Attr::InputFocus, (CStrID)InputFocusEntity->GetUID());
-#endif
-		InputFocusEntity->FireEvent(CStrID("OnObtainInputFocus"));
-	}
-
-	if (NewCameraFocusEntity.isvalid())
-	{
-		n_assert(NewCameraFocusEntity->HasProperty<CPropCamera>());
-		CameraFocusEntity = NewCameraFocusEntity;
-		NewCameraFocusEntity = NULL;
-#ifndef _EDITOR
-		LoaderSrv->SetGlobal(Attr::CameraFocus, (CStrID)CameraFocusEntity->GetUID());
-#endif
-		CameraFocusEntity->FireEvent(CStrID("OnObtainCameraFocus"));
-	}
-}
-//---------------------------------------------------------------------
-
 // Set input focus pEntity to the given pEntity. The pEntity pointer can be NULL, this will clear the
 // current input focus. The pEntity must have an CPropInput attached for this to work.
 void CFocusManager::SetInputFocusEntity(CEntity* pEntity)
 {
-	if (InputFocusEntity.get_unsafe() == pEntity) return;
-	if (InputFocusEntity.isvalid()) InputFocusEntity->FireEvent(CStrID("OnLoseInputFocus"));
+	if (InputFocusEntity.GetUnsafe() == pEntity) return;
+	if (InputFocusEntity.IsValid()) InputFocusEntity->FireEvent(CStrID("OnLoseInputFocus"));
 	InputFocusEntity = NULL;
 	NewInputFocusEntity = pEntity;
 }
@@ -188,8 +183,8 @@ void CFocusManager::SetInputFocusEntity(CEntity* pEntity)
 // current camera focus. The pEntity must have a CPropCamera attached for this to work.
 void CFocusManager::SetCameraFocusEntity(CEntity* pEntity)
 {
-	if (CameraFocusEntity.get_unsafe() == pEntity) return;
-	if (CameraFocusEntity.isvalid()) CameraFocusEntity->FireEvent(CStrID("OnLoseCameraFocus"));
+	if (CameraFocusEntity.GetUnsafe() == pEntity) return;
+	if (CameraFocusEntity.IsValid()) CameraFocusEntity->FireEvent(CStrID("OnLoseCameraFocus"));
 	CameraFocusEntity = NULL;
 	NewCameraFocusEntity = pEntity;
 }

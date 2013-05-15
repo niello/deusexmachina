@@ -44,7 +44,7 @@ bool CDebugDraw::Open()
 
 	VC.Erase(0);
 	InstVL = RenderSrv->GetVertexLayout(VC);
-	InstanceBuffer.Create();
+	InstanceBuffer = n_new(CVertexBuffer);
 
 	VC.Clear();
 	pCmp = VC.Reserve(2);
@@ -78,8 +78,7 @@ bool CDebugDraw::Open()
 
 	n_assert(VCount < 65536); // 16-bit IB
 
-	PVertexBuffer VB;
-	VB.Create();
+	PVertexBuffer VB = n_new(CVertexBuffer);
 	if (!VB->Create(ShapeVL, VCount, Usage_Immutable, CPU_NoAccess))
 	{
 		for (int i = 0; i < ShapeCount; ++i)
@@ -87,8 +86,7 @@ bool CDebugDraw::Open()
 		FAIL;
 	}
 
-	PIndexBuffer IB;
-	IB.Create();
+	PIndexBuffer IB = n_new(CIndexBuffer);
 	if (!IB->Create(CIndexBuffer::Index16, ICount, Usage_Immutable, CPU_NoAccess))
 	{
 		for (int i = 0; i < ShapeCount; ++i)
@@ -171,11 +169,11 @@ void CDebugDraw::RenderGeometry()
 	for (int i = 0; i < ShapeCount; ++i)
 	{
 		nArray<CDDShapeInst>& Insts = ShapeInsts[i];
-		if (!Insts.Size()) continue;
+		if (!Insts.GetCount()) continue;
 
 		RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
 
-		DWORD Remain = Insts.Size();
+		DWORD Remain = Insts.GetCount();
 		while (Remain > 0)
 		{
 			DWORD Count = n_min(MaxShapesPerDIP, Remain);
@@ -199,7 +197,7 @@ void CDebugDraw::RenderGeometry()
 
 	RenderSrv->SetVertexLayout(PrimVL);
 
-	if (Lines.Size() || Tris.Size())
+	if (Lines.GetCount() || Tris.GetCount())
 	{
 		DWORD FeatFlagDefault = RenderSrv->ShaderFeatureStringToMask("Default");
 		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlagDefault));
@@ -207,15 +205,15 @@ void CDebugDraw::RenderGeometry()
 		n_assert(ShapeShader->Begin(true) == 1);
 		ShapeShader->BeginPass(0);
 
-		if (Tris.Size())
+		if (Tris.GetCount())
 		{
-			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST, Tris.Size() / 3, Tris.Begin(), sizeof(CDDVertex));
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST, Tris.GetCount() / 3, Tris.Begin(), sizeof(CDDVertex));
 			Tris.Clear();
 		}
 
-		if (Lines.Size())
+		if (Lines.GetCount())
 		{
-			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_LINELIST, Lines.Size() / 2, Lines.Begin(), sizeof(CDDVertex));
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_LINELIST, Lines.GetCount() / 2, Lines.Begin(), sizeof(CDDVertex));
 			Lines.Clear();
 		}
 
@@ -223,7 +221,7 @@ void CDebugDraw::RenderGeometry()
 		ShapeShader->End();
 	}
 
-	if (Points.Size())
+	if (Points.GetCount())
 	{
 		DWORD FeatFlag = RenderSrv->ShaderFeatureStringToMask("Point");
 		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlag));
@@ -231,7 +229,7 @@ void CDebugDraw::RenderGeometry()
 		n_assert(ShapeShader->Begin(true) == 1);
 		ShapeShader->BeginPass(0);
 
-		RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.Size(), Points.Begin(), sizeof(CDDVertex));
+		RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.GetCount(), Points.Begin(), sizeof(CDDVertex));
 		Points.Clear();
 
 		ShapeShader->EndPass();
@@ -242,12 +240,12 @@ void CDebugDraw::RenderGeometry()
 
 void CDebugDraw::RenderText()
 {
-	if (!Texts.Size() || !pD3DXFont) return;
+	if (!Texts.GetCount() || !pD3DXFont) return;
 
 	pD3DXSprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE);
 
 	RECT r;
-	for (int i = 0; i < Texts.Size(); ++i)
+	for (int i = 0; i < Texts.GetCount(); ++i)
 	{
 		const CDDText& Text = Texts[i];
 
@@ -278,7 +276,7 @@ void CDebugDraw::RenderText()
 
 		D3DCOLOR Color = D3DCOLOR_COLORVALUE(Text.Color.x, Text.Color.y, Text.Color.z, Text.Color.w);
 
-		pD3DXFont->DrawTextA(pD3DXSprite, Text.Text.Get(), -1, &r, Fmt, Color);
+		pD3DXFont->DrawTextA(pD3DXSprite, Text.Text.CStr(), -1, &r, Fmt, Color);
 	}
 
 	pD3DXSprite->End();

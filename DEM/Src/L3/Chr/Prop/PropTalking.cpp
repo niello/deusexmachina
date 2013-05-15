@@ -1,8 +1,8 @@
 #include "PropTalking.h"
 
-#include <Story/Dlg/DlgSystem.h>
+#include <Story/Dlg/DialogueManager.h>
 #include <Loading/EntityFactory.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <DB/DBServer.h>
 #include <Events/EventManager.h>
 
@@ -17,9 +17,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropTalking, Game::CProperty);
-ImplementFactory(Properties::CPropTalking);
-ImplementPropertyStorage(CPropTalking, 32);
+__ImplementClassNoFactory(Properties::CPropTalking, Game::CProperty);
+__ImplementClass(Properties::CPropTalking);
+__ImplementPropertyStorage(CPropTalking, 32);
 RegisterProperty(CPropTalking);
 
 void CPropTalking::Activate()
@@ -27,7 +27,7 @@ void CPropTalking::Activate()
 	Game::CProperty::Activate();
 
 	const nString& Dlg = GetEntity()->Get<nString>(Attr::Dialogue);
-	if (Dlg.IsValid()) Dialogue = DlgSys->GetDialogue(Dlg);
+	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTalking, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(Talk, CPropTalking, OnTalk);
@@ -71,8 +71,8 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 bool CPropTalking::OnTalk(const Events::CEventBase& Event)
 {
 	PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CEntity* pActorEnt = EntityMgr->GetEntityByID(P->Get<CStrID>(CStrID("Actor"), CStrID::Empty));
-	DlgSys->StartDialogue(GetEntity(), pActorEnt, true);
+	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor"), CStrID::Empty));
+	DlgMgr->StartDialogue(GetEntity(), pActorEnt, true);
 	OK;
 }
 //---------------------------------------------------------------------

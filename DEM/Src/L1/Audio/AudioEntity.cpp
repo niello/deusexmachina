@@ -5,8 +5,7 @@
 
 namespace Audio
 {
-ImplementRTTI(Audio::CAudioEntity, Core::CRefCounted);
-ImplementFactory(Audio::CAudioEntity);
+__ImplementClass(Audio::CAudioEntity, 'AUEN', Core::CRefCounted);
 
 CAudioEntity::CAudioEntity():
 	Volume(1.0f),
@@ -31,11 +30,11 @@ void CAudioEntity::Activate()
 {
 	n_assert(!Flags.Is(IS_ACTIVE));
 	n_assert(RsrcName.IsValid());
-	//n_assert(!refRsrc.isvalid());
+	//n_assert(!refRsrc.IsValid());
 
 	//???!!!rename to GetSoundResource?!
-	//refRsrc = (CSoundResource*)AudioSrv->NewSoundResource(RsrcName.Get());
-	//n_assert(refRsrc.isvalid());
+	//refRsrc = (CSoundResource*)AudioSrv->NewSoundResource(RsrcName.CStr());
+	//n_assert(refRsrc.IsValid());
 
 	//if (!refRsrc->IsLoaded())
 	//{
@@ -60,7 +59,7 @@ void CAudioEntity::Activate()
 void CAudioEntity::Deactivate()
 {
 	n_assert(Flags.Is(IS_ACTIVE));
-	//n_assert(refRsrc.isvalid());
+	//n_assert(refRsrc.IsValid());
 
 	if (IsPlaying()) Stop();
 
@@ -93,7 +92,7 @@ void CAudioEntity::Start()
 	{
 		// Play as 2D sound
 		if (FAILED(pSound->Play(Priority, PlaybackFlags, GetDSVolume(), 0, 0, SoundIdx)))
-			n_printf("Sound: failed to start 2D sound '%s'\n", RsrcName.Get());
+			n_printf("Sound: failed to start 2D sound '%s'\n", RsrcName.CStr());
 	}
 	else
 	{
@@ -101,7 +100,7 @@ void CAudioEntity::Start()
 		// Play as 3D sound
 		PlaybackFlags |= DSBPLAY_TERMINATEBY_PRIORITY | DSBPLAY_TERMINATEBY_DISTANCE;
 		if (FAILED(pSound->Play3D(GetDS3DProps(), Priority, PlaybackFlags, GetDSVolume(), 0, SoundIdx)))
-			n_printf("Sound: failed to start 3D sound '%s'\n", RsrcName.Get());
+			n_printf("Sound: failed to start 3D sound '%s'\n", RsrcName.CStr());
 	}
 
 	Flags.Set(IS_FIRST_FRAME);

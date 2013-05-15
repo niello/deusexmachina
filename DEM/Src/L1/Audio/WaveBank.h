@@ -19,8 +19,8 @@
 //
 //class CWaveBank: public Core::CRefCounted
 //{
-//	DeclareRTTI;
-//	DeclareFactory(CWaveBank);
+//	__DeclareClassNoFactory;
+//	__DeclareClass(CWaveBank);
 //
 //private:
 //
@@ -42,14 +42,14 @@
 //	void			AddResource(CWaveResource* pResource);
 //	CWaveResource*	FindResource(const nString& name);
 //	CWaveResource*	GetResourceAt(int Idx) const { return Resources[Idx]; }
-//	int				GetNumResources() const { return Resources.Size(); }
+//	int				GetNumResources() const { return Resources.GetCount(); }
 //
 //	void			SetFilename(const nString& FileName);
 //	const nString&	GetFilename() const { return XMLSheet.GetFilename(); }
 //};
 ////---------------------------------------------------------------------
 //
-//RegisterFactory(CWaveBank);
+//__RegisterClassInFactory(CWaveBank);
 //
 //typedef Ptr<CWaveBank> PWaveBank;
 //

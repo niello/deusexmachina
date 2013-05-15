@@ -15,8 +15,8 @@ extern "C"
 
 namespace Scripting
 {
-ImplementRTTI(Scripting::CEntityScriptObject, CScriptObject);
-ImplementFactory(Scripting::CEntityScriptObject);
+__ImplementClassNoFactory(Scripting::CEntityScriptObject, CScriptObject);
+__ImplementClass(Scripting::CEntityScriptObject);
 
 using namespace Data;
 
@@ -114,7 +114,7 @@ bool CEntityScriptObject::SetField(LPCSTR Key, const CData& Value)
 	{
 		//!!!tmp while no conversion!
 		if (ID->IsA<CStrID>() && Value.IsA<nString>())
-			GetEntity()->Set(ID, CStrID(Value.GetValue<nString>().Get()));
+			GetEntity()->Set(ID, CStrID(Value.GetValue<nString>().CStr()));
 		else if (ID->IsA<int>() && Value.IsA<float>())
 			GetEntity()->Set(ID, (int)Value.GetValue<float>());
 		else if (ID->IsA<float>() && Value.IsA<int>())

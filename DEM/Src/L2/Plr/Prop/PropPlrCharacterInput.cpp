@@ -20,8 +20,8 @@
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropPlrCharacterInput, Properties::CPropInput);
-ImplementFactory(Properties::CPropPlrCharacterInput);
+__ImplementClassNoFactory(Properties::CPropPlrCharacterInput, Properties::CPropInput);
+__ImplementClass(Properties::CPropPlrCharacterInput);
 RegisterProperty(CPropPlrCharacterInput);
 
 using namespace Data;
@@ -97,7 +97,7 @@ bool CPropPlrCharacterInput::OnMouseClick(Input::EMouseButton Button, bool Doubl
     if (EnvQueryMgr->HasMouseIntersection())
     {
 		Game::CEntity* pEnt = EnvQueryMgr->GetEntityUnderMouse();
-		CPropUIControl* pCtl = (pEnt) ? pEnt->FindProperty<CPropUIControl>() : NULL;
+		CPropUIControl* pCtl = (pEnt) ? pEnt->GetProperty<CPropUIControl>() : NULL;
 
 		if (pCtl)
 		{

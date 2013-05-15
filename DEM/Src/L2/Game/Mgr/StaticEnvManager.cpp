@@ -1,11 +1,11 @@
 #include "StaticEnvManager.h"
 
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/Event/SetTransform.h>
 #include <Scene/SceneServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <DB/ValueTable.h>
 
 namespace Attr
@@ -25,26 +25,14 @@ namespace Scene
 
 namespace Game
 {
-__ImplementClass(CStaticEnvManager, 'MENV', Game::CManager);
+__ImplementClassNoFactory(Game::CStaticEnvManager, Core::CRefCounted);
 __ImplementSingleton(CStaticEnvManager);
 
 using namespace Physics;
 
-CStaticEnvManager::CStaticEnvManager()
-{
-	__ConstructSingleton;
-}
-//---------------------------------------------------------------------
-
-CStaticEnvManager::~CStaticEnvManager()
-{
-	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
 bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 {
-	n_assert(Table.isvalid());
+	n_assert(Table.IsValid());
 	n_assert(RowIdx != INVALID_INDEX);
 
 	CEnvObject* pObj = NULL;
@@ -57,23 +45,23 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 		int Idx = Desc->IndexOf(CStrID("Bodies"));
 
 		// If is not a pure collide object, load as a physics entity
-		if (Idx != INVALID_INDEX && Desc->Get<PDataArray>(Idx)->Size() > 0) FAIL;
+		if (Idx != INVALID_INDEX && Desc->Get<PDataArray>(Idx)->GetCount() > 0) FAIL;
 
 		Idx = Desc->IndexOf(CStrID("Shapes"));
 		if (Idx != INVALID_INDEX)
 		{
 			CDataArray& Shapes = *Desc->Get<PDataArray>(Idx);
-			if (Shapes.Size() > 0)
+			if (Shapes.GetCount() > 0)
 			{
 				CStrID UID = Table->Get<CStrID>(Attr::GUID, RowIdx);
 				EnvObjects.Add(UID, CEnvObject()); //!!!unnecessary copying!
 				pObj = &EnvObjects[UID];
 				//InvEntityTfm.invert();
 				
-				for (int i = 0; i < Shapes.Size(); i++)
+				for (int i = 0; i < Shapes.GetCount(); i++)
 				{
 					PParams ShapeDesc = Shapes[i];
-					PShape pShape = (CShape*)CoreFct->Create("Physics::C" + ShapeDesc->Get<nString>(CStrID("Type")));
+					PShape pShape = (CShape*)Factory->Create("Physics::C" + ShapeDesc->Get<nString>(CStrID("Type")));
 					pShape->Init(ShapeDesc);
 					pObj->CollLocalTfm.Append(pShape->GetTransform());// * InvEntityTfm);
 					pShape->SetTransform(pShape->GetTransform() * EntityTfm);
@@ -100,10 +88,10 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 		}
 
 		//???optimize duplicate search?
-		pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), false);
-		pObj->ExistingNode = pObj->Node.isvalid();
-		if (!pObj->ExistingNode) pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), true);
-		n_assert(pObj->Node.isvalid());
+		pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), false);
+		pObj->ExistingNode = pObj->Node.IsValid();
+		if (!pObj->ExistingNode) pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), true);
+		n_assert(pObj->Node.IsValid());
 
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", pObj->Node));
 
@@ -117,7 +105,7 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 bool CStaticEnvManager::EnvObjectExists(CStrID ID) const
 {
 	n_assert(ID.IsValid());
-	return EnvObjects.Contains(ID) || EntityMgr->ExistsEntityByID(ID);
+	return EnvObjects.Contains(ID) || EntityMgr->EntityExists(ID);
 }
 //---------------------------------------------------------------------
 
@@ -125,7 +113,7 @@ bool CStaticEnvManager::IsEntityStatic(CStrID ID) const
 {
 	n_assert(ID.IsValid());
 	if (EnvObjects.Contains(ID)) OK;
-	CEntity* pEnt = EntityMgr->GetEntityByID(ID);
+	CEntity* pEnt = EntityMgr->GetEntity(ID);
 	return pEnt ? IsEntityStatic(*pEnt) : false;
 }
 //---------------------------------------------------------------------
@@ -136,16 +124,16 @@ bool CStaticEnvManager::IsEntityStatic(CEntity& Entity) const
 	nString Value;
 
 	// We have physics bodies that can move us
-	if (Entity.Get<nString>(Attr::Physics, Value) && Value.IsValid())
+	if (Entity.GetAttr<nString>(CStrID("Physics"), Value) && Value.IsValid())
 	{
 		// It uses HRD cache, so it isn't so slow
 		PParams Desc = DataSrv->LoadPRM(nString("physics:") + Value + ".prm");
 		int Idx = Desc->IndexOf(CStrID("Bodies"));
-		if (Idx != INVALID_INDEX && Desc->Get<PDataArray>(Idx)->Size() > 0) FAIL;
+		if (Idx != INVALID_INDEX && Desc->Get<PDataArray>(Idx)->GetCount() > 0) FAIL;
 	}
 
 	// We have animations that can move us
-	if (Entity.Get<nString>(Attr::AnimDesc, Value) && Value.IsValid())
+	if (Entity.GetAttr<nString>(CStrID("AnimDesc"), Value) && Value.IsValid())
 		FAIL;
 
 	OK;
@@ -160,15 +148,15 @@ void CStaticEnvManager::SetEnvObjectTransform(CStrID ID, const matrix44& Tfm)
 	if (Idx != INVALID_INDEX)
 	{
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(Idx);
-		for (int i = 0; i < Obj.Collision.Size(); i++)
+		for (int i = 0; i < Obj.Collision.GetCount(); i++)
 			Obj.Collision[i]->SetTransform(Obj.CollLocalTfm[i] * Tfm);
-		//if (Obj.Node.isvalid()) Obj.Node->SetLocalTransform(Tfm); //???!!!setglobal!
+		//if (Obj.Node.IsValid()) Obj.Node->SetLocalTransform(Tfm); //???!!!setglobal!
 	}
 	else
 	{
 		// Normal entity case
-		Game::PEntity pEnt = EntityMgr->GetEntityByID(ID);
-		if (pEnt.isvalid())
+		Game::PEntity pEnt = EntityMgr->GetEntity(ID);
+		if (pEnt.IsValid())
 			pEnt->FireEvent(Event::SetTransform(Tfm));
 	}
 }
@@ -182,27 +170,23 @@ void CStaticEnvManager::DeleteEnvObject(CStrID ID)
 	if (Idx != INVALID_INDEX)
 	{
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(Idx);
-		for (int j = 0; j < Obj.Collision.Size(); j++)
+		for (int j = 0; j < Obj.Collision.GetCount(); j++)
 			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
-		if (Obj.Node.isvalid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
+		if (Obj.Node.IsValid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 		EnvObjects.EraseAt(Idx);
 	}
-	else
-	{
-		Game::PEntity pEnt = EntityMgr->GetEntityByID(ID);
-		if (pEnt.isvalid()) EntityMgr->RemoveEntity(pEnt);
-	}
+	else EntityMgr->DeleteEntity(ID);
 }
 //---------------------------------------------------------------------
 
 void CStaticEnvManager::ClearStaticEnv()
 {
-	for (int i = 0; i < EnvObjects.Size(); i++)
+	for (int i = 0; i < EnvObjects.GetCount(); i++)
 	{
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(i);
-		for (int j = 0; j < Obj.Collision.Size(); j++)
+		for (int j = 0; j < Obj.Collision.GetCount(); j++)
 			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
-		if (Obj.Node.isvalid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
+		if (Obj.Node.IsValid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 	}
 	EnvObjects.Clear();
 }

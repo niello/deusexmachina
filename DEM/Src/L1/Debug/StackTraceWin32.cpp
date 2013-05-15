@@ -39,7 +39,7 @@ void CStackTraceWin32::WalkStack(HANDLE thread, CONTEXT& context)
 	DWORD strLen = GetModuleFileName(0,  buf, sizeof(buf));
 	nString path = buf;
 	nString dirPath = path.ExtractDirName();
-	SymInitialize(hProcess, (PSTR)dirPath.Get(), true);
+	SymInitialize(hProcess, (PSTR)dirPath.CStr(), true);
 
 	STACKFRAME64 stackFrame = { 0 };
 	stackFrame.AddrPC.Offset    = context.Eip;

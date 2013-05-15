@@ -2,8 +2,8 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Render/RenderServer.h>
-#include <Data/BinaryReader.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/BinaryReader.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Render
 {
@@ -53,11 +53,11 @@ static void SetupVertexComponents(uint Mask, nArray<CVertexComponent>& Component
 
 //!!!can write/use as default mapped reading, when file is read as its whole
 //so there will be two loaders, memory and stream. Memory is faster, stream allows to load very big files.
-bool LoadMeshFromNVX2(Data::CStream& In, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
+bool LoadMeshFromNVX2(IO::CStream& In, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
 {
-	if (!OutMesh.isvalid()) FAIL;
+	if (!OutMesh.IsValid()) FAIL;
 
-	Data::CBinaryReader Reader(In);
+	IO::CBinaryReader Reader(In);
 
 	// NVX2 is always TriList and Index16
 	CNVX2Header Header;
@@ -101,7 +101,7 @@ bool LoadMeshFromNVX2(Data::CStream& In, EUsage Usage, ECPUAccess Access, PMesh 
 
 //!!!OFFLINE+
 //!!!must be offline!
-	In.Seek(VBBegin, Data::SSO_BEGIN);
+	In.Seek(VBBegin, IO::Seek_Begin);
 
 	DWORD ElmCount = Header.numVertices * Header.vertexWidth;
 	float* pVBData = n_new_array(float, ElmCount);
@@ -110,7 +110,7 @@ bool LoadMeshFromNVX2(Data::CStream& In, EUsage Usage, ECPUAccess Access, PMesh 
 	ushort* pIBData = n_new_array(ushort, Header.numIndices);
 	In.Read(pIBData, Header.numIndices * sizeof(short));
 
-	for (int i = 0; i < MeshGroups.Size(); ++i)
+	for (int i = 0; i < MeshGroups.GetCount(); ++i)
 	{
 		CMeshGroup& MeshGroup = MeshGroups[i];
 		MeshGroup.AABB.begin_extend();
@@ -132,8 +132,8 @@ bool LoadMeshFromNVX2(Data::CStream& In, EUsage Usage, ECPUAccess Access, PMesh 
 
 bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
 {
-	Data::CFileStream File;
-	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
+	IO::CFileStream File;
+	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadMeshFromNVX2(File, Usage, Access, OutMesh);
 }
 //---------------------------------------------------------------------

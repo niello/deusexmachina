@@ -2,5 +2,5 @@
 
 namespace Render
 {
-ImplementRTTI(Render::IRenderer, Core::CRefCounted);
+__ImplementClassNoFactory(Render::IRenderer, Core::CRefCounted);
 }

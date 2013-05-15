@@ -61,7 +61,7 @@ public:
     T&			Append(const T& pElm);
     void		AppendArray(const nArray<T>& Other);
 	iterator	Reserve(int num, bool Grow = true);
-	int			Size() const { return Count; }
+	int			GetCount() const { return Count; }
 	int			AllocSize() const { return Allocated; }
     /// set element at Idx, _GrowSize array if necessary
     T& Set(int Idx, const T& pElm);
@@ -74,7 +74,7 @@ public:
     /// return true if array empty
 	bool Empty() const { return !Count; }
     /// erase element equal to arg
-    bool RemoveByValue(const T& pElm);
+    bool RemoveByValue(const T& Elm);
     /// erase element at Idx
     void Erase(int Idx);
     /// quick erase, does not call operator= or destructor

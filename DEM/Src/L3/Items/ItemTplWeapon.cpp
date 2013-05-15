@@ -5,13 +5,13 @@
 
 namespace Items
 {
-//ImplementRTTI(Items::CItemTplWeapon, Items::CItemTpl);
-ImplementFactory(Items::CItemTplWeapon);
+//__ImplementClassNoFactory(Items::CItemTplWeapon, Items::CItemTpl);
+__ImplementClass(Items::CItemTplWeapon);
 
 void CItemTplWeapon::Init(CStrID SID, const CParams& Params)
 {
-	WpnClass = CStrID(Params.Get<nString>(CStrID("WpnClass"), "").Get());
-	AmmoItemID = CStrID(Params.Get<nString>(CStrID("AmmoItemID"), "").Get());
+	WpnClass = CStrID(Params.Get<nString>(CStrID("WpnClass"), "").CStr());
+	AmmoItemID = CStrID(Params.Get<nString>(CStrID("AmmoItemID"), "").CStr());
 	RangeMin = Params.Get<float>(CStrID("RangeMin"), 0.f);
 	RangeMax = Params.Get<float>(CStrID("RangeMax"), 0.f);
 	ROF = Params.Get<float>(CStrID("ROF"), 0.f);

@@ -27,7 +27,7 @@
 
 namespace UI
 {
-ImplementRTTI(UI::CUIServer, Core::CRefCounted);
+__ImplementClassNoFactory(UI::CUIServer, Core::CRefCounted);
 __ImplementSingleton(UI::CUIServer);
 
 CUIServer::CUIServer()
@@ -91,14 +91,14 @@ CUIServer::~CUIServer()
 }
 //---------------------------------------------------------------------
 
-void CUIServer::Trigger()
+void CUIServer::Trigger(float FrameTime)
 {
 	nArray<CEGUI::Event::Connection>::iterator It = ConnectionsToDisconnect.Begin();
 	for (; It != ConnectionsToDisconnect.End(); It++)
 		(*It)->disconnect();
 	ConnectionsToDisconnect.Clear();
 
-	CEGUISystem->injectTimePulse((float)FrameTime);
+	CEGUISystem->injectTimePulse(FrameTime);
 
 	EventMgr->FireEvent(CStrID("OnUIUpdate"));
 }
@@ -181,14 +181,14 @@ bool CUIServer::RegisterScreen(CStrID Name, CWindow* pScreen)
 
 void CUIServer::LoadScheme(const nString& ResourceFile)
 {
-	CEGUI::SchemeManager::getSingleton().create(ResourceFile.Get());
+	CEGUI::SchemeManager::getSingleton().create(ResourceFile.CStr());
 }
 //---------------------------------------------------------------------
 
 //CEGUI::Font& 
 void CUIServer::LoadFont(const nString& ResourceFile)
 {
-	CEGUI::FontManager::getSingleton().create(ResourceFile.Get());
+	CEGUI::FontManager::getSingleton().create(ResourceFile.CStr());
 }
 //---------------------------------------------------------------------
 
@@ -235,7 +235,7 @@ void CUIServer::HideGUI()
 
 void CUIServer::SetDefaultMouseCursor(const nString& schemeName, const nString& cursorName)
 {
-	CEGUISystem->setDefaultMouseCursor(schemeName.Get(), cursorName.Get());
+	CEGUISystem->setDefaultMouseCursor(schemeName.CStr(), cursorName.CStr());
 }
 //---------------------------------------------------------------------
 

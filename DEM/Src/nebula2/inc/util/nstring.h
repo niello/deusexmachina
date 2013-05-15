@@ -38,13 +38,13 @@ public:
 	nString(): pString(NULL), Len(0), LocalLen(0) {}
 	nString(const char* pSrc): pString(NULL), Len(0), LocalLen(0) { Set(pSrc); }
 	nString(const char* pSrc, uint SrcLength): pString(NULL), Len(0), LocalLen(0) { Set(pSrc, SrcLength); }
-	nString(const nString& Other): pString(NULL), Len(0) { pLocalString[0] = 0; Set(Other.Get(), Other.Length()); }
+	nString(const nString& Other): pString(NULL), Len(0) { pLocalString[0] = 0; Set(Other.CStr(), Other.Length()); }
 	~nString() { Clear(); }
 
 	void			Set(const char* pSrc, int SrcLength);
 	void			Set(const char* pSrc) { Set(pSrc, pSrc ? (int)strlen(pSrc) : 0); }
 	void			Append(const char* str) { n_assert(str); AppendRange(str, strlen(str)); }
-	void			Append(const nString& Str) { AppendRange(Str.Get(), Str.Length()); }
+	void			Append(const nString& Str) { AppendRange(Str.CStr(), Str.Length()); }
 	void			AppendRange(const char* str, uint CharCount);
 	void			AppendInt(int val) { nString str; str.SetInt(val); Append(str); }
 	void			AppendFloat(float val) { nString str; str.SetFloat(val); Append(str); }
@@ -58,7 +58,7 @@ public:
 	int				FindStringIndex(const nString& v, int StartIdx) const;
 	int				FindCharIndex(unsigned char c, int StartIdx) const;
 	void			TerminateAtIndex(int Idx);
-	bool			ContainsCharFromSet(const char* CharSet) const { return CharSet && !!strpbrk(Get(), CharSet); }
+	bool			ContainsCharFromSet(const char* CharSet) const { return CharSet && !!strpbrk(CStr(), CharSet); }
 	bool			ContainsOnly(const nString& CharSet) const;
 	void			ToLower();
 	void			ToUpper();
@@ -80,7 +80,7 @@ public:
 	nString			ExtractDirName() const;
 	nString			ExtractToLastSlash() const;
 
-	bool			MatchPattern(const nString& Pattern) const { return n_strmatch(Get(), Pattern.Get()); }
+	bool			MatchPattern(const nString& Pattern) const { return n_strmatch(CStr(), Pattern.CStr()); }
 
 	void __cdecl	Format(const char* pFormatStr, ...) __attribute__((format(printf,2,3)));
 	void			FormatWithArgs(const char* pFormatStr, va_list args);
@@ -88,7 +88,7 @@ public:
 	void			UTF8toANSI();
 	void			ANSItoUTF8();
 
-	const char*		Get() const;
+	const char*		CStr() const;
 	int				Length() const { return pString ? Len : LocalLen; }
 	bool			IsEmpty() const { return !IsValid(); }
 	bool			IsValid() const { return (pString && *pString) || *pLocalString; }
@@ -114,30 +114,30 @@ public:
 	bool			IsValidVector4() const { return ContainsOnly(" \t-+.,e1234567890"); }
 	bool			IsValidMatrix44() const { return ContainsOnly(" \t-+.,e1234567890"); }
 
-	int				AsInt() const { return atoi(Get()); }
-	float			AsFloat() const { return (float)atof(Get()); }
+	int				AsInt() const { return atoi(CStr()); }
+	float			AsFloat() const { return (float)atof(CStr()); }
 	bool			AsBool() const;
 	vector3			AsVector3() const;
 	vector4			AsVector4() const;
 	matrix44		AsMatrix44() const;
 
-	int				GetLastDirSeparatorIndex() const { return GetLastDirSeparator() - Get(); }
+	int				GetLastDirSeparatorIndex() const { return GetLastDirSeparator() - CStr(); }
 
 	nString&		operator =(const nString& Other);
-	nString&		operator =(const char* pStr) { if (pStr != Get()) Set(pStr); return *this; }
+	nString&		operator =(const char* pStr) { if (pStr != CStr()) Set(pStr); return *this; }
 	nString&		operator +=(const char* pStr) { Append(pStr); return *this; }
 	nString&		operator +=(const nString& Other) { Append(Other); return *this; }
 	char			operator [](int i) const;
 	char&			operator [](int i);
 
-	friend bool		operator ==(const nString& a, const nString& b) { return !strcmp(a.Get(), b.Get()); }
-	friend bool		operator ==(const nString& a, const char* b) { return b ? (!strcmp(a.Get(), b)) : a.IsEmpty(); }
-	friend bool		operator !=(const nString& a, const nString& b) { return !!strcmp(a.Get(), b.Get()); }
-	friend bool		operator !=(const nString& a, const char* b) { return b ? (!!strcmp(a.Get(), b)) : a.IsValid(); }
-	friend bool		operator <(const nString& a, const nString& b) { return strcmp(a.Get(), b.Get()) < 0; }
-	friend bool		operator >(const nString& a, const nString& b) { return strcmp(a.Get(), b.Get()) > 0; }
-	friend bool		operator <=(const nString& a, const nString& b) { return strcmp(a.Get(), b.Get()) <= 0; }
-	friend bool		operator >=(const nString& a, const nString& b) { return strcmp(a.Get(), b.Get()) >= 0; }
+	friend bool		operator ==(const nString& a, const nString& b) { return !strcmp(a.CStr(), b.CStr()); }
+	friend bool		operator ==(const nString& a, const char* b) { return b ? (!strcmp(a.CStr(), b)) : a.IsEmpty(); }
+	friend bool		operator !=(const nString& a, const nString& b) { return !!strcmp(a.CStr(), b.CStr()); }
+	friend bool		operator !=(const nString& a, const char* b) { return b ? (!!strcmp(a.CStr(), b)) : a.IsValid(); }
+	friend bool		operator <(const nString& a, const nString& b) { return strcmp(a.CStr(), b.CStr()) < 0; }
+	friend bool		operator >(const nString& a, const nString& b) { return strcmp(a.CStr(), b.CStr()) > 0; }
+	friend bool		operator <=(const nString& a, const nString& b) { return strcmp(a.CStr(), b.CStr()) <= 0; }
+	friend bool		operator >=(const nString& a, const nString& b) { return strcmp(a.CStr(), b.CStr()) >= 0; }
 };
 
 inline void nString::Set(const char* pSrc, int SrcLength)
@@ -187,7 +187,7 @@ inline void nString::Clear()
 //}
 //---------------------------------------------------------------------
 
-inline const char* nString::Get() const
+inline const char* nString::CStr() const
 {
 	if (pString) return pString;
 	if (pLocalString[0]) return pLocalString;
@@ -224,7 +224,7 @@ inline int nString::Tokenize(const char* whiteSpace, nArray<nString>& Tokens) co
 	int numTokens = 0;
 
 	nString TmpString(*this);
-	char* pStr = (char*)TmpString.Get();
+	char* pStr = (char*)TmpString.CStr();
 	const char* pTok;
 	while (pTok = strtok(pStr, whiteSpace))
 	{
@@ -253,7 +253,7 @@ inline int nString::Tokenize(const char* whiteSpace, uchar fence, nArray<nString
 {
     // create a temporary pString, which will be destroyed during the operation
     nString str(*this);
-    char* ptr = (char*)str.Get();
+    char* ptr = (char*)str.CStr();
     char* end = ptr + strlen(ptr);
     while (ptr < end)
     {
@@ -284,7 +284,7 @@ inline int nString::Tokenize(const char* whiteSpace, uchar fence, nArray<nString
             }
         }
     }
-    return Tokens.Size();
+    return Tokens.GetCount();
 }
 //---------------------------------------------------------------------
 
@@ -292,7 +292,7 @@ inline nString nString::SubString(int from, int CharCount) const
 {
 	n_assert(from <= Length());
 	n_assert((from + CharCount) <= Length());
-	const char* str = Get();
+	const char* str = CStr();
 	nString newString;
 	newString.Set(&(str[from]), CharCount);
 	return newString;
@@ -303,7 +303,7 @@ inline nString nString::SubString(int from, int CharCount) const
 inline void nString::Strip(const char* CharSet)
 {
 	n_assert(CharSet);
-	char* str = (char*)Get();
+	char* str = (char*)CStr();
 	char* ptr = strpbrk(str, CharSet);
 	if (ptr) *ptr = 0;
 	SetLength(strlen(str));
@@ -318,7 +318,7 @@ inline int nString::FindStringIndex(const nString& v, int StartIdx) const
 	for (int i = StartIdx; i < Length(); ++i)
 	{
 		if (Length() - i < v.Length()) break;
-		if (!strncmp(&(Get()[i]), v.Get(), v.Length())) return i;
+		if (!strncmp(&(CStr()[i]), v.CStr(), v.Length())) return i;
 	}
 
 	return -1;
@@ -329,7 +329,7 @@ inline int nString::FindCharIndex(uchar c, int StartIdx) const
 {
 	n_assert(StartIdx < Length());
 	if (!Length()) return -1;
-	const char* pStr = Get();
+	const char* pStr = CStr();
 	const char* pChar = strchr(pStr + StartIdx, c);
 	return pChar ? pChar - pStr : -1;
 }
@@ -338,7 +338,7 @@ inline int nString::FindCharIndex(uchar c, int StartIdx) const
 inline void nString::TerminateAtIndex(int Idx)
 {
 	n_assert(Idx < Length());
-	char* pStr = (char*)Get();
+	char* pStr = (char*)CStr();
 	pStr[Idx] = 0;
 	SetLength(strlen(pStr));
 }
@@ -349,20 +349,20 @@ inline void nString::StripTrailingSlash()
 {
 	if (!Length()) return;
 	int Pos = Length() - 1;
-	char* pStr = (char*)Get();
+	char* pStr = (char*)CStr();
 	if (pStr[Pos] == '/' || pStr[Pos] == '\\')
 	{
 		pStr[Pos] = 0;
 		if (pString) --Len;
 		else --LocalLen;
 	}
-	SetLength(strlen(Get()));
+	SetLength(strlen(CStr()));
 }
 //---------------------------------------------------------------------
 
 inline void nString::Replace(char Char, char NewChar)
 {
-	char* pStr = (char*)Get();
+	char* pStr = (char*)CStr();
 	for (int i = 0; i <= Length(); ++i)
 		if (pStr[i] == Char)
 			pStr[i] = NewChar;
@@ -372,7 +372,7 @@ inline void nString::Replace(char Char, char NewChar)
 inline void nString::ReplaceChars(const char* CharSet, char NewChar)
 {
 	n_assert(CharSet);
-	char* pChar = (char*)Get();
+	char* pChar = (char*)CStr();
 	while (*pChar)
 	{
 		if (strchr(CharSet, *pChar)) *pChar = NewChar;
@@ -393,7 +393,7 @@ inline
 void
 nString::UTF8toANSI()
 {
-    uchar* src = (uchar*)Get();
+    uchar* src = (uchar*)CStr();
     uchar* dst = src;
     uchar c;
     while ((c = *src++))
@@ -455,7 +455,7 @@ nString::ANSItoUTF8()
     int bufSize = Length() * 2 + 1;
     char* buffer = n_new_array(char, bufSize);
     char* dstPtr = buffer;
-    const char* srcPtr = Get();
+    const char* srcPtr = CStr();
     unsigned char c;
     while ((c = *srcPtr++))
     {
@@ -481,7 +481,7 @@ nString::ANSItoUTF8()
 inline const char* nString::GetExtension() const
 {
 	char* pLastDirSep = GetLastDirSeparator();
-	const char* pStr = strrchr(pLastDirSep ? pLastDirSep + 1 : Get(), '.');
+	const char* pStr = strrchr(pLastDirSep ? pLastDirSep + 1 : CStr(), '.');
 	return (pStr && *(++pStr)) ? pStr : NULL;
 }
 //---------------------------------------------------------------------
@@ -499,14 +499,14 @@ inline void nString::StripExtension()
 {
 	char* ext = (char*)GetExtension();
 	if (ext) ext[-1] = 0;
-	SetLength(strlen(Get()));
+	SetLength(strlen(CStr()));
 }
 //---------------------------------------------------------------------
 
 // Get a pointer to the last directory separator.
 inline char* nString::GetLastDirSeparator() const
 {
-	char* pStr = (char*)Get();
+	char* pStr = (char*)CStr();
 	char* lastSlash = strrchr(pStr, '/');
 	if (!lastSlash) lastSlash = strrchr(pStr, '\\');
 	if (!lastSlash) lastSlash = strrchr(pStr, ':');
@@ -517,7 +517,7 @@ inline char* nString::GetLastDirSeparator() const
 inline nString nString::ExtractFileName() const
 {
 	char* pLastDirSep = GetLastDirSeparator();
-	nString Path = pLastDirSep ? pLastDirSep + 1 : Get();
+	nString Path = pLastDirSep ? pLastDirSep + 1 : CStr();
 	return Path;
 }
 //---------------------------------------------------------------------
@@ -577,7 +577,7 @@ inline nString nString::ExtractDirName() const
 		if (pLastDirSep) *++pLastDirSep = 0;
 	}
 
-	Path.SetLength(strlen(Path.Get()));
+	Path.SetLength(strlen(Path.CStr()));
 	return Path;
 }
 //---------------------------------------------------------------------
@@ -596,7 +596,7 @@ inline nString nString::ExtractToLastSlash() const
 
 inline bool nString::ContainsOnly(const nString& CharSet) const
 {
-	const char* pStr = Get();
+	const char* pStr = CStr();
 	for (int i = 0; i < Length(); i++)
 		if (CharSet.FindCharIndex(pStr[i], 0) == -1) return false;
 	return true;
@@ -636,10 +636,10 @@ inline void nString::SetLength(int length)
 inline nString nString::Concatenate(const nArray<nString>& strArray, const nString& whiteSpace)
 {
 	nString Result;
-	for (int i = 0; i < strArray.Size(); i++)
+	for (int i = 0; i < strArray.GetCount(); i++)
 	{
 		Result.Append(strArray[i]);
-		if (i < strArray.Size() - 1)
+		if (i < strArray.GetCount() - 1)
 			Result.Append(whiteSpace);
 	}
 	return Result;
@@ -665,7 +665,7 @@ inline bool nString::IsValidBool() const
 	int i = 0;
 	while (Bools[i])
 	{
-		if (!n_stricmp(Bools[i], Get())) return true;
+		if (!n_stricmp(Bools[i], CStr())) return true;
 		++i;
 	}
 	return false;
@@ -678,7 +678,7 @@ inline bool nString::AsBool() const
 	int i = 0;
 	while (Bools[i])
 	{
-		if (!n_stricmp(Bools[i], Get())) return (i & 1);
+		if (!n_stricmp(Bools[i], CStr())) return (i & 1);
 		++i;
 	}
 	n_assert2(false, "Invalid pString value for bool!");
@@ -690,7 +690,7 @@ inline vector3 nString::AsVector3() const
 {
 	nArray<nString> Tokens;
 	Tokenize(", \t", Tokens);
-	n_assert(Tokens.Size() == 3);
+	n_assert(Tokens.GetCount() == 3);
 	vector3 v(Tokens[0].AsFloat(), Tokens[1].AsFloat(), Tokens[2].AsFloat());
 	return v;
 }
@@ -700,7 +700,7 @@ inline vector4 nString::AsVector4() const
 {
 	nArray<nString> Tokens;
 	Tokenize(", \t", Tokens);
-	n_assert(Tokens.Size() == 4);
+	n_assert(Tokens.GetCount() == 4);
 	vector4 v(Tokens[0].AsFloat(), Tokens[1].AsFloat(), Tokens[2].AsFloat(), Tokens[3].AsFloat());
 	return v;
 }
@@ -710,7 +710,7 @@ inline matrix44 nString::AsMatrix44() const
 {
 	nArray<nString> Tokens;
 	Tokenize(", \t", Tokens);
-	n_assert(Tokens.Size() == 16);
+	n_assert(Tokens.GetCount() == 16);
 	matrix44 m(	Tokens[0].AsFloat(),  Tokens[1].AsFloat(),  Tokens[2].AsFloat(),  Tokens[3].AsFloat(),
 				Tokens[4].AsFloat(),  Tokens[5].AsFloat(),  Tokens[6].AsFloat(),  Tokens[7].AsFloat(),
 				Tokens[8].AsFloat(),  Tokens[9].AsFloat(),  Tokens[10].AsFloat(), Tokens[11].AsFloat(),
@@ -724,7 +724,7 @@ inline nString& nString::operator =(const nString& Other)
 	if (&Other != this)
 	{
 		Clear();
-		Set(Other.Get(), Other.Length());
+		Set(Other.CStr(), Other.Length());
 	}
 	return *this;
 }
@@ -747,7 +747,7 @@ inline char& nString::operator [](int i)
 static inline nString operator +(const nString& s0, const nString& s1)
 {
 	nString Result(s0);
-	Result.Append(s1.Get());
+	Result.Append(s1.CStr());
 	return Result;
 }
 //---------------------------------------------------------------------

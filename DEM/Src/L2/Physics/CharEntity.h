@@ -21,8 +21,7 @@ typedef Ptr<class CRagdoll> PRagdoll;
 
 class CCharEntity: public CEntity
 {
-	DeclareRTTI;
-	DeclareFactory(CCharEntity);
+	__DeclareClass(CCharEntity);
 
 protected:
 
@@ -68,7 +67,7 @@ public:
 	CMaterialType		GetGroundMaterial() const { return GroundMtl; }
 };
 
-RegisterFactory(CCharEntity);
+__RegisterClassInFactory(CCharEntity);
 
 typedef Ptr<CCharEntity> PCharEntity;
 

@@ -4,7 +4,7 @@
 #include <AI/Perception/Perceptor.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <mathlib/sphere.h>
 
 namespace Attr
@@ -14,8 +14,8 @@ namespace Attr
 
 namespace AI
 {
-ImplementRTTI(AI::CSensorVision, AI::CSensor);
-ImplementFactory(AI::CSensorVision);
+__ImplementClassNoFactory(AI::CSensorVision, AI::CSensor);
+__ImplementClass(AI::CSensorVision);
 
 void CSensorVision::Init(const CParams& Desc)
 {

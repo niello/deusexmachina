@@ -15,8 +15,7 @@ using namespace Dmg;
 
 class CItemTplWeapon: public CItemTpl
 {
-	//DeclareRTTI;
-	DeclareFactory(CItemTplWeapon);
+	__DeclareClass(CItemTplWeapon);
 
 protected:
 
@@ -39,7 +38,7 @@ public:
 	virtual void Init(CStrID SID, const CParams& Params);
 };
 
-RegisterFactory(CItemTplWeapon);
+__RegisterClassInFactory(CItemTplWeapon);
 
 }
 

@@ -26,10 +26,10 @@ public:
 	void			Init(CStrID Target, CStrID Action) { TargetID = Target; ActionID = Action; }
 	virtual bool	Activate(CActor* pActor);
 
-	virtual void	GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().Get(), TargetID.CStr(), ActionID.CStr()); }
+	virtual void	GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };
 
-RegisterFactory(CActionGotoSmartObj);
+__RegisterClassInFactory(CActionGotoSmartObj);
 
 typedef Ptr<CActionGotoSmartObj> PActionGotoSmartObj;
 

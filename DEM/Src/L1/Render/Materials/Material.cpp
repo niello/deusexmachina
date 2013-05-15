@@ -22,7 +22,7 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 	//???set active feature for test? mb it is never used with these flags, always adding Skinned etc
 
 	StaticVars = StaticShaderVars;
-	for (int i = 0; i < StaticVars.Size(); ++i)
+	for (int i = 0; i < StaticVars.GetCount(); ++i)
 	{
 		CShaderVar& Var = StaticVars.ValueAtIndex(i);
 		Var.Bind(*pShader);

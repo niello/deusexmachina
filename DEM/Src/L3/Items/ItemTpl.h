@@ -24,8 +24,7 @@ class CItem;
 
 class CItemTpl: public Core::CRefCounted
 {
-	//DeclareRTTI;
-	DeclareFactory(CItemTpl);
+	__DeclareClass(CItemTpl);
 
 protected:
 
@@ -52,7 +51,7 @@ public:
 	CStrID			GetType() const { return Type; }
 };
 
-RegisterFactory(CItemTpl);
+__RegisterClassInFactory(CItemTpl);
 
 typedef Ptr<CItemTpl> PItemTpl;
 

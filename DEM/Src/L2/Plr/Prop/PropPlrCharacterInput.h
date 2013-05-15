@@ -16,8 +16,7 @@ namespace Properties
 
 class CPropPlrCharacterInput: public CPropInput
 {
-	DeclareRTTI;
-	DeclareFactory(CPropPlrCharacterInput);
+	__DeclareClass(CPropPlrCharacterInput);
 
 protected:
 
@@ -35,7 +34,7 @@ public:
 
 };
 
-RegisterFactory(CPropPlrCharacterInput);
+__RegisterClassInFactory(CPropPlrCharacterInput);
 
 }
 

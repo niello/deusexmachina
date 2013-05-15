@@ -11,10 +11,7 @@ namespace Render
 
 class CPassPosteffect: public CPass
 {
-	//DeclareRTTI;
-
-//protected:
-public:
+protected:
 
 //???can use MRT?
 // Input:

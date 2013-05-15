@@ -12,7 +12,7 @@ namespace Scene
 
 class CRenderObject: public CSceneNodeAttr
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 };

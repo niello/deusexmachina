@@ -18,8 +18,7 @@ struct CSPSRecord;
 
 class CLight: public CSceneNodeAttr
 {
-	DeclareRTTI;
-	DeclareFactory(CLight);
+	__DeclareClass(CLight);
 
 protected:
 
@@ -57,7 +56,7 @@ public:
 
 	CLight();
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	OnRemove();
 	virtual void	Update();
 
@@ -67,9 +66,9 @@ public:
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);
 	void			SetSpotOuterAngle(float NewAngle);
-	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().pos_component(); }
-	vector3			GetDirection() const { return -pNode->GetWorldMatrix().z_component(); }
-	const vector3&	GetReverseDirection() const { return pNode->GetWorldMatrix().z_component(); }
+	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().Translation(); }
+	vector3			GetDirection() const { return -pNode->GetWorldMatrix().AxisZ(); }
+	const vector3&	GetReverseDirection() const { return pNode->GetWorldMatrix().AxisZ(); }
 	float			GetRange() const { return Range; }
 	float			GetInvRange() const { return InvRange; }
 	float			GetSpotInnerAngle() const { return ConeInner; }
@@ -78,7 +77,7 @@ public:
 	float			GetCosHalfPhi() const { return CosHalfOuter; }
 };
 
-RegisterFactory(CLight);
+__RegisterClassInFactory(CLight);
 
 typedef Ptr<CLight> PLight;
 

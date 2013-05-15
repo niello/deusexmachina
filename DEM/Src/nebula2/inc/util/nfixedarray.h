@@ -33,7 +33,7 @@ public:
 	int		Find(const TYPE& Elm) const;
 
 	void	SetSize(int NewSize) { if (Count != NewSize) Allocate(NewSize); }
-	int		Size() const { return Count; }
+	int		GetCount() const { return Count; }
 	TYPE*	GetPtr() { return pData; }
 
 	void	RawCopyFrom(const TYPE* pSrc, uint SrcCount);

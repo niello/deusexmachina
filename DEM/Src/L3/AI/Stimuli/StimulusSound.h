@@ -11,10 +11,7 @@ namespace AI
 
 class CStimulusSound: public CStimulus
 {
-	DeclareRTTI;
-	DeclareFactory(CStimulusSound);
-
-protected:
+	__DeclareClass(CStimulusSound);
 
 public:
 
@@ -22,7 +19,7 @@ public:
 
 };
 
-RegisterFactory(CStimulusSound);
+__RegisterClassInFactory(CStimulusSound);
 
 typedef Ptr<CStimulusSound> PStimulusSound;
 

@@ -3,7 +3,7 @@
 #define __DEM_L2_PHYSICS_SERVER_H__
 
 #include <Core/RefCounted.h>
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <Physics/Entity.h>
 #include <Physics/ContactPoint.h>
 #include <Physics/FilterSet.h>
@@ -13,7 +13,7 @@
 
 namespace Physics
 {
-typedef Ptr<class CLevel> PLevel;
+typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
 typedef Ptr<class CShape> PShape;
 class CBoxShape;
 class CSphereShape;
@@ -38,14 +38,14 @@ protected:
 
 	nKeyArray<CEntity*>		Entities;
 	CContacts				Contacts;
-	PLevel					CurrLevel;
+	PPhysicsLevel					CurrLevel;
 
 	bool					isOpen;
 
 	void RegisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Add(pEnt->GetUID(), pEnt); }
 	void UnregisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Rem(pEnt->GetUID()); }
 
-	friend class CLevel;
+	friend class CPhysicsLevel;
 	friend class CRigidBody;
 	friend class TerrainEntity;
 	friend class MouseGripper;
@@ -94,13 +94,13 @@ public:
 
 	static uint		GetUniqueStamp() { return ++UniqueStamp; }
 
-	void			SetLevel(CLevel* pLevel);
-	CLevel*			GetLevel() const { return CurrLevel.get_unsafe(); }
+	//void			SetLevel(CPhysicsLevel* pLevel);
+	CPhysicsLevel*			GetLevel() const { return CurrLevel.GetUnsafe(); }
 	//void			SetPointOfInterest(const vector3& NewPOI);
 	//const vector3&	GetPointOfInterest() const { return CurrLevel->GetPointOfInterest(); }
 };
 
-RegisterFactory(CPhysicsServer);
+__RegisterClassInFactory(CPhysicsServer);
 
 // Converts the rotational part of a matrix44 To ODE. This includes
 // a handedness conversion (transpose), since Mangalore is right handed, ODE left handed(?)

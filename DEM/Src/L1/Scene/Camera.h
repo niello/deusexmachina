@@ -15,8 +15,7 @@ namespace Scene
 
 class CCamera: public CSceneNodeAttr
 {
-	DeclareRTTI;
-	DeclareFactory(CCamera);
+	__DeclareClass(CCamera);
 
 protected:
 
@@ -46,7 +45,7 @@ public:
 	//???bool IsOrtho? bool ProjMatrixWasSetDirectly?
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	Update();
 
 	void			GetRay3D(float RelX, float RelY, float Length, line3& OutRay);
@@ -73,7 +72,7 @@ public:
 	const matrix44&	GetViewProjMatrix() const { return ViewProj; }
 };
 
-RegisterFactory(CCamera);
+__RegisterClassInFactory(CCamera);
 
 typedef Ptr<CCamera> PCamera;
 

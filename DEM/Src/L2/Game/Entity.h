@@ -3,138 +3,114 @@
 #define __DEM_L2_GAME_ENTITY_H__
 
 // Entity is an abstract game object containing properties which extend it
-// Based on mangalore Entity (C) 2003 RadonLabs GmbH
 
-#include "EntityFwd.h"
-#include <DB/ValueTable.h>
 #include <Events/EventDispatcher.h>
-
-namespace Loading
-{
-	class CEntityFactory;
-}
+#include <Data/Flags.h>
+#include <util/ndictionary.h>
 
 namespace Game
 {
-class CProperty;
-
-using namespace DB;
-using namespace Events;
 
 class CEntity: public Events::CEventDispatcher
 {
-	__DeclareClass(CEntity);
+	__DeclareClassNoFactory;
 
 protected:
 
-	friend class Loading::CEntityFactory;
+	friend class CEntityManager;
 
 	enum
 	{
-		ENT_LIVE = 0x01,			// true - Live pool, false - Sleeping pool
-		ENT_ACTIVE = 0x02,			// true - Active, false - Inactive
-		ENT_CHANGING_STATUS = 0x04, // if true: ENT_ACTIVE true - Deactivate, ENT_ACTIVE false - Activate
+		Active				= 0x01,
+		ChangingActivity	= 0x02	// If set: Active set - in Deactivate(), Active not set - in Activate()
 	};
 
-	CStrID			UID;
-	CStrID			Category;
-	char			Flags;		// entity status //???align to DWORD?
-	Events::PSub	GlobalSubscription;
-	DB::PValueTable	AttrTable;
-	int				ATRowIdx;
+	CStrID								UID;
+	CStrID								LevelID;
+	Data::CFlags						Flags;
+	Events::PSub						GlobalSub;
+	nDictionary<CStrID, Data::CData>	Attrs;		//???use hash map?
 
-	//!!!instead of IsLive() check can unsubscribe when not alive in SetLive!
-	bool OnEvent(const CEventBase& Event);
-	
-	//???private?
-	void SetCategory(CStrID Cat) { n_assert(Cat.IsValid()); Category = Cat; }
-	void SetAttrTableRowIndex(int Idx) { ATRowIdx = Idx; }
-	void SetAttrTable(const DB::PValueTable& Table) { AttrTable = Table; } //???const Ptr&? O_o
-	void SetUniqueIDFromAttrTable();
+	void SetUID(CStrID NewUID);
+	//void SetLevelID(CStrID NewLevelID);
+	bool OnEvent(const Events::CEventBase& Event);
+
+	CEntity(CStrID _UID, CStrID _LevelID): CEventDispatcher(16), UID(_UID), LevelID(_LevelID) {}
 
 public:
 
-	CEntity();
-	virtual ~CEntity();
+	void						Activate();
+	void						Deactivate();
 
-	void			Activate();
-	void			Deactivate();
+	template<class T> T*		GetProperty() const;
+	template<class T> bool		HasProperty() const { return GetProperty<T>() != NULL; }
 
-	template<class T> T*	FindProperty() const;
-	template<class T> bool	HasProperty() const { return FindProperty<T>() != NULL; }
+	CStrID						GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
+	CStrID						GetLevelID() const { return LevelID; }
 
-	void			SetUID(CStrID NewUID);
-	CStrID			GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
+	template<class T> void		SetAttr(CStrID ID, const T& Value);
+	template<> void				SetAttr(CStrID ID, const Data::CData& Value);
+	template<class T> const T&	GetAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
+	template<class T> bool		GetAttr(CStrID ID, T& Out) const;
+	template<> bool				GetAttr(CStrID ID, Data::CData& Out) const;
+	bool						HasAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
-	// Status getters
-	bool			IsLive() const { return Flags & ENT_LIVE; }
-	void			SetLive(bool Live) { if (Live != IsLive()) Flags ^= ENT_LIVE; }
-	bool			IsActive() const { return (Flags & ENT_ACTIVE) && !(Flags & ENT_CHANGING_STATUS); }
-	bool			IsInactive() const { return !(Flags & ENT_ACTIVE) && !(Flags & ENT_CHANGING_STATUS); }
-	bool			IsActivating() const { return !(Flags & ENT_ACTIVE) && (Flags & ENT_CHANGING_STATUS); }
-	bool			IsDeactivating() const { return (Flags & ENT_ACTIVE) && (Flags & ENT_CHANGING_STATUS); }
-	EntityPool		GetPool() const { return IsLive() ? LivePool : SleepingPool;}
-
-	CStrID			GetCategory() const { return Category; }
-	int				GetAttrTableRowIndex() const { return ATRowIdx; }
-	const DB::PValueTable& GetAttrTable() const { return AttrTable; }
-
-	bool			HasAttr(CAttrID Attr) const { return AttrTable.isvalid() ? AttrTable->HasColumn(Attr) : false; }
-
-	template<class T>
-	void			Add(CAttrID AttrID);
-	template<class T>
-	void			Set(CAttrID AttrID, const T& Value) { AttrTable->Set<T>(AttrID, ATRowIdx, Value); }
-	template<class T>
-	const T&		Get(CAttrID AttrID) const { return AttrTable->Get<T>(AttrID, ATRowIdx); }
-	template<class T>
-	bool			Get(CAttrID AttrID, T& Out) const; //???ref of ptr? to avoid copying big data
-
-	bool			Get(CAttrID AttrID, CData& Out) const;
-	void			SetRaw(CAttrID AttrID, const CData& Value) const { AttrTable->SetValue(AttrID, ATRowIdx, Value); }
+	bool						IsActive() const { return Flags.Is(Active) && Flags.IsNot(ChangingActivity); }
+	bool						IsInactive() const { return Flags.IsNot(Active) && Flags.IsNot(ChangingActivity); }
+	bool						IsActivating() const { return Flags.IsNot(Active) && Flags.Is(ChangingActivity); }
+	bool						IsDeactivating() const { return Flags.Is(Active) && Flags.Is(ChangingActivity); }
 };
-
-RegisterFactory(CEntity);
 
 typedef Ptr<CEntity> PEntity;
 
-template<class T> T* CEntity::FindProperty() const
+template<class T>
+T* CEntity::GetProperty() const
 {
 	PProperty Prop;
-	if (T::Storage.Get(UID, Prop))
+	if (T::pStorage && T::pStorage->Get(UID, Prop))
 		if (!Prop->IsA(T::RTTI)) return NULL;
-	return (T*)Prop.get_unsafe();
+	return (T*)Prop.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
-template<class T> inline bool CEntity::Get(CAttrID AttrID, T& Out) const
+template<class T>
+inline void CEntity::SetAttr(CStrID ID, const T& Value)
 {
-	if (!HasAttr(AttrID)) FAIL;
-	Out = Get<T>(AttrID);
+	int Idx = Attrs.FindIndex(ID);
+	if (ID == INVALID_INDEX) Attrs.Add(ID, Value);
+	else Attrs.ValueAtIndex(Idx).SetTypeValue(Value);
+}
+//---------------------------------------------------------------------
+
+template<> void CEntity::SetAttr(CStrID ID, const Data::CData& Value)
+{
+	if (Value.IsValid()) Attrs.Set(ID, Value);
+	else
+	{
+		int Idx = Attrs.FindIndex(ID);
+		if (ID != INVALID_INDEX) Attrs.Erase(ID);
+	}
+}
+//---------------------------------------------------------------------
+
+//???ref of ptr? to avoid copying big data
+template<class T>
+inline bool CEntity::GetAttr(CStrID ID, T& Out) const
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (ID == INVALID_INDEX) FAIL;
+	return Attrs.ValueAtIndex(Idx).GetValue<T>(Out);
+}
+//---------------------------------------------------------------------
+
+//???ref of ptr? to avoid copying big data
+template<>
+inline bool CEntity::GetAttr(CStrID ID, Data::CData& Out) const
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (ID == INVALID_INDEX) FAIL;
+	Out = Attrs.ValueAtIndex(Idx);
 	OK;
-}
-//---------------------------------------------------------------------
-
-inline bool CEntity::Get(CAttrID AttrID, CData& Out) const
-{
-	if (!HasAttr(AttrID)) FAIL;
-	AttrTable->GetValue(AttrID, ATRowIdx, Out); //???return bool here?
-	OK;
-}
-//---------------------------------------------------------------------
-
-template<> inline bool CEntity::Get(CAttrID AttrID, vector3& Out) const
-{
-	if (!HasAttr(AttrID)) FAIL;
-	const vector4& Tmp = AttrTable->Get<vector4>(AttrID, ATRowIdx);
-	Out = vector3(Tmp.x, Tmp.y, Tmp.z);
-	OK;
-}
-//---------------------------------------------------------------------
-
-template<> inline void CEntity::Set(CAttrID AttrID, const vector3& Val)
-{
-	AttrTable->Set<vector4>(AttrID, ATRowIdx, vector4(Val));
 }
 //---------------------------------------------------------------------
 

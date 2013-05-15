@@ -13,7 +13,7 @@ namespace Event
 //???inherit from InputEvent where DeviceID is stored?
 class MouseBtnUp: public Events::CEventNative
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

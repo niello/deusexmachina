@@ -12,7 +12,7 @@ struct CPathEdge;
 
 class CActionTraversePathEdge: public CAction
 {
-	DeclareRTTI;
+	__DeclareClass(CActionTraversePathEdge);
 
 protected:
 
@@ -20,6 +20,8 @@ public:
 
 	virtual void UpdatePathEdge(CActor* pActor, const CPathEdge* pEdge, const CPathEdge* pNextEdge) = 0;
 };
+
+__RegisterClassInFactory(CActionTraversePathEdge);
 
 typedef Ptr<CActionTraversePathEdge> PActionTraversePathEdge;
 

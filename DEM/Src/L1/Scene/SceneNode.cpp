@@ -40,7 +40,7 @@ void CSceneNode::UpdateLocalFromWorld()
 // there we can finish updating dependent parts of the hierarchy.
 void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 {
-	if (Controller.isvalid() && Controller->IsActive())
+	if (Controller.IsValid() && Controller->IsActive())
 	{
 		if (Controller->IsLocalSpace())
 		{
@@ -56,7 +56,7 @@ void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 	}
 	else Flags.Clear(WorldMatrixUpdated);
 
-	for (int i = 0; i < Child.Size(); ++i)
+	for (int i = 0; i < Child.GetCount(); ++i)
 		if (Child.ValueAtIndex(i)->IsActive())
 			Child.ValueAtIndex(i)->UpdateLocalSpace(UpdateWorldMatrix);
 }
@@ -67,7 +67,7 @@ void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 // After world transform is up-to-date, we update scene node attributes.
 void CSceneNode::UpdateWorldSpace()
 {
-	if (Controller.isvalid() && Controller->IsActive() && !Controller->IsLocalSpace())
+	if (Controller.IsValid() && Controller->IsActive() && !Controller->IsLocalSpace())
 	{
 		Math::CTransformSRT WorldSRT;
 		if (Controller->ApplyTo(WorldSRT))
@@ -82,11 +82,11 @@ void CSceneNode::UpdateWorldSpace()
 	else if (!Flags.Is(WorldMatrixUpdated)) UpdateWorldFromLocal();
 
 	// LODGroup attr may disable some children, so process attrs before children
-	for (int i = 0; i < Attrs.Size(); ++i)
+	for (int i = 0; i < Attrs.GetCount(); ++i)
 		if (Attrs[i]->IsActive())
 			Attrs[i]->Update();
 
-	for (int i = 0; i < Child.Size(); ++i)
+	for (int i = 0; i < Child.GetCount(); ++i)
 		if (Child.ValueAtIndex(i)->IsActive())
 			Child.ValueAtIndex(i)->UpdateWorldSpace();
 }
@@ -95,9 +95,9 @@ void CSceneNode::UpdateWorldSpace()
 void CSceneNode::RenderDebug()
 {
 	if (pParent)
-		DebugDraw->DrawLine(pParent->WorldMatrix.pos_component(), WorldMatrix.pos_component(), vector4::White);
+		DebugDraw->DrawLine(pParent->WorldMatrix.Translation(), WorldMatrix.Translation(), vector4::White);
 
-	for (int i = 0; i < Child.Size(); ++i)
+	for (int i = 0; i < Child.GetCount(); ++i)
 		Child.ValueAtIndex(i)->RenderDebug();
 }
 //---------------------------------------------------------------------
@@ -169,7 +169,7 @@ void CSceneNode::RemoveAttr(CSceneNodeAttr& Attr)
 
 void CSceneNode::RemoveAttr(DWORD Idx)
 {
-	n_assert(Idx < (DWORD)Attrs.Size());
+	n_assert(Idx < (DWORD)Attrs.GetCount());
 	CSceneNodeAttr& Attr = *Attrs[Idx];
 	Attr.OnRemove();
 	Attr.pNode = NULL;

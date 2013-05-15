@@ -14,7 +14,7 @@ namespace Anim
 
 class CKeyframeClip: public CAnimClip
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

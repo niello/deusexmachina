@@ -2,5 +2,5 @@
 
 namespace Event
 {
-ImplementRTTI(Event::KeyUp, Events::CEventNative);
+__ImplementClassNoFactory(Event::KeyUp, Events::CEventNative);
 } // namespace Event

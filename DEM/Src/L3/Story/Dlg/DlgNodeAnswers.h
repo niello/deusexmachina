@@ -13,8 +13,7 @@ namespace Story
 
 class CDlgNodeAnswers: public CDlgNode
 {
-	DeclareRTTI;
-	DeclareFactory(CDlgNodeAnswers);
+	__DeclareClass(CDlgNodeAnswers);
 
 public:
 
@@ -26,7 +25,7 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-RegisterFactory(CDlgNodeAnswers);
+__RegisterClassInFactory(CDlgNodeAnswers);
 
 }
 

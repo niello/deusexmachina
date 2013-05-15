@@ -2,6 +2,6 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionIdle, AI::CAction);
-ImplementFactory(AI::CActionIdle);
+__ImplementClassNoFactory(AI::CActionIdle, AI::CAction);
+__ImplementClass(AI::CActionIdle);
 } //namespace AI

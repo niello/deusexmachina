@@ -24,10 +24,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropAIHints, Game::CProperty);
-ImplementFactory(Properties::CPropAIHints);
-ImplementPropertyStorage(CPropAIHints, 128);
-RegisterProperty(CPropAIHints);
+__ImplementClass(Properties::CPropAIHints, 'PRAH', Game::CProperty);
+__ImplementPropertyStorage(CPropAIHints);
 
 static const nString StrStimulusPrefix("AI::CStimulus");
 
@@ -55,7 +53,7 @@ void CPropAIHints::Deactivate()
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(UpdateTransform);
 
-	for (int i = 0; i < Hints.Size(); ++i)
+	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(i);
 		if (Rec.pNode) AISrv->GetLevel()->RemoveStimulus(Rec.pNode);
@@ -76,9 +74,9 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 	const nString& DescName = GetEntity()->Get<nString>(Attr::AIHintsDesc);
 	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(nString("aihints:") + DescName + ".prm");
 
-	if (Desc.isvalid())
+	if (Desc.IsValid())
 	{
-		const vector3& Pos = GetEntity()->Get<matrix44>(Attr::Transform).pos_component();
+		const vector3& Pos = GetEntity()->Get<matrix44>(Attr::Transform).Translation();
 
 		Hints.Clear();
 		Hints.BeginAdd();
@@ -88,7 +86,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			PParams PrmVal = Prm.GetValue<PParams>();
 			CRecord Rec;
 			
-			Rec.Stimulus = (CStimulus*)CoreFct->Create(StrStimulusPrefix + PrmVal->Get<nString>(CStrID("Type"), NULL));
+			Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<nString>(CStrID("Type"), NULL));
 
 			Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
 			Rec.Stimulus->Position = Pos; //!!!offset * tfm!
@@ -104,7 +102,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			}
 			else if (SizeStr == "Box" || SizeStr == "GfxBox")
 			{
-				CPropSceneNode* pNode = GetEntity()->FindProperty<CPropSceneNode>();
+				CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
 				if (pNode)
 				{
 					bbox3 AABB;
@@ -116,7 +114,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			}
 			else if (SizeStr == "PhysBox")
 			{
-				CPropPhysics* pPropPhys = GetEntity()->FindProperty<CPropPhysics>();
+				CPropPhysics* pPropPhys = GetEntity()->GetProperty<CPropPhysics>();
 				if (pPropPhys)
 				{
 					bbox3 AABB;
@@ -150,7 +148,7 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 	if (Idx != INVALID_INDEX)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(Idx);
-		n_assert(Rec.Stimulus.isvalid());
+		n_assert(Rec.Stimulus.IsValid());
 
 		if (Enable)
 		{
@@ -171,9 +169,9 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 
 bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 {
-	const vector3& Pos = GetEntity()->Get<matrix44>(Attr::Transform).pos_component();
+	const vector3& Pos = GetEntity()->Get<matrix44>(Attr::Transform).Translation();
 	
-	for (int i = 0; i < Hints.Size(); ++i)
+	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
@@ -191,7 +189,7 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 	static const vector4 ColorOther(0.5f, 0.25f, 0.0f, 0.5f);
 	static const vector4 ColorDisabled(0.5f, 0.5f, 0.5f, 0.5f);
 
-	for (int i = 0; i < Hints.Size(); ++i)
+	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(i);
 

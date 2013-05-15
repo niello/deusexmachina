@@ -2,6 +2,6 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CAreaImpulse, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CAreaImpulse, Core::CRefCounted);
 };
 

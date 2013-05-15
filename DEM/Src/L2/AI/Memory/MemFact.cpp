@@ -2,7 +2,7 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CMemFact, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CMemFact, Core::CRefCounted);
 
 bool CMemFact::Match(const CMemFact& Pattern, CFlags FieldMask) const
 {

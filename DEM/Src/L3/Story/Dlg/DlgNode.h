@@ -14,8 +14,7 @@ class CActiveDlg;
 
 class CDlgNode: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CDlgNode);
+	__DeclareClass(CDlgNode);
 
 public:
 
@@ -25,7 +24,7 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-RegisterFactory(CDlgNode);
+__RegisterClassInFactory(CDlgNode);
 
 }
 

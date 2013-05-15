@@ -76,13 +76,13 @@ public:
     /// transform vector3, projecting back into w=1
     _vector3_sse transform_coord(const _vector3_sse& v) const;
     /// return x component
-    _vector3_sse x_component() const;
+    _vector3_sse AxisX() const;
     /// return y component
-    _vector3_sse y_component() const;
+    _vector3_sse AxisY() const;
     /// return z component
-    _vector3_sse z_component() const;
+    _vector3_sse AxisZ() const;
     /// return translate component
-    _vector3_sse pos_component() const;
+    _vector3_sse Translation() const;
     /// rotate around global x
     void rotate_x(const float a);
     /// rotate around global y
@@ -554,7 +554,7 @@ _matrix44_sse::transform_coord(const _vector3_sse& v) const
 */
 inline
 _vector3_sse
-_matrix44_sse::x_component() const
+_matrix44_sse::AxisX() const
 {
     _vector3_sse v(m1);
     return v;
@@ -565,7 +565,7 @@ _matrix44_sse::x_component() const
 */
 inline
 _vector3_sse
-_matrix44_sse::y_component() const
+_matrix44_sse::AxisY() const
 {
     _vector3_sse v(m2);
     return v;
@@ -576,7 +576,7 @@ _matrix44_sse::y_component() const
 */
 inline
 _vector3_sse
-_matrix44_sse::z_component() const
+_matrix44_sse::AxisZ() const
 {
     _vector3_sse v(m3);
     return v;
@@ -587,7 +587,7 @@ _matrix44_sse::z_component() const
 */
 inline
 _vector3_sse
-_matrix44_sse::pos_component() const
+_matrix44_sse::Translation() const
 {
     _vector3_sse v(M41, M42, M43);
     return v;

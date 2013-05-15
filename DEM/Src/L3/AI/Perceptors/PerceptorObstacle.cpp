@@ -7,8 +7,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CPerceptorObstacle, AI::CPerceptor);
-ImplementFactory(AI::CPerceptorObstacle);
+__ImplementClassNoFactory(AI::CPerceptorObstacle, AI::CPerceptor);
+__ImplementClass(AI::CPerceptorObstacle);
 
 void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {
@@ -20,7 +20,7 @@ void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		CMemFactObstacle Pattern;
 		Pattern.pSourceStimulus = pStimulus;
 		PMemFactObstacle pFact = (CMemFactObstacle*)pActor->GetMemSystem().FindFact(Pattern);
-		if (!pFact.isvalid())
+		if (!pFact.IsValid())
 		{
 			pFact = (CMemFactObstacle*)pActor->GetMemSystem().AddFact(CMemFactObstacle::RTTI);
 			pFact->pSourceStimulus = pStimulus;

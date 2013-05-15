@@ -4,8 +4,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CMemFactSmartObj, AI::CMemFact);
-ImplementFactory(AI::CMemFactSmartObj);
+__ImplementClassNoFactory(AI::CMemFactSmartObj, AI::CMemFact);
+__ImplementClass(AI::CMemFactSmartObj);
 
 bool CMemFactSmartObj::Match(const CMemFact& Pattern, CFlags FieldMask) const
 {
@@ -13,7 +13,7 @@ bool CMemFactSmartObj::Match(const CMemFact& Pattern, CFlags FieldMask) const
 
 	const CMemFactSmartObj& PatternCast = (const CMemFactSmartObj&)Pattern;
 
-	if (pSourceStimulus.isvalid() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
+	if (pSourceStimulus.IsValid() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
 
 	OK;
 }

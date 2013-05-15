@@ -12,8 +12,7 @@ namespace App
 
 class CPlayVideoHandler: public CStateHandler
 {
-	DeclareRTTI;
-	//DeclareFactory(CPlayVideoHandler);
+	__DeclareClassNoFactory;
 
 private:
 
@@ -34,8 +33,6 @@ public:
 	void			SetVideoFile(const nString& FileName) { VideoFileName = FileName; }
 	const nString&	GetVideoFile() const { return VideoFileName; }
 };
-
-//RegisterFactory(CPlayVideoHandler);
 
 }
 

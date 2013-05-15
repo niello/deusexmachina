@@ -16,7 +16,7 @@ using namespace Data;
 
 class CMemFact: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

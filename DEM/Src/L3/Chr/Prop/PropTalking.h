@@ -26,13 +26,12 @@ using namespace Story;
 
 class CPropTalking: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropTalking);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropTalking);
+	__DeclarePropertyStorage;
 
 protected:
 
-	//??????!!!!!or just CStrID dlg name & resolve in DlgSys
+	//??????!!!!!or just CStrID dlg name & resolve in DlgMgr
 	PDialogue Dialogue;
 
 	//broken dialogue state (to restart or take into account)
@@ -47,10 +46,10 @@ public:
 	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void	SayPhrase(CStrID PhraseID);
 
-	CDialogue*		GetDialogue() { return Dialogue.get_unsafe(); }
+	CDialogue*		GetDialogue() { return Dialogue.GetUnsafe(); }
 };
 
-RegisterFactory(CPropTalking);
+__RegisterClassInFactory(CPropTalking);
 
 }
 

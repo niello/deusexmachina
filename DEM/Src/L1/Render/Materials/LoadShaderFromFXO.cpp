@@ -2,15 +2,15 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Render/RenderServer.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/Streams/FileStream.h>
 #include <Data/Buffer.h>
 
 namespace Render
 {
 
-bool LoadShaderFromFXO(Data::CStream& In, PShader OutShader)
+bool LoadShaderFromFXO(IO::CStream& In, PShader OutShader)
 {
-	if (!OutShader.isvalid()) FAIL;
+	if (!OutShader.IsValid()) FAIL;
 
 	DWORD DataSize = In.GetSize();
 	Data::CBuffer Buffer(DataSize);
@@ -44,8 +44,8 @@ bool LoadShaderFromFXO(Data::CStream& In, PShader OutShader)
 
 bool LoadShaderFromFXO(const nString& FileName, PShader OutShader)
 {
-	Data::CFileStream File;
-	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
+	IO::CFileStream File;
+	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadShaderFromFXO(File, OutShader);
 }
 //---------------------------------------------------------------------

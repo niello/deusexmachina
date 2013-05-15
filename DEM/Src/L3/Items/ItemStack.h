@@ -26,8 +26,8 @@ public:
 	int		ID; // Database record ID
 
 	CItemStack(): ID(0), Item(NULL), Count(0), EquippedCount(0) {}
-	CItemStack(PItem pItem, WORD Num = 1): ID(0), Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.isvalid() && Num > 0); }
-	CItemStack(const CItemStack& pItem): ID(0), Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.isvalid()); }
+	CItemStack(PItem pItem, WORD Num = 1): ID(0), Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.IsValid() && Num > 0); }
+	CItemStack(const CItemStack& pItem): ID(0), Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.IsValid()); }
 
 	void			Add(WORD Num) { SetCount(Count + Num); }
 	void			Remove(WORD Num) { n_assert(Num < Count); SetCount(Count - Num); }
@@ -35,14 +35,14 @@ public:
 	void			Unequip(WORD Num) { n_assert(Num <= EquippedCount); SetEquippedCount(EquippedCount - Num); }
 	void			Merge(const CItemStack* pOther);
 	void			Clear() { Item = NULL; Count = EquippedCount = 0; }
-	bool			IsValid() const { return Item.isvalid() && Count > 0; }
+	bool			IsValid() const { return Item.IsValid() && Count > 0; }
 
-	void			SetItem(PItem NewItem) { n_assert(NewItem.isvalid()); Item = NewItem; }
+	void			SetItem(PItem NewItem) { n_assert(NewItem.IsValid()); Item = NewItem; }
 	void			SetCount(WORD NewCount) { n_assert(NewCount > 0 && NewCount >= EquippedCount); Count = NewCount; }
 	void			SetEquippedCount(WORD NewCount) { n_assert(NewCount <= Count); EquippedCount = NewCount; }
 	CStrID			GetItemID() const { return Item->GetID(); }
 	Ptr<CItemTpl>	GetTpl() const { return Item->GetTpl(); }
-	CItem*			GetItem() const { return Item.get_unsafe(); }
+	CItem*			GetItem() const { return Item.GetUnsafe(); }
 	WORD			GetCount() const { return Count; }
 	WORD			GetEquippedCount() const { return EquippedCount; }
 	WORD			GetNotEquippedCount() const { return Count - EquippedCount; }

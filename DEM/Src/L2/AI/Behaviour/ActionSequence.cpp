@@ -6,7 +6,7 @@ namespace AI
 bool CActionSequence::Activate(CActor* pActor)
 {
 	n_assert(!ppCurrChild);
-	if (Child.Size() < 1) FAIL;
+	if (Child.GetCount() < 1) FAIL;
 	ppCurrChild = Child.Begin();
 	return (*ppCurrChild)->Activate(pActor);
 }

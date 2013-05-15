@@ -16,8 +16,7 @@ namespace AI
 
 class CActionGoto: public CAction
 {
-	DeclareRTTI;
-	DeclareFactory(CActionGoto);
+	__DeclareClass(CActionGoto);
 
 protected:
 
@@ -35,7 +34,7 @@ public:
 	virtual bool		IsValid(CActor* pActor) const;
 };
 
-RegisterFactory(CActionGoto);
+__RegisterClassInFactory(CActionGoto);
 
 typedef Ptr<CActionGoto> PActionGoto;
 

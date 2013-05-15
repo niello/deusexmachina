@@ -3,20 +3,20 @@
 #define __DEM_L1_TIME_SERVER_H__
 
 #include <Time/TimeSource.h>
-#include <util/ndictionary.h>
+#include <Core/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/Events.h>
+#include <util/ndictionary.h>
 
 // Manages
 
 namespace Time
 {
-
 #define TimeSrv Time::CTimeServer::Instance()
 
 class CTimeServer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CTimeServer);
 
 protected:
@@ -52,7 +52,7 @@ public:
 
 	void			Open();
 	void			Close();
-	void			Update();
+	void			Trigger();
 
 	bool			IsOpen() const { return _IsOpen; }
 
@@ -80,7 +80,7 @@ public:
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::ResetAll()
 {
-	for (int i = 0; i < TimeSources.Size(); i++)
+	for (int i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAtIndex(i)->Reset();
 }
 //---------------------------------------------------------------------
@@ -90,7 +90,7 @@ inline void CTimeServer::ResetAll()
 // it, when the pause counter is != 0 it means, pause is activated.
 inline void CTimeServer::PauseAll()
 {
-	for (int i = 0; i < TimeSources.Size(); i++)
+	for (int i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAtIndex(i)->Pause();
 }
 //---------------------------------------------------------------------
@@ -98,7 +98,7 @@ inline void CTimeServer::PauseAll()
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::UnpauseAll()
 {
-	for (int i = 0; i < TimeSources.Size(); i++)
+	for (int i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAtIndex(i)->Unpause();
 }
 //---------------------------------------------------------------------
@@ -106,7 +106,7 @@ inline void CTimeServer::UnpauseAll()
 inline CTimeSource* CTimeServer::GetTimeSource(CStrID Name) const
 {
 	int Idx = TimeSources.FindIndex(Name);
-	return (Idx != INVALID_INDEX) ? TimeSources.ValueAtIndex(Idx).get_unsafe() : NULL;
+	return (Idx != INVALID_INDEX) ? TimeSources.ValueAtIndex(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

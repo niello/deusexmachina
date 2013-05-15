@@ -4,7 +4,7 @@
 
 namespace Anim
 {
-ImplementRTTI(Anim::CMocapClip, Anim::CAnimClip);
+__ImplementClassNoFactory(Anim::CMocapClip, Anim::CAnimClip);
 
 bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping, vector4* _pKeys,
 					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
@@ -21,7 +21,7 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>&
 	InvKeyTime = 1.f / _KeyTime;
 	Duration = (KeysPerCurve - 1) * _KeyTime;
 
-	for (int i = 0; i < Tracks.Size(); ++i)
+	for (int i = 0; i < Tracks.GetCount(); ++i)
 	{
 		Tracks[i].pOwnerClip = this;
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
@@ -56,7 +56,7 @@ Scene::PAnimController CMocapClip::CreateController(DWORD SamplerIdx) const
 {
 	Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
 	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
-	return Ctlr.get_unsafe();
+	return Ctlr.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

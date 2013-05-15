@@ -2,8 +2,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CBallJoint, Physics::CJoint);
-ImplementFactory(Physics::CBallJoint);
+__ImplementClassNoFactory(Physics::CBallJoint, Physics::CJoint);
+__ImplementClass(Physics::CBallJoint);
 
 void CBallJoint::Init(PParams Desc)
 {

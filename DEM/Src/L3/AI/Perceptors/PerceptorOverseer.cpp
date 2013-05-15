@@ -8,8 +8,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CPerceptorOverseer, AI::CPerceptor);
-ImplementFactory(AI::CPerceptorOverseer);
+__ImplementClassNoFactory(AI::CPerceptorOverseer, AI::CPerceptor);
+__ImplementClass(AI::CPerceptorOverseer);
 
 void CPerceptorOverseer::Init(const Data::CParams& Desc)
 {
@@ -18,30 +18,30 @@ void CPerceptorOverseer::Init(const Data::CParams& Desc)
 	PDataArray Array = Desc.Get<PDataArray>(CStrID("Overseers"), NULL);
 	
 	//!!!need CStrID in PS!
-	//if (Array.isvalid()) Array->FillArray(Overseers);
+	//if (Array.IsValid()) Array->FillArray(Overseers);
 	
-	if (Array.isvalid())
+	if (Array.IsValid())
 		for (CDataArray::iterator It = Array->Begin(); It != Array->End(); It++)
-			Overseers.Append(CStrID((*It).GetValue<nString>().Get()));
+			Overseers.Append(CStrID((*It).GetValue<nString>().CStr()));
 }
 //---------------------------------------------------------------------
 
 void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {
-	if (Overseers.Size() < 1) return; // Only if no rule to dynamically detect overseers
+	if (Overseers.GetCount() < 1) return; // Only if no rule to dynamically detect overseers
 
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
 		int i;
-		for (i = 0; i < Overseers.Size(); ++i)
+		for (i = 0; i < Overseers.GetCount(); ++i)
 			if (pStimulus->SourceEntityID == Overseers[i]) break;
 
-		if (i == Overseers.Size()) return;
+		if (i == Overseers.GetCount()) return;
 
 		CMemFactOverseer Pattern;
 		Pattern.pSourceStimulus = pStimulus;
 		PMemFactOverseer pFact = (CMemFactOverseer*)pActor->GetMemSystem().FindFact(Pattern);
-		if (!pFact.isvalid())
+		if (!pFact.IsValid())
 		{
 			pFact = (CMemFactOverseer*)pActor->GetMemSystem().AddFact(CMemFactOverseer::RTTI);
 			pFact->pSourceStimulus = pStimulus;

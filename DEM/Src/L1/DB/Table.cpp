@@ -45,7 +45,7 @@ void CTable::SetName(const nString& newName)
 	if (IsConnected())
 	{
 		nString SQL;
-		SQL.Format("ALTER TABLE '%s' RENAME TO '%s'", Name.Get(), newName.Get());
+		SQL.Format("ALTER TABLE '%s' RENAME TO '%s'", Name.CStr(), newName.CStr());
 		PCommand Cmd = CCommand::Create();
 		Cmd->Execute(Database, SQL);
 	}
@@ -60,9 +60,9 @@ void CTable::AddColumn(const CColumn& NewColumn)
 	if (!HasColumn(NewColumn.AttrID))
 	{
 		Columns.Append(NewColumn);
-		NameIdxMap.Add(NewColumn.GetName().CStr(), Columns.Size() - 1);
-		AttrIDIdxMap.Add(NewColumn.AttrID, Columns.Size() - 1);
-		if (NewColumn.Type & CColumn::Primary) PKColumnIndices.Append(Columns.Size() - 1);
+		NameIdxMap.Add(NewColumn.GetName().CStr(), Columns.GetCount() - 1);
+		AttrIDIdxMap.Add(NewColumn.AttrID, Columns.GetCount() - 1);
+		if (NewColumn.Type & CColumn::Primary) PKColumnIndices.Append(Columns.GetCount() - 1);
 	}
 }
 //---------------------------------------------------------------------
@@ -76,11 +76,11 @@ PDataset CTable::CreateDataset()
 // Private helper method which checks if an associated Database table exists.
 bool CTable::TableExists()
 {
-	n_assert(Database.isvalid());
+	n_assert(Database.IsValid());
 	n_assert(Name.IsValid());
 
 	nString SQL;
-	SQL.Format("SELECT Name FROM 'sqlite_master' WHERE type='table' AND Name='%s'", Name.Get());
+	SQL.Format("SELECT Name FROM 'sqlite_master' WHERE type='table' AND Name='%s'", Name.CStr());
 	PCommand Cmd = CCommand::Create();
 	PValueTable result = CValueTable::Create();
 	Cmd->Execute(Database, SQL, result);
@@ -91,11 +91,11 @@ bool CTable::TableExists()
 // Private helper method which deletes the associated Database table.
 void CTable::DropTable()
 {
-	n_assert(Database.isvalid());
+	n_assert(Database.IsValid());
 	n_assert(Name.IsValid());
 
 	nString SQL;
-	SQL.Format("DROP TABLE '%s'", Name.Get());
+	SQL.Format("DROP TABLE '%s'", Name.CStr());
 	PCommand Cmd = CCommand::Create();
 	Cmd->Execute(Database, SQL);
 }
@@ -120,11 +120,11 @@ nString CTable::BuildColumnDef(const CColumn& Column)
 
 void CTable::CreateTable()
 {
-	n_assert(Database.isvalid());
+	n_assert(Database.IsValid());
 	n_assert(Name.IsValid());
 
 	nString SQL;
-	SQL.Format("CREATE TABLE '%s' ( ", Name.Get());
+	SQL.Format("CREATE TABLE '%s' ( ", Name.CStr());
 	nString PK;
 	for (int ColIdx = 0; ColIdx < GetNumColumns(); ColIdx++)
 	{
@@ -162,9 +162,9 @@ void CTable::CreateTable()
 		{
 			n_assert(!(Column.Type & CColumn::Primary));
 			SQL.Format("CREATE INDEX %s_%s ON %s ( %s )", 
-			GetName().Get(),
+			GetName().CStr(),
 			Column.GetName().CStr(), 
-			GetName().Get(), 
+			GetName().CStr(), 
 			Column.GetName().CStr());
 			Cmd->Execute(Database, SQL);
 		}
@@ -175,11 +175,11 @@ void CTable::CreateTable()
 // Synchronizes column list between this table & DB table, OR-ing column sets
 void CTable::ReadTableLayout(bool IgnoreUnknownColumns)
 {
-	n_assert(Database.isvalid());
+	n_assert(Database.IsValid());
 	n_assert(Name.IsValid());
 
 	nString SQL;
-	SQL.Format("PRAGMA table_info(%s)", Name.Get());
+	SQL.Format("PRAGMA table_info(%s)", Name.CStr());
 	PCommand Cmd = CCommand::Create();
 	PValueTable TblInfo = CValueTable::Create();
 	Cmd->Execute(Database, SQL, TblInfo);
@@ -190,7 +190,7 @@ void CTable::ReadTableLayout(bool IgnoreUnknownColumns)
 		const nString& ColName = TblInfo->Get<nString>(Attr::name, i);
 		if (DBSrv->IsValidAttrName(ColName))
 		{
-			CAttrID AttrID = DBSrv->FindAttrID(ColName.Get());
+			CAttrID AttrID = DBSrv->FindAttrID(ColName.CStr());
 			if (!HasColumn(AttrID))
 			{
 				CColumn NewColumn;
@@ -203,10 +203,10 @@ void CTable::ReadTableLayout(bool IgnoreUnknownColumns)
 		}
 		else if (!IgnoreUnknownColumns)
 			n_error("CTable::ReadTableLayout(): invalid Column '%s' in table '%s'!", 
-				ColName.Get(), Name.Get());
+				ColName.CStr(), Name.CStr());
 	}
 
-	SQL.Format("PRAGMA index_list(%s)", GetName().Get());
+	SQL.Format("PRAGMA index_list(%s)", GetName().CStr());
 	PValueTable IndexList = CValueTable::Create();
 	Cmd->Execute(Database, SQL, IndexList);
 	for (int i = 0; i < IndexList->GetRowCount(); i++)
@@ -216,7 +216,7 @@ void CTable::ReadTableLayout(bool IgnoreUnknownColumns)
 		{
 			PCommand IndexInfoCmd = CCommand::Create();
 			PValueTable IndexInfo = CValueTable::Create();
-			SQL.Format("PRAGMA index_info(%s)", IndexName.Get());
+			SQL.Format("PRAGMA index_info(%s)", IndexName.CStr());
 			IndexInfoCmd->Execute(Database, SQL, IndexInfo);
 			if (1 == IndexInfo->GetRowCount())
 			{
@@ -224,7 +224,7 @@ void CTable::ReadTableLayout(bool IgnoreUnknownColumns)
 				const nString& ColName = IndexInfo->Get<nString>(Attr::name, 0);
 				if (DBSrv->IsValidAttrName(ColName))
 				{
-					CAttrID AttrID = DBSrv->FindAttrID(ColName.Get());
+					CAttrID AttrID = DBSrv->FindAttrID(ColName.CStr());
 					if (HasColumn(AttrID))
 					{
 						CColumn& Column = const_cast<CColumn&>(GetColumn(AttrID));
@@ -286,7 +286,7 @@ void CTable::CommitUncommittedColumns()
 	PCommand Cmd = CCommand::Create();
 
 	nString SQL;
-	for (int i = 0; i < Columns.Size(); i++)
+	for (int i = 0; i < Columns.GetCount(); i++)
 	{
 		CColumn& Column = Columns[i];
 		if (!Column.Committed)
@@ -295,7 +295,7 @@ void CTable::CommitUncommittedColumns()
 
 			// note: it is illegal to add primary or unique Columns after table creation
 			n_assert(!(Column.Type & CColumn::Primary))
-			SQL.Format("ALTER TABLE '%s' ADD COLUMN ", Name.Get());
+			SQL.Format("ALTER TABLE '%s' ADD COLUMN ", Name.CStr());
 			SQL.Append(BuildColumnDef(Column));
 			n_assert(Cmd->Execute(Database, SQL));
 
@@ -303,9 +303,9 @@ void CTable::CommitUncommittedColumns()
 			if (Column.Type & CColumn::Indexed)
 			{
 				SQL.Format("CREATE INDEX %s_%s ON %s ( %s )", 
-					GetName().Get(),
+					GetName().CStr(),
 					Column.GetName().CStr(), 
-					GetName().Get(), 
+					GetName().CStr(), 
 					Column.GetName().CStr());
 				n_assert(Cmd->Execute(Database, SQL));
 			}
@@ -341,23 +341,23 @@ void CTable::CreateMultiColumnIndex(const nArray<CAttrID>& columnIds)
 	SQL.Append(GetName());
 	SQL.Append("_");
 
-	for (int i = 0; i < columnIds.Size(); i++)
+	for (int i = 0; i < columnIds.GetCount(); i++)
 	{
 		n_assert(HasColumn(columnIds[i]));
 		SQL.Append(columnIds[i]->GetName());
-		if (i < columnIds.Size() - 1) SQL.Append("_");
+		if (i < columnIds.GetCount() - 1) SQL.Append("_");
 	}
 
 	SQL.Append(" ON ");
 	SQL.Append(GetName());
 	SQL.Append(" ( ");
 
-	for (int i = 0; i < columnIds.Size(); i++)
+	for (int i = 0; i < columnIds.GetCount(); i++)
 	{
 		SQL.Append("'");
 		SQL.Append(columnIds[i]->GetName());
 		SQL.Append("'");
-		if (i < columnIds.Size() - 1) SQL.Append(",");
+		if (i < columnIds.GetCount() - 1) SQL.Append(",");
 	}
 
 	SQL.Append(" ) ");

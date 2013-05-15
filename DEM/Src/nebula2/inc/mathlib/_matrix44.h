@@ -78,13 +78,13 @@ public:
     /// transform vector3, projecting back into w=1
     _vector3 transform_coord(const _vector3& v) const;
     /// return x component
-    _vector3& x_component() const;
+    _vector3& AxisX() const;
     /// return y component
-    _vector3& y_component() const;
+    _vector3& AxisY() const;
     /// return z component
-    _vector3& z_component() const;
+    _vector3& AxisZ() const;
     /// return translate component
-    _vector3& pos_component() const;
+    _vector3& Translation() const;
     /// rotate around global x
     void rotate_x(const float a);
     /// rotate around global y
@@ -502,7 +502,7 @@ _matrix44::transform_coord(const _vector3& v) const
 */
 inline
 _vector3&
-_matrix44::x_component() const
+_matrix44::AxisX() const
 {
     return *(_vector3*)&M11;
 }
@@ -513,7 +513,7 @@ _matrix44::x_component() const
 */
 inline
 _vector3&
-_matrix44::y_component() const
+_matrix44::AxisY() const
 {
     return *(_vector3*)&M21;
 }
@@ -524,7 +524,7 @@ _matrix44::y_component() const
 */
 inline
 _vector3&
-_matrix44::z_component() const
+_matrix44::AxisZ() const
 {
     return *(_vector3*)&M31;
 }
@@ -535,7 +535,7 @@ _matrix44::z_component() const
 */
 inline
 _vector3&
-_matrix44::pos_component() const
+_matrix44::Translation() const
 {
     return *(_vector3*)&M41;
 }

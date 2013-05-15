@@ -20,9 +20,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropSmartObject, Game::CProperty);
-ImplementFactory(Properties::CPropSmartObject);
-ImplementPropertyStorage(CPropSmartObject, 256);
+__ImplementClassNoFactory(Properties::CPropSmartObject, Game::CProperty);
+__ImplementClass(Properties::CPropSmartObject);
+__ImplementPropertyStorage(CPropSmartObject, 256);
 RegisterProperty(CPropSmartObject);
 
 using namespace Data;
@@ -42,9 +42,9 @@ void CPropSmartObject::Activate()
 	const nString& DescResource = GetEntity()->Get<nString>(Attr::SmartObjDesc);
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(nString("smarts:") + DescResource + ".prm");
 
-	if (Desc.isvalid())
+	if (Desc.IsValid())
 	{
-		TypeID = CStrID(Desc->Get<nString>(CStrID("TypeID"), NULL).Get());
+		TypeID = CStrID(Desc->Get<nString>(CStrID("TypeID"), NULL).CStr());
 		
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Actions")))
@@ -54,7 +54,7 @@ void CPropSmartObject::Activate()
 			{
 				const CParam& Prm = DescSection->Get(i);
 				PParams ActDesc = Prm.GetValue<PParams>();
-				LPCSTR TplName = ActDesc->Get<nString>(CStrID("Tpl")).Get();
+				LPCSTR TplName = ActDesc->Get<nString>(CStrID("Tpl")).CStr();
 				const CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
 				if (pTpl) Actions.Add(Prm.GetName(), n_new(CSmartObjAction)(*pTpl, ActDesc));
 				else n_printf("AI, IAO, Warning: can't find smart object action template '%s'\n", TplName);
@@ -64,7 +64,7 @@ void CPropSmartObject::Activate()
 
 		nString DefaultState;
 		if (Desc->Get(DefaultState, CStrID("DefaultState")))
-			SetState(CStrID(DefaultState.Get()));
+			SetState(CStrID(DefaultState.CStr()));
 	}
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropSmartObject, ExposeSI);
@@ -116,7 +116,7 @@ bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector
 {
 	PSmartObjAction Action = GetAction(ActionID);
 
-	if (Action.isvalid())
+	if (Action.IsValid())
 	{
 		GetEntity()->Get<matrix44>(Attr::Transform).mult(Action->GetTpl().DestOffset, OutDest);
 		OutMinDist = Action->GetTpl().MinDistance;

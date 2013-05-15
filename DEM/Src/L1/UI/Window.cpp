@@ -5,8 +5,7 @@
 
 namespace UI
 {
-ImplementRTTI(UI::CWindow, Core::CRefCounted);
-ImplementFactory(UI::CWindow);
+__ImplementClass(UI::CWindow, 'UIWN', Core::CRefCounted);
 
 void CWindow::Init(CEGUI::Window* pWindow)
 {
@@ -17,7 +16,7 @@ void CWindow::Init(CEGUI::Window* pWindow)
 
 void CWindow::Load(const nString& ResourceFile)
 {
-	Init(CEGUI::WindowManager::getSingleton().loadWindowLayout(ResourceFile.Get(), ""));
+	Init(CEGUI::WindowManager::getSingleton().loadWindowLayout(ResourceFile.CStr(), ""));
 }
 //---------------------------------------------------------------------
 

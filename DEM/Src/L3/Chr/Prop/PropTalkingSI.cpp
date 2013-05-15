@@ -2,7 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 extern "C"
 {
@@ -21,7 +21,7 @@ int CPropTalking_SayPhrase(lua_State* l)
 	SETUP_ENT_SI_ARGS(2);
 
 	Game::CEntity* pTalkingEnt = This->GetEntity();
-	CPropTalking* pTalking = pTalkingEnt ? pTalkingEnt->FindProperty<CPropTalking>() : NULL;
+	CPropTalking* pTalking = pTalkingEnt ? pTalkingEnt->GetProperty<CPropTalking>() : NULL;
 
 	if (pTalking)
 	{

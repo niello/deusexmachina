@@ -13,8 +13,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTplEquipItem, AI::CActionTpl);
-ImplementFactory(AI::CActionTplEquipItem);
+__ImplementClassNoFactory(AI::CActionTplEquipItem, AI::CActionTpl);
+__ImplementClass(AI::CActionTplEquipItem);
 
 using namespace Properties;
 
@@ -27,7 +27,7 @@ void CActionTplEquipItem::Init(PParams Params)
 
 bool CActionTplEquipItem::GetPreconditions(CActor* pActor, CWorldState& WS, const CWorldState& WSGoal) const
 {
-	CPropInventory* pInv = pActor->GetEntity()->FindProperty<CPropInventory>();
+	CPropInventory* pInv = pActor->GetEntity()->GetProperty<CPropInventory>();
 	if (pInv->HasItem(WSGoal.GetProp(WSP_ItemEquipped))) FAIL;
 	WS.SetProp(WSP_HasItem, WSP_ItemEquipped);
 	OK;
@@ -36,7 +36,7 @@ bool CActionTplEquipItem::GetPreconditions(CActor* pActor, CWorldState& WS, cons
 
 bool CActionTplEquipItem::ValidateContextPreconditions(CActor* pActor, const CWorldState& WSGoal)
 {
-	CPropEquipment* pEquipment = pActor->GetEntity()->FindProperty<CPropEquipment>();
+	CPropEquipment* pEquipment = pActor->GetEntity()->GetProperty<CPropEquipment>();
 	//!!!check can equip!
 	return !!pEquipment;
 }
@@ -46,7 +46,7 @@ PAction CActionTplEquipItem::CreateInstance(const CWorldState& Context) const
 {
 	PActionEquipItem Act = n_new(CActionEquipItem);
 	Act->Init(Context.GetProp(WSP_ItemEquipped));
-	return Act.get_unsafe();
+	return Act.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

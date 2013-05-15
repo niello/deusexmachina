@@ -4,5 +4,5 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CValidator, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CValidator, Core::CRefCounted);
 } //namespace AI

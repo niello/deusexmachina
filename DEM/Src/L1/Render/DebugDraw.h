@@ -5,6 +5,7 @@
 #include <Render/Renderer.h>
 #include <Render/Geometry/Mesh.h>
 #include <Render/Materials/Shader.h>
+#include <Core/Singleton.h>
 
 #undef DrawText
 
@@ -218,9 +219,9 @@ inline bool CDebugDraw::DrawBoxWireframe(const bbox3& Box, const vector4& Color)
 
 inline bool CDebugDraw::DrawCoordAxes(const matrix44& Tfm, bool DrawX, bool DrawY, bool DrawZ)
 {
-	if (DrawX) DrawLine(Tfm.pos_component(), Tfm.pos_component() + Tfm.x_component(), vector4::Red);
-	if (DrawY) DrawLine(Tfm.pos_component(), Tfm.pos_component() + Tfm.y_component(), vector4::Green);
-	if (DrawZ) DrawLine(Tfm.pos_component(), Tfm.pos_component() + Tfm.z_component(), vector4::Blue);
+	if (DrawX) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisX(), vector4::Red);
+	if (DrawY) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisY(), vector4::Green);
+	if (DrawZ) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisZ(), vector4::Blue);
 	OK;
 }
 //---------------------------------------------------------------------

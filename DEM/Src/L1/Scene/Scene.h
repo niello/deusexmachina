@@ -48,7 +48,7 @@ public:
 	CScene(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f), AutoAdjustCameraAspect(true) {  }
 	~CScene() { Clear(); }
 
-	void		Init(const bbox3& Bounds);
+	void		Init(const bbox3& Bounds, DWORD SPSHierarchyDepth);
 	void		Activate();
 	void		Deactivate();
 	void		Clear();
@@ -60,10 +60,10 @@ public:
 
 	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader);
 
-	CSceneNode*	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode.get_unsafe(); }
-	CSceneNode&	GetRootNode() { return *RootNode.get_unsafe(); }
+	CSceneNode*	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode.GetUnsafe(); }
+	CSceneNode&	GetRootNode() { return *RootNode.GetUnsafe(); }
 	void		SetMainCamera(CCamera* pNewCamera);
-	CCamera*	GetMainCamera() const { return MainCamera.get_unsafe(); }
+	CCamera*	GetMainCamera() const { return MainCamera.GetUnsafe(); }
 };
 
 typedef Ptr<CScene> PScene;

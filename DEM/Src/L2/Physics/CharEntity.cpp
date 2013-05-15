@@ -3,7 +3,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/RigidBody.h>
 #include <Physics/Collision/Shape.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/Joints/AMotor.h>
 #include <Physics/Ragdoll.h>
 #include <Game/Mgr/EnvQueryManager.h>
@@ -16,8 +16,8 @@ extern const matrix44 Rotate180(
 
 namespace Physics
 {
-ImplementRTTI(Physics::CCharEntity, Physics::CEntity);
-ImplementFactory(Physics::CCharEntity);
+__ImplementClassNoFactory(Physics::CCharEntity, Physics::CEntity);
+__ImplementClass(Physics::CCharEntity);
 
 static const vector3 UpVector(0.0f, 1.0f, 0.0f);
 
@@ -34,7 +34,7 @@ CCharEntity::CCharEntity():
 
 CCharEntity::~CCharEntity()
 {
-	n_assert(!DefaultComposite.isvalid());
+	n_assert(!DefaultComposite.IsValid());
 }
 //---------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ void CCharEntity::CreateRagdollComposite()
 
 void CCharEntity::Activate()
 {
-	n_assert(!DefaultComposite.isvalid());
+	n_assert(!DefaultComposite.IsValid());
 	n_assert(!IsActive());
 	
 	CreateDefaultComposite();
@@ -124,7 +124,7 @@ void CCharEntity::OnStepBefore()
 	if (IsCollisionEnabled() && !IsRagdollActive())
 	{
 		CEnvInfo EnvInfo;
-		vector3 Pos = GetTransform().pos_component();
+		vector3 Pos = GetTransform().Translation();
 		Pos.y += Height;
 
 		float DistanceToGround;
@@ -226,7 +226,7 @@ void CCharEntity::ActivateRagdoll()
 	n_assert(!IsRagdollActive());
 
 	//!!!many unnecessary matrix copyings!
-	if (RagdollComposite.isvalid())
+	if (RagdollComposite.IsValid())
 	{
 		// Get transform before detaching current composite
 		matrix44 CurrTfm = GetTransform();
@@ -247,7 +247,7 @@ void CCharEntity::ActivateRagdoll()
 		RagdollComposite->ReadJoints();
 
 		// Apply a the stored impulse to the ragdoll
-		if (pRagdollImpulse.isvalid())
+		if (pRagdollImpulse.IsValid())
 		{
 			pRagdollImpulse->Apply();
 			pRagdollImpulse = NULL;
@@ -264,7 +264,7 @@ void CCharEntity::DeactivateRagdoll()
 
 	Flags.Clear(RAGDOLL_ACTIVE);
 
-	if (RagdollComposite.isvalid())
+	if (RagdollComposite.IsValid())
 	{
 		DisableCollision();
 		SetComposite(DefaultComposite);

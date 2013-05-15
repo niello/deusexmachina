@@ -12,8 +12,7 @@ namespace Event
 
 class SetTransform: public Events::CEventNative
 {
-	DeclareRTTI;
-	DeclareFactory(SetTransform);
+	__DeclareClass(SetTransform);
 
 public:
 
@@ -23,7 +22,7 @@ public:
 	SetTransform(const matrix44& Tfm): Transform(Tfm) {}
 };
 
-RegisterFactory(SetTransform);
+__RegisterClassInFactory(SetTransform);
 
 }
 

@@ -32,7 +32,7 @@ typedef Ptr<CFrameShader> PFrameShader;
 inline void CFrameShader::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
 	//!!!PERF: for passes and batches - if shader is the same as set, don't reset it!
-	for (int i = 0; i < Passes.Size(); ++i)
+	for (int i = 0; i < Passes.GetCount(); ++i)
 		Passes[i]->Render(pObjects, pLights);
 }
 //---------------------------------------------------------------------

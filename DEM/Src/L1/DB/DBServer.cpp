@@ -7,7 +7,7 @@ int UnregisterN2SQLiteVFS();
 
 namespace DB
 {
-ImplementRTTI(DB::CDBServer, Core::CRefCounted);
+__ImplementClassNoFactory(DB::CDBServer, Core::CRefCounted);
 __ImplementSingleton(DB::CDBServer);
 
 CDBServer::CDBServer()

@@ -22,8 +22,7 @@ struct CSPSRecord;
 
 class CModel: public CRenderObject
 {
-	DeclareRTTI;
-	DeclareFactory(CModel);
+	__DeclareClass(CModel);
 
 protected:
 
@@ -46,7 +45,7 @@ public:
 
 	CModel(): pSPSRecord(NULL), MeshGroupIndex(0), FeatureFlags(0) {}
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual bool	OnAdd();
 	virtual void	OnRemove();
 	virtual void	Update();
@@ -55,7 +54,7 @@ public:
 	void			GetGlobalAABB(bbox3& OutBox) const;
 };
 
-RegisterFactory(CModel);
+__RegisterClassInFactory(CModel);
 
 typedef Ptr<CModel> PModel;
 

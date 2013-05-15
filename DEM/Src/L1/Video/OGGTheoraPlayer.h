@@ -10,7 +10,7 @@
 // and slightly modified to match the CVideoPlayer interface
 // Based on nOggTheoraPlayer (C) 2005 RadonLabs GmbH
 
-namespace Data
+namespace IO
 {
 	class CFileStream;
 }
@@ -40,7 +40,7 @@ protected:
 	int					frameNr;
 
 	ogg_packet			op;
-	Data::CFileStream*	infile;
+	IO::CFileStream*	infile;
 	yuv_buffer			yuv;
 
 	unsigned char*		rgbBuffer;
@@ -50,7 +50,7 @@ protected:
 	nTime				currentTime;
 	uint				decodedFrames;
 
-	int buffer_data(Data::CFileStream *in,ogg_sync_state *oy);
+	int buffer_data(IO::CFileStream *in,ogg_sync_state *oy);
 	int queue_page(ogg_page *page);
 	void DecodeYUV(yuv_buffer& yuv,unsigned char* rgbBuffer);
 	void StopTheora();

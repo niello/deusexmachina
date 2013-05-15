@@ -13,8 +13,7 @@ class CDlgLink;
 
 class CDlgNodePhrase: public CDlgNode
 {
-	DeclareRTTI;
-	DeclareFactory(CDlgNodePhrase);
+	__DeclareClass(CDlgNodePhrase);
 
 public:
 
@@ -28,7 +27,7 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-RegisterFactory(CDlgNodePhrase);
+__RegisterClassInFactory(CDlgNodePhrase);
 
 }
 

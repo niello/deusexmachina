@@ -1,7 +1,7 @@
 #include "ActionFaceTarget.h"
 
 #include <AI/Prop/PropActorBrain.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 namespace Attr
 {
@@ -10,8 +10,8 @@ namespace Attr
 
 namespace AI
 {
-ImplementRTTI(AI::CActionFaceTarget, AI::CActionFace)
-ImplementFactory(AI::CActionFaceTarget);
+__ImplementClassNoFactory(AI::CActionFaceTarget, AI::CActionFace)
+__ImplementClass(AI::CActionFaceTarget);
 
 bool CActionFaceTarget::Activate(CActor* pActor)
 {
@@ -33,9 +33,9 @@ EExecStatus CActionFaceTarget::Update(CActor* pActor)
 
 bool CActionFaceTarget::SetupDirFromTarget(CActor* pActor)
 {
-	Game::CEntity* pEnt = EntityMgr->GetEntityByID(TargetID);
+	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
-	vector3 FaceDir = pEnt->Get<matrix44>(Attr::Transform).pos_component() - pActor->Position;
+	vector3 FaceDir = pEnt->Get<matrix44>(Attr::Transform).Translation() - pActor->Position;
 	FaceDir.norm();
 	pActor->GetMotorSystem().SetFaceDirection(FaceDir);
 	OK;

@@ -9,6 +9,7 @@
 #include <Render/Geometry/Mesh.h>
 #include <Resources/ResourceManager.h>
 #include <Data/Data.h>
+#include <Core/Singleton.h>
 #include <Events/Events.h>
 #include <Events/Subscription.h>
 
@@ -23,7 +24,7 @@ namespace Render
 
 class CRenderServer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CRenderServer);
 
 public:
@@ -108,7 +109,7 @@ public:
 	bool				BeginFrame();
 	void				EndFrame();
 	void				Present();
-	void				SaveScreenshot(EImageFormat ImageFormat, Data::CStream& OutStream);
+	void				SaveScreenshot(EImageFormat ImageFormat, IO::CStream& OutStream);
 
 	void				SetAmbientLight(const vector4& Color);
 	void				SetCameraPosition(const vector3& Pos);

@@ -75,14 +75,14 @@ public:
 	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
 
 	CSceneNode*				GetParent() const { return pParent; }
-	DWORD					GetChildCount() const { return Child.Size(); }
+	DWORD					GetChildCount() const { return Child.GetCount(); }
 	CSceneNode*				GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
 	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
 	CSceneNode*				GetChild(LPCSTR Path, bool Create = false);
 	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
 	bool					AddAttr(CSceneNodeAttr& Attr);
-	DWORD					GetAttrCount() const { return Attrs.Size(); }
+	DWORD					GetAttrCount() const { return Attrs.GetCount(); }
 	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
 	void					RemoveAttr(CSceneNodeAttr& Attr);
 	void					RemoveAttr(DWORD Idx);
@@ -117,13 +117,13 @@ public:
 	const Math::CTransform&	GetLocalTransform() { return Tfm; }
 	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
 	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
-	const vector3&			GetWorldPosition() { return WorldMatrix.pos_component(); }
+	const vector3&			GetWorldPosition() { return WorldMatrix.Translation(); }
 };
 
 inline CSceneNode::~CSceneNode()
 {
 	Child.Clear();
-	while (Attrs.Size()) RemoveAttr(0);
+	while (Attrs.GetCount()) RemoveAttr(0);
 }
 //---------------------------------------------------------------------
 
@@ -144,7 +144,7 @@ inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
 
 template<class T> inline T* CSceneNode::FindFirstAttr() const
 {
-	for (int i = 0; i < Attrs.Size(); ++i)
+	for (int i = 0; i < Attrs.GetCount(); ++i)
 	{
 		CSceneNodeAttr* pAttr = Attrs[i];
 		if (pAttr->IsA(T::RTTI)) return (T*)pAttr;

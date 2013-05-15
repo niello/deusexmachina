@@ -24,8 +24,7 @@ using namespace Data;
 
 class CItemManager: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CItemManager);
+	__DeclareClassNoFactory;
 
 private:
 
@@ -54,13 +53,11 @@ public:
 
 	PItemTpl		CreateItemTpl(CStrID ID, const CParams& Params); //???type from params?
 	PItemTpl		GetItemTpl(CStrID ID);
-	DB::CDataset*	GetInventoriesDataset() const { return DSInv.get_unsafe(); }
+	DB::CDataset*	GetInventoriesDataset() const { return DSInv.GetUnsafe(); }
 	int				GetInventoriesRowCount() const { return InitialVTRowCount; }
-	DB::CDataset*	GetEquipmentDataset() const { return DSEquip.get_unsafe(); }
+	DB::CDataset*	GetEquipmentDataset() const { return DSEquip.GetUnsafe(); }
 	int				NewItemStackID() const { return ++LargestItemStackID; }
 };
-
-RegisterFactory(CItemManager);
 
 }
 

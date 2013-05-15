@@ -13,8 +13,7 @@ namespace Physics
 
 class CHinge2Joint: public CJoint
 {
-	DeclareRTTI;
-	DeclareFactory(CHinge2Joint);
+	__DeclareClass(CHinge2Joint);
 
 public:
 
@@ -32,7 +31,7 @@ public:
 	virtual void RenderDebug();
 };
 
-RegisterFactory(CHinge2Joint);
+__RegisterClassInFactory(CHinge2Joint);
 
 }
 

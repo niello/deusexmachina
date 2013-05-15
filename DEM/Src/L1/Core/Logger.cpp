@@ -1,7 +1,8 @@
 #include "Logger.h"
 
-#include <Data/DataServer.h>
-#include <Data/Streams/FileStream.h>
+#include <Core/CoreServer.h>
+#include <IO/IOServer.h>
+#include <IO/Streams/FileStream.h>
 #include <Events/EventManager.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -26,19 +27,19 @@ bool CLogger::Open(const char* pAppName, const nString& FilePath)
 	if (RealPath.IsEmpty())
 	{
 		Dir = "appdata:RadonLabs/Nebula2";
-		RealPath.Format("appdata:RadonLabs/Nebula2/%s.log", AppName.Get());
+		RealPath.Format("appdata:RadonLabs/Nebula2/%s.log", AppName.CStr());
 	}
 	else Dir = RealPath.ExtractDirName();
 
-	if (!DataSrv->DirectoryExists(Dir) && !DataSrv->CreateDirectory(Dir)) FAIL;
+	if (!IOSrv->DirectoryExists(Dir) && !IOSrv->CreateDirectory(Dir)) FAIL;
 
-	pLogFile = n_new(Data::CFileStream);
+	pLogFile = n_new(IO::CFileStream);
 
 	// Note: Failing to open the log file is not an error. There may
 	// be several versions of the same application running, which
 	// would fight for the log file. The first one wins, the other
 	// silently don't log.
-	pLogFile->Open(RealPath, Data::SAM_WRITE, Data::SAP_SEQUENTIAL);
+	pLogFile->Open(RealPath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -121,7 +122,7 @@ void CLogger::ShowMessageBox(EMsgType Type, const char* pMsg)
 		case MsgTypeError:		BoxType |= MB_ICONERROR; break;
 	}
 
-	MessageBox(0, pMsg, AppName.Get(), BoxType);
+	MessageBox(0, pMsg, AppName.CStr(), BoxType);
 }
 //---------------------------------------------------------------------
 

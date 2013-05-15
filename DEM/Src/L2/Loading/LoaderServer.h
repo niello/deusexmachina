@@ -5,7 +5,7 @@
 #include <Core/RefCounted.h>
 
 #include <Data/StringID.h>
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <DB/AttrSet.h>
 #include <util/ndictionary.h>
 #include <Data/DataServer.h>
@@ -33,8 +33,7 @@ namespace Loading
 
 class CLoaderServer: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CLoaderServer);
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CLoaderServer);
 
 private:
@@ -72,10 +71,6 @@ public:
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
 
-	bool				LoadLevel(const nString& LevelName);
-	bool				LoadEmptyLevel() { return LoadLevel(NULL); }
-	void				UnloadLevel();
-
 	void				CommitChangesToDB();
 	
 	bool				NewGame(const nString& StartupLevel = NULL);
@@ -97,8 +92,8 @@ public:
 	const T&			GetGlobal(DB::CAttrID AttrID) const { return Globals.GetAttr(AttrID).GetValue<T>(); }
 
 	//!!!only for CEntityFactory now!
-	DB::CDatabase*		GetStaticDB() { return StaticDB.get_unsafe(); }
-	DB::CDatabase*		GetGameDB() { return GameDB.get_unsafe(); }
+	DB::CDatabase*		GetStaticDB() { return StaticDB.GetUnsafe(); }
+	DB::CDatabase*		GetGameDB() { return GameDB.GetUnsafe(); }
 
 	void				SetGameDBName(const nString& DBName) { GameDBName = (DBName.IsValid()) ? DBName : "game"; }
 	const nString&		GetGameDBName() const { return GameDBName; }
@@ -110,8 +105,6 @@ public:
 	void				SetEmptyLevelDimensions(const bbox3& Box) { EmptyLevelBox = Box; }
 	const bbox3&		GetEmptyLevelDimensions() const { return EmptyLevelBox; }
 };
-
-RegisterFactory(CLoaderServer);
 
 //???!!!pre-create this strings in profile when it's loaded?!
 
@@ -134,35 +127,6 @@ inline nString CLoaderServer::GetSaveGameDirectory() const
 inline nString CLoaderServer::GetSaveGamePath(const nString& SaveGameName) const
 {
 	return GetSaveGameDirectory() + "/" + SaveGameName + ".db3";
-}
-//---------------------------------------------------------------------
-
-// This method starts a new game by creating a copy of the initial
-// world database into the current user profile's directory. 
-// The given StartupLevel will be loaded.
-inline bool CLoaderServer::NewGame(const nString& StartupLevel)
-{
-	DataSrv->CreateDirectory("appdata:profiles/default");
-	if (!OpenGameDB(nString("export:db/") + GameDBName + ".db3")) FAIL;
-	return LoadLevel(StartupLevel.IsValid() ? StartupLevel : GetStartupLevel());
-}
-//---------------------------------------------------------------------
-
-// This method continues the game from the last known state (the existing
-// world database file in the user profile's directory, created by NewGame().
-inline bool CLoaderServer::ContinueGame()
-{
-	if (!OpenGameDB(GetDatabasePath())) FAIL;
-	return LoadLevel(GetCurrentLevel());
-}
-//---------------------------------------------------------------------
-
-// Load a saved game. This will overwrite the current world database
-// with the saved game database file.
-inline bool CLoaderServer::LoadGame(const nString& SaveGameName)
-{
-	if (!OpenGameDB(GetSaveGamePath(SaveGameName))) FAIL;
-	return LoadLevel(GetCurrentLevel());
 }
 //---------------------------------------------------------------------
 

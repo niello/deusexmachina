@@ -6,15 +6,15 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CValidatorScript, AI::CValidator);
-ImplementFactory(AI::CValidatorScript);
+__ImplementClassNoFactory(AI::CValidatorScript, AI::CValidator);
+__ImplementClass(AI::CValidatorScript);
 
 using namespace Data;
 
 void CValidatorScript::Init(PParams Desc)
 {
-	n_assert(Desc.isvalid());
-	ConditionFunc = Desc->Get<nString>(CStrID("ConditionFunc")).Get();
+	n_assert(Desc.IsValid());
+	ConditionFunc = Desc->Get<nString>(CStrID("ConditionFunc")).CStr();
 	//???!!!relevance func?!
 }
 //---------------------------------------------------------------------
@@ -23,7 +23,7 @@ bool CValidatorScript::IsValid(const CActor* pActor, const CPropSmartObject* pSO
 {
 	if (ConditionFunc.IsValid())
 	{
-		CPropScriptable* pScriptable = pSO->GetEntity()->FindProperty<CPropScriptable>();
+		CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<CPropScriptable>();
 		CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 		if (pScriptObj && pScriptObj->RunFunctionData(ConditionFunc, pActor->GetEntity()->GetUID()) != Success) FAIL;
 	}

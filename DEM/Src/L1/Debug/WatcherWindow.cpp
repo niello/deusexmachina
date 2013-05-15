@@ -3,6 +3,7 @@
 #include <Scripting/ScriptServer.h>
 #include <Events/EventManager.h>
 #include <Data/DataArray.h>
+#include <Core/CoreServer.h>
 
 #include <elements/CEGUIEditbox.h>
 #include <elements/CEGUIMultiColumnList.h>
@@ -16,8 +17,7 @@
 
 namespace Debug
 {
-ImplementRTTI(Debug::CWatcherWindow, UI::CWindow);
-ImplementFactory(Debug::CWatcherWindow);
+__ImplementClass(Debug::CWatcherWindow, 'DWWW', UI::CWindow);
 
 using namespace Data;
 
@@ -111,14 +111,14 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 
 void CWatcherWindow::AddAllGlobals()
 {
-	int i = Watched.Size();
+	int i = Watched.GetCount();
 	for (CHashMap<CData>::CIterator It = CoreSrv->Globals.Begin(); !It.IsEnd(); ++It, ++i)
 	{
 		nString Str(It.GetKey(), It.GetKeyLength());
-		AddWatched(DEM, Str.Get());
+		AddWatched(DEM, Str.CStr());
 	}
 
-	for (int j = i; j < Watched.Size(); ++j)
+	for (int j = i; j < Watched.GetCount(); ++j)
 		Watched[j].Clear();
 	Watched.Resize(i);
 }
@@ -173,7 +173,7 @@ bool CWatcherWindow::OnListKeyDown(const CEGUI::EventArgs& e)
 bool CWatcherWindow::OnClearClick(const CEGUI::EventArgs& e)
 {
 	pList->resetList();
-	for (int i = 0; i < Watched.Size(); ++i)
+	for (int i = 0; i < Watched.GetCount(); ++i)
 		Watched[i].Clear();
 	Watched.Clear();
 	OK;
@@ -206,27 +206,27 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 					if (CurrVar.IsA<bool>())
 					{
 						It->pTypeItem->setText("DEM bool");
-						It->pValueItem->setText(nString::FromBool(CurrVar.GetValue<bool>()).Get());
+						It->pValueItem->setText(nString::FromBool(CurrVar.GetValue<bool>()).CStr());
 					}
 					else if (CurrVar.IsA<int>())
 					{
 						It->pTypeItem->setText("DEM int");
-						It->pValueItem->setText(nString::FromInt(CurrVar.GetValue<int>()).Get());
+						It->pValueItem->setText(nString::FromInt(CurrVar.GetValue<int>()).CStr());
 					}
 					else if (CurrVar.IsA<float>())
 					{
 						It->pTypeItem->setText("DEM float");
-						It->pValueItem->setText(nString::FromFloat(CurrVar.GetValue<float>()).Get());
+						It->pValueItem->setText(nString::FromFloat(CurrVar.GetValue<float>()).CStr());
 					}
 					else if (CurrVar.IsA<nString>())
 					{
 						It->pTypeItem->setText("DEM string");
-						It->pValueItem->setText((CEGUI::utf8*)CurrVar.GetValue<nString>().Get());
+						It->pValueItem->setText((CEGUI::utf8*)CurrVar.GetValue<nString>().CStr());
 					}
 					else if (CurrVar.IsA<vector4>())
 					{
 						It->pTypeItem->setText("DEM vector4");
-						It->pValueItem->setText(nString::FromVector4(CurrVar.GetValue<vector4>()).Get());
+						It->pValueItem->setText(nString::FromVector4(CurrVar.GetValue<vector4>()).CStr());
 					}
 					else
 					{
@@ -262,27 +262,27 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 				else if (Output.IsA<int>())
 				{
 					It->pTypeItem->setText("Lua int");
-					It->pValueItem->setText(nString::FromInt(Output).Get());
+					It->pValueItem->setText(nString::FromInt(Output).CStr());
 				}
 				else if (Output.IsA<float>())
 				{
 					It->pTypeItem->setText("Lua float");
-					It->pValueItem->setText(nString::FromFloat(Output).Get());
+					It->pValueItem->setText(nString::FromFloat(Output).CStr());
 				}
 				else if (Output.IsA<nString>())
 				{
 					It->pTypeItem->setText("Lua string");
-					It->pValueItem->setText((CEGUI::utf8*)Output.GetValue<nString>().Get());
+					It->pValueItem->setText((CEGUI::utf8*)Output.GetValue<nString>().CStr());
 				}
 				else if (Output.IsA<vector4>())
 				{
 					It->pTypeItem->setText("Lua vector4");
-					It->pValueItem->setText(nString::FromVector4(Output).Get());
+					It->pValueItem->setText(nString::FromVector4(Output).CStr());
 				}
 				else if (Output.IsA<PVOID>())
 				{
 					It->pTypeItem->setText("Lua userdata");
-					It->pValueItem->setText(nString::FromInt((int)Output.GetValue<PVOID>()).Get());
+					It->pValueItem->setText(nString::FromInt((int)Output.GetValue<PVOID>()).CStr());
 				}
 				else if (Output.IsA<PDataArray>())
 				{

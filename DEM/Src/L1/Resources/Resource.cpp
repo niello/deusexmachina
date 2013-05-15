@@ -4,5 +4,5 @@
 
 namespace Resources
 {
-ImplementRTTI(Resources::CResource, Core::CRefCounted);
+__ImplementClassNoFactory(Resources::CResource, Core::CRefCounted);
 }

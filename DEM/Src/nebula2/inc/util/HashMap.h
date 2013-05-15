@@ -119,7 +119,7 @@ public:
 
 	CIterator	Begin() { return CIterator(this); }
 
-	int			Size() const { return count; }
+	int			GetCount() const { return count; }
 
     const TVal&	operator[](const char* key) const { return At(key); }
 	TVal&		operator[](const char* key) { return At(key); }

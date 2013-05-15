@@ -6,7 +6,7 @@
 namespace Scene
 {
 
-void CScene::Init(const bbox3& Bounds)
+void CScene::Init(const bbox3& Bounds, DWORD SPSHierarchyDepth)
 {
 	RootNode = n_new(CSceneNode(*this, CStrID::Empty));
 
@@ -22,7 +22,7 @@ void CScene::Init(const bbox3& Bounds)
 	SceneBBox = Bounds;
 	vector3 Center = SceneBBox.center();
 	vector3 Size = SceneBBox.size();
-	SPS.Build(Center.x, Center.z, Size.x, Size.z, 5); //???where to get depth?
+	SPS.Build(Center.x, Center.z, Size.x, Size.z, (uchar)SPSHierarchyDepth);
 
 	//!!!could subscribe only when AutoAdjustCameraAspect is set to true!
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CScene, OnRenderDeviceReset);
@@ -59,9 +59,9 @@ void CScene::SetMainCamera(CCamera* pNewCamera)
 
 bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrID FrameShaderID)
 {
-	if (!Camera.isvalid()) Camera = MainCamera;
-	if (!Camera.isvalid()) Camera = DefaultCamera;
-	if (!Camera.isvalid())
+	if (!Camera.IsValid()) Camera = MainCamera;
+	if (!Camera.IsValid()) Camera = DefaultCamera;
+	if (!Camera.IsValid())
 	{
 		ClearVisibleLists();
 		FAIL;
@@ -191,12 +191,12 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		if (Clip == Outside) return;
 	}
 
-	if (OutObjects && pNode->Data.Objects.Size())
+	if (OutObjects && pNode->Data.Objects.GetCount())
 	{
 		nArray<CSPSRecord*>::iterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
-			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.Size());
+			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.GetCount());
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj, ++ppObj)
 				*ppObj = (CRenderObject*)&(*ItObj)->Attr;
 		}
@@ -209,12 +209,12 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		}
 	}
 
-	if (OutLights && pNode->Data.Lights.Size())
+	if (OutLights && pNode->Data.Lights.GetCount())
 	{
 		nArray<CSPSRecord*>::iterator ItLight = pNode->Data.Lights.Begin();
 		if (Clip == Inside)
 		{
-			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.Size());
+			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.GetCount());
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight, ++ppLight)
 				*ppLight = (CLight*)&(*ItLight)->Attr;
 		}

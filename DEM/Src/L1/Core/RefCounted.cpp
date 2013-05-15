@@ -1,23 +1,46 @@
 #include "RefCounted.h"
 
-#include "CoreServer.h"
-
 namespace Core
 {
-ImplementRootRtti(Core::CRefCounted);
+__ImplementRootClassNoFactory(Core::CRefCounted, 'RFCN');
 
-CRefCounted::CRefCounted(): RefCount(0)
-{
-	CCoreServer::RefCountedList.AddTail(this);
-}
-//---------------------------------------------------------------------
+#ifdef _DEBUG
+CRefCountedList CRefCounted::List;
+#endif
 
-// NOTE: the destructor of derived classes MUST be virtual!
+// NB: the destructor of derived classes MUST be virtual!
 CRefCounted::~CRefCounted()
 {
-    n_assert(RefCount == 0);
-    Remove();
+	n_assert(!RefCount);
+#ifdef _DEBUG
+	n_assert(ListIt);
+	List.Remove(ListIt);
+	ListIt = NULL;
+#endif
 }
 //---------------------------------------------------------------------
+
+#ifdef _DEBUG
+void CRefCounted::DumpLeaks()
+{
+	if (List.IsEmpty()) n_dbgout("\n>>> NO REFCOUNT LEAKS\n\n\n");
+	else
+	{
+		n_dbgout("\n\n\n******** REFCOUNTING LEAKS DETECTED:\n\n");
+		CRefCountedList::CIterator It;
+		for (CRefCountedList::CIterator It = List.Begin(); It != List.End(); It++)
+		{
+			nString Msg;
+			Msg.Format("*** REFCOUNT LEAK: Object of class '%s' at address '0x%08lx', refcount is '%d'\n", 
+				(*It)->GetClassName().CStr(),
+				(*It),
+				(*It)->GetRefCount());
+			n_dbgout(Msg.CStr());
+		}
+		n_dbgout("\n******** END OF REFCOUNT LEAK REPORT\n\n\n");
+	}
+}
+//---------------------------------------------------------------------
+#endif
 
 } // namespace Core

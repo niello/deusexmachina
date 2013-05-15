@@ -1,7 +1,7 @@
 #include <StdCfg.h>
 #include "CEGUINebula2ResourceProvider.h"
-#include <Data/DataServer.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/IOServer.h>
+#include <IO/Streams/FileStream.h>
 
 namespace CEGUI
 {
@@ -20,8 +20,8 @@ void CNebula2ResourceProvider::loadRawDataContainer(const String& filename, RawD
 		else FinalFilename = filename;
 	}
 
-	Data::CFileStream File;
-	if (File.Open(FinalFilename.c_str(), Data::SAM_READ))
+	IO::CFileStream File;
+	if (File.Open(FinalFilename.c_str(), IO::SAM_READ))
 	{
 		const long Size = File.GetSize();
 		unsigned char* const pBuffer = n_new_array(unsigned char, Size);
@@ -88,21 +88,21 @@ size_t CNebula2ResourceProvider::getResourceGroupFileNames(std::vector<String>& 
 	nString Pattern = DirName.c_str();
 	Pattern += file_pattern.c_str();
 
-	Data::PFileSystem FS;
+	IO::PFileSystem FS;
 	nString EntryName;
-	Data::EFSEntryType EntryType;
+	IO::EFSEntryType EntryType;
 	nString RootDir(DirName.c_str());
-	void* hDir = DataSrv->OpenDirectory(RootDir, NULL, FS, EntryName, EntryType);
+	void* hDir = IOSrv->OpenDirectory(RootDir, NULL, FS, EntryName, EntryType);
 	if (hDir)
 	{
-		if (EntryType != Data::FSE_NONE) do
+		if (EntryType != IO::FSE_NONE) do
 		{
-			if (EntryType == Data::FSE_FILE)
+			if (EntryType == IO::FSE_FILE)
 			{
 				nString FullEntryName = RootDir + EntryName;
 				if (FullEntryName.MatchPattern(Pattern))
 				{
-					out_vec.push_back(String(FullEntryName.Get()));
+					out_vec.push_back(String(FullEntryName.CStr()));
 					++Entries;
 				}
 			}

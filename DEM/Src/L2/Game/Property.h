@@ -3,83 +3,58 @@
 #define __DEM_L2_GAME_PROPERTY_H__
 
 // Properties are attached to game entities to add specific functionality or behaviors to the entity.
-// Based on mangalore Property_(C) 2005 Radon Labs GmbH
 
 #include <Core/RefCounted.h>
-#include <util/HashTable.h>
+#include <Data/StringID.h>
 #include <Events/Events.h>
-#include <Game/EntityFwd.h>
+#include <util/HashTable.h>
 
-#define DeclarePropertyPools(ActivePools) \
+#define __DeclarePropertyStorage \
 	public: \
-		static const int Pools = (ActivePools); \
+		static Game::CPropertyStorage* pStorage; \
+		virtual Game::CPropertyStorage* GetStorage() const; \
 	private:
-#define DeclarePropertyStorage \
-	public: \
-		static Game::CPropertyStorage Storage; \
-	private:
-#define ImplementPropertyStorage(Class, MapCapacity) \
-	Game::CPropertyStorage Class::Storage(MapCapacity);
-#define RegisterProperty(Class) \
-	bool PropertyRegistered_##Class = EntityFct->RegisterPropertyMeta(Class::RTTI, Class::Storage, Class::Pools);
+
+#define __ImplementPropertyStorage(Class) \
+	Game::CPropertyStorage* Class::pStorage = NULL; \
+	Game::CPropertyStorage* Class::GetStorage() const { return pStorage; }
 
 #define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \
 	Sub_##EventName = GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
 #define PROP_SUBSCRIBE_PEVENT(EventName, Class, Handler) \
 	Sub_##EventName = GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
 
-namespace Loading
-{
-	class CEntityFactory;
-}
-
-namespace DB
-{
-	class CAttributeID;
-	typedef const CAttributeID* CAttrID;
-}
-
 namespace Game
 {
-using namespace Events;
+class CEntity;
+typedef Ptr<class CProperty> PProperty;
+typedef CHashTable<CStrID, PProperty> CPropertyStorage;
 
 class CProperty: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclarePropertyPools(LivePool | SleepingPool);
+	__DeclareClassNoFactory;
 
 protected:
 
-	friend class CEntity;
-	friend class Loading::CEntityFactory;
+	friend class CEntityManager;
 
 	CEntity*	pEntity;
 	bool		Active;
 
-	void SetEntity(CEntity* pEnt);
-	void ClearEntity();
+	void SetEntity(CEntity* pNewEntity);
 
-	DECLARE_EVENT_HANDLER(OnEntityActivated, OnEntityActivated);
-	DECLARE_EVENT_HANDLER(OnEntityDeactivated, OnEntityDeactivated);
-
-	//!!!to protected everywhere!
-	virtual void Activate();
-	virtual void Deactivate();
+	DECLARE_EVENT_HANDLER_VIRTUAL(OnEntityActivated, Activate);
+	DECLARE_EVENT_HANDLER_VIRTUAL(OnEntityDeactivated, Deactivate);
 
 public:
 
-	CProperty();
+	CProperty(): Active(false), pEntity(NULL) {}
 	virtual ~CProperty() = 0;
 
-	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
-
-	bool		IsActive() const { return Active; }
-	bool		HasEntity() const { return pEntity != NULL; }
-	CEntity*	GetEntity() const { n_assert(pEntity); return pEntity; }
+	virtual CPropertyStorage*	GetStorage() const { return NULL; }
+	CEntity*					GetEntity() const { n_assert(pEntity); return pEntity; }
+	bool						IsActive() const { return Active; }
 };
-
-typedef Ptr<CProperty> PProperty;
-typedef CHashTable<CStrID, PProperty> CPropertyStorage;
 
 }
 

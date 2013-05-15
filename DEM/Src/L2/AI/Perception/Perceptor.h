@@ -16,7 +16,7 @@ class CStimulus;
 
 class CPerceptor: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

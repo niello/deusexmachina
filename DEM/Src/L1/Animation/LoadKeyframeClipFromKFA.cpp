@@ -2,18 +2,18 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Animation/KeyframeClip.h>
-#include <Data/BinaryReader.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/BinaryReader.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Anim
 {
 using namespace Data;
 
-bool LoadKeyframeClipFromKFA(Data::CStream& In, PKeyframeClip OutClip)
+bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 {
-	if (!OutClip.isvalid()) FAIL;
+	if (!OutClip.IsValid()) FAIL;
 
-	Data::CBinaryReader Reader(In);
+	IO::CBinaryReader Reader(In);
 
 	if (Reader.Read<DWORD>() != 'KFAN') FAIL;
 
@@ -46,8 +46,8 @@ bool LoadKeyframeClipFromKFA(Data::CStream& In, PKeyframeClip OutClip)
 
 bool LoadKeyframeClipFromKFA(const nString& FileName, PKeyframeClip OutClip)
 {
-	Data::CFileStream File;
-	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
+	IO::CFileStream File;
+	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadKeyframeClipFromKFA(File, OutClip);
 }
 //---------------------------------------------------------------------

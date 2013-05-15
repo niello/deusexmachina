@@ -11,15 +11,14 @@ namespace AI
 
 class CValidatorCanTalk: public CValidator
 {
-	DeclareRTTI;
-	DeclareFactory(CValidatorCanTalk);
+	__DeclareClass(CValidatorCanTalk);
 
 public:
 
 	virtual bool IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction);
 };
 
-RegisterFactory(CValidatorCanTalk);
+__RegisterClassInFactory(CValidatorCanTalk);
 
 typedef Ptr<CValidatorCanTalk> PValidatorCanTalk;
 

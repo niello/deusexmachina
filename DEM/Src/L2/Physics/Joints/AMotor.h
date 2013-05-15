@@ -14,8 +14,7 @@ namespace Physics
 
 class CAMotor: public CJoint
 {
-	DeclareRTTI;
-	DeclareFactory(CAMotor);
+	__DeclareClass(CAMotor);
 
 public:
 
@@ -28,11 +27,11 @@ public:
     virtual void UpdateTransform(const matrix44& Tfm);
 
 	void		SetNumAxes(uint Num) { n_assert(Num <= 3); AxisParams.SetSize(Num); }
-	uint		GetNumAxes() const { return AxisParams.Size(); }
+	uint		GetNumAxes() const { return AxisParams.GetCount(); }
     void		UpdateVelocity(uint AxisIdx);
 };
 
-RegisterFactory(CAMotor);
+__RegisterClassInFactory(CAMotor);
 
 }
 

@@ -46,6 +46,6 @@ namespace Events
 	Sub_##EventName = NULL
 
 #define IS_SUBSCRIBED(EventName) \
-	(Sub_##EventName.isvalid())
+	(Sub_##EventName.IsValid())
 
 #endif

@@ -54,7 +54,7 @@ public:
 	bool		RemoveByValue(const TObject& Object);
 	void		RemoveElement(CElement* pElement);
 
-	int			GetListCount() const { return Lists.Size(); }
+	int			GetListCount() const { return Lists.GetCount(); }
 	TKey		GetKeyAt(int Idx) const { return Lists.KeyAtIndex(Idx); }
 	CElement*	GetHead(TKey Key) const;
 	CElement*	GetHeadAt(int Idx) const { return Lists.ValueAtIndex(Idx)->GetHead(); }
@@ -66,7 +66,7 @@ public:
 template<class TKey, class TObject>
 CLinkedListSet<TKey,TObject>::~CLinkedListSet()
 {
-	for (int i = 0; i < Lists.Size(); ++i)
+	for (int i = 0; i < Lists.GetCount(); ++i)
 	{
 		nObjectList<TObject>* pList = Lists.ValueAtIndex(i);
 		CElement* pNode;

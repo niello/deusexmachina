@@ -1,13 +1,13 @@
 #include "Ray.h"
 
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/Collision/Shape.h>
 #include <Physics/Composite.h>
 
 namespace Physics
 {
-ImplementRTTI(Physics::CRay, Core::CRefCounted);
-ImplementFactory(Physics::CRay);
+__ImplementClassNoFactory(Physics::CRay, Core::CRefCounted);
+__ImplementClass(Physics::CRay);
 
 nArray<CContactPoint>* CRay::Contacts = NULL;
 
@@ -79,7 +79,7 @@ int CRay::DoRayCheckAllContacts(const matrix44& Tfm, nArray<CContactPoint>& OutC
 {
 	if (!PhysicsSrv->GetLevel()) return 0;
 
-	int InitialContactCount = OutContacts.Size();
+	int InitialContactCount = OutContacts.GetCount();
 
 	vector3 GlobalOrig = Tfm * Origin;
 	vector3 GlobalDir  = (Tfm * (Origin + Direction)) - GlobalOrig;
@@ -93,7 +93,7 @@ int CRay::DoRayCheckAllContacts(const matrix44& Tfm, nArray<CContactPoint>& OutC
 	CRay::Contacts = &OutContacts;
 	dSpaceCollide2((dGeomID)ODESpaceID, ODERayId, this, &OdeRayCallback);
 	CRay::Contacts = NULL;
-	return OutContacts.Size() - InitialContactCount;
+	return OutContacts.GetCount() - InitialContactCount;
 }
 //---------------------------------------------------------------------
 

@@ -16,9 +16,8 @@ using namespace Events;
 
 class CPropDestructible: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropDestructible);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropDestructible);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -38,7 +37,7 @@ public:
 	virtual void	Deactivate();
 };
 
-RegisterFactory(CPropDestructible);
+__RegisterClassInFactory(CPropDestructible);
 
 }
 

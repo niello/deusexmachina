@@ -12,8 +12,7 @@ namespace AI
 
 class CTaskGoto: public CTask
 {
-	DeclareRTTI;
-	DeclareFactory(CTaskGoto);
+	__DeclareClass(CTaskGoto);
 
 protected:
 
@@ -33,7 +32,7 @@ public:
 	virtual bool	OnPlanSet(CActor* pActor);
 };
 
-RegisterFactory(CTaskGoto);
+__RegisterClassInFactory(CTaskGoto);
 
 typedef Ptr<CTaskGoto> PTaskGoto;
 

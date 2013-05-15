@@ -34,7 +34,7 @@ CValueTable::~CValueTable()
 void CValueTable::Clear()
 {
 	// This is a lot like DeleteRowData but checks type only once per column
-	for (int ColIdx = 0; ColIdx < Columns.Size(); ColIdx++)
+	for (int ColIdx = 0; ColIdx < Columns.GetCount(); ColIdx++)
 	{
 		const CType* Type = GetColumnValueType(ColIdx);
 
@@ -106,7 +106,7 @@ void CValueTable::Realloc(int NewPitch, int NewAllocRows)
 int CValueTable::UpdateColumnOffsets()
 {
 	int CurrOffset = 0;
-	for (int i = 0; i < Columns.Size(); i++)
+	for (int i = 0; i < Columns.GetCount(); i++)
 	{
 		Columns[i].ByteOffset = CurrOffset;
 		const CType* Type = GetColumnValueType(i);
@@ -123,7 +123,7 @@ void CValueTable::BeginAddColumns()
 {
 	n_assert(!Flags.Is(_InBeginAddColumns));
 	Flags.Set(_InBeginAddColumns);
-	FirstAddedColIndex = Columns.Size();
+	FirstAddedColIndex = Columns.GetCount();
 	ColumnIndexMap.BeginAdd();
 }
 //---------------------------------------------------------------------
@@ -137,11 +137,11 @@ void CValueTable::AddColumn(CAttrID ID, bool RecAsNewCol)
 	NewColInfo.AttrID = ID;
 	Columns.Append(NewColInfo);
 
-	ColumnIndexMap.Add(ID, Columns.Size() - 1);
+	ColumnIndexMap.Add(ID, Columns.GetCount() - 1);
 
 	if (Flags.Is(_TrackModifications))
 	{
-		if (RecAsNewCol) NewColumnIndices.Append(Columns.Size() - 1);
+		if (RecAsNewCol) NewColumnIndices.Append(Columns.GetCount() - 1);
 		Flags.Set(_IsModified);
 	}
 
@@ -150,7 +150,7 @@ void CValueTable::AddColumn(CAttrID ID, bool RecAsNewCol)
 		if (NumRows > 0) Realloc(UpdateColumnOffsets(), NumRows);
 		else RowPitch = UpdateColumnOffsets();
 
-		SetColumnToDefaultValues(Columns.Size() - 1);
+		SetColumnToDefaultValues(Columns.GetCount() - 1);
 	}
 }
 //---------------------------------------------------------------------
@@ -161,12 +161,12 @@ void CValueTable::EndAddColumns()
 	Flags.Clear(_InBeginAddColumns);
 	ColumnIndexMap.EndAdd();
 
-	if (FirstAddedColIndex < Columns.Size())
+	if (FirstAddedColIndex < Columns.GetCount())
 	{
 		if (NumRows > 0) Realloc(UpdateColumnOffsets(), NumRows);
 		else RowPitch = UpdateColumnOffsets();
 
-		for (int ColIdx = FirstAddedColIndex; ColIdx < Columns.Size(); ColIdx++)
+		for (int ColIdx = FirstAddedColIndex; ColIdx < Columns.GetCount(); ColIdx++)
 			SetColumnToDefaultValues(ColIdx);
 	}
 }
@@ -225,7 +225,7 @@ int CValueTable::CopyRow(int FromRowIdx)
 	n_assert(FromRowIdx < NumRows);
 	int ToRowIdx = AddRow();
 	CData Value; //???or inside the loop?
-	for (int ColIdx = 0; ColIdx < Columns.Size(); ColIdx++)
+	for (int ColIdx = 0; ColIdx < Columns.GetCount(); ColIdx++)
 	{
 		GetValue(ColIdx, FromRowIdx, Value);
 		SetValue(ColIdx, ToRowIdx, Value);
@@ -296,10 +296,10 @@ int CValueTable::AddRow()
 nArray<int> CValueTable::InternalFindRowIndicesByAttrs(const nArray<CAttr>& Attrs, bool FirstMatchOnly) const
 {
 	nArray<int> Result;
-	if (!Attrs.Size() || !NumRows) return Result;
+	if (!Attrs.GetCount() || !NumRows) return Result;
 
-	nFixedArray<int> AttrColIndices(Attrs.Size());
-	for (int i = 0; i < Attrs.Size(); i++)
+	nFixedArray<int> AttrColIndices(Attrs.GetCount());
+	for (int i = 0; i < Attrs.GetCount(); i++)
 		AttrColIndices[i] = GetColumnIndex(Attrs[i].GetAttrID());
 
 	for (int RowIdx = 0; RowIdx < NumRows; RowIdx++)
@@ -307,7 +307,7 @@ nArray<int> CValueTable::InternalFindRowIndicesByAttrs(const nArray<CAttr>& Attr
 		if (!IsRowValid(RowIdx)) continue;
 
 		bool IsEqual = true;
-		for (int AttrIdx = 0; IsEqual && (AttrIdx < Attrs.Size()); AttrIdx++)
+		for (int AttrIdx = 0; IsEqual && (AttrIdx < Attrs.GetCount()); AttrIdx++)
 		{
 			const CAttr& Attr = Attrs[AttrIdx];
 			void** pObj = GetValuePtr(AttrColIndices[AttrIdx], RowIdx);

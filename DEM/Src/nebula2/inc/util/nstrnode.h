@@ -21,7 +21,7 @@ public:
 	nStrNode(const char* str, void* _ptr): nDataNode(_ptr), Name(str) {}
 
 	void		SetName(const char* str) { Name.Set(str); }
-	const char*	GetName() const { return Name.IsValid() ? Name.Get() : NULL; } //!!!ONLY while Get returns "" as empty!
+	const char*	GetName() const { return Name.IsValid() ? Name.CStr() : NULL; } //!!!ONLY while Get returns "" as empty!
 	int			GetNameLength() { return Name.Length(); }
 
 	nStrNode*	GetSucc() const { return (nStrNode*)nNode::GetSucc(); }

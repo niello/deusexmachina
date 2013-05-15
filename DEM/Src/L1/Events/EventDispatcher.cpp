@@ -30,13 +30,13 @@ PSub CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler)
 	if (Subscriptions.Get(ID, Curr))
 	{
 		PEventHandler Prev;
-		while (Curr.isvalid() && Curr->GetPriority() > Handler->GetPriority())
+		while (Curr.IsValid() && Curr->GetPriority() > Handler->GetPriority())
 		{
 			Prev = Curr;
 			Curr = Curr->Next;
 		}
 
-		if (Prev.isvalid()) Prev->Next = Handler;
+		if (Prev.IsValid()) Prev->Next = Handler;
 		else
 		{
 			//!!!rewrite to CHashTable.SetValue()!
@@ -125,7 +125,7 @@ DWORD CEventDispatcher::DispatchEvent(const CEventBase& Event)
 		}
 		Sub = Sub->Next;
 	}
-	while (Sub.isvalid());
+	while (Sub.IsValid());
 
 	// Look for subscriptions to any event
 	if (Subscriptions.Get(NULL, Sub)) do
@@ -137,7 +137,7 @@ DWORD CEventDispatcher::DispatchEvent(const CEventBase& Event)
 		}
 		Sub = Sub->Next;
 	}
-	while (Sub.isvalid());
+	while (Sub.IsValid());
 
 	return HandledCounter;
 }
@@ -194,21 +194,21 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* Handler)
 
 	if (Subscriptions.Get(ID, Sub)) do
 	{
-		if (Sub.get_unsafe() == Handler)
+		if (Sub.GetUnsafe() == Handler)
 		{
-			if (Prev.isvalid()) Prev->Next = Handler->Next;
+			if (Prev.IsValid()) Prev->Next = Handler->Next;
 			else
 			{
 				//???rewrite to CHashTable.SetValue()?
 				Subscriptions.Erase(ID);
-				if (Handler->Next.isvalid()) Subscriptions.Add(ID, Handler->Next);
+				if (Handler->Next.IsValid()) Subscriptions.Add(ID, Handler->Next);
 			}
 			return;
 		}
 		Prev = Sub;
 		Sub = Sub->Next;
 	}
-	while (Sub.isvalid());
+	while (Sub.IsValid());
 
 	n_error("Subscription on '%s' not found, mb double unsubscription", ID.ID);
 }

@@ -11,7 +11,7 @@ namespace Events
 
 class CEventNative: public CEventBase
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

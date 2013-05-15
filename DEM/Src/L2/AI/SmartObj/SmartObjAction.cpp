@@ -9,7 +9,7 @@ using namespace Data;
 CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 	Tpl(_Tpl), FreeUserSlots(_Tpl.MaxUserCount), Progress(0.f)
 {
-	if (Desc.isvalid())
+	if (Desc.IsValid())
 	{
 		Enabled = Desc->Get<bool>(CStrID("Enabled"), true);
 
@@ -20,38 +20,38 @@ CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 		static const nString StrWSSrcPfx("AI::CWorldStateSource");
 
 		PParams SubDesc = Desc->Get<PParams>(CStrID("Validator"), NULL);
-		if (SubDesc.isvalid())
+		if (SubDesc.IsValid())
 		{
-			ActivationValidator = (CValidator*)CoreFct->Create(StrValidatorPfx + SubDesc->Get<nString>(CStrID("Type")));
+			ActivationValidator = (CValidator*)Factory->Create(StrValidatorPfx + SubDesc->Get<nString>(CStrID("Type")));
 			ActivationValidator->Init(SubDesc);
 			UpdateValidator = ActivationValidator;
 		}
 		else
 		{
 			SubDesc = Desc->Get<PParams>(CStrID("ActivationValidator"), NULL);
-			if (SubDesc.isvalid())
+			if (SubDesc.IsValid())
 			{
-				ActivationValidator = (CValidator*)CoreFct->Create(StrValidatorPfx + SubDesc->Get<nString>(CStrID("Type")));
+				ActivationValidator = (CValidator*)Factory->Create(StrValidatorPfx + SubDesc->Get<nString>(CStrID("Type")));
 				ActivationValidator->Init(SubDesc);
 			}
 
 			SubDesc = Desc->Get<PParams>(CStrID("UpdateValidator"), NULL);
-			if (SubDesc.isvalid())
+			if (SubDesc.IsValid())
 			{
-				UpdateValidator = (CValidator*)CoreFct->Create(StrValidatorPfx + SubDesc->Get<nString>(CStrID("Type")));
+				UpdateValidator = (CValidator*)Factory->Create(StrValidatorPfx + SubDesc->Get<nString>(CStrID("Type")));
 				UpdateValidator->Init(SubDesc);
 			}
 		}
 
-		OnStartCmd = CStrID(Desc->Get<nString>(CStrID("OnStartCmd"), nString::Empty).Get());
-		OnDoneCmd = CStrID(Desc->Get<nString>(CStrID("OnDoneCmd"), nString::Empty).Get());
-		OnEndCmd = CStrID(Desc->Get<nString>(CStrID("OnEndCmd"), nString::Empty).Get());
-		OnAbortCmd = CStrID(Desc->Get<nString>(CStrID("OnAbortCmd"), nString::Empty).Get());
+		OnStartCmd = CStrID(Desc->Get<nString>(CStrID("OnStartCmd"), nString::Empty).CStr());
+		OnDoneCmd = CStrID(Desc->Get<nString>(CStrID("OnDoneCmd"), nString::Empty).CStr());
+		OnEndCmd = CStrID(Desc->Get<nString>(CStrID("OnEndCmd"), nString::Empty).CStr());
+		OnAbortCmd = CStrID(Desc->Get<nString>(CStrID("OnAbortCmd"), nString::Empty).CStr());
 
 		SubDesc = Desc->Get<PParams>(CStrID("Preconditions"), NULL);
-		if (SubDesc.isvalid())
+		if (SubDesc.IsValid())
 		{
-			Preconditions = (CWorldStateSource*)CoreFct->Create(StrWSSrcPfx + SubDesc->Get<nString>(CStrID("Type")));
+			Preconditions = (CWorldStateSource*)Factory->Create(StrWSSrcPfx + SubDesc->Get<nString>(CStrID("Type")));
 			Preconditions->Init(SubDesc);
 		}
 	}

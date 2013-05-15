@@ -24,9 +24,9 @@ namespace Scene
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropSceneNode, CPropTransformable);
-ImplementFactory(Properties::CPropSceneNode);
-ImplementPropertyStorage(CPropSceneNode, 256); //!!!remove if : public CPropTransformable
+__ImplementClassNoFactory(Properties::CPropSceneNode, CPropTransformable);
+__ImplementClass(Properties::CPropSceneNode);
+__ImplementPropertyStorage(CPropSceneNode, 256); //!!!remove if : public CPropTransformable
 RegisterProperty(CPropSceneNode);
 
 void CPropSceneNode::GetAttributes(nArray<DB::CAttrID>& Attrs)
@@ -52,10 +52,10 @@ void CPropSceneNode::Activate()
 	if (NodePath.IsValid())
 	{
 		//???optimize duplicate search?
-		Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), false);
-		ExistingNode = Node.isvalid();
-		if (!ExistingNode) Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.Get(), true);
-		n_assert(Node.isvalid());
+		Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), false);
+		ExistingNode = Node.IsValid();
+		if (!ExistingNode) Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), true);
+		n_assert(Node.IsValid());
 
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
 
@@ -68,7 +68,7 @@ void CPropSceneNode::Activate()
 
 void CPropSceneNode::Deactivate()
 {
-	if (Node.isvalid() && !ExistingNode)
+	if (Node.IsValid() && !ExistingNode)
 	{
 		Node->RemoveFromParent();
 		Node = NULL;
@@ -80,7 +80,7 @@ void CPropSceneNode::Deactivate()
 
 void CPropSceneNode::GetAABB(bbox3& OutBox) const
 {
-	if (!Node.isvalid() || !Node->GetAttrCount()) return;
+	if (!Node.IsValid() || !Node->GetAttrCount()) return;
 
 	OutBox.begin_extend();
 	for (DWORD i = 0; i < Node->GetAttrCount(); ++i)

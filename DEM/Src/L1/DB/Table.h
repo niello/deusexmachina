@@ -66,14 +66,14 @@ public:
 	const nString&	GetName() const { return Name; }
 	bool			IsConnected() const { return _IsConnected; }
 	void			AddColumn(const CColumn& c);
-	int				GetNumColumns() const { return Columns.Size(); }
+	int				GetNumColumns() const { return Columns.GetCount(); }
 	const CColumn&	GetColumn(int i) const { return Columns[i]; }
 	const CColumn&	GetColumn(CAttrID id) const { return Columns[AttrIDIdxMap[id]]; }
 	const CColumn&	GetColumn(const nString& Name) const { return Columns[NameIdxMap[Name]]; }
 	const CColumn&	GetPrimaryColumn(int Idx = 0) const { return Columns[PKColumnIndices[Idx]]; }
 	bool			HasColumn(CAttrID id) const { return AttrIDIdxMap.Contains(id); }
 	bool			HasColumn(const nString& Name) const { return NameIdxMap.Contains(Name); }
-	bool			HasPrimaryColumn() const { return PKColumnIndices.Size() > 0; }
+	bool			HasPrimaryColumn() const { return PKColumnIndices.GetCount() > 0; }
 	bool			HasUncommittedColumns() const;
 	
 	const PDatabase&		GetDB() const { return Database; }
@@ -87,7 +87,7 @@ typedef Ptr<CTable> PTable;
 inline bool CTable::HasUncommittedColumns() const
 {
 	// NOTE: Columns are always added at the end, so its ok if we just check the last column
-	return Columns.Size() ? (!Columns.Back().Committed): false;
+	return Columns.GetCount() ? (!Columns.Back().Committed): false;
 }
 //---------------------------------------------------------------------
 

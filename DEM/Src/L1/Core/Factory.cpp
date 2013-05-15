@@ -12,25 +12,28 @@ CFactory* CFactory::Instance()
 }
 //---------------------------------------------------------------------
 
-void CFactory::Add(CFactoryFunction Function, const nString& ClassName)
+void CFactory::Register(const CRTTI& RTTI, const nString& Name, nFourCC FourCC)
 {
-	n_assert2(!Has(ClassName), ClassName.Get());
-	ClassTable.Add(ClassName.Get(), Function);
+	n_assert2(!IsRegistered(Name), Name.CStr());
+	if (FourCC != 0) n_assert2(!IsRegistered(FourCC), n_fourcctostr(FourCC));
+	NameToRTTI.Add(Name, &RTTI);
+	if (FourCC != 0) FourCCToRTTI.Add(FourCC, &RTTI);
 }
 //---------------------------------------------------------------------
 
-CRefCounted* CFactory::Create(const nString& ClassName) const
+CRefCounted* CFactory::Create(const nString& ClassName, void* pParam) const
 {
-	CFactoryFunction* f = ClassTable.Get(ClassName.Get());
-	n_assert2(f, ClassName.Get());
-	return (*f)();
+	const CRTTI* pRTTI = GetRTTI(ClassName);
+	n_assert_dbg(pRTTI);
+	return pRTTI->Create(pParam);
 }
 //---------------------------------------------------------------------
 
-CRefCounted* CFactory::Create(const CRTTI& Class) const
+CRefCounted* CFactory::Create(nFourCC ClassFourCC, void* pParam) const
 {
-	//???map RTTI->FactoryFunction?
-	return Create(Class.GetName());
+	const CRTTI* pRTTI = GetRTTI(ClassFourCC);
+	n_assert_dbg(pRTTI);
+	return pRTTI->Create(pParam);
 }
 //---------------------------------------------------------------------
 

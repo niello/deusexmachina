@@ -143,7 +143,7 @@ void CMotorSystem::Update()
 				CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 				for (; pCurr; pCurr = pCurr->GetSucc())
 				{
-					CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.get();
+					CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.CStr();
 					//!!!remember obstacle velocity in the fact and use here!
 					// desired velocity can be get from obstacles-actors only!
 					ObstacleQuery.addCircle(pObstacle->Position.v, pObstacle->Radius, vector3::Zero.v, vector3::Zero.v);
@@ -155,7 +155,7 @@ void CMotorSystem::Update()
 				if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
 				{
 					//!!!???track LinearVelocity in actor like position?
-					Properties::CPropActorPhysics* pPhysics = pActor->GetEntity()->FindProperty<Properties::CPropActorPhysics>();
+					Properties::CPropActorPhysics* pPhysics = pActor->GetEntity()->GetProperty<Properties::CPropActorPhysics>();
 					const vector3& Velocity = pPhysics ? pPhysics->GetPhysicsEntity()->GetVelocity() : vector3::Zero;
 
 					float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call
@@ -190,7 +190,7 @@ void CMotorSystem::Update()
 
 					for (; pCurr; pCurr = pCurr->GetSucc())
 					{
-						CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.get();
+						CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.CStr();
 
 						// Uncomment if obstacle has Height
 						//if ((pActor->Position.y + pActor->Height < pObstacle->Position.y) ||
@@ -378,7 +378,7 @@ void CMotorSystem::RenderDebug()
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
 	{
-		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.get();
+		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.CStr();
 		matrix44 Tfm;
 		Tfm.rotate_x(PI * 0.5f);
 		Tfm.set_translation(pObstacle->Position);
@@ -422,7 +422,7 @@ void CMotorSystem::RenderDebug()
 		text += text2;
 	}
 
-	DebugDraw->DrawText(text.Get(), 0.05f, 0.1f);
+	DebugDraw->DrawText(text.CStr(), 0.05f, 0.1f);
 }
 //---------------------------------------------------------------------
 

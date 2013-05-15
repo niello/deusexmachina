@@ -18,7 +18,7 @@ namespace Properties
 
 class CPropAbstractPhysics: public CPropTransformable
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

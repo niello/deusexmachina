@@ -3,25 +3,31 @@
 #define __DEM_L1_REFCOUNTED_H__
 
 #include <Core/RTTI.h>
-#include <Core/CoreServer.h>
 #include <Core/Factory.h>
-#include <kernel/ntypes.h>
-#include <util/nnode.h>
+#ifdef _DEBUG
+#include "Data/List.h"
+#endif
 
 // Class with simple refcounting mechanism, and security check at application shutdown.
 
 namespace Core
 {
+#ifdef _DEBUG
+	typedef Data::CList<CRefCounted*> CRefCountedList;
+#endif
 
-class CRefCounted: private nNode
+class CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 private:
 
-	//friend class CCoreServer;
+	int RefCount; // volatile
 
-	int RefCount;
+#ifdef _DEBUG
+	static CRefCountedList		List;
+	CRefCountedList::CIterator	ListIt;
+#endif
 
 protected:
 
@@ -31,84 +37,33 @@ public:
 
 	CRefCounted();
 
-	void			AddRef() { ++RefCount; }
-	void			Release() { n_assert(RefCount > 0); if (--RefCount == 0) n_delete(this); }
+#ifdef _DEBUG
+	static void DumpLeaks();
+#endif
+
+	void			AddRef() { ++RefCount; } //!!!interlocked for threading!
+	void			Release() { n_assert(RefCount > 0); if (--RefCount == 0) n_delete(this); } //!!!interlocked for threading!
 	int				GetRefCount() const { return RefCount; }
-	bool			IsInstanceOf(const CRTTI& Other) const { return GetRTTI() == &Other; }
-	bool			IsInstanceOf(const nString& Other) const { return GetRTTI()->GetName() == Other; }
+	bool			IsInstanceOf(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
+	bool			IsInstanceOf(const nString& Name) const { return GetRTTI()->GetName() == Name; }
+	bool			IsInstanceOf(nFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
 	template<class T>
-	bool			IsA() const;
-	bool			IsA(const CRTTI& Other) const;
-	bool			IsA(const nString& Other) const;
+	bool			IsA() const { return IsA(T::RTTI); }
+	bool			IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
+	bool			IsA(const nString& Name) const { return GetRTTI()->IsDerivedFrom(Name); }
+	bool			IsA(nFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
 	const nString&	GetClassName() const { return GetRTTI()->GetName(); }
+	nFourCC			GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
 };
 //---------------------------------------------------------------------
 
-template<class T> inline bool CRefCounted::IsA() const
+inline CRefCounted::CRefCounted(): RefCount(0)
 {
-	for (const CRTTI* i = GetRTTI(); i != NULL; i = i->GetParent())
-		if (i == &T::RTTI)
-			return true;
-	return false;
+#ifdef _DEBUG
+	ListIt = List.AddBack(this);
+#endif
 }
 //---------------------------------------------------------------------
-
-inline bool CRefCounted::IsA(const CRTTI& Other) const
-{
-	for (const CRTTI* i = GetRTTI(); i != NULL; i = i->GetParent())
-		if (i == &Other)
-			return true;
-	return false;
-}
-//---------------------------------------------------------------------
-
-inline bool CRefCounted::IsA(const nString& Other) const
-{
-	for (const CRTTI* i = GetRTTI(); i != NULL; i = i->GetParent())
-		if (i->GetName() == Other)
-			return true;
-	return false;
-}
-//---------------------------------------------------------------------
-
-// Declare factory macro.
-#define DeclareFactory(classname) \
-public: \
-    static classname* Create(); \
-    static Core::CRefCounted* InternalCreate(); \
-	static bool RegisterFactoryFunction(); \
-private:
-
-// Register factory macro.
-#define RegisterFactory(classname) \
-static bool factoryRegistered_##classname = classname::RegisterFactoryFunction();
-
-// Implement factory macro.
-#define ImplementFactory(classname) \
-classname* classname::Create() \
-{ \
-    return (classname*)InternalCreate(); \
-} \
-Core::CRefCounted* classname::InternalCreate() \
-{ \
-	classname* result = n_new(classname); \
-	n_assert(result != 0); \
-	return result; \
-} \
-bool classname::RegisterFactoryFunction() \
-{ \
-	if (!Core::CFactory::Instance()->Has(#classname)) \
-		Core::CFactory::Instance()->Add(classname::InternalCreate, #classname); \
-	return true; \
-}
-
-#define __DeclareClass(classname) \
-	DeclareRTTI; \
-	DeclareFactory(classname);
-
-#define __ImplementClass(type, fourcc, baseType) \
-	ImplementRTTI(type, baseType); \
-	ImplementFactory(type);
 
 }
 

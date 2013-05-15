@@ -19,7 +19,7 @@ using namespace Data;
 
 class CStateHandler: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 protected:
 

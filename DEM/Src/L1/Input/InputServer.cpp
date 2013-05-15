@@ -17,7 +17,7 @@
 
 namespace Input
 {
-ImplementRTTI(Input::CInputServer, Core::CRefCounted);
+__ImplementClassNoFactory(Input::CInputServer, Core::CRefCounted);
 __ImplementSingleton(Input::CInputServer);
 
 CInputServer::CInputServer(): CEventDispatcher(16), _IsOpen(false)
@@ -111,13 +111,13 @@ CControlLayout* CInputServer::GetControlLayout(CStrID Name)
 CControlLayout* CInputServer::LoadControlLayout(CStrID Name)
 {
 	Data::PParams Desc = DataSrv->LoadHRD("data:Input/Layouts.hrd");
-	if (!Desc.isvalid()) return NULL;
+	if (!Desc.IsValid()) return NULL;
 	Desc = Desc->Get<PParams>(Name);
-	if (!Desc.isvalid()) return NULL;
+	if (!Desc.IsValid()) return NULL;
 	PControlLayout New = n_new(CControlLayout);
-	if (!New->Init(*Desc.get_unsafe())) return NULL;
+	if (!New->Init(*Desc.GetUnsafe())) return NULL;
 	Layouts.Add(Name, New);
-	return New.get_unsafe();
+	return New.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -157,7 +157,7 @@ CControlLayout* CInputServer::GetContextLayout(CStrID Context) const
 bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 {
 	if (DisableOthers)
-		for (int i = 0; i < Contexts.Size(); ++i)
+		for (int i = 0; i < Contexts.GetCount(); ++i)
 			if (Contexts.KeyAtIndex(i) != Context)
 				Contexts.ValueAtIndex(i)->Disable();
 

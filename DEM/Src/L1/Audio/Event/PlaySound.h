@@ -15,8 +15,7 @@ namespace Event
 
 class PlaySound: public Events::CEventNative
 {
-	DeclareRTTI;
-	DeclareFactory(PlaySound);
+	__DeclareClass(PlaySound);
 
 public:
 
@@ -28,7 +27,7 @@ public:
 	PlaySound(): Volume(1.0f) {}
 };
 
-RegisterFactory(PlaySound);
+__RegisterClassInFactory(PlaySound);
 
 }
 

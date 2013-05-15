@@ -13,8 +13,7 @@ namespace Event
 
 class UpdateTransform: public Events::CEventNative
 {
-    DeclareRTTI;
-    DeclareFactory(UpdateTransform);
+    __DeclareClass(UpdateTransform);
 
 public:
 
@@ -24,7 +23,7 @@ public:
 	UpdateTransform(): Smoothing(true) {}
 };
 
-RegisterFactory(UpdateTransform);
+__RegisterClassInFactory(UpdateTransform);
 
 }
 

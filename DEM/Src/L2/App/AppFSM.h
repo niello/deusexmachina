@@ -62,7 +62,7 @@ inline void CAppFSM::AddStateHandler(CStateHandler* pHandler)
 
 inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 {
-	for (int i = 0; i < StateHandlers.Size(); i++)
+	for (int i = 0; i < StateHandlers.GetCount(); i++)
 		if (StateHandlers[i]->GetID() == ID)
 			return StateHandlers[i];
 	return NULL;
@@ -71,7 +71,7 @@ inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 
 inline CStateHandler* CAppFSM::FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const
 {
-	for (int i = 0; i < StateHandlers.Size(); i++)
+	for (int i = 0; i < StateHandlers.GetCount(); i++)
 		if (StateHandlers[i]->IsInstanceOf(RTTI))
 			return StateHandlers[i];
 	return NULL;

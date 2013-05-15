@@ -11,15 +11,14 @@ namespace AI
 
 class CValidatorDlgRuns: public CValidator
 {
-	DeclareRTTI;
-	DeclareFactory(CValidatorDlgRuns);
+	__DeclareClass(CValidatorDlgRuns);
 
 public:
 
 	virtual bool IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction);
 };
 
-RegisterFactory(CValidatorDlgRuns);
+__RegisterClassInFactory(CValidatorDlgRuns);
 
 typedef Ptr<CValidatorDlgRuns> PValidatorDlgRuns;
 

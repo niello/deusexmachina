@@ -25,9 +25,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropUIControl, Game::CProperty);
-ImplementFactory(Properties::CPropUIControl);
-ImplementPropertyStorage(CPropUIControl, 128);
+__ImplementClassNoFactory(Properties::CPropUIControl, Game::CProperty);
+__ImplementClass(Properties::CPropUIControl);
+__ImplementPropertyStorage(CPropUIControl, 128);
 RegisterProperty(CPropUIControl);
 
 using namespace Data;
@@ -49,7 +49,7 @@ void CPropUIControl::Activate()
 	const nString& IAODesc = GetEntity()->Get<nString>(Attr::IAODesc);
 	if (IAODesc.IsValid()) Desc = DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm");
 
-	if (Desc.isvalid())
+	if (Desc.IsValid())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<nString>(CStrID("UIName"), NULL);
 		AutoAddSmartObjActions = Desc->Get<bool>(CStrID("AutoAddSmartObjActions"), true);
@@ -88,18 +88,18 @@ void CPropUIControl::Deactivate()
 
 bool CPropUIControl::OnPropsActivated(const CEventBase& Event)
 {
-	CPropSmartObject* pSO = GetEntity()->FindProperty<CPropSmartObject>();
+	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 	if (!pSO) OK;
 
 	const CPropSmartObject::CActList& SOActions = pSO->GetActions();
 
-	for (int i = 0; i < SOActions.Size(); ++i)
+	for (int i = 0; i < SOActions.GetCount(); ++i)
 	{
 		CStrID ID = SOActions.KeyAtIndex(i);
 		PSmartObjAction Act = SOActions.ValueAtIndex(i);
-		if (Act.isvalid() && Act->AppearsInUI)
+		if (Act.IsValid() && Act->AppearsInUI)
 		{
-			LPCSTR pUIName = SOActionNames.isvalid() ? SOActionNames->Get<nString>(ID, nString::Empty).Get() : NULL;
+			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<nString>(ID, nString::Empty).CStr() : NULL;
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, DEFAULT_PRIORITY, true));
 
 			CAction* pAction = GetActionByID(ID);
@@ -145,7 +145,7 @@ bool CPropUIControl::OnSOActionAvailabile(const Events::CEventBase& Event)
 
 bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority, bool AutoAdded)
 {
-	CPropScriptable* pScriptable = GetEntity()->FindProperty<CPropScriptable>();
+	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	if (!pScriptObj) FAIL;
 	return AddActionHandler(ID, UIName, n_new(CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, AutoAdded);
@@ -163,7 +163,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHa
 	sprintf_s(EvIDString, 63, "OnUIAction%s", ID.CStr());
 	Act.EventID = CStrID(EvIDString);
 	Act.Sub = GetEntity()->AddHandler(Act.EventID, Handler);
-	if (!Act.Sub.isvalid()) FAIL;
+	if (!Act.Sub.IsValid()) FAIL;
 	Act.AutoAdded = AutoAdded;
 
 	Actions.InsertSorted(Act);
@@ -202,8 +202,8 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 	if (!pAction) FAIL;
 	if (pAction->AutoAdded)
 	{
-		CPropActorBrain* pActor = pActorEnt->FindProperty<CPropActorBrain>();
-		CPropSmartObject* pSO = GetEntity()->FindProperty<CPropSmartObject>();
+		CPropActorBrain* pActor = pActorEnt->GetProperty<CPropActorBrain>();
+		CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 		n_assert(pActor && pSO);
 		pAction->Enabled = pSO->GetAction(ID)->IsValid(pActor, pSO);
 	}
@@ -213,7 +213,7 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 
 bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 {
-	if (!pActorEnt || !Actions.Size()) FAIL;
+	if (!pActorEnt || !Actions.GetCount()) FAIL;
 
 	// Cmd can have the highest priority but be disabled. Imagine character under the 
 	// silence spell who left-clicks on NPC. Default cmd is "Talk" which is disabled
@@ -224,8 +224,8 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	CPropSmartObject* pSO = NULL;
 	if (AutoAddSmartObjActions)
 	{
-		pActor = pActorEnt->FindProperty<CPropActorBrain>();
-		pSO = GetEntity()->FindProperty<CPropSmartObject>();
+		pActor = pActorEnt->GetProperty<CPropActorBrain>();
+		pSO = GetEntity()->GetProperty<CPropSmartObject>();
 		n_assert(pActor && pSO);
 	}
 
@@ -250,8 +250,8 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	CPropSmartObject* pSO = NULL;
 	if (AutoAddSmartObjActions)
 	{
-		pActor = pActorEnt->FindProperty<CPropActorBrain>();
-		pSO = GetEntity()->FindProperty<CPropSmartObject>();
+		pActor = pActorEnt->GetProperty<CPropActorBrain>();
+		pSO = GetEntity()->GetProperty<CPropSmartObject>();
 		n_assert(pActor && pSO);
 	}
 
@@ -283,7 +283,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 // Special handler for auto-added smart object actions
 bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 {
-	CPropSmartObject* pSO = GetEntity()->FindProperty<CPropSmartObject>();
+	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
 
 	PParams P = ((const CEvent&)Event).Params;

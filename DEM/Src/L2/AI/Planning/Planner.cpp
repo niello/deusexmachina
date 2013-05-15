@@ -20,7 +20,7 @@ void CPlanner::RegisterActionTpl(LPCSTR Name, PParams Params)
 {
 	if (!FindActionTpl(Name))
 	{
-		PActionTpl NewTpl = (CActionTpl*)CoreFct->Create(StrActTplPrefix + Name);
+		PActionTpl NewTpl = (CActionTpl*)Factory->Create(StrActTplPrefix + Name);
 		NewTpl->Init(Params);
 		ActionTpls.Append(NewTpl); //???dictionary? CStrID -> Tpl?
 	}
@@ -29,7 +29,7 @@ void CPlanner::RegisterActionTpl(LPCSTR Name, PParams Params)
 
 void CPlanner::EndActionTpls()
 {
-	for (; NewActIdx < ActionTpls.Size(); ++NewActIdx)
+	for (; NewActIdx < ActionTpls.GetCount(); ++NewActIdx)
 	{
 		const CWorldState& Effects = ActionTpls[NewActIdx]->GetEffects();
 
@@ -38,7 +38,7 @@ void CPlanner::EndActionTpls()
 				EffectToActions[i].Append(ActionTpls[NewActIdx]);
 	}
 
-	ActionsAdded.Reallocate(ActionTpls.Size(), 0);
+	ActionsAdded.Reallocate(ActionTpls.GetCount(), 0);
 }
 //---------------------------------------------------------------------
 
@@ -187,13 +187,13 @@ void CPlanner::FillNeighbors(CActor* pActor, const CNode& Node, nArray<CNode*>& 
 				pNewNode->pAction = *ppAction;
 				OutNeighbors.Append(pNewNode);
 				ActionsAdded.InsertSorted(*ppAction);
-				if (OutNeighbors.Size() >= ActionTpls.Size()) break;
+				if (OutNeighbors.GetCount() >= ActionTpls.GetCount()) break;
 			}
 	}
 
 	// Sort actions by precedence, so the plan will be sorted by precedence too
-	if (OutNeighbors.Size() > 1)
-		qsort((void*)OutNeighbors.Begin(), (size_t)OutNeighbors.Size(), sizeof(CNode*), CmpPlannerNodes);
+	if (OutNeighbors.GetCount() > 1)
+		qsort((void*)OutNeighbors.Begin(), (size_t)OutNeighbors.GetCount(), sizeof(CNode*), CmpPlannerNodes);
 }
 //---------------------------------------------------------------------
 
@@ -244,7 +244,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 
 		FillNeighbors(pActor, *pCurrNode, Neighbors);
 
-		for (int i = 0; i < Neighbors.Size(); ++i)
+		for (int i = 0; i < Neighbors.GetCount(); ++i)
 		{
 			CNode* pNeighbor = Neighbors[i];
 
@@ -314,19 +314,19 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	{
 		PAction CurrAction = pCurrNode->pAction->CreateInstance(pCurrNode->pParent->WSGoal);
 
-		if (CurrAction.isvalid())
+		if (CurrAction.IsValid())
 		{
 #ifdef _DEBUG
 			nString DbgString;
 			CurrAction->GetDebugString(DbgString);
 			n_printf("Planner -> '%s'     Action added: '%s'\n",
-				pActor->GetEntity()->GetUID(), DbgString.Get());
+				pActor->GetEntity()->GetUID(), DbgString.CStr());
 #endif
 
-			if (!Plan.isvalid()) Plan = CurrAction;
+			if (!Plan.IsValid()) Plan = CurrAction;
 			else
 			{
-				if (!Seq.isvalid())
+				if (!Seq.IsValid())
 				{
 					Seq = n_new(CActionSequence);
 					Seq->AddChild(Plan);

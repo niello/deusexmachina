@@ -14,15 +14,14 @@ namespace AI
 
 class CActionIdle: public CAction
 {
-	DeclareRTTI;
-	DeclareFactory(CActionIdle);
+	__DeclareClass(CActionIdle);
 
 public:
 
 	virtual EExecStatus	Update(CActor* pActor) { return Running; }
 };
 
-RegisterFactory(CActionIdle);
+__RegisterClassInFactory(CActionIdle);
 
 typedef Ptr<CActionIdle> PActionIdle;
 

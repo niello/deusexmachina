@@ -33,8 +33,7 @@ using namespace Events;
 
 class CPropChaseCamera: public CPropCamera
 {
-	DeclareRTTI;
-	DeclareFactory(CPropChaseCamera);
+	__DeclareClass(CPropChaseCamera);
 
 protected:
 
@@ -69,7 +68,7 @@ public:
 	virtual void Deactivate();
 };
 
-RegisterFactory(CPropChaseCamera);
+__RegisterClassInFactory(CPropChaseCamera);
 
 } // namespace Properties
 

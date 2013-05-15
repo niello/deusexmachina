@@ -22,9 +22,8 @@ namespace Properties
 
 class CPropTransitionZone: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropTransitionZone);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropTransitionZone);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -37,7 +36,7 @@ public:
 	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 };
 
-RegisterFactory(CPropTransitionZone);
+__RegisterClassInFactory(CPropTransitionZone);
 
 }
 

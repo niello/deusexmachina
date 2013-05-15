@@ -33,8 +33,7 @@ namespace Render
 
 class CModelRenderer: public IRenderer
 {
-	DeclareRTTI;
-	DeclareFactory(CModelRenderer);
+	__DeclareClass(CModelRenderer);
 
 public:
 
@@ -74,13 +73,13 @@ protected:
 		{
 			if (R1.hTech == R2.hTech)
 			{
-				if (R1.pModel->Material.get_unsafe() == R2.pModel->Material.get_unsafe())
+				if (R1.pModel->Material.GetUnsafe() == R2.pModel->Material.GetUnsafe())
 				{
-					if (R1.pModel->Mesh.get_unsafe() == R2.pModel->Mesh.get_unsafe())
+					if (R1.pModel->Mesh.GetUnsafe() == R2.pModel->Mesh.GetUnsafe())
 						return R1.pModel->MeshGroupIndex < R2.pModel->MeshGroupIndex;
-					return R1.pModel->Mesh.get_unsafe() < R2.pModel->Mesh.get_unsafe();
+					return R1.pModel->Mesh.GetUnsafe() < R2.pModel->Mesh.GetUnsafe();
 				}
-				return R1.pModel->Material.get_unsafe() < R2.pModel->Material.get_unsafe();
+				return R1.pModel->Material.GetUnsafe() < R2.pModel->Material.GetUnsafe();
 			}
 			return R1.hTech < R2.hTech;
 		}
@@ -138,7 +137,7 @@ public:
 	virtual void	Render();
 };
 
-RegisterFactory(CModelRenderer);
+__RegisterClassInFactory(CModelRenderer);
 
 typedef Ptr<CModelRenderer> PModelRenderer;
 

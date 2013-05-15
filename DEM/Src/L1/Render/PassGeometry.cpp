@@ -11,11 +11,11 @@ bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const nDict
 	if (!CPass::Init(PassName, Desc, RenderTargets)) FAIL;
 
 	Data::CDataArray& Batches = *Desc.Get<Data::PDataArray>(CStrID("Batches"));
-	for (int i = 0; i < Batches.Size(); ++i)
+	for (int i = 0; i < Batches.GetCount(); ++i)
 	{
 		Data::CParams& BatchDesc = *(Data::PParams)Batches[i];
 		PRenderer& Renderer = BatchRenderers.At(i);
-		Renderer = (IRenderer*)CoreFct->Create(BatchDesc.Get<nString>(CStrID("Renderer")));
+		Renderer = (IRenderer*)Factory->Create(BatchDesc.Get<nString>(CStrID("Renderer")));
 		if (!Renderer->Init(BatchDesc)) FAIL;
 	}
 
@@ -25,24 +25,24 @@ bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const nDict
 
 void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
 {
-	if (Shader.isvalid())
+	if (Shader.IsValid())
 	{
-		for (int i = 0; i < ShaderVars.Size(); ++i)
-			ShaderVars.ValueAtIndex(i).Apply(*Shader.get_unsafe());
+		for (int i = 0; i < ShaderVars.GetCount(); ++i)
+			ShaderVars.ValueAtIndex(i).Apply(*Shader.GetUnsafe());
 		n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
 		Shader->BeginPass(0);
 	}
 
 	for (int i = 0; i < CRenderServer::MaxRenderTargetCount; ++i)
-		//if (RT[i].isvalid()) // Now sets NULL RTs too to clear unused RTs from prev. passes. See alternative below.
-			RenderSrv->SetRenderTarget(i, RT[i].get_unsafe());
+		//if (RT[i].IsValid()) // Now sets NULL RTs too to clear unused RTs from prev. passes. See alternative below.
+			RenderSrv->SetRenderTarget(i, RT[i].GetUnsafe());
 
 	RenderSrv->Clear(ClearFlags, ClearColor, ClearDepth, ClearStencil);
 
 	// N3: set pixel size and half pixel size shared shader vars //???why not committed in N3?
 	//!!!soft particles use it to sample depth!
 
-	for (int i = 0; i < BatchRenderers.Size(); ++i)
+	for (int i = 0; i < BatchRenderers.GetCount(); ++i)
 	{
 		IRenderer* pRenderer = BatchRenderers[i];
 		if (pLights) pRenderer->AddLights(*pLights);
@@ -51,13 +51,13 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	}
 
 	for (int i = 0; i < CRenderServer::MaxRenderTargetCount; ++i)
-		if (RT[i].isvalid()) //???break on first invalid? RTs must be set in order
+		if (RT[i].IsValid()) //???break on first invalid? RTs must be set in order
 		{
 			RT[i]->Resolve();
 			// N3: if (i > 0) RenderSrv->SetRenderTarget(i, NULL);
 		}
 
-	if (Shader.isvalid())
+	if (Shader.IsValid())
 	{
 		Shader->EndPass();
 		Shader->End();

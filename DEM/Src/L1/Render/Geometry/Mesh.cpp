@@ -8,7 +8,7 @@ namespace Render
 
 bool CMesh::Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups)
 {
-	if (!VertexBuffer || !MeshGroups.Size()) FAIL;
+	if (!VertexBuffer || !MeshGroups.GetCount()) FAIL;
 	VB = VertexBuffer;
 	IB = IndexBuffer;
 	Groups = MeshGroups;

@@ -24,8 +24,7 @@ namespace Debug
 
 class CWatcherWindow: public UI::CWindow
 {
-	DeclareRTTI;
-	DeclareFactory(CWatcherWindow);
+	__DeclareClass(CWatcherWindow);
 
 public:
 
@@ -67,7 +66,7 @@ protected:
 public:
 
 	//CWatcherWindow() {}
-	virtual ~CWatcherWindow() { for (int i = 0; i < Watched.Size(); ++i) Watched[i].Clear(); }
+	virtual ~CWatcherWindow() { for (int i = 0; i < Watched.GetCount(); ++i) Watched[i].Clear(); }
 
 	virtual void	Init(CEGUI::Window* pWindow);
 	virtual void	Term();
@@ -78,7 +77,7 @@ public:
 	void			AddAllGlobals();
 };
 
-RegisterFactory(CWatcherWindow);
+__RegisterClassInFactory(CWatcherWindow);
 
 typedef Ptr<CWatcherWindow> PWatcherWindow;
 

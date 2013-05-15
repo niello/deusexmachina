@@ -12,10 +12,7 @@ namespace AI
 
 class CActionTplWander: public CActionTpl
 {
-	DeclareRTTI;
-	DeclareFactory(CActionTplWander);
-
-private:
+	__DeclareClass(CActionTplWander);
 
 public:
 
@@ -24,7 +21,7 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-RegisterFactory(CActionTplWander);
+__RegisterClassInFactory(CActionTplWander);
 
 typedef Ptr<CActionTplWander> PActionTplWander;
 

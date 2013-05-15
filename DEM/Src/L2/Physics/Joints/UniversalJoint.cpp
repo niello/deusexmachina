@@ -2,8 +2,7 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CUniversalJoint, Physics::CJoint);
-ImplementFactory(Physics::CUniversalJoint);
+__ImplementClass(Physics::CUniversalJoint, 'JUNV', Physics::CJoint);
 
 CUniversalJoint::CUniversalJoint(): AxisParams(2)
 {
@@ -55,7 +54,7 @@ void CUniversalJoint::UpdateTransform(const matrix44& Tfm)
 	vector3 p = Tfm * Anchor;
 	dJointSetUniversalAnchor(ODEJointID, p.x, p.y, p.z);
 
-	matrix33 m33(Tfm.x_component(), Tfm.y_component(), Tfm.z_component());
+	matrix33 m33(Tfm.AxisX(), Tfm.AxisY(), Tfm.AxisZ());
 	vector3 a0 = m33 * AxisParams[0].Axis;
 	vector3 a1 = m33 * AxisParams[1].Axis;
 	dJointSetUniversalAxis1(ODEJointID, a0.x, a0.y, a0.z);

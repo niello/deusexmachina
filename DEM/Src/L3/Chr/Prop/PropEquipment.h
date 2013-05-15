@@ -12,8 +12,7 @@ namespace Properties
 
 class CPropEquipment: public CPropInventory
 {
-	DeclareRTTI;
-	DeclareFactory(CPropEquipment);
+	__DeclareClass(CPropEquipment);
 
 protected:
 
@@ -45,7 +44,7 @@ public:
 	void Unequip(CStrID SlotID);
 };
 
-RegisterFactory(CPropEquipment);
+__RegisterClassInFactory(CPropEquipment);
 
 }
 

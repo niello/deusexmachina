@@ -11,8 +11,7 @@ namespace Render
 
 class CDebugGeomRenderer: public IRenderer
 {
-	DeclareRTTI;
-	DeclareFactory(CDebugGeomRenderer);
+	__DeclareClass(CDebugGeomRenderer);
 
 public:
 
@@ -22,7 +21,7 @@ public:
 	virtual void	Render();
 };
 
-RegisterFactory(CDebugGeomRenderer);
+__RegisterClassInFactory(CDebugGeomRenderer);
 
 typedef Ptr<CDebugGeomRenderer> PDebugGeomRenderer;
 

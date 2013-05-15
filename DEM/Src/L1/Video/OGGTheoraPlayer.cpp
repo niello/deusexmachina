@@ -1,6 +1,6 @@
 #include "OGGTheoraPlayer.h"
 
-#include <Data/Streams/FileStream.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Video
 {
@@ -19,7 +19,7 @@ COGGTheoraPlayer::COGGTheoraPlayer():
 /**
     Helper; just grab some more compressed bitstream and sync it for page extraction
 */
-int COGGTheoraPlayer::buffer_data(Data::CFileStream *in,ogg_sync_state *oy)
+int COGGTheoraPlayer::buffer_data(IO::CFileStream *in,ogg_sync_state *oy)
 {
 	char *buffer = ogg_sync_buffer(oy, 4096);
 	int bytes = (int)in->Read(buffer, 4096);
@@ -49,7 +49,7 @@ COGGTheoraPlayer::Rewind()
         StopTheora();
 
     // go back to the beginning of the file
-	infile->Seek(0,Data::SSO_BEGIN);
+	infile->Seek(0,IO::Seek_Begin);
 
     // reset times
     currentTime = 0;
@@ -231,8 +231,8 @@ COGGTheoraPlayer::Open()
 {
     n_assert(FileName != "");
     // open file
-	infile = n_new(Data::CFileStream);
-	infile->Open(FileName, Data::SAM_READ);
+	infile = n_new(IO::CFileStream);
+	infile->Open(FileName, IO::SAM_READ);
     // rewind
     Rewind();
     // setup framebuffer

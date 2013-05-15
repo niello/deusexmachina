@@ -24,8 +24,7 @@ class CEntity;
 
 class CComposite: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CComposite);
+	__DeclareClass(CComposite);
 
 protected:
 
@@ -72,23 +71,23 @@ public:
 	virtual void	BeginBodies(int Count);
 	virtual void	AddBody(CRigidBody* pBody);
 	virtual void	EndBodies();
-	int				GetNumBodies() const { return Bodies.Size(); }
+	int				GetNumBodies() const { return Bodies.GetCount(); }
 	CRigidBody*		GetBodyAt(int Idx) const { return Bodies[Idx]; }
 	CRigidBody*		FindBodyByUniqueID(int ID) const;
 	bool			HasBodyWithName(const nString& Name) const;
 	CRigidBody*		GetBodyByName(const nString& Name) const;
-	CRigidBody*		GetMasterBody() const { if (Bodies.Size() > 0) return Bodies[0]; else return NULL; }
+	CRigidBody*		GetMasterBody() const { if (Bodies.GetCount() > 0) return Bodies[0]; else return NULL; }
 
 	virtual void	BeginJoints(int Count);
 	virtual void	AddJoint(CJoint* pJoint);
 	virtual void	EndJoints();
-	int				GetNumJoints() const { return Joints.Size(); }
+	int				GetNumJoints() const { return Joints.GetCount(); }
 	CJoint*			GetJointAt(int Idx) const { return Joints[Idx]; }
 
 	virtual void	BeginShapes(int Count);
 	virtual void	AddShape(CShape* pShape);
 	virtual void	EndShapes();
-	int				GetNumShapes() const { return Shapes.Size(); }
+	int				GetNumShapes() const { return Shapes.GetCount(); }
 	CShape*			GetShapeAt(int Idx) const { return Shapes[Idx]; }
 
 	void			GetAABB(bbox3& AABB) const;
@@ -99,21 +98,21 @@ public:
 	void			SetEntity(CEntity* pEnt);
 	CEntity*		GetEntity() const { return pEntity; }
 	void			SetEnabled(bool Enabled);
-	bool			IsEnabled() const { return Bodies.Size() < 1 || Bodies[0]->IsEnabled(); }
+	bool			IsEnabled() const { return Bodies.GetCount() < 1 || Bodies[0]->IsEnabled(); }
 	bool			IsAttached() const { return Flags.Is(PHYS_COMP_ATTACHED); }
 	bool			IsHorizontalCollided() const;
 	bool			HasLinkType(CRigidBody::ELinkType Type);
 };
 //---------------------------------------------------------------------
 
-RegisterFactory(CComposite);
+__RegisterClassInFactory(CComposite);
 
 typedef Ptr<CComposite> PComposite;
 
 inline bool CComposite::HasBodyWithName(const nString& Name) const
 {
 	//???or store into CStrID/nString nDict & store Key of master body?
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 		if (Name == Bodies[i]->Name) OK;
 	FAIL;
 }
@@ -121,7 +120,7 @@ inline bool CComposite::HasBodyWithName(const nString& Name) const
 
 inline CRigidBody* CComposite::GetBodyByName(const nString& Name) const
 {
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 		if (Name == Bodies[i]->Name) return Bodies[i];
 	//n_assert(false);
 	return NULL;
@@ -133,13 +132,13 @@ inline CRigidBody* CComposite::GetBodyByName(const nString& Name) const
 // themselves automatically on contact with other enabled bodies.
 inline void CComposite::SetEnabled(bool Enabled)
 {
-	for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->SetEnabled(Enabled);
+	for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->SetEnabled(Enabled);
 }
 //---------------------------------------------------------------------
 
 inline void CComposite::Reset()
 {
-	for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->Reset();
+	for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->Reset();
 }
 //---------------------------------------------------------------------
 

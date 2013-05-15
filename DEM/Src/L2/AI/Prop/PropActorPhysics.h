@@ -17,8 +17,7 @@ namespace Properties
 
 class CPropActorPhysics: public CPropAbstractPhysics
 {
-	DeclareRTTI;
-	DeclareFactory(CPropActorPhysics);
+	__DeclareClass(CPropActorPhysics);
 
 protected:
 
@@ -46,7 +45,7 @@ public:
 	virtual Physics::CEntity* GetPhysicsEntity() const;
 };
 
-RegisterFactory(CPropActorPhysics);
+__RegisterClassInFactory(CPropActorPhysics);
 
 }
 

@@ -4,29 +4,29 @@
 //
 //namespace Audio
 //{
-//ImplementRTTI(Audio::CWaveBank, Core::CRefCounted);
-//ImplementFactory(Audio::CWaveBank);
+//__ImplementClassNoFactory(Audio::CWaveBank, Core::CRefCounted);
+//__ImplementClass(Audio::CWaveBank);
 //
 //nSound3* CWaveBank::CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const nString& ColumnName)
 //{
 //	nString FileName;
-//	FileName.Format("sound:%s", XMLTable.Cell(Row, ColumnName).AsString().Get());
-//	n_assert2(DataSrv->FileExists(FileName), FileName.Get());
+//	FileName.Format("sound:%s", XMLTable.Cell(Row, ColumnName).AsString().CStr());
+//	n_assert2(IOSrv->FileExists(FileName), FileName.CStr());
 //
 //	nSound3* pSound = nAudioServer3::Instance()->NewSound();
-//	pSound->SetName(XMLTable.Cell(Row, "Name").AsString().Get());
+//	pSound->SetName(XMLTable.Cell(Row, "Name").AsString().CStr());
 //	pSound->SetFilename(FileName);
 //	pSound->SetAmbient(XMLTable.Cell(Row, "Ambient").AsBool());
 //	pSound->SetStreaming(XMLTable.Cell(Row, "Stream").AsBool());
 //	pSound->SetLooping(XMLTable.Cell(Row, "Loop").AsBool());
 //	pSound->SetPriority(XMLTable.Cell(Row, "Pri").AsInt());
-//	pSound->SetCategory(nAudioServer3::StringToCategory(XMLTable.Cell(Row, "Category").AsString().Get()));
+//	pSound->SetCategory(nAudioServer3::StringToCategory(XMLTable.Cell(Row, "Category").AsString().CStr()));
 //	pSound->SetNumTracks(XMLTable.Cell(Row, "Tracks").AsInt());
 //	pSound->SetMinDist(XMLTable.Cell(Row, "MinDist").AsFloat());
 //	pSound->SetMaxDist(XMLTable.Cell(Row, "MaxDist").AsFloat());
 //
 //	bool IsLoaded = pSound->Load();
-//	n_assert2(IsLoaded, FileName.Get());
+//	n_assert2(IsLoaded, FileName.CStr());
 //
 //	return pSound;
 //}
@@ -36,7 +36,7 @@
 //{
 //	if (!XMLSheet.Open())
 //	{
-//		n_error("Audio::CWaveBank::Open(): failed to load '%s'", XMLSheet.GetFilename().Get());
+//		n_error("Audio::CWaveBank::Open(): failed to load '%s'", XMLSheet.GetFilename().CStr());
 //		return false;
 //	}
 //
@@ -70,7 +70,7 @@
 //CWaveResource* CWaveBank::FindResource(const nString& Name)
 //{
 //	n_assert(Name.IsValid());
-//	for (int i = 0; i < Resources.Size(); i++)
+//	for (int i = 0; i < Resources.GetCount(); i++)
 //		if (Resources[i]->GetName() == Name)
 //			return Resources[i];
 //	return NULL;

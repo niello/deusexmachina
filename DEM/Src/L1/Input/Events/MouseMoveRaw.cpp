@@ -2,5 +2,5 @@
 
 namespace Event
 {
-ImplementRTTI(Event::MouseMoveRaw, Events::CEventNative);
+__ImplementClassNoFactory(Event::MouseMoveRaw, Events::CEventNative);
 } // namespace Event

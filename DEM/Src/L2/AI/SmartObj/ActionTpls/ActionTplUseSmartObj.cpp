@@ -1,7 +1,7 @@
 #include "ActionTplUseSmartObj.h"
 
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <AI/Prop/PropSmartObject.h>
 
 #ifdef __WIN32__
@@ -13,8 +13,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionTplUseSmartObj, AI::CActionTpl);
-ImplementFactory(AI::CActionTplUseSmartObj);
+__ImplementClassNoFactory(AI::CActionTplUseSmartObj, AI::CActionTpl);
+__ImplementClass(AI::CActionTplUseSmartObj);
 
 void CActionTplUseSmartObj::Init(PParams Params)
 {
@@ -37,14 +37,14 @@ bool CActionTplUseSmartObj::GetPreconditions(CActor* pActor, CWorldState& WS, co
 
 bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, CStrID SOEntityID, CStrID ActionID) const
 {
-	Game::CEntity* pEntity = EntityMgr->GetEntityByID(SOEntityID, true);
+	Game::CEntity* pEntity = EntityMgr->GetEntity(SOEntityID, true);
 	if (pEntity)
 	{
-		CPropSmartObject* pSO = pEntity->FindProperty<CPropSmartObject>();
+		CPropSmartObject* pSO = pEntity->GetProperty<CPropSmartObject>();
 		n_assert(pSO);
 
 		PSmartObjAction Action = pSO->GetAction(ActionID);
-		if (Action.isvalid() && Action->Preconditions.isvalid())
+		if (Action.IsValid() && Action->Preconditions.IsValid())
 			return Action->Preconditions->FillWorldState(pActor, pSO, WS);
 	}
 
@@ -64,7 +64,7 @@ PAction CActionTplUseSmartObj::CreateInstance(const CWorldState& Context) const
 {
 	PActionUseSmartObj Act = n_new(CActionUseSmartObj);
 	Act->Init(Context.GetProp(WSP_UsingSmartObj), Context.GetProp(WSP_Action));
-	return Act.get_unsafe();
+	return Act.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

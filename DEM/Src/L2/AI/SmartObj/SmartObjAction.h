@@ -61,7 +61,7 @@ typedef Ptr<CSmartObjAction> PSmartObjAction;
 inline bool CSmartObjAction::IsValid(const CActor* pActor, const CPropSmartObject* pSO)
 {
 	return	Enabled && Resource && FreeUserSlots &&
-			(!ActivationValidator.isvalid() || ActivationValidator->IsValid(pActor, pSO, this));
+			(!ActivationValidator.IsValid() || ActivationValidator->IsValid(pActor, pSO, this));
 }
 //---------------------------------------------------------------------
 

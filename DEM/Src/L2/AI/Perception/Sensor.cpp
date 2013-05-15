@@ -2,5 +2,5 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CSensor, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CSensor, Core::CRefCounted);
 }

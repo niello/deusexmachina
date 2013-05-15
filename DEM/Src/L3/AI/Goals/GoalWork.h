@@ -13,8 +13,7 @@ namespace AI
 
 class CGoalWork: public CGoal
 {
-	DeclareRTTI;
-	DeclareFactory(CGoalWork);
+	__DeclareClass(CGoalWork);
 
 protected:
 
@@ -31,7 +30,7 @@ public:
 	virtual void GetDesiredProps(CWorldState& Dest);
 };
 
-RegisterFactory(CGoalWork);
+__RegisterClassInFactory(CGoalWork);
 
 }
 

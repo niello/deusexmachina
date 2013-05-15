@@ -7,8 +7,7 @@
 
 namespace Render
 {
-ImplementRTTI(Render::CTerrainRenderer, Render::IRenderer);
-ImplementFactory(Render::CTerrainRenderer);
+__ImplementClass(Render::CTerrainRenderer, 'TRRE', Render::IRenderer);
 
 bool CTerrainRenderer::Init(const Data::CParams& Desc)
 {
@@ -16,7 +15,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	if (ShaderID.IsValid())
 	{
 		Shader = RenderSrv->ShaderMgr.GetTypedResource(ShaderID);
-		if (!Shader.isvalid() || !Shader->IsLoaded()) FAIL;
+		if (!Shader.IsValid() || !Shader->IsLoaded()) FAIL;
 	}
 	else FAIL;
 
@@ -46,7 +45,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().Get()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
 		}
 	}
 
@@ -71,7 +70,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	if (EnableLighting)
 	{
 		SharedShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shared"));
-		n_assert(SharedShader.isvalid());
+		n_assert(SharedShader.IsValid());
 
 		hLightType = SharedShader->GetVarHandleByName(CStrID("LightType"));
 		hLightDir = SharedShader->GetVarHandleByName(CStrID("LightDir"));
@@ -119,7 +118,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	//!!!ALLOW GROW OF InstanceBuffer!
 	MaxInstanceCount = Desc.Get<int>(CStrID("MaxInstanceCount"), 256);
 	n_assert(MaxInstanceCount);
-	InstanceBuffer.Create();
+	InstanceBuffer = n_new(CVertexBuffer);
 	InstanceVertexLayout = RenderSrv->GetVertexLayout(InstCmps);
 	n_assert(InstanceBuffer->Create(InstanceVertexLayout, MaxInstanceCount, Usage_Dynamic, CPU_Write));
 
@@ -129,7 +128,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 
 void CTerrainRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects)
 {
-	for (int i = 0; i < Objects.Size(); ++i)
+	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
 		//???use buckets instead?
 		if (!Objects[i]->IsA<Scene::CTerrain>()) continue;
@@ -330,19 +329,19 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 
 void CTerrainRenderer::Render()
 {
-	if (!TerrainObjects.Size()) return;
+	if (!TerrainObjects.GetCount()) return;
 
 	if (!InstanceBuffer->IsValid())
 		n_assert(InstanceBuffer->Create(InstanceVertexLayout, MaxInstanceCount, Usage_Dynamic, CPU_Write));
 
 	CShader::HTech hCurrTech = NULL;
 
-	for (int i = 0; i < ShaderVars.Size(); ++i)
-		ShaderVars.ValueAtIndex(i).Apply(*Shader.get_unsafe());
+	for (int i = 0; i < ShaderVars.GetCount(); ++i)
+		ShaderVars.ValueAtIndex(i).Apply(*Shader.GetUnsafe());
 
 	RenderSrv->SetVertexLayout(FinalVertexLayout);
 
-	for (int ObjIdx = 0; ObjIdx < TerrainObjects.Size(); ++ObjIdx)
+	for (int ObjIdx = 0; ObjIdx < TerrainObjects.GetCount(); ++ObjIdx)
 	{
 		Scene::CTerrain& Terrain = *TerrainObjects[ObjIdx];
 
@@ -399,7 +398,7 @@ void CTerrainRenderer::Render()
 		if (EnableLighting)
 		{
 			n_assert_dbg(pLights);
-			for (int j = 0; j < pLights->Size(); ++j)
+			for (int j = 0; j < pLights->GetCount(); ++j)
 			{
 				Scene::CLight& CurrLight = *(*pLights)[j];
 				if ((*pLights)[j]->Type == Scene::CLight::Directional || (*pLights)[j]->Intensity == 0.f)
@@ -450,7 +449,7 @@ void CTerrainRenderer::Render()
 		HMTexInfo[1] = 1.f / (float)Terrain.GetHeightMapHeight();
 		Shader->SetFloatArray(hHMTexInfo, HMTexInfo, 2);
 
-		for (int VarIdx = 0; VarIdx < Terrain.ShaderVars.Size(); ++VarIdx)
+		for (int VarIdx = 0; VarIdx < Terrain.ShaderVars.GetCount(); ++VarIdx)
 		{
 			CShaderVar& Var = Terrain.ShaderVars.ValueAtIndex(VarIdx);
 			if (!Var.IsBound()) Var.Bind(*Shader);
@@ -529,8 +528,8 @@ CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
 	{
 		nString PatchName;
 		PatchName.Format("Patch%dx%d", Size, Size);
-		Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.Get()));
-		PatchMeshes.Add(Size, Patch.get());
+		Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.CStr()));
+		PatchMeshes.Add(Size, Patch.Get());
 	}
 	else Patch = PatchMeshes.ValueAtIndex(Idx);
 

@@ -21,7 +21,7 @@ using namespace Properties;
 
 class CWorldStateSource: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

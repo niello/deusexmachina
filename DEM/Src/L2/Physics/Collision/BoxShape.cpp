@@ -4,8 +4,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CBoxShape, Physics::CShape);
-ImplementFactory(Physics::CBoxShape);
+__ImplementClassNoFactory(Physics::CBoxShape, Physics::CShape);
+__ImplementClass(Physics::CBoxShape);
 
 void CBoxShape::Init(Data::PParams Desc)
 {

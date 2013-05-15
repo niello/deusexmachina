@@ -29,9 +29,9 @@ namespace Anim
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropAnimation, Game::CProperty);
-ImplementFactory(Properties::CPropAnimation);
-ImplementPropertyStorage(CPropAnimation, 64);
+__ImplementClassNoFactory(Properties::CPropAnimation, Game::CProperty);
+__ImplementClass(Properties::CPropAnimation);
+__ImplementPropertyStorage(CPropAnimation, 64);
 RegisterProperty(CPropAnimation);
 
 using namespace Data;
@@ -59,7 +59,7 @@ void CPropAnimation::Deactivate()
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
-	for (int i = 0; i < Tasks.Size(); ++i)
+	for (int i = 0; i < Tasks.GetCount(); ++i)
 		Tasks[i].Stop(0.f);
 	Tasks.Clear();
 
@@ -72,7 +72,7 @@ void CPropAnimation::Deactivate()
 
 bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 {
-	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (!pProp || !pProp->GetNode()) OK; // Nothing to animate
 
 	// Remap bone indices to node relative pathes
@@ -85,14 +85,14 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 	const nString& AnimDesc = GetEntity()->Get<nString>(Attr::AnimDesc);
 	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("game:Anim/") + AnimDesc + ".prm");
 
-	if (Desc.isvalid())
+	if (Desc.IsValid())
 	{
 		for (int i = 0; i < Desc->GetCount(); ++i)
 		{
 			CParam& Prm = Desc->Get(i);
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
 			Anim::PAnimClip Clip = SceneSrv->AnimationMgr.GetTypedResource(ClipRsrcID);
-			if (!Clip.isvalid())
+			if (!Clip.IsValid())
 			{
 				nString FileName = ClipRsrcID.CStr();
 				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
@@ -105,9 +105,9 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 			{
 				nString FileName = Clip->GetUID().CStr();
 				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
-					LoadMocapClipFromNAX2(FileName, Bones, (Anim::CMocapClip*)Clip.get_unsafe());
+					LoadMocapClipFromNAX2(FileName, Bones, (Anim::CMocapClip*)Clip.GetUnsafe());
 				else if (FileName.CheckExtension("kfa"))
-					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.get_unsafe());
+					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.GetUnsafe());
 			}
 			n_assert(Clip->IsLoaded());
 			Clips.Add(Prm.GetName(), Clip);
@@ -116,7 +116,7 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 //!!!to Activate() -
 
 //!!!DBG TMP! some AI character controller must drive character animations
-	if (Clips.Size())
+	if (Clips.GetCount())
 		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
 
 	OK;
@@ -139,7 +139,7 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 				Name = pCurrParent->GetName().CStr() + StrDot + Name;
 				pCurrParent = pCurrParent->GetParent();
 			}
-			Bones.Add(pBone->GetIndex(), CStrID(Name.Get()));
+			Bones.Add(pBone->GetIndex(), CStrID(Name.CStr()));
 			if (!pBone->IsTerminal()) AddChildrenToMapping(pNode, pRoot, Bones);
 		}
 	}
@@ -149,7 +149,7 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 {
 	float FrameTime = (float)GameSrv->GetFrameTime();
-	for (int i = 0; i < Tasks.Size(); ++i)
+	for (int i = 0; i < Tasks.GetCount(); ++i)
 		Tasks[i].Update(FrameTime);
 	OK;
 }
@@ -165,13 +165,13 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) return INVALID_INDEX;
 	if (!Loop && (Offset < 0.f || Offset > Clip->GetDuration())) return INVALID_INDEX;
 
-	CPropSceneNode* pProp = GetEntity()->FindProperty<CPropSceneNode>();
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (!pProp || !pProp->GetNode()) return INVALID_INDEX; // Nothing to animate
 	Scene::CSceneNode* pRoot = pProp->GetNode();
 
 	int TaskID = INVALID_INDEX;
 	Anim::CAnimTask* pTask = NULL;
-	for (int i = 0; i < Tasks.Size(); ++i)
+	for (int i = 0; i < Tasks.GetCount(); ++i)
 		if (!Tasks[i].ClipID.IsValid())
 		{
 			pTask = &Tasks[i];
@@ -181,11 +181,11 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 	if (!pTask)
 	{
-		TaskID = Tasks.Size();
+		TaskID = Tasks.GetCount();
 		pTask = Tasks.Reserve(1);
 	}
 
-	n_assert_dbg(!pTask->Ctlrs.Size());
+	n_assert_dbg(!pTask->Ctlrs.GetCount());
 
 	pTask->Ctlrs.BeginAdd(Clip->GetSamplerCount());
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
@@ -201,7 +201,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		}
 		else pNode = Nodes.ValueAtIndex(NodeIdx);
 		pNode->Controller = Clip->CreateController(i);
-		pTask->Ctlrs.Add(pNode, pNode->Controller.get_unsafe());
+		pTask->Ctlrs.Add(pNode, pNode->Controller.GetUnsafe());
 
 		//!!!
 		// If still no blend controller, create and setup
@@ -211,7 +211,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	}
 	pTask->Ctlrs.EndAdd();
 
-	if (!pTask->Ctlrs.Size()) return INVALID_INDEX;
+	if (!pTask->Ctlrs.GetCount()) return INVALID_INDEX;
 
 	if (!Loop)
 	{

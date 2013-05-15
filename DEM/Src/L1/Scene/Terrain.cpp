@@ -2,9 +2,9 @@
 
 #include <Scene/Scene.h>
 #include <Render/RenderServer.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/Streams/FileStream.h>
+#include <IO/BinaryReader.h>
 #include <Data/DataServer.h>
-#include <Data/BinaryReader.h>
 #include <d3d9.h> //!!!for a texture format only!
 
 namespace Render
@@ -14,12 +14,11 @@ namespace Render
 
 namespace Scene
 {
-ImplementRTTI(Scene::CTerrain, Scene::CSceneNodeAttr);
-ImplementFactory(Scene::CTerrain);
+__ImplementClass(Scene::CTerrain, 'TERR', Scene::CSceneNodeAttr);
 
 using namespace Render;
 
-bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CTerrain::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
@@ -73,9 +72,9 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
 
 bool CTerrain::OnAdd()
 {
-	Data::CFileStream CDLODFile;
-	if (!CDLODFile.Open(HeightMap->GetUID().CStr(), Data::SAM_READ, Data::SAP_SEQUENTIAL)) FAIL;
-	Data::CBinaryReader Reader(CDLODFile);
+	IO::CFileStream CDLODFile;
+	if (!CDLODFile.Open(HeightMap->GetUID().CStr(), IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(CDLODFile);
 
 	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
 	n_assert(Reader.Read<int>() == 1);		// Version
@@ -106,7 +105,7 @@ bool CTerrain::OnAdd()
 		CDLODFile.Read(MapInfo.pData, HFWidth * HFHeight * sizeof(unsigned short));
 		HeightMap->Unmap(0);
 	}
-	else CDLODFile.Seek(HFWidth * HFHeight * sizeof(unsigned short), Data::SSO_CURRENT);
+	else CDLODFile.Seek(HFWidth * HFHeight * sizeof(unsigned short), IO::Seek_Current);
 
 	pMinMaxData = (short*)n_malloc(MinMaxDataSize);
 	CDLODFile.Read(pMinMaxData, MinMaxDataSize);
@@ -130,7 +129,7 @@ bool CTerrain::OnAdd()
 	TopPatchCountX = (HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
 	TopPatchCountZ = (HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
 
-	for (int i = 0; i < ShaderVars.Size(); ++i)
+	for (int i = 0; i < ShaderVars.GetCount(); ++i)
 	{
 		CShaderVar& Var = ShaderVars.ValueAtIndex(i);
 		if (Var.Value.IsA<PTexture>())

@@ -24,9 +24,8 @@ namespace Properties
 
 class CPropTransformable: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropTransformable);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropTransformable);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -42,7 +41,7 @@ public:
 	virtual void Deactivate();
 };
 
-RegisterFactory(CPropTransformable);
+__RegisterClassInFactory(CPropTransformable);
 
 } // namespace Properties
 

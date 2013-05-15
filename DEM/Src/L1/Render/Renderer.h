@@ -23,7 +23,7 @@ namespace Render
 
 class IRenderer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 
 public:
 

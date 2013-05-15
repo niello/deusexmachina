@@ -3,12 +3,12 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/Collision/SphereShape.h>
 #include <Physics/RigidBody.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 
 namespace Physics
 {
-ImplementRTTI(Physics::CExplosionAreaImpulse, Physics::CAreaImpulse);
-ImplementFactory(Physics::CExplosionAreaImpulse);
+__ImplementClassNoFactory(Physics::CExplosionAreaImpulse, Physics::CAreaImpulse);
+__ImplementClass(Physics::CExplosionAreaImpulse);
 
 nArray<CContactPoint> CExplosionAreaImpulse::CollideContacts(256, 512);
 
@@ -28,7 +28,7 @@ void CExplosionAreaImpulse::Apply()
 
 	// apply Impulse to rigid bodies
 	uint Stamp = CPhysicsServer::GetUniqueStamp();
-	for (int i = 0; i < CollideContacts.Size(); i++)
+	for (int i = 0; i < CollideContacts.GetCount(); i++)
 	{
 		CRigidBody* pBody = CollideContacts[i].GetRigidBody();
 		if (pBody && pBody->Stamp != Stamp)

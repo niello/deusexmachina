@@ -5,6 +5,7 @@
 #include "EventDispatcher.h"
 #include "EventBase.h"
 #include <Data/Pool.h>
+#include <Core/Singleton.h>
 
 // Event manager is a central coordination point for the event processing. It works as:
 // - Factory/Cache, by producing event, subscription etc nodes for dispatchers' internal usage
@@ -24,7 +25,7 @@ using namespace Data;
 
 class CEventManager: public CEventDispatcher
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CEventManager);
 
 public:

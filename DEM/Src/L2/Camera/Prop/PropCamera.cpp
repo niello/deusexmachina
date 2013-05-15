@@ -16,9 +16,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropCamera, Game::CProperty);
-ImplementFactory(Properties::CPropCamera);
-ImplementPropertyStorage(CPropCamera, 16);
+__ImplementClassNoFactory(Properties::CPropCamera, Game::CProperty);
+__ImplementClass(Properties::CPropCamera);
+__ImplementPropertyStorage(CPropCamera, 16);
 RegisterProperty(CPropCamera);
 
 using namespace Game;

@@ -28,11 +28,11 @@ void CEntityFactory::Init()
 	
 	Categories.Clear();
 
-	PParams P = DataSrv->LoadHRD("data:tables/EntityCats.hrd");
-	if (!P.isvalid()) n_error("Loading::CEntityFactory: Error loading EntityCats.hrd!");
+	Data::PParams P = DataSrv->LoadHRD("data:tables/EntityCats.hrd");
+	if (!P.IsValid()) n_error("Loading::CEntityFactory: Error loading EntityCats.hrd!");
 
 	for (int i = 0; i < P->GetCount(); i++)
-		CreateEntityCat(P->Get(i).GetName(), P->Get(i).GetValue<PParams>());
+		CreateEntityCat(P->Get(i).GetName(), P->Get(i).GetValue<Data::PParams>());
 }
 //---------------------------------------------------------------------
 
@@ -45,38 +45,26 @@ void CEntityFactory::Release()
 }
 //---------------------------------------------------------------------
 
-CEntity* CEntityFactory::CreateEntityByClassName(const nString& CppClassName) const
-{
-	if (CppClassName == "Entity") return CEntity::Create();
-	else
-	{
-		n_error("Loading::CEntityFactory::CreateEntity(): unknown entity class name '%s'!", CppClassName.Get());
-		return NULL;
-	}
-}
-//---------------------------------------------------------------------
-
 //Create an entity from its category name. The category name is looked
 //up in the EntityCats.hrd file to check what properties must be attached
 //to the entity. All required properties will be attached, and all
 //attributes will be initialised in their default state.
 //!!!!!tmp not const!
-CEntity* CEntityFactory::CreateEntityByCategory(CStrID GUID, CStrID Category, EntityPool EntPool) //const
+CEntity* CEntityFactory::CreateEntityByCategory(CStrID GUID, CStrID Category) //const
 {
 	int Idx = Categories.FindIndex(Category);
 	if (Idx != INVALID_INDEX)
 	{
 		const CEntityCat& Cat = Categories.ValueAtIndex(Idx);
-		n_assert(Cat.InstDataset.isvalid());
+		n_assert(Cat.InstDataset.IsValid());
 		
-		CEntity* pEntity = CreateEntityByClassName(Cat.CppClass);
-		pEntity->SetLive(EntPool == LivePool);
+		CEntity* pEntity = n_new(CEntity);
 		pEntity->SetAttrTable(Cat.InstDataset->GetValueTable());
 		pEntity->SetAttrTableRowIndex(Cat.InstDataset->GetValueTable()->AddRow());
 		pEntity->SetCategory(Category);
 		pEntity->SetUID(GUID);
 
-		for (int i = 0; i < Cat.Properties.Size(); i++)
+		for (int i = 0; i < Cat.Properties.GetCount(); i++)
 			AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
 
 		return pEntity;
@@ -90,7 +78,7 @@ CEntity* CEntityFactory::CreateEntityByCategory(CStrID GUID, CStrID Category, En
 }
 //---------------------------------------------------------------------
 
-CEntity* CEntityFactory::CreateEntityByTemplate(CStrID GUID, CStrID Category, CStrID TplName, EntityPool EntPool)
+CEntity* CEntityFactory::CreateEntityByTemplate(CStrID GUID, CStrID Category, CStrID TplName)
 {
 	n_assert(Category.IsValid());
 	n_assert(TplName.IsValid());
@@ -100,14 +88,13 @@ CEntity* CEntityFactory::CreateEntityByTemplate(CStrID GUID, CStrID Category, CS
 	int TplIdx = FindTemplate(TplName, Cat);
 	if (TplIdx == INVALID_INDEX) return NULL;
 
-	CEntity* pEntity = CreateEntityByClassName(Cat.CppClass);
-	pEntity->SetLive(EntPool == LivePool);
+	CEntity* pEntity = n_new(CEntity);
 	pEntity->SetAttrTable(Cat.InstDataset->GetValueTable());
 	pEntity->SetAttrTableRowIndex(Cat.InstDataset->GetValueTable()->CopyExtRow(Cat.TplDataset->GetValueTable(), TplIdx, true));
 	pEntity->SetCategory(Category);
 	pEntity->SetUID(GUID);
 
-	for (int i = 0; i < Cat.Properties.Size(); i++)
+	for (int i = 0; i < Cat.Properties.GetCount(); i++)
 		AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
 
 	return pEntity;
@@ -115,7 +102,7 @@ CEntity* CEntityFactory::CreateEntityByTemplate(CStrID GUID, CStrID Category, CS
 //---------------------------------------------------------------------
 
 // Create a entity as a clone of a existing one. A new GUID will be assigned.
-CEntity* CEntityFactory::CreateEntityByEntity(CStrID GUID, CEntity* pTplEntity, EntityPool EntPool) const
+CEntity* CEntityFactory::CreateEntityByEntity(CStrID GUID, CEntity* pTplEntity) const
 {
 	n_assert(pTplEntity);
 	n_assert(pTplEntity->GetCategory().IsValid());
@@ -127,7 +114,7 @@ CEntity* CEntityFactory::CreateEntityByEntity(CStrID GUID, CEntity* pTplEntity, 
 	n_assert(pEntity);
 
 	//const nArray<DB::CAttr>& TplAttrs = pTplEntity->GetAttrs();
-	//for (int i = 0; i < TplAttrs.Size(); i++)
+	//for (int i = 0; i < TplAttrs.GetCount(); i++)
 	//	if (TplAttrs[i].GetAttrID() != Attr::GUID)
 	//		pEntity->SetAttr(TplAttrs[i]);
 
@@ -137,12 +124,11 @@ CEntity* CEntityFactory::CreateEntityByEntity(CStrID GUID, CEntity* pTplEntity, 
 
 CEntity* CEntityFactory::CreateTmpEntity(CStrID GUID, CStrID Category, PValueTable Table, int Row) const
 {
-	CEntity* pEntity = CreateEntityByClassName("Entity");
+	CEntity* pEntity = n_new(CEntity);
 	pEntity->SetCategory(Category); //???add to dummy table all attrs if category exists?
 	pEntity->SetAttrTable(Table);
 	pEntity->SetAttrTableRowIndex(Row);
 	pEntity->SetUID(GUID);
-	pEntity->SetLive(true);
 	return pEntity;
 }
 //---------------------------------------------------------------------
@@ -153,15 +139,14 @@ PEntity CEntityFactory::CreateEntityByCategory(CStrID Category, DB::CValueTable*
 	if (Idx != INVALID_INDEX)
 	{
 		const CEntityCat& Cat = Categories.ValueAtIndex(Idx);
-		PEntity pEntity = CreateEntityByClassName(Cat.CppClass);
-		pEntity->SetLive(true);//EntPool == LivePool); //???layers now?
+		PEntity pEntity = n_new(CEntity);
 
 		pEntity->SetAttrTable(pTable);
 		pEntity->SetAttrTableRowIndex(RowIdx);
 		pEntity->SetUniqueIDFromAttrTable();
 		pEntity->SetCategory(Category);
 
-		for (int i = 0; i < Cat.Properties.Size(); i++)
+		for (int i = 0; i < Cat.Properties.GetCount(); i++)
 			AttachProperty(*pEntity, StrPropPrefix + Cat.Properties[i]);
 		
 		return pEntity;
@@ -178,38 +163,19 @@ PEntity CEntityFactory::CreateEntityByCategory(CStrID Category, DB::CValueTable*
 CProperty* CEntityFactory::AttachProperty(CEntity& Entity, const nString& TypeName) const
 {
 	CPropertyInfo PropInfo;
-	if (!PropertyMeta.Get(TypeName.Get(), PropInfo))
-		n_error("No such property \"%s\"", TypeName.Get());
+	if (!PropertyMeta.Get(TypeName.CStr(), PropInfo))
+		n_error("No such property \"%s\"", TypeName.CStr());
 
-	if (PropInfo.ActivePools & Entity.GetPool())
+	PProperty Prop;
+	if (!PropInfo.pStorage->Get(Entity.GetUID(), Prop))
 	{
-		PProperty Prop;
-		if (!PropInfo.pStorage->Get(Entity.GetUID(), Prop))
-		{
-			Prop = (CProperty*)CoreFct->Create(TypeName);
-			PropInfo.pStorage->Add(Entity.GetUID(), Prop);
-			Prop->SetEntity(&Entity);
-		}
-		return Prop.get_unsafe();
+		Prop = (CProperty*)Factory->Create(TypeName);
+		PropInfo.pStorage->Add(Entity.GetUID(), Prop);
+		Prop->SetEntity(&Entity);
 	}
+	return Prop.GetUnsafe();
 
 	return NULL;
-}
-//---------------------------------------------------------------------
-
-void CEntityFactory::DetachProperty(CEntity& Entity, const nString& TypeName) const
-{
-	CPropertyInfo PropInfo;
-	if (!PropertyMeta.Get(TypeName.Get(), PropInfo))
-		n_error("No such property \"%s\"", TypeName.Get());
-	n_assert_dbg(PropInfo.pStorage->Erase(Entity.GetUID()));
-}
-//---------------------------------------------------------------------
-
-void CEntityFactory::DetachAllProperties(CEntity& Entity) const
-{
-	for (int i = 0; i < PropStorage.Size(); i++)
-		PropStorage[i]->Erase(Entity.GetUID());
 }
 //---------------------------------------------------------------------
 
@@ -223,11 +189,11 @@ void CEntityFactory::CreateEntityCat(CStrID Name, const PParams& Desc) //???need
 	New.AllowDefaultLoader = true;
 	
 	CDataArray& Props = *Desc->Get<PDataArray>(CStrID("Props"));
-	for (int i = 0; i < Props.Size(); ++i)
+	for (int i = 0; i < Props.GetCount(); ++i)
 	{
 		const nString& PropName = Props[i].GetValue<nString>();
 		New.Properties.Append(PropName);
-		PProperty Prop = (CProperty*)CoreFct->Create(StrPropPrefix + PropName);
+		PProperty Prop = (CProperty*)Factory->Create(StrPropPrefix + PropName);
 		Prop->GetAttributes(New.Attrs);
 	}
 
@@ -291,7 +257,7 @@ void CEntityFactory::CreateNewEntityCat(CStrID Name, const Data::PParams& Desc, 
 
 void CEntityFactory::LoadEntityTemplates()
 {
-	for (int i = 0; i < Categories.Size(); i++)
+	for (int i = 0; i < Categories.GetCount(); i++)
 	{
 		CEntityCat& Cat = Categories.ValueAtIndex(i);
 		if (Cat.TplTableName.IsValid())
@@ -306,7 +272,7 @@ void CEntityFactory::LoadEntityTemplates()
 
 void CEntityFactory::UnloadEntityTemplates()
 {
-	for (int i = 0; i < Categories.Size(); i++)
+	for (int i = 0; i < Categories.GetCount(); i++)
 		Categories.ValueAtIndex(i).TplDataset = NULL;
 }
 //---------------------------------------------------------------------
@@ -317,7 +283,7 @@ DB::CDataset* CEntityFactory::GetTemplate(CStrID UID, CStrID Category, bool Crea
 
 	CEntityCat& Cat = Categories[Category];
 
-	if (!Cat.TplDataset.isvalid()) return NULL;
+	if (!Cat.TplDataset.IsValid()) return NULL;
 
 	for (int i = 0; i < Cat.TplDataset->GetRowCount(); i++)
 		if (Cat.TplDataset->GetValueTable()->IsRowValid(i))
@@ -343,7 +309,7 @@ void CEntityFactory::DeleteTemplate(CStrID UID, CStrID Category)
 
 	CEntityCat& Cat = Categories[Category];
 
-	if (Cat.TplDataset.isvalid())
+	if (Cat.TplDataset.IsValid())
 		for (int i = 0; i < Cat.TplDataset->GetRowCount(); i++)
 			if (Cat.TplDataset->GetValueTable()->IsRowValid(i))
 				if (Cat.TplDataset->GetValueTable()->Get<CStrID>(Attr::GUID, i) == UID)
@@ -353,7 +319,7 @@ void CEntityFactory::DeleteTemplate(CStrID UID, CStrID Category)
 
 int CEntityFactory::FindTemplate(CStrID UID, const CEntityCat& Cat)
 {
-	n_assert(Cat.TplDataset.isvalid());
+	n_assert(Cat.TplDataset.IsValid());
 
 	const DB::PValueTable VT = Cat.TplDataset->GetValueTable();
 	int Col = VT->GetColumnIndex(Attr::GUID);
@@ -369,7 +335,7 @@ void CEntityFactory::LoadEntityInstances(const nString& LevelName)
 {
 	bool IsLevelValid = LevelName.IsValid();
 
-	for (int i = 0; i < Categories.Size(); i++)
+	for (int i = 0; i < Categories.GetCount(); i++)
 	{
 		CEntityCat& Cat = Categories.ValueAtIndex(i);
 		if (Cat.InstTableName.IsValid())
@@ -389,8 +355,8 @@ void CEntityFactory::LoadEntityInstances(const nString& LevelName)
 				Cat.InstDataset->PerformQuery();
 
 				Ptr<CEntityLoaderBase> Loader = Cat.Loader;
-				if (!Loader.isvalid() && Cat.AllowDefaultLoader) Loader = DefaultLoader;
-				if (!Loader.isvalid()) continue;
+				if (!Loader.IsValid() && Cat.AllowDefaultLoader) Loader = DefaultLoader;
+				if (!Loader.IsValid()) continue;
 
 				//???set category & table once outside a loop?
 				for (int j = 0; j < Cat.InstDataset->GetValueTable()->GetRowCount(); j++)
@@ -403,7 +369,7 @@ void CEntityFactory::LoadEntityInstances(const nString& LevelName)
 
 void CEntityFactory::UnloadEntityInstances()
 {
-	for (int i = 0; i < Categories.Size(); i++)
+	for (int i = 0; i < Categories.GetCount(); i++)
 		Categories.ValueAtIndex(i).InstDataset = NULL;
 }
 //---------------------------------------------------------------------
@@ -425,12 +391,12 @@ void CEntityFactory::RenameEntityInstance(CEntity* pEntity, CStrID NewID) const
 
 	nString SQL;
 	SQL.Format("UPDATE %s SET GUID='%s' WHERE GUID='%s'",
-		Categories[pEntity->Category].InstTableName.Get(), NewID.CStr(), OldID.CStr());
+		Categories[pEntity->Category].InstTableName.CStr(), NewID.CStr(), OldID.CStr());
 	PCommand Cmd = CCommand::Create();
 	n_assert(Cmd->Execute(LoaderSrv->GetGameDB(), SQL));
 
 	PProperty Prop;
-	for (int i = 0; i < PropStorage.Size(); i++)
+	for (int i = 0; i < PropStorage.GetCount(); i++)
 		if (PropStorage[i]->Get(OldID, Prop))
 		{
 			PropStorage[i]->Erase(OldID);
@@ -441,13 +407,13 @@ void CEntityFactory::RenameEntityInstance(CEntity* pEntity, CStrID NewID) const
 
 void CEntityFactory::CommitChangesToDB()
 {
-	for (int i = 0; i < Categories.Size(); i++)
+	for (int i = 0; i < Categories.GetCount(); i++)
 	{
 		CEntityCat& Cat = Categories.ValueAtIndex(i);
 #ifdef _EDITOR
-		if (Cat.TplDataset.isvalid()) Cat.TplDataset->CommitChanges();
+		if (Cat.TplDataset.IsValid()) Cat.TplDataset->CommitChanges();
 #endif
-		if (Cat.InstDataset.isvalid()) Cat.InstDataset->CommitChanges();
+		if (Cat.InstDataset.IsValid()) Cat.InstDataset->CommitChanges();
 	}
 }
 //---------------------------------------------------------------------

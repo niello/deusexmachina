@@ -9,8 +9,8 @@
 
 namespace App
 {
-ImplementRTTI(App::CPlayVideoHandler, App::CStateHandler);
-//ImplementFactory(App::CPlayVideoHandler);
+__ImplementClassNoFactory(App::CPlayVideoHandler, App::CStateHandler);
+//__ImplementClass(App::CPlayVideoHandler);
 
 void CPlayVideoHandler::OnStateEnter(CStrID PrevState, PParams Params)
 {
@@ -19,7 +19,7 @@ void CPlayVideoHandler::OnStateEnter(CStrID PrevState, PParams Params)
 	CStateHandler::OnStateEnter(PrevState);
 	n_assert(VideoFileName.IsValid());
 	VideoSrv->ScalingEnabled = EnableScaling;
-	VideoSrv->PlayFile(VideoFileName.Get());
+	VideoSrv->PlayFile(VideoFileName.CStr());
 }
 //---------------------------------------------------------------------
 

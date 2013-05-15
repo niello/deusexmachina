@@ -164,6 +164,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Src\L3\Story\Dlg\DialogueManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Story\Dlg\DialogueManager.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L3\Story\Dlg\DlgLink.cpp"
 					>
 				</File>
@@ -203,14 +211,6 @@
 					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodeRandom.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgSystem.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgSystem.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Quests"
@@ -220,11 +220,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L3\Story\Quests\QuestSystem.cpp"
+					RelativePath="..\..\Src\L3\Story\Quests\QuestManager.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L3\Story\Quests\QuestSystem.h"
+					RelativePath="..\..\Src\L3\Story\Quests\QuestManager.h"
 					>
 				</File>
 				<File
@@ -441,11 +441,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\SI\SIDlgSystem.cpp"
+				RelativePath="..\..\Src\L3\SI\SIDialogueManager.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\SI\SIQuestSystem.cpp"
+				RelativePath="..\..\Src\L3\SI\SIQuestManager.cpp"
 				>
 			</File>
 		</Filter>

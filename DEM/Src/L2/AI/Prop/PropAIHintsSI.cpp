@@ -19,7 +19,7 @@ int CPropAIHints_EnableStimulus(lua_State* l)
 {
 	//args: EntityScriptObject's this table, Stimulus ID, bool Enable
 	SETUP_ENT_SI_ARGS(3);
-	This->GetEntity()->FindProperty<CPropAIHints>()->EnableStimulus(CStrID(lua_tostring(l, 2)), lua_toboolean(l, 3) != 0);
+	This->GetEntity()->GetProperty<CPropAIHints>()->EnableStimulus(CStrID(lua_tostring(l, 2)), lua_toboolean(l, 3) != 0);
 	return 0;
 }
 //---------------------------------------------------------------------

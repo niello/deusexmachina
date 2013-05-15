@@ -1,12 +1,13 @@
 #include "RenderServer.h"
 
 #include <Events/EventManager.h>
-#include <Data/Stream.h>
+#include <IO/Stream.h>
+#include <Core/CoreServer.h>
 #include <dxerr.h>
 
 namespace Render
 {
-ImplementRTTI(Render::CRenderServer, Core::CRefCounted);
+__ImplementClassNoFactory(Render::CRenderServer, Core::CRefCounted);
 __ImplementSingleton(CRenderServer);
 
 bool CRenderServer::Open()
@@ -26,9 +27,9 @@ bool CRenderServer::Open()
 	FFlagSkinned = ShaderFeatureStringToMask("Skinned");
 	FFlagInstanced = ShaderFeatureStringToMask("Instanced");
 
-	if (!DefaultRT.isvalid())
+	if (!DefaultRT.IsValid())
 	{
-		DefaultRT.Create();
+		DefaultRT = n_new(CRenderTarget);
 		if (!DefaultRT->CreateDefaultRT()) FAIL;
 	}
 	pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
@@ -233,7 +234,7 @@ void CRenderServer::SetupPresentParams()
 			float IdealResolution = (float)Display.GetDisplayMode().Width * Display.GetDisplayMode().Height;
 			float MinMetric = FLT_MAX;
 			int MinIdx = INVALID_INDEX;
-			for (int i = 0; i < Modes.Size(); ++i)
+			for (int i = 0; i < Modes.GetCount(); ++i)
 			{
 				const CDisplayMode& Mode = Modes[i];
 				float AspectDiff = Mode.GetAspectRatio() - IdealAspect;
@@ -315,7 +316,7 @@ bool CRenderServer::BeginFrame()
 	DIPsRendered = 0;
 
 	//???where? once per frame shader change
-	if (!SharedShader.isvalid())
+	if (!SharedShader.IsValid())
 	{
 		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
 		n_assert(SharedShader->IsLoaded());
@@ -378,7 +379,7 @@ void CRenderServer::Present()
 }
 //---------------------------------------------------------------------
 
-void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, Data::CStream& OutStream)
+void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, IO::CStream& OutStream)
 {
 	n_assert(pD3DDevice && !IsInsideFrame);
 
@@ -400,7 +401,7 @@ void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, Data::CStream& OutS
 	n_assert(SUCCEEDED(hr));
 	pCaptureSurface->Release();
 
-	if (OutStream.Open(Data::SAM_WRITE, Data::SAP_SEQUENTIAL)) //???or open outside? here assert IsOpen and write access
+	if (OutStream.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) //???or open outside? here assert IsOpen and write access
 	{
 		OutStream.Write(pBuf->GetBufferPointer(), pBuf->GetBufferSize());
 		OutStream.Close();
@@ -412,10 +413,10 @@ void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, Data::CStream& OutS
 void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 {
 	n_assert(Index < MaxRenderTargetCount);
-	if (CurrRT[Index].get_unsafe() == pRT) return;
+	if (CurrRT[Index].GetUnsafe() == pRT) return;
 
 	// Restore main RT to backbuffer and autodepthstencil (or NULL if no auto)
-	if (!pRT && Index == 0) pRT = DefaultRT.get_unsafe();
+	if (!pRT && Index == 0) pRT = DefaultRT.GetUnsafe();
 
 	IDirect3DSurface9* pRTSurface = pRT ? pRT->GetD3DRenderTargetSurface() : NULL;
 	IDirect3DSurface9* pDSSurface = pRT ? pRT->GetD3DDepthStencilSurface() : NULL;
@@ -440,7 +441,7 @@ void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 void CRenderServer::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
 {
 	n_assert(Index < MaxVertexStreamCount && (!pVB || OffsetVertex < pVB->GetVertexCount()));
-	if (CurrVB[Index].get_unsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) return;
+	if (CurrVB[Index].GetUnsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) return;
 	IDirect3DVertexBuffer9* pD3DVB = pVB ? pVB->GetD3DBuffer() : NULL;
 	DWORD VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSize() : 0;
 	n_assert(SUCCEEDED(pD3DDevice->SetStreamSource(Index, pD3DVB, VertexSize * OffsetVertex, VertexSize)));
@@ -451,7 +452,7 @@ void CRenderServer::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Offse
 
 void CRenderServer::SetVertexLayout(CVertexLayout* pVLayout)
 {
-	if (CurrVLayout.get_unsafe() == pVLayout) return;
+	if (CurrVLayout.GetUnsafe() == pVLayout) return;
 	IDirect3DVertexDeclaration9* pDecl = pVLayout ? pVLayout->GetD3DVertexDeclaration() : NULL;
 	n_assert(SUCCEEDED(pD3DDevice->SetVertexDeclaration(pDecl)));
 	CurrVLayout = pVLayout;
@@ -460,7 +461,7 @@ void CRenderServer::SetVertexLayout(CVertexLayout* pVLayout)
 
 void CRenderServer::SetIndexBuffer(CIndexBuffer* pIB)
 {
-	if (CurrIB.get_unsafe() == pIB) return;
+	if (CurrIB.GetUnsafe() == pIB) return;
 	IDirect3DIndexBuffer9* pD3DIB = pIB ? pIB->GetD3DBuffer() : NULL;
 	n_assert(SUCCEEDED(pD3DDevice->SetIndices(pD3DIB)));
 	CurrIB = pIB;
@@ -538,8 +539,8 @@ void CRenderServer::Draw()
 	HRESULT hr;
 	if (CurrPrimGroup.IndexCount > 0)
 	{
-		n_assert_dbg(CurrIB.isvalid());
-		n_assert_dbg(!InstanceCount || CurrVB[0].isvalid());
+		n_assert_dbg(CurrIB.IsValid());
+		n_assert_dbg(!InstanceCount || CurrVB[0].IsValid());
 		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
 												0,
 												CurrPrimGroup.FirstVertex,
@@ -561,7 +562,7 @@ void CRenderServer::Draw()
 
 PVertexLayout CRenderServer::GetVertexLayout(const nArray<CVertexComponent>& Components)
 {
-	if (!Components.Size()) return NULL;
+	if (!Components.GetCount()) return NULL;
 	CStrID Signature = CVertexLayout::BuildSignature(Components);
 	int Idx = VertexLayouts.FindIndex(Signature);
 	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAtIndex(Idx);
@@ -593,7 +594,7 @@ EPixelFormat CRenderServer::GetPixelFormat(const nString& String)
 	if (String == "D24X8") return D3DFMT_D24X8;
 	if (String == "D24X4S4") return D3DFMT_D24X4S4;
 
-	n_error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.Get());
+	n_error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.CStr());
 	return PixelFormat_Invalid;
 }
 //---------------------------------------------------------------------
@@ -663,14 +664,14 @@ DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
 
 	nArray<nString> Features;
 	FeatureString.Tokenize("\t |", Features);
-	for (int i = 0; i < Features.Size(); ++i)
+	for (int i = 0; i < Features.GetCount(); ++i)
 	{
-		CStrID Feature = CStrID(Features[i].Get());
+		CStrID Feature = CStrID(Features[i].CStr());
 		int Idx = ShaderFeatures.FindIndex(Feature);
 		if (Idx != INVALID_INDEX) Mask |= (1 << ShaderFeatures.ValueAtIndex(Idx));
 		else
 		{
-			int BitIdx = ShaderFeatures.Size();
+			int BitIdx = ShaderFeatures.GetCount();
 			if (BitIdx >= MaxShaderFeatureCount)
 			{
 				n_error("ShaderFeature: more then %d unqiue shader features requested!", MaxShaderFeatureCount);

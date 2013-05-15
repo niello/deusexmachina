@@ -18,9 +18,9 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropTransformable, Game::CProperty);
-ImplementFactory(Properties::CPropTransformable);
-ImplementPropertyStorage(CPropTransformable, 512);
+__ImplementClassNoFactory(Properties::CPropTransformable, Game::CProperty);
+__ImplementClass(Properties::CPropTransformable);
+__ImplementPropertyStorage(CPropTransformable, 512);
 RegisterProperty(CPropTransformable);
 
 IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropTransformable, OnRenderDebug)

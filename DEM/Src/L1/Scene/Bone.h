@@ -13,8 +13,7 @@ struct CSPSRecord;
 
 class CBone: public CSceneNodeAttr
 {
-	DeclareRTTI;
-	DeclareFactory(CBone);
+	__DeclareClass(CBone);
 
 protected:
 
@@ -33,7 +32,7 @@ protected:
 
 public:
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual bool	OnAdd();
 	virtual void	OnRemove();
 	virtual void	Update();
@@ -52,7 +51,7 @@ public:
 	CBone*			GetRootBone();
 };
 
-RegisterFactory(CBone);
+__RegisterClassInFactory(CBone);
 
 typedef Ptr<CBone> PBone;
 

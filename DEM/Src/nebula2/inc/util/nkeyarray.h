@@ -36,7 +36,7 @@ public:
     /// remove element defined by key index
     void RemByIndex(int index);
     /// return number of elements
-    int Size() const;
+    int GetCount() const;
     /// element at index
     TYPE& operator[](int index) const;
     /// get element at index
@@ -68,9 +68,9 @@ template<class TYPE>
 int
 nKeyArray<TYPE>::bsearch(int key) const
 {
-    n_assert(this->elements.Size() > 0);
+    n_assert(this->elements.GetCount() > 0);
 
-    int num = this->elements.Size();
+    int num = this->elements.GetCount();
     int half;
 
     int lo = 0;
@@ -170,7 +170,7 @@ nKeyArray<TYPE>::Add(int key, const TYPE& e)
 
     // insert key into array, keep array sorted by key
     int i;
-    for (i = 0; i < this->elements.Size(); i++)
+    for (i = 0; i < this->elements.GetCount(); i++)
     {
         const nKAElement& kae = this->elements[i];
         if (key < kae.key)
@@ -192,7 +192,7 @@ template<class TYPE>
 bool
 nKeyArray<TYPE>::Find(int key, TYPE& e) const
 {
-    if (this->elements.Size() == 0)
+    if (this->elements.GetCount() == 0)
     {
         return false;
     }
@@ -232,7 +232,7 @@ template<class TYPE>
 bool
 nKeyArray<TYPE>::HasKey(int key) const
 {
-    if (this->elements.Size() == 0)
+    if (this->elements.GetCount() == 0)
     {
         return false;
     }
@@ -270,7 +270,7 @@ template<class TYPE>
 void
 nKeyArray<TYPE>::RemByIndex(int index)
 {
-    n_assert((index >= 0) && (index < this->elements.Size()));
+    n_assert((index >= 0) && (index < this->elements.GetCount()));
     this->elements.Erase(index);
 }
 
@@ -279,9 +279,9 @@ nKeyArray<TYPE>::RemByIndex(int index)
 */
 template<class TYPE>
 int
-nKeyArray<TYPE>::Size() const
+nKeyArray<TYPE>::GetCount() const
 {
-    return this->elements.Size();
+    return this->elements.GetCount();
 }
 
 //------------------------------------------------------------------------------
@@ -301,7 +301,7 @@ template<class TYPE>
 TYPE&
 nKeyArray<TYPE>::GetElementAt(int index) const
 {
-    n_assert((index >= 0) && (index < this->elements.Size()));
+    n_assert((index >= 0) && (index < this->elements.GetCount()));
     return this->elements[index].elm;
 }
 
@@ -312,7 +312,7 @@ template<class TYPE>
 int
 nKeyArray<TYPE>::GetKeyAt(int index) const
 {
-    n_assert((index >= 0) && (index < this->elements.Size()));
+    n_assert((index >= 0) && (index < this->elements.GetCount()));
     return this->elements[index].key;
 }
 

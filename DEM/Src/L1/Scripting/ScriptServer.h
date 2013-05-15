@@ -3,6 +3,7 @@
 #define __DEM_L1_SCRIPT_SERVER_H__
 
 #include <Core/RefCounted.h>
+#include <Core/Singleton.h>
 #include <StdDEM.h>
 #include <Events/Events.h>
 
@@ -31,7 +32,7 @@ typedef Ptr<class CScriptObject> PScriptObject;
 
 class CScriptServer: public Core::CRefCounted
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CScriptServer);
 
 private:

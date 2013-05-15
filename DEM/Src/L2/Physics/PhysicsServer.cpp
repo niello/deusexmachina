@@ -1,6 +1,6 @@
 #include "PhysicsServer.h"
 
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/Composite.h>
 #include <Physics/Collision/BoxShape.h>
 #include <Physics/Collision/SphereShape.h>
@@ -33,16 +33,16 @@ CPhysicsServer::CPhysicsServer():
 CPhysicsServer::~CPhysicsServer()
 {
 	n_assert(!isOpen);
-	n_assert(!CurrLevel.isvalid()); //???need? mb release it right here if not NULL?
+	n_assert(!CurrLevel.IsValid()); //???need? mb release it right here if not NULL?
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
 // A NULL pointer is valid and will just release the previous level.
-void CPhysicsServer::SetLevel(CLevel* pLevel)
+void CPhysicsServer::SetLevel(CPhysicsLevel* pLevel)
 {
 	n_assert(isOpen);
-	if (CurrLevel.isvalid())
+	if (CurrLevel.IsValid())
 	{
 		CurrLevel->Deactivate();
 		CurrLevel = NULL;
@@ -77,7 +77,7 @@ void CPhysicsServer::Close()
 void CPhysicsServer::Trigger()
 {
 	n_assert(isOpen);
-	if (CurrLevel.isvalid()) CurrLevel->Trigger();
+	if (CurrLevel.IsValid()) CurrLevel->Trigger();
 }
 //---------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ bool CPhysicsServer::RayCheck(const vector3& Pos, const vector3& Dir, const CFil
 	R.SetDirection(Dir);
 	if (ExcludeSet) R.SetExcludeFilterSet(*ExcludeSet);
 	R.DoRayCheckAllContacts(matrix44::identity, Contacts);
-	return Contacts.Size() > 0;
+	return Contacts.GetCount() > 0;
 }
 //---------------------------------------------------------------------
 
@@ -161,17 +161,17 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 {
 	n_assert(Name.IsValid());
 	PParams Desc = DataSrv->LoadPRM(nString("physics:") + Name + ".prm");
-	if (!Desc.isvalid()) return NULL;
+	if (!Desc.IsValid()) return NULL;
 
-	CComposite* pComposite = (CComposite*)CoreFct->Create(PhysClassPrefix + Desc->Get<nString>(CStrID("Type")));
+	CComposite* pComposite = (CComposite*)Factory->Create(PhysClassPrefix + Desc->Get<nString>(CStrID("Type")));
 	if (!pComposite) return NULL;
 
 	int Idx = Desc->IndexOf(CStrID("Bodies"));
 	if (Idx != INVALID_INDEX)
 	{
 		CDataArray& Bodies = *Desc->Get<PDataArray>(Idx);
-		pComposite->BeginBodies(Bodies.Size());
-		for (int i = 0; i < Bodies.Size(); i++)
+		pComposite->BeginBodies(Bodies.GetCount());
+		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
 			PParams BodyDesc = Bodies[i];
 			PRigidBody pBody = CRigidBody::Create();
@@ -192,11 +192,11 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 			pBody->SetLinkName(CRigidBody::JointNode, BodyDesc->Get<nString>(CStrID("Joint"), NULL));
 
 			CDataArray& Shapes = *BodyDesc->Get<PDataArray>(CStrID("Shapes"));
-			pBody->BeginShapes(Shapes.Size());
-			for (int j = 0; j < Shapes.Size(); j++)
+			pBody->BeginShapes(Shapes.GetCount());
+			for (int j = 0; j < Shapes.GetCount(); j++)
 			{
 				PParams ShapeDesc = Shapes[j];
-				PShape pShape = (CShape*)CoreFct->Create(PhysClassPrefix + ShapeDesc->Get<nString>(CStrID("Type")));
+				PShape pShape = (CShape*)Factory->Create(PhysClassPrefix + ShapeDesc->Get<nString>(CStrID("Type")));
 				pShape->Init(ShapeDesc);
 				pBody->AddShape(pShape);
 			}
@@ -211,11 +211,11 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 	if (Idx != INVALID_INDEX)
 	{
 		CDataArray& Joints = *Desc->Get<PDataArray>(Idx);
-		pComposite->BeginJoints(Joints.Size());
-		for (int i = 0; i < Joints.Size(); i++)
+		pComposite->BeginJoints(Joints.GetCount());
+		for (int i = 0; i < Joints.GetCount(); i++)
 		{
 			PParams JointDesc = Joints[i];
-			PJoint pJoint = (CJoint*)CoreFct->Create(PhysClassPrefix + JointDesc->Get<nString>(CStrID("Type")));
+			PJoint pJoint = (CJoint*)Factory->Create(PhysClassPrefix + JointDesc->Get<nString>(CStrID("Type")));
 			Idx = Desc->IndexOf(CStrID("Body1"));
 			if (Idx != INVALID_INDEX)
 				pJoint->SetBody1(pComposite->GetBodyByName(Desc->Get(Idx).GetRawValue()));
@@ -233,11 +233,11 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 	if (Idx != INVALID_INDEX)
 	{
 		CDataArray& Shapes = *Desc->Get<PDataArray>(Idx);
-		pComposite->BeginShapes(Shapes.Size());
-		for (int i = 0; i < Shapes.Size(); i++)
+		pComposite->BeginShapes(Shapes.GetCount());
+		for (int i = 0; i < Shapes.GetCount(); i++)
 		{
 			PParams ShapeDesc = Shapes[i];
-			PShape pShape = (CShape*)CoreFct->Create("Physics::C" + ShapeDesc->Get<nString>(CStrID("Type")));
+			PShape pShape = (CShape*)Factory->Create("Physics::C" + ShapeDesc->Get<nString>(CStrID("Type")));
 			pShape->Init(ShapeDesc);
 			pComposite->AddShape(pShape);
 		}
@@ -257,7 +257,7 @@ const CContactPoint* CPhysicsServer::GetClosestContactAlongRay(const vector3& Po
 	// Find closest contact
 	int Idx = INVALID_INDEX;
 	float ClosestDistanceSq = Dir.lensquared();
-	for (int i = 0; i < Contacts.Size(); i++)
+	for (int i = 0; i < Contacts.GetCount(); i++)
 	{
 		const CContactPoint& CurrContact = Contacts[i];
 		float DistanceSq = (CurrContact.Position - Pos).lensquared();
@@ -308,11 +308,11 @@ int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSe
 	Shape->Collide(ExcludeSet, Contacts);
 	Shape->Detach();
 
-	int OldResultSize = Result.Size();
+	int OldResultSize = Result.GetCount();
 	
 	//???stamp?
 	uint Stamp = GetUniqueStamp();
-	for (int i = 0; i < Contacts.Size(); i++)
+	for (int i = 0; i < Contacts.GetCount(); i++)
 	{
 		CEntity* pEnt = Contacts[i].GetEntity();
 		if (pEnt && pEnt->GetStamp() != Stamp)
@@ -321,7 +321,7 @@ int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSe
 			Result.Append(pEnt);
 		}
 	}
-	return Result.Size() - OldResultSize;
+	return Result.GetCount() - OldResultSize;
 }
 //---------------------------------------------------------------------
 
@@ -351,10 +351,10 @@ int CPhysicsServer::GetEntitiesInBox(const vector3& Scale, const matrix44& TF, c
 
 	//???can optimize?
 	matrix44 Tfm;
-	Tfm.x_component() = TF.x_component() / Scale.x;
-	Tfm.y_component() = TF.y_component() / Scale.y;
-	Tfm.z_component() = TF.z_component() / Scale.z;
-	Tfm.set_translation(TF.pos_component());
+	Tfm.AxisX() = TF.AxisX() / Scale.x;
+	Tfm.AxisY() = TF.AxisY() / Scale.y;
+	Tfm.AxisZ() = TF.AxisZ() / Scale.z;
+	Tfm.set_translation(TF.Translation());
 
 	return GetEntitiesInShape(CreateBoxShape(Tfm, InvalidMaterial, Scale), ExcludeSet, Result);
 }

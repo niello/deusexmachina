@@ -3,7 +3,7 @@
 #include <Items/Item.h>
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 extern "C"
 {
@@ -25,7 +25,7 @@ int CPropInventory_AddItem(lua_State* l)
 	if (Count > 0)
 	{
 		lua_pushboolean(l,
-			This->GetEntity()->FindProperty<CPropInventory>()->AddItem(CStrID(lua_tostring(l, 2)), Count));
+			This->GetEntity()->GetProperty<CPropInventory>()->AddItem(CStrID(lua_tostring(l, 2)), Count));
 		return 1;
 	}
 	return 0; //!!!how to determine failure reason in script?!
@@ -42,7 +42,7 @@ int CPropInventory_RemoveItem(lua_State* l)
 	if (Count > 0)
 	{
 		lua_pushboolean(l,
-			This->GetEntity()->FindProperty<CPropInventory>()->RemoveItem(CStrID(lua_tostring(l, 2)),
+			This->GetEntity()->GetProperty<CPropInventory>()->RemoveItem(CStrID(lua_tostring(l, 2)),
 				Count, AsManyAsCan));
 		return 1;
 	}
@@ -59,7 +59,7 @@ int CPropInventory_HasItem(lua_State* l)
 	if (Count > 0)
 	{
 		lua_pushboolean(l,
-			This->GetEntity()->FindProperty<CPropInventory>()->HasItem(CStrID(lua_tostring(l, 2)), Count));
+			This->GetEntity()->GetProperty<CPropInventory>()->HasItem(CStrID(lua_tostring(l, 2)), Count));
 		return 1;
 	}
 	return 0;

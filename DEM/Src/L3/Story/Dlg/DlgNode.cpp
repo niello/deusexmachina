@@ -1,16 +1,16 @@
 #include "DlgNode.h"
 
-#include "DlgSystem.h"
+#include "DialogueManager.h"
 #include "DlgLink.h"
 
 namespace Story
 {
-ImplementRTTI(Story::CDlgNode, Core::CRefCounted);
-ImplementFactory(Story::CDlgNode);
+__ImplementClassNoFactory(Story::CDlgNode, Core::CRefCounted);
+__ImplementClass(Story::CDlgNode);
 
 CDlgNode* CDlgNode::Trigger(CActiveDlg& Dlg)
 {
-	while (Dlg.IsCheckingConditions && Dlg.LinkIdx < Links.Size())
+	while (Dlg.IsCheckingConditions && Dlg.LinkIdx < Links.GetCount())
 	{
 		EExecStatus Status = Links[Dlg.LinkIdx]->Validate(Dlg);
 		if (Status == Success) Dlg.IsCheckingConditions = false;
@@ -18,7 +18,7 @@ CDlgNode* CDlgNode::Trigger(CActiveDlg& Dlg)
 		else Dlg.LinkIdx++;
 	}
 
-	return (Dlg.LinkIdx == Links.Size()) ? NULL : Links[Dlg.LinkIdx]->DoTransition(Dlg);
+	return (Dlg.LinkIdx == Links.GetCount()) ? NULL : Links[Dlg.LinkIdx]->DoTransition(Dlg);
 }
 //---------------------------------------------------------------------
 

@@ -60,18 +60,18 @@ inline void RankDecompose(float Scales[3], DWORD& First, DWORD& Second, DWORD& T
 
 bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 {
-	Translation = Tfm.pos_component();
+	Translation = Tfm.Translation();
 
 	static const vector3* pCanonicalBasis[3] = { &vector3::AxisX, &vector3::AxisY, &vector3::AxisZ };
 
 	matrix44 Tmp(Tfm);
-	Tmp.pos_component().set(0.f, 0.f, 0.f);
+	Tmp.Translation().set(0.f, 0.f, 0.f);
 	Tmp.m[3][3] = 1.f;
 
 	vector3* pBasis[3];
-	pBasis[0] = &Tmp.x_component();
-	pBasis[1] = &Tmp.y_component();
-	pBasis[2] = &Tmp.z_component();
+	pBasis[0] = &Tmp.AxisX();
+	pBasis[1] = &Tmp.AxisY();
+	pBasis[2] = &Tmp.AxisZ();
 
 	float* pScales = (float*)&Scale;
 

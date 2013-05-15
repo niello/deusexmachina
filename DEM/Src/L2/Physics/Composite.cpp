@@ -4,8 +4,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::CComposite, Core::CRefCounted);
-ImplementFactory(Physics::CComposite);
+__ImplementClassNoFactory(Physics::CComposite, Core::CRefCounted);
+__ImplementClass(Physics::CComposite);
 
 CComposite::CComposite():
 	CurrBodyIdx(0),
@@ -48,7 +48,7 @@ void CComposite::AddBody(CRigidBody* pBody)
 void CComposite::EndBodies()
 {
 	n_assert(Flags.Is(PHYS_COMP_BEGIN_BODIES));
-	n_assert(Bodies.Size() == CurrBodyIdx);
+	n_assert(Bodies.GetCount() == CurrBodyIdx);
 	Flags.Clear(PHYS_COMP_BEGIN_BODIES);
 }
 //---------------------------------------------------------------------
@@ -74,7 +74,7 @@ void CComposite::AddJoint(CJoint* pJoint)
 void CComposite::EndJoints()
 {
 	n_assert(Flags.Is(PHYS_COMP_BEGIN_JOINTS));
-	n_assert(Joints.Size() == CurrJointIdx);
+	n_assert(Joints.GetCount() == CurrJointIdx);
 	Flags.Clear(PHYS_COMP_BEGIN_JOINTS);
 }
 //---------------------------------------------------------------------
@@ -100,7 +100,7 @@ void CComposite::AddShape(CShape* pShape)
 void CComposite::EndShapes()
 {
 	n_assert(Flags.Is(PHYS_COMP_BEGIN_SHAPES));
-	n_assert(Shapes.Size() == CurrShapeIdx);
+	n_assert(Shapes.GetCount() == CurrShapeIdx);
 	Flags.Clear(PHYS_COMP_BEGIN_SHAPES);
 }
 //---------------------------------------------------------------------
@@ -111,10 +111,10 @@ void CComposite::Attach(dWorldID WorldID, dSpaceID DynamicSpaceID, dSpaceID Stat
 
 	// count the number of shapes in the composite, this dictates whether and what
 	// type of local collision space will be created.
-	if (Bodies.Size() > 0)
+	if (Bodies.GetCount() > 0)
 	{
 		int ShapeCount = 0;
-		for (int i = 0; i < Bodies.Size(); i++)
+		for (int i = 0; i < Bodies.GetCount(); i++)
 			ShapeCount += Bodies[i]->GetNumShapes();
 
 		// if number of shapes is equal to 1 we don't allocate
@@ -132,20 +132,20 @@ void CComposite::Attach(dWorldID WorldID, dSpaceID DynamicSpaceID, dSpaceID Stat
 		}
 		*/
 
-		for (int i = 0; i < Bodies.Size(); i++)
+		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
 			CRigidBody* pBody = Bodies[i];
 			pBody->Attach(WorldID, LocalSpaceID, pBody->GetInitialTransform() * Transform);
 		}
 
-		for (int i = 0; i < Joints.Size(); i++)
+		for (int i = 0; i < Joints.GetCount(); i++)
 		{
 			CJoint* pJoint = GetJointAt(i);
 			pJoint->Attach(WorldID, 0, Transform);
 		}
 	}
 
-	for (int i = 0; i < Shapes.Size(); i++)
+	for (int i = 0; i < Shapes.GetCount(); i++)
 	{
 		CShape* pShape = Shapes[i];
 		pShape->SetTransform(pShape->GetInitialTransform() * Transform);
@@ -160,9 +160,9 @@ void CComposite::Detach()
 {
 	n_assert(IsAttached());
 
-	for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->Detach();
-	for (int i = 0; i < Joints.Size(); i++) Joints[i]->Detach();
-	for (int i = 0; i < Shapes.Size(); i++) Shapes[i]->Detach();
+	for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->Detach();
+	for (int i = 0; i < Joints.GetCount(); i++) Joints[i]->Detach();
+	for (int i = 0; i < Shapes.GetCount(); i++) Shapes[i]->Detach();
 
 	if (ODESpaceID)
 	{
@@ -177,7 +177,7 @@ void CComposite::Detach()
 void CComposite::OnStepBefore()
 {
 	if (IsAttached())
-		for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->OnStepBefore();
+		for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->OnStepBefore();
 }
 //---------------------------------------------------------------------
 
@@ -185,10 +185,10 @@ void CComposite::OnStepAfter()
 {
 	if (IsAttached())
 	{
-		for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->OnStepAfter();
+		for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->OnStepAfter();
 
 		// update stored transform
-		if (Bodies.Size() > 0)
+		if (Bodies.GetCount() > 0)
 		{
 			CRigidBody* pMaster = Bodies[0];
 			Transform = pMaster->GetInvInitialTransform() * pMaster->GetTransform();
@@ -203,7 +203,7 @@ void CComposite::OnFrameBefore()
 	{
 		FrameBeforeTfm = Transform;
 		Flags.Clear(PHYS_COMP_TFM_CHANGED);
-		for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->OnFrameBefore();
+		for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->OnFrameBefore();
 	}
 }
 //---------------------------------------------------------------------
@@ -212,7 +212,7 @@ void CComposite::OnFrameAfter()
 {
 	if (IsAttached())
 	{
-		for (int i = 0; i < Bodies.Size(); i++)
+		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
 			CRigidBody* pBody = Bodies[i];
 			pBody->OnFrameAfter();
@@ -224,10 +224,10 @@ void CComposite::OnFrameAfter()
 		if (!Flags.Is(PHYS_COMP_TFM_CHANGED))
 		{
 			if (Flags.Is(PHYS_COMP_TFM_WAS_SET) ||
-				(!FrameBeforeTfm.x_component().isequal(Transform.x_component(), 0.001f)) ||
-				(!FrameBeforeTfm.y_component().isequal(Transform.y_component(), 0.001f)) ||
-				(!FrameBeforeTfm.z_component().isequal(Transform.z_component(), 0.001f)) ||
-				(!FrameBeforeTfm.pos_component().isequal(Transform.pos_component(), 0.001f)))
+				(!FrameBeforeTfm.AxisX().isequal(Transform.AxisX(), 0.001f)) ||
+				(!FrameBeforeTfm.AxisY().isequal(Transform.AxisY(), 0.001f)) ||
+				(!FrameBeforeTfm.AxisZ().isequal(Transform.AxisZ(), 0.001f)) ||
+				(!FrameBeforeTfm.Translation().isequal(Transform.Translation(), 0.001f)))
 			{
 				Flags.Set(PHYS_COMP_TFM_CHANGED);
 			}
@@ -240,7 +240,7 @@ void CComposite::OnFrameAfter()
 int CComposite::GetNumCollisions() const
 {
 	int Result = 0;
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 		Result += Bodies[i]->GetNumCollisions();
 	return Result;
 }
@@ -248,7 +248,7 @@ int CComposite::GetNumCollisions() const
 
 bool CComposite::IsHorizontalCollided() const
 {
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 		if (Bodies[i]->IsHorizontalCollided()) OK;
 	FAIL;
 }
@@ -257,12 +257,12 @@ bool CComposite::IsHorizontalCollided() const
 void CComposite::GetAABB(bbox3& AABB) const
 {
 	int ShapeIdx;
-	if (Bodies.Size() > 0)
+	if (Bodies.GetCount() > 0)
 	{
 		ShapeIdx = 0;
 		Bodies[0]->GetAABB(AABB);
 		//???transform?
-		for (int i = 1; i < Bodies.Size(); i++)
+		for (int i = 1; i < Bodies.GetCount(); i++)
 		{
 			bbox3 NextAABB;
 			Bodies[i]->GetAABB(NextAABB);
@@ -270,7 +270,7 @@ void CComposite::GetAABB(bbox3& AABB) const
 			AABB.extend(NextAABB);
 		}
 	}
-	else if (Shapes.Size() > 0)
+	else if (Shapes.GetCount() > 0)
 	{
 		ShapeIdx = 1;
 		Shapes[0]->GetAABB(AABB);
@@ -287,7 +287,7 @@ void CComposite::GetAABB(bbox3& AABB) const
 		return;
 	}
 
-	for (; ShapeIdx < Shapes.Size(); ShapeIdx++)
+	for (; ShapeIdx < Shapes.GetCount(); ShapeIdx++)
 	{
 		bbox3 NextAABB;
 		Shapes[ShapeIdx]->GetAABB(NextAABB);
@@ -304,15 +304,15 @@ void CComposite::SetTransform(const matrix44& Tfm)
 
 	if (IsAttached())
 	{
-		for (int i = 0; i < Bodies.Size(); i++)
+		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
 			CRigidBody* pBody = Bodies[i];
 			pBody->SetTransform(pBody->GetInitialTransform() * Tfm);
 		}
 
-		for (int i = 0; i < Joints.Size(); i++) Joints[i]->UpdateTransform(Tfm);
+		for (int i = 0; i < Joints.GetCount(); i++) Joints[i]->UpdateTransform(Tfm);
 
-		for (int i = 0; i < Shapes.Size(); i++)
+		for (int i = 0; i < Shapes.GetCount(); i++)
 		{
 			CShape* pShape = Shapes[i];
 			pShape->SetTransform(pShape->GetInitialTransform() * Tfm);
@@ -323,9 +323,9 @@ void CComposite::SetTransform(const matrix44& Tfm)
 
 void CComposite::RenderDebug()
 {
-	for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->RenderDebug();
-	for (int i = 0; i < Joints.Size(); i++) Joints[i]->RenderDebug();
-	for (int i = 0; i < Shapes.Size(); i++) Shapes[i]->RenderDebug(matrix44::identity);
+	for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->RenderDebug();
+	for (int i = 0; i < Joints.GetCount(); i++) Joints[i]->RenderDebug();
+	for (int i = 0; i < Shapes.GetCount(); i++) Shapes[i]->RenderDebug(matrix44::identity);
 }
 //---------------------------------------------------------------------
 
@@ -333,7 +333,7 @@ CRigidBody* CComposite::FindBodyByUniqueID(int ID) const
 {
 	n_assert(ID > 0); //!!!to check if it never happens normally!
 	//if (ID)
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 	{
 		CRigidBody* pBody = Bodies[i];
 		if (ID == pBody->GetUID()) return pBody;
@@ -347,7 +347,7 @@ CRigidBody* CComposite::FindBodyByUniqueID(int ID) const
 // through the rigid bodies (and thus may be slow).
 bool CComposite::HasLinkType(CRigidBody::ELinkType Type)
 {
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 		if (Bodies[i]->IsLinkValid(Type)) OK;
 	FAIL;
 }
@@ -358,8 +358,8 @@ void CComposite::SetEntity(CEntity* pEnt)
 {
 	n_assert(pEnt);
 	pEntity = pEnt;
-	for (int i = 0; i < Bodies.Size(); i++) Bodies[i]->SetEntity(pEntity);
-	for (int i = 0; i < Shapes.Size(); i++) Shapes[i]->SetEntity(pEntity);
+	for (int i = 0; i < Bodies.GetCount(); i++) Bodies[i]->SetEntity(pEntity);
+	for (int i = 0; i < Shapes.GetCount(); i++) Shapes[i]->SetEntity(pEntity);
 }
 //---------------------------------------------------------------------
 

@@ -33,10 +33,8 @@ namespace Properties
 
 class CPropCamera: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropCamera);
-	DeclarePropertyStorage;
-	DeclarePropertyPools(Game::LivePool);
+	__DeclareClass(CPropCamera);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -58,7 +56,7 @@ public:
 	bool HasFocus() const;
 };
 
-RegisterFactory(CPropCamera);
+__RegisterClassInFactory(CPropCamera);
 
 }
 

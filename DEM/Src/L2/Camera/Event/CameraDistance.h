@@ -11,8 +11,7 @@ namespace Event
 
 class CameraDistance: public Events::CEventNative
 {
-    DeclareRTTI;
-    DeclareFactory(CameraDistance);
+    __DeclareClass(CameraDistance);
 
 public:
 
@@ -22,7 +21,7 @@ public:
 	CameraDistance(float _RelChange): RelChange(_RelChange) {}
 };
 
-RegisterFactory(CameraDistance);
+__RegisterClassInFactory(CameraDistance);
 
 }
 

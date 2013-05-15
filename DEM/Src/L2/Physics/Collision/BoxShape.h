@@ -11,8 +11,7 @@ namespace Physics
 
 class CBoxShape: public CShape
 {
-	DeclareRTTI;
-	DeclareFactory(CBoxShape);
+	__DeclareClass(CBoxShape);
 
 private:
 
@@ -31,7 +30,7 @@ public:
 	const vector3&	GetSize() const { return Size; }
 };
 
-RegisterFactory(CBoxShape);
+__RegisterClassInFactory(CBoxShape);
 
 }
 

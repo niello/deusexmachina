@@ -5,12 +5,12 @@
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <Game/GameServer.h> //???separate time source for AI?
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 
 namespace AI
 {
-ImplementRTTI(AI::CPerceptorIAO, AI::CPerceptor);
-ImplementFactory(AI::CPerceptorIAO);
+__ImplementClassNoFactory(AI::CPerceptorIAO, AI::CPerceptor);
+__ImplementClass(AI::CPerceptorIAO);
 
 using namespace Properties;
 
@@ -19,15 +19,15 @@ void CPerceptorIAO::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float 
 	//???special IAO stimulus, may be one per action or with action list?
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
-		Game::PEntity Ent = EntityMgr->GetEntityByID(pStimulus->SourceEntityID);
-		CPropSmartObject* pSO = Ent->FindProperty<CPropSmartObject>();
+		Game::PEntity Ent = EntityMgr->GetEntity(pStimulus->SourceEntityID);
+		CPropSmartObject* pSO = Ent->GetProperty<CPropSmartObject>();
 
 		if (!pSO) return;
 
 		CMemFactSmartObj Pattern;
 		Pattern.pSourceStimulus = pStimulus;
 		PMemFactSmartObj pFact = (CMemFactSmartObj*)pActor->GetMemSystem().FindFact(Pattern);
-		if (!pFact.isvalid())
+		if (!pFact.IsValid())
 		{
 			pFact = (CMemFactSmartObj*)pActor->GetMemSystem().AddFact(CMemFactSmartObj::RTTI);
 			pFact->pSourceStimulus = pStimulus;

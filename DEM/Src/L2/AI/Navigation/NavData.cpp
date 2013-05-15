@@ -1,13 +1,12 @@
 #include "NavData.h"
 
-#include <Data/Stream.h>
-#include <Data/BinaryReader.h>
+#include <IO/BinaryReader.h>
 #include <DetourNavMeshQuery.h>
 
 namespace AI
 {
 
-bool CNavData::LoadFromStream(Data::CStream& Stream)
+bool CNavData::LoadFromStream(IO::CStream& Stream)
 {
 	Clear();
 
@@ -39,14 +38,14 @@ bool CNavData::LoadFromStream(Data::CStream& Stream)
 		}
 	}
 
-	Data::CBinaryReader Reader(Stream);
+	IO::CBinaryReader Reader(Stream);
 	int RegionCount = Stream.Get<int>();
 	Regions.BeginAdd(RegionCount);
 	for (int RIdx = 0; RIdx < RegionCount; ++RIdx)
 	{
 		CNavRegion& Region = Regions.Add(Reader.Read<CStrID>());
 		Region.SetSize(Stream.Get<int>());
-		Stream.Read(Region.GetPtr(), sizeof(dtPolyRef) * Region.Size());
+		Stream.Read(Region.GetPtr(), sizeof(dtPolyRef) * Region.GetCount());
 	}
 	Regions.EndAdd();
 	OK;

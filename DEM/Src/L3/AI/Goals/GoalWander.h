@@ -11,8 +11,7 @@ namespace AI
 
 class CGoalWander: public CGoal
 {
-	DeclareRTTI;
-	DeclareFactory(CGoalWander);
+	__DeclareClass(CGoalWander);
 
 public:
 
@@ -20,7 +19,7 @@ public:
 	virtual void GetDesiredProps(CWorldState& Dest);
 };
 
-RegisterFactory(CGoalWander);
+__RegisterClassInFactory(CGoalWander);
 
 }
 

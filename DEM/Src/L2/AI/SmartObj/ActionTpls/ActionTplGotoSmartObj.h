@@ -11,8 +11,7 @@ namespace AI
 
 class CActionTplGotoSmartObj: public CActionTpl //!!!???CActionTplGoto?!
 {
-	DeclareRTTI;
-	DeclareFactory(CActionTplGotoSmartObj);
+	__DeclareClass(CActionTplGotoSmartObj);
 
 private:
 
@@ -23,7 +22,7 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-RegisterFactory(CActionTplGotoSmartObj);
+__RegisterClassInFactory(CActionTplGotoSmartObj);
 
 typedef Ptr<CActionTplGotoSmartObj> PActionTplGotoSmartObj;
 

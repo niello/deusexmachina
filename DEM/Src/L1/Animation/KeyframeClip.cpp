@@ -4,7 +4,7 @@
 
 namespace Anim
 {
-ImplementRTTI(Anim::CKeyframeClip, Anim::CAnimClip);
+__ImplementClassNoFactory(Anim::CKeyframeClip, Anim::CAnimClip);
 
 bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping, float Length)
 {
@@ -14,7 +14,7 @@ bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CS
 
 	Duration = Length;
 
-	for (int i = 0; i < Tracks.Size(); ++i)
+	for (int i = 0; i < Tracks.GetCount(); ++i)
 	{
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
 		switch (Tracks[i].Channel)
@@ -47,7 +47,7 @@ Scene::PAnimController CKeyframeClip::CreateController(DWORD SamplerIdx) const
 {
 	Anim::PAnimControllerKeyframe Ctlr = n_new(Anim::CAnimControllerKeyframe);
 	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
-	return Ctlr.get_unsafe();
+	return Ctlr.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

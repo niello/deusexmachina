@@ -3,17 +3,17 @@
 
 #include <Scene/Scene.h> // For owning (pinning) created child nodes, likely to be HACK!
 #include <Scene/SceneNode.h>
-#include <Data/BinaryReader.h>
-#include <Data/Streams/FileStream.h>
+#include <IO/BinaryReader.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Scene
 {
 
-bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResources = true)
+bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResources = true)
 {
-	if (!RootNode.isvalid()) FAIL;
+	if (!RootNode.IsValid()) FAIL;
 
-	Data::CBinaryReader Reader(In);
+	IO::CBinaryReader Reader(In);
 
 	RootNode->SetScale(Reader.Read<vector3>());
 	RootNode->SetRotation(Reader.Read<quaternion>());
@@ -31,7 +31,7 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 		char ClassName[256];
 		n_assert(Reader.ReadString(ClassName, sizeof(ClassName)));
 
-		PSceneNodeAttr Attr = (CSceneNodeAttr*)CoreFct->Create(StrAttr + ClassName);
+		PSceneNodeAttr Attr = (CSceneNodeAttr*)Factory->Create(StrAttr + ClassName);
 
 		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
 		//may require to read data block count inside, or ignore it for such attrs.
@@ -62,8 +62,8 @@ bool LoadNodesFromSCN(Data::CStream& In, PSceneNode RootNode, bool PreloadResour
 
 bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true)
 {
-	Data::CFileStream File;
-	return File.Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) &&
+	IO::CFileStream File;
+	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadNodesFromSCN(File, RootNode, PreloadResources);
 }
 //---------------------------------------------------------------------

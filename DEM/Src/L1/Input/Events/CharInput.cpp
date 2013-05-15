@@ -2,5 +2,5 @@
 
 namespace Event
 {
-ImplementRTTI(Event::CharInput, Events::CEventNative);
+__ImplementClassNoFactory(Event::CharInput, Events::CEventNative);
 } // namespace Event

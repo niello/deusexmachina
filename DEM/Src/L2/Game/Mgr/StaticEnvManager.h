@@ -2,15 +2,17 @@
 #ifndef __DEM_L2_STATIC_ENV_MANAGER_H__
 #define __DEM_L2_STATIC_ENV_MANAGER_H__
 
-#include <Data/Singleton.h> //!!!was core!
+#include <Core/RefCounted.h>
+#include <Core/Singleton.h>
 #include <Data/StringID.h>
-#include <Game/Manager.h>
 #include <util/ndictionary.h>
 
-// Static environment manager manages static graphics and collision shapes without using entities
-// at all thereby reducing overhead and centralising all static level geometry.
+// Static environment manager manages static environment. It includes graphics and collision shapes,
+// that are not simulated / animated / controlled, so there is no point in storing them as separate
+// entities. Static environment can't store per-entity attributes and can't be extended by properties.
+// If this manager founds that some entity can't be added as static, it rejects it. (???or forward to regulat entity mgr?)
 
-//!!!NEED DEBUG RENDERING OF COLLIDE SHAPES! foreach Shape->RenderDebug(). Gfx entities too?
+//!!!DEBUG RENDER!
 
 namespace Physics
 {
@@ -35,18 +37,17 @@ class CEntity;
 
 #define StaticEnvMgr Game::CStaticEnvManager::Instance()
 
-class CStaticEnvManager: public CManager
+class CStaticEnvManager: public Core::CRefCounted
 {
-	__DeclareClass(CStaticEnvManager);
+	__DeclareClassNoFactory;
 	__DeclareSingleton(CStaticEnvManager);
 
 private:
 
 	struct CEnvObject
 	{
-		nArray<Physics::PShape>			Collision;
-		nArray<matrix44>				GfxLocalTfm;
-		nArray<matrix44>				CollLocalTfm;
+		nArray<Physics::PShape>			Collision; //???scene node attributes?
+		nArray<matrix44>				CollLocalTfm; //???use child scene node?
 		Scene::PSceneNode				Node;
 		bool							ExistingNode;
 	};
@@ -55,8 +56,8 @@ private:
 
 public:
 
-	CStaticEnvManager();
-	virtual ~CStaticEnvManager();
+	CStaticEnvManager() { __ConstructSingleton; }
+	~CStaticEnvManager() { __DestructSingleton; }
 
 	bool AddEnvObject(const DB::PValueTable& Table, int RowIdx);
 	void SetEnvObjectTransform(CStrID ID, const matrix44& Tfm);

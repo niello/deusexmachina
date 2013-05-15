@@ -13,8 +13,7 @@ namespace UI
 
 class CWindow: public Core::CRefCounted
 {
-	DeclareRTTI;
-	DeclareFactory(CWindow);
+	__DeclareClass(CWindow);
 
 protected:
 
@@ -48,7 +47,7 @@ public:
 	CEGUI::Window*	GetWnd() const { return pWnd; }
 };
 
-RegisterFactory(CWindow);
+__RegisterClassInFactory(CWindow);
 
 typedef Ptr<CWindow> PWindow;
 

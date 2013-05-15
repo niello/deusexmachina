@@ -38,13 +38,13 @@ void CCommand::Clear()
 // Remember that the SQL statement string must be UTF-8 encoded!
 bool CCommand::Compile(const PDatabase& DB)
 {
-	n_assert(DB.isvalid());
+	n_assert(DB.IsValid());
 	n_assert(!SQLiteStmt);
 
 	//!!!can clear SQLCmd & use sqlite3_sql to retrieve SQL code!
 
 	const char* pTail = NULL;
-	if (sqlite3_prepare_v2(DB->GetSQLiteHandle(), SQLCmd.Get(), -1, &SQLiteStmt, &pTail) != SQLITE_OK)
+	if (sqlite3_prepare_v2(DB->GetSQLiteHandle(), SQLCmd.CStr(), -1, &SQLiteStmt, &pTail) != SQLITE_OK)
 	{
 		SetError(sqlite3_errmsg(DB->GetSQLiteHandle()));
 		FAIL;
@@ -55,13 +55,13 @@ bool CCommand::Compile(const PDatabase& DB)
 	n_assert(pTail);
 	if (pTail[0])
 	{
-		n_error("CCommand::Compile(): Only one SQL statement allowed (SQL: %s)\n", SQLCmd.Get());
+		n_error("CCommand::Compile(): Only one SQL statement allowed (SQL: %s)\n", SQLCmd.CStr());
 		Clear();
 		FAIL;
 	}
 
 	// If VT changed, create an index map to map value table indices to sqlite Result indices
-	if (VT.isvalid() && ResultIdxMap.Size() == 0)
+	if (VT.IsValid() && ResultIdxMap.GetCount() == 0)
 	{
 		int ColCount = sqlite3_column_count(SQLiteStmt);
 		if (ColCount > 0)
@@ -103,10 +103,10 @@ bool CCommand::Compile(const PDatabase& DB)
 // Execute a compiled command and gather the result
 bool CCommand::Execute(const PDatabase& DB)
 {
-	n_assert(DB.isvalid()); //!!!only for error msg!
+	n_assert(DB.IsValid()); //!!!only for error msg!
 	n_assert(IsValid());
 
-	if (VT.isvalid()) VT->SetModifiedTracking(false);
+	if (VT.IsValid()) VT->SetModifiedTracking(false);
 
 	bool Done = false;
 	while (!Done)
@@ -115,7 +115,7 @@ bool CCommand::Execute(const PDatabase& DB)
 		{
 			case SQLITE_DONE:	Done = true; break;
 			case SQLITE_BUSY:	n_sleep(0.0001); break;
-			case SQLITE_ROW:	if (VT.isvalid()) ReadRow(); break;
+			case SQLITE_ROW:	if (VT.IsValid()) ReadRow(); break;
 			case SQLITE_ERROR:	SetError(sqlite3_errmsg(DB->GetSQLiteHandle())); FAIL;
 			case SQLITE_MISUSE:
 			{
@@ -133,7 +133,7 @@ bool CCommand::Execute(const PDatabase& DB)
 	// Reset the command, this clears the bound values
 	n_assert(sqlite3_reset(SQLiteStmt) == SQLITE_OK);
 
-	if (VT.isvalid()) VT->SetModifiedTracking(true);
+	if (VT.IsValid()) VT->SetModifiedTracking(true);
 
 	OK;
 }
@@ -145,7 +145,7 @@ bool CCommand::Execute(const PDatabase& DB)
 void CCommand::ReadRow()
 {
 	n_assert(SQLiteStmt);
-	n_assert(VT.isvalid());
+	n_assert(VT.IsValid());
 
 	int RowIdx = VT->AddRow();
 	int ResultColIdx;
@@ -264,7 +264,7 @@ int CCommand::BindingIndexOf(const nString& Name) const
 	nString wildcard = ":";
 	wildcard.Append(Name);
 
-	int Idx = sqlite3_bind_parameter_index(SQLiteStmt, wildcard.Get());
+	int Idx = sqlite3_bind_parameter_index(SQLiteStmt, wildcard.CStr());
 	n_assert2(Idx > 0, "Invalid wildcard Name.");
 
 	// Sqlite's indices are 1-based, convert to 0-based
@@ -284,7 +284,7 @@ int CCommand::BindingIndexOf(CAttrID AttrID) const
 
 	nString Wildcard(":");
 	Wildcard.Append(AttrID->GetName());
-	int Idx = sqlite3_bind_parameter_index(SQLiteStmt, Wildcard.Get());
+	int Idx = sqlite3_bind_parameter_index(SQLiteStmt, Wildcard.CStr());
 	n_assert2(Idx > 0, "Invalid wildcard Name.");
 
 	// Sqlite's indices are 1-based, convert to 0-based
@@ -303,7 +303,7 @@ void CCommand::BindValue(int Idx, const CData& Val)
 	else if (Val.IsA<nString>())
 	{
 		// NOTE: the string should be in UTF-8 format.
-		Error = sqlite3_bind_text(SQLiteStmt, Idx + 1, Val.GetValuePtr<nString>()->Get(),
+		Error = sqlite3_bind_text(SQLiteStmt, Idx + 1, Val.GetValuePtr<nString>()->CStr(),
 			-1, SQLITE_TRANSIENT);
 	}
 	else if (Val.IsA<CStrID>())

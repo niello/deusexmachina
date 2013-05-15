@@ -20,9 +20,8 @@ using namespace AI;
 
 class CPropAIHints: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropAIHints);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropAIHints);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -56,7 +55,7 @@ public:
 	//DestroyStimulus(Name)
 };
 
-RegisterFactory(CPropAIHints);
+__RegisterClassInFactory(CPropAIHints);
 
 }
 

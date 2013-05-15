@@ -1,15 +1,12 @@
 #include "HeightfieldShape.h"
 
-#include <Data/BTFile.h>
+#include <IO/BTFile.h>
 #include <Data/Buffer.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 
 namespace Physics
 {
-ImplementRTTI(Physics::CHeightfieldShape, Physics::CShape);
-ImplementFactory(Physics::CHeightfieldShape);
-
-using namespace Data;
+__ImplementClass(Physics::CHeightfieldShape, 'HFSH', Physics::CShape);
 
 CHeightfieldShape::CHeightfieldShape():
 	CShape(Heightfield),
@@ -48,10 +45,10 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 	float WorldW, WorldH;
 	if (FileName.CheckExtension("bt"))
 	{
-		CBuffer Buffer;
-		DataSrv->LoadFileToBuffer(FileName, Buffer);
+		Data::CBuffer Buffer;
+		IOSrv->LoadFileToBuffer(FileName, Buffer);
 		{
-			CBTFile BTFile(Buffer.GetPtr());
+			IO::CBTFile BTFile(Buffer.GetPtr());
 			n_assert(BTFile.GetFileSize() == Buffer.GetSize());
 			Width = BTFile.GetWidth();
 			Height = BTFile.GetHeight();
@@ -68,7 +65,7 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 	}
 	else
 	{
-		n_error("CHeightfieldShape: invalid file extension in '%s'", FileName.Get());
+		n_error("CHeightfieldShape: invalid file extension in '%s'", FileName.CStr());
 		FAIL;
 	}
 

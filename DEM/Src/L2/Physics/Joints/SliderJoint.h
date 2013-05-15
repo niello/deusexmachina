@@ -12,8 +12,7 @@ namespace Physics
 
 class CSliderJoint: public CJoint
 {
-	DeclareRTTI;
-	DeclareFactory(CSliderJoint);
+	__DeclareClass(CSliderJoint);
 
 public:
 

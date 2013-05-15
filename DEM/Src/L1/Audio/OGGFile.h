@@ -5,7 +5,7 @@
 #include "AudioFile.h"
 #include <vorbis/codec.h>
 
-namespace Data
+namespace IO
 {
 	class CStream;
 }
@@ -22,7 +22,7 @@ private:
 	bool                m_bFileEndReached;
 	int                 size;               /* ogg filesize in bytes */
 
-	Data::CStream*		pStream;
+	IO::CStream*		pStream;
 	WAVEFORMATEX        wfx;                /* audio format */
 
 	int                 bytesIn;

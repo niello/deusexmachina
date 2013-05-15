@@ -2,6 +2,6 @@
 
 namespace Event
 {
-ImplementRTTI(Event::QueueTask, Events::CEventNative);
-ImplementFactory(Event::QueueTask);
+__ImplementClassNoFactory(Event::QueueTask, Events::CEventNative);
+__ImplementClass(Event::QueueTask);
 } // namespace Event

@@ -2,8 +2,8 @@
 
 namespace Physics
 {
-ImplementRTTI(Physics::ÑHingeJoint, Physics::CJoint);
-ImplementFactory(Physics::ÑHingeJoint);
+__ImplementClassNoFactory(Physics::ÑHingeJoint, Physics::CJoint);
+__ImplementClass(Physics::ÑHingeJoint);
 
 ÑHingeJoint::ÑHingeJoint()
 {
@@ -49,7 +49,7 @@ void ÑHingeJoint::UpdateTransform(const matrix44& Tfm)
 	vector3 p = Tfm * Anchor;
 	dJointSetHingeAnchor(ODEJointID, p.x, p.y, p.z);
 
-	matrix33 m33(Tfm.x_component(), Tfm.y_component(), Tfm.z_component());
+	matrix33 m33(Tfm.AxisX(), Tfm.AxisY(), Tfm.AxisZ());
 	vector3 a = m33 * AxisParams.Axis;
 	dJointSetHingeAxis(ODEJointID, a.x, a.y, a.z);
 }

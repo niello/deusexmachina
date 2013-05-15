@@ -1,14 +1,13 @@
 #include "Light.h"
 
 #include <Scene/Scene.h>
-#include <Data/BinaryReader.h>
+#include <IO/BinaryReader.h>
 
 namespace Scene
 {
-ImplementRTTI(Scene::CLight, Scene::CSceneNodeAttr);
-ImplementFactory(Scene::CLight);
+__ImplementClass(Scene::CLight, 'LGHT', Scene::CSceneNodeAttr);
 
-bool CLight::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CLight::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{

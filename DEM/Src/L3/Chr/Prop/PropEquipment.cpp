@@ -9,8 +9,8 @@
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropEquipment, CPropInventory);
-ImplementFactory(Properties::CPropEquipment);
+__ImplementClassNoFactory(Properties::CPropEquipment, CPropInventory);
+__ImplementClass(Properties::CPropEquipment);
 RegisterProperty(CPropEquipment);
 
 CPropEquipment::CPropEquipment()
@@ -45,7 +45,7 @@ void CPropEquipment::Save()
 	DB::CDataset* DS = ItemMgr->GetEquipmentDataset();
 	n_assert(DS);
 
-	for (int i = 0; i < Slots.Size(); i++)
+	for (int i = 0; i < Slots.GetCount(); i++)
 	{
 		CSlot& Slot = Slots.ValueAtIndex(i);
 		if (Slot.pStack)
@@ -68,7 +68,7 @@ void CPropEquipment::Load()
 
 	DB::PValueTable VT = DS->GetValueTable();
 
-	if (!VT.isvalid() || !VT->GetRowCount()) return;
+	if (!VT.IsValid() || !VT->GetRowCount()) return;
 
 	foreach_stack(Stack, Items)
 	{
@@ -107,7 +107,7 @@ bool CPropEquipment::Equip(CStrID Slot, CItemStack* pStack, WORD Count)
 	else
 	{
 		// Find any appropriate slot
-		for (int i = 0; i < Slots.Size(); ++i)
+		for (int i = 0; i < Slots.GetCount(); ++i)
 			if (Slots.ValueAtIndex(i).Type == pStack->GetTpl()->GetType())
 			{
 				pSlot = &Slots.ValueAtIndex(i);

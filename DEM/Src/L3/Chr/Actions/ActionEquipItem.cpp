@@ -5,15 +5,15 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionEquipItem, AI::CAction);
-ImplementFactory(AI::CActionEquipItem);
+__ImplementClassNoFactory(AI::CActionEquipItem, AI::CAction);
+__ImplementClass(AI::CActionEquipItem);
 
 using namespace Properties;
 
 bool CActionEquipItem::Activate(CActor* pActor)
 {
 	//!!!later play animation! //???where to attach model?
-	CPropEquipment* pEquipment = pActor->GetEntity()->FindProperty<CPropEquipment>();
+	CPropEquipment* pEquipment = pActor->GetEntity()->GetProperty<CPropEquipment>();
 	return pEquipment ? pEquipment->Equip(Slot, pEquipment->FindItemStack(Item)) : false;
 }
 //---------------------------------------------------------------------

@@ -11,8 +11,7 @@ namespace Render
 
 class CDebugTextRenderer: public IRenderer
 {
-	DeclareRTTI;
-	DeclareFactory(CDebugTextRenderer);
+	__DeclareClass(CDebugTextRenderer);
 
 public:
 
@@ -22,7 +21,7 @@ public:
 	virtual void	Render();
 };
 
-RegisterFactory(CDebugTextRenderer);
+__RegisterClassInFactory(CDebugTextRenderer);
 
 typedef Ptr<CDebugTextRenderer> PDebugTextRenderer;
 

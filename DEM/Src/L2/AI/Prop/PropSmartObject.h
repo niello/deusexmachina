@@ -5,7 +5,6 @@
 #include <Game/Property.h>
 #include <DB/AttrID.h>
 #include <Data/Params.h>
-#include <Game/EntityFwd.h>
 #include <AI/SmartObj/SmartObjAction.h>
 #include <util/ndictionary.h>
 
@@ -25,9 +24,8 @@ using namespace AI;
 
 class CPropSmartObject: public Game::CProperty
 {
-	DeclareRTTI;
-	DeclareFactory(CPropSmartObject);
-	DeclarePropertyStorage;
+	__DeclareClass(CPropSmartObject);
+	__DeclarePropertyStorage;
 
 public:
 
@@ -61,7 +59,7 @@ public:
 	CStrID			GetCurrState() const { return CurrState; }
 };
 
-RegisterFactory(CPropSmartObject);
+__RegisterClassInFactory(CPropSmartObject);
 
 inline PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
 {

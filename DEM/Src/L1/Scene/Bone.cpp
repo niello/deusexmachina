@@ -3,16 +3,15 @@
 #include <Scene/SceneNode.h>
 #include <Scene/Model.h>
 #include <Render/RenderServer.h>
-#include <Data/BinaryReader.h>
+#include <IO/BinaryReader.h>
 
 namespace Scene
 {
-ImplementRTTI(Scene::CBone, Scene::CSceneNodeAttr);
-ImplementFactory(Scene::CBone);
+__ImplementClass(Scene::CBone, 'BONE', Scene::CSceneNodeAttr);
 
 using namespace Render;
 
-bool CBone::LoadDataBlock(nFourCC FourCC, Data::CBinaryReader& DataReader)
+bool CBone::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC)
 	{
@@ -73,7 +72,7 @@ bool CBone::OnAdd()
 		CSceneNodeAttr* pAttr = pModelNode->GetAttr(i);
 		if (pAttr->IsA(CModel::RTTI) &&
 			(((CModel*)pAttr)->FeatureFlags & RenderSrv->GetFeatureFlagSkinned()) &&
-			((CModel*)pAttr)->Material.isvalid())
+			((CModel*)pAttr)->Material.IsValid())
 		{
 			CModel* pModel = (CModel*)pAttr;
 			int PaletteIdx = pModel->ShaderVars.FindIndex(sidJointPalette);
@@ -88,10 +87,10 @@ bool CBone::OnAdd()
 			}
 			else pPalette = &pModel->ShaderVars.ValueAtIndex(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
 
-			if (!pModel->BoneIndices.Size())
+			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &SkinMatrix;
 			else
-				for (int j = 0; j < pModel->BoneIndices.Size(); ++j)
+				for (int j = 0; j < pModel->BoneIndices.GetCount(); ++j)
 					if (pModel->BoneIndices[j] == Index)
 					{
 						pPalette->At(j) = &SkinMatrix;
@@ -120,17 +119,17 @@ void CBone::OnRemove()
 		CSceneNodeAttr* pAttr = pModelNode->GetAttr(i);
 		if (pAttr->IsA(CModel::RTTI) &&
 			(((CModel*)pAttr)->FeatureFlags & RenderSrv->GetFeatureFlagSkinned()) &&
-			((CModel*)pAttr)->Material.isvalid())
+			((CModel*)pAttr)->Material.IsValid())
 		{
 			CModel* pModel = (CModel*)pAttr;
 			int PaletteIdx = pModel->ShaderVars.FindIndex(sidJointPalette);
 			if (PaletteIdx == INVALID_INDEX) continue;
 			CMatrixPtrArray* pPalette = &pModel->ShaderVars.ValueAtIndex(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
 
-			if (!pModel->BoneIndices.Size())
+			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &matrix44::identity;
 			else
-				for (int j = 0; j < pModel->BoneIndices.Size(); ++j)
+				for (int j = 0; j < pModel->BoneIndices.GetCount(); ++j)
 					if (pModel->BoneIndices[j] == Index)
 					{
 						pPalette->At(j) = &matrix44::identity;

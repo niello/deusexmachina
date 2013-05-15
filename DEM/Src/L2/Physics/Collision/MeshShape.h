@@ -19,8 +19,7 @@ namespace Physics
 
 class CMeshShape: public CShape
 {
-	DeclareRTTI;
-	DeclareFactory(CMeshShape);
+	__DeclareClass(CMeshShape);
 
 protected:
 
@@ -63,7 +62,7 @@ public:
 	int				GetNumIndices() const { return IndexCount; }
 };
 
-RegisterFactory(CMeshShape);
+__RegisterClassInFactory(CMeshShape);
 
 }
 

@@ -17,9 +17,6 @@ private:
 
 	nDictionary<CAttrID, CData> Attrs;
 
-	// find index for attribute (SLOW!)
-	int FindAttrIndex(CAttrID AttrID) const;
-
 public:
 
 	void			AddAttr(CAttrID AttrID, const CData& Value) { Attrs.Add(AttrID, Value); }

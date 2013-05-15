@@ -4,8 +4,7 @@
 
 namespace Render
 {
-ImplementRTTI(Render::CDebugGeomRenderer, Render::IRenderer);
-ImplementFactory(Render::CDebugGeomRenderer);
+__ImplementClass(Render::CDebugGeomRenderer, 'DBGM', Render::IRenderer);
 
 void CDebugGeomRenderer::Render()
 {

@@ -1,292 +1,33 @@
 #include "DataServer.h"
 
-#include <Data/Params.h>
-#include <Data/DataArray.h>
 #include <Data/HRDParser.h>
-#include <Data/HRDWriter.h>
-#include <Data/BinaryReader.h>
-#include <Data/BinaryWriter.h>
 #include <Data/XMLDocument.h>
 #include <Data/Buffer.h>
-#include <Data/FS/FileSystemWin32.h>
-#include <Data/FS/FileSystemNPK.h>
+#include <IO/IOServer.h>
+#include <IO/HRDWriter.h>
+#include <IO/BinaryReader.h>
+#include <IO/BinaryWriter.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Data
 {
-ImplementRTTI(Data::CDataServer, Core::CRefCounted);
+__ImplementClassNoFactory(Data::CDataServer, Core::CRefCounted);
+__ImplementSingleton(Data::CDataServer);
 
-CDataServer* CDataServer::Singleton = NULL;
-
-CDataServer::CDataServer(): HRDCache(PParams()), Assigns(nString())
+CDataServer::CDataServer(): HRDCache(PParams())
 {
-	n_assert(!Singleton);
-	Singleton = this;
+	__ConstructSingleton;
 
 #ifdef _EDITOR
 	DataPathCB = NULL;
 #endif
-
-	DefaultFS = n_new(CFileSystemWin32);
-
-	nString SysFolder;
-	if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("home", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_BIN, SysFolder))	SetAssign("bin", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_USER, SysFolder))	SetAssign("user", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("temp", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("appdata", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("programs", SysFolder);
-}
-//---------------------------------------------------------------------
-
-CDataServer::~CDataServer()
-{
-	n_assert(Singleton);
-	Singleton = NULL;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::MountNPK(const nString& NPKPath, const nString& Root)
-{
-	PFileSystem NewFS = n_new(CFileSystemNPK);
-
-	//!!!mangle NPKPath and check if this NPK is already mounted!
-
-	nString RealRoot;
-	if (Root.IsValid()) RealRoot = Root;
-	else RealRoot = NPKPath.ExtractDirName();
-
-	if (!NewFS->Mount(NPKPath, RealRoot)) FAIL;
-	FS.Append(NewFS);
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::FileExists(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->FileExists(Path)) OK;
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->FileExists(Path)) OK;
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::IsFileReadOnly(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->FileExists(Path))
-		return DefaultFS->IsFileReadOnly(Path);
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->FileExists(Path))
-			return FS[i]->IsFileReadOnly(Path);
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::SetFileReadOnly(const nString& Path, bool ReadOnly) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->FileExists(Path))
-		return DefaultFS->SetFileReadOnly(Path, ReadOnly);
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->FileExists(Path))
-			return FS[i]->SetFileReadOnly(Path, ReadOnly);
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-#undef DeleteFile
-bool CDataServer::DeleteFile(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->DeleteFile(Path)) OK;
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->DeleteFile(Path)) OK;
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-DWORD CDataServer::GetFileSize(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	PFileSystem FS;
-	void* hFile = OpenFile(FS, Path, SAM_READ);
-	if (hFile)
-	{
-		DWORD Size = FS->GetFileSize(hFile);
-		FS->CloseFile(hFile);
-		return Size;
-	}
-	return 0;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::DirectoryExists(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->DirectoryExists(Path)) OK;
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->DirectoryExists(Path)) OK;
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::CreateDirectory(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->CreateDirectory(Path)) OK;
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->CreateDirectory(Path)) OK;
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::DeleteDirectory(const nString& Path) const
-{
-	//???mangle here for perf reasons?
-	if (DefaultFS->DeleteDirectory(Path)) OK;
-	for (int i = 0; i < FS.Size(); ++i)
-		if (FS[i]->DeleteDirectory(Path)) OK;
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-#undef CopyFile
-bool CDataServer::CopyFile(const nString& SrcPath, const nString& DestPath)
-{
-	//???mangle here for perf reasons?
-
-	if (IsFileReadOnly(DestPath))
-		SetFileReadOnly(DestPath, false);
-
-	CFileStream Src, Dest;
-	if (!Src.Open(SrcPath, SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	if (!Dest.Open(DestPath, SAM_WRITE, SAP_SEQUENTIAL))
-	{
-		Src.Close();
-		FAIL;
-	}
-
-	int Size = Src.GetSize();
-	char* pBuffer = (char*)n_malloc(Size);
-	int RealSize = Src.Read(pBuffer, Size);
-	n_assert(RealSize == Size);
-	Src.Close();
-
-	RealSize = Dest.Write(pBuffer, Size);
-	n_assert(RealSize == Size);
-	Dest.Close();
-	n_free(pBuffer);
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void* CDataServer::OpenFile(PFileSystem& OutFS, const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
-{
-	void* hFile = DefaultFS->OpenFile(Path, Mode, Pattern);
-	if (hFile)
-	{
-		OutFS = DefaultFS;
-		return hFile;
-	}
-
-	for (int i = 0; i < FS.Size(); ++i)
-	{
-		hFile = FS[i]->OpenFile(Path, Mode, Pattern);
-		if (hFile)
-		{
-			OutFS = FS[i];
-			return hFile;
-		}
-	}
-
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-void* CDataServer::OpenDirectory(const nString& Path, const nString& Filter,
-								 PFileSystem& OutFS, nString& OutName, EFSEntryType& OutType) const
-{
-	void* hDir = DefaultFS->OpenDirectory(Path, Filter, OutName, OutType);
-	if (hDir)
-	{
-		OutFS = DefaultFS;
-		return hDir;
-	}
-
-	for (int i = 0; i < FS.Size(); ++i)
-	{
-		hDir = FS[i]->OpenDirectory(Path, Filter, OutName, OutType);
-		if (hDir)
-		{
-			OutFS = FS[i];
-			return hDir;
-		}
-	}
-
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-void CDataServer::SetAssign(const nString& Assign, const nString& Path)
-{
-	nString PathString = Path;
-	PathString.StripTrailingSlash();
-	PathString.Append("/");
-	Assigns.At(Assign.Get()) = PathString;
-}
-//---------------------------------------------------------------------
-
-nString CDataServer::GetAssign(const nString& Assign)
-{
-	nString Str;
-	return Assigns.Get(Assign.Get(), Str) ? Str : nString::Empty;
-}
-//---------------------------------------------------------------------
-
-nString CDataServer::ManglePath(const nString& Path)
-{
-	nString PathString = Path;
-
-	int ColonIdx;
-	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 0)
-	{
-		// Special case: ignore one character "assigns" because they are really DOS drive letters
-		if (ColonIdx > 1)
-		{
-#ifdef _EDITOR
-			if (QueryMangledPath(PathString, PathString)) continue;
-#endif
-			nString Assign = GetAssign(PathString.SubString(0, ColonIdx));
-			if (Assign.IsEmpty()) return nString::Empty;
-			Assign.Append(PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1)));
-			PathString = Assign;
-		}
-		else break;
-	}
-	PathString.ConvertBackslashes();
-	PathString.StripTrailingSlash();
-	return PathString;
-}
-//---------------------------------------------------------------------
-
-bool CDataServer::LoadFileToBuffer(const nString& FileName, CBuffer& Buffer)
-{
-	CFileStream File;
-	if (!File.Open(FileName, SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	int FileSize = File.GetSize();
-	Buffer.Reserve(FileSize);
-	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
-	n_printf("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.Get());
-	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------
 
 PParams CDataServer::LoadHRD(const nString& FileName, bool Cache)
 {
 	PParams P;
-	if (HRDCache.Get(FileName.Get(), P)) return P;
+	if (HRDCache.Get(FileName.CStr(), P)) return P;
 	else return ReloadHRD(FileName, Cache);
 }
 //---------------------------------------------------------------------
@@ -294,15 +35,15 @@ PParams CDataServer::LoadHRD(const nString& FileName, bool Cache)
 PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
 {
 	CBuffer Buffer;
-	if (!LoadFileToBuffer(FileName, Buffer)) return NULL;
+	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return NULL;
 
 	PParams Params;
-	if (!pHRDParser.isvalid()) pHRDParser = n_new(CHRDParser); //!!!make non-singleton! use on stack
-	if (pHRDParser->ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
+	CHRDParser Parser; //???static?
+	if (Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
 	{
-		if (Cache) HRDCache.Add(FileName.Get(), Params); //!!!???mangle/unmangle path to avoid duplicates?
+		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
-	else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.Get());
+	else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
 
 	return Params;
 }
@@ -311,45 +52,44 @@ PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
 //???remove from here? make user use readers/writers directly?
 void CDataServer::SaveHRD(const nString& FileName, PParams Content)
 {
-	if (!Content.isvalid()) return;
+	if (!Content.IsValid()) return;
 
-	CFileStream File;
-	if (!File.Open(FileName, SAM_WRITE)) return;
-	CHRDWriter Writer(File);
+	IO::CFileStream File;
+	if (!File.Open(FileName, IO::SAM_WRITE)) return;
+	IO::CHRDWriter Writer(File);
 	Writer.WriteParams(Content);
 }
 //---------------------------------------------------------------------
 
 void CDataServer::UnloadHRD(const nString& FileName)
 {
-	HRDCache.Remove(FileName.Get());
+	HRDCache.Remove(FileName.CStr());
 }
 //---------------------------------------------------------------------
 
 PParams CDataServer::LoadPRM(const nString& FileName, bool Cache)
 {
 	PParams P;
-	if (HRDCache.Get(FileName.Get(), P)) return P;
+	if (HRDCache.Get(FileName.CStr(), P)) return P;
 	else return ReloadPRM(FileName, Cache);
 }
 //---------------------------------------------------------------------
 
 PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 {
-	CFileStream File;
-	if (!File.Open(FileName, SAM_READ)) return NULL;
-	CBinaryReader Reader(File);
+	IO::CFileStream File;
+	if (!File.Open(FileName, IO::SAM_READ)) return NULL;
+	IO::CBinaryReader Reader(File);
 
-	PParams Params;
-	Params.Create();
+	PParams Params = CParams::Create();
 	if (Reader.ReadParams(*Params))
 	{
-		if (Cache) HRDCache.Add(FileName.Get(), Params); //!!!???mangle path to avoid duplicates?
+		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle path to avoid duplicates?
 	}
 	else
 	{
 		Params = NULL;
-		n_printf("FileIO: PRM loading from \"%s\" failed\n", FileName.Get());
+		n_printf("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
 	}
 
 	return Params;
@@ -359,11 +99,11 @@ PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 //???remove from here? make user use readers/writers directly?
 void CDataServer::SavePRM(const nString& FileName, PParams Content)
 {
-	if (!Content.isvalid()) return;
+	if (!Content.IsValid()) return;
 
-	CFileStream File;
-	if (!File.Open(FileName, SAM_WRITE)) return;
-	CBinaryWriter Writer(File);
+	IO::CFileStream File;
+	if (!File.Open(FileName, IO::SAM_WRITE)) return;
+	IO::CBinaryWriter Writer(File);
 	Writer.WriteParams(*Content);
 }
 //---------------------------------------------------------------------
@@ -371,16 +111,16 @@ void CDataServer::SavePRM(const nString& FileName, PParams Content)
 PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 {
 	CBuffer Buffer;
-	if (!DataSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
+	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
 
 	PXMLDocument XML = n_new(CXMLDocument);
 	if (XML->Parse((LPCSTR)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)
 	{
-		//if (Cache) XMLCache.Add(FileName.Get(), XML); //!!!???mangle/unmangle path to avoid duplicates?
+		//if (Cache) XMLCache.Add(FileName.CStr(), XML); //!!!???mangle/unmangle path to avoid duplicates?
 	}
 	else
 	{
-		n_printf("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.Get(), XML->GetErrorStr1(), XML->GetErrorStr2());
+		n_printf("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
 		XML = NULL;
 	}
 
@@ -393,7 +133,7 @@ bool CDataServer::LoadDesc(PParams& Out, const nString& FileName, bool Cache)
 {
 	PParams Main = LoadPRM(FileName, Cache);
 
-	if (!Main.isvalid()) FAIL;
+	if (!Main.IsValid()) FAIL;
 
 	nString BaseName;
 	if (Main->Get(BaseName, CStrID("_Base_")))
@@ -427,27 +167,5 @@ bool CDataServer::LoadDataSchemes(const nString& FileName)
 	OK;
 }
 //---------------------------------------------------------------------
-
-#ifdef _EDITOR
-bool CDataServer::QueryMangledPath(const nString& FileName, nString& MangledFileName)
-{
-	if (!DataPathCB) FAIL;
-
-	LPSTR pMangledStr = NULL;
-	if (!DataPathCB(FileName.Get(), &pMangledStr))
-	{
-		if (pMangledStr && ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
-		FAIL;
-	}
-
-	MangledFileName.Clear();
-	if (pMangledStr)
-	{
-		MangledFileName.Set(pMangledStr);
-		if (ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
-	}
-	OK;
-}
-#endif
 
 } //namespace Data

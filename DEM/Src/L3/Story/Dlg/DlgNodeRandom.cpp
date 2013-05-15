@@ -1,12 +1,12 @@
 #include "DlgNodeRandom.h"
 
-#include "DlgSystem.h"
+#include "DialogueManager.h"
 #include "DlgLink.h"
 
 namespace Story
 {
-ImplementRTTI(Story::CDlgNodeRandom, Story::CDlgNode);
-ImplementFactory(Story::CDlgNodeRandom);
+__ImplementClassNoFactory(Story::CDlgNodeRandom, Story::CDlgNode);
+__ImplementClass(Story::CDlgNodeRandom);
 
 void CDlgNodeRandom::OnEnter(CActiveDlg& Dlg)
 {

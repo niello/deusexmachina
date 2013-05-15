@@ -1,6 +1,6 @@
 #include "OGGFile.h"
 
-#include <Data/Streams/FileStream.h>
+#include <IO/Streams/FileStream.h>
 
 namespace Audio
 {
@@ -8,8 +8,8 @@ namespace Audio
 bool COGGFile::Open(const nString& FileName)
 {
 	n_assert(!pStream);
-	pStream = n_new(Data::CFileStream);
-	return ((Data::CFileStream*)pStream)->Open(FileName, Data::SAM_READ, Data::SAP_SEQUENTIAL) && InitOGG();
+	pStream = n_new(IO::CFileStream);
+	return ((IO::CFileStream*)pStream)->Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) && InitOGG();
 }
 //---------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ void COGGFile::Close()
 bool COGGFile::Reset()
 {
 	n_assert(pStream);
-	return ReleaseOGG() && pStream->Seek(0, Data::SSO_BEGIN) && InitOGG();
+	return ReleaseOGG() && pStream->Seek(0, IO::Seek_Begin) && InitOGG();
 }
 //---------------------------------------------------------------------
 

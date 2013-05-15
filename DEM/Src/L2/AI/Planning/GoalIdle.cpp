@@ -4,8 +4,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CGoalIdle, AI::CGoal);
-ImplementFactory(AI::CGoalIdle);
+__ImplementClassNoFactory(AI::CGoalIdle, AI::CGoal);
+__ImplementClass(AI::CGoalIdle);
 
 void CGoalIdle::GetDesiredProps(CWorldState& Dest)
 {

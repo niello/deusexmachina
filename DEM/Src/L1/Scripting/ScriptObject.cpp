@@ -3,7 +3,7 @@
 #include "ScriptServer.h"
 #include "EventHandlerScript.h"
 #include <Events/EventManager.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 #include <DB/Dataset.h>
 #include <DB/Database.h>
 #include <DB/DBServer.h>
@@ -32,13 +32,12 @@ extern const nString StrLuaObjects("LuaObjects");
 
 namespace Scripting
 {
-ImplementRTTI(Scripting::CScriptObject, Core::CRefCounted);
-ImplementFactory(Scripting::CScriptObject);
+__ImplementClass(Scripting::CScriptObject, 'SOBJ', Core::CRefCounted);
 
 CScriptObject::~CScriptObject()
 {
 	//???if (Temporary && DBSaveLoadEnabled) ClearFields();? Temporary is Lua-exposed flag too.
-	ScriptSrv->RemoveObject(Name.Get(), Table.Get());
+	ScriptSrv->RemoveObject(Name.CStr(), Table.CStr());
 }
 //---------------------------------------------------------------------
 
@@ -87,7 +86,7 @@ int CScriptObject_Index(lua_State* l)
 	{
 		if (!strcmp(Key, "name"))
 		{
-			lua_pushstring(l, This->GetName().Get());
+			lua_pushstring(l, This->GetName().CStr());
 			return 1;
 		}
 
@@ -177,8 +176,8 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 EExecStatus CScriptObject::LoadScriptFile(const nString& FileName)
 {
 	CBuffer Buffer;
-	if (!DataSrv->LoadFileToBuffer(FileName, Buffer) &&
-		!DataSrv->LoadFileToBuffer("scripts:" + FileName + ".lua", Buffer)) return Error;
+	if (!IOSrv->LoadFileToBuffer(FileName, Buffer) &&
+		!IOSrv->LoadFileToBuffer("scripts:" + FileName + ".lua", Buffer)) return Error;
 	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
@@ -189,13 +188,13 @@ EExecStatus CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 
 	if (luaL_loadbuffer(l, Buffer, Length, Buffer) != 0)
 	{
-		n_printf("Error parsing script for %s: %s\n", Name.Get(), lua_tostring(l, -1));
+		n_printf("Error parsing script for %s: %s\n", Name.CStr(), lua_tostring(l, -1));
 		n_printf("Script is: %s\n", Buffer);
 		lua_pop(l, 1);
 		return Error;
 	}
 
-	if (!ScriptSrv->PlaceObjectOnStack(Name.Get(), Table.Get()))
+	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr()))
 	{
 		lua_pop(l, 1);
 		return Error;
@@ -216,14 +215,14 @@ bool CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
 
 	lua_State* l = ScriptSrv->GetLuaState();
 
-	if (!ScriptSrv->PlaceObjectOnStack(Name.Get(), Table.Get())) FAIL;
+	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) FAIL;
 
 	if (Table.IsValid()) lua_remove(l, -2);
 
 	lua_getfield(l, -1, pFuncName);
 	if (!lua_isfunction(l, -1)) 
 	{
-		n_printf("Error: function \"%s\" not found in script object \"%s\"\n", pFuncName, Name.Get());
+		n_printf("Error: function \"%s\" not found in script object \"%s\"\n", pFuncName, Name.CStr());
 		lua_pop(l, 2);
 		FAIL;
 	}
@@ -238,7 +237,7 @@ bool CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
 
 EExecStatus CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, CData* pRetVal) const
 {
-	EExecStatus Result = ScriptSrv->PerformCall(ArgCount, pRetVal, (Name + "." + pFuncName).Get());
+	EExecStatus Result = ScriptSrv->PerformCall(ArgCount, pRetVal, (Name + "." + pFuncName).CStr());
 	if (Result == Error) lua_pop(ScriptSrv->GetLuaState(), 1); // Object itself
 	return Result;
 }
@@ -263,7 +262,7 @@ EExecStatus CScriptObject::RunFunctionData(LPCSTR pFuncName, const CData& Arg, C
 bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, CEventDispatcher* pDisp, ushort Priority)
 {
 	PSub Sub = pDisp->AddHandler(EventID, n_new(CEventHandlerScript)(this, HandlerFuncName, Priority));
-	if (!Sub.isvalid()) FAIL;
+	if (!Sub.IsValid()) FAIL;
 	Subscriptions.Append(Sub);
 	OK;
 }
@@ -271,7 +270,7 @@ bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, CEven
 
 void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const CEventDispatcher* pDisp)
 {
-	for (int i = 0; i < Subscriptions.Size(); i++)
+	for (int i = 0; i < Subscriptions.GetCount(); i++)
 	{
 		PSub CurrSub = Subscriptions[i];
 		if (CurrSub->GetEvent() == EventID && CurrSub->GetDispatcher() == pDisp &&
@@ -302,13 +301,13 @@ void CScriptObject::SetName(const char* NewName)
 
 	if (Name == NewName) return;
 
-	if (!ScriptSrv->PlaceObjectOnStack(Name.Get(), Table.Get())) return;
+	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) return;
 
 	int TableIdx = Table.IsValid() ? -2 : LUA_GLOBALSINDEX;
 	lua_State* l = ScriptSrv->GetLuaState();
 	lua_setfield(l, TableIdx, NewName);
 	lua_pushnil(l);
-	lua_setfield(l, TableIdx, Name.Get());
+	lua_setfield(l, TableIdx, Name.CStr());
 	Name = NewName;
 }
 //---------------------------------------------------------------------
@@ -322,7 +321,7 @@ bool CScriptObject::SaveFields(DB::CDatabase* pDB)
 	//RunFunction("OnSave");
 	//!!!there is object on stack now, so we need not to call PlaceObjectOnStack!
 
-	if (!ScriptSrv->PlaceObjectOnStack(Name.Get(), Table.Get())) FAIL;
+	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) FAIL;
 
 	nString ObjName = GetFullName();
 
@@ -398,7 +397,7 @@ bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
 
 	lua_State* l = ScriptSrv->GetLuaState();
 
-	if (!ScriptSrv->PlaceObjectOnStack(Name.Get(), Table.Get())) FAIL;
+	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) FAIL;
 
 	//!!!no need in reading objname!
 
@@ -413,7 +412,7 @@ bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
 	CData Value;
 	for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
 	{
-		lua_pushstring(l, DS->GetValueTable()->Get<nString>(0, i).Get());
+		lua_pushstring(l, DS->GetValueTable()->Get<nString>(0, i).CStr());
 		DS->GetValueTable()->GetValue(1, i, Value);
 		if (ScriptSrv->DataToLuaStack(Value) == 1) lua_rawset(l, -3);
 	}

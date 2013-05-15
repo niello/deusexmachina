@@ -5,12 +5,12 @@
 #include <Physics/Joints/UniversalJoint.h>
 #include <Physics/Joints/SliderJoint.h>
 #include <Physics/Joints/Hinge2Joint.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 
 namespace Physics
 {
-ImplementRTTI(Physics::CRagdoll, Physics::CComposite);
-ImplementFactory(Physics::CRagdoll);
+__ImplementClassNoFactory(Physics::CRagdoll, Physics::CComposite);
+__ImplementClass(Physics::CRagdoll);
 
 CRagdoll::~CRagdoll()
 {
@@ -23,7 +23,7 @@ void CRagdoll::Attach(dWorldID WorldID, dSpaceID DynamicSpaceID, dSpaceID Static
 	CComposite::Attach(WorldID, DynamicSpaceID, StaticSpaceID);
 
 	// set new auto disable flags for rigid bodies
-	for (int i = 0; i < Bodies.Size(); i++)
+	for (int i = 0; i < Bodies.GetCount(); i++)
 	{
 		//???need to do it each activation?
 		dBodyID BodyId = Bodies[i]->GetODEBodyID();
@@ -67,15 +67,15 @@ CRagdoll::CJointInfo CRagdoll::ComputeBindPoseInfoForJoint(CJoint* pJoint)
 	JointInfo.AxisAngle2 = 0.0f;
 	vector3 Body1Pos;
 	vector3 Body2Pos;
-	if (pJoint->GetBody1()) Body1Pos = pJoint->GetBody1()->GetInitialTransform().pos_component();
-	if (pJoint->GetBody2()) Body2Pos = pJoint->GetBody2()->GetInitialTransform().pos_component();
+	if (pJoint->GetBody1()) Body1Pos = pJoint->GetBody1()->GetInitialTransform().Translation();
+	if (pJoint->GetBody2()) Body2Pos = pJoint->GetBody2()->GetInitialTransform().Translation();
 
 	//???!!!TO JOINT VIRTUAL FUNCTION!?
 	// build a matrix which describes the joints position and orientation in the world
 	matrix44 JointMatrix;
 	if (pJoint->IsA(CBallJoint::RTTI))
 	{
-		JointMatrix.pos_component() = ((CBallJoint*)pJoint)->Anchor;
+		JointMatrix.Translation() = ((CBallJoint*)pJoint)->Anchor;
 	}
 	else if (pJoint->IsA(CHinge2Joint::RTTI))
 	{
@@ -85,10 +85,10 @@ CRagdoll::CJointInfo CRagdoll::ComputeBindPoseInfoForJoint(CJoint* pJoint)
 		const vector3& Anchor = hinge2Joint->Anchor;
 		const vector3& y = Axis1;
 		const vector3& z = Axis2;
-		JointMatrix.y_component() = y;
-		JointMatrix.z_component() = z;
-		JointMatrix.x_component() = y * z;
-		JointMatrix.pos_component() = Anchor;
+		JointMatrix.AxisY() = y;
+		JointMatrix.AxisZ() = z;
+		JointMatrix.AxisX() = y * z;
+		JointMatrix.Translation() = Anchor;
 		JointInfo.AxisAngle1 = ComputeAxisAngle(Anchor, Axis1, Body1Pos, Body2Pos);
 		JointInfo.AxisAngle2 = ComputeAxisAngle(Anchor, Axis2, Body1Pos, Body2Pos);
 		JointInfo.AxisParams1 = hinge2Joint->AxisParams[0];
@@ -100,10 +100,10 @@ CRagdoll::CJointInfo CRagdoll::ComputeBindPoseInfoForJoint(CJoint* pJoint)
 		const vector3& Axis   = hingeJoint->AxisParams.Axis;
 		const vector3& Anchor = hingeJoint->Anchor;
 		const vector3& y = Axis;
-		JointMatrix.y_component() = y;
-		JointMatrix.x_component() = y * vector3(y.z, y.x, y.y);
-		JointMatrix.z_component() = y * JointMatrix.x_component();
-		JointMatrix.pos_component() = Anchor;
+		JointMatrix.AxisY() = y;
+		JointMatrix.AxisX() = y * vector3(y.z, y.x, y.y);
+		JointMatrix.AxisZ() = y * JointMatrix.AxisX();
+		JointMatrix.Translation() = Anchor;
 		JointInfo.AxisAngle1 = ComputeAxisAngle(Anchor, Axis, Body1Pos, Body2Pos);
 		JointInfo.AxisParams1 = hingeJoint->AxisParams;
 	}
@@ -112,9 +112,9 @@ CRagdoll::CJointInfo CRagdoll::ComputeBindPoseInfoForJoint(CJoint* pJoint)
 		CSliderJoint* sliderJoint = (CSliderJoint*) pJoint;
 		const vector3& Axis = sliderJoint->AxisParams.Axis;
 		const vector3& x = Axis;
-		JointMatrix.x_component() = x;
-		JointMatrix.y_component() = x * vector3(x.z, x.x, x.y);
-		JointMatrix.z_component() = x * JointMatrix.y_component();
+		JointMatrix.AxisX() = x;
+		JointMatrix.AxisY() = x * vector3(x.z, x.x, x.y);
+		JointMatrix.AxisZ() = x * JointMatrix.AxisY();
 		JointInfo.AxisAngle1 = ComputeAxisAngle(vector3(0.0f, 0.0f, 0.0f), Axis, Body1Pos, Body2Pos);
 		JointInfo.AxisParams1 = sliderJoint->AxisParams;
 	}
@@ -126,10 +126,10 @@ CRagdoll::CJointInfo CRagdoll::ComputeBindPoseInfoForJoint(CJoint* pJoint)
 		const vector3& Anchor = uniJoint->Anchor;
 		const vector3& z = Axis1;
 		const vector3& y = Axis2;
-		JointMatrix.z_component() = z;
-		JointMatrix.y_component() = y;
-		JointMatrix.x_component() = y * z;
-		JointMatrix.pos_component() = Anchor;
+		JointMatrix.AxisZ() = z;
+		JointMatrix.AxisY() = y;
+		JointMatrix.AxisX() = y * z;
+		JointMatrix.Translation() = Anchor;
 		JointInfo.AxisAngle1 = ComputeAxisAngle(Anchor, Axis1, Body1Pos, Body2Pos);
 		JointInfo.AxisAngle2 = ComputeAxisAngle(Anchor, Axis2, Body1Pos, Body2Pos);
 		JointInfo.AxisParams1 = uniJoint->AxisParams[0];
@@ -156,16 +156,16 @@ void CRagdoll::Bind()
 	//const nCharSkeleton& Skeleton = pNCharacter->GetSkeleton();
 
 	//// Convert joint names into indices
-	//for (int i = 0; i < Bodies.Size(); i++)
+	//for (int i = 0; i < Bodies.GetCount(); i++)
 	//{
 	//	CRigidBody* pBody = Bodies[i];
 	//	n_assert(pBody->IsLinkValid(CRigidBody::JointNode));
 	//	pBody->LinkIndex = Skeleton.GetJointIndexByName(pBody->GetLinkName(CRigidBody::JointNode));
 	//	if (pBody->LinkIndex == INVALID_INDEX)
-	//		n_error("CRagdoll::Bind(): invalid joint name '%s'!", pBody->GetLinkName(CRigidBody::JointNode).Get());
+	//		n_error("CRagdoll::Bind(): invalid joint name '%s'!", pBody->GetLinkName(CRigidBody::JointNode).CStr());
 	//}
 
-	//for (int i = 0; i < Joints.Size(); i++)
+	//for (int i = 0; i < Joints.GetCount(); i++)
 	//	BindPoseInfo.Append(ComputeBindPoseInfoForJoint(Joints[i]));
 }
 //---------------------------------------------------------------------
@@ -184,7 +184,7 @@ void CRagdoll::WriteJoints()
 	//matrix44 InvRagdollWorld;
 	//GetTransform().invert_simple(InvRagdollWorld);
 
-	//for (int i = 0; i < Bodies.Size(); i++)
+	//for (int i = 0; i < Bodies.GetCount(); i++)
 	//{
 	//	CRigidBody* pBody = Bodies[i];
 	//	if (pBody->IsLinkValid(CRigidBody::JointNode))
@@ -241,7 +241,7 @@ void CRagdoll::ReadJoints()
 	//dSpaceID ODESpaceID = PhysicsSrv->GetLevel()->GetODEDynamicSpaceID();
 
 	//// Update rigid body positions
-	//for (int i = 0; i < Bodies.Size(); i++)
+	//for (int i = 0; i < Bodies.GetCount(); i++)
 	//{
 	//	CRigidBody* pBody = Bodies[i];
 	//	n_assert(pBody->IsLinkValid(CRigidBody::JointNode));
@@ -261,13 +261,13 @@ void CRagdoll::ReadJoints()
 	//}
 
 	//// Update joint positions and orientations
-	//for (int i = 0; i < Joints.Size(); i++)
+	//for (int i = 0; i < Joints.GetCount(); i++)
 	//{
 	//	const CJointInfo& JointInfo = BindPoseInfo[i];
 	//	CJoint* pJoint = Joints[i];
 	//	vector3 Body1Pos, Body2Pos;
-	//	if (pJoint->GetBody1()) Body1Pos = pJoint->GetBody1()->GetTransform().pos_component();
-	//	if (pJoint->GetBody2()) Body2Pos = pJoint->GetBody2()->GetTransform().pos_component();
+	//	if (pJoint->GetBody1()) Body1Pos = pJoint->GetBody1()->GetTransform().Translation();
+	//	if (pJoint->GetBody2()) Body2Pos = pJoint->GetBody2()->GetTransform().Translation();
 
 	//	pJoint->Detach();
 
@@ -276,35 +276,35 @@ void CRagdoll::ReadJoints()
 	//	//???to virtual function?
 	//	if (pJoint->IsA(CBallJoint::RTTI))
 	//	{
-	//		((CBallJoint*)pJoint)->Anchor = JointWorld.pos_component();
+	//		((CBallJoint*)pJoint)->Anchor = JointWorld.Translation();
 	//	}
 	//	else if (pJoint->IsA(CHinge2Joint::RTTI))
 	//	{
 	//		CHinge2Joint* hinge2Joint = (CHinge2Joint*) pJoint;
-	//		hinge2Joint->AxisParams[0].Axis = JointWorld.y_component();
-	//		hinge2Joint->AxisParams[1].Axis = JointWorld.z_component();
-	//		hinge2Joint->Anchor = JointWorld.pos_component();
+	//		hinge2Joint->AxisParams[0].Axis = JointWorld.AxisY();
+	//		hinge2Joint->AxisParams[1].Axis = JointWorld.AxisZ();
+	//		hinge2Joint->Anchor = JointWorld.Translation();
 	//		FixJointStops(hinge2Joint->AxisParams[0], hinge2Joint->Anchor, Body1Pos, Body2Pos, JointInfo.AxisAngle1, JointInfo.AxisParams1);
 	//		FixJointStops(hinge2Joint->AxisParams[1], hinge2Joint->Anchor, Body1Pos, Body2Pos, JointInfo.AxisAngle2, JointInfo.AxisParams2);
 	//	}
 	//	else if (pJoint->IsA(ÑHingeJoint::RTTI))
 	//	{
 	//		ÑHingeJoint* hingeJoint = (ÑHingeJoint*) pJoint;
-	//		hingeJoint->AxisParams.Axis = JointWorld.y_component();
-	//		hingeJoint->Anchor = (JointWorld.pos_component());
+	//		hingeJoint->AxisParams.Axis = JointWorld.AxisY();
+	//		hingeJoint->Anchor = (JointWorld.Translation());
 	//		FixJointStops(hingeJoint->AxisParams, hingeJoint->Anchor, Body1Pos, Body2Pos, JointInfo.AxisAngle1, JointInfo.AxisParams1);
 	//	}
 	//	else if (pJoint->IsA(CSliderJoint::RTTI))
 	//	{
 	//		CSliderJoint* sliderJoint = (CSliderJoint*) pJoint;
-	//		sliderJoint->AxisParams.Axis = JointWorld.x_component();
+	//		sliderJoint->AxisParams.Axis = JointWorld.AxisX();
 	//		FixJointStops(sliderJoint->AxisParams, vector3(0.0f, 0.0f, 0.0f), Body1Pos, Body2Pos, JointInfo.AxisAngle1, JointInfo.AxisParams1);
 	//	}
 	//	else if (pJoint->IsA(CUniversalJoint::RTTI))
 	//	{
 	//		CUniversalJoint* uniJoint = (CUniversalJoint*) pJoint;
-	//		uniJoint->AxisParams[0].Axis = JointWorld.z_component();
-	//		uniJoint->Anchor = (JointWorld.pos_component());
+	//		uniJoint->AxisParams[0].Axis = JointWorld.AxisZ();
+	//		uniJoint->Anchor = (JointWorld.Translation());
 	//		FixJointStops(uniJoint->AxisParams[0], uniJoint->Anchor, Body1Pos, Body2Pos, JointInfo.AxisAngle1, JointInfo.AxisParams1);
 	//		FixJointStops(uniJoint->AxisParams[1], uniJoint->Anchor, Body1Pos, Body2Pos, JointInfo.AxisAngle2, JointInfo.AxisParams2);
 	//	}

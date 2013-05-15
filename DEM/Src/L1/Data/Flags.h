@@ -28,6 +28,7 @@ public:
 	void ClearAll() { Flags = (DWORD)0; }
 	//void Invert(DWORD Flag) { Flags ^= ~Flag; } ???
 	bool Is(DWORD Flag) const { return (Flags & Flag) != 0; }
+	bool IsNot(DWORD Flag) const { return (Flags & Flag) == 0; }
 	//!!!IsAll(DWORD FlagCombination), IsAny(DWORD FlagCombination)!
 
 	//!!!GetSetCount()

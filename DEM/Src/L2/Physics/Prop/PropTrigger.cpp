@@ -1,10 +1,10 @@
 #include "PropTrigger.h"
 
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Scripting/Prop/PropScriptable.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/Level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Events/Subscription.h>
 #include <Render/DebugDraw.h>
 #include <Loading/EntityFactory.h>
@@ -29,8 +29,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-ImplementRTTI(Properties::CPropTrigger, CPropTransformable);
-ImplementFactory(Properties::CPropTrigger);
+__ImplementClassNoFactory(Properties::CPropTrigger, CPropTransformable);
+__ImplementClass(Properties::CPropTrigger);
 RegisterProperty(CPropTrigger);
 
 using namespace Physics;
@@ -131,7 +131,7 @@ void CPropTrigger::SetEnabled(bool Enable)
 
 bool CPropTrigger::OnPropsActivated(const CEventBase& Event)
 {
-	CPropScriptable* pScriptable = GetEntity()->FindProperty<CPropScriptable>();
+	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	OK;
 }
@@ -162,13 +162,13 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 
 	uint Stamp = PhysicsSrv->GetUniqueStamp();
 	pInsideNow->Clear();
-	for (int i = 0; i < Contacts.Size(); i++)
+	for (int i = 0; i < Contacts.GetCount(); i++)
 	{
 		Physics::CEntity* pPhysEnt = Contacts[i].GetEntity();
 		if (pPhysEnt && pPhysEnt->GetStamp() != Stamp)
 		{
 			pPhysEnt->SetStamp(Stamp);
-			Game::CEntity* pEnt = EntityMgr->GetEntityByID(pPhysEnt->GetUserData());
+			Game::CEntity* pEnt = EntityMgr->GetEntity(pPhysEnt->GetUserData());
 			if (pEnt)
 			{
 				pInsideNow->Append(pEnt); //???!!!sort to faster search?!
@@ -177,7 +177,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 					if (pScriptObj)
 					{
 						//???notify pEnt too by local or even global event?
-						pScriptObj->RunFunctionData(OnTriggerEnter.Get(), nString(pEnt->GetUID().CStr()));
+						pScriptObj->RunFunctionData(OnTriggerEnter.CStr(), nString(pEnt->GetUID().CStr()));
 						//???here or from OnTriggerEnter if needed for this trigger?
 						//pScriptObj->RunFunctionData(OnTriggerApply, nString(pEnt->GetUID().CStr()))
 					}
@@ -186,19 +186,19 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		}
 	}
 
-	for (int i = 0; i < pInsideLastFrame->Size(); i++)
+	for (int i = 0; i < pInsideLastFrame->GetCount(); i++)
 	{
 		Game::CEntity* pEnt = pInsideLastFrame->At(i);
 		if (!pInsideNow->Contains(pEnt) && pEnt->IsActive())
 			if (pScriptObj)
-				pScriptObj->RunFunctionData(OnTriggerLeave.Get(), nString(pEnt->GetUID().CStr()));
+				pScriptObj->RunFunctionData(OnTriggerLeave.CStr(), nString(pEnt->GetUID().CStr()));
 	}
 
 	if (Period > 0.f && GameSrv->GetTime() - TimeLastTriggered >= Period)
 	{
-		for (int i = 0; i < pInsideNow->Size(); i++)
+		for (int i = 0; i < pInsideNow->GetCount(); i++)
 			if (pScriptObj)
-				pScriptObj->RunFunctionData(OnTriggerLeave.Get(), nString(pInsideNow->At(i)->GetUID().CStr()));
+				pScriptObj->RunFunctionData(OnTriggerLeave.CStr(), nString(pInsideNow->At(i)->GetUID().CStr()));
 		TimeLastTriggered = (float)GameSrv->GetTime();
 	}
 
@@ -231,7 +231,7 @@ bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 			DebugDraw->DrawBox(Tfm, Enabled ? ColorOn : ColorOff);
 			break;
 		case CShape::Sphere:
-			DebugDraw->DrawSphere(GetEntity()->Get<matrix44>(Attr::Transform).pos_component(), ShapeParams.x, Enabled ? ColorOn : ColorOff);
+			DebugDraw->DrawSphere(GetEntity()->Get<matrix44>(Attr::Transform).Translation(), ShapeParams.x, Enabled ? ColorOn : ColorOff);
 			break;
 		default: break; //!!!capsule rendering!
 	}

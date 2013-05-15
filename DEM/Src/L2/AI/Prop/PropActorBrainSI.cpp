@@ -2,7 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
-#include <Game/Mgr/EntityManager.h>
+#include <Game/EntityManager.h>
 #include <AI/Events/QueueTask.h>
 #include <AI/Prop/PropSmartObject.h>
 #include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
@@ -29,10 +29,10 @@ int CPropActorBrain_DoAction(lua_State* l)
 	//args: EntityScriptObject's this table, IAO ID, Action ID
 	SETUP_ENT_SI_ARGS(3);
 
-	Game::CEntity* pTarget = EntityMgr->GetEntityByID(CStrID(lua_tostring(l, 2)));
+	Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
 	if (!pTarget) return 0;
 
-	CPropSmartObject* pSO = pTarget->FindProperty<CPropSmartObject>();
+	CPropSmartObject* pSO = pTarget->GetProperty<CPropSmartObject>();
 	if (!pSO) return 0;
 
 	//!!!can call function instead of sending event!
@@ -54,7 +54,7 @@ int CPropActorBrain_Go(lua_State* l)
 	AI::PTaskGoto Task = n_new(AI::CTaskGoto);
 
 	//!!!get from params!
-	Task->MvmtType = This->GetEntity()->FindProperty<CPropActorBrain>()->MvmtType;
+	Task->MvmtType = This->GetEntity()->GetProperty<CPropActorBrain>()->MvmtType;
 
 	if (ArgCount >= 4 && lua_isnumber(l, 2))
 	{
@@ -65,9 +65,9 @@ int CPropActorBrain_Go(lua_State* l)
 	else
 	{
 		//???autodetect smart object & use optional Action arg?
-		Game::CEntity* pTarget = EntityMgr->GetEntityByID(CStrID(lua_tostring(l, 2)));
+		Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
 		if (!pTarget) return 0;
-		Task->Point = pTarget->Get<matrix44>(Attr::Transform).pos_component();
+		Task->Point = pTarget->Get<matrix44>(Attr::Transform).Translation();
 		Task->MinDistance = 
 		Task->MaxDistance = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
 	}

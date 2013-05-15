@@ -7,8 +7,8 @@
 
 namespace AI
 {
-ImplementRTTI(AI::CActionWander, AI::CAction);
-ImplementFactory(AI::CActionWander);
+__ImplementClassNoFactory(AI::CActionWander, AI::CAction);
+__ImplementClass(AI::CActionWander);
 
 //void CActionWander::Init()
 //{
@@ -17,7 +17,7 @@ ImplementFactory(AI::CActionWander);
 
 bool CActionWander::SelectAction(CActor* pActor)
 {
-	if (CurrAction.isvalid()) CurrAction->Deactivate(pActor);
+	if (CurrAction.IsValid()) CurrAction->Deactivate(pActor);
 
 	//!!!can tune all these probabilities and timings!
 	float Rnd = n_rand();
@@ -65,7 +65,7 @@ bool CActionWander::Activate(CActor* pActor)
 
 EExecStatus CActionWander::Update(CActor* pActor)
 {
-	if ((CurrAction.isvalid() && CurrAction->Update(pActor) == Running) ||
+	if ((CurrAction.IsValid() && CurrAction->Update(pActor) == Running) ||
 		NextActSelectionTime > (float)GameSrv->GetTime())
 	{
 		return Running;
@@ -77,7 +77,7 @@ EExecStatus CActionWander::Update(CActor* pActor)
 
 void CActionWander::Deactivate(CActor* pActor)
 {
-	if (CurrAction.isvalid())
+	if (CurrAction.IsValid())
 	{
 		CurrAction->Deactivate(pActor);
 		CurrAction = NULL;
