@@ -1,10 +1,10 @@
 #include "PropActorPhysics.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/CharEntity.h>
 #include <Render/DebugDraw.h>
-#include <Loading/EntityFactory.h>
 
 namespace Attr
 {
@@ -16,15 +16,13 @@ namespace Attr
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropActorPhysics, Properties::CPropAbstractPhysics);
-__ImplementClass(Properties::CPropActorPhysics);
-RegisterProperty(CPropActorPhysics);
+__ImplementClass(Properties::CPropActorPhysics, 'PRAP', Properties::CPropAbstractPhysics);
 
 void CPropActorPhysics::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
 	CPropAbstractPhysics::GetAttributes(Attrs);
-	Attrs.Append(Attr::Physics);
-	Attrs.Append(Attr::VelocityVector);
+	//Attrs.Append(CStrID("Physics"));
+	//Attrs.Append(CStrID("VelocityVector"));
 }
 //------------------------------------------------------------------------------
 
@@ -62,15 +60,16 @@ void CPropActorPhysics::EnablePhysics()
 
 	PhysEntity = Physics::CCharEntity::Create();
 	PhysEntity->SetUserData(GetEntity()->GetUID());
-	PhysEntity->SetTransform(GetEntity()->Get<matrix44>(Attr::Transform));
-	PhysEntity->CompositeName = GetEntity()->Get<nString>(Attr::Physics);
-	PhysEntity->Radius = GetEntity()->Get<float>(Attr::Radius);
-	PhysEntity->Height = GetEntity()->Get<float>(Attr::Height);
+	PhysEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"));
+	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"));
+	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"));
 	PhysEntity->Hover = 0.2f;
 
 	//!!!recreate physics capsule on R/H change!
 
-	PhysicsSrv->GetLevel()->AttachEntity(PhysEntity);
+	//!!!GET LEVEL from entity!
+	GetEntity()->GetLevel().GetPhysicsLevel()->AttachEntity(PhysEntity);
 
 	Stop();
 
@@ -83,7 +82,7 @@ void CPropActorPhysics::DisablePhysics()
 	n_assert(IsEnabled());
 
 	Stop();
-	PhysicsSrv->GetLevel()->RemoveEntity(PhysEntity);
+	GetEntity()->GetLevel().GetPhysicsLevel()->RemoveEntity(PhysEntity);
 	PhysEntity = NULL;
 
 	CPropAbstractPhysics::DisablePhysics();
@@ -93,7 +92,7 @@ void CPropActorPhysics::DisablePhysics()
 void CPropActorPhysics::Stop()
 {
 	PhysEntity->SetDesiredLinearVelocity(vector3::Zero);
-	GetEntity()->Set<vector4>(Attr::VelocityVector, vector4::Zero);
+	GetEntity()->SetAttr<vector4>(CStrID("VelocityVector"), vector4::Zero);
 }
 //------------------------------------------------------------------------------
 
@@ -110,7 +109,7 @@ bool CPropActorPhysics::OnMoveAfter(const Events::CEventBase& Event)
 	if (IsEnabled() && PhysEntity->HasTransformChanged())
 	{
 		CPropAbstractPhysics::SetTransform(PhysEntity->GetTransform());
-		GetEntity()->Set<vector3>(Attr::VelocityVector, PhysEntity->GetVelocity());
+		GetEntity()->SetAttr<vector3>(CStrID("VelocityVector"), PhysEntity->GetVelocity());
 	}
 
 	OK;
@@ -144,7 +143,7 @@ void CPropActorPhysics::OnRenderDebug()
 	static const vector4 ColorVel(1.0f, 0.5f, 0.0f, 1.0f);
 	static const vector4 ColorDesVel(0.0f, 1.0f, 1.0f, 1.0f);
 
-	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 
 	DebugDraw->DrawCoordAxes(Tfm);
 	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + PhysEntity->GetVelocity(), ColorVel);

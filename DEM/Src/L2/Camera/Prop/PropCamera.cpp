@@ -3,7 +3,6 @@
 #include <Game/Mgr/FocusManager.h>
 #include <Audio/AudioServer.h>
 #include <DB/DBServer.h>
-#include <Loading/EntityFactory.h>
 
 namespace Attr
 {
@@ -16,10 +15,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropCamera, Game::CProperty);
-__ImplementClass(Properties::CPropCamera);
-__ImplementPropertyStorage(CPropCamera, 16);
-RegisterProperty(CPropCamera);
+__ImplementClass(Properties::CPropCamera, 'PCAM', Game::CProperty);
+__ImplementPropertyStorage(CPropCamera);
 
 using namespace Game;
 
@@ -31,13 +28,6 @@ CPropCamera::CPropCamera()
 {
 	//ShakeFxHelper.SetMaxDisplacement(vector3(0.5f, 0.5f, 0.25f));
 	//ShakeFxHelper.SetMaxTumble(vector3(5.0f, 5.0f, 5.0f));
-}
-//---------------------------------------------------------------------
-
-void CPropCamera::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	CProperty::GetAttributes(Attrs);
-	Attrs.Append(Attr::FieldOfView);
 }
 //---------------------------------------------------------------------
 

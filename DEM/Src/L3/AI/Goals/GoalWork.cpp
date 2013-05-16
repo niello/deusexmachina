@@ -16,8 +16,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CGoalWork, AI::CGoal);
-__ImplementClass(AI::CGoalWork);
+__ImplementClass(AI::CGoalWork, 'GWRK', AI::CGoal);
 
 using namespace Properties;
 
@@ -50,7 +49,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
 	{
-		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.CStr();
+		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.Get();
 		int Idx = WorkActionMap.FindIndex(pSOFact->TypeID);
 		if (Idx != INVALID_INDEX)
 		{
@@ -76,7 +75,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	
 	pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactOverseer::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
-		TotalOverseersConf += ((CMemFactOverseer*)pCurr->Object.CStr())->Confidence;
+		TotalOverseersConf += ((CMemFactOverseer*)pCurr->Object.Get())->Confidence;
 
 	IAO = pBest->pSourceStimulus->SourceEntityID;
 	Relevance *= (1.f + TotalOverseersConf) * PersonalityFactor;

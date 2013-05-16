@@ -11,8 +11,7 @@ namespace Attr
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionGotoSmartObj, AI::CActionGoto)
-__ImplementClass(AI::CActionGotoSmartObj);
+__ImplementClass(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
 
 using namespace Properties;
 

@@ -10,7 +10,6 @@
 #include <Game/Mgr/FocusManager.h>	// For dbg rendering
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 #ifdef __WIN32__
@@ -61,9 +60,9 @@ CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSyste
 
 void CPropActorBrain::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
-	Attrs.Append(Attr::ActorDesc);
-	Attrs.Append(Attr::Radius);
-	Attrs.Append(Attr::Height);
+	//Attrs.Append(Attr::ActorDesc);
+	//Attrs.Append(CStrID("Radius"));
+	//Attrs.Append(CStrID("Height"));
 }
 //---------------------------------------------------------------------
 
@@ -73,13 +72,13 @@ void CPropActorBrain::Activate()
 
 // Blackboard
 
-	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	Position = Tfm.Translation();
 	LookatDir = -Tfm.AxisZ();
 
 	//!!!update on R/H attrs change!
-	Radius = GetEntity()->Get<float>(Attr::Radius);
-	Height = GetEntity()->Get<float>(Attr::Height);
+	Radius = GetEntity()->GetAttr<float>(CStrID("Radius"));
+	Height = GetEntity()->GetAttr<float>(CStrID("Height"));
 
 	NavStatus = AINav_Done;
 
@@ -96,7 +95,7 @@ void CPropActorBrain::Activate()
 
 	//???need to cache?
 	PParams Desc;
-	if (DataSrv->LoadDesc(Desc, nString("actors:") + GetEntity()->Get<nString>(Attr::ActorDesc) + ".prm"))
+	if (DataSrv->LoadDesc(Desc, nString("actors:") + GetEntity()->GetAttr<nString>(CStrID("ActorDesc")) + ".prm"))
 	{
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))
@@ -369,7 +368,7 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 
 bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
 {
-	const matrix44& Tfm = GetEntity()->Get<matrix44>(Attr::Transform);
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	Position = Tfm.Translation();
 	LookatDir = -Tfm.AxisZ();
 	NavSystem.UpdatePosition();

@@ -2,6 +2,5 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::QueueTask, Events::CEventNative);
-__ImplementClass(Event::QueueTask);
+__ImplementClass(Event::QueueTask, 'EQTK', Events::CEventNative);
 } // namespace Event

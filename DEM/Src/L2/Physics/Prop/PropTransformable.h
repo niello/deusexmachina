@@ -10,7 +10,7 @@
 // TF sources (like input, code, CPropPathAnim) =>
 // SetTransform event =>
 // TF handlers (CPropTransformable and derivatives like physics props) =>
-// set Attr::Transform based on internal logic + SetTransform, fire OnTransformChanged =>
+// set CStrID("Transform") based on internal logic + SetTransform, fire OnTransformChanged =>
 // TF receivers (gfx, cameras, lights, audio src etc) => update TF of components
 // This allows to attach path animation to physics entities
 

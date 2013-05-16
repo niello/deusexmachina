@@ -67,7 +67,7 @@ int CPropActorBrain_Go(lua_State* l)
 		//???autodetect smart object & use optional Action arg?
 		Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
 		if (!pTarget) return 0;
-		Task->Point = pTarget->Get<matrix44>(Attr::Transform).Translation();
+		Task->Point = pTarget->GetAttr<matrix44>(CStrID("Transform")).Translation();
 		Task->MinDistance = 
 		Task->MaxDistance = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
 	}

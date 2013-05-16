@@ -401,8 +401,9 @@ bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
 
 	//!!!no need in reading objname!
 
+/*
 	nString ObjName = GetFullName();
-	static const DB::CAttrID Columns[2] = { Attr::LuaFieldName, Attr::LuaValue };
+	static const DB::CAttrID Columns[2] = { CStrID("LuaFieldName"), Attr::LuaValue };
 
 	DB::PDataset DS = pDB->GetTable(Idx)->CreateDataset();
 	DS->AddColumns(Columns, 2);
@@ -420,6 +421,7 @@ bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
 	lua_pop(l, Table.IsValid() ? 2 : 1);
 
 	RunFunction("OnLoad"); //???call before pop without PlaceOnStack?
+*/
 
 	OK;
 }

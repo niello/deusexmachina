@@ -9,16 +9,16 @@
 namespace AI
 {
 
-class CPerceptorIAO: public CPerceptor
+class CPerceptorSmartObj: public CPerceptor
 {
-	__DeclareClass(CPerceptorIAO);
+	__DeclareClass(CPerceptorSmartObj);
 
 public:
 
 	virtual void ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence = 1.f);
 };
 
-__RegisterClassInFactory(CPerceptorIAO);
+__RegisterClassInFactory(CPerceptorSmartObj);
 
 }
 

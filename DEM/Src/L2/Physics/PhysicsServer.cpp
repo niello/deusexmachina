@@ -33,25 +33,7 @@ CPhysicsServer::CPhysicsServer():
 CPhysicsServer::~CPhysicsServer()
 {
 	n_assert(!isOpen);
-	n_assert(!CurrLevel.IsValid()); //???need? mb release it right here if not NULL?
 	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
-// A NULL pointer is valid and will just release the previous level.
-void CPhysicsServer::SetLevel(CPhysicsLevel* pLevel)
-{
-	n_assert(isOpen);
-	if (CurrLevel.IsValid())
-	{
-		CurrLevel->Deactivate();
-		CurrLevel = NULL;
-	}
-	if (pLevel)
-	{
-		CurrLevel = pLevel;
-		CurrLevel->Activate();
-	}
 }
 //---------------------------------------------------------------------
 
@@ -67,17 +49,7 @@ bool CPhysicsServer::Open()
 void CPhysicsServer::Close()
 {
 	n_assert(isOpen);
-	SetLevel(NULL);
 	isOpen = false;
-}
-//---------------------------------------------------------------------
-
-// Perform one or more simulation steps. The number of simulation steps
-// performed depends on the time of the last call to Trigger().
-void CPhysicsServer::Trigger()
-{
-	n_assert(isOpen);
-	if (CurrLevel.IsValid()) CurrLevel->Trigger();
 }
 //---------------------------------------------------------------------
 
@@ -291,13 +263,7 @@ bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir
 }
 //---------------------------------------------------------------------
 
-void CPhysicsServer::RenderDebug()
-{
-	n_assert(CurrLevel);
-	CurrLevel->RenderDebug();
-}
-//---------------------------------------------------------------------
-
+//!!!TO LEVEL!
 int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSet,
 									   nArray<PEntity>& Result)
 {

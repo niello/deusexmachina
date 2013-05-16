@@ -4,7 +4,6 @@
 #include <Items/ItemManager.h>
 #include <Events/EventManager.h>
 #include <Game/EntityManager.h>
-#include <Loading/EntityFactory.h>
 
 const nString StrInventories("Inventories");
 
@@ -15,10 +14,8 @@ namespace Attr
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropInventory, Game::CProperty);
-__ImplementClass(Properties::CPropInventory);
-__ImplementPropertyStorage(CPropInventory, 96);
-RegisterProperty(CPropInventory);
+__ImplementClass(Properties::CPropInventory, 'PINV', Game::CProperty);
+__ImplementPropertyStorage(CPropInventory);
 
 using namespace DB;
 

@@ -1,12 +1,22 @@
 #include "Entity.h"
 
 #include "Property.h"
+#include <Game/GameLevel.h>
 #include <Events/EventManager.h>
-#include <Loading/EntityFactory.h>
 
 namespace Game
 {
 __ImplementClassNoFactory(Game::CEntity, Core::CRefCounted);
+
+CEntity::CEntity(CStrID _UID, CGameLevel& _Level): CEventDispatcher(16), UID(_UID), Level(&_Level)
+{
+}
+//---------------------------------------------------------------------
+
+//CEntity::~CEntity()
+//{
+//}
+////---------------------------------------------------------------------
 
 void CEntity::SetUID(CStrID NewUID)
 {

@@ -2,6 +2,5 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::UpdateTransform, Events::CEventNative);
-__ImplementClass(Event::UpdateTransform);
+__ImplementClass(Event::UpdateTransform, 'UTFM', Events::CEventNative);
 } // namespace Event

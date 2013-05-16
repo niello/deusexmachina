@@ -31,16 +31,26 @@ public:
 
 	CMemSystem(CActor* Actor): pActor(Actor) {}
 
-	//void			Init();
-	void			Update();
+	//void				Init();
+	void				Update();
 
 	//???return CMemFactNode?
-	CMemFact*		AddFact(const Core::CRTTI& Type);
-	CMemFact*		FindFact(const CMemFact& Pattern, CFlags FieldMask = CFlags(0xffffffff));
-	CMemFactNode*	GetFactsByType(const Core::CRTTI& Type) { return Facts.GetHead(&Type); }
+	template<class T>
+	T*					AddFact();
+	CMemFact*			FindFact(const CMemFact& Pattern, CFlags FieldMask = CFlags(0xffffffff));
+	CMemFactNode*		GetFactsByType(const Core::CRTTI& Type) { return Facts.GetHead(&Type); }
 
 	//???GetTotalConfidence(const Core::CRTTI& Type)?
 };
+
+template<class T> inline T* CMemSystem::AddFact()
+{
+	// remember list count
+	CMemFactNode* pNode = Facts.Add(n_new(T));
+	// if list count changed, build validation sensor list for Type
+	return (T*)pNode->Object.GetUnsafe();
+}
+//---------------------------------------------------------------------
 
 }
 

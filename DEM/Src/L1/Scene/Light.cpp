@@ -96,7 +96,7 @@ void CLight::GetGlobalAABB(bbox3& OutBox) const
 			float HalfFarExtent = Range * n_tan(ConeOuter / 2.f);
 			OutBox.vmin.set(-HalfFarExtent, -HalfFarExtent, -Range);
 			OutBox.vmax.set(HalfFarExtent, HalfFarExtent, 0.f);
-			OutBox.transform(pNode->GetWorldMatrix());
+			OutBox.Transform(pNode->GetWorldMatrix());
 			return;
 		}
 		default:			n_error("Invalid light type!");

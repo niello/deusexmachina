@@ -7,8 +7,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CPerceptorObstacle, AI::CPerceptor);
-__ImplementClass(AI::CPerceptorObstacle);
+__ImplementClass(AI::CPerceptorObstacle, 'PEOB', AI::CPerceptor);
 
 void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {
@@ -22,7 +21,7 @@ void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		PMemFactObstacle pFact = (CMemFactObstacle*)pActor->GetMemSystem().FindFact(Pattern);
 		if (!pFact.IsValid())
 		{
-			pFact = (CMemFactObstacle*)pActor->GetMemSystem().AddFact(CMemFactObstacle::RTTI);
+			pFact = pActor->GetMemSystem().AddFact<CMemFactObstacle>();
 			pFact->pSourceStimulus = pStimulus;
 
 			////???update even if fact found? only if R & H of obstacle can change

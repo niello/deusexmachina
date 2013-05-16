@@ -2,12 +2,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CMeshShape, Physics::CShape);
-__ImplementClass(Physics::CMeshShape);
-
-//Opcode::SphereCollider CMeshShape::OPCSphereCollider;
-//Opcode::RayCollider CMeshShape::OPCRayCollider;
-//Opcode::CollisionFaces CMeshShape::OPCFaces;
+__ImplementClass(Physics::CMeshShape, 'MSSH', Physics::CShape);
 
 CMeshShape::CMeshShape():
 	CShape(Mesh),

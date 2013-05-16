@@ -5,8 +5,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CTaskGoto, AI::CTask);
-__ImplementClass(AI::CTaskGoto);
+__ImplementClass(AI::CTaskGoto, 'TGOT', AI::CTask);
 
 // Can check movement capabilities here or just validate CActionGoto
 bool CTaskGoto::IsAvailableTo(const CActor* pActor)

@@ -1,7 +1,6 @@
 #include "PropTalking.h"
 
 #include <Story/Dlg/DialogueManager.h>
-#include <Loading/EntityFactory.h>
 #include <Game/EntityManager.h>
 #include <DB/DBServer.h>
 #include <Events/EventManager.h>
@@ -17,16 +16,14 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropTalking, Game::CProperty);
-__ImplementClass(Properties::CPropTalking);
-__ImplementPropertyStorage(CPropTalking, 32);
-RegisterProperty(CPropTalking);
+__ImplementClass(Properties::CPropTalking, 'PTLK', Game::CProperty);
+__ImplementPropertyStorage(CPropTalking);
 
 void CPropTalking::Activate()
 {
 	Game::CProperty::Activate();
 
-	const nString& Dlg = GetEntity()->Get<nString>(Attr::Dialogue);
+	const nString& Dlg = GetEntity()->GetAttr<nString>(CStrID("Dialogue"));
 	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTalking, ExposeSI);

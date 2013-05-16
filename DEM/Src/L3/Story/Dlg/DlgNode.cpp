@@ -5,8 +5,7 @@
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CDlgNode, Core::CRefCounted);
-__ImplementClass(Story::CDlgNode);
+__ImplementClass(Story::CDlgNode, 'DLGN', Core::CRefCounted);
 
 CDlgNode* CDlgNode::Trigger(CActiveDlg& Dlg)
 {

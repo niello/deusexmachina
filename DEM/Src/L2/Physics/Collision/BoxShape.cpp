@@ -4,8 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CBoxShape, Physics::CShape);
-__ImplementClass(Physics::CBoxShape);
+__ImplementClass(Physics::CBoxShape, 'BOSH', Physics::CShape);
 
 void CBoxShape::Init(Data::PParams Desc)
 {

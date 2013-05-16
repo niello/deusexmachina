@@ -4,8 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCapsuleShape, Physics::CShape);
-__ImplementClass(Physics::CCapsuleShape);
+__ImplementClass(Physics::CCapsuleShape, 'CASH', Physics::CShape);
 
 void CCapsuleShape::Init(Data::PParams Desc)
 {

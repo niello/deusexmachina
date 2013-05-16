@@ -36,9 +36,10 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 	n_assert(RowIdx != INVALID_INDEX);
 
 	CEnvObject* pObj = NULL;
-	const matrix44& EntityTfm = Table->Get<matrix44>(Attr::Transform, RowIdx);
+	//const matrix44& EntityTfm = Table->GetAttr<matrix44>(CStrID("Transform"), RowIdx);
+	matrix44 EntityTfm;
 
-	const nString& CompositeName = Table->Get<nString>(Attr::Physics, RowIdx);    
+	const nString& CompositeName = Table->Get<nString>(CStrID("Physics"), RowIdx);    
 	if (CompositeName.IsValid())
 	{
 		PParams Desc = DataSrv->LoadPRM(nString("physics:") + CompositeName + ".prm");
@@ -87,6 +88,8 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 			pObj = &EnvObjects[UID];
 		}
 
+		//!!!send level to loader!
+
 		//???optimize duplicate search?
 		pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), false);
 		pObj->ExistingNode = pObj->Node.IsValid();
@@ -95,7 +98,7 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", pObj->Node));
 
-		if (!pObj->ExistingNode) pObj->Node->SetLocalTransform(Table->Get<matrix44>(Attr::Transform, RowIdx)); //???set local? or set global & then calc local?
+		if (!pObj->ExistingNode) pObj->Node->SetLocalTransform(Table->GetAttr<matrix44>(CStrID("Transform"), RowIdx)); //???set local? or set global & then calc local?
 	}
 
 	OK;

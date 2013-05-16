@@ -1,14 +1,11 @@
 #include "PropDestructible.h"
 
 #include <Combat/Event/ObjDamageDone.h>
-#include <Loading/EntityFactory.h>
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropDestructible, Game::CProperty);
-__ImplementClass(Properties::CPropDestructible);
-__ImplementPropertyStorage(CPropDestructible, 128);
-RegisterProperty(CPropDestructible);
+__ImplementClass(Properties::CPropDestructible, 'PDST', Game::CProperty);
+__ImplementPropertyStorage(CPropDestructible);
 
 using namespace Event;
 

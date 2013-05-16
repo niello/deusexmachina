@@ -1,7 +1,8 @@
 #include "GameLevel.h"
 
-#include <Scene/Scene.h>
+#include <Game/Entity.h>
 #include <Scene/SceneServer.h> //!!!only for scene creation. mb not needed!
+#include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsLevel.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h> //???need, or is dispatcher itself?
@@ -40,9 +41,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 	//???desc, params?
 	PhysicsLevel = n_new(Physics::CPhysicsLevel);
-
-	//!!!OLD!
-	PhysicsSrv->SetLevel(PhysicsLevel);
+	PhysicsLevel->Activate();
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
 	{
@@ -97,13 +96,124 @@ void CGameLevel::RenderScene()
 }
 //---------------------------------------------------------------------
 
+//!!!???separate? or with bool flags?
 void CGameLevel::RenderDebug()
 {
+	PhysicsLevel->RenderDebug();
+
 	//???!!!fire from itself?!
 	EventMgr->FireEvent(CStrID("OnRenderDebug"));
 
 	if (Scene.IsValid())
 		Scene->GetRootNode().RenderDebug();
+}
+//---------------------------------------------------------------------
+
+DWORD CGameLevel::GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const
+{
+	// calc frustum
+	// query scene quadtree with this frustum
+	// select only render objects
+	// return newly selected obj count
+	n_error("CGameLevel::GetEntitiesAtScreenRect() -> IMPLEMENT ME!");
+	return 0;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
+{
+	if (!Scene.IsValid()) FAIL;
+	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
+	if (Offset) EntityPos += *Offset;
+	Scene->GetMainCamera().GetPoint2D(EntityPos, Out.x, Out.y);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
+{
+	if (!Scene.IsValid()) FAIL;
+
+	Properties::CPropSceneNode* pNode = Entity.GetProperty<Properties::CPropSceneNode>();
+	if (!pNode) FAIL;
+
+	bbox3 AABB;
+	pNode->GetAABB(AABB);
+	Scene->GetMainCamera().GetPoint2D(vector3(AABB.center().x, AABB.vmax.y, AABB.center().z), Out.x, Out.y);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset) const
+{
+	if (!Scene.IsValid()) FAIL;
+
+	Properties::CPropSceneNode* pNode = Entity.GetProperty<Properties::CPropSceneNode>();
+	if (!pNode) FAIL;
+
+	bbox3 AABB;
+	pNode->GetAABB(AABB);
+
+	if (Offset)
+	{
+		AABB.vmax += *Offset;
+		AABB.vmin += *Offset;
+	}
+
+	Scene->GetMainCamera().GetPoint2D(AABB.GetCorner(0), Out.v0.x, Out.v0.y);
+	Out.v1 = Out.v0;
+
+	vector2 ScreenPos;
+	for (DWORD i = 1; i < 8; i++)
+	{
+		Scene->GetMainCamera().GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
+
+		if (ScreenPos.x < Out.v0.x) Out.v0.x = ScreenPos.x;
+		else if (ScreenPos.x > Out.v1.x) Out.v1.x = ScreenPos.x;
+
+		if (ScreenPos.y < Out.v0.y) Out.v0.y = ScreenPos.y;
+		else if (ScreenPos.y > Out.v1.y) Out.v1.y = ScreenPos.y;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+DWORD CGameLevel::GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const
+{
+	// request physics level for shapes and bodies
+	// select ones that are attached to entities
+	// return newly selected obj count
+	n_error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
+	return 0;
+}
+//---------------------------------------------------------------------
+
+DWORD CGameLevel::GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const
+{
+	// request physics level for shapes and bodies
+	// select ones that are attached to entities
+	// return newly selected obj count
+	n_error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
+	return 0;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength /*, //!!!FILTER!*/) const
+{
+	n_assert(ProbeLength > 0);
+	vector3 Dir(0.0f, -ProbeLength, 0.0f);
+
+	Physics::CFilterSet ExcludeSet;
+	//!!!!!if (SelfPhysicsID != -1) ExcludeSet.AddEntityID(SelfPhysicsID);
+	const Physics::CContactPoint* pContact = PhysicsSrv->GetClosestContactAlongRay(Position, Dir, &ExcludeSet);
+	if (pContact)
+	{
+		Out.WorldHeight = pContact->Position.y;
+		Out.Material = pContact->Material;
+		OK;
+	}
+	else FAIL;
 }
 //---------------------------------------------------------------------
 

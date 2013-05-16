@@ -161,7 +161,7 @@ void CModel::GetGlobalAABB(bbox3& OutBox) const
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
 	OutBox = Mesh->GetGroup(MeshGroupIndex).AABB;
-	OutBox.transform(pNode->GetWorldMatrix());
+	OutBox.Transform(pNode->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
 

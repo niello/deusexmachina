@@ -13,8 +13,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CWorldStateSourceScript, AI::CWorldStateSource);
-__ImplementClass(AI::CWorldStateSourceScript);
+__ImplementClass(AI::CWorldStateSourceScript, 'WSSS', AI::CWorldStateSource);
 
 void CWorldStateSourceScript::Init(Data::PParams Desc)
 {

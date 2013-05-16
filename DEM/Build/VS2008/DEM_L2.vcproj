@@ -814,14 +814,6 @@
 			Name="Loading"
 			>
 			<File
-				RelativePath="..\..\Src\L2\Loading\EntityFactory.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\EntityFactory.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Loading\LoaderServer.cpp"
 				>
 			</File>
@@ -900,14 +892,6 @@
 			<Filter
 				Name="Mgr"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\EnvQueryManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\EnvQueryManager.h"
-					>
-				</File>
 				<File
 					RelativePath="..\..\Src\L2\Game\Mgr\FocusManager.cpp"
 					>

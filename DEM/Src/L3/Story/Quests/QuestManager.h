@@ -2,7 +2,8 @@
 #ifndef __DEM_L3_QUEST_SYSTEM_H__
 #define __DEM_L3_QUEST_SYSTEM_H__
 
-#include "Quest.h"
+#include <Core/Singleton.h>
+#include <Story/Quests/Quest.h>
 #include <Events/Events.h>
 #include <DB/AttrID.h>
 

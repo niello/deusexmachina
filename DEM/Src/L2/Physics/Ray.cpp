@@ -6,8 +6,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CRay, Core::CRefCounted);
-__ImplementClass(Physics::CRay);
+__ImplementClass(Physics::CRay, 'PRAY', Core::CRefCounted);
 
 nArray<CContactPoint>* CRay::Contacts = NULL;
 

@@ -10,6 +10,7 @@
 
 namespace Game
 {
+typedef Ptr<class CGameLevel> PGameLevel;
 
 class CEntity: public Events::CEventDispatcher
 {
@@ -26,18 +27,20 @@ protected:
 	};
 
 	CStrID								UID;
-	CStrID								LevelID;
+	PGameLevel							Level;
 	Data::CFlags						Flags;
 	Events::PSub						GlobalSub;
 	nDictionary<CStrID, Data::CData>	Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);
-	//void SetLevelID(CStrID NewLevelID);
+	//???!!!void SetLevel(CGameLevel* NewLevel); - for transitions!
 	bool OnEvent(const Events::CEventBase& Event);
 
-	CEntity(CStrID _UID, CStrID _LevelID): CEventDispatcher(16), UID(_UID), LevelID(_LevelID) {}
+	CEntity(CStrID _UID, CGameLevel& _Level);
 
 public:
+
+	//~CEntity();
 
 	void						Activate();
 	void						Deactivate();
@@ -46,7 +49,7 @@ public:
 	template<class T> bool		HasProperty() const { return GetProperty<T>() != NULL; }
 
 	CStrID						GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
-	CStrID						GetLevelID() const { return LevelID; }
+	CGameLevel&					GetLevel() const { return *Level.GetUnsafe(); }
 
 	template<class T> void		SetAttr(CStrID ID, const T& Value);
 	template<> void				SetAttr(CStrID ID, const Data::CData& Value);

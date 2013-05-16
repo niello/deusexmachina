@@ -30,7 +30,6 @@ public:
 
 	virtual void	Activate();
 	virtual void	Deactivate();
-	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 };
 
 __RegisterClassInFactory(CPropItem);

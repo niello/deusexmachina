@@ -7,8 +7,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CValidatorCanTalk, AI::CValidator);
-__ImplementClass(AI::CValidatorCanTalk);
+__ImplementClass(AI::CValidatorCanTalk, 'VCTK', AI::CValidator);
 
 bool CValidatorCanTalk::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {

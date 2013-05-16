@@ -110,13 +110,7 @@ bool CTimeServer::OnLoad(const Events::CEventBase& Event)
 		for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
 		{
 			DS->SetRowIndex(i);
-			CTimeSource* Src = GetTimeSource(CStrID(DS->Get<nString>(Attr::TimeSourceID).CStr()));
-			//if (Src) Src->OnLoad(DS);
-	//Time			= pVT->Get<float>(Attr::TimeSourceTime);
-	//TimeFactor		= pVT->Get<float>(Attr::TimeSourceFactor);
-	//FrameId			= pVT->Get<int>(Attr::TimeSourceFrameID);
-	//PauseCounter	= 0;
-	//FrameTime		= 0.0;
+			CTimeSource* Src = GetTimeSource(CStrID(DS->Get<nString>(CStrID("TimeSourceID")).CStr()));
 		}
 	}
 	else ResetAll(); //!!!check if it is needed! (added by me, see state handlers)	

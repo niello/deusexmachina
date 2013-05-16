@@ -1,10 +1,8 @@
 #include "Environment.h"
 
 #include <Game/EntityManager.h>
-#include <Game/Mgr/EnvQueryManager.h>
 #include <Game/Mgr/FocusManager.h>
 #include <Game/Mgr/StaticEnvManager.h>
-#include <Loading/EntityFactory.h>
 #include <Scripting/EntityScriptObject.h>
 #include <Core/Logger.h>
 

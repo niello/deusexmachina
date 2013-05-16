@@ -4,8 +4,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CValidatorDlgRuns, AI::CValidator);
-__ImplementClass(AI::CValidatorDlgRuns);
+__ImplementClass(AI::CValidatorDlgRuns, 'VDLG', AI::CValidator);
 
 bool CValidatorDlgRuns::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {

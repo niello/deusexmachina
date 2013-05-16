@@ -2,7 +2,6 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Game/Entity.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -18,10 +17,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropScriptable, Game::CProperty);
-__ImplementClass(Properties::CPropScriptable);
-__ImplementPropertyStorage(CPropScriptable, 256);
-RegisterProperty(CPropScriptable);
+__ImplementClass(Properties::CPropScriptable, 'PSCR', Game::CProperty);
+__ImplementPropertyStorage(CPropScriptable);
 
 void CPropScriptable::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
@@ -34,14 +31,14 @@ void CPropScriptable::Activate()
 {
 	Game::CProperty::Activate();
 	
-	const nString& LuaClass = GetEntity()->Get<nString>(Attr::ScriptClass);
+	const nString& LuaClass = GetEntity()->GetAttr<nString>(Attr::ScriptClass);
 
 	//???to OnLoad?
 
 	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUID().CStr(), "Entities"));
 	n_assert(Obj->Init(LuaClass.IsValid() ? LuaClass.CStr() : "CEntityScriptObject"));
 
-	const nString& ScriptFile = GetEntity()->Get<nString>(Attr::Script);
+	const nString& ScriptFile = GetEntity()->GetAttr<nString>(Attr::Script);
 	if (ScriptFile.IsValid()) Obj->LoadScriptFile("scripts:" + ScriptFile + ".lua");
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);

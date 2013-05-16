@@ -4,8 +4,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionFace, AI::CAction)
-__ImplementClass(AI::CActionFace);
+__ImplementClass(AI::CActionFace, 'AFAC', AI::CAction)
 
 //bool CActionFace::Activate(CActor* pActor)
 //{

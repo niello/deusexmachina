@@ -8,8 +8,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CTaskUseSmartObj, AI::CTask);
-__ImplementClass(AI::CTaskUseSmartObj);
+__ImplementClass(AI::CTaskUseSmartObj, 'TUSO', AI::CTask);
 
 bool CTaskUseSmartObj::IsAvailableTo(const CActor* pActor)
 {

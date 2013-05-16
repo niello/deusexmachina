@@ -5,8 +5,7 @@
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CDlgNodeRandom, Story::CDlgNode);
-__ImplementClass(Story::CDlgNodeRandom);
+__ImplementClass(Story::CDlgNodeRandom, 'DLNR', Story::CDlgNode);
 
 void CDlgNodeRandom::OnEnter(CActiveDlg& Dlg)
 {

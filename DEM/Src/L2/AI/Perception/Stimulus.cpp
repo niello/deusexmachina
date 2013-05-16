@@ -3,5 +3,4 @@
 namespace AI
 {
 __ImplementClassNoFactory(AI::CStimulus, Core::CRefCounted);
-__ImplementClass(AI::CStimulus);
 }

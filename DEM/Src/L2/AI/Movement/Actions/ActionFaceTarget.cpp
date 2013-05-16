@@ -10,8 +10,7 @@ namespace Attr
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionFaceTarget, AI::CActionFace)
-__ImplementClass(AI::CActionFaceTarget);
+__ImplementClass(AI::CActionFaceTarget, 'AFTG', AI::CActionFace)
 
 bool CActionFaceTarget::Activate(CActor* pActor)
 {
@@ -35,7 +34,7 @@ bool CActionFaceTarget::SetupDirFromTarget(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
-	vector3 FaceDir = pEnt->Get<matrix44>(Attr::Transform).Translation() - pActor->Position;
+	vector3 FaceDir = pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 	FaceDir.norm();
 	pActor->GetMotorSystem().SetFaceDirection(FaceDir);
 	OK;

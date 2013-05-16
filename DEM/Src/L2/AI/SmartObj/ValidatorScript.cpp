@@ -6,8 +6,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CValidatorScript, AI::CValidator);
-__ImplementClass(AI::CValidatorScript);
+__ImplementClass(AI::CValidatorScript, 'VLSC', AI::CValidator);
 
 using namespace Data;
 

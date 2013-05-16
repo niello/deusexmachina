@@ -2,7 +2,6 @@
 
 #include <Game/EntityManager.h>
 #include <Loading/LoaderServer.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 #include <Events/EventManager.h>
 
@@ -56,20 +55,20 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
 	n_assert(pActorEnt);
 
-	const nString& LevelID = GetEntity()->Get<nString>(Attr::TargetLevelID);
-	const nString& DestPt = GetEntity()->Get<nString>(Attr::DestPoint);
+	const nString& LevelID = GetEntity()->GetAttr<nString>(CStrID("TargetLevelID"));
+	const nString& DestPt = GetEntity()->GetAttr<nString>(CStrID("DestPoint"));
 
 	//???set pause?
 
 	if (DestPt.IsValid())
 	{
-		matrix44 Tfm;
-		if (EntityFct->GetEntityAttribute<matrix44>(DestPt, Attr::Transform, Tfm))
-			pActorEnt->Set<matrix44>(Attr::Transform, Rotate180 * Tfm); //???or fire SetTransform?
-		else n_printf("Travel, Warning: destination point '%s' not found\n", DestPt.CStr());
+		//matrix44 Tfm;
+		//if (EntityFct->GetEntityAttribute<matrix44>(DestPt, CStrID("Transform"), Tfm))
+		//	pActorEnt->Set<matrix44>(CStrID("Transform"), Rotate180 * Tfm); //???or fire SetTransform?
+		//else n_printf("Travel, Warning: destination point '%s' not found\n", DestPt.CStr());
 	}
 
-	pActorEnt->Set<nString>(Attr::LevelID, LevelID);
+	pActorEnt->SetAttr<nString>(CStrID("LevelID"), LevelID);
 	
 	LoaderSrv->CommitChangesToDB();
 

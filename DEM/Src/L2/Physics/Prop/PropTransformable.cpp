@@ -4,7 +4,6 @@
 #include <Events/EventBase.h>
 #include <Game/Entity.h>
 #include <Render/DebugDraw.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -18,16 +17,14 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropTransformable, Game::CProperty);
-__ImplementClass(Properties::CPropTransformable);
-__ImplementPropertyStorage(CPropTransformable, 512);
-RegisterProperty(CPropTransformable);
+__ImplementClass(Properties::CPropTransformable, 'PTFM', Game::CProperty);
+__ImplementPropertyStorage(CPropTransformable);
 
 IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropTransformable, OnRenderDebug)
 
 void CPropTransformable::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
-	Attrs.Append(Attr::Transform);
+	//Attrs.Append(CStrID("Transform"));
 }
 //---------------------------------------------------------------------
 
@@ -58,14 +55,14 @@ void CPropTransformable::SetTransform(const matrix44& NewTF)
 {
 	// Tfm-using props can cache ref to VT field where this matrix is to avoid lookup.
 	// This is allowed only for reading, writing value requires Set call and occurs only here!
-	GetEntity()->Set<matrix44>(Attr::Transform, NewTF);
+	GetEntity()->SetAttr<matrix44>(CStrID("Transform"), NewTF);
 	GetEntity()->FireEvent(CStrID("UpdateTransform"));
 }
 //---------------------------------------------------------------------
 
 void CPropTransformable::OnRenderDebug()
 {
-	DebugDraw->DrawCoordAxes(GetEntity()->Get<matrix44>(Attr::Transform));
+	DebugDraw->DrawCoordAxes(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 }
 //---------------------------------------------------------------------
 
