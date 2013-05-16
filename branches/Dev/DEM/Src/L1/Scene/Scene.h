@@ -63,7 +63,7 @@ public:
 	CSceneNode*	GetNode(LPCSTR Path, bool Create = false) { return (Path && *Path) ? RootNode->GetChild(Path, Create) : RootNode.GetUnsafe(); }
 	CSceneNode&	GetRootNode() { return *RootNode.GetUnsafe(); }
 	void		SetMainCamera(CCamera* pNewCamera);
-	CCamera*	GetMainCamera() const { return MainCamera.GetUnsafe(); }
+	CCamera&	GetMainCamera() const { return *MainCamera; }
 };
 
 typedef Ptr<CScene> PScene;

@@ -21,8 +21,7 @@ END_ATTRS_REGISTRATION
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CFocusManager, Game::CManager);
-__ImplementClass(Game::CFocusManager);
+__ImplementClassNoFactory(Game::CFocusManager, Core::CRefCounted);
 
 CFocusManager* CFocusManager::Singleton = NULL;
 
@@ -48,7 +47,6 @@ CFocusManager::~CFocusManager()
 
 void CFocusManager::Activate()
 {
-	CManager::Activate();
 	SUBSCRIBE_PEVENT(OnFrame, CFocusManager, OnFrame);
 	SUBSCRIBE_PEVENT(OnLoad, CFocusManager, OnLoad);
 	if (!LoaderSrv->HasGlobal(Attr::InputFocus)) LoaderSrv->SetGlobal<CStrID>(Attr::InputFocus, CStrID::Empty);
@@ -60,7 +58,6 @@ void CFocusManager::Deactivate()
 {
 	UNSUBSCRIBE_EVENT(OnFrame);
 	UNSUBSCRIBE_EVENT(OnLoad);
-	CManager::Deactivate();
 }
 //---------------------------------------------------------------------
 

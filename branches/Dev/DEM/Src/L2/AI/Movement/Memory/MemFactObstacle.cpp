@@ -4,8 +4,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CMemFactObstacle, AI::CMemFact);
-__ImplementClass(AI::CMemFactObstacle);
+__ImplementClass(AI::CMemFactObstacle, 'MFOB', AI::CMemFact);
 
 bool CMemFactObstacle::Match(const CMemFact& Pattern, CFlags FieldMask) const
 {

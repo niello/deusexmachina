@@ -190,7 +190,7 @@ void CMotorSystem::Update()
 
 					for (; pCurr; pCurr = pCurr->GetSucc())
 					{
-						CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.CStr();
+						CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.Get();
 
 						// Uncomment if obstacle has Height
 						//if ((pActor->Position.y + pActor->Height < pObstacle->Position.y) ||
@@ -378,7 +378,7 @@ void CMotorSystem::RenderDebug()
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
 	{
-		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.CStr();
+		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.Get();
 		matrix44 Tfm;
 		Tfm.rotate_x(PI * 0.5f);
 		Tfm.set_translation(pObstacle->Position);

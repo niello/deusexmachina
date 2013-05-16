@@ -6,8 +6,7 @@
 
 namespace Items
 {
-//__ImplementClassNoFactory(Items::CItemTpl, Core::CRefCounted);
-__ImplementClass(Items::CItemTpl);
+__ImplementClass(Items::CItemTpl, 'ITPL', Core::CRefCounted);
 
 void CItemTpl::Init(CStrID SID, const CParams& Params)
 {

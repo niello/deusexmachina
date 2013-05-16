@@ -4,7 +4,6 @@
 #include <AI/AIServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -20,10 +19,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropSmartObject, Game::CProperty);
-__ImplementClass(Properties::CPropSmartObject);
-__ImplementPropertyStorage(CPropSmartObject, 256);
-RegisterProperty(CPropSmartObject);
+__ImplementClass(Properties::CPropSmartObject, 'PRSO', Game::CProperty);
+__ImplementPropertyStorage(CPropSmartObject);
 
 using namespace Data;
 
@@ -39,7 +36,7 @@ void CPropSmartObject::Activate()
 
 	PParams Desc;
 	
-	const nString& DescResource = GetEntity()->Get<nString>(Attr::SmartObjDesc);
+	const nString& DescResource = GetEntity()->GetAttr<nString>(CStrID("SmartObjDesc"));
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(nString("smarts:") + DescResource + ".prm");
 
 	if (Desc.IsValid())
@@ -118,7 +115,7 @@ bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector
 
 	if (Action.IsValid())
 	{
-		GetEntity()->Get<matrix44>(Attr::Transform).mult(Action->GetTpl().DestOffset, OutDest);
+		GetEntity()->GetAttr<matrix44>(CStrID("Transform")).mult(Action->GetTpl().DestOffset, OutDest);
 		OutMinDist = Action->GetTpl().MinDistance;
 		OutMaxDist = Action->GetTpl().MaxDistance;
 		if (Action->ActorRadiusMatters())

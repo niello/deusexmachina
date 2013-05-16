@@ -49,14 +49,25 @@ void CCamera::Update()
 }
 //---------------------------------------------------------------------
 
-void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay)
+void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const
 {
 	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
 	vector3 LocalMousePos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
 	LocalMousePos.y = -LocalMousePos.y;
-	OutRay.b = pNode->GetWorldMatrix() * LocalMousePos;
-	OutRay.m = OutRay.b - pNode->GetWorldMatrix().Translation();
+	OutRay.b = GetInvViewMatrix() * LocalMousePos;
+	OutRay.m = OutRay.b - GetInvViewMatrix().Translation();
 	OutRay.m *= (Length / OutRay.m.len());
+}
+//---------------------------------------------------------------------
+
+void CCamera::GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const
+{
+	vector4 WorldPos = View * Point3D;
+	WorldPos.w = 0.f;
+	WorldPos = Proj * WorldPos;
+	WorldPos /= WorldPos.w;
+	OutRelX = WorldPos.x * 0.5f + 0.5f;
+	OutRelY = 0.5f - WorldPos.y * 0.5f;
 }
 //---------------------------------------------------------------------
 

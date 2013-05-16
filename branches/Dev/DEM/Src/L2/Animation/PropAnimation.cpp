@@ -9,7 +9,6 @@
 #include <Animation/MocapClip.h>
 #include <Data/DataServer.h>
 
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -29,10 +28,8 @@ namespace Anim
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropAnimation, Game::CProperty);
-__ImplementClass(Properties::CPropAnimation);
-__ImplementPropertyStorage(CPropAnimation, 64);
-RegisterProperty(CPropAnimation);
+__ImplementClass(Properties::CPropAnimation, 'PANM', Game::CProperty);
+__ImplementPropertyStorage(CPropAnimation);
 
 using namespace Data;
 
@@ -82,7 +79,7 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 
 //!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	PParams Desc;
-	const nString& AnimDesc = GetEntity()->Get<nString>(Attr::AnimDesc);
+	const nString& AnimDesc = GetEntity()->GetAttr<nString>(Attr::AnimDesc);
 	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("game:Anim/") + AnimDesc + ".prm");
 
 	if (Desc.IsValid())

@@ -182,4 +182,66 @@ void CGameServer::PauseGame(bool Pause) const
 }
 //---------------------------------------------------------------------
 
+/*
+bool CEnvQueryManager::OnFrame(const Events::CEventBase& Event)
+{
+	CStrID OldEntityUnderMouse = EntityUnderMouse;
+
+    // Get 3d contact under mouse
+    if (!UISrv->IsMouseOverGUI())
+	{
+		float XRel, YRel;
+		InputSrv->GetMousePosRel(XRel, YRel);
+		line3 Ray;
+		SceneSrv->GetCurrentScene()->GetMainCamera()->GetRay3D(XRel, YRel, 5000.f, Ray);
+		const Physics::CContactPoint* pContact = PhysicsSrv->GetClosestContactAlongRay(Ray.start(), Ray.vec());
+        MouseIntersection = (pContact != NULL);
+        if (MouseIntersection)
+        {
+            // Store intersection position
+            MousePos3D = pContact->Position;
+            UpVector = pContact->UpVector;
+
+            // Get entity under mouse
+            Physics::CEntity* pPhysEntity = PhysicsSrv->FindEntityByUniqueID(pContact->EntityID);
+			EntityUnderMouse = (pPhysEntity) ? pPhysEntity->GetUserData() : CStrID::Empty;
+        }
+		else
+		{
+			// Reset values
+			EntityUnderMouse = CStrID::Empty;
+			MousePos3D.set(0.0f, 0.0f, 0.0f);
+		}
+    }
+	else
+	{
+		MouseIntersection = false;
+		EntityUnderMouse = CStrID::Empty;
+		MousePos3D.set(0.0f, 0.0f, 0.0f);
+	}
+
+	if (OldEntityUnderMouse != EntityUnderMouse)
+	{
+		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
+		if (pEntityUnderMouse)
+		{
+			PParams P = n_new(CParams);
+			P->Set(CStrID("IsOver"), false);
+			pEntityUnderMouse->FireEvent(CStrID("ObjMouseOver"), P);
+		}
+		
+		pEntityUnderMouse = GetEntityUnderMouse();
+		if (pEntityUnderMouse)
+		{
+			PParams P = n_new(CParams);
+			P->Set(CStrID("IsOver"), true);
+			pEntityUnderMouse->FireEvent(CStrID("ObjMouseOver"), P);
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+*/
+
 }

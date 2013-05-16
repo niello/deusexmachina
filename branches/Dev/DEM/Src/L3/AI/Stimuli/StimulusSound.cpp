@@ -2,6 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CStimulusSound, AI::CStimulus);
-__ImplementClass(AI::CStimulusSound);
+__ImplementClass(AI::CStimulusSound, 'STSD', AI::CStimulus);
 }

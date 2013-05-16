@@ -4,8 +4,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionSteerToPosition, AI::CActionTraversePathEdge);
-__ImplementClass(AI::CActionSteerToPosition);
+__ImplementClass(AI::CActionSteerToPosition, 'ASTP', AI::CActionTraversePathEdge);
 
 void CActionSteerToPosition::UpdatePathEdge(CActor* pActor, const CPathEdge* pEdge, const CPathEdge* pNextEdge)
 {

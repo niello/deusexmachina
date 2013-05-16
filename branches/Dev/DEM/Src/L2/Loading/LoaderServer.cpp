@@ -3,7 +3,6 @@
 #include <Events/EventManager.h>
 #include <Game/EntityManager.h>
 #include <Game/Mgr/StaticEnvManager.h>
-#include <Loading/EntityFactory.h>
 #include <Time/TimeServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>

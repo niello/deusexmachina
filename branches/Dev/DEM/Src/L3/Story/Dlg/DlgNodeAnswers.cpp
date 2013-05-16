@@ -7,8 +7,7 @@
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CDlgNodeAnswers, Story::CDlgNode);
-__ImplementClass(Story::CDlgNodeAnswers);
+__ImplementClass(Story::CDlgNodeAnswers, 'DLNA', Story::CDlgNode);
 
 void CDlgNodeAnswers::OnEnter(CActiveDlg& Dlg)
 {

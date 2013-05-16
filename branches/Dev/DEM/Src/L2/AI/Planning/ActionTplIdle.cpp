@@ -11,8 +11,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionTplIdle, AI::CActionTpl);
-__ImplementClass(AI::CActionTplIdle);
+__ImplementClass(AI::CActionTplIdle, 'ATID', AI::CActionTpl);
 
 void CActionTplIdle::Init(PParams Params)
 {

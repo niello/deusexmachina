@@ -8,12 +8,6 @@
 
 // Scene node property associates entity transform with scene graph node
 
-namespace Attr
-{
-	DeclareString(ScenePath);
-	DeclareString(SceneFile);
-}
-
 namespace Properties
 {
 
@@ -31,7 +25,6 @@ public:
 
 	//virtual ~CPropSceneNode() {}
 
-	virtual void		GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void		Activate();
 	virtual void		Deactivate();
 

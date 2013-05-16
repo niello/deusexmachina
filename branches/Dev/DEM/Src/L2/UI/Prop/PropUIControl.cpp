@@ -9,7 +9,6 @@
 #include <Scripting/EventHandlerScript.h>
 #include <Data/DataServer.h>
 #include <Events/EventManager.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -25,10 +24,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropUIControl, Game::CProperty);
-__ImplementClass(Properties::CPropUIControl);
-__ImplementPropertyStorage(CPropUIControl, 128);
-RegisterProperty(CPropUIControl);
+__ImplementClass(Properties::CPropUIControl, 'PUIC', Game::CProperty);
+__ImplementPropertyStorage(CPropUIControl);
 
 using namespace Data;
 
@@ -43,10 +40,10 @@ void CPropUIControl::Activate()
 {
 	Game::CProperty::Activate();
 
-	UIName = GetEntity()->Get<nString>(Attr::Name);
+	UIName = GetEntity()->GetAttr<nString>(Attr::Name);
 
 	PParams Desc;
-	const nString& IAODesc = GetEntity()->Get<nString>(Attr::IAODesc);
+	const nString& IAODesc = GetEntity()->GetAttr<nString>(Attr::IAODesc);
 	if (IAODesc.IsValid()) Desc = DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm");
 
 	if (Desc.IsValid())

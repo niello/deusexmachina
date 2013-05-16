@@ -309,46 +309,4 @@ void CDatabase::CopyInMemoryDatabaseToFile(const nString& FileURI)
 }
 //---------------------------------------------------------------------
 
-/**
-    Registers additional attributes defined in the database's special
-    _Attributes Table. This enables an application to function even
-    without knowing all attributes beforehand.
-
-    FIXME: we could also check here if the attributes in the database
-    are type-compatible with the already existing attributes(?).
-*/
-/*
-void CDatabase::RegisterAttributes(PTable& attrTable)
-{
-    n_assert(0 != attrTable);
-
-    // create a dataset and read Table contents
-    PDataset dataset = attrTable->CreateDataset();
-    dataset->AddColumnsFromTable();
-    dataset->PerformQuery();
-    PValueTable values = dataset->Values();
-    int RowIdx;
-    int numRows = values->GetRowCount();
-    for (RowIdx = 0; RowIdx < numRows; RowIdx++)
-    {
-        const nString& attrName = values->Get<nString>(Attr::AttrName, RowIdx);        
-        if (!DBSrv->IsValidAttrName(attrName))
-        {
-            nString valueString = values->Get<nString>(Attr::AttrType, RowIdx);
-        //#if NEBULA3_DATABASE_LEGACY_VECTORS
-            // nebula2 export support
-            if (valueString == "vector3" || valueString == "vector4")
-            {
-                valueString = "float4";
-            }
-        //#endif
-            const CType* valueType = CAttr::StringToValueType(valueString);
-            bool readWrite = values->GetBool(Attr::AttrReadWrite, RowIdx);
-            AccessMode accessMode = readWrite ? Attr::ReadWrite : Attr::ReadOnly;
-            Attr::AttributeDefinitionBase::RegisterDynamicAttribute(attrName, Util::FourCC(), valueType, accessMode);
-        }
-    }
-}
-*/
-
 } // namespace DB

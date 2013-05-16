@@ -16,13 +16,9 @@
 #include <Camera/Event/CameraOrbit.h>
 #include <Camera/Event/CameraDistance.h>
 
-#include <Loading/EntityFactory.h>
-
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropPlrCharacterInput, Properties::CPropInput);
-__ImplementClass(Properties::CPropPlrCharacterInput);
-RegisterProperty(CPropPlrCharacterInput);
+__ImplementClass(Properties::CPropPlrCharacterInput, 'PPIN', Properties::CPropInput);
 
 using namespace Data;
 using namespace Input;

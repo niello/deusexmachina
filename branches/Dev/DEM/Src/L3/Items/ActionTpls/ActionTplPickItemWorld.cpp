@@ -16,8 +16,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionTplPickItemWorld, AI::CActionTpl);
-__ImplementClass(AI::CActionTplPickItemWorld);
+__ImplementClass(AI::CActionTplPickItemWorld, 'ATIW', AI::CActionTpl);
 
 using namespace Properties;
 
@@ -44,7 +43,7 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
 	for (; pCurr; pCurr = pCurr->GetSucc())
 	{
-		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.CStr();
+		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.Get();
 		if (pSOFact->TypeID == CStrID("Item"))
 		{
 			Game::CEntity* pEnt = EntityMgr->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);

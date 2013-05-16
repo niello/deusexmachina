@@ -5,7 +5,6 @@
 #include <AI/AIServer.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -25,10 +24,8 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropWeapon, Game::CProperty);
-__ImplementClass(Properties::CPropWeapon);
-__ImplementPropertyStorage(CPropWeapon, 64);
-RegisterProperty(CPropWeapon);
+__ImplementClass(Properties::CPropWeapon, 'PWPN', Game::CProperty);
+__ImplementPropertyStorage(CPropWeapon);
 
 using namespace Event;
 
@@ -46,11 +43,11 @@ CPropWeapon::CPropWeapon():
 
 void CPropWeapon::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
-    CProperty::GetAttributes(Attrs);
-	Attrs.Append(Attr::WpnROF);
-	Attrs.Append(Attr::WpnRangeMin);
-	Attrs.Append(Attr::WpnRangeMax);
-	Attrs.Append(Attr::WpnLastStrikeTime);
+ //   CProperty::GetAttributes(Attrs);
+	//Attrs.Append(Attr::WpnROF);
+	//Attrs.Append(Attr::WpnRangeMin);
+	//Attrs.Append(Attr::WpnRangeMax);
+	//Attrs.Append(Attr::WpnLastStrikeTime);
 }
 //---------------------------------------------------------------------
 
@@ -88,7 +85,7 @@ bool CPropWeapon::OnChrStrike(const CEventBase& Event)
 	//???or get from attr?
 	//CStrID TargetEntityID = (*((CEvent&)Event).Params).Get<CStrID>(CStrID("TargetEntityID"));
 	//
-	//if (EntityMgr->ExistsEntityByID(TargetEntityID))
+	//if (EntityMgr->EntityExists(TargetEntityID))
 	//	Strike(*EntityMgr->GetEntity(TargetEntityID));
 
 	OK;
@@ -98,7 +95,7 @@ bool CPropWeapon::OnChrStrike(const CEventBase& Event)
 //???destructible prop as arg?
 void CPropWeapon::Strike(Game::CEntity& Target)
 {
-    GetEntity()->Set<float>(Attr::WpnLastStrikeTime, (float)GameSrv->GetTime());
+    GetEntity()->SetAttr<float>(CStrID("WpnLastStrikeTime"), (float)GameSrv->GetTime());
 
 	//!!!check hit (accurecy etc)!
 

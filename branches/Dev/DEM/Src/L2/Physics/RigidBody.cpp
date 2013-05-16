@@ -6,8 +6,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CRigidBody, Core::CRefCounted);
-__ImplementClass(Physics::CRigidBody);
+__ImplementClass(Physics::CRigidBody, 'RGBD', Core::CRefCounted);
 
 uint CRigidBody::UIDCounter = 1;
 

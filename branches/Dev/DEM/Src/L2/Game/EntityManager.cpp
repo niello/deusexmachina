@@ -29,11 +29,11 @@ void CEntityManager::Close()
 }
 //---------------------------------------------------------------------
 
-PEntity CEntityManager::CreateEntity(CStrID UID, CStrID LevelID)
+PEntity CEntityManager::CreateEntity(CStrID UID, CGameLevel& Level)
 {
-	n_assert(UID.IsValid() && LevelID.IsValid());
+	n_assert(UID.IsValid());
 	n_assert(EntityExists(UID)); //???return NULL or existing entity?
-	PEntity Entity = n_new(CEntity(UID, LevelID));
+	PEntity Entity = n_new(CEntity(UID, Level));
 	Entities.Append(Entity);
 	UIDToEntity.Add(Entity->GetUID(), Entity.GetUnsafe());
 	return Entity;
@@ -79,10 +79,12 @@ void CEntityManager::DeleteEntity(CEntity& Entity)
 }
 //---------------------------------------------------------------------
 
-CProperty* CEntityManager::AttachProperty(CEntity& Entity, Core::CRTTI& Type) const
+CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
 {
-	int Idx = PropStorages.FindIndex(&Type);
-	n_assert2_dbg(Idx != INVALID_INDEX, (nString("Property ") + Type.GetName() + " is not registered!").CStr());
+	if (!pRTTI) return NULL;
+
+	int Idx = PropStorages.FindIndex(pRTTI);
+	n_assert2_dbg(Idx != INVALID_INDEX, (nString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
 	if (Idx == INVALID_INDEX) return NULL;
 	CPropertyStorage* pStorage = *PropStorages.ValueAtIndex(Idx);
 	n_assert_dbg(pStorage);
@@ -90,7 +92,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, Core::CRTTI& Type) co
 	PProperty Prop;
 	if (!pStorage->Get(Entity.GetUID(), Prop))
 	{
-		Prop = (CProperty*)Factory->Create(Type);
+		Prop = (CProperty*)pRTTI->Create();
 		pStorage->Add(Entity.GetUID(), Prop);
 		Prop->SetEntity(&Entity);
 	}

@@ -8,8 +8,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CPerceptorOverseer, AI::CPerceptor);
-__ImplementClass(AI::CPerceptorOverseer);
+__ImplementClass(AI::CPerceptorOverseer, 'PEOV', AI::CPerceptor);
 
 void CPerceptorOverseer::Init(const Data::CParams& Desc)
 {
@@ -43,7 +42,7 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		PMemFactOverseer pFact = (CMemFactOverseer*)pActor->GetMemSystem().FindFact(Pattern);
 		if (!pFact.IsValid())
 		{
-			pFact = (CMemFactOverseer*)pActor->GetMemSystem().AddFact(CMemFactOverseer::RTTI);
+			pFact = pActor->GetMemSystem().AddFact<CMemFactOverseer>();
 			pFact->pSourceStimulus = pStimulus;
 			pActor->RequestGoalUpdate();
 		}

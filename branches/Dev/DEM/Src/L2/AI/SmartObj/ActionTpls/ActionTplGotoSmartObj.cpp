@@ -11,8 +11,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionTplGotoSmartObj, AI::CActionTpl);
-__ImplementClass(AI::CActionTplGotoSmartObj);
+__ImplementClass(AI::CActionTplGotoSmartObj, 'ATGS', AI::CActionTpl);
 
 void CActionTplGotoSmartObj::Init(PParams Params)
 {

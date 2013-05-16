@@ -3,7 +3,6 @@
 #include <Game/Entity.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Model.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -24,31 +23,21 @@ namespace Scene
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropSceneNode, CPropTransformable);
-__ImplementClass(Properties::CPropSceneNode);
-__ImplementPropertyStorage(CPropSceneNode, 256); //!!!remove if : public CPropTransformable
-RegisterProperty(CPropSceneNode);
-
-void CPropSceneNode::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	//CPropTransformable::GetAttributes(Attrs);
-	CProperty::GetAttributes(Attrs);
-	Attrs.Append(Attr::ScenePath);
-	Attrs.Append(Attr::SceneFile);
-}
-//---------------------------------------------------------------------
+__ImplementClass(Properties::CPropSceneNode, 'PSCN', Game::CProperty);
+__ImplementPropertyStorage(CPropSceneNode);
 
 void CPropSceneNode::Activate()
 {
 	//CPropTransformable::Activate();
 	CProperty::Activate();
 
-	nString NodePath = GetEntity()->Get<nString>(Attr::ScenePath);
-	const nString& NodeRsrc = GetEntity()->Get<nString>(Attr::SceneFile);
+	nString NodePath = GetEntity()->GetAttr<nString>(CStrID("ScenePath"));
+	const nString& NodeRsrc = GetEntity()->GetAttr<nString>(CStrID("SceneFile"));
 
 	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
 		NodePath = GetEntity()->GetUID().CStr();
 	
+	//!!!get level from entity and attach to it!
 	if (NodePath.IsValid())
 	{
 		//???optimize duplicate search?
@@ -60,8 +49,8 @@ void CPropSceneNode::Activate()
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
 
 		if (ExistingNode)
-			GetEntity()->Set<matrix44>(Attr::Transform, Node->GetWorldMatrix());
-		else Node->SetLocalTransform(GetEntity()->Get<matrix44>(Attr::Transform)); //???set local? or set global & then calc local?
+			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
+		else Node->SetLocalTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform"))); //???set local? or set global & then calc local?
 	}
 }
 //---------------------------------------------------------------------

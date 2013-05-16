@@ -4,39 +4,27 @@
 #include <Items/ItemManager.h>
 #include <Items/Prop/PropInventory.h>
 #include <Game/EntityManager.h>
-#include <Loading/EntityFactory.h>
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropItem, Game::CProperty);
-__ImplementClass(Properties::CPropItem);
-__ImplementPropertyStorage(CPropItem, 128);
-RegisterProperty(CPropItem);
+__ImplementClass(Properties::CPropItem, 'PITM', Game::CProperty);
+__ImplementPropertyStorage(CPropItem);
 
 using namespace Items;
-
-void CPropItem::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::ItemTplID);
-	Attrs.Append(Attr::ItemInstID);
-	Attrs.Append(Attr::ItemCount);
-}
-//---------------------------------------------------------------------
 
 void CPropItem::Activate()
 {
 	Game::CProperty::Activate();
 
-	PItem Item =
-		ItemMgr->GetItemTpl(GetEntity()->Get<CStrID>(Attr::ItemTplID))->GetTemplateItem();
-	int InstID = GetEntity()->Get<int>(Attr::ItemInstID);
+	PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
+	int InstID = GetEntity()->GetAttr<int>(CStrID("ItemInstID"));
 	if (InstID > -1)
 	{
 		Item = Item->Clone();
 		//!!!Item->LoadFromDB(InstID);!
 	}
 	Items.SetItem(Item);
-	Items.SetCount((WORD)GetEntity()->Get<int>(Attr::ItemCount));
+	Items.SetCount((WORD)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
 	
 	PROP_SUBSCRIBE_PEVENT(OnSave, CPropItem, OnSave);
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropItem, OnPropsActivated);
@@ -59,15 +47,15 @@ bool CPropItem::OnSave(const Events::CEventBase& Event)
 	//???store smth like bool Changed?
 	if (Items.IsValid()) //???assert? or DeleteEntity(this) if !valid?
 	{
-		GetEntity()->Set<CStrID>(Attr::ItemTplID, Items.GetItemID());
+		GetEntity()->SetAttr<CStrID>(CStrID("ItemTplID"), Items.GetItemID());
 		if (Items.GetItem()->IsTemplateInstance())
-			GetEntity()->Set<int>(Attr::ItemInstID, -1);
+			GetEntity()->SetAttr<int>(CStrID("ItemInstID"), -1);
 		else
 		{
 			n_assert(false);
 			//!!!save instance, get its ID & save ID!
 		}
-		GetEntity()->Set<int>(Attr::ItemCount, (int)Items.GetCount());
+		GetEntity()->SetAttr<int>(CStrID("ItemCount"), (int)Items.GetCount());
 	}
 	OK;
 }
@@ -98,7 +86,7 @@ bool CPropItem::OnPickItem(const Events::CEventBase& Event)
 		{
 			pInv->AddItem(Items);
 			Items.Clear();
-			EntityMgr->DeleteEntity(GetEntity());
+			EntityMgr->DeleteEntity(*GetEntity()); //!!!check deletion from itself!
 		}
 	}
 

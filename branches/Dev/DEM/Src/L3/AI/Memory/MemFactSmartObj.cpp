@@ -4,8 +4,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CMemFactSmartObj, AI::CMemFact);
-__ImplementClass(AI::CMemFactSmartObj);
+__ImplementClass(AI::CMemFactSmartObj, 'MFSO', AI::CMemFact);
 
 bool CMemFactSmartObj::Match(const CMemFact& Pattern, CFlags FieldMask) const
 {

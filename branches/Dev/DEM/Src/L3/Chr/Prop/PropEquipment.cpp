@@ -5,13 +5,10 @@
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/AIServer.h>
 #include <Events/EventManager.h>
-#include <Loading/EntityFactory.h>
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropEquipment, CPropInventory);
-__ImplementClass(Properties::CPropEquipment);
-RegisterProperty(CPropEquipment);
+__ImplementClass(Properties::CPropEquipment, 'PEQI', CPropInventory);
 
 CPropEquipment::CPropEquipment()
 {

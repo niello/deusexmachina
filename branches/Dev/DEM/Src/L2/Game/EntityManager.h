@@ -27,10 +27,12 @@ class CEntityManager: public Core::CRefCounted
 
 protected:
 
-	nDictionary<Core::CRTTI*, CPropertyStorage**>	PropStorages;
-	nArray<PEntity>									Entities;	//???need? CHashTable has iterator
-	CHashTable<CStrID, CEntity*>					UIDToEntity;
-	nDictionary<CStrID, CStrID>						Aliases;
+	nDictionary<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
+	nArray<PEntity>										Entities;	//???need? CHashTable has iterator
+	CHashTable<CStrID, CEntity*>						UIDToEntity;
+	nDictionary<CStrID, CStrID>							Aliases;
+
+	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 
 public:
 
@@ -40,7 +42,7 @@ public:
 	void		Open();
 	void		Close();
 
-	PEntity		CreateEntity(CStrID UID, CStrID LevelID);
+	PEntity		CreateEntity(CStrID UID, CGameLevel& Level);
 	bool		RenameEntity(CEntity& Entity, CStrID NewUID);
 	PEntity		CloneEntity(const CEntity& Entity, CStrID UID);
 	void		DeleteEntity(CEntity& Entity);
@@ -51,8 +53,8 @@ public:
 	bool		RegisterProperty(DWORD TableCapacity = 32);
 	template<class T>
 	bool		UnregisterProperty();
-	CProperty*	AttachProperty(CEntity& Entity, Core::CRTTI& Type) const;
-	//!!!CProperty*	AttachProperty(CEntity& Entity, const nString& TypeName) const; //???or GetRTTI(TypeName)?
+	CProperty*	AttachProperty(CEntity& Entity, const nString& ClassName) const { return AttachProperty(Entity, Factory->GetRTTI(ClassName)); }
+	CProperty*	AttachProperty(CEntity& Entity, nFourCC ClassFourCC) const { return AttachProperty(Entity, Factory->GetRTTI(ClassFourCC)); }
 	template<class T>
 	T*			AttachProperty(CEntity& Entity) const;
 	void		RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const;

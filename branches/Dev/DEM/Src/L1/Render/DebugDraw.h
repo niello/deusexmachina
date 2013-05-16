@@ -193,14 +193,14 @@ inline bool CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, const vec
 
 inline bool CDebugDraw::DrawBoxWireframe(const bbox3& Box, const vector4& Color)
 {
-	vector3 mmm = Box.corner_point(0);
-	vector3 mMm = Box.corner_point(1);
-	vector3 MMm = Box.corner_point(2);
-	vector3 Mmm = Box.corner_point(3);
-	vector3 MMM = Box.corner_point(4);
-	vector3 mMM = Box.corner_point(5);
-	vector3 mmM = Box.corner_point(6);
-	vector3 MmM = Box.corner_point(7);
+	vector3 mmm = Box.GetCorner(0);
+	vector3 mMm = Box.GetCorner(1);
+	vector3 MMm = Box.GetCorner(2);
+	vector3 Mmm = Box.GetCorner(3);
+	vector3 MMM = Box.GetCorner(4);
+	vector3 mMM = Box.GetCorner(5);
+	vector3 mmM = Box.GetCorner(6);
+	vector3 MmM = Box.GetCorner(7);
 	DrawLine(mmm, Mmm, Color);
 	DrawLine(mmm, mMm, Color);
 	DrawLine(mmm, mmM, Color);

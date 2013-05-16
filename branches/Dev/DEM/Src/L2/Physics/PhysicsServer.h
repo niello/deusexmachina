@@ -38,7 +38,6 @@ protected:
 
 	nKeyArray<CEntity*>		Entities;
 	CContacts				Contacts;
-	PPhysicsLevel					CurrLevel;
 
 	bool					isOpen;
 
@@ -59,7 +58,6 @@ public:
 	virtual bool	Open();
 	virtual void	Close();
 	bool			IsOpen() const { return isOpen; }
-	virtual void	Trigger();
 
 	CBoxShape*			CreateBoxShape(const matrix44& TF, CMaterialType MatType, const vector3& Size) const;
 	CSphereShape*		CreateSphereShape(const matrix44& TF, CMaterialType MatType, float Radius) const;
@@ -81,8 +79,6 @@ public:
 	int				GetEntitiesInBox(const vector3& Scale, const matrix44& TF, const CFilterSet& ExcludeSet,
 									 nArray<PEntity>& Result);
 
-	virtual void	RenderDebug();
-
 	static void		Matrix44ToOde(const matrix44& from, dMatrix3& to);
 	static void		OdeToMatrix44(const dMatrix3& from, matrix44& to);
 	static void		Vector3ToOde(const vector3& from, dVector3& to);
@@ -94,8 +90,6 @@ public:
 
 	static uint		GetUniqueStamp() { return ++UniqueStamp; }
 
-	//void			SetLevel(CPhysicsLevel* pLevel);
-	CPhysicsLevel*			GetLevel() const { return CurrLevel.GetUnsafe(); }
 	//void			SetPointOfInterest(const vector3& NewPOI);
 	//const vector3&	GetPointOfInterest() const { return CurrLevel->GetPointOfInterest(); }
 };

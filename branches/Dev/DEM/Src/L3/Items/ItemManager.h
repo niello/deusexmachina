@@ -3,6 +3,7 @@
 #define __IPG_ITEM_MANAGER_H__
 
 #include <Core/RefCounted.h>
+#include <Core/Singleton.h>
 #include <util/HashTable.h>
 #include <Events/Events.h>
 #include <DB/Dataset.h>
@@ -18,20 +19,18 @@ namespace Data
 
 namespace Items
 {
-using namespace Data;
-
 #define ItemMgr Items::CItemManager::Instance()
 
 class CItemManager: public Core::CRefCounted
 {
 	__DeclareClassNoFactory;
+	__DeclareSingleton(CItemManager);
 
 private:
 
-	static CItemManager*	Singleton;
 	static int				LargestItemStackID;
 
-	CHashTable<CStrID, Ptr<CItemTpl>>	ItemTplRegistry;
+	CHashTable<CStrID, PItemTpl>	ItemTplRegistry;
 
 	DB::PDataset						DSInv;
 	DB::PDataset						DSEquip;
@@ -48,8 +47,6 @@ public:
 
 	CItemManager();
 	virtual ~CItemManager();
-
-	static CItemManager* Instance() { n_assert(Singleton); return Singleton; }
 
 	PItemTpl		CreateItemTpl(CStrID ID, const CParams& Params); //???type from params?
 	PItemTpl		GetItemTpl(CStrID ID);

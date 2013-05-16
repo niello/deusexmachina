@@ -2,6 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CStimulusVisible, AI::CStimulus);
-__ImplementClass(AI::CStimulusVisible);
+__ImplementClass(AI::CStimulusVisible, 'STVI', AI::CStimulus);
 }

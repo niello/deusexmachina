@@ -15,8 +15,7 @@ extern "C"
 
 namespace Scripting
 {
-__ImplementClassNoFactory(Scripting::CEntityScriptObject, CScriptObject);
-__ImplementClass(Scripting::CEntityScriptObject);
+__ImplementClass(Scripting::CEntityScriptObject, 'ESCO', CScriptObject);
 
 using namespace Data;
 
@@ -90,40 +89,27 @@ bool CEntityScriptObject::RegisterClass()
 
 int CEntityScriptObject::GetField(LPCSTR Key) const
 {
-	DB::CAttrID ID = DBSrv->FindAttrID(Key);
-	if (ID)
+	CData Data;
+	if (GetEntity()->GetAttr(CStrID(Key), Data))
 	{
-		CData Data;
-		if (GetEntity()->Get(ID, Data))
-		{
-			int Pushed = ScriptSrv->DataToLuaStack(Data);
-			if (Pushed > 0) return Pushed;
-		}
+		int Pushed = ScriptSrv->DataToLuaStack(Data);
+		if (Pushed > 0) return Pushed;
 	}
 
 	return CScriptObject::GetField(Key);
 }
 //---------------------------------------------------------------------
 
+//!!!TEST IT!
+// EPS
 bool CEntityScriptObject::SetField(LPCSTR Key, const CData& Value)
 {
 	if (!strcmp(Key, "Transform")) FAIL; // Read-only, sent SetTransform event to change
 
-	DB::CAttrID ID = DBSrv->FindAttrID(Key);
-	if (ID)
-	{
-		//!!!tmp while no conversion!
-		if (ID->IsA<CStrID>() && Value.IsA<nString>())
-			GetEntity()->Set(ID, CStrID(Value.GetValue<nString>().CStr()));
-		else if (ID->IsA<int>() && Value.IsA<float>())
-			GetEntity()->Set(ID, (int)Value.GetValue<float>());
-		else if (ID->IsA<float>() && Value.IsA<int>())
-			GetEntity()->Set(ID, (float)Value.GetValue<int>());
-		else GetEntity()->SetRaw(ID, Value);
-		OK;
-	}
+	GetEntity()->SetAttr(CStrID(Key), Value);
+	OK;
 
-	return CScriptObject::SetField(Key, Value);
+	//return CScriptObject::SetField(Key, Value);
 }
 //---------------------------------------------------------------------
 

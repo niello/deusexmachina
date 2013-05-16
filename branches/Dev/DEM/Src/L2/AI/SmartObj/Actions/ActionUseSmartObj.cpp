@@ -14,8 +14,7 @@ namespace Attr
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionUseSmartObj, AI::CAction)
-__ImplementClass(AI::CActionUseSmartObj);
+__ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 
 using namespace Properties;
 
@@ -49,7 +48,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 
 	if (Action->FaceObject())
 	{
-		vector3 FaceDir = pSO->GetEntity()->Get<matrix44>(Attr::Transform).Translation() - pActor->Position;
+		vector3 FaceDir = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 		FaceDir.norm();
 		pActor->GetMotorSystem().SetFaceDirection(FaceDir);
 		SubActFace = n_new(CActionFace);
@@ -149,7 +148,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 bool CActionUseSmartObj::IsValid(CActor* pActor) const
 {
-	return	EntityMgr->ExistsEntityByID(TargetID) &&
+	return	EntityMgr->EntityExists(TargetID) &&
 			Action->Enabled &&
 			(WasDone || Action->Resource) &&
 			((SubActFace.IsValid() && SubActFace->IsValid(pActor)) ||

@@ -584,7 +584,7 @@ bool CScriptServer::ObjectExists(LPCSTR Name, LPCSTR Table)
 
 bool CScriptServer::OnSaveBefore(const Events::CEventBase& Event)
 {
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
+/*	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 	
 	DB::PTable Tbl;
 	int TableIdx = pDB->FindTableIndex(StrLuaObjects);
@@ -592,15 +592,15 @@ bool CScriptServer::OnSaveBefore(const Events::CEventBase& Event)
 	{
 		Tbl = DB::CTable::Create();
 		Tbl->SetName(StrLuaObjects);
-		Tbl->AddColumn(DB::CColumn(Attr::LuaObjName, DB::CColumn::Primary));
-		Tbl->AddColumn(DB::CColumn(Attr::LuaFieldName, DB::CColumn::Primary));
+		Tbl->AddColumn(DB::CColumn(CStrID("LuaObjName"), DB::CColumn::Primary));
+		Tbl->AddColumn(DB::CColumn(CStrID("LuaFieldName"), DB::CColumn::Primary));
 		Tbl->AddColumn(Attr::LuaValue);
 		pDB->AddTable(Tbl);
 	}
 	//else Tbl = LoaderSrv->GetGameDB()->GetTableByIndex(TableIdx);
 
 	//???!!!create reusable dataset?!
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------

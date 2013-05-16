@@ -5,8 +5,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionEquipItem, AI::CAction);
-__ImplementClass(AI::CActionEquipItem);
+__ImplementClass(AI::CActionEquipItem, 'AEQI', AI::CAction);
 
 using namespace Properties;
 

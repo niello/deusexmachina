@@ -7,8 +7,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionWander, AI::CAction);
-__ImplementClass(AI::CActionWander);
+__ImplementClass(AI::CActionWander, 'AWDR', AI::CAction);
 
 //void CActionWander::Init()
 //{

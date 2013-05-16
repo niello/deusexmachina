@@ -2,6 +2,5 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::ObjDamageDone, Events::CEventNative);
-__ImplementClass(Event::ObjDamageDone);
+__ImplementClass(Event::ObjDamageDone, 'ODMD', Events::CEventNative);
 } // namespace Event

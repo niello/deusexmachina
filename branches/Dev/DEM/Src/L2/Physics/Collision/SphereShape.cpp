@@ -4,8 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CSphereShape, Physics::CShape);
-__ImplementClass(Physics::CSphereShape);
+__ImplementClass(Physics::CSphereShape, 'SPSH', Physics::CShape);
 
 void CSphereShape::Init(Data::PParams Desc)
 {

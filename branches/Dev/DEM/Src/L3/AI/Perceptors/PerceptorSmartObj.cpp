@@ -9,12 +9,11 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CPerceptorIAO, AI::CPerceptor);
-__ImplementClass(AI::CPerceptorIAO);
+__ImplementClass(AI::CPerceptorSmartObj, 'PESO', AI::CPerceptor);
 
 using namespace Properties;
 
-void CPerceptorIAO::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
+void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {
 	//???special IAO stimulus, may be one per action or with action list?
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
@@ -29,7 +28,7 @@ void CPerceptorIAO::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float 
 		PMemFactSmartObj pFact = (CMemFactSmartObj*)pActor->GetMemSystem().FindFact(Pattern);
 		if (!pFact.IsValid())
 		{
-			pFact = (CMemFactSmartObj*)pActor->GetMemSystem().AddFact(CMemFactSmartObj::RTTI);
+			pFact = pActor->GetMemSystem().AddFact<CMemFactSmartObj>();
 			pFact->pSourceStimulus = pStimulus;
 			pFact->TypeID = pSO->GetTypeID();
 			pActor->RequestGoalUpdate();

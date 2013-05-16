@@ -69,7 +69,7 @@ public:
     /// extend the box
     void extend(const bbox3& box);
     /// transform axis aligned bounding box
-    void transform(const matrix44& m);
+    void Transform(const matrix44& m);
     /// transform bounding box with divide by w
     void transform_divw(const matrix44& m);
     /// check for intersection with axis aligned bounding box
@@ -85,7 +85,7 @@ public:
     /// create a matrix which transforms an unit cube to this bounding box
     matrix44 to_matrix44() const;
     /// return one of the 8 corner points
-    vector3 corner_point(int index) const;
+    vector3 GetCorner(int index) const;
     /// return side planes in clip space
     void get_clipplanes(const matrix44& viewProjection, nArray<plane>& outPlanes) const;
 
@@ -325,7 +325,7 @@ bbox3::extend(const bbox3& box)
 */
 inline
 vector3
-bbox3::corner_point(int index) const
+bbox3::GetCorner(int index) const
 {
     n_assert((index >= 0) && (index < 8));
     switch (index)
@@ -378,13 +378,13 @@ bbox3::get_clipplanes(const matrix44& viewProj, nArray<plane>& outPlanes) const
     E.g. if you have a bounding box in model space 'modelBox', and a
     'modelView' matrix, the operation
 
-    modelBox.transform(modelView)
+    modelBox.Transform(modelView)
 
     would transform the bounding box into view space.
 */
 inline
 void
-bbox3::transform(const matrix44& m)
+bbox3::Transform(const matrix44& m)
 {
     /*  ?? BUG ??
     // get own extents vector
@@ -434,7 +434,7 @@ bbox3::transform(const matrix44& m)
 
 //------------------------------------------------------------------------------
 /**
-    Same as transform() but does a div-by-w on the way (useful for transforming
+    Same as Transform() but does a div-by-w on the way (useful for transforming
     to screen space).
 */
 inline

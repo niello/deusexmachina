@@ -2,9 +2,8 @@
 
 #include <Game/Entity.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/level.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/Event/SetTransform.h>
-#include <Loading/EntityFactory.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -20,9 +19,7 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropPhysics, CPropAbstractPhysics);
-__ImplementClass(Properties::CPropPhysics);
-RegisterProperty(CPropPhysics);
+__ImplementClass(Properties::CPropPhysics, 'PPHY', CPropAbstractPhysics);
 
 using namespace Game;
 
@@ -35,8 +32,8 @@ CPropPhysics::~CPropPhysics()
 void CPropPhysics::GetAttributes(nArray<DB::CAttrID>& Attrs)
 {
 	CPropAbstractPhysics::GetAttributes(Attrs);
-	Attrs.Append(Attr::VelocityVector);
-	Attrs.Append(Attr::Physics);
+	//Attrs.Append(CStrID("VelocityVector"));
+	//Attrs.Append(CStrID("Physics"));
 }
 //---------------------------------------------------------------------
 
@@ -63,19 +60,19 @@ void CPropPhysics::EnablePhysics()
 {
 	n_assert(!IsEnabled());
 
-	if (GetEntity()->Get<nString>(Attr::Physics).IsEmpty()) return;
+	if (GetEntity()->GetAttr<nString>(CStrID("Physics")).IsEmpty()) return;
 
 	if (!PhysicsEntity.IsValid())
 	{
 		// Create and setup physics entity
 		PhysicsEntity = CreatePhysicsEntity();
 		n_assert(PhysicsEntity.IsValid());
-		PhysicsEntity->CompositeName = GetEntity()->Get<nString>(Attr::Physics);
+		PhysicsEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"));
 		PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	}
 
 	// Attach physics entity to physics level
-	PhysicsEntity->SetTransform(GetEntity()->Get<matrix44>(Attr::Transform));
+	PhysicsEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 	PhysicsSrv->GetLevel()->AttachEntity(PhysicsEntity);
 
 	PhysicsEntity->SetEnabled(true);
@@ -97,18 +94,18 @@ void CPropPhysics::DisablePhysics()
 
 // Called after the physics subsystem has been triggered. This will transfer
 // the physics entity's new transform back into the game entity.
-bool CPropPhysics::OnMoveAfter(const CEventBase& Event)
+bool CPropPhysics::OnMoveAfter(const Events::CEventBase& Event)
 {
 	if (IsEnabled() && PhysicsEntity->HasTransformChanged())
 	{
 		CPropAbstractPhysics::SetTransform(GetPhysicsEntity()->GetTransform());
-		GetEntity()->Set<vector3>(Attr::VelocityVector, PhysicsEntity->GetVelocity());
+		GetEntity()->SetAttr<vector3>(CStrID("VelocityVector"), PhysicsEntity->GetVelocity());
 	}
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropPhysics::OnEntityRenamed(const CEventBase& Event)
+bool CPropPhysics::OnEntityRenamed(const Events::CEventBase& Event)
 {
 	if (PhysicsEntity.IsValid()) PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	OK;

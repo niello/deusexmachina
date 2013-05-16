@@ -2,10 +2,12 @@
 #ifndef __DEM_L2_GAME_LEVEL_H__
 #define __DEM_L2_GAME_LEVEL_H__
 
-// Represents one game location, including all entities in it and property worlds (physics, AI, scene)
+// Represents one game location, including all entities in it and property worlds (physics, AI, scene).
+// Game server allows to perform different queries on a location.
 
 #include <Core/RefCounted.h>
 #include <Scripting/ScriptObject.h> //???fwd decl?
+#include <mathlib/rectangle.h>
 
 namespace Scene
 {
@@ -15,6 +17,7 @@ namespace Scene
 namespace Physics
 {
 	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
+	typedef int CMaterialType;
 }
 
 namespace AI
@@ -24,6 +27,17 @@ namespace AI
 
 namespace Game
 {
+class CEntity;
+
+struct CSurfaceInfo
+{
+	//float					TerrainHeight;
+	float					WorldHeight;
+	Physics::CMaterialType	Material;
+	//???where to ignore dynamic/AI objects, where not to?
+	//???how to check multilevel ground (bridge above a road etc)?
+	//???how to check is point inside world geom?
+};
 
 class CGameLevel: public Core::CRefCounted
 {
@@ -44,8 +58,24 @@ public:
 	void			RenderScene();
 	void			RenderDebug();
 
+	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
+
+	// Screen queries
+	CEntity*		GetEntityAtScreenPos(float RelX, float RelY) const; //???write 2 versions, physics-based and mesh-based?
+	DWORD			GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const;
+	bool			GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+	bool			GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
+	bool			GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+
+	// Physics-based queries
+	DWORD			GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const;
+	DWORD			GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const;
+	bool			GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f /*, //!!!FILTER!*/) const;
+
 	CStrID			GetID() const { return ID; }
 	const nString&	GetName() const { return Name; }
+
+	Physics::CPhysicsLevel*	GetPhysicsLevel() const { return PhysicsLevel.GetUnsafe(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

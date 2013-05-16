@@ -48,7 +48,8 @@ public:
 	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	Update();
 
-	void			GetRay3D(float RelX, float RelY, float Length, line3& OutRay);
+	void			GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const;
+	void			GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const;
 
 	void			SetPerspectiveMode() { if (Flags.Is(Orthogonal)) { Flags.Clear(Orthogonal); Flags.Set(ProjDirty); } }
 	void			SetOrthogonalMode() { if (!Flags.Is(Orthogonal)) { Flags.Set(Orthogonal); Flags.Set(ProjDirty); } }

@@ -9,7 +9,6 @@
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
 #include <DB/DBServer.h>
-#include <Loading/EntityFactory.h>
 
 namespace Attr
 {
@@ -43,9 +42,7 @@ END_ATTRS_REGISTRATION
 
 namespace Properties
 {
-__ImplementClassNoFactory(Properties::CPropChaseCamera, Properties::CPropCamera);
-__ImplementClass(Properties::CPropChaseCamera);
-RegisterProperty(CPropChaseCamera);
+__ImplementClass(Properties::CPropChaseCamera, 'PCHC', Properties::CPropCamera);
 
 using namespace Game;
 
@@ -113,10 +110,10 @@ bool CPropChaseCamera::OnPropsActivated(const Events::CEventBase& Event)
 	Node->Controller = Ctlr;
 	Ctlr->Activate(true);
 
-	Ctlr->SetVerticalAngleLimits(n_deg2rad(GetEntity()->Get<float>(Attr::CameraLowStop)),
-		n_deg2rad(GetEntity()->Get<float>(Attr::CameraHighStop)));
-	Ctlr->SetDistanceLimits(GetEntity()->Get<float>(Attr::CameraMinDistance),
-		GetEntity()->Get<float>(Attr::CameraMaxDistance));
+	Ctlr->SetVerticalAngleLimits(n_deg2rad(GetEntity()->GetAttr<float>(Attr::CameraLowStop)),
+		n_deg2rad(GetEntity()->GetAttr<float>(Attr::CameraHighStop)));
+	Ctlr->SetDistanceLimits(GetEntity()->GetAttr<float>(Attr::CameraMinDistance),
+		GetEntity()->GetAttr<float>(Attr::CameraMaxDistance));
 	Ctlr->SetAngles(Angles.theta, Angles.phi);
 	Ctlr->SetDistance(Distance);
 
@@ -130,8 +127,8 @@ void CPropChaseCamera::OnObtainCameraFocus()
 	// that we get a smooth interpolation to the new position
 	//Graphics::CCameraEntity* pCamera = RenderSrv->GetDisplay().GetCamera();
 	//const matrix44& Tfm = pCamera->GetTransform();
-	//Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), Tfm.Translation());
-	//Lookat.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain),
+	//Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->GetAttr<float>(Attr::CameraLinearGain), Tfm.Translation());
+	//Lookat.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->GetAttr<float>(Attr::CameraAngularGain),
 	//	Tfm.Translation() - (Tfm.AxisZ() * 10.0f));
 
 	SceneSrv->GetCurrentScene()->SetMainCamera(Camera);
@@ -158,7 +155,7 @@ bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
 {
 	const Event::CameraOrbit& e = (const Event::CameraOrbit&)Event;
 	float dt = (float)TimeSrv->GetFrameTime();
-	float AngVel = n_deg2rad(GetEntity()->Get<float>(Attr::CameraAngularVelocity));
+	float AngVel = n_deg2rad(GetEntity()->GetAttr<float>(Attr::CameraAngularVelocity));
 
 	if (e.DirHoriz != 0)
 		Angles.phi += AngVel * dt * (float)e.DirHoriz;
@@ -167,8 +164,8 @@ bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
 
 	Angles.phi += e.AngleHoriz;
 	Angles.theta = n_clamp(Angles.theta + e.AngleVert,
-						n_deg2rad(GetEntity()->Get<float>(Attr::CameraLowStop)),
-						n_deg2rad(GetEntity()->Get<float>(Attr::CameraHighStop)));
+						n_deg2rad(GetEntity()->GetAttr<float>(Attr::CameraLowStop)),
+						n_deg2rad(GetEntity()->GetAttr<float>(Attr::CameraHighStop)));
 
 	if (Ctlr.IsValid())
 	{
@@ -183,12 +180,12 @@ bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
 bool CPropChaseCamera::OnCameraDistanceChange(const CEventBase& Event)
 {
 	Distance = n_clamp(
-		Distance + ((const Event::CameraDistance&)Event).RelChange * GetEntity()->Get<float>(Attr::CameraDistanceStep),
-		GetEntity()->Get<float>(Attr::CameraMinDistance),
-		GetEntity()->Get<float>(Attr::CameraMaxDistance));
+		Distance + ((const Event::CameraDistance&)Event).RelChange * GetEntity()->GetAttr<float>(Attr::CameraDistanceStep),
+		GetEntity()->GetAttr<float>(Attr::CameraMinDistance),
+		GetEntity()->GetAttr<float>(Attr::CameraMaxDistance));
 
 	if (Ctlr.IsValid())
-		Ctlr->Zoom(((const Event::CameraDistance&)Event).RelChange * GetEntity()->Get<float>(Attr::CameraDistanceStep));
+		Ctlr->Zoom(((const Event::CameraDistance&)Event).RelChange * GetEntity()->GetAttr<float>(Attr::CameraDistanceStep));
 
 	OK;
 }
@@ -235,10 +232,10 @@ vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
 void CPropChaseCamera::UpdateCamera()
 {
 	// compute the lookat point in global space
-	const matrix44& m44 = GetEntity()->Get<matrix44>(Attr::Transform);
+	const matrix44& m44 = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	matrix33 m33 = matrix33(m44.AxisX(), m44.AxisY(), m44.AxisZ());
 	vector3 Offset;
-	GetEntity()->Get<vector3>(Attr::CameraOffset, Offset);
+	GetEntity()->GetAttr<vector3>(Attr::CameraOffset, Offset);
 	vector3 lookatPoint = m44.Translation() + m33 * Offset;
 
 	// compute the collided goal position
@@ -255,8 +252,8 @@ void CPropChaseCamera::UpdateCamera()
 	//const vector3& camPos = pCamera->GetTransform().Translation();
 	//if (camPos.isequal(vector3::Zero, 0.0f))
 	//{
-	//	Position.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraLinearGain), goalPos);
-	//	Lookat.Reset(Time, 0.0001f, GetEntity()->Get<float>(Attr::CameraAngularGain), lookatPoint);
+	//	Position.Reset(Time, 0.0001f, GetEntity()->GetAttr<float>(Attr::CameraLinearGain), goalPos);
+	//	Lookat.Reset(Time, 0.0001f, GetEntity()->GetAttr<float>(Attr::CameraAngularGain), lookatPoint);
 	//}
 
 	// feed and update the feedback loops
@@ -277,9 +274,9 @@ void CPropChaseCamera::UpdateCamera()
 
 void CPropChaseCamera::ResetCamera()
 {
-	Angles.set(GetEntity()->Get<matrix44>(Attr::Transform).AxisZ());
-	Angles.theta = n_deg2rad(GetEntity()->Get<float>(Attr::CameraDefaultTheta));
-	Distance = GetEntity()->Get<float>(Attr::CameraDistance);
+	Angles.set(GetEntity()->GetAttr<matrix44>(CStrID("Transform")).AxisZ());
+	Angles.theta = n_deg2rad(GetEntity()->GetAttr<float>(Attr::CameraDefaultTheta));
+	Distance = GetEntity()->GetAttr<float>(Attr::CameraDistance);
 }
 //---------------------------------------------------------------------
 

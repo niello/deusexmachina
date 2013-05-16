@@ -75,15 +75,6 @@ void CMemSystem::Update()
 }
 //---------------------------------------------------------------------
 
-CMemFact* CMemSystem::AddFact(const Core::CRTTI& Type)
-{
-	// remember list count
-	CMemFactNode* pNode = Facts.Add((CMemFact*)Factory->Create(Type));
-	// if list count changed, build validation sensor list for Type
-	return pNode->Object;
-}
-//---------------------------------------------------------------------
-
 CMemFact* CMemSystem::FindFact(const CMemFact& Pattern, CFlags FieldMask)
 {
 	CMemFactNode* pCurr = Facts.GetHead(Pattern.GetKey());

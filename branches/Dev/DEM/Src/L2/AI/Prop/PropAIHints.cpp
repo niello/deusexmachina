@@ -3,7 +3,6 @@
 #include <Game/Entity.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/Prop/PropPhysics.h>
-#include <Loading/EntityFactory.h>
 #include <AI/AIServer.h>
 #include <Render/DebugDraw.h>
 #include <Data/DataServer.h>
@@ -71,12 +70,12 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 
 	//???need to cache?
 	Data::PParams Desc;
-	const nString& DescName = GetEntity()->Get<nString>(Attr::AIHintsDesc);
+	const nString& DescName = GetEntity()->GetAttr<nString>(CStrID("AIHintsDesc"));
 	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(nString("aihints:") + DescName + ".prm");
 
 	if (Desc.IsValid())
 	{
-		const vector3& Pos = GetEntity()->Get<matrix44>(Attr::Transform).Translation();
+		const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
 
 		Hints.Clear();
 		Hints.BeginAdd();
@@ -126,8 +125,8 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			}
 			else if (SizeStr == "Attr")
 			{
-				Rec.Stimulus->Radius = GetEntity()->Get<float>(Attr::Radius);
-				//!!!Rec.Stimulus->Height = GetEntity()->Get<float>(Attr::Height);
+				Rec.Stimulus->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"));
+				//!!!Rec.Stimulus->Height = GetEntity()->GetAttr<float>(CStrID("Height"));
 			}
 
 			//???Rec.Stimulus->Init(PrmVal);
@@ -169,7 +168,7 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 
 bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 {
-	const vector3& Pos = GetEntity()->Get<matrix44>(Attr::Transform).Translation();
+	const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
 	
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{

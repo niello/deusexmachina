@@ -6,7 +6,7 @@
 #include <Events/EventManager.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 #include <DB/Dataset.h>
 #include <DB/Database.h>
 #include <DB/DBServer.h>
@@ -36,8 +36,8 @@ using namespace Data;
 
 CQuestManager::CQuestManager()
 {
-    n_assert(!Singleton);
-    Singleton = this;
+	__ConstructSingleton;
+
 	IOSrv->SetAssign("quests", "game:quests");
 	SUBSCRIBE_PEVENT(OnLoad, CQuestManager, OnLoad);
 	SUBSCRIBE_PEVENT(OnSave, CQuestManager, OnSave);
@@ -48,8 +48,8 @@ CQuestManager::~CQuestManager()
 {
 	UNSUBSCRIBE_EVENT(OnLoad);
 	UNSUBSCRIBE_EVENT(OnSave);
-    n_assert(Singleton);
-    Singleton = NULL;
+
+	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 

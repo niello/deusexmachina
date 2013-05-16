@@ -44,6 +44,22 @@ public:
 	bool	Open();
 	void	Close();
 	void	Trigger();
+
+	//!!!can get entity under mouse here! ActiveLevel->GetEntityAtScreenPos(mouse.x, mouse.y)
+	//SEE commented OnFrame method in the cpp
+	//
+	//CStrID	EntityUnderMouse; - if already deleted, repeat request?
+	//vector3	MousePos3D;
+	//vector3	UpVector;
+	//bool	MouseIntersection;
+	//EntityUnderMouse(CStrID::Empty),
+	//MouseIntersection(false)
+	//bool			HasMouseIntersection() const { return MouseIntersection; }
+	//CEntity*		GetEntityUnderMouse() const; //???write 2 versions, physics-based and mesh-based?
+	//const vector3&	GetMousePos3D() const { return MousePos3D; }
+	//const vector3&	GetUpVector() const { return UpVector; }
+
+	//!!!remove and use GetActiveLevel!
 	void	RenderCurrentLevel() { if (ActiveLevel.IsValid()) ActiveLevel->RenderScene(); }
 	void	RenderCurrentLevelDebug() { if (ActiveLevel.IsValid()) ActiveLevel->RenderDebug(); }
 
@@ -53,6 +69,7 @@ public:
 	bool	LoadLevel(CStrID ID, const Data::CParams& Desc);
 	void	UnloadLevel(CStrID ID);
 	void	SetActiveLevel(CStrID ID);
+	//!!!GetActiveLevel!
 	bool	StartGame(const nString& FileName);
 	bool	SaveGame(const nString& Name);
 	bool	LoadGame(const nString& Name);

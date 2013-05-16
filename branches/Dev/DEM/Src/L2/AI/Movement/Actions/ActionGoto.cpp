@@ -4,8 +4,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionGoto, AI::CAction);
-__ImplementClass(AI::CActionGoto);
+__ImplementClass(AI::CActionGoto, 'AGTO', AI::CAction);
 
 //bool CActionGoto::Activate(CActor* pActor)
 //{

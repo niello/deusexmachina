@@ -10,6 +10,7 @@
 
 namespace Game
 {
+class CGameLevel;
 
 class IEntityLoader: public Core::CRefCounted
 {
@@ -17,7 +18,7 @@ class IEntityLoader: public Core::CRefCounted
 
 public:
 
-	virtual bool Load(CStrID UID, CStrID LevelID, Data::PParams Desc) = 0;
+	virtual bool Load(CStrID UID, CGameLevel& Level, Data::PParams Desc) = 0;
 };
 
 typedef Ptr<IEntityLoader> PEntityLoader;

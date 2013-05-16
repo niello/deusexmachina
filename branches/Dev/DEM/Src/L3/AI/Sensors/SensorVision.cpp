@@ -14,8 +14,7 @@ namespace Attr
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CSensorVision, AI::CSensor);
-__ImplementClass(AI::CSensorVision);
+__ImplementClass(AI::CSensorVision, 'SEVI', AI::CSensor);
 
 void CSensorVision::Init(const CParams& Desc)
 {

@@ -6,7 +6,6 @@
 #include <Events/Subscription.h>
 #include <Scene/PropSceneNode.h>
 #include <Math/TransformSRT.h>
-#include <Loading/EntityFactory.h>
 
 namespace Properties
 {

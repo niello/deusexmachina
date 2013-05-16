@@ -4,7 +4,7 @@
 #include <Items/ItemAttrs.h>
 #include <Loading/LoaderServer.h>
 #include <Data/Params.h>
-#include <Data/DataServer.h>
+#include <IO/IOServer.h>
 #include <Events/EventManager.h>
 #include <DB/Database.h>
 
@@ -13,15 +13,14 @@ extern const nString CommaFrag;
 namespace Items
 {
 __ImplementClassNoFactory(Items::CItemManager, Core::CRefCounted);
-__ImplementClass(Items::CItemManager);
+__ImplementSingleton(Items::CItemManager);
 
-CItemManager* CItemManager::Singleton = NULL;
 int CItemManager::LargestItemStackID = 0;
 
 CItemManager::CItemManager(): InitialVTRowCount(0)
 {
-	n_assert(!Singleton);
-	Singleton = this;
+	__ConstructSingleton;
+
 	IOSrv->SetAssign("items", "game:items");
 	if (LoaderSrv->HasGlobal(Attr::LargestItemStackID))
 		LargestItemStackID = LoaderSrv->GetGlobal<int>(Attr::LargestItemStackID);
@@ -37,14 +36,13 @@ CItemManager::CItemManager(): InitialVTRowCount(0)
 
 CItemManager::~CItemManager()
 {
-	n_assert(Singleton);
-	Singleton = NULL;
+	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
-Ptr<CItemTpl> CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
+PItemTpl CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
 {
-	Ptr<CItemTpl> Tpl =
+	PItemTpl Tpl =
 		(CItemTpl*)Factory->Create(nString("Items::CItemTpl") + Params.Get<nString>(CStrID("Type"), NULL));
 	n_assert(Tpl.IsValid());
 	Tpl->Init(ID, Params);
@@ -52,9 +50,9 @@ Ptr<CItemTpl> CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
 }
 //---------------------------------------------------------------------
 
-Ptr<CItemTpl> CItemManager::GetItemTpl(CStrID ID)
+PItemTpl CItemManager::GetItemTpl(CStrID ID)
 {
-	Ptr<CItemTpl> Tpl;
+	PItemTpl Tpl;
 	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
 	else
 	{
@@ -66,7 +64,7 @@ Ptr<CItemTpl> CItemManager::GetItemTpl(CStrID ID)
 			ItemTplRegistry.Add(ID, Tpl);
 			return Tpl;
 		}
-		else return Ptr<CItemTpl>();
+		else return PItemTpl();
 	}
 }
 //---------------------------------------------------------------------

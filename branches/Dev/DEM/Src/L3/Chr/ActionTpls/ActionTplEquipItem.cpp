@@ -13,8 +13,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionTplEquipItem, AI::CActionTpl);
-__ImplementClass(AI::CActionTplEquipItem);
+__ImplementClass(AI::CActionTplEquipItem, 'ATEI', AI::CActionTpl);
 
 using namespace Properties;
 

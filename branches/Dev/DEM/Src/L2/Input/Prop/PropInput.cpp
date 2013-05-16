@@ -1,7 +1,6 @@
 #include "PropInput.h"
 
 #include <Game/Mgr/FocusManager.h>
-#include <Loading/EntityFactory.h>
 
 namespace Properties
 {

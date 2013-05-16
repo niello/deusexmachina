@@ -7,8 +7,7 @@
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CDlgNodePhrase, Story::CDlgNode);
-__ImplementClass(Story::CDlgNodePhrase);
+__ImplementClass(Story::CDlgNodePhrase, 'DLNP', Story::CDlgNode);
 
 void CDlgNodePhrase::OnEnter(CActiveDlg& Dlg)
 {
