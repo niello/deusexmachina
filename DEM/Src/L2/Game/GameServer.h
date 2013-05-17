@@ -11,9 +11,6 @@
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
 // from L2 & L3 (like dialogue, quest and item managers).
 
-//???env queries to CGameLevel?
-//???entity quadtree?
-
 namespace Game
 {
 class Entity;
@@ -41,9 +38,9 @@ public:
 	CGameServer();
 	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
 
-	bool	Open();
-	void	Close();
-	void	Trigger();
+	bool		Open();
+	void		Close();
+	void		Trigger();
 
 	//!!!can get entity under mouse here! ActiveLevel->GetEntityAtScreenPos(mouse.x, mouse.y)
 	//SEE commented OnFrame method in the cpp
@@ -60,19 +57,19 @@ public:
 	//const vector3&	GetUpVector() const { return UpVector; }
 
 	//!!!remove and use GetActiveLevel!
-	void	RenderCurrentLevel() { if (ActiveLevel.IsValid()) ActiveLevel->RenderScene(); }
-	void	RenderCurrentLevelDebug() { if (ActiveLevel.IsValid()) ActiveLevel->RenderDebug(); }
+	void		RenderCurrentLevel() { if (ActiveLevel.IsValid()) ActiveLevel->RenderScene(); }
+	void		RenderCurrentLevelDebug() { if (ActiveLevel.IsValid()) ActiveLevel->RenderDebug(); }
 
-	void	SetEntityLoader(CStrID Group, PEntityLoader Loader);
-	void	ClearEntityLoader(CStrID Group);
+	void		SetEntityLoader(CStrID Group, PEntityLoader Loader);
+	void		ClearEntityLoader(CStrID Group);
 
-	bool	LoadLevel(CStrID ID, const Data::CParams& Desc);
-	void	UnloadLevel(CStrID ID);
-	void	SetActiveLevel(CStrID ID);
-	//!!!GetActiveLevel!
-	bool	StartGame(const nString& FileName);
-	bool	SaveGame(const nString& Name);
-	bool	LoadGame(const nString& Name);
+	bool		LoadLevel(CStrID ID, const Data::CParams& Desc);
+	void		UnloadLevel(CStrID ID);
+	void		SetActiveLevel(CStrID ID);
+	CGameLevel*	GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
+	bool		StartGame(const nString& FileName);
+	bool		SaveGame(const nString& Name);
+	bool		LoadGame(const nString& Name);
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
 

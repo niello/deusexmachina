@@ -6,7 +6,7 @@
 #include <Physics/PhysicsLevel.h>
 #include <Physics/Joints/AMotor.h>
 #include <Physics/Ragdoll.h>
-#include <Game/Mgr/EnvQueryManager.h>
+#include <Game/GameLevel.h>
 
 extern const matrix44 Rotate180(
 	-1.f, 0.f,  0.f, 0.f,
@@ -16,8 +16,7 @@ extern const matrix44 Rotate180(
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCharEntity, Physics::CEntity);
-__ImplementClass(Physics::CCharEntity);
+__ImplementClass(Physics::CCharEntity, 'PCEN', Physics::CEntity);
 
 static const vector3 UpVector(0.0f, 1.0f, 0.0f);
 
@@ -123,15 +122,16 @@ void CCharEntity::OnStepBefore()
 {
 	if (IsCollisionEnabled() && !IsRagdollActive())
 	{
-		CEnvInfo EnvInfo;
+		Game::CSurfaceInfo SurfInfo;
 		vector3 Pos = GetTransform().Translation();
 		Pos.y += Height;
 
+		// EPS
 		float DistanceToGround;
-		if (EnvQueryMgr->GetEnvInfoAt(Pos, EnvInfo, Height + 0.1f, GetUID()))
+		if (false) //EnvQueryMgr->GetEnvInfoAt(Pos, SurfInfo, Height + 0.1f, GetUID()))
 		{
-			DistanceToGround = Pos.y - Height - EnvInfo.WorldHeight;
-			GroundMtl = EnvInfo.Material;
+			DistanceToGround = Pos.y - Height - SurfInfo.WorldHeight;
+			GroundMtl = SurfInfo.Material;
 		}
 		else
 		{

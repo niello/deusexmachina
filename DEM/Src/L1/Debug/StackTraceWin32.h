@@ -16,12 +16,12 @@ protected:
 
 	struct CParams
 	{
-		CStackTraceWin32* self;
-		DWORD64 base;
+		CStackTraceWin32*	pSelf;
+		DWORD64				Base;
 	};
 
-	static char CharBuffer[1<<15];
-	HANDLE hProcess;
+	static char	CharBuffer[1 << 15];
+	HANDLE		hProcess;
 
 	static BOOL CALLBACK EnumSymbolsCallback(PSYMBOL_INFO symbol, ULONG symbolSize, PVOID userContext);
 

@@ -9,8 +9,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CRagdoll, Physics::CComposite);
-__ImplementClass(Physics::CRagdoll);
+__ImplementClass(Physics::CRagdoll, 'RGDL', Physics::CComposite);
 
 CRagdoll::~CRagdoll()
 {

@@ -6,16 +6,16 @@
 #include <Events/EventManager.h>
 #include <Video/VideoServer.h>
 #include <Input/InputServer.h>
+#include <Core/CoreServer.h>
 
 namespace App
 {
 __ImplementClassNoFactory(App::CPlayVideoHandler, App::CStateHandler);
-//__ImplementClass(App::CPlayVideoHandler);
 
 void CPlayVideoHandler::OnStateEnter(CStrID PrevState, PParams Params)
 {
 	TimeSrv->ResetAll();
-	TimeSrv->Update();
+	TimeSrv->Trigger();
 	CStateHandler::OnStateEnter(PrevState);
 	n_assert(VideoFileName.IsValid());
 	VideoSrv->ScalingEnabled = EnableScaling;
@@ -27,7 +27,7 @@ CStrID CPlayVideoHandler::OnFrame()
 {
 	CStrID ReturnState = ID;
 
-	TimeSrv->Update();
+	TimeSrv->Trigger();
 	DbgSrv->Trigger();
 	EventMgr->ProcessPendingEvents();
 

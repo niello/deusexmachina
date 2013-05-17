@@ -14,7 +14,6 @@ using namespace Core;
 namespace Physics
 {
 __ImplementClassNoFactory(Physics::CPhysicsLevel, Core::CRefCounted);
-__ImplementClass(Physics::CPhysicsLevel);
 
 CPhysicsLevel::CPhysicsLevel() :
 #ifdef DEM_STATS

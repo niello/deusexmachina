@@ -7,8 +7,6 @@
 #include <IO/IO.h>
 #include <util/HashMap.h>
 
-#undef DeleteFile
-
 // IO server manages input/output, file systems, generic file caching, path assigns
 
 //!!!implement file caching if needed!

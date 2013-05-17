@@ -12,7 +12,6 @@
 #include <Input/Events/MouseMoveRaw.h>
 #include <Input/Events/MouseWheel.h>
 #include <Game/Mgr/FocusManager.h>
-#include <Game/Mgr/EnvQueryManager.h>
 #include <Camera/Event/CameraOrbit.h>
 #include <Camera/Event/CameraDistance.h>
 
@@ -90,7 +89,9 @@ bool CPropPlrCharacterInput::OnMouseWheel(const Events::CEventBase& Event)
 
 bool CPropPlrCharacterInput::OnMouseClick(Input::EMouseButton Button, bool Double)
 {
-    if (EnvQueryMgr->HasMouseIntersection())
+	//EPS
+	//???!!!cache?
+    /*if (EnvQueryMgr->HasMouseIntersection())
     {
 		Game::CEntity* pEnt = EnvQueryMgr->GetEntityUnderMouse();
 		CPropUIControl* pCtl = (pEnt) ? pEnt->GetProperty<CPropUIControl>() : NULL;
@@ -127,7 +128,7 @@ bool CPropPlrCharacterInput::OnMouseClick(Input::EMouseButton Button, bool Doubl
 			}
 		}
     }
-
+*/
 	FAIL;
 }
 //---------------------------------------------------------------------

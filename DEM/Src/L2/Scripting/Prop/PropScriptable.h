@@ -41,7 +41,6 @@ public:
 
 	virtual void	Activate();
 	virtual void	Deactivate();
-	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 
 	//???or hide & add RunFunction calls here?
 	PEntityScriptObject GetScriptObject() const { return Obj; }

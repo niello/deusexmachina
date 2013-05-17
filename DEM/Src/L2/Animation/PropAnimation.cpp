@@ -33,13 +33,6 @@ __ImplementPropertyStorage(CPropAnimation);
 
 using namespace Data;
 
-void CPropAnimation::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	CProperty::GetAttributes(Attrs);
-	Attrs.Append(Attr::AnimDesc);
-}
-//---------------------------------------------------------------------
-
 void CPropAnimation::Activate()
 {
 	Game::CProperty::Activate();
@@ -79,7 +72,7 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 
 //!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	PParams Desc;
-	const nString& AnimDesc = GetEntity()->GetAttr<nString>(Attr::AnimDesc);
+	const nString& AnimDesc = GetEntity()->GetAttr<nString>(CStrID("AnimDesc"));
 	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("game:Anim/") + AnimDesc + ".prm");
 
 	if (Desc.IsValid())

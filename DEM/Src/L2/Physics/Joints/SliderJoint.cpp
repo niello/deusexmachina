@@ -4,8 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CSliderJoint, Physics::CJoint);
-__ImplementClass(Physics::CSliderJoint);
+__ImplementClass(Physics::CSliderJoint, 'JSLD', Physics::CJoint);
 
 CSliderJoint::CSliderJoint()
 {

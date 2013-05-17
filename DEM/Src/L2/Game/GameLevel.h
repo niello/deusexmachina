@@ -2,12 +2,14 @@
 #ifndef __DEM_L2_GAME_LEVEL_H__
 #define __DEM_L2_GAME_LEVEL_H__
 
-// Represents one game location, including all entities in it and property worlds (physics, AI, scene).
-// Game server allows to perform different queries on a location.
-
 #include <Core/RefCounted.h>
 #include <Scripting/ScriptObject.h> //???fwd decl?
 #include <mathlib/rectangle.h>
+
+// Represents one game location, including all entities in it and property worlds (physics, AI, scene).
+// Game server allows to perform different queries on a location.
+
+//???need entity quadtree? or always use physics or mesh AABBs and respective world's spatial query
 
 namespace Scene
 {
@@ -75,6 +77,7 @@ public:
 	CStrID			GetID() const { return ID; }
 	const nString&	GetName() const { return Name; }
 
+	Scene::CScene*	GetScene() const { return Scene.GetUnsafe(); }
 	Physics::CPhysicsLevel*	GetPhysicsLevel() const { return PhysicsLevel.GetUnsafe(); }
 };
 

@@ -55,6 +55,8 @@ bool CDebugServer::RegisterPlugin(CStrID Name, LPCSTR CppClassName, LPCSTR UIRes
 }
 //---------------------------------------------------------------------
 
+//???instead of this subscribe always and inside check UIServer::HasInstance()?
+//UI server must destruct plugin windows correctly on its destruction!
 void CDebugServer::AllowUI(bool Allow)
 {
 	UIAllowed = Allow;

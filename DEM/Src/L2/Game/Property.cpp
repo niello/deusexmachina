@@ -9,6 +9,11 @@ __ImplementClassNoFactory(Game::CProperty, Core::CRefCounted);
 IMPL_EVENT_HANDLER_VIRTUAL(OnEntityActivated, CProperty, Activate);
 IMPL_EVENT_HANDLER_VIRTUAL(OnEntityDeactivated, CProperty, Deactivate);
 
+CProperty::~CProperty()
+{
+}
+//---------------------------------------------------------------------
+
 void CProperty::SetEntity(CEntity* pNewEntity)
 {
 	if (pNewEntity == pEntity) return;

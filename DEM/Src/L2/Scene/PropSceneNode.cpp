@@ -1,6 +1,7 @@
 #include "PropSceneNode.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Model.h>
 #include <DB/DBServer.h>
@@ -37,13 +38,12 @@ void CPropSceneNode::Activate()
 	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
 		NodePath = GetEntity()->GetUID().CStr();
 	
-	//!!!get level from entity and attach to it!
 	if (NodePath.IsValid())
 	{
 		//???optimize duplicate search?
-		Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), false);
+		Node = GetEntity()->GetLevel().GetScene()->GetNode(NodePath.CStr(), false);
 		ExistingNode = Node.IsValid();
-		if (!ExistingNode) Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), true);
+		if (!ExistingNode) Node = GetEntity()->GetLevel().GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));

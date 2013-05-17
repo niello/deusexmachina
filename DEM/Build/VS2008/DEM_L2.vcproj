@@ -811,18 +811,6 @@
 			</Filter>
 		</Filter>
 		<Filter
-			Name="Loading"
-			>
-			<File
-				RelativePath="..\..\Src\L2\Loading\LoaderServer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Loading\LoaderServer.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="Game"
 			>
 			<File

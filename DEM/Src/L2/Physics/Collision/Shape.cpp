@@ -247,7 +247,7 @@ void CShape::Collide(const CFilterSet& FilterSet, nArray<CContactPoint>& Contact
 	Contacts.Reset();
 	CShape::CollideContacts = &Contacts;
 	CShape::CollideFilterSet = &FilterSet;
-	dSpaceCollide2((dGeomID)PhysicsSrv->GetLevel()->GetODECommonSpaceID(), ODEGeomID, this, &ODENearCallback);
+	//dSpaceCollide2((dGeomID)PhysicsSrv->GetLevel()->GetODECommonSpaceID(), ODEGeomID, this, &ODENearCallback);
 }
 //---------------------------------------------------------------------
 
