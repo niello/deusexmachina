@@ -47,8 +47,6 @@ public:
 	virtual void		GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };
 
-__RegisterClassInFactory(CActionUseSmartObj);
-
 typedef Ptr<CActionUseSmartObj> PActionUseSmartObj;
 
 }

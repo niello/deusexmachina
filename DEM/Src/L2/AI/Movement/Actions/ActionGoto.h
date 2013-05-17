@@ -34,8 +34,6 @@ public:
 	virtual bool		IsValid(CActor* pActor) const;
 };
 
-__RegisterClassInFactory(CActionGoto);
-
 typedef Ptr<CActionGoto> PActionGoto;
 
 }

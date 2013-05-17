@@ -19,8 +19,6 @@ public:
 
 };
 
-__RegisterClassInFactory(CStimulusSound);
-
 typedef Ptr<CStimulusSound> PStimulusSound;
 
 }

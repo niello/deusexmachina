@@ -25,8 +25,6 @@ public:
 	virtual void RenderDebug();
 };
 
-__RegisterClassInFactory(CBallJoint);
-
 }
 
 #endif

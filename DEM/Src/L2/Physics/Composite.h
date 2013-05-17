@@ -105,8 +105,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CComposite);
-
 typedef Ptr<CComposite> PComposite;
 
 inline bool CComposite::HasBodyWithName(const nString& Name) const

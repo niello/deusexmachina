@@ -26,8 +26,6 @@ public:
 	virtual EExecStatus	Update(CActor* pActor);
 };
 
-__RegisterClassInFactory(CActionGotoTarget);
-
 typedef Ptr<CActionGotoTarget> PActionGotoTarget;
 
 }

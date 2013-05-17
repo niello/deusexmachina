@@ -54,8 +54,6 @@ public:
 	void			GetGlobalAABB(bbox3& OutBox) const;
 };
 
-__RegisterClassInFactory(CModel);
-
 typedef Ptr<CModel> PModel;
 
 }

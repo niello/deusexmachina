@@ -21,8 +21,6 @@ public:
 	virtual void GetDesiredProps(CWorldState& Dest);
 };
 
-__RegisterClassInFactory(CGoalIdle);
-
 }
 
 #endif

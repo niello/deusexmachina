@@ -15,7 +15,7 @@
 
 namespace Debug
 {
-__ImplementClass(Debug::CLuaConsole, 'DLUA', UI::CWindow);
+__ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CRefCounted); //UI::CWindow);
 
 void CLuaConsole::Init(CEGUI::Window* pWindow)
 {

@@ -40,8 +40,6 @@ public:
 	DWORD			GetHFHeight() const { return Height; }
 };
 
-__RegisterClassInFactory(CHeightfieldShape);
-
 }
 
 #endif

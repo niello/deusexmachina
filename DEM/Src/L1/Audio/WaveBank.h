@@ -49,8 +49,6 @@
 //};
 ////---------------------------------------------------------------------
 //
-//__RegisterClassInFactory(CWaveBank);
-//
 //typedef Ptr<CWaveBank> PWaveBank;
 //
 //inline void CWaveBank::SetFilename(const nString& FileName)

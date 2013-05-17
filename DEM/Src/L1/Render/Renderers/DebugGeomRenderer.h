@@ -21,8 +21,6 @@ public:
 	virtual void	Render();
 };
 
-__RegisterClassInFactory(CDebugGeomRenderer);
-
 typedef Ptr<CDebugGeomRenderer> PDebugGeomRenderer;
 
 }

@@ -24,8 +24,6 @@ public:
 	CameraOrbit(float AngleH, float AngleV): AngleHoriz(AngleH), AngleVert(AngleV), DirHoriz(0), DirVert(0) { }
 };
 
-__RegisterClassInFactory(CameraOrbit);
-
 }
 
 #endif

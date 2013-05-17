@@ -21,8 +21,6 @@ public:
 	virtual void	Render();
 };
 
-__RegisterClassInFactory(CDebugTextRenderer);
-
 typedef Ptr<CDebugTextRenderer> PDebugTextRenderer;
 
 }

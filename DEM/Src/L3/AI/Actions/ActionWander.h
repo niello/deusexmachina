@@ -33,8 +33,6 @@ public:
 	//virtual bool		IsValid() const { return ppCurrChild && (*ppCurrChild)->IsValid(); }
 };
 
-__RegisterClassInFactory(CActionWander);
-
 typedef Ptr<CActionWander> PActionWander;
 
 }

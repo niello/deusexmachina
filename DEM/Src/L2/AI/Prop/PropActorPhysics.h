@@ -45,8 +45,6 @@ public:
 	virtual Physics::CEntity* GetPhysicsEntity() const;
 };
 
-__RegisterClassInFactory(CPropActorPhysics);
-
 }
 
 #endif

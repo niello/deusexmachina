@@ -73,8 +73,6 @@ public:
 	const matrix44&	GetViewProjMatrix() const { return ViewProj; }
 };
 
-__RegisterClassInFactory(CCamera);
-
 typedef Ptr<CCamera> PCamera;
 
 }

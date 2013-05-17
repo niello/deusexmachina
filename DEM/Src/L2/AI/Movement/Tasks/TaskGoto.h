@@ -32,8 +32,6 @@ public:
 	virtual bool	OnPlanSet(CActor* pActor);
 };
 
-__RegisterClassInFactory(CTaskGoto);
-
 typedef Ptr<CTaskGoto> PTaskGoto;
 
 }

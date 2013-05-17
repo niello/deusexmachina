@@ -104,8 +104,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CAudioEntity);
-
 inline void CAudioEntity::CopyFrom(const CAudioEntity& Other)
 {
 	*this = Other;

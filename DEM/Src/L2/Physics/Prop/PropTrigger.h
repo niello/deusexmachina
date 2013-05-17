@@ -78,8 +78,6 @@ public:
 	bool			IsEnabled() const { return Enabled; }
 };
 
-__RegisterClassInFactory(CPropTrigger);
-
 }
 
 #endif

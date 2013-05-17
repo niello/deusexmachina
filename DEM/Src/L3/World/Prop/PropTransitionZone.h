@@ -36,8 +36,6 @@ public:
 	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 };
 
-__RegisterClassInFactory(CPropTransitionZone);
-
 }
 
 #endif

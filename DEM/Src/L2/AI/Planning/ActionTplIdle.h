@@ -21,8 +21,6 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-__RegisterClassInFactory(CActionTplIdle);
-
 typedef Ptr<CActionTplIdle> PActionTplIdle;
 
 }

@@ -44,8 +44,6 @@ public:
 	void Unequip(CStrID SlotID);
 };
 
-__RegisterClassInFactory(CPropEquipment);
-
 }
 
 #endif

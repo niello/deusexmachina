@@ -19,8 +19,6 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-__RegisterClassInFactory(CDlgNodeRandom);
-
 }
 
 #endif

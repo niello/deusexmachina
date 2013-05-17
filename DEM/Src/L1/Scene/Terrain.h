@@ -70,8 +70,6 @@ public:
 	float				GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };
 
-__RegisterClassInFactory(CTerrain);
-
 typedef Ptr<CTerrain> PTerrain;
 
 inline void CTerrain::GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const

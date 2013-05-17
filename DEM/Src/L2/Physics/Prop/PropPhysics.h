@@ -42,8 +42,6 @@ public:
 	virtual Physics::CEntity* GetPhysicsEntity() const { return PhysicsEntity.GetUnsafe(); }
 };
 
-__RegisterClassInFactory(CPropPhysics);
-
 } // namespace Properties
 
 #endif

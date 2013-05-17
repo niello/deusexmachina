@@ -27,8 +27,6 @@ public:
 	virtual void	Render();
 };
 
-__RegisterClassInFactory(CUIRenderer);
-
 typedef Ptr<CUIRenderer> PUIRenderer;
 
 }

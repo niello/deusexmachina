@@ -25,8 +25,6 @@ public:
 	virtual void		Deactivate(CActor* pActor);
 };
 
-__RegisterClassInFactory(CActionSteerToPosition);
-
 }
 
 #endif

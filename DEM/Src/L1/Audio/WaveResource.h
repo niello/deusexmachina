@@ -37,8 +37,6 @@
 //	bool			IsPlaying() const;
 //};
 //
-//__RegisterClassInFactory(CWaveResource);
-//
 //}
 //
 //#endif

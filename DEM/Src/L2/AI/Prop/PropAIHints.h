@@ -55,8 +55,6 @@ public:
 	//DestroyStimulus(Name)
 };
 
-__RegisterClassInFactory(CPropAIHints);
-
 }
 
 #endif

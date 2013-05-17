@@ -122,8 +122,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CRigidBody);
-
 typedef Ptr<CRigidBody> PRigidBody;
 
 // Enable/disable the rigid body. Bodies which have reached a resting position

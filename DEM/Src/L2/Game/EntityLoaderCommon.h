@@ -18,8 +18,6 @@ public:
 	virtual bool Load(CStrID UID, CGameLevel& Level, Data::PParams Desc);
 };
 
-__RegisterClassInFactory(CEntityLoaderCommon);
-
 }
 
 #endif

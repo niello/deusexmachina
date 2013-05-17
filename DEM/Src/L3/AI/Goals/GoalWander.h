@@ -19,8 +19,6 @@ public:
 	virtual void GetDesiredProps(CWorldState& Dest);
 };
 
-__RegisterClassInFactory(CGoalWander);
-
 }
 
 #endif

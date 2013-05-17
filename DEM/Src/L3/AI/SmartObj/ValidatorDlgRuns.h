@@ -18,8 +18,6 @@ public:
 	virtual bool IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction);
 };
 
-__RegisterClassInFactory(CValidatorDlgRuns);
-
 typedef Ptr<CValidatorDlgRuns> PValidatorDlgRuns;
 
 }

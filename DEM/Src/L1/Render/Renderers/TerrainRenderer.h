@@ -95,8 +95,6 @@ public:
 	void			SetVisibilityRange(float Range) { n_assert(Range > 0.f); VisibilityRange = Range; }
 };
 
-__RegisterClassInFactory(CTerrainRenderer);
-
 typedef Ptr<CTerrainRenderer> PTerrainRenderer;
 
 inline CTerrainRenderer::CTerrainRenderer():

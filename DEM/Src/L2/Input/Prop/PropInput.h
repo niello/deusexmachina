@@ -49,8 +49,6 @@ public:
 	void			EnableInput(bool Enable);
 };
 
-__RegisterClassInFactory(CPropInput);
-
 }
 
 #endif

@@ -29,8 +29,6 @@ public:
 	float			GetRadius() const { return Radius; }
 };
 
-__RegisterClassInFactory(CSphereShape);
-
 }
 
 #endif

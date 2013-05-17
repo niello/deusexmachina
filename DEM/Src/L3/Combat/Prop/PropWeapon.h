@@ -79,8 +79,6 @@ public:
 	void			Strike(Game::CEntity& Target); //???destructible prop as arg?
 };
 
-__RegisterClassInFactory(CPropWeapon);
-
 }
 
 #endif

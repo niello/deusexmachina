@@ -25,8 +25,6 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-__RegisterClassInFactory(CActionTplUseSmartObj);
-
 typedef Ptr<CActionTplUseSmartObj> PActionTplUseSmartObj;
 
 }

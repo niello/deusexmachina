@@ -30,8 +30,6 @@ public:
 	virtual void Update();
 };
 
-__RegisterClassInFactory(CLODGroup);
-
 typedef Ptr<CLODGroup> PLODGroup;
 
 }

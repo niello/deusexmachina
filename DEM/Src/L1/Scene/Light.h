@@ -77,8 +77,6 @@ public:
 	float			GetCosHalfPhi() const { return CosHalfOuter; }
 };
 
-__RegisterClassInFactory(CLight);
-
 typedef Ptr<CLight> PLight;
 
 inline CLight::CLight():

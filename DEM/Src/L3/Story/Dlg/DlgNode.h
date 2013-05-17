@@ -24,9 +24,6 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-//__RegisterClassInFactory(CDlgNode);
-const bool CDlgNode_Registered = CDlgNode::RegisterInFactory();
-
 }
 
 #endif

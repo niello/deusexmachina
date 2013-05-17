@@ -11,6 +11,11 @@
 
 //???need entity quadtree? or always use physics or mesh AABBs and respective world's spatial query
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace Scene
 {
 	typedef Ptr<class CScene> PScene;

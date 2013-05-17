@@ -8,6 +8,7 @@
 #include <util/narray.h>
 #include <mathlib/vector.h>
 #include <mathlib/matrix.h>
+#include <util/Hash.h>
 
 // Character string with local buffer for small strings to avoid allocations
 
@@ -139,6 +140,12 @@ public:
 	friend bool		operator <=(const nString& a, const nString& b) { return strcmp(a.CStr(), b.CStr()) <= 0; }
 	friend bool		operator >=(const nString& a, const nString& b) { return strcmp(a.CStr(), b.CStr()) >= 0; }
 };
+
+template<> inline unsigned int Hash<nString>(const nString& Key)
+{
+	return Hash(Key.CStr(), Key.Length());
+}
+//---------------------------------------------------------------------
 
 inline void nString::Set(const char* pSrc, int SrcLength)
 {

@@ -24,8 +24,6 @@ public:
 	virtual bool FillWorldState(const CActor* pActor, const CPropSmartObject* pSO, CWorldState& WS);
 };
 
-__RegisterClassInFactory(CWorldStateSourceScript);
-
 typedef Ptr<CWorldStateSourceScript> PWorldStateSourceScript;
 
 }

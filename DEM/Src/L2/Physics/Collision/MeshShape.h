@@ -62,8 +62,6 @@ public:
 	int				GetNumIndices() const { return IndexCount; }
 };
 
-__RegisterClassInFactory(CMeshShape);
-
 }
 
 #endif

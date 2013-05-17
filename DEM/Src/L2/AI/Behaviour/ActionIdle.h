@@ -21,8 +21,6 @@ public:
 	virtual EExecStatus	Update(CActor* pActor) { return Running; }
 };
 
-__RegisterClassInFactory(CActionIdle);
-
 typedef Ptr<CActionIdle> PActionIdle;
 
 }

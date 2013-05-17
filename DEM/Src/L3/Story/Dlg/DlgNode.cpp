@@ -14,7 +14,7 @@ CDlgNode* CDlgNode::Trigger(CActiveDlg& Dlg)
 		EExecStatus Status = Links[Dlg.LinkIdx]->Validate(Dlg);
 		if (Status == Success) Dlg.IsCheckingConditions = false;
 		else if (Status == Running) return this;
-		else Dlg.LinkIdx++;
+		else ++Dlg.LinkIdx;
 	}
 
 	return (Dlg.LinkIdx == Links.GetCount()) ? NULL : Links[Dlg.LinkIdx]->DoTransition(Dlg);

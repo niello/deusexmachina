@@ -25,8 +25,6 @@ public:
 	//virtual bool		IsValid(CActor* pActor) const;
 };
 
-__RegisterClassInFactory(CActionFace);
-
 typedef Ptr<CActionFace> PActionFace;
 
 }

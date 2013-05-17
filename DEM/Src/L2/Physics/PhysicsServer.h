@@ -94,8 +94,6 @@ public:
 	//const vector3&	GetPointOfInterest() const { return CurrLevel->GetPointOfInterest(); }
 };
 
-__RegisterClassInFactory(CPhysicsServer);
-
 // Converts the rotational part of a matrix44 To ODE. This includes
 // a handedness conversion (transpose), since Mangalore is right handed, ODE left handed(?)
 inline void CPhysicsServer::Matrix44ToOde(const matrix44& From, dMatrix3& To)

@@ -97,8 +97,6 @@ public:
 	void					ShowPopup(Game::CEntity* pActorEnt);
 };
 
-__RegisterClassInFactory(CPropUIControl);
-
 inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
 											 bool (*Callback)(const Events::CEventBase&),
 											 int Priority, bool AutoAdded)
