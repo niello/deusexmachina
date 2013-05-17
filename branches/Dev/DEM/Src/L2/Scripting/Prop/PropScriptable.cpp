@@ -2,42 +2,36 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Game/Entity.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropScriptable)
+//	RegisterString(ScriptClass, ReadOnly);
+//	RegisterString(Script, ReadOnly);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineString(ScriptClass);
-	DefineString(Script);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropScriptable)
-	RegisterString(ScriptClass, ReadOnly);
-	RegisterString(Script, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropScriptable, 'PSCR', Game::CProperty);
+__ImplementClass(Prop::CPropScriptable, 'PSCR', Game::CProperty);
 __ImplementPropertyStorage(CPropScriptable);
 
 void CPropScriptable::Activate()
 {
 	Game::CProperty::Activate();
-	
-	const nString& LuaClass = GetEntity()->GetAttr<nString>(CStrID("ScriptClass"));
 
-	//???to OnLoad?
+	nString LuaClass;
+	if (!GetEntity()->GetAttr<nString>(LuaClass, CStrID("ScriptClass")))
+		LuaClass = "CEntityScriptObject";
+	n_assert(LuaClass.IsValid());
 
 	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUID().CStr(), "Entities"));
-	n_assert(Obj->Init(LuaClass.IsValid() ? LuaClass.CStr() : "CEntityScriptObject"));
+	n_assert(Obj->Init(LuaClass.CStr()));
 
-	const nString& ScriptFile = GetEntity()->GetAttr<nString>(CStrID("Script"));
-	if (ScriptFile.IsValid()) Obj->LoadScriptFile("scripts:" + ScriptFile + ".lua");
+	nString ScriptFile;
+	if (GetEntity()->GetAttr<nString>(ScriptFile, CStrID("Script")) && ScriptFile.IsValid())
+		Obj->LoadScriptFile("scripts:" + ScriptFile + ".lua");
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(OnLoad, CPropScriptable, OnLoad);
 	PROP_SUBSCRIBE_PEVENT(OnSave, CPropScriptable, OnSave);
-	PROP_SUBSCRIBE_PEVENT(OnDelete, CPropScriptable, OnDelete);
 }
 //---------------------------------------------------------------------
 
@@ -46,7 +40,6 @@ void CPropScriptable::Deactivate()
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnLoad);
 	UNSUBSCRIBE_EVENT(OnSave);
-	UNSUBSCRIBE_EVENT(OnDelete);
 	
 	Obj->RunFunction("OnPropTerm");
 	Obj = NULL;
@@ -55,7 +48,7 @@ void CPropScriptable::Deactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropScriptable::OnPropsActivated(const CEventBase& Event)
+bool CPropScriptable::OnPropsActivated(const Events::CEventBase& Event)
 {
 	if (ScriptSrv->BeginMixin(Obj.GetUnsafe()))
 	{
@@ -68,28 +61,20 @@ bool CPropScriptable::OnPropsActivated(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropScriptable::OnLoad(const CEventBase& Event)
+bool CPropScriptable::OnLoad(const Events::CEventBase& Event)
 {
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-	Obj->LoadFields(pDB);
+	//DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
+	//Obj->LoadFields(pDB);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropScriptable::OnSave(const CEventBase& Event)
+bool CPropScriptable::OnSave(const Events::CEventBase& Event)
 {
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-	Obj->SaveFields(pDB);
+	//DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
+	//Obj->SaveFields(pDB);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropScriptable::OnDelete(const CEventBase& Event)
-{
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-	Obj->ClearFields(pDB);
-	OK;
-}
-//---------------------------------------------------------------------
-
-} // namespace Properties
+} // namespace Prop

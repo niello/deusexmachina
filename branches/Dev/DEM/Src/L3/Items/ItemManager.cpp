@@ -1,12 +1,20 @@
 #include "ItemManager.h"
 
 #include <Items/ItemTpl.h>
-#include <Items/ItemAttrs.h>
 #include <Data/Params.h>
 #include <IO/IOServer.h>
 #include <Data/DataServer.h>
 #include <Events/EventManager.h>
-#include <DB/Database.h>
+
+//BEGIN_ATTRS_REGISTRATION(ItemAttrs)
+//	RegisterStrID(ItemOwner, ReadOnly);
+//	RegisterStrID(ItemTplID, ReadWrite);
+//	RegisterIntWithDefault(ItemInstID, ReadWrite, -1);
+//	RegisterIntWithDefault(ItemCount, ReadWrite, 1);
+//	RegisterStrID(EquipSlotID, ReadWrite);
+//	RegisterIntWithDefault(EquipCount, ReadWrite, 1);
+//	RegisterIntWithDefault(LargestItemStackID, ReadWrite, 0);
+//END_ATTRS_REGISTRATION
 
 extern const nString CommaFrag;
 
@@ -30,7 +38,6 @@ CItemManager::CItemManager(): InitialVTRowCount(0)
 	SUBSCRIBE_PEVENT(OnSaveAfter, CItemManager, OnSaveAfter);
 	SUBSCRIBE_PEVENT(OnLoadBefore, CItemManager, OnLoadBefore);
 	SUBSCRIBE_PEVENT(OnLoadAfter, CItemManager, OnLoadAfter);
-	SUBSCRIBE_PEVENT(OnGameDBClose, CItemManager, OnGameDBClose);
 }
 //---------------------------------------------------------------------
 
@@ -248,15 +255,6 @@ bool CItemManager::OnLoadAfter(const Events::CEventBase& Event)
 	
 	// Kill instance VTs
 	
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CItemManager::OnGameDBClose(const Events::CEventBase& Event)
-{
-	DSInv = NULL;
-	DSEquip = NULL;
-	LevelInQuery = nString::Empty;
 	OK;
 }
 //---------------------------------------------------------------------

@@ -814,6 +814,10 @@
 			Name="Game"
 			>
 			<File
+				RelativePath="..\..\Src\L2\Game\AttrSet.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L2\Game\Entity.cpp"
 				>
 			</File>

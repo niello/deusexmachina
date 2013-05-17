@@ -4,8 +4,8 @@
 #include <Events/EventManager.h>
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
+#include <Data/Buffer.h>
 #include <IO/IOServer.h>
-#include <DB/Database.h>
 
 extern const nString StrLuaObjects;
 
@@ -76,7 +76,7 @@ CScriptServer::~CScriptServer()
 }
 //---------------------------------------------------------------------
 
-int CScriptServer::DataToLuaStack(const CData& Data)
+int CScriptServer::DataToLuaStack(const Data::CData& Data)
 {
 	if (Data.IsVoid()) lua_pushnil(l);
 	else if (Data.IsA<bool>()) lua_pushboolean(l, Data.GetValue<bool>());
@@ -85,17 +85,17 @@ int CScriptServer::DataToLuaStack(const CData& Data)
 	else if (Data.IsA<nString>()) lua_pushstring(l, Data.GetValue<nString>().CStr());
 	else if (Data.IsA<CStrID>()) lua_pushstring(l, Data.GetValue<CStrID>().CStr());
 	else if (Data.IsA<PVOID>()) lua_pushlightuserdata(l, Data.GetValue<PVOID>());
-	else if (Data.IsA<PDataArray>())
+	else if (Data.IsA<Data::PDataArray>())
 	{
-		const CDataArray& A = *Data.GetValue<PDataArray>();
+		const Data::CDataArray& A = *Data.GetValue<Data::PDataArray>();
 		lua_createtable(l, A.GetCount(), 0);
 		for (int i = 0; i < A.GetCount();)
 			if (DataToLuaStack(A[i]) == 1)
 				lua_rawseti(l, -2, ++i);
 	}
-	else if (Data.IsA<PParams>())
+	else if (Data.IsA<Data::PParams>())
 	{
-		const CParams& P = *Data.GetValue<PParams>();
+		const Data::CParams& P = *Data.GetValue<Data::PParams>();
 		lua_createtable(l, 0, P.GetCount());
 		for (int i = 0; i < P.GetCount(); ++i)
 		{
@@ -114,7 +114,7 @@ int CScriptServer::DataToLuaStack(const CData& Data)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::LuaStackToData(CData& Result, int StackIdx, lua_State* l)
+bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State* l)
 {
 	if (!l) l = l;
 	if (StackIdx < 0) StackIdx = lua_gettop(l) + StackIdx + 1;
@@ -160,7 +160,7 @@ bool CScriptServer::LuaStackToData(CData& Result, int StackIdx, lua_State* l)
 
 		if (MaxKey > -1)
 		{
-			PDataArray Array = n_new(CDataArray);
+			Data::PDataArray Array = n_new(Data::CDataArray);
 			Array->Reserve(MaxKey);
 
 			lua_pushnil(l);
@@ -175,8 +175,8 @@ bool CScriptServer::LuaStackToData(CData& Result, int StackIdx, lua_State* l)
 		}
 		else
 		{
-			CData ParamData;
-			PParams Params = n_new(CParams);
+			Data::CData ParamData;
+			Data::PParams Params = n_new(Data::CParams);
 			
 			lua_pushnil(l);
 			while (lua_next(l, StackIdx))
@@ -211,13 +211,13 @@ bool CScriptServer::LuaStackToData(CData& Result, int StackIdx, lua_State* l)
 
 EExecStatus CScriptServer::RunScriptFile(const nString& FileName)
 {
-	CBuffer Buffer;
+	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
 	return RunScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, CData* pRetVal)
+EExecStatus CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal)
 {
 	if (luaL_loadbuffer(l, Buffer, ((Length > -1) ? Length : strlen(Buffer)), Buffer) != 0)
 	{
@@ -236,7 +236,7 @@ EExecStatus CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, CData* pRetVal
 //---------------------------------------------------------------------
 
 // Mainly for internal use
-EExecStatus CScriptServer::PerformCall(int ArgCount, CData* pRetVal, LPCSTR pDbgName)
+EExecStatus CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCSTR pDbgName)
 {
 	int ResultCount = lua_gettop(l) - ArgCount - 1;
 
@@ -349,7 +349,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 	n_assert2(Name.IsValid(), "Invalid class name to register");
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
-	PParams ClassDesc = DataSrv->LoadPRM("classes:" + Name + ".cls", false);
+	Data::PParams ClassDesc = DataSrv->LoadPRM("classes:" + Name + ".cls", false);
 
 	if (ClassDesc.IsValid() &&
 		BeginClass(Name, ClassDesc->Get<nString>(CStrID("Base"), "CScriptObject")))
@@ -362,12 +362,12 @@ bool CScriptServer::LoadClass(const nString& Name)
 		const char* pData = NULL;
 		DWORD Size = 0;
 
-		CParam* pCodePrm;
+		Data::CParam* pCodePrm;
 		if (ClassDesc->Get(pCodePrm, CStrID("Code")))
 		{
-			if (pCodePrm->IsA<CBuffer>())
+			if (pCodePrm->IsA<Data::CBuffer>())
 			{
-				const CBuffer& Code = pCodePrm->GetValue<CBuffer>();
+				const Data::CBuffer& Code = pCodePrm->GetValue<Data::CBuffer>();
 				pData = (const char*)Code.GetPtr();
 				Size = Code.GetSize();
 			}

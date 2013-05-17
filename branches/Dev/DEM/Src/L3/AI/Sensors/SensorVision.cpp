@@ -7,11 +7,6 @@
 #include <Game/EntityManager.h>
 #include <mathlib/sphere.h>
 
-namespace Attr
-{
-	DeclareAttr(Transform);
-}
-
 namespace AI
 {
 __ImplementClass(AI::CSensorVision, 'SEVI', AI::CSensor);

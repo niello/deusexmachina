@@ -44,4 +44,13 @@ void CCoreServer::Close()
 }
 //---------------------------------------------------------------------
 
+void CCoreServer::Trigger()
+{
+	nMemoryStats Stats = n_dbgmemgetstats();
+	CoreSrv->SetGlobal<int>("Mem_HighWaterSize", Stats.HighWaterSize);
+	CoreSrv->SetGlobal<int>("Mem_TotalSize", Stats.TotalSize);
+	CoreSrv->SetGlobal<int>("Mem_TotalCount", Stats.TotalCount);
+}
+//---------------------------------------------------------------------
+
 } // namespace Core

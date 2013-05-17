@@ -2,8 +2,7 @@
 #ifndef __DEM_L2_GAME_LEVEL_H__
 #define __DEM_L2_GAME_LEVEL_H__
 
-#include <Core/RefCounted.h>
-#include <Scripting/ScriptObject.h> //???fwd decl?
+#include <Events/EventDispatcher.h>
 #include <mathlib/rectangle.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
@@ -14,6 +13,11 @@
 namespace Data
 {
 	class CParams;
+}
+
+namespace Scripting
+{
+	typedef Ptr<class CScriptObject> PScriptObject;
 }
 
 namespace Scene
@@ -46,21 +50,27 @@ struct CSurfaceInfo
 	//???how to check is point inside world geom?
 };
 
-class CGameLevel: public Core::CRefCounted
+class CGameLevel: public Events::CEventDispatcher
 {
 protected:
 
 	CStrID						ID;
 	nString						Name;
+	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
 
 	Scene::PScene				Scene;
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
 
+	bool OnEvent(const Events::CEventBase& Event);
+
 public:
 
+	~CGameLevel();
+
 	bool			Init(CStrID LevelID, const Data::CParams& Desc);
+	void			Term();
 	void			Trigger();
 	void			RenderScene();
 	void			RenderDebug();

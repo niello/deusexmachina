@@ -9,41 +9,25 @@
 #include <Physics/PhysicsUtil.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropChaseCamera)
+//	RegisterFloatWithDefault(CameraDistance, ReadOnly, 7.0f);
+//	RegisterFloatWithDefault(CameraMinDistance, ReadOnly, 1.5f);
+//	RegisterFloatWithDefault(CameraMaxDistance, ReadOnly, 15.0f);
+//	RegisterFloatWithDefault(CameraAngularVelocity, ReadOnly, 6.0f);
+//	RegisterVector3WithDefault(CameraOffset, ReadOnly, vector4(0.0f, 1.5f, 0.0f, 0.f));
+//	RegisterFloatWithDefault(CameraLowStop, ReadOnly, 5.0f);
+//	RegisterFloatWithDefault(CameraHighStop, ReadOnly, 45.0f);
+//	RegisterFloatWithDefault(CameraDistanceStep, ReadOnly, 1.0f);
+//	RegisterFloatWithDefault(CameraLinearGain, ReadOnly, -10.0f);
+//	RegisterFloatWithDefault(CameraAngularGain, ReadOnly, -15.0f);
+//	RegisterFloatWithDefault(CameraDefaultTheta, ReadOnly, 20.0f);
+//	//???DefineFloatWithDefault(CameraDefaultRho, 'CRHO', ReadWrite, n_deg2rad(10.0f));?
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineFloat(CameraDistance);
-	DefineFloat(CameraMinDistance);
-	DefineFloat(CameraMaxDistance);
-	DefineFloat(CameraDistanceStep);
-	DefineFloat(CameraAngularVelocity);
-	DefineVector3(CameraOffset);
-	DefineFloat(CameraLowStop);
-	DefineFloat(CameraHighStop);
-	DefineFloat(CameraLinearGain);
-	DefineFloat(CameraAngularGain);
-	DefineFloat(CameraDefaultTheta);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropChaseCamera)
-	RegisterFloatWithDefault(CameraDistance, ReadOnly, 7.0f);
-	RegisterFloatWithDefault(CameraMinDistance, ReadOnly, 1.5f);
-	RegisterFloatWithDefault(CameraMaxDistance, ReadOnly, 15.0f);
-	RegisterFloatWithDefault(CameraAngularVelocity, ReadOnly, 6.0f);
-	RegisterVector3WithDefault(CameraOffset, ReadOnly, vector4(0.0f, 1.5f, 0.0f, 0.f));
-	RegisterFloatWithDefault(CameraLowStop, ReadOnly, 5.0f);
-	RegisterFloatWithDefault(CameraHighStop, ReadOnly, 45.0f);
-	RegisterFloatWithDefault(CameraDistanceStep, ReadOnly, 1.0f);
-	RegisterFloatWithDefault(CameraLinearGain, ReadOnly, -10.0f);
-	RegisterFloatWithDefault(CameraAngularGain, ReadOnly, -15.0f);
-	RegisterFloatWithDefault(CameraDefaultTheta, ReadOnly, 20.0f);
-	//???DefineFloatWithDefault(CameraDefaultRho, 'CRHO', ReadWrite, n_deg2rad(10.0f));?
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropChaseCamera, 'PCHC', Properties::CPropCamera);
+__ImplementClass(Prop::CPropChaseCamera, 'PCHC', Prop::CPropCamera);
 
 using namespace Game;
 
@@ -264,4 +248,4 @@ void CPropChaseCamera::ResetCamera()
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

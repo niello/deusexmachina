@@ -6,17 +6,6 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Game/EntityManager.h>
-#include <DB/ValueTable.h>
-
-namespace Attr
-{
-	DeclareAttr(GUID);
-	DeclareAttr(Physics);
-	DeclareAttr(AnimDesc);
-	DeclareAttr(Transform);
-	DeclareAttr(ScenePath);
-	DeclareAttr(SceneFile);
-}
 
 namespace Scene
 {
@@ -128,7 +117,7 @@ bool CStaticEnvManager::IsEntityStatic(CEntity& Entity) const
 	nString Value;
 
 	// We have physics bodies that can move us
-	if (Entity.GetAttr<nString>(CStrID("Physics"), Value) && Value.IsValid())
+	if (Entity.GetAttr<nString>(Value, CStrID("Physics")) && Value.IsValid())
 	{
 		// It uses HRD cache, so it isn't so slow
 		PParams Desc = DataSrv->LoadPRM(nString("physics:") + Value + ".prm");
@@ -137,7 +126,7 @@ bool CStaticEnvManager::IsEntityStatic(CEntity& Entity) const
 	}
 
 	// We have animations that can move us
-	if (Entity.GetAttr<nString>(CStrID("AnimDesc"), Value) && Value.IsValid())
+	if (Entity.GetAttr<nString>(Value, CStrID("AnimDesc")) && Value.IsValid())
 		FAIL;
 
 	OK;

@@ -361,14 +361,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\Items\ItemAttrs.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L3\Items\ItemAttrs.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L3\Items\ItemManager.cpp"
 				>
 			</File>

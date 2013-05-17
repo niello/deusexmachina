@@ -9,7 +9,7 @@
 // Adds IAO actions:
 // - Attack
 
-namespace Properties
+namespace Prop
 {
 
 using namespace Events;

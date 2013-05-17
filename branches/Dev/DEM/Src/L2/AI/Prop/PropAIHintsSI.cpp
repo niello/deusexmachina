@@ -11,7 +11,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -24,11 +24,11 @@ int CPropAIHints_EnableStimulus(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::ExposeSI(const CEventBase& Event)
+bool CPropAIHints::ExposeSI(const Events::CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("EnableStimulus", CPropAIHints_EnableStimulus);
 	OK;
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

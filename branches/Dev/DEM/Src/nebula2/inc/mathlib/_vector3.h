@@ -12,6 +12,8 @@
 #include "mathlib/nmath.h"
 #include <float.h>
 
+class _vector4;
+
 class _vector3
 {
 public:
@@ -32,6 +34,7 @@ public:
 	_vector3(): x(0.f), y(0.f), z(0.f) {}
 	_vector3(const float _x, const float _y, const float _z): x(_x), y(_y), z(_z) {}
 	_vector3(const _vector3& vec): x(vec.x), y(vec.y), z(vec.z) {}
+	_vector3(const _vector4& vec);
 	_vector3(const float* vec): x(vec[0]), y(vec[1]), z(vec[2]) {}
 
 	static float	Distance(const _vector3& v0, const _vector3& v1) { return n_sqrt(SqDistance(v0, v1)); }

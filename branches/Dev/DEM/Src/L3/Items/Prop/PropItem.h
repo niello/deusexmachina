@@ -10,7 +10,7 @@
 // Adds IAO actions:
 // - Pick
 
-namespace Properties
+namespace Prop
 {
 
 class CPropItem: public Game::CProperty

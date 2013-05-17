@@ -11,7 +11,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -40,4 +40,4 @@ bool CPropTalking::ExposeSI(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

@@ -9,7 +9,7 @@
 // Sends or feeds with data ObjDamageDone message.
 // Triggered by acceptor.
 
-namespace Properties
+namespace Prop
 {
 	class CPropDestructible;
 }
@@ -17,7 +17,7 @@ namespace Properties
 namespace Dmg
 {
 
-using namespace Properties;
+using namespace Prop;
 
 //???struct?
 class CDamageEffect //???public CEffect? //: public Core::CRefCounted

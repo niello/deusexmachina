@@ -2,9 +2,9 @@
 
 #include <Combat/Event/ObjDamageDone.h>
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropDestructible, 'PDST', Game::CProperty);
+__ImplementClass(Prop::CPropDestructible, 'PDST', Game::CProperty);
 __ImplementPropertyStorage(CPropDestructible);
 
 using namespace Event;
@@ -47,4 +47,4 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

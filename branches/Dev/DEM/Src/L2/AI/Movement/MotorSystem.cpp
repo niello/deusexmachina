@@ -155,7 +155,7 @@ void CMotorSystem::Update()
 				if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
 				{
 					//!!!???track LinearVelocity in actor like position?
-					Properties::CPropActorPhysics* pPhysics = pActor->GetEntity()->GetProperty<Properties::CPropActorPhysics>();
+					Prop::CPropActorPhysics* pPhysics = pActor->GetEntity()->GetProperty<Prop::CPropActorPhysics>();
 					const vector3& Velocity = pPhysics ? pPhysics->GetPhysicsEntity()->GetVelocity() : vector3::Zero;
 
 					float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call

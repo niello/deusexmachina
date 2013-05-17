@@ -10,7 +10,6 @@
 #include <Game/Mgr/FocusManager.h>	// For dbg rendering
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <DB/DBServer.h>
 
 #ifdef __WIN32__
 	#undef GetClassName
@@ -20,24 +19,9 @@
 	#endif
 #endif
 
-namespace Attr
+namespace Prop
 {
-	DeclareAttr(Transform);
-
-	DefineString(ActorDesc);
-	DefineFloat(Radius);
-	DefineFloat(Height);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropActorBrain)
-	RegisterString(ActorDesc, ReadOnly);
-	RegisterFloatWithDefault(Radius, ReadWrite, 0.3f);
-	RegisterFloatWithDefault(Height, ReadWrite, 1.75f);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropActorBrain, 'PRAB', Game::CProperty);
+__ImplementClass(Prop::CPropActorBrain, 'PRAB', Game::CProperty);
 __ImplementPropertyStorage(CPropActorBrain);
 
 static const nString StrPercPrefix("AI::CPerceptor");
@@ -58,14 +42,6 @@ CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSyste
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	//Attrs.Append(Attr::ActorDesc);
-	//Attrs.Append(CStrID("Radius"));
-	//Attrs.Append(CStrID("Height"));
-}
-//---------------------------------------------------------------------
-
 void CPropActorBrain::Activate()
 {
 	Game::CProperty::Activate();
@@ -77,8 +53,8 @@ void CPropActorBrain::Activate()
 	LookatDir = -Tfm.AxisZ();
 
 	//!!!update on R/H attrs change!
-	Radius = GetEntity()->GetAttr<float>(CStrID("Radius"));
-	Height = GetEntity()->GetAttr<float>(CStrID("Height"));
+	Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
+	Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 
 	NavStatus = AINav_Done;
 
@@ -411,4 +387,4 @@ bool CPropActorBrain::OnRenderDebug(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

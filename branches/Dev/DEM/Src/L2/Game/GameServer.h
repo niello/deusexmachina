@@ -29,6 +29,7 @@ protected:
 	PEntityManager						EntityManager;
 	nDictionary<CStrID, PGameLevel>		Levels;
 	PGameLevel							ActiveLevel;
+	nDictionary<CStrID, Data::CData>	Attrs;
 
 	PEntityLoader						DefaultLoader;
 	nDictionary<CStrID, PEntityLoader>	Loaders;
@@ -65,7 +66,7 @@ public:
 
 	bool		LoadLevel(CStrID ID, const Data::CParams& Desc);
 	void		UnloadLevel(CStrID ID);
-	void		SetActiveLevel(CStrID ID);
+	bool		SetActiveLevel(CStrID ID);
 	CGameLevel*	GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
 	bool		StartGame(const nString& FileName);
 	bool		SaveGame(const nString& Name);
@@ -73,16 +74,80 @@ public:
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
 
-	//Global attributes
+	template<class T>
+	void		SetGlobalAttr(CStrID ID, const T& Value);
+	template<>
+	void		SetGlobalAttr(CStrID ID, const Data::CData& Value);
+	template<class T>
+	const T&	GetGlobalAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
+	template<class T>
+	bool		GetGlobalAttr(CStrID ID, T& Out) const;
+	template<>
+	bool		GetGlobalAttr(CStrID ID, Data::CData& Out) const;
+	bool		HasGlobalAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
 	//Transition service - to move entities from level to level, including store-unload level 1-load level 2-restore case
 
-	nTime	GetTime() const { return GameTimeSrc->GetTime(); }
-	nTime	GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
-	bool	IsGamePaused() const { return GameTimeSrc->IsPaused(); }
-	void	PauseGame(bool Pause = true) const;
-	void	ToggleGamePause() const { PauseGame(!IsGamePaused()); }
+	nTime		GetTime() const { return GameTimeSrc->GetTime(); }
+	nTime		GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
+	bool		IsGamePaused() const { return GameTimeSrc->IsPaused(); }
+	void		PauseGame(bool Pause = true) const;
+	void		ToggleGamePause() const { PauseGame(!IsGamePaused()); }
 };
+
+inline bool CGameServer::SetActiveLevel(CStrID ID)
+{
+	if (ID.IsValid())
+	{
+		int LevelIdx = Levels.FindIndex(ID);
+		if (LevelIdx == INVALID_INDEX) FAIL;
+		ActiveLevel = Levels.ValueAtIndex(LevelIdx);
+	}
+	else ActiveLevel = NULL;
+	OK;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+inline void CGameServer::SetGlobalAttr(CStrID ID, const T& Value)
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) Attrs.Add(ID, Value);
+	else Attrs.ValueAtIndex(Idx).SetTypeValue(Value);
+}
+//---------------------------------------------------------------------
+
+template<> void CGameServer::SetGlobalAttr(CStrID ID, const Data::CData& Value)
+{
+	if (Value.IsValid()) Attrs.Set(ID, Value);
+	else
+	{
+		int Idx = Attrs.FindIndex(ID);
+		if (Idx != INVALID_INDEX) Attrs.Erase(ID);
+	}
+}
+//---------------------------------------------------------------------
+
+//???ref of ptr? to avoid copying big data
+template<class T>
+inline bool CGameServer::GetGlobalAttr(CStrID ID, T& Out) const
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) FAIL;
+	return Attrs.ValueAtIndex(Idx).GetValue<T>(Out);
+}
+//---------------------------------------------------------------------
+
+//???ref of ptr? to avoid copying big data
+template<>
+inline bool CGameServer::GetGlobalAttr(CStrID ID, Data::CData& Out) const
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) FAIL;
+	Out = Attrs.ValueAtIndex(Idx);
+	OK;
+}
+//---------------------------------------------------------------------
 
 }
 

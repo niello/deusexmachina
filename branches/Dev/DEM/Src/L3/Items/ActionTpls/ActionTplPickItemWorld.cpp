@@ -18,7 +18,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionTplPickItemWorld, 'ATIW', AI::CActionTpl);
 
-using namespace Properties;
+using namespace Prop;
 
 void CActionTplPickItemWorld::Init(PParams Params)
 {

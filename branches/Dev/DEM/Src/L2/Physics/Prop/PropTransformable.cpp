@@ -4,29 +4,17 @@
 #include <Events/EventBase.h>
 #include <Game/Entity.h>
 #include <Render/DebugDraw.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropTransformable)
+//	RegisterMatrix44WithDefault(Transform, ReadWrite, matrix44::identity);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineMatrix44(Transform);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropTransformable)
-	RegisterMatrix44WithDefault(Transform, ReadWrite, matrix44::identity);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropTransformable, 'PTFM', Game::CProperty);
+__ImplementClass(Prop::CPropTransformable, 'PTFM', Game::CProperty);
 __ImplementPropertyStorage(CPropTransformable);
 
 IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropTransformable, OnRenderDebug)
-
-void CPropTransformable::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	//Attrs.Append(CStrID("Transform"));
-}
-//---------------------------------------------------------------------
 
 void CPropTransformable::Activate()
 {
@@ -66,4 +54,4 @@ void CPropTransformable::OnRenderDebug()
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

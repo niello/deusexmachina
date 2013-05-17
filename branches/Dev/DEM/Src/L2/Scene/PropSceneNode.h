@@ -8,7 +8,7 @@
 
 // Scene node property associates entity transform with scene graph node
 
-namespace Properties
+namespace Prop
 {
 
 class CPropSceneNode: public Game::CProperty

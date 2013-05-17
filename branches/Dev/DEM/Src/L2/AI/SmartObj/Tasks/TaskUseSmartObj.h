@@ -6,14 +6,14 @@
 
 // Generic 'use smart object' task, makes actor perform action on SO.
 
-namespace Properties
+namespace Prop
 {
 	class CPropSmartObject;
 }
 
 namespace AI
 {
-using namespace Properties;
+using namespace Prop;
 
 class CTaskUseSmartObj: public CTask
 {

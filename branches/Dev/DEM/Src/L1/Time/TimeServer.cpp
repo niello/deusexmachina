@@ -1,28 +1,10 @@
 #include "TimeServer.h"
 
-#include <DB/DBServer.h>
-#include <DB/Database.h>
-#include <DB/Dataset.h>
 #include <Events/EventManager.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #define MAX_FRAME_TIME 0.25f
-
-namespace Attr
-{
-	DefineString(TimeSourceID);
-	DefineFloat(TimeSourceTime);
-	DefineFloat(TimeSourceFactor);
-	DefineInt(TimeSourceFrameID);
-};
-
-BEGIN_ATTRS_REGISTRATION(TimeServer)
-	RegisterString(TimeSourceID, ReadOnly);
-	RegisterFloat(TimeSourceTime, ReadWrite);
-	RegisterFloat(TimeSourceFactor, ReadWrite);
-	RegisterInt(TimeSourceFrameID, ReadWrite);
-END_ATTRS_REGISTRATION
 
 namespace Time
 {
@@ -98,6 +80,7 @@ void CTimeServer::RemoveTimeSource(CStrID Name)
 // Checks whether the TimeSources table exists in the database, if yes invokes OnLoad() on all time sources
 bool CTimeServer::OnLoad(const Events::CEventBase& Event)
 {
+	/*
 #ifndef _EDITOR
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
@@ -115,6 +98,7 @@ bool CTimeServer::OnLoad(const Events::CEventBase& Event)
 	}
 	else ResetAll(); //!!!check if it is needed! (added by me, see state handlers)	
 #endif
+*/
 
 	OK;
 }
@@ -123,6 +107,7 @@ bool CTimeServer::OnLoad(const Events::CEventBase& Event)
 // Ask all time sources to save their status to the database.
 bool CTimeServer::OnSave(const Events::CEventBase& Event)
 {
+/*
 #ifndef _EDITOR
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
@@ -150,6 +135,7 @@ bool CTimeServer::OnSave(const Events::CEventBase& Event)
 	//pVT->Set<int>(Attr::TimeSourceFrameID, FrameId);
 	DS->CommitChanges();
 #endif
+*/
 
 	OK;
 }

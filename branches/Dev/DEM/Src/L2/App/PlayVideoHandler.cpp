@@ -40,11 +40,7 @@ CStrID CPlayVideoHandler::OnFrame()
 
 	//else ReturnState = EXIT_STATE; // Application closed
 
-	//!!!to some method of memory/core server!
-	nMemoryStats memStats = n_dbgmemgetstats();
-	CoreSrv->SetGlobal<int>("MemHighWaterSize", memStats.highWaterSize);
-	CoreSrv->SetGlobal<int>("MemTotalSize", memStats.totalSize);
-	CoreSrv->SetGlobal<int>("MemTotalCount", memStats.totalCount);
+	CoreSrv->Trigger();
 
 	return ReturnState;
 }

@@ -19,7 +19,7 @@
     Based on mangalore InputProperty_(C) 2005 Radon Labs GmbH
 */
 
-namespace Properties
+namespace Prop
 {
 
 class CPropInput: public Game::CProperty

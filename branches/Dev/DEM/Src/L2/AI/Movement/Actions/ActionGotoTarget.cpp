@@ -3,11 +3,6 @@
 #include <AI/Prop/PropActorBrain.h>
 #include <Game/EntityManager.h>
 
-namespace Attr
-{
-	DeclareAttr(Transform);
-}
-
 namespace AI
 {
 __ImplementClass(AI::CActionGotoTarget, 'AGTG', AI::CActionGoto)

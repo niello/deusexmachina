@@ -4,14 +4,14 @@
 
 // Actor forward declaration
 
-namespace Properties
+namespace Prop
 {
 	class CPropActorBrain;
 }
 
 namespace AI
 {
-	typedef Properties::CPropActorBrain CActor;
+	typedef Prop::CPropActorBrain CActor;
 }
 
 #endif

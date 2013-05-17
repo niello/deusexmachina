@@ -16,12 +16,6 @@
 #include <Game/Mgr/FocusManager.h>
 #include <Game/GameServer.h>
 
-namespace Attr
-{
-	DeclareAttr(GUID);
-	DeclareAttr(Name);
-}
-
 namespace Story
 {
 __ImplementClassNoFactory(Story::CDialogueManager, Core::CRefCounted);
@@ -196,7 +190,7 @@ void CDialogueManager::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool
 
 	if (TargetIsPlr == InitiatorIsPlr) // Plr-Plr & NPC-NPC
 	{
-		NewDlg.Dlg = pTarget->GetProperty<Properties::CPropTalking>()->GetDialogue();
+		NewDlg.Dlg = pTarget->GetProperty<Prop::CPropTalking>()->GetDialogue();
 		if (NewDlg.Dlg.IsValid())
 		{
 			NewDlg.DlgOwner = pTarget->GetUID();
@@ -204,7 +198,7 @@ void CDialogueManager::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool
 		}
 		else
 		{
-			NewDlg.Dlg = pInitiator->GetProperty<Properties::CPropTalking>()->GetDialogue();
+			NewDlg.Dlg = pInitiator->GetProperty<Prop::CPropTalking>()->GetDialogue();
 			if (NewDlg.Dlg.IsValid())
 			{
 				NewDlg.DlgOwner = pInitiator->GetUID();
@@ -216,7 +210,7 @@ void CDialogueManager::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool
 	{
 		CEntity* pNPC = (TargetIsPlr) ? pInitiator : pTarget;
 		CEntity* pPlr = (TargetIsPlr) ? pTarget : pInitiator;
-		NewDlg.Dlg = pNPC->GetProperty<Properties::CPropTalking>()->GetDialogue();
+		NewDlg.Dlg = pNPC->GetProperty<Prop::CPropTalking>()->GetDialogue();
 		if (NewDlg.Dlg.IsValid())
 		{
 			NewDlg.DlgOwner = pNPC->GetUID();
@@ -224,7 +218,7 @@ void CDialogueManager::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool
 		}
 		else //???need?
 		{
-			NewDlg.Dlg = pPlr->GetProperty<Properties::CPropTalking>()->GetDialogue();
+			NewDlg.Dlg = pPlr->GetProperty<Prop::CPropTalking>()->GetDialogue();
 			if (NewDlg.Dlg.IsValid())
 			{
 				NewDlg.DlgOwner = pPlr->GetUID();
@@ -335,7 +329,7 @@ void CDialogueManager::SayPhrase(CStrID SpeakerEntity, const nString& Phrase, CA
 	if (IsDialogueForeground(Dlg))
 	{
 		nString SpeakerName;
-		if (!Speaker->GetAttr<nString>(CStrID("Name"), SpeakerName))
+		if (!Speaker->GetAttr<nString>(SpeakerName, CStrID("Name")))
 			SpeakerName = Speaker->GetUID().CStr();
 		FocusMgr->SetCameraFocusEntity(Speaker);
 
@@ -347,7 +341,7 @@ void CDialogueManager::SayPhrase(CStrID SpeakerEntity, const nString& Phrase, CA
 	else
 	{
 		//!!!get timeout from the node!
-		Speaker->GetProperty<Properties::CPropTalking>()->SayPhrase(CStrID(Phrase.CStr()));
+		Speaker->GetProperty<Prop::CPropTalking>()->SayPhrase(CStrID(Phrase.CStr()));
 	}
 }
 //---------------------------------------------------------------------

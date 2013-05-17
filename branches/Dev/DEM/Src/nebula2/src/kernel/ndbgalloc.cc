@@ -145,12 +145,12 @@ nMemoryStats n_dbgmemgetstats()
 	_CrtMemState crtState = { 0 };
 	_CrtMemCheckpoint(&crtState);
 	nMemoryStats MemStats = { 0 };
-	MemStats.highWaterSize = crtState.lHighWaterCount;
+	MemStats.HighWaterSize = crtState.lHighWaterCount;
 
 	for (int i = 0; i < _MAX_BLOCKS; ++i)
 	{
-		MemStats.totalCount += crtState.lCounts[i];
-		MemStats.totalSize  += crtState.lSizes[i];
+		MemStats.TotalCount += crtState.lCounts[i];
+		MemStats.TotalSize  += crtState.lSizes[i];
 	}
 	return MemStats;
 }

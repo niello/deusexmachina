@@ -11,22 +11,7 @@
 #include <mathlib/polar.h>
 #include <util/npfeedbackloop.h>
 
-namespace Attr
-{
-	DeclareFloat(CameraDistance);
-	DeclareFloat(CameraMinDistance);
-	DeclareFloat(CameraMaxDistance);
-	DeclareFloat(CameraDistanceStep);
-	DeclareFloat(CameraAngularVelocity);	// in degrees per second
-	DeclareVector3(CameraOffset);
-	DeclareFloat(CameraLowStop);			// in degrees
-	DeclareFloat(CameraHighStop);			// in degrees
-	DeclareFloat(CameraLinearGain);
-	DeclareFloat(CameraAngularGain);
-	DeclareFloat(CameraDefaultTheta);		// in degrees
-}
-
-namespace Properties
+namespace Prop
 {
 
 using namespace Events;
@@ -67,6 +52,6 @@ public:
 	virtual void Deactivate();
 };
 
-} // namespace Properties
+} // namespace Prop
 
 #endif

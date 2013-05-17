@@ -1,23 +1,15 @@
 #include "PropInventory.h"
 
-#include <Items/ItemAttrs.h>
 #include <Items/ItemManager.h>
 #include <Events/EventManager.h>
 #include <Game/EntityManager.h>
 
 const nString StrInventories("Inventories");
 
-namespace Attr
+namespace Prop
 {
-	DeclareInt(ID);
-}
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropInventory, 'PINV', Game::CProperty);
+__ImplementClass(Prop::CPropInventory, 'PINV', Game::CProperty);
 __ImplementPropertyStorage(CPropInventory);
-
-using namespace DB;
 
 void CPropInventory::Activate()
 {
@@ -73,6 +65,7 @@ bool CPropInventory::OnLoadAfter(const Events::CEventBase& Event)
 
 void CPropInventory::Save()
 {
+/*
 	CDataset* DS = ItemMgr->GetInventoriesDataset();
 	if (!DS) return;
 
@@ -146,11 +139,13 @@ void CPropInventory::Save()
 	for (int RowIdx = FirstRowIdx; RowIdx < StopRowIdx; ++RowIdx)
 		if (VT->IsRowUntouched(RowIdx))
 			VT->DeleteRow(RowIdx);
+*/
 }
 //---------------------------------------------------------------------
 
 void CPropInventory::Load()
 {
+/*
 	//Items.Clear();
 	n_assert(Items.GetCount() == 0);
 
@@ -186,6 +181,7 @@ void CPropInventory::Load()
 
 		++RowIdx;
 	}
+*/
 }
 //---------------------------------------------------------------------
 
@@ -337,4 +333,4 @@ void CPropInventory::MergeItems(PItem Item)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

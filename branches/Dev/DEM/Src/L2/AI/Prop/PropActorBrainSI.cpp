@@ -15,12 +15,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Attr
-{
-	DeclareAttr(Transform);
-}
-
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -78,7 +73,7 @@ int CPropActorBrain_Go(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::ExposeSI(const CEventBase& Event)
+bool CPropActorBrain::ExposeSI(const Events::CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("DoAction", CPropActorBrain_DoAction);
 	ScriptSrv->ExportCFunction("Go", CPropActorBrain_Go);
@@ -86,4 +81,4 @@ bool CPropActorBrain::ExposeSI(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

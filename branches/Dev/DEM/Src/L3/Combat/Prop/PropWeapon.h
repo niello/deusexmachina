@@ -2,9 +2,7 @@
 #ifndef __IPG_PROP_WEAPON_H__
 #define __IPG_PROP_WEAPON_H__
 
-#include <game/property.h>
-#include <db/AttrID.h>
-
+#include <Game/Property.h>
 #include <Combat/Dmg/Damage.h>
 
 // Adds ability to attack destructible objects. Also stores parameters of currently equipped weapon,
@@ -14,19 +12,8 @@
 // Adds Actor actions available:
 // - Attack
 
-namespace Attr
+namespace Prop
 {
-	DeclareFloat(WpnROF);				// Current actual Rate Of Fire (with all modifiers applied)
-	DeclareFloat(WpnRangeMin);			// Current actual weapon range minimum (with all modifiers applied)
-	DeclareFloat(WpnRangeMax);			// Current actual weapon range maximum (with all modifiers applied)
-	DeclareFloat(WpnLastStrikeTime);	// Game time of the last strike
-};
-
-namespace Properties
-{
-
-using namespace Dmg;
-using namespace Events;
 
 class CPropWeapon: public Game::CProperty
 {
@@ -45,8 +32,8 @@ public:
 	// Damage params
 	//!!!on set Y change die sides!
 	//???move from here?
-	int			x, y, z;		// Damage value, calculated as xdy+z
-	EDmgType	DmgType;
+	int				x, y, z;		// Damage value, calculated as xdy+z
+	Dmg::EDmgType	DmgType;
 
 	// Weapon params (this + Damage params will be moved to Dmg or Items as wpnparams struct)
 	// !!!don't store here! here attributes store this data
@@ -67,7 +54,6 @@ public:
 	CPropWeapon();
 	//virtual ~CPropWeapon();
 
-	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void	Activate();
 	virtual void	Deactivate();
 

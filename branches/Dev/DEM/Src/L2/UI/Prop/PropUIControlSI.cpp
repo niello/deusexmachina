@@ -11,7 +11,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -42,7 +42,7 @@ int CPropUIControl_RemoveActionHandler(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::ExposeSI(const CEventBase& Event)
+bool CPropUIControl::ExposeSI(const Events::CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("AddUIActionHandler", CPropUIControl_AddActionHandler);
 	ScriptSrv->ExportCFunction("RemoveUIActionHandler", CPropUIControl_RemoveActionHandler);
@@ -50,4 +50,4 @@ bool CPropUIControl::ExposeSI(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

@@ -128,9 +128,9 @@ const char* n_fourcctostr(nFourCC);
 extern bool DEM_LogMemory;
 struct nMemoryStats
 {
-    int highWaterSize;      // max allocated size so far
-    int totalCount;         // total number of allocations
-    int totalSize;          // current allocated size
+	int HighWaterSize;      // max allocated size so far
+	int TotalCount;         // total number of allocations
+	int TotalSize;          // current allocated size
 };
 
 int n_dbgmemdumpleaks();

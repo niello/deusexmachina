@@ -4,31 +4,17 @@
 #include <AI/AIServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropSmartObject)
+//	RegisterString(SmartObjDesc, ReadOnly);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DeclareAttr(Transform);
-
-	DefineString(SmartObjDesc);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropSmartObject)
-	RegisterString(SmartObjDesc, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropSmartObject, 'PRSO', Game::CProperty);
+__ImplementClass(Prop::CPropSmartObject, 'PRSO', Game::CProperty);
 __ImplementPropertyStorage(CPropSmartObject);
 
 using namespace Data;
-
-void CPropSmartObject::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::SmartObjDesc);
-}
-//---------------------------------------------------------------------
 
 void CPropSmartObject::Activate()
 {
@@ -36,7 +22,7 @@ void CPropSmartObject::Activate()
 
 	PParams Desc;
 	
-	const nString& DescResource = GetEntity()->GetAttr<nString>(CStrID("SmartObjDesc"));
+	const nString& DescResource = GetEntity()->GetAttr<nString>(CStrID("SmartObjDesc"), NULL);
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(nString("smarts:") + DescResource + ".prm");
 
 	if (Desc.IsValid())
@@ -130,4 +116,4 @@ bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

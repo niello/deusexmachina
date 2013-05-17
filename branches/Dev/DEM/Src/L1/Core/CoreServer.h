@@ -29,6 +29,7 @@ public:
 
 	bool Open();
 	void Close();
+	void Trigger();
 
 	template<class T> void		SetGlobal(const nString& Name, const T& Value) { Globals.At(Name.CStr()) = Value; }
 	template<class T> T&		GetGlobal(const nString& Name) { return Globals[Name.CStr()].GetValue<T>(); }

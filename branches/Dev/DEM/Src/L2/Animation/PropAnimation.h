@@ -6,16 +6,10 @@
 #include <Animation/Anim.h>
 #include <Animation/AnimClip.h>
 #include <Animation/AnimTask.h>
-#include <DB/AttrID.h>
 #include <util/ndictionary.h>
 
 // Animation property manages node animation controllers, clip playback and blending.
 // This variation supports bones and mocap clips.
-
-namespace Attr
-{
-	DeclareString(AnimDesc);
-}
 
 namespace Scene
 {
@@ -23,7 +17,7 @@ namespace Scene
 	class CAnimController;
 }
 
-namespace Properties
+namespace Prop
 {
 
 class CPropAnimation: public Game::CProperty

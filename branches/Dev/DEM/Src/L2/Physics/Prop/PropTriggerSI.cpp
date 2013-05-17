@@ -12,7 +12,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -34,7 +34,7 @@ int CPropTrigger_DisableTrigger(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::ExposeSI(const CEventBase& Event)
+bool CPropTrigger::ExposeSI(const Events::CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("EnableTrigger", CPropTrigger_EnableTrigger);
 	ScriptSrv->ExportCFunction("DisableTrigger", CPropTrigger_DisableTrigger);
@@ -42,4 +42,4 @@ bool CPropTrigger::ExposeSI(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

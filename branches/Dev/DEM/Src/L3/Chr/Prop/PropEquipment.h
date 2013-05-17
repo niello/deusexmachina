@@ -7,7 +7,7 @@
 // Extends basic inventory with set of slots, accepting some volume/count of items of certain types
 // and allowing characters to use these items and gain their effects.
 
-namespace Properties
+namespace Prop
 {
 
 class CPropEquipment: public CPropInventory

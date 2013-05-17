@@ -2,9 +2,9 @@
 
 #include <Game/Mgr/FocusManager.h>
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropInput, 'PRIN', Game::CProperty);
+__ImplementClass(Prop::CPropInput, 'PRIN', Game::CProperty);
 __ImplementPropertyStorage(CPropInput);
 
 void CPropInput::Activate()
@@ -81,4 +81,4 @@ void CPropInput::EnableInput(bool Enable)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

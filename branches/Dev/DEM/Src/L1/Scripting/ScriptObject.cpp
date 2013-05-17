@@ -3,10 +3,8 @@
 #include "ScriptServer.h"
 #include "EventHandlerScript.h"
 #include <Events/EventManager.h>
+#include <Data/Buffer.h>
 #include <IO/IOServer.h>
-#include <DB/Dataset.h>
-#include <DB/Database.h>
-#include <DB/DBServer.h>
 
 extern "C"
 {
@@ -14,19 +12,6 @@ extern "C"
 	#include <lauxlib.h>
 	#include <lualib.h>
 };
-
-namespace Attr
-{
-	DefineString(LuaObjName);
-	DefineString(LuaFieldName);
-	DefineAttr(LuaValue);
-}
-
-BEGIN_ATTRS_REGISTRATION(ScriptObject)
-	RegisterString(LuaObjName, ReadWrite);
-	RegisterString(LuaFieldName, ReadWrite);
-	RegisterVarAttr(LuaValue, ReadWrite);
-END_ATTRS_REGISTRATION
 
 extern const nString StrLuaObjects("LuaObjects");
 
@@ -140,7 +125,7 @@ int CScriptObject_NewIndex(lua_State* l)
 			return 0;
 		}
 
-		CData Data;
+		Data::CData Data;
 		if (ScriptSrv->LuaStackToData(Data, 3, l) && This->SetField(Key, Data)) return 0;
 	}
 
@@ -175,7 +160,7 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 
 EExecStatus CScriptObject::LoadScriptFile(const nString& FileName)
 {
-	CBuffer Buffer;
+	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer) &&
 		!IOSrv->LoadFileToBuffer("scripts:" + FileName + ".lua", Buffer)) return Error;
 	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
@@ -235,7 +220,7 @@ bool CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, CData* pRetVal) const
+EExecStatus CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const
 {
 	EExecStatus Result = ScriptSrv->PerformCall(ArgCount, pRetVal, (Name + "." + pFuncName).CStr());
 	if (Result == Error) lua_pop(ScriptSrv->GetLuaState(), 1); // Object itself
@@ -243,7 +228,7 @@ EExecStatus CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, C
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, CData* pRetVal) const
+EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal) const
 {
 	if (!PrepareToLuaCall(pFuncName)) return Error;
 	lua_getglobal(ScriptSrv->GetLuaState(), LuaArg); //???only globals are allowed? //???assert nil?
@@ -251,7 +236,7 @@ EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, CData* p
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunctionData(LPCSTR pFuncName, const CData& Arg, CData* pRetVal) const
+EExecStatus CScriptObject::RunFunctionData(LPCSTR pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
 {
 	if (!PrepareToLuaCall(pFuncName)) return Error;
 	ScriptSrv->DataToLuaStack(Arg);
@@ -259,22 +244,22 @@ EExecStatus CScriptObject::RunFunctionData(LPCSTR pFuncName, const CData& Arg, C
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, CEventDispatcher* pDisp, ushort Priority)
+bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority)
 {
-	PSub Sub = pDisp->AddHandler(EventID, n_new(CEventHandlerScript)(this, HandlerFuncName, Priority));
+	Events::PSub Sub = pDisp->AddHandler(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority));
 	if (!Sub.IsValid()) FAIL;
 	Subscriptions.Append(Sub);
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const CEventDispatcher* pDisp)
+void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const Events::CEventDispatcher* pDisp)
 {
 	for (int i = 0; i < Subscriptions.GetCount(); i++)
 	{
-		PSub CurrSub = Subscriptions[i];
+		Events::PSub CurrSub = Subscriptions[i];
 		if (CurrSub->GetEvent() == EventID && CurrSub->GetDispatcher() == pDisp &&
-			((CEventHandlerScript*)CurrSub->GetHandler())->GetFunc() == HandlerFuncName)
+			((Events::CEventHandlerScript*)CurrSub->GetHandler())->GetFunc() == HandlerFuncName)
 		{
 			Subscriptions.Erase(i);
 			break; //???or scan all array for duplicates?
@@ -312,10 +297,8 @@ void CScriptObject::SetName(const char* NewName)
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::SaveFields(DB::CDatabase* pDB)
+bool CScriptObject::SaveFields(Data::CParams& Dest)
 {
-	n_assert(pDB);
-
 	if (!DBSaveLoadEnabled) OK;
 
 	//RunFunction("OnSave");
@@ -325,6 +308,7 @@ bool CScriptObject::SaveFields(DB::CDatabase* pDB)
 
 	nString ObjName = GetFullName();
 
+	/*
 	//!!!optimize - query can be compiled once! (for both save & load, or load can avoid reading objname!)
 	//!!!can lookup table once per db loading! (inside a script server)
 	//!!!reuse VT (& DS?) without reallocation!
@@ -381,17 +365,17 @@ bool CScriptObject::SaveFields(DB::CDatabase* pDB)
 		if (VT->IsRowUntouched(i)) VT->DeleteRow(i);
 
 	if (InitialCount || Written) DS->CommitChanges();
+*/
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
+bool CScriptObject::LoadFields(const Data::CParams& Src)
 {
-	n_assert(pDB);
-
 	if (!DBSaveLoadEnabled) OK;
 	
+/*
 	int Idx = pDB->FindTableIndex(StrLuaObjects);
 	if (Idx == INVALID_INDEX) OK;
 
@@ -401,7 +385,6 @@ bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
 
 	//!!!no need in reading objname!
 
-/*
 	nString ObjName = GetFullName();
 	static const DB::CAttrID Columns[2] = { CStrID("LuaFieldName"), Attr::LuaValue };
 
@@ -424,23 +407,6 @@ bool CScriptObject::LoadFields(const DB::CDatabase* pDB)
 */
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-void CScriptObject::ClearFields(DB::CDatabase* pDB)
-{
-	if (!DBSaveLoadEnabled) return;
-	ClearFieldsDeffered(pDB, GetFullName());
-}
-//---------------------------------------------------------------------
-
-void CScriptObject::ClearFieldsDeffered(DB::CDatabase* pDB, const nString FullObjName)
-{
-	//!!!hastable lookup can be avoided with shared dataset existence check!
-	if (!pDB->HasTable(StrLuaObjects)) return;
-	nString SQL("DELETE FROM LuaObjects WHERE LuaObjName=\"");
-	DB::PCommand Cmd = DB::CCommand::Create();
-	n_assert(Cmd->Execute(pDB, SQL + FullObjName + "\""));
 }
 //---------------------------------------------------------------------
 

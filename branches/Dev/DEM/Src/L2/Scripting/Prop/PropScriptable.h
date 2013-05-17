@@ -4,17 +4,10 @@
 
 #include <Game/Property.h>
 #include <Scripting/EntityScriptObject.h>
-#include <DB/AttrID.h>
 
 // This property adds script object to the entity and manages entity script interface
 
-namespace Attr
-{
-	DeclareString(ScriptClass);	// Lua class of hosted scriptable object
-	DeclareString(Script);		// Custom lua script to load directly into object
-};
-
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -30,7 +23,6 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(OnLoad, OnLoad);
 	DECLARE_EVENT_HANDLER(OnSave, OnSave);
-	DECLARE_EVENT_HANDLER(OnDelete, OnDelete);
 
 	//???!!!listen OnEntityRenamed?!
 

@@ -227,18 +227,19 @@ nArray<T>& nArray<T>::operator =(const nArray<T>& Other)
 template<class T>
 void nArray<T>::Resize(int NewAllocSize)
 {
-	/*
+	if (Allocated == NewAllocSize) return;
+
 	for (int i = NewAllocSize; i < Count; ++i)
 		pData[i].~T();
 
 	pData = (T*)n_realloc(pData, sizeof(T) * NewAllocSize);
-	n_assert(pData);
+	n_assert_dbg(!NewAllocSize || pData);
 
 	Allocated = NewAllocSize;
 	Count = (NewAllocSize < Count) ? NewAllocSize : Count;
-	*/
 
-	T* newArray = (T*)n_malloc(sizeof(T) * NewAllocSize);
+/*
+	T* pNewData = (T*)n_malloc(sizeof(T) * NewAllocSize);
 
 	int NewSize = (NewAllocSize < Count) ? NewAllocSize : Count;
 
@@ -246,15 +247,16 @@ void nArray<T>::Resize(int NewAllocSize)
 	{
 		for (int i = 0; i < NewSize; i++)
 		{
-			Construct(newArray + i, pData[i]);
+			Construct(pNewData + i, pData[i]);
 			pData[i].~T();
 		}
 		n_free(pData);
 	}
 
-	pData = newArray;
+	pData = pNewData;
 	Allocated = NewAllocSize;
 	Count = NewSize;
+*/
 }
 //---------------------------------------------------------------------
 
