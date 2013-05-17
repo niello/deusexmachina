@@ -47,6 +47,7 @@ CPhysicsLevel::CPhysicsLevel() :
 
 CPhysicsLevel::~CPhysicsLevel()
 {
+	if (ODEWorldID) Deactivate();
 	n_assert(!ODEWorldID);
 	n_assert(!ODEDynamicSpaceID);
 	n_assert(!ODEStaticSpaceID);

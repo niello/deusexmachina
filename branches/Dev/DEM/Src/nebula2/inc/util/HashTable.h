@@ -99,7 +99,7 @@ bool CHashTable<TKey, TVal>::Erase(const TKey& Key)
 	CChain& Chain = Chains[Hash(Key) % Chains.GetCount()];
 	int ElmIdx = Chain.BinarySearchIndex(Key);
 	if (ElmIdx == INVALID_INDEX) FAIL;
-	Chain.Erase(ElmIdx);
+	Chain.EraseAt(ElmIdx);
 	--Count;
 	OK;
 }

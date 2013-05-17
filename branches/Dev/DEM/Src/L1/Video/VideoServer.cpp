@@ -185,7 +185,7 @@ void CVideoServer::DeleteVideoPlayer(CVideoPlayer* pPlayer)
 	for (int i = 0; i < Players.GetCount(); i++)
 		if (Players[i] == pPlayer)
 		{
-			Players.Erase(i);
+			Players.EraseAt(i);
 			break;
 		}
 	if (pPlayer->IsOpen()) pPlayer->Close();

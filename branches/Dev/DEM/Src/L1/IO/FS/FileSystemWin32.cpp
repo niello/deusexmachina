@@ -87,7 +87,7 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 	while (DirStack.GetCount())
 	{
 		AbsPath += "/" + DirStack.Back();
-		DirStack.Erase(DirStack.GetCount() - 1);
+		DirStack.EraseAt(DirStack.GetCount() - 1);
 		if (!CreateDirectory(AbsPath.CStr(), NULL)) FAIL;
 	}
 

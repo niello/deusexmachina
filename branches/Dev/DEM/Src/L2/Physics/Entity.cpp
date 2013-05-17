@@ -12,7 +12,7 @@ DWORD CEntity::UIDCounter = 1;
 CEntity::CEntity(): Level(NULL), UserData(CStrID::Empty), Stamp(0)
 {
 	UID = UIDCounter++;
-	CollidedShapes.SetFlags(nArray<PShape>::DoubleGrowSize);
+	CollidedShapes.Flags.Set(Array_DoubleGrowSize);
 	PhysicsSrv->RegisterEntity(this);
 }
 //---------------------------------------------------------------------

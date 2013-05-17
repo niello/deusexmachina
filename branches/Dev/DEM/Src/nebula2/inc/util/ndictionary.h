@@ -40,7 +40,7 @@ private:
 public:
 
 	nDictionary(): IsInBeginAdd(false) {}
-	nDictionary(int Alloc, int Grow, bool DoubleGrow): Pairs(Alloc, Grow), IsInBeginAdd(false) { Pairs.SetFlags(nArray<CPair>::DoubleGrowSize); }
+	nDictionary(int Alloc, int Grow, bool DoubleGrow): Pairs(Alloc, Grow), IsInBeginAdd(false) { Pairs.Flags.Set(Array_DoubleGrowSize); }
 	nDictionary(const nDictionary<TKey, TValue>& Other): Pairs(Other.Pairs), IsInBeginAdd(Other.IsInBeginAdd) {}
 
 	void			BeginAdd() { n_assert(!IsInBeginAdd); IsInBeginAdd = true; }
@@ -50,7 +50,7 @@ public:
 	TValue&			Add(const TKey& Key, const TValue& Value) { return Add(CPair(Key, Value)); }
 	TValue&			Add(const TKey& Key) { return Add(CPair(Key)); }
 	bool			Erase(const TKey& Key);
-	void			EraseAt(int Idx) { n_assert(!IsInBeginAdd); Pairs.Erase(Idx); }
+	void			EraseAt(int Idx) { n_assert(!IsInBeginAdd); Pairs.EraseAt(Idx); }
 	int				FindIndex(const TKey& Key) const { n_assert(!IsInBeginAdd); return Pairs.BinarySearchIndex(Key); }
 	TValue*			Get(const TKey& Key) const;
 	TValue&			GetOrAdd(const TKey& Key);

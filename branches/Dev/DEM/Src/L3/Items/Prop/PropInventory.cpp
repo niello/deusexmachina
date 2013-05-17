@@ -328,7 +328,7 @@ void CPropInventory::MergeItems(PItem Item)
 			MainStack->Add(Items[i].GetCount());
 			//???what about equipped? MainStack->Merge(Items[i]);?
 			//in normal case erasure will be executed only once
-			Items.Erase(i);
+			Items.EraseAt(i);
 		}
 }
 //---------------------------------------------------------------------

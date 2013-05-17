@@ -189,7 +189,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 	EventMgr->FireEvent(CStrID("OnLevelUnloading"), P);
 
 	Level->FireEvent(CStrID("OnEntitiesUnloading"));
-	//!!!delete all entities of this level! allow them to kill themselves? //EntityMgr->RemoveAllEntities(LevelID);
+	EntityMgr->DeleteEntities(*Level);
 	//!!!delete static environment objects! //StaticEnvMgr->ClearStaticEnv();
 	Level->FireEvent(CStrID("OnEntitiesUnloaded"));
 

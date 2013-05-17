@@ -259,7 +259,7 @@ nKeyArray<TYPE>::Rem(int key)
     int i = this->bsearch(key);
     if (i >= 0)
     {
-        this->elements.Erase(i);
+        this->elements.EraseAt(i);
     }
 }
 

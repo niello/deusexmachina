@@ -26,7 +26,7 @@ CPhysicsServer::CPhysicsServer():
 	Entities(1024, 1024)
 {
 	__ConstructSingleton;
-	Contacts.SetFlags(CContacts::DoubleGrowSize);
+	Contacts.Flags.Set(Array_DoubleGrowSize);
 }
 //---------------------------------------------------------------------
 
