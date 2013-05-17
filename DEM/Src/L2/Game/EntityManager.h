@@ -32,11 +32,12 @@ protected:
 	CHashTable<CStrID, CEntity*>						UIDToEntity;
 	nDictionary<CStrID, CStrID>							Aliases;
 
+	void		DeleteEntity(int Idx);
 	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 
 public:
 
-	CEntityManager(): Entities(256, 256), UIDToEntity(512) { __ConstructSingleton; }
+	CEntityManager(): Entities(256, 256), UIDToEntity(512) { __ConstructSingleton; Entities.Flags.Clear(Array_KeepOrder); }
 	~CEntityManager() { n_assert(!Entities.GetCount() && !UIDToEntity.GetCount()); __DestructSingleton; }
 
 	void		Open();
@@ -46,7 +47,8 @@ public:
 	bool		RenameEntity(CEntity& Entity, CStrID NewUID);
 	PEntity		CloneEntity(const CEntity& Entity, CStrID UID);
 	void		DeleteEntity(CEntity& Entity);
-	void		DeleteEntity(CStrID UID) { CEntity* pEnt = GetEntity(UID, true); if (pEnt) DeleteEntity(*pEnt); }
+	void		DeleteEntity(CStrID UID);
+	void		DeleteEntities(const CGameLevel& Level);
 	void		DeleteAllEntities() { while (Entities.GetCount() > 0) DeleteEntity(*Entities.Back()); }
 
 	template<class T>
@@ -76,6 +78,20 @@ public:
 };
 
 typedef Ptr<CEntityManager> PEntityManager;
+
+inline void CEntityManager::DeleteEntity(CEntity& Entity)
+{
+	int Idx = Entities.FindIndex(&Entity);
+	if (Idx != INVALID_INDEX) DeleteEntity(Idx);
+}
+//---------------------------------------------------------------------
+
+inline void CEntityManager::DeleteEntity(CStrID UID)
+{
+	CEntity* pEnt = GetEntity(UID, true);
+	if (pEnt) DeleteEntity(*pEnt);
+}
+//---------------------------------------------------------------------
 
 template<class T>
 bool CEntityManager::RegisterProperty(DWORD TableCapacity)

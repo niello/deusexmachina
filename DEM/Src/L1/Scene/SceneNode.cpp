@@ -173,7 +173,7 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 	CSceneNodeAttr& Attr = *Attrs[Idx];
 	Attr.OnRemove();
 	Attr.pNode = NULL;
-	Attrs.Erase(Idx);
+	Attrs.EraseAt(Idx);
 }
 //---------------------------------------------------------------------
 

@@ -261,7 +261,7 @@ void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, con
 		if (CurrSub->GetEvent() == EventID && CurrSub->GetDispatcher() == pDisp &&
 			((Events::CEventHandlerScript*)CurrSub->GetHandler())->GetFunc() == HandlerFuncName)
 		{
-			Subscriptions.Erase(i);
+			Subscriptions.EraseAt(i);
 			break; //???or scan all array for duplicates?
 		}
 	}

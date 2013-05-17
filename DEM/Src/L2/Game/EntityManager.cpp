@@ -64,8 +64,10 @@ PEntity CEntityManager::CloneEntity(const CEntity& Entity, CStrID UID)
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::DeleteEntity(CEntity& Entity)
+void CEntityManager::DeleteEntity(int Idx)
 {
+	CEntity& Entity = *Entities[Idx];
+
 	n_assert_dbg(!Entity.IsActivating() && !Entity.IsDeactivating());
 
 	if (Entity.IsActive()) Entity.Deactivate();
@@ -75,7 +77,15 @@ void CEntityManager::DeleteEntity(CEntity& Entity)
 		(*PropStorages.ValueAtIndex(i))->Erase(Entity.GetUID());
 
 	UIDToEntity.Erase(Entity.GetUID());
-	Entities.RemoveByValue(&Entity);
+	Entities.EraseAt(Idx);
+}
+//---------------------------------------------------------------------
+
+void CEntityManager::DeleteEntities(const CGameLevel& Level)
+{
+	for (int i = Entities.GetCount() - 1; i >= 0; --i)
+		if (&Entities[i]->GetLevel() == &Level)
+			DeleteEntity(i);
 }
 //---------------------------------------------------------------------
 

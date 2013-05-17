@@ -16,10 +16,16 @@
     (C) 2002 RadonLabs GmbH
 */
 #include "kernel/ntypes.h"
+#include <Data/Flags.h>
 
 #include <algorithm> // std::sort
 
-//------------------------------------------------------------------------------
+enum
+{
+	Array_DoubleGrowSize	= 0x01,
+	Array_KeepOrder		= 0x02	// Now is set by default //???clear by default?
+};
+
 template<class T> class nArray
 {
 private:
@@ -27,7 +33,6 @@ private:
     int GrowSize;           // _GrowSize by this number of pData if array exhausted
     int Allocated;          // number of pData allocated
     int Count;        // number of pData in array
-    int Flags;
     T* pData;         // pointer to element array
 
     /// check if Idx is in valid range, and array grow if necessary
@@ -45,16 +50,14 @@ public:
 
 	typedef T* iterator;
 
-    enum { DoubleGrowSize = (1 << 0) };
+	Data::CFlags Flags;
 
-	nArray(): GrowSize(16), Allocated(0), Count(0), Flags(0), pData(NULL) {}
+	nArray(): GrowSize(16), Allocated(0), Count(0), Flags(Array_KeepOrder), pData(NULL) {}
     nArray(int _Count, int _GrowSize);
     nArray(int _Count, int _GrowSize, const T& Value);
-	nArray(const nArray<T>& Other): GrowSize(0), Allocated(0), Count(0), pData(0), Flags(0) { Copy(Other); }
+	nArray(const nArray<T>& Other): GrowSize(0), Allocated(0), Count(0), pData(0), Flags(Array_KeepOrder) { Copy(Other); }
 	~nArray() { Delete(); }
 
-	void SetFlags(int f) { Flags = f; }
-	int GetFlags() const { return Flags; }
     void SetFixedSize(int size); //???need to clear all content?
 	void SetGrowSize(int Grow) { GrowSize = Grow; }
 
@@ -76,9 +79,9 @@ public:
     /// erase element equal to arg
     bool RemoveByValue(const T& Elm);
     /// erase element at Idx
-    void Erase(int Idx);
+    void EraseAt(int Idx);
     /// quick erase, does not call operator= or destructor
-    void EraseQuick(int Idx);
+    void EraseAtQuick(int Idx);
     /// erase element pointed to by iterator
     iterator Erase(iterator iter);
     /// quick erase, does not call operator= or destructor
@@ -128,7 +131,7 @@ nArray<T>::nArray(int _Count, int _GrowSize):
 	GrowSize(_GrowSize),
 	Allocated(_Count),
 	Count(0),
-	Flags(0)
+	Flags(Array_KeepOrder)
 {
 	n_assert(_Count >= 0);
 	pData = (_Count > 0) ? (T*)n_malloc(sizeof(T) * this->Allocated) : NULL;
@@ -140,7 +143,7 @@ nArray<T>::nArray(int _Count, int _GrowSize, const T& Value):
 	GrowSize(_GrowSize),
 	Allocated(_Count),
 	Count(_Count),
-	Flags(0)
+	Flags(Array_KeepOrder)
 {
 	n_assert(_Count >= 0);
 	if (_Count > 0)
@@ -264,7 +267,7 @@ template<class T>
 void nArray<T>::Grow()
 {
 	n_assert(GrowSize > 0);
-	Resize((DoubleGrowSize & Flags) ? (Allocated ? (Allocated << 1) : GrowSize) : Allocated + GrowSize);
+	Resize(Flags.Is(Array_DoubleGrowSize) ? (Allocated ? (Allocated << 1) : GrowSize) : Allocated + GrowSize);
 }
 //---------------------------------------------------------------------
 
@@ -454,42 +457,50 @@ bool nArray<T>::RemoveByValue(const T& pElm)
 {
 	int Idx = FindIndex(pElm);
 	if (Idx == -1) return false;
-	Erase(Idx);
+	EraseAt(Idx);
 	return true;
 }
 //---------------------------------------------------------------------
 
 template<class T>
-void nArray<T>::Erase(int Idx)
+void nArray<T>::EraseAt(int Idx)
 {
 	n_assert(pData && Idx >= 0 && Idx < Count);
 	pData[Idx].~T();
-	if (Idx == Count - 1) Count--;
-	else Move(Idx + 1, Idx); //!!!can swap!
+	if (Idx == Count - 1) --Count;
+	else if (Flags.Is(Array_KeepOrder)) Move(Idx + 1, Idx);
+	else
+	{
+		//???or use memcpy?
+		Construct(pData + Idx, pData[Count - 1]);
+		pData[Count - 1].~T();
+		--Count;
+	}
 }
 //---------------------------------------------------------------------
 
 // Quick erase, uses memmove() and does not call assignment operators
 // or destructor, so be careful about that!
 template<class T>
-inline void nArray<T>::EraseQuick(int Idx)
+inline void nArray<T>::EraseAtQuick(int Idx)
 {
 	n_assert(pData && Idx >= 0 && Idx < Count);
 	if (Idx == Count - 1) Count--;
-	else MoveQuick(Idx + 1, Idx);
+	else if (Flags.Is(Array_KeepOrder)) MoveQuick(Idx + 1, Idx);
+	else
+	{
+		memcpy(pData + Idx, pData + Count - 1, sizeof(T));
+		--Count;
+	}
 }
 //---------------------------------------------------------------------
 
 template<class T>
 inline typename nArray<T>::iterator
-nArray<T>::Erase(typename nArray<T>::iterator iter)
+nArray<T>::Erase(typename nArray<T>::iterator It)
 {
-	if (iter)
-	{
-		n_assert(pData && iter >= pData && iter < pData + Count);
-		Erase(int(iter - pData));
-	}
-	return iter;
+	if (It) EraseAt(int(It - pData));
+	return It;
 }
 //---------------------------------------------------------------------
 

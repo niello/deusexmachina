@@ -80,7 +80,6 @@ void CGameLevel::Term()
 {
 	GlobalSub = NULL;
 	AILevel = NULL;
-	PhysicsLevel->Deactivate(); //!!!to PhysicsLevel destructor!
 	PhysicsLevel = NULL;
 	Scene = NULL;
 	Script = NULL;
