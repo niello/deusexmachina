@@ -18,7 +18,7 @@ namespace AI
 {
 __ImplementClass(AI::CGoalWork, 'GWRK', AI::CGoal);
 
-using namespace Properties;
+using namespace Prop;
 
 void CGoalWork::Init(PParams Params)
 {

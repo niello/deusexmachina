@@ -10,14 +10,14 @@
 // E.g. it is very useful for getting SO action preconditions and effects from script.
 
 //???AI/SmartObjFwd.h?
-namespace Properties
+namespace Prop
 {
 	class CPropSmartObject;
 }
 
 namespace AI
 {
-using namespace Properties;
+using namespace Prop;
 
 class CWorldStateSource: public Core::CRefCounted
 {

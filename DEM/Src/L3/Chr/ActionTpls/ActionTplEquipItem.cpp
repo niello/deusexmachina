@@ -15,7 +15,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionTplEquipItem, 'ATEI', AI::CActionTpl);
 
-using namespace Properties;
+using namespace Prop;
 
 void CActionTplEquipItem::Init(PParams Params)
 {

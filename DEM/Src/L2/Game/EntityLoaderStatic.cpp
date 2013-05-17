@@ -11,7 +11,7 @@ bool CEntityLoaderStatic::Load(CStrID UID, CGameLevel& Level, Data::PParams Desc
 {
 	//if (!StaticEnvMgr->AddEnvObject())
 	//	EntityMgr->AttachEntity();
-	OK;
+	FAIL;
 }
 //---------------------------------------------------------------------
 

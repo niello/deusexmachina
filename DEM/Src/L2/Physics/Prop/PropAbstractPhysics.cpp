@@ -7,9 +7,9 @@
 #include <Scene/PropSceneNode.h>
 #include <Math/TransformSRT.h>
 
-namespace Properties
+namespace Prop
 {
-__ImplementClassNoFactory(Properties::CPropAbstractPhysics, CPropTransformable);
+__ImplementClassNoFactory(Prop::CPropAbstractPhysics, CPropTransformable);
 
 CPropAbstractPhysics::~CPropAbstractPhysics()
 {
@@ -94,4 +94,4 @@ void CPropAbstractPhysics::GetAABB(bbox3& AABB) const
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

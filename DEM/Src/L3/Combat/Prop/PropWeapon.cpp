@@ -5,26 +5,17 @@
 #include <AI/AIServer.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropWeapon)
+//    RegisterFloatWithDefault(WpnROF, ReadOnly, 2.0f);
+//    RegisterFloatWithDefault(WpnRangeMin, ReadOnly, 0.1f);
+//    RegisterFloatWithDefault(WpnRangeMax, ReadOnly, 0.8f);
+//    RegisterFloatWithDefault(WpnLastStrikeTime, ReadOnly, -2.1f); //???!!! check bhv
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-    DefineFloat(WpnROF);
-    DefineFloat(WpnRangeMin);
-    DefineFloat(WpnRangeMax);
-    DefineFloat(WpnLastStrikeTime);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropWeapon)
-    RegisterFloatWithDefault(WpnROF, ReadOnly, 2.0f);
-    RegisterFloatWithDefault(WpnRangeMin, ReadOnly, 0.1f);
-    RegisterFloatWithDefault(WpnRangeMax, ReadOnly, 0.8f);
-    RegisterFloatWithDefault(WpnLastStrikeTime, ReadOnly, -2.1f); //???!!! check bhv
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropWeapon, 'PWPN', Game::CProperty);
+__ImplementClass(Prop::CPropWeapon, 'PWPN', Game::CProperty);
 __ImplementPropertyStorage(CPropWeapon);
 
 using namespace Event;
@@ -34,20 +25,10 @@ static CStrID SidAttack;
 
 CPropWeapon::CPropWeapon():
 	x(1), y(6), z(0),
-	DmgType(DT_WPN_THRUST)
+	DmgType(Dmg::DT_WPN_THRUST)
 {
 	//!!!not here, in strid (static CStrID::Attack)!
 	SidAttack = CStrID("Attack");
-}
-//---------------------------------------------------------------------
-
-void CPropWeapon::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
- //   CProperty::GetAttributes(Attrs);
-	//Attrs.Append(Attr::WpnROF);
-	//Attrs.Append(Attr::WpnRangeMin);
-	//Attrs.Append(Attr::WpnRangeMax);
-	//Attrs.Append(Attr::WpnLastStrikeTime);
 }
 //---------------------------------------------------------------------
 
@@ -73,14 +54,14 @@ void CPropWeapon::Deactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropWeapon::OnPropsActivated(const CEventBase& Event)
+bool CPropWeapon::OnPropsActivated(const Events::CEventBase& Event)
 {
 	//SetupBrain(true);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropWeapon::OnChrStrike(const CEventBase& Event)
+bool CPropWeapon::OnChrStrike(const Events::CEventBase& Event)
 {
 	//???or get from attr?
 	//CStrID TargetEntityID = (*((CEvent&)Event).Params).Get<CStrID>(CStrID("TargetEntityID"));
@@ -123,4 +104,4 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

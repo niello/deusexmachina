@@ -5,19 +5,11 @@
 #include <Core/Singleton.h>
 #include <Story/Quests/Quest.h>
 #include <Events/Events.h>
-#include <DB/AttrID.h>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,
 // opening new tasks etc)
 
 //???do CQuest & CTask need refcount or they can be rewritten as simple structs?
-
-namespace Attr
-{
-	DeclareStrID(QuestID);
-	DeclareStrID(TaskID);
-	DeclareInt(QStatus);
-}
 
 namespace Story
 {

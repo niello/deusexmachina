@@ -7,7 +7,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionEquipItem, 'AEQI', AI::CAction);
 
-using namespace Properties;
+using namespace Prop;
 
 bool CActionEquipItem::Activate(CActor* pActor)
 {

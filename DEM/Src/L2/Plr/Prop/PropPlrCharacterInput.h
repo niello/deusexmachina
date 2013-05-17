@@ -11,7 +11,7 @@ namespace Input
 	enum EMouseButton;
 }
 
-namespace Properties
+namespace Prop
 {
 
 class CPropPlrCharacterInput: public CPropInput

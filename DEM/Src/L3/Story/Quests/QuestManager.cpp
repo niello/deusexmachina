@@ -7,25 +7,15 @@
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
 #include <IO/IOServer.h>
-#include <DB/Dataset.h>
-#include <DB/Database.h>
-#include <DB/DBServer.h>
 
 const nString StrQuests("Quests");
 const nString StrUnderline("_");
 
-namespace Attr
-{
-	DefineStrID(QuestID);
-	DefineStrID(TaskID);
-	DefineInt(QStatus);
-}
-
-BEGIN_ATTRS_REGISTRATION(QuestManager)
-	RegisterStrID(QuestID, ReadWrite);
-	RegisterStrID(TaskID, ReadWrite);
-	RegisterInt(QStatus, ReadWrite);
-END_ATTRS_REGISTRATION
+//BEGIN_ATTRS_REGISTRATION(QuestManager)
+//	RegisterStrID(QuestID, ReadWrite);
+//	RegisterStrID(TaskID, ReadWrite);
+//	RegisterInt(QStatus, ReadWrite);
+//END_ATTRS_REGISTRATION
 
 namespace Story
 {
@@ -296,6 +286,7 @@ CQuest::EStatus CQuestManager::GetQuestStatus(CStrID QuestID, CStrID TaskID)
 
 bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 {
+	/*
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
 	QuestsToDelete.Clear();
@@ -367,13 +358,14 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 	for (int i = Quests.GetCount() - 1; i >= 0; i--)
 		if (Quests.ValueAtIndex(i).Status == CQuest::No)
 			Quests.EraseAt(i);
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CQuestManager::OnSave(const Events::CEventBase& Event)
 {
+/*
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
 	//????!!!!move to script server & make general policy to chande LuaObjects table (only OnSave)?!
@@ -431,7 +423,7 @@ bool CQuestManager::OnSave(const Events::CEventBase& Event)
 	}
 
 	DS->CommitChanges();
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------

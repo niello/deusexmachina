@@ -9,7 +9,7 @@
 // Custom Use actions are highly extendable and flexible, allowing designers to implement
 // any specific logic without touching C++. All setup is done with params and scripts.
 
-namespace Properties
+namespace Prop
 {
 	class CPropSmartObject;
 }
@@ -29,7 +29,7 @@ private:
 
 	bool							WasDone;
 
-	Properties::CPropSmartObject*	pSO;
+	Prop::CPropSmartObject*	pSO;
 	CSmartObjAction*				Action;
 
 	PAction							SubActFace;

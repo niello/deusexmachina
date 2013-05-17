@@ -10,13 +10,16 @@ __ImplementClassNoFactory(Game::CEntity, Core::CRefCounted);
 
 CEntity::CEntity(CStrID _UID, CGameLevel& _Level): CEventDispatcher(16), UID(_UID), Level(&_Level)
 {
+	LevelSub = Level->Subscribe(NULL, this, &CEntity::OnEvent);
 }
 //---------------------------------------------------------------------
 
-//CEntity::~CEntity()
-//{
-//}
-////---------------------------------------------------------------------
+CEntity::~CEntity()
+{
+	n_assert_dbg(IsInactive());
+	LevelSub = NULL;
+}
+//---------------------------------------------------------------------
 
 void CEntity::SetUID(CStrID NewUID)
 {
@@ -30,8 +33,6 @@ void CEntity::Activate()
 {
 	n_assert(IsInactive());
 	Flags.Set(ChangingActivity);
-
-	GlobalSub = EventMgr->Subscribe(NULL, this, &CEntity::OnEvent);
 
 	FireEvent(CStrID("OnEntityActivated"));
 	FireEvent(CStrID("OnPropsActivated")); // Needed for initialization of properties dependent on other properties
@@ -48,15 +49,27 @@ void CEntity::Deactivate()
 
 	FireEvent(CStrID("OnEntityDeactivated"));
 
-	GlobalSub = NULL;
-
 	Flags.Clear(Active | ChangingActivity);
 }
 //---------------------------------------------------------------------
 
 bool CEntity::OnEvent(const Events::CEventBase& Event)
 {
-	if (((Events::CEvent&)Event).ID == CStrID("OnBeginFrame")) ProcessPendingEvents();
+	CStrID EvID = ((Events::CEvent&)Event).ID;
+
+	if (EvID == CStrID("OnEntitiesLoaded"))
+	{
+		Activate();
+		OK;
+	}
+
+	if (EvID == CStrID("OnEntitiesUnloading"))
+	{
+		Deactivate();
+		OK;
+	}
+
+	if (EvID == CStrID("OnBeginFrame")) ProcessPendingEvents();
 	return !!DispatchEvent(Event);
 }
 //---------------------------------------------------------------------

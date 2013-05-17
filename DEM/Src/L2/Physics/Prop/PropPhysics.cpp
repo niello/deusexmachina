@@ -5,36 +5,21 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/Event/SetTransform.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropPhysics)
+//	RegisterString(Physics, ReadOnly);
+//	RegisterVector3(VelocityVector, ReadOnly);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineString(Physics);
-	DefineVector3(VelocityVector);
-}
-
-BEGIN_ATTRS_REGISTRATION(PropPhysics)
-	RegisterString(Physics, ReadOnly);
-	RegisterVector3(VelocityVector, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropPhysics, 'PPHY', CPropAbstractPhysics);
+__ImplementClass(Prop::CPropPhysics, 'PPHY', CPropAbstractPhysics);
 
 using namespace Game;
 
 CPropPhysics::~CPropPhysics()
 {
 	n_assert(!PhysicsEntity.IsValid());
-}
-//---------------------------------------------------------------------
-
-void CPropPhysics::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	CPropAbstractPhysics::GetAttributes(Attrs);
-	//Attrs.Append(CStrID("VelocityVector"));
-	//Attrs.Append(CStrID("Physics"));
 }
 //---------------------------------------------------------------------
 
@@ -61,7 +46,8 @@ void CPropPhysics::EnablePhysics()
 {
 	n_assert(!IsEnabled());
 
-	if (GetEntity()->GetAttr<nString>(CStrID("Physics")).IsEmpty()) return;
+	nString PhysicsDesc;
+	if (!GetEntity()->GetAttr<nString>(PhysicsDesc, CStrID("Physics"))) return;
 
 	if (!PhysicsEntity.IsValid())
 	{
@@ -130,4 +116,4 @@ Physics::CEntity* CPropPhysics::CreatePhysicsEntity()
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

@@ -12,7 +12,6 @@
 #include <AI/Memory/MemSystem.h>
 #include <Data/Flags.h>
 #include <Game/Entity.h> // Because too many modules using Brain use also Entity
-#include <DB/AttrID.h>
 
 // Represents AI actor (agent). It is only a part of a whole character, which consists of brain and body.
 // Capabilities fo the brain are to process world and self state, perform decision making, planning and
@@ -21,13 +20,6 @@
 
 //!!!needs first update delay!
 
-namespace Attr
-{
-	DeclareString(ActorDesc);
-	DeclareFloat(Radius);
-	DeclareFloat(Height);
-}
-
 namespace AI
 {
 	class CActionTpl;
@@ -35,7 +27,7 @@ namespace AI
 	typedef Ptr<class CTask> PTask;
 }
 
-namespace Properties
+namespace Prop
 {
 using namespace AI;
 
@@ -115,7 +107,6 @@ public:
 	CPropActorBrain();
 	//virtual ~CPropActorBrain();
 
-	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void	Activate();
 	virtual void	Deactivate();
 	virtual void	OnBeginFrame();

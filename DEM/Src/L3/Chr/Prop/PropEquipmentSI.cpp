@@ -12,7 +12,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 
 using namespace Scripting;
@@ -43,4 +43,4 @@ void CPropEquipment::ExposeSI()
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

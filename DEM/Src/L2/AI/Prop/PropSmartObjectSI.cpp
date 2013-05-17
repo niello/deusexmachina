@@ -11,7 +11,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -65,7 +65,7 @@ int CPropSmartObject_IsActionEnabled(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::ExposeSI(const CEventBase& Event)
+bool CPropSmartObject::ExposeSI(const Events::CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("SetState", CPropSmartObject_SetState);
 	ScriptSrv->ExportCFunction("GetState", CPropSmartObject_GetState);
@@ -76,4 +76,4 @@ bool CPropSmartObject::ExposeSI(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

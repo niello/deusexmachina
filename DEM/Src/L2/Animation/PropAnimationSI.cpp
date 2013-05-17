@@ -11,7 +11,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -75,7 +75,7 @@ int CPropAnimation_StopAnim(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::ExposeSI(const CEventBase& Event)
+bool CPropAnimation::ExposeSI(const Events::CEventBase& Event)
 {
 	ScriptSrv->ExportCFunction("GetAnimLength", CPropAnimation_GetAnimLength);
 	ScriptSrv->ExportCFunction("StartAnim", CPropAnimation_StartAnim);
@@ -85,4 +85,4 @@ bool CPropAnimation::ExposeSI(const CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

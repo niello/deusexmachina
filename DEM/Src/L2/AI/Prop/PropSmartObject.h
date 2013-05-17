@@ -3,7 +3,6 @@
 #define __DEM_L2_PROP_SMART_OBJECT_H__
 
 #include <Game/Property.h>
-#include <DB/AttrID.h>
 #include <Data/Params.h>
 #include <AI/SmartObj/SmartObjAction.h>
 #include <util/ndictionary.h>
@@ -13,12 +12,7 @@
 // Dev info:
 // Can make this class inherited from the AINode analog.
 
-namespace Attr
-{
-	DeclareString(SmartObjDesc);	// Smart object description HRD file ID
-};
-
-namespace Properties
+namespace Prop
 {
 using namespace AI;
 
@@ -44,7 +38,6 @@ public:
 
 	virtual void	Activate();
 	virtual void	Deactivate();
-	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 
 	bool			SetState(CStrID ID);
 	bool			HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }

@@ -6,25 +6,9 @@
 #include <Physics/CharEntity.h>
 #include <Render/DebugDraw.h>
 
-namespace Attr
+namespace Prop
 {
-	DeclareAttr(Physics);
-	DeclareAttr(VelocityVector);
-	DeclareAttr(Radius);
-	DeclareAttr(Height);
-}
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropActorPhysics, 'PRAP', Properties::CPropAbstractPhysics);
-
-void CPropActorPhysics::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	CPropAbstractPhysics::GetAttributes(Attrs);
-	//Attrs.Append(CStrID("Physics"));
-	//Attrs.Append(CStrID("VelocityVector"));
-}
-//------------------------------------------------------------------------------
+__ImplementClass(Prop::CPropActorPhysics, 'PRAP', Prop::CPropAbstractPhysics);
 
 void CPropActorPhysics::Activate()
 {
@@ -62,8 +46,8 @@ void CPropActorPhysics::EnablePhysics()
 	PhysEntity->SetUserData(GetEntity()->GetUID());
 	PhysEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"));
-	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"));
-	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"));
+	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
+	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 	PhysEntity->Hover = 0.2f;
 
 	//!!!recreate physics capsule on R/H change!
@@ -168,4 +152,4 @@ void CPropActorPhysics::OnRenderDebug()
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

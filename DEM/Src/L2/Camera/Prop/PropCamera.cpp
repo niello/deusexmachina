@@ -2,20 +2,14 @@
 
 #include <Game/Mgr/FocusManager.h>
 #include <Audio/AudioServer.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropCamera)
+//	RegisterFloatWithDefault(FieldOfView, ReadOnly, 60.f);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineFloat(FieldOfView);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropCamera)
-	RegisterFloatWithDefault(FieldOfView, ReadOnly, 60.f);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropCamera, 'PCAM', Game::CProperty);
+__ImplementClass(Prop::CPropCamera, 'PCAM', Game::CProperty);
 __ImplementPropertyStorage(CPropCamera);
 
 using namespace Game;
@@ -85,4 +79,4 @@ bool CPropCamera::HasFocus() const
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

@@ -5,7 +5,6 @@
 #include <Game/Property.h>
 #include <Events/Events.h>
 #include <Events/EventHandler.h>
-#include <DB/AttrID.h>
 #include <util/ndictionary.h>
 
 // InterActiveObject (AO, IAO) property. IAO is a 3D-world GUI entity similar to GUI controls like buttons.
@@ -13,18 +12,12 @@
 // IAO uses physics/collide property to determine mouse-over etc.
 // Later it can also have states, offering different action sets.
 
-namespace Attr
-{
-	DeclareString(IAODesc);	// IAO description HRD file ID
-	DeclareString(Name);	// UI (player-readable) name of IAO
-};
-
 namespace Data
 {
 	typedef Ptr<class CParams> PParams;
 }
 
-namespace Properties
+namespace Prop
 {
 
 class CPropUIControl: public Game::CProperty

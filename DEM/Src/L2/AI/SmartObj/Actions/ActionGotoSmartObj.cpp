@@ -4,16 +4,11 @@
 #include <AI/Prop/PropSmartObject.h>
 #include <Game/EntityManager.h>
 
-namespace Attr
-{
-	DeclareAttr(Transform);
-}
-
 namespace AI
 {
 __ImplementClass(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
 
-using namespace Properties;
+using namespace Prop;
 
 bool CActionGotoSmartObj::Activate(CActor* pActor)
 {

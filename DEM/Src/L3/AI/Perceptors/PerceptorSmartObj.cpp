@@ -11,7 +11,7 @@ namespace AI
 {
 __ImplementClass(AI::CPerceptorSmartObj, 'PESO', AI::CPerceptor);
 
-using namespace Properties;
+using namespace Prop;
 
 void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {

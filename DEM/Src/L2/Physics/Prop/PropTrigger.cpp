@@ -7,28 +7,18 @@
 #include <Physics/PhysicsLevel.h>
 #include <Events/Subscription.h>
 #include <Render/DebugDraw.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropTrigger)
+//	RegisterIntWithDefault(TrgShapeType, ReadOnly, (int)Physics::CShape::Sphere);
+//	RegisterFloat4WithDefault(TrgShapeParams, ReadOnly, vector4(1.f, 1.f, 1.f, 1.f));
+//	RegisterFloat(TrgPeriod, ReadOnly);
+//	RegisterBool(TrgEnabled, ReadWrite);
+//	RegisterFloat(TrgTimeLastTriggered, ReadWrite);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineInt(TrgShapeType);
-	DefineFloat4(TrgShapeParams);
-	DefineFloat(TrgPeriod);
-	DefineBool(TrgEnabled);
-	DefineFloat(TrgTimeLastTriggered);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropTrigger)
-	RegisterIntWithDefault(TrgShapeType, ReadOnly, (int)Physics::CShape::Sphere);
-	RegisterFloat4WithDefault(TrgShapeParams, ReadOnly, vector4(1.f, 1.f, 1.f, 1.f));
-	RegisterFloat(TrgPeriod, ReadOnly);
-	RegisterBool(TrgEnabled, ReadWrite);
-	RegisterFloat(TrgTimeLastTriggered, ReadWrite);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropTrigger, 'PTRG', CPropTransformable);
+__ImplementClass(Prop::CPropTrigger, 'PTRG', CPropTransformable);
 
 using namespace Physics;
 
@@ -38,17 +28,6 @@ static nString OnTriggerLeave("OnTriggerLeave");
 
 CPropTrigger::~CPropTrigger()
 {
-}
-//---------------------------------------------------------------------
-
-void CPropTrigger::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::TrgShapeType);
-	Attrs.Append(Attr::TrgShapeParams);
-	Attrs.Append(Attr::TrgPeriod);
-	Attrs.Append(Attr::TrgEnabled);
-	Attrs.Append(Attr::TrgTimeLastTriggered);
-	CPropTransformable::GetAttributes(Attrs);
 }
 //---------------------------------------------------------------------
 
@@ -126,7 +105,7 @@ void CPropTrigger::SetEnabled(bool Enable)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnPropsActivated(const CEventBase& Event)
+bool CPropTrigger::OnPropsActivated(const Events::CEventBase& Event)
 {
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
@@ -205,7 +184,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnSave(const CEventBase& Event)
+bool CPropTrigger::OnSave(const Events::CEventBase& Event)
 {
 	GetEntity()->SetAttr<bool>(CStrID("TrgEnabled"), Enabled);
 	if (Period > 0.f) GetEntity()->SetAttr<float>(CStrID("TrgTimeLastTriggered"), TimeLastTriggered);
@@ -237,4 +216,4 @@ bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

@@ -7,16 +7,11 @@
 #include <Game/GameServer.h>
 #include <Events/EventManager.h>
 
-namespace Attr
-{
-	DeclareAttr(Transform);
-}
-
 namespace AI
 {
 __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 
-using namespace Properties;
+using namespace Prop;
 
 void CActionUseSmartObj::StartSOAction(CActor* pActor)
 {

@@ -4,7 +4,6 @@
 #include <Events/Subscription.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
-#include <DB/DBServer.h>
 
 extern "C"
 {
@@ -90,7 +89,7 @@ bool CEntityScriptObject::RegisterClass()
 int CEntityScriptObject::GetField(LPCSTR Key) const
 {
 	CData Data;
-	if (GetEntity()->GetAttr(CStrID(Key), Data))
+	if (GetEntity()->GetAttr(Data, CStrID(Key)))
 	{
 		int Pushed = ScriptSrv->DataToLuaStack(Data);
 		if (Pushed > 0) return Pushed;

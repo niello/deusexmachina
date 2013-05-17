@@ -12,7 +12,7 @@ namespace Physics
 	typedef Ptr<class CCharEntity> PCharEntity;
 }
 
-namespace Properties
+namespace Prop
 {
 
 class CPropActorPhysics: public CPropAbstractPhysics
@@ -38,7 +38,6 @@ protected:
 
 public:
 
-	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void Activate();
 	virtual void Deactivate();
 

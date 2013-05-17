@@ -9,22 +9,15 @@
 #include <Scripting/EventHandlerScript.h>
 #include <Data/DataServer.h>
 #include <Events/EventManager.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropUIControl)
+//	RegisterString(IAODesc, ReadOnly);
+//	RegisterString(Name, ReadOnly);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DefineString(IAODesc);
-	DefineString(Name);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropUIControl)
-	RegisterString(IAODesc, ReadOnly);
-	RegisterString(Name, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropUIControl, 'PUIC', Game::CProperty);
+__ImplementClass(Prop::CPropUIControl, 'PUIC', Game::CProperty);
 __ImplementPropertyStorage(CPropUIControl);
 
 using namespace Data;
@@ -33,10 +26,10 @@ void CPropUIControl::Activate()
 {
 	Game::CProperty::Activate();
 
-	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"));
+	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"), NULL);
 
 	PParams Desc;
-	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"));
+	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"), NULL);
 	if (IAODesc.IsValid()) Desc = DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm");
 
 	if (Desc.IsValid())
@@ -76,7 +69,7 @@ void CPropUIControl::Deactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnPropsActivated(const CEventBase& Event)
+bool CPropUIControl::OnPropsActivated(const Events::CEventBase& Event)
 {
 	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 	if (!pSO) OK;
@@ -138,7 +131,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFun
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	if (!pScriptObj) FAIL;
-	return AddActionHandler(ID, UIName, n_new(CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, AutoAdded);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, AutoAdded);
 }
 //---------------------------------------------------------------------
 
@@ -276,7 +269,7 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
 
-	PParams P = ((const CEvent&)Event).Params;
+	PParams P = ((const Events::CEvent&)Event).Params;
 
 	PTaskUseSmartObj Task = n_new(CTaskUseSmartObj);
 	Task->SetSmartObj(pSO);
@@ -287,4 +280,4 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

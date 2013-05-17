@@ -11,7 +11,7 @@
 // in subclasses.
 // Based on mangalore PhysicsProperty (C) 2005 Radon Labs GmbH
 
-namespace Properties
+namespace Prop
 {
 
 class CPropPhysics: public CPropAbstractPhysics
@@ -35,13 +35,12 @@ public:
 
 	virtual ~CPropPhysics();
 
-	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void Activate();
 	virtual void Deactivate();
 
 	virtual Physics::CEntity* GetPhysicsEntity() const { return PhysicsEntity.GetUnsafe(); }
 };
 
-} // namespace Properties
+} // namespace Prop
 
 #endif

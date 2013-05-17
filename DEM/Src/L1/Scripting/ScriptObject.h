@@ -4,7 +4,6 @@
 
 #include <Core/RefCounted.h>
 #include <util/narray.h>
-#include <DB/AttrID.h>
 #include <Events/Subscription.h>
 #include "Scripting.h"
 
@@ -23,6 +22,7 @@ namespace Events
 namespace Data
 {
 	class CData;
+	class CParams;
 }
 
 namespace DB
@@ -30,17 +30,8 @@ namespace DB
 	class CDatabase;
 }
 
-namespace Attr
-{
-	DeclareString(LuaObjName);
-	DeclareString(LuaFieldName);
-	DeclareAttr(LuaValue);
-}
-
 namespace Scripting
 {
-using namespace Events;
-using namespace Data;
 
 class CScriptObject: public Core::CRefCounted
 {
@@ -48,14 +39,14 @@ class CScriptObject: public Core::CRefCounted
 
 protected:
 
-	nString			Name;
-	nString			Table;
-	nArray<PSub>	Subscriptions;
+	nString					Name;
+	nString					Table;
+	nArray<Events::PSub>	Subscriptions;
 
 	CScriptObject(): DBSaveLoadEnabled(false) {}
 
 	bool		PrepareToLuaCall(LPCSTR pFuncName) const;
-	EExecStatus	RunFunctionInternal(LPCSTR pFuncName, int ArgCount, CData* pRetVal) const;
+	EExecStatus	RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const;
 
 public:
 
@@ -74,20 +65,18 @@ public:
 	EExecStatus		LoadScriptFile(const nString& FileName);
 	EExecStatus		LoadScript(LPCSTR Buffer, DWORD Length);
 
-	bool			SaveFields(DB::CDatabase* pDB);
-	bool			LoadFields(const DB::CDatabase* pDB);
-	void			ClearFields(DB::CDatabase* pDB);
-	static void		ClearFieldsDeffered(DB::CDatabase* pDB, const nString FullObjName);
+	bool			SaveFields(Data::CParams& Dest);
+	bool			LoadFields(const Data::CParams& Src);
 
-	EExecStatus		RunFunction(LPCSTR pFuncName, CData* pRetVal = NULL) const;
-	EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, CData* pRetVal = NULL) const;
-	EExecStatus		RunFunctionData(LPCSTR FuncName, const CData& Arg, CData* pRetVal = NULL) const;
+	EExecStatus		RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
+	EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal = NULL) const;
+	EExecStatus		RunFunctionData(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
 	//int				RunFunction(LPCSTR pFuncName, const nArray<LPCSTR>& LuaArgs);
 	//int				RunFunction(LPCSTR pFuncName, CDataArray);????
 
-	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, CEventDispatcher* pDisp, ushort Priority);
-	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const CEventDispatcher* pDisp);
-	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Priority_Default);
+	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority);
+	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const Events::CEventDispatcher* pDisp);
+	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Events::Priority_Default);
 	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName);
 
 	const nString&	GetName() const { return Name; }
@@ -95,13 +84,14 @@ public:
 	nString			GetFullName() const { return Table.IsValid() ? Table + "." + Name : Name; }
 	void			SetName(const char* NewName);
 
+	//???implement?
 	virtual int		GetField(LPCSTR Key) const { return 0; } //???is always const?
-	virtual bool	SetField(LPCSTR Key, const CData& Value) { FAIL; }
+	virtual bool	SetField(LPCSTR Key, const Data::CData& Value) { FAIL; }
 };
 
 typedef Ptr<CScriptObject> PScriptObject;
 
-inline EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, CData* pRetVal) const
+inline EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* pRetVal) const
 {
 	return PrepareToLuaCall(pFuncName) ? RunFunctionInternal(pFuncName, 0, pRetVal) : Error;
 }

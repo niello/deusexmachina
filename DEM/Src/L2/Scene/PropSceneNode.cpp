@@ -4,27 +4,20 @@
 #include <Game/GameLevel.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Model.h>
-#include <DB/DBServer.h>
 
-namespace Attr
-{
-	DefineString(ScenePath);
-	DefineString(SceneFile);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropSceneNode)
-	RegisterString(ScenePath, ReadOnly);
-	RegisterString(SceneFile, ReadOnly);
-END_ATTRS_REGISTRATION
+//BEGIN_ATTRS_REGISTRATION(PropSceneNode)
+//	RegisterString(ScenePath, ReadOnly);
+//	RegisterString(SceneFile, ReadOnly);
+//END_ATTRS_REGISTRATION
 
 namespace Scene
 {
 	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
 }
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropSceneNode, 'PSCN', Game::CProperty);
+__ImplementClass(Prop::CPropSceneNode, 'PSCN', Game::CProperty);
 __ImplementPropertyStorage(CPropSceneNode);
 
 void CPropSceneNode::Activate()
@@ -32,8 +25,10 @@ void CPropSceneNode::Activate()
 	//CPropTransformable::Activate();
 	CProperty::Activate();
 
-	nString NodePath = GetEntity()->GetAttr<nString>(CStrID("ScenePath"));
-	const nString& NodeRsrc = GetEntity()->GetAttr<nString>(CStrID("SceneFile"));
+	nString NodePath;
+	GetEntity()->GetAttr<nString>(CStrID("ScenePath"), NodePath);
+	nString NodeRsrc;
+	GetEntity()->GetAttr<nString>(CStrID("SceneFile"), NodeRsrc);
 
 	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
 		NodePath = GetEntity()->GetUID().CStr();

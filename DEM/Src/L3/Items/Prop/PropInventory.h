@@ -5,7 +5,6 @@
 #include <Game/Property.h>
 #include <Items/ItemManager.h>
 #include <Items/ItemStack.h>
-#include <DB/AttrID.h>
 
 // Item collection (character inventory or container items list). When character dies this prop
 // does not change and is used by dead body container. Equipped items are added to it.
@@ -19,7 +18,7 @@
 	ItItemStack Stack = Collection.Begin(); \
 	for (; Stack != Collection.End(); ++Stack)
 
-namespace Properties
+namespace Prop
 {
 using namespace Items;
 

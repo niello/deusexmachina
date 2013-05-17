@@ -9,16 +9,9 @@
 #include <Animation/MocapClip.h>
 #include <Data/DataServer.h>
 
-#include <DB/DBServer.h>
-
-namespace Attr
-{
-	DefineString(AnimDesc);
-}
-
-BEGIN_ATTRS_REGISTRATION(PropAnimation)
-	RegisterString(AnimDesc, ReadOnly);
-END_ATTRS_REGISTRATION
+//BEGIN_ATTRS_REGISTRATION(PropAnimation)
+//	RegisterString(AnimDesc, ReadOnly);
+//END_ATTRS_REGISTRATION
 
 namespace Anim
 {
@@ -26,9 +19,9 @@ namespace Anim
 	bool LoadKeyframeClipFromKFA(const nString& FileName, PKeyframeClip OutClip);
 }
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropAnimation, 'PANM', Game::CProperty);
+__ImplementClass(Prop::CPropAnimation, 'PANM', Game::CProperty);
 __ImplementPropertyStorage(CPropAnimation);
 
 using namespace Data;
@@ -242,4 +235,4 @@ float CPropAnimation::GetAnimLength(CStrID ClipID) const
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

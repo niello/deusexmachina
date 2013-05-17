@@ -23,9 +23,6 @@ namespace Data
 
 namespace Scripting
 {
-
-using namespace Data;
-
 typedef Ptr<class CScriptObject> PScriptObject;
 
 #define ScriptSrv Scripting::CScriptServer::Instance()
@@ -52,13 +49,13 @@ public:
 
 	lua_State*	GetLuaState() const { return l; }
 
-	int			DataToLuaStack(const CData& Data);
-	bool		LuaStackToData(CData& Result, int StackIdx, lua_State* L = NULL);
+	int			DataToLuaStack(const Data::CData& Data);
+	bool		LuaStackToData(Data::CData& Result, int StackIdx, lua_State* L = NULL);
 
 	EExecStatus	RunScriptFile(const nString& FileName);
-	EExecStatus	RunScript(LPCSTR Buffer, DWORD Length = -1, CData* pRetVal = NULL);
+	EExecStatus	RunScript(LPCSTR Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
 
-	EExecStatus	PerformCall(int ArgCount, CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");
+	EExecStatus	PerformCall(int ArgCount, Data::CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");
 	
 	//EExecStatus		RunFunction(LPCSTR pFuncName, int ArgsOnStack = 0);
 	//EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg);

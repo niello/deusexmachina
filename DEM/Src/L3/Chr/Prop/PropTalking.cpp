@@ -2,21 +2,15 @@
 
 #include <Story/Dlg/DialogueManager.h>
 #include <Game/EntityManager.h>
-#include <DB/DBServer.h>
 #include <Events/EventManager.h>
 
-namespace Attr
-{
-	DefineString(Dialogue);
-};
+//BEGIN_ATTRS_REGISTRATION(PropTalking)
+//	RegisterString(Dialogue, ReadOnly);
+//END_ATTRS_REGISTRATION
 
-BEGIN_ATTRS_REGISTRATION(PropTalking)
-	RegisterString(Dialogue, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropTalking, 'PTLK', Game::CProperty);
+__ImplementClass(Prop::CPropTalking, 'PTLK', Game::CProperty);
 __ImplementPropertyStorage(CPropTalking);
 
 void CPropTalking::Activate()
@@ -39,12 +33,6 @@ void CPropTalking::Deactivate()
 	//???check IsTalking and force abort dlg?
 	Dialogue = NULL;
 	Game::CProperty::Deactivate();
-}
-//---------------------------------------------------------------------
-
-void CPropTalking::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::Dialogue);
 }
 //---------------------------------------------------------------------
 
@@ -74,4 +62,4 @@ bool CPropTalking::OnTalk(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

@@ -8,7 +8,7 @@
 // Damage source produces DamageEffects and applies them at the right time to the right targets.
 // Triggered by source-owning entity.
 
-namespace Properties
+namespace Prop
 {
 	class CPropDestructible;
 }
@@ -16,7 +16,7 @@ namespace Properties
 namespace Dmg
 {
 
-using namespace Properties;
+using namespace Prop;
 
 //!!!not here!
 enum ETargetType

@@ -15,9 +15,9 @@
 #include <Camera/Event/CameraOrbit.h>
 #include <Camera/Event/CameraDistance.h>
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropPlrCharacterInput, 'PPIN', Properties::CPropInput);
+__ImplementClass(Prop::CPropPlrCharacterInput, 'PPIN', Prop::CPropInput);
 
 using namespace Data;
 using namespace Input;
@@ -133,4 +133,4 @@ bool CPropPlrCharacterInput::OnMouseClick(Input::EMouseButton Button, bool Doubl
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

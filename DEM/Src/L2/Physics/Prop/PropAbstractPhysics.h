@@ -13,7 +13,7 @@ namespace Physics
 	class CEntity;
 };
 
-namespace Properties
+namespace Prop
 {
 
 class CPropAbstractPhysics: public CPropTransformable

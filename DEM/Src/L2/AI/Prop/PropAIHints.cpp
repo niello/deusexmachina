@@ -6,33 +6,13 @@
 #include <AI/AIServer.h>
 #include <Render/DebugDraw.h>
 #include <Data/DataServer.h>
-#include <DB/DBServer.h>
 
-namespace Attr
+namespace Prop
 {
-	DeclareAttr(Transform);
-	DeclareAttr(Radius);
-	//DeclareAttr(Height);
-
-	DefineString(AIHintsDesc);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropAIHints)
-	RegisterString(AIHintsDesc, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropAIHints, 'PRAH', Game::CProperty);
+__ImplementClass(Prop::CPropAIHints, 'PRAH', Game::CProperty);
 __ImplementPropertyStorage(CPropAIHints);
 
 static const nString StrStimulusPrefix("AI::CStimulus");
-
-void CPropAIHints::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::AIHintsDesc);
-}
-//---------------------------------------------------------------------
 
 void CPropAIHints::Activate()
 {
@@ -70,7 +50,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 
 	//???need to cache?
 	Data::PParams Desc;
-	const nString& DescName = GetEntity()->GetAttr<nString>(CStrID("AIHintsDesc"));
+	const nString& DescName = GetEntity()->GetAttr<nString>(CStrID("AIHintsDesc"), NULL);
 	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(nString("aihints:") + DescName + ".prm");
 
 	if (Desc.IsValid())
@@ -125,8 +105,8 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			}
 			else if (SizeStr == "Attr")
 			{
-				Rec.Stimulus->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"));
-				//!!!Rec.Stimulus->Height = GetEntity()->GetAttr<float>(CStrID("Height"));
+				Rec.Stimulus->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
+				//!!!Rec.Stimulus->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 			}
 
 			//???Rec.Stimulus->Init(PrmVal);
@@ -208,4 +188,4 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

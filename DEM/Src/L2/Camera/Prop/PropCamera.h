@@ -3,7 +3,6 @@
 #define __DEM_L2_PROP_CAMERA_H__
 
 #include <Game/Property.h>
-#include <DB/AttrID.h>
 //#include <vfx/shakeeffecthelper.h>
 #include <Game/Entity.h>
 
@@ -23,12 +22,7 @@
     Based on mangalore CameraProperty (C) 2005 Radon Labs GmbH
 */
 
-namespace Attr
-{
-	DeclareFloat(FieldOfView);
-};
-
-namespace Properties
+namespace Prop
 {
 
 class CPropCamera: public Game::CProperty

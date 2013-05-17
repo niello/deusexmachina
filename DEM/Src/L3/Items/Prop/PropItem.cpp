@@ -1,13 +1,12 @@
 #include "PropItem.h"
 
-#include <Items/ItemAttrs.h>
 #include <Items/ItemManager.h>
 #include <Items/Prop/PropInventory.h>
 #include <Game/EntityManager.h>
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropItem, 'PITM', Game::CProperty);
+__ImplementClass(Prop::CPropItem, 'PITM', Game::CProperty);
 __ImplementPropertyStorage(CPropItem);
 
 using namespace Items;
@@ -94,4 +93,4 @@ bool CPropItem::OnPickItem(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

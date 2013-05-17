@@ -1,36 +1,19 @@
 #include "PropTransitionZone.h"
 
 #include <Game/EntityManager.h>
-#include <DB/DBServer.h>
 #include <Events/EventManager.h>
 
 extern const matrix44 Rotate180;
 
-namespace Attr
+//BEGIN_ATTRS_REGISTRATION(PropTransitionZone)
+//	RegisterString(TargetLevelID, ReadOnly);
+//	RegisterString(DestPoint, ReadOnly);
+//END_ATTRS_REGISTRATION
+
+namespace Prop
 {
-	DeclareAttr(Transform);
-	DeclareAttr(LevelID);
-
-	DefineString(TargetLevelID);
-	DefineString(DestPoint);
-};
-
-BEGIN_ATTRS_REGISTRATION(PropTransitionZone)
-	RegisterString(TargetLevelID, ReadOnly);
-	RegisterString(DestPoint, ReadOnly);
-END_ATTRS_REGISTRATION
-
-namespace Properties
-{
-__ImplementClass(Properties::CPropTransitionZone, 'PRTZ', Game::CProperty);
+__ImplementClass(Prop::CPropTransitionZone, 'PRTZ', Game::CProperty);
 __ImplementPropertyStorage(CPropTransitionZone);
-
-void CPropTransitionZone::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::TargetLevelID);
-	Attrs.Append(Attr::DestPoint);
-}
-//---------------------------------------------------------------------
 
 void CPropTransitionZone::Activate()
 {
@@ -78,4 +61,4 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

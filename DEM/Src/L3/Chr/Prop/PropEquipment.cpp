@@ -6,9 +6,9 @@
 #include <AI/AIServer.h>
 #include <Events/EventManager.h>
 
-namespace Properties
+namespace Prop
 {
-__ImplementClass(Properties::CPropEquipment, 'PEQI', CPropInventory);
+__ImplementClass(Prop::CPropEquipment, 'PEQI', CPropInventory);
 
 CPropEquipment::CPropEquipment()
 {
@@ -37,6 +37,7 @@ CPropEquipment::CPropEquipment()
 
 void CPropEquipment::Save()
 {
+/*
 	CPropInventory::Save();
 	
 	DB::CDataset* DS = ItemMgr->GetEquipmentDataset();
@@ -53,11 +54,13 @@ void CPropEquipment::Save()
 			DS->Set<int>(2, Slot.Count);
 		}
 	}
+*/
 }
 //---------------------------------------------------------------------
 
 void CPropEquipment::Load()
 {
+/*
 	CPropInventory::Load();
 
 	DB::CDataset* DS = ItemMgr->GetEquipmentDataset();
@@ -84,6 +87,7 @@ void CPropEquipment::Load()
 			else End = CurrIdx - 1;
 		}
 	}
+*/
 }
 //---------------------------------------------------------------------
 
@@ -148,4 +152,4 @@ void CPropEquipment::Unequip(CStrID SlotID)
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop

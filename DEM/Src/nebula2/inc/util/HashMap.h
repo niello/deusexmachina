@@ -85,7 +85,13 @@ public:
 
 	public:
 
-		CIterator(CHashMap<TVal>* Map): BucketIdx(0), pMap(Map) { n_assert(pMap); pNode = (pMap->buckets && pMap->capacity > 0) ? pMap->buckets[0] : NULL; }
+		CIterator(CHashMap<TVal>* Map): BucketIdx(0), pMap(Map)
+		{
+			n_assert(pMap);
+			pNode = pMap->buckets ? pMap->buckets[0] : NULL;
+			while (!pNode && ++BucketIdx < pMap->capacity)
+				pNode = pMap->buckets[BucketIdx];
+		}
 
 		const char*	GetKey() const { n_assert(pNode); return (const char*)pNode->key; }
 		size_t		GetKeyLength() const { n_assert(pNode); return pNode->len; }

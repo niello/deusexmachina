@@ -15,7 +15,7 @@ namespace Data
 }
 
 //???AI/SmartObjFwd.h?
-namespace Properties
+namespace Prop
 {
 	class CPropSmartObject;
 }
@@ -23,7 +23,7 @@ namespace Properties
 namespace AI
 {
 class CSmartObjAction;
-using namespace Properties;
+using namespace Prop;
 
 class CValidator: public Core::CRefCounted
 {

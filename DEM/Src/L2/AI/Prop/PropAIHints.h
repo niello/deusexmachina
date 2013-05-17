@@ -4,17 +4,11 @@
 
 #include <Game/Property.h>
 #include <AI/Perception/Stimulus.h>
-#include <DB/AttrID.h>
 
 // This property manages all the AI stimuli and hints produced by a single game entity.
 // Speaking figuratively, this property makes the entity smell, sound and be visible for the actors.
 
-namespace Attr
-{
-	DeclareString(AIHintsDesc);
-}
-
-namespace Properties
+namespace Prop
 {
 using namespace AI;
 
@@ -43,7 +37,6 @@ public:
 	//CPropAIHints();
 	//virtual ~CPropAIHints();
 
-	virtual void	GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void	Activate();
 	virtual void	Deactivate();
 

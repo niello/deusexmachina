@@ -1,14 +1,23 @@
 #include "GameLevel.h"
 
 #include <Game/Entity.h>
-#include <Scene/SceneServer.h> //!!!only for scene creation. mb not needed!
+#include <Scripting/ScriptObject.h>
+#include <Scene/SceneServer.h>		//!!!Because scene stores ScreenFrameShader! //!!!???move to RenderSrv?!
+//#include <Scene/Scene.h>
+//#include <Render/FrameShader.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsLevel.h>
 #include <AI/AILevel.h>
-#include <Events/EventManager.h> //???need, or is dispatcher itself?
+#include <Events/EventManager.h>
 
 namespace Game
 {
+
+CGameLevel::~CGameLevel()
+{
+	Term();
+}
+//---------------------------------------------------------------------
 
 bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 {
@@ -18,7 +27,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	Name = Desc.Get<nString>(CStrID("Name"), NULL);
 
 	nString ScriptFile;
-	if (Desc.Get(ScriptFile, CStrID("Name")))
+	if (Desc.Get(ScriptFile, CStrID("Script")))
 	{
 		Script = n_new(Scripting::CScriptObject(("Level_" + Name).CStr()));
 		Script->Init(); // No special class
@@ -29,8 +38,9 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	Data::PParams SubDesc;
 	if (Desc.Get(SubDesc, CStrID("Scene")))
 	{
-		vector3 Center = SubDesc->Get<vector3>(CStrID("Center"), vector3::Zero);
-		vector3 Extents = SubDesc->Get<vector3>(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
+		//!!!allow vector3 (de)serialization?!
+		vector3 Center = SubDesc->Get<vector4>(CStrID("Center"), vector4::Zero);
+		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
 		int QTDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 		bbox3 Bounds(Center, Extents);
 
@@ -45,8 +55,9 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
 	{
-		vector3 Center = SubDesc->Get<vector3>(CStrID("Center"), vector3::Zero);
-		vector3 Extents = SubDesc->Get<vector3>(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
+		//!!!allow vector3 (de)serialization?!
+		vector3 Center = SubDesc->Get<vector4>(CStrID("Center"), vector4::Zero);
+		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
 		int QTDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 		bbox3 Bounds(Center, Extents);
 
@@ -59,7 +70,20 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 				n_printf("Error loading navigation mesh for level %s\n", ID.CStr());
 	}
 
+	GlobalSub = EventMgr->Subscribe(NULL, this, &CGameLevel::OnEvent);
+
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CGameLevel::Term()
+{
+	GlobalSub = NULL;
+	AILevel = NULL;
+	PhysicsLevel->Deactivate(); //!!!to PhysicsLevel destructor!
+	PhysicsLevel = NULL;
+	Scene = NULL;
+	Script = NULL;
 }
 //---------------------------------------------------------------------
 
@@ -77,12 +101,19 @@ void CGameLevel::Trigger()
 
 	if (PhysicsLevel.IsValid())
 	{
-		EventMgr->FireEvent(CStrID("BeforePhysics"));
+		FireEvent(CStrID("BeforePhysics"));
 		PhysicsLevel->Trigger();
-		EventMgr->FireEvent(CStrID("AfterPhysics"));
+		FireEvent(CStrID("AfterPhysics"));
 	}
 
 	if (Scene.IsValid()) Scene->GetRootNode().UpdateWorldSpace();
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::OnEvent(const Events::CEventBase& Event)
+{
+	if (((Events::CEvent&)Event).ID == CStrID("OnBeginFrame")) ProcessPendingEvents();
+	return !!DispatchEvent(Event);
 }
 //---------------------------------------------------------------------
 
@@ -101,8 +132,7 @@ void CGameLevel::RenderDebug()
 {
 	PhysicsLevel->RenderDebug();
 
-	//???!!!fire from itself?!
-	EventMgr->FireEvent(CStrID("OnRenderDebug"));
+	FireEvent(CStrID("OnRenderDebug"));
 
 	if (Scene.IsValid())
 		Scene->GetRootNode().RenderDebug();
@@ -134,7 +164,7 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 {
 	if (!Scene.IsValid()) FAIL;
 
-	Properties::CPropSceneNode* pNode = Entity.GetProperty<Properties::CPropSceneNode>();
+	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode) FAIL;
 
 	bbox3 AABB;
@@ -148,7 +178,7 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 {
 	if (!Scene.IsValid()) FAIL;
 
-	Properties::CPropSceneNode* pNode = Entity.GetProperty<Properties::CPropSceneNode>();
+	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode) FAIL;
 
 	bbox3 AABB;

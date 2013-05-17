@@ -2,11 +2,11 @@
 #ifndef __DEM_L2_GAME_ENTITY_H__
 #define __DEM_L2_GAME_ENTITY_H__
 
-// Entity is an abstract game object containing properties which extend it
-
 #include <Events/EventDispatcher.h>
 #include <Data/Flags.h>
 #include <util/ndictionary.h>
+
+// Entity is an abstract game object containing properties which extend it
 
 namespace Game
 {
@@ -29,7 +29,7 @@ protected:
 	CStrID								UID;
 	PGameLevel							Level;
 	Data::CFlags						Flags;
-	Events::PSub						GlobalSub;
+	Events::PSub						LevelSub;
 	nDictionary<CStrID, Data::CData>	Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);
@@ -40,7 +40,7 @@ protected:
 
 public:
 
-	//~CEntity();
+	~CEntity();
 
 	void						Activate();
 	void						Deactivate();
@@ -51,11 +51,13 @@ public:
 	CStrID						GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
 	CGameLevel&					GetLevel() const { return *Level.GetUnsafe(); }
 
+	//???!!!need GetAttr with default?!
 	template<class T> void		SetAttr(CStrID ID, const T& Value);
 	template<> void				SetAttr(CStrID ID, const Data::CData& Value);
 	template<class T> const T&	GetAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
-	template<class T> bool		GetAttr(CStrID ID, T& Out) const;
-	template<> bool				GetAttr(CStrID ID, Data::CData& Out) const;
+	template<class T> const T&	GetAttr(CStrID ID, const T& Default) const;
+	template<class T> bool		GetAttr(T& Out, CStrID ID) const;
+	template<> bool				GetAttr(Data::CData& Out, CStrID ID) const;
 	bool						HasAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
 	bool						IsActive() const { return Flags.Is(Active) && Flags.IsNot(ChangingActivity); }
@@ -80,7 +82,7 @@ template<class T>
 inline void CEntity::SetAttr(CStrID ID, const T& Value)
 {
 	int Idx = Attrs.FindIndex(ID);
-	if (ID == INVALID_INDEX) Attrs.Add(ID, Value);
+	if (Idx == INVALID_INDEX) Attrs.Add(ID, Value);
 	else Attrs.ValueAtIndex(Idx).SetTypeValue(Value);
 }
 //---------------------------------------------------------------------
@@ -91,27 +93,36 @@ template<> void CEntity::SetAttr(CStrID ID, const Data::CData& Value)
 	else
 	{
 		int Idx = Attrs.FindIndex(ID);
-		if (ID != INVALID_INDEX) Attrs.Erase(ID);
+		if (Idx != INVALID_INDEX) Attrs.Erase(ID);
 	}
+}
+//---------------------------------------------------------------------
+
+template<class T>
+inline const T& CEntity::GetAttr(CStrID ID, const T& Default) const
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) return Default;
+	return Attrs.ValueAtIndex(Idx).GetValue<T>();
 }
 //---------------------------------------------------------------------
 
 //???ref of ptr? to avoid copying big data
 template<class T>
-inline bool CEntity::GetAttr(CStrID ID, T& Out) const
+inline bool CEntity::GetAttr(T& Out, CStrID ID) const
 {
 	int Idx = Attrs.FindIndex(ID);
-	if (ID == INVALID_INDEX) FAIL;
+	if (Idx == INVALID_INDEX) FAIL;
 	return Attrs.ValueAtIndex(Idx).GetValue<T>(Out);
 }
 //---------------------------------------------------------------------
 
 //???ref of ptr? to avoid copying big data
 template<>
-inline bool CEntity::GetAttr(CStrID ID, Data::CData& Out) const
+inline bool CEntity::GetAttr(Data::CData& Out, CStrID ID) const
 {
 	int Idx = Attrs.FindIndex(ID);
-	if (ID == INVALID_INDEX) FAIL;
+	if (Idx == INVALID_INDEX) FAIL;
 	Out = Attrs.ValueAtIndex(Idx);
 	OK;
 }

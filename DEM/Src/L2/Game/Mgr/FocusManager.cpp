@@ -5,18 +5,11 @@
 #include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Input/InputServer.h>
-#include <DB/DBServer.h>
 
-namespace Attr
-{
-	DefineStrID(InputFocus);
-	DefineStrID(CameraFocus);
-}
-
-BEGIN_ATTRS_REGISTRATION(FocusManager)
-	RegisterStrID(InputFocus, ReadWrite);
-	RegisterStrID(CameraFocus, ReadWrite);
-END_ATTRS_REGISTRATION
+//BEGIN_ATTRS_REGISTRATION(FocusManager)
+//	RegisterStrID(InputFocus, ReadWrite);
+//	RegisterStrID(CameraFocus, ReadWrite);
+//END_ATTRS_REGISTRATION
 
 namespace Game
 {
@@ -24,7 +17,7 @@ __ImplementClassNoFactory(Game::CFocusManager, Core::CRefCounted);
 
 CFocusManager* CFocusManager::Singleton = NULL;
 
-using namespace Properties;
+using namespace Prop;
 
 CFocusManager::CFocusManager()
 {

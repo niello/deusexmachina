@@ -8,6 +8,7 @@
 #include <Data/DataServer.h>
 #include <IO/IOServer.h>
 #include <Time/TimeServer.h>
+#include <Scripting/ScriptObject.h>
 #include <Events/EventManager.h>
 
 /* User profile stuff:
@@ -100,7 +101,7 @@ void CGameServer::Trigger()
 	AISrv->Trigger(); // Pathfinding queries inside
 
 	//!!!trigger all levels, but send to the audio, video, scene and debug rendering only data from the active level!
-	ActiveLevel->Trigger();
+	if (ActiveLevel.IsValid()) ActiveLevel->Trigger();
 
 	EventMgr->FireEvent(CStrID("OnEndFrame"));
 }
@@ -124,51 +125,46 @@ void CGameServer::ClearEntityLoader(CStrID Group)
 bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 {
 	int LevelIdx = Levels.FindIndex(ID);
-	if (ID != INVALID_INDEX)
+	if (LevelIdx != INVALID_INDEX)
 	{
 		//???update already existing objects or unload the level?
 		FAIL;
 	}
 
-	//!!!may be useful for custom gameplay managers!
-	//P = n_new(CParams);
-	//P->Set(CStrID("Level"), Level->GetID());
-	//EventMgr->FireEvent(CStrID("OnLevelLoading"), P);
+	Data::PParams P = n_new(Data::CParams);
+	P->Set(CStrID("ID"), ID);
+	EventMgr->FireEvent(CStrID("OnLevelLoading"), P); //???or after a level is added, but entities aren't loaded?
 
 	PGameLevel Level = n_new(CGameLevel);
 	if (!Level->Init(ID, Desc)) FAIL;
 
+	Levels.Add(Level->GetID(), Level);
+
 	Data::PParams SubDesc;
 	if (Desc.Get(SubDesc, CStrID("Entities")))
 	{
+		Level->FireEvent(CStrID("OnEntitiesLoading"));
+
 		for (int i = 0; i < SubDesc->GetCount(); ++i)
 		{
 			const Data::CParam& EntityPrm = SubDesc->Get(i);
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
 			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
 
-			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"));
+			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
 			int LoaderIdx = Loaders.FindIndex(LoadingGroup);
 			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAtIndex(LoaderIdx);
 			if (!Loader.IsValid()) continue;
 
 			if (!Loader->Load(EntityPrm.GetName(), *Level, EntityDesc))
-				n_printf("Entity %s not loaded in level %s\n", EntityPrm.GetName().CStr(), Level->GetID().CStr());
+				n_printf("Entity %s not loaded in level %s, group is %s\n",
+					EntityPrm.GetName().CStr(), Level->GetID().CStr(), LoadingGroup.CStr());
 		}
+
+		Level->FireEvent(CStrID("OnEntitiesLoaded"));
 	}
 
-	//!!!old and idiotic! use one event, smth like OnLevelLoaded
-	//
-	//PParams P = n_new(CParams);
-	//P->Set(CStrID("DB"), (PVOID)GameDB.GetUnsafe());
-	//EventMgr->FireEvent(CStrID("OnLoadBefore"), P);
-	//EventMgr->FireEvent(CStrID("OnLoad"), P);
-	//EventMgr->FireEvent(CStrID("OnLoadAfter"), P);
-	//P = n_new(CParams);
-	//P->Set(CStrID("Level"), Level->GetID());
-	//EventMgr->FireEvent(CStrID("OnLevelLoaded"), P);
-
-	Levels.Add(Level->GetID(), Level);
+	EventMgr->FireEvent(CStrID("OnLevelLoaded"), P);
 
 	OK;
 }
@@ -179,17 +175,31 @@ void CGameServer::UnloadLevel(CStrID ID)
 	int LevelIdx = Levels.FindIndex(ID);
 	if (ID == INVALID_INDEX) return;
 
-	//???Level->Release()/Term();?
+	PGameLevel Level = Levels.ValueAtIndex(LevelIdx);
 
-	////!!!unload AI level!
-	//GameSrv->Stop();
-	//StaticEnvMgr->ClearStaticEnv();
-	//EntityMgr->RemoveAllEntities();
-	//SceneSrv->RemoveScene(SceneSrv->GetCurrentSceneID());
-	//PhysicsSrv->SetLevel(NULL);
-	//LevelBox.vmin = vector3::Zero;
-	//LevelBox.vmax = vector3::Zero;
-	//LevelScript = NULL;
+	//!!!if in game mode, save diff of this level to a continue set!
+	// re-entering location LoadLevel call will load continue diff
+	// If mode is not a game, but is a simple level, we don't need to save diff,
+	// moreover, we have no user profile
+
+	if (ActiveLevel == Level) SetActiveLevel(CStrID::Empty);
+
+	Data::PParams P = n_new(Data::CParams);
+	P->Set(CStrID("ID"), ID);
+	EventMgr->FireEvent(CStrID("OnLevelUnloading"), P);
+
+	Level->FireEvent(CStrID("OnEntitiesUnloading"));
+	//!!!delete all entities of this level! allow them to kill themselves? //EntityMgr->RemoveAllEntities(LevelID);
+	//!!!delete static environment objects! //StaticEnvMgr->ClearStaticEnv();
+	Level->FireEvent(CStrID("OnEntitiesUnloaded"));
+
+	Levels.EraseAt(LevelIdx);
+
+	Level->Term();
+
+	EventMgr->FireEvent(CStrID("OnLevelUnloaded"), P); //???or before a level is removed, but entities are unloaded?
+
+	n_assert_dbg(Level->GetRefCount() == 1);
 }
 //---------------------------------------------------------------------
 
@@ -199,18 +209,27 @@ bool CGameServer::StartGame(const nString& FileName)
 	Data::PParams GameDesc = DataSrv->LoadHRD(FileName);
 	if (!GameDesc.IsValid()) FAIL;
 
-	CStrID LevelID = GameDesc->Get<CStrID>(CStrID("Level"));
-	Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:/Levels/") + LevelID.CStr() + ".hrd"); //!!!load PRM!
-	if (!LevelDesc.IsValid()) FAIL;
+	//!!!if there is GameDesc override, apply it here!
 
-	//!!!load and apply overrides on descs, if there are!
+	for (int i = 0; i < GameDesc->GetCount(); ++i)
+		SetGlobalAttr(GameDesc->Get(i).GetName(), GameDesc->Get(i).GetRawValue());
+
+	CStrID LevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
+	Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + LevelID.CStr() + "/Level.hrd"); //!!!load PRM!
+	if (!LevelDesc.IsValid())
+	{
+		Attrs.Clear();
+		FAIL;
+	}
+
+	//!!!if there is LevelDesc override, apply it here!
 
 	//!!!HERE:
 	//???simply load GameDesc as globals?
 
 	//!!!reset game timers or load, if LoadGame!
 
-	return LoadLevel(LevelID, *LevelDesc);
+	return LoadLevel(LevelID, *LevelDesc) && SetActiveLevel(LevelID);
 }
 //---------------------------------------------------------------------
 

@@ -37,9 +37,9 @@ public:
 	static bool		RegisterClass();
 
 	virtual int		GetField(LPCSTR Key) const;
-	virtual bool	SetField(LPCSTR Key, const CData& Value);
+	virtual bool	SetField(LPCSTR Key, const Data::CData& Value);
 
-	bool			SubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Priority_Default);
+	bool			SubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Events::Priority_Default);
 	void			UnsubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName);
 
 	void			SetEntity(Game::CEntity* pEnt) { pEntity = pEnt; }

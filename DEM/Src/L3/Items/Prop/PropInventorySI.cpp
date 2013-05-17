@@ -12,7 +12,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-namespace Properties
+namespace Prop
 {
 using namespace Scripting;
 
@@ -74,11 +74,11 @@ void CPropInventory::ExposeSI()
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::OnExposeSI(const CEventBase& Event)
+bool CPropInventory::OnExposeSI(const Events::CEventBase& Event)
 {
 	ExposeSI();
 	OK;
 }
 //---------------------------------------------------------------------
 
-} // namespace Properties
+} // namespace Prop
