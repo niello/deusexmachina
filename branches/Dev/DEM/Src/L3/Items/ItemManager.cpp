@@ -2,9 +2,9 @@
 
 #include <Items/ItemTpl.h>
 #include <Items/ItemAttrs.h>
-#include <Loading/LoaderServer.h>
 #include <Data/Params.h>
 #include <IO/IOServer.h>
+#include <Data/DataServer.h>
 #include <Events/EventManager.h>
 #include <DB/Database.h>
 
@@ -22,8 +22,8 @@ CItemManager::CItemManager(): InitialVTRowCount(0)
 	__ConstructSingleton;
 
 	IOSrv->SetAssign("items", "game:items");
-	if (LoaderSrv->HasGlobal(Attr::LargestItemStackID))
-		LargestItemStackID = LoaderSrv->GetGlobal<int>(Attr::LargestItemStackID);
+	//if (LoaderSrv->HasGlobal(Attr::LargestItemStackID))
+	//	LargestItemStackID = LoaderSrv->GetGlobal<int>(Attr::LargestItemStackID);
 
 	// Unsubscribed in destructor automatically
 	SUBSCRIBE_PEVENT(OnSaveBefore, CItemManager, OnSaveBefore);
@@ -71,6 +71,7 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 
 bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 {
+	/*
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
 	if (!DSInv.IsValid())
@@ -144,6 +145,7 @@ bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 	}
 
 	// request item instance tables (whole? on demand?)
+*/
 
 	OK;
 }
@@ -151,6 +153,7 @@ bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 
 bool CItemManager::OnSaveAfter(const Events::CEventBase& Event)
 {
+	/*
 	DSInv->CommitChanges();
 	DSInv->Clear();
 	InitialVTRowCount = 0;
@@ -162,6 +165,7 @@ bool CItemManager::OnSaveAfter(const Events::CEventBase& Event)
 	// Kill instance VTs
 
 	LoaderSrv->SetGlobal<int>(Attr::LargestItemStackID, LargestItemStackID);
+*/
 
 	OK;
 }
@@ -169,6 +173,7 @@ bool CItemManager::OnSaveAfter(const Events::CEventBase& Event)
 
 bool CItemManager::OnLoadBefore(const Events::CEventBase& Event)
 {
+	/*
 	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
 
 	if (!DSInv.IsValid())
@@ -228,18 +233,18 @@ bool CItemManager::OnLoadBefore(const Events::CEventBase& Event)
 
 	// May be needed not only for Invs but for item entities too
 	// request item instance tables (whole? on demand?)
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CItemManager::OnLoadAfter(const Events::CEventBase& Event)
 {
-	if (DSInv.IsValid() && DSInv->GetRowCount() > 0)
-	{
-		DSInv->Clear();
-		if (DSEquip->GetRowCount() > 0) DSEquip->Clear();
-	}
+	//if (DSInv.IsValid() && DSInv->GetRowCount() > 0)
+	//{
+	//	DSInv->Clear();
+	//	if (DSEquip->GetRowCount() > 0) DSEquip->Clear();
+	//}
 	
 	// Kill instance VTs
 	

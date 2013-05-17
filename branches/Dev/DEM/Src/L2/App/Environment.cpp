@@ -27,12 +27,13 @@ bool CEnvironment::InitCore()
 	n_new(Core::CCoreServer());
 	CoreSrv->Open();
 
-	DataServer.Create();
+	IOServer = n_new(IO::CIOServer);
+	DataServer = n_new(Data::CDataServer);
 
 	n_new(Core::CLogger);
 	CoreLogger->Open((AppName + " - " + AppVersion).CStr());
 
-	if (!ProjDir.IsValid()) ProjDir = DataSrv->GetAssign("home");
+	if (!ProjDir.IsValid()) ProjDir = IOSrv->GetAssign("home");
 	IOSrv->SetAssign("proj", ProjDir);
 
 	nString AppData;
@@ -46,6 +47,7 @@ bool CEnvironment::InitCore()
 void CEnvironment::ReleaseCore()
 {
 	DataServer = NULL;
+	IOServer = NULL;
 
 	CoreLogger->Close();
 	n_delete(CoreLogger);
@@ -57,55 +59,55 @@ void CEnvironment::ReleaseCore()
 
 bool CEnvironment::InitEngine()
 {
-	EventManager.Create();
-	ScriptServer.Create();
+	EventManager = n_new(Events::CEventManager);
+	ScriptServer = n_new(Scripting::CScriptServer);
 
-	TimeServer.Create();
+	TimeServer = n_new(Time::CTimeServer);
 	TimeServer->Open();
 
-	DebugServer.Create();
+	DebugServer = n_new(Debug::CDebugServer);
 	DebugServer->RegisterPlugin(CStrID("Console"), "Debug::CLuaConsole", "Console.layout");
 	DebugServer->RegisterPlugin(CStrID("Watcher"), "Debug::CWatcherWindow", "Watcher.layout");
 
-	DBServer.Create();
-	RegisterAttributes();
+	//DBServer = n_new(DB::CDBServer);
+	//RegisterAttributes();
 
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
-	EntityFct->Init();
 
-	LoaderServer.Create();
-	if (!LoaderServer->Open()) FAIL;
+	//LoaderServer = n_new(Loading::CLoaderServer);
+	//if (!LoaderServer->Open()) FAIL;
 
-	RenderServer.Create();
+	RenderServer = n_new(Render::CRenderServer);
 	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.CStr());
 	RenderServer->GetDisplay().SetWindowIcon(IconName.CStr());
 	RenderServer->GetDisplay().RequestDisplayMode(DisplayMode);
 	if (!RenderServer->Open()) FAIL;
 
-	SceneServer.Create();
+	//???manage frame shaders in a RenderSrv?
+	SceneServer = n_new(Scene::CSceneServer);
 	//???do it in Open()?
 	Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
 	n_assert(DefaultFrameShader->Init(*DataSrv->LoadHRD("data:shaders/Default.hrd")));
 	SceneServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
 	SceneServer->SetScreenFrameShaderID(CStrID("Default"));
 
-	DD.Create();
+	DD = n_new(Render::CDebugDraw);
 	if (!DD->Open()) FAIL;
 
-	InputServer.Create();
+	InputServer = n_new(Input::CInputServer);
 	InputServer->Open();
 
-	AudioServer.Create();
+	AudioServer = n_new(Audio::CAudioServer);
 	AudioServer->Open();
 	//nString TablePath = "data:tables/sound.xml";
 	//if (IOSrv->FileExists(TablePath))
 	//	AudioServer->OpenWaveBank(TablePath);
 	//else n_printf("Warning: '%s' doesn't exist!\n", TablePath.CStr());
 
-	VideoServer.Create();
+	VideoServer = n_new(Video::CVideoServer);
 	VideoServer->Open();
 	
-	UIServer.Create();
+	UIServer = n_new(UI::CUIServer);
 	DbgSrv->AllowUI(true);
 
 	OK;
@@ -134,12 +136,10 @@ void CEnvironment::ReleaseEngine()
 	if (InputServer.IsValid() && InputServer->IsOpen()) InputServer->Close();
 	InputServer = NULL;
 
-	if (LoaderServer.IsValid() && LoaderServer->IsOpen()) LoaderServer->Close();
-	LoaderServer = NULL;
+	//if (LoaderServer.IsValid() && LoaderServer->IsOpen()) LoaderServer->Close();
+	//LoaderServer = NULL;
 
-	EntityFct->Release();
-
-	DBServer = NULL;
+	//DBServer = NULL;
 	DebugServer = NULL;
 
 	if (TimeServer.IsValid() && TimeServer->IsOpen()) TimeServer->Close();
@@ -152,13 +152,13 @@ void CEnvironment::ReleaseEngine()
 
 bool CEnvironment::InitGameSystem()
 {
-	PhysicsServer.Create();
+	PhysicsServer = n_new(Physics::CPhysicsServer);
 	PhysicsServer->Open();
 	
-	GameServer.Create();
+	GameServer = n_new(Game::CGameServer);
 	GameServer->Open();
 
-	AIServer = AI::CAIServer::Create();
+	AIServer = n_new(AI::CAIServer);
 
 	Data::PParams ActTpls = DataSrv->LoadHRD("data:tables/AIActionTpls.hrd");
 	if (ActTpls.IsValid())

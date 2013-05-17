@@ -2,8 +2,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::ÑHingeJoint, Physics::CJoint);
-__ImplementClass(Physics::ÑHingeJoint);
+__ImplementClass(Physics::ÑHingeJoint, 'JHNG', Physics::CJoint);
 
 ÑHingeJoint::ÑHingeJoint()
 {

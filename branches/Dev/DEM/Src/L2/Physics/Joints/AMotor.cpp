@@ -4,8 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CAMotor, Physics::CJoint);
-__ImplementClass(Physics::CAMotor);
+__ImplementClass(Physics::CAMotor, 'AMTR', Physics::CJoint);
 
 void CAMotor::Init(PParams Desc)
 {

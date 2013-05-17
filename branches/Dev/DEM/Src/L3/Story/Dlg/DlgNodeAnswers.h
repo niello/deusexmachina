@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __IPG_DLG_NODE_ANSWERS_H__
-#define __IPG_DLG_NODE_ANSWERS_H__
+#ifndef __DEM_L3_DLG_NODE_ANSWERS_H__
+#define __DEM_L3_DLG_NODE_ANSWERS_H__
 
 #include "DlgNode.h"
 #include <Data/StringID.h>

@@ -1,5 +1,6 @@
 #include "Environment.h"
 
+/*
 namespace Attr
 {
 	DeclareAttrsModule(StdAttrs)
@@ -63,3 +64,4 @@ void CEnvironment::RegisterAttributes()
 //---------------------------------------------------------------------
 
 }
+*/

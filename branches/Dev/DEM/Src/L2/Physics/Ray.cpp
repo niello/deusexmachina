@@ -76,7 +76,7 @@ void CRay::OdeRayCallback(void* data, dGeomID o1, dGeomID o2)
 // - 24-Nov-03     floh    dGeomRaySet() was expecting a normalized direction
 int CRay::DoRayCheckAllContacts(const matrix44& Tfm, nArray<CContactPoint>& OutContacts)
 {
-	if (!PhysicsSrv->GetLevel()) return 0;
+	//if (!PhysicsSrv->GetLevel()) return 0;
 
 	int InitialContactCount = OutContacts.GetCount();
 
@@ -88,9 +88,9 @@ int CRay::DoRayCheckAllContacts(const matrix44& Tfm, nArray<CContactPoint>& OutC
 	dGeomRaySet(ODERayId, GlobalOrig.x, GlobalOrig.y, GlobalOrig.z, GlobalDir.x, GlobalDir.y, GlobalDir.z);
 	dGeomRaySetLength(ODERayId, RayLength);
 
-	dSpaceID ODESpaceID = PhysicsSrv->GetLevel()->GetODECommonSpaceID();
+//	dSpaceID ODESpaceID = PhysicsSrv->GetLevel()->GetODECommonSpaceID();
 	CRay::Contacts = &OutContacts;
-	dSpaceCollide2((dGeomID)ODESpaceID, ODERayId, this, &OdeRayCallback);
+//	dSpaceCollide2((dGeomID)ODESpaceID, ODERayId, this, &OdeRayCallback);
 	CRay::Contacts = NULL;
 	return OutContacts.GetCount() - InitialContactCount;
 }

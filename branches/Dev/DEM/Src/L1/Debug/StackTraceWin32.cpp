@@ -148,14 +148,14 @@ void CStackTraceWin32::ShowLocals(STACKFRAME64& frame)
 BOOL CALLBACK CStackTraceWin32::EnumSymbolsCallback(PSYMBOL_INFO symbol, ULONG symbolSize, PVOID userContext)
 {
 	CParams* params = (CParams*)userContext;
-	DWORD64 addr = params->base + symbol->Address - 8;
+	DWORD64 addr = params->Base + symbol->Address - 8;
 	DWORD data = *((DWORD*)addr);
 
 	if (symbol->Flags & IMAGEHLP_SYMBOL_INFO_PARAMETER)
-		params->self->Print("%s=%d ", symbol->Name, data);
+		params->pSelf->Print("%s=%d ", symbol->Name, data);
 
 /*
-	params->self->Print("\t%c %-20s = %08x\n",
+	params->pSelf->Print("\t%c %-20s = %08x\n",
 		(symbol->Flags & IMAGEHLP_SYMBOL_INFO_PARAMETER) ? 'P' : ' ',
 		symbol->Name,
 		data);

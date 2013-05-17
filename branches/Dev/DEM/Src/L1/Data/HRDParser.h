@@ -90,7 +90,6 @@ private:
 public:
 
 	CHRDParser();
-	~CHRDParser();
 
 	bool ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result);
 };

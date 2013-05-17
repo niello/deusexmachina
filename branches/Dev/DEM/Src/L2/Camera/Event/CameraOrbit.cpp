@@ -2,6 +2,5 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::CameraOrbit, Events::CEventNative);
-__ImplementClass(Event::CameraOrbit);
+__ImplementClass(Event::CameraOrbit, 'CORB', Events::CEventNative);
 } // namespace Event

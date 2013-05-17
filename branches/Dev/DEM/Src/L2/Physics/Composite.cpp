@@ -4,8 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CComposite, Core::CRefCounted);
-__ImplementClass(Physics::CComposite);
+__ImplementClass(Physics::CComposite, 'CMPS', Core::CRefCounted);
 
 CComposite::CComposite():
 	CurrBodyIdx(0),

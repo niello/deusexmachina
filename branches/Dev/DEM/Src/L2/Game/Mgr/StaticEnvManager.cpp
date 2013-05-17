@@ -30,11 +30,12 @@ __ImplementSingleton(CStaticEnvManager);
 
 using namespace Physics;
 
-bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
+//!!!before creation we need to determine if object can be static! see common loader!
+bool CStaticEnvManager::CreateStaticObject(CStrID UID, CGameLevel& Level)
 {
-	n_assert(Table.IsValid());
-	n_assert(RowIdx != INVALID_INDEX);
+	n_assert(UID.IsValid());
 
+	/*
 	CEnvObject* pObj = NULL;
 	//const matrix44& EntityTfm = Table->GetAttr<matrix44>(CStrID("Transform"), RowIdx);
 	matrix44 EntityTfm;
@@ -67,7 +68,7 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 					pObj->CollLocalTfm.Append(pShape->GetTransform());// * InvEntityTfm);
 					pShape->SetTransform(pShape->GetTransform() * EntityTfm);
 					pObj->Collision.Append(pShape);
-					PhysicsSrv->GetLevel()->AttachShape(pShape);
+					//PhysicsSrv->GetLevel()->AttachShape(pShape);
 				}
 			}
 		}
@@ -91,16 +92,16 @@ bool CStaticEnvManager::AddEnvObject(const DB::PValueTable& Table, int RowIdx)
 		//!!!send level to loader!
 
 		//???optimize duplicate search?
-		pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), false);
+		pObj->Node = Level.GetScene()->GetNode(NodePath.CStr(), false);
 		pObj->ExistingNode = pObj->Node.IsValid();
-		if (!pObj->ExistingNode) pObj->Node = SceneSrv->GetCurrentScene()->GetNode(NodePath.CStr(), true);
+		if (!pObj->ExistingNode) pObj->Node = Level.GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(pObj->Node.IsValid());
 
 		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", pObj->Node));
 
 		if (!pObj->ExistingNode) pObj->Node->SetLocalTransform(Table->GetAttr<matrix44>(CStrID("Transform"), RowIdx)); //???set local? or set global & then calc local?
 	}
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------
@@ -173,8 +174,8 @@ void CStaticEnvManager::DeleteEnvObject(CStrID ID)
 	if (Idx != INVALID_INDEX)
 	{
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(Idx);
-		for (int j = 0; j < Obj.Collision.GetCount(); j++)
-			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
+		//for (int j = 0; j < Obj.Collision.GetCount(); j++)
+		//	PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
 		if (Obj.Node.IsValid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 		EnvObjects.EraseAt(Idx);
 	}
@@ -187,8 +188,8 @@ void CStaticEnvManager::ClearStaticEnv()
 	for (int i = 0; i < EnvObjects.GetCount(); i++)
 	{
 		CEnvObject& Obj = EnvObjects.ValueAtIndex(i);
-		for (int j = 0; j < Obj.Collision.GetCount(); j++)
-			PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
+		//for (int j = 0; j < Obj.Collision.GetCount(); j++)
+		//	PhysicsSrv->GetLevel()->RemoveShape(Obj.Collision[j]);
 		if (Obj.Node.IsValid() && !Obj.ExistingNode) Obj.Node->RemoveFromParent();
 	}
 	EnvObjects.Clear();

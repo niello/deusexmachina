@@ -83,7 +83,6 @@ public:
 
 	virtual void			Activate();
 	virtual void			Deactivate();
-	virtual void			GetAttributes(nArray<DB::CAttrID>& Attrs);
 
 	bool					AddActionHandler(CStrID ID, LPCSTR UIName, bool (*Callback)(const Events::CEventBase&), int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
 	template<class T>

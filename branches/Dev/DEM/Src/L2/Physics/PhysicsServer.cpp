@@ -267,6 +267,7 @@ bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir
 int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSet,
 									   nArray<PEntity>& Result)
 {
+	/*
 	n_assert(CurrLevel);
 
 	Shape->Attach(CurrLevel->GetODEDynamicSpaceID());
@@ -288,6 +289,8 @@ int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSe
 		}
 	}
 	return Result.GetCount() - OldResultSize;
+	*/
+	return 0;
 }
 //---------------------------------------------------------------------
 

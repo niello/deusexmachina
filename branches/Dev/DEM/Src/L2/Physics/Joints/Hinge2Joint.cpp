@@ -2,8 +2,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CHinge2Joint, Physics::CJoint);
-__ImplementClass(Physics::CHinge2Joint);
+__ImplementClass(Physics::CHinge2Joint, 'JHN2', Physics::CJoint);
 
 CHinge2Joint::CHinge2Joint():
 	SuspensionERP(0.2f),

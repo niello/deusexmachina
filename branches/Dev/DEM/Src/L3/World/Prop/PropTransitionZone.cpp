@@ -1,7 +1,6 @@
 #include "PropTransitionZone.h"
 
 #include <Game/EntityManager.h>
-#include <Loading/LoaderServer.h>
 #include <DB/DBServer.h>
 #include <Events/EventManager.h>
 
@@ -63,14 +62,13 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 	if (DestPt.IsValid())
 	{
 		//matrix44 Tfm;
-		//if (EntityFct->GetEntityAttribute<matrix44>(DestPt, CStrID("Transform"), Tfm))
-		//	pActorEnt->Set<matrix44>(CStrID("Transform"), Rotate180 * Tfm); //???or fire SetTransform?
+		//pActorEnt->Set<matrix44>(CStrID("Transform"), Rotate180 * Tfm); //???or fire SetTransform?
 		//else n_printf("Travel, Warning: destination point '%s' not found\n", DestPt.CStr());
 	}
 
 	pActorEnt->SetAttr<nString>(CStrID("LevelID"), LevelID);
 	
-	LoaderSrv->CommitChangesToDB();
+	//LoaderSrv->CommitChangesToDB();
 
 	P = n_new(Data::CParams(1));
 	P->Set(CStrID("LevelID"), LevelID);

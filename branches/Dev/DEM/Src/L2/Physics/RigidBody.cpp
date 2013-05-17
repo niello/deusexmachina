@@ -118,12 +118,12 @@ void CRigidBody::OnFrameAfter()
 // Apply an Impulse vector at a position in the global coordinate frame.
 void CRigidBody::ApplyImpulseAtPos(const vector3& Impulse, const vector3& Pos)
 {
-	n_assert(IsAttached());
-	dWorldID ODEWorldID = PhysicsSrv->GetLevel()->GetODEWorldID();
-	SetEnabled(true);
-	dVector3 ODEForce;
-	dWorldImpulseToForce(ODEWorldID, dReal(PhysicsSrv->GetLevel()->GetStepSize()), Impulse.x, Impulse.y, Impulse.z, ODEForce);
-	dBodyAddForceAtPos(ODEBodyID, ODEForce[0], ODEForce[1], ODEForce[2], Pos.x, Pos.y, Pos.z);
+	//n_assert(IsAttached());
+	//dWorldID ODEWorldID = PhysicsSrv->GetLevel()->GetODEWorldID();
+	//SetEnabled(true);
+	//dVector3 ODEForce;
+	//dWorldImpulseToForce(ODEWorldID, dReal(PhysicsSrv->GetLevel()->GetStepSize()), Impulse.x, Impulse.y, Impulse.z, ODEForce);
+	//dBodyAddForceAtPos(ODEBodyID, ODEForce[0], ODEForce[1], ODEForce[2], Pos.x, Pos.y, Pos.z);
 }
 //---------------------------------------------------------------------
 
@@ -164,6 +164,7 @@ void CRigidBody::ApplyDamping()
 
 void CRigidBody::OnStepBefore()
 {
+	/*
     CPhysicsLevel* pLevel = PhysicsSrv->GetLevel();
     n_assert(pLevel);
     
@@ -198,6 +199,7 @@ void CRigidBody::OnStepBefore()
 			}
 		}
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

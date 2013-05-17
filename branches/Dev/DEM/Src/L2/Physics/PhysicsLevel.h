@@ -22,7 +22,7 @@ class Ray;
 
 class CPhysicsLevel: public Core::CRefCounted
 {
-	__DeclareClass(CPhysicsLevel);
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -96,8 +96,6 @@ public:
 	dSpaceID		GetODEDynamicSpaceID() const { return ODEDynamicSpaceID; }
 	dSpaceID		GetODECommonSpaceID() const { return ODECommonSpaceID; }
 };
-
-__RegisterClassInFactory(CPhysicsLevel);
 
 typedef Ptr<CPhysicsLevel> PPhysicsLevel;
 

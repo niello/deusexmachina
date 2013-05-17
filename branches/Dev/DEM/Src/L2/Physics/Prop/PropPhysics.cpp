@@ -1,6 +1,7 @@
 #include "PropPhysics.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/Event/SetTransform.h>
@@ -73,7 +74,7 @@ void CPropPhysics::EnablePhysics()
 
 	// Attach physics entity to physics level
 	PhysicsEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	PhysicsSrv->GetLevel()->AttachEntity(PhysicsEntity);
+	GetEntity()->GetLevel().GetPhysicsLevel()->AttachEntity(PhysicsEntity);
 
 	PhysicsEntity->SetEnabled(true);
 
@@ -87,7 +88,7 @@ void CPropPhysics::DisablePhysics()
 	n_assert(IsEnabled());
 
 	// Release the physics entity
-	PhysicsSrv->GetLevel()->RemoveEntity(GetPhysicsEntity()); // strange design
+	GetEntity()->GetLevel().GetPhysicsLevel()->RemoveEntity(GetPhysicsEntity()); // strange design
 	CPropAbstractPhysics::DisablePhysics();
 }
 //---------------------------------------------------------------------

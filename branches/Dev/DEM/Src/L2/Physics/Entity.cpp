@@ -5,8 +5,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CEntity, Core::CRefCounted);
-__ImplementClass(Physics::CEntity);
+__ImplementClass(Physics::CEntity, 'PENT', Core::CRefCounted);
 
 DWORD CEntity::UIDCounter = 1;
 

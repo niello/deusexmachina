@@ -7,8 +7,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CExplosionAreaImpulse, Physics::CAreaImpulse);
-__ImplementClass(Physics::CExplosionAreaImpulse);
+__ImplementClass(Physics::CExplosionAreaImpulse, 'EXAI', Physics::CAreaImpulse);
 
 nArray<CContactPoint> CExplosionAreaImpulse::CollideContacts(256, 512);
 
@@ -21,7 +20,7 @@ void CExplosionAreaImpulse::Apply()
 		PhysicsSrv->CreateSphereShape(Tfm,
 									  CMaterialTable::StringToMaterialType("Wood"), //???Invalid mtl?
 									  Radius);
-	pShape->Attach(PhysicsSrv->GetLevel()->GetODEDynamicSpaceID());
+	//pShape->Attach(PhysicsSrv->GetLevel()->GetODEDynamicSpaceID());
 	CFilterSet ExcludeSet;
 	pShape->Collide(ExcludeSet, CollideContacts);
 	pShape->Detach();

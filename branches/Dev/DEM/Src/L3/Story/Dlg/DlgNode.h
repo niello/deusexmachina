@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __IPG_DLG_NODE_H__
-#define __IPG_DLG_NODE_H__
+#ifndef __DEM_L3_DLG_NODE_H__
+#define __DEM_L3_DLG_NODE_H__
 
 #include <Core/RefCounted.h>
 
@@ -24,7 +24,8 @@ public:
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
 };
 
-__RegisterClassInFactory(CDlgNode);
+//__RegisterClassInFactory(CDlgNode);
+const bool CDlgNode_Registered = CDlgNode::RegisterInFactory();
 
 }
 

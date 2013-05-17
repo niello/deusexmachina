@@ -20,25 +20,18 @@ namespace Properties
 __ImplementClass(Properties::CPropScriptable, 'PSCR', Game::CProperty);
 __ImplementPropertyStorage(CPropScriptable);
 
-void CPropScriptable::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::ScriptClass);
-	Attrs.Append(Attr::Script);
-}
-//---------------------------------------------------------------------
-
 void CPropScriptable::Activate()
 {
 	Game::CProperty::Activate();
 	
-	const nString& LuaClass = GetEntity()->GetAttr<nString>(Attr::ScriptClass);
+	const nString& LuaClass = GetEntity()->GetAttr<nString>(CStrID("ScriptClass"));
 
 	//???to OnLoad?
 
 	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUID().CStr(), "Entities"));
 	n_assert(Obj->Init(LuaClass.IsValid() ? LuaClass.CStr() : "CEntityScriptObject"));
 
-	const nString& ScriptFile = GetEntity()->GetAttr<nString>(Attr::Script);
+	const nString& ScriptFile = GetEntity()->GetAttr<nString>(CStrID("Script"));
 	if (ScriptFile.IsValid()) Obj->LoadScriptFile("scripts:" + ScriptFile + ".lua");
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);

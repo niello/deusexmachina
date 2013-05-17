@@ -3,10 +3,52 @@
 #include <Game/EntityLoaderCommon.h>
 #include <Physics/PhysicsServer.h>
 #include <AI/AIServer.h>
+#include <Scene/Scene.h>
+#include <Physics/PhysicsLevel.h>
 #include <Data/DataServer.h>
 #include <IO/IOServer.h>
 #include <Time/TimeServer.h>
 #include <Events/EventManager.h>
+
+/* User profile stuff:
+
+//!!!must store settings!
+
+IOSrv->CreateDirectory("appdata:Profiles/Default");
+
+inline nString CLoaderServer::GetDatabasePath() const
+{
+	return "appdata:profiles/default/" + GameDBName + ".db3";
+}
+//---------------------------------------------------------------------
+
+// Returns the path to the user's savegame directory (inside the profile
+// directory) using the Nebula2 filesystem path conventions.
+inline nString CLoaderServer::GetSaveGameDirectory() const
+{
+	return "appdata:profiles/default/save";
+}
+//---------------------------------------------------------------------
+
+// Get the complete filename to a savegame file.
+inline nString CLoaderServer::GetSaveGamePath(const nString& SaveGameName) const
+{
+	return GetSaveGameDirectory() + "/" + SaveGameName + ".db3";
+}
+//---------------------------------------------------------------------
+
+*/
+//???when and how to load static data (former static.db3)? or it is just a set of descs now?
+
+/* Savegame stuff:
+	PParams P = n_new(CParams);
+	P->Set(CStrID("DB"), (PVOID)GameDB.GetUnsafe());
+	EventMgr->FireEvent(CStrID("OnSaveBefore"), P);
+	EventMgr->FireEvent(CStrID("OnSave"), P);
+	EventMgr->FireEvent(CStrID("OnSaveAfter"), P);
+	SaveGlobalAttributes();
+	//SaveEntities();
+*/
 
 namespace Game
 {
@@ -88,6 +130,11 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 		FAIL;
 	}
 
+	//!!!may be useful for custom gameplay managers!
+	//P = n_new(CParams);
+	//P->Set(CStrID("Level"), Level->GetID());
+	//EventMgr->FireEvent(CStrID("OnLevelLoading"), P);
+
 	PGameLevel Level = n_new(CGameLevel);
 	if (!Level->Init(ID, Desc)) FAIL;
 
@@ -105,7 +152,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAtIndex(LoaderIdx);
 			if (!Loader.IsValid()) continue;
 
-			if (!Loader->Load(EntityPrm.GetName(), Level->GetID(), EntityDesc))
+			if (!Loader->Load(EntityPrm.GetName(), *Level, EntityDesc))
 				n_printf("Entity %s not loaded in level %s\n", EntityPrm.GetName().CStr(), Level->GetID().CStr());
 		}
 	}

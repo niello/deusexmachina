@@ -12,7 +12,7 @@
 // entities. Static environment can't store per-entity attributes and can't be extended by properties.
 // If this manager founds that some entity can't be added as static, it rejects it. (???or forward to regulat entity mgr?)
 
-//!!!DEBUG RENDER!
+//!!!DEBUG RENDER OF ACTIVE LEVEL!
 
 namespace Physics
 {
@@ -34,6 +34,7 @@ namespace Game
 using namespace Data;
 
 class CEntity;
+class CGameLevel;
 
 #define StaticEnvMgr Game::CStaticEnvManager::Instance()
 
@@ -59,7 +60,7 @@ public:
 	CStaticEnvManager() { __ConstructSingleton; }
 	~CStaticEnvManager() { __DestructSingleton; }
 
-	bool AddEnvObject(const DB::PValueTable& Table, int RowIdx);
+	bool CreateStaticObject(CStrID UID, CGameLevel& Level);
 	void SetEnvObjectTransform(CStrID ID, const matrix44& Tfm);
 	void DeleteEnvObject(CStrID ID);
 	void ClearStaticEnv();

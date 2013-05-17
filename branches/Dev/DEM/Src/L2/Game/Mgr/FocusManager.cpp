@@ -5,7 +5,6 @@
 #include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 #include <Input/InputServer.h>
-#include <Loading/LoaderServer.h>
 #include <DB/DBServer.h>
 
 namespace Attr
@@ -49,8 +48,8 @@ void CFocusManager::Activate()
 {
 	SUBSCRIBE_PEVENT(OnFrame, CFocusManager, OnFrame);
 	SUBSCRIBE_PEVENT(OnLoad, CFocusManager, OnLoad);
-	if (!LoaderSrv->HasGlobal(Attr::InputFocus)) LoaderSrv->SetGlobal<CStrID>(Attr::InputFocus, CStrID::Empty);
-	if (!LoaderSrv->HasGlobal(Attr::CameraFocus)) LoaderSrv->SetGlobal<CStrID>(Attr::CameraFocus, CStrID::Empty);
+	//if (!LoaderSrv->HasGlobal(Attr::InputFocus)) LoaderSrv->SetGlobal<CStrID>(Attr::InputFocus, CStrID::Empty);
+	//if (!LoaderSrv->HasGlobal(Attr::CameraFocus)) LoaderSrv->SetGlobal<CStrID>(Attr::CameraFocus, CStrID::Empty);
 }
 //---------------------------------------------------------------------
 
@@ -72,7 +71,7 @@ bool CFocusManager::OnFrame(const Events::CEventBase& Event)
 		InputFocusEntity = NewInputFocusEntity;
 		NewInputFocusEntity = NULL;
 #ifndef _EDITOR
-		LoaderSrv->SetGlobal(Attr::InputFocus, (CStrID)InputFocusEntity->GetUID());
+		//LoaderSrv->SetGlobal(Attr::InputFocus, (CStrID)InputFocusEntity->GetUID());
 #endif
 		InputFocusEntity->FireEvent(CStrID("OnObtainInputFocus"));
 	}
@@ -83,7 +82,7 @@ bool CFocusManager::OnFrame(const Events::CEventBase& Event)
 		CameraFocusEntity = NewCameraFocusEntity;
 		NewCameraFocusEntity = NULL;
 #ifndef _EDITOR
-		LoaderSrv->SetGlobal(Attr::CameraFocus, (CStrID)CameraFocusEntity->GetUID());
+		//LoaderSrv->SetGlobal(Attr::CameraFocus, (CStrID)CameraFocusEntity->GetUID());
 #endif
 		CameraFocusEntity->FireEvent(CStrID("OnObtainCameraFocus"));
 	}
@@ -95,8 +94,8 @@ bool CFocusManager::OnFrame(const Events::CEventBase& Event)
 bool CFocusManager::OnLoad(const Events::CEventBase& Event)
 {
 #ifndef _EDITOR
-	SetInputFocusEntity(EntityMgr->GetEntity(LoaderSrv->GetGlobal<CStrID>(Attr::InputFocus), true));
-	SetCameraFocusEntity(EntityMgr->GetEntity(LoaderSrv->GetGlobal<CStrID>(Attr::CameraFocus), true));
+	//SetInputFocusEntity(EntityMgr->GetEntity(LoaderSrv->GetGlobal<CStrID>(Attr::InputFocus), true));
+	//SetCameraFocusEntity(EntityMgr->GetEntity(LoaderSrv->GetGlobal<CStrID>(Attr::CameraFocus), true));
 #endif
 	OK;
 }
@@ -106,6 +105,7 @@ void CFocusManager::SetToNextEntity(bool CameraFocus, bool InputFocus)
 {
 	n_assert(CameraFocus || InputFocus);
 
+/*
 	const nArray<PEntity>& Entities = EntityMgr->GetEntities();
 
 	nArray<PEntity>::iterator Iter = Entities.Begin();
@@ -141,11 +141,13 @@ void CFocusManager::SetToNextEntity(bool CameraFocus, bool InputFocus)
 		}
 	}
 	while (Iter != Start);
+*/
 }
 //---------------------------------------------------------------------
 
 bool CFocusManager::SwitchToFirstCameraFocusEntity()
 {
+/*
 	const nArray<PEntity>& Entities = EntityMgr->GetEntities();
 	nArray<PEntity>::iterator Iter = Entities.Begin();
 
@@ -160,7 +162,7 @@ bool CFocusManager::SwitchToFirstCameraFocusEntity()
 		}
 		Iter++;
 	}
-
+*/
 	FAIL;
 }
 //---------------------------------------------------------------------

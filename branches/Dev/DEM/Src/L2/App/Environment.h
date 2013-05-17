@@ -6,11 +6,10 @@
 #include <Core/CoreServer.h>
 #include <Time/TimeServer.h>
 #include <Debug/DebugServer.h>
+#include <IO/IOServer.h>
 #include <Data/DataServer.h>
 #include <Events/EventManager.h>
 #include <Scripting/ScriptServer.h>
-#include <DB/DBServer.h>
-#include <Loading/LoaderServer.h>
 #include <Render/RenderServer.h>
 #include <Render/DebugDraw.h>
 #include <Scene/SceneServer.h>
@@ -53,11 +52,10 @@ protected:
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
+	Ptr<IO::CIOServer>				IOServer;
 	Ptr<Data::CDataServer>			DataServer;
 	Ptr<Scripting::CScriptServer>	ScriptServer;
 	Ptr<Events::CEventManager>		EventManager;
-	Ptr<DB::CDBServer>				DBServer;
-	Ptr<Loading::CLoaderServer>		LoaderServer;
 	Ptr<Render::CRenderServer>		RenderServer;
 	Ptr<Render::CDebugDraw>			DD;
 	Ptr<Scene::CSceneServer>		SceneServer;

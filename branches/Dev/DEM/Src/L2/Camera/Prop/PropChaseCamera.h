@@ -63,7 +63,6 @@ public:
 
 	CPropChaseCamera(): Distance(0.0f) {}
 
-	virtual void GetAttributes(nArray<DB::CAttrID>& Attrs);
 	virtual void Activate();
 	virtual void Deactivate();
 };

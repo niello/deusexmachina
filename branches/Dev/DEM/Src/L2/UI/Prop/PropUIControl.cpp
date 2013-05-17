@@ -29,21 +29,14 @@ __ImplementPropertyStorage(CPropUIControl);
 
 using namespace Data;
 
-void CPropUIControl::GetAttributes(nArray<DB::CAttrID>& Attrs)
-{
-	Attrs.Append(Attr::IAODesc);
-	Attrs.Append(Attr::Name);
-}
-//---------------------------------------------------------------------
-
 void CPropUIControl::Activate()
 {
 	Game::CProperty::Activate();
 
-	UIName = GetEntity()->GetAttr<nString>(Attr::Name);
+	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"));
 
 	PParams Desc;
-	const nString& IAODesc = GetEntity()->GetAttr<nString>(Attr::IAODesc);
+	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"));
 	if (IAODesc.IsValid()) Desc = DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm");
 
 	if (Desc.IsValid())
