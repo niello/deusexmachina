@@ -47,8 +47,6 @@ public:
 	void			ReadJoints();
 };
 
-__RegisterClassInFactory(CRagdoll);
-
 }
 
 #endif

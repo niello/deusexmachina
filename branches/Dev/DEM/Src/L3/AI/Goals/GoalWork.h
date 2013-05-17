@@ -30,8 +30,6 @@ public:
 	virtual void GetDesiredProps(CWorldState& Dest);
 };
 
-__RegisterClassInFactory(CGoalWork);
-
 }
 
 #endif

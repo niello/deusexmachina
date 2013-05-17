@@ -47,8 +47,6 @@ public:
 	CEGUI::Window*	GetWnd() const { return pWnd; }
 };
 
-__RegisterClassInFactory(CWindow);
-
 typedef Ptr<CWindow> PWindow;
 
 }

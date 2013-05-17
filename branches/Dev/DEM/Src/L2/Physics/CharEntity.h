@@ -67,8 +67,6 @@ public:
 	CMaterialType		GetGroundMaterial() const { return GroundMtl; }
 };
 
-__RegisterClassInFactory(CCharEntity);
-
 typedef Ptr<CCharEntity> PCharEntity;
 
 }

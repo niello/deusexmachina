@@ -2,6 +2,8 @@
 
 #include <Core/RTTI.h>
 
+//???RTTI class name CStrID, CSimpleString or nString?
+
 namespace Core
 {
 
@@ -23,6 +25,7 @@ void CFactory::Register(const CRTTI& RTTI, const nString& Name, nFourCC FourCC)
 
 CRefCounted* CFactory::Create(const nString& ClassName, void* pParam) const
 {
+	n_assert2_dbg(IsRegistered(ClassName), ClassName.CStr());
 	const CRTTI* pRTTI = GetRTTI(ClassName);
 	n_assert_dbg(pRTTI);
 	return pRTTI->Create(pParam);
@@ -31,6 +34,7 @@ CRefCounted* CFactory::Create(const nString& ClassName, void* pParam) const
 
 CRefCounted* CFactory::Create(nFourCC ClassFourCC, void* pParam) const
 {
+	n_assert2_dbg(IsRegistered(ClassFourCC), n_fourcctostr(ClassFourCC));
 	const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 	n_assert_dbg(pRTTI);
 	return pRTTI->Create(pParam);

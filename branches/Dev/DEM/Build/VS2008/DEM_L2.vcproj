@@ -910,10 +910,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\App\DEM_DBAttrs.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\App\Environment.cpp"
 				>
 			</File>

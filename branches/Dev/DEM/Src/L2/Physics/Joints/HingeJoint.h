@@ -28,8 +28,6 @@ public:
 	virtual void RenderDebug();
 };
 
-__RegisterClassInFactory(ÑHingeJoint);
-
 }
 
 #endif

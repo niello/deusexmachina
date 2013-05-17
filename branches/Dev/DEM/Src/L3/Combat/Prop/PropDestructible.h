@@ -37,8 +37,6 @@ public:
 	virtual void	Deactivate();
 };
 
-__RegisterClassInFactory(CPropDestructible);
-
 }
 
 #endif

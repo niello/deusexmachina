@@ -38,8 +38,6 @@ public:
 	virtual void Init(CStrID SID, const CParams& Params);
 };
 
-__RegisterClassInFactory(CItemTplWeapon);
-
 }
 
 #endif

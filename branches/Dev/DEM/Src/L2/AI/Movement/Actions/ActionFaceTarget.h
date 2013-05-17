@@ -28,8 +28,6 @@ public:
 	virtual EExecStatus	Update(CActor* pActor);
 };
 
-__RegisterClassInFactory(CActionFaceTarget);
-
 typedef Ptr<CActionFaceTarget> PActionFaceTarget;
 
 }

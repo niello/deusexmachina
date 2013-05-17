@@ -27,8 +27,6 @@ public:
 	PlaySound(): Volume(1.0f) {}
 };
 
-__RegisterClassInFactory(PlaySound);
-
 }
 
 #endif

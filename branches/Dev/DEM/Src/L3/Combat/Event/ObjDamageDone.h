@@ -22,8 +22,6 @@ public:
 	CStrID			EntDamager;
 };
 
-__RegisterClassInFactory(ObjDamageDone);
-
 }
 
 #endif

@@ -50,8 +50,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CRay);
-
 inline void CRay::SetDirection(const vector3& Dir)
 {
 	Direction = Dir;

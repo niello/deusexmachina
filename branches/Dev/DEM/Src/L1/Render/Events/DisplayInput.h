@@ -50,8 +50,6 @@ public:
 	};
 };
 
-__RegisterClassInFactory(DisplayInput);
-
 }
 
 #endif

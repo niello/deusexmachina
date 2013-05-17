@@ -137,8 +137,6 @@ public:
 	virtual void	Render();
 };
 
-__RegisterClassInFactory(CModelRenderer);
-
 typedef Ptr<CModelRenderer> PModelRenderer;
 
 }

@@ -35,8 +35,6 @@ public:
 	void			SetActionID(CStrID ID) { ActionID = ID; }
 };
 
-__RegisterClassInFactory(CTaskUseSmartObj);
-
 typedef Ptr<CTaskUseSmartObj> PTaskUseSmartObj;
 
 }

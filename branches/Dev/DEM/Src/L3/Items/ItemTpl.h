@@ -51,8 +51,6 @@ public:
 	CStrID			GetType() const { return Type; }
 };
 
-__RegisterClassInFactory(CItemTpl);
-
 typedef Ptr<CItemTpl> PItemTpl;
 
 }

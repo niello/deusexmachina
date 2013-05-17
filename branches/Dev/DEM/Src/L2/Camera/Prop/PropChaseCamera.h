@@ -67,8 +67,6 @@ public:
 	virtual void Deactivate();
 };
 
-__RegisterClassInFactory(CPropChaseCamera);
-
 } // namespace Properties
 
 #endif

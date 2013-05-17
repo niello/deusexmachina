@@ -21,8 +21,6 @@ public:
 	QueueTask(AI::CTask* pTask = NULL): Task(pTask) {}
 };
 
-__RegisterClassInFactory(QueueTask);
-
 }
 
 #endif

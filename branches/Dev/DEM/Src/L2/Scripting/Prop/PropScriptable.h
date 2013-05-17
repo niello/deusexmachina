@@ -46,8 +46,6 @@ public:
 	PEntityScriptObject GetScriptObject() const { return Obj; }
 };
 
-__RegisterClassInFactory(CPropScriptable);
-
 }
 
 #endif

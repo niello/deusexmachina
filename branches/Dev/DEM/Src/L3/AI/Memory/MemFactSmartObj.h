@@ -27,8 +27,6 @@ public:
 	virtual bool Match(const CMemFact& Pattern, CFlags FieldMask) const;
 };
 
-__RegisterClassInFactory(CMemFactSmartObj);
-
 typedef Ptr<CMemFactSmartObj> PMemFactSmartObj;
 
 }

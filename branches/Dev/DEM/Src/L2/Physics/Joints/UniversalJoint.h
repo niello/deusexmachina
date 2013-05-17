@@ -29,8 +29,6 @@ public:
 	virtual void RenderDebug();
 };
 
-__RegisterClassInFactory(CUniversalJoint);
-
 }
 
 #endif

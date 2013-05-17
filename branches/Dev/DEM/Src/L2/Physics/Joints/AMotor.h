@@ -31,8 +31,6 @@ public:
     void		UpdateVelocity(uint AxisIdx);
 };
 
-__RegisterClassInFactory(CAMotor);
-
 }
 
 #endif

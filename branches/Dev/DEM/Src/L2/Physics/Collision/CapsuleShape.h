@@ -33,8 +33,6 @@ public:
 	float			GetLength() const { return Length; }
 };
 
-__RegisterClassInFactory(CCapsuleShape);
-
 }
 
 #endif

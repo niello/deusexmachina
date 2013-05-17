@@ -23,8 +23,6 @@ public:
 	UpdateTransform(): Smoothing(true) {}
 };
 
-__RegisterClassInFactory(UpdateTransform);
-
 }
 
 #endif

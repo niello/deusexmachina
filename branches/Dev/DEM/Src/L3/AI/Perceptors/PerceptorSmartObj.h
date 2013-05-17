@@ -18,8 +18,6 @@ public:
 	virtual void ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence = 1.f);
 };
 
-__RegisterClassInFactory(CPerceptorSmartObj);
-
 }
 
 #endif

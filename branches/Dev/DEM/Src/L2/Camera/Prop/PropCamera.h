@@ -55,8 +55,6 @@ public:
 	bool HasFocus() const;
 };
 
-__RegisterClassInFactory(CPropCamera);
-
 }
 
 #endif

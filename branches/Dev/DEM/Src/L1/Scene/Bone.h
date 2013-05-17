@@ -51,8 +51,6 @@ public:
 	CBone*			GetRootBone();
 };
 
-__RegisterClassInFactory(CBone);
-
 typedef Ptr<CBone> PBone;
 
 }

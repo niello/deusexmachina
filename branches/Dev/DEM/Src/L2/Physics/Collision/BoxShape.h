@@ -30,8 +30,6 @@ public:
 	const vector3&	GetSize() const { return Size; }
 };
 
-__RegisterClassInFactory(CBoxShape);
-
 }
 
 #endif

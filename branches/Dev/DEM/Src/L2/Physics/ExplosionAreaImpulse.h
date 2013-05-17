@@ -38,8 +38,6 @@ public:
 	void Apply();
 };
 
-__RegisterClassInFactory(CExplosionAreaImpulse);
-
 }
 
 #endif

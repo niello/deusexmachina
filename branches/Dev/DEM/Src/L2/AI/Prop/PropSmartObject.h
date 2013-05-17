@@ -59,8 +59,6 @@ public:
 	CStrID			GetCurrState() const { return CurrState; }
 };
 
-__RegisterClassInFactory(CPropSmartObject);
-
 inline PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
 {
 	int Idx = Actions.FindIndex(ID);

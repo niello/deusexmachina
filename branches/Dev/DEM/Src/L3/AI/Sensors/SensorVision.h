@@ -29,8 +29,6 @@ public:
 	virtual EClipStatus	GetBoxClipStatus(CActor* pActor, const bbox3& Box) const;
 };
 
-__RegisterClassInFactory(CSensorVision);
-
 }
 
 #endif

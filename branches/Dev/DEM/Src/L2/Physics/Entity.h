@@ -94,8 +94,6 @@ public:
 	const nArray<Ptr<CShape>>& GetCollidedShapes() const { return CollidedShapes; }
 };
 
-__RegisterClassInFactory(CEntity);
-
 typedef Ptr<CEntity> PEntity;
 
 }

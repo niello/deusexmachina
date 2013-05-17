@@ -46,8 +46,6 @@ public:
 	Game::CEntity*	GetEntity() const { return pEntity; }
 };
 
-__RegisterClassInFactory(CEntityScriptObject);
-
 typedef Ptr<CEntityScriptObject> PEntityScriptObject;
 
 }

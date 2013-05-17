@@ -77,8 +77,6 @@ public:
 	void			AddAllGlobals();
 };
 
-__RegisterClassInFactory(CWatcherWindow);
-
 typedef Ptr<CWatcherWindow> PWatcherWindow;
 
 }

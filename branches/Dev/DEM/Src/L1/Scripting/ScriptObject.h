@@ -99,8 +99,6 @@ public:
 	virtual bool	SetField(LPCSTR Key, const CData& Value) { FAIL; }
 };
 
-__RegisterClassInFactory(CScriptObject);
-
 typedef Ptr<CScriptObject> PScriptObject;
 
 inline EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, CData* pRetVal) const

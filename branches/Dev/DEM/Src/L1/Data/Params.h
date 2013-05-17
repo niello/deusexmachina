@@ -66,8 +66,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CParams);
-
 inline int CParams::IndexOf(CStrID Name) const
 {
 	for (int i = 0; i < Params.GetCount(); i++)

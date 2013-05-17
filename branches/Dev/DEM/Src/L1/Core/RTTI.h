@@ -53,7 +53,8 @@ inline CRTTI::CRTTI(const nString& ClassName, nFourCC ClassFourCC, CFactoryFunc 
 	Name(ClassName),
 	FourCC(ClassFourCC),
 	InstanceSize(InstSize),
-	pParent(pParentClass)
+	pParent(pParentClass),
+	pFactoryFunc(pFactoryCreator)
 {
 	n_assert(ClassName.IsValid());
 	n_assert(pParentClass != this);
@@ -102,11 +103,13 @@ inline bool CRTTI::IsDerivedFrom(const nString& OtherName) const
 //	void operator delete(void* p) { RTTI.FreeInstanceMemory(p); };
 #define __DeclareClass(Class) \
 public: \
-	static Core::CRTTI RTTI; \
+	static Core::CRTTI	RTTI; \
+	static const bool	Registered; \
 	virtual Core::CRTTI*		GetRTTI() const; \
 	static Core::CRefCounted*	FactoryCreator(void* pParam); \
 	static Class*				Create(void* pParam = NULL); \
 	static bool					RegisterInFactory(); \
+	static void					ForceFactoryRegistration(); \
 private:
 
 #define __DeclareClassNoFactory \
@@ -114,9 +117,6 @@ public: \
 	static Core::CRTTI RTTI; \
 	virtual Core::CRTTI* GetRTTI() const; \
 private:
-
-#define __RegisterClassInFactory(Class) \
-	static const bool Class##_Registered = Class::RegisterInFactory();
 
 #define __ImplementClass(Class, FourCC, ParentClass) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
@@ -128,7 +128,9 @@ private:
 		if (!Factory->IsRegistered(#Class)) \
 			Factory->Register(Class::RTTI, #Class, FourCC); \
 		OK; \
-	}
+	} \
+	void Class::ForceFactoryRegistration() { Class::Registered; } \
+	const bool Class::Registered = Class::RegisterInFactory();
 
 //#define __ImplementClassNoFactory(Class, FourCC, ParentClass) \
 //	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, &ParentClass::RTTI, 0); \

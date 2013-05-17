@@ -49,8 +49,6 @@ public:
 	CDialogue*		GetDialogue() { return Dialogue.GetUnsafe(); }
 };
 
-__RegisterClassInFactory(CPropTalking);
-
 }
 
 #endif

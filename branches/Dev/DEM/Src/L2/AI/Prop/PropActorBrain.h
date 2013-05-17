@@ -138,8 +138,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CPropActorBrain);
-
 inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 {
 	for (nArray<const CActionTpl*>::iterator ppTpl = Actions.Begin(); ppTpl != Actions.End(); ppTpl++)

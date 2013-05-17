@@ -32,8 +32,6 @@ public:
 	void				GetAABB(bbox3& OutBox) const;
 };
 
-__RegisterClassInFactory(CPropSceneNode);
-
 }
 
 #endif

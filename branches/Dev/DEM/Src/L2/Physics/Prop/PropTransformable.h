@@ -41,8 +41,6 @@ public:
 	virtual void Deactivate();
 };
 
-__RegisterClassInFactory(CPropTransformable);
-
 } // namespace Properties
 
 #endif

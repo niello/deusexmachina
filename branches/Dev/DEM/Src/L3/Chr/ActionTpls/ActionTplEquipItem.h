@@ -22,8 +22,6 @@ public:
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 
-__RegisterClassInFactory(CActionTplEquipItem);
-
 typedef Ptr<CActionTplEquipItem> PActionTplEquipItem;
 
 }

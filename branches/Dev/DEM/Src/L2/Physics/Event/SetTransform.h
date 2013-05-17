@@ -22,8 +22,6 @@ public:
 	SetTransform(const matrix44& Tfm): Transform(Tfm) {}
 };
 
-__RegisterClassInFactory(SetTransform);
-
 }
 
 #endif

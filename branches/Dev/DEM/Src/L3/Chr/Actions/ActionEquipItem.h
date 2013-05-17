@@ -29,8 +29,6 @@ public:
 	virtual void		GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), Item.CStr(), Slot.CStr()); }
 };
 
-__RegisterClassInFactory(CActionEquipItem);
-
 typedef Ptr<CActionEquipItem> PActionEquipItem;
 
 }

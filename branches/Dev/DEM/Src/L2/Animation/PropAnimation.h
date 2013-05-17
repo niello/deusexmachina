@@ -56,8 +56,6 @@ public:
 	float			GetAnimLength(CStrID ClipID) const;
 };
 
-__RegisterClassInFactory(CPropAnimation);
-
 }
 
 #endif

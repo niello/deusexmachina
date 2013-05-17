@@ -26,8 +26,6 @@ public:
 	virtual float	GetRelevance(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction);
 };
 
-__RegisterClassInFactory(CValidatorScript);
-
 typedef Ptr<CValidatorScript> PValidatorScript;
 
 }

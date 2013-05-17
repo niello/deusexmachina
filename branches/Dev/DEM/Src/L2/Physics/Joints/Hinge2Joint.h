@@ -31,8 +31,6 @@ public:
 	virtual void RenderDebug();
 };
 
-__RegisterClassInFactory(CHinge2Joint);
-
 }
 
 #endif

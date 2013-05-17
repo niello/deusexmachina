@@ -17,8 +17,6 @@ public:
 
 };
 
-__RegisterClassInFactory(CStimulusVisible);
-
 typedef Ptr<CStimulusVisible> PStimulusVisible;
 
 }

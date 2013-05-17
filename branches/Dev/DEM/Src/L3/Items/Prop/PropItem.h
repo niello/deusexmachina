@@ -32,8 +32,6 @@ public:
 	virtual void	Deactivate();
 };
 
-__RegisterClassInFactory(CPropItem);
-
 }
 
 #endif

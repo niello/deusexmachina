@@ -74,8 +74,6 @@ public:
 };
 //---------------------------------------------------------------------
 
-__RegisterClassInFactory(CPropInventory);
-
 inline bool CPropInventory::AddItem(CStrID ItemID, WORD Count)
 {
 	return AddItem(ItemMgr->GetItemTpl(ItemID)->GetTemplateItem(), Count);

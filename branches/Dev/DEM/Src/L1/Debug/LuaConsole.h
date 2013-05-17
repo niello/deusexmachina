@@ -55,8 +55,6 @@ public:
 	void			SetInputFocus() { ((CEGUI::Window*)pInputLine)->activate(); }
 };
 
-__RegisterClassInFactory(CLuaConsole);
-
 typedef Ptr<CLuaConsole> PLuaConsole;
 
 }

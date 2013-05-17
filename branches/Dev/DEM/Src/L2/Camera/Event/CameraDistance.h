@@ -21,8 +21,6 @@ public:
 	CameraDistance(float _RelChange): RelChange(_RelChange) {}
 };
 
-__RegisterClassInFactory(CameraDistance);
-
 }
 
 #endif

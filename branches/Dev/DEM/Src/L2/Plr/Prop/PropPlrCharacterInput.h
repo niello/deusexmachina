@@ -34,8 +34,6 @@ public:
 
 };
 
-__RegisterClassInFactory(CPropPlrCharacterInput);
-
 }
 
 #endif
