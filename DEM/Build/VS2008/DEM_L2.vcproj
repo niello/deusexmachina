@@ -814,10 +814,6 @@
 			Name="Game"
 			>
 			<File
-				RelativePath="..\..\Src\L2\Game\AttrSet.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Game\Entity.cpp"
 				>
 			</File>
@@ -881,6 +877,22 @@
 				RelativePath="..\..\Src\L2\Game\Property.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\StaticEnvManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\StaticEnvManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\StaticObject.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\StaticObject.h"
+				>
+			</File>
 			<Filter
 				Name="Mgr"
 				>
@@ -890,14 +902,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\Game\Mgr\FocusManager.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\StaticEnvManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\StaticEnvManager.h"
 					>
 				</File>
 			</Filter>

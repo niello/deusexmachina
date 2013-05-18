@@ -93,7 +93,7 @@ public:
 	const nString&	GetName() const { return Name; }
 
 	Scene::CScene*	GetScene() const { return Scene.GetUnsafe(); }
-	Physics::CPhysicsLevel*	GetPhysicsLevel() const { return PhysicsLevel.GetUnsafe(); }
+	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.GetUnsafe(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

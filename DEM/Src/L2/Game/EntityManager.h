@@ -12,12 +12,8 @@
 // The entity manager creates and manages entities and allows to
 // register properties to be usable by entities.
 
-//!!!how to manage entities on different levels?
-
 namespace Game
 {
-using namespace Core;
-
 #define EntityMgr Game::CEntityManager::Instance()
 
 class CEntityManager: public Core::CRefCounted
@@ -38,10 +34,7 @@ protected:
 public:
 
 	CEntityManager(): Entities(256, 256), UIDToEntity(512) { __ConstructSingleton; Entities.Flags.Clear(Array_KeepOrder); }
-	~CEntityManager() { n_assert(!Entities.GetCount() && !UIDToEntity.GetCount()); __DestructSingleton; }
-
-	void		Open();
-	void		Close();
+	~CEntityManager();
 
 	PEntity		CreateEntity(CStrID UID, CGameLevel& Level);
 	bool		RenameEntity(CEntity& Entity, CStrID NewUID);
@@ -50,6 +43,19 @@ public:
 	void		DeleteEntity(CStrID UID);
 	void		DeleteEntities(const CGameLevel& Level);
 	void		DeleteAllEntities() { while (Entities.GetCount() > 0) DeleteEntity(*Entities.Back()); }
+
+	int			GetEntityCount() const { return Entities.GetCount(); }
+	CEntity*	GetEntity(int Idx) const { return Entities[Idx].GetUnsafe(); }
+	CEntity*	GetEntity(CStrID UID, bool SearchInAliases = false) const;
+	bool		EntityExists(CStrID UID, bool SearchInAliases = false) const { return !!GetEntity(UID, SearchInAliases); }
+
+	CEntity*	FindEntityByAttr(CStrID AttrID, const Data::CData& Value) const; //???find first - find next?
+	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, nArray<CEntity*>& Out) const;
+
+	//???find first/all by property? - in fact iterates through the storage / CopyToArray
+
+	bool		SetEntityAlias(CStrID Alias, CStrID UID) { if (!UID.IsValid()) FAIL; Aliases.Set(Alias, UID); OK; }
+	void		RemoveEntityAlias(CStrID Alias) { Aliases.Erase(Alias); }
 
 	template<class T>
 	bool		RegisterProperty(DWORD TableCapacity = 32);
@@ -62,19 +68,6 @@ public:
 	void		RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const;
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
-
-	bool		SetEntityAlias(CStrID Alias, CStrID UID) { if (!UID.IsValid()) FAIL; Aliases.Set(Alias, UID); OK; }
-	void		RemoveEntityAlias(CStrID Alias) { Aliases.Erase(Alias); }
-
-	int			GetEntityCount() const { return Entities.GetCount(); }
-	CEntity*	GetEntity(int Idx) const { return Entities[Idx].GetUnsafe(); }
-	CEntity*	GetEntity(CStrID UID, bool SearchInAliases = false) const;
-	bool		EntityExists(CStrID UID, bool SearchInAliases = false) const { return !!GetEntity(UID, SearchInAliases); }
-
-	CEntity*	FindEntityByAttr(CStrID AttrID, const Data::CData& Value) const; //???find first - find next?
-	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, nArray<CEntity*>& Out) const;
-
-	//???find first/all by property? - in fact iterates through the storage / CopyToArray
 };
 
 typedef Ptr<CEntityManager> PEntityManager;

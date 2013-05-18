@@ -5,6 +5,7 @@
 #include <Time/TimeSource.h>
 #include <Game/GameLevel.h>
 #include <Game/EntityManager.h>
+#include <Game/StaticEnvManager.h>
 #include <Game/EntityLoader.h>
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
@@ -27,6 +28,7 @@ protected:
 	bool								IsOpen;
 	Time::PTimeSource					GameTimeSrc;
 	PEntityManager						EntityManager;
+	PStaticEnvManager					StaticEnvManager;
 	nDictionary<CStrID, PGameLevel>		Levels;
 	PGameLevel							ActiveLevel;
 	nDictionary<CStrID, Data::CData>	Attrs;
@@ -56,10 +58,6 @@ public:
 	//CEntity*		GetEntityUnderMouse() const; //???write 2 versions, physics-based and mesh-based?
 	//const vector3&	GetMousePos3D() const { return MousePos3D; }
 	//const vector3&	GetUpVector() const { return UpVector; }
-
-	//!!!remove and use GetActiveLevel!
-	void		RenderCurrentLevel() { if (ActiveLevel.IsValid()) ActiveLevel->RenderScene(); }
-	void		RenderCurrentLevelDebug() { if (ActiveLevel.IsValid()) ActiveLevel->RenderDebug(); }
 
 	void		SetEntityLoader(CStrID Group, PEntityLoader Loader);
 	void		ClearEntityLoader(CStrID Group);

@@ -38,4 +38,4 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, Data::PParams Desc
 }
 //---------------------------------------------------------------------
 
-} // namespace Loading
+}

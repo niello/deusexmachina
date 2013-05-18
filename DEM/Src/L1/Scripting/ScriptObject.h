@@ -25,11 +25,6 @@ namespace Data
 	class CParams;
 }
 
-namespace DB
-{
-	class CDatabase;
-}
-
 namespace Scripting
 {
 

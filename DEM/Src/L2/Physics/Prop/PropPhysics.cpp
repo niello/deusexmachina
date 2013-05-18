@@ -60,7 +60,7 @@ void CPropPhysics::EnablePhysics()
 
 	// Attach physics entity to physics level
 	PhysicsEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	GetEntity()->GetLevel().GetPhysicsLevel()->AttachEntity(PhysicsEntity);
+	GetEntity()->GetLevel().GetPhysics()->AttachEntity(PhysicsEntity);
 
 	PhysicsEntity->SetEnabled(true);
 
@@ -74,7 +74,7 @@ void CPropPhysics::DisablePhysics()
 	n_assert(IsEnabled());
 
 	// Release the physics entity
-	GetEntity()->GetLevel().GetPhysicsLevel()->RemoveEntity(GetPhysicsEntity()); // strange design
+	GetEntity()->GetLevel().GetPhysics()->RemoveEntity(GetPhysicsEntity()); // strange design
 	CPropAbstractPhysics::DisablePhysics();
 }
 //---------------------------------------------------------------------

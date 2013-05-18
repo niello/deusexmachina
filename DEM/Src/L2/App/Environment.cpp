@@ -1,8 +1,5 @@
 #include "Environment.h"
 
-#include <Game/EntityManager.h>
-#include <Game/Mgr/FocusManager.h>
-#include <Game/Mgr/StaticEnvManager.h>
 #include <Scripting/EntityScriptObject.h>
 #include <Core/Logger.h>
 
@@ -69,13 +66,7 @@ bool CEnvironment::InitEngine()
 	DebugServer->RegisterPlugin(CStrID("Console"), "Debug::CLuaConsole", "Console.layout");
 	DebugServer->RegisterPlugin(CStrID("Watcher"), "Debug::CWatcherWindow", "Watcher.layout");
 
-	//DBServer = n_new(DB::CDBServer);
-	//RegisterAttributes();
-
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
-
-	//LoaderServer = n_new(Loading::CLoaderServer);
-	//if (!LoaderServer->Open()) FAIL;
 
 	RenderServer = n_new(Render::CRenderServer);
 	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.CStr());
@@ -172,7 +163,6 @@ bool CEnvironment::InitGameSystem()
 	}
 
 	// Smart object actions
-	//???Load from DB?
 	Data::PParams SOActTpls = DataSrv->LoadHRD("data:tables/AISOActionTpls.hrd");
 	if (SOActTpls.IsValid())
 		for (int i = 0; i < SOActTpls->GetCount(); ++i)
