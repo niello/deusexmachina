@@ -53,7 +53,7 @@ void CPropActorPhysics::EnablePhysics()
 	//!!!recreate physics capsule on R/H change!
 
 	//!!!GET LEVEL from entity!
-	GetEntity()->GetLevel().GetPhysicsLevel()->AttachEntity(PhysEntity);
+	GetEntity()->GetLevel().GetPhysics()->AttachEntity(PhysEntity);
 
 	Stop();
 
@@ -66,7 +66,7 @@ void CPropActorPhysics::DisablePhysics()
 	n_assert(IsEnabled());
 
 	Stop();
-	GetEntity()->GetLevel().GetPhysicsLevel()->RemoveEntity(PhysEntity);
+	GetEntity()->GetLevel().GetPhysics()->RemoveEntity(PhysEntity);
 	PhysEntity = NULL;
 
 	CPropAbstractPhysics::DisablePhysics();

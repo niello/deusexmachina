@@ -71,7 +71,7 @@ bool CGameServer::Open()
 	TimeSrv->AttachTimeSource(CStrID("Game"), GameTimeSrc);
 
 	EntityManager = n_new(CEntityManager);
-	EntityManager->Open();
+	StaticEnvManager = n_new(CStaticEnvManager);
 
 	if (!DefaultLoader.IsValid()) DefaultLoader = n_new(CEntityLoaderCommon);
 
@@ -87,7 +87,7 @@ void CGameServer::Close()
 	TimeSrv->RemoveTimeSource(CStrID("Game"));
 	GameTimeSrc = NULL;
 
-	EntityManager->Close();
+	StaticEnvManager = NULL;
 	EntityManager = NULL;
 
 	IsOpen = false;
@@ -190,7 +190,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 
 	Level->FireEvent(CStrID("OnEntitiesUnloading"));
 	EntityMgr->DeleteEntities(*Level);
-	//!!!delete static environment objects! //StaticEnvMgr->ClearStaticEnv();
+	StaticEnvMgr->DeleteStaticObjects(*Level);
 	Level->FireEvent(CStrID("OnEntitiesUnloaded"));
 
 	Levels.EraseAt(LevelIdx);

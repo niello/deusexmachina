@@ -8,12 +8,7 @@ namespace Game
 __ImplementClassNoFactory(Game::CEntityManager, Core::CRefCounted);
 __ImplementSingleton(Game::CEntityManager);
 
-void CEntityManager::Open()
-{
-}
-//---------------------------------------------------------------------
-
-void CEntityManager::Close()
+CEntityManager::~CEntityManager()
 {
 	DeleteAllEntities();
 
@@ -26,6 +21,8 @@ void CEntityManager::Close()
 		*PropStorages.ValueAtIndex(i) = NULL;
 	}
 	PropStorages.Clear();
+
+	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 

@@ -5,11 +5,6 @@
 #include <Scene/SceneServer.h>
 #include <Scene/Model.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropSceneNode)
-//	RegisterString(ScenePath, ReadOnly);
-//	RegisterString(SceneFile, ReadOnly);
-//END_ATTRS_REGISTRATION
-
 namespace Scene
 {
 	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
@@ -22,15 +17,14 @@ __ImplementPropertyStorage(CPropSceneNode);
 
 void CPropSceneNode::Activate()
 {
-	//CPropTransformable::Activate();
 	CProperty::Activate();
 
 	nString NodePath;
 	GetEntity()->GetAttr<nString>(CStrID("ScenePath"), NodePath);
-	nString NodeRsrc;
-	GetEntity()->GetAttr<nString>(CStrID("SceneFile"), NodeRsrc);
+	nString NodeFile;
+	GetEntity()->GetAttr<nString>(CStrID("SceneFile"), NodeFile);
 
-	if (NodePath.IsEmpty() && NodeRsrc.IsValid())
+	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = GetEntity()->GetUID().CStr();
 	
 	if (NodePath.IsValid())
@@ -41,7 +35,7 @@ void CPropSceneNode::Activate()
 		if (!ExistingNode) Node = GetEntity()->GetLevel().GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
-		if (NodeRsrc.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeRsrc + ".scn", Node));
+		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
 
 		if (ExistingNode)
 			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
@@ -57,11 +51,11 @@ void CPropSceneNode::Deactivate()
 		Node->RemoveFromParent();
 		Node = NULL;
 	}
-	//CPropTransformable::Deactivate();
 	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 
+//???to node or some scene utils?
 void CPropSceneNode::GetAABB(bbox3& OutBox) const
 {
 	if (!Node.IsValid() || !Node->GetAttrCount()) return;
