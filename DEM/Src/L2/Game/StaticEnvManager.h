@@ -53,7 +53,7 @@ typedef Ptr<CStaticEnvManager> PStaticEnvManager;
 inline CStaticObject* CStaticEnvManager::GetStaticObject(CStrID UID) const
 {
 	int Idx = Objects.FindIndex(UID);
-	return (Idx != INVALID_INDEX) ? Objects.ValueAtIndex(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? Objects.ValueAtIndex(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

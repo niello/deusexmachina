@@ -8,27 +8,28 @@ namespace Game
 __ImplementClassNoFactory(Game::CStaticEnvManager, Core::CRefCounted);
 __ImplementSingleton(CStaticEnvManager);
 
-using namespace Physics;
-
 bool CStaticEnvManager::CanEntityBeStatic(const Data::CParams& Desc) const
 {
-	if (!Desc.Has(CStrID("Transform"))) FAIL;
+	Data::PParams Attrs;
+	if (!Desc.Get(Attrs, CStrID("Attrs"))) FAIL;
+
+	if (!Attrs->Has(CStrID("Transform"))) FAIL;
 
 	//???do controllers really deny loading of entity as a static object?
 	//scene allows node without an entity to be controlled
 
 	// We have physics bodies that can move us
-	const nString& PhysDesc = Desc.Get<nString>(CStrID("Physics"), NULL);
-	if (PhysDesc.IsValid())
+	const nString& PhysDescName = Attrs->Get<nString>(CStrID("Physics"), NULL);
+	if (PhysDescName.IsValid())
 	{
 		// It uses HRD cache, so it isn't so slow
-		Data::PParams Desc = DataSrv->LoadPRM(nString("physics:") + PhysDesc + ".prm");
-		int Idx = Desc->IndexOf(CStrID("Bodies"));
-		if (Idx != INVALID_INDEX && Desc->Get<Data::PDataArray>(Idx)->GetCount() > 0) FAIL;
+		Data::PParams PhysDesc = DataSrv->LoadPRM(nString("physics:") + PhysDescName + ".prm");
+		int Idx = PhysDesc->IndexOf(CStrID("Bodies"));
+		if (Idx != INVALID_INDEX && PhysDesc->Get<Data::PDataArray>(Idx)->GetCount() > 0) FAIL;
 	}
 
 	// We have animations that can move us
-	if (Desc.Get<nString>(CStrID("AnimDesc"), NULL).IsValid()) FAIL;
+	if (Attrs->Get<nString>(CStrID("AnimDesc"), NULL).IsValid()) FAIL;
 
 	OK;
 }

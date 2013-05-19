@@ -20,9 +20,9 @@ void CPropSceneNode::Activate()
 	CProperty::Activate();
 
 	nString NodePath;
-	GetEntity()->GetAttr<nString>(CStrID("ScenePath"), NodePath);
+	GetEntity()->GetAttr<nString>(NodePath, CStrID("ScenePath"));
 	nString NodeFile;
-	GetEntity()->GetAttr<nString>(CStrID("SceneFile"), NodeFile);
+	GetEntity()->GetAttr<nString>(NodeFile, CStrID("SceneFile"));
 
 	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = GetEntity()->GetUID().CStr();

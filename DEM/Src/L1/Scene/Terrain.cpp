@@ -153,11 +153,6 @@ void CTerrain::OnRemove()
 
 void CTerrain::Update()
 {
-	/*if (pNode->IsWorldMatrixChanged())
-	{
-		//pNode->GetWorldMatrix();
-	}*/
-
 	//!!!can check global Box before adding!
 	pNode->GetScene()->AddVisibleObject(*this);
 }
