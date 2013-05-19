@@ -40,12 +40,15 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 {
 	n_assert(!Desc.IsValid());
 
-	Desc = &ObjDesc;
+	Data::PParams Attrs;
+	n_verify_dbg(ObjDesc.Get(Attrs, CStrID("Attrs")));
+
+	Desc = Attrs; //&ObjDesc;
 
 	nString NodePath;
-	Desc->Get<nString>(CStrID("ScenePath"), NodePath);
+	Desc->Get<nString>(NodePath, CStrID("ScenePath"));
 	nString NodeFile;
-	Desc->Get<nString>(CStrID("SceneFile"), NodeFile);
+	Desc->Get<nString>(NodeFile, CStrID("SceneFile"));
 
 	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = UID.CStr();
@@ -61,7 +64,6 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
 	}
 
-	//!!!load collision shapes, if not scene attrs
 	const nString& CompositeName = Desc->Get<nString>(CStrID("Physics"), NULL);    
 	if (CompositeName.IsValid())
 	{
@@ -76,7 +78,6 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 				PShape pShape = (CShape*)Factory->Create("Physics::C" + ShapeDesc->Get<nString>(CStrID("Type")));
 				pShape->Init(ShapeDesc);
 				CollLocalTfm.Append(pShape->GetTransform());
-				//!!!pShape->SetTransform(pShape->GetTransform() * EntityTfm);
 				Collision.Append(pShape);
 				Level->GetPhysics()->AttachShape(pShape);
 			}
@@ -85,8 +86,8 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 
 	if (ExistingNode)
 	{
-		//!!!setup collision shapes' tfm from Node->GetWorldMatrix(),
-		//if needed (only if collision shapes aren't node attrs)
+		for (int i = 0; i < Collision.GetCount(); ++i)
+			Collision[i]->SetTransform(CollLocalTfm[i] * Node->GetWorldMatrix());
 	}
 	else SetTransform(Desc->Get<matrix44>(CStrID("Transform")));
 }
@@ -113,7 +114,7 @@ void CStaticObject::SetTransform(const matrix44& Tfm)
 {
 	for (int i = 0; i < Collision.GetCount(); ++i)
 		Collision[i]->SetTransform(CollLocalTfm[i] * Tfm);
-	//!!!if (Node.IsValid()) Node->SetGlobalTransform(Tfm);
+	if (Node.IsValid()) Node->SetWorldTransform(Tfm);
 }
 //---------------------------------------------------------------------
 

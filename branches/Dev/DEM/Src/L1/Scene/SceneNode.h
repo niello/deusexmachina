@@ -32,11 +32,11 @@ protected:
 	enum
 	{
 		Active				= 0x01,	// Node must be processed
-		RespectsLOD			= 0x04,	// This node is affected by parent's LODGroup attribute
-		LocalMatrixDirty	= 0x08,	// Local transform components were changed, but matrix is not updated
-		WorldMatrixDirty	= 0x10,	// Local matrix changed, and world matrix need to be updated
-		WorldMatrixChanged	= 0x20,	// World matrix of this node was changed this frame
-		WorldMatrixUpdated	= 0x40	// World matrix of this node was already updated this frame
+		RespectsLOD			= 0x02,	// This node is affected by parent's LODGroup attribute
+		LocalMatrixDirty	= 0x04,	// Local transform components were changed, but matrix is not updated
+		WorldMatrixDirty	= 0x08,	// Local matrix changed, and world matrix need to be updated
+		WorldMatrixChanged	= 0x10,	// World matrix of this node was changed this frame
+		WorldMatrixUpdated	= 0x20	// World matrix of this node was already updated this frame
 	};
 
 	typedef nDictionary<CStrID, PSceneNode> CNodeDict;
@@ -48,6 +48,7 @@ protected:
 	CNodeDict				Child;
 	CScene*					pScene;
 
+	//!!!can write special 4x3 tfm matrix withour 0,0,0,1 column to save memory! is good for SSE?
 	Math::CTransform		Tfm;
 	matrix44				LocalMatrix;	// For caching only
 	matrix44				WorldMatrix;
@@ -115,6 +116,7 @@ public:
 	void					SetLocalTransform(const Math::CTransform& NewTfm) { Tfm = NewTfm; Flags.Set(LocalMatrixDirty); }
 	void					SetLocalTransform(const matrix44& Transform);
 	const Math::CTransform&	GetLocalTransform() { return Tfm; }
+	void					SetWorldTransform(const matrix44& Transform);
 	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
 	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
 	const vector3&			GetWorldPosition() { return WorldMatrix.Translation(); }

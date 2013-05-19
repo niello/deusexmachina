@@ -177,4 +177,19 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 }
 //---------------------------------------------------------------------
 
+void CSceneNode::SetWorldTransform(const matrix44& Transform)
+{
+	WorldMatrix = Transform;
+	if (pParent)
+	{
+		matrix44 InvParentPos;
+		pParent->GetWorldMatrix().invert_simple(InvParentPos);
+		LocalMatrix = InvParentPos * Transform;
+	}
+	else LocalMatrix = Transform;
+	Tfm.FromMatrix(LocalMatrix);
+	Flags.Clear(WorldMatrixDirty | LocalMatrixDirty);
+}
+//---------------------------------------------------------------------
+
 }
