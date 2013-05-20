@@ -1,5 +1,6 @@
 #include "NavSystem.h"
 
+#include <Game/GameLevel.h> //!!!???cache AI level instead of getting from entity every time?!
 #include <AI/AIServer.h>
 #include <AI/Prop/PropActorBrain.h>
 #include <DetourCommon.h>
@@ -76,7 +77,7 @@ void CNavSystem::SetupState()
 
 	dtPolyRef Ref = 0;
 
-	pNavQuery = AISrv->GetLevel()->GetSyncNavQuery(pActor->Radius);
+	pNavQuery = pActor->GetEntity()->GetLevel().GetAI()->GetSyncNavQuery(pActor->Radius);
 	if (pNavQuery)
 	{
 		const float Extents[3] = { 0.f, pActor->Height, 0.f };
@@ -230,7 +231,7 @@ void CNavSystem::Update(float FrameTime)
 		if (PathRequestID == DT_PATHQ_INVALID)
 		{
 			dtNavMeshQuery* pAsyncQuery;
-			if (AISrv->GetLevel()->GetAsyncNavQuery(pActor->Radius, pAsyncQuery, pProcessingQueue))
+			if (pActor->GetEntity()->GetLevel().GetAI()->GetAsyncNavQuery(pActor->Radius, pAsyncQuery, pProcessingQueue))
 			{
 				//!!!Insert request based on greatest targetReplanTime!
 				PathRequestID = pProcessingQueue->Request(Corridor.getLastPoly(), DestRef, Corridor.getTarget(),

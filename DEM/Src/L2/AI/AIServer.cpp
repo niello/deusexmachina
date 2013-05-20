@@ -1,13 +1,11 @@
 #include "AIServer.h"
 
 #include <AI/Planning/ActionTpl.h>
-#include <AI/Navigation/NavMeshDebugDraw.h>
 #include <Data/Params.h>
 #include <IO/IOServer.h>
 #include <Events/EventManager.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourObstacleAvoidance.h>
-#include <DetourDebugDraw.h>
 
 namespace AI
 {
@@ -59,23 +57,6 @@ void CAIServer::Trigger()
 {
 	for (int i = 0; i < DEM_THREAD_COUNT; ++i)
 		PathQueues[i].Update(100);
-}
-//---------------------------------------------------------------------
-
-void CAIServer::RenderDebug()
-{
-	// Render the first NavMesh (later render navmesh used by the current actor)
-	if (CurrLevel.IsValid())
-	{
-		dtNavMeshQuery* pNavQuery = CurrLevel->GetSyncNavQuery(0.f);
-		if (pNavQuery)
-		{
-			CNavMeshDebugDraw DD;
-			duDebugDrawNavMesh(&DD, *pNavQuery->getAttachedNavMesh(), DU_DRAWNAVMESH_OFFMESHCONS);
-			duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
-			//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
-		}
-	}
 }
 //---------------------------------------------------------------------
 

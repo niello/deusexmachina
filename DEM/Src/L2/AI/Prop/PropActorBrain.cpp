@@ -7,7 +7,6 @@
 #include <AI/Events/QueueTask.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <Game/Mgr/FocusManager.h>	// For dbg rendering
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 
@@ -309,7 +308,7 @@ void CPropActorBrain::OnBeginFrame()
 	{
 		//!!!only for external! also need to update internal sensors & actor's state through them
 		//???CStimulus -> CExternalStimulus?
-		AISrv->GetLevel()->UpdateActorsSense(this, (*ppSensor));
+		GetEntity()->GetLevel().GetAI()->UpdateActorsSense(this, (*ppSensor));
 	}
 
 	MemSystem.Update();
@@ -379,7 +378,7 @@ bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 
 bool CPropActorBrain::OnRenderDebug(const Events::CEventBase& Event)
 {
-	if (FocusMgr->GetInputFocusEntity() == GetEntity())
+	if (false) //FocusMgr->GetInputFocusEntity() == GetEntity())
 	{
 		MotorSystem.RenderDebug();
 	}

@@ -72,6 +72,7 @@ bool CGameServer::Open()
 
 	EntityManager = n_new(CEntityManager);
 	StaticEnvManager = n_new(CStaticEnvManager);
+	CameraManager = n_new(CCameraManager);
 
 	if (!DefaultLoader.IsValid()) DefaultLoader = n_new(CEntityLoaderCommon);
 
@@ -87,6 +88,7 @@ void CGameServer::Close()
 	TimeSrv->RemoveTimeSource(CStrID("Game"));
 	GameTimeSrc = NULL;
 
+	CameraManager = NULL;
 	StaticEnvManager = NULL;
 	EntityManager = NULL;
 
@@ -164,6 +166,8 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 		Level->FireEvent(CStrID("OnEntitiesLoaded"));
 	}
 
+	//???!!!load camera state!?
+
 	EventMgr->FireEvent(CStrID("OnLevelLoaded"), P);
 
 	OK;
@@ -200,6 +204,27 @@ void CGameServer::UnloadLevel(CStrID ID)
 	EventMgr->FireEvent(CStrID("OnLevelUnloaded"), P); //???or before a level is removed, but entities are unloaded?
 
 	n_assert_dbg(Level->GetRefCount() == 1);
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::SetActiveLevel(CStrID ID)
+{
+	PGameLevel NewLevel;
+	if (ID.IsValid())
+	{
+		int LevelIdx = Levels.FindIndex(ID);
+		if (LevelIdx == INVALID_INDEX) FAIL;
+		NewLevel = Levels.ValueAtIndex(LevelIdx);
+	}
+
+	if (NewLevel != ActiveLevel)
+	{
+		EventMgr->FireEvent(CStrID("OnActiveLevelChanging"));
+		ActiveLevel = NewLevel;
+		EventMgr->FireEvent(CStrID("OnActiveLevelChanged"));
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

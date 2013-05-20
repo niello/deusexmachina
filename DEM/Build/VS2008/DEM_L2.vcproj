@@ -814,6 +814,14 @@
 			Name="Game"
 			>
 			<File
+				RelativePath="..\..\Src\L2\Game\CameraManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Game\CameraManager.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L2\Game\Entity.cpp"
 				>
 			</File>
@@ -893,18 +901,6 @@
 				RelativePath="..\..\Src\L2\Game\StaticObject.h"
 				>
 			</File>
-			<Filter
-				Name="Mgr"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\FocusManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Game\Mgr\FocusManager.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="App"
@@ -918,19 +914,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L2\App\AppStateVideo.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\App\AppStateVideo.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L2\App\Environment.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L2\App\Environment.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\App\PlayVideoHandler.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\App\PlayVideoHandler.h"
 				>
 			</File>
 			<File
@@ -954,50 +950,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\Input\Prop\PropInput.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Camera"
-			>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropCamera.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropCamera.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropChaseCamera.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Prop\PropChaseCamera.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Event"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Event\CameraDistance.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Event\CameraDistance.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Event\CameraOrbit.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Camera\Event\CameraOrbit.h"
 					>
 				</File>
 			</Filter>

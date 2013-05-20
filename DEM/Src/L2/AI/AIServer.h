@@ -34,7 +34,6 @@ class CAIServer: public Core::CRefCounted
 private:
 
 	CPlanner								Planner; //???or singleton?
-	PAILevel								CurrLevel;
 	nDictionary<CStrID, CSmartObjActionTpl>	SOActTpls;
 	nDictionary<CStrID, dtQueryFilter*>		NavQueryFilters;
 	nDictionary<CStrID, COAParams*>			ObstacleAvoidanceParams;
@@ -46,7 +45,6 @@ public:
 	~CAIServer();
 
 	void						Trigger();
-	void						RenderDebug();
 
 	void						AddSmartObjActionTpl(CStrID ID, const CParams& Desc);
 	const CSmartObjActionTpl*	GetSmartObjActionTpl(CStrID ID) const;
@@ -62,7 +60,6 @@ public:
 	CPathRequestQueue*			GetPathQueue(DWORD ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
 
 	CPlanner&					GetPlanner() { return Planner; } //???or singleton?
-	CAILevel*					GetLevel() const { return CurrLevel.GetUnsafe(); }
 };
 
 inline const dtQueryFilter* CAIServer::GetNavQueryFilter(CStrID ID) const

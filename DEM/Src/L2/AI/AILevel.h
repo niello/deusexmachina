@@ -34,6 +34,7 @@ public:
 	~CAILevel();
 
 	bool			Init(const bbox3& LevelBox, uchar QuadTreeDepth);
+	void			RenderDebug();
 
 	bool			LoadNavMesh(const nString& FileName);
 	void			UnloadNavMesh();

@@ -1,7 +1,5 @@
 #include "PropInput.h"
 
-#include <Game/Mgr/FocusManager.h>
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropInput, 'PRIN', Game::CProperty);
@@ -22,7 +20,7 @@ void CPropInput::Activate()
 
 void CPropInput::Deactivate()
 {
-	if (HasFocus()) FocusMgr->SetInputFocusEntity(NULL);
+	//if (HasFocus()) FocusMgr->SetInputFocusEntity(NULL);
 
 	UNSUBSCRIBE_EVENT(OnObtainInputFocus);
 	UNSUBSCRIBE_EVENT(OnLoseInputFocus);
@@ -63,7 +61,7 @@ bool CPropInput::OnDisableInput(const Events::CEventBase& Event)
 
 bool CPropInput::HasFocus() const
 {
-	return FocusMgr->GetInputFocusEntity() == GetEntity();
+	FAIL; //return FocusMgr->GetInputFocusEntity() == GetEntity();
 }
 //---------------------------------------------------------------------
 

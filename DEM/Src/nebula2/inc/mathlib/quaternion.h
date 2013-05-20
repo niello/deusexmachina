@@ -211,20 +211,20 @@ public:
     }
 
     void set_rotate_x(float a) {
-        //float sin_a = n_sin(a * 0.5f);
-        //float cos_a = n_cos(a * 0.5f);
-        //x = sin_a;
-        //y = 0.0f;
-        //z = 0.0f;
-        //w = cos_a;
+		y = 0.f;
+		z = 0.f;
 		n_sincos(a * 0.5f, x, w);
     }
 
     void set_rotate_y(float a) {
+		x = 0.f;
+		z = 0.f;
 		n_sincos(a * 0.5f, y, w);
     }
 
     void set_rotate_z(float a) {
+		x = 0.f;
+		y = 0.f;
 		n_sincos(a * 0.5f, z, w);
     }
 
