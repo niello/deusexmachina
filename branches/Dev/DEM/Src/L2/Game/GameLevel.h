@@ -94,6 +94,7 @@ public:
 
 	Scene::CScene*	GetScene() const { return Scene.GetUnsafe(); }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.GetUnsafe(); }
+	AI::CAILevel*	GetAI() const { return AILevel.GetUnsafe(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

@@ -13,7 +13,6 @@
 #include <Scripting/ScriptServer.h>
 #include <Events/EventManager.h>
 #include <Game/EntityManager.h>
-#include <Game/Mgr/FocusManager.h>
 #include <Game/GameServer.h>
 
 namespace Story
@@ -288,7 +287,7 @@ void CDialogueManager::Trigger()
 				if (ForegroundDlg.PlrSpeaker.IsValid())
 					EntityMgr->GetEntity(ForegroundDlg.PlrSpeaker)->FireEvent(CStrID("EnableInput"));
 
-				FocusMgr->SetCameraFocusEntity(FocusMgr->GetInputFocusEntity());
+				//FocusMgr->SetCameraFocusEntity(FocusMgr->GetInputFocusEntity());
 
 				ForegroundDlg.Dlg = NULL;
 				break;
@@ -331,7 +330,7 @@ void CDialogueManager::SayPhrase(CStrID SpeakerEntity, const nString& Phrase, CA
 		nString SpeakerName;
 		if (!Speaker->GetAttr<nString>(SpeakerName, CStrID("Name")))
 			SpeakerName = Speaker->GetUID().CStr();
-		FocusMgr->SetCameraFocusEntity(Speaker);
+		//FocusMgr->SetCameraFocusEntity(Speaker);
 
 		PParams P = n_new(CParams);
 		P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
@@ -351,7 +350,7 @@ bool CDialogueManager::OnDlgAnswersBegin(const Events::CEventBase& Event)
 	n_assert2(!ForegroundDlg.ValidLinkIndices.GetCount(), "Re-entering answer mode in dialogue");
 	PEntity Speaker = EntityMgr->GetEntity(ForegroundDlg.PlrSpeaker);
 	n_assert(Speaker.IsValid());
-	FocusMgr->SetCameraFocusEntity(Speaker);
+	//FocusMgr->SetCameraFocusEntity(Speaker);
 	OK;
 }
 //---------------------------------------------------------------------

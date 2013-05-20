@@ -4,9 +4,10 @@
 
 #include <Time/TimeSource.h>
 #include <Game/GameLevel.h>
+#include <Game/EntityLoader.h>
 #include <Game/EntityManager.h>
 #include <Game/StaticEnvManager.h>
-#include <Game/EntityLoader.h>
+#include <Game/CameraManager.h>
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
@@ -14,8 +15,6 @@
 
 namespace Game
 {
-class Entity;
-
 #define GameSrv Game::CGameServer::Instance()
 
 class CGameServer: public Core::CRefCounted
@@ -26,15 +25,20 @@ class CGameServer: public Core::CRefCounted
 protected:
 
 	bool								IsOpen;
+	nDictionary<CStrID, Data::CData>	Attrs;
+
 	Time::PTimeSource					GameTimeSrc;
 	PEntityManager						EntityManager;
 	PStaticEnvManager					StaticEnvManager;
+	PCameraManager						CameraManager;
+
+	//!!!selected entities! or per-level?
+
 	nDictionary<CStrID, PGameLevel>		Levels;
 	PGameLevel							ActiveLevel;
-	nDictionary<CStrID, Data::CData>	Attrs;
 
-	PEntityLoader						DefaultLoader;
 	nDictionary<CStrID, PEntityLoader>	Loaders;
+	PEntityLoader						DefaultLoader;
 
 public:
 
@@ -92,19 +96,6 @@ public:
 	void		PauseGame(bool Pause = true) const;
 	void		ToggleGamePause() const { PauseGame(!IsGamePaused()); }
 };
-
-inline bool CGameServer::SetActiveLevel(CStrID ID)
-{
-	if (ID.IsValid())
-	{
-		int LevelIdx = Levels.FindIndex(ID);
-		if (LevelIdx == INVALID_INDEX) FAIL;
-		ActiveLevel = Levels.ValueAtIndex(LevelIdx);
-	}
-	else ActiveLevel = NULL;
-	OK;
-}
-//---------------------------------------------------------------------
 
 template<class T>
 inline void CGameServer::SetGlobalAttr(CStrID ID, const T& Value)

@@ -1,6 +1,7 @@
 #include "PropAIHints.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/Prop/PropPhysics.h>
 #include <AI/AIServer.h>
@@ -35,7 +36,7 @@ void CPropAIHints::Deactivate()
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(i);
-		if (Rec.pNode) AISrv->GetLevel()->RemoveStimulus(Rec.pNode);
+		if (Rec.pNode) GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.pNode);
 	}
 
 	Hints.Clear();
@@ -111,7 +112,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 
 			//???Rec.Stimulus->Init(PrmVal);
 
-			Rec.pNode = PrmVal->Get(CStrID("Enabled"), false) ? AISrv->GetLevel()->RegisterStimulus(Rec.Stimulus) : NULL;
+			Rec.pNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus) : NULL;
 			Hints.Add(Prm.GetName(), Rec);
 		}
 		Hints.EndAdd();
@@ -132,13 +133,13 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 		if (Enable)
 		{
 			if (!Rec.pNode)
-				Rec.pNode = AISrv->GetLevel()->RegisterStimulus(Rec.Stimulus);
+				Rec.pNode = GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus);
 		}
 		else
 		{
 			if (Rec.pNode)
 			{
-				AISrv->GetLevel()->RemoveStimulus(Rec.pNode);
+				GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.pNode);
 				Rec.pNode = NULL;
 			}
 		}
@@ -154,7 +155,7 @@ bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 	{
 		CRecord& Rec = Hints.ValueAtIndex(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
-		if (Rec.pNode) AISrv->GetLevel()->UpdateStimulusLocation(Rec.pNode);
+		if (Rec.pNode) GetEntity()->GetLevel().GetAI()->UpdateStimulusLocation(Rec.pNode);
 	}
 
 	OK;

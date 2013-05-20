@@ -1,5 +1,6 @@
 #include <Scripting/ScriptServer.h>
 #include <AI/AIServer.h>
+#include <Game/GameServer.h>
 
 extern "C"
 {
@@ -27,8 +28,10 @@ int NavMesh_LockRegion(lua_State* l)
 	}
 
 	float Radius = (ArgCount > 1) ? (float)lua_tonumber(l, 2) : 0.f;
-	if (AISrv->GetLevel())
-		AISrv->GetLevel()->SetNavRegionFlags(CStrID(lua_tostring(l, 1)), NAV_FLAG_LOCKED, Radius);
+
+	//!!!must not be global! per-level or level ID as arg!
+	if (GameSrv->GetActiveLevel())
+		GameSrv->GetActiveLevel()->GetAI()->SetNavRegionFlags(CStrID(lua_tostring(l, 1)), NAV_FLAG_LOCKED, Radius);
 
 	return 0;
 }
@@ -48,8 +51,8 @@ int NavMesh_UnlockRegion(lua_State* l)
 	}
 
 	float Radius = (ArgCount > 1) ? (float)lua_tonumber(l, 2) : 0.f;
-	if (AISrv->GetLevel())
-		AISrv->GetLevel()->ClearNavRegionFlags(CStrID(lua_tostring(l, 1)), NAV_FLAG_LOCKED, Radius);
+	if (GameSrv->GetActiveLevel())
+		GameSrv->GetActiveLevel()->GetAI()->ClearNavRegionFlags(CStrID(lua_tostring(l, 1)), NAV_FLAG_LOCKED, Radius);
 
 	return 0;
 }

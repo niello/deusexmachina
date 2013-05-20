@@ -1,79 +1,30 @@
-#include "PropChaseCamera.h"
+#include "CameraManager.h"
 
-#include <Time/TimeServer.h>
-#include <Game/Entity.h>
-#include <Game/GameLevel.h>
-#include <Camera/Event/CameraOrbit.h>
-#include <Camera/Event/CameraDistance.h>
-#include <Physics/Prop/PropPhysics.h>
-#include <Physics/PhysicsUtil.h>
-#include <Scene/PropSceneNode.h>
-#include <Scene/SceneServer.h>
+#include <Game/GameServer.h>
+#include <Scene/Scene.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropChaseCamera)
-//	RegisterFloatWithDefault(CameraDistance, ReadOnly, 7.0f);
-//	RegisterFloatWithDefault(CameraMinDistance, ReadOnly, 1.5f);
-//	RegisterFloatWithDefault(CameraMaxDistance, ReadOnly, 15.0f);
-//	RegisterFloatWithDefault(CameraAngularVelocity, ReadOnly, 6.0f);
-//	RegisterVector3WithDefault(CameraOffset, ReadOnly, vector4(0.0f, 1.5f, 0.0f, 0.f));
-//	RegisterFloatWithDefault(CameraLowStop, ReadOnly, 5.0f);
-//	RegisterFloatWithDefault(CameraHighStop, ReadOnly, 45.0f);
-//	RegisterFloatWithDefault(CameraDistanceStep, ReadOnly, 1.0f);
-//	RegisterFloatWithDefault(CameraLinearGain, ReadOnly, -10.0f);
-//	RegisterFloatWithDefault(CameraAngularGain, ReadOnly, -15.0f);
-//	RegisterFloatWithDefault(CameraDefaultTheta, ReadOnly, 20.0f);
-//	//???DefineFloatWithDefault(CameraDefaultRho, 'CRHO', ReadWrite, n_deg2rad(10.0f));?
-//END_ATTRS_REGISTRATION
-
-namespace Prop
+namespace Game
 {
-__ImplementClass(Prop::CPropChaseCamera, 'PCHC', Prop::CPropCamera);
+__ImplementClassNoFactory(Game::CCameraManager, Core::CRefCounted);
+__ImplementSingleton(Game::CCameraManager);
 
-using namespace Game;
-
-void CPropChaseCamera::Activate()
+bool CCameraManager::InitThirdPersonCamera()
 {
-	CPropCamera::Activate();
-	ResetCamera();
+	Scene::PAnimController Ctlr = n_new(Scene::CAnimControllerThirdPerson);
+	if (!Ctlr.IsValid()) FAIL;
 
-	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropChaseCamera, OnPropsActivated);
-	PROP_SUBSCRIBE_PEVENT(CameraReset, CPropChaseCamera, OnCameraReset);
-	PROP_SUBSCRIBE_NEVENT(CameraOrbit, CPropChaseCamera, OnCameraOrbit);
-	PROP_SUBSCRIBE_NEVENT(CameraDistance, CPropChaseCamera, OnCameraDistanceChange);
+	CGameLevel* pLevel = GameSrv->GetActiveLevel();
+	if (pLevel && pLevel->GetScene())
+	{
+		pCameraNode = pLevel->GetScene()->GetMainCamera().GetNode();
+		pCameraNode->Controller = Ctlr;
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropChaseCamera::Deactivate()
-{
-	UNSUBSCRIBE_EVENT(OnPropsActivated);
-	UNSUBSCRIBE_EVENT(CameraReset);
-	UNSUBSCRIBE_EVENT(CameraOrbit);
-	UNSUBSCRIBE_EVENT(CameraDistance);
-
-	if (Ctlr.IsValid())
-	{
-		Ctlr->Activate(false);
-		Ctlr = NULL;
-	}
-	if (Node.IsValid())
-	{
-		Node->RemoveFromParent();
-		Node = NULL;
-	}
-
-	CPropCamera::Deactivate();
-}
-//---------------------------------------------------------------------
-
-bool CPropChaseCamera::OnPropsActivated(const Events::CEventBase& Event)
-{
-	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (!pProp || !pProp->GetNode()) OK; // No node to chase
-
-	Node = pProp->GetNode()->CreateChild(CStrID("ChaseCamera"));
-	Camera = n_new(Scene::CCamera);
-	//!!!setup camera params here! or mb load camera from SCN
-	Node->AddAttr(*Camera);
+/* activation
 	Ctlr = n_new(Scene::CAnimControllerThirdPerson);
 	Node->Controller = Ctlr;
 	Ctlr->Activate(true);
@@ -84,13 +35,17 @@ bool CPropChaseCamera::OnPropsActivated(const Events::CEventBase& Event)
 		GetEntity()->GetAttr<float>(CStrID("CameraMaxDistance")));
 	Ctlr->SetAngles(Angles.theta, Angles.phi);
 	Ctlr->SetDistance(Distance);
+*/
 
-	OK;
-}
-//---------------------------------------------------------------------
+/* deactivation
+	if (Ctlr.IsValid())
+	{
+		Ctlr->Activate(false);
+		Ctlr = NULL;
+	}
+*/
 
-void CPropChaseCamera::OnObtainCameraFocus()
-{
+/* changing targer / camera
 	// initialize the feedback loops with the current pCamera values so
 	// that we get a smooth interpolation to the new position
 	//Graphics::CCameraEntity* pCamera = RenderSrv->GetDisplay().GetCamera();
@@ -100,27 +55,9 @@ void CPropChaseCamera::OnObtainCameraFocus()
 	//	Tfm.Translation() - (Tfm.AxisZ() * 10.0f));
 
 	GetEntity()->GetLevel().GetScene()->SetMainCamera(Camera);
+*/
 
-	CPropCamera::OnObtainCameraFocus();
-}
-//---------------------------------------------------------------------
-
-void CPropChaseCamera::OnRender()
-{
-	if (HasFocus()) UpdateCamera();
-	CPropCamera::OnRender();
-}
-//---------------------------------------------------------------------
-
-bool CPropChaseCamera::OnCameraReset(const CEventBase& Event)
-{
-	ResetCamera();
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
-{
+/*orbiting
 	const Event::CameraOrbit& e = (const Event::CameraOrbit&)Event;
 	float dt = (float)TimeSrv->GetFrameTime();
 	float AngVel = n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraAngularVelocity")));
@@ -131,37 +68,24 @@ bool CPropChaseCamera::OnCameraOrbit(const CEventBase& Event)
 		Angles.theta += AngVel * dt * (float)e.DirVert;
 
 	Angles.phi += e.AngleHoriz;
-	Angles.theta = n_clamp(Angles.theta + e.AngleVert,
-						n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraLowStop"))),
-						n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraHighStop"))));
+	Angles.theta = Angles.theta + e.AngleVert;
 
 	if (Ctlr.IsValid())
 	{
 		Ctlr->OrbitHorizontal(e.AngleHoriz);
 		Ctlr->OrbitVertical(e.AngleVert);
 	}
+*/
 
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropChaseCamera::OnCameraDistanceChange(const CEventBase& Event)
-{
-	Distance = n_clamp(
-		Distance + ((const Event::CameraDistance&)Event).RelChange * GetEntity()->GetAttr<float>(CStrID("CameraDistanceStep")),
-		GetEntity()->GetAttr<float>(CStrID("CameraMinDistance")),
-		GetEntity()->GetAttr<float>(CStrID("CameraMaxDistance")));
+/*zooming
+	Distance = Distance + ((const Event::CameraDistance&)Event).RelChange * GetEntity()->GetAttr<float>(CStrID("CameraDistanceStep"));
 
 	if (Ctlr.IsValid())
 		Ctlr->Zoom(((const Event::CameraDistance&)Event).RelChange * GetEntity()->GetAttr<float>(CStrID("CameraDistanceStep")));
+*/
 
-	OK;
-}
-//---------------------------------------------------------------------
-
-vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
-{
-	/* WITH pre-created filterset from N3:
+/*collision test
+	WITH pre-created filterset from N3:
 	
 	static const vector up(0.0f, 1.0f, 0.0f);
     matrix44 m = matrix44::lookatrh(from, to, up);
@@ -172,7 +96,7 @@ vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
     vector vec = vector::normalize(to - from);    
     point newTo = from + vec * outContactDist;
     return newTo;
-*/
+
 	static const vector3 up(0.0f, 1.0f, 0.0f);
 	matrix44 m;
 	m.set_translation(from);
@@ -194,11 +118,9 @@ vector3 CPropChaseCamera::DoCollideCheck(const vector3& from, const vector3& to)
 	vector3 newTo = from + vec * outContactDist;
 
 	return newTo;
-}
-//---------------------------------------------------------------------
+*/
 
-void CPropChaseCamera::UpdateCamera()
-{
+/*updating
 	// compute the lookat point in global space
 	const matrix44& m44 = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	matrix33 m33 = matrix33(m44.AxisX(), m44.AxisY(), m44.AxisZ());
@@ -234,18 +156,25 @@ void CPropChaseCamera::UpdateCamera()
 	matrix44 CameraMatrix;
 	CameraMatrix.translate(Position.State);
 	CameraMatrix.lookatRh(Lookat.State, vector3::Up);
+*/
 
-	// update the graphics subsystem pCamera
-	//pCamera->SetTransform(CameraMatrix);
-}
-//---------------------------------------------------------------------
-
-void CPropChaseCamera::ResetCamera()
-{
+/*reset
 	Angles.set(GetEntity()->GetAttr<matrix44>(CStrID("Transform")).AxisZ());
 	Angles.theta = n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraDefaultTheta")));
 	Distance = GetEntity()->GetAttr<float>(CStrID("CameraDistance"));
+*/
+
+/*
+PEntity CCameraManager::CreateEntity(CStrID UID, CGameLevel& Level)
+{
+	n_assert(UID.IsValid());
+	n_assert(!EntityExists(UID)); //???return NULL or existing entity?
+	PEntity Entity = n_new(CEntity(UID, Level));
+	Entities.Append(Entity);
+	UIDToEntity.Add(Entity->GetUID(), Entity.GetUnsafe());
+	return Entity;
 }
 //---------------------------------------------------------------------
+*/
 
-} // namespace Prop
+}

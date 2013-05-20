@@ -10,7 +10,7 @@
 namespace App
 {
 
-class CPlayVideoHandler: public CStateHandler
+class CAppStateVideo: public CStateHandler
 {
 	__DeclareClassNoFactory;
 
@@ -23,7 +23,7 @@ public:
 
 	bool	EnableScaling;
 
-	CPlayVideoHandler(CStrID StateID): CStateHandler(StateID), EnableScaling(false) {}
+	CAppStateVideo(CStrID StateID): CStateHandler(StateID), EnableScaling(false) {}
 
 	virtual void	OnStateEnter(CStrID PrevState, PParams Params = NULL);
 	virtual CStrID	OnFrame();

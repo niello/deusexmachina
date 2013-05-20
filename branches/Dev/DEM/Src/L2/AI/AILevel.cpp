@@ -2,8 +2,10 @@
 
 #include <AI/AIServer.h>
 #include <AI/Perception/Sensor.h>
+#include <AI/Navigation/NavMeshDebugDraw.h>
 #include <IO/Streams/FileStream.h>
 #include <Events/EventManager.h>
+#include <DetourDebugDraw.h>
 
 namespace AI
 {
@@ -177,6 +179,20 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 	if (pNode->HasChildren())
 		for (DWORD i = 0; i < 4; i++)
 			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, EClipStatus);
+}
+//---------------------------------------------------------------------
+
+void CAILevel::RenderDebug()
+{
+	// Render the first NavMesh (later render navmesh used by the current actor)
+	dtNavMeshQuery* pNavQuery = GetSyncNavQuery(0.f);
+	if (pNavQuery)
+	{
+		CNavMeshDebugDraw DD;
+		duDebugDrawNavMesh(&DD, *pNavQuery->getAttachedNavMesh(), DU_DRAWNAVMESH_OFFMESHCONS);
+		duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
+		//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
+	}
 }
 //---------------------------------------------------------------------
 

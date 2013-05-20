@@ -10,6 +10,8 @@ __ImplementSingleton(CStaticEnvManager);
 
 bool CStaticEnvManager::CanEntityBeStatic(const Data::CParams& Desc) const
 {
+	//!!!???check props?!
+
 	Data::PParams Attrs;
 	if (!Desc.Get(Attrs, CStrID("Attrs"))) FAIL;
 

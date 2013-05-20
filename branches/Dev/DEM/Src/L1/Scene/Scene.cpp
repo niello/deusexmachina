@@ -11,6 +11,8 @@ void CScene::Init(const bbox3& Bounds, DWORD SPSHierarchyDepth)
 	RootNode = n_new(CSceneNode(*this, CStrID::Empty));
 
 	//???is always needed?
+	//???create from L2 camera manager? scene hasn't to have camera, it is an user's responsibility
+	//but LODs use camera!
 	CSceneNode* CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
 	DefaultCamera = n_new(CCamera);
 	CameraNode->AddAttr(*DefaultCamera);

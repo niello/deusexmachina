@@ -11,9 +11,6 @@
 #include <Input/Events/MouseDoubleClick.h>
 #include <Input/Events/MouseMoveRaw.h>
 #include <Input/Events/MouseWheel.h>
-#include <Game/Mgr/FocusManager.h>
-#include <Camera/Event/CameraOrbit.h>
-#include <Camera/Event/CameraDistance.h>
 
 namespace Prop
 {
@@ -74,7 +71,7 @@ bool CPropPlrCharacterInput::OnMouseMoveRaw(const Events::CEventBase& Event)
 	static const float PlrCameraSens = 0.05f;
 
 	const Event::MouseMoveRaw& Ev = (const Event::MouseMoveRaw&)Event;
-	GetEntity()->FireEvent(Event::CameraOrbit(Ev.X * PlrCameraSens, Ev.Y * PlrCameraSens));
+	//GetEntity()->FireEvent(Event::CameraOrbit(Ev.X * PlrCameraSens, Ev.Y * PlrCameraSens));
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -82,7 +79,7 @@ bool CPropPlrCharacterInput::OnMouseMoveRaw(const Events::CEventBase& Event)
 bool CPropPlrCharacterInput::OnMouseWheel(const Events::CEventBase& Event)
 {
 	const Event::MouseWheel& Ev = (const Event::MouseWheel&)Event;
-	GetEntity()->FireEvent(Event::CameraDistance((float)(-Ev.Delta)));
+	//GetEntity()->FireEvent(Event::CameraDistance((float)(-Ev.Delta)));
 	FAIL; //???!!!OK?!
 }
 //---------------------------------------------------------------------

@@ -1,4 +1,4 @@
-#include "PlayVideoHandler.h"
+#include "AppStateVideo.h"
 
 #include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
@@ -10,9 +10,9 @@
 
 namespace App
 {
-__ImplementClassNoFactory(App::CPlayVideoHandler, App::CStateHandler);
+__ImplementClassNoFactory(App::CAppStateVideo, App::CStateHandler);
 
-void CPlayVideoHandler::OnStateEnter(CStrID PrevState, PParams Params)
+void CAppStateVideo::OnStateEnter(CStrID PrevState, PParams Params)
 {
 	TimeSrv->ResetAll();
 	TimeSrv->Trigger();
@@ -23,7 +23,7 @@ void CPlayVideoHandler::OnStateEnter(CStrID PrevState, PParams Params)
 }
 //---------------------------------------------------------------------
 
-CStrID CPlayVideoHandler::OnFrame()
+CStrID CAppStateVideo::OnFrame()
 {
 	CStrID ReturnState = ID;
 
@@ -33,6 +33,7 @@ CStrID CPlayVideoHandler::OnFrame()
 
 	RenderSrv->GetDisplay().ProcessWindowMessages();
 
+	//???AudioSrv?
 	VideoSrv->Trigger();
 	InputSrv->Trigger();
 

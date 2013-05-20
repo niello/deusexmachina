@@ -29,7 +29,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	nString ScriptFile;
 	if (Desc.Get(ScriptFile, CStrID("Script")))
 	{
-		Script = n_new(Scripting::CScriptObject(("Level_" + Name).CStr()));
+		Script = n_new(Scripting::CScriptObject((nString("Level_") + ID.CStr()).CStr()));
 		Script->Init(); // No special class
 		if (Script->LoadScriptFile(ScriptFile) == Error)
 			n_printf("Error loading script for level %s\n", ID.CStr());
