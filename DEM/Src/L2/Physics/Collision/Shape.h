@@ -41,7 +41,6 @@ protected:
 
 	friend class CRigidBody;
 	friend class CPhysicsLevel;
-	friend class CRay;
 
 	static nArray<CContactPoint>*	CollideContacts;
 	static const CFilterSet*		CollideFilterSet;

@@ -40,61 +40,58 @@ protected:
 	nDictionary<CStrID, PEntityLoader>	Loaders;
 	PEntityLoader						DefaultLoader;
 
+	CStrID								EntityUnderMouse;
+	bool								HasMouseIsect;
+	vector3								MousePos3D;
+
+	void UpdateMouseIntersectionInfo();
+
 public:
 
 	CGameServer();
 	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
 
-	bool		Open();
-	void		Close();
-	void		Trigger();
+	bool			Open();
+	void			Close();
+	void			Trigger();
 
-	//!!!can get entity under mouse here! ActiveLevel->GetEntityAtScreenPos(mouse.x, mouse.y)
-	//SEE commented OnFrame method in the cpp
-	//
-	//CStrID	EntityUnderMouse; - if already deleted, repeat request?
-	//vector3	MousePos3D;
-	//vector3	UpVector;
-	//bool	MouseIntersection;
-	//EntityUnderMouse(CStrID::Empty),
-	//MouseIntersection(false)
-	//bool			HasMouseIntersection() const { return MouseIntersection; }
-	//CEntity*		GetEntityUnderMouse() const; //???write 2 versions, physics-based and mesh-based?
-	//const vector3&	GetMousePos3D() const { return MousePos3D; }
-	//const vector3&	GetUpVector() const { return UpVector; }
+	void			SetEntityLoader(CStrID Group, PEntityLoader Loader);
+	void			ClearEntityLoader(CStrID Group);
 
-	void		SetEntityLoader(CStrID Group, PEntityLoader Loader);
-	void		ClearEntityLoader(CStrID Group);
-
-	bool		LoadLevel(CStrID ID, const Data::CParams& Desc);
-	void		UnloadLevel(CStrID ID);
-	bool		SetActiveLevel(CStrID ID);
-	CGameLevel*	GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
-	bool		StartGame(const nString& FileName);
-	bool		SaveGame(const nString& Name);
-	bool		LoadGame(const nString& Name);
+	bool			LoadLevel(CStrID ID, const Data::CParams& Desc);
+	void			UnloadLevel(CStrID ID);
+	bool			SetActiveLevel(CStrID ID);
+	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
+	bool			StartGame(const nString& FileName);
+	bool			SaveGame(const nString& Name);
+	bool			LoadGame(const nString& Name);
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
 
 	template<class T>
-	void		SetGlobalAttr(CStrID ID, const T& Value);
+	void			SetGlobalAttr(CStrID ID, const T& Value);
 	template<>
-	void		SetGlobalAttr(CStrID ID, const Data::CData& Value);
+	void			SetGlobalAttr(CStrID ID, const Data::CData& Value);
 	template<class T>
-	const T&	GetGlobalAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
+	const T&		GetGlobalAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
 	template<class T>
-	bool		GetGlobalAttr(CStrID ID, T& Out) const;
+	bool			GetGlobalAttr(CStrID ID, T& Out) const;
 	template<>
-	bool		GetGlobalAttr(CStrID ID, Data::CData& Out) const;
-	bool		HasGlobalAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
+	bool			GetGlobalAttr(CStrID ID, Data::CData& Out) const;
+	bool			HasGlobalAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
 	//Transition service - to move entities from level to level, including store-unload level 1-load level 2-restore case
 
-	nTime		GetTime() const { return GameTimeSrc->GetTime(); }
-	nTime		GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
-	bool		IsGamePaused() const { return GameTimeSrc->IsPaused(); }
-	void		PauseGame(bool Pause = true) const;
-	void		ToggleGamePause() const { PauseGame(!IsGamePaused()); }
+	nTime			GetTime() const { return GameTimeSrc->GetTime(); }
+	nTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
+	bool			IsGamePaused() const { return GameTimeSrc->IsPaused(); }
+	void			PauseGame(bool Pause = true) const;
+	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }
+
+	bool			HasMouseIntersection() const { return HasMouseIsect; }
+	CEntity*		GetEntityUnderMouse() const { return EntityManager->GetEntity(EntityUnderMouse); }
+	CStrID			GetEntityUnderMouseUID() const { return EntityUnderMouse; }
+	const vector3&	GetMousePos3D() const { return MousePos3D; }
 };
 
 template<class T>

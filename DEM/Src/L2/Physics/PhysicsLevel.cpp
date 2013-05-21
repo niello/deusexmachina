@@ -32,6 +32,7 @@ CPhysicsLevel::CPhysicsLevel() :
 	ODEDynamicSpaceID(0),
 	ODEStaticSpaceID(0),
 	ODECommonSpaceID(0),
+	ODERayID(0),
 	ContactJointGroup(0),
 	Gravity(0.0f, -9.81f, 0.0f)
 {
@@ -52,6 +53,7 @@ CPhysicsLevel::~CPhysicsLevel()
 	n_assert(!ODEDynamicSpaceID);
 	n_assert(!ODEStaticSpaceID);
 	n_assert(!ODECommonSpaceID);
+	n_assert(!ODERayID);
 	n_assert(Shapes.GetCount() == 0);
 	n_assert(Entities.GetCount() == 0);
 }
@@ -173,6 +175,48 @@ void CPhysicsLevel::RemoveEntity(CEntity* pEnt)
 	Entities.Erase(EntityIt);
 	pEnt->Deactivate();
 	pEnt->OnRemovedFromLevel();
+}
+//---------------------------------------------------------------------
+
+// Do a ray check starting from position `pos' along direction `dir'.
+// Make resulting intersection points available in `GetIntersectionPoints()'.
+bool CPhysicsLevel::RayCheck(const vector3& Pos, const vector3& Dir)
+{
+	Contacts.Clear();
+
+	float RayLength = Dir.len();
+	if (RayLength < TINY) FAIL;
+
+	ODERayID = dCreateRay(0, RayLength);
+	vector3 NormDir = Dir / RayLength;
+	dGeomRaySet(ODERayID, Pos.x, Pos.y, Pos.z, NormDir.x, NormDir.y, NormDir.z);
+	dGeomRaySetLength(ODERayID, RayLength);
+	dSpaceCollide2((dGeomID)ODECommonSpaceID, ODERayID, this, &ODERayCallback);
+	dGeomDestroy(ODERayID);
+	ODERayID = 0;
+
+	return Contacts.GetCount() > 0;
+}
+//---------------------------------------------------------------------
+
+const CContactPoint* CPhysicsLevel::GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir)
+{
+	RayCheck(Pos, Dir);
+
+	// Find closest contact
+	int Idx = INVALID_INDEX;
+	float ClosestDistanceSq = Dir.lensquared();
+	for (int i = 0; i < Contacts.GetCount(); i++)
+	{
+		const CContactPoint& CurrContact = Contacts[i];
+		float DistanceSq = (CurrContact.Position - Pos).lensquared();
+		if (DistanceSq < ClosestDistanceSq)
+		{
+			Idx = i;
+			ClosestDistanceSq = DistanceSq;
+		}
+	}
+	return (Idx != INVALID_INDEX) ? &Contacts[Idx] : NULL;
 }
 //---------------------------------------------------------------------
 
@@ -317,6 +361,58 @@ void CPhysicsLevel::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 				}
 			}
 		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CPhysicsLevel::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
+{
+	n_assert(data);
+	n_assert(o1 != o2);
+
+	// handle sub-space
+	if (dGeomIsSpace(o1) || dGeomIsSpace(o2))
+	{
+		dSpaceCollide2(o1, o2, data, &ODERayCallback);
+		return;
+	}
+
+	CPhysicsLevel* pLevel = (CPhysicsLevel*)data;
+	dGeomID ODERayID = pLevel->ODERayID;
+
+	// check for exclusion
+	CShape* pOtherShape;
+	if (o1 == ODERayID) pOtherShape = CShape::GetShapeFromGeom(o2);
+	else if (o2 == ODERayID) pOtherShape = CShape::GetShapeFromGeom(o1);
+	else n_error("Unexpected ray collision without a ray!");
+
+	dContactGeom ODEContact[MaxContacts];
+	int CollCount = (o1 == ODERayID) ?
+		dCollide(o2, o1, MaxContacts, ODEContact, sizeof(dContactGeom)) :
+		dCollide(o1, o2, MaxContacts, ODEContact, sizeof(dContactGeom));
+
+	CContactPoint ContactPt;
+	for (int i = 0; i < CollCount; i++)
+	{
+		dVector3 ODEOrigin, ODEDir;
+		dGeomRayGet(ODERayID, ODEOrigin, ODEDir);
+
+		vector3 Origin, Dir;
+		CPhysicsServer::OdeToVector3(ODEOrigin, Origin);
+		CPhysicsServer::OdeToVector3(ODEDir, Dir);
+
+		// FIXME: hmm, ODEContact[x].geom.pos[] doesn't seem to be correct with mesh
+		// shapes which are not at the origin. Computing the intersection pos from
+		// the stabbing depth and the ray's original vector
+		ContactPt.Position = Origin + Dir * ODEContact[i].depth;
+		ContactPt.UpVector.set(ODEContact[i].normal[0], ODEContact[i].normal[1], ODEContact[i].normal[2]);
+		ContactPt.Depth = ODEContact[i].depth;
+		CEntity* pOtherEntity = pOtherShape->GetEntity();
+		ContactPt.EntityID = pOtherEntity ? pOtherEntity->GetUID() : 0;
+		CRigidBody* pOtherRB = pOtherShape->GetRigidBody();
+		ContactPt.RigidBodyID = pOtherRB ? pOtherRB->GetUID() : 0;
+		ContactPt.Material = pOtherShape->GetMaterialType();
+		pLevel->Contacts.Append(ContactPt);
 	}
 }
 //---------------------------------------------------------------------

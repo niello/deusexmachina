@@ -23,8 +23,6 @@ class CMeshShape: public CShape
 
 protected:
 
-	friend class CRay;
-
 	//static Opcode::SphereCollider	OPCSphereCollider;	// an OPCODE sphere collider
 	//Opcode::SphereCache				OPCSphereCache;		// an OPCODE sphere cache
 	//static Opcode::RayCollider		OPCRayCollider;		// an OPCODE ray collider

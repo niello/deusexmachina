@@ -8,7 +8,7 @@ namespace Physics
 bool CPhysicsUtil::RayCheck(const vector3& From, const vector3& To, CContactPoint& OutContact,
 							const CFilterSet* ExcludeSet)
 {
-	PhysicsSrv->RayCheck(From, To - From, ExcludeSet);
+	//PhysicsSrv->RayCheck(From, To - From, ExcludeSet);
 
 	float MinSqDist = 10000000000.0f;
 	const nArray<CContactPoint>& Contacts = PhysicsSrv->GetContactPoints();
@@ -56,7 +56,7 @@ bool CPhysicsUtil::RayBundleCheck(const vector3& From, const vector3& To, const 
 			default: break;
 		}
 
-		PhysicsSrv->RayCheck(RayPos, StabDir, ExcludeSet);
+		//PhysicsSrv->RayCheck(RayPos, StabDir, ExcludeSet);
 
 		const nArray<CContactPoint>& Contacts = PhysicsSrv->GetContactPoints();
 		for (int j = 0; j < PhysicsSrv->GetContactPoints().GetCount(); j++)

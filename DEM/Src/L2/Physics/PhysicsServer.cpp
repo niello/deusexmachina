@@ -7,7 +7,6 @@
 #include <Physics/Collision/CapsuleShape.h>
 #include <Physics/Collision/MeshShape.h>
 #include <Physics/Collision/HeightfieldShape.h>
-#include <Physics/Ray.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -50,20 +49,6 @@ void CPhysicsServer::Close()
 {
 	n_assert(isOpen);
 	isOpen = false;
-}
-//---------------------------------------------------------------------
-
-// Do a ray check starting from position `pos' along direction `dir'.
-// Make resulting intersection points available in `GetIntersectionPoints()'.
-bool CPhysicsServer::RayCheck(const vector3& Pos, const vector3& Dir, const CFilterSet* ExcludeSet)
-{
-	Contacts.Clear();
-	CRay R;
-	R.SetOrigin(Pos);
-	R.SetDirection(Dir);
-	if (ExcludeSet) R.SetExcludeFilterSet(*ExcludeSet);
-	R.DoRayCheckAllContacts(matrix44::identity, Contacts);
-	return Contacts.GetCount() > 0;
 }
 //---------------------------------------------------------------------
 
@@ -116,15 +101,6 @@ CHeightfieldShape* CPhysicsServer::CreateHeightfieldShape(const matrix44& TF, CM
 	Shape->SetMaterialType(MatType);
 	Shape->SetFileName(FileName);
 	return Shape;
-}
-//---------------------------------------------------------------------
-
-Physics::CRay* CPhysicsServer::CreateRay(const vector3& Origin, const vector3& Dir) const
-{
-	CRay* R = CRay::Create();
-	R->SetOrigin(Origin);
-	R->SetDirection(Dir);
-	return R;
 }
 //---------------------------------------------------------------------
 
@@ -220,34 +196,11 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 }
 //---------------------------------------------------------------------
 
-const CContactPoint* CPhysicsServer::GetClosestContactAlongRay(const vector3& Pos,
-															   const vector3& Dir,
-															   const CFilterSet* ExcludeSet)
-{
-	RayCheck(Pos, Dir, ExcludeSet);
-
-	// Find closest contact
-	int Idx = INVALID_INDEX;
-	float ClosestDistanceSq = Dir.lensquared();
-	for (int i = 0; i < Contacts.GetCount(); i++)
-	{
-		const CContactPoint& CurrContact = Contacts[i];
-		float DistanceSq = (CurrContact.Position - Pos).lensquared();
-		if (DistanceSq < ClosestDistanceSq)
-		{
-			Idx = i;
-			ClosestDistanceSq = DistanceSq;
-		}
-	}
-	return (Idx != INVALID_INDEX) ? &Contacts[Idx] : NULL;
-}
-//---------------------------------------------------------------------
-
 // Apply an impulse on the first rigid body which lies along the defined ray.
 bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir, float Impulse,
 										  const CFilterSet* ExcludeSet)
 {
-	const CContactPoint* pContact = GetClosestContactAlongRay(Pos, Dir, ExcludeSet);
+	const CContactPoint* pContact = NULL; //GetClosestContactAlongRay(Pos, Dir, ExcludeSet);
 	if (pContact)
 	{
 		CRigidBody* Body = pContact->GetRigidBody();

@@ -80,6 +80,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 				CollLocalTfm.Append(pShape->GetTransform());
 				Collision.Append(pShape);
 				Level->GetPhysics()->AttachShape(pShape);
+				//???associate collision shape with game entity UID?
 			}
 		}
 	}
