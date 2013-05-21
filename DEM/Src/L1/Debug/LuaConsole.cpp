@@ -157,7 +157,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	//}
 	else ScriptSrv->RunScript(pCmd); //!!!use sandbox!
 
-	if (CmdHistory.GetCount() > 32) CmdHistory.Erase(0);
+	if (CmdHistory.GetCount() > 32) CmdHistory.EraseAt(0);
 	CmdHistory.Append(pCmd);
 	CmdHistoryCursor = CmdHistory.GetCount();
 

@@ -64,15 +64,7 @@ void CPropAbstractPhysics::SetTransform(const matrix44& NewTF)
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	Physics::CEntity* pPhysEnt = GetPhysicsEntity();
 	if (pPhysEnt && pProp && pProp->GetNode())
-	{
-		if (pProp->GetNode()->GetParent())
-		{
-			matrix44 InvParentPos;
-			pProp->GetNode()->GetParent()->GetWorldMatrix().invert_simple(InvParentPos);
-			pProp->GetNode()->SetLocalTransform(InvParentPos * NewTF);
-		}
-		else pProp->GetNode()->SetLocalTransform(NewTF);
-	}
+		pProp->GetNode()->SetWorldTransform(NewTF);
 
 	CPropTransformable::SetTransform(NewTF);
 }

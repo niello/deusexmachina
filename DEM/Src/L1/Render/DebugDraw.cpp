@@ -42,7 +42,7 @@ bool CDebugDraw::Open()
 
 	ShapeInstVL = RenderSrv->GetVertexLayout(VC);
 
-	VC.Erase(0);
+	VC.EraseAt(0);
 	InstVL = RenderSrv->GetVertexLayout(VC);
 	InstanceBuffer = n_new(CVertexBuffer);
 
@@ -158,44 +158,52 @@ void CDebugDraw::RenderGeometry()
 	if (!InstanceBuffer->IsValid())
 		n_assert(InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write));
 
-	ShapeShader->SetTech(ShapeShader->GetTechByFeatures(RenderSrv->GetFeatureFlagInstanced()));
-
-	n_assert(ShapeShader->Begin(true) == 1);
-	ShapeShader->BeginPass(0);
-
-	RenderSrv->SetVertexBuffer(0, Shapes->GetVertexBuffer());
-	RenderSrv->SetVertexLayout(ShapeInstVL);
-	RenderSrv->SetIndexBuffer(Shapes->GetIndexBuffer());
+	DWORD TotalShapeCount = 0;
 	for (int i = 0; i < ShapeCount; ++i)
+		TotalShapeCount += ShapeInsts[i].GetCount();
+
+	if (TotalShapeCount)
 	{
-		nArray<CDDShapeInst>& Insts = ShapeInsts[i];
-		if (!Insts.GetCount()) continue;
+		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(RenderSrv->GetFeatureFlagInstanced()));
 
-		RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
+		n_assert(ShapeShader->Begin(true) == 1);
+		ShapeShader->BeginPass(0);
 
-		DWORD Remain = Insts.GetCount();
-		while (Remain > 0)
+		RenderSrv->SetVertexBuffer(0, Shapes->GetVertexBuffer());
+		RenderSrv->SetVertexLayout(ShapeInstVL);
+		RenderSrv->SetIndexBuffer(Shapes->GetIndexBuffer());
+		for (int i = 0; i < ShapeCount; ++i)
 		{
-			DWORD Count = n_min(MaxShapesPerDIP, Remain);
-			Remain -= Count;
-			void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
-			memcpy(pInstData, Insts.Begin(), Count * sizeof(CDDShapeInst));
-			InstanceBuffer->Unmap();
+			nArray<CDDShapeInst>& Insts = ShapeInsts[i];
+			if (!Insts.GetCount()) continue;
 
-			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, Count);
-			RenderSrv->Draw();
+			RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
+
+			DWORD Remain = Insts.GetCount();
+			while (Remain > 0)
+			{
+				DWORD Count = n_min(MaxShapesPerDIP, Remain);
+				Remain -= Count;
+				void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
+				memcpy(pInstData, Insts.Begin(), Count * sizeof(CDDShapeInst));
+				InstanceBuffer->Unmap();
+
+				RenderSrv->SetInstanceBuffer(1, InstanceBuffer, Count);
+				RenderSrv->Draw();
+			}
 		}
+
+		RenderSrv->SetInstanceBuffer(1, NULL, 0);
+
+		ShapeShader->EndPass();
+		ShapeShader->End();
+
+		for (int i = 0; i < ShapeCount; ++i)
+			ShapeInsts[i].Clear();
 	}
 
-	RenderSrv->SetInstanceBuffer(1, NULL, 0);
-
-	ShapeShader->EndPass();
-	ShapeShader->End();
-
-	for (int i = 0; i < ShapeCount; ++i)
-		ShapeInsts[i].Clear();
-
-	RenderSrv->SetVertexLayout(PrimVL);
+	if (Lines.GetCount() || Tris.GetCount() || Points.GetCount())
+		RenderSrv->SetVertexLayout(PrimVL);
 
 	if (Lines.GetCount() || Tris.GetCount())
 	{

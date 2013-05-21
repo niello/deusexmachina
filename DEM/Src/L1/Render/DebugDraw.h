@@ -109,7 +109,7 @@ public:
 
 	bool	DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color);
 	bool	DrawBox(const matrix44& Tfm, const vector4& Color);
-	bool	DrawSphere(vector3 Pos, float R, const vector4& Color);
+	bool	DrawSphere(const vector3& Pos, float R, const vector4& Color);
 	bool	DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color);
 	bool	DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color);
 
@@ -149,7 +149,7 @@ inline bool CDebugDraw::DrawBox(const matrix44& Tfm, const vector4& Color)
 }
 //---------------------------------------------------------------------
 
-inline bool CDebugDraw::DrawSphere(vector3 Pos, float R, const vector4& Color)
+inline bool CDebugDraw::DrawSphere(const vector3& Pos, float R, const vector4& Color)
 {
 	CDDShapeInst& Inst = *ShapeInsts[Sphere].Reserve(1);
 	Inst.World.set(	R, 0.f, 0.f, 0.f,
@@ -176,8 +176,8 @@ inline bool CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length,
 
 inline bool CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color)
 {
-	DrawSphere(Tfm * vector3(0.0f, 0.0f, Length * 0.5f), R, Color);
 	DrawSphere(Tfm * vector3(0.0f, 0.0f, Length * -0.5f), R, Color);
+	DrawSphere(Tfm * vector3(0.0f, 0.0f, Length * 0.5f), R, Color);
 	DrawCylinder(Tfm, R, Length, Color);
 	OK;
 }

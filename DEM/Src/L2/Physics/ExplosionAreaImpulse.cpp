@@ -3,7 +3,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/Collision/SphereShape.h>
 #include <Physics/RigidBody.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 
 namespace Physics
 {

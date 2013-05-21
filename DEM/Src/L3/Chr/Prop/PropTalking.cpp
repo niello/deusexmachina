@@ -17,7 +17,7 @@ void CPropTalking::Activate()
 {
 	Game::CProperty::Activate();
 
-	const nString& Dlg = GetEntity()->GetAttr<nString>(CStrID("Dialogue"));
+	const nString& Dlg = GetEntity()->GetAttr<nString>(CStrID("Dialogue"), NULL);
 	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTalking, ExposeSI);

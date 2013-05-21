@@ -1,4 +1,10 @@
-#include "PhysicsLevel.h"
+#include "PhysicsWorld.h"
+
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
+//#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
+#include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
+#include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 
 #include <Game/GameServer.h>
 #include <Physics/Entity.h>
@@ -9,22 +15,16 @@
 #include <Audio/Event/PlaySound.h>
 #include <Events/EventManager.h>
 
-using namespace Core;
+//!!!later migrate to bullet math!
+inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
+inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysicsLevel, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CPhysWorld, Core::CRefCounted);
 
-CPhysicsLevel::CPhysicsLevel() :
-#ifdef DEM_STATS
-    statsNumSpaceCollideCalled(0),
-    statsNumNearCallbackCalled(0),
-    statsNumCollideCalled(0),
-    statsNumCollided(0),
-    statsNumSpaces(0),
-    statsNumShapes(0),
-    statsNumSteps(0),
-#endif
+CPhysWorld::CPhysWorld():
+	pBtDynWorld(NULL),
 	TimeToSim(0.0),
 	StepSize(0.01),
 	CollisionSounds(0.0),
@@ -36,19 +36,12 @@ CPhysicsLevel::CPhysicsLevel() :
 	ContactJointGroup(0),
 	Gravity(0.0f, -9.81f, 0.0f)
 {
-	PROFILER_INIT(profFrameBefore, "profMangaPhysFrameBefore");
-	PROFILER_INIT(profFrameAfter, "profMangaPhysFrameAfter");
-	PROFILER_INIT(profStepBefore, "profMangaPhysStepBefore");
-	PROFILER_INIT(profStepAfter, "profMangaPhysStepAfter");
-	PROFILER_INIT(profCollide, "profMangaPhysCollide");
-	PROFILER_INIT(profStep, "profMangaPhysStep");
-	PROFILER_INIT(profJointGroupEmpty, "profMangaPhysJointGroupEmpty");
 }
 //---------------------------------------------------------------------
 
-CPhysicsLevel::~CPhysicsLevel()
+CPhysWorld::~CPhysWorld()
 {
-	if (ODEWorldID) Deactivate();
+	if (ODEWorldID) Term();
 	n_assert(!ODEWorldID);
 	n_assert(!ODEDynamicSpaceID);
 	n_assert(!ODEStaticSpaceID);
@@ -60,8 +53,33 @@ CPhysicsLevel::~CPhysicsLevel()
 //---------------------------------------------------------------------
 
 // Called by Physics::Server when the Level is attached to the server.
-void CPhysicsLevel::Activate()
+bool CPhysWorld::Init(const bbox3& Bounds)
 {
+	n_assert(!pBtDynWorld);
+
+	btVector3 Min = VectorToBtVector(Bounds.vmin);
+	btVector3 Max = VectorToBtVector(Bounds.vmax);
+	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
+	//btBroadphaseInterface* pBtBroadPhase = new btDbvtBroadphase();
+
+	btDefaultCollisionConfiguration* pBtCollCfg = new btDefaultCollisionConfiguration();
+	btCollisionDispatcher* pBtCollDisp = new btCollisionDispatcher(pBtCollCfg);
+
+	btSequentialImpulseConstraintSolver* pBtSolver = new btSequentialImpulseConstraintSolver;
+
+	pBtDynWorld = new btDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
+
+	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
+
+	/*
+	collision shape can be loaded from desc and stored as a reusable resource
+	any rigid body or scene node can use the same collision shape instance by its resource ID
+	rigid body has a construction info
+	btCollisionObject can be used to add collision shape without a body
+	???use motion state to read tfm and velocity from body?
+	*/
+
+//
 	TimeToSim = 0.0;
 
 	// Initialize ODE //???per-Level?
@@ -89,12 +107,32 @@ void CPhysicsLevel::Activate()
 
 	// create a Contact group for joints
 	ContactJointGroup = dJointGroupCreate(0);
+
+	OK;
 }
 //---------------------------------------------------------------------
 
 // Called by Physics::Server when the Level is removed from the server.
-void CPhysicsLevel::Deactivate()
+void CPhysWorld::Term()
 {
+	if (pBtDynWorld)
+	{
+		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
+		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
+		btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
+		btBroadphaseInterface* pBtBroadPhase = pBtDynWorld->getBroadphase();
+
+		delete pBtDynWorld;
+		delete pBtSolver;
+		delete pBtCollDisp;
+		delete pBtCollCfg;
+		delete pBtBroadPhase;
+
+		pBtDynWorld = NULL;
+	}
+
+//
+
 	n_assert(ODEWorldID);
 	n_assert(ODEDynamicSpaceID);
 	n_assert(ODEStaticSpaceID);
@@ -123,7 +161,7 @@ void CPhysicsLevel::Deactivate()
 //---------------------------------------------------------------------
 
 //???INLINE?
-void CPhysicsLevel::SetGravity(const vector3& NewGravity)
+void CPhysWorld::SetGravity(const vector3& NewGravity)
 {
 	Gravity = NewGravity;
 	if (ODEWorldID) dWorldSetGravity(ODEWorldID, Gravity.x, Gravity.y, Gravity.z);
@@ -131,17 +169,17 @@ void CPhysicsLevel::SetGravity(const vector3& NewGravity)
 //---------------------------------------------------------------------
 
 // Attach a static collide shape to the Level.
-void CPhysicsLevel::AttachShape(Physics::CShape* pShape)
+void CPhysWorld::AttachShape(Physics::CShape* pShape)
 {
 	n_assert(pShape);
 	Shapes.Append(pShape);
 	if (!pShape->Attach(ODEStaticSpaceID))
-		n_error("CPhysicsLevel::AttachShape(): Failed attaching a shape!");
+		n_error("CPhysWorld::AttachShape(): Failed attaching a shape!");
 }
 //---------------------------------------------------------------------
 
 // Remove a static collide shape to the Level
-void CPhysicsLevel::RemoveShape(CShape* pShape)
+void CPhysWorld::RemoveShape(CShape* pShape)
 {
 	n_assert(pShape);
 	nArray<PShape>::iterator ShapeIt = Shapes.Find(pShape);
@@ -151,7 +189,7 @@ void CPhysicsLevel::RemoveShape(CShape* pShape)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::AttachEntity(CEntity* pEnt)
+void CPhysWorld::AttachEntity(CEntity* pEnt)
 {
 	n_assert(pEnt);
 	n_assert(pEnt->GetLevel() == 0);
@@ -165,7 +203,7 @@ void CPhysicsLevel::AttachEntity(CEntity* pEnt)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::RemoveEntity(CEntity* pEnt)
+void CPhysWorld::RemoveEntity(CEntity* pEnt)
 {
 	n_assert(pEnt);
 	n_assert(pEnt->GetLevel() == this);
@@ -180,7 +218,7 @@ void CPhysicsLevel::RemoveEntity(CEntity* pEnt)
 
 // Do a ray check starting from position `pos' along direction `dir'.
 // Make resulting intersection points available in `GetIntersectionPoints()'.
-bool CPhysicsLevel::RayCheck(const vector3& Pos, const vector3& Dir)
+bool CPhysWorld::RayCheck(const vector3& Pos, const vector3& Dir)
 {
 	Contacts.Clear();
 
@@ -199,7 +237,7 @@ bool CPhysicsLevel::RayCheck(const vector3& Pos, const vector3& Dir)
 }
 //---------------------------------------------------------------------
 
-const CContactPoint* CPhysicsLevel::GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir)
+const CContactPoint* CPhysWorld::GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID)
 {
 	RayCheck(Pos, Dir);
 
@@ -209,6 +247,7 @@ const CContactPoint* CPhysicsLevel::GetClosestContactAlongRay(const vector3& Pos
 	for (int i = 0; i < Contacts.GetCount(); i++)
 	{
 		const CContactPoint& CurrContact = Contacts[i];
+		if (SelfPhysID != -1 && CurrContact.EntityID == SelfPhysID) continue;
 		float DistanceSq = (CurrContact.Position - Pos).lensquared();
 		if (DistanceSq < ClosestDistanceSq)
 		{
@@ -223,16 +262,14 @@ const CContactPoint* CPhysicsLevel::GetClosestContactAlongRay(const vector3& Pos
 // The "Near Callback". ODE calls this during collision detection to
 // decide whether 2 geoms collide, and if yes, to generate Contact
 // joints between the 2 involved rigid bodies.
-void CPhysicsLevel::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
+void CPhysWorld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 {
-	CPhysicsLevel* Level = (CPhysicsLevel*)data;
-	Level->statsNumNearCallbackCalled++;
+	CPhysWorld* Level = (CPhysWorld*)data;
 
 	// handle sub-spaces
 	if (dGeomIsSpace(o1) || dGeomIsSpace(o2))
 	{
 		// collide a space with something
-		Level->statsNumSpaceCollideCalled++;
 		dSpaceCollide2(o1, o2, data, &ODENearCallback);
 		return;
 	}
@@ -261,8 +298,6 @@ void CPhysicsLevel::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 	CShape* Shape2 = CShape::GetShapeFromGeom(o2);
 	n_assert(Shape1 && Shape2);
 	n_assert(!((Shape1->GetType() == CShape::Mesh) && (Shape2->GetType() == CShape::Mesh)));
-
-	Level->statsNumCollideCalled++;
 
 	// initialize Contact array
 	bool MaterialsValid = (Shape1->GetMaterialType() != InvalidMaterial &&  Shape2->GetMaterialType() != InvalidMaterial);
@@ -300,8 +335,6 @@ void CPhysicsLevel::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 	
 	if (CollisionCount > 0)
 	{
-		Level->statsNumCollided++;
-
 		if (!Shape1->OnCollide(Shape2) || !Shape2->OnCollide(Shape1)) return;
 
 			// create a Contact for each collision
@@ -365,7 +398,7 @@ void CPhysicsLevel::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
+void CPhysWorld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 {
 	n_assert(data);
 	n_assert(o1 != o2);
@@ -377,7 +410,7 @@ void CPhysicsLevel::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 		return;
 	}
 
-	CPhysicsLevel* pLevel = (CPhysicsLevel*)data;
+	CPhysWorld* pLevel = (CPhysWorld*)data;
 	dGeomID ODERayID = pLevel->ODERayID;
 
 	// check for exclusion
@@ -417,93 +450,35 @@ void CPhysicsLevel::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 }
 //---------------------------------------------------------------------
 
-//Trigger the ODE simulation. This method should be called frequently
-//(call SetTime() before invoking Trigger() to update the current Time).
-//The method will invoke dWorldStep one or several times, depending
-//on the Time since the last call, and the step size of the Level.
-//The method will make sure that the physics simulation is triggered
-//using a constant step size.
-void CPhysicsLevel::Trigger()
+// Physics simulation is triggered using a constant step size
+void CPhysWorld::Trigger(float FrameTime)
 {
-	PROFILER_START(profFrameBefore);
+	pBtDynWorld->stepSimulation(FrameTime, 10);
+
+//
+
 	for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->OnFrameBefore();
-	PROFILER_STOP(profFrameBefore);
-
-	PROFILER_RESET(profStepBefore);
-	PROFILER_RESET(profStepAfter);
-	PROFILER_RESET(profCollide);
-	PROFILER_RESET(profStep);
-	PROFILER_RESET(profJointGroupEmpty);
-
-#ifdef DEM_STATS
-	statsNumNearCallbackCalled = 0;
-	statsNumCollideCalled = 0;
-	statsNumCollided = 0;
-	statsNumSpaceCollideCalled = 0;
-	statsNumSteps = 0;
-#endif
 
 	TimeToSim += GameSrv->GetFrameTime();
 	while (TimeToSim > StepSize)
 	{
-		PROFILER_STARTACCUM(profStepBefore);
 		for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->OnStepBefore();
-		PROFILER_STOPACCUM(profStepBefore);
 
-		// do collision detection
-		PROFILER_STARTACCUM(profCollide);
-		statsNumSpaceCollideCalled++;
 		dSpaceCollide2((dGeomID)ODEDynamicSpaceID, (dGeomID)ODEStaticSpaceID, this, &ODENearCallback);
 		dSpaceCollide(ODEDynamicSpaceID, this, &ODENearCallback);
-		PROFILER_STOPACCUM(profCollide);
-
-		// step physics simulation
-		PROFILER_STARTACCUM(profStep);
 		dWorldQuickStep(ODEWorldID, dReal(StepSize));
-		PROFILER_STOPACCUM(profStep);
-
-		// clear Contact joints
-		PROFILER_STARTACCUM(profJointGroupEmpty);
 		dJointGroupEmpty(ContactJointGroup);
-		PROFILER_STOPACCUM(profJointGroupEmpty);
 
-		PROFILER_STARTACCUM(profStepAfter);
 		for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->OnStepAfter();
-		PROFILER_STOPACCUM(profStepAfter);
 
-		statsNumSteps++;
 		TimeToSim -= StepSize;
     }
 
-	// export statistics
-#ifdef DEM_STATS
-	//nWatched watchSpaceCollideCalled("statsMangaPhysicsSpaceCollideCalled", DATA_TYPE(int));
-	//nWatched watchNearCallbackCalled("statsMangaPhysicsNearCallbackCalled", DATA_TYPE(int));
-	//nWatched watchCollideCalled("statsMangaPhysicsCollideCalled", DATA_TYPE(int));
-	//nWatched watchCollided("statsMangaPhysicsCollided", DATA_TYPE(int));
-	//nWatched watchSpaces("statsMangaPhysicsSpaces", DATA_TYPE(int));
-	//nWatched watchShapes("statsMangaPhysicsShapes", DATA_TYPE(int));
-	//nWatched watchSteps("statsMangaPhysicsSteps", DATA_TYPE(int));
-	//if (statsNumSteps > 0)
-	//{
-	//	watchSpaceCollideCalled->SetValue(statsNumSpaceCollideCalled/statsNumSteps);
-	//	watchNearCallbackCalled->SetValue(statsNumNearCallbackCalled/statsNumSteps);
-	//	watchCollideCalled->SetValue(statsNumCollideCalled/statsNumSteps);
-	//	watchCollided->SetValue(statsNumCollided/statsNumSteps);
-	//}
-	//watchSpaces->SetValue(statsNumSpaces);
-	//watchShapes->SetValue(statsNumShapes);
-	//watchSteps->SetValue(statsNumSteps);
-#endif
-
-	// invoke the "on-frame-after" methods
-	PROFILER_START(profFrameAfter);
 	for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->OnFrameAfter();
-	PROFILER_STOP(profFrameAfter);
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::RenderDebug()
+void CPhysWorld::RenderDebug()
 {
 	for (int i = 0; i < Shapes.GetCount(); i++) Shapes[i]->RenderDebug(matrix44::identity);
 	for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->RenderDebug();

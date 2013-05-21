@@ -7,7 +7,7 @@
 #include <util/ndictionary.h>
 #include <DetourNavMesh.h>
 
-// AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysicsLevel),
+// AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysWorld),
 // that contains stimuli, AI hints and other AI-related world info. Also AILevel serves as
 // a navigation manager.
 

@@ -3,7 +3,7 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <Physics/Event/SetTransform.h>
 
 //BEGIN_ATTRS_REGISTRATION(PropPhysics)
@@ -27,7 +27,7 @@ void CPropPhysics::Activate()
 {
     CPropAbstractPhysics::Activate();
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropPhysics, OnSetTransform);
-	PROP_SUBSCRIBE_PEVENT(OnMoveAfter, CPropPhysics, OnMoveAfter);
+	PROP_SUBSCRIBE_PEVENT(AfterPhysics, CPropPhysics, AfterPhysics);
 	PROP_SUBSCRIBE_PEVENT(OnEntityRenamed, CPropPhysics, OnEntityRenamed);
 }
 //---------------------------------------------------------------------
@@ -35,7 +35,7 @@ void CPropPhysics::Activate()
 void CPropPhysics::Deactivate()
 {
 	UNSUBSCRIBE_EVENT(OnEntityRenamed);
-	UNSUBSCRIBE_EVENT(OnMoveAfter);
+	UNSUBSCRIBE_EVENT(AfterPhysics);
 	UNSUBSCRIBE_EVENT(SetTransform);
 	CPropAbstractPhysics::Deactivate();
     PhysicsEntity = NULL;
@@ -81,7 +81,7 @@ void CPropPhysics::DisablePhysics()
 
 // Called after the physics subsystem has been triggered. This will transfer
 // the physics entity's new transform back into the game entity.
-bool CPropPhysics::OnMoveAfter(const Events::CEventBase& Event)
+bool CPropPhysics::AfterPhysics(const Events::CEventBase& Event)
 {
 	if (IsEnabled() && PhysicsEntity->HasTransformChanged())
 	{

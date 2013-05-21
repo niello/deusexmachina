@@ -9,39 +9,19 @@ void CPropInput::Activate()
 {
 	CProperty::Activate();
 
-	PROP_SUBSCRIBE_PEVENT(OnObtainInputFocus, CPropInput, OnObtainInputFocus);
-	PROP_SUBSCRIBE_PEVENT(OnLoseInputFocus, CPropInput, OnLoseInputFocus);
 	PROP_SUBSCRIBE_PEVENT(EnableInput, CPropInput, OnEnableInput);
 	PROP_SUBSCRIBE_PEVENT(DisableInput, CPropInput, OnDisableInput);
 
-	if (Enabled && HasFocus()) ActivateInput();
+	if (Enabled /*&& HasFocus()*/) ActivateInput();
 }
 //---------------------------------------------------------------------
 
 void CPropInput::Deactivate()
 {
-	//if (HasFocus()) FocusMgr->SetInputFocusEntity(NULL);
-
-	UNSUBSCRIBE_EVENT(OnObtainInputFocus);
-	UNSUBSCRIBE_EVENT(OnLoseInputFocus);
 	UNSUBSCRIBE_EVENT(EnableInput);
 	UNSUBSCRIBE_EVENT(DisableInput);
 
 	CProperty::Deactivate();
-}
-//---------------------------------------------------------------------
-
-bool CPropInput::OnObtainInputFocus(const Events::CEventBase& Event)
-{
-	if (Enabled) ActivateInput();
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropInput::OnLoseInputFocus(const Events::CEventBase& Event)
-{
-	DeactivateInput();
-	OK;
 }
 //---------------------------------------------------------------------
 

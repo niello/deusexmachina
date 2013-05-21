@@ -4,7 +4,7 @@
 #include <Physics/PhysicsServer.h>
 #include <AI/AIServer.h>
 #include <Scene/Scene.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <Data/DataServer.h>
 #include <IO/IOServer.h>
 #include <UI/UIServer.h>

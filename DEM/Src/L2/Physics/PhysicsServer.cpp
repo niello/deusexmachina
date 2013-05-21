@@ -1,6 +1,6 @@
 #include "PhysicsServer.h"
 
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <Physics/Composite.h>
 #include <Physics/Collision/BoxShape.h>
 #include <Physics/Collision/SphereShape.h>
