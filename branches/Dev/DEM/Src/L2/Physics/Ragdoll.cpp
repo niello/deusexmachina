@@ -5,7 +5,7 @@
 #include <Physics/Joints/UniversalJoint.h>
 #include <Physics/Joints/SliderJoint.h>
 #include <Physics/Joints/Hinge2Joint.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 
 namespace Physics
 {

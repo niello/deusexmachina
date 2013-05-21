@@ -26,7 +26,7 @@ protected:
 	virtual void				DisablePhysics();
 	virtual Physics::CEntity*	CreatePhysicsEntity();
 
-	DECLARE_EVENT_HANDLER(OnMoveAfter, OnMoveAfter);
+	DECLARE_EVENT_HANDLER(AfterPhysics, AfterPhysics);
 	DECLARE_EVENT_HANDLER(OnEntityRenamed, OnEntityRenamed);
 
 	virtual void SetTransform(const matrix44& NewTF);

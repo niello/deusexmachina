@@ -3,9 +3,10 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/RigidBody.h>
 #include <Physics/Collision/Shape.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <Physics/Joints/AMotor.h>
 #include <Physics/Ragdoll.h>
+#include <Game/GameServer.h>
 #include <Game/GameLevel.h>
 
 extern const matrix44 Rotate180(
@@ -128,7 +129,7 @@ void CCharEntity::OnStepBefore()
 
 		// EPS
 		float DistanceToGround;
-		if (false) //EnvQueryMgr->GetEnvInfoAt(Pos, SurfInfo, Height + 0.1f, GetUID()))
+		if (GameSrv->GetActiveLevel()->GetSurfaceInfoUnder(SurfInfo, Pos, Height + 0.1f, GetUID()))
 		{
 			DistanceToGround = Pos.y - Height - SurfInfo.WorldHeight;
 			GroundMtl = SurfInfo.Material;

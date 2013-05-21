@@ -3,7 +3,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/Scene.h>
 #include <Physics/Collision/Shape.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 

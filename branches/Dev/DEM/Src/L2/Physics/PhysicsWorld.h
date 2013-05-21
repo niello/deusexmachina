@@ -1,31 +1,35 @@
 #pragma once
-#ifndef __DEM_L2_PHYSICS_LEVEL_H__ //!!!to L1!
-#define __DEM_L2_PHYSICS_LEVEL_H__
-
-// The Physics level contains all the physics entities.
-// Has a "point of interest" property which should be set to the point
-// where the action happens (for instance where the player controlled
-// character is at the moment). This is useful for huge levels where
-// physics should only happen in an area around the player.
+#ifndef __DEM_L1_PHYSICS_WORLD_H__ //!!!to L1!
+#define __DEM_L1_PHYSICS_WORLD_H__
 
 #include <Core/RefCounted.h>
+
+//#include <LinearMath/btScalar.h>
+
 #include <Physics/Joints/Joint.h>
 #include <Physics/MaterialTable.h>
 #include <util/HashMap.h>
 #include <Debug/Profiler.h>
 
+// Physics world represents a space where physics bodies and shapes live.
+
+class btDiscreteDynamicsWorld; //???class btDynamicsWorld;
+
 namespace Physics
 {
 typedef Ptr<class CEntity> PEntity;
 class CShape;
-class Ray;
 
-class CPhysicsLevel: public Core::CRefCounted
+class CPhysWorld: public Core::CRefCounted
 {
 	__DeclareClassNoFactory;
 
 protected:
 
+	btDiscreteDynamicsWorld*	pBtDynWorld;
+
+
+//!!!OLD!
 	enum { MaxContacts = 16 };
 
 	nTime					TimeToSim;
@@ -47,37 +51,19 @@ protected:
 	//???here?
 	CHashMap<nTime>		CollisionSounds;
 
-	PROFILER_DECLARE(profFrameBefore);
-	PROFILER_DECLARE(profFrameAfter);
-	PROFILER_DECLARE(profStepBefore);
-	PROFILER_DECLARE(profStepAfter);
-	PROFILER_DECLARE(profCollide);
-	PROFILER_DECLARE(profStep);
-	PROFILER_DECLARE(profJointGroupEmpty);
-
-#ifdef DEM_STATS
-	int statsNumSpaceCollideCalled;              // number of times dSpaceCollide has been invoked
-	int statsNumNearCallbackCalled;              // number of times the near callback has been invoked
-	int statsNumCollideCalled;                   // number of times the collide function has been invoked
-	int statsNumCollided;                        // number of times two shapes have collided
-	int statsNumSpaces;
-	int statsNumShapes;
-	int statsNumSteps;
-#endif
-
 	// ODE collision callbacks
 	static void ODENearCallback(void* data, dGeomID o1, dGeomID o2);
 	static void ODERayCallback(void* data, dGeomID o1, dGeomID o2);
 
 public:
 
-	CPhysicsLevel();
-	virtual ~CPhysicsLevel();
+	CPhysWorld();
+	virtual ~CPhysWorld();
 
-	virtual void	Activate();
-	virtual void	Deactivate();
-	virtual void	Trigger();
-	void			RenderDebug();
+	bool	Init(const bbox3& Bounds);
+	void	Term();
+	void	Trigger(float FrameTime);
+	void	RenderDebug();
 
 	void			AttachShape(CShape* pShape);
 	void			RemoveShape(CShape* pShape);
@@ -90,7 +76,7 @@ public:
 	CEntity*		GetEntityAt(int Idx) const { return Entities[Idx]; }
 
 	bool					RayCheck(const vector3& Pos, const vector3& Dir);
-	const CContactPoint*	GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir);
+	const CContactPoint*	GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID = -1);
 
 	void			SetStepSize(nTime t) { StepSize = t; }
 	nTime			GetStepSize() const { return StepSize; }
@@ -104,7 +90,7 @@ public:
 	dSpaceID		GetODECommonSpaceID() const { return ODECommonSpaceID; }
 };
 
-typedef Ptr<CPhysicsLevel> PPhysicsLevel;
+typedef Ptr<CPhysWorld> PPhysicsLevel;
 
 }
 

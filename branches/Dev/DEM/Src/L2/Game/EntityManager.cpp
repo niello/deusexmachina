@@ -90,16 +90,27 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 {
 	if (!pRTTI) return NULL;
 
-	int Idx = PropStorages.FindIndex(pRTTI);
-	n_assert2_dbg(Idx != INVALID_INDEX, (nString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
-	if (Idx == INVALID_INDEX) return NULL;
-	CPropertyStorage* pStorage = *PropStorages.ValueAtIndex(Idx);
-	n_assert_dbg(pStorage);
+	/* // Another way to get storage, without early instantiation. ???What is better?
+	CPropertyStorage* pStorage = NULL;
+	const Core::CRTTI* pCurrRTTI = pRTTI;
+	while (pCurrRTTI)
+	{
+		int Idx = PropStorages.FindIndex(pRTTI);
+		if (Idx != INVALID_INDEX)
+		{
+			pStorage = *PropStorages.ValueAtIndex(Idx);
+			break;
+		}
+		pCurrRTTI = pCurrRTTI->GetParent();
+	}
+	*/
 
-	PProperty Prop;
+	PProperty Prop = (CProperty*)pRTTI->Create();
+	CPropertyStorage* pStorage = Prop->GetStorage();
+	n_assert2_dbg(pStorage, (nString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
+
 	if (!pStorage->Get(Entity.GetUID(), Prop))
 	{
-		Prop = (CProperty*)pRTTI->Create();
 		pStorage->Add(Entity.GetUID(), Prop);
 		Prop->SetEntity(&Entity);
 	}

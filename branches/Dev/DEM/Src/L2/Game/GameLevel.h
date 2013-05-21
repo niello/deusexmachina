@@ -27,7 +27,7 @@ namespace Scene
 
 namespace Physics
 {
-	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
+	typedef Ptr<class CPhysWorld> PPhysicsLevel;
 	typedef int CMaterialType;
 }
 
@@ -60,7 +60,7 @@ protected:
 	Scripting::PScriptObject	Script;
 
 	Scene::PScene				Scene;
-	Physics::PPhysicsLevel		PhysicsLevel;
+	Physics::PPhysicsLevel		PhysWorld;
 	AI::PAILevel				AILevel;
 
 	bool OnEvent(const Events::CEventBase& Event);
@@ -87,13 +87,13 @@ public:
 	// Physics-based queries
 	DWORD			GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const;
 	DWORD			GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const;
-	bool			GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f /*, //!!!FILTER!*/) const;
+	bool			GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f, DWORD SelpPhysID = -1) const;
 
 	CStrID			GetID() const { return ID; }
 	const nString&	GetName() const { return Name; }
 
 	Scene::CScene*	GetScene() const { return Scene.GetUnsafe(); }
-	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.GetUnsafe(); }
+	Physics::CPhysWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
 	AI::CAILevel*	GetAI() const { return AILevel.GetUnsafe(); }
 };
 

@@ -2,7 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <Physics/CharEntity.h>
 #include <Render/DebugDraw.h>
 
@@ -14,7 +14,7 @@ void CPropActorPhysics::Activate()
 {
 	CPropAbstractPhysics::Activate();
 
-	PROP_SUBSCRIBE_PEVENT(OnMoveAfter, CPropActorPhysics, OnMoveAfter);
+	PROP_SUBSCRIBE_PEVENT(AfterPhysics, CPropActorPhysics, AfterPhysics);
 	PROP_SUBSCRIBE_PEVENT(OnEntityRenamed, CPropActorPhysics, OnEntityRenamed);
 	PROP_SUBSCRIBE_PEVENT(AIBodyRequestLVelocity, CPropActorPhysics, OnRequestLinearVelocity);
 	PROP_SUBSCRIBE_PEVENT(AIBodyRequestAVelocity, CPropActorPhysics, OnRequestAngularVelocity);
@@ -23,7 +23,7 @@ void CPropActorPhysics::Activate()
 
 void CPropActorPhysics::Deactivate()
 {
-	UNSUBSCRIBE_EVENT(OnMoveAfter);
+	UNSUBSCRIBE_EVENT(AfterPhysics);
 	UNSUBSCRIBE_EVENT(OnEntityRenamed);
 	UNSUBSCRIBE_EVENT(AIBodyRequestLVelocity);
 	UNSUBSCRIBE_EVENT(AIBodyRequestAVelocity);
@@ -45,7 +45,7 @@ void CPropActorPhysics::EnablePhysics()
 	PhysEntity = Physics::CCharEntity::Create();
 	PhysEntity->SetUserData(GetEntity()->GetUID());
 	PhysEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"));
+	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);
 	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
 	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 	PhysEntity->Hover = 0.2f;
@@ -87,8 +87,8 @@ void CPropActorPhysics::SetTransform(const matrix44& NewTF)
 }
 //---------------------------------------------------------------------
 
-// The OnMoveAfter() method transfers the current physics entity transform to the game entity.
-bool CPropActorPhysics::OnMoveAfter(const Events::CEventBase& Event)
+// The AfterPhysics() method transfers the current physics entity transform to the game entity.
+bool CPropActorPhysics::AfterPhysics(const Events::CEventBase& Event)
 {
 	if (IsEnabled() && PhysEntity->HasTransformChanged())
 	{

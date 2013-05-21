@@ -17,7 +17,7 @@ class MouseMoveRaw: public Events::CEventNative
 
 public:
 
-	int		X, Y;
+	int X, Y;
 
 	MouseMoveRaw(int x, int y): X(x), Y(y) {}
 };

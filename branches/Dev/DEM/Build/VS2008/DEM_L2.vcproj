@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -108,7 +108,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -174,7 +174,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC;_EDITOR"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -242,7 +242,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC;_EDITOR"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -1054,7 +1054,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsLevel.cpp"
+				RelativePath="..\..\Src\L2\Physics\PhysicsServer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PhysicsServer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PhysicsUtil.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PhysicsUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PhysicsWorld.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1090,23 +1106,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsLevel.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsServer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsUtil.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsUtil.h"
+				RelativePath="..\..\Src\L2\Physics\PhysicsWorld.h"
 				>
 			</File>
 			<File

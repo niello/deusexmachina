@@ -28,7 +28,7 @@ protected:
 
 	void			Stop();
 
-	DECLARE_EVENT_HANDLER(OnMoveAfter, OnMoveAfter);
+	DECLARE_EVENT_HANDLER(AfterPhysics, AfterPhysics);
 	DECLARE_EVENT_HANDLER(OnEntityRenamed, OnEntityRenamed);
 	DECLARE_EVENT_HANDLER(AIBodyRequestLVelocity, OnRequestLinearVelocity);
 	DECLARE_EVENT_HANDLER(AIBodyRequestAVelocity, OnRequestAngularVelocity);

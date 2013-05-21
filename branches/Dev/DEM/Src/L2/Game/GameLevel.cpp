@@ -1,12 +1,13 @@
 #include "GameLevel.h"
 
 #include <Game/Entity.h>
+#include <Game/GameServer.h>
 #include <Scripting/ScriptObject.h>
 #include <Scene/SceneServer.h>		//!!!Because scene stores ScreenFrameShader! //!!!???move to RenderSrv?!
 //#include <Scene/Scene.h>
 //#include <Render/FrameShader.h>
 #include <Scene/PropSceneNode.h>
-#include <Physics/PhysicsLevel.h>
+#include <Physics/PhysicsWorld.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h>
 
@@ -49,9 +50,16 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		Scene->Init(Bounds, QTDepth);
 	}
 
-	//???desc, params?
-	PhysicsLevel = n_new(Physics::CPhysicsLevel);
-	PhysicsLevel->Activate();
+	if (Desc.Get(SubDesc, CStrID("Physics")))
+	{
+		//!!!allow vector3 (de)serialization?!
+		vector3 Center = SubDesc->Get<vector4>(CStrID("Center"), vector4::Zero);
+		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
+		bbox3 Bounds(Center, Extents);
+
+		PhysWorld = n_new(Physics::CPhysWorld);
+		if (!PhysWorld->Init(Bounds)) FAIL;
+	}
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
 	{
@@ -80,7 +88,7 @@ void CGameLevel::Term()
 {
 	GlobalSub = NULL;
 	AILevel = NULL;
-	PhysicsLevel = NULL;
+	PhysWorld = NULL;
 	Scene = NULL;
 	Script = NULL;
 }
@@ -98,10 +106,10 @@ void CGameLevel::Trigger()
 		Scene->GetRootNode().UpdateLocalSpace();
 	}
 
-	if (PhysicsLevel.IsValid())
+	if (PhysWorld.IsValid())
 	{
 		FireEvent(CStrID("BeforePhysics"));
-		PhysicsLevel->Trigger();
+		PhysWorld->Trigger((float)GameSrv->GetFrameTime());
 		FireEvent(CStrID("AfterPhysics"));
 	}
 
@@ -129,7 +137,7 @@ void CGameLevel::RenderScene()
 //!!!???separate? or with bool flags?
 void CGameLevel::RenderDebug()
 {
-	PhysicsLevel->RenderDebug();
+	PhysWorld->RenderDebug();
 
 	FireEvent(CStrID("OnRenderDebug"));
 
@@ -141,11 +149,11 @@ void CGameLevel::RenderDebug()
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	if (!Scene.IsValid() || !PhysicsLevel.IsValid()) FAIL;
+	if (!Scene.IsValid() || !PhysWorld.IsValid()) FAIL;
 
 	line3 Ray;
 	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray);
-	const Physics::CContactPoint* pContact = PhysicsLevel->GetClosestContactAlongRay(Ray.start(), Ray.vec());
+	const Physics::CContactPoint* pContact = PhysWorld->GetClosestContactAlongRay(Ray.start(), Ray.vec());
 	if (!pContact) FAIL;
 
 	if (pOutPoint3D) *pOutPoint3D = pContact->Position;
@@ -249,13 +257,12 @@ DWORD CGameLevel::GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& 
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength /*, //!!!FILTER!*/) const
+bool CGameLevel::GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength, DWORD SelpPhysID) const
 {
 	n_assert(ProbeLength > 0);
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
-	//!!!!!if (SelfPhysicsID != -1) ExcludeSet.AddEntityID(SelfPhysicsID);
-	const Physics::CContactPoint* pContact = PhysicsLevel->GetClosestContactAlongRay(Position, Dir);
+	const Physics::CContactPoint* pContact = PhysWorld->GetClosestContactAlongRay(Position, Dir, SelpPhysID);
 	if (pContact)
 	{
 		Out.WorldHeight = pContact->Position.y;
