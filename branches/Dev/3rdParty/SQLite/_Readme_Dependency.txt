@@ -13,3 +13,6 @@ Current version used:
 
 Purpose in DEM:
 Level and savegame data storage
+
+Status:
+Not used

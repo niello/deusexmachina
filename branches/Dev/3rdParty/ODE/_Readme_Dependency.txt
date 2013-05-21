@@ -11,3 +11,6 @@ You need to apply our patch to get it working
 
 Purpose in DEM:
 Physics simulation, collisions, triggers
+
+Status:
+Not used, is being replaced by Bullet
