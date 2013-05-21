@@ -55,9 +55,9 @@ class CCameraManager: public Core::CRefCounted
 
 protected:
 
+	bool					IsThirdPerson; // Cached to avoid RTTI checking. //???remove? Strict IsA() is fast
 	Scene::CSceneNode*		pCameraNode;
-	//Scene::CCamera*		pCamera; //???is always level's camera?
-	//Scene::PAnimController	Ctlr;
+	Scene::PAnimController	Ctlr;
 
 	//nPFeedbackLoop<vector3>				Position;
 	//nPFeedbackLoop<vector3>				Lookat;
@@ -87,26 +87,32 @@ public:
 		Track_Chase		// Camera follows the target position and orientation
 	};
 
-	CCameraManager(): pCameraNode(NULL) { __ConstructSingleton; }
+	float	Sensitivity;
+	float	MoveSpeed;
+	float	ZoomSpeed;
+	//???bool InvertY?
+
+	CCameraManager(): pCameraNode(NULL), Sensitivity(0.05f), MoveSpeed(0.1f), ZoomSpeed(1.f) { __ConstructSingleton; }
 	~CCameraManager() { __DestructSingleton; }
 
-	bool	InitThirdPersonCamera(); //create controller (to attach to cameras later), attach if has active lvel //???setup aspect?
-	void	ResetCamera(); //???reset only orientation (and distance for 3P)?
+	bool					InitThirdPersonCamera(); //create controller (to attach to cameras later), attach if has active lvel //???setup aspect?
+	void					ResetCamera(); //???reset only orientation (and distance for 3P)?
 
-	void	SetTarget(const Scene::CSceneNode* pTarget); //!!!assert target is in the same scene as the camera!
-	void	SetTargetTrackingMode(ETrackingMode Mode);
+	void					SetTarget(const Scene::CSceneNode* pTarget); //!!!assert target is in the same scene as the camera!
+	void					SetTargetTrackingMode(ETrackingMode Mode);
 
-	void	EnableCollision(bool Enable);
+	void					EnableCollision(bool Enable);
+	//void PreserveDistance(); // When object/terrain is under a camera, follow its surface
 
-	//???GetThirdPersonCamera() or abstract GetCameraController()?
+	Scene::CSceneNode*		GetCameraNode() const { return pCameraNode; }
+	Scene::CAnimController*	GetCameraController() const { return Ctlr.GetUnsafe(); }
+	bool					IsCameraThirdPerson() const { return IsThirdPerson; }
 
 	//???force COI in parent space for 3P camera? default is zero vector
 	//chasing is attaching camera to some entity
 	//tracking is manual COI updating without touching an orientation
 	//so, movement functions, like orientation and zooming ones, will be in a camera controller, not here
 	//!!!FP camera moves itself, 3P camera moves COI!
-	void	Move(const vector3& Translation);
-	void	SetPosition(const vector3& Pos) {}
 };
 
 typedef Ptr<CCameraManager> PCameraManager;

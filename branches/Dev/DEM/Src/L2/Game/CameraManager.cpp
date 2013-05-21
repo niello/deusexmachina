@@ -10,32 +10,23 @@ __ImplementSingleton(Game::CCameraManager);
 
 bool CCameraManager::InitThirdPersonCamera()
 {
-	Scene::PAnimController Ctlr = n_new(Scene::CAnimControllerThirdPerson);
+	Ctlr = n_new(Scene::CAnimControllerThirdPerson);
 	if (!Ctlr.IsValid()) FAIL;
+	IsThirdPerson = true;
+
+	//???load ctlr state from desc?
 
 	CGameLevel* pLevel = GameSrv->GetActiveLevel();
 	if (pLevel && pLevel->GetScene())
 	{
 		pCameraNode = pLevel->GetScene()->GetMainCamera().GetNode();
 		pCameraNode->Controller = Ctlr;
+		Ctlr->Activate(true);
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
-
-/* activation
-	Ctlr = n_new(Scene::CAnimControllerThirdPerson);
-	Node->Controller = Ctlr;
-	Ctlr->Activate(true);
-
-	Ctlr->SetVerticalAngleLimits(n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraLowStop"))),
-		n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraHighStop"))));
-	Ctlr->SetDistanceLimits(GetEntity()->GetAttr<float>(CStrID("CameraMinDistance")),
-		GetEntity()->GetAttr<float>(CStrID("CameraMaxDistance")));
-	Ctlr->SetAngles(Angles.theta, Angles.phi);
-	Ctlr->SetDistance(Distance);
-*/
 
 /* deactivation
 	if (Ctlr.IsValid())
@@ -57,25 +48,6 @@ bool CCameraManager::InitThirdPersonCamera()
 	GetEntity()->GetLevel().GetScene()->SetMainCamera(Camera);
 */
 
-/*orbiting
-	const Event::CameraOrbit& e = (const Event::CameraOrbit&)Event;
-	float dt = (float)TimeSrv->GetFrameTime();
-	float AngVel = n_deg2rad(GetEntity()->GetAttr<float>(CStrID("CameraAngularVelocity")));
-
-	if (e.DirHoriz != 0)
-		Angles.phi += AngVel * dt * (float)e.DirHoriz;
-	if (e.DirVert != 0)
-		Angles.theta += AngVel * dt * (float)e.DirVert;
-
-	Angles.phi += e.AngleHoriz;
-	Angles.theta = Angles.theta + e.AngleVert;
-
-	if (Ctlr.IsValid())
-	{
-		Ctlr->OrbitHorizontal(e.AngleHoriz);
-		Ctlr->OrbitVertical(e.AngleVert);
-	}
-*/
 
 /*zooming
 	Distance = Distance + ((const Event::CameraDistance&)Event).RelChange * GetEntity()->GetAttr<float>(CStrID("CameraDistanceStep"));

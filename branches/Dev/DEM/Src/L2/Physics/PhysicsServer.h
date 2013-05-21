@@ -20,7 +20,6 @@ class CSphereShape;
 class CCapsuleShape;
 class CMeshShape;
 class CHeightfieldShape;
-class CRay;
 class CAreaImpulse;
 
 #define PhysicsSrv Physics::CPhysicsServer::Instance()
@@ -64,7 +63,6 @@ public:
 	CCapsuleShape*		CreateCapsuleShape(const matrix44& TF, CMaterialType MatType, float Radius, float Length) const;
 	CMeshShape*			CreateMeshShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const;
 	CHeightfieldShape*	CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const;
-	CRay*				CreateRay(const vector3& Origin, const vector3& Dir) const;
 	
 	CComposite*			LoadCompositeFromPRM(const nString& Name) const;
 
@@ -84,9 +82,7 @@ public:
 	static void		Vector3ToOde(const vector3& from, dVector3& to);
 	static void		OdeToVector3(const dVector3& from, vector3& to);
 
-	bool					RayCheck(const vector3& Pos, const vector3& Dir, const CFilterSet* ExcludeSet = NULL);
 	const CContacts&		GetContactPoints() const { return Contacts; }
-	const CContactPoint*	GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir, const CFilterSet* ExcludeSet = NULL);
 
 	static uint		GetUniqueStamp() { return ++UniqueStamp; }
 

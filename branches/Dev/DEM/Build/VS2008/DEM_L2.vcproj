@@ -1118,14 +1118,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\Ray.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\Ray.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Physics\RigidBody.cpp"
 				>
 			</File>

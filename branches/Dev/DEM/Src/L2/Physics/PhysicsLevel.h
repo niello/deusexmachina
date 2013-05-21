@@ -35,6 +35,9 @@ protected:
 	vector3					POI;
 	vector3					Gravity;
 
+	nArray<CContactPoint>	Contacts;
+	dGeomID					ODERayID;
+
 	dWorldID				ODEWorldID;
 	dSpaceID				ODECommonSpaceID;	// contains both the static and dynamic space
 	dSpaceID				ODEStaticSpaceID;	// collide space for static geoms
@@ -62,8 +65,9 @@ protected:
 	int statsNumSteps;
 #endif
 
-	// ODE collision callback
+	// ODE collision callbacks
 	static void ODENearCallback(void* data, dGeomID o1, dGeomID o2);
+	static void ODERayCallback(void* data, dGeomID o1, dGeomID o2);
 
 public:
 
@@ -84,6 +88,9 @@ public:
 	void			RemoveEntity(CEntity* pEnt);
 	int				GetNumEntities() const { return Entities.GetCount(); }
 	CEntity*		GetEntityAt(int Idx) const { return Entities[Idx]; }
+
+	bool					RayCheck(const vector3& Pos, const vector3& Dir);
+	const CContactPoint*	GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir);
 
 	void			SetStepSize(nTime t) { StepSize = t; }
 	nTime			GetStepSize() const { return StepSize; }

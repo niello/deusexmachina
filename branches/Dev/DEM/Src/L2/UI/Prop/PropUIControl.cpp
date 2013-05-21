@@ -51,7 +51,8 @@ void CPropUIControl::Activate()
 		PROP_SUBSCRIBE_PEVENT(OnSOActionAvailabile, CPropUIControl, OnSOActionAvailabile);
 	}
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropUIControl, ExposeSI);
-	PROP_SUBSCRIBE_PEVENT(ObjMouseOver, CPropUIControl, OnObjMouseOver);
+	PROP_SUBSCRIBE_PEVENT(OnMouseEnter, CPropUIControl, OnMouseEnter);
+	PROP_SUBSCRIBE_PEVENT(OnMouseLeave, CPropUIControl, OnMouseLeave);
 	PROP_SUBSCRIBE_PEVENT(OverrideUIName, CPropUIControl, OverrideUIName);
 }
 //---------------------------------------------------------------------
@@ -60,7 +61,8 @@ void CPropUIControl::Deactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(ExposeSI);
-	UNSUBSCRIBE_EVENT(ObjMouseOver);
+	UNSUBSCRIBE_EVENT(OnMouseEnter);
+	UNSUBSCRIBE_EVENT(OnMouseLeave);
 	UNSUBSCRIBE_EVENT(OverrideUIName);
 	UNSUBSCRIBE_EVENT(OnSOActionAvailabile);
 
@@ -95,17 +97,19 @@ bool CPropUIControl::OnPropsActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnObjMouseOver(const Events::CEventBase& Event)
+bool CPropUIControl::OnMouseEnter(const Events::CEventBase& Event)
 {
-	if ((*((Events::CEvent&)Event).Params).Get<bool>(CStrID("IsOver"), false))
-	{
-		PParams P = n_new(CParams);
-		P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUID().CStr()));
-		P->Set(CStrID("EntityID"), GetEntity()->GetUID());
-		EventMgr->FireEvent(CStrID("ShowIAOTip"), P);
-	}
-	else EventMgr->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!
+	PParams P = n_new(CParams);
+	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUID().CStr()));
+	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
+	EventMgr->FireEvent(CStrID("ShowIAOTip"), P);
+	OK;
+}
+//---------------------------------------------------------------------
 
+bool CPropUIControl::OnMouseLeave(const Events::CEventBase& Event)
+{
+	EventMgr->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!
 	OK;
 }
 //---------------------------------------------------------------------

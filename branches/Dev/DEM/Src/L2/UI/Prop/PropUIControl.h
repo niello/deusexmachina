@@ -63,7 +63,8 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
-	DECLARE_EVENT_HANDLER(ObjMouseOver, OnObjMouseOver);
+	DECLARE_EVENT_HANDLER(OnMouseEnter, OnMouseEnter);
+	DECLARE_EVENT_HANDLER(OnMouseLeave, OnMouseLeave);
 	DECLARE_EVENT_HANDLER(OverrideUIName, OverrideUIName);
 	DECLARE_EVENT_HANDLER(OnSOActionAvailabile, OnSOActionAvailabile);
 

@@ -78,7 +78,7 @@ public:
 	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
 
 	// Screen queries
-	CEntity*		GetEntityAtScreenPos(float RelX, float RelY) const; //???write 2 versions, physics-based and mesh-based?
+	bool			GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
 	DWORD			GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const;
 	bool			GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 	bool			GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;

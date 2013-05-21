@@ -25,10 +25,7 @@ protected:
 	bool			OnMouseClick(Input::EMouseButton Button, bool Double = false);
 
 	DECLARE_EVENT_HANDLER(MouseBtnDown, OnMouseBtnDown);
-	DECLARE_EVENT_HANDLER(MouseBtnUp, OnMouseBtnUp);
 	DECLARE_EVENT_HANDLER(MouseDoubleClick, OnMouseDoubleClick);
-	DECLARE_EVENT_HANDLER(MouseMoveRaw, OnMouseMoveRaw);
-	DECLARE_EVENT_HANDLER(MouseWheel, OnMouseWheel);
 
 public:
 

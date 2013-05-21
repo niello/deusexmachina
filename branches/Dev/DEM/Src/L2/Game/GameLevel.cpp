@@ -138,6 +138,27 @@ void CGameLevel::RenderDebug()
 }
 //---------------------------------------------------------------------
 
+//???write 2 versions, physics-based and mesh-based?
+bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
+{
+	if (!Scene.IsValid() || !PhysicsLevel.IsValid()) FAIL;
+
+	line3 Ray;
+	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray);
+	const Physics::CContactPoint* pContact = PhysicsLevel->GetClosestContactAlongRay(Ray.start(), Ray.vec());
+	if (!pContact) FAIL;
+
+	if (pOutPoint3D) *pOutPoint3D = pContact->Position;
+	if (pOutEntityUID)
+	{
+		Physics::CEntity* pPhysEntity = PhysicsSrv->FindEntityByUniqueID(pContact->EntityID);
+		*pOutEntityUID = pPhysEntity ? pPhysEntity->GetUserData() : CStrID::Empty;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 DWORD CGameLevel::GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const
 {
 	// calc frustum
@@ -233,9 +254,8 @@ bool CGameLevel::GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position,
 	n_assert(ProbeLength > 0);
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
-	Physics::CFilterSet ExcludeSet;
 	//!!!!!if (SelfPhysicsID != -1) ExcludeSet.AddEntityID(SelfPhysicsID);
-	const Physics::CContactPoint* pContact = PhysicsSrv->GetClosestContactAlongRay(Position, Dir, &ExcludeSet);
+	const Physics::CContactPoint* pContact = PhysicsLevel->GetClosestContactAlongRay(Position, Dir);
 	if (pContact)
 	{
 		Out.WorldHeight = pContact->Position.y;
