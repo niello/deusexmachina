@@ -13,7 +13,7 @@
 
 namespace Physics
 {
-typedef Ptr<class CPhysWorld> PPhysicsLevel;
+typedef Ptr<class CPhysWorldOld> PPhysWorldOld;
 typedef Ptr<class CShape> PShape;
 class CBoxShape;
 class CSphereShape;
@@ -43,7 +43,7 @@ protected:
 	void RegisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Add(pEnt->GetUID(), pEnt); }
 	void UnregisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Rem(pEnt->GetUID()); }
 
-	friend class CPhysWorld;
+	friend class CPhysWorldOld;
 	friend class CRigidBody;
 	friend class TerrainEntity;
 	friend class MouseGripper;

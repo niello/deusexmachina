@@ -1070,7 +1070,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsWorld.cpp"
+				RelativePath="..\..\Src\L2\Physics\PhysicsWorldOld.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1106,7 +1106,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsWorld.h"
+				RelativePath="..\..\Src\L2\Physics\PhysicsWorldOld.h"
 				>
 			</File>
 			<File

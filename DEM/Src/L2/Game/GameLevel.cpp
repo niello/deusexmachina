@@ -7,7 +7,7 @@
 //#include <Scene/Scene.h>
 //#include <Render/FrameShader.h>
 #include <Scene/PropSceneNode.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h>
 
@@ -57,7 +57,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
 		bbox3 Bounds(Center, Extents);
 
-		PhysWorld = n_new(Physics::CPhysWorld);
+		PhysWorld = n_new(Physics::CPhysWorldOld);
 		if (!PhysWorld->Init(Bounds)) FAIL;
 	}
 
@@ -153,7 +153,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 
 	line3 Ray;
 	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray);
-	const Physics::CContactPoint* pContact = PhysWorld->GetClosestContactAlongRay(Ray.start(), Ray.vec());
+	const Physics::CContactPoint* pContact = PhysWorld->GetClosestRayContact(Ray.start(), Ray.vec());
 	if (!pContact) FAIL;
 
 	if (pOutPoint3D) *pOutPoint3D = pContact->Position;
@@ -262,7 +262,7 @@ bool CGameLevel::GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position,
 	n_assert(ProbeLength > 0);
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
-	const Physics::CContactPoint* pContact = PhysWorld->GetClosestContactAlongRay(Position, Dir, SelpPhysID);
+	const Physics::CContactPoint* pContact = PhysWorld->GetClosestRayContact(Position, Dir, SelpPhysID);
 	if (pContact)
 	{
 		Out.WorldHeight = pContact->Position.y;

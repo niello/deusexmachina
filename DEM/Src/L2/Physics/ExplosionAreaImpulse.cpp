@@ -3,7 +3,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/Collision/SphereShape.h>
 #include <Physics/RigidBody.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 
 namespace Physics
 {
@@ -47,7 +47,7 @@ bool CExplosionAreaImpulse::HandleRigidBody(CRigidBody* pBody, const vector3& Po
 	//CFilterSet ExcludeSet;
 	//ExcludeSet.AddRigidBodyId(pBody->GetUID());
 	vector3 Dir = Position - Position;
-	//if (0 == PhysicsSrv->GetClosestContactAlongRay(Position, Dir, ExcludeSet))
+	//if (0 == PhysicsSrv->GetClosestRayContact(Position, Dir, ExcludeSet))
 	//{
 		// free line of sight, apply Impulse
 		float Distance = Dir.len();

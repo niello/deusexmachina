@@ -16,7 +16,7 @@ class CPhysicsUtil //???need class? mb static funcs in namespace?
 {
 public:
 
-	static bool RayCheck(const vector3& From, const vector3& To, CContactPoint& OutContact,
+	static bool RayTest(const vector3& From, const vector3& To, CContactPoint& OutContact,
 		const CFilterSet* ExcludeSet = NULL);
 	static bool RayBundleCheck(const vector3& From, const vector3& To, const vector3& Up,
 		const vector3& Left, float Radius, float& OutContactDist, const CFilterSet* ExcludeSet = NULL);

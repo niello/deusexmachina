@@ -3,7 +3,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/RigidBody.h>
 #include <Physics/Collision/Shape.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 #include <Physics/Joints/AMotor.h>
 #include <Physics/Ragdoll.h>
 #include <Game/GameServer.h>

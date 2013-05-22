@@ -2,7 +2,7 @@
 
 #include <Physics/Collision/Shape.h>
 #include <Physics/Composite.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 
 namespace Physics
 {
@@ -165,7 +165,7 @@ void CRigidBody::ApplyDamping()
 void CRigidBody::OnStepBefore()
 {
 	/*
-    CPhysWorld* pLevel = PhysicsSrv->GetLevel();
+    CPhysWorldOld* pLevel = PhysicsSrv->GetLevel();
     n_assert(pLevel);
     
 	dSpaceID DynamicSpace = pLevel->GetODEDynamicSpaceID();

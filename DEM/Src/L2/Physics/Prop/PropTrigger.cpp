@@ -4,7 +4,7 @@
 #include <Game/GameServer.h>
 #include <Scripting/Prop/PropScriptable.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 #include <Events/Subscription.h>
 #include <Render/DebugDraw.h>
 
