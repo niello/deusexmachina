@@ -12,6 +12,8 @@
 
 //???write Grow()?
 
+//???use btHashTable from Bullet? or improve this table?
+
 template<class TKey, class TVal>
 class CHashTable
 {

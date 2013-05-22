@@ -1,6 +1,6 @@
 #include "PhysicsServer.h"
 
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 #include <Physics/Composite.h>
 #include <Physics/Collision/BoxShape.h>
 #include <Physics/Collision/SphereShape.h>
@@ -200,7 +200,7 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir, float Impulse,
 										  const CFilterSet* ExcludeSet)
 {
-	const CContactPoint* pContact = NULL; //GetClosestContactAlongRay(Pos, Dir, ExcludeSet);
+	const CContactPoint* pContact = NULL; //GetClosestRayContact(Pos, Dir, ExcludeSet);
 	if (pContact)
 	{
 		CRigidBody* Body = pContact->GetRigidBody();

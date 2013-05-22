@@ -3,7 +3,7 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 #include <Physics/Event/SetTransform.h>
 
 //BEGIN_ATTRS_REGISTRATION(PropPhysics)

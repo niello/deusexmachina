@@ -1,7 +1,7 @@
 #include "Entity.h"
 
 #include <Physics/Composite.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 
 namespace Physics
 {
@@ -50,7 +50,7 @@ void CEntity::Deactivate()
 }
 //---------------------------------------------------------------------
 
-void CEntity::OnAttachedToLevel(CPhysWorld* pLevel)
+void CEntity::OnAttachedToLevel(CPhysWorldOld* pLevel)
 {
 	n_assert(pLevel && !Level);
 	Level = pLevel;

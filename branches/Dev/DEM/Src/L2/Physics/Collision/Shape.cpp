@@ -3,7 +3,7 @@
 #include <Physics/RigidBody.h>
 #include <Physics/FilterSet.h>
 #include <Physics/ContactPoint.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsWorldOld.h>
 
 namespace Physics
 {

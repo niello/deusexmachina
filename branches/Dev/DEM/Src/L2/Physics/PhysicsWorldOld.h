@@ -3,9 +3,6 @@
 #define __DEM_L1_PHYSICS_WORLD_H__
 
 #include <Core/RefCounted.h>
-
-//#include <LinearMath/btScalar.h>
-
 #include <Physics/Joints/Joint.h>
 #include <Physics/MaterialTable.h>
 #include <util/HashMap.h>
@@ -13,23 +10,17 @@
 
 // Physics world represents a space where physics bodies and shapes live.
 
-class btDiscreteDynamicsWorld; //???class btDynamicsWorld;
-
 namespace Physics
 {
 typedef Ptr<class CEntity> PEntity;
 class CShape;
 
-class CPhysWorld: public Core::CRefCounted
+class CPhysWorldOld: public Core::CRefCounted
 {
 	__DeclareClassNoFactory;
 
 protected:
 
-	btDiscreteDynamicsWorld*	pBtDynWorld;
-
-
-//!!!OLD!
 	enum { MaxContacts = 16 };
 
 	nTime					TimeToSim;
@@ -57,8 +48,8 @@ protected:
 
 public:
 
-	CPhysWorld();
-	virtual ~CPhysWorld();
+	CPhysWorldOld();
+	virtual ~CPhysWorldOld();
 
 	bool	Init(const bbox3& Bounds);
 	void	Term();
@@ -75,8 +66,8 @@ public:
 	int				GetNumEntities() const { return Entities.GetCount(); }
 	CEntity*		GetEntityAt(int Idx) const { return Entities[Idx]; }
 
-	bool					RayCheck(const vector3& Pos, const vector3& Dir);
-	const CContactPoint*	GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID = -1);
+	bool					RayTest(const vector3& Pos, const vector3& Dir);
+	const CContactPoint*	GetClosestRayContact(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID = -1);
 
 	void			SetStepSize(nTime t) { StepSize = t; }
 	nTime			GetStepSize() const { return StepSize; }
@@ -90,7 +81,7 @@ public:
 	dSpaceID		GetODECommonSpaceID() const { return ODECommonSpaceID; }
 };
 
-typedef Ptr<CPhysWorld> PPhysicsLevel;
+typedef Ptr<CPhysWorldOld> PPhysWorldOld;
 
 }
 

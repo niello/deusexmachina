@@ -11,7 +11,7 @@ namespace Physics
 {
 using namespace Data;
 
-class CPhysWorld;
+class CPhysWorldOld;
 typedef Ptr<class CComposite> PComposite; //???all such things to PhysicsFwd.h?
 typedef Ptr<class CShape> PShape; //???all such things to PhysicsFwd.h?
 
@@ -27,7 +27,7 @@ protected:
 
 	DWORD			UID;
 	CFlags			Flags;
-	CPhysWorld*			Level;				// currently attached to this Level
+	CPhysWorldOld*			Level;				// currently attached to this Level
 	PComposite		Composite;			// the Composite of this entity
 	nArray<PShape>	CollidedShapes;
 	matrix44		Transform;			// the backup Transform matrix
@@ -54,7 +54,7 @@ public:
 	virtual void Activate();
 	virtual void Deactivate();
 	
-	virtual void OnAttachedToLevel(CPhysWorld* pLevel);
+	virtual void OnAttachedToLevel(CPhysWorldOld* pLevel);
 	virtual void OnRemovedFromLevel();
 	virtual void OnStepBefore();
 	virtual void OnStepAfter();
@@ -89,7 +89,7 @@ public:
 	CStrID			GetUserData() const { return UserData; }
 	void			SetStamp(uint s) { Stamp = s; }
 	uint			GetStamp() const { return Stamp; }
-	CPhysWorld*			GetLevel() const { return Level; }
+	CPhysWorldOld*			GetLevel() const { return Level; }
 	int				GetNumCollisions() const;
 	const nArray<Ptr<CShape>>& GetCollidedShapes() const { return CollidedShapes; }
 };

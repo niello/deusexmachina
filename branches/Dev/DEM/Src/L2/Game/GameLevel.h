@@ -27,7 +27,7 @@ namespace Scene
 
 namespace Physics
 {
-	typedef Ptr<class CPhysWorld> PPhysicsLevel;
+	typedef Ptr<class CPhysWorldOld> PPhysWorldOld;
 	typedef int CMaterialType;
 }
 
@@ -60,7 +60,7 @@ protected:
 	Scripting::PScriptObject	Script;
 
 	Scene::PScene				Scene;
-	Physics::PPhysicsLevel		PhysWorld;
+	Physics::PPhysWorldOld		PhysWorld;
 	AI::PAILevel				AILevel;
 
 	bool OnEvent(const Events::CEventBase& Event);
@@ -93,7 +93,7 @@ public:
 	const nString&	GetName() const { return Name; }
 
 	Scene::CScene*	GetScene() const { return Scene.GetUnsafe(); }
-	Physics::CPhysWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
+	Physics::CPhysWorldOld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
 	AI::CAILevel*	GetAI() const { return AILevel.GetUnsafe(); }
 };
 

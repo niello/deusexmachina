@@ -20,7 +20,7 @@ inline unsigned int Hash(const char* pStr)
 
 template<class T> inline unsigned int Hash(const T& Key)
 {
-	//???what about smaller then DWORD?
+	//???what about smaller than DWORD?
 	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
 	else return Hash(&Key, sizeof(T));
 }
@@ -34,12 +34,23 @@ template<> inline unsigned int Hash<const char*>(const char * const & Key)
 
 inline int WangIntegerHash(int Key)
 {
-	Key = ~Key + (Key << 15); // key = (key << 15) - key - 1;
-	Key = Key ^ (Key >> 12);
-	Key = Key + (Key << 2);
-	Key = Key ^ (Key >> 4);
-	Key = Key * 2057; // key = (key + (key << 3)) + (key << 11);
-	Key = Key ^ (Key >> 16);
+	//if (sizeof(void*)==8) RealKey = Key[0] + Key[1];
+
+	// Don't remember where I found it
+	//Key = ~Key + (Key << 15); // Key = (Key << 15) - Key - 1;
+	//Key = Key ^ (Key >> 12);
+	//Key = Key + (Key << 2);
+	//Key = Key ^ (Key >> 4);
+	//Key = Key * 2057; // Key = (Key + (Key << 3)) + (Key << 11);
+	//Key = Key ^ (Key >> 16);
+
+	// Bullet Physics variant
+	Key += ~(Key << 15);
+	Key ^=  (Key >> 10);
+	Key +=  (Key << 3);
+	Key ^=  (Key >> 6);
+	Key += ~(Key << 11);
+	Key ^=  (Key >> 16);
 	return Key;
 }
 //---------------------------------------------------------------------

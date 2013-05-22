@@ -1,10 +1,4 @@
-#include "PhysicsWorld.h"
-
-#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
-//#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
-#include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
-#include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
+#include "PhysicsWorldOld.h"
 
 #include <Game/GameServer.h>
 #include <Physics/Entity.h>
@@ -15,16 +9,11 @@
 #include <Audio/Event/PlaySound.h>
 #include <Events/EventManager.h>
 
-//!!!later migrate to bullet math!
-inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
-inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
-
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysWorld, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CPhysWorldOld, Core::CRefCounted);
 
-CPhysWorld::CPhysWorld():
-	pBtDynWorld(NULL),
+CPhysWorldOld::CPhysWorldOld():
 	TimeToSim(0.0),
 	StepSize(0.01),
 	CollisionSounds(0.0),
@@ -39,7 +28,7 @@ CPhysWorld::CPhysWorld():
 }
 //---------------------------------------------------------------------
 
-CPhysWorld::~CPhysWorld()
+CPhysWorldOld::~CPhysWorldOld()
 {
 	if (ODEWorldID) Term();
 	n_assert(!ODEWorldID);
@@ -53,33 +42,8 @@ CPhysWorld::~CPhysWorld()
 //---------------------------------------------------------------------
 
 // Called by Physics::Server when the Level is attached to the server.
-bool CPhysWorld::Init(const bbox3& Bounds)
+bool CPhysWorldOld::Init(const bbox3& Bounds)
 {
-	n_assert(!pBtDynWorld);
-
-	btVector3 Min = VectorToBtVector(Bounds.vmin);
-	btVector3 Max = VectorToBtVector(Bounds.vmax);
-	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
-	//btBroadphaseInterface* pBtBroadPhase = new btDbvtBroadphase();
-
-	btDefaultCollisionConfiguration* pBtCollCfg = new btDefaultCollisionConfiguration();
-	btCollisionDispatcher* pBtCollDisp = new btCollisionDispatcher(pBtCollCfg);
-
-	btSequentialImpulseConstraintSolver* pBtSolver = new btSequentialImpulseConstraintSolver;
-
-	pBtDynWorld = new btDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
-
-	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
-
-	/*
-	collision shape can be loaded from desc and stored as a reusable resource
-	any rigid body or scene node can use the same collision shape instance by its resource ID
-	rigid body has a construction info
-	btCollisionObject can be used to add collision shape without a body
-	???use motion state to read tfm and velocity from body?
-	*/
-
-//
 	TimeToSim = 0.0;
 
 	// Initialize ODE //???per-Level?
@@ -113,26 +77,8 @@ bool CPhysWorld::Init(const bbox3& Bounds)
 //---------------------------------------------------------------------
 
 // Called by Physics::Server when the Level is removed from the server.
-void CPhysWorld::Term()
+void CPhysWorldOld::Term()
 {
-	if (pBtDynWorld)
-	{
-		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
-		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
-		btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
-		btBroadphaseInterface* pBtBroadPhase = pBtDynWorld->getBroadphase();
-
-		delete pBtDynWorld;
-		delete pBtSolver;
-		delete pBtCollDisp;
-		delete pBtCollCfg;
-		delete pBtBroadPhase;
-
-		pBtDynWorld = NULL;
-	}
-
-//
-
 	n_assert(ODEWorldID);
 	n_assert(ODEDynamicSpaceID);
 	n_assert(ODEStaticSpaceID);
@@ -161,7 +107,7 @@ void CPhysWorld::Term()
 //---------------------------------------------------------------------
 
 //???INLINE?
-void CPhysWorld::SetGravity(const vector3& NewGravity)
+void CPhysWorldOld::SetGravity(const vector3& NewGravity)
 {
 	Gravity = NewGravity;
 	if (ODEWorldID) dWorldSetGravity(ODEWorldID, Gravity.x, Gravity.y, Gravity.z);
@@ -169,17 +115,17 @@ void CPhysWorld::SetGravity(const vector3& NewGravity)
 //---------------------------------------------------------------------
 
 // Attach a static collide shape to the Level.
-void CPhysWorld::AttachShape(Physics::CShape* pShape)
+void CPhysWorldOld::AttachShape(Physics::CShape* pShape)
 {
 	n_assert(pShape);
 	Shapes.Append(pShape);
 	if (!pShape->Attach(ODEStaticSpaceID))
-		n_error("CPhysWorld::AttachShape(): Failed attaching a shape!");
+		n_error("CPhysWorldOld::AttachShape(): Failed attaching a shape!");
 }
 //---------------------------------------------------------------------
 
 // Remove a static collide shape to the Level
-void CPhysWorld::RemoveShape(CShape* pShape)
+void CPhysWorldOld::RemoveShape(CShape* pShape)
 {
 	n_assert(pShape);
 	nArray<PShape>::iterator ShapeIt = Shapes.Find(pShape);
@@ -189,7 +135,7 @@ void CPhysWorld::RemoveShape(CShape* pShape)
 }
 //---------------------------------------------------------------------
 
-void CPhysWorld::AttachEntity(CEntity* pEnt)
+void CPhysWorldOld::AttachEntity(CEntity* pEnt)
 {
 	n_assert(pEnt);
 	n_assert(pEnt->GetLevel() == 0);
@@ -203,7 +149,7 @@ void CPhysWorld::AttachEntity(CEntity* pEnt)
 }
 //---------------------------------------------------------------------
 
-void CPhysWorld::RemoveEntity(CEntity* pEnt)
+void CPhysWorldOld::RemoveEntity(CEntity* pEnt)
 {
 	n_assert(pEnt);
 	n_assert(pEnt->GetLevel() == this);
@@ -218,7 +164,7 @@ void CPhysWorld::RemoveEntity(CEntity* pEnt)
 
 // Do a ray check starting from position `pos' along direction `dir'.
 // Make resulting intersection points available in `GetIntersectionPoints()'.
-bool CPhysWorld::RayCheck(const vector3& Pos, const vector3& Dir)
+bool CPhysWorldOld::RayTest(const vector3& Pos, const vector3& Dir)
 {
 	Contacts.Clear();
 
@@ -237,9 +183,9 @@ bool CPhysWorld::RayCheck(const vector3& Pos, const vector3& Dir)
 }
 //---------------------------------------------------------------------
 
-const CContactPoint* CPhysWorld::GetClosestContactAlongRay(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID)
+const CContactPoint* CPhysWorldOld::GetClosestRayContact(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID)
 {
-	RayCheck(Pos, Dir);
+	RayTest(Pos, Dir);
 
 	// Find closest contact
 	int Idx = INVALID_INDEX;
@@ -262,9 +208,9 @@ const CContactPoint* CPhysWorld::GetClosestContactAlongRay(const vector3& Pos, c
 // The "Near Callback". ODE calls this during collision detection to
 // decide whether 2 geoms collide, and if yes, to generate Contact
 // joints between the 2 involved rigid bodies.
-void CPhysWorld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
+void CPhysWorldOld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 {
-	CPhysWorld* Level = (CPhysWorld*)data;
+	CPhysWorldOld* Level = (CPhysWorldOld*)data;
 
 	// handle sub-spaces
 	if (dGeomIsSpace(o1) || dGeomIsSpace(o2))
@@ -398,7 +344,7 @@ void CPhysWorld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 }
 //---------------------------------------------------------------------
 
-void CPhysWorld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
+void CPhysWorldOld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 {
 	n_assert(data);
 	n_assert(o1 != o2);
@@ -410,7 +356,7 @@ void CPhysWorld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 		return;
 	}
 
-	CPhysWorld* pLevel = (CPhysWorld*)data;
+	CPhysWorldOld* pLevel = (CPhysWorldOld*)data;
 	dGeomID ODERayID = pLevel->ODERayID;
 
 	// check for exclusion
@@ -451,12 +397,8 @@ void CPhysWorld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 //---------------------------------------------------------------------
 
 // Physics simulation is triggered using a constant step size
-void CPhysWorld::Trigger(float FrameTime)
+void CPhysWorldOld::Trigger(float FrameTime)
 {
-	pBtDynWorld->stepSimulation(FrameTime, 10);
-
-//
-
 	for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->OnFrameBefore();
 
 	TimeToSim += GameSrv->GetFrameTime();
@@ -478,7 +420,7 @@ void CPhysWorld::Trigger(float FrameTime)
 }
 //---------------------------------------------------------------------
 
-void CPhysWorld::RenderDebug()
+void CPhysWorldOld::RenderDebug()
 {
 	for (int i = 0; i < Shapes.GetCount(); i++) Shapes[i]->RenderDebug(matrix44::identity);
 	for (int i = 0; i < Entities.GetCount(); i++) Entities[i]->RenderDebug();

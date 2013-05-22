@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -109,7 +109,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -173,7 +173,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;_EDITOR;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -241,7 +241,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;_EDITOR;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -1580,6 +1580,26 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Physics"
+			>
+			<File
+				RelativePath="..\..\Src\L1\Physics\AnimControllerRigidBody.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\AnimControllerRigidBody.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsWorld.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsWorld.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath="..\..\Src\L1\StdCfg.h"

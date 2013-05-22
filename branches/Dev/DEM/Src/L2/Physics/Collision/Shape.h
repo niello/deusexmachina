@@ -40,7 +40,7 @@ protected:
 	enum { MaxContacts = 64 };
 
 	friend class CRigidBody;
-	friend class CPhysWorld;
+	friend class CPhysWorldOld;
 
 	static nArray<CContactPoint>*	CollideContacts;
 	static const CFilterSet*		CollideFilterSet;
