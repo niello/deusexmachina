@@ -35,6 +35,8 @@ public:
 	bool	GetClosestRayContact(const vector3& Start, const vector3& End) const;
 	DWORD	GetAllRayContacts(const vector3& Start, const vector3& End) const;
 
+	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, nArray<PEntity>& Result);
+
 	void	SetStepTime(float Secs) { n_assert(Secs > 0.f); StepTime = Secs; }
 	float	GetStepTime() const { return StepTime; }
 	void	SetGravity(const vector3& NewGravity);

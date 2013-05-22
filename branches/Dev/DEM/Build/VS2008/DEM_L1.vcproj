@@ -1593,6 +1593,26 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionShape.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionShape.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsServer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsServer.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Physics\PhysicsWorld.cpp"
 				>
 			</File>

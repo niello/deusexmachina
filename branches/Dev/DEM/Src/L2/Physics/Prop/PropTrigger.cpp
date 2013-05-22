@@ -3,7 +3,7 @@
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Scripting/Prop/PropScriptable.h>
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <Physics/PhysicsWorldOld.h>
 #include <Events/Subscription.h>
 #include <Render/DebugDraw.h>
@@ -42,15 +42,15 @@ void CPropTrigger::Activate()
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
 		case CShape::Box:
-			pCollShape = (CShape*)PhysicsSrv->CreateBoxShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
+			pCollShape = (CShape*)PhysSrvOld->CreateBoxShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
 				InvalidMaterial, vector3(ShapeParams.x, ShapeParams.y, ShapeParams.z));
 			break;
 		case CShape::Sphere:
-			pCollShape = (CShape*)PhysicsSrv->CreateSphereShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
+			pCollShape = (CShape*)PhysSrvOld->CreateSphereShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
 				InvalidMaterial, ShapeParams.x);
 			break;
 		case CShape::Capsule:
-			pCollShape = (CShape*)PhysicsSrv->CreateCapsuleShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
+			pCollShape = (CShape*)PhysSrvOld->CreateCapsuleShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
 				InvalidMaterial, ShapeParams.x, ShapeParams.y);
 			break;
 		default: n_error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
@@ -93,7 +93,7 @@ void CPropTrigger::SetEnabled(bool Enable)
 	if (Enable)
 	{
 		//???reset timestamp?
-		//pCollShape->Attach(PhysicsSrv->GetLevel()->GetODEDynamicSpaceID());
+		//pCollShape->Attach(PhysSrvOld->GetLevel()->GetODEDynamicSpaceID());
 		PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropTrigger, OnBeginFrame);
 	}
 	else
@@ -136,7 +136,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 	pCollShape->SetCategoryBits(Physics::None);
 	pCollShape->SetCollideBits(Physics::None);
 
-	uint Stamp = PhysicsSrv->GetUniqueStamp();
+	uint Stamp = PhysSrvOld->GetUniqueStamp();
 	pInsideNow->Clear();
 	for (int i = 0; i < Contacts.GetCount(); i++)
 	{

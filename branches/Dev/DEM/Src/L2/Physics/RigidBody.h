@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_PHYSICS_RBODY_H__ //!!!to L1!
 #define __DEM_L2_PHYSICS_RBODY_H__
 
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <Physics/MaterialTable.h>
 #include <mathlib/matrix.h>
 #include <mathlib/vector.h>
@@ -172,7 +172,7 @@ inline void CRigidBody::SetLinearVelocity(const vector3& Velocity)
 inline vector3 CRigidBody::GetLinearVelocity() const
 {
 	vector3 Velocity;
-	CPhysicsServer::OdeToVector3(*(dVector3*)dBodyGetLinearVel(ODEBodyID), Velocity);
+	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetLinearVel(ODEBodyID), Velocity);
 	return Velocity;
 }
 //---------------------------------------------------------------------
@@ -186,20 +186,20 @@ inline void CRigidBody::SetAngularVelocity(const vector3& Velocity)
 inline vector3 CRigidBody::GetAngularVelocity() const
 {
 	vector3 Velocity;
-	CPhysicsServer::OdeToVector3(*(dVector3*)dBodyGetAngularVel(ODEBodyID), Velocity);
+	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetAngularVel(ODEBodyID), Velocity);
 	return Velocity;
 }
 //---------------------------------------------------------------------
 
 inline void CRigidBody::GetLocalForce(vector3& OutForce) const
 {
-	CPhysicsServer::OdeToVector3(*(dVector3*)dBodyGetForce(ODEBodyID), OutForce);
+	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetForce(ODEBodyID), OutForce);
 }
 //---------------------------------------------------------------------
 
 inline void CRigidBody::GetLocalTorque(vector3& OutTorque) const
 {
-	CPhysicsServer::OdeToVector3(*(dVector3*)dBodyGetTorque(ODEBodyID), OutTorque);
+	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetTorque(ODEBodyID), OutTorque);
 }
 //---------------------------------------------------------------------
 

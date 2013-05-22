@@ -1,6 +1,6 @@
 #include "CharEntity.h"
 
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <Physics/RigidBody.h>
 #include <Physics/Collision/Shape.h>
 #include <Physics/PhysicsWorldOld.h>
@@ -51,7 +51,7 @@ void CCharEntity::CreateDefaultComposite()
 	matrix44 UpRight;
 	UpRight.rotate_x(n_deg2rad(90.0f));
 	UpRight.translate(vector3(0.0f, Hover + Radius + CapsuleLength * 0.5f, 0.0f));
-	PShape pShape = (CShape*)PhysicsSrv->CreateCapsuleShape(UpRight,
+	PShape pShape = (CShape*)PhysSrvOld->CreateCapsuleShape(UpRight,
 		CMaterialTable::StringToMaterialType("Character"), Radius, CapsuleLength);
 	BaseBody->BeginShapes(1);
 	BaseBody->AddShape(pShape);
@@ -79,7 +79,7 @@ void CCharEntity::CreateRagdollComposite()
 	if (CompositeName.IsValid())
 	{
 		n_assert(CompositeName.IsValid());
-		RagdollComposite = (Physics::CRagdoll*)PhysicsSrv->LoadCompositeFromPRM(CompositeName);
+		RagdollComposite = (Physics::CRagdoll*)PhysSrvOld->LoadCompositeFromPRM(CompositeName);
 		n_assert(RagdollComposite->IsA(CRagdoll::RTTI));
 		RagdollComposite->SetTransform(Transform);
 		//RagdollComposite->SetCharacter(pNCharacter);
@@ -114,7 +114,6 @@ void CCharEntity::Deactivate()
 	CEntity::Deactivate();
 	DefaultComposite = NULL;
 	RagdollComposite = NULL;
-	pRagdollImpulse = NULL;
 	//SetCharacter(NULL);
 }
 //---------------------------------------------------------------------
@@ -223,7 +222,6 @@ void CCharEntity::OnStepBefore()
 
 void CCharEntity::ActivateRagdoll()
 {
-//	n_assert(pNCharacter);
 	n_assert(!IsRagdollActive());
 
 	//!!!many unnecessary matrix copyings!
@@ -246,13 +244,6 @@ void CCharEntity::ActivateRagdoll()
 
 		// Sync physics joint angles with bind pose model
 		RagdollComposite->ReadJoints();
-
-		// Apply a the stored impulse to the ragdoll
-		if (pRagdollImpulse.IsValid())
-		{
-			pRagdollImpulse->Apply();
-			pRagdollImpulse = NULL;
-		}
 
 		Flags.Set(RAGDOLL_ACTIVE);
 	}

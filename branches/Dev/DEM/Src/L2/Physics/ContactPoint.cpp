@@ -1,6 +1,6 @@
 #include "ContactPoint.h"
 
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <Physics/Entity.h>
 #include <Physics/Composite.h>
 
@@ -9,7 +9,7 @@ namespace Physics
 
 CEntity* CContactPoint::GetEntity() const
 {
-	return PhysicsSrv->FindEntityByUniqueID(EntityID);
+	return PhysSrvOld->FindEntityByUniqueID(EntityID);
 }
 //---------------------------------------------------------------------
 

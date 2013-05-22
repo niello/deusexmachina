@@ -1,4 +1,4 @@
-#include "PhysicsServer.h"
+#include "PhysicsServerOld.h"
 
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/Composite.h>
@@ -12,14 +12,14 @@
 
 namespace Physics
 {
-__ImplementClass(Physics::CPhysicsServer, 'PHSR', Core::CRefCounted);
-__ImplementSingleton(Physics::CPhysicsServer);
+__ImplementClass(Physics::CPhysicsServerOld, 'PHSR', Core::CRefCounted);
+__ImplementSingleton(Physics::CPhysicsServerOld);
 
-uint CPhysicsServer::UniqueStamp = 0;
+uint CPhysicsServerOld::UniqueStamp = 0;
 
 static const nString PhysClassPrefix("Physics::C");
 
-CPhysicsServer::CPhysicsServer():
+CPhysicsServerOld::CPhysicsServerOld():
 	isOpen(false),
 	Contacts(256, 256),
 	Entities(1024, 1024)
@@ -29,14 +29,14 @@ CPhysicsServer::CPhysicsServer():
 }
 //---------------------------------------------------------------------
 
-CPhysicsServer::~CPhysicsServer()
+CPhysicsServerOld::~CPhysicsServerOld()
 {
 	n_assert(!isOpen);
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsServer::Open()
+bool CPhysicsServerOld::Open()
 {
 	n_assert(!isOpen);
 	CMaterialTable::Setup();
@@ -45,14 +45,14 @@ bool CPhysicsServer::Open()
 }
 //---------------------------------------------------------------------
 
-void CPhysicsServer::Close()
+void CPhysicsServerOld::Close()
 {
 	n_assert(isOpen);
 	isOpen = false;
 }
 //---------------------------------------------------------------------
 
-CBoxShape* CPhysicsServer::CreateBoxShape(const matrix44& TF, CMaterialType MatType, const vector3& Size) const
+CBoxShape* CPhysicsServerOld::CreateBoxShape(const matrix44& TF, CMaterialType MatType, const vector3& Size) const
 {
 	CBoxShape* Shape = CBoxShape::Create();
 	Shape->SetTransform(TF);
@@ -62,7 +62,7 @@ CBoxShape* CPhysicsServer::CreateBoxShape(const matrix44& TF, CMaterialType MatT
 }
 //---------------------------------------------------------------------
 
-CSphereShape* CPhysicsServer::CreateSphereShape(const matrix44& TF, CMaterialType MatType, float Radius) const
+CSphereShape* CPhysicsServerOld::CreateSphereShape(const matrix44& TF, CMaterialType MatType, float Radius) const
 {
 	CSphereShape* Shape = CSphereShape::Create();
 	Shape->SetTransform(TF);
@@ -72,7 +72,7 @@ CSphereShape* CPhysicsServer::CreateSphereShape(const matrix44& TF, CMaterialTyp
 }
 //---------------------------------------------------------------------
 
-CCapsuleShape* CPhysicsServer::CreateCapsuleShape(const matrix44& TF, CMaterialType MatType,
+CCapsuleShape* CPhysicsServerOld::CreateCapsuleShape(const matrix44& TF, CMaterialType MatType,
 												  float Radius, float Length) const
 {
 	CCapsuleShape* Shape = CCapsuleShape::Create();
@@ -84,7 +84,7 @@ CCapsuleShape* CPhysicsServer::CreateCapsuleShape(const matrix44& TF, CMaterialT
 }
 //---------------------------------------------------------------------
 
-CMeshShape* CPhysicsServer::CreateMeshShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
+CMeshShape* CPhysicsServerOld::CreateMeshShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
 {
 	CMeshShape* Shape = CMeshShape::Create();
 	Shape->SetTransform(TF);
@@ -94,7 +94,7 @@ CMeshShape* CPhysicsServer::CreateMeshShape(const matrix44& TF, CMaterialType Ma
 }
 //---------------------------------------------------------------------
 
-CHeightfieldShape* CPhysicsServer::CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
+CHeightfieldShape* CPhysicsServerOld::CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
 {
 	CHeightfieldShape* Shape = CHeightfieldShape::Create();
 	Shape->SetTransform(TF);
@@ -105,7 +105,7 @@ CHeightfieldShape* CPhysicsServer::CreateHeightfieldShape(const matrix44& TF, CM
 //---------------------------------------------------------------------
 
 //!!!???to loaders?!
-CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
+CComposite* CPhysicsServerOld::LoadCompositeFromPRM(const nString& Name) const
 {
 	n_assert(Name.IsValid());
 	PParams Desc = DataSrv->LoadPRM(nString("physics:") + Name + ".prm");
@@ -197,7 +197,7 @@ CComposite* CPhysicsServer::LoadCompositeFromPRM(const nString& Name) const
 //---------------------------------------------------------------------
 
 // Apply an impulse on the first rigid body which lies along the defined ray.
-bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir, float Impulse,
+bool CPhysicsServerOld::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir, float Impulse,
 										  const CFilterSet* ExcludeSet)
 {
 	const CContactPoint* pContact = NULL; //GetClosestRayContact(Pos, Dir, ExcludeSet);
@@ -217,7 +217,7 @@ bool CPhysicsServer::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir
 //---------------------------------------------------------------------
 
 //!!!TO LEVEL!
-int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSet,
+int CPhysicsServerOld::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSet,
 									   nArray<PEntity>& Result)
 {
 	/*
@@ -254,7 +254,7 @@ int CPhysicsServer::GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSe
 // will also overwrite the internal Contacts array which can be
 // queried after the method has returned, but note that there will only
 // be one contact per physics shape.
-int CPhysicsServer::GetEntitiesInSphere(const vector3& Pos, float Radius, const CFilterSet& ExcludeSet,
+int CPhysicsServerOld::GetEntitiesInSphere(const vector3& Pos, float Radius, const CFilterSet& ExcludeSet,
 										nArray<PEntity>& Result)
 {
 	n_assert(Radius >= 0.0f); //???in shape constructor?
@@ -266,7 +266,7 @@ int CPhysicsServer::GetEntitiesInSphere(const vector3& Pos, float Radius, const 
 }
 //---------------------------------------------------------------------
 
-int CPhysicsServer::GetEntitiesInBox(const vector3& Scale, const matrix44& TF, const CFilterSet& ExcludeSet,
+int CPhysicsServerOld::GetEntitiesInBox(const vector3& Scale, const matrix44& TF, const CFilterSet& ExcludeSet,
 									 nArray<PEntity>& Result)
 {
 	n_assert(Scale.x >= 0 && Scale.y >= 0 && Scale.z >= 0); //???in shape constructor?

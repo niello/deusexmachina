@@ -236,8 +236,8 @@ void CRagdoll::ReadJoints()
 	//n_assert(pNCharacter);
 	//const nCharSkeleton& Skeleton = pNCharacter->GetSkeleton();
 
-	//dWorldID ODEWorldID = PhysicsSrv->GetLevel()->GetODEWorldID();
-	//dSpaceID ODESpaceID = PhysicsSrv->GetLevel()->GetODEDynamicSpaceID();
+	//dWorldID ODEWorldID = PhysSrvOld->GetLevel()->GetODEWorldID();
+	//dSpaceID ODESpaceID = PhysSrvOld->GetLevel()->GetODEDynamicSpaceID();
 
 	//// Update rigid body positions
 	//for (int i = 0; i < Bodies.GetCount(); i++)
