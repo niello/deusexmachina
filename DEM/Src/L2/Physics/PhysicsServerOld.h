@@ -20,14 +20,13 @@ class CSphereShape;
 class CCapsuleShape;
 class CMeshShape;
 class CHeightfieldShape;
-class CAreaImpulse;
 
-#define PhysicsSrv Physics::CPhysicsServer::Instance()
+#define PhysSrvOld Physics::CPhysicsServerOld::Instance()
 
-class CPhysicsServer: public Core::CRefCounted
+class CPhysicsServerOld: public Core::CRefCounted
 {
-	__DeclareClass(CPhysicsServer);
-	__DeclareSingleton(CPhysicsServer);
+	__DeclareClass(CPhysicsServerOld);
+	__DeclareSingleton(CPhysicsServerOld);
 
 protected:
 	
@@ -51,8 +50,8 @@ protected:
 
 public:
 
-	CPhysicsServer();
-	virtual ~CPhysicsServer();
+	CPhysicsServerOld();
+	virtual ~CPhysicsServerOld();
 
 	virtual bool	Open();
 	virtual void	Close();
@@ -92,7 +91,7 @@ public:
 
 // Converts the rotational part of a matrix44 To ODE. This includes
 // a handedness conversion (transpose), since Mangalore is right handed, ODE left handed(?)
-inline void CPhysicsServer::Matrix44ToOde(const matrix44& From, dMatrix3& To)
+inline void CPhysicsServerOld::Matrix44ToOde(const matrix44& From, dMatrix3& To)
 {
 	To[0] = From.M11; To[1] = From.M21; To[2] = From.M31; To[3] = 0.0f;
 	To[4] = From.M12; To[5] = From.M22; To[6] = From.M32; To[7] = 0.0f;
@@ -101,7 +100,7 @@ inline void CPhysicsServer::Matrix44ToOde(const matrix44& From, dMatrix3& To)
 //---------------------------------------------------------------------
 
 // Convert a dMatrix3 To the rotational part of a matrix44. Includes handedness conversion.
-inline void CPhysicsServer::OdeToMatrix44(const dMatrix3& From, matrix44& To)
+inline void CPhysicsServerOld::OdeToMatrix44(const dMatrix3& From, matrix44& To)
 {
 	To.M11 = From[0]; To.M12 = From[4]; To.M13 = From[8];
 	To.M21 = From[1]; To.M22 = From[5]; To.M23 = From[9];
@@ -109,19 +108,19 @@ inline void CPhysicsServer::OdeToMatrix44(const dMatrix3& From, matrix44& To)
 }
 //---------------------------------------------------------------------
 
-inline void CPhysicsServer::Vector3ToOde(const vector3& From, dVector3& To)
+inline void CPhysicsServerOld::Vector3ToOde(const vector3& From, dVector3& To)
 {
 	To[0] = From.x; To[1] = From.y; To[2] = From.z; To[3] = 1.0f;
 }
 //---------------------------------------------------------------------
 
-inline void CPhysicsServer::OdeToVector3(const dVector3& From, vector3& To)
+inline void CPhysicsServerOld::OdeToVector3(const dVector3& From, vector3& To)
 {
 	To.set(From[0], From[1], From[2]);
 }
 //---------------------------------------------------------------------
 
-inline CEntity* CPhysicsServer::FindEntityByUniqueID(DWORD UID) const
+inline CEntity* CPhysicsServerOld::FindEntityByUniqueID(DWORD UID) const
 {
 	CEntity* pEnt = NULL;
 	if (UID) Entities.Find(UID, pEnt);
@@ -132,7 +131,7 @@ inline CEntity* CPhysicsServer::FindEntityByUniqueID(DWORD UID) const
 // Set the current point of interest for the physics subsystem. This can
 // be for instance the position of the game entity which has the input focus.
 // Only the area around this point of interest should be simulated.
-//inline void CPhysicsServer::SetPointOfInterest(const vector3& NewPOI)
+//inline void CPhysicsServerOld::SetPointOfInterest(const vector3& NewPOI)
 //{
 //	n_assert(CurrLevel);
 //	CurrLevel->SetPointOfInterest(NewPOI);

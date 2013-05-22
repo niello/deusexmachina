@@ -1,7 +1,7 @@
 #include "GameServer.h"
 
 #include <Game/EntityLoaderCommon.h>
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <AI/AIServer.h>
 #include <Scene/Scene.h>
 #include <Physics/PhysicsWorldOld.h>

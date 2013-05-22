@@ -2,7 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/Event/SetTransform.h>
 

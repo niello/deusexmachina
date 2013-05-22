@@ -5,7 +5,6 @@
 #include "Entity.h"
 #include <Physics/MaterialTable.h>
 #include <Physics/FilterSet.h>
-#include <Physics/AreaImpulse.h>
 #include <Data/Flags.h>
 
 // Character physics controller. Supports default state in which actor is a capsule
@@ -30,7 +29,6 @@ protected:
 	PComposite		DefaultComposite;
 	PRagdoll		RagdollComposite;
 	CMaterialType	GroundMtl;
-	PAreaImpulse	pRagdollImpulse;
 	float			MaxHorizAccel;
 
 	// See CEntity flags enum too
@@ -39,8 +37,8 @@ protected:
 		RAGDOLL_ACTIVE = 0x08
 	};
 
-	virtual void		CreateDefaultComposite();
-	virtual void		CreateRagdollComposite();
+	virtual void	CreateDefaultComposite();
+	virtual void	CreateRagdollComposite();
 
 public:
 
@@ -51,20 +49,19 @@ public:
 	CCharEntity();
 	virtual ~CCharEntity();
 
-	virtual void		Activate();
-	virtual void		Deactivate();
-	virtual void		OnStepBefore();
-	//virtual bool		OnCollide(CShape* pCollidee) { return CEntity::OnCollide(pCollidee) && !GroundExclSet.CheckShape(pCollidee); }
-	void				ActivateRagdoll();
-	void				DeactivateRagdoll();
+	virtual void	Activate();
+	virtual void	Deactivate();
+	virtual void	OnStepBefore();
+	//virtual bool	OnCollide(CShape* pCollidee) { return CEntity::OnCollide(pCollidee) && !GroundExclSet.CheckShape(pCollidee); }
+	void			ActivateRagdoll();
+	void			DeactivateRagdoll();
 
-	void				SetDesiredLinearVelocity(const vector3& Velocity) { DesiredLinearVel = Velocity; }
-	const vector3&		GetDesiredLinearVelocity() const { return DesiredLinearVel; }
-	void				SetDesiredAngularVelocity(float Velocity) { DesiredAngularVel = Velocity; }
-	float				GetDesiredAngularVelocity() const { return DesiredAngularVel; }
-	void				SetRagdollImpulse(CAreaImpulse* pImpulse) { pRagdollImpulse = pImpulse; }
-	bool				IsRagdollActive() const { return Flags.Is(RAGDOLL_ACTIVE); }
-	CMaterialType		GetGroundMaterial() const { return GroundMtl; }
+	void			SetDesiredLinearVelocity(const vector3& Velocity) { DesiredLinearVel = Velocity; }
+	const vector3&	GetDesiredLinearVelocity() const { return DesiredLinearVel; }
+	void			SetDesiredAngularVelocity(float Velocity) { DesiredAngularVel = Velocity; }
+	float			GetDesiredAngularVelocity() const { return DesiredAngularVel; }
+	bool			IsRagdollActive() const { return Flags.Is(RAGDOLL_ACTIVE); }
+	CMaterialType	GetGroundMaterial() const { return GroundMtl; }
 };
 
 typedef Ptr<CCharEntity> PCharEntity;

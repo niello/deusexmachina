@@ -159,7 +159,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	if (pOutPoint3D) *pOutPoint3D = pContact->Position;
 	if (pOutEntityUID)
 	{
-		Physics::CEntity* pPhysEntity = PhysicsSrv->FindEntityByUniqueID(pContact->EntityID);
+		Physics::CEntity* pPhysEntity = PhysSrvOld->FindEntityByUniqueID(pContact->EntityID);
 		*pOutEntityUID = pPhysEntity ? pPhysEntity->GetUserData() : CStrID::Empty;
 	}
 

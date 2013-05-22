@@ -119,10 +119,10 @@ void CRigidBody::OnFrameAfter()
 void CRigidBody::ApplyImpulseAtPos(const vector3& Impulse, const vector3& Pos)
 {
 	//n_assert(IsAttached());
-	//dWorldID ODEWorldID = PhysicsSrv->GetLevel()->GetODEWorldID();
+	//dWorldID ODEWorldID = PhysSrvOld->GetLevel()->GetODEWorldID();
 	//SetEnabled(true);
 	//dVector3 ODEForce;
-	//dWorldImpulseToForce(ODEWorldID, dReal(PhysicsSrv->GetLevel()->GetStepSize()), Impulse.x, Impulse.y, Impulse.z, ODEForce);
+	//dWorldImpulseToForce(ODEWorldID, dReal(PhysSrvOld->GetLevel()->GetStepSize()), Impulse.x, Impulse.y, Impulse.z, ODEForce);
 	//dBodyAddForceAtPos(ODEBodyID, ODEForce[0], ODEForce[1], ODEForce[2], Pos.x, Pos.y, Pos.z);
 }
 //---------------------------------------------------------------------
@@ -165,7 +165,7 @@ void CRigidBody::ApplyDamping()
 void CRigidBody::OnStepBefore()
 {
 	/*
-    CPhysWorldOld* pLevel = PhysicsSrv->GetLevel();
+    CPhysWorldOld* pLevel = PhysSrvOld->GetLevel();
     n_assert(pLevel);
     
 	dSpaceID DynamicSpace = pLevel->GetODEDynamicSpaceID();
@@ -206,8 +206,8 @@ void CRigidBody::OnStepBefore()
 void CRigidBody::OnStepAfter()
 {
 	n_assert(IsAttached());
-	CPhysicsServer::OdeToMatrix44(*(dMatrix3*)dBodyGetRotation(ODEBodyID), Transform);
-	CPhysicsServer::OdeToVector3(*(dVector3*)dBodyGetPosition(ODEBodyID), Transform.Translation());
+	CPhysicsServerOld::OdeToMatrix44(*(dMatrix3*)dBodyGetRotation(ODEBodyID), Transform);
+	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetPosition(ODEBodyID), Transform.Translation());
 }
 //---------------------------------------------------------------------
 
@@ -263,7 +263,7 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 	if (IsAttached())
 	{
 		dMatrix3 ODERotation;
-		CPhysicsServer::Matrix44ToOde(Tfm, ODERotation);
+		CPhysicsServerOld::Matrix44ToOde(Tfm, ODERotation);
 		dBodySetRotation(ODEBodyID, ODERotation);
 		const vector3& Pos = Transform.Translation();
 		dBodySetPosition(ODEBodyID, Pos.x, Pos.y, Pos.z);

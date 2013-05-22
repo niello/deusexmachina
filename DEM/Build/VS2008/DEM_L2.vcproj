@@ -958,14 +958,6 @@
 			Name="Physics"
 			>
 			<File
-				RelativePath="..\..\Src\L2\Physics\AreaImpulse.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\AreaImpulse.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Physics\CharEntity.cpp"
 				>
 			</File>
@@ -1030,14 +1022,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\ExplosionAreaImpulse.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\ExplosionAreaImpulse.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Physics\FilterSet.cpp"
 				>
 			</File>
@@ -1054,19 +1038,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsServer.cpp"
+				RelativePath="..\..\Src\L2\Physics\PhysicsServerOld.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsUtil.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsUtil.h"
+				RelativePath="..\..\Src\L2\Physics\PhysicsServerOld.h"
 				>
 			</File>
 			<File

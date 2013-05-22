@@ -143,7 +143,7 @@ void CEnvironment::ReleaseEngine()
 
 bool CEnvironment::InitGameSystem()
 {
-	PhysicsServer = n_new(Physics::CPhysicsServer);
+	PhysicsServer = n_new(Physics::CPhysicsServerOld);
 	PhysicsServer->Open();
 	
 	GameServer = n_new(Game::CGameServer);

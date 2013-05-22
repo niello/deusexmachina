@@ -99,7 +99,7 @@ void CShape::AttachGeom(dGeomID GeomId, dSpaceID SpaceID)
 	const vector3& Pos = Transform.Translation();
 	dGeomSetPosition(GeomId, Pos.x, Pos.y, Pos.z);
 	dMatrix3 ODERotation;
-	CPhysicsServer::Matrix44ToOde(Transform, ODERotation);
+	CPhysicsServerOld::Matrix44ToOde(Transform, ODERotation);
 	dGeomSetRotation(GeomId, ODERotation);
 
 	// if attached to rigid body, create a geom Transform "proxy" object && attach it to the rigid body
@@ -124,7 +124,7 @@ void CShape::AttachGeom(dGeomID GeomId, dSpaceID SpaceID)
 void CShape::TransformMass()
 {
 	dMatrix3 ODERotation;
-	CPhysicsServer::Matrix44ToOde(Transform, ODERotation);
+	CPhysicsServerOld::Matrix44ToOde(Transform, ODERotation);
 	dMassRotate(&ODEMass, ODERotation);
 	const vector3& Pos = Transform.Translation();
 	dMassTranslate(&ODEMass, Pos.x, Pos.y, Pos.z);
@@ -168,7 +168,7 @@ void CShape::SetTransform(const matrix44& Tfm)
 		const vector3& Pos = Transform.Translation();
 		dGeomSetPosition(ODEGeomID, Pos.x, Pos.y, Pos.z);
 		dMatrix3 ODERotation;
-		CPhysicsServer::Matrix44ToOde(Transform, ODERotation);
+		CPhysicsServerOld::Matrix44ToOde(Transform, ODERotation);
 		dGeomSetRotation(ODEGeomID, ODERotation);
 	}
 }
@@ -247,7 +247,7 @@ void CShape::Collide(const CFilterSet& FilterSet, nArray<CContactPoint>& Contact
 	Contacts.Reset();
 	CShape::CollideContacts = &Contacts;
 	CShape::CollideFilterSet = &FilterSet;
-	//dSpaceCollide2((dGeomID)PhysicsSrv->GetLevel()->GetODECommonSpaceID(), ODEGeomID, this, &ODENearCallback);
+	//dSpaceCollide2((dGeomID)PhysSrvOld->GetLevel()->GetODECommonSpaceID(), ODEGeomID, this, &ODENearCallback);
 }
 //---------------------------------------------------------------------
 

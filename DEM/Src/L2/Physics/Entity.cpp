@@ -13,7 +13,7 @@ CEntity::CEntity(): Level(NULL), UserData(CStrID::Empty), Stamp(0)
 {
 	UID = UIDCounter++;
 	CollidedShapes.Flags.Set(Array_DoubleGrowSize);
-	PhysicsSrv->RegisterEntity(this);
+	PhysSrvOld->RegisterEntity(this);
 }
 //---------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ CEntity::~CEntity()
 {
 	n_assert(!Level);
 	if (IsActive()) Deactivate();
-	PhysicsSrv->UnregisterEntity(this);
+	PhysSrvOld->UnregisterEntity(this);
 }
 //---------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ void CEntity::Activate()
 	if (!Composite.IsValid())
 	{
 		if (CompositeName.IsValid())
-			SetComposite(PhysicsSrv->LoadCompositeFromPRM(CompositeName));
+			SetComposite(PhysSrvOld->LoadCompositeFromPRM(CompositeName));
 		else n_error("Physics::CEntity: no valid physics Composite name given!");
 	}
 	else Composite->SetTransform(Transform);

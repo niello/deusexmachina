@@ -4,7 +4,7 @@
 #include <Physics/Entity.h>
 #include <Physics/Composite.h>
 #include <Physics/Collision/Shape.h>
-#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsServerOld.h>
 #include <Physics/RigidBody.h>
 #include <Audio/Event/PlaySound.h>
 #include <Events/EventManager.h>
@@ -324,7 +324,7 @@ void CPhysWorldOld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 			if (Sound.IsValid())
 			{
 				vector3 Normal;
-				CPhysicsServer::OdeToVector3(Contact[0].geom.normal, Normal);
+				CPhysicsServerOld::OdeToVector3(Contact[0].geom.normal, Normal);
 				vector3 Velocity = Rigid1 ? Rigid1->GetLinearVelocity() : vector3(0.0f, 0.0f, 0.0f);
 				if (Rigid2) Velocity -= Rigid2->GetLinearVelocity();
 
@@ -377,8 +377,8 @@ void CPhysWorldOld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 		dGeomRayGet(ODERayID, ODEOrigin, ODEDir);
 
 		vector3 Origin, Dir;
-		CPhysicsServer::OdeToVector3(ODEOrigin, Origin);
-		CPhysicsServer::OdeToVector3(ODEDir, Dir);
+		CPhysicsServerOld::OdeToVector3(ODEOrigin, Origin);
+		CPhysicsServerOld::OdeToVector3(ODEDir, Dir);
 
 		// FIXME: hmm, ODEContact[x].geom.pos[] doesn't seem to be correct with mesh
 		// shapes which are not at the origin. Computing the intersection pos from
