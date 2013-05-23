@@ -4,6 +4,8 @@
 
 namespace Render
 {
+__ImplementResourceClass(Render::CMaterial, 'MTRL', Resources::CResource);
+
 bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
 
 bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)

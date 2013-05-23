@@ -10,7 +10,7 @@ DEFINE_TYPE_EX(Render::PTexture, PTexture)
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CTexture, Resources::CResource);
+__ImplementResourceClass(Render::CTexture, 'RTEX', Resources::CResource);
 
 bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 {

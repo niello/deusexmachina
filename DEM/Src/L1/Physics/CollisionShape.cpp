@@ -4,7 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionShape, Core::CRefCounted);
+__ImplementResourceClass(Physics::CCollisionShape, 'CSHP', Resources::CResource);
 
 bool CCollisionShape::Setup(btCollisionShape* pShape)
 {

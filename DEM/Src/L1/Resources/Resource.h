@@ -27,16 +27,19 @@ class CResource: public Core::CRefCounted
 protected:
 
 	CStrID				UID;
+	DWORD				ByteSize;
 	EResourceState		State;
+
+	CResource(CStrID ID): UID(ID), ByteSize(0), State(Rsrc_NotLoaded) {} // Create only by manager
 
 public:
 
-	CResource(CStrID ID): UID(ID), State(Rsrc_NotLoaded) {} // Create only by manager
 	virtual ~CResource() {}
 
 	virtual void	Unload() { State = Rsrc_NotLoaded; }
 
 	CStrID			GetUID() const { return UID; }
+	DWORD			GetSizeInBytes() const { return ByteSize; }
 	EResourceState	GetState() const { return State; }
 	bool			IsLoaded() const { return State == Rsrc_Loaded; }
 };
@@ -44,5 +47,19 @@ public:
 typedef Ptr<CResource> PResource;
 
 }
+
+#define __ImplementResourceClass(Class, FourCC, ParentClass) \
+	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
+	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
+	Core::CRefCounted* Class::FactoryCreator(void* pParam) { return Class::Create(pParam); } \
+	Class* Class::Create(void* pParam) { return n_new(Class)(*(CStrID*)pParam); } \
+	bool Class::RegisterInFactory() \
+	{ \
+		if (!Factory->IsRegistered(#Class)) \
+			Factory->Register(Class::RTTI, #Class, FourCC); \
+		OK; \
+	} \
+	void Class::ForceFactoryRegistration() { Class::Registered; } \
+	const bool Class::Registered = Class::RegisterInFactory();
 
 #endif

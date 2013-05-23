@@ -15,7 +15,7 @@ namespace Render
 
 class CTexture: public Resources::CResource
 {
-	__DeclareClassNoFactory;
+	__DeclareClass(CTexture);
 
 public:
 

@@ -13,11 +13,13 @@ namespace Physics
 
 class CCollisionShape: public Resources::CResource
 {
-	__DeclareClassNoFactory;
+	__DeclareClass(CCollisionShape);
 
 protected:
 
 	btCollisionShape*	pBtShape;
+	//btBvhTriangleMeshShape(btStridingMeshInterface*)
+	//btHeightfieldTerrainShape(const void* heightfieldData)
 
 public:
 

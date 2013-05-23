@@ -4,7 +4,7 @@
 
 namespace Anim
 {
-__ImplementClassNoFactory(Anim::CKeyframeClip, Anim::CAnimClip);
+__ImplementResourceClass(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
 
 bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping, float Length)
 {

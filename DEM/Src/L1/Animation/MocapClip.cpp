@@ -4,7 +4,7 @@
 
 namespace Anim
 {
-__ImplementClassNoFactory(Anim::CMocapClip, Anim::CAnimClip);
+__ImplementResourceClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
 
 bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping, vector4* _pKeys,
 					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
