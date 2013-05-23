@@ -5,6 +5,7 @@
 
 namespace Render
 {
+__ImplementResourceClass(Render::CMesh, 'MESH', Resources::CResource);
 
 bool CMesh::Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups)
 {

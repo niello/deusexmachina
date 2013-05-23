@@ -73,26 +73,27 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 		for (int i = 0; i < Desc->GetCount(); ++i)
 		{
 			CParam& Prm = Desc->Get(i);
+
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
-			Anim::PAnimClip Clip = SceneSrv->AnimationMgr.GetTypedResource(ClipRsrcID);
-			if (!Clip.IsValid())
-			{
-				nString FileName = ClipRsrcID.CStr();
-				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
-					Clip = n_new(Anim::CMocapClip(ClipRsrcID));
-				else if (FileName.CheckExtension("kfa"))
-					Clip = n_new(Anim::CKeyframeClip(ClipRsrcID));
-				n_verify(SceneSrv->AnimationMgr.AddResource(Clip));
-			}
+			nString FileName = ClipRsrcID.CStr();
+			bool IsMocap = FileName.CheckExtension("mca") || FileName.CheckExtension("nax2");
+			
+			Anim::PAnimClip Clip;
+			if (IsMocap)
+				Clip = SceneSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CMocapClip>(ClipRsrcID);
+			else
+				Clip = SceneSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CKeyframeClip>(ClipRsrcID);
+			
 			if (!Clip->IsLoaded())
 			{
 				nString FileName = Clip->GetUID().CStr();
-				if (FileName.CheckExtension("mca") || FileName.CheckExtension("nax2"))
+				if (IsMocap)
 					LoadMocapClipFromNAX2(FileName, Bones, (Anim::CMocapClip*)Clip.GetUnsafe());
-				else if (FileName.CheckExtension("kfa"))
+				else
 					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.GetUnsafe());
 			}
 			n_assert(Clip->IsLoaded());
+			
 			Clips.Add(Prm.GetName(), Clip);
 		}
 	}

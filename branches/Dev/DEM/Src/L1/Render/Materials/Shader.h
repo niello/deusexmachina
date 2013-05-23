@@ -25,6 +25,8 @@ namespace Render
 
 class CShader: public Resources::CResource
 {
+	__DeclareClass(CShader);
+
 public:
 
 	typedef D3DXHANDLE HVar;

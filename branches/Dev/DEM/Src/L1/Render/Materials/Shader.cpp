@@ -5,6 +5,7 @@
 
 namespace Render
 {
+__ImplementResourceClass(Render::CShader, 'SHDR', Resources::CResource);
 
 bool CShader::Setup(ID3DXEffect* pFX)
 {

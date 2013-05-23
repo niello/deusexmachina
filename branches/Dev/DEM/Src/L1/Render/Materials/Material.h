@@ -21,6 +21,8 @@ namespace Render
 
 class CMaterial: public Resources::CResource
 {
+	__DeclareClass(CMaterial);
+
 protected:
 
 	PShader			Shader;

@@ -28,6 +28,8 @@ struct CMeshGroup
 
 class CMesh: public Resources::CResource
 {
+	__DeclareClass(CMesh);
+
 protected:
 
 	//!!!if VB & IB are shared, need to store offset (and mb total size) here!
