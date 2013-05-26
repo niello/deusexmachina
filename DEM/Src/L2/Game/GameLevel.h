@@ -27,6 +27,7 @@ namespace Scene
 
 namespace Physics
 {
+	typedef Ptr<class CPhysicsWorld> PPhysicsWorld;
 	typedef Ptr<class CPhysWorldOld> PPhysWorldOld;
 	typedef int CMaterialType;
 }
@@ -60,7 +61,8 @@ protected:
 	Scripting::PScriptObject	Script;
 
 	Scene::PScene				Scene;
-	Physics::PPhysWorldOld		PhysWorld;
+	Physics::PPhysicsWorld		PhysWorld;
+	Physics::PPhysWorldOld		PhysWorldOld;
 	AI::PAILevel				AILevel;
 
 	bool OnEvent(const Events::CEventBase& Event);
@@ -69,32 +71,33 @@ public:
 
 	~CGameLevel();
 
-	bool			Init(CStrID LevelID, const Data::CParams& Desc);
-	void			Term();
-	void			Trigger();
-	void			RenderScene();
-	void			RenderDebug();
+	bool					Init(CStrID LevelID, const Data::CParams& Desc);
+	void					Term();
+	void					Trigger();
+	void					RenderScene();
+	void					RenderDebug();
 
 	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
 
 	// Screen queries
-	bool			GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
-	DWORD			GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const;
-	bool			GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
-	bool			GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
-	bool			GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+	bool					GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
+	DWORD					GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const;
+	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
+	bool					GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 
 	// Physics-based queries
-	DWORD			GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const;
-	DWORD			GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const;
-	bool			GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f, DWORD SelpPhysID = -1) const;
+	DWORD					GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const;
+	DWORD					GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const;
+	bool					GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f, DWORD SelpPhysID = -1) const;
 
-	CStrID			GetID() const { return ID; }
-	const nString&	GetName() const { return Name; }
+	CStrID					GetID() const { return ID; }
+	const nString&			GetName() const { return Name; }
 
-	Scene::CScene*	GetScene() const { return Scene.GetUnsafe(); }
-	Physics::CPhysWorldOld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
-	AI::CAILevel*	GetAI() const { return AILevel.GetUnsafe(); }
+	Scene::CScene*			GetScene() const { return Scene.GetUnsafe(); }
+	Physics::CPhysicsWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
+	Physics::CPhysWorldOld*	GetPhysicsOld() const { return PhysWorldOld.GetUnsafe(); }
+	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

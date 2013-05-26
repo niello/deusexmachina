@@ -131,7 +131,7 @@ T* CEntityManager::AttachProperty(Game::CEntity& Entity) const
 	PProperty Prop;
 	if (!T::pStorage->Get(Entity.GetUID(), Prop))
 	{
-		Prop = T::Create();
+		Prop = T::CreateInstance();
 		n_assert(Prop.IsValid());
 		T::pStorage->Add(Entity.GetUID(), Prop);
 		Prop->SetEntity(&Entity);

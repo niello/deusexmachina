@@ -6,6 +6,7 @@
     @ingroup NebulaMathDataTypes
 
     A generic matrix33 class.
+	Row-major.
 
     (C) 2002 RadonLabs GmbH
 */

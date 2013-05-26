@@ -46,21 +46,19 @@ void CPropPhysics::EnablePhysics()
 {
 	n_assert(!IsEnabled());
 
-	nString PhysicsDesc;
-	if (!GetEntity()->GetAttr<nString>(PhysicsDesc, CStrID("Physics"))) return;
-
 	if (!PhysicsEntity.IsValid())
 	{
-		// Create and setup physics entity
+		nString PhysicsDesc;
+		if (!GetEntity()->GetAttr<nString>(PhysicsDesc, CStrID("PhysicsOld"))) return;
 		PhysicsEntity = CreatePhysicsEntity();
 		n_assert(PhysicsEntity.IsValid());
-		PhysicsEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"));
+		PhysicsEntity->CompositeName = PhysicsDesc;
 		PhysicsEntity->SetUserData(GetEntity()->GetUID());
 	}
 
 	// Attach physics entity to physics level
 	PhysicsEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	GetEntity()->GetLevel().GetPhysics()->AttachEntity(PhysicsEntity);
+	GetEntity()->GetLevel().GetPhysicsOld()->AttachEntity(PhysicsEntity);
 
 	PhysicsEntity->SetEnabled(true);
 
@@ -74,7 +72,7 @@ void CPropPhysics::DisablePhysics()
 	n_assert(IsEnabled());
 
 	// Release the physics entity
-	GetEntity()->GetLevel().GetPhysics()->RemoveEntity(GetPhysicsEntity()); // strange design
+	GetEntity()->GetLevel().GetPhysicsOld()->RemoveEntity(GetPhysicsEntity()); // strange design
 	CPropAbstractPhysics::DisablePhysics();
 }
 //---------------------------------------------------------------------
@@ -112,7 +110,7 @@ void CPropPhysics::SetTransform(const matrix44& NewTF)
 
 Physics::CEntity* CPropPhysics::CreatePhysicsEntity()
 {
-	return Physics::CEntity::Create();
+	return Physics::CEntity::CreateInstance();
 }
 //---------------------------------------------------------------------
 

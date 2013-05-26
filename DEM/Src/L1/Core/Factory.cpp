@@ -28,7 +28,7 @@ CRefCounted* CFactory::Create(const nString& ClassName, void* pParam) const
 	n_assert2_dbg(IsRegistered(ClassName), ClassName.CStr());
 	const CRTTI* pRTTI = GetRTTI(ClassName);
 	n_assert_dbg(pRTTI);
-	return pRTTI->Create(pParam);
+	return pRTTI->CreateInstance(pParam);
 }
 //---------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ CRefCounted* CFactory::Create(nFourCC ClassFourCC, void* pParam) const
 	n_assert2_dbg(IsRegistered(ClassFourCC), n_fourcctostr(ClassFourCC));
 	const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 	n_assert_dbg(pRTTI);
-	return pRTTI->Create(pParam);
+	return pRTTI->CreateInstance(pParam);
 }
 //---------------------------------------------------------------------
 

@@ -142,7 +142,7 @@ void CAudioServer::RemoveEntity(CAudioEntity* pEntity)
 //bool CAudioServer::OpenWaveBank(const nString& Name)
 //{
 	//n_assert(!WaveBank.IsValid());
-	//WaveBank = CWaveBank::Create();
+	//WaveBank = CWaveBank::CreateInstance();
 	//WaveBank->SetFilename(Name);
 	//return WaveBank->Open();
 //	FAIL;

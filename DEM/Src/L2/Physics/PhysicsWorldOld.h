@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_PHYSICS_WORLD_H__ //!!!to L1!
-#define __DEM_L1_PHYSICS_WORLD_H__
+#ifndef __DEM_L1_PHYSICS_WORLD_OLD_H__ //!!!to L1!
+#define __DEM_L1_PHYSICS_WORLD_OLD_H__
 
 #include <Core/RefCounted.h>
 #include <Physics/Joints/Joint.h>
@@ -58,13 +58,8 @@ public:
 
 	void			AttachShape(CShape* pShape);
 	void			RemoveShape(CShape* pShape);
-	int				GetNumShapes() const { return Shapes.GetCount(); }
-	CShape*			GetShapeAt(int Idx) const { return Shapes[Idx]; }
-
 	void			AttachEntity(CEntity* pEnt);
 	void			RemoveEntity(CEntity* pEnt);
-	int				GetNumEntities() const { return Entities.GetCount(); }
-	CEntity*		GetEntityAt(int Idx) const { return Entities[Idx]; }
 
 	bool					RayTest(const vector3& Pos, const vector3& Dir);
 	const CContactPoint*	GetClosestRayContact(const vector3& Pos, const vector3& Dir, DWORD SelfPhysID = -1);

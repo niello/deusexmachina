@@ -3,13 +3,21 @@
 #include <Game/GameLevel.h>
 #include <Scene/Scene.h>
 #include <Physics/Collision/Shape.h>
+#include <Physics/CollisionObject.h>
 #include <Physics/PhysicsWorldOld.h>
+#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
 namespace Scene
 {
 	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
+}
+
+namespace Physics
+{
+	PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName);
 }
 
 namespace Game
@@ -64,7 +72,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
 	}
 
-	const nString& CompositeName = Desc->Get<nString>(CStrID("Physics"), NULL);    
+	const nString& CompositeName = Desc->Get<nString>(CStrID("PhysicsOld"), NULL);    
 	if (CompositeName.IsValid())
 	{
 		Data::PParams Desc = DataSrv->LoadPRM(nString("physics:") + CompositeName + ".prm");
@@ -75,11 +83,13 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 			for (int i = 0; i < Shapes.GetCount(); ++i)
 			{
 				Data::PParams ShapeDesc = Shapes[i];
-				PShape pShape = (CShape*)Factory->Create("Physics::C" + ShapeDesc->Get<nString>(CStrID("Type")));
+				nString ShCls = ShapeDesc->Get<nString>(CStrID("Type"));
+				if (ShCls == "HeightfieldShape") ShCls = "HeightfieldShapeOld";
+				PShape pShape = (CShape*)Factory->Create("Physics::C" + ShCls);
 				pShape->Init(ShapeDesc);
 				CollLocalTfm.Append(pShape->GetTransform());
 				Collision.Append(pShape);
-				Level->GetPhysics()->AttachShape(pShape);
+				Level->GetPhysicsOld()->AttachShape(pShape);
 				//???associate collision shape with game entity UID?
 			}
 		}
@@ -91,15 +101,35 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 			Collision[i]->SetTransform(CollLocalTfm[i] * Node->GetWorldMatrix());
 	}
 	else SetTransform(Desc->Get<matrix44>(CStrID("Transform")));
+
+	const matrix44& Tfm = Node.IsValid() ? Node->GetWorldMatrix() : Desc->Get<matrix44>(CStrID("Transform"));
+
+	//???use composites in the new physics system?
+	//composite is a set of bodies and joints
+	//each body can/must have one shape
+	//shape can be compound
+	CStrID Coll = Desc->Get<CStrID>(CStrID("Collision"), CStrID::Empty);    
+	if (Coll.IsValid() && Level->GetPhysics())
+	{
+		Physics::PCollisionShape Shape = PhysicsSrv->CollShapeMgr.GetTypedResource(Coll);
+		if (!Shape.IsValid())
+			Shape = LoadCollisionShapeFromPRM(Coll, nString("physics:") + Coll.CStr() + ".hrd"); //!!!prm!
+		//!!!???what if shape is found but is not loaded? RESMGR problem!
+		n_assert(Shape->IsLoaded());
+		Physics::PCollisionObject Obj = n_new(Physics::CCollisionObject)(*Shape);
+		Level->GetPhysics()->AddCollisionObject(*Obj, Tfm, 0x01, 0xffff); //!!!set normal flags!
+	}
 }
 //---------------------------------------------------------------------
 
 void CStaticObject::Term()
 {
 	for (int i = 0; i < Collision.GetCount(); ++i)
-		Level->GetPhysics()->RemoveShape(Collision[i]);
+		Level->GetPhysicsOld()->RemoveShape(Collision[i]);
 	Collision.Clear();
 	CollLocalTfm.Clear();
+
+	//!!!remove bullet obj!
 
 	if (Node.IsValid() && !ExistingNode)
 	{
@@ -113,6 +143,8 @@ void CStaticObject::Term()
 
 void CStaticObject::SetTransform(const matrix44& Tfm)
 {
+	//???!!!allow to set Bullet obj tfm?!
+
 	for (int i = 0; i < Collision.GetCount(); ++i)
 		Collision[i]->SetTransform(CollLocalTfm[i] * Tfm);
 	if (Node.IsValid()) Node->SetWorldTransform(Tfm);

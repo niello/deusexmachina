@@ -81,7 +81,7 @@ PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 	if (!File.Open(FileName, IO::SAM_READ)) return NULL;
 	IO::CBinaryReader Reader(File);
 
-	PParams Params = CParams::Create();
+	PParams Params = CParams::CreateInstance();
 	if (Reader.ReadParams(*Params))
 	{
 		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle path to avoid duplicates?

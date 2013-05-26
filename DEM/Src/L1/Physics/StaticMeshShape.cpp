@@ -1,12 +1,11 @@
-#include "CollisionShape.h"
-
-#include <BulletCollision/CollisionShapes/btCollisionShape.h>
+#include "StaticMeshShape.h"
 
 namespace Physics
 {
-__ImplementResourceClass(Physics::CCollisionShape, 'CSHP', Resources::CResource);
+__ImplementResourceClass(Physics::CStaticMeshShape, 'SMSH', Physics::CCollisionShape);
 
-bool CCollisionShape::Setup(btCollisionShape* pShape)
+/*
+bool CStaticMeshShape::Setup(btBvhTriangleMeshShape* pShape)
 {
 	if (!pShape)
 	{
@@ -14,16 +13,13 @@ bool CCollisionShape::Setup(btCollisionShape* pShape)
 		FAIL;
 	}
 
-	//n_assert(!pShape->getUserPointer());
-	//pShape->setUserPointer(this);
-
 	pBtShape = pShape;
 	State = Resources::Rsrc_Loaded;
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CCollisionShape::Unload()
+void CStaticMeshShape::Unload()
 {
 	n_assert(GetRefCount() <= 1); //!!!if unload when used, physics will crash!
 	if (pBtShape)
@@ -34,5 +30,6 @@ void CCollisionShape::Unload()
 	State = Resources::Rsrc_NotLoaded;
 }
 //---------------------------------------------------------------------
+*/
 
 }

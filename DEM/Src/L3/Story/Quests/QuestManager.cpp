@@ -378,7 +378,7 @@ bool CQuestManager::OnSave(const Events::CEventBase& Event)
 	int TblIdx = pDB->FindTableIndex(StrQuests);
 	if (TblIdx == INVALID_INDEX)
 	{
-		Tbl = DB::CTable::Create();
+		Tbl = DB::CTable::CreateInstance();
 		Tbl->SetName(StrQuests);
 		Tbl->AddColumn(DB::CColumn(Attr::QuestID, DB::CColumn::Primary));
 		Tbl->AddColumn(DB::CColumn(Attr::TaskID, DB::CColumn::Primary));

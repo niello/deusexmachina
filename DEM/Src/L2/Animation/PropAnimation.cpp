@@ -77,13 +77,13 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
 			nString FileName = ClipRsrcID.CStr();
 			bool IsMocap = FileName.CheckExtension("mca") || FileName.CheckExtension("nax2");
-			
+
 			Anim::PAnimClip Clip;
 			if (IsMocap)
 				Clip = SceneSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CMocapClip>(ClipRsrcID);
 			else
 				Clip = SceneSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CKeyframeClip>(ClipRsrcID);
-			
+
 			if (!Clip->IsLoaded())
 			{
 				nString FileName = Clip->GetUID().CStr();
@@ -93,7 +93,7 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.GetUnsafe());
 			}
 			n_assert(Clip->IsLoaded());
-			
+
 			Clips.Add(Prm.GetName(), Clip);
 		}
 	}

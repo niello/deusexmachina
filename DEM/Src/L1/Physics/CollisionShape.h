@@ -18,18 +18,16 @@ class CCollisionShape: public Resources::CResource
 protected:
 
 	btCollisionShape*	pBtShape;
-	//btBvhTriangleMeshShape(btStridingMeshInterface*)
-	//btHeightfieldTerrainShape(const void* heightfieldData)
 
 public:
 
 	CCollisionShape(CStrID ID): CResource(ID), pBtShape(NULL) {}
 	virtual ~CCollisionShape() { if (IsLoaded()) Unload(); }
 
-	bool			Setup(btCollisionShape* pShape);
-	virtual void	Unload();
+	bool				Setup(btCollisionShape* pShape);
+	virtual void		Unload();
 
-	const btCollisionShape*	GetBtShape() const { return pBtShape; }
+	btCollisionShape*	GetBtShape() const { return pBtShape; }
 };
 
 typedef Ptr<CCollisionShape> PCollisionShape;

@@ -590,7 +590,7 @@ bool CScriptServer::OnSaveBefore(const Events::CEventBase& Event)
 	int TableIdx = pDB->FindTableIndex(StrLuaObjects);
 	if (TableIdx == INVALID_INDEX)
 	{
-		Tbl = DB::CTable::Create();
+		Tbl = DB::CTable::CreateInstance();
 		Tbl->SetName(StrLuaObjects);
 		Tbl->AddColumn(DB::CColumn(CStrID("LuaObjName"), DB::CColumn::Primary));
 		Tbl->AddColumn(DB::CColumn(CStrID("LuaFieldName"), DB::CColumn::Primary));

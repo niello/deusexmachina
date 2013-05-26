@@ -38,10 +38,13 @@ public:
 
 	PResource	CreateResource(CStrID UID, const Core::CRTTI& Type);
 	PResource	GetResource(CStrID UID);
-	int			UnloadResource(CStrID UID); // returns remaining refcount, if 0, was really unloaded, if -1, was not found
+	int			DeleteResource(CStrID UID); // returns remaining refcount, if 0, was really unloaded, if -1, was not found
+	bool		ResourceExists(CStrID UID) const { return UIDToResource.Contains(UID); }
 
-	DWORD		UnloadUnreferenced(); // returns count/mem size
-	DWORD		FreeMemory(DWORD DesiredBytes); // returns really freed mem size
+	DWORD		UnloadUnreferenced();
+	DWORD		DeleteUnreferenced();
+	DWORD		FreeMemory(DWORD DesiredBytes);
+	DWORD		GetMemoryUsed();
 };
 
 inline PResource IResourceManager::GetResource(CStrID UID)

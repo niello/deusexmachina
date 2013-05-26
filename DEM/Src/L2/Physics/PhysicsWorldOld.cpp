@@ -331,7 +331,7 @@ void CPhysWorldOld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 				float Volume = n_saturate((-Velocity.dot(Normal) - 0.3f) / 4.0f);
 				if (Volume > 0.0f)
 				{
-					Ptr<Event::PlaySound> Evt = Event::PlaySound::Create();
+					Ptr<Event::PlaySound> Evt = Event::PlaySound::CreateInstance();
 					Evt->Name = Sound;
 					Evt->Position.set(Contact[0].geom.pos[0], Contact[0].geom.pos[1], Contact[0].geom.pos[2]);
 					Evt->Volume = Volume;

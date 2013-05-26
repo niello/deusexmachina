@@ -42,9 +42,9 @@ CCharEntity::~CCharEntity()
 // is "alive" (not in its ragdoll state).
 void CCharEntity::CreateDefaultComposite()
 {
-	DefaultComposite = CComposite::Create();
+	DefaultComposite = CComposite::CreateInstance();
 
-	PRigidBody BaseBody = CRigidBody::Create();
+	PRigidBody BaseBody = CRigidBody::CreateInstance();
 	BaseBody->Name = "CharEntityBody";
 
 	float CapsuleLength = Height - 2.0f * Radius - Hover;
@@ -60,7 +60,7 @@ void CCharEntity::CreateDefaultComposite()
 	DefaultComposite->AddBody(BaseBody);
 	DefaultComposite->EndBodies();
 
-	Ptr<CAMotor> AMotor = CAMotor::Create();
+	Ptr<CAMotor> AMotor = CAMotor::CreateInstance();
 	AMotor->SetBodies(BaseBody, NULL);
 	AMotor->SetNumAxes(2);
 	AMotor->AxisParams[0].Axis = vector3(1.0f, 0.0f, 0.0f);
