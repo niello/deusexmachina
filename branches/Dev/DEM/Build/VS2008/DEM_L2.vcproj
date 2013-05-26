@@ -1249,11 +1249,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\HeightfieldShape.cpp"
+					RelativePath="..\..\Src\L2\Physics\Collision\HeightfieldShapeOld.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\HeightfieldShape.h"
+					RelativePath="..\..\Src\L2\Physics\Collision\HeightfieldShapeOld.h"
 					>
 				</File>
 				<File

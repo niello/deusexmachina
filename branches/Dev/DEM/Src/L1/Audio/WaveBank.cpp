@@ -80,7 +80,7 @@
 //CWaveResource* CWaveBank::CreateResource(const nString& Name)
 //{
 //	n_assert(Name.IsValid());
-//	CWaveResource* pNewWave = CWaveResource::Create();
+//	CWaveResource* pNewWave = CWaveResource::CreateInstance();
 //	pNewWave->SetName(Name);
 //	return pNewWave;
 //}

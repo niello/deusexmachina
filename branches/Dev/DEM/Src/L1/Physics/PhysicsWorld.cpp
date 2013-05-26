@@ -10,10 +10,31 @@
 //!!!later migrate to bullet math!
 inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
 inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
+inline btTransform TfmToBtTfm(const matrix44& Tfm)
+{
+	vector3 AxisX = Tfm.AxisX();
+	AxisX.norm();
+	vector3 AxisY = Tfm.AxisY();
+	AxisY.norm();
+	vector3 AxisZ = Tfm.AxisZ();
+	AxisZ.norm();
+	return btTransform(
+		btMatrix3x3(
+			AxisX.x, AxisX.y, AxisX.z,
+			AxisY.x, AxisY.y, AxisY.z,
+			AxisZ.x, AxisZ.y, AxisZ.z),
+		VectorToBtVector(Tfm.Translation()));
+}
 
 namespace Physics
 {
 __ImplementClassNoFactory(Physics::CPhysicsWorld, Core::CRefCounted);
+
+CPhysicsWorld::~CPhysicsWorld()
+{
+	Term();
+}
+//---------------------------------------------------------------------
 
 // Called by Physics::Server when the Level is attached to the server.
 bool CPhysicsWorld::Init(const bbox3& Bounds)
@@ -87,6 +108,9 @@ void CPhysicsWorld::Term()
 {
 	if (pBtDynWorld)
 	{
+		for (int i = 0; i < CollObjects.GetCount(); ++i)
+			pBtDynWorld->removeCollisionObject(CollObjects[i]->GetBtObject());
+
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
 		btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
@@ -100,6 +124,8 @@ void CPhysicsWorld::Term()
 
 		pBtDynWorld = NULL;
 	}
+
+	CollObjects.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -126,6 +152,23 @@ void CPhysicsWorld::RenderDebug()
 {
 	n_assert(pBtDynWorld);
 	//pBtDynWorld->debugDrawWorld();
+}
+//---------------------------------------------------------------------
+
+bool CPhysicsWorld::AddCollisionObject(CCollisionObject& Obj, const matrix44& Tfm, ushort Group, ushort Mask)
+{
+	n_assert(pBtDynWorld && Obj.GetBtObject());
+	CollObjects.Append(&Obj);
+	Obj.GetBtObject()->setWorldTransform(TfmToBtTfm(Tfm));
+	pBtDynWorld->addCollisionObject(Obj.GetBtObject(), Group, Mask);
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CPhysicsWorld::RemoveCollisionObject(CCollisionObject& Obj)
+{
+	pBtDynWorld->removeCollisionObject(Obj.GetBtObject());
+	CollObjects.RemoveByValue(&Obj);
 }
 //---------------------------------------------------------------------
 

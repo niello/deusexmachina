@@ -6,6 +6,7 @@
     @ingroup NebulaMathDataTypes
 
     Generic matrix44 class.
+	Row-major.
 
     (C) 2002 RadonLabs GmbH
 */

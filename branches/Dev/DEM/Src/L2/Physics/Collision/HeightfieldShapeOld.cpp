@@ -1,4 +1,4 @@
-#include "HeightfieldShape.h"
+#include "HeightfieldShapeOld.h"
 
 #include <IO/BTFile.h>
 #include <Data/Buffer.h>
@@ -6,9 +6,9 @@
 
 namespace Physics
 {
-__ImplementClass(Physics::CHeightfieldShape, 'HFSH', Physics::CShape);
+__ImplementClass(Physics::CHeightfieldShapeOld, 'HFSO', Physics::CShape);
 
-CHeightfieldShape::CHeightfieldShape():
+CHeightfieldShapeOld::CHeightfieldShapeOld():
 	CShape(Heightfield),
 	pHeights(NULL),
 	Width(0),
@@ -19,13 +19,13 @@ CHeightfieldShape::CHeightfieldShape():
 }
 //---------------------------------------------------------------------
 
-CHeightfieldShape::~CHeightfieldShape()
+CHeightfieldShapeOld::~CHeightfieldShapeOld()
 {
 	if (IsAttached()) Detach();
 }
 //---------------------------------------------------------------------
 
-void CHeightfieldShape::Init(Data::PParams Desc)
+void CHeightfieldShapeOld::Init(Data::PParams Desc)
 {
 	InitialTfm.ident(); //??? (was in mangalore, see XML CompositeLoader)
 	SetTransform(InitialTfm);
@@ -34,7 +34,7 @@ void CHeightfieldShape::Init(Data::PParams Desc)
 }
 //---------------------------------------------------------------------
 
-bool CHeightfieldShape::Attach(dSpaceID SpaceID)
+bool CHeightfieldShapeOld::Attach(dSpaceID SpaceID)
 {
     if (!CShape::Attach(SpaceID)) FAIL;
 
@@ -65,7 +65,7 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 	}
 	else
 	{
-		n_error("CHeightfieldShape: invalid file extension in '%s'", FileName.CStr());
+		n_error("CHeightfieldShapeOld: invalid file extension in '%s'", FileName.CStr());
 		FAIL;
 	}
 
@@ -97,7 +97,7 @@ bool CHeightfieldShape::Attach(dSpaceID SpaceID)
 }
 //---------------------------------------------------------------------
 
-void CHeightfieldShape::Detach()
+void CHeightfieldShapeOld::Detach()
 {
 	n_assert(IsAttached());
 	n_assert(pHeights);
@@ -111,7 +111,7 @@ void CHeightfieldShape::Detach()
 };
 //---------------------------------------------------------------------
 
-void CHeightfieldShape::RenderDebug(const matrix44& ParentTfm)
+void CHeightfieldShapeOld::RenderDebug(const matrix44& ParentTfm)
 {
 	if (!IsAttached()) return;
 	//matrix44 Tfm = Transform * ParentTfm;

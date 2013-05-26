@@ -86,7 +86,7 @@ bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 		int TableIdx = pDB->FindTableIndex("Inventories");
 		if (TableIdx == INVALID_INDEX)
 		{
-			DB::PTable Tbl = DB::CTable::Create();
+			DB::PTable Tbl = DB::CTable::CreateInstance();
 			Tbl->SetName("Inventories");
 			Tbl->AddColumn(DB::CColumn(Attr::ID, DB::CColumn::Primary)); // For equipment records
 			Tbl->AddColumn(DB::CColumn(Attr::ItemOwner, DB::CColumn::Indexed));
@@ -124,7 +124,7 @@ bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 		int TableIdx = pDB->FindTableIndex("Equipment");
 		if (TableIdx == INVALID_INDEX)
 		{
-			DB::PTable Tbl = DB::CTable::Create();
+			DB::PTable Tbl = DB::CTable::CreateInstance();
 			Tbl->SetName("Equipment");
 			Tbl->AddColumn(DB::CColumn(Attr::ID, DB::CColumn::Primary)); // Stack ID
 			Tbl->AddColumn(Attr::EquipSlotID);

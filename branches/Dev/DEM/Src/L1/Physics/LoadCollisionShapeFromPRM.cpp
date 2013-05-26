@@ -3,7 +3,7 @@
 
 //!!!NEED .bullet FILE LOADER!
 
-#include <Physics/CollisionShape.h>
+#include <Physics/HeightfieldShape.h>
 #include <Physics/PhysicsServer.h>
 #include <Data/DataServer.h>
 #include <Data/Params.h>
@@ -29,7 +29,7 @@ namespace Str
 	DEFINE_STRID(Size)
 	DEFINE_STRID(Capsule)
 	DEFINE_STRID(Height)
-	DEFINE_STRID(Mesh)
+	DEFINE_STRID(StaticMesh)
 	DEFINE_STRID(Heightfield)
 	DEFINE_STRID(FileName)
 }
@@ -39,25 +39,8 @@ namespace Physics
 
 PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 {
-	PCollisionShape Shape;
-	btCollisionShape* pBtShape;
-
 	CStrID Type = In.Get<CStrID>(Str::Type);
-	if (Type == Str::Sphere)
-	{
-		pBtShape = new btSphereShape(In.Get<float>(Str::Radius, 1.f));
-	}
-	else if (Type == Str::Box)
-	{
-		vector3 Ext = In.Get<vector4>(Str::Size, vector4(1.f, 1.f, 1.f, 0.f));
-		Ext *= 0.5f;
-		pBtShape = new btBoxShape(VectorToBtVector(Ext));
-	}
-	else if (Type == Str::Capsule)
-	{
-		pBtShape = new btCapsuleShape(In.Get<float>(Str::Radius, 1.f), In.Get<float>(Str::Height, 1.f));
-	}
-	else if (Type == Str::Mesh)
+	if (Type == Str::StaticMesh)
 	{
 		//Shape = 
 		//create btStridingMeshInterface*
@@ -105,32 +88,52 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 		}
 		else return NULL;
 
-		//???
-		const bool FlipQuadEdges = false;
+		PHeightfieldShape HFShape = PhysicsSrv->CollShapeMgr.CreateTypedResource<CHeightfieldShape>(UID);
+		if (HFShape.IsValid())
+		{
+			const bool FlipQuadEdges = false; //???
+			btHeightfieldTerrainShape* pBtShape =
+				new btHeightfieldTerrainShape(HFWidth, HFHeight, pHFData, HScale, MinH, MaxH, 1, PHY_SHORT, FlipQuadEdges);
+			if (HFShape->Setup(pBtShape, pHFData, (MinH + MaxH) * 0.5f)) return HFShape.GetUnsafe();
+			delete pBtShape;
+		}
 
-		//!!!float HFShape->GetHeightCompensationOffset();! bullet shifts the center!
-		//PHeightfieldShape HFShape = PhysicsSrv->CollShapeMgr.CreateTypedResource<CHeightfieldShape>(UID);
-		pBtShape = new btHeightfieldTerrainShape(HFWidth, HFHeight, pHFData, HScale, MinH, MaxH, 1, PHY_SHORT, FlipQuadEdges);
-		//if (HFShape->Setup(pBtShape, pHFData)) return HFShape;
+		n_free(pHFData);
+	}
+	else
+	{
+		btCollisionShape* pBtShape;
+
+		if (Type == Str::Sphere)
+		{
+			pBtShape = new btSphereShape(In.Get<float>(Str::Radius, 1.f));
+		}
+		else if (Type == Str::Box)
+		{
+			vector3 Ext = In.Get<vector4>(Str::Size, vector4(1.f, 1.f, 1.f, 0.f));
+			Ext *= 0.5f;
+			pBtShape = new btBoxShape(VectorToBtVector(Ext));
+		}
+		else if (Type == Str::Capsule)
+		{
+			pBtShape = new btCapsuleShape(In.Get<float>(Str::Radius, 1.f), In.Get<float>(Str::Height, 1.f));
+		}
+		else return NULL;
+
+		PCollisionShape Shape = PhysicsSrv->CollShapeMgr.CreateTypedResource(UID);
+		if (Shape.IsValid() && Shape->Setup(pBtShape)) return Shape;
 
 		delete pBtShape;
-		return NULL;
 	}
-	else return NULL;
 
-	if (!Shape.IsValid()) Shape = PhysicsSrv->CollShapeMgr.CreateTypedResource(UID);
-	if (!Shape.IsValid()) return NULL;
-
-	if (Shape->Setup(pBtShape)) return Shape;
-
-	delete pBtShape;
 	return NULL;
 }
 //---------------------------------------------------------------------
 
 PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName)
 {
-	Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
+	//!!!Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
+	Data::PParams Desc = DataSrv->LoadHRD(FileName, false);
 	return Desc.IsValid() ? LoadCollisionShapeFromPRM(UID, *Desc): NULL;
 }
 //---------------------------------------------------------------------

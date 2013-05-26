@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __DEM_L2_PHYSICS_SERVER_H__ //!!!to L1!
-#define __DEM_L2_PHYSICS_SERVER_H__
+#ifndef __DEM_L2_PHYSICS_SERVER_OLD_H__ //!!!to L1!
+#define __DEM_L2_PHYSICS_SERVER_OLD_H__
 
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
@@ -19,7 +19,7 @@ class CBoxShape;
 class CSphereShape;
 class CCapsuleShape;
 class CMeshShape;
-class CHeightfieldShape;
+class CHeightfieldShapeOld;
 
 #define PhysSrvOld Physics::CPhysicsServerOld::Instance()
 
@@ -44,8 +44,6 @@ protected:
 
 	friend class CPhysWorldOld;
 	friend class CRigidBody;
-	friend class TerrainEntity;
-	friend class MouseGripper;
 	friend class CEntity;
 
 public:
@@ -61,12 +59,9 @@ public:
 	CSphereShape*		CreateSphereShape(const matrix44& TF, CMaterialType MatType, float Radius) const;
 	CCapsuleShape*		CreateCapsuleShape(const matrix44& TF, CMaterialType MatType, float Radius, float Length) const;
 	CMeshShape*			CreateMeshShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const;
-	CHeightfieldShape*	CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const;
+	CHeightfieldShapeOld*	CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const;
 	
 	CComposite*			LoadCompositeFromPRM(const nString& Name) const;
-
-	bool			ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir, float Impulse,
-										 const CFilterSet* ExcludeSet = NULL);
 
 	CEntity*		FindEntityByUniqueID(DWORD uniqueId) const;
 	int				GetEntitiesInShape(PShape Shape, const CFilterSet& ExcludeSet,
@@ -84,9 +79,6 @@ public:
 	const CContacts&		GetContactPoints() const { return Contacts; }
 
 	static uint		GetUniqueStamp() { return ++UniqueStamp; }
-
-	//void			SetPointOfInterest(const vector3& NewPOI);
-	//const vector3&	GetPointOfInterest() const { return CurrLevel->GetPointOfInterest(); }
 };
 
 // Converts the rotational part of a matrix44 To ODE. This includes
@@ -126,16 +118,6 @@ inline CEntity* CPhysicsServerOld::FindEntityByUniqueID(DWORD UID) const
 	if (UID) Entities.Find(UID, pEnt);
 	return pEnt;
 }
-//---------------------------------------------------------------------
-
-// Set the current point of interest for the physics subsystem. This can
-// be for instance the position of the game entity which has the input focus.
-// Only the area around this point of interest should be simulated.
-//inline void CPhysicsServerOld::SetPointOfInterest(const vector3& NewPOI)
-//{
-//	n_assert(CurrLevel);
-//	CurrLevel->SetPointOfInterest(NewPOI);
-//}
 //---------------------------------------------------------------------
 
 }

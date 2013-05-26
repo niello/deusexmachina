@@ -62,7 +62,7 @@ void CPropTrigger::Activate()
 	pCollShape->SetCategoryBits(Physics::None);
 	pCollShape->SetCollideBits(Physics::None);
 
-	pCollShape->Attach(GetEntity()->GetLevel().GetPhysics()->GetODEDynamicSpaceID()); //???here or when enabled only?
+	pCollShape->Attach(GetEntity()->GetLevel().GetPhysicsOld()->GetODEDynamicSpaceID()); //???here or when enabled only?
 	SetEnabled(GetEntity()->GetAttr<bool>(CStrID("TrgEnabled")));
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropTrigger, OnPropsActivated);

@@ -6,13 +6,13 @@
 #include <Physics/Collision/SphereShape.h>
 #include <Physics/Collision/CapsuleShape.h>
 #include <Physics/Collision/MeshShape.h>
-#include <Physics/Collision/HeightfieldShape.h>
+#include <Physics/Collision/HeightfieldShapeOld.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
 namespace Physics
 {
-__ImplementClass(Physics::CPhysicsServerOld, 'PHSR', Core::CRefCounted);
+__ImplementClass(Physics::CPhysicsServerOld, 'PHSO', Core::CRefCounted);
 __ImplementSingleton(Physics::CPhysicsServerOld);
 
 uint CPhysicsServerOld::UniqueStamp = 0;
@@ -54,7 +54,7 @@ void CPhysicsServerOld::Close()
 
 CBoxShape* CPhysicsServerOld::CreateBoxShape(const matrix44& TF, CMaterialType MatType, const vector3& Size) const
 {
-	CBoxShape* Shape = CBoxShape::Create();
+	CBoxShape* Shape = CBoxShape::CreateInstance();
 	Shape->SetTransform(TF);
 	Shape->SetMaterialType(MatType);
 	Shape->SetSize(Size);
@@ -64,7 +64,7 @@ CBoxShape* CPhysicsServerOld::CreateBoxShape(const matrix44& TF, CMaterialType M
 
 CSphereShape* CPhysicsServerOld::CreateSphereShape(const matrix44& TF, CMaterialType MatType, float Radius) const
 {
-	CSphereShape* Shape = CSphereShape::Create();
+	CSphereShape* Shape = CSphereShape::CreateInstance();
 	Shape->SetTransform(TF);
 	Shape->SetMaterialType(MatType);
 	Shape->SetRadius(Radius);
@@ -75,7 +75,7 @@ CSphereShape* CPhysicsServerOld::CreateSphereShape(const matrix44& TF, CMaterial
 CCapsuleShape* CPhysicsServerOld::CreateCapsuleShape(const matrix44& TF, CMaterialType MatType,
 												  float Radius, float Length) const
 {
-	CCapsuleShape* Shape = CCapsuleShape::Create();
+	CCapsuleShape* Shape = CCapsuleShape::CreateInstance();
 	Shape->SetTransform(TF);
 	Shape->SetMaterialType(MatType);
 	Shape->SetRadius(Radius);
@@ -86,7 +86,7 @@ CCapsuleShape* CPhysicsServerOld::CreateCapsuleShape(const matrix44& TF, CMateri
 
 CMeshShape* CPhysicsServerOld::CreateMeshShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
 {
-	CMeshShape* Shape = CMeshShape::Create();
+	CMeshShape* Shape = CMeshShape::CreateInstance();
 	Shape->SetTransform(TF);
 	Shape->SetMaterialType(MatType);
 	Shape->SetFileName(FileName);
@@ -94,9 +94,9 @@ CMeshShape* CPhysicsServerOld::CreateMeshShape(const matrix44& TF, CMaterialType
 }
 //---------------------------------------------------------------------
 
-CHeightfieldShape* CPhysicsServerOld::CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
+CHeightfieldShapeOld* CPhysicsServerOld::CreateHeightfieldShape(const matrix44& TF, CMaterialType MatType, const nString& FileName) const
 {
-	CHeightfieldShape* Shape = CHeightfieldShape::Create();
+	CHeightfieldShapeOld* Shape = CHeightfieldShapeOld::CreateInstance();
 	Shape->SetTransform(TF);
 	Shape->SetMaterialType(MatType);
 	Shape->SetFileName(FileName);
@@ -122,7 +122,7 @@ CComposite* CPhysicsServerOld::LoadCompositeFromPRM(const nString& Name) const
 		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
 			PParams BodyDesc = Bodies[i];
-			PRigidBody pBody = CRigidBody::Create();
+			PRigidBody pBody = CRigidBody::CreateInstance();
 			pBody->Name = BodyDesc->Get<nString>(CStrID("Name"));
 			pBody->CollideConnected = BodyDesc->Get<bool>(CStrID("CollideConnected"), false);
 			matrix44 InitialTfm(quaternion(
@@ -193,26 +193,6 @@ CComposite* CPhysicsServerOld::LoadCompositeFromPRM(const nString& Name) const
 	}
 
 	return pComposite;
-}
-//---------------------------------------------------------------------
-
-// Apply an impulse on the first rigid body which lies along the defined ray.
-bool CPhysicsServerOld::ApplyImpulseAlongRay(const vector3& Pos, const vector3& Dir, float Impulse,
-										  const CFilterSet* ExcludeSet)
-{
-	const CContactPoint* pContact = NULL; //GetClosestRayContact(Pos, Dir, ExcludeSet);
-	if (pContact)
-	{
-		CRigidBody* Body = pContact->GetRigidBody();
-		if (Body)
-		{
-			vector3 NormDir = Dir;
-			NormDir.norm();
-			Body->ApplyImpulseAtPos(pContact->Position, NormDir * Impulse);
-			OK;
-		}
-	}
-	FAIL;
 }
 //---------------------------------------------------------------------
 

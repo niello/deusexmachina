@@ -42,10 +42,10 @@ void CPropActorPhysics::EnablePhysics()
 {
 	n_assert(!IsEnabled());
 
-	PhysEntity = Physics::CCharEntity::Create();
+	PhysEntity = Physics::CCharEntity::CreateInstance();
 	PhysEntity->SetUserData(GetEntity()->GetUID());
 	PhysEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);
+	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("PhysicsOld"), NULL);
 	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
 	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 	PhysEntity->Hover = 0.2f;
@@ -53,7 +53,7 @@ void CPropActorPhysics::EnablePhysics()
 	//!!!recreate physics capsule on R/H change!
 
 	//!!!GET LEVEL from entity!
-	GetEntity()->GetLevel().GetPhysics()->AttachEntity(PhysEntity);
+	GetEntity()->GetLevel().GetPhysicsOld()->AttachEntity(PhysEntity);
 
 	Stop();
 
@@ -66,7 +66,7 @@ void CPropActorPhysics::DisablePhysics()
 	n_assert(IsEnabled());
 
 	Stop();
-	GetEntity()->GetLevel().GetPhysics()->RemoveEntity(PhysEntity);
+	GetEntity()->GetLevel().GetPhysicsOld()->RemoveEntity(PhysEntity);
 	PhysEntity = NULL;
 
 	CPropAbstractPhysics::DisablePhysics();

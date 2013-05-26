@@ -1593,11 +1593,27 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionObject.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionObject.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Physics\CollisionShape.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Physics\CollisionShape.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\HeightfieldShape.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\HeightfieldShape.h"
 				>
 			</File>
 			<File
@@ -1618,6 +1634,14 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Physics\PhysicsWorld.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\StaticMeshShape.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\StaticMeshShape.h"
 				>
 			</File>
 		</Filter>

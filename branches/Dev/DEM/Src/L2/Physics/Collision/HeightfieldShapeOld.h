@@ -10,9 +10,9 @@
 namespace Physics
 {
 
-class CHeightfieldShape: public CShape
+class CHeightfieldShapeOld: public CShape
 {
-	__DeclareClass(CHeightfieldShape);
+	__DeclareClass(CHeightfieldShapeOld);
 
 protected:
 
@@ -25,8 +25,8 @@ protected:
 
 public:
 
-	CHeightfieldShape();
-	virtual ~CHeightfieldShape();
+	CHeightfieldShapeOld();
+	virtual ~CHeightfieldShapeOld();
 
 	virtual void	Init(Data::PParams Desc);
 	virtual bool	Attach(dSpaceID SpaceID);

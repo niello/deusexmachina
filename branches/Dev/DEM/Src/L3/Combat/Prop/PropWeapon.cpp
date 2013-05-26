@@ -80,7 +80,7 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 
 	//!!!check hit (accurecy etc)!
 
-	Ptr<ObjDamageDone> Event = ObjDamageDone::Create();
+	Ptr<ObjDamageDone> Event = ObjDamageDone::CreateInstance();
 	Event->EntDamager = GetEntity()->GetUID();
 	Event->Type = DmgType;
 

@@ -115,7 +115,7 @@ bool CTimeServer::OnSave(const Events::CEventBase& Event)
 	int Idx = pDB->FindTableIndex("TimeSources");
 	if (Idx == INVALID_INDEX)
 	{
-		Tbl = DB::CTable::Create();
+		Tbl = DB::CTable::CreateInstance();
 		Tbl->SetName("TimeSources");
 		Tbl->AddColumn(DB::CColumn(Attr::TimeSourceID, DB::CColumn::Primary));
 		Tbl->AddColumn(Attr::TimeSourceTime);

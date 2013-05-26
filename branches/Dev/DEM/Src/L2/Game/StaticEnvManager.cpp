@@ -21,7 +21,7 @@ bool CStaticEnvManager::CanEntityBeStatic(const Data::CParams& Desc) const
 	//scene allows node without an entity to be controlled
 
 	// We have physics bodies that can move us
-	const nString& PhysDescName = Attrs->Get<nString>(CStrID("Physics"), NULL);
+	const nString& PhysDescName = Attrs->Get<nString>(CStrID("PhysicsOld"), NULL);
 	if (PhysDescName.IsValid())
 	{
 		// It uses HRD cache, so it isn't so slow
