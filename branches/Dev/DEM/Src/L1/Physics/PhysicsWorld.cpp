@@ -1,30 +1,14 @@
 #include "PhysicsWorld.h"
 
+#include <Physics/BulletConv.h>
+#include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsDebugDraw.h>
 #include <mathlib/bbox.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
 //#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
-
-//!!!later migrate to bullet math!
-inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
-inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
-inline btTransform TfmToBtTfm(const matrix44& Tfm)
-{
-	vector3 AxisX = Tfm.AxisX();
-	AxisX.norm();
-	vector3 AxisY = Tfm.AxisY();
-	AxisY.norm();
-	vector3 AxisZ = Tfm.AxisZ();
-	AxisZ.norm();
-	return btTransform(
-		btMatrix3x3(
-			AxisX.x, AxisX.y, AxisX.z,
-			AxisY.x, AxisY.y, AxisY.z,
-			AxisZ.x, AxisZ.y, AxisZ.z),
-		VectorToBtVector(Tfm.Translation()));
-}
 
 namespace Physics
 {
@@ -55,6 +39,7 @@ bool CPhysicsWorld::Init(const bbox3& Bounds)
 	pBtDynWorld = new btDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
+	pBtDynWorld->setDebugDrawer(PhysicsSrv->GetDebugDrawer());
 
 	//!!!can reimplement with some notifications like FireEvent(OnCollision)!
 	//btGhostPairCallback* pGhostPairCB = new btGhostPairCallback(); //!!!delete!
@@ -151,7 +136,7 @@ void CPhysicsWorld::Trigger(float FrameTime)
 void CPhysicsWorld::RenderDebug()
 {
 	n_assert(pBtDynWorld);
-	//pBtDynWorld->debugDrawWorld();
+	pBtDynWorld->debugDrawWorld();
 }
 //---------------------------------------------------------------------
 

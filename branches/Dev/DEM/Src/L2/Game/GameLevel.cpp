@@ -114,6 +114,7 @@ void CGameLevel::Trigger()
 	if (PhysWorld.IsValid())
 	{
 		FireEvent(CStrID("BeforePhysics"));
+		PhysWorldOld->Trigger((float)GameSrv->GetFrameTime());
 		PhysWorld->Trigger((float)GameSrv->GetFrameTime());
 		FireEvent(CStrID("AfterPhysics"));
 	}

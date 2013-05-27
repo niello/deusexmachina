@@ -241,7 +241,7 @@ void nArray<T>::Resize(int NewAllocSize)
 	Allocated = NewAllocSize;
 	Count = (NewAllocSize < Count) ? NewAllocSize : Count;
 
-/*
+	/*
 	T* pNewData = (T*)n_malloc(sizeof(T) * NewAllocSize);
 
 	int NewSize = (NewAllocSize < Count) ? NewAllocSize : Count;

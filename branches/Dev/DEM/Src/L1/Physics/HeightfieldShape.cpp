@@ -6,12 +6,12 @@ namespace Physics
 {
 __ImplementResourceClass(Physics::CHeightfieldShape, 'HFSH', Physics::CCollisionShape);
 
-bool CHeightfieldShape::Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, float HeightOffset)
+bool CHeightfieldShape::Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset)
 {
 	if (pHeightMapData && CCollisionShape::Setup(pShape))
 	{
 		pHFData = pHeightMapData;
-		HOffset = HeightOffset;
+		Offset = ShapeOffset;
 		OK;
 	}
 

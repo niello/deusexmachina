@@ -97,7 +97,7 @@ protected:
 
 public:
 
-	CDebugDraw() { __ConstructSingleton; }
+	CDebugDraw(): Lines(0, 256) { __ConstructSingleton; }
 	~CDebugDraw() { __DestructSingleton; }
 
 	bool	Open();

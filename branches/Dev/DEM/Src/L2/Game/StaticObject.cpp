@@ -105,9 +105,12 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	const matrix44& Tfm = Node.IsValid() ? Node->GetWorldMatrix() : Desc->Get<matrix44>(CStrID("Transform"));
 
 	//???use composites in the new physics system?
+	//call it CCompoundBody
 	//composite is a set of bodies and joints
 	//each body can/must have one shape
 	//shape can be compound
+	//composite can't have non-body collision shapes
+	//body or compound body can be mapped as controllers to the scene hierarchy
 	CStrID Coll = Desc->Get<CStrID>(CStrID("Collision"), CStrID::Empty);    
 	if (Coll.IsValid() && Level->GetPhysics())
 	{
@@ -116,8 +119,17 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 			Shape = LoadCollisionShapeFromPRM(Coll, nString("physics:") + Coll.CStr() + ".hrd"); //!!!prm!
 		//!!!???what if shape is found but is not loaded? RESMGR problem!
 		n_assert(Shape->IsLoaded());
-		Physics::PCollisionObject Obj = n_new(Physics::CCollisionObject)(*Shape);
-		Level->GetPhysics()->AddCollisionObject(*Obj, Tfm, 0x01, 0xffff); //!!!set normal flags!
+
+		CollObj = n_new(Physics::CCollisionObject)(*Shape);
+
+		vector3 Offset;
+		if (Shape->GetOffset(Offset))
+		{
+			matrix44 OffsetTfm(Tfm);
+			OffsetTfm.translate(Offset);
+			Level->GetPhysics()->AddCollisionObject(*CollObj, OffsetTfm, 0x01, 0xffff); //!!!set normal flags!
+		}
+		else Level->GetPhysics()->AddCollisionObject(*CollObj, Tfm, 0x01, 0xffff); //!!!set normal flags!
 	}
 }
 //---------------------------------------------------------------------
@@ -129,7 +141,11 @@ void CStaticObject::Term()
 	Collision.Clear();
 	CollLocalTfm.Clear();
 
-	//!!!remove bullet obj!
+	if (CollObj.IsValid())
+	{
+		Level->GetPhysics()->RemoveCollisionObject(*CollObj);
+		CollObj = NULL;
+	}
 
 	if (Node.IsValid() && !ExistingNode)
 	{
