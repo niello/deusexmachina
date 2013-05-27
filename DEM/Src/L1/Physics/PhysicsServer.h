@@ -10,6 +10,8 @@
 
 namespace Physics
 {
+class CPhysicsDebugDraw;
+
 #define PhysicsSrv Physics::CPhysicsServer::Instance()
 
 class CPhysicsServer: public Core::CRefCounted
@@ -19,7 +21,8 @@ class CPhysicsServer: public Core::CRefCounted
 
 protected:
 
-	bool _IsOpen;
+	bool				_IsOpen;
+	CPhysicsDebugDraw*	pDD;
 
 public:
 
@@ -28,9 +31,11 @@ public:
 	CPhysicsServer();
 	~CPhysicsServer();
 
-	bool	Open();
-	void	Close();
-	bool	IsOpen() const { return _IsOpen; }
+	bool				Open();
+	void				Close();
+	bool				IsOpen() const { return _IsOpen; }
+
+	CPhysicsDebugDraw*	GetDebugDrawer() { return pDD; }
 };
 
 }

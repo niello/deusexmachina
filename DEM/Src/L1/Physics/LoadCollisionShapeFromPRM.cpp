@@ -5,18 +5,16 @@
 
 #include <Physics/HeightfieldShape.h>
 #include <Physics/PhysicsServer.h>
+#include <Physics/BulletConv.h>
 #include <Data/DataServer.h>
 #include <Data/Params.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
+#include <mathlib/bbox.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
 #include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
-
-//!!!later migrate to bullet math!
-inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
-inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
 
 #define DEFINE_STRID(Str) static const CStrID Str(#Str);
 
@@ -53,7 +51,8 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 
 		void* pHFData = NULL;
 		DWORD HFWidth, HFHeight;
-		float HScale, MinH, MaxH;
+		float HScale;
+		bbox3 AABB;
 
 		if (FileName.CheckExtension("cdlod"))
 		{
@@ -71,30 +70,43 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 			Reader.Read<DWORD>(); // LODCount
 			Reader.Read<DWORD>(); // MinMaxDataSize
 			Reader.Read(HScale);
-			Reader.Read<float>(); //Box.vmin.x
-			Reader.Read(MinH);
-			Reader.Read<float>(); //Box.vmin.z
-			Reader.Read<float>(); //Box.vmax.x
-			Reader.Read(MaxH);
-			Reader.Read<float>(); //Box.vmax.z
-
-			//???how Bullet determines HF texel to unit (meter) relationship?
+			Reader.Read(AABB.vmin.x);
+			Reader.Read(AABB.vmin.y);
+			Reader.Read(AABB.vmin.z);
+			Reader.Read(AABB.vmax.x);
+			Reader.Read(AABB.vmax.y);
+			Reader.Read(AABB.vmax.z);
 
 			DWORD DataSize = HFWidth * HFHeight * sizeof(unsigned short);
 			pHFData = n_malloc(DataSize);
 			CDLODFile.Read(pHFData, DataSize);
 
-			//???convert to signed?
+			// Convert to signed
+			const unsigned short* pUData = ((unsigned short*)pHFData);
+			const unsigned short* pUDataEnd = ((unsigned short*)pHFData) + HFWidth * HFHeight;
+			short* pSData = ((short*)pHFData);
+			while (pUData < pUDataEnd)
+			{
+				//???is there some fast bitwise way?
+				*pSData = *pUData - 32767;
+				++pUData;
+				++pSData;
+			}
 		}
 		else return NULL;
 
 		PHeightfieldShape HFShape = PhysicsSrv->CollShapeMgr.CreateTypedResource<CHeightfieldShape>(UID);
 		if (HFShape.IsValid())
 		{
-			const bool FlipQuadEdges = false; //???
 			btHeightfieldTerrainShape* pBtShape =
-				new btHeightfieldTerrainShape(HFWidth, HFHeight, pHFData, HScale, MinH, MaxH, 1, PHY_SHORT, FlipQuadEdges);
-			if (HFShape->Setup(pBtShape, pHFData, (MinH + MaxH) * 0.5f)) return HFShape.GetUnsafe();
+				new btHeightfieldTerrainShape(HFWidth, HFHeight, pHFData, HScale, AABB.vmin.y, AABB.vmax.y, 1, PHY_SHORT, false);
+
+			btVector3 LocalScaling((AABB.vmax.x - AABB.vmin.x) / (float)(HFWidth - 1), 1.f, (AABB.vmax.z - AABB.vmin.z) / (float)(HFHeight - 1));
+			pBtShape->setLocalScaling(LocalScaling);
+
+			vector3 Offset((AABB.vmax.x - AABB.vmin.x) * 0.5f, (AABB.vmin.y + AABB.vmax.y) * 0.5f, (AABB.vmax.z - AABB.vmin.z) * 0.5f);
+			if (HFShape->Setup(pBtShape, pHFData, Offset)) return HFShape.GetUnsafe();
+
 			delete pBtShape;
 		}
 

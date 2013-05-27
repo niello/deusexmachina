@@ -26,7 +26,7 @@ public:
 
 	bool				Setup(btCollisionShape* pShape);
 	virtual void		Unload();
-
+	virtual bool		GetOffset(vector3& Out) const { FAIL; }
 	btCollisionShape*	GetBtShape() const { return pBtShape; }
 };
 

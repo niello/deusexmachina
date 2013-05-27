@@ -18,17 +18,21 @@ class CHeightfieldShape: public CCollisionShape
 protected:
 
 	void*				pHFData;
-	float				HOffset;
+
+	// Bullet shape is created with an origin at the center of a heightmap AABB
+	// This is an offset between that center and the real origin
+	vector3				Offset;
 
 public:
 
 	CHeightfieldShape(CStrID ID): CCollisionShape(ID), pHFData(NULL) {}
 	virtual ~CHeightfieldShape() { if (IsLoaded()) Unload(); }
 
-	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, float HeightOffset);
+	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset);
 	virtual void	Unload();
+	virtual bool	GetOffset(vector3& Out) const { Out = Offset; OK; }
 
-	float			GetHeightOffset() const { return HOffset; }
+	const vector3&	GetOffset() const { return Offset; }
 };
 
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;

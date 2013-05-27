@@ -1,0 +1,31 @@
+#pragma once
+#ifndef __DEM_L1_PHYSICS_BULLET_FWD_H__
+#define __DEM_L1_PHYSICS_BULLET_FWD_H__
+
+#include <mathlib/matrix.h>
+#include <LinearMath/btTransform.h>
+
+// Bullet physics library to DEM data convertors
+
+//!!!later migrate to bullet math!
+inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
+
+inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
+
+inline btTransform TfmToBtTfm(const matrix44& Tfm)
+{
+	vector3 AxisX = Tfm.AxisX();
+	AxisX.norm();
+	vector3 AxisY = Tfm.AxisY();
+	AxisY.norm();
+	vector3 AxisZ = Tfm.AxisZ();
+	AxisZ.norm();
+	return btTransform(
+		btMatrix3x3(
+			AxisX.x, AxisX.y, AxisX.z,
+			AxisY.x, AxisY.y, AxisY.z,
+			AxisZ.x, AxisZ.y, AxisZ.z),
+		VectorToBtVector(Tfm.Translation()));
+}
+
+#endif

@@ -1593,6 +1593,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Physics\BulletConv.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Physics\CollisionObject.cpp"
 				>
 			</File>
@@ -1618,6 +1622,14 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsDebugDraw.h"
 				>
 			</File>
 			<File
