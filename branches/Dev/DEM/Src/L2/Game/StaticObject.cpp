@@ -159,10 +159,9 @@ void CStaticObject::Term()
 
 void CStaticObject::SetTransform(const matrix44& Tfm)
 {
-	//???!!!allow to set Bullet obj tfm?!
-
 	for (int i = 0; i < Collision.GetCount(); ++i)
 		Collision[i]->SetTransform(CollLocalTfm[i] * Tfm);
+	if (CollObj.IsValid()) CollObj->SetTransform(Tfm);
 	if (Node.IsValid()) Node->SetWorldTransform(Tfm);
 }
 //---------------------------------------------------------------------

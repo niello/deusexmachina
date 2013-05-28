@@ -25,7 +25,7 @@ bool CPhysicsServer::Open()
 	n_assert(!_IsOpen);
 
 	pDD = n_new(CPhysicsDebugDraw);
-	pDD->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb);
+	pDD->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb); // | CPhysicsDebugDraw::DBG_DrawWireframe);
 
 	_IsOpen = true;
 	OK;

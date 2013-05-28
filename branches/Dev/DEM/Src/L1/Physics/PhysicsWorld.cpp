@@ -146,12 +146,14 @@ bool CPhysicsWorld::AddCollisionObject(CCollisionObject& Obj, const matrix44& Tf
 	CollObjects.Append(&Obj);
 	Obj.GetBtObject()->setWorldTransform(TfmToBtTfm(Tfm));
 	pBtDynWorld->addCollisionObject(Obj.GetBtObject(), Group, Mask);
+	Obj.OnAdd(*this);
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CPhysicsWorld::RemoveCollisionObject(CCollisionObject& Obj)
 {
+	Obj.OnRemove();
 	pBtDynWorld->removeCollisionObject(Obj.GetBtObject());
 	CollObjects.RemoveByValue(&Obj);
 }
