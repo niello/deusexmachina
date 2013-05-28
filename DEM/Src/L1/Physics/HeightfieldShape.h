@@ -31,8 +31,6 @@ public:
 	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset);
 	virtual void	Unload();
 	virtual bool	GetOffset(vector3& Out) const { Out = Offset; OK; }
-
-	const vector3&	GetOffset() const { return Offset; }
 };
 
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;

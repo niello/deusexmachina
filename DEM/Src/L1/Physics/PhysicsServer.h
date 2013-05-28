@@ -6,7 +6,8 @@
 #include <Resources/ResourceManager.h>
 #include <Physics/CollisionShape.h>
 
-// Physics server stores shape manager, which manages shared collision shape resources
+// Physics server stores shape manager, which manages shared collision shape resources,
+// shared debug drawer implementation and other physics services.
 
 namespace Physics
 {

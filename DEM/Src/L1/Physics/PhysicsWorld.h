@@ -48,6 +48,8 @@ public:
 
 	//void			SetPointOfInterest(const vector3& NewPOI) { POI = NewPOI; }
 	//const vector3&	GetPointOfInterest() const { return POI; }
+
+	btDiscreteDynamicsWorld* GetBtWorld() const { return pBtDynWorld; }
 };
 
 typedef Ptr<CPhysicsWorld> PPhysicsWorld;

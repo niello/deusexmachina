@@ -10,6 +10,7 @@ class btCollisionObject;
 
 namespace Physics
 {
+class CPhysicsWorld;
 
 class CCollisionObject: public Core::CRefCounted
 {
@@ -19,12 +20,17 @@ protected:
 
 	PCollisionShape		Shape;
 	btCollisionObject*	pBtCollObj;
+	CPhysicsWorld*		pWorld;
 
 public:
 
 	CCollisionObject(CCollisionShape& CollShape);
 	~CCollisionObject();
 
+	void				OnAdd(CPhysicsWorld& PhysWorld) { n_assert(!pWorld); pWorld = &PhysWorld; }
+	void				OnRemove() { n_assert(pWorld); pWorld = NULL; }
+
+	bool				SetTransform(const matrix44& Tfm);
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
 };
 

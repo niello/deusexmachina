@@ -87,7 +87,6 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 			short* pSData = ((short*)pHFData);
 			while (pUData < pUDataEnd)
 			{
-				//???is there some fast bitwise way?
 				*pSData = *pUData - 32767;
 				++pUData;
 				++pSData;
