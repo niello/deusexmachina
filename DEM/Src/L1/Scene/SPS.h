@@ -28,15 +28,15 @@ struct CSPSCell
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;
 typedef CSPS::CNode CSPSNode;
 
-class CSceneNodeAttr;
+class CNodeAttribute;
 
 struct CSPSRecord
 {
-	CSceneNodeAttr&	Attr;
+	CNodeAttribute&	Attr;
 	bbox3			GlobalBox;
 	CSPSNode*		pSPSNode;
 
-	CSPSRecord(CSceneNodeAttr& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
+	CSPSRecord(CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
 	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {} 
 
 	bool		IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }

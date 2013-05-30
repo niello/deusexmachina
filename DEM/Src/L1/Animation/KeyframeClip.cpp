@@ -1,6 +1,6 @@
 #include "KeyframeClip.h"
 
-#include <Animation/AnimControllerKeyframe.h>
+#include <Animation/NodeControllerKeyframe.h>
 
 namespace Anim
 {
@@ -43,9 +43,9 @@ void CKeyframeClip::Unload()
 }
 //---------------------------------------------------------------------
 
-Scene::PAnimController CKeyframeClip::CreateController(DWORD SamplerIdx) const
+Scene::PNodeController CKeyframeClip::CreateController(DWORD SamplerIdx) const
 {
-	Anim::PAnimControllerKeyframe Ctlr = n_new(Anim::CAnimControllerKeyframe);
+	Anim::PNodeControllerKeyframe Ctlr = n_new(Anim::CNodeControllerKeyframe);
 	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
 	return Ctlr.GetUnsafe();
 }

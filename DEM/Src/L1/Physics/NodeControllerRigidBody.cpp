@@ -1,9 +1,9 @@
-#include "AnimControllerRigidBody.h"
+#include "NodeControllerRigidBody.h"
 
 namespace Anim
 {
 
-void CAnimControllerRigidBody::SetBody(btRigidBody* pRigidBody)
+void CNodeControllerRigidBody::SetBody(btRigidBody* pRigidBody)
 {
 	n_assert(pRigidBody);
 	pRB = pRigidBody;
@@ -11,14 +11,14 @@ void CAnimControllerRigidBody::SetBody(btRigidBody* pRigidBody)
 }
 //---------------------------------------------------------------------
 
-void CAnimControllerRigidBody::Clear()
+void CNodeControllerRigidBody::Clear()
 {
 	Channels.ClearAll();
 	pRB = NULL;
 }
 //---------------------------------------------------------------------
 
-bool CAnimControllerRigidBody::ApplyTo(Math::CTransformSRT& DestTfm)
+bool CNodeControllerRigidBody::ApplyTo(Math::CTransformSRT& DestTfm)
 {
 	if (!pRB) FAIL;
 

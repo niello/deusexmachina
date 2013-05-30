@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_CTLR_MOCAP_H__
 #define __DEM_L1_ANIM_CTLR_MOCAP_H__
 
-#include <Scene/AnimController.h>
+#include <Scene/NodeController.h>
 
 // Animation controller, that samples transform from mocap clip tracks.
 // It involves mocap-specific optimization of calculating keyframes from
@@ -11,7 +11,7 @@
 namespace Anim
 {
 
-class CAnimControllerMocap: public Scene::CAnimController
+class CNodeControllerMocap: public Scene::CNodeController
 {
 protected:
 
@@ -22,7 +22,7 @@ protected:
 
 public:
 
-	CAnimControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
+	CNodeControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
 
 	void			SetSampler(const CSampler* _pSampler);
 	void			SetSamplingParams(int KeyIdx, float Factor) { KeyIndex = KeyIdx; IpolFactor = Factor; }
@@ -30,7 +30,7 @@ public:
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };
 
-typedef Ptr<CAnimControllerMocap> PAnimControllerMocap;
+typedef Ptr<CNodeControllerMocap> PNodeControllerMocap;
 
 }
 

@@ -1,13 +1,13 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_ANIM_CTLR_H__
-#define __DEM_L1_SCENE_ANIM_CTLR_H__
+#ifndef __DEM_L1_SCENE_NODE_CTLR_H__
+#define __DEM_L1_SCENE_NODE_CTLR_H__
 
 #include <Core/RefCounted.h>
 #include <Animation/Anim.h>
 #include <Data/Flags.h>
 #include <Math/TransformSRT.h>
 
-// Animation controller provides transform (SRT) parameters. It is mainly used for
+// Scene node controller provides transform (SRT) parameters. It is mainly used for
 // scene node animation. Animation controller subclasses can sample keyframed
 // animation data, use physics as a transformation source or implement any other
 // custom logic, such as look-at or even constant value. Animation controller can
@@ -19,7 +19,7 @@
 namespace Scene
 {
 
-class CAnimController: public Core::CRefCounted
+class CNodeController: public Core::CRefCounted
 {
 protected:
 
@@ -37,14 +37,14 @@ public:
 
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;
 
-	void			Activate(bool SetActive) { return Flags.SetTo(Active, SetActive); }
+	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool			IsActive() const { return Flags.Is(Active); }
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
 	bool			HasChannel(Anim::EChannel Channel) const { return Channels.Is(Channel); }
 };
 
-typedef Ptr<CAnimController> PAnimController;
+typedef Ptr<CNodeController> PNodeController;
 
 }
 

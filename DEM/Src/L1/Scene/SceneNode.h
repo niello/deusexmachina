@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_SCENE_NODE_H__
 #define __DEM_L1_SCENE_NODE_H__
 
-#include <Scene/SceneNodeAttr.h>
-#include <Scene/AnimController.h>
+#include <Scene/NodeAttribute.h>
+#include <Scene/NodeController.h>
 #include <Math/TransformSRT.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
@@ -54,7 +54,7 @@ protected:
 	matrix44				WorldMatrix;
 
 	Data::CFlags			Flags; // ?UniformScale?, LockTransform
-	nArray<PSceneNodeAttr>	Attrs; //???or list? List seems to be better
+	nArray<PNodeAttribute>	Attrs; //???or list? List seems to be better
 
 	friend class CScene;
 
@@ -63,7 +63,7 @@ protected:
 
 public:
 
-	PAnimController			Controller; //???weak ptr? detach itself on death?
+	PNodeController			Controller; //???weak ptr? detach itself on death?
 
 	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), pParent(NULL), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
 	~CSceneNode();
@@ -82,10 +82,10 @@ public:
 	CSceneNode*				GetChild(LPCSTR Path, bool Create = false);
 	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
 
-	bool					AddAttr(CSceneNodeAttr& Attr);
+	bool					AddAttr(CNodeAttribute& Attr);
 	DWORD					GetAttrCount() const { return Attrs.GetCount(); }
-	CSceneNodeAttr*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
-	void					RemoveAttr(CSceneNodeAttr& Attr);
+	CNodeAttribute*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
+	void					RemoveAttr(CNodeAttribute& Attr);
 	void					RemoveAttr(DWORD Idx);
 	template<class T> T*	FindFirstAttr() const;
 
@@ -115,11 +115,11 @@ public:
 	const vector3&			GetScale() const { return Tfm.Scale; }
 	void					SetLocalTransform(const Math::CTransform& NewTfm) { Tfm = NewTfm; Flags.Set(LocalMatrixDirty); }
 	void					SetLocalTransform(const matrix44& Transform);
-	const Math::CTransform&	GetLocalTransform() { return Tfm; }
+	const Math::CTransform&	GetLocalTransform() const { return Tfm; }
 	void					SetWorldTransform(const matrix44& Transform);
-	const matrix44&			GetLocalMatrix() { return LocalMatrix; }
-	const matrix44&			GetWorldMatrix() { return WorldMatrix; }
-	const vector3&			GetWorldPosition() { return WorldMatrix.Translation(); }
+	const matrix44&			GetLocalMatrix() const { return LocalMatrix; }
+	const matrix44&			GetWorldMatrix() const { return WorldMatrix; }
+	const vector3&			GetWorldPosition() const { return WorldMatrix.Translation(); }
 };
 
 inline CSceneNode::~CSceneNode()
@@ -148,7 +148,7 @@ template<class T> inline T* CSceneNode::FindFirstAttr() const
 {
 	for (int i = 0; i < Attrs.GetCount(); ++i)
 	{
-		CSceneNodeAttr* pAttr = Attrs[i];
+		CNodeAttribute* pAttr = Attrs[i];
 		if (pAttr->IsA(T::RTTI)) return (T*)pAttr;
 	}
 	return NULL;

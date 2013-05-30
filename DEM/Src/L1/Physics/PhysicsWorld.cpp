@@ -93,8 +93,9 @@ void CPhysicsWorld::Term()
 {
 	if (pBtDynWorld)
 	{
-		for (int i = 0; i < CollObjects.GetCount(); ++i)
-			pBtDynWorld->removeCollisionObject(CollObjects[i]->GetBtObject());
+		//!!!!!!!!!!!!
+		//for (int i = 0; i < CollObjects.GetCount(); ++i)
+		//	pBtDynWorld->removeCollisionObject(CollObjects[i]->GetBtObject());
 
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
@@ -110,7 +111,7 @@ void CPhysicsWorld::Term()
 		pBtDynWorld = NULL;
 	}
 
-	CollObjects.Clear();
+	//CollObjects.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -140,24 +141,25 @@ void CPhysicsWorld::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsWorld::AddCollisionObject(CCollisionObject& Obj, const matrix44& Tfm, ushort Group, ushort Mask)
+/*
+bool CPhysicsWorld::AddCollisionObject(CCollisionObjStatic& Obj, ushort Group, ushort Mask)
 {
 	n_assert(pBtDynWorld && Obj.GetBtObject());
 	CollObjects.Append(&Obj);
-	Obj.GetBtObject()->setWorldTransform(TfmToBtTfm(Tfm));
 	pBtDynWorld->addCollisionObject(Obj.GetBtObject(), Group, Mask);
 	Obj.OnAdd(*this);
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CPhysicsWorld::RemoveCollisionObject(CCollisionObject& Obj)
+void CPhysicsWorld::RemoveCollisionObject(CCollisionObjStatic& Obj)
 {
 	Obj.OnRemove();
 	pBtDynWorld->removeCollisionObject(Obj.GetBtObject());
 	CollObjects.RemoveByValue(&Obj);
 }
 //---------------------------------------------------------------------
+*/
 
 //http://bulletphysics.org/mediawiki-1.5.8/index.php/Using_RayTest
 bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End) const

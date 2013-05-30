@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_BONE_H__
 #define __DEM_L1_SCENE_BONE_H__
 
-#include <Scene/SceneNodeAttr.h>
+#include <Scene/NodeAttribute.h>
 #include <Math/TransformSRT.h>
 
 // Skeletal animation bone. Manages skinning matrix, which is used by shader through node's shader params.
@@ -11,13 +11,13 @@ namespace Scene
 {
 struct CSPSRecord;
 
-class CBone: public CSceneNodeAttr
+class CBone: public CNodeAttribute
 {
 	__DeclareClass(CBone);
 
 protected:
 
-	// For use with CSceneNodeAttr::Flags
+	// For use with CNodeAttribute::Flags
 	enum
 	{
 		Bone_Root = 0x0100,		// Root bone, which has no parent

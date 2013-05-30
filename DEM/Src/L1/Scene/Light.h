@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_LIGHT_H__
 #define __DEM_L1_SCENE_LIGHT_H__
 
-#include <Scene/SceneNodeAttr.h>
+#include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
 
 // Light is a scene node attribute describing light source properties, including type,
@@ -16,7 +16,7 @@ namespace Scene
 {
 struct CSPSRecord;
 
-class CLight: public CSceneNodeAttr
+class CLight: public CNodeAttribute
 {
 	__DeclareClass(CLight);
 

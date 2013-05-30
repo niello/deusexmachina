@@ -2,7 +2,8 @@
 #ifndef __DEM_L1_PHYSICS_WORLD_H__
 #define __DEM_L1_PHYSICS_WORLD_H__
 
-#include <Physics/CollisionObject.h>
+#include <Core/RefCounted.h>
+//#include <Physics/CollisionObjStatic.h>
 
 // Physics world represents a space where physics bodies and collision objects live.
 
@@ -20,7 +21,6 @@ protected:
 
 	btDiscreteDynamicsWorld*	pBtDynWorld;
 	float						StepTime;
-	nArray<PCollisionObject>	CollObjects;
 
 public:
 
@@ -32,8 +32,8 @@ public:
 	void	Trigger(float FrameTime);
 	void	RenderDebug();
 
-	bool	AddCollisionObject(CCollisionObject& Obj, const matrix44& Tfm, ushort Group, ushort Mask);
-	void	RemoveCollisionObject(CCollisionObject& Obj);
+	//bool	AddCollisionObject(CCollisionObjStatic& Obj, ushort Group, ushort Mask);
+	//void	RemoveCollisionObject(CCollisionObjStatic& Obj);
 
 	//!!!can set filter group and mask!
 	bool	GetClosestRayContact(const vector3& Start, const vector3& End) const;

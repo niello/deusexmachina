@@ -19,7 +19,7 @@ namespace Scene
 class CScene;
 class CSceneNode;
 
-class CSceneNodeAttr: public Core::CRefCounted
+class CNodeAttribute: public Core::CRefCounted
 {
 	__DeclareClassNoFactory;
 
@@ -39,19 +39,19 @@ protected:
 
 public:
 
-	CSceneNodeAttr(): pNode(NULL), Flags(Active) {}
+	CNodeAttribute(): pNode(NULL), Flags(Active) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
 	virtual bool	OnAdd() { OK; }
 	virtual void	OnRemove() {}
 	virtual void	Update() = 0;
 
-	bool			IsActive() const { return Flags.Is(Active); }
 	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
+	bool			IsActive() const { return Flags.Is(Active); }
 	CSceneNode*		GetNode() const { return pNode; }
 };
 
-typedef Ptr<CSceneNodeAttr> PSceneNodeAttr;
+typedef Ptr<CNodeAttribute> PNodeAttribute;
 
 }
 

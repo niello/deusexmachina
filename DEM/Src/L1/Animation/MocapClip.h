@@ -36,7 +36,7 @@ public:
 											vector4* _pKeys, DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
 	virtual void					Unload();
 
-	virtual Scene::PAnimController	CreateController(DWORD SamplerIdx) const;
+	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;
 
 	void							GetSamplingParams(float Time, bool Loop, int& KeyIndex, float& IpolFactor) const;
 	const vector4&					GetKey(int FirstKey, int Index) const;

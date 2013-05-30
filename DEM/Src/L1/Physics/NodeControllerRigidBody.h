@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_CTLR_RIGID_BODY_H__
 #define __DEM_L1_ANIM_CTLR_RIGID_BODY_H__
 
-#include <Scene/AnimController.h>
+#include <Scene/NodeController.h>
 
 // Animation controller, that samples world transform from a physically simulated rigid body.
 
@@ -11,7 +11,7 @@ class btRigidBody;
 namespace Anim
 {
 
-class CAnimControllerRigidBody: public Scene::CAnimController
+class CNodeControllerRigidBody: public Scene::CNodeController
 {
 protected:
 
@@ -20,7 +20,7 @@ protected:
 
 public:
 
-	CAnimControllerRigidBody(): pRB(NULL), TfmChanged(false) { }
+	CNodeControllerRigidBody(): pRB(NULL), TfmChanged(false) { }
 
 	//???on deactivation forceActivationState(DISABLE_SIMULATION) or let the object be simulated?
 	//???ctlr creates and owns body, or even pass motion state here?
@@ -31,7 +31,7 @@ public:
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };
 
-typedef Ptr<CAnimControllerRigidBody> PAnimControllerRigidBody;
+typedef Ptr<CNodeControllerRigidBody> PNodeControllerRigidBody;
 
 }
 

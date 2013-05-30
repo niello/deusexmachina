@@ -39,7 +39,7 @@ public:
 	nFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
-	//can use Flags field of CSceneNodeAttr
+	//can use Flags field of CNodeAttribute
 
 	CSPSRecord*				pSPSRecord;
 
