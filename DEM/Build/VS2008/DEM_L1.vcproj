@@ -989,18 +989,6 @@
 			Name="Scene"
 			>
 			<File
-				RelativePath="..\..\Src\L1\Scene\AnimController.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Scene\AnimControllerThirdPerson.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Scene\AnimControllerThirdPerson.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Scene\Bone.cpp"
 				>
 			</File>
@@ -1045,6 +1033,26 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\NodeAttribute.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeAttribute.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeController.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerThirdPerson.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerThirdPerson.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\RenderObject.cpp"
 				>
 			</File>
@@ -1066,14 +1074,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Scene\SceneNode.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Scene\SceneNodeAttr.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Scene\SceneNodeAttr.h"
 				>
 			</File>
 			<File
@@ -1377,30 +1377,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Animation\AnimControllerKeyframe.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\AnimControllerKeyframe.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\AnimControllerMocap.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\AnimControllerMocap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\AnimControllerPriorityBlend.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\AnimControllerPriorityBlend.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Animation\AnimTask.cpp"
 				>
 			</File>
@@ -1446,6 +1422,30 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Animation\MocapTrack.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\NodeControllerKeyframe.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\NodeControllerKeyframe.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\NodeControllerMocap.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\NodeControllerMocap.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\NodeControllerPriorityBlend.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\NodeControllerPriorityBlend.h"
 				>
 			</File>
 		</Filter>
@@ -1585,23 +1585,31 @@
 			Name="Physics"
 			>
 			<File
-				RelativePath="..\..\Src\L1\Physics\AnimControllerRigidBody.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Physics\AnimControllerRigidBody.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Physics\BulletConv.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Physics\CollisionObject.cpp"
+				RelativePath="..\..\Src\L1\Physics\CollisionObj.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Physics\CollisionObject.h"
+				RelativePath="..\..\Src\L1\Physics\CollisionObj.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionObjMoving.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionObjMoving.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionObjStatic.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\CollisionObjStatic.h"
 				>
 			</File>
 			<File
@@ -1622,6 +1630,18 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\MotionStateFromNode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\NodeControllerRigidBody.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\NodeControllerRigidBody.h"
 				>
 			</File>
 			<File
