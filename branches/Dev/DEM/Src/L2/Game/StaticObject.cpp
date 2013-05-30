@@ -3,7 +3,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/Scene.h>
 #include <Physics/Collision/Shape.h>
-#include <Physics/CollisionObject.h>
+#include <Physics/CollisionObjStatic.h>
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/PhysicsWorld.h>
 #include <Physics/PhysicsServer.h>
@@ -117,19 +117,23 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		Physics::PCollisionShape Shape = PhysicsSrv->CollShapeMgr.GetTypedResource(Coll);
 		if (!Shape.IsValid())
 			Shape = LoadCollisionShapeFromPRM(Coll, nString("physics:") + Coll.CStr() + ".hrd"); //!!!prm!
+
 		//!!!???what if shape is found but is not loaded? RESMGR problem!
+		//desired way:
+		//if resource is found, but not loaded
+		//  pass in into the loader
+		//if loader determines that the type is incompatible
+		//  it gets the resource pointer from the resource manager
+		//  sets it to the passed pointer
+		//  checks its type
+		//  if type is right, someone reloaded the resource before
+		//  else replaces a passed pointer with a new one, of the right type
 		n_assert(Shape->IsLoaded());
 
-		CollObj = n_new(Physics::CCollisionObject)(*Shape);
-
-		vector3 Offset;
-		if (Shape->GetOffset(Offset))
-		{
-			matrix44 OffsetTfm(Tfm);
-			OffsetTfm.translate(Offset);
-			Level->GetPhysics()->AddCollisionObject(*CollObj, OffsetTfm, 0x01, 0xffff); //!!!set normal flags!
-		}
-		else Level->GetPhysics()->AddCollisionObject(*CollObj, Tfm, 0x01, 0xffff); //!!!set normal flags!
+		CollObj = n_new(Physics::CCollisionObjStatic);
+		CollObj->Init(*Shape, 0x01, 0xffff); //!!!set normal flags!
+		CollObj->SetTransform(Tfm);
+		CollObj->AttachToLevel(*Level->GetPhysics());
 	}
 }
 //---------------------------------------------------------------------
@@ -143,7 +147,7 @@ void CStaticObject::Term()
 
 	if (CollObj.IsValid())
 	{
-		Level->GetPhysics()->RemoveCollisionObject(*CollObj);
+		CollObj->RemoveFromLevel();
 		CollObj = NULL;
 	}
 

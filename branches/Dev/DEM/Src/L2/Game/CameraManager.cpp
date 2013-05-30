@@ -10,7 +10,7 @@ __ImplementSingleton(Game::CCameraManager);
 
 bool CCameraManager::InitThirdPersonCamera()
 {
-	Ctlr = n_new(Scene::CAnimControllerThirdPerson);
+	Ctlr = n_new(Scene::CNodeControllerThirdPerson);
 	if (!Ctlr.IsValid()) FAIL;
 	IsThirdPerson = true;
 

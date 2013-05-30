@@ -14,7 +14,7 @@
 namespace Scene
 {
 	class CSceneNode;
-	class CAnimController;
+	class CNodeController;
 }
 
 namespace Prop
@@ -27,8 +27,10 @@ class CPropAnimation: public Game::CProperty
 
 private:
 
-	nDictionary<CStrID, Anim::PAnimClip>	Clips;
+	//???move this cache to CSceneNode? any Prop that manages node controlers may want to access it!
 	nDictionary<CStrID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
+
+	nDictionary<CStrID, Anim::PAnimClip>	Clips;
 	nArray<Anim::CAnimTask>					Tasks;
 
 	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones);
