@@ -14,8 +14,8 @@ bool CCollisionShape::Setup(btCollisionShape* pShape)
 		FAIL;
 	}
 
-	//n_assert(!pShape->getUserPointer());
-	//pShape->setUserPointer(this);
+	n_assert(!pShape->getUserPointer());
+	pShape->setUserPointer(this);
 
 	pBtShape = pShape;
 	State = Resources::Rsrc_Loaded;

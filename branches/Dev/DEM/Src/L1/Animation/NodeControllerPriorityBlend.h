@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_CTLR_PRIORITY_BLEND_H__
 #define __DEM_L1_ANIM_CTLR_PRIORITY_BLEND_H__
 
-#include <Scene/AnimController.h>
+#include <Scene/NodeController.h>
 
 // Priority-blend controller blends inputs from a set of another controllers from the most
 // to the least priority according to input weights until weight sum is 1.0f
@@ -10,7 +10,7 @@
 namespace Anim
 {
 
-class CAnimControllerPriorityBlend: public Scene::CAnimController
+class CNodeControllerPriorityBlend: public Scene::CNodeController
 {
 protected:
 
@@ -24,7 +24,7 @@ public:
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };
 
-typedef Ptr<CAnimControllerPriorityBlend> PAnimControllerPriorityBlend;
+typedef Ptr<CNodeControllerPriorityBlend> PNodeControllerPriorityBlend;
 
 }
 

@@ -1,9 +1,9 @@
-#include "AnimControllerThirdPerson.h"
+#include "NodeControllerThirdPerson.h"
 
 namespace Scene
 {
 
-bool CAnimControllerThirdPerson::ApplyTo(Math::CTransformSRT& DestTfm)
+bool CNodeControllerThirdPerson::ApplyTo(Math::CTransformSRT& DestTfm)
 {
 	if (!Dirty) FAIL;
 

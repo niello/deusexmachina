@@ -84,7 +84,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 			FeatureFlags = RenderSrv->ShaderFeatureStringToMask(FeatFlagsStr);
 			OK;
 		}
-		default: return CSceneNodeAttr::LoadDataBlock(FourCC, DataReader);
+		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);
 	}
 }
 //---------------------------------------------------------------------

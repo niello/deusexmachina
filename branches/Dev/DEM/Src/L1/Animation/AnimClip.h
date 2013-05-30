@@ -17,7 +17,7 @@
 namespace Scene
 {
 	class CSceneNode;
-	typedef Ptr<class CAnimController> PAnimController;
+	typedef Ptr<class CNodeController> PNodeController;
 }
 
 namespace Anim
@@ -36,7 +36,7 @@ public:
 
 	CAnimClip(CStrID ID): CResource(ID) {}
 
-	virtual Scene::PAnimController	CreateController(DWORD SamplerIdx) const = 0;
+	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
 	float							AdjustTime(float Time, bool Loop) const;
 	DWORD							GetSamplerCount() const { return Samplers.GetCount(); }
 	CStrID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAtIndex(Idx); }

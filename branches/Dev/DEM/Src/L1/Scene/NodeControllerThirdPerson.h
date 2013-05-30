@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_CTLR_THIRD_PERSON_H__
 #define __DEM_L1_ANIM_CTLR_THIRD_PERSON_H__
 
-#include <Scene/AnimController.h>
+#include <Scene/NodeController.h>
 #include <mathlib/polar.h>
 
 // Animation controller, that implements logic of third-person camera.
@@ -13,7 +13,7 @@
 namespace Scene
 {
 
-class CAnimControllerThirdPerson: public CAnimController
+class CNodeControllerThirdPerson: public CNodeController
 {
 protected:
 
@@ -30,7 +30,7 @@ protected:
 
 public:
 
-	CAnimControllerThirdPerson();
+	CNodeControllerThirdPerson();
 
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 
@@ -47,9 +47,9 @@ public:
 	void			ForceNextUpdate() { Dirty = true; } //???normal dirty-on-set instead?
 };
 
-typedef Ptr<CAnimControllerThirdPerson> PAnimControllerThirdPerson;
+typedef Ptr<CNodeControllerThirdPerson> PNodeControllerThirdPerson;
 
-inline CAnimControllerThirdPerson::CAnimControllerThirdPerson():
+inline CNodeControllerThirdPerson::CNodeControllerThirdPerson():
 	Distance(1.f),
 	MinVertAngle(0.f),
 	MaxVertAngle(PI * 0.5f),
@@ -62,7 +62,7 @@ inline CAnimControllerThirdPerson::CAnimControllerThirdPerson():
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::SetVerticalAngleLimits(float Min, float Max)
+inline void CNodeControllerThirdPerson::SetVerticalAngleLimits(float Min, float Max)
 {
 	n_assert(Min <= Max);
 	MinVertAngle = Min;
@@ -72,7 +72,7 @@ inline void CAnimControllerThirdPerson::SetVerticalAngleLimits(float Min, float 
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::SetDistanceLimits(float Min, float Max)
+inline void CNodeControllerThirdPerson::SetDistanceLimits(float Min, float Max)
 {
 	n_assert(Min <= Max);
 	MinDistance = Min;
@@ -82,7 +82,7 @@ inline void CAnimControllerThirdPerson::SetDistanceLimits(float Min, float Max)
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::SetAngles(float Vertical, float Horizontal)
+inline void CNodeControllerThirdPerson::SetAngles(float Vertical, float Horizontal)
 {
 	Angles.theta = n_clamp(Vertical, MinVertAngle, MaxVertAngle);
 	Angles.phi = Horizontal;
@@ -90,7 +90,7 @@ inline void CAnimControllerThirdPerson::SetAngles(float Vertical, float Horizont
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::SetDirection(const vector3& Dir)
+inline void CNodeControllerThirdPerson::SetDirection(const vector3& Dir)
 {
 	Angles.set(Dir); //???or -Dir?
 	Angles.theta = n_clamp(Angles.theta, MinVertAngle, MaxVertAngle);
@@ -98,14 +98,14 @@ inline void CAnimControllerThirdPerson::SetDirection(const vector3& Dir)
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::SetDistance(float Value)
+inline void CNodeControllerThirdPerson::SetDistance(float Value)
 {
 	Distance = n_clamp(Value, MinDistance, MaxDistance);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::SetCOI(const vector3& NewCOI)
+inline void CNodeControllerThirdPerson::SetCOI(const vector3& NewCOI)
 {
 	if (COI == NewCOI) return;
 	COI = NewCOI;
@@ -113,7 +113,7 @@ inline void CAnimControllerThirdPerson::SetCOI(const vector3& NewCOI)
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::OrbitVertical(float Angle)
+inline void CNodeControllerThirdPerson::OrbitVertical(float Angle)
 {
 	if (Angle == 0.f) return;
 	Angles.theta = n_clamp(Angles.theta + Angle, MinVertAngle, MaxVertAngle);
@@ -121,7 +121,7 @@ inline void CAnimControllerThirdPerson::OrbitVertical(float Angle)
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::OrbitHorizontal(float Angle)
+inline void CNodeControllerThirdPerson::OrbitHorizontal(float Angle)
 {
 	if (Angle == 0.f) return;
 	Angles.phi += Angle;
@@ -129,7 +129,7 @@ inline void CAnimControllerThirdPerson::OrbitHorizontal(float Angle)
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::Zoom(float Amount)
+inline void CNodeControllerThirdPerson::Zoom(float Amount)
 {
 	if (Amount == 0.f) return;
 	Distance = n_clamp(Distance + Amount, MinDistance, MaxDistance);
@@ -137,7 +137,7 @@ inline void CAnimControllerThirdPerson::Zoom(float Amount)
 }
 //---------------------------------------------------------------------
 
-inline void CAnimControllerThirdPerson::Move(const vector3& Translation)
+inline void CNodeControllerThirdPerson::Move(const vector3& Translation)
 {
 	if (Translation == vector3::Zero) return;
 	COI += Translation;

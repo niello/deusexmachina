@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_LOD_GROUP_H__
 #define __DEM_L1_SCENE_LOD_GROUP_H__
 
-#include <Scene/SceneNodeAttr.h>
+#include <Scene/NodeAttribute.h>
 #include <util/ndictionary.h>
 
 // Level of detail group activates and deactivates child nodes of its node
@@ -12,7 +12,7 @@ namespace Scene
 {
 struct CSPSRecord;
 
-class CLODGroup: public CSceneNodeAttr
+class CLODGroup: public CNodeAttribute
 {
 	__DeclareClass(CLODGroup);
 

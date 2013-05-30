@@ -28,7 +28,7 @@ public:
 	bool							Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& _TrackMapping, float Length);
 	virtual void					Unload();
 
-	virtual Scene::PAnimController	CreateController(DWORD SamplerIdx) const;
+	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;
 };
 
 typedef Ptr<CKeyframeClip> PKeyframeClip;

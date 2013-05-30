@@ -3,8 +3,8 @@
 #include <Scene/SceneNode.h>
 #include <Animation/KeyframeClip.h>
 #include <Animation/MocapClip.h>
-#include <Animation/AnimControllerKeyframe.h>
-#include <Animation/AnimControllerMocap.h>
+#include <Animation/NodeControllerKeyframe.h>
+#include <Animation/NodeControllerMocap.h>
 
 namespace Anim
 {
@@ -55,13 +55,13 @@ void CAnimTask::Update(float FrameTime)
 		float IpolFactor;
 		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CurrTime, Loop, KeyIndex, IpolFactor);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CAnimControllerMocap*)Ctlrs.ValueAtIndex(i))->SetSamplingParams(KeyIndex, IpolFactor);
+			((Anim::CNodeControllerMocap*)Ctlrs.ValueAtIndex(i))->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 	else if (Clip->IsA<Anim::CKeyframeClip>())
 	{
 		float Time = Clip->AdjustTime(CurrTime, Loop);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CAnimControllerKeyframe*)Ctlrs.ValueAtIndex(i))->SetTime(Time);
+			((Anim::CNodeControllerKeyframe*)Ctlrs.ValueAtIndex(i))->SetTime(Time);
 	}
 }
 //---------------------------------------------------------------------

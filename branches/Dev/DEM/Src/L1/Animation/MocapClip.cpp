@@ -1,6 +1,6 @@
 #include "MocapClip.h"
 
-#include <Animation/AnimControllerMocap.h>
+#include <Animation/NodeControllerMocap.h>
 
 namespace Anim
 {
@@ -52,9 +52,9 @@ void CMocapClip::Unload()
 }
 //---------------------------------------------------------------------
 
-Scene::PAnimController CMocapClip::CreateController(DWORD SamplerIdx) const
+Scene::PNodeController CMocapClip::CreateController(DWORD SamplerIdx) const
 {
-	Anim::PAnimControllerMocap Ctlr = n_new(Anim::CAnimControllerMocap);
+	Anim::PNodeControllerMocap Ctlr = n_new(Anim::CNodeControllerMocap);
 	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
 	return Ctlr.GetUnsafe();
 }

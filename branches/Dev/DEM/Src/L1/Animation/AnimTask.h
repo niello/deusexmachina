@@ -15,7 +15,7 @@
 namespace Scene
 {
 	class CSceneNode;
-	class CAnimController;
+	class CNodeController;
 }
 
 namespace Anim
@@ -39,7 +39,7 @@ public:
 		Task_Stopping
 	};
 
-	typedef nDictionary<Scene::CSceneNode*, Scene::CAnimController*> CCtlrList;
+	typedef nDictionary<Scene::CSceneNode*, Scene::CNodeController*> CCtlrList;
 
 	CStrID			ClipID;
 	Anim::PAnimClip	Clip;

@@ -27,8 +27,15 @@ void CSceneNode::UpdateWorldFromLocal()
 
 void CSceneNode::UpdateLocalFromWorld()
 {
-	//!!!be careful with flags!
-	//!!! Restore LS from WS using parent WS
+	if (pParent)
+	{
+		matrix44 InvParentPos;
+		pParent->GetWorldMatrix().invert_simple(InvParentPos);
+		LocalMatrix = InvParentPos * WorldMatrix;
+	}
+	else LocalMatrix = WorldMatrix;
+	Tfm.FromMatrix(LocalMatrix);
+	Flags.Clear(WorldMatrixDirty | LocalMatrixDirty);
 }
 //---------------------------------------------------------------------
 
@@ -144,7 +151,7 @@ CSceneNode* CSceneNode::GetChild(LPCSTR Path, bool Create)
 }
 //---------------------------------------------------------------------
 
-bool CSceneNode::AddAttr(CSceneNodeAttr& Attr)
+bool CSceneNode::AddAttr(CNodeAttribute& Attr)
 {
 	if (Attr.pNode) FAIL;
 	Attr.pNode = this;
@@ -158,7 +165,7 @@ bool CSceneNode::AddAttr(CSceneNodeAttr& Attr)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::RemoveAttr(CSceneNodeAttr& Attr)
+void CSceneNode::RemoveAttr(CNodeAttribute& Attr)
 {
 	n_assert(Attr.pNode == this);
 	Attr.OnRemove();
@@ -170,7 +177,7 @@ void CSceneNode::RemoveAttr(CSceneNodeAttr& Attr)
 void CSceneNode::RemoveAttr(DWORD Idx)
 {
 	n_assert(Idx < (DWORD)Attrs.GetCount());
-	CSceneNodeAttr& Attr = *Attrs[Idx];
+	CNodeAttribute& Attr = *Attrs[Idx];
 	Attr.OnRemove();
 	Attr.pNode = NULL;
 	Attrs.EraseAt(Idx);
@@ -180,15 +187,8 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 void CSceneNode::SetWorldTransform(const matrix44& Transform)
 {
 	WorldMatrix = Transform;
-	if (pParent)
-	{
-		matrix44 InvParentPos;
-		pParent->GetWorldMatrix().invert_simple(InvParentPos);
-		LocalMatrix = InvParentPos * Transform;
-	}
-	else LocalMatrix = Transform;
-	Tfm.FromMatrix(LocalMatrix);
-	Flags.Clear(WorldMatrixDirty | LocalMatrixDirty);
+	Flags.Set(WorldMatrixChanged);
+	UpdateLocalFromWorld();
 }
 //---------------------------------------------------------------------
 

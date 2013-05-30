@@ -1,11 +1,11 @@
-#include "AnimControllerKeyframe.h"
+#include "NodeControllerMocap.h"
 
-#include <Animation/KeyframeTrack.h>
+#include <Animation/MocapTrack.h>
 
 namespace Anim
 {
 
-void CAnimControllerKeyframe::SetSampler(const CSampler* _pSampler)
+void CNodeControllerMocap::SetSampler(const CSampler* _pSampler)
 {
 	n_assert(_pSampler); //???allow NULL?
 	pSampler = _pSampler;
@@ -16,21 +16,22 @@ void CAnimControllerKeyframe::SetSampler(const CSampler* _pSampler)
 }
 //---------------------------------------------------------------------
 
-void CAnimControllerKeyframe::Clear()
+void CNodeControllerMocap::Clear()
 {
 	Channels.ClearAll();
 	pSampler = NULL;
-	Time = 0.f;
+	KeyIndex = INVALID_INDEX;
+	IpolFactor = 0.f;
 }
 //---------------------------------------------------------------------
 
-bool CAnimControllerKeyframe::ApplyTo(Math::CTransformSRT& DestTfm)
+bool CNodeControllerMocap::ApplyTo(Math::CTransformSRT& DestTfm)
 {
 	if (!pSampler || (!pSampler->pTrackT && !pSampler->pTrackR && !pSampler->pTrackS)) FAIL;
 
-	if (pSampler->pTrackT) ((CKeyframeTrack*)pSampler->pTrackT)->Sample(Time, DestTfm.Translation);
-	if (pSampler->pTrackR) ((CKeyframeTrack*)pSampler->pTrackR)->Sample(Time, DestTfm.Rotation);
-	if (pSampler->pTrackS) ((CKeyframeTrack*)pSampler->pTrackS)->Sample(Time, DestTfm.Scale);
+	if (pSampler->pTrackT) ((CMocapTrack*)pSampler->pTrackT)->Sample(KeyIndex, IpolFactor, DestTfm.Translation);
+	if (pSampler->pTrackR) ((CMocapTrack*)pSampler->pTrackR)->Sample(KeyIndex, IpolFactor, DestTfm.Rotation);
+	if (pSampler->pTrackS) ((CMocapTrack*)pSampler->pTrackS)->Sample(KeyIndex, IpolFactor, DestTfm.Scale);
 
 	OK;
 }

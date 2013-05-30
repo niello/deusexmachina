@@ -5,7 +5,7 @@
 
 namespace Scene
 {
-__ImplementClass(Scene::CLODGroup, 'LODG', Scene::CSceneNodeAttr);
+__ImplementClass(Scene::CLODGroup, 'LODG', Scene::CNodeAttribute);
 
 bool CLODGroup::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {

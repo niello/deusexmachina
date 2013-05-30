@@ -31,7 +31,7 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResource
 		char ClassName[256];
 		n_assert(Reader.ReadString(ClassName, sizeof(ClassName)));
 
-		PSceneNodeAttr Attr = (CSceneNodeAttr*)Factory->Create(StrAttr + ClassName);
+		PNodeAttribute Attr = (CNodeAttribute*)Factory->Create(StrAttr + ClassName);
 
 		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
 		//may require to read data block count inside, or ignore it for such attrs.

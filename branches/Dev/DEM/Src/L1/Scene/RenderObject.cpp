@@ -2,5 +2,5 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CRenderObject, Scene::CSceneNodeAttr);
+__ImplementClassNoFactory(Scene::CRenderObject, Scene::CNodeAttribute);
 }

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_CAMERA_H__
 #define __DEM_L1_SCENE_CAMERA_H__
 
-#include <Scene/SceneNodeAttr.h>
+#include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
 #include <mathlib/line.h>
 
@@ -13,7 +13,7 @@
 namespace Scene
 {
 
-class CCamera: public CSceneNodeAttr
+class CCamera: public CNodeAttribute
 {
 	__DeclareClass(CCamera);
 

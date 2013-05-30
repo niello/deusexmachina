@@ -2,7 +2,7 @@
 
 namespace Scene
 {
-__ImplementClass(Scene::CCamera, 'CAMR', Scene::CSceneNodeAttr);
+__ImplementClass(Scene::CCamera, 'CAMR', Scene::CNodeAttribute);
 
 bool CCamera::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {

@@ -14,7 +14,7 @@ namespace Render
 
 namespace Scene
 {
-__ImplementClass(Scene::CTerrain, 'TERR', Scene::CSceneNodeAttr);
+__ImplementClass(Scene::CTerrain, 'TERR', Scene::CNodeAttribute);
 
 using namespace Render;
 

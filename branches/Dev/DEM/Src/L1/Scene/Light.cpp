@@ -5,7 +5,7 @@
 
 namespace Scene
 {
-__ImplementClass(Scene::CLight, 'LGHT', Scene::CSceneNodeAttr);
+__ImplementClass(Scene::CLight, 'LGHT', Scene::CNodeAttribute);
 
 bool CLight::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 {
