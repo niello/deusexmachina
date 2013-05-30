@@ -16,7 +16,7 @@ namespace Data
 namespace Physics
 {
 	typedef Ptr<class CShape> PShape;
-	typedef Ptr<class CCollisionObject> PCollisionObject;
+	typedef Ptr<class CCollisionObjStatic> PCollisionObjStatic;
 }
 
 namespace Scene
@@ -42,7 +42,7 @@ protected:
 
 	Scene::PSceneNode			Node;
 	bool						ExistingNode;
-	Physics::PCollisionObject	CollObj;
+	Physics::PCollisionObjStatic	CollObj;
 
 	nArray<Physics::PShape>	Collision; //???scene node attributes?
 	nArray<matrix44>		CollLocalTfm; //???use child scene node?

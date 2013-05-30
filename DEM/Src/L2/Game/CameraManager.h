@@ -4,7 +4,7 @@
 
 //#include <Core/RefCounted.h>
 #include <Core/Singleton.h>
-#include <Scene/AnimControllerThirdPerson.h>
+#include <Scene/NodeControllerThirdPerson.h>
 //#include <Scene/Camera.h>
 //#include <util/npfeedbackloop.h>
 
@@ -57,7 +57,7 @@ protected:
 
 	bool					IsThirdPerson; // Cached to avoid RTTI checking. //???remove? Strict IsA() is fast
 	Scene::CSceneNode*		pCameraNode;
-	Scene::PAnimController	Ctlr;
+	Scene::PNodeController	Ctlr;
 
 	//nPFeedbackLoop<vector3>				Position;
 	//nPFeedbackLoop<vector3>				Lookat;
@@ -105,7 +105,7 @@ public:
 	//void PreserveDistance(); // When object/terrain is under a camera, follow its surface
 
 	Scene::CSceneNode*		GetCameraNode() const { return pCameraNode; }
-	Scene::CAnimController*	GetCameraController() const { return Ctlr.GetUnsafe(); }
+	Scene::CNodeController*	GetCameraController() const { return Ctlr.GetUnsafe(); }
 	bool					IsCameraThirdPerson() const { return IsThirdPerson; }
 
 	//???force COI in parent space for 3P camera? default is zero vector
