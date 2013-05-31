@@ -1637,6 +1637,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Physics\NodeAttrCollision.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\NodeAttrCollision.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Physics\NodeControllerRigidBody.cpp"
 				>
 			</File>

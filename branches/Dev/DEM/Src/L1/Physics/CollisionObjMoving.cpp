@@ -17,7 +17,7 @@ bool CCollisionObjMoving::Init(CCollisionShape& CollShape, ushort Group, ushort 
 	n_assert(!pWorld && CollShape.IsLoaded());
 
 	btRigidBody::btRigidBodyConstructionInfo CI(0.f, NULL, CollShape.GetBtShape());
-	//???pass material and set friction, restitution, dampings etc?
+	//???pass material and set friction, restitution etc?
 
 	pBtCollObj = new btRigidBody(CI);
 	pBtCollObj->setCollisionFlags(pBtCollObj->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
@@ -54,15 +54,9 @@ void CCollisionObjMoving::SetNode(Scene::CSceneNode& Node)
 
 bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!World.GetBtWorld() || !pBtCollObj || !pNode) FAIL;
-
-	n_assert(!pWorld);
-	pWorld = &World;
-	//World.CollObjects.Append(this);
-
+	if (!pNode || !CCollisionObj::AttachToLevel(World)) FAIL;
 	SetNode(*pNode);
 	pWorld->GetBtWorld()->addRigidBody((btRigidBody*)pBtCollObj, Group, Mask);
-
 	OK;
 }
 //---------------------------------------------------------------------
@@ -71,11 +65,8 @@ void CCollisionObjMoving::RemoveFromLevel()
 {
 	if (!pWorld) return;
 	n_assert(pWorld->GetBtWorld());
-
 	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
-
-	pWorld = NULL;
-	//World.CollObjects.RemoveByValue(this);
+	CCollisionObj::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 

@@ -24,14 +24,8 @@ bool CCollisionObjStatic::Init(CCollisionShape& CollShape, ushort Group, ushort 
 
 bool CCollisionObjStatic::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!World.GetBtWorld() || !pBtCollObj) FAIL;
-
-	n_assert(!pWorld);
-	pWorld = &World;
-	//World.CollObjects.Append(this);
-
+	if (!CCollisionObj::AttachToLevel(World)) FAIL;
 	pWorld->GetBtWorld()->addCollisionObject(pBtCollObj, Group, Mask);
-
 	OK;
 }
 //---------------------------------------------------------------------
@@ -40,11 +34,8 @@ void CCollisionObjStatic::RemoveFromLevel()
 {
 	if (!pWorld) return;
 	n_assert(pWorld->GetBtWorld());
-
 	pWorld->GetBtWorld()->removeCollisionObject(pBtCollObj);
-	pWorld = NULL;
-
-	//World.CollObjects.RemoveByValue(this);
+	CCollisionObj::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 

@@ -26,15 +26,15 @@ protected:
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
 
+	virtual bool		Init(CCollisionShape& CollShape, ushort Group, ushort Mask, const vector3& Offset);
+	virtual void		Term();
+	virtual bool		AttachToLevel(CPhysicsWorld& World);
+	virtual void		RemoveFromLevel();
+
 public:
 
 	CCollisionObj(): pBtCollObj(NULL), pWorld(NULL) {}
 	virtual ~CCollisionObj() { Term(); }
-
-	virtual bool		Init(CCollisionShape& CollShape, ushort Group, ushort Mask, const vector3& Offset);
-	virtual void		Term();
-	virtual bool		AttachToLevel(CPhysicsWorld& World) = 0;
-	virtual void		RemoveFromLevel() = 0;
 
 	bool				SetTransform(const matrix44& Tfm);
 	void				GetGlobalAABB(bbox3& OutBox) const;

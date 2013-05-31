@@ -37,6 +37,28 @@ void CCollisionObj::Term()
 }
 //---------------------------------------------------------------------
 
+bool CCollisionObj::AttachToLevel(CPhysicsWorld& World)
+{
+	if (!World.GetBtWorld() || !pBtCollObj) FAIL;
+
+	n_assert(!pWorld);
+	pWorld = &World;
+	//World.CollObjects.Append(this);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CCollisionObj::RemoveFromLevel()
+{
+	if (pWorld)
+	{
+		//World.CollObjects.RemoveByValue(this);
+		pWorld = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
 bool CCollisionObj::SetTransform(const matrix44& Tfm)
 {
 	btTransform BtTfm = TfmToBtTfm(Tfm);
