@@ -2,8 +2,7 @@
 #ifndef __DEM_L1_PHYSICS_WORLD_H__
 #define __DEM_L1_PHYSICS_WORLD_H__
 
-#include <Core/RefCounted.h>
-//#include <Physics/CollisionObjStatic.h>
+#include <Physics/CollisionObjStatic.h>
 
 // Physics world represents a space where physics bodies and collision objects live.
 
@@ -21,6 +20,15 @@ protected:
 
 	btDiscreteDynamicsWorld*	pBtDynWorld;
 	float						StepTime;
+	nArray<PCollisionObj>		CollObjects;
+
+	// Cross-dependence of collision objects and the level.
+	// Only objects know, how to add them, but only the level knows, when it is killed.
+	// On level term all objects must be removed from it.
+	friend class CCollisionObj;
+
+	bool	AddCollisionObject(CCollisionObj& Obj);
+	void	RemoveCollisionObject(CCollisionObj& Obj);
 
 public:
 
@@ -31,9 +39,6 @@ public:
 	void	Term();
 	void	Trigger(float FrameTime);
 	void	RenderDebug();
-
-	//bool	AddCollisionObject(CCollisionObjStatic& Obj, ushort Group, ushort Mask);
-	//void	RemoveCollisionObject(CCollisionObjStatic& Obj);
 
 	//!!!can set filter group and mask!
 	bool	GetClosestRayContact(const vector3& Start, const vector3& End) const;

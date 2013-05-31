@@ -141,25 +141,19 @@ void CPhysicsWorld::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-/*
-bool CPhysicsWorld::AddCollisionObject(CCollisionObjStatic& Obj, ushort Group, ushort Mask)
+bool CPhysicsWorld::AddCollisionObject(CCollisionObj& Obj)
 {
 	n_assert(pBtDynWorld && Obj.GetBtObject());
 	CollObjects.Append(&Obj);
-	pBtDynWorld->addCollisionObject(Obj.GetBtObject(), Group, Mask);
-	Obj.OnAdd(*this);
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CPhysicsWorld::RemoveCollisionObject(CCollisionObjStatic& Obj)
+void CPhysicsWorld::RemoveCollisionObject(CCollisionObj& Obj)
 {
-	Obj.OnRemove();
-	pBtDynWorld->removeCollisionObject(Obj.GetBtObject());
 	CollObjects.RemoveByValue(&Obj);
 }
 //---------------------------------------------------------------------
-*/
 
 //http://bulletphysics.org/mediawiki-1.5.8/index.php/Using_RayTest
 bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End) const

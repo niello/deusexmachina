@@ -65,7 +65,7 @@ public:
 
 	PNodeController			Controller; //???weak ptr? detach itself on death?
 
-	CSceneNode(CScene& Scene, CStrID NodeName): pScene(&Scene), pParent(NULL), Name(NodeName), Flags(Active | LocalMatrixDirty) {}
+	CSceneNode(CScene& Scene, CStrID NodeName);
 	~CSceneNode();
 
 	CSceneNode*				CreateChild(CStrID ChildName);
@@ -122,10 +122,20 @@ public:
 	const vector3&			GetWorldPosition() const { return WorldMatrix.Translation(); }
 };
 
+inline CSceneNode::CSceneNode(CScene& Scene, CStrID NodeName):
+	pScene(&Scene),
+	pParent(NULL),
+	Name(NodeName),
+	Flags(Active | LocalMatrixDirty)
+{
+	Attrs.Flags.Clear(Array_KeepOrder);
+}
+//---------------------------------------------------------------------
+
 inline CSceneNode::~CSceneNode()
 {
 	Child.Clear();
-	while (Attrs.GetCount()) RemoveAttr(0);
+	while (Attrs.GetCount()) RemoveAttr(Attrs.GetCount() - 1);
 }
 //---------------------------------------------------------------------
 
