@@ -2,7 +2,7 @@
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsWorld.h>
-#include <Physics/MotionStateFromNode.h>
+#include <Physics/MotionStateKinematic.h>
 #include <mathlib/bbox.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
@@ -10,11 +10,11 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CCollisionObj);
+__ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CPhysicsObj);
 
 bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 {
-	if (!CCollisionObj::Init(Desc, Offset)) FAIL;
+	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
 
 	//!!!create motion state!
 	//???does the motion state gettfm when object is attached to level?
@@ -38,7 +38,7 @@ void CCollisionObjMoving::Term()
 {
 	btMotionState* pMS = pBtCollObj ? ((btRigidBody*)pBtCollObj)->getMotionState() : NULL;
 
-	CCollisionObj::Term();
+	CPhysicsObj::Term();
 
 	if (pMS) delete pMS;
 }
@@ -46,7 +46,7 @@ void CCollisionObjMoving::Term()
 
 bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!CCollisionObj::AttachToLevel(World)) FAIL;
+	if (!CPhysicsObj::AttachToLevel(World)) FAIL;
 	pWorld->GetBtWorld()->addRigidBody((btRigidBody*)pBtCollObj, Group, Mask);
 	OK;
 }
@@ -56,7 +56,7 @@ void CCollisionObjMoving::RemoveFromLevel()
 {
 	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
-	CCollisionObj::RemoveFromLevel();
+	CPhysicsObj::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 
@@ -64,12 +64,18 @@ void CCollisionObjMoving::SetTransform(const matrix44& Tfm)
 {
 	n_assert_dbg(pBtCollObj);
 
-	btMotionState* pMotionState = ((btRigidBody*)pBtCollObj)->getMotionState();
+	//???activate physics body only when tfm changed?
+
+	CMotionStateKinematic* pMotionState = (CMotionStateKinematic*)((btRigidBody*)pBtCollObj)->getMotionState();
 	if (pMotionState)
 	{
-		// set to motion state cache
+		pMotionState->Tfm = TfmToBtTfm(Tfm);
+
+		pMotionState->Tfm.getOrigin().m_floats[0] += ShapeOffset.x;
+		pMotionState->Tfm.getOrigin().m_floats[1] += ShapeOffset.y;
+		pMotionState->Tfm.getOrigin().m_floats[2] += ShapeOffset.z;
 	}
-	else CCollisionObj::SetTransform(Tfm);
+	else CPhysicsObj::SetTransform(Tfm);
 }
 //---------------------------------------------------------------------
 
@@ -77,12 +83,16 @@ void CCollisionObjMoving::GetTransform(btTransform& Out) const
 {
 	n_assert_dbg(pBtCollObj);
 
-	btMotionState* pMotionState = ((btRigidBody*)pBtCollObj)->getMotionState();
+	CMotionStateKinematic* pMotionState = (CMotionStateKinematic*)((btRigidBody*)pBtCollObj)->getMotionState();
 	if (pMotionState)
 	{
-		// get from motion state cache
+		Out = pMotionState->Tfm;
+
+		Out.getOrigin().m_floats[0] -= ShapeOffset.x;
+		Out.getOrigin().m_floats[1] -= ShapeOffset.y;
+		Out.getOrigin().m_floats[2] -= ShapeOffset.z;
 	}
-	else CCollisionObj::GetTransform(Out);
+	else CPhysicsObj::GetTransform(Out);
 }
 //---------------------------------------------------------------------
 

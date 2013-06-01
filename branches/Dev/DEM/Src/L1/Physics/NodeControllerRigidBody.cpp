@@ -1,26 +1,34 @@
 #include "NodeControllerRigidBody.h"
 
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//for channel flags, move flags to Scene!
+#include <Animation/Anim.h>
+
 namespace Physics
 {
-//
-//void CNodeControllerRigidBody::SetBody(btRigidBody* pRigidBody)
-//{
-//	n_assert(pRigidBody);
-//	pRB = pRigidBody;
-//	Channels.Set(Chnl_Translation | Chnl_Rotation);
-//}
-////---------------------------------------------------------------------
+
+void CNodeControllerRigidBody::SetBody(CRigidBody& RigidBody)
+{
+	Body = &RigidBody;
+	Channels.Set(Anim::Chnl_Translation | Anim::Chnl_Rotation);
+}
+//---------------------------------------------------------------------
 
 void CNodeControllerRigidBody::Clear()
 {
 	Channels.ClearAll();
-//	pRB = NULL;
+	Body = NULL;
 }
 //---------------------------------------------------------------------
 
 bool CNodeControllerRigidBody::ApplyTo(Math::CTransformSRT& DestTfm)
 {
-//	if (!pRB) FAIL;
+	if (!Body.IsValid()) FAIL;
+
+	//always update the first time after activation
+	//then look at body motion state flag "changed this frame"
+
+	Body->GetTransform(DestTfm.Translation, DestTfm.Rotation);
 
 	OK;
 }

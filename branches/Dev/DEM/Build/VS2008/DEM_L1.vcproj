@@ -1589,14 +1589,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Physics\CollisionObj.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Physics\CollisionObj.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Physics\CollisionObjMoving.cpp"
 				>
 			</File>
@@ -1633,7 +1625,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Physics\MotionStateFromNode.h"
+				RelativePath="..\..\Src\L1\Physics\MotionStateDynamic.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\MotionStateKinematic.h"
 				>
 			</File>
 			<File
@@ -1658,6 +1654,14 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Physics\PhysicsDebugDraw.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsObj.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Physics\PhysicsObj.h"
 				>
 			</File>
 			<File

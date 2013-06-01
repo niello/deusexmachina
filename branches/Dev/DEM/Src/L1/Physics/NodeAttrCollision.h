@@ -11,11 +11,6 @@
 // NB: for now this attribute is not loadable from .scn, because at the L1
 // there is no any link between certain scene and physics world.
 
-//???need this class at all? it allows to control presence of physics object depending on
-// existence of the scene node
-
-//???or link physics and scene strictly in L2? write controller and then decide.
-
 namespace Physics
 {
 

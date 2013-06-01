@@ -103,14 +103,17 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	//shape can be compound
 	//composite can't have non-body collision shapes
 	//body or compound body can be mapped as controllers to the scene hierarchy
-	CStrID Coll = Desc->Get<CStrID>(CStrID("Physics"), CStrID::Empty);    
-	Data::PParams CollDesc = DataSrv->LoadHRD(nString("physics:") + Coll.CStr() + ".hrd"); //!!!load prm!
-	if (CollDesc.IsValid() && Level->GetPhysics())
+	const nString& Coll = Desc->Get<nString>(CStrID("Physics"), NULL);    
+	if (Coll.IsValid() && Level->GetPhysics())
 	{
-		CollObj = n_new(Physics::CCollisionObjStatic);
-		CollObj->Init(*CollDesc); //???where to get offset?
-		CollObj->SetTransform(Tfm);
-		CollObj->AttachToLevel(*Level->GetPhysics());
+		Data::PParams CollDesc = DataSrv->LoadHRD(nString("physics:") + Coll.CStr() + ".hrd"); //!!!load prm!
+		if (CollDesc.IsValid())
+		{
+			CollObj = n_new(Physics::CCollisionObjStatic);
+			CollObj->Init(*CollDesc); //???where to get offset?
+			CollObj->SetTransform(Tfm);
+			CollObj->AttachToLevel(*Level->GetPhysics());
+		}
 	}
 }
 //---------------------------------------------------------------------

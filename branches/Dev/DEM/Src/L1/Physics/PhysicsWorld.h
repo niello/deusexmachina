@@ -20,15 +20,15 @@ protected:
 
 	btDiscreteDynamicsWorld*	pBtDynWorld;
 	float						StepTime;
-	nArray<PCollisionObj>		CollObjects;
+	nArray<PPhysicsObj>			Objects;
 
 	// Cross-dependence of collision objects and the level.
 	// Only objects know, how to add them, but only the level knows, when it is killed.
 	// On level term all objects must be removed from it.
-	friend class CCollisionObj;
+	friend class CPhysicsObj;
 
-	bool	AddCollisionObject(CCollisionObj& Obj);
-	void	RemoveCollisionObject(CCollisionObj& Obj);
+	bool	AddCollisionObject(CPhysicsObj& Obj);
+	void	RemoveCollisionObject(CPhysicsObj& Obj);
 
 public:
 

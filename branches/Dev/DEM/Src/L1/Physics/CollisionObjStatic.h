@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_COLLISION_OBJECT_STATIC_H__
 #define __DEM_L1_COLLISION_OBJECT_STATIC_H__
 
-#include <Physics/CollisionObj.h>
+#include <Physics/PhysicsObj.h>
 
 // Static collision object can't move, transform changes are discrete and manual.
 // Use this type of objects to represent static environment.
@@ -10,7 +10,7 @@
 namespace Physics
 {
 
-class CCollisionObjStatic: public CCollisionObj
+class CCollisionObjStatic: public CPhysicsObj
 {
 	__DeclareClassNoFactory;
 
