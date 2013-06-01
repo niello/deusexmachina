@@ -1094,11 +1094,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\RigidBody.cpp"
+				RelativePath="..\..\Src\L2\Physics\RigidBodyOld.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\RigidBody.h"
+				RelativePath="..\..\Src\L2\Physics\RigidBodyOld.h"
 				>
 			</File>
 			<Filter

@@ -16,8 +16,7 @@ class CCollisionObjStatic: public CCollisionObj
 
 public:
 
-	//!!!need normal flags!
-	virtual bool Init(CCollisionShape& CollShape, ushort Group = 0x0001, ushort Mask = 0xffff, const vector3& Offset = vector3::Zero);
+	virtual bool Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	virtual bool AttachToLevel(CPhysicsWorld& World);
 	virtual void RemoveFromLevel();
 };

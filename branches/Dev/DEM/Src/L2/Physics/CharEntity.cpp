@@ -1,7 +1,7 @@
 #include "CharEntity.h"
 
 #include <Physics/PhysicsServerOld.h>
-#include <Physics/RigidBody.h>
+#include <Physics/RigidBodyOld.h>
 #include <Physics/Collision/Shape.h>
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/Joints/AMotor.h>
@@ -44,7 +44,7 @@ void CCharEntity::CreateDefaultComposite()
 {
 	DefaultComposite = CComposite::CreateInstance();
 
-	PRigidBody BaseBody = CRigidBody::CreateInstance();
+	PRigidBodyOld BaseBody = CRigidBodyOld::CreateInstance();
 	BaseBody->Name = "CharEntityBody";
 
 	float CapsuleLength = Height - 2.0f * Radius - Hover;
@@ -139,7 +139,7 @@ void CCharEntity::OnStepBefore()
 			GroundMtl = InvalidMaterial;
 		}
 
-		CRigidBody* pMasterBody = Composite->GetMasterBody();
+		CRigidBodyOld* pMasterBody = Composite->GetMasterBody();
 		bool BodyIsEnabled = IsEnabled();
 		vector3 AngularVel = pMasterBody->GetAngularVelocity();
 		vector3 LinearVel = pMasterBody->GetLinearVelocity();

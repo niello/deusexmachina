@@ -7,7 +7,13 @@
 // Collision object instantiates shared shape and locates it in a physics world.
 
 class bbox3;
+class btTransform;
 class btCollisionObject;
+
+namespace Data
+{
+	class CParams;
+}
 
 namespace Physics
 {
@@ -20,24 +26,27 @@ class CCollisionObj: public Core::CRefCounted
 protected:
 
 	PCollisionShape		Shape;
-	vector3				Offset;			// Offset between a center of mass and a graphics
+	vector3				ShapeOffset;	// Offset between a center of mass and a graphics
 	ushort				Group;
 	ushort				Mask;
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
 
-	virtual bool		Init(CCollisionShape& CollShape, ushort Group, ushort Mask, const vector3& Offset);
+	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset);
 	virtual void		Term();
 	virtual bool		AttachToLevel(CPhysicsWorld& World);
 	virtual void		RemoveFromLevel();
+	virtual void		GetTransform(btTransform& Out) const;
 
 public:
 
 	CCollisionObj(): pBtCollObj(NULL), pWorld(NULL) {}
 	virtual ~CCollisionObj() { Term(); }
 
-	bool				SetTransform(const matrix44& Tfm);
+	virtual void		SetTransform(const matrix44& Tfm);
+	void				GetTransform(vector3& OutPos, quaternion& OutRot) const;
 	void				GetGlobalAABB(bbox3& OutBox) const;
+	void				GetPhysicsAABB(bbox3& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
 };
 

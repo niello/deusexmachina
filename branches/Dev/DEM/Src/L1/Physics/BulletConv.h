@@ -9,8 +9,10 @@
 
 //!!!later migrate to bullet math!
 inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
-
 inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
+
+inline quaternion BtQuatToQuat(const btQuaternion& Q) { return quaternion(Q.x(), Q.y(), Q.z(), Q.w()); }
+inline btQuaternion QuatToBtQuat(const quaternion& Q) { return btQuaternion(Q.x, Q.y, Q.z, Q.w); }
 
 inline btTransform TfmToBtTfm(const matrix44& Tfm)
 {

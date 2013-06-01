@@ -6,7 +6,6 @@
 #include <Physics/CollisionObjStatic.h>
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/PhysicsWorld.h>
-#include <Physics/PhysicsServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -15,16 +14,9 @@ namespace Scene
 	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
 }
 
-namespace Physics
-{
-	PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName);
-}
-
 namespace Game
 {
 __ImplementClassNoFactory(Game::CStaticObject, Core::CRefCounted);
-
-using namespace Physics;
 
 CStaticObject::CStaticObject(CStrID _UID, CGameLevel& _Level): UID(_UID), Level(&_Level)
 {
@@ -85,7 +77,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 				Data::PParams ShapeDesc = Shapes[i];
 				nString ShCls = ShapeDesc->Get<nString>(CStrID("Type"));
 				if (ShCls == "HeightfieldShape") ShCls = "HeightfieldShapeOld";
-				PShape pShape = (CShape*)Factory->Create("Physics::C" + ShCls);
+				Physics::PShape pShape = (Physics::CShape*)Factory->Create("Physics::C" + ShCls);
 				pShape->Init(ShapeDesc);
 				CollLocalTfm.Append(pShape->GetTransform());
 				Collision.Append(pShape);
@@ -111,27 +103,12 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	//shape can be compound
 	//composite can't have non-body collision shapes
 	//body or compound body can be mapped as controllers to the scene hierarchy
-	CStrID Coll = Desc->Get<CStrID>(CStrID("Collision"), CStrID::Empty);    
-	if (Coll.IsValid() && Level->GetPhysics())
+	CStrID Coll = Desc->Get<CStrID>(CStrID("Physics"), CStrID::Empty);    
+	Data::PParams CollDesc = DataSrv->LoadHRD(nString("physics:") + Coll.CStr() + ".hrd"); //!!!load prm!
+	if (CollDesc.IsValid() && Level->GetPhysics())
 	{
-		Physics::PCollisionShape Shape = PhysicsSrv->CollShapeMgr.GetTypedResource(Coll);
-		if (!Shape.IsValid())
-			Shape = LoadCollisionShapeFromPRM(Coll, nString("physics:") + Coll.CStr() + ".hrd"); //!!!prm!
-
-		//!!!???what if shape is found but is not loaded? RESMGR problem!
-		//desired way:
-		//if resource is found, but not loaded
-		//  pass in into the loader
-		//if loader determines that the type is incompatible
-		//  it gets the resource pointer from the resource manager
-		//  sets it to the passed pointer
-		//  checks its type
-		//  if type is right, someone reloaded the resource before
-		//  else replaces a passed pointer with a new one, of the right type
-		n_assert(Shape->IsLoaded());
-
 		CollObj = n_new(Physics::CCollisionObjStatic);
-		CollObj->Init(*Shape, 0x01, 0xffff); //!!!set normal flags!
+		CollObj->Init(*CollDesc); //???where to get offset?
 		CollObj->SetTransform(Tfm);
 		CollObj->AttachToLevel(*Level->GetPhysics());
 	}

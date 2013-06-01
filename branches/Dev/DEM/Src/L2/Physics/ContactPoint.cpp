@@ -13,7 +13,7 @@ CEntity* CContactPoint::GetEntity() const
 }
 //---------------------------------------------------------------------
 
-CRigidBody* CContactPoint::GetRigidBody() const
+CRigidBodyOld* CContactPoint::GetRigidBody() const
 {
 	CEntity* pEnt = GetEntity();
 	return (pEnt) ? pEnt->GetComposite()->FindBodyByUniqueID(RigidBodyID) : NULL;

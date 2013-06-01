@@ -5,7 +5,7 @@
 #include <Physics/Composite.h>
 #include <Physics/Collision/Shape.h>
 #include <Physics/PhysicsServerOld.h>
-#include <Physics/RigidBody.h>
+#include <Physics/RigidBodyOld.h>
 #include <Audio/Event/PlaySound.h>
 #include <Events/EventManager.h>
 
@@ -232,11 +232,11 @@ void CPhysWorldOld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 		// for both bodies (whether 2 bodies connected by a joint should
 		// collide or not, for this, both bodies must have set the
 		// CollideConnected() flag set.
-		CRigidBody* PhysicsBody0 = (CRigidBody*)dBodyGetData(Body1);
-		n_assert(PhysicsBody0 && PhysicsBody0->IsInstanceOf(CRigidBody::RTTI));
+		CRigidBodyOld* PhysicsBody0 = (CRigidBodyOld*)dBodyGetData(Body1);
+		n_assert(PhysicsBody0 && PhysicsBody0->IsInstanceOf(CRigidBodyOld::RTTI));
 		if (!PhysicsBody0->CollideConnected) return;
-		CRigidBody* PhysicsBody1 = (CRigidBody*) dBodyGetData(Body2);
-		n_assert(PhysicsBody1 && PhysicsBody1->IsInstanceOf(CRigidBody::RTTI));
+		CRigidBodyOld* PhysicsBody1 = (CRigidBodyOld*) dBodyGetData(Body2);
+		n_assert(PhysicsBody1 && PhysicsBody1->IsInstanceOf(CRigidBodyOld::RTTI));
 		if (!PhysicsBody1->CollideConnected) return;
 	}
 
@@ -312,8 +312,8 @@ void CPhysWorldOld::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 
 		if ((Now - Level->CollisionSounds.At(Key, sizeof(Key))) > 0.25f)
 		{
-			CRigidBody* Rigid1 = Shape1->GetRigidBody();
-			CRigidBody* Rigid2 = Shape2->GetRigidBody();
+			CRigidBodyOld* Rigid1 = Shape1->GetRigidBody();
+			CRigidBodyOld* Rigid2 = Shape2->GetRigidBody();
 
 			if ((!Rigid1 || !Rigid1->IsEnabled()) && (!Rigid2 || !Rigid2->IsEnabled())) return;
 
@@ -388,7 +388,7 @@ void CPhysWorldOld::ODERayCallback(void* data, dGeomID o1, dGeomID o2)
 		ContactPt.Depth = ODEContact[i].depth;
 		CEntity* pOtherEntity = pOtherShape->GetEntity();
 		ContactPt.EntityID = pOtherEntity ? pOtherEntity->GetUID() : 0;
-		CRigidBody* pOtherRB = pOtherShape->GetRigidBody();
+		CRigidBodyOld* pOtherRB = pOtherShape->GetRigidBody();
 		ContactPt.RigidBodyID = pOtherRB ? pOtherRB->GetUID() : 0;
 		ContactPt.Material = pOtherShape->GetMaterialType();
 		pLevel->Contacts.Append(ContactPt);

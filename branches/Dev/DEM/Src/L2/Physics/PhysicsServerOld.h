@@ -43,7 +43,7 @@ protected:
 	void UnregisterEntity(CEntity* pEnt) { n_assert(pEnt); Entities.Rem(pEnt->GetUID()); }
 
 	friend class CPhysWorldOld;
-	friend class CRigidBody;
+	friend class CRigidBodyOld;
 	friend class CEntity;
 
 public:

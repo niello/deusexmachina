@@ -10,22 +10,27 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjMoving, Scene::CNodeAttribute);
+__ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CCollisionObj);
 
-bool CCollisionObjMoving::Init(CCollisionShape& CollShape, ushort Group, ushort Mask, const vector3& Offset)
+bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 {
-	n_assert(!pWorld && CollShape.IsLoaded());
+	if (!CCollisionObj::Init(Desc, Offset)) FAIL;
 
-	btRigidBody::btRigidBodyConstructionInfo CI(0.f, NULL, CollShape.GetBtShape());
-	//???pass material and set friction, restitution etc?
+	//!!!create motion state!
+	//???does the motion state gettfm when object is attached to level?
+
+	btRigidBody::btRigidBodyConstructionInfo CI(0.f, NULL, Shape->GetBtShape());
+
+	//!!!set friction and restitution!
 
 	pBtCollObj = new btRigidBody(CI);
 	pBtCollObj->setCollisionFlags(pBtCollObj->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
+	pBtCollObj->setUserPointer(this);
 
 	//???or activate only when tfm changes?
 	pBtCollObj->setActivationState(DISABLE_DEACTIVATION);
 
-	return CCollisionObj::Init(CollShape, Group, Mask, Offset);
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -39,23 +44,9 @@ void CCollisionObjMoving::Term()
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::SetNode(Scene::CSceneNode& Node)
-{
-	pNode = &Node;
-	if (pWorld)
-	{
-		//???!!!offset to motion state?!
-		btMotionState* pMotionState = ((btRigidBody*)pBtCollObj)->getMotionState();
-		if (pMotionState) ((CMotionStateFromNode*)pMotionState)->SetNode(*pNode);
-		else ((btRigidBody*)pBtCollObj)->setMotionState(new CMotionStateFromNode(*pNode));
-	}
-}
-//---------------------------------------------------------------------
-
 bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!pNode || !CCollisionObj::AttachToLevel(World)) FAIL;
-	SetNode(*pNode);
+	if (!CCollisionObj::AttachToLevel(World)) FAIL;
 	pWorld->GetBtWorld()->addRigidBody((btRigidBody*)pBtCollObj, Group, Mask);
 	OK;
 }
@@ -63,23 +54,35 @@ bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
 
 void CCollisionObjMoving::RemoveFromLevel()
 {
-	if (!pWorld) return;
-	n_assert(pWorld->GetBtWorld());
+	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
 	CCollisionObj::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::GetMotionStateAABB(bbox3& OutBox) const
+void CCollisionObjMoving::SetTransform(const matrix44& Tfm)
 {
-	if (!pBtCollObj || !((btRigidBody*)pBtCollObj)->getMotionState()) return;
+	n_assert_dbg(pBtCollObj);
 
-	const Scene::CSceneNode* pNode = ((CMotionStateFromNode*)((btRigidBody*)pBtCollObj)->getMotionState())->GetNode();
-	btVector3 Min, Max;
-	//!!!???take offset into account?!
-	pBtCollObj->getCollisionShape()->getAabb(TfmToBtTfm(pNode->GetWorldMatrix()), Min, Max);
-	OutBox.vmin = BtVectorToVector(Min);
-	OutBox.vmax = BtVectorToVector(Max);
+	btMotionState* pMotionState = ((btRigidBody*)pBtCollObj)->getMotionState();
+	if (pMotionState)
+	{
+		// set to motion state cache
+	}
+	else CCollisionObj::SetTransform(Tfm);
+}
+//---------------------------------------------------------------------
+
+void CCollisionObjMoving::GetTransform(btTransform& Out) const
+{
+	n_assert_dbg(pBtCollObj);
+
+	btMotionState* pMotionState = ((btRigidBody*)pBtCollObj)->getMotionState();
+	if (pMotionState)
+	{
+		// get from motion state cache
+	}
+	else CCollisionObj::GetTransform(Out);
 }
 //---------------------------------------------------------------------
 

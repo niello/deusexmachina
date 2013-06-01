@@ -39,7 +39,7 @@ protected:
 
 	enum { MaxContacts = 64 };
 
-	friend class CRigidBody;
+	friend class CRigidBodyOld;
 	friend class CPhysWorldOld;
 
 	static nArray<CContactPoint>*	CollideContacts;
@@ -50,7 +50,7 @@ protected:
 	matrix44		Transform;	//!!!MEMORY: too many mb redundant matrices in physics, check for optimization!
 	matrix44		InitialTfm;
 	CMaterialType	MaterialType;
-	CRigidBody*		pRigidBody;
+	CRigidBodyOld*		pRigidBody;
 	int				CollCount;
 	bool			IsHorizColl;
 	uint			CatBits; //???!!!CFlags?!
@@ -97,8 +97,8 @@ public:
 	uint			GetCategoryBits() const { return CatBits; }
 	void			SetCollideBits(uint NewCollBits);
 	uint			GetCollideBits() const { return CollBits; }
-	void			SetRigidBody(CRigidBody* pBody) { n_assert(!IsAttached()); pRigidBody = pBody; }
-	CRigidBody*		GetRigidBody() const { return pRigidBody; }
+	void			SetRigidBody(CRigidBodyOld* pBody) { n_assert(!IsAttached()); pRigidBody = pBody; }
+	CRigidBodyOld*		GetRigidBody() const { return pRigidBody; }
 	bool			IsAttached() const { return ODEGeomID != NULL; }
 	dGeomID			GetGeomId() const { return ODEGeomID; }
 	dSpaceID		GetSpaceId() const { return ODESpaceID; }

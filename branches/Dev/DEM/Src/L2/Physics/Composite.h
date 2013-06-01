@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_PHYSICS_COMPOSITE_H__ //!!!to L1!
 #define __DEM_L2_PHYSICS_COMPOSITE_H__
 
-#include <Physics/RigidBody.h>
+#include <Physics/RigidBodyOld.h>
 #include <Physics/Joints/Joint.h>
 #include <Data/Flags.h>
 
@@ -31,7 +31,7 @@ protected:
 	CFlags					Flags;
 	matrix44				FrameBeforeTfm;
 	matrix44				Transform;
-	nFixedArray<PRigidBody>	Bodies;
+	nFixedArray<PRigidBodyOld>	Bodies;
 	nFixedArray<PJoint>		Joints;
 	nFixedArray<PShape>		Shapes;
 	int						CurrBodyIdx;	//???need both 3 and all the time?
@@ -69,14 +69,14 @@ public:
 	void			OnFrameAfter();
 
 	virtual void	BeginBodies(int Count);
-	virtual void	AddBody(CRigidBody* pBody);
+	virtual void	AddBody(CRigidBodyOld* pBody);
 	virtual void	EndBodies();
 	int				GetNumBodies() const { return Bodies.GetCount(); }
-	CRigidBody*		GetBodyAt(int Idx) const { return Bodies[Idx]; }
-	CRigidBody*		FindBodyByUniqueID(int ID) const;
+	CRigidBodyOld*		GetBodyAt(int Idx) const { return Bodies[Idx]; }
+	CRigidBodyOld*		FindBodyByUniqueID(int ID) const;
 	bool			HasBodyWithName(const nString& Name) const;
-	CRigidBody*		GetBodyByName(const nString& Name) const;
-	CRigidBody*		GetMasterBody() const { if (Bodies.GetCount() > 0) return Bodies[0]; else return NULL; }
+	CRigidBodyOld*		GetBodyByName(const nString& Name) const;
+	CRigidBodyOld*		GetMasterBody() const { if (Bodies.GetCount() > 0) return Bodies[0]; else return NULL; }
 
 	virtual void	BeginJoints(int Count);
 	virtual void	AddJoint(CJoint* pJoint);
@@ -101,7 +101,7 @@ public:
 	bool			IsEnabled() const { return Bodies.GetCount() < 1 || Bodies[0]->IsEnabled(); }
 	bool			IsAttached() const { return Flags.Is(PHYS_COMP_ATTACHED); }
 	bool			IsHorizontalCollided() const;
-	bool			HasLinkType(CRigidBody::ELinkType Type);
+	bool			HasLinkType(CRigidBodyOld::ELinkType Type);
 };
 //---------------------------------------------------------------------
 
@@ -116,7 +116,7 @@ inline bool CComposite::HasBodyWithName(const nString& Name) const
 }
 //---------------------------------------------------------------------
 
-inline CRigidBody* CComposite::GetBodyByName(const nString& Name) const
+inline CRigidBodyOld* CComposite::GetBodyByName(const nString& Name) const
 {
 	for (int i = 0; i < Bodies.GetCount(); i++)
 		if (Name == Bodies[i]->Name) return Bodies[i];

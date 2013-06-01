@@ -122,7 +122,7 @@ CComposite* CPhysicsServerOld::LoadCompositeFromPRM(const nString& Name) const
 		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
 			PParams BodyDesc = Bodies[i];
-			PRigidBody pBody = CRigidBody::CreateInstance();
+			PRigidBodyOld pBody = CRigidBodyOld::CreateInstance();
 			pBody->Name = BodyDesc->Get<nString>(CStrID("Name"));
 			pBody->CollideConnected = BodyDesc->Get<bool>(CStrID("CollideConnected"), false);
 			matrix44 InitialTfm(quaternion(
@@ -135,9 +135,9 @@ CComposite* CPhysicsServerOld::LoadCompositeFromPRM(const nString& Name) const
 				BodyDesc->Get<float>(CStrID("PosY")),
 				BodyDesc->Get<float>(CStrID("PosZ"))));
 			pBody->SetInitialTransform(InitialTfm);
-			pBody->SetLinkName(CRigidBody::ModelNode, BodyDesc->Get<nString>(CStrID("Model"), NULL));
-			pBody->SetLinkName(CRigidBody::ShadowNode, BodyDesc->Get<nString>(CStrID("Shadow"), NULL));
-			pBody->SetLinkName(CRigidBody::JointNode, BodyDesc->Get<nString>(CStrID("Joint"), NULL));
+			pBody->SetLinkName(CRigidBodyOld::ModelNode, BodyDesc->Get<nString>(CStrID("Model"), NULL));
+			pBody->SetLinkName(CRigidBodyOld::ShadowNode, BodyDesc->Get<nString>(CStrID("Shadow"), NULL));
+			pBody->SetLinkName(CRigidBodyOld::JointNode, BodyDesc->Get<nString>(CStrID("Joint"), NULL));
 
 			CDataArray& Shapes = *BodyDesc->Get<PDataArray>(CStrID("Shapes"));
 			pBody->BeginShapes(Shapes.GetCount());
