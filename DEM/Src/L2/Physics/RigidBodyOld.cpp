@@ -1,4 +1,4 @@
-#include "RigidBody.h"
+#include "RigidBodyOld.h"
 
 #include <Physics/Collision/Shape.h>
 #include <Physics/Composite.h>
@@ -6,11 +6,11 @@
 
 namespace Physics
 {
-__ImplementClass(Physics::CRigidBody, 'RGBD', Core::CRefCounted);
+__ImplementClass(Physics::CRigidBodyOld, 'RGBD', Core::CRefCounted);
 
-uint CRigidBody::UIDCounter = 1;
+uint CRigidBodyOld::UIDCounter = 1;
 
-CRigidBody::CRigidBody():
+CRigidBodyOld::CRigidBodyOld():
 	Composite(NULL),
 	CurrShapeIndex(0),
 	pEntity(NULL),
@@ -26,14 +26,14 @@ CRigidBody::CRigidBody():
 }
 //---------------------------------------------------------------------
 
-CRigidBody::~CRigidBody()
+CRigidBodyOld::~CRigidBodyOld()
 {
 	if (IsAttached()) Detach();
 }
 //---------------------------------------------------------------------
 
 // A rigid body's shape can be described by any number of geometry shapes which are attached to the rigid body.
-void CRigidBody::BeginShapes(int Count)
+void CRigidBodyOld::BeginShapes(int Count)
 {
 	n_assert(!Shapes.GetCount());
 	Shapes.SetSize(Count);
@@ -41,7 +41,7 @@ void CRigidBody::BeginShapes(int Count)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::AddShape(CShape* pShape)
+void CRigidBodyOld::AddShape(CShape* pShape)
 {
 	n_assert(pShape);
 	pShape->SetRigidBody(this);
@@ -50,7 +50,7 @@ void CRigidBody::AddShape(CShape* pShape)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::EndShapes()
+void CRigidBodyOld::EndShapes()
 {
 	n_assert(Shapes.GetCount() == CurrShapeIndex);
 }
@@ -58,7 +58,7 @@ void CRigidBody::EndShapes()
 
 // Attach the rigid body to the world and initialize its position.
 // This will create an ODE rigid body object and create all associated shapes.
-void CRigidBody::Attach(dWorldID WorldID, dSpaceID SpaceID, const matrix44& Tfm)
+void CRigidBodyOld::Attach(dWorldID WorldID, dSpaceID SpaceID, const matrix44& Tfm)
 {
 	n_assert(!IsAttached());
 
@@ -70,7 +70,7 @@ void CRigidBody::Attach(dWorldID WorldID, dSpaceID SpaceID, const matrix44& Tfm)
 	{
 		CShape* pShape = Shapes[i];
 		if (pShape->Attach(SpaceID)) dMassAdd(&Mass, &pShape->ODEMass);
-		else n_error("CRigidBody::Attach(): Failed to attach pShape!");
+		else n_error("CRigidBodyOld::Attach(): Failed to attach pShape!");
 	}
 
 	dMassTranslate(&Mass, -Mass.c[0], -Mass.c[1], -Mass.c[2]);
@@ -79,7 +79,7 @@ void CRigidBody::Attach(dWorldID WorldID, dSpaceID SpaceID, const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::Detach()
+void CRigidBodyOld::Detach()
 {
 	n_assert(IsAttached());
 	for (int i = 0; i < Shapes.GetCount(); i++) Shapes[i]->Detach();
@@ -88,7 +88,7 @@ void CRigidBody::Detach()
 }
 //---------------------------------------------------------------------
 
-bool CRigidBody::SetAutoFreezeParams(bool AutoFreeze)
+bool CRigidBodyOld::SetAutoFreezeParams(bool AutoFreeze)
 {
 	if (ODEBodyID)
 	{
@@ -99,7 +99,7 @@ bool CRigidBody::SetAutoFreezeParams(bool AutoFreeze)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::OnFrameBefore()
+void CRigidBodyOld::OnFrameBefore()
 {
 	for (int i = 0; i < Shapes.GetCount(); i++)
 	{
@@ -110,13 +110,13 @@ void CRigidBody::OnFrameBefore()
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::OnFrameAfter()
+void CRigidBodyOld::OnFrameAfter()
 {
 }
 //---------------------------------------------------------------------
 
 // Apply an Impulse vector at a position in the global coordinate frame.
-void CRigidBody::ApplyImpulseAtPos(const vector3& Impulse, const vector3& Pos)
+void CRigidBodyOld::ApplyImpulseAtPos(const vector3& Impulse, const vector3& Pos)
 {
 	//n_assert(IsAttached());
 	//dWorldID ODEWorldID = PhysSrvOld->GetLevel()->GetODEWorldID();
@@ -128,7 +128,7 @@ void CRigidBody::ApplyImpulseAtPos(const vector3& Impulse, const vector3& Pos)
 //---------------------------------------------------------------------
 
 // Apply linear and angular damping.
-void CRigidBody::ApplyDamping()
+void CRigidBodyOld::ApplyDamping()
 {
 	n_assert(IsEnabled());
 
@@ -162,7 +162,7 @@ void CRigidBody::ApplyDamping()
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::OnStepBefore()
+void CRigidBodyOld::OnStepBefore()
 {
 	/*
     CPhysWorldOld* pLevel = PhysSrvOld->GetLevel();
@@ -203,7 +203,7 @@ void CRigidBody::OnStepBefore()
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::OnStepAfter()
+void CRigidBodyOld::OnStepAfter()
 {
 	n_assert(IsAttached());
 	CPhysicsServerOld::OdeToMatrix44(*(dMatrix3*)dBodyGetRotation(ODEBodyID), Transform);
@@ -211,7 +211,7 @@ void CRigidBody::OnStepAfter()
 }
 //---------------------------------------------------------------------
 
-int CRigidBody::GetNumCollisions() const
+int CRigidBodyOld::GetNumCollisions() const
 {
 	int Result = 0;
 	for (int i = 0; i < Shapes.GetCount(); i++)
@@ -220,7 +220,7 @@ int CRigidBody::GetNumCollisions() const
 }
 //---------------------------------------------------------------------
 
-bool CRigidBody::IsHorizontalCollided() const
+bool CRigidBodyOld::IsHorizontalCollided() const
 {
 	for (int i = 0; i < Shapes.GetCount(); i++)
 		if (Shapes[i]->IsHorizontalCollided()) OK;
@@ -228,7 +228,7 @@ bool CRigidBody::IsHorizontalCollided() const
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::GetAABB(bbox3& AABB) const
+void CRigidBodyOld::GetAABB(bbox3& AABB) const
 {
 	if (Shapes.GetCount() > 0)
 	{
@@ -256,7 +256,7 @@ void CRigidBody::GetAABB(bbox3& AABB) const
 
 // Set the body's current transformation in global space.
 // Only translation and rotation is allowed (no scale or shear).
-void CRigidBody::SetTransform(const matrix44& Tfm)
+void CRigidBodyOld::SetTransform(const matrix44& Tfm)
 {
 	Transform = Tfm;
 
@@ -271,7 +271,7 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::RenderDebug()
+void CRigidBodyOld::RenderDebug()
 {
 	if (IsAttached())
 		for (int i = 0; i < Shapes.GetCount(); i++)
@@ -279,7 +279,7 @@ void CRigidBody::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::SetEntity(CEntity* pEnt)
+void CRigidBodyOld::SetEntity(CEntity* pEnt)
 {
 	n_assert(pEnt);
 	pEntity = pEnt;

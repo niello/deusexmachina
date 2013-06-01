@@ -1,26 +1,26 @@
 #include "NodeControllerRigidBody.h"
 
-namespace Anim
+namespace Physics
 {
-
-void CNodeControllerRigidBody::SetBody(btRigidBody* pRigidBody)
-{
-	n_assert(pRigidBody);
-	pRB = pRigidBody;
-	Channels.Set(Chnl_Translation | Chnl_Rotation);
-}
-//---------------------------------------------------------------------
+//
+//void CNodeControllerRigidBody::SetBody(btRigidBody* pRigidBody)
+//{
+//	n_assert(pRigidBody);
+//	pRB = pRigidBody;
+//	Channels.Set(Chnl_Translation | Chnl_Rotation);
+//}
+////---------------------------------------------------------------------
 
 void CNodeControllerRigidBody::Clear()
 {
 	Channels.ClearAll();
-	pRB = NULL;
+//	pRB = NULL;
 }
 //---------------------------------------------------------------------
 
 bool CNodeControllerRigidBody::ApplyTo(Math::CTransformSRT& DestTfm)
 {
-	if (!pRB) FAIL;
+//	if (!pRB) FAIL;
 
 	OK;
 }

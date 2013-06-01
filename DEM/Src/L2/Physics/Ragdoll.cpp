@@ -157,11 +157,11 @@ void CRagdoll::Bind()
 	//// Convert joint names into indices
 	//for (int i = 0; i < Bodies.GetCount(); i++)
 	//{
-	//	CRigidBody* pBody = Bodies[i];
-	//	n_assert(pBody->IsLinkValid(CRigidBody::JointNode));
-	//	pBody->LinkIndex = Skeleton.GetJointIndexByName(pBody->GetLinkName(CRigidBody::JointNode));
+	//	CRigidBodyOld* pBody = Bodies[i];
+	//	n_assert(pBody->IsLinkValid(CRigidBodyOld::JointNode));
+	//	pBody->LinkIndex = Skeleton.GetJointIndexByName(pBody->GetLinkName(CRigidBodyOld::JointNode));
 	//	if (pBody->LinkIndex == INVALID_INDEX)
-	//		n_error("CRagdoll::Bind(): invalid joint name '%s'!", pBody->GetLinkName(CRigidBody::JointNode).CStr());
+	//		n_error("CRagdoll::Bind(): invalid joint name '%s'!", pBody->GetLinkName(CRigidBodyOld::JointNode).CStr());
 	//}
 
 	//for (int i = 0; i < Joints.GetCount(); i++)
@@ -185,8 +185,8 @@ void CRagdoll::WriteJoints()
 
 	//for (int i = 0; i < Bodies.GetCount(); i++)
 	//{
-	//	CRigidBody* pBody = Bodies[i];
-	//	if (pBody->IsLinkValid(CRigidBody::JointNode))
+	//	CRigidBodyOld* pBody = Bodies[i];
+	//	if (pBody->IsLinkValid(CRigidBodyOld::JointNode))
 	//	{
 	//		// last step - move the body's model space transform by the difference between the
 	//		// rigid body's initial pose and the joint's bind pose. NOTE: this difference matrix
@@ -242,8 +242,8 @@ void CRagdoll::ReadJoints()
 	//// Update rigid body positions
 	//for (int i = 0; i < Bodies.GetCount(); i++)
 	//{
-	//	CRigidBody* pBody = Bodies[i];
-	//	n_assert(pBody->IsLinkValid(CRigidBody::JointNode));
+	//	CRigidBodyOld* pBody = Bodies[i];
+	//	n_assert(pBody->IsLinkValid(CRigidBodyOld::JointNode));
 	//	const nCharJoint& CharJoint = Skeleton.GetJointAt(pBody->LinkIndex);
 
 	//	pBody->Detach();

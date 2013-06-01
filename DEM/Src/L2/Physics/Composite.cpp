@@ -35,7 +35,7 @@ void CComposite::BeginBodies(int Count)
 }
 //---------------------------------------------------------------------
 
-void CComposite::AddBody(CRigidBody* pBody)
+void CComposite::AddBody(CRigidBodyOld* pBody)
 {
 	n_assert(Flags.Is(PHYS_COMP_BEGIN_BODIES));
 	n_assert(pBody);
@@ -133,7 +133,7 @@ void CComposite::Attach(dWorldID WorldID, dSpaceID DynamicSpaceID, dSpaceID Stat
 
 		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
-			CRigidBody* pBody = Bodies[i];
+			CRigidBodyOld* pBody = Bodies[i];
 			pBody->Attach(WorldID, LocalSpaceID, pBody->GetInitialTransform() * Transform);
 		}
 
@@ -189,7 +189,7 @@ void CComposite::OnStepAfter()
 		// update stored transform
 		if (Bodies.GetCount() > 0)
 		{
-			CRigidBody* pMaster = Bodies[0];
+			CRigidBodyOld* pMaster = Bodies[0];
 			Transform = pMaster->GetInvInitialTransform() * pMaster->GetTransform();
 		}
 	}
@@ -213,7 +213,7 @@ void CComposite::OnFrameAfter()
 	{
 		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
-			CRigidBody* pBody = Bodies[i];
+			CRigidBodyOld* pBody = Bodies[i];
 			pBody->OnFrameAfter();
 			// if any rigid pBody is enabled, we set the transform changed flag
 			if (pBody->IsEnabled()) Flags.Set(PHYS_COMP_TFM_CHANGED);
@@ -305,7 +305,7 @@ void CComposite::SetTransform(const matrix44& Tfm)
 	{
 		for (int i = 0; i < Bodies.GetCount(); i++)
 		{
-			CRigidBody* pBody = Bodies[i];
+			CRigidBodyOld* pBody = Bodies[i];
 			pBody->SetTransform(pBody->GetInitialTransform() * Tfm);
 		}
 
@@ -328,13 +328,13 @@ void CComposite::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-CRigidBody* CComposite::FindBodyByUniqueID(int ID) const
+CRigidBodyOld* CComposite::FindBodyByUniqueID(int ID) const
 {
 	n_assert(ID > 0); //!!!to check if it never happens normally!
 	//if (ID)
 	for (int i = 0; i < Bodies.GetCount(); i++)
 	{
-		CRigidBody* pBody = Bodies[i];
+		CRigidBodyOld* pBody = Bodies[i];
 		if (ID == pBody->GetUID()) return pBody;
 	}
 	return NULL;
@@ -344,7 +344,7 @@ CRigidBody* CComposite::FindBodyByUniqueID(int ID) const
 // Returns true if any of the contained rigid bodies has the
 // provided link type. This method currently iterates
 // through the rigid bodies (and thus may be slow).
-bool CComposite::HasLinkType(CRigidBody::ELinkType Type)
+bool CComposite::HasLinkType(CRigidBodyOld::ELinkType Type)
 {
 	for (int i = 0; i < Bodies.GetCount(); i++)
 		if (Bodies[i]->IsLinkValid(Type)) OK;

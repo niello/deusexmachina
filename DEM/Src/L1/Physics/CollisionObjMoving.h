@@ -9,35 +9,29 @@
 // Use this type of objects to represent objects controlled by an animation,
 // by user input or any other non-physics controller.
 
-namespace Scene
-{
-	class CSceneNode;
-}
-
 namespace Physics
 {
 
+//???own motion state or inherit from it?
 class CCollisionObjMoving: public CCollisionObj
 {
 	__DeclareClassNoFactory;
 
 protected:
 
-	Scene::CSceneNode*	pNode;
+	virtual void	GetTransform(btTransform& Out) const;
 
 public:
 
-	CCollisionObjMoving(): pNode(NULL) {}
+	CCollisionObjMoving() {}
 	virtual ~CCollisionObjMoving() { Term(); }
 
-	//!!!need normal flags!
-	virtual bool	Init(CCollisionShape& CollShape, ushort Group = 0x0001, ushort Mask = 0xffff, const vector3& Offset = vector3::Zero);
+	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	virtual void	Term();
 	virtual bool	AttachToLevel(CPhysicsWorld& World);
 	virtual void	RemoveFromLevel();
 
-	void			SetNode(Scene::CSceneNode& Node);
-	void			GetMotionStateAABB(bbox3& OutBox) const;
+	virtual void	SetTransform(const matrix44& Tfm);
 };
 
 typedef Ptr<CCollisionObjMoving> PCollisionObjMoving;

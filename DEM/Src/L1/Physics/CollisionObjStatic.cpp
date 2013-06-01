@@ -1,24 +1,23 @@
 #include "CollisionObjStatic.h"
 
-#include <Physics/BulletConv.h>
 #include <Physics/PhysicsWorld.h>
-#include <mathlib/bbox.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <BulletCollision/CollisionShapes/btCollisionShape.h>
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjStatic, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CCollisionObjStatic, Physics::CCollisionObj);
 
-bool CCollisionObjStatic::Init(CCollisionShape& CollShape, ushort Group, ushort Mask, const vector3& Offset)
+bool CCollisionObjStatic::Init(const Data::CParams& Desc, const vector3& Offset)
 {
-	n_assert(!pWorld && CollShape.IsLoaded());
+	if (!CCollisionObj::Init(Desc, Offset)) FAIL;
 
 	pBtCollObj = new btCollisionObject();
-	pBtCollObj->setCollisionShape(CollShape.GetBtShape());
-	//???pass material and set friction and restitution?
+	pBtCollObj->setCollisionShape(Shape->GetBtShape());
+	pBtCollObj->setUserPointer(this);
 
-	return CCollisionObj::Init(CollShape, Group, Mask, Offset);
+	//!!!set friction and restitution!
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -32,8 +31,7 @@ bool CCollisionObjStatic::AttachToLevel(CPhysicsWorld& World)
 
 void CCollisionObjStatic::RemoveFromLevel()
 {
-	if (!pWorld) return;
-	n_assert(pWorld->GetBtWorld());
+	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeCollisionObject(pBtCollObj);
 	CCollisionObj::RemoveFromLevel();
 }

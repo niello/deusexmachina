@@ -11,7 +11,7 @@
 #define dSINGLE
 #include <ode/ode.h>
 
-// CRigidBody is the internal base class for all types of rigid bodies.
+// CRigidBodyOld is the internal base class for all types of rigid bodies.
 // RigidBodies can be connected by Joints to form a hierarchy.
 
 namespace Physics
@@ -20,9 +20,9 @@ typedef Ptr<class CShape> PShape;
 class CComposite;
 class CEntity;
 
-class CRigidBody: public Core::CRefCounted
+class CRigidBodyOld: public Core::CRefCounted
 {
-	__DeclareClass(CRigidBody);
+	__DeclareClass(CRigidBodyOld);
 
 public:
 
@@ -66,8 +66,8 @@ public:
 	uint		Stamp;
 	bool		CollideConnected; // Enable/disable collision for bodies connected by a joint (if both true).
 
-	CRigidBody();
-	virtual ~CRigidBody();
+	CRigidBodyOld();
+	virtual ~CRigidBodyOld();
 
 	void			Attach(dWorldID WorldID, dSpaceID SpaceID, const matrix44& Tfm);
 	void			Detach();
@@ -122,26 +122,26 @@ public:
 };
 //---------------------------------------------------------------------
 
-typedef Ptr<CRigidBody> PRigidBody;
+typedef Ptr<CRigidBodyOld> PRigidBodyOld;
 
 // Enable/disable the rigid body. Bodies which have reached a resting position
 // should be disabled. Bodies will Enable themselves as soon as they are
 // touched by another body.
-inline void CRigidBody::SetEnabled(bool Enable)
+inline void CRigidBodyOld::SetEnabled(bool Enable)
 {
 	if (Enable) dBodyEnable(ODEBodyID);
 	else dBodyDisable(ODEBodyID);
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::Reset()
+inline void CRigidBodyOld::Reset()
 {
 	dBodySetForce(ODEBodyID, 0.0f, 0.0f, 0.0f);
 	dBodySetTorque(ODEBodyID, 0.0f, 0.0f, 0.0f);
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::SetInitialTransform(const matrix44& Tfm)
+inline void CRigidBodyOld::SetInitialTransform(const matrix44& Tfm)
 {
 	InitialTfm = Tfm;
 	InvInitialTfm = Tfm;
@@ -149,27 +149,27 @@ inline void CRigidBody::SetInitialTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::SetAngularDamping(float Damping)
+inline void CRigidBodyOld::SetAngularDamping(float Damping)
 {
 	n_assert(Damping >= 0.0f && Damping <= 1.0f);
 	AngularDamping = Damping;
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::SetLinearDamping(float Damping)
+inline void CRigidBodyOld::SetLinearDamping(float Damping)
 {
 	n_assert(Damping >= 0.0f && Damping <= 1.0f);
 	LinearDamping = Damping;
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::SetLinearVelocity(const vector3& Velocity)
+inline void CRigidBodyOld::SetLinearVelocity(const vector3& Velocity)
 {
 	dBodySetLinearVel(ODEBodyID, Velocity.x, Velocity.y, Velocity.z);
 }
 //---------------------------------------------------------------------
 
-inline vector3 CRigidBody::GetLinearVelocity() const
+inline vector3 CRigidBodyOld::GetLinearVelocity() const
 {
 	vector3 Velocity;
 	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetLinearVel(ODEBodyID), Velocity);
@@ -177,13 +177,13 @@ inline vector3 CRigidBody::GetLinearVelocity() const
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::SetAngularVelocity(const vector3& Velocity)
+inline void CRigidBodyOld::SetAngularVelocity(const vector3& Velocity)
 {
 	dBodySetAngularVel(ODEBodyID, Velocity.x, Velocity.y, Velocity.z);
 }
 //---------------------------------------------------------------------
 
-inline vector3 CRigidBody::GetAngularVelocity() const
+inline vector3 CRigidBodyOld::GetAngularVelocity() const
 {
 	vector3 Velocity;
 	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetAngularVel(ODEBodyID), Velocity);
@@ -191,20 +191,20 @@ inline vector3 CRigidBody::GetAngularVelocity() const
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::GetLocalForce(vector3& OutForce) const
+inline void CRigidBodyOld::GetLocalForce(vector3& OutForce) const
 {
 	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetForce(ODEBodyID), OutForce);
 }
 //---------------------------------------------------------------------
 
-inline void CRigidBody::GetLocalTorque(vector3& OutTorque) const
+inline void CRigidBodyOld::GetLocalTorque(vector3& OutTorque) const
 {
 	CPhysicsServerOld::OdeToVector3(*(dVector3*)dBodyGetTorque(ODEBodyID), OutTorque);
 }
 //---------------------------------------------------------------------
 
 // Transforms a point in global space into the local coordinate system of the body.
-inline vector3 CRigidBody::GlobalToLocalPoint(const vector3& Point) const
+inline vector3 CRigidBodyOld::GlobalToLocalPoint(const vector3& Point) const
 {
 	dVector3 Result;
 	dBodyGetPosRelPoint(ODEBodyID, Point.x, Point.y, Point.z, Result);
@@ -213,7 +213,7 @@ inline vector3 CRigidBody::GlobalToLocalPoint(const vector3& Point) const
 //---------------------------------------------------------------------
 
 // Transforms a point in body-local space into global space.
-inline vector3 CRigidBody::LocalToGlobalPoint(const vector3& Point) const
+inline vector3 CRigidBodyOld::LocalToGlobalPoint(const vector3& Point) const
 {
 	dVector3 Result;
 	dBodyGetRelPointPos(ODEBodyID, Point.x, Point.y, Point.z, Result);

@@ -14,6 +14,8 @@
 //???need this class at all? it allows to control presence of physics object depending on
 // existence of the scene node
 
+//???or link physics and scene strictly in L2? write controller and then decide.
+
 namespace Physics
 {
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_PHYSICS_JOINT_H__ //!!!to L1!
 #define __DEM_L2_PHYSICS_JOINT_H__
 
-#include <Physics/RigidBody.h>
+#include <Physics/RigidBodyOld.h>
 #include <Data/Params.h>
 #define dSINGLE
 #include <ode/ode.h>
@@ -21,8 +21,8 @@ class CJoint: public Core::CRefCounted
 protected:
 
 	dJointID	ODEJointID;
-	PRigidBody	pBody1;
-	PRigidBody	pBody2;
+	PRigidBodyOld	pBody1;
+	PRigidBodyOld	pBody2;
 
 	static void	InitAxis(CJointAxis* pAxis, PParams Desc);
 	vector4		GetDebugVisualizationColor() const { return vector4(1.0f, 0.0f, 1.0f, 1.0f); }
@@ -43,11 +43,11 @@ public:
 
 	bool IsAttached() const { return ODEJointID != NULL; }
 
-	void				SetBodies(CRigidBody* pRigidBody1, CRigidBody* pRigidBody2);
-	void				SetBody1(CRigidBody* pBody);
-	void				SetBody2(CRigidBody* pBody);
-	const CRigidBody*	GetBody1() const { return pBody1.GetUnsafe(); }
-	const CRigidBody*	GetBody2() const { return pBody2.GetUnsafe(); }
+	void				SetBodies(CRigidBodyOld* pRigidBody1, CRigidBodyOld* pRigidBody2);
+	void				SetBody1(CRigidBodyOld* pBody);
+	void				SetBody2(CRigidBodyOld* pBody);
+	const CRigidBodyOld*	GetBody1() const { return pBody1.GetUnsafe(); }
+	const CRigidBodyOld*	GetBody2() const { return pBody2.GetUnsafe(); }
 	bool				IsLinkValid() const { return LinkName.IsValid(); }
 	dJointID			GetJointId() const { return ODEJointID; }
 };
@@ -55,20 +55,20 @@ public:
 
 typedef Ptr<CJoint> PJoint;
 
-inline void CJoint::SetBodies(CRigidBody* pRigidBody1, CRigidBody* pRigidBody2)
+inline void CJoint::SetBodies(CRigidBodyOld* pRigidBody1, CRigidBodyOld* pRigidBody2)
 {
 	pBody1 = pRigidBody1;
 	pBody2 = pRigidBody2;
 }
 //---------------------------------------------------------------------
 
-inline void CJoint::SetBody1(CRigidBody* pBody)
+inline void CJoint::SetBody1(CRigidBodyOld* pBody)
 {
 	pBody1 = pBody;
 }
 //---------------------------------------------------------------------
 
-inline void CJoint::SetBody2(CRigidBody* pBody)
+inline void CJoint::SetBody2(CRigidBodyOld* pBody)
 {
 	pBody2 = pBody;
 }

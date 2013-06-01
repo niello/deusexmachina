@@ -2,7 +2,7 @@
 
 #include <Physics/Collision/Shape.h>
 #include <Physics/Entity.h>
-#include <Physics/rigidbody.h>
+#include <Physics/RigidBodyOld.h>
 
 namespace Physics
 {

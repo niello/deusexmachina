@@ -1,6 +1,6 @@
 #include "SliderJoint.h"
 
-#include <Physics/RigidBody.h>
+#include <Physics/RigidBodyOld.h>
 
 namespace Physics
 {

@@ -1,6 +1,6 @@
 #include "Shape.h"
 
-#include <Physics/RigidBody.h>
+#include <Physics/RigidBodyOld.h>
 #include <Physics/FilterSet.h>
 #include <Physics/ContactPoint.h>
 #include <Physics/PhysicsWorldOld.h>
@@ -230,7 +230,7 @@ void CShape::ODENearCallback(void* data, dGeomID o1, dGeomID o2)
 		ContactPt.Depth = ODEContact.depth;
 		CEntity* pEntity = pOtherShape->GetEntity();
 		if (pEntity) ContactPt.EntityID = pEntity->GetUID();
-		CRigidBody* pRigidBody = pOtherShape->GetRigidBody();
+		CRigidBodyOld* pRigidBody = pOtherShape->GetRigidBody();
 		if (pRigidBody) ContactPt.RigidBodyID = pRigidBody->GetUID();
 		CShape::CollideContacts->Append(ContactPt);
 	}

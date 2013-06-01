@@ -10,7 +10,7 @@
 namespace Physics
 {
 class CEntity;
-class CRigidBody;
+class CRigidBodyOld;
 class CComposite;
 
 class CContactPoint
@@ -28,7 +28,7 @@ public:
 
 	void		Clear();
 	CEntity*	GetEntity() const;
-	CRigidBody*	GetRigidBody() const;
+	CRigidBodyOld*	GetRigidBody() const;
 };
 //---------------------------------------------------------------------
 
