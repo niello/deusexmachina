@@ -93,9 +93,8 @@ void CPhysicsWorld::Term()
 {
 	if (pBtDynWorld)
 	{
-		//!!!!!!!!!!!!
-		//for (int i = 0; i < CollObjects.GetCount(); ++i)
-		//	pBtDynWorld->removeCollisionObject(CollObjects[i]->GetBtObject());
+		for (int i = 0; i < Objects.GetCount(); ++i)
+			Objects[i]->RemoveFromLevel();
 
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
@@ -111,7 +110,7 @@ void CPhysicsWorld::Term()
 		pBtDynWorld = NULL;
 	}
 
-	//CollObjects.Clear();
+	Objects.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -141,17 +140,17 @@ void CPhysicsWorld::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsWorld::AddCollisionObject(CCollisionObj& Obj)
+bool CPhysicsWorld::AddCollisionObject(CPhysicsObj& Obj)
 {
 	n_assert(pBtDynWorld && Obj.GetBtObject());
-	CollObjects.Append(&Obj);
+	Objects.Append(&Obj);
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CPhysicsWorld::RemoveCollisionObject(CCollisionObj& Obj)
+void CPhysicsWorld::RemoveCollisionObject(CPhysicsObj& Obj)
 {
-	CollObjects.RemoveByValue(&Obj);
+	Objects.RemoveByValue(&Obj);
 }
 //---------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-#include "CollisionObj.h"
+#include "PhysicsObj.h"
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
@@ -10,11 +10,11 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObj, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CPhysicsObj, Core::CRefCounted);
 
 PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName);
 
-bool CCollisionObj::Init(const Data::CParams& Desc, const vector3& Offset)
+bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	n_assert(!pWorld);
 
@@ -35,15 +35,23 @@ bool CCollisionObj::Init(const Data::CParams& Desc, const vector3& Offset)
 	//  else replaces a passed pointer with a new one, of the right type
 	n_assert(Shape->IsLoaded());
 
-	Group = (ushort)Desc.Get<int>(CStrID("Group"), 0x0001); //!!!set normal flags!
-	Mask = (ushort)Desc.Get<int>(CStrID("Mask"), 0xffff); //!!!set normal flags!
-	ShapeOffset = Offset; //???pre-add shape offset? always constant!
+	//!!!!!!!!!!!
+	//Group = (ushort)Desc.Get<int>(CStrID("Group"), 0x0001); //!!!set normal flags!
+	//Mask = (ushort)Desc.Get<int>(CStrID("Mask"), 0xffff); //!!!set normal flags!
+	Group = 0x0001;
+	Mask = 0xffff;
+
+	ShapeOffset = Offset;
+
+	//???get rid of self-offset? prop can calc heightmap offset
+	vector3 ShapeSelfOffset;
+	if (Shape->GetOffset(ShapeSelfOffset)) ShapeOffset += ShapeSelfOffset;
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::Term()
+void CPhysicsObj::Term()
 {
 	RemoveFromLevel();
 
@@ -57,7 +65,7 @@ void CCollisionObj::Term()
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObj::AttachToLevel(CPhysicsWorld& World)
+bool CPhysicsObj::AttachToLevel(CPhysicsWorld& World)
 {
 	if (!pBtCollObj) FAIL;
 
@@ -69,7 +77,7 @@ bool CCollisionObj::AttachToLevel(CPhysicsWorld& World)
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::RemoveFromLevel()
+void CPhysicsObj::RemoveFromLevel()
 {
 	if (pWorld)
 	{
@@ -79,7 +87,7 @@ void CCollisionObj::RemoveFromLevel()
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::SetTransform(const matrix44& Tfm)
+void CPhysicsObj::SetTransform(const matrix44& Tfm)
 {
 	n_assert_dbg(pBtCollObj);
 
@@ -89,20 +97,12 @@ void CCollisionObj::SetTransform(const matrix44& Tfm)
 	BtTfm.getOrigin().m_floats[1] += ShapeOffset.y;
 	BtTfm.getOrigin().m_floats[2] += ShapeOffset.z;
 
-	vector3 ShapeSelfOffset;
-	if (Shape->GetOffset(ShapeSelfOffset))
-	{
-		BtTfm.getOrigin().m_floats[0] += ShapeSelfOffset.x;
-		BtTfm.getOrigin().m_floats[1] += ShapeSelfOffset.y;
-		BtTfm.getOrigin().m_floats[2] += ShapeSelfOffset.z;
-	}
-
 	pBtCollObj->setWorldTransform(BtTfm);
 	if (pWorld) pWorld->GetBtWorld()->updateSingleAabb(pBtCollObj);
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::GetTransform(btTransform& Out) const
+void CPhysicsObj::GetTransform(btTransform& Out) const
 {
 	n_assert_dbg(pBtCollObj);
 
@@ -111,18 +111,10 @@ void CCollisionObj::GetTransform(btTransform& Out) const
 	Out.getOrigin().m_floats[0] -= ShapeOffset.x;
 	Out.getOrigin().m_floats[1] -= ShapeOffset.y;
 	Out.getOrigin().m_floats[2] -= ShapeOffset.z;
-
-	vector3 ShapeSelfOffset;
-	if (Shape->GetOffset(ShapeSelfOffset))
-	{
-		Out.getOrigin().m_floats[0] -= ShapeSelfOffset.x;
-		Out.getOrigin().m_floats[1] -= ShapeSelfOffset.y;
-		Out.getOrigin().m_floats[2] -= ShapeSelfOffset.z;
-	}
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::GetTransform(vector3& OutPos, quaternion& OutRot) const
+void CPhysicsObj::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
 	btTransform Tfm;
 	GetTransform(Tfm);
@@ -131,7 +123,8 @@ void CCollisionObj::GetTransform(vector3& OutPos, quaternion& OutRot) const
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::GetGlobalAABB(bbox3& OutBox) const
+// If possible, returns interpolated AABB from motion state. It matches the graphics representation.
+void CPhysicsObj::GetGlobalAABB(bbox3& OutBox) const
 {
 	btTransform Tfm;
 	GetTransform(Tfm);
@@ -143,7 +136,8 @@ void CCollisionObj::GetGlobalAABB(bbox3& OutBox) const
 }
 //---------------------------------------------------------------------
 
-void CCollisionObj::GetPhysicsAABB(bbox3& OutBox) const
+// Returns AABB from the physics world
+void CPhysicsObj::GetPhysicsAABB(bbox3& OutBox) const
 {
 	n_assert_dbg(pBtCollObj);
 

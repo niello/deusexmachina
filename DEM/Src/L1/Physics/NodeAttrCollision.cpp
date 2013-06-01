@@ -1,6 +1,6 @@
 #include "NodeAttrCollision.h"
 
-#include <Physics/PhysicsWorld.h>
+#include <Scene/SceneNode.h>
 
 namespace Physics
 {
@@ -20,7 +20,7 @@ void CNodeAttrCollision::OnRemove()
 
 void CNodeAttrCollision::Update()
 {
-	//???activate physics body only when tfm changed?
+	if (pNode->IsWorldMatrixChanged()) CollObj->SetTransform(pNode->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
 

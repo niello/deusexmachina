@@ -5,11 +5,11 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjStatic, Physics::CCollisionObj);
+__ImplementClassNoFactory(Physics::CCollisionObjStatic, Physics::CPhysicsObj);
 
 bool CCollisionObjStatic::Init(const Data::CParams& Desc, const vector3& Offset)
 {
-	if (!CCollisionObj::Init(Desc, Offset)) FAIL;
+	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
 
 	pBtCollObj = new btCollisionObject();
 	pBtCollObj->setCollisionShape(Shape->GetBtShape());
@@ -23,7 +23,7 @@ bool CCollisionObjStatic::Init(const Data::CParams& Desc, const vector3& Offset)
 
 bool CCollisionObjStatic::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!CCollisionObj::AttachToLevel(World)) FAIL;
+	if (!CPhysicsObj::AttachToLevel(World)) FAIL;
 	pWorld->GetBtWorld()->addCollisionObject(pBtCollObj, Group, Mask);
 	OK;
 }
@@ -33,7 +33,7 @@ void CCollisionObjStatic::RemoveFromLevel()
 {
 	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeCollisionObject(pBtCollObj);
-	CCollisionObj::RemoveFromLevel();
+	CPhysicsObj::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 
