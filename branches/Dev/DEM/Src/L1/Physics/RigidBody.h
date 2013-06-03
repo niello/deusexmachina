@@ -34,6 +34,7 @@ public:
 
 	virtual void	SetTransform(const matrix44& Tfm);
 	virtual void	GetTransform(vector3& OutPos, quaternion& OutRot) const;
+	void			SetTransformChanged(bool Changed);
 	bool			IsTransformChanged() const;
 };
 

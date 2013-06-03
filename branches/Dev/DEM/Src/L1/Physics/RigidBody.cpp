@@ -109,6 +109,13 @@ void CRigidBody::GetTransform(btTransform& Out) const
 }
 //---------------------------------------------------------------------
 
+void CRigidBody::SetTransformChanged(bool Changed)
+{
+	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
+	if (pMotionState) pMotionState->TfmChanged = Changed;
+}
+//---------------------------------------------------------------------
+
 bool CRigidBody::IsTransformChanged() const
 {
 	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();

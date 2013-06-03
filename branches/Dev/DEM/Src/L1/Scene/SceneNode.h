@@ -78,6 +78,7 @@ public:
 	CSceneNode*				GetParent() const { return pParent; }
 	DWORD					GetChildCount() const { return Child.GetCount(); }
 	CSceneNode*				GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
+	//???create and non-create () const; versions?
 	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
 	CSceneNode*				GetChild(LPCSTR Path, bool Create = false);
 	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes

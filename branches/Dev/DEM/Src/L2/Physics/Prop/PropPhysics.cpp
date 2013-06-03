@@ -2,6 +2,11 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
+#include <Scene/PropSceneNode.h>
+#include <Data/DataServer.h>
+#include <Data/DataArray.h>
+
+//!!!OLD!
 #include <Physics/PhysicsServerOld.h>
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/Event/SetTransform.h>
@@ -26,6 +31,10 @@ CPropPhysics::~CPropPhysics()
 void CPropPhysics::Activate()
 {
     CPropAbstractPhysics::Activate();
+
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+	if (pProp && pProp->IsActive()) SetupScene(*(CPropSceneNode*)pProp);
+
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropPhysics, OnSetTransform);
 	PROP_SUBSCRIBE_PEVENT(AfterPhysics, CPropPhysics, AfterPhysics);
 	PROP_SUBSCRIBE_PEVENT(OnEntityRenamed, CPropPhysics, OnEntityRenamed);
@@ -39,6 +48,61 @@ void CPropPhysics::Deactivate()
 	UNSUBSCRIBE_EVENT(SetTransform);
 	CPropAbstractPhysics::Deactivate();
     PhysicsEntity = NULL;
+}
+//---------------------------------------------------------------------
+
+void CPropPhysics::SetupScene(CPropSceneNode& Prop)
+{
+	const nString& PhysicsDescFile = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);    
+	if (PhysicsDescFile.IsValid() && GetEntity()->GetLevel().GetPhysics())
+	{
+		Data::PParams PhysicsDesc = DataSrv->LoadHRD(nString("physics:") + PhysicsDescFile.CStr() + ".hrd"); //!!!load prm!
+		if (PhysicsDesc.IsValid())
+		{
+			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
+			for (int i = 0; i < Objects.GetCount(); ++i)
+			{
+				//???allow moving collision objects and rigid bodies?
+
+				//const Data::CParams& ObjDesc = *Objects.Get<Data::PParams>(i);
+				//CollObj = n_new(Physics::CCollisionObjStatic);
+				//CollObj->Init(ObjDesc); //???where to get offset?
+
+				//Scene::CSceneNode* pCurrNode = Node.GetUnsafe();
+				//const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);
+				//if (pCurrNode && RelNodePath.IsValid())
+				//{
+				//	pCurrNode = pCurrNode->GetChild(RelNodePath.CStr());
+				//	n_assert2_dbg(pCurrNode && "Child node not found", RelNodePath.CStr());
+				//}
+
+				//CollObj->SetTransform(pCurrNode ? pCurrNode->GetWorldMatrix() : EntityTfm);
+				//CollObj->AttachToLevel(*Level->GetPhysics());
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		SetupScene(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	OK;
 }
 //---------------------------------------------------------------------
 
