@@ -39,11 +39,11 @@ void CSceneNode::UpdateLocalFromWorld()
 }
 //---------------------------------------------------------------------
 
-// Update local transform of the node, if it has local controller.
-// Also try to update world matrix of this node to provide correct world matrix to children
+// Updates local transform of the node, if it has local controller.
+// Also tries to update world matrix of this node to provide correct world matrix to children
 // and possibly as a constraint to the physics simulation. Once we meet node with a world
 // controller, we update only local transform, because we can't rely on parent world matrix
-// which will be calculated by physics. UpdateWorldSpace is called after the physics and
+// which will be calculated by physics. UpdateWorldSpace() is called after the physics and
 // there we can finish updating dependent parts of the hierarchy.
 void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 {
@@ -132,7 +132,7 @@ CSceneNode* CSceneNode::GetChild(LPCSTR Path, bool Create)
 		*pDstCurr++ = *pSrcCurr++;
 		n_assert(pDstCurr - Name < MAX_NODE_NAME);
 	}
-	n_assert(pDstCurr > Name + 1);
+	n_assert_dbg(pDstCurr > Name + 1);
 	*pDstCurr = 0;
 	while (*pSrcCurr == '.') ++pSrcCurr;
 

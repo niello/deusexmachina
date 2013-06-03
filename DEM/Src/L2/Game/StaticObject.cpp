@@ -87,32 +87,45 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		}
 	}
 
+	const matrix44& EntityTfm = Desc->Get<matrix44>(CStrID("Transform"));
+
 	if (ExistingNode)
 	{
 		for (int i = 0; i < Collision.GetCount(); ++i)
 			Collision[i]->SetTransform(CollLocalTfm[i] * Node->GetWorldMatrix());
 	}
-	else SetTransform(Desc->Get<matrix44>(CStrID("Transform")));
+	else SetTransform(EntityTfm);
 
-	const matrix44& Tfm = Node.IsValid() ? Node->GetWorldMatrix() : Desc->Get<matrix44>(CStrID("Transform"));
+	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
+	// It is necessary because collision objects may require subnode world transformations.
+	if (Node.IsValid()) Node->UpdateLocalSpace();
 
-	//???use composites in the new physics system?
-	//call it CCompoundBody
-	//composite is a set of bodies and joints
-	//each body can/must have one shape
-	//shape can be compound
-	//composite can't have non-body collision shapes
-	//body or compound body can be mapped as controllers to the scene hierarchy
-	const nString& Coll = Desc->Get<nString>(CStrID("Physics"), NULL);    
-	if (Coll.IsValid() && Level->GetPhysics())
+	const nString& PhysicsDescFile = Desc->Get<nString>(CStrID("Physics"), NULL);    
+	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
-		Data::PParams CollDesc = DataSrv->LoadHRD(nString("physics:") + Coll.CStr() + ".hrd"); //!!!load prm!
-		if (CollDesc.IsValid())
+		Data::PParams PhysicsDesc = DataSrv->LoadHRD(nString("physics:") + PhysicsDescFile.CStr() + ".hrd"); //!!!load prm!
+		if (PhysicsDesc.IsValid())
 		{
-			CollObj = n_new(Physics::CCollisionObjStatic);
-			CollObj->Init(*CollDesc); //???where to get offset?
-			CollObj->SetTransform(Tfm);
-			CollObj->AttachToLevel(*Level->GetPhysics());
+			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
+			for (int i = 0; i < Objects.GetCount(); ++i)
+			{
+				//???allow moving collision objects and rigid bodies?
+
+				const Data::CParams& ObjDesc = *Objects.Get<Data::PParams>(i);
+				CollObj = n_new(Physics::CCollisionObjStatic);
+				CollObj->Init(ObjDesc); //???where to get offset?
+
+				Scene::CSceneNode* pCurrNode = Node.GetUnsafe();
+				const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);
+				if (pCurrNode && RelNodePath.IsValid())
+				{
+					pCurrNode = pCurrNode->GetChild(RelNodePath.CStr());
+					n_assert2_dbg(pCurrNode && "Child node not found", RelNodePath.CStr());
+				}
+
+				CollObj->SetTransform(pCurrNode ? pCurrNode->GetWorldMatrix() : EntityTfm);
+				CollObj->AttachToLevel(*Level->GetPhysics());
+			}
 		}
 	}
 }

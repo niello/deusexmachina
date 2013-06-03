@@ -41,11 +41,17 @@ void CPropSceneNode::Activate()
 			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
 		else Node->SetLocalTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform"))); //???set local? or set global & then calc local?
 	}
+
+	Data::PParams P;
+	P->Set<PVOID>(CStrID("Prop"), (Game::CProperty*)this);
+	GetEntity()->FireEvent(CStrID("OnPropActivated"), P);
 }
 //---------------------------------------------------------------------
 
 void CPropSceneNode::Deactivate()
 {
+	GetEntity()->FireEvent(CStrID("OnPropDeactivating"));
+
 	if (Node.IsValid() && !ExistingNode)
 	{
 		Node->RemoveFromParent();

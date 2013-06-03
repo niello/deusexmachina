@@ -13,12 +13,20 @@
 
 namespace Prop
 {
+class CPropSceneNode;
 
 class CPropPhysics: public CPropAbstractPhysics
 {
 	__DeclareClass(CPropPhysics);
 
 protected:
+
+	void SetupScene(CPropSceneNode& Prop);
+
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
+
+	//!!!OLD
 
 	Physics::PEntity PhysicsEntity;
 
