@@ -39,10 +39,10 @@ void CPropSceneNode::Activate()
 
 		if (ExistingNode)
 			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
-		else Node->SetLocalTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform"))); //???set local? or set global & then calc local?
+		else Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 	}
 
-	Data::PParams P;
+	Data::PParams P = n_new(Data::CParams);
 	P->Set<PVOID>(CStrID("Prop"), (Game::CProperty*)this);
 	GetEntity()->FireEvent(CStrID("OnPropActivated"), P);
 }
