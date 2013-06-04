@@ -6,33 +6,17 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
-//!!!OLD!
-#include <Physics/PhysicsServerOld.h>
-#include <Physics/PhysicsWorldOld.h>
-#include <Physics/Event/SetTransform.h>
-
 namespace Prop
 {
-__ImplementClass(Prop::CPropPhysics, 'PPHY', CPropAbstractPhysics);
-
-using namespace Game;
-
-CPropPhysics::~CPropPhysics()
-{
-	n_assert(!PhysicsEntity.IsValid());
-}
-//---------------------------------------------------------------------
+__ImplementClass(Prop::CPropPhysics, 'PPHY', Game::CProperty);
+__ImplementPropertyStorage(CPropPhysics);
 
 void CPropPhysics::Activate()
 {
-    CPropAbstractPhysics::Activate();
+    CProperty::Activate();
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
-
-	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropPhysics, OnSetTransform);
-	PROP_SUBSCRIBE_PEVENT(AfterPhysics, CPropPhysics, AfterPhysics);
-	PROP_SUBSCRIBE_PEVENT(OnEntityRenamed, CPropPhysics, OnEntityRenamed);
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropPhysics, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropPhysics, OnPropDeactivating);
@@ -47,11 +31,7 @@ void CPropPhysics::Deactivate()
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
 
-	UNSUBSCRIBE_EVENT(OnEntityRenamed);
-	UNSUBSCRIBE_EVENT(AfterPhysics);
-	UNSUBSCRIBE_EVENT(SetTransform);
-	CPropAbstractPhysics::Deactivate();
-    PhysicsEntity = NULL;
+	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 
@@ -123,13 +103,9 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{
 		Physics::PNodeControllerRigidBody Ctlr = Ctlrs.ValueAtIndex(i);
+		Ctlr->GetBody()->RemoveFromLevel();
 		if (Ctlrs.KeyAtIndex(i)->Controller.GetUnsafe() == Ctlr)
-		{
-			//!!!there is a BUG when comment this removal!
-			//???can write _working_ autoremoval?
-			Ctlr->GetBody()->RemoveFromLevel();
 			Ctlrs.KeyAtIndex(i)->Controller = NULL;
-		}
 	}
 	Ctlrs.Clear(); //???create once and attach/detach?
 
@@ -171,76 +147,4 @@ bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-void CPropPhysics::EnablePhysics()
-{
-	n_assert(!IsEnabled());
-
-	if (!PhysicsEntity.IsValid())
-	{
-		nString PhysicsDesc;
-		if (!GetEntity()->GetAttr<nString>(PhysicsDesc, CStrID("PhysicsOld"))) return;
-		PhysicsEntity = CreatePhysicsEntity();
-		n_assert(PhysicsEntity.IsValid());
-		PhysicsEntity->CompositeName = PhysicsDesc;
-		PhysicsEntity->SetUserData(GetEntity()->GetUID());
-	}
-
-	// Attach physics entity to physics level
-	PhysicsEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	GetEntity()->GetLevel().GetPhysicsOld()->AttachEntity(PhysicsEntity);
-
-	PhysicsEntity->SetEnabled(true);
-
-	// Call parent to do the real enable
-	CPropAbstractPhysics::EnablePhysics();
 }
-//---------------------------------------------------------------------
-
-void CPropPhysics::DisablePhysics()
-{
-	n_assert(IsEnabled());
-
-	// Release the physics entity
-	GetEntity()->GetLevel().GetPhysicsOld()->RemoveEntity(GetPhysicsEntity()); // strange design
-	CPropAbstractPhysics::DisablePhysics();
-}
-//---------------------------------------------------------------------
-
-// Called after the physics subsystem has been triggered. This will transfer
-// the physics entity's new transform back into the game entity.
-bool CPropPhysics::AfterPhysics(const Events::CEventBase& Event)
-{
-	if (IsEnabled() && PhysicsEntity->HasTransformChanged())
-	{
-		CPropAbstractPhysics::SetTransform(GetPhysicsEntity()->GetTransform());
-		GetEntity()->SetAttr<vector3>(CStrID("VelocityVector"), PhysicsEntity->GetVelocity());
-	}
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropPhysics::OnEntityRenamed(const Events::CEventBase& Event)
-{
-	if (PhysicsEntity.IsValid()) PhysicsEntity->SetUserData(GetEntity()->GetUID());
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CPropPhysics::SetTransform(const matrix44& NewTF)
-{
-	// Forex EnvObjects can have no physics attached, in this case we behave as base class
-	// Also we directly update transform for disabled PropPhysics
-	//???what about Disabled & Locked physics entity?
-	Physics::CEntity* pPhysEnt = GetPhysicsEntity();
-	if (pPhysEnt) pPhysEnt->SetTransform(NewTF);
-	CPropAbstractPhysics::SetTransform(NewTF);
-}
-//---------------------------------------------------------------------
-
-Physics::CEntity* CPropPhysics::CreatePhysicsEntity()
-{
-	return Physics::CEntity::CreateInstance();
-}
-//---------------------------------------------------------------------
-
-} // namespace Prop

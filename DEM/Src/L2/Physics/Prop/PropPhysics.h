@@ -6,23 +6,17 @@
 #include <Physics/NodeControllerRigidBody.h>
 #include <Physics/NodeAttrCollision.h>
 
-//!!!OLD!
-#include "PropAbstractPhysics.h"
-#include <Physics/Entity.h>
-
-// A physics property adds basic physical behavior to a game entity.
-// The default behavior is that of a passive physics object which will
-// just passively roll and bounce around. Implement more advanced behavior
-// in subclasses.
-// Based on mangalore PhysicsProperty (C) 2005 Radon Labs GmbH
+// Allows to assign physics objects to the scene nodes of this entity. Objects can be
+// dynamic (which control node transform) and kinematic (which only collide with dynamic ones).
 
 namespace Prop
 {
 class CPropSceneNode;
 
-class CPropPhysics: public CPropAbstractPhysics
+class CPropPhysics: public Game::CProperty
 {
 	__DeclareClass(CPropPhysics);
+	__DeclarePropertyStorage;
 
 protected:
 
@@ -35,29 +29,15 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 
-	//!!!OLD
-
-	Physics::PEntity PhysicsEntity;
-
-	virtual void				EnablePhysics();
-	virtual void				DisablePhysics();
-	virtual Physics::CEntity*	CreatePhysicsEntity();
-
-	DECLARE_EVENT_HANDLER(AfterPhysics, AfterPhysics);
-	DECLARE_EVENT_HANDLER(OnEntityRenamed, OnEntityRenamed);
-
-	virtual void SetTransform(const matrix44& NewTF);
-
 public:
 
-	virtual ~CPropPhysics();
+	virtual void	Activate();
+	virtual void	Deactivate();
 
-	virtual void Activate();
-	virtual void Deactivate();
-
-	virtual Physics::CEntity* GetPhysicsEntity() const { return PhysicsEntity.GetUnsafe(); }
+	//!!!WRITE!
+	void			GetAABB(bbox3& AABB) const {}
 };
 
-} // namespace Prop
+}
 
 #endif

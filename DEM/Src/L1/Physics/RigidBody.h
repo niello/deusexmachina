@@ -21,11 +21,12 @@ class CRigidBody: public CPhysicsObj
 
 protected:
 
+	void			InternalTerm();
 	virtual void	GetTransform(btTransform& Out) const;
 
 public:
 
-	virtual ~CRigidBody() { Term(); }
+	virtual ~CRigidBody() { InternalTerm(); }
 
 	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	virtual void	Term();

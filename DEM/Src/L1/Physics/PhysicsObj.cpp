@@ -51,9 +51,10 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObj::Term()
+// Is required to aviod virtual call from destructor
+void CPhysicsObj::InternalTerm()
 {
-	RemoveFromLevel();
+	n_assert2(!pWorld, "CPhysicsObj::InternalTerm() -> Object must be removed from level");
 
 	if (pBtCollObj)
 	{
@@ -62,6 +63,13 @@ void CPhysicsObj::Term()
 	}
 
 	Shape = NULL;
+}
+//---------------------------------------------------------------------
+
+void CPhysicsObj::Term()
+{
+	RemoveFromLevel();
+	InternalTerm();
 }
 //---------------------------------------------------------------------
 
