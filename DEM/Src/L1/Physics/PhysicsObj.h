@@ -32,8 +32,6 @@ protected:
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
 
-	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset);
-	virtual void		Term();
 	virtual void		GetTransform(btTransform& Out) const;
 
 public:
@@ -41,8 +39,11 @@ public:
 	CPhysicsObj(): pBtCollObj(NULL), pWorld(NULL) {}
 	virtual ~CPhysicsObj() { Term(); }
 
+	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
+	virtual void		Term();
 	virtual bool		AttachToLevel(CPhysicsWorld& World);
 	virtual void		RemoveFromLevel();
+	bool				IsAttachedToLevel() const { return !!pWorld; }
 
 	virtual void		SetTransform(const matrix44& Tfm);
 	virtual void		GetTransform(vector3& OutPos, quaternion& OutRot) const;

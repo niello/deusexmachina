@@ -11,11 +11,6 @@
 #include <Physics/PhysicsWorldOld.h>
 #include <Physics/Event/SetTransform.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropPhysics)
-//	RegisterString(Physics, ReadOnly);
-//	RegisterVector3(VelocityVector, ReadOnly);
-//END_ATTRS_REGISTRATION
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropPhysics, 'PPHY', CPropAbstractPhysics);
@@ -33,16 +28,25 @@ void CPropPhysics::Activate()
     CPropAbstractPhysics::Activate();
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) SetupScene(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
 
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropPhysics, OnSetTransform);
 	PROP_SUBSCRIBE_PEVENT(AfterPhysics, CPropPhysics, AfterPhysics);
 	PROP_SUBSCRIBE_PEVENT(OnEntityRenamed, CPropPhysics, OnEntityRenamed);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropPhysics, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropPhysics, OnPropDeactivating);
 }
 //---------------------------------------------------------------------
 
 void CPropPhysics::Deactivate()
 {
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
+
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+
 	UNSUBSCRIBE_EVENT(OnEntityRenamed);
 	UNSUBSCRIBE_EVENT(AfterPhysics);
 	UNSUBSCRIBE_EVENT(SetTransform);
@@ -51,36 +55,87 @@ void CPropPhysics::Deactivate()
 }
 //---------------------------------------------------------------------
 
-void CPropPhysics::SetupScene(CPropSceneNode& Prop)
+void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
+	if (!Prop.GetNode()) return;
+
+	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel().GetPhysics();
+	if (!pPhysWorld) return;
+
 	const nString& PhysicsDescFile = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);    
-	if (PhysicsDescFile.IsValid() && GetEntity()->GetLevel().GetPhysics())
+	if (PhysicsDescFile.IsEmpty()) return;
+
+	Data::PParams PhysicsDesc = DataSrv->LoadHRD(nString("physics:") + PhysicsDescFile.CStr() + ".hrd"); //!!!load prm!
+	if (!PhysicsDesc.IsValid()) return;
+
+	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
+	// It is necessary because dynamic bodies may require subnode world tfm to set their initial tfm.
+	// World transform of the prop root node is updated by owner prop.
+	Prop.GetNode()->UpdateLocalSpace();
+
+	const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
+	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
-		Data::PParams PhysicsDesc = DataSrv->LoadHRD(nString("physics:") + PhysicsDescFile.CStr() + ".hrd"); //!!!load prm!
-		if (PhysicsDesc.IsValid())
+		const Data::CParams& ObjDesc = *Objects.Get<Data::PParams>(i);
+
+		bool IsDynamic = ObjDesc.Get(CStrID("Dynamic"), false);
+
+		Physics::PPhysicsObj Obj;
+		if (IsDynamic) Obj = n_new(Physics::CRigidBody);
+		else Obj = n_new(Physics::CCollisionObjMoving);
+
+		n_verify_dbg(Obj->Init(ObjDesc)); //???where to get offset?
+
+		Scene::CSceneNode* pCurrNode;
+		const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);
+		if (RelNodePath.IsValid())
 		{
-			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
-			for (int i = 0; i < Objects.GetCount(); ++i)
-			{
-				//???allow moving collision objects and rigid bodies?
+			//???!!!use node cache?!
+			pCurrNode = Prop.GetNode()->GetChild(RelNodePath.CStr());
+			n_assert2_dbg(pCurrNode && "Child node not found", RelNodePath.CStr());
+		}
+		else pCurrNode = Prop.GetNode();
 
-				//const Data::CParams& ObjDesc = *Objects.Get<Data::PParams>(i);
-				//CollObj = n_new(Physics::CCollisionObjStatic);
-				//CollObj->Init(ObjDesc); //???where to get offset?
+		if (IsDynamic)
+		{
+			Obj->SetTransform(pCurrNode->GetWorldMatrix());
+			Obj->AttachToLevel(*pPhysWorld);
 
-				//Scene::CSceneNode* pCurrNode = Node.GetUnsafe();
-				//const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);
-				//if (pCurrNode && RelNodePath.IsValid())
-				//{
-				//	pCurrNode = pCurrNode->GetChild(RelNodePath.CStr());
-				//	n_assert2_dbg(pCurrNode && "Child node not found", RelNodePath.CStr());
-				//}
+			Physics::PNodeControllerRigidBody Ctlr = n_new(Physics::CNodeControllerRigidBody);
+			Ctlr->SetBody(*(Physics::CRigidBody*)Obj.GetUnsafe());
+			pCurrNode->Controller = Ctlr;
+			Ctlr->Activate(true);
 
-				//CollObj->SetTransform(pCurrNode ? pCurrNode->GetWorldMatrix() : EntityTfm);
-				//CollObj->AttachToLevel(*Level->GetPhysics());
-			}
+			Ctlrs.Add(pCurrNode, Ctlr);
+		}
+		else
+		{
+			Physics::PNodeAttrCollision Attr = n_new(Physics::CNodeAttrCollision);
+			pCurrNode->AddAttr(*Attr);
+			Attrs.Append(Attr);
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
+{
+	for (int i = 0; i < Ctlrs.GetCount(); ++i)
+	{
+		Physics::PNodeControllerRigidBody Ctlr = Ctlrs.ValueAtIndex(i);
+		if (Ctlrs.KeyAtIndex(i)->Controller.GetUnsafe() == Ctlr)
+		{
+			//!!!there is a BUG when comment this removal!
+			//???can write _working_ autoremoval?
+			Ctlr->GetBody()->RemoveFromLevel();
+			Ctlrs.KeyAtIndex(i)->Controller = NULL;
+		}
+	}
+	Ctlrs.Clear(); //???create once and attach/detach?
+
+	for (int i = 0; i < Attrs.GetCount(); ++i)
+		Attrs[i]->RemoveFromNode();
+	Attrs.Clear(); //???create once and attach/detach?
 }
 //---------------------------------------------------------------------
 
@@ -92,7 +147,7 @@ bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
 
 	if (pProp->IsA<CPropSceneNode>())
 	{
-		SetupScene(*(CPropSceneNode*)pProp);
+		InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
 		OK;
 	}
 
@@ -102,7 +157,17 @@ bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
 
 bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
 {
-	OK;
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

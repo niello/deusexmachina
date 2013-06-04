@@ -8,7 +8,7 @@ __ImplementClassNoFactory(Physics::CNodeAttrCollision, Scene::CNodeAttribute);
 
 bool CNodeAttrCollision::OnAdd()
 {
-	return CollObj->AttachToLevel(*pWorld);
+	return CollObj->IsAttachedToLevel() || CollObj->AttachToLevel(*pWorld);
 }
 //---------------------------------------------------------------------
 
