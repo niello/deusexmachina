@@ -32,17 +32,19 @@ protected:
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
 
+	void				InternalTerm();
 	virtual void		GetTransform(btTransform& Out) const;
 
 public:
 
 	CPhysicsObj(): pBtCollObj(NULL), pWorld(NULL) {}
-	virtual ~CPhysicsObj() { Term(); }
+	virtual ~CPhysicsObj() { InternalTerm(); }
 
 	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	virtual void		Term();
 	virtual bool		AttachToLevel(CPhysicsWorld& World);
 	virtual void		RemoveFromLevel();
+	bool				IsInitialized() const { return Shape.IsValid() && pBtCollObj; }
 	bool				IsAttachedToLevel() const { return !!pWorld; }
 
 	virtual void		SetTransform(const matrix44& Tfm);

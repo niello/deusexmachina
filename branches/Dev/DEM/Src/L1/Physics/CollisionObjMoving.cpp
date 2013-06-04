@@ -16,10 +16,9 @@ bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
 
-	//!!!create motion state!
-	//???does the motion state gettfm when object is attached to level?
+	CMotionStateKinematic* pMS = new CMotionStateKinematic;
 
-	btRigidBody::btRigidBodyConstructionInfo CI(0.f, NULL, Shape->GetBtShape());
+	btRigidBody::btRigidBodyConstructionInfo CI(0.f, pMS, Shape->GetBtShape());
 
 	//!!!set friction and restitution!
 
@@ -34,20 +33,35 @@ bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 }
 //---------------------------------------------------------------------
 
+void CCollisionObjMoving::InternalTerm()
+{
+	if (!pBtCollObj) return;
+
+	btMotionState* pMS = ((btRigidBody*)pBtCollObj)->getMotionState();
+	if (pMS)
+	{
+		((btRigidBody*)pBtCollObj)->setMotionState(NULL);
+		delete pMS;
+	}
+}
+//---------------------------------------------------------------------
+
 void CCollisionObjMoving::Term()
 {
-	btMotionState* pMS = pBtCollObj ? ((btRigidBody*)pBtCollObj)->getMotionState() : NULL;
-
+	InternalTerm();
 	CPhysicsObj::Term();
-
-	if (pMS) delete pMS;
 }
 //---------------------------------------------------------------------
 
 bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
 {
 	if (!CPhysicsObj::AttachToLevel(World)) FAIL;
-	pWorld->GetBtWorld()->addRigidBody((btRigidBody*)pBtCollObj, Group, Mask);
+
+	// Enforce offline transform update to be taken into account
+	btRigidBody* pRB = (btRigidBody*)pBtCollObj;
+	pRB->setMotionState(pRB->getMotionState());
+	pWorld->GetBtWorld()->addRigidBody(pRB, Group, Mask);
+
 	OK;
 }
 //---------------------------------------------------------------------
