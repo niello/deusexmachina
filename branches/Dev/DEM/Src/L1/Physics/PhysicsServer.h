@@ -27,7 +27,7 @@ protected:
 
 public:
 
-	Resources::CResourceManager<CCollisionShape>	CollShapeMgr;
+	Resources::CResourceManager<CCollisionShape> CollShapeMgr;
 
 	CPhysicsServer();
 	~CPhysicsServer();
@@ -35,6 +35,8 @@ public:
 	bool				Open();
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
+
+	PCollisionShape		CreateCapsuleShape(float Radius, float Height, CStrID UID = CStrID::Empty);
 
 	CPhysicsDebugDraw*	GetDebugDrawer() { return pDD; }
 };

@@ -28,10 +28,7 @@ protected:
 	Data::CFlags	Flags;
 	CPhysWorldOld*	Level;				// currently attached to this Level
 	PComposite		Composite;			// the Composite of this entity
-	nArray<PShape>	CollidedShapes;
 	matrix44		Transform;			// the backup Transform matrix
-	//!!!don't store when no need! use ptrs & some matrix pool or allocation!
-	matrix44		LockedTfm;			// backup Transform matrix when locked
 	CStrID			UserData;
 	uint			Stamp;
 
@@ -50,8 +47,6 @@ public:
 	enum
 	{
 		PHYS_ENT_ACTIVE				= 0x01,
-		PHYS_ENT_LOCKED				= 0x02,
-		PHYS_ENT_COLLISION_ENABLED	= 0x04
 	};
 
 	nString CompositeName;
@@ -76,27 +71,17 @@ public:
 	virtual bool		HasTransformChanged() const;
 	virtual vector3		GetVelocity() const;
 
-	void			EnableCollision();
-	void			DisableCollision();
-	void			Lock();
-	void			Unlock();
 	void			Reset();
 
 	void			SetDesiredLinearVelocity(const vector3& Velocity) { DesiredLinearVel = Velocity; }
 	const vector3&	GetDesiredLinearVelocity() const { return DesiredLinearVel; }
 	void			SetDesiredAngularVelocity(float Velocity) { DesiredAngularVel = Velocity; }
 	float			GetDesiredAngularVelocity() const { return DesiredAngularVel; }
-	CMaterialType	GetGroundMaterial() const { return GroundMtl; }
 
 	bool			IsActive() const { return Flags.Is(PHYS_ENT_ACTIVE); }
-	bool			IsLocked() const { return Flags.Is(PHYS_ENT_LOCKED); }
-	bool			IsCollisionEnabled() const { return Flags.Is(PHYS_ENT_COLLISION_ENABLED); }
 	bool			IsEnabled() const;
-	bool			IsAttachedToLevel() const { return Level != NULL; }
-	bool			IsHorizontalCollided() const;
 
 	void			SetEnabled(bool Enabled);
-	void			SetComposite(CComposite* pNew);
 	CComposite*		GetComposite() const { return Composite.GetUnsafe(); }
 	DWORD			GetUID() const { return UID; }
 	void			SetUserData(CStrID Data) { UserData = Data; }
@@ -104,8 +89,6 @@ public:
 	void			SetStamp(uint s) { Stamp = s; }
 	uint			GetStamp() const { return Stamp; }
 	CPhysWorldOld*	GetLevel() const { return Level; }
-	int				GetNumCollisions() const;
-	const nArray<Ptr<CShape>>& GetCollidedShapes() const { return CollidedShapes; }
 };
 
 typedef Ptr<CEntity> PEntity;

@@ -958,6 +958,14 @@
 			Name="Physics"
 			>
 			<File
+				RelativePath="..\..\Src\L2\Physics\CharacterController.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\CharacterController.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L2\Physics\Composite.cpp"
 				>
 			</File>
