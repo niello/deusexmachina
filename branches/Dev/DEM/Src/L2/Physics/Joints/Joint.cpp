@@ -12,7 +12,7 @@ CJoint::~CJoint()
 }
 //---------------------------------------------------------------------
 
-void CJoint::InitAxis(CJointAxis* pAxis, PParams Desc)
+void CJoint::InitAxis(CJointAxis* pAxis, Data::PParams Desc)
 {
 	pAxis->Axis.x = Desc->Get<float>(CStrID("AxisX"));
 	pAxis->Axis.y = Desc->Get<float>(CStrID("AxisY"));

@@ -958,14 +958,6 @@
 			Name="Physics"
 			>
 			<File
-				RelativePath="..\..\Src\L2\Physics\CharEntity.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\CharEntity.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Physics\Composite.cpp"
 				>
 			</File>
@@ -1086,14 +1078,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\Ragdoll.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\Ragdoll.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Physics\RigidBodyOld.cpp"
 				>
 			</File>
@@ -1124,14 +1108,6 @@
 			<Filter
 				Name="Prop"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropAbstractPhysics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropAbstractPhysics.h"
-					>
-				</File>
 				<File
 					RelativePath="..\..\Src\L2\Physics\Prop\PropPhysics.cpp"
 					>
@@ -1173,30 +1149,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\BallJoint.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\BallJoint.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\Hinge2Joint.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\Hinge2Joint.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\HingeJoint.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\HingeJoint.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Src\L2\Physics\Joints\Joint.cpp"
 					>
 				</File>
@@ -1206,22 +1158,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\Physics\Joints\JointAxis.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\SliderJoint.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\SliderJoint.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\UniversalJoint.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\UniversalJoint.h"
 					>
 				</File>
 			</Filter>

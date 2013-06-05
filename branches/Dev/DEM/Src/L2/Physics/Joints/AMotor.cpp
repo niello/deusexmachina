@@ -6,9 +6,9 @@ namespace Physics
 {
 __ImplementClass(Physics::CAMotor, 'AMTR', Physics::CJoint);
 
-void CAMotor::Init(PParams Desc)
+void CAMotor::Init(Data::PParams Desc)
 {
-	CDataArray& Axes = *Desc->Get<PDataArray>(CStrID("Axes"));
+	Data::CDataArray& Axes = *Desc->Get<Data::PDataArray>(CStrID("Axes"));
 	SetNumAxes(Axes.GetCount());
 	for (int i = 0; i < Axes.GetCount(); i++)
 		InitAxis(&AxisParams[i], Axes[i]);

@@ -18,11 +18,11 @@ bool CRigidBody::Init(const Data::CParams& Desc, const vector3& Offset)
 	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
 
 	float Mass = Desc.Get<float>(CStrID("Mass"), 1.f);
+	btVector3 Inertia;
+	Shape->GetBtShape()->calculateLocalInertia(Mass, Inertia);
 
 	CMotionStateDynamic* pMS = new CMotionStateDynamic;
 
-	btVector3 Inertia;
-	Shape->GetBtShape()->calculateLocalInertia(Mass, Inertia);
 	btRigidBody::btRigidBodyConstructionInfo CI(Mass, pMS, Shape->GetBtShape(), Inertia);
 
 	//!!!set friction and restitution!
@@ -82,14 +82,7 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
 	if (pMotionState)
 	{
-		btTransform BtTfm = TfmToBtTfm(Tfm);
-		pMotionState->Rotation = BtTfm.getRotation();
-		pMotionState->Position = BtTfm.getOrigin();
-		pMotionState->TfmChanged = true;
-
-		//???why crashes?
-		//pMotionState->setWorldTransform(TfmToBtTfm(Tfm)); //???optimize?
-
+		pMotionState->setWorldTransform(TfmToBtTfm(Tfm)); //???optimize?
 		pMotionState->Position.m_floats[0] += ShapeOffset.x;
 		pMotionState->Position.m_floats[1] += ShapeOffset.y;
 		pMotionState->Position.m_floats[2] += ShapeOffset.z;
