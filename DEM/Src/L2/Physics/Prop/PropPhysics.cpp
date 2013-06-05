@@ -97,11 +97,15 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 		Obj->AttachToLevel(*pPhysWorld);
 	}
+
+	//!!!load joints!
 }
 //---------------------------------------------------------------------
 
 void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
+	//!!!unload joints!
+
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{
 		Physics::PNodeControllerRigidBody Ctlr = Ctlrs.ValueAtIndex(i);

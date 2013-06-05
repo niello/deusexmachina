@@ -1,6 +1,7 @@
 #include "PhysicsServer.h"
 
 #include <Physics/PhysicsDebugDraw.h>
+#include <BulletCollision/CollisionShapes/btCapsuleShape.h>
 
 namespace Physics
 {
@@ -43,6 +44,16 @@ void CPhysicsServer::Close()
 	}
 
 	_IsOpen = false;
+}
+//---------------------------------------------------------------------
+
+// Vertical capsule (around Y axis)
+PCollisionShape CPhysicsServer::CreateCapsuleShape(float Radius, float Height, CStrID UID)
+{
+	PCollisionShape Shape = CollShapeMgr.CreateTypedResource(UID);
+	btCapsuleShape* pBtShape = new btCapsuleShape(Radius, Height);
+	Shape->Setup(pBtShape);
+	return Shape;
 }
 //---------------------------------------------------------------------
 
