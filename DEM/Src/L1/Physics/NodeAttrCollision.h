@@ -21,12 +21,7 @@ class CNodeAttrCollision: public Scene::CNodeAttribute
 public:
 
 	PCollisionObjMoving	CollObj;
-	CPhysicsWorld*		pWorld;
 
-	CNodeAttrCollision(): pWorld(NULL) {}
-
-	virtual bool OnAdd();
-	virtual void OnRemove();
 	virtual void Update();
 };
 

@@ -24,7 +24,7 @@ protected:
 	PRigidBodyOld	pBody1;
 	PRigidBodyOld	pBody2;
 
-	static void	InitAxis(CJointAxis* pAxis, PParams Desc);
+	static void	InitAxis(CJointAxis* pAxis, Data::PParams Desc);
 	vector4		GetDebugVisualizationColor() const { return vector4(1.0f, 0.0f, 1.0f, 1.0f); }
 
 public:
@@ -35,7 +35,7 @@ public:
 	CJoint(): ODEJointID(NULL) {}
 	virtual ~CJoint() = 0;
 
-	virtual void Init(PParams Desc) {}
+	virtual void Init(Data::PParams Desc) {}
 	virtual void Attach(dWorldID WorldID, dJointGroupID GroupID, const matrix44& ParentTfm);
 	virtual void Detach();
 	virtual void UpdateTransform(const matrix44& Tfm) = 0;

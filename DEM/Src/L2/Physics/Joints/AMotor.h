@@ -22,7 +22,7 @@ public:
 
 	virtual ~CAMotor() {}
 
-	virtual void Init(PParams Desc);
+	virtual void Init(Data::PParams Desc);
 	virtual void Attach(dWorldID WorldID, dJointGroupID GroupID, const matrix44& ParentTfm);
     virtual void UpdateTransform(const matrix44& Tfm);
 

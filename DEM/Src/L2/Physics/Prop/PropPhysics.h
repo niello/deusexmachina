@@ -35,7 +35,7 @@ public:
 	virtual void	Deactivate();
 
 	//!!!WRITE!
-	void			GetAABB(bbox3& AABB) const {}
+	void			GetAABB(bbox3& AABB) const { n_error("CPropPhysics::GetAABB() -> IMPLEMENT ME!!!"); }
 };
 
 }

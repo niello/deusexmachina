@@ -2,17 +2,35 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
+#include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsWorldOld.h>
-#include <Physics/CharEntity.h>
+#include <Physics/Composite.h>
 #include <Render/DebugDraw.h>
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropActorPhysics, 'PRAP', Prop::CPropAbstractPhysics);
+__ImplementClass(Prop::CPropActorPhysics, 'PRAP', Prop::CPropTransformable);
+
+CPropActorPhysics::~CPropActorPhysics()
+{
+	if (IsActive()) DisablePhysics(); //???is right?
+}
+//---------------------------------------------------------------------
 
 void CPropActorPhysics::Activate()
 {
-	CPropAbstractPhysics::Activate();
+	CPropTransformable::Activate();
+
+	PhysEntity = Physics::CEntity::CreateInstance();
+	PhysEntity->SetUserData(GetEntity()->GetUID());
+	PhysEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("PhysicsOld"), NULL);
+	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
+	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
+	PhysEntity->Hover = 0.2f;
+	//!!!recreate physics capsule on R/H change!
+
+	EnablePhysics();
 
 	PROP_SUBSCRIBE_PEVENT(AfterPhysics, CPropActorPhysics, AfterPhysics);
 	PROP_SUBSCRIBE_PEVENT(OnEntityRenamed, CPropActorPhysics, OnEntityRenamed);
@@ -28,50 +46,57 @@ void CPropActorPhysics::Deactivate()
 	UNSUBSCRIBE_EVENT(AIBodyRequestLVelocity);
 	UNSUBSCRIBE_EVENT(AIBodyRequestAVelocity);
 
-	CPropAbstractPhysics::Deactivate();
+	if (IsEnabled()) DisablePhysics();
+
+	PhysEntity = NULL;
+
+	CPropTransformable::Deactivate();
 }
 //---------------------------------------------------------------------
 
-Physics::CEntity* CPropActorPhysics::GetPhysicsEntity() const
+void CPropActorPhysics::SetEnabled(bool Enable)
 {
-	return PhysEntity;
+	if (Enabled != Enable)
+	{
+		if (Enable) EnablePhysics();
+		else DisablePhysics();
+	}
 }
 //---------------------------------------------------------------------
 
 void CPropActorPhysics::EnablePhysics()
 {
 	n_assert(!IsEnabled());
-
-	PhysEntity = Physics::CCharEntity::CreateInstance();
-	PhysEntity->SetUserData(GetEntity()->GetUID());
-	PhysEntity->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	PhysEntity->CompositeName = GetEntity()->GetAttr<nString>(CStrID("PhysicsOld"), NULL);
-	PhysEntity->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
-	PhysEntity->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
-	PhysEntity->Hover = 0.2f;
-
-	//!!!recreate physics capsule on R/H change!
-
-	//!!!GET LEVEL from entity!
 	GetEntity()->GetLevel().GetPhysicsOld()->AttachEntity(PhysEntity);
-
 	Stop();
-
-	CPropAbstractPhysics::EnablePhysics();
+	Enabled = true;
 }
 //------------------------------------------------------------------------------
 
 void CPropActorPhysics::DisablePhysics()
 {
 	n_assert(IsEnabled());
-
 	Stop();
 	GetEntity()->GetLevel().GetPhysicsOld()->RemoveEntity(PhysEntity);
-	PhysEntity = NULL;
-
-	CPropAbstractPhysics::DisablePhysics();
+	Enabled = false;
 }
 //------------------------------------------------------------------------------
+
+void CPropActorPhysics::GetAABB(bbox3& AABB) const
+{
+	Physics::CEntity* pEnt = GetPhysicsEntity();
+	if (pEnt && pEnt->GetComposite()) pEnt->GetComposite()->GetAABB(AABB);
+	else
+	{
+		AABB.vmin.x = 
+		AABB.vmin.y = 
+		AABB.vmin.z = 
+		AABB.vmax.x = 
+		AABB.vmax.y = 
+		AABB.vmax.z = 0.f;
+	}
+}
+//---------------------------------------------------------------------
 
 void CPropActorPhysics::Stop()
 {
@@ -83,7 +108,15 @@ void CPropActorPhysics::Stop()
 void CPropActorPhysics::SetTransform(const matrix44& NewTF)
 {
 	PhysEntity->SetTransform(NewTF);
-	if (!IsEnabled()) CPropAbstractPhysics::SetTransform(NewTF);
+	if (!IsEnabled())
+	{
+		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+		Physics::CEntity* pPhysEnt = GetPhysicsEntity();
+		if (pPhysEnt && pProp && pProp->GetNode())
+			pProp->GetNode()->SetWorldTransform(NewTF);
+
+		CPropTransformable::SetTransform(NewTF);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -92,7 +125,13 @@ bool CPropActorPhysics::AfterPhysics(const Events::CEventBase& Event)
 {
 	if (IsEnabled() && PhysEntity->HasTransformChanged())
 	{
-		CPropAbstractPhysics::SetTransform(PhysEntity->GetTransform());
+		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+		Physics::CEntity* pPhysEnt = GetPhysicsEntity();
+		if (pPhysEnt && pProp && pProp->GetNode())
+			pProp->GetNode()->SetWorldTransform(PhysEntity->GetTransform());
+
+		CPropTransformable::SetTransform(PhysEntity->GetTransform());
+
 		GetEntity()->SetAttr<vector3>(CStrID("VelocityVector"), PhysEntity->GetVelocity());
 	}
 

@@ -15,6 +15,8 @@ class CMotionStateKinematic: public btMotionState
 {
 public:
 
+	BT_DECLARE_ALIGNED_ALLOCATOR();
+
 	btTransform Tfm;
 
 	virtual void getWorldTransform(btTransform& worldTrans) const { worldTrans = Tfm; }

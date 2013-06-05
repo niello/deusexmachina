@@ -79,7 +79,6 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		if (IsDynamic)
 		{
 			Obj->SetTransform(pCurrNode->GetWorldMatrix());
-			Obj->AttachToLevel(*pPhysWorld);
 
 			Physics::PNodeControllerRigidBody Ctlr = n_new(Physics::CNodeControllerRigidBody);
 			Ctlr->SetBody(*(Physics::CRigidBody*)Obj.GetUnsafe());
@@ -91,9 +90,12 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		else
 		{
 			Physics::PNodeAttrCollision Attr = n_new(Physics::CNodeAttrCollision);
+			Attr->CollObj = (Physics::CCollisionObjMoving*)Obj.GetUnsafe();
 			pCurrNode->AddAttr(*Attr);
 			Attrs.Append(Attr);
 		}
+
+		Obj->AttachToLevel(*pPhysWorld);
 	}
 }
 //---------------------------------------------------------------------
@@ -110,7 +112,10 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 	Ctlrs.Clear(); //???create once and attach/detach?
 
 	for (int i = 0; i < Attrs.GetCount(); ++i)
+	{
+		Attrs[i]->CollObj->RemoveFromLevel();
 		Attrs[i]->RemoveFromNode();
+	}
 	Attrs.Clear(); //???create once and attach/detach?
 }
 //---------------------------------------------------------------------

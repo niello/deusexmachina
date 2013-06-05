@@ -15,6 +15,8 @@ class CMotionStateDynamic: public btMotionState
 {
 public:
 
+	BT_DECLARE_ALIGNED_ALLOCATOR();
+
 	btQuaternion	Rotation;
 	btVector3		Position;
 	bool			TfmChanged;

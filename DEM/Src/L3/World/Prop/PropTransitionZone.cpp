@@ -3,7 +3,11 @@
 #include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 
-extern const matrix44 Rotate180;
+extern const matrix44 Rotate180(
+	-1.f, 0.f,  0.f, 0.f,
+	 0.f, 1.f,  0.f, 0.f,
+	 0.f, 0.f, -1.f, 0.f,
+	 0.f, 0.f,  0.f, 1.f);
 
 //BEGIN_ATTRS_REGISTRATION(PropTransitionZone)
 //	RegisterString(TargetLevelID, ReadOnly);
