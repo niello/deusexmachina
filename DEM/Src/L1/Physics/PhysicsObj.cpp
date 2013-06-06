@@ -22,17 +22,6 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 	Shape = PhysicsSrv->CollShapeMgr.GetTypedResource(ShapeID);
 	if (!Shape.IsValid())
 		Shape = LoadCollisionShapeFromPRM(ShapeID, nString("physics:") + ShapeID.CStr() + ".hrd"); //!!!prm!
-
-	//!!!???what if shape is found but is not loaded? RESMGR problem!
-	//desired way:
-	//if resource is found, but not loaded
-	//  pass in into the loader
-	//if loader determines that the type is incompatible
-	//  it gets the resource pointer from the resource manager
-	//  sets it to the passed pointer
-	//  checks its type
-	//  if type is right, someone reloaded the resource before
-	//  else replaces a passed pointer with a new one, of the right type
 	n_assert(Shape->IsLoaded());
 
 	//!!!!!!!!!!!
@@ -40,6 +29,23 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 	//Mask = (ushort)Desc.Get<int>(CStrID("Mask"), 0xffff); //!!!set normal flags!
 	Group = 0x0001;
 	Mask = 0xffff;
+
+	ShapeOffset = Offset;
+
+	//???get rid of self-offset? prop can calc heightmap offset
+	vector3 ShapeSelfOffset;
+	if (Shape->GetOffset(ShapeSelfOffset)) ShapeOffset += ShapeSelfOffset;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPhysicsObj::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
+{
+	n_assert(CollShape.IsLoaded());
+	Shape = &CollShape;
+	Group = CollGroup;
+	Mask = CollMask;
 
 	ShapeOffset = Offset;
 

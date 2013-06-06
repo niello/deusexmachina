@@ -32,6 +32,7 @@ protected:
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
 
+	bool				Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset = vector3::Zero);
 	void				InternalTerm();
 	virtual void		GetTransform(btTransform& Out) const;
 
@@ -52,6 +53,7 @@ public:
 	void				GetGlobalAABB(bbox3& OutBox) const;
 	void				GetPhysicsAABB(bbox3& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
+	CPhysicsWorld*		GetWorld() const { return pWorld; }
 };
 
 typedef Ptr<CPhysicsObj> PPhysicsObj;

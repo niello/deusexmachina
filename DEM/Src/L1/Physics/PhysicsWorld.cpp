@@ -51,38 +51,20 @@ bool CPhysicsWorld::Init(const bbox3& Bounds)
 	//mBody->setCollisionFlags(mBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
 
 	/*
-	collision shape can be loaded from desc and stored as a reusable resource
-	any rigid body or collision object can use the same collision shape instance by its resource ID
-	rigid body : public collision object
-	rigid body has a btRigidBodyConstructionInfo which can be cached for instance creation
-	rigid body has a shape inside, no separate shape
-	btCollisionObject can be used to add collision shape without a body
-	static objects must have zero mass
-	???use motion state to read tfm and velocity from body?
-	write own motion state impl
 	btGhostObject for triggers and raytests, it keeps track of all its intersections
 	btGhostPairCallback to notify application of new/removed collisions
 	???btBvhTriangleMeshShape->performRaycast(btTriangleCallback*)
 	bt[Scaled]BvhTriangleMeshShape for all the non-modifyable and non-deletable static environment except a terrain
 	it can be created at compile time and saved (btOptimizedBvh, Demo/ConcaveDemo)
-	terrain is btHeightfieldTerrainShape
-	collision filtering is the best using masks
 	a->group in b->mask && b->group in a->mask = collision, 32bit
 	btOverlapFilterCallback - broadphase, receives broadphase proxies (AABBs?) world->getpaircache->set
 	near callback dispatcher->set
-	static objects (zero mass) should never be moved by the user
-	kinematic body affect dynamic bodies but isn't affected itself
-	there is a kinematic character controller
 	appendAnchor attaches body to body
 	use CCD for fast moving objects
 	btConeTwistConstraint for ragdolls
 	#define BT_NO_PROFILE 1 in release
 	materials - restitution and friction
 	there is a multithreading support
-	btIDebugDraw
-	//moving xz and rotating y:
-	body->setLinearFactor(btVector3(1,0,1));
-	body->setAngularFactor(btVector3(0,1,0));
 	*/
 
 	OK;

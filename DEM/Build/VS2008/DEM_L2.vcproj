@@ -1086,6 +1086,22 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L2\Physics\PropCharacterController.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PropCharacterController.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PropPhysics.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\PropPhysics.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L2\Physics\RigidBodyOld.cpp"
 				>
 			</File>
@@ -1116,14 +1132,6 @@
 			<Filter
 				Name="Prop"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropPhysics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropPhysics.h"
-					>
-				</File>
 				<File
 					RelativePath="..\..\Src\L2\Physics\Prop\PropTransformable.cpp"
 					>

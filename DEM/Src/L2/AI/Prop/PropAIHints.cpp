@@ -3,7 +3,7 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
-#include <Physics/Prop/PropPhysics.h>
+#include <Physics/PropPhysics.h>
 #include <AI/AIServer.h>
 #include <Render/DebugDraw.h>
 #include <Data/DataServer.h>
