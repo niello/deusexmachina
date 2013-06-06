@@ -7,6 +7,8 @@
 // Rigid body is a center of mass that has shape and transform. Rigid body is
 // simulated by physics world and can be used as transformation source.
 
+class btRigidBody;
+
 namespace Scene
 {
 	class CSceneNode;
@@ -21,6 +23,9 @@ class CRigidBody: public CPhysicsObj
 
 protected:
 
+	float Mass;
+
+	bool			InternalInit(float BodyMass);
 	void			InternalTerm();
 	virtual void	GetTransform(btTransform& Out) const;
 
@@ -29,6 +34,7 @@ public:
 	virtual ~CRigidBody() { InternalTerm(); }
 
 	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
+	bool			Init(CCollisionShape& CollShape, float BodyMass, ushort CollGroup, ushort CollMask, const vector3& Offset = vector3::Zero);
 	virtual void	Term();
 	virtual bool	AttachToLevel(CPhysicsWorld& World);
 	virtual void	RemoveFromLevel();
@@ -37,6 +43,9 @@ public:
 	virtual void	GetTransform(vector3& OutPos, quaternion& OutRot) const;
 	void			SetTransformChanged(bool Changed);
 	bool			IsTransformChanged() const;
+	float			GetInvMass() const;
+	float			GetMass() const { return Mass; }
+	btRigidBody*	GetBtBody() const { return (btRigidBody*)pBtCollObj; }
 };
 
 typedef Ptr<CRigidBody> PRigidBody;

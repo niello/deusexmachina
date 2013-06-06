@@ -3,6 +3,17 @@
 
 //!!!NEED .bullet FILE LOADER!
 
+//!!!???what if shape is found but is not loaded? RESMGR problem!
+//desired way:
+//if resource is found, but not loaded
+//  pass in into the loader
+//if loader determines that the type is incompatible
+//  it gets the resource pointer from the resource manager
+//  sets it to the passed pointer
+//  checks its type
+//  if type is right, someone reloaded the resource before
+//  else replaces a passed pointer with a new one, of the right type
+
 #include <Physics/HeightfieldShape.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/BulletConv.h>

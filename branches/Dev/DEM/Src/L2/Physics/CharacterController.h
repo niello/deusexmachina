@@ -18,30 +18,58 @@ namespace Data
 namespace Physics
 {
 typedef Ptr<class CRigidBody> PRigidBody;
+class CPhysicsWorld;
 
 class CCharacterController: public Core::CRefCounted
 {
 protected:
 
+	//!!!Slide down from where can't climb up and don't slide where can climb!
+	//Slide along vertical obstacles, don't bounce
+
 	float		Radius;
 	float		Height;
 	float		Hover;
-	float		MaxSlopeAngle;	// In radians
+	float		MaxSlopeAngle;	// In radians //???recalc to cos?
 	float		MaxClimb; //???recalc to hover?
 	float		MaxJump; //???!!!recalc to max jump impulse?
 	float		Softness;		// Allowed penetration depth //???!!!recalc to bullet collision margin?!
 
+	//???need here? or Bullet can do this? if zero or less, don't use
+	float		MaxAcceleration;
+
 	PRigidBody	Body;
+
+	vector3		ReqLinVel;
+	float		ReqAngVel;
 
 public:
 
-	bool Init(const Data::CParams& Desc);
-	void Term();
-	//AttachToLevel()
-	//RemoveFromLevel()
+	~CCharacterController() { Term(); }
 
-	void RequestLinearVelocity(const vector3& Velocity);
-	void RequestAngularVelocity(float Velocity);
+	bool		Init(const Data::CParams& Desc);
+	void		Term();
+	bool		AttachToLevel(CPhysicsWorld& World);
+	void		RemoveFromLevel();
+	bool		IsAttachedToLevel() const;
+
+	void		Update();
+
+	void		RequestLinearVelocity(const vector3& Velocity);
+	void		RequestAngularVelocity(float Velocity);
+
+	CRigidBody*	GetBody() const { return Body.GetUnsafe(); }
+
+	// SetTransform - teleport
+	// GetTransform
+	// GetLinearVelocity
+	// GetAngularVelocity
+
+	//!!!collision callbacks/events! fire from global or from here?
+
+	//IsOnTheGround / GetGroundInfo / IsFalling
+	//Jump //???Fall if touched the ceiling?
+	//???StartCrouch, StopCrouch (if can't, now will remember request), IsCrouching?
 };
 
 typedef Ptr<CCharacterController> PCharacterController;

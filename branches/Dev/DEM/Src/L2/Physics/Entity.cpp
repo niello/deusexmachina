@@ -48,9 +48,9 @@ void CEntity::Activate()
 	float CapsuleLength = Height - 2.0f * Radius - Hover;
 	matrix44 UpRight;
 	UpRight.rotate_x(n_deg2rad(90.0f));
-	UpRight.translate(vector3(0.0f, Hover + Radius + CapsuleLength * 0.5f, 0.0f));
-	PShape pShape = (CShape*)PhysSrvOld->CreateCapsuleShape(UpRight,
-		CMaterialTable::StringToMaterialType("Character"), Radius, CapsuleLength);
+	UpRight.translate(vector3(0.0f, (Hover + Height) * 0.5f, 0.0f));
+	PShape pShape =
+		(CShape*)PhysSrvOld->CreateCapsuleShape(UpRight, CMaterialTable::StringToMaterialType("Character"), Radius, CapsuleLength);
 	BaseBody->BeginShapes(1);
 	BaseBody->AddShape(pShape);
 	BaseBody->EndShapes();
@@ -143,7 +143,6 @@ vector3 CEntity::GetVelocity() const
 }
 //---------------------------------------------------------------------
 
-//???INLINE?
 void CEntity::OnStepBefore()
 {
 	Game::CSurfaceInfo SurfInfo;

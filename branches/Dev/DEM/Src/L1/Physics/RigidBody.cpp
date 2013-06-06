@@ -16,13 +16,31 @@ __ImplementClassNoFactory(Physics::CRigidBody, Physics::CPhysicsObj);
 bool CRigidBody::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
+	return InternalInit(Desc.Get<float>(CStrID("Mass"), 1.f));
+}
+//---------------------------------------------------------------------
 
-	float Mass = Desc.Get<float>(CStrID("Mass"), 1.f);
+bool CRigidBody::Init(CCollisionShape& CollShape, float BodyMass, ushort CollGroup, ushort CollMask, const vector3& Offset)
+{
+	if (!CPhysicsObj::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
+	return InternalInit(BodyMass);
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::Term()
+{
+	InternalTerm();
+	CPhysicsObj::Term();
+}
+//---------------------------------------------------------------------
+
+bool CRigidBody::InternalInit(float BodyMass)
+{
+	Mass = BodyMass;
 	btVector3 Inertia;
 	Shape->GetBtShape()->calculateLocalInertia(Mass, Inertia);
 
 	CMotionStateDynamic* pMS = new CMotionStateDynamic;
-
 	btRigidBody::btRigidBodyConstructionInfo CI(Mass, pMS, Shape->GetBtShape(), Inertia);
 
 	//!!!set friction and restitution!
@@ -44,13 +62,6 @@ void CRigidBody::InternalTerm()
 		((btRigidBody*)pBtCollObj)->setMotionState(NULL);
 		delete pMS;
 	}
-}
-//---------------------------------------------------------------------
-
-void CRigidBody::Term()
-{
-	InternalTerm();
-	CPhysicsObj::Term();
 }
 //---------------------------------------------------------------------
 
@@ -133,6 +144,12 @@ bool CRigidBody::IsTransformChanged() const
 {
 	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
 	return pMotionState ? pMotionState->TfmChanged : true;
+}
+//---------------------------------------------------------------------
+
+float CRigidBody::GetInvMass() const
+{
+	return ((btRigidBody*)pBtCollObj)->getInvMass();
 }
 //---------------------------------------------------------------------
 

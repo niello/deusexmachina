@@ -15,9 +15,27 @@ __ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CPhysicsObj);
 bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
+	return InternalInit();
+}
+//---------------------------------------------------------------------
 
+bool CCollisionObjMoving::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
+{
+	if (!CPhysicsObj::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
+	return InternalInit();
+}
+//---------------------------------------------------------------------
+
+void CCollisionObjMoving::Term()
+{
+	InternalTerm();
+	CPhysicsObj::Term();
+}
+//---------------------------------------------------------------------
+
+bool CCollisionObjMoving::InternalInit()
+{
 	CMotionStateKinematic* pMS = new CMotionStateKinematic;
-
 	btRigidBody::btRigidBodyConstructionInfo CI(0.f, pMS, Shape->GetBtShape());
 
 	//!!!set friction and restitution!
@@ -43,13 +61,6 @@ void CCollisionObjMoving::InternalTerm()
 		((btRigidBody*)pBtCollObj)->setMotionState(NULL);
 		delete pMS;
 	}
-}
-//---------------------------------------------------------------------
-
-void CCollisionObjMoving::Term()
-{
-	InternalTerm();
-	CPhysicsObj::Term();
 }
 //---------------------------------------------------------------------
 
