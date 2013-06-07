@@ -181,6 +181,7 @@ void CRenderServer::SetupDevice()
 {
 	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
 	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
 
 	D3DVIEWPORT9 ViewPort;
 	ViewPort.Width = D3DPresentParams.BackBufferWidth;
@@ -285,6 +286,14 @@ void CRenderServer::SetupPresentParams()
 	D3DPresentParams.EnableAutoDepthStencil = TRUE;
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_D24S8;
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
+}
+//---------------------------------------------------------------------
+
+void CRenderServer::SetWireframe(bool Wire)
+{
+	if (Wireframe == Wire) return;
+	Wireframe = Wire;
+	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
 }
 //---------------------------------------------------------------------
 

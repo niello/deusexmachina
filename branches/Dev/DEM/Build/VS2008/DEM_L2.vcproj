@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -108,7 +108,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -174,7 +174,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC;_EDITOR"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -242,7 +242,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\DetourTileCache\Include;..\..\..\3rdParty\Recast\DebugUtils\Include;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC;_EDITOR"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -322,14 +322,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\AI\Prop\PropActorBrainSI.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorPhysics.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorPhysics.h"
 					>
 				</File>
 				<File
@@ -966,126 +958,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\Composite.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\Composite.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\ContactPoint.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\ContactPoint.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\Entity.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Entity_Phys.obj"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Entity_Phys.obj"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugEditor|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Entity_Phys.obj"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseEditor|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\Entity_Phys.obj"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\Entity.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\FilterSet.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\FilterSet.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\MaterialTable.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\MaterialTable.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsServerOld.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsServerOld.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsWorldOld.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugEditor|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseEditor|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Physics\PhysicsWorldOld.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Physics\PropCharacterController.cpp"
 				>
 			</File>
@@ -1102,137 +974,17 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\RigidBodyOld.cpp"
+				RelativePath="..\..\Src\L2\Physics\PropTrigger.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Physics\RigidBodyOld.h"
+				RelativePath="..\..\Src\L2\Physics\PropTrigger.h"
 				>
 			</File>
-			<Filter
-				Name="Event"
+			<File
+				RelativePath="..\..\Src\L2\Physics\PropTriggerSI.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Event\SetTransform.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Event\SetTransform.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Event\UpdateTransform.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Event\UpdateTransform.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropTransformable.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropTransformable.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropTrigger.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropTrigger.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Prop\PropTriggerSI.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Joints"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\AMotor.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\AMotor.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\Joint.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\Joint.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Joints\JointAxis.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Collision"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\BoxShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\BoxShape.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\CapsuleShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\CapsuleShape.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\CollideCategory.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\HeightfieldShapeOld.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\HeightfieldShapeOld.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\MeshShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\MeshShape.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\Shape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\Shape.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\SphereShape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Physics\Collision\SphereShape.h"
-					>
-				</File>
-			</Filter>
+			</File>
 		</Filter>
 		<Filter
 			Name="SI"
@@ -1261,6 +1013,18 @@
 				RelativePath="..\..\Src\L2\Scene\PropSceneNode.h"
 				>
 			</File>
+			<Filter
+				Name="Events"
+				>
+				<File
+					RelativePath="..\..\Src\L2\Scene\Events\SetTransform.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L2\Scene\Events\SetTransform.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Animation"

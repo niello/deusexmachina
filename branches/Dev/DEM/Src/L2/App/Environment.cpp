@@ -143,9 +143,6 @@ void CEnvironment::ReleaseEngine()
 
 bool CEnvironment::InitGameSystem()
 {
-	PhysicsServerOld = n_new(Physics::CPhysicsServerOld);
-	PhysicsServerOld->Open();
-
 	PhysicsServer = n_new(Physics::CPhysicsServer);
 	PhysicsServer->Open();
 
@@ -187,9 +184,6 @@ void CEnvironment::ReleaseGameSystem()
 
 	PhysicsServer->Close();
 	PhysicsServer = NULL;
-
-	PhysicsServerOld->Close();
-	PhysicsServerOld = NULL;
 }
 //---------------------------------------------------------------------
 

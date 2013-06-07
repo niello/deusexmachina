@@ -21,6 +21,12 @@ protected:
 	Scene::PSceneNode	Node;
 	bool				ExistingNode;
 
+	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
+	DECLARE_EVENT_HANDLER(OnWorldTfmsUpdated, OnWorldTfmsUpdated);
+	DECLARE_EVENT_HANDLER_VIRTUAL(OnRenderDebug, OnRenderDebug);
+
+	virtual void SetTransform(const matrix44& NewTfm);
+
 public:
 
 	//virtual ~CPropSceneNode() {}

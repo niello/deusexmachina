@@ -1589,6 +1589,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Physics\ClosestNotMeRayResultCallback.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Physics\CollisionObjMoving.cpp"
 				>
 			</File>

@@ -15,7 +15,6 @@ namespace Data
 
 namespace Physics
 {
-	typedef Ptr<class CShape> PShape;
 	typedef Ptr<class CCollisionObjStatic> PCollisionObjStatic;
 }
 
@@ -36,16 +35,13 @@ protected:
 
 	friend class CStaticEnvManager;
 
-	CStrID						UID;
-	PGameLevel					Level;
-	Data::PParams				Desc;
+	CStrID							UID;
+	PGameLevel						Level;
+	Data::PParams					Desc;
 
-	Scene::PSceneNode			Node;
-	bool						ExistingNode;
+	Scene::PSceneNode				Node;
+	bool							ExistingNode;
 	Physics::PCollisionObjStatic	CollObj;
-
-	nArray<Physics::PShape>	Collision; //???scene node attributes?
-	nArray<matrix44>		CollLocalTfm; //???use child scene node?
 
 	void SetUID(CStrID NewUID);
 	//???!!!void SetLevel(CGameLevel* NewLevel); - for transitions!

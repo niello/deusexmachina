@@ -8,9 +8,9 @@
 //#include <Render/FrameShader.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsWorld.h>
-#include <Physics/PhysicsWorldOld.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h>
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Game
 {
@@ -18,6 +18,20 @@ namespace Game
 CGameLevel::~CGameLevel()
 {
 	Term();
+}
+//---------------------------------------------------------------------
+
+void PhysicsPreTick(btDynamicsWorld* world, btScalar timeStep)
+{
+	n_assert_dbg(world && world->getWorldUserInfo());
+	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("BeforePhysicsTick")); //???set time as param?
+}
+//---------------------------------------------------------------------
+
+void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
+{
+	n_assert_dbg(world && world->getWorldUserInfo());
+	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("AfterPhysicsTick")); //???set time as param?
 }
 //---------------------------------------------------------------------
 
@@ -58,11 +72,11 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
 		bbox3 Bounds(Center, Extents);
 
-		PhysWorldOld = n_new(Physics::CPhysWorldOld);
-		if (!PhysWorldOld->Init(Bounds)) FAIL;
-
 		PhysWorld = n_new(Physics::CPhysicsWorld);
 		if (!PhysWorld->Init(Bounds)) FAIL;
+
+		PhysWorld->GetBtWorld()->setInternalTickCallback(PhysicsPreTick, this, true);
+		PhysWorld->GetBtWorld()->setInternalTickCallback(PhysicsTick, this, false);
 	}
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
@@ -92,7 +106,6 @@ void CGameLevel::Term()
 {
 	GlobalSub = NULL;
 	AILevel = NULL;
-	PhysWorldOld = NULL;
 	PhysWorld = NULL;
 	Scene = NULL;
 	Script = NULL;
@@ -114,12 +127,13 @@ void CGameLevel::Trigger()
 	if (PhysWorld.IsValid())
 	{
 		FireEvent(CStrID("BeforePhysics"));
-		PhysWorldOld->Trigger((float)GameSrv->GetFrameTime());
 		PhysWorld->Trigger((float)GameSrv->GetFrameTime());
 		FireEvent(CStrID("AfterPhysics"));
 	}
 
 	if (Scene.IsValid()) Scene->GetRootNode().UpdateWorldSpace();
+
+	FireEvent(CStrID("OnWorldTfmsUpdated"));
 }
 //---------------------------------------------------------------------
 
@@ -158,15 +172,15 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	if (!Scene.IsValid() || !PhysWorld.IsValid()) FAIL;
 
 	line3 Ray;
-	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray);
-	const Physics::CContactPoint* pContact = PhysWorldOld->GetClosestRayContact(Ray.start(), Ray.vec());
-	if (!pContact) FAIL;
+	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
 
-	if (pOutPoint3D) *pOutPoint3D = pContact->Position;
+	Physics::PPhysicsObj PhysObj;
+	if (!PhysWorld->GetClosestRayContact(Ray.start(), Ray.vec(), pOutPoint3D, &PhysObj)) FAIL;
+
 	if (pOutEntityUID)
 	{
-		Physics::CEntity* pPhysEntity = PhysSrvOld->FindEntityByUniqueID(pContact->EntityID);
-		*pOutEntityUID = pPhysEntity ? pPhysEntity->GetUserData() : CStrID::Empty;
+		void* pUserData = PhysObj.IsValid() ? PhysObj->GetUserData() : NULL;
+		*pOutEntityUID = pUserData ? *(CStrID*)&pUserData : CStrID::Empty;
 	}
 
 	OK;
@@ -263,19 +277,18 @@ DWORD CGameLevel::GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& 
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::GetSurfaceInfoUnder(CSurfaceInfo& Out, const vector3& Position, float ProbeLength, DWORD SelpPhysID) const
+bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength) const
 {
 	n_assert(ProbeLength > 0);
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
-	const Physics::CContactPoint* pContact = PhysWorldOld->GetClosestRayContact(Position, Dir, SelpPhysID);
-	if (pContact)
-	{
-		Out.WorldHeight = pContact->Position.y;
-		Out.Material = pContact->Material;
-		OK;
-	}
-	else FAIL;
+	vector3 ContactPos;
+	if (!PhysWorld->GetClosestRayContact(Position, Dir, &ContactPos)) FAIL;
+	Out.WorldHeight = ContactPos.y;
+
+	//!!!material from CPhysicsObj!
+
+	OK;
 }
 //---------------------------------------------------------------------
 

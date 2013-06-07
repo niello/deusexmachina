@@ -2,9 +2,7 @@
 
 #include <AI/AIServer.h>
 #include <AI/Prop/PropActorBrain.h>
-#include <AI/Prop/PropActorPhysics.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
-#include <Physics/Entity.h>
 #include <Render/DebugDraw.h>
 #include <DetourObstacleAvoidance.h>
 
@@ -299,7 +297,7 @@ void CMotorSystem::Update()
 
 			PParams PAngularVel = n_new(CParams);
 			PAngularVel->Set(CStrID("Velocity"), AngularVel);
-			pActor->GetEntity()->FireEvent(CStrID("AIBodyRequestAVelocity"), PAngularVel);
+			pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
 			WasFacingPrevFrame = true;
 		}
 		else
@@ -317,7 +315,7 @@ void CMotorSystem::Update()
 	{
 		PParams PLinearVel = n_new(CParams);
 		PLinearVel->Set(CStrID("Velocity"), LinearVel);
-		pActor->GetEntity()->FireEvent(CStrID("AIBodyRequestLVelocity"), PLinearVel);
+		pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
 	}
 }
 //---------------------------------------------------------------------
@@ -327,7 +325,7 @@ void CMotorSystem::ResetMovement()
 	pActor->MvmtStatus = AIMvmt_Done;
 	PParams PLinearVel = n_new(CParams);
 	PLinearVel->Set(CStrID("Velocity"), vector4::Zero);
-	pActor->GetEntity()->FireEvent(CStrID("AIBodyRequestLVelocity"), PLinearVel);
+	pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
 }
 //---------------------------------------------------------------------
 
@@ -341,7 +339,7 @@ void CMotorSystem::ResetRotation()
 	}
 	PParams PAngularVel = n_new(CParams);
 	PAngularVel->Set(CStrID("Velocity"), 0.f);
-	pActor->GetEntity()->FireEvent(CStrID("AIBodyRequestAVelocity"), PAngularVel);
+	pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
 	WasFacingPrevFrame = false;
 }
 //---------------------------------------------------------------------

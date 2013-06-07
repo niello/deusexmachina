@@ -153,4 +153,11 @@ float CRigidBody::GetInvMass() const
 }
 //---------------------------------------------------------------------
 
+bool CRigidBody::IsActive() const
+{
+	int ActState = ((btRigidBody*)pBtCollObj)->getActivationState();
+	return ActState == DISABLE_DEACTIVATION || ActState == ACTIVE_TAG;
+}
+//---------------------------------------------------------------------
+
 }

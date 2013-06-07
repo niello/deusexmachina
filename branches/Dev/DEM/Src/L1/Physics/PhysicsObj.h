@@ -31,6 +31,7 @@ protected:
 	ushort				Mask;
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
+	void*				pUserPtr;
 
 	bool				Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset = vector3::Zero);
 	void				InternalTerm();
@@ -38,7 +39,7 @@ protected:
 
 public:
 
-	CPhysicsObj(): pBtCollObj(NULL), pWorld(NULL) {}
+	CPhysicsObj(): pBtCollObj(NULL), pWorld(NULL), pUserPtr(NULL) {}
 	virtual ~CPhysicsObj() { InternalTerm(); }
 
 	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
@@ -50,10 +51,13 @@ public:
 
 	virtual void		SetTransform(const matrix44& Tfm);
 	virtual void		GetTransform(vector3& OutPos, quaternion& OutRot) const;
+	void				SetUserData(void* pPtr) { pUserPtr = pPtr; }
+	void*				GetUserData() const { return pUserPtr; }
 	void				GetGlobalAABB(bbox3& OutBox) const;
 	void				GetPhysicsAABB(bbox3& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
 	CPhysicsWorld*		GetWorld() const { return pWorld; }
+	const vector3&		GetShapeOffset() const { return ShapeOffset; }
 };
 
 typedef Ptr<CPhysicsObj> PPhysicsObj;

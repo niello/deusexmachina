@@ -42,6 +42,7 @@ protected:
 
 	bool								_IsOpen;
 	bool								IsInsideFrame;
+	bool								Wireframe;
 	DWORD								InstanceCount;	// If 0, non-instanced rendering is active
 
 	nDictionary<CStrID, PVertexLayout>	VertexLayouts;
@@ -133,6 +134,9 @@ public:
 	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
 	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }
 
+	void				SetWireframe(bool Wire);
+	bool				IsWireframe() const { return Wireframe; }
+
 	CDisplay&			GetDisplay() { return Display; }
 	DWORD				GetFrameID() const { return FrameID; }
 	DWORD				GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
@@ -149,6 +153,7 @@ public:
 inline CRenderServer::CRenderServer():
 	_IsOpen(false),
 	IsInsideFrame(false),
+	Wireframe(false),
 	InstanceCount(0),
 	hLightAmbient(NULL),
 	hEyePos(NULL),

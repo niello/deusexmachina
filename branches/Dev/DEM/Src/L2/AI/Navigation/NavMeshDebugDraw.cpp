@@ -33,7 +33,7 @@ void CNavMeshDebugDraw::vertex(const float x, const float y, const float z, unsi
 
 	switch (PrimType)
 	{
-		case Render::PointList:	DebugDraw->DrawPoint(Pos, VColor, Size); break;
+		case Render::PointList:	DebugDraw->DrawPoint(Pos, Size, VColor); break;
 		case Render::LineList:	DebugDraw->AddLineVertex(Pos, VColor); break;
 		case Render::TriList:	DebugDraw->AddTriangleVertex(Pos, VColor); break;
 	}

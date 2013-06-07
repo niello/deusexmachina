@@ -41,7 +41,7 @@ public:
 	void	RenderDebug();
 
 	//!!!can set filter group and mask!
-	bool	GetClosestRayContact(const vector3& Start, const vector3& End) const;
+	bool	GetClosestRayContact(const vector3& Start, const vector3& End, vector3* pOutPos = NULL, PPhysicsObj* pOutObj = NULL) const;
 	DWORD	GetAllRayContacts(const vector3& Start, const vector3& End) const;
 
 	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, nArray<PEntity>& Result);
