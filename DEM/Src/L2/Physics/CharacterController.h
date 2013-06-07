@@ -29,7 +29,7 @@ protected:
 
 	float		Radius;
 	float		Height;
-	float		Hover;
+	float		Hover;	//???is it MaxClimb itself?
 	float		MaxSlopeAngle;	// In radians //???recalc to cos?
 	float		MaxClimb; //???recalc to hover?
 	float		MaxJump; //???!!!recalc to max jump impulse?
@@ -47,18 +47,23 @@ public:
 
 	~CCharacterController() { Term(); }
 
-	bool		Init(const Data::CParams& Desc);
-	void		Term();
-	bool		AttachToLevel(CPhysicsWorld& World);
-	void		RemoveFromLevel();
-	bool		IsAttachedToLevel() const;
+	bool			Init(const Data::CParams& Desc);
+	void			Term();
+	bool			AttachToLevel(CPhysicsWorld& World);
+	void			RemoveFromLevel();
+	bool			IsAttachedToLevel() const;
 
-	void		Update();
+	void			Update();
 
-	void		RequestLinearVelocity(const vector3& Velocity);
-	void		RequestAngularVelocity(float Velocity);
+	void			RequestLinearVelocity(const vector3& Velocity) { ReqLinVel = Velocity; }
+	void			RequestAngularVelocity(float Velocity) { ReqAngVel = Velocity; }
 
-	CRigidBody*	GetBody() const { return Body.GetUnsafe(); }
+	float			GetRadius() const { return Radius; }
+	float			GetHeight() const { return Height; }
+	float			GetHover() const { return Hover; }
+	CRigidBody*		GetBody() const { return Body.GetUnsafe(); }
+	bool			GetLinearVelocity(vector3& Out) const;
+	const vector3&	GetRequestedLinearVelocity() const { return ReqLinVel; }
 
 	// SetTransform - teleport
 	// GetTransform

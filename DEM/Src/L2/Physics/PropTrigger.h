@@ -2,15 +2,10 @@
 #ifndef __DEM_L2_PROP_TRIGGER_H__
 #define __DEM_L2_PROP_TRIGGER_H__
 
-#include "PropTransformable.h"
+#include <Game/Property.h>
 
 // Trigger is an abstract level geometry that produces some events/effects on entities
-// colliding with it
-
-namespace Physics
-{
-	typedef Ptr<class CShape> PShape;
-}
+// colliding with it. Trigger usually doesn't cause collision response.
 
 namespace Game
 {
@@ -40,14 +35,14 @@ namespace Prop
 {
 using namespace Scripting;
 
-class CPropTrigger: public CPropTransformable
+class CPropTrigger: public Game::CProperty
 {
 	__DeclareClass(CPropTrigger);
+	__DeclarePropertyStorage;
 
 protected:
 
 	bool					Enabled;
-	Physics::PShape			pCollShape; //???allow many shapes?
 	nArray<Game::PEntity>	EntitiesInsideNow;
 	nArray<Game::PEntity>	EntitiesInsideLastFrame;
 	bool					SwapArrays;

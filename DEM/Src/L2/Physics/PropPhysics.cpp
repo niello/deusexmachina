@@ -63,6 +63,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		Physics::PPhysicsObj Obj;
 		if (IsDynamic) Obj = n_new(Physics::CRigidBody);
 		else Obj = n_new(Physics::CCollisionObjMoving);
+		Obj->SetUserData(*(void**)&GetEntity()->GetUID());
 
 		n_verify_dbg(Obj->Init(ObjDesc)); //???where to get offset?
 

@@ -1,11 +1,13 @@
 #include "CharacterController.h"
 
-#include <Game/GameServer.h>
+#include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsWorld.h>
 #include <Physics/RigidBody.h>
+#include <Physics/ClosestNotMeRayResultCallback.h>
 #include <Data/Params.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Physics
 {
@@ -32,6 +34,10 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 	//???or activate only when command is received?
 	//???set low threshold instead?
 	Body->GetBtBody()->setActivationState(DISABLE_DEACTIVATION);
+
+	MaxAcceleration = 0.f;
+	ReqLinVel = vector3::Zero;
+	ReqAngVel = 0.f;
 
 	OK;
 }
@@ -69,25 +75,20 @@ void CCharacterController::Update()
 	vector3 Pos;
 	quaternion Rot;
 	Body->GetTransform(Pos, Rot);
-	Pos.y += Height;
 
-	//!!!REQUEST closest not me below!
-	/*
-	Game::CSurfaceInfo SurfInfo;
-	float DistanceToGround;
-	if (Body->GetWorld()->GetSurfaceInfoUnder(SurfInfo, Pos, Height + 0.1f)) //!!!Height + MaxStepDown!
-	{
-		DistanceToGround = Pos.y - Height - SurfInfo.WorldHeight;
-	}
-	else
-	{
-		DistanceToGround = FLT_MAX;
-	}
-	*/
-	float DistanceToGround = 0.f;
+	btVector3 BtStart = VectorToBtVector(Pos);
+	btVector3 BtEnd = BtStart;
+	BtStart.m_floats[1] += Height;
+	BtEnd.m_floats[1] -= 0.5f; //!!!- MaxStepDown - BelowProbeLength!
+	CClosestNotMeRayResultCallback RayCB(BtStart, BtEnd, Body->GetBtObject());
+	Body->GetWorld()->GetBtWorld()->rayTest(BtStart, BtEnd, RayCB);
+
+	float DistanceToGround = RayCB.hasHit() ? Pos.y - RayCB.m_hitPointWorld.y() : FLT_MAX;
 
 	//!!!take step down height into account, if above the ground by less\
 	//than StepDown, use ground binding instead of falling!
+
+	//!!!if jumping(?) or falling, don't use step down!
 
 	// Process jumping or falling
 	if (DistanceToGround > 0.f) //!!!if > MaxStepDown!
@@ -101,6 +102,8 @@ void CCharacterController::Update()
 	// No angular acceleration limit, set directly
 	Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
 
+	//btScalar CurrLinVelY = Body->GetBtBody()->getLinearVelocity().y();
+	//btVector3 ReqLVel = btVector3(ReqLinVel.x, CurrLinVelY, ReqLinVel.z);
 	btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
 	if (MaxAcceleration > 0.f)
 	{
@@ -108,7 +111,7 @@ void CCharacterController::Update()
 		if (CurrLVel.x() != ReqLVel.x() || CurrLVel.z() != ReqLVel.z())
 		{
 			// calc acceleration from velocity
-			// limit acceleration vector magnitude
+			// limit acceleration vector magnitude only in XZ plane
 			// create force as F = a * m
 			// apply central force
 		}
@@ -117,7 +120,10 @@ void CCharacterController::Update()
 
 	// Now our linear velocity has no vertical component, and we aren't jumping or falling.
 	// We want to offset to DistanceToGround in a single simulation step.
-	const float ReqVerticalVel = DistanceToGround / Body->GetWorld()->GetStepTime();
+	//vector3 Gvt;
+	//Body->GetWorld()->GetGravity(Gvt);
+	//const float ReqVerticalVel = -DistanceToGround / Body->GetWorld()->GetStepTime() - Gvt.y * Body->GetWorld()->GetStepTime();
+	const float ReqVerticalVel = -DistanceToGround / Body->GetWorld()->GetStepTime();
 	Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * Body->GetMass(), 0.f));
 
 	/*
@@ -138,6 +144,14 @@ void CCharacterController::Update()
 		if (AVelIsAlmostZero && LVelIsAlmostZero) SetEnabled(false);
 	}
 	*/
+}
+//---------------------------------------------------------------------
+
+bool CCharacterController::GetLinearVelocity(vector3& Out) const
+{
+	if (!Body->IsInitialized()) FAIL;
+	Out = BtVectorToVector(Body->GetBtBody()->getLinearVelocity());
+	OK;
 }
 //---------------------------------------------------------------------
 

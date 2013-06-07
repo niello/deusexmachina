@@ -3,8 +3,6 @@
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Scripting/Prop/PropScriptable.h>
-#include <Physics/PhysicsServerOld.h>
-#include <Physics/PhysicsWorldOld.h>
 #include <Events/Subscription.h>
 #include <Render/DebugDraw.h>
 
@@ -18,7 +16,8 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropTrigger, 'PTRG', CPropTransformable);
+__ImplementClass(Prop::CPropTrigger, 'PTRG', Game::CProperty);
+__ImplementPropertyStorage(CPropTrigger);
 
 using namespace Physics;
 
@@ -33,7 +32,7 @@ CPropTrigger::~CPropTrigger()
 
 void CPropTrigger::Activate()
 {
-	CPropTransformable::Activate();
+	CProperty::Activate();
 
 	Period = GetEntity()->GetAttr<float>(CStrID("TrgPeriod"));
 	if (Period > 0.f) TimeLastTriggered = GetEntity()->GetAttr<float>(CStrID("TrgTimeLastTriggered"));
@@ -41,28 +40,29 @@ void CPropTrigger::Activate()
 	const vector4& ShapeParams = GetEntity()->GetAttr<vector4>(CStrID("TrgShapeParams"));
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
-		case CShape::Box:
-			pCollShape = (CShape*)PhysSrvOld->CreateBoxShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
-				InvalidMaterial, vector3(ShapeParams.x, ShapeParams.y, ShapeParams.z));
-			break;
-		case CShape::Sphere:
-			pCollShape = (CShape*)PhysSrvOld->CreateSphereShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
-				InvalidMaterial, ShapeParams.x);
-			break;
-		case CShape::Capsule:
-			pCollShape = (CShape*)PhysSrvOld->CreateCapsuleShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
-				InvalidMaterial, ShapeParams.x, ShapeParams.y);
-			break;
+	//PHYS
+		//case CShape::Box:
+		//	pCollShape = (CShape*)PhysSrvOld->CreateBoxShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
+		//		InvalidMaterial, vector3(ShapeParams.x, ShapeParams.y, ShapeParams.z));
+		//	break;
+		//case CShape::Sphere:
+		//	pCollShape = (CShape*)PhysSrvOld->CreateSphereShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
+		//		InvalidMaterial, ShapeParams.x);
+		//	break;
+		//case CShape::Capsule:
+		//	pCollShape = (CShape*)PhysSrvOld->CreateCapsuleShape(GetEntity()->GetAttr<matrix44>(CStrID("Transform")),
+		//		InvalidMaterial, ShapeParams.x, ShapeParams.y);
+		//	break;
 		default: n_error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
 					 GetEntity()->GetUID().CStr(),
 					 GetEntity()->GetAttr<int>(CStrID("TrgShapeType")));
 	}
 
-	n_assert(pCollShape);
-	pCollShape->SetCategoryBits(Physics::None);
-	pCollShape->SetCollideBits(Physics::None);
+	//n_assert(pCollShape);
+	//pCollShape->SetCategoryBits(Physics::None);
+	//pCollShape->SetCollideBits(Physics::None);
 
-	pCollShape->Attach(GetEntity()->GetLevel().GetPhysicsOld()->GetODEDynamicSpaceID()); //???here or when enabled only?
+	//pCollShape->Attach(GetEntity()->GetLevel().GetPhysicsOld()->GetODEDynamicSpaceID()); //???here or when enabled only?
 	SetEnabled(GetEntity()->GetAttr<bool>(CStrID("TrgEnabled")));
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropTrigger, OnPropsActivated);
@@ -80,10 +80,11 @@ void CPropTrigger::Deactivate()
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 
 	SetEnabled(false);
-	pCollShape->Detach();
-	pCollShape = NULL;
+	//PHYS
+	//pCollShape->Detach();
+	//pCollShape = NULL;
 
-	CPropTransformable::Deactivate();
+	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 
@@ -127,6 +128,8 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		pInsideLastFrame = &EntitiesInsideLastFrame;
 	}
 
+	//PHYS
+	/*
 	pCollShape->SetCategoryBits(Physics::Trigger);
 	pCollShape->SetCollideBits(Physics::Dynamic); //!!!later set Trigger bit only on entities who want to collide with trigger!
 
@@ -161,7 +164,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 			}
 		}
 	}
-
+*/
 	for (int i = 0; i < pInsideLastFrame->GetCount(); i++)
 	{
 		Game::CEntity* pEnt = pInsideLastFrame->At(i);
@@ -201,14 +204,15 @@ bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
 	matrix44 Tfm;
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
-		case CShape::Box:
-			Tfm.scale(vector3(ShapeParams.x, ShapeParams.y, ShapeParams.z));
-			Tfm *= GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
-			DebugDraw->DrawBox(Tfm, Enabled ? ColorOn : ColorOff);
-			break;
-		case CShape::Sphere:
-			DebugDraw->DrawSphere(GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation(), ShapeParams.x, Enabled ? ColorOn : ColorOff);
-			break;
+	//PHYS
+		//case CShape::Box:
+		//	Tfm.scale(vector3(ShapeParams.x, ShapeParams.y, ShapeParams.z));
+		//	Tfm *= GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+		//	DebugDraw->DrawBox(Tfm, Enabled ? ColorOn : ColorOff);
+		//	break;
+		//case CShape::Sphere:
+		//	DebugDraw->DrawSphere(GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation(), ShapeParams.x, Enabled ? ColorOn : ColorOff);
+		//	break;
 		default: break; //!!!capsule rendering!
 	}
 

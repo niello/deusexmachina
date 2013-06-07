@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src\L3;..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L3;..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				ExceptionHandling="0"
@@ -108,7 +108,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src\L3;..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\ODE\include;..\..\..\3rdParty\CEGUI\cegui\include;..\..\Src\nebula2\inc"
+				AdditionalIncludeDirectories="..\..\Src\L3;..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\Src\nebula2\inc"
 				PreprocessorDefinitions="__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC"
 				StringPooling="true"
 				MinimalRebuild="true"

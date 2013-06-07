@@ -20,16 +20,6 @@ bool CStaticEnvManager::CanEntityBeStatic(const Data::CParams& Desc) const
 	//???do controllers really deny loading of entity as a static object?
 	//scene allows node without an entity to be controlled
 
-	// We have physics bodies that can move us
-	const nString& PhysDescName = Attrs->Get<nString>(CStrID("PhysicsOld"), NULL);
-	if (PhysDescName.IsValid())
-	{
-		// It uses HRD cache, so it isn't so slow
-		Data::PParams PhysDesc = DataSrv->LoadPRM(nString("physics:") + PhysDescName + ".prm");
-		int Idx = PhysDesc->IndexOf(CStrID("Bodies"));
-		if (Idx != INVALID_INDEX && PhysDesc->Get<Data::PDataArray>(Idx)->GetCount() > 0) FAIL;
-	}
-
 	// We have animations that can move us
 	if (Attrs->Get<nString>(CStrID("AnimDesc"), NULL).IsValid()) FAIL;
 

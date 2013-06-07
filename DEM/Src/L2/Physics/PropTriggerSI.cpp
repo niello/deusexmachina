@@ -3,7 +3,6 @@
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
 #include <Game/Entity.h>
-#include <Physics/Collision/Shape.h>
 
 extern "C"
 {

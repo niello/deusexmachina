@@ -45,6 +45,7 @@ public:
 	bool			IsTransformChanged() const;
 	float			GetInvMass() const;
 	float			GetMass() const { return Mass; }
+	bool			IsActive() const;
 	btRigidBody*	GetBtBody() const { return (btRigidBody*)pBtCollObj; }
 };
 

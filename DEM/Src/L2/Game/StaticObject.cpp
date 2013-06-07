@@ -2,9 +2,7 @@
 
 #include <Game/GameLevel.h>
 #include <Scene/Scene.h>
-#include <Physics/Collision/Shape.h>
 #include <Physics/CollisionObjStatic.h>
-#include <Physics/PhysicsWorldOld.h>
 #include <Physics/PhysicsWorld.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
@@ -64,37 +62,9 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
 	}
 
-	const nString& CompositeName = Desc->Get<nString>(CStrID("PhysicsOld"), NULL);    
-	if (CompositeName.IsValid())
-	{
-		Data::PParams Desc = DataSrv->LoadPRM(nString("physics:") + CompositeName + ".prm");
-		int Idx = Desc->IndexOf(CStrID("Shapes"));
-		if (Idx != INVALID_INDEX)
-		{
-			Data::CDataArray& Shapes = *Desc->Get<Data::PDataArray>(Idx);
-			for (int i = 0; i < Shapes.GetCount(); ++i)
-			{
-				Data::PParams ShapeDesc = Shapes[i];
-				nString ShCls = ShapeDesc->Get<nString>(CStrID("Type"));
-				if (ShCls == "HeightfieldShape") ShCls = "HeightfieldShapeOld";
-				Physics::PShape pShape = (Physics::CShape*)Factory->Create("Physics::C" + ShCls);
-				pShape->Init(ShapeDesc);
-				CollLocalTfm.Append(pShape->GetTransform());
-				Collision.Append(pShape);
-				Level->GetPhysicsOld()->AttachShape(pShape);
-				//???associate collision shape with game entity UID?
-			}
-		}
-	}
-
 	const matrix44& EntityTfm = Desc->Get<matrix44>(CStrID("Transform"));
 
-	if (ExistingNode)
-	{
-		for (int i = 0; i < Collision.GetCount(); ++i)
-			Collision[i]->SetTransform(CollLocalTfm[i] * Node->GetWorldMatrix());
-	}
-	else SetTransform(EntityTfm);
+	if (!ExistingNode) SetTransform(EntityTfm);
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
 	// It is necessary because collision objects may require subnode world transformations.
@@ -133,11 +103,6 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 
 void CStaticObject::Term()
 {
-	for (int i = 0; i < Collision.GetCount(); ++i)
-		Level->GetPhysicsOld()->RemoveShape(Collision[i]);
-	Collision.Clear();
-	CollLocalTfm.Clear();
-
 	if (CollObj.IsValid())
 	{
 		CollObj->RemoveFromLevel();
@@ -156,8 +121,6 @@ void CStaticObject::Term()
 
 void CStaticObject::SetTransform(const matrix44& Tfm)
 {
-	for (int i = 0; i < Collision.GetCount(); ++i)
-		Collision[i]->SetTransform(CollLocalTfm[i] * Tfm);
 	if (CollObj.IsValid()) CollObj->SetTransform(Tfm);
 	if (Node.IsValid()) Node->SetWorldTransform(Tfm);
 }

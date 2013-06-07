@@ -107,25 +107,25 @@ public:
 	void	RenderGeometry();
 	void	RenderText();
 
-	bool	DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color);
-	bool	DrawBox(const matrix44& Tfm, const vector4& Color);
-	bool	DrawSphere(const vector3& Pos, float R, const vector4& Color);
-	bool	DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color);
-	bool	DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color);
+	bool	DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color = vector4::White);
+	bool	DrawBox(const matrix44& Tfm, const vector4& Color = vector4::White);
+	bool	DrawSphere(const vector3& Pos, float R, const vector4& Color = vector4::White);
+	bool	DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color = vector4::White);
+	bool	DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color = vector4::White);
 
-	bool	DrawLine(const vector3& P1, const vector3& P2, const vector4& Color);
+	bool	DrawLine(const vector3& P1, const vector3& P2, const vector4& Color = vector4::White);
 	bool	DrawArrow();
 	bool	DrawCross();
-	bool	DrawBoxWireframe(const bbox3& Box, const vector4& Color);
+	bool	DrawBoxWireframe(const bbox3& Box, const vector4& Color = vector4::White);
 	bool	DrawArc();
 	bool	DrawCircle();
 	bool	DrawGridXZ();
 	bool	DrawCoordAxes(const matrix44& Tfm, bool DrawX = true, bool DrawY = true, bool DrawZ = true);
 
-	bool	DrawPoint(const vector3& Pos, const vector4& Color, float Size);
+	bool	DrawPoint(const vector3& Pos, float Size, const vector4& Color = vector4::White);
 
-	void	AddLineVertex(const vector3& Pos, const vector4& Color);
-	void	AddTriangleVertex(const vector3& Pos, const vector4& Color);
+	void	AddLineVertex(const vector3& Pos, const vector4& Color = vector4::White);
+	void	AddTriangleVertex(const vector3& Pos, const vector4& Color = vector4::White);
 
 	bool	DrawText(const char* pText, float Left, float Top, const vector4& Color = vector4::White, float Width = 1.f, bool Wrap = true, EHAlign HAlign = Align_Left, EVAlign VAlign = Align_Top);
 	//???GetTextExtent();?
@@ -163,10 +163,11 @@ inline bool CDebugDraw::DrawSphere(const vector3& Pos, float R, const vector4& C
 
 inline bool CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color)
 {
+	// Cylinder axis is Z, by we draw Y-aligned one by default as the most useful
 	CDDShapeInst& Inst = *ShapeInsts[Cylinder].Reserve(1);
 	Inst.World.set(	R, 0.f, 0.f, 0.f,
-					0.f, R, 0.f, 0.f,
-					0.f, 0.f, Length, 0.f,
+					0.f, 0.f, R, 0.f,
+					0.f, -Length, 0.f, 0.f,
 					0.f, 0.f, 0.f, 1.f);
 	Inst.World *= Tfm;
 	Inst.Color = Color;
@@ -176,8 +177,8 @@ inline bool CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length,
 
 inline bool CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color)
 {
-	DrawSphere(Tfm * vector3(0.0f, 0.0f, Length * -0.5f), R, Color);
-	DrawSphere(Tfm * vector3(0.0f, 0.0f, Length * 0.5f), R, Color);
+	DrawSphere(Tfm * vector3(0.0f, Length * -0.5f, 0.0f), R, Color);
+	DrawSphere(Tfm * vector3(0.0f, Length * 0.5f, 0.0f), R, Color);
 	DrawCylinder(Tfm, R, Length, Color);
 	OK;
 }
@@ -226,7 +227,7 @@ inline bool CDebugDraw::DrawCoordAxes(const matrix44& Tfm, bool DrawX, bool Draw
 }
 //---------------------------------------------------------------------
 
-inline bool CDebugDraw::DrawPoint(const vector3& Pos, const vector4& Color, float Size)
+inline bool CDebugDraw::DrawPoint(const vector3& Pos, float Size, const vector4& Color)
 {
 	CDDVertex* pV = Points.Reserve(1);
 	pV->Pos = Pos;

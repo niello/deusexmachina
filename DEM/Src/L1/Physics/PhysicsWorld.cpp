@@ -136,15 +136,9 @@ void CPhysicsWorld::RemoveCollisionObject(CPhysicsObj& Obj)
 }
 //---------------------------------------------------------------------
 
-//http://bulletphysics.org/mediawiki-1.5.8/index.php/Using_RayTest
-bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End) const
+bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End, vector3* pOutPos, PPhysicsObj* pOutObj) const
 {
 	n_assert(pBtDynWorld);
-
-	// Predefined callbacks:
-	//btCollisionWorld::ClosestRayResultCallback
-	//btCollisionWorld::AllHitsRayResultCallback
-	//btKinematicClosestNotMeRayResultCallback
 
 	btVector3 BtStart = VectorToBtVector(Start);
 	btVector3 BtEnd = VectorToBtVector(End);
@@ -153,11 +147,9 @@ bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& En
 
 	if (!RayCB.hasHit()) FAIL;
 
-	// Create contact point
-	//btVector3 Point = RayCB.m_hitPointWorld;
-	//btVector3 Normal = RayCB.m_hitNormalWorld;
-	//const btCollisionObject* pCollObj = RayCB.m_collisionObject;
-	//void* pUserObj = pCollObj->getUserPointer();
+	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
+	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObj*)RayCB.m_collisionObject->getUserPointer() : NULL;
+	n_assert_dbg(!pOutObj || !(*pOutObj).IsValid() || Objects.Contains(*pOutObj));
 
 	OK;
 }

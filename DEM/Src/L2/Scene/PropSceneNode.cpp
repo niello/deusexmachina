@@ -4,6 +4,8 @@
 #include <Game/GameLevel.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Model.h>
+#include <Scene/Events/SetTransform.h>
+#include <Render/DebugDraw.h>
 
 namespace Scene
 {
@@ -14,6 +16,8 @@ namespace Prop
 {
 __ImplementClass(Prop::CPropSceneNode, 'PSCN', Game::CProperty);
 __ImplementPropertyStorage(CPropSceneNode);
+
+IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 
 void CPropSceneNode::Activate()
 {
@@ -40,16 +44,25 @@ void CPropSceneNode::Activate()
 		if (ExistingNode)
 			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
 		else Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+		GetEntity()->FireEvent(CStrID("UpdateTransform"));
 	}
 
 	Data::PParams P = n_new(Data::CParams);
 	P->Set<PVOID>(CStrID("Prop"), (Game::CProperty*)this);
 	GetEntity()->FireEvent(CStrID("OnPropActivated"), P);
+
+	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropSceneNode, OnSetTransform);
+	PROP_SUBSCRIBE_PEVENT(OnWorldTfmsUpdated, CPropSceneNode, OnWorldTfmsUpdated);
+	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropSceneNode, OnRenderDebugProc);
 }
 //---------------------------------------------------------------------
 
 void CPropSceneNode::Deactivate()
 {
+	UNSUBSCRIBE_EVENT(SetTransform);
+	UNSUBSCRIBE_EVENT(OnWorldTfmsUpdated);
+	UNSUBSCRIBE_EVENT(OnRenderDebug);
+
 	GetEntity()->FireEvent(CStrID("OnPropDeactivating"));
 
 	if (Node.IsValid() && !ExistingNode)
@@ -78,6 +91,38 @@ void CPropSceneNode::GetAABB(bbox3& OutBox) const
 		}
 	}
 	OutBox.end_extend();
+}
+//---------------------------------------------------------------------
+
+void CPropSceneNode::SetTransform(const matrix44& NewTfm)
+{
+	if (Node.IsValid()) Node->SetWorldTransform(NewTfm);
+	GetEntity()->SetAttr<matrix44>(CStrID("Transform"), NewTfm);
+	GetEntity()->FireEvent(CStrID("UpdateTransform"));
+}
+//---------------------------------------------------------------------
+
+bool CPropSceneNode::OnSetTransform(const Events::CEventBase& Event)
+{
+	SetTransform(((Event::SetTransform&)Event).Transform);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropSceneNode::OnWorldTfmsUpdated(const Events::CEventBase& Event)
+{
+	if (Node.IsValid() && Node->IsWorldMatrixChanged())
+	{
+		GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
+		GetEntity()->FireEvent(CStrID("UpdateTransform"));
+	}
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropSceneNode::OnRenderDebug()
+{
+	DebugDraw->DrawCoordAxes(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 }
 //---------------------------------------------------------------------
 
