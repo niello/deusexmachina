@@ -8,7 +8,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
 using System.Xml.Serialization;
 using Microsoft.CSharp;
@@ -102,13 +101,26 @@ namespace HrdLib
             writer.IncreaseIndent();
 
             var baseType = typeof (HrdSerializer);
-            writer.WriteLine("public class {0}: {1}", ClassName, ReflectionHelper.GetCsTypeName(baseType)).Write("{").IncreaseIndent();
+            writer.WriteLine("public class {0}: {1}", ClassName, ReflectionHelper.GetCsTypeName(baseType));
 
             var queue = new HrdGeneratorQueue(_type);
             var objType = typeof(object);
-            var writerType = typeof (HrdWriter);
+            var writerType = typeof(HrdWriter);
             queue.AddType(objType, false);
             queue.AddType(writerType, false);
+
+            var serializerInterface = typeof (IHrdSerializer<>);
+            writer.IncreaseIndent();
+            foreach (var rootType in queue.GetRootTypes())
+            {
+                var genericSerializerType = serializerInterface.MakeGenericType(rootType);
+                writer.WriteLine(", {0}", ReflectionHelper.GetCsTypeName(genericSerializerType));
+            }
+            writer.DecreaseIndent();
+
+            writer.Write("{").IncreaseIndent();
+
+            
 
             writer.WriteLine().WriteLine("public {0}():", ClassName).IncreaseIndent();
             writer.WriteLine("base(typeof({0}))", ReflectionHelper.GetCsTypeName(_type)).DecreaseIndent();
@@ -124,12 +136,49 @@ namespace HrdLib
 
                 writer.DecreaseIndent();
                 writer.WriteLine("}");
+
+                writer.WriteLine()
+                      .WriteLine("private {0} Deserialize{1}({2} reader)",
+                                 ReflectionHelper.GetCsTypeName(queue.CurrentType), queue.CurrentTypeID,
+                                 ReflectionHelper.GetCsTypeName<HrdReader>())
+                      .WriteLine("{")
+                      .IncreaseIndent();
+
+                BuildTypeDeserializationMethod(writer, queue);
+
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+
+                if (queue.IsRoot)
+                {
+                    var genericSerializerInterface = serializerInterface.MakeGenericType(queue.CurrentType);
+                    writer.WriteLine()
+                          .WriteLine("{0} {1}.Deserialize({2} reader)",
+                                     ReflectionHelper.GetCsTypeName(queue.CurrentType),
+                                     ReflectionHelper.GetCsTypeName(genericSerializerInterface),
+                                     ReflectionHelper.GetCsTypeName<HrdReader>())
+                          .WriteLine("{")
+                          .IncreaseIndent();
+
+                    writer.WriteLine("return Deserialize{0}(reader);", queue.CurrentTypeID).DecreaseIndent();
+
+                    writer.WriteLine("}");
+                }
             }
 
             writer.WriteLine()
                   .WriteLine("protected override void Serialize({1} writer, {0} obj)", ReflectionHelper.GetCsTypeName(objType),
                              ReflectionHelper.GetCsTypeName(writerType)).WriteLine("{").IncreaseIndent();
             writer.WriteLine("Serialize(writer, ({0}) obj);", ReflectionHelper.GetCsTypeName(_type)).DecreaseIndent();
+            writer.WriteLine("}");
+
+            writer.WriteLine()
+                  .WriteLine("protected override {0} Deserialize({1} reader)", ReflectionHelper.GetCsTypeName(objType),
+                             ReflectionHelper.GetCsTypeName<HrdReader>())
+                  .WriteLine("{")
+                  .IncreaseIndent();
+
+            writer.WriteLine("return Deserialize{0}(reader);", queue.GetTypeID(_type)).DecreaseIndent();
             writer.WriteLine("}");
 
             // class
@@ -150,23 +199,29 @@ namespace HrdLib
             }
         }
 
+        private void BuildTypeDeserializationMethod(HrdIndentWriter writer, HrdGeneratorQueue queue)
+        {
+            var type = queue.CurrentType;
+            Debug.Assert(type != null);
+
+            var serizalizableAttribute = GetSerializableAttribute(type);
+
+            if (!serizalizableAttribute.Serializable)
+                throw new InvalidOperationException(SR.GetFormatString(SR.TypeMarkedNonserializableFormat, type.FullName));
+
+            if (type.IsArray)
+            {
+                DeserializeArray(writer, type, queue);
+            }
+
+        }
+
         private void BuildTypeSerializationMethod(HrdIndentWriter writer, HrdGeneratorQueue queue)
         {
             var type = queue.CurrentType;
             Debug.Assert(type != null);
 
-            var serializableAttrs = type.GetCustomAttributes(typeof (HrdSerializableAttribute), false);
-            HrdSerializableAttribute serizalizableAttribute;
-            if (serializableAttrs.Length == 0)
-            {
-                // Class is not marked for HRD serialization directly. But it could be serialized with the default parameters.
-                serizalizableAttribute = new HrdSerializableAttribute();
-            }
-            else
-            {
-                Debug.Assert(serializableAttrs.Length == 1, "Multiple attributes are not allowed.");
-                serizalizableAttribute = (HrdSerializableAttribute) serializableAttrs[0];
-            }
+            var serizalizableAttribute = GetSerializableAttribute(type);
 
             if (!serizalizableAttribute.Serializable)
                 throw new InvalidOperationException(SR.GetFormatString(SR.TypeMarkedNonserializableFormat, type.FullName));
@@ -206,6 +261,24 @@ namespace HrdLib
             }
 
             SerializeType(writer, type, queue);
+        }
+
+        private static HrdSerializableAttribute GetSerializableAttribute(Type type)
+        {
+            var serializableAttrs = type.GetCustomAttributes(typeof(HrdSerializableAttribute), false);
+            HrdSerializableAttribute serizalizableAttribute;
+            if (serializableAttrs.Length == 0)
+            {
+                // Class is not marked for HRD serialization directly. But it could be serialized with the default parameters.
+                serizalizableAttribute = new HrdSerializableAttribute();
+            }
+            else
+            {
+                Debug.Assert(serializableAttrs.Length == 1, "Multiple attributes are not allowed.");
+                serizalizableAttribute = (HrdSerializableAttribute)serializableAttrs[0];
+            }
+
+            return serizalizableAttribute;
         }
 
         private void SerializeType(HrdIndentWriter writer, Type type, HrdGeneratorQueue queue)
@@ -467,6 +540,17 @@ namespace HrdLib
             return properties;
         }
 
+        private void DeserializeArray(HrdIndentWriter writer, Type arrayType, HrdGeneratorQueue queue)
+        {
+            var elementType = arrayType.GetElementType();
+            Debug.Assert(elementType != null, "The type must be an array.");
+
+            var rank = arrayType.GetArrayRank();
+            Debug.Assert(rank >= 1, "Array must have at least one dimension.");
+
+            throw new NotImplementedException();
+        }
+
         private void SerializeArray(HrdIndentWriter writer, Type arrayType, HrdGeneratorQueue queue)
         {
             var elementType = arrayType.GetElementType();
@@ -477,6 +561,7 @@ namespace HrdLib
 
             if (rank > 1)
             {
+                writer.WriteBeginElement(null);
                 writer.WriteBeginElement("Size");
                 writer.WriteBeginArray(null);
                 for (int i = 0; i < rank; i++)
@@ -522,7 +607,10 @@ namespace HrdLib
             writer.WriteEndArray();
 
             if (rank > 1)
+            {
                 writer.WriteEndElement();
+                writer.WriteEndElement();
+            }
         }
 
         private void WriteWriteValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue)

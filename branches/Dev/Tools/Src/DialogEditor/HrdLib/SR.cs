@@ -11,14 +11,18 @@ namespace HrdLib
             CompilerErrorCollectionEmpty = "CompilerErrorCollectionEmpty",
             IncorrectOrderFormat = "IncorrectOrderFormat",
             InternalCodeGenError = "InternalCodeGenError",
+            NamedElementCantBeAdded = "NamedElementCantBeAdded",
             NoApproppriateConstructorFormat = "NoApproppriateConstructorFormat",
             NoPublicPropertyFormat = "NoPublicPropertyFormat",
+            NonAttributeValueCantBeRead = "NonAttributeValueCantBeRead",
             ParameterSetterAlreadyDeclaredFormat = "ParameterSetterAlreadyDeclaredFormat",
             ParameterTypeMismatchFormat = "ParameterTypeMismatchFormat",
             PropertyCantBeNullFormat = "PropertyCantBeNullFormat",
             TypeCantBeGenericDefinitionFormat = "TypeCantBeGenericDefinitionFormat",
             TypeCantBeInterfaceFormat = "TypeCantBeInterfaceFormat",
-            TypeMarkedNonserializableFormat = "TypeMarkedNonserializableFormat";
+            TypeMarkedNonserializableFormat = "TypeMarkedNonserializableFormat",
+            UnnamedElementCantBeAdded = "UnnamedElementCantBeAdded",
+            ValueTypeMismatch = "ValueTypeMismatch";
 
         private static ResourceManager _resourceManager;
         private static ResourceManager ResourceManager

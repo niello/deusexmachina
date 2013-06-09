@@ -38,13 +38,27 @@ namespace HrdLib
 
         public void Serialize(Stream stream, object obj)
         {
+            SerializeInternal(stream, obj);
+        }
+
+        private void SerializeInternal<T>(Stream stream, T obj)
+        {
             var innerSerializer = Assembly.CreateSerializer();
-            var writer = new HrdWriter(stream);
-
-            innerSerializer.Serialize(writer, obj);
-
-            var document = writer.EndWrite();
-            document.WriteDocument(stream);
+            HrdWriter writer = null;
+            try
+            {
+                writer = new HrdWriter(stream);
+                var exactSerializer = innerSerializer as IHrdSerializer<T>;
+                if (exactSerializer != null)
+                    exactSerializer.Serialize(writer, obj);
+                else
+                    innerSerializer.Serialize(writer, obj);
+            }
+            finally
+            {
+                if (writer != null)
+                    writer.Close();
+            }
         }
 
         protected virtual void Serialize(HrdWriter writer, object obj)
@@ -55,19 +69,43 @@ namespace HrdLib
         public static void Serialize<T>(Stream stream, T obj)
         {
             var serializer = new HrdSerializer(typeof (T));
-            serializer.Serialize(stream, (object) obj);
+            serializer.SerializeInternal(stream, obj);
         }
 
         public object Deserialize(Stream stream)
         {
-            throw new NotImplementedException();
+            return DeserializeInternal<object>(stream);
+        }
+
+        private T DeserializeInternal<T>(Stream stream)
+        {
+            var innerSerializer = Assembly.CreateSerializer();
+            HrdReader reader = null;
+            try
+            {
+                reader = new HrdReader(stream);
+                var exactSerializer = innerSerializer as IHrdSerializer<T>;
+                if (exactSerializer != null)
+                    return exactSerializer.Deserialize(reader);
+                return (T) innerSerializer.Deserialize(reader);
+            }
+            finally
+            {
+                if (reader != null)
+                    reader.Close();
+            }
+        }
+
+        protected virtual object Deserialize(HrdReader reader)
+        {
+            throw new NotSupportedException();
         }
 
         public static T Deserialize<T>(Stream stream)
         {
             var serializer = new HrdSerializer(typeof (T));
-            var result = serializer.Deserialize(stream);
-            return (T) result;
+            var result = serializer.DeserializeInternal<T>(stream);
+            return result;
         }
     }
 }

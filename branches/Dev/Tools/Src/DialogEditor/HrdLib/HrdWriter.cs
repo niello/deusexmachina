@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 
 namespace HrdLib
 {
     public class HrdWriter
     {
-        private const string UtcTimeFormatString = @"yyyyMMdd:hhmmss.fffffff", TimeFormatString = UtcTimeFormatString + "zzz";
+        internal const string UtcTimeFormatString = @"yyyyMMdd:hhmmss.fffffff", TimeFormatString = UtcTimeFormatString + "zzz";
 
         private readonly Stream _stream;
         private readonly Stack<HrdElement> _elementStack = new Stack<HrdElement>();
 
-        public Stream Stream{get { return _stream; }}
+        public Stream Stream { get { return _stream; } }
 
         public HrdWriter(Stream stream)
         {
@@ -40,25 +39,7 @@ namespace HrdLib
                 return;
 
             var parent = _elementStack.Peek();
-            if (element.Name == null && element.ChildrenCount == 1)
-            {
-                parent.AddElement(element.GetElements().First());
-            }
-            else
-            {
-                if (element.Name != null && element.ChildrenCount == 1)
-                {
-                    var child = element.GetElements().First();
-                    if ((child is HrdAttribute) && child.Name == element.Name)
-                    {
-                        parent.AddElement(child);
-                        return;
-                    }
-                }
-                if (parent is HrdArray)
-                    element.Name = null;
-                parent.AddElement(element);
-            }
+            parent.AddElement(element);
         }
 
         public void WriteBeginArray()
@@ -76,9 +57,6 @@ namespace HrdLib
         {
             var array = (HrdArray)_elementStack.Pop();
             var parent = _elementStack.Peek();
-            if (array.Name == null && (parent is HrdNode))
-                array.Name = parent.Name;
-
             parent.AddElement(array);
         }
 
@@ -140,7 +118,7 @@ namespace HrdLib
             WriteValue(value.ToString(CultureInfo.InvariantCulture), false);
         }
 
-        public void WriteValue(char value)
+        public void WriteValue(Char value)
         {
             WriteValue(new string(value, 1), true);
         }
@@ -176,9 +154,10 @@ namespace HrdLib
             WriteValue(CultureInfo.InvariantCulture, format, args);
         }
 
-        public HrdDocument EndWrite()
+        public void Close()
         {
-            return (HrdDocument) _elementStack.Pop();
+            var document = (HrdDocument) _elementStack.Pop();
+            document.WriteDocument(_stream);
         }
     }
 }

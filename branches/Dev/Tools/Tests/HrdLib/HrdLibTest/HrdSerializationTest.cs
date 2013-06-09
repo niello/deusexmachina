@@ -73,10 +73,24 @@ namespace HrdLibTest
             }
 
             var path = Path.GetFullPath("ArrayTest.hrd");
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            ArraySerializationTest deserialized;
+            try
             {
-                HrdSerializer.Serialize(stream, testObj);
-                stream.Flush();
+                using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+                {
+                    HrdSerializer.Serialize(stream, testObj);
+                    stream.Flush();
+                }
+
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    deserialized = HrdSerializer.Deserialize<ArraySerializationTest>(stream);
+                }
+            }
+            finally
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
             }
         }
     }

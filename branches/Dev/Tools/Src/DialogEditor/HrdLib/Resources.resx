@@ -129,8 +129,14 @@
   <data name="InternalCodeGenError" xml:space="preserve">
     <value>One or more errors were accured during compilation of HRD serializer. See the collection of errors for details.</value>
   </data>
+  <data name="NamedElementCantBeAdded" xml:space="preserve">
+    <value>A named element can't be added to a node which contains an unnamed element.</value>
+  </data>
   <data name="NoApproppriateConstructorFormat" xml:space="preserve">
     <value>Type '{0}' has no an appropriate public constructor.</value>
+  </data>
+  <data name="NonAttributeValueCantBeRead" xml:space="preserve">
+    <value>Node is not an attribute. It's value can't be read.</value>
   </data>
   <data name="NoPublicPropertyFormat" xml:space="preserve">
     <value>Type '{0}' has no public property '{1}'.</value>
@@ -152,5 +158,11 @@
   </data>
   <data name="TypeMarkedNonserializableFormat" xml:space="preserve">
     <value>Can't generate a serialization method for type '{0}', because it is marked as non-serializable.</value>
+  </data>
+  <data name="UnnamedElementCantBeAdded" xml:space="preserve">
+    <value>An element without name can't be added to the node.</value>
+  </data>
+  <data name="ValueTypeMismatch" xml:space="preserve">
+    <value>Value type mismatch.</value>
   </data>
 </root>
