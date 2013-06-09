@@ -21,7 +21,7 @@ public:
 	btVector3		Position;
 	bool			TfmChanged;
 
-	CMotionStateDynamic(): TfmChanged(false) {}
+	CMotionStateDynamic(): Rotation(0.f, 0.f, 0.f, 1.f), Position(0.f, 0.f, 0.f), TfmChanged(false) {}
 
 	virtual void getWorldTransform(btTransform& worldTrans) const;
 	virtual void setWorldTransform(const btTransform& worldTrans);

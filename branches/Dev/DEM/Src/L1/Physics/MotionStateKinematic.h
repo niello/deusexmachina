@@ -19,6 +19,8 @@ public:
 
 	btTransform Tfm;
 
+	CMotionStateKinematic(): Tfm(btQuaternion(0.f, 0.f, 0.f, 1.f), btVector3(0.f, 0.f, 0.f)) {}
+
 	virtual void getWorldTransform(btTransform& worldTrans) const { worldTrans = Tfm; }
 	virtual void setWorldTransform(const btTransform& worldTrans) {}
 };

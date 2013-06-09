@@ -18,6 +18,7 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 	Radius = Desc.Get<float>(CStrID("Radius"), 0.3f);
 	Height = Desc.Get<float>(CStrID("Height"), 1.75f);
 	Hover = Desc.Get<float>(CStrID("Hover"), 0.2f);
+	MaxAcceleration = Desc.Get<float>(CStrID("MaxAcceleration"), 0.f);
 	float Mass = Desc.Get<float>(CStrID("Mass"), 80.f);
 
 	float CapsuleHeight = Height - Radius - Radius - Hover;
@@ -31,11 +32,6 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 	Body->Init(*Shape, Mass, 0x0001, 0xffff, Offset); //!!!need normal flags!
 	Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
 
-	//???or activate only when command is received?
-	//???set low threshold instead?
-	Body->GetBtBody()->setActivationState(DISABLE_DEACTIVATION);
-
-	MaxAcceleration = 0.f;
 	ReqLinVel = vector3::Zero;
 	ReqAngVel = 0.f;
 
@@ -90,60 +86,45 @@ void CCharacterController::Update()
 
 	//!!!if jumping(?) or falling, don't use step down!
 
-	// Process jumping or falling
+	//!!!Process jumping or falling
 	if (DistanceToGround > 0.f) //!!!if > MaxStepDown!
 	{
-		//???!!!apply damping?!
+		if (!Body->IsAlwaysActive()) Body->MakeAlwaysActive();
 		return;
 	}
 
-	//!!!If body auto deactivation is enabled, activate here if request affects it!
+	bool AlwaysActive = Body->IsAlwaysActive();
+	bool HasReq = IsMotionRequested();
+	if (!AlwaysActive && HasReq) Body->MakeAlwaysActive();
+	else if (AlwaysActive && !HasReq) Body->MakeActive();
 
 	// No angular acceleration limit, set directly
 	Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
 
-	//btScalar CurrLinVelY = Body->GetBtBody()->getLinearVelocity().y();
-	//btVector3 ReqLVel = btVector3(ReqLinVel.x, CurrLinVelY, ReqLinVel.z);
+	float InvTickTime = 1.f / Body->GetWorld()->GetStepTime();
+
+	//???what to do with requested y?
 	btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
 	if (MaxAcceleration > 0.f)
 	{
 		const btVector3& CurrLVel = Body->GetBtBody()->getLinearVelocity();
-		if (CurrLVel.x() != ReqLVel.x() || CurrLVel.z() != ReqLVel.z())
+		btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
+		if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
 		{
-			// calc acceleration from velocity
-			// limit acceleration vector magnitude only in XZ plane
-			// create force as F = a * m
-			// apply central force
+			btVector3 ReqAccel = ReqLVelChange * InvTickTime;
+			btScalar AccelMagSq = ReqAccel.length2();
+			if (AccelMagSq > MaxAcceleration * MaxAcceleration)
+				ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
+			Body->GetBtBody()->applyCentralForce(ReqAccel * Body->GetMass());
 		}
+		else Body->GetBtBody()->clearForces();
 	}
 	else Body->GetBtBody()->setLinearVelocity(ReqLVel);
 
 	// Now our linear velocity has no vertical component, and we aren't jumping or falling.
 	// We want to offset to DistanceToGround in a single simulation step.
-	//vector3 Gvt;
-	//Body->GetWorld()->GetGravity(Gvt);
-	//const float ReqVerticalVel = -DistanceToGround / Body->GetWorld()->GetStepTime() - Gvt.y * Body->GetWorld()->GetStepTime();
-	const float ReqVerticalVel = -DistanceToGround / Body->GetWorld()->GetStepTime();
+	const float ReqVerticalVel = -DistanceToGround * InvTickTime;
 	Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * Body->GetMass(), 0.f));
-
-	/*
-	if (BodyIsEnabled && !Actuated && DistanceToGround > -0.002f)
-	{
-		const float FreezeThreshold = 0.00001f; //???use TINY?
-
-		bool AVelIsAlmostZero = n_fabs(AngularVel.y) < FreezeThreshold;
-		bool LVelIsAlmostZero = n_fabs(LinearVel.x) * (float)Level->GetStepSize() < FreezeThreshold &&
-								n_fabs(LinearVel.z) * (float)Level->GetStepSize() < FreezeThreshold;
-
-		if (AVelIsAlmostZero)
-			pMasterBody->SetAngularVelocity(vector3::Zero);
-
-		if (LVelIsAlmostZero)
-			pMasterBody->SetLinearVelocity(vector3::Zero);
-
-		if (AVelIsAlmostZero && LVelIsAlmostZero) SetEnabled(false);
-	}
-	*/
 }
 //---------------------------------------------------------------------
 
