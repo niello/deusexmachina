@@ -25,7 +25,7 @@ void CPropCharacterController::Activate()
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropCharacterController, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(RequestLinearV, CPropCharacterController, OnRequestLinearVelocity);
 	PROP_SUBSCRIBE_PEVENT(RequestAngularV, CPropCharacterController, OnRequestAngularVelocity);
-	PROP_SUBSCRIBE_PEVENT(BeforePhysicsTick, CPropCharacterController, OnBeforePhysicsTick);
+	PROP_SUBSCRIBE_PEVENT(BeforePhysicsTick, CPropCharacterController, OnPhysicsTick);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropCharacterController, OnRenderDebug);
 }
 //---------------------------------------------------------------------
@@ -170,7 +170,7 @@ bool CPropCharacterController::OnRequestAngularVelocity(const Events::CEventBase
 //---------------------------------------------------------------------
 
 //???OR USE BULLET ACTION INTERFACE?
-bool CPropCharacterController::OnBeforePhysicsTick(const Events::CEventBase& Event)
+bool CPropCharacterController::OnPhysicsTick(const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
 	CharCtlr->Update();

@@ -74,6 +74,10 @@ bool CRigidBody::AttachToLevel(CPhysicsWorld& World)
 	pRB->setMotionState(pRB->getMotionState());
 	pWorld->GetBtWorld()->addRigidBody(pRB, Group, Mask);
 
+	// Sometimes we read tfm from motion state before any real tick is performed.
+	// For this case make that tfm up-to-date.
+	//pRB->setInterpolationWorldTransform(pRB->getWorldTransform());
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -124,7 +128,6 @@ void CRigidBody::GetTransform(btTransform& Out) const
 	if (pMotionState)
 	{
 		pMotionState->getWorldTransform(Out);
-
 		Out.getOrigin().m_floats[0] -= ShapeOffset.x;
 		Out.getOrigin().m_floats[1] -= ShapeOffset.y;
 		Out.getOrigin().m_floats[2] -= ShapeOffset.z;
@@ -157,6 +160,36 @@ bool CRigidBody::IsActive() const
 {
 	int ActState = ((btRigidBody*)pBtCollObj)->getActivationState();
 	return ActState == DISABLE_DEACTIVATION || ActState == ACTIVE_TAG;
+}
+//---------------------------------------------------------------------
+
+bool CRigidBody::IsAlwaysActive() const
+{
+	return ((btRigidBody*)pBtCollObj)->getActivationState() == DISABLE_DEACTIVATION;
+}
+//---------------------------------------------------------------------
+
+bool CRigidBody::IsAlwaysInactive() const
+{
+	return ((btRigidBody*)pBtCollObj)->getActivationState() == DISABLE_SIMULATION;
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::MakeActive()
+{
+	((btRigidBody*)pBtCollObj)->forceActivationState(ACTIVE_TAG);
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::MakeAlwaysActive()
+{
+	((btRigidBody*)pBtCollObj)->forceActivationState(DISABLE_DEACTIVATION);
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::MakeAlwaysInactive()
+{
+	((btRigidBody*)pBtCollObj)->forceActivationState(DISABLE_SIMULATION);
 }
 //---------------------------------------------------------------------
 

@@ -31,7 +31,7 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(RequestLinearV, OnRequestLinearVelocity);
 	DECLARE_EVENT_HANDLER(RequestAngularV, OnRequestAngularVelocity);
-	DECLARE_EVENT_HANDLER(BeforePhysicsTick, OnBeforePhysicsTick);
+	DECLARE_EVENT_HANDLER(BeforePhysicsTick, OnPhysicsTick);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 
 public:

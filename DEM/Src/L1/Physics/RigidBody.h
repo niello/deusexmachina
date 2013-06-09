@@ -46,6 +46,11 @@ public:
 	float			GetInvMass() const;
 	float			GetMass() const { return Mass; }
 	bool			IsActive() const;
+	bool			IsAlwaysActive() const;
+	bool			IsAlwaysInactive() const;
+	void			MakeActive();
+	void			MakeAlwaysActive();
+	void			MakeAlwaysInactive();
 	btRigidBody*	GetBtBody() const { return (btRigidBody*)pBtCollObj; }
 };
 

@@ -64,6 +64,9 @@ public:
 	CRigidBody*		GetBody() const { return Body.GetUnsafe(); }
 	bool			GetLinearVelocity(vector3& Out) const;
 	const vector3&	GetRequestedLinearVelocity() const { return ReqLinVel; }
+	bool			IsMotionRequested() const { return IsLinearMotionRequested() || IsAngularMotionRequested(); }
+	bool			IsLinearMotionRequested() const { return ReqLinVel != vector3::Zero; }
+	bool			IsAngularMotionRequested() const { return ReqAngVel != 0.f; }
 
 	// SetTransform - teleport
 	// GetTransform

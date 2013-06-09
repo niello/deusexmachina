@@ -334,6 +334,9 @@ bool CRenderServer::BeginFrame()
 		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
 	}
 
+	// CEGUI overwrites this value without restoring it, so restore each frame
+	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
+
 	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
 	return IsInsideFrame;
 }
