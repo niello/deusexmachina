@@ -5,7 +5,7 @@
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/Prop/PropSmartObject.h>
 #include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
-#include <Scripting/Prop/PropScriptable.h>
+#include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>
 #include <Data/DataServer.h>
 #include <Events/EventManager.h>

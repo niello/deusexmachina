@@ -2,7 +2,7 @@
 
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/Prop/PropSmartObject.h>
-#include <Scripting/Prop/PropScriptable.h>
+#include <Scripting/PropScriptable.h>
 
 namespace AI
 {
