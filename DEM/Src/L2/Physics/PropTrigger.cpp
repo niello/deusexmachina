@@ -2,7 +2,7 @@
 
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <Scripting/Prop/PropScriptable.h>
+#include <Scripting/PropScriptable.h>
 #include <Events/Subscription.h>
 #include <Render/DebugDraw.h>
 

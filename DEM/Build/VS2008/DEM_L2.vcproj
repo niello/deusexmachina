@@ -735,22 +735,6 @@
 			</Filter>
 		</Filter>
 		<Filter
-			Name="Plr"
-			>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L2\Plr\Prop\PropPlrCharacterInput.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Plr\Prop\PropPlrCharacterInput.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
 			Name="Scripting"
 			>
 			<File
@@ -762,45 +746,33 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Scripting\ScriptObjectSIEx.cpp"
+				RelativePath="..\..\Src\L2\Scripting\PropScriptable.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L2\Scripting\SI_L2.h"
+				RelativePath="..\..\Src\L2\Scripting\PropScriptable.h"
 				>
 			</File>
-			<Filter
-				Name="Prop"
+			<File
+				RelativePath="..\..\Src\L2\Scripting\ScriptObjectSIEx.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Scripting\Prop\PropScriptable.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Scripting\Prop\PropScriptable.h"
-					>
-				</File>
-			</Filter>
+			</File>
 		</Filter>
 		<Filter
 			Name="UI"
 			>
-			<Filter
-				Name="Prop"
+			<File
+				RelativePath="..\..\Src\L2\UI\PropUIControl.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L2\UI\Prop\PropUIControl.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\UI\Prop\PropUIControl.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\UI\Prop\PropUIControlSI.cpp"
-					>
-				</File>
-			</Filter>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\UI\PropUIControl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\UI\PropUIControlSI.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Game"
@@ -933,18 +905,14 @@
 		<Filter
 			Name="Input"
 			>
-			<Filter
-				Name="Prop"
+			<File
+				RelativePath="..\..\Src\L2\Input\PropPlrCharacterInput.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L2\Input\Prop\PropInput.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\Input\Prop\PropInput.h"
-					>
-				</File>
-			</Filter>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Input\PropPlrCharacterInput.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Physics"

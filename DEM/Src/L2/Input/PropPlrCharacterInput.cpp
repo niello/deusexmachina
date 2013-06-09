@@ -1,6 +1,6 @@
 #include "PropPlrCharacterInput.h"
 
-#include <UI/Prop/PropUIControl.h>
+#include <UI/PropUIControl.h>
 #include <AI/Movement/Tasks/TaskGoto.h>
 #include <AI/Events/QueueTask.h>
 #include <Game/GameServer.h>
@@ -10,7 +10,28 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropPlrCharacterInput, 'PPIN', Prop::CPropInput);
+__ImplementClass(Prop::CPropPlrCharacterInput, 'PPIN', Game::CProperty);
+__ImplementPropertyStorage(CPropPlrCharacterInput);
+
+void CPropPlrCharacterInput::Activate()
+{
+	CProperty::Activate();
+
+	//PROP_SUBSCRIBE_PEVENT(EnableInput, CPropPlrCharacterInput, OnEnableInput);
+	//PROP_SUBSCRIBE_PEVENT(DisableInput, CPropPlrCharacterInput, OnDisableInput);
+
+	if (Enabled /*&& HasFocus()*/) ActivateInput();
+}
+//---------------------------------------------------------------------
+
+void CPropPlrCharacterInput::Deactivate()
+{
+	//UNSUBSCRIBE_EVENT(EnableInput);
+	//UNSUBSCRIBE_EVENT(DisableInput);
+
+	CProperty::Deactivate();
+}
+//---------------------------------------------------------------------
 
 void CPropPlrCharacterInput::ActivateInput()
 {
