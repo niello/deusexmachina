@@ -175,7 +175,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
 
 	Physics::PPhysicsObj PhysObj;
-	if (!PhysWorld->GetClosestRayContact(Ray.start(), Ray.vec(), pOutPoint3D, &PhysObj)) FAIL;
+	if (!PhysWorld->GetClosestRayContact(Ray.start(), Ray.start() + Ray.vec(), pOutPoint3D, &PhysObj)) FAIL;
 
 	if (pOutEntityUID)
 	{
@@ -283,7 +283,7 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
 	vector3 ContactPos;
-	if (!PhysWorld->GetClosestRayContact(Position, Dir, &ContactPos)) FAIL;
+	if (!PhysWorld->GetClosestRayContact(Position, Position + Dir, &ContactPos)) FAIL;
 	Out.WorldHeight = ContactPos.y;
 
 	//!!!material from CPhysicsObj!
