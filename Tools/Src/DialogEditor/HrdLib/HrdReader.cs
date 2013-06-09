@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -7,10 +7,24 @@ namespace HrdLib
 {
     public class HrdReader
     {
-        internal const string UtcTimeFormatString = @"yyyyMMdd:hhmmss.fffffff", TimeFormatString = UtcTimeFormatString + "zzz";
+        private struct ElementInfo
+        {
+            public readonly HrdElement Parent;
+            public readonly HrdElement Element;
+            public readonly int Index;
+
+            public ElementInfo(int index, HrdElement element, HrdElement parent)
+            {
+                Index = index;
+                Parent = parent;
+                Element = element;
+            }
+        }
+
+        private const string UtcTimeFormatString = HrdWriter.UtcTimeFormatString, TimeFormatString = HrdWriter.TimeFormatString;
 
         private readonly Stream _stream;
-        private readonly Stack<HrdElement> _elementStack = new Stack<HrdElement>();
+        private readonly Stack<ElementInfo> _elementStack = new Stack<ElementInfo>();
 
         public Stream Stream { get { return _stream; } }
 
@@ -20,11 +34,60 @@ namespace HrdLib
                 throw new ArgumentNullException("stream");
 
             _stream = stream;
+            var document = HrdDocument.Read(_stream);
+            _elementStack.Push(new ElementInfo(-1, document, null));
+        }
+
+        public bool ReadNextSibling()
+        {
+            var elementInfo = _elementStack.Pop();
+
+            if (elementInfo.Parent == null)
+                return false;
+
+            int nextIndex = elementInfo.Index + 1;
+            if (nextIndex >= elementInfo.Parent.ChildrenCount)
+            {
+                _elementStack.Push(elementInfo);
+                return false;
+            }
+
+            var nextElement = elementInfo.Parent.GetElementAt(nextIndex);
+            var nextElementInfo = new ElementInfo(nextIndex, nextElement, elementInfo.Parent);
+            _elementStack.Push(nextElementInfo);
+
+            return true;
+        }
+
+        public bool ReadBeginElement()
+        {
+            var elementInfo = _elementStack.Peek();
+            if (elementInfo.Element is HrdArray || elementInfo.Element is HrdNode)
+            {
+                if (elementInfo.Element.ChildrenCount == 0)
+                    return false;
+
+                var childElement = elementInfo.Element.GetElementAt(0);
+                var childInfo = new ElementInfo(0, childElement, elementInfo.Element);
+                _elementStack.Push(childInfo);
+
+                return true;
+            }
+
+            return false;
         }
 
         private string ReadString(bool quoted)
         {
-            throw new NotImplementedException();
+            var elementInfo = _elementStack.Peek();
+            var attribute = elementInfo.Element as HrdAttribute;
+            if (attribute == null)
+                throw new HrdStructureValidationException(SR.GetString(SR.NonAttributeValueCantBeRead));
+
+            if (attribute.SerializeAsQuotedString == quoted)
+                return attribute.Value;
+
+            throw new HrdStructureValidationException(SR.GetString(SR.ValueTypeMismatch));
         }
 
         public Int64 ReadInt64()
@@ -108,11 +171,6 @@ namespace HrdLib
         public string ReadString()
         {
             return ReadString(true);
-        }
-
-        public void Close()
-        {
-            throw new NotImplementedException();
         }
     }
 }
