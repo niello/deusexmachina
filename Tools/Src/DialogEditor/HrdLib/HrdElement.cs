@@ -6,7 +6,12 @@ namespace HrdLib
 {
     public class HrdElement
     {
-        protected readonly List<HrdElement> _elements = new List<HrdElement>();
+        private readonly List<HrdElement> _elements = new List<HrdElement>();
+
+        protected List<HrdElement> Elements
+        {
+            get { return _elements; }
+        }
 
         public string Name { get; set; }
 
@@ -75,6 +80,11 @@ namespace HrdLib
             where TElement:HrdElement
         {
             return _elements.OfType<TElement>();
+        }
+
+        public HrdElement GetElementAt(int index)
+        {
+            return _elements[index];
         }
     }
 }

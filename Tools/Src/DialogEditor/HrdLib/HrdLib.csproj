@@ -51,12 +51,15 @@
     <Compile Include="HrdLidDiagnostics.cs" />
     <Compile Include="HrdMethodWriter.cs" />
     <Compile Include="HrdPropertySetterAttribute.cs" />
+    <Compile Include="HrdReader.cs" />
     <Compile Include="HrdSerializationAttribute.cs" />
     <Compile Include="HrdSerializer.cs" />
     <Compile Include="HrdSerializerAssembly.cs" />
     <Compile Include="HrdSerizalizableAttribute.cs" />
+    <Compile Include="HrdStructureValidationException.cs" />
     <Compile Include="HrdWriter.cs" />
     <Compile Include="IHrdSerializable.cs" />
+    <Compile Include="IHrdSerializer.cs" />
     <Compile Include="NotDisposingStreamWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HrdArray.cs" />

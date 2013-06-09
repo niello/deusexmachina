@@ -20,8 +20,9 @@ namespace HrdLib
             base.AddElement(elementBase);
         }
 
-        public int Count { get { return _elements.Count;}}
-
-        public HrdElement this[int index] { get { return _elements[index]; } }
+        public HrdElement this[int index]
+        {
+            get { return Elements[index]; }
+        }
     }
 }

@@ -231,11 +231,14 @@ namespace HrdLib
             }
             else if (element is HrdNode)
             {
-                writer.WriteStatement(StatementType.BraceOpened);
+                bool isVirtual = ((HrdNode) element).IsVirtual;
+                if (!isVirtual)
+                    writer.WriteStatement(StatementType.BraceOpened);
                 foreach (var child in element.GetElements())
                     WriteElement(child, writer);
 
-                writer.WriteStatement(StatementType.BraceClosed);
+                if (!isVirtual)
+                    writer.WriteStatement(StatementType.BraceClosed);
             }
             else
                 throw new Exception(string.Format("Element is '{0}'. This type is not supported.", element.GetType()));
