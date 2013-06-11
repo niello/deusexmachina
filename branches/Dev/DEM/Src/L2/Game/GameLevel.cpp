@@ -121,6 +121,7 @@ void CGameLevel::Term()
 
 bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 {
+	// This is a chance for all properties to write their attrs to entities
 	FireEvent(CStrID("OnLevelSaving"), &OutDesc);
 
 	// Scene, Physics, AI data & static env. objects are read only by design, so skip them all
@@ -141,6 +142,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 			CEntity* pEntity = EntityMgr->GetEntity(EntityID, false);
 			if (!pEntity || &pEntity->GetLevel() != this)
 			{
+				// Static objects never change, so we need no diff of them
 				CStaticObject* pStaticObj = StaticEnvMgr->GetStaticObject(EntityID);
 				if (!pStaticObj || &pStaticObj->GetLevel() != this)
 					SGEntities->Set(EntityID, Data::CData());

@@ -55,9 +55,13 @@ public:
 	template<class T> void		Set(CStrID Name, const T& Value) { Set(Name, CData(Value)); }
 	void						Clear() { Params.Clear(); }
 
+	void						FromDataDict(const CDataDict& Dict);
+	void						ToDataDict(CDataDict& Dict) const;
+
 	void						Merge(const CParams& Other, int Method);
-	void						Diff(CParams& OutDiff, const CParams& ChangedData) const;
-	void						Diff(CParams& OutDiff, const CDataDict& ChangedData) const;
+	void						MergeDiff(CParams& OutChangedData, const CParams& Diff) const;
+	void						GetDiff(CParams& OutDiff, const CParams& ChangedData) const;
+	void						GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const;
 
 	//???also/instead of this: return CData? or even template class
 	const CParam&				operator [](CStrID Name) const { return Get(Name); }

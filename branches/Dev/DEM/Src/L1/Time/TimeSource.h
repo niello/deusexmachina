@@ -15,14 +15,16 @@
 namespace Time
 {
 
-class CTimeSource: public Core::CRefCounted //???need?
+class CTimeSource: public Core::CRefCounted
 {
 	__DeclareClassNoFactory;
 
 protected:
 
-	nTime	Time;
-	nTime	FrameTime;
+	friend class CTimeServer; //!!!For loading, revisit
+
+	float	Time;
+	float	FrameTime;
 	float	TimeFactor;
 	DWORD	FrameID;
 	int		PauseCounter;
@@ -32,7 +34,7 @@ public:
 	CTimeSource();
 	virtual ~CTimeSource() {}
 
-	void	Update(nTime _FrameTime);
+	void	Update(float _FrameTime);
 	void	Reset() { Time = 0.0; FrameTime = 0.0; }
 	void	Pause() { ++PauseCounter; }
 	void	Unpause() { if (PauseCounter > 0) --PauseCounter; }
@@ -42,8 +44,8 @@ public:
 
 	void	SetFactor(float Factor) { n_assert(Factor > 0.f); TimeFactor = Factor; }
 	float	GetFactor() const { return TimeFactor; }
-	nTime	GetTime() const { return Time; }
-	nTime	GetFrameTime() const { return IsPaused() ? 0.f : FrameTime; }
+	float	GetTime() const { return Time; }
+	float	GetFrameTime() const { return IsPaused() ? 0.f : FrameTime; }
 	DWORD	GetFrameID() const { return FrameID; }
 };
 

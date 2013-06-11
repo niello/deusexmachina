@@ -80,7 +80,7 @@ void CTimeServer::Save(Data::CParams& TimeParams)
 		{
 			CTimeSource* pSrc = TimeSources.ValueAt(i);
 			Data::PParams SGTimeSrc = n_new(Data::CParams);
-			SGTimeSrc->Set(CStrID("Time"), (float)pSrc->GetTime());
+			SGTimeSrc->Set(CStrID("Time"), pSrc->GetTime());
 			SGTimeSrc->Set(CStrID("Factor"), pSrc->GetFactor());
 			SGTimeSrc->Set(CStrID("FrameID"), (int)pSrc->GetFrameID());
 			SGTimeSrc->Set(CStrID("PauseCount"), pSrc->GetPauseCount());
@@ -112,6 +112,37 @@ void CTimeServer::Save(Data::CParams& TimeParams)
 
 void CTimeServer::Load(const Data::CParams& TimeParams)
 {
+	Data::PParams SubSection;
+	if (TimeParams.Get<Data::PParams>(SubSection, CStrID("TimeSources")) && SubSection->GetCount())
+	{
+		for (int i = 0; i < SubSection->GetCount(); ++i)
+		{
+			const Data::CParam& Prm = SubSection->Get(i);
+			Data::PParams TimeSrcDesc = Prm.GetValue<Data::PParams>();
+			int Idx = TimeSources.FindIndex(Prm.GetName());
+			PTimeSource TimeSrc = (Idx == INVALID_INDEX) ? TimeSources.Add(Prm.GetName()) : TimeSources.ValueAt(Idx);
+			TimeSrc->FrameID = SubSection->Get<int>(CStrID("FrameID"));
+			SubSection->Get(TimeSrc->Time, CStrID("Time"));
+			SubSection->Get(TimeSrc->TimeFactor, CStrID("TimeFactor"));
+			SubSection->Get(TimeSrc->PauseCounter, CStrID("PauseCounter"));
+		}
+	}
+
+	Timers.Clear();
+	if (TimeParams.Get<Data::PParams>(SubSection, CStrID("Timers")) && SubSection->GetCount())
+	{
+		for (int i = 0; i < SubSection->GetCount(); ++i)
+		{
+			const Data::CParam& Prm = SubSection->Get(i);
+			CTimer& Timer = Timers.Add(Prm.GetName());
+			SubSection->Get(Timer.Time, CStrID("Time"));
+			SubSection->Get(Timer.CurrTime, CStrID("CurrTime"));
+			SubSection->Get(Timer.Loop, CStrID("Loop"));
+			SubSection->Get(Timer.Active, CStrID("Active"));
+			Timer.TimeSrc = SubSection->Get(CStrID("TimeSrc"), CStrID::Empty);
+			Timer.EventID = SubSection->Get<CStrID>(CStrID("EventID"));
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -151,7 +182,7 @@ void CTimeServer::Trigger()
 	Time += FrameTime;
 
 	for (int i = 0; i < TimeSources.GetCount(); i++)
-		TimeSources.ValueAt(i)->Update(FrameTime);
+		TimeSources.ValueAt(i)->Update((float)FrameTime);
 
 	for (int i = 0; i < Timers.GetCount(); i++)
 	{

@@ -60,7 +60,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	Data::PParams InitialAttrs;
 	if (!pInitialDesc || !pInitialDesc->Get<Data::PParams>(InitialAttrs, CStrID("Attrs")))
 		InitialAttrs = n_new(Data::CParams);
-	InitialAttrs->Diff(*SGAttrs, Attrs);
+	InitialAttrs->GetDiff(*SGAttrs, Attrs);
 	if (SGAttrs->GetCount()) OutDesc.Set(CStrID("Attrs"), SGAttrs);
 
 	Data::PDataArray InitialProps;
