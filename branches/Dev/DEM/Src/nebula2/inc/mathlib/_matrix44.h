@@ -1,15 +1,6 @@
 #ifndef _MATRIX44_H
 #define _MATRIX44_H
-//------------------------------------------------------------------------------
-/**
-    @class _matrix44
-    @ingroup NebulaMathDataTypes
 
-    Generic matrix44 class.
-	Row-major.
-
-    (C) 2002 RadonLabs GmbH
-*/
 #include "mathlib/_vector3.h"
 #include "mathlib/_vector4.h"
 #include "mathlib/quaternion.h"
@@ -17,58 +8,39 @@
 #include "mathlib/matrixdefs.h"
 #include <memory.h>
 
-static float _matrix44_ident[16] =
-{
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
-};
+// Matrix 4x4 class. Row-major.
 
-//------------------------------------------------------------------------------
 class _matrix44
 {
 public:
-    static const _matrix44 identity;
+
+    float m[4][4];
+
+	static const _matrix44 identity;
     static const _matrix44 ortho;
 
-public:
-    /// constructor 1
-    _matrix44();
-    /// constructor 2
+	_matrix44() { ident(); }
     _matrix44(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3);
-    /// constructor 3
-    _matrix44(const _matrix44& m1);
-    /// constructor 4
+	_matrix44(const _matrix44& m1) { set(m1); }
     _matrix44(float _m11, float _m12, float _m13, float _m14,
               float _m21, float _m22, float _m23, float _m24,
               float _m31, float _m32, float _m33, float _m34,
               float _m41, float _m42, float _m43, float _m44);
-    /// construct from quaternion
-    _matrix44(const quaternion& q);
-	void from_quaternion(const quaternion& q);
-    /// convert to quaternion
-    quaternion get_quaternion() const;
-    /// set 1
-    void set(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3);
-    /// set 2
-    void set(const _matrix44& m1);
-    /// set 3
+	_matrix44(const quaternion& q) { FromQuaternion(q); }
+
+	void		FromQuaternion(const quaternion& q);
+    quaternion	ToQuaternion() const;
+
+	void set(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3);
+	void set(const _matrix44& m1) { memcpy(m, &(m1.m[0][0]), sizeof(_matrix44)); }
     void set(float _m11, float _m12, float _m13, float _m14,
              float _m21, float _m22, float _m23, float _m24,
              float _m31, float _m32, float _m33, float _m34,
              float _m41, float _m42, float _m43, float _m44);
-    /// set from quaternion
-    void set(const quaternion& q);
-    /// set to identity
-    void ident();
-    /// transpose
+	void ident() { set(identity); }
     void transpose();
-    /// determinant
     float det() const;
-    /// full invert
     void invert();
-	///
 	float det_simple() const;
 	/// quick invert (if 3x3 rotation and translation)
     void invert_simple(_matrix44& Out) const;
@@ -79,13 +51,13 @@ public:
     /// transform vector3, projecting back into w=1
     _vector3 transform_coord(const _vector3& v) const;
     /// return x component
-    _vector3& AxisX() const;
+    _vector3& AxisX() const { return *(_vector3*)&M11; }
     /// return y component
-    _vector3& AxisY() const;
+    _vector3& AxisY() const { return *(_vector3*)&M21; }
     /// return z component
-    _vector3& AxisZ() const;
+    _vector3& AxisZ() const { return *(_vector3*)&M31; }
     /// return translate component
-    _vector3& Translation() const;
+	_vector3& Translation() const { return *(_vector3*)&M41; }
     /// rotate around global x
     void rotate_x(const float a);
     /// rotate around global y
@@ -132,18 +104,7 @@ public:
     vector3 mult_divw(const _vector3& v) const;
     /// fast multiply-add with weighting
     void weighted_madd(const _vector3& src, _vector3& dst, float weight) const;
-
-    float m[4][4];
 };
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-_matrix44::_matrix44()
-{
-    memcpy(&(m[0][0]), _matrix44_ident, sizeof(_matrix44_ident));
-}
 
 //------------------------------------------------------------------------------
 /**
@@ -161,15 +122,6 @@ _matrix44::_matrix44(const _vector4& v0, const _vector4& v1, const _vector4& v2,
 /**
 */
 inline
-_matrix44::_matrix44(const _matrix44& m1)
-{
-    memcpy(m, &(m1.m[0][0]), 16 * sizeof(float));
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
 _matrix44::_matrix44(float _m11, float _m12, float _m13, float _m14,
                      float _m21, float _m22, float _m23, float _m24,
                      float _m31, float _m32, float _m33, float _m34,
@@ -181,16 +133,7 @@ _matrix44::_matrix44(float _m11, float _m12, float _m13, float _m14,
     M41 = _m41; M42 = _m42; M43 = _m43; M44 = _m44;
 }
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-_matrix44::_matrix44(const quaternion& q)
-{
-	from_quaternion(q);
-}
-
-inline void _matrix44::from_quaternion(const quaternion& q)
+inline void _matrix44::FromQuaternion(const quaternion& q)
 {
     float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
     x2 = q.x + q.x; y2 = q.y + q.y; z2 = q.z + q.z;
@@ -222,7 +165,7 @@ inline void _matrix44::from_quaternion(const quaternion& q)
 */
 inline
 quaternion
-_matrix44::get_quaternion() const
+_matrix44::ToQuaternion() const
 {
     float qa[4];
     float tr = m[0][0] + m[1][1] + m[2][2];
@@ -272,16 +215,6 @@ _matrix44::set(const _vector4& v0, const _vector4& v1, const _vector4& v2, const
 */
 inline
 void
-_matrix44::set(const _matrix44& m1)
-{
-    memcpy(m, &(m1.m[0][0]), 16*sizeof(float));
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
 _matrix44::set(float _m11, float _m12, float _m13, float _m14,
                float _m21, float _m22, float _m23, float _m24,
                float _m31, float _m32, float _m33, float _m34,
@@ -291,46 +224,6 @@ _matrix44::set(float _m11, float _m12, float _m13, float _m14,
     M21=_m21; M22=_m22; M23=_m23; M24=_m24;
     M31=_m31; M32=_m32; M33=_m33; M34=_m34;
     M41=_m41; M42=_m42; M43=_m43; M44=_m44;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-_matrix44::set(const quaternion& q)
-{
-    float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
-    x2 = q.x + q.x; y2 = q.y + q.y; z2 = q.z + q.z;
-    xx = q.x * x2;   xy = q.x * y2;   xz = q.x * z2;
-    yy = q.y * y2;   yz = q.y * z2;   zz = q.z * z2;
-    wx = q.w * x2;   wy = q.w * y2;   wz = q.w * z2;
-
-    m[0][0] = 1.0f - (yy + zz);
-    m[1][0] = xy - wz;
-    m[2][0] = xz + wy;
-
-    m[0][1] = xy + wz;
-    m[1][1] = 1.0f - (xx + zz);
-    m[2][1] = yz - wx;
-
-    m[0][2] = xz - wy;
-    m[1][2] = yz + wx;
-    m[2][2] = 1.0f - (xx + yy);
-
-    m[3][0] = m[3][1] = m[3][2] = 0.0f;
-    m[0][3] = m[1][3] = m[2][3] = 0.0f;
-    m[3][3] = 1.0f;
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-_matrix44::ident()
-{
-    memcpy(&(m[0][0]), _matrix44_ident, sizeof(_matrix44_ident));
 }
 
 //------------------------------------------------------------------------------
@@ -465,7 +358,7 @@ _matrix44::mult_simple(const _matrix44& m1)
 /// quick multiplication of two matrices (m1*m2) with M14==M24==M34==0 and M44==1
 inline void _matrix44::mult2_simple(const _matrix44& m1, const _matrix44& m2)
 {
-    for (int i=0; i<4; i++)
+    for (int i = 0; i < 4; ++i)
     {
         m[i][0] = m1.m[i][0]*m2.m[0][0] + m1.m[i][1]*m2.m[1][0] + m1.m[i][2]*m2.m[2][0];
         m[i][1] = m1.m[i][0]*m2.m[0][1] + m1.m[i][1]*m2.m[1][1] + m1.m[i][2]*m2.m[2][1];
@@ -495,50 +388,6 @@ _matrix44::transform_coord(const _vector3& v) const
         (M11*v.x + M21*v.y + M31*v.z + M41) * d,
         (M12*v.x + M22*v.y + M32*v.z + M42) * d,
         (M13*v.x + M23*v.y + M33*v.z + M43) * d);
-}
-
-//------------------------------------------------------------------------------
-/**
-    @return the first row of the matrix. (M11, M12 and M13)
-*/
-inline
-_vector3&
-_matrix44::AxisX() const
-{
-    return *(_vector3*)&M11;
-}
-
-//------------------------------------------------------------------------------
-/**
-    @return the second row of the matrix. (M21, M22 and M23)
-*/
-inline
-_vector3&
-_matrix44::AxisY() const
-{
-    return *(_vector3*)&M21;
-}
-
-//------------------------------------------------------------------------------
-/**
-    @return the third row of the matrix. (M31, M32 and M33)
-*/
-inline
-_vector3&
-_matrix44::AxisZ() const
-{
-    return *(_vector3*)&M31;
-}
-
-//------------------------------------------------------------------------------
-/**
-    @return the 4th row of the matrix. (M41, M42 and M43)
-*/
-inline
-_vector3&
-_matrix44::Translation() const
-{
-    return *(_vector3*)&M41;
 }
 
 //------------------------------------------------------------------------------
@@ -626,8 +475,7 @@ inline
 void
 _matrix44::scale(const _vector3& s)
 {
-    int i;
-    for (i=0; i<4; i++)
+    for (int i=0; i<4; i++)
     {
         m[i][0] *= s.x;
         m[i][1] *= s.y;

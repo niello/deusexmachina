@@ -34,7 +34,7 @@ bool CShader::Setup(ID3DXEffect* pFX)
 			FeatAnnotation.Tokenize(",", FeatureMasks);
 			n_assert_dbg(FeatureMasks.GetCount());
 			for (int MaskIdx = 0; MaskIdx < FeatureMasks.GetCount(); ++MaskIdx)
-				FlagsToTech.Add(RenderSrv->ShaderFeatureStringToMask(FeatureMasks[MaskIdx]), hTech);
+				FlagsToTech.Add(RenderSrv->ShaderFeatures.GetMask(FeatureMasks[MaskIdx]), hTech);
 		}
 		else n_printf("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}

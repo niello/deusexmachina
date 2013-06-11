@@ -33,6 +33,9 @@ private:
 	nDictionary<CStrID, Anim::PAnimClip>	Clips;
 	nArray<Anim::CAnimTask>					Tasks;
 
+
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
 	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones);
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
@@ -42,9 +45,6 @@ private:
 public:
 
 	CPropAnimation(): Tasks(1, 1) {}
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause) { Tasks[TaskID].SetPause(Pause); }

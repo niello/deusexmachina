@@ -8,6 +8,7 @@
 //#include <Render/FrameShader.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsServer.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
@@ -32,6 +33,12 @@ void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
 {
 	n_assert_dbg(world && world->getWorldUserInfo());
 	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("AfterPhysicsTick")); //???set time as param?
+
+	/*for (int i = 0; i < world->getDispatcher()->getNumManifolds(); ++i)
+	{
+		btPersistentManifold* pManifold = world->getDispatcher()->getManifoldByIndexInternal(i);
+		//pManifold->getBody0();
+	}*/
 }
 //---------------------------------------------------------------------
 
@@ -174,8 +181,10 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	line3 Ray;
 	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
 
+	ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
+	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
 	Physics::PPhysicsObj PhysObj;
-	if (!PhysWorld->GetClosestRayContact(Ray.start(), Ray.start() + Ray.vec(), pOutPoint3D, &PhysObj)) FAIL;
+	if (!PhysWorld->GetClosestRayContact(Ray.start(), Ray.start() + Ray.vec(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 
 	if (pOutEntityUID)
 	{
@@ -282,8 +291,11 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	n_assert(ProbeLength > 0);
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
+	//!!!can request closest contacts for Default and Terrain!
+	ushort Group = PhysicsSrv->CollisionGroups.GetMask("Default");
+	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All");
 	vector3 ContactPos;
-	if (!PhysWorld->GetClosestRayContact(Position, Position + Dir, &ContactPos)) FAIL;
+	if (!PhysWorld->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
 	Out.WorldHeight = ContactPos.y;
 
 	//!!!material from CPhysicsObj!

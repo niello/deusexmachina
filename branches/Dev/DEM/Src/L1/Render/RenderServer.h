@@ -9,6 +9,7 @@
 #include <Render/Geometry/Mesh.h>
 #include <Resources/ResourceManager.h>
 #include <Data/Data.h>
+#include <Data/DynamicEnum.h>
 #include <Core/Singleton.h>
 #include <Events/Events.h>
 #include <Events/Subscription.h>
@@ -38,17 +39,15 @@ public:
 
 protected:
 
-	enum { MaxShaderFeatureCount = sizeof(DWORD) * 8 };
-
 	bool								_IsOpen;
 	bool								IsInsideFrame;
 	bool								Wireframe;
 	DWORD								InstanceCount;	// If 0, non-instanced rendering is active
 
 	nDictionary<CStrID, PVertexLayout>	VertexLayouts;
-	nDictionary<CStrID, int>			ShaderFeatures;
 	DWORD								FFlagSkinned;
 	DWORD								FFlagInstanced;
+
 
 	CDisplay							Display;
 	PRenderTarget						DefaultRT;
@@ -92,6 +91,7 @@ protected:
 
 public:
 
+	Data::CDynamicEnum32					ShaderFeatures;
 	Resources::CResourceManager<CMesh>		MeshMgr;
 	Resources::CResourceManager<CTexture>	TextureMgr;
 	Resources::CResourceManager<CShader>	ShaderMgr;
@@ -130,7 +130,6 @@ public:
 	//???PVertexLayout		GetVertexLayout(const nString& Signature);
 	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
 	int					GetFormatBits(EPixelFormat Format);
-	DWORD				ShaderFeatureStringToMask(const nString& FeatureString);
 	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
 	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }
 

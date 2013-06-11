@@ -65,7 +65,7 @@ public:
 
 	EExecStatus		RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
 	EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal = NULL) const;
-	EExecStatus		RunFunctionData(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
+	EExecStatus		RunFunctionOneArg(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
 	//int				RunFunction(LPCSTR pFuncName, const nArray<LPCSTR>& LuaArgs);
 	//int				RunFunction(LPCSTR pFuncName, CDataArray);????
 

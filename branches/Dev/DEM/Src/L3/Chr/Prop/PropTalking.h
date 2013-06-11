@@ -30,13 +30,14 @@ protected:
 
 	//broken dialogue state (to restart or take into account)
 
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(Talk, OnTalk);
 
 public:
 
-	virtual void	Activate();
-	virtual void	Deactivate();
 	virtual void	SayPhrase(CStrID PhraseID);
 
 	CDialogue*		GetDialogue() { return Dialogue.GetUnsafe(); }

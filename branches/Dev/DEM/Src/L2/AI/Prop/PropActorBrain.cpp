@@ -41,10 +41,8 @@ CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSyste
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::Activate()
+bool CPropActorBrain::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 // Blackboard
 
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
@@ -174,10 +172,11 @@ void CPropActorBrain::Activate()
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropActorBrain, OnUpdateTransform);
 	PROP_SUBSCRIBE_NEVENT(QueueTask, CPropActorBrain, OnAddTask);
 	PROP_SUBSCRIBE_PEVENT(OnNavMeshDataChanged, CPropActorBrain, OnNavMeshDataChanged);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::Deactivate()
+void CPropActorBrain::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
@@ -188,7 +187,6 @@ void CPropActorBrain::Deactivate()
 
 	NavSystem.Term();
 
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

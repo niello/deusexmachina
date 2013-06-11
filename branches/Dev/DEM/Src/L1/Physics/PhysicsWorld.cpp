@@ -100,18 +100,6 @@ void CPhysicsWorld::Trigger(float FrameTime)
 {
 	n_assert(pBtDynWorld);
 	pBtDynWorld->stepSimulation(FrameTime, 10, StepTime);
-
-	//!!!in a substep (internal tick) calback can get all collisions:
-	//http://bulletphysics.org/mediawiki-1.5.8/index.php/Collision_Callbacks_and_Triggers
-	/*
-	int numManifolds = world->getDispatcher()->getNumManifolds();
-	for (int i=0;i<numManifolds;i++)
-	{
-		btPersistentManifold* contactManifold =  world->getDispatcher()->getManifoldByIndexInternal(i);
-		btCollisionObject* obA = static_cast<btCollisionObject*>(contactManifold->getBody0());
-		...
-	}
-	*/
 }
 //---------------------------------------------------------------------
 
@@ -136,13 +124,15 @@ void CPhysicsWorld::RemoveCollisionObject(CPhysicsObj& Obj)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End, vector3* pOutPos, PPhysicsObj* pOutObj) const
+bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End, ushort Group, ushort Mask, vector3* pOutPos, PPhysicsObj* pOutObj) const
 {
 	n_assert(pBtDynWorld);
 
 	btVector3 BtStart = VectorToBtVector(Start);
 	btVector3 BtEnd = VectorToBtVector(End);
 	btCollisionWorld::ClosestRayResultCallback RayCB(BtStart, BtEnd);
+	RayCB.m_collisionFilterGroup = Group;
+	RayCB.m_collisionFilterMask = Mask;
 	pBtDynWorld->rayTest(BtStart, BtEnd, RayCB);
 
 	if (!RayCB.hasHit()) FAIL;
@@ -155,13 +145,15 @@ bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& En
 }
 //---------------------------------------------------------------------
 
-DWORD CPhysicsWorld::GetAllRayContacts(const vector3& Start, const vector3& End) const
+DWORD CPhysicsWorld::GetAllRayContacts(const vector3& Start, const vector3& End, ushort Group, ushort Mask) const
 {
 	n_assert(pBtDynWorld);
 
 	btVector3 BtStart = VectorToBtVector(Start);
 	btVector3 BtEnd = VectorToBtVector(End);
 	btCollisionWorld::AllHitsRayResultCallback RayCB(BtStart, BtEnd);
+	RayCB.m_collisionFilterGroup = Group;
+	RayCB.m_collisionFilterMask = Mask;
 	pBtDynWorld->rayTest(BtStart, BtEnd, RayCB);
 
 	if (!RayCB.hasHit()) return 0;

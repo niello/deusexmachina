@@ -49,7 +49,7 @@ public:
     /// construct from sse variables
     _matrix44_sse(const __m128& _m1, const __m128& _m2, const __m128& _m3, const __m128& _m4);
     /// convert to quaternion
-    quaternion get_quaternion() const;
+    quaternion ToQuaternion() const;
     /// set 1
     void set(const _vector4_sse& v1, const _vector4_sse& v2, const _vector4_sse& v3, const _vector4_sse& v4);
     /// set 2
@@ -217,7 +217,7 @@ _matrix44_sse::_matrix44_sse(const __m128& _m1, const __m128& _m2, const __m128&
 */
 inline
 quaternion
-_matrix44_sse::get_quaternion() const
+_matrix44_sse::ToQuaternion() const
 {
     float qa[4];
     float tr = m[0][0] + m[1][1] + m[2][2];

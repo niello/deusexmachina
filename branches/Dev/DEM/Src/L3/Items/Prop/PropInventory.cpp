@@ -11,26 +11,24 @@ namespace Prop
 __ImplementClass(Prop::CPropInventory, 'PINV', Game::CProperty);
 __ImplementPropertyStorage(CPropInventory);
 
-void CPropInventory::Activate()
+bool CPropInventory::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	n_assert(CurrWeight == 0.f && CurrVolume == 0.f);
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropInventory, OnExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnSave, CPropInventory, OnSave);
 	PROP_SUBSCRIBE_PEVENT(OnLoad, CPropInventory, OnLoad);
 	PROP_SUBSCRIBE_PEVENT(OnLoadAfter, CPropInventory, OnLoadAfter);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropInventory::Deactivate()
+void CPropInventory::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnSave);
 	UNSUBSCRIBE_EVENT(OnLoad);
 	UNSUBSCRIBE_EVENT(OnLoadAfter);
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

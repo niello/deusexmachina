@@ -9,20 +9,19 @@ __ImplementPropertyStorage(CPropDestructible);
 
 using namespace Event;
 
-void CPropDestructible::Activate()
+bool CPropDestructible::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	//!!!!!DBG!
 	HP = HPMax = 12;
 	PROP_SUBSCRIBE_NEVENT(ObjDamageDone, CPropDestructible, OnObjDamageDone);
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropDestructible::Deactivate()
+void CPropDestructible::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(ObjDamageDone);
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

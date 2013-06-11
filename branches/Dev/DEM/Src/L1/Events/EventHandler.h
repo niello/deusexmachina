@@ -3,21 +3,12 @@
 #define __DEM_L1_EVENT_HANDLER_H__
 
 #include <Core/RefCounted.h>
+#include <Events/Events.h>
 
 // Event handler is an abstract wrapper to event handling function (functor)
 
 namespace Events
 {
-class CEventBase;
-
-typedef bool(*CEventCallback)(const CEventBase& Event);
-typedef Ptr<class CEventHandler> PEventHandler;
-
-enum EEventPriority
-{
-	Priority_Default	= 0,		// Not set, handler will be added to the tail
-	Priority_Top		= 0xffff	// Handler will be added as the head
-};
 
 class CEventHandler: public Core::CRefCounted
 {

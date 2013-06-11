@@ -23,8 +23,8 @@ protected:
 
 	bool Enabled;
 
-    virtual void	Activate();
-    virtual void	Deactivate();
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
 	virtual void	ActivateInput();
     virtual void	DeactivateInput();
 	void			EnableInput(bool Enable);

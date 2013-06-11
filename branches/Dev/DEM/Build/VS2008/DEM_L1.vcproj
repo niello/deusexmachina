@@ -329,6 +329,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\DynamicEnum.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\Flags.h"
 				>
 			</File>

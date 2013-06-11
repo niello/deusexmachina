@@ -122,7 +122,7 @@ bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 
 	if (Det > DECOMPOSE_EPSILON) FAIL; // Non-SRT matrix encountered
 
-	Rotation = Tmp.get_quaternion();
+	Rotation = Tmp.ToQuaternion();
 
 	OK;
 }

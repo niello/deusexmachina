@@ -13,23 +13,21 @@ namespace Prop
 __ImplementClass(Prop::CPropPlrCharacterInput, 'PPIN', Game::CProperty);
 __ImplementPropertyStorage(CPropPlrCharacterInput);
 
-void CPropPlrCharacterInput::Activate()
+bool CPropPlrCharacterInput::InternalActivate()
 {
-	CProperty::Activate();
-
 	//PROP_SUBSCRIBE_PEVENT(EnableInput, CPropPlrCharacterInput, OnEnableInput);
 	//PROP_SUBSCRIBE_PEVENT(DisableInput, CPropPlrCharacterInput, OnDisableInput);
 
 	if (Enabled /*&& HasFocus()*/) ActivateInput();
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropPlrCharacterInput::Deactivate()
+void CPropPlrCharacterInput::InternalDeactivate()
 {
 	//UNSUBSCRIBE_EVENT(EnableInput);
 	//UNSUBSCRIBE_EVENT(DisableInput);
 
-	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

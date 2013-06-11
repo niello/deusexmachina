@@ -12,10 +12,8 @@ namespace Prop
 __ImplementClass(Prop::CPropCharacterController, 'PCCT', Game::CProperty);
 __ImplementPropertyStorage(CPropCharacterController);
 
-void CPropCharacterController::Activate()
+bool CPropCharacterController::InternalActivate()
 {
-    CProperty::Activate();
-
 	CreateController();
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
@@ -27,10 +25,11 @@ void CPropCharacterController::Activate()
 	PROP_SUBSCRIBE_PEVENT(RequestAngularV, CPropCharacterController, OnRequestAngularVelocity);
 	PROP_SUBSCRIBE_PEVENT(BeforePhysicsTick, CPropCharacterController, OnPhysicsTick);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropCharacterController, OnRenderDebug);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropCharacterController::Deactivate()
+void CPropCharacterController::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
@@ -44,7 +43,6 @@ void CPropCharacterController::Deactivate()
 
 	CharCtlr = NULL;
 
-	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 
@@ -210,7 +208,7 @@ bool CPropCharacterController::OnRenderDebug(const Events::CEventBase& Event)
 	vector3 Pos;
 	quaternion Rot;
 	CharCtlr->GetBody()->GetTransform(Pos, Rot);
-	Tfm.from_quaternion(Rot);
+	Tfm.FromQuaternion(Rot);
 	Tfm.Translation() = Pos;
 
 	DebugDraw->DrawCoordAxes(Tfm);

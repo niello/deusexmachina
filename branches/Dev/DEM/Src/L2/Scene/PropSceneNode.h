@@ -21,6 +21,9 @@ protected:
 	Scene::PSceneNode	Node;
 	bool				ExistingNode;
 
+	virtual bool		InternalActivate();
+	virtual void		InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
 	DECLARE_EVENT_HANDLER(OnWorldTfmsUpdated, OnWorldTfmsUpdated);
 	DECLARE_EVENT_HANDLER_VIRTUAL(OnRenderDebug, OnRenderDebug);
@@ -30,9 +33,6 @@ protected:
 public:
 
 	//virtual ~CPropSceneNode() {}
-
-	virtual void		Activate();
-	virtual void		Deactivate();
 
 	Scene::CSceneNode*	GetNode() const { return Node.GetUnsafe(); }
 	void				GetAABB(bbox3& OutBox) const;

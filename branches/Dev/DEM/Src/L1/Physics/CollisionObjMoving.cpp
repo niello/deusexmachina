@@ -95,7 +95,6 @@ void CCollisionObjMoving::SetTransform(const matrix44& Tfm)
 	if (pMotionState)
 	{
 		pMotionState->Tfm = TfmToBtTfm(Tfm);
-
 		pMotionState->Tfm.getOrigin().m_floats[0] += ShapeOffset.x;
 		pMotionState->Tfm.getOrigin().m_floats[1] += ShapeOffset.y;
 		pMotionState->Tfm.getOrigin().m_floats[2] += ShapeOffset.z;
@@ -112,7 +111,6 @@ void CCollisionObjMoving::GetTransform(btTransform& Out) const
 	if (pMotionState)
 	{
 		Out = pMotionState->Tfm;
-
 		Out.getOrigin().m_floats[0] -= ShapeOffset.x;
 		Out.getOrigin().m_floats[1] -= ShapeOffset.y;
 		Out.getOrigin().m_floats[2] -= ShapeOffset.z;

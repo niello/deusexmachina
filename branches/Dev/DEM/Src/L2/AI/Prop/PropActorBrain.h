@@ -71,14 +71,16 @@ protected:
 
 // END Blackboard
 
+	virtual bool		InternalActivate();
+	virtual void		InternalDeactivate();
+	void				UpdateDecisionMaking();
+
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrameProc);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
 	DECLARE_EVENT_HANDLER(QueueTask, OnAddTask);
 	DECLARE_EVENT_HANDLER(OnNavMeshDataChanged, OnNavMeshDataChanged);
-
-	void UpdateDecisionMaking();
 
 public:
 
@@ -107,8 +109,6 @@ public:
 	CPropActorBrain();
 	//virtual ~CPropActorBrain();
 
-	virtual void	Activate();
-	virtual void	Deactivate();
 	virtual void	OnBeginFrame();
 
 	bool			IsActionAvailable(const CActionTpl* pAction) const;

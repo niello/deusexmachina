@@ -32,25 +32,23 @@ CPropWeapon::CPropWeapon():
 }
 //---------------------------------------------------------------------
 
-void CPropWeapon::Activate()
+bool CPropWeapon::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	//if (GetEntity()->IsActive()) SetupBrain(true);
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropWeapon, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(ChrStrike, CPropWeapon, OnChrStrike);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropWeapon::Deactivate()
+void CPropWeapon::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(ChrStrike);
 
 	//if (!GetEntity()->IsDeactivating()) SetupBrain(false);
 
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

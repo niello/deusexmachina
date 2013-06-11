@@ -60,9 +60,9 @@ public:
 
 	// Return value is subscription handle used to unsubscribe
 	//???leave 2 instead of 4 with CEventID first param?
-	PSub					Subscribe(CStrID ID, bool (*Callback)(const CEventBase&), ushort Priority = Priority_Default);
+	PSub					Subscribe(CStrID ID, CEventCallback Callback, ushort Priority = Priority_Default);
 	template<class T> PSub	Subscribe(CStrID ID, T* Object, bool (T::*Callback)(const CEventBase&), ushort Priority = Priority_Default);
-	PSub					Subscribe(const CRTTI* RTTI, bool (*Callback)(const CEventBase&), ushort Priority = Priority_Default);
+	PSub					Subscribe(const CRTTI* RTTI, CEventCallback Callback, ushort Priority = Priority_Default);
 	template<class T> PSub	Subscribe(const CRTTI* RTTI, T* Object, bool (T::*Callback)(const CEventBase&), ushort Priority = Priority_Default);
 	PSub					Subscribe(CEventDispatcher& Listener, ushort Priority = Priority_Default);
 
@@ -70,7 +70,7 @@ public:
 	void					Unsubscribe(CEventID ID, CEventHandler* Handler);
 	//void					UnsubscribeEvent(CStrID ID);
 	//void					UnsubscribeEvent(const CRTTI* RTTI);
-	//void					UnsubscribeCallback(bool (*Callback)(const CEventBase&));
+	//void					UnsubscribeCallback(CEventCallback Callback);
 	//template<class T> void	UnsubscribeObject(T* Object);
 	//template<class T> void	Unsubscribe(CStrID ID, T* Object, bool FirstOnly = true);
 	void					UnsubscribeAll() { Subscriptions.Clear(); }

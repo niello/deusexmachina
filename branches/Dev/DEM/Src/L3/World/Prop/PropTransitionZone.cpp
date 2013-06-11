@@ -19,18 +19,17 @@ namespace Prop
 __ImplementClass(Prop::CPropTransitionZone, 'PRTZ', Game::CProperty);
 __ImplementPropertyStorage(CPropTransitionZone);
 
-void CPropTransitionZone::Activate()
+bool CPropTransitionZone::InternalActivate()
 {
-	Game::CProperty::Activate();
 	//???check level existence here?
 	PROP_SUBSCRIBE_PEVENT(Travel, CPropTransitionZone, OnTravel);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropTransitionZone::Deactivate()
+void CPropTransitionZone::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(Travel);
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

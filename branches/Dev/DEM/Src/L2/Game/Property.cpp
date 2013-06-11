@@ -6,44 +6,67 @@ namespace Game
 {
 __ImplementClassNoFactory(Game::CProperty, Core::CRefCounted);
 
-IMPL_EVENT_HANDLER_VIRTUAL(OnEntityActivated, CProperty, Activate);
-IMPL_EVENT_HANDLER_VIRTUAL(OnEntityDeactivated, CProperty, Deactivate);
-
-CProperty::~CProperty()
-{
-}
-//---------------------------------------------------------------------
-
 void CProperty::SetEntity(CEntity* pNewEntity)
 {
 	if (pNewEntity == pEntity) return;
+	bool WasActive = Active;
 	if (pEntity)
 	{
-		//!!!deactivate if active!
+		if (Active) Deactivate();
 		UNSUBSCRIBE_EVENT(OnEntityActivated);
 		UNSUBSCRIBE_EVENT(OnEntityDeactivated);
 	}
 	pEntity = pNewEntity;
 	if (pEntity)
 	{
-		PROP_SUBSCRIBE_PEVENT(OnEntityActivated, CProperty, ActivateProc);
-		PROP_SUBSCRIBE_PEVENT(OnEntityDeactivated, CProperty, DeactivateProc);
-		//!!!activate if must be active!
+		PROP_SUBSCRIBE_PEVENT(OnEntityActivated, CProperty, OnEntityActivated);
+		PROP_SUBSCRIBE_PEVENT(OnEntityDeactivated, CProperty, OnEntityDeactivated);
+		if (WasActive) Activate();
 	}
 }
 //---------------------------------------------------------------------
 
 void CProperty::Activate()
 {
-	n_assert_dbg(!IsActive());
-	Active = true;
+	n_assert_dbg(!Active && pEntity);
+
+	Active = InternalActivate();
+
+	if (Active)
+	{
+		Data::PParams P = n_new(Data::CParams);
+		P->Set<PVOID>(CStrID("Prop"), this);
+		GetEntity()->FireEvent(CStrID("OnPropActivated"), P);
+	}
 }
 //---------------------------------------------------------------------
 
 void CProperty::Deactivate()
 {
-	n_assert_dbg(IsActive());
+	n_assert_dbg(Active && pEntity);
+
+	Data::PParams P = n_new(Data::CParams);
+	P->Set<PVOID>(CStrID("Prop"), this);
+	GetEntity()->FireEvent(CStrID("OnPropDeactivating"), P);
+
+	InternalDeactivate();
 	Active = false;
+
+	GetEntity()->FireEvent(CStrID("OnPropDeactivated"), P);
+}
+//---------------------------------------------------------------------
+
+bool CProperty::OnEntityActivated(const Events::CEventBase& Event)
+{
+	Activate();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CProperty::OnEntityDeactivated(const Events::CEventBase& Event)
+{
+	Deactivate();
+	OK;
 }
 //---------------------------------------------------------------------
 

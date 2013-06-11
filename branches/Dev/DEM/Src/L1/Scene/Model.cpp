@@ -81,7 +81,7 @@ bool CModel::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 		{
 			nString FeatFlagsStr;
 			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;
-			FeatureFlags = RenderSrv->ShaderFeatureStringToMask(FeatFlagsStr);
+			FeatureFlags = RenderSrv->ShaderFeatures.GetMask(FeatFlagsStr);
 			OK;
 		}
 		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);

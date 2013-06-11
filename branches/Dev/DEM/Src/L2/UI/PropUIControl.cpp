@@ -1,19 +1,22 @@
 #include "PropUIControl.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <AI/Events/QueueTask.h>
 #include <AI/Prop/PropActorBrain.h>
 #include <AI/Prop/PropSmartObject.h>
 #include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
+#include <Physics/PhysicsServer.h>
+#include <Scene/PropSceneNode.h>
 #include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>
 #include <Data/DataServer.h>
 #include <Events/EventManager.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropUIControl)
-//	RegisterString(IAODesc, ReadOnly);
-//	RegisterString(Name, ReadOnly);
-//END_ATTRS_REGISTRATION
+namespace Physics
+{
+	PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName);
+}
 
 namespace Prop
 {
@@ -22,11 +25,10 @@ __ImplementPropertyStorage(CPropUIControl);
 
 using namespace Data;
 
-void CPropUIControl::Activate()
+bool CPropUIControl::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"), NULL);
+	ReflectSOActions = false;
 
 	PParams Desc;
 	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"), NULL);
@@ -35,48 +37,121 @@ void CPropUIControl::Activate()
 	if (Desc.IsValid())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<nString>(CStrID("UIName"), NULL);
-		AutoAddSmartObjActions = Desc->Get<bool>(CStrID("AutoAddSmartObjActions"), true);
 
 		//???read priorities for actions? or all through scripts?
 
 		//???read custom commands or add through script?
 		
 		SOActionNames = Desc->Get<PParams>(CStrID("SmartObjActionNames"), NULL);
+		EnableSmartObjReflection(Desc->Get<bool>(CStrID("AutoAddSmartObjActions"), true));
 	}
-	else AutoAddSmartObjActions = true;
-	
-	if (AutoAddSmartObjActions)
+
+	//???move to the IAO desc as field?
+	//???Shape desc or collision object desc? CollObj can have offset, but Group & Mask must be overridden.
+	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
+	if (PickShapeID.IsValid() && GetEntity()->GetLevel().GetPhysics())
 	{
-		PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropUIControl, OnPropsActivated);
-		PROP_SUBSCRIBE_PEVENT(OnSOActionAvailabile, CPropUIControl, OnSOActionAvailabile);
+		Physics::PCollisionShape Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(PickShapeID);
+		if (!Shape.IsValid())
+			Shape = Physics::LoadCollisionShapeFromPRM(PickShapeID, nString("physics:") + PickShapeID.CStr() + ".hrd"); //!!!prm!
+		n_assert(Shape->IsLoaded());
+
+		ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
+		ushort Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
+
+		//???or use OnUpdateTransform?
+		MousePickShape = n_new(Physics::CNodeAttrCollision);
+		MousePickShape->CollObj = n_new(Physics::CCollisionObjMoving);
+		MousePickShape->CollObj->Init(*Shape, Group, Mask); // Can specify offset
+		MousePickShape->CollObj->SetUserData(*(void**)&GetEntity()->GetUID());
+		MousePickShape->CollObj->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+
+		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+		if (pProp && pProp->IsActive())
+		{
+			MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
+			pProp->GetNode()->AddAttr(*MousePickShape);
+		}
 	}
+
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropUIControl, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnMouseEnter, CPropUIControl, OnMouseEnter);
 	PROP_SUBSCRIBE_PEVENT(OnMouseLeave, CPropUIControl, OnMouseLeave);
 	PROP_SUBSCRIBE_PEVENT(OverrideUIName, CPropUIControl, OverrideUIName);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropUIControl::Deactivate()
+void CPropUIControl::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnMouseEnter);
 	UNSUBSCRIBE_EVENT(OnMouseLeave);
 	UNSUBSCRIBE_EVENT(OverrideUIName);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnSOActionAvailabile);
 
 	Actions.Clear();
-	Game::CProperty::Deactivate();
+
+	if (MousePickShape.IsValid())
+	{
+		MousePickShape->RemoveFromNode();
+		MousePickShape->CollObj->RemoveFromLevel();
+		MousePickShape = NULL;
+	}
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnPropsActivated(const Events::CEventBase& Event)
+bool CPropUIControl::OnPropActivated(const Events::CEventBase& Event)
 {
-	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
-	if (!pSO) OK;
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
 
-	const CPropSmartObject::CActList& SOActions = pSO->GetActions();
+	if (ReflectSOActions && pProp->IsA<CPropSmartObject>())
+	{
+		AddSOActions(*(CPropSmartObject*)pProp);
+		OK;
+	}
+
+	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
+	{
+		MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
+		((CPropSceneNode*)pProp)->GetNode()->AddAttr(*MousePickShape);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropUIControl::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (ReflectSOActions && pProp->IsA<CPropSmartObject>())
+	{
+		RemoveSOActions();
+		OK;
+	}
+
+	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>())
+	{
+		MousePickShape->RemoveFromNode();
+		MousePickShape->CollObj->RemoveFromLevel();
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
+{
+	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
 
 	for (int i = 0; i < SOActions.GetCount(); ++i)
 	{
@@ -92,8 +167,40 @@ bool CPropUIControl::OnPropsActivated(const Events::CEventBase& Event)
 			pAction->Visible = Act->Enabled;
 		}
 	}
+}
+//---------------------------------------------------------------------
 
-	OK;
+void CPropUIControl::RemoveSOActions()
+{
+	for (int i = 0 ; i < Actions.GetCount(); )
+	{
+		if (Actions[i].AutoAdded) Actions.EraseAt(i);
+		else ++i;
+	}
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::EnableSmartObjReflection(bool Enable)
+{
+	if (ReflectSOActions == Enable) return;
+	ReflectSOActions = Enable;
+	if (ReflectSOActions)
+	{
+		CPropSmartObject* pProp = GetEntity()->GetProperty<CPropSmartObject>();
+		if (pProp && pProp->IsActive()) AddSOActions(*(CPropSmartObject*)pProp);
+
+		PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropUIControl, OnPropActivated);
+		PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropUIControl, OnPropDeactivating);
+		PROP_SUBSCRIBE_PEVENT(OnSOActionAvailabile, CPropUIControl, OnSOActionAvailabile);
+	}
+	else
+	{
+		UNSUBSCRIBE_EVENT(OnPropActivated);
+		UNSUBSCRIBE_EVENT(OnPropDeactivating);
+		UNSUBSCRIBE_EVENT(OnSOActionAvailabile);
+
+		RemoveSOActions();
+	}
 }
 //---------------------------------------------------------------------
 
@@ -209,7 +316,7 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 
 	CPropActorBrain* pActor = NULL;
 	CPropSmartObject* pSO = NULL;
-	if (AutoAddSmartObjActions)
+	if (ReflectSOActions)
 	{
 		pActor = pActorEnt->GetProperty<CPropActorBrain>();
 		pSO = GetEntity()->GetProperty<CPropSmartObject>();
@@ -235,7 +342,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 {
 	CPropActorBrain* pActor = NULL;
 	CPropSmartObject* pSO = NULL;
-	if (AutoAddSmartObjActions)
+	if (ReflectSOActions)
 	{
 		pActor = pActorEnt->GetProperty<CPropActorBrain>();
 		pSO = GetEntity()->GetProperty<CPropSmartObject>();
@@ -284,4 +391,4 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

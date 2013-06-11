@@ -13,10 +13,8 @@ namespace Prop
 __ImplementClass(Prop::CPropScriptable, 'PSCR', Game::CProperty);
 __ImplementPropertyStorage(CPropScriptable);
 
-void CPropScriptable::Activate()
+bool CPropScriptable::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	nString LuaClass;
 	if (!GetEntity()->GetAttr<nString>(LuaClass, CStrID("ScriptClass")))
 		LuaClass = "CEntityScriptObject";
@@ -32,10 +30,12 @@ void CPropScriptable::Activate()
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(OnLoad, CPropScriptable, OnLoad);
 	PROP_SUBSCRIBE_PEVENT(OnSave, CPropScriptable, OnSave);
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropScriptable::Deactivate()
+void CPropScriptable::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnLoad);
@@ -44,7 +44,6 @@ void CPropScriptable::Deactivate()
 	Obj->RunFunction("OnPropTerm");
 	Obj = NULL;
 	
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

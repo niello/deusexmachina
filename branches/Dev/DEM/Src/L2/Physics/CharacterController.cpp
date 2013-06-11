@@ -29,7 +29,7 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 	vector3 Offset(0.f, (Hover + Height) * 0.5f, 0.f);
 
 	Body = n_new(CRigidBody);
-	Body->Init(*Shape, Mass, 0x0001, 0xffff, Offset); //!!!need normal flags!
+	Body->Init(*Shape, Mass, PhysicsSrv->CollisionGroups.GetMask("Character"), PhysicsSrv->CollisionGroups.GetMask("All"), Offset);
 	Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
 
 	ReqLinVel = vector3::Zero;

@@ -108,7 +108,7 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 	}
 	else if (Type == DATA_TYPE_ID(Data::PDataArray))
 	{
-		Data::PDataArray A = n_new(Data::CDataArray);;
+		Data::PDataArray A = n_new(Data::CDataArray);
 
 		short Count;
 		if (!Read(Count)) FAIL;

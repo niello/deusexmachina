@@ -24,9 +24,9 @@ inline btTransform TfmToBtTfm(const matrix44& Tfm)
 	AxisZ.norm();
 	return btTransform(
 		btMatrix3x3(
-			AxisX.x, AxisX.y, AxisX.z,
-			AxisY.x, AxisY.y, AxisY.z,
-			AxisZ.x, AxisZ.y, AxisZ.z),
+			AxisX.x, AxisY.x, AxisZ.x,
+			AxisX.y, AxisY.y, AxisZ.y,
+			AxisX.z, AxisY.z, AxisZ.z),
 		VectorToBtVector(Tfm.Translation()));
 }
 

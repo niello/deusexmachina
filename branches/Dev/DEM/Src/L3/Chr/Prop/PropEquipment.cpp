@@ -23,15 +23,16 @@ CPropEquipment::CPropEquipment()
 //!!!OnPropsActivated can setup equipment info loaded from DB! (need to load inventory contents before)
 // at least it can setup equipment effects
 
-//void CPropEquipment::Activate()
+//bool PROP::InternalActivate()
 //{
-//	Game::CProperty::Activate();
+//	if (!CPropInventory::InternalActivate()) FAIL;
+//	OK;
 //}
 ////---------------------------------------------------------------------
 //
-//void CPropEquipment::Deactivate()
+//void PROP::InternalDeactivate()
 //{
-//	Game::CProperty::Deactivate();
+//	CPropInventory::InternalDeactivate();
 //}
 ////---------------------------------------------------------------------
 

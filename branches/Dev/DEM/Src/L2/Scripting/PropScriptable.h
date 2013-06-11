@@ -20,6 +20,9 @@ protected:
 
 	PEntityScriptObject Obj;
 
+	virtual bool InternalActivate();
+	virtual void InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(OnLoad, OnLoad);
 	DECLARE_EVENT_HANDLER(OnSave, OnSave);
@@ -30,9 +33,6 @@ public:
 
 	//CPropScriptable() {}
 	//virtual ~CPropScriptable();
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	//???or hide & add RunFunction calls here?
 	PEntityScriptObject GetScriptObject() const { return Obj; }

@@ -26,17 +26,16 @@ __ImplementPropertyStorage(CPropAnimation);
 
 using namespace Data;
 
-void CPropAnimation::Activate()
+bool CPropAnimation::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAnimation, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAnimation, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropAnimation::Deactivate()
+void CPropAnimation::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(ExposeSI);
@@ -49,7 +48,6 @@ void CPropAnimation::Deactivate()
 	Clips.Clear();
 	Nodes.Clear();
 
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

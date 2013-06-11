@@ -52,7 +52,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	ShaderVars.EndAdd();
 	//!!!DUPLICATE CODE!-
 
-	FeatFlags = RenderSrv->ShaderFeatureStringToMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
+	FeatFlags = RenderSrv->ShaderFeatures.GetMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
 
 	if (!RenderSrv->CheckCaps(Caps_VSTexFiltering_Linear))
 	{
@@ -80,11 +80,11 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 		{
 			nString Mask;
 			Mask.Format("L%d", i + 1);
-			LightFeatFlags[i] = RenderSrv->ShaderFeatureStringToMask(Mask);
+			LightFeatFlags[i] = RenderSrv->ShaderFeatures.GetMask(Mask);
 		}
 	}
 
-	FeatFlagDefault = RenderSrv->ShaderFeatureStringToMask("Default");
+	FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
 	if (!FeatFlags && !EnableLighting) FeatFlags = FeatFlagDefault;
 
 	nArray<CVertexComponent> PatchVC;

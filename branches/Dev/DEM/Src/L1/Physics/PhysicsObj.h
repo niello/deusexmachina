@@ -57,6 +57,8 @@ public:
 	void				GetPhysicsAABB(bbox3& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
 	CPhysicsWorld*		GetWorld() const { return pWorld; }
+	ushort				GetCollisionGroup() const { return Group; }
+	ushort				GetCollisionMask() const { return Mask; }
 	const vector3&		GetShapeOffset() const { return ShapeOffset; }
 };
 

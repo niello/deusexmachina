@@ -19,10 +19,8 @@ __ImplementPropertyStorage(CPropSceneNode);
 
 IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 
-void CPropSceneNode::Activate()
+bool CPropSceneNode::InternalActivate()
 {
-	CProperty::Activate();
-
 	nString NodePath;
 	GetEntity()->GetAttr<nString>(NodePath, CStrID("ScenePath"));
 	nString NodeFile;
@@ -47,30 +45,24 @@ void CPropSceneNode::Activate()
 		GetEntity()->FireEvent(CStrID("UpdateTransform"));
 	}
 
-	Data::PParams P = n_new(Data::CParams);
-	P->Set<PVOID>(CStrID("Prop"), (Game::CProperty*)this);
-	GetEntity()->FireEvent(CStrID("OnPropActivated"), P);
-
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropSceneNode, OnSetTransform);
 	PROP_SUBSCRIBE_PEVENT(OnWorldTfmsUpdated, CPropSceneNode, OnWorldTfmsUpdated);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropSceneNode, OnRenderDebugProc);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropSceneNode::Deactivate()
+void CPropSceneNode::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(SetTransform);
 	UNSUBSCRIBE_EVENT(OnWorldTfmsUpdated);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
-
-	GetEntity()->FireEvent(CStrID("OnPropDeactivating"));
 
 	if (Node.IsValid() && !ExistingNode)
 	{
 		Node->RemoveFromParent();
 		Node = NULL;
 	}
-	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

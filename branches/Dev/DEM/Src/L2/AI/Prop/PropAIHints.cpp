@@ -15,18 +15,17 @@ __ImplementPropertyStorage(CPropAIHints);
 
 static const nString StrStimulusPrefix("AI::CStimulus");
 
-void CPropAIHints::Activate()
+bool CPropAIHints::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAIHints, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropAIHints, OnRenderDebug);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAIHints, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropAIHints, OnUpdateTransform);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropAIHints::Deactivate()
+void CPropAIHints::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
@@ -41,7 +40,6 @@ void CPropAIHints::Deactivate()
 
 	Hints.Clear();
 
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

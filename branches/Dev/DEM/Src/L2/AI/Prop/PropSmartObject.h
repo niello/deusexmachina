@@ -32,12 +32,12 @@ protected:
 	CActList	Actions;
 	CStrID		CurrState; //???empty state = disabled?
 
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 
 public:
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	bool			SetState(CStrID ID);
 	bool			HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }

@@ -23,16 +23,15 @@ protected:
 	nDictionary<Scene::CSceneNode*, Physics::PNodeControllerRigidBody>	Ctlrs; //???store node ptr in the controller?
 	nArray<Physics::PNodeAttrCollision>									Attrs;
 
-	void InitSceneNodeModifiers(CPropSceneNode& Prop);
-	void TermSceneNodeModifiers(CPropSceneNode& Prop);
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+	void			InitSceneNodeModifiers(CPropSceneNode& Prop);
+	void			TermSceneNodeModifiers(CPropSceneNode& Prop);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 
 public:
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	//!!!WRITE!
 	void			GetAABB(bbox3& AABB) const { n_error("CPropPhysics::GetAABB() -> IMPLEMENT ME!!!"); }
