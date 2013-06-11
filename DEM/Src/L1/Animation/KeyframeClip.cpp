@@ -46,7 +46,7 @@ void CKeyframeClip::Unload()
 Scene::PNodeController CKeyframeClip::CreateController(DWORD SamplerIdx) const
 {
 	Anim::PNodeControllerKeyframe Ctlr = n_new(Anim::CNodeControllerKeyframe);
-	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
+	Ctlr->SetSampler(&Samplers.ValueAt(SamplerIdx));
 	return Ctlr.GetUnsafe();
 }
 //---------------------------------------------------------------------

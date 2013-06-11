@@ -1,6 +1,6 @@
 #include "SensorVision.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <AI/Perception/Perceptor.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>

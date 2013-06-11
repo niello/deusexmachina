@@ -97,7 +97,7 @@ bool CModel::ValidateResources()
 
 		for (int i = 0; i < ShaderVars.GetCount(); ++i)
 		{
-			CShaderVar& Var = ShaderVars.ValueAtIndex(i);
+			CShaderVar& Var = ShaderVars.ValueAt(i);
 			if (!Var.IsBound()) Var.Bind(*Material->GetShader());
 
 			//!!!non-file textures (forex RTs) will fail to load here! ensure they are

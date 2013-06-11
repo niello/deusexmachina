@@ -60,7 +60,7 @@ void CLODGroup::Update()
 	CStrID SelectedChild;
 	if (SqDist >= MinSqDistance && SqDist <= MaxSqDistance)
 		for (int i = 0; i < SqThresholds.GetCount(); ++i)
-			if (SqThresholds.KeyAtIndex(i) > SqDist) SelectedChild = SqThresholds.ValueAtIndex(i);
+			if (SqThresholds.KeyAt(i) > SqDist) SelectedChild = SqThresholds.ValueAt(i);
 			else break;
 
 	for (DWORD i = 0; i < pNode->GetChildCount(); ++i)

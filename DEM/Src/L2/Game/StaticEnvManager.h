@@ -43,7 +43,7 @@ public:
 	void			DeleteAllStaticObjects();
 
 	int				GetStaticObjectCount() const { return Objects.GetCount(); }
-	CStaticObject*	GetStaticObject(int Idx) const { return Objects.ValueAtIndex(Idx).GetUnsafe(); }
+	CStaticObject*	GetStaticObject(int Idx) const { return Objects.ValueAt(Idx).GetUnsafe(); }
 	CStaticObject*	GetStaticObject(CStrID UID) const;
 	bool			StaticObjectExists(CStrID UID) const { return !!GetStaticObject(UID); }
 };
@@ -53,7 +53,7 @@ typedef Ptr<CStaticEnvManager> PStaticEnvManager;
 inline CStaticObject* CStaticEnvManager::GetStaticObject(CStrID UID) const
 {
 	int Idx = Objects.FindIndex(UID);
-	return (Idx != INVALID_INDEX) ? Objects.ValueAtIndex(Idx).GetUnsafe() : NULL;
+	return (Idx != INVALID_INDEX) ? Objects.ValueAt(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

@@ -95,7 +95,7 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const nDictionary<int, CStrID>& Bone
 
 		int RemapIdx = BoneToNode.FindIndex(i / 3);
 		if (RemapIdx == INVALID_INDEX) continue; // No such bone in a target skeleton
-		CStrID RelNodePath = BoneToNode.ValueAtIndex(RemapIdx);
+		CStrID RelNodePath = BoneToNode.ValueAt(RemapIdx);
 
 		CMocapTrack& Track = *Tracks.Reserve(1);
 		Track.FirstKey = Curve.firstKeyIndex;

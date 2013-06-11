@@ -1,7 +1,7 @@
 #include "Planner.h"
 
 #include <AI/Behaviour/ActionSequence.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp

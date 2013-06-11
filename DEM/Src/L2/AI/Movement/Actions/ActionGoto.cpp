@@ -1,6 +1,6 @@
 #include "ActionGoto.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 
 namespace AI
 {

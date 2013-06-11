@@ -1,6 +1,6 @@
 #include "PerceptorOverseer.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <AI/Memory/MemFactOverseer.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <Game/GameServer.h> //???separate time source for AI?

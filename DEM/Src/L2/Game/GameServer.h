@@ -25,7 +25,8 @@ class CGameServer: public Core::CRefCounted
 protected:
 
 	bool								IsOpen;
-	nDictionary<CStrID, Data::CData>	Attrs;
+	nString								GameFileName;
+	CDataDict							Attrs;
 
 	Time::PTimeSource					GameTimeSrc;
 	PEntityManager						EntityManager;
@@ -99,7 +100,7 @@ inline void CGameServer::SetGlobalAttr(CStrID ID, const T& Value)
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) Attrs.Add(ID, Value);
-	else Attrs.ValueAtIndex(Idx).SetTypeValue(Value);
+	else Attrs.ValueAt(Idx).SetTypeValue(Value);
 }
 //---------------------------------------------------------------------
 
@@ -120,7 +121,7 @@ inline bool CGameServer::GetGlobalAttr(CStrID ID, T& Out) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
-	return Attrs.ValueAtIndex(Idx).GetValue<T>(Out);
+	return Attrs.ValueAt(Idx).GetValue<T>(Out);
 }
 //---------------------------------------------------------------------
 
@@ -130,7 +131,7 @@ inline bool CGameServer::GetGlobalAttr(CStrID ID, Data::CData& Out) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
-	Out = Attrs.ValueAtIndex(Idx);
+	Out = Attrs.ValueAt(Idx);
 	OK;
 }
 //---------------------------------------------------------------------

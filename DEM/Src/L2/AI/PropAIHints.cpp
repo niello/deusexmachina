@@ -34,7 +34,7 @@ void CPropAIHints::InternalDeactivate()
 
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
-		CRecord& Rec = Hints.ValueAtIndex(i);
+		CRecord& Rec = Hints.ValueAt(i);
 		if (Rec.pNode) GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.pNode);
 	}
 
@@ -125,7 +125,7 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 	int Idx = Hints.FindIndex(Name);
 	if (Idx != INVALID_INDEX)
 	{
-		CRecord& Rec = Hints.ValueAtIndex(Idx);
+		CRecord& Rec = Hints.ValueAt(Idx);
 		n_assert(Rec.Stimulus.IsValid());
 
 		if (Enable)
@@ -151,7 +151,7 @@ bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 	
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
-		CRecord& Rec = Hints.ValueAtIndex(i);
+		CRecord& Rec = Hints.ValueAt(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
 		if (Rec.pNode) GetEntity()->GetLevel().GetAI()->UpdateStimulusLocation(Rec.pNode);
 	}
@@ -169,7 +169,7 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
-		CRecord& Rec = Hints.ValueAtIndex(i);
+		CRecord& Rec = Hints.ValueAt(i);
 
 		if (Rec.pNode) //???else draw grey or more pale/transparent sphere?
 		{

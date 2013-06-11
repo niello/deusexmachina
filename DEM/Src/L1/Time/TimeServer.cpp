@@ -28,23 +28,17 @@ void CTimeServer::Open()
 	n_assert(!_IsOpen);
 	_IsOpen = true;
 
-	// ResetTime
-	QueryPerformanceCounter((LARGE_INTEGER*)&(BasePerfTime));
+	QueryPerformanceCounter((LARGE_INTEGER*)&(BasePerfTime)); // Resets time
 
 	PrevTime = 0;
 	Time = 0;
-
-	SUBSCRIBE_PEVENT(OnLoad, CTimeServer, OnLoad);
-	SUBSCRIBE_PEVENT(OnSave, CTimeServer, OnSave);
 }
 //---------------------------------------------------------------------
 
 void CTimeServer::Close()
 {
-	UNSUBSCRIBE_EVENT(OnLoad);
-	UNSUBSCRIBE_EVENT(OnSave);
-
 	TimeSources.Clear();
+	Timers.Clear();
 
 	n_assert(_IsOpen);
 	_IsOpen = false;
@@ -77,67 +71,47 @@ void CTimeServer::RemoveTimeSource(CStrID Name)
 }
 //---------------------------------------------------------------------
 
-// Checks whether the TimeSources table exists in the database, if yes invokes OnLoad() on all time sources
-bool CTimeServer::OnLoad(const Events::CEventBase& Event)
+void CTimeServer::Save(Data::CParams& TimeParams)
 {
-	/*
-#ifndef _EDITOR
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-
-	int Idx = pDB->FindTableIndex("TimeSources");
-	if (Idx != INVALID_INDEX)
+	if (TimeSources.GetCount())
 	{
-		DB::PDataset DS = pDB->GetTable(Idx)->CreateDataset();
-		DS->AddColumnsFromTable();
-		DS->PerformQuery();
-		for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
+		Data::PParams SGTimeSrcs = n_new(Data::CParams);
+		for (int i = 0; i < TimeSources.GetCount(); ++i)
 		{
-			DS->SetRowIndex(i);
-			CTimeSource* Src = GetTimeSource(CStrID(DS->Get<nString>(CStrID("TimeSourceID")).CStr()));
+			CTimeSource* pSrc = TimeSources.ValueAt(i);
+			Data::PParams SGTimeSrc = n_new(Data::CParams);
+			SGTimeSrc->Set(CStrID("Time"), (float)pSrc->GetTime());
+			SGTimeSrc->Set(CStrID("Factor"), pSrc->GetFactor());
+			SGTimeSrc->Set(CStrID("FrameID"), (int)pSrc->GetFrameID());
+			SGTimeSrc->Set(CStrID("PauseCount"), pSrc->GetPauseCount());
+			SGTimeSrcs->Set(TimeSources.KeyAt(i), SGTimeSrc);
 		}
+		TimeParams.Set(CStrID("TimeSources"), SGTimeSrcs);
 	}
-	else ResetAll(); //!!!check if it is needed! (added by me, see state handlers)	
-#endif
-*/
 
-	OK;
+	if (Timers.GetCount())
+	{
+		Data::PParams SGTimers = n_new(Data::CParams);
+		for (int i = 0; i < Timers.GetCount(); ++i)
+		{
+			CTimer& Timer = Timers.ValueAt(i);
+			Data::PParams SGTimer = n_new(Data::CParams);
+			SGTimer->Set(CStrID("Time"), Timer.Time);
+			SGTimer->Set(CStrID("CurrTime"), Timer.CurrTime);
+			SGTimer->Set(CStrID("Loop"), Timer.Loop);
+			SGTimer->Set(CStrID("Active"), Timer.Active);
+			if (Timer.TimeSrc.IsValid())
+				SGTimer->Set(CStrID("TimeSrc"), Timer.TimeSrc);
+			SGTimer->Set(CStrID("EventID"), Timer.EventID);
+			SGTimers->Set(Timers.KeyAt(i), SGTimer);
+		}
+		TimeParams.Set(CStrID("Timers"), SGTimers);
+	}
 }
 //---------------------------------------------------------------------
 
-// Ask all time sources to save their status to the database.
-bool CTimeServer::OnSave(const Events::CEventBase& Event)
+void CTimeServer::Load(const Data::CParams& TimeParams)
 {
-/*
-#ifndef _EDITOR
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-
-	DB::PTable Tbl;
-	int Idx = pDB->FindTableIndex("TimeSources");
-	if (Idx == INVALID_INDEX)
-	{
-		Tbl = DB::CTable::CreateInstance();
-		Tbl->SetName("TimeSources");
-		Tbl->AddColumn(DB::CColumn(Attr::TimeSourceID, DB::CColumn::Primary));
-		Tbl->AddColumn(Attr::TimeSourceTime);
-		Tbl->AddColumn(Attr::TimeSourceFactor);
-		Tbl->AddColumn(Attr::TimeSourceFrameID);
-		pDB->AddTable(Tbl);
-	}
-	else Tbl = pDB->GetTable(Idx);
-
-	DB::PDataset DS = Tbl->CreateDataset();
-	DS->AddColumnsFromTable();
-	//for (int i = 0; i < TimeSources.GetCount(); i++)
-	//	TimeSources.ValueAtIndex(i)->OnSave(DS);
-	//pVT->Set<nString>(Attr::TimeSourceID, GetClassName());
-	//pVT->Set<float>(Attr::TimeSourceTime, float(Time));
-	//pVT->Set<float>(Attr::TimeSourceFactor, TimeFactor);
-	//pVT->Set<int>(Attr::TimeSourceFrameID, FrameId);
-	DS->CommitChanges();
-#endif
-*/
-
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -177,11 +151,11 @@ void CTimeServer::Trigger()
 	Time += FrameTime;
 
 	for (int i = 0; i < TimeSources.GetCount(); i++)
-		TimeSources.ValueAtIndex(i)->Update(FrameTime);
+		TimeSources.ValueAt(i)->Update(FrameTime);
 
 	for (int i = 0; i < Timers.GetCount(); i++)
 	{
-		CTimer& Timer = Timers.ValueAtIndex(i);
+		CTimer& Timer = Timers.ValueAt(i);
 		if (Timer.Active && !IsPaused(Timer.TimeSrc))
 		{
 			Timer.CurrTime += (float)GetFrameTime(Timer.TimeSrc);
@@ -189,7 +163,7 @@ void CTimeServer::Trigger()
 			{
 				//!!!???pre-create params once per timer?!
 				Data::PParams P = n_new(Data::CParams);
-				P->Set(CStrID("Name"), nString(Timers.KeyAtIndex(i).CStr()));
+				P->Set(CStrID("Name"), nString(Timers.KeyAt(i).CStr()));
 				EventMgr->FireEvent(Timer.EventID, P);
 				if (Timer.Loop) Timer.CurrTime -= Timer.Time;
 				else
@@ -221,50 +195,3 @@ void CTimeServer::LockFrameRate(nTime DesiredFrameTime)
 //---------------------------------------------------------------------
 
 }
-
-/*
-bool stopped;
-LONGLONG time_stop;
-
-void ResetTime()
-{
-	LockTime = 0.0;
-	QueryPerformanceCounter((LARGE_INTEGER*)&(BasePerfTime));
-}
-
-void
-nTimeServer::SetTime(double t)
-{
-    LockTime = t;
-
-    LONGLONG PerfFreq;
-    QueryPerformanceFrequency((LARGE_INTEGER*)&PerfFreq);
-    LONGLONG td = (LONGLONG)(t * ((double)PerfFreq));
-    QueryPerformanceCounter((LARGE_INTEGER*)&(BasePerfTime));
-    time_stop = BasePerfTime;
-    BasePerfTime -= td;
-}
-
-void
-nTimeServer::StopTime()
-{
-    if (!stopped)
-    {
-        stopped = true;
-        QueryPerformanceCounter((LARGE_INTEGER*)&(time_stop));
-    }
-}
-
-void
-nTimeServer::StartTime()
-{
-    if (stopped)
-    {
-        stopped = false;
-        LONGLONG PerfTime, td;
-        QueryPerformanceCounter((LARGE_INTEGER*)&PerfTime);
-        td = PerfTime - time_stop;
-        BasePerfTime += td;
-    }
-}
-*/

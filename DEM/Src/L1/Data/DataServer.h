@@ -58,7 +58,7 @@ public:
 inline CDataScheme* CDataServer::GetDataScheme(CStrID ID)
 {
 	int Idx = DataSchemes.FindIndex(ID);
-	return Idx != INVALID_INDEX ? DataSchemes.ValueAtIndex(Idx) : NULL;
+	return Idx != INVALID_INDEX ? DataSchemes.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 

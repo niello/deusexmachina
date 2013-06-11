@@ -1,7 +1,7 @@
 #include "MotorSystem.h"
 
 #include <AI/AIServer.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Render/DebugDraw.h>
 #include <DetourObstacleAvoidance.h>

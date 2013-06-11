@@ -55,7 +55,7 @@ public:
 inline PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
 {
 	int Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? Actions.ValueAtIndex(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? Actions.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ inline bool CPropSmartObject::IsActionEnabled(CStrID ID) const
 {
 	//???check is in this state?
 	int Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) && Actions.ValueAtIndex(Idx)->Enabled;
+	return (Idx != INVALID_INDEX) && Actions.ValueAt(Idx)->Enabled;
 }
 //---------------------------------------------------------------------
 

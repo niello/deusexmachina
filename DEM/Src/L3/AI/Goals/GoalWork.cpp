@@ -1,7 +1,7 @@
 #include "GoalWork.h"
 
-#include <AI/Prop/PropActorBrain.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropActorBrain.h>
+#include <AI/PropSmartObject.h>
 #include <AI/Perception/Stimulus.h>
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Memory/MemFactOverseer.h>
@@ -59,7 +59,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 
 			//!!!check not only HasAction, but also is action available for this actor in this SO state now!
 
-			CStrID CurrAction = WorkActionMap.ValueAtIndex(Idx);
+			CStrID CurrAction = WorkActionMap.ValueAt(Idx);
 			if (pSOFact->Confidence > Relevance && pSO->HasAction(CurrAction))
 			{
 				pBest = pSOFact;

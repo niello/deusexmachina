@@ -1,6 +1,6 @@
 #include "ActionFaceTarget.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <Game/EntityManager.h>
 
 namespace AI

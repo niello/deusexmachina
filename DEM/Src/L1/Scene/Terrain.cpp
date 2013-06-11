@@ -131,7 +131,7 @@ bool CTerrain::OnAdd()
 
 	for (int i = 0; i < ShaderVars.GetCount(); ++i)
 	{
-		CShaderVar& Var = ShaderVars.ValueAtIndex(i);
+		CShaderVar& Var = ShaderVars.ValueAt(i);
 		if (Var.Value.IsA<PTexture>())
 		{
 			PTexture Tex = Var.Value.GetValue<PTexture>();

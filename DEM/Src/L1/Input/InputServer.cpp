@@ -104,7 +104,7 @@ CControlLayout* CInputServer::GetControlLayout(CStrID Name)
 {
 	int Idx = Layouts.FindIndex(Name);
 	if (Idx == INVALID_INDEX) return LoadControlLayout(Name);
-	else return Layouts.ValueAtIndex(Idx);
+	else return Layouts.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 
@@ -158,8 +158,8 @@ bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 {
 	if (DisableOthers)
 		for (int i = 0; i < Contexts.GetCount(); ++i)
-			if (Contexts.KeyAtIndex(i) != Context)
-				Contexts.ValueAtIndex(i)->Disable();
+			if (Contexts.KeyAt(i) != Context)
+				Contexts.ValueAt(i)->Disable();
 
 	PControlLayout* ppCtx = Contexts.Get(Context);
 	if (ppCtx)

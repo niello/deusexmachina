@@ -16,7 +16,7 @@ void CNebula2ResourceProvider::loadRawDataContainer(const String& filename, RawD
 	else
 	{
 		int Idx = ResourceGroups.FindIndex(resourceGroup);
-		if (Idx != -1) FinalFilename = ResourceGroups.ValueAtIndex(Idx) + filename;
+		if (Idx != -1) FinalFilename = ResourceGroups.ValueAt(Idx) + filename;
 		else FinalFilename = filename;
 	}
 
@@ -79,7 +79,7 @@ size_t CNebula2ResourceProvider::getResourceGroupFileNames(std::vector<String>& 
 	else
 	{
 		int Idx = ResourceGroups.FindIndex(resource_group);
-		if (Idx != -1) DirName = ResourceGroups.ValueAtIndex(Idx);
+		if (Idx != -1) DirName = ResourceGroups.ValueAt(Idx);
 		else DirName = "./";
 	}
 

@@ -41,7 +41,7 @@ bool CShader::Setup(ID3DXEffect* pFX)
 
 	// It is good for pass and batch shaders with only one tech
 	// It seems, pass shaders use the only tech without setting it
-	//n_assert(SetTech(FlagsToTech.ValueAtIndex(0)));
+	//n_assert(SetTech(FlagsToTech.ValueAt(0)));
 
 	for (UINT i = 0; i < Desc.Parameters; ++i)
 	{

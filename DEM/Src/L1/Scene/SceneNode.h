@@ -77,7 +77,7 @@ public:
 
 	CSceneNode*				GetParent() const { return pParent; }
 	DWORD					GetChildCount() const { return Child.GetCount(); }
-	CSceneNode*				GetChild(DWORD Idx) const { return Child.ValueAtIndex(Idx); }
+	CSceneNode*				GetChild(DWORD Idx) const { return Child.ValueAt(Idx); }
 	//???create and non-create () const; versions?
 	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
 	CSceneNode*				GetChild(LPCSTR Path, bool Create = false);

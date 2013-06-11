@@ -1,7 +1,7 @@
 #include "ActionGotoSmartObj.h"
 
-#include <AI/Prop/PropActorBrain.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropActorBrain.h>
+#include <AI/PropSmartObject.h>
 #include <Game/EntityManager.h>
 
 namespace AI

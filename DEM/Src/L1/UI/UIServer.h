@@ -117,7 +117,7 @@ public:
 inline CWindow* CUIServer::GetScreen(CStrID Name) const
 {
 	int Idx = Screens.FindIndex(Name);
-	return Idx != INVALID_INDEX ? Screens.ValueAtIndex(Idx) : NULL;
+	return Idx != INVALID_INDEX ? Screens.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 

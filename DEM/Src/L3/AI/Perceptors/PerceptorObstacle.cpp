@@ -1,6 +1,6 @@
 #include "PerceptorObstacle.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <Game/GameServer.h> //???separate time source for AI?

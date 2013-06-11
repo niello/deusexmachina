@@ -60,9 +60,9 @@ public:
 	void			Clear() { Pairs.Clear(); IsInBeginAdd = false; }
 	bool			IsEmpty() const { return !Pairs.GetCount(); }
 
-	const TKey&		KeyAtIndex(int Idx) const { return Pairs[Idx].GetKey(); }
-	TValue&			ValueAtIndex(int Idx) { return Pairs[Idx].GetValue(); }
-	const TValue&	ValueAtIndex(int Idx) const { return Pairs[Idx].GetValue(); }
+	const TKey&		KeyAt(int Idx) const { return Pairs[Idx].GetKey(); }
+	TValue&			ValueAt(int Idx) { return Pairs[Idx].GetValue(); }
+	const TValue&	ValueAt(int Idx) const { return Pairs[Idx].GetValue(); }
 
 	void			CopyToArray(nArray<TValue>& Out) const;
 
@@ -115,7 +115,7 @@ void nDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
 	n_assert(!IsInBeginAdd);
 	int Idx = Pairs.BinarySearchIndex(Key);
 	if (Idx == -1) Add(Key, Value);
-	else ValueAtIndex(Idx) = Value;
+	else ValueAt(Idx) = Value;
 }
 //---------------------------------------------------------------------
 

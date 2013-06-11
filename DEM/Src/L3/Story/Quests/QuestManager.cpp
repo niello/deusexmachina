@@ -128,8 +128,8 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	}
 	else
 	{
-		Quest = Quests.ValueAtIndex(Idx).Quest;
-		n_assert(Quests.ValueAtIndex(Idx).Status == CQuest::Opened);
+		Quest = Quests.ValueAt(Idx).Quest;
+		n_assert(Quests.ValueAt(Idx).Status == CQuest::Opened);
 	}
 
 	if (TaskID == CStrID::Empty) 
@@ -176,9 +176,9 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 	int Idx = Quests.FindIndex(QuestID);
 	if (Idx == INVALID_INDEX) FAIL;
 
-	Ptr<CQuest> Quest = Quests.ValueAtIndex(Idx).Quest;
+	Ptr<CQuest> Quest = Quests.ValueAt(Idx).Quest;
 
-	if (Quests.ValueAtIndex(Idx).Status != CQuest::Opened) FAIL;
+	if (Quests.ValueAt(Idx).Status != CQuest::Opened) FAIL;
 
 	CQuest::EStatus Status = (Success) ? CQuest::Done : CQuest::Failed;
 
@@ -186,7 +186,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 	{
 		for (int i = 0; i < Quest->Tasks.GetCount(); i++)
 		{
-			CQuest::CTaskRec& Task = Quest->Tasks.ValueAtIndex(i);
+			CQuest::CTaskRec& Task = Quest->Tasks.ValueAt(i);
 			if (Task.Status == CQuest::Opened)
 			{
 				//???move to CloseTask()? see below.
@@ -207,7 +207,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 		}
 
 #ifdef _DEBUG
-		CQuest* Quest = Quests.ValueAtIndex(Idx).Quest;
+		CQuest* Quest = Quests.ValueAt(Idx).Quest;
 		n_printf("QUEST \"%s\" closed %s.\n",
 			Quest->Name.CStr(),
 			Success ? "successfully" : "with failure");
@@ -215,14 +215,14 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 		// Do not unload to access to tasks' Status now
 		//QuestsToDelete.Append(Quest);
-		//Quests.ValueAtIndex(Idx).Quest = NULL;
-		Quests.ValueAtIndex(Idx).Status = Status;
+		//Quests.ValueAt(Idx).Quest = NULL;
+		Quests.ValueAt(Idx).Status = Status;
 
 		//!!!refactor params!
 		PParams P = n_new(CParams);
 		P->Set(CStrID("IsTask"), false);
 		P->Set(CStrID("Status"), (int)Status);
-		P->Set(CStrID("Name"), Quests.ValueAtIndex(Idx).Quest->Name);
+		P->Set(CStrID("Name"), Quests.ValueAt(Idx).Quest->Name);
 		EventMgr->FireEvent(CStrID("OnQuestStatusChanged"), P, EV_ASYNC);
 		//add Story::CJournal record or it will receive event too
 
@@ -234,7 +234,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 		Idx = Quest->Tasks.FindIndex(TaskID);
 		if (Idx != INVALID_INDEX) //???&& status == opened?
 		{
-			CQuest::CTaskRec& Task = Quest->Tasks.ValueAtIndex(Idx);
+			CQuest::CTaskRec& Task = Quest->Tasks.ValueAt(Idx);
 
 			if (Task.Status != CQuest::Opened) FAIL;
 
@@ -268,16 +268,16 @@ CQuest::EStatus CQuestManager::GetQuestStatus(CStrID QuestID, CStrID TaskID)
 {
 	int Idx = Quests.FindIndex(QuestID);
 	if (Idx == INVALID_INDEX) return CQuest::No;
-	if (TaskID == CStrID::Empty) //|| Quests.ValueAtIndex(Idx).Status != CQuest::Opened)
-		return Quests.ValueAtIndex(Idx).Status;
+	if (TaskID == CStrID::Empty) //|| Quests.ValueAt(Idx).Status != CQuest::Opened)
+		return Quests.ValueAt(Idx).Status;
 	else
 	{
-		Ptr<CQuest> Quest = Quests.ValueAtIndex(Idx).Quest;
+		Ptr<CQuest> Quest = Quests.ValueAt(Idx).Quest;
 		if (Quest.IsValid())
 		{
 			Idx = Quest->Tasks.FindIndex(TaskID);
-			if (Idx != INVALID_INDEX) return Quest->Tasks.ValueAtIndex(Idx).Status;
-			else if (Quests.ValueAtIndex(Idx).Status != CQuest::Opened) return Quests.ValueAtIndex(Idx).Status;
+			if (Idx != INVALID_INDEX) return Quest->Tasks.ValueAt(Idx).Status;
+			else if (Quests.ValueAt(Idx).Status != CQuest::Opened) return Quests.ValueAt(Idx).Status;
 		}
 	}
 	return CQuest::No;
@@ -302,12 +302,12 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 
 	for (int i = 0; i < Quests.GetCount(); i++)
 	{
-		CQuestRec& QuestRec = Quests.ValueAtIndex(i);
+		CQuestRec& QuestRec = Quests.ValueAt(i);
 		QuestRec.Status = CQuest::No;
 		nDictionary<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
 		for (int j = 0; j < Tasks.GetCount(); j++)
 		{
-			CQuest::CTaskRec& TaskRec = Tasks.ValueAtIndex(j);
+			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
 			TaskRec.Status = CQuest::No;
 			TaskRec.Task->ScriptObj = NULL;
 		}
@@ -331,7 +331,7 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 			if (!LoadQuest(QuestID)) FAIL;
 			QuestRec = &Quests[QuestID];
 		}
-		else QuestRec = &Quests.ValueAtIndex(Idx);
+		else QuestRec = &Quests.ValueAt(Idx);
 
 		CStrID TaskID = DS->Get<CStrID>(Attr::TaskID);
 		if (TaskID.IsValid())
@@ -356,7 +356,7 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 	}
 
 	for (int i = Quests.GetCount() - 1; i >= 0; i--)
-		if (Quests.ValueAtIndex(i).Status == CQuest::No)
+		if (Quests.ValueAt(i).Status == CQuest::No)
 			Quests.EraseAt(i);
 */
 	OK;
@@ -396,23 +396,23 @@ bool CQuestManager::OnSave(const Events::CEventBase& Event)
 
 	for (int i = 0; i < Quests.GetCount(); i++)
 	{
-		CQuestRec& QuestRec = Quests.ValueAtIndex(i);
+		CQuestRec& QuestRec = Quests.ValueAt(i);
 		if (QuestRec.Status != CQuest::No)
 		{
 			DS->AddRow();
-			DS->Set<CStrID>(Attr::QuestID, Quests.KeyAtIndex(i));
+			DS->Set<CStrID>(Attr::QuestID, Quests.KeyAt(i));
 			DS->Set<int>(Attr::QStatus, (int)QuestRec.Status);
 			if (QuestRec.Status == CQuest::Opened)
 			{
 				nDictionary<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
 				for (int j = 0; j < Tasks.GetCount(); j++)
 				{
-					CQuest::CTaskRec& TaskRec = Tasks.ValueAtIndex(j);
+					CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
 					if (TaskRec.Status != CQuest::No)
 					{
 						DS->AddRow();
-						DS->Set<CStrID>(Attr::QuestID, Quests.KeyAtIndex(i));
-						DS->Set<CStrID>(Attr::TaskID, Tasks.KeyAtIndex(j));
+						DS->Set<CStrID>(Attr::QuestID, Quests.KeyAt(i));
+						DS->Set<CStrID>(Attr::TaskID, Tasks.KeyAt(j));
 						DS->Set<int>(Attr::QStatus, (int)TaskRec.Status);
 						if (TaskRec.Status == CQuest::Opened && TaskRec.Task->ScriptObj.IsValid())
 							TaskRec.Task->ScriptObj->SaveFields(pDB);

@@ -1,7 +1,7 @@
 #include "MemSystem.h"
 
 //#include <AI/AIServer.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <Game/GameServer.h> //???separate time source for AI?
 
 namespace AI

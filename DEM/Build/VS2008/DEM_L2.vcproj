@@ -309,46 +309,42 @@
 				RelativePath="..\..\Src\L2\AI\AIServer.h"
 				>
 			</File>
-			<Filter
-				Name="Prop"
+			<File
+				RelativePath="..\..\Src\L2\AI\PropActorBrain.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorBrain.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorBrain.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropActorBrainSI.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropAIHints.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropAIHints.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropAIHintsSI.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropSmartObject.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropSmartObject.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Prop\PropSmartObjectSI.cpp"
-					>
-				</File>
-			</Filter>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropActorBrain.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropActorBrainSI.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropAIHints.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropAIHints.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropAIHintsSI.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropSmartObject.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropSmartObject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\AI\PropSmartObjectSI.cpp"
+				>
+			</File>
 			<Filter
 				Name="Navigation"
 				>
@@ -903,7 +899,7 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Input"
+			Name="Input_OLD"
 			>
 			<File
 				RelativePath="..\..\Src\L2\Input\PropPlrCharacterInput.cpp"

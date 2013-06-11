@@ -2,7 +2,7 @@
 
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
 #include <Game/EntityManager.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropSmartObject.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp

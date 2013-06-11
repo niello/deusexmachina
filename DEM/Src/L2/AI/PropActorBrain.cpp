@@ -1,6 +1,6 @@
 #include "PropActorBrain.h"
 
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropSmartObject.h>
 #include <AI/AIServer.h>
 #include <AI/Behaviour/Action.h>
 #include <AI/Planning/GoalIdle.h>

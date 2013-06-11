@@ -16,7 +16,7 @@ void CAnimTask::Update(float FrameTime)
 	if (State == Task_Starting)
 	{
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			Ctlrs.ValueAtIndex(i)->Activate(true);
+			Ctlrs.ValueAt(i)->Activate(true);
 		State = Task_Running;
 	}
 	else if (State == Task_Running)
@@ -55,13 +55,13 @@ void CAnimTask::Update(float FrameTime)
 		float IpolFactor;
 		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CurrTime, Loop, KeyIndex, IpolFactor);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CNodeControllerMocap*)Ctlrs.ValueAtIndex(i))->SetSamplingParams(KeyIndex, IpolFactor);
+			((Anim::CNodeControllerMocap*)Ctlrs.ValueAt(i))->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 	else if (Clip->IsA<Anim::CKeyframeClip>())
 	{
 		float Time = Clip->AdjustTime(CurrTime, Loop);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CNodeControllerKeyframe*)Ctlrs.ValueAtIndex(i))->SetTime(Time);
+			((Anim::CNodeControllerKeyframe*)Ctlrs.ValueAt(i))->SetTime(Time);
 	}
 }
 //---------------------------------------------------------------------
@@ -71,7 +71,7 @@ void CAnimTask::SetPause(bool Pause)
 	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
 	if (Pause == (State == Task_Paused)) return;
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
-		Ctlrs.ValueAtIndex(i)->Activate(!Pause);
+		Ctlrs.ValueAt(i)->Activate(!Pause);
 	State = Pause ? Task_Paused : Task_Running;
 }
 //---------------------------------------------------------------------
@@ -107,8 +107,8 @@ void CAnimTask::Clear()
 	Clip = NULL;
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{
-		n_assert_dbg(Ctlrs.KeyAtIndex(i)->Controller.GetUnsafe() == Ctlrs.ValueAtIndex(i));
-		Ctlrs.KeyAtIndex(i)->Controller = NULL;
+		n_assert_dbg(Ctlrs.KeyAt(i)->Controller.GetUnsafe() == Ctlrs.ValueAt(i));
+		Ctlrs.KeyAt(i)->Controller = NULL;
 	}
 	Ctlrs.Clear();
 }

@@ -2,7 +2,7 @@
 
 #include <Items/ItemStack.h>
 #include <Items/Prop/PropInventory.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <AI/AIServer.h>
 #include <Events/EventManager.h>
 
@@ -46,12 +46,12 @@ void CPropEquipment::Save()
 
 	for (int i = 0; i < Slots.GetCount(); i++)
 	{
-		CSlot& Slot = Slots.ValueAtIndex(i);
+		CSlot& Slot = Slots.ValueAt(i);
 		if (Slot.pStack)
 		{
 			DS->AddRow();
 			DS->Set<int>(0, Slot.pStack->ID);
-			DS->Set<CStrID>(1, Slots.KeyAtIndex(i));
+			DS->Set<CStrID>(1, Slots.KeyAt(i));
 			DS->Set<int>(2, Slot.Count);
 		}
 	}
@@ -103,16 +103,16 @@ bool CPropEquipment::Equip(CStrID Slot, CItemStack* pStack, WORD Count)
 	if (Slot.IsValid())
 	{
 		int Idx = Slots.FindIndex(Slot);
-		if (Idx != INVALID_INDEX && Slots.ValueAtIndex(Idx).Type == pStack->GetTpl()->GetType())
-			pSlot = &Slots.ValueAtIndex(Idx);
+		if (Idx != INVALID_INDEX && Slots.ValueAt(Idx).Type == pStack->GetTpl()->GetType())
+			pSlot = &Slots.ValueAt(Idx);
 	}
 	else
 	{
 		// Find any appropriate slot
 		for (int i = 0; i < Slots.GetCount(); ++i)
-			if (Slots.ValueAtIndex(i).Type == pStack->GetTpl()->GetType())
+			if (Slots.ValueAt(i).Type == pStack->GetTpl()->GetType())
 			{
-				pSlot = &Slots.ValueAtIndex(i);
+				pSlot = &Slots.ValueAt(i);
 				break;
 			}
 	}

@@ -1,6 +1,6 @@
 #include "PropWeapon.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <Combat/Event/ObjDamageDone.h>
 #include <AI/AIServer.h>
 #include <Game/EntityManager.h>

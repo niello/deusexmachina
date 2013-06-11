@@ -85,7 +85,7 @@ bool CBone::OnAdd()
 				pPalette->SetGrowSize(1);
 				Var.Bind(*pModel->Material->GetShader());
 			}
-			else pPalette = &pModel->ShaderVars.ValueAtIndex(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
+			else pPalette = &pModel->ShaderVars.ValueAt(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
 
 			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &SkinMatrix;
@@ -124,7 +124,7 @@ void CBone::OnRemove()
 			CModel* pModel = (CModel*)pAttr;
 			int PaletteIdx = pModel->ShaderVars.FindIndex(sidJointPalette);
 			if (PaletteIdx == INVALID_INDEX) continue;
-			CMatrixPtrArray* pPalette = &pModel->ShaderVars.ValueAtIndex(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
+			CMatrixPtrArray* pPalette = &pModel->ShaderVars.ValueAt(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
 
 			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &matrix44::identity;
