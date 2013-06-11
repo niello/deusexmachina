@@ -120,21 +120,21 @@ inline DWORD CShader::Begin(bool SaveState)
 inline CShader::HTech CShader::GetTechByFeatures(DWORD FeatureFlags) const
 {
 	int Idx = FlagsToTech.FindIndex(FeatureFlags);
-	return(Idx == INVALID_INDEX) ? NULL : FlagsToTech.ValueAtIndex(Idx);
+	return(Idx == INVALID_INDEX) ? NULL : FlagsToTech.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 
 inline CShader::HVar CShader::GetVarHandleByName(CStrID Name) const
 {
 	int Idx = NameToHVar.FindIndex(Name);
-	return (Idx == INVALID_INDEX) ? NULL : NameToHVar.ValueAtIndex(Idx);
+	return (Idx == INVALID_INDEX) ? NULL : NameToHVar.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 
 inline CShader::HVar CShader::GetVarHandleBySemantic(CStrID Semantic) const
 {
 	int Idx = NameToHVar.FindIndex(Semantic);
-	return (Idx == INVALID_INDEX) ? NULL : SemanticToHVar.ValueAtIndex(Idx);
+	return (Idx == INVALID_INDEX) ? NULL : SemanticToHVar.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

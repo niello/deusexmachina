@@ -17,12 +17,16 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, Data::PParams Desc
 	if (!Desc.IsValid()) OK;
 
 	Data::PParams SubDesc;
-	if (Desc->Get(SubDesc, CStrID("Attrs")))
+	if (Desc->Get(SubDesc, CStrID("Attrs")) && SubDesc->GetCount())
+	{
+		Entity->BeginNewAttrs(SubDesc->GetCount());
 		for (int i = 0; i < SubDesc->GetCount(); ++i)
 		{
 			const Data::CParam& Attr = SubDesc->Get(i);
-			Entity->SetAttr(Attr.GetName(), Attr.GetRawValue());
+			Entity->AddNewAttr(Attr.GetName(), Attr.GetRawValue());
 		}
+		Entity->EndNewAttrs();
+	}
 
 	Data::PDataArray Props;
 	if (Desc->Get(Props, CStrID("Props")))

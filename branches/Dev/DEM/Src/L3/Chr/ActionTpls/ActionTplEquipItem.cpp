@@ -1,6 +1,6 @@
 #include "ActionTplEquipItem.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <Chr/Prop/PropEquipment.h>
 #include <Chr/Actions/ActionEquipItem.h>
 

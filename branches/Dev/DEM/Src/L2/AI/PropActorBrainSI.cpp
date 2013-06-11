@@ -4,7 +4,7 @@
 #include <Scripting/EntityScriptObject.h>
 #include <Game/EntityManager.h>
 #include <AI/Events/QueueTask.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropSmartObject.h>
 #include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
 #include <AI/Movement/Tasks/TaskGoto.h>
 

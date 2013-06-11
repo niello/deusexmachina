@@ -156,7 +156,7 @@ PDialogue CDialogueManager::GetDialogue(const nString& Name) //???CStrID identif
 {
 	CStrID SID = CStrID(Name.CStr());
 	int Idx = DlgRegistry.FindIndex(SID);
-	if (Idx > -1) return DlgRegistry.ValueAtIndex(Idx);
+	if (Idx > -1) return DlgRegistry.ValueAt(Idx);
 	else
 	{
 		PParams Desc = DataSrv->LoadPRM(nString("dlg:") + Name + ".prm", false);

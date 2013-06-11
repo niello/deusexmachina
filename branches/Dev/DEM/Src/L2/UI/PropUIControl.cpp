@@ -3,8 +3,8 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <AI/Events/QueueTask.h>
-#include <AI/Prop/PropActorBrain.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropActorBrain.h>
+#include <AI/PropSmartObject.h>
 #include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
 #include <Physics/PhysicsServer.h>
 #include <Scene/PropSceneNode.h>
@@ -155,8 +155,8 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 
 	for (int i = 0; i < SOActions.GetCount(); ++i)
 	{
-		CStrID ID = SOActions.KeyAtIndex(i);
-		PSmartObjAction Act = SOActions.ValueAtIndex(i);
+		CStrID ID = SOActions.KeyAt(i);
+		PSmartObjAction Act = SOActions.ValueAt(i);
 		if (Act.IsValid() && Act->AppearsInUI)
 		{
 			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<nString>(ID, nString::Empty).CStr() : NULL;

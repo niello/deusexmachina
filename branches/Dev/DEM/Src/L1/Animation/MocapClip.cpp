@@ -55,7 +55,7 @@ void CMocapClip::Unload()
 Scene::PNodeController CMocapClip::CreateController(DWORD SamplerIdx) const
 {
 	Anim::PNodeControllerMocap Ctlr = n_new(Anim::CNodeControllerMocap);
-	Ctlr->SetSampler(&Samplers.ValueAtIndex(SamplerIdx));
+	Ctlr->SetSampler(&Samplers.ValueAt(SamplerIdx));
 	return Ctlr.GetUnsafe();
 }
 //---------------------------------------------------------------------

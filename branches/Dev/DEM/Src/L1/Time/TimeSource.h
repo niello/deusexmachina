@@ -38,6 +38,7 @@ public:
 	void	Unpause() { if (PauseCounter > 0) --PauseCounter; }
 	void	ForceUnpause() { PauseCounter = 0; }
 	bool	IsPaused() const { return (PauseCounter > 0); }
+	int		GetPauseCount() const { return PauseCounter; }
 
 	void	SetFactor(float Factor) { n_assert(Factor > 0.f); TimeFactor = Factor; }
 	float	GetFactor() const { return TimeFactor; }

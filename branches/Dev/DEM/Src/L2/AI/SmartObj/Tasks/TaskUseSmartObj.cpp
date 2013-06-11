@@ -1,7 +1,7 @@
 #include "TaskUseSmartObj.h"
 
-#include <AI/Prop/PropActorBrain.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropActorBrain.h>
+#include <AI/PropSmartObject.h>
 #include <AI/Behaviour/ActionSequence.h>
 #include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>

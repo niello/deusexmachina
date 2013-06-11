@@ -16,9 +16,9 @@ CEntityManager::~CEntityManager()
 	// We don't need to deactivate and detach properties, DeleteAllEntities deleted all prop instances.
 	for (int i = 0; i < PropStorages.GetCount(); ++i)
 	{
-		n_assert_dbg(!(*PropStorages.ValueAtIndex(i))->GetCount());
-		n_delete(*PropStorages.ValueAtIndex(i));
-		*PropStorages.ValueAtIndex(i) = NULL;
+		n_assert_dbg(!(*PropStorages.ValueAt(i))->GetCount());
+		n_delete(*PropStorages.ValueAt(i));
+		*PropStorages.ValueAt(i) = NULL;
 	}
 	PropStorages.Clear();
 
@@ -71,7 +71,7 @@ void CEntityManager::DeleteEntity(int Idx)
 
 	// Remove all properties of this entity
 	for (int i = 0; i < PropStorages.GetCount(); ++i)
-		(*PropStorages.ValueAtIndex(i))->Erase(Entity.GetUID());
+		(*PropStorages.ValueAt(i))->Erase(Entity.GetUID());
 
 	UIDToEntity.Erase(Entity.GetUID());
 	Entities.EraseAt(Idx);
@@ -98,7 +98,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 		int Idx = PropStorages.FindIndex(pRTTI);
 		if (Idx != INVALID_INDEX)
 		{
-			pStorage = *PropStorages.ValueAtIndex(Idx);
+			pStorage = *PropStorages.ValueAt(Idx);
 			break;
 		}
 		pCurrRTTI = pCurrRTTI->GetParent();
@@ -123,7 +123,7 @@ void CEntityManager::RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const
 	int Idx = PropStorages.FindIndex(&Type);
 	n_assert2_dbg(Idx != INVALID_INDEX, (nString("Property ") + Type.GetName() + " is not registered!").CStr());
 	if (Idx == INVALID_INDEX) return;
-	CPropertyStorage* pStorage = *PropStorages.ValueAtIndex(Idx);
+	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);
 	pStorage->Erase(Entity.GetUID());
 }
@@ -134,7 +134,7 @@ CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 	if (SearchInAliases)
 	{
 		int Idx = Aliases.FindIndex(UID);
-		if (Idx != INVALID_INDEX) UID = Aliases.ValueAtIndex(Idx);
+		if (Idx != INVALID_INDEX) UID = Aliases.ValueAt(Idx);
 	}
 
 	CEntity* pEnt = NULL;

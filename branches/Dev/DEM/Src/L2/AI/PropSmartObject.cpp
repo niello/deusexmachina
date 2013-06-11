@@ -84,7 +84,7 @@ bool CPropSmartObject::SetState(CStrID ID)
 void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 {
 	int Idx = Actions.FindIndex(ID);
-	if (Idx != INVALID_INDEX) Actions.ValueAtIndex(Idx)->Enabled = Enable;
+	if (Idx != INVALID_INDEX) Actions.ValueAt(Idx)->Enabled = Enable;
 
 	PParams P = n_new(CParams(2));
 	P->Set(CStrID("ActionID"), ID);

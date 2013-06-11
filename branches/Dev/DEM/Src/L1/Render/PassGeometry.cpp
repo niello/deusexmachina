@@ -28,7 +28,7 @@ void CPassGeometry::Render(const nArray<Scene::CRenderObject*>* pObjects, const 
 	if (Shader.IsValid())
 	{
 		for (int i = 0; i < ShaderVars.GetCount(); ++i)
-			ShaderVars.ValueAtIndex(i).Apply(*Shader.GetUnsafe());
+			ShaderVars.ValueAt(i).Apply(*Shader.GetUnsafe());
 		n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
 		Shader->BeginPass(0);
 	}

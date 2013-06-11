@@ -337,7 +337,7 @@ void CTerrainRenderer::Render()
 	CShader::HTech hCurrTech = NULL;
 
 	for (int i = 0; i < ShaderVars.GetCount(); ++i)
-		ShaderVars.ValueAtIndex(i).Apply(*Shader.GetUnsafe());
+		ShaderVars.ValueAt(i).Apply(*Shader.GetUnsafe());
 
 	RenderSrv->SetVertexLayout(FinalVertexLayout);
 
@@ -451,7 +451,7 @@ void CTerrainRenderer::Render()
 
 		for (int VarIdx = 0; VarIdx < Terrain.ShaderVars.GetCount(); ++VarIdx)
 		{
-			CShaderVar& Var = Terrain.ShaderVars.ValueAtIndex(VarIdx);
+			CShaderVar& Var = Terrain.ShaderVars.ValueAt(VarIdx);
 			if (!Var.IsBound()) Var.Bind(*Shader);
 			if (Var.IsBound()) n_assert(Var.Apply(*Shader));
 		}
@@ -531,7 +531,7 @@ CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
 		Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.CStr()));
 		PatchMeshes.Add(Size, Patch.Get());
 	}
-	else Patch = PatchMeshes.ValueAtIndex(Idx);
+	else Patch = PatchMeshes.ValueAt(Idx);
 
 	if (!Patch->IsLoaded())
 	{

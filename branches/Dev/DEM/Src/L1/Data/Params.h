@@ -56,6 +56,8 @@ public:
 	void						Clear() { Params.Clear(); }
 
 	void						Merge(const CParams& Other, int Method);
+	void						Diff(CParams& OutDiff, const CParams& ChangedData) const;
+	void						Diff(CParams& OutDiff, const CDataDict& ChangedData) const;
 
 	//???also/instead of this: return CData? or even template class
 	const CParam&				operator [](CStrID Name) const { return Get(Name); }

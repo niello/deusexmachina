@@ -42,7 +42,7 @@ T CDynamicEnumT<T>::GetMask(const nString& FlagStr)
 	{
 		CStrID Flag = CStrID(FlagsToFind[i].CStr());
 		int Idx = Flags.FindIndex(Flag);
-		if (Idx != INVALID_INDEX) Mask |= Flags.ValueAtIndex(Idx);
+		if (Idx != INVALID_INDEX) Mask |= Flags.ValueAt(Idx);
 		else
 		{
 			if (BitsUsed >= sizeof(T) * 8)

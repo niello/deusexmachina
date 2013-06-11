@@ -27,7 +27,7 @@ int CPropEquipment_GetEquippedItemID(lua_State* l)
 	if (Idx == INVALID_INDEX) lua_pushnil(l);
 	else
 	{
-		CItemStack* pStack = Slots.ValueAtIndex(Idx).pStack;
+		CItemStack* pStack = Slots.ValueAt(Idx).pStack;
 		if (pStack) lua_pushstring(l, pStack->GetItemID().CStr());
 		else lua_pushnil(l);
 	}

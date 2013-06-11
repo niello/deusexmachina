@@ -54,7 +54,7 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 	{
 		//!!!correctly serialize \n, \t etc!
 		WRITE_STATIC_STRING("'")
-		if (WriteCharString(Value.GetValue<CStrID>().CStr())) FAIL;
+		if (!WriteCharString(Value.GetValue<CStrID>().CStr())) FAIL;
 		WRITE_STATIC_STRING("'")
 	}
 	else if (Value.IsA<vector4>())

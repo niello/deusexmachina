@@ -55,9 +55,9 @@ public:
 	void		RemoveElement(CElement* pElement);
 
 	int			GetListCount() const { return Lists.GetCount(); }
-	TKey		GetKeyAt(int Idx) const { return Lists.KeyAtIndex(Idx); }
+	TKey		GetKeyAt(int Idx) const { return Lists.KeyAt(Idx); }
 	CElement*	GetHead(TKey Key) const;
-	CElement*	GetHeadAt(int Idx) const { return Lists.ValueAtIndex(Idx)->GetHead(); }
+	CElement*	GetHeadAt(int Idx) const { return Lists.ValueAt(Idx)->GetHead(); }
 
 	//int		GetTotalCount() const { return TotalCount; }
 };
@@ -68,7 +68,7 @@ CLinkedListSet<TKey,TObject>::~CLinkedListSet()
 {
 	for (int i = 0; i < Lists.GetCount(); ++i)
 	{
-		nObjectList<TObject>* pList = Lists.ValueAtIndex(i);
+		nObjectList<TObject>* pList = Lists.ValueAt(i);
 		CElement* pNode;
 		while (pNode = pList->RemHead()) n_delete(pNode);
 		n_delete(pList);
@@ -89,7 +89,7 @@ typename CLinkedListSet<TKey, TObject>::CElement* CLinkedListSet<TKey,TObject>::
 		pList = n_new(nObjectList<TObject>);
 		Lists.Add(Key, pList);
 	}
-	else pList = Lists.ValueAtIndex(Idx);
+	else pList = Lists.ValueAt(Idx);
 
 	CElement* pNode = n_new(CElement)(Object);
 	pList->AddTail(pNode);
@@ -104,7 +104,7 @@ bool CLinkedListSet<TKey, TObject>::RemoveByValue(const TObject& Object)
 	int Idx = Lists.FindIndex(Key);
 	if (Idx != INVALID_INDEX)
 	{
-		for (CElement* pCurr = Lists.ValueAtIndex(Idx)->GetHead(); pCurr; pCurr = pCurr->GetSucc())
+		for (CElement* pCurr = Lists.ValueAt(Idx)->GetHead(); pCurr; pCurr = pCurr->GetSucc())
 			if (pCurr->Object == Object)
 			{
 				pCurr->Remove();
@@ -129,7 +129,7 @@ template<class TKey, class TObject>
 inline typename CLinkedListSet<TKey, TObject>::CElement* CLinkedListSet<TKey, TObject>::GetHead(TKey Key) const
 {	
 	int Idx = Lists.FindIndex(Key);
-	return (Idx != INVALID_INDEX) ? Lists.ValueAtIndex(Idx)->GetHead() : NULL;
+	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->GetHead() : NULL;
 }
 //---------------------------------------------------------------------
 

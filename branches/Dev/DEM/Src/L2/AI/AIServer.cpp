@@ -44,10 +44,10 @@ CAIServer::CAIServer()
 CAIServer::~CAIServer()
 {
 	for (int i = 0; i < NavQueryFilters.GetCount(); ++i)
-		n_delete(NavQueryFilters.ValueAtIndex(i));
+		n_delete(NavQueryFilters.ValueAt(i));
 
 	for (int i = 0; i < ObstacleAvoidanceParams.GetCount(); ++i)
-		n_delete(ObstacleAvoidanceParams.ValueAtIndex(i));
+		n_delete(ObstacleAvoidanceParams.ValueAt(i));
 
 	__DestructSingleton;
 }
@@ -69,7 +69,7 @@ void CAIServer::AddSmartObjActionTpl(CStrID ID, const CParams& Desc)
 const CSmartObjActionTpl* CAIServer::GetSmartObjActionTpl(CStrID ID) const
 {
 	int Idx = SOActTpls.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAtIndex(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 

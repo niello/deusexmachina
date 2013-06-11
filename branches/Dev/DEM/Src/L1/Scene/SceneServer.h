@@ -59,7 +59,7 @@ inline void CSceneServer::AddFrameShader(CStrID ID, Render::PFrameShader FrameSh
 inline Render::CFrameShader* CSceneServer::GetScreenFrameShader() const
 {
 	int Idx = FrameShaders.FindIndex(ScreenFrameShaderID);
-	return (Idx != INVALID_INDEX) ? FrameShaders.ValueAtIndex(Idx).GetUnsafe() : NULL;
+	return (Idx != INVALID_INDEX) ? FrameShaders.ValueAt(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

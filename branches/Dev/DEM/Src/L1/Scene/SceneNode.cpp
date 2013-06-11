@@ -64,8 +64,8 @@ void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 	else Flags.Clear(WorldMatrixUpdated);
 
 	for (int i = 0; i < Child.GetCount(); ++i)
-		if (Child.ValueAtIndex(i)->IsActive())
-			Child.ValueAtIndex(i)->UpdateLocalSpace(UpdateWorldMatrix);
+		if (Child.ValueAt(i)->IsActive())
+			Child.ValueAt(i)->UpdateLocalSpace(UpdateWorldMatrix);
 }
 //---------------------------------------------------------------------
 
@@ -94,8 +94,8 @@ void CSceneNode::UpdateWorldSpace()
 			Attrs[i]->Update();
 
 	for (int i = 0; i < Child.GetCount(); ++i)
-		if (Child.ValueAtIndex(i)->IsActive())
-			Child.ValueAtIndex(i)->UpdateWorldSpace();
+		if (Child.ValueAt(i)->IsActive())
+			Child.ValueAt(i)->UpdateWorldSpace();
 }
 //---------------------------------------------------------------------
 
@@ -105,7 +105,7 @@ void CSceneNode::RenderDebug()
 		DebugDraw->DrawLine(pParent->WorldMatrix.Translation(), WorldMatrix.Translation(), vector4::White);
 
 	for (int i = 0; i < Child.GetCount(); ++i)
-		Child.ValueAtIndex(i)->RenderDebug();
+		Child.ValueAt(i)->RenderDebug();
 }
 //---------------------------------------------------------------------
 

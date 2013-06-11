@@ -26,11 +26,11 @@ protected:
 		ChangingActivity	= 0x02	// If set: Active set - in Deactivate(), Active not set - in Activate()
 	};
 
-	CStrID								UID;
-	PGameLevel							Level;
-	Data::CFlags						Flags;
-	Events::PSub						LevelSub;
-	nDictionary<CStrID, Data::CData>	Attrs;		//???use hash map?
+	CStrID			UID;
+	PGameLevel		Level;
+	Data::CFlags	Flags;
+	Events::PSub	LevelSub;
+	CDataDict		Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);
 	//???!!!void SetLevel(CGameLevel* NewLevel); - for transitions!
@@ -52,6 +52,9 @@ public:
 	CGameLevel&					GetLevel() const { return *Level.GetUnsafe(); }
 
 	//???!!!need GetAttr with default?!
+	void						BeginNewAttrs(DWORD Count) { Attrs.BeginAdd(Count); }
+	template<class T> void		AddNewAttr(CStrID ID, const T& Value) { Attrs.Add(ID, Value); }
+	void						EndNewAttrs() { Attrs.EndAdd(); }
 	template<class T> void		SetAttr(CStrID ID, const T& Value);
 	template<> void				SetAttr(CStrID ID, const Data::CData& Value);
 	template<class T> const T&	GetAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
@@ -83,7 +86,7 @@ inline void CEntity::SetAttr(CStrID ID, const T& Value)
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) Attrs.Add(ID, Value);
-	else Attrs.ValueAtIndex(Idx).SetTypeValue(Value);
+	else Attrs.ValueAt(Idx).SetTypeValue(Value);
 }
 //---------------------------------------------------------------------
 
@@ -103,7 +106,7 @@ inline const T& CEntity::GetAttr(CStrID ID, const T& Default) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) return Default;
-	return Attrs.ValueAtIndex(Idx).GetValue<T>();
+	return Attrs.ValueAt(Idx).GetValue<T>();
 }
 //---------------------------------------------------------------------
 
@@ -113,7 +116,7 @@ inline bool CEntity::GetAttr(T& Out, CStrID ID) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
-	return Attrs.ValueAtIndex(Idx).GetValue<T>(Out);
+	return Attrs.ValueAt(Idx).GetValue<T>(Out);
 }
 //---------------------------------------------------------------------
 
@@ -123,7 +126,7 @@ inline bool CEntity::GetAttr(Data::CData& Out, CStrID ID) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
-	Out = Attrs.ValueAtIndex(Idx);
+	Out = Attrs.ValueAt(Idx);
 	OK;
 }
 //---------------------------------------------------------------------

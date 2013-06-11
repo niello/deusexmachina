@@ -143,7 +143,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f) return INVALID_INDEX;
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
-	Anim::PAnimClip Clip = Clips.ValueAtIndex(ClipIdx);
+	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
 	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) return INVALID_INDEX;
 	if (!Loop && (Offset < 0.f || Offset > Clip->GetDuration())) return INVALID_INDEX;
 
@@ -181,7 +181,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 			if (pNode) Nodes.Add(Target, pNode);
 			else continue;
 		}
-		else pNode = Nodes.ValueAtIndex(NodeIdx);
+		else pNode = Nodes.ValueAt(NodeIdx);
 		pNode->Controller = Clip->CreateController(i);
 		pTask->Ctlrs.Add(pNode, pNode->Controller.GetUnsafe());
 
@@ -230,7 +230,7 @@ float CPropAnimation::GetAnimLength(CStrID ClipID) const
 {
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return 0.f;
-	return Clips.ValueAtIndex(ClipIdx)->GetDuration();
+	return Clips.ValueAt(ClipIdx)->GetDuration();
 }
 //---------------------------------------------------------------------
 

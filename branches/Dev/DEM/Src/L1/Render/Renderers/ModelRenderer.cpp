@@ -292,7 +292,7 @@ void CModelRenderer::Render()
 	if (Shader.IsValid())
 	{
 		for (int i = 0; i < ShaderVars.GetCount(); ++i)
-			ShaderVars.ValueAtIndex(i).Apply(*Shader.GetUnsafe());
+			ShaderVars.ValueAt(i).Apply(*Shader.GetUnsafe());
 		n_assert(Shader->Begin(true) == 1); //!!!PERF: saves state!
 		Shader->BeginPass(0);
 	}
@@ -372,16 +372,16 @@ void CModelRenderer::Render()
 			//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
 			//???check IsVarUsed?
 			for (int VarIdx = 0; VarIdx < pMaterial->GetStaticVars().GetCount(); ++VarIdx)
-				if (pMaterial->GetStaticVars().ValueAtIndex(VarIdx).IsBound())
-					n_assert(pMaterial->GetStaticVars().ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
+				if (pMaterial->GetStaticVars().ValueAt(VarIdx).IsBound())
+					n_assert(pMaterial->GetStaticVars().ValueAt(VarIdx).Apply(*pMaterial->GetShader()));
 			ShaderVarsChanged = (pMaterial->GetStaticVars().GetCount() > 0);
 		}
 
 		//!!!Apply() as method to CShaderVarMap! Mb even store shader ref in it.
 		//???check IsVarUsed?
 		for (int VarIdx = 0; VarIdx < Rec.pModel->ShaderVars.GetCount(); ++VarIdx)
-			if (Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).IsBound())
-				n_assert(Rec.pModel->ShaderVars.ValueAtIndex(VarIdx).Apply(*pMaterial->GetShader()));
+			if (Rec.pModel->ShaderVars.ValueAt(VarIdx).IsBound())
+				n_assert(Rec.pModel->ShaderVars.ValueAt(VarIdx).Apply(*pMaterial->GetShader()));
 		ShaderVarsChanged = ShaderVarsChanged || (Rec.pModel->ShaderVars.GetCount() > 0);
 
 		//!!!Need redundancy check, may be even "does this light now set at ANY index"! mb store index in light rec

@@ -577,7 +577,7 @@ PVertexLayout CRenderServer::GetVertexLayout(const nArray<CVertexComponent>& Com
 	if (!Components.GetCount()) return NULL;
 	CStrID Signature = CVertexLayout::BuildSignature(Components);
 	int Idx = VertexLayouts.FindIndex(Signature);
-	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAtIndex(Idx);
+	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx);
 	PVertexLayout Layout = n_new(CVertexLayout);
 	n_assert(Layout->Create(Components));
 	VertexLayouts.Add(Signature, Layout);

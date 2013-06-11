@@ -3,7 +3,7 @@
 #include <Game/GameServer.h>
 #include <AI/Movement/Actions/ActionGoto.h>
 #include <AI/Movement/Actions/ActionFace.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 
 namespace AI
 {

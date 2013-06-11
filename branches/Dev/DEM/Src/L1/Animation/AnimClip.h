@@ -39,7 +39,7 @@ public:
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
 	float							AdjustTime(float Time, bool Loop) const;
 	DWORD							GetSamplerCount() const { return Samplers.GetCount(); }
-	CStrID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAtIndex(Idx); }
+	CStrID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
 	float							GetDuration() const { return Duration; }
 };
 

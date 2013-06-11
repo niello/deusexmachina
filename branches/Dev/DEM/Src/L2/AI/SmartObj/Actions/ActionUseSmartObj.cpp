@@ -1,7 +1,7 @@
 #include "ActionUseSmartObj.h"
 
-#include <AI/Prop/PropActorBrain.h>
-#include <AI/Prop/PropSmartObject.h>
+#include <AI/PropActorBrain.h>
+#include <AI/PropSmartObject.h>
 #include <AI/Movement/Actions/ActionFace.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>

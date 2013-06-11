@@ -187,7 +187,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 
 			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
 			int LoaderIdx = Loaders.FindIndex(LoadingGroup);
-			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAtIndex(LoaderIdx);
+			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAt(LoaderIdx);
 			if (!Loader.IsValid()) continue;
 
 			if (!Loader->Load(EntityPrm.GetName(), *Level, EntityDesc))
@@ -211,7 +211,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 	int LevelIdx = Levels.FindIndex(ID);
 	if (ID == INVALID_INDEX) return;
 
-	PGameLevel Level = Levels.ValueAtIndex(LevelIdx);
+	PGameLevel Level = Levels.ValueAt(LevelIdx);
 
 	//!!!if in game mode, save diff of this level to a continue set!
 	// re-entering location LoadLevel call will load continue diff
@@ -246,13 +246,14 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 	{
 		int LevelIdx = Levels.FindIndex(ID);
 		if (LevelIdx == INVALID_INDEX) FAIL;
-		NewLevel = Levels.ValueAtIndex(LevelIdx);
+		NewLevel = Levels.ValueAt(LevelIdx);
 	}
 
 	if (NewLevel != ActiveLevel)
 	{
 		EventMgr->FireEvent(CStrID("OnActiveLevelChanging"));
 		ActiveLevel = NewLevel;
+		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValid() ? ID : CStrID::Empty);
 		UpdateMouseIntersectionInfo();
 		EventMgr->FireEvent(CStrID("OnActiveLevelChanged"));
 	}
@@ -267,12 +268,20 @@ bool CGameServer::StartGame(const nString& FileName)
 	Data::PParams GameDesc = DataSrv->LoadHRD(FileName);
 	if (!GameDesc.IsValid()) FAIL;
 
+	//!!!only for LoadGame!
 	//!!!if there is GameDesc override, apply it here!
 
-	for (int i = 0; i < GameDesc->GetCount(); ++i)
-		SetGlobalAttr(GameDesc->Get(i).GetName(), GameDesc->Get(i).GetRawValue());
+	Data::PParams GameSection;
+	if (GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")) && GameSection->GetCount())
+	{
+		Attrs.BeginAdd(GameSection->GetCount());
+		for (int i = 0; i < GameSection->GetCount(); ++i)
+			 Attrs.Add(GameSection->Get(i).GetName(), GameSection->Get(i).GetRawValue());
+		Attrs.EndAdd();
+	}
 
 	CStrID LevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
+	//???ECCY.prm instead of ECCY/Level.prm?
 	Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + LevelID.CStr() + "/Level.hrd"); //!!!load PRM!
 	if (!LevelDesc.IsValid())
 	{
@@ -286,6 +295,8 @@ bool CGameServer::StartGame(const nString& FileName)
 	//???simply load GameDesc as globals?
 
 	//!!!reset game timers or load, if LoadGame!
+
+	GameFileName = FileName;
 
 	return LoadLevel(LevelID, *LevelDesc) && SetActiveLevel(LevelID);
 }
@@ -303,6 +314,68 @@ void CGameServer::PauseGame(bool Pause) const
 		GameTimeSrc->Unpause();
 		EventMgr->FireEvent(CStrID("OnGameUnpaused"));
 	}
+}
+//---------------------------------------------------------------------
+
+//???save delayed events?
+bool CGameServer::SaveGame(const nString& Name)
+{
+	Data::PParams GameDesc = DataSrv->LoadHRD(GameFileName);
+	if (!GameDesc.IsValid()) FAIL;
+
+	// Save main game file with common data
+	Data::PParams SGCommon = n_new(Data::CParams);
+
+	// Save global game attributes diff
+	Data::PParams SGGame = n_new(Data::CParams);
+	Data::PParams GameSection;
+	if (!GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")))
+		GameSection = n_new(Data::CParams);
+
+	GameSection->Diff(*SGGame, Attrs);
+
+	if (SGGame->GetCount()) SGCommon->Set(CStrID("Game"), SGGame);
+
+	// Time data is never present in the initial game file, so save without diff
+	Data::PParams SGTime = n_new(Data::CParams);
+	TimeSrv->Save(*SGTime);
+	if (SGTime->GetCount()) SGCommon->Set(CStrID("Time"), SGTime);
+
+	// Allow custom gameplay managers to save their data
+	//!!!Item instance data can be saved in the entity attrs as CParams attr!
+	EventMgr->FireEvent(CStrID("OnGameSaving"), SGCommon);
+
+//======
+	//!!!DBG TMP!
+	nString Path = "home:" + Name;
+	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
+	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
+//======
+
+	// Save diffs of each level
+	Data::PParams SGLevel = n_new(Data::CParams);
+	for (int i = 0; i < Levels.GetCount(); ++i)
+	{
+		if (SGLevel->GetCount()) SGLevel = n_new(Data::CParams);
+		//???ECCY.prm instead of ECCY/Level.prm?
+		Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + Levels.KeyAt(i).CStr() + "/Level.hrd"); //!!!load PRM!
+		//n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
+
+//======
+		//!!!DBG TMP!
+		nString Path = "home:" + Name + "/Levels/" + Levels.KeyAt(i).CStr();
+		if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
+		DataSrv->SaveHRD(Path + "/Level.hrd", SGLevel);
+//======
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::LoadGame(const nString& Name)
+{
+	OK;
 }
 //---------------------------------------------------------------------
 

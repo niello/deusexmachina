@@ -1,7 +1,7 @@
 #include "ActionTplPickItemWorld.h"
 
 #include <AI/Behaviour/Action.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <AI/Perception/Stimulus.h>
 #include <AI/Memory/MemFactSmartObj.h>
 #include <Game/EntityManager.h>

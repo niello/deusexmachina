@@ -39,7 +39,7 @@ PStaticObject CStaticEnvManager::CreateStaticObject(CStrID UID, CGameLevel& Leve
 
 void CStaticEnvManager::DeleteStaticObject(int Idx)
 {
-	CStaticObject& Obj = *Objects.ValueAtIndex(Idx);
+	CStaticObject& Obj = *Objects.ValueAt(Idx);
 	if (Obj.IsValid()) Obj.Term();
 	Objects.EraseAt(Idx);
 }
@@ -48,7 +48,7 @@ void CStaticEnvManager::DeleteStaticObject(int Idx)
 void CStaticEnvManager::DeleteStaticObjects(const CGameLevel& Level)
 {
 	for (int i = Objects.GetCount() - 1; i >= 0; --i)
-		if (&Objects.ValueAtIndex(i)->GetLevel() == &Level)
+		if (&Objects.ValueAt(i)->GetLevel() == &Level)
 			DeleteStaticObject(i);
 }
 //---------------------------------------------------------------------
@@ -56,8 +56,8 @@ void CStaticEnvManager::DeleteStaticObjects(const CGameLevel& Level)
 void CStaticEnvManager::DeleteAllStaticObjects()
 {
 	for (int i = 0; i < Objects.GetCount(); ++i)
-		if (Objects.ValueAtIndex(i)->IsValid())
-			Objects.ValueAtIndex(i)->Term();
+		if (Objects.ValueAt(i)->IsValid())
+			Objects.ValueAt(i)->Term();
 	Objects.Clear();
 }
 //---------------------------------------------------------------------

@@ -8,7 +8,12 @@
 #include <Events/Events.h>
 #include <util/ndictionary.h>
 
-// Manages
+// Manages the main application timer, time sources used by different subsystems, and named timers
+
+namespace Data
+{
+	class CParams;
+}
 
 namespace Time
 {
@@ -40,10 +45,7 @@ protected:
 	nTime								LockTime;
 	float								TimeScale;
 	nDictionary<CStrID, PTimeSource>	TimeSources;
-	nDictionary<CStrID, CTimer>			Timers; //???map with string key?
-
-	DECLARE_EVENT_HANDLER(OnLoad, OnLoad);
-	DECLARE_EVENT_HANDLER(OnSave, OnSave);
+	nDictionary<CStrID, CTimer>			Timers;
 
 public:
 
@@ -53,6 +55,8 @@ public:
 	void			Open();
 	void			Close();
 	void			Trigger();
+	void			Save(Data::CParams& TimeParams);
+	void			Load(const Data::CParams& TimeParams);
 
 	bool			IsOpen() const { return _IsOpen; }
 
@@ -81,7 +85,7 @@ public:
 inline void CTimeServer::ResetAll()
 {
 	for (int i = 0; i < TimeSources.GetCount(); i++)
-		TimeSources.ValueAtIndex(i)->Reset();
+		TimeSources.ValueAt(i)->Reset();
 }
 //---------------------------------------------------------------------
 
@@ -91,7 +95,7 @@ inline void CTimeServer::ResetAll()
 inline void CTimeServer::PauseAll()
 {
 	for (int i = 0; i < TimeSources.GetCount(); i++)
-		TimeSources.ValueAtIndex(i)->Pause();
+		TimeSources.ValueAt(i)->Pause();
 }
 //---------------------------------------------------------------------
 
@@ -99,14 +103,14 @@ inline void CTimeServer::PauseAll()
 inline void CTimeServer::UnpauseAll()
 {
 	for (int i = 0; i < TimeSources.GetCount(); i++)
-		TimeSources.ValueAtIndex(i)->Unpause();
+		TimeSources.ValueAt(i)->Unpause();
 }
 //---------------------------------------------------------------------
 
 inline CTimeSource* CTimeServer::GetTimeSource(CStrID Name) const
 {
 	int Idx = TimeSources.FindIndex(Name);
-	return (Idx != INVALID_INDEX) ? TimeSources.ValueAtIndex(Idx).GetUnsafe() : NULL;
+	return (Idx != INVALID_INDEX) ? TimeSources.ValueAt(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

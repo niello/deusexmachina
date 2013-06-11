@@ -26,7 +26,7 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 	StaticVars = StaticShaderVars;
 	for (int i = 0; i < StaticVars.GetCount(); ++i)
 	{
-		CShaderVar& Var = StaticVars.ValueAtIndex(i);
+		CShaderVar& Var = StaticVars.ValueAt(i);
 		Var.Bind(*pShader);
 
 		//!!!non-file textures (forex RTs) will fail to load here! ensure they are

@@ -2,7 +2,7 @@
 
 #include <Game/GameLevel.h> //!!!???cache AI level instead of getting from entity every time?!
 #include <AI/AIServer.h>
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 #include <DetourCommon.h>
 #include <DetourObstacleAvoidance.h>
 
@@ -356,7 +356,7 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 	}
 
 	//int Idx = EdgeTypeToAction.FindIndex(EdgeType);
-	//return Idx == INVALID_INDEX ? CStrID::Empty : EdgeTypeToAction.ValueAtIndex(Idx);
+	//return Idx == INVALID_INDEX ? CStrID::Empty : EdgeTypeToAction.ValueAt(Idx);
 
 	return EdgeTypeToAction[EdgeType];
 }
