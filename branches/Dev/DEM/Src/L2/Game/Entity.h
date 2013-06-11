@@ -44,6 +44,7 @@ public:
 
 	void						Activate();
 	void						Deactivate();
+	void						Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
 
 	template<class T> T*		GetProperty() const;
 	template<class T> bool		HasProperty() const { return GetProperty<T>() != NULL; }

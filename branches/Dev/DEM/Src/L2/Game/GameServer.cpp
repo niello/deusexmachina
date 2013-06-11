@@ -331,9 +331,7 @@ bool CGameServer::SaveGame(const nString& Name)
 	Data::PParams GameSection;
 	if (!GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")))
 		GameSection = n_new(Data::CParams);
-
 	GameSection->Diff(*SGGame, Attrs);
-
 	if (SGGame->GetCount()) SGCommon->Set(CStrID("Game"), SGGame);
 
 	// Time data is never present in the initial game file, so save without diff
@@ -342,7 +340,6 @@ bool CGameServer::SaveGame(const nString& Name)
 	if (SGTime->GetCount()) SGCommon->Set(CStrID("Time"), SGTime);
 
 	// Allow custom gameplay managers to save their data
-	//!!!Item instance data can be saved in the entity attrs as CParams attr!
 	EventMgr->FireEvent(CStrID("OnGameSaving"), SGCommon);
 
 //======
@@ -357,9 +354,12 @@ bool CGameServer::SaveGame(const nString& Name)
 	for (int i = 0; i < Levels.GetCount(); ++i)
 	{
 		if (SGLevel->GetCount()) SGLevel = n_new(Data::CParams);
+
 		//???ECCY.prm instead of ECCY/Level.prm?
 		Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + Levels.KeyAt(i).CStr() + "/Level.hrd"); //!!!load PRM!
-		//n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
+		n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
+
+		if (!SGLevel->GetCount()) continue;
 
 //======
 		//!!!DBG TMP!
@@ -368,6 +368,9 @@ bool CGameServer::SaveGame(const nString& Name)
 		DataSrv->SaveHRD(Path + "/Level.hrd", SGLevel);
 //======
 	}
+
+	//???pack savegame? on load can unpack to the override (continue) directory!
+	//!!!can pack the whole game set!
 
 	OK;
 }

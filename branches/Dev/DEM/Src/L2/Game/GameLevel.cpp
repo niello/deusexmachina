@@ -119,6 +119,54 @@ void CGameLevel::Term()
 }
 //---------------------------------------------------------------------
 
+bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
+{
+	FireEvent(CStrID("OnLevelSaving"), &OutDesc);
+
+	// Scene, Physics, AI data & static env. objects are read only by design, so skip them all
+
+	// Save selection
+	// Save camera //???or is one per the whole game?
+	// Save nav. regions status
+
+	// Save entities diff
+	Data::PParams SGEntities = n_new(Data::CParams);
+
+	Data::PParams InitialEntities;
+	if (pInitialDesc && pInitialDesc->Get(InitialEntities, CStrID("Entities")))
+	{
+		for (int i = 0; i < InitialEntities->GetCount(); ++i)
+		{
+			CStrID EntityID = InitialEntities->Get(i).GetName();
+			CEntity* pEntity = EntityMgr->GetEntity(EntityID, false);
+			if (!pEntity || &pEntity->GetLevel() != this)
+			{
+				CStaticObject* pStaticObj = StaticEnvMgr->GetStaticObject(EntityID);
+				if (!pStaticObj || &pStaticObj->GetLevel() != this)
+					SGEntities->Set(EntityID, Data::CData());
+			}
+		}
+	}
+
+	//???is there any better way to iterate over all entities of this level? mb send them an event?
+	nArray<CEntity*> Entities(128, 128);
+	EntityMgr->GetEntitiesByLevel(ID, Entities);
+	Data::PParams SGEntity = n_new(Data::CParams);
+	const Data::CParams* pInitialEntities = InitialEntities.IsValid() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
+	for (int i = 0; i < Entities.GetCount(); ++i)
+	{
+		CEntity* pEntity = Entities[i];
+		if (SGEntity->GetCount()) SGEntity = n_new(Data::CParams);
+		pEntity->Save(*SGEntity, pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).GetUnsafe() : NULL);
+		if (SGEntity->GetCount()) SGEntities->Set(pEntity->GetUID(), SGEntity);
+	}
+
+	OutDesc.Set(CStrID("Entities"), SGEntities);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 void CGameLevel::Trigger()
 {
 	//!!!all events here will be fired many times if many levels exist! level as event dispatcher?

@@ -71,6 +71,7 @@ public:
 
 	bool					Init(CStrID LevelID, const Data::CParams& Desc);
 	void					Term();
+	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
 	void					Trigger();
 	void					RenderScene();
 	void					RenderDebug();

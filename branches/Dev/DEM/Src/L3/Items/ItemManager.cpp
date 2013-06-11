@@ -9,7 +9,6 @@
 //BEGIN_ATTRS_REGISTRATION(ItemAttrs)
 //	RegisterStrID(ItemOwner, ReadOnly);
 //	RegisterStrID(ItemTplID, ReadWrite);
-//	RegisterIntWithDefault(ItemInstID, ReadWrite, -1);
 //	RegisterIntWithDefault(ItemCount, ReadWrite, 1);
 //	RegisterStrID(EquipSlotID, ReadWrite);
 //	RegisterIntWithDefault(EquipCount, ReadWrite, 1);
@@ -79,29 +78,6 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 bool CItemManager::OnSaveBefore(const Events::CEventBase& Event)
 {
 	/*
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-
-	if (!DSInv.IsValid())
-	{
-		int TableIdx = pDB->FindTableIndex("Inventories");
-		if (TableIdx == INVALID_INDEX)
-		{
-			DB::PTable Tbl = DB::CTable::CreateInstance();
-			Tbl->SetName("Inventories");
-			Tbl->AddColumn(DB::CColumn(Attr::ID, DB::CColumn::Primary)); // For equipment records
-			Tbl->AddColumn(DB::CColumn(Attr::ItemOwner, DB::CColumn::Indexed));
-			Tbl->AddColumn(Attr::ItemTplID);
-			Tbl->AddColumn(Attr::ItemInstID);
-			Tbl->AddColumn(Attr::ItemCount);
-			pDB->AddTable(Tbl);
-			DSInv = Tbl->CreateDataset();
-		}
-		else DSInv = pDB->GetTable(TableIdx)->CreateDataset();
-
-		//LevelInQuery = nString::Empty;
-		n_assert(LevelInQuery.IsEmpty());
-	}
-
 	nString CurrLevel = LoaderSrv->GetCurrentLevel();
 	n_assert(CurrLevel.IsValid());
 	if (LevelInQuery != CurrLevel)
