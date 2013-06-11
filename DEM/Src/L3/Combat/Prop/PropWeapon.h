@@ -22,6 +22,8 @@ class CPropWeapon: public Game::CProperty
 
 protected:
 
+	virtual bool InternalActivate();
+	virtual void InternalDeactivate();
 	//void SetupBrain(bool Active);
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
@@ -52,10 +54,6 @@ public:
 	// attack, damage etc role system params (chance to hit modifier, strength bonus etc)
 
 	CPropWeapon();
-	//virtual ~CPropWeapon();
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	//SetWeapon(Item)
 	//SetWeapon(WpnDesc)

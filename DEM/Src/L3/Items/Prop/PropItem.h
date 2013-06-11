@@ -20,6 +20,9 @@ class CPropItem: public Game::CProperty
 
 protected:
 
+	virtual bool InternalActivate();
+	virtual void InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(OnSave, OnSave);
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(PickItem, OnPickItem);
@@ -27,9 +30,6 @@ protected:
 public:
 
 	Items::CItemStack Items;
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 };
 
 }

@@ -23,6 +23,9 @@ protected:
 
 	//!!!resists!
 
+	virtual bool InternalActivate();
+	virtual void InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(ObjDamageDone, OnObjDamageDone);
 
 public:
@@ -32,9 +35,6 @@ public:
 
 	//CPropDestructible();
 	//virtual ~CPropDestructible();
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 };
 
 }

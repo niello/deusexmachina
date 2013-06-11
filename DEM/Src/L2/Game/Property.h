@@ -9,21 +9,6 @@
 #include <Events/Events.h>
 #include <util/HashTable.h>
 
-#define __DeclarePropertyStorage \
-	public: \
-		static Game::CPropertyStorage* pStorage; \
-		virtual Game::CPropertyStorage* GetStorage() const; \
-	private:
-
-#define __ImplementPropertyStorage(Class) \
-	Game::CPropertyStorage* Class::pStorage = NULL; \
-	Game::CPropertyStorage* Class::GetStorage() const { return pStorage; }
-
-#define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \
-	Sub_##EventName = GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
-#define PROP_SUBSCRIBE_PEVENT(EventName, Class, Handler) \
-	Sub_##EventName = GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
-
 namespace Game
 {
 class CEntity;
@@ -41,21 +26,40 @@ protected:
 	CEntity*	pEntity;
 	bool		Active;
 
-	void SetEntity(CEntity* pNewEntity);
+	virtual bool	InternalActivate() = 0; // { OK; }
+	virtual void	InternalDeactivate() = 0; // {}
+	void			SetEntity(CEntity* pNewEntity);
 
-	DECLARE_EVENT_HANDLER_VIRTUAL(OnEntityActivated, Activate);
-	DECLARE_EVENT_HANDLER_VIRTUAL(OnEntityDeactivated, Deactivate);
+	DECLARE_EVENT_HANDLER(OnEntityActivated, OnEntityActivated);
+	DECLARE_EVENT_HANDLER(OnEntityDeactivated, OnEntityDeactivated);
 
 public:
 
 	CProperty(): Active(false), pEntity(NULL) {}
-	virtual ~CProperty() = 0;
+	virtual ~CProperty() = 0 {}
 
+	void						Activate();
+	void						Deactivate();
 	virtual CPropertyStorage*	GetStorage() const { return NULL; }
 	CEntity*					GetEntity() const { n_assert(pEntity); return pEntity; }
 	bool						IsActive() const { return Active; }
 };
 
 }
+
+#define __DeclarePropertyStorage \
+	public: \
+		static Game::CPropertyStorage* pStorage; \
+		virtual Game::CPropertyStorage* GetStorage() const; \
+	private:
+
+#define __ImplementPropertyStorage(Class) \
+	Game::CPropertyStorage* Class::pStorage = NULL; \
+	Game::CPropertyStorage* Class::GetStorage() const { return pStorage; }
+
+#define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \
+	Sub_##EventName = GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
+#define PROP_SUBSCRIBE_PEVENT(EventName, Class, Handler) \
+	Sub_##EventName = GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
 
 #endif

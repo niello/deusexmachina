@@ -119,7 +119,7 @@ public:
     /// do a binary search, requires a sorted array
     int BinarySearchIndex(const T& pElm) const;
 
-	nArray<T>&	operator =(const nArray<T>& Other);
+	nArray<T>&	operator =(const nArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
 	T&			operator [](int Idx) const { n_assert(Idx >= 0 && Idx < Count); return pData[Idx]; }
     bool		operator ==(const nArray<T>& Other) const;
 	bool		operator !=(const nArray<T>& Other) const { return !(*this == Other); }
@@ -157,20 +157,22 @@ nArray<T>::nArray(int _Count, int _GrowSize, const T& Value):
 //---------------------------------------------------------------------
 
 template<class T>
-void nArray<T>::Copy(const nArray<T>& src)
+void nArray<T>::Copy(const nArray<T>& Other)
 {
-	n_assert(!pData);
-
-	this->GrowSize    = src.GrowSize;
-	this->Allocated   = src.Allocated;
-	this->Count = src.Count;
-	this->Flags       = src.Flags;
-	if (this->Allocated > 0)
+	if (Allocated < Other.Allocated)
 	{
-		pData = (T*)n_malloc(sizeof(T) * Allocated);
-		for (int i = 0; i < Count; i++)
-			Construct(pData + i, src.pData[i]);
+		Delete();
+		pData = (T*)n_malloc(sizeof(T) * Other.Allocated);
 	}
+	else for (int i = 0; i < Count; ++i) pData[i].~T();
+
+	for (int i = 0; i < Other.Count; ++i)
+		Construct(pData + i, Other.pData[i]);
+
+	Flags = Other.Flags;
+	GrowSize = Other.GrowSize;
+	Allocated = Other.Allocated;
+	Count = Other.Count;
 }
 //---------------------------------------------------------------------
 
@@ -184,10 +186,8 @@ void nArray<T>::Delete()
 		n_free(pData);
 		pData = NULL;
 	}
-	GrowSize = 0;
 	Allocated = 0;
 	Count = 0;
-	Flags = 0;
 }
 //---------------------------------------------------------------------
 
@@ -212,18 +212,6 @@ void nArray<T>::SetFixedSize(int size)
 	Count = size;
 	for (int i = 0; i < size; i++)
 		Construct(pData + i);
-}
-//---------------------------------------------------------------------
-
-template<class T>
-nArray<T>& nArray<T>::operator =(const nArray<T>& Other)
-{
-	if (this != &Other)
-	{
-		Delete();
-		Copy(Other);
-	}
-	return *this;
 }
 //---------------------------------------------------------------------
 

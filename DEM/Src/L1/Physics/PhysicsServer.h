@@ -5,6 +5,7 @@
 #include <Core/Singleton.h>
 #include <Resources/ResourceManager.h>
 #include <Physics/CollisionShape.h>
+#include <Data/DynamicEnum.h>
 
 // Physics server stores shape manager, which manages shared collision shape resources,
 // shared debug drawer implementation and other physics services.
@@ -22,12 +23,13 @@ class CPhysicsServer: public Core::CRefCounted
 
 protected:
 
-	bool				_IsOpen;
-	CPhysicsDebugDraw*	pDD;
+	bool					_IsOpen;
+	CPhysicsDebugDraw*		pDD;
 
 public:
 
-	Resources::CResourceManager<CCollisionShape> CollShapeMgr;
+	Data::CDynamicEnum16							CollisionGroups;
+	Resources::CResourceManager<CCollisionShape>	CollisionShapeMgr;
 
 	CPhysicsServer();
 	~CPhysicsServer();
@@ -36,6 +38,8 @@ public:
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
 
+	PCollisionShape		CreateBoxShape(const vector3& Size, CStrID UID = CStrID::Empty);
+	PCollisionShape		CreateSphereShape(float Radius, CStrID UID = CStrID::Empty);
 	PCollisionShape		CreateCapsuleShape(float Radius, float Height, CStrID UID = CStrID::Empty);
 
 	CPhysicsDebugDraw*	GetDebugDrawer() { return pDD; }

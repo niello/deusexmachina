@@ -23,9 +23,11 @@ protected:
 	Physics::PNodeControllerRigidBody	NodeCtlr;
 	Physics::PCharacterController		CharCtlr;
 
-	void CreateController();
-	void InitSceneNodeModifiers(CPropSceneNode& Prop);
-	void TermSceneNodeModifiers(CPropSceneNode& Prop);
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+	void			CreateController();
+	void			InitSceneNodeModifiers(CPropSceneNode& Prop);
+	void			TermSceneNodeModifiers(CPropSceneNode& Prop);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
@@ -35,9 +37,6 @@ protected:
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 
 public:
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	bool			Enable();
 	void			Disable();

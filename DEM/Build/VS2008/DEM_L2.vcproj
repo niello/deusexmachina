@@ -953,6 +953,10 @@
 				RelativePath="..\..\Src\L2\Physics\PropTriggerSI.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L2\Physics\TriggerContactCallback.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="SI"

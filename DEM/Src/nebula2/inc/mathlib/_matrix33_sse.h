@@ -43,7 +43,7 @@ public:
     /// constructor 6
     _matrix33_sse(const __m128& _m1, const __m128& _m2, const __m128& _m3);
     /// get as quaternion
-    quaternion get_quaternion() const;
+    quaternion ToQuaternion() const;
     /// get as euler representation
     _vector3_sse to_euler() const;
     /// set as euler
@@ -238,7 +238,7 @@ _matrix33_sse::_matrix33_sse(const quaternion& q)
 */
 inline
 quaternion
-_matrix33_sse::get_quaternion() const
+_matrix33_sse::ToQuaternion() const
 {
     float qa[4];
     float tr = m[0][0] + m[1][1] + m[2][2];

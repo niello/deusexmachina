@@ -16,10 +16,8 @@ __ImplementPropertyStorage(CPropSmartObject);
 
 using namespace Data;
 
-void CPropSmartObject::Activate()
+bool CPropSmartObject::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	PParams Desc;
 	
 	const nString& DescResource = GetEntity()->GetAttr<nString>(CStrID("SmartObjDesc"), NULL);
@@ -51,17 +49,17 @@ void CPropSmartObject::Activate()
 	}
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropSmartObject, ExposeSI);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropSmartObject::Deactivate()
+void CPropSmartObject::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(ExposeSI);
 
 	CurrState = CStrID::Empty;
 	Actions.Clear();
 
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

@@ -19,16 +19,13 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 	n_assert(!pWorld);
 
 	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
-	Shape = PhysicsSrv->CollShapeMgr.GetTypedResource(ShapeID);
+	Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(ShapeID);
 	if (!Shape.IsValid())
 		Shape = LoadCollisionShapeFromPRM(ShapeID, nString("physics:") + ShapeID.CStr() + ".hrd"); //!!!prm!
 	n_assert(Shape->IsLoaded());
 
-	//!!!!!!!!!!!
-	//Group = (ushort)Desc.Get<int>(CStrID("Group"), 0x0001); //!!!set normal flags!
-	//Mask = (ushort)Desc.Get<int>(CStrID("Mask"), 0xffff); //!!!set normal flags!
-	Group = 0x0001;
-	Mask = 0xffff;
+	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<nString>(CStrID("Group"), "Default"));
+	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<nString>(CStrID("Mask"), "All"));
 
 	ShapeOffset = Offset;
 

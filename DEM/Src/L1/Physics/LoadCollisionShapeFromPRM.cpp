@@ -105,7 +105,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 		}
 		else return NULL;
 
-		PHeightfieldShape HFShape = PhysicsSrv->CollShapeMgr.CreateTypedResource<CHeightfieldShape>(UID);
+		PHeightfieldShape HFShape = PhysicsSrv->CollisionShapeMgr.CreateTypedResource<CHeightfieldShape>(UID);
 		if (HFShape.IsValid())
 		{
 			btHeightfieldTerrainShape* pBtShape =
@@ -142,7 +142,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 		}
 		else return NULL;
 
-		PCollisionShape Shape = PhysicsSrv->CollShapeMgr.CreateTypedResource(UID);
+		PCollisionShape Shape = PhysicsSrv->CollisionShapeMgr.CreateTypedResource(UID);
 		if (Shape.IsValid() && Shape->Setup(pBtShape)) return Shape;
 
 		delete pBtShape;

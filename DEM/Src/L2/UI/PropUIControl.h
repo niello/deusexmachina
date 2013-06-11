@@ -3,14 +3,16 @@
 #define __DEM_L2_PROP_UI_CONTROL_H__
 
 #include <Game/Property.h>
-#include <Events/Events.h>
+#include <Physics/NodeAttrCollision.h>
 #include <Events/EventHandler.h>
-#include <util/ndictionary.h>
+#include <util/narray.h>
 
-// InterActiveObject (AO, IAO) property. IAO is a 3D-world GUI entity similar to GUI controls like buttons.
+// InterActiveObject (AO, IAO) property. IAO is a 3D world GUI entity similar to GUI controls like buttons.
 // It has highlighting, hint and causes actions on activation, e.g. clicking.
-// IAO uses physics/collide property to determine mouse-over etc.
-// Later it can also have states, offering different action sets.
+// This control can be detected by mouse through the physics raytest. For this to work, entity must have
+// an attached physics shape which accepts collision with MousePick group. By default it accepts, to disable,
+// use AllNoPick collision mask. Shape can be attached by CPropPhysics or right here, if object requires no physics.
+// This control can automatically reflect actions available in a CPropSmartObject of the same entity.
 
 namespace Data
 {
@@ -19,6 +21,8 @@ namespace Data
 
 namespace Prop
 {
+class CPropSmartObject;
+class CPropSceneNode;
 
 class CPropUIControl: public Game::CProperty
 {
@@ -51,48 +55,53 @@ public:
 
 protected:
 
-	nString			UIName;
-	nArray<CAction>	Actions;
-	Data::PParams	SOActionNames;
-	bool			AutoAddSmartObjActions;
+	Physics::PNodeAttrCollision	MousePickShape;
+	nString						UIName;
+	nArray<CAction>				Actions;
+	bool						ReflectSOActions;
+	Data::PParams				SOActionNames;
 
-	bool		AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool AutoAdded = false);
-	bool		ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
-	bool		OnExecuteSmartObjAction(const Events::CEventBase& Event);
-	CAction*	GetActionByID(CStrID ID);
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+	void			AddSOActions(CPropSmartObject& Prop);
+	void			RemoveSOActions();
 
-	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
+	bool			AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool AutoAdded = false);
+	bool			ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
+	bool			OnExecuteSmartObjAction(const Events::CEventBase& Event);
+	CAction*		GetActionByID(CStrID ID);
+
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnMouseEnter, OnMouseEnter);
 	DECLARE_EVENT_HANDLER(OnMouseLeave, OnMouseLeave);
 	DECLARE_EVENT_HANDLER(OverrideUIName, OverrideUIName);
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnSOActionAvailabile, OnSOActionAvailabile);
 
 public:
 
-	enum
-	{
-		DEFAULT_PRIORITY = 20
-	};
+	enum { DEFAULT_PRIORITY = 20 };
 
-	virtual void			Activate();
-	virtual void			Deactivate();
+	CPropUIControl() { Actions.Flags.Clear(Array_KeepOrder); }
 
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, bool (*Callback)(const Events::CEventBase&), int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
+	bool					AddActionHandler(CStrID ID, LPCSTR UIName, Events::CEventCallback Callback, int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
 	template<class T>
 	bool					AddActionHandler(CStrID ID, LPCSTR UIName, T* Object, bool (T::*Callback)(const Events::CEventBase&), int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
 	bool					AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
 	void					RemoveActionHandler(CStrID ID);
 
-	const nArray<CAction>&	GetActions() const { return Actions; }
-
 	bool					ExecuteAction(Game::CEntity* pActorEnt, CStrID ID);
 	bool					ExecuteDefaultAction(Game::CEntity* pActorEnt);
 	void					ShowPopup(Game::CEntity* pActorEnt);
+
+	const nArray<CAction>&	GetActions() const { return Actions; }
+	void					EnableSmartObjReflection(bool Enable);
+	bool					IsSmartObjReflectionEnabled() const { return ReflectSOActions; }
 };
 
 inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
-											 bool (*Callback)(const Events::CEventBase&),
+											 Events::CEventCallback Callback,
 											 int Priority, bool AutoAdded)
 {
 	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerCallback)(Callback), Priority, AutoAdded);

@@ -13,26 +13,25 @@ namespace Prop
 __ImplementClass(Prop::CPropTalking, 'PTLK', Game::CProperty);
 __ImplementPropertyStorage(CPropTalking);
 
-void CPropTalking::Activate()
+bool CPropTalking::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	const nString& Dlg = GetEntity()->GetAttr<nString>(CStrID("Dialogue"), NULL);
 	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTalking, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(Talk, CPropTalking, OnTalk);
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropTalking::Deactivate()
+void CPropTalking::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(Talk);
 
 	//???check IsTalking and force abort dlg?
 	Dialogue = NULL;
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

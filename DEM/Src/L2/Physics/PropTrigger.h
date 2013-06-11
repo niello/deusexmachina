@@ -3,33 +3,32 @@
 #define __DEM_L2_PROP_TRIGGER_H__
 
 #include <Game/Property.h>
+#include <Physics/CollisionObjStatic.h>
 
 // Trigger is an abstract level geometry that produces some events/effects on entities
 // colliding with it. Trigger usually doesn't cause collision response.
 
+// Attributes:
+// int		TrgShapeType			- Collision shape type
+// vector4	TrgShapeParams			- Collision shape params, see comment below for details
+// float	TrgPeriod				- Period of trigger operations on entitise inside. <= 0 - once
+// bool		TrgEnabled				- Is trigger enabled
+// float	TrgTimeLastTriggered	- Timestamp of last trigger operation, <= 0 - never before
+
+// TrgShapeType. TrgShapeParams:
+// 1. Box:		xyz = size
+// 2. Sphere:	x = radius
+// 4. Capsule:	x = radius, y = length (without caps)
+
 namespace Game
 {
 	typedef Ptr<class CEntity> PEntity;
-};
+}
 
 namespace Scripting
 {
 	class CScriptObject;
 }
-
-//DeclareInt(TrgShapeType);			// Collision shape type
-//DeclareFloat4(TrgShapeParams);		// Collision shape params, see comment below for details
-//DeclareFloat(TrgPeriod);			// Period of trigger operations on entitise inside. <= 0 - once
-//DeclareBool(TrgEnabled);			// Is trigger enabled //???editor complications? to TrgShapeType's most significant bit
-//DeclareFloat(TrgTimeLastTriggered);	// Timestamp of last trigger operation, <= 0 - never before
-
-// Collision shape params (float4):
-// Box:		xyz = size
-// Sphere:	x = radius
-// Plane:	nothing
-// Capsule: x = radius, y = length (without caps)
-// Remember that position & orientation are in Transform parameter (box mb can also use scaling...)
-// Float4 isn't enough for mesh shape (string would suffice, but now we needn't mesh-shaped triggers)
 
 namespace Prop
 {
@@ -42,15 +41,18 @@ class CPropTrigger: public Game::CProperty
 
 protected:
 
-	bool					Enabled;
-	nArray<Game::PEntity>	EntitiesInsideNow;
-	nArray<Game::PEntity>	EntitiesInsideLastFrame;
-	bool					SwapArrays;
-	const CScriptObject*	pScriptObj;
-	float					Period;
-	float					TimeLastTriggered; //???use nTime?
+	Physics::PCollisionObjStatic	CollObj;
+	const CScriptObject*			pScriptObj;	// Cached pointer to CPropScriptable object
+	nArray<CStrID>					CurrInsiders;
+	float							Period;
+	float							TimeLastTriggered;
+	bool							Enabled;
 
-	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnSave, OnSave);
@@ -58,14 +60,11 @@ protected:
 
 public:
 
-	CPropTrigger(): Enabled(false), SwapArrays(false), pScriptObj(NULL), Period(0.f), TimeLastTriggered(0.f) {}
+	CPropTrigger(): Enabled(false), pScriptObj(NULL), Period(0.f), TimeLastTriggered(0.f) {}
 	virtual ~CPropTrigger();
 
-	virtual void	Activate();
-	virtual void	Deactivate();
-
-	void			SetEnabled(bool Enable);
-	bool			IsEnabled() const { return Enabled; }
+	void SetEnabled(bool Enable);
+	bool IsEnabled() const { return Enabled; }
 };
 
 }

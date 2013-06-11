@@ -41,7 +41,7 @@ public:
     /// constructor 5
     _matrix33(const quaternion& q);
     /// get as quaternion
-    quaternion get_quaternion() const;
+    quaternion ToQuaternion() const;
     /// get as euler representation
     _vector3 to_euler() const;
     /// set as euler
@@ -201,7 +201,7 @@ _matrix33::_matrix33(const quaternion& q)
 */
 inline
 quaternion
-_matrix33::get_quaternion() const
+_matrix33::ToQuaternion() const
 {
     float qa[4];
     float tr = m[0][0] + m[1][1] + m[2][2];

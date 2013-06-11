@@ -207,7 +207,7 @@ void CDebugDraw::RenderGeometry()
 
 	if (Lines.GetCount() || Tris.GetCount())
 	{
-		DWORD FeatFlagDefault = RenderSrv->ShaderFeatureStringToMask("Default");
+		DWORD FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
 		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlagDefault));
 
 		n_assert(ShapeShader->Begin(true) == 1);
@@ -231,7 +231,7 @@ void CDebugDraw::RenderGeometry()
 
 	if (Points.GetCount())
 	{
-		DWORD FeatFlag = RenderSrv->ShaderFeatureStringToMask("Point");
+		DWORD FeatFlag = RenderSrv->ShaderFeatures.GetMask("Point");
 		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlag));
 
 		n_assert(ShapeShader->Begin(true) == 1);

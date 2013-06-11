@@ -24,8 +24,8 @@ bool CRenderServer::Open()
 	if (!CreateDevice()) FAIL;
 	if (Display.GetDisplayMode() != OldMode) Display.ResetWindow();
 
-	FFlagSkinned = ShaderFeatureStringToMask("Skinned");
-	FFlagInstanced = ShaderFeatureStringToMask("Instanced");
+	FFlagSkinned = ShaderFeatures.GetMask("Skinned");
+	FFlagInstanced = ShaderFeatures.GetMask("Instanced");
 
 	if (!DefaultRT.IsValid())
 	{
@@ -667,33 +667,6 @@ int CRenderServer::GetFormatBits(EPixelFormat Format)
 		default:
 			return -1;
 	}
-}
-//---------------------------------------------------------------------
-
-DWORD CRenderServer::ShaderFeatureStringToMask(const nString& FeatureString)
-{
-	DWORD Mask = 0;
-
-	nArray<nString> Features;
-	FeatureString.Tokenize("\t |", Features);
-	for (int i = 0; i < Features.GetCount(); ++i)
-	{
-		CStrID Feature = CStrID(Features[i].CStr());
-		int Idx = ShaderFeatures.FindIndex(Feature);
-		if (Idx != INVALID_INDEX) Mask |= (1 << ShaderFeatures.ValueAtIndex(Idx));
-		else
-		{
-			int BitIdx = ShaderFeatures.GetCount();
-			if (BitIdx >= MaxShaderFeatureCount)
-			{
-				n_error("ShaderFeature: more then %d unqiue shader features requested!", MaxShaderFeatureCount);
-				return 0;
-			}
-			ShaderFeatures.Add(Feature, BitIdx);
-			Mask |= (1 << BitIdx);
-		}
-	}
-	return Mask;
 }
 //---------------------------------------------------------------------
 

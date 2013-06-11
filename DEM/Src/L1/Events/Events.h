@@ -8,9 +8,17 @@
 
 namespace Events
 {
-	class CEventBase;
-	typedef Ptr<class CSubscription> PSub;
-	typedef Ptr<class CEventHandler> PEventHandler;
+class CEventBase;
+typedef Ptr<class CSubscription> PSub;
+typedef Ptr<class CEventHandler> PEventHandler;
+typedef bool (*CEventCallback)(const CEventBase&);
+
+enum EEventPriority
+{
+	Priority_Default	= 0,		// Not set, handler will be added to the tail
+	Priority_Top		= 0xffff	// Handler will be added as the head
+};
+
 }
 
 #define DECLARE_EVENT_HANDLER(EventName, HandlerName) \

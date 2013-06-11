@@ -54,7 +54,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 	BatchType = Desc.Get<CStrID>(CStrID("BatchType"));
 	n_assert(BatchType.IsValid());
 
-	FeatFlags = RenderSrv->ShaderFeatureStringToMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
+	FeatFlags = RenderSrv->ShaderFeatures.GetMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
 
 	nString SortType;
 	if (Desc.Get<nString>(SortType, CStrID("Sort")))
@@ -85,7 +85,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 		{
 			nString Mask;
 			Mask.Format("L%d", i + 1);
-			LightFeatFlags[i] = RenderSrv->ShaderFeatureStringToMask(Mask);
+			LightFeatFlags[i] = RenderSrv->ShaderFeatures.GetMask(Mask);
 		}
 	}
 

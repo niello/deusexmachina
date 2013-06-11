@@ -11,27 +11,24 @@ namespace Prop
 __ImplementClass(Prop::CPropPhysics, 'PPHY', Game::CProperty);
 __ImplementPropertyStorage(CPropPhysics);
 
-void CPropPhysics::Activate()
+bool CPropPhysics::InternalActivate()
 {
-    CProperty::Activate();
-
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropPhysics, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropPhysics, OnPropDeactivating);
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropPhysics::Deactivate()
+void CPropPhysics::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
-
-	CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 

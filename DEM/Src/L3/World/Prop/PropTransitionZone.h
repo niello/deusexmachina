@@ -20,12 +20,12 @@ class CPropTransitionZone: public Game::CProperty
 
 protected:
 
+	virtual bool InternalActivate();
+	virtual void InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(Travel, OnTravel);
 
 public:
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 };
 
 }

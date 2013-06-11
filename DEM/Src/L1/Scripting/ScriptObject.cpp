@@ -236,7 +236,7 @@ EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CD
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunctionData(LPCSTR pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
+EExecStatus CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
 {
 	if (!PrepareToLuaCall(pFuncName)) return Error;
 	ScriptSrv->DataToLuaStack(Arg);

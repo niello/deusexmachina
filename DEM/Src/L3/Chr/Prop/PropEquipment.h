@@ -37,9 +37,6 @@ public:
 	CPropEquipment();
 	//virtual ~CPropEquipment();
 
-	//virtual void	Activate();
-	//virtual void	Deactivate();
-
 	bool Equip(CStrID Slot, CItemStack* pStack, WORD Count = 1); //???for 0 or -1 count as many as possible?
 	void Unequip(CStrID SlotID);
 };

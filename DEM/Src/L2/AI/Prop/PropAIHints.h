@@ -27,6 +27,9 @@ protected:
 
 	nDictionary<CStrID, CRecord> Hints;
 
+	virtual bool InternalActivate();
+	virtual void InternalDeactivate();
+
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
@@ -36,9 +39,6 @@ public:
 
 	//CPropAIHints();
 	//virtual ~CPropAIHints();
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	//CreateStimulus(Name, Type, ExpirationTime, Confidence, ...)
 	void EnableStimulus(CStrID Name, bool Enable);

@@ -33,7 +33,9 @@ protected:
 
 	typedef nArray<CItemStack>::iterator ItItemStack;
 
-	WORD RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan);
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+	WORD			RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan);
 
 	DECLARE_EVENT_HANDLER(ExposeSI, OnExposeSI);
 	DECLARE_EVENT_HANDLER(OnSave, OnSave);
@@ -54,9 +56,6 @@ public:
 	//???MaxWV to attrs?
 	CPropInventory(): MaxWeight(82.f), MaxVolume(146.f), CurrWeight(0.f), CurrVolume(0.f) {}
 	//virtual ~CPropInventory();
-
-	virtual void	Activate();
-	virtual void	Deactivate();
 
 	bool			AddItem(PItem NewItem, WORD Count = 1);
 	bool			AddItem(CStrID ItemID, WORD Count = 1);

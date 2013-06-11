@@ -11,10 +11,8 @@ __ImplementPropertyStorage(CPropItem);
 
 using namespace Items;
 
-void CPropItem::Activate()
+bool CPropItem::InternalActivate()
 {
-	Game::CProperty::Activate();
-
 	PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
 	int InstID = GetEntity()->GetAttr<int>(CStrID("ItemInstID"));
 	if (InstID > -1)
@@ -28,16 +26,17 @@ void CPropItem::Activate()
 	PROP_SUBSCRIBE_PEVENT(OnSave, CPropItem, OnSave);
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropItem, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(PickItem, CPropItem, OnPickItem);
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CPropItem::Deactivate()
+void CPropItem::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnSave);
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(PickItem);
 	Items.Clear();
-	Game::CProperty::Deactivate();
 }
 //---------------------------------------------------------------------
 
