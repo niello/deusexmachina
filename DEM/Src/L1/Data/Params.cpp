@@ -6,13 +6,32 @@ __ImplementClass(Data::CParams, 'PRMS', Core::CRefCounted);
 
 DEFINE_TYPE(PParams)
 
+void CParams::FromDataDict(const CDataDict& Dict)
+{
+	Params.Clear();
+	CParam* pParam = Params.Reserve(Dict.GetCount());
+	for (int i = 0; i < Dict.GetCount(); ++i, ++pParam)
+		pParam->Set(Dict.KeyAt(i), Dict.ValueAt(i));
+}
+//---------------------------------------------------------------------
+
+void CParams::ToDataDict(CDataDict& Dict) const
+{
+	Dict.Clear();
+	Dict.BeginAdd(Params.GetCount());
+	for (int i = 0; i < Params.GetCount(); ++i)
+		Dict.Add(Params[i].GetName(), Params[i].GetRawValue());
+	Dict.EndAdd();
+}
+//---------------------------------------------------------------------
+
 void CParams::Merge(const CParams& Other, int Method)
 {
 	for (int i = 0; i < Other.GetCount(); ++i)
 	{
 		const CParam& Prm = Other.Get(i);
 		CParam* pMyPrm;
-		
+
 		if (Get(pMyPrm, Prm.GetName()))
 		{
 			if (Method & Merge_Replace)
@@ -27,7 +46,37 @@ void CParams::Merge(const CParams& Other, int Method)
 }
 //---------------------------------------------------------------------
 
-void CParams::Diff(CParams& OutDiff, const CParams& ChangedData) const
+void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
+{
+	// Add new fields from diff
+	for (int i = 0; i < Diff.GetCount(); ++i)
+	{
+		const CParam& Prm = Diff[i];
+		if (!Prm.GetRawValue().IsVoid() && !Has(Prm.GetName()))
+			OutChangedData.Set(Prm);
+	}
+
+	for (int i = 0; i < Params.GetCount(); ++i)
+	{
+		const CParam& Prm = Params[i];
+		CParam* pDiffPrm;
+		if (Diff.Get(pDiffPrm, Prm.GetName()))
+		{
+			if (pDiffPrm->GetRawValue().IsVoid()) continue;
+			if (Prm.IsA<PParams>() && pDiffPrm->IsA<PParams>())
+			{
+				PParams SubMerge = n_new(CParams);
+				Prm.GetValue<PParams>()->GetDiff(*SubMerge, *pDiffPrm->GetValue<PParams>());
+				OutChangedData.Set(Prm.GetName(), SubMerge);
+			}
+			else OutChangedData.Set(Prm);
+		}
+		else OutChangedData.Set(Prm);
+	}
+}
+//---------------------------------------------------------------------
+
+void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 {
 	// Cnanged data no longer contains my param, set NULL as its new value in diff
 	for (int i = 0; i < GetCount(); ++i)
@@ -46,10 +95,10 @@ void CParams::Diff(CParams& OutDiff, const CParams& ChangedData) const
 		if (IsNew || pInitialParam->GetRawValue() != ChangedVal)
 		{
 			// Recursively diff CParams //???can recurse to CDataArray?
-			if (!IsNew && ChangedVal.IsA<PParams>())
+			if (!IsNew && ChangedVal.IsA<PParams>() && pInitialParam->IsA<PParams>())
 			{
 				PParams SubDiff = n_new(CParams);
-				pInitialParam->GetValue<PParams>()->Diff(*SubDiff, *ChangedVal.GetValue<PParams>());
+				pInitialParam->GetValue<PParams>()->GetDiff(*SubDiff, *ChangedVal.GetValue<PParams>());
 				OutDiff.Set(Key, SubDiff);
 			}
 			else OutDiff.Set(Key, ChangedVal);
@@ -58,7 +107,7 @@ void CParams::Diff(CParams& OutDiff, const CParams& ChangedData) const
 }
 //---------------------------------------------------------------------
 
-void CParams::Diff(CParams& OutDiff, const CDataDict& ChangedData) const
+void CParams::GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const
 {
 	// Cnanged data no longer contains my param, set NULL as its new value in diff
 	for (int i = 0; i < GetCount(); ++i)
@@ -76,10 +125,10 @@ void CParams::Diff(CParams& OutDiff, const CDataDict& ChangedData) const
 		if (IsNew || pInitialParam->GetRawValue() != ChangedVal)
 		{
 			// Recursively diff CParams //???can recurse to CDataArray?
-			if (!IsNew && ChangedVal.IsA<PParams>())
+			if (!IsNew && ChangedVal.IsA<PParams>() && pInitialParam->IsA<PParams>())
 			{
 				PParams SubDiff = n_new(CParams);
-				pInitialParam->GetValue<PParams>()->Diff(*SubDiff, *ChangedVal.GetValue<PParams>());
+				pInitialParam->GetValue<PParams>()->GetDiff(*SubDiff, *ChangedVal.GetValue<PParams>());
 				OutDiff.Set(ChangedData.KeyAt(i), SubDiff);
 			}
 			else OutDiff.Set(ChangedData.KeyAt(i), ChangedVal);

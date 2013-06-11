@@ -4,7 +4,7 @@ namespace Time
 {
 __ImplementClassNoFactory(Time::CTimeSource, Core::CRefCounted);
 
-void CTimeSource::Update(nTime _FrameTime)
+void CTimeSource::Update(float _FrameTime)
 {
 	++FrameID;
 	if (!IsPaused())

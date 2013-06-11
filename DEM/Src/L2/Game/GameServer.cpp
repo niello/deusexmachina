@@ -4,12 +4,13 @@
 #include <AI/AIServer.h>
 #include <Scene/Scene.h>
 #include <Physics/PhysicsWorld.h>
-#include <Data/DataServer.h>
 #include <IO/IOServer.h>
 #include <UI/UIServer.h>
 #include <Input/InputServer.h>
 #include <Time/TimeServer.h>
 #include <Scripting/ScriptObject.h>
+#include <Data/DataServer.h>
+#include <Data/DataArray.h>
 #include <Events/EventManager.h>
 
 /* User profile stuff:
@@ -273,12 +274,7 @@ bool CGameServer::StartGame(const nString& FileName)
 
 	Data::PParams GameSection;
 	if (GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")) && GameSection->GetCount())
-	{
-		Attrs.BeginAdd(GameSection->GetCount());
-		for (int i = 0; i < GameSection->GetCount(); ++i)
-			 Attrs.Add(GameSection->Get(i).GetName(), GameSection->Get(i).GetRawValue());
-		Attrs.EndAdd();
-	}
+		GameSection->ToDataDict(Attrs);
 
 	CStrID LevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
 	//???ECCY.prm instead of ECCY/Level.prm?
@@ -290,11 +286,6 @@ bool CGameServer::StartGame(const nString& FileName)
 	}
 
 	//!!!if there is LevelDesc override, apply it here!
-
-	//!!!HERE:
-	//???simply load GameDesc as globals?
-
-	//!!!reset game timers or load, if LoadGame!
 
 	GameFileName = FileName;
 
@@ -331,7 +322,7 @@ bool CGameServer::SaveGame(const nString& Name)
 	Data::PParams GameSection;
 	if (!GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")))
 		GameSection = n_new(Data::CParams);
-	GameSection->Diff(*SGGame, Attrs);
+	GameSection->GetDiff(*SGGame, Attrs);
 	if (SGGame->GetCount()) SGCommon->Set(CStrID("Game"), SGGame);
 
 	// Time data is never present in the initial game file, so save without diff
@@ -348,6 +339,12 @@ bool CGameServer::SaveGame(const nString& Name)
 	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
 //======
+
+	//???!!!here or in Load/Unload level?
+	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
+	for (int i = 0; i < Levels.GetCount(); ++i)
+		LoadedLevels->Append(Levels.KeyAt(i));
+	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
 	// Save diffs of each level
 	Data::PParams SGLevel = n_new(Data::CParams);
@@ -378,7 +375,49 @@ bool CGameServer::SaveGame(const nString& Name)
 
 bool CGameServer::LoadGame(const nString& Name)
 {
-	OK;
+	Data::PParams InitialCommon = DataSrv->LoadHRD(GameFileName);
+	if (!InitialCommon.IsValid()) FAIL;
+
+	//!!!DBG TMP PATH!
+	Data::PParams SGCommon = Name.IsValid() ? DataSrv->LoadHRD("home:" + Name + "/Main.hrd") : NULL;
+
+	Data::PParams GameDesc;
+	if (SGCommon.IsValid())
+	{
+		GameDesc = n_new(Data::CParams);
+		InitialCommon->MergeDiff(*GameDesc, *SGCommon);
+	}
+	else GameDesc = InitialCommon;
+
+	Data::PParams SubSection;
+	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Game")) && SubSection->GetCount())
+		SubSection->ToDataDict(Attrs);
+
+	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Time")) && SubSection->GetCount())
+		TimeSrv->Load(*SubSection);
+	else TimeSrv->ResetAll();
+
+	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"));
+	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
+	{
+		CStrID LevelID = LoadedLevels->Get<CStrID>(i);
+
+		//???ECCY.prm instead of ECCY/Level.prm?
+		Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + LevelID.CStr() + "/Level.hrd"); //!!!load PRM!
+		n_assert(LevelDesc.IsValid());
+
+		//!!!if there is LevelDesc override, apply it here, or send to LoadLevel!
+		//!!!DBG TMP PATH!
+		//nString Path = "home:" + Name + "/Levels/" + Levels.KeyAt(i).CStr();
+		//if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
+		//DataSrv->SaveHRD(Path + "/Level.hrd", SGLevel);
+
+		n_verify(LoadLevel(LevelID, *LevelDesc));
+	}
+
+	//!!!GameFileName = FileName;
+
+	return SetActiveLevel(GetGlobalAttr<CStrID>(CStrID("ActiveLevel")));
 }
 //---------------------------------------------------------------------
 
