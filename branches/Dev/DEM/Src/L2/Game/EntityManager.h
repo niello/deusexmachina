@@ -69,6 +69,7 @@ public:
 	void		RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const;
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
+	void		GetPropertiesOfEntity(CStrID EntityID, nArray<CProperty*>& Out) const;
 };
 
 typedef Ptr<CEntityManager> PEntityManager;

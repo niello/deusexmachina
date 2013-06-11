@@ -1,8 +1,9 @@
 #include "Entity.h"
 
-#include "Property.h"
+#include <Game/Property.h>
 #include <Game/GameLevel.h>
-#include <Events/EventManager.h>
+#include <Game/EntityManager.h>
+#include <Data/DataArray.h>
 
 namespace Game
 {
@@ -62,7 +63,39 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	InitialAttrs->Diff(*SGAttrs, Attrs);
 	if (SGAttrs->GetCount()) OutDesc.Set(CStrID("Attrs"), SGAttrs);
 
+	Data::PDataArray InitialProps;
+	if (pInitialDesc) pInitialDesc->Get<Data::PDataArray>(InitialProps, CStrID("Props"));
+
 	//!!!Save props! Get all props, try to find in initial, if all is equal, skip, else write all!
+	nArray<CProperty*> Props;
+	EntityMgr->GetPropertiesOfEntity(UID, Props);
+	bool Differs = (Props.GetCount() && !InitialProps.IsValid()) || Props.GetCount() != InitialProps->GetCount();
+	if (!Differs && Props.GetCount() && InitialProps.IsValid())
+	{
+		// Quick difference detection is insufficient, do full comparison
+		for (int i = 0; i < Props.GetCount(); ++i)
+		{
+			//???!!!use FourCC!?
+			const nString& ClassName = Props[i]->GetClassName();
+			int j;
+			for (j = 0; j < InitialProps->GetCount(); ++j)
+				if (InitialProps->Get<nString>(j) == ClassName)
+					break;
+			if (j == InitialProps->GetCount())
+			{
+				Differs = true;
+				break;
+			}
+		}
+	}
+
+	if (Differs)
+	{
+		Data::PDataArray SGProps = n_new(Data::CDataArray);
+		for (int i = 0; i < Props.GetCount(); ++i)
+			SGProps->Append(Props[i]->GetClassName());
+		OutDesc.Set(CStrID("Props"), SGProps);
+	}
 }
 //---------------------------------------------------------------------
 

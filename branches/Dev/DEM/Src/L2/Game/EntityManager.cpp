@@ -87,6 +87,31 @@ void CEntityManager::DeleteEntities(const CGameLevel& Level)
 }
 //---------------------------------------------------------------------
 
+CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
+{
+	if (SearchInAliases)
+	{
+		int Idx = Aliases.FindIndex(UID);
+		if (Idx != INVALID_INDEX) UID = Aliases.ValueAt(Idx);
+	}
+
+	CEntity* pEnt = NULL;
+	UIDToEntity.Get(UID, pEnt);
+	return pEnt;
+}
+//---------------------------------------------------------------------
+
+void CEntityManager::GetEntitiesByLevel(CStrID LevelID, nArray<CEntity*>& Out) const
+{
+	for (int i = 0; i < Entities.GetCount(); ++i)
+	{
+		CEntity* pEntity = Entities[i].GetUnsafe();
+		if (pEntity && pEntity->GetLevel().GetID() == LevelID)
+			Out.Append(pEntity);
+	}
+}
+//---------------------------------------------------------------------
+
 CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
 {
 	if (!pRTTI) return NULL;
@@ -130,27 +155,13 @@ void CEntityManager::RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const
 }
 //---------------------------------------------------------------------
 
-CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
+void CEntityManager::GetPropertiesOfEntity(CStrID EntityID, nArray<CProperty*>& Out) const
 {
-	if (SearchInAliases)
+	for (int i = 0; i < PropStorages.GetCount(); ++i)
 	{
-		int Idx = Aliases.FindIndex(UID);
-		if (Idx != INVALID_INDEX) UID = Aliases.ValueAt(Idx);
-	}
-
-	CEntity* pEnt = NULL;
-	UIDToEntity.Get(UID, pEnt);
-	return pEnt;
-}
-//---------------------------------------------------------------------
-
-void CEntityManager::GetEntitiesByLevel(CStrID LevelID, nArray<CEntity*>& Out) const
-{
-	for (int i = 0; i < Entities.GetCount(); ++i)
-	{
-		CEntity* pEntity = Entities[i].GetUnsafe();
-		if (pEntity && pEntity->GetLevel().GetID() == LevelID)
-			Out.Append(pEntity);
+		PProperty Prop;
+		if ((*PropStorages.ValueAt(i))->Get(EntityID, Prop))
+			Out.Append(Prop.GetUnsafe());
 	}
 }
 //---------------------------------------------------------------------
