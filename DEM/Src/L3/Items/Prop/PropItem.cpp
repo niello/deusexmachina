@@ -14,11 +14,11 @@ using namespace Items;
 bool CPropItem::InternalActivate()
 {
 	PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
-	int InstID = GetEntity()->GetAttr<int>(CStrID("ItemInstID"));
-	if (InstID > -1)
+	Data::PParams ItemInst = GetEntity()->GetAttr<Data::PParams>(CStrID("ItemInstance"), NULL);
+	if (ItemInst.IsValid())
 	{
 		Item = Item->Clone();
-		//!!!Item->LoadFromDB(InstID);!
+		//!!!init from params!
 	}
 	Items.SetItem(Item);
 	Items.SetCount((WORD)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
@@ -46,12 +46,10 @@ bool CPropItem::OnSave(const Events::CEventBase& Event)
 	if (Items.IsValid()) //???assert? or DeleteEntity(this) if !valid?
 	{
 		GetEntity()->SetAttr<CStrID>(CStrID("ItemTplID"), Items.GetItemID());
-		if (Items.GetItem()->IsTemplateInstance())
-			GetEntity()->SetAttr<int>(CStrID("ItemInstID"), -1);
-		else
+		if (!Items.GetItem()->IsTemplateInstance())
 		{
 			n_assert(false);
-			//!!!save instance, get its ID & save ID!
+			//!!!save instance desc!
 		}
 		GetEntity()->SetAttr<int>(CStrID("ItemCount"), (int)Items.GetCount());
 	}

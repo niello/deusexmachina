@@ -53,6 +53,19 @@ void CEntity::Deactivate()
 }
 //---------------------------------------------------------------------
 
+void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
+{
+	Data::PParams SGAttrs = n_new(Data::CParams);
+	Data::PParams InitialAttrs;
+	if (!pInitialDesc || !pInitialDesc->Get<Data::PParams>(InitialAttrs, CStrID("Attrs")))
+		InitialAttrs = n_new(Data::CParams);
+	InitialAttrs->Diff(*SGAttrs, Attrs);
+	if (SGAttrs->GetCount()) OutDesc.Set(CStrID("Attrs"), SGAttrs);
+
+	//!!!Save props! Get all props, try to find in initial, if all is equal, skip, else write all!
+}
+//---------------------------------------------------------------------
+
 bool CEntity::OnEvent(const Events::CEventBase& Event)
 {
 	CStrID EvID = ((Events::CEvent&)Event).ID;

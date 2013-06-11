@@ -24,7 +24,7 @@ class CEntityManager: public Core::CRefCounted
 protected:
 
 	nDictionary<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
-	nArray<PEntity>										Entities;	//???need? CHashTable has iterator
+	nArray<PEntity>										Entities;
 	CHashTable<CStrID, CEntity*>						UIDToEntity;
 	nDictionary<CStrID, CStrID>							Aliases;
 
@@ -51,6 +51,7 @@ public:
 
 	CEntity*	FindEntityByAttr(CStrID AttrID, const Data::CData& Value) const; //???find first - find next?
 	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, nArray<CEntity*>& Out) const;
+	void		GetEntitiesByLevel(CStrID LevelID, nArray<CEntity*>& Out) const;
 
 	//???find first/all by property? - in fact iterates through the storage / CopyToArray
 

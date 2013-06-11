@@ -1,6 +1,7 @@
 #include "EntityManager.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <Events/EventManager.h>
 
 namespace Game
@@ -140,6 +141,17 @@ CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 	CEntity* pEnt = NULL;
 	UIDToEntity.Get(UID, pEnt);
 	return pEnt;
+}
+//---------------------------------------------------------------------
+
+void CEntityManager::GetEntitiesByLevel(CStrID LevelID, nArray<CEntity*>& Out) const
+{
+	for (int i = 0; i < Entities.GetCount(); ++i)
+	{
+		CEntity* pEntity = Entities[i].GetUnsafe();
+		if (pEntity && pEntity->GetLevel().GetID() == LevelID)
+			Out.Append(pEntity);
+	}
 }
 //---------------------------------------------------------------------
 
