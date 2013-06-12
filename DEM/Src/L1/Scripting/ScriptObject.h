@@ -5,7 +5,6 @@
 #include <Core/RefCounted.h>
 #include <util/narray.h>
 #include <Events/Subscription.h>
-#include "Scripting.h"
 
 #undef RegisterClass
 

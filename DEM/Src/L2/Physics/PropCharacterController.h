@@ -9,6 +9,8 @@
 // Special physics property that controls the root node of the entity by a character controller.
 // Controller can be disabled, removing its body from the world, to switch to ragdoll.
 
+//???add ragdoll support here?
+
 namespace Prop
 {
 class CPropSceneNode;

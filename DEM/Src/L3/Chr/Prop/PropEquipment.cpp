@@ -12,29 +12,13 @@ __ImplementClass(Prop::CPropEquipment, 'PEQI', CPropInventory);
 
 CPropEquipment::CPropEquipment()
 {
-	//!!!tmp!
+	//!!!TMP!
 	CSlot Slot;
 	//???bitmask of acceptable types? will be much more efficient! types as bit enum, not as strids!
 	Slot.Type = CStrID("Weapon");
 	Slots.Add(CStrID("MainWpn"), Slot);
 }
 //---------------------------------------------------------------------
-
-//!!!OnPropsActivated can setup equipment info loaded from DB! (need to load inventory contents before)
-// at least it can setup equipment effects
-
-//bool PROP::InternalActivate()
-//{
-//	if (!CPropInventory::InternalActivate()) FAIL;
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-//void PROP::InternalDeactivate()
-//{
-//	CPropInventory::InternalDeactivate();
-//}
-////---------------------------------------------------------------------
 
 void CPropEquipment::Save()
 {

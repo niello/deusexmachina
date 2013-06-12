@@ -28,7 +28,11 @@ using namespace Data;
 
 bool CPropAnimation::InternalActivate()
 {
-	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAnimation, OnPropsActivated);
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropAnimation, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropAnimation, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAnimation, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
 	OK;
@@ -37,29 +41,26 @@ bool CPropAnimation::InternalActivate()
 
 void CPropAnimation::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(OnPropsActivated);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
-	for (int i = 0; i < Tasks.GetCount(); ++i)
-		Tasks[i].Stop(0.f);
-	Tasks.Clear();
+	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
 
 	Clips.Clear();
-	Nodes.Clear();
-
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
+void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
-	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (!pProp || !pProp->GetNode()) OK; // Nothing to animate
+	if (!Prop.GetNode()) return; // Nothing to animate
 
 	// Remap bone indices to node relative pathes
 	nDictionary<int, CStrID> Bones;
 	Bones.Add(-1, CStrID::Empty);
-	AddChildrenToMapping(pProp->GetNode(), pProp->GetNode(), Bones);
+	AddChildrenToMapping(Prop.GetNode(), Prop.GetNode(), Bones);
 
 //!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	PParams Desc;
@@ -98,10 +99,18 @@ bool CPropAnimation::OnPropsActivated(const Events::CEventBase& Event)
 //!!!to Activate() -
 
 //!!!DBG TMP! some AI character controller must drive character animations
+//for self-animated objects without AI can store info about current animations, it will help with save-load
 	if (Clips.GetCount())
 		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
+}
+//---------------------------------------------------------------------
 
-	OK;
+void CPropAnimation::TermSceneNodeModifiers(CPropSceneNode& Prop)
+{
+	for (int i = 0; i < Tasks.GetCount(); ++i)
+		Tasks[i].Stop(0.f);
+	Tasks.Clear();
+	Nodes.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -125,6 +134,38 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 			if (!pBone->IsTerminal()) AddChildrenToMapping(pNode, pRoot, Bones);
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+bool CPropAnimation::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropAnimation::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

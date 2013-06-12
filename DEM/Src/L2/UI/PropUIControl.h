@@ -56,8 +56,10 @@ public:
 protected:
 
 	Physics::PNodeAttrCollision	MousePickShape;
-	nString						UIName;
+	nString						UIName;	//???use attribute?
 	nArray<CAction>				Actions;
+	bool						Enabled;
+	bool						TipVisible;
 	bool						ReflectSOActions;
 	Data::PParams				SOActionNames;
 
@@ -74,7 +76,6 @@ protected:
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnMouseEnter, OnMouseEnter);
 	DECLARE_EVENT_HANDLER(OnMouseLeave, OnMouseLeave);
-	DECLARE_EVENT_HANDLER(OverrideUIName, OverrideUIName);
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnSOActionAvailabile, OnSOActionAvailabile);
@@ -83,7 +84,13 @@ public:
 
 	enum { DEFAULT_PRIORITY = 20 };
 
-	CPropUIControl() { Actions.Flags.Clear(Array_KeepOrder); }
+	CPropUIControl(): TipVisible(false), Enabled(true) { Actions.Flags.Clear(Array_KeepOrder); }
+
+	void					Enable(bool SetEnabled);
+	bool					IsEnabled() const { return Enabled; }
+	void					SetUIName(const nString& NewName);
+	void					ShowTip();
+	void					HideTip();
 
 	bool					AddActionHandler(CStrID ID, LPCSTR UIName, Events::CEventCallback Callback, int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
 	template<class T>

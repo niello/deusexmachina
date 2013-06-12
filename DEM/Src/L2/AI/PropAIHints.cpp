@@ -187,4 +187,4 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

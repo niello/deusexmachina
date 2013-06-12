@@ -513,10 +513,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Scripting\Scripting.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Scripting\ScriptObject.cpp"
 				>
 			</File>

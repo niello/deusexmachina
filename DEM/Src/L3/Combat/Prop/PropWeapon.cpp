@@ -36,7 +36,6 @@ bool CPropWeapon::InternalActivate()
 {
 	//if (GetEntity()->IsActive()) SetupBrain(true);
 
-	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropWeapon, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(ChrStrike, CPropWeapon, OnChrStrike);
 	OK;
 }
@@ -44,18 +43,10 @@ bool CPropWeapon::InternalActivate()
 
 void CPropWeapon::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(ChrStrike);
 
 	//if (!GetEntity()->IsDeactivating()) SetupBrain(false);
 
-}
-//---------------------------------------------------------------------
-
-bool CPropWeapon::OnPropsActivated(const Events::CEventBase& Event)
-{
-	//SetupBrain(true);
-	OK;
 }
 //---------------------------------------------------------------------
 

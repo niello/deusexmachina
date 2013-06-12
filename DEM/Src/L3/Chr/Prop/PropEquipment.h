@@ -35,7 +35,6 @@ public:
 	nDictionary<CStrID, CSlot> Slots; //???to protected?
 
 	CPropEquipment();
-	//virtual ~CPropEquipment();
 
 	bool Equip(CStrID Slot, CItemStack* pStack, WORD Count = 1); //???for 0 or -1 count as many as possible?
 	void Unequip(CStrID SlotID);
