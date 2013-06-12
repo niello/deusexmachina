@@ -41,27 +41,21 @@ CScriptObject* CScriptObject::GetFromStack(lua_State* l, int StackIdx)
 		return NULL;
 	}
 
-	//???why don't work: lua_getfield(l, LUA_ENVIRONINDEX, "cpp_ptr");
 	lua_pushstring(l, "cpp_ptr");
 	lua_rawget(l, StackIdx);
 	return (CScriptObject*)lua_touserdata(l, -1);
 }
 //---------------------------------------------------------------------
 
-// Special cases cpp_ptr & name, if not, tries to get value from C++ class,
-// else reads value from class table (metatable of current)
 int CScriptObject_Index(lua_State* l)
 {
-	// stack contains: current table at 1, key at 2
+	// Stack: current table at 1, key at 2
 
 	LPCSTR Key = lua_tostring(l, 2);
 
-	//never called O_o
-	//if (!strcmp(Key, "cpp_ptr"))
-	//{
-	//	//lua_pushnil(l);
-	//	return 0;
-	//}
+	//!!!use lightuserdata objects as class instances, if possible! cpp_ptr is rewritable
+	//through Lua since index/newindex aren't called for existing fields
+	n_assert_dbg(strcmp(Key, "cpp_ptr"));
 
 	lua_pushstring(l, "cpp_ptr");
 	lua_rawget(l, 1);
@@ -72,12 +66,6 @@ int CScriptObject_Index(lua_State* l)
 		if (!strcmp(Key, "name"))
 		{
 			lua_pushstring(l, This->GetName().CStr());
-			return 1;
-		}
-
-		if (!strcmp(Key, "SaveLoadEnabled"))
-		{
-			lua_pushboolean(l, This->DBSaveLoadEnabled);
 			return 1;
 		}
 
@@ -92,16 +80,13 @@ int CScriptObject_Index(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-// Special cases cpp_ptr & name, if not, tries to set value to C++ class,
-// else writes value to class table (metatable of current)
 int CScriptObject_NewIndex(lua_State* l)
 {
-	// stack contains: current table at 1, key at 2, value at 3
+	// Stack: current table at 1, key at 2, value at 3
 
 	const char* Key = lua_tostring(l, 2);
 
-	//???never called? //???the same for "this"?
-	if (!strcmp(Key, "cpp_ptr")) return 0; // disallow to rewrite this data
+	n_assert_dbg(strcmp(Key, "cpp_ptr"));
 
 	lua_pushstring(l, "cpp_ptr");
 	lua_rawget(l, 1);
@@ -114,14 +99,8 @@ int CScriptObject_NewIndex(lua_State* l)
 			n_assert(lua_isstring(l, 3));
 			This->SetName(lua_tostring(l, 3));
 
-			// never cache the name, cause next rewrite will not call __newindex and will break object naming
+			// Never cache the name, cause next rewrite will not call __newindex and will break object naming
 			// it's not fatal if object can someway store its table instead of getting it from globals by name
-			return 0;
-		}
-
-		if (!strcmp(Key, "SaveLoadEnabled"))
-		{
-			This->DBSaveLoadEnabled = (lua_toboolean(l, 3) != 0);
 			return 0;
 		}
 
@@ -139,7 +118,7 @@ int CScriptObject_NewIndex(lua_State* l)
 
 int CScriptObject_SubscribeEvent(lua_State* l)
 {
-	//args: ScriptObject's this table, event name, [func name = event name]
+	// Args: ScriptObject's this table, event name, [func name = event name]
 
 	//!!!PRIORITY!
 	CScriptObject* This = CScriptObject::GetFromStack(l, 1);
@@ -297,117 +276,4 @@ void CScriptObject::SetName(const char* NewName)
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::SaveFields(Data::CParams& Dest)
-{
-	if (!DBSaveLoadEnabled) OK;
-
-	//RunFunction("OnSave");
-	//!!!there is object on stack now, so we need not to call PlaceObjectOnStack!
-
-	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) FAIL;
-
-	nString ObjName = GetFullName();
-
-	/*
-	//!!!optimize - query can be compiled once! (for both save & load, or load can avoid reading objname!)
-	//!!!can lookup table once per db loading! (inside a script server)
-	//!!!reuse VT (& DS?) without reallocation!
-	DB::PDataset DS = pDB->GetTable(StrLuaObjects)->CreateDataset();
-	//DS->AddColumnsFromTable(); // LuaObjName LuaFieldName LuaValue
-	DS->SetWhereClause("LuaObjName='" + ObjName + "'");
-	DS->PerformQuery();
-
-	DB::PValueTable VT = DS->GetValueTable();
-	int InitialCount = VT->GetRowCount();
-	int Written = 0;
-
-	lua_State* l = ScriptSrv->GetLuaState();
-
-	lua_pushnil(l);
-	while (lua_next(l, -2))
-	{
-		nString Key = lua_tostring(l, -2);
-		if (!lua_isfunction(l, -1) &&
-			Key != "name" && Key != "this" && Key != "cpp_ptr" && Key != "SaveLoadEnabled")
-		{
-			int RowIdx = INVALID_INDEX;
-			for (int i = 0; i < InitialCount; i++)
-				if (VT->IsRowUntouched(i) && VT->Get<nString>(1, 0) == Key)
-				{
-					RowIdx = i;
-					//???check values equality & continue outer loop if equal?
-					break;
-				}
-			
-			if (RowIdx == INVALID_INDEX)
-			{
-				RowIdx = VT->AddRow();
-				VT->Set(0, RowIdx, ObjName);
-				VT->Set(1, RowIdx, Key);
-			}
-			
-			CData Val;
-			ScriptSrv->LuaStackToData(Val, -1, l);
-			VT->SetValue(2, RowIdx, Val);
-			
-			++Written;
-		}
-		lua_pop(l, 1);
-	}
-
-	lua_pop(l, Table.IsValid() ? 2 : 1);
-
-	// Never need to save metatable fields, all readwrite values are stored in this table
-	// Metatable contains only readonly defaults
-
-	//???or delete all rows at the beginning and then insert all fields as new? What is better?
-	for (int i = 0; i < InitialCount; i++)
-		if (VT->IsRowUntouched(i)) VT->DeleteRow(i);
-
-	if (InitialCount || Written) DS->CommitChanges();
-*/
-
-	OK;
 }
-//---------------------------------------------------------------------
-
-bool CScriptObject::LoadFields(const Data::CParams& Src)
-{
-	if (!DBSaveLoadEnabled) OK;
-	
-/*
-	int Idx = pDB->FindTableIndex(StrLuaObjects);
-	if (Idx == INVALID_INDEX) OK;
-
-	lua_State* l = ScriptSrv->GetLuaState();
-
-	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) FAIL;
-
-	//!!!no need in reading objname!
-
-	nString ObjName = GetFullName();
-	static const DB::CAttrID Columns[2] = { CStrID("LuaFieldName"), Attr::LuaValue };
-
-	DB::PDataset DS = pDB->GetTable(Idx)->CreateDataset();
-	DS->AddColumns(Columns, 2);
-	DS->SetWhereClause("LuaObjName='" + ObjName + "'");
-	DS->PerformQuery();
-
-	CData Value;
-	for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
-	{
-		lua_pushstring(l, DS->GetValueTable()->Get<nString>(0, i).CStr());
-		DS->GetValueTable()->GetValue(1, i, Value);
-		if (ScriptSrv->DataToLuaStack(Value) == 1) lua_rawset(l, -3);
-	}
-
-	lua_pop(l, Table.IsValid() ? 2 : 1);
-
-	RunFunction("OnLoad"); //???call before pop without PlaceOnStack?
-*/
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-} //namespace AI

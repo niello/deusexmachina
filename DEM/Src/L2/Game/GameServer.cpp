@@ -39,18 +39,6 @@ inline nString CLoaderServer::GetSaveGamePath(const nString& SaveGameName) const
 	return GetSaveGameDirectory() + "/" + SaveGameName + ".db3";
 }
 //---------------------------------------------------------------------
-
-*/
-//???when and how to load static data (former static.db3)? or it is just a set of descs now?
-
-/* Savegame stuff:
-	PParams P = n_new(CParams);
-	P->Set(CStrID("DB"), (PVOID)GameDB.GetUnsafe());
-	EventMgr->FireEvent(CStrID("OnSaveBefore"), P);
-	EventMgr->FireEvent(CStrID("OnSave"), P);
-	EventMgr->FireEvent(CStrID("OnSaveAfter"), P);
-	SaveGlobalAttributes();
-	//SaveEntities();
 */
 
 namespace Game

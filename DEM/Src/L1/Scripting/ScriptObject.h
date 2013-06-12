@@ -38,7 +38,7 @@ protected:
 	nString					Table;
 	nArray<Events::PSub>	Subscriptions;
 
-	CScriptObject(): DBSaveLoadEnabled(false) {}
+	CScriptObject() {}
 
 	bool		PrepareToLuaCall(LPCSTR pFuncName) const;
 	EExecStatus	RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const;
@@ -47,10 +47,7 @@ public:
 
 	friend class CScriptServer;
 
-	bool DBSaveLoadEnabled;
-
-	CScriptObject(LPCSTR ObjName, LPCSTR TableName = NULL):
-		Name(ObjName), Table(TableName), DBSaveLoadEnabled(false) {}
+	CScriptObject(LPCSTR ObjName, LPCSTR TableName = NULL): Name(ObjName), Table(TableName) {}
 	virtual ~CScriptObject();
 
 	static CScriptObject* GetFromStack(lua_State* l, int StackIdx);
@@ -59,9 +56,6 @@ public:
 
 	EExecStatus		LoadScriptFile(const nString& FileName);
 	EExecStatus		LoadScript(LPCSTR Buffer, DWORD Length);
-
-	bool			SaveFields(Data::CParams& Dest);
-	bool			LoadFields(const Data::CParams& Src);
 
 	EExecStatus		RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
 	EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal = NULL) const;
