@@ -63,6 +63,8 @@ void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 		if (Diff.Get(pDiffPrm, Prm.GetName()))
 		{
 			if (pDiffPrm->GetRawValue().IsVoid()) continue;
+
+			//???allow CDataArray merging, per-element one by one? use KeepOrder flag!
 			if (Prm.IsA<PParams>() && pDiffPrm->IsA<PParams>())
 			{
 				PParams SubMerge = n_new(CParams);
