@@ -19,6 +19,7 @@ namespace Scene
 
 namespace Prop
 {
+class CPropSceneNode;
 
 class CPropAnimation: public Game::CProperty
 {
@@ -36,9 +37,12 @@ private:
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
+	void			InitSceneNodeModifiers(CPropSceneNode& Prop);
+	void			TermSceneNodeModifiers(CPropSceneNode& Prop);
 	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones);
 
-	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame); //???OnMoveBefore?
 

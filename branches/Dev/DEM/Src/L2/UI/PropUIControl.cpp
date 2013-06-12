@@ -77,7 +77,6 @@ bool CPropUIControl::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropUIControl, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnMouseEnter, CPropUIControl, OnMouseEnter);
 	PROP_SUBSCRIBE_PEVENT(OnMouseLeave, CPropUIControl, OnMouseLeave);
-	PROP_SUBSCRIBE_PEVENT(OverrideUIName, CPropUIControl, OverrideUIName);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -87,10 +86,11 @@ void CPropUIControl::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnMouseEnter);
 	UNSUBSCRIBE_EVENT(OnMouseLeave);
-	UNSUBSCRIBE_EVENT(OverrideUIName);
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnSOActionAvailabile);
+
+	HideTip();
 
 	Actions.Clear();
 
@@ -206,24 +206,14 @@ void CPropUIControl::EnableSmartObjReflection(bool Enable)
 
 bool CPropUIControl::OnMouseEnter(const Events::CEventBase& Event)
 {
-	PParams P = n_new(CParams);
-	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUID().CStr()));
-	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
-	EventMgr->FireEvent(CStrID("ShowIAOTip"), P);
+	ShowTip();
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CPropUIControl::OnMouseLeave(const Events::CEventBase& Event)
 {
-	EventMgr->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropUIControl::OverrideUIName(const Events::CEventBase& Event)
-{
-	UIName = ((Events::CEvent&)Event).Params->Get<nString>(CStrID("Text"));
+	HideTip();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -234,6 +224,46 @@ bool CPropUIControl::OnSOActionAvailabile(const Events::CEventBase& Event)
 	CAction* pAction = GetActionByID(P->Get<CStrID>(CStrID("ActionID")));
 	if (pAction) pAction->Visible = P->Get<bool>(CStrID("Enabled"));
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::Enable(bool SetEnabled)
+{
+	if (Enabled == SetEnabled) return;
+
+	if (!SetEnabled)
+	{
+		Data::PParams P = n_new(Data::CParams(1));
+		P->Set<PVOID>(CStrID("CtlPtr"), this);
+		EventMgr->FireEvent(CStrID("HideActionListPopup"), P);
+	}
+
+	Enabled = SetEnabled;
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::SetUIName(const nString& NewName)
+{
+	//???use attribute?
+	UIName = NewName;
+	if (TipVisible) ShowTip();
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::ShowTip()
+{
+	PParams P = n_new(CParams);
+	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUID().CStr()));
+	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
+	TipVisible = (EventMgr->FireEvent(CStrID("ShowIAOTip"), P) > 0);
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::HideTip()
+{
+	if (!TipVisible) return;
+	EventMgr->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!
+	TipVisible = false;
 }
 //---------------------------------------------------------------------
 
@@ -279,7 +309,7 @@ void CPropUIControl::RemoveActionHandler(CStrID ID)
 
 bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CAction& Action)
 {
-	if (!Action.Enabled) FAIL;
+	if (!Enabled || !Action.Enabled) FAIL;
 
 	PParams P = n_new(CParams);
 	P->Set(CStrID("ActorEntityPtr"), (PVOID)pActorEnt);
@@ -292,6 +322,8 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CAction& Action)
 
 bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 {
+	if (!Enabled) FAIL;
+
 	CAction* pAction = GetActionByID(ID);
 	if (!pAction) FAIL;
 	if (pAction->AutoAdded)
@@ -307,7 +339,7 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 
 bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 {
-	if (!pActorEnt || !Actions.GetCount()) FAIL;
+	if (!Enabled || !pActorEnt || !Actions.GetCount()) FAIL;
 
 	// Cmd can have the highest priority but be disabled. Imagine character under the 
 	// silence spell who left-clicks on NPC. Default cmd is "Talk" which is disabled
@@ -340,6 +372,8 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 
 void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 {
+	if (!Enabled) return;
+
 	CPropActorBrain* pActor = NULL;
 	CPropSmartObject* pSO = NULL;
 	if (ReflectSOActions)

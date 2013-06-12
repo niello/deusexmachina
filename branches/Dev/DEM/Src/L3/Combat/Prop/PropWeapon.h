@@ -26,7 +26,6 @@ protected:
 	virtual void InternalDeactivate();
 	//void SetupBrain(bool Active);
 
-	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(ChrStrike, OnChrStrike);
 
 public:

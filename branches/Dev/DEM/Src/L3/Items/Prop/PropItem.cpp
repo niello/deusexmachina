@@ -2,6 +2,7 @@
 
 #include <Items/ItemManager.h>
 #include <Items/Prop/PropInventory.h>
+#include <UI/PropUIControl.h>
 #include <Game/EntityManager.h>
 
 namespace Prop
@@ -22,9 +23,13 @@ bool CPropItem::InternalActivate()
 	}
 	Items.SetItem(Item);
 	Items.SetCount((WORD)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
+
+	CPropUIControl* pProp = GetEntity()->GetProperty<CPropUIControl>();
+	if (pProp && pProp->IsActive())
+		pProp->SetUIName(Items.GetTpl()->UIName);
 	
 	PROP_SUBSCRIBE_PEVENT(OnSave, CPropItem, OnSave);
-	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropItem, OnPropsActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropItem, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(PickItem, CPropItem, OnPickItem);
 
 	OK;
@@ -34,7 +39,7 @@ bool CPropItem::InternalActivate()
 void CPropItem::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnSave);
-	UNSUBSCRIBE_EVENT(OnPropsActivated);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(PickItem);
 	Items.Clear();
 }
@@ -57,15 +62,19 @@ bool CPropItem::OnSave(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropItem::OnPropsActivated(const Events::CEventBase& Event)
+bool CPropItem::OnPropActivated(const Events::CEventBase& Event)
 {
-	if (Items.IsValid() && Items.GetTpl()->UIName.IsValid())
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropUIControl>())
 	{
-		PParams P = n_new(CParams);
-		P->Set(CStrID("Text"), Items.GetTpl()->UIName);
-		GetEntity()->FireEvent(CStrID("OverrideUIName"), P);
+		((CPropUIControl*)pProp)->SetUIName(Items.GetTpl()->UIName);
+		OK;
 	}
-	OK;
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 
