@@ -1,28 +1,21 @@
 #include "CameraManager.h"
 
-#include <Game/GameServer.h>
 #include <Scene/Scene.h>
 
-namespace Game
+namespace Scene
 {
-__ImplementClassNoFactory(Game::CCameraManager, Core::CRefCounted);
-__ImplementSingleton(Game::CCameraManager);
+__ImplementClassNoFactory(Scene::CCameraManager, Core::CRefCounted);
 
-bool CCameraManager::InitThirdPersonCamera()
+bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithCamera)
 {
-	Ctlr = n_new(Scene::CNodeControllerThirdPerson);
+	Ctlr = n_new(CNodeControllerThirdPerson);
 	if (!Ctlr.IsValid()) FAIL;
 	IsThirdPerson = true;
 
-	//???load ctlr state from desc?
-
-	CGameLevel* pLevel = GameSrv->GetActiveLevel();
-	if (pLevel && pLevel->GetScene())
-	{
-		pCameraNode = pLevel->GetScene()->GetMainCamera().GetNode();
-		pCameraNode->Controller = Ctlr;
-		Ctlr->Activate(true);
-	}
+	pCameraNode = pNodeWithCamera ? pNodeWithCamera : Scene.GetMainCamera().GetNode();
+	n_assert(pCameraNode);
+	pCameraNode->Controller = Ctlr;
+	Ctlr->Activate(true);
 
 	OK;
 }

@@ -7,7 +7,6 @@
 #include <Game/EntityLoader.h>
 #include <Game/EntityManager.h>
 #include <Game/StaticEnvManager.h>
-#include <Game/CameraManager.h>
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
@@ -31,7 +30,6 @@ protected:
 	Time::PTimeSource					GameTimeSrc;
 	PEntityManager						EntityManager;
 	PStaticEnvManager					StaticEnvManager;
-	PCameraManager						CameraManager;
 
 	//!!!selected entities! or per-level?
 

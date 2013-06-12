@@ -3,6 +3,7 @@
 #define __DEM_L2_GAME_LEVEL_H__
 
 #include <Events/EventDispatcher.h>
+#include <Scene/CameraManager.h>
 #include <mathlib/rectangle.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
@@ -62,6 +63,7 @@ protected:
 	Scene::PScene				Scene;
 	Physics::PPhysicsWorld		PhysWorld;
 	AI::PAILevel				AILevel;
+	Scene::PCameraManager		CameraManager;
 
 	bool OnEvent(const Events::CEventBase& Event);
 
@@ -96,6 +98,7 @@ public:
 	Scene::CScene*			GetScene() const { return Scene.GetUnsafe(); }
 	Physics::CPhysicsWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
 	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }
+	Scene::CCameraManager*	GetCameraMgr() const { return CameraManager.GetUnsafe(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

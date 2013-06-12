@@ -70,6 +70,29 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		Scene = n_new(Scene::CScene);
 		if (!Scene.IsValid()) FAIL;
 		Scene->Init(Bounds, QTDepth);
+
+		CameraManager = n_new(Scene::CCameraManager);
+
+		Data::PParams CameraDesc;
+		if (SubDesc->Get(CameraDesc, CStrID("Camera")))
+		{
+			bool IsThirdPerson = CameraDesc->Get(CStrID("ThirdPerson"), true);
+			n_assert(IsThirdPerson); // Until a first person camera is implemented
+
+			if (IsThirdPerson)
+			{
+				CameraManager->InitThirdPersonCamera(*Scene);
+				Scene::CNodeControllerThirdPerson* pCtlr = (Scene::CNodeControllerThirdPerson*)CameraManager->GetCameraController();
+				if (pCtlr)
+				{
+					pCtlr->SetVerticalAngleLimits(n_deg2rad(CameraDesc->Get(CStrID("MinVAngle"), 0.0f)), n_deg2rad(CameraDesc->Get(CStrID("MaxVAngle"), 89.999f)));
+					pCtlr->SetDistanceLimits(CameraDesc->Get(CStrID("MinDistance"), 0.0f), CameraDesc->Get(CStrID("MaxDistance"), 10000.0f));
+					pCtlr->SetCOI(CameraDesc->Get<vector4>(CStrID("COI"), vector3::Zero)); //!!!read vector3!
+					pCtlr->SetAngles(n_deg2rad(CameraDesc->Get(CStrID("VAngle"), 0.0f)), n_deg2rad(CameraDesc->Get(CStrID("HAngle"), 0.0f)));
+					pCtlr->SetDistance(CameraDesc->Get(CStrID("Distance"), 20.0f));
+				}
+			}
+		}
 	}
 
 	if (Desc.Get(SubDesc, CStrID("Physics")))
@@ -103,6 +126,8 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 				n_printf("Error loading navigation mesh for level %s\n", ID.CStr());
 	}
 
+	//!!!load selection state, if required! sometimes selection shouldn't be loaded!
+
 	GlobalSub = EventMgr->Subscribe(NULL, this, &CGameLevel::OnEvent);
 
 	OK;
@@ -112,6 +137,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 void CGameLevel::Term()
 {
 	GlobalSub = NULL;
+	CameraManager = NULL;
 	AILevel = NULL;
 	PhysWorld = NULL;
 	Scene = NULL;
@@ -124,10 +150,48 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	// This is a chance for all properties to write their attrs to entities
 	FireEvent(CStrID("OnLevelSaving"), &OutDesc);
 
-	// Scene, Physics, AI data & static env. objects are read only by design, so skip them all
+	// Save camera state
+	if (CameraManager.IsValid())
+	{
+		Data::PParams SGScene = n_new(Data::CParams);
+		OutDesc.Set(CStrID("Scene"), SGScene);
+
+		bool IsThirdPerson = CameraManager->IsCameraThirdPerson();
+		n_assert(IsThirdPerson); // Until a first person camera is implemented
+
+		Data::PParams CurrCameraDesc = n_new(Data::CParams);
+		CurrCameraDesc->Set(CStrID("ThirdPerson"), IsThirdPerson);
+
+		if (IsThirdPerson)
+		{
+			Scene::CNodeControllerThirdPerson* pCtlr = (Scene::CNodeControllerThirdPerson*)CameraManager->GetCameraController();
+			if (pCtlr)
+			{
+				CurrCameraDesc->Set(CStrID("MinVAngle"), n_rad2deg(pCtlr->GetVerticalAngleMin()));
+				CurrCameraDesc->Set(CStrID("MaxVAngle"), n_rad2deg(pCtlr->GetVerticalAngleMax()));
+				CurrCameraDesc->Set(CStrID("MinDistance"), pCtlr->GetDistanceMin());
+				CurrCameraDesc->Set(CStrID("MaxDistance"), pCtlr->GetDistanceMax());
+				CurrCameraDesc->Set(CStrID("COI"), pCtlr->GetCOI());
+				CurrCameraDesc->Set(CStrID("HAngle"), n_rad2deg(pCtlr->GetAngles().phi));
+				CurrCameraDesc->Set(CStrID("VAngle"), n_rad2deg(pCtlr->GetAngles().theta));
+				CurrCameraDesc->Set(CStrID("Distance"), pCtlr->GetDistance());
+			}
+		}
+
+		Data::PParams InitialScene;
+		Data::PParams InitialCamera;
+		if (pInitialDesc &&
+			pInitialDesc->Get(InitialScene, CStrID("Scene")) &&
+			InitialScene->Get(InitialCamera, CStrID("Camera")))
+		{
+			Data::PParams SGCamera = n_new(Data::CParams);
+			InitialCamera->GetDiff(*SGCamera, *CurrCameraDesc);
+			if (SGCamera->GetCount()) SGScene->Set(CStrID("Camera"), SGCamera);
+		}
+		else SGScene->Set(CStrID("Camera"), CurrCameraDesc);
+	}
 
 	// Save selection
-	// Save camera //???or is one per the whole game?
 	// Save nav. regions status
 
 	// Save entities diff

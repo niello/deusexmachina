@@ -45,6 +45,14 @@ public:
 	void			Zoom(float Amount);
 	void			Move(const vector3& Translation);
 	void			ForceNextUpdate() { Dirty = true; } //???normal dirty-on-set instead?
+
+	float			GetVerticalAngleMin() const { return MinVertAngle; }
+	float			GetVerticalAngleMax() const { return MaxVertAngle; }
+	float			GetDistanceMin() const { return MinDistance; }
+	float			GetDistanceMax() const { return MaxDistance; }
+	const polar2&	GetAngles() const {return Angles; }
+	float			GetDistance() const {return Distance; }
+	const vector3&	GetCOI() const { return COI; }
 };
 
 typedef Ptr<CNodeControllerThirdPerson> PNodeControllerThirdPerson;

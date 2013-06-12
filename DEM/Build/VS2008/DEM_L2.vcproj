@@ -774,14 +774,6 @@
 			Name="Game"
 			>
 			<File
-				RelativePath="..\..\Src\L2\Game\CameraManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Game\CameraManager.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L2\Game\Entity.cpp"
 				>
 			</File>
@@ -973,6 +965,14 @@
 		<Filter
 			Name="Scene"
 			>
+			<File
+				RelativePath="..\..\Src\L2\Scene\CameraManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L2\Scene\CameraManager.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\Src\L2\Scene\PropSceneNode.cpp"
 				>

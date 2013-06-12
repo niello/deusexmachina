@@ -57,6 +57,17 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 		if (!WriteCharString(Value.GetValue<CStrID>().CStr())) FAIL;
 		WRITE_STATIC_STRING("'")
 	}
+	else if (Value.IsA<vector3>())
+	{
+		const vector3& V = Value.GetValue<vector3>();
+		WRITE_STATIC_STRING("(")
+		WRITE_NSTRING(nString::FromFloat(V.x))
+		WRITE_STATIC_STRING(", ")
+		WRITE_NSTRING(nString::FromFloat(V.y))
+		WRITE_STATIC_STRING(", ")
+		WRITE_NSTRING(nString::FromFloat(V.z))
+		WRITE_STATIC_STRING(")")
+	}
 	else if (Value.IsA<vector4>())
 	{
 		const vector4& V = Value.GetValue<vector4>();
