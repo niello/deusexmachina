@@ -39,9 +39,6 @@ private:
 	nString			CurrClass;
 	CScriptObject*	CurrObj;
 
-	DECLARE_EVENT_HANDLER(OnSaveBefore, OnSaveBefore);
-	DECLARE_EVENT_HANDLER(OnSaveAfter, OnSaveAfter);
-
 public:
 
 	CScriptServer();

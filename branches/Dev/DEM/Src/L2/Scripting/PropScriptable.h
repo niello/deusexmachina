@@ -24,8 +24,6 @@ protected:
 	virtual void InternalDeactivate();
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
-	DECLARE_EVENT_HANDLER(OnLoad, OnLoad);
-	DECLARE_EVENT_HANDLER(OnSave, OnSave);
 
 	//???!!!listen OnEntityRenamed?!
 

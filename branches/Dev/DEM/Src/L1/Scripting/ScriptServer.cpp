@@ -57,10 +57,6 @@ CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)
 	lua_setfield(l, -2, "CScriptObject");
 
 	lua_setglobal(l, TBL_CLASSES);
-
-	// Unsubscribed in destructor automatically
-	SUBSCRIBE_PEVENT(OnSaveBefore, CScriptServer, OnSaveBefore);
-	SUBSCRIBE_PEVENT(OnSaveAfter, CScriptServer, OnSaveAfter);
 }
 //---------------------------------------------------------------------
 
@@ -578,35 +574,6 @@ bool CScriptServer::ObjectExists(LPCSTR Name, LPCSTR Table)
 {
 	if (!PlaceObjectOnStack(Name, Table)) FAIL;
 	lua_pop(l, (Table && *Table) ? 2 : 1);
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CScriptServer::OnSaveBefore(const Events::CEventBase& Event)
-{
-/*	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-	
-	DB::PTable Tbl;
-	int TableIdx = pDB->FindTableIndex(StrLuaObjects);
-	if (TableIdx == INVALID_INDEX)
-	{
-		Tbl = DB::CTable::CreateInstance();
-		Tbl->SetName(StrLuaObjects);
-		Tbl->AddColumn(DB::CColumn(CStrID("LuaObjName"), DB::CColumn::Primary));
-		Tbl->AddColumn(DB::CColumn(CStrID("LuaFieldName"), DB::CColumn::Primary));
-		Tbl->AddColumn(Attr::LuaValue);
-		pDB->AddTable(Tbl);
-	}
-	//else Tbl = LoaderSrv->GetGameDB()->GetTableByIndex(TableIdx);
-
-	//???!!!create reusable dataset?!
-*/
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CScriptServer::OnSaveAfter(const Events::CEventBase& Event)
-{
 	OK;
 }
 //---------------------------------------------------------------------

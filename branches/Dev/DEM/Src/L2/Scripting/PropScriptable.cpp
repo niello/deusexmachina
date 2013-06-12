@@ -3,11 +3,6 @@
 #include <Scripting/ScriptServer.h>
 #include <Game/Entity.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropScriptable)
-//	RegisterString(ScriptClass, ReadOnly);
-//	RegisterString(Script, ReadOnly);
-//END_ATTRS_REGISTRATION
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropScriptable, 'PSCR', Game::CProperty);
@@ -28,8 +23,6 @@ bool CPropScriptable::InternalActivate()
 		Obj->LoadScriptFile("scripts:" + ScriptFile + ".lua");
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);
-	PROP_SUBSCRIBE_PEVENT(OnLoad, CPropScriptable, OnLoad);
-	PROP_SUBSCRIBE_PEVENT(OnSave, CPropScriptable, OnSave);
 
 	OK;
 }
@@ -38,8 +31,6 @@ bool CPropScriptable::InternalActivate()
 void CPropScriptable::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
-	UNSUBSCRIBE_EVENT(OnLoad);
-	UNSUBSCRIBE_EVENT(OnSave);
 	
 	Obj->RunFunction("OnPropTerm");
 	Obj = NULL;
@@ -60,20 +51,4 @@ bool CPropScriptable::OnPropsActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropScriptable::OnLoad(const Events::CEventBase& Event)
-{
-	//DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-	//Obj->LoadFields(pDB);
-	OK;
 }
-//---------------------------------------------------------------------
-
-bool CPropScriptable::OnSave(const Events::CEventBase& Event)
-{
-	//DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-	//Obj->SaveFields(pDB);
-	OK;
-}
-//---------------------------------------------------------------------
-
-} // namespace Prop

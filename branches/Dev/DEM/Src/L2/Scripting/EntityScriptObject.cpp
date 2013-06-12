@@ -99,16 +99,12 @@ int CEntityScriptObject::GetField(LPCSTR Key) const
 }
 //---------------------------------------------------------------------
 
-//!!!TEST IT!
-// EPS
 bool CEntityScriptObject::SetField(LPCSTR Key, const CData& Value)
 {
-	if (!strcmp(Key, "Transform")) FAIL; // Read-only, sent SetTransform event to change
+	if (!strcmp(Key, "Transform")) FAIL; // Read-only, send SetTransform event to change
 
 	GetEntity()->SetAttr(CStrID(Key), Value);
 	OK;
-
-	//return CScriptObject::SetField(Key, Value);
 }
 //---------------------------------------------------------------------
 
