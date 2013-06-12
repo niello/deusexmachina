@@ -55,7 +55,7 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
-	DECLARE_EVENT_HANDLER(OnSave, OnSave);
+	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 
 public:

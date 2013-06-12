@@ -9,6 +9,9 @@
 // Allows to assign physics objects to the scene nodes of this entity. Objects can be
 // dynamic (which control node transform) and kinematic (which only collide with dynamic ones).
 
+//???OnLevelSaving - save active state?
+//!!!save velocities!
+
 namespace Prop
 {
 class CPropSceneNode;

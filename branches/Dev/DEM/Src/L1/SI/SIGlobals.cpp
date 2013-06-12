@@ -13,12 +13,11 @@ extern "C"
 namespace SI
 {
 
-//using namespace Scripting;
-
 int Print(lua_State* l)
 {
 	//???concat args if > 1?
-	n_printf(lua_tostring(l, 1));
+	if (lua_isboolean(l, 1)) n_printf(lua_toboolean(l, 1) == 0 ? "false" : "true");
+	else n_printf(lua_tostring(l, 1));
 	return 0;
 }
 //---------------------------------------------------------------------

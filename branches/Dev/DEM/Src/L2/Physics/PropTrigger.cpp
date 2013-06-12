@@ -49,7 +49,7 @@ bool CPropTrigger::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropTrigger, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropTrigger, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTrigger, ExposeSI);
-	PROP_SUBSCRIBE_PEVENT(OnSave, CPropTrigger, OnSave);
+	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropTrigger, OnLevelSaving);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropTrigger, OnRenderDebug);
 	OK;
 }
@@ -60,7 +60,7 @@ void CPropTrigger::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(ExposeSI);
-	UNSUBSCRIBE_EVENT(OnSave);
+	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 
 	SetEnabled(false);
@@ -170,7 +170,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnSave(const Events::CEventBase& Event)
+bool CPropTrigger::OnLevelSaving(const Events::CEventBase& Event)
 {
 	GetEntity()->SetAttr<bool>(CStrID("TrgEnabled"), Enabled);
 	if (Period > 0.f) GetEntity()->SetAttr<float>(CStrID("TrgTimeLastTriggered"), TimeLastTriggered);
