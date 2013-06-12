@@ -203,6 +203,7 @@ void CUIServer::SetRootScreen(CWindow* pWindow)
 	n_assert(pWindow);
 	CurrRootScreen = pWindow;
 	CEGUISystem->setGUISheet(pWindow->GetWnd());
+	CEGUISystem->updateWindowContainingMouse();
 }
 //---------------------------------------------------------------------
 
@@ -258,4 +259,4 @@ bool CUIServer::IsMouseOverGUI() const
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

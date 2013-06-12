@@ -121,10 +121,10 @@ void CTimeServer::Load(const Data::CParams& TimeParams)
 			Data::PParams TimeSrcDesc = Prm.GetValue<Data::PParams>();
 			int Idx = TimeSources.FindIndex(Prm.GetName());
 			PTimeSource TimeSrc = (Idx == INVALID_INDEX) ? TimeSources.Add(Prm.GetName()) : TimeSources.ValueAt(Idx);
-			TimeSrc->FrameID = SubSection->Get<int>(CStrID("FrameID"));
-			SubSection->Get(TimeSrc->Time, CStrID("Time"));
-			SubSection->Get(TimeSrc->TimeFactor, CStrID("TimeFactor"));
-			SubSection->Get(TimeSrc->PauseCounter, CStrID("PauseCounter"));
+			TimeSrc->FrameID = TimeSrcDesc->Get<int>(CStrID("FrameID"));
+			TimeSrcDesc->Get(TimeSrc->Time, CStrID("Time"));
+			TimeSrcDesc->Get(TimeSrc->TimeFactor, CStrID("TimeFactor"));
+			TimeSrcDesc->Get(TimeSrc->PauseCounter, CStrID("PauseCounter"));
 		}
 	}
 
@@ -134,13 +134,14 @@ void CTimeServer::Load(const Data::CParams& TimeParams)
 		for (int i = 0; i < SubSection->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
+			Data::PParams TimerDesc = Prm.GetValue<Data::PParams>();
 			CTimer& Timer = Timers.Add(Prm.GetName());
-			SubSection->Get(Timer.Time, CStrID("Time"));
-			SubSection->Get(Timer.CurrTime, CStrID("CurrTime"));
-			SubSection->Get(Timer.Loop, CStrID("Loop"));
-			SubSection->Get(Timer.Active, CStrID("Active"));
-			Timer.TimeSrc = SubSection->Get(CStrID("TimeSrc"), CStrID::Empty);
-			Timer.EventID = SubSection->Get<CStrID>(CStrID("EventID"));
+			TimerDesc->Get(Timer.Time, CStrID("Time"));
+			TimerDesc->Get(Timer.CurrTime, CStrID("CurrTime"));
+			TimerDesc->Get(Timer.Loop, CStrID("Loop"));
+			TimerDesc->Get(Timer.Active, CStrID("Active"));
+			Timer.TimeSrc = TimerDesc->Get(CStrID("TimeSrc"), CStrID::Empty);
+			Timer.EventID = TimerDesc->Get<CStrID>(CStrID("EventID"));
 		}
 	}
 }

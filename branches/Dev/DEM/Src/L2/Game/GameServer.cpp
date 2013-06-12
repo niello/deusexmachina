@@ -255,7 +255,11 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 		EventMgr->FireEvent(CStrID("OnActiveLevelChanging"));
 		ActiveLevel = NewLevel;
 		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValid() ? ID : CStrID::Empty);
+
+		EntityUnderMouse = CStrID::Empty;
+		HasMouseIsect = false;
 		UpdateMouseIntersectionInfo();
+
 		EventMgr->FireEvent(CStrID("OnActiveLevelChanged"));
 	}
 
@@ -263,33 +267,66 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 }
 //---------------------------------------------------------------------
 
-//!!!maybe merge with LoadGame! load globals, load overrides like quests, load level set in global "Level"
-bool CGameServer::StartGame(const nString& FileName)
+bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName)
 {
-	Data::PParams GameDesc = DataSrv->LoadHRD(FileName);
-	if (!GameDesc.IsValid()) FAIL;
+	Data::PParams InitialCommon = DataSrv->LoadHRD(FileName);
+	if (!InitialCommon.IsValid()) FAIL;
 
-	//!!!only for LoadGame!
-	//!!!if there is GameDesc override, apply it here!
+	//!!!DBG TMP PATH!
+	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadHRD("home:" + SaveGameName + "/Main.hrd", false) : NULL;
 
-	Data::PParams GameSection;
-	if (GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")) && GameSection->GetCount())
-		GameSection->ToDataDict(Attrs);
-
-	CStrID LevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
-	//???ECCY.prm instead of ECCY/Level.prm?
-	Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + LevelID.CStr() + "/Level.hrd"); //!!!load PRM!
-	if (!LevelDesc.IsValid())
+	Data::PParams GameDesc;
+	if (SGCommon.IsValid())
 	{
-		Attrs.Clear();
-		FAIL;
+		GameDesc = n_new(Data::CParams);
+		InitialCommon->MergeDiff(*GameDesc, *SGCommon);
 	}
+	else GameDesc = InitialCommon;
 
-	//!!!if there is LevelDesc override, apply it here!
+	Data::PParams SubSection;
+	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Game")) && SubSection->GetCount())
+		SubSection->ToDataDict(Attrs);
+
+	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Time")) && SubSection->GetCount())
+		TimeSrv->Load(*SubSection);
+	else TimeSrv->ResetAll();
+
+	CStrID ActiveLevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
+	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
+	if (!LoadedLevels.IsValid())
+	{
+		LoadedLevels = n_new(Data::CDataArray);
+		SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
+	}
+	if (!LoadedLevels->Contains(ActiveLevelID)) LoadedLevels->Append(ActiveLevelID);
+
+	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
+	{
+		CStrID LevelID = LoadedLevels->Get<CStrID>(i);
+
+		//???ECCY.prm instead of ECCY/Level.prm?
+		nString RelLevelPath = nString("/Levels/") + LevelID.CStr() + "/Level.hrd";
+
+		Data::PParams InitialLvl = DataSrv->LoadHRD("export:Game" + RelLevelPath); //!!!load PRM!
+		n_assert(InitialLvl.IsValid());
+
+		//!!!DBG TMP PATH!
+		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadHRD("home:" + SaveGameName + RelLevelPath, false) : NULL;
+
+		Data::PParams LevelDesc;
+		if (SGLvl.IsValid())
+		{
+			LevelDesc = n_new(Data::CParams);
+			InitialLvl->MergeDiff(*LevelDesc, *SGLvl);
+		}
+		else LevelDesc = InitialLvl;
+
+		n_verify(LoadLevel(LevelID, *LevelDesc));
+	}
 
 	GameFileName = FileName;
 
-	return LoadLevel(LevelID, *LevelDesc) && SetActiveLevel(LevelID);
+	return SetActiveLevel(ActiveLevelID);
 }
 //---------------------------------------------------------------------
 
@@ -311,6 +348,12 @@ void CGameServer::PauseGame(bool Pause) const
 //???save delayed events?
 bool CGameServer::SaveGame(const nString& Name)
 {
+	//???!!!here or in Load/Unload level?
+	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
+	for (int i = 0; i < Levels.GetCount(); ++i)
+		LoadedLevels->Append(Levels.KeyAt(i));
+	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
+
 	Data::PParams GameDesc = DataSrv->LoadHRD(GameFileName);
 	if (!GameDesc.IsValid()) FAIL;
 
@@ -340,12 +383,6 @@ bool CGameServer::SaveGame(const nString& Name)
 	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
 //======
 
-	//???!!!here or in Load/Unload level?
-	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
-	for (int i = 0; i < Levels.GetCount(); ++i)
-		LoadedLevels->Append(Levels.KeyAt(i));
-	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
-
 	// Save diffs of each level
 	Data::PParams SGLevel = n_new(Data::CParams);
 	for (int i = 0; i < Levels.GetCount(); ++i)
@@ -370,54 +407,6 @@ bool CGameServer::SaveGame(const nString& Name)
 	//!!!can pack the whole game set!
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CGameServer::LoadGame(const nString& Name)
-{
-	Data::PParams InitialCommon = DataSrv->LoadHRD(GameFileName);
-	if (!InitialCommon.IsValid()) FAIL;
-
-	//!!!DBG TMP PATH!
-	Data::PParams SGCommon = Name.IsValid() ? DataSrv->LoadHRD("home:" + Name + "/Main.hrd") : NULL;
-
-	Data::PParams GameDesc;
-	if (SGCommon.IsValid())
-	{
-		GameDesc = n_new(Data::CParams);
-		InitialCommon->MergeDiff(*GameDesc, *SGCommon);
-	}
-	else GameDesc = InitialCommon;
-
-	Data::PParams SubSection;
-	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Game")) && SubSection->GetCount())
-		SubSection->ToDataDict(Attrs);
-
-	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Time")) && SubSection->GetCount())
-		TimeSrv->Load(*SubSection);
-	else TimeSrv->ResetAll();
-
-	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"));
-	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
-	{
-		CStrID LevelID = LoadedLevels->Get<CStrID>(i);
-
-		//???ECCY.prm instead of ECCY/Level.prm?
-		Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + LevelID.CStr() + "/Level.hrd"); //!!!load PRM!
-		n_assert(LevelDesc.IsValid());
-
-		//!!!if there is LevelDesc override, apply it here, or send to LoadLevel!
-		//!!!DBG TMP PATH!
-		//nString Path = "home:" + Name + "/Levels/" + Levels.KeyAt(i).CStr();
-		//if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
-		//DataSrv->SaveHRD(Path + "/Level.hrd", SGLevel);
-
-		n_verify(LoadLevel(LevelID, *LevelDesc));
-	}
-
-	//!!!GameFileName = FileName;
-
-	return SetActiveLevel(GetGlobalAttr<CStrID>(CStrID("ActiveLevel")));
 }
 //---------------------------------------------------------------------
 
