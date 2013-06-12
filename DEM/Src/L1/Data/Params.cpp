@@ -66,10 +66,10 @@ void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 			if (Prm.IsA<PParams>() && pDiffPrm->IsA<PParams>())
 			{
 				PParams SubMerge = n_new(CParams);
-				Prm.GetValue<PParams>()->GetDiff(*SubMerge, *pDiffPrm->GetValue<PParams>());
+				Prm.GetValue<PParams>()->MergeDiff(*SubMerge, *pDiffPrm->GetValue<PParams>());
 				OutChangedData.Set(Prm.GetName(), SubMerge);
 			}
-			else OutChangedData.Set(Prm);
+			else OutChangedData.Set(*pDiffPrm);
 		}
 		else OutChangedData.Set(Prm);
 	}

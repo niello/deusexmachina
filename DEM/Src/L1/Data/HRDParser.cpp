@@ -9,9 +9,9 @@ __ImplementClassNoFactory(Data::CHRDParser, Core::CRefCounted);
 	
 enum
 {
-	RW_FALSE,
-	RW_TRUE,
-	RW_NULL
+	RW_FALSE = 0,
+	RW_TRUE = 2,
+	RW_NULL = 1
 };
 
 enum
@@ -28,9 +28,10 @@ enum
 
 CHRDParser::CHRDParser()
 {
+	// NB: Keep sorted and keep enum above updated
 	TableRW.Append("false");
-	TableRW.Append("true");
 	TableRW.Append("null");
+	TableRW.Append("true");
 	
 	TableDlm.Append("=");
 	TableDlm.Append("[");
@@ -232,7 +233,7 @@ bool CHRDParser::LexProcessID(nArray<CToken>& Tokens)
 	nString NewID;
 	NewID.Set(TokenStart, LexerCursor - TokenStart);
 	
-	int Idx = TableRW.BinarySearchIndex(NewID); //!!!use sorted! RWs is a static table
+	int Idx = TableRW.BinarySearchIndex(NewID);
 	if (Idx != INVALID_INDEX)
 	{
 		Tokens.Append(CToken(TBL_RW, Idx, Line, Col));

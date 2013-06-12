@@ -63,9 +63,9 @@ public:
 	void			UnloadLevel(CStrID ID);
 	bool			SetActiveLevel(CStrID ID);
 	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
-	bool			StartGame(const nString& FileName);
+	bool			StartGame(const nString& FileName, const nString& SaveGameName = nString::Empty);
 	bool			SaveGame(const nString& Name);
-	bool			LoadGame(const nString& Name);
+	bool			LoadGame(const nString& Name) { return StartGame(GameFileName, Name); }
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
 
@@ -76,9 +76,11 @@ public:
 	template<class T>
 	const T&		GetGlobalAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
 	template<class T>
-	bool			GetGlobalAttr(CStrID ID, T& Out) const;
+	const T&		GetGlobalAttr(CStrID ID, const T& Default) const;
+	template<class T>
+	bool			GetGlobalAttr(T& Out, CStrID ID) const;
 	template<>
-	bool			GetGlobalAttr(CStrID ID, Data::CData& Out) const;
+	bool			GetGlobalAttr(Data::CData& Out, CStrID ID) const;
 	bool			HasGlobalAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
 	//Transition service - to move entities from level to level, including store-unload level 1-load level 2-restore case
@@ -115,9 +117,18 @@ template<> void CGameServer::SetGlobalAttr(CStrID ID, const Data::CData& Value)
 }
 //---------------------------------------------------------------------
 
+template<class T>
+inline const T& CGameServer::GetGlobalAttr(CStrID ID, const T& Default) const
+{
+	int Idx = Attrs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) return Default;
+	return Attrs.ValueAt(Idx).GetValue<T>();
+}
+//---------------------------------------------------------------------
+
 //???ref of ptr? to avoid copying big data
 template<class T>
-inline bool CGameServer::GetGlobalAttr(CStrID ID, T& Out) const
+inline bool CGameServer::GetGlobalAttr(T& Out, CStrID ID) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
@@ -127,7 +138,7 @@ inline bool CGameServer::GetGlobalAttr(CStrID ID, T& Out) const
 
 //???ref of ptr? to avoid copying big data
 template<>
-inline bool CGameServer::GetGlobalAttr(CStrID ID, Data::CData& Out) const
+inline bool CGameServer::GetGlobalAttr(Data::CData& Out, CStrID ID) const
 {
 	int Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
