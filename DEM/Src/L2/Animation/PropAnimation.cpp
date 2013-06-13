@@ -9,10 +9,6 @@
 #include <Animation/MocapClip.h>
 #include <Data/DataServer.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropAnimation)
-//	RegisterString(AnimDesc, ReadOnly);
-//END_ATTRS_REGISTRATION
-
 namespace Anim
 {
 	bool LoadMocapClipFromNAX2(const nString& FileName, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip);
@@ -226,11 +222,11 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		pNode->Controller = Clip->CreateController(i);
 		pTask->Ctlrs.Add(pNode, pNode->Controller.GetUnsafe());
 
+		// If Weight != 1.f force creation of the blend controller
 		//!!!
 		// If still no blend controller, create and setup
 		// Add child controller
 		// Only blend controller allows to tune weight
-		//????or weight to controller?
 	}
 	pTask->Ctlrs.EndAdd();
 
