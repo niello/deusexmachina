@@ -3,7 +3,7 @@
 #define __DEM_L2_NAV_MESH_DEBUG_DRAW_H__
 
 #include <StdDEM.h>
-#include <Render/Render.h>
+#include <Render/RenderFwd.h>
 #include <DebugDraw.h>
 #include <util/narray.h>
 #include <mathlib/vector.h>

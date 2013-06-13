@@ -5,7 +5,7 @@
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
 #include <StdDEM.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 
 // Script server is a central point for script objects creation, registration and script running
 // Should store script interpreter, loader from file etc

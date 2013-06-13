@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_KEYFRAME_TRACK_H__
 #define __DEM_L1_ANIM_KEYFRAME_TRACK_H__
 
-#include <Animation/Anim.h>
+#include <Animation/AnimFwd.h>
 #include <mathlib/quaternion.h>
 #include <util/nfixedarray.h>
 

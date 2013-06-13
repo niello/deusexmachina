@@ -3,16 +3,24 @@
 #define __DEM_L1_ANIM_CLIP_H__
 
 #include <Resources/Resource.h>
-#include <Animation/Anim.h>
+#include <Animation/EventTrack.h>
 #include <util/ndictionary.h>
 
 // Animation clip is a set of tracks (curves), which defines single animation for a set of points
 // in space. Typically it consists of up to 3 tracks * number of animated bones in target sceleton.
 // Clip can have any number of tracks and target bones, so it can animate a single scene node as well.
-// Tracks are grouped in samplers. One sampler affects one target, referencing it by a node relative
-// path or by a bone ID.
+// Tracks are grouped in samplers. One sampler affects one node, referencing it by a relative path.
+// There are also event tracks that fire events when reach specified points on the timeline.
 
-//!!!TODO: unify MCA & KFA mapping. Map to node relative path, CPropAnimation can cache CStrID with the path -> Node.
+namespace Data
+{
+	typedef Ptr<class CParams> PParams;
+}
+
+namespace Events
+{
+	class CEventDispatcher;
+}
 
 namespace Scene
 {
@@ -30,6 +38,7 @@ class CAnimClip: public Resources::CResource
 protected:
 
 	nDictionary<CStrID, CSampler>	Samplers;
+	nArray<CEventTrack>				EventTracks; //???use fixed array? //???per-sampler event tracks (are 3D editors capable)?
 	float							Duration;
 
 public:
@@ -38,6 +47,8 @@ public:
 
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
 	float							AdjustTime(float Time, bool Loop) const;
+	void							FireEvents(float ExactTime, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
+	void							FireEvents(float StartTime, float EndTime, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
 	DWORD							GetSamplerCount() const { return Samplers.GetCount(); }
 	CStrID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
 	float							GetDuration() const { return Duration; }

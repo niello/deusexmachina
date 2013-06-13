@@ -31,7 +31,7 @@ typedef Ptr<CDataArray> PDataArray;
 
 template<class T> inline void CDataArray::FillArray(nArray<T>& OutArray) const
 {
-	for (iterator It = Begin(); It != End(); It++)
+	for (CIterator It = Begin(); It != End(); It++)
 		OutArray.Append((*It).GetValue<T>());
 }
 //---------------------------------------------------------------------

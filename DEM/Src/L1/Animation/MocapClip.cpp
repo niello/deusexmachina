@@ -6,7 +6,8 @@ namespace Anim
 {
 __ImplementResourceClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
 
-bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping, vector4* _pKeys,
+bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
+					   const nArray<CEventTrack>* _EventTracks, vector4* _pKeys,
 					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
 {
 	n_assert(_pKeys);
@@ -15,6 +16,8 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>&
 
 	pKeys = _pKeys;
 	Tracks = _Tracks;
+	if (_EventTracks) EventTracks = *_EventTracks;
+	else EventTracks.Clear();
 
 	KeysPerCurve = _KeysPerCurve;
 	KeyStride = _KeyStride;
@@ -27,9 +30,9 @@ bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>&
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
 		switch (Tracks[i].Channel)
 		{
-			case Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
-			case Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
-			case Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
+			case Scene::Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
+			case Scene::Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
+			case Scene::Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
 			default: n_error("CMocapClip::Setup() -> Unsupported channel for an SRT sampler track!");
 		};
 	}

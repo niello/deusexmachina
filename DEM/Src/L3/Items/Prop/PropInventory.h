@@ -31,7 +31,7 @@ protected:
 
 	nArray<CItemStack> Items; //???linked list?
 
-	typedef nArray<CItemStack>::iterator ItItemStack;
+	typedef nArray<CItemStack>::CIterator ItItemStack;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

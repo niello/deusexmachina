@@ -59,7 +59,7 @@ bool CSensorVision::SenseStimulus(CActor* pActor, CStimulus* pStimulus) const
 
 			if (Confidence > 0.f)
 			{
-				nArray<PPerceptor>::iterator ItPerceptor;
+				nArray<PPerceptor>::CIterator ItPerceptor;
 				for (ItPerceptor = Perceptors.Begin(); ItPerceptor != Perceptors.End(); ItPerceptor++)
 					(*ItPerceptor)->ProcessStimulus(pActor, pStimulus, Confidence);
 			}

@@ -3,7 +3,7 @@
 #define __DEM_L2_APP_FSM_H__
 
 #include "StateHandler.h"
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 
 // Application state machine manages different application states and their transitions.
 // Use it into your application class if app has more than one state.

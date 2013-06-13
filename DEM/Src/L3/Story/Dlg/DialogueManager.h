@@ -6,7 +6,7 @@
 #include <Core/Singleton.h>
 #include <util/ndictionary.h>
 #include <Data/StringID.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include "Dialogue.h"
 
 // Dialogue system (parsing/executing machine).

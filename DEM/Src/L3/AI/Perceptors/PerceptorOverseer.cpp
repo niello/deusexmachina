@@ -20,7 +20,7 @@ void CPerceptorOverseer::Init(const Data::CParams& Desc)
 	//if (Array.IsValid()) Array->FillArray(Overseers);
 	
 	if (Array.IsValid())
-		for (CDataArray::iterator It = Array->Begin(); It != Array->End(); It++)
+		for (CDataArray::CIterator It = Array->Begin(); It != Array->End(); It++)
 			Overseers.Append(CStrID((*It).GetValue<nString>().CStr()));
 }
 //---------------------------------------------------------------------

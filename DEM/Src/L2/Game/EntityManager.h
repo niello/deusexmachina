@@ -6,7 +6,7 @@
 #include <Core/Singleton.h>
 #include <Game/Entity.h>
 #include <Game/Property.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <util/ndictionary.h>
 
 // The entity manager creates and manages entities and allows to

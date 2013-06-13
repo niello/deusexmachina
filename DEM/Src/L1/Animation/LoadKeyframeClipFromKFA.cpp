@@ -29,7 +29,7 @@ bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 		Reader.Read(*pMap++);
 
 		CKeyframeTrack& Track = *Tracks.Reserve(1);
-		Track.Channel = (EChannel)Reader.Read<int>();
+		Track.Channel = (Scene::EChannel)Reader.Read<int>();
 
 		DWORD KeyCount = Reader.Read<DWORD>();
 		if (!KeyCount) Reader.Read(Track.ConstValue);
@@ -40,7 +40,22 @@ bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 		}
 	}
 
-	return OutClip->Setup(Tracks, TrackMapping, Duration);
+	//!!!load event tracks!
+	nArray<CEventTrack> EventTracks;
+
+	//!!!DBG TMP!
+	CEventTrack& ET = *EventTracks.Reserve(1);
+	ET.Keys.SetSize(3);
+	ET.Keys[0].Time = 0.f;
+	ET.Keys[0].EventID = CStrID("OnAnimStart");
+	ET.Keys[1].Time = Duration * 0.5f;
+	ET.Keys[1].EventID = CStrID("OnAnimHalf");
+	ET.Keys[2].Time = Duration;
+	ET.Keys[2].EventID = CStrID("OnAnimEnd");
+
+	ET.Keys.Sort();
+
+	return OutClip->Setup(Tracks, TrackMapping, &EventTracks, Duration);
 }
 //---------------------------------------------------------------------
 

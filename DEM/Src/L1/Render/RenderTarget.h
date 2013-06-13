@@ -4,8 +4,8 @@
 
 #include <Core/RefCounted.h>
 #include <Data/StringID.h>
-#include <Render/Render.h>
-#include <Events/Events.h>
+#include <Render/RenderFwd.h>
+#include <Events/EventsFwd.h>
 
 // A surface render server renders to. Can be used as texture.
 // If resolve texture and RT surface are identical, this class uses one RT texture,

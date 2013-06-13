@@ -195,7 +195,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 
 	if (OutObjects && pNode->Data.Objects.GetCount())
 	{
-		nArray<CSPSRecord*>::iterator ItObj = pNode->Data.Objects.Begin();
+		nArray<CSPSRecord*>::CIterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
 			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.GetCount());
@@ -213,7 +213,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 
 	if (OutLights && pNode->Data.Lights.GetCount())
 	{
-		nArray<CSPSRecord*>::iterator ItLight = pNode->Data.Lights.Begin();
+		nArray<CSPSRecord*>::CIterator ItLight = pNode->Data.Lights.Begin();
 		if (Clip == Inside)
 		{
 			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.GetCount());

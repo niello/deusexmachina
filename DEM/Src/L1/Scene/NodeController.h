@@ -3,7 +3,7 @@
 #define __DEM_L1_SCENE_NODE_CTLR_H__
 
 #include <Core/RefCounted.h>
-#include <Animation/Anim.h>
+#include <Scene/SceneFwd.h>
 #include <Data/Flags.h>
 #include <Math/TransformSRT.h>
 
@@ -41,7 +41,7 @@ public:
 	bool			IsActive() const { return Flags.Is(Active); }
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
-	bool			HasChannel(Anim::EChannel Channel) const { return Channels.Is(Channel); }
+	bool			HasChannel(EChannel Channel) const { return Channels.Is(Channel); }
 };
 
 typedef Ptr<CNodeController> PNodeController;

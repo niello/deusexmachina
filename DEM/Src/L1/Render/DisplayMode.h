@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_DISPLAY_MODE_H__
 #define __DEM_L1_RENDER_DISPLAY_MODE_H__
 
-#include <Render/Render.h>
+#include <Render/RenderFwd.h>
 #include <util/nstring.h>
 
 // Contains display mode parameters.

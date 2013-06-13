@@ -5,7 +5,7 @@
 #include <Core/RefCounted.h>
 #include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 
 // Storage of geometry index array for corresponding vertex array.
 

@@ -4,7 +4,7 @@
 
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
-#include <IO/IO.h>
+#include <IO/IOFwd.h>
 #include <util/HashMap.h>
 
 // IO server manages input/output, file systems, generic file caching, path assigns

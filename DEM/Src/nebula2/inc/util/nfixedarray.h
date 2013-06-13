@@ -10,39 +10,44 @@
     (C) 2004 RadonLabs GmbH
 */
 #include "kernel/ntypes.h"
+#include <algorithm> // std::sort
 
-template<class TYPE> class nFixedArray
+template<class T> class nFixedArray
 {
 private:
 
-	TYPE*	pData;
+	T*	pData;
 	int		Count;
 
 	void	Allocate(int NewSize);
-	void	Copy(const nFixedArray<TYPE>& src);
+	void	Copy(const nFixedArray<T>& src);
 	void	Delete();
 
 public:
 
 	nFixedArray(): Count(0), pData(NULL) {}
 	nFixedArray(int _Size): Count(0), pData(NULL) { Allocate(_Size); }
-	nFixedArray(const nFixedArray<TYPE>& Other): Count(0), pData(NULL) { Copy(Other); }
+	nFixedArray(const nFixedArray<T>& Other): Count(0), pData(NULL) { Copy(Other); }
 	~nFixedArray();
 
-	void	Clear(TYPE Elm) { for (int i = 0; i < Count; i++) pData[i] = Elm; }
-	int		Find(const TYPE& Elm) const;
+	void	Clear(T Elm) { for (int i = 0; i < Count; i++) pData[i] = Elm; }
+	int		FindIndex(const T& Elm) const;
+	bool	Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
+	void	Sort() { std::sort(pData, pData + Count); }
+	template<class TCmp>
+	void	Sort() { std::sort(pData, pData + Count, TCmp()); }
 
 	void	SetSize(int NewSize) { if (Count != NewSize) Allocate(NewSize); }
 	int		GetCount() const { return Count; }
-	TYPE*	GetPtr() { return pData; }
+	T*		GetPtr() { return pData; }
 
-	void	RawCopyFrom(const TYPE* pSrc, uint SrcCount);
+	void	RawCopyFrom(const T* pSrc, uint SrcCount);
 
-	void	operator =(const nFixedArray<TYPE>& Other) { Copy(Other); }
-	TYPE&	operator [](int Index) const;
+	void	operator =(const nFixedArray<T>& Other) { Copy(Other); }
+	T&	operator [](int Index) const;
 };
 
-template<class TYPE> nFixedArray<TYPE>::~nFixedArray()
+template<class T> nFixedArray<T>::~nFixedArray()
 {
 	if (pData)
 	{
@@ -52,18 +57,18 @@ template<class TYPE> nFixedArray<TYPE>::~nFixedArray()
 }
 //---------------------------------------------------------------------
 
-template<class TYPE> void nFixedArray<TYPE>::Allocate(int NewSize)
+template<class T> void nFixedArray<T>::Allocate(int NewSize)
 {
 	Delete();
 	if (NewSize > 0)
 	{
-		pData = n_new_array(TYPE, NewSize);
+		pData = n_new_array(T, NewSize);
 		Count = NewSize;
 	}
 }
 //---------------------------------------------------------------------
 
-template<class TYPE> void nFixedArray<TYPE>::Copy(const nFixedArray<TYPE>& rhs)
+template<class T> void nFixedArray<T>::Copy(const nFixedArray<T>& rhs)
 {
 	if (this != &rhs)
 	{
@@ -73,7 +78,7 @@ template<class TYPE> void nFixedArray<TYPE>::Copy(const nFixedArray<TYPE>& rhs)
 }
 //---------------------------------------------------------------------
 
-template<class TYPE> void nFixedArray<TYPE>::Delete()
+template<class T> void nFixedArray<T>::Delete()
 {
 	if (pData)
 	{
@@ -85,21 +90,21 @@ template<class TYPE> void nFixedArray<TYPE>::Delete()
 //---------------------------------------------------------------------
 
 // Doesn't call element constructors
-template<class TYPE> void nFixedArray<TYPE>::RawCopyFrom(const TYPE* pSrc, uint SrcCount)
+template<class T> void nFixedArray<T>::RawCopyFrom(const T* pSrc, uint SrcCount)
 {
 	n_assert(pSrc);
 	memcpy(pData, pSrc, n_min(SrcCount, Count));
 }
 //---------------------------------------------------------------------
 
-template<class TYPE> TYPE& nFixedArray<TYPE>::operator [](int Index) const
+template<class T> T& nFixedArray<T>::operator [](int Index) const
 {
 	n_assert(pData && Index >= 0 && Index < Count);
 	return pData[Index];
 }
 //---------------------------------------------------------------------
 
-template<class TYPE> int nFixedArray<TYPE>::Find(const TYPE& Elm) const
+template<class T> int nFixedArray<T>::FindIndex(const T& Elm) const
 {
 	for (int i = 0; i < Count; i++)
 		if (Elm == pData[i]) return i;

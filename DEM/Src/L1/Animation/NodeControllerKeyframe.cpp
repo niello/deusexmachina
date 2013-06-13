@@ -10,9 +10,9 @@ void CNodeControllerKeyframe::SetSampler(const CSampler* _pSampler)
 	n_assert(_pSampler); //???allow NULL?
 	pSampler = _pSampler;
 	Channels.ClearAll();
-	if (pSampler->pTrackT) Channels.Set(Chnl_Translation);
-	if (pSampler->pTrackR) Channels.Set(Chnl_Rotation);
-	if (pSampler->pTrackS) Channels.Set(Chnl_Scaling);
+	if (pSampler->pTrackT) Channels.Set(Scene::Chnl_Translation);
+	if (pSampler->pTrackR) Channels.Set(Scene::Chnl_Rotation);
+	if (pSampler->pTrackS) Channels.Set(Scene::Chnl_Scaling);
 }
 //---------------------------------------------------------------------
 

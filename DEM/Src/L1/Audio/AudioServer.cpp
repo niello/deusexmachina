@@ -133,7 +133,7 @@ void CAudioServer::RemoveEntity(CAudioEntity* pEntity)
 {
 	n_assert(pEntity);
 	pEntity->Deactivate();
-	nArray<PAudioEntity>::iterator itEntity = Entities.Find(pEntity);
+	nArray<PAudioEntity>::CIterator itEntity = Entities.Find(pEntity);
 	n_assert(itEntity);
 	Entities.Erase(itEntity);
 }

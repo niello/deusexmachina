@@ -33,7 +33,8 @@ public:
 	virtual ~CMocapClip() { if (IsLoaded()) Unload(); }
 
 	bool							Setup(	const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
-											vector4* _pKeys, DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
+											const nArray<CEventTrack>* _EventTracks, vector4* _pKeys,
+											DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
 	virtual void					Unload();
 
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;

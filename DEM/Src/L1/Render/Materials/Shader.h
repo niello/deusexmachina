@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_SHADER_H__
 
 #include <Render/Materials/Texture.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 #include <Data/Data.h>
 #include <util/ndictionary.h>

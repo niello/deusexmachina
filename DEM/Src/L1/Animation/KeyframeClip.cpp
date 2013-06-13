@@ -6,11 +6,14 @@ namespace Anim
 {
 __ImplementResourceClass(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
 
-bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping, float Length)
+bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
+						  const nArray<CEventTrack>* _EventTracks, float Length)
 {
 	if (State == Resources::Rsrc_Loaded) Unload();
 
 	Tracks = _Tracks;
+	if (_EventTracks) EventTracks = *_EventTracks;
+	else EventTracks.Clear();
 
 	Duration = Length;
 
@@ -19,9 +22,9 @@ bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CS
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
 		switch (Tracks[i].Channel)
 		{
-			case Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
-			case Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
-			case Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
+			case Scene::Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
+			case Scene::Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
+			case Scene::Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
 			default: n_error("CKeyframeClip::Setup() -> Unsupported channel for an SRT sampler track!");
 		};
 	}

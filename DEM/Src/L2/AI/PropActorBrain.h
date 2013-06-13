@@ -131,7 +131,7 @@ public:
 
 inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 {
-	for (nArray<const CActionTpl*>::iterator ppTpl = Actions.Begin(); ppTpl != Actions.End(); ppTpl++)
+	for (nArray<const CActionTpl*>::CIterator ppTpl = Actions.Begin(); ppTpl != Actions.End(); ppTpl++)
 		if (*ppTpl == pAction) OK;
 	FAIL;
 }

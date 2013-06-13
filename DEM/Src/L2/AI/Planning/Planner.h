@@ -67,7 +67,7 @@ public:
 inline const CActionTpl* CPlanner::FindActionTpl(LPCSTR Name) const
 {
 	nString ClassName = StrActTplPrefix + Name;
-	for (nArray<PActionTpl>::iterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
+	for (nArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
 		if ((*ppTpl)->IsInstanceOf(ClassName))
 			return (*ppTpl).GetUnsafe();
 	return NULL;

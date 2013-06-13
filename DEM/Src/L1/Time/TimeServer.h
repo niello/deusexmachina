@@ -5,7 +5,7 @@
 #include <Time/TimeSource.h>
 #include <Core/Singleton.h>
 #include <Data/StringID.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <util/ndictionary.h>
 
 // Manages the main application timer, time sources used by different subsystems, and named timers

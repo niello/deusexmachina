@@ -562,10 +562,6 @@
 					RelativePath="..\..\Src\nebula2\inc\util\nfixedarray.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nkeyarray.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="nhash"

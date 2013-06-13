@@ -3,7 +3,7 @@
 #define __DEM_L2_PROP_ANIM_H__
 
 #include <Game/Property.h>
-#include <Animation/Anim.h>
+#include <Animation/AnimFwd.h>
 #include <Animation/AnimClip.h>
 #include <Animation/AnimTask.h>
 #include <util/ndictionary.h>

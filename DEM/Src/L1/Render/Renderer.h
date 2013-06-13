@@ -4,7 +4,7 @@
 
 #include <Core/RefCounted.h>
 #include <Data/Params.h>
-//#include <Render/Render.h>
+//#include <Render/RenderFwd.h>
 
 // Renderer is responsible for rendering certain type of graphics elements, like meshes,
 // particles, terrain patches, debug shapes, text, UI etc. Renderer can be fed directly

@@ -4,7 +4,7 @@
 
 #include <Core/Singleton.h>
 #include <Story/Quests/Quest.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,
 // opening new tasks etc)

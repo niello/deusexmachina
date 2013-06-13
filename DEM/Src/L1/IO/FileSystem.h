@@ -3,7 +3,7 @@
 #define __DEM_L1_FILE_SYSTEM_H__
 
 #include <Core/RefCounted.h>
-#include <IO/IO.h>
+#include <IO/IOFwd.h>
 
 // File system interface. Implementation can be real OS file system or any VFS.
 

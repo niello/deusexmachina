@@ -5,7 +5,7 @@
 #include <Data/SimpleString.h>
 #include <Data/StringID.h>
 #include <Core/Singleton.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <UI/Window.h>
 #include <util/ndictionary.h>
 

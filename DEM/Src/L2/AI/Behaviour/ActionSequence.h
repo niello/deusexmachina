@@ -15,7 +15,7 @@ class CActionSequence: public CAction
 protected:
 
 	nArray<PAction>				Child; //???use linked list?
-	nArray<PAction>::iterator	ppCurrChild;
+	nArray<PAction>::CIterator	ppCurrChild;
 
 public:
 

@@ -295,7 +295,7 @@ void CDialogueManager::Trigger()
 		}
 	}
 
-	for (nArray<CActiveDlg>::iterator pDlg = BackgroundDlgs.Begin(); pDlg != BackgroundDlgs.End(); )
+	for (nArray<CActiveDlg>::CIterator pDlg = BackgroundDlgs.Begin(); pDlg != BackgroundDlgs.End(); )
 	{
 		CDlgNode* pNewNode = pDlg->Trigger();
 		while (pNewNode != pDlg->pCurrNode)
