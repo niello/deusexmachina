@@ -6,7 +6,7 @@
 
 #include <Core/RefCounted.h>
 #include <Data/StringID.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <util/HashTable.h>
 
 namespace Game

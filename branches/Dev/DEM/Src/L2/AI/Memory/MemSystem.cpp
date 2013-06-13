@@ -12,7 +12,7 @@ void CMemSystem::Init()
 {
 	for (int i = 0; i < Facts.GetListCount(); ++i)
 	{
-		nArray<PSensor>::iterator It = pActor->GetSensors().Begin();
+		nArray<PSensor>::CIterator It = pActor->GetSensors().Begin();
 		for (; It != pActor->GetSensors().End(); It++)
 	}
 }
@@ -29,7 +29,7 @@ void CMemSystem::Update()
 	{
 		//!!!can avoid second dictionary lookup, index will always be i!
 		//???!!!cache sensor lists?!
-		nArray<PSensor>::iterator It = pActor->GetSensors().Begin();
+		nArray<PSensor>::CIterator It = pActor->GetSensors().Begin();
 		for (; It != pActor->GetSensors().End(); It++)
 			if ((*It)->ValidatesFactType(*Facts.GetKeyAt(i)))
 				ValidationSensors.Append((*It));
@@ -40,7 +40,7 @@ void CMemSystem::Update()
 			{
 				EExecStatus Result = Running;
 
-				nArray<CSensor*>::iterator It = ValidationSensors.Begin();
+				nArray<CSensor*>::CIterator It = ValidationSensors.Begin();
 				for (; It != ValidationSensors.End(); It++)
 				{
 					// Since we validate only facts not updated this frame, we definitely know here,

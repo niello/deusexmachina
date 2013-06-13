@@ -5,7 +5,7 @@
 #include <UI/Window.h>
 #include <Core/Singleton.h>
 #include <Data/StringID.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <util/ndictionary.h>
 #include <CEGUIEvent.h>
 #include <CEGUIVector.h>

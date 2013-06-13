@@ -4,7 +4,7 @@
 
 //#include <Core/RefCounted.h>
 #include <Core/RTTI.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Data/StringID.h>
 #include <Input/Keys.h>
 

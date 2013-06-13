@@ -11,7 +11,7 @@
 #include <Data/Data.h>
 #include <Data/DynamicEnum.h>
 #include <Core/Singleton.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 
 // Render device interface (currently D3D9). Renderer manages shaders, shader state, shared variables,

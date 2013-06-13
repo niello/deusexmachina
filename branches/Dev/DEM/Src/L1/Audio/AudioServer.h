@@ -4,7 +4,7 @@
 
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Audio/Audio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

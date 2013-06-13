@@ -140,9 +140,13 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		void* pUserData = PhysObj->GetUserData();
 		if (!pUserData) continue;
 		CStrID EntityID = *(CStrID*)&pUserData;
-		NewInsiders.Append(EntityID);
 		if (pScriptObj && CurrInsiders.BinarySearchIndex(EntityID) == INVALID_INDEX)
-			pScriptObj->RunFunctionOneArg("OnTriggerEnter", nString(EntityID.CStr()));
+		{
+			Data::CData RetVal;
+			pScriptObj->RunFunctionOneArg("OnTriggerEnter", nString(EntityID.CStr()), &RetVal);
+			if (!(RetVal.IsA<bool>() && RetVal == false || RetVal.IsA<int>() && RetVal == 0))
+				NewInsiders.Append(EntityID);
+		}
 	}
 
 	NewInsiders.Sort();

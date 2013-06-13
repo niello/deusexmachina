@@ -48,7 +48,7 @@ private:
 
 public:
 
-	typedef T* iterator;
+	typedef T* CIterator;
 
 	Data::CFlags Flags;
 
@@ -58,66 +58,46 @@ public:
 	nArray(const nArray<T>& Other): GrowSize(0), Allocated(0), Count(0), pData(0), Flags(Array_KeepOrder) { Copy(Other); }
 	~nArray() { Delete(); }
 
-    void SetFixedSize(int size); //???need to clear all content?
-	void SetGrowSize(int Grow) { GrowSize = Grow; }
+    void		SetFixedSize(int size); //???need to clear all content?
+	void		SetGrowSize(int Grow) { GrowSize = Grow; }
+	int			GetCount() const { return Count; }
+	int			GetAllocSize() const { return Allocated; }
+	bool		IsEmpty() const { return !Count; }
 
     T&			Append(const T& pElm);
     void		AppendArray(const nArray<T>& Other);
-	iterator	Reserve(int num, bool Grow = true);
-	int			GetCount() const { return Count; }
-	int			AllocSize() const { return Allocated; }
-    /// set element at Idx, _GrowSize array if necessary
-    T& Set(int Idx, const T& pElm);
-    /// return reference to nth element in array
-    T& At(int Idx);
-    /// return reference to first element
-	T& Front() const { n_assert(pData && Count > 0); return pData[0]; }
-    /// return reference to last element
-	T& Back() const { n_assert(pData && Count > 0); return pData[Count - 1]; }
-    /// return true if array empty
-	bool Empty() const { return !Count; }
-    /// erase element equal to arg
-    bool RemoveByValue(const T& Elm);
-    /// erase element at Idx
-    void EraseAt(int Idx);
-    /// quick erase, does not call operator= or destructor
-    void EraseAtQuick(int Idx);
-    /// erase element pointed to by iterator
-    iterator Erase(iterator iter);
-    /// quick erase, does not call operator= or destructor
-    iterator EraseQuick(iterator iter);
-    /// insert element at Idx
-    T& Insert(int Idx, const T& pElm);
-    /// insert element into sorted array
-    T& InsertSorted(const T& pElm);
-    /// grows/shrinks array (calls constructors/destructors)
-    void Resize(int NewAllocSize);
-    /// clear array (calls destructors)
-    void Clear();
-    /// reset array (does NOT call destructors)
-	void Reset() { Count = 0; }
-    /// return iterator to beginning of array
-	iterator Begin() const { return pData; }
-    /// return iterator to end of array
-	iterator End() const { return pData + Count; }
-    /// find identical element in array, return iterator
-    iterator Find(const T& pElm) const;
-    /// find identical element in array, return Idx
-    int FindIndex(const T& pElm) const;
-    /// find identical element in array, return Idx
-	bool Contains(const T& pElm) const { return FindIndex(pElm) != -1; }
-    /// find array range with element
-    void Fill(int first, int num, const T& pElm);
-    /// clear contents and preallocate with new attributes
-    void Reallocate(int _Count, int _GrowSize);
-    /// returns new array with pData which are not in Other (slow!)
-    nArray<T> Difference(const nArray<T>& Other) const;
-    /// sort the array
-	void Sort() { std::sort(Begin(), End()); }
-    /// sort the array
-	template<class TCmp> void Sort() { std::sort(Begin(), End(), TCmp()); }
-    /// do a binary search, requires a sorted array
-    int BinarySearchIndex(const T& pElm) const;
+	CIterator	Reserve(int num, bool Grow = true);
+    T&			Set(int Idx, const T& pElm);
+	T&			Insert(int Idx, const T& pElm);
+    T&			InsertSorted(const T& pElm);
+	void		Fill(int first, int num, const T& pElm);
+
+	T&			At(int Idx);
+    T&			At(int Idx) const;
+	T&			Front() const { n_assert(pData && Count > 0); return pData[0]; }
+	T&			Back() const { n_assert(pData && Count > 0); return pData[Count - 1]; }
+	CIterator	Begin() const { return pData; }
+	CIterator	End() const { return pData + Count; }
+
+	bool		RemoveByValue(const T& Elm);
+    void		EraseAt(int Idx);
+    void		EraseAtQuick(int Idx);
+    CIterator	Erase(CIterator iter);
+    CIterator	EraseQuick(CIterator iter);
+    void		Clear();
+	void		Reset() { Count = 0; }
+
+	void		Resize(int NewAllocSize);
+    void		Reallocate(int _Count, int _GrowSize);
+
+	CIterator	Find(const T& Elm) const;
+    int			FindIndex(const T& Elm) const;
+	bool		Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
+    int			BinarySearchIndex(const T& pElm) const;
+	void		Sort() { std::sort(Begin(), End()); }
+	template<class TCmp>
+	void		Sort() { std::sort(Begin(), End(), TCmp()); }
+	nArray<T>	Difference(const nArray<T>& Other) const;
 
 	nArray<T>&	operator =(const nArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
 	T&			operator [](int Idx) const { n_assert(Idx >= 0 && Idx < Count); return pData[Idx]; }
@@ -375,7 +355,7 @@ void nArray<T>::AppendArray(const nArray<T>& Other)
 // to the start of the reserved area. This can be (carefully!) used as a fast
 // shortcut to fill the array directly with data.
 template<class T>
-typename nArray<T>::iterator nArray<T>::Reserve(int num, bool Grow)
+typename nArray<T>::CIterator nArray<T>::Reserve(int num, bool Grow)
 {
 	n_assert(num > 0);
 	int maxElement = Count + num;
@@ -385,7 +365,7 @@ typename nArray<T>::iterator nArray<T>::Reserve(int num, bool Grow)
 		else Resize(maxElement);
 	}
 	n_assert(pData);
-	iterator iter = pData + Count;
+	CIterator iter = pData + Count;
 	for (int i = Count; i < maxElement; i++)
 		Construct(pData + i);
 	Count = maxElement;
@@ -419,12 +399,18 @@ T& nArray<T>::Set(int Idx, const T& pElm)
 }
 //---------------------------------------------------------------------
 
-// Access an element. This method may _GrowSize the array if the Idx is
-// outside the array range.
-template<class T>
-inline T& nArray<T>::At(int Idx)
+// Access an element. This method may grow the array if the Idx is outside the array range.
+template<class T> inline T& nArray<T>::At(int Idx)
 {
 	CheckIndex(Idx);
+	return pData[Idx];
+}
+//---------------------------------------------------------------------
+
+// Access an element. This method may grow the array if the Idx is outside the array range.
+template<class T> inline T& nArray<T>::At(int Idx) const
+{
+	n_assert(Idx >= 0 && Idx < Count);
 	return pData[Idx];
 }
 //---------------------------------------------------------------------
@@ -484,8 +470,8 @@ inline void nArray<T>::EraseAtQuick(int Idx)
 //---------------------------------------------------------------------
 
 template<class T>
-inline typename nArray<T>::iterator
-nArray<T>::Erase(typename nArray<T>::iterator It)
+inline typename nArray<T>::CIterator
+nArray<T>::Erase(typename nArray<T>::CIterator It)
 {
 	if (It) EraseAt(int(It - pData));
 	return It;
@@ -495,8 +481,8 @@ nArray<T>::Erase(typename nArray<T>::iterator It)
 // Quick erase, uses memmove() and does not call assignment operators
 // or destructor, so be careful about that!
 template<class T>
-inline typename nArray<T>::iterator
-nArray<T>::EraseQuick(typename nArray<T>::iterator iter)
+inline typename nArray<T>::CIterator
+nArray<T>::EraseQuick(typename nArray<T>::CIterator iter)
 {
 	n_assert(pData && iter >= pData && iter < pData + Count);
 	EraseQuick(int(iter - pData));
@@ -527,7 +513,7 @@ void nArray<T>::Clear()
 //---------------------------------------------------------------------
 
 template<class T>
-typename nArray<T>::iterator nArray<T>::Find(const T& pElm) const
+typename nArray<T>::CIterator nArray<T>::Find(const T& pElm) const
 {
 	for (int i = 0; i < Count; ++i)
 		if (pData[i] == pElm)

@@ -1,16 +1,12 @@
 #include "NodeControllerRigidBody.h"
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//for channel flags, move flags to Scene!
-#include <Animation/Anim.h>
-
 namespace Physics
 {
 
 void CNodeControllerRigidBody::SetBody(CRigidBody& RigidBody)
 {
 	Body = &RigidBody;
-	Channels.Set(Anim::Chnl_Translation | Anim::Chnl_Rotation);
+	Channels.Set(Scene::Chnl_Translation | Scene::Chnl_Rotation);
 	Body->SetTransformChanged(true); // To enforce first update
 }
 //---------------------------------------------------------------------

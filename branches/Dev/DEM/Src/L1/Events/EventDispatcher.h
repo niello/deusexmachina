@@ -75,7 +75,8 @@ public:
 	//template<class T> void	Unsubscribe(CStrID ID, T* Object, bool FirstOnly = true);
 	void					UnsubscribeAll() { Subscriptions.Clear(); }
 };
-//---------------------------------------------------------------------
+
+typedef Ptr<CEventDispatcher> PEventDispatcher;
 
 inline CEventDispatcher::CEventDispatcher():
 	PendingEventsHead(NULL),

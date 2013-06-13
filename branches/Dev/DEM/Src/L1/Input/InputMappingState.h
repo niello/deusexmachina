@@ -3,7 +3,7 @@
 #define __DEM_L1_INPUT_MAPPING_STATE_H__
 
 #include <Core/RefCounted.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Data/StringID.h>
 #include <Input/Keys.h>
 

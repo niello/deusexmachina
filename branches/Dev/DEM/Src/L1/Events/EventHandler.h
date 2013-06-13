@@ -3,7 +3,7 @@
 #define __DEM_L1_EVENT_HANDLER_H__
 
 #include <Core/RefCounted.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 
 // Event handler is an abstract wrapper to event handling function (functor)
 

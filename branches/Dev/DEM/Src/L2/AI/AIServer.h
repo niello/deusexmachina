@@ -4,7 +4,7 @@
 
 #include <Core/Singleton.h>
 #include <Data/StringID.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <AI/Planning/Planner.h>
 #include <AI/SmartObj/SmartObjActionTpl.h>
 #include <AI/AILevel.h>

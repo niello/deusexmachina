@@ -3,7 +3,7 @@
 #define __DEM_L1_INPUT_SERVER_H__
 
 #include <Events/EventDispatcher.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Core/Singleton.h>
 #include <Input/Keys.h>
 #include <Input/ControlLayout.h>

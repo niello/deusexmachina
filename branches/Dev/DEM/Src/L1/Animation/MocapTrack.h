@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_MOCAP_TRACK_H__
 #define __DEM_L1_ANIM_MOCAP_TRACK_H__
 
-#include <Animation/Anim.h>
+#include <Animation/AnimFwd.h>
 #include <mathlib/quaternion.h>
 
 // Animation track is a set of float4 keys, forming a curve. Being sampled in a certain time,

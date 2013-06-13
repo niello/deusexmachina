@@ -53,9 +53,9 @@ bool CControlLayout::Init(const CParams& Desc)
 void CControlLayout::Enable()
 {
 	if (Enabled) return;
-	for (nArray<CInputMappingEvent>::iterator It = EventMappings.Begin(); It != EventMappings.End(); It++)
+	for (nArray<CInputMappingEvent>::CIterator It = EventMappings.Begin(); It != EventMappings.End(); It++)
 		It->Enable();
-	for (nArray<CInputMappingState>::iterator It = StateMappings.Begin(); It != StateMappings.End(); It++)
+	for (nArray<CInputMappingState>::CIterator It = StateMappings.Begin(); It != StateMappings.End(); It++)
 		It->Enable();
 	Enabled = true;
 }
@@ -64,9 +64,9 @@ void CControlLayout::Enable()
 void CControlLayout::Disable()
 {
 	if (!Enabled) return;
-	for (nArray<CInputMappingEvent>::iterator It = EventMappings.Begin(); It != EventMappings.End(); It++)
+	for (nArray<CInputMappingEvent>::CIterator It = EventMappings.Begin(); It != EventMappings.End(); It++)
 		It->Disable();
-	for (nArray<CInputMappingState>::iterator It = StateMappings.Begin(); It != StateMappings.End(); It++)
+	for (nArray<CInputMappingState>::CIterator It = StateMappings.Begin(); It != StateMappings.End(); It++)
 		It->Disable();
 	Enabled = false;
 }

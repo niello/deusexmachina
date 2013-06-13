@@ -97,13 +97,13 @@ bool CPropActorBrain::InternalActivate()
 				PDataArray Percs = NewDesc->Get<PDataArray>(CStrID("Perceptors"), NULL);
 				if (Percs.IsValid())
 				{
-					CDataArray::iterator ItPercName;
+					CDataArray::CIterator ItPercName;
 					for (ItPercName = Percs->Begin(); ItPercName != Percs->End(); ItPercName++)
 					{
 						nString PercClass = StrPercPrefix + ItPercName->GetValue<nString>();
 						bool Found = false;
 
-						nArray<PPerceptor>::iterator ItPerc;
+						nArray<PPerceptor>::CIterator ItPerc;
 						for (ItPerc = Perceptors.Begin(); ItPerc != Perceptors.End(); ItPerc++)
 						{
 							//???store class name as CStrID to compare faster?
@@ -208,7 +208,7 @@ void CPropActorBrain::UpdateDecisionMaking()
 
 	if (!UpdateGoals) return;
 
-	for (nArray<PGoal>::iterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
+	for (nArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
 	{
 		//???all this to EvalRel?
 		// If not a time still, skip goal & invalidate its relevance
@@ -225,7 +225,7 @@ void CPropActorBrain::UpdateDecisionMaking()
 		CGoal* pTopGoal = CurrGoal.GetUnsafe();
 		float MaxRelevance = CurrGoal.IsValid() ? CurrGoal->GetRelevance() : 0.f;
 
-		for (nArray<PGoal>::iterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
+		for (nArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
 			if ((*ppGoal)->GetRelevance() > MaxRelevance)
 			{
 				MaxRelevance = (*ppGoal)->GetRelevance();
@@ -302,7 +302,7 @@ void CPropActorBrain::OnBeginFrame()
 	//???where to update target system? or goal updates target?
 
 	//!!!update for some time, if not updated all return or allow to process next!
-	for (nArray<PSensor>::iterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
+	for (nArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
 	{
 		//!!!only for external! also need to update internal sensors & actor's state through them
 		//???CStimulus -> CExternalStimulus?

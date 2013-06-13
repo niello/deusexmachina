@@ -13,11 +13,15 @@ void CAnimTask::Update(float FrameTime)
 {
 	if (State == Task_Paused || State == Task_Invalid) return;
 
+	float PrevTime = CurrTime;
 	if (State == Task_Starting)
 	{
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 			Ctlrs.ValueAt(i)->Activate(true);
 		State = Task_Running;
+
+		// Fire events at initial time point, because interval-based firing below always excludes StartTime
+		Clip->FireEvents(CurrTime, Loop, pEventDisp, Params);
 	}
 	else if (State == Task_Running)
 		CurrTime += FrameTime * Speed;
@@ -63,6 +67,10 @@ void CAnimTask::Update(float FrameTime)
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 			((Anim::CNodeControllerKeyframe*)Ctlrs.ValueAt(i))->SetTime(Time);
 	}
+
+	// Fire animation events
+	// NB: pass unadjusted time
+	Clip->FireEvents(PrevTime, CurrTime, Loop, pEventDisp, Params);
 }
 //---------------------------------------------------------------------
 
@@ -103,6 +111,8 @@ void CAnimTask::Stop(float OverrideFadeOutTime)
 void CAnimTask::Clear()
 {
 	State = Task_Invalid;
+	pEventDisp = NULL;
+	Params = NULL;
 	ClipID = CStrID::Empty;
 	Clip = NULL;
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)

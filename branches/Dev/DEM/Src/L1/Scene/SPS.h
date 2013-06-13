@@ -22,7 +22,7 @@ struct CSPSCell
 
 	CElement*	Add(CSPSRecord* const & Object);
 	bool		RemoveByValue(CSPSRecord* const & Object); // By value
-	void		RemoveElement(CElement* pElement) { n_error("No persistent handles for arrays!"); } // By iterator
+	void		RemoveElement(CElement* pElement) { n_error("No persistent handles for arrays!"); } // By CIterator
 };
 
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;

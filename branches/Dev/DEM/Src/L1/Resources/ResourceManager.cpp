@@ -56,7 +56,7 @@ DWORD IResourceManager::DeleteUnreferenced()
 {
 	//!!!SLOW and UGLY!
 	//!!!allow deletion on iteration or use array/pool for the main storage and weak ptr map only for indexing?
-	//!!!write deletion by iterator!
+	//!!!write deletion by CIterator!
 	//???migrate to bullet or some other hash map?
 
 	nArray<CStrID> ToDelete;
@@ -86,7 +86,7 @@ DWORD IResourceManager::FreeMemory(DWORD DesiredBytes)
 }
 //---------------------------------------------------------------------
 
-DWORD IResourceManager::GetMemoryUsed() //const //!!!need const iterator!
+DWORD IResourceManager::GetMemoryUsed() //const //!!!need const CIterator!
 {
 	DWORD Total = 0;
 	CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin();

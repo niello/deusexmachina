@@ -3,10 +3,10 @@
 #define __DEM_L1_RENDER_MESH_H__
 
 #include <Resources/Resource.h>
-#include <Render/Render.h>
+#include <Render/RenderFwd.h>
 #include <Render/Geometry/VertexBuffer.h>
 #include <Render/Geometry/IndexBuffer.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 #include <mathlib/bbox.h>
 

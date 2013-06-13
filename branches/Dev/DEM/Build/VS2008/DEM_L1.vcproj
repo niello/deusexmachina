@@ -953,7 +953,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Events\Events.h"
+				RelativePath="..\..\Src\L1\Events\EventsFwd.h"
 				>
 			</File>
 			<File
@@ -1066,6 +1066,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Scene\Scene.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\SceneFwd.h"
 				>
 			</File>
 			<File
@@ -1193,15 +1197,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Render\Render.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Render\Renderer.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Render\Renderer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Render\RenderFwd.h"
 				>
 			</File>
 			<File
@@ -1365,10 +1369,6 @@
 			Name="Animation"
 			>
 			<File
-				RelativePath="..\..\Src\L1\Animation\Anim.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Animation\AnimClip.cpp"
 				>
 			</File>
@@ -1377,11 +1377,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Animation\AnimFwd.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Animation\AnimTask.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Animation\AnimTask.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Animation\EventTrack.h"
 				>
 			</File>
 			<File
@@ -1497,7 +1505,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\IO\IO.h"
+				RelativePath="..\..\Src\L1\IO\IOFwd.h"
 				>
 			</File>
 			<File

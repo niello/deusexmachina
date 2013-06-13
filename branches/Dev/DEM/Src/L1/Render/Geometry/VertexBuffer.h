@@ -4,7 +4,7 @@
 
 #include <Render/Geometry/VertexLayout.h>
 #include <Render/GPUResourceDefs.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 
 // Storage of geometry vertices
 

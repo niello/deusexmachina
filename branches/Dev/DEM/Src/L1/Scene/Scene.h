@@ -5,7 +5,7 @@
 #include <Scene/SceneNode.h>
 #include <Scene/Camera.h>
 #include <Scene/SPS.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 
 // 3D scene with node hierarchy and volume subdivided to optimize spatial requests

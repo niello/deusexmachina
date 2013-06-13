@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_STREAM_H__
 #define __DEM_L1_STREAM_H__
 
-#include <IO/IO.h>
+#include <IO/IOFwd.h>
 #include <Data/Flags.h>
 #include <kernel/ntypes.h>
 

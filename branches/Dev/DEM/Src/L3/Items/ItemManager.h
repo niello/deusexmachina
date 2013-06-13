@@ -5,7 +5,7 @@
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
 #include <util/HashTable.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include "ItemTpl.h"
 
 // Item manager loads and keeps track of item templates, assists in saving & loading

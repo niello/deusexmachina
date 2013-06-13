@@ -5,7 +5,7 @@
 #include <Resources/Resource.h>
 #include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Data/Type.h>
 
 // Texture resource, usable by renderer

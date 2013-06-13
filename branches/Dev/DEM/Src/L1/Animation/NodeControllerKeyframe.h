@@ -3,6 +3,7 @@
 #define __DEM_L1_ANIM_CTLR_KEYFRAME_H__
 
 #include <Scene/NodeController.h>
+#include <Animation/AnimFwd.h>
 
 // Animation controller, that samples transform from simple keyframed clip tracks.
 // It performs all calculations in a per-track manner.

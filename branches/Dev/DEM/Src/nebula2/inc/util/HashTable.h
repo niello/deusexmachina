@@ -33,7 +33,7 @@ public:
 
 		CHashTable<TKey, TVal>*		pTable;
 		int							ChainIdx;
-		typename CChain::iterator	It;
+		typename CChain::CIterator	It;
 
 	public:
 

@@ -3,7 +3,7 @@
 #define __DEM_L1_DBG_LUA_CONSOLE_H__
 
 #include <UI/Window.h>
-#include <Events/Events.h>
+#include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 #include <Data/SimpleString.h>
 

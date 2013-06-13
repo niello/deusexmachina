@@ -25,7 +25,8 @@ public:
 	CKeyframeClip(CStrID ID): CAnimClip(ID) {}
 	virtual ~CKeyframeClip() { if (IsLoaded()) Unload(); }
 
-	bool							Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& _TrackMapping, float Length);
+	bool							Setup(	const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
+											const nArray<CEventTrack>* _EventTracks, float Length);
 	virtual void					Unload();
 
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;

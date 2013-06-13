@@ -93,7 +93,7 @@ CUIServer::~CUIServer()
 
 void CUIServer::Trigger(float FrameTime)
 {
-	nArray<CEGUI::Event::Connection>::iterator It = ConnectionsToDisconnect.Begin();
+	nArray<CEGUI::Event::Connection>::CIterator It = ConnectionsToDisconnect.Begin();
 	for (; It != ConnectionsToDisconnect.End(); It++)
 		(*It)->disconnect();
 	ConnectionsToDisconnect.Clear();

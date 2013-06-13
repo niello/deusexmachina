@@ -278,7 +278,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFun
 
 bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool AutoAdded)
 {
-	for (nArray<CAction>::iterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (nArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->ID == ID) FAIL;
 
 	CAction Act(ID, UIName, Priority);
@@ -298,7 +298,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHa
 
 void CPropUIControl::RemoveActionHandler(CStrID ID)
 {
-	for (nArray<CAction>::iterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (nArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->ID == ID)
 		{
 			Actions.Erase(It);
@@ -356,7 +356,7 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	}
 
 	CAction* pTopAction = Actions.Begin();
-	for (nArray<CPropUIControl::CAction>::iterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (nArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 	{
 		if (It->AutoAdded)
 		{
@@ -384,7 +384,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	}
 
 	int VisibleCount = 0;
-	for (nArray<CPropUIControl::CAction>::iterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (nArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->Visible)
 		{
 			if (It->AutoAdded)

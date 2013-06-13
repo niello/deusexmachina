@@ -66,7 +66,7 @@ inline CNodeControllerThirdPerson::CNodeControllerThirdPerson():
 	Dirty(true)
 {
 	Flags.Set(LocalSpace); // For now, later mb world space + offset + position of target node
-	Channels.Set(Anim::Chnl_Translation | Anim::Chnl_Rotation);
+	Channels.Set(Chnl_Translation | Chnl_Rotation);
 }
 //---------------------------------------------------------------------
 
