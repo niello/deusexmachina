@@ -28,12 +28,13 @@ class CPropAnimation: public Game::CProperty
 
 private:
 
-	//???move this cache to CSceneNode? any Prop that manages node controlers may want to access it!
-	nDictionary<CStrID, Scene::CSceneNode*>	Nodes; //???where to store blend controller ref?
+	//typedef nDictionary<Scene::CSceneNode*, Anim::PNodeControllerPriorityBlend> CCtlrList;
 
+	//???move this cache to CSceneNode? any Prop that manages node controlers may want to access it!
+	nDictionary<CStrID, Scene::CSceneNode*>	Nodes;
+	//CCtlrList								BlendCtlrs;
 	nDictionary<CStrID, Anim::PAnimClip>	Clips;
 	nArray<Anim::CAnimTask>					Tasks;
-
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

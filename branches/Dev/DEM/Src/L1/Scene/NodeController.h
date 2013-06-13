@@ -42,6 +42,7 @@ public:
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
 	bool			HasChannel(EChannel Channel) const { return Channels.Is(Channel); }
+	DWORD			GetChannels() const { return Channels.GetMask(); }
 };
 
 typedef Ptr<CNodeController> PNodeController;

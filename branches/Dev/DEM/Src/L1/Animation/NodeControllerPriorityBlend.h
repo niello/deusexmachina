@@ -14,12 +14,26 @@ class CNodeControllerPriorityBlend: public Scene::CNodeController
 {
 protected:
 
-	// Set of (ctlr + weight + priority) sorted by priority
+	struct CSource
+	{
+		Scene::PNodeController	Ctlr;
+		DWORD					Priority;
+		float					Weight;
+		Math::CTransformSRT		SRT;	// Store only because Ctlr.ApplyTo may return false for unchanged tfm, which must be cached
+
+		bool operator <(const CSource& Other) const { return Priority < Other.Priority; }
+		bool operator >(const CSource& Other) const { return Priority > Other.Priority; }
+	};
+
+	nArray<CSource> Sources;
 
 public:
 
-	// bool AddSource(ctlr, priority, weight), RemoveSource(ctlr), Clear()
-	// don't accept src if local/world mismatches
+	bool			AddSource(Scene::CNodeController& Ctlr, DWORD Priority, float Weight);
+	void			RemoveSource(Scene::CNodeController& Ctlr);
+	void			Clear();
+	void			SetPriority(Scene::CNodeController& Ctlr, DWORD Priority);
+	void			SetWeight(Scene::CNodeController& Ctlr, float Weight);
 
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };

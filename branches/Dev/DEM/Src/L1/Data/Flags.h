@@ -20,16 +20,18 @@ public:
 	CFlags(): Flags(0) {}
 	CFlags(DWORD InitialFlags): Flags(InitialFlags) {}
 
-	void Set(DWORD Flag) { Flags |= Flag; } //!!!can return old value!
-	void SetTo(DWORD Flag, bool Value) { if (Value) Flags |= Flag; else Flags &= ~Flag; } //!!!do it better!
-	void SetAll() { Flags = (DWORD)-1; }
-	void ResetTo(DWORD Flag) { Flags = Flag; }
-	void Clear(DWORD Flag) { Flags &= ~Flag; }
-	void ClearAll() { Flags = (DWORD)0; }
-	//void Invert(DWORD Flag) { Flags ^= ~Flag; } ???
-	bool Is(DWORD Flag) const { return (Flags & Flag) != 0; }
-	bool IsNot(DWORD Flag) const { return (Flags & Flag) == 0; }
-	//!!!IsAll(DWORD FlagCombination), IsAny(DWORD FlagCombination)!
+	void	Set(DWORD Flag) { Flags |= Flag; } //!!!can return old value!
+	void	SetTo(DWORD Flag, bool Value) { if (Value) Flags |= Flag; else Flags &= ~Flag; } //!!!do it better!
+	void	SetAll() { Flags = (DWORD)-1; }
+	void	ResetTo(DWORD Flag) { Flags = Flag; }
+	void	Clear(DWORD Flag) { Flags &= ~Flag; }
+	void	ClearAll() { Flags = (DWORD)0; }
+	//void	Invert(DWORD Flag) { Flags ^= ~Flag; } ???
+	bool	Is(DWORD Flag) const { return (Flags & Flag) == Flag; }
+	bool	IsAll(DWORD FlagSet) const { return (Flags & FlagSet) == FlagSet; }
+	bool	IsAny(DWORD FlagSet) const { return (Flags & FlagSet) != 0; }
+	bool	IsNot(DWORD Flag) const { return (Flags & Flag) == 0; }
+	DWORD	GetMask() const { return Flags; }
 
 	//!!!GetSetCount()
 };
