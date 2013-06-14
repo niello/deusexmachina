@@ -23,85 +23,87 @@
 enum
 {
 	Array_DoubleGrowSize	= 0x01,
-	Array_KeepOrder		= 0x02	// Now is set by default //???clear by default?
+	Array_KeepOrder			= 0x02	// Now is set by default //???clear by default?
 };
 
 template<class T> class nArray
 {
 private:
 
-    int GrowSize;           // _GrowSize by this number of pData if array exhausted
-    int Allocated;          // number of pData allocated
-    int Count;        // number of pData in array
-    T* pData;         // pointer to element array
+	T*				pData;
+	int				Allocated;
+	int				Count;
+	int				GrowSize;
 
-    /// check if Idx is in valid range, and array grow if necessary
-    void CheckIndex(int);
-	void Construct(T* pElm) { n_placement_new(pElm, T); }
-	void Construct(T* pElm, const T& Value) { n_placement_new(pElm, T)(Value); }
-    void Copy(const nArray<T>& src);
-    void Delete();
-    void Grow();
-    void Move(int fromIndex, int toIndex);
-    /// unsafe quick move, does not call operator= or destructor
-    void MoveQuick(int fromIndex, int toIndex);
+	void	MakeIndexValid(int Idx);
+	void	Construct(T* pElm) { n_placement_new(pElm, T); }
+	void	Construct(T* pElm, const T& Value) { n_placement_new(pElm, T)(Value); }
+	void	Copy(const nArray<T>& src);
+	void	Delete();
+	void	Grow();
+	void	Move(int fromIndex, int toIndex);
+	void	MoveQuick(int fromIndex, int toIndex);
 
 public:
 
 	typedef T* CIterator;
 
-	Data::CFlags Flags;
+	Data::CFlags	Flags; // nDictionary needs to access it
 
 	nArray(): GrowSize(16), Allocated(0), Count(0), Flags(Array_KeepOrder), pData(NULL) {}
-    nArray(int _Count, int _GrowSize);
-    nArray(int _Count, int _GrowSize, const T& Value);
+	nArray(int _Count, int _GrowSize);
+	nArray(int _Count, int _GrowSize, const T& Value);
 	nArray(const nArray<T>& Other): GrowSize(0), Allocated(0), Count(0), pData(0), Flags(Array_KeepOrder) { Copy(Other); }
 	~nArray() { Delete(); }
 
-    void		SetFixedSize(int size); //???need to clear all content?
-	void		SetGrowSize(int Grow) { GrowSize = Grow; }
-	int			GetCount() const { return Count; }
-	int			GetAllocSize() const { return Allocated; }
-	bool		IsEmpty() const { return !Count; }
-
-    T&			Append(const T& pElm);
-    void		AppendArray(const nArray<T>& Other);
+	T&			Append(const T& pElm);
+	void		AppendArray(const nArray<T>& Other);
 	CIterator	Reserve(int num, bool Grow = true);
-    T&			Set(int Idx, const T& pElm);
+	T&			Set(int Idx, const T& pElm);
 	T&			Insert(int Idx, const T& pElm);
-    T&			InsertSorted(const T& pElm);
+	T&			InsertSorted(const T& pElm);
 	void		Fill(int first, int num, const T& pElm);
 
 	T&			At(int Idx);
-    T&			At(int Idx) const;
+	T&			At(int Idx) const;
 	T&			Front() const { n_assert(pData && Count > 0); return pData[0]; }
 	T&			Back() const { n_assert(pData && Count > 0); return pData[Count - 1]; }
 	CIterator	Begin() const { return pData; }
 	CIterator	End() const { return pData + Count; }
 
 	bool		RemoveByValue(const T& Elm);
-    void		EraseAt(int Idx);
-    void		EraseAtQuick(int Idx);
-    CIterator	Erase(CIterator iter);
-    CIterator	EraseQuick(CIterator iter);
-    void		Clear();
+	void		EraseAt(int Idx);
+	void		EraseAtQuick(int Idx);
+	CIterator	Erase(CIterator iter);
+	CIterator	EraseQuick(CIterator iter);
+	void		Clear();
 	void		Reset() { Count = 0; }
 
 	void		Resize(int NewAllocSize);
-    void		Reallocate(int _Count, int _GrowSize);
+	void		Reallocate(int _Count, int _GrowSize);
 
 	CIterator	Find(const T& Elm) const;
-    int			FindIndex(const T& Elm) const;
+	int			FindIndex(const T& Elm) const;
 	bool		Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
-    int			BinarySearchIndex(const T& pElm) const;
+	int			BinarySearchIndex(const T& pElm) const;
 	void		Sort() { std::sort(Begin(), End()); }
 	template<class TCmp>
 	void		Sort() { std::sort(Begin(), End(), TCmp()); }
 	nArray<T>	Difference(const nArray<T>& Other) const;
 
+	int			GetCount() const { return Count; }
+	int			GetAllocSize() const { return Allocated; }
+	bool		IsEmpty() const { return !Count; }
+	void		SetFixedSize(int Size); //???need to clear all content?
+	void		SetGrowSize(int Grow) { GrowSize = Grow; }
+	void		SetDoubleGrow(bool Double) { Flags.SetTo(Array_DoubleGrowSize, Double); }
+	void		SetKeepOrder(bool Keep) { Flags.SetTo(Array_KeepOrder, Keep); }
+	bool		IsDoubleGrowing() const { return Flags.Is(Array_DoubleGrowSize); }
+	bool		IsKeepingOrder() const { return Flags.Is(Array_KeepOrder); }
+
 	nArray<T>&	operator =(const nArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
 	T&			operator [](int Idx) const { n_assert(Idx >= 0 && Idx < Count); return pData[Idx]; }
-    bool		operator ==(const nArray<T>& Other) const;
+	bool		operator ==(const nArray<T>& Other) const;
 	bool		operator !=(const nArray<T>& Other) const { return !(*this == Other); }
 };
 
@@ -376,7 +378,7 @@ typename nArray<T>::CIterator nArray<T>::Reserve(int num, bool Grow)
 // This will check if the provided Idx is in the valid range. If it is
 // not the array will be grown to that Idx.
 template<class T>
-void nArray<T>::CheckIndex(int Idx)
+void nArray<T>::MakeIndexValid(int Idx)
 {
 	if (Idx < Count) return;
 	if (Idx >= Allocated)
@@ -393,7 +395,7 @@ void nArray<T>::CheckIndex(int Idx)
 template<class T>
 T& nArray<T>::Set(int Idx, const T& pElm)
 {
-	CheckIndex(Idx);
+	MakeIndexValid(Idx);
 	pData[Idx] = pElm;
 	return pData[Idx];
 }
@@ -402,7 +404,7 @@ T& nArray<T>::Set(int Idx, const T& pElm)
 // Access an element. This method may grow the array if the Idx is outside the array range.
 template<class T> inline T& nArray<T>::At(int Idx)
 {
-	CheckIndex(Idx);
+	MakeIndexValid(Idx);
 	return pData[Idx];
 }
 //---------------------------------------------------------------------

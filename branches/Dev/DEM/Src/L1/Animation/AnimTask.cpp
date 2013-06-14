@@ -17,7 +17,7 @@ void CAnimTask::Update(float FrameTime)
 	if (State == Task_Starting)
 	{
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			Ctlrs.ValueAt(i)->Activate(true);
+			Ctlrs[i]->Activate(true);
 		State = Task_Running;
 
 		// Fire events at initial time point, because interval-based firing below always excludes StartTime
@@ -52,6 +52,10 @@ void CAnimTask::Update(float FrameTime)
 			RealWeight *= (CurrTime - Offset) / (FadeInTime - Offset);
 	}
 
+	//!!!if RealWeight != 1.f and weight isn't in a controller itself, blend controller must exist!
+	//it is attached to node or it is in BlendCtlrs!
+	//???if resulting weight is 0, skip updating time?
+
 	// Feed node controllers
 	if (Clip->IsA<Anim::CMocapClip>())
 	{
@@ -59,13 +63,13 @@ void CAnimTask::Update(float FrameTime)
 		float IpolFactor;
 		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CurrTime, Loop, KeyIndex, IpolFactor);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CNodeControllerMocap*)Ctlrs.ValueAt(i))->SetSamplingParams(KeyIndex, IpolFactor);
+			((Anim::CNodeControllerMocap*)Ctlrs[i].GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 	else if (Clip->IsA<Anim::CKeyframeClip>())
 	{
 		float Time = Clip->AdjustTime(CurrTime, Loop);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CNodeControllerKeyframe*)Ctlrs.ValueAt(i))->SetTime(Time);
+			((Anim::CNodeControllerKeyframe*)Ctlrs[i].GetUnsafe())->SetTime(Time);
 	}
 
 	// Fire animation events
@@ -79,7 +83,7 @@ void CAnimTask::SetPause(bool Pause)
 	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
 	if (Pause == (State == Task_Paused)) return;
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
-		Ctlrs.ValueAt(i)->Activate(!Pause);
+		Ctlrs[i]->Activate(!Pause);
 	State = Pause ? Task_Paused : Task_Running;
 }
 //---------------------------------------------------------------------
@@ -117,8 +121,8 @@ void CAnimTask::Clear()
 	Clip = NULL;
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{
-		n_assert_dbg(Ctlrs.KeyAt(i)->Controller.GetUnsafe() == Ctlrs.ValueAt(i));
-		Ctlrs.KeyAt(i)->Controller = NULL;
+		Ctlrs[i]->RemoveFromNode();
+		n_assert_dbg(Ctlrs[i]->GetRefCount() == 1); // Could be stored in detached blend controller, if it is stored somewhere
 	}
 	Ctlrs.Clear();
 }

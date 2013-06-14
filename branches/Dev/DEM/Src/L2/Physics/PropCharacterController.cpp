@@ -83,9 +83,11 @@ void CPropCharacterController::TermSceneNodeModifiers(CPropSceneNode& Prop)
 
 	Disable();
 
-	if (Prop.GetNode()->Controller.GetUnsafe() == NodeCtlr)
-		Prop.GetNode()->Controller = NULL;
-	NodeCtlr = NULL; //???create once and attach/detach?
+	if (NodeCtlr.IsValid())
+	{
+		NodeCtlr->RemoveFromNode();
+		NodeCtlr = NULL; //???create once and attach/detach?
+	}
 }
 //---------------------------------------------------------------------
 
@@ -101,7 +103,7 @@ bool CPropCharacterController::Enable()
 	//CharCtlr->GetBody()->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 	CharCtlr->GetBody()->SetTransform(pProp->GetNode()->GetWorldMatrix());
 	CharCtlr->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
-	pProp->GetNode()->Controller = NodeCtlr;
+	pProp->GetNode()->SetController(NodeCtlr);
 	NodeCtlr->Activate(true);
 
 	OK;

@@ -23,8 +23,8 @@ class CPropPhysics: public Game::CProperty
 
 protected:
 
-	nDictionary<Scene::CSceneNode*, Physics::PNodeControllerRigidBody>	Ctlrs; //???store node ptr in the controller?
-	nArray<Physics::PNodeAttrCollision>									Attrs;
+	nArray<Physics::PNodeControllerRigidBody>	Ctlrs;
+	nArray<Physics::PNodeAttrCollision>			Attrs;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

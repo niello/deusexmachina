@@ -8,35 +8,49 @@
 #include <Math/TransformSRT.h>
 
 // Scene node controller provides transform (SRT) parameters. It is mainly used for
-// scene node animation. Animation controller subclasses can sample keyframed
-// animation data, use physics as a transformation source or implement any other
-// custom logic, such as look-at or even constant value. Animation controller can
-// also implement selection or blending algorithm using other animation controllers
-// as inputs.
+// scene node animation. Animation controller subclasses can sample keyframed animation
+// data, use physics as a transformation source or implement any other custom logic,
+// such as look-at or even constant value. Animation controller can also implement
+// selection or blending algorithm using other animation controllers as inputs.
 
-//!!!there is QuatSquad blending operation!
+//???LoadDataBlock, as in node attrs?
 
 namespace Scene
 {
 
 class CNodeController: public Core::CRefCounted
 {
+	__DeclareClassNoFactory;
+
 protected:
+
+	friend class CSceneNode;
 
 	enum
 	{
-		Active				= 0x01,
-		LocalSpace			= 0x02,
-		UpdateLocalSpace	= 0x04
+		Active				= 0x01,	// Controller must be processed
+		LocalSpace			= 0x02,	// Controller produces local-space transform
+		UpdateLocalSpace	= 0x04	// Controller wants the host to update local transform from provided world one
 	};
 
-	Data::CFlags	Channels;
+	CSceneNode*		pNode;
 	Data::CFlags	Flags;
+	Data::CFlags	Channels;
 
 public:
 
-	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;
+	CNodeController(): pNode(NULL) {}
 
+	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;
+	void			RemoveFromNode();
+
+	//???need?
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { pNode = pSceneNode; OK; }
+	virtual void	OnDetachFromNode() { }
+
+	virtual bool	IsComposite() const { FAIL; }
+	bool			IsAttachedToNode() const { return !!pNode; }
+	CSceneNode*		GetNode() const { return pNode; }
 	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool			IsActive() const { return Flags.Is(Active); }
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }

@@ -45,7 +45,7 @@ bool CBone::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-bool CBone::OnAdd()
+bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 {
 	// Constructed as identity, no need to set explicitly now
 	//SkinMatrix.ident();
@@ -104,9 +104,9 @@ bool CBone::OnAdd()
 //---------------------------------------------------------------------
 
 //!!!must be called recursively if only root node is detached!
-//mb OnRemove() { DetachBones(); foreach Child { DetachBones(); } }
-//and no recursion is needed with OnRemove
-void CBone::OnRemove()
+//mb OnDetachFromNode() { DetachBones(); foreach Child { DetachBones(); } }
+//and no recursion is needed with OnDetachFromNode
+void CBone::OnDetachFromNode()
 {
 	CBone* pRootBone = GetRootBone();
 	CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;

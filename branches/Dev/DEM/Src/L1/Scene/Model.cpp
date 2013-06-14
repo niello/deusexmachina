@@ -116,7 +116,7 @@ bool CModel::ValidateResources()
 }
 //---------------------------------------------------------------------
 
-bool CModel::OnAdd()
+bool CModel::OnAttachToNode(CSceneNode* pSceneNode)
 {
 	return ValidateResources();
 }
@@ -125,7 +125,7 @@ bool CModel::OnAdd()
 // Now resources are shared and aren't unloaded
 // If it is necessary to unload resources (decrement refcount), resource IDs must be saved,
 // so pointers can be cleared, but model is able to reload resources from IDs
-void CModel::OnRemove()
+void CModel::OnDetachFromNode()
 {
 	if (pSPSRecord)
 	{

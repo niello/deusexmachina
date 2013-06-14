@@ -81,10 +81,10 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 			Physics::PNodeControllerRigidBody Ctlr = n_new(Physics::CNodeControllerRigidBody);
 			Ctlr->SetBody(*(Physics::CRigidBody*)Obj.GetUnsafe());
-			pCurrNode->Controller = Ctlr;
+			pCurrNode->SetController(Ctlr);
 			Ctlr->Activate(true);
 
-			Ctlrs.Add(pCurrNode, Ctlr);
+			Ctlrs.Append(Ctlr);
 		}
 		else
 		{
@@ -107,10 +107,8 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{
-		Physics::PNodeControllerRigidBody Ctlr = Ctlrs.ValueAt(i);
-		Ctlr->GetBody()->RemoveFromLevel();
-		if (Ctlrs.KeyAt(i)->Controller.GetUnsafe() == Ctlr)
-			Ctlrs.KeyAt(i)->Controller = NULL;
+		Ctlrs[i]->GetBody()->RemoveFromLevel();
+		Ctlrs[i]->RemoveFromNode();
 	}
 	Ctlrs.Clear(); //???create once and attach/detach?
 

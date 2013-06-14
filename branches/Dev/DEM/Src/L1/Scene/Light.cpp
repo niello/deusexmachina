@@ -50,7 +50,7 @@ bool CLight::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CLight::OnRemove()
+void CLight::OnDetachFromNode()
 {
 	if (pSPSRecord)
 	{

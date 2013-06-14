@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_TASK_H__
 #define __DEM_L1_ANIM_TASK_H__
 
-#include <Core/Ptr.h>
+#include <Scene/NodeController.h>
 #include <Data/Params.h>
 #include <util/ndictionary.h>
 
@@ -20,7 +20,6 @@ namespace Events
 namespace Scene
 {
 	class CSceneNode;
-	class CNodeController;
 }
 
 namespace Anim
@@ -44,26 +43,24 @@ public:
 		Task_Stopping
 	};
 
-	typedef nDictionary<Scene::CSceneNode*, Scene::CNodeController*> CCtlrList;
+	CStrID							ClipID;
+	Anim::PAnimClip					Clip;
+	nArray<Scene::PNodeController>	Ctlrs; //???or weak refs?
+	Events::CEventDispatcher*		pEventDisp;	// For anim events
+	Data::PParams					Params;		// For anim events
+	EState							State;
+	float							CurrTime;
+	float							StopTimeBase;
 
-	CStrID						ClipID;
-	Anim::PAnimClip				Clip;
-	CCtlrList					Ctlrs;
-	Events::CEventDispatcher*	pEventDisp;	// For anim events
-	Data::PParams				Params;		// For anim events
-	EState						State;
-	float						CurrTime;
-	float						StopTimeBase;
+	float							Offset;
+	float							Speed;
+	DWORD							Priority;
+	float							Weight;
+	float							FadeInTime;
+	float							FadeOutTime;
+	bool							Loop;
 
-	float						Offset;
-	float						Speed;
-	DWORD						Priority;
-	float						Weight;
-	float						FadeInTime;
-	float						FadeOutTime;
-	bool						Loop;
-
-	CAnimTask(): Ctlrs(1, 2, true), pEventDisp(NULL) {}
+	CAnimTask(): Ctlrs(1, 2), pEventDisp(NULL) { Ctlrs.Flags.Set(Array_DoubleGrowSize); }
 	~CAnimTask() { Clear(); }
 
 	void Update(float FrameTime);
