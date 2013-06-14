@@ -14,7 +14,7 @@ bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithC
 
 	pCameraNode = pNodeWithCamera ? pNodeWithCamera : Scene.GetMainCamera().GetNode();
 	n_assert(pCameraNode);
-	pCameraNode->Controller = Ctlr;
+	pCameraNode->SetController(Ctlr);
 	Ctlr->Activate(true);
 
 	OK;

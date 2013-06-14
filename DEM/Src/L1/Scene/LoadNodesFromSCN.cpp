@@ -1,7 +1,6 @@
 // Loads hierarchy of scene nodes from .scn file.
 // Use function declaration instead of header file where you want to call this loader.
 
-#include <Scene/Scene.h> // For owning (pinning) created child nodes, likely to be HACK!
 #include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <IO/Streams/FileStream.h>

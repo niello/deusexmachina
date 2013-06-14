@@ -42,6 +42,9 @@ protected:
 	float					InvSplatSizeX;
 	float					InvSplatSizeZ;
 
+	virtual bool		OnAttachToNode(CSceneNode* pSceneNode);
+	virtual void		OnDetachFromNode();
+
 public:
 
 	Render::CShaderVarMap	ShaderVars;
@@ -49,8 +52,6 @@ public:
 	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) { }
 
 	virtual bool		LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual bool		OnAdd();
-	virtual void		OnRemove();
 	virtual void		Update();
 
 	const bbox3&		GetLocalAABB() const { return Box; }

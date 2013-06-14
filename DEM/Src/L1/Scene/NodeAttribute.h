@@ -25,31 +25,31 @@ class CNodeAttribute: public Core::CRefCounted
 
 protected:
 
+	friend class CSceneNode;
+
 	enum
 	{
 		Active = 0x01	// Attribute must be processed
 	};
 
-	friend class CSceneNode;
-
 	CSceneNode*		pNode;
+	Data::CFlags	Flags;
 
-	//???Active flag?
-	Data::CFlags	Flags; //???or in children only?
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { OK; }
+	virtual void	OnDetachFromNode() { }
 
 public:
 
 	CNodeAttribute(): pNode(NULL), Flags(Active) {}
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
-	virtual bool	OnAdd() { OK; }
-	virtual void	OnRemove() {}
 	virtual void	Update() = 0;
 	void			RemoveFromNode();
 
+	bool			IsAttachedToNode() const { return !!pNode; }
+	CSceneNode*		GetNode() const { return pNode; }
 	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool			IsActive() const { return Flags.Is(Active); }
-	CSceneNode*		GetNode() const { return pNode; }
 };
 
 typedef Ptr<CNodeAttribute> PNodeAttribute;

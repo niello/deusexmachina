@@ -56,14 +56,14 @@ protected:
 	Data::CFlags			Flags; // ?UniformScale?, LockTransform
 	nArray<PNodeAttribute>	Attrs; //???or list? List seems to be better
 
+	PNodeController			Controller;
+
 	friend class CScene;
 
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
 public:
-
-	PNodeController			Controller; //???weak ptr? detach itself on death?
 
 	CSceneNode(CScene& Scene, CStrID NodeName);
 	~CSceneNode();
@@ -89,6 +89,9 @@ public:
 	void					RemoveAttr(CNodeAttribute& Attr);
 	void					RemoveAttr(DWORD Idx);
 	template<class T> T*	FindFirstAttr() const;
+
+	bool					SetController(CNodeController* pCtlr);
+	CNodeController*		GetController() const { return Controller.GetUnsafe(); }
 
 	void					UpdateLocalSpace(bool UpdateWorldMatrix = true);
 	void					UpdateWorldSpace();

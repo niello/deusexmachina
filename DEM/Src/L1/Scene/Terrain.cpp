@@ -70,7 +70,7 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-bool CTerrain::OnAdd()
+bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
 {
 	IO::CFileStream CDLODFile;
 	if (!CDLODFile.Open(HeightMap->GetUID().CStr(), IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
@@ -143,7 +143,7 @@ bool CTerrain::OnAdd()
 }
 //---------------------------------------------------------------------
 
-void CTerrain::OnRemove()
+void CTerrain::OnDetachFromNode()
 {
 	MinMaxMaps.Clear();
 	SAFE_FREE(pMinMaxData);

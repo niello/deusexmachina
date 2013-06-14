@@ -97,7 +97,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 //!!!DBG TMP! some AI character controller must drive character animations
 //for self-animated objects without AI can store info about current animations, it will help with save-load
 	if (Clips.GetCount())
-		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.f, 0.f, 0.f);
+		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.0f, 0.f, 0.f);
 }
 //---------------------------------------------------------------------
 
@@ -168,8 +168,26 @@ bool CPropAnimation::OnPropDeactivating(const Events::CEventBase& Event)
 bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 {
 	float FrameTime = (float)GameSrv->GetFrameTime();
-	for (int i = 0; i < Tasks.GetCount(); ++i)
-		Tasks[i].Update(FrameTime);
+	for (int i = 0; i < Tasks.GetCount(); /* NB: i is incremented inside */)
+	{
+		Anim::CAnimTask& Task = Tasks[i];
+
+		int j = 0;
+		for (; j < Task.Ctlrs.GetCount(); ++j)
+			if (Task.Ctlrs[j]->IsAttachedToNode()) break;
+
+		// Remove task if all its controllers were removed from target nodes
+		if (j == Task.Ctlrs.GetCount())
+		{
+			Task.Stop(0.f);
+			Tasks.EraseAt(i);
+		}
+		else
+		{
+			Task.Update(FrameTime);
+			++i;
+		}
+	}
 	OK;
 }
 //---------------------------------------------------------------------
@@ -177,7 +195,7 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
 							  float Weight, float FadeInTime, float FadeOutTime)
 {
-	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f) return INVALID_INDEX;
+	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeInTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
 	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
@@ -204,11 +222,14 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		pTask = Tasks.Reserve(1);
 	}
 
-	n_assert_dbg(!pTask->Ctlrs.GetCount());
+	bool NeedWeight = (Weight < 1.f || FadeInTime > 0.f || FadeOutTime > 0.f);
+	bool BlendingIsNotNecessary = (!NeedWeight && Priority == 0);
 
-	pTask->Ctlrs.BeginAdd(Clip->GetSamplerCount());
-	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
+	n_assert_dbg(!pTask->Ctlrs.GetCount());
+	Scene::PNodeController* ppCtlr = pTask->Ctlrs.Reserve(Clip->GetSamplerCount());
+	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i, ++ppCtlr)
 	{
+		// Get controller target node
 		Scene::CSceneNode* pNode;
 		CStrID Target = Clip->GetSamplerTarget(i);
 		int NodeIdx = Nodes.FindIndex(Target);
@@ -219,16 +240,53 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 			else continue;
 		}
 		else pNode = Nodes.ValueAt(NodeIdx);
-		pNode->Controller = Clip->CreateController(i);
-		pTask->Ctlrs.Add(pNode, pNode->Controller.GetUnsafe());
 
-		// If Weight != 1.f force creation of the blend controller
-		//!!!
-		// If still no blend controller, create and setup
-		// Add child controller
-		// Only blend controller allows to tune weight
+		*ppCtlr = Clip->CreateController(i);
+
+		//???Weight to controller itself ans apply weight always?
+		//so can use fading controllers without fade source, or even single weighted controllers
+		//in other way, fade source is a pose at the start time, and it is a typical blending
+		//scenario, with interpolation from constant tfm to animation start pose
+
+		// When all these conditions are met, we can use a clip controller directly, without blending
+		//!!!if weight will be inside a clip controller, can remove it and both fades from conditions!
+
+		Anim::PNodeControllerPriorityBlend BlendCtlr;
+		if (pNode->GetController() && pNode->GetController()->IsA<Anim::CNodeControllerPriorityBlend>())
+			BlendCtlr = (Anim::CNodeControllerPriorityBlend*)pNode->GetController();
+
+		if (BlendingIsNotNecessary && (!BlendCtlr.IsValid() || !BlendCtlr->GetSourceCount()))
+		{
+			pNode->SetController(*ppCtlr);
+		}
+		else
+		{
+			if (!BlendCtlr.IsValid())
+			{
+				BlendCtlr = n_new(Anim::CNodeControllerPriorityBlend);
+				if (pNode->GetController()) BlendCtlr->AddSource(*pNode->GetController(), 0, 1.f);
+			}
+
+			if (!BlendCtlr->GetSourceCount() && NeedWeight)
+			{
+				// Create static controller with the current pose for correct interpolation
+				// from the current state to the requested anim starting pose
+				// if this is not done, starting pose will be blended with an identity transform
+
+				//!!!
+				//use fade in time as interpolation time
+				//use 1 - Weight as target weight
+				//at the end use fade out time as interpolation time back to Weight 1 of a static pose
+				//???or use static pose only for in-transition and then remove?!
+				//can create static controllers as a lite task or smth like
+			}
+
+			BlendCtlr->AddSource(**ppCtlr, Priority, Weight);
+
+			pNode->SetController(BlendCtlr);
+			BlendCtlr->Activate(true);
+		}
 	}
-	pTask->Ctlrs.EndAdd();
 
 	if (!pTask->Ctlrs.GetCount()) return INVALID_INDEX;
 
@@ -258,6 +316,9 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	pTask->FadeOutTime = FadeOutTime;			// Remember only the length, because we don't know the end time
 	pTask->State = Anim::CAnimTask::Task_Starting;
 	pTask->Loop = Loop;
+	pTask->pEventDisp = GetEntity();
+	pTask->Params = n_new(Data::CParams);
+	pTask->Params->Set(CStrID("Clip"), ClipID);
 
 	return TaskID;
 }
@@ -271,4 +332,4 @@ float CPropAnimation::GetAnimLength(CStrID ClipID) const
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

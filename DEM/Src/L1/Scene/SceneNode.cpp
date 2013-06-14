@@ -155,11 +155,7 @@ bool CSceneNode::AddAttr(CNodeAttribute& Attr)
 {
 	if (Attr.pNode) FAIL;
 	Attr.pNode = this;
-	if (!Attr.OnAdd())
-	{
-		Attr.pNode = NULL;
-		FAIL;
-	}
+	if (!Attr.OnAttachToNode(this)) FAIL;
 	Attrs.Append(&Attr);
 	OK;
 }
@@ -168,7 +164,7 @@ bool CSceneNode::AddAttr(CNodeAttribute& Attr)
 void CSceneNode::RemoveAttr(CNodeAttribute& Attr)
 {
 	n_assert(Attr.pNode == this);
-	Attr.OnRemove();
+	Attr.OnDetachFromNode();
 	Attr.pNode = NULL;
 	Attrs.RemoveByValue(&Attr);
 }
@@ -178,9 +174,37 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 {
 	n_assert(Idx < (DWORD)Attrs.GetCount());
 	CNodeAttribute& Attr = *Attrs[Idx];
-	Attr.OnRemove();
+	Attr.OnDetachFromNode();
 	Attr.pNode = NULL;
 	Attrs.EraseAt(Idx);
+}
+//---------------------------------------------------------------------
+
+bool CSceneNode::SetController(CNodeController* pCtlr)
+{
+	if (Controller.GetUnsafe() == pCtlr) OK;
+	if (pCtlr && pCtlr->pNode) FAIL;
+
+	if (Controller.IsValid())
+	{
+		n_assert(Controller->pNode == this);
+		Controller->OnDetachFromNode();
+		Controller->pNode = NULL;
+	}
+
+	if (pCtlr)
+	{
+		pCtlr->pNode = this;
+		if (!pCtlr->OnAttachToNode(this))
+		{
+			pCtlr->pNode = NULL;
+			FAIL;
+		}
+	}
+
+	Controller = pCtlr;
+
+	OK;
 }
 //---------------------------------------------------------------------
 

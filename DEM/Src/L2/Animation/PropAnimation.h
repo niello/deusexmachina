@@ -6,6 +6,7 @@
 #include <Animation/AnimFwd.h>
 #include <Animation/AnimClip.h>
 #include <Animation/AnimTask.h>
+#include <Animation/NodeControllerPriorityBlend.h>
 #include <util/ndictionary.h>
 
 // Animation property manages node animation controllers, clip playback and blending.
@@ -28,13 +29,11 @@ class CPropAnimation: public Game::CProperty
 
 private:
 
-	//typedef nDictionary<Scene::CSceneNode*, Anim::PNodeControllerPriorityBlend> CCtlrList;
-
 	//???move this cache to CSceneNode? any Prop that manages node controlers may want to access it!
-	nDictionary<CStrID, Scene::CSceneNode*>	Nodes;
-	//CCtlrList								BlendCtlrs;
-	nDictionary<CStrID, Anim::PAnimClip>	Clips;
-	nArray<Anim::CAnimTask>					Tasks;
+	nDictionary<CStrID, Scene::CSceneNode*>		Nodes;
+
+	nDictionary<CStrID, Anim::PAnimClip>		Clips;
+	nArray<Anim::CAnimTask>						Tasks;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -49,7 +48,7 @@ private:
 
 public:
 
-	CPropAnimation(): Tasks(1, 1) {}
+	CPropAnimation(): Tasks(1, 1) { Tasks.SetKeepOrder(false); }
 
 	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause) { Tasks[TaskID].SetPause(Pause); }

@@ -30,11 +30,12 @@ protected:
 	matrix44			InvBindPose;
 	matrix44			SkinMatrix;
 
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode);
+	virtual void	OnDetachFromNode();
+
 public:
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual bool	OnAdd();
-	virtual void	OnRemove();
 	virtual void	Update();
 
 	//!!!Can be useful for ragdolls!

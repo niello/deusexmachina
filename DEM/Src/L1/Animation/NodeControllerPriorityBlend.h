@@ -7,6 +7,9 @@
 // Priority-blend controller blends inputs from a set of another controllers from the most
 // to the least priority according to input weights until weight sum is 1.0f
 
+//???what is the best way to blend multiple quaternions?
+//!!!there is QuatSquad blending operation!
+
 namespace Anim
 {
 
@@ -29,13 +32,19 @@ protected:
 
 public:
 
+	virtual bool	IsComposite() const { OK; }
+	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
+
+	//!!!TMP HACK!
+	virtual bool	OnAttachToNode(Scene::CSceneNode* pSceneNode);
+	virtual void	OnDetachFromNode();
+
 	bool			AddSource(Scene::CNodeController& Ctlr, DWORD Priority, float Weight);
-	void			RemoveSource(Scene::CNodeController& Ctlr);
+	bool			RemoveSource(const Scene::CNodeController& Ctlr);
 	void			Clear();
 	void			SetPriority(Scene::CNodeController& Ctlr, DWORD Priority);
 	void			SetWeight(Scene::CNodeController& Ctlr, float Weight);
-
-	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
+	DWORD			GetSourceCount() const { return Sources.GetCount(); }
 };
 
 typedef Ptr<CNodeControllerPriorityBlend> PNodeControllerPriorityBlend;

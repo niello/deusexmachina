@@ -57,7 +57,7 @@ public:
 	CLight();
 
 	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	OnRemove();
+	virtual void	OnDetachFromNode();
 	virtual void	Update();
 
 	void			CalcFrustum(matrix44& OutFrustum);

@@ -3,6 +3,23 @@
 namespace Anim
 {
 
+//!!!TMP HACK!
+bool CNodeControllerPriorityBlend::OnAttachToNode(Scene::CSceneNode* pSceneNode)
+{
+	for (int i = 0; i < Sources.GetCount(); ++i)
+		Sources[i].Ctlr->OnAttachToNode(pSceneNode);
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!TMP HACK!
+void CNodeControllerPriorityBlend::OnDetachFromNode()
+{
+	for (int i = 0; i < Sources.GetCount(); ++i)
+		Sources[i].Ctlr->OnDetachFromNode();
+}
+//---------------------------------------------------------------------
+
 bool CNodeControllerPriorityBlend::AddSource(Scene::CNodeController& Ctlr, DWORD Priority, float Weight)
 {
 #ifdef _DEBUG
@@ -10,8 +27,11 @@ bool CNodeControllerPriorityBlend::AddSource(Scene::CNodeController& Ctlr, DWORD
 		if (Sources[i].Ctlr.GetUnsafe() == &Ctlr) FAIL;
 #endif
 
+	if (Ctlr.IsComposite()) FAIL;
+
 	if (Sources.GetCount())
 	{
+		//???or autoconvert based on parent node? now it is possible!
 		if (IsLocalSpace() != Ctlr.IsLocalSpace()) FAIL;
 		if (!NeedToUpdateLocalSpace() && Ctlr.NeedToUpdateLocalSpace())
 			Flags.Set(UpdateLocalSpace);
@@ -28,12 +48,15 @@ bool CNodeControllerPriorityBlend::AddSource(Scene::CNodeController& Ctlr, DWORD
 	Src.Weight = Weight;
 	Sources.InsertSorted(Src);
 
+	//!!!TMP HACK!
+	Src.Ctlr->OnAttachToNode(pNode);
+
 	Channels.Set(Ctlr.GetChannels());
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CNodeControllerPriorityBlend::RemoveSource(Scene::CNodeController& Ctlr)
+bool CNodeControllerPriorityBlend::RemoveSource(const Scene::CNodeController& Ctlr)
 {
 	for (int i = 0; i < Sources.GetCount(); ++i)
 		if (Sources[i].Ctlr.GetUnsafe() == &Ctlr)
@@ -42,8 +65,9 @@ void CNodeControllerPriorityBlend::RemoveSource(Scene::CNodeController& Ctlr)
 			Channels.ClearAll();
 			for (int j = 0; j < Sources.GetCount(); ++j)
 				Channels.Set(Sources[j].Ctlr->GetChannels());
-			return;
+			OK;
 		}
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -103,17 +127,17 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 			float Weight = TheLast ? WeightLeft : Src.Weight;
 
 			//!!!Need quaternion interpolation that support more than one quaternion! nlerp, squad?
-			float RelTotalWeight = TotalWeight;
-			TotalWeight += Weight;
-			RelTotalWeight /= TotalWeight;
-			if (RelTotalWeight > 0.f)
+			if (TotalWeight > 0.f)
 			{
+				//???can write inplace slerp?
 				quaternion Tmp = DestTfm.Rotation;
-				DestTfm.Rotation.slerp(Tmp, Src.SRT.Rotation, RelTotalWeight);
+				DestTfm.Rotation.slerp(Tmp, Src.SRT.Rotation, TotalWeight / (TotalWeight + Weight));
 			}
 			else DestTfm.Rotation = Src.SRT.Rotation;
 
 			if (TheLast) break;
+
+			TotalWeight += Weight;
 		}
 	}
 
@@ -130,9 +154,10 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 			bool TheLast = (Src.Weight >= WeightLeft);
 			float Weight = TheLast ? WeightLeft : Src.Weight;
 			DestTfm.Translation += Src.SRT.Translation * Weight;
-			TotalWeight += Weight;
 
 			if (TheLast) break;
+
+			TotalWeight += Weight;
 		}
 	}
 

@@ -1041,6 +1041,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\NodeController.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\NodeController.h"
 				>
 			</File>
