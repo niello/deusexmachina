@@ -19,26 +19,9 @@ namespace HrdLib
 
             if (type.IsArray)
             {
-                var rankList = new List<string>();
-
-                Type t;
-                for (t = type; t != null && t.IsArray; t = t.GetElementType())
-                {
-                    var rank = t.GetArrayRank();
-                    string rankStr;
-                    if (rank > 1)
-                        rankStr = string.Concat("[", new string(',', rank - 1), "]");
-                    else
-                    {
-                        Debug.Assert(rank == 1);
-                        rankStr = "[]";
-                    }
-                    rankList.Add(rankStr);
-                }
-                Debug.Assert(t != null);
-
-                var fullRank = string.Concat(rankList.ToArray());
-                return GetCsTypeName(t) + fullRank;
+                Type elementType;
+                var fullRank = GetArrayRankString(type, out elementType);
+                return GetCsTypeName(elementType) + fullRank;
             }
 
             if (!type.IsGenericType)
@@ -60,6 +43,39 @@ namespace HrdLib
         public static string GetCsTypeName<T>()
         {
             return GetCsTypeName(typeof (T));
+        }
+
+        public static string GetArrayRankString(Type arrayType, out Type elementType)
+        {
+            if (arrayType == null)
+                throw new ArgumentNullException("arrayType");
+
+            if (!arrayType.IsArray)
+            {
+                elementType = null;
+                return null;
+            }
+
+            var rankList = new List<string>();
+
+            Type t;
+            for (t = arrayType; t != null && t.IsArray; t = t.GetElementType())
+            {
+                var rank = t.GetArrayRank();
+                string rankStr;
+                if (rank > 1)
+                    rankStr = string.Concat("[", new string(',', rank - 1), "]");
+                else
+                {
+                    Debug.Assert(rank == 1);
+                    rankStr = "[]";
+                }
+                rankList.Add(rankStr);
+            }
+            Debug.Assert(t != null);
+
+            elementType = t;
+            return string.Concat(rankList.ToArray());
         }
     }
 }

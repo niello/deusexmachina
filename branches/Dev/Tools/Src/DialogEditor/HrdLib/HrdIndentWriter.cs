@@ -169,6 +169,54 @@ namespace HrdLib
             WriteLine("writer.WriteEndArray();");
         }
 
+        public void ReadBeginElement()
+        {
+            ReadBeginElement(null);
+        }
+
+        public void ReadBeginElement(string name)
+        {
+            WriteLine("reader.ReadBeginElement();");
+            ValidateElementName(name);
+        }
+
+        public void ReadEndElement()
+        {
+            WriteLine("reader.ReadEndElement();");
+        }
+
+        public void ReadNextSibling()
+        {
+            WriteLine("if(!reader.ReadNextSibling())")
+                .WriteLine("{")
+                .IncreaseIndent();
+            WriteLine("throw new {0}({1});", ReflectionHelper.GetCsTypeName<HrdStructureValidationException>(),
+                      MakeVerbatimString(SR.GetString(SR.NoNextSibling)))
+                .DecreaseIndent();
+            WriteLine("}");
+        }
+
+        private void ValidateElementName(string name)
+        {
+            if (name == null)
+                return;
+
+            WriteLine("if(!{0}.Equals({1}, reader.ElementName, {2}.Ordinal))",
+                      ReflectionHelper.GetCsTypeName<string>(), MakeVerbatimString(name),
+                      ReflectionHelper.GetCsTypeName<StringComparison>())
+                .WriteLine("{")
+                .IncreaseIndent();
+
+            // An error message is embeding here into the code. It means that the culture
+            // of the serializer can't be changed.
+            WriteLine("throw new {0}({1}.Format({2}, reader.ElementName));",
+                      ReflectionHelper.GetCsTypeName<HrdStructureValidationException>(),
+                      ReflectionHelper.GetCsTypeName<string>(),
+                      MakeVerbatimString(SR.GetFormatString(SR.ElementNameMismatchFormat, "{0}", name)))
+                .DecreaseIndent();
+            WriteLine("}");
+        }
+
         public void Flush()
         {
             _writer.Flush();
@@ -190,6 +238,14 @@ namespace HrdLib
         ~HrdIndentWriter()
         {
             Dispose(false);
+        }
+
+        private static string MakeVerbatimString(string str)
+        {
+            if (str == null)
+                return "null";
+
+            return string.Concat("@\"", str.Replace("\"", "\"\""), "\"");
         }
     }
 }

@@ -165,4 +165,10 @@
   <data name="ValueTypeMismatch" xml:space="preserve">
     <value>Value type mismatch.</value>
   </data>
+  <data name="ElementNameMismatchFormat" xml:space="preserve">
+    <value>The name of the element is '{0}'. Required element's name is '{1}'.</value>
+  </data>
+  <data name="NoNextSibling" xml:space="preserve">
+    <value>Node is the last sibling.</value>
+  </data>
 </root>

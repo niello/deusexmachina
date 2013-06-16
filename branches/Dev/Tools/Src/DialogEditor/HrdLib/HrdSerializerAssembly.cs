@@ -212,8 +212,11 @@ namespace HrdLib
             if (type.IsArray)
             {
                 DeserializeArray(writer, type, queue);
+                return;
             }
 
+            //TODO: deserialize any other types
+            writer.WriteLine("return default({0});", ReflectionHelper.GetCsTypeName(queue.CurrentType));
         }
 
         private void BuildTypeSerializationMethod(HrdIndentWriter writer, HrdGeneratorQueue queue)
@@ -548,7 +551,58 @@ namespace HrdLib
             var rank = arrayType.GetArrayRank();
             Debug.Assert(rank >= 1, "Array must have at least one dimension.");
 
-            throw new NotImplementedException();
+            if (rank > 1)
+            {
+                writer.ReadBeginElement("Size");
+                writer.ReadBeginElement();
+
+                var sizeBuilder = new StringBuilder("[");
+                for (int i = 0; i < rank; i++)
+                {
+                    if (i > 0)
+                    {
+                        writer.ReadNextSibling();
+                        sizeBuilder.Append(", ");
+                    }
+                    writer.WriteLine("int length{0} = reader.ReadInt32();", i);
+                    sizeBuilder.AppendFormat(CultureInfo.InvariantCulture, "length{0}", i);
+                }
+                sizeBuilder.Append("]");
+
+                writer.ReadNextSibling();
+                writer.ReadBeginElement("Value");
+
+                Type realElementType;
+                var subElementRank = ReflectionHelper.GetArrayRankString(elementType, out realElementType);
+                if (subElementRank != null)
+                {
+                    sizeBuilder.Append(subElementRank);
+                    elementType = realElementType;
+                }
+
+                writer.WriteLine("{0} result = new {1}{2};", ReflectionHelper.GetCsTypeName(arrayType),
+                                 ReflectionHelper.GetCsTypeName(elementType), sizeBuilder);
+
+                // TODO: read an array
+            }
+            else
+            {
+                Type realElementType;
+                var subElementRank = ReflectionHelper.GetArrayRankString(elementType, out realElementType);
+                if (subElementRank != null)
+                    elementType = realElementType;
+
+                // TODO: read an array
+
+                writer.Write("{0} result = new {1}[0]", ReflectionHelper.GetCsTypeName(arrayType), ReflectionHelper.GetCsTypeName(elementType));
+
+                if (subElementRank != null)
+                    writer.Write(subElementRank);
+
+                writer.WriteLine(";");
+            }
+
+            writer.WriteLine("return result;");
         }
 
         private void SerializeArray(HrdIndentWriter writer, Type arrayType, HrdGeneratorQueue queue)

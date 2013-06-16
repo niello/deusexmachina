@@ -28,6 +28,20 @@ namespace HrdLib
 
         public Stream Stream { get { return _stream; } }
 
+        /// <summary>
+        /// The name of current element
+        /// </summary>
+        public string ElementName
+        {
+            get
+            {
+                if (_elementStack.Count == 0)
+                    return null;
+                var elementInfo = _elementStack.Peek();
+                return elementInfo.Element.Name;
+            }
+        }
+
         public HrdReader(Stream stream)
         {
             if (stream == null)
@@ -171,6 +185,10 @@ namespace HrdLib
         public string ReadString()
         {
             return ReadString(true);
+        }
+
+        public void Close()
+        {
         }
     }
 }
