@@ -36,11 +36,12 @@ public:
 
 	enum EState
 	{
-		Task_Invalid,
-		Task_Starting,
-		Task_Running,
-		Task_Paused,
-		Task_Stopping
+		Task_Invalid,	// Task is empty and can't be executed
+		Task_Starting,	// Task is initialized but not yet started
+		Task_Running,	// Animation time is advancing
+		Task_Paused,	// Animation time is frozen, but task is valid and can be resumed
+		Task_Stopping,	// Fadeout is played
+		Task_LastFrame	// Animation time reached the final point, but controllers must update nodes, so give them a chance
 	};
 
 	CStrID							ClipID;
