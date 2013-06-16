@@ -227,6 +227,8 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	bool NeedWeight = (Weight < 1.f || FadeInTime > 0.f || FadeOutTime > 0.f);
 	bool BlendingIsNotNecessary = (!NeedWeight && Priority == 0);
 
+	int FreePoseLockerIdx = 0;
+
 	n_assert_dbg(!pTask->Ctlrs.GetCount());
 	Scene::PNodeController* ppCtlr = pTask->Ctlrs.Reserve(Clip->GetSamplerCount());
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i, ++ppCtlr)
@@ -261,14 +263,21 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 				if (pNode->GetController()) BlendCtlr->AddSource(*pNode->GetController(), 0, 1.f);
 			}
 
+			// If blend controller is new, we capture current pose to it with full weight but the least priority,
+			// so blending will always be correct, using this pose as a base.
 			if (!BlendCtlr->GetSourceCount() && NeedWeight)
 			{
-				//???when to update local from world?
-				Scene::PNodeControllerStatic CurrPoseLocker = n_new(Scene::CNodeControllerStatic);
-				CurrPoseLocker->SetStaticTransform(pNode->GetLocalTransform(), true);
-				BlendCtlr->AddSource(*CurrPoseLocker, 0, 1.f);
-				//???where to store pose lockers to delete them later?
-				CurrPoseLocker->Activate(true); //???activate in task if store there?
+				while (FreePoseLockerIdx < BasePose.GetCount() && BasePose[FreePoseLockerIdx]->IsAttachedToNode())
+					++FreePoseLockerIdx;
+				Scene::PNodeControllerStatic& PoseLock =
+					(FreePoseLockerIdx < BasePose.GetCount()) ?
+					BasePose[FreePoseLockerIdx] :
+					BasePose.Append(n_new(Scene::CNodeControllerStatic));
+
+				if (!pNode->IsLocalTransformValid()) pNode->UpdateLocalFromWorld();
+				PoseLock->SetStaticTransform(pNode->GetLocalTransform(), true);
+				BlendCtlr->AddSource(*PoseLock, 0, 1.f);
+				PoseLock->Activate(true); //???where to deactivate? when all tasks were stopped and it is the only source
 			}
 
 			BlendCtlr->AddSource(**ppCtlr, Priority, Weight);
@@ -293,16 +302,20 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	FadeInTime *= Speed;
 	FadeOutTime *= Speed;
 
-	if (!Loop) pTask->StopTimeBase = ((Speed > 0.f) ? Clip->GetDuration() : 0.f) - FadeOutTime;
+	if (!Loop)
+	{
+		pTask->StopTimeBase = ((Speed > 0.f) ? Clip->GetDuration() : 0.f) - FadeOutTime;
+		Offset = (Speed > 0.f) ? Offset : Clip->GetDuration() - Offset;
+	}
 
 	pTask->ClipID = ClipID;
 	pTask->Clip = Clip;
-	pTask->CurrTime = Offset;
 	pTask->Offset = Offset;
+	pTask->CurrTime = pTask->Offset;
 	pTask->Speed = Speed;
 	pTask->Priority = Priority;
 	pTask->Weight = Weight;
-	pTask->FadeInTime = Offset + FadeInTime;	// Get a point in time becuse we know the start time
+	pTask->FadeInTime = Offset + FadeInTime;	// Get a point in time because we know the start time
 	pTask->FadeOutTime = FadeOutTime;			// Remember only the length, because we don't know the end time
 	pTask->State = Anim::CAnimTask::Task_Starting;
 	pTask->Loop = Loop;

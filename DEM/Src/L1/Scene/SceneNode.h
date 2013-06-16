@@ -36,7 +36,8 @@ protected:
 		LocalMatrixDirty	= 0x04,	// Local transform components were changed, but matrix is not updated
 		WorldMatrixDirty	= 0x08,	// Local matrix changed, and world matrix need to be updated
 		WorldMatrixChanged	= 0x10,	// World matrix of this node was changed this frame
-		WorldMatrixUpdated	= 0x20	// World matrix of this node was already updated this frame
+		WorldMatrixUpdated	= 0x20,	// World matrix of this node was already updated this frame
+		LocalTransformValid	= 0x40	// Local transform is actual, not invalidated by world space controller
 	};
 
 	typedef nDictionary<CStrID, PSceneNode> CNodeDict;
@@ -108,16 +109,18 @@ public:
 	bool					IsActive() const { return Flags.Is(Active); }
 	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool					IsLODDependent() const { return Flags.Is(RespectsLOD); }
-	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
+	bool					IsLocalTransformValid() const { return Flags.Is(LocalTransformValid); }
+	bool					IsLocalMatrixDirty() const { return Flags.Is(LocalMatrixDirty); }
 	bool					IsWorldMatrixDirty() const { return Flags.Is(WorldMatrixDirty); }
+	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
 
-	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty); }
+	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
 	const vector3&			GetPosition() const { return Tfm.Translation; }
-	void					SetRotation(const quaternion& Rot) { Tfm.Rotation = Rot; Flags.Set(LocalMatrixDirty); }
+	void					SetRotation(const quaternion& Rot) { Tfm.Rotation = Rot; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
 	const quaternion&		GetRotation() const { return Tfm.Rotation; }
-	void					SetScale(const vector3& Scale) { Tfm.Scale = Scale; Flags.Set(LocalMatrixDirty); }
+	void					SetScale(const vector3& Scale) { Tfm.Scale = Scale; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
 	const vector3&			GetScale() const { return Tfm.Scale; }
-	void					SetLocalTransform(const Math::CTransform& NewTfm) { Tfm = NewTfm; Flags.Set(LocalMatrixDirty); }
+	void					SetLocalTransform(const Math::CTransform& NewTfm) { Tfm = NewTfm; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
 	void					SetLocalTransform(const matrix44& Transform);
 	const Math::CTransform&	GetLocalTransform() const { return Tfm; }
 	void					SetWorldTransform(const matrix44& Transform);
@@ -130,7 +133,7 @@ inline CSceneNode::CSceneNode(CScene& Scene, CStrID NodeName):
 	pScene(&Scene),
 	pParent(NULL),
 	Name(NodeName),
-	Flags(Active | LocalMatrixDirty)
+	Flags(Active | LocalMatrixDirty | LocalTransformValid)
 {
 	Attrs.Flags.Clear(Array_KeepOrder);
 }
@@ -174,7 +177,7 @@ inline void CSceneNode::SetLocalTransform(const matrix44& Transform)
 	LocalMatrix = Transform;
 	Tfm.FromMatrix(LocalMatrix);
 	Flags.Clear(LocalMatrixDirty);
-	Flags.Set(WorldMatrixDirty);
+	Flags.Set(WorldMatrixDirty | LocalTransformValid);
 }
 //---------------------------------------------------------------------
 
