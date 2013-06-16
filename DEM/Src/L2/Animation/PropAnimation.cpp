@@ -170,25 +170,19 @@ bool CPropAnimation::OnPropDeactivating(const Events::CEventBase& Event)
 bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 {
 	float FrameTime = (float)GameSrv->GetFrameTime();
-	for (int i = 0; i < Tasks.GetCount(); /* NB: i is incremented inside */)
+	for (int i = 0; i < Tasks.GetCount(); ++i)
 	{
 		Anim::CAnimTask& Task = Tasks[i];
+
+		if (Task.State == Anim::CAnimTask::Task_Invalid) continue;
 
 		int j = 0;
 		for (; j < Task.Ctlrs.GetCount(); ++j)
 			if (Task.Ctlrs[j]->IsAttachedToNode()) break;
 
 		// Remove task if all its controllers were removed from target nodes
-		if (j == Task.Ctlrs.GetCount())
-		{
-			Task.Stop(0.f);
-			Tasks.EraseAt(i);
-		}
-		else
-		{
-			Task.Update(FrameTime);
-			++i;
-		}
+		if (j == Task.Ctlrs.GetCount()) Task.Stop(0.f);
+		else Task.Update(FrameTime);
 	}
 	OK;
 }
@@ -304,14 +298,22 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 	if (!Loop)
 	{
-		pTask->StopTimeBase = ((Speed > 0.f) ? Clip->GetDuration() : 0.f) - FadeOutTime;
-		Offset = (Speed > 0.f) ? Offset : Clip->GetDuration() - Offset;
+		if (Speed > 0.f) pTask->StopTimeBase = Clip->GetDuration() - FadeOutTime;
+		else
+		{
+			pTask->StopTimeBase = -FadeOutTime;
+			if (Offset == 0.f)
+			{
+				n_printf("Anim,Warning: Reverse non-looping animation with offset = 0 will not be played, because offset 0 is its end");
+				Offset = Clip->GetDuration();
+			}
+		}
 	}
 
 	pTask->ClipID = ClipID;
 	pTask->Clip = Clip;
 	pTask->Offset = Offset;
-	pTask->CurrTime = pTask->Offset;
+	pTask->CurrTime = Offset;
 	pTask->Speed = Speed;
 	pTask->Priority = Priority;
 	pTask->Weight = Weight;

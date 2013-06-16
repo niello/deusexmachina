@@ -12,6 +12,12 @@ namespace Anim
 
 void CAnimTask::Update(float FrameTime)
 {
+	if (State == Task_LastFrame)
+	{
+		Clear();
+		return;
+	}
+
 	if (State == Task_Paused || State == Task_Invalid) return;
 
 	float PrevTime = CurrTime;
@@ -42,11 +48,18 @@ void CAnimTask::Update(float FrameTime)
 		float CurrFadeOutTime = CurrTime - StopTimeBase;
 		if (Speed * (CurrFadeOutTime - FadeOutTime) >= 0.f)
 		{
-			Clear();
-			return;
+			if (FadeOutTime == 0.f)
+			{
+				State = Task_LastFrame;
+				CurrTime = StopTimeBase + FadeOutTime;
+			}
+			else
+			{
+				Clear();
+				return;
+			}
 		}
-
-		RealWeight *= (1.f - CurrFadeOutTime / FadeOutTime);
+		else RealWeight *= (1.f - CurrFadeOutTime / FadeOutTime);
 	}
 	else
 	{
@@ -113,7 +126,7 @@ void CAnimTask::Stop(float OverrideFadeOutTime)
 			OverrideFadeOutTime = MaxPossibleFadeOut;
 	}
 
-	if (OverrideFadeOutTime <= 0.f) Clear();
+	if (OverrideFadeOutTime == 0.f) Clear();
 	else
 	{
 		State = Task_Stopping;
