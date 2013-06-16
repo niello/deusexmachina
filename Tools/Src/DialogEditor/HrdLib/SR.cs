@@ -9,10 +9,12 @@ namespace HrdLib
         public const string
             AmbigousConstructorDeclaredFormat = "AmbigousConstructorDeclaredFormat",
             CompilerErrorCollectionEmpty = "CompilerErrorCollectionEmpty",
+            ElementNameMismatchFormat = "ElementNameMismatchFormat",
             IncorrectOrderFormat = "IncorrectOrderFormat",
             InternalCodeGenError = "InternalCodeGenError",
             NamedElementCantBeAdded = "NamedElementCantBeAdded",
             NoApproppriateConstructorFormat = "NoApproppriateConstructorFormat",
+            NoNextSibling = "NoNextSibling",
             NoPublicPropertyFormat = "NoPublicPropertyFormat",
             NonAttributeValueCantBeRead = "NonAttributeValueCantBeRead",
             ParameterSetterAlreadyDeclaredFormat = "ParameterSetterAlreadyDeclaredFormat",
