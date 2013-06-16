@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_ANIM_CTLR_THIRD_PERSON_H__
-#define __DEM_L1_ANIM_CTLR_THIRD_PERSON_H__
+#ifndef __DEM_L1_NODE_CTLR_THIRD_PERSON_H__
+#define __DEM_L1_NODE_CTLR_THIRD_PERSON_H__
 
 #include <Scene/NodeController.h>
 #include <mathlib/polar.h>

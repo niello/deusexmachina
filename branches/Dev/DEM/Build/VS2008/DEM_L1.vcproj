@@ -1049,6 +1049,26 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerComposite.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerComposite.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerPriorityBlend.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerPriorityBlend.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Scene\NodeControllerStatic.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Scene\NodeControllerThirdPerson.cpp"
 				>
 			</File>
@@ -1450,14 +1470,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Animation\NodeControllerMocap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\NodeControllerPriorityBlend.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Animation\NodeControllerPriorityBlend.h"
 				>
 			</File>
 		</Filter>

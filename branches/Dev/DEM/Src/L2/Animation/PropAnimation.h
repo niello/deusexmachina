@@ -6,11 +6,12 @@
 #include <Animation/AnimFwd.h>
 #include <Animation/AnimClip.h>
 #include <Animation/AnimTask.h>
-#include <Animation/NodeControllerPriorityBlend.h>
 #include <util/ndictionary.h>
 
 // Animation property manages node animation controllers, clip playback and blending.
 // This variation supports bones and mocap clips.
+
+//!!!can write no blend animation property without weights etc!
 
 namespace Scene
 {

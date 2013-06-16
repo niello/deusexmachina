@@ -51,6 +51,7 @@ public:
 	EState							State;
 	float							CurrTime;
 	float							StopTimeBase;
+	float							PrevRealWeight;
 
 	float							Offset;
 	float							Speed;

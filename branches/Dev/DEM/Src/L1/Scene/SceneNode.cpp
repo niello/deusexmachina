@@ -30,8 +30,8 @@ void CSceneNode::UpdateLocalFromWorld()
 	if (pParent)
 	{
 		matrix44 InvParentPos;
-		pParent->GetWorldMatrix().invert_simple(InvParentPos);
-		LocalMatrix = InvParentPos * WorldMatrix;
+		pParent->WorldMatrix.invert_simple(InvParentPos);
+		LocalMatrix.mult2_simple(InvParentPos, WorldMatrix);
 	}
 	else LocalMatrix = WorldMatrix;
 	Tfm.FromMatrix(LocalMatrix);
@@ -189,18 +189,9 @@ bool CSceneNode::SetController(CNodeController* pCtlr)
 	{
 		n_assert(Controller->pNode == this);
 		Controller->OnDetachFromNode();
-		Controller->pNode = NULL;
 	}
 
-	if (pCtlr)
-	{
-		pCtlr->pNode = this;
-		if (!pCtlr->OnAttachToNode(this))
-		{
-			pCtlr->pNode = NULL;
-			FAIL;
-		}
-	}
+	if (pCtlr && !pCtlr->OnAttachToNode(this)) FAIL;
 
 	Controller = pCtlr;
 

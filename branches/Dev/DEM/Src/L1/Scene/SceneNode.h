@@ -60,9 +60,6 @@ protected:
 
 	friend class CScene;
 
-	void					UpdateWorldFromLocal();
-	void					UpdateLocalFromWorld();
-
 public:
 
 	CSceneNode(CScene& Scene, CStrID NodeName);
@@ -95,6 +92,8 @@ public:
 
 	void					UpdateLocalSpace(bool UpdateWorldMatrix = true);
 	void					UpdateWorldSpace();
+	void					UpdateWorldFromLocal();
+	void					UpdateLocalFromWorld();
 
 	// Rendering, lighting & debug rendering
 	// (Implement only transforms with debug rendering before writing render connections)
@@ -110,6 +109,7 @@ public:
 	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool					IsLODDependent() const { return Flags.Is(RespectsLOD); }
 	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
+	bool					IsWorldMatrixDirty() const { return Flags.Is(WorldMatrixDirty); }
 
 	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty); }
 	const vector3&			GetPosition() const { return Tfm.Translation; }
