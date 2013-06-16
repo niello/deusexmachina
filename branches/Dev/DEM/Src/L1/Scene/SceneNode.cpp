@@ -22,6 +22,8 @@ void CSceneNode::UpdateWorldFromLocal()
 		Flags.Set(WorldMatrixChanged);
 	}
 	else Flags.Clear(WorldMatrixChanged);
+
+	Flags.Set(LocalTransformValid);
 }
 //---------------------------------------------------------------------
 
@@ -36,6 +38,7 @@ void CSceneNode::UpdateLocalFromWorld()
 	else LocalMatrix = WorldMatrix;
 	Tfm.FromMatrix(LocalMatrix);
 	Flags.Clear(WorldMatrixDirty | LocalMatrixDirty);
+	Flags.Set(LocalTransformValid);
 }
 //---------------------------------------------------------------------
 
@@ -51,7 +54,7 @@ void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 	{
 		if (Controller->IsLocalSpace())
 		{
-			if (Controller->ApplyTo(Tfm)) Flags.Set(LocalMatrixDirty);
+			if (Controller->ApplyTo(Tfm)) Flags.Set(LocalMatrixDirty | LocalTransformValid);
 		}
 		else UpdateWorldMatrix = false;
 	}
@@ -83,6 +86,7 @@ void CSceneNode::UpdateWorldSpace()
 			Flags.Clear(WorldMatrixDirty);
 			Flags.Set(WorldMatrixChanged);
 			if (Controller->NeedToUpdateLocalSpace()) UpdateLocalFromWorld();
+			else Flags.Clear(LocalTransformValid);
 		}
 		else Flags.Clear(WorldMatrixChanged);
 	}

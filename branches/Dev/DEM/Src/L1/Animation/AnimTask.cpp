@@ -25,7 +25,7 @@ void CAnimTask::Update(float FrameTime)
 		// Fire events at initial time point, because interval-based firing below always excludes StartTime
 		Clip->FireEvents(CurrTime, Loop, pEventDisp, Params);
 	}
-	else if (State == Task_Running)
+	else if (State == Task_Running || State == Task_Stopping)
 		CurrTime += FrameTime * Speed;
 
 	// Stop non-looping clips automatically
@@ -46,7 +46,7 @@ void CAnimTask::Update(float FrameTime)
 			return;
 		}
 
-		RealWeight *= CurrFadeOutTime / FadeOutTime;
+		RealWeight *= (1.f - CurrFadeOutTime / FadeOutTime);
 	}
 	else
 	{

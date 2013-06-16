@@ -6,6 +6,7 @@
 #include <Animation/AnimFwd.h>
 #include <Animation/AnimClip.h>
 #include <Animation/AnimTask.h>
+#include <Scene/NodeControllerStatic.h>
 #include <util/ndictionary.h>
 
 // Animation property manages node animation controllers, clip playback and blending.
@@ -16,7 +17,6 @@
 namespace Scene
 {
 	class CSceneNode;
-	class CNodeController;
 }
 
 namespace Prop
@@ -35,6 +35,7 @@ private:
 
 	nDictionary<CStrID, Anim::PAnimClip>		Clips;
 	nArray<Anim::CAnimTask>						Tasks;
+	nArray<Scene::PNodeControllerStatic>		BasePose; // Captured pose for correct fading and blending
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
