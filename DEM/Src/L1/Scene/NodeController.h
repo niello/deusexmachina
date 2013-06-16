@@ -17,6 +17,7 @@
 
 namespace Scene
 {
+class CNodeControllerComposite;
 
 class CNodeController: public Core::CRefCounted
 {
@@ -41,18 +42,16 @@ public:
 
 	CNodeController(): pNode(NULL) {}
 
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { pNode = pSceneNode; OK; }
+	virtual void	OnDetachFromNode() { pNode = NULL; }
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;
 	void			RemoveFromNode();
 
-	//???need?
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { pNode = pSceneNode; OK; }
-	virtual void	OnDetachFromNode() { }
-
-	virtual bool	IsComposite() const { FAIL; }
 	bool			IsAttachedToNode() const { return !!pNode; }
 	CSceneNode*		GetNode() const { return pNode; }
 	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool			IsActive() const { return Flags.Is(Active); }
+	void			SetLocalSpace(bool Local) { Flags.SetTo(LocalSpace, Local); }
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
 	bool			HasChannel(EChannel Channel) const { return Channels.Is(Channel); }

@@ -5,6 +5,8 @@
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Bone.h>
+#include <Scene/NodeControllerPriorityBlend.h>
+#include <Scene/NodeControllerStatic.h>
 #include <Animation/KeyframeClip.h>
 #include <Animation/MocapClip.h>
 #include <Data/DataServer.h>
@@ -97,7 +99,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 //!!!DBG TMP! some AI character controller must drive character animations
 //for self-animated objects without AI can store info about current animations, it will help with save-load
 	if (Clips.GetCount())
-		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.0f, 0.f, 0.f);
+		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.0f, 4.f, 4.f);
 }
 //---------------------------------------------------------------------
 
@@ -243,17 +245,9 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 		*ppCtlr = Clip->CreateController(i);
 
-		//???Weight to controller itself ans apply weight always?
-		//so can use fading controllers without fade source, or even single weighted controllers
-		//in other way, fade source is a pose at the start time, and it is a typical blending
-		//scenario, with interpolation from constant tfm to animation start pose
-
-		// When all these conditions are met, we can use a clip controller directly, without blending
-		//!!!if weight will be inside a clip controller, can remove it and both fades from conditions!
-
-		Anim::PNodeControllerPriorityBlend BlendCtlr;
-		if (pNode->GetController() && pNode->GetController()->IsA<Anim::CNodeControllerPriorityBlend>())
-			BlendCtlr = (Anim::CNodeControllerPriorityBlend*)pNode->GetController();
+		Scene::PNodeControllerPriorityBlend BlendCtlr;
+		if (pNode->GetController() && pNode->GetController()->IsA<Scene::CNodeControllerPriorityBlend>())
+			BlendCtlr = (Scene::CNodeControllerPriorityBlend*)pNode->GetController();
 
 		if (BlendingIsNotNecessary && (!BlendCtlr.IsValid() || !BlendCtlr->GetSourceCount()))
 		{
@@ -263,22 +257,18 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		{
 			if (!BlendCtlr.IsValid())
 			{
-				BlendCtlr = n_new(Anim::CNodeControllerPriorityBlend);
+				BlendCtlr = n_new(Scene::CNodeControllerPriorityBlend);
 				if (pNode->GetController()) BlendCtlr->AddSource(*pNode->GetController(), 0, 1.f);
 			}
 
 			if (!BlendCtlr->GetSourceCount() && NeedWeight)
 			{
-				// Create static controller with the current pose for correct interpolation
-				// from the current state to the requested anim starting pose
-				// if this is not done, starting pose will be blended with an identity transform
-
-				//!!!
-				//use fade in time as interpolation time
-				//use 1 - Weight as target weight
-				//at the end use fade out time as interpolation time back to Weight 1 of a static pose
-				//???or use static pose only for in-transition and then remove?!
-				//can create static controllers as a lite task or smth like
+				//???when to update local from world?
+				Scene::PNodeControllerStatic CurrPoseLocker = n_new(Scene::CNodeControllerStatic);
+				CurrPoseLocker->SetStaticTransform(pNode->GetLocalTransform(), true);
+				BlendCtlr->AddSource(*CurrPoseLocker, 0, 1.f);
+				//???where to store pose lockers to delete them later?
+				CurrPoseLocker->Activate(true); //???activate in task if store there?
 			}
 
 			BlendCtlr->AddSource(**ppCtlr, Priority, Weight);

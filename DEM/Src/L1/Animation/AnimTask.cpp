@@ -1,6 +1,7 @@
 #include "AnimTask.h"
 
 #include <Scene/SceneNode.h>
+#include <Scene/NodeControllerComposite.h>
 #include <Animation/KeyframeClip.h>
 #include <Animation/MocapClip.h>
 #include <Animation/NodeControllerKeyframe.h>
@@ -19,6 +20,7 @@ void CAnimTask::Update(float FrameTime)
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 			Ctlrs[i]->Activate(true);
 		State = Task_Running;
+		PrevRealWeight = Weight;
 
 		// Fire events at initial time point, because interval-based firing below always excludes StartTime
 		Clip->FireEvents(CurrTime, Loop, pEventDisp, Params);
@@ -52,9 +54,18 @@ void CAnimTask::Update(float FrameTime)
 			RealWeight *= (CurrTime - Offset) / (FadeInTime - Offset);
 	}
 
-	//!!!if RealWeight != 1.f and weight isn't in a controller itself, blend controller must exist!
-	//it is attached to node or it is in BlendCtlrs!
-	//???if resulting weight is 0, skip updating time?
+	// Apply weight, if it was changed
+	if (PrevRealWeight != RealWeight)
+		for (int i = 0; i < Ctlrs.GetCount(); ++i)
+		{
+			Scene::CNodeController* pCtlr = Ctlrs[i];
+			if (!pCtlr->IsAttachedToNode()) continue;
+			n_assert_dbg(pCtlr->GetNode()->GetController()->IsA<Scene::CNodeControllerComposite>());
+			Scene::CNodeControllerComposite* pBlendCtlr = (Scene::CNodeControllerComposite*)pCtlr->GetNode()->GetController();
+			int Idx = ((Scene::CNodeControllerComposite*)pBlendCtlr)->GetSourceIndex(*pCtlr);
+			n_assert_dbg(Idx != INVALID_INDEX);
+			pBlendCtlr->SetWeight(Idx, RealWeight); //???mb store task ptr in controller?
+		}
 
 	// Feed node controllers
 	if (Clip->IsA<Anim::CMocapClip>())
