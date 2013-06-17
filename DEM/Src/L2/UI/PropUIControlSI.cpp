@@ -59,7 +59,7 @@ int CPropUIControl_AddActionHandler(lua_State* l)
 			CStrID(lua_tostring(l, 2)),
 			lua_tostring(l, 3),
 			lua_tostring(l, 4),
-			(ArgCount > 3) ? lua_tointeger(l, 5) : CPropUIControl::DEFAULT_PRIORITY));
+			(ArgCount > 3) ? lua_tointeger(l, 5) : CPropUIControl::Priority_Default));
 	return 1;
 }
 //---------------------------------------------------------------------

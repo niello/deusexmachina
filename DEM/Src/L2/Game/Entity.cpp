@@ -48,6 +48,7 @@ void CEntity::Deactivate()
 	n_assert(IsActive());
 	Flags.Set(ChangingActivity);
 
+	Level->RemoveFromSelection(UID);
 	FireEvent(CStrID("OnEntityDeactivated"));
 
 	Flags.Clear(Active | ChangingActivity);

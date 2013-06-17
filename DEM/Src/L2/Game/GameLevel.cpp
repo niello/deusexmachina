@@ -11,6 +11,7 @@
 #include <Physics/PhysicsServer.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h>
+#include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Game
@@ -126,8 +127,6 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 				n_printf("Error loading navigation mesh for level %s\n", ID.CStr());
 	}
 
-	//!!!load selection state, if required! sometimes selection shouldn't be loaded!
-
 	GlobalSub = EventMgr->Subscribe(NULL, this, &CGameLevel::OnEvent);
 
 	OK;
@@ -149,6 +148,11 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 {
 	// This is a chance for all properties to write their attrs to entities
 	FireEvent(CStrID("OnLevelSaving"), &OutDesc);
+
+	Data::PDataArray SGSelection = n_new(Data::CDataArray);
+	for (int i = 0; i < SelectedEntities.GetCount(); ++i)
+		SGSelection->Append(SelectedEntities[i]);
+	OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
 
 	// Save camera state
 	if (CameraManager.IsValid())

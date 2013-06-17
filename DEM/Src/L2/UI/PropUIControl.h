@@ -36,16 +36,16 @@ public:
 		CStrID			ID;
 		CStrID			EventID;	// cached
 		nString			UIName;		//???use CSimpleString to reduce size of struct?
-		short			Priority;
+		short			Priority;	// The higher is value the closer an action to the top of the list
 		bool			Enabled;	//!!!add methods to control it!
 		bool			Visible;
-		bool			AutoAdded;
+		bool			IsSOAction;
 		//???picture, or associate with ID? if so, UIName & Priority can also be associated with ID
 
 		//!!!can also store handler HandleAction(CStrID ActionID)! (template functor?)
 		Events::PSub	Sub;
 
-		CAction(): Enabled(true), Visible(true), AutoAdded(false) {}
+		CAction(): Enabled(true), Visible(true), IsSOAction(false) {}
 		CAction(CStrID _ID, LPCSTR Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority), Enabled(true), Visible(true) {}
 
 		LPCSTR	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
@@ -57,19 +57,21 @@ protected:
 
 	Physics::PNodeAttrCollision	MousePickShape;
 	nString						UIName;	//???use attribute?
+	nString						UIDesc;	//???use attribute?
 	nArray<CAction>				Actions;
 	bool						Enabled;
 	bool						TipVisible;
 	bool						ReflectSOActions;
-	Data::PParams				SOActionNames;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
 	void			AddSOActions(CPropSmartObject& Prop);
 	void			RemoveSOActions();
 
-	bool			AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool AutoAdded = false);
+	bool			AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction = false);
 	bool			ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
+	bool			OnExecuteExploreAction(const Events::CEventBase& Event);
+	bool			OnExecuteSelectAction(const Events::CEventBase& Event);
 	bool			OnExecuteSmartObjAction(const Events::CEventBase& Event);
 	CAction*		GetActionByID(CStrID ID);
 
@@ -82,7 +84,7 @@ protected:
 
 public:
 
-	enum { DEFAULT_PRIORITY = 20 };
+	enum { Priority_Default = 20, Priority_Top = 100 };
 
 	CPropUIControl(): TipVisible(false), Enabled(true) { Actions.Flags.Clear(Array_KeepOrder); }
 
@@ -92,10 +94,10 @@ public:
 	void					ShowTip();
 	void					HideTip();
 
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, Events::CEventCallback Callback, int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
+	bool					AddActionHandler(CStrID ID, LPCSTR UIName, Events::CEventCallback Callback, int Priority = Priority_Default, bool IsSOAction = false);
 	template<class T>
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, T* Object, bool (T::*Callback)(const Events::CEventBase&), int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority = DEFAULT_PRIORITY, bool AutoAdded = false);
+	bool					AddActionHandler(CStrID ID, LPCSTR UIName, T* Object, bool (T::*Callback)(const Events::CEventBase&), int Priority = Priority_Default, bool IsSOAction = false);
+	bool					AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority = Priority_Default, bool IsSOAction = false);
 	void					RemoveActionHandler(CStrID ID);
 
 	bool					ExecuteAction(Game::CEntity* pActorEnt, CStrID ID);
@@ -109,18 +111,18 @@ public:
 
 inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
 											 Events::CEventCallback Callback,
-											 int Priority, bool AutoAdded)
+											 int Priority, bool IsSOAction)
 {
-	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerCallback)(Callback), Priority, AutoAdded);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerCallback)(Callback), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 
 template<class T>
 inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, T* Object,
 											 bool (T::*Callback)(const Events::CEventBase&),
-											 int Priority, bool AutoAdded)
+											 int Priority, bool IsSOAction)
 {
-	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerMember<T>)(Object, Callback), Priority, AutoAdded);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerMember<T>)(Object, Callback), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 

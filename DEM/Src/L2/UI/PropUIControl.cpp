@@ -28,26 +28,40 @@ using namespace Data;
 bool CPropUIControl::InternalActivate()
 {
 	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"), NULL);
+	UIDesc = GetEntity()->GetAttr<nString>(CStrID("Desc"), NULL);
 	ReflectSOActions = false;
 
-	PParams Desc;
 	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"), NULL);
-	if (IAODesc.IsValid()) Desc = DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm");
-
+	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm") : NULL;
 	if (Desc.IsValid())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<nString>(CStrID("UIName"), NULL);
+		if (UIDesc.IsEmpty()) UIDesc = Desc->Get<nString>(CStrID("UIDesc"), NULL);
 
 		//???read priorities for actions? or all through scripts?
 
-		//???read custom commands or add through script?
-		
-		SOActionNames = Desc->Get<PParams>(CStrID("SmartObjActionNames"), NULL);
+		Data::PParams UIActionNames = Desc->Get<PParams>(CStrID("UIActionNames"), NULL);
+
+		if (Desc->Get<bool>(CStrID("Explorable"), false))
+		{
+			CStrID ID("Explore");
+			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<nString>(ID, nString::Empty).CStr() : ID.CStr();
+			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteExploreAction, 1, false));
+			GetActionByID(ID)->Visible = UIDesc.IsValid();
+		}
+
+		if (Desc->Get<bool>(CStrID("Selectable"), false))
+		{
+			CStrID ID("Select");
+			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<nString>(ID, nString::Empty).CStr() : ID.CStr();
+			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSelectAction, Priority_Top, false));
+		}
+
 		EnableSmartObjReflection(Desc->Get<bool>(CStrID("AutoAddSmartObjActions"), true));
 	}
 
-	//???move to the IAO desc as field?
-	//???Shape desc or collision object desc? CollObj can have offset, but Group & Mask must be overridden.
+	//???move to the IAO desc as field? per-entity allows not to spawn redundant IAO descs
+	//???Shape desc or collision object desc? CollObj can have offset, but Group & Mask must be overridden to support picking.
 	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
 	if (PickShapeID.IsValid() && GetEntity()->GetLevel().GetPhysics())
 	{
@@ -153,6 +167,10 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
 	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
 
+	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"), NULL);
+	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm") : NULL;
+	Data::PParams SOActionNames = Desc.IsValid() ? Desc->Get<PParams>(CStrID("SmartObjActionNames"), NULL) : NULL;
+
 	for (int i = 0; i < SOActions.GetCount(); ++i)
 	{
 		CStrID ID = SOActions.KeyAt(i);
@@ -160,7 +178,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 		if (Act.IsValid() && Act->AppearsInUI)
 		{
 			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<nString>(ID, nString::Empty).CStr() : NULL;
-			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, DEFAULT_PRIORITY, true));
+			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, Priority_Default, true));
 
 			CAction* pAction = GetActionByID(ID);
 			n_assert(pAction);
@@ -174,7 +192,7 @@ void CPropUIControl::RemoveSOActions()
 {
 	for (int i = 0 ; i < Actions.GetCount(); )
 	{
-		if (Actions[i].AutoAdded) Actions.EraseAt(i);
+		if (Actions[i].IsSOAction) Actions.EraseAt(i);
 		else ++i;
 	}
 }
@@ -267,16 +285,16 @@ void CPropUIControl::HideTip()
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority, bool AutoAdded)
+bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority, bool IsSOAction)
 {
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	if (!pScriptObj) FAIL;
-	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, AutoAdded);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool AutoAdded)
+bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction)
 {
 	for (nArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->ID == ID) FAIL;
@@ -288,7 +306,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHa
 	Act.EventID = CStrID(EvIDString);
 	Act.Sub = GetEntity()->AddHandler(Act.EventID, Handler);
 	if (!Act.Sub.IsValid()) FAIL;
-	Act.AutoAdded = AutoAdded;
+	Act.IsSOAction = IsSOAction;
 
 	Actions.InsertSorted(Act);
 	
@@ -326,7 +344,7 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 
 	CAction* pAction = GetActionByID(ID);
 	if (!pAction) FAIL;
-	if (pAction->AutoAdded)
+	if (pAction->IsSOAction)
 	{
 		CPropActorBrain* pActor = pActorEnt->GetProperty<CPropActorBrain>();
 		CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
@@ -358,7 +376,7 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	CAction* pTopAction = Actions.Begin();
 	for (nArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 	{
-		if (It->AutoAdded)
+		if (It->IsSOAction)
 		{
 			It->Enabled = pSO->GetAction(It->ID)->IsValid(pActor, pSO);
 			// Update Priority
@@ -387,7 +405,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	for (nArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->Visible)
 		{
-			if (It->AutoAdded)
+			if (It->IsSOAction)
 			{
 				It->Enabled = pSO->GetAction(It->ID)->IsValid(pActor, pSO);
 				// Update Priority
@@ -405,6 +423,23 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	P->Set(CStrID("ActorEntityPtr"), (PVOID)pActorEnt);
 	P->Set(CStrID("CtlPtr"), (PVOID)this);
 	EventMgr->FireEvent(CStrID("ShowActionListPopup"), P);
+}
+//---------------------------------------------------------------------
+
+bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
+{
+	if (!UIDesc.IsValid()) FAIL;
+	PParams P = n_new(Data::CParams(1));
+	P->Set<nString>(CStrID("UIDesc"), UIDesc);
+	EventMgr->FireEvent(CStrID("OnObjectDescRequested"), P, EV_ASYNC);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropUIControl::OnExecuteSelectAction(const Events::CEventBase& Event)
+{
+	GetEntity()->GetLevel().AddToSelection(GetEntity()->GetUID());
+	OK;
 }
 //---------------------------------------------------------------------
 

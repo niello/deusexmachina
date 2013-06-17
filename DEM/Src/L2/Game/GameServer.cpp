@@ -185,6 +185,11 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 		Level->FireEvent(CStrID("OnEntitiesLoaded"));
 	}
 
+	Data::PDataArray SelArray;
+	if (Desc.Get(SelArray, CStrID("SelectedEntities")))
+		for (int i = 0; i < SelArray->GetCount(); ++i)
+			Level->AddToSelection(SelArray->Get<CStrID>(i));
+
 	EventMgr->FireEvent(CStrID("OnLevelLoaded"), P);
 
 	OK;
