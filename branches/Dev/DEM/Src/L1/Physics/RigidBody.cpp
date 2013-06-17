@@ -76,7 +76,7 @@ bool CRigidBody::AttachToLevel(CPhysicsWorld& World)
 
 	// Sometimes we read tfm from motion state before any real tick is performed.
 	// For this case make that tfm up-to-date.
-	//pRB->setInterpolationWorldTransform(pRB->getWorldTransform());
+	pRB->setInterpolationWorldTransform(pRB->getWorldTransform());
 
 	OK;
 }
@@ -97,10 +97,9 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
 	if (pMotionState)
 	{
-		pMotionState->setWorldTransform(TfmToBtTfm(Tfm)); //???optimize?
-		pMotionState->Position.m_floats[0] += ShapeOffset.x;
-		pMotionState->Position.m_floats[1] += ShapeOffset.y;
-		pMotionState->Position.m_floats[2] += ShapeOffset.z;
+		btTransform BtTfm = TfmToBtTfm(Tfm);
+		BtTfm.getOrigin() = BtTfm * VectorToBtVector(ShapeOffset);
+		pMotionState->setWorldTransform(BtTfm);
 	}
 	else CPhysicsObj::SetTransform(Tfm);
 }
@@ -114,7 +113,7 @@ void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
 	if (pMotionState)
 	{
 		OutRot = BtQuatToQuat(pMotionState->Rotation);
-		OutPos = BtVectorToVector(pMotionState->Position) - ShapeOffset;
+		OutPos = BtVectorToVector(pMotionState->Position) - OutRot.rotate(ShapeOffset);
 	}
 	else CPhysicsObj::GetTransform(OutPos, OutRot);
 }
@@ -128,9 +127,7 @@ void CRigidBody::GetTransform(btTransform& Out) const
 	if (pMotionState)
 	{
 		pMotionState->getWorldTransform(Out);
-		Out.getOrigin().m_floats[0] -= ShapeOffset.x;
-		Out.getOrigin().m_floats[1] -= ShapeOffset.y;
-		Out.getOrigin().m_floats[2] -= ShapeOffset.z;
+		Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
 	}
 	else CPhysicsObj::GetTransform(Out);
 }
