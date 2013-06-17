@@ -1,7 +1,7 @@
 #include "ActionEquipItem.h"
 
 #include <AI/PropActorBrain.h>
-#include <Chr/Prop/PropEquipment.h>
+#include <Items/Prop/PropEquipment.h>
 
 namespace AI
 {

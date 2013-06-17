@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_DIALOGUE_H__
 #define __DEM_L3_DIALOGUE_H__
 
-#include <Story/Dlg/DlgNode.h>
+#include <Dlg/DlgNode.h>
 #include <Scripting/ScriptObject.h>
 
 // Dialogue contains all necessary data to talk - set of dlg nodes, script name

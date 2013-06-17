@@ -19,7 +19,8 @@ bool CPropItem::InternalActivate()
 	if (ItemInst.IsValid())
 	{
 		Item = Item->Clone();
-		//!!!init from params!
+		n_error("IMPLEMENT ME!!!");
+		//!!!load per-instance fields!
 	}
 	Items.SetItem(Item);
 	Items.SetCount((WORD)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
@@ -28,8 +29,8 @@ bool CPropItem::InternalActivate()
 	if (pProp && pProp->IsActive())
 		pProp->SetUIName(Items.GetTpl()->UIName);
 	
-	PROP_SUBSCRIBE_PEVENT(OnSave, CPropItem, OnSave);
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropItem, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropItem, OnLevelSaving);
 	PROP_SUBSCRIBE_PEVENT(PickItem, CPropItem, OnPickItem);
 
 	OK;
@@ -38,27 +39,10 @@ bool CPropItem::InternalActivate()
 
 void CPropItem::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(OnSave);
 	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(PickItem);
 	Items.Clear();
-}
-//---------------------------------------------------------------------
-
-bool CPropItem::OnSave(const Events::CEventBase& Event)
-{
-	//???store smth like bool Changed?
-	if (Items.IsValid()) //???assert? or DeleteEntity(this) if !valid?
-	{
-		GetEntity()->SetAttr<CStrID>(CStrID("ItemTplID"), Items.GetItemID());
-		if (!Items.GetItem()->IsTemplateInstance())
-		{
-			n_assert(false);
-			//!!!save instance desc!
-		}
-		GetEntity()->SetAttr<int>(CStrID("ItemCount"), (int)Items.GetCount());
-	}
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -78,25 +62,37 @@ bool CPropItem::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
+bool CPropItem::OnLevelSaving(const Events::CEventBase& Event)
+{
+	if (!Items.IsValid()) OK;
+	GetEntity()->SetAttr<CStrID>(CStrID("ItemTplID"), Items.GetItemID());
+	if (!Items.GetItem()->IsTemplateInstance())
+	{
+		n_error("IMPLEMENT ME!!!");
+		//!!!save per-instance fields!
+	}
+	GetEntity()->SetAttr<int>(CStrID("ItemCount"), (int)Items.GetCount());
+	OK;
+}
+//---------------------------------------------------------------------
+
 // "PickItem" command handler, actual item picking is here
 bool CPropItem::OnPickItem(const Events::CEventBase& Event)
 {
-	if (Items.IsValid())
-	{
-		PParams P = ((const Events::CEvent&)Event).Params;
+	if (!Items.IsValid()) OK;
 
-		Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
-		CPropInventory* pInv = pActorEnt ? pActorEnt->GetProperty<CPropInventory>() : NULL;
-		if (pInv)
-		{
-			pInv->AddItem(Items);
-			Items.Clear();
-			EntityMgr->DeleteEntity(*GetEntity()); //!!!check deletion from itself!
-		}
+	PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
+	CPropInventory* pInv = pActorEnt ? pActorEnt->GetProperty<CPropInventory>() : NULL;
+	if (pInv)
+	{
+		pInv->AddItem(Items);
+		Items.Clear();
+		EntityMgr->DeleteEntity(*GetEntity());
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

@@ -155,7 +155,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	//	// change current table
 	//	// pCmd + 3, while 32 ++pCmd
 	//}
-	else ScriptSrv->RunScript(pCmd); //!!!use sandbox!
+	else ScriptSrv->RunScript(pCmd);
 
 	if (CmdHistory.GetCount() > 32) CmdHistory.EraseAt(0);
 	CmdHistory.Append(pCmd);

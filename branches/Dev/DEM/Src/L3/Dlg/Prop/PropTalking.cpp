@@ -1,6 +1,6 @@
 #include "PropTalking.h"
 
-#include <Story/Dlg/DialogueManager.h>
+#include <Dlg/DialogueManager.h>
 #include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 

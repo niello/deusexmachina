@@ -17,8 +17,6 @@ class CPropEquipment: public CPropInventory
 protected:
 
 	virtual void ExposeSI();
-	virtual void Save();
-	virtual void Load();
 
 public:
 

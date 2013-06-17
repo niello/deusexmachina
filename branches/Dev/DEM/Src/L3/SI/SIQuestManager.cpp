@@ -7,7 +7,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-#include <Story/Quests/QuestManager.h>
+#include <Quests/QuestManager.h>
 
 // Script Interface for the Quest system
 

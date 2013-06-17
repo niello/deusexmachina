@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __IPG_ITEM_TPL_WEAPON_H__
-#define __IPG_ITEM_TPL_WEAPON_H__
+#ifndef __DEM_L3_ITEM_TPL_WEAPON_H__
+#define __DEM_L3_ITEM_TPL_WEAPON_H__
 
 #include "ItemTpl.h" 
 #include <Combat/Dmg/Damage.h>

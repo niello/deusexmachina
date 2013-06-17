@@ -38,13 +38,9 @@ protected:
 	WORD			RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan);
 
 	DECLARE_EVENT_HANDLER(ExposeSI, OnExposeSI);
-	DECLARE_EVENT_HANDLER(OnSave, OnSave);
-	DECLARE_EVENT_HANDLER(OnLoad, OnLoad);
-	DECLARE_EVENT_HANDLER(OnLoadAfter, OnLoadAfter);
+	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 
 	virtual void ExposeSI();
-	virtual void Save();
-	virtual void Load();
 
 public:
 

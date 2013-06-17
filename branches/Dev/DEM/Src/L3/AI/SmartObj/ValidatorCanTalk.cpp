@@ -1,9 +1,9 @@
 #include "ValidatorCanTalk.h"
 
-#include <Story/Dlg/DialogueManager.h>
+#include <Dlg/DialogueManager.h>
+#include <Dlg/Prop/PropTalking.h>
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
-#include <Chr/Prop/PropTalking.h>
 
 namespace AI
 {

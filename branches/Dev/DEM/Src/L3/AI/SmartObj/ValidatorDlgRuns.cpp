@@ -1,6 +1,6 @@
 #include "ValidatorDlgRuns.h"
 
-#include <Story/Dlg/DialogueManager.h>
+#include <Dlg/DialogueManager.h>
 
 namespace AI
 {

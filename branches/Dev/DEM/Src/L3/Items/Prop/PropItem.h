@@ -23,8 +23,8 @@ protected:
 	virtual bool InternalActivate();
 	virtual void InternalDeactivate();
 
-	DECLARE_EVENT_HANDLER(OnSave, OnSave);
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(PickItem, OnPickItem);
 
 public:

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __IPG_ITEM_TPL_H__
-#define __IPG_ITEM_TPL_H__
+#ifndef __DEM_L3_ITEM_TPL_H__
+#define __DEM_L3_ITEM_TPL_H__
 
 #include <Core/RefCounted.h>
 #include <Data/StringID.h>

@@ -3,7 +3,7 @@
 #define __DEM_L3_QUEST_SYSTEM_H__
 
 #include <Core/Singleton.h>
-#include <Story/Quests/Quest.h>
+#include <Quests/Quest.h>
 #include <Events/EventsFwd.h>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,

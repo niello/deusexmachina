@@ -23,11 +23,9 @@ private:
 
 public:
 
-	int		ID; // Database record ID
-
-	CItemStack(): ID(0), Item(NULL), Count(0), EquippedCount(0) {}
-	CItemStack(PItem pItem, WORD Num = 1): ID(0), Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.IsValid() && Num > 0); }
-	CItemStack(const CItemStack& pItem): ID(0), Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.IsValid()); }
+	CItemStack(): Item(NULL), Count(0), EquippedCount(0) {}
+	CItemStack(PItem pItem, WORD Num = 1): Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.IsValid() && Num > 0); }
+	CItemStack(const CItemStack& pItem): Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.IsValid()); }
 
 	void			Add(WORD Num) { SetCount(Count + Num); }
 	void			Remove(WORD Num) { n_assert(Num < Count); SetCount(Count - Num); }

@@ -47,7 +47,9 @@ bool CPropUIControl::InternalActivate()
 			CStrID ID("Explore");
 			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<nString>(ID, nString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteExploreAction, 1, false));
-			GetActionByID(ID)->Visible = UIDesc.IsValid();
+			CAction* pAct = GetActionByID(ID);
+			pAct->Enabled = UIDesc.IsValid();
+			pAct->Visible = pAct->Enabled;
 		}
 
 		if (Desc->Get<bool>(CStrID("Selectable"), false))
