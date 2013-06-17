@@ -59,6 +59,7 @@ protected:
 	nString						Name;
 	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
+	nArray<CStrID>				SelectedEntities;
 
 	Scene::PScene				Scene;
 	Physics::PPhysicsWorld		PhysWorld;
@@ -91,6 +92,14 @@ public:
 	DWORD					GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const;
 	DWORD					GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
+
+	//!!!fire events!
+	void					AddToSelection(CStrID EntityID) { if (!IsSelected(EntityID)) SelectedEntities.Append(EntityID); }
+	bool					RemoveFromSelection(CStrID EntityID) { return SelectedEntities.RemoveByValue(EntityID); }
+	void					ClearSelection() { SelectedEntities.Clear(); }
+	const nArray<CStrID>&	GetSelection() const { return SelectedEntities; }
+	DWORD					GetSelectedCount() const { return SelectedEntities.GetCount(); }
+	bool					IsSelected(CStrID EntityID) const { return SelectedEntities.Contains(EntityID); }
 
 	CStrID					GetID() const { return ID; }
 	const nString&			GetName() const { return Name; }

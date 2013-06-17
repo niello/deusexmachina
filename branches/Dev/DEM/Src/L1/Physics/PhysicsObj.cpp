@@ -113,7 +113,6 @@ void CPhysicsObj::SetTransform(const matrix44& Tfm)
 void CPhysicsObj::GetTransform(btTransform& Out) const
 {
 	n_assert_dbg(pBtCollObj);
-
 	Out = pBtCollObj->getWorldTransform();
 	Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
 }
