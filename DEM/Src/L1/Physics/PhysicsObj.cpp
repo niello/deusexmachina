@@ -103,10 +103,7 @@ void CPhysicsObj::SetTransform(const matrix44& Tfm)
 	n_assert_dbg(pBtCollObj);
 
 	btTransform BtTfm = TfmToBtTfm(Tfm);
-
-	BtTfm.getOrigin().m_floats[0] += ShapeOffset.x;
-	BtTfm.getOrigin().m_floats[1] += ShapeOffset.y;
-	BtTfm.getOrigin().m_floats[2] += ShapeOffset.z;
+	BtTfm.getOrigin() = BtTfm * VectorToBtVector(ShapeOffset);
 
 	pBtCollObj->setWorldTransform(BtTfm);
 	if (pWorld) pWorld->GetBtWorld()->updateSingleAabb(pBtCollObj);
@@ -118,10 +115,7 @@ void CPhysicsObj::GetTransform(btTransform& Out) const
 	n_assert_dbg(pBtCollObj);
 
 	Out = pBtCollObj->getWorldTransform();
-
-	Out.getOrigin().m_floats[0] -= ShapeOffset.x;
-	Out.getOrigin().m_floats[1] -= ShapeOffset.y;
-	Out.getOrigin().m_floats[2] -= ShapeOffset.z;
+	Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
 }
 //---------------------------------------------------------------------
 
