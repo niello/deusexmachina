@@ -5,7 +5,7 @@
 #include "DlgNodeAnswers.h"
 #include "DlgNodeRandom.h"
 #include "DlgLink.h"
-#include <Chr/Prop/PropTalking.h>
+#include <Dlg/Prop/PropTalking.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>

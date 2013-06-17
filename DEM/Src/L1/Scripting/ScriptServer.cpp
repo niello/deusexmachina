@@ -610,4 +610,4 @@ bool CScriptServer::GetTableFieldsDebug(nArray<nString>& OutFields)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

@@ -154,142 +154,6 @@
 	</References>
 	<Files>
 		<Filter
-			Name="Story"
-			>
-			<Filter
-				Name="Dlg"
-				>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\Dialogue.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DialogueManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DialogueManager.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgLink.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgLink.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNode.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNode.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodeAnswers.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodeAnswers.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodePhrase.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodePhrase.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodeRandom.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Dlg\DlgNodeRandom.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Quests"
-				>
-				<File
-					RelativePath="..\..\Src\L3\Story\Quests\Quest.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Quests\QuestManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Quests\QuestManager.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Story\Quests\Task.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Chr"
-			>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Prop\PropEquipment.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Prop\PropEquipment.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Prop\PropEquipmentSI.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Prop\PropTalking.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Prop\PropTalking.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Prop\PropTalkingSI.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Actions"
-				>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Actions\ActionEquipItem.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\Actions\ActionEquipItem.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="ActionTpls"
-				>
-				<File
-					RelativePath="..\..\Src\L3\Chr\ActionTpls\ActionTplEquipItem.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Chr\ActionTpls\ActionTplEquipItem.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
 			Name="Combat"
 			>
 			<Filter
@@ -392,6 +256,18 @@
 				Name="Prop"
 				>
 				<File
+					RelativePath="..\..\Src\L3\Items\Prop\PropEquipment.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Items\Prop\PropEquipment.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Items\Prop\PropEquipmentSI.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L3\Items\Prop\PropInventory.cpp"
 					>
 				</File>
@@ -416,11 +292,31 @@
 				Name="ActionTpls"
 				>
 				<File
+					RelativePath="..\..\Src\L3\Items\ActionTpls\ActionTplEquipItem.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Items\ActionTpls\ActionTplEquipItem.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Src\L3\Items\ActionTpls\ActionTplPickItemWorld.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\..\Src\L3\Items\ActionTpls\ActionTplPickItemWorld.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Actions"
+				>
+				<File
+					RelativePath="..\..\Src\L3\Items\Actions\ActionEquipItem.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Items\Actions\ActionEquipItem.h"
 					>
 				</File>
 			</Filter>
@@ -608,6 +504,98 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Dlg"
+			>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\Dialogue.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DialogueManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DialogueManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgLink.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgLink.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNodeAnswers.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNodeAnswers.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNodePhrase.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNodePhrase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNodeRandom.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgNodeRandom.h"
+				>
+			</File>
+			<Filter
+				Name="Prop"
+				>
+				<File
+					RelativePath="..\..\Src\L3\Dlg\Prop\PropTalking.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Dlg\Prop\PropTalking.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Src\L3\Dlg\Prop\PropTalkingSI.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="Quests"
+			>
+			<File
+				RelativePath="..\..\Src\L3\Quests\Quest.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Quests\QuestManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Quests\QuestManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Quests\Task.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

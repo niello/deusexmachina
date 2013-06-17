@@ -20,62 +20,6 @@ CPropEquipment::CPropEquipment()
 }
 //---------------------------------------------------------------------
 
-void CPropEquipment::Save()
-{
-/*
-	CPropInventory::Save();
-	
-	DB::CDataset* DS = ItemMgr->GetEquipmentDataset();
-	n_assert(DS);
-
-	for (int i = 0; i < Slots.GetCount(); i++)
-	{
-		CSlot& Slot = Slots.ValueAt(i);
-		if (Slot.pStack)
-		{
-			DS->AddRow();
-			DS->Set<int>(0, Slot.pStack->ID);
-			DS->Set<CStrID>(1, Slots.KeyAt(i));
-			DS->Set<int>(2, Slot.Count);
-		}
-	}
-*/
-}
-//---------------------------------------------------------------------
-
-void CPropEquipment::Load()
-{
-/*
-	CPropInventory::Load();
-
-	DB::CDataset* DS = ItemMgr->GetEquipmentDataset();
-	if (!DS) return;
-
-	DB::PValueTable VT = DS->GetValueTable();
-
-	if (!VT.IsValid() || !VT->GetRowCount()) return;
-
-	foreach_stack(Stack, Items)
-	{
-		int Start = 0;
-		int End = VT->GetRowCount() - 1;
-		while (Start <= End)
-		{
-			int CurrIdx = Start + ((End - Start) >> 1);
-			int VTID = VT->Get<int>(0, CurrIdx);
-			if (VTID == Stack->ID)
-			{
-				Equip(VT->Get<CStrID>(1, CurrIdx), Stack, VT->Get<int>(2, CurrIdx));
-				break;
-			}
-			else if (VTID < Stack->ID) Start = CurrIdx + 1;
-			else End = CurrIdx - 1;
-		}
-	}
-*/
-}
-//---------------------------------------------------------------------
-
 bool CPropEquipment::Equip(CStrID Slot, CItemStack* pStack, WORD Count)
 {
 	if (!pStack || !pStack->IsValid()) FAIL;
@@ -137,4 +81,4 @@ void CPropEquipment::Unequip(CStrID SlotID)
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

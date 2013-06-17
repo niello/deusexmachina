@@ -7,7 +7,7 @@ extern "C"
 	#include <lualib.h>
 };
 
-#include <Story/Dlg/DialogueManager.h>
+#include <Dlg/DialogueManager.h>
 
 // Script Interface for the Dialogue system
 

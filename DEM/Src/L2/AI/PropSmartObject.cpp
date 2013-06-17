@@ -5,10 +5,6 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropSmartObject)
-//	RegisterString(SmartObjDesc, ReadOnly);
-//END_ATTRS_REGISTRATION
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropSmartObject, 'PRSO', Game::CProperty);

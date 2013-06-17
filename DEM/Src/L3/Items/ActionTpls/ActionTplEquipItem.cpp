@@ -1,8 +1,8 @@
 #include "ActionTplEquipItem.h"
 
 #include <AI/PropActorBrain.h>
-#include <Chr/Prop/PropEquipment.h>
-#include <Chr/Actions/ActionEquipItem.h>
+#include <Items/Prop/PropEquipment.h>
+#include <Items/Actions/ActionEquipItem.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp
