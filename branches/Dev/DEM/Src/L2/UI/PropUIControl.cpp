@@ -383,6 +383,11 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 			It->Enabled = pSO->GetAction(It->ID)->IsValid(pActor, pSO);
 			// Update Priority
 		}
+
+		// FIXME
+		// This line discards disbled actions, so for example door in transition between
+		// Opened and Closed has default action Explore, which is executed on left click.
+		// Need to solve this and choose desired behaviour. Force set default action?
 		if ((*It) < (*pTopAction)) pTopAction = It;
 	}
 

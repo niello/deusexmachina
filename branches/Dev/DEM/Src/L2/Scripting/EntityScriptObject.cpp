@@ -1,6 +1,7 @@
 #include "EntityScriptObject.h"
 
 #include <Game/Entity.h>
+#include <Game/GameLevel.h>
 #include <Events/Subscription.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
@@ -88,8 +89,14 @@ bool CEntityScriptObject::RegisterClass()
 
 int CEntityScriptObject::GetField(LPCSTR Key) const
 {
+	if (!strcmp(Key, "LevelID"))
+	{
+		lua_pushstring(ScriptSrv->GetLuaState(), pEntity->GetLevel().GetID().CStr());
+		return 1;
+	}
+
 	CData Data;
-	if (GetEntity()->GetAttr(Data, CStrID(Key)))
+	if (pEntity->GetAttr(Data, CStrID(Key)))
 	{
 		int Pushed = ScriptSrv->DataToLuaStack(Data);
 		if (Pushed > 0) return Pushed;
@@ -101,7 +108,8 @@ int CEntityScriptObject::GetField(LPCSTR Key) const
 
 bool CEntityScriptObject::SetField(LPCSTR Key, const CData& Value)
 {
-	if (!strcmp(Key, "Transform")) FAIL; // Read-only, send SetTransform event to change
+	// Read-only
+	if (!strcmp(Key, "Transform") || !strcmp(Key, "LevelID")) FAIL;
 
 	GetEntity()->SetAttr(CStrID(Key), Value);
 	OK;

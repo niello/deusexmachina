@@ -17,21 +17,19 @@ namespace SI
 // Locks named region on the navmesh (by agent raduis or on all meshes), making it impassable
 int NavMesh_LockRegion(lua_State* l)
 {
-	// args: Region ID (name), [target actor raduis]
+	// args: Level ID, Region ID (name), [target actor raduis]
 
 	int ArgCount = lua_gettop(l);
 
-	if (ArgCount < 1 || !lua_isstring(l, 1))
+	if (ArgCount < 2 || !lua_isstring(l, 1) || !lua_isstring(l, 2))
 	{
 		lua_settop(l, 0); //???need to call manually?
 		return 0;
 	}
 
-	float Radius = (ArgCount > 1) ? (float)lua_tonumber(l, 2) : 0.f;
-
-	//!!!must not be global! per-level or level ID as arg!
-	if (GameSrv->GetActiveLevel())
-		GameSrv->GetActiveLevel()->GetAI()->SetNavRegionFlags(CStrID(lua_tostring(l, 1)), NAV_FLAG_LOCKED, Radius);
+	float Radius = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
+	Game::CGameLevel* pLevel = GameSrv->GetLevel(CStrID(lua_tostring(l, 1)));
+	if (pLevel) pLevel->GetAI()->SetNavRegionFlags(CStrID(lua_tostring(l, 2)), NAV_FLAG_LOCKED, Radius);
 
 	return 0;
 }
@@ -40,19 +38,19 @@ int NavMesh_LockRegion(lua_State* l)
 // Unlocks named region on the navmesh (by agent raduis or on all meshes), making it passable
 int NavMesh_UnlockRegion(lua_State* l)
 {
-	// args: Region ID (name), [target actor raduis]
+	// args: Level ID, Region ID (name), [target actor raduis]
 
 	int ArgCount = lua_gettop(l);
 
-	if (ArgCount < 1 || !lua_isstring(l, 1))
+	if (ArgCount < 2 || !lua_isstring(l, 1) || !lua_isstring(l, 2))
 	{
 		lua_settop(l, 0); //???need to call manually?
 		return 0;
 	}
 
-	float Radius = (ArgCount > 1) ? (float)lua_tonumber(l, 2) : 0.f;
-	if (GameSrv->GetActiveLevel())
-		GameSrv->GetActiveLevel()->GetAI()->ClearNavRegionFlags(CStrID(lua_tostring(l, 1)), NAV_FLAG_LOCKED, Radius);
+	float Radius = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
+	Game::CGameLevel* pLevel = GameSrv->GetLevel(CStrID(lua_tostring(l, 1)));
+	if (pLevel) pLevel->GetAI()->ClearNavRegionFlags(CStrID(lua_tostring(l, 2)), NAV_FLAG_LOCKED, Radius);
 
 	return 0;
 }
