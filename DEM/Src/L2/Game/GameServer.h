@@ -61,6 +61,7 @@ public:
 	void			UnloadLevel(CStrID ID);
 	bool			SetActiveLevel(CStrID ID);
 	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
+	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			StartGame(const nString& FileName, const nString& SaveGameName = nString::Empty);
 	bool			SaveGame(const nString& Name);
 	bool			LoadGame(const nString& Name) { return StartGame(GameFileName, Name); }
@@ -142,6 +143,13 @@ inline bool CGameServer::GetGlobalAttr(Data::CData& Out, CStrID ID) const
 	if (Idx == INVALID_INDEX) FAIL;
 	Out = Attrs.ValueAt(Idx);
 	OK;
+}
+//---------------------------------------------------------------------
+
+inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
+{
+	int Idx = Levels.FindIndex(ID);
+	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

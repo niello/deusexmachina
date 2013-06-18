@@ -103,7 +103,6 @@ void CGameServer::UpdateMouseIntersectionInfo()
 {
 	CStrID OldEntityUnderMouse = EntityUnderMouse;
 
-	//!!!FIXME IsMouseOverGUI is true after level is loaded until the first mouse move!
 	if (UISrv->IsMouseOverGUI() || !ActiveLevel.IsValid()) HasMouseIsect = false;
 	else
 	{

@@ -519,10 +519,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\nebula2\inc\util\nbucket.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\nebula2\inc\util\ndictionary.h"
 				>
 			</File>
