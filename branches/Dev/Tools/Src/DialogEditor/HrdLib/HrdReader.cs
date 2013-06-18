@@ -29,6 +29,39 @@ namespace HrdLib
         public Stream Stream { get { return _stream; } }
 
         /// <summary>
+        /// Indicates that the current element is <see cref="HrdAttribute"/> and it has a value.
+        /// </summary>
+        public bool HasValue
+        {
+            get
+            {
+                if (_elementStack.Count == 0)
+                    return false;
+
+                var element = _elementStack.Peek().Element as HrdAttribute;
+                if (element == null)
+                    return false;
+
+                return element.Value != null;
+            }
+        }
+
+        /// <summary>
+        /// Number of children of the current element.
+        /// </summary>
+        public int ChildrenCount
+        {
+            get
+            {
+                if (_elementStack.Count == 0)
+                    return 0;
+
+                var element = _elementStack.Peek().Element;
+                return element.ChildrenCount;
+            }
+        }
+
+        /// <summary>
         /// The name of current element
         /// </summary>
         public string ElementName

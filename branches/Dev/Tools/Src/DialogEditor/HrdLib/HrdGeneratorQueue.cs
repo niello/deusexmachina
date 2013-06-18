@@ -118,14 +118,6 @@ namespace HrdLib
             return isMoved;
         }
 
-        public int GetTypeID(Type type)
-        {
-            if (type == null)
-                throw new ArgumentNullException("type");
-
-            return AddType(type, false);
-        }
-
         public Type[] GetRootTypes()
         {
             return _rootTypes.ToArray();

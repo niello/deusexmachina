@@ -178,7 +178,7 @@ namespace HrdLib
                   .WriteLine("{")
                   .IncreaseIndent();
 
-            writer.WriteLine("return Deserialize{0}(reader);", queue.GetTypeID(_type)).DecreaseIndent();
+            writer.WriteLine("return Deserialize{0}(reader);", queue.AddType(_type)).DecreaseIndent();
             writer.WriteLine("}");
 
             // class
@@ -575,31 +575,46 @@ namespace HrdLib
                 Type realElementType;
                 var subElementRank = ReflectionHelper.GetArrayRankString(elementType, out realElementType);
                 if (subElementRank != null)
-                {
                     sizeBuilder.Append(subElementRank);
-                    elementType = realElementType;
-                }
 
                 writer.WriteLine("{0} result = new {1}{2};", ReflectionHelper.GetCsTypeName(arrayType),
-                                 ReflectionHelper.GetCsTypeName(elementType), sizeBuilder);
+                                 ReflectionHelper.GetCsTypeName(realElementType), sizeBuilder);
 
-                // TODO: read an array
+                var resultBuilder = new StringBuilder("result[");
+                for (int i = 0; i < rank; i++)
+                {
+                    writer.WriteLine("for(int i{0} = 0; i{0} < length{0}; i{0}++)", i).WriteLine("{").IncreaseIndent();
+                    if (i > 0)
+                        resultBuilder.Append(", ");
+                    resultBuilder.AppendFormat(CultureInfo.InvariantCulture, "i{0}", i);
+                }
+                resultBuilder.Append("]");
+
+                WriteReadValue(writer, elementType, resultBuilder.ToString(), queue);
+
+                for (int i = 0; i < rank; i++)
+                {
+                    writer.ReadNextSibling();
+                    writer.DecreaseIndent().WriteLine("}");
+                }
             }
             else
             {
                 Type realElementType;
                 var subElementRank = ReflectionHelper.GetArrayRankString(elementType, out realElementType);
-                if (subElementRank != null)
-                    elementType = realElementType;
 
-                // TODO: read an array
-
-                writer.Write("{0} result = new {1}[0]", ReflectionHelper.GetCsTypeName(arrayType), ReflectionHelper.GetCsTypeName(elementType));
+                writer.WriteLine("int length = reader.ChildrenCount;")
+                      .Write("{0} result = new {1}[length]", ReflectionHelper.GetCsTypeName(arrayType), ReflectionHelper.GetCsTypeName(realElementType));
 
                 if (subElementRank != null)
                     writer.Write(subElementRank);
 
                 writer.WriteLine(";");
+
+                writer.WriteLine("for(int i = 0; i< length; i++)").WriteLine("{").IncreaseIndent();
+                WriteReadValue(writer, elementType, "result[i]", queue);
+
+                writer.DecreaseIndent().WriteLine("}");
             }
 
             writer.WriteLine("return result;");
@@ -670,6 +685,11 @@ namespace HrdLib
         private void WriteWriteValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue)
         {
             WriteWriteValue(writer, valueType, valueCodeString, queue, true, true);
+        }
+
+        private void WriteReadValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue)
+        {
+            WriteReadValue(writer, valueType, valueCodeString, queue, true);
         }
 
         private void WriteWriteValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue, bool allowNull, bool ignoreNull)
@@ -749,6 +769,66 @@ namespace HrdLib
             }
         }
 
+        private void WriteReadValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue, bool allowNull)
+        {
+            bool isNullable = !valueType.IsValueType;
+            if (!isNullable && valueType.IsGenericType)
+            {
+                var genericDefinition = valueType.GetGenericTypeDefinition();
+                if (genericDefinition == typeof(Nullable<>))
+                {
+                    isNullable = true;
+                    valueType = valueType.GetGenericArguments()[0];
+                }
+            }
+
+            writer.WriteLine("if(!reader.HasValue)").WriteLine("{").IncreaseIndent();
+            if (isNullable && allowNull)
+            {
+                writer.WriteLine("{0} = ({1}) null;", valueCodeString,
+                                 ReflectionHelper.GetCsTypeName(valueType) + (valueType.IsValueType ? "?" : string.Empty));
+            }
+            else
+            {
+                writer.WriteLine("throw new {0}({1});", ReflectionHelper.GetCsTypeName<HrdStructureValidationException>(),
+                                     MakeVerbatimString(SR.GetString(SR.NullValueNotAllowed)));
+            }
+            writer.DecreaseIndent().WriteLine("}").WriteLine("else").WriteLine("{").IncreaseIndent();
+
+            var typeCode = Type.GetTypeCode(valueType);
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                case TypeCode.Byte:
+                case TypeCode.Char:
+                case TypeCode.Double:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.SByte:
+                case TypeCode.Single:
+                case TypeCode.String:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                    writer.WriteLine("{0} = reader.Read{1}();", valueCodeString, typeCode);
+                    break;
+
+                case TypeCode.DateTime:
+                    writer.WriteLine("{0} = reader.ReadDateTime(true);", ReflectionHelper.GetCsTypeName<DateTime>(), valueCodeString);
+                    break;
+
+                default:
+                    if (valueType == typeof (object))
+                        writer.WriteLine("{0} = new {1}();", valueCodeString, ReflectionHelper.GetCsTypeName<object>());
+                    else
+                        writer.WriteLine("{0} = Deserialize{1}(reader);", valueCodeString, queue.AddType(valueType));
+                    break;
+            }
+            
+            writer.DecreaseIndent().WriteLine("}");
+        }
+
         private CodeTypeDeclaration CreateDeclaration()
         {
             var declaration = new CodeTypeDeclaration(ClassName);
@@ -759,6 +839,15 @@ namespace HrdLib
             member.LinePragma=new CodeLinePragma();
 
             return declaration;
+        }
+
+        private static string MakeVerbatimString(string value)
+        {
+            if (value == null)
+                return "null";
+
+            var result = string.Concat("@\"", value.Replace("\"", "\"\""), "\"");
+            return result;
         }
     }
 }

@@ -52,7 +52,7 @@ namespace HrdLib
 
             if (!arrayType.IsArray)
             {
-                elementType = null;
+                elementType = arrayType;
                 return null;
             }
 
