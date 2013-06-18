@@ -171,4 +171,7 @@
   <data name="NoNextSibling" xml:space="preserve">
     <value>Node is the last sibling.</value>
   </data>
+  <data name="NullValueNotAllowed" xml:space="preserve">
+    <value>Null value is not allowed.</value>
+  </data>
 </root>

@@ -47,19 +47,20 @@ namespace HrdLib
             _writer = new StringWriter(new StringBuilder(), CultureInfo.InvariantCulture);
         }
 
-        public void IncreaseIndent()
+        public HrdIndentWriter IncreaseIndent()
         {
             _indent++;
+            return this;
         }
 
-        public bool DecreaseIndent()
+        public HrdIndentWriter DecreaseIndent()
         {
             if (_indent == 0)
-                return false;
+                return this;
 
             _indent--;
             Debug.Assert(_indent >= 0);
-            return true;
+            return this;
         }
 
         public HrdIndentWriter Write(string text)

@@ -17,6 +17,7 @@ namespace HrdLib
             NoNextSibling = "NoNextSibling",
             NoPublicPropertyFormat = "NoPublicPropertyFormat",
             NonAttributeValueCantBeRead = "NonAttributeValueCantBeRead",
+            NullValueNotAllowed = "NullValueNotAllowed",
             ParameterSetterAlreadyDeclaredFormat = "ParameterSetterAlreadyDeclaredFormat",
             ParameterTypeMismatchFormat = "ParameterTypeMismatchFormat",
             PropertyCantBeNullFormat = "PropertyCantBeNullFormat",
