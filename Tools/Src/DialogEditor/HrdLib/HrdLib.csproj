@@ -55,6 +55,7 @@
     <Compile Include="HrdSerializationAttribute.cs" />
     <Compile Include="HrdSerializer.cs" />
     <Compile Include="HrdSerializerAssembly.cs" />
+    <Compile Include="HrdSerializerAssembly.Serialization.cs" />
     <Compile Include="HrdSerizalizableAttribute.cs" />
     <Compile Include="HrdStructureValidationException.cs" />
     <Compile Include="HrdWriter.cs" />
@@ -75,6 +76,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="HrdSerializerAssembly.Deserialization.cs" />
   </ItemGroup>
   <Import Condition="Exists('$(SolutionDir)$(SolutionName).csproj.targets')" Project="$(SolutionDir)$(SolutionName).csproj.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
