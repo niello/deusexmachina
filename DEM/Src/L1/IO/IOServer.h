@@ -55,10 +55,11 @@ public:
 	bool			SetFileReadOnly(const nString& Path, bool ReadOnly) const;
 	bool			DeleteFile(const nString& Path) const;
 	DWORD			GetFileSize(const nString& Path) const;
+	bool			CopyFile(const nString& SrcPath, const nString& DestPath);
 	bool			DirectoryExists(const nString& Path) const;
 	bool			CreateDirectory(const nString& Path) const;
 	bool			DeleteDirectory(const nString& Path) const;
-	bool			CopyFile(const nString& SrcPath, const nString& DestPath);
+	bool			CopyDirectory(const nString& SrcPath, const nString& DestPath, bool Recursively);
 	//bool Checksum(const nString& filename, uint& crc);
 	//nFileTime GetFileWriteTime(const nString& pathName);
 

@@ -3,6 +3,7 @@
 #include <Data/Buffer.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/FS/FileSystemNPK.h>
+#include <IO/FSBrowser.h>
 
 namespace IO
 {
@@ -111,6 +112,40 @@ DWORD CIOServer::GetFileSize(const nString& Path) const
 }
 //---------------------------------------------------------------------
 
+bool CIOServer::CopyFile(const nString& SrcPath, const nString& DestPath)
+{
+	nString AbsSrcPath = ManglePath(SrcPath);
+	nString AbsDestPath = ManglePath(DestPath);
+
+	// Try to copy inside a single FS
+
+	if (DefaultFS->CopyFile(AbsSrcPath, AbsDestPath)) OK;
+	for (int i = 0; i < FS.GetCount(); ++i)
+		if (FS[i]->CopyFile(AbsSrcPath, AbsDestPath)) OK;
+
+	// Cross-FS copying
+
+	if (IsFileReadOnly(AbsDestPath) && !SetFileReadOnly(AbsDestPath, false)) FAIL;
+
+	CFileStream Src, Dest;
+	if (!Src.Open(AbsSrcPath, SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	if (!Dest.Open(AbsDestPath, SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
+
+	DWORD Size = Src.GetSize();
+	void* pBuffer = n_malloc(Size);
+	int RealSize = Src.Read(pBuffer, Size);
+	n_assert(RealSize == Size);
+	Src.Close();
+
+	RealSize = Dest.Write(pBuffer, Size);
+	n_assert(RealSize == Size);
+	Dest.Close();
+	n_free(pBuffer);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CIOServer::DirectoryExists(const nString& Path) const
 {
 	//???mangle here for perf reasons?
@@ -141,32 +176,29 @@ bool CIOServer::DeleteDirectory(const nString& Path) const
 }
 //---------------------------------------------------------------------
 
-#undef CopyFile
-bool CIOServer::CopyFile(const nString& SrcPath, const nString& DestPath)
+bool CIOServer::CopyDirectory(const nString& SrcPath, const nString& DestPath, bool Recursively)
 {
-	//???mangle here for perf reasons?
+	nString AbsSrcPath = ManglePath(SrcPath);
+	nString AbsDestPath = ManglePath(DestPath);
 
-	if (IsFileReadOnly(DestPath))
-		SetFileReadOnly(DestPath, false);
+	CFSBrowser Browser;
+	if (!Browser.SetAbsolutePath(AbsSrcPath)) FAIL;
 
-	CFileStream Src, Dest;
-	if (!Src.Open(SrcPath, SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	if (!Dest.Open(DestPath, SAM_WRITE, SAP_SEQUENTIAL))
+	if (!CreateDirectory(AbsDestPath)) FAIL;
+
+	if (!Browser.IsCurrDirEmpty()) do
 	{
-		Src.Close();
-		FAIL;
+		nString EntryName = "/" + Browser.GetCurrEntryName();
+		if (Browser.IsCurrEntryFile())
+		{
+			if (!CopyFile(SrcPath + EntryName, DestPath + EntryName)) FAIL;
+		}
+		else if (Recursively && Browser.IsCurrEntryDir())
+		{
+			if (!CopyDirectory(SrcPath + EntryName, DestPath + EntryName, Recursively)) FAIL;
+		}
 	}
-
-	int Size = Src.GetSize();
-	char* pBuffer = (char*)n_malloc(Size);
-	int RealSize = Src.Read(pBuffer, Size);
-	n_assert(RealSize == Size);
-	Src.Close();
-
-	RealSize = Dest.Write(pBuffer, Size);
-	n_assert(RealSize == Size);
-	Dest.Close();
-	n_free(pBuffer);
+	while (Browser.NextCurrDirEntry());
 
 	OK;
 }
@@ -243,17 +275,15 @@ nString CIOServer::ManglePath(const nString& Path)
 	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 0)
 	{
 		// Special case: ignore one character "assigns" because they are really DOS drive letters
-		if (ColonIdx > 1)
-		{
+		if (ColonIdx == 1) break;
+
 #ifdef _EDITOR
-			if (QueryMangledPath(PathString, PathString)) continue;
+		if (QueryMangledPath(PathString, PathString)) continue;
 #endif
-			nString Assign = GetAssign(PathString.SubString(0, ColonIdx));
-			if (Assign.IsEmpty()) return nString::Empty;
-			Assign.Append(PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1)));
-			PathString = Assign;
-		}
-		else break;
+		nString Assign = GetAssign(PathString.SubString(0, ColonIdx));
+		if (Assign.IsEmpty()) return nString::Empty;
+		Assign.Append(PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1)));
+		PathString = Assign;
 	}
 	PathString.ConvertBackslashes();
 	PathString.StripTrailingSlash();

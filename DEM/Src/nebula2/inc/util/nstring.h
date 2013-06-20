@@ -122,7 +122,7 @@ public:
 	vector4			AsVector4() const;
 	matrix44		AsMatrix44() const;
 
-	int				GetLastDirSeparatorIndex() const { return GetLastDirSeparator() - CStr(); }
+	int				GetLastDirSeparatorIndex() const { char* pSep = GetLastDirSeparator(); return pSep ? pSep - CStr() : -1; }
 
 	nString&		operator =(const nString& Other);
 	nString&		operator =(const char* pStr) { if (pStr != CStr()) Set(pStr); return *this; }
@@ -334,8 +334,8 @@ inline int nString::FindStringIndex(const nString& v, int StartIdx) const
 
 inline int nString::FindCharIndex(uchar c, int StartIdx) const
 {
-	n_assert(StartIdx < Length());
 	if (!Length()) return -1;
+	n_assert(StartIdx < Length());
 	const char* pStr = CStr();
 	const char* pChar = strchr(pStr + StartIdx, c);
 	return pChar ? pChar - pStr : -1;

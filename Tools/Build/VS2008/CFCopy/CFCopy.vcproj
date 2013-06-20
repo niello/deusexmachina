@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="BBuilder"
-	ProjectGUID="{DCEEFA17-9D97-43FA-A7B0-6CE097CABBAA}"
-	RootNamespace="BBuilder"
+	Name="CFCopy"
+	ProjectGUID="{EA8504FE-BB42-4C50-9C39-2E906D5FCA35}"
+	RootNamespace="CFCopy"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -18,10 +18,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\Bin\$(SolutionName)"
-			IntermediateDirectory="..\..\Obj\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="..\..\..\Bin\$(SolutionName)"
+			IntermediateDirectory="..\..\..\Obj\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Src;..\..\Src\BBuilder;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty;..\..\..\3rdParty\Lua\Src"
+				AdditionalIncludeDirectories="../../../Src;../../../Src/ContentForge/CFCopy;../../../../DEM/Src/L1;../../../../DEM/Src/nebula2/inc"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="TinyXML2_d.lib lua5.1_d.lib DEM_L1_d.lib sqlite_d.lib nkernel_d.lib"
+				AdditionalDependencies="DEM_L1_d.lib nkernel_d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\DEM\Lib;..\..\..\3rdParty\Lua\Lib;..\..\..\3rdParty\SQLite\Lib;..\..\..\3rdParty\TinyXML2\Lib"
+				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -95,10 +95,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\Bin\$(SolutionName)"
-			IntermediateDirectory="..\..\Obj\$(ProjectName)\$(ConfigurationName)"
+			OutputDirectory="..\..\..\Bin\$(SolutionName)"
+			IntermediateDirectory="..\..\..\Obj\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="2"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -120,7 +120,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\Src;..\..\Src\BBuilder;..\..\..\DEM\Src\L1;..\..\..\DEM\Src\nebula2\inc;..\..\..\3rdParty;..\..\..\3rdParty\Lua\Src"
+				AdditionalIncludeDirectories="../../../Src;../../../Src/ContentForge/CFCopy;../../../../DEM/Src/L1;../../../../DEM/Src/nebula2/inc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
@@ -141,9 +141,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="TinyXML2.lib lua5.1.lib DEM_L1.lib sqlite.lib nkernel.lib"
+				AdditionalDependencies="DEM_L1.lib nkernel.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\DEM\Lib;..\..\..\3rdParty\Lua\Lib;..\..\..\3rdParty\SQLite\Lib;..\..\..\3rdParty\TinyXML2\Lib"
+				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -177,80 +177,12 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\..\Src\ConsoleApp.h"
+			RelativePath="..\..\..\Src\ContentForge\CFCopy\Main.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\Src\BBuilder\Lua.cpp"
+			RelativePath="..\..\..\Src\ncmdlineargs.h"
 			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\..\Src\BBuilder\Main.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\..\Src\BBuilder\Main.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\Src\BBuilder\Main_OLD.cpp"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\..\Src\ncmdlineargs.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\Src\BBuilder\Pack.cpp"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-				/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
