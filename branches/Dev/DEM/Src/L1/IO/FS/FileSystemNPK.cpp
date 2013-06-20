@@ -1,7 +1,5 @@
 #include "FileSystemNPK.h"
 
-#include <IO/IOServer.h>
-
 namespace IO
 {
 
@@ -9,9 +7,7 @@ bool CFileSystemNPK::Mount(const nString& Source, const nString& Root)
 {
 	if (!NPKData.Open(Source, SAM_READ, SAP_RANDOM)) FAIL;
 
-	nString RealRoot = IOSrv->ManglePath(Root);
-
-	TOC.SetRootPath(RealRoot.CStr());
+	TOC.SetRootPath(Root.CStr());
 
 	int Value;
 	NPKData.Read(&Value, sizeof(int));
@@ -83,7 +79,7 @@ void CFileSystemNPK::Unmount()
 
 bool CFileSystemNPK::FileExists(const nString& Path)
 {
-	CNpkTOCEntry* pTE = TOC.FindEntry(IOSrv->ManglePath(Path).CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	return pTE && pTE->GetType() == FSE_FILE;
 }
 //---------------------------------------------------------------------
@@ -108,7 +104,7 @@ bool CFileSystemNPK::CopyFile(const nString& SrcPath, const nString& DestPath)
 
 bool CFileSystemNPK::DirectoryExists(const nString& Path)
 {
-	CNpkTOCEntry* pTE = TOC.FindEntry(IOSrv->ManglePath(Path).CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	return pTE && pTE->GetType() == FSE_DIR;
 }
 //---------------------------------------------------------------------
@@ -135,7 +131,7 @@ bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, nString& OutPath)
 
 void* CFileSystemNPK::OpenDirectory(const nString& Path, const nString& Filter, nString& OutName, EFSEntryType& OutType)
 {
-	CNpkTOCEntry* pTE = TOC.FindEntry(IOSrv->ManglePath(Path).CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	if (pTE && pTE->GetType() == FSE_DIR)
 	{
 		CNPKDir* pDir = n_new(CNPKDir);
@@ -202,7 +198,7 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryTy
 void* CFileSystemNPK::OpenFile(const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern /*Pattern*/)
 {
 	n_assert(Path.IsValid());
-	CNpkTOCEntry* pTE = TOC.FindEntry(IOSrv->ManglePath(Path).CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	if (pTE && pTE->GetType() == FSE_FILE)
 	{
 		CNPKFile* pFile = n_new(CNPKFile);

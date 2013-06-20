@@ -68,8 +68,8 @@ public:
 
 	//???LoadXML? then rename these functions not to bind name to data format.
 	void			SetAssign(const nString& Assign, const nString& Path);
-	nString			GetAssign(const nString& Assign);
-	nString			ManglePath(const nString& Path);
+	nString			GetAssign(const nString& Assign) const;
+	nString			ManglePath(const nString& Path) const;
 	bool			LoadFileToBuffer(const nString& FileName, Data::CBuffer& Buffer);
 
 #ifdef _EDITOR
