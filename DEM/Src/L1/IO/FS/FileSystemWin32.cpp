@@ -1,6 +1,5 @@
 #include "FileSystemWin32.h"
 
-#include <IO/IOServer.h> //???force mangle path externally?
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shlobj.h>
@@ -23,26 +22,25 @@ CFileSystemWin32::~CFileSystemWin32()
 
 bool CFileSystemWin32::FileExists(const nString& Path)
 {
-	DWORD FileAttrs = GetFileAttributes(IOSrv->ManglePath(Path).CStr());
+	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::IsFileReadOnly(const nString& Path)
 {
-	DWORD FileAttrs = GetFileAttributes(IOSrv->ManglePath(Path).CStr());
+	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_READONLY);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::SetFileReadOnly(const nString& Path, bool ReadOnly)
 {
-	nString AbsPath = IOSrv->ManglePath(Path);
-	DWORD FileAttrs = GetFileAttributes(AbsPath.CStr());
+	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES) FAIL;
 	if (ReadOnly) FileAttrs |= FILE_ATTRIBUTE_READONLY;
 	else FileAttrs &= ~FILE_ATTRIBUTE_READONLY;
-	return SetFileAttributes(AbsPath.CStr(), FileAttrs) != FALSE;
+	return SetFileAttributes(Path.CStr(), FileAttrs) != FALSE;
 }
 //---------------------------------------------------------------------
 
@@ -54,7 +52,7 @@ bool CFileSystemWin32::DeleteFile(const nString& Path)
 #else
 #define DeleteFile  DeleteFileA
 #endif
-	return ::DeleteFile(IOSrv->ManglePath(Path).CStr()) != 0;
+	return ::DeleteFile(Path.CStr()) != 0;
 }
 //---------------------------------------------------------------------
 
@@ -67,13 +65,13 @@ bool CFileSystemWin32::CopyFile(const nString& SrcPath, const nString& DestPath)
 #define CopyFile  CopyFileA
 #endif
 	if (IsFileReadOnly(DestPath) && !SetFileReadOnly(DestPath, false)) FAIL;
-	return ::CopyFile(IOSrv->ManglePath(SrcPath).CStr(), IOSrv->ManglePath(DestPath).CStr(), FALSE) != 0;
+	return ::CopyFile(SrcPath.CStr(), DestPath.CStr(), FALSE) != 0;
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::DirectoryExists(const nString& Path)
 {
-	DWORD FileAttrs = GetFileAttributes(IOSrv->ManglePath(Path).CStr());
+	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
@@ -87,8 +85,9 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 #define CreateDirectory  CreateDirectoryA
 #endif
 
+	nString AbsPath = Path;
+
 	nArray<nString> DirStack;
-	nString AbsPath = IOSrv->ManglePath(Path);
 	while (!DirectoryExists(AbsPath))
 	{
 		AbsPath.StripTrailingSlash();
@@ -118,7 +117,7 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 
 bool CFileSystemWin32::DeleteDirectory(const nString& Path)
 {
-	return RemoveDirectory(IOSrv->ManglePath(Path).CStr()) != FALSE;
+	return RemoveDirectory(Path.CStr()) != FALSE;
 }
 //---------------------------------------------------------------------
 
@@ -177,14 +176,13 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, nString& OutPath)
 
 void* CFileSystemWin32::OpenDirectory(const nString& Path, const nString& Filter, nString& OutName, EFSEntryType& OutType)
 {
-	nString AbsPath = IOSrv->ManglePath(Path);
-	DWORD FileAttrs = GetFileAttributes(AbsPath.CStr());
+	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 
 	char* pFilter = Filter.IsValid() ? Filter.CStr() : "/*.*"; //???or "/*" ?
 
 	WIN32_FIND_DATA FindData;
-	HANDLE hDir = FindFirstFile((AbsPath + pFilter).CStr(), &FindData);
+	HANDLE hDir = FindFirstFile((Path + pFilter).CStr(), &FindData);
 
 	if (hDir == INVALID_HANDLE_VALUE)
 	{
@@ -253,8 +251,7 @@ void* CFileSystemWin32::OpenFile(const nString& Path, EStreamAccessMode Mode, ES
 		case SAM_APPEND:	Disposition = OPEN_ALWAYS; break;
 	}
 
-	nString AbsPath = IOSrv->ManglePath(Path);
-	HANDLE hFile = CreateFile(	AbsPath.CStr(),
+	HANDLE hFile = CreateFile(	Path.CStr(),
 								Access,
 								ShareMode,
 								0,
