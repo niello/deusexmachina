@@ -27,6 +27,7 @@ public:
 	virtual bool	IsFileReadOnly(const nString& Path);
 	virtual bool	SetFileReadOnly(const nString& Path, bool ReadOnly);
 	virtual bool	DeleteFile(const nString& Path);
+	virtual bool	CopyFile(const nString& SrcPath, const nString& DestPath);
 	virtual bool	DirectoryExists(const nString& Path);
 	virtual bool	CreateDirectory(const nString& Path);
 	virtual bool	DeleteDirectory(const nString& Path);

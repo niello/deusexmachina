@@ -100,6 +100,12 @@ bool CFileSystemNPK::DeleteFile(const nString& Path)
 }
 //---------------------------------------------------------------------
 
+bool CFileSystemNPK::CopyFile(const nString& SrcPath, const nString& DestPath)
+{
+	FAIL; // Readonly FS
+}
+//---------------------------------------------------------------------
+
 bool CFileSystemNPK::DirectoryExists(const nString& Path)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(IOSrv->ManglePath(Path).CStr());

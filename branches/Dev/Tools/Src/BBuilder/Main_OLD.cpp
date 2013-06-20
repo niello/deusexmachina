@@ -1,13 +1,7 @@
-#include <Core/CoreServer.h>
 #include <Data/FS/NpkTOC.h>
 #include <Data/Streams/FileStream.h>
-#include <DB/DBServer.h>
-#include <DB/Database.h>
-#include <DB/Dataset.h>
 #include <Data/DataArray.h>
 #include <Data/BinaryWriter.h>
-
-Ptr<DB::CDBServer>		DBServer;
 
 void FilterByFolder(const nString& Folder, nArray<nString>& In, nArray<nString>& Out);
 bool AddFilesToTOC(nArray<nString>& Files, CNpkTOC& TOCObj, int& Offset);
@@ -19,16 +13,6 @@ bool WriteNPK(const nString& NpkName, CNpkTOC& TOCObj);
 bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut);
 bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut);
 void LuaRelease();
-
-bool Init()
-{
-	n_new(Core::CCoreServer());
-	CoreSrv->Open();
-	//!!!some unused servers are created inside CoreServer->Open()! refactor!
-
-	OK;
-}
-//---------------------------------------------------------------------
 
 bool AddRsrcIfUnique(const nString& Rsrc, nArray<nString>& Array, const char* Category)
 {

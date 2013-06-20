@@ -1,35 +1,35 @@
 #include "Main.h"
 
 #include <IO/IOServer.h>
-#include <Data/DataServer.h>
 #include <IO/FSBrowser.h>
-#include "ncmdlineargs.h"
-#include <conio.h>
+#include <Data/DataServer.h>
 
-	// Find game file. If use Src, export it here, else ?update from Src or just notify the Src is changed?
-	// Iterate over all level files. If use Src, export it here, else ?update from Src or just notify the Src is changed?
-	//   Export resources referenced by level entities
-	// Iterate over all entity templates
-	//   Export resources referenced by template entities
+// Find game file. If use Src, export it here, else ?update from Src or just notify the Src is changed?
+// Iterate over all level files. If use Src, export it here, else ?update from Src or just notify the Src is changed?
+//   Export resources referenced by level entities
+// Iterate over all entity templates
+//   Export resources referenced by template entities
+//
+// ConvertResource(Config)
+// ConvertResource(ID, Convertor, Format / AddInfo / CommandLine)
 
-	// ConvertResource(Config)
-	// ConvertResource(ID, Convertor, Format / AddInfo / CommandLine)
-
+int						Verbose = VR_ERROR;
 Ptr<IO::CIOServer>		IOServer;
 Ptr<Data::CDataServer>	DataServer;
+nArray<nString>			FilesToPack;
 
 int main(int argc, const char** argv)
 {
-	nCmdLineArgs args(argc, argv);
+	nCmdLineArgs Args(argc, argv);
 
 	// If true, application will wait for key before exit
-	bool WaitKey = args.GetBoolArg("-waitkey");
+	bool WaitKey = Args.GetBoolArg("-waitkey");
 
 	// Verbosity level, where 0 is silence
-	Verbose = args.GetIntArg("-v");
+	Verbose = Args.GetIntArg("-v");
 
 	// Project directory, where all content is placed. Will be a base directory for all data.
-	nString ProjDir = args.GetStringArg("-proj");
+	nString ProjDir = Args.GetStringArg("-proj");
 	ProjDir.ConvertBackslashes();
 	ProjDir.StripTrailingSlash();
 
@@ -38,7 +38,10 @@ int main(int argc, const char** argv)
 	n_msg(VR_ALWAYS, SEP_LINE"BBuilder v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2013\n"SEP_LINE"\n");
 
 	IOServer = n_new(IO::CIOServer);
+	ProjDir = IOSrv->ManglePath(ProjDir);
 	IOSrv->SetAssign("Proj", ProjDir);
+	IOSrv->SetAssign("Src", ProjDir + "/Src");
+	IOSrv->SetAssign("Export", ProjDir + "/Export");
 
 	n_msg(VR_INFO, "Project directory: %s\n\n", ProjDir.CStr());
 
@@ -46,13 +49,14 @@ int main(int argc, const char** argv)
 
 	// Parse levels
 
-	nString PathLevels = "Proj:Src/Game/Levels";
 	IO::CFSBrowser Browser;
-	if (!Browser.SetAbsolutePath(PathLevels))
+	if (!Browser.SetAbsolutePath("Src:Game/Levels"))
 	{
-		n_msg(VR_ERROR, "Could not open directory 'Proj:Src/Game/Levels' for reading!\n", PathLevels.CStr());
+		n_msg(VR_ERROR, "Could not open directory 'Src:Game/Levels' for reading!\n");
 		EXIT_APP_FAIL;
 	}
+
+	IOSrv->CreateDirectory("Export:Game/Levels");
 
 	if (!Browser.IsCurrDirEmpty()) do
 	{
@@ -64,11 +68,29 @@ int main(int argc, const char** argv)
 			FileNoExt.StripExtension();
 			n_msg(VR_INFO, "Parsing level '%s'...\n", FileNoExt.CStr());
 
-			// Call level parsing function
-			//   Read HRD
-			//   Export HRD as PRM or by scheme that allows diff
-			//   Export script, if found
-			//   Export navmesh, if found
+			Data::PParams LevelDesc = DataSrv->LoadHRD("Src:Game/Levels/" + Browser.GetCurrEntryName(), false);
+			if (!LevelDesc.IsValid())
+			{
+				n_msg(VR_ERROR, "Error loading level '%s' desc...\n", FileNoExt.CStr());
+				continue;
+			}
+
+			nString FileFullName = "Export:Game/Levels/" + FileNoExt + ".prm";
+			DataSrv->SavePRM(FileFullName, LevelDesc);
+			FilesToPack.Append(FileFullName);
+
+			FileFullName = "Src:Game/Levels/" + FileNoExt + ".lua";
+			if (IOSrv->FileExists(FileFullName))
+			{
+				FileFullName = "Export:Game/Levels/" + FileNoExt + ".lua";
+				// Run lua compiler
+				FilesToPack.Append(FileFullName);
+			}
+
+			FileFullName = "Export:Game/Levels/" + FileNoExt + ".nm";
+			if (IOSrv->FileExists(FileFullName)) FilesToPack.Append(FileFullName);
+
+			// Export entities
 		}
 	}
 	while (Browser.NextCurrDirEntry());
@@ -86,15 +108,9 @@ int ExitApp(bool NoError, bool WaitKey)
 		getch();
 	}
 
-	Release();
-	return NoError ? 0 : 1;
-}
-//---------------------------------------------------------------------
-
-//???need?
-void Release()
-{
 	DataServer = NULL;
 	IOServer = NULL;
+
+	return NoError ? 0 : 1;
 }
 //---------------------------------------------------------------------

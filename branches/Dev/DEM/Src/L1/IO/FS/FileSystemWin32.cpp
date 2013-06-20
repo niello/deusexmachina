@@ -1,6 +1,6 @@
 #include "FileSystemWin32.h"
 
-#include <IO/IOServer.h>
+#include <IO/IOServer.h> //???force mangle path externally?
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shlobj.h>
@@ -58,6 +58,19 @@ bool CFileSystemWin32::DeleteFile(const nString& Path)
 }
 //---------------------------------------------------------------------
 
+#undef CopyFile
+bool CFileSystemWin32::CopyFile(const nString& SrcPath, const nString& DestPath)
+{
+#ifdef UNICODE
+#define CopyFile  CopyFileW
+#else
+#define CopyFile  CopyFileA
+#endif
+	if (IsFileReadOnly(DestPath) && !SetFileReadOnly(DestPath, false)) FAIL;
+	return ::CopyFile(IOSrv->ManglePath(SrcPath).CStr(), IOSrv->ManglePath(DestPath).CStr(), FALSE) != 0;
+}
+//---------------------------------------------------------------------
+
 bool CFileSystemWin32::DirectoryExists(const nString& Path)
 {
 	DWORD FileAttrs = GetFileAttributes(IOSrv->ManglePath(Path).CStr());
@@ -80,8 +93,16 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 	{
 		AbsPath.StripTrailingSlash();
 		int LastSepIdx = AbsPath.GetLastDirSeparatorIndex();
-		DirStack.Append(AbsPath.SubString(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
-		AbsPath = AbsPath.SubString(0, LastSepIdx);
+		if (LastSepIdx >= 0)
+		{
+			DirStack.Append(AbsPath.SubString(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
+			AbsPath = AbsPath.SubString(0, LastSepIdx);
+		}
+		else
+		{
+			if (!CreateDirectory(AbsPath.CStr(), NULL)) FAIL;
+			break;
+		}
 	}
 
 	while (DirStack.GetCount())
