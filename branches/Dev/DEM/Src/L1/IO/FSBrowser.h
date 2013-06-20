@@ -43,6 +43,8 @@ public:
 	bool			IsCurrDirEmpty();
 	const nString&	GetCurrEntryName() const { n_assert(hDir); return CurrEntryName; }
 	EFSEntryType	GetCurrEntryType() const { n_assert(hDir); return CurrEntryType; }
+	bool			IsCurrEntryFile() const { return hDir && CurrEntryType == FSE_FILE;}
+	bool			IsCurrEntryDir() const { return hDir && CurrEntryType == FSE_DIR;}
 };
 
 }
