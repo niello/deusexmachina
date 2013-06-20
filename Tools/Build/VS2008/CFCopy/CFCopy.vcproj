@@ -177,6 +177,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\..\..\Src\ConsoleApp.h"
+			>
+		</File>
+		<File
 			RelativePath="..\..\..\Src\ContentForge\CFCopy\Main.cpp"
 			>
 		</File>

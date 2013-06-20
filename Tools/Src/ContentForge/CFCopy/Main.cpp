@@ -13,7 +13,7 @@ int Verbose = VR_ERROR;
 
 int ExitApp(int Code, bool WaitKey);
 
-int main(int argc, const char** argv)
+__declspec(dllexport) int Run(int argc, const char** argv)
 {
 	nCmdLineArgs Args(argc, argv);
 
@@ -33,6 +33,12 @@ int main(int argc, const char** argv)
 		if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
 		return ExitApp(IOSrv->CopyFile(In, Out) ? SUCCESS : ERR_COPY_FAILED, WaitKey);
 	}
+}
+//---------------------------------------------------------------------
+
+int main(int argc, const char** argv)
+{
+	return Run(argc, argv);
 }
 //---------------------------------------------------------------------
 
