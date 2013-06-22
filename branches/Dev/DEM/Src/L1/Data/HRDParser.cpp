@@ -881,4 +881,4 @@ bool CHRDParser::ParseVector(const nArray<CToken>& Tokens, CData& Output)
 }
 //---------------------------------------------------------------------
 
-} //namespace IO
+}
