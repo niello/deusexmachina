@@ -59,7 +59,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		if (!ExistingNode) Node = Level->GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
-		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
+		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
 	}
 
 	const matrix44& EntityTfm = Desc->Get<matrix44>(CStrID("Transform"));
