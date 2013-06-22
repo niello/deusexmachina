@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="CFCopy"
-	ProjectGUID="{EA8504FE-BB42-4C50-9C39-2E906D5FCA35}"
-	RootNamespace="CFCopy"
+	Name="CFLua"
+	ProjectGUID="{E2856EC7-7EC4-4C99-B14D-59B22EA0898B}"
+	RootNamespace="CFLua"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../Src;../../../Src/ContentForge/CFCopy;../../../../DEM/Src/L1;../../../../DEM/Src/nebula2/inc"
+				AdditionalIncludeDirectories="../../../Src;../../../Src/ContentForge/CFCopy;../../../../DEM/Src/L1;../../../../DEM/Src/nebula2/inc;../../../../3rdParty/Lua/Src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1_d.lib nkernel_d.lib"
+				AdditionalDependencies="DEM_L1_d.lib nkernel_d.lib lua5.1_d.lib TinyXML2_d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib"
+				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib;..\..\..\..\3rdParty\Lua\Lib;..\..\..\..\3rdParty\TinyXML2\Lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -120,7 +120,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="../../../Src;../../../Src/ContentForge/CFCopy;../../../../DEM/Src/L1;../../../../DEM/Src/nebula2/inc"
+				AdditionalIncludeDirectories="../../../Src;../../../Src/ContentForge/CFCopy;../../../../DEM/Src/L1;../../../../DEM/Src/nebula2/inc;../../../../3rdParty/Lua/Src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
@@ -141,9 +141,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1.lib nkernel.lib"
+				AdditionalDependencies="DEM_L1.lib nkernel.lib lua5.1.lib TinyXML2.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib"
+				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib;..\..\..\..\3rdParty\Lua\Lib;..\..\..\..\3rdParty\TinyXML2\Lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -185,7 +185,11 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\..\Src\ContentForge\CFCopy\Main.cpp"
+			RelativePath="..\..\..\Src\ContentForge\CFLua\Lua.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\Src\ContentForge\CFLua\Main.cpp"
 			>
 		</File>
 	</Files>

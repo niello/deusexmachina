@@ -54,7 +54,7 @@ void CPropCharacterController::CreateController()
 	const nString& PhysicsDescFile = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
-	Data::PParams PhysicsDesc = DataSrv->LoadHRD(nString("physics:") + PhysicsDescFile.CStr() + ".hrd"); //!!!load prm!
+	Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("physics:") + PhysicsDescFile.CStr() + ".prm");
 	if (!PhysicsDesc.IsValid()) return;
 
 	//???init by entity attrs like R & H instead?

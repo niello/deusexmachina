@@ -10,10 +10,6 @@ void WriteTOCEntry(Data::CFileStream* pFile, CNpkTOCEntry* tocEntry);
 bool WriteEntryData(Data::CFileStream* pFile, CNpkTOCEntry* tocEntry, int dataBlockOffset, int& dataLen);
 bool WriteNPK(const nString& NpkName, CNpkTOC& TOCObj);
 
-bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut);
-bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut);
-void LuaRelease();
-
 bool AddRsrcIfUnique(const nString& Rsrc, nArray<nString>& Array, const char* Category)
 {
 	if (Rsrc.IsValid() && Array.BinarySearchIndex(Rsrc) == INVALID_INDEX)

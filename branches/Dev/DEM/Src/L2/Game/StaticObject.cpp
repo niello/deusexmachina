@@ -73,7 +73,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	const nString& PhysicsDescFile = Desc->Get<nString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
-		Data::PParams PhysicsDesc = DataSrv->LoadHRD(nString("physics:") + PhysicsDescFile.CStr() + ".hrd"); //!!!load prm!
+		Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("physics:") + PhysicsDescFile.CStr() + ".prm");
 		if (PhysicsDesc.IsValid())
 		{
 			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));

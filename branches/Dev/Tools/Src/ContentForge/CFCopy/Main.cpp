@@ -13,13 +13,14 @@ int Verbose = VR_ERROR;
 
 int ExitApp(int Code, bool WaitKey);
 
-__declspec(dllexport) int Run(int argc, const char** argv)
+API int Run(int argc, const char** argv)
 {
 	nCmdLineArgs Args(argc, argv);
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
 	nString In = Args.GetStringArg("-in");
 	nString Out = Args.GetStringArg("-out");
+	Verbose = Args.GetIntArg("-v");
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 

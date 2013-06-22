@@ -5,8 +5,8 @@ extern "C"
 	#include <lualib.h>
 };
 
-#include <Data/Streams/FileStream.h>
-#include <Data/Streams/MemStream.h>
+#include <IO/Streams/FileStream.h>
+#include <IO/Streams/MemStream.h>
 #include <Data/Buffer.h>
 #include <Data/DataServer.h>
 
@@ -19,6 +19,7 @@ bool LuaInit()
 	//luaL_openlibs(l);
 	return !!l;
 }
+//---------------------------------------------------------------------
 
 void LuaRelease()
 {
@@ -28,14 +29,16 @@ void LuaRelease()
 		l = NULL;
 	}
 }
+//---------------------------------------------------------------------
 
 // Saves Lua data to stream
 static int SaveLua(lua_State* L, const void* p, size_t sz, void* ud)
 {
 	n_assert(ud);
-	Data::CStream* pOut = (Data::CStream*)ud;
+	IO::CStream* pOut = (IO::CStream*)ud;
 	return (pOut->Write(p, sz) == sz) ? 0 : 1;
 }
+//---------------------------------------------------------------------
 
 bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 {
@@ -50,15 +53,16 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 
 	int Result = 1;
 
-	Data::CFileStream Out;
-	if (Out.Open(pFileOut, Data::SAM_WRITE, Data::SAP_SEQUENTIAL))
+	IO::CFileStream Out;
+	if (Out.Open(pFileOut, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 	{
-		Result = lua_dump(l, SaveLua, (Data::CStream*)&Out);
+		Result = lua_dump(l, SaveLua, (IO::CStream*)&Out);
 		Out.Close();
 	}
 
 	return !Result;
 }
+//---------------------------------------------------------------------
 
 bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 {
@@ -66,7 +70,7 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 
 	if (Code.IsValid())
 	{
-		if (luaL_loadbuffer(l, Code.Get(), Code.Length(), Name) != 0)
+		if (luaL_loadbuffer(l, Code.CStr(), Code.Length(), Name) != 0)
 		{
 			n_printf("Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
 			lua_pop(l, 1); // Error msg
@@ -75,10 +79,10 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 
 		int Result = 1;
 
-		Data::CMemStream Out;
-		if (Out.Open(Data::SAM_WRITE, Data::SAP_SEQUENTIAL))
+		IO::CMemStream Out;
+		if (Out.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
-			Result = lua_dump(l, SaveLua, (Data::CStream*)&Out);
+			Result = lua_dump(l, SaveLua, (IO::CStream*)&Out);
 			Data::CBuffer Buffer(Out.GetPtr(), Out.GetSize());
 			Out.Close();
 			if (Result != 0) FAIL;
@@ -92,3 +96,4 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 
 	OK;
 }
+//---------------------------------------------------------------------

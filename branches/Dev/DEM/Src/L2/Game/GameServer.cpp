@@ -257,11 +257,11 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 
 bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName)
 {
-	Data::PParams InitialCommon = DataSrv->LoadHRD(FileName);
+	Data::PParams InitialCommon = DataSrv->LoadPRM(FileName);
 	if (!InitialCommon.IsValid()) FAIL;
 
 	//!!!DBG TMP PATH!
-	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadHRD("home:" + SaveGameName + "/Main.hrd", false) : NULL;
+	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadPRM("home:" + SaveGameName + "/Main.prm", false) : NULL;
 
 	Data::PParams GameDesc;
 	if (SGCommon.IsValid())
@@ -292,14 +292,13 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 	{
 		CStrID LevelID = LoadedLevels->Get<CStrID>(i);
 
-		//???ECCY.prm instead of ECCY/Level.prm?
-		nString RelLevelPath = nString("/Levels/") + LevelID.CStr() + "/Level.hrd";
+		nString RelLevelPath = nString("/Levels/") + LevelID.CStr() + ".prm";
 
-		Data::PParams InitialLvl = DataSrv->LoadHRD("export:Game" + RelLevelPath); //!!!load PRM!
+		Data::PParams InitialLvl = DataSrv->LoadPRM("export:Game" + RelLevelPath);
 		n_assert(InitialLvl.IsValid());
 
 		//!!!DBG TMP PATH!
-		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadHRD("home:" + SaveGameName + RelLevelPath, false) : NULL;
+		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("home:" + SaveGameName + RelLevelPath, false) : NULL;
 
 		Data::PParams LevelDesc;
 		if (SGLvl.IsValid())
@@ -342,7 +341,7 @@ bool CGameServer::SaveGame(const nString& Name)
 		LoadedLevels->Append(Levels.KeyAt(i));
 	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
-	Data::PParams GameDesc = DataSrv->LoadHRD(GameFileName);
+	Data::PParams GameDesc = DataSrv->LoadPRM(GameFileName);
 	if (!GameDesc.IsValid()) FAIL;
 
 	// Save main game file with common data
@@ -364,10 +363,13 @@ bool CGameServer::SaveGame(const nString& Name)
 	// Allow custom gameplay managers to save their data
 	EventMgr->FireEvent(CStrID("OnGameSaving"), SGCommon);
 
+	//!!!TMP!
 //======
-	//!!!DBG TMP!
 	nString Path = "home:" + Name;
 	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
+	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
+
+	//!!!DBG TMP!
 	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
 //======
 
@@ -376,18 +378,18 @@ bool CGameServer::SaveGame(const nString& Name)
 	for (int i = 0; i < Levels.GetCount(); ++i)
 	{
 		if (SGLevel->GetCount()) SGLevel = n_new(Data::CParams);
-
-		//???ECCY.prm instead of ECCY/Level.prm?
-		Data::PParams LevelDesc = DataSrv->LoadHRD(nString("export:Game/Levels/") + Levels.KeyAt(i).CStr() + "/Level.hrd"); //!!!load PRM!
+		Data::PParams LevelDesc = DataSrv->LoadPRM(nString("export:Game/Levels/") + Levels.KeyAt(i).CStr() + ".prm");
 		n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
-
 		if (!SGLevel->GetCount()) continue;
 
+		//!!!TMP!
 //======
-		//!!!DBG TMP!
-		nString Path = "home:" + Name + "/Levels/" + Levels.KeyAt(i).CStr();
+		nString Path = "home:" + Name + "/Levels/";
 		if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
-		DataSrv->SaveHRD(Path + "/Level.hrd", SGLevel);
+		DataSrv->SavePRM(Path + Levels.KeyAt(i).CStr() + ".prm", SGLevel);
+
+		//!!!DBG TMP!
+		DataSrv->SaveHRD(Path + Levels.KeyAt(i).CStr() + ".hrd", SGLevel);
 //======
 	}
 
