@@ -260,14 +260,18 @@ void CIOServer::SetAssign(const nString& Assign, const nString& Path)
 	nString PathString = Path;
 	PathString.StripTrailingSlash();
 	PathString.Append("/");
-	Assigns.At(Assign.CStr()) = PathString;
+	nString RealAssign = Assign;
+	RealAssign.ToLower();
+	Assigns.At(RealAssign.CStr()) = PathString;
 }
 //---------------------------------------------------------------------
 
 nString CIOServer::GetAssign(const nString& Assign) const
 {
+	nString RealAssign = Assign;
+	RealAssign.ToLower();
 	nString Str;
-	return Assigns.Get(Assign.CStr(), Str) ? Str : nString::Empty;
+	return Assigns.Get(RealAssign.CStr(), Str) ? Str : nString::Empty;
 }
 //---------------------------------------------------------------------
 
@@ -276,19 +280,20 @@ nString CIOServer::ManglePath(const nString& Path) const
 	nString PathString = Path;
 
 	int ColonIdx;
-	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 0)
-	{
-		// Special case: ignore one character "assigns" because they are really DOS drive letters
-		if (ColonIdx == 1) break;
 
+	// Ignore one character "assigns" because they are really DOS drive letters
+	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 1)
+	{
 #ifdef _EDITOR
 		if (QueryMangledPath(PathString, PathString)) continue;
 #endif
-		nString Assign = GetAssign(PathString.SubString(0, ColonIdx));
-		if (Assign.IsEmpty()) return nString::Empty;
-		Assign.Append(PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1)));
-		PathString = Assign;
+		nString Assign = PathString.SubString(0, ColonIdx);
+		Assign.ToLower();
+		nString AssignValue;
+		if (!Assigns.Get(Assign.CStr(), AssignValue)) return nString::Empty;
+		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1));
 	}
+
 	PathString.ConvertBackslashes();
 	PathString.StripTrailingSlash();
 	return PathString;

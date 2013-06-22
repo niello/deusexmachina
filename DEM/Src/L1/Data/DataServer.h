@@ -8,10 +8,7 @@
 
 // Data server manages descs and data serialization schemes
 
-//???HRD/PRM loading here, IO server don't know about file format specifics?
-//???use loader objects or functions instead of server method?
-
-//???need at all? move to IO?
+//???HRD/PRM - use loader objects or functions instead of server method?
 
 namespace Data
 {
