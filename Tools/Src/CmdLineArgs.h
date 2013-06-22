@@ -1,9 +1,10 @@
-#ifndef N_CMDLINEARGS_H
-#define N_CMDLINEARGS_H
+#pragma once
+#ifndef __DEM_TOOLS_CMD_LINE_ARGS_H__
+#define __DEM_TOOLS_CMD_LINE_ARGS_H__
 
 #include <stdlib.h>
 #include <math.h>
-#include "util/nstring.h"
+#include <util/nstring.h>
 
 // Helper class to extract arguments from a ANSI-C command line.
 // (C) 2003 RadonLabs GmbH

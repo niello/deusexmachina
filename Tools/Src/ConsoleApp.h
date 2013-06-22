@@ -2,8 +2,10 @@
 #ifndef __DEM_TOOLS_CONSOLE_APP_H__
 #define __DEM_TOOLS_CONSOLE_APP_H__
 
-#include <ncmdlineargs.h>
+#include <CmdLineArgs.h>
 #include <conio.h>
+
+#define API extern "C" __declspec(dllexport)
 
 #define SEP_LINE "--------------------------------------------------------------------------------"
 

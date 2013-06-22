@@ -10,13 +10,13 @@
 // Iterate over all entity templates
 //   Export resources referenced by template entities
 //
-// ConvertResource(Config)
-// ConvertResource(ID, Convertor, Format / AddInfo / CommandLine)
 
 int						Verbose = VR_ERROR;
 Ptr<IO::CIOServer>		IOServer;
 Ptr<Data::CDataServer>	DataServer;
 nArray<nString>			FilesToPack;
+
+int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine);
 
 int main(int argc, const char** argv)
 {
@@ -58,6 +58,15 @@ int main(int argc, const char** argv)
 
 	IOSrv->CreateDirectory("Export:Game/Levels");
 
+	Data::PParams Desc = DataSrv->LoadHRD("Src:Game/Main.hrd", false);
+	if (!Desc.IsValid())
+	{
+		n_msg(VR_ERROR, "Error loading main game desc...\n");
+		EXIT_APP_FAIL;
+	}
+	DataSrv->SavePRM("Export:Game/Main.prm", Desc);
+	FilesToPack.Append("Export:Game/Main.prm");
+
 	if (!Browser.IsCurrDirEmpty()) do
 	{
 		if (Browser.IsCurrEntryFile())
@@ -82,8 +91,14 @@ int main(int argc, const char** argv)
 			FileFullName = "Src:Game/Levels/" + FileNoExt + ".lua";
 			if (IOSrv->FileExists(FileFullName))
 			{
-				FileFullName = "Export:Game/Levels/" + FileNoExt + ".lua";
-				// Run lua compiler
+				//???or collect to batch-convert later?
+				nString OutFullName = "Export:Game/Levels/" + FileNoExt + ".lua";
+				//LPCSTR Args[4] = { "-in", FileFullName.CStr(), "-out", OutFullName.CStr() };
+				char CmdLine[4096];
+				sprintf_s(CmdLine, "-v 0 -in %s -out %s",
+					IOSrv->ManglePath(FileFullName).CStr(),
+					IOSrv->ManglePath(OutFullName).CStr());
+				int ExitCode = RunExternalToolAsProcess(CStrID("CFLua"), CmdLine);
 				FilesToPack.Append(FileFullName);
 			}
 
