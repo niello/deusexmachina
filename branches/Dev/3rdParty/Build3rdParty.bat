@@ -4,14 +4,9 @@
 
 rem pause
 
-pushd .
-cd ODE\build
-premake4.exe vs2008
-popd
+%windir%\Microsoft.NET\Framework\v3.5\msbuild /property:Configuration=Debug;Platform="Win32" Bullet\build\vs2008\0BulletSolution.sln
 
-%windir%\Microsoft.NET\Framework\v3.5\msbuild /property:Configuration=DebugSingleLib;Platform="Win32" ODE\build\vs2008\ode.sln
-
-%windir%\Microsoft.NET\Framework\v3.5\msbuild /property:Configuration=ReleaseSingleLib;Platform="Win32" ODE\build\vs2008\ode.sln
+%windir%\Microsoft.NET\Framework\v3.5\msbuild /property:Configuration=Release;Platform="Win32" Bullet\build\vs2008\0BulletSolution.sln
 
 rem pause
 
