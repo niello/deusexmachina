@@ -4,10 +4,6 @@
 #include <Game/EntityManager.h>
 #include <Events/EventManager.h>
 
-//BEGIN_ATTRS_REGISTRATION(PropTalking)
-//	RegisterString(Dialogue, ReadOnly);
-//END_ATTRS_REGISTRATION
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropTalking, 'PTLK', Game::CProperty);

@@ -2,6 +2,8 @@
 
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
+#include <IO/Streams/FileStream.h>
+#include <IO/BinaryWriter.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -16,6 +18,7 @@
 // Physics
 // Anim (game)
 // Anim (export)
+// Dlg
 
 //???Convert from Src resources, descs or both? or load from export & warn if outdated?
 //can convert from src if NO converted file, and warn if out of date!
@@ -24,20 +27,76 @@
 // Iterate over all entity templates
 //   Export resources referenced by template entities
 
-//!!!Export quests!
+//!!!Export quests, AI tables, quest scripts!
+
+//!!!CHECK if resource/desc already exported/parsed!
+//store abs mangled pathes of processed resources and descs!
 
 bool					ExportFromSrc;
 int						Verbose = VR_ERROR;
 
 Ptr<IO::CIOServer>		IOServer;
 Ptr<Data::CDataServer>	DataServer;
+Data::PDataScheme		SceneRsrcScheme;
 
+//!!!control duplicates on add! or sort before packing and skip dups!
 nArray<nString>			FilesToPack;
 
+//!!!control duplicates! (immediately after mangle path, forex)
 nArray<nString>			CFLuaIn;
 nArray<nString>			CFLuaOut;
 
 int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir = NULL);
+
+bool ProcessDialogue(const nString& SrcContext, const nString& ExportContext, const nString& Name)
+{
+	Data::PParams Desc;
+	nString ExportFilePath = ExportContext + Name + ".prm";
+	if (ExportFromSrc)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		Desc = DataSrv->LoadHRD(SrcContext + Name + ".dlg", false);
+		DataSrv->SavePRM(ExportFilePath, Desc);
+	}
+	else Desc = DataSrv->LoadPRM(ExportFilePath);
+
+	if (!Desc.IsValid()) FAIL;
+
+	FilesToPack.Append(ExportFilePath);
+
+	bool UsesScript = false;
+
+	const Data::CDataArray& Links = *(Desc->Get<Data::PDataArray>(CStrID("Links")));
+	for (int j = 0; j < Links.GetCount(); j++)
+	{
+		//const Data::CDataArray& Link = *(Links[j]); // Crashes vs2008 compiler :)
+		const Data::CDataArray& Link = *(Links.Get(j).GetValue<Data::PDataArray>());
+
+		if (Link.GetCount() > 2)
+		{
+			if (Link.Get(2).GetValue<nString>().IsValid()) UsesScript = true;
+			else if (Link.GetCount() > 3 && Link.Get(3).GetValue<nString>().IsValid()) UsesScript = true;
+			if (UsesScript)
+			{
+				int Idx = Desc->IndexOf(CStrID("ScriptFile"));
+				nString ScriptFile = (Idx == INVALID_INDEX) ? Name : Desc->Get(Idx).GetValue<nString>();
+
+				ExportFilePath = ExportContext + ScriptFile + ".lua";
+				if (ExportFromSrc)
+				{
+					CFLuaIn.Append(SrcContext + ScriptFile + ".lua");
+					CFLuaOut.Append(ExportFilePath);
+				}
+				FilesToPack.Append(ExportFilePath);
+
+				break;
+			}
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFilePath)
 {
@@ -45,7 +104,7 @@ bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFile
 	if (ExportFromSrc)
 	{
 		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		Desc = DataSrv->LoadHRD(SrcFilePath);
+		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		DataSrv->SavePRM(ExportFilePath, Desc);
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
@@ -68,7 +127,7 @@ bool ProcessPhysicsDesc(const nString& SrcFilePath, const nString& ExportFilePat
 	if (ExportFromSrc)
 	{
 		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		Desc = DataSrv->LoadHRD(SrcFilePath);
+		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		DataSrv->SavePRM(ExportFilePath, Desc);
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
@@ -105,7 +164,7 @@ bool ProcessAnimDesc(const nString& SrcFilePath, const nString& ExportFilePath)
 	if (ExportFromSrc)
 	{
 		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		Desc = DataSrv->LoadHRD(SrcFilePath);
+		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		DataSrv->SavePRM(ExportFilePath, Desc);
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
@@ -149,7 +208,76 @@ bool ProcessDesc(const nString& SrcContext, const nString& ExportContext, const 
 }
 //---------------------------------------------------------------------
 
-//!!!???check if resources are already parsed?!
+bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
+{
+	Data::PDataArray Attrs;
+	if (NodeDesc.Get(Attrs, CStrID("Attrs")))
+	{
+		for (int i = 0; i < Attrs->GetCount(); ++i)
+		{
+			Data::PParams AttrDesc = Attrs->Get<Data::PParams>(i);
+
+			//!!!ProcessTextures!
+
+			Data::CData* pValue;
+			if (AttrDesc->Get(pValue, CStrID("Textures")))
+			{
+				if (pValue->IsA<Data::PParams>())
+				{
+					const Data::CParams& Textures = *pValue->GetValue<Data::PParams>();
+
+					//!!!when export from src, find resource desc and add source texture to CFTexture list!
+					for (int i = 0; i < Textures.GetCount(); ++i)
+						FilesToPack.Append(nString("Export:Textures/") + Textures.Get(i).GetValue<CStrID>().CStr());
+				}
+			}
+
+			//if (AttrDesc->Get(pValue, CStrID("Material")))
+			//	AddRsrcIfUnique(pValue->GetValue<nString>(), MaterialFiles, "Material");
+
+			// Material -> Textures //!!!ProcessTextures!
+
+			//!!!when export from src, find resource desc and add source Model to CFModel list!
+			if (AttrDesc->Get(pValue, CStrID("Mesh")))
+				FilesToPack.Append(nString("Export:Meshes/") + pValue->GetValue<CStrID>().CStr() + ".nvx2"); //!!!change extension!
+
+			//!!!when export from src, find resource desc and add source BT to CFTerrain list!
+			if (AttrDesc->Get(pValue, CStrID("CDLODFile")))
+				FilesToPack.Append(nString("Export:Terrain/") + pValue->GetValue<CStrID>().CStr() + ".cdlod");
+		}
+	}
+
+	Data::PParams Children;
+	if (NodeDesc.Get(Children, CStrID("Children")))
+		for (int i = 0; i < Children->GetCount(); ++i)
+			if (!ProcessSceneNodeRefs(*Children->Get(i).GetValue<Data::PParams>())) FAIL;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Always processed from Src
+bool ProcessSceneResource(const nString& SrcFilePath, const nString& ExportFilePath)
+{
+	Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
+	if (!Desc.IsValid()) FAIL;
+
+	if (ExportFromSrc)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IO::CFileStream File;
+		if (!File.Open(ExportFilePath, IO::SAM_WRITE)) FAIL;
+		IO::CBinaryWriter Writer(File);
+		Writer.WriteParams(*Desc, *SceneRsrcScheme);
+		File.Close();
+	}
+
+	FilesToPack.Append(ExportFilePath);
+
+	return ProcessSceneNodeRefs(*Desc);
+}
+//---------------------------------------------------------------------
+
 bool ProcessEntity(const Data::CParams& EntityDesc)
 {
 	Data::PParams Attrs;
@@ -276,8 +404,19 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 			FAIL;
 		}
 
-	// SceneFile -> Mesh, Vars.Texture, Material, CDLODFile
-	// Dialogue -> Script
+	if (Attrs->Get<nString>(AttrValue, CStrID("Dialogue")))
+		if (!ProcessDialogue("Src:Game/Dlg/", "Export:Game/Dlg/", AttrValue))
+		{
+			n_msg(VR_ERROR, "Error processing dialogue desc '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
+
+	if (Attrs->Get<nString>(AttrValue, CStrID("SceneFile")))
+		if (!ProcessSceneResource("Src:Scene/" + AttrValue + ".hrd", "Export:Scene/" + AttrValue + ".scn"))
+		{
+			n_msg(VR_ERROR, "Error processing scene resource '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
 
 	OK;
 }
@@ -341,6 +480,9 @@ int main(int argc, const char** argv)
 	// Verbosity level, where 0 is silence
 	Verbose = Args.GetIntArg("-v");
 
+	// Verbosity level for external tools
+	int ExtVerb = Args.GetIntArg("-ev");
+
 	// Project directory, where all content is placed. Will be a base directory for all data.
 	nString ProjDir = Args.GetStringArg("-proj");
 	ProjDir.ConvertBackslashes();
@@ -359,6 +501,14 @@ int main(int argc, const char** argv)
 	n_msg(VR_INFO, "Project directory: %s\n\n", ProjDir.CStr());
 
 	DataServer = n_new(Data::CDataServer);
+
+	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
+	{
+		n_msg(VR_ERROR, "BBuilder: Failed to read 'home:DataSchemes/SceneNodes.dss'");
+		EXIT_APP_FAIL;
+	}
+
+	SceneRsrcScheme = DataSrv->GetDataScheme(CStrID("SceneNode"));
 
 	// Parse levels
 
@@ -445,7 +595,7 @@ int main(int argc, const char** argv)
 			if (NextLength >= MAX_CMDLINE_CHARS)
 			{
 				char CmdLine[MAX_CMDLINE_CHARS];
-				sprintf_s(CmdLine, "-v 0 -in %s -out %s", InStr.CStr(), OutStr.CStr());
+				sprintf_s(CmdLine, "-v %d -in %s -out %s", ExtVerb, InStr.CStr(), OutStr.CStr());
 				if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) EXIT_APP_FAIL;
 				InStr = CFLuaIn[i];
 				OutStr = CFLuaOut[i];
@@ -463,7 +613,7 @@ int main(int argc, const char** argv)
 		if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 		char CmdLine[MAX_CMDLINE_CHARS];
-		sprintf_s(CmdLine, "-v 0 -in %s -out %s", InStr.CStr(), OutStr.CStr());
+		sprintf_s(CmdLine, "-v %d -in %s -out %s", ExtVerb, InStr.CStr(), OutStr.CStr());
 		if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) EXIT_APP_FAIL;
 	}
 
@@ -485,6 +635,7 @@ int ExitApp(bool NoError, bool WaitKey)
 		getch();
 	}
 
+	SceneRsrcScheme = NULL;
 	DataServer = NULL;
 	IOServer = NULL;
 
