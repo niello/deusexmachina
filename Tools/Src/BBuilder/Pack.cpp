@@ -65,7 +65,7 @@ bool AddFilesToTOC(nArray<nString>& Files, CNpkTOC& TOCObj, int& Offset)
 	for (int i = Files.Size() - 1; i >= 0; i--)
 	{
 		//if (Files[i].ExtractFileName() == Files[i])
-		if (Files[i].FindCharIndex('/', 0) == -1)
+		if (Files[i].FindCharIndex('/') == -1)
 		{
 			AddFileToTOC(DirName + Files[i], TOCObj, Offset);
 			Files.Erase(i);
@@ -74,7 +74,7 @@ bool AddFilesToTOC(nArray<nString>& Files, CNpkTOC& TOCObj, int& Offset)
 
 	while (Files.Size() > 0)
 	{
-		nString DirName = Files[0].SubString(0, Files[0].FindCharIndex('/', 0));
+		nString DirName = Files[0].SubString(0, Files[0].FindCharIndex('/'));
 		DirName.ToLower();
 		
 		n_printf("-> Writing NPK directory '%s'\n", DirName.Get());

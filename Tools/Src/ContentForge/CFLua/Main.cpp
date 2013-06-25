@@ -14,6 +14,7 @@
 #define ERR_IN_OUT_TYPES_DONT_MATCH 2
 #define ERR_IN_NOT_FOUND			3
 #define ERR_NOT_IMPLEMENTED_YET		4
+#define ERR_INVALID_CMD_LINE		5
 
 int		Verbose = VR_ERROR;
 
@@ -29,25 +30,43 @@ API int Run(int argc, const char** argv)
 	nCmdLineArgs Args(argc, argv);
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
+	Verbose = Args.GetIntArg("-v");
 	nString In = Args.GetStringArg("-in");
 	nString Out = Args.GetStringArg("-out");
-	Verbose = Args.GetIntArg("-v");
+
+	if (In.IsEmpty() || Out.IsEmpty()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	bool Dir = IOSrv->DirectoryExists(In);
-	if (!Dir && IOSrv->DirectoryExists(Out)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
+	nArray<nString> InList, OutList;
+	In.Tokenize(";", InList);
+	Out.Tokenize(";", OutList);
 
-	if (Dir)
+	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+
+	for (int i = 0; i < InList.GetCount(); ++i)
 	{
-		//PathExport + Name + ".cls"
-		return ExitApp(ERR_NOT_IMPLEMENTED_YET, WaitKey);
+		In = InList[i];
+		Out = OutList[i];
+
+		n_msg(VR_INFO, "Compiling pair %d: '%s' -> '%s'\n", i, In.CStr(), Out.CStr());
+
+		bool Dir = IOSrv->DirectoryExists(In);
+		if (!Dir && IOSrv->DirectoryExists(Out)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
+
+		if (Dir)
+		{
+			//PathExport + Name + ".cls"
+			return ExitApp(ERR_NOT_IMPLEMENTED_YET, WaitKey);
+		}
+		else
+		{
+			if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
+			if (!ProcessSingleFile(In, Out)) return ExitApp(ERR_COMPILATION_FAILED, WaitKey);
+		}
 	}
-	else
-	{
-		if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-		return ExitApp(ProcessSingleFile(In, Out) ? SUCCESS : ERR_COMPILATION_FAILED, WaitKey);
-	}
+
+	return ExitApp(SUCCESS, WaitKey);
 }
 //---------------------------------------------------------------------
 
@@ -73,6 +92,8 @@ bool ProcessSingleFile(const nString& InFileName, const nString& OutFileName, bo
 			FAIL;
 		}
 	}
+
+	IOSrv->CreateDirectory(OutFileName.ExtractDirName());
 
 	if (IsClass) return LuaCompileClass(*ClassDesc, Name.CStr(), OutFileName.CStr());
 	else return LuaCompile((char*)Buffer.GetPtr(), Buffer.GetSize(), Name.CStr(), OutFileName.CStr());

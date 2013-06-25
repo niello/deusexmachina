@@ -57,8 +57,8 @@ public:
 	int				Tokenize(const char* whiteSpace, uchar fence, nArray<nString>& Tokens) const;
 	nString			SubString(int from, int CharCount) const;
 	void			Strip(const char* CharSet);
-	int				FindStringIndex(const nString& v, int StartIdx) const;
-	int				FindCharIndex(unsigned char c, int StartIdx) const;
+	int				FindStringIndex(const nString& v, int StartIdx = 0) const;
+	int				FindCharIndex(unsigned char c, int StartIdx = 0) const;
 	void			TerminateAtIndex(int Idx);
 	bool			ContainsCharFromSet(const char* CharSet) const { return CharSet && !!strpbrk(CStr(), CharSet); }
 	bool			ContainsOnly(const nString& CharSet) const;
@@ -606,7 +606,7 @@ inline bool nString::ContainsOnly(const nString& CharSet) const
 {
 	const char* pStr = CStr();
 	for (int i = 0; i < Length(); i++)
-		if (CharSet.FindCharIndex(pStr[i], 0) == -1) return false;
+		if (CharSet.FindCharIndex(pStr[i]) == -1) return false;
 	return true;
 }
 //---------------------------------------------------------------------

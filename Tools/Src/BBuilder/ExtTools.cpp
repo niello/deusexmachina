@@ -23,7 +23,7 @@ int Result = Run ? Run(argc, argv) : -1;
 FreeLibrary(hModule);
 */
 
-int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine)
+int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 {
 	n_printf("> %s %s\n", Name.CStr(), pCmdLine);
 
@@ -40,7 +40,7 @@ int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine)
 	RtlZeroMemory(&SUI, sizeof(SUI));
 	SUI.cb = sizeof(SUI);
 	SUI.dwFlags = STARTF_FORCEOFFFEEDBACK;
-	if (CreateProcess(Path.CStr(), pCmdLine, NULL, NULL, FALSE, 0, NULL, NULL, &SUI, &Info) == FALSE) return -1;
+	if (CreateProcess(Path.CStr(), pCmdLine, NULL, NULL, FALSE, 0, NULL, pWorkingDir, &SUI, &Info) == FALSE) return -1;
 
 	int Result = -1;
 	WaitForSingleObject(Info.hProcess, INFINITE);

@@ -124,19 +124,18 @@ PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 }
 //---------------------------------------------------------------------
 
-//!!!need desc cache! (independent from HRD cache)
-bool CDataServer::LoadDesc(PParams& Out, const nString& FileName, bool Cache)
+//!!!need desc cache! (independent from HRD cache) OR pre-unwind descs on export!
+bool CDataServer::LoadDesc(PParams& Out, const nString& Context, const nString& Name, bool Cache)
 {
-	PParams Main = LoadPRM(FileName, Cache);
+	PParams Main = LoadPRM(Context + Name + ".prm", Cache);
 
 	if (!Main.IsValid()) FAIL;
 
 	nString BaseName;
 	if (Main->Get(BaseName, CStrID("_Base_")))
 	{
-		BaseName = "actors:" + BaseName + ".prm";
-		n_assert(BaseName != FileName);
-		if (!LoadDesc(Out, BaseName, Cache)) FAIL;
+		n_assert(BaseName != Name);
+		if (!LoadDesc(Out, Context, BaseName, Cache)) FAIL;
 		Out->Merge(*Main, Merge_AddNew | Merge_Replace | Merge_Deep); //!!!can specify merge flags in Desc!
 	}
 	else Out = n_new(CParams(*Main));

@@ -283,7 +283,7 @@ nString CIOServer::ManglePath(const nString& Path) const
 	int ColonIdx;
 
 	// Ignore one character "assigns" because they are really DOS drive letters
-	while ((ColonIdx = PathString.FindCharIndex(':', 0)) > 1)
+	while ((ColonIdx = PathString.FindCharIndex(':')) > 1)
 	{
 #ifdef _EDITOR
 		if (QueryMangledPath(PathString, PathString)) continue;

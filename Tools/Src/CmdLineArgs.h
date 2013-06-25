@@ -36,14 +36,14 @@ inline int nCmdLineArgs::FindArg(const nString& option) const
 	for (int i = 0; i < argCount; i++)
 		if (option == argVector[i])
 			return i;
-	return 0;
+	return -1;
 }
 //---------------------------------------------------------------------
 
 inline float nCmdLineArgs::GetFloatArg(const nString& option, float defaultValue) const
 {
 	int i = FindArg(option);
-	if (!i) return defaultValue;
+	if (i == -1) return defaultValue;
 	else if (++i < argCount) return (float)atof(argVector[i]);
 	else return defaultValue;
 }
@@ -52,7 +52,7 @@ inline float nCmdLineArgs::GetFloatArg(const nString& option, float defaultValue
 inline int nCmdLineArgs::GetIntArg(const nString& option, int defaultValue) const
 {
 	int i = FindArg(option);
-	if (!i) return defaultValue;
+	if (i == -1) return defaultValue;
 	else if (++i < argCount) return atoi(argVector[i]);
 	else return defaultValue;
 }
@@ -61,7 +61,7 @@ inline int nCmdLineArgs::GetIntArg(const nString& option, int defaultValue) cons
 inline nString nCmdLineArgs::GetStringArg(const nString& option, const nString& defaultValue) const
 {
 	int i = FindArg(option);
-	if (!i) return defaultValue;
+	if (i == -1) return defaultValue;
 	else if (++i < argCount) return argVector[i];
 	else return defaultValue;
 }

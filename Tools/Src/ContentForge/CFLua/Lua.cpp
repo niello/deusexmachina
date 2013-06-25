@@ -7,8 +7,10 @@ extern "C"
 
 #include <IO/Streams/FileStream.h>
 #include <IO/Streams/MemStream.h>
+#include <IO/BinaryWriter.h>
 #include <Data/Buffer.h>
-#include <Data/DataServer.h>
+#include <Data/Params.h>
+#include <ConsoleApp.h>
 
 lua_State* l = NULL;
 
@@ -46,7 +48,7 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 
 	if (luaL_loadbuffer(l, pData, Size, Name) != 0)
 	{
-		n_printf("Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
+		n_msg(VR_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
 		lua_pop(l, 1); // Error msg
 		FAIL;
 	}
@@ -72,7 +74,7 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 	{
 		if (luaL_loadbuffer(l, Code.CStr(), Code.Length(), Name) != 0)
 		{
-			n_printf("Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
+			n_msg(VR_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
 			lua_pop(l, 1); // Error msg
 			FAIL;
 		}
@@ -92,7 +94,10 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 		else FAIL;
 	}
 
-	DataSrv->SavePRM(pFileOut, &LoadedHRD);
+	IO::CFileStream File;
+	if (!File.Open(pFileOut, IO::SAM_WRITE)) FAIL;
+	IO::CBinaryWriter Writer(File);
+	return Writer.WriteParams(LoadedHRD);
 
 	OK;
 }
