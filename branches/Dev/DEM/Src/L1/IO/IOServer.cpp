@@ -257,12 +257,12 @@ void* CIOServer::OpenDirectory(const nString& Path, const nString& Filter,
 
 void CIOServer::SetAssign(const nString& Assign, const nString& Path)
 {
-	nString PathString = Path;
-	PathString.StripTrailingSlash();
-	PathString.Append("/");
 	nString RealAssign = Assign;
 	RealAssign.ToLower();
-	Assigns.At(RealAssign.CStr()) = PathString;
+	nString& PathString = Assigns.At(RealAssign.CStr());
+	PathString = Path;
+	PathString.ConvertBackslashes();
+	if (PathString[PathString.Length() - 1] != '/') PathString.Append('/');
 }
 //---------------------------------------------------------------------
 
@@ -278,6 +278,7 @@ nString CIOServer::GetAssign(const nString& Assign) const
 nString CIOServer::ManglePath(const nString& Path) const
 {
 	nString PathString = Path;
+	PathString.ConvertBackslashes();
 
 	int ColonIdx;
 
@@ -294,7 +295,6 @@ nString CIOServer::ManglePath(const nString& Path) const
 		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1));
 	}
 
-	PathString.ConvertBackslashes();
 	PathString.StripTrailingSlash();
 	return PathString;
 }
@@ -307,7 +307,7 @@ bool CIOServer::LoadFileToBuffer(const nString& FileName, Data::CBuffer& Buffer)
 	int FileSize = File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
-	n_printf("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
+	//n_printf("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
 	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------

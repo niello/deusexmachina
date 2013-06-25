@@ -255,6 +255,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 }
 //---------------------------------------------------------------------
 
+//???use ReloadPRM?
 bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName)
 {
 	Data::PParams InitialCommon = DataSrv->LoadPRM(FileName);

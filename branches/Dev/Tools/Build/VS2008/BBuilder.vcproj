@@ -177,6 +177,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\..\Src\CmdLineArgs.h"
+			>
+		</File>
+		<File
 			RelativePath="..\..\Src\ConsoleApp.h"
 			>
 		</File>
@@ -211,10 +215,6 @@
 					Name="VCCLCompilerTool"
 				/>
 			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\..\Src\ncmdlineargs.h"
-			>
 		</File>
 		<File
 			RelativePath="..\..\Src\BBuilder\Pack.cpp"

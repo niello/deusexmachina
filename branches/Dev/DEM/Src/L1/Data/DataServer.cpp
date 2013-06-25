@@ -17,10 +17,6 @@ __ImplementSingleton(Data::CDataServer);
 CDataServer::CDataServer(): HRDCache(PParams())
 {
 	__ConstructSingleton;
-
-#ifdef _EDITOR
-	DataPathCB = NULL;
-#endif
 }
 //---------------------------------------------------------------------
 
@@ -43,21 +39,21 @@ PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
 	{
 		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
-	else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
+	//else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
 
 	return Params;
 }
 //---------------------------------------------------------------------
 
 //???remove from here? make user use readers/writers directly?
-void CDataServer::SaveHRD(const nString& FileName, PParams Content)
+void CDataServer::SaveHRD(const nString& FileName, const CParams* pContent)
 {
-	if (!Content.IsValid()) return;
+	if (!pContent) return;
 
 	IO::CFileStream File;
 	if (!File.Open(FileName, IO::SAM_WRITE)) return;
 	IO::CHRDWriter Writer(File);
-	Writer.WriteParams(Content);
+	Writer.WriteParams(*pContent);
 }
 //---------------------------------------------------------------------
 
@@ -89,7 +85,7 @@ PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 	else
 	{
 		Params = NULL;
-		n_printf("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
+		//n_printf("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
 	}
 
 	return Params;
@@ -97,14 +93,14 @@ PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 //---------------------------------------------------------------------
 
 //???remove from here? make user use readers/writers directly?
-void CDataServer::SavePRM(const nString& FileName, PParams Content)
+bool CDataServer::SavePRM(const nString& FileName, const CParams* pContent)
 {
-	if (!Content.IsValid()) return;
+	if (!pContent) FAIL;
 
 	IO::CFileStream File;
-	if (!File.Open(FileName, IO::SAM_WRITE)) return;
+	if (!File.Open(FileName, IO::SAM_WRITE)) FAIL;
 	IO::CBinaryWriter Writer(File);
-	Writer.WriteParams(*Content);
+	return Writer.WriteParams(*pContent);
 }
 //---------------------------------------------------------------------
 
@@ -120,7 +116,7 @@ PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 	}
 	else
 	{
-		n_printf("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
+		//n_printf("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
 		XML = NULL;
 	}
 
@@ -152,6 +148,8 @@ bool CDataServer::LoadDesc(PParams& Out, const nString& FileName, bool Cache)
 bool CDataServer::LoadDataSchemes(const nString& FileName)
 {
 	PParams SchemeDescs = LoadHRD(FileName, false);
+	if (!SchemeDescs.IsValid()) FAIL;
+
 	for (int i = 0; i < SchemeDescs->GetCount(); ++i)
 	{
 		const CParam& Prm = SchemeDescs->Get(i);
@@ -164,6 +162,7 @@ bool CDataServer::LoadDataSchemes(const nString& FileName)
 		if (!Scheme->Init(*Prm.GetValue<PParams>())) FAIL;
 		DataSchemes.Add(Prm.GetName(), Scheme);
 	}
+
 	OK;
 }
 //---------------------------------------------------------------------

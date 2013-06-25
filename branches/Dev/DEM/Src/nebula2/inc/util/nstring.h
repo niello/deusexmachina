@@ -44,6 +44,7 @@ public:
 
 	void			Set(const char* pSrc, int SrcLength);
 	void			Set(const char* pSrc) { Set(pSrc, pSrc ? (int)strlen(pSrc) : 0); }
+	void			Append(char Chr) { AppendRange(&Chr, 1); }
 	void			Append(const char* str) { n_assert(str); AppendRange(str, strlen(str)); }
 	void			Append(const nString& Str) { AppendRange(Str.CStr(), Str.Length()); }
 	void			AppendRange(const char* str, uint CharCount);
