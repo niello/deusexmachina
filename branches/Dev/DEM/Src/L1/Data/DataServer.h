@@ -47,7 +47,7 @@ public:
 	
 	PXMLDocument	LoadXML(const nString& FileName); //, bool Cache = true);
 
-	bool			LoadDesc(PParams& Out, const nString& FileName, bool Cache = true);
+	bool			LoadDesc(PParams& Out, const nString& Context, const nString& Name, bool Cache = true);
 
 	bool			LoadDataSchemes(const nString& FileName);
 	CDataScheme*	GetDataScheme(CStrID ID);

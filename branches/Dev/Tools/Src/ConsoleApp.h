@@ -7,6 +7,8 @@
 
 #define API extern "C" __declspec(dllexport)
 
+#define MAX_CMDLINE_CHARS 32000
+
 #define SEP_LINE "--------------------------------------------------------------------------------"
 
 #define n_msg(Verbosity, String, ...) { if (Verbose >= Verbosity) n_printf(String, __VA_ARGS__); }

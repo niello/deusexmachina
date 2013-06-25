@@ -18,50 +18,80 @@
 // Iterate over all entity templates
 //   Export resources referenced by template entities
 
+//!!!Export quests!
+
 bool					ExportFromSrc;
 int						Verbose = VR_ERROR;
+
 Ptr<IO::CIOServer>		IOServer;
 Ptr<Data::CDataServer>	DataServer;
+
 nArray<nString>			FilesToPack;
 
-int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine);
+nArray<nString>			CFLuaIn;
+nArray<nString>			CFLuaOut;
 
+int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir = NULL);
+
+//???pre-unwind descs on exports?
+bool ProcessDesc(const nString& SrcContext, const nString& ExportContext, const nString& Name)
+{
+	Data::PParams Desc;
+	nString ExportFilePath = ExportContext + Name + ".prm";
+	if (ExportFromSrc)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		Desc = DataSrv->LoadHRD(SrcContext + Name + ".hrd", false);
+		DataSrv->SavePRM(ExportFilePath, Desc);
+	}
+	else Desc = DataSrv->LoadPRM(ExportFilePath);
+
+	if (!Desc.IsValid()) FAIL;
+
+	FilesToPack.Append(ExportFilePath);
+
+	nString BaseName = Desc->Get(CStrID("_Base_"), nString::Empty);
+	return BaseName.IsEmpty() || (BaseName != Name && ProcessDesc(SrcContext, ExportContext, BaseName));
+}
+//---------------------------------------------------------------------
+
+//!!!???check if resources are already parsed?!
 bool ProcessEntity(const Data::CParams& EntityDesc)
 {
 	Data::PParams Attrs;
 	if (!EntityDesc.Get<Data::PParams>(Attrs, CStrID("Attrs"))) OK;
 
-	nString DescName;
+	nString AttrValue;
 
-	if (Attrs->Get<nString>(DescName, CStrID("UIDesc")))
+	if (Attrs->Get<nString>(AttrValue, CStrID("UIDesc")))
 	{
-		nString ExportFilePath = "Export:Game/UI/" + DescName + ".prm";
+		nString ExportFilePath = "Export:Game/UI/" + AttrValue + ".prm";
 		if (ExportFromSrc)
 		{
 			IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-			DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD("Src:Game/UI/" + DescName + ".hrd", false));
+			DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD("Src:Game/UI/" + AttrValue + ".hrd", false));
 		}
 		FilesToPack.Append(ExportFilePath);
 	}
 
-	if (Attrs->Get<nString>(DescName, CStrID("AIHintsDesc")))
+	if (Attrs->Get<nString>(AttrValue, CStrID("AIHintsDesc")))
 	{
-		nString ExportFilePath = "Export:Game/AI/Hints/" + DescName + ".prm";
+		nString ExportFilePath = "Export:Game/AI/Hints/" + AttrValue + ".prm";
 		if (ExportFromSrc)
 		{
 			IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-			DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD("Src:Game/AI/Hints/" + DescName + ".hrd", false));
+			DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD("Src:Game/AI/Hints/" + AttrValue + ".hrd", false));
 		}
 		FilesToPack.Append(ExportFilePath);
 	}
 
-	if (Attrs->Get<nString>(DescName, CStrID("SmartObjDesc")))
+	if (Attrs->Get<nString>(AttrValue, CStrID("SmartObjDesc")))
 	{
-		nString ExportFilePath = "Export:Game/AI/Smarts/" + DescName + ".prm";
+		nString ExportFilePath = "Export:Game/AI/Smarts/" + AttrValue + ".prm";
 		if (ExportFromSrc)
 		{
 			IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-			DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD("Src:Game/AI/Smarts/" + DescName + ".hrd", false));
+			DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD("Src:Game/AI/Smarts/" + AttrValue + ".hrd", false));
 		}
 		FilesToPack.Append(ExportFilePath);
 	}
@@ -98,14 +128,40 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		}
 	}
 
+	if (Attrs->Get<nString>(AttrValue, CStrID("ActorDesc")))
+		if (!ProcessDesc("Src:Game/AI/Actors/", "Export:Game/AI/Actors/", AttrValue))
+		{
+			n_msg(VR_ERROR, "Error processing ActorDesc '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
+
+	if (Attrs->Get<nString>(AttrValue, CStrID("ScriptClass")))
+	{
+		nString ExportFilePath = "Export:Game/ScriptClasses/" + AttrValue + ".lua";
+		if (ExportFromSrc)
+		{
+			CFLuaIn.Append("Src:Game/ScriptClasses/" + AttrValue + ".lua");
+			CFLuaOut.Append(ExportFilePath);
+		}
+		FilesToPack.Append(ExportFilePath);
+	}
+
+	if (Attrs->Get<nString>(AttrValue, CStrID("Script")))
+	{
+		nString ExportFilePath = "Export:Game/Scripts/" + AttrValue + ".lua";
+		if (ExportFromSrc)
+		{
+			CFLuaIn.Append("Src:Game/Scripts/" + AttrValue + ".lua");
+			CFLuaOut.Append(ExportFilePath);
+		}
+		FilesToPack.Append(ExportFilePath);
+	}
+
 	// SceneFile -> Mesh, Vars.Texture, Material, CDLODFile
-	// PickShape -> FileName
-	// ScriptClass
-	// Script
 	// Physics -> Shape -> FileName
-	// ActorDesc -> _Base_ -> _Base_ ...
+	// PickShape -> FileName
 	// AnimDesc -> Animation
-	// Dialogue
+	// Dialogue -> Script
 
 	OK;
 }
@@ -121,16 +177,12 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 		nString SrcFilePath = "Src:Game/Levels/" + Name + ".lua";
 		if (IOSrv->FileExists(SrcFilePath))
 		{
-			//???or collect to batch-convert later?
-			//LPCSTR Args[4] = { "-in", FileFullName.CStr(), "-out", OutFullName.CStr() };
-			char CmdLine[4096];
-			sprintf_s(CmdLine, "-v 0 -in %s -out %s",
-				IOSrv->ManglePath(SrcFilePath).CStr(),
-				IOSrv->ManglePath(ExportFilePath).CStr());
-			if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) FAIL;
+			CFLuaIn.Append(SrcFilePath);
+			CFLuaOut.Append(ExportFilePath);
+			FilesToPack.Append(ExportFilePath); //???or after running tool?
 		}
 	}
-	if (IOSrv->FileExists(ExportFilePath)) FilesToPack.Append(ExportFilePath);
+	else if (IOSrv->FileExists(ExportFilePath)) FilesToPack.Append(ExportFilePath);
 
 	// Add navmesh (always exported, no src)
 
@@ -254,6 +306,55 @@ int main(int argc, const char** argv)
 		}
 	}
 	while (Browser.NextCurrDirEntry());
+
+	n_printf("\n"SEP_LINE"Compiling scripts by CFLua:\n"SEP_LINE);
+
+	if (CFLuaIn.GetCount() > 0)
+	{
+		n_assert(CFLuaIn.GetCount() == CFLuaOut.GetCount());
+
+		for (int i = 0; i < CFLuaIn.GetCount(); ++i)
+		{
+			CFLuaIn[i] = IOSrv->ManglePath(CFLuaIn[i]);
+			CFLuaOut[i] = IOSrv->ManglePath(CFLuaOut[i]);
+			//!!!GetRelativePath(Base) to reduce cmd line size!
+			//!!!don't forget to pass BasePath or override working directory to CFLua in that case!
+		}
+
+		nString InStr = CFLuaIn[0], OutStr = CFLuaOut[0];
+
+		for (int i = 1; i < CFLuaIn.GetCount(); ++i)
+		{
+			DWORD NextLength = 32 + InStr.Length() + OutStr.Length() + CFLuaIn[i].Length() + CFLuaOut[i].Length();
+			if (NextLength >= MAX_CMDLINE_CHARS)
+			{
+				char CmdLine[MAX_CMDLINE_CHARS];
+				sprintf_s(CmdLine, "-v 5 -in %s -out %s", InStr.CStr(), OutStr.CStr());
+				if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) EXIT_APP_FAIL;
+				InStr = CFLuaIn[i];
+				OutStr = CFLuaOut[i];
+			}
+			else
+			{
+				InStr.Append(';');
+				InStr += CFLuaIn[i];
+				OutStr.Append(';');
+				OutStr += CFLuaOut[i];
+			}
+		}
+
+		if (InStr.FindCharIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
+		if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
+
+		char CmdLine[MAX_CMDLINE_CHARS];
+		sprintf_s(CmdLine, "-v 5 -in %s -out %s", InStr.CStr(), OutStr.CStr());
+		if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) EXIT_APP_FAIL;
+	}
+
+	n_printf("\n"SEP_LINE"Packing:\n"SEP_LINE);
+
+	for (int i = 0; i < FilesToPack.GetCount(); ++i)
+		n_printf("%s\n", FilesToPack[i].CStr());
 
 	EXIT_APP_OK;
 }
