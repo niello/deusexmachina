@@ -10,6 +10,12 @@
 // Export
 // Game
 // UI
+// AI
+// Scripts
+// ScriptClasses
+// Physics
+// Anim (game)
+// Anim (export)
 
 //???Convert from Src resources, descs or both? or load from export & warn if outdated?
 //can convert from src if NO converted file, and warn if out of date!
@@ -32,6 +38,94 @@ nArray<nString>			CFLuaIn;
 nArray<nString>			CFLuaOut;
 
 int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir = NULL);
+
+bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFilePath)
+{
+	Data::PParams Desc;
+	if (ExportFromSrc)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		Desc = DataSrv->LoadHRD(SrcFilePath);
+		DataSrv->SavePRM(ExportFilePath, Desc);
+	}
+	else Desc = DataSrv->LoadPRM(ExportFilePath);
+
+	if (!Desc.IsValid()) FAIL;
+
+	FilesToPack.Append(ExportFilePath);
+
+	// Add terrain file for heightfield shapes (always exported) //???or allow building from L3DT src?
+	nString FileName = Desc->Get(CStrID("FileName"), nString::Empty);
+	if (!FileName.IsEmpty()) FilesToPack.Append(FileName);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessPhysicsDesc(const nString& SrcFilePath, const nString& ExportFilePath)
+{
+	Data::PParams Desc;
+	if (ExportFromSrc)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		Desc = DataSrv->LoadHRD(SrcFilePath);
+		DataSrv->SavePRM(ExportFilePath, Desc);
+	}
+	else Desc = DataSrv->LoadPRM(ExportFilePath);
+
+	if (!Desc.IsValid()) FAIL;
+
+	FilesToPack.Append(ExportFilePath);
+
+	Data::PDataArray Objects;
+	if (Desc->Get(Objects, CStrID("Objects")))
+	{
+		for (int i = 0; i < Objects->GetCount(); ++i)
+		{
+			Data::PParams ObjDesc = Objects->Get<Data::PParams>(i);
+			CStrID PickShape = ObjDesc->Get<CStrID>(CStrID("Shape"), CStrID::Empty);
+			if (PickShape.IsValid())
+				if (!ProcessCollisionShape(	nString("Src:Physics/") + PickShape.CStr() + ".hrd",
+											nString("Export:Physics/") + PickShape.CStr() + ".prm"))
+				{
+					n_msg(VR_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
+					FAIL;
+				}
+		}
+	}
+
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessAnimDesc(const nString& SrcFilePath, const nString& ExportFilePath)
+{
+	Data::PParams Desc;
+	if (ExportFromSrc)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		Desc = DataSrv->LoadHRD(SrcFilePath);
+		DataSrv->SavePRM(ExportFilePath, Desc);
+	}
+	else Desc = DataSrv->LoadPRM(ExportFilePath);
+
+	if (!Desc.IsValid()) FAIL;
+
+	FilesToPack.Append(ExportFilePath);
+
+	for (int i = 0; i < Desc->GetCount(); ++i)
+	{
+		CStrID AnimRsrc = Desc->Get(i).GetValue<CStrID>();
+
+		//???!!!allow compile or batch-compile? can add Model resource description, associated with this anim, to list
+
+		FilesToPack.Append(nString("Export:Anim/") + AnimRsrc.CStr());
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 //???pre-unwind descs on exports?
 bool ProcessDesc(const nString& SrcContext, const nString& ExportContext, const nString& Name)
@@ -131,7 +225,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 	if (Attrs->Get<nString>(AttrValue, CStrID("ActorDesc")))
 		if (!ProcessDesc("Src:Game/AI/Actors/", "Export:Game/AI/Actors/", AttrValue))
 		{
-			n_msg(VR_ERROR, "Error processing ActorDesc '%s'\n", AttrValue.CStr());
+			n_msg(VR_ERROR, "Error processing AI actor desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
@@ -157,10 +251,32 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		FilesToPack.Append(ExportFilePath);
 	}
 
+	CStrID PickShape = Attrs->Get<CStrID>(CStrID("PickShape"), CStrID::Empty);
+	if (PickShape.IsValid())
+		if (!ProcessCollisionShape(	nString("Src:Physics/") + PickShape.CStr() + ".hrd",
+									nString("Export:Physics/") + PickShape.CStr() + ".prm"))
+		{
+			n_msg(VR_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
+			FAIL;
+		}
+
+	if (Attrs->Get<nString>(AttrValue, CStrID("Physics")))
+		if (!ProcessPhysicsDesc(nString("Src:Physics/") + AttrValue + ".hrd",
+								nString("Export:Physics/") + AttrValue + ".prm"))
+		{
+			n_msg(VR_ERROR, "Error processing physics desc '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
+
+	if (Attrs->Get<nString>(AttrValue, CStrID("AnimDesc")))
+		if (!ProcessAnimDesc(	nString("Src:Game/Anim/") + AttrValue + ".hrd",
+								nString("Export:Game/Anim/") + AttrValue + ".prm"))
+		{
+			n_msg(VR_ERROR, "Error processing animation desc '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
+
 	// SceneFile -> Mesh, Vars.Texture, Material, CDLODFile
-	// Physics -> Shape -> FileName
-	// PickShape -> FileName
-	// AnimDesc -> Animation
 	// Dialogue -> Script
 
 	OK;
@@ -329,7 +445,7 @@ int main(int argc, const char** argv)
 			if (NextLength >= MAX_CMDLINE_CHARS)
 			{
 				char CmdLine[MAX_CMDLINE_CHARS];
-				sprintf_s(CmdLine, "-v 5 -in %s -out %s", InStr.CStr(), OutStr.CStr());
+				sprintf_s(CmdLine, "-v 0 -in %s -out %s", InStr.CStr(), OutStr.CStr());
 				if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) EXIT_APP_FAIL;
 				InStr = CFLuaIn[i];
 				OutStr = CFLuaOut[i];
@@ -347,7 +463,7 @@ int main(int argc, const char** argv)
 		if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 		char CmdLine[MAX_CMDLINE_CHARS];
-		sprintf_s(CmdLine, "-v 5 -in %s -out %s", InStr.CStr(), OutStr.CStr());
+		sprintf_s(CmdLine, "-v 0 -in %s -out %s", InStr.CStr(), OutStr.CStr());
 		if (RunExternalToolAsProcess(CStrID("CFLua"), CmdLine) != 0) EXIT_APP_FAIL;
 	}
 
