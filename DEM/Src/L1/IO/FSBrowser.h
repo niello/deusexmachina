@@ -46,6 +46,7 @@ public:
 	bool			IsCurrEntryFile() const { return hDir && CurrEntryType == FSE_FILE;}
 	bool			IsCurrEntryDir() const { return hDir && CurrEntryType == FSE_DIR;}
 	PFileSystem		GetFileSystem() const { return FS; }
+	const nString&	GetCurrentPath() const { return CurrPath; }
 };
 
 }

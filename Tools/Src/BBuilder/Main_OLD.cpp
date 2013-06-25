@@ -34,42 +34,6 @@ bool AddRsrcIfUnique(const DB::PDataset& DS, DB::CAttrID AttrID, nArray<nString>
 }
 //---------------------------------------------------------------------
 
-bool ParseSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles)
-{
-	CData* pValue;
-	if (NodeDesc.Get(pValue, CStrID("Textures")))
-	{
-		if (pValue->IsA<PParams>())
-		{
-			const CParams& Textures = *pValue->GetValue<PParams>();
-			for (int i = 0; i < Textures.GetCount(); ++i)
-				AddRsrcIfUnique(Textures.Get(i).GetValue<nString>(), ResourceFiles, "Texture");
-		}
-	}
-
-	if (NodeDesc.Get(pValue, CStrID("Mesh")))
-		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Mesh");
-
-	if (NodeDesc.Get(pValue, CStrID("Anim")))
-		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Animation");
-
-	if (NodeDesc.Get(pValue, CStrID("ChunkFile")))
-		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "ChunkLODMesh");
-
-	if (NodeDesc.Get(pValue, CStrID("TQTFile")))
-		AddRsrcIfUnique(pValue->GetValue<nString>(), ResourceFiles, "Tqt2Texture");
-
-	if (NodeDesc.Get(pValue, CStrID("Children")))
-	{
-		const CParams& Children = *pValue->GetValue<PParams>();
-		for (int i = 0; i < Children.GetCount(); ++i)
-			if (!ParseSceneNode(*Children[i].GetValue<PParams>(), ResourceFiles)) FAIL;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool ParseDEMSceneNode(const CParams& NodeDesc, nArray<nString>& ResourceFiles, nArray<nString>& MaterialFiles)
 {
 	CData* pValue;
@@ -342,23 +306,7 @@ void CompileAllLua(LPCSTR Dir, LPCSTR ExtRaw, LPCSTR ExtOut, LPCSTR pClassesFold
 
 int main(int argc, const char** argv)
 {
-	if (StaticDBFile.IsEmpty() && GameDBFile.IsEmpty()) return 1;
-
 	if (BuildDir.IsEmpty()) BuildDir = "home:Build";
-
-	if (GameDBFile == StaticDBFile) StaticDBFile = NULL;
-
-	if (!Init())
-	{
-		n_error("BBuilder: Failed to initialize runtime");
-		Release();
-		return 1;
-	}
-	
-	n_printf("BBuilder v"VERSION" for DeusExMachina engine, (c) Vladimir \"Niello\" Orlov 2011\n");
-	
-	ProjDir.ConvertBackslashes();
-	ProjDir.StripTrailingSlash();
 	
 	DataSrv->SetAssign("proj", ProjDir);
 	DataSrv->SetAssign("build", BuildDir);
@@ -402,149 +350,6 @@ int main(int argc, const char** argv)
 			File.Close();
 		}
 	}*/
-
-	PParams Cats = DataSrv->LoadHRD("proj:Project/tables/EntityCats.hrd", false);
-
-	if (!Cats.isvalid())
-	{
-		n_error("BBuilder: Failed to read 'proj:Project/tables/EntityCats.hrd'");
-		return FailApp(WaitKey);
-	}
-
-	// Analyze DB(s) and get names of used resources
-
-	nArray<nString> SceneFiles2;
-	nArray<nString> AnimDescFiles;
-	nArray<nString> PhysicsFiles;
-	nArray<nString> IAODescFiles;
-	nArray<nString> ActorDescFiles;
-	nArray<nString> AIHintsDescFiles;
-	nArray<nString> SmartObjDescFiles;
-	nArray<nString> DlgFiles;
-	nArray<nString> NavMeshFiles;
-	nArray<nString> MaterialFiles;
-
-	RegisterN2SQLiteVFS();
-
-	if (StaticDBFile.IsValid())
-	{
-		n_printf("\nEstablishing DB connection to '%s'...\n", StaticDBFile.Get());
-		n_printf("-----------------------------------------------------\n");
-		
-		DB::PDatabase DB = OpenDB("export:db/" + StaticDBFile);
-		
-		const CStrID sTplTable("TplTableName");
-		for (int i = 0; i < Cats->GetCount(); i++)
-		{
-			PParams Cat = Cats->Get<PParams>(i);
-			nString DefaultTbl("Tpl");
-			DefaultTbl += Cats->Get(i).GetName().CStr();
-			nString TblName = Cat->Get<nString>(sTplTable, DefaultTbl);
-			if (TblName.IsEmpty()) continue;
-
-			int Idx = DB->FindTableIndex(TblName);
-			if (Idx != INVALID_INDEX)
-			{
-				n_printf("\nParsing table '%s'...\n", TblName.Get());
-				
-				DB::PDataset DS = DB->GetTable(Idx)->CreateDataset();
-				DS->AddColumnsFromTable();
-				DS->PerformQuery();
-
-				for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
-				{
-					DS->SetRowIndex(i);
-					
-					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
-					AddRsrcIfUnique(DS, Attr::AnimDesc, AnimDescFiles);
-					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
-					AddRsrcIfUnique(DS, Attr::IAODesc, IAODescFiles);
-					AddRsrcIfUnique(DS, Attr::ActorDesc, ActorDescFiles);
-					AddRsrcIfUnique(DS, Attr::AIHintsDesc, AIHintsDescFiles);
-					AddRsrcIfUnique(DS, Attr::SmartObjDesc, SmartObjDescFiles);
-					AddRsrcIfUnique(DS, Attr::Dialogue, DlgFiles);
-				}
-			}
-		}
-		
-		DB->Close();
-		n_assert(DB->GetRefCount() == 1);
-		n_printf("\nDB connection to '%s' closed\n", StaticDBFile.Get());
-		n_printf("-----------------------------------------------------\n\n");
-	}
-
-	if (GameDBFile.IsValid())
-	{
-		n_printf("Establishing DB connection to '%s'...\n", GameDBFile.Get());
-		n_printf("-----------------------------------------------------\n");
-
-		DB::PDatabase DB = OpenDB("export:db/" + GameDBFile);
-
-		int Idx = DB->FindTableIndex("Levels");
-		if (Idx != INVALID_INDEX)
-		{
-			n_printf("\nParsing table 'Levels'...\n");
-			
-			DB::PDataset DS = DB->GetTable(Idx)->CreateDataset();
-			DS->AddColumnsFromTable();
-			DS->PerformQuery();
-
-			//n_assert(DS->GetValueTable()->HasColumn(Attr::NavMesh));
-
-			for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
-			{
-				DS->SetRowIndex(i);
-				AddRsrcIfUnique(DS, Attr::NavMesh, NavMeshFiles, ".nm");
-			}
-		}
-
-		const CStrID sInstTable("InstTableName");
-		for (int i = 0; i < Cats->GetCount(); i++)
-		{
-			PParams Cat = Cats->Get<PParams>(i);
-			nString DefaultTbl("Inst");
-			DefaultTbl += Cats->Get(i).GetName().CStr();
-			nString TblName = Cat->Get<nString>(sInstTable, DefaultTbl);
-			if (TblName.IsEmpty()) continue;
-
-			Idx = DB->FindTableIndex(TblName);
-			if (Idx != INVALID_INDEX)
-			{
-				n_printf("\nParsing table '%s'...\n", TblName.Get());
-				
-				DB::PDataset DS = DB->GetTable(Idx)->CreateDataset();
-				DS->AddColumnsFromTable();
-				DS->PerformQuery();
-
-				for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
-				{
-					DS->SetRowIndex(i);
-					
-					AddRsrcIfUnique(DS, Attr::SceneFile, SceneFiles2);
-					AddRsrcIfUnique(DS, Attr::AnimDesc, AnimDescFiles);
-					AddRsrcIfUnique(DS, Attr::Physics, PhysicsFiles);
-					AddRsrcIfUnique(DS, Attr::IAODesc, IAODescFiles);
-					AddRsrcIfUnique(DS, Attr::ActorDesc, ActorDescFiles);
-					AddRsrcIfUnique(DS, Attr::AIHintsDesc, AIHintsDescFiles);
-					AddRsrcIfUnique(DS, Attr::SmartObjDesc, SmartObjDescFiles);
-					AddRsrcIfUnique(DS, Attr::Dialogue, DlgFiles);
-				}
-			}
-		}
-		
-		DB->Close();
-		n_assert(DB->GetRefCount() == 1);
-		n_printf("\nDB connection to '%s' closed\n", GameDBFile.Get());
-		n_printf("-----------------------------------------------------\n\n");
-	}
-
-	UnregisterN2SQLiteVFS();
-
-	Cats = NULL;
-
-	// Analyze used N2 files to get textures, meshes etc
-
-	n_printf("\n-----------------------------------------------------\n");
 
 	nArray<nString> ResourceFiles;
 

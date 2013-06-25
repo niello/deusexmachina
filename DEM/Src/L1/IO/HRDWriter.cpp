@@ -9,12 +9,12 @@
 namespace IO
 {
 
-bool CHRDWriter::WriteParams(Data::PParams Value)
+bool CHRDWriter::WriteParams(const Data::CParams& Value)
 {
 	CurrTabLevel = 0;
-	for (int i = 0; i < Value->GetCount(); i++)
+	for (int i = 0; i < Value.GetCount(); i++)
 	{
-		const Data::CParam& Prm = Value->Get(i);
+		const Data::CParam& Prm = Value.Get(i);
 		if (!WriteParam(Prm)) FAIL;
 		if (Prm.IsA<Data::PParams>()) WRITE_STATIC_STRING("\n")
 	}
