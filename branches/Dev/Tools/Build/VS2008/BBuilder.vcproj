@@ -185,6 +185,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\Src\BBuilder\Descs.cpp"
+			>
+		</File>
+		<File
 			RelativePath="..\..\Src\BBuilder\ExtTools.cpp"
 			>
 		</File>
