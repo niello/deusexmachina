@@ -1,56 +1,8 @@
 #include <Data/FS/NpkTOC.h>
-#include <Data/Streams/FileStream.h>
-#include <Data/DataArray.h>
-#include <Data/BinaryWriter.h>
-
-void FilterByFolder(const nString& Folder, nArray<nString>& In, nArray<nString>& Out);
-bool AddFilesToTOC(nArray<nString>& Files, CNpkTOC& TOCObj, int& Offset);
-bool AddDirectoryToTOC(const nString& DirName, CNpkTOC& TOCObj, int& Offset);
-void WriteTOCEntry(Data::CFileStream* pFile, CNpkTOCEntry* tocEntry);
-bool WriteEntryData(Data::CFileStream* pFile, CNpkTOCEntry* tocEntry, int dataBlockOffset, int& dataLen);
-bool WriteNPK(const nString& NpkName, CNpkTOC& TOCObj);
-
-bool CopyDirectoryToBuild(LPCSTR From, LPCSTR To)
-{
-	Data::CFSBrowser Browser;
-	if (!Browser.SetAbsolutePath(From))
-	{
-		n_printf("Could not open directory '%s' for reading!\n", From);
-		FAIL;
-	}
-
-	DataSrv->CreateDirectory(To);
-
-	if (!Browser.IsCurrDirEmpty()) do
-	{
-		Data::EFSEntryType CurrEntryType = Browser.GetCurrEntryType();
-
-		if (CurrEntryType == Data::FSE_FILE)
-		{
-			const nString& FileName = Browser.GetCurrEntryName();
-			n_assert(DataSrv->CopyFile(From + FileName, To + FileName));
-			n_printf("%s: %s -> %s\n", FileName.Get(), From, To);
-		}
-
-		// Ignore subdirectories for now
-		//else if (CurrEntryType == Data::FSE_DIR)
-	}
-	while (Browser.NextCurrDirEntry());
-
-	OK;
-}
-//---------------------------------------------------------------------
 
 int main(int argc, const char** argv)
 {
-	if (BuildDir.IsEmpty()) BuildDir = "home:Build";
-	
-	DataSrv->SetAssign("proj", ProjDir);
-	DataSrv->SetAssign("build", BuildDir);
-
-	//!!!to script config!
-	nString Proj = DataSrv->ManglePath("proj:");
-	nString Export = Proj + "/export";
+	//!!!to config!
 	DataSrv->SetAssign("shaders", "home:shaders");
 	DataSrv->SetAssign("renderpath", "home:shaders");
 	DataSrv->SetAssign("export", Export);
@@ -88,54 +40,10 @@ int main(int argc, const char** argv)
 		}
 	}*/
 
-	n_printf("\n-----------------------------------------------------\n");
-
-	n_printf("\nCompiling HRD & Lua sources:\n");
-	CompileAllHRD("materials", "hrd", "prm");
-	CompileAllLua("game/quests", "lua", "lua", NULL);
-
-	n_printf("\n-----------------------------------------------------\n");
-
-	// Analyze materials for textures
-
-	for (int i = MaterialFiles.Size() - 1; i >= 0; i--)
-	{
-		nString& FileName = MaterialFiles[i];
-		n_printf("\nParsing material '%s'...\n", FileName.Get());
-
-		PParams Mtl = DataSrv->LoadPRM(FileName, false);
-
-		if (!Mtl.isvalid())
-		{
-			n_printf("WARNING: material not found, builder deleted it from the list.\nBuild may be invalid!\n");
-			MaterialFiles.Erase(i);
-			continue;
-		}
-
-		CData* pValue;
-		if (Mtl->Get(pValue, CStrID("Textures")))
-		{
-			if (pValue->IsA<PParams>())
-			{
-				const CParams& Textures = *pValue->GetValue<PParams>();
-				for (int i = 0; i < Textures.GetCount(); ++i)
-					AddRsrcIfUnique(Textures.Get(i).GetValue<nString>(), ResourceFiles, "Texture");
-			}
-		}
-	}
-
-	ResourceFiles.AppendArray(MaterialFiles);
-	MaterialFiles.Clear();
-
-	n_printf("\n-----------------------------------------------------\n");
-
-	n_printf("\nAdding system resources:\n");
-	AddRsrcIfUnique("textures:system/noise.dds", ResourceFiles, "Texture");
-
-	n_printf("\n-----------------------------------------------------\n\nPacking...\n\n");
-	
-	for (int i = 0; i < ResourceFiles.Size(); i++)
-		ResourceFiles[i] = DataSrv->ManglePath(ResourceFiles[i]);
+	//???!!!or parse frame shader vars?!
+	AddRsrcIfUnique("Export:Textures/System/Noise.dds", ResourceFiles, "Texture");
+	AddRsrcIfUnique("Export:Textures/System/White.dds", ResourceFiles, "Texture");
+	AddRsrcIfUnique("Export:Textures/System/NoBump.dds", ResourceFiles, "Texture");
 
 	nArray<nString> RsrcFromExport;
 	FilterByFolder(DataSrv->ManglePath("export:"), ResourceFiles, RsrcFromExport);
@@ -152,10 +60,6 @@ int main(int argc, const char** argv)
 	TOC.BeginDirEntry("export");
 
 	if (!AddDirectoryToTOC("cegui", TOC, Offset)) goto error;
-
-	if (!AddDirectoryToTOC("db", TOC, Offset)) goto error;
-
-	// FilterByFolder _appends_ recs within a folder from In arrray to Out array
 
 	TOC.BeginDirEntry("scene");
 	FilterByFolder("scene", RsrcFromExport, SceneFiles2);
@@ -211,8 +115,6 @@ int main(int argc, const char** argv)
 			FilterByFolder("smarts", AIFiles, SmartObjDescFiles);
 			AddFilesToTOC(SmartObjDescFiles, TOC, Offset);
 			TOC.EndDirEntry();
-
-			//if (!AddDirectoryToTOC("bhv", TOC, Offset)) goto error;
 			
 			AddFilesToTOC(AIFiles, TOC, Offset);
 		}
@@ -249,30 +151,7 @@ int main(int argc, const char** argv)
 			DataSrv->GetFileSize(DestFile) / (1024.f * 1024.f));
 	}
 
-	//!!!!!!!!!!!!
-	//!!!!!!!!Copy all shaders, project tables, init scripts
-	//(or just project tables as shaders & scripts are changed manually)?
-	//!!!!!!!!!!!!
-
-	n_printf("\n-----------------------------------------------------\n\nCopying system data files...\n\n");
-
-	if (!CopyDirectoryToBuild("proj:Project/tables/", "build:data/tables/")) goto error;
-	if (!CopyDirectoryToBuild("proj:Project/Input/", "build:data/Input/")) goto error;
-
-	n_printf("\n-----------------------------------------------------\n");
-	
-	n_printf("Building done.\n");
-	if (WaitKey)
-	{
-		n_printf("Press any key to exit...\n");
-		getch();
-	}
-
-	Release();
-	return 0;
-
-error:
-
-	return FailApp(WaitKey);
+	if (!CopyDirectoryToBuild("Proj:Project/Input/", "Build:Data/Input/")) goto error;
+	if (!CopyDirectoryToBuild("Proj:Project/Shaders/", "Build:Data/Shaders/")) goto error;
 }
 //---------------------------------------------------------------------
