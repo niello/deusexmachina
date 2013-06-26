@@ -58,6 +58,22 @@ int main(int argc, const char** argv)
 	IOSrv->SetAssign("Src", ProjDir + "/Src");
 	IOSrv->SetAssign("Export", ProjDir + "/Export");
 
+	////!!!read setup file with assigns!
+	//DataSrv->SetAssign("shaders", "home:shaders");
+	//DataSrv->SetAssign("renderpath", "home:shaders");
+	//DataSrv->SetAssign("export", Export);
+	//DataSrv->SetAssign("src", Proj + "/src");
+	//DataSrv->SetAssign("scene", Export + "/Scene");
+	//DataSrv->SetAssign("scenesrc", "src:Scene");
+	//DataSrv->SetAssign("dlg", Export + "/game/dlg");
+	//DataSrv->SetAssign("dlgsrc", "src:game/dlg");
+	//DataSrv->SetAssign("physics", Export + "/physics");
+	//DataSrv->SetAssign("meshes", Export + "/meshes");
+	//DataSrv->SetAssign("materials", Export + "/materials");
+	//DataSrv->SetAssign("mtlsrc", Export + "/materials");
+	//DataSrv->SetAssign("textures", Export + "/textures");
+	//DataSrv->SetAssign("anims", Export + "/anims");
+
 	n_msg(VR_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
 
 	DataServer = n_new(Data::CDataServer);
@@ -144,6 +160,13 @@ int main(int argc, const char** argv)
 	// Convert frame shaders
 	// Compile all shaders of all frame shaders
 
+	////???!!!or parse frame shader vars?!
+	//AddRsrcIfUnique("Export:Textures/System/Noise.dds", ResourceFiles, "Texture");
+	//AddRsrcIfUnique("Export:Textures/System/White.dds", ResourceFiles, "Texture");
+	//AddRsrcIfUnique("Export:Textures/System/NoBump.dds", ResourceFiles, "Texture");
+	//if (!CopyDirectoryToBuild("Proj:Project/Input/", "Build:Data/Input/")) goto error;
+	//if (!CopyDirectoryToBuild("Proj:Project/Shaders/", "Build:Data/Shaders/")) goto error;
+
 	n_printf("\n"SEP_LINE"Compiling scripts by CFLua:\n"SEP_LINE);
 
 	if (RunExternalToolBatch(CStrID("CFLua"), ExtVerb, CFLuaIn, CFLuaOut) != 0) EXIT_APP_FAIL;
@@ -157,7 +180,19 @@ int main(int argc, const char** argv)
 	}
 	FilesToPack.Sort();
 
-	if (!PackFiles(FilesToPack, "Build:Export.npk", ProjDir, "Export")) EXIT_APP_FAIL;
+	nString DestFile = "Build:Export.npk";
+	if (PackFiles(FilesToPack, DestFile, ProjDir, "Export"))
+	{
+		n_msg(VR_INFO, "\nNPK file:      %s\nNPK file size: %.3f MB\n",
+			IOSrv->ManglePath(DestFile).CStr(),
+			IOSrv->GetFileSize(DestFile) / (1024.f * 1024.f));
+	}
+	else
+	{
+		n_msg(VR_ERROR, "ERROR IN FILE GENERATION, DELETING NPK FILE\n");
+		IOSrv->DeleteFile(DestFile);
+		EXIT_APP_FAIL;
+	}
 
 	EXIT_APP_OK;
 }
@@ -178,3 +213,25 @@ int ExitApp(bool NoError, bool WaitKey)
 	return NoError ? 0 : 1;
 }
 //---------------------------------------------------------------------
+
+//!!!DBG TMP! Door KFA animation
+	/*{
+		Data::CFileStream File;
+		if (File.Open("anims:examples/Door.kfa", Data::SAM_WRITE))
+		{
+			Data::CBinaryWriter Wr(File);
+			Wr.Write('KFAN');
+			Wr.Write(0.5f);
+			Wr.Write<DWORD>(1);
+			Wr.Write<LPCSTR>("DoorBody");
+			Wr.Write((int)Anim::Chnl_Rotation);
+			Wr.Write<DWORD>(2);
+			quaternion q;
+			Wr.Write(q);
+			Wr.Write(0.f);
+			q.set_rotate_y(PI / 2.f);
+			Wr.Write(q);
+			Wr.Write(0.5f);
+			File.Close();
+		}
+	}*/

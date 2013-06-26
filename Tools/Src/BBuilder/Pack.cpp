@@ -1,10 +1,148 @@
 #include <IO/IOServer.h>
 #include <IO/FS/NpkTOC.h>
+#include <IO/FSBrowser.h>
 #include <IO/Streams/FileStream.h>
+#include <Data/Buffer.h>
 #include <ConsoleApp.h>
+
+bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
+{
+	bool Result = true;
+
+	DirName.StripTrailingSlash();
+	DirName.ToLower();
+
+	if (DirName == ".svn") OK;
+
+	IO::CNpkTOCEntry* pNPKDir = TOC.BeginDirEntry(DirName.CStr());
+
+	IO::CFSBrowser Browser;
+	nString FullDirName = pNPKDir->GetFullName() + "/";
+	if (Browser.SetAbsolutePath(FullDirName))
+	{
+		if (!Browser.IsCurrDirEmpty()) do
+		{
+			IO::EFSEntryType CurrEntryType = Browser.GetCurrEntryType();
+
+			if (CurrEntryType == IO::FSE_FILE)
+			{
+				nString FilePart = Browser.GetCurrEntryName();
+				nString FullFilePath = FullDirName + Browser.GetCurrEntryName();
+				FilePart.ToLower();
+
+				IO::CFileStream File;
+				if (File.Open(FullFilePath, IO::SAM_READ))
+				{
+					int FileLength = File.GetSize();
+					File.Close();
+					TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
+					Offset += FileLength;
+				}
+				else n_msg(VR_ERROR, "Error reading file %s\n", FullFilePath.CStr());
+			}
+			else if (CurrEntryType == IO::FSE_DIR)
+			{
+				if (!AddDirectoryToTOC(Browser.GetCurrEntryName(), TOC, Offset))
+				{
+					Result = false;
+					break;
+				}
+			}
+		}
+		while (Browser.NextCurrDirEntry());
+	}
+	else
+	{
+		n_msg(VR_ERROR, "Could not open directory '%s' for reading!\n", FullDirName.CStr());
+		Result = false;
+	}
+
+	TOC.EndDirEntry();
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
+void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry)
+{
+	n_assert(pTOCEntry);
+
+	if (pTOCEntry->GetType() == IO::FSE_DIR)
+	{
+		File.Put<int>('DIR_');
+		File.Put<int>(sizeof(short) + pTOCEntry->GetNameLength());
+		File.Put<short>(pTOCEntry->GetNameLength());
+		File.Write(pTOCEntry->GetName(), pTOCEntry->GetNameLength());
+
+		IO::CNpkTOCEntry* pSubEntry = pTOCEntry->GetFirstEntry();
+		while (pSubEntry)
+		{
+			WriteTOCEntry(File, pSubEntry);
+			pSubEntry = pTOCEntry->GetNextEntry(pSubEntry);
+		}
+
+		File.Put<int>('DEND');
+		File.Put<int>(0);
+	}
+	else if (pTOCEntry->GetType() == IO::FSE_FILE)
+	{
+		File.Put<int>('FILE');
+		File.Put<int>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetNameLength());
+		File.Put<int>(pTOCEntry->GetFileOffset());
+		File.Put<int>(pTOCEntry->GetFileLength());
+		File.Put<short>(pTOCEntry->GetNameLength());
+		File.Write(pTOCEntry->GetName(), pTOCEntry->GetNameLength());
+	}
+}
+//---------------------------------------------------------------------
+
+bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int DataOffset, int& DataSize)
+{
+	n_assert(pTOCEntry);
+
+	if (pTOCEntry->GetType() == IO::FSE_DIR)
+	{
+		IO::CNpkTOCEntry* pSubEntry = pTOCEntry->GetFirstEntry();
+		while (pSubEntry)
+		{
+			if (!WriteEntryData(File, pSubEntry, DataOffset, DataSize)) FAIL;
+			pSubEntry = pTOCEntry->GetNextEntry(pSubEntry);
+		}
+	}
+	else if (pTOCEntry->GetType() == IO::FSE_FILE)
+	{
+		n_assert(File.GetPosition() == (DataOffset + pTOCEntry->GetFileOffset()));
+
+		nString FullFileName = pTOCEntry->GetFullName();
+
+		//???write streamed file copying?
+		Data::CBuffer Buffer;
+		if (IOSrv->LoadFileToBuffer(FullFileName, Buffer))
+		{
+			if (File.Write(Buffer.GetPtr(), Buffer.GetSize()) != pTOCEntry->GetFileLength())
+			{
+				n_printf("Error writing %s to NPK!\n", FullFileName.CStr());
+				FAIL;
+			}
+			DataSize += pTOCEntry->GetFileLength();
+		}
+		else
+		{
+			n_msg(VR_ERROR, "Error reading file %s\n", FullFileName.CStr());
+			FAIL;
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, const nString& PkgRoot, nString PkgRootDir)
 {
+	// Create TOC
+
+	n_msg(VR_INFO, "Creating NPK TOC...\n");
+
 	nString RootPath = IOSrv->ManglePath(PkgRoot);
 	RootPath.ToLower();
 
@@ -49,12 +187,9 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 			{
 				if (Dir != DirStack[DirCount])
 				{
-					//!!!need array shrinking method without reallocation!
-					while (DirStack.GetCount() > DirCount)
-					{
+					for (int StackIdx = DirCount; StackIdx < DirStack.GetCount(); ++StackIdx)
 						TOC.EndDirEntry();
-						DirStack.EraseAt(DirStack.GetCount() - 1);
-					}
+					DirStack.Truncate(DirStack.GetCount() - DirCount);
 					TOC.BeginDirEntry(Dir.CStr());
 					DirStack.Append(Dir);
 				}
@@ -70,29 +205,29 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 			CurrStartChar = DirSepChar + 1;
 		}
 
-		//!!!need array shrinking method without reallocation!
-		while (DirStack.GetCount() > DirCount)
-		{
+		for (int StackIdx = DirCount; StackIdx < DirStack.GetCount(); ++StackIdx)
 			TOC.EndDirEntry();
-			DirStack.EraseAt(DirStack.GetCount() - 1);
-		}
+		DirStack.Truncate(DirStack.GetCount() - DirCount);
 
 		nString FilePart = RelFile.ExtractFileName();
 		nString FullFilePath = RootDirPath + "/" + RelFile;
 
-		IO::CFileStream File;
-		if (File.Open(FullFilePath, IO::SAM_READ))
+		if (IOSrv->DirectoryExists(FullFilePath))
 		{
-			int FileLength = File.GetSize();
-			File.Close();
-			TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
-			Offset += FileLength;
+			if (!AddDirectoryToTOC(FilePart, TOC, Offset))
+				n_msg(VR_ERROR, "Error reading directory %s\n", FullFilePath.CStr());
 		}
 		else
 		{
-			//!!!if it is a directory, add a whole directory!
-
-			n_msg(VR_ERROR, "Error reading file %s\n", FullFilePath.CStr());
+			IO::CFileStream File;
+			if (File.Open(FullFilePath, IO::SAM_READ))
+			{
+				int FileLength = File.GetSize();
+				File.Close();
+				TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
+				Offset += FileLength;
+			}
+			else n_msg(VR_ERROR, "Error reading file %s\n", FullFilePath.CStr());
 		}
 	}
 
@@ -100,6 +235,51 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 
 	for (; i < FilesToPack.GetCount(); ++i)
 		n_msg(VR_WARNING, "File is out of the export package scope:\n - %s\n", FilesToPack[i].CStr());
+
+	// Write NPK file to disk
+
+	n_msg(VR_INFO, "Writing NPK...\n");
+
+	IO::CFileStream File;
+	IOSrv->CreateDirectory(PkgFileName.ExtractDirName());
+	if (!File.Open(PkgFileName, IO::SAM_WRITE))
+	{
+		n_msg(VR_ERROR, "Could not open file '%s' for writing!\n", PkgFileName.CStr());
+		FAIL;
+	}
+
+	File.Put<int>('NPK0');	// Magic
+	File.Put<int>(4);		// Block length
+	File.Put<int>(0);		// DataBlockStart (at 8, fixed later)
+
+	n_msg(VR_DETAILS, " - Writing TOC...\n");
+
+	WriteTOCEntry(File, TOC.GetRootEntry());
+
+	n_msg(VR_DETAILS, " - Writing data...\n");
+	
+	int DataBlockStart = File.GetPosition();
+	int DataOffset = DataBlockStart + 4;
+
+	File.Put<int>('DATA');
+	File.Put<int>(0);		// DataSize (at DataOffset, fixed later)
+
+	int DataSize = 0;
+	if (WriteEntryData(File, TOC.GetRootEntry(), DataOffset + 4, DataSize))
+	{
+		File.Seek(8, IO::Seek_Begin);
+		File.Put<int>(DataBlockStart);
+		File.Seek(DataOffset, IO::Seek_Begin);
+		File.Put<int>(DataSize);
+		File.Seek(0, IO::Seek_End);
+	}
+	else
+	{
+		n_msg(VR_ERROR, "ERROR WRITING DATA BLOCK\n");
+		FAIL;
+	}
+
+	n_msg(VR_DETAILS, " - NPK writing done\n");
 
 	OK;
 }
