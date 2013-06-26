@@ -22,7 +22,7 @@ public:
 
 	void		SetName(const char* str) { Name.Set(str); }
 	const char*	GetName() const { return Name.IsValid() ? Name.CStr() : NULL; } //!!!ONLY while Get returns "" as empty!
-	int			GetNameLength() { return Name.Length(); }
+	int			GetNameLength() const { return Name.Length(); }
 
 	nStrNode*	GetSucc() const { return (nStrNode*)nNode::GetSucc(); }
 	nStrNode*	GetPred() const { return (nStrNode*)nNode::GetPred(); }

@@ -25,6 +25,7 @@ public:
 
 	void		SetHashTable(nHashTable* pTable) { pHashTable = pTable; } // Can be NULL
 	const char*	GetName() const { return StrNode.GetName(); }
+	int			GetNameLength() const { return StrNode.GetNameLength(); }
 	void		SetName(const char* pName);
 	nHashNode*	GetSucc() const { return (nHashNode*)nNode::GetSucc(); }
 	nHashNode*	GetPred() const { return (nHashNode *)nNode::GetPred(); }

@@ -81,6 +81,7 @@ public:
 
 	void		Resize(int NewAllocSize);
 	void		Reallocate(int _Count, int _GrowSize);
+	void		Truncate(int _TailCount);
 
 	CIterator	Find(const T& Elm) const;
 	int			FindIndex(const T& Elm) const;
@@ -241,11 +242,17 @@ void nArray<T>::Grow()
 }
 //---------------------------------------------------------------------
 
-/**
-     - 30-Jan-03   floh    serious bugfixes!
-     - 07-Dec-04   jo      bugfix: neededSize >= this->Allocated becomes
-                                   neededSize > Allocated
-*/
+template<class T>
+void nArray<T>::Truncate(int _TailCount)
+{
+	if (_TailCount <= 0) return;
+	int NewCount = (_TailCount > Count) ? 0 : Count - _TailCount;
+	for (int i = NewCount; i < Count; i++)
+		pData[i].~T();
+	Count = NewCount;
+}
+//---------------------------------------------------------------------
+
 template<class T>
 void nArray<T>::Move(int fromIndex, int toIndex)
 {
