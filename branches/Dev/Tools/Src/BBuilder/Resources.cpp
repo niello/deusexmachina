@@ -17,6 +17,8 @@ bool ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileN
 	{
 		Data::PParams RsrcDesc = Desc->Get<Data::PParams>(i);
 
+		n_msg(VL_DETAILS, "  Processing CFD resource %s.%s...\n", RsrcFileName.CStr(), Desc->Get(i).GetName().CStr());
+
 		CStrID Tool = RsrcDesc->Get<CStrID>(CStrID("Tool"));
 
 		if (Tool == CStrID("CFTerrain"))

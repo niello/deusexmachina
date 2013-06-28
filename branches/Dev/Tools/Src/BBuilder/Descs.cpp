@@ -493,7 +493,7 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 			const Data::CParam& EntityPrm = SubDesc->Get(i);
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
 			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
-			n_msg(VL_INFO, "Processing entity '%s'...\n", EntityPrm.GetName().CStr());
+			n_msg(VL_INFO, " Processing entity '%s'...\n", EntityPrm.GetName().CStr());
 			if (!EntityDesc.IsValid() || !ProcessEntity(*EntityDesc))
 			{
 				n_msg(VL_ERROR, "Error processing entity '%s'\n", EntityPrm.GetName().CStr());
