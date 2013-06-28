@@ -57,28 +57,15 @@ int main(int argc, const char** argv)
 	BuildDir = IOSrv->ManglePath(BuildDir);
 	IOSrv->SetAssign("Proj", ProjDir);
 	IOSrv->SetAssign("Build", BuildDir);
-	IOSrv->SetAssign("Src", ProjDir + "/Src");
-	IOSrv->SetAssign("Export", ProjDir + "/Export");
-
-	////!!!read setup file with assigns!
-	//DataSrv->SetAssign("shaders", "home:shaders");
-	//DataSrv->SetAssign("renderpath", "home:shaders");
-	//DataSrv->SetAssign("export", Export);
-	//DataSrv->SetAssign("src", Proj + "/src");
-	//DataSrv->SetAssign("scene", Export + "/Scene");
-	//DataSrv->SetAssign("scenesrc", "src:Scene");
-	//DataSrv->SetAssign("dlg", Export + "/game/dlg");
-	//DataSrv->SetAssign("dlgsrc", "src:game/dlg");
-	//DataSrv->SetAssign("physics", Export + "/physics");
-	//DataSrv->SetAssign("meshes", Export + "/meshes");
-	//DataSrv->SetAssign("materials", Export + "/materials");
-	//DataSrv->SetAssign("mtlsrc", Export + "/materials");
-	IOSrv->SetAssign("Textures", IOSrv->ManglePath("Proj:Export/Textures"));
-	//DataSrv->SetAssign("anims", Export + "/anims");
 
 	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
 
 	DataServer = n_new(Data::CDataServer);
+
+	Data::PParams PathList = DataSrv->LoadHRD("Proj:Project/PathList.hrd", false);
+	if (PathList.IsValid())
+		for (int i = 0; i < PathList->GetCount(); ++i)
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
 
 	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
 	{
@@ -90,12 +77,12 @@ int main(int argc, const char** argv)
 
 	n_printf("\n"SEP_LINE"Processing levels and entities:\n"SEP_LINE);
 
-	nString ExportFilePath = "Export:Game/Main.prm";
+	nString ExportFilePath = "Game:Main.prm";
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory("Export:Game/Levels");
-		Desc = DataSrv->LoadHRD("Src:Game/Main.hrd", false);
+		IOSrv->CreateDirectory("Levels:");
+		Desc = DataSrv->LoadHRD("SrcGame:Main.hrd", false);
 		DataSrv->SavePRM(ExportFilePath, Desc);
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath, false);
@@ -109,7 +96,7 @@ int main(int argc, const char** argv)
 	FilesToPack.InsertSorted(ExportFilePath);
 
 	IO::CFSBrowser Browser;
-	if (!Browser.SetAbsolutePath(ExportDescs ? "Src:Game/Levels" : "Export:Game/Levels"))
+	if (!Browser.SetAbsolutePath(ExportDescs ? "SrcLevels:" : "Levels:"))
 	{
 		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
 		EXIT_APP_FAIL;
@@ -125,11 +112,11 @@ int main(int argc, const char** argv)
 			FileNoExt.StripExtension();
 			n_msg(VL_INFO, "Processing level '%s'...\n", FileNoExt.CStr());
 
-			ExportFilePath = "Export:Game/Levels/" + FileNoExt + ".prm";
+			ExportFilePath = "Levels:" + FileNoExt + ".prm";
 			Data::PParams LevelDesc;
 			if (ExportDescs)
 			{
-				LevelDesc = DataSrv->LoadHRD("Src:Game/Levels/" + Browser.GetCurrEntryName(), false);
+				LevelDesc = DataSrv->LoadHRD("SrcLevels:" + Browser.GetCurrEntryName(), false);
 				DataSrv->SavePRM(ExportFilePath, LevelDesc);
 			}
 			else LevelDesc = DataSrv->LoadPRM(ExportFilePath, false);
