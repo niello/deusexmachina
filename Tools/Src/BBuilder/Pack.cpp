@@ -11,12 +11,13 @@ void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
 	for (int i = 0; i < Level; ++i) Str.Append("  "); //Str.Append("| ");
 	Str.Append((Entry.GetType() == IO::FSE_DIR) ? "+ " : "  ");
 	Str += Entry.GetName();
-	Str += '\n';
 
 	n_printf(Str.CStr());
 
 	if (Entry.GetType() == IO::FSE_DIR)
 	{
+		n_printf("\n");
+
 		IO::CNpkTOCEntry* pSubEntry = Entry.GetFirstEntry();
 		while (pSubEntry)
 		{
@@ -33,6 +34,7 @@ void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
 			pSubEntry = Entry.GetNextEntry(pSubEntry);
 		}
 	}
+	else n_printf(" (%d B)\n", Entry.GetFileLength());
 }
 //---------------------------------------------------------------------
 

@@ -142,9 +142,16 @@ int main(int argc, const char** argv)
 
 //!!!Export ALL entity templates!
 
-	// Add quests and task scripts
+	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
+
+// Add quests and task scripts
+
+	n_printf("\n"SEP_LINE"Processing system data and resources:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
+
+	if (IOSrv->DirectoryExists("Export:cegui") && !IsFileAdded("Export:cegui"))
+		FilesToPack.InsertSorted("Export:cegui");
+
 	// Add system resources
-	// Add the whole CEGUI directory (as directory, but mb to the same array)
 	// Convert frame shaders
 	// Compile all shaders of all frame shaders
 	// Add input mappings
