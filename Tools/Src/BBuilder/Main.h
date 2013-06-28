@@ -3,6 +3,8 @@
 
 // Main header
 
+typedef nDictionary<CStrID, nArray<nString>> CToolFileLists;
+
 #define TOOL_NAME	"BBuilder"
 #define VERSION		"3.0 alpha"
 
@@ -10,13 +12,18 @@
 #define EXIT_APP_OK		return ExitApp(true, WaitKey)
 
 extern bool					ExportDescs;
+extern bool					ExportResources;
 extern int					Verbose;
+extern int					ExternalVerbosity;
 extern nArray<nString>		FilesToPack;
-extern nArray<nString>		CFLuaIn;
-extern nArray<nString>		CFLuaOut;
+extern CToolFileLists		InFileLists;
+extern CToolFileLists		OutFileLists;
 
 bool	ProcessLevel(const Data::CParams& LevelDesc, const nString& Name);
-int		RunExternalToolBatch(CStrID Tool, int Verb, const nArray<nString>& InList, const nArray<nString>& OutList, LPCSTR pWorkingDir = NULL);
+bool	ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileName);
+void	BatchToolInOut(CStrID Name, const nString& InStr, const nString& OutStr);
+int		RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir = NULL);
+int		RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pWorkingDir = NULL);
 bool	PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, const nString& PkgRoot, nString PkgRootDir);
 int		ExitApp(bool NoError, bool WaitKey);
 

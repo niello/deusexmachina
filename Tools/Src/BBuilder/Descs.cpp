@@ -44,14 +44,11 @@ bool ProcessDialogue(const nString& SrcContext, const nString& ExportContext, co
 
 				ExportFilePath = ExportContext + ScriptFile + ".lua";
 
-				if (IsFileAdded(ExportFilePath)) break;
-
-				if (ExportDescs)
+				if (!IsFileAdded(ExportFilePath))
 				{
-					CFLuaIn.Append(SrcContext + ScriptFile + ".lua");
-					CFLuaOut.Append(ExportFilePath);
+					if (ExportDescs) BatchToolInOut(CStrID("CFLua"), SrcContext + ScriptFile + ".lua", ExportFilePath);
+					FilesToPack.InsertSorted(ExportFilePath);
 				}
-				FilesToPack.InsertSorted(ExportFilePath);
 
 				break;
 			}
@@ -80,8 +77,22 @@ bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFile
 	FilesToPack.InsertSorted(ExportFilePath);
 
 	// Add terrain file for heightfield shapes (always exported) //???or allow building from L3DT src?
-	nString FileName = Desc->Get(CStrID("FileName"), nString::Empty);
-	if (!FileName.IsEmpty() && !IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+	nString CDLODFile = Desc->Get(CStrID("CDLODFile"), nString::Empty);
+	if (CDLODFile.IsValid())
+	{
+		nString CDLODFilePath = "Export:Terrain/" + CDLODFile + ".cdlod";
+		if (!IsFileAdded(CDLODFilePath))
+		{
+			if (ExportResources &&
+				!ProcessResourceDesc("Src:Terrain/" + CDLODFile + ".cfd", CDLODFilePath) &&
+				!IOSrv->FileExists(CDLODFilePath))
+			{
+				n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", CDLODFilePath.GetExtension());
+				FAIL;
+			}
+			FilesToPack.InsertSorted(CDLODFilePath);
+		}
+	}
 
 	OK;
 }
@@ -115,7 +126,7 @@ bool ProcessPhysicsDesc(const nString& SrcFilePath, const nString& ExportFilePat
 				if (!ProcessCollisionShape(	nString("Src:Physics/") + PickShape.CStr() + ".hrd",
 											nString("Export:Physics/") + PickShape.CStr() + ".prm"))
 				{
-					n_msg(VR_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
+					n_msg(VL_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
 					FAIL;
 				}
 		}
@@ -249,8 +260,18 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 			//!!!when export from src, find resource desc and add source BT to CFTerrain list!
 			if (AttrDesc->Get(pValue, CStrID("CDLODFile")))
 			{
-				nString FileName = nString("Export:Terrain/") + pValue->GetValue<CStrID>().CStr() + ".cdlod";
-				if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+				nString CDLODFilePath = "Export:Terrain/" + pValue->GetValue<nString>() + ".cdlod";
+				if (!IsFileAdded(CDLODFilePath))
+				{
+					if (ExportResources &&
+						!ProcessResourceDesc("Src:Terrain/" + pValue->GetValue<nString>() + ".cfd", CDLODFilePath) &&
+						!IOSrv->FileExists(CDLODFilePath))
+					{
+						n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", CDLODFilePath.GetExtension());
+						FAIL;
+					}
+					FilesToPack.InsertSorted(CDLODFilePath);
+				}
 			}
 		}
 	}
@@ -313,29 +334,52 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 	if (Attrs->Get<nString>(AttrValue, CStrID("UIDesc")))
 		if (!ProcessDesc("Src:Game/UI/" + AttrValue + ".hrd", "Export:Game/UI/" + AttrValue + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing UI desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing UI desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
+
+	if (Attrs->Get<nString>(AttrValue, CStrID("ActorDesc")))
+	{
+		if (!ProcessDescWithParents("Src:Game/AI/Actors/", "Export:Game/AI/Actors/", AttrValue))
+		{
+			n_msg(VL_ERROR, "Error processing AI actor desc '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
+
+		if (!ProcessDesc("Src:Game/AI/AIActionTpls.hrd", "Export:Game/AI/AIActionTpls.prm"))
+		{
+			n_msg(VL_ERROR, "Error processing shared AI action templates desc\n");
+			FAIL;
+		}
+	}
 
 	if (Attrs->Get<nString>(AttrValue, CStrID("AIHintsDesc")))
 		if (!ProcessDesc("Src:Game/AI/Hints/" + AttrValue + ".hrd", "Export:Game/AI/Hints/" + AttrValue + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing AI hints desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing AI hints desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
 	if (Attrs->Get<nString>(AttrValue, CStrID("SmartObjDesc")))
+	{
 		if (!ProcessDesc("Src:Game/AI/Smarts/" + AttrValue + ".hrd", "Export:Game/AI/Smarts/" + AttrValue + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing AI smart object desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing AI smart object desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
+
+		if (!ProcessDesc("Src:Game/AI/AISOActionTpls.hrd", "Export:Game/AI/AISOActionTpls.prm"))
+		{
+			n_msg(VL_ERROR, "Error processing shared AI smart object action templates desc\n");
+			FAIL;
+		}
+	}
 
 	CStrID ItemID = Attrs->Get<CStrID>(CStrID("ItemTplID"), CStrID::Empty);
 	if (ItemID.IsValid())
 		if (!ProcessDesc(nString("Src:Game/Items/") + ItemID.CStr() + ".hrd", nString("Export:Game/Items/") + ItemID.CStr() + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing item desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing item desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
@@ -349,29 +393,18 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 				!ProcessDesc(	nString("Src:Game/Items/") + ItemID.CStr() + ".hrd",
 								nString("Export:Game/Items/") + ItemID.CStr() + ".prm"))
 			{
-				n_msg(VR_ERROR, "Error processing item desc '%s'\n", AttrValue.CStr());
+				n_msg(VL_ERROR, "Error processing item desc '%s'\n", AttrValue.CStr());
 				FAIL;
 			}
 		}
 	}
-
-	if (Attrs->Get<nString>(AttrValue, CStrID("ActorDesc")))
-		if (!ProcessDescWithParents("Src:Game/AI/Actors/", "Export:Game/AI/Actors/", AttrValue))
-		{
-			n_msg(VR_ERROR, "Error processing AI actor desc '%s'\n", AttrValue.CStr());
-			FAIL;
-		}
 
 	if (Attrs->Get<nString>(AttrValue, CStrID("ScriptClass")))
 	{
 		nString ExportFilePath = "Export:Game/ScriptClasses/" + AttrValue + ".lua";
 		if (!IsFileAdded(ExportFilePath))
 		{
-			if (ExportDescs)
-			{
-				CFLuaIn.Append("Src:Game/ScriptClasses/" + AttrValue + ".lua");
-				CFLuaOut.Append(ExportFilePath);
-			}
+			if (ExportDescs) BatchToolInOut(CStrID("CFLua"), "Src:Game/ScriptClasses/" + AttrValue + ".lua", ExportFilePath);
 			FilesToPack.InsertSorted(ExportFilePath);
 		}
 	}
@@ -381,11 +414,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		nString ExportFilePath = "Export:Game/Scripts/" + AttrValue + ".lua";
 		if (!IsFileAdded(ExportFilePath))
 		{
-			if (ExportDescs)
-			{
-				CFLuaIn.Append("Src:Game/Scripts/" + AttrValue + ".lua");
-				CFLuaOut.Append(ExportFilePath);
-			}
+			if (ExportDescs) BatchToolInOut(CStrID("CFLua"), "Src:Game/Scripts/" + AttrValue + ".lua", ExportFilePath);
 			FilesToPack.InsertSorted(ExportFilePath);
 		}
 	}
@@ -395,7 +424,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		if (!ProcessCollisionShape(	nString("Src:Physics/") + PickShape.CStr() + ".hrd",
 									nString("Export:Physics/") + PickShape.CStr() + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
+			n_msg(VL_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
 			FAIL;
 		}
 
@@ -403,7 +432,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		if (!ProcessPhysicsDesc(nString("Src:Physics/") + AttrValue + ".hrd",
 								nString("Export:Physics/") + AttrValue + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing physics desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing physics desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
@@ -411,21 +440,21 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		if (!ProcessAnimDesc(	nString("Src:Game/Anim/") + AttrValue + ".hrd",
 								nString("Export:Game/Anim/") + AttrValue + ".prm"))
 		{
-			n_msg(VR_ERROR, "Error processing animation desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing animation desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
 	if (Attrs->Get<nString>(AttrValue, CStrID("Dialogue")))
 		if (!ProcessDialogue("Src:Game/Dlg/", "Export:Game/Dlg/", AttrValue))
 		{
-			n_msg(VR_ERROR, "Error processing dialogue desc '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing dialogue desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
 	if (Attrs->Get<nString>(AttrValue, CStrID("SceneFile")))
 		if (!ProcessSceneResource("Src:Scene/" + AttrValue + ".hrd", "Export:Scene/" + AttrValue + ".scn"))
 		{
-			n_msg(VR_ERROR, "Error processing scene resource '%s'\n", AttrValue.CStr());
+			n_msg(VL_ERROR, "Error processing scene resource '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
@@ -443,8 +472,7 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 		nString SrcFilePath = "Src:Game/Levels/" + Name + ".lua";
 		if (!IsFileAdded(SrcFilePath) && IOSrv->FileExists(SrcFilePath))
 		{
-			CFLuaIn.Append(SrcFilePath);
-			CFLuaOut.Append(ExportFilePath);
+			BatchToolInOut(CStrID("CFLua"), SrcFilePath, ExportFilePath);
 			FilesToPack.InsertSorted(ExportFilePath); //???or after running tool?
 		}
 	}
@@ -465,10 +493,10 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 			const Data::CParam& EntityPrm = SubDesc->Get(i);
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
 			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
-			n_msg(VR_INFO, "Processing entity '%s'...\n", EntityPrm.GetName().CStr());
+			n_msg(VL_INFO, "Processing entity '%s'...\n", EntityPrm.GetName().CStr());
 			if (!EntityDesc.IsValid() || !ProcessEntity(*EntityDesc))
 			{
-				n_msg(VR_ERROR, "Error processing entity '%s'\n", EntityPrm.GetName().CStr());
+				n_msg(VL_ERROR, "Error processing entity '%s'\n", EntityPrm.GetName().CStr());
 				FAIL;
 			}
 		}

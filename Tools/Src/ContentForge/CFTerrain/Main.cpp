@@ -1,84 +1,83 @@
-#include <Data/DataServer.h>
-#include <Data/BTFile.h>
+#include <IO/IOServer.h>
+#include <IO/BTFile.h>
+#include <IO/Streams/FileStream.h>
+#include <IO/BinaryWriter.h>
 #include <Data/Buffer.h>
-#include <Data/Streams/FileStream.h>
-#include <Data/BinaryWriter.h>
-#include "ncmdlineargs.h"
+#include <ConsoleApp.h>
 
-using namespace Data;
+#define TOOL_NAME		"CFTerrain"
+#define VERSION			"1.0"
+#define CDLOD_VERSION	((DWORD)1)
+
+int		Verbose = VL_ERROR;
+
+int		ExitApp(int Code, bool WaitKey);
 
 int main(int argc, const char** argv)
 {
-	// Debug cmd line
-	// -patch 8 -lod 6 -in "..\..\..\..\InsanePoet\Content\Src\Terrain\Eger Cathedral Courtyard\ECCY_HF.bt" -out ECCY/ECCY -proj ..\..\..\..\InsanePoet\Content\
-	// -patch 8 -lod 8 -in "..\..\..\..\InsanePoet\Content\Src\Terrain\Test\Test_HF.bt" -out Test/Test -proj ..\..\..\..\InsanePoet\Content\
-
 	nCmdLineArgs Args(argc, argv);
-	bool Help = Args.GetBoolArg("-help");
+
+	bool WaitKey = Args.GetBoolArg("-waitkey");
+	Verbose = Args.GetIntArg("-v");
+
+	bool Help = Args.GetBoolArg("-help") || Args.GetBoolArg("/?");
 
 	if (Help)
 	{
-		printf(	"ConvHF - DeusExMachina heightfield CDLOD conversion tool\n"
+		printf(	TOOL_NAME" v"VERSION" - DeusExMachina heightfield to CDLOD conversion tool\n"
 				"Command line args:\n"
 				"------------------\n"
 				"-help                 show this help\n"
-				"-in [filename]        input file (.bt)\n" //LATER may be also .png, .bmp, .raw, .r32
-				"-out [rsrc id]        resulting resource ID\n"
-				"-proj [dirname]       project directory\n"
+				"-in [filename]        input file (.bt) or resource desc\n" //LATER may be also .png, .bmp, .raw, .r32
+				"-out [filename]       resulting CDLOD file\n"
 				"-patch [uint]         quads per patch edge, where quad is formed by a triangle pair\n"
 				"-lod [uint]           LOD count, including finest LOD 0\n");
-		return 5;
+
+		return ExitApp(SUCCESS_HELP, WaitKey);
 	}
 
-	nString ProjDir = Args.GetStringArg("-proj");
-	nString HFFileName = Args.GetStringArg("-in");
-	nString RsrcID = Args.GetStringArg("-out");
+	nString InFileName = Args.GetStringArg("-in");
+	nString OutFileName = Args.GetStringArg("-out");
 	DWORD PatchSize = Args.GetIntArg("-patch");
 	DWORD LODCount = Args.GetIntArg("-lod");
 
-	if (ProjDir.IsEmpty())
+	if (InFileName.IsEmpty() || OutFileName.IsEmpty())
 	{
-	    printf("ConvHF error: No input file, output resource or project directory!\n");
-	    return 5;
+	    n_msg(VL_ERROR, "Specify -in and -out files\n");
+	    return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 	}
 
 	if (!IsPow2(PatchSize) || PatchSize < 4 || PatchSize > 1024)
 	{
-		printf("ConvHF error: PatchSize must be pow of 2 in 4 .. 1024 range" );
-		return 5;
+		n_msg(VL_ERROR, "PatchSize must be pow of 2 in 4 .. 1024 range" );
+	    return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 	}
 
 	if (LODCount < 2) // || LODCount > MAX_LOD_COUNT)
 	{
-		printf("ConvHF error: LODCount must be > 1" );
-		return 5;
+		n_msg(VL_ERROR, "LODCount must be > 1" );
+	    return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 	}
 
-	Ptr<Data::CDataServer> DataServer;
-	DataServer.Create();
-	DataSrv->SetAssign("proj", ProjDir);
-	DataSrv->SetAssign("src", "proj:Src");
-	DataSrv->SetAssign("export", "proj:Export");
-	DataSrv->SetAssign("terrain", "proj:Export/Terrain");
+	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	if (HFFileName.CheckExtension("bt"))
+	if (InFileName.CheckExtension("bt"))
 	{
-		CBuffer Buffer;
-		DataSrv->LoadFileToBuffer(HFFileName, Buffer);
-		CBTFile BTFile(Buffer.GetPtr());
+		Data::CBuffer Buffer;
+		IOSrv->LoadFileToBuffer(InFileName, Buffer);
+		IO::CBTFile BTFile(Buffer.GetPtr());
 		n_assert(BTFile.GetFileSize() == Buffer.GetSize());
 		DWORD Width = BTFile.GetWidth();
 		DWORD Height = BTFile.GetHeight();
 
-		nString OutFileName = "terrain:" + RsrcID + ".cdlod";
 		nString OutPath = OutFileName.ExtractDirName();
-		if (!DataSrv->DirectoryExists(OutPath)) DataSrv->CreateDirectory(OutPath);
+		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
 
-		Data::CFileStream OutFile;
-		if (!OutFile.Open(OutFileName, Data::SAM_WRITE, Data::SAP_SEQUENTIAL))
+		IO::CFileStream OutFile;
+		if (!OutFile.Open(OutFileName, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
-			printf("ConvHF error: Can't open output file" );
-			return 5;
+			n_msg(VL_ERROR, "Can't open output file" );
+			return ExitApp(ERR_IO_WRITE, WaitKey);
 		}
 
 		DWORD PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
@@ -92,9 +91,9 @@ int main(int argc, const char** argv)
 		}
 		TotalMinMaxDataSize *= 2 * sizeof(short);
 
-		Data::CBinaryWriter Writer(OutFile);
+		IO::CBinaryWriter Writer(OutFile);
 		Writer.Write('CDLD');							// Magic
-		Writer.Write((DWORD)1);							// Version
+		Writer.Write(CDLOD_VERSION);
 		Writer.Write(Width);
 		Writer.Write(Height);
 		Writer.Write(PatchSize);
@@ -148,7 +147,7 @@ int main(int argc, const char** argv)
 					for (DWORD X = Col * PatchSize; X < StopAtX; ++X)
 					{
 						short CurrHeight = pHeights[Z * Width + X];
-						if (CurrHeight != CBTFile::NoDataS)
+						if (CurrHeight != IO::CBTFile::NoDataS)
 						{
 							if (CurrHeight < MinHeight) MinHeight = CurrHeight;
 							else if (CurrHeight > MaxHeight) MaxHeight = CurrHeight;
@@ -212,19 +211,33 @@ int main(int argc, const char** argv)
 	}
 	else
 	{
-		printf("ConvHF error: Can't load input HF!\n");
-		return 5;
+		n_msg(VL_ERROR, "Can't load input HF");
+		return ExitApp(ERR_IO_READ, WaitKey);
 	}
 
-	return 0;
+	return ExitApp(SUCCESS, WaitKey);
+}
+//---------------------------------------------------------------------
+
+int ExitApp(int Code, bool WaitKey)
+{
+	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occured with code %d\n", Code);
+
+	if (WaitKey)
+	{
+		n_printf("\nPress any key to exit...\n");
+		getch();
+	}
+
+	return Code;
 }
 //---------------------------------------------------------------------
 
 /*
-	else if (HFFileName.CheckExtension("raw") || HFFileName.CheckExtension("r32"))
+	else if (InFile.CheckExtension("raw") || InFile.CheckExtension("r32"))
 	{
 	}
-	else if (HFFileName.CheckExtension("png"))
+	else if (InFile.CheckExtension("png"))
 	{
 		// IT IS NOT A CODE, IT IS AN EXAMPLE OF IL USAGE
 //#include <IL/il.h>
@@ -238,9 +251,9 @@ int main(int argc, const char** argv)
 		ilEnable(IL_CONV_PAL);
 		ilEnable(IL_ORIGIN_SET);
 		ilOriginFunc(IL_ORIGIN_UPPER_LEFT); // L3DT origin is lower-left, but DX is upper-left
-		if (!ilLoadImage(HFFileName.Get()))
+		if (!ilLoadImage(InFile.Get()))
 		{
-			printf("ConvHF error: Can't load input HF image!\n");
+			printf("Can't load input HF image!\n");
 			return 5;
 		}
 

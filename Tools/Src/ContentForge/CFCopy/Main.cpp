@@ -4,16 +4,11 @@
 #define TOOL_NAME	"CFCopy"
 #define VERSION		"1.0"
 
-#define SUCCESS						0
-#define ERR_COPY_FAILED				1
-#define ERR_IN_OUT_TYPES_DONT_MATCH 2
-#define ERR_IN_NOT_FOUND			3
-
-int Verbose = VR_ERROR;
+int Verbose = VL_ERROR;
 
 int ExitApp(int Code, bool WaitKey);
 
-API int Run(int argc, const char** argv)
+int main(int argc, const char** argv)
 {
 	nCmdLineArgs Args(argc, argv);
 
@@ -24,28 +19,41 @@ API int Run(int argc, const char** argv)
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	bool Dir = IOSrv->DirectoryExists(In);
-	if (!Dir && IOSrv->DirectoryExists(Out)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
+	nArray<nString> InList, OutList;
+	In.Tokenize(";", InList);
+	Out.Tokenize(";", OutList);
 
-	if (Dir)
-		return ExitApp(IOSrv->CopyDirectory(In, Out, Args.GetBoolArg("-r")) ? SUCCESS : ERR_COPY_FAILED, WaitKey);
-	else
+	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+
+	for (int i = 0; i < InList.GetCount(); ++i)
 	{
-		if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-		return ExitApp(IOSrv->CopyFile(In, Out) ? SUCCESS : ERR_COPY_FAILED, WaitKey);
-	}
-}
-//---------------------------------------------------------------------
+		In = InList[i];
+		Out = OutList[i];
 
-int main(int argc, const char** argv)
-{
-	return Run(argc, argv);
+		n_msg(VL_INFO, "Copying pair %d: '%s' -> '%s'\n", i, In.CStr(), Out.CStr());
+
+		bool Dir = IOSrv->DirectoryExists(In);
+		if (!Dir && IOSrv->DirectoryExists(Out)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
+
+		if (Dir)
+		{
+			if (!IOSrv->CopyDirectory(In, Out, Args.GetBoolArg("-r"))) return ExitApp(ERR_MAIN_FAILED, WaitKey);
+		}
+		else
+		{
+			if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
+			IOSrv->CreateDirectory(Out.ExtractDirName());
+			if (!IOSrv->CopyFile(In, Out)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
+		}
+	}
+
+	return ExitApp(SUCCESS, WaitKey);
 }
 //---------------------------------------------------------------------
 
 int ExitApp(int Code, bool WaitKey)
 {
-	if (Code != SUCCESS) n_msg(VR_ERROR, TOOL_NAME" v"VERSION": Error occured with code %d\n", Code);
+	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occured with code %d\n", Code);
 	if (WaitKey)
 	{
 		n_printf("\nPress any key to exit...\n");

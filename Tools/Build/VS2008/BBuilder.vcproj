@@ -204,6 +204,10 @@
 			RelativePath="..\..\Src\BBuilder\Pack.cpp"
 			>
 		</File>
+		<File
+			RelativePath="..\..\Src\BBuilder\Resources.cpp"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

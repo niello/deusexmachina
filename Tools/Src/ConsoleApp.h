@@ -9,15 +9,28 @@
 
 #define MAX_CMDLINE_CHARS 32000
 
+// Return codes
+#define SUCCESS						0
+#define SUCCESS_HELP				100
+#define ERR_MAIN_FAILED				1
+#define ERR_IN_OUT_TYPES_DONT_MATCH 2
+#define ERR_IN_NOT_FOUND			3
+#define ERR_NOT_IMPLEMENTED_YET		4
+#define ERR_INVALID_CMD_LINE		5
+#define ERR_IO_READ					6
+#define ERR_IO_WRITE				7
+
 #define SEP_LINE "--------------------------------------------------------------------------------"
 
+// Verbosity levels
+#define VL_ALWAYS	0
+#define VL_ERROR	1
+#define VL_WARNING	2
+#define VL_INFO		3
+#define VL_DETAILS	4
+#define VL_DEBUG	5
+
 #define n_msg(Verbosity, String, ...) { if (Verbose >= Verbosity) n_printf(String, __VA_ARGS__); }
-#define VR_ALWAYS	0
-#define VR_ERROR	1
-#define VR_WARNING	2
-#define VR_INFO		3
-#define VR_DETAILS	4
-#define VR_DEBUG	5
 
 //???to console application class?
 extern int Verbose;

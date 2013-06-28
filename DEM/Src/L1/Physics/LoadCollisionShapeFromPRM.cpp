@@ -40,7 +40,7 @@ namespace Str
 	DEFINE_STRID(Height)
 	DEFINE_STRID(StaticMesh)
 	DEFINE_STRID(Heightfield)
-	DEFINE_STRID(FileName)
+	DEFINE_STRID(CDLODFile)
 }
 
 namespace Physics
@@ -57,8 +57,9 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 	}
 	else if (Type == Str::Heightfield)
 	{
-		const nString& FileName = In.Get<nString>(Str::FileName, NULL);
+		nString FileName = In.Get<nString>(Str::CDLODFile, NULL);
 		if (!FileName.IsValid()) return NULL;
+		FileName = "Terrain:" + FileName + ".cdlod";
 
 		void* pHFData = NULL;
 		DWORD HFWidth, HFHeight;

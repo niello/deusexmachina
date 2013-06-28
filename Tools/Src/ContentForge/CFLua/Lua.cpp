@@ -48,7 +48,7 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 
 	if (luaL_loadbuffer(l, pData, Size, Name) != 0)
 	{
-		n_msg(VR_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
+		n_msg(VL_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
 		lua_pop(l, 1); // Error msg
 		FAIL;
 	}
@@ -74,7 +74,7 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 	{
 		if (luaL_loadbuffer(l, Code.CStr(), Code.Length(), Name) != 0)
 		{
-			n_msg(VR_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
+			n_msg(VL_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
 			lua_pop(l, 1); // Error msg
 			FAIL;
 		}

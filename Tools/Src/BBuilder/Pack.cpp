@@ -5,6 +5,37 @@
 #include <Data/Buffer.h>
 #include <ConsoleApp.h>
 
+void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
+{
+	nString Str;
+	for (int i = 0; i < Level; ++i) Str.Append("  "); //Str.Append("| ");
+	Str.Append((Entry.GetType() == IO::FSE_DIR) ? "+ " : "  ");
+	Str += Entry.GetName();
+	Str += '\n';
+
+	n_printf(Str.CStr());
+
+	if (Entry.GetType() == IO::FSE_DIR)
+	{
+		IO::CNpkTOCEntry* pSubEntry = Entry.GetFirstEntry();
+		while (pSubEntry)
+		{
+			if (pSubEntry->GetType() == IO::FSE_DIR)
+				PrintNpkTOCEntry(*pSubEntry, Level + 1);
+			pSubEntry = Entry.GetNextEntry(pSubEntry);
+		}
+
+		pSubEntry = Entry.GetFirstEntry();
+		while (pSubEntry)
+		{
+			if (pSubEntry->GetType() == IO::FSE_FILE)
+				PrintNpkTOCEntry(*pSubEntry, Level + 1);
+			pSubEntry = Entry.GetNextEntry(pSubEntry);
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
 {
 	bool Result = true;
@@ -38,7 +69,7 @@ bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
 					TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
 					Offset += FileLength;
 				}
-				else n_msg(VR_ERROR, "Error reading file %s\n", FullFilePath.CStr());
+				else n_msg(VL_ERROR, "Error reading file %s\n", FullFilePath.CStr());
 			}
 			else if (CurrEntryType == IO::FSE_DIR)
 			{
@@ -53,7 +84,7 @@ bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
 	}
 	else
 	{
-		n_msg(VR_ERROR, "Could not open directory '%s' for reading!\n", FullDirName.CStr());
+		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", FullDirName.CStr());
 		Result = false;
 	}
 
@@ -128,7 +159,7 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int Data
 		}
 		else
 		{
-			n_msg(VR_ERROR, "Error reading file %s\n", FullFileName.CStr());
+			n_msg(VL_ERROR, "Error reading file %s\n", FullFileName.CStr());
 			FAIL;
 		}
 	}
@@ -141,7 +172,7 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 {
 	// Create TOC
 
-	n_msg(VR_INFO, "Creating NPK TOC...\n");
+	n_msg(VL_INFO, "Creating NPK TOC...\n");
 
 	nString RootPath = IOSrv->ManglePath(PkgRoot);
 	RootPath.ToLower();
@@ -156,7 +187,7 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 		const nString& FileName = FilesToPack[i];
 		if (FileName.Length() <= RootDirPath.Length() + 1) continue;
 		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.Length()) >= 0) break;
-		n_msg(VR_WARNING, "File is out of the export package scope:\n - %s\n", FileName.CStr());
+		n_msg(VL_WARNING, "File is out of the export package scope:\n - %s\n", FileName.CStr());
 	}
 
 	nArray<nString> DirStack;
@@ -215,7 +246,7 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 		if (IOSrv->DirectoryExists(FullFilePath))
 		{
 			if (!AddDirectoryToTOC(FilePart, TOC, Offset))
-				n_msg(VR_ERROR, "Error reading directory %s\n", FullFilePath.CStr());
+				n_msg(VL_ERROR, "Error reading directory %s\n", FullFilePath.CStr());
 		}
 		else
 		{
@@ -227,24 +258,24 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 				TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
 				Offset += FileLength;
 			}
-			else n_msg(VR_ERROR, "Error reading file %s\n", FullFilePath.CStr());
+			else n_msg(VL_ERROR, "Error reading file %s\n", FullFilePath.CStr());
 		}
 	}
 
 	TOC.EndDirEntry();
 
 	for (; i < FilesToPack.GetCount(); ++i)
-		n_msg(VR_WARNING, "File is out of the export package scope:\n - %s\n", FilesToPack[i].CStr());
+		n_msg(VL_WARNING, "File is out of the export package scope:\n - %s\n", FilesToPack[i].CStr());
 
 	// Write NPK file to disk
 
-	n_msg(VR_INFO, "Writing NPK...\n");
+	n_msg(VL_INFO, "Writing NPK...\n");
 
 	IO::CFileStream File;
 	IOSrv->CreateDirectory(PkgFileName.ExtractDirName());
 	if (!File.Open(PkgFileName, IO::SAM_WRITE))
 	{
-		n_msg(VR_ERROR, "Could not open file '%s' for writing!\n", PkgFileName.CStr());
+		n_msg(VL_ERROR, "Could not open file '%s' for writing!\n", PkgFileName.CStr());
 		FAIL;
 	}
 
@@ -252,11 +283,11 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 	File.Put<int>(4);		// Block length
 	File.Put<int>(0);		// DataBlockStart (at 8, fixed later)
 
-	n_msg(VR_DETAILS, " - Writing TOC...\n");
+	n_msg(VL_DETAILS, " - Writing TOC...\n");
 
 	WriteTOCEntry(File, TOC.GetRootEntry());
 
-	n_msg(VR_DETAILS, " - Writing data...\n");
+	n_msg(VL_DETAILS, " - Writing data...\n");
 	
 	int DataBlockStart = File.GetPosition();
 	int DataOffset = DataBlockStart + 4;
@@ -275,11 +306,19 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 	}
 	else
 	{
-		n_msg(VR_ERROR, "ERROR WRITING DATA BLOCK\n");
+		n_msg(VL_ERROR, "ERROR WRITING DATA BLOCK\n");
 		FAIL;
 	}
 
-	n_msg(VR_DETAILS, " - NPK writing done\n");
+	n_msg(VL_DETAILS, " - NPK writing done\n");
+
+	// Print TOC
+
+	if (TOC.GetRootEntry() && Verbose >= VL_DETAILS)
+	{
+		n_printf("\n"SEP_LINE"Package TOC:\n'+' = directory\n"SEP_LINE);
+		PrintNpkTOCEntry(*TOC.GetRootEntry(), 0);
+	}
 
 	OK;
 }
