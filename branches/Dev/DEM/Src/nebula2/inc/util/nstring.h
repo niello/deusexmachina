@@ -127,6 +127,7 @@ public:
 
 	nString&		operator =(const nString& Other);
 	nString&		operator =(const char* pStr) { if (pStr != CStr()) Set(pStr); return *this; }
+	nString&		operator +=(char Chr) { Append(Chr); return *this; }
 	nString&		operator +=(const char* pStr) { Append(pStr); return *this; }
 	nString&		operator +=(const nString& Other) { Append(Other); return *this; }
 	char			operator [](int i) const;

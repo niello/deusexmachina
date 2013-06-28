@@ -5,7 +5,9 @@
 #include <Data/DataServer.h>
 
 bool					ExportDescs;
-int						Verbose = VR_ERROR;
+bool					ExportResources;
+int						Verbose = VL_ERROR;
+int						ExternalVerbosity = VL_ALWAYS;
 
 Ptr<IO::CIOServer>		IOServer;
 Ptr<Data::CDataServer>	DataServer;
@@ -16,16 +18,16 @@ Ptr<Data::CDataServer>	DataServer;
 nArray<nString>			FilesToPack;
 
 //!!!control duplicates! (immediately after mangle path, forex)
-nArray<nString>			CFLuaIn;
-nArray<nString>			CFLuaOut;
+CToolFileLists			InFileLists;
+CToolFileLists			OutFileLists;
 
 int main(int argc, const char** argv)
 {
 	nCmdLineArgs Args(argc, argv);
 
-	// If true, will re-export descs (not resources!) from Src to Export before packing
-	ExportDescs = Args.GetBoolArg("-export");
-	//!!!also can store ExportResources or smth, because they are more heavy than descs!
+	// If true, will re-export files from Src to Export before packing
+	ExportDescs = Args.GetBoolArg("-er") || Args.GetBoolArg("-export");
+	ExportResources = Args.GetBoolArg("-ed") || Args.GetBoolArg("-export");
 
 	// If true, application will wait for key before exit
 	bool WaitKey = Args.GetBoolArg("-waitkey");
@@ -34,7 +36,7 @@ int main(int argc, const char** argv)
 	Verbose = Args.GetIntArg("-v");
 
 	// Verbosity level for external tools
-	int ExtVerb = Args.GetIntArg("-ev");
+	ExternalVerbosity = Args.GetIntArg("-ev");
 
 	// Project directory, where all content is placed. Will be a base directory for all data.
 	nString ProjDir = Args.GetStringArg("-proj");
@@ -48,7 +50,7 @@ int main(int argc, const char** argv)
 	BuildDir.StripTrailingSlash();
 	if (BuildDir.IsEmpty()) EXIT_APP_FAIL;
 
-	n_msg(VR_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2013\n"SEP_LINE"\n");
+	n_msg(VL_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2013\n"SEP_LINE"\n");
 
 	IOServer = n_new(IO::CIOServer);
 	ProjDir = IOSrv->ManglePath(ProjDir);
@@ -71,16 +73,16 @@ int main(int argc, const char** argv)
 	//DataSrv->SetAssign("meshes", Export + "/meshes");
 	//DataSrv->SetAssign("materials", Export + "/materials");
 	//DataSrv->SetAssign("mtlsrc", Export + "/materials");
-	//DataSrv->SetAssign("textures", Export + "/textures");
+	IOSrv->SetAssign("Textures", IOSrv->ManglePath("Proj:Export/Textures"));
 	//DataSrv->SetAssign("anims", Export + "/anims");
 
-	n_msg(VR_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
+	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
 
 	DataServer = n_new(Data::CDataServer);
 
 	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
 	{
-		n_msg(VR_ERROR, "BBuilder: Failed to read 'home:DataSchemes/SceneNodes.dss'");
+		n_msg(VL_ERROR, "BBuilder: Failed to read 'home:DataSchemes/SceneNodes.dss'");
 		EXIT_APP_FAIL;
 	}
 
@@ -100,7 +102,7 @@ int main(int argc, const char** argv)
 
 	if (!Desc.IsValid())
 	{
-		n_msg(VR_ERROR, "Error loading main game desc\n");
+		n_msg(VL_ERROR, "Error loading main game desc\n");
 		EXIT_APP_FAIL;
 	}
 
@@ -109,7 +111,7 @@ int main(int argc, const char** argv)
 	IO::CFSBrowser Browser;
 	if (!Browser.SetAbsolutePath(ExportDescs ? "Src:Game/Levels" : "Export:Game/Levels"))
 	{
-		n_msg(VR_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
+		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
 		EXIT_APP_FAIL;
 	}
 
@@ -121,7 +123,7 @@ int main(int argc, const char** argv)
 
 			nString FileNoExt = Browser.GetCurrEntryName();
 			FileNoExt.StripExtension();
-			n_msg(VR_INFO, "Processing level '%s'...\n", FileNoExt.CStr());
+			n_msg(VL_INFO, "Processing level '%s'...\n", FileNoExt.CStr());
 
 			ExportFilePath = "Export:Game/Levels/" + FileNoExt + ".prm";
 			Data::PParams LevelDesc;
@@ -134,7 +136,7 @@ int main(int argc, const char** argv)
 
 			if (!LevelDesc.IsValid())
 			{
-				n_msg(VR_ERROR, "Error loading level '%s' desc\n", FileNoExt.CStr());
+				n_msg(VL_ERROR, "Error loading level '%s' desc\n", FileNoExt.CStr());
 				continue;
 			}
 
@@ -142,7 +144,7 @@ int main(int argc, const char** argv)
 
 			if (!ProcessLevel(*LevelDesc, FileNoExt))
 			{
-				n_msg(VR_ERROR, "Error processing level '%s'\n", FileNoExt.CStr());
+				n_msg(VL_ERROR, "Error processing level '%s'\n", FileNoExt.CStr());
 				continue;
 			}
 		}
@@ -153,12 +155,12 @@ int main(int argc, const char** argv)
 
 //!!!Export ALL entity templates!
 
-	// Add AI tables
 	// Add quests and task scripts
 	// Add system resources
 	// Add the whole CEGUI directory (as directory, but mb to the same array)
 	// Convert frame shaders
 	// Compile all shaders of all frame shaders
+	// Add input mappings
 
 	////???!!!or parse frame shader vars?!
 	//AddRsrcIfUnique("Export:Textures/System/Noise.dds", ResourceFiles, "Texture");
@@ -167,9 +169,10 @@ int main(int argc, const char** argv)
 	//if (!CopyDirectoryToBuild("Proj:Project/Input/", "Build:Data/Input/")) goto error;
 	//if (!CopyDirectoryToBuild("Proj:Project/Shaders/", "Build:Data/Shaders/")) goto error;
 
-	n_printf("\n"SEP_LINE"Compiling scripts by CFLua:\n"SEP_LINE);
+	n_printf("\n"SEP_LINE"Running external tools:\n"SEP_LINE);
 
-	if (RunExternalToolBatch(CStrID("CFLua"), ExtVerb, CFLuaIn, CFLuaOut) != 0) EXIT_APP_FAIL;
+	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
+	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
 
 	n_printf("\n"SEP_LINE"Packing:\n"SEP_LINE);
 
@@ -183,13 +186,13 @@ int main(int argc, const char** argv)
 	nString DestFile = "Build:Export.npk";
 	if (PackFiles(FilesToPack, DestFile, ProjDir, "Export"))
 	{
-		n_msg(VR_INFO, "\nNPK file:      %s\nNPK file size: %.3f MB\n",
+		n_msg(VL_INFO, "\nNPK file:      %s\nNPK file size: %.3f MB\n",
 			IOSrv->ManglePath(DestFile).CStr(),
 			IOSrv->GetFileSize(DestFile) / (1024.f * 1024.f));
 	}
 	else
 	{
-		n_msg(VR_ERROR, "ERROR IN FILE GENERATION, DELETING NPK FILE\n");
+		n_msg(VL_ERROR, "ERROR IN FILE GENERATION, DELETING NPK FILE\n");
 		IOSrv->DeleteFile(DestFile);
 		EXIT_APP_FAIL;
 	}
@@ -200,7 +203,7 @@ int main(int argc, const char** argv)
 
 int ExitApp(bool NoError, bool WaitKey)
 {
-	if (!NoError) n_msg(VR_ERROR, "Building aborted due to errors.\n");
+	if (!NoError) n_msg(VL_ERROR, "Building aborted due to errors.\n");
 	if (WaitKey)
 	{
 		n_printf("\nPress any key to exit...\n");
@@ -213,25 +216,3 @@ int ExitApp(bool NoError, bool WaitKey)
 	return NoError ? 0 : 1;
 }
 //---------------------------------------------------------------------
-
-//!!!DBG TMP! Door KFA animation
-	/*{
-		Data::CFileStream File;
-		if (File.Open("anims:examples/Door.kfa", Data::SAM_WRITE))
-		{
-			Data::CBinaryWriter Wr(File);
-			Wr.Write('KFAN');
-			Wr.Write(0.5f);
-			Wr.Write<DWORD>(1);
-			Wr.Write<LPCSTR>("DoorBody");
-			Wr.Write((int)Anim::Chnl_Rotation);
-			Wr.Write<DWORD>(2);
-			quaternion q;
-			Wr.Write(q);
-			Wr.Write(0.f);
-			q.set_rotate_y(PI / 2.f);
-			Wr.Write(q);
-			Wr.Write(0.5f);
-			File.Close();
-		}
-	}*/

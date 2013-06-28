@@ -1,14 +1,23 @@
+#include "Main.h"
+
 #include <IO/IOServer.h>
-#include <Data/StringID.h>
-#include <util/nstring.h>
-#include <ConsoleApp.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+void BatchToolInOut(CStrID Name, const nString& InStr, const nString& OutStr)
+{
+	//???insert sorted?
+	nArray<nString>& InList = InFileLists.GetOrAdd(Name);
+	InList.Append(InStr);
+	nArray<nString>& OutList = OutFileLists.GetOrAdd(Name);
+	OutList.Append(OutStr);
+}
+//---------------------------------------------------------------------
+
 int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 {
-	n_msg(VR_DETAILS, "> %s %s\n", Name.CStr(), pCmdLine);
+	n_msg(VL_DETAILS, "> %s %s\n", Name.CStr(), pCmdLine);
 
 	nString Path = IOSrv->ManglePath("home:");
 	Path += "\\..\\ContentForge\\";
@@ -37,8 +46,16 @@ int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 }
 //---------------------------------------------------------------------
 
-int RunExternalToolBatch(CStrID Tool, int Verb, const nArray<nString>& InList, const nArray<nString>& OutList, LPCSTR pWorkingDir)
+int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pWorkingDir)
 {
+	int Idx = InFileLists.FindIndex(Tool);
+	if (Idx == INVALID_INDEX) return 0;
+	nArray<nString>& InList = InFileLists.ValueAt(Idx);
+
+	Idx = OutFileLists.FindIndex(Tool);
+	if (Idx == INVALID_INDEX) return 0;
+	nArray<nString>& OutList = OutFileLists.ValueAt(Idx);
+
 	if (InList.GetCount() != OutList.GetCount()) return -1;
 	if (InList.GetCount() == 0) return 0;
 
