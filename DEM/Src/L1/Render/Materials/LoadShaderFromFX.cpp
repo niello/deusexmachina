@@ -3,7 +3,7 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Render/RenderServer.h>
-#include <Render/D3DXNebula2Include.h>
+#include <Render/D3DXDEMInclude.h>
 #include <IO/Streams/FileStream.h>
 #include <Data/Buffer.h>
 
@@ -26,7 +26,7 @@ bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PSh
 	D3DEffFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
 #endif
 
-	CD3DXNebula2Include IncludeHandler(FileName.ExtractDirName(), ShaderRootDir);
+	CD3DXDEMInclude IncludeHandler(FileName.ExtractDirName(), ShaderRootDir);
 	ID3DXBuffer* pErrorBuffer = NULL;
 	ID3DXEffect* pEffect = NULL;
 
@@ -52,7 +52,7 @@ bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PSh
 	else if (pErrorBuffer)
 	{
 		n_printf("FXLoader: fx file '%s' loaded with:\n\n%s\n", FileName.CStr(), pErrorBuffer->GetBufferPointer());
-		if (pErrorBuffer) pErrorBuffer->Release();
+		pErrorBuffer->Release();
 	}
 
 	return OutShader->Setup(pEffect);
