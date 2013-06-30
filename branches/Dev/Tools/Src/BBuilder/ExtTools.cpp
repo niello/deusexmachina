@@ -46,7 +46,7 @@ int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 }
 //---------------------------------------------------------------------
 
-int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pWorkingDir)
+int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWorkingDir)
 {
 	int Idx = InFileLists.FindIndex(Tool);
 	if (Idx == INVALID_INDEX) return 0;
@@ -79,7 +79,7 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pWorkingDir)
 			if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 			char CmdLine[MAX_CMDLINE_CHARS];
-			sprintf_s(CmdLine, "-v %d -in %s -out %s", Verb, InStr.CStr(), OutStr.CStr());
+			sprintf_s(CmdLine, "-v %d -in %s -out %s %s", Verb, InStr.CStr(), OutStr.CStr(), pExtraCmdLine ? pExtraCmdLine : "");
 			int ExitCode = RunExternalToolAsProcess(Tool, CmdLine, pWorkingDir);
 			if (ExitCode != 0) return ExitCode;
 
@@ -99,7 +99,7 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pWorkingDir)
 	if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 	char CmdLine[MAX_CMDLINE_CHARS];
-	sprintf_s(CmdLine, "-v %d -in %s -out %s", Verb, InStr.CStr(), OutStr.CStr());
+	sprintf_s(CmdLine, "-v %d -in %s -out %s %s", Verb, InStr.CStr(), OutStr.CStr(), pExtraCmdLine ? pExtraCmdLine : "");
 	return RunExternalToolAsProcess(Tool, CmdLine, pWorkingDir);
 }
 //---------------------------------------------------------------------

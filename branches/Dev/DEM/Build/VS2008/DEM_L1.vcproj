@@ -1145,11 +1145,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Render\D3DXNebula2Include.cpp"
+				RelativePath="..\..\Src\L1\Render\D3DXDEMInclude.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Render\D3DXNebula2Include.h"
+				RelativePath="..\..\Src\L1\Render\D3DXDEMInclude.h"
 				>
 			</File>
 			<File

@@ -1,7 +1,7 @@
-#include "D3DXNebula2Include.h"
+#include "D3DXDEMInclude.h"
 #include <IO/Streams/FileStream.h>
 
-HRESULT CD3DXNebula2Include::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
+HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
 {
 	IO::CFileStream File;
 	nString FilePath = pName;
@@ -17,7 +17,7 @@ HRESULT CD3DXNebula2Include::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LP
 
 	if (!Loaded)
 	{
-		n_printf("D3DXNebula2Include: could not open include file '%s' nor\n\t'%s' nor\n\t'%s'!\n",
+		n_printf("D3DXDEMInclude: could not open include file '%s' nor\n\t'%s' nor\n\t'%s'!\n",
 			pName, (ShaderDir + pName).CStr(), (ShaderRootDir + pName).CStr());
 		return E_FAIL;
 	}

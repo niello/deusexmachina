@@ -1,6 +1,7 @@
 #include "Main.h"
 
 #include <IO/IOServer.h>
+#include <IO/FSBrowser.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryWriter.h>
 #include <Data/DataServer.h>
@@ -503,5 +504,62 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
+{
+	/*
+	IO::CFSBrowser Browser;
+	if (!Browser.SetAbsolutePath(ExportDescs ? "SrcQuests:" : "Quests:"))
+	{
+		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
+		FAIL;
+	}
+
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryFile())
+		{
+			nString LowerName = Browser.GetCurrEntryName();
+			LowerName.ToLower();
+
+			if (LowerName != (ExportDescs ? "_quest.hrd" : "_quest.prm")) continue;
+
+			nString FileNoExt = Browser.GetCurrEntryName();
+			FileNoExt.StripExtension();
+
+			nString QuestName = Browser
+			n_msg(VL_INFO, "Processing quest '%s'...\n", FileNoExt.CStr());
+
+			ExportFilePath = "Levels:" + FileNoExt + ".prm";
+			Data::PParams LevelDesc;
+			if (ExportDescs)
+			{
+				LevelDesc = DataSrv->LoadHRD("SrcLevels:" + Browser.GetCurrEntryName(), false);
+				DataSrv->SavePRM(ExportFilePath, LevelDesc);
+			}
+			else LevelDesc = DataSrv->LoadPRM(ExportFilePath, false);
+
+			if (!LevelDesc.IsValid())
+			{
+				n_msg(VL_ERROR, "Error loading level '%s' desc\n", FileNoExt.CStr());
+				continue;
+			}
+
+			FilesToPack.InsertSorted(ExportFilePath);
+
+			if (!ProcessLevel(*LevelDesc, FileNoExt))
+			{
+				n_msg(VL_ERROR, "Error processing level '%s'\n", FileNoExt.CStr());
+				continue;
+			}
+		}
+	}
+	while (Browser.NextCurrDirEntry());
+
+	OK;
+*/
+FAIL;
 }
 //---------------------------------------------------------------------

@@ -6,6 +6,7 @@
 
 bool					ExportDescs;
 bool					ExportResources;
+bool					ExportShaders;
 int						Verbose = VL_ERROR;
 int						ExternalVerbosity = VL_ALWAYS;
 
@@ -28,6 +29,7 @@ int main(int argc, const char** argv)
 	// If true, will re-export files from Src to Export before packing
 	ExportDescs = Args.GetBoolArg("-er") || Args.GetBoolArg("-export");
 	ExportResources = Args.GetBoolArg("-ed") || Args.GetBoolArg("-export");
+	ExportShaders = Args.GetBoolArg("-es") || Args.GetBoolArg("-export");
 
 	// If true, application will wait for key before exit
 	bool WaitKey = Args.GetBoolArg("-waitkey");
@@ -62,7 +64,7 @@ int main(int argc, const char** argv)
 
 	DataServer = n_new(Data::CDataServer);
 
-	Data::PParams PathList = DataSrv->LoadHRD("Proj:Project/PathList.hrd", false);
+	Data::PParams PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValid())
 		for (int i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
@@ -106,7 +108,7 @@ int main(int argc, const char** argv)
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!Browser.GetCurrEntryName().CheckExtension("hrd")) continue;
+			if (!Browser.GetCurrEntryName().CheckExtension(ExportDescs ? "hrd" : "prm")) continue;
 
 			nString FileNoExt = Browser.GetCurrEntryName();
 			FileNoExt.StripExtension();
@@ -142,31 +144,83 @@ int main(int argc, const char** argv)
 
 //!!!Export ALL entity templates!
 
-	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
+	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE);
 
-// Add quests and task scripts
+	if (!ProcessQuestsInFolder("SrcQuests:", "Quests:"))
+	{
+		n_msg(VL_ERROR, "Error procesing quests!\n");
+		EXIT_APP_FAIL;
+	}
 
-	n_printf("\n"SEP_LINE"Processing system data and resources:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
+	n_printf("\n"SEP_LINE"Processing system data and resources:\n"SEP_LINE);
 
 	if (IOSrv->DirectoryExists("Export:cegui") && !IsFileAdded("Export:cegui"))
 		FilesToPack.InsertSorted("Export:cegui");
 
-	// Add system resources
-	// Convert frame shaders
-	// Compile all shaders of all frame shaders
-	// Add input mappings
+	if (!ProcessDesc("SrcInput:Layouts.hrd", "Input:Layouts.prm"))
+	{
+		n_msg(VL_ERROR, "Error procesing input layouts desc!\n");
+		EXIT_APP_FAIL;
+	}
 
-	////???!!!or parse frame shader vars?!
-	//AddRsrcIfUnique("Export:Textures/System/Noise.dds", ResourceFiles, "Texture");
-	//AddRsrcIfUnique("Export:Textures/System/White.dds", ResourceFiles, "Texture");
-	//AddRsrcIfUnique("Export:Textures/System/NoBump.dds", ResourceFiles, "Texture");
-	//if (!CopyDirectoryToBuild("Proj:Project/Input/", "Build:Data/Input/")) goto error;
-	//if (!CopyDirectoryToBuild("Proj:Project/Shaders/", "Build:Data/Shaders/")) goto error;
+	// Process frame shaders
+
+	if (!Browser.SetAbsolutePath(ExportShaders ? "SrcShaders:" : "Shaders:"))
+	{
+		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
+		EXIT_APP_FAIL;
+	}
+
+	if (ExportShaders) IOSrv->CreateDirectory("Shaders:");
+
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryFile())
+		{
+			if (!Browser.GetCurrEntryName().CheckExtension(ExportShaders ? "hrd" : "prm")) continue;
+
+			nString FileNoExt = Browser.GetCurrEntryName();
+			FileNoExt.StripExtension();
+			n_msg(VL_INFO, "Processing frame shader '%s'...\n", FileNoExt.CStr());
+
+			ExportFilePath = "Shaders:" + FileNoExt + ".prm";
+			Data::PParams ShdDesc;
+			if (ExportShaders)
+			{
+				ShdDesc = DataSrv->LoadHRD("SrcShaders:" + Browser.GetCurrEntryName(), false);
+				DataSrv->SavePRM(ExportFilePath, ShdDesc);
+			}
+			else ShdDesc = DataSrv->LoadPRM(ExportFilePath, false);
+
+			if (!ShdDesc.IsValid())
+			{
+				n_msg(VL_ERROR, "Error loading frame shader '%s' desc\n", FileNoExt.CStr());
+				continue;
+			}
+
+			FilesToPack.InsertSorted(ExportFilePath);
+
+			if (!ProcessFrameShader(*ShdDesc))
+			{
+				n_msg(VL_ERROR, "Error processing frame shader '%s'\n", FileNoExt.CStr());
+				continue;
+			}
+		}
+	}
+	while (Browser.NextCurrDirEntry());
 
 	n_printf("\n"SEP_LINE"Running external tools:\n"SEP_LINE);
 
 	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
+	if (ExportShaders)
+	{
+		nString ShdRoot = IOSrv->ManglePath("SrcShaders:");
+		if (ShdRoot.FindCharIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
+		nString ExtraCmdLine = "-o 3 -root ";
+		ExtraCmdLine += ShdRoot;
+		if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr()) != 0) EXIT_APP_FAIL;
+	}
 
 	n_printf("\n"SEP_LINE"Packing:\n"SEP_LINE);
 

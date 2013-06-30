@@ -52,3 +52,27 @@ bool ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileN
 	OK;
 }
 //---------------------------------------------------------------------
+
+bool ProcessFrameShader(const Data::CParams& Desc)
+{
+	Data::PParams ShaderList;
+	if (Desc.Get(ShaderList, CStrID("Shaders")))
+	{
+		for (int i = 0; i < ShaderList->GetCount(); ++i)
+		{
+			nString ExportFilePath = "Shaders:" + ShaderList->Get<nString>(i) + ".fxo";
+
+			if (IsFileAdded(ExportFilePath)) continue;
+
+			if (ExportShaders)
+				BatchToolInOut(CStrID("CFShader"), "SrcShaders:" + ShaderList->Get<nString>(i) + ".fx", ExportFilePath);
+
+			FilesToPack.InsertSorted(ExportFilePath);
+		}
+	}
+
+	//!!!Parse for textures!
+
+	OK;
+}
+//---------------------------------------------------------------------
