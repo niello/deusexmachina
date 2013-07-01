@@ -142,7 +142,13 @@ int main(int argc, const char** argv)
 
 	n_printf("\n"SEP_LINE"Processing entity templates:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
 
-//!!!Export ALL entity templates!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!Export ALL entity templates!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE);
 
