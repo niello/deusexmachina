@@ -155,8 +155,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 
 PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName)
 {
-	//!!!Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
-	Data::PParams Desc = DataSrv->LoadHRD(FileName, false);
+	Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
 	return Desc.IsValid() ? LoadCollisionShapeFromPRM(UID, *Desc): NULL;
 }
 //---------------------------------------------------------------------

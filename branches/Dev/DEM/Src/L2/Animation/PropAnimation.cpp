@@ -72,7 +72,8 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			CParam& Prm = Desc->Get(i);
 
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
-			nString FileName = ClipRsrcID.CStr();
+			nString FileName("Anims:");
+			FileName += ClipRsrcID.CStr();
 			bool IsMocap = FileName.CheckExtension("mca") || FileName.CheckExtension("nax2");
 
 			Anim::PAnimClip Clip;
@@ -83,7 +84,6 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 			if (!Clip->IsLoaded())
 			{
-				nString FileName = Clip->GetUID().CStr();
 				if (IsMocap)
 					LoadMocapClipFromNAX2(FileName, Bones, (Anim::CMocapClip*)Clip.GetUnsafe());
 				else

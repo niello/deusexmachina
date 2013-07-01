@@ -73,7 +73,7 @@ bool CTerrain::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
 {
 	IO::CFileStream CDLODFile;
-	if (!CDLODFile.Open(HeightMap->GetUID().CStr(), IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	if (!CDLODFile.Open(nString("Terrain:") + HeightMap->GetUID().CStr() + ".cdlod", IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
 	IO::CBinaryReader Reader(CDLODFile);
 
 	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
@@ -129,13 +129,15 @@ bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
 	TopPatchCountX = (HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
 	TopPatchCountZ = (HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
 
+	static const nString StrTextures("Textures:");
+
 	for (int i = 0; i < ShaderVars.GetCount(); ++i)
 	{
 		CShaderVar& Var = ShaderVars.ValueAt(i);
 		if (Var.Value.IsA<PTexture>())
 		{
 			PTexture Tex = Var.Value.GetValue<PTexture>();
-			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
 		}
 	}
 

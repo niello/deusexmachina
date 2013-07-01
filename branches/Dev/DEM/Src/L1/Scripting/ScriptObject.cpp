@@ -141,7 +141,7 @@ EExecStatus CScriptObject::LoadScriptFile(const nString& FileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer) &&
-		!IOSrv->LoadFileToBuffer("scripts:" + FileName + ".lua", Buffer)) return Error;
+		!IOSrv->LoadFileToBuffer("Scripts:" + FileName + ".lua", Buffer)) return Error;
 	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------

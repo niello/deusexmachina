@@ -42,7 +42,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	const nString& PhysicsDescFile = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
-	Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("physics:") + PhysicsDescFile.CStr() + ".prm");
+	Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("Physics:") + PhysicsDescFile.CStr() + ".prm");
 	if (!PhysicsDesc.IsValid()) return;
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.

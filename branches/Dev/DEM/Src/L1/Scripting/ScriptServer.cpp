@@ -33,9 +33,6 @@ CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)
 
 	luaL_openlibs(l);
 
-	IOSrv->SetAssign("scripts", "game:scripts");
-	IOSrv->SetAssign("classes", "game:scripts/classes");
-
 	// Create base class for scripted objects
 
 	// 'Classes' table
@@ -345,7 +342,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 	n_assert2(Name.IsValid(), "Invalid class name to register");
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
-	Data::PParams ClassDesc = DataSrv->LoadPRM("classes:" + Name + ".cls", false);
+	Data::PParams ClassDesc = DataSrv->LoadPRM("ScriptClasses:" + Name + ".cls", false);
 
 	if (ClassDesc.IsValid() &&
 		BeginClass(Name, ClassDesc->Get<nString>(CStrID("Base"), "CScriptObject")))

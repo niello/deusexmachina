@@ -21,7 +21,7 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
 	Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(ShapeID);
 	if (!Shape.IsValid())
-		Shape = LoadCollisionShapeFromPRM(ShapeID, nString("physics:") + ShapeID.CStr() + ".hrd"); //!!!prm!
+		Shape = LoadCollisionShapeFromPRM(ShapeID, nString("Physics:") + ShapeID.CStr() + ".prm");
 	n_assert(Shape->IsLoaded());
 
 	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<nString>(CStrID("Group"), "Default"));

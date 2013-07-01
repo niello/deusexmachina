@@ -47,12 +47,12 @@ CUIServer::CUIServer()
 	CEGUI::Logger::getSingleton().setLoggingLevel(CEGUI::Warnings);
 
 	//!!!to config!
-	ResourceProvider->setResourceGroupDirectory("schemes", "cegui:schemes/");
-	ResourceProvider->setResourceGroupDirectory("imagesets", "cegui:imagesets/");
-	ResourceProvider->setResourceGroupDirectory("fonts", "cegui:fonts/");
-	ResourceProvider->setResourceGroupDirectory("layouts", "cegui:layouts/");
-	ResourceProvider->setResourceGroupDirectory("looknfeels", "cegui:looknfeel/");
-	ResourceProvider->setResourceGroupDirectory("lua_scripts", "cegui:lua_scripts/");
+	ResourceProvider->setResourceGroupDirectory("schemes", "CEGUI:schemes/");
+	ResourceProvider->setResourceGroupDirectory("imagesets", "CEGUI:imagesets/");
+	ResourceProvider->setResourceGroupDirectory("fonts", "CEGUI:fonts/");
+	ResourceProvider->setResourceGroupDirectory("layouts", "CEGUI:layouts/");
+	ResourceProvider->setResourceGroupDirectory("looknfeels", "CEGUI:looknfeel/");
+	ResourceProvider->setResourceGroupDirectory("lua_scripts", "CEGUI:lua_scripts/");
 	CEGUI::Imageset::setDefaultResourceGroup("imagesets");
 	CEGUI::Font::setDefaultResourceGroup("fonts");
 	CEGUI::Scheme::setDefaultResourceGroup("schemes");

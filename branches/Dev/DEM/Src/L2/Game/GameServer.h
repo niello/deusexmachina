@@ -47,7 +47,7 @@ protected:
 
 public:
 
-	CGameServer();
+	CGameServer(): IsOpen(false) { __ConstructSingleton; }
 	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
 
 	bool			Open();

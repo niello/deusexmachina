@@ -42,7 +42,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = VarMap.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<CStrID>().CStr()));
 		}
 	}
 

@@ -110,7 +110,7 @@ CControlLayout* CInputServer::GetControlLayout(CStrID Name)
 
 CControlLayout* CInputServer::LoadControlLayout(CStrID Name)
 {
-	Data::PParams Desc = DataSrv->LoadHRD("data:Input/Layouts.hrd");
+	Data::PParams Desc = DataSrv->LoadPRM("Input:Layouts.prm");
 	if (!Desc.IsValid()) return NULL;
 	Desc = Desc->Get<PParams>(Name);
 	if (!Desc.IsValid()) return NULL;

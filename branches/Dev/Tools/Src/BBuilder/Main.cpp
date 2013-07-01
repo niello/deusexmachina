@@ -66,8 +66,12 @@ int main(int argc, const char** argv)
 
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValid())
+	{
 		for (int i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
+
+		IOSrv->CopyFile("Proj:PathList.hrd", "Build:PathList.hrd");
+	}
 
 	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
 	{

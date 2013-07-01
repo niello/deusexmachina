@@ -76,8 +76,8 @@ private:
 
 public:
 
-	CDialogueManager();
-	~CDialogueManager();
+	CDialogueManager() { __ConstructSingleton; }
+	~CDialogueManager() { __DestructSingleton; }
 
 	void		Trigger();
 

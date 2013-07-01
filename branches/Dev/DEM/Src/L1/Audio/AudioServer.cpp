@@ -7,7 +7,6 @@
 #include <Audio/DSUtil/DSUtil.h>
 #include <Events/EventManager.h>
 #include <Time/TimeServer.h>
-#include <IO/IOServer.h>
 #include <Core/CoreServer.h>
 
 namespace Audio
@@ -45,8 +44,6 @@ bool CAudioServer::Open()
 	n_assert(!_IsOpen);
 	n_assert(!pDS);
 	n_assert(!pDSListener);
-
-	IOSrv->SetAssign("audio", IOSrv->ManglePath("proj:export/audio"));
 
 	float CurrTime = (float)TimeSrv->GetTime();
 	for (int i = 0; i < SoundCategoryCount; ++i)

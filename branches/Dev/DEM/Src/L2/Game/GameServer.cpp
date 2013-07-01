@@ -46,13 +46,6 @@ namespace Game
 __ImplementClassNoFactory(Game::CGameServer, Core::CRefCounted);
 __ImplementSingleton(CGameServer);
 
-CGameServer::CGameServer(): IsOpen(false)
-{
-	__ConstructSingleton;
-	IOSrv->SetAssign("iao", "game:iao");
-}
-//---------------------------------------------------------------------
-
 bool CGameServer::Open()
 {
 	n_assert(!IsOpen);
@@ -262,7 +255,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 	if (!InitialCommon.IsValid()) FAIL;
 
 	//!!!DBG TMP PATH!
-	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadPRM("home:" + SaveGameName + "/Main.prm", false) : NULL;
+	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadPRM("Home:" + SaveGameName + "/Main.prm", false) : NULL;
 
 	Data::PParams GameDesc;
 	if (SGCommon.IsValid())
@@ -299,7 +292,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 		n_assert(InitialLvl.IsValid());
 
 		//!!!DBG TMP PATH!
-		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("home:" + SaveGameName + RelLevelPath, false) : NULL;
+		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("Home:" + SaveGameName + RelLevelPath, false) : NULL;
 
 		Data::PParams LevelDesc;
 		if (SGLvl.IsValid())
@@ -366,7 +359,7 @@ bool CGameServer::SaveGame(const nString& Name)
 
 	//!!!TMP!
 //======
-	nString Path = "home:" + Name;
+	nString Path = "Home:" + Name;
 	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
 
@@ -385,7 +378,7 @@ bool CGameServer::SaveGame(const nString& Name)
 
 		//!!!TMP!
 //======
-		nString Path = "home:" + Name + "/Levels/";
+		nString Path = "Home:" + Name + "/Levels/";
 		if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 		DataSrv->SavePRM(Path + Levels.KeyAt(i).CStr() + ".prm", SGLevel);
 

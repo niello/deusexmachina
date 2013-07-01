@@ -9,7 +9,6 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
-#include <IO/IOServer.h>
 #include <Scripting/ScriptServer.h>
 #include <Events/EventManager.h>
 #include <Game/EntityManager.h>
@@ -30,19 +29,6 @@ void CActiveDlg::EnterNode(CDlgNode* pNewNode)
 	ValidLinkIndices.Clear();
 	pCurrNode = pNewNode;
 	pCurrNode->OnEnter(*this);
-}
-//---------------------------------------------------------------------
-
-CDialogueManager::CDialogueManager()
-{
-    __ConstructSingleton;
-	IOSrv->SetAssign("dlg", "game:dlg");
-}
-//---------------------------------------------------------------------
-
-CDialogueManager::~CDialogueManager()
-{
-    __DestructSingleton;
 }
 //---------------------------------------------------------------------
 

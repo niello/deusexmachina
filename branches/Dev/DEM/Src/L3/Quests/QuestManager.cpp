@@ -11,12 +11,6 @@
 const nString StrQuests("Quests");
 const nString StrUnderline("_");
 
-//BEGIN_ATTRS_REGISTRATION(QuestManager)
-//	RegisterStrID(QuestID, ReadWrite);
-//	RegisterStrID(TaskID, ReadWrite);
-//	RegisterInt(QStatus, ReadWrite);
-//END_ATTRS_REGISTRATION
-
 namespace Story
 {
 __ImplementClassNoFactory(Story::CQuestManager, Core::CRefCounted);
@@ -28,7 +22,6 @@ CQuestManager::CQuestManager()
 {
 	__ConstructSingleton;
 
-	IOSrv->SetAssign("quests", "game:quests");
 	SUBSCRIBE_PEVENT(OnLoad, CQuestManager, OnLoad);
 	SUBSCRIBE_PEVENT(OnSave, CQuestManager, OnSave);
 }
@@ -156,7 +149,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 
 	// Run script at last cause we want to have up-to-date current task status
 	// This way we can immediately close the task we're starting now by it's own script
-	nString TaskScriptFile = nString("quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
+	nString TaskScriptFile = nString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
 	if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 	{
 		nString Name = nString(QuestID.CStr()) + StrUnderline + TaskID.CStr();

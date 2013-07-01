@@ -30,7 +30,7 @@ private:
 
 public:
 
-	CItemManager();
+	CItemManager() { __ConstructSingleton; }
 	~CItemManager() { __DestructSingleton; }
 
 	PItemTpl CreateItemTpl(CStrID ID, const CParams& Params); //???type from params?

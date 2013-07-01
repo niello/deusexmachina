@@ -23,6 +23,8 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 	FeatureFlags = ShaderFeatureFlags;
 	//???set active feature for test? mb it is never used with these flags, always adding Skinned etc
 
+	static const nString StrTextures("Textures:");
+
 	StaticVars = StaticShaderVars;
 	for (int i = 0; i < StaticVars.GetCount(); ++i)
 	{
@@ -34,7 +36,7 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 		if (Var.Value.IsA<PTexture>())
 		{
 			PTexture Tex = Var.Value.GetValue<PTexture>();
-			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
 			//if (!Tex->IsLoaded() && !LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex))
 			//{
 			//	State = Resources::Rsrc_Failed;

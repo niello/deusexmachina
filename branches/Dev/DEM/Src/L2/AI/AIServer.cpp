@@ -2,7 +2,6 @@
 
 #include <AI/Planning/ActionTpl.h>
 #include <Data/Params.h>
-#include <IO/IOServer.h>
 #include <Events/EventManager.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourObstacleAvoidance.h>
@@ -15,9 +14,6 @@ __ImplementSingleton(AI::CAIServer);
 CAIServer::CAIServer()
 {
 	__ConstructSingleton;
-	IOSrv->SetAssign("actors", "game:ai/actors"); //!!!unwind!
-	IOSrv->SetAssign("aihints", "game:ai/hints");
-	IOSrv->SetAssign("smarts", "game:ai/smarts");
 
 	dtObstacleAvoidanceParams* pOAParams = n_new(dtObstacleAvoidanceParams);
 	pOAParams->velBias = 0.4f;

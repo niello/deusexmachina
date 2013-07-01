@@ -402,7 +402,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 
 	if (Attrs->Get<nString>(AttrValue, CStrID("ScriptClass")))
 	{
-		nString ExportFilePath = "ScriptClasses:" + AttrValue + ".lua";
+		nString ExportFilePath = "ScriptClasses:" + AttrValue + ".cls";
 		if (!IsFileAdded(ExportFilePath))
 		{
 			if (ExportDescs) BatchToolInOut(CStrID("CFLua"), "SrcScriptClasses:" + AttrValue + ".lua", ExportFilePath);

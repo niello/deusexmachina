@@ -40,7 +40,7 @@ public:
 
 	CNpkTOCEntry*	GetRootEntry() const { return pRootDir; }
 	CNpkTOCEntry*	GetCurrentDirEntry() { return pCurrDir; }
-	void			SetRootPath(const char* pPath) { n_assert(pPath); RootPath = pPath; }
+	void			SetRootPath(const char* pPath) { n_assert(pPath); RootPath = pPath; RootPath.ConvertBackslashes(); RootPath.StripTrailingSlash(); }
 	const char*		GetRootPath() const { return RootPath.IsEmpty() ? NULL : RootPath.CStr(); }
 };
 
