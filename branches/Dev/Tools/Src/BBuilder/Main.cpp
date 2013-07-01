@@ -146,7 +146,7 @@ int main(int argc, const char** argv)
 
 	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE);
 
-	if (!ProcessQuestsInFolder("SrcQuests:", "Quests:"))
+	if (!ProcessQuestsInFolder(IOSrv->ManglePath("SrcQuests:"), IOSrv->ManglePath("Quests:")))
 	{
 		n_msg(VL_ERROR, "Error procesing quests!\n");
 		EXIT_APP_FAIL;

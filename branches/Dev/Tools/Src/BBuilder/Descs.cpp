@@ -474,7 +474,7 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 		if (!IsFileAdded(SrcFilePath) && IOSrv->FileExists(SrcFilePath))
 		{
 			BatchToolInOut(CStrID("CFLua"), SrcFilePath, ExportFilePath);
-			FilesToPack.InsertSorted(ExportFilePath); //???or after running tool?
+			FilesToPack.InsertSorted(ExportFilePath);
 		}
 	}
 	else if (!IsFileAdded(ExportFilePath) && IOSrv->FileExists(ExportFilePath)) FilesToPack.InsertSorted(ExportFilePath);
@@ -509,13 +509,14 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 
 bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
 {
-	/*
 	IO::CFSBrowser Browser;
-	if (!Browser.SetAbsolutePath(ExportDescs ? "SrcQuests:" : "Quests:"))
+	if (!Browser.SetAbsolutePath(ExportDescs ? SrcPath : ExportPath))
 	{
 		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
 		FAIL;
 	}
+
+	if (ExportDescs) IOSrv->CreateDirectory(ExportPath);
 
 	if (!Browser.IsCurrDirEmpty()) do
 	{
@@ -526,40 +527,62 @@ bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
 
 			if (LowerName != (ExportDescs ? "_quest.hrd" : "_quest.prm")) continue;
 
-			nString FileNoExt = Browser.GetCurrEntryName();
-			FileNoExt.StripExtension();
+			nString QuestName;
+			if (Verbose >= VL_INFO)
+			{
+				nString QuestName = Browser.GetCurrentPath();
+				QuestName.ConvertBackslashes();
+				QuestName.StripTrailingSlash();
+				QuestName.ExtractFileName();
+				QuestName.StripExtension();
+			}
 
-			nString QuestName = Browser
-			n_msg(VL_INFO, "Processing quest '%s'...\n", FileNoExt.CStr());
+			n_msg(VL_INFO, "Processing quest '%s'...\n", QuestName.CStr());
 
-			ExportFilePath = "Levels:" + FileNoExt + ".prm";
-			Data::PParams LevelDesc;
+			nString ExportFilePath = ExportPath + "/_Quest.prm";
+			Data::PParams Desc;
 			if (ExportDescs)
 			{
-				LevelDesc = DataSrv->LoadHRD("SrcLevels:" + Browser.GetCurrEntryName(), false);
-				DataSrv->SavePRM(ExportFilePath, LevelDesc);
+				Desc = DataSrv->LoadHRD(SrcPath + "/_Quest.hrd", false);
+				DataSrv->SavePRM(ExportFilePath, Desc);
 			}
-			else LevelDesc = DataSrv->LoadPRM(ExportFilePath, false);
+			else Desc = DataSrv->LoadPRM(ExportFilePath, false);
 
-			if (!LevelDesc.IsValid())
+			if (!Desc.IsValid())
 			{
-				n_msg(VL_ERROR, "Error loading level '%s' desc\n", FileNoExt.CStr());
+				n_msg(VL_ERROR, "Error loading quest '%s' desc\n", QuestName.CStr());
 				continue;
 			}
 
 			FilesToPack.InsertSorted(ExportFilePath);
 
-			if (!ProcessLevel(*LevelDesc, FileNoExt))
+			Data::PParams Tasks;
+			if (Desc->Get(Tasks, CStrID("Tasks")))
 			{
-				n_msg(VL_ERROR, "Error processing level '%s'\n", FileNoExt.CStr());
-				continue;
+				for (int i = 0; i < Tasks->GetCount(); ++i)
+				{
+					nString Name = Tasks->Get(i).GetName().CStr();
+					ExportFilePath = ExportPath + "/" + Name + ".lua";
+					if (ExportDescs)
+					{
+						nString SrcFilePath = SrcPath + "/" + Name + ".lua";
+						if (!IsFileAdded(SrcFilePath) && IOSrv->FileExists(SrcFilePath))
+						{
+							BatchToolInOut(CStrID("CFLua"), SrcFilePath, ExportFilePath);
+							FilesToPack.InsertSorted(ExportFilePath);
+						}
+					}
+					else if (!IsFileAdded(ExportFilePath) && IOSrv->FileExists(ExportFilePath)) FilesToPack.InsertSorted(ExportFilePath);
+				}
 			}
+		}
+		else if (Browser.IsCurrEntryDir())
+		{
+			if (!ProcessQuestsInFolder(SrcPath + "/" + Browser.GetCurrEntryName(), ExportPath + "/" + Browser.GetCurrEntryName())) FAIL;
 		}
 	}
 	while (Browser.NextCurrDirEntry());
 
 	OK;
-*/
-FAIL;
 }
 //---------------------------------------------------------------------
