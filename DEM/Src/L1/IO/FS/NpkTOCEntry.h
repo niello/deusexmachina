@@ -86,6 +86,7 @@ inline CNpkTOCEntry::~CNpkTOCEntry()
 
 inline CNpkTOCEntry* CNpkTOCEntry::AddDirEntry(const char* pName)
 {
+	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);
 	if (!pEntries) pEntries = n_new(nHashList(32));
 	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(GetRootPath(), this, pName));
@@ -96,6 +97,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddDirEntry(const char* pName)
 
 inline CNpkTOCEntry* CNpkTOCEntry::AddFileEntry(const char* pName, int FileOffset, int FileLength)
 {
+	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);
 	if (!pEntries) pEntries = n_new(nHashList(32));
 	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(GetRootPath(), this, pName, FileOffset, FileLength));

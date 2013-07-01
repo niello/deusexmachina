@@ -46,6 +46,8 @@ public:
 
 inline CNpkTOCEntry* CNpkTOC::BeginDirEntry(const char* pDirName)
 {
+	n_assert_dbg(pDirName);
+
 	CNpkTOCEntry* pEntry;
 	if (pCurrDir) pEntry = pCurrDir->AddDirEntry(pDirName);
 	else
@@ -63,6 +65,7 @@ inline CNpkTOCEntry* CNpkTOC::BeginDirEntry(const char* pDirName)
 
 inline CNpkTOCEntry* CNpkTOC::AddFileEntry(const char* pName, int Offset, int Length)
 {
+	n_assert_dbg(pName);
 	n_assert(pCurrDir);
 	return pCurrDir->AddFileEntry(pName, Offset, Length);
 }
