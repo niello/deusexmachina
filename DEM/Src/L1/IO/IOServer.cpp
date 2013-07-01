@@ -21,12 +21,12 @@ CIOServer::CIOServer(): Assigns(nString())
 	DefaultFS = n_new(CFileSystemWin32);
 
 	nString SysFolder;
-	if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("home", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_BIN, SysFolder))	SetAssign("bin", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_USER, SysFolder))	SetAssign("user", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("temp", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("appdata", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("programs", SysFolder);
+	if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("Home", SysFolder);
+	if (DefaultFS->GetSystemFolderPath(SF_BIN, SysFolder))	SetAssign("Bin", SysFolder);
+	if (DefaultFS->GetSystemFolderPath(SF_USER, SysFolder))	SetAssign("User", SysFolder);
+	if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("Temp", SysFolder);
+	if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("AppData", SysFolder);
+	if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("Programs", SysFolder);
 }
 //---------------------------------------------------------------------
 

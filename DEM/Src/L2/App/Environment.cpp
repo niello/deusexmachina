@@ -27,15 +27,20 @@ bool CEnvironment::InitCore()
 	IOServer = n_new(IO::CIOServer);
 	DataServer = n_new(Data::CDataServer);
 
+	if (!ProjDir.IsValid()) ProjDir = IOSrv->GetAssign("Home");
+	IOSrv->SetAssign("Proj", ProjDir);
+
+	Data::PParams PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
+	if (PathList.IsValid())
+		for (int i = 0; i < PathList->GetCount(); ++i)
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
+
 	n_new(Core::CLogger);
 	CoreLogger->Open((AppName + " - " + AppVersion).CStr());
 
-	if (!ProjDir.IsValid()) ProjDir = IOSrv->GetAssign("home");
-	IOSrv->SetAssign("proj", ProjDir);
-
 	nString AppData;
-	AppData.Format("appdata:%s/%s", AppVendor.CStr(), AppName.CStr());
-	IOSrv->SetAssign("appdata", IOSrv->ManglePath(AppData));
+	AppData.Format("AppData:%s/%s", AppVendor.CStr(), AppName.CStr());
+	IOSrv->SetAssign("AppData", IOSrv->ManglePath(AppData));
 
 	OK;
 }
@@ -78,7 +83,7 @@ bool CEnvironment::InitEngine()
 	SceneServer = n_new(Scene::CSceneServer);
 	//???do it in Open()?
 	Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
-	n_assert(DefaultFrameShader->Init(*DataSrv->LoadHRD("data:shaders/Default.hrd")));
+	n_assert(DefaultFrameShader->Init(*DataSrv->LoadPRM("Shaders:Default.prm")));
 	SceneServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
 	SceneServer->SetScreenFrameShaderID(CStrID("Default"));
 
@@ -151,7 +156,8 @@ bool CEnvironment::InitGameSystem()
 
 	AIServer = n_new(AI::CAIServer);
 
-	Data::PParams ActTpls = DataSrv->LoadHRD("data:tables/AIActionTpls.hrd");
+	// Actor action templates
+	Data::PParams ActTpls = DataSrv->LoadPRM("AI:AIActionTpls.prm");
 	if (ActTpls.IsValid())
 	{
 		for (int i = 0; i < ActTpls->GetCount(); ++i)
@@ -162,8 +168,8 @@ bool CEnvironment::InitGameSystem()
 		AISrv->GetPlanner().EndActionTpls();
 	}
 
-	// Smart object actions
-	Data::PParams SOActTpls = DataSrv->LoadHRD("data:tables/AISOActionTpls.hrd");
+	// Smart object action templates
+	Data::PParams SOActTpls = DataSrv->LoadPRM("AI:AISOActionTpls.prm");
 	if (SOActTpls.IsValid())
 		for (int i = 0; i < SOActTpls->GetCount(); ++i)
 		{

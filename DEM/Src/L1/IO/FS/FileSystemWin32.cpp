@@ -129,7 +129,6 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, nString& OutPath)
 		if (!GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
 		OutPath = pRawPath;
 		OutPath.ConvertBackslashes();
-		OK;
 	}
 	else if (Code == SF_HOME || Code == SF_BIN)
 	{
@@ -137,22 +136,6 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, nString& OutPath)
 		nString PathToExe(pRawPath);
 		PathToExe.ConvertBackslashes();
 		OutPath = PathToExe.ExtractDirName();
-
-		if (Code == SF_HOME)
-		{
-			nString LastDir = PathToExe.ExtractLastDirName();
-			if (!n_stricmp(LastDir.CStr(), "win32") || !n_stricmp(LastDir.CStr(), "win32d"))
-			{
-				// Normal home:bin/win32 directory structure, strip bin/win32
-				OutPath.StripTrailingSlash();
-				OutPath = OutPath.ExtractDirName();
-				OutPath.StripTrailingSlash();
-				OutPath = OutPath.ExtractDirName();
-				OutPath.StripTrailingSlash();
-			}
-		}
-
-		OK;
 	}
 	else
 	{

@@ -59,7 +59,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 		if (!ExistingNode) Node = Level->GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
-		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
+		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
 	}
 
 	const matrix44& EntityTfm = Desc->Get<matrix44>(CStrID("Transform"));
@@ -73,7 +73,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	const nString& PhysicsDescFile = Desc->Get<nString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
-		Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("physics:") + PhysicsDescFile.CStr() + ".prm");
+		Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("Physics:") + PhysicsDescFile.CStr() + ".prm");
 		if (PhysicsDesc.IsValid())
 		{
 			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));

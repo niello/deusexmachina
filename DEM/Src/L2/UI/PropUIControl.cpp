@@ -69,7 +69,7 @@ bool CPropUIControl::InternalActivate()
 	{
 		Physics::PCollisionShape Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(PickShapeID);
 		if (!Shape.IsValid())
-			Shape = Physics::LoadCollisionShapeFromPRM(PickShapeID, nString("physics:") + PickShapeID.CStr() + ".hrd"); //!!!prm!
+			Shape = Physics::LoadCollisionShapeFromPRM(PickShapeID, nString("Physics:") + PickShapeID.CStr() + ".prm");
 		n_assert(Shape->IsLoaded());
 
 		ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");

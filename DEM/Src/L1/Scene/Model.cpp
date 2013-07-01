@@ -91,9 +91,13 @@ bool CModel::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
 
 bool CModel::ValidateResources()
 {
+	static const nString StrMaterials("Materials:");
+	static const nString StrMeshes("Meshes:");
+	static const nString StrTextures("Textures:");
+
 	if (Material.IsValid())
 	{
-		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(Material->GetUID().CStr(), Material)) FAIL;
+		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(StrMaterials + Material->GetUID().CStr() + ".prm", Material)) FAIL;
 
 		for (int i = 0; i < ShaderVars.GetCount(); ++i)
 		{
@@ -105,12 +109,13 @@ bool CModel::ValidateResources()
 			if (Var.Value.IsA<PTexture>())
 			{
 				PTexture Tex = Var.Value.GetValue<PTexture>();
-				if (!Tex->IsLoaded()) LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex);
+				if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
 			}
 		}
 	}
 
-	if (Mesh.IsValid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(Mesh->GetUID().CStr(), Usage_Immutable, CPU_NoAccess, Mesh)) FAIL;
+	//!!!change extension!
+	if (Mesh.IsValid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(StrMeshes + Mesh->GetUID().CStr() + ".nvx2", Usage_Immutable, CPU_NoAccess, Mesh)) FAIL;
 
 	OK;
 }

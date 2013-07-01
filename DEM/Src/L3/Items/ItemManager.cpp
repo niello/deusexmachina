@@ -1,6 +1,5 @@
 #include "ItemManager.h"
 
-#include <IO/IOServer.h>
 #include <Data/Params.h>
 #include <Data/DataServer.h>
 
@@ -8,13 +7,6 @@ namespace Items
 {
 __ImplementClassNoFactory(Items::CItemManager, Core::CRefCounted);
 __ImplementSingleton(Items::CItemManager);
-
-CItemManager::CItemManager()
-{
-	__ConstructSingleton;
-	IOSrv->SetAssign("items", "game:items");
-}
-//---------------------------------------------------------------------
 
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
 {
