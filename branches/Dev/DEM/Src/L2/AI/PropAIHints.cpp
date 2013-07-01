@@ -50,7 +50,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 	//???need to cache?
 	Data::PParams Desc;
 	const nString& DescName = GetEntity()->GetAttr<nString>(CStrID("AIHintsDesc"), NULL);
-	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(nString("aihints:") + DescName + ".prm");
+	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(nString("AIHints:") + DescName + ".prm");
 
 	if (Desc.IsValid())
 	{

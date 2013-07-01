@@ -58,7 +58,7 @@ void CQuestManager::Trigger()
 
 bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 {
-	PParams QuestDesc = DataSrv->LoadPRM(nString("quests:") + QuestID.CStr() + "/_Quest.prm", false);
+	PParams QuestDesc = DataSrv->LoadPRM(nString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
 	if (!QuestDesc.IsValid()) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);
@@ -333,7 +333,7 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 			TaskRec.Status = (CQuest::EStatus)DS->Get<int>(Attr::QStatus);
 			if (TaskRec.Status == CQuest::Opened)
 			{
-				nString TaskScriptFile = nString("quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
+				nString TaskScriptFile = nString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
 				if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 				{
 					nString Name = nString(QuestID.CStr()) + StrUnderline + TaskID.CStr();

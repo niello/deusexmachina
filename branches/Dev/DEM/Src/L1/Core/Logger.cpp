@@ -26,8 +26,8 @@ bool CLogger::Open(const char* pAppName, const nString& FilePath)
 	nString RealPath(FilePath);
 	if (RealPath.IsEmpty())
 	{
-		Dir = "appdata:RadonLabs/Nebula2";
-		RealPath.Format("appdata:RadonLabs/Nebula2/%s.log", AppName.CStr());
+		Dir = "AppData:STILL NO TEAM NAME/Logs";
+		RealPath.Format("AppData:STILL NO TEAM NAME/Logs/%s.log", AppName.CStr());
 	}
 	else Dir = RealPath.ExtractDirName();
 

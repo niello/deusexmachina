@@ -17,7 +17,7 @@ bool CPropSmartObject::InternalActivate()
 	PParams Desc;
 	
 	const nString& DescResource = GetEntity()->GetAttr<nString>(CStrID("SmartObjDesc"), NULL);
-	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(nString("smarts:") + DescResource + ".prm");
+	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(nString("Smarts:") + DescResource + ".prm");
 
 	if (Desc.IsValid())
 	{

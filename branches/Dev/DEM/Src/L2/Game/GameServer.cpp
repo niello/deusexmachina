@@ -17,11 +17,11 @@
 
 //!!!must store settings!
 
-IOSrv->CreateDirectory("appdata:Profiles/Default");
+IOSrv->CreateDirectory("AppData:Profiles/Default");
 
 inline nString CLoaderServer::GetDatabasePath() const
 {
-	return "appdata:profiles/default/" + GameDBName + ".db3";
+	return "AppData:profiles/default/" + GameDBName + ".db3";
 }
 //---------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ inline nString CLoaderServer::GetDatabasePath() const
 // directory) using the Nebula2 filesystem path conventions.
 inline nString CLoaderServer::GetSaveGameDirectory() const
 {
-	return "appdata:profiles/default/save";
+	return "AppData:profiles/default/save";
 }
 //---------------------------------------------------------------------
 
@@ -288,7 +288,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 
 		nString RelLevelPath = nString("/Levels/") + LevelID.CStr() + ".prm";
 
-		Data::PParams InitialLvl = DataSrv->LoadPRM("export:Game" + RelLevelPath);
+		Data::PParams InitialLvl = DataSrv->LoadPRM("Game:" + RelLevelPath);
 		n_assert(InitialLvl.IsValid());
 
 		//!!!DBG TMP PATH!
@@ -372,7 +372,7 @@ bool CGameServer::SaveGame(const nString& Name)
 	for (int i = 0; i < Levels.GetCount(); ++i)
 	{
 		if (SGLevel->GetCount()) SGLevel = n_new(Data::CParams);
-		Data::PParams LevelDesc = DataSrv->LoadPRM(nString("export:Game/Levels/") + Levels.KeyAt(i).CStr() + ".prm");
+		Data::PParams LevelDesc = DataSrv->LoadPRM(nString("Levels:") + Levels.KeyAt(i).CStr() + ".prm");
 		n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
 		if (!SGLevel->GetCount()) continue;
 

@@ -63,7 +63,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 //!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	PParams Desc;
 	const nString& AnimDesc = GetEntity()->GetAttr<nString>(CStrID("AnimDesc"));
-	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("game:Anim/") + AnimDesc + ".prm");
+	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("GameAnim:") + AnimDesc + ".prm");
 
 	if (Desc.IsValid())
 	{

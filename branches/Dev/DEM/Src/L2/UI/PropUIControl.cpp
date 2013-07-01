@@ -23,16 +23,14 @@ namespace Prop
 __ImplementClass(Prop::CPropUIControl, 'PUIC', Game::CProperty);
 __ImplementPropertyStorage(CPropUIControl);
 
-using namespace Data;
-
 bool CPropUIControl::InternalActivate()
 {
 	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"), NULL);
 	UIDesc = GetEntity()->GetAttr<nString>(CStrID("Desc"), NULL);
 	ReflectSOActions = false;
 
-	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"), NULL);
-	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm") : NULL;
+	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("UIDesc"), NULL);
+	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("UI:") + IAODesc + ".prm") : NULL;
 	if (Desc.IsValid())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<nString>(CStrID("UIName"), NULL);
@@ -169,8 +167,8 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
 	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
 
-	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("IAODesc"), NULL);
-	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("iao:") + IAODesc + ".prm") : NULL;
+	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("UIDesc"), NULL);
+	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("UI:") + IAODesc + ".prm") : NULL;
 	Data::PParams SOActionNames = Desc.IsValid() ? Desc->Get<PParams>(CStrID("SmartObjActionNames"), NULL) : NULL;
 
 	for (int i = 0; i < SOActions.GetCount(); ++i)

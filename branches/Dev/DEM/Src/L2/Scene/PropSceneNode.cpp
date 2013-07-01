@@ -37,7 +37,7 @@ bool CPropSceneNode::InternalActivate()
 		if (!ExistingNode) Node = GetEntity()->GetLevel().GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
-		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("scene:" + NodeFile + ".scn", Node));
+		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
 
 		if (ExistingNode)
 			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());

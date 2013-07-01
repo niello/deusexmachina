@@ -11,6 +11,7 @@
 #include <Physics/PhysicsServer.h>
 #include <AI/AILevel.h>
 #include <Events/EventManager.h>
+#include <IO/IOServer.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
@@ -50,8 +51,11 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	ID = LevelID; //Desc.Get<CStrID>(CStrID("ID"), CStrID::Empty);
 	Name = Desc.Get<nString>(CStrID("Name"), NULL);
 
-	nString ScriptFile;
-	if (Desc.Get(ScriptFile, CStrID("Script")))
+	nString PathBase = "Levels:";
+	PathBase += LevelID.CStr();
+
+	nString ScriptFile = PathBase + ".lua";
+	if (IOSrv->FileExists(ScriptFile))
 	{
 		Script = n_new(Scripting::CScriptObject((nString("Level_") + ID.CStr()).CStr()));
 		Script->Init(); // No special class
@@ -121,10 +125,14 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		AILevel = n_new(AI::CAILevel);
 		if (!AILevel->Init(Bounds, QTDepth)) FAIL;
 
-		nString NMFile;
-		if (SubDesc->Get(NMFile, CStrID("NavMesh")))
+		nString NMFile = PathBase + ".nm";
+		if (IOSrv->FileExists(NMFile))
+		{
 			if (!AILevel->LoadNavMesh(NMFile))
 				n_printf("Error loading navigation mesh for level %s\n", ID.CStr());
+
+			//!!!load nav regions and their status!
+		}
 	}
 
 	GlobalSub = EventMgr->Subscribe(NULL, this, &CGameLevel::OnEvent);
