@@ -95,10 +95,6 @@ bool CEnvironment::InitEngine()
 
 	AudioServer = n_new(Audio::CAudioServer);
 	AudioServer->Open();
-	//nString TablePath = "data:tables/sound.xml";
-	//if (IOSrv->FileExists(TablePath))
-	//	AudioServer->OpenWaveBank(TablePath);
-	//else n_printf("Warning: '%s' doesn't exist!\n", TablePath.CStr());
 
 	VideoServer = n_new(Video::CVideoServer);
 	VideoServer->Open();

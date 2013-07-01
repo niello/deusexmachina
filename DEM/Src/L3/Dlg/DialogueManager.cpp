@@ -126,11 +126,7 @@ PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const nString&
 	{
 		Idx = Params.IndexOf(CStrID("ScriptFile"));
 		if (Idx == INVALID_INDEX)
-		{
-			Dlg->ScriptFile = "dlg:";
-			Dlg->ScriptFile += Name;
-			Dlg->ScriptFile += ".lua";
-		}
+			Dlg->ScriptFile = nString("Dlg:") + Name + ".lua";
 		else Dlg->ScriptFile = Params.Get(Idx).GetValue<nString>();
 	}
 
@@ -145,7 +141,7 @@ PDialogue CDialogueManager::GetDialogue(const nString& Name) //???CStrID identif
 	if (Idx > -1) return DlgRegistry.ValueAt(Idx);
 	else
 	{
-		PParams Desc = DataSrv->LoadPRM(nString("dlg:") + Name + ".prm", false);
+		PParams Desc = DataSrv->LoadPRM(nString("Dlg:") + Name + ".prm", false);
 		if (Desc.IsValid())
 		{
 			PDialogue NewDlg = CreateDialogue(*Desc, Name);

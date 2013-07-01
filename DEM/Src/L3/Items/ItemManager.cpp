@@ -23,7 +23,7 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
 	else
 	{
-		PParams HRD = DataSrv->LoadPRM(nString("items:") + ID.CStr() + ".prm", false);
+		PParams HRD = DataSrv->LoadPRM(nString("Items:") + ID.CStr() + ".prm", false);
 		if (HRD.IsValid())
 		{
 			Tpl = CreateItemTpl(ID, *HRD);
