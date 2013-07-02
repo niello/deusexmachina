@@ -62,8 +62,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		else Obj = n_new(Physics::CCollisionObjMoving);
 		Obj->SetUserData(*(void**)&GetEntity()->GetUID());
 
-		//!!!vector3 in CData fix reading!
-		n_verify_dbg(Obj->Init(ObjDesc, ObjDesc.Get<vector4>(CStrID("Offset"), vector3::Zero)));
+		n_verify_dbg(Obj->Init(ObjDesc, ObjDesc.Get(CStrID("Offset"), vector3::Zero)));
 
 		Scene::CSceneNode* pCurrNode;
 		const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);

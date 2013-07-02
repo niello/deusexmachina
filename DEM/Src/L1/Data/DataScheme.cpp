@@ -43,11 +43,7 @@ bool CDataScheme::Init(const CParams& Desc)
 				else if (!n_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
 				else if (!n_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(nString);
 				else if (!n_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
-				else if (!n_stricmp(pTypeString, "vector3"))
-				{
-					Rec.TypeID = DATA_TYPE_ID(vector4);
-					Rec.Flags.Set(SAVE_V4_AS_V3);
-				}
+				else if (!n_stricmp(pTypeString, "vector3")) Rec.TypeID = DATA_TYPE_ID(vector3);
 				else if (!n_stricmp(pTypeString, "vector4")) Rec.TypeID = DATA_TYPE_ID(vector4);
 				else if (!n_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
 				else Rec.TypeID = -1;

@@ -39,8 +39,8 @@ private:
 	bool LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID = NULL);
 	bool CloseQuest(CStrID QuestID, CStrID TaskID, bool Success);
 
-	DECLARE_EVENT_HANDLER(OnLoad, OnLoad);
-	DECLARE_EVENT_HANDLER(OnSave, OnSave);
+	DECLARE_EVENT_HANDLER(OnGameDescLoaded, OnGameDescLoaded);
+	DECLARE_EVENT_HANDLER(OnGameSaving, OnGameSaving);
 
 public:
 

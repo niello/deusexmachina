@@ -76,6 +76,7 @@ protected:
 	CAction*		GetActionByID(CStrID ID);
 
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
+	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(OnMouseEnter, OnMouseEnter);
 	DECLARE_EVENT_HANDLER(OnMouseLeave, OnMouseLeave);
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);

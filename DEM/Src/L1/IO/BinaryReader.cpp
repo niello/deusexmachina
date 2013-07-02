@@ -64,7 +64,7 @@ bool CBinaryReader::ReadString(nString& OutValue)
 
 bool CBinaryReader::ReadParams(Data::CParams& OutValue)
 {
-	//OutValue.Clear();
+	n_assert_dbg(!OutValue.GetCount());
 	short Count;
 	if (!Read(Count)) FAIL;
 	//!!!OutValue.BeginAdd(Count)!
@@ -93,11 +93,13 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 	char Type;
 	if (!Read(Type)) FAIL;
 
-	if (Type == DATA_TYPE_ID(bool)) OutValue = Read<bool>();
+	if (Type == TVoid) OutValue.Clear();
+	else if (Type == DATA_TYPE_ID(bool)) OutValue = Read<bool>();
 	else if (Type == DATA_TYPE_ID(int)) OutValue = Read<int>();
 	else if (Type == DATA_TYPE_ID(float)) OutValue = Read<float>();
 	else if (Type == DATA_TYPE_ID(nString)) OutValue = Read<nString>();
 	else if (Type == DATA_TYPE_ID(CStrID)) OutValue = Read<CStrID>();
+	else if (Type == DATA_TYPE_ID(vector3)) OutValue = Read<vector3>();
 	else if (Type == DATA_TYPE_ID(vector4)) OutValue = Read<vector4>();
 	else if (Type == DATA_TYPE_ID(matrix44)) OutValue = Read<matrix44>();
 	else if (Type == DATA_TYPE_ID(Data::PParams))
@@ -112,9 +114,12 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 
 		short Count;
 		if (!Read(Count)) FAIL;
-		A->Reserve(Count);
-		for (int i = 0; i < Count; ++i)
-			if (!ReadData(A->At(i))) FAIL;
+		if (Count > 0)
+		{
+			A->Reserve(Count);
+			for (int i = 0; i < Count; ++i)
+				if (!ReadData(A->At(i))) FAIL;
+		}
 
 		OutValue = A;
 	}
