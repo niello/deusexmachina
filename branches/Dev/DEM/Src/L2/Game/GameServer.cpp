@@ -273,6 +273,9 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 		TimeSrv->Load(*SubSection);
 	else TimeSrv->ResetAll();
 
+	// Allow custom gameplay managers to load their data
+	EventMgr->FireEvent(CStrID("OnGameDescLoaded"), GameDesc);
+
 	CStrID ActiveLevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
 	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
 	if (!LoadedLevels.IsValid())
@@ -306,6 +309,9 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 	}
 
 	GameFileName = FileName;
+
+	// Allow custom gameplay managers to load their data
+	EventMgr->FireEvent(CStrID("OnGameLoaded"), GameDesc);
 
 	return SetActiveLevel(ActiveLevelID);
 }

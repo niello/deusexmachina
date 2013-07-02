@@ -25,8 +25,7 @@ public:
 		WRITE_COUNT				= 0x02,	// Write param count of this param, if it is {} or []
 		WRITE_CHILD_KEYS		= 0x04,	// Write keys of child elements, when save without subscheme or apply it to children
 		WRITE_CHILD_COUNT		= 0x08,	// Write param count of child {} and [] elements, when save without subscheme or apply it to children
-		APPLY_SCHEME_TO_SELF	= 0x10,	// Apply scheme defined by Scheme/SchemeID to self, not to child params
-		SAVE_V4_AS_V3			= 0x20	// Ignores W of vectors when we want to save v3, because there is no v3 CTypeImpl
+		APPLY_SCHEME_TO_SELF	= 0x10	// Apply scheme defined by Scheme/SchemeID to self, not to child params
 	};
 
 	struct CRecord

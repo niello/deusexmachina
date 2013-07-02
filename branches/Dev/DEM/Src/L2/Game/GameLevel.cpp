@@ -66,9 +66,8 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	Data::PParams SubDesc;
 	if (Desc.Get(SubDesc, CStrID("Scene")))
 	{
-		//!!!allow vector3 (de)serialization?!
-		vector3 Center = SubDesc->Get<vector4>(CStrID("Center"), vector4::Zero);
-		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
+		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
+		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 		int QTDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 		bbox3 Bounds(Center, Extents);
 
@@ -92,7 +91,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 				{
 					pCtlr->SetVerticalAngleLimits(n_deg2rad(CameraDesc->Get(CStrID("MinVAngle"), 0.0f)), n_deg2rad(CameraDesc->Get(CStrID("MaxVAngle"), 89.999f)));
 					pCtlr->SetDistanceLimits(CameraDesc->Get(CStrID("MinDistance"), 0.0f), CameraDesc->Get(CStrID("MaxDistance"), 10000.0f));
-					pCtlr->SetCOI(CameraDesc->Get<vector4>(CStrID("COI"), vector3::Zero)); //!!!read vector3!
+					pCtlr->SetCOI(CameraDesc->Get(CStrID("COI"), vector3::Zero));
 					pCtlr->SetAngles(n_deg2rad(CameraDesc->Get(CStrID("VAngle"), 0.0f)), n_deg2rad(CameraDesc->Get(CStrID("HAngle"), 0.0f)));
 					pCtlr->SetDistance(CameraDesc->Get(CStrID("Distance"), 20.0f));
 				}
@@ -102,9 +101,8 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 	if (Desc.Get(SubDesc, CStrID("Physics")))
 	{
-		//!!!allow vector3 (de)serialization?!
-		vector3 Center = SubDesc->Get<vector4>(CStrID("Center"), vector4::Zero);
-		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
+		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
+		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 		bbox3 Bounds(Center, Extents);
 
 		PhysWorld = n_new(Physics::CPhysicsWorld);
@@ -116,9 +114,8 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
 	{
-		//!!!allow vector3 (de)serialization?!
-		vector3 Center = SubDesc->Get<vector4>(CStrID("Center"), vector4::Zero);
-		vector3 Extents = SubDesc->Get<vector4>(CStrID("Extents"), vector4(512.f, 128.f, 512.f, 0.f));
+		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
+		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 		int QTDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 		bbox3 Bounds(Center, Extents);
 
@@ -170,7 +167,6 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	if (CameraManager.IsValid())
 	{
 		Data::PParams SGScene = n_new(Data::CParams);
-		OutDesc.Set(CStrID("Scene"), SGScene);
 
 		bool IsThirdPerson = CameraManager->IsCameraThirdPerson();
 		n_assert(IsThirdPerson); // Until a first person camera is implemented
@@ -205,6 +201,8 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 			if (SGCamera->GetCount()) SGScene->Set(CStrID("Camera"), SGCamera);
 		}
 		else SGScene->Set(CStrID("Camera"), CurrCameraDesc);
+
+		if (SGScene->GetCount()) OutDesc.Set(CStrID("Scene"), SGScene);
 	}
 
 	// Save nav. regions status
@@ -273,10 +271,6 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 void CGameLevel::Trigger()
 {
-	//!!!all events here will be fired many times if many levels exist! level as event dispatcher?
-
-	//!!!update AI level if needed!
-
 	if (Scene.IsValid())
 	{
 		Scene->ClearVisibleLists();

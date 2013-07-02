@@ -25,6 +25,8 @@ __ImplementPropertyStorage(CPropUIControl);
 
 bool CPropUIControl::InternalActivate()
 {
+	Enable(GetEntity()->GetAttr<bool>(CStrID("UIEnabled"), true));
+
 	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"), NULL);
 	UIDesc = GetEntity()->GetAttr<nString>(CStrID("Desc"), NULL);
 	ReflectSOActions = false;
@@ -89,6 +91,7 @@ bool CPropUIControl::InternalActivate()
 	}
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropUIControl, ExposeSI);
+	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropUIControl, OnLevelSaving);
 	PROP_SUBSCRIBE_PEVENT(OnMouseEnter, CPropUIControl, OnMouseEnter);
 	PROP_SUBSCRIBE_PEVENT(OnMouseLeave, CPropUIControl, OnMouseLeave);
 	OK;
@@ -98,6 +101,7 @@ bool CPropUIControl::InternalActivate()
 void CPropUIControl::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(OnMouseEnter);
 	UNSUBSCRIBE_EVENT(OnMouseLeave);
 	UNSUBSCRIBE_EVENT(OnPropActivated);
@@ -219,6 +223,14 @@ void CPropUIControl::EnableSmartObjReflection(bool Enable)
 
 		RemoveSOActions();
 	}
+}
+//---------------------------------------------------------------------
+
+bool CPropUIControl::OnLevelSaving(const Events::CEventBase& Event)
+{
+	if (Enabled) GetEntity()->DeleteAttr(CStrID("UIEnabled"));
+	else GetEntity()->SetAttr(CStrID("UIEnabled"), false);
+	OK;
 }
 //---------------------------------------------------------------------
 

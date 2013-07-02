@@ -197,7 +197,7 @@ inline bool CData::operator ==(const CData& Other) const
 template<class T> inline bool CData::operator ==(const T& Other) const
 {
 	//!!!compare by comparator & return IsEqual!
-	if (Type != DATA_TYPE(T))	FAIL;
+	if (Type != DATA_TYPE(T)) FAIL;
 	return (IsVoid() || Type->IsEqualT(&Value, &Other));
 }
 //---------------------------------------------------------------------
@@ -222,7 +222,7 @@ DECLARE_TYPE(vector4, 7)
 DECLARE_TYPE(matrix44, 8)
 DECLARE_TYPE(CMatrixPtrArray, 15)
 
-//#define TVoid	DATA_TYPE(void)
+#define TVoid			-1
 #define TBool			DATA_TYPE(bool)
 #define TInt			DATA_TYPE(int)
 #define TFloat			DATA_TYPE(float)

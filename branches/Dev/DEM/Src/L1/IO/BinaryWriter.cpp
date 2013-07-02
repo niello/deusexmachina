@@ -12,17 +12,19 @@ bool CBinaryWriter::WriteData(const CData& Value)
 {
 	if (!Write<char>(Value.GetTypeID())) FAIL;
 
-	if (Value.IsA<bool>()) return Write<bool>(Value);
+	if (Value.IsVoid()) OK;
+	else if (Value.IsA<bool>()) return Write<bool>(Value);
 	else if (Value.IsA<int>()) return Write<int>(Value);
 	else if (Value.IsA<float>()) return Write<float>(Value);
 	else if (Value.IsA<nString>()) return Write<nString>(Value);
 	else if (Value.IsA<CStrID>()) return Write<CStrID>(Value);
+	else if (Value.IsA<vector3>()) return Write<vector3>(Value);
 	else if (Value.IsA<vector4>()) return Write<vector4>(Value);
 	else if (Value.IsA<matrix44>()) return Write<matrix44>(Value);
 	else if (Value.IsA<PParams>()) return Write<PParams>(Value);
 	else if (Value.IsA<PDataArray>()) return Write<PDataArray>(Value);
 	else if (Value.IsA<CBuffer>())  return Write<CBuffer>(Value);
-	//???else FAIL;?
+	else FAIL;
 
 	OK;
 }
@@ -209,7 +211,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 
 bool CBinaryWriter::WriteDataAsOfType(const CData& Value, int TypeID, CFlags Flags)
 {
-	if (TypeID == -1) return Write(Value);
+	if (TypeID == TVoid) return Write(Value);
 	else
 	{
 		if (Value.GetTypeID() != TypeID)
@@ -233,15 +235,12 @@ bool CBinaryWriter::WriteDataAsOfType(const CData& Value, int TypeID, CFlags Fla
 		else if (TypeID == DATA_TYPE_ID(float)) return Write(Value.GetValue<float>());
 		else if (TypeID == DATA_TYPE_ID(nString)) return Write(Value.GetValue<nString>());
 		else if (TypeID == DATA_TYPE_ID(CStrID)) return Write(Value.GetValue<CStrID>());
-		else if (TypeID == DATA_TYPE_ID(vector4))
-		{
-			DWORD DataSize = Flags.Is(CDataScheme::SAVE_V4_AS_V3) ? 3 * sizeof(float) : 4 * sizeof(float);
-			return Stream.Write(Value.GetValue<vector4>().v, DataSize) == DataSize;
-		}
+		else if (TypeID == DATA_TYPE_ID(vector3)) return Write(Value.GetValue<vector3>());
+		else if (TypeID == DATA_TYPE_ID(vector4)) return Write(Value.GetValue<vector4>());
 	}
 
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-} //namespace IO
+}

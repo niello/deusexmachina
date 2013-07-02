@@ -133,7 +133,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 		}
 		else if (Type == Str::Box)
 		{
-			vector3 Ext = In.Get<vector4>(Str::Size, vector4(1.f, 1.f, 1.f, 0.f));
+			vector3 Ext = In.Get(Str::Size, vector3(1.f, 1.f, 1.f));
 			Ext *= 0.5f;
 			pBtShape = new btBoxShape(VectorToBtVector(Ext));
 		}

@@ -15,7 +15,7 @@ bool CPropInventory::InternalActivate()
 	n_assert(CurrWeight == 0.f && CurrVolume == 0.f);
 
 	Data::PDataArray InvDesc = GetEntity()->GetAttr<Data::PDataArray>(CStrID("Inventory"), NULL);
-	if (InvDesc.IsValid())
+	if (InvDesc.IsValid() && InvDesc->GetCount())
 	{
 		CItemStack* pStack = Items.Reserve(InvDesc->GetCount());
 		for (int i = 0; i < InvDesc->GetCount(); ++i, ++pStack)
@@ -57,11 +57,15 @@ void CPropInventory::InternalDeactivate()
 
 bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
 {
+	if (!Items.GetCount())
+	{
+		GetEntity()->DeleteAttr(CStrID("Inventory"));
+		OK;
+	}
+
 	// Need to recreate array because else we may rewrite initial level desc in the HRD cache
 	Data::PDataArray InvDesc = n_new(Data::CDataArray);
 	GetEntity()->SetAttr<Data::PDataArray>(CStrID("Inventory"), InvDesc);
-
-	if (!Items.GetCount()) OK;
 
 	CData* pData = InvDesc->Reserve(Items.GetCount());
 	foreach_stack(Stack, Items)

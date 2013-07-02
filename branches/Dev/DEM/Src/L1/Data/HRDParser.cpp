@@ -840,9 +840,11 @@ bool CHRDParser::ParseVector(const nArray<CToken>& Tokens, CData& Output)
 				//	Output = vector2(Floats[0], Floats[1]);
 				//	break;
 
-				case 3: // now emulate through vector4
+				case 3:
+					Output = vector3(Floats[0], Floats[1], Floats[2]);
+					break;
 				case 4:
-					Output = vector4(Floats[0], Floats[1], Floats[2], Floats.GetCount() > 3 ? Floats[3] : 0.f);
+					Output = vector4(Floats[0], Floats[1], Floats[2], Floats[3]);
 					break;
 
 				//case 9:

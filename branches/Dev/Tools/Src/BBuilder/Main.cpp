@@ -64,7 +64,12 @@ int main(int argc, const char** argv)
 
 	DataServer = n_new(Data::CDataServer);
 
-	Data::PParams PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
+	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
+	if (PathList.IsValid())
+		for (int i = 0; i < PathList->GetCount(); ++i)
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
+
+	PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValid())
 	{
 		for (int i = 0; i < PathList->GetCount(); ++i)

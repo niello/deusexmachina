@@ -22,15 +22,15 @@ CQuestManager::CQuestManager()
 {
 	__ConstructSingleton;
 
-	SUBSCRIBE_PEVENT(OnLoad, CQuestManager, OnLoad);
-	SUBSCRIBE_PEVENT(OnSave, CQuestManager, OnSave);
+	SUBSCRIBE_PEVENT(OnGameDescLoaded, CQuestManager, OnGameDescLoaded);
+	SUBSCRIBE_PEVENT(OnGameSaving, CQuestManager, OnGameSaving);
 }
 //---------------------------------------------------------------------
 
 CQuestManager::~CQuestManager()
 {
-	UNSUBSCRIBE_EVENT(OnLoad);
-	UNSUBSCRIBE_EVENT(OnSave);
+	UNSUBSCRIBE_EVENT(OnGameDescLoaded);
+	UNSUBSCRIBE_EVENT(OnGameSaving);
 
 	__DestructSingleton;
 }
@@ -277,22 +277,20 @@ CQuest::EStatus CQuestManager::GetQuestStatus(CStrID QuestID, CStrID TaskID)
 }
 //---------------------------------------------------------------------
 
-bool CQuestManager::OnLoad(const Events::CEventBase& Event)
+bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
 {
-	/*
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-
 	QuestsToDelete.Clear();
 	TasksToDelete.Clear();
-	DeletedScriptObjects.Clear();
-	
-	int TblIdx = pDB->FindTableIndex(StrQuests);
-	if (TblIdx == INVALID_INDEX)
+
+	Data::PParams GameDesc = ((const Events::CEvent&)Event).Params;
+	Data::PDataArray SGQuests;
+	if (!GameDesc->Get(SGQuests, CStrID("Quests")) || !SGQuests->GetCount())
 	{
 		Quests.Clear();
 		OK;
 	}
 
+	// Reset all loaded quests instead of clearing array to avoid reloading from descs
 	for (int i = 0; i < Quests.GetCount(); i++)
 	{
 		CQuestRec& QuestRec = Quests.ValueAt(i);
@@ -306,15 +304,11 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 		}
 	}
 
-	DB::PDataset DS = pDB->GetTable(TblIdx)->CreateDataset();
-	DS->AddColumnsFromTable();
-	DS->PerformQuery();
-	
-	for (int i = 0; i < DS->GetValueTable()->GetRowCount(); i++)
+	for (int i = 0; i < SGQuests->GetCount(); ++i)
 	{
-		DS->SetRowIndex(i);
+		Data::PParams SGQuest = SGQuests->Get(i);
 
-		CStrID QuestID = DS->Get<CStrID>(Attr::QuestID);
+		CStrID QuestID = SGQuest->Get<CStrID>(CStrID("ID"));
 
 		CQuestRec* QuestRec;
 
@@ -326,99 +320,73 @@ bool CQuestManager::OnLoad(const Events::CEventBase& Event)
 		}
 		else QuestRec = &Quests.ValueAt(Idx);
 
-		CStrID TaskID = DS->Get<CStrID>(Attr::TaskID);
-		if (TaskID.IsValid())
+		QuestRec->Status = (CQuest::EStatus)SGQuest->Get<int>(CStrID("Status"));
+
+		Data::PParams SGTasks;
+		if (SGQuest->Get(SGTasks, CStrID("Tasks")))
 		{
-			CQuest::CTaskRec& TaskRec = QuestRec->Quest->Tasks[TaskID];
-			TaskRec.Status = (CQuest::EStatus)DS->Get<int>(Attr::QStatus);
-			if (TaskRec.Status == CQuest::Opened)
+			for (int j = 0; j < SGTasks->GetCount(); ++j)
 			{
-				nString TaskScriptFile = nString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
-				if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
+				CStrID TaskID = SGTasks->Get(j).GetName();
+				CQuest::CTaskRec& TaskRec = QuestRec->Quest->Tasks[TaskID];
+				TaskRec.Status = (CQuest::EStatus)SGTasks->Get<int>(j);
+				if (TaskRec.Status == CQuest::Opened)
 				{
-					nString Name = nString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
-					Name.ReplaceChars("/", '_');
-					TaskRec.Task->ScriptObj = n_new(Scripting::CScriptObject(Name.CStr(), StrQuests.CStr()));
-					TaskRec.Task->ScriptObj->Init();
-					TaskRec.Task->ScriptObj->LoadScriptFile(TaskScriptFile);
-					TaskRec.Task->ScriptObj->LoadFields(pDB);
-				}
-			}
-		}
-		else QuestRec->Status = (CQuest::EStatus)DS->Get<int>(Attr::QStatus);
-	}
-
-	for (int i = Quests.GetCount() - 1; i >= 0; i--)
-		if (Quests.ValueAt(i).Status == CQuest::No)
-			Quests.EraseAt(i);
-*/
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CQuestManager::OnSave(const Events::CEventBase& Event)
-{
-/*
-	DB::CDatabase* pDB = (DB::CDatabase*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("DB"));
-
-	//????!!!!move to script server & make general policy to chande LuaObjects table (only OnSave)?!
-	//!!!use WHERE ... IN instead of 100500 queries!
-	for (int i = 0; i < DeletedScriptObjects.GetCount(); i++)
-		Scripting::CScriptObject::ClearFieldsDeffered(pDB, DeletedScriptObjects[i]);
-	DeletedScriptObjects.Clear();
-
-	DB::PTable Tbl;
-	int TblIdx = pDB->FindTableIndex(StrQuests);
-	if (TblIdx == INVALID_INDEX)
-	{
-		Tbl = DB::CTable::CreateInstance();
-		Tbl->SetName(StrQuests);
-		Tbl->AddColumn(DB::CColumn(Attr::QuestID, DB::CColumn::Primary));
-		Tbl->AddColumn(DB::CColumn(Attr::TaskID, DB::CColumn::Primary));
-		Tbl->AddColumn(Attr::QStatus);
-		pDB->AddTable(Tbl);
-	}
-	else
-	{
-		Tbl = pDB->GetTable(TblIdx);
-		Tbl->Truncate();
-	}
-
-	DB::PDataset DS = Tbl->CreateDataset();
-	DS->AddColumnsFromTable();
-
-	for (int i = 0; i < Quests.GetCount(); i++)
-	{
-		CQuestRec& QuestRec = Quests.ValueAt(i);
-		if (QuestRec.Status != CQuest::No)
-		{
-			DS->AddRow();
-			DS->Set<CStrID>(Attr::QuestID, Quests.KeyAt(i));
-			DS->Set<int>(Attr::QStatus, (int)QuestRec.Status);
-			if (QuestRec.Status == CQuest::Opened)
-			{
-				nDictionary<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
-				for (int j = 0; j < Tasks.GetCount(); j++)
-				{
-					CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
-					if (TaskRec.Status != CQuest::No)
+					nString TaskScriptFile = nString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
+					if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 					{
-						DS->AddRow();
-						DS->Set<CStrID>(Attr::QuestID, Quests.KeyAt(i));
-						DS->Set<CStrID>(Attr::TaskID, Tasks.KeyAt(j));
-						DS->Set<int>(Attr::QStatus, (int)TaskRec.Status);
-						if (TaskRec.Status == CQuest::Opened && TaskRec.Task->ScriptObj.IsValid())
-							TaskRec.Task->ScriptObj->SaveFields(pDB);
+						nString Name = nString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
+						Name.ReplaceChars("/", '_');
+						TaskRec.Task->ScriptObj = n_new(Scripting::CScriptObject(Name.CStr(), StrQuests.CStr()));
+						TaskRec.Task->ScriptObj->Init();
+						TaskRec.Task->ScriptObj->LoadScriptFile(TaskScriptFile);
 					}
 				}
 			}
 		}
 	}
 
-	DS->CommitChanges();
-*/
+	// Remove quests that weren't loaded
+	for (int i = Quests.GetCount() - 1; i >= 0; --i)
+		if (Quests.ValueAt(i).Status == CQuest::No)
+			Quests.EraseAt(i);
+
 	OK;
 }
 //---------------------------------------------------------------------
 
-} //namespace Story
+bool CQuestManager::OnGameSaving(const Events::CEventBase& Event)
+{
+	Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
+
+	Data::PDataArray SGQuests = n_new(Data::CDataArray);
+	for (int i = 0; i < Quests.GetCount(); ++i)
+	{
+		CQuestRec& QuestRec = Quests.ValueAt(i);
+		if (QuestRec.Status == CQuest::No) continue;
+
+		Data::PParams SGQuest = n_new(Data::CParams);
+		SGQuest->Set(CStrID("ID"), Quests.KeyAt(i));
+		SGQuest->Set(CStrID("Status"), (int)QuestRec.Status);
+		SGQuests->Append(SGQuest);
+
+		if (QuestRec.Status != CQuest::Opened) continue;
+
+		Data::PParams SGTasks = n_new(Data::CParams);
+		nDictionary<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
+		for (int j = 0; j < Tasks.GetCount(); j++)
+		{
+			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
+			if (TaskRec.Status == CQuest::No) continue;
+			SGTasks->Set(Tasks.KeyAt(j), (int)TaskRec.Status);
+		}
+		if (SGTasks->GetCount()) SGQuest->Set(CStrID("Tasks"), SGTasks);
+	}
+
+	if (SGQuests->GetCount()) SGCommon->Set(CStrID("Quests"), SGQuests);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+}
