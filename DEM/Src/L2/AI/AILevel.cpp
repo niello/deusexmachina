@@ -62,6 +62,39 @@ void CAILevel::UnloadNavMesh()
 }
 //---------------------------------------------------------------------
 
+// Checks if all polys or any poly (AllPolys = false) of a nav. region contains specified flags.
+// Now it is enough to contain ANY flag, not all.
+bool CAILevel::CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float ActorRadius)
+{
+	bool ProcessAll = ActorRadius <= 0.f;
+	for (int i = 0; i < NavData.GetCount(); ++i)
+		if (ProcessAll || ActorRadius <= NavData.KeyAt(i))
+		{
+			CNavData& Data = NavData.ValueAt(i);
+			CNavRegion* pRegion = Data.Regions.Get(ID);
+			if (!pRegion) continue;
+
+			for (int j = 0; j < pRegion->GetCount(); ++j)
+			{
+				dtPolyRef Ref = (*pRegion)[j];
+				ushort PolyFlags;
+				if (dtStatusSucceed(Data.pNavMesh->getPolyFlags(Ref, &PolyFlags)))
+				{
+					if (PolyFlags & Flags)
+					{
+						if (!AllPolys) OK;
+					}
+					else if (AllPolys) FAIL;
+				}
+			}
+
+			if (!ProcessAll) break;
+		}
+
+	return AllPolys;
+}
+//---------------------------------------------------------------------
+
 void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;

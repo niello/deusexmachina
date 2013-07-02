@@ -119,8 +119,7 @@ void CTimeServer::Load(const Data::CParams& TimeParams)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
 			Data::PParams TimeSrcDesc = Prm.GetValue<Data::PParams>();
-			int Idx = TimeSources.FindIndex(Prm.GetName());
-			PTimeSource TimeSrc = (Idx == INVALID_INDEX) ? TimeSources.Add(Prm.GetName()) : TimeSources.ValueAt(Idx);
+			PTimeSource TimeSrc = TimeSources.GetOrAdd(Prm.GetName());
 			TimeSrc->FrameID = TimeSrcDesc->Get<int>(CStrID("FrameID"));
 			TimeSrcDesc->Get(TimeSrc->Time, CStrID("Time"));
 			TimeSrcDesc->Get(TimeSrc->TimeFactor, CStrID("TimeFactor"));

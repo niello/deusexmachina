@@ -255,7 +255,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 	if (!InitialCommon.IsValid()) FAIL;
 
 	//!!!DBG TMP PATH!
-	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadPRM("Home:" + SaveGameName + "/Main.prm", false) : NULL;
+	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadPRM("AppData:SavesTMP/" + SaveGameName + "/Main.prm", false) : NULL;
 
 	Data::PParams GameDesc;
 	if (SGCommon.IsValid())
@@ -292,7 +292,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 		n_assert(InitialLvl.IsValid());
 
 		//!!!DBG TMP PATH!
-		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("Home:" + SaveGameName + RelLevelPath, false) : NULL;
+		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("AppData:SavesTMP/" + SaveGameName + RelLevelPath, false) : NULL;
 
 		Data::PParams LevelDesc;
 		if (SGLvl.IsValid())
@@ -359,7 +359,7 @@ bool CGameServer::SaveGame(const nString& Name)
 
 	//!!!TMP!
 //======
-	nString Path = "Home:" + Name;
+	nString Path = "AppData:SavesTMP/" + Name;
 	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
 
@@ -378,7 +378,7 @@ bool CGameServer::SaveGame(const nString& Name)
 
 		//!!!TMP!
 //======
-		nString Path = "Home:" + Name + "/Levels/";
+		nString Path = "AppData:SavesTMP/" + Name + "/Levels/";
 		if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 		DataSrv->SavePRM(Path + Levels.KeyAt(i).CStr() + ".prm", SGLevel);
 

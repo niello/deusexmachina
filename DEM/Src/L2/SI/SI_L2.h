@@ -8,6 +8,7 @@
 namespace SI
 {
 	bool RegisterScriptObjectSIEx();
+	bool RegisterGameServer();
 	bool RegisterEntityManager();
 	bool RegisterNavMesh();
 }
