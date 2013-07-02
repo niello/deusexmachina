@@ -958,6 +958,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L2\SI\SIGameServer.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L2\SI\SINavMesh.cpp"
 				>
 			</File>

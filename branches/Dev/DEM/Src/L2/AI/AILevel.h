@@ -41,6 +41,7 @@ public:
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
 	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);
+	bool			CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float ActorRadius = 0.f);
 	void			SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius = 0.f);
 	void			SetNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
 	void			ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);

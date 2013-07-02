@@ -17,7 +17,7 @@ namespace SI
 // Locks named region on the navmesh (by agent raduis or on all meshes), making it impassable
 int NavMesh_LockRegion(lua_State* l)
 {
-	// args: Level ID, Region ID (name), [target actor raduis]
+	// Args: Level ID, Region ID (name), [target actor raduis]
 
 	int ArgCount = lua_gettop(l);
 
@@ -38,7 +38,7 @@ int NavMesh_LockRegion(lua_State* l)
 // Unlocks named region on the navmesh (by agent raduis or on all meshes), making it passable
 int NavMesh_UnlockRegion(lua_State* l)
 {
-	// args: Level ID, Region ID (name), [target actor raduis]
+	// Args: Level ID, Region ID (name), [target actor raduis]
 
 	int ArgCount = lua_gettop(l);
 

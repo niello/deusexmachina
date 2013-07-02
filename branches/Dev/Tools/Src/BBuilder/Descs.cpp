@@ -530,11 +530,10 @@ bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
 			nString QuestName;
 			if (Verbose >= VL_INFO)
 			{
-				nString QuestName = Browser.GetCurrentPath();
+				QuestName = Browser.GetCurrentPath();
 				QuestName.ConvertBackslashes();
 				QuestName.StripTrailingSlash();
-				QuestName.ExtractFileName();
-				QuestName.StripExtension();
+				QuestName = QuestName.ExtractFileName();
 			}
 
 			n_msg(VL_INFO, "Processing quest '%s'...\n", QuestName.CStr());

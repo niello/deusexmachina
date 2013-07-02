@@ -15,7 +15,7 @@ namespace SI
 
 int CEntityManager_DeleteEntity(lua_State* l)
 {
-	// args: Entity ID or alias
+	// Args: Entity ID or alias
 	if (lua_gettop(l) > 0) EntityMgr->DeleteEntity(CStrID(lua_tostring(l, 1)));
 	return 0;
 }

@@ -131,7 +131,10 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 			if (!AILevel->LoadNavMesh(NMFile))
 				n_printf("Error loading navigation mesh for level %s\n", ID.CStr());
 
-			//!!!load nav regions and their status!
+			//Data::PParams NavRegDesc;
+			//if (SubDesc->Get(NavRegDesc, CStrID("Regions")))
+			//	for (int i = 0; i < NavRegDesc->GetCount(); ++i)
+			//		AILevel->SwitchNavRegionFlags(NavRegDesc->Get(i).GetName(), NavRegDesc->Get<bool>(i), NAV_FLAG_LOCKED);
 		}
 	}
 
@@ -157,6 +160,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	// This is a chance for all properties to write their attrs to entities
 	FireEvent(CStrID("OnLevelSaving"), &OutDesc);
 
+	// Save selection
 	Data::PDataArray SGSelection = n_new(Data::CDataArray);
 	for (int i = 0; i < SelectedEntities.GetCount(); ++i)
 		SGSelection->Append(SelectedEntities[i]);
@@ -203,8 +207,30 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		else SGScene->Set(CStrID("Camera"), CurrCameraDesc);
 	}
 
-	// Save selection
 	// Save nav. regions status
+	// No iterator, no consistency. Needs redesign.
+/*	if (AILevel.IsValid())
+	{
+		Data::PParams SGAI = n_new(Data::CParams);
+		OutDesc.Set(CStrID("AI"), SGAI);
+
+		// In fact, must save per-nav-poly flags, because regions may intersect
+		Data::PParams CurrRegionsDesc = n_new(Data::CParams);
+		for ()
+
+		Data::PParams InitialAI;
+		Data::PParams InitialRegions;
+		if (pInitialDesc &&
+			pInitialDesc->Get(InitialAI, CStrID("AI")) &&
+			InitialAI->Get(InitialRegions, CStrID("Regions")))
+		{
+			Data::PParams SGRegions = n_new(Data::CParams);
+			InitialRegions->GetDiff(*SGRegions, *CurrRegionsDesc);
+			if (SGRegions->GetCount()) SGAI->Set(CStrID("Regions"), SGRegions);
+		}
+		else SGAI->Set(CStrID("Regions"), CurrRegionsDesc);
+	}
+*/
 
 	// Save entities diff
 	Data::PParams SGEntities = n_new(Data::CParams);
