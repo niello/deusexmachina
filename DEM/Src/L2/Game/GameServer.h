@@ -91,7 +91,7 @@ public:
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }
 
 	bool			HasMouseIntersection() const { return HasMouseIsect; }
-	CEntity*		GetEntityUnderMouse() const { return EntityManager->GetEntity(EntityUnderMouse); }
+	CEntity*		GetEntityUnderMouse() const { return EntityUnderMouse.IsValid() ? EntityManager->GetEntity(EntityUnderMouse) : NULL; }
 	CStrID			GetEntityUnderMouseUID() const { return EntityUnderMouse; }
 	const vector3&	GetMousePos3D() const { return MousePos3D; }
 };

@@ -16,8 +16,6 @@ namespace Story
 __ImplementClassNoFactory(Story::CQuestManager, Core::CRefCounted);
 __ImplementSingleton(Story::CQuestManager);
 
-using namespace Data;
-
 CQuestManager::CQuestManager()
 {
 	__ConstructSingleton;
@@ -58,18 +56,18 @@ void CQuestManager::Trigger()
 
 bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 {
-	PParams QuestDesc = DataSrv->LoadPRM(nString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
+	Data::PParams QuestDesc = DataSrv->LoadPRM(nString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
 	if (!QuestDesc.IsValid()) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);
 	Quest->Name = QuestDesc->Get<nString>(CStrID("Name"), "<No quest name>");
 	Quest->Description = QuestDesc->Get<nString>(CStrID("Desc"), "<No quest desc>");
 
-	const CParams& Tasks = *QuestDesc->Get<PParams>(CStrID("Tasks"));
+	const Data::CParams& Tasks = *QuestDesc->Get<Data::PParams>(CStrID("Tasks"));
 	for (int i = 0; i < Tasks.GetCount(); i++)
 	{
-		const CParam& TaskPrm = Tasks[i];
-		const CParams& TaskDesc = *TaskPrm.GetValue<PParams>();
+		const Data::CParam& TaskPrm = Tasks[i];
+		const Data::CParams& TaskDesc = *TaskPrm.GetValue<Data::PParams>();
 
 		Ptr<CTask> NewTask = n_new(CTask);
 		NewTask->Name = TaskDesc.Get<nString>(CStrID("Name"), "<No task name>");
@@ -111,7 +109,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 		NewRec.Status = CQuest::Opened;
 
 		//!!!refactor params!
-		PParams P = n_new(CParams);
+		Data::PParams P = n_new(Data::CParams);
 		P->Set(CStrID("IsTask"), false);
 		P->Set(CStrID("Status"), (int)CQuest::Opened);
 		P->Set(CStrID("Name"), Quest->Name);
@@ -132,7 +130,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	Task.Status = CQuest::Opened;
 
 	//!!!refactor params!
-	PParams P = n_new(CParams);
+	Data::PParams P = n_new(Data::CParams);
 	P->Set(CStrID("IsTask"), true);
 	P->Set(CStrID("Status"), (int)CQuest::Opened);
 	P->Set(CStrID("Name"), Task.Task->Name);
@@ -185,7 +183,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 				//???move to CloseTask()? see below.
 
 				//!!!refactor params!
-				PParams P = n_new(CParams);
+				Data::PParams P = n_new(Data::CParams);
 				P->Set(CStrID("IsTask"), true);
 				P->Set(CStrID("Status"), (int)Status);
 				P->Set(CStrID("Name"), Task.Task->Name);
@@ -212,7 +210,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 		Quests.ValueAt(Idx).Status = Status;
 
 		//!!!refactor params!
-		PParams P = n_new(CParams);
+		Data::PParams P = n_new(Data::CParams);
 		P->Set(CStrID("IsTask"), false);
 		P->Set(CStrID("Status"), (int)Status);
 		P->Set(CStrID("Name"), Quests.ValueAt(Idx).Quest->Name);
@@ -237,7 +235,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 #endif
 
 			//!!!refactor params!
-			PParams P = n_new(CParams);
+			Data::PParams P = n_new(Data::CParams);
 			P->Set(CStrID("IsTask"), true);
 			P->Set(CStrID("Status"), (int)Status);
 			P->Set(CStrID("Name"), Task.Task->Name);

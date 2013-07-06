@@ -891,18 +891,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Input_OLD"
-			>
-			<File
-				RelativePath="..\..\Src\L2\Input\PropPlrCharacterInput.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L2\Input\PropPlrCharacterInput.h"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="Physics"
 			>
 			<File

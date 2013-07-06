@@ -597,6 +597,26 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="Factions"
+			>
+			<File
+				RelativePath="..\..\Src\L3\Factions\Faction.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Factions\Faction.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Factions\FactionManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\Factions\FactionManager.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
