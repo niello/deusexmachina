@@ -13,10 +13,7 @@
 
 namespace Story
 {
-
 #define QuestMgr Story::CQuestManager::Instance()
-
-class CQuest;
 
 class CQuestManager: public Core::CRefCounted //???Game::CManager?
 {
