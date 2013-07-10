@@ -13,15 +13,12 @@ extern "C"
 	#include <lualib.h>
 };
 
-extern const nString StrLuaObjects("LuaObjects");
-
 namespace Scripting
 {
 __ImplementClass(Scripting::CScriptObject, 'SOBJ', Core::CRefCounted);
 
 CScriptObject::~CScriptObject()
 {
-	//???if (Temporary && DBSaveLoadEnabled) ClearFields();? Temporary is Lua-exposed flag too.
 	ScriptSrv->RemoveObject(Name.CStr(), Table.CStr());
 }
 //---------------------------------------------------------------------
@@ -53,7 +50,8 @@ int CScriptObject_Index(lua_State* l)
 
 	LPCSTR Key = lua_tostring(l, 2);
 
-	//!!!use lightuserdata objects as class instances, if possible! cpp_ptr is rewritable
+	//???can return 'this' through __index?
+	//!!!use userdata objects as class instances, if possible! cpp_ptr is rewritable
 	//through Lua since index/newindex aren't called for existing fields
 	n_assert_dbg(strcmp(Key, "cpp_ptr"));
 
@@ -129,7 +127,7 @@ int CScriptObject_SubscribeEvent(lua_State* l)
 
 int CScriptObject_UnsubscribeEvent(lua_State* l)
 {
-	//args: ScriptObject's this table or nil, event name, [func name = event name]
+	//args: ScriptObject's this table, event name, [func name = event name]
 
 	CScriptObject* This = CScriptObject::GetFromStack(l, 1);
 	if (This) This->UnsubscribeEvent(CStrID(lua_tostring(l, 2)), lua_tostring(l, -2));
@@ -140,8 +138,7 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 EExecStatus CScriptObject::LoadScriptFile(const nString& FileName)
 {
 	Data::CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(FileName, Buffer) &&
-		!IOSrv->LoadFileToBuffer("Scripts:" + FileName + ".lua", Buffer)) return Error;
+	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
 	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------

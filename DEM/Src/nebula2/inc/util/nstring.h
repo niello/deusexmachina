@@ -9,6 +9,7 @@
 #include <mathlib/vector.h>
 #include <mathlib/matrix.h>
 #include <util/Hash.h>
+#include <Data/StringTokenizer.h>
 
 // Character string with local buffer for small strings to avoid allocations
 
@@ -53,8 +54,8 @@ public:
 	void			Clear();
 
 	static nString	Concatenate(const nArray<nString>& strArray, const nString& whiteSpace);
-	int				Tokenize(const char* whiteSpace, nArray<nString>& Tokens) const;
-	int				Tokenize(const char* whiteSpace, uchar fence, nArray<nString>& Tokens) const;
+	int				Tokenize(const char* SplitChars, nArray<nString>& Tokens) const;
+	int				Tokenize(const char* SplitChars, uchar fence, nArray<nString>& Tokens) const;
 	nString			SubString(int from, int CharCount) const;
 	void			Strip(const char* CharSet);
 	int				FindStringIndex(const nString& v, int StartIdx = 0) const;
@@ -228,20 +229,12 @@ inline void nString::ToUpper()
 }
 //---------------------------------------------------------------------
 
-inline int nString::Tokenize(const char* whiteSpace, nArray<nString>& Tokens) const
+inline int nString::Tokenize(const char* SplitChars, nArray<nString>& Tokens) const
 {
-	int numTokens = 0;
-
-	nString TmpString(*this);
-	char* pStr = (char*)TmpString.CStr();
-	const char* pTok;
-	while (pTok = strtok(pStr, whiteSpace))
-	{
-		Tokens.Append(pTok);
-		pStr = NULL;
-		++numTokens;
-	}
-	return numTokens;
+	int CountBase = Tokens.GetCount();
+	Data::CStringTokenizer StrTok(CStr(), SplitChars);
+	while (StrTok.GetNextToken()) Tokens.Append(StrTok.GetCurrToken());
+	return Tokens.GetCount() - CountBase;
 }
 //---------------------------------------------------------------------
 
@@ -258,7 +251,7 @@ inline int nString::Tokenize(const char* whiteSpace, nArray<nString>& Tokens) co
     token 1:    said:
     token 2:    I don't know.
 */
-inline int nString::Tokenize(const char* whiteSpace, uchar fence, nArray<nString>& Tokens) const
+inline int nString::Tokenize(const char* SplitChars, uchar fence, nArray<nString>& Tokens) const
 {
     // create a temporary pString, which will be destroyed during the operation
     nString str(*this);
@@ -269,7 +262,7 @@ inline int nString::Tokenize(const char* whiteSpace, uchar fence, nArray<nString
         char* c;
 
         // skip white space
-        while (*ptr && strchr(whiteSpace, *ptr)) ++ptr;
+        while (*ptr && strchr(SplitChars, *ptr)) ++ptr;
 
 		if (*ptr)
         {
@@ -280,7 +273,7 @@ inline int nString::Tokenize(const char* whiteSpace, uchar fence, nArray<nString
                 Tokens.Append(ptr);
                 ptr = c;
             }
-            else if ((c = strpbrk(ptr, whiteSpace)))
+            else if ((c = strpbrk(ptr, SplitChars)))
             {
                 *c++ = 0;
                 Tokens.Append(ptr);

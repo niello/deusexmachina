@@ -60,9 +60,9 @@ public:
 	//EExecStatus		RunFunction(LPCSTR pFuncName, PParams Args = NULL);
 
 	// Class registration, Mixing-in
-	bool		BeginClass(const nString& Name, const nString& BaseClass = "CScriptObject");
+	bool		BeginClass(LPCSTR Name, LPCSTR BaseClass = NULL, DWORD FieldCount = 0);
 	bool		BeginExistingClass(LPCSTR Name);
-	void		EndClass();
+	void		EndClass(bool IsScriptObjectSubclass);
 	bool		BeginMixin(CScriptObject* pObj);
 	void		EndMixin();
 	void		ExportCFunction(LPCSTR Name, lua_CFunction Function);
@@ -74,8 +74,9 @@ public:
 	//!!!can add functions to subscribe global functions to events!
 	
 	bool		CreateObject(CScriptObject& Obj, LPCSTR LuaClassName = "CScriptObject");
+	bool		CreateInterface(LPCSTR Name, LPCSTR TablePath, LPCSTR LuaClassName, void* pCppPtr);
 	bool		PlaceObjectOnStack(LPCSTR Name, LPCSTR Table = NULL);
-	bool		PlaceOnStack(LPCSTR pFullName);
+	bool		PlaceOnStack(LPCSTR FullPath, bool Create = false);
 	void		RemoveObject(LPCSTR Name, LPCSTR Table = NULL);
 	bool		ObjectExists(LPCSTR Name, LPCSTR Table = NULL);
 

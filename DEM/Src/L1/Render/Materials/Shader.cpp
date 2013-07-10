@@ -29,12 +29,12 @@ bool CShader::Setup(ID3DXEffect* pFX)
 		{
 			LPCSTR pFeatMask = NULL;
 			n_assert(SUCCEEDED(pEffect->GetString(hFeatureAnnotation, &pFeatMask)));
-			nString FeatAnnotation(pFeatMask);
-			nArray<nString> FeatureMasks;
-			FeatAnnotation.Tokenize(",", FeatureMasks);
-			n_assert_dbg(FeatureMasks.GetCount());
-			for (int MaskIdx = 0; MaskIdx < FeatureMasks.GetCount(); ++MaskIdx)
-				FlagsToTech.Add(RenderSrv->ShaderFeatures.GetMask(FeatureMasks[MaskIdx]), hTech);
+
+			Data::CStringTokenizer StrTok(pFeatMask, ",");
+			while (StrTok.GetNextTokenSingleChar())
+				FlagsToTech.Add(RenderSrv->ShaderFeatures.GetMask(StrTok.GetCurrToken()), hTech);
+
+			n_assert_dbg(FlagsToTech.GetCount());
 		}
 		else n_printf("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}

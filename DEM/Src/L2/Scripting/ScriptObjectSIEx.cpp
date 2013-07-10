@@ -57,7 +57,7 @@ bool RegisterScriptObjectSIEx()
 	{
 		ScriptSrv->ExportCFunction("SubscribeEntityEvent", CScriptObject_SubscribeEntityEvent);
 		ScriptSrv->ExportCFunction("UnsubscribeEntityEvent", CScriptObject_UnsubscribeEntityEvent);
-		ScriptSrv->EndClass();
+		ScriptSrv->EndClass(true);
 		OK;
 	}
 	FAIL;

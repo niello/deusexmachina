@@ -9,6 +9,7 @@ namespace SI
 {
 	bool RegisterQuestSystem();
 	bool RegisterDlgSystem();
+	bool RegisterClassCFaction();
 }
 
 #endif

@@ -92,7 +92,7 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 		{
 			if (!strcmp(pCurrToken, ".."))
 				pCurrEntry = pCurrEntry->GetParent();
-			else if (strcmp(pCurrToken, ".")) // if not a dot, dot is current dir
+			else if (strcmp(pCurrToken, ".")) // if is NOT a dot (dot is a current dir)
 				pCurrEntry = pCurrEntry->FindEntry(pCurrToken);
 		}
 		return pCurrEntry;
