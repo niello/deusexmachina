@@ -393,6 +393,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\StringTokenizer.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\TTable.h"
 				>
 			</File>

@@ -17,8 +17,6 @@ namespace Scripting
 {
 __ImplementClass(Scripting::CEntityScriptObject, 'ESCO', CScriptObject);
 
-using namespace Data;
-
 int CEntityScriptObject_SubscribeLocalEvent(lua_State* l)
 {
 	//args: EntityScriptObject's this table, event name, [func name = event name]
@@ -51,16 +49,16 @@ int CEntityScriptObject_FireEvent(lua_State* l)
 		return 0;
 	}
 
-	PParams Params;
+	Data::PParams Params;
 	if (ArgCount > 2 && !lua_isnil(l, 3))
 	{
-		CData Data;
+		Data::CData Data;
 		ScriptSrv->LuaStackToData(Data, 3, l);
-		if (lua_istable(l, 3)) Params = (PParams)Data;
+		if (lua_istable(l, 3)) Params = (Data::PParams)Data;
 		else if (Data.IsValid())
 		{
 			//???for all args read and push into array?
-			Params = n_new(CParams(1));
+			Params = n_new(Data::CParams(1));
 			Params->Set(CStrID::Empty, Data);
 		}
 	}
@@ -72,15 +70,12 @@ int CEntityScriptObject_FireEvent(lua_State* l)
 
 bool CEntityScriptObject::RegisterClass()
 {
-	if (ScriptSrv->BeginClass("CEntityScriptObject"))
+	if (ScriptSrv->BeginClass("CEntityScriptObject", "CScriptObject"))
 	{
-		//???use virtual GetField, SetField or override index & newindex?
-		ScriptSrv->ExportCFunction("__index", CScriptObject_Index);
-		ScriptSrv->ExportCFunction("__newindex", CScriptObject_NewIndex);
 		ScriptSrv->ExportCFunction("SubscribeLocalEvent", CEntityScriptObject_SubscribeLocalEvent);
 		ScriptSrv->ExportCFunction("UnsubscribeLocalEvent", CEntityScriptObject_UnsubscribeLocalEvent);
 		ScriptSrv->ExportCFunction("FireEvent", CEntityScriptObject_FireEvent);
-		ScriptSrv->EndClass();
+		ScriptSrv->EndClass(true);
 		OK;
 	}
 	FAIL;
@@ -95,7 +90,7 @@ int CEntityScriptObject::GetField(LPCSTR Key) const
 		return 1;
 	}
 
-	CData Data;
+	Data::CData Data;
 	if (pEntity->GetAttr(Data, CStrID(Key)))
 	{
 		int Pushed = ScriptSrv->DataToLuaStack(Data);
@@ -106,7 +101,7 @@ int CEntityScriptObject::GetField(LPCSTR Key) const
 }
 //---------------------------------------------------------------------
 
-bool CEntityScriptObject::SetField(LPCSTR Key, const CData& Value)
+bool CEntityScriptObject::SetField(LPCSTR Key, const Data::CData& Value)
 {
 	// Read-only
 	if (!strcmp(Key, "Transform") || !strcmp(Key, "LevelID")) FAIL;

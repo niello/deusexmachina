@@ -3,6 +3,7 @@
 #define __DEM_L1_DYNAMIC_ENUM_H__
 
 #include <StdDEM.h>
+#include <Data/StringTokenizer.h>
 
 // Dynamic enum associates string names with bits. Use integer types as a template type.
 // This class is designed for flag enums, where each value reserves a bit, and values can
@@ -36,11 +37,10 @@ T CDynamicEnumT<T>::GetMask(const nString& FlagStr)
 {
 	T Mask = 0;
 
-	nArray<nString> FlagsToFind;
-	FlagStr.Tokenize("\t |", FlagsToFind);
-	for (int i = 0; i < FlagsToFind.GetCount(); ++i)
+	Data::CStringTokenizer StrTok(FlagStr.CStr(), "\t |");
+	while (StrTok.GetNextToken() && *StrTok.GetCurrToken())
 	{
-		CStrID Flag = CStrID(FlagsToFind[i].CStr());
+		CStrID Flag = CStrID(StrTok.GetCurrToken());
 		int Idx = Flags.FindIndex(Flag);
 		if (Idx != INVALID_INDEX) Mask |= Flags.ValueAt(Idx);
 		else

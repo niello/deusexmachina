@@ -5,6 +5,7 @@
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
 #include <Data/Buffer.h>
+#include <Data/StringTokenizer.h>
 #include <IO/IOServer.h>
 
 extern const nString StrLuaObjects;
@@ -257,25 +258,28 @@ EExecStatus CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCST
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::BeginClass(const nString& Name, const nString& BaseClass)
+bool CScriptServer::BeginClass(LPCSTR Name, LPCSTR BaseClass, DWORD FieldCount)
 {
-	n_assert2(Name.IsValid(), "Invalid class name to register");
+	n_assert2(Name && *Name, "Invalid class name to register");
 	n_assert2(CurrClass.IsEmpty(), "Already in class registration process!");
 	n_assert2(!CurrObj, "Already in mixing-in process!");
 
-	if (ClassExists(Name.CStr())) FAIL;
-	if (!ClassExists(BaseClass.CStr()) && !LoadClass(BaseClass)) FAIL;
+	if (ClassExists(Name)) FAIL;
+	if (BaseClass && *BaseClass && !ClassExists(BaseClass) && !LoadClass(BaseClass)) FAIL;
 
 	CurrClass = Name;
 
 	lua_getglobal(l, TBL_CLASSES);
 
 	// Create class table
-	lua_createtable(l, 0, 4); //!!!can pass fields count as arg!
+	lua_createtable(l, 0, FieldCount ? FieldCount : 4);
 
 	// Setup base class
-	lua_getfield(l, -2, BaseClass.CStr());
-	lua_setmetatable(l, -2);
+	if (BaseClass && *BaseClass)
+	{
+		lua_getfield(l, -2, BaseClass);
+		lua_setmetatable(l, -2);
+	}
 
 	OK;
 }
@@ -283,7 +287,7 @@ bool CScriptServer::BeginClass(const nString& Name, const nString& BaseClass)
 
 bool CScriptServer::BeginExistingClass(LPCSTR Name)
 {
-	n_assert(Name);
+	n_assert2(Name && *Name, "Invalid class name to register");
 	lua_getglobal(l, TBL_CLASSES);
 	lua_getfield(l, -1, Name);
 	if (!lua_istable(l, -1))
@@ -296,9 +300,30 @@ bool CScriptServer::BeginExistingClass(LPCSTR Name)
 }
 //---------------------------------------------------------------------
 
-void CScriptServer::EndClass()
+void CScriptServer::EndClass(bool IsScriptObjectSubclass)
 {
 	n_assert(CurrClass.IsValid());
+
+	if (IsScriptObjectSubclass)
+	{
+		// The only way to access cpp_ptr and non-lua fields
+		ScriptSrv->ExportCFunction("__index", CScriptObject_Index);
+		ScriptSrv->ExportCFunction("__newindex", CScriptObject_NewIndex);
+	}
+	else
+	{
+		lua_pushstring(l, "__index");
+		lua_rawget(l, -2);
+		bool SelfIndex = lua_isnil(l, -1);
+		lua_pop(l, 1);
+		if (SelfIndex)
+		{
+			lua_pushstring(l, "__index");
+			lua_pushvalue(l, -2);
+			lua_rawset(l, -3);
+		}
+	}
+
 	lua_setfield(l, -2, CurrClass.CStr());
 	lua_pop(l, 1); // Classes table
 	CurrClass = NULL;
@@ -343,62 +368,56 @@ bool CScriptServer::LoadClass(const nString& Name)
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
 	Data::PParams ClassDesc = DataSrv->LoadPRM("ScriptClasses:" + Name + ".cls", false);
+	if (!ClassDesc.IsValid()) FAIL;
 
-	if (ClassDesc.IsValid() &&
-		BeginClass(Name, ClassDesc->Get<nString>(CStrID("Base"), "CScriptObject")))
+	const nString& BaseClass = ClassDesc->Get<nString>(CStrID("Base"), nString::Empty);
+	if (!BeginClass(Name.CStr(), BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;
+
+	const char* pData = NULL;
+	DWORD Size = 0;
+
+	Data::CParam* pCodePrm;
+	if (ClassDesc->Get(pCodePrm, CStrID("Code")))
 	{
-		// Here we don't know C++ class, because it's an object, not a Lua class property.
-		// So, all classes use default __index & __newindex.
-		ExportCFunction("__index", CScriptObject_Index);
-		ExportCFunction("__newindex", CScriptObject_NewIndex);
-
-		const char* pData = NULL;
-		DWORD Size = 0;
-
-		Data::CParam* pCodePrm;
-		if (ClassDesc->Get(pCodePrm, CStrID("Code")))
+		if (pCodePrm->IsA<Data::CBuffer>())
 		{
-			if (pCodePrm->IsA<Data::CBuffer>())
-			{
-				const Data::CBuffer& Code = pCodePrm->GetValue<Data::CBuffer>();
-				pData = (const char*)Code.GetPtr();
-				Size = Code.GetSize();
-			}
-			else if (pCodePrm->IsA<nString>())
-			{
-				const nString& Code = pCodePrm->GetValue<nString>();
-				pData = Code.CStr();
-				Size = Code.Length();
-			}
+			const Data::CBuffer& Code = pCodePrm->GetValue<Data::CBuffer>();
+			pData = (const char*)Code.GetPtr();
+			Size = Code.GetSize();
 		}
-
-		if (pData && Size)
+		else if (pCodePrm->IsA<nString>())
 		{
-			if (luaL_loadbuffer(l, pData, Size, Name.CStr()) != 0)
-			{
-				n_printf("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-				if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
-				lua_pop(l, 2);
-				FAIL;
-			}
-			
-			lua_pushvalue(l, -2);
-			lua_setfenv(l, -2);
-
-			if (lua_pcall(l, 0, 0, 0))
-			{
-				n_printf("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-				if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
-				lua_pop(l, 2); // Error msg, class table
-				FAIL;
-			}
+			const nString& Code = pCodePrm->GetValue<nString>();
+			pData = Code.CStr();
+			Size = Code.Length();
 		}
-		
-		EndClass();
-		OK;
 	}
 
-	FAIL;
+	if (pData && Size)
+	{
+		if (luaL_loadbuffer(l, pData, Size, Name.CStr()) != 0)
+		{
+			n_printf("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+			if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
+			lua_pop(l, 2);
+			FAIL;
+		}
+		
+		lua_pushvalue(l, -2);
+		lua_setfenv(l, -2);
+
+		if (lua_pcall(l, 0, 0, 0))
+		{
+			n_printf("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+			if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
+			lua_pop(l, 2); // Error msg, class table
+			FAIL;
+		}
+	}
+	
+	EndClass(BaseClass.IsValid());
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -482,6 +501,31 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 }
 //---------------------------------------------------------------------
 
+bool CScriptServer::CreateInterface(LPCSTR Name, LPCSTR TablePath, LPCSTR LuaClassName, void* pCppPtr)
+{
+	if (!pCppPtr) FAIL;
+
+	if (!PlaceOnStack(TablePath, true)) FAIL;
+
+	// Create object and store interface pointer
+	void** ppObj = (void**)lua_newuserdata(l, sizeof(pCppPtr));
+	*ppObj = pCppPtr;
+
+	// Setup class of this interface
+	lua_getglobal(l, TBL_CLASSES);
+	lua_getfield(l, -1, LuaClassName);
+	n_assert2(lua_istable(l, -1), "Requested Lua class does not exist");
+	lua_setmetatable(l, -3);
+	lua_pop(l, 1);
+
+	// Set to parent
+	lua_setfield(l, -2, Name);
+	lua_pop(l, 1);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 // Places object to -1 and optionally object's containing table to -2
 bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
 {
@@ -505,7 +549,7 @@ bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
 	else TableIdx = LUA_GLOBALSINDEX;
 
 	lua_getfield(l, TableIdx, Name);
-	if (lua_istable(l, -1)) OK;
+	if (lua_istable(l, -1) || lua_isuserdata(l, -1)) OK;
 	else
 	{
 		n_printf("Error: script object \"%s\" not found in table \"%s\"\n",
@@ -517,41 +561,41 @@ bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
 //---------------------------------------------------------------------
 
 // Places any named Lua var on the top of the stack
-bool CScriptServer::PlaceOnStack(LPCSTR pFullName)
+bool CScriptServer::PlaceOnStack(LPCSTR FullPath, bool Create)
 {
-	if (!l || !pFullName) FAIL;
+	if (!l || !FullPath) FAIL;
 
-	char pBuffer[512];
-	const char* pSrcCurr = pFullName;
-	char* pDestCurr = pBuffer;
-	const char* pDestEnd = pBuffer + 511;
+	//char Buffer[512];
+	Data::CStringTokenizer StrTok(FullPath, "."); //, Buffer, 512);
 
 	lua_getglobal(l, "_G");
 
-	while (true)
+	LPCSTR pTok;
+	while (pTok = StrTok.GetNextTokenSingleChar())
 	{
-		if (*pSrcCurr == '.' || !*pSrcCurr)
+		if (!*pTok) continue;
+
+		lua_getfield(l, -1, pTok);
+		if (lua_isnil(l, -1) && Create)
 		{
-			if (pDestCurr - pBuffer > 1)
-			{
-				*pDestCurr = 0;
-				lua_getfield(l, -1, pBuffer);
-				if (lua_isnil(l, -1) || (!lua_istable(l, -1) && *pSrcCurr == '.'))
-				{
-					lua_pop(l, 2); // Remove parent table and value received
-					FAIL;
-				}
-				else lua_remove(l, -2); // Remove parent table
-			}
-			pDestCurr = pBuffer;
-
-			if (*pSrcCurr == '.') ++pSrcCurr;
-			if (!*pSrcCurr) OK;
+			lua_pop(l, 1);				// Remove nil
+			lua_createtable(l, 0, 2);	// Create new table at -1
+			lua_pushvalue(l, -1);		// Copy new table, it is at -1 and -2, parent is at -3
+			lua_setfield(l, -3, pTok);	// Set as parent's field
+			lua_remove(l, -2);			// Remove parent table
 		}
-
-		*pDestCurr++ = *pSrcCurr++;
-		n_assert2(pDestCurr < pDestEnd, "Lua name exceeds 512 characters!\n");
+		else if (lua_istable(l, -1) || StrTok.IsLast())
+		{
+			lua_remove(l, -2);			// Remove parent table
+		}
+		else
+		{
+			lua_pop(l, 2);				// Remove parent table and value received
+			FAIL;
+		}
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
