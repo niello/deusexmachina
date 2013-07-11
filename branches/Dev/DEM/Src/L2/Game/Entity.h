@@ -33,10 +33,10 @@ protected:
 	CDataDict		Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);
-	//???!!!void SetLevel(CGameLevel* NewLevel); - for transitions!
+	void SetLevel(CGameLevel* pNewLevel);
 	bool OnEvent(const Events::CEventBase& Event);
 
-	CEntity(CStrID _UID, CGameLevel& _Level);
+	CEntity(CStrID _UID);
 
 public:
 

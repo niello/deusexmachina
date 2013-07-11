@@ -9,8 +9,6 @@
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
 // Game server allows to perform different queries on a location.
 
-//???need entity quadtree? or always use physics or mesh AABBs and respective world's spatial query
-
 namespace Data
 {
 	class CParams;

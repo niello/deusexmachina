@@ -9,16 +9,14 @@ namespace Game
 {
 __ImplementClassNoFactory(Game::CEntity, Core::CRefCounted);
 
-CEntity::CEntity(CStrID _UID, CGameLevel& _Level): CEventDispatcher(16), UID(_UID), Level(&_Level)
+CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID)
 {
-	LevelSub = Level->Subscribe(NULL, this, &CEntity::OnEvent);
 }
 //---------------------------------------------------------------------
 
 CEntity::~CEntity()
 {
 	n_assert_dbg(IsInactive());
-	LevelSub = NULL;
 }
 //---------------------------------------------------------------------
 
@@ -30,9 +28,18 @@ void CEntity::SetUID(CStrID NewUID)
 }
 //---------------------------------------------------------------------
 
-void CEntity::Activate()
+void CEntity::SetLevel(CGameLevel* pNewLevel)
 {
 	n_assert(IsInactive());
+	if (pNewLevel == Level.GetUnsafe()) return;
+	Level = pNewLevel;
+	LevelSub = pNewLevel ? Level->Subscribe(NULL, this, &CEntity::OnEvent) : NULL;
+}
+//---------------------------------------------------------------------
+
+void CEntity::Activate()
+{
+	n_assert(IsInactive() && Level.IsValid());
 	Flags.Set(ChangingActivity);
 
 	FireEvent(CStrID("OnEntityActivated"));
