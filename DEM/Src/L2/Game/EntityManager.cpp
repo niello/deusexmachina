@@ -31,7 +31,8 @@ PEntity CEntityManager::CreateEntity(CStrID UID, CGameLevel& Level)
 {
 	n_assert(UID.IsValid());
 	n_assert(!EntityExists(UID)); //???return NULL or existing entity?
-	PEntity Entity = n_new(CEntity(UID, Level));
+	PEntity Entity = n_new(CEntity(UID));
+	Entity->SetLevel(&Level);
 	Entities.Append(Entity);
 	UIDToEntity.Add(Entity->GetUID(), Entity.GetUnsafe());
 	return Entity;
