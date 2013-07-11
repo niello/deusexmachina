@@ -14,10 +14,10 @@ CFactory* CFactory::Instance()
 }
 //---------------------------------------------------------------------
 
-void CFactory::Register(const CRTTI& RTTI, const nString& Name, nFourCC FourCC)
+void CFactory::Register(const CRTTI& RTTI, const nString& Name, Data::CFourCC FourCC)
 {
-	n_assert2(!IsRegistered(Name), Name.CStr());
-	if (FourCC != 0) n_assert2(!IsRegistered(FourCC), n_fourcctostr(FourCC));
+	n_assert2(!IsNameRegistered(Name), Name.CStr());
+	if (FourCC != 0) n_assert2(!IsFourCCRegistered(FourCC), FourCC.ToString());
 	NameToRTTI.Add(Name, &RTTI);
 	if (FourCC != 0) FourCCToRTTI.Add(FourCC, &RTTI);
 }
@@ -25,16 +25,16 @@ void CFactory::Register(const CRTTI& RTTI, const nString& Name, nFourCC FourCC)
 
 CRefCounted* CFactory::Create(const nString& ClassName, void* pParam) const
 {
-	n_assert2_dbg(IsRegistered(ClassName), ClassName.CStr());
+	n_assert2_dbg(IsNameRegistered(ClassName), ClassName.CStr());
 	const CRTTI* pRTTI = GetRTTI(ClassName);
 	n_assert_dbg(pRTTI);
 	return pRTTI->CreateInstance(pParam);
 }
 //---------------------------------------------------------------------
 
-CRefCounted* CFactory::Create(nFourCC ClassFourCC, void* pParam) const
+CRefCounted* CFactory::Create(Data::CFourCC ClassFourCC, void* pParam) const
 {
-	n_assert2_dbg(IsRegistered(ClassFourCC), n_fourcctostr(ClassFourCC));
+	n_assert2_dbg(IsFourCCRegistered(ClassFourCC), ClassFourCC.ToString());
 	const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 	n_assert_dbg(pRTTI);
 	return pRTTI->CreateInstance(pParam);

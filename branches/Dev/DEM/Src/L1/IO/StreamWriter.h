@@ -3,6 +3,7 @@
 #define __DEM_L1_STREAM_WRITER_H__
 
 #include <IO/Stream.h>
+#include <string.h> // strlen
 
 // Generic stream writer. Derive classes to write structured/formatted data to streams.
 

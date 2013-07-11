@@ -26,7 +26,7 @@ bool CDataScheme::Init(const CParams& Desc)
 
 		nString FourCC;
 		if (Value.Get<nString>(FourCC, CStrID("FourCC")))
-			Rec.FourCC = MAKE_FOURCC(FourCC[0], FourCC[1], FourCC[2], FourCC[3]);
+			Rec.FourCC.FromString(FourCC.CStr());
 		else Rec.FourCC = 0;
 
 		CData* TypeIDVal;

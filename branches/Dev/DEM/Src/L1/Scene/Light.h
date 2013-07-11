@@ -56,7 +56,7 @@ public:
 
 	CLight();
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	OnDetachFromNode();
 	virtual void	Update();
 

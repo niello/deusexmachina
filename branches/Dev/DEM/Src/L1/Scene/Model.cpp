@@ -17,9 +17,9 @@ __ImplementClass(Scene::CModel, 'MODL', Scene::CRenderObject);
 
 using namespace Render;
 
-bool CModel::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
-	switch (FourCC)
+	switch (FourCC.Code)
 	{
 		case 'LRTM': // MTRL
 		{

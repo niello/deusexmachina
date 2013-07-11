@@ -4,9 +4,9 @@ namespace Scene
 {
 __ImplementClass(Scene::CCamera, 'CAMR', Scene::CNodeAttribute);
 
-bool CCamera::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
-	switch (FourCC)
+	switch (FourCC.Code)
 	{
 		case 'XXXX': // XXXX
 		{
@@ -54,9 +54,9 @@ void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) cons
 	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
 	vector3 LocalMousePos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
 	LocalMousePos.y = -LocalMousePos.y;
-	OutRay.b = GetInvViewMatrix() * LocalMousePos;
-	OutRay.m = OutRay.b - GetInvViewMatrix().Translation();
-	OutRay.m *= (Length / OutRay.m.len());
+	OutRay.Start = GetInvViewMatrix() * LocalMousePos;
+	OutRay.Vector = OutRay.Start - GetInvViewMatrix().Translation();
+	OutRay.Vector *= (Length / OutRay.len());
 }
 //---------------------------------------------------------------------
 

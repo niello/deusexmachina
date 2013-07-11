@@ -3,6 +3,7 @@
 #define __DEM_L1_HASH_H__
 
 #include "SuperFastHash.h"
+#include <string.h>			// strlen
 
 // Hash functions
 

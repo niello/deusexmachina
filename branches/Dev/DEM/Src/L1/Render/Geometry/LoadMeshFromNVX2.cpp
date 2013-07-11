@@ -113,13 +113,14 @@ bool LoadMeshFromNVX2(IO::CStream& In, EUsage Usage, ECPUAccess Access, PMesh Ou
 	for (int i = 0; i < MeshGroups.GetCount(); ++i)
 	{
 		CMeshGroup& MeshGroup = MeshGroups[i];
-		MeshGroup.AABB.begin_extend();
+		MeshGroup.AABB.BeginExtend();
 		ushort* pIndex = pIBData + MeshGroup.FirstIndex;
 		for (uint j = 0; j < MeshGroup.IndexCount; ++j)
 		{
 			float* pVertex = pVBData + (pIndex[j] * Header.vertexWidth);
-			MeshGroup.AABB.extend(pVertex[0], pVertex[1], pVertex[2]);
+			MeshGroup.AABB.Extend(pVertex[0], pVertex[1], pVertex[2]);
 		}
+		MeshGroup.AABB.EndExtend();
 	}
 
 	n_delete_array(pVBData);

@@ -71,7 +71,7 @@ void CPropSceneNode::GetAABB(bbox3& OutBox) const
 {
 	if (!Node.IsValid() || !Node->GetAttrCount()) return;
 
-	OutBox.begin_extend();
+	OutBox.BeginExtend();
 	for (DWORD i = 0; i < Node->GetAttrCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node->GetAttr(i);
@@ -79,10 +79,10 @@ void CPropSceneNode::GetAABB(bbox3& OutBox) const
 		{
 			bbox3 AttrBox;
 			((Scene::CModel&)Attr).GetGlobalAABB(AttrBox);
-			OutBox.extend(AttrBox);
+			OutBox.Extend(AttrBox);
 		}
 	}
-	OutBox.end_extend();
+	OutBox.EndExtend();
 }
 //---------------------------------------------------------------------
 

@@ -63,9 +63,9 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 		++Written;
 
 		// Write Key of FourCC of current param
-		if (Rec.FourCC)
+		if (Rec.FourCC.IsValid())
 		{
-			if (!Write<int>(Rec.FourCC)) FAIL;
+			if (!Write<int>(Rec.FourCC.Code)) FAIL;
 		}
 		else if (Rec.Flags.Is(CDataScheme::WRITE_KEY))
 		{

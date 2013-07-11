@@ -1,76 +1,38 @@
 #ifndef N_PERLIN_H
 #define N_PERLIN_H
-//------------------------------------------------------------------------------
-/**
-    @class noise
-    @ingroup Math
 
-    Perlin noise class.
+#include <kernel/ntypes.h>
+#include <math.h>
 
-    See http://mrl.nyu.edu/~perlin/noise/ for details.
+// Perlin noise class.
+// See http://mrl.nyu.edu/~perlin/noise/ for details.
+// (C) 2004 RadonLabs GmbH
 
-    (C) 2004 RadonLabs GmbH
-*/
-#include "kernel/ntypes.h"
-#include "math.h"
-
-//------------------------------------------------------------------------------
 class noise
 {
-public:
-    /// generate noise value
-    static float gen(float x, float y, float z);
-
 private:
-    /// compute fade curve
-    static float fade(float t);
-    /// lerp between a and b
-    static float lerp(float t, float a, float b);
-    /// convert into gradient direction
-    static float grad(int hash, float x, float y, float z);
 
-    static int perm[512];
+	static int perm[512];
+
+	static float fade(float t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
+	static float lerp(float t, float a, float b) { return a + t * (b - a); }
+	static float grad(int hash, float x, float y, float z);
+
+public:
+
+	static float gen(float x, float y, float z);
 };
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-float
-noise::fade(float t)
+inline float noise::grad(int hash, float x, float y, float z)
 {
-    return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+	int h = hash & 15;
+	float u = h < 8 ? x : y;
+	float v = h < 4 ? y : ((h == 12) || (h==14)) ? x : z;
+	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-float
-noise::lerp(float t, float a, float b)
-{
-    return a + t * (b - a);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-float
-noise::grad(int hash, float x, float y, float z)
-{
-    int h = hash & 15;
-    float u = h < 8 ? x : y;
-    float v = h < 4 ? y : ((h == 12) || (h==14)) ? x : z;
-    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-float
-noise::gen(float x, float y, float z)
+inline float noise::gen(float x, float y, float z)
 {
     float floorX = floorf(x);
     float floorY = floorf(y);
@@ -109,6 +71,6 @@ noise::gen(float x, float y, float z)
                            lerp(u, grad(perm[AB+1], x  , y-1, z-1),
                                    grad(perm[BB+1], x-1, y-1, z-1))));
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
 #endif

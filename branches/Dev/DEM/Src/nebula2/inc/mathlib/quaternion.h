@@ -1,207 +1,49 @@
 #ifndef N_QUATERNION_H
 #define N_QUATERNION_H
-//-------------------------------------------------------------------
-/**
-    @class quaternion
-    @ingroup NebulaMathDataTypes
 
-    quaternion class with some basic operators.
+#include <mathlib/vector.h>
 
-     - 08-Dec-00   floh    extended, ATTENTION: argument ordering in
-                           constructor has changed!
+// Quaternion class with some basic operators.
 
-    (C) 2004 RadonLabs GmbH
-*/
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include "mathlib/vector.h"
-
-//-------------------------------------------------------------------
-//  quaternion
-//-------------------------------------------------------------------
 class quaternion
 {
 public:
-    static const quaternion identity;
 
-public:
-    float x, y, z, w;
+	float x, y, z, w;
 
-    //-- constructors -----------------------------------------------
-    quaternion()
-        : x(0.0f), y(0.0f), z(0.0f), w(1.0f)
-    {}
-    quaternion(float _x, float _y, float _z, float _w)
-        : x(_x), y(_y), z(_z), w(_w)
-    {}
-    quaternion(const quaternion& q)
-        : x(q.x), y(q.y), z(q.z), w(q.w)
-    {}
+	static const quaternion identity;
 
-    //-- setting elements -------------------------------------------
-    void set(float _x, float _y, float _z, float _w) {
-        x = _x;
-        y = _y;
-        z = _z;
-        w = _w;
-    }
-    void set(const quaternion& q) {
-        x = q.x;
-        y = q.y;
-        z = q.z;
-        w = q.w;
-    }
+	quaternion(): x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+	quaternion(float _x, float _y, float _z, float _w): x(_x), y(_y), z(_z), w(_w) {}
+	quaternion(const quaternion& q): x(q.x), y(q.y), z(q.z), w(q.w) {}
 
-    //-- misc operations --------------------------------------------
-    void ident() {
-        x = 0.0f;
-        y = 0.0f;
-        z = 0.0f;
-        w = 1.0f;
-    }
+	void				set(float _x, float _y, float _z, float _w) { x = _x; y = _y; z = _z; w = _w; }
+	void				set(const quaternion& q) { x = q.x; y = q.y; z = q.z; w = q.w; }
+	void				set_from_norm_axes(const vector3& from, const vector3& to);
+	void				set_from_axes(const vector3& from, const vector3& to);
 
-    void conjugate() {
-        x = -x;
-        y = -y;
-        z = -z;
-    }
+	void				ident() { x = 0.0f; y = 0.0f; z = 0.0f; w = 1.0f; }
+	void				conjugate() { x = -x; y = -y; z = -z; }
+	void				scale(float s) { x *= s; y *= s; z *= s; w *= s; }
+	float				norm() { return x * x + y * y + z * z + w * w; }
+	float				magnitude() { float n = norm(); return (n > 0.0f) ? n_sqrt(n) : 0.0f; }
+	void				invert() { float n = norm(); if (n > 0.0f) scale(1.0f / norm()); conjugate(); }
+	void				normalize() { float l = magnitude(); if (l > 0.0f) scale(1.0f / l); else ident(); }
+	void				lerp(const quaternion& q0, const quaternion& q1, float l) { slerp(q0, q1, l); }
 
-    void scale(float s) {
-        x *= s;
-        y *= s;
-        z *= s;
-        w *= s;
-    }
+	vector3				rotate(const vector3& v) const;
 
-    float norm() {
-        return x*x + y*y + z*z + w*w;
-    }
+	static quaternion	Mul(const quaternion& q0, const quaternion& q1);
 
-    float magnitude() {
-        float n = norm();
-        if (n > 0.0f) return n_sqrt(n);
-        else          return 0.0f;
-    }
+	bool				operator ==(const quaternion& q) const { return x == q.x && y == q.y && z == q.z && w == q.w; }
+	bool				operator !=(const quaternion& q) const { return x != q.x || y != q.y || z != q.z || w != q.w; }
 
-    void invert() {
-        float n = norm();
-        if (n > 0.0f) scale(1.0f / norm());
-        conjugate();
-    }
-
-    void normalize() {
-        float l = magnitude();
-        if (l > 0.0f) scale(1.0f / l);
-        else          set(0.0f,0.0f,0.0f,1.0f);
-    }
-
-    //-- operators --------------------------------------------------
-    bool operator==(const quaternion& q) const {
-        return ((x==q.x) && (y==q.y) && (z==q.z) && (w==q.w)) ? true : false;
-    }
-
-    bool operator!=(const quaternion& q) const {
-        return ((x!=q.x) || (y!=q.y) || (z!=q.z) || (w!=q.w)) ? true : false;
-    }
-
-    const quaternion& operator+=(const quaternion& q) {
-        x += q.x;
-        y += q.y;
-        z += q.z;
-        w += q.w;
-        return *this;
-    }
-
-    const quaternion& operator-=(const quaternion& q) {
-        x -= q.x;
-        y -= q.y;
-        z -= q.z;
-        w -= q.w;
-        return *this;
-    }
-
-    const quaternion& operator*=(const quaternion& q) {
-        float qx = w*q.x + x*q.w + y*q.z - z*q.y;
-        float qy = w*q.y + y*q.w + z*q.x - x*q.z;
-        float qz = w*q.z + z*q.w + x*q.y - y*q.x;
-        float qw = w*q.w - x*q.x - y*q.y - z*q.z;
-        x = qx;
-        y = qy;
-        z = qz;
-        w = qw;
-        return *this;
-    }
-
-    /// rotate vector by quaternion
-    vector3 rotate(const vector3& v) {
-        quaternion q(v.x * w + v.z * y - v.y * z,
-                     v.y * w + v.x * z - v.z * x,
-                     v.z * w + v.y * x - v.x * y,
-                     v.x * x + v.y * y + v.z * z);
-
-        return vector3(w * q.x + x * q.w + y * q.z - z * q.y,
-                       w * q.y + y * q.w + z * q.x - x * q.z,
-                       w * q.z + z * q.w + x * q.y - y * q.x);
-    }
-
-    /**
-        Create a rotation from one vector to an other. Works only with unit vectors.
-
-        See http://www.martinb.com/maths/algebra/vectors/angleBetween/index.htm for
-        more information.
-
-        @param from source unit vector
-        @param to destination unit vector
-    */
-    void set_from_axes(const vector3& from, const vector3& to)
-    {
-        vector3 c(from * to);
-        set(c.x, c.y, c.z, from % to);
-        w += 1.0f;      // reducing angle to halfangle
-        if (w <= TINY) // angle close to PI
-        {
-            if ((from.z * from.z) > (from.x * from.x))
-                set(0, from.z, -from.y, w);
-                //from*vector3(1,0,0)
-            else
-                set(from.y, -from.x, 0, w);
-                //from*vector3(0,0,1)
-        }
-        normalize();
-    }
-
-    /**
-        Create a rotation from one vector to an other. Works with non unit vectors.
-
-        See http://www.martinb.com/maths/algebra/vectors/angleBetween/index.htm for
-        more information.
-
-        @param from source vector
-        @param to destination vector
-    */
-    void set_from_axes2(const vector3& from, const vector3& to)
-    {
-        vector3 c(from * to);
-        set(c.x, c.y, c.z, from % to);
-        normalize();    // if "from" or "to" not unit, normalize quat
-        w += 1.0f;      // reducing angle to halfangle
-        if (w <= TINY) // angle close to PI
-        {
-            if ((from.z * from.z) > (from.x * from.x))
-                set(0, from.z, -from.y, w);
-                //from*vector3(1,0,0)
-            else
-                set(from.y, -from.x, 0, w);
-                //from*vector3(0,0,1)
-        }
-        normalize();
-    }
+	const quaternion&	operator +=(const quaternion& q) { x += q.x; y += q.y; z += q.z; w += q.w; return *this; }
+	const quaternion&	operator -=(const quaternion& q) { x -= q.x; y -= q.y; z -= q.z; w -= q.w; return *this; }
+	const quaternion&	operator *=(const quaternion& q);
 
     //-- convert from euler angles ----------------------------------
     void set_rotate_axis_angle(const vector3& v, float a) {
-        //float sin_a = n_sin(a * 0.5f);
-        //float cos_a = n_cos(a * 0.5f);
 		float sin_a, cos_a;
  		n_sincos(a * 0.5f, sin_a, cos_a);
         x = v.x * sin_a;
@@ -210,23 +52,9 @@ public:
         w = cos_a;
     }
 
-    void set_rotate_x(float a) {
-		y = 0.f;
-		z = 0.f;
-		n_sincos(a * 0.5f, x, w);
-    }
-
-    void set_rotate_y(float a) {
-		x = 0.f;
-		z = 0.f;
-		n_sincos(a * 0.5f, y, w);
-    }
-
-    void set_rotate_z(float a) {
-		x = 0.f;
-		y = 0.f;
-		n_sincos(a * 0.5f, z, w);
-    }
+    void set_rotate_x(float a) { y = 0.f; z = 0.f; n_sincos(a * 0.5f, x, w); }
+    void set_rotate_y(float a) { x = 0.f; z = 0.f; n_sincos(a * 0.5f, y, w); }
+    void set_rotate_z(float a) { x = 0.f; y = 0.f; n_sincos(a * 0.5f, z, w); }
 
 	//!!!can avoid calculating parts for 0 angles!
     void set_rotate_xyz(float ax, float ay, float az) {
@@ -241,10 +69,10 @@ public:
     //--- fuzzy compare operators -----------------------------------
     bool isequal(const quaternion& v, float tol) const
     {
-        if (fabs(v.x-x) > tol)      return false;
-        else if (fabs(v.y-y) > tol) return false;
-        else if (fabs(v.z-z) > tol) return false;
-        else if (fabs(v.w-w) > tol) return false;
+        if (n_fabs(v.x-x) > tol)      return false;
+        else if (n_fabs(v.y-y) > tol) return false;
+        else if (n_fabs(v.z-z) > tol) return false;
+        else if (n_fabs(v.w-w) > tol) return false;
         return true;
     }
 
@@ -299,39 +127,94 @@ public:
         z = fScale1 * A.z + fScale2 * B.z;
         w = fScale1 * A.w + fScale2 * B.w;
     }
-
-    void lerp(const quaternion& q0, const quaternion& q1, float l)
-    {
-        slerp(q0, q1, l);
-    }
 };
 
-//--- global operators ----------------------------------------------
-static inline quaternion operator+(const quaternion& q0, const quaternion& q1) {
-    return quaternion(q0.x+q1.x, q0.y+q1.y, q0.z+q1.z, q0.w+q1.w);
-}
-
-static inline quaternion operator-(const quaternion& q0, const quaternion& q1) {
-    return quaternion(q0.x-q1.x, q0.y-q1.y, q0.z-q1.z, q0.w-q1.w);
-}
-
-static inline quaternion operator*(const quaternion& q0, const quaternion& q1) {
-    return quaternion(q0.w*q1.x + q0.x*q1.w + q0.y*q1.z - q0.z*q1.y,
-                      q0.w*q1.y + q0.y*q1.w + q0.z*q1.x - q0.x*q1.z,
-                      q0.w*q1.z + q0.z*q1.w + q0.x*q1.y - q0.y*q1.x,
-                      q0.w*q1.w - q0.x*q1.x - q0.y*q1.y - q0.z*q1.z);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-template<>
-static inline
-void
-lerp<quaternion>(quaternion & result, const quaternion & val0, const quaternion & val1, float lerpVal)
+// Create a rotation from one vector to an other. Works only with unit vectors.
+// See http://www.martinb.com/maths/algebra/vectors/angleBetween/index.htm for more information.
+inline void quaternion::set_from_norm_axes(const vector3& from, const vector3& to)
 {
-    result.lerp(val0, val1, lerpVal);
+	vector3 c(from * to);
+	set(c.x, c.y, c.z, from % to);
+	w += 1.0f;		// reducing angle to halfangle
+	if (w <= TINY)	// angle close to PI
+	{
+		if (from.z * from.z > from.x * from.x) set(0, from.z, -from.y, w); //from*vector3(1,0,0)
+		else set(from.y, -from.x, 0, w); //from*vector3(0,0,1)
+	}
+	normalize();
 }
+//---------------------------------------------------------------------
 
-//-------------------------------------------------------------------
+// Create a rotation from one vector to an other. Works with non unit vectors.
+// See http://www.martinb.com/maths/algebra/vectors/angleBetween/index.htm for more information.
+inline void quaternion::set_from_axes(const vector3& from, const vector3& to)
+{
+	vector3 c(from * to);
+	set(c.x, c.y, c.z, from % to);
+	normalize();	// if "from" or "to" not unit, normalize quat
+	w += 1.0f;		// reducing angle to halfangle
+	if (w <= TINY)	// angle close to PI
+	{
+		if (from.z * from.z > from.x * from.x) set(0, from.z, -from.y, w); //from*vector3(1,0,0)
+		else set(from.y, -from.x, 0, w); //from*vector3(0,0,1)
+	}
+	normalize();
+}
+//---------------------------------------------------------------------
+
+inline vector3 quaternion::rotate(const vector3& v) const
+{
+	quaternion q(	v.x * w + v.z * y - v.y * z,
+					v.y * w + v.x * z - v.z * x,
+					v.z * w + v.y * x - v.x * y,
+					v.x * x + v.y * y + v.z * z);
+	return vector3(	w * q.x + x * q.w + y * q.z - z * q.y,
+					w * q.y + y * q.w + z * q.x - x * q.z,
+					w * q.z + z * q.w + x * q.y - y * q.x);
+}
+//---------------------------------------------------------------------
+
+inline quaternion quaternion::Mul(const quaternion& q0, const quaternion& q1)
+{
+	return quaternion(	q0.w * q1.x + q0.x * q1.w + q0.y * q1.z - q0.z * q1.y,
+						q0.w * q1.y + q0.y * q1.w + q0.z * q1.x - q0.x * q1.z,
+						q0.w * q1.z + q0.z * q1.w + q0.x * q1.y - q0.y * q1.x,
+						q0.w * q1.w - q0.x * q1.x - q0.y * q1.y - q0.z * q1.z);
+}
+//---------------------------------------------------------------------
+
+inline const quaternion& quaternion::operator *=(const quaternion& q)
+{
+	*this = quaternion::Mul(*this, q);
+	return *this;
+}
+//---------------------------------------------------------------------
+
+static inline quaternion operator +(const quaternion& q0, const quaternion& q1)
+{
+	return quaternion(q0.x + q1.x, q0.y + q1.y, q0.z + q1.z, q0.w + q1.w);
+}
+//---------------------------------------------------------------------
+
+static inline quaternion operator -(const quaternion& q0, const quaternion& q1)
+{
+	return quaternion(q0.x - q1.x, q0.y - q1.y, q0.z - q1.z, q0.w - q1.w);
+}
+//---------------------------------------------------------------------
+
+static inline quaternion operator *(const quaternion& q0, const quaternion& q1)
+{
+	return quaternion(	q0.w * q1.x + q0.x * q1.w + q0.y * q1.z - q0.z * q1.y,
+						q0.w * q1.y + q0.y * q1.w + q0.z * q1.x - q0.x * q1.z,
+						q0.w * q1.z + q0.z * q1.w + q0.x * q1.y - q0.y * q1.x,
+						q0.w * q1.w - q0.x * q1.x - q0.y * q1.y - q0.z * q1.z);
+}
+//---------------------------------------------------------------------
+
+template<> static inline void lerp<quaternion>(quaternion& result, const quaternion& val0, const quaternion& val1, float lerpVal)
+{
+	result.lerp(val0, val1, lerpVal);
+}
+//---------------------------------------------------------------------
+
 #endif

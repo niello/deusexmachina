@@ -330,7 +330,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
 	Physics::PPhysicsObj PhysObj;
-	if (!PhysWorld->GetClosestRayContact(Ray.start(), Ray.start() + Ray.vec(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
+	if (!PhysWorld->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 
 	if (pOutEntityUID)
 	{

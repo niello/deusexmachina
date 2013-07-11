@@ -55,7 +55,7 @@ typedef Ptr<CResource> PResource;
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class)(*(CStrID*)pParam); } \
 	bool Class::RegisterInFactory() \
 	{ \
-		if (!Factory->IsRegistered(#Class)) \
+		if (!Factory->IsNameRegistered(#Class)) \
 			Factory->Register(Class::RTTI, #Class, FourCC); \
 		OK; \
 	} \

@@ -1,8 +1,8 @@
 #ifndef _MATRIX44_H
 #define _MATRIX44_H
 
-#include "mathlib/_vector3.h"
-#include "mathlib/_vector4.h"
+#include "mathlib/vector3.h"
+#include "mathlib/vector4.h"
 #include "mathlib/quaternion.h"
 #include "mathlib/euler.h"
 #include "mathlib/matrixdefs.h"
@@ -10,29 +10,29 @@
 
 // Matrix 4x4 class. Row-major.
 
-class _matrix44
+class matrix44
 {
 public:
 
     float m[4][4];
 
-	static const _matrix44 identity;
-    static const _matrix44 ortho;
+	static const matrix44 identity;
+    static const matrix44 ortho;
 
-	_matrix44() { ident(); }
-    _matrix44(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3);
-	_matrix44(const _matrix44& m1) { set(m1); }
-    _matrix44(float _m11, float _m12, float _m13, float _m14,
+	matrix44() { ident(); }
+    matrix44(const vector4& v0, const vector4& v1, const vector4& v2, const vector4& v3);
+	matrix44(const matrix44& m1) { set(m1); }
+    matrix44(float _m11, float _m12, float _m13, float _m14,
               float _m21, float _m22, float _m23, float _m24,
               float _m31, float _m32, float _m33, float _m34,
               float _m41, float _m42, float _m43, float _m44);
-	_matrix44(const quaternion& q) { FromQuaternion(q); }
+	matrix44(const quaternion& q) { FromQuaternion(q); }
 
 	void		FromQuaternion(const quaternion& q);
     quaternion	ToQuaternion() const;
 
-	void set(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3);
-	void set(const _matrix44& m1) { memcpy(m, &(m1.m[0][0]), sizeof(_matrix44)); }
+	void set(const vector4& v0, const vector4& v1, const vector4& v2, const vector4& v3);
+	void set(const matrix44& m1) { memcpy(m, &(m1.m[0][0]), sizeof(matrix44)); }
     void set(float _m11, float _m12, float _m13, float _m14,
              float _m21, float _m22, float _m23, float _m24,
              float _m31, float _m32, float _m33, float _m34,
@@ -43,21 +43,21 @@ public:
     void invert();
 	float det_simple() const;
 	/// quick invert (if 3x3 rotation and translation)
-    void invert_simple(_matrix44& Out) const;
+    void invert_simple(matrix44& Out) const;
     /// quick multiplication, assumes that M14==M24==M34==0 and M44==1
-    void mult_simple(const _matrix44& m1);
+    void mult_simple(const matrix44& m1);
 	/// quick multiplication of two matrices (m1*m2) with M14==M24==M34==0 and M44==1
-    void mult2_simple(const _matrix44& m1, const _matrix44& m2);
+    void mult2_simple(const matrix44& m1, const matrix44& m2);
     /// transform vector3, projecting back into w=1
-    _vector3 transform_coord(const _vector3& v) const;
+    vector3 transform_coord(const vector3& v) const;
     /// return x component
-    _vector3& AxisX() const { return *(_vector3*)&M11; }
+    vector3& AxisX() const { return *(vector3*)&M11; }
     /// return y component
-    _vector3& AxisY() const { return *(_vector3*)&M21; }
+    vector3& AxisY() const { return *(vector3*)&M21; }
     /// return z component
-    _vector3& AxisZ() const { return *(_vector3*)&M31; }
+    vector3& AxisZ() const { return *(vector3*)&M31; }
     /// return translate component
-	_vector3& Translation() const { return *(_vector3*)&M41; }
+	vector3& Translation() const { return *(vector3*)&M41; }
     /// rotate around global x
     void rotate_x(const float a);
     /// rotate around global y
@@ -65,17 +65,17 @@ public:
     /// rotate around global z
     void rotate_z(const float a);
     /// rotate about any axis
-    void rotate(const _vector3& vec, float a);
+    void rotate(const vector3& vec, float a);
     /// translate
-    void translate(const _vector3& t);
+    void translate(const vector3& t);
     /// set absolute translation
-    void set_translation(const _vector3& t);
+    void set_translation(const vector3& t);
     /// scale
-    void scale(const _vector3& s);
+    void scale(const vector3& s);
     /// lookat in a left-handed coordinate system
-    void lookatLh(const _vector3& to, const _vector3& up);
+    void lookatLh(const vector3& to, const vector3& up);
     /// lookat in a right-handed coordinate system
-    void lookatRh(const _vector3& to, const _vector3& up);
+    void lookatRh(const vector3& to, const vector3& up);
     /// create left-handed field-of-view perspective projection matrix
     void perspFovLh(float fovY, float aspect, float zn, float zf);
     /// create right-handed field-of-view perspective projection matrix
@@ -89,28 +89,28 @@ public:
     /// create right-handed orthogonal projection matrix
     void orthoRh(float w, float h, float zn, float zf);
     /// restricted lookat
-    void billboard(const _vector3& to, const _vector3& up);
+    void billboard(const vector3& to, const vector3& up);
     /// inplace matrix multiply
-    void operator *= (const _matrix44& m1);
+    void operator *= (const matrix44& m1);
 	/// comparison
-	bool operator ==(const _matrix44& Other) const;
+	bool operator ==(const matrix44& Other) const;
 	/// comparison
-	bool operator !=(const _matrix44& Other) const { return !(*this == Other); }
+	bool operator !=(const matrix44& Other) const { return !(*this == Other); }
     /// multiply source vector into target vector, eliminates tmp vector
-    void mult(const _vector4& src, _vector4& dst) const;
+    void mult(const vector4& src, vector4& dst) const;
     /// multiply source vector into target vector, eliminates tmp vector
-    void mult(const _vector3& src, _vector3& dst) const;
+    void mult(const vector3& src, vector3& dst) const;
     /// multiply and divide by w
-    vector3 mult_divw(const _vector3& v) const;
+    vector3 mult_divw(const vector3& v) const;
     /// fast multiply-add with weighting
-    void weighted_madd(const _vector3& src, _vector3& dst, float weight) const;
+    void weighted_madd(const vector3& src, vector3& dst, float weight) const;
 };
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_matrix44::_matrix44(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3)
+matrix44::matrix44(const vector4& v0, const vector4& v1, const vector4& v2, const vector4& v3)
 {
     M11 = v0.x; M12 = v0.y; M13 = v0.z; M14 = v0.w;
     M21 = v1.x; M22 = v1.y; M23 = v1.z; M24 = v1.w;
@@ -122,7 +122,7 @@ _matrix44::_matrix44(const _vector4& v0, const _vector4& v1, const _vector4& v2,
 /**
 */
 inline
-_matrix44::_matrix44(float _m11, float _m12, float _m13, float _m14,
+matrix44::matrix44(float _m11, float _m12, float _m13, float _m14,
                      float _m21, float _m22, float _m23, float _m24,
                      float _m31, float _m32, float _m33, float _m34,
                      float _m41, float _m42, float _m43, float _m44)
@@ -133,7 +133,7 @@ _matrix44::_matrix44(float _m11, float _m12, float _m13, float _m14,
     M41 = _m41; M42 = _m42; M43 = _m43; M44 = _m44;
 }
 
-inline void _matrix44::FromQuaternion(const quaternion& q)
+inline void matrix44::FromQuaternion(const quaternion& q)
 {
     float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
     x2 = q.x + q.x; y2 = q.y + q.y; z2 = q.z + q.z;
@@ -165,7 +165,7 @@ inline void _matrix44::FromQuaternion(const quaternion& q)
 */
 inline
 quaternion
-_matrix44::ToQuaternion() const
+matrix44::ToQuaternion() const
 {
     float qa[4];
     float tr = m[0][0] + m[1][1] + m[2][2];
@@ -202,7 +202,7 @@ _matrix44::ToQuaternion() const
 */
 inline
 void
-_matrix44::set(const _vector4& v0, const _vector4& v1, const _vector4& v2, const _vector4& v3)
+matrix44::set(const vector4& v0, const vector4& v1, const vector4& v2, const vector4& v3)
 {
     M11=v0.x; M12=v0.y; M13=v0.z, M14=v0.w;
     M21=v1.x; M22=v1.y; M23=v1.z; M24=v1.w;
@@ -215,7 +215,7 @@ _matrix44::set(const _vector4& v0, const _vector4& v1, const _vector4& v2, const
 */
 inline
 void
-_matrix44::set(float _m11, float _m12, float _m13, float _m14,
+matrix44::set(float _m11, float _m12, float _m13, float _m14,
                float _m21, float _m22, float _m23, float _m24,
                float _m31, float _m32, float _m33, float _m34,
                float _m41, float _m42, float _m43, float _m44)
@@ -231,7 +231,7 @@ _matrix44::set(float _m11, float _m12, float _m13, float _m14,
 */
 inline
 void
-_matrix44::transpose()
+matrix44::transpose()
 {
     #undef n_swap
     #define n_swap(x,y) { float t=x; x=y; y=t; }
@@ -248,7 +248,7 @@ _matrix44::transpose()
 */
 inline
 float
-_matrix44::det() const
+matrix44::det() const
 {
     return
         (M11 * M22 - M12 * M21) * (M33 * M44 - M34 * M43)
@@ -264,7 +264,7 @@ _matrix44::det() const
 */
 inline
 void
-_matrix44::invert()
+matrix44::invert()
 {
     float s = det();
     if (s == 0.0) return;
@@ -292,7 +292,7 @@ _matrix44::invert()
 /**
     optimized determinant calculation, assumes that M14==M24==M34==0 AND M44==1
 */
-inline float _matrix44::det_simple() const
+inline float matrix44::det_simple() const
 {
 	return (M11 * M22 - M12 * M21) * (M33)
 		   -(M11 * M23 - M13 * M21) * (M32)
@@ -305,7 +305,7 @@ inline float _matrix44::det_simple() const
     a translation (eg. everything that has [0,0,0,1] as
     the rightmost column) MUCH cheaper then a real 4x4 inversion
 */
-inline void _matrix44::invert_simple(_matrix44& Out) const
+inline void matrix44::invert_simple(matrix44& Out) const
 {
     float s = det_simple();
 	if (s == 0.0f) return;
@@ -335,7 +335,7 @@ inline void _matrix44::invert_simple(_matrix44& Out) const
 */
 inline
 void
-_matrix44::mult_simple(const _matrix44& m1)
+matrix44::mult_simple(const matrix44& m1)
 {
     for (int i=0; i<4; i++)
     {
@@ -356,7 +356,7 @@ _matrix44::mult_simple(const _matrix44& m1)
 }
 
 /// quick multiplication of two matrices (m1*m2) with M14==M24==M34==0 and M44==1
-inline void _matrix44::mult2_simple(const _matrix44& m1, const _matrix44& m2)
+inline void matrix44::mult2_simple(const matrix44& m1, const matrix44& m2)
 {
     for (int i = 0; i < 4; ++i)
     {
@@ -380,11 +380,11 @@ inline void _matrix44::mult2_simple(const _matrix44& m1, const _matrix44& m2)
     Transforms a vector by the matrix, projecting the result back into w=1.
 */
 inline
-_vector3
-_matrix44::transform_coord(const _vector3& v) const
+vector3
+matrix44::transform_coord(const vector3& v) const
 {
     float d = 1.0f / (M14*v.x + M24*v.y + M34*v.z + M44);
-    return _vector3(
+    return vector3(
         (M11*v.x + M21*v.y + M31*v.z + M41) * d,
         (M12*v.x + M22*v.y + M32*v.z + M42) * d,
         (M13*v.x + M23*v.y + M33*v.z + M43) * d);
@@ -395,7 +395,7 @@ _matrix44::transform_coord(const _vector3& v) const
 */
 inline
 void
-_matrix44::rotate_x(const float a)
+matrix44::rotate_x(const float a)
 {
     float c, s;
 	n_sincos(a, s, c);
@@ -413,7 +413,7 @@ _matrix44::rotate_x(const float a)
 */
 inline
 void
-_matrix44::rotate_y(const float a)
+matrix44::rotate_y(const float a)
 {
     float c, s;
 	n_sincos(a, s, c);
@@ -431,7 +431,7 @@ _matrix44::rotate_y(const float a)
 */
 inline
 void
-_matrix44::rotate_z(const float a)
+matrix44::rotate_z(const float a)
 {
     float c, s;
 	n_sincos(a, s, c);
@@ -449,7 +449,7 @@ _matrix44::rotate_z(const float a)
 */
 inline
 void
-_matrix44::translate(const _vector3& t)
+matrix44::translate(const vector3& t)
 {
     M41 += t.x;
     M42 += t.y;
@@ -461,7 +461,7 @@ _matrix44::translate(const _vector3& t)
 */
 inline
 void
-_matrix44::set_translation(const _vector3& t)
+matrix44::set_translation(const vector3& t)
 {
     M41 = t.x;
     M42 = t.y;
@@ -473,7 +473,7 @@ _matrix44::set_translation(const _vector3& t)
 */
 inline
 void
-_matrix44::scale(const _vector3& s)
+matrix44::scale(const vector3& s)
 {
     for (int i=0; i<4; i++)
     {
@@ -488,14 +488,14 @@ _matrix44::scale(const _vector3& s)
 */
 inline
 void
-_matrix44::lookatRh(const _vector3& at, const _vector3& up)
+matrix44::lookatRh(const vector3& at, const vector3& up)
 {
-    _vector3 eye(M41, M42, M43);
-    _vector3 zaxis = eye - at;
+    vector3 eye(M41, M42, M43);
+    vector3 zaxis = eye - at;
     zaxis.norm();
-    _vector3 xaxis = up * zaxis;
+    vector3 xaxis = up * zaxis;
     xaxis.norm();
-    _vector3 yaxis = zaxis * xaxis;
+    vector3 yaxis = zaxis * xaxis;
     M11 = xaxis.x;  M12 = xaxis.y;  M13 = xaxis.z;  M14 = 0.0f;
     M21 = yaxis.x;  M22 = yaxis.y;  M23 = yaxis.z;  M24 = 0.0f;
     M31 = zaxis.x;  M32 = zaxis.y;  M33 = zaxis.z;  M34 = 0.0f;
@@ -506,14 +506,14 @@ _matrix44::lookatRh(const _vector3& at, const _vector3& up)
 */
 inline
 void
-_matrix44::lookatLh(const _vector3& at, const _vector3& up)
+matrix44::lookatLh(const vector3& at, const vector3& up)
 {
-    _vector3 eye(M41, M42, M43);
-    _vector3 zaxis = at - eye;
+    vector3 eye(M41, M42, M43);
+    vector3 zaxis = at - eye;
     zaxis.norm();
-    _vector3 xaxis = up * zaxis;
+    vector3 xaxis = up * zaxis;
     xaxis.norm();
-    _vector3 yaxis = zaxis * xaxis;
+    vector3 yaxis = zaxis * xaxis;
     M11 = xaxis.x;  M12 = yaxis.x;  M13 = zaxis.x;  M14 = 0.0f;
     M21 = xaxis.y;  M22 = yaxis.y;  M23 = zaxis.y;  M24 = 0.0f;
     M31 = xaxis.z;  M32 = yaxis.z;  M33 = zaxis.z;  M34 = 0.0f;
@@ -522,7 +522,7 @@ _matrix44::lookatLh(const _vector3& at, const _vector3& up)
 //------------------------------------------------------------------------------
 /**
 */
-inline void _matrix44::perspFovLh(float fovY, float aspect, float zn, float zf)
+inline void matrix44::perspFovLh(float fovY, float aspect, float zn, float zf)
 {
 	float h = float(1.0 / tan(fovY * 0.5f));
 	M11 = h / aspect;	M12 = 0.0f; M13 = 0.0f;				M14 = 0.0f;
@@ -534,7 +534,7 @@ inline void _matrix44::perspFovLh(float fovY, float aspect, float zn, float zf)
 //------------------------------------------------------------------------------
 /**
 */
-inline void _matrix44::perspFovRh(float fovY, float aspect, float zn, float zf)
+inline void matrix44::perspFovRh(float fovY, float aspect, float zn, float zf)
 {
 	float h = float(1.0 / tan(fovY * 0.5f));
 	M11 = h / aspect;	M12 = 0.0f; M13 = 0.0f;             M14 = 0.0f;
@@ -548,7 +548,7 @@ inline void _matrix44::perspFovRh(float fovY, float aspect, float zn, float zf)
 */
 inline
 void
-_matrix44::perspOffCenterLh(float minX, float maxX, float minY, float maxY, float zn, float zf)
+matrix44::perspOffCenterLh(float minX, float maxX, float minY, float maxY, float zn, float zf)
 {
     M11 = 2.0f * zn / (maxX - minX); M12 = 0.0f, M13 = 0.0f; M14 = 0.0f;
     M21 = 0.0f; M22 = 2.0f * zn / (maxY - minY); M23 = 0.0f; M24 = 0.0f;
@@ -561,7 +561,7 @@ _matrix44::perspOffCenterLh(float minX, float maxX, float minY, float maxY, floa
 */
 inline
 void
-_matrix44::perspOffCenterRh(float minX, float maxX, float minY, float maxY, float zn, float zf)
+matrix44::perspOffCenterRh(float minX, float maxX, float minY, float maxY, float zn, float zf)
 {
     M11 = 2.0f * zn / (maxX - minX); M12 = 0.0f, M13 = 0.0f; M14 = 0.0f;
     M21 = 0.0f; M22 = 2.0f * zn / (maxY - minY); M23 = 0.0f; M24 = 0.0f;
@@ -574,7 +574,7 @@ _matrix44::perspOffCenterRh(float minX, float maxX, float minY, float maxY, floa
 */
 inline
 void
-_matrix44::orthoLh(float w, float h, float zn, float zf)
+matrix44::orthoLh(float w, float h, float zn, float zf)
 {
     M11 = 2.0f / w; M12 = 0.0f;     M13 = 0.0f;             M14 = 0.0f;
     M21 = 0.0f;     M22 = 2.0f / h; M23 = 0.0f;             M24 = 0.0f;
@@ -587,7 +587,7 @@ _matrix44::orthoLh(float w, float h, float zn, float zf)
 */
 inline
 void
-_matrix44::orthoRh(float w, float h, float zn, float zf)
+matrix44::orthoRh(float w, float h, float zn, float zf)
 {
     M11 = 2.0f / w; M12 = 0.0f;     M13 = 0.0f;             M14 = 0.0f;
     M21 = 0.0f;     M22 = 2.0f / h; M23 = 0.0f;             M24 = 0.0f;
@@ -600,14 +600,14 @@ _matrix44::orthoRh(float w, float h, float zn, float zf)
 */
 inline
 void
-_matrix44::billboard(const _vector3& to, const _vector3& up)
+matrix44::billboard(const vector3& to, const vector3& up)
 {
-    _vector3 from(M41, M42, M43);
-    _vector3 z(from - to);
+    vector3 from(M41, M42, M43);
+    vector3 z(from - to);
     z.norm();
-    _vector3 y(up);
+    vector3 y(up);
     y.norm();
-    _vector3 x(y * z);
+    vector3 x(y * z);
     z = x * y;
 
     M11=x.x;  M12=x.y;  M13=x.z;  M14=0.0f;
@@ -620,7 +620,7 @@ _matrix44::billboard(const _vector3& to, const _vector3& up)
 */
 inline
 void
-_matrix44::operator *= (const _matrix44& m1)
+matrix44::operator *= (const matrix44& m1)
 {
     int i;
     for (i=0; i<4; i++)
@@ -641,7 +641,7 @@ _matrix44::operator *= (const _matrix44& m1)
 */
 inline
 bool
-_matrix44::operator == (const _matrix44& Other) const
+matrix44::operator == (const matrix44& Other) const
 {
 	bool ByHands = true;
 	for (int i=0; i<4; i++)
@@ -661,14 +661,14 @@ _matrix44::operator == (const _matrix44& Other) const
 */
 inline
 void
-_matrix44::rotate(const _vector3& vec, float a)
+matrix44::rotate(const vector3& vec, float a)
 {
-    _vector3 v(vec);
+    vector3 v(vec);
     v.norm();
     float sa = (float) n_sin(a);
     float ca = (float) n_cos(a);
 
-    _matrix44 rotM;
+    matrix44 rotM;
     rotM.M11 = ca + (1.0f - ca) * v.x * v.x;
     rotM.M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
     rotM.M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
@@ -687,7 +687,7 @@ _matrix44::rotate(const _vector3& vec, float a)
 */
 inline
 void
-_matrix44::mult(const _vector4& src, _vector4& dst) const
+matrix44::mult(const vector4& src, vector4& dst) const
 {
     dst.x = M11*src.x + M21*src.y + M31*src.z + M41*src.w;
     dst.y = M12*src.x + M22*src.y + M32*src.z + M42*src.w;
@@ -700,7 +700,7 @@ _matrix44::mult(const _vector4& src, _vector4& dst) const
 */
 inline
 void
-_matrix44::mult(const _vector3& src, _vector3& dst) const
+matrix44::mult(const vector3& src, vector3& dst) const
 {
     dst.x = M11*src.x + M21*src.y + M31*src.z + M41;
     dst.y = M12*src.x + M22*src.y + M32*src.z + M42;
@@ -714,7 +714,7 @@ _matrix44::mult(const _vector3& src, _vector3& dst) const
 */
 inline
 void
-_matrix44::weighted_madd(const _vector3& src, _vector3& dst, float weight) const
+matrix44::weighted_madd(const vector3& src, vector3& dst, float weight) const
 {
     dst.x += (M11*src.x + M21*src.y + M31*src.z + M41) * weight;
     dst.y += (M12*src.x + M22*src.y + M32*src.z + M42) * weight;
@@ -726,9 +726,9 @@ _matrix44::weighted_madd(const _vector3& src, _vector3& dst, float weight) const
 */
 static
 inline
-_matrix44 operator * (const _matrix44& m0, const _matrix44& m1)
+matrix44 operator * (const matrix44& m0, const matrix44& m1)
 {
-    _matrix44 m2(
+    matrix44 m2(
         m0.m[0][0]*m1.m[0][0] + m0.m[0][1]*m1.m[1][0] + m0.m[0][2]*m1.m[2][0] + m0.m[0][3]*m1.m[3][0],
         m0.m[0][0]*m1.m[0][1] + m0.m[0][1]*m1.m[1][1] + m0.m[0][2]*m1.m[2][1] + m0.m[0][3]*m1.m[3][1],
         m0.m[0][0]*m1.m[0][2] + m0.m[0][1]*m1.m[1][2] + m0.m[0][2]*m1.m[2][2] + m0.m[0][3]*m1.m[3][2],
@@ -756,9 +756,9 @@ _matrix44 operator * (const _matrix44& m0, const _matrix44& m1)
 */
 static
 inline
-_vector3 operator * (const _matrix44& m, const _vector3& v)
+vector3 operator * (const matrix44& m, const vector3& v)
 {
-    return _vector3(
+    return vector3(
         m.M11*v.x + m.M21*v.y + m.M31*v.z + m.M41,
         m.M12*v.x + m.M22*v.y + m.M32*v.z + m.M42,
         m.M13*v.x + m.M23*v.y + m.M33*v.z + m.M43);
@@ -769,9 +769,9 @@ _vector3 operator * (const _matrix44& m, const _vector3& v)
 */
 static
 inline
-_vector4 operator * (const _matrix44& m, const _vector4& v)
+vector4 operator * (const matrix44& m, const vector4& v)
 {
-    return _vector4(
+    return vector4(
         m.M11*v.x + m.M21*v.y + m.M31*v.z + m.M41*v.w,
         m.M12*v.x + m.M22*v.y + m.M32*v.z + m.M42*v.w,
         m.M13*v.x + m.M23*v.y + m.M33*v.z + m.M43*v.w,
@@ -783,9 +783,9 @@ _vector4 operator * (const _matrix44& m, const _vector4& v)
 */
 inline
 vector3
-_matrix44::mult_divw(const _vector3& v) const
+matrix44::mult_divw(const vector3& v) const
 {
-    _vector4 v4(v.x, v.y, v.z, 1.0f);
+    vector4 v4(v.x, v.y, v.z, 1.0f);
     v4 = *this * v4;
     return vector3(v4.x / v4.w, v4.y / v4.w, v4.z / v4.w);
 }

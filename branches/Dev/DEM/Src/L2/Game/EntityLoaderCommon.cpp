@@ -33,7 +33,7 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, Data::PParams Desc
 		for (int i = 0; i < Props->GetCount(); ++i)
 		{
 			const Data::CData& PropID = Props->Get(i);
-			if (PropID.IsA<int>()) EntityMgr->AttachProperty(*Entity, (nFourCC)PropID.GetValue<int>());
+			if (PropID.IsA<int>()) EntityMgr->AttachProperty(*Entity, (Data::CFourCC)PropID.GetValue<int>());
 			else if (PropID.IsA<nString>()) EntityMgr->AttachProperty(*Entity, PropID.GetValue<nString>());
 			else n_printf("Failed to attach property #%d to entity %s at level %s\n", i, UID.CStr(), Level.GetID().CStr());
 		}

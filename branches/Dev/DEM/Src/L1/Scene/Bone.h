@@ -35,7 +35,7 @@ protected:
 
 public:
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	Update();
 
 	//!!!Can be useful for ragdolls!

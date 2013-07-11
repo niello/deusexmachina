@@ -1,15 +1,7 @@
 #ifndef N_TYPES_H
 #define N_TYPES_H
-//------------------------------------------------------------------------------
-/**
-    Lowlevel Nebula defines.
 
-    (C) 2002 RadonLabs GmbH
-*/
-#include <errno.h>
-#include <stdio.h>
-#include <new>
-
+#include <stdio.h> //???why error if comment?
 #include "StdCfg.h"
 
 //---------------------------------------------------------------------
@@ -45,7 +37,6 @@ typedef unsigned int   uint;
 typedef unsigned short ushort;
 typedef unsigned char  uchar;
 
-typedef unsigned int nFourCC;
 typedef double nTime;
 
 #ifndef NULL
@@ -60,13 +51,8 @@ enum EClipStatus
 	//InvalidClipStatus - Clipped is used instead now
 };
 
-//------------------------------------------------------------------------------
 #define N_MAXPATH (512)     // maximum length for complete path
-#define N_MAXNAMELEN (128)   // maximum length for single path component
 
-//------------------------------------------------------------------------------
-#define MAKE_FOURCC(c0, c1, c2, c3) ((c0) | (c1 << 8) | (c2 << 16) | (c3 << 24))
-#define FOURCC(i) (((i & 0xff000000) >> 24) | ((i & 0x00ff0000) >> 8) | ((i & 0x0000ff00) << 8) | ((i & 0x000000ff) << 24))
 #define N_WHITESPACE " \r\n\t"
 
 #if defined(__LINUX__) || defined(__MACOSX__)
@@ -118,9 +104,6 @@ void n_barf(const char*, const char*, int)
     __attribute__((noreturn));
 void n_barf2(const char*, const char*, const char*, int)
     __attribute__((noreturn));
-
-nFourCC n_strtofourcc(const char*);
-const char* n_fourcctostr(nFourCC);
 
 //------------------------------------------------------------------------------
 //  Nebula memory management and debugging stuff.
@@ -182,6 +165,5 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #define n_realloc(memblock, size) realloc(memblock, size)
 #define n_free(memblock) free(memblock)
 #endif
-
 
 #endif

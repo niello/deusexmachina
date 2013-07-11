@@ -45,7 +45,7 @@ public:
 	//???bool IsOrtho? bool ProjMatrixWasSetDirectly?
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	Update();
 
 	void			GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const;

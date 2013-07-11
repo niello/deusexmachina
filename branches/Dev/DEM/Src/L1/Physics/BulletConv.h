@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_PHYSICS_BULLET_FWD_H__
 #define __DEM_L1_PHYSICS_BULLET_FWD_H__
 
-#include <mathlib/matrix.h>
+#include <mathlib/matrix44.h>
 #include <LinearMath/btTransform.h>
 
 // Bullet physics library to DEM data convertors

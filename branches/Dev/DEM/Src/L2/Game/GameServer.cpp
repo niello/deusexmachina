@@ -363,6 +363,9 @@ bool CGameServer::SaveGame(const nString& Name)
 	// Allow custom gameplay managers to save their data
 	EventMgr->FireEvent(CStrID("OnGameSaving"), SGCommon);
 
+	//???diff here?
+	//mb special Extensions/Plugins section not to affect already saved data by diff
+
 	//!!!TMP!
 //======
 	nString Path = "AppData:SavesTMP/" + Name;

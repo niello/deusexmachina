@@ -1,63 +1,61 @@
-#ifndef _MATRIX33_SSE_H
-#define _MATRIX33_SSE_H
+#ifndef _MATRIX33_H
+#define _MATRIX33_H
 //------------------------------------------------------------------------------
 /**
-    @class _matrix33_sse
+    @class matrix33
     @ingroup NebulaMathDataTypes
 
-    An SSE based matrix33 class.
+    A generic matrix33 class.
+	Row-major.
 
     (C) 2002 RadonLabs GmbH
 */
-#include <xmmintrin.h>
-#include <memory.h>
-#include "mathlib/_vector3_sse.h"
+#include "mathlib/vector3.h"
 #include "mathlib/quaternion.h"
 #include "mathlib/euler.h"
 #include "matrixdefs.h"
+#include <memory.h>
 
-static float _matrix33_sse_ident[12] =
+static float _matrix33_ident[9] =
 {
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
+    1.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 1.0f,
 };
 
 //------------------------------------------------------------------------------
-class _matrix33_sse
+class matrix33
 {
 public:
-    static const _matrix33_sse identity;
+    static const matrix33 identity;
 
 public:
     /// constructor 1
-    _matrix33_sse();
+    matrix33();
     /// constructor 2
-    _matrix33_sse(const _vector3_sse& v1, const _vector3_sse& v2, const _vector3_sse& v3);
+    matrix33(const vector3& v0, const vector3& v1, const vector3& v2);
     /// constructor 3
-    _matrix33_sse(const _matrix33_sse& mx);
+    matrix33(const matrix33& mx);
     /// constructor 4
-    _matrix33_sse(float _m11, float _m12, float _m13, float _m21, float _m22, float _m23, float _m31, float _m32, float _m33);
+    matrix33(float _m11, float _m12, float _m13, float _m21, float _m22, float _m23, float _m31, float _m32, float _m33);
     /// constructor 5
-    _matrix33_sse(const quaternion& q);
-    /// constructor 6
-    _matrix33_sse(const __m128& _m1, const __m128& _m2, const __m128& _m3);
+    matrix33(const quaternion& q);
     /// get as quaternion
     quaternion ToQuaternion() const;
     /// get as euler representation
-    _vector3_sse to_euler() const;
+    vector3 to_euler() const;
     /// set as euler
-    void from_euler(const _vector3_sse& ea);
+    void from_euler(const vector3& ea);
     /// unrestricted lookat
-    void lookat(const _vector3_sse& from, const _vector3_sse& to, const _vector3_sse& up);
+    void lookat(const vector3& from, const vector3& to, const vector3& up);
     /// restricted lookat (billboard)
-    void billboard(const _vector3_sse& from, const _vector3_sse& to, const _vector3_sse& up);
+    void billboard(const vector3& from, const vector3& to, const vector3& up);
     /// set 1
     void set(float m11, float m12, float m13, float m21, float m22, float m23, float m31, float m32, float m33);
     /// set 2
-    void set(const _vector3_sse& v1, const _vector3_sse& v2, const _vector3_sse& v3);
+    void set(const vector3& v0, const vector3& v1, const vector3& v2);
     /// set 3
-    void set(const _matrix33_sse& mx);
+    void set(const matrix33& m1);
     /// set to identity
     void ident();
     /// set to transpose
@@ -65,7 +63,7 @@ public:
     /// is orthonormal?
     bool orthonorm(float limit);
     /// scale
-    void scale(const _vector3_sse& s);
+    void scale(const vector3& s);
     /// rotate about global x
     void rotate_x(const float a);
     /// rotates matrix about global y
@@ -79,141 +77,107 @@ public:
     /// rotate about local z (not very fast)
     void rotate_local_z(const float a);
     /// rotate about any axis
-    void rotate(const _vector3_sse& vec, float a);
+    void rotate(const vector3& vec, float a);
     /// get x component
-    _vector3_sse AxisX() const;
+    vector3 AxisX() const;
     /// get y component
-    _vector3_sse AxisY() const;
+    vector3 AxisY() const;
     /// get z component
-    _vector3_sse AxisZ() const;
+    vector3 AxisZ() const;
     // inplace matrix multiply
-    void operator *= (const _matrix33_sse& m1);
+    void operator *= (const matrix33& m1);
     /// multiply source vector into target vector
-    void mult(const _vector3_sse& src, _vector3_sse& dst) const;
+    void mult(const vector3& src, vector3& dst) const;
+    /// translate, this treats the matrix as a 2x2 rotation + translate matrix
+    void translate(const vector2& t);
 
-    union
-    {
-        struct
-        {
-            __m128 m1;
-            __m128 m2;
-            __m128 m3;
-        };
-        struct
-        {
-            float m[3][4];
-        };
-    };
+    float m[3][3];
 };
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: OPTIMIZE -> KILL TEMPORARYS, SEE _MATRIX44_SSE
 */
 static
 inline
-_matrix33_sse operator * (const _matrix33_sse& ma, const _matrix33_sse& mb)
+matrix33
+operator * (const matrix33& m0, const matrix33& m1)
 {
-    return _matrix33_sse(
-        _mm_add_ps(
-        _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(ma.m1, ma.m1, _MM_SHUFFLE(0,0,0,0)), mb.m1),
-            _mm_mul_ps(_mm_shuffle_ps(ma.m1, ma.m1, _MM_SHUFFLE(1,1,1,1)), mb.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(ma.m1, ma.m1, _MM_SHUFFLE(2,2,2,2)), mb.m3)),
+    matrix33 m2(
+        m0.m[0][0]*m1.m[0][0] + m0.m[0][1]*m1.m[1][0] + m0.m[0][2]*m1.m[2][0],
+        m0.m[0][0]*m1.m[0][1] + m0.m[0][1]*m1.m[1][1] + m0.m[0][2]*m1.m[2][1],
+        m0.m[0][0]*m1.m[0][2] + m0.m[0][1]*m1.m[1][2] + m0.m[0][2]*m1.m[2][2],
 
-        _mm_add_ps(
-        _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(ma.m2, ma.m2, _MM_SHUFFLE(0,0,0,0)), mb.m1),
-            _mm_mul_ps(_mm_shuffle_ps(ma.m2, ma.m2, _MM_SHUFFLE(1,1,1,1)), mb.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(ma.m2, ma.m2, _MM_SHUFFLE(2,2,2,2)), mb.m3)),
+        m0.m[1][0]*m1.m[0][0] + m0.m[1][1]*m1.m[1][0] + m0.m[1][2]*m1.m[2][0],
+        m0.m[1][0]*m1.m[0][1] + m0.m[1][1]*m1.m[1][1] + m0.m[1][2]*m1.m[2][1],
+        m0.m[1][0]*m1.m[0][2] + m0.m[1][1]*m1.m[1][2] + m0.m[1][2]*m1.m[2][2],
 
-        _mm_add_ps(
-        _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(ma.m3, ma.m3, _MM_SHUFFLE(0,0,0,0)), mb.m1),
-            _mm_mul_ps(_mm_shuffle_ps(ma.m3, ma.m3, _MM_SHUFFLE(1,1,1,1)), mb.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(ma.m3, ma.m3, _MM_SHUFFLE(2,2,2,2)), mb.m3)));
+        m0.m[2][0]*m1.m[0][0] + m0.m[2][1]*m1.m[1][0] + m0.m[2][2]*m1.m[2][0],
+        m0.m[2][0]*m1.m[0][1] + m0.m[2][1]*m1.m[1][1] + m0.m[2][2]*m1.m[2][1],
+        m0.m[2][0]*m1.m[0][2] + m0.m[2][1]*m1.m[1][2] + m0.m[2][2]*m1.m[2][2]
+    );
+    return m2;
 }
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: KILL TEMPORARY
 */
 static
 inline
-_vector3_sse operator * (const _matrix33_sse& mx, const _vector3_sse& v)
+vector3 operator * (const matrix33& m, const vector3& v)
 {
-    return _vector3_sse(
-        _mm_add_ps(
-        _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(v.m128, v.m128, _MM_SHUFFLE(0,0,0,0)), mx.m1),
-            _mm_mul_ps(_mm_shuffle_ps(v.m128, v.m128, _MM_SHUFFLE(1,1,1,1)), mx.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(v.m128, v.m128, _MM_SHUFFLE(2,2,2,2)), mx.m3)));
+    return vector3(
+        m.M11*v.x + m.M21*v.y + m.M31*v.z,
+        m.M12*v.x + m.M22*v.y + m.M32*v.z,
+        m.M13*v.x + m.M23*v.y + m.M33*v.z);
+};
+
+//------------------------------------------------------------------------------
+/**
+*/
+inline
+matrix33::matrix33()
+{
+    memcpy(&(m[0][0]), _matrix33_ident, sizeof(_matrix33_ident));
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_matrix33_sse::_matrix33_sse()
+matrix33::matrix33(const vector3& v0, const vector3& v1, const vector3& v2)
 {
-    memcpy(&(m[0][0]), _matrix33_sse_ident, sizeof(_matrix33_sse_ident));
+    M11=v0.x; M12=v0.y; M13=v0.z;
+    M21=v1.x; M22=v1.y; M23=v1.z;
+    M31=v2.x; M32=v2.y; M33=v2.z;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_matrix33_sse::_matrix33_sse(const _vector3_sse& v1, const _vector3_sse& v2, const _vector3_sse& v3) :
-    m1(v1.m128),
-    m2(v2.m128),
-    m3(v3.m128)
+matrix33::matrix33(const matrix33& m1)
 {
-    // empty
+    memcpy(m, &(m1.m[0][0]), 9*sizeof(float));
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_matrix33_sse::_matrix33_sse(const _matrix33_sse& mx) :
-    m1(mx.m1),
-    m2(mx.m2),
-    m3(mx.m3)
+matrix33::matrix33(float _m11, float _m12, float _m13,
+                     float _m21, float _m22, float _m23,
+                     float _m31, float _m32, float _m33)
 {
-    // empty
+    M11=_m11; M12=_m12; M13=_m13;
+    M21=_m21; M22=_m22; M23=_m23;
+    M31=_m31; M32=_m32; M33=_m33;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_matrix33_sse::_matrix33_sse(float _m11, float _m12, float _m13,
-                             float _m21, float _m22, float _m23,
-                             float _m31, float _m32, float _m33)
-{
-    m1 = _mm_set_ps(0.0f, _m13, _m12, _m11);
-    m2 = _mm_set_ps(0.0f, _m23, _m22, _m21);
-    m3 = _mm_set_ps(0.0f, _m33, _m32, _m31);
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-_matrix33_sse::_matrix33_sse(const __m128& _m1, const __m128& _m2, const __m128& _m3) :
-    m1(_m1),
-    m2(_m2),
-    m3(_m3)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-    FIXME: SSE OPTIMIZATION!
-*/
-inline
-_matrix33_sse::_matrix33_sse(const quaternion& q)
+matrix33::matrix33(const quaternion& q)
 {
     float xx = q.x*q.x; float yy = q.y*q.y; float zz = q.z*q.z;
     float xy = q.x*q.y; float xz = q.x*q.z; float yz = q.y*q.z;
@@ -234,11 +198,10 @@ _matrix33_sse::_matrix33_sse(const quaternion& q)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION!
 */
 inline
 quaternion
-_matrix33_sse::ToQuaternion() const
+matrix33::ToQuaternion() const
 {
     float qa[4];
     float tr = m[0][0] + m[1][1] + m[2][2];
@@ -272,31 +235,30 @@ _matrix33_sse::ToQuaternion() const
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION!
 */
 inline
-_vector3_sse
-_matrix33_sse::to_euler() const
+vector3
+matrix33::to_euler() const
 {
-    _vector3_sse ea;
+    vector3 ea;
 
     // work on matrix with flipped row/columns
-    _matrix33_sse tmp(*this);
+    matrix33 tmp(*this);
     tmp.transpose();
 
     int i,j,k,h,n,s,f;
     EulGetOrd(EulOrdXYZs,i,j,k,h,n,s,f);
     if (s==EulRepYes)
     {
-        double sy = sqrt(tmp.M12 * tmp.M12 + tmp.M13 * tmp.M13);
+        double sy = (float) sqrt(tmp.M12 * tmp.M12 + tmp.M13 * tmp.M13);
         if (sy > 16*FLT_EPSILON)
         {
             ea.x = (float) atan2(tmp.M12, tmp.M13);
-            ea.y = (float) atan2((float) sy, tmp.M11);
+            ea.y = (float) atan2((float)sy, tmp.M11);
             ea.z = (float) atan2(tmp.M21, -tmp.M31);
         } else {
             ea.x = (float) atan2(-tmp.M23, tmp.M22);
-            ea.y = (float) atan2((float) sy, tmp.M11);
+            ea.y = (float) atan2((float)sy, tmp.M11);
             ea.z = 0;
         }
     }
@@ -306,13 +268,13 @@ _matrix33_sse::to_euler() const
         if (cy > 16*FLT_EPSILON)
         {
             ea.x = (float) atan2(tmp.M32, tmp.M33);
-            ea.y = (float) atan2(-tmp.M31, (float) cy);
+            ea.y = (float) atan2(-tmp.M31, (float)cy);
             ea.z = (float) atan2(tmp.M21, tmp.M11);
         }
         else
         {
             ea.x = (float) atan2(-tmp.M23, tmp.M22);
-            ea.y = (float) atan2(-tmp.M31, (float) cy);
+            ea.y = (float) atan2(-tmp.M31, (float)cy);
             ea.z = 0;
         }
     }
@@ -324,13 +286,12 @@ _matrix33_sse::to_euler() const
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION!
 */
 inline
 void
-_matrix33_sse::from_euler(const _vector3_sse& ea)
+matrix33::from_euler(const vector3& ea)
 {
-    _vector3_sse tea = ea;
+    vector3 tea = ea;
     double ti, tj, th, ci, cj, ch, si, sj, sh, cc, cs, sc, ss;
     int i,j,k,h,n,s,f;
     EulGetOrd(EulOrdXYZs,i,j,k,h,n,s,f);
@@ -362,19 +323,17 @@ _matrix33_sse::from_euler(const _vector3_sse& ea)
 */
 inline
 void
-_matrix33_sse::lookat(const _vector3_sse& from, const _vector3_sse& to, const _vector3_sse& up)
+matrix33::lookat(const vector3& from, const vector3& to, const vector3& up)
 {
-    _vector3_sse z(from - to);
+    vector3 z(from - to);
     z.norm();
-    _vector3_sse y(up);
-    _vector3_sse x(y * z);   // x = y cross z
-    y = z * x;          // y = z cross x
+    vector3 x(up * z);   // x = y cross z
     x.norm();
-    y.norm();
+    vector3 y = z * x;   // y = z cross x
 
-    m1 = x.m128;
-    m2 = y.m128;
-    m3 = z.m128;
+    M11=x.x;  M12=x.y;  M13=x.z;
+    M21=y.x;  M22=y.y;  M23=y.z;
+    M31=z.x;  M32=z.y;  M33=z.z;
 }
 
 //------------------------------------------------------------------------------
@@ -382,20 +341,18 @@ _matrix33_sse::lookat(const _vector3_sse& from, const _vector3_sse& to, const _v
 */
 inline
 void
-_matrix33_sse::billboard(const _vector3_sse& from, const _vector3_sse& to, const _vector3_sse& up)
+matrix33::billboard(const vector3& from, const vector3& to, const vector3& up)
 {
-    _vector3_sse z(from - to);
+    vector3 z(from - to);
     z.norm();
-    _vector3_sse y(up);
-    _vector3_sse x(y * z);
+    vector3 y(up);
+    y.norm();
+    vector3 x(y * z);
     z = x * y;
-    x.norm();
-    y.norm();
-    z.norm();
 
-    m1 = x.m128;
-    m2 = y.m128;
-    m3 = z.m128;
+    M11=x.x;  M12=x.y;  M13=x.z;
+    M21=y.x;  M22=y.y;  M23=y.z;
+    M31=z.x;  M32=z.y;  M33=z.z;
 }
 
 //------------------------------------------------------------------------------
@@ -403,13 +360,13 @@ _matrix33_sse::billboard(const _vector3_sse& from, const _vector3_sse& to, const
 */
 inline
 void
-_matrix33_sse::set(float m11, float m12, float m13,
-                   float m21, float m22, float m23,
-                   float m31, float m32, float m33)
+matrix33::set(float m11, float m12, float m13,
+               float m21, float m22, float m23,
+               float m31, float m32, float m33)
 {
-    m1 = _mm_set_ps(0.0f, m13, m12, m11);
-    m2 = _mm_set_ps(0.0f, m23, m22, m21);
-    m3 = _mm_set_ps(0.0f, m33, m32, m31);
+    M11=m11; M12=m12; M13=m13;
+    M21=m21; M22=m22; M23=m23;
+    M31=m31; M32=m32; M33=m33;
 }
 
 //------------------------------------------------------------------------------
@@ -417,11 +374,11 @@ _matrix33_sse::set(float m11, float m12, float m13,
 */
 inline
 void
-_matrix33_sse::set(const _vector3_sse& v1, const _vector3_sse& v2, const _vector3_sse& v3)
+matrix33::set(const vector3& v0, const vector3& v1, const vector3& v2)
 {
-    m1 = v1.m128;
-    m2 = v2.m128;
-    m3 = v3.m128;
+    M11=v0.x; M12=v0.y; M13=v0.z;
+    M21=v1.x; M22=v1.y; M23=v1.z;
+    M31=v2.x; M32=v2.y; M33=v2.z;
 }
 
 //------------------------------------------------------------------------------
@@ -429,11 +386,9 @@ _matrix33_sse::set(const _vector3_sse& v1, const _vector3_sse& v2, const _vector
 */
 inline
 void
-_matrix33_sse::set(const _matrix33_sse& mx)
+matrix33::set(const matrix33& m1)
 {
-    m1 = mx.m1;
-    m2 = mx.m2;
-    m3 = mx.m3;
+    memcpy(m, &(m1.m), 9*sizeof(float));
 }
 
 //------------------------------------------------------------------------------
@@ -441,18 +396,17 @@ _matrix33_sse::set(const _matrix33_sse& mx)
 */
 inline
 void
-_matrix33_sse::ident()
+matrix33::ident()
 {
-    memcpy(&(m[0][0]), _matrix33_sse_ident, sizeof(_matrix33_sse_ident));
+    memcpy(&(m[0][0]), _matrix33_ident, sizeof(_matrix33_ident));
 }
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::transpose()
+matrix33::transpose()
 {
     #undef n_swap
     #define n_swap(x,y) { float t=x; x=y; y=t; }
@@ -463,11 +417,10 @@ _matrix33_sse::transpose()
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 bool
-_matrix33_sse::orthonorm(float limit)
+matrix33::orthonorm(float limit)
 {
     if (((M11*M21+M12*M22+M13*M23)<limit) &&
         ((M11*M31+M12*M32+M13*M33)<limit) &&
@@ -488,25 +441,26 @@ _matrix33_sse::orthonorm(float limit)
 */
 inline
 void
-_matrix33_sse::scale(const _vector3_sse& s)
+matrix33::scale(const vector3& s)
 {
-    m1 = _mm_mul_ps(m1, s.m128);
-    m2 = _mm_mul_ps(m2, s.m128);
-    m3 = _mm_mul_ps(m3, s.m128);
+    int i;
+    for (i=0; i<3; i++) {
+        m[i][0] *= s.x;
+        m[i][1] *= s.y;
+        m[i][2] *= s.z;
+    }
 }
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate_x(const float a)
+matrix33::rotate_x(const float a)
 {
-    float c = n_cos(a);
-    float s = n_sin(a);
-    int i;
-    for (i=0; i<3; i++)
+    float c, s;
+	n_sincos(a, s, c);
+    for (int i = 0; i < 3; ++i)
     {
         float mi1 = m[i][1];
         float mi2 = m[i][2];
@@ -517,16 +471,14 @@ _matrix33_sse::rotate_x(const float a)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate_y(const float a)
+matrix33::rotate_y(const float a)
 {
-    float c = n_cos(a);
-    float s = n_sin(a);
-    int i;
-    for (i=0; i<3; i++)
+    float c, s;
+	n_sincos(a, s, c);
+    for (int i = 0; i < 3; ++i)
     {
         float mi0 = m[i][0];
         float mi2 = m[i][2];
@@ -537,16 +489,14 @@ _matrix33_sse::rotate_y(const float a)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate_z(const float a)
+matrix33::rotate_z(const float a)
 {
-    float c = n_cos(a);
-    float s = n_sin(a);
-    int i;
-    for (i=0; i<3; i++)
+    float c, s;
+	n_sincos(a, s, c);
+    for (int i = 0; i < 3; ++i)
     {
         float mi0 = m[i][0];
         float mi1 = m[i][1];
@@ -557,13 +507,12 @@ _matrix33_sse::rotate_z(const float a)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate_local_x(const float a)
+matrix33::rotate_local_x(const float a)
 {
-    _matrix33_sse rotM;  // initialized as identity matrix
+    matrix33 rotM;  // initialized as identity matrix
     rotM.M22 = (float) cos(a); rotM.M23 = -(float) sin(a);
     rotM.M32 = (float) sin(a); rotM.M33 =  (float) cos(a);
 
@@ -572,13 +521,12 @@ _matrix33_sse::rotate_local_x(const float a)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate_local_y(const float a)
+matrix33::rotate_local_y(const float a)
 {
-    _matrix33_sse rotM;  // initialized as identity matrix
+    matrix33 rotM;  // initialized as identity matrix
     rotM.M11 = (float) cos(a);  rotM.M13 = (float) sin(a);
     rotM.M31 = -(float) sin(a); rotM.M33 = (float) cos(a);
 
@@ -587,13 +535,12 @@ _matrix33_sse::rotate_local_y(const float a)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate_local_z(const float a)
+matrix33::rotate_local_z(const float a)
 {
-    _matrix33_sse rotM;  // initialized as identity matrix
+    matrix33 rotM;  // initialized as identity matrix
     rotM.M11 = (float) cos(a); rotM.M12 = -(float) sin(a);
     rotM.M21 = (float) sin(a); rotM.M22 =  (float) cos(a);
 
@@ -602,18 +549,17 @@ _matrix33_sse::rotate_local_z(const float a)
 
 //------------------------------------------------------------------------------
 /**
-    FIXME: SSE OPTIMIZATION
 */
 inline
 void
-_matrix33_sse::rotate(const _vector3_sse& vec, float a)
+matrix33::rotate(const vector3& vec, float a)
 {
-    _vector3_sse v(vec);
+    vector3 v(vec);
     v.norm();
     float sa = (float) n_sin(a);
     float ca = (float) n_cos(a);
 
-    _matrix33_sse rotM;
+    matrix33 rotM;
     rotM.M11 = ca + (1.0f - ca) * v.x * v.x;
     rotM.M12 = (1.0f - ca) * v.x * v.y - sa * v.z;
     rotM.M13 = (1.0f - ca) * v.z * v.x + sa * v.y;
@@ -631,30 +577,33 @@ _matrix33_sse::rotate(const _vector3_sse& vec, float a)
 /**
 */
 inline
-_vector3_sse
-_matrix33_sse::AxisX() const
+vector3
+matrix33::AxisX() const
 {
-    return _vector3_sse(m1);
+    vector3 v(M11,M12,M13);
+    return v;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_vector3_sse
-_matrix33_sse::AxisY() const
+vector3
+matrix33::AxisY() const
 {
-    return _vector3_sse(m2);
+    vector3 v(M21,M22,M23);
+    return v;
 }
 
 //------------------------------------------------------------------------------
 /**
 */
 inline
-_vector3_sse
-_matrix33_sse::AxisZ() const
+vector3
+matrix33::AxisZ() const
 {
-    return _vector3_sse(m3);
+    vector3 v(M31,M32,M33);
+    return v;
 };
 
 //------------------------------------------------------------------------------
@@ -662,40 +611,42 @@ _matrix33_sse::AxisZ() const
 */
 inline
 void
-_matrix33_sse::operator *= (const _matrix33_sse& mx)
+matrix33::operator *= (const matrix33& m1)
 {
-    m1 = _mm_add_ps(
-         _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(0,0,0,0)), mx.m1),
-            _mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(1,1,1,1)), mx.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(m1, m1, _MM_SHUFFLE(2,2,2,2)), mx.m3));
-
-    m2 = _mm_add_ps(
-         _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(0,0,0,0)), mx.m1),
-            _mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(1,1,1,1)), mx.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(m2, m2, _MM_SHUFFLE(2,2,2,2)), mx.m3));
-
-    m3 = _mm_add_ps(
-         _mm_add_ps(
-            _mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0,0,0,0)), mx.m1),
-            _mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(1,1,1,1)), mx.m2)),
-            _mm_mul_ps(_mm_shuffle_ps(m3, m3, _MM_SHUFFLE(2,2,2,2)), mx.m3));
+    int i;
+    for (i=0; i<3; i++) {
+        float mi0 = m[i][0];
+        float mi1 = m[i][1];
+        float mi2 = m[i][2];
+        m[i][0] = mi0*m1.m[0][0] + mi1*m1.m[1][0] + mi2*m1.m[2][0];
+        m[i][1] = mi0*m1.m[0][1] + mi1*m1.m[1][1] + mi2*m1.m[2][1];
+        m[i][2] = mi0*m1.m[0][2] + mi1*m1.m[1][2] + mi2*m1.m[2][2];
+    };
 }
 
 //------------------------------------------------------------------------------
 /**
     multiply source vector with matrix and store in destination vector
-    this eliminates the construction of a temp _vector3_sse object
+    this eliminates the construction of a temp vector3 object
 */
 inline
 void
-_matrix33_sse::mult(const _vector3_sse& src, _vector3_sse& dst) const
+matrix33::mult(const vector3& src, vector3& dst) const
 {
-    dst.m128 = _mm_add_ps(
-               _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(src.m128, src.m128, _MM_SHUFFLE(0,0,0,0)), m1),
-                          _mm_mul_ps(_mm_shuffle_ps(src.m128, src.m128, _MM_SHUFFLE(1,1,1,1)), m2)),
-                          _mm_mul_ps(_mm_shuffle_ps(src.m128, src.m128, _MM_SHUFFLE(2,2,2,2)), m3));
+    dst.x = M11*src.x + M21*src.y + M31*src.z;
+    dst.y = M12*src.x + M22*src.y + M32*src.z;
+    dst.z = M13*src.x + M23*src.y + M33*src.z;
+}
+
+//------------------------------------------------------------------------------
+/**
+*/
+inline
+void
+matrix33::translate(const vector2& t)
+{
+    M31 += t.x;
+    M32 += t.y;
 }
 
 //------------------------------------------------------------------------------

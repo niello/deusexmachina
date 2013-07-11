@@ -5,6 +5,7 @@
 // Allows object creation by type name or FourCC code
 
 #include <Core/Ptr.h>
+#include <Data/FourCC.h>
 #include <util/HashTable.h>
 #include <util/ndictionary.h>
 #include <util/nstring.h>
@@ -21,7 +22,7 @@ class CFactory
 protected:
 
 	CHashTable<nString, const CRTTI*>		NameToRTTI;
-	nDictionary<nFourCC, const CRTTI*>		FourCCToRTTI; //???hash table too?
+	nDictionary<Data::CFourCC, const CRTTI*>		FourCCToRTTI; //???hash table too?
 
 	CFactory(): NameToRTTI(512) {}
 
@@ -29,13 +30,13 @@ public:
 
 	static CFactory* Instance();
 
-	void			Register(const CRTTI& RTTI, const nString& Name, nFourCC FourCC = 0);
-	bool			IsRegistered(const nString& ClassName) const { return NameToRTTI.Contains(ClassName); }
-	bool			IsRegistered(nFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
+	void			Register(const CRTTI& RTTI, const nString& Name, Data::CFourCC FourCC = 0);
+	bool			IsNameRegistered(const nString& ClassName) const { return NameToRTTI.Contains(ClassName); }
+	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
 	const CRTTI*	GetRTTI(const nString& ClassName) const { return NameToRTTI[ClassName]; }
-	const CRTTI*	GetRTTI(nFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
+	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
 	CRefCounted*	Create(const nString& ClassName, void* pParam = NULL) const;
-	CRefCounted*	Create(nFourCC ClassFourCC, void* pParam = NULL) const;
+	CRefCounted*	Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
 };
 
 }

@@ -10,7 +10,7 @@
                            'n_pow' macros.
 */
 #include <math.h>
-#include <stdlib.h>
+#include <stdlib.h>	// rand
 
 #include "kernel/ntypes.h"
 
@@ -157,7 +157,7 @@ inline float n_fabs(float val)
 inline float n_smooth(float newVal, float curVal, float maxChange)
 {
     float diff = newVal - curVal;
-    if (fabs(diff) > maxChange)
+    if (n_fabs(diff) > maxChange)
     {
         if (diff > 0.0f)
         {
