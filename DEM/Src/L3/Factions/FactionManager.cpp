@@ -22,6 +22,7 @@ CFactionManager::~CFactionManager()
 	UNSUBSCRIBE_EVENT(OnGameDescLoaded);
 	UNSUBSCRIBE_EVENT(OnGameSaving);
 
+	//???!!!make more implicit and/or safe!?
 	for (int i = 0; i < Factions.GetCount(); ++i)
 		ScriptSrv->RemoveObject(Factions.KeyAt(i).CStr(), "Factions");
 	Factions.Clear();
@@ -32,6 +33,9 @@ CFactionManager::~CFactionManager()
 
 bool CFactionManager::OnGameDescLoaded(const Events::CEventBase& Event)
 {
+	//???!!!make more implicit and/or safe!?
+	for (int i = 0; i < Factions.GetCount(); ++i)
+		ScriptSrv->RemoveObject(Factions.KeyAt(i).CStr(), "Factions");
 	Factions.Clear();
 
 	Data::PParams GameDesc = ((const Events::CEvent&)Event).Params;
@@ -70,12 +74,31 @@ bool CFactionManager::OnGameDescLoaded(const Events::CEventBase& Event)
 
 bool CFactionManager::OnGameSaving(const Events::CEventBase& Event)
 {
-	n_error("IMPLEMENT ME!!!");
-	//Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
+	Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
 
-	//Data::PDataArray SGFactions = n_new(Data::CDataArray);
+	Data::PParams SGFactions = n_new(Data::CParams);
+	for (int i = 0; i < Factions.GetCount(); ++i)
+	{
+		CFaction* pFaction = Factions.ValueAt(i).GetUnsafe();
 
-	//if (SGFactions->GetCount()) SGCommon->Set(CStrID("Factions"), SGFactions);
+		//???to pFaction->Save()?
+		Data::PParams SGFaction = n_new(Data::CParams);
+		Data::PParams SGMembers = n_new(Data::CParams);
+		for (DWORD j = 0; j < pFaction->GetMemberCount(); ++j)
+		{
+			CStrID MID = pFaction->GetMember(i);
+			SGMembers->Set(MID, pFaction->GetMemberRank(MID));
+		}
+		if (SGMembers->GetCount()) SGFaction->Set(CStrID("Members"), SGMembers);
+
+		if (SGFaction->GetCount()) SGFactions->Set(Factions.KeyAt(i), SGFaction);
+	}
+
+	//!!!need diff! so, need initial desc!
+	//!!!remember to write "Factions = nil" if NO data!
+	//???or global diff once in GameSrv?
+
+	if (SGFactions->GetCount()) SGCommon->Set(CStrID("Factions"), SGFactions);
 
 	OK;
 }

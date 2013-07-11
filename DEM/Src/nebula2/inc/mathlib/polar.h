@@ -14,10 +14,6 @@
 
     (C) 2004 RadonLabs GmbH
 */
-#include <stdlib.h>
-#include <math.h>
-#include <float.h>
-
 #include "mathlib/vector.h"
 
 class polar2

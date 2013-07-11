@@ -11,9 +11,9 @@ __ImplementClass(Scene::CBone, 'BONE', Scene::CNodeAttribute);
 
 using namespace Render;
 
-bool CBone::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
-	switch (FourCC)
+	switch (FourCC.Code)
 	{
 		case 'TESP': // PSET
 		{

@@ -42,7 +42,7 @@ public:
 
 	CNodeAttribute(): pNode(NULL), Flags(Active) {}
 
-	virtual bool	LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
+	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
 	virtual void	Update() = 0;
 	void			RemoveFromNode();
 

@@ -7,7 +7,7 @@
 #include <malloc.h>
 #include <util/narray.h>
 #include <mathlib/vector.h>
-#include <mathlib/matrix.h>
+#include <mathlib/matrix44.h>
 #include <util/Hash.h>
 #include <Data/StringTokenizer.h>
 

@@ -12,9 +12,7 @@
     - 07-Jun-05    kims    Added Set() function to specify euler angles from quaternion.
                            Fix of #263
 */
-#include <stdlib.h>
-#include <math.h>
-#include "mathlib/matrix.h"
+#include "mathlib/matrix44.h"
 #include "mathlib/euler.h"
 
 //-------------------------------------------------------------------

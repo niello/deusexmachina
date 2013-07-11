@@ -2,7 +2,7 @@
 #define _VECTOR4_H
 //------------------------------------------------------------------------------
 /**
-    @class _vector4
+    @class vector4
     @ingroup NebulaMathDataTypes
 
     A generic vector4 class.
@@ -11,18 +11,18 @@
 */
 #include "mathlib/nmath.h"
 #include <float.h>
-#include "mathlib/_vector3.h"
+#include "mathlib/vector3.h"
 
 //------------------------------------------------------------------------------
-class _vector4
+class vector4
 {
 public:
 
-	static const _vector4 Zero;
-	static const _vector4 Red;
-	static const _vector4 Green;
-	static const _vector4 Blue;
-	static const _vector4 White;
+	static const vector4 Zero;
+	static const vector4 Red;
+	static const vector4 Green;
+	static const vector4 Blue;
+	static const vector4 White;
 
 public:
     enum component
@@ -34,45 +34,45 @@ public:
     };
 
     /// constructor 1
-    _vector4();
+    vector4();
     /// constructor 2
-    _vector4(const float _x, const float _y, const float _z, const float _w);
+    vector4(const float _x, const float _y, const float _z, const float _w);
     /// constructor 3
-    _vector4(const _vector4& vec);
+    vector4(const vector4& vec);
     /// constructor from vector3 (w will be set to 1.0)
-    _vector4(const _vector3& vec3);
+    vector4(const vector3& vec3);
     /// set elements 1
     void set(const float _x, const float _y, const float _z, const float _w);
     /// set elements 2
-    void set(const _vector4& v);
+    void set(const vector4& v);
     /// set to vector3 (w will be set to 1.0)
-    void set(const _vector3& v);
+    void set(const vector3& v);
     /// return length
     float len() const;
     /// normalize
     void norm();
     /// inplace add
-    void operator +=(const _vector4& v);
+    void operator +=(const vector4& v);
     /// inplace sub
-    void operator -=(const _vector4& v);
+    void operator -=(const vector4& v);
     /// inplace scalar mul
     void operator *=(const float s);
     /// inplace scalar div
     void operator /=(float s);
     /// true if all elements are equal
-    bool operator ==(const _vector4& v0);
+    bool operator ==(const vector4& v0);
     /// true if any of the elements is not equal
-    bool operator !=(const _vector4& v0);
+    bool operator !=(const vector4& v0);
     /// vector3 assignment operator (w set to 1.0f)
-    _vector4& operator=(const _vector3& v);
+    vector4& operator=(const vector3& v);
     /// fuzzy compare
-    bool isequal(const _vector4& v, float tol) const;
+    bool isequal(const vector4& v, float tol) const;
     /// fuzzy compare, return -1, 0, +1
-    int compare(const _vector4& v, float tol) const;
+    int compare(const vector4& v, float tol) const;
     /// set own components to minimum
-    void minimum(const _vector4& v);
+    void minimum(const vector4& v);
     /// set own components to maximum
-    void maximum(const _vector4& v);
+    void maximum(const vector4& v);
     /// set component float value by mask
     void setcomp(float val, int mask);
     /// get component float value by mask
@@ -80,13 +80,13 @@ public:
     /// get write mask for smallest component
     int mincompmask() const;
     /// inplace linear interpolation
-    void lerp(const _vector4& v0, float lerpVal);
+    void lerp(const vector4& v0, float lerpVal);
     /// linear interpolation between v0 and v1
-    void lerp(const _vector4& v0, const _vector4& v1, float lerpVal);
+    void lerp(const vector4& v0, const vector4& v1, float lerpVal);
     /// saturate components between 0 and 1
     void saturate();
     /// dot product
-    float dot(const _vector4& v0) const;
+    float dot(const vector4& v0) const;
 
 	union
 	{
@@ -99,7 +99,7 @@ public:
 /**
 */
 inline
-_vector4::_vector4() :
+vector4::vector4() :
     x(0.0f),
     y(0.0f),
     z(0.0f),
@@ -112,7 +112,7 @@ _vector4::_vector4() :
 /**
 */
 inline
-_vector4::_vector4(const float _x, const float _y, const float _z, const float _w) :
+vector4::vector4(const float _x, const float _y, const float _z, const float _w) :
     x(_x),
     y(_y),
     z(_z),
@@ -125,7 +125,7 @@ _vector4::_vector4(const float _x, const float _y, const float _z, const float _
 /**
 */
 inline
-_vector4::_vector4(const _vector4& v) :
+vector4::vector4(const vector4& v) :
     x(v.x),
     y(v.y),
     z(v.z),
@@ -138,7 +138,7 @@ _vector4::_vector4(const _vector4& v) :
 /**
 */
 inline
-_vector4::_vector4(const _vector3& v) :
+vector4::vector4(const vector3& v) :
     x(v.x),
     y(v.y),
     z(v.z),
@@ -152,7 +152,7 @@ _vector4::_vector4(const _vector3& v) :
 */
 inline
 void
-_vector4::set(const float _x, const float _y, const float _z, const float _w)
+vector4::set(const float _x, const float _y, const float _z, const float _w)
 {
     x = _x;
     y = _y;
@@ -165,7 +165,7 @@ _vector4::set(const float _x, const float _y, const float _z, const float _w)
 */
 inline
 void
-_vector4::set(const _vector4& v)
+vector4::set(const vector4& v)
 {
     x = v.x;
     y = v.y;
@@ -178,7 +178,7 @@ _vector4::set(const _vector4& v)
 */
 inline
 void
-_vector4::set(const _vector3& v)
+vector4::set(const vector3& v)
 {
     x = v.x;
     y = v.y;
@@ -191,7 +191,7 @@ _vector4::set(const _vector3& v)
 */
 inline
 float
-_vector4::len() const
+vector4::len() const
 {
     return (float) sqrt(x * x + y * y + z * z + w * w);
 }
@@ -201,7 +201,7 @@ _vector4::len() const
 */
 inline
 void
-_vector4::norm()
+vector4::norm()
 {
     float l = len();
     if (l > TINY)
@@ -219,7 +219,7 @@ _vector4::norm()
 */
 inline
 void
-_vector4::operator +=(const _vector4& v)
+vector4::operator +=(const vector4& v)
 {
     x += v.x;
     y += v.y;
@@ -232,7 +232,7 @@ _vector4::operator +=(const _vector4& v)
 */
 inline
 void
-_vector4::operator -=(const _vector4& v)
+vector4::operator -=(const vector4& v)
 {
     x -= v.x;
     y -= v.y;
@@ -245,7 +245,7 @@ _vector4::operator -=(const _vector4& v)
 */
 inline
 void
-_vector4::operator *=(const float s)
+vector4::operator *=(const float s)
 {
     x *= s;
     y *= s;
@@ -258,7 +258,7 @@ _vector4::operator *=(const float s)
 */
 inline
 void
-_vector4::operator /=(float s)
+vector4::operator /=(float s)
 {
 	s = 1.f / s;
     x *= s;
@@ -272,7 +272,7 @@ _vector4::operator /=(float s)
 */
 inline
 bool
-_vector4::operator ==(const _vector4& rhs)
+vector4::operator ==(const vector4& rhs)
 {
     if ((this->x == rhs.x) && (this->y == rhs.y) && (this->z == rhs.z) && (this->w == rhs.w))
     {
@@ -289,7 +289,7 @@ _vector4::operator ==(const _vector4& rhs)
 */
 inline
 bool
-_vector4::operator !=(const _vector4& rhs)
+vector4::operator !=(const vector4& rhs)
 {
     if ((this->x != rhs.x) || (this->y != rhs.y) || (this->z != rhs.z) || (this->w != rhs.w))
     {
@@ -305,8 +305,8 @@ _vector4::operator !=(const _vector4& rhs)
 /**
 */
 inline
-_vector4&
-_vector4::operator=(const _vector3& v)
+vector4&
+vector4::operator=(const vector3& v)
 {
     this->set(v);
     return *this;
@@ -317,12 +317,12 @@ _vector4::operator=(const _vector3& v)
 */
 inline
 bool
-_vector4::isequal(const _vector4& v, float tol) const
+vector4::isequal(const vector4& v, float tol) const
 {
-    if (fabs(v.x - x) > tol)      return false;
-    else if (fabs(v.y - y) > tol) return false;
-    else if (fabs(v.z - z) > tol) return false;
-    else if (fabs(v.w - w) > tol) return false;
+    if (n_fabs(v.x - x) > tol)      return false;
+    else if (n_fabs(v.y - y) > tol) return false;
+    else if (n_fabs(v.z - z) > tol) return false;
+    else if (n_fabs(v.w - w) > tol) return false;
     return true;
 }
 
@@ -331,12 +331,12 @@ _vector4::isequal(const _vector4& v, float tol) const
 */
 inline
 int
-_vector4::compare(const _vector4& v, float tol) const
+vector4::compare(const vector4& v, float tol) const
 {
-    if (fabs(v.x - x) > tol)      return (v.x > x) ? +1 : -1;
-    else if (fabs(v.y - y) > tol) return (v.y > y) ? +1 : -1;
-    else if (fabs(v.z - z) > tol) return (v.z > z) ? +1 : -1;
-    else if (fabs(v.w - w) > tol) return (v.w > w) ? +1 : -1;
+    if (n_fabs(v.x - x) > tol)      return (v.x > x) ? +1 : -1;
+    else if (n_fabs(v.y - y) > tol) return (v.y > y) ? +1 : -1;
+    else if (n_fabs(v.z - z) > tol) return (v.z > z) ? +1 : -1;
+    else if (n_fabs(v.w - w) > tol) return (v.w > w) ? +1 : -1;
     else                          return 0;
 }
 
@@ -345,7 +345,7 @@ _vector4::compare(const _vector4& v, float tol) const
 */
 inline
 void
-_vector4::minimum(const _vector4& v)
+vector4::minimum(const vector4& v)
 {
     if (v.x < x) x = v.x;
     if (v.y < y) y = v.y;
@@ -358,7 +358,7 @@ _vector4::minimum(const _vector4& v)
 */
 inline
 void
-_vector4::maximum(const _vector4& v)
+vector4::maximum(const vector4& v)
 {
     if (v.x > x) x = v.x;
     if (v.y > y) y = v.y;
@@ -371,9 +371,9 @@ _vector4::maximum(const _vector4& v)
 */
 static
 inline
-_vector4 operator +(const _vector4& v0, const _vector4& v1)
+vector4 operator +(const vector4& v0, const vector4& v1)
 {
-    return _vector4(v0.x + v1.x, v0.y + v1.y, v0.z + v1.z, v0.w + v1.w);
+    return vector4(v0.x + v1.x, v0.y + v1.y, v0.z + v1.z, v0.w + v1.w);
 }
 
 //------------------------------------------------------------------------------
@@ -381,9 +381,9 @@ _vector4 operator +(const _vector4& v0, const _vector4& v1)
 */
 static
 inline
-_vector4 operator -(const _vector4& v0, const _vector4& v1)
+vector4 operator -(const vector4& v0, const vector4& v1)
 {
-    return _vector4(v0.x - v1.x, v0.y - v1.y, v0.z - v1.z, v0.w - v1.w);
+    return vector4(v0.x - v1.x, v0.y - v1.y, v0.z - v1.z, v0.w - v1.w);
 }
 
 //------------------------------------------------------------------------------
@@ -391,9 +391,9 @@ _vector4 operator -(const _vector4& v0, const _vector4& v1)
 */
 static
 inline
-_vector4 operator *(const _vector4& v0, const float& s)
+vector4 operator *(const vector4& v0, const float& s)
 {
-    return _vector4(v0.x * s, v0.y * s, v0.z * s, v0.w * s);
+    return vector4(v0.x * s, v0.y * s, v0.z * s, v0.w * s);
 }
 
 //------------------------------------------------------------------------------
@@ -401,9 +401,9 @@ _vector4 operator *(const _vector4& v0, const float& s)
 */
 static
 inline
-_vector4 operator -(const _vector4& v)
+vector4 operator -(const vector4& v)
 {
-    return _vector4(-v.x, -v.y, -v.z, -v.w);
+    return vector4(-v.x, -v.y, -v.z, -v.w);
 }
 
 //------------------------------------------------------------------------------
@@ -411,7 +411,7 @@ _vector4 operator -(const _vector4& v)
 */
 inline
 void
-_vector4::setcomp(float val, int mask)
+vector4::setcomp(float val, int mask)
 {
     if (mask & X) x = val;
     if (mask & Y) y = val;
@@ -424,7 +424,7 @@ _vector4::setcomp(float val, int mask)
 */
 inline
 float
-_vector4::getcomp(int mask)
+vector4::getcomp(int mask)
 {
     switch (mask)
     {
@@ -440,7 +440,7 @@ _vector4::getcomp(int mask)
 */
 inline
 int
-_vector4::mincompmask() const
+vector4::mincompmask() const
 {
     float minVal = x;
     int minComp = X;
@@ -467,7 +467,7 @@ _vector4::mincompmask() const
 */
 inline
 void
-_vector4::lerp(const _vector4& v0, float lerpVal)
+vector4::lerp(const vector4& v0, float lerpVal)
 {
     x = v0.x + ((x - v0.x) * lerpVal);
     y = v0.y + ((y - v0.y) * lerpVal);
@@ -480,7 +480,7 @@ _vector4::lerp(const _vector4& v0, float lerpVal)
 */
 inline
 void
-_vector4::lerp(const _vector4& v0, const _vector4& v1, float lerpVal)
+vector4::lerp(const vector4& v0, const vector4& v1, float lerpVal)
 {
     x = v0.x + ((v1.x - v0.x) * lerpVal);
     y = v0.y + ((v1.y - v0.y) * lerpVal);
@@ -494,7 +494,7 @@ _vector4::lerp(const _vector4& v0, const _vector4& v1, float lerpVal)
 */
 inline
 void
-_vector4::saturate()
+vector4::saturate()
 {
     x = n_saturate(x);
     y = n_saturate(y);
@@ -507,7 +507,7 @@ _vector4::saturate()
     Dot product for vector4
 */
 inline
-float _vector4::dot(const _vector4& v0) const
+float vector4::dot(const vector4& v0) const
 {
     return (x * v0.x + y * v0.y + z * v0.z + w * v0.w);
 }

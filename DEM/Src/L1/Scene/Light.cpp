@@ -7,9 +7,9 @@ namespace Scene
 {
 __ImplementClass(Scene::CLight, 'LGHT', Scene::CNodeAttribute);
 
-bool CLight::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
-	switch (FourCC)
+	switch (FourCC.Code)
 	{
 		case 'THGL': // LGHT
 		{

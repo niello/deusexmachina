@@ -165,25 +165,3 @@ match:
     }
 }
 //---------------------------------------------------------------------
-
-// Convert 4 character string to FourCC code.
-nFourCC n_strtofourcc(const char* str)
-{
-	n_assert(str && strlen(str) == 4);
-	return MAKE_FOURCC(str[0], str[1], str[2], str[3]);
-}
-//---------------------------------------------------------------------
-
-// Convert FourCC code into character string. Note: the returned string
-// will be destroyed on the next function invocation.
-const char* n_fourcctostr(nFourCC fourcc)
-{
-	static char buf[5];
-	buf[0] = (fourcc)     & 0xff;
-	buf[1] = (fourcc>>8)  & 0xff;
-	buf[2] = (fourcc>>16) & 0xff;
-	buf[3] = (fourcc>>24) & 0xff;
-	buf[4] = 0;
-	return buf;
-}
-//---------------------------------------------------------------------

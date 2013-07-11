@@ -26,7 +26,7 @@ public:
 
 	CLODGroup(): MinSqDistance(0.f), MaxSqDistance(FLT_MAX) {}
 
-	virtual bool LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void Update();
 };
 

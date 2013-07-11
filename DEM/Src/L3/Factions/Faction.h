@@ -31,7 +31,7 @@ public:
 	DWORD	SplitByMembership(const nArray<CStrID>& Group, nArray<CStrID>* pMembers = NULL, nArray<CStrID>* pNonMembers = NULL) const;
 
 	DWORD	GetMemberCount() const { return Members.GetCount(); }
-	//CStrID	GetMember(DWORD Idx) const;
+	CStrID	GetMember(DWORD Idx) const { return Members.KeyAt(Idx); }
 	bool	IsMember(CStrID ID) const { return Members.Contains(ID); }
 	int		GetMemberRank(CStrID ID) const;
 	int		SetMemberRank(CStrID ID, int Rank) const; // Ret prev value
@@ -46,6 +46,13 @@ public:
 };
 
 typedef Ptr<CFaction> PFaction;
+
+inline int CFaction::GetMemberRank(CStrID ID) const
+{
+	int Idx = Members.FindIndex(ID);
+	return (Idx == INVALID_INDEX) ? 0 : Members.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
 
 }
 

@@ -337,6 +337,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\FourCC.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\HRDParser.cpp"
 				>
 			</File>

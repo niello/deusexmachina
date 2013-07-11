@@ -81,7 +81,7 @@ bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 
 	//???or store StartingTask in CQuest and allow setting it later, not only on task loading? really need?
 	if (OutStartingTaskID)
-		*OutStartingTaskID = CStrID(QuestDesc->Get<nString>(CStrID("StartingTask"), "").CStr());
+		*OutStartingTaskID = QuestDesc->Get<CStrID>(CStrID("StartingTask"), CStrID::Empty);
 
 	CQuestRec Rec;
 	Rec.Quest = Quest;

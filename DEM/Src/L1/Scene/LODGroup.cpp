@@ -7,9 +7,9 @@ namespace Scene
 {
 __ImplementClass(Scene::CLODGroup, 'LODG', Scene::CNodeAttribute);
 
-bool CLODGroup::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
-	switch (FourCC)
+	switch (FourCC.Code)
 	{
 		case 'HSRT': // TRSH
 		{

@@ -63,7 +63,7 @@ public:
 	template<class T>
 	bool		UnregisterProperty();
 	CProperty*	AttachProperty(CEntity& Entity, const nString& ClassName) const { return AttachProperty(Entity, Factory->GetRTTI(ClassName)); }
-	CProperty*	AttachProperty(CEntity& Entity, nFourCC ClassFourCC) const { return AttachProperty(Entity, Factory->GetRTTI(ClassFourCC)); }
+	CProperty*	AttachProperty(CEntity& Entity, Data::CFourCC ClassFourCC) const { return AttachProperty(Entity, Factory->GetRTTI(ClassFourCC)); }
 	template<class T>
 	T*			AttachProperty(CEntity& Entity) const;
 	void		RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const;

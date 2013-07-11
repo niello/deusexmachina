@@ -46,14 +46,14 @@ public:
 	int				GetRefCount() const { return RefCount; }
 	bool			IsInstanceOf(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
 	bool			IsInstanceOf(const nString& Name) const { return GetRTTI()->GetName() == Name; }
-	bool			IsInstanceOf(nFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
+	bool			IsInstanceOf(Data::CFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
 	template<class T>
 	bool			IsA() const { return IsA(T::RTTI); }
 	bool			IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
 	bool			IsA(const nString& Name) const { return GetRTTI()->IsDerivedFrom(Name); }
-	bool			IsA(nFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
+	bool			IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
 	const nString&	GetClassName() const { return GetRTTI()->GetName(); }
-	nFourCC			GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
+	Data::CFourCC	GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
 };
 //---------------------------------------------------------------------
 

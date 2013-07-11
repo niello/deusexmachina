@@ -2,7 +2,7 @@
 #define _VECTOR2_H
 //------------------------------------------------------------------------------
 /**
-    @class _vector2
+    @class vector2
     @ingroup NebulaMathDataTypes
 
     Generic vector2 class.
@@ -12,7 +12,7 @@
 #include "mathlib/nmath.h"
 #include <float.h>
 
-class _vector2
+class vector2
 {
 public:
 
@@ -22,41 +22,41 @@ public:
 		float v[2];
 	};
 
-	static const _vector2 zero;
+	static const vector2 zero;
 
-	_vector2(): x(0.f), y(0.f) {}
-	_vector2(const float _x, const float _y): x(_x), y(_y) {}
-	_vector2(const _vector2& vec): x(vec.x), y(vec.y) {}
-	_vector2(const float* p): x(p[0]), y(p[1]) {}
+	vector2(): x(0.f), y(0.f) {}
+	vector2(const float _x, const float _y): x(_x), y(_y) {}
+	vector2(const vector2& vec): x(vec.x), y(vec.y) {}
+	vector2(const float* p): x(p[0]), y(p[1]) {}
 
 	void	set(const float _x, const float _y) { x = _x; y = _y; }
-	void	set(const _vector2& v) { x = v.x; y = v.y; }
+	void	set(const vector2& v) { x = v.x; y = v.y; }
 	void	set(const float* p) { x = p[0]; y = p[1]; }
 
 	float	len() const { return sqrtf(x * x + y * y); }
 	float	lensquared() const { return x * x + y * y; }
 	void	norm();
-	float	dot(const _vector2& v) const { return x * v.x + y * v.y; }
-	bool	isequal(const _vector2& v, float tol) const { return fabsf(v.x - x) <= tol && fabsf(v.y - y) <= tol; } //???!!!use fast n_fabs!?
-	int		compare(const _vector2& v, float tol) const;
+	float	dot(const vector2& v) const { return x * v.x + y * v.y; }
+	bool	isequal(const vector2& v, float tol) const { return n_fabs(v.x - x) <= tol && n_fabs(v.y - y) <= tol; } //???!!!use fast n_fabs!?
+	int		compare(const vector2& v, float tol) const;
 	void	rotate(float angle);
-	void	lerp(const _vector2& v0, float lerpVal);
-	void	lerp(const _vector2& v0, const _vector2& v1, float lerpVal);
-	void	ToLocalAsPoint(const _vector2& Look, const _vector2& Side, const _vector2& Pos);
-	void	ToGlobalAsPoint(const _vector2& Look, const _vector2& Side, const _vector2& Pos);
-	void	ToLocalAsVector(const _vector2& Look, const _vector2& Side);
-	void	ToGlobalAsVector(const _vector2& Look, const _vector2& Side);
+	void	lerp(const vector2& v0, float lerpVal);
+	void	lerp(const vector2& v0, const vector2& v1, float lerpVal);
+	void	ToLocalAsPoint(const vector2& Look, const vector2& Side, const vector2& Pos);
+	void	ToGlobalAsPoint(const vector2& Look, const vector2& Side, const vector2& Pos);
+	void	ToLocalAsVector(const vector2& Look, const vector2& Side);
+	void	ToGlobalAsVector(const vector2& Look, const vector2& Side);
 
-	void operator +=(const _vector2& v0) { x += v0.x; y += v0.y; }
-	void operator -=(const _vector2& v0) { x -= v0.x; y -= v0.y; }
+	void operator +=(const vector2& v0) { x += v0.x; y += v0.y; }
+	void operator -=(const vector2& v0) { x -= v0.x; y -= v0.y; }
 	void operator *=(const float s) { x *= s; y *= s; }
 	void operator /=(float s) { s = 1.f / s; x *= s; y *= s; }
-	bool operator ==(const _vector2& rhs) { return x == rhs.x && y == rhs.y; }
-	bool operator !=(const _vector2& rhs) { return x != rhs.x || y != rhs.y; }
+	bool operator ==(const vector2& rhs) { return x == rhs.x && y == rhs.y; }
+	bool operator !=(const vector2& rhs) { return x != rhs.x || y != rhs.y; }
 };
 //---------------------------------------------------------------------
 
-inline void _vector2::norm()
+inline void vector2::norm()
 {
 	float l = len();
 	if (l > TINY)
@@ -68,43 +68,43 @@ inline void _vector2::norm()
 }
 //---------------------------------------------------------------------
 
-inline int _vector2::compare(const _vector2& v, float tol) const
+inline int vector2::compare(const vector2& v, float tol) const
 {
 	//???!!!use fast n_fabs?!
-	if (fabsf(v.x - x) > tol) return (v.x > x) ? +1 : -1;
-	else if (fabsf(v.y - y) > tol) return (v.y > y) ? +1 : -1;
+	if (n_fabs(v.x - x) > tol) return (v.x > x) ? +1 : -1;
+	else if (n_fabs(v.y - y) > tol) return (v.y > y) ? +1 : -1;
 	else return 0;
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::rotate(float angle)
+inline void vector2::rotate(float angle)
 {
 	// rotates this one around P(0,0).
 	float sa = sinf(angle);
 	float ca = cosf(angle);
 
 	// "handmade" multiplication
-	_vector2 help(ca * x - sa * y, sa * x + ca * y);
+	vector2 help(ca * x - sa * y, sa * x + ca * y);
 
 	*this = help;
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::lerp(const _vector2& v0, float lerpVal)
+inline void vector2::lerp(const vector2& v0, float lerpVal)
 {
 	x = v0.x + ((x - v0.x) * lerpVal);
 	y = v0.y + ((y - v0.y) * lerpVal);
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::lerp(const _vector2& v0, const _vector2& v1, float lerpVal)
+inline void vector2::lerp(const vector2& v0, const vector2& v1, float lerpVal)
 {
 	x = v0.x + ((v1.x - v0.x) * lerpVal);
 	y = v0.y + ((v1.y - v0.y) * lerpVal);
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::ToLocalAsPoint(const _vector2& Look, const _vector2& Side, const _vector2& Pos)
+inline void vector2::ToLocalAsPoint(const vector2& Look, const vector2& Side, const vector2& Pos)
 {
 	float TmpX = Look.x * x + Look.y * y - Pos.dot(Look);
 	float TmpY = Side.x * x + Side.y * y - Pos.dot(Side);
@@ -113,7 +113,7 @@ inline void _vector2::ToLocalAsPoint(const _vector2& Look, const _vector2& Side,
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::ToGlobalAsPoint(const _vector2& Look, const _vector2& Side, const _vector2& Pos)
+inline void vector2::ToGlobalAsPoint(const vector2& Look, const vector2& Side, const vector2& Pos)
 {
 	float TmpX = Look.x * x + Side.x * y + Pos.x;
 	float TmpY = Look.y * x + Side.y * y + Pos.y;
@@ -122,7 +122,7 @@ inline void _vector2::ToGlobalAsPoint(const _vector2& Look, const _vector2& Side
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::ToLocalAsVector(const _vector2& Look, const _vector2& Side)
+inline void vector2::ToLocalAsVector(const vector2& Look, const vector2& Side)
 {
 	float TmpX = Look.x * x + Look.y * y;
 	float TmpY = Side.x * x + Side.y * y;
@@ -131,7 +131,7 @@ inline void _vector2::ToLocalAsVector(const _vector2& Look, const _vector2& Side
 }
 //---------------------------------------------------------------------
 
-inline void _vector2::ToGlobalAsVector(const _vector2& Look, const _vector2& Side)
+inline void vector2::ToGlobalAsVector(const vector2& Look, const vector2& Side)
 {
 	float TmpX = Look.x * x + Side.x * y;
 	float TmpY = Look.y * x + Side.y * y;
@@ -140,27 +140,27 @@ inline void _vector2::ToGlobalAsVector(const _vector2& Look, const _vector2& Sid
 }
 //---------------------------------------------------------------------
 
-static inline _vector2 operator +(const _vector2& v0, const _vector2& v1)
+static inline vector2 operator +(const vector2& v0, const vector2& v1)
 {
-	return _vector2(v0.x + v1.x, v0.y + v1.y);
+	return vector2(v0.x + v1.x, v0.y + v1.y);
 }
 //---------------------------------------------------------------------
 
-static inline _vector2 operator -(const _vector2& v0, const _vector2& v1)
+static inline vector2 operator -(const vector2& v0, const vector2& v1)
 {
-	return _vector2(v0.x - v1.x, v0.y - v1.y);
+	return vector2(v0.x - v1.x, v0.y - v1.y);
 }
 //---------------------------------------------------------------------
 
-static inline _vector2 operator *(const _vector2& v0, const float s)
+static inline vector2 operator *(const vector2& v0, const float s)
 {
-	return _vector2(v0.x * s, v0.y * s);
+	return vector2(v0.x * s, v0.y * s);
 }
 //---------------------------------------------------------------------
 
-static inline _vector2 operator -(const _vector2& v)
+static inline vector2 operator -(const vector2& v)
 {
-	return _vector2(-v.x, -v.y);
+	return vector2(-v.x, -v.y);
 }
 //---------------------------------------------------------------------
 

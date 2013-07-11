@@ -12,8 +12,6 @@
 #include "mathlib/vector.h"
 #include "mathlib/line.h"
 #include "mathlib/plane.h"
-#include <math.h>
-#include <stdlib.h>
 
 //-------------------------------------------------------------------
 //  Triangle points are tri(s,t)=b + s*e0 + t*e1 where
@@ -104,7 +102,7 @@ public:
         float fE00 = e0 % e0;
         float fE01 = e0 % e1;
         float fE11 = e1 % e1;
-        float fDet = (float)fabs(fE00*fE11-fE01*fE01);     // = |normal|^2 > 0
+        float fDet = (float)n_fabs(fE00*fE11-fE01*fE01);     // = |normal|^2 > 0
         float fR0  = e0 % kDiff1;
         float fR1  = e1 % kDiff1;
 
@@ -159,7 +157,7 @@ public:
         float fE00 = e0 % e0;
         float fE01 = e0 % e1;
         float fE11 = e1 % e1;
-        float fDet = (float)fabs(fE00*fE11 - fE01*fE01);     // = |normal|^2 > 0
+        float fDet = (float)n_fabs(fE00*fE11 - fE01*fE01);     // = |normal|^2 > 0
         float fR0  = e0 % kDiff1;
         float fR1  = e1 % kDiff1;
 

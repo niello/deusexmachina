@@ -51,7 +51,7 @@ public:
 
 	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) { }
 
-	virtual bool		LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void		Update();
 
 	const bbox3&		GetLocalAABB() const { return Box; }

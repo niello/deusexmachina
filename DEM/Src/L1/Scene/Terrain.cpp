@@ -18,9 +18,9 @@ __ImplementClass(Scene::CTerrain, 'TERR', Scene::CNodeAttribute);
 
 using namespace Render;
 
-bool CTerrain::LoadDataBlock(nFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
-	switch (FourCC)
+	switch (FourCC.Code)
 	{
 		case 'DLDC': // CDLD
 		{
