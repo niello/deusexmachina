@@ -4,7 +4,7 @@
 
 #include <Scene/NodeController.h>
 #include <Data/Params.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Encapsulates all the data needed to run animation on the scene object. It feeds the list of
 // node controllers with sampled data. It also supports fading (in & out) and reverse playback.

@@ -34,7 +34,7 @@ public:
 	bool			Apply(CShader& Shader) const { return IsBound() && Value.IsValid() && Shader.Set(hVar, Value); }
 };
 
-typedef nDictionary<CStrID, CShaderVar> CShaderVarMap;
+typedef CDict<CStrID, CShaderVar> CShaderVarMap;
 
 }
 

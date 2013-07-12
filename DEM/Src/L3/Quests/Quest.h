@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_STORY_QUEST_H__
 #define __DEM_L3_STORY_QUEST_H__
 
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #include "Task.h"
 
 // Quest is a graph of linked tasks representing a part of storyline, either main or optional
@@ -30,7 +30,7 @@ public:
 		Ptr<CTask>	Task;
 		EStatus		Status;
 	};
-	nDictionary<CStrID, CTaskRec>	Tasks;
+	CDict<CStrID, CTaskRec>	Tasks;
 
 	// UI-related
 	nString							Name;

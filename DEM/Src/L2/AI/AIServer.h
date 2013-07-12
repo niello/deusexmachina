@@ -34,9 +34,9 @@ class CAIServer: public Core::CRefCounted
 private:
 
 	CPlanner								Planner; //???or singleton?
-	nDictionary<CStrID, CSmartObjActionTpl>	SOActTpls;
-	nDictionary<CStrID, dtQueryFilter*>		NavQueryFilters;
-	nDictionary<CStrID, COAParams*>			ObstacleAvoidanceParams;
+	CDict<CStrID, CSmartObjActionTpl>	SOActTpls;
+	CDict<CStrID, dtQueryFilter*>		NavQueryFilters;
+	CDict<CStrID, COAParams*>			ObstacleAvoidanceParams;
 	CPathRequestQueue						PathQueues[DEM_THREAD_COUNT];
 
 public:

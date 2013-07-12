@@ -6,7 +6,7 @@
 namespace Render
 {
 
-bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets)
+bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
 {
 	if (!CPass::Init(PassName, Desc, RenderTargets)) FAIL;
 

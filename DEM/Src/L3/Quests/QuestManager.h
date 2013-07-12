@@ -27,7 +27,7 @@ private:
 		Ptr<CQuest>		Quest;
 		CQuest::EStatus	Status;
 	};
-	nDictionary<CStrID, CQuestRec> Quests;
+	CDict<CStrID, CQuestRec> Quests;
 
 	nArray<Ptr<CQuest>>	QuestsToDelete;
 	nArray<Ptr<CTask>>	TasksToDelete;

@@ -6,7 +6,7 @@
 #include <Core/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Manages the main application timer, time sources used by different subsystems, and named timers
 
@@ -44,8 +44,8 @@ protected:
 	nTime								LockedFrameTime;
 	nTime								LockTime;
 	float								TimeScale;
-	nDictionary<CStrID, PTimeSource>	TimeSources;
-	nDictionary<CStrID, CTimer>			Timers;
+	CDict<CStrID, PTimeSource>	TimeSources;
+	CDict<CStrID, CTimer>			Timers;
 
 public:
 

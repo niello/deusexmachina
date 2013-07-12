@@ -6,7 +6,7 @@
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 #include <Data/Data.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3dx9.h>
@@ -36,13 +36,13 @@ protected:
 
 	ID3DXEffect*				pEffect;
 
-	//nDictionary<CStrID, HTech>	NameToTech;
-	nDictionary<DWORD, HTech>	FlagsToTech;
+	//CDict<CStrID, HTech>	NameToTech;
+	CDict<DWORD, HTech>	FlagsToTech;
 	HTech						hCurrTech;
 
 	//???!!!need both?!
-	nDictionary<CStrID, HVar>	NameToHVar;
-	nDictionary<CStrID, HVar>	SemanticToHVar;
+	CDict<CStrID, HVar>	NameToHVar;
+	CDict<CStrID, HVar>	SemanticToHVar;
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);

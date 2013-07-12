@@ -16,7 +16,7 @@ class CFaction: public Core::CRefCounted
 {
 protected:
 
-	nDictionary<CStrID, int> Members; // Value is a rank, 0 is reserved for non-members
+	CDict<CStrID, int> Members; // Value is a rank, 0 is reserved for non-members
 
 	//???relation/attitude info towards other factions?
 	//???relation/attitude info towards characters?

@@ -1,8 +1,8 @@
-// Loads CTTable<nString> from Excel 2003 table saved in XML format.
+// Loads CTableT<nString> from Excel 2003 table saved in XML format.
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Data/DataServer.h>
-#include <Data/TTable.h>
+#include <Data/TableT.h>
 #include <Data/XMLDocument.h>
 #include <util/nstring.h>
 #include <TinyXML2/Src/tinyxml2.h>
@@ -35,7 +35,7 @@ static void GetTextFromCell(tinyxml2::XMLElement* pCell, nString& Text)
 //---------------------------------------------------------------------
 
 bool StringTableFromExcelXML(Data::PXMLDocument Doc,
-							 Data::CTTable<nString>& Out,
+							 Data::CTableT<nString>& Out,
 							 LPCSTR pWorksheetName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
@@ -146,7 +146,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 //---------------------------------------------------------------------
 
 bool StringTableFromExcelXML(const nString& FileName,
-							 Data::CTTable<nString>& Out,
+							 Data::CTableT<nString>& Out,
 							 LPCSTR pWorksheetName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)

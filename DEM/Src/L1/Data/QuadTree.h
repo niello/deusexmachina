@@ -3,7 +3,7 @@
 #define __DEM_L1_QUADTREE_H__
 
 #include <mathlib/bbox.h>
-#include <util/nfixedarray.h>
+#include <Data/FixedArray.h>
 
 #ifdef GetObject
 #undef GetObject
@@ -79,7 +79,7 @@ protected:
 	vector2				Center;
 	vector2				Size;
 	uchar				Depth;
-	nFixedArray<CNode>	Nodes;
+	CFixedArray<CNode>	Nodes;
 
 	void	Build(ushort Col, ushort Row, uchar Level, CNode* pNode, CNode*& pFirstFreeNode);
 	CNode*	FindContainingNode(const TObject& Object) const;
@@ -158,7 +158,7 @@ void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float Siz
 
 	Nodes.SetSize(0x55555555 & ((1 << (Depth << 1)) - 1));
 
-	for (int i = 0; i < Nodes.GetCount(); i++) Nodes[i].pOwner = this;
+	for (DWORD i = 0; i < Nodes.GetCount(); ++i) Nodes[i].pOwner = this;
 
 	CNode* pFirstFreeNode = &Nodes[1];
 	Nodes[0].pParent = NULL;

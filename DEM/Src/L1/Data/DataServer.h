@@ -26,7 +26,7 @@ private:
 
 	CHashMap<PParams>					HRDCache; //!!!need better hashmap with Clear, Find etc!
 	//!!!Desc cache!
-	nDictionary<CStrID, PDataScheme>	DataSchemes;
+	CDict<CStrID, PDataScheme>	DataSchemes;
 
 public:
 

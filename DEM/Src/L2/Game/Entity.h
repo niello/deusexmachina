@@ -4,7 +4,7 @@
 
 #include <Events/EventDispatcher.h>
 #include <Data/Flags.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Entity is an abstract game object containing properties which extend it
 

@@ -5,7 +5,7 @@
 #include <Game/Property.h>
 #include <Data/Params.h>
 #include <AI/SmartObj/SmartObjAction.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Smart object provides set of actions that can be executed on it by actor either through command or AI.
 
@@ -23,7 +23,7 @@ class CPropSmartObject: public Game::CProperty
 
 public:
 
-	typedef nDictionary<CStrID, PSmartObjAction> CActList;
+	typedef CDict<CStrID, PSmartObjAction> CActList;
 
 protected:
 

@@ -48,7 +48,7 @@ public:
 
 	typedef T* CIterator;
 
-	Data::CFlags	Flags; // nDictionary needs to access it
+	Data::CFlags	Flags; // CDict needs to access it
 
 	nArray(): GrowSize(16), Allocated(0), Count(0), Flags(Array_KeepOrder), pData(NULL) {}
 	nArray(int _Count, int _GrowSize);

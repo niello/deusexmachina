@@ -7,7 +7,7 @@
 #include <Math/TransformSRT.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Scene nodes represent hierarchical transform frames and together form a scene graph.
 // Each 3D scene consists of one scene graph starting at the root scene node.
@@ -40,7 +40,7 @@ protected:
 		LocalTransformValid	= 0x40	// Local transform is actual, not invalidated by world space controller
 	};
 
-	typedef nDictionary<CStrID, PSceneNode> CNodeDict;
+	typedef CDict<CStrID, PSceneNode> CNodeDict;
 
 	//???store scene ptr here? or always pass as param?
 

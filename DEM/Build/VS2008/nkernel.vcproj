@@ -394,10 +394,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\nebula2\inc\util\ndictionary.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\nebula2\inc\util\nlinebuffer.h"
 				>
 			</File>
@@ -409,28 +405,20 @@
 				RelativePath="..\..\Src\nebula2\inc\util\nringbuffer.h"
 				>
 			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\PairT.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\Stack.h"
-				>
-			</File>
 			<Filter
 				Name="narray"
 				Filter="cpp;c;cxx;cc;h;hxx;hcc"
 				>
+				<File
+					RelativePath="..\..\Src\nebula2\inc\util\FixedArray.h"
+					>
+				</File>
 				<File
 					RelativePath="..\..\Src\nebula2\inc\util\narray.h"
 					>
 				</File>
 				<File
 					RelativePath="..\..\Src\nebula2\inc\util\narray2.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\util\nfixedarray.h"
 					>
 				</File>
 			</Filter>

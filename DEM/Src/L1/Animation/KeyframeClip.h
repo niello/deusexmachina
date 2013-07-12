@@ -4,7 +4,7 @@
 
 #include <Animation/AnimClip.h>
 #include <Animation/KeyframeTrack.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // This clip stores keyframe data per-track and, unlike the CMocapClip, has no specific optimizations.
 // Advantage of this clip is its flexibility and lower memory consumption.

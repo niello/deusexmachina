@@ -5,7 +5,7 @@
 #include <Core/Singleton.h>
 #include <Factions/Faction.h>
 #include <Events/EventsFwd.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Faction manager manages faction list and cross-faction relations. Query it for example
 // to know if one character/group is an ally or enemy of another character/group, even if
@@ -23,7 +23,7 @@ class CFactionManager: public Core::CRefCounted
 
 private:
 
-	nDictionary<CStrID, PFaction> Factions;
+	CDict<CStrID, PFaction> Factions;
 
 	DECLARE_EVENT_HANDLER(OnGameDescLoaded, OnGameDescLoaded);
 	DECLARE_EVENT_HANDLER(OnGameSaving, OnGameSaving);

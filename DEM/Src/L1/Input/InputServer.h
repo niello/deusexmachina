@@ -7,7 +7,7 @@
 #include <Core/Singleton.h>
 #include <Input/Keys.h>
 #include <Input/ControlLayout.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // The input server is the central object of the input subsystem
 
@@ -87,8 +87,8 @@ private:
 	float	MouseXRel;
 	float	MouseYRel;
 
-	nDictionary<CStrID, PControlLayout>	Layouts;
-	nDictionary<CStrID, PControlLayout>	Contexts;
+	CDict<CStrID, PControlLayout>	Layouts;
+	CDict<CStrID, PControlLayout>	Contexts;
 
 	//!!!save & load mappings for profile!
 

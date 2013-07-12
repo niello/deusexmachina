@@ -206,8 +206,8 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 
 typedef Data::CStringID CStrID;
 typedef nArray<const matrix44*> CMatrixPtrArray;			// Shader parameter type
-template<class TKey, class TVal> class nDictionary;
-typedef nDictionary<CStrID, Data::CData> CDataDict;	// Is used oftenly
+template<class TKey, class TVal> class CDictionary;
+typedef CDictionary<CStrID, Data::CData> CDataDict;	// Is used oftenly
 
 // Std types
 //DECLARE_TYPE(void) //!!!can use struct CVoid {};

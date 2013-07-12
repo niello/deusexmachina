@@ -329,7 +329,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\Dictionary.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\DynamicEnum.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\FixedArray.h"
 				>
 			</File>
 			<File
@@ -357,6 +365,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\PairT.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\Param.h"
 				>
 			</File>
@@ -381,11 +393,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\StrIDStorage.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Data\StrIDStorage.h"
+				RelativePath="..\..\Src\L1\Data\Stack.h"
 				>
 			</File>
 			<File
@@ -397,11 +405,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\StringIDStorage.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\StringIDStorage.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\StringTokenizer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\TTable.h"
+				RelativePath="..\..\Src\L1\Data\TableT.h"
 				>
 			</File>
 			<File

@@ -90,7 +90,7 @@ bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &SkinMatrix;
 			else
-				for (int j = 0; j < pModel->BoneIndices.GetCount(); ++j)
+				for (DWORD j = 0; j < pModel->BoneIndices.GetCount(); ++j)
 					if (pModel->BoneIndices[j] == Index)
 					{
 						pPalette->At(j) = &SkinMatrix;
@@ -129,7 +129,7 @@ void CBone::OnDetachFromNode()
 			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &matrix44::identity;
 			else
-				for (int j = 0; j < pModel->BoneIndices.GetCount(); ++j)
+				for (DWORD j = 0; j < pModel->BoneIndices.GetCount(); ++j)
 					if (pModel->BoneIndices[j] == Index)
 					{
 						pPalette->At(j) = &matrix44::identity;

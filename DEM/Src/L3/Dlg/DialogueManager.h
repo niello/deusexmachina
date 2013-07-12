@@ -4,7 +4,7 @@
 
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include "Dialogue.h"
@@ -70,7 +70,7 @@ private:
 	CActiveDlg						ForegroundDlg;
 	nArray<CActiveDlg>				BackgroundDlgs;
 
-	nDictionary<CStrID, PDialogue>	DlgRegistry;
+	CDict<CStrID, PDialogue>	DlgRegistry;
 
 	DECLARE_EVENT_HANDLER(OnDlgAnswersBegin, OnDlgAnswersBegin);
 

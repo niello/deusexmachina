@@ -7,7 +7,7 @@
 #include <Core/Singleton.h>
 #include <Events/EventsFwd.h>
 #include <UI/Window.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Central point of all debug (and profiling/statistics???) functionality
 
@@ -29,7 +29,7 @@ private:
 	};
 
 	bool							UIAllowed;
-	nDictionary<CStrID, CPlugin>	Plugins;
+	CDict<CStrID, CPlugin>	Plugins;
 
 	void TogglePluginWindow(CStrID Name);
 

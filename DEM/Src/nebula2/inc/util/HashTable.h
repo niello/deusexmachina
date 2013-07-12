@@ -3,9 +3,9 @@
 #define __DEM_L1_HASH_TABLE_H__
 
 #include <StdDEM.h>
-#include <util/nfixedarray.h>
+#include <Data/FixedArray.h>
 #include <util/narray.h>
-#include <util/PairT.h>
+#include <Data/PairT.h>
 #include <util/Hash.h>
 
 // Hash table that uses sorted arrays as chains
@@ -22,7 +22,7 @@ protected:
 	typedef CPairT<TKey, TVal> CPair;
 	typedef nArray<CPair> CChain;
 
-	nFixedArray<CChain>	Chains;
+	CFixedArray<CChain>	Chains;
 	int					Count;
 
 public:
@@ -32,7 +32,7 @@ public:
 	private:
 
 		CHashTable<TKey, TVal>*		pTable;
-		int							ChainIdx;
+		DWORD						ChainIdx;
 		typename CChain::CIterator	It;
 
 	public:
@@ -110,7 +110,7 @@ bool CHashTable<TKey, TVal>::Erase(const TKey& Key)
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Clear()
 {
-	for (int i = 0; i < Chains.GetCount(); i++)
+	for (DWORD i = 0; i < Chains.GetCount(); ++i)
 		Chains[i].Clear();
 	Count = 0;
 }

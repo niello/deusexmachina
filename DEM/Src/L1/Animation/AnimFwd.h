@@ -8,7 +8,7 @@
 
 // Animation system constants and forward declarations
 
-template<class TKey, class TVal> class nDictionary;
+template<class TKey, class TVal> class CDict;
 
 namespace Anim
 {

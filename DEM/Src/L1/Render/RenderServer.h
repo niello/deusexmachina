@@ -44,7 +44,7 @@ protected:
 	bool								Wireframe;
 	DWORD								InstanceCount;	// If 0, non-instanced rendering is active
 
-	nDictionary<CStrID, PVertexLayout>	VertexLayouts;
+	CDict<CStrID, PVertexLayout>	VertexLayouts;
 	DWORD								FFlagSkinned;
 	DWORD								FFlagInstanced;
 

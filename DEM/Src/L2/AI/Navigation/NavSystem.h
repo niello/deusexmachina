@@ -6,7 +6,7 @@
 #include <Core/Ptr.h>
 #include <AI/Navigation/PathEdge.h>
 #include <AI/ActorFwd.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #include <util/nstring.h>
 #include <DetourPathCorridor.h>
 
@@ -65,7 +65,7 @@ protected:
 	DWORD						PathRequestID;
 
 	//???personal or template?
-	nDictionary<int, CStrID>	EdgeTypeToAction;
+	CDict<int, CStrID>	EdgeTypeToAction;
 
 	//!!!Path info cache
 

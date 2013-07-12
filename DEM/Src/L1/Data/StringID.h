@@ -18,12 +18,12 @@ class CStringID
 {
 protected:
 
-	friend class CStrIDStorage;
-	static class CStrIDStorage* Storage;
+	friend class CStringIDStorage;
+	static class CStringIDStorage* Storage;
 
 	LPCSTR String;
 
-	explicit CStringID(LPCSTR string, int a, int b){ String = string; }
+	explicit CStringID(LPCSTR pString, int a, int b){ String = pString; }
 
 public:
 
@@ -33,7 +33,7 @@ public:
 #ifdef _DEBUG
 	explicit // So I can later search all static StrIDs and predefine them
 #endif
-	CStringID(LPCSTR string, bool OnlyExisting = false);
+	CStringID(LPCSTR pString, bool OnlyExisting = false);
 	explicit	CStringID(void* StrID): String((LPCSTR)StrID) {} // Direct constructor. Be careful.
 	explicit	CStringID(DWORD StrID): String((LPCSTR)StrID) {} // Direct constructor. Be careful.
 
@@ -46,15 +46,15 @@ public:
 
 	bool		IsValid() const { return String && *String; }
 
-	bool operator <(const CStringID& Other) const {return String<Other.String;}
-	bool operator >(const CStringID& Other) const {return String>Other.String;}
-	bool operator <=(const CStringID& Other) const {return String<=Other.String;}
-	bool operator >=(const CStringID& Other) const {return String>=Other.String;}
-	bool operator ==(const CStringID& Other) const {return String==Other.String;}
-	bool operator !=(const CStringID& Other) const {return String!=Other.String;}
-	bool operator ==(LPCSTR Str) const {return !strcmp(String, Str);}
-	bool operator !=(LPCSTR Str) const {return strcmp(String, Str)!=0;}
-	CStringID& operator =(const CStringID& Other) {String=Other.String; return *this;}
+	bool		operator <(const CStringID& Other) const { return String < Other.String; }
+	bool		operator >(const CStringID& Other) const { return String > Other.String; }
+	bool		operator <=(const CStringID& Other) const { return String <= Other.String; }
+	bool		operator >=(const CStringID& Other) const { return String >= Other.String; }
+	bool		operator ==(const CStringID& Other) const { return String == Other.String; }
+	bool		operator !=(const CStringID& Other) const { return String != Other.String; }
+	bool		operator ==(LPCSTR Str) const { return !strcmp(String, Str); }
+	bool		operator !=(LPCSTR Str) const { return !!strcmp(String, Str); }
+	CStringID&	operator =(const CStringID& Other) { String = Other.String; return *this; }
 };
 
 }

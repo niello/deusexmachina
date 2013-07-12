@@ -22,7 +22,7 @@ int CPropEquipment_GetEquippedItemID(lua_State* l)
 	//args: EntityScriptObject's this table, Slot ID
 	SETUP_ENT_SI_ARGS(2);
 
-	nDictionary<CStrID, CPropEquipment::CSlot>& Slots = This->GetEntity()->GetProperty<CPropEquipment>()->Slots;
+	CDict<CStrID, CPropEquipment::CSlot>& Slots = This->GetEntity()->GetProperty<CPropEquipment>()->Slots;
 	int Idx = Slots.FindIndex(CStrID(lua_tostring(l, 2)));
 	if (Idx == INVALID_INDEX) lua_pushnil(l);
 	else

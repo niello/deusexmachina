@@ -19,7 +19,7 @@ void CAnimClip::FireEvents(float ExactTime, bool Loop, Events::CEventDispatcher*
 		CEventTrack& Track = EventTracks[i];
 
 		// [ExactTime, ExactTime]
-		int j = 0;
+		DWORD j = 0;
 		for (; j < Track.Keys.GetCount(); ++j)
 			if (Track.Keys[j].Time >= ExactTime) break;
 
@@ -56,7 +56,7 @@ void CAnimClip::FireEvents(float StartTime, float EndTime, bool Loop, Events::CE
 			if (StartTime > EndTime)
 			{
 				// (StartTime, Duration]
-				int j = 0;
+				DWORD j = 0;
 				for (; j < Track.Keys.GetCount(); ++j)
 					if (Track.Keys[j].Time > StartTime) break;
 
@@ -77,7 +77,7 @@ void CAnimClip::FireEvents(float StartTime, float EndTime, bool Loop, Events::CE
 			else
 			{
 				// (StartTime, EndTime]
-				int j = 0;
+				DWORD j = 0;
 				for (; j < Track.Keys.GetCount(); ++j)
 					if (Track.Keys[j].Time > StartTime) break;
 
