@@ -5,7 +5,7 @@
 #include <Scene/RenderObject.h>
 #include <Render/Materials/Material.h>
 #include <Render/Geometry/Mesh.h>
-#include <util/nfixedarray.h>
+#include <Data/FixedArray.h>
 
 // Mesh is a scene node attribute representing a visible shape.
 // Mesh attribute references VB & IB resources, stores vertex and index range,
@@ -38,7 +38,7 @@ public:
 	DWORD					FeatureFlags;	// Model shader flags like Skinned, must be ORed with material flags before use
 	Render::CShaderVarMap	ShaderVars;		// Animable per-object vars, also can store geom. vars like CullMode
 	CStrID					BatchType; //???use in CRenderObject and don't check RTTI at all?
-	nFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
+	CFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
 	//can use Flags field of CNodeAttribute

@@ -34,7 +34,7 @@ void CActiveDlg::EnterNode(CDlgNode* pNewNode)
 
 PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const nString& Name)
 {
-	nDictionary<CStrID, Ptr<CDlgNode>> LoadedNodes;
+	CDict<CStrID, Ptr<CDlgNode>> LoadedNodes;
 
 	//!!!can store dialog as node (not node ptr) array, lesser allocations needed!
 

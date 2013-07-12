@@ -5,7 +5,7 @@
 #include <Render/Materials/ShaderVar.h>
 //#include <Resources/Resource.h>
 //#include <Data/StringID.h>
-//#include <util/ndictionary.h>
+//#include <Data/Dictionary.h>
 
 // Material consists of material shader (typically phong, cook-torrance or smth), feature flags that specify
 // additional features (light, alpha etc) and variable info. Textures are managed as all other variables.
@@ -17,7 +17,7 @@
 namespace Render
 {
 //typedef Ptr<class CShader> PShader;
-//typedef nDictionary<CStrID, class CShaderVar> CShaderVarMap;
+//typedef CDict<CStrID, class CShaderVar> CShaderVarMap;
 
 class CMaterial: public Resources::CResource
 {

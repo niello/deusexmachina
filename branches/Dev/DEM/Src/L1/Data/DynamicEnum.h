@@ -17,7 +17,7 @@ class CDynamicEnumT
 {
 protected:
 
-	nDictionary<CStrID, T>	Flags;
+	CDict<CStrID, T>	Flags;
 	DWORD					BitsUsed;
 
 public:

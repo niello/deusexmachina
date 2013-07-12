@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_LINKED_LIST_SET_H__
 #define __DEM_L1_LINKED_LIST_SET_H__
 
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #include <util/nobjectlist.h>
 
 // Linked list set is a set of linked lists, grouped by a curtain key attribute.
@@ -41,7 +41,7 @@ protected:
 		//???or just redefine member access operator?
 	};
 
-	nDictionary<TKey, nObjectList<TObject>*>	Lists;
+	CDict<TKey, nObjectList<TObject>*>	Lists;
 	//int										TotalCount;
 
 public:

@@ -4,7 +4,7 @@
 
 #include <Animation/AnimClip.h>
 #include <Animation/MocapTrack.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Mocap clip is a type of animation clips with the same count of keys in each
 // curve. Keys are placed in even intervals. This enables specific optimizations.

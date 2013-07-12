@@ -7,7 +7,7 @@
 #include <Animation/AnimClip.h>
 #include <Animation/AnimTask.h>
 #include <Scene/NodeControllerStatic.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Animation property manages node animation controllers, clip playback and blending.
 // This variation supports bones and mocap clips.
@@ -31,9 +31,9 @@ class CPropAnimation: public Game::CProperty
 private:
 
 	//???move this cache to CSceneNode? any Prop that manages node controlers may want to access it!
-	nDictionary<CStrID, Scene::CSceneNode*>		Nodes;
+	CDict<CStrID, Scene::CSceneNode*>		Nodes;
 
-	nDictionary<CStrID, Anim::PAnimClip>		Clips;
+	CDict<CStrID, Anim::PAnimClip>		Clips;
 	nArray<Anim::CAnimTask>						Tasks;
 	nArray<Scene::PNodeControllerStatic>		BasePose; // Captured pose for correct fading and blending
 
@@ -41,7 +41,7 @@ private:
 	virtual void	InternalDeactivate();
 	void			InitSceneNodeModifiers(CPropSceneNode& Prop);
 	void			TermSceneNodeModifiers(CPropSceneNode& Prop);
-	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones);
+	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, CDict<int, CStrID>& Bones);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);

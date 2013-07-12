@@ -77,7 +77,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 	ShaderVars.EndAdd();
 	//!!!DUPLICATE CODE!-
 
-	nDictionary<CStrID, PRenderTarget> RenderTargets;
+	CDict<CStrID, PRenderTarget> RenderTargets;
 
 	if (Desc.Get(pPrm, CStrID("RenderTargets")))
 	{

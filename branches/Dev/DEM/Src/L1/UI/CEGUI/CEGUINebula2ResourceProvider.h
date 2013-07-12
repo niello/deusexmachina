@@ -5,7 +5,7 @@
 #include "CEGUIBase.h"
 #include "CEGUIResourceProvider.h"
 
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 namespace CEGUI
 {
@@ -14,7 +14,7 @@ class CNebula2ResourceProvider: public ResourceProvider
 {
 protected:
 
-	nDictionary<String, String>	ResourceGroups;
+	CDict<String, String>	ResourceGroups;
 
 public:
 

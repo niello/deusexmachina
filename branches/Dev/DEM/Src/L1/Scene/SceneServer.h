@@ -7,7 +7,7 @@
 #include <Animation/AnimClip.h>
 #include <Resources/ResourceManager.h>
 #include <Data/Pool.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Scene server loads and manages 3D scenes and frame shaders for a scene rendering.
 // Also scene server holds animation resource manager, which stores data, used for
@@ -24,7 +24,7 @@ class CSceneServer: public Core::CRefCounted
 private:
 
 	//CPool<CSceneNode>								NodePool;
-	nDictionary<CStrID, Render::PFrameShader>		FrameShaders;	//???to RenderServer?
+	CDict<CStrID, Render::PFrameShader>		FrameShaders;	//???to RenderServer?
 	CStrID											ScreenFrameShaderID;
 
 public:

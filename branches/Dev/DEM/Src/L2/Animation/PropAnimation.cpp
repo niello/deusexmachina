@@ -13,7 +13,7 @@
 
 namespace Anim
 {
-	bool LoadMocapClipFromNAX2(const nString& FileName, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip);
+	bool LoadMocapClipFromNAX2(const nString& FileName, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip);
 	bool LoadKeyframeClipFromKFA(const nString& FileName, PKeyframeClip OutClip);
 }
 
@@ -56,7 +56,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	if (!Prop.GetNode()) return; // Nothing to animate
 
 	// Remap bone indices to node relative pathes
-	nDictionary<int, CStrID> Bones;
+	CDict<int, CStrID> Bones;
 	Bones.Add(-1, CStrID::Empty);
 	AddChildrenToMapping(Prop.GetNode(), Prop.GetNode(), Bones);
 
@@ -112,7 +112,7 @@ void CPropAnimation::TermSceneNodeModifiers(CPropSceneNode& Prop)
 }
 //---------------------------------------------------------------------
 
-void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, nDictionary<int, CStrID>& Bones)
+void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, CDict<int, CStrID>& Bones)
 {
 	for (DWORD i = 0; i < pParent->GetChildCount(); ++i)
 	{

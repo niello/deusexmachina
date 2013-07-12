@@ -6,7 +6,7 @@
 #include <Core/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #include <CEGUIEvent.h>
 #include <CEGUIVector.h>
 
@@ -46,7 +46,7 @@ private:
 	CEGUI::CNebula2Logger*				Logger;
 	CEGUI::CNebula2ResourceProvider*	ResourceProvider;
 
-	nDictionary<CStrID, PWindow>		Screens;
+	CDict<CStrID, PWindow>		Screens;
 	CWindow*							CurrRootScreen;
 
 	nArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;

@@ -18,7 +18,7 @@ class CMemSystem //: public Core::CRefCounted
 {
 protected:
 
-	//typedef nDictionary<const Core::CRTTI*, nArray<class CSensor*>> CGroupedSensors;
+	//typedef CDict<const Core::CRTTI*, nArray<class CSensor*>> CGroupedSensors;
 
 	CActor*			pActor;
 	

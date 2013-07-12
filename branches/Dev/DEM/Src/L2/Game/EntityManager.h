@@ -7,7 +7,7 @@
 #include <Game/Entity.h>
 #include <Game/Property.h>
 #include <Events/EventsFwd.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // The entity manager creates and manages entities and allows to
 // register properties to be usable by entities.
@@ -23,10 +23,10 @@ class CEntityManager: public Core::CRefCounted
 
 protected:
 
-	nDictionary<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
+	CDict<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
 	nArray<PEntity>										Entities;
 	CHashTable<CStrID, CEntity*>						UIDToEntity;
-	nDictionary<CStrID, CStrID>							Aliases;
+	CDict<CStrID, CStrID>							Aliases;
 
 	void		DeleteEntity(int Idx);
 	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;

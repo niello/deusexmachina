@@ -12,24 +12,25 @@
 namespace Data //???need?
 {
 
-class CStrIDStorage
+class CStringIDStorage
 {
 protected:
 
-	//???CPool<LPCSTR>					Table;
+	//???CPool<LPCSTR>	Table;
 	CHashMap<CStringID>	Map;
-	LPSTR					Block[STR_BLOCK_COUNT];
-	int						BlockIndex,
-							BlockPosition;
+	LPSTR				Block[STR_BLOCK_COUNT];
+	int					BlockIndex;
+	int					BlockPosition;
 
 	LPCSTR		StoreString(LPCSTR String);
 
 public:
 
-	CStrIDStorage();
-	~CStrIDStorage();
+	CStringIDStorage();
+	~CStringIDStorage();
 
-	CStringID	GetIDByString(LPCSTR String);
+	bool		GetIDByString(LPCSTR String, CStringID& OutID) { return Map.Get(String, OutID); }
+	CStringID	GetIDByString(LPCSTR String) { CStringID ID; Map.Get(String, ID); return ID; }
 	CStringID	AddString(LPCSTR String);
 };
 

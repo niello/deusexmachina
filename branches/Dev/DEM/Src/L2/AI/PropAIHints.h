@@ -25,7 +25,7 @@ protected:
 		CStimulusNode*	pNode;
 	};
 
-	nDictionary<CStrID, CRecord> Hints;
+	CDict<CStrID, CRecord> Hints;
 
 	virtual bool InternalActivate();
 	virtual void InternalDeactivate();

@@ -33,10 +33,10 @@ protected:
 
 	//!!!selected entities! or per-level?
 
-	nDictionary<CStrID, PGameLevel>		Levels;
+	CDict<CStrID, PGameLevel>		Levels;
 	PGameLevel							ActiveLevel;
 
-	nDictionary<CStrID, PEntityLoader>	Loaders;
+	CDict<CStrID, PEntityLoader>	Loaders;
 	PEntityLoader						DefaultLoader;
 
 	CStrID								EntityUnderMouse;

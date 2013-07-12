@@ -3,7 +3,7 @@
 #define __DEM_L1_ANIM_EVENT_TRACK_H__
 
 #include <Animation/AnimFwd.h>
-#include <util/nfixedarray.h>
+#include <Data/FixedArray.h>
 
 // Event track places events on the animation timeline. Once time cursor passes the event time mark,
 // event is fired with additional info about time direction (reverse or not) etc.
@@ -25,7 +25,7 @@ public:
 		bool operator <(const CKey& Other) const { return Time < Other.Time; }
 	};
 
-	nFixedArray<CKey> Keys; // Must be sorted by time
+	CFixedArray<CKey> Keys; // Must be sorted by time
 };
 
 }

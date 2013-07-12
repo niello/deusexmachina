@@ -74,7 +74,7 @@ bool CAILevel::CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float
 			CNavRegion* pRegion = Data.Regions.Get(ID);
 			if (!pRegion) continue;
 
-			for (int j = 0; j < pRegion->GetCount(); ++j)
+			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
 			{
 				dtPolyRef Ref = (*pRegion)[j];
 				ushort PolyFlags;
@@ -105,7 +105,7 @@ void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float Act
 			CNavRegion* pRegion = Data.Regions.Get(ID);
 			if (!pRegion) continue;
 
-			for (int j = 0; j < pRegion->GetCount(); ++j)
+			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
 			{
 				dtPolyRef Ref = (*pRegion)[j];
 				ushort PolyFlags;
@@ -132,7 +132,7 @@ void CAILevel::SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius)
 			CNavRegion* pRegion = Data.Regions.Get(ID);
 			if (!pRegion) continue;
 
-			for (int j = 0; j < pRegion->GetCount(); ++j)
+			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
 				Data.pNavMesh->setPolyArea((*pRegion)[j], Area);
 
 			if (!ProcessAll) break;

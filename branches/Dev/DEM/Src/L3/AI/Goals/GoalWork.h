@@ -3,7 +3,7 @@
 #define __DEM_L3_AI_GOAL_WORK_H__
 
 #include <AI/Planning/Goal.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // This goal makes actor want to work, if he knows aboutsome IAO offering work and
 // if he is aware of overseer.
@@ -18,7 +18,7 @@ class CGoalWork: public CGoal
 protected:
 
 	// IAO type ID to action ID
-	nDictionary<CStrID, CStrID> WorkActionMap;
+	CDict<CStrID, CStrID> WorkActionMap;
 
 	CStrID IAO;
 	CStrID Action;

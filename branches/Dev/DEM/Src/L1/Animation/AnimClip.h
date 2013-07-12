@@ -4,7 +4,7 @@
 
 #include <Resources/Resource.h>
 #include <Animation/EventTrack.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Animation clip is a set of tracks (curves), which defines single animation for a set of points
 // in space. Typically it consists of up to 3 tracks * number of animated bones in target sceleton.
@@ -37,7 +37,7 @@ class CAnimClip: public Resources::CResource
 
 protected:
 
-	nDictionary<CStrID, CSampler>	Samplers;
+	CDict<CStrID, CSampler>	Samplers;
 	nArray<CEventTrack>				EventTracks; //???use fixed array? //???per-sampler event tracks (are 3D editors capable)?
 	float							Duration;
 

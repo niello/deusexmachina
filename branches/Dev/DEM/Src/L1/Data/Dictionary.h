@@ -1,10 +1,11 @@
-#ifndef N_DICTIONARY_H
-#define N_DICTIONARY_H
+#pragma once
+#ifndef __DEM_L1_DICTIONARY_H__
+#define __DEM_L1_DICTIONARY_H__
 
-#include "util/narray.h"
-#include "util/PairT.h"
+#include <Data/PairT.h>
+#include <util/narray.h>
 
-// Dictionary is an associative array, internally implemented as array of key-value pairs sorted by key.
+// Associative container, internally implemented as an array of key-value pairs sorted by key
 
 // Extension of nArray flags
 enum
@@ -12,8 +13,10 @@ enum
 	Dict_InBeginAdd = 0x04	// Internal
 };
 
+#define CDict CDictionary
+
 template<class TKey, class TValue>
-class nDictionary
+class CDictionary
 {
 private:
 
@@ -23,9 +26,9 @@ private:
 
 public:
 
-	nDictionary() {}
-	nDictionary(int Alloc, int Grow, bool DoubleGrow): Pairs(Alloc, Grow) { Pairs.Flags.Set(Array_DoubleGrowSize); }
-	nDictionary(const nDictionary<TKey, TValue>& Other): Pairs(Other.Pairs) {}
+	CDictionary() {}
+	CDictionary(int Alloc, int Grow, bool DoubleGrow): Pairs(Alloc, Grow) { Pairs.Flags.Set(Array_DoubleGrowSize); }
+	CDictionary(const CDictionary<TKey, TValue>& Other): Pairs(Other.Pairs) {}
 
 	void			BeginAdd() { n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd)); Pairs.Flags.Set(Dict_InBeginAdd); }
 	void			BeginAdd(int num);
@@ -51,13 +54,13 @@ public:
 
 	void			CopyToArray(nArray<TValue>& Out) const;
 
-	void			operator =(const nDictionary<TKey, TValue>& Other) { Pairs = Other.Pairs; }
+	void			operator =(const CDictionary<TKey, TValue>& Other) { Pairs = Other.Pairs; }
 	TValue&			operator [](const TKey& Key) { int Idx = FindIndex(Key); n_assert(Idx != -1); return Pairs[Idx].GetValue(); }
 	const TValue&	operator [](const TKey& Key) const { int Idx = FindIndex(Key); n_assert(Idx != -1); return Pairs[Idx].GetValue(); }
 };
 
 template<class TKey, class TValue>
-void nDictionary<TKey, TValue>::BeginAdd(int num)
+void CDictionary<TKey, TValue>::BeginAdd(int num)
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	Pairs.Resize(Pairs.GetCount() + num);
@@ -66,7 +69,7 @@ void nDictionary<TKey, TValue>::BeginAdd(int num)
 //---------------------------------------------------------------------
 
 template<class TKey, class TValue>
-bool nDictionary<TKey, TValue>::Erase(const TKey& Key)
+bool CDictionary<TKey, TValue>::Erase(const TKey& Key)
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	int Idx = Pairs.BinarySearchIndex(Key);
@@ -78,7 +81,7 @@ bool nDictionary<TKey, TValue>::Erase(const TKey& Key)
 
 //???TValue*& Out to avoid copying?
 template<class TKey, class TValue>
-bool nDictionary<TKey, TValue>::Get(const TKey& Key, TValue& Out) const
+bool CDictionary<TKey, TValue>::Get(const TKey& Key, TValue& Out) const
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	int Idx = Pairs.BinarySearchIndex(Key);
@@ -88,7 +91,7 @@ bool nDictionary<TKey, TValue>::Get(const TKey& Key, TValue& Out) const
 //---------------------------------------------------------------------
 
 template<class TKey, class TValue>
-TValue* nDictionary<TKey, TValue>::Get(const TKey& Key) const
+TValue* CDictionary<TKey, TValue>::Get(const TKey& Key) const
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	int Idx = Pairs.BinarySearchIndex(Key);
@@ -97,7 +100,7 @@ TValue* nDictionary<TKey, TValue>::Get(const TKey& Key) const
 //---------------------------------------------------------------------
 
 template<class TKey, class TValue>
-TValue& nDictionary<TKey, TValue>::GetOrAdd(const TKey& Key)
+TValue& CDictionary<TKey, TValue>::GetOrAdd(const TKey& Key)
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	int Idx = Pairs.BinarySearchIndex(Key);
@@ -106,7 +109,7 @@ TValue& nDictionary<TKey, TValue>::GetOrAdd(const TKey& Key)
 //---------------------------------------------------------------------
 
 template<class TKey, class TValue>
-void nDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
+void CDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	int Idx = Pairs.BinarySearchIndex(Key);
@@ -116,7 +119,7 @@ void nDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
 //---------------------------------------------------------------------
 
 template<class TKey, class TValue>
-void nDictionary<TKey, TValue>::CopyToArray(nArray<TValue>& Out) const
+void CDictionary<TKey, TValue>::CopyToArray(nArray<TValue>& Out) const
 {
 	for (int i = 0; i < Pairs.GetCount(); i++)
 		Out.Append(Pairs[i].GetValue());

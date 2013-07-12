@@ -57,7 +57,7 @@ protected:
 	float							MorphStartRatio;
 	nArray<CMorphInfo>				MorphConsts;
 
-	nDictionary<DWORD, CMesh*>		PatchMeshes;
+	CDict<DWORD, CMesh*>		PatchMeshes;
 	PVertexLayout					PatchVertexLayout;
 	PVertexLayout					InstanceVertexLayout;
 	PVertexLayout					FinalVertexLayout;

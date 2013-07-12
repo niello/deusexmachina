@@ -1,12 +1,10 @@
-#ifndef N_KEYVALUEPAIR_H
-#define N_KEYVALUEPAIR_H
+#pragma once
+#ifndef __DEM_L1_PAIR_T_H__
+#define __DEM_L1_PAIR_T_H__
 
-#include "kernel/ntypes.h"
+#include <StdDEM.h>
 
-// Key-value pair objects are used by most associative container classes,
-// like Dictionary or HashTable. This has been "backported" from
-// the Nebula3 Core Layer.
-// (C) 2006 Radon Labs GmbH
+// Template key-value pair for use with associative containers
 
 template<class TKey, class TVal>
 class CPairT

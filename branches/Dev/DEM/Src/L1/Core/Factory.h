@@ -7,7 +7,7 @@
 #include <Core/Ptr.h>
 #include <Data/FourCC.h>
 #include <util/HashTable.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 #include <util/nstring.h>
 
 namespace Core
@@ -22,7 +22,7 @@ class CFactory
 protected:
 
 	CHashTable<nString, const CRTTI*>		NameToRTTI;
-	nDictionary<Data::CFourCC, const CRTTI*>		FourCCToRTTI; //???hash table too?
+	CDict<Data::CFourCC, const CRTTI*>		FourCCToRTTI; //???hash table too?
 
 	CFactory(): NameToRTTI(512) {}
 

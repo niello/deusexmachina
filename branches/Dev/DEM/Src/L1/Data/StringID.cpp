@@ -1,23 +1,20 @@
 #include "StringID.h"
-#include "StrIDStorage.h"
+#include "StringIDStorage.h"
 
-namespace Data //???need?
+namespace Data
 {
-static CStrIDStorage StrIDStorage;
+static CStringIDStorage StringIDStorage;
 
-//CStrIDStorage* CStringID::Storage = n_new(CStrIDStorage()); //???!!!where to delete and is it needed?
-CStrIDStorage* CStringID::Storage = &StrIDStorage;
+//CStringIDStorage* CStringID::Storage = n_new(CStringIDStorage()); //???!!!where to delete and is it needed?
+CStringIDStorage* CStringID::Storage = &StringIDStorage;
 
 const CStringID CStringID::Empty;
 
-CStringID::CStringID(LPCSTR string, bool OnlyExisting)
+CStringID::CStringID(LPCSTR pString, bool OnlyExisting)
 {
-	if (string && string[0])
-	{
-		if (OnlyExisting) String = Storage->GetIDByString(string);
-		else String = Storage->AddString(string);
-	}
-	else String = NULL; //Storage.GetEmptyStrID();
+	if (pString && *pString)
+		String = OnlyExisting ? Storage->GetIDByString(pString) : Storage->AddString(pString);
+	else String = CStringID::Empty.CStr();
 }
 //---------------------------------------------------------------------
 

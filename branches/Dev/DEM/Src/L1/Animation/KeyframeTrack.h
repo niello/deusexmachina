@@ -4,7 +4,7 @@
 
 #include <Animation/AnimFwd.h>
 #include <mathlib/quaternion.h>
-#include <util/nfixedarray.h>
+#include <Data/FixedArray.h>
 
 // Animation track is a set of float4 keys, forming a curve. Being sampled in a certain time,
 // it returns single interpolated float4 value, that can be used as any transformation component
@@ -25,7 +25,7 @@ public:
 		float	Time;
 	};
 
-	nFixedArray<CKey> Keys;
+	CFixedArray<CKey> Keys;
 
 	void Sample(float Time, vector3& Out);
 	void Sample(float Time, vector4& Out);

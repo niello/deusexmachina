@@ -3,7 +3,7 @@
 #define __DEM_L1_SCENE_LOD_GROUP_H__
 
 #include <Scene/NodeAttribute.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Level of detail group activates and deactivates child nodes of its node
 // according to a distance to the main camera 
@@ -20,7 +20,7 @@ protected:
 
 	float						MinSqDistance;
 	float						MaxSqDistance;
-	nDictionary<float, CStrID>	SqThresholds;	// Square threshold to child ID map
+	CDict<float, CStrID>	SqThresholds;	// Square threshold to child ID map
 
 public:
 

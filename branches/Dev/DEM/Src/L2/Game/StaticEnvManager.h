@@ -4,7 +4,7 @@
 
 #include <Game/StaticObject.h>
 #include <Core/Singleton.h>
-#include <util/ndictionary.h>
+#include <Data/Dictionary.h>
 
 // Static environment manager manages static objects. It includes graphics and collision shapes
 // that aren't required to be stored as separate entities. Static environment can't store per-entity
@@ -23,7 +23,7 @@ class CStaticEnvManager: public Core::CRefCounted
 
 private:
 
-	nDictionary<CStrID, PStaticObject> Objects;
+	CDict<CStrID, PStaticObject> Objects;
 
 	void DeleteStaticObject(int Idx);
 

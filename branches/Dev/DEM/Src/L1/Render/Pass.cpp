@@ -6,7 +6,7 @@
 namespace Render
 {
 
-bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const nDictionary<CStrID, PRenderTarget>& RenderTargets)
+bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
 {
 	Name = PassName;
 

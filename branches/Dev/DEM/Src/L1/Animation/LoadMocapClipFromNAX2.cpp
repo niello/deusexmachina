@@ -35,7 +35,7 @@ struct CNAX2Curve
 };
 #pragma pack(pop)
 
-bool LoadMocapClipFromNAX2(IO::CStream& In, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
+bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
 	if (!OutClip.IsValid()) FAIL;
 
@@ -115,7 +115,7 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const nDictionary<int, CStrID>& Bone
 }
 //---------------------------------------------------------------------
 
-bool LoadMocapClipFromNAX2(const nString& FileName, const nDictionary<int, CStrID>& BoneToNode, PMocapClip OutClip)
+bool LoadMocapClipFromNAX2(const nString& FileName, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
 	IO::CFileStream File;
 	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&

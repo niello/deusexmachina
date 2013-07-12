@@ -3,8 +3,8 @@
 #define __DEM_L2_AI_NAV_DATA_H__
 
 #include <Data/StringID.h>
-#include <util/nfixedarray.h>
-#include <util/ndictionary.h>
+#include <Data/FixedArray.h>
+#include <Data/Dictionary.h>
 #include <DetourNavMesh.h>
 
 // AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysWorld),
@@ -25,7 +25,7 @@ namespace IO
 
 namespace AI
 {
-typedef nFixedArray<dtPolyRef> CNavRegion;
+typedef CFixedArray<dtPolyRef> CNavRegion;
 
 #define NAV_FLAG_NORMAL	0x01	// Normal poly (poly must have at least 1 flag set to be passable)
 #define NAV_FLAG_LOCKED	0x02	// Poly is locked by door, obstacle or any other physical/collision object 
@@ -40,7 +40,7 @@ public:
 	dtNavMesh*						pNavMesh;
 	dtNavMeshQuery*					pNavMeshQuery[DEM_THREAD_COUNT]; // [0] is sync, main query
 
-	nDictionary<CStrID, CNavRegion> Regions;
+	CDict<CStrID, CNavRegion> Regions;
 
 	CNavData(): pNavMesh(NULL) { memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery)); }
 

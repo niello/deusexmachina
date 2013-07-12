@@ -293,7 +293,7 @@ bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
 	{
 		CQuestRec& QuestRec = Quests.ValueAt(i);
 		QuestRec.Status = CQuest::No;
-		nDictionary<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
+		CDict<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
 		for (int j = 0; j < Tasks.GetCount(); j++)
 		{
 			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
@@ -371,7 +371,7 @@ bool CQuestManager::OnGameSaving(const Events::CEventBase& Event)
 		if (QuestRec.Status != CQuest::Opened) continue;
 
 		Data::PParams SGTasks = n_new(Data::CParams);
-		nDictionary<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
+		CDict<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
 		for (int j = 0; j < Tasks.GetCount(); j++)
 		{
 			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);

@@ -30,7 +30,7 @@ public:
 		CSlot(): pStack(NULL), Count(0) {}
 	};
 
-	nDictionary<CStrID, CSlot> Slots; //???to protected?
+	CDict<CStrID, CSlot> Slots; //???to protected?
 
 	CPropEquipment();
 
