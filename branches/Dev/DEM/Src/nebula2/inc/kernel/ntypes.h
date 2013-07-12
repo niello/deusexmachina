@@ -2,6 +2,8 @@
 #define N_TYPES_H
 
 #include <stdio.h> //???why error if comment?
+#include <stdlib.h> // malloc, free
+#include <new> // malloc, free
 #include "StdCfg.h"
 
 //---------------------------------------------------------------------
