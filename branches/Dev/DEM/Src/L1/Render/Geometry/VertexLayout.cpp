@@ -58,7 +58,7 @@ BYTE FormatD3DTypes[] =
 	D3DDECLTYPE_SHORT4N
 };
 
-bool CVertexLayout::Create(const nArray<CVertexComponent>& VertexComponents)
+bool CVertexLayout::Create(const CArray<CVertexComponent>& VertexComponents)
 {
 	n_assert(!pDecl && VertexComponents.GetCount());
 
@@ -103,7 +103,7 @@ void CVertexLayout::Destroy()
 }
 //---------------------------------------------------------------------
 
-CStrID CVertexLayout::BuildSignature(const nArray<CVertexComponent>& Components)
+CStrID CVertexLayout::BuildSignature(const CArray<CVertexComponent>& Components)
 {
 	if (!Components.GetCount()) return CStrID::Empty;
 	nString UID;

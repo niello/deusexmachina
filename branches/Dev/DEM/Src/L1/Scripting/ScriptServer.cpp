@@ -620,7 +620,7 @@ bool CScriptServer::ObjectExists(LPCSTR Name, LPCSTR Table)
 //---------------------------------------------------------------------
 
 //???universalize?
-bool CScriptServer::GetTableFieldsDebug(nArray<nString>& OutFields)
+bool CScriptServer::GetTableFieldsDebug(CArray<nString>& OutFields)
 {
 	OutFields.Clear();
 

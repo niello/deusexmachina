@@ -19,7 +19,7 @@ class CMocapClip: public CAnimClip
 protected:
 
 	vector4*			pKeys;
-	nArray<CMocapTrack>	Tracks;		//???use fixed array?
+	CArray<CMocapTrack>	Tracks;		//???use fixed array?
 
 	float				InvKeyTime;
 	DWORD				KeysPerCurve;
@@ -32,8 +32,8 @@ public:
 	CMocapClip(CStrID ID): CAnimClip(ID), pKeys(NULL) {}
 	virtual ~CMocapClip() { if (IsLoaded()) Unload(); }
 
-	bool							Setup(	const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
-											const nArray<CEventTrack>* _EventTracks, vector4* _pKeys,
+	bool							Setup(	const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
+											const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,
 											DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
 	virtual void					Unload();
 

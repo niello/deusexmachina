@@ -36,7 +36,7 @@ bool CInputMappingState::OnInputUpdated(const Events::CEventBase& Event)
 {
 	bool OldState = State;
 	State = true;
-	for (nArray<CCondition>::CIterator It = Conditions.Begin(); It != Conditions.End(); It++)
+	for (CArray<CCondition>::CIterator It = Conditions.Begin(); It != Conditions.End(); It++)
 	{
 		bool CndState;
 		switch (It->Type)
@@ -53,7 +53,7 @@ bool CInputMappingState::OnInputUpdated(const Events::CEventBase& Event)
 
 		if (!CndState && CheckInOrder)
 		{
-			for (nArray<CCondition>::CIterator It2 = Conditions.Begin(); It2 != It; It2++)
+			for (CArray<CCondition>::CIterator It2 = Conditions.Begin(); It2 != It; It2++)
 				It2->State = false;
 			break;
 		}

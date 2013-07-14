@@ -119,7 +119,7 @@ bool CWAVFile::Open(const nString& FileName)
 	// Modify FileName so that MMIO will invoke our custom file function
 	nString Path = IOSrv->ManglePath(FileName);
 	nString MMIOFileName("X.NEB2+");
-	MMIOFileName.Append(Path);
+	MMIOFileName.Add(Path);
 
 	m_hmmio = mmioOpen((LPSTR)MMIOFileName.CStr(), NULL, MMIO_ALLOCBUF | MMIO_READ);
 	if (!m_hmmio)

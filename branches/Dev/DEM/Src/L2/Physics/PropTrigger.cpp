@@ -122,11 +122,11 @@ void CPropTrigger::SetEnabled(bool Enable)
 
 bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 {
-	nArray<const btCollisionObject*> Collisions(16, 16);
+	CArray<const btCollisionObject*> Collisions(16, 16);
 	Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
 	GetEntity()->GetLevel().GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
 
-	nArray<CStrID> NewInsiders(16, 16);
+	CArray<CStrID> NewInsiders(16, 16);
 
 	// Sort to skip duplicates
 	Collisions.Sort();
@@ -140,12 +140,12 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		void* pUserData = PhysObj->GetUserData();
 		if (!pUserData) continue;
 		CStrID EntityID = *(CStrID*)&pUserData;
-		if (pScriptObj && CurrInsiders.BinarySearchIndex(EntityID) == INVALID_INDEX)
+		if (pScriptObj && CurrInsiders.FindIndexSorted(EntityID) == INVALID_INDEX)
 		{
 			Data::CData RetVal;
 			pScriptObj->RunFunctionOneArg("OnTriggerEnter", nString(EntityID.CStr()), &RetVal);
 			if (!(RetVal.IsA<bool>() && RetVal == false || RetVal.IsA<int>() && RetVal == 0))
-				NewInsiders.Append(EntityID);
+				NewInsiders.Add(EntityID);
 		}
 	}
 
@@ -155,7 +155,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		for (int i = 0; i < CurrInsiders.GetCount(); ++i)
 		{
 			CStrID EntityID = CurrInsiders[i];
-			if (NewInsiders.BinarySearchIndex(EntityID) == INVALID_INDEX && EntityMgr->EntityExists(EntityID))
+			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX && EntityMgr->EntityExists(EntityID))
 				pScriptObj->RunFunctionOneArg("OnTriggerLeave", nString(EntityID.CStr()));
 		}
 

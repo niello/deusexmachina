@@ -1,71 +1,64 @@
 #include "MemSystem.h"
 
-//#include <AI/AIServer.h>
 #include <AI/PropActorBrain.h>
 #include <Game/GameServer.h> //???separate time source for AI?
 
 namespace AI
 {
 
-/*
-void CMemSystem::Init()
-{
-	for (int i = 0; i < Facts.GetListCount(); ++i)
-	{
-		nArray<PSensor>::CIterator It = pActor->GetSensors().Begin();
-		for (; It != pActor->GetSensors().End(); It++)
-	}
-}
-//---------------------------------------------------------------------
-*/
-
 void CMemSystem::Update()
 {
 	float Now = (float)GameSrv->GetTime();
 
-	nArray<CSensor*> ValidationSensors;
+	CArray<CSensor*> ValidationSensors;
 
-	for (int i = 0; i < Facts.GetListCount(); ++i)
+	// Here we validate facts that reside in memory but weren't updated by the last
+	// sensor activity session. Facts will be accepted or rejected by sensors where
+	// it is possible. Some sort of prediction can be applied to remaining facts.
+
+	for (DWORD i = 0; i < Facts.GetListCount(); ++i)
 	{
 		//!!!can avoid second dictionary lookup, index will always be i!
 		//???!!!cache sensor lists?!
-		nArray<PSensor>::CIterator It = pActor->GetSensors().Begin();
-		for (; It != pActor->GetSensors().End(); It++)
+		CArray<PSensor>::CIterator It = pActor->GetSensors().Begin();
+		for (; It != pActor->GetSensors().End(); ++It)
 			if ((*It)->ValidatesFactType(*Facts.GetKeyAt(i)))
-				ValidationSensors.Append((*It));
+				ValidationSensors.Add((*It));
 
-		for (CMemFactNode* pCurr = Facts.GetHeadAt(i); pCurr; )
+		for (CMemFactNode ItCurr = Facts.GetHeadAt(i); ItCurr; )
 		{
-			if (pCurr->Object->LastUpdateTime < Now)
+			CMemFact* pFact = ItCurr->GetUnsafe();
+
+			if (pFact->LastUpdateTime < Now)
 			{
 				EExecStatus Result = Running;
 
-				nArray<CSensor*>::CIterator It = ValidationSensors.Begin();
+				CArray<CSensor*>::CIterator It = ValidationSensors.Begin();
 				for (; It != ValidationSensors.End(); It++)
 				{
 					// Since we validate only facts not updated this frame, we definitely know here,
 					// that sensor didn't sense stimulus that produced this fact
-					Result = (*It)->ValidateFact(pActor, *pCurr->Object);
+					Result = (*It)->ValidateFact(pActor, *pFact);
 					if (Result != Running) break;
 				}
 
 				if (Result != Failure)
-					pCurr->Object->Confidence -= (Now - pCurr->Object->LastUpdateTime) * pCurr->Object->ForgettingFactor;
+					pFact->Confidence -= (Now - pFact->LastUpdateTime) * pFact->ForgettingFactor;
 				
-				if (Result == Failure || pCurr->Object->Confidence <= 0.f)
+				if (Result == Failure || pFact->Confidence <= 0.f)
 				{
-					CMemFactNode* pRem = pCurr;
-					pCurr = pCurr->GetSucc();
-					Facts.RemoveElement(pRem);
+					CMemFactNode ItRemove = ItCurr;
+					++ItCurr;
+					Facts.Remove(ItRemove);
 					continue;
 				}
 
 				// update facts here (can predict positions etc)
 
-				pCurr->Object->LastUpdateTime = Now;
+				pFact->LastUpdateTime = Now;
 			}
 
-			pCurr = pCurr->GetSucc();
+			++ItCurr;
 		}
 
 		ValidationSensors.Clear();
@@ -77,13 +70,13 @@ void CMemSystem::Update()
 
 CMemFact* CMemSystem::FindFact(const CMemFact& Pattern, CFlags FieldMask)
 {
-	CMemFactNode* pCurr = Facts.GetHead(Pattern.GetKey());
+	CMemFactNode ItCurr = Facts.GetHead(Pattern.GetKey());
 
-	while (pCurr)
+	while (ItCurr)
 	{
 		// Can lookup pointer to virtual function Match() once since facts are grouped by the class
-		if (pCurr->Object->Match(Pattern, FieldMask)) return pCurr->Object;
-		pCurr = pCurr->GetSucc();
+		if ((*ItCurr)->Match(Pattern, FieldMask)) return *ItCurr;
+		++ItCurr;
 	}
 
 	return NULL;

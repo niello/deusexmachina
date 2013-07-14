@@ -32,11 +32,11 @@ private:
 	//Fog settings
 	//???shadow settings?
 
-	nArray<CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
-	nArray<CLight*>			VisibleLights;
+	CArray<CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
+	CArray<CLight*>			VisibleLights;
 
 	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
-	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, nArray<CRenderObject*>* OutObjects, nArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
+	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnRenderDeviceReset);
 
@@ -55,8 +55,8 @@ public:
 	void		ClearVisibleLists() { VisibleObjects.Clear(); VisibleLights.Clear(); }
 
 	//!!!can add global lights to separate array if necessary!
-	void		AddVisibleObject(CRenderObject& Obj) { VisibleObjects.Append(&Obj); }
-	void		AddVisibleLight(CLight& Light) { VisibleLights.Append(&Light); }
+	void		AddVisibleObject(CRenderObject& Obj) { VisibleObjects.Add(&Obj); }
+	void		AddVisibleLight(CLight& Light) { VisibleLights.Add(&Light); }
 
 	bool		Render(PCamera Camera, Render::CFrameShader& FrameShader);
 

@@ -79,7 +79,7 @@ bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrI
 	// so gather there CRenderObject* and CLight* arrays and feed renderers
 
 	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
-	nArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
+	CArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
 	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleObjects, pVisibleLights);
 
 	RenderSrv->SetAmbientLight(AmbientLight);
@@ -178,7 +178,7 @@ bool CScene::Render(PCamera Camera, Render::CFrameShader& FrameShader) //, CStrI
 //---------------------------------------------------------------------
 
 void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
-									  nArray<CRenderObject*>* OutObjects, nArray<CLight*>* OutLights,
+									  CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights,
 									  EClipStatus Clip)
 {
 	if (!pNode || !pNode->GetTotalObjCount() || (!OutObjects && !OutLights)) return;
@@ -195,7 +195,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 
 	if (OutObjects && pNode->Data.Objects.GetCount())
 	{
-		nArray<CSPSRecord*>::CIterator ItObj = pNode->Data.Objects.Begin();
+		CArray<CSPSRecord*>::CIterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
 			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.GetCount());
@@ -207,13 +207,13 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 			//???test against global box or transform to model space and test against local box?
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
 				if ((*ItObj)->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutObjects->Append((CRenderObject*)&(*ItObj)->Attr);
+					OutObjects->Add((CRenderObject*)&(*ItObj)->Attr);
 		}
 	}
 
 	if (OutLights && pNode->Data.Lights.GetCount())
 	{
-		nArray<CSPSRecord*>::CIterator ItLight = pNode->Data.Lights.Begin();
+		CArray<CSPSRecord*>::CIterator ItLight = pNode->Data.Lights.Begin();
 		if (Clip == Inside)
 		{
 			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.GetCount());
@@ -225,7 +225,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 			//???test against global box or transform to model space and test against local box?
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
 				if ((*ItLight)->GlobalBox.clipstatus(ViewProj) != Outside)
-					OutLights->Append((CLight*)&(*ItLight)->Attr);
+					OutLights->Add((CLight*)&(*ItLight)->Attr);
 		}
 	}
 

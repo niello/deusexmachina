@@ -11,7 +11,7 @@
 */
 
 #include "kernel/ntypes.h"
-#include <util/Hash.h>
+#include <Data/Hash.h>
 
 //------------------------------------------------------------------------------
 template<class TVal>

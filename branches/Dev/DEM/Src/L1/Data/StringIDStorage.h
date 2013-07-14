@@ -4,7 +4,7 @@
 
 #include "StringID.h"
 
-#include <util/HashMap.h>
+#include <Data/HashMap.h>
 
 #define STR_BLOCK_COUNT	64
 #define STR_BLOCK_SIZE	8192

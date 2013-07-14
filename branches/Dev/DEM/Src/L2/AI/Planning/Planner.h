@@ -42,15 +42,15 @@ private:
 	};
 
 	CPool<CNode, 32>	NodePool;
-	nArray<PActionTpl>	ActionTpls;
-	nArray<CActionTpl*>	EffectToActions[WSP_Count];
+	CArray<PActionTpl>	ActionTpls;
+	CArray<CActionTpl*>	EffectToActions[WSP_Count];
 	int					NewActIdx;
 
 	static int CmpPlannerNodes(const void* First, const void* Second);
 
 	void	MergeWorldStates(CWorldState& WSCurr, const CWorldState& WSGoal, const CWorldState& WSActor);
 	bool	IsPlanValid(CActor* pActor, CNode* pNode, const CWorldState& WSActor);
-	void	FillNeighbors(CActor* pActor, const CNode& Node, nArray<CNode*>& OutNeighbors);
+	void	FillNeighbors(CActor* pActor, const CNode& Node, CArray<CNode*>& OutNeighbors);
 
 public:
 
@@ -67,7 +67,7 @@ public:
 inline const CActionTpl* CPlanner::FindActionTpl(LPCSTR Name) const
 {
 	nString ClassName = StrActTplPrefix + Name;
-	for (nArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
+	for (CArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
 		if ((*ppTpl)->IsInstanceOf(ClassName))
 			return (*ppTpl).GetUnsafe();
 	return NULL;

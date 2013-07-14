@@ -266,7 +266,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 				Scene::PNodeControllerStatic& PoseLock =
 					(FreePoseLockerIdx < BasePose.GetCount()) ?
 					BasePose[FreePoseLockerIdx] :
-					BasePose.Append(n_new(Scene::CNodeControllerStatic));
+					BasePose.Add(n_new(Scene::CNodeControllerStatic));
 
 				if (!pNode->IsLocalTransformValid()) pNode->UpdateLocalFromWorld();
 				PoseLock->SetStaticTransform(pNode->GetLocalTransform(), true);

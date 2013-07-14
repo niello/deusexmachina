@@ -5,10 +5,10 @@
 #include <string.h>
 #include <stdarg.h>
 #include <malloc.h>
-#include <util/narray.h>
+#include <Data/Array.h>
 #include <mathlib/vector.h>
 #include <mathlib/matrix44.h>
-#include <util/Hash.h>
+#include <Data/Hash.h>
 #include <Data/StringTokenizer.h>
 
 // Character string with local buffer for small strings to avoid allocations
@@ -45,17 +45,17 @@ public:
 
 	void			Set(const char* pSrc, int SrcLength);
 	void			Set(const char* pSrc) { Set(pSrc, pSrc ? (int)strlen(pSrc) : 0); }
-	void			Append(char Chr) { AppendRange(&Chr, 1); }
-	void			Append(const char* str) { n_assert(str); AppendRange(str, strlen(str)); }
-	void			Append(const nString& Str) { AppendRange(Str.CStr(), Str.Length()); }
+	void			Add(char Chr) { AppendRange(&Chr, 1); }
+	void			Add(const char* str) { n_assert(str); AppendRange(str, strlen(str)); }
+	void			Add(const nString& Str) { AppendRange(Str.CStr(), Str.Length()); }
 	void			AppendRange(const char* str, uint CharCount);
-	void			AppendInt(int val) { nString str; str.SetInt(val); Append(str); }
-	void			AppendFloat(float val) { nString str; str.SetFloat(val); Append(str); }
+	void			AppendInt(int val) { nString str; str.SetInt(val); Add(str); }
+	void			AppendFloat(float val) { nString str; str.SetFloat(val); Add(str); }
 	void			Clear();
 
-	static nString	Concatenate(const nArray<nString>& strArray, const nString& whiteSpace);
-	int				Tokenize(const char* SplitChars, nArray<nString>& Tokens) const;
-	int				Tokenize(const char* SplitChars, uchar fence, nArray<nString>& Tokens) const;
+	static nString	Concatenate(const CArray<nString>& strArray, const nString& whiteSpace);
+	int				Tokenize(const char* SplitChars, CArray<nString>& Tokens) const;
+	int				Tokenize(const char* SplitChars, uchar fence, CArray<nString>& Tokens) const;
 	nString			SubString(int from, int CharCount) const;
 	void			Strip(const char* CharSet);
 	int				FindStringIndex(const nString& v, int StartIdx = 0) const;
@@ -128,9 +128,9 @@ public:
 
 	nString&		operator =(const nString& Other);
 	nString&		operator =(const char* pStr) { if (pStr != CStr()) Set(pStr); return *this; }
-	nString&		operator +=(char Chr) { Append(Chr); return *this; }
-	nString&		operator +=(const char* pStr) { Append(pStr); return *this; }
-	nString&		operator +=(const nString& Other) { Append(Other); return *this; }
+	nString&		operator +=(char Chr) { Add(Chr); return *this; }
+	nString&		operator +=(const char* pStr) { Add(pStr); return *this; }
+	nString&		operator +=(const nString& Other) { Add(Other); return *this; }
 	char			operator [](int i) const;
 	char&			operator [](int i);
 
@@ -185,7 +185,7 @@ inline void nString::Clear()
 ////------------------------------------------------------------------------------
 ///**
 //    Reserves internal space to prevent excessive heap re-allocations.
-//    If you plan to do many Append() operations this may help alot.
+//    If you plan to do many Add() operations this may help alot.
 //*/
 //inline void
 //String::Reserve(int newSize)
@@ -229,11 +229,11 @@ inline void nString::ToUpper()
 }
 //---------------------------------------------------------------------
 
-inline int nString::Tokenize(const char* SplitChars, nArray<nString>& Tokens) const
+inline int nString::Tokenize(const char* SplitChars, CArray<nString>& Tokens) const
 {
 	int CountBase = Tokens.GetCount();
 	Data::CStringTokenizer StrTok(CStr(), SplitChars);
-	while (StrTok.GetNextToken()) Tokens.Append(StrTok.GetCurrToken());
+	while (StrTok.GetNextToken()) Tokens.Add(StrTok.GetCurrToken());
 	return Tokens.GetCount() - CountBase;
 }
 //---------------------------------------------------------------------
@@ -251,7 +251,7 @@ inline int nString::Tokenize(const char* SplitChars, nArray<nString>& Tokens) co
     token 1:    said:
     token 2:    I don't know.
 */
-inline int nString::Tokenize(const char* SplitChars, uchar fence, nArray<nString>& Tokens) const
+inline int nString::Tokenize(const char* SplitChars, uchar fence, CArray<nString>& Tokens) const
 {
     // create a temporary pString, which will be destroyed during the operation
     nString str(*this);
@@ -270,18 +270,18 @@ inline int nString::Tokenize(const char* SplitChars, uchar fence, nArray<nString
             if ((fence == *ptr) && (c = strchr(++ptr, fence)))
             {
                 *c++ = 0;
-                Tokens.Append(ptr);
+                Tokens.Add(ptr);
                 ptr = c;
             }
             else if ((c = strpbrk(ptr, SplitChars)))
             {
                 *c++ = 0;
-                Tokens.Append(ptr);
+                Tokens.Add(ptr);
                 ptr = c;
             }
             else
             {
-                Tokens.Append(ptr);
+                Tokens.Add(ptr);
                 break;
             }
         }
@@ -635,14 +635,14 @@ inline void nString::SetLength(int length)
 }
 //---------------------------------------------------------------------
 
-inline nString nString::Concatenate(const nArray<nString>& strArray, const nString& whiteSpace)
+inline nString nString::Concatenate(const CArray<nString>& strArray, const nString& whiteSpace)
 {
 	nString Result;
 	for (int i = 0; i < strArray.GetCount(); i++)
 	{
-		Result.Append(strArray[i]);
+		Result.Add(strArray[i]);
 		if (i < strArray.GetCount() - 1)
-			Result.Append(whiteSpace);
+			Result.Add(whiteSpace);
 	}
 	return Result;
 }
@@ -690,7 +690,7 @@ inline bool nString::AsBool() const
 
 inline vector3 nString::AsVector3() const
 {
-	nArray<nString> Tokens;
+	CArray<nString> Tokens;
 	Tokenize(", \t", Tokens);
 	n_assert(Tokens.GetCount() == 3);
 	vector3 v(Tokens[0].AsFloat(), Tokens[1].AsFloat(), Tokens[2].AsFloat());
@@ -700,7 +700,7 @@ inline vector3 nString::AsVector3() const
 
 inline vector4 nString::AsVector4() const
 {
-	nArray<nString> Tokens;
+	CArray<nString> Tokens;
 	Tokenize(", \t", Tokens);
 	n_assert(Tokens.GetCount() == 4);
 	vector4 v(Tokens[0].AsFloat(), Tokens[1].AsFloat(), Tokens[2].AsFloat(), Tokens[3].AsFloat());
@@ -710,7 +710,7 @@ inline vector4 nString::AsVector4() const
 
 inline matrix44 nString::AsMatrix44() const
 {
-	nArray<nString> Tokens;
+	CArray<nString> Tokens;
 	Tokenize(", \t", Tokens);
 	n_assert(Tokens.GetCount() == 16);
 	matrix44 m(	Tokens[0].AsFloat(),  Tokens[1].AsFloat(),  Tokens[2].AsFloat(),  Tokens[3].AsFloat(),
@@ -749,7 +749,7 @@ inline char& nString::operator [](int i)
 static inline nString operator +(const nString& s0, const nString& s1)
 {
 	nString Result(s0);
-	Result.Append(s1.CStr());
+	Result.Add(s1.CStr());
 	return Result;
 }
 //---------------------------------------------------------------------

@@ -24,7 +24,7 @@ class CEntityManager: public Core::CRefCounted
 protected:
 
 	CDict<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
-	nArray<PEntity>										Entities;
+	CArray<PEntity>										Entities;
 	CHashTable<CStrID, CEntity*>						UIDToEntity;
 	CDict<CStrID, CStrID>							Aliases;
 
@@ -50,13 +50,13 @@ public:
 	bool		EntityExists(CStrID UID, bool SearchInAliases = false) const { return !!GetEntity(UID, SearchInAliases); }
 
 	CEntity*	FindEntityByAttr(CStrID AttrID, const Data::CData& Value) const; //???find first - find next?
-	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, nArray<CEntity*>& Out) const;
-	void		GetEntitiesByLevel(CStrID LevelID, nArray<CEntity*>& Out) const;
+	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, CArray<CEntity*>& Out) const;
+	void		GetEntitiesByLevel(CStrID LevelID, CArray<CEntity*>& Out) const;
 
 	//???find first/all by property? - in fact iterates through the storage / CopyToArray
 
 	bool		SetEntityAlias(CStrID Alias, CStrID UID) { if (!UID.IsValid()) FAIL; Aliases.Set(Alias, UID); OK; }
-	void		RemoveEntityAlias(CStrID Alias) { Aliases.Erase(Alias); }
+	void		RemoveEntityAlias(CStrID Alias) { Aliases.Remove(Alias); }
 
 	template<class T>
 	bool		RegisterProperty(DWORD TableCapacity = 32);
@@ -69,7 +69,7 @@ public:
 	void		RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const;
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
-	void		GetPropertiesOfEntity(CStrID EntityID, nArray<CProperty*>& Out) const;
+	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
 };
 
 typedef Ptr<CEntityManager> PEntityManager;
@@ -116,7 +116,7 @@ bool CEntityManager::UnregisterProperty()
 		}
 	}
 
-	PropStorages.Erase(&T::RTTI);
+	PropStorages.Remove(&T::RTTI);
 	n_delete(T::pStorage);
 	T::pStorage = NULL;
 	OK;
@@ -148,7 +148,7 @@ void CEntityManager::RemoveProperty(Game::CEntity& Entity) const
 	n_assert_dbg(T::RTTI.IsDerivedFrom(CProperty::RTTI));
 	n_assert2_dbg(T::pStorage, (nString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
 	if (!T::pStorage) return;
-	T::pStorage->Erase(Entity.GetUID());
+	T::pStorage->Remove(Entity.GetUID());
 }
 //---------------------------------------------------------------------
 

@@ -134,19 +134,17 @@ void* CFileSystemNPK::OpenDirectory(const nString& Path, const nString& Filter, 
 	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	if (pTE && pTE->GetType() == FSE_DIR)
 	{
-		CNPKDir* pDir = n_new(CNPKDir);
+		CNPKDir* pDir = n_new(CNPKDir(pTE));
 		pDir->Filter = (Filter == "*") ? nString::Empty : Filter;
-		pDir->pTOCEntry = pTE;
-		pDir->pCurrEntry = pTE->GetFirstEntry();
 
 		if (Filter.IsValid())
-			while (pDir->pCurrEntry && !nString(pDir->pCurrEntry->GetName()).MatchPattern(Filter))
-				pDir->pCurrEntry = pTE->GetNextEntry(pDir->pCurrEntry);
+			while (!pDir->It.IsEnd() && !nString(pDir->It.GetValue()->GetName()).MatchPattern(Filter))
+				++pDir->It;
 
-		if (pDir->pCurrEntry)
+		if (!pDir->It.IsEnd())
 		{
-			OutName = pDir->pCurrEntry->GetName();
-			OutType = pDir->pCurrEntry->GetType() == FSE_DIR ? FSE_DIR : FSE_FILE;
+			OutName = pDir->It.GetValue()->GetName();
+			OutType = pDir->It.GetValue()->GetType() == FSE_DIR ? FSE_DIR : FSE_FILE;
 		}
 		else
 		{
@@ -173,18 +171,18 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryTy
 {
 	n_assert(hDir);
 	CNPKDir* pDir = ((CNPKDir*)hDir);
-	if (pDir->pCurrEntry)
+	if (!pDir->It.IsEnd())
 	{
-		pDir->pCurrEntry = pDir->pTOCEntry->GetNextEntry(pDir->pCurrEntry);
+		++pDir->It;
 
 		if (pDir->Filter.IsValid())
-			while (pDir->pCurrEntry && !nString(pDir->pCurrEntry->GetName()).MatchPattern(pDir->Filter))
-				pDir->pCurrEntry = pDir->pTOCEntry->GetNextEntry(pDir->pCurrEntry);
+			while (!pDir->It.IsEnd() && !nString(pDir->It.GetValue()->GetName()).MatchPattern(pDir->Filter))
+				++pDir->It;
 
-		if (pDir->pCurrEntry)
+		if (!pDir->It.IsEnd())
 		{
-			OutName = pDir->pCurrEntry->GetName(); //???GetFullName()?
-			OutType = pDir->pCurrEntry->GetType() == FSE_DIR ? FSE_DIR : FSE_FILE;
+			OutName = pDir->It.GetValue()->GetName();
+			OutType = pDir->It.GetValue()->GetType() == FSE_DIR ? FSE_DIR : FSE_FILE;
 			OK;
 		}
 	}

@@ -12,11 +12,11 @@ class CTriggerContactCallback: public btCollisionWorld::ContactResultCallback
 protected:
 
 	btCollisionObject*					pSelf;
-	nArray<const btCollisionObject*>&	CollResults;
+	CArray<const btCollisionObject*>&	CollResults;
 
 public:
 
-	CTriggerContactCallback(btCollisionObject* pMe, nArray<const btCollisionObject*>& Results, ushort Group, ushort Mask):
+	CTriggerContactCallback(btCollisionObject* pMe, CArray<const btCollisionObject*>& Results, ushort Group, ushort Mask):
 		pSelf(pMe), CollResults(Results)
 	{
 		m_collisionFilterGroup = Group;
@@ -28,7 +28,7 @@ public:
 									const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
 	{
 		// NB: objects may be duplicated
-		CollResults.Append(colObj0Wrap->getCollisionObject() == pSelf ?
+		CollResults.Add(colObj0Wrap->getCollisionObject() == pSelf ?
 			colObj1Wrap->getCollisionObject() :
 			colObj0Wrap->getCollisionObject());
 		return 0;

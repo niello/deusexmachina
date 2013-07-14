@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <StdDEM.h>
+#include <Data/Hash.h>
 #include <kernel/ntypes.h>
 
 // Simple static string, a wrapper around an LPCSTR
@@ -33,6 +34,7 @@ public:
 	void		Set(LPCSTR Str);
 	LPCSTR		CStr() const { return String; }
 	bool		IsValid() const { return String && *String; }
+	DWORD		Length() const { return Len; }
 
 	operator	DWORD() const { return (DWORD)String; }
 	operator	LPCSTR() const { return String; }
@@ -46,7 +48,6 @@ public:
 	CSimpleString& operator =(LPCSTR Str) { Set(Str); return *this; }
 	CSimpleString& operator =(const CSimpleString& Str) { Set((LPCSTR)Str); return *this; }
 };
-//---------------------------------------------------------------------
 
 inline void CSimpleString::Set(LPCSTR Str)
 {
@@ -68,5 +69,11 @@ inline void CSimpleString::Set(LPCSTR Str)
 //---------------------------------------------------------------------
 
 }
+
+template<> inline unsigned int Hash<Data::CSimpleString>(const Data::CSimpleString& Key)
+{
+	return Hash(Key.CStr(), Key.Length());
+}
+//---------------------------------------------------------------------
 
 #endif

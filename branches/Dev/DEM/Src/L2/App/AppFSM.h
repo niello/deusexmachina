@@ -20,7 +20,7 @@ protected:
 
 	CStrID						CurrState;
 	CStrID						RequestedState;
-	nArray<Ptr<CStateHandler>>	StateHandlers;
+	CArray<Ptr<CStateHandler>>	StateHandlers;
 	CStateHandler*				CurrStateHandler;
 	PParams						TransitionParams;
 
@@ -55,7 +55,7 @@ inline void CAppFSM::RequestState(CStrID NewState, PParams Params)
 
 inline void CAppFSM::AddStateHandler(CStateHandler* pHandler)
 {
-    StateHandlers.Append(pHandler);
+    StateHandlers.Add(pHandler);
     pHandler->OnAttachToApplication();
 }
 //---------------------------------------------------------------------

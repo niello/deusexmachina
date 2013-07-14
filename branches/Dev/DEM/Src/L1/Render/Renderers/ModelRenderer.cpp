@@ -98,7 +98,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-void CModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects)
+void CModelRenderer::AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects)
 {
 	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
@@ -118,7 +118,7 @@ void CModelRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objec
 //---------------------------------------------------------------------
 
 //!!!skip black lights or lights with 0 intensity!
-void CModelRenderer::AddLights(const nArray<Scene::CLight*>& Lights)
+void CModelRenderer::AddLights(const CArray<Scene::CLight*>& Lights)
 {
 	pLights = EnableLighting ? &Lights : NULL;
 }
@@ -184,7 +184,7 @@ void CModelRenderer::Render()
 
 	if (MaxInstanceCount && !InstanceBuffer->IsValid())
 	{
-		nArray<CVertexComponent> InstCmps(4, 0);
+		CArray<CVertexComponent> InstCmps(4, 0);
 		for (int i = 0; i < 4; ++i)
 		{
 			CVertexComponent& Cmp = InstCmps.At(i);
@@ -448,8 +448,8 @@ void CModelRenderer::Render()
 			InstanceBuffer->Unmap();
 
 			//!!!make sure that there are no redundant concatenations inside one frame or at least in succession!
-			nArray<CVertexComponent> InstComponents = pMesh->GetVertexBuffer()->GetVertexLayout()->GetComponents();
-			InstComponents.AppendArray(InstanceBuffer->GetVertexLayout()->GetComponents());
+			CArray<CVertexComponent> InstComponents = pMesh->GetVertexBuffer()->GetVertexLayout()->GetComponents();
+			InstComponents.AddArray(InstanceBuffer->GetVertexLayout()->GetComponents());
 			RenderSrv->SetVertexLayout(RenderSrv->GetVertexLayout(InstComponents));
 			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, InstanceCount); //???don't hardcode instance stream index?
 			InstancingIsActive = true;

@@ -20,7 +20,7 @@ public:
 
 	bool ReadLine(char* pOutValue, DWORD MaxLen = MAX_DWORD);
 	bool ReadLine(nString& OutValue);
-	bool ReadLines(nArray<nString>& OutValues, int Count = -1);
+	bool ReadLines(CArray<nString>& OutValues, int Count = -1);
 	bool ReadAll(nString& OutValue);
 };
 

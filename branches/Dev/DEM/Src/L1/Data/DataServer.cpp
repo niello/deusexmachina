@@ -155,7 +155,7 @@ bool CDataServer::LoadDataSchemes(const nString& FileName)
 		if (!Prm.IsA<PParams>()) FAIL;
 
 		int Idx = DataSchemes.FindIndex(Prm.GetName());
-		if (Idx != INVALID_INDEX) DataSchemes.EraseAt(Idx);
+		if (Idx != INVALID_INDEX) DataSchemes.RemoveAt(Idx);
 
 		PDataScheme Scheme = n_new(CDataScheme);
 		if (!Scheme->Init(*Prm.GetValue<PParams>())) FAIL;

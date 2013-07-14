@@ -54,7 +54,7 @@ protected:
 		void Clear();
 	};
 
-	nArray<CWatched>			Watched;
+	CArray<CWatched>			Watched;
 
 	bool OnClearClick(const CEGUI::EventArgs& e);
 	bool OnAddVarsClick(const CEGUI::EventArgs& e);

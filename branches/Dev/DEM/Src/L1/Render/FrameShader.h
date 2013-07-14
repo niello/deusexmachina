@@ -15,7 +15,7 @@ class CFrameShader: public Core::CRefCounted
 public:
 
 	CStrID			Name;
-	nArray<PPass>	Passes;		//???smartptr?
+	CArray<PPass>	Passes;		//???smartptr?
 	CShaderVarMap	ShaderVars;
 
 // Pass mgmt
@@ -24,12 +24,12 @@ public:
 public:
 
 	bool Init(const Data::CParams& Desc);
-	void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
+	void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights);
 };
 
 typedef Ptr<CFrameShader> PFrameShader;
 
-inline void CFrameShader::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
+inline void CFrameShader::Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights)
 {
 	//!!!PERF: for passes and batches - if shader is the same as set, don't reset it!
 	for (int i = 0; i < Passes.GetCount(); ++i)

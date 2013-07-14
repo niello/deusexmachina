@@ -6,7 +6,7 @@
 // Based on mangalore Util::Blob_(C) 2006 Radon Labs GmbH
 
 #include <kernel/ntypes.h>
-#include <util/Hash.h>
+#include <Data/Hash.h>
 #include <memory.h>
 #include "Type.h"
 

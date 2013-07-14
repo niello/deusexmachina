@@ -126,7 +126,7 @@ public:
 	void				ClearScreen(DWORD Color);
 	void				Draw();
 
-	PVertexLayout		GetVertexLayout(const nArray<CVertexComponent>& Components);
+	PVertexLayout		GetVertexLayout(const CArray<CVertexComponent>& Components);
 	//???PVertexLayout		GetVertexLayout(const nString& Signature);
 	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
 	int					GetFormatBits(EPixelFormat Format);

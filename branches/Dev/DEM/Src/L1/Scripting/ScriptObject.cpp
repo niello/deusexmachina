@@ -224,7 +224,7 @@ bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Event
 {
 	Events::PSub Sub = pDisp->AddHandler(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority));
 	if (!Sub.IsValid()) FAIL;
-	Subscriptions.Append(Sub);
+	Subscriptions.Add(Sub);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -237,7 +237,7 @@ void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, con
 		if (CurrSub->GetEvent() == EventID && CurrSub->GetDispatcher() == pDisp &&
 			((Events::CEventHandlerScript*)CurrSub->GetHandler())->GetFunc() == HandlerFuncName)
 		{
-			Subscriptions.EraseAt(i);
+			Subscriptions.RemoveAt(i);
 			break; //???or scan all array for duplicates?
 		}
 	}

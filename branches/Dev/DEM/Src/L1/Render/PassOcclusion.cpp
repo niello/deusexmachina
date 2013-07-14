@@ -3,7 +3,7 @@
 namespace Render
 {
 
-void CPassOcclusion::Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights)
+void CPassOcclusion::Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights)
 {
 }
 //---------------------------------------------------------------------

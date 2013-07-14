@@ -6,7 +6,7 @@
 
 #include <Core/Ptr.h>
 #include <Data/FourCC.h>
-#include <util/HashTable.h>
+#include <Data/HashTable.h>
 #include <Data/Dictionary.h>
 #include <util/nstring.h>
 

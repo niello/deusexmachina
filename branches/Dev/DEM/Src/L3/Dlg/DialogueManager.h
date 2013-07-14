@@ -40,7 +40,7 @@ public:
 	CDlgNode*	pCurrNode;
 	float		NodeEnterTime;
 	int			LinkIdx;
-	nArray<int>	ValidLinkIndices;		// For Random / Answers nodes
+	CArray<int>	ValidLinkIndices;		// For Random / Answers nodes
 	bool		IsCheckingConditions;
 	bool		Continued;
 
@@ -68,7 +68,7 @@ private:
 	};
 
 	CActiveDlg						ForegroundDlg;
-	nArray<CActiveDlg>				BackgroundDlgs;
+	CArray<CActiveDlg>				BackgroundDlgs;
 
 	CDict<CStrID, PDialogue>	DlgRegistry;
 

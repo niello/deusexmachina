@@ -4,7 +4,7 @@
 
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
-#include <util/HashTable.h>
+#include <Data/HashTable.h>
 #include <Items/ItemTpl.h>
 
 // Item manager loads and keeps track of item templates. Works like factory for CItemTpl

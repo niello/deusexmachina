@@ -41,7 +41,7 @@ void CParams::Merge(const CParams& Other, int Method)
 				else pMyPrm->SetValue(Prm.GetRawValue());
 			}
 		}
-		else if (Method & Merge_AddNew) Params.Append(Prm);
+		else if (Method & Merge_AddNew) Params.Add(Prm);
 	}
 }
 //---------------------------------------------------------------------

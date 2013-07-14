@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_STACK_H__
 #define __DEM_L1_STACK_H__
 
-#include <util/narray.h>
+#include <Data/Array.h>
 
 // Array-based stack class
 
@@ -11,11 +11,11 @@ class CStack
 {
 private:
 
-	nArray<T> Storage;
+	CArray<T> Storage;
 
 public:
 
-	void		Push(const T& Elm) { Storage.Append(Elm); }
+	void		Push(const T& Elm) { Storage.Add(Elm); }
 	T			Pop();
 	const T&	Top() const { return Storage.Back(); }
 	bool		IsEmpty() const { return Storage.IsEmpty(); }
@@ -26,7 +26,7 @@ inline T CStack<T>::Pop()
 {
 	if (Storage.IsEmpty()) return T();
 	T Elm = Storage.Back();
-	Storage.EraseAt(Storage.GetCount() - 1);
+	Storage.RemoveAt(Storage.GetCount() - 1);
 	return Elm;
 }
 //---------------------------------------------------------------------

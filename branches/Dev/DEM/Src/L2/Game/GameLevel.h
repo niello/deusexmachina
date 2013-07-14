@@ -57,7 +57,7 @@ protected:
 	nString						Name;
 	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
-	nArray<CStrID>				SelectedEntities;
+	CArray<CStrID>				SelectedEntities;
 
 	Scene::PScene				Scene;
 	Physics::PPhysicsWorld		PhysWorld;
@@ -81,21 +81,21 @@ public:
 
 	// Screen queries
 	bool					GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
-	DWORD					GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const;
+	DWORD					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const;
 	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
 	bool					GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 
 	// Physics-based queries
-	DWORD					GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const;
-	DWORD					GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const;
+	DWORD					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
+	DWORD					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
 
 	//!!!fire events!
-	void					AddToSelection(CStrID EntityID) { if (!IsSelected(EntityID)) SelectedEntities.Append(EntityID); }
+	void					AddToSelection(CStrID EntityID) { if (!IsSelected(EntityID)) SelectedEntities.Add(EntityID); }
 	bool					RemoveFromSelection(CStrID EntityID) { return SelectedEntities.RemoveByValue(EntityID); }
 	void					ClearSelection() { SelectedEntities.Clear(); }
-	const nArray<CStrID>&	GetSelection() const { return SelectedEntities; }
+	const CArray<CStrID>&	GetSelection() const { return SelectedEntities; }
 	DWORD					GetSelectedCount() const { return SelectedEntities.GetCount(); }
 	bool					IsSelected(CStrID EntityID) const { return SelectedEntities.Contains(EntityID); }
 

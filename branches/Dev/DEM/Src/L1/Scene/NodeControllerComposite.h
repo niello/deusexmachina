@@ -29,7 +29,7 @@ protected:
 	};
 
 	// Sorted by priority. Search by controller is linear, but there are 2-3 sources in the most cases.
-	nArray<CSource> Sources;
+	CArray<CSource> Sources;
 
 public:
 

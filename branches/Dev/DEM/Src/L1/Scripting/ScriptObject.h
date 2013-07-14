@@ -3,7 +3,7 @@
 #define __DEM_L1_SCRIPT_OBJ_H__
 
 #include <Core/RefCounted.h>
-#include <util/narray.h>
+#include <Data/Array.h>
 #include <Events/Subscription.h>
 
 #undef RegisterClass
@@ -35,7 +35,7 @@ protected:
 
 	nString					Name;
 	nString					Table;
-	nArray<Events::PSub>	Subscriptions;
+	CArray<Events::PSub>	Subscriptions;
 
 	CScriptObject() {}
 
@@ -59,7 +59,7 @@ public:
 	EExecStatus		RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
 	EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal = NULL) const;
 	EExecStatus		RunFunctionOneArg(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
-	//int				RunFunction(LPCSTR pFuncName, const nArray<LPCSTR>& LuaArgs);
+	//int				RunFunction(LPCSTR pFuncName, const CArray<LPCSTR>& LuaArgs);
 	//int				RunFunction(LPCSTR pFuncName, CDataArray);????
 
 	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority);

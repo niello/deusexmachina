@@ -31,7 +31,7 @@ CDlgNode* CDlgNodeAnswers::Trigger(CActiveDlg& Dlg)
 			{
 				n_assert2(Links[Dlg.LinkIdx]->pTargetNode->IsA(CDlgNodePhrase::RTTI), "Answer dlg node should contain ONLY phrase nodes!");
 				
-				Dlg.ValidLinkIndices.Append(Dlg.LinkIdx);
+				Dlg.ValidLinkIndices.Add(Dlg.LinkIdx);
 
 				//???send link index too?
 				PParams P = n_new(CParams);

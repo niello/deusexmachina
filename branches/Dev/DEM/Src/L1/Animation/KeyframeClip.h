@@ -18,15 +18,15 @@ class CKeyframeClip: public CAnimClip
 
 protected:
 
-	nArray<CKeyframeTrack>	Tracks;		//???use fixed array?
+	CArray<CKeyframeTrack>	Tracks;		//???use fixed array?
 
 public:
 
 	CKeyframeClip(CStrID ID): CAnimClip(ID) {}
 	virtual ~CKeyframeClip() { if (IsLoaded()) Unload(); }
 
-	bool							Setup(	const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
-											const nArray<CEventTrack>* _EventTracks, float Length);
+	bool							Setup(	const CArray<CKeyframeTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
+											const CArray<CEventTrack>* _EventTracks, float Length);
 	virtual void					Unload();
 
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;

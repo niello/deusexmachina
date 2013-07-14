@@ -35,7 +35,7 @@ protected:
 	//!!!if VB & IB are shared, need to store offset (and mb total size) here!
 	PVertexBuffer		VB;
 	PIndexBuffer		IB;
-	nArray<CMeshGroup>	Groups;
+	CArray<CMeshGroup>	Groups;
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 
@@ -44,7 +44,7 @@ public:
 	CMesh(CStrID ID): CResource(ID) {}
 	virtual ~CMesh() { if (IsLoaded()) Unload(); }
 
-	bool				Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups);
+	bool				Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const CArray<CMeshGroup>& MeshGroups);
 	virtual void		Unload();
 
 	PVertexBuffer		GetVertexBuffer() const { return VB; }

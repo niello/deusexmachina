@@ -16,8 +16,8 @@ class CControlLayout: public Core::CRefCounted
 private:
 
 	bool						Enabled;
-	nArray<CInputMappingEvent>	EventMappings;
-	nArray<CInputMappingState>	StateMappings;
+	CArray<CInputMappingEvent>	EventMappings;
+	CArray<CInputMappingState>	StateMappings;
 
 	//???listen ResetInput?
 

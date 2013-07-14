@@ -30,8 +30,8 @@ public:
 	virtual ~IRenderer() {}
 
 	virtual bool Init(const Data::CParams& Desc) = 0;
-	virtual void AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects) = 0;
-	virtual void AddLights(const nArray<Scene::CLight*>& Lights) = 0;
+	virtual void AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects) = 0;
+	virtual void AddLights(const CArray<Scene::CLight*>& Lights) = 0;
 	virtual void Render() = 0;
 };
 

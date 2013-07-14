@@ -90,7 +90,7 @@
 //{
 //	n_assert(pResource);
 //	n_assert(!FindResource(pResource->GetName()));
-//	Resources.Append(pResource);
+//	Resources.Add(pResource);
 //}
 ////---------------------------------------------------------------------
 //

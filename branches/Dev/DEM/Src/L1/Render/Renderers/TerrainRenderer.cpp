@@ -87,7 +87,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
 	if (!FeatFlags && !EnableLighting) FeatFlags = FeatFlagDefault;
 
-	nArray<CVertexComponent> PatchVC;
+	CArray<CVertexComponent> PatchVC;
 	CVertexComponent& Cmp = *PatchVC.Reserve(1);
 	Cmp.Format = CVertexComponent::Float2;
 	Cmp.Semantic = CVertexComponent::Position;
@@ -95,7 +95,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	Cmp.Stream = 0;
 	PatchVertexLayout = RenderSrv->GetVertexLayout(PatchVC);
 
-	nArray<CVertexComponent> InstCmps(2, 0);
+	CArray<CVertexComponent> InstCmps(2, 0);
 
 	// ScaleOffset
 	CVertexComponent* pCmp = InstCmps.Reserve(2);
@@ -111,7 +111,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	pCmp->Index = 1;
 	pCmp->Stream = 1;
 
-	PatchVC.AppendArray(InstCmps);
+	PatchVC.AddArray(InstCmps);
 	FinalVertexLayout = RenderSrv->GetVertexLayout(PatchVC);
 
 	//???add InitialInstanceCount + AllowGrowInstanceBuffer or MaxInstanceCount or both?
@@ -126,18 +126,18 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects)
+void CTerrainRenderer::AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects)
 {
 	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
 		//???use buckets instead?
 		if (!Objects[i]->IsA<Scene::CTerrain>()) continue;
-		TerrainObjects.Append((Scene::CTerrain*)Objects[i]);
+		TerrainObjects.Add((Scene::CTerrain*)Objects[i]);
 	}
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::AddLights(const nArray<Scene::CLight*>& Lights)
+void CTerrainRenderer::AddLights(const CArray<Scene::CLight*>& Lights)
 {
 	pLights = EnableLighting ? &Lights : NULL;
 }
@@ -566,7 +566,7 @@ CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
 			}
 		IB->Unmap();
 
-		nArray<CMeshGroup> MeshGroups(1, 0);
+		CArray<CMeshGroup> MeshGroups(1, 0);
 		CMeshGroup& Group = *MeshGroups.Reserve(1);
 		Group.Topology = TriList;
 		Group.FirstVertex = 0;

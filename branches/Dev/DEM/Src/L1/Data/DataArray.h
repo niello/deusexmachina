@@ -10,12 +10,12 @@
 namespace Data
 {
 
-class CDataArray: public nArray<CData>, public Core::CRefCounted
+class CDataArray: public CArray<CData>, public Core::CRefCounted
 {
 public:
 
 	template<class T>
-	void			FillArray(nArray<T>& OutArray) const;
+	void			FillArray(CArray<T>& OutArray) const;
 
 	CData&			Get(int Index) { return At(Index); }
 	const CData&	Get(int Index) const { return operator [](Index); }
@@ -29,10 +29,10 @@ public:
 
 typedef Ptr<CDataArray> PDataArray;
 
-template<class T> inline void CDataArray::FillArray(nArray<T>& OutArray) const
+template<class T> inline void CDataArray::FillArray(CArray<T>& OutArray) const
 {
 	for (CIterator It = Begin(); It != End(); It++)
-		OutArray.Append((*It).GetValue<T>());
+		OutArray.Add((*It).GetValue<T>());
 }
 //---------------------------------------------------------------------
 

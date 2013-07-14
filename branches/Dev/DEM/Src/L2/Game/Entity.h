@@ -56,7 +56,7 @@ public:
 	void						BeginNewAttrs(DWORD Count) { Attrs.BeginAdd(Count); }
 	template<class T> void		AddNewAttr(CStrID ID, const T& Value) { Attrs.Add(ID, Value); }
 	void						EndNewAttrs() { Attrs.EndAdd(); }
-	bool						DeleteAttr(CStrID ID) { return Attrs.Erase(ID); }
+	bool						DeleteAttr(CStrID ID) { return Attrs.Remove(ID); }
 	template<class T> void		SetAttr(CStrID ID, const T& Value);
 	template<> void				SetAttr(CStrID ID, const Data::CData& Value);
 	template<class T> const T&	GetAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }

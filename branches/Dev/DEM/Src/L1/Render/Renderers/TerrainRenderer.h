@@ -55,7 +55,7 @@ protected:
 
 	float							VisibilityRange;
 	float							MorphStartRatio;
-	nArray<CMorphInfo>				MorphConsts;
+	CArray<CMorphInfo>				MorphConsts;
 
 	CDict<DWORD, CMesh*>		PatchMeshes;
 	PVertexLayout					PatchVertexLayout;
@@ -64,8 +64,8 @@ protected:
 	PVertexBuffer					InstanceBuffer;
 	DWORD							MaxInstanceCount;
 
-	nArray<Scene::CTerrain*>		TerrainObjects;
-	const nArray<Scene::CLight*>*	pLights;
+	CArray<Scene::CTerrain*>		TerrainObjects;
+	const CArray<Scene::CLight*>*	pLights;
 
 	CShader::HVar					hHeightMap;
 	CShader::HVar					hWorldToHM;
@@ -88,8 +88,8 @@ public:
 	CTerrainRenderer();
 
 	virtual bool	Init(const Data::CParams& Desc);
-	virtual void	AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);
-	virtual void	AddLights(const nArray<Scene::CLight*>& Lights);
+	virtual void	AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects);
+	virtual void	AddLights(const CArray<Scene::CLight*>& Lights);
 	virtual void	Render();
 
 	void			SetVisibilityRange(float Range) { n_assert(Range > 0.f); VisibilityRange = Range; }

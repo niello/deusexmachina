@@ -18,7 +18,7 @@ class CDlgNode: public Core::CRefCounted
 
 public:
 
-	nArray<Ptr<CDlgLink>> Links; //???!!!or nonptr array of structs declared here?!
+	CArray<Ptr<CDlgLink>> Links; //???!!!or nonptr array of structs declared here?!
 
 	virtual void		OnEnter(CActiveDlg& Dlg) {}
 	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);

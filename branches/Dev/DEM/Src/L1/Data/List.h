@@ -64,29 +64,34 @@ public:
 	CList(const CList<T>& Other): pFront(NULL), pBack(NULL) { AddList(Other); }
 	~CList() { Clear(); }
 
-	bool		IsEmpty() const { return !pFront; }
-	DWORD		GetCount() const { DWORD Size = 0; for (CIterator It = Begin(); It != End(); ++It) ++Size; return Size; }
-	void		Clear() { while (pBack) RemoveBack(); }
-	void		AddList(const CList<T>& Other);
-	CIterator	AddAfter(CIterator It, const T& Val);
+	CIterator	Add(const T& Val) { return AddAfter(pBack, Val); }
 	CIterator	AddBefore(CIterator It, const T& Val);
+	CIterator	AddAfter(CIterator It, const T& Val);
 	CIterator	AddFront(const T& Val) { return AddBefore(pFront, Val); }
 	CIterator	AddBack(const T& Val) { return AddAfter(pBack, Val); }
-	T			RemoveFront() { n_assert_dbg(pFront); return Remove(pFront); }
-	T			RemoveBack() { n_assert_dbg(pBack); return Remove(pBack); }
-	T			Remove(CIterator It);
+	void		AddList(const CList<T>& Other);
+
+	void		RemoveFront(T* pOutValue = NULL) { n_assert_dbg(pFront); Remove(pFront, pOutValue); }
+	void		RemoveBack(T* pOutValue = NULL) { n_assert_dbg(pBack); Remove(pBack, pOutValue); }
+	void		Remove(CIterator It, T* pOutValue = NULL);
+	bool		RemoveByValue(const T& Val);
+	void		Clear() { while (pBack) RemoveBack(); }
+
 	T&			Front() const { n_assert_dbg(pFront); return pFront->Value; }
 	T&			Back() const { n_assert_dbg(pBack); return pBack->Value; }
 	CIterator	Begin() const { return CIterator(pFront); }
 	CIterator	End() const { return NULL; }
-	CIterator	Find(const T& Val, CIterator ItStart) const;
+
+	CIterator	Find(const T& Val, CIterator ItStart = Begin()) const;
+
+	bool		IsEmpty() const { return !pFront; }
+	DWORD		GetCount() const { DWORD Size = 0; for (CIterator It = Begin(); It != End(); ++It) ++Size; return Size; }
 
 	void operator =(const CList<T>& Other) { Clear(); AddList(); }
 };
 
 template<class T>
-typename CList<T>::CIterator
-CList<T>::CIterator::operator ++(int)
+typename CList<T>::CIterator CList<T>::CIterator::operator ++(int)
 {
 	n_assert_dbg(pNode);
 	CIterator Tmp(pNode);
@@ -96,8 +101,7 @@ CList<T>::CIterator::operator ++(int)
 //---------------------------------------------------------------------
 
 template<class T>
-typename CList<T>::CIterator
-CList<T>::CIterator::operator--(int)
+typename CList<T>::CIterator CList<T>::CIterator::operator --(int)
 {
 	n_assert_dbg(pNode);
 	CIterator Tmp(pNode);    
@@ -161,7 +165,7 @@ typename CList<T>::CIterator CList<T>::AddBefore(CIterator It, const T& Val)
 //---------------------------------------------------------------------
 
 template<class T>
-T CList<T>::Remove(CIterator It)
+void CList<T>::Remove(CIterator It, T* pOutValue)
 {
 	n_assert_dbg(It.pNode);
 	CNode* pNode = It.pNode;
@@ -171,9 +175,8 @@ T CList<T>::Remove(CIterator It)
 	if (pNode == pBack) pBack = pNode->pPrev;
 	pNode->pNext = NULL;
 	pNode->pPrev = NULL;
-	T Val = pNode->Value;
+	if (pOutValue) *pOutValue = pNode->Value;
 	n_delete(pNode);
-	return Val;
 }
 //---------------------------------------------------------------------
 

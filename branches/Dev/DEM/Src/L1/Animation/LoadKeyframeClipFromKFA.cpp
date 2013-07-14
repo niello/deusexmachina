@@ -19,8 +19,8 @@ bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 
 	float Duration = Reader.Read<float>();
 
-	nArray<CKeyframeTrack> Tracks;
-	nArray<CStrID> TrackMapping;
+	CArray<CKeyframeTrack> Tracks;
+	CArray<CStrID> TrackMapping;
 
 	DWORD TrackCount = Reader.Read<DWORD>();
 	CStrID* pMap = TrackMapping.Reserve(TrackCount);
@@ -41,7 +41,7 @@ bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 	}
 
 	//!!!load event tracks!
-	nArray<CEventTrack> EventTracks;
+	CArray<CEventTrack> EventTracks;
 
 	//!!!DBG TMP!
 	CEventTrack& ET = *EventTracks.Reserve(1);

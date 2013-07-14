@@ -20,7 +20,7 @@ protected:
 
 	btDiscreteDynamicsWorld*	pBtDynWorld;
 	float						StepTime;
-	nArray<PPhysicsObj>			Objects;
+	CArray<PPhysicsObj>			Objects;
 
 	// Cross-dependence of collision objects and the level.
 	// Only objects know, how to add them, but only the level knows, when it is killed.
@@ -43,7 +43,7 @@ public:
 	bool	GetClosestRayContact(const vector3& Start, const vector3& End, ushort Group, ushort Mask, vector3* pOutPos = NULL, PPhysicsObj* pOutObj = NULL) const;
 	DWORD	GetAllRayContacts(const vector3& Start, const vector3& End, ushort Group, ushort Mask) const;
 
-	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, nArray<PEntity>& Result);
+	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, CArray<PEntity>& Result);
 
 	void	SetStepTime(float Secs) { n_assert(Secs > 0.f); StepTime = Secs; }
 	float	GetStepTime() const { return StepTime; }

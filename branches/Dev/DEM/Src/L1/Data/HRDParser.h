@@ -45,10 +45,10 @@ private:
 		T_STRID
 	};
 	
-	nArray<nString>	TableID;
-	nArray<nString>	TableRW;
-	nArray<nString>	TableDlm;
-	nArray<CData>	TableConst;
+	CArray<nString>	TableID;
+	CArray<nString>	TableRW;
+	CArray<nString>	TableDlm;
+	CArray<CData>	TableConst;
 
 	LPCSTR			LexerCursor;
 	LPCSTR			EndOfBuffer;
@@ -61,31 +61,31 @@ private:
 					
 	int				ParserCursor;
 	
-	//???nArray<CToken> Tokens;?
+	//???CArray<CToken> Tokens;?
 	
 	// Lexical analysis
 	//!!!void SetupRWAndDlm();
-	bool Tokenize(nArray<CToken>& Tokens);
-	bool LexProcessID(nArray<CToken>& Tokens);
-	bool LexProcessHex(nArray<CToken>& Tokens);
-	bool LexProcessFloat(nArray<CToken>& Tokens);
-	bool LexProcessNumeric(nArray<CToken>& Tokens);
-	bool LexProcessString(nArray<CToken>& Tokens, char QuoteChar = '"');
-	bool LexProcessBigString(nArray<CToken>& Tokens);
-	bool LexProcessDlm(nArray<CToken>& Tokens);
+	bool Tokenize(CArray<CToken>& Tokens);
+	bool LexProcessID(CArray<CToken>& Tokens);
+	bool LexProcessHex(CArray<CToken>& Tokens);
+	bool LexProcessFloat(CArray<CToken>& Tokens);
+	bool LexProcessNumeric(CArray<CToken>& Tokens);
+	bool LexProcessString(CArray<CToken>& Tokens, char QuoteChar = '"');
+	bool LexProcessBigString(CArray<CToken>& Tokens);
+	bool LexProcessDlm(CArray<CToken>& Tokens);
 	bool LexProcessCommentLine();
 	bool LexProcessCommentBlock();
 	void DlmMatchChar(char Char, int Index, int Start, int End, int& MatchStart, int& MatchEnd);
 	void SkipSpaces();
-	void AddConst(nArray<CToken>& Tokens, const nString& Const, EType Type);
+	void AddConst(CArray<CToken>& Tokens, const nString& Const, EType Type);
 	
 	// Syntax analysis
-	bool ParseTokenStream(const nArray<CToken>& Tokens, PParams Output);
-	bool ParseParam(const nArray<CToken>& Tokens, PParams Output);
-	bool ParseData(const nArray<CToken>& Tokens, CData& Output);
-	bool ParseArray(const nArray<CToken>& Tokens, PDataArray Output);
-	bool ParseSection(const nArray<CToken>& Tokens, PParams Output);
-	bool ParseVector(const nArray<CToken>& Tokens, CData& Output);
+	bool ParseTokenStream(const CArray<CToken>& Tokens, PParams Output);
+	bool ParseParam(const CArray<CToken>& Tokens, PParams Output);
+	bool ParseData(const CArray<CToken>& Tokens, CData& Output);
+	bool ParseArray(const CArray<CToken>& Tokens, PDataArray Output);
+	bool ParseSection(const CArray<CToken>& Tokens, PParams Output);
+	bool ParseVector(const CArray<CToken>& Tokens, CData& Output);
 
 public:
 

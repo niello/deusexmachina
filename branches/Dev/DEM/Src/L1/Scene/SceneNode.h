@@ -55,7 +55,7 @@ protected:
 	matrix44				WorldMatrix;
 
 	Data::CFlags			Flags; // ?UniformScale?, LockTransform
-	nArray<PNodeAttribute>	Attrs; //???or list? List seems to be better
+	CArray<PNodeAttribute>	Attrs; //???or list? List seems to be better
 
 	PNodeController			Controller;
 
@@ -148,7 +148,7 @@ inline CSceneNode::~CSceneNode()
 
 inline void CSceneNode::RemoveChild(CSceneNode& Node)
 {
-	n_assert(Node.pParent == this && Child.Erase(Node.Name));
+	n_assert(Node.pParent == this && Child.Remove(Node.Name));
 	Node.pParent = NULL;
 }
 //---------------------------------------------------------------------

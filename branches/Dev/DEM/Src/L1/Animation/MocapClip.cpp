@@ -6,8 +6,8 @@ namespace Anim
 {
 __ImplementResourceClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
 
-bool CMocapClip::Setup(const nArray<CMocapTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
-					   const nArray<CEventTrack>* _EventTracks, vector4* _pKeys,
+bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
+					   const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,
 					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
 {
 	n_assert(_pKeys);

@@ -22,8 +22,8 @@ public:
 	//CUIRenderer(): pLights(NULL), FeatFlags(0), DistanceSorting(Sort_None), EnableLighting(false) {}
 
 	virtual bool	Init(const Data::CParams& Desc) { OK; }
-	virtual void	AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects) {}
-	virtual void	AddLights(const nArray<Scene::CLight*>& Lights) {}
+	virtual void	AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects) {}
+	virtual void	AddLights(const CArray<Scene::CLight*>& Lights) {}
 	virtual void	Render();
 };
 

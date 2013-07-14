@@ -160,7 +160,7 @@ bool CSceneNode::AddAttr(CNodeAttribute& Attr)
 	if (Attr.pNode) FAIL;
 	Attr.pNode = this;
 	if (!Attr.OnAttachToNode(this)) FAIL;
-	Attrs.Append(&Attr);
+	Attrs.Add(&Attr);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -180,7 +180,7 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 	CNodeAttribute& Attr = *Attrs[Idx];
 	Attr.OnDetachFromNode();
 	Attr.pNode = NULL;
-	Attrs.EraseAt(Idx);
+	Attrs.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
 

@@ -12,13 +12,13 @@
 namespace AI
 {
 typedef CLinkedListSet<const Core::CRTTI*, PMemFact> CMemFactListSet;
-typedef CMemFactListSet::CElement CMemFactNode;
+typedef CMemFactListSet::CIterator CMemFactNode;
 
 class CMemSystem //: public Core::CRefCounted
 {
 protected:
 
-	//typedef CDict<const Core::CRTTI*, nArray<class CSensor*>> CGroupedSensors;
+	//typedef CDict<const Core::CRTTI*, CArray<class CSensor*>> CGroupedSensors;
 
 	CActor*			pActor;
 	
@@ -38,7 +38,7 @@ public:
 	template<class T>
 	T*					AddFact();
 	CMemFact*			FindFact(const CMemFact& Pattern, CFlags FieldMask = CFlags(0xffffffff));
-	CMemFactNode*		GetFactsByType(const Core::CRTTI& Type) { return Facts.GetHead(&Type); }
+	CMemFactNode		GetFactsByType(const Core::CRTTI& Type) { return Facts.GetHead(&Type); }
 
 	//???GetTotalConfidence(const Core::CRTTI& Type)?
 };

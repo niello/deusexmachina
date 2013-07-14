@@ -120,8 +120,8 @@ protected:
 
 	DWORD							LightFeatFlags[MaxLightsPerObject];
 
-	nArray<CModelRecord>			Models;
-	const nArray<Scene::CLight*>*	pLights; //???!!!not ptr?!
+	CArray<CModelRecord>			Models;
+	const CArray<Scene::CLight*>*	pLights; //???!!!not ptr?!
 
 	//???both to light?
 	bool			IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light);
@@ -132,8 +132,8 @@ public:
 	CModelRenderer(): pLights(NULL), FeatFlags(0), DistanceSorting(Sort_None), EnableLighting(false) {}
 
 	virtual bool	Init(const Data::CParams& Desc);
-	virtual void	AddRenderObjects(const nArray<Scene::CRenderObject*>& Objects);
-	virtual void	AddLights(const nArray<Scene::CLight*>& Lights);
+	virtual void	AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects);
+	virtual void	AddLights(const CArray<Scene::CLight*>& Lights);
 	virtual void	Render();
 };
 

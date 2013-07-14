@@ -79,14 +79,14 @@ PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const nString&
 		}
 		n_assert(NewNode.IsValid());
 		LoadedNodes.Add(Node.GetName(), NewNode);
-		Dlg->Nodes.Append(NewNode);
+		Dlg->Nodes.Add(NewNode);
 	}
 	
 	int	Idx = Params.IndexOf(CStrID("StartNode"));
 	if (Idx == INVALID_INDEX) Dlg->StartNode = n_new(CDlgNode);
 	else Dlg->StartNode = LoadedNodes[CStrID(Params.Get(Idx).GetValue<nString>().CStr())];
 	n_assert(Dlg->StartNode);
-	Dlg->Nodes.Append(Dlg->StartNode);
+	Dlg->Nodes.Add(Dlg->StartNode);
 
 	bool UsesScript = false;
 
@@ -119,7 +119,7 @@ PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const nString&
 			if (!UsesScript && NewLink->Action.IsValid()) UsesScript = true;
 		}
 
-		From->Links.Append(NewLink);
+		From->Links.Add(NewLink);
 	}
 
 	if (UsesScript)
@@ -237,7 +237,7 @@ void CDialogueManager::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool
 	}
 	else
 	{
-		BackgroundDlgs.Append(NewDlg);
+		BackgroundDlgs.Add(NewDlg);
 		BackgroundDlgs.Back().EnterNode(BackgroundDlgs.Back().Dlg->StartNode);
 	}
 }
@@ -277,7 +277,7 @@ void CDialogueManager::Trigger()
 		}
 	}
 
-	for (nArray<CActiveDlg>::CIterator pDlg = BackgroundDlgs.Begin(); pDlg != BackgroundDlgs.End(); )
+	for (CArray<CActiveDlg>::CIterator pDlg = BackgroundDlgs.Begin(); pDlg != BackgroundDlgs.End(); )
 	{
 		CDlgNode* pNewNode = pDlg->Trigger();
 		while (pNewNode != pDlg->pCurrNode)
@@ -289,7 +289,7 @@ void CDialogueManager::Trigger()
 			}
 			else
 			{
-				BackgroundDlgs.Erase(pDlg);
+				BackgroundDlgs.Remove(pDlg);
 				pDlg--;
 				break;
 			}

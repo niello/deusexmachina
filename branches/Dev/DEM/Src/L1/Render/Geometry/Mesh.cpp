@@ -7,7 +7,7 @@ namespace Render
 {
 __ImplementResourceClass(Render::CMesh, 'MESH', Resources::CResource);
 
-bool CMesh::Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const nArray<CMeshGroup>& MeshGroups)
+bool CMesh::Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const CArray<CMeshGroup>& MeshGroups)
 {
 	if (!VertexBuffer || !MeshGroups.GetCount()) FAIL;
 	VB = VertexBuffer;

@@ -22,7 +22,7 @@ class CVideoServer: public Core::CRefCounted
 
 protected:
 
-	nArray<CVideoPlayer*>	Players;
+	CArray<CVideoPlayer*>	Players;
 
 	bool					_IsOpen;
 	bool					_IsPlaying;

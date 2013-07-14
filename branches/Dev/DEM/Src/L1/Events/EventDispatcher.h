@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_EVENT_DISPATCHER_H__
 #define __DEM_L1_EVENT_DISPATCHER_H__
 
-#include <util/HashTable.h>
+#include <Data/HashTable.h>
 #include "Subscription.h"
 #include "Event.h"
 #include "EventNative.h"
@@ -35,7 +35,7 @@ protected:
 	CEventNode* PendingEventsTail; // to preserve events' fire order, insert to the end of the list
 	CEventNode* EventsToAdd;
 
-	// can use sorted array instead of nList & implement subscription priority
+	// can use sorted array instead of list & implement subscription priority
 	CHashTable<CEventID, PEventHandler> Subscriptions;
 
 	DWORD	ScheduleEvent(CEventBase* Event, float RelTime);

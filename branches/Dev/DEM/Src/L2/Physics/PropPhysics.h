@@ -23,8 +23,8 @@ class CPropPhysics: public Game::CProperty
 
 protected:
 
-	nArray<Physics::PNodeControllerRigidBody>	Ctlrs;
-	nArray<Physics::PNodeAttrCollision>			Attrs;
+	CArray<Physics::PNodeControllerRigidBody>	Ctlrs;
+	CArray<Physics::PNodeAttrCollision>			Attrs;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

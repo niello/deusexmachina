@@ -15,7 +15,7 @@ class CPassGeometry: public CPass
 {
 protected:
 
-	nArray<PRenderer>	BatchRenderers;
+	CArray<PRenderer>	BatchRenderers;
 
 // Input:
 // Geometry, lights (if lighting is enabled)
@@ -30,7 +30,7 @@ protected:
 public:
 
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets);
-	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights);
+	virtual void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights);
 };
 
 }

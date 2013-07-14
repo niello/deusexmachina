@@ -28,7 +28,7 @@ static void GetTextFromCell(tinyxml2::XMLElement* pCell, nString& Text)
 		{
 			tinyxml2::XMLHandle hFont(pFont);
 			tinyxml2::XMLText* pFontText = hFont.FirstChild().ToText();
-			if (pFontText) Text.Append(pFontText->Value());
+			if (pFontText) Text.Add(pFontText->Value());
 		}
 	}
 }

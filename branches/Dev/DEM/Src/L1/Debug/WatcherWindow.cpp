@@ -154,11 +154,11 @@ bool CWatcherWindow::OnListKeyDown(const CEGUI::EventArgs& e)
 				pList->setItemSelectState(CEGUI::MCLGridRef(RowIdx, COL_NAME), true);
 			}
 			
-			for (nArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++)
+			for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++)
 				if (pSel == It->pNameItem)
 				{
 					It->Clear();
-					Watched.Erase(It);
+					Watched.Remove(It);
 					break;
 				}
 			
@@ -193,7 +193,7 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 	bool CheckMatch = (pPattern && *pPattern && strcmp(pPattern, "*"));
 
 	int i = 0;
-	for (nArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++, ++i)
+	for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++, ++i)
 	{
 		if (!CheckMatch || n_strmatch(It->VarName, pPattern))
 		{

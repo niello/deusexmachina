@@ -48,7 +48,7 @@ bool CIOServer::MountNPK(const nString& NPKPath, const nString& Root)
 	else RealRoot = AbsNPKPath.ExtractDirName();
 
 	if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
-	FS.Append(NewFS);
+	FS.Add(NewFS);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -262,7 +262,7 @@ void CIOServer::SetAssign(const nString& Assign, const nString& Path)
 	nString& PathString = Assigns.At(RealAssign.CStr());
 	PathString = Path;
 	PathString.ConvertBackslashes();
-	if (PathString[PathString.Length() - 1] != '/') PathString.Append('/');
+	if (PathString[PathString.Length() - 1] != '/') PathString.Add('/');
 }
 //---------------------------------------------------------------------
 

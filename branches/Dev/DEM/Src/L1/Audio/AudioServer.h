@@ -35,7 +35,7 @@ private:
 	bool						_IsOpen;
 	bool						_IsMuted;
 	//PWaveBank					WaveBank;
-	nArray<PAudioEntity>		Entities;
+	CArray<PAudioEntity>		Entities;
 
 	struct CVolumeRecord
 	{

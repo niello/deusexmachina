@@ -89,11 +89,11 @@ protected:
 	ID3DXFont*				pD3DXFont;
 	ID3DXSprite*			pD3DXSprite;
 
-	nArray<CDDShapeInst>	ShapeInsts[ShapeCount];
-	nArray<CDDVertex>		Points;
-	nArray<CDDVertex>		Lines;
-	nArray<CDDVertex>		Tris;
-	nArray<CDDText>			Texts;
+	CArray<CDDShapeInst>	ShapeInsts[ShapeCount];
+	CArray<CDDVertex>		Points;
+	CArray<CDDVertex>		Lines;
+	CArray<CDDVertex>		Tris;
+	CArray<CDDText>			Texts;
 
 public:
 

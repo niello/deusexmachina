@@ -226,7 +226,7 @@ void CRenderServer::SetupPresentParams()
 		if (DisplayMode.PixelFormat == D3DFMT_UNKNOWN)
 			DisplayMode.PixelFormat = D3DFMT_X8R8G8B8;
 
-		nArray<CDisplayMode> Modes;
+		CArray<CDisplayMode> Modes;
 		Display.GetAvailableDisplayModes((CDisplay::EAdapter)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
 		if (Modes.FindIndex(DisplayMode) == INVALID_INDEX)
 		{
@@ -572,7 +572,7 @@ void CRenderServer::Draw()
 }
 //---------------------------------------------------------------------
 
-PVertexLayout CRenderServer::GetVertexLayout(const nArray<CVertexComponent>& Components)
+PVertexLayout CRenderServer::GetVertexLayout(const CArray<CVertexComponent>& Components)
 {
 	if (!Components.GetCount()) return NULL;
 	CStrID Signature = CVertexLayout::BuildSignature(Components);

@@ -41,7 +41,7 @@ void CStaticEnvManager::DeleteStaticObject(int Idx)
 {
 	CStaticObject& Obj = *Objects.ValueAt(Idx);
 	if (Obj.IsValid()) Obj.Term();
-	Objects.EraseAt(Idx);
+	Objects.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
 

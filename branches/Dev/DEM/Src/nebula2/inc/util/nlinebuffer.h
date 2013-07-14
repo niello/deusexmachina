@@ -20,7 +20,7 @@ private:
 
 		void		Set(char* p, int len);
 		void		Reset() { n_assert(line); line[0] = 0; act_pos = 0; }
-		const char*	Append(const char* s);
+		const char*	Add(const char* s);
 	};
 
 	enum
@@ -65,7 +65,7 @@ inline void nLineBuffer::nLine::Set(char* p, int len)
 // If new line, a pointer to the next char is returned, otherwise NULL.
 // A '\r' in the string rewinds the cursor to the start of the line. If the
 // string buffer is full, a 0 is appended in any case. Newlines are not copied.
-inline const char* nLineBuffer::nLine::Append(const char* s)
+inline const char* nLineBuffer::nLine::Add(const char* s)
 {
 	n_assert(s);
 
@@ -121,7 +121,7 @@ inline nLineBuffer::nLineBuffer()
 inline void nLineBuffer::Put(const char* s)
 {
 	const char *cont = s;
-	while (cont && (*cont) && (cont = Lines[HeadLine].Append(cont)))
+	while (cont && (*cont) && (cont = Lines[HeadLine].Add(cont)))
 	{
 		// Line ends with a newline (\n) so switch to next line
 		HeadLine = NextLine(HeadLine);

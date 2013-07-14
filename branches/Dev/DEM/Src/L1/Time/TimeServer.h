@@ -142,7 +142,7 @@ inline void CTimeServer::PauseNamedTimer(CStrID Name, bool Pause)
 inline void CTimeServer::DestroyNamedTimer(CStrID Name)
 {
 	int Idx = Timers.FindIndex(Name);
-	if (Idx != INVALID_INDEX) Timers.EraseAt(Idx);
+	if (Idx != INVALID_INDEX) Timers.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
 

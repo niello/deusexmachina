@@ -113,7 +113,7 @@ void CPhysicsWorld::RenderDebug()
 bool CPhysicsWorld::AddCollisionObject(CPhysicsObj& Obj)
 {
 	n_assert(pBtDynWorld && Obj.GetBtObject());
-	Objects.Append(&Obj);
+	Objects.Add(&Obj);
 	OK;
 }
 //---------------------------------------------------------------------
