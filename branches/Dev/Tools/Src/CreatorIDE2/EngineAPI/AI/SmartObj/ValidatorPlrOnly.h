@@ -11,15 +11,12 @@ namespace AI
 
 class CValidatorPlrOnly: public CValidator
 {
-	DeclareRTTI;
-	DeclareFactory(CValidatorPlrOnly);
+	__DeclareClass(CValidatorPlrOnly);
 
 public:
 
 	virtual bool IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction);
 };
-
-RegisterFactory(CValidatorPlrOnly);
 
 typedef Ptr<CValidatorPlrOnly> PValidatorPlrOnly;
 

@@ -313,7 +313,7 @@ bool CIOServer::LoadFileToBuffer(const nString& FileName, Data::CBuffer& Buffer)
 //---------------------------------------------------------------------
 
 #ifdef _EDITOR
-bool CIOServer::QueryMangledPath(const nString& FileName, nString& MangledFileName)
+bool CIOServer::QueryMangledPath(const nString& FileName, nString& MangledFileName) const
 {
 	if (!DataPathCB) FAIL;
 

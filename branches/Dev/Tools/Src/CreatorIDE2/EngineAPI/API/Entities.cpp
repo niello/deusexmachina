@@ -1,6 +1,6 @@
 #include "../StdAPI.h"
-#include <Game/Mgr/EntityManager.h>
-#include <Game/Mgr/EnvQueryManager.h>
+#include <Game/EntityManager.h>
+//#include <Game/EnvQueryManager.h>
 #include <Loading/EntityFactory.h>
 #include "../App/CIDEApp.h"
 

@@ -1,7 +1,7 @@
 #include "../StdAPI.h"
-#include <Game/Mgr/FocusManager.h>
-#include <Game/Mgr/EntityManager.h>
-#include <Game/Mgr/EnvQueryManager.h>
+#include <Game/FocusManager.h>
+#include <Game/EntityManager.h>
+#include <Game/EnvQueryManager.h>
 #include <Loading/EntityFactory.h>
 #include "../App/CIDEApp.h"
 #include <Physics/Event/SetTransform.h>

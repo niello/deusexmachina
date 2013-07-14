@@ -73,7 +73,7 @@ public:
 	bool			LoadFileToBuffer(const nString& FileName, Data::CBuffer& Buffer);
 
 #ifdef _EDITOR
-	bool			QueryMangledPath(const nString& FileName, nString& MangledFileName);
+	bool			QueryMangledPath(const nString& FileName, nString& MangledFileName) const;
 #endif
 };
 

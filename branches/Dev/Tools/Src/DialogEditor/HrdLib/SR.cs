@@ -8,6 +8,7 @@ namespace HrdLib
     {
         public const string
             AmbigousConstructorDeclaredFormat = "AmbigousConstructorDeclaredFormat",
+            CollectionElementTypeNotDefined = "CollectionElementTypeNotDefined",
             CompilerErrorCollectionEmpty = "CompilerErrorCollectionEmpty",
             ElementNameMismatchFormat = "ElementNameMismatchFormat",
             IncorrectOrderFormat = "IncorrectOrderFormat",
@@ -20,6 +21,7 @@ namespace HrdLib
             NullValueNotAllowed = "NullValueNotAllowed",
             ParameterSetterAlreadyDeclaredFormat = "ParameterSetterAlreadyDeclaredFormat",
             ParameterTypeMismatchFormat = "ParameterTypeMismatchFormat",
+            ParameterlessConstructorRequiredFormat = "ParameterlessConstructorRequiredFormat",
             PropertyCantBeNullFormat = "PropertyCantBeNullFormat",
             TypeCantBeGenericDefinitionFormat = "TypeCantBeGenericDefinitionFormat",
             TypeCantBeInterfaceFormat = "TypeCantBeInterfaceFormat",

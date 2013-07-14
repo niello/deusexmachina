@@ -1,11 +1,10 @@
 #include "ValidatorPlrOnly.h"
 
-#include <AI/Prop/PropActorBrain.h>
+#include <AI/PropActorBrain.h>
 
 namespace AI
 {
-ImplementRTTI(AI::CValidatorPlrOnly, AI::CValidator);
-ImplementFactory(AI::CValidatorPlrOnly);
+__ImplementClass(CValidatorPlrOnly);
 
 bool CValidatorPlrOnly::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {
