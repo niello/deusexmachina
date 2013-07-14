@@ -3,12 +3,13 @@
 #define __CIDE_APP_H__
 
 #include <App/AppFSM.h>
-#include <Story/Dlg/DlgSystem.h>
-#include <Story/Quests/QuestSystem.h>
+#include <Dlg/DialogueManager.h>
+#include <Quests/QuestManager.h>
 #include <Items/ItemManager.h>
 #include <Game/Entity.h>
-#include <Data/Singleton.h>
+#include <Core/Singleton.h>
 #include <Data/DataServer.h>
+#include <IO/IOServer.h>
 #include "../StdAPI.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -36,20 +37,20 @@ typedef void* const CIDEAppHandle;
 
 class CCIDEApp//: public App::CApplication
 {
-	//__DeclareSingleton(CCIDEApp);
+	__DeclareSingleton(CCIDEApp);
 
 private:
 
 	CAppFSM							FSM;
 	HWND							ParentHwnd;
 
-	Ptr<Story::CQuestSystem>		QuestSystem;
-	Ptr<Story::CDlgSystem>			DlgSystem;
+	Ptr<Story::CQuestManager>		QuestSystem;
+	Ptr<Story::CDialogueManager>	DlgSystem;
 	Ptr<Items::CItemManager>		ItemManager;
 
 	// We may subscribe to this callbacks before CDataServer is initialized. So it's temporary stored here.
-	Data::CDataPathCallback			DataPathCB;
-	Data::CReleaseMemoryCallback	ReleaseMemoryCB;
+	IO::CDataPathCallback			DataPathCB;
+	IO::CReleaseMemoryCallback		ReleaseMemoryCB;
 
 public:
 
@@ -79,7 +80,7 @@ public:
 	void	SetupDisplayMode();
 	bool	AdvanceFrame();
 	void	Close();
-	void	SetDataPathCB(Data::CDataPathCallback Cb, Data::CReleaseMemoryCallback ReleaseCb);
+	void	SetDataPathCB(IO::CDataPathCallback Cb, IO::CReleaseMemoryCallback ReleaseCb);
 };
 
 typedef CCIDEApp* PCIDEApp;

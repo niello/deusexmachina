@@ -174,4 +174,10 @@
   <data name="NullValueNotAllowed" xml:space="preserve">
     <value>Null value is not allowed.</value>
   </data>
+  <data name="ParameterlessConstructorRequiredFormat" xml:space="preserve">
+    <value>Public parameterless constructor is required for type '{0}'.</value>
+  </data>
+  <data name="CollectionElementTypeNotDefined" xml:space="preserve">
+    <value>A type of the collection element is not defined.</value>
+  </data>
 </root>

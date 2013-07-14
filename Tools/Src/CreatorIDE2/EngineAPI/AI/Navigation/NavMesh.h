@@ -3,8 +3,9 @@
 #define __CIDE_NAV_MESH_H__
 
 #include <StdDEM.h>
-#include <kernel/nprofiler.h>
+//#include <kernel/nprofiler.h>
 #include <Recast.h>
+#include <mathlib//matrix44.h>
 
 namespace Game
 {
@@ -59,15 +60,15 @@ protected:
 	float					Climb;
 
 	static const int MAX_OFFMESH_CONNECTIONS = 256;
-	float	OffMeshVerts[MAX_OFFMESH_CONNECTIONS * 3 * 2];
-	float	OffMeshRadius[MAX_OFFMESH_CONNECTIONS];
-	uchar	OffMeshDir[MAX_OFFMESH_CONNECTIONS];
-	uchar	OffMeshArea[MAX_OFFMESH_CONNECTIONS];
-	ushort	OffMeshFlags[MAX_OFFMESH_CONNECTIONS];
-	uint	OffMeshID[MAX_OFFMESH_CONNECTIONS];
-	int		OffMeshCount;
+	float			OffMeshVerts[MAX_OFFMESH_CONNECTIONS * 3 * 2];
+	float			OffMeshRadius[MAX_OFFMESH_CONNECTIONS];
+	unsigned char	OffMeshDir[MAX_OFFMESH_CONNECTIONS];
+	unsigned char	OffMeshArea[MAX_OFFMESH_CONNECTIONS];
+	unsigned short	OffMeshFlags[MAX_OFFMESH_CONNECTIONS];
+	unsigned int	OffMeshID[MAX_OFFMESH_CONNECTIONS];
+	int				OffMeshCount;
 
-	bool AddGeometryNCT2(nChunkLodNode* pNode, nChunkLodTree* pTree, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
+	bool AddGeometryNCT2(nChunkLodNode* pNode, nChunkLodTree* pTree, const matrix44* pTfm = NULL, unsigned char Area = RC_WALKABLE_AREA);
 
 public:
 
@@ -75,13 +76,13 @@ public:
 	~CNavMeshBuilder() { Cleanup(); }
 
 	bool Init(const rcConfig& Config, float MaxClimb);
-	bool AddGeometry(Game::CEntity& Entity, uchar Area = RC_WALKABLE_AREA);
-	bool AddGeometry(nMesh2* pMesh, const matrix44* pTfm = NULL, uchar Area = RC_WALKABLE_AREA);
-	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, uchar Area = RC_WALKABLE_AREA);
-	bool AddOffmeshConnection(const float* pStart, const float* pEnd, float Radius, uchar Dir, uchar Area, ushort Flags);
+	bool AddGeometry(Game::CEntity& Entity, unsigned char Area = RC_WALKABLE_AREA);
+	bool AddGeometry(nMesh2* pMesh, const matrix44* pTfm = NULL, unsigned char Area = RC_WALKABLE_AREA);
+	bool AddGeometry(const float* pVerts, int VertexCount, const int* pTris, int TriCount, unsigned char Area = RC_WALKABLE_AREA);
+	bool AddOffmeshConnection(const float* pStart, const float* pEnd, float Radius, unsigned char Dir, unsigned char Area, unsigned short Flags);
 	bool PrepareGeometry(float AgentRadius, float AgentHeight);
 	void ApplyConvexVolumeArea();
-	bool Build(uchar*& pOutData, int& OutSize, bool MonotonePartitioning = false);
+	bool Build(unsigned char*& pOutData, int& OutSize, bool MonotonePartitioning = false);
 	void Cleanup();
 };
 //=====================================================================

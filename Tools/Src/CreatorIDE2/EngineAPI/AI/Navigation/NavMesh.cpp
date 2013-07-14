@@ -1,12 +1,10 @@
 #include "NavMesh.h"
 
-#include <Gfx/Prop/PropGraphics.h>
-#include <Gfx/ShapeEntity.h>
-#include <Physics/Prop/PropAbstractPhysics.h>
+#include <Physics/PropPhysics.h>
 #include <Game/Entity.h>
-#include <scene/nshapenode.h>
-#include <ncterrain2/nterrainnode.h>
-#include <ncterrain2/nchunklodnode.h>
+//#include <scene/nshapenode.h>
+//#include <ncterrain2/nterrainnode.h>
+//#include <ncterrain2/nchunklodnode.h>
 //#include <RecastDump.h>
 #include <DetourNavMeshBuilder.h>
 

@@ -1,8 +1,7 @@
 #include "App/CIDEApp.h"
 #include <App/Environment.h>
 #include "FactoryRegHelper.h"
-#include <Game/Mgr/EntityManager.h>
-#include <Game/Mgr/FocusManager.h>
+#include <Game/EntityManager.h>
 
 using namespace App;
 
@@ -23,9 +22,9 @@ API int Init(CIDEAppHandle Handle, HWND ParentWnd, LPCSTR ProjDir)
 	AppEnv->SetProjectDirectory(ProjDir);
 	if (CIDEApp->Open()) 
 	{
-		LoaderSrv->LoadEmptyLevel();
-		EntityMgr->AttachEntity(CIDEApp->EditorCamera);
-		FocusMgr->SetFocusEntity(CIDEApp->EditorCamera);
+		//LoaderSrv->LoadEmptyLevel();
+		//EntityMgr->AttachEntity(CIDEApp->EditorCamera);
+		//FocusMgr->SetFocusEntity(CIDEApp->EditorCamera);
 		//!!!error but should not be! LoaderSrv->LoadLevel("Eger_Cathedral_Courtyard");
 		//LoaderSrv->NewGame();
 		Initialized = true;
@@ -46,9 +45,9 @@ API void Release(CIDEAppHandle Handle)
 {
 	DeclareCIDEApp(Handle);
 	Initialized = false;
-	LoaderSrv->CommitChangesToDB();
+	//LoaderSrv->CommitChangesToDB();
 	//!!!restore current entity here if transform or at least check why this property isn't active!
-	LoaderSrv->UnloadLevel();
+	//LoaderSrv->UnloadLevel();
 	CIDEApp->Close();
 	delete CIDEApp;
 	AppInst = NULL;
@@ -58,14 +57,14 @@ API void Release(CIDEAppHandle Handle)
 API void GetDLLName(CIDEAppHandle Handle, char* Name)
 {
 	DeclareCIDEApp(Handle);
-	sprintf_s(Name, 255, (Initialized) ? CIDEApp->GetAppName().Get() : "Not initialized!");
+	sprintf_s(Name, 255, (Initialized) ? CIDEApp->GetAppName().CStr() : "Not initialized!");
 }
 //---------------------------------------------------------------------
 
 API void GetDLLVersion(CIDEAppHandle Handle, char* Version)
 {
 	DeclareCIDEApp(Handle);
-	sprintf_s(Version, 255, (Initialized) ? CIDEApp->GetAppVersion().Get() : "Not initialized!");
+	sprintf_s(Version, 255, (Initialized) ? CIDEApp->GetAppVersion().CStr() : "Not initialized!");
 }
 //---------------------------------------------------------------------
 
@@ -82,7 +81,7 @@ API void SetMouseButtonCallback(CIDEAppHandle Handle, CMouseButtonCallback Cb)
 }
 //---------------------------------------------------------------------
 
-API void SetDataPathCallback(CIDEAppHandle Handle, Data::CDataPathCallback Cb, Data::CReleaseMemoryCallback ReleaseCb)
+API void SetDataPathCallback(CIDEAppHandle Handle, IO::CDataPathCallback Cb, IO::CReleaseMemoryCallback ReleaseCb)
 {
 	DeclareCIDEApp(Handle);
 	CIDEApp->SetDataPathCB(Cb, ReleaseCb);

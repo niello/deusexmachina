@@ -79,6 +79,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HrdSerializerAssembly.Deserialization.cs" />
+    <Compile Include="HrdSerializerPropertyInfo.cs" />
+    <Compile Include="HrdSerializerTypeInfo.cs" />
   </ItemGroup>
   <Import Condition="Exists('$(SolutionDir)$(SolutionName).csproj.targets')" Project="$(SolutionDir)$(SolutionName).csproj.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

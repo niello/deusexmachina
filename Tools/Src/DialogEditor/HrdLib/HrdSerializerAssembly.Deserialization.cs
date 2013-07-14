@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace HrdLib
@@ -12,36 +16,85 @@ namespace HrdLib
             var type = queue.CurrentType;
             Debug.Assert(type != null);
 
-            var serizalizableAttribute = GetSerializableAttribute(type);
+            var typeInfo = new HrdSerializerTypeInfo(type);
 
-            if (!serizalizableAttribute.Serializable)
+            if (!typeInfo.Attribute.Serializable)
                 throw new InvalidOperationException(SR.GetFormatString(SR.TypeMarkedNonserializableFormat, type.FullName));
 
-            if (type.IsArray)
+            if (typeInfo.IsSelfSerializable)
             {
-                DeserializeArray(writer, type, queue);
+                DeserializeArray(writer, typeInfo, queue);
                 return;
             }
 
-            //TODO: deserialize any other types
-            writer.WriteLine("return default({0});", ReflectionHelper.GetCsTypeName(queue.CurrentType));
+            if (typeInfo.IsSelfSerializable)
+            {
+                var ctr = type.GetConstructor(new Type[0]);
+                if (ctr == null || !ctr.IsPublic)
+                    throw new HrdStructureValidationException(SR.GetFormatString(SR.ParameterlessConstructorRequiredFormat, type.FullName));
+
+                writer.WriteLine("{0} result = new {0}();", ReflectionHelper.GetCsTypeName(type))
+                      .WriteLine("(({0}) result).Deserialize(reader);", ReflectionHelper.GetCsTypeName<IHrdSerializable>())
+                      .WriteLine("return result;");
+
+                return;
+            }
+
+            if (typeInfo.IsCollection)
+            {
+                DeserializeCollection(writer, typeInfo, queue);
+                return;
+            }
+
+            DeserializeType(writer, typeInfo, queue);
         }
 
-        private void DeserializeArray(HrdIndentWriter writer, Type arrayType, HrdGeneratorQueue queue)
+        private void DeserializeType(HrdIndentWriter writer, HrdSerializerTypeInfo typeInfo, HrdGeneratorQueue queue)
         {
-            var elementType = arrayType.GetElementType();
-            Debug.Assert(elementType != null, "The type must be an array.");
+            throw new NotImplementedException();
+        }
 
-            var rank = arrayType.GetArrayRank();
-            Debug.Assert(rank >= 1, "Array must have at least one dimension.");
+        private void DeserializeCollection(HrdIndentWriter writer, HrdSerializerTypeInfo typeInfo, HrdGeneratorQueue queue)
+        {
+            if (typeInfo.ElementType == null)
+                throw new HrdStructureValidationException(SR.GetString(SR.CollectionElementTypeNotDefined));
 
-            if (rank > 1)
+            var ctr = typeInfo.Type.GetConstructor(new Type[0]);
+            if (ctr == null || !ctr.IsPublic)
+                throw new HrdStructureValidationException(SR.GetFormatString(SR.ParameterlessConstructorRequiredFormat, typeInfo.Type.FullName));
+
+            writer.WriteLine("{0} result = new {0}();", ReflectionHelper.GetCsTypeName(typeInfo.Type));
+            writer.WriteBeginElement(null);
+            if (typeInfo.Attribute.SerializeAs == HrdSerializeAs.Array)
+            {
+                writer.WriteLine("while(reader.ReadNextSibling())").WriteLine("{").IncreaseIndent();
+                WriteReadValue(writer, typeInfo, ReflectionHelper.GetCsTypeName(typeInfo.ElementType) + " item", queue);
+
+                writer.WriteLine("(({0}) result).Add(({1}) item);", ReflectionHelper.GetCsTypeName(typeInfo.CollectionInterface),
+                                 ReflectionHelper.GetCsTypeName(typeInfo.CollectionInterfaceElement))
+                      .DecreaseIndent()
+                      .WriteLine("}");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+
+            writer.WriteLine("return result;");
+        }
+
+        private void DeserializeArray(HrdIndentWriter writer, HrdSerializerTypeInfo arrayType, HrdGeneratorQueue queue)
+        {
+            Debug.Assert(arrayType.IsArray, "The type must be an array.");
+            Debug.Assert(arrayType.ArrayRank >= 1, "Array must have at least one dimension.");
+
+            if (arrayType.ArrayRank > 1)
             {
                 writer.ReadBeginElement("Size");
                 writer.ReadBeginElement();
 
                 var sizeBuilder = new StringBuilder("[");
-                for (int i = 0; i < rank; i++)
+                for (int i = 0; i < arrayType.ArrayRank; i++)
                 {
                     if (i > 0)
                     {
@@ -57,15 +110,15 @@ namespace HrdLib
                 writer.ReadBeginElement("Value");
 
                 Type realElementType;
-                var subElementRank = ReflectionHelper.GetArrayRankString(elementType, out realElementType);
+                var subElementRank = ReflectionHelper.GetArrayRankString(arrayType.ElementType, out realElementType);
                 if (subElementRank != null)
                     sizeBuilder.Append(subElementRank);
 
-                writer.WriteLine("{0} result = new {1}{2};", ReflectionHelper.GetCsTypeName(arrayType),
+                writer.WriteLine("{0} result = new {1}{2};", ReflectionHelper.GetCsTypeName(arrayType.Type),
                                  ReflectionHelper.GetCsTypeName(realElementType), sizeBuilder);
 
                 var resultBuilder = new StringBuilder("result[");
-                for (int i = 0; i < rank; i++)
+                for (int i = 0; i < arrayType.ArrayRank; i++)
                 {
                     writer.WriteLine("for(int i{0} = 0; i{0} < length{0}; i{0}++)", i).WriteLine("{").IncreaseIndent();
                     if (i > 0)
@@ -74,9 +127,9 @@ namespace HrdLib
                 }
                 resultBuilder.Append("]");
 
-                WriteReadValue(writer, elementType, resultBuilder.ToString(), queue);
+                WriteReadValue(writer, arrayType, resultBuilder.ToString(), queue);
 
-                for (int i = 0; i < rank; i++)
+                for (int i = 0; i < arrayType.ArrayRank; i++)
                 {
                     writer.ReadNextSibling();
                     writer.DecreaseIndent().WriteLine("}");
@@ -85,10 +138,10 @@ namespace HrdLib
             else
             {
                 Type realElementType;
-                var subElementRank = ReflectionHelper.GetArrayRankString(elementType, out realElementType);
+                var subElementRank = ReflectionHelper.GetArrayRankString(arrayType.ElementType, out realElementType);
 
                 writer.WriteLine("int length = reader.ChildrenCount;")
-                      .Write("{0} result = new {1}[length]", ReflectionHelper.GetCsTypeName(arrayType), ReflectionHelper.GetCsTypeName(realElementType));
+                      .Write("{0} result = new {1}[length]", ReflectionHelper.GetCsTypeName(arrayType.ElementType), ReflectionHelper.GetCsTypeName(realElementType));
 
                 if (subElementRank != null)
                     writer.Write(subElementRank);
@@ -96,7 +149,7 @@ namespace HrdLib
                 writer.WriteLine(";");
 
                 writer.WriteLine("for(int i = 0; i< length; i++)").WriteLine("{").IncreaseIndent();
-                WriteReadValue(writer, elementType, "result[i]", queue);
+                WriteReadValue(writer, arrayType, "result[i]", queue);
 
                 writer.DecreaseIndent().WriteLine("}");
             }
@@ -104,12 +157,12 @@ namespace HrdLib
             writer.WriteLine("return result;");
         }
 
-        private void WriteReadValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue)
+        private void WriteReadValue(HrdIndentWriter writer, HrdSerializerTypeInfo valueType, string valueCodeString, HrdGeneratorQueue queue)
         {
             WriteReadValue(writer, valueType, valueCodeString, queue, true);
         }
 
-        private void WriteReadValue(HrdIndentWriter writer, Type valueType, string valueCodeString, HrdGeneratorQueue queue, bool allowNull)
+        private void WriteReadValue(HrdIndentWriter writer, HrdSerializerTypeInfo valueType, string valueCodeString, HrdGeneratorQueue queue, bool allowNull)
         {
             bool isNullable = !valueType.IsValueType;
             if (!isNullable && valueType.IsGenericType)

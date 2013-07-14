@@ -204,7 +204,7 @@ namespace HrdLib
             else
             {
                 Debug.Assert(serializableAttrs.Length == 1, "Multiple attributes are not allowed.");
-                serizalizableAttribute = (HrdSerializableAttribute)serializableAttrs[0];
+                serizalizableAttribute = ((HrdSerializableAttribute)serializableAttrs[0]).Clone();
             }
 
             return serizalizableAttribute;
