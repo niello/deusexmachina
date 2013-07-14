@@ -29,18 +29,18 @@ enum
 CHRDParser::CHRDParser()
 {
 	// NB: Keep sorted and keep enum above updated
-	TableRW.Append("false");
-	TableRW.Append("null");
-	TableRW.Append("true");
+	TableRW.Add("false");
+	TableRW.Add("null");
+	TableRW.Add("true");
 	
-	TableDlm.Append("=");
-	TableDlm.Append("[");
-	TableDlm.Append(",");
-	TableDlm.Append("]");
-	TableDlm.Append("{");
-	TableDlm.Append("}");
-	TableDlm.Append("(");
-	TableDlm.Append(")");
+	TableDlm.Add("=");
+	TableDlm.Add("[");
+	TableDlm.Add(",");
+	TableDlm.Add("]");
+	TableDlm.Add("{");
+	TableDlm.Add("}");
+	TableDlm.Add("(");
+	TableDlm.Add(")");
 }
 //---------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
 
 	Line = Col = 1;
 
-	nArray<CToken> Tokens;
+	CArray<CToken> Tokens;
 	if (!Tokenize(Tokens))
 	{
 		n_printf("Lexical analysis of HRD failed\n");
@@ -96,7 +96,7 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::Tokenize(nArray<CToken>& Tokens)
+bool CHRDParser::Tokenize(CArray<CToken>& Tokens)
 {
 	while (LexerCursor < EndOfBuffer)
 	{
@@ -130,9 +130,9 @@ bool CHRDParser::Tokenize(nArray<CToken>& Tokens)
 			if (ZeroIdx == INVALID_INDEX)
 			{
 				ZeroIdx = TableConst.GetCount();
-				TableConst.Append((int)0); //!!!preallocate & set inplace!
+				TableConst.Add((int)0); //!!!preallocate & set inplace!
 			}
-			Tokens.Append(CToken(TBL_CONST, ZeroIdx, Line, Col));
+			Tokens.Add(CToken(TBL_CONST, ZeroIdx, Line, Col));
 		}
 		else if (CurrChar == '.')
 		{
@@ -201,7 +201,7 @@ bool CHRDParser::Tokenize(nArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessID(nArray<CToken>& Tokens)
+bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
 {
 	bool HasLetter = ((*LexerCursor) != '_'); //isalpha(*LexerCursor);
 	LexerCursor++;
@@ -233,10 +233,10 @@ bool CHRDParser::LexProcessID(nArray<CToken>& Tokens)
 	nString NewID;
 	NewID.Set(TokenStart, LexerCursor - TokenStart);
 	
-	int Idx = TableRW.BinarySearchIndex(NewID);
+	int Idx = TableRW.FindIndexSorted(NewID);
 	if (Idx != INVALID_INDEX)
 	{
-		Tokens.Append(CToken(TBL_RW, Idx, Line, Col));
+		Tokens.Add(CToken(TBL_RW, Idx, Line, Col));
 		OK;
 	}
 	
@@ -244,14 +244,14 @@ bool CHRDParser::LexProcessID(nArray<CToken>& Tokens)
 	if (Idx == INVALID_INDEX)
 	{
 		Idx = TableID.GetCount();
-		TableID.Append(NewID);
+		TableID.Add(NewID);
 	}
-	Tokens.Append(CToken(TBL_ID, Idx, Line, Col));
+	Tokens.Add(CToken(TBL_ID, Idx, Line, Col));
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessHex(nArray<CToken>& Tokens)
+bool CHRDParser::LexProcessHex(CArray<CToken>& Tokens)
 {
 	do
 	{
@@ -275,7 +275,7 @@ bool CHRDParser::LexProcessHex(nArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessFloat(nArray<CToken>& Tokens)
+bool CHRDParser::LexProcessFloat(CArray<CToken>& Tokens)
 {
 	// Dot and at least one digit were read
 
@@ -293,7 +293,7 @@ bool CHRDParser::LexProcessFloat(nArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessNumeric(nArray<CToken>& Tokens)
+bool CHRDParser::LexProcessNumeric(CArray<CToken>& Tokens)
 {
 	LexerCursor++;
 	Col++;
@@ -316,7 +316,7 @@ bool CHRDParser::LexProcessNumeric(nArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessString(nArray<CToken>& Tokens, char QuoteChar)
+bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 {
 	nString NewConst; //!!!preallocate and grow like array!
 	
@@ -398,7 +398,7 @@ bool CHRDParser::LexProcessString(nArray<CToken>& Tokens, char QuoteChar)
 //---------------------------------------------------------------------
 
 // <" STRING CONTENTS ">
-bool CHRDParser::LexProcessBigString(nArray<CToken>& Tokens)
+bool CHRDParser::LexProcessBigString(CArray<CToken>& Tokens)
 {
 	nString NewConst; //!!!preallocate and grow like array!
 	
@@ -443,7 +443,7 @@ bool CHRDParser::LexProcessBigString(nArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessDlm(nArray<CToken>& Tokens)
+bool CHRDParser::LexProcessDlm(CArray<CToken>& Tokens)
 {
 	int	Start = 0,
 		End = TableDlm.GetCount(),
@@ -483,7 +483,7 @@ bool CHRDParser::LexProcessDlm(nArray<CToken>& Tokens)
 		}
 
 		n_assert(MatchStart + 1 == MatchEnd); // Assert there are no duplicates
-		Tokens.Append(CToken(TBL_DLM, MatchStart, Line, Col));
+		Tokens.Add(CToken(TBL_DLM, MatchStart, Line, Col));
 		OK;
 	}
 	
@@ -584,7 +584,7 @@ void CHRDParser::SkipSpaces()
 }
 //---------------------------------------------------------------------
 
-void CHRDParser::AddConst(nArray<CToken>& Tokens, const nString& Const, EType Type)
+void CHRDParser::AddConst(CArray<CToken>& Tokens, const nString& Const, EType Type)
 {
 	CData Data;
 	switch (Type)
@@ -601,14 +601,14 @@ void CHRDParser::AddConst(nArray<CToken>& Tokens, const nString& Const, EType Ty
 	if (Idx == INVALID_INDEX)
 	{
 		Idx = TableConst.GetCount();
-		TableConst.Append(Data);
+		TableConst.Add(Data);
 	}
-	Tokens.Append(CToken(TBL_CONST, Idx, Line, Col));
+	Tokens.Add(CToken(TBL_CONST, Idx, Line, Col));
 }
 //---------------------------------------------------------------------
 
 // ROOT = { PARAM }
-bool CHRDParser::ParseTokenStream(const nArray<CToken>& Tokens, PParams Output)
+bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, PParams Output)
 {
 	ParserCursor = 0;
 	while (ParserCursor < Tokens.GetCount() && ParseParam(Tokens, Output))
@@ -618,7 +618,7 @@ bool CHRDParser::ParseTokenStream(const nArray<CToken>& Tokens, PParams Output)
 //---------------------------------------------------------------------
 
 // PARAM = ID [ '=' ] DATA
-bool CHRDParser::ParseParam(const nArray<CToken>& Tokens, PParams Output)
+bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, PParams Output)
 {
 	CToken& CurrToken = Tokens[ParserCursor];
 	if (CurrToken.Table != TBL_ID)
@@ -657,7 +657,7 @@ bool CHRDParser::ParseParam(const nArray<CToken>& Tokens, PParams Output)
 //---------------------------------------------------------------------
 
 // DATA = CONST | ARRAY | SECTION
-bool CHRDParser::ParseData(const nArray<CToken>& Tokens, CData& Output)
+bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 {
 	CToken& CurrToken = Tokens[ParserCursor];
 
@@ -731,7 +731,7 @@ bool CHRDParser::ParseData(const nArray<CToken>& Tokens, CData& Output)
 //---------------------------------------------------------------------
 
 // ARRAY = '[' [ DATA { ',' DATA } ] ']'
-bool CHRDParser::ParseArray(const nArray<CToken>& Tokens, Ptr<CDataArray> Output)
+bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, Ptr<CDataArray> Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_SQ_BR_OPEN)) FAIL;
 	
@@ -751,7 +751,7 @@ bool CHRDParser::ParseArray(const nArray<CToken>& Tokens, Ptr<CDataArray> Output
 			ParserCursor = CursorBackup;
 			FAIL;
 		}
-		Output->Append(Data);
+		Output->Add(Data);
 	
 		if (ParserCursor >= Tokens.GetCount()) break;
 		
@@ -777,7 +777,7 @@ bool CHRDParser::ParseArray(const nArray<CToken>& Tokens, Ptr<CDataArray> Output
 //---------------------------------------------------------------------
 
 // SECTION = '{' { PARAM } '}'
-bool CHRDParser::ParseSection(const nArray<CToken>& Tokens, PParams Output)
+bool CHRDParser::ParseSection(const CArray<CToken>& Tokens, PParams Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_CUR_BR_OPEN)) FAIL;
 	
@@ -806,13 +806,13 @@ bool CHRDParser::ParseSection(const nArray<CToken>& Tokens, PParams Output)
 //---------------------------------------------------------------------
 
 // VECTOR = '(' [ NUMBER { ',' NUMBER } ] ')'
-bool CHRDParser::ParseVector(const nArray<CToken>& Tokens, CData& Output)
+bool CHRDParser::ParseVector(const CArray<CToken>& Tokens, CData& Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_BR_OPEN)) FAIL;
 
 	int CursorBackup = ParserCursor;
 
-	nArray<float> Floats;
+	CArray<float> Floats;
 
 	while (++ParserCursor < Tokens.GetCount())
 	{
@@ -826,7 +826,7 @@ bool CHRDParser::ParseVector(const nArray<CToken>& Tokens, CData& Output)
 			ParserCursor = CursorBackup;
 			FAIL;
 		}
-		Floats.Append(Data.IsA<int>() ? (float)Data.GetValue<int>() : Data.GetValue<float>());
+		Floats.Add(Data.IsA<int>() ? (float)Data.GetValue<int>() : Data.GetValue<float>());
 	
 		if (ParserCursor >= Tokens.GetCount()) break;
 		

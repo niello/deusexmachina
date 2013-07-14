@@ -79,7 +79,7 @@ bool CPropActorBrain::InternalActivate()
 				const CParam& DescParam = DescSection->Get(i);
 				PPerceptor New = (CPerceptor*)Factory->Create(StrPercPrefix + DescParam.GetName().CStr());
 				New->Init(*DescParam.GetValue<PParams>());
-				Perceptors.Append(New);
+				Perceptors.Add(New);
 			}
 		}
 
@@ -92,7 +92,7 @@ bool CPropActorBrain::InternalActivate()
 				PSensor New = (CSensor*)Factory->Create(StrSensorPrefix + DescParam.GetName().CStr());
 				PParams NewDesc = DescParam.GetValue<PParams>();
 				New->Init(*NewDesc);
-				Sensors.Append(New);
+				Sensors.Add(New);
 				
 				PDataArray Percs = NewDesc->Get<PDataArray>(CStrID("Perceptors"), NULL);
 				if (Percs.IsValid())
@@ -103,7 +103,7 @@ bool CPropActorBrain::InternalActivate()
 						nString PercClass = StrPercPrefix + ItPercName->GetValue<nString>();
 						bool Found = false;
 
-						nArray<PPerceptor>::CIterator ItPerc;
+						CArray<PPerceptor>::CIterator ItPerc;
 						for (ItPerc = Perceptors.Begin(); ItPerc != Perceptors.End(); ItPerc++)
 						{
 							//???store class name as CStrID to compare faster?
@@ -134,14 +134,14 @@ bool CPropActorBrain::InternalActivate()
 				const CParam& DescParam = DescSection->Get(i);
 				PGoal New = (CGoal*)Factory->Create(StrGoalPrefix + DescParam.GetName().CStr());
 				New->Init(DescParam.GetValue<PParams>());
-				Goals.Append(New);
+				Goals.Add(New);
 			}
 
 			if (!HasIdleGoal)
 			{
 				PGoal New = n_new(CGoalIdle);
 				New->Init(NULL);
-				Goals.Append(New);
+				Goals.Add(New);
 			}
 		}
 
@@ -153,7 +153,7 @@ bool CPropActorBrain::InternalActivate()
 			{
 				LPCSTR pActionName = ActionArray->At(i).GetValue<nString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
-				if (pTpl) Actions.Append(pTpl);
+				if (pTpl) Actions.Add(pTpl);
 				else n_printf("Warning, AI: action template '%s' is not registered\n", pActionName);
 			}
 		}
@@ -208,7 +208,7 @@ void CPropActorBrain::UpdateDecisionMaking()
 
 	if (!UpdateGoals) return;
 
-	for (nArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
+	for (CArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
 	{
 		//???all this to EvalRel?
 		// If not a time still, skip goal & invalidate its relevance
@@ -225,7 +225,7 @@ void CPropActorBrain::UpdateDecisionMaking()
 		CGoal* pTopGoal = CurrGoal.GetUnsafe();
 		float MaxRelevance = CurrGoal.IsValid() ? CurrGoal->GetRelevance() : 0.f;
 
-		for (nArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
+		for (CArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
 			if ((*ppGoal)->GetRelevance() > MaxRelevance)
 			{
 				MaxRelevance = (*ppGoal)->GetRelevance();
@@ -302,7 +302,7 @@ void CPropActorBrain::OnBeginFrame()
 	//???where to update target system? or goal updates target?
 
 	//!!!update for some time, if not updated all return or allow to process next!
-	for (nArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
+	for (CArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
 	{
 		//!!!only for external! also need to update internal sensors & actor's state through them
 		//???CStimulus -> CExternalStimulus?

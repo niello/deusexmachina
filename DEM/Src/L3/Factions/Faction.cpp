@@ -31,7 +31,7 @@ CStrID CFaction::GetLeader() const
 }
 //---------------------------------------------------------------------
 
-CStrID CFaction::GetGroupLeader(const nArray<CStrID>& Group) const
+CStrID CFaction::GetGroupLeader(const CArray<CStrID>& Group) const
 {
 	//???use negative ranks?
 

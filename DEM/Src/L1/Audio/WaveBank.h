@@ -24,7 +24,7 @@
 //
 //private:
 //
-//	nArray<PWaveResource>	Resources; //!!!dictionary by name! (or strid???)
+//	CArray<PWaveResource>	Resources; //!!!dictionary by name! (or strid???)
 //	nXmlSpreadSheet			XMLSheet;
 //
 //	nSound3* CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const nString& ColumnName);

@@ -6,8 +6,8 @@ namespace Anim
 {
 __ImplementResourceClass(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
 
-bool CKeyframeClip::Setup(const nArray<CKeyframeTrack>& _Tracks, const nArray<CStrID>& TrackMapping,
-						  const nArray<CEventTrack>* _EventTracks, float Length)
+bool CKeyframeClip::Setup(const CArray<CKeyframeTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
+						  const CArray<CEventTrack>* _EventTracks, float Length)
 {
 	if (State == Resources::Rsrc_Loaded) Unload();
 

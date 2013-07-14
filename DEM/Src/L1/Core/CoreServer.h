@@ -4,7 +4,7 @@
 
 #include <Core/Singleton.h>
 #include <Data/Data.h>
-#include <util/HashMap.h>
+#include <Data/HashMap.h>
 
 // Core server manages low-level object framework
 

@@ -33,7 +33,7 @@ PEntity CEntityManager::CreateEntity(CStrID UID, CGameLevel& Level)
 	n_assert(!EntityExists(UID)); //???return NULL or existing entity?
 	PEntity Entity = n_new(CEntity(UID));
 	Entity->SetLevel(&Level);
-	Entities.Append(Entity);
+	Entities.Add(Entity);
 	UIDToEntity.Add(Entity->GetUID(), Entity.GetUnsafe());
 	return Entity;
 }
@@ -44,7 +44,7 @@ bool CEntityManager::RenameEntity(CEntity& Entity, CStrID NewUID)
 	if (!NewUID.IsValid()) FAIL;
 	if (Entity.GetUID() == NewUID) OK;
 	if (EntityExists(NewUID)) FAIL;
-	UIDToEntity.Erase(Entity.GetUID());
+	UIDToEntity.Remove(Entity.GetUID());
 	Entity.SetUID(NewUID);
 	UIDToEntity.Add(Entity.GetUID(), &Entity);
 	Entity.FireEvent(CStrID("OnEntityRenamed"));
@@ -73,10 +73,10 @@ void CEntityManager::DeleteEntity(int Idx)
 
 	// Remove all properties of this entity
 	for (int i = 0; i < PropStorages.GetCount(); ++i)
-		(*PropStorages.ValueAt(i))->Erase(Entity.GetUID());
+		(*PropStorages.ValueAt(i))->Remove(Entity.GetUID());
 
-	UIDToEntity.Erase(Entity.GetUID());
-	Entities.EraseAt(Idx);
+	UIDToEntity.Remove(Entity.GetUID());
+	Entities.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
 
@@ -102,13 +102,13 @@ CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::GetEntitiesByLevel(CStrID LevelID, nArray<CEntity*>& Out) const
+void CEntityManager::GetEntitiesByLevel(CStrID LevelID, CArray<CEntity*>& Out) const
 {
 	for (int i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i].GetUnsafe();
 		if (pEntity && pEntity->GetLevel().GetID() == LevelID)
-			Out.Append(pEntity);
+			Out.Add(pEntity);
 	}
 }
 //---------------------------------------------------------------------
@@ -152,17 +152,17 @@ void CEntityManager::RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const
 	if (Idx == INVALID_INDEX) return;
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);
-	pStorage->Erase(Entity.GetUID());
+	pStorage->Remove(Entity.GetUID());
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::GetPropertiesOfEntity(CStrID EntityID, nArray<CProperty*>& Out) const
+void CEntityManager::GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const
 {
 	for (int i = 0; i < PropStorages.GetCount(); ++i)
 	{
 		PProperty Prop;
 		if ((*PropStorages.ValueAt(i))->Get(EntityID, Prop))
-			Out.Append(Prop.GetUnsafe());
+			Out.Add(Prop.GetUnsafe());
 	}
 }
 //---------------------------------------------------------------------

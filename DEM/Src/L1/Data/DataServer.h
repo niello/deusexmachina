@@ -4,7 +4,7 @@
 
 #include <Data/DataScheme.h>
 #include <Core/Singleton.h>
-#include <util/HashMap.h>
+#include <Data/HashMap.h>
 
 // Data server manages descs and data serialization schemes
 

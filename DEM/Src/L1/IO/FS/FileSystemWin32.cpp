@@ -87,14 +87,14 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 
 	nString AbsPath = Path;
 
-	nArray<nString> DirStack;
+	CArray<nString> DirStack;
 	while (!DirectoryExists(AbsPath))
 	{
 		AbsPath.StripTrailingSlash();
 		int LastSepIdx = AbsPath.GetLastDirSeparatorIndex();
 		if (LastSepIdx >= 0)
 		{
-			DirStack.Append(AbsPath.SubString(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
+			DirStack.Add(AbsPath.SubString(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
 			AbsPath = AbsPath.SubString(0, LastSepIdx);
 		}
 		else
@@ -107,7 +107,7 @@ bool CFileSystemWin32::CreateDirectory(const nString& Path)
 	while (DirStack.GetCount())
 	{
 		AbsPath += "/" + DirStack.Back();
-		DirStack.EraseAt(DirStack.GetCount() - 1);
+		DirStack.RemoveAt(DirStack.GetCount() - 1);
 		if (!CreateDirectory(AbsPath.CStr(), NULL)) FAIL;
 	}
 

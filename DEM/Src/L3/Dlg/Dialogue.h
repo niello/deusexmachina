@@ -23,7 +23,7 @@ class CDialogue: public Core::CRefCounted
 public:
 
 	CDlgNode*				StartNode;
-	nArray<Ptr<CDlgNode>>	Nodes;
+	CArray<Ptr<CDlgNode>>	Nodes;
 	nString					ScriptFile;
 	PScriptObject			ScriptObj;	// Object is needed to avoid name clashes and to clear script at the end
 

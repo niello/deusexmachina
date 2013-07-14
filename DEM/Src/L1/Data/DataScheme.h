@@ -4,7 +4,7 @@
 
 #include <Data/Params.h>
 #include <Data/Flags.h>
-#include <util/narray.h>
+#include <Data/Array.h>
 
 // Data serialization scheme declares structure of CParams list and allows to omit saving
 // redundant info (types, keys etc). Use it to save CParams/HRD to custom binary files
@@ -39,7 +39,7 @@ public:
 		CData			Default;
 	};
 
-	nArray<CRecord> Records;
+	CArray<CRecord> Records;
 
 	bool Init(const CParams& Desc);
 };

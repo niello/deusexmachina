@@ -45,7 +45,7 @@ void CQuestManager::Trigger()
 		{
 			if (TasksToDelete[i]->ScriptObj.IsValid())
 			{
-				DeletedScriptObjects.Append(TasksToDelete[i]->ScriptObj->GetFullName());
+				DeletedScriptObjects.Add(TasksToDelete[i]->ScriptObj->GetFullName());
 				TasksToDelete[i]->ScriptObj = NULL;
 			}
 		}
@@ -191,7 +191,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 				//add Story::CJournal record or it will receive event too
 
 				// Don't delete task, we need its name & desc for journal
-				TasksToDelete.Append(Task.Task);
+				TasksToDelete.Add(Task.Task);
 				//Task.Task = NULL;
 				Task.Status = Status;
 			}
@@ -205,7 +205,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 #endif
 
 		// Do not unload to access to tasks' Status now
-		//QuestsToDelete.Append(Quest);
+		//QuestsToDelete.Add(Quest);
 		//Quests.ValueAt(Idx).Quest = NULL;
 		Quests.ValueAt(Idx).Status = Status;
 
@@ -243,7 +243,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 			//add Story::CJournal record or it will receive event too
 
 			// Don't delete task, we need its name & desc for journal
-			TasksToDelete.Append(Task.Task);
+			TasksToDelete.Add(Task.Task);
 			//Task.Task = NULL;
 			Task.Status = Status;
 
@@ -347,7 +347,7 @@ bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
 	// Remove quests that weren't loaded
 	for (int i = Quests.GetCount() - 1; i >= 0; --i)
 		if (Quests.ValueAt(i).Status == CQuest::No)
-			Quests.EraseAt(i);
+			Quests.RemoveAt(i);
 
 	OK;
 }
@@ -366,7 +366,7 @@ bool CQuestManager::OnGameSaving(const Events::CEventBase& Event)
 		Data::PParams SGQuest = n_new(Data::CParams);
 		SGQuest->Set(CStrID("ID"), Quests.KeyAt(i));
 		SGQuest->Set(CStrID("Status"), (int)QuestRec.Status);
-		SGQuests->Append(SGQuest);
+		SGQuests->Add(SGQuest);
 
 		if (QuestRec.Status != CQuest::Opened) continue;
 

@@ -29,9 +29,9 @@ private:
 	};
 	CDict<CStrID, CQuestRec> Quests;
 
-	nArray<Ptr<CQuest>>	QuestsToDelete;
-	nArray<Ptr<CTask>>	TasksToDelete;
-	nArray<nString>		DeletedScriptObjects;
+	CArray<Ptr<CQuest>>	QuestsToDelete;
+	CArray<Ptr<CTask>>	TasksToDelete;
+	CArray<nString>		DeletedScriptObjects;
 
 	bool LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID = NULL);
 	bool CloseQuest(CStrID QuestID, CStrID TaskID, bool Success);

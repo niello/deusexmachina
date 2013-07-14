@@ -22,7 +22,7 @@ bool CFSBrowser::SetRelativePath(const nString& Path)
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::ListCurrDirContents(nArray<nString>& OutContents, DWORD EntryTypes, const nString& Filter)
+bool CFSBrowser::ListCurrDirContents(CArray<nString>& OutContents, DWORD EntryTypes, const nString& Filter)
 {
 	AtFirstEntry = false;
 
@@ -32,7 +32,7 @@ bool CFSBrowser::ListCurrDirContents(nArray<nString>& OutContents, DWORD EntryTy
 
 	while (CurrEntryType != FSE_NONE)
 	{
-		if (EntryTypes & CurrEntryType) OutContents.Append(CurrEntryName);
+		if (EntryTypes & CurrEntryType) OutContents.Add(CurrEntryName);
 		if (!FS->NextDirectoryEntry(hDir, CurrEntryName, CurrEntryType)) break;
 	}
 

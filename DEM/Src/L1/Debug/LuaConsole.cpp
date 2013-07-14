@@ -138,7 +138,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		LPCSTR pTable = pCmd + 3;
 		while (*pTable == 32) ++pTable;
 
-		nArray<nString> Contents;
+		CArray<nString> Contents;
 
 		if (ScriptSrv->PlaceOnStack(pTable))
 		{
@@ -157,8 +157,8 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	//}
 	else ScriptSrv->RunScript(pCmd);
 
-	if (CmdHistory.GetCount() > 32) CmdHistory.EraseAt(0);
-	CmdHistory.Append(pCmd);
+	if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
+	CmdHistory.Add(pCmd);
 	CmdHistoryCursor = CmdHistory.GetCount();
 
 	pInputLine->setText("");

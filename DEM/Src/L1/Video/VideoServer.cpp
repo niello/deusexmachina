@@ -174,7 +174,7 @@ CVideoPlayer* CVideoServer::NewVideoPlayer(const nString& Name)
 {
 	CVideoPlayer* pPlayer = n_new(COGGTheoraPlayer);
 	pPlayer->SetFilename(Name);
-	Players.Append(pPlayer);
+	Players.Add(pPlayer);
 	return pPlayer;
 }
 //---------------------------------------------------------------------
@@ -185,7 +185,7 @@ void CVideoServer::DeleteVideoPlayer(CVideoPlayer* pPlayer)
 	for (int i = 0; i < Players.GetCount(); i++)
 		if (Players[i] == pPlayer)
 		{
-			Players.EraseAt(i);
+			Players.RemoveAt(i);
 			break;
 		}
 	if (pPlayer->IsOpen()) pPlayer->Close();

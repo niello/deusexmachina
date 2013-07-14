@@ -155,7 +155,7 @@ void nMD5::Finalize()
     padLen = (index < 56) ? (56 - index) : (120 - index);
     Update(PADDING, padLen);
 
-    // Append length (before padding)
+    // Add length (before padding)
     Update (bits, 8);
 
     // Store state in digest

@@ -29,7 +29,7 @@ protected:
 	// UpdateRate
 
 	//!!!need set instead of array!
-	nArray<PPerceptor> Perceptors;
+	CArray<PPerceptor> Perceptors;
 
 public:
 
@@ -50,18 +50,18 @@ typedef Ptr<CSensor> PSensor;
 
 inline void CSensor::AddPerceptor(CPerceptor* pPerceptor)
 {
-	for (nArray<PPerceptor>::CIterator It = Perceptors.Begin(); It != Perceptors.End(); It++)
+	for (CArray<PPerceptor>::CIterator It = Perceptors.Begin(); It != Perceptors.End(); It++)
 		if ((*It).GetUnsafe() == pPerceptor) return;
-	Perceptors.Append(pPerceptor);
+	Perceptors.Add(pPerceptor);
 }
 //---------------------------------------------------------------------
 
 inline void CSensor::RemovePerceptor(const CPerceptor* pPerceptor)
 {
-	for (nArray<PPerceptor>::CIterator It = Perceptors.Begin(); It != Perceptors.End(); It++)
+	for (CArray<PPerceptor>::CIterator It = Perceptors.Begin(); It != Perceptors.End(); It++)
 		if ((*It).GetUnsafe() == pPerceptor)
 		{
-			Perceptors.Erase(It);
+			Perceptors.Remove(It);
 			return;
 		}
 }

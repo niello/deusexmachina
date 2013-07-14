@@ -28,7 +28,7 @@ class CParams: public Core::CRefCounted
 
 private:
 
-	nArray<CParam> Params; //!!!order is important at least for HRDs!
+	CArray<CParam> Params; //!!!order is important at least for HRDs!
 
 public:
 
@@ -170,7 +170,7 @@ inline void CParams::Set(const CParam& Param)
 {
 	int Idx = IndexOf(Param.GetName());
 	if (Idx != INVALID_INDEX) Params[Idx].SetValue(Param.GetRawValue());
-	else Params.Append(Param);
+	else Params.Add(Param);
 }
 //---------------------------------------------------------------------
 
@@ -178,7 +178,7 @@ inline void CParams::Set(CStrID Name, const CData& Value)
 {
 	int Idx = IndexOf(Name);
 	if (Idx != INVALID_INDEX) Params[Idx].SetValue(Value);
-	else Params.Append(CParam(Name, Value)); //???can avoid tmp obj creation?
+	else Params.Add(CParam(Name, Value)); //???can avoid tmp obj creation?
 }
 //---------------------------------------------------------------------
 

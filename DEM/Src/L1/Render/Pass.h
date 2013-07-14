@@ -46,7 +46,7 @@ public:
 	virtual ~CPass() {}
 
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets);
-	virtual void Render(const nArray<Scene::CRenderObject*>* pObjects, const nArray<Scene::CLight*>* pLights) = 0;
+	virtual void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights) = 0;
 };
 
 typedef Ptr<CPass> PPass;

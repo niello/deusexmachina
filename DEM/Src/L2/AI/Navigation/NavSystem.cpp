@@ -453,7 +453,7 @@ void CNavSystem::EndEdgeTraversal()
 }
 //---------------------------------------------------------------------
 
-bool CNavSystem::GetPathEdges(nArray<CPathEdge>& OutPath, int MaxSize)
+bool CNavSystem::GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize)
 {
 	n_assert(MaxSize > 0);
 

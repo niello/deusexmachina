@@ -28,7 +28,7 @@ public:
 	bool	AdoptMember(CStrID ID, int Rank); //???bool IsNativeMember or use sign of rank?
 	bool	ExpelMember(CStrID ID);
 
-	DWORD	SplitByMembership(const nArray<CStrID>& Group, nArray<CStrID>* pMembers = NULL, nArray<CStrID>* pNonMembers = NULL) const;
+	DWORD	SplitByMembership(const CArray<CStrID>& Group, CArray<CStrID>* pMembers = NULL, CArray<CStrID>* pNonMembers = NULL) const;
 
 	DWORD	GetMemberCount() const { return Members.GetCount(); }
 	CStrID	GetMember(DWORD Idx) const { return Members.KeyAt(Idx); }
@@ -38,7 +38,7 @@ public:
 	//bool	IsNativeMember(CStrID ID) const { return GetMemberRank(ID) > 0; }
 	CStrID	GetLeader() const;
 	bool	IsLeader(CStrID ID) const { return GetLeader() == ID; }
-	CStrID	GetGroupLeader(const nArray<CStrID>& Group) const;
+	CStrID	GetGroupLeader(const CArray<CStrID>& Group) const;
 
 	//???int GetAttitudeTo[wards](CStrID Character)
 	//???int GetAttitudeTo[wards](CStrID OtherFaction)

@@ -16,7 +16,7 @@ bool CDebugDraw::Open()
 	ShapeShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shapes"));
 	if (!ShapeShader->IsLoaded()) FAIL;
 
-	nArray<CVertexComponent> VC(1, 1);
+	CArray<CVertexComponent> VC(1, 1);
 	CVertexComponent* pCmp = VC.Reserve(1);
 	pCmp->Format = CVertexComponent::Float3;
 	pCmp->Semantic = CVertexComponent::Position;
@@ -42,7 +42,7 @@ bool CDebugDraw::Open()
 
 	ShapeInstVL = RenderSrv->GetVertexLayout(VC);
 
-	VC.EraseAt(0);
+	VC.RemoveAt(0);
 	InstVL = RenderSrv->GetVertexLayout(VC);
 	InstanceBuffer = n_new(CVertexBuffer);
 
@@ -94,7 +94,7 @@ bool CDebugDraw::Open()
 		FAIL;
 	}
 
-	nArray<CMeshGroup> Groups(ShapeCount, 0);
+	CArray<CMeshGroup> Groups(ShapeCount, 0);
 
 	DWORD VertexOffset = 0, IndexOffset = 0;
 	vector3* pVBData = (vector3*)VB->Map(Map_Setup);
@@ -174,7 +174,7 @@ void CDebugDraw::RenderGeometry()
 		RenderSrv->SetIndexBuffer(Shapes->GetIndexBuffer());
 		for (int i = 0; i < ShapeCount; ++i)
 		{
-			nArray<CDDShapeInst>& Insts = ShapeInsts[i];
+			CArray<CDDShapeInst>& Insts = ShapeInsts[i];
 			if (!Insts.GetCount()) continue;
 
 			RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));

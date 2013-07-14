@@ -62,7 +62,7 @@ private:
 	CStrID				EventOn;
 	CStrID				EventOff;
 
-	nArray<CCondition>	Conditions;
+	CArray<CCondition>	Conditions;
 
 	DECLARE_EVENT_HANDLER(OnInputUpdated, OnInputUpdated);
 

@@ -19,7 +19,7 @@
 //private:
 //
 //	nString					Name;
-//	nArray<nRef<nSound3>>	Sounds;
+//	CArray<nRef<nSound3>>	Sounds;
 //
 //public:
 //
@@ -30,7 +30,7 @@
 //
 //	void			SetName(const nString& NewName) { n_assert(NewName.IsValid()); Name = NewName; }
 //	const nString&	GetName() const { return Name; }
-//	void			AddSoundObject(nSound3* pSound) { n_assert(pSound); Sounds.Append(pSound); }
+//	void			AddSoundObject(nSound3* pSound) { n_assert(pSound); Sounds.Add(pSound); }
 //	int				GetNumSoundObjects() const { return Sounds.GetCount(); }
 //	nSound3*			GetSoundObjectAt(int Idx) const { return Sounds[Idx]; }
 //	nSound3*			GetRandomSoundObject() const { return Sounds[rand() % Sounds.GetCount()]; }

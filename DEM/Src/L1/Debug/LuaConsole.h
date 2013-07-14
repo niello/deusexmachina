@@ -33,7 +33,7 @@ protected:
 	CEGUI::Event::Connection	ConnOnShow;
 	//CEGUI::Event::Connection	ConnOnChar;
 
-	nArray<Data::CSimpleString>	CmdHistory;
+	CArray<Data::CSimpleString>	CmdHistory;
 	int							CmdHistoryCursor;
 
 	void Print(LPCSTR pMsg, DWORD Color);

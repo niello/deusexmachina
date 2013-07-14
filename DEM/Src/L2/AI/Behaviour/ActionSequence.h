@@ -3,7 +3,7 @@
 #define __DEM_L2_AI_ACTION_SEQUENCE_H__
 
 #include "Action.h"
-#include <util/narray.h>
+#include <Data/Array.h>
 
 // Action sequence is a composite action that executes children in a sequence.
 
@@ -14,14 +14,14 @@ class CActionSequence: public CAction
 {
 protected:
 
-	nArray<PAction>				Child; //???use linked list?
-	nArray<PAction>::CIterator	ppCurrChild;
+	CArray<PAction>				Child; //???use linked list?
+	CArray<PAction>::CIterator	ppCurrChild;
 
 public:
 
 	CActionSequence(): ppCurrChild(NULL) {}
 
-	void				AddChild(CAction* pAction) { n_assert(pAction); Child.Append(pAction); }
+	void				AddChild(CAction* pAction) { n_assert(pAction); Child.Add(pAction); }
 	// RemoveAllChildren / Clear (deactivate current, remove all)
 
 	virtual bool		Activate(CActor* pActor);

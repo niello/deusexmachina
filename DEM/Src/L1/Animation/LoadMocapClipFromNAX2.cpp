@@ -56,8 +56,8 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 		TotalCurves += TmpGroup.numCurves;
 	}
 
-	nArray<CMocapTrack> Tracks;
-	nArray<CStrID> TrackMapping;
+	CArray<CMocapTrack> Tracks;
+	CArray<CStrID> TrackMapping;
 	for (uint i = 0; i < Group.numCurves; ++i)
 	{
 		CNAX2Curve Curve;
@@ -101,7 +101,7 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 		Track.FirstKey = Curve.firstKeyIndex;
 		Track.ConstValue = Curve.collapsedKey;
 		Track.Channel = Channel;
-		TrackMapping.Append(RelNodePath);
+		TrackMapping.Add(RelNodePath);
 	}
 
 	for (uint i = Group.numCurves; i < TotalCurves; ++i)

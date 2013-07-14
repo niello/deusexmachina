@@ -29,9 +29,9 @@ class CPropInventory: public Game::CProperty
 
 protected:
 
-	nArray<CItemStack> Items; //???linked list?
+	CArray<CItemStack> Items; //???linked list?
 
-	typedef nArray<CItemStack>::CIterator ItItemStack;
+	typedef CArray<CItemStack>::CIterator ItItemStack;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -64,7 +64,7 @@ public:
 	bool			SplitItems(PItem Item, WORD Ñount, CItemStack& OutStack);
 	void			MergeItems(PItem Item);
 
-	const nArray<CItemStack>& GetItems() const { return Items; }
+	const CArray<CItemStack>& GetItems() const { return Items; }
 };
 //---------------------------------------------------------------------
 

@@ -56,7 +56,7 @@ public:
 	
 	//EExecStatus		RunFunction(LPCSTR pFuncName, int ArgsOnStack = 0);
 	//EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg);
-	//EExecStatus		RunFunction(LPCSTR pFuncName, const nArray<LPCSTR>& LuaArgs);
+	//EExecStatus		RunFunction(LPCSTR pFuncName, const CArray<LPCSTR>& LuaArgs);
 	//EExecStatus		RunFunction(LPCSTR pFuncName, PParams Args = NULL);
 
 	// Class registration, Mixing-in
@@ -80,7 +80,7 @@ public:
 	void		RemoveObject(LPCSTR Name, LPCSTR Table = NULL);
 	bool		ObjectExists(LPCSTR Name, LPCSTR Table = NULL);
 
-	bool		GetTableFieldsDebug(nArray<nString>& OutFields);
+	bool		GetTableFieldsDebug(CArray<nString>& OutFields);
 };
 
 }

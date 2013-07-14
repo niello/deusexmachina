@@ -5,7 +5,7 @@
 #include <Core/Ptr.h>
 #include <Core/RTTI.h>
 #include <Data/StringID.h>
-#include <util/HashTable.h>
+#include <Data/HashTable.h>
 
 // Template resource manager that allows to manage different resources separately.
 // Resource manager ensures that each shared resource is loaded in memory exactly once.

@@ -83,14 +83,14 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			pCurrNode->SetController(Ctlr);
 			Ctlr->Activate(true);
 
-			Ctlrs.Append(Ctlr);
+			Ctlrs.Add(Ctlr);
 		}
 		else
 		{
 			Physics::PNodeAttrCollision Attr = n_new(Physics::CNodeAttrCollision);
 			Attr->CollObj = (Physics::CCollisionObjMoving*)Obj.GetUnsafe();
 			pCurrNode->AddAttr(*Attr);
-			Attrs.Append(Attr);
+			Attrs.Add(Attr);
 		}
 
 		Obj->AttachToLevel(*pPhysWorld);

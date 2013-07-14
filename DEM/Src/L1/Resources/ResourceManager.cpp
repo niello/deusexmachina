@@ -31,7 +31,7 @@ int IResourceManager::DeleteResource(CStrID UID)
 	PResource* ppRsrc = UIDToResource.Get(UID);
 	if (!ppRsrc) return -1;
 	int RC = (*ppRsrc).IsValid() ? (*ppRsrc)->GetRefCount() : 0;
-	UIDToResource.Erase(UID);
+	UIDToResource.Remove(UID);
 	return RC - 1;
 }
 //---------------------------------------------------------------------
@@ -59,7 +59,7 @@ DWORD IResourceManager::DeleteUnreferenced()
 	//!!!write deletion by CIterator!
 	//???migrate to bullet or some other hash map?
 
-	nArray<CStrID> ToDelete;
+	CArray<CStrID> ToDelete;
 
 	DWORD Released = 0;
 	CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin();
@@ -68,11 +68,11 @@ DWORD IResourceManager::DeleteUnreferenced()
 		{
 			Released += It.GetValue()->GetSizeInBytes();
 			It.GetValue()->Unload();
-			ToDelete.Append(It.GetKey());
+			ToDelete.Add(It.GetKey());
 		}
 
 	for (int i = 0; i < ToDelete.GetCount(); ++i)
-		UIDToResource.Erase(ToDelete[i]);
+		UIDToResource.Remove(ToDelete[i]);
 
 	return Released;
 }

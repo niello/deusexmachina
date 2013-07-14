@@ -75,7 +75,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	if (pInitialDesc) pInitialDesc->Get<Data::PDataArray>(InitialProps, CStrID("Props"));
 
 	//!!!Save props! Get all props, try to find in initial, if all is equal, skip, else write all!
-	nArray<CProperty*> Props;
+	CArray<CProperty*> Props;
 	EntityMgr->GetPropertiesOfEntity(UID, Props);
 	bool Differs = (Props.GetCount() && !InitialProps.IsValid()) || Props.GetCount() != InitialProps->GetCount();
 	if (!Differs && Props.GetCount() && InitialProps.IsValid())
@@ -101,7 +101,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	{
 		Data::PDataArray SGProps = n_new(Data::CDataArray);
 		for (int i = 0; i < Props.GetCount(); ++i)
-			SGProps->Append(Props[i]->GetClassName());
+			SGProps->Add(Props[i]->GetClassName());
 		OutDesc.Set(CStrID("Props"), SGProps);
 	}
 }

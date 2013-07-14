@@ -40,7 +40,7 @@ PSub CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler)
 		else
 		{
 			//!!!rewrite to CHashTable.SetValue()!
-			Subscriptions.Erase(ID);
+			Subscriptions.Remove(ID);
 			Subscriptions.Add(ID, Handler);
 		}
 		Handler->Next = Curr;
@@ -200,7 +200,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* Handler)
 			else
 			{
 				//???rewrite to CHashTable.SetValue()?
-				Subscriptions.Erase(ID);
+				Subscriptions.Remove(ID);
 				if (Handler->Next.IsValid()) Subscriptions.Add(ID, Handler->Next);
 			}
 			return;

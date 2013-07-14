@@ -16,7 +16,7 @@ class CPerceptorOverseer: public CPerceptor
 
 protected:
 
-	nArray<CStrID> Overseers;
+	CArray<CStrID> Overseers;
 	
 	//!!!can also have a personal rule (piece of code/script) to detect overseers!
 

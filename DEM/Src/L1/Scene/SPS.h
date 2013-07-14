@@ -15,14 +15,14 @@ struct CSPSRecord;
 
 struct CSPSCell
 {
-	typedef CSPSRecord* CElement;
+	typedef CSPSRecord* CIterator;
 
-	nArray<CElement> Objects;
-	nArray<CElement> Lights;
+	CArray<CSPSRecord*> Objects;
+	CArray<CSPSRecord*> Lights;
 
-	CElement*	Add(CSPSRecord* const & Object);
-	bool		RemoveByValue(CSPSRecord* const & Object); // By value
-	void		RemoveElement(CElement* pElement) { n_error("No persistent handles for arrays!"); } // By CIterator
+	CIterator	Add(CSPSRecord* const & Object);
+	bool		RemoveByValue(CSPSRecord* const & Object);
+	void		Remove(CIterator It) { n_error("There are no persistent handles for arrays due to possible data move!"); }
 };
 
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;
@@ -65,16 +65,16 @@ inline void CSPSRecord::GetHalfSize(vector2& Out) const
 //---------------------------------------------------------------------
 
 // NB: no persistent handle for arrays
-inline CSPSCell::CElement* CSPSCell::Add(CSPSRecord* const & Object)
+inline CSPSCell::CIterator CSPSCell::Add(CSPSRecord* const & Object)
 {
 	if (Object->IsRenderObject())
 	{
-		Objects.Append(Object);
+		Objects.Add(Object);
 		return NULL;
 	}
 	if (Object->IsLight())
 	{
-		Lights.Append(Object);
+		Lights.Add(Object);
 		return NULL;
 	}
 	n_assert_dbg(false);

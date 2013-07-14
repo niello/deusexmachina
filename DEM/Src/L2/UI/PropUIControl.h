@@ -5,7 +5,7 @@
 #include <Game/Property.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Events/EventHandler.h>
-#include <util/narray.h>
+#include <Data/Array.h>
 
 // InterActiveObject (AO, IAO) property. IAO is a 3D world GUI entity similar to GUI controls like buttons.
 // It has highlighting, hint and causes actions on activation, e.g. clicking.
@@ -58,7 +58,7 @@ protected:
 	Physics::PNodeAttrCollision	MousePickShape;
 	nString						UIName;	//???use attribute?
 	nString						UIDesc;	//???use attribute?
-	nArray<CAction>				Actions;
+	CArray<CAction>				Actions;
 	bool						Enabled;
 	bool						TipVisible;
 	bool						ReflectSOActions;
@@ -105,7 +105,7 @@ public:
 	bool					ExecuteDefaultAction(Game::CEntity* pActorEnt);
 	void					ShowPopup(Game::CEntity* pActorEnt);
 
-	const nArray<CAction>&	GetActions() const { return Actions; }
+	const CArray<CAction>&	GetActions() const { return Actions; }
 	void					EnableSmartObjReflection(bool Enable);
 	bool					IsSmartObjReflectionEnabled() const { return ReflectSOActions; }
 };
@@ -129,7 +129,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, T* Object
 
 inline CPropUIControl::CAction* CPropUIControl::GetActionByID(CStrID ID)
 {
-	for (nArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->ID == ID) return It;
 	return NULL;
 }

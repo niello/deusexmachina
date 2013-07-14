@@ -130,7 +130,7 @@ void CGameServer::SetEntityLoader(CStrID Group, PEntityLoader Loader)
 
 void CGameServer::ClearEntityLoader(CStrID Group)
 {
-	if (Group.IsValid()) Loaders.Erase(Group);
+	if (Group.IsValid()) Loaders.Remove(Group);
 	else DefaultLoader = NULL; //???allow?
 }
 //---------------------------------------------------------------------
@@ -211,7 +211,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 	StaticEnvMgr->DeleteStaticObjects(*Level);
 	Level->FireEvent(CStrID("OnEntitiesUnloaded"));
 
-	Levels.EraseAt(LevelIdx);
+	Levels.RemoveAt(LevelIdx);
 
 	Level->Term();
 
@@ -283,7 +283,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 		LoadedLevels = n_new(Data::CDataArray);
 		SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 	}
-	if (!LoadedLevels->Contains(ActiveLevelID)) LoadedLevels->Append(ActiveLevelID);
+	if (!LoadedLevels->Contains(ActiveLevelID)) LoadedLevels->Add(ActiveLevelID);
 
 	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
 	{
@@ -338,7 +338,7 @@ bool CGameServer::SaveGame(const nString& Name)
 	//???!!!here or in Load/Unload level?
 	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
 	for (int i = 0; i < Levels.GetCount(); ++i)
-		LoadedLevels->Append(Levels.KeyAt(i));
+		LoadedLevels->Add(Levels.KeyAt(i));
 	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
 	Data::PParams GameDesc = DataSrv->LoadPRM(GameFileName);

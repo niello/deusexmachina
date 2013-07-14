@@ -32,6 +32,8 @@ struct CEventID
 	bool operator !=(const CEventID& Other) const { return ID != Other.ID; }
 	bool operator <(const CEventID& Other) const { return ID < Other.ID; }
 	bool operator >(const CEventID& Other) const { return ID > Other.ID; }
+	bool operator <=(const CEventID& Other) const { return ID <= Other.ID; }
+	bool operator >=(const CEventID& Other) const { return ID >= Other.ID; }
 
 	operator DWORD() const { return (DWORD)ID; }
 	operator CStrID() const { return *(CStrID*)&ID; }

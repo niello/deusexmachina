@@ -49,7 +49,7 @@ enum ENVX2VertexComponent
 	AllComponents = ((1<<NumVertexComponents) - 1)
 };
 
-static void SetupVertexComponents(uint Mask, nArray<CVertexComponent>& Components);
+static void SetupVertexComponents(uint Mask, CArray<CVertexComponent>& Components);
 
 //!!!can write/use as default mapped reading, when file is read as its whole
 //so there will be two loaders, memory and stream. Memory is faster, stream allows to load very big files.
@@ -65,7 +65,7 @@ bool LoadMeshFromNVX2(IO::CStream& In, EUsage Usage, ECPUAccess Access, PMesh Ou
 	if (Header.magic != 'NVX2') FAIL;
 	Header.numIndices *= 3;
 
-	nArray<CMeshGroup> MeshGroups(Header.numGroups, 0);
+	CArray<CMeshGroup> MeshGroups(Header.numGroups, 0);
 	for (uint i = 0; i < Header.numGroups; ++i)
 	{
 		CNVX2Group Group;
@@ -79,7 +79,7 @@ bool LoadMeshFromNVX2(IO::CStream& In, EUsage Usage, ECPUAccess Access, PMesh Ou
 		MeshGroup.Topology = TriList;
 	}
 
-	nArray<CVertexComponent> Components;
+	CArray<CVertexComponent> Components;
 	SetupVertexComponents(Header.vertexComponentMask, Components);
 	PVertexLayout VertexLayout = RenderSrv->GetVertexLayout(Components);
 	n_assert_dbg(VertexLayout->GetVertexSize() == (Header.vertexWidth * sizeof(float)));
@@ -139,7 +139,7 @@ bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, 
 }
 //---------------------------------------------------------------------
 
-static void SetupVertexComponents(uint Mask, nArray<CVertexComponent>& Components)
+static void SetupVertexComponents(uint Mask, CArray<CVertexComponent>& Components)
 {
 	if (Mask & Coord)
 	{

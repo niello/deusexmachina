@@ -109,7 +109,7 @@ bool CPropInventory::AddItem(PItem NewItem, WORD Count)
 				break;
 			}
 
-		if (Stack == Items.End()) Items.Append(CItemStack(NewItem, Count)); //???!!!preallocate & set fields?!
+		if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields?!
 
 		PParams P = n_new(CParams);
 		P->Set(CStrID("Item"), nString(NewItem->GetID().CStr()));
@@ -152,7 +152,7 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 		Stack->Remove(ToRemove);
 		CurrVolume += Stack->GetVolume();
 	}
-	else Items.Erase(Stack);
+	else Items.Remove(Stack);
 
 	EventMgr->FireEvent(CStrID("OnItemRemoved"), P);
 
@@ -213,7 +213,7 @@ bool CPropInventory::SplitItems(PItem Item, WORD Count, CItemStack& OutStack)
 	//OutStack.SetEquippedCount(0); //???how to behave when split equipped?
 	OutStack.SetCount(Count);
 
-	Items.Append(OutStack); //???always append? what about stack-on-cursor? append too?
+	Items.Add(OutStack); //???always append? what about stack-on-cursor? append too?
 	OK;
 }
 //---------------------------------------------------------------------
@@ -232,7 +232,7 @@ void CPropInventory::MergeItems(PItem Item)
 			MainStack->Add(Items[i].GetCount());
 			//???what about equipped? MainStack->Merge(Items[i]);?
 			//in normal case erasure will be executed only once
-			Items.EraseAt(i);
+			Items.RemoveAt(i);
 		}
 }
 //---------------------------------------------------------------------

@@ -52,10 +52,10 @@ nString nString::Replace(const char* pMatch, const char* pReplaceWith) const
 	while ((pFound = strstr(pStr, pMatch)))
 	{
 		Result.AppendRange(pStr, pFound - pStr);
-		Result.Append(pReplaceWith);
+		Result.Add(pReplaceWith);
 		pStr = pFound + MatchLen;
 	}
-	Result.Append(pStr);
+	Result.Add(pStr);
 	return Result;
 }
 //---------------------------------------------------------------------

@@ -160,7 +160,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	// Save selection
 	Data::PDataArray SGSelection = n_new(Data::CDataArray);
 	for (int i = 0; i < SelectedEntities.GetCount(); ++i)
-		SGSelection->Append(SelectedEntities[i]);
+		SGSelection->Add(SelectedEntities[i]);
 	OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
 
 	// Save camera state
@@ -251,7 +251,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	}
 
 	//???is there any better way to iterate over all entities of this level? mb send them an event?
-	nArray<CEntity*> Entities(128, 128);
+	CArray<CEntity*> Entities(128, 128);
 	EntityMgr->GetEntitiesByLevel(ID, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
 	const Data::CParams* pInitialEntities = InitialEntities.IsValid() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
@@ -342,7 +342,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 }
 //---------------------------------------------------------------------
 
-DWORD CGameLevel::GetEntitiesAtScreenRect(nArray<CEntity*>& Out, const rectangle& RelRect) const
+DWORD CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const
 {
 	// calc frustum
 	// query scene quadtree with this frustum
@@ -412,7 +412,7 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 }
 //---------------------------------------------------------------------
 
-DWORD CGameLevel::GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OBB) const
+DWORD CGameLevel::GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const
 {
 	// request physics level for shapes and bodies
 	// select ones that are attached to entities
@@ -422,7 +422,7 @@ DWORD CGameLevel::GetEntitiesInPhysBox(nArray<CEntity*>& Out, const matrix44& OB
 }
 //---------------------------------------------------------------------
 
-DWORD CGameLevel::GetEntitiesInPhysSphere(nArray<CEntity*>& Out, const vector3& Center, float Radius) const
+DWORD CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const
 {
 	// request physics level for shapes and bodies
 	// select ones that are attached to entities

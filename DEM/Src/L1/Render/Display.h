@@ -83,7 +83,7 @@ public:
 	void				AdjustSize();
 
 	bool				AdapterExists(EAdapter Adapter);
-	void				GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, nArray<CDisplayMode>& OutModes);
+	void				GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, CArray<CDisplayMode>& OutModes);
 	bool				SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode);
 	bool				GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode);
 	//CAdapterInfo		GetAdapterInfo(EAdapter Adapter);

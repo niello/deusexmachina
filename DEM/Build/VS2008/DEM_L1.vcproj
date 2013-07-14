@@ -289,6 +289,10 @@
 			Name="Data"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Data\Array.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\Buffer.cpp"
 				>
 			</File>
@@ -346,6 +350,18 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Data\FourCC.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\Hash.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\HashMap.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\HashTable.h"
 				>
 			</File>
 			<File
@@ -414,6 +430,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Data\StringTokenizer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\SuperFastHash.h"
 				>
 			</File>
 			<File

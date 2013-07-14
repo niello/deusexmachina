@@ -46,7 +46,7 @@ public:
 
 	CStrID							ClipID;
 	Anim::PAnimClip					Clip;
-	nArray<Scene::PNodeController>	Ctlrs; //???or weak refs?
+	CArray<Scene::PNodeController>	Ctlrs; //???or weak refs?
 	Events::CEventDispatcher*		pEventDisp;	// For anim events
 	Data::PParams					Params;		// For anim events
 	EState							State;

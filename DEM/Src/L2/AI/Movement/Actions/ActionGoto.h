@@ -20,7 +20,7 @@ class CActionGoto: public CAction
 
 protected:
 
-	nArray<CPathEdge>		Path;
+	CArray<CPathEdge>		Path;
 	CStrID					SubActionID;
 	PActionTraversePathEdge SubAction;
 

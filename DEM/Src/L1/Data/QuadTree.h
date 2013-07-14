@@ -24,11 +24,13 @@
 // - void	SetQuadTreeNode(CNode*);
 
 // TStorage interface:
-// - typedef CElement (for array - TObject, for linked list - list node etc)
-// - TObject&	CElement::GetObject(); // or TObject CElement::GetObject();
-// - CElement*	Add(const TObject& Object);
+// - CIterator type (see below)
+// - CIterator	Add(const TObject& Object);
+// - void		Remove(CIterator It);
 // - void		RemoveByValue(const TObject& Object);
-// - void		RemoveElement(CElement* pElement);
+
+// TStorage::CIterator interface:
+// - TObject& CIterator::opreator *(); // or TObject as return type
 
 namespace Data
 {
@@ -40,7 +42,7 @@ public:
 
 	class CNode;
 
-	typedef typename TStorage::CElement CElement;
+	typedef typename TStorage::CIterator CElement;
 
 protected:
 

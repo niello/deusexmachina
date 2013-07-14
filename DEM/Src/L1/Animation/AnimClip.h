@@ -38,7 +38,7 @@ class CAnimClip: public Resources::CResource
 protected:
 
 	CDict<CStrID, CSampler>	Samplers;
-	nArray<CEventTrack>				EventTracks; //???use fixed array? //???per-sampler event tracks (are 3D editors capable)?
+	CArray<CEventTrack>				EventTracks; //???use fixed array? //???per-sampler event tracks (are 3D editors capable)?
 	float							Duration;
 
 public:

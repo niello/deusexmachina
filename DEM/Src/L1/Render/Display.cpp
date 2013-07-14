@@ -321,7 +321,7 @@ bool CDisplay::AdapterExists(EAdapter Adapter)
 }
 //---------------------------------------------------------------------
 
-void CDisplay::GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, nArray<CDisplayMode>& OutModes)
+void CDisplay::GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, CArray<CDisplayMode>& OutModes)
 {
 	n_assert(AdapterExists(Adapter));
 	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
@@ -332,14 +332,14 @@ void CDisplay::GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, n
 		RenderSrv->GetD3D()->EnumAdapterModes(Adapter, Format, i, &D3DDisplayMode);
 		CDisplayMode Mode(D3DDisplayMode.Width, D3DDisplayMode.Height, D3DDisplayMode.Format);
 		if (OutModes.FindIndex(Mode) == INVALID_INDEX)
-			OutModes.Append(Mode);
+			OutModes.Add(Mode);
 	}
 }
 //---------------------------------------------------------------------
 
 bool CDisplay::SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode)
 {
-	nArray<CDisplayMode> Modes;
+	CArray<CDisplayMode> Modes;
 	GetAvailableDisplayModes(Adapter, Mode.PixelFormat, Modes);
 	return Modes.FindIndex(Mode) != INVALID_INDEX;
 }

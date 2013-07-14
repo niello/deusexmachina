@@ -22,9 +22,11 @@ protected:
 
 	struct CNPKDir
 	{
-		CNpkTOCEntry*	pTOCEntry;
-		CNpkTOCEntry*	pCurrEntry;
-		nString			Filter;
+		CNpkTOCEntry*			pTOCEntry;
+		CNpkTOCEntry::CIterator	It;
+		nString					Filter;
+
+		CNPKDir(CNpkTOCEntry* pEntry): pTOCEntry(pEntry), It(pTOCEntry->GetEntryIterator()) {}
 	};
 
 	CNpkTOC		TOC;

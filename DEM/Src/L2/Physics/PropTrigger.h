@@ -43,7 +43,7 @@ protected:
 
 	Physics::PCollisionObjStatic	CollObj;
 	const CScriptObject*			pScriptObj;	// Cached pointer to CPropScriptable object
-	nArray<CStrID>					CurrInsiders;
+	CArray<CStrID>					CurrInsiders;
 	float							Period;
 	float							TimeLastTriggered;
 	bool							Enabled;

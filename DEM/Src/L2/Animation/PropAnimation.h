@@ -34,8 +34,8 @@ private:
 	CDict<CStrID, Scene::CSceneNode*>		Nodes;
 
 	CDict<CStrID, Anim::PAnimClip>		Clips;
-	nArray<Anim::CAnimTask>						Tasks;
-	nArray<Scene::PNodeControllerStatic>		BasePose; // Captured pose for correct fading and blending
+	CArray<Anim::CAnimTask>						Tasks;
+	CArray<Scene::PNodeControllerStatic>		BasePose; // Captured pose for correct fading and blending
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

@@ -52,7 +52,7 @@ protected:
 	vector3						DestPoint;
 	dtPolyRef					DestRef;
 
-	//nArray<CPathEdge>			Path;
+	//CArray<CPathEdge>			Path;
 
 	dtPolyRef					OffMeshRef;
 	vector3						OffMeshPoint;
@@ -83,7 +83,7 @@ public:
 
 	void			UpdatePosition();
 	void			EndEdgeTraversal();
-	bool			GetPathEdges(nArray<CPathEdge>& OutPath, int MaxSize = MAX_SDWORD);
+	bool			GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize = MAX_SDWORD);
 	void			GetObstacles(float Range, dtObstacleAvoidanceQuery& Query);
 	//bool			GetRandomValidLocation(float Range, vector3& Location);
 

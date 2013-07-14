@@ -111,7 +111,7 @@ template<> void CGameServer::SetGlobalAttr(CStrID ID, const Data::CData& Value)
 	else
 	{
 		int Idx = Attrs.FindIndex(ID);
-		if (Idx != INVALID_INDEX) Attrs.Erase(ID);
+		if (Idx != INVALID_INDEX) Attrs.Remove(ID);
 	}
 }
 //---------------------------------------------------------------------

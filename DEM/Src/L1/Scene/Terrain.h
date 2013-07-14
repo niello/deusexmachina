@@ -35,7 +35,7 @@ protected:
 	};
 
 	short*					pMinMaxData;
-	nArray<CMinMaxMap>		MinMaxMaps;
+	CArray<CMinMaxMap>		MinMaxMaps;
 
 	Render::PTexture		HeightMap;
 

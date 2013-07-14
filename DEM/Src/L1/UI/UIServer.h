@@ -49,7 +49,7 @@ private:
 	CDict<CStrID, PWindow>		Screens;
 	CWindow*							CurrRootScreen;
 
-	nArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
+	CArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
 
 	DECLARE_EVENT_HANDLER(KeyDown, OnKeyDown);
 	DECLARE_EVENT_HANDLER(KeyUp, OnKeyUp);
@@ -101,7 +101,7 @@ public:
 	// Event will be disconnected at the end of GUI render loop.
 	// Attention! This method is not thread safe. You must call
 	// it only from GUI thread.
-	void			DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.Append(Connection); }
+	void			DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.Add(Connection); }
 	/*
 	void UnloadScheme(const nString& schemeName);
 	void UnloadAllSchemes();

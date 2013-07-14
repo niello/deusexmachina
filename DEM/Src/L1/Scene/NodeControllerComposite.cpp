@@ -64,7 +64,7 @@ bool CNodeControllerComposite::RemoveSource(const Scene::CNodeController& Ctlr)
 		{
 			if (pNode) Src.Ctlr->OnDetachFromNode();
 
-			Sources.EraseAt(i);
+			Sources.RemoveAt(i);
 
 			Channels.ClearAll();
 			for (int j = 0; j < Sources.GetCount(); ++j)

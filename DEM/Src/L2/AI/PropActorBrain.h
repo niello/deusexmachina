@@ -48,10 +48,10 @@ protected:
 	//???BhvSystem/DecisionSystem?
 	//SoundSystem/SpeechSystem
 
-	nArray<PSensor>				Sensors;
-	nArray<PPerceptor>			Perceptors; //???may be store only in sensors? sensors die - perceptors die with no source. refcount.
-	nArray<PGoal>				Goals;
-	nArray<const CActionTpl*>	Actions;
+	CArray<PSensor>				Sensors;
+	CArray<PPerceptor>			Perceptors; //???may be store only in sensors? sensors die - perceptors die with no source. refcount.
+	CArray<PGoal>				Goals;
+	CArray<const CActionTpl*>	Actions;
 
 	PGoal						CurrGoal;
 	PAction						CurrPlan;
@@ -125,13 +125,13 @@ public:
 	CNavSystem&		GetNavSystem() { return NavSystem; }
 	CMotorSystem&	GetMotorSystem() { return MotorSystem; }
 
-	const nArray<PSensor>& GetSensors() const { return Sensors; }
+	const CArray<PSensor>& GetSensors() const { return Sensors; }
 };
 //---------------------------------------------------------------------
 
 inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 {
-	for (nArray<const CActionTpl*>::CIterator ppTpl = Actions.Begin(); ppTpl != Actions.End(); ppTpl++)
+	for (CArray<const CActionTpl*>::CIterator ppTpl = Actions.Begin(); ppTpl != Actions.End(); ppTpl++)
 		if (*ppTpl == pAction) OK;
 	FAIL;
 }

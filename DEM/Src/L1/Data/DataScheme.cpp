@@ -68,7 +68,7 @@ bool CDataScheme::Init(const CParams& Desc)
 		if (Value.Get(pDflt, CStrID("Default")))
 			Rec.Default = pDflt->GetRawValue();
 
-		Records.Append(Rec);
+		Records.Add(Rec);
 	}
 
 	OK;

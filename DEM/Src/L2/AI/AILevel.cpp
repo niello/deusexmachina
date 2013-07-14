@@ -201,7 +201,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 
 	if (EClipStatus == Outside) return;
 
-	for (int i = 0; i < pNode->Data.GetListCount(); ++i)
+	for (DWORD i = 0; i < pNode->Data.GetListCount(); ++i)
 		if (pSensor->AcceptsStimulusType(*pNode->Data.GetKeyAt(i)))
 		{
 			CStimulusListSet::CElement* pCurr = pNode->Data.GetHeadAt(i);

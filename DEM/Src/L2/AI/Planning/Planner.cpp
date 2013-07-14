@@ -14,7 +14,7 @@ const nString StrActTplPrefix("AI::CActionTpl");
 
 namespace AI
 {
-static nArray<CActionTpl*> ActionsAdded;
+static CArray<CActionTpl*> ActionsAdded;
 
 void CPlanner::RegisterActionTpl(LPCSTR Name, PParams Params)
 {
@@ -22,7 +22,7 @@ void CPlanner::RegisterActionTpl(LPCSTR Name, PParams Params)
 	{
 		PActionTpl NewTpl = (CActionTpl*)Factory->Create(StrActTplPrefix + Name);
 		NewTpl->Init(Params);
-		ActionTpls.Append(NewTpl); //???dictionary? CStrID -> Tpl?
+		ActionTpls.Add(NewTpl); //???dictionary? CStrID -> Tpl?
 	}
 }
 //---------------------------------------------------------------------
@@ -35,7 +35,7 @@ void CPlanner::EndActionTpls()
 
 		for (DWORD i = 0; i < WSP_Count; ++i)
 			if (Effects.IsPropSet((EWSProp)i))
-				EffectToActions[i].Append(ActionTpls[NewActIdx]);
+				EffectToActions[i].Add(ActionTpls[NewActIdx]);
 	}
 
 	ActionsAdded.Reallocate(ActionTpls.GetCount(), 0);
@@ -164,7 +164,7 @@ int CPlanner::CmpPlannerNodes(const void* First, const void* Second)
 
 // A neighbor is an Action that has an effect potentially satisfying one of the goal props.
 // Neighbors are based only on the property key, not on the associated value.
-void CPlanner::FillNeighbors(CActor* pActor, const CNode& Node, nArray<CNode*>& OutNeighbors)
+void CPlanner::FillNeighbors(CActor* pActor, const CNode& Node, CArray<CNode*>& OutNeighbors)
 {
 	OutNeighbors.Clear();
 	ActionsAdded.Clear();
@@ -177,15 +177,15 @@ void CPlanner::FillNeighbors(CActor* pActor, const CNode& Node, nArray<CNode*>& 
 			Node.WSCurr.GetProp((EWSProp)i) == Node.WSGoal.GetProp((EWSProp)i))
 			continue;
 
-		nArray<CActionTpl*>& Actions = EffectToActions[i];
-		for (nArray<CActionTpl*>::CIterator ppAction = Actions.Begin(); ppAction != Actions.End(); ppAction++)
-			if (ActionsAdded.BinarySearchIndex(*ppAction) == INVALID_INDEX &&
+		CArray<CActionTpl*>& Actions = EffectToActions[i];
+		for (CArray<CActionTpl*>::CIterator ppAction = Actions.Begin(); ppAction != Actions.End(); ppAction++)
+			if (ActionsAdded.FindIndexSorted(*ppAction) == INVALID_INDEX &&
 				pActor->IsActionAvailable(*ppAction) &&
 				(*ppAction)->ValidateContextPreconditions(pActor, Node.WSGoal))
 			{					
 				CNode* pNewNode = NodePool.Construct();
 				pNewNode->pAction = *ppAction;
-				OutNeighbors.Append(pNewNode);
+				OutNeighbors.Add(pNewNode);
 				ActionsAdded.InsertSorted(*ppAction);
 				if (OutNeighbors.GetCount() >= ActionTpls.GetCount()) break;
 			}
@@ -218,7 +218,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	pCurrNode->Goal = 0;
 	pCurrNode->Fitness = pCurrNode->WSCurr.GetDiffCount(pCurrNode->WSGoal);
 
-	nArray<CNode*> Neighbors;
+	CArray<CNode*> Neighbors;
 
 	while (true)
 	{

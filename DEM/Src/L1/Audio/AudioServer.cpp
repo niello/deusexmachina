@@ -122,7 +122,7 @@ void CAudioServer::AttachEntity(CAudioEntity* pEntity)
 {
 	n_assert(pEntity);
 	pEntity->Activate();
-	Entities.Append(pEntity);
+	Entities.Add(pEntity);
 }
 //---------------------------------------------------------------------
 
@@ -130,9 +130,9 @@ void CAudioServer::RemoveEntity(CAudioEntity* pEntity)
 {
 	n_assert(pEntity);
 	pEntity->Deactivate();
-	nArray<PAudioEntity>::CIterator itEntity = Entities.Find(pEntity);
+	CArray<PAudioEntity>::CIterator itEntity = Entities.Find(pEntity);
 	n_assert(itEntity);
-	Entities.Erase(itEntity);
+	Entities.Remove(itEntity);
 }
 //---------------------------------------------------------------------
 

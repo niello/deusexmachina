@@ -5,7 +5,7 @@
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
 #include <IO/IOFwd.h>
-#include <util/HashMap.h>
+#include <Data/HashMap.h>
 
 // IO server manages input/output, file systems, generic file caching, path assigns
 
@@ -35,7 +35,7 @@ class CIOServer: public Core::CRefCounted
 private:
 
 	PFileSystem							DefaultFS;
-	nArray<PFileSystem>					FS;
+	CArray<PFileSystem>					FS;
 	CHashMap<nString>					Assigns; //!!!need better hashmap with Clear, Find etc!
 
 public:

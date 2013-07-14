@@ -67,7 +67,7 @@ void CTimeServer::AttachTimeSource(CStrID Name, PTimeSource TimeSrc)
 void CTimeServer::RemoveTimeSource(CStrID Name)
 {
 	int Idx = TimeSources.FindIndex(Name);
-	if (Idx != INVALID_INDEX) TimeSources.EraseAt(Idx);
+	if (Idx != INVALID_INDEX) TimeSources.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
 
@@ -199,7 +199,7 @@ void CTimeServer::Trigger()
 				if (Timer.Loop) Timer.CurrTime -= Timer.Time;
 				else
 				{
-					Timers.EraseAt(i--);
+					Timers.RemoveAt(i--);
 					break;
 				}
 			}

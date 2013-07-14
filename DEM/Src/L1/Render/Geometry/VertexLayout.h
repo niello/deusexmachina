@@ -64,7 +64,7 @@ class CVertexLayout: public Core::CRefCounted
 {
 protected:
 
-	nArray<CVertexComponent>		Components;
+	CArray<CVertexComponent>		Components;
 	DWORD							VertexSize;
 	IDirect3DVertexDeclaration9*	pDecl;
 
@@ -73,13 +73,13 @@ public:
 	CVertexLayout(): pDecl(NULL), VertexSize(0) {}
 	~CVertexLayout() { Destroy(); }
 
-	bool	Create(const nArray<CVertexComponent>& VertexComponents);
+	bool	Create(const CArray<CVertexComponent>& VertexComponents);
 	void	Destroy();
 
 	DWORD	GetVertexSize() const { return VertexSize; }
 
-	static CStrID					BuildSignature(const nArray<CVertexComponent>& Components);
-	const nArray<CVertexComponent>&	GetComponents() const { return Components; }
+	static CStrID					BuildSignature(const CArray<CVertexComponent>& Components);
+	const CArray<CVertexComponent>&	GetComponents() const { return Components; }
 	IDirect3DVertexDeclaration9*	GetD3DVertexDeclaration() const { return pDecl; }
 };
 
