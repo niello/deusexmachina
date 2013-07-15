@@ -23,6 +23,7 @@ struct CSPSCell
 	CIterator	Add(CSPSRecord* const & Object);
 	bool		RemoveByValue(CSPSRecord* const & Object);
 	void		Remove(CIterator It) { n_error("There are no persistent handles for arrays due to possible data move!"); }
+	CIterator	Find(CSPSRecord* const & Object) const { return NULL; } //???!!!implement?
 };
 
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;

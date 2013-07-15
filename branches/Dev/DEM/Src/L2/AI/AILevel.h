@@ -22,8 +22,8 @@ class CAILevel: public Core::CRefCounted
 {
 protected:
 
-	bbox3							Box;
-	CStimulusQT						StimulusQT;		// Quadtree containing stimuli and other AI hints
+	bbox3					Box;
+	CStimulusQT				StimulusQT;		// Quadtree containing stimuli and other AI hints
 	CDict<float, CNavData>	NavData;		// Mapped to maximum radius of agent
 
 	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = Clipped);
@@ -47,11 +47,11 @@ public:
 	void			ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
 	void			SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius = 0.f);
 
-	CStimulusNode*	RegisterStimulus(CStimulus* pStimulus);
-	CStimulusNode*	UpdateStimulusLocation(CStimulus* pStimulus) { n_assert(pStimulus && pStimulus->GetQuadTreeNode()); return StimulusQT.UpdateObject(pStimulus); }
-	void			UpdateStimulusLocation(CStimulusNode*& pStimulusNode) { n_assert(pStimulusNode && pStimulusNode->Object->GetQuadTreeNode()); StimulusQT.UpdateElement(pStimulusNode); }
+	CStimulusNode	RegisterStimulus(CStimulus* pStimulus);
+	CStimulusNode	UpdateStimulusLocation(CStimulus* pStimulus) { n_assert(pStimulus && pStimulus->GetQuadTreeNode()); return StimulusQT.UpdateObject(pStimulus); }
+	void			UpdateStimulusLocation(CStimulusNode& StimulusNode) { n_assert(StimulusNode && (*StimulusNode)->GetQuadTreeNode()); StimulusQT.UpdateHandle(StimulusNode); }
 	void			RemoveStimulus(CStimulus* pStimulus);		//!!!autoremove on expire!
-	void			RemoveStimulus(CStimulusNode* pStimulusNode);	//!!!autoremove on expire!
+	void			RemoveStimulus(CStimulusNode StimulusNode);	//!!!autoremove on expire!
 	void			UpdateActorsSense(CActor* pActor, CSensor* pSensor);
 };
 //---------------------------------------------------------------------

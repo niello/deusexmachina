@@ -35,7 +35,7 @@ void CPropAIHints::InternalDeactivate()
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
-		if (Rec.pNode) GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.pNode);
+		if (Rec.QTNode) GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.QTNode);
 	}
 
 	Hints.Clear();
@@ -110,7 +110,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 
 			//???Rec.Stimulus->Init(PrmVal);
 
-			Rec.pNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus) : NULL;
+			Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus) : NULL;
 			Hints.Add(Prm.GetName(), Rec);
 		}
 		Hints.EndAdd();
@@ -130,15 +130,15 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 
 		if (Enable)
 		{
-			if (!Rec.pNode)
-				Rec.pNode = GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus);
+			if (!Rec.QTNode)
+				Rec.QTNode = GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus);
 		}
 		else
 		{
-			if (Rec.pNode)
+			if (Rec.QTNode)
 			{
-				GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.pNode);
-				Rec.pNode = NULL;
+				GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.QTNode);
+				Rec.QTNode = NULL;
 			}
 		}
 	}
@@ -153,7 +153,7 @@ bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
-		if (Rec.pNode) GetEntity()->GetLevel().GetAI()->UpdateStimulusLocation(Rec.pNode);
+		if (Rec.QTNode) GetEntity()->GetLevel().GetAI()->UpdateStimulusLocation(Rec.QTNode);
 	}
 
 	OK;
@@ -171,7 +171,7 @@ bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 
-		if (Rec.pNode) //???else draw grey or more pale/transparent sphere?
+		if (Rec.QTNode) //???else draw grey or more pale/transparent sphere?
 		{
 			if (Rec.Stimulus->GetRTTI()->GetName() == "AI::CStimulusVisible")
 				DebugDraw->DrawSphere(Rec.Stimulus->Position, 0.2f, ColorVisible);

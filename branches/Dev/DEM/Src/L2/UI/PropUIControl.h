@@ -87,7 +87,7 @@ public:
 
 	enum { Priority_Default = 20, Priority_Top = 100 };
 
-	CPropUIControl(): TipVisible(false), Enabled(true) { Actions.Flags.Clear(Array_KeepOrder); }
+	CPropUIControl(): TipVisible(false), Enabled(true) { }
 
 	void					Enable(bool SetEnabled);
 	bool					IsEnabled() const { return Enabled; }

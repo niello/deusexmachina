@@ -71,8 +71,8 @@ public:
 	CIterator	AddBack(const T& Val) { return AddAfter(pBack, Val); }
 	void		AddList(const CList<T>& Other);
 
-	void		RemoveFront(T* pOutValue = NULL) { n_assert_dbg(pFront); Remove(pFront, pOutValue); }
-	void		RemoveBack(T* pOutValue = NULL) { n_assert_dbg(pBack); Remove(pBack, pOutValue); }
+	bool		RemoveFront(T* pOutValue = NULL) { if (!pFront) FAIL; Remove(pFront, pOutValue); OK; }
+	bool		RemoveBack(T* pOutValue = NULL) { if (!pBack) FAIL; Remove(pBack, pOutValue); OK; }
 	void		Remove(CIterator It, T* pOutValue = NULL);
 	bool		RemoveByValue(const T& Val);
 	void		Clear() { while (pBack) RemoveBack(); }

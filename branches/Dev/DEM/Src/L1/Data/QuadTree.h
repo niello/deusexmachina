@@ -5,9 +5,9 @@
 #include <mathlib/bbox.h>
 #include <Data/FixedArray.h>
 
-#ifdef GetObject
-#undef GetObject
-#endif
+//#ifdef GetObject
+//#undef GetObject
+//#endif
 
 //???write loose quadtree? Current variant is not so good.
 //???create child nodes on demand, using node pool?
@@ -42,7 +42,7 @@ public:
 
 	class CNode;
 
-	typedef typename TStorage::CIterator CElement;
+	typedef typename TStorage::CIterator CHandle;
 
 protected:
 
@@ -104,10 +104,10 @@ public:
 
 		template<class TObject, class TStorage> friend class CQuadTree;
 		
-		CElement*	AddObject(TObject& Object);
-		CElement*	AddObject(TObject& Object, const vector2& Center, const vector2& HalfSize);
-		void		RemoveObject(TObject& Object);
-		void		RemoveElement(CElement* pElement);
+		CHandle	AddObject(TObject& Object);
+		CHandle	AddObject(TObject& Object, const vector2& Center, const vector2& HalfSize);
+		void	RemoveByValue(TObject& Object);
+		void	RemoveByHandle(CHandle Handle);
 
 	public:
 
@@ -130,16 +130,16 @@ public:
 	CQuadTree() {}
 	CQuadTree(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth) { Build(CenterX, CenterZ, SizeX, SizeZ, TreeDepth); }
 
-	void		Build(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth);
+	void	Build(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth);
 
-	CNode*		GetNode(ushort Col, ushort Row, uchar Level);
-	CNode*		GetRootNode() { return &Nodes[0]; }
+	CNode*	GetNode(ushort Col, ushort Row, uchar Level);
+	CNode*	GetRootNode() { return &Nodes[0]; }
 
-	CElement*	AddObject(TObject& Object) { return Nodes[0].AddObject(Object); }
-	CElement*	UpdateObject(TObject& Object);
-	void		UpdateElement(CElement*& pElement);
-	void		RemoveObject(TObject& Object) { TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveObject(Object); }
-	void		RemoveElement(CElement* pElement) { TObjTraits::GetPtr(pElement->GetObject())->GetQuadTreeNode()->RemoveElement(pElement); }
+	CHandle	AddObject(TObject& Object) { return Nodes[0].AddObject(Object); }
+	CHandle	UpdateObject(TObject& Object);
+	void	UpdateHandle(CHandle& Handle);
+	void	RemoveByValue(TObject& Object) { TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveByValue(Object); }
+	void	RemoveByHandle(CHandle Handle) { TObjTraits::GetPtr(*Handle)->GetQuadTreeNode()->RemoveByHandle(Handle); }
 
 	//!!!Test against circle & 2d box
 
@@ -242,27 +242,27 @@ typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::Find
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::UpdateObject(TObject& Object)
+typename CQuadTree<TObject, TStorage>::CHandle CQuadTree<TObject, TStorage>::UpdateObject(TObject& Object)
 {
 	CNode* pCurrNode = TObjTraits::GetPtr(Object)->GetQuadTreeNode();
 	CNode* pNewNode = FindContainingNode(Object);
 
-	if (pCurrNode == pNewNode) return NULL; //???return pCurrNode->Data.GetElementByValue(Object);?
+	if (pCurrNode == pNewNode) return pCurrNode->Data.Find(Object); // return NULL
 
 	TObjTraits::GetPtr(Object)->SetQuadTreeNode(pNewNode);
-	CElement* pNewElm = pNewNode->Data.Add(Object);
+	CHandle NewHandle = pNewNode->Data.Add(Object);
 	pCurrNode->Data.RemoveByValue(Object);		
-	return pNewElm;
+	return NewHandle;
 }
 //---------------------------------------------------------------------
 
-// NB: pElement is in-out arg
+// NB: Handle is an in-out arg
 template<class TObject, class TStorage>
-void CQuadTree<TObject, TStorage>::UpdateElement(typename CQuadTree<TObject, TStorage>::CElement*& pElement)
+void CQuadTree<TObject, TStorage>::UpdateHandle(typename CQuadTree<TObject, TStorage>::CHandle& Handle)
 {
 	//???is there a better way?
-	const TObject& Object = pElement->GetObject();
-	TObjTraits::Ref ObjRef = TObjTraits::GetRef(pElement->GetObject());
+	const TObject& Object = *Handle;
+	TObjTraits::Ref ObjRef = TObjTraits::GetRef(*Handle);
 
 	CNode* pCurrNode = ObjRef.GetQuadTreeNode();
 	CNode* pNewNode = FindContainingNode(Object);
@@ -270,15 +270,15 @@ void CQuadTree<TObject, TStorage>::UpdateElement(typename CQuadTree<TObject, TSt
 	if (pCurrNode != pNewNode)
 	{
 		ObjRef.SetQuadTreeNode(pNewNode);
-		CElement* pNewElm = pNewNode->Data.Add(Object);
-		pCurrNode->Data.RemoveElement(pElement);		
-		pElement = pNewElm;
+		CHandle NewHandle = pNewNode->Data.Add(Object);
+		pCurrNode->Data.Remove(Handle);		
+		Handle = NewHandle;
 	}
 }
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-inline typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::CNode::AddObject(TObject& Object)
+inline typename CQuadTree<TObject, TStorage>::CHandle CQuadTree<TObject, TStorage>::CNode::AddObject(TObject& Object)
 {
 	vector2 Center, HalfSize;
 	TObjTraits::GetPtr(Object)->GetCenter(Center);
@@ -288,9 +288,9 @@ inline typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStor
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::CNode::AddObject(TObject& Object,
-																								const vector2& Center,
-																								const vector2& HalfSize)
+typename CQuadTree<TObject, TStorage>::CHandle CQuadTree<TObject, TStorage>::CNode::AddObject(TObject& Object,
+																							  const vector2& Center,
+																							  const vector2& HalfSize)
 {
 	++TotalObjCount;
 
@@ -305,7 +305,7 @@ typename CQuadTree<TObject, TStorage>::CElement* CQuadTree<TObject, TStorage>::C
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
+inline void CQuadTree<TObject, TStorage>::CNode::RemoveByValue(TObject& Object)
 {
 	TObjTraits::GetPtr(Object)->SetQuadTreeNode(NULL);
 	Data.RemoveByValue(Object);
@@ -319,10 +319,10 @@ inline void CQuadTree<TObject, TStorage>::CNode::RemoveObject(TObject& Object)
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-inline void CQuadTree<TObject, TStorage>::CNode::RemoveElement(typename CQuadTree<TObject, TStorage>::CElement* pElement)
+inline void CQuadTree<TObject, TStorage>::CNode::RemoveByHandle(typename CQuadTree<TObject, TStorage>::CHandle Handle)
 {
-	TObjTraits::GetPtr(pElement->GetObject())->SetQuadTreeNode(NULL);
-	Data.RemoveElement(pElement);
+	TObjTraits::GetPtr(*Handle)->SetQuadTreeNode(NULL);
+	Data.Remove(Handle);
 	CNode* pNode = this;
 	while (pNode)
 	{

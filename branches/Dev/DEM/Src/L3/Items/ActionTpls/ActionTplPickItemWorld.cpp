@@ -40,10 +40,10 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 	CMemFactSmartObj* pBest = NULL;
 	float MaxConf = 0.f;
 
-	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
-	for (; pCurr; pCurr = pCurr->GetSucc())
+	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
+	for (; It; ++It)
 	{
-		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.Get();
+		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)It->Get();
 		if (pSOFact->TypeID == CStrID("Item"))
 		{
 			Game::CEntity* pEnt = EntityMgr->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);

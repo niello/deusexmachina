@@ -17,6 +17,7 @@ bool CShader::Setup(ID3DXEffect* pFX)
 	n_assert(SUCCEEDED(pEffect->GetDesc(&Desc)));
 
 	n_assert(Desc.Techniques > 0);
+	FlagsToTech.BeginAdd();
 	for (UINT i = 0; i < Desc.Techniques; ++i)
 	{
 		D3DXHANDLE hTech = pEffect->GetTechnique(i);
@@ -38,6 +39,7 @@ bool CShader::Setup(ID3DXEffect* pFX)
 		}
 		else n_printf("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}
+	FlagsToTech.EndAdd();
 
 	// It is good for pass and batch shaders with only one tech
 	// It seems, pass shaders use the only tech without setting it

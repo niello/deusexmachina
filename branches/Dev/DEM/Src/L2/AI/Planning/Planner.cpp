@@ -201,16 +201,16 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 {
 	n_assert(pActor && pGoal);
 
+	CWorldState WSActor;
+	pActor->FillWorldState(WSActor);
+
 	// Some sources recommend to use IDA* instead of basic A*.
 	// We use A* at least for now.
 
-	CNode* pCurrNode = NodePool.Construct();
+	Data::CList<CNode*> OpenList, ClosedList;
+	Data::CList<CNode*>::CIterator ItCurrNode = OpenList.AddFront(NodePool.Construct());
 
-	nList OpenList, ClosedList;
-	OpenList.AddHead(pCurrNode);
-
-	CWorldState WSActor;
-	pActor->FillWorldState(WSActor);
+	CNode* pCurrNode = *ItCurrNode;
 
 	pGoal->GetDesiredProps(pCurrNode->WSGoal);
 	MergeWorldStates(pCurrNode->WSCurr, pCurrNode->WSGoal, WSActor);
@@ -227,17 +227,16 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 		// AI Game Programming Wisdom, p. 133.
 		// Specifically "Be a Cheapskate" on p. 140.
 
-		pCurrNode = (CNode*)OpenList.GetHead();
+		ItCurrNode = OpenList.Begin();
 
-		if (!pCurrNode) break; // No valid plan exists
+		if (!ItCurrNode) break; // No valid plan exists
 
-		for (CNode* pNode = pCurrNode; pNode; pNode = (CNode*)pNode->GetSucc())
-			if (pNode->Fitness < pCurrNode->Fitness)
-				pCurrNode = pNode;
+		for (Data::CList<CNode*>::CIterator It = ItCurrNode; It; ++It)
+			if ((*It)->Fitness < (*ItCurrNode)->Fitness)
+				ItCurrNode = It;
 
-		pCurrNode->Remove();
-
-		ClosedList.AddHead(pCurrNode);
+		OpenList.Remove(ItCurrNode, &pCurrNode);
+		ClosedList.AddFront(pCurrNode);
 
 		//!!!this re-checks plan from the beginning! can re-check only part changed since last check?
 		if (IsPlanValid(pActor, pCurrNode, WSActor)) break; // Valid plan found
@@ -295,7 +294,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 			n_assert(pNeighbor->Fitness < MAX_SDWORD);
 			//if (pNeighbor->Fitness == MAX_SDWORD) NodePool.Destroy(pNeighbor);
 
-			OpenList.AddHead(pNeighbor);
+			OpenList.AddFront(pNeighbor);
 		}
 
 		// No need now, but can optimize:
@@ -343,11 +342,11 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	n_printf("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUID());
 #endif
 
-	while (CNode* pNode = (CNode*)OpenList.RemHead()) NodePool.Destroy(pNode);
-	while (CNode* pNode = (CNode*)ClosedList.RemHead()) NodePool.Destroy(pNode);
+	while (OpenList.RemoveBack(&pCurrNode)) NodePool.Destroy(pCurrNode);
+	while (ClosedList.RemoveBack(&pCurrNode)) NodePool.Destroy(pCurrNode);
 
 	return Plan;
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

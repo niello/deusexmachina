@@ -134,7 +134,7 @@ void CModel::OnDetachFromNode()
 {
 	if (pSPSRecord)
 	{
-		pNode->GetScene()->SPS.RemoveObject(pSPSRecord);
+		pNode->GetScene()->SPS.RemoveByValue(pSPSRecord);
 		n_delete(pSPSRecord);
 		pSPSRecord = NULL;
 	}
