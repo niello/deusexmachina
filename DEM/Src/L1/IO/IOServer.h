@@ -36,7 +36,7 @@ private:
 
 	PFileSystem							DefaultFS;
 	CArray<PFileSystem>					FS;
-	CHashMap<nString>					Assigns; //!!!need better hashmap with Clear, Find etc!
+	CHashMap<CString>					Assigns; //!!!need better hashmap with Clear, Find etc!
 
 public:
 
@@ -48,32 +48,32 @@ public:
 	CIOServer();
 	~CIOServer();
 
-	bool			MountNPK(const nString& NPKPath, const nString& Root = NULL);
+	bool			MountNPK(const CString& NPKPath, const CString& Root = NULL);
 
-	bool			FileExists(const nString& Path) const;
-	bool			IsFileReadOnly(const nString& Path) const;
-	bool			SetFileReadOnly(const nString& Path, bool ReadOnly) const;
-	bool			DeleteFile(const nString& Path) const;
-	DWORD			GetFileSize(const nString& Path) const;
-	bool			CopyFile(const nString& SrcPath, const nString& DestPath);
-	bool			DirectoryExists(const nString& Path) const;
-	bool			CreateDirectory(const nString& Path) const;
-	bool			DeleteDirectory(const nString& Path) const;
-	bool			CopyDirectory(const nString& SrcPath, const nString& DestPath, bool Recursively);
-	//bool Checksum(const nString& filename, uint& crc);
-	//nFileTime GetFileWriteTime(const nString& pathName);
+	bool			FileExists(const CString& Path) const;
+	bool			IsFileReadOnly(const CString& Path) const;
+	bool			SetFileReadOnly(const CString& Path, bool ReadOnly) const;
+	bool			DeleteFile(const CString& Path) const;
+	DWORD			GetFileSize(const CString& Path) const;
+	bool			CopyFile(const CString& SrcPath, const CString& DestPath);
+	bool			DirectoryExists(const CString& Path) const;
+	bool			CreateDirectory(const CString& Path) const;
+	bool			DeleteDirectory(const CString& Path) const;
+	bool			CopyDirectory(const CString& SrcPath, const CString& DestPath, bool Recursively);
+	//bool Checksum(const CString& filename, uint& crc);
+	//nFileTime GetFileWriteTime(const CString& pathName);
 
-	void*			OpenFile(PFileSystem& OutFS, const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
-	void*			OpenDirectory(const nString& Path, const nString& Filter, PFileSystem& OutFS, nString& OutName, EFSEntryType& OutType) const;
+	void*			OpenFile(PFileSystem& OutFS, const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
+	void*			OpenDirectory(const CString& Path, const CString& Filter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
 
 	//???LoadXML? then rename these functions not to bind name to data format.
-	void			SetAssign(const nString& Assign, const nString& Path);
-	nString			GetAssign(const nString& Assign) const;
-	nString			ManglePath(const nString& Path) const;
-	bool			LoadFileToBuffer(const nString& FileName, Data::CBuffer& Buffer);
+	void			SetAssign(const CString& Assign, const CString& Path);
+	CString			GetAssign(const CString& Assign) const;
+	CString			ManglePath(const CString& Path) const;
+	bool			LoadFileToBuffer(const CString& FileName, Data::CBuffer& Buffer);
 
 #ifdef _EDITOR
-	bool			QueryMangledPath(const nString& FileName, nString& MangledFileName) const;
+	bool			QueryMangledPath(const CString& FileName, CString& MangledFileName) const;
 #endif
 };
 

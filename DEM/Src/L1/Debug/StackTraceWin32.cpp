@@ -1,5 +1,5 @@
 #include "StackTraceWin32.h"
-#include <util/nstring.h>
+#include <Data/String.h>
 
 namespace Debug
 {
@@ -37,8 +37,8 @@ void CStackTraceWin32::WalkStack(HANDLE thread, CONTEXT& context)
 	// add executable's directory to the search path
 	char buf[N_MAXPATH];
 	DWORD strLen = GetModuleFileName(0,  buf, sizeof(buf));
-	nString path = buf;
-	nString dirPath = path.ExtractDirName();
+	CString path = buf;
+	CString dirPath = path.ExtractDirName();
 	SymInitialize(hProcess, (PSTR)dirPath.CStr(), true);
 
 	STACKFRAME64 stackFrame = { 0 };

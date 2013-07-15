@@ -15,15 +15,15 @@ namespace Core
 {
 __ImplementSingleton(CLogger);
 
-bool CLogger::Open(const char* pAppName, const nString& FilePath)
+bool CLogger::Open(const char* pAppName, const CString& FilePath)
 {
 	AppName = pAppName;
 
 	n_assert(!pLogFile && !_IsOpen);
 	_IsOpen = true;
 
-	nString Dir;
-	nString RealPath(FilePath);
+	CString Dir;
+	CString RealPath(FilePath);
 	if (RealPath.IsEmpty())
 	{
 		Dir = "AppData:STILL NO TEAM NAME/Logs";

@@ -16,25 +16,25 @@ public:
 
 	virtual ~IFileSystem() {}
 
-	virtual bool	Mount(const nString& Source, const nString& Root) = 0;
+	virtual bool	Mount(const CString& Source, const CString& Root) = 0;
 	virtual void	Unmount() = 0;
 	virtual bool	ProvidesFileCursor() = 0;
 
-	virtual bool	FileExists(const nString& Path) = 0;
-	virtual bool	IsFileReadOnly(const nString& Path) = 0;
-	virtual bool	SetFileReadOnly(const nString& Path, bool ReadOnly) = 0;
-	virtual bool	DeleteFile(const nString& Path) = 0;
-	virtual bool	CopyFile(const nString& SrcPath, const nString& DestPath) = 0;
-	virtual bool	DirectoryExists(const nString& Path) = 0;
-	virtual bool	CreateDirectory(const nString& Path) = 0;
-	virtual bool	DeleteDirectory(const nString& Path) = 0;
-	virtual bool	GetSystemFolderPath(ESystemFolder Code, nString& OutPath) = 0;
+	virtual bool	FileExists(const CString& Path) = 0;
+	virtual bool	IsFileReadOnly(const CString& Path) = 0;
+	virtual bool	SetFileReadOnly(const CString& Path, bool ReadOnly) = 0;
+	virtual bool	DeleteFile(const CString& Path) = 0;
+	virtual bool	CopyFile(const CString& SrcPath, const CString& DestPath) = 0;
+	virtual bool	DirectoryExists(const CString& Path) = 0;
+	virtual bool	CreateDirectory(const CString& Path) = 0;
+	virtual bool	DeleteDirectory(const CString& Path) = 0;
+	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath) = 0;
 
-	virtual void*	OpenDirectory(const nString& Path, const nString& Filter, nString& OutName, EFSEntryType& OutType) = 0;
+	virtual void*	OpenDirectory(const CString& Path, const CString& Filter, CString& OutName, EFSEntryType& OutType) = 0;
 	virtual void	CloseDirectory(void* hDir) = 0;
-	virtual bool	NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryType& OutType) = 0;
+	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType) = 0;
 
-	virtual void*	OpenFile(const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
+	virtual void*	OpenFile(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	CloseFile(void* hFile) = 0;
 	virtual DWORD	Read(void* hFile, void* pData, DWORD Size) = 0;
 	virtual DWORD	Write(void* hFile, const void* pData, DWORD Size) = 0;

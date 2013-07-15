@@ -131,7 +131,7 @@ bool LoadMeshFromNVX2(IO::CStream& In, EUsage Usage, ECPUAccess Access, PMesh Ou
 }
 //---------------------------------------------------------------------
 
-bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
+bool LoadMeshFromNVX2(const CString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh)
 {
 	IO::CFileStream File;
 	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&

@@ -26,7 +26,7 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResource
 		Reader.Read(DataBlockCount);
 		--DataBlockCount;
 
-		static const nString StrAttr("Scene::C");
+		static const CString StrAttr("Scene::C");
 		char ClassName[256];
 		n_assert(Reader.ReadString(ClassName, sizeof(ClassName)));
 
@@ -59,7 +59,7 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResource
 }
 //---------------------------------------------------------------------
 
-bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true)
+bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode, bool PreloadResources = true)
 {
 	IO::CFileStream File;
 	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&

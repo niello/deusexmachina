@@ -20,8 +20,6 @@ protected:
 	DWORD	BufferSize;
 	bool	FreeBuffer;
 
-	bool	IsCharInList(char Chr);
-
 public:
 
 	CStringTokenizer(LPCSTR String, LPCSTR SplitChars, LPSTR Buffer = NULL, DWORD BufSize = 0);
@@ -54,7 +52,7 @@ inline CStringTokenizer::CStringTokenizer(LPCSTR String, LPCSTR SplitChars, LPST
 			while (*pCursor)
 			{
 				char Chr = *pCursor;
-				if (IsCharInList(Chr))
+				if (strchr(pSplitChars, Chr))
 				{
 					if (CurrSize > BufferSize) BufferSize = CurrSize;
 					CurrSize = 0;
@@ -86,7 +84,7 @@ inline LPCSTR CStringTokenizer::GetNextToken()
 
 		char Chr = *pCursor;
 		++pCursor;
-		if (IsCharInList(Chr))
+		if (strchr(pSplitChars, Chr))
 		{
 			*pBuf = 0;
 			return pBuffer;
@@ -131,15 +129,6 @@ inline LPCSTR CStringTokenizer::GetNextTokenSingleChar()
 	pCursor = NULL;
 	*pBuf = 0;
 	return pBuffer;
-}
-//---------------------------------------------------------------------
-
-inline bool CStringTokenizer::IsCharInList(char Chr)
-{
-	LPCSTR pSplitChar = pSplitChars;
-	while (*pSplitChar)
-		if (Chr == *pSplitChar++) OK;
-	FAIL;
 }
 //---------------------------------------------------------------------
 

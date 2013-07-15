@@ -10,7 +10,7 @@
 	#endif
 #endif
 
-const nString StrActTplPrefix("AI::CActionTpl");
+const CString StrActTplPrefix("AI::CActionTpl");
 
 namespace AI
 {
@@ -316,7 +316,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 		if (CurrAction.IsValid())
 		{
 #ifdef _DEBUG
-			nString DbgString;
+			CString DbgString;
 			CurrAction->GetDebugString(DbgString);
 			n_printf("Planner -> '%s'     Action added: '%s'\n",
 				pActor->GetEntity()->GetUID(), DbgString.CStr());

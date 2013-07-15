@@ -1,7 +1,7 @@
 #ifndef N_D3D9SHADERINCLUDE_H
 #define N_D3D9SHADERINCLUDE_H
 
-#include <util/nstring.h>
+#include <Data/String.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3dx9.h>
@@ -13,18 +13,18 @@ class CD3DXDEMInclude: public ID3DXInclude
 {
 private:
 
-	nString ShaderDir;
-	nString ShaderRootDir;
+	CString ShaderDir;
+	CString ShaderRootDir;
 
 public:
 
-	CD3DXDEMInclude(const nString& ShdDir, const nString& ShdRootDir);
+	CD3DXDEMInclude(const CString& ShdDir, const CString& ShdRootDir);
 
 	STDMETHOD(Open)(D3DXINCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes);
 	STDMETHOD(Close)(LPCVOID pData) { n_free((void*)pData); return S_OK; }
 };
 
-inline CD3DXDEMInclude::CD3DXDEMInclude(const nString& ShdDir, const nString& ShdRootDir):
+inline CD3DXDEMInclude::CD3DXDEMInclude(const CString& ShdDir, const CString& ShdRootDir):
 	ShaderDir(ShdDir),
 	ShaderRootDir(ShdRootDir)
 {

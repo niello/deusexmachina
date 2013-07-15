@@ -53,7 +53,7 @@ private:
 
 public:
 
-	nString					RsrcName;
+	CString					RsrcName;
 
 	float					Volume;
 	int						Priority;

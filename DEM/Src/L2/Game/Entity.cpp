@@ -84,10 +84,10 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		for (int i = 0; i < Props.GetCount(); ++i)
 		{
 			//???!!!use FourCC!?
-			const nString& ClassName = Props[i]->GetClassName();
+			const CString& ClassName = Props[i]->GetClassName();
 			int j;
 			for (j = 0; j < InitialProps->GetCount(); ++j)
-				if (InitialProps->Get<nString>(j) == ClassName)
+				if (InitialProps->Get<CString>(j) == ClassName)
 					break;
 			if (j == InitialProps->GetCount())
 			{

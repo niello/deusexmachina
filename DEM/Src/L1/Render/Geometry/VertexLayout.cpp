@@ -106,7 +106,7 @@ void CVertexLayout::Destroy()
 CStrID CVertexLayout::BuildSignature(const CArray<CVertexComponent>& Components)
 {
 	if (!Components.GetCount()) return CStrID::Empty;
-	nString UID;
+	CString UID;
 	for (int i = 0; i < Components.GetCount(); ++i)
 	{
 		const CVertexComponent& Cmp = Components[i];

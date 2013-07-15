@@ -114,7 +114,7 @@ void CWatcherWindow::AddAllGlobals()
 	int i = Watched.GetCount();
 	for (CHashMap<CData>::CIterator It = CoreSrv->Globals.Begin(); !It.IsEnd(); ++It, ++i)
 	{
-		nString Str(It.GetKey(), It.GetKeyLength());
+		CString Str(It.GetKey(), It.GetKeyLength());
 		AddWatched(DEM, Str.CStr());
 	}
 
@@ -206,27 +206,27 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 					if (CurrVar.IsA<bool>())
 					{
 						It->pTypeItem->setText("DEM bool");
-						It->pValueItem->setText(nString::FromBool(CurrVar.GetValue<bool>()).CStr());
+						It->pValueItem->setText(CString::FromBool(CurrVar.GetValue<bool>()).CStr());
 					}
 					else if (CurrVar.IsA<int>())
 					{
 						It->pTypeItem->setText("DEM int");
-						It->pValueItem->setText(nString::FromInt(CurrVar.GetValue<int>()).CStr());
+						It->pValueItem->setText(CString::FromInt(CurrVar.GetValue<int>()).CStr());
 					}
 					else if (CurrVar.IsA<float>())
 					{
 						It->pTypeItem->setText("DEM float");
-						It->pValueItem->setText(nString::FromFloat(CurrVar.GetValue<float>()).CStr());
+						It->pValueItem->setText(CString::FromFloat(CurrVar.GetValue<float>()).CStr());
 					}
-					else if (CurrVar.IsA<nString>())
+					else if (CurrVar.IsA<CString>())
 					{
 						It->pTypeItem->setText("DEM string");
-						It->pValueItem->setText((CEGUI::utf8*)CurrVar.GetValue<nString>().CStr());
+						It->pValueItem->setText((CEGUI::utf8*)CurrVar.GetValue<CString>().CStr());
 					}
 					else if (CurrVar.IsA<vector4>())
 					{
 						It->pTypeItem->setText("DEM vector4");
-						It->pValueItem->setText(nString::FromVector4(CurrVar.GetValue<vector4>()).CStr());
+						It->pValueItem->setText(CString::FromVector4(CurrVar.GetValue<vector4>()).CStr());
 					}
 					else
 					{
@@ -262,27 +262,27 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 				else if (Output.IsA<int>())
 				{
 					It->pTypeItem->setText("Lua int");
-					It->pValueItem->setText(nString::FromInt(Output).CStr());
+					It->pValueItem->setText(CString::FromInt(Output).CStr());
 				}
 				else if (Output.IsA<float>())
 				{
 					It->pTypeItem->setText("Lua float");
-					It->pValueItem->setText(nString::FromFloat(Output).CStr());
+					It->pValueItem->setText(CString::FromFloat(Output).CStr());
 				}
-				else if (Output.IsA<nString>())
+				else if (Output.IsA<CString>())
 				{
 					It->pTypeItem->setText("Lua string");
-					It->pValueItem->setText((CEGUI::utf8*)Output.GetValue<nString>().CStr());
+					It->pValueItem->setText((CEGUI::utf8*)Output.GetValue<CString>().CStr());
 				}
 				else if (Output.IsA<vector4>())
 				{
 					It->pTypeItem->setText("Lua vector4");
-					It->pValueItem->setText(nString::FromVector4(Output).CStr());
+					It->pValueItem->setText(CString::FromVector4(Output).CStr());
 				}
 				else if (Output.IsA<PVOID>())
 				{
 					It->pTypeItem->setText("Lua userdata");
-					It->pValueItem->setText(nString::FromInt((int)Output.GetValue<PVOID>()).CStr());
+					It->pValueItem->setText(CString::FromInt((int)Output.GetValue<PVOID>()).CStr());
 				}
 				else if (Output.IsA<PDataArray>())
 				{

@@ -9,7 +9,7 @@
 
 namespace Scene
 {
-	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
+	bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode, bool PreloadResources = true);
 }
 
 namespace Game
@@ -43,10 +43,10 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 
 	Desc = Attrs; //&ObjDesc;
 
-	nString NodePath;
-	Desc->Get<nString>(NodePath, CStrID("ScenePath"));
-	nString NodeFile;
-	Desc->Get<nString>(NodeFile, CStrID("SceneFile"));
+	CString NodePath;
+	Desc->Get<CString>(NodePath, CStrID("ScenePath"));
+	CString NodeFile;
+	Desc->Get<CString>(NodeFile, CStrID("SceneFile"));
 
 	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = UID.CStr();
@@ -70,10 +70,10 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	// It is necessary because collision objects may require subnode world transformations.
 	if (Node.IsValid()) Node->UpdateLocalSpace();
 
-	const nString& PhysicsDescFile = Desc->Get<nString>(CStrID("Physics"), NULL);    
+	const CString& PhysicsDescFile = Desc->Get<CString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
-		Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("Physics:") + PhysicsDescFile.CStr() + ".prm");
+		Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
 		if (PhysicsDesc.IsValid())
 		{
 			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
@@ -86,7 +86,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 				CollObj->Init(ObjDesc); //???where to get offset?
 
 				Scene::CSceneNode* pCurrNode = Node.GetUnsafe();
-				const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);
+				const CString& RelNodePath = ObjDesc.Get<CString>(CStrID("Node"), CString::Empty);
 				if (pCurrNode && RelNodePath.IsValid())
 				{
 					pCurrNode = pCurrNode->GetChild(RelNodePath.CStr());

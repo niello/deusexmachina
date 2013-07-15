@@ -13,7 +13,7 @@ using namespace Data;
 void CValidatorScript::Init(PParams Desc)
 {
 	n_assert(Desc.IsValid());
-	ConditionFunc = Desc->Get<nString>(CStrID("ConditionFunc")).CStr();
+	ConditionFunc = Desc->Get<CString>(CStrID("ConditionFunc")).CStr();
 	//???!!!relevance func?!
 }
 //---------------------------------------------------------------------

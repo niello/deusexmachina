@@ -18,7 +18,7 @@ __ImplementClass(AI::CWorldStateSourceScript, 'WSSS', AI::CWorldStateSource);
 void CWorldStateSourceScript::Init(Data::PParams Desc)
 {
 	n_assert(Desc.IsValid());
-	Func = Desc->Get<nString>(CStrID("Func")).CStr();
+	Func = Desc->Get<CString>(CStrID("Func")).CStr();
 }
 //---------------------------------------------------------------------
 
@@ -56,10 +56,10 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 				EWSProp Key = GetPropKeyByName(Prm.GetName().CStr());
 				if (Key != WSP_Invalid)
 				{
-					// Conversion from nString to CStrID may be wrong, fix if so
-					if (Prm.IsA<nString>())
+					// Conversion from CString to CStrID may be wrong, fix if so
+					if (Prm.IsA<CString>())
 					{
-						LPCSTR Str = Prm.GetValue<nString>().CStr();
+						LPCSTR Str = Prm.GetValue<CString>().CStr();
 						EWSProp Value = GetPropKeyByName(Str);
 						WS.SetProp(Key, (Value != WSP_Invalid) ? CData(Value) : CData(CStrID(Str)));
 					}

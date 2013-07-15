@@ -54,7 +54,7 @@ class CGameLevel: public Events::CEventDispatcher
 protected:
 
 	CStrID						ID;
-	nString						Name;
+	CString						Name;
 	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
 	CArray<CStrID>				SelectedEntities;
@@ -100,7 +100,7 @@ public:
 	bool					IsSelected(CStrID EntityID) const { return SelectedEntities.Contains(EntityID); }
 
 	CStrID					GetID() const { return ID; }
-	const nString&			GetName() const { return Name; }
+	const CString&			GetName() const { return Name; }
 
 	Scene::CScene*			GetScene() const { return Scene.GetUnsafe(); }
 	Physics::CPhysicsWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }

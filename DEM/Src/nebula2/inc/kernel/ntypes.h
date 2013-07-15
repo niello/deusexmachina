@@ -3,7 +3,7 @@
 
 #include <stdio.h> //???why error if comment?
 #include <stdlib.h> // malloc, free
-#include <new> // malloc, free
+#include <new>
 #include "StdCfg.h"
 
 //---------------------------------------------------------------------

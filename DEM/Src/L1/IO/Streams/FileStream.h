@@ -4,7 +4,7 @@
 
 #include <IO/Stream.h>
 #include <IO/FileSystem.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // File system file access stream
 // Partially based on Nebula 3 (c) IO::FileStream class
@@ -16,7 +16,7 @@ class CFileStream: public CStream
 {
 protected:
 
-	nString		FileName;
+	CString		FileName;
 	PFileSystem	FS;
 	void*		hFile;
 
@@ -25,7 +25,7 @@ public:
 	CFileStream(): hFile(NULL) {}
 	virtual ~CFileStream() { if (IsOpen()) Close(); }
 
-	bool			Open(const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
+	bool			Open(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();
 	virtual DWORD	Read(void* pData, DWORD Size);
@@ -35,8 +35,8 @@ public:
 	virtual void*	Map();
 	virtual void	Unmap();
 
-	void			SetFileName(const nString& Path) { n_assert(!IsOpen()); FileName = Path; }
-	const nString&	GetFileName() const { return FileName; }
+	void			SetFileName(const CString& Path) { n_assert(!IsOpen()); FileName = Path; }
+	const CString&	GetFileName() const { return FileName; }
 	virtual DWORD	GetSize() const;
 	virtual DWORD	GetPosition() const;
 	virtual bool	IsEOF() const;
@@ -46,7 +46,7 @@ public:
 	virtual bool	CanBeMapped() const { OK; }
 };
 
-inline bool CFileStream::Open(const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+inline bool CFileStream::Open(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
 	FileName = Path;
 	return Open(Mode, Pattern);

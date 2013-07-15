@@ -585,7 +585,7 @@ PVertexLayout CRenderServer::GetVertexLayout(const CArray<CVertexComponent>& Com
 }
 //---------------------------------------------------------------------
 
-EPixelFormat CRenderServer::GetPixelFormat(const nString& String)
+EPixelFormat CRenderServer::GetPixelFormat(const CString& String)
 {
 	if (String.IsEmpty()) return PixelFormat_Invalid;
 

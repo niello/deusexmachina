@@ -18,7 +18,7 @@ class CDlgNodePhrase: public CDlgNode
 public:
 
 	CStrID	SpeakerEntity;
-	nString	Phrase;
+	CString	Phrase;
 	float	Timeout;
 
 	CDlgNodePhrase(): Timeout(-1.f) {}

@@ -3,7 +3,7 @@
 namespace IO
 {
 
-bool CFileSystemNPK::Mount(const nString& Source, const nString& Root)
+bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 {
 	if (!NPKData.Open(Source, SAM_READ, SAP_RANDOM)) FAIL;
 
@@ -40,7 +40,7 @@ bool CFileSystemNPK::Mount(const nString& Source, const nString& Root)
 			// Placeholder root directory name
 			if (!strcmp(NameBuffer, "<noname>"))
 			{
-				nString NewName = Source.ExtractFileName();
+				CString NewName = Source.ExtractFileName();
 				NewName.StripExtension();
 				NewName.ToLower();
 				n_strncpy2(NameBuffer, NewName.CStr(), sizeof(NameBuffer));
@@ -77,51 +77,51 @@ void CFileSystemNPK::Unmount()
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::FileExists(const nString& Path)
+bool CFileSystemNPK::FileExists(const CString& Path)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	return pTE && pTE->GetType() == FSE_FILE;
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::IsFileReadOnly(const nString& Path)
+bool CFileSystemNPK::IsFileReadOnly(const CString& Path)
 {
 	OK; // All NPK files are readonly
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::DeleteFile(const nString& Path)
+bool CFileSystemNPK::DeleteFile(const CString& Path)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::CopyFile(const nString& SrcPath, const nString& DestPath)
+bool CFileSystemNPK::CopyFile(const CString& SrcPath, const CString& DestPath)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::DirectoryExists(const nString& Path)
+bool CFileSystemNPK::DirectoryExists(const CString& Path)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	return pTE && pTE->GetType() == FSE_DIR;
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::CreateDirectory(const nString& Path)
+bool CFileSystemNPK::CreateDirectory(const CString& Path)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::DeleteDirectory(const nString& Path)
+bool CFileSystemNPK::DeleteDirectory(const CString& Path)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, nString& OutPath)
+bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 {
 	// VFS doesn't provide any system directories
 	OutPath.Clear();
@@ -129,16 +129,16 @@ bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, nString& OutPath)
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNPK::OpenDirectory(const nString& Path, const nString& Filter, nString& OutName, EFSEntryType& OutType)
+void* CFileSystemNPK::OpenDirectory(const CString& Path, const CString& Filter, CString& OutName, EFSEntryType& OutType)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	if (pTE && pTE->GetType() == FSE_DIR)
 	{
 		CNPKDir* pDir = n_new(CNPKDir(pTE));
-		pDir->Filter = (Filter == "*") ? nString::Empty : Filter;
+		pDir->Filter = (Filter == "*") ? CString::Empty : Filter;
 
 		if (Filter.IsValid())
-			while (!pDir->It.IsEnd() && !nString(pDir->It.GetValue()->GetName()).MatchPattern(Filter))
+			while (!pDir->It.IsEnd() && !CString(pDir->It.GetValue()->GetName()).MatchPattern(Filter))
 				++pDir->It;
 
 		if (!pDir->It.IsEnd())
@@ -167,7 +167,7 @@ void CFileSystemNPK::CloseDirectory(void* hDir)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryType& OutType)
+bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType)
 {
 	n_assert(hDir);
 	CNPKDir* pDir = ((CNPKDir*)hDir);
@@ -176,7 +176,7 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryTy
 		++pDir->It;
 
 		if (pDir->Filter.IsValid())
-			while (!pDir->It.IsEnd() && !nString(pDir->It.GetValue()->GetName()).MatchPattern(pDir->Filter))
+			while (!pDir->It.IsEnd() && !CString(pDir->It.GetValue()->GetName()).MatchPattern(pDir->Filter))
 				++pDir->It;
 
 		if (!pDir->It.IsEnd())
@@ -193,7 +193,7 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryTy
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNPK::OpenFile(const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern /*Pattern*/)
+void* CFileSystemNPK::OpenFile(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern /*Pattern*/)
 {
 	n_assert(Path.IsValid());
 	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());

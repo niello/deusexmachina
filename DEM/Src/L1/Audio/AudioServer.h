@@ -66,11 +66,11 @@ public:
 	void			Close();
 	void			Trigger();
 
-	//bool			OpenWaveBank(const nString& Name);
+	//bool			OpenWaveBank(const CString& Name);
 	//void			CloseWaveBank();
 	//CWaveBank*		GetWaveBank() const { return WaveBank.GetUnsafe(); }
 	
-	void			PlaySoundEffect(const nString& FXName, const vector3& Pos, const vector3& Vel, float Volume);
+	void			PlaySoundEffect(const CString& FXName, const vector3& Pos, const vector3& Vel, float Volume);
 	
 	void			AttachEntity(CAudioEntity* e);
 	void			RemoveEntity(CAudioEntity* e);
@@ -88,7 +88,7 @@ public:
 };
 
 /*
-CDSSound* CAudioServer::CreateSoundFromResourceName(const nString& Name)
+CDSSound* CAudioServer::CreateSoundFromResourceName(const CString& Name)
 {
 	n_assert(WaveBank.IsValid());
 	CWaveResource* pResource = WaveBank->FindResource(Name);

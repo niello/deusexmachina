@@ -8,7 +8,7 @@
 #include <Data/StringTokenizer.h>
 #include <IO/IOServer.h>
 
-extern const nString StrLuaObjects;
+extern const CString StrLuaObjects;
 
 extern "C"
 {
@@ -76,7 +76,7 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	else if (Data.IsA<bool>()) lua_pushboolean(l, Data.GetValue<bool>());
 	else if (Data.IsA<int>()) lua_pushinteger(l, Data.GetValue<int>());
 	else if (Data.IsA<float>()) lua_pushnumber(l, Data.GetValue<float>());
-	else if (Data.IsA<nString>()) lua_pushstring(l, Data.GetValue<nString>().CStr());
+	else if (Data.IsA<CString>()) lua_pushstring(l, Data.GetValue<CString>().CStr());
 	else if (Data.IsA<CStrID>()) lua_pushstring(l, Data.GetValue<CStrID>().CStr());
 	else if (Data.IsA<PVOID>()) lua_pushlightuserdata(l, Data.GetValue<PVOID>());
 	else if (Data.IsA<Data::PDataArray>())
@@ -122,7 +122,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State*
 		if ((double)((int)Value) == Value) Result = (int)Value;
 		else Result = (float)Value;
 	}
-	else if (Type == LUA_TSTRING) Result = nString(lua_tostring(l, StackIdx));
+	else if (Type == LUA_TSTRING) Result = CString(lua_tostring(l, StackIdx));
 	else if (Type == LUA_TLIGHTUSERDATA) Result = lua_touserdata(l, StackIdx);
 	else if (Type == LUA_TTABLE)
 	{						
@@ -203,7 +203,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State*
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptServer::RunScriptFile(const nString& FileName)
+EExecStatus CScriptServer::RunScriptFile(const CString& FileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
@@ -362,7 +362,7 @@ void CScriptServer::ExportIntegerConst(LPCSTR Name, int Value)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::LoadClass(const nString& Name)
+bool CScriptServer::LoadClass(const CString& Name)
 {
 	n_assert2(Name.IsValid(), "Invalid class name to register");
 
@@ -370,7 +370,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 	Data::PParams ClassDesc = DataSrv->LoadPRM("ScriptClasses:" + Name + ".cls", false);
 	if (!ClassDesc.IsValid()) FAIL;
 
-	const nString& BaseClass = ClassDesc->Get<nString>(CStrID("Base"), nString::Empty);
+	const CString& BaseClass = ClassDesc->Get<CString>(CStrID("Base"), CString::Empty);
 	if (!BeginClass(Name.CStr(), BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;
 
 	const char* pData = NULL;
@@ -385,9 +385,9 @@ bool CScriptServer::LoadClass(const nString& Name)
 			pData = (const char*)Code.GetPtr();
 			Size = Code.GetSize();
 		}
-		else if (pCodePrm->IsA<nString>())
+		else if (pCodePrm->IsA<CString>())
 		{
-			const nString& Code = pCodePrm->GetValue<nString>();
+			const CString& Code = pCodePrm->GetValue<CString>();
 			pData = Code.CStr();
 			Size = Code.Length();
 		}
@@ -398,7 +398,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 		if (luaL_loadbuffer(l, pData, Size, Name.CStr()) != 0)
 		{
 			n_printf("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-			if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
+			if (pCodePrm->IsA<CString>()) n_printf("Script is: %s\n", pData);
 			lua_pop(l, 2);
 			FAIL;
 		}
@@ -409,7 +409,7 @@ bool CScriptServer::LoadClass(const nString& Name)
 		if (lua_pcall(l, 0, 0, 0))
 		{
 			n_printf("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-			if (pCodePrm->IsA<nString>()) n_printf("Script is: %s\n", pData);
+			if (pCodePrm->IsA<CString>()) n_printf("Script is: %s\n", pData);
 			lua_pop(l, 2); // Error msg, class table
 			FAIL;
 		}
@@ -620,7 +620,7 @@ bool CScriptServer::ObjectExists(LPCSTR Name, LPCSTR Table)
 //---------------------------------------------------------------------
 
 //???universalize?
-bool CScriptServer::GetTableFieldsDebug(CArray<nString>& OutFields)
+bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 {
 	OutFields.Clear();
 
@@ -629,7 +629,7 @@ bool CScriptServer::GetTableFieldsDebug(CArray<nString>& OutFields)
 	lua_pushnil(l);
 	while (lua_next(l, -2))
 	{
-		nString& New = *OutFields.Reserve(1);
+		CString& New = *OutFields.Reserve(1);
 		New = lua_tostring(l, -2);
 		switch (lua_type(l, -1))
 		{

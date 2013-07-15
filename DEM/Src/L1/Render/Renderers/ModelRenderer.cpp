@@ -44,7 +44,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<CString>().CStr()));
 		}
 	}
 
@@ -54,10 +54,10 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 	BatchType = Desc.Get<CStrID>(CStrID("BatchType"));
 	n_assert(BatchType.IsValid());
 
-	FeatFlags = RenderSrv->ShaderFeatures.GetMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
+	FeatFlags = RenderSrv->ShaderFeatures.GetMask(Desc.Get<CString>(CStrID("FeatFlags"), NULL));
 
-	nString SortType;
-	if (Desc.Get<nString>(SortType, CStrID("Sort")))
+	CString SortType;
+	if (Desc.Get<CString>(SortType, CStrID("Sort")))
 	{
 		SortType = SortType.Trim(N_WHITESPACE);
 		SortType.ToLower();
@@ -83,7 +83,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 
 		for (DWORD i = 0; i < MaxLightsPerObject; ++i)
 		{
-			nString Mask;
+			CString Mask;
 			Mask.Format("L%d", i + 1);
 			LightFeatFlags[i] = RenderSrv->ShaderFeatures.GetMask(Mask);
 		}

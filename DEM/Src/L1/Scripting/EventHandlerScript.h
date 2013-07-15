@@ -20,16 +20,16 @@ class CEventHandlerScript: public CEventHandler
 private:
 
 	CScriptObject*	pObject; //???weak ref?
-	nString			Func;
+	CString			Func;
 
 public:
 
-	CEventHandlerScript(CScriptObject* Obj, const nString& FuncName, ushort _Priority = Priority_Default): CEventHandler(_Priority), pObject(Obj), Func(FuncName) {}
+	CEventHandlerScript(CScriptObject* Obj, const CString& FuncName, ushort _Priority = Priority_Default): CEventHandler(_Priority), pObject(Obj), Func(FuncName) {}
 
 	virtual bool operator()(const CEventBase& Event);
 
 	CScriptObject*	GetObj() const { return pObject; }
-	const nString&	GetFunc() const { return Func; }
+	const CString&	GetFunc() const { return Func; }
 };
 
 }

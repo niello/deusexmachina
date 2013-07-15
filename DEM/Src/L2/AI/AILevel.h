@@ -36,7 +36,7 @@ public:
 	bool			Init(const bbox3& LevelBox, uchar QuadTreeDepth);
 	void			RenderDebug();
 
-	bool			LoadNavMesh(const nString& FileName);
+	bool			LoadNavMesh(const CString& FileName);
 	void			UnloadNavMesh();
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);

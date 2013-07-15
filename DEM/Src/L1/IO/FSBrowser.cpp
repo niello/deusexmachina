@@ -14,7 +14,7 @@ bool CFSBrowser::ForceToFirstEntry()
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::SetRelativePath(const nString& Path)
+bool CFSBrowser::SetRelativePath(const CString& Path)
 {
 	n_assert(CurrPath.IsValid());
 	CurrPath.StripTrailingSlash();
@@ -22,7 +22,7 @@ bool CFSBrowser::SetRelativePath(const nString& Path)
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::ListCurrDirContents(CArray<nString>& OutContents, DWORD EntryTypes, const nString& Filter)
+bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes, const CString& Filter)
 {
 	AtFirstEntry = false;
 

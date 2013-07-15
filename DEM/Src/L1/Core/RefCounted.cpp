@@ -30,7 +30,7 @@ void CRefCounted::DumpLeaks()
 		CRefCountedList::CIterator It;
 		for (CRefCountedList::CIterator It = List.Begin(); It != List.End(); It++)
 		{
-			nString Msg;
+			CString Msg;
 			Msg.Format("*** REFCOUNT LEAK: Object of class '%s' at address '0x%08lx', refcount is '%d'\n", 
 				(*It)->GetClassName().CStr(),
 				(*It),

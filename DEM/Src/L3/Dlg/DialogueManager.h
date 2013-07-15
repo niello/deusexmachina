@@ -81,8 +81,8 @@ public:
 
 	void		Trigger();
 
-	PDialogue	CreateDialogue(const CParams& Params, const nString& Name);
-	PDialogue	GetDialogue(const nString& Name); //???CStrID identifier?
+	PDialogue	CreateDialogue(const CParams& Params, const CString& Name);
+	PDialogue	GetDialogue(const CString& Name); //???CStrID identifier?
 
 	void		StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool Foreground);
 	void		ContinueDialogue(int ValidLinkIdx = -1);
@@ -90,7 +90,7 @@ public:
 	bool		IsDialogueForeground(CActiveDlg& Dlg) const { return &Dlg == &ForegroundDlg; }
 	//AbortDlg(ID);
 
-	void		SayPhrase(CStrID SpeakerEntity, const nString& Phrase, CActiveDlg& Dlg);
+	void		SayPhrase(CStrID SpeakerEntity, const CString& Phrase, CActiveDlg& Dlg);
 };
 
 }

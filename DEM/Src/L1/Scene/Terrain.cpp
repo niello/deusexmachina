@@ -9,7 +9,7 @@
 
 namespace Render
 {
-	bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
+	bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
 }
 
 namespace Scene
@@ -73,7 +73,7 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
 {
 	IO::CFileStream CDLODFile;
-	if (!CDLODFile.Open(nString("Terrain:") + HeightMap->GetUID().CStr() + ".cdlod", IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	if (!CDLODFile.Open(CString("Terrain:") + HeightMap->GetUID().CStr() + ".cdlod", IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
 	IO::CBinaryReader Reader(CDLODFile);
 
 	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
@@ -129,7 +129,7 @@ bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
 	TopPatchCountX = (HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
 	TopPatchCountZ = (HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
 
-	static const nString StrTextures("Textures:");
+	static const CString StrTextures("Textures:");
 
 	for (int i = 0; i < ShaderVars.GetCount(); ++i)
 	{

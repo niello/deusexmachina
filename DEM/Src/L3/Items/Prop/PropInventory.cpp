@@ -112,9 +112,9 @@ bool CPropInventory::AddItem(PItem NewItem, WORD Count)
 		if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields?!
 
 		PParams P = n_new(CParams);
-		P->Set(CStrID("Item"), nString(NewItem->GetID().CStr()));
+		P->Set(CStrID("Item"), CString(NewItem->GetID().CStr()));
 		P->Set(CStrID("Count"), (int)Count);
-		P->Set(CStrID("Entity"), nString(GetEntity()->GetUID().CStr()));
+		P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));
 		EventMgr->FireEvent(CStrID("OnItemAdded"), P);
 
 		OK;
@@ -143,9 +143,9 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 	CurrVolume -= Stack->GetVolume();
 	
 	PParams P = n_new(CParams);
-	P->Set(CStrID("Item"), nString(Stack->GetItemID().CStr()));
+	P->Set(CStrID("Item"), CString(Stack->GetItemID().CStr()));
 	P->Set(CStrID("Count"), (int)ToRemove);
-	P->Set(CStrID("Entity"), nString(GetEntity()->GetUID().CStr()));
+	P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));
 
 	if (Stack->GetCount() > ToRemove)
 	{

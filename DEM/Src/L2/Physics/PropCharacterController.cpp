@@ -51,10 +51,10 @@ void CPropCharacterController::CreateController()
 	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel().GetPhysics();
 	if (!pPhysWorld) return;
 
-	const nString& PhysicsDescFile = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);    
+	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
-	Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("Physics:") + PhysicsDescFile.CStr() + ".prm");
+	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
 	if (!PhysicsDesc.IsValid()) return;
 
 	//???init by entity attrs like R & H instead?
@@ -228,7 +228,7 @@ bool CPropCharacterController::OnRenderDebug(const Events::CEventBase& Event)
 	/*
 	if (GetEntity()->GetUID() == CStrID("GG"))
 	{
-		nString text;
+		CString text;
 		text.Format("Velocity: %.4f, %.4f, %.4f\nDesired velocity: %.4f, %.4f, %.4f\nAngular desired: %.5f\n"
 					"Speed: %.4f\nDesired speed: %.4f",
 			PhysEntity->GetVelocity().x,

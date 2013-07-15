@@ -35,7 +35,7 @@
 
 
 
-#include <util/nstring.h>
+#include <Data/String.h>
 
 typedef unsigned       int uint4;
 typedef unsigned short int uint2;
@@ -51,8 +51,8 @@ public:
     void    Finalize();
     uchar*  Digest() { return m_Digest; }
 
-    nString String2MD5(const char* szString);
-    nString PrintMD5(uchar md5Digest[16]);
+    CString String2MD5(const char* szString);
+    CString PrintMD5(uchar md5Digest[16]);
 
 private:
 

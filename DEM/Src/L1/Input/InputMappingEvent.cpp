@@ -16,7 +16,7 @@ namespace Input
 
 bool CInputMappingEvent::Init(CStrID Name, const CParams& Desc)
 {
-	const nString& InEvent = Desc.Get<nString>(CStrID("InEvent"));
+	const CString& InEvent = Desc.Get<CString>(CStrID("InEvent"));
 	if (InEvent == "KeyDown")
 	{
 		InEventID = &Event::KeyDown::RTTI;

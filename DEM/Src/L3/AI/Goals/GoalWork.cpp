@@ -29,7 +29,7 @@ void CGoalWork::Init(PParams Params)
 		for (int i = 0; i < Map->GetCount(); ++i)
 		{
 			const CParam& Prm = Map->Get(i);
-			WorkActionMap.Add(Prm.GetName(), CStrID(Prm.GetValue<nString>().CStr()));
+			WorkActionMap.Add(Prm.GetName(), CStrID(Prm.GetValue<CString>().CStr()));
 		}
 
 	CGoal::Init(Params);

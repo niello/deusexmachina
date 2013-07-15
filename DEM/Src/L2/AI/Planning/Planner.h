@@ -11,7 +11,7 @@
 // the goal when is completed.
 // Planner is a singleton, this is achieved by having an instance in the singleton AISrv.
 
-extern const nString StrActTplPrefix;
+extern const CString StrActTplPrefix;
 
 namespace Data
 {
@@ -65,7 +65,7 @@ public:
 
 inline const CActionTpl* CPlanner::FindActionTpl(LPCSTR Name) const
 {
-	nString ClassName = StrActTplPrefix + Name;
+	CString ClassName = StrActTplPrefix + Name;
 	for (CArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
 		if ((*ppTpl)->IsInstanceOf(ClassName))
 			return (*ppTpl).GetUnsafe();

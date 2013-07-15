@@ -13,8 +13,8 @@
 
 namespace Anim
 {
-	bool LoadMocapClipFromNAX2(const nString& FileName, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip);
-	bool LoadKeyframeClipFromKFA(const nString& FileName, PKeyframeClip OutClip);
+	bool LoadMocapClipFromNAX2(const CString& FileName, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip);
+	bool LoadKeyframeClipFromKFA(const CString& FileName, PKeyframeClip OutClip);
 }
 
 namespace Prop
@@ -62,8 +62,8 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 //!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	PParams Desc;
-	const nString& AnimDesc = GetEntity()->GetAttr<nString>(CStrID("AnimDesc"));
-	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(nString("GameAnim:") + AnimDesc + ".prm");
+	const CString& AnimDesc = GetEntity()->GetAttr<CString>(CStrID("AnimDesc"));
+	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(CString("GameAnim:") + AnimDesc + ".prm");
 
 	if (Desc.IsValid())
 	{
@@ -72,7 +72,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			CParam& Prm = Desc->Get(i);
 
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
-			nString FileName("Anims:");
+			CString FileName("Anims:");
 			FileName += ClipRsrcID.CStr();
 			bool IsMocap = FileName.CheckExtension("mca") || FileName.CheckExtension("nax2");
 
@@ -120,8 +120,8 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 		Scene::CBone* pBone = pNode->FindFirstAttr<Scene::CBone>();
 		if (pBone)
 		{
-			static const nString StrDot(".");
-			nString Name = pNode->GetName().CStr();
+			static const CString StrDot(".");
+			CString Name = pNode->GetName().CStr();
 			Scene::CSceneNode* pCurrParent = pParent;
 			while (pCurrParent && pCurrParent != pRoot)
 			{

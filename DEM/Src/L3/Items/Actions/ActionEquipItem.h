@@ -26,7 +26,7 @@ public:
 	void				Init(CStrID ItemID, CStrID SlotID = CStrID::Empty) { Item = ItemID; Slot = SlotID; }
 	virtual bool		Activate(CActor* pActor);
 
-	virtual void		GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), Item.CStr(), Slot.CStr()); }
+	virtual void		GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), Item.CStr(), Slot.CStr()); }
 };
 
 typedef Ptr<CActionEquipItem> PActionEquipItem;

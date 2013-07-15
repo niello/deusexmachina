@@ -10,7 +10,7 @@ __ImplementSingleton(Items::CItemManager);
 
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
 {
-	PItemTpl Tpl = (CItemTpl*)Factory->Create(nString("Items::CItemTpl") + Params.Get<nString>(CStrID("Type"), NULL));
+	PItemTpl Tpl = (CItemTpl*)Factory->Create(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), NULL));
 	n_assert(Tpl.IsValid());
 	Tpl->Init(ID, Params);
 	return Tpl;
@@ -23,7 +23,7 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
 	else
 	{
-		PParams HRD = DataSrv->LoadPRM(nString("Items:") + ID.CStr() + ".prm", false);
+		PParams HRD = DataSrv->LoadPRM(CString("Items:") + ID.CStr() + ".prm", false);
 		if (HRD.IsValid())
 		{
 			Tpl = CreateItemTpl(ID, *HRD);

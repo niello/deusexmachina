@@ -16,8 +16,8 @@ class CDlgLink: public Core::CRefCounted //???or declare as struct inside node?
 {
 public:
 
-	nString		Condition;	// Scripted function name
-	nString		Action;		// Scripted function name
+	CString		Condition;	// Scripted function name
+	CString		Action;		// Scripted function name
 	CDlgNode*	pTargetNode;
 
 	CDlgLink(): pTargetNode(NULL) {}

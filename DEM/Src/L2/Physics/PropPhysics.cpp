@@ -39,10 +39,10 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel().GetPhysics();
 	if (!pPhysWorld) return;
 
-	const nString& PhysicsDescFile = GetEntity()->GetAttr<nString>(CStrID("Physics"), NULL);    
+	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
-	Data::PParams PhysicsDesc = DataSrv->LoadPRM(nString("Physics:") + PhysicsDescFile.CStr() + ".prm");
+	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
 	if (!PhysicsDesc.IsValid()) return;
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
@@ -65,7 +65,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		n_verify_dbg(Obj->Init(ObjDesc, ObjDesc.Get(CStrID("Offset"), vector3::Zero)));
 
 		Scene::CSceneNode* pCurrNode;
-		const nString& RelNodePath = ObjDesc.Get<nString>(CStrID("Node"), nString::Empty);
+		const CString& RelNodePath = ObjDesc.Get<CString>(CStrID("Node"), CString::Empty);
 		if (RelNodePath.IsValid())
 		{
 			//???!!!use node cache?!

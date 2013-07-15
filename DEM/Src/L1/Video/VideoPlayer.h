@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_VIDEO_PLAYER_H__
 #define __DEM_L1_VIDEO_PLAYER_H__
 
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // An abstract player for videos
 
@@ -14,7 +14,7 @@ class CVideoPlayer
 protected:
 
 	bool		_IsOpen;
-	nString		FileName;
+	CString		FileName;
 	//nTexture2*	pTexture;
 
 	uint		videoWidth;
@@ -48,8 +48,8 @@ public:
 	uint			GetHeight() const { return videoHeight; }
 	float			GetFpS() const { return videoFpS; }
 	uint			GetFrameCount() const { return videoFrameCount; }
-	void			SetFilename(const nString& _FileName);
-	const nString&	GetFilename() const { return FileName; }
+	void			SetFilename(const CString& _FileName);
+	const CString&	GetFilename() const { return FileName; }
 	//void			SetTexture(nTexture2* pTex) { pTexture = pTex; }
 	//nTexture2*		GetTexture() const { return pTexture; }
 };

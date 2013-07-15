@@ -8,7 +8,7 @@
 #include <Data/FourCC.h>
 #include <Data/HashTable.h>
 #include <Data/Dictionary.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 namespace Core
 {
@@ -21,7 +21,7 @@ class CFactory
 {
 protected:
 
-	CHashTable<nString, const CRTTI*>		NameToRTTI;
+	CHashTable<CString, const CRTTI*>		NameToRTTI;
 	CDict<Data::CFourCC, const CRTTI*>		FourCCToRTTI; //???hash table too?
 
 	CFactory(): NameToRTTI(512) {}
@@ -30,12 +30,12 @@ public:
 
 	static CFactory* Instance();
 
-	void			Register(const CRTTI& RTTI, const nString& Name, Data::CFourCC FourCC = 0);
-	bool			IsNameRegistered(const nString& ClassName) const { return NameToRTTI.Contains(ClassName); }
+	void			Register(const CRTTI& RTTI, const CString& Name, Data::CFourCC FourCC = 0);
+	bool			IsNameRegistered(const CString& ClassName) const { return NameToRTTI.Contains(ClassName); }
 	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
-	const CRTTI*	GetRTTI(const nString& ClassName) const { return NameToRTTI[ClassName]; }
+	const CRTTI*	GetRTTI(const CString& ClassName) const { return NameToRTTI[ClassName]; }
 	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
-	CRefCounted*	Create(const nString& ClassName, void* pParam = NULL) const;
+	CRefCounted*	Create(const CString& ClassName, void* pParam = NULL) const;
 	CRefCounted*	Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
 };
 

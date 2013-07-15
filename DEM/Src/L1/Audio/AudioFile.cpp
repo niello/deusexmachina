@@ -4,7 +4,7 @@ namespace Audio
 {
 
 // Open for reading & read header
-bool CAudioFile::Open(const nString& FileName)
+bool CAudioFile::Open(const CString& FileName)
 {
 	n_assert(!_IsOpen);
 	_IsOpen = true;

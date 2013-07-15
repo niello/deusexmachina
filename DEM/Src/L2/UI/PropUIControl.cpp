@@ -15,7 +15,7 @@
 
 namespace Physics
 {
-	PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName);
+	PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName);
 }
 
 namespace Prop
@@ -27,16 +27,16 @@ bool CPropUIControl::InternalActivate()
 {
 	Enable(GetEntity()->GetAttr<bool>(CStrID("UIEnabled"), true));
 
-	UIName = GetEntity()->GetAttr<nString>(CStrID("Name"), NULL);
-	UIDesc = GetEntity()->GetAttr<nString>(CStrID("Desc"), NULL);
+	UIName = GetEntity()->GetAttr<CString>(CStrID("Name"), NULL);
+	UIDesc = GetEntity()->GetAttr<CString>(CStrID("Desc"), NULL);
 	ReflectSOActions = false;
 
-	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("UIDesc"), NULL);
-	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("UI:") + IAODesc + ".prm") : NULL;
+	const CString& IAODesc = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
+	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
 	if (Desc.IsValid())
 	{
-		if (UIName.IsEmpty()) UIName = Desc->Get<nString>(CStrID("UIName"), NULL);
-		if (UIDesc.IsEmpty()) UIDesc = Desc->Get<nString>(CStrID("UIDesc"), NULL);
+		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), NULL);
+		if (UIDesc.IsEmpty()) UIDesc = Desc->Get<CString>(CStrID("UIDesc"), NULL);
 
 		//???read priorities for actions? or all through scripts?
 
@@ -45,7 +45,7 @@ bool CPropUIControl::InternalActivate()
 		if (Desc->Get<bool>(CStrID("Explorable"), false))
 		{
 			CStrID ID("Explore");
-			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<nString>(ID, nString::Empty).CStr() : ID.CStr();
+			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteExploreAction, 1, false));
 			CAction* pAct = GetActionByID(ID);
 			pAct->Enabled = UIDesc.IsValid();
@@ -55,7 +55,7 @@ bool CPropUIControl::InternalActivate()
 		if (Desc->Get<bool>(CStrID("Selectable"), false))
 		{
 			CStrID ID("Select");
-			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<nString>(ID, nString::Empty).CStr() : ID.CStr();
+			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSelectAction, Priority_Top, false));
 		}
 
@@ -69,7 +69,7 @@ bool CPropUIControl::InternalActivate()
 	{
 		Physics::PCollisionShape Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(PickShapeID);
 		if (!Shape.IsValid())
-			Shape = Physics::LoadCollisionShapeFromPRM(PickShapeID, nString("Physics:") + PickShapeID.CStr() + ".prm");
+			Shape = Physics::LoadCollisionShapeFromPRM(PickShapeID, CString("Physics:") + PickShapeID.CStr() + ".prm");
 		n_assert(Shape->IsLoaded());
 
 		ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
@@ -171,8 +171,8 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
 	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
 
-	const nString& IAODesc = GetEntity()->GetAttr<nString>(CStrID("UIDesc"), NULL);
-	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(nString("UI:") + IAODesc + ".prm") : NULL;
+	const CString& IAODesc = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
+	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
 	Data::PParams SOActionNames = Desc.IsValid() ? Desc->Get<PParams>(CStrID("SmartObjActionNames"), NULL) : NULL;
 
 	for (int i = 0; i < SOActions.GetCount(); ++i)
@@ -181,7 +181,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 		PSmartObjAction Act = SOActions.ValueAt(i);
 		if (Act.IsValid() && Act->AppearsInUI)
 		{
-			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<nString>(ID, nString::Empty).CStr() : NULL;
+			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<CString>(ID, CString::Empty).CStr() : NULL;
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, Priority_Default, true));
 
 			CAction* pAction = GetActionByID(ID);
@@ -272,7 +272,7 @@ void CPropUIControl::Enable(bool SetEnabled)
 }
 //---------------------------------------------------------------------
 
-void CPropUIControl::SetUIName(const nString& NewName)
+void CPropUIControl::SetUIName(const CString& NewName)
 {
 	//???use attribute?
 	UIName = NewName;
@@ -283,7 +283,7 @@ void CPropUIControl::SetUIName(const nString& NewName)
 void CPropUIControl::ShowTip()
 {
 	PParams P = n_new(CParams);
-	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : nString(GetEntity()->GetUID().CStr()));
+	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : CString(GetEntity()->GetUID().CStr()));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	TipVisible = (EventMgr->FireEvent(CStrID("ShowIAOTip"), P) > 0);
 }
@@ -447,7 +447,7 @@ bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
 {
 	if (!UIDesc.IsValid()) FAIL;
 	PParams P = n_new(Data::CParams(1));
-	P->Set<nString>(CStrID("UIDesc"), UIDesc);
+	P->Set<CString>(CStrID("UIDesc"), UIDesc);
 	EventMgr->FireEvent(CStrID("OnObjectDescRequested"), P, EV_ASYNC);
 	OK;
 }

@@ -233,39 +233,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\nebula2\src\mathlib\noise.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_noise;N_NEW=n_new_noise;N_INITCMDS=n_initcmds_noise"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_noise;N_NEW=n_new_noise;N_INITCMDS=n_initcmds_noise"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\mathlib\noise.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\nebula2\inc\mathlib\pknorm.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\nebula2\inc\mathlib\plane.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\mathlib\polar.h"
 				>
 			</File>
 			<File
@@ -424,30 +396,6 @@
 					PreprocessorDefinitions="N_INIT=n_init_nkernelserver;N_NEW=n_new_nkernelserver;N_INITCMDS=n_initcmds_nkernelserver"
 				/>
 			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\..\Src\nebula2\src\util\nstring.cc"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions="N_INIT=n_init_nstring;N_NEW=n_new_nstring;N_INITCMDS=n_initcmds_nstring"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions="N_INIT=n_init_nstring;N_NEW=n_new_nstring;N_INITCMDS=n_initcmds_nstring"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\..\Src\nebula2\inc\util\nstring.h"
-			>
 		</File>
 		<File
 			RelativePath="..\..\Src\nebula2\inc\kernel\ntypes.h"

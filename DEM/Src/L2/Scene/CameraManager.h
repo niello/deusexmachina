@@ -6,7 +6,7 @@
 #include <Core/Singleton.h>
 #include <Scene/NodeControllerThirdPerson.h>
 //#include <Scene/Camera.h>
-//#include <util/npfeedbackloop.h>
+//#include <Util/PFLoop.h>
 
 // Manages the current camera of the game level. Provides interface for driving camera
 // (manually, by input, by script), performing smooth transition between changing targets,

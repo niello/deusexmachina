@@ -28,7 +28,7 @@ void CNavSystem::Init(const Data::CParams* Params)
 {
 	if (Params)
 	{
-		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<nString>(CStrID("NavFilterID"), NULL).CStr()));
+		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<CString>(CStrID("NavFilterID"), NULL).CStr()));
 		
 		//!!!if avoid obstacles
 		pBoundary = n_new(dtLocalBoundary);

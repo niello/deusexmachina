@@ -179,14 +179,14 @@ bool CUIServer::RegisterScreen(CStrID Name, CWindow* pScreen)
 }
 //---------------------------------------------------------------------
 
-void CUIServer::LoadScheme(const nString& ResourceFile)
+void CUIServer::LoadScheme(const CString& ResourceFile)
 {
 	CEGUI::SchemeManager::getSingleton().create(ResourceFile.CStr());
 }
 //---------------------------------------------------------------------
 
 //CEGUI::Font& 
-void CUIServer::LoadFont(const nString& ResourceFile)
+void CUIServer::LoadFont(const CString& ResourceFile)
 {
 	CEGUI::FontManager::getSingleton().create(ResourceFile.CStr());
 }
@@ -234,7 +234,7 @@ void CUIServer::HideGUI()
 }
 //---------------------------------------------------------------------
 
-void CUIServer::SetDefaultMouseCursor(const nString& schemeName, const nString& cursorName)
+void CUIServer::SetDefaultMouseCursor(const CString& schemeName, const CString& cursorName)
 {
 	CEGUISystem->setDefaultMouseCursor(schemeName.CStr(), cursorName.CStr());
 }

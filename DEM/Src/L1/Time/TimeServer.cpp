@@ -194,7 +194,7 @@ void CTimeServer::Trigger()
 			{
 				//!!!???pre-create params once per timer?!
 				Data::PParams P = n_new(Data::CParams);
-				P->Set(CStrID("Name"), nString(Timers.KeyAt(i).CStr()));
+				P->Set(CStrID("Name"), CString(Timers.KeyAt(i).CStr()));
 				EventMgr->FireEvent(Timer.EventID, P);
 				if (Timer.Loop) Timer.CurrTime -= Timer.Time;
 				else

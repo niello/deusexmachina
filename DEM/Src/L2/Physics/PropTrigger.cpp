@@ -111,7 +111,7 @@ void CPropTrigger::SetEnabled(bool Enable)
 	{
 		if (pScriptObj)
 			for (int i = 0; i < CurrInsiders.GetCount(); ++i)
-				pScriptObj->RunFunctionOneArg("OnTriggerLeave", nString(CurrInsiders[i].CStr()));
+				pScriptObj->RunFunctionOneArg("OnTriggerLeave", CString(CurrInsiders[i].CStr()));
 		CurrInsiders.Clear();
 
 		UNSUBSCRIBE_EVENT(OnBeginFrame);
@@ -143,7 +143,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		if (pScriptObj && CurrInsiders.FindIndexSorted(EntityID) == INVALID_INDEX)
 		{
 			Data::CData RetVal;
-			pScriptObj->RunFunctionOneArg("OnTriggerEnter", nString(EntityID.CStr()), &RetVal);
+			pScriptObj->RunFunctionOneArg("OnTriggerEnter", CString(EntityID.CStr()), &RetVal);
 			if (!(RetVal.IsA<bool>() && RetVal == false || RetVal.IsA<int>() && RetVal == 0))
 				NewInsiders.Add(EntityID);
 		}
@@ -156,7 +156,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 		{
 			CStrID EntityID = CurrInsiders[i];
 			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX && EntityMgr->EntityExists(EntityID))
-				pScriptObj->RunFunctionOneArg("OnTriggerLeave", nString(EntityID.CStr()));
+				pScriptObj->RunFunctionOneArg("OnTriggerLeave", CString(EntityID.CStr()));
 		}
 
 	CurrInsiders = NewInsiders;
@@ -166,7 +166,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 	{
 		if (pScriptObj)
 			for (int i = 0; i < CurrInsiders.GetCount(); ++i)
-				pScriptObj->RunFunctionOneArg("OnTriggerApply", nString(CurrInsiders[i].CStr()));
+				pScriptObj->RunFunctionOneArg("OnTriggerApply", CString(CurrInsiders[i].CStr()));
 		TimeLastTriggered = NewTime;
 	}
 

@@ -4,7 +4,7 @@
 
 #include <Core/Singleton.h>
 #include <Data/LineBuffer.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 namespace IO
 {
@@ -31,7 +31,7 @@ public:
 private:
 
 	bool				_IsOpen;
-	nString				AppName;
+	CString				AppName;
 	IO::CFileStream*	pLogFile;
 	CLineBuffer			LineBuffer;
 
@@ -44,7 +44,7 @@ public:
 	CLogger(): _IsOpen(false), pLogFile(NULL) { __ConstructSingleton; }
 	virtual ~CLogger() { if (IsOpen()) Close(); __DestructSingleton; }
 
-	bool Open(const char* pAppName, const nString& FilePath = nString::Empty);
+	bool Open(const char* pAppName, const CString& FilePath = CString::Empty);
 	void Close();
 	bool IsOpen() const { return _IsOpen; }
 

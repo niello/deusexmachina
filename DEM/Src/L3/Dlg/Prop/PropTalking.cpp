@@ -11,7 +11,7 @@ __ImplementPropertyStorage(CPropTalking);
 
 bool CPropTalking::InternalActivate()
 {
-	const nString& Dlg = GetEntity()->GetAttr<nString>(CStrID("Dialogue"), NULL);
+	const CString& Dlg = GetEntity()->GetAttr<CString>(CStrID("Dialogue"), NULL);
 	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTalking, ExposeSI);
@@ -36,7 +36,7 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 	PParams P = n_new(CParams);
 
 	//!!! Try to find the phrase by it's ID before saying it.
-	P->Set(CStrID("Text"), nString(PhraseID.CStr()));
+	P->Set(CStrID("Text"), CString(PhraseID.CStr()));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	EventMgr->FireEvent(CStrID("ShowPhrase"), P);
 

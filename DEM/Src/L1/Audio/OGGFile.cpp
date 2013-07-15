@@ -5,7 +5,7 @@
 namespace Audio
 {
 
-bool COGGFile::Open(const nString& FileName)
+bool COGGFile::Open(const CString& FileName)
 {
 	n_assert(!pStream);
 	pStream = n_new(IO::CFileStream);

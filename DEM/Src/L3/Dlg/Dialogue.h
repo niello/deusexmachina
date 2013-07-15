@@ -24,7 +24,7 @@ public:
 
 	CDlgNode*				StartNode;
 	CArray<Ptr<CDlgNode>>	Nodes;
-	nString					ScriptFile;
+	CString					ScriptFile;
 	PScriptObject			ScriptObj;	// Object is needed to avoid name clashes and to clear script at the end
 
 	CDialogue(): StartNode(NULL) {}

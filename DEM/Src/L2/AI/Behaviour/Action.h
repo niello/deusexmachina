@@ -30,7 +30,7 @@ public:
 	virtual bool		IsValid(CActor* pActor) const { OK; }
 	// IsInterruptible
 
-	virtual void		GetDebugString(nString& Out) const { Out = GetClassName(); }
+	virtual void		GetDebugString(CString& Out) const { Out = GetClassName(); }
 };
 
 typedef Ptr<CAction> PAction;

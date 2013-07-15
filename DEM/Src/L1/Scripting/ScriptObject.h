@@ -33,8 +33,8 @@ class CScriptObject: public Core::CRefCounted
 
 protected:
 
-	nString					Name;
-	nString					Table;
+	CString					Name;
+	CString					Table;
 	CArray<Events::PSub>	Subscriptions;
 
 	CScriptObject() {}
@@ -53,7 +53,7 @@ public:
 
 	bool			Init(LPCSTR LuaClassName = "CScriptObject");
 
-	EExecStatus		LoadScriptFile(const nString& FileName);
+	EExecStatus		LoadScriptFile(const CString& FileName);
 	EExecStatus		LoadScript(LPCSTR Buffer, DWORD Length);
 
 	EExecStatus		RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
@@ -67,9 +67,9 @@ public:
 	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Events::Priority_Default);
 	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName);
 
-	const nString&	GetName() const { return Name; }
-	const nString&	GetTable() const { return Table; }
-	nString			GetFullName() const { return Table.IsValid() ? Table + "." + Name : Name; }
+	const CString&	GetName() const { return Name; }
+	const CString&	GetTable() const { return Table; }
+	CString			GetFullName() const { return Table.IsValid() ? Table + "." + Name : Name; }
 	void			SetName(const char* NewName);
 
 	//???implement?

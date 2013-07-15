@@ -35,8 +35,8 @@ protected:
 		ACCEL_TOGGLEFULLSCREEN = 1001,
 	};
 
-	nString			WindowTitle;
-	nString			IconName;
+	CString			WindowTitle;
+	CString			IconName;
 	CDisplayMode	DisplayMode;
 	CDisplayMode	RequestedMode;
 	bool			IsWndOpen;
@@ -90,9 +90,9 @@ public:
 	void				GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo);
 
 	void				SetWindowTitle(const char* pTitle);
-	const nString&		GetWindowTitle() const { return WindowTitle; }
+	const CString&		GetWindowTitle() const { return WindowTitle; }
 	void				SetWindowIcon(const char* pIconName);
-	const nString&		GetWindowIcon() const { return IconName; }
+	const CString&		GetWindowIcon() const { return IconName; }
 	void				RequestDisplayMode(const CDisplayMode& Mode) { RequestedMode = Mode; }
 	const CDisplayMode&	GetDisplayMode() const { return DisplayMode; }
 	const CDisplayMode&	GetRequestedDisplayMode() const { return RequestedMode; }

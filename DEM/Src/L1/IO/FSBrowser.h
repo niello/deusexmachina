@@ -16,11 +16,11 @@ class CFSBrowser
 {
 protected:
 
-	nString			CurrPath;
+	CString			CurrPath;
 	PFileSystem		FS;
 	void*			hDir;
 	bool			AtFirstEntry;
-	nString			CurrEntryName;
+	CString			CurrEntryName;
 	EFSEntryType	CurrEntryType;
 
 	bool ForceToFirstEntry();
@@ -30,23 +30,23 @@ public:
 	CFSBrowser(): hDir(NULL), AtFirstEntry(false) {}
 	~CFSBrowser() { Close(); }
 
-	bool			SetAbsolutePath(const nString& Path) { CurrPath = Path; return ForceToFirstEntry(); }
-	bool			SetRelativePath(const nString& Path);
+	bool			SetAbsolutePath(const CString& Path) { CurrPath = Path; return ForceToFirstEntry(); }
+	bool			SetRelativePath(const CString& Path);
 	void			Close() { if (hDir) FS->CloseDirectory(hDir); }
 
 	bool			FirstCurrDirEntry() { return hDir && (AtFirstEntry || ForceToFirstEntry()); }
 	bool			NextCurrDirEntry();
 
-	bool			ListCurrDirContents(CArray<nString>& OutContents, DWORD EntryTypes = FSE_DIR | FSE_FILE, const nString& Filter = "*");
+	bool			ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes = FSE_DIR | FSE_FILE, const CString& Filter = "*");
 
 	bool			IsCurrPathValid() const { return !!hDir; }
 	bool			IsCurrDirEmpty();
-	const nString&	GetCurrEntryName() const { n_assert(hDir); return CurrEntryName; }
+	const CString&	GetCurrEntryName() const { n_assert(hDir); return CurrEntryName; }
 	EFSEntryType	GetCurrEntryType() const { n_assert(hDir); return CurrEntryType; }
 	bool			IsCurrEntryFile() const { return hDir && CurrEntryType == FSE_FILE;}
 	bool			IsCurrEntryDir() const { return hDir && CurrEntryType == FSE_DIR;}
 	PFileSystem		GetFileSystem() const { return FS; }
-	const nString&	GetCurrentPath() const { return CurrPath; }
+	const CString&	GetCurrentPath() const { return CurrPath; }
 };
 
 }

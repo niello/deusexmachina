@@ -8,8 +8,8 @@
 #include <Data/DataServer.h>
 #include <IO/IOServer.h>
 
-const nString StrQuests("Quests");
-const nString StrUnderline("_");
+const CString StrQuests("Quests");
+const CString StrUnderline("_");
 
 namespace Story
 {
@@ -56,12 +56,12 @@ void CQuestManager::Trigger()
 
 bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 {
-	Data::PParams QuestDesc = DataSrv->LoadPRM(nString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
+	Data::PParams QuestDesc = DataSrv->LoadPRM(CString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
 	if (!QuestDesc.IsValid()) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);
-	Quest->Name = QuestDesc->Get<nString>(CStrID("Name"), "<No quest name>");
-	Quest->Description = QuestDesc->Get<nString>(CStrID("Desc"), "<No quest desc>");
+	Quest->Name = QuestDesc->Get<CString>(CStrID("Name"), "<No quest name>");
+	Quest->Description = QuestDesc->Get<CString>(CStrID("Desc"), "<No quest desc>");
 
 	const Data::CParams& Tasks = *QuestDesc->Get<Data::PParams>(CStrID("Tasks"));
 	for (int i = 0; i < Tasks.GetCount(); i++)
@@ -70,8 +70,8 @@ bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 		const Data::CParams& TaskDesc = *TaskPrm.GetValue<Data::PParams>();
 
 		Ptr<CTask> NewTask = n_new(CTask);
-		NewTask->Name = TaskDesc.Get<nString>(CStrID("Name"), "<No task name>");
-		NewTask->Description = TaskDesc.Get<nString>(CStrID("Desc"), "<No task desc>");
+		NewTask->Name = TaskDesc.Get<CString>(CStrID("Name"), "<No task name>");
+		NewTask->Description = TaskDesc.Get<CString>(CStrID("Desc"), "<No task desc>");
 
 		CQuest::CTaskRec NewTR;
 		NewTR.Task = NewTask;
@@ -147,10 +147,10 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 
 	// Run script at last cause we want to have up-to-date current task status
 	// This way we can immediately close the task we're starting now by it's own script
-	nString TaskScriptFile = nString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
+	CString TaskScriptFile = CString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
 	if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 	{
-		nString Name = nString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
+		CString Name = CString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
 		Name.ReplaceChars("/", '_');
 		Task.Task->ScriptObj = n_new(Scripting::CScriptObject(Name.CStr(), StrQuests.CStr()));
 		Task.Task->ScriptObj->Init(); // No special class
@@ -330,10 +330,10 @@ bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
 				TaskRec.Status = (CQuest::EStatus)SGTasks->Get<int>(j);
 				if (TaskRec.Status == CQuest::Opened)
 				{
-					nString TaskScriptFile = nString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
+					CString TaskScriptFile = CString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
 					if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 					{
-						nString Name = nString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
+						CString Name = CString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
 						Name.ReplaceChars("/", '_');
 						TaskRec.Task->ScriptObj = n_new(Scripting::CScriptObject(Name.CStr(), StrQuests.CStr()));
 						TaskRec.Task->ScriptObj->Init();

@@ -19,7 +19,7 @@ class PlaySound: public Events::CEventNative
 
 public:
 
-	nString	Name;
+	CString	Name;
 	vector3	Position;
 	vector3	Velocity;
 	float	Volume;

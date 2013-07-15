@@ -62,7 +62,7 @@ public:
 	bool		RegisterProperty(DWORD TableCapacity = 32);
 	template<class T>
 	bool		UnregisterProperty();
-	CProperty*	AttachProperty(CEntity& Entity, const nString& ClassName) const { return AttachProperty(Entity, Factory->GetRTTI(ClassName)); }
+	CProperty*	AttachProperty(CEntity& Entity, const CString& ClassName) const { return AttachProperty(Entity, Factory->GetRTTI(ClassName)); }
 	CProperty*	AttachProperty(CEntity& Entity, Data::CFourCC ClassFourCC) const { return AttachProperty(Entity, Factory->GetRTTI(ClassFourCC)); }
 	template<class T>
 	T*			AttachProperty(CEntity& Entity) const;
@@ -127,7 +127,7 @@ template<class T>
 T* CEntityManager::AttachProperty(Game::CEntity& Entity) const
 {
 	n_assert_dbg(T::RTTI.IsDerivedFrom(CProperty::RTTI));
-	n_assert2_dbg(T::pStorage, (nString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
+	n_assert2_dbg(T::pStorage, (CString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
 	if (!T::pStorage) return NULL;
 
 	PProperty Prop;
@@ -146,7 +146,7 @@ template<class T>
 void CEntityManager::RemoveProperty(Game::CEntity& Entity) const
 {
 	n_assert_dbg(T::RTTI.IsDerivedFrom(CProperty::RTTI));
-	n_assert2_dbg(T::pStorage, (nString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
+	n_assert2_dbg(T::pStorage, (CString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
 	if (!T::pStorage) return;
 	T::pStorage->Remove(Entity.GetUID());
 }
