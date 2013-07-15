@@ -46,10 +46,10 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	CMemFactSmartObj* pBest = NULL;
 	Relevance = 0.f;
 	
-	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
-	for (; pCurr; pCurr = pCurr->GetSucc())
+	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
+	for (; It; ++It)
 	{
-		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)pCurr->Object.Get();
+		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)It->Get();
 		int Idx = WorkActionMap.FindIndex(pSOFact->TypeID);
 		if (Idx != INVALID_INDEX)
 		{
@@ -73,9 +73,9 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 
 	float TotalOverseersConf = 0.f;
 	
-	pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactOverseer::RTTI);
-	for (; pCurr; pCurr = pCurr->GetSucc())
-		TotalOverseersConf += ((CMemFactOverseer*)pCurr->Object.Get())->Confidence;
+	It = pActor->GetMemSystem().GetFactsByType(CMemFactOverseer::RTTI);
+	for (; It; ++It)
+		TotalOverseersConf += ((CMemFactOverseer*)It->Get())->Confidence;
 
 	IAO = pBest->pSourceStimulus->SourceEntityID;
 	Relevance *= (1.f + TotalOverseersConf) * PersonalityFactor;

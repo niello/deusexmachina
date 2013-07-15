@@ -278,18 +278,52 @@ inline void bbox3::Transform(const matrix44& m)
 	set(extentMatrix);
 	*/
 
-	BeginExtend(m * GetCorner(0));
+	//!!!For bbox3::Transform(const matrix44& m, bbox3& Out)
+	//BeginExtend(m * GetCorner(0));
+	//for (int i = 1; i < 8; ++i)
+	//	ExtendFast(m * GetCorner(i));
+
+	vector3 Min = m * GetCorner(0);
+	vector3 Max = Min;
 	for (int i = 1; i < 8; ++i)
-		ExtendFast(m * GetCorner(i));
+	{
+		vector3 OBBCorner = m * GetCorner(i);
+		if (OBBCorner.x < Min.x) Min.x = OBBCorner.x;
+		else if (OBBCorner.x > Max.x) Max.x = OBBCorner.x;
+		if (OBBCorner.y < Min.y) Min.y = OBBCorner.y;
+		else if (OBBCorner.y > Max.y) Max.y = OBBCorner.y;
+		if (OBBCorner.z < Min.z) Min.z = OBBCorner.z;
+		else if (OBBCorner.z > Max.z) Max.z = OBBCorner.z;
+	}
+
+	vmin = Min;
+	vmax = Max;
 }
 //---------------------------------------------------------------------
 
 // Same as Transform() but does a div-by-w on the way (useful for transforming to screen space)
 inline void bbox3::transform_divw(const matrix44& m)
 {
-	BeginExtend(m.mult_divw(GetCorner(0)));
+	//!!!For bbox3::transform_divw(const matrix44& m, bbox3& Out)
+	//BeginExtend(m.mult_divw(GetCorner(0)));
+	//for (int i = 1; i < 8; ++i)
+	//	ExtendFast(m.mult_divw(GetCorner(i)));
+
+	vector3 Min = m.mult_divw(GetCorner(0));
+	vector3 Max = Min;
 	for (int i = 1; i < 8; ++i)
-		ExtendFast(m.mult_divw(GetCorner(i)));
+	{
+		vector3 OBBCorner = m.mult_divw(GetCorner(i));
+		if (OBBCorner.x < Min.x) Min.x = OBBCorner.x;
+		else if (OBBCorner.x > Max.x) Max.x = OBBCorner.x;
+		if (OBBCorner.y < Min.y) Min.y = OBBCorner.y;
+		else if (OBBCorner.y > Max.y) Max.y = OBBCorner.y;
+		if (OBBCorner.z < Min.z) Min.z = OBBCorner.z;
+		else if (OBBCorner.z > Max.z) Max.z = OBBCorner.z;
+	}
+
+	vmin = Min;
+	vmax = Max;
 }
 //---------------------------------------------------------------------
 

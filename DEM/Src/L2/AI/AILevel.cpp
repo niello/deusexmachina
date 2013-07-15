@@ -165,7 +165,7 @@ bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, C
 }
 //---------------------------------------------------------------------
 
-CStimulusNode* CAILevel::RegisterStimulus(CStimulus* pStimulus)
+CStimulusNode CAILevel::RegisterStimulus(CStimulus* pStimulus)
 {
 	n_assert(pStimulus && !pStimulus->GetQuadTreeNode());
 	return StimulusQT.AddObject(pStimulus);
@@ -175,14 +175,14 @@ CStimulusNode* CAILevel::RegisterStimulus(CStimulus* pStimulus)
 void CAILevel::RemoveStimulus(CStimulus* pStimulus)
 {
 	n_assert(pStimulus && pStimulus->GetQuadTreeNode());
-	StimulusQT.RemoveObject(pStimulus);
+	StimulusQT.RemoveByValue(pStimulus);
 }
 //---------------------------------------------------------------------
 
-void CAILevel::RemoveStimulus(CStimulusNode* pStimulusNode)
+void CAILevel::RemoveStimulus(CStimulusNode StimulusNode)
 {
-	n_assert(pStimulusNode && pStimulusNode->Object->GetQuadTreeNode());
-	StimulusQT.RemoveElement(pStimulusNode);
+	n_assert(StimulusNode && (*StimulusNode)->GetQuadTreeNode());
+	StimulusQT.RemoveByHandle(StimulusNode);
 }
 //---------------------------------------------------------------------
 
@@ -204,9 +204,8 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 	for (DWORD i = 0; i < pNode->Data.GetListCount(); ++i)
 		if (pSensor->AcceptsStimulusType(*pNode->Data.GetKeyAt(i)))
 		{
-			CStimulusListSet::CElement* pCurr = pNode->Data.GetHeadAt(i);
-			for (; pCurr; pCurr = pCurr->GetSucc())
-				pSensor->SenseStimulus(pActor, pCurr->Object);
+			CStimulusListSet::CIterator It = pNode->Data.GetHeadAt(i);
+			for (; It; ++It) pSensor->SenseStimulus(pActor, (*It));
 		}
 
 	if (pNode->HasChildren())

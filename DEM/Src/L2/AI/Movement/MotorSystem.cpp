@@ -166,12 +166,12 @@ void CMotorSystem::Update()
 				}
 
 #else
-				CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+				CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 
 				//!!!???dynamic obstacles - take velocity into account!?
 				//!!!if get stuck avoiding obstacle, try to select far point
 
-				if (pCurr)
+				if (It)
 				{
 					CMemFactObstacle* pClosest = NULL;
 					float MinIsect = FLT_MAX;
@@ -186,9 +186,9 @@ void CMotorSystem::Update()
 
 					float DetectorLength = ActorRadius + OBSTACTLE_DETECTOR_MIN + Speed * OBSTACLE_PREDICTION_TIME;
 
-					for (; pCurr; pCurr = pCurr->GetSucc())
+					for (; It; ++It)
 					{
-						CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.Get();
+						CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
 
 						// Uncomment if obstacle has Height
 						//if ((pActor->Position.y + pActor->Height < pObstacle->Position.y) ||
@@ -373,10 +373,10 @@ void CMotorSystem::RenderDebug()
 			vector3(DestPoint.x, pActor->Position.y + 1.f, DestPoint.z),
 			pActor->MvmtStatus == AIMvmt_DestSet ? ColorNormal : ColorStuck);
 
-	CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
-	for (; pCurr; pCurr = pCurr->GetSucc())
+	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+	for (; It; ++It)
 	{
-		CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.Get();
+		CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
 		matrix44 Tfm;
 		Tfm.rotate_x(PI * 0.5f);
 		Tfm.set_translation(pObstacle->Position);

@@ -34,11 +34,11 @@ public:
 
 protected:
 
-	ID3DXEffect*				pEffect;
+	ID3DXEffect*		pEffect;
 
 	//CDict<CStrID, HTech>	NameToTech;
 	CDict<DWORD, HTech>	FlagsToTech;
-	HTech						hCurrTech;
+	HTech				hCurrTech;
 
 	//???!!!need both?!
 	CDict<CStrID, HVar>	NameToHVar;
@@ -49,7 +49,7 @@ protected:
 
 public:
 
-	CShader(CStrID ID): CResource(ID), pEffect(NULL), hCurrTech(NULL) {}
+	CShader(CStrID ID): CResource(ID), pEffect(NULL), hCurrTech(NULL), FlagsToTech(0, 4, true) {}
 	virtual ~CShader() { if (IsLoaded()) Unload(); }
 
 	bool			Setup(ID3DXEffect* pFX);

@@ -18,7 +18,7 @@ protected:
 
 public:
 
-	CNebula2ResourceProvider() {}
+	CNebula2ResourceProvider(): ResourceGroups(0, 8, false) {}
 	~CNebula2ResourceProvider(void) {}
 
 	void			setResourceGroupDirectory(const String& resourceGroup, const String& directory);

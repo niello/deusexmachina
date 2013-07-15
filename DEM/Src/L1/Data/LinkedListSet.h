@@ -51,6 +51,7 @@ public:
 	void		Remove(CIterator It, TObject* pOutValue = NULL);
 	bool		RemoveByValue(const TObject& Object);
 
+	CIterator	Find(const TObject& Object) const;
 	TKey		GetKeyAt(int Idx) const { return Lists.KeyAt(Idx); }
 	CIterator	GetHead(TKey Key) const;
 	CIterator	GetHeadAt(int Idx) const { return Lists.ValueAt(Idx)->Begin(); }
@@ -98,7 +99,7 @@ inline void CLinkedListSet<TKey, TObject>::Remove(typename CLinkedListSet<TKey, 
 template<class TKey, class TObject>
 bool CLinkedListSet<TKey, TObject>::RemoveByValue(const TObject& Object)
 {	
-	TKey Key = Object->GetKey();
+	TKey Key = ObjTraits<TObject>::GetKey(Object);
 	int Idx = Lists.FindIndex(Key);
 	if (Idx != INVALID_INDEX)
 	{
@@ -112,6 +113,17 @@ bool CLinkedListSet<TKey, TObject>::RemoveByValue(const TObject& Object)
 	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+template<class TKey, class TObject>
+typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey, TObject>::Find(const TObject& Object) const
+{
+	TKey Key = ObjTraits<TObject>::GetKey(Object);
+	int Idx = Lists.FindIndex(Key);
+	if (Idx == INVALID_INDEX) return NULL;
+	CList<TObject>* pList = Lists.ValueAt(Idx);
+	return pList->Find(Object, pList->Begin());
 }
 //---------------------------------------------------------------------
 

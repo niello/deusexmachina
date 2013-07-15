@@ -6,7 +6,6 @@
 #include <AI/Planning/ActionTpl.h>
 #include <AI/ActorFwd.h>
 #include <Data/Pool.h>
-#include <util/nnode.h>
 
 // Planner receives goal as input and builds plan (action sequence) that will satisfy
 // the goal when is completed.
@@ -27,7 +26,7 @@ class CPlanner
 {
 private:
 
-	struct CNode: public nNode
+	struct CNode
 	{
 		CActionTpl*	pAction;
 		CWorldState	WSCurr;

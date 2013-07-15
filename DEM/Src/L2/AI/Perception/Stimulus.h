@@ -14,7 +14,7 @@ namespace AI
 {
 typedef Data::CLinkedListSet<Core::CRTTI*, class CStimulus*> CStimulusListSet;
 typedef Data::CQuadTree<class CStimulus*, CStimulusListSet> CStimulusQT;
-typedef CStimulusQT::CElement CStimulusNode;
+typedef CStimulusQT::CHandle CStimulusNode;
 
 class CStimulus: public Core::CRefCounted
 {

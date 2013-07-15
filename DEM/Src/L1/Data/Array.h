@@ -26,7 +26,7 @@ private:
 
 	void	MakeIndexValid(DWORD Idx);
 	DWORD	GetActualGrowSize() { return (Flags.Is(Array_DoubleGrowSize) && Allocated) ? Allocated : GrowSize; }
-	void	Grow() { Resize(GetActualGrowSize()); }
+	void	Grow();
 	void	GrowTo(DWORD NewCount);
 	void	Move(int FromIdx, int ToIdx);
 
@@ -36,10 +36,10 @@ public:
 
 	Data::CFlags	Flags; // CDict needs pDataDest access it
 
-	CArray(): GrowSize(16), Allocated(0), Count(0), Flags(Array_KeepOrder), pData(NULL) {}
+	CArray(): pData(NULL), Allocated(0), Count(0), GrowSize(16), Flags(Array_KeepOrder) {}
 	CArray(DWORD _Count, DWORD _GrowSize);
 	CArray(DWORD _Count, DWORD _GrowSize, const T& Value);
-	CArray(const CArray<T>& Other): GrowSize(0), Allocated(0), Count(0), pData(0), Flags(Array_KeepOrder) { Copy(Other); }
+	CArray(const CArray<T>& Other): pData(NULL), Allocated(0), Count(0) { Copy(Other); }
 	~CArray();
 
 	CIterator	Add(const T& Val);
@@ -205,6 +205,8 @@ void CArray<T>::Resize(DWORD NewAllocSize)
 	Count = n_min(Allocated, Count);
 
 	/*
+	// NB: variant above doesn't construct objects above the Count! It is good, and Move() relies on it!
+
 	T* pNewData = (T*)n_malloc(sizeof(T) * NewAllocSize);
 
 	int NewSize = (NewAllocSize < Count) ? NewAllocSize : Count;
@@ -236,10 +238,21 @@ void CArray<T>::Truncate(DWORD TailCount)
 //---------------------------------------------------------------------
 
 template<class T>
+void CArray<T>::Grow()
+{
+	DWORD CurrGrow = GetActualGrowSize();
+	n_assert2(CurrGrow, "Request to grow non-growable array");
+	Resize(Allocated + CurrGrow);
+}
+//---------------------------------------------------------------------
+
+template<class T>
 void CArray<T>::GrowTo(DWORD NewCount)
 {
 	if (NewCount <= Allocated) return;
 	DWORD NewAllocSize = Allocated;
+	NewAllocSize += GetActualGrowSize();
+	n_assert2(NewAllocSize > Allocated, "Request to grow non-growable array");
 	while (NewCount > NewAllocSize) NewAllocSize += GetActualGrowSize();
 	Resize(NewAllocSize);
 }
@@ -264,28 +277,32 @@ void CArray<T>::Move(int FromIdx, int ToIdx)
 	{
 		T* pDataSrc = pData + FromIdx;
 		T* pDataDest = pData + ToIdx;
-		for (DWORD i = 0; i < MoveCount; ++i) pDataDest[i] = pDataSrc[i];
-		Truncate(FromIdx - ToIdx);
+		T* pDataLast = pData + Count;
+		for (; pDataSrc < pDataLast; ++pDataSrc, ++pDataDest)
+			*pDataDest = *pDataSrc;
+
+		pDataSrc = pData + NewCount;
+		for (; pDataSrc < pDataLast; ++pDataSrc) pDataSrc->~T();
 	}
 	else // Forward
 	{
 		// NB Nebula2: Be aware of uninitialized slots between FromIdx and ToIdx
 
-		T* pDataSrc = pData + FromIdx;
-		T* pDataDest = pData + ToIdx;
-		T* pDataDestEnd = pData + Count;
-		for (; pDataDest < pDataDestEnd; ++pDataSrc, ++pDataDest)
-		{
-			*pDataDest = *pDataSrc;
-			pDataSrc->~T();
-		}
+		DWORD OldDataEndIdx = n_min(Count, ToIdx);
 
-		pDataDestEnd = pData + NewCount;
-		for (; pDataDest < pDataDestEnd; ++pDataSrc, ++pDataDest)
-		{
+		T* pDataSrc = pData + Count - 1;
+		T* pDataDest = pData + NewCount - 1;
+		T* pDataLast = pDataSrc - OldDataEndIdx + FromIdx;
+		for (; pDataSrc > pDataLast; --pDataSrc, --pDataDest)
 			n_placement_new(pDataDest, T)(*pDataSrc);
-			pDataSrc->~T();
-		}
+
+		pDataLast = pData + FromIdx;
+		for (; pDataSrc >= pDataLast; --pDataSrc, --pDataDest)
+			*pDataDest = *pDataSrc;
+
+		pDataSrc = pDataLast;
+		pDataLast = pData + OldDataEndIdx;
+		for (; pDataSrc < pDataLast; ++pDataSrc) pDataSrc->~T();
 	}
 
 	Count = NewCount;
@@ -306,7 +323,7 @@ template<class T>
 typename CArray<T>::CIterator CArray<T>::Insert(int Idx, const T& Val)
 {
 	n_assert2_dbg(Flags.Is(Array_KeepOrder), "Insertion has no much meaning if order isn't preserver, use Add(), it is faster!");
-	n_assert(IsIndexValid(Idx));
+	n_assert(Idx >= 0 && Idx <= (int)Count);
 	if (Idx == Count) return Add(Val);
 	else
 	{
@@ -355,7 +372,7 @@ void CArray<T>::MakeIndexValid(DWORD Idx)
 	if (Idx < Count) return;
 	if (Idx >= Allocated)
 	{
-		n_assert(GrowSize > 0);
+		n_assert2(GrowSize, "Request to grow non-growable array");
 		Resize(Idx + GrowSize);
 	}
 	for (DWORD i = Count; i <= Idx; ++i) n_placement_new(pData + i, T);
@@ -500,7 +517,7 @@ int CArray<T>::FindClosestIndexSorted(const T& Val) const
 		else return (Val < pData[Low]) ? Low : Low + 1;
 	}
 
-	return 0;
+	return Low;
 }
 //---------------------------------------------------------------------
 

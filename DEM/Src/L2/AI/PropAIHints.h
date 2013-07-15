@@ -22,7 +22,7 @@ protected:
 	struct CRecord
 	{
 		PStimulus		Stimulus;
-		CStimulusNode*	pNode;
+		CStimulusNode	QTNode;
 	};
 
 	CDict<CStrID, CRecord> Hints;
