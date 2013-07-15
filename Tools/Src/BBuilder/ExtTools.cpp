@@ -5,13 +5,13 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-void BatchToolInOut(CStrID Name, const nString& InStr, const nString& OutStr)
+void BatchToolInOut(CStrID Name, const CString& InStr, const CString& OutStr)
 {
 	//???insert sorted?
-	nArray<nString>& InList = InFileLists.GetOrAdd(Name);
-	InList.Append(InStr);
-	nArray<nString>& OutList = OutFileLists.GetOrAdd(Name);
-	OutList.Append(OutStr);
+	CArray<CString>& InList = InFileLists.GetOrAdd(Name);
+	InList.Add(InStr);
+	CArray<CString>& OutList = OutFileLists.GetOrAdd(Name);
+	OutList.Add(OutStr);
 }
 //---------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 {
 	n_msg(VL_DETAILS, "> %s %s\n", Name.CStr(), pCmdLine);
 
-	nString Path = IOSrv->ManglePath("home:");
+	CString Path = IOSrv->ManglePath("home:");
 	Path += "\\..\\ContentForge\\";
 	Path += Name.CStr();
 	Path +=	".exe";
@@ -50,11 +50,11 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWo
 {
 	int Idx = InFileLists.FindIndex(Tool);
 	if (Idx == INVALID_INDEX) return 0;
-	nArray<nString>& InList = InFileLists.ValueAt(Idx);
+	CArray<CString>& InList = InFileLists.ValueAt(Idx);
 
 	Idx = OutFileLists.FindIndex(Tool);
 	if (Idx == INVALID_INDEX) return 0;
-	nArray<nString>& OutList = OutFileLists.ValueAt(Idx);
+	CArray<CString>& OutList = OutFileLists.ValueAt(Idx);
 
 	if (InList.GetCount() != OutList.GetCount()) return -1;
 	if (InList.GetCount() == 0) return 0;
@@ -68,7 +68,7 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWo
 		//!!!???use Curr/Overridden Working Directory as Base?!
 	}
 
-	nString InStr = InList[0], OutStr = OutList[0];
+	CString InStr = InList[0], OutStr = OutList[0];
 
 	for (int i = 1; i < InList.GetCount(); ++i)
 	{
@@ -88,9 +88,9 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWo
 		}
 		else
 		{
-			InStr.Append(';');
+			InStr.Add(';');
 			InStr += InList[i];
-			OutStr.Append(';');
+			OutStr.Add(';');
 			OutStr += OutList[i];
 		}
 	}

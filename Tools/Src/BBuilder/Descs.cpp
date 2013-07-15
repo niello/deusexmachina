@@ -7,9 +7,9 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
-bool ProcessDialogue(const nString& SrcContext, const nString& ExportContext, const nString& Name)
+bool ProcessDialogue(const CString& SrcContext, const CString& ExportContext, const CString& Name)
 {
-	nString ExportFilePath = ExportContext + Name + ".prm";
+	CString ExportFilePath = ExportContext + Name + ".prm";
 
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -36,12 +36,12 @@ bool ProcessDialogue(const nString& SrcContext, const nString& ExportContext, co
 
 		if (Link.GetCount() > 2)
 		{
-			if (Link.Get(2).GetValue<nString>().IsValid()) UsesScript = true;
-			else if (Link.GetCount() > 3 && Link.Get(3).GetValue<nString>().IsValid()) UsesScript = true;
+			if (Link.Get(2).GetValue<CString>().IsValid()) UsesScript = true;
+			else if (Link.GetCount() > 3 && Link.Get(3).GetValue<CString>().IsValid()) UsesScript = true;
 			if (UsesScript)
 			{
 				int Idx = Desc->IndexOf(CStrID("ScriptFile"));
-				nString ScriptFile = (Idx == INVALID_INDEX) ? Name : Desc->Get(Idx).GetValue<nString>();
+				CString ScriptFile = (Idx == INVALID_INDEX) ? Name : Desc->Get(Idx).GetValue<CString>();
 
 				ExportFilePath = ExportContext + ScriptFile + ".lua";
 
@@ -60,7 +60,7 @@ bool ProcessDialogue(const nString& SrcContext, const nString& ExportContext, co
 }
 //---------------------------------------------------------------------
 
-bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFilePath)
+bool ProcessCollisionShape(const CString& SrcFilePath, const CString& ExportFilePath)
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -78,10 +78,10 @@ bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFile
 	FilesToPack.InsertSorted(ExportFilePath);
 
 	// Add terrain file for heightfield shapes (always exported) //???or allow building from L3DT src?
-	nString CDLODFile = Desc->Get(CStrID("CDLODFile"), nString::Empty);
+	CString CDLODFile = Desc->Get(CStrID("CDLODFile"), CString::Empty);
 	if (CDLODFile.IsValid())
 	{
-		nString CDLODFilePath = "Terrain:" + CDLODFile + ".cdlod";
+		CString CDLODFilePath = "Terrain:" + CDLODFile + ".cdlod";
 		if (!IsFileAdded(CDLODFilePath))
 		{
 			if (ExportResources &&
@@ -99,7 +99,7 @@ bool ProcessCollisionShape(const nString& SrcFilePath, const nString& ExportFile
 }
 //---------------------------------------------------------------------
 
-bool ProcessPhysicsDesc(const nString& SrcFilePath, const nString& ExportFilePath)
+bool ProcessPhysicsDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -124,8 +124,8 @@ bool ProcessPhysicsDesc(const nString& SrcFilePath, const nString& ExportFilePat
 			Data::PParams ObjDesc = Objects->Get<Data::PParams>(i);
 			CStrID PickShape = ObjDesc->Get<CStrID>(CStrID("Shape"), CStrID::Empty);
 			if (PickShape.IsValid())
-				if (!ProcessCollisionShape(	nString("SrcPhysics:") + PickShape.CStr() + ".hrd",
-											nString("Physics:") + PickShape.CStr() + ".prm"))
+				if (!ProcessCollisionShape(	CString("SrcPhysics:") + PickShape.CStr() + ".hrd",
+											CString("Physics:") + PickShape.CStr() + ".prm"))
 				{
 					n_msg(VL_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
 					FAIL;
@@ -138,7 +138,7 @@ bool ProcessPhysicsDesc(const nString& SrcFilePath, const nString& ExportFilePat
 }
 //---------------------------------------------------------------------
 
-bool ProcessAnimDesc(const nString& SrcFilePath, const nString& ExportFilePath)
+bool ProcessAnimDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -159,7 +159,7 @@ bool ProcessAnimDesc(const nString& SrcFilePath, const nString& ExportFilePath)
 	{
 		//???!!!allow compile or batch-compile?
 		// can add Model resource description, associated with this anim, to CFModel list
-		nString FileName = nString("Anims:") + Desc->Get(i).GetValue<CStrID>().CStr();
+		CString FileName = CString("Anims:") + Desc->Get(i).GetValue<CStrID>().CStr();
 		if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 	}
 
@@ -168,9 +168,9 @@ bool ProcessAnimDesc(const nString& SrcFilePath, const nString& ExportFilePath)
 //---------------------------------------------------------------------
 
 //???pre-unwind descs on exports?
-bool ProcessDescWithParents(const nString& SrcContext, const nString& ExportContext, const nString& Name)
+bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportContext, const CString& Name)
 {
-	nString ExportFilePath = ExportContext + Name + ".prm";
+	CString ExportFilePath = ExportContext + Name + ".prm";
 
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -187,14 +187,14 @@ bool ProcessDescWithParents(const nString& SrcContext, const nString& ExportCont
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
-	nString BaseName = Desc->Get(CStrID("_Base_"), nString::Empty);
+	CString BaseName = Desc->Get(CStrID("_Base_"), CString::Empty);
 	return BaseName.IsEmpty() || (BaseName != Name && ProcessDescWithParents(SrcContext, ExportContext, BaseName));
 }
 //---------------------------------------------------------------------
 
-bool ProcessMaterialDesc(const nString& Name)
+bool ProcessMaterialDesc(const CString& Name)
 {
-	nString ExportFilePath = "Materials:" + Name + ".prm";
+	CString ExportFilePath = "Materials:" + Name + ".prm";
 
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -217,7 +217,7 @@ bool ProcessMaterialDesc(const nString& Name)
 		//!!!when export from src, find resource desc and add source texture to CFTexture list!
 		for (int i = 0; i < Textures->GetCount(); ++i)
 		{
-			nString FileName = nString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
+			CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
 			if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 		}
 	}
@@ -241,7 +241,7 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 				//!!!when export from src, find resource desc and add source texture to CFTexture list!
 				for (int i = 0; i < Textures->GetCount(); ++i)
 				{
-					nString FileName = nString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
+					CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
 					if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 				}
 			}
@@ -254,18 +254,18 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 			//!!!when export from src, find resource desc and add source Model to CFModel list!
 			if (AttrDesc->Get(pValue, CStrID("Mesh")))
 			{
-				nString FileName = nString("Meshes:") + pValue->GetValue<CStrID>().CStr() + ".nvx2"; //!!!change extension!
+				CString FileName = CString("Meshes:") + pValue->GetValue<CStrID>().CStr() + ".nvx2"; //!!!change extension!
 				if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 			}
 
 			//!!!when export from src, find resource desc and add source BT to CFTerrain list!
 			if (AttrDesc->Get(pValue, CStrID("CDLODFile")))
 			{
-				nString CDLODFilePath = "Terrain:" + pValue->GetValue<nString>() + ".cdlod";
+				CString CDLODFilePath = "Terrain:" + pValue->GetValue<CString>() + ".cdlod";
 				if (!IsFileAdded(CDLODFilePath))
 				{
 					if (ExportResources &&
-						!ProcessResourceDesc("SrcTerrain:" + pValue->GetValue<nString>() + ".cfd", CDLODFilePath) &&
+						!ProcessResourceDesc("SrcTerrain:" + pValue->GetValue<CString>() + ".cfd", CDLODFilePath) &&
 						!IOSrv->FileExists(CDLODFilePath))
 					{
 						n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", CDLODFilePath.GetExtension());
@@ -287,7 +287,7 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 //---------------------------------------------------------------------
 
 // Always processed from Src
-bool ProcessSceneResource(const nString& SrcFilePath, const nString& ExportFilePath)
+bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFilePath)
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -310,7 +310,7 @@ bool ProcessSceneResource(const nString& SrcFilePath, const nString& ExportFileP
 }
 //---------------------------------------------------------------------
 
-bool ProcessDesc(const nString& SrcFilePath, const nString& ExportFilePath)
+bool ProcessDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
@@ -330,16 +330,16 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 	Data::PParams Attrs;
 	if (!EntityDesc.Get<Data::PParams>(Attrs, CStrID("Attrs"))) OK;
 
-	nString AttrValue;
+	CString AttrValue;
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("UIDesc")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("UIDesc")))
 		if (!ProcessDesc("SrcUI:" + AttrValue + ".hrd", "UI:" + AttrValue + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing UI desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("ActorDesc")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("ActorDesc")))
 	{
 		if (!ProcessDescWithParents("SrcActors:", "Actors:", AttrValue))
 		{
@@ -354,14 +354,14 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		}
 	}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("AIHintsDesc")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("AIHintsDesc")))
 		if (!ProcessDesc("SrcAIHints:" + AttrValue + ".hrd", "AIHints:" + AttrValue + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing AI hints desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("SmartObjDesc")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("SmartObjDesc")))
 	{
 		if (!ProcessDesc("SrcSmarts:" + AttrValue + ".hrd", "Smarts:" + AttrValue + ".prm"))
 		{
@@ -378,7 +378,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 
 	CStrID ItemID = Attrs->Get<CStrID>(CStrID("ItemTplID"), CStrID::Empty);
 	if (ItemID.IsValid())
-		if (!ProcessDesc(nString("SrcItems:") + ItemID.CStr() + ".hrd", nString("Items:") + ItemID.CStr() + ".prm"))
+		if (!ProcessDesc(CString("SrcItems:") + ItemID.CStr() + ".hrd", CString("Items:") + ItemID.CStr() + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing item desc '%s'\n", AttrValue.CStr());
 			FAIL;
@@ -391,8 +391,8 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		{
 			ItemID = Inventory->Get<Data::PParams>(i)->Get<CStrID>(CStrID("ID"), CStrID::Empty);
 			if (ItemID.IsValid() &&
-				!ProcessDesc(	nString("SrcItems:") + ItemID.CStr() + ".hrd",
-								nString("Items:") + ItemID.CStr() + ".prm"))
+				!ProcessDesc(	CString("SrcItems:") + ItemID.CStr() + ".hrd",
+								CString("Items:") + ItemID.CStr() + ".prm"))
 			{
 				n_msg(VL_ERROR, "Error processing item desc '%s'\n", AttrValue.CStr());
 				FAIL;
@@ -400,9 +400,9 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		}
 	}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("ScriptClass")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("ScriptClass")))
 	{
-		nString ExportFilePath = "ScriptClasses:" + AttrValue + ".cls";
+		CString ExportFilePath = "ScriptClasses:" + AttrValue + ".cls";
 		if (!IsFileAdded(ExportFilePath))
 		{
 			if (ExportDescs) BatchToolInOut(CStrID("CFLua"), "SrcScriptClasses:" + AttrValue + ".lua", ExportFilePath);
@@ -410,9 +410,9 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		}
 	}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("Script")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("Script")))
 	{
-		nString ExportFilePath = "Scripts:" + AttrValue + ".lua";
+		CString ExportFilePath = "Scripts:" + AttrValue + ".lua";
 		if (!IsFileAdded(ExportFilePath))
 		{
 			if (ExportDescs) BatchToolInOut(CStrID("CFLua"), "SrcScripts:" + AttrValue + ".lua", ExportFilePath);
@@ -422,37 +422,37 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 
 	CStrID PickShape = Attrs->Get<CStrID>(CStrID("PickShape"), CStrID::Empty);
 	if (PickShape.IsValid())
-		if (!ProcessCollisionShape(	nString("SrcPhysics:") + PickShape.CStr() + ".hrd",
-									nString("Physics:") + PickShape.CStr() + ".prm"))
+		if (!ProcessCollisionShape(	CString("SrcPhysics:") + PickShape.CStr() + ".hrd",
+									CString("Physics:") + PickShape.CStr() + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing collision shape '%s'\n", PickShape.CStr());
 			FAIL;
 		}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("Physics")))
-		if (!ProcessPhysicsDesc(nString("SrcPhysics:") + AttrValue + ".hrd",
-								nString("Physics:") + AttrValue + ".prm"))
+	if (Attrs->Get<CString>(AttrValue, CStrID("Physics")))
+		if (!ProcessPhysicsDesc(CString("SrcPhysics:") + AttrValue + ".hrd",
+								CString("Physics:") + AttrValue + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing physics desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("AnimDesc")))
-		if (!ProcessAnimDesc(	nString("SrcGameAnim:") + AttrValue + ".hrd",
-								nString("GameAnim:") + AttrValue + ".prm"))
+	if (Attrs->Get<CString>(AttrValue, CStrID("AnimDesc")))
+		if (!ProcessAnimDesc(	CString("SrcGameAnim:") + AttrValue + ".hrd",
+								CString("GameAnim:") + AttrValue + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing animation desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("Dialogue")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("Dialogue")))
 		if (!ProcessDialogue("SrcDlg:", "Dlg:", AttrValue))
 		{
 			n_msg(VL_ERROR, "Error processing dialogue desc '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
 
-	if (Attrs->Get<nString>(AttrValue, CStrID("SceneFile")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("SceneFile")))
 		if (!ProcessSceneResource("SrcScene:" + AttrValue + ".hrd", "Scene:" + AttrValue + ".scn"))
 		{
 			n_msg(VL_ERROR, "Error processing scene resource '%s'\n", AttrValue.CStr());
@@ -463,14 +463,14 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 }
 //---------------------------------------------------------------------
 
-bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
+bool ProcessLevel(const Data::CParams& LevelDesc, const CString& Name)
 {
 	// Add level script
 
-	nString ExportFilePath = "Levels:" + Name + ".lua";
+	CString ExportFilePath = "Levels:" + Name + ".lua";
 	if (ExportDescs)
 	{
-		nString SrcFilePath = "SrcLevels:" + Name + ".lua";
+		CString SrcFilePath = "SrcLevels:" + Name + ".lua";
 		if (!IsFileAdded(SrcFilePath) && IOSrv->FileExists(SrcFilePath))
 		{
 			BatchToolInOut(CStrID("CFLua"), SrcFilePath, ExportFilePath);
@@ -507,7 +507,7 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const nString& Name)
 }
 //---------------------------------------------------------------------
 
-bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
+bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 {
 	IO::CFSBrowser Browser;
 	if (!Browser.SetAbsolutePath(ExportDescs ? SrcPath : ExportPath))
@@ -522,12 +522,12 @@ bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			nString LowerName = Browser.GetCurrEntryName();
+			CString LowerName = Browser.GetCurrEntryName();
 			LowerName.ToLower();
 
 			if (LowerName != (ExportDescs ? "_quest.hrd" : "_quest.prm")) continue;
 
-			nString QuestName;
+			CString QuestName;
 			if (Verbose >= VL_INFO)
 			{
 				QuestName = Browser.GetCurrentPath();
@@ -538,7 +538,7 @@ bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
 
 			n_msg(VL_INFO, "Processing quest '%s'...\n", QuestName.CStr());
 
-			nString ExportFilePath = ExportPath + "/_Quest.prm";
+			CString ExportFilePath = ExportPath + "/_Quest.prm";
 			Data::PParams Desc;
 			if (ExportDescs)
 			{
@@ -560,11 +560,11 @@ bool ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath)
 			{
 				for (int i = 0; i < Tasks->GetCount(); ++i)
 				{
-					nString Name = Tasks->Get(i).GetName().CStr();
+					CString Name = Tasks->Get(i).GetName().CStr();
 					ExportFilePath = ExportPath + "/" + Name + ".lua";
 					if (ExportDescs)
 					{
-						nString SrcFilePath = SrcPath + "/" + Name + ".lua";
+						CString SrcFilePath = SrcPath + "/" + Name + ".lua";
 						if (!IsFileAdded(SrcFilePath) && IOSrv->FileExists(SrcFilePath))
 						{
 							BatchToolInOut(CStrID("CFLua"), SrcFilePath, ExportFilePath);

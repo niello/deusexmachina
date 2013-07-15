@@ -2,6 +2,7 @@
 #include <Data/Params.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
+#include <Data/StringTokenizer.h>
 #include <ConsoleApp.h>
 
 //!!!tiyxml2 mustn't be linked!
@@ -17,9 +18,9 @@ bool	LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut);
 bool	LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut);
 void	LuaRelease();
 
-bool ProcessSingleFile(const nString& InFileName, const nString& OutFileName, bool CheckFileType = true, bool IsClass = false)
+bool ProcessSingleFile(const CString& InFileName, const CString& OutFileName, bool CheckFileType = true, bool IsClass = false)
 {
-	nString Name = InFileName.ExtractFileName();
+	CString Name = InFileName.ExtractFileName();
 	Name.StripExtension();
 
 	Data::CBuffer Buffer;
@@ -53,16 +54,26 @@ int main(int argc, const char** argv)
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
 	Verbose = Args.GetIntArg("-v");
-	nString In = Args.GetStringArg("-in");
-	nString Out = Args.GetStringArg("-out");
+	CString In = Args.GetStringArg("-in");
+	CString Out = Args.GetStringArg("-out");
 
 	if (In.IsEmpty() || Out.IsEmpty()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	nArray<nString> InList, OutList;
-	In.Tokenize(";", InList);
-	Out.Tokenize(";", OutList);
+	CArray<CString> InList, OutList;
+
+	{
+		Data::CStringTokenizer StrTok(In.CStr(), ";");
+		while (StrTok.GetNextTokenSingleChar())
+			InList.Add(StrTok.GetCurrToken());
+	}
+
+	{
+		Data::CStringTokenizer StrTok(Out.CStr(), ";");
+		while (StrTok.GetNextTokenSingleChar())
+			OutList.Add(StrTok.GetCurrToken());
+	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 

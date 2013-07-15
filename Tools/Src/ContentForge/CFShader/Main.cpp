@@ -1,15 +1,16 @@
 #include <IO/IOServer.h>
 #include <Render/D3DXDEMInclude.h>
+#include <Data/StringTokenizer.h>
 #include <ConsoleApp.h>
 
 #define TOOL_NAME	"CFShader"
 #define VERSION		"1.0"
 
 int		Verbose = VL_ERROR;
-nString	RootPath;
+CString	RootPath;
 
 int		ExitApp(int Code, bool WaitKey);
-int		CompileShader(const nString& InFilePath, const nString& OutFilePath, bool Debug, int OptimizationLevel);
+int		CompileShader(const CString& InFilePath, const CString& OutFilePath, bool Debug, int OptimizationLevel);
 
 int main(int argc, const char** argv)
 {
@@ -17,8 +18,8 @@ int main(int argc, const char** argv)
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
 	Verbose = Args.GetIntArg("-v");
-	nString In = Args.GetStringArg("-in");
-	nString Out = Args.GetStringArg("-out");
+	CString In = Args.GetStringArg("-in");
+	CString Out = Args.GetStringArg("-out");
 	RootPath = Args.GetStringArg("-root");
 	int OptLevel = Args.GetIntArg("-o");
 	bool Debug = Args.GetBoolArg("-d");
@@ -27,9 +28,19 @@ int main(int argc, const char** argv)
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	nArray<nString> InList, OutList;
-	In.Tokenize(";", InList);
-	Out.Tokenize(";", OutList);
+	CArray<CString> InList, OutList;
+
+	{
+		Data::CStringTokenizer StrTok(In.CStr(), ";");
+		while (StrTok.GetNextTokenSingleChar())
+			InList.Add(StrTok.GetCurrToken());
+	}
+
+	{
+		Data::CStringTokenizer StrTok(Out.CStr(), ";");
+		while (StrTok.GetNextTokenSingleChar())
+			OutList.Add(StrTok.GetCurrToken());
+	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 

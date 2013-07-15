@@ -4,14 +4,14 @@
 #include <Data/DataServer.h>
 
 //???get ID & dest from desc or from here? use some parameter in desc pathes?
-bool ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileName)
+bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileName)
 {
 	//!!!check if aready was exported!
 
 	Data::PParams Desc = DataSrv->LoadHRD(RsrcFileName, false);
 	if (!Desc.IsValid()) FAIL;
 
-	nString RsrcDir = RsrcFileName.ExtractDirName();
+	CString RsrcDir = RsrcFileName.ExtractDirName();
 
 	for (int i = 0; i < Desc->GetCount(); ++i)
 	{
@@ -23,8 +23,8 @@ bool ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileN
 
 		if (Tool == CStrID("CFTerrain"))
 		{
-			nString InStr = IOSrv->ManglePath(RsrcDir + RsrcDesc->Get<nString>(CStrID("In")));
-			nString OutStr = IOSrv->ManglePath(ExportFileName);
+			CString InStr = IOSrv->ManglePath(RsrcDir + RsrcDesc->Get<CString>(CStrID("In")));
+			CString OutStr = IOSrv->ManglePath(ExportFileName);
 
 			int PatchSize = RsrcDesc->Get<int>(CStrID("PatchSize"), 8);
 			int LODCount = RsrcDesc->Get<int>(CStrID("LODCount"), 6);
@@ -44,7 +44,7 @@ bool ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileN
 		}
 		else if (Tool == CStrID("CFCopy") || Tool == CStrID("CFLua"))
 		{
-			BatchToolInOut(Tool, RsrcDir + RsrcDesc->Get<nString>(CStrID("In")), RsrcDesc->Get(CStrID("Out"), ExportFileName));
+			BatchToolInOut(Tool, RsrcDir + RsrcDesc->Get<CString>(CStrID("In")), RsrcDesc->Get(CStrID("Out"), ExportFileName));
 		}
 		else FAIL;
 	}
@@ -60,12 +60,12 @@ bool ProcessFrameShader(const Data::CParams& Desc)
 	{
 		for (int i = 0; i < ShaderList->GetCount(); ++i)
 		{
-			nString ExportFilePath = "Shaders:" + ShaderList->Get<nString>(i) + ".fxo";
+			CString ExportFilePath = "Shaders:" + ShaderList->Get<CString>(i) + ".fxo";
 
 			if (IsFileAdded(ExportFilePath)) continue;
 
 			if (ExportShaders)
-				BatchToolInOut(CStrID("CFShader"), "SrcShaders:" + ShaderList->Get<nString>(i) + ".fx", ExportFilePath);
+				BatchToolInOut(CStrID("CFShader"), "SrcShaders:" + ShaderList->Get<CString>(i) + ".fx", ExportFilePath);
 
 			FilesToPack.InsertSorted(ExportFilePath);
 		}

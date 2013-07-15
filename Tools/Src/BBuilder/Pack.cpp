@@ -7,9 +7,9 @@
 
 void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
 {
-	nString Str;
-	for (int i = 0; i < Level; ++i) Str.Append("  "); //Str.Append("| ");
-	Str.Append((Entry.GetType() == IO::FSE_DIR) ? "+ " : "  ");
+	CString Str;
+	for (int i = 0; i < Level; ++i) Str.Add("  "); //Str.Add("| ");
+	Str.Add((Entry.GetType() == IO::FSE_DIR) ? "+ " : "  ");
 	Str += Entry.GetName();
 
 	n_printf(Str.CStr());
@@ -18,27 +18,27 @@ void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
 	{
 		n_printf("\n");
 
-		IO::CNpkTOCEntry* pSubEntry = Entry.GetFirstEntry();
-		while (pSubEntry)
+		IO::CNpkTOCEntry::CIterator ItSubEntry = Entry.GetEntryIterator();
+		while (ItSubEntry)
 		{
-			if (pSubEntry->GetType() == IO::FSE_DIR)
-				PrintNpkTOCEntry(*pSubEntry, Level + 1);
-			pSubEntry = Entry.GetNextEntry(pSubEntry);
+			if ((*ItSubEntry)->GetType() == IO::FSE_DIR)
+				PrintNpkTOCEntry(**ItSubEntry, Level + 1);
+			++ItSubEntry;
 		}
 
-		pSubEntry = Entry.GetFirstEntry();
-		while (pSubEntry)
+		ItSubEntry = Entry.GetEntryIterator();
+		while (ItSubEntry)
 		{
-			if (pSubEntry->GetType() == IO::FSE_FILE)
-				PrintNpkTOCEntry(*pSubEntry, Level + 1);
-			pSubEntry = Entry.GetNextEntry(pSubEntry);
+			if ((*ItSubEntry)->GetType() == IO::FSE_FILE)
+				PrintNpkTOCEntry(**ItSubEntry, Level + 1);
+			++ItSubEntry;
 		}
 	}
 	else n_printf(" (%d B)\n", Entry.GetFileLength());
 }
 //---------------------------------------------------------------------
 
-bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
+bool AddDirectoryToTOC(CString DirName, IO::CNpkTOC& TOC) //, int& Offset)
 {
 	bool Result = true;
 
@@ -50,17 +50,15 @@ bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
 	IO::CNpkTOCEntry* pNPKDir = TOC.BeginDirEntry(DirName.CStr());
 
 	IO::CFSBrowser Browser;
-	nString FullDirName = pNPKDir->GetFullName() + "/";
+	CString FullDirName = pNPKDir->GetFullName() + "/";
 	if (Browser.SetAbsolutePath(FullDirName))
 	{
 		if (!Browser.IsCurrDirEmpty()) do
 		{
-			IO::EFSEntryType CurrEntryType = Browser.GetCurrEntryType();
-
-			if (CurrEntryType == IO::FSE_FILE)
+			if (Browser.IsCurrEntryFile())
 			{
-				nString FilePart = Browser.GetCurrEntryName();
-				nString FullFilePath = FullDirName + Browser.GetCurrEntryName();
+				CString FilePart = Browser.GetCurrEntryName();
+				CString FullFilePath = FullDirName + Browser.GetCurrEntryName();
 				FilePart.ToLower();
 
 				IO::CFileStream File;
@@ -68,14 +66,14 @@ bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
 				{
 					int FileLength = File.GetSize();
 					File.Close();
-					TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
-					Offset += FileLength;
+					TOC.AddFileEntry(FilePart.CStr(), 0, FileLength); //Offset, FileLength);
+					//Offset += FileLength;
 				}
 				else n_msg(VL_ERROR, "Error reading file %s\n", FullFilePath.CStr());
 			}
-			else if (CurrEntryType == IO::FSE_DIR)
+			else if (Browser.IsCurrEntryDir())
 			{
-				if (!AddDirectoryToTOC(Browser.GetCurrEntryName(), TOC, Offset))
+				if (!AddDirectoryToTOC(Browser.GetCurrEntryName(), TOC)) //, Offset))
 				{
 					Result = false;
 					break;
@@ -96,22 +94,22 @@ bool AddDirectoryToTOC(nString DirName, IO::CNpkTOC& TOC, int& Offset)
 }
 //---------------------------------------------------------------------
 
-void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry)
+void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int& Offset)
 {
 	n_assert(pTOCEntry);
 
 	if (pTOCEntry->GetType() == IO::FSE_DIR)
 	{
 		File.Put<int>('DIR_');
-		File.Put<int>(sizeof(short) + pTOCEntry->GetNameLength());
-		File.Put<short>(pTOCEntry->GetNameLength());
-		File.Write(pTOCEntry->GetName(), pTOCEntry->GetNameLength());
+		File.Put<int>(sizeof(short) + pTOCEntry->GetName().Length());
+		File.Put<ushort>((ushort)pTOCEntry->GetName().Length());
+		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().Length());
 
-		IO::CNpkTOCEntry* pSubEntry = pTOCEntry->GetFirstEntry();
-		while (pSubEntry)
+		IO::CNpkTOCEntry::CIterator ItSubEntry = pTOCEntry->GetEntryIterator();
+		while (ItSubEntry)
 		{
-			WriteTOCEntry(File, pSubEntry);
-			pSubEntry = pTOCEntry->GetNextEntry(pSubEntry);
+			WriteTOCEntry(File, *ItSubEntry, Offset);
+			++ItSubEntry;
 		}
 
 		File.Put<int>('DEND');
@@ -120,11 +118,19 @@ void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry)
 	else if (pTOCEntry->GetType() == IO::FSE_FILE)
 	{
 		File.Put<int>('FILE');
-		File.Put<int>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetNameLength());
-		File.Put<int>(pTOCEntry->GetFileOffset());
+		File.Put<int>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetName().Length());
+
+		// CHashTable iterator doesn't keep insertion order due to hash table nature, so offset can't
+		// be calculated until all the TOC is formed. Now we can calculate real offset, which is
+		// order-dependent, but TOC entries take only R/O access to the offset stored. So we ignore this
+		// field at all and calculate real offset here.
+		//File.Put<int>(pTOCEntry->GetFileOffset());
+		File.Put<int>(Offset);
+		Offset += pTOCEntry->GetFileLength();
+
 		File.Put<int>(pTOCEntry->GetFileLength());
-		File.Put<short>(pTOCEntry->GetNameLength());
-		File.Write(pTOCEntry->GetName(), pTOCEntry->GetNameLength());
+		File.Put<ushort>((ushort)pTOCEntry->GetName().Length());
+		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().Length());
 	}
 }
 //---------------------------------------------------------------------
@@ -135,18 +141,19 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int Data
 
 	if (pTOCEntry->GetType() == IO::FSE_DIR)
 	{
-		IO::CNpkTOCEntry* pSubEntry = pTOCEntry->GetFirstEntry();
-		while (pSubEntry)
+		IO::CNpkTOCEntry::CIterator ItSubEntry = pTOCEntry->GetEntryIterator();
+		while (ItSubEntry)
 		{
-			if (!WriteEntryData(File, pSubEntry, DataOffset, DataSize)) FAIL;
-			pSubEntry = pTOCEntry->GetNextEntry(pSubEntry);
+			if (!WriteEntryData(File, *ItSubEntry, DataOffset, DataSize)) FAIL;
+			++ItSubEntry;
 		}
 	}
 	else if (pTOCEntry->GetType() == IO::FSE_FILE)
 	{
-		n_assert(File.GetPosition() == (DataOffset + pTOCEntry->GetFileOffset()));
+		// It was a very good assert, but now it can't be used since GetFileOffset() always returns 0
+		//n_assert(File.GetPosition() == (DataOffset + pTOCEntry->GetFileOffset()));
 
-		nString FullFileName = pTOCEntry->GetFullName();
+		CString FullFileName = pTOCEntry->GetFullName();
 
 		//???write streamed file copying?
 		Data::CBuffer Buffer;
@@ -170,31 +177,31 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int Data
 }
 //---------------------------------------------------------------------
 
-bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, const nString& PkgRoot, nString PkgRootDir)
+bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, const CString& PkgRoot, CString PkgRootDir)
 {
 	// Create TOC
 
 	n_msg(VL_INFO, "Creating NPK TOC...\n");
 
-	nString RootPath = IOSrv->ManglePath(PkgRoot);
+	CString RootPath = IOSrv->ManglePath(PkgRoot);
 	RootPath.ToLower();
 
 	PkgRootDir.ToLower();
 
-	nString RootDirPath = RootPath + "/" + PkgRootDir;
+	CString RootDirPath = RootPath + "/" + PkgRootDir;
 
 	int i = 0;
 	for (; i < FilesToPack.GetCount(); ++i)
 	{
-		const nString& FileName = FilesToPack[i];
+		const CString& FileName = FilesToPack[i];
 		if (FileName.Length() <= RootDirPath.Length() + 1) continue;
 		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.Length()) >= 0) break;
 		n_msg(VL_WARNING, "File is out of the export package scope:\n - %s\n", FileName.CStr());
 	}
 
-	nArray<nString> DirStack;
+	CArray<CString> DirStack;
 
-	int Offset = 0;
+	//int Offset = 0;
 
 	IO::CNpkTOC TOC;
 	TOC.SetRootPath(RootPath.CStr());
@@ -202,20 +209,21 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 
 	for (; i < FilesToPack.GetCount(); ++i)
 	{
-		const nString& FileName = FilesToPack[i];
+		const CString& FileName = FilesToPack[i];
 		if (FileName.Length() <= RootDirPath.Length() + 1) continue;
 		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.Length()) > 0) break;
 
-		nString RelFile = FileName.CStr() + RootDirPath.Length() + 1;
+		CString RelFile = FileName.CStr() + RootDirPath.Length() + 1;
 
 		int CurrStartChar = 0;
 		int DirCount = 0;
-		while (CurrStartChar < RelFile.Length())
+		int RFLen = RelFile.Length();
+		while (CurrStartChar < RFLen)
 		{
 			int DirSepChar = RelFile.FindCharIndex('/', CurrStartChar);
 			if (DirSepChar == INVALID_INDEX) break;
 
-			nString Dir = RelFile.SubString(CurrStartChar, DirSepChar - CurrStartChar);
+			CString Dir = RelFile.SubString(CurrStartChar, DirSepChar - CurrStartChar);
 			if (DirCount < DirStack.GetCount())
 			{
 				if (Dir != DirStack[DirCount])
@@ -224,13 +232,13 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 						TOC.EndDirEntry();
 					DirStack.Truncate(DirStack.GetCount() - DirCount);
 					TOC.BeginDirEntry(Dir.CStr());
-					DirStack.Append(Dir);
+					DirStack.Add(Dir);
 				}
 			}
 			else
 			{
 				TOC.BeginDirEntry(Dir.CStr());
-				DirStack.Append(Dir);
+				DirStack.Add(Dir);
 			}
 
 			++DirCount;
@@ -242,12 +250,12 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 			TOC.EndDirEntry();
 		DirStack.Truncate(DirStack.GetCount() - DirCount);
 
-		nString FilePart = RelFile.ExtractFileName();
-		nString FullFilePath = RootDirPath + "/" + RelFile;
+		CString FilePart = RelFile.ExtractFileName();
+		CString FullFilePath = RootDirPath + "/" + RelFile;
 
 		if (IOSrv->DirectoryExists(FullFilePath))
 		{
-			if (!AddDirectoryToTOC(FilePart, TOC, Offset))
+			if (!AddDirectoryToTOC(FilePart, TOC)) //, Offset))
 				n_msg(VL_ERROR, "Error reading directory %s\n", FullFilePath.CStr());
 		}
 		else
@@ -257,8 +265,8 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 			{
 				int FileLength = File.GetSize();
 				File.Close();
-				TOC.AddFileEntry(FilePart.CStr(), Offset, FileLength);
-				Offset += FileLength;
+				TOC.AddFileEntry(FilePart.CStr(), 0, FileLength); //Offset, FileLength);
+				//Offset += FileLength;
 			}
 			else n_msg(VL_ERROR, "Error reading file %s\n", FullFilePath.CStr());
 		}
@@ -287,7 +295,8 @@ bool PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, c
 
 	n_msg(VL_DETAILS, " - Writing TOC...\n");
 
-	WriteTOCEntry(File, TOC.GetRootEntry());
+	int Offset = 0;
+	WriteTOCEntry(File, TOC.GetRootEntry(), Offset);
 
 	n_msg(VL_DETAILS, " - Writing data...\n");
 	
