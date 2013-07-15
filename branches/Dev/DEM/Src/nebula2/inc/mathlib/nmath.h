@@ -12,7 +12,7 @@
 #include <math.h>
 #include <stdlib.h>	// rand
 
-#include "kernel/ntypes.h"
+#include <kernel/ntypes.h>
 
 #ifdef _MSC_VER
 #define isnan _isnan
@@ -338,28 +338,23 @@ inline float n_normangle(float a)
     }
     return a;
 }
+//---------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-/**
-    Get angular distance.
-*/
-inline
-float
-n_angulardistance(float from, float to)
+// Compute the shortest angular distance between 2 angles. The angular distance
+// will be between rad(-180) and rad(180). Positive distance are in counter-clockwise
+// order, negative distances in clockwise order.
+inline float n_angulardistance(float from, float to)
 {
-    float normFrom = n_normangle(from);
-    float normTo   = n_normangle(to);
-    float dist = normTo - normFrom;
-    if (dist < n_deg2rad(-180.0f))
-    {
-        dist += n_deg2rad(360.0f);
-    }
-    else if (dist > n_deg2rad(180.0f))
-    {
-        dist -= n_deg2rad(360.0f);
-    }
-    return dist;
+	float normFrom = n_normangle(from);
+	float normTo   = n_normangle(to);
+	float dist = normTo - normFrom;
+	if (dist < n_deg2rad(-180.0f))
+		dist += n_deg2rad(360.0f);
+	else if (dist > n_deg2rad(180.0f))
+		dist -= n_deg2rad(360.0f);
+	return dist;
 }
-//------------------------------------------------------------------------------
+//---------------------------------------------------------------------
+
 #endif
 

@@ -113,7 +113,7 @@ inline vector3 polar2::get_cartesian_z() const
 
 inline bool polar2::isequal(const polar2& rhs, float tol) const
 {
-	return (n_abs(rhs.theta - theta) <= tol) && (n_abs(rhs.phi - phi) <= tol);
+	return (n_fabs(rhs.theta - theta) <= tol) && (n_fabs(rhs.phi - phi) <= tol);
 }
 //---------------------------------------------------------------------
 

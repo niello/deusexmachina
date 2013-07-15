@@ -31,7 +31,7 @@ public:
 	
 	virtual bool	Match(const CMemFact& Pattern, CFlags FieldMask) const;
 	
-	// For CLinkedListSet
+	// For CKeyList
 	Core::CRTTI*	GetKey() const { return GetRTTI(); }
 
 	bool operator <(const CMemFact& Other) const { return Confidence < Other.Confidence; }

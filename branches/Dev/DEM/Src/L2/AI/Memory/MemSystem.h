@@ -3,7 +3,7 @@
 #define __DEM_L2_AI_MEMORY_SYSTEM_H__
 
 #include "MemFact.h"
-#include <Data/LinkedListSet.h>
+#include <Data/KeyList.h>
 #include <AI/ActorFwd.h>
 
 // Memory stores facts known by the actor. Memory also provides the interface to query
@@ -11,7 +11,7 @@
 
 namespace AI
 {
-typedef CLinkedListSet<const Core::CRTTI*, PMemFact> CMemFactListSet;
+typedef CKeyList<const Core::CRTTI*, PMemFact> CMemFactListSet;
 typedef CMemFactListSet::CIterator CMemFactNode;
 
 class CMemSystem //: public Core::CRefCounted

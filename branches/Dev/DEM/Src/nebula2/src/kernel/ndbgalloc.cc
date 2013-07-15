@@ -2,7 +2,7 @@
 
 #define CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
-#include "kernel/ntypes.h"
+#include <kernel/ntypes.h>
 
 // Debug memory management functions
 

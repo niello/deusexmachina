@@ -5,14 +5,14 @@
 #include <Core/RefCounted.h>
 #include <Data/StringID.h>
 #include <Data/QuadTree.h>
-#include <Data/LinkedListSet.h>
+#include <Data/KeyList.h>
 
 // Stimulus is a source of sense, placed in the world and collected by actor sensors.
 // Derive from this class to create different stimulus types (visual, audial, tactile etc).
 
 namespace AI
 {
-typedef Data::CLinkedListSet<Core::CRTTI*, class CStimulus*> CStimulusListSet;
+typedef Data::CKeyList<Core::CRTTI*, class CStimulus*> CStimulusListSet;
 typedef Data::CQuadTree<class CStimulus*, CStimulusListSet> CStimulusQT;
 typedef CStimulusQT::CHandle CStimulusNode;
 
@@ -41,7 +41,7 @@ public:
 
 	bool				IsActive() const { return pQTNode != NULL; }
 	
-	// For CLinkedListSet
+	// For CKeyList
 	Core::CRTTI*		GetKey() const { return GetRTTI(); }
 
 	// For CQuadTree

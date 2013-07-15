@@ -1,27 +1,19 @@
 #ifndef N_BBOX_H
 #define N_BBOX_H
-//------------------------------------------------------------------------------
-/**
-    @class bbox3
-    @ingroup NebulaMathDataTypes
 
-    A non-oriented bounding box class.
-
-    (C) 2004 RadonLabs GmbH
-*/
 #include "mathlib/vector.h"
 #include "mathlib/matrix44.h"
 #include "mathlib/line.h"
 #include "mathlib/plane.h"
 
-//------------------------------------------------------------------------------
-//  bbox3
-//------------------------------------------------------------------------------
+// An axis-aligned bounding box class.
+// (C) 2004 RadonLabs GmbH
+
 class bbox3
 {
 public:
-    /// clip codes
-    enum
+
+	enum
     {
         ClipLeft   = (1<<0),
         ClipRight  = (1<<1),
@@ -31,7 +23,8 @@ public:
         ClipFar    = (1<<5),
     };
 
-    enum {
+    enum
+	{
         OUTSIDE     = 0,
         ISEQUAL     = (1<<0),
         ISCONTAINED = (1<<1),
@@ -154,9 +147,9 @@ public:
 // center point, and the x,y,z vectors of the matrix define the extents.
 inline void bbox3::set(const matrix44& m)
 {
-	float xExtent = n_max(n_max(n_abs(m.M11), n_abs(m.M21)), n_abs(m.M31));
-	float yExtent = n_max(n_max(n_abs(m.M12), n_abs(m.M22)), n_abs(m.M32));
-	float zExtent = n_max(n_max(n_abs(m.M13), n_abs(m.M23)), n_abs(m.M33));
+	float xExtent = n_max(n_max(n_fabs(m.M11), n_fabs(m.M21)), n_fabs(m.M31));
+	float yExtent = n_max(n_max(n_fabs(m.M12), n_fabs(m.M22)), n_fabs(m.M32));
+	float zExtent = n_max(n_max(n_fabs(m.M13), n_fabs(m.M23)), n_fabs(m.M33));
 	vector3 extent(xExtent, yExtent, zExtent);
 	vector3 center = m.Translation();
 	vmin = center - extent;
