@@ -4,7 +4,7 @@
 //
 //#include <Core/RefCounted.h>
 //#include <kernel/nref.h>
-//#include <util/nstring.h>
+//#include <Data/String.h>
 //
 //// A wave resource is an entry in a CWaveBank.
 //
@@ -18,7 +18,7 @@
 //
 //private:
 //
-//	nString					Name;
+//	CString					Name;
 //	CArray<nRef<nSound3>>	Sounds;
 //
 //public:
@@ -28,8 +28,8 @@
 //	CWaveResource(): Volume(1.0f) {}
 //	virtual ~CWaveResource();
 //
-//	void			SetName(const nString& NewName) { n_assert(NewName.IsValid()); Name = NewName; }
-//	const nString&	GetName() const { return Name; }
+//	void			SetName(const CString& NewName) { n_assert(NewName.IsValid()); Name = NewName; }
+//	const CString&	GetName() const { return Name; }
 //	void			AddSoundObject(nSound3* pSound) { n_assert(pSound); Sounds.Add(pSound); }
 //	int				GetNumSoundObjects() const { return Sounds.GetCount(); }
 //	nSound3*			GetSoundObjectAt(int Idx) const { return Sounds[Idx]; }

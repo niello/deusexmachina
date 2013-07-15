@@ -19,25 +19,25 @@ public:
 	CFileSystemWin32();
 	virtual ~CFileSystemWin32();
 
-	virtual bool	Mount(const nString& Source, const nString& Root) { OK; }
+	virtual bool	Mount(const CString& Source, const CString& Root) { OK; }
 	virtual void	Unmount() {}
 	virtual bool	ProvidesFileCursor() { OK; }
 
-	virtual bool	FileExists(const nString& Path);
-	virtual bool	IsFileReadOnly(const nString& Path);
-	virtual bool	SetFileReadOnly(const nString& Path, bool ReadOnly);
-	virtual bool	DeleteFile(const nString& Path);
-	virtual bool	CopyFile(const nString& SrcPath, const nString& DestPath);
-	virtual bool	DirectoryExists(const nString& Path);
-	virtual bool	CreateDirectory(const nString& Path);
-	virtual bool	DeleteDirectory(const nString& Path);
-	virtual bool	GetSystemFolderPath(ESystemFolder Code, nString& OutPath);
+	virtual bool	FileExists(const CString& Path);
+	virtual bool	IsFileReadOnly(const CString& Path);
+	virtual bool	SetFileReadOnly(const CString& Path, bool ReadOnly);
+	virtual bool	DeleteFile(const CString& Path);
+	virtual bool	CopyFile(const CString& SrcPath, const CString& DestPath);
+	virtual bool	DirectoryExists(const CString& Path);
+	virtual bool	CreateDirectory(const CString& Path);
+	virtual bool	DeleteDirectory(const CString& Path);
+	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath);
 
-	virtual void*	OpenDirectory(const nString& Path, const nString& Filter, nString& OutName, EFSEntryType& OutType);
+	virtual void*	OpenDirectory(const CString& Path, const CString& Filter, CString& OutName, EFSEntryType& OutType);
 	virtual void	CloseDirectory(void* hDir);
-	virtual bool	NextDirectoryEntry(void* hDir, nString& OutName, EFSEntryType& OutType);
+	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType);
 
-	virtual void*	OpenFile(const nString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
+	virtual void*	OpenFile(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	CloseFile(void* hFile);
 	virtual DWORD	Read(void* hFile, void* pData, DWORD Size);
 	virtual DWORD	Write(void* hFile, const void* pData, DWORD Size);

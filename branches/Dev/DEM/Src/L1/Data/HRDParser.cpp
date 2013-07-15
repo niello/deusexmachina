@@ -230,7 +230,7 @@ bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
 		FAIL;
 	}
 	
-	nString NewID;
+	CString NewID;
 	NewID.Set(TokenStart, LexerCursor - TokenStart);
 	
 	int Idx = TableRW.FindIndexSorted(NewID);
@@ -268,7 +268,7 @@ bool CHRDParser::LexProcessHex(CArray<CToken>& Tokens)
 		FAIL;
 	}
 	
-	nString Token;
+	CString Token;
 	Token.Set(TokenStart, TokenLength);
 	AddConst(Tokens, Token, T_INT_HEX);
 	OK;
@@ -286,7 +286,7 @@ bool CHRDParser::LexProcessFloat(CArray<CToken>& Tokens)
 	}
 	while (LexerCursor < EndOfBuffer && isdigit(*LexerCursor));
 		
-	nString Token;
+	CString Token;
 	Token.Set(TokenStart, LexerCursor - TokenStart);
 	AddConst(Tokens, Token, T_FLOAT);
 	OK;
@@ -309,7 +309,7 @@ bool CHRDParser::LexProcessNumeric(CArray<CToken>& Tokens)
 		else break;
 	}
 
-	nString Token;
+	CString Token;
 	Token.Set(TokenStart, LexerCursor - TokenStart);
 	AddConst(Tokens, Token, T_INT);
 	OK;
@@ -318,7 +318,8 @@ bool CHRDParser::LexProcessNumeric(CArray<CToken>& Tokens)
 
 bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 {
-	nString NewConst; //!!!preallocate and grow like array!
+	CString NewConst;
+	//NewConst.Reserve(256); //!!!need grow!
 	
 	LexerCursor++;
 	Col++;
@@ -334,7 +335,7 @@ bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 				CurrChar = *LexerCursor;
 				switch (CurrChar)
 				{
-					case 't': NewConst += "\t"; break;	//!!!NEED nString += char!
+					case 't': NewConst += "\t"; break;	//!!!NEED CString += char!
 					case '\\': NewConst += "\\"; break;
 					case '"': NewConst += "\""; break;
 					case '\'': NewConst += "'"; break;
@@ -353,7 +354,7 @@ bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 						break;
 					default:
 						{
-							//!!!NEED nString += char!
+							//!!!NEED CString += char!
 							char Tmp[3];
 							Tmp[0] = '\\';
 							Tmp[1] = CurrChar;
@@ -382,7 +383,7 @@ bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 		}
 		else
 		{
-			//!!!NEED nString += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
+			//!!!NEED CString += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
 			char Tmp[2];
 			Tmp[0] = CurrChar;
 			Tmp[1] = 0;
@@ -400,7 +401,7 @@ bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 // <" STRING CONTENTS ">
 bool CHRDParser::LexProcessBigString(CArray<CToken>& Tokens)
 {
-	nString NewConst; //!!!preallocate and grow like array!
+	CString NewConst; //!!!preallocate and grow like array!
 	
 	LexerCursor++;
 	Col++;
@@ -429,7 +430,7 @@ bool CHRDParser::LexProcessBigString(CArray<CToken>& Tokens)
 			else break;
 		}
 
-		//!!!NEED nString += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
+		//!!!NEED CString += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
 		char Tmp[2];
 		Tmp[0] = CurrChar;
 		Tmp[1] = 0;
@@ -540,7 +541,7 @@ void CHRDParser::DlmMatchChar(char Char, int Index, int Start, int End, int& Mat
 	int i = Start;
 	for (; i < End; i++)
 	{
-		if (TableDlm[i].Length() < Index) continue;
+		if ((int)TableDlm[i].Length() < Index) continue;
 
 		if (MatchStart == INVALID_INDEX)
 		{
@@ -584,7 +585,7 @@ void CHRDParser::SkipSpaces()
 }
 //---------------------------------------------------------------------
 
-void CHRDParser::AddConst(CArray<CToken>& Tokens, const nString& Const, EType Type)
+void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Type)
 {
 	CData Data;
 	switch (Type)
@@ -705,13 +706,13 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 	n_printf("Parsing of DATA failed (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
 
 #ifdef _DEBUG
-	nString TokenValue;
+	CString TokenValue;
 	if (CurrToken.Table == TBL_RW) TokenValue = TableRW[CurrToken.Index];
 	else if (CurrToken.Table == TBL_ID) TokenValue = TableID[CurrToken.Index];
 	else if (CurrToken.Table == TBL_DLM) TokenValue = TableDlm[CurrToken.Index];
-	else if (TableConst[CurrToken.Index].IsA<nString>())
-		TokenValue = TableConst[CurrToken.Index].GetValue<nString>();
-	else TokenValue = nString("Non-string (numeric) constant");
+	else if (TableConst[CurrToken.Index].IsA<CString>())
+		TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
+	else TokenValue = CString("Non-string (numeric) constant");
 	n_printf("Current token: %s\n", TokenValue.CStr());
 	if (ParserCursor > 0)
 	{
@@ -719,9 +720,9 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 		if (CurrToken.Table == TBL_RW) TokenValue = TableRW[CurrToken.Index];
 		else if (CurrToken.Table == TBL_ID) TokenValue = TableID[CurrToken.Index];
 		else if (CurrToken.Table == TBL_DLM) TokenValue = TableDlm[CurrToken.Index];
-		else if (TableConst[CurrToken.Index].IsA<nString>())
-			TokenValue = TableConst[CurrToken.Index].GetValue<nString>();
-		else TokenValue = nString("Non-string (numeric) constant");
+		else if (TableConst[CurrToken.Index].IsA<CString>())
+			TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
+		else TokenValue = CString("Non-string (numeric) constant");
 		n_printf("Previous token: %s\n", TokenValue.CStr());
 	}
 #endif

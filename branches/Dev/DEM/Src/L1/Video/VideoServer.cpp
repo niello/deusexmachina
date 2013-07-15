@@ -100,7 +100,7 @@ bool CVideoServer::PlayFile(const char* pFileName)
 	}
 
 	wchar_t WidePath[N_MAXPATH];
-	nString Path = IOSrv->ManglePath(pFileName);
+	CString Path = IOSrv->ManglePath(pFileName);
 	mbstowcs(WidePath, Path.CStr(), Path.Length() + 1);
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, NULL)))
@@ -170,7 +170,7 @@ void CVideoServer::Stop()
 }
 //---------------------------------------------------------------------
 
-CVideoPlayer* CVideoServer::NewVideoPlayer(const nString& Name)
+CVideoPlayer* CVideoServer::NewVideoPlayer(const CString& Name)
 {
 	CVideoPlayer* pPlayer = n_new(COGGTheoraPlayer);
 	pPlayer->SetFilename(Name);

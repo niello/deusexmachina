@@ -11,7 +11,7 @@ class CProfiler
 {
 private:
 
-	nString	GlobalVarName;
+	CString	GlobalVarName;
 	nTime	StartTime;
 	nTime	AccumTime;
 	bool	IsActive;

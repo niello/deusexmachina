@@ -12,7 +12,7 @@ namespace Physics
 {
 __ImplementClassNoFactory(Physics::CPhysicsObj, Core::CRefCounted);
 
-PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName);
+PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName);
 
 bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 {
@@ -21,11 +21,11 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
 	Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(ShapeID);
 	if (!Shape.IsValid())
-		Shape = LoadCollisionShapeFromPRM(ShapeID, nString("Physics:") + ShapeID.CStr() + ".prm");
+		Shape = LoadCollisionShapeFromPRM(ShapeID, CString("Physics:") + ShapeID.CStr() + ".prm");
 	n_assert(Shape->IsLoaded());
 
-	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<nString>(CStrID("Group"), "Default"));
-	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<nString>(CStrID("Mask"), "All"));
+	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), "Default"));
+	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), "All"));
 
 	ShapeOffset = Offset;
 

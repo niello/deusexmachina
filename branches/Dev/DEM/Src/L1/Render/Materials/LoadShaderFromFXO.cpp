@@ -42,7 +42,7 @@ bool LoadShaderFromFXO(IO::CStream& In, PShader OutShader)
 }
 //---------------------------------------------------------------------
 
-bool LoadShaderFromFXO(const nString& FileName, PShader OutShader)
+bool LoadShaderFromFXO(const CString& FileName, PShader OutShader)
 {
 	IO::CFileStream File;
 	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&

@@ -3,7 +3,7 @@
 #define __DEM_L1_NODE_CTLR_THIRD_PERSON_H__
 
 #include <Scene/NodeController.h>
-#include <mathlib/polar.h>
+#include <Math/Polar.h>
 
 // Animation controller, that implements logic of third-person camera.
 // This controller updates transform only when it has changed, saving
@@ -17,7 +17,7 @@ class CNodeControllerThirdPerson: public CNodeController
 {
 protected:
 
-	polar2	Angles;
+	CPolar	Angles;
 	float	Distance;
 	vector3	COI;			// Center of interest, eye target in parent coordinates
 
@@ -44,13 +44,13 @@ public:
 	void			OrbitHorizontal(float Angle);
 	void			Zoom(float Amount);
 	void			Move(const vector3& Translation);
-	void			ForceNextUpdate() { Dirty = true; } //???normal dirty-on-set instead?
+	void			ForceNextUpdate() { Dirty = true; } //???normal dirty-on-Set instead?
 
 	float			GetVerticalAngleMin() const { return MinVertAngle; }
 	float			GetVerticalAngleMax() const { return MaxVertAngle; }
 	float			GetDistanceMin() const { return MinDistance; }
 	float			GetDistanceMax() const { return MaxDistance; }
-	const polar2&	GetAngles() const {return Angles; }
+	const CPolar&	GetAngles() const {return Angles; }
 	float			GetDistance() const {return Distance; }
 	const vector3&	GetCOI() const { return COI; }
 };
@@ -75,7 +75,7 @@ inline void CNodeControllerThirdPerson::SetVerticalAngleLimits(float Min, float 
 	n_assert(Min <= Max);
 	MinVertAngle = Min;
 	MaxVertAngle = Max;
-	Angles.theta = n_clamp(Angles.theta, MinVertAngle, MaxVertAngle);
+	Angles.Theta = n_clamp(Angles.Theta, MinVertAngle, MaxVertAngle);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -92,16 +92,16 @@ inline void CNodeControllerThirdPerson::SetDistanceLimits(float Min, float Max)
 
 inline void CNodeControllerThirdPerson::SetAngles(float Vertical, float Horizontal)
 {
-	Angles.theta = n_clamp(Vertical, MinVertAngle, MaxVertAngle);
-	Angles.phi = Horizontal;
+	Angles.Theta = n_clamp(Vertical, MinVertAngle, MaxVertAngle);
+	Angles.Phi = Horizontal;
 	Dirty = true;
 }
 //---------------------------------------------------------------------
 
 inline void CNodeControllerThirdPerson::SetDirection(const vector3& Dir)
 {
-	Angles.set(Dir); //???or -Dir?
-	Angles.theta = n_clamp(Angles.theta, MinVertAngle, MaxVertAngle);
+	Angles.Set(Dir); //???or -Dir?
+	Angles.Theta = n_clamp(Angles.Theta, MinVertAngle, MaxVertAngle);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -124,7 +124,7 @@ inline void CNodeControllerThirdPerson::SetCOI(const vector3& NewCOI)
 inline void CNodeControllerThirdPerson::OrbitVertical(float Angle)
 {
 	if (Angle == 0.f) return;
-	Angles.theta = n_clamp(Angles.theta + Angle, MinVertAngle, MaxVertAngle);
+	Angles.Theta = n_clamp(Angles.Theta + Angle, MinVertAngle, MaxVertAngle);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -132,7 +132,7 @@ inline void CNodeControllerThirdPerson::OrbitVertical(float Angle)
 inline void CNodeControllerThirdPerson::OrbitHorizontal(float Angle)
 {
 	if (Angle == 0.f) return;
-	Angles.phi += Angle;
+	Angles.Phi += Angle;
 	Dirty = true;
 }
 //---------------------------------------------------------------------

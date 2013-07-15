@@ -20,7 +20,7 @@ CDataServer::CDataServer(): HRDCache(PParams())
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::LoadHRD(const nString& FileName, bool Cache)
+PParams CDataServer::LoadHRD(const CString& FileName, bool Cache)
 {
 	PParams P;
 	if (HRDCache.Get(FileName.CStr(), P)) return P;
@@ -28,7 +28,7 @@ PParams CDataServer::LoadHRD(const nString& FileName, bool Cache)
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
+PParams CDataServer::ReloadHRD(const CString& FileName, bool Cache)
 {
 	CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return NULL;
@@ -46,7 +46,7 @@ PParams CDataServer::ReloadHRD(const nString& FileName, bool Cache)
 //---------------------------------------------------------------------
 
 //???remove from here? make user use readers/writers directly?
-void CDataServer::SaveHRD(const nString& FileName, const CParams* pContent)
+void CDataServer::SaveHRD(const CString& FileName, const CParams* pContent)
 {
 	if (!pContent) return;
 
@@ -57,13 +57,13 @@ void CDataServer::SaveHRD(const nString& FileName, const CParams* pContent)
 }
 //---------------------------------------------------------------------
 
-void CDataServer::UnloadHRD(const nString& FileName)
+void CDataServer::UnloadHRD(const CString& FileName)
 {
 	HRDCache.Remove(FileName.CStr());
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::LoadPRM(const nString& FileName, bool Cache)
+PParams CDataServer::LoadPRM(const CString& FileName, bool Cache)
 {
 	PParams P;
 	if (HRDCache.Get(FileName.CStr(), P)) return P;
@@ -71,7 +71,7 @@ PParams CDataServer::LoadPRM(const nString& FileName, bool Cache)
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
+PParams CDataServer::ReloadPRM(const CString& FileName, bool Cache)
 {
 	IO::CFileStream File;
 	if (!File.Open(FileName, IO::SAM_READ)) return NULL;
@@ -93,7 +93,7 @@ PParams CDataServer::ReloadPRM(const nString& FileName, bool Cache)
 //---------------------------------------------------------------------
 
 //???remove from here? make user use readers/writers directly?
-bool CDataServer::SavePRM(const nString& FileName, const CParams* pContent)
+bool CDataServer::SavePRM(const CString& FileName, const CParams* pContent)
 {
 	if (!pContent) FAIL;
 
@@ -104,7 +104,7 @@ bool CDataServer::SavePRM(const nString& FileName, const CParams* pContent)
 }
 //---------------------------------------------------------------------
 
-PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
+PXMLDocument CDataServer::LoadXML(const CString& FileName) //, bool Cache)
 {
 	CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
@@ -125,13 +125,13 @@ PXMLDocument CDataServer::LoadXML(const nString& FileName) //, bool Cache)
 //---------------------------------------------------------------------
 
 //!!!need desc cache! (independent from HRD cache) OR pre-unwind descs on export!
-bool CDataServer::LoadDesc(PParams& Out, const nString& Context, const nString& Name, bool Cache)
+bool CDataServer::LoadDesc(PParams& Out, const CString& Context, const CString& Name, bool Cache)
 {
 	PParams Main = LoadPRM(Context + Name + ".prm", Cache);
 
 	if (!Main.IsValid()) FAIL;
 
-	nString BaseName;
+	CString BaseName;
 	if (Main->Get(BaseName, CStrID("_Base_")))
 	{
 		n_assert(BaseName != Name);
@@ -144,7 +144,7 @@ bool CDataServer::LoadDesc(PParams& Out, const nString& Context, const nString& 
 }
 //---------------------------------------------------------------------
 
-bool CDataServer::LoadDataSchemes(const nString& FileName)
+bool CDataServer::LoadDataSchemes(const CString& FileName)
 {
 	PParams SchemeDescs = LoadHRD(FileName, false);
 	if (!SchemeDescs.IsValid()) FAIL;

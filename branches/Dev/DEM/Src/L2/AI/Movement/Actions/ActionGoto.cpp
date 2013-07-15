@@ -77,7 +77,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 
 		SubActionID = NewActionID;
 
-		static const nString ActNameBase("AI::CAction");
+		static const CString ActNameBase("AI::CAction");
 		SubAction = (CActionTraversePathEdge*)Factory->Create(ActNameBase + SubActionID.CStr());
 		if (!SubAction->Activate(pActor))				
 		{

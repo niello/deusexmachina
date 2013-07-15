@@ -47,7 +47,7 @@ public:
 	virtual bool	PlayFile(const char* pFileName);
 	virtual void	Stop();
 
-	CVideoPlayer*	NewVideoPlayer(const nString& Name);
+	CVideoPlayer*	NewVideoPlayer(const CString& Name);
 	void			DeleteVideoPlayer(CVideoPlayer* pPlayer);
 
 	bool			IsOpen() const { return _IsOpen; }

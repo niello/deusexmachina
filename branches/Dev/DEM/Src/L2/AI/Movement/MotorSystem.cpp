@@ -395,14 +395,14 @@ void CMotorSystem::RenderDebug()
 	else if (pActor->MvmtStatus == AIMvmt_DestSet) pMvmt = "DestSet";
 	else if (pActor->MvmtStatus == AIMvmt_Stuck) pMvmt = "Stuck";
 
-	nString text;
+	CString text;
 	text.Format("Mvmt status: %s\nFace direction set: %s\n", pMvmt, pActor->FacingStatus == AIFacing_DirSet ? "true" : "false");
 
 	if (pActor->MvmtStatus == AIMvmt_DestSet)
 	{
 		vector2 ToDest(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
 		
-		nString text2;
+		CString text2;
 		text2.Format("DestPoint: %.4f, %.4f, %.4f\n"
 			"Position: %.4f, %.4f, %.4f\n"
 			"DistToDest: %.4f\n"

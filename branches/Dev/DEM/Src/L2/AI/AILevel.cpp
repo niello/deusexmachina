@@ -26,7 +26,7 @@ bool CAILevel::Init(const bbox3& LevelBox, uchar QuadTreeDepth)
 }
 //---------------------------------------------------------------------
 
-bool CAILevel::LoadNavMesh(const nString& FileName)
+bool CAILevel::LoadNavMesh(const CString& FileName)
 {
 	IO::CFileStream File;
 	if (!File.Open(FileName, IO::SAM_READ)) FAIL;

@@ -34,22 +34,22 @@ public:
 	~CDataServer() { __DestructSingleton; }
 
 	//???to resource managers? the same cache can br implemented. or special class C...Cache?
-	PParams			LoadHRD(const nString& FileName, bool Cache = true);
-	PParams			ReloadHRD(const nString& FileName, bool Cache = true);	// Force reloading from file
-	void			SaveHRD(const nString& FileName, const CParams* pContent);
+	PParams			LoadHRD(const CString& FileName, bool Cache = true);
+	PParams			ReloadHRD(const CString& FileName, bool Cache = true);	// Force reloading from file
+	void			SaveHRD(const CString& FileName, const CParams* pContent);
 	//???void			UnloadHRD(CParams* Data);
-	void			UnloadHRD(const nString& FileName);
+	void			UnloadHRD(const CString& FileName);
 	//void			ClearHRDCache() { HRDCache. }
 
-	PParams			LoadPRM(const nString& FileName, bool Cache = true);
-	PParams			ReloadPRM(const nString& FileName, bool Cache = true);	// Force reloading from file
-	bool			SavePRM(const nString& FileName, const CParams* pContent);
+	PParams			LoadPRM(const CString& FileName, bool Cache = true);
+	PParams			ReloadPRM(const CString& FileName, bool Cache = true);	// Force reloading from file
+	bool			SavePRM(const CString& FileName, const CParams* pContent);
 	
-	PXMLDocument	LoadXML(const nString& FileName); //, bool Cache = true);
+	PXMLDocument	LoadXML(const CString& FileName); //, bool Cache = true);
 
-	bool			LoadDesc(PParams& Out, const nString& Context, const nString& Name, bool Cache = true);
+	bool			LoadDesc(PParams& Out, const CString& Context, const CString& Name, bool Cache = true);
 
-	bool			LoadDataSchemes(const nString& FileName);
+	bool			LoadDataSchemes(const CString& FileName);
 	CDataScheme*	GetDataScheme(CStrID ID);
 };
 

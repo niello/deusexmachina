@@ -27,7 +27,7 @@
 //	CArray<PWaveResource>	Resources; //!!!dictionary by name! (or strid???)
 //	nXmlSpreadSheet			XMLSheet;
 //
-//	nSound3* CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const nString& ColumnName);
+//	nSound3* CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const CString& ColumnName);
 //
 //public:
 //
@@ -38,20 +38,20 @@
 //	void Close() { XMLSheet.Close(); }
 //	bool IsOpen() const { return XMLSheet.IsOpen(); }
 //
-//	CWaveResource*	CreateResource(const nString& name);
+//	CWaveResource*	CreateResource(const CString& name);
 //	void			AddResource(CWaveResource* pResource);
-//	CWaveResource*	FindResource(const nString& name);
+//	CWaveResource*	FindResource(const CString& name);
 //	CWaveResource*	GetResourceAt(int Idx) const { return Resources[Idx]; }
 //	int				GetNumResources() const { return Resources.GetCount(); }
 //
-//	void			SetFilename(const nString& FileName);
-//	const nString&	GetFilename() const { return XMLSheet.GetFilename(); }
+//	void			SetFilename(const CString& FileName);
+//	const CString&	GetFilename() const { return XMLSheet.GetFilename(); }
 //};
 ////---------------------------------------------------------------------
 //
 //typedef Ptr<CWaveBank> PWaveBank;
 //
-//inline void CWaveBank::SetFilename(const nString& FileName)
+//inline void CWaveBank::SetFilename(const CString& FileName)
 //{
 //	if (FileName.IsEmpty()) n_error("Audio::CWaveBank::SetFilename(): got no filename!");
 //	XMLSheet.SetFilename(FileName);

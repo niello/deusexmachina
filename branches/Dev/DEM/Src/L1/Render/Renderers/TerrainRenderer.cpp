@@ -45,14 +45,14 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<CString>().CStr()));
 		}
 	}
 
 	ShaderVars.EndAdd();
 	//!!!DUPLICATE CODE!-
 
-	FeatFlags = RenderSrv->ShaderFeatures.GetMask(Desc.Get<nString>(CStrID("FeatFlags"), NULL));
+	FeatFlags = RenderSrv->ShaderFeatures.GetMask(Desc.Get<CString>(CStrID("FeatFlags"), NULL));
 
 	if (!RenderSrv->CheckCaps(Caps_VSTexFiltering_Linear))
 	{
@@ -78,7 +78,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 
 		for (DWORD i = 0; i < MaxLightsPerObject; ++i)
 		{
-			nString Mask;
+			CString Mask;
 			Mask.Format("L%d", i + 1);
 			LightFeatFlags[i] = RenderSrv->ShaderFeatures.GetMask(Mask);
 		}
@@ -526,7 +526,7 @@ CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
 	int Idx = PatchMeshes.FindIndex(Size);
 	if (Idx == INVALID_INDEX)
 	{
-		nString PatchName;
+		CString PatchName;
 		PatchName.Format("Patch%dx%d", Size, Size);
 		Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.CStr()));
 		PatchMeshes.Add(Size, Patch.Get());

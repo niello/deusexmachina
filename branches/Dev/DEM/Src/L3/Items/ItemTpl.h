@@ -39,7 +39,7 @@ public:
 	// Type-specific params are defined in derived classes
 	float			Weight; //???can it change per instance?
 	float			Volume; //???can it change per instance?
-	nString			UIName;
+	CString			UIName;
 
 	// When derive and need TemplateItem of specific type, call parent ::Init only after TemplateItem creation
 	virtual void	Init(CStrID SID, const CParams& Params);

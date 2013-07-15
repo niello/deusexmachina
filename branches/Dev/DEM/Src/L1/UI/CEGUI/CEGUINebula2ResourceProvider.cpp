@@ -85,13 +85,13 @@ size_t CNebula2ResourceProvider::getResourceGroupFileNames(std::vector<String>& 
 
     size_t Entries = 0;
 
-	nString Pattern = DirName.c_str();
+	CString Pattern = DirName.c_str();
 	Pattern += file_pattern.c_str();
 
 	IO::PFileSystem FS;
-	nString EntryName;
+	CString EntryName;
 	IO::EFSEntryType EntryType;
-	nString RootDir(DirName.c_str());
+	CString RootDir(DirName.c_str());
 	void* hDir = IOSrv->OpenDirectory(RootDir, NULL, FS, EntryName, EntryType);
 	if (hDir)
 	{
@@ -99,7 +99,7 @@ size_t CNebula2ResourceProvider::getResourceGroupFileNames(std::vector<String>& 
 		{
 			if (EntryType == IO::FSE_FILE)
 			{
-				nString FullEntryName = RootDir + EntryName;
+				CString FullEntryName = RootDir + EntryName;
 				if (FullEntryName.MatchPattern(Pattern))
 				{
 					out_vec.push_back(String(FullEntryName.CStr()));

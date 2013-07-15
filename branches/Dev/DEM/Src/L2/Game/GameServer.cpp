@@ -19,7 +19,7 @@
 
 IOSrv->CreateDirectory("AppData:Profiles/Default");
 
-inline nString CLoaderServer::GetDatabasePath() const
+inline CString CLoaderServer::GetDatabasePath() const
 {
 	return "AppData:profiles/default/" + GameDBName + ".db3";
 }
@@ -27,14 +27,14 @@ inline nString CLoaderServer::GetDatabasePath() const
 
 // Returns the path to the user's savegame directory (inside the profile
 // directory) using the Nebula2 filesystem path conventions.
-inline nString CLoaderServer::GetSaveGameDirectory() const
+inline CString CLoaderServer::GetSaveGameDirectory() const
 {
 	return "AppData:profiles/default/save";
 }
 //---------------------------------------------------------------------
 
 // Get the complete filename to a savegame file.
-inline nString CLoaderServer::GetSaveGamePath(const nString& SaveGameName) const
+inline CString CLoaderServer::GetSaveGamePath(const CString& SaveGameName) const
 {
 	return GetSaveGameDirectory() + "/" + SaveGameName + ".db3";
 }
@@ -249,7 +249,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 //---------------------------------------------------------------------
 
 //???use ReloadPRM?
-bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName)
+bool CGameServer::StartGame(const CString& FileName, const CString& SaveGameName)
 {
 	Data::PParams InitialCommon = DataSrv->LoadPRM(FileName);
 	if (!InitialCommon.IsValid()) FAIL;
@@ -289,7 +289,7 @@ bool CGameServer::StartGame(const nString& FileName, const nString& SaveGameName
 	{
 		CStrID LevelID = LoadedLevels->Get<CStrID>(i);
 
-		nString RelLevelPath = nString("/Levels/") + LevelID.CStr() + ".prm";
+		CString RelLevelPath = CString("/Levels/") + LevelID.CStr() + ".prm";
 
 		Data::PParams InitialLvl = DataSrv->LoadPRM("Game:" + RelLevelPath);
 		n_assert(InitialLvl.IsValid());
@@ -333,7 +333,7 @@ void CGameServer::PauseGame(bool Pause) const
 //---------------------------------------------------------------------
 
 //???save delayed events?
-bool CGameServer::SaveGame(const nString& Name)
+bool CGameServer::SaveGame(const CString& Name)
 {
 	//???!!!here or in Load/Unload level?
 	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
@@ -368,7 +368,7 @@ bool CGameServer::SaveGame(const nString& Name)
 
 	//!!!TMP!
 //======
-	nString Path = "AppData:SavesTMP/" + Name;
+	CString Path = "AppData:SavesTMP/" + Name;
 	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
 
@@ -381,13 +381,13 @@ bool CGameServer::SaveGame(const nString& Name)
 	for (int i = 0; i < Levels.GetCount(); ++i)
 	{
 		if (SGLevel->GetCount()) SGLevel = n_new(Data::CParams);
-		Data::PParams LevelDesc = DataSrv->LoadPRM(nString("Levels:") + Levels.KeyAt(i).CStr() + ".prm");
+		Data::PParams LevelDesc = DataSrv->LoadPRM(CString("Levels:") + Levels.KeyAt(i).CStr() + ".prm");
 		n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
 		if (!SGLevel->GetCount()) continue;
 
 		//!!!TMP!
 //======
-		nString Path = "AppData:SavesTMP/" + Name + "/Levels/";
+		CString Path = "AppData:SavesTMP/" + Name + "/Levels/";
 		if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 		DataSrv->SavePRM(Path + Levels.KeyAt(i).CStr() + ".prm", SGLevel);
 

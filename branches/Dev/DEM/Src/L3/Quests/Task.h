@@ -23,8 +23,8 @@ public:
 	Scripting::PScriptObject	ScriptObj;
 
 	// UI-related
-	nString						Name;
-	nString						Description;
+	CString						Name;
+	CString						Description;
 
 	//CTask();
 	//~CTask();

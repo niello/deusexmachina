@@ -9,23 +9,23 @@
 
 namespace Render
 {
-bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PShader OutShader);
-bool LoadShaderFromFXO(const nString& FileName, PShader OutShader);
+bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PShader OutShader);
+bool LoadShaderFromFXO(const CString& FileName, PShader OutShader);
 
 bool CFrameShader::Init(const Data::CParams& Desc)
 {
-	nString ShaderPath;
+	CString ShaderPath;
 	Desc.Get(ShaderPath, CStrID("ShaderPath"));
 
 	Data::CParam* pPrm;
 	if (Desc.Get(pPrm, CStrID("Shaders")))
 	{
-		nString ShaderPathMangled = IOSrv->ManglePath(ShaderPath) + "/";
+		CString ShaderPathMangled = IOSrv->ManglePath(ShaderPath) + "/";
 		Data::CParams& List = *pPrm->GetValue<Data::PParams>();
 		for (int i = 0; i < List.GetCount(); ++i)
 		{
 			CStrID ShaderID = List[i].GetName();
-			nString FileName = ShaderPathMangled + List[i].GetValue<nString>();
+			CString FileName = ShaderPathMangled + List[i].GetValue<CString>();
 
 			PShader Shader = RenderSrv->ShaderMgr.GetOrCreateTypedResource(ShaderID);
 			n_assert(!Shader->IsLoaded()); //!!!now just to check!
@@ -70,7 +70,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<CString>().CStr()));
 		}
 	}
 
@@ -88,8 +88,8 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			const Data::CParam& RTPrm = RTList[i];
 			Data::CParams& RTDesc = *RTPrm.GetValue<Data::PParams>();
 
-			EPixelFormat RTFmt = RenderSrv->GetPixelFormat(RTDesc.Get<nString>(CStrID("RTFormat"))); //???CStrID?
-			EPixelFormat DSFmt = RenderSrv->GetPixelFormat(RTDesc.Get<nString>(CStrID("DSFormat"), NULL)); //???CStrID?
+			EPixelFormat RTFmt = RenderSrv->GetPixelFormat(RTDesc.Get<CString>(CStrID("RTFormat"))); //???CStrID?
+			EPixelFormat DSFmt = RenderSrv->GetPixelFormat(RTDesc.Get<CString>(CStrID("DSFormat"), NULL)); //???CStrID?
 			float W = RTDesc.Get<float>(CStrID("Width"), 1.f);
 			float H = RTDesc.Get<float>(CStrID("Height"), 1.f);
 			bool IsWHAbs = RTDesc.Get<bool>(CStrID("IsSizeAbsolute"), false);
@@ -114,7 +114,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			Data::CParams& PassDesc = *PassPrm.GetValue<Data::PParams>();
 
 			//!!!???Use factory?!
-			const nString& PassType = PassDesc.Get<nString>(CStrID("Type"), NULL);
+			const CString& PassType = PassDesc.Get<CString>(CStrID("Type"), NULL);
 			if (PassType.IsEmpty()) *pCurrPass = n_new(CPassGeometry);
 			else if (PassType == "Occlusion") *pCurrPass = n_new(CPassOcclusion);
 			else if (PassType == "Posteffect") *pCurrPass = n_new(CPassPosteffect);

@@ -4,7 +4,7 @@
 #include <Data/Params.h>
 
 #define WRITE_STATIC_STRING(s) { if (Stream.Write(s, sizeof(s) - 1) != (sizeof(s) - 1)) FAIL; }
-#define WRITE_NSTRING(s) { const nString& __Tmp = s; if (Stream.Write(__Tmp.CStr(), __Tmp.Length()) != __Tmp.Length()) FAIL; }
+#define WRITE_NSTRING(s) { const CString& __Tmp = s; if (Stream.Write(__Tmp.CStr(), __Tmp.Length()) != __Tmp.Length()) FAIL; }
 
 namespace IO
 {
@@ -41,13 +41,13 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 		if ((bool)Value) WRITE_STATIC_STRING("true")
 		else WRITE_STATIC_STRING("false")
 	}
-	else if (Value.IsA<int>()) WRITE_NSTRING(nString::FromInt(Value))
-	else if (Value.IsA<float>()) WRITE_NSTRING(nString::FromFloat(Value))
-	else if (Value.IsA<nString>())
+	else if (Value.IsA<int>()) WRITE_NSTRING(CString::FromInt(Value))
+	else if (Value.IsA<float>()) WRITE_NSTRING(CString::FromFloat(Value))
+	else if (Value.IsA<CString>())
 	{
 		//!!!correctly serialize \n, \t etc!
 		WRITE_STATIC_STRING("\"")
-		WRITE_NSTRING(Value.GetValue<nString>())
+		WRITE_NSTRING(Value.GetValue<CString>())
 		WRITE_STATIC_STRING("\"")
 	}
 	else if (Value.IsA<CStrID>())
@@ -61,64 +61,64 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 	{
 		const vector3& V = Value.GetValue<vector3>();
 		WRITE_STATIC_STRING("(")
-		WRITE_NSTRING(nString::FromFloat(V.x))
+		WRITE_NSTRING(CString::FromFloat(V.x))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(V.y))
+		WRITE_NSTRING(CString::FromFloat(V.y))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(V.z))
+		WRITE_NSTRING(CString::FromFloat(V.z))
 		WRITE_STATIC_STRING(")")
 	}
 	else if (Value.IsA<vector4>())
 	{
 		const vector4& V = Value.GetValue<vector4>();
 		WRITE_STATIC_STRING("(")
-		WRITE_NSTRING(nString::FromFloat(V.x))
+		WRITE_NSTRING(CString::FromFloat(V.x))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(V.y))
+		WRITE_NSTRING(CString::FromFloat(V.y))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(V.z))
+		WRITE_NSTRING(CString::FromFloat(V.z))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(V.w))
+		WRITE_NSTRING(CString::FromFloat(V.w))
 		WRITE_STATIC_STRING(")")
 	}
 	else if (Value.IsA<matrix44>())
 	{
 		const matrix44& M = Value.GetValue<matrix44>();
 		WRITE_STATIC_STRING("(")
-		WRITE_NSTRING(nString::FromFloat(M.m[0][0]))
+		WRITE_NSTRING(CString::FromFloat(M.m[0][0]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[0][1]))
+		WRITE_NSTRING(CString::FromFloat(M.m[0][1]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[0][2]))
+		WRITE_NSTRING(CString::FromFloat(M.m[0][2]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[0][3]))
+		WRITE_NSTRING(CString::FromFloat(M.m[0][3]))
 		WRITE_STATIC_STRING(", \n\t")
 		if (!WriteIndent()) FAIL;
-		WRITE_NSTRING(nString::FromFloat(M.m[1][0]))
+		WRITE_NSTRING(CString::FromFloat(M.m[1][0]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[1][1]))
+		WRITE_NSTRING(CString::FromFloat(M.m[1][1]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[1][2]))
+		WRITE_NSTRING(CString::FromFloat(M.m[1][2]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[1][3]))
+		WRITE_NSTRING(CString::FromFloat(M.m[1][3]))
 		WRITE_STATIC_STRING(", \n\t")
 		if (!WriteIndent()) FAIL;
-		WRITE_NSTRING(nString::FromFloat(M.m[2][0]))
+		WRITE_NSTRING(CString::FromFloat(M.m[2][0]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[2][1]))
+		WRITE_NSTRING(CString::FromFloat(M.m[2][1]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[2][2]))
+		WRITE_NSTRING(CString::FromFloat(M.m[2][2]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[2][3]))
+		WRITE_NSTRING(CString::FromFloat(M.m[2][3]))
 		WRITE_STATIC_STRING(", \n\t")
 		if (!WriteIndent()) FAIL;
-		WRITE_NSTRING(nString::FromFloat(M.m[3][0]))
+		WRITE_NSTRING(CString::FromFloat(M.m[3][0]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[3][1]))
+		WRITE_NSTRING(CString::FromFloat(M.m[3][1]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[3][2]))
+		WRITE_NSTRING(CString::FromFloat(M.m[3][2]))
 		WRITE_STATIC_STRING(", ")
-		WRITE_NSTRING(nString::FromFloat(M.m[3][3]))
+		WRITE_NSTRING(CString::FromFloat(M.m[3][3]))
 		WRITE_STATIC_STRING(")")
 	}
 	else if (Value.IsA<Data::PDataArray>())

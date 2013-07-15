@@ -4,11 +4,11 @@
 
 #include <IO/StreamWriter.h>
 #include <Data/Params.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Binary data serializer
 
-class nString;
+class CString;
 
 namespace Data
 {
@@ -32,7 +32,7 @@ public:
 	CBinaryWriter(CStream& DestStream): CStreamWriter(DestStream) { }
 
 	bool				WriteString(LPCSTR Value);
-	bool				WriteString(const nString& Value);
+	bool				WriteString(const CString& Value);
 	bool				WriteParams(const Data::CParams& Value);
 	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme) { DWORD Dummy; return WriteParamsByScheme(Value, Scheme, Dummy); }
 	bool				WriteParam(const Data::CParam& Value) { return Write(Value.GetName()) && Write(Value.GetRawValue()); }
@@ -42,7 +42,7 @@ public:
 	bool				Write(const T& Value) { return Stream.Write(&Value, sizeof(T)) == sizeof(T); }
 	template<> bool		Write<LPSTR>(const LPSTR& Value) { return WriteString(Value); }
 	template<> bool		Write<LPCSTR>(const LPCSTR& Value) { return WriteString(Value); }
-	template<> bool		Write<nString>(const nString& Value) { return WriteString(Value); }
+	template<> bool		Write<CString>(const CString& Value) { return WriteString(Value); }
 	template<> bool		Write<CStrID>(const CStrID& Value) { return WriteString(Value.CStr()); }
 	template<> bool		Write<Data::CParams>(const Data::CParams& Value) { return WriteParams(Value); }
 	template<> bool		Write<Data::PParams>(const Data::PParams& Value) { return Value.IsValid() ? WriteParams(*Value) : true; }
@@ -60,9 +60,9 @@ inline bool CBinaryWriter::WriteString(LPCSTR Value)
 }
 //---------------------------------------------------------------------
 
-inline bool CBinaryWriter::WriteString(const nString& Value)
+inline bool CBinaryWriter::WriteString(const CString& Value)
 {
-	return Write<short>(Value.Length()) &&
+	return Write<ushort>((ushort)Value.Length()) &&
 		(!Value.Length() || Stream.Write(Value.CStr(), Value.Length()) == Value.Length());
 }
 //---------------------------------------------------------------------

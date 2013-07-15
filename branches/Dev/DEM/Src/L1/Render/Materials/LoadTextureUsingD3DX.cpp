@@ -43,7 +43,7 @@ bool LoadTextureUsingD3DX(IO::CStream& In, PTexture OutTexture)
 }
 //---------------------------------------------------------------------
 
-bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture)
+bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture)
 {
 	IO::CFileStream File;
 	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&

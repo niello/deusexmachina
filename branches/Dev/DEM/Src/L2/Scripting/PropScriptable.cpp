@@ -10,16 +10,16 @@ __ImplementPropertyStorage(CPropScriptable);
 
 bool CPropScriptable::InternalActivate()
 {
-	nString LuaClass;
-	if (!GetEntity()->GetAttr<nString>(LuaClass, CStrID("ScriptClass")))
+	CString LuaClass;
+	if (!GetEntity()->GetAttr<CString>(LuaClass, CStrID("ScriptClass")))
 		LuaClass = "CEntityScriptObject";
 	n_assert(LuaClass.IsValid());
 
 	Obj = n_new(CEntityScriptObject(*GetEntity(), GetEntity()->GetUID().CStr(), "Entities"));
 	n_assert(Obj->Init(LuaClass.CStr()));
 
-	nString ScriptFile;
-	if (GetEntity()->GetAttr<nString>(ScriptFile, CStrID("Script")) && ScriptFile.IsValid())
+	CString ScriptFile;
+	if (GetEntity()->GetAttr<CString>(ScriptFile, CStrID("Script")) && ScriptFile.IsValid())
 		Obj->LoadScriptFile("Scripts:" + ScriptFile + ".lua");
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);

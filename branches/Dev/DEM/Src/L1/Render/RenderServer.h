@@ -127,8 +127,8 @@ public:
 	void				Draw();
 
 	PVertexLayout		GetVertexLayout(const CArray<CVertexComponent>& Components);
-	//???PVertexLayout		GetVertexLayout(const nString& Signature);
-	EPixelFormat		GetPixelFormat(const nString& String); //???CStrID?
+	//???PVertexLayout		GetVertexLayout(const CString& Signature);
+	EPixelFormat		GetPixelFormat(const CString& String); //???CStrID?
 	int					GetFormatBits(EPixelFormat Format);
 	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
 	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }

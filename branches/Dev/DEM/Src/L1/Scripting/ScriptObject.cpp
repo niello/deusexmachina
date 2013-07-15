@@ -135,7 +135,7 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::LoadScriptFile(const nString& FileName)
+EExecStatus CScriptObject::LoadScriptFile(const CString& FileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;

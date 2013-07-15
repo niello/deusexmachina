@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_AUDIO_FILE_H__
 #define __DEM_L1_AUDIO_FILE_H__
 
-#include <util/nstring.h>
+#include <Data/String.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -31,7 +31,7 @@ public:
 	CAudioFile(): _IsOpen(false) {}
 	virtual ~CAudioFile() { n_assert(!_IsOpen); }
 
-	virtual bool			Open(const nString& FileName);
+	virtual bool			Open(const CString& FileName);
 	virtual void			Close();
 	bool					IsOpen() const { return _IsOpen; }
 

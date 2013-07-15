@@ -4,7 +4,7 @@
 HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
 {
 	IO::CFileStream File;
-	nString FilePath = pName;
+	CString FilePath = pName;
 
 	// Try absolute path first
 	bool Loaded = File.Open(FilePath, IO::SAM_READ, IO::SAP_SEQUENTIAL);

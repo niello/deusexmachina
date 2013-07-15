@@ -4,7 +4,7 @@
 
 #include <StdDEM.h>
 #include <Data/FourCC.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Implements the runtime type information system of Mangalore. Every class
 // derived from CRefCounted should define a static RTTI object which is initialized
@@ -21,7 +21,7 @@ private:
 
 	typedef CRefCounted* (*CFactoryFunc)(void* pParam);
 
-	nString			Name;
+	CString			Name;
 	Data::CFourCC	FourCC;
 	DWORD			InstanceSize;
 
@@ -31,26 +31,26 @@ private:
 public:
 
 
-	CRTTI(const nString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
+	CRTTI(const CString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
 
 	CRefCounted*	CreateInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
 	//void*			AllocInstanceMemory() const { return n_malloc(InstanceSize); }
 	//void			FreeInstanceMemory(void* pPtr) { n_free(pPtr); }
 
-	const nString&	GetName() const { return Name; }
+	const CString&	GetName() const { return Name; }
 	Data::CFourCC			GetFourCC() const { return FourCC; }
 	const CRTTI*	GetParent() const { return pParent; }
 	DWORD			GetInstanceSize() const;
 	bool			IsDerivedFrom(const CRTTI& Other) const;
 	bool			IsDerivedFrom(Data::CFourCC OtherFourCC) const;
-	bool			IsDerivedFrom(const nString& OtherName) const;
+	bool			IsDerivedFrom(const CString& OtherName) const;
 
 	bool operator ==(const CRTTI& Other) const { return this == &Other; }
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
 };
 //---------------------------------------------------------------------
 
-inline CRTTI::CRTTI(const nString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize):
+inline CRTTI::CRTTI(const CString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize):
 	Name(ClassName),
 	FourCC(ClassFourCC),
 	InstanceSize(InstSize),
@@ -86,7 +86,7 @@ inline bool CRTTI::IsDerivedFrom(Data::CFourCC OtherFourCC) const
 }
 //---------------------------------------------------------------------
 
-inline bool CRTTI::IsDerivedFrom(const nString& OtherName) const
+inline bool CRTTI::IsDerivedFrom(const CString& OtherName) const
 {
 	const CRTTI* pCurr = this;
 	while (pCurr)

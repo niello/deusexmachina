@@ -3,11 +3,11 @@
 #define __DEM_L1_TEXT_READER_H__
 
 #include <IO/StreamReader.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Text data reader, aware of line endings
 
-class nString;
+class CString;
 
 namespace IO
 {
@@ -19,9 +19,9 @@ public:
 	CTextReader(CStream& SrcStream): CStreamReader(SrcStream) { }
 
 	bool ReadLine(char* pOutValue, DWORD MaxLen = MAX_DWORD);
-	bool ReadLine(nString& OutValue);
-	bool ReadLines(CArray<nString>& OutValues, int Count = -1);
-	bool ReadAll(nString& OutValue);
+	bool ReadLine(CString& OutValue);
+	bool ReadLines(CArray<CString>& OutValues, int Count = -1);
+	bool ReadAll(CString& OutValue);
 };
 
 }

@@ -25,8 +25,8 @@ LRESULT CALLBACK mmioProc(LPSTR lpstr, UINT uMsg, LPARAM lParam1, LPARAM lParam2
                 if (0 == (lpMMIOInfo->dwFlags & (MMIO_WRITE | MMIO_READWRITE)))
                 {
                     // strip the "X.NEB2+" prefix from the file
-                    nString rawName((const char*)lParam1);
-                    nString FileName = rawName.SubString(7, rawName.Length() - 7);
+                    CString rawName((const char*)lParam1);
+                    CString FileName = rawName.SubString(7, rawName.Length() - 7);
 
                     // open a Nebula2 file for reading
 					IO::CFileStream* file = n_new(IO::CFileStream);
@@ -111,14 +111,14 @@ CWAVFile::CWAVFile(): m_pwfx(NULL), m_hmmio(NULL), Size(0)
 }
 //---------------------------------------------------------------------
 
-bool CWAVFile::Open(const nString& FileName)
+bool CWAVFile::Open(const CString& FileName)
 {
 	n_assert(!_IsOpen);
 	n_assert(FileName.IsValid());
 
 	// Modify FileName so that MMIO will invoke our custom file function
-	nString Path = IOSrv->ManglePath(FileName);
-	nString MMIOFileName("X.NEB2+");
+	CString Path = IOSrv->ManglePath(FileName);
+	CString MMIOFileName("X.NEB2+");
 	MMIOFileName.Add(Path);
 
 	m_hmmio = mmioOpen((LPSTR)MMIOFileName.CStr(), NULL, MMIO_ALLOCBUF | MMIO_READ);

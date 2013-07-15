@@ -1,16 +1,16 @@
-// Loads CTableT<nString> from Excel 2003 table saved in XML format.
+// Loads CTableT<CString> from Excel 2003 table saved in XML format.
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Data/DataServer.h>
 #include <Data/TableT.h>
 #include <Data/XMLDocument.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 #include <TinyXML2/Src/tinyxml2.h>
 
 namespace Load
 {
 
-static void GetTextFromCell(tinyxml2::XMLElement* pCell, nString& Text)
+static void GetTextFromCell(tinyxml2::XMLElement* pCell, CString& Text)
 {
 	Text.Clear();
 
@@ -35,7 +35,7 @@ static void GetTextFromCell(tinyxml2::XMLElement* pCell, nString& Text)
 //---------------------------------------------------------------------
 
 bool StringTableFromExcelXML(Data::PXMLDocument Doc,
-							 Data::CTableT<nString>& Out,
+							 Data::CTableT<CString>& Out,
 							 LPCSTR pWorksheetName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
@@ -54,7 +54,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 	tinyxml2::XMLElement* pTable = pSheet->FirstChildElement("Table");
 	n_assert(pTable);
 
-	nString CellText;
+	CString CellText;
 
 	Out.Name = pSheet->Attribute("ss:Name");
 	Out.ColMap.Clear();
@@ -145,8 +145,8 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 }
 //---------------------------------------------------------------------
 
-bool StringTableFromExcelXML(const nString& FileName,
-							 Data::CTableT<nString>& Out,
+bool StringTableFromExcelXML(const CString& FileName,
+							 Data::CTableT<CString>& Out,
 							 LPCSTR pWorksheetName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)

@@ -15,7 +15,7 @@ bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const CDict
 	{
 		Data::CParams& BatchDesc = *(Data::PParams)Batches[i];
 		PRenderer& Renderer = BatchRenderers.At(i);
-		Renderer = (IRenderer*)Factory->Create(BatchDesc.Get<nString>(CStrID("Renderer")));
+		Renderer = (IRenderer*)Factory->Create(BatchDesc.Get<CString>(CStrID("Renderer")));
 		if (!Renderer->Init(BatchDesc)) FAIL;
 	}
 

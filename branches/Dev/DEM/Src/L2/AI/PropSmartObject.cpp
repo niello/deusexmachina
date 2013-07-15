@@ -16,12 +16,12 @@ bool CPropSmartObject::InternalActivate()
 {
 	PParams Desc;
 	
-	const nString& DescResource = GetEntity()->GetAttr<nString>(CStrID("SmartObjDesc"), NULL);
-	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(nString("Smarts:") + DescResource + ".prm");
+	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SmartObjDesc"), NULL);
+	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 
 	if (Desc.IsValid())
 	{
-		TypeID = CStrID(Desc->Get<nString>(CStrID("TypeID"), NULL).CStr());
+		TypeID = CStrID(Desc->Get<CString>(CStrID("TypeID"), NULL).CStr());
 		
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Actions")))
@@ -31,7 +31,7 @@ bool CPropSmartObject::InternalActivate()
 			{
 				const CParam& Prm = DescSection->Get(i);
 				PParams ActDesc = Prm.GetValue<PParams>();
-				LPCSTR TplName = ActDesc->Get<nString>(CStrID("Tpl")).CStr();
+				LPCSTR TplName = ActDesc->Get<CString>(CStrID("Tpl")).CStr();
 				const CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
 				if (pTpl) Actions.Add(Prm.GetName(), n_new(CSmartObjAction)(*pTpl, ActDesc));
 				else n_printf("AI, IAO, Warning: can't find smart object action template '%s'\n", TplName);
@@ -39,7 +39,7 @@ bool CPropSmartObject::InternalActivate()
 			Actions.EndAdd();
 		}
 
-		nString DefaultState;
+		CString DefaultState;
 		if (Desc->Get(DefaultState, CStrID("DefaultState")))
 			SetState(CStrID(DefaultState.CStr()));
 	}

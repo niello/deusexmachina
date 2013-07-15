@@ -7,9 +7,9 @@
 //__ImplementClassNoFactory(Audio::CWaveBank, Core::CRefCounted);
 //__ImplementClass(Audio::CWaveBank);
 //
-//nSound3* CWaveBank::CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const nString& ColumnName)
+//nSound3* CWaveBank::CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const CString& ColumnName)
 //{
-//	nString FileName;
+//	CString FileName;
 //	FileName.Format("sound:%s", XMLTable.Cell(Row, ColumnName).AsString().CStr());
 //	n_assert2(IOSrv->FileExists(FileName), FileName.CStr());
 //
@@ -67,7 +67,7 @@
 //}
 ////---------------------------------------------------------------------
 //
-//CWaveResource* CWaveBank::FindResource(const nString& Name)
+//CWaveResource* CWaveBank::FindResource(const CString& Name)
 //{
 //	n_assert(Name.IsValid());
 //	for (int i = 0; i < Resources.GetCount(); i++)
@@ -77,7 +77,7 @@
 //}
 ////---------------------------------------------------------------------
 //
-//CWaveResource* CWaveBank::CreateResource(const nString& Name)
+//CWaveResource* CWaveBank::CreateResource(const CString& Name)
 //{
 //	n_assert(Name.IsValid());
 //	CWaveResource* pNewWave = CWaveResource::CreateInstance();

@@ -4,7 +4,7 @@
 
 #include "Type.h"
 #include <StdDEM.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 #ifdef _DEBUG
 	#include <Core/Ptr.h>
@@ -35,7 +35,7 @@ protected:
 		bool							As_bool;
 		int								As_int;
 		float							As_float;
-		nString*						As_nString;
+		CString*						As_nString;
 		LPCSTR							As_CStrID;
 		const CDataArray*				As_CDataArray;
 		const CParams*					As_CParams;
@@ -214,7 +214,7 @@ typedef CDictionary<CStrID, Data::CData> CDataDict;	// Is used oftenly
 DECLARE_TYPE(bool, 1)
 DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
-DECLARE_TYPE(nString, 4) //???define char* too?
+DECLARE_TYPE(CString, 4) //???define char* too?
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(PVOID, 6)
 DECLARE_TYPE(vector3, 16) //???need or completely replace with vector4 for CData uses?
@@ -226,7 +226,7 @@ DECLARE_TYPE(CMatrixPtrArray, 15)
 #define TBool			DATA_TYPE(bool)
 #define TInt			DATA_TYPE(int)
 #define TFloat			DATA_TYPE(float)
-#define TString			DATA_TYPE(nString)
+#define TString			DATA_TYPE(CString)
 #define TStrID			DATA_TYPE(CStrID)
 #define TPtr			DATA_TYPE(PVOID)
 #define TVector3		DATA_TYPE(vector3)

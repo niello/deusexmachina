@@ -41,7 +41,7 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID,
 			Data::CParam& PrmVar = Vars.Get(i);
 			CShaderVar& Var = ShaderVars.Add(PrmVar.GetName());
 			Var.SetName(PrmVar.GetName());
-			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<nString>().CStr()));
+			Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(CStrID(PrmVar.GetValue<CString>().CStr()));
 		}
 	}
 

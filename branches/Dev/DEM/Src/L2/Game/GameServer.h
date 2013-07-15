@@ -24,7 +24,7 @@ class CGameServer: public Core::CRefCounted
 protected:
 
 	bool								IsOpen;
-	nString								GameFileName;
+	CString								GameFileName;
 	CDataDict							Attrs;
 
 	Time::PTimeSource					GameTimeSrc;
@@ -62,9 +62,9 @@ public:
 	bool			SetActiveLevel(CStrID ID);
 	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
 	CGameLevel*		GetLevel(CStrID ID) const;
-	bool			StartGame(const nString& FileName, const nString& SaveGameName = nString::Empty);
-	bool			SaveGame(const nString& Name);
-	bool			LoadGame(const nString& Name) { return StartGame(GameFileName, Name); }
+	bool			StartGame(const CString& FileName, const CString& SaveGameName = CString::Empty);
+	bool			SaveGame(const CString& Name);
+	bool			LoadGame(const CString& Name) { return StartGame(GameFileName, Name); }
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
 

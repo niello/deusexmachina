@@ -24,8 +24,8 @@ bool CDataScheme::Init(const CParams& Desc)
 		Rec.Flags.SetTo(WRITE_CHILD_COUNT, Value.Get<bool>(CStrID("WriteChildCount"), true));
 		Rec.Flags.SetTo(APPLY_SCHEME_TO_SELF, Value.Get<bool>(CStrID("ApplySchemeToSelf"), false));
 
-		nString FourCC;
-		if (Value.Get<nString>(FourCC, CStrID("FourCC")))
+		CString FourCC;
+		if (Value.Get<CString>(FourCC, CStrID("FourCC")))
 			Rec.FourCC.FromString(FourCC.CStr());
 		else Rec.FourCC = 0;
 
@@ -33,15 +33,15 @@ bool CDataScheme::Init(const CParams& Desc)
 		if (Value.Get(TypeIDVal, CStrID("Type")))
 		{
 			if (TypeIDVal->IsA<int>()) Rec.TypeID = *TypeIDVal;
-			else if (TypeIDVal->IsA<nString>())
+			else if (TypeIDVal->IsA<CString>())
 			{
-				LPCSTR pTypeString = TypeIDVal->GetValue<nString>().CStr();
+				LPCSTR pTypeString = TypeIDVal->GetValue<CString>().CStr();
 
 				//???move somewhere as common? or even store map of string-to-ID
 				if (!n_stricmp(pTypeString, "bool")) Rec.TypeID = DATA_TYPE_ID(bool);
 				else if (!n_stricmp(pTypeString, "int")) Rec.TypeID = DATA_TYPE_ID(int);
 				else if (!n_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
-				else if (!n_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(nString);
+				else if (!n_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(CString);
 				else if (!n_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
 				else if (!n_stricmp(pTypeString, "vector3")) Rec.TypeID = DATA_TYPE_ID(vector3);
 				else if (!n_stricmp(pTypeString, "vector4")) Rec.TypeID = DATA_TYPE_ID(vector4);

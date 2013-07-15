@@ -24,8 +24,8 @@ public:
 
 	CDynamicEnumT(): BitsUsed(0) {}
 
-	T		GetMask(const nString& FlagStr);
-	void	SetAlias(CStrID Alias, const nString& FlagStr) { Flags.Add(Alias, GetMask(FlagStr)); }
+	T		GetMask(const CString& FlagStr);
+	void	SetAlias(CStrID Alias, const CString& FlagStr) { Flags.Add(Alias, GetMask(FlagStr)); }
 	void	SetAlias(CStrID Alias, T Mask) { Flags.Add(Alias, Mask); }
 };
 
@@ -33,7 +33,7 @@ typedef CDynamicEnumT<ushort> CDynamicEnum16;
 typedef CDynamicEnumT<DWORD> CDynamicEnum32;
 
 template<class T>
-T CDynamicEnumT<T>::GetMask(const nString& FlagStr)
+T CDynamicEnumT<T>::GetMask(const CString& FlagStr)
 {
 	T Mask = 0;
 

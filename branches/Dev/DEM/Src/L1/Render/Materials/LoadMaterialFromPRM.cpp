@@ -16,7 +16,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 
 	CStrID ShaderID = In.Get<CStrID>(CStrID("Shader"));
 	PShader Shader = RenderSrv->ShaderMgr.GetOrCreateTypedResource(ShaderID);
-	DWORD FeatFlags = RenderSrv->ShaderFeatures.GetMask(In.Get<nString>(CStrID("FeatureFlags")));
+	DWORD FeatFlags = RenderSrv->ShaderFeatures.GetMask(In.Get<CString>(CStrID("FeatureFlags")));
 
 	CShaderVarMap VarMap;
 	VarMap.BeginAdd();
@@ -52,7 +52,7 @@ bool LoadMaterialFromPRM(Data::CParams& In, PMaterial OutMaterial)
 }
 //---------------------------------------------------------------------
 
-bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial)
+bool LoadMaterialFromPRM(const CString& FileName, PMaterial OutMaterial)
 {
 	Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
 	return Desc.IsValid() && LoadMaterialFromPRM(*Desc, OutMaterial);

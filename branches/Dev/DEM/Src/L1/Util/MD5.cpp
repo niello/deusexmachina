@@ -61,7 +61,7 @@ static unsigned char PADDING[64] =
 #define S44 21
 
 /// Transforms normal text into an encoded md5 string
-nString CMD5::String2MD5(const char* szString)
+CString CMD5::String2MD5(const char* szString)
 {
     int nLen = strlen(szString);
     this->Update((unsigned char*)szString, (unsigned int)nLen);
@@ -72,7 +72,7 @@ nString CMD5::String2MD5(const char* szString)
 
 
 /// PrintMD5: Converts a completed md5 digest into a string.
-nString CMD5::PrintMD5(uchar md5Digest[16])
+CString CMD5::PrintMD5(uchar md5Digest[16])
 {
     char chBuffer[256];
     char chEach[10];

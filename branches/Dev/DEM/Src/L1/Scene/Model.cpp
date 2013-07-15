@@ -6,9 +6,9 @@
 
 namespace Render
 {
-	bool LoadMaterialFromPRM(const nString& FileName, PMaterial OutMaterial);
-	bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
-	bool LoadMeshFromNVX2(const nString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh);
+	bool LoadMaterialFromPRM(const CString& FileName, PMaterial OutMaterial);
+	bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
+	bool LoadMeshFromNVX2(const CString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh);
 }
 
 namespace Scene
@@ -79,7 +79,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		case 'GLFF': // FFLG
 		{
-			nString FeatFlagsStr;
+			CString FeatFlagsStr;
 			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;
 			FeatureFlags = RenderSrv->ShaderFeatures.GetMask(FeatFlagsStr);
 			OK;
@@ -91,9 +91,9 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 bool CModel::ValidateResources()
 {
-	static const nString StrMaterials("Materials:");
-	static const nString StrMeshes("Meshes:");
-	static const nString StrTextures("Textures:");
+	static const CString StrMaterials("Materials:");
+	static const CString StrMeshes("Meshes:");
+	static const CString StrTextures("Textures:");
 
 	if (Material.IsValid())
 	{

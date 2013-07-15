@@ -39,15 +39,15 @@ class CEnvironment
 {
 protected:
 
-	nString							AppName;
-	nString							AppVersion;
-	nString							AppVendor;
-	nString							ProjDir;
+	CString							AppName;
+	CString							AppVersion;
+	CString							AppVendor;
+	CString							ProjDir;
 
 	bool							AllowMultipleInstances;
 
-	nString							WindowTitle;
-	nString							IconName;
+	CString							WindowTitle;
+	CString							IconName;
 	CDisplayMode					DisplayMode;
 
 	Ptr<Time::CTimeServer>			TimeServer;
@@ -83,20 +83,20 @@ public:
 	bool InitGameSystem();		//L2 game system
 	void ReleaseGameSystem();
 
-	void					SetProjectDirectory(const nString& NewProjDir) { ProjDir = NewProjDir; }
-	const nString&			GetProjectDirectory() const { return ProjDir; }
+	void					SetProjectDirectory(const CString& NewProjDir) { ProjDir = NewProjDir; }
+	const CString&			GetProjectDirectory() const { return ProjDir; }
 	void					SetWindowTitle(const char* pTitle) { WindowTitle = pTitle; }
-	const nString&			GetWindowTitle() const { return WindowTitle; }
+	const CString&			GetWindowTitle() const { return WindowTitle; }
 	void					SetWindowIcon(const char* pIconName) { IconName = pIconName; }
-	const nString&			GetWindowIcon() const { return IconName; }
+	const CString&			GetWindowIcon() const { return IconName; }
 	void					SetDisplayMode(const CDisplayMode& DispMode) { DisplayMode = DispMode; }
 	const CDisplayMode&		GetDisplayMode() const { return DisplayMode; }
-	void					SetAppName(const nString& ApplicationName) { AppName = ApplicationName; }
-	const nString&			GetAppName() const { return AppName; }
-	void					SetAppVersion(const nString& Version) { AppVersion = Version; }
-	const nString&			GetAppVersion() const { return AppVersion; }
-	void					SetVendorName(const nString& Vendor) { AppVendor = Vendor; }
-	const nString&			GetVendorName() const { return AppVendor; }
+	void					SetAppName(const CString& ApplicationName) { AppName = ApplicationName; }
+	const CString&			GetAppName() const { return AppName; }
+	void					SetAppVersion(const CString& Version) { AppVersion = Version; }
+	const CString&			GetAppVersion() const { return AppVersion; }
+	void					SetVendorName(const CString& Vendor) { AppVendor = Vendor; }
+	const CString&			GetVendorName() const { return AppVendor; }
 	void					SetAllowMultipleInstances(bool Allow) { AllowMultipleInstances = Allow; }
 	bool					GetAllowMultipleInstances() const { return AllowMultipleInstances; }
 };

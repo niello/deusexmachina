@@ -136,7 +136,7 @@ void CAudioServer::RemoveEntity(CAudioEntity* pEntity)
 }
 //---------------------------------------------------------------------
 
-//bool CAudioServer::OpenWaveBank(const nString& Name)
+//bool CAudioServer::OpenWaveBank(const CString& Name)
 //{
 	//n_assert(!WaveBank.IsValid());
 	//WaveBank = CWaveBank::CreateInstance();
@@ -208,7 +208,7 @@ void CAudioServer::Trigger()
 }
 //---------------------------------------------------------------------
 
-void CAudioServer::PlaySoundEffect(const nString& FXName, const vector3& Pos, const vector3& Vel, float Volume)
+void CAudioServer::PlaySoundEffect(const CString& FXName, const vector3& Pos, const vector3& Vel, float Volume)
 {
 	n_assert(FXName.IsValid());
 

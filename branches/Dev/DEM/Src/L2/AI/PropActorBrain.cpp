@@ -23,9 +23,9 @@ namespace Prop
 __ImplementClass(Prop::CPropActorBrain, 'PRAB', Game::CProperty);
 __ImplementPropertyStorage(CPropActorBrain);
 
-static const nString StrPercPrefix("AI::CPerceptor");
-static const nString StrSensorPrefix("AI::CSensor");
-static const nString StrGoalPrefix("AI::CGoal");
+static const CString StrPercPrefix("AI::CPerceptor");
+static const CString StrSensorPrefix("AI::CSensor");
+static const CString StrGoalPrefix("AI::CGoal");
 
 // At very small speeds and physics step sizes body position stops updating because of limited
 // float precision. LinearSpeed = 0.0007f, StepSize = 0.01f, Pos + LinearSpeed * StepSize = Pos.
@@ -64,11 +64,11 @@ bool CPropActorBrain::InternalActivate()
 
 // END Blackboard
 	
-	static const nString DefaultState("Default");
+	static const CString DefaultState("Default");
 
 	//???need to cache?
 	PParams Desc;
-	if (DataSrv->LoadDesc(Desc, "Actors:", GetEntity()->GetAttr<nString>(CStrID("ActorDesc"))))
+	if (DataSrv->LoadDesc(Desc, "Actors:", GetEntity()->GetAttr<CString>(CStrID("ActorDesc"))))
 	{
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))
@@ -100,7 +100,7 @@ bool CPropActorBrain::InternalActivate()
 					CDataArray::CIterator ItPercName;
 					for (ItPercName = Percs->Begin(); ItPercName != Percs->End(); ItPercName++)
 					{
-						nString PercClass = StrPercPrefix + ItPercName->GetValue<nString>();
+						CString PercClass = StrPercPrefix + ItPercName->GetValue<CString>();
 						bool Found = false;
 
 						CArray<PPerceptor>::CIterator ItPerc;
@@ -117,7 +117,7 @@ bool CPropActorBrain::InternalActivate()
 
 						if (!Found)
 							n_printf("Warning, AI: perceptor '%s' not found in '%s' on activation\n",
-									 ItPercName->GetValue<nString>().CStr(),
+									 ItPercName->GetValue<CString>().CStr(),
 									 GetEntity()->GetUID().CStr());
 					}
 				}
@@ -151,7 +151,7 @@ bool CPropActorBrain::InternalActivate()
 			Actions.Reallocate(ActionArray->GetCount(), 0);
 			for (int i = 0; i < ActionArray->GetCount(); i++)
 			{
-				LPCSTR pActionName = ActionArray->At(i).GetValue<nString>().CStr();
+				LPCSTR pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
 				if (pTpl) Actions.Add(pTpl);
 				else n_printf("Warning, AI: action template '%s' is not registered\n", pActionName);

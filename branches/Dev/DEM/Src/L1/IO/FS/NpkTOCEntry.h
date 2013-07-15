@@ -48,7 +48,7 @@ public:
 	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(NULL); }
 
 	const Data::CSimpleString&	GetName() const { return Name; }
-	nString						GetFullName() const;
+	CString						GetFullName() const;
 	CNpkTOCEntry*				GetParent() const { return pParent; }
 	EFSEntryType				GetType() const { return Type; }
 	int							GetFileOffset() const { n_assert(Type == FSE_FILE); return Offset; }
@@ -118,7 +118,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName)
 }
 //---------------------------------------------------------------------
 
-inline nString CNpkTOCEntry::GetFullName() const
+inline CString CNpkTOCEntry::GetFullName() const
 {
 	const int MaxDepth = 16;
 	const CNpkTOCEntry* TraceStack[MaxDepth];
@@ -131,7 +131,7 @@ inline nString CNpkTOCEntry::GetFullName() const
 		pCurrEntry = pCurrEntry->GetParent();
 	}
 
-	nString Result;
+	CString Result;
 	if (pRoot)
 	{
 		Result = pRoot;

@@ -16,7 +16,7 @@ bool CSoundResource::LoadResource()
 	LPDIRECTSOUND8 pDS = AudioSrv->GetDirectSound();
 	n_assert(pDS);
 
-	nString FileName = GetFilename();
+	CString FileName = GetFilename();
 	FileName.ToLower();
 
 	Audio::CAudioFile* pWaveFile;

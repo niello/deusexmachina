@@ -67,9 +67,9 @@ public:
 	~CUIServer();
 	
 	// Internal use, set by config
-	void			LoadScheme(const nString& ResourceFile);
-	void			LoadFont(const nString& ResourceFile); //???retval CEGUI::Font&?
-	void			SetDefaultMouseCursor(const nString& SchemeName, const nString& CursorName);
+	void			LoadScheme(const CString& ResourceFile);
+	void			LoadFont(const CString& ResourceFile); //???retval CEGUI::Font&?
+	void			SetDefaultMouseCursor(const CString& SchemeName, const CString& CursorName);
 	//!!!create dynamic fonts! see article!
 
 	//bool Init(PParams Cfg);
@@ -78,7 +78,7 @@ public:
 
 	// Interface
 	bool			RegisterScreen(CStrID Name, CWindow* pScreen);
-	//Ptr<CWindow>	LoadScreen(CStrID Name, const nString& ResourceFile);
+	//Ptr<CWindow>	LoadScreen(CStrID Name, const CString& ResourceFile);
 	CWindow*		GetScreen(CStrID Name) const;
 	void			SetRootScreen(CWindow* pWindow);
 	CWindow*		GetRootScreen() const { return CurrRootScreen; }
@@ -103,12 +103,12 @@ public:
 	// it only from GUI thread.
 	void			DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.Add(Connection); }
 	/*
-	void UnloadScheme(const nString& schemeName);
+	void UnloadScheme(const CString& schemeName);
 	void UnloadAllSchemes();
-	void CreateImageSet(const nString& imagesetName, const nString& fileName);
-	void DestroyImageSet(const nString& imagesetName);
+	void CreateImageSet(const CString& imagesetName, const CString& fileName);
+	void DestroyImageSet(const CString& imagesetName);
 	void DestroyAllImageSets();
-	void UnloadFont(const nString& FontName);
+	void UnloadFont(const CString& FontName);
 	void DestroyAllFonts();
 	void DestroyAllWindows();
 	*/

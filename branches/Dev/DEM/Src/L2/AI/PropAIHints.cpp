@@ -13,7 +13,7 @@ namespace Prop
 __ImplementClass(Prop::CPropAIHints, 'PRAH', Game::CProperty);
 __ImplementPropertyStorage(CPropAIHints);
 
-static const nString StrStimulusPrefix("AI::CStimulus");
+static const CString StrStimulusPrefix("AI::CStimulus");
 
 bool CPropAIHints::InternalActivate()
 {
@@ -49,8 +49,8 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 
 	//???need to cache?
 	Data::PParams Desc;
-	const nString& DescName = GetEntity()->GetAttr<nString>(CStrID("AIHintsDesc"), NULL);
-	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(nString("AIHints:") + DescName + ".prm");
+	const CString& DescName = GetEntity()->GetAttr<CString>(CStrID("AIHintsDesc"), NULL);
+	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(CString("AIHints:") + DescName + ".prm");
 
 	if (Desc.IsValid())
 	{
@@ -64,14 +64,14 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 			PParams PrmVal = Prm.GetValue<PParams>();
 			CRecord Rec;
 			
-			Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<nString>(CStrID("Type"), NULL));
+			Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), NULL));
 
 			Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
 			Rec.Stimulus->Position = Pos; //!!!offset * tfm!
 			Rec.Stimulus->Intensity = PrmVal->Get<float>(CStrID("Intensity"), 1.f);
 			Rec.Stimulus->ExpireTime = PrmVal->Get<float>(CStrID("ExpireTime"), -1.f);
 
-			const nString& SizeStr = PrmVal->Get<nString>(CStrID("Size"), NULL);
+			const CString& SizeStr = PrmVal->Get<CString>(CStrID("Size"), NULL);
 
 			if (SizeStr.IsEmpty())
 			{

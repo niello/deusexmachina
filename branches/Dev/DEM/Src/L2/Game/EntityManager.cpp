@@ -134,7 +134,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 
 	PProperty Prop = (CProperty*)pRTTI->CreateInstance();
 	CPropertyStorage* pStorage = Prop->GetStorage();
-	n_assert2_dbg(pStorage, (nString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
+	n_assert2_dbg(pStorage, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
 
 	if (!pStorage->Get(Entity.GetUID(), Prop))
 	{
@@ -148,7 +148,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 void CEntityManager::RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const
 {
 	int Idx = PropStorages.FindIndex(&Type);
-	n_assert2_dbg(Idx != INVALID_INDEX, (nString("Property ") + Type.GetName() + " is not registered!").CStr());
+	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + Type.GetName() + " is not registered!").CStr());
 	if (Idx == INVALID_INDEX) return;
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);

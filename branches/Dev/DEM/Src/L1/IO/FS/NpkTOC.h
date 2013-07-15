@@ -3,7 +3,7 @@
 #define __DEM_L1_NPK_TOC_H__
 
 #include "NpkTOCEntry.h"
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Holds table of content entries for npk files.
 // (C) 2002 RadonLabs GmbH
@@ -19,7 +19,7 @@ private:
 	enum { STACKSIZE = 16 };
 
 	CNpkTOCEntry*	pRootDir;      // the top level directory
-	nString			RootPath;           // filesystem pPath to the root pEntry (i.e. d:/nomads)
+	CString			RootPath;           // filesystem pPath to the root pEntry (i.e. d:/nomads)
 	CNpkTOCEntry*	pCurrDir;       // current directory (only valid during BeginDirEntry());
 	int				CurrStackIdx;
 	CNpkTOCEntry*	Stack[STACKSIZE];
@@ -75,7 +75,7 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 {
 	n_assert(pRootDir);
 
-	nString LocalPath;
+	CString LocalPath;
 	n_assert(RootPath.IsValid());
 	if (strncmp(RootPath.CStr(), pAbsPath, RootPath.Length())) return NULL;
 	if (strlen(pAbsPath) > (size_t)RootPath.Length() + 1)

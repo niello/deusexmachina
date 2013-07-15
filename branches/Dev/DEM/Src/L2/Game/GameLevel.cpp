@@ -49,15 +49,15 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	//n_assert(!Initialized);
 
 	ID = LevelID; //Desc.Get<CStrID>(CStrID("ID"), CStrID::Empty);
-	Name = Desc.Get<nString>(CStrID("Name"), NULL);
+	Name = Desc.Get<CString>(CStrID("Name"), NULL);
 
-	nString PathBase = "Levels:";
+	CString PathBase = "Levels:";
 	PathBase += LevelID.CStr();
 
-	nString ScriptFile = PathBase + ".lua";
+	CString ScriptFile = PathBase + ".lua";
 	if (IOSrv->FileExists(ScriptFile))
 	{
-		Script = n_new(Scripting::CScriptObject((nString("Level_") + ID.CStr()).CStr()));
+		Script = n_new(Scripting::CScriptObject((CString("Level_") + ID.CStr()).CStr()));
 		Script->Init(); // No special class
 		if (Script->LoadScriptFile(ScriptFile) == Error)
 			n_printf("Error loading script for level %s\n", ID.CStr());
@@ -122,7 +122,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		AILevel = n_new(AI::CAILevel);
 		if (!AILevel->Init(Bounds, QTDepth)) FAIL;
 
-		nString NMFile = PathBase + ".nm";
+		CString NMFile = PathBase + ".nm";
 		if (IOSrv->FileExists(NMFile))
 		{
 			if (!AILevel->LoadNavMesh(NMFile))
@@ -184,8 +184,8 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 				CurrCameraDesc->Set(CStrID("MinDistance"), pCtlr->GetDistanceMin());
 				CurrCameraDesc->Set(CStrID("MaxDistance"), pCtlr->GetDistanceMax());
 				CurrCameraDesc->Set(CStrID("COI"), pCtlr->GetCOI());
-				CurrCameraDesc->Set(CStrID("HAngle"), n_rad2deg(pCtlr->GetAngles().phi));
-				CurrCameraDesc->Set(CStrID("VAngle"), n_rad2deg(pCtlr->GetAngles().theta));
+				CurrCameraDesc->Set(CStrID("HAngle"), n_rad2deg(pCtlr->GetAngles().Phi));
+				CurrCameraDesc->Set(CStrID("VAngle"), n_rad2deg(pCtlr->GetAngles().Theta));
 				CurrCameraDesc->Set(CStrID("Distance"), pCtlr->GetDistance());
 			}
 		}

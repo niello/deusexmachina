@@ -35,7 +35,7 @@ public:
 	{
 		CStrID			ID;
 		CStrID			EventID;	// cached
-		nString			UIName;		//???use CSimpleString to reduce size of struct?
+		CString			UIName;		//???use CSimpleString to reduce size of struct?
 		short			Priority;	// The higher is value the closer an action to the top of the list
 		bool			Enabled;	//!!!add methods to control it!
 		bool			Visible;
@@ -56,8 +56,8 @@ public:
 protected:
 
 	Physics::PNodeAttrCollision	MousePickShape;
-	nString						UIName;	//???use attribute?
-	nString						UIDesc;	//???use attribute?
+	CString						UIName;	//???use attribute?
+	CString						UIDesc;	//???use attribute?
 	CArray<CAction>				Actions;
 	bool						Enabled;
 	bool						TipVisible;
@@ -91,7 +91,7 @@ public:
 
 	void					Enable(bool SetEnabled);
 	bool					IsEnabled() const { return Enabled; }
-	void					SetUIName(const nString& NewName);
+	void					SetUIName(const CString& NewName);
 	void					ShowTip();
 	void					HideTip();
 

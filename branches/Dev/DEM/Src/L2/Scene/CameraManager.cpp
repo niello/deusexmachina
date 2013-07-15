@@ -94,7 +94,7 @@ bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithC
 	vector3 lookatPoint = m44.Translation() + m33 * Offset;
 
 	// compute the collided goal position
-	vector3 goalPos = lookatPoint + Angles.get_cartesian_z() * Distance;
+	vector3 goalPos = lookatPoint + Angles.GetCartesianZ() * Distance;
 	vector3 CorrectedGoalPos = DoCollideCheck(lookatPoint, goalPos);
 
 	//!!!define constant somewhere!

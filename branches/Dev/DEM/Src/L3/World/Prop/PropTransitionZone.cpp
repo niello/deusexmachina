@@ -40,8 +40,8 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
 	n_assert(pActorEnt);
 
-	const nString& LevelID = GetEntity()->GetAttr<nString>(CStrID("TargetLevelID"));
-	const nString& DestPt = GetEntity()->GetAttr<nString>(CStrID("DestPoint"));
+	const CString& LevelID = GetEntity()->GetAttr<CString>(CStrID("TargetLevelID"));
+	const CString& DestPt = GetEntity()->GetAttr<CString>(CStrID("DestPoint"));
 
 	//???set pause?
 
@@ -52,7 +52,7 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 		//else n_printf("Travel, Warning: destination point '%s' not found\n", DestPt.CStr());
 	}
 
-	pActorEnt->SetAttr<nString>(CStrID("LevelID"), LevelID);
+	pActorEnt->SetAttr<CString>(CStrID("LevelID"), LevelID);
 	
 	//LoaderSrv->CommitChangesToDB();
 

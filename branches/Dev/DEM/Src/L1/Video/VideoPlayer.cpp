@@ -29,7 +29,7 @@ void CVideoPlayer::Close()
 }
 //---------------------------------------------------------------------
 
-void CVideoPlayer::SetFilename(const nString& _FileName)
+void CVideoPlayer::SetFilename(const CString& _FileName)
 {
 	FileName = IOSrv->ManglePath(_FileName);
 }

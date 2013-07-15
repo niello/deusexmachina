@@ -50,7 +50,7 @@ enum EVAlign
 
 struct CDDText
 {
-	nString	Text;
+	CString	Text;
 	vector4	Color;
 	float	Left;
 	float	Top;

@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_DISPLAY_MODE_H__
 
 #include <Render/RenderFwd.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Contains display mode parameters.
 

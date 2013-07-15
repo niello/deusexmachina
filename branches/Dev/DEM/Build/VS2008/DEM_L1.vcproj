@@ -425,6 +425,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\String.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\String.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\StringID.cpp"
 				>
 			</File>
@@ -1185,6 +1193,10 @@
 			Name="Math"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Math\Polar.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Math\TransformSRT.cpp"
 				>
 			</File>
@@ -1794,6 +1806,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Util\MD5.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\PerlinNoise.cpp"
 				>
 			</File>
 			<File

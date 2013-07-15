@@ -33,12 +33,12 @@ bool CEnvironment::InitCore()
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValid())
 		for (int i = 0; i < PathList->GetCount(); ++i)
-			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
 
 	n_new(Core::CLogger);
 	CoreLogger->Open((AppName + " - " + AppVersion).CStr());
 
-	nString AppData;
+	CString AppData;
 	AppData.Format("AppData:%s/%s", AppVendor.CStr(), AppName.CStr());
 	IOSrv->SetAssign("AppData", IOSrv->ManglePath(AppData));
 

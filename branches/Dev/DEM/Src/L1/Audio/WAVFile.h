@@ -33,7 +33,7 @@ public:
 	CWAVFile();
 	virtual ~CWAVFile() { if (_IsOpen) Close(); }
 
-	virtual bool			Open(const nString& FileName);
+	virtual bool			Open(const CString& FileName);
 	virtual void			Close();
 
 	virtual uint			Read(void* pBuffer, uint BytesToRead);

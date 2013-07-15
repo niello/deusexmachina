@@ -45,9 +45,9 @@ private:
 		T_STRID
 	};
 	
-	CArray<nString>	TableID;
-	CArray<nString>	TableRW;
-	CArray<nString>	TableDlm;
+	CArray<CString>	TableID;
+	CArray<CString>	TableRW;
+	CArray<CString>	TableDlm;
 	CArray<CData>	TableConst;
 
 	LPCSTR			LexerCursor;
@@ -77,7 +77,7 @@ private:
 	bool LexProcessCommentBlock();
 	void DlmMatchChar(char Char, int Index, int Start, int End, int& MatchStart, int& MatchEnd);
 	void SkipSpaces();
-	void AddConst(CArray<CToken>& Tokens, const nString& Const, EType Type);
+	void AddConst(CArray<CToken>& Tokens, const CString& Const, EType Type);
 	
 	// Syntax analysis
 	bool ParseTokenStream(const CArray<CToken>& Tokens, PParams Output);

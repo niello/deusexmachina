@@ -6,7 +6,7 @@ namespace Render
 {
 __ImplementResourceClass(Render::CMaterial, 'MTRL', Resources::CResource);
 
-bool LoadTextureUsingD3DX(const nString& FileName, PTexture OutTexture);
+bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
 
 bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
 {
@@ -23,7 +23,7 @@ bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderV
 	FeatureFlags = ShaderFeatureFlags;
 	//???set active feature for test? mb it is never used with these flags, always adding Skinned etc
 
-	static const nString StrTextures("Textures:");
+	static const CString StrTextures("Textures:");
 
 	StaticVars = StaticShaderVars;
 	for (int i = 0; i < StaticVars.GetCount(); ++i)

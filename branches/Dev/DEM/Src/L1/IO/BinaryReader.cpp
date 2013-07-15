@@ -36,14 +36,14 @@ bool CBinaryReader::ReadString(char*& OutValue)
 }
 //---------------------------------------------------------------------
 
-bool CBinaryReader::ReadString(nString& OutValue)
+bool CBinaryReader::ReadString(CString& OutValue)
 {
 	ushort Len;
 	if (!Read(Len)) FAIL;
 
 	if (Len)
 	{
-		//!!!NEED nString::Reserve!
+		//!!!NEED CString::Reserve!
 		//OutValue.Reserve(Len);
 
 		char* pTmp = n_new_array(char, Len + 1);
@@ -97,7 +97,7 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 	else if (Type == DATA_TYPE_ID(bool)) OutValue = Read<bool>();
 	else if (Type == DATA_TYPE_ID(int)) OutValue = Read<int>();
 	else if (Type == DATA_TYPE_ID(float)) OutValue = Read<float>();
-	else if (Type == DATA_TYPE_ID(nString)) OutValue = Read<nString>();
+	else if (Type == DATA_TYPE_ID(CString)) OutValue = Read<CString>();
 	else if (Type == DATA_TYPE_ID(CStrID)) OutValue = Read<CStrID>();
 	else if (Type == DATA_TYPE_ID(vector3)) OutValue = Read<vector3>();
 	else if (Type == DATA_TYPE_ID(vector4)) OutValue = Read<vector4>();

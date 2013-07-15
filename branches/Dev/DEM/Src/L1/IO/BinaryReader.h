@@ -4,11 +4,11 @@
 
 #include <IO/StreamReader.h>
 #include <Data/Params.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Binary data reader
 
-class nString;
+class CString;
 
 namespace Data
 {
@@ -26,7 +26,7 @@ public:
 
 	bool				ReadString(char* OutValue, DWORD MaxLen);
 	bool				ReadString(char*& OutValue); // Allocates memory
-	bool				ReadString(nString& OutValue);
+	bool				ReadString(CString& OutValue);
 	bool				ReadParams(Data::CParams& OutValue);
 	bool				ReadParam(Data::CParam& OutValue);
 	bool				ReadData(Data::CData& OutValue);
@@ -36,7 +36,7 @@ public:
 	template<class T>
 	bool				Read(T& OutValue) { return Stream.Read(&OutValue, sizeof(T)) == sizeof(T); }
 	template<> bool		Read<char*>(char*& OutValue) { return ReadString(OutValue); }
-	template<> bool		Read<nString>(nString& OutValue) { return ReadString(OutValue); }
+	template<> bool		Read<CString>(CString& OutValue) { return ReadString(OutValue); }
 	template<> bool		Read<CStrID>(CStrID& OutValue);
 	//template<> bool		Read<CParams>(const CParams& OutValue) { return WriteParams(OutValue); }
 	//template<> bool		Read<PParams>(const PParams& OutValue) { return OutValue.IsValid() ? WriteParams(*OutValue) : true; }

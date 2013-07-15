@@ -44,7 +44,7 @@ public:
 	virtual void		Deactivate(CActor* pActor);
 	virtual bool		IsValid(CActor* pActor) const;
 
-	virtual void		GetDebugString(nString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
+	virtual void		GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };
 
 typedef Ptr<CActionUseSmartObj> PActionUseSmartObj;

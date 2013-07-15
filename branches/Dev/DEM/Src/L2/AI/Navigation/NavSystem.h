@@ -7,7 +7,7 @@
 #include <AI/Navigation/PathEdge.h>
 #include <AI/ActorFwd.h>
 #include <Data/Dictionary.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 #include <DetourPathCorridor.h>
 
 // Navigation system is responsible for path planning, destination tracking, high-level spatial status tracking.

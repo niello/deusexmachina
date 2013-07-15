@@ -138,7 +138,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		LPCSTR pTable = pCmd + 3;
 		while (*pTable == 32) ++pTable;
 
-		CArray<nString> Contents;
+		CArray<CString> Contents;
 
 		if (ScriptSrv->PlaceOnStack(pTable))
 		{

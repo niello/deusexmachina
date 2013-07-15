@@ -50,7 +50,7 @@ public:
 	virtual bool	CanSeek() const { FAIL; }
 	virtual bool	CanBeMapped() const { FAIL; }
 
-	// For simple types (integrated or struct). Use stream writers for things like nString etc.
+	// For simple types (integrated or struct). Use stream writers for things like CString etc.
 	template<class T>
 	bool			Put(const T& Value) { return Write(&Value, sizeof(T)) == sizeof(T); }
 	template<class T>

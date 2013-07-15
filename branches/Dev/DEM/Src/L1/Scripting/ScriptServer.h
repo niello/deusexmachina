@@ -36,7 +36,7 @@ private:
 
 	lua_State*		l; // Yes, just 'l'. It's very convinient when writing & reading tons of Lua-related code.
 
-	nString			CurrClass;
+	CString			CurrClass;
 	CScriptObject*	CurrObj;
 
 public:
@@ -49,7 +49,7 @@ public:
 	int			DataToLuaStack(const Data::CData& Data);
 	bool		LuaStackToData(Data::CData& Result, int StackIdx, lua_State* L = NULL);
 
-	EExecStatus	RunScriptFile(const nString& FileName);
+	EExecStatus	RunScriptFile(const CString& FileName);
 	EExecStatus	RunScript(LPCSTR Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
 
 	EExecStatus	PerformCall(int ArgCount, Data::CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");
@@ -68,7 +68,7 @@ public:
 	void		ExportCFunction(LPCSTR Name, lua_CFunction Function);
 	void		ExportIntegerConst(LPCSTR Name, int Value);
 
-	bool		LoadClass(const nString& Name);
+	bool		LoadClass(const CString& Name);
 	bool		ClassExists(LPCSTR Name);
 
 	//!!!can add functions to subscribe global functions to events!
@@ -80,7 +80,7 @@ public:
 	void		RemoveObject(LPCSTR Name, LPCSTR Table = NULL);
 	bool		ObjectExists(LPCSTR Name, LPCSTR Table = NULL);
 
-	bool		GetTableFieldsDebug(CArray<nString>& OutFields);
+	bool		GetTableFieldsDebug(CArray<CString>& OutFields);
 };
 
 }

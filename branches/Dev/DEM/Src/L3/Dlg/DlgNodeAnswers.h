@@ -18,7 +18,7 @@ class CDlgNodeAnswers: public CDlgNode
 public:
 
 	CStrID				SpeakerEntity; //!!!special cases Starter & Support!
-	nString				Phrase;
+	CString				Phrase;
 	//???default answer index or special OnAbort action? or can end dlg only by answering?
 
 	virtual void		OnEnter(CActiveDlg& Dlg);

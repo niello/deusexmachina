@@ -9,7 +9,7 @@
 
 namespace Scene
 {
-	bool LoadNodesFromSCN(const nString& FileName, PSceneNode RootNode, bool PreloadResources = true);
+	bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode, bool PreloadResources = true);
 }
 
 namespace Prop
@@ -21,10 +21,10 @@ IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 
 bool CPropSceneNode::InternalActivate()
 {
-	nString NodePath;
-	GetEntity()->GetAttr<nString>(NodePath, CStrID("ScenePath"));
-	nString NodeFile;
-	GetEntity()->GetAttr<nString>(NodeFile, CStrID("SceneFile"));
+	CString NodePath;
+	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
+	CString NodeFile;
+	GetEntity()->GetAttr<CString>(NodeFile, CStrID("SceneFile"));
 
 	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = GetEntity()->GetUID().CStr();

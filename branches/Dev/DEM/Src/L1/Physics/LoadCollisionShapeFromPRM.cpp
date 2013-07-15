@@ -57,7 +57,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 	}
 	else if (Type == Str::Heightfield)
 	{
-		nString FileName = In.Get<nString>(Str::CDLODFile, NULL);
+		CString FileName = In.Get<CString>(Str::CDLODFile, NULL);
 		if (!FileName.IsValid()) return NULL;
 		FileName = "Terrain:" + FileName + ".cdlod";
 
@@ -153,7 +153,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const nString& FileName)
+PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName)
 {
 	Data::PParams Desc = DataSrv->LoadPRM(FileName, false);
 	return Desc.IsValid() ? LoadCollisionShapeFromPRM(UID, *Desc): NULL;

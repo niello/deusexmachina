@@ -31,7 +31,7 @@ private:
 
 	CArray<Ptr<CQuest>>	QuestsToDelete;
 	CArray<Ptr<CTask>>	TasksToDelete;
-	CArray<nString>		DeletedScriptObjects;
+	CArray<CString>		DeletedScriptObjects;
 
 	bool LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID = NULL);
 	bool CloseQuest(CStrID QuestID, CStrID TaskID, bool Success);

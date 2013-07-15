@@ -36,7 +36,7 @@ public:
 	CParams(const CParams& Other): Params(Other.Params) {}
 	CParams(int InitialSize, int Grow = 4): Params(InitialSize, Grow) {}
 
-	//???LPCSTR/nString version?
+	//???LPCSTR/CString version?
 	int							IndexOf(CStrID Name) const;
 	bool						Has(CStrID Name) const { return IndexOf(Name) != INVALID_INDEX; }
 	int							GetCount() const { return Params.GetCount(); }

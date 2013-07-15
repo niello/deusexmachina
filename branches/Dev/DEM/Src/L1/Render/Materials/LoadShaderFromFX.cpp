@@ -10,7 +10,7 @@
 namespace Render
 {
 
-bool LoadShaderFromFX(const nString& FileName, const nString& ShaderRootDir, PShader OutShader)
+bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PShader OutShader)
 {
 	if (!OutShader.IsValid()) FAIL;
 

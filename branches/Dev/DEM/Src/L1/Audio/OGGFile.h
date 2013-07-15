@@ -50,7 +50,7 @@ public:
 	COGGFile(): m_bFileEndReached(false), pStream(NULL), size(0) {}
 	virtual ~COGGFile() { Close(); }
 
-	virtual bool			Open(const nString& FileName);
+	virtual bool			Open(const CString& FileName);
 	virtual void			Close();
 
 	virtual uint			Read(void* pBuffer, uint BytesToRead);

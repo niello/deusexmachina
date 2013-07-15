@@ -33,8 +33,8 @@ public:
 	CDict<CStrID, CTaskRec>	Tasks;
 
 	// UI-related
-	nString							Name;
-	nString							Description;
+	CString							Name;
+	CString							Description;
 
 	//CQuest();
 	//~CQuest();
