@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <util/nstring.h>
+#include <Data/String.h>
 
 // Helper class to extract arguments from a ANSI-C command line.
 // (C) 2003 RadonLabs GmbH
@@ -16,7 +16,7 @@ private:
 	int				argCount;
 	const char**	argVector;
 
-	int FindArg(const nString& option) const;
+	int FindArg(const CString& option) const;
 
 public:
 
@@ -24,14 +24,14 @@ public:
 	nCmdLineArgs(int argc, const char** argv): argCount(argc), argVector(argv) {}
 
 	void	Initialize(int argc, const char** argv) { argCount = argc; argVector = argv; }
-	float	GetFloatArg(const nString& option, float defaultValue = 0.0f) const;
-	int		GetIntArg(const nString& option, int defaultValue = 0) const;
-	bool	GetBoolArg(const nString& option) const { return FindArg(option) > 0; }
-	nString	GetStringArg(const nString& option, const nString& defaultValue = NULL) const;
-	bool	HasArg(const nString& option) const { return FindArg(option) != 0; }
+	float	GetFloatArg(const CString& option, float defaultValue = 0.0f) const;
+	int		GetIntArg(const CString& option, int defaultValue = 0) const;
+	bool	GetBoolArg(const CString& option) const { return FindArg(option) > 0; }
+	CString	GetStringArg(const CString& option, const CString& defaultValue = NULL) const;
+	bool	HasArg(const CString& option) const { return FindArg(option) != 0; }
 };
 
-inline int nCmdLineArgs::FindArg(const nString& option) const
+inline int nCmdLineArgs::FindArg(const CString& option) const
 {
 	for (int i = 0; i < argCount; i++)
 		if (option == argVector[i])
@@ -40,7 +40,7 @@ inline int nCmdLineArgs::FindArg(const nString& option) const
 }
 //---------------------------------------------------------------------
 
-inline float nCmdLineArgs::GetFloatArg(const nString& option, float defaultValue) const
+inline float nCmdLineArgs::GetFloatArg(const CString& option, float defaultValue) const
 {
 	int i = FindArg(option);
 	if (i == -1) return defaultValue;
@@ -49,7 +49,7 @@ inline float nCmdLineArgs::GetFloatArg(const nString& option, float defaultValue
 }
 //---------------------------------------------------------------------
 
-inline int nCmdLineArgs::GetIntArg(const nString& option, int defaultValue) const
+inline int nCmdLineArgs::GetIntArg(const CString& option, int defaultValue) const
 {
 	int i = FindArg(option);
 	if (i == -1) return defaultValue;
@@ -58,7 +58,7 @@ inline int nCmdLineArgs::GetIntArg(const nString& option, int defaultValue) cons
 }
 //---------------------------------------------------------------------
 
-inline nString nCmdLineArgs::GetStringArg(const nString& option, const nString& defaultValue) const
+inline CString nCmdLineArgs::GetStringArg(const CString& option, const CString& defaultValue) const
 {
 	int i = FindArg(option);
 	if (i == -1) return defaultValue;

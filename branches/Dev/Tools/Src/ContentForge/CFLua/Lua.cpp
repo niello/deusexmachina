@@ -68,7 +68,7 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 
 bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 {
-	nString Code = LoadedHRD.Get<nString>(CStrID("Code"), NULL);
+	CString Code = LoadedHRD.Get<CString>(CStrID("Code"), NULL);
 
 	if (Code.IsValid())
 	{

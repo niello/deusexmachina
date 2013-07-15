@@ -7,9 +7,9 @@
 
 #undef CreateDirectory
 
-extern nString RootPath;
+extern CString RootPath;
 
-int CompileShader(const nString& InFilePath, const nString& OutFilePath, bool Debug, int OptimizationLevel)
+int CompileShader(const CString& InFilePath, const CString& OutFilePath, bool Debug, int OptimizationLevel)
 {
 	Data::CBuffer In;
 	if (!IOSrv->LoadFileToBuffer(InFilePath, In)) return ERR_IO_READ;

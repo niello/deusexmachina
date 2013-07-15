@@ -36,8 +36,8 @@ int main(int argc, const char** argv)
 		return ExitApp(SUCCESS_HELP, WaitKey);
 	}
 
-	nString InFileName = Args.GetStringArg("-in");
-	nString OutFileName = Args.GetStringArg("-out");
+	CString InFileName = Args.GetStringArg("-in");
+	CString OutFileName = Args.GetStringArg("-out");
 	DWORD PatchSize = Args.GetIntArg("-patch");
 	DWORD LODCount = Args.GetIntArg("-lod");
 
@@ -70,7 +70,7 @@ int main(int argc, const char** argv)
 		DWORD Width = BTFile.GetWidth();
 		DWORD Height = BTFile.GetHeight();
 
-		nString OutPath = OutFileName.ExtractDirName();
+		CString OutPath = OutFileName.ExtractDirName();
 		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
 
 		IO::CFileStream OutFile;

@@ -1,4 +1,5 @@
 #include <IO/IOServer.h>
+#include <Data/StringTokenizer.h>
 #include <ConsoleApp.h>
 
 #define TOOL_NAME	"CFCopy"
@@ -13,15 +14,25 @@ int main(int argc, const char** argv)
 	nCmdLineArgs Args(argc, argv);
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
-	nString In = Args.GetStringArg("-in");
-	nString Out = Args.GetStringArg("-out");
+	CString In = Args.GetStringArg("-in");
+	CString Out = Args.GetStringArg("-out");
 	Verbose = Args.GetIntArg("-v");
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	nArray<nString> InList, OutList;
-	In.Tokenize(";", InList);
-	Out.Tokenize(";", OutList);
+	CArray<CString> InList, OutList;
+
+	{
+		Data::CStringTokenizer StrTok(In.CStr(), ";");
+		while (StrTok.GetNextTokenSingleChar())
+			InList.Add(StrTok.GetCurrToken());
+	}
+
+	{
+		Data::CStringTokenizer StrTok(Out.CStr(), ";");
+		while (StrTok.GetNextTokenSingleChar())
+			OutList.Add(StrTok.GetCurrToken());
+	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 

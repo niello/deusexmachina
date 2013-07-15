@@ -50,6 +50,10 @@ public:
 		const TKey&	GetKey() const { n_assert(It); return It->GetKey(); }
 		const TVal&	GetValue() const { n_assert(It); return It->GetValue(); }
 		bool		IsEnd() const { return !It; }
+					operator bool() const { return !!It; }
+		TVal*		operator ->() const { n_assert_dbg(It); return &It->GetValue(); }
+		TVal&		operator *() const { n_assert_dbg(It); return It->GetValue(); }
+
 		CIterator&	operator ++()
 		{
 			n_assert(It);

@@ -3,7 +3,7 @@
 
 // Main header
 
-typedef nDictionary<CStrID, nArray<nString>> CToolFileLists;
+typedef CDict<CStrID, CArray<CString>> CToolFileLists;
 
 #define TOOL_NAME	"BBuilder"
 #define VERSION		"3.0 alpha"
@@ -16,23 +16,23 @@ extern bool					ExportResources;
 extern bool					ExportShaders;
 extern int					Verbose;
 extern int					ExternalVerbosity;
-extern nArray<nString>		FilesToPack;
+extern CArray<CString>		FilesToPack;
 extern CToolFileLists		InFileLists;
 extern CToolFileLists		OutFileLists;
 
-bool	ProcessLevel(const Data::CParams& LevelDesc, const nString& Name);
+bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
 bool	ProcessFrameShader(const Data::CParams& Desc);
-bool	ProcessDesc(const nString& SrcFilePath, const nString& ExportFilePath);
-bool	ProcessResourceDesc(const nString& RsrcFileName, const nString& ExportFileName);
-bool	ProcessQuestsInFolder(const nString& SrcPath, const nString& ExportPath);
-void	BatchToolInOut(CStrID Name, const nString& InStr, const nString& OutStr);
+bool	ProcessDesc(const CString& SrcFilePath, const CString& ExportFilePath);
+bool	ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileName);
+bool	ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath);
+void	BatchToolInOut(CStrID Name, const CString& InStr, const CString& OutStr);
 int		RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir = NULL);
 int		RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine = NULL, LPCSTR pWorkingDir = NULL);
-bool	PackFiles(const nArray<nString>& FilesToPack, const nString& PkgFileName, const nString& PkgRoot, nString PkgRootDir);
+bool	PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, const CString& PkgRoot, CString PkgRootDir);
 int		ExitApp(bool NoError, bool WaitKey);
 
-inline bool IsFileAdded(const nString& File)
+inline bool IsFileAdded(const CString& File)
 {
-	return FilesToPack.BinarySearchIndex(File) != INVALID_INDEX;
+	return FilesToPack.FindIndexSorted(File) != INVALID_INDEX;
 }
 //---------------------------------------------------------------------

@@ -16,7 +16,7 @@ Ptr<Data::CDataServer>	DataServer;
 //!!!control duplicates on add! or sort before packing and skip dups!
 // Can optimize by calculating nearest index:
 //!!!if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
-nArray<nString>			FilesToPack;
+CArray<CString>			FilesToPack;
 
 //!!!control duplicates! (immediately after mangle path, forex)
 CToolFileLists			InFileLists;
@@ -41,13 +41,13 @@ int main(int argc, const char** argv)
 	ExternalVerbosity = Args.GetIntArg("-ev");
 
 	// Project directory, where all content is placed. Will be a base directory for all data.
-	nString ProjDir = Args.GetStringArg("-proj");
+	CString ProjDir = Args.GetStringArg("-proj");
 	ProjDir.ConvertBackslashes();
 	ProjDir.StripTrailingSlash();
 	if (ProjDir.IsEmpty()) EXIT_APP_FAIL;
 
 	// Build directory, to where final data will be saved.
-	nString BuildDir = Args.GetStringArg("-build");
+	CString BuildDir = Args.GetStringArg("-build");
 	BuildDir.ConvertBackslashes();
 	BuildDir.StripTrailingSlash();
 	if (BuildDir.IsEmpty()) EXIT_APP_FAIL;
@@ -67,13 +67,13 @@ int main(int argc, const char** argv)
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
 	if (PathList.IsValid())
 		for (int i = 0; i < PathList->GetCount(); ++i)
-			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
 
 	PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValid())
 	{
 		for (int i = 0; i < PathList->GetCount(); ++i)
-			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<nString>(i)));
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
 
 		IOSrv->CopyFile("Proj:PathList.hrd", "Build:PathList.hrd");
 	}
@@ -88,7 +88,7 @@ int main(int argc, const char** argv)
 
 	n_printf("\n"SEP_LINE"Processing levels and entities:\n"SEP_LINE);
 
-	nString ExportFilePath = "Game:Main.prm";
+	CString ExportFilePath = "Game:Main.prm";
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
@@ -119,7 +119,7 @@ int main(int argc, const char** argv)
 		{
 			if (!Browser.GetCurrEntryName().CheckExtension(ExportDescs ? "hrd" : "prm")) continue;
 
-			nString FileNoExt = Browser.GetCurrEntryName();
+			CString FileNoExt = Browser.GetCurrEntryName();
 			FileNoExt.StripExtension();
 			n_msg(VL_INFO, "Processing level '%s'...\n", FileNoExt.CStr());
 
@@ -194,7 +194,7 @@ int main(int argc, const char** argv)
 		{
 			if (!Browser.GetCurrEntryName().CheckExtension(ExportShaders ? "hrd" : "prm")) continue;
 
-			nString FileNoExt = Browser.GetCurrEntryName();
+			CString FileNoExt = Browser.GetCurrEntryName();
 			FileNoExt.StripExtension();
 			n_msg(VL_INFO, "Processing frame shader '%s'...\n", FileNoExt.CStr());
 
@@ -230,9 +230,9 @@ int main(int argc, const char** argv)
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
 	if (ExportShaders)
 	{
-		nString ShdRoot = IOSrv->ManglePath("SrcShaders:");
+		CString ShdRoot = IOSrv->ManglePath("SrcShaders:");
 		if (ShdRoot.FindCharIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
-		nString ExtraCmdLine = "-o 3 -root ";
+		CString ExtraCmdLine = "-o 3 -root ";
 		ExtraCmdLine += ShdRoot;
 		if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr()) != 0) EXIT_APP_FAIL;
 	}
@@ -246,7 +246,7 @@ int main(int argc, const char** argv)
 	}
 	FilesToPack.Sort();
 
-	nString DestFile = "Build:Export.npk";
+	CString DestFile = "Build:Export.npk";
 	if (PackFiles(FilesToPack, DestFile, ProjDir, "Export"))
 	{
 		n_msg(VL_INFO, "\nNPK file:      %s\nNPK file size: %.3f MB\n",
