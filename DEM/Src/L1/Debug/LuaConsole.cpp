@@ -35,7 +35,7 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 	pOutputWnd = (CEGUI::Listbox*)pWnd->getChild(pWnd->getName() + "/OutputList");
 	pVertScroll = pOutputWnd->getVertScrollbar();
 
-	nLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();
+	CLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();
 	if (pLineBuffer)
 	{
 		LPCSTR Lines[MAX_LINES_START];

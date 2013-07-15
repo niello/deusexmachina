@@ -4,7 +4,7 @@
 
 #include <Data/SimpleString.h>
 #include <Data/StringID.h>
-#include <util/narray2.h>
+#include <Data/Array2.h>
 #include <Data/Dictionary.h>
 
 // Template table with fixed size, 2D array with name and optionally named columns.
@@ -13,7 +13,7 @@ namespace Data
 {
 
 template<class T>
-class CTableT: public nArray2<T>
+class CTableT: public CArray2<T>
 {
 public:
 
@@ -23,7 +23,7 @@ public:
 	CDict<CStrID, int>	RowMap;
 
 	CTableT() {}
-	CTableT(DWORD Cols, DWORD Rows): nArray2(Cols, Rows) {}
+	CTableT(DWORD Cols, DWORD Rows): CArray2(Cols, Rows) {}
 
 	DWORD	GetColumnCount() const { return Width; }
 	DWORD	GetRowCount() const { return Height; }

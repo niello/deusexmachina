@@ -68,11 +68,11 @@ inline bool line3::intersect(const line3& l, vector3& pa, vector3& pb) const
 	p43.x = p4.x - p3.x;
 	p43.y = p4.y - p3.y;
 	p43.z = p4.z - p3.z;
-	if (n_abs(p43.x) < EPS && n_abs(p43.y) < EPS && n_abs(p43.z) < EPS) return false;
+	if (n_fabs(p43.x) < EPS && n_fabs(p43.y) < EPS && n_fabs(p43.z) < EPS) return false;
 	p21.x = p2.x - p1.x;
 	p21.y = p2.y - p1.y;
 	p21.z = p2.z - p1.z;
-	if (n_abs(p21.x)  < EPS && n_abs(p21.y) < EPS && n_abs(p21.z) < EPS) return false;
+	if (n_fabs(p21.x)  < EPS && n_fabs(p21.y) < EPS && n_fabs(p21.z) < EPS) return false;
 
 	d1343 = p13.x * p43.x + p13.y * p43.y + p13.z * p43.z;
 	d4321 = p43.x * p21.x + p43.y * p21.y + p43.z * p21.z;
@@ -81,7 +81,7 @@ inline bool line3::intersect(const line3& l, vector3& pa, vector3& pb) const
 	d2121 = p21.x * p21.x + p21.y * p21.y + p21.z * p21.z;
 
 	denom = d2121 * d4343 - d4321 * d4321;
-	if (n_abs(denom) < EPS) return false;
+	if (n_fabs(denom) < EPS) return false;
 	numer = d1343 * d4321 - d1321 * d4343;
 
 	mua = numer / denom;

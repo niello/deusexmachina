@@ -3,7 +3,7 @@
 #define __DEM_L1_LOGGER_H__
 
 #include <Core/Singleton.h>
-#include <util/nlinebuffer.h>
+#include <Data/LineBuffer.h>
 #include <util/nstring.h>
 
 namespace IO
@@ -33,7 +33,7 @@ private:
 	bool				_IsOpen;
 	nString				AppName;
 	IO::CFileStream*	pLogFile;
-	nLineBuffer			LineBuffer;
+	CLineBuffer			LineBuffer;
 
 	//void PutLineBuffer(const char* msg, va_list argList);
 	void PrintInternal(char* pOutStr, int BufLen, EMsgType Type, const char* pMsg, va_list Args);
@@ -53,7 +53,7 @@ public:
 	void Error(const char* pMsg, va_list Args);
 	void OutputDebug(const char* pMsg, va_list Args);
 
-	nLineBuffer* GetLineBuffer() { return &LineBuffer; }
+	CLineBuffer* GetLineBuffer() { return &LineBuffer; }
 };
 
 }

@@ -1,5 +1,6 @@
-#ifndef N_ARRAY_H
-#define N_ARRAY_H
+#pragma once
+#ifndef __DEM_L1_ARRAY_H__
+#define __DEM_L1_ARRAY_H__
 
 #include <Data/Flags.h>
 #include <kernel/ntypes.h>

@@ -33,7 +33,7 @@
 // documentation and/or software.
 /////////////////////////////////////////////////////////////////////////
 
-#include "util/nmd5.h"
+#include "MD5.h"
 
 
 static unsigned char PADDING[64] =
@@ -61,7 +61,7 @@ static unsigned char PADDING[64] =
 #define S44 21
 
 /// Transforms normal text into an encoded md5 string
-nString nMD5::String2MD5(const char* szString)
+nString CMD5::String2MD5(const char* szString)
 {
     int nLen = strlen(szString);
     this->Update((unsigned char*)szString, (unsigned int)nLen);
@@ -72,7 +72,7 @@ nString nMD5::String2MD5(const char* szString)
 
 
 /// PrintMD5: Converts a completed md5 digest into a string.
-nString nMD5::PrintMD5(uchar md5Digest[16])
+nString CMD5::PrintMD5(uchar md5Digest[16])
 {
     char chBuffer[256];
     char chEach[10];
@@ -92,7 +92,7 @@ nString nMD5::PrintMD5(uchar md5Digest[16])
 
 /// md5::Init
 /// Initializes a new context.
-void nMD5::Init()
+void CMD5::Init()
 {
     memset(m_Count, 0, 2 * sizeof(uint4));
 
@@ -106,7 +106,7 @@ void nMD5::Init()
 /// MD5 block update operation. Continues an MD5 message-digest
 /// operation, processing another message block, and updating the
 /// context.
-void nMD5::Update(uchar* chInput, uint4 nInputLen)
+void CMD5::Update(uchar* chInput, uint4 nInputLen)
 {
     uint4 i, index, partLen;
 
@@ -142,7 +142,7 @@ void nMD5::Update(uchar* chInput, uint4 nInputLen)
 /// md5::Finalize
 /// MD5 finalization. Ends an MD5 message-digest operation, writing
 /// the message digest and zeroizing the context.
-void nMD5::Finalize()
+void CMD5::Finalize()
 {
     uchar bits[8];
     uint4 index, padLen;
@@ -168,7 +168,7 @@ void nMD5::Finalize()
 
 /// md5::Transform
 /// MD5 basic transformation. Transforms state based on block.
-void nMD5::Transform (uchar* block)
+void CMD5::Transform (uchar* block)
 {
   uint4 a = m_State[0], b = m_State[1], c = m_State[2], d = m_State[3], x[16];
 
@@ -257,7 +257,7 @@ void nMD5::Transform (uchar* block)
 /// md5::Encode
 /// Encodes input (uint4) into output (uchar). Assumes nLength is
 /// a multiple of 4.
-void nMD5::Encode(uchar* dest, uint4* src, uint4 nLength)
+void CMD5::Encode(uchar* dest, uint4* src, uint4 nLength)
 {
     uint4 i, j;
 
@@ -275,7 +275,7 @@ void nMD5::Encode(uchar* dest, uint4* src, uint4 nLength)
 /// md5::Decode
 /// Decodes input (uchar) into output (uint4). Assumes nLength is
 /// a multiple of 4.
-void nMD5::Decode(uint4* dest, uchar* src, uint4 nLength)
+void CMD5::Decode(uint4* dest, uchar* src, uint4 nLength)
 {
     uint4 i, j;
 

@@ -35,17 +35,17 @@
 
 
 
-#include "nstring.h"
+#include <util/nstring.h>
 
 typedef unsigned       int uint4;
 typedef unsigned short int uint2;
 typedef unsigned      char uchar;
 
-class nMD5
+class CMD5
 {
 // Methods
 public:
-    nMD5() { Init(); }
+    CMD5() { Init(); }
     void    Init();
     void    Update(uchar* chInput, uint4 nInputLen);
     void    Finalize();

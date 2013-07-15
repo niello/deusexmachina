@@ -293,6 +293,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\Array2.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\Buffer.cpp"
 				>
 			</File>
@@ -373,7 +377,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Data\LinkedListSet.h"
+				RelativePath="..\..\Src\L1\Data\KeyList.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\LineBuffer.h"
 				>
 			</File>
 			<File
@@ -402,6 +410,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Data\QuadTree.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\RingBuffer.h"
 				>
 			</File>
 			<File
@@ -1766,6 +1778,42 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Physics\StaticMeshShape.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Util"
+			>
+			<File
+				RelativePath="..\..\Src\L1\Util\CRC.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\MD5.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\MD5.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\PFLoop.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\PFLoopAngular.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\PFLoopIntDrv.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\PFLoopQuat.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Util\UtilFwd.h"
 				>
 			</File>
 		</Filter>

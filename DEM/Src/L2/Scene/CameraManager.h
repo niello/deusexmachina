@@ -38,8 +38,8 @@ protected:
 	CSceneNode*		pCameraNode;
 	PNodeController	Ctlr;
 
-	//nPFeedbackLoop<vector3>				Position;
-	//nPFeedbackLoop<vector3>				Lookat;
+	//CPFLoop<vector3>				Position;
+	//CPFLoop<vector3>				Lookat;
 
 	//accelerations, if smoothing needed
 

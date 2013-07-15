@@ -5,9 +5,9 @@
 #include <Data/Dictionary.h>
 #include <Data/List.h>
 
-// Linked list set is a set of linked lists, grouped by a curtain key attribute.
-// Elements are added to one of lists based on the value of this key.
-// NB: if key value changes dynamically, element placing will not change automatically!
+// keyList is an array of linked lists, sorted by a curtain key attribute.
+// Elements are added to one of lists based on their key.
+// NB: if key value changes dynamically, element placing will not be adjusted automatically!
 
 // Class TObject must implement following interface:
 // - TKey GetKey() const;
@@ -16,7 +16,7 @@ namespace Data
 {
 
 template<class TKey, class TObject>
-class CLinkedListSet
+class CKeyList
 {
 protected:
 
@@ -45,7 +45,7 @@ public:
 
 	typedef typename CList<TObject>::CIterator CIterator;
 
-	~CLinkedListSet();
+	~CKeyList();
 
 	CIterator	Add(const TObject& Object);
 	void		Remove(CIterator It, TObject* pOutValue = NULL);
@@ -62,7 +62,7 @@ public:
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-CLinkedListSet<TKey,TObject>::~CLinkedListSet()
+CKeyList<TKey,TObject>::~CKeyList()
 {
 	for (int i = 0; i < Lists.GetCount(); ++i)
 		n_delete(Lists.ValueAt(i));
@@ -71,7 +71,7 @@ CLinkedListSet<TKey,TObject>::~CLinkedListSet()
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey,TObject>::Add(const TObject& Object)
+typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey,TObject>::Add(const TObject& Object)
 {
 	CList<TObject>* pList;
 
@@ -89,7 +89,7 @@ typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey,TObject>::
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-inline void CLinkedListSet<TKey, TObject>::Remove(typename CLinkedListSet<TKey, TObject>::CIterator It, TObject* pOutValue)
+inline void CKeyList<TKey, TObject>::Remove(typename CKeyList<TKey, TObject>::CIterator It, TObject* pOutValue)
 {	
 	int Idx = Lists.FindIndex((*It)->GetKey());
 	if (Idx != INVALID_INDEX) Lists.ValueAt(Idx)->Remove(It, pOutValue);
@@ -97,7 +97,7 @@ inline void CLinkedListSet<TKey, TObject>::Remove(typename CLinkedListSet<TKey, 
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-bool CLinkedListSet<TKey, TObject>::RemoveByValue(const TObject& Object)
+bool CKeyList<TKey, TObject>::RemoveByValue(const TObject& Object)
 {	
 	TKey Key = ObjTraits<TObject>::GetKey(Object);
 	int Idx = Lists.FindIndex(Key);
@@ -117,7 +117,7 @@ bool CLinkedListSet<TKey, TObject>::RemoveByValue(const TObject& Object)
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey, TObject>::Find(const TObject& Object) const
+typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::Find(const TObject& Object) const
 {
 	TKey Key = ObjTraits<TObject>::GetKey(Object);
 	int Idx = Lists.FindIndex(Key);
@@ -128,7 +128,7 @@ typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey, TObject>:
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-inline typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey, TObject>::GetHead(TKey Key) const
+inline typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::GetHead(TKey Key) const
 {	
 	int Idx = Lists.FindIndex(Key);
 	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->Begin() : NULL;
@@ -136,7 +136,7 @@ inline typename CLinkedListSet<TKey, TObject>::CIterator CLinkedListSet<TKey, TO
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-inline DWORD CLinkedListSet<TKey, TObject>::GetCount(TKey Key) const
+inline DWORD CKeyList<TKey, TObject>::GetCount(TKey Key) const
 {	
 	int Idx = Lists.FindIndex(Key);
 	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->GetCount() : 0;

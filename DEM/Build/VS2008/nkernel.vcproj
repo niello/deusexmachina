@@ -385,103 +385,6 @@
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="util"
-			Filter="cpp;c;cxx;cc;h;hxx;hcc"
-			>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\nangularpfeedbackloop.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\narray2.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\src\kernel\ncrc.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_ncrc;N_NEW=n_new_ncrc;N_INITCMDS=n_initcmds_ncrc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_ncrc;N_NEW=n_new_ncrc;N_INITCMDS=n_initcmds_ncrc"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\kernel\ncrc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\nlinebuffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\src\util\nmd5.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_nmd5;N_NEW=n_new_nmd5;N_INITCMDS=n_initcmds_nmd5"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_nmd5;N_NEW=n_new_nmd5;N_INITCMDS=n_initcmds_nmd5"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\nmd5.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\npfeedbackloop.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\nringbuffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\src\util\nstring.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_nstring;N_NEW=n_new_nstring;N_INITCMDS=n_initcmds_nstring"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="N_INIT=n_init_nstring;N_NEW=n_new_nstring;N_INITCMDS=n_initcmds_nstring"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\Src\nebula2\inc\util\nstring.h"
-				>
-			</File>
-		</Filter>
 		<File
 			RelativePath="..\..\Src\nebula2\src\kernel\ndbgalloc.cc"
 			>
@@ -521,6 +424,30 @@
 					PreprocessorDefinitions="N_INIT=n_init_nkernelserver;N_NEW=n_new_nkernelserver;N_INITCMDS=n_initcmds_nkernelserver"
 				/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\Src\nebula2\src\util\nstring.cc"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					PreprocessorDefinitions="N_INIT=n_init_nstring;N_NEW=n_new_nstring;N_INITCMDS=n_initcmds_nstring"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					PreprocessorDefinitions="N_INIT=n_init_nstring;N_NEW=n_new_nstring;N_INITCMDS=n_initcmds_nstring"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\Src\nebula2\inc\util\nstring.h"
+			>
 		</File>
 		<File
 			RelativePath="..\..\Src\nebula2\inc\kernel\ntypes.h"

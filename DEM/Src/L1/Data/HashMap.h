@@ -10,19 +10,21 @@
     (C) 2005 RadonLabs GmbH
 */
 
-#include "kernel/ntypes.h"
+#include <kernel/ntypes.h>
 #include <Data/Hash.h>
 
-//------------------------------------------------------------------------------
+//!!!make TKey arbitrary, mb rewrite through CList or even write <class TChain> hash map!
 template<class TVal>
 class CHashMap
 {
 protected:
-    // Hashmap configuration values
-    static const int DEFAULT_SIZE = 32;
-    // someone tell me, why the above does not work with floats ...
-#define GROW_FACTOR    2.0f
-#define GROW_THRESHOLD 1.5f
+
+	static const int DEFAULT_SIZE = 32;
+
+	// Since internal float representation is machine-dependent, C++ doesn't allow static const float =/
+	//???as per-map params?
+	#define GROW_FACTOR    2.0f
+	#define GROW_THRESHOLD 1.5f
 
 	/// Hashmap key-value-pair
     /// Contains key and value, the keys hash, value and prev/next links for overflowing buckets.

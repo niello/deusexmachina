@@ -1,7 +1,7 @@
 #ifndef N_D3D9SHADERINCLUDE_H
 #define N_D3D9SHADERINCLUDE_H
 
-#include "util/nstring.h"
+#include <util/nstring.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3dx9.h>
