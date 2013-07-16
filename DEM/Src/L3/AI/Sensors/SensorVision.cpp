@@ -82,7 +82,7 @@ EExecStatus CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) co
 {
 	const CMemFactObstacle& Obstacle = (const CMemFactObstacle&)Fact;
 
-	if (Fact.LastUpdateTime == Fact.LastPerceptionTime &&
+	if (Fact.LastUpdateTime == Fact.LastPerceptioCTime &&
 		(!Obstacle.pSourceStimulus ||
 		!Obstacle.pSourceStimulus->IsActive() ||
 		Obstacle.pSourceStimulus->Intensity <= 0.f)) return Failure;
@@ -117,11 +117,11 @@ EExecStatus CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) co
 }
 //---------------------------------------------------------------------
 
-EClipStatus CSensorVision::GetBoxClipStatus(CActor* pActor, const bbox3& Box) const
+EClipStatus CSensorVision::GetBoxClipStatus(CActor* pActor, const CAABB& Box) const
 {
 	//???check FOV too?
 	sphere Sphere(pActor->Position, Radius);
-	return Sphere.clipstatus(Box);
+	return Sphere.GetClipStatus(Box);
 }
 //---------------------------------------------------------------------
 

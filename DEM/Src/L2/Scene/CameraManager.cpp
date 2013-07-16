@@ -100,7 +100,7 @@ bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithC
 	//!!!define constant somewhere!
 	if ((lookatPoint - CorrectedGoalPos).lensquared() > 1.5f * 1.5f) goalPos = CorrectedGoalPos;
 
-	nTime Time = TimeSrv->GetTime();
+	CTime Time = TimeSrv->GetTime();
 
 	// check if the pCamera is currently at the origin, if yes it is in its initial
 	// position and should not interpolate towards its target position

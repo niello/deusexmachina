@@ -82,14 +82,14 @@ void CLight::Update()
 //---------------------------------------------------------------------
 
 //!!!GetGlobalAABB & CalcBox must be separate!
-void CLight::GetGlobalAABB(bbox3& OutBox) const
+void CLight::GetGlobalAABB(CAABB& OutBox) const
 {
 	//!!!If local params changed, recompute AABB
 	//!!!If transform of host node changed, update global space AABB (rotate, scale)
 	switch (Type)
 	{
 		case Directional:	n_error("No AABB for directional lights, must not be requested!"); return;
-		case Point:			OutBox.set(GetPosition(), vector3(Range, Range, Range)); return;
+		case Point:			OutBox.Set(GetPosition(), vector3(Range, Range, Range)); return;
 		case Spot:
 		{
 			//!!!can cache local box!

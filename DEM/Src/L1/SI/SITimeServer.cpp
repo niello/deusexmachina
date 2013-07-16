@@ -30,7 +30,7 @@ int TimeSrv_CreateTimer(lua_State* l)
 	}
 
 	bool Loop = (ArgCount > 2) ? lua_toboolean(l, 3) != 0 : false;
-	CStrID Event = CStrID((ArgCount > 3) ? lua_tostring(l, 4) : "OnTimer");
+	CStrID Event = CStrID((ArgCount > 3) ? lua_tostring(l, 4) : "OCTimer");
 	CStrID Src = (ArgCount > 4) ? CStrID(lua_tostring(l, 5)) : CStrID::Empty;
 
 	bool Result = TimeSrv->CreateNamedTimer(CStrID(lua_tostring(l, 1)), (float)lua_tonumber(l, 2), Loop, Event, Src);

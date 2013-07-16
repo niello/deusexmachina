@@ -42,7 +42,7 @@ public:
 
 	virtual void	Rewind() = 0;
 	virtual void	DecodeNextFrame() = 0;
-	virtual void	Decode(nTime DeltaTime) = 0;
+	virtual void	Decode(CTime DeltaTime) = 0;
 
 	uint			GetWidth() const { return videoWidth; }
 	uint			GetHeight() const { return videoHeight; }

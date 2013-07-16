@@ -38,11 +38,11 @@ protected:
 
 	bool								_IsOpen;
 	__int64								BasePerfTime;
-	nTime								PrevTime;
-	nTime								Time;
-	nTime								FrameTime;
-	nTime								LockedFrameTime;
-	nTime								LockTime;
+	CTime								PrevTime;
+	CTime								Time;
+	CTime								FrameTime;
+	CTime								LockedFrameTime;
+	CTime								LockTime;
 	float								TimeScale;
 	CDict<CStrID, PTimeSource>	TimeSources;
 	CDict<CStrID, CTimer>			Timers;
@@ -67,16 +67,16 @@ public:
 	void			AttachTimeSource(CStrID Name, PTimeSource TimeSrc);
 	void			RemoveTimeSource(CStrID Name);
 	CTimeSource*	GetTimeSource(CStrID Name) const;
-	nTime			GetTime(CStrID SrcName = CStrID::Empty) const;
-	nTime			GetTrueTime();
-	nTime			GetFrameTime(CStrID SrcName = CStrID::Empty) const;
+	CTime			GetTime(CStrID SrcName = CStrID::Empty) const;
+	CTime			GetTrueTime();
+	CTime			GetFrameTime(CStrID SrcName = CStrID::Empty) const;
 	void			SetTimeScale(float SpeedScale) { n_assert(SpeedScale >= 0.f); TimeScale = SpeedScale; }
-	void			LockFrameRate(nTime DesiredFrameTime);
+	void			LockFrameRate(CTime DesiredFrameTime);
 	void			UnlockFrameRate() { LockFrameRate(0.0); }
 	bool			IsPaused(CStrID SrcName = CStrID::Empty) const;
 
 	bool			CreateNamedTimer(CStrID Name, float Time, bool Loop = false,
-									 CStrID Event = CStrID("OnTimer"), CStrID TimeSrc = CStrID::Empty);
+									 CStrID Event = CStrID("OCTimer"), CStrID TimeSrc = CStrID::Empty);
 	void			PauseNamedTimer(CStrID Name, bool Pause = true);
 	void			DestroyNamedTimer(CStrID Name);
 };
@@ -114,13 +114,13 @@ inline CTimeSource* CTimeServer::GetTimeSource(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-inline nTime CTimeServer::GetTime(CStrID SrcName) const
+inline CTime CTimeServer::GetTime(CStrID SrcName) const
 {
 	return (SrcName.IsValid()) ? TimeSources[SrcName]->GetTime() : Time;
 }
 //---------------------------------------------------------------------
 
-inline nTime CTimeServer::GetFrameTime(CStrID SrcName) const
+inline CTime CTimeServer::GetFrameTime(CStrID SrcName) const
 {
 	return (SrcName.IsValid()) ? TimeSources[SrcName]->GetFrameTime() : FrameTime;
 }

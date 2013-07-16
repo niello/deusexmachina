@@ -30,7 +30,7 @@ void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		}
 		
 		pFact->Confidence = Confidence; //???prioritize by distance to actor?
-		pFact->LastPerceptionTime =
+		pFact->LastPerceptioCTime =
 		pFact->LastUpdateTime = (float)GameSrv->GetTime(); //???or AI frame number?
 		pFact->ForgettingFactor = 0.05f; //???!!!different rates for static & moving?!
 		pFact->Position = pStimulus->Position;

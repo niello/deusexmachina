@@ -158,12 +158,12 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 	if (MaxY < MinY) return Node_Invisible;
 
 	DWORD NodeSize = Terrain.GetPatchSize() << LOD;
-	bbox3 TerrainAABB;
+	CAABB TerrainAABB;
 	Terrain.GetGlobalAABB(TerrainAABB); //???get once outside and pass as param?
 	float ScaleX = NodeSize * (TerrainAABB.vmax.x - TerrainAABB.vmin.x) / (float)(Terrain.GetHeightMapWidth() - 1);
 	float ScaleZ = NodeSize * (TerrainAABB.vmax.z - TerrainAABB.vmin.z) / (float)(Terrain.GetHeightMapHeight() - 1);
 
-	bbox3 AABB;
+	CAABB AABB;
 	AABB.vmin.x = TerrainAABB.vmin.x + X * ScaleX;
 	AABB.vmax.x = TerrainAABB.vmin.x + (X + 1) * ScaleX;
 	AABB.vmin.y = MinY * Terrain.GetVerticalScale();
@@ -173,13 +173,13 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 
 	if (Clip == Clipped)
 	{
-		Clip = AABB.clipstatus(RenderSrv->GetViewProjection());
+		Clip = AABB.GetClipStatus(RenderSrv->GetViewProjection());
 		if (Clip == Outside) return Node_Invisible;
 	}
 
 	//!!!don't create sphere object for test!
 	sphere LODSphere(RenderSrv->GetCameraPosition(), LODRange); //!!!Always must check the Main camera!
-	if (LODSphere.clipstatus(AABB) == Outside) return Node_NotInLOD;
+	if (LODSphere.GetClipStatus(AABB) == Outside) return Node_NotInLOD;
 
 	// Flags identifying what children we need to add
 	bool TL = true, TR = true, BL = true, BR = true, AddWhole, IsVisible;
@@ -193,7 +193,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 
 		//!!!don't create sphere object for test!
 		sphere LODSphere(RenderSrv->GetCameraPosition(), NextLODRange); //!!!Always must check the Main camera!
-		EClipStatus NextClip = LODSphere.clipstatus(AABB);
+		EClipStatus NextClip = LODSphere.GetClipStatus(AABB);
 		if (NextClip != Outside)
 		{
 			DWORD XNext = X << 1, ZNext = Z << 1;
@@ -428,7 +428,7 @@ void CTerrainRenderer::Render()
 
 		Shader->SetTexture(hHeightMap, *Terrain.GetHeightMap());
 
-		bbox3 TerrainAABB;
+		CAABB TerrainAABB;
 		Terrain.GetGlobalAABB(TerrainAABB);
 		float WorldToHM[4];
 		WorldToHM[0] = 1.f / (TerrainAABB.vmax.x - TerrainAABB.vmin.x);

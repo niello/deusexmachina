@@ -83,7 +83,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 				CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
 				if (pNode)
 				{
-					bbox3 AABB;
+					CAABB AABB;
 					pNode->GetAABB(AABB);
 					vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
 					Rec.Stimulus->Radius = HorizDiag.len() * 0.5f;
@@ -95,7 +95,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 				CPropPhysics* pPropPhys = GetEntity()->GetProperty<CPropPhysics>();
 				if (pPropPhys)
 				{
-					bbox3 AABB;
+					CAABB AABB;
 					pPropPhys->GetAABB(AABB);
 					vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
 					Rec.Stimulus->Radius = HorizDiag.len() * 0.5f;

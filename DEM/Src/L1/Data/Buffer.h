@@ -5,10 +5,9 @@
 // The CBuffer class encapsulates a chunk of raw memory into a C++ object which can be copied, compared and hashed.
 // Based on mangalore Util::Blob_(C) 2006 Radon Labs GmbH
 
-#include <kernel/ntypes.h>
+#include <Data/Type.h>
 #include <Data/Hash.h>
 #include <memory.h>
-#include "Type.h"
 
 namespace Data
 {

@@ -64,7 +64,7 @@ void CNavSystem::Term()
 
 void CNavSystem::SetupState()
 {
-	ReplanTime = 0.f;
+	ReplaCTime = 0.f;
 	//TopologyOptTime = 0.f;
 	OffMeshRef = 0;
 	TraversingOffMesh = false;
@@ -93,7 +93,7 @@ void CNavSystem::SetupState()
 
 void CNavSystem::Update(float FrameTime)
 {
-	ReplanTime += FrameTime;
+	ReplaCTime += FrameTime;
 
 	if (!pNavQuery) return;
 
@@ -156,7 +156,7 @@ void CNavSystem::Update(float FrameTime)
 			}
 
 			Replan = Replan || (pActor->NavStatus == AINav_Following &&
-								ReplanTime > TARGET_REPLAN_DELAY &&
+								ReplaCTime > TARGET_REPLAN_DELAY &&
 								Corridor.getPathCount() < CHECK_LOOKAHEAD &&
 								Corridor.getLastPoly() != DestRef);
 
@@ -221,7 +221,7 @@ void CNavSystem::Update(float FrameTime)
 		if (Path[PathSize-1] == DestRef)
 		{
 			pActor->NavStatus = AINav_Following;
-			ReplanTime = 0.f;
+			ReplaCTime = 0.f;
 		}
 		else pActor->NavStatus = AINav_Planning;
 	}
@@ -233,7 +233,7 @@ void CNavSystem::Update(float FrameTime)
 			dtNavMeshQuery* pAsyncQuery;
 			if (pActor->GetEntity()->GetLevel().GetAI()->GetAsyncNavQuery(pActor->Radius, pAsyncQuery, pProcessingQueue))
 			{
-				//!!!Insert request based on greatest targetReplanTime!
+				//!!!Insert request based on greatest targetReplaCTime!
 				PathRequestID = pProcessingQueue->Request(Corridor.getLastPoly(), DestRef, Corridor.getTarget(),
 									DestPoint.v, pAsyncQuery, pNavFilter);
 			}
@@ -304,7 +304,7 @@ void CNavSystem::Update(float FrameTime)
 					else pActor->NavStatus = AINav_Failed;
 				}
 
-				ReplanTime = 0.f;
+				ReplaCTime = 0.f;
 				pProcessingQueue = NULL;
 				PathRequestID = DT_PATHQ_INVALID;
 			}
@@ -430,7 +430,7 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 	pNavQuery->findNearestPoly(DestPoint.v, Extents, pNavFilter, &DestRef, Nearest);
 	dtVcopy(DestPoint.v, Nearest);
 
-	//???allow partial path (to the navmesh edge)? extend extents, if so!
+	//???allow partial path (to the navmesh edge)? extend Extents, if so!
 
 	pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
 

@@ -25,7 +25,7 @@ protected:
 	DWORD					TopPatchCountX;
 	DWORD					TopPatchCountZ;
 	float					VerticalScale;
-	bbox3					Box;
+	CAABB					Box;
 
 	struct CMinMaxMap
 	{
@@ -54,8 +54,8 @@ public:
 	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void		Update();
 
-	const bbox3&		GetLocalAABB() const { return Box; }
-	void				GetGlobalAABB(bbox3& Out) const;
+	const CAABB&		GetLocalAABB() const { return Box; }
+	void				GetGlobalAABB(CAABB& Out) const;
 
 	DWORD				GetHeightMapWidth() const { return HFWidth; }
 	DWORD				GetHeightMapHeight() const { return HFHeight; }

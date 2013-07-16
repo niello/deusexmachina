@@ -4,7 +4,7 @@
 #include <Physics/PhysicsWorld.h>
 #include <Physics/MotionStateDynamic.h>
 #include <Data/Params.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>

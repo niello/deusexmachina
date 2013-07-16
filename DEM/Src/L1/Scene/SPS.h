@@ -34,7 +34,7 @@ class CNodeAttribute;
 struct CSPSRecord
 {
 	CNodeAttribute&	Attr;
-	bbox3			GlobalBox;
+	CAABB			GlobalBox;
 	CSPSNode*		pSPSNode;
 
 	CSPSRecord(CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 

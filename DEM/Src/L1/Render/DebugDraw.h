@@ -116,7 +116,7 @@ public:
 	bool	DrawLine(const vector3& P1, const vector3& P2, const vector4& Color = vector4::White);
 	bool	DrawArrow();
 	bool	DrawCross();
-	bool	DrawBoxWireframe(const bbox3& Box, const vector4& Color = vector4::White);
+	bool	DrawBoxWireframe(const CAABB& Box, const vector4& Color = vector4::White);
 	bool	DrawArc();
 	bool	DrawCircle();
 	bool	DrawGridXZ();
@@ -192,7 +192,7 @@ inline bool CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, const vec
 }
 //---------------------------------------------------------------------
 
-inline bool CDebugDraw::DrawBoxWireframe(const bbox3& Box, const vector4& Color)
+inline bool CDebugDraw::DrawBoxWireframe(const CAABB& Box, const vector4& Color)
 {
 	vector3 mmm = Box.GetCorner(0);
 	vector3 mMm = Box.GetCorner(1);

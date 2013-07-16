@@ -152,7 +152,7 @@ void CAudioEntity::Update()
 }
 //---------------------------------------------------------------------
 
-void CAudioEntity::FadeOut(nTime Time)
+void CAudioEntity::FadeOut(CTime Time)
 {
 	if (Time > 0.05f)
 	{

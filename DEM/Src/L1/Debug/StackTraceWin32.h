@@ -1,7 +1,7 @@
 #ifndef N_STACKTRACE_H
 #define N_STACKTRACE_H
 
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 #include <windows.h>
 #include <dbghelp.h>
 

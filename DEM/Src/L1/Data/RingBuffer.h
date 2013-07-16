@@ -2,7 +2,6 @@
 #define N_RINGBUFFER_H
 
 #include <StdDEM.h>
-#include <kernel/ntypes.h>
 
 // A ring buffer class
 // (C) 2003 RadonLabs GmbH

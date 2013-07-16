@@ -45,12 +45,12 @@ void CTimeServer::Close()
 }
 //---------------------------------------------------------------------
 
-nTime CTimeServer::GetTrueTime()
+CTime CTimeServer::GetTrueTime()
 {
 	LONGLONG PerfTime, PerfFreq;
 	QueryPerformanceCounter((LARGE_INTEGER*)&PerfTime);
 	QueryPerformanceFrequency((LARGE_INTEGER*)&PerfFreq);
-	return (nTime)((double)(PerfTime - BasePerfTime)) / ((double)PerfFreq);
+	return (CTime)((double)(PerfTime - BasePerfTime)) / ((double)PerfFreq);
 }
 //---------------------------------------------------------------------
 
@@ -171,7 +171,7 @@ void CTimeServer::Trigger()
 {
 	if (LockedFrameTime > 0.0) LockTime += LockedFrameTime;
 
-	nTime CurrTime = (LockedFrameTime > 0.0) ? LockTime : GetTrueTime();
+	CTime CurrTime = (LockedFrameTime > 0.0) ? LockTime : GetTrueTime();
 
 	FrameTime = CurrTime - PrevTime;
 	if (FrameTime < 0.0) FrameTime = 0.0001;
@@ -208,7 +208,7 @@ void CTimeServer::Trigger()
 }
 //---------------------------------------------------------------------
 
-void CTimeServer::LockFrameRate(nTime DesiredFrameTime)
+void CTimeServer::LockFrameRate(CTime DesiredFrameTime)
 {
 	n_assert(DesiredFrameTime >= 0.0);
 	if (DesiredFrameTime == 0.0)

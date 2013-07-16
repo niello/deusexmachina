@@ -47,7 +47,7 @@ protected:
 	int					fileVideoDataOffset;
 	bool				theoraLoaded;
 	bool				isPlaying;
-	nTime				currentTime;
+	CTime				currentTime;
 	uint				decodedFrames;
 
 	int buffer_data(IO::CFileStream *in,ogg_sync_state *oy);
@@ -64,7 +64,7 @@ public:
 	virtual bool Open();
 	virtual void Close();
 	virtual void DecodeNextFrame();
-	virtual void Decode(nTime DeltaTime);
+	virtual void Decode(CTime DeltaTime);
 	virtual void Rewind();
 };
 

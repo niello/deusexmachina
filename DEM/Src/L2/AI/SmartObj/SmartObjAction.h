@@ -28,7 +28,7 @@ public:
 	bool				Enabled;
 
 	bool				AppearsInUI;
-	//LastActivationTime - for Timeout!
+	//LastActivatioCTime - for Timeout!
 	int					FreeUserSlots;
 	int					Resource;
 	float				Progress; //???per-user? can't place into Action, it is destructed on abort plan.

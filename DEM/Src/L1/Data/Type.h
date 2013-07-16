@@ -2,8 +2,7 @@
 #ifndef __DEM_L1_DATA_TYPE_H__
 #define __DEM_L1_DATA_TYPE_H__
 
-// Only for n_assert
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 
 #define DECLARE_TYPE(T, ID)		namespace Data { template<> class CTypeID<T> { public: enum { TypeID = ID }; enum { IsDeclared = true }; }; }
 //#define DECLARE_TYPE(T)		DECLARE_TYPE(T, -1)

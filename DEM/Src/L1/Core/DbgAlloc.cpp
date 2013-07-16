@@ -2,7 +2,7 @@
 
 #define CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 
 // Debug memory management functions
 
@@ -39,8 +39,8 @@ void n_free_dbg(void* memblock, const char* filename, int line)
 }
 //---------------------------------------------------------------------
 
- //Replacement global new operator without location reporting. This
- //catches calls which don't use n_new for some reason.
+// Replacement global new operator without location reporting. This
+// catches calls which don't use n_new for some reason.
 void* operator new(size_t size)
 {
 	void* res = _malloc_dbg(size, _NORMAL_BLOCK, __FILE__, __LINE__);

@@ -47,7 +47,7 @@ bool CActionWander::SelectAction(CActor* pActor)
 	else
 	{
 		CurrAction = NULL;
-		NextActSelectionTime = (float)GameSrv->GetTime() + n_rand() * 5.f + 5.f;
+		NextActSelectioCTime = (float)GameSrv->GetTime() + n_rand() * 5.f + 5.f;
 		OK;
 	}
 
@@ -65,7 +65,7 @@ bool CActionWander::Activate(CActor* pActor)
 EExecStatus CActionWander::Update(CActor* pActor)
 {
 	if ((CurrAction.IsValid() && CurrAction->Update(pActor) == Running) ||
-		NextActSelectionTime > (float)GameSrv->GetTime())
+		NextActSelectioCTime > (float)GameSrv->GetTime())
 	{
 		return Running;
 	}

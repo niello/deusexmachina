@@ -10,7 +10,7 @@
     (C) 2005 RadonLabs GmbH
 */
 
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 #include <Data/Hash.h>
 
 //!!!make TKey arbitrary, mb rewrite through CList or even write <class TChain> hash map!

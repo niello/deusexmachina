@@ -179,7 +179,7 @@ bool CPropCharacterController::OnPhysicsTick(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 /*
-void CPropActorPhysics::GetAABB(bbox3& AABB) const
+void CPropActorPhysics::GetAABB(CAABB& AABB) const
 {
 	Physics::CEntity* pEnt = GetPhysicsEntity();
 	if (pEnt && pEnt->GetComposite()) pEnt->GetComposite()->GetAABB(AABB);

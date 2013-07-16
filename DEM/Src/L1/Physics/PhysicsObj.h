@@ -6,7 +6,7 @@
 
 // Base class for all physics objects. Instantiates shared shape and locates it in a physics world.
 
-class bbox3;
+class CAABB;
 class btTransform;
 class btCollisionObject;
 
@@ -53,8 +53,8 @@ public:
 	virtual void		GetTransform(vector3& OutPos, quaternion& OutRot) const;
 	void				SetUserData(void* pPtr) { pUserPtr = pPtr; }
 	void*				GetUserData() const { return pUserPtr; }
-	void				GetGlobalAABB(bbox3& OutBox) const;
-	void				GetPhysicsAABB(bbox3& OutBox) const;
+	void				GetGlobalAABB(CAABB& OutBox) const;
+	void				GetPhysicsAABB(CAABB& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
 	CPhysicsWorld*		GetWorld() const { return pWorld; }
 	ushort				GetCollisionGroup() const { return Group; }

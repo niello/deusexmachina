@@ -189,9 +189,9 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
-							  float Weight, float FadeInTime, float FadeOutTime)
+							  float Weight, float FadeICTime, float FadeOutTime)
 {
-	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeInTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
+	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeICTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
 	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
@@ -218,7 +218,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		pTask = Tasks.Reserve(1);
 	}
 
-	bool NeedWeight = (Weight < 1.f || FadeInTime > 0.f || FadeOutTime > 0.f);
+	bool NeedWeight = (Weight < 1.f || FadeICTime > 0.f || FadeOutTime > 0.f);
 	bool BlendingIsNotNecessary = (!NeedWeight && Priority == 0);
 
 	int FreePoseLockerIdx = 0;
@@ -286,14 +286,14 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	if (!Loop)
 	{
 		float RealDuration = Clip->GetDuration() / n_fabs(Speed);
-		if (FadeInTime + FadeOutTime > RealDuration)
+		if (FadeICTime + FadeOutTime > RealDuration)
 		{
-			FadeOutTime = n_max(0.f, RealDuration - FadeInTime);
-			FadeInTime = RealDuration - FadeOutTime;
+			FadeOutTime = n_max(0.f, RealDuration - FadeICTime);
+			FadeICTime = RealDuration - FadeOutTime;
 		}
 	}
 
-	FadeInTime *= Speed;
+	FadeICTime *= Speed;
 	FadeOutTime *= Speed;
 
 	if (!Loop)
@@ -317,7 +317,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	pTask->Speed = Speed;
 	pTask->Priority = Priority;
 	pTask->Weight = Weight;
-	pTask->FadeInTime = Offset + FadeInTime;	// Get a point in time because we know the start time
+	pTask->FadeICTime = Offset + FadeICTime;	// Get a point in time because we know the start time
 	pTask->FadeOutTime = FadeOutTime;			// Remember only the length, because we don't know the end time
 	pTask->State = Anim::CAnimTask::Task_Starting;
 	pTask->Loop = Loop;

@@ -16,11 +16,11 @@ CAILevel::~CAILevel()
 }
 //---------------------------------------------------------------------
 
-bool CAILevel::Init(const bbox3& LevelBox, uchar QuadTreeDepth)
+bool CAILevel::Init(const CAABB& LevelBox, uchar QuadTreeDepth)
 {
 	Box = LevelBox;
-	vector3 Center = LevelBox.center();
-	vector3 Size = LevelBox.size();
+	vector3 Center = LevelBox.Center();
+	vector3 Size = LevelBox.Size();
 	StimulusQT.Build(Center.x, Center.z, Size.x, Size.z, QuadTreeDepth);
 	OK;
 }
@@ -192,7 +192,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 
 	if (EClipStatus == Clipped)
 	{
-		bbox3 BBox;
+		CAABB BBox;
 		pNode->GetBounds(BBox);
 		BBox.vmin.y = Box.vmin.y;
 		BBox.vmax.y = Box.vmax.y;

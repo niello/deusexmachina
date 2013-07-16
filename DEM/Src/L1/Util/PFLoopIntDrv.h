@@ -1,7 +1,7 @@
 #ifndef N_PIDFEEDBACKLOOP_H
 #define N_PIDFEEDBACKLOOP_H
 
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 
 // A proportional integral derivative feedback loop
 // (C) 2006 RadonLabs GmbH
@@ -38,7 +38,7 @@ public:
 	double	GetLastError() const { return lastError; }
 	double	GetLastErrorDelta() const { return lastDelta; }
 
-	void	Update(nTime time);
+	void	Update(CTime time);
 	void	ResetError() { runningError = 0.0f; validError = false; }
 };
 
@@ -76,7 +76,7 @@ inline void CPFLoopIntDrv::SetConstants(double PropConst, double IntConst, doubl
 }
 //---------------------------------------------------------------------
 
-inline void CPFLoopIntDrv::Update(nTime time)
+inline void CPFLoopIntDrv::Update(CTime time)
 {
 	// if too much time has passed, do nothing
 	if (time != 0.0f)

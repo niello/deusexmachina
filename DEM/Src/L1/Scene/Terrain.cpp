@@ -160,7 +160,7 @@ void CTerrain::Update()
 }
 //---------------------------------------------------------------------
 
-void CTerrain::GetGlobalAABB(bbox3& Out) const
+void CTerrain::GetGlobalAABB(CAABB& Out) const
 {
 	const vector3& Translation = GetNode()->GetWorldPosition();
 	Out.vmin = Box.vmin + Translation;

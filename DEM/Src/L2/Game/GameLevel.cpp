@@ -69,7 +69,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 		int QTDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
-		bbox3 Bounds(Center, Extents);
+		CAABB Bounds(Center, Extents);
 
 		Scene = n_new(Scene::CScene);
 		if (!Scene.IsValid()) FAIL;
@@ -103,7 +103,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	{
 		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
-		bbox3 Bounds(Center, Extents);
+		CAABB Bounds(Center, Extents);
 
 		PhysWorld = n_new(Physics::CPhysicsWorld);
 		if (!PhysWorld->Init(Bounds)) FAIL;
@@ -117,7 +117,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 		int QTDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
-		bbox3 Bounds(Center, Extents);
+		CAABB Bounds(Center, Extents);
 
 		AILevel = n_new(AI::CAILevel);
 		if (!AILevel->Init(Bounds, QTDepth)) FAIL;
@@ -370,9 +370,10 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode) FAIL;
 
-	bbox3 AABB;
+	CAABB AABB;
 	pNode->GetAABB(AABB);
-	Scene->GetMainCamera().GetPoint2D(vector3(AABB.center().x, AABB.vmax.y, AABB.center().z), Out.x, Out.y);
+	vector3 Center = AABB.Center();
+	Scene->GetMainCamera().GetPoint2D(vector3(Center.x, AABB.vmax.y, Center.z), Out.x, Out.y);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -384,7 +385,7 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode) FAIL;
 
-	bbox3 AABB;
+	CAABB AABB;
 	pNode->GetAABB(AABB);
 
 	if (Offset)

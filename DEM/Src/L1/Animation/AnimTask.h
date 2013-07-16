@@ -58,7 +58,7 @@ public:
 	float							Speed;
 	DWORD							Priority;
 	float							Weight;
-	float							FadeInTime;
+	float							FadeICTime;
 	float							FadeOutTime;
 	bool							Loop;
 

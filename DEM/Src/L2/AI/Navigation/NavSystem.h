@@ -59,7 +59,7 @@ protected:
 	float						OffMeshRadius;
 	bool						TraversingOffMesh;
 
-	float						ReplanTime;
+	float						ReplaCTime;
 	float						TopologyOptTime;
 	CPathRequestQueue*			pProcessingQueue;
 	DWORD						PathRequestID;

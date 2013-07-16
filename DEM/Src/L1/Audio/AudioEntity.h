@@ -33,8 +33,8 @@ private:
 
 	Data::CFlags			Flags;
 
-	nTime					FadeOutStartTime;
-	nTime					FadeOutTime;
+	CTime					FadeOutStartTime;
+	CTime					FadeOutTime;
 	matrix44				Transform;
 	vector3					Velocity;
 	DWORD					SoundIdx;
@@ -79,7 +79,7 @@ public:
 	void			Stop();
 	void			Update();
 	bool			IsPlaying() const;
-	void			FadeOut(nTime Time);
+	void			FadeOut(CTime Time);
 
 	
 	//CDSSound*			GetCSoundPtr() const { return refRsrc->GetCSoundPtr(); }

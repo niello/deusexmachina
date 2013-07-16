@@ -14,7 +14,7 @@
 //!!!it is good to have attr for each mesh group, so separate visibility test
 // is performed and shader sorting simplifies
 
-class bbox3;
+class CAABB;
 
 namespace Scene
 {
@@ -50,8 +50,8 @@ public:
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	Update();
 
-	const bbox3&	GetLocalAABB() const { return Mesh->GetGroup(MeshGroupIndex).AABB; }
-	void			GetGlobalAABB(bbox3& OutBox) const;
+	const CAABB&	GetLocalAABB() const { return Mesh->GetGroup(MeshGroupIndex).AABB; }
+	void			GetGlobalAABB(CAABB& OutBox) const;
 };
 
 typedef Ptr<CModel> PModel;

@@ -45,7 +45,7 @@ public:
 	bool			IsEnabled() const { return NodeCtlr.IsValid() && NodeCtlr->IsActive(); }
 
 	//!!!WRITE!
-	void			GetAABB(bbox3& AABB) const { n_error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
+	void			GetAABB(CAABB& AABB) const { n_error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
 };
 
 }
