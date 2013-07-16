@@ -1,5 +1,6 @@
-#ifndef N_POLAR_H
-#define N_POLAR_H
+#pragma once
+#ifndef __DEM_L1_MATH_POLAR_H__
+#define __DEM_L1_MATH_POLAR_H__
 
 #include <mathlib/vector.h>
 

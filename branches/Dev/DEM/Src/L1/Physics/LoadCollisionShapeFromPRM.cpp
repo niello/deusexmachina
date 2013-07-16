@@ -21,7 +21,7 @@
 #include <Data/Params.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
@@ -64,7 +64,7 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 		void* pHFData = NULL;
 		DWORD HFWidth, HFHeight;
 		float HScale;
-		bbox3 AABB;
+		CAABB AABB;
 
 		if (FileName.CheckExtension("cdlod"))
 		{

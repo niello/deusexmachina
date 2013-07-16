@@ -3,7 +3,6 @@
 #define __DEM_L1_FIXED_ARRAY_H__
 
 #include <StdDEM.h>
-#include <kernel/ntypes.h>
 #include <algorithm> // std::sort
 
 // A fixed count, bounds checked array.

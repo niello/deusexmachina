@@ -3,7 +3,7 @@
 
 #include <Data/Array.h>
 #include <Data/Hash.h>
-#include <mathlib/matrix44.h> // remove, but need ntypes!
+#include <mathlib/matrix44.h> // remove dependent code to utils
 #include <ctype.h> // tolower, toupper
 #include <stdarg.h>
 

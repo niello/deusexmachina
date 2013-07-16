@@ -63,8 +63,8 @@ void CAnimTask::Update(float FrameTime)
 	}
 	else
 	{
-		if (Speed * (CurrTime - FadeInTime) < 0.f)
-			RealWeight *= (CurrTime - Offset) / (FadeInTime - Offset);
+		if (Speed * (CurrTime - FadeICTime) < 0.f)
+			RealWeight *= (CurrTime - Offset) / (FadeICTime - Offset);
 	}
 
 	// Apply weight, if it was changed

@@ -3,7 +3,6 @@
 #define __DEM_L1_RENDER_H__
 
 #include <Render/D3D9Fwd.h>
-#include <kernel/ntypes.h>
 
 // Render system definitions and forward declarations
 

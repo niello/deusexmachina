@@ -8,7 +8,7 @@
 #include <Render/Geometry/IndexBuffer.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 
 // Mesh represents complete geometry information about a 3D model. It stores vertex buffer,
 // index buffer (if required) and list of primitive groups (also known as mesh subsets).
@@ -23,7 +23,7 @@ struct CMeshGroup
 	DWORD				FirstIndex;
 	DWORD				IndexCount;
 	EPrimitiveTopology	Topology;
-	bbox3				AABB;
+	CAABB				AABB;
 };
 
 class CMesh: public Resources::CResource

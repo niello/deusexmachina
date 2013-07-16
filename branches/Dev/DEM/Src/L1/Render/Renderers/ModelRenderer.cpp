@@ -133,19 +133,19 @@ bool CModelRenderer::IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Ligh
 	if (!Model.pSPSRecord->pSPSNode->SharesSpaceWith(*Light.pSPSRecord->pSPSNode)) FAIL;
 
 	//!!!GetGlobalAABB must return cached box, scene updates it!
-	bbox3 ModelBox;
+	CAABB ModelBox;
 	Model.GetGlobalAABB(ModelBox);
 
 	// Now test spotlight too. In fact spotlight sphere is much less.
 	sphere LightSphere(Light.GetNode()->GetWorldPosition(), Light.GetRange());
-	if (LightSphere.clipstatus(ModelBox) == Outside) FAIL;
+	if (LightSphere.GetClipStatus(ModelBox) == Outside) FAIL;
 
 	if (Light.Type == Scene::CLight::Spot)
 	{
 		//!!!precalculate once!
 		matrix44 LightFrustum;
 		Light.CalcFrustum(LightFrustum);
-		if (ModelBox.clipstatus(LightFrustum) == Outside) FAIL;
+		if (ModelBox.GetClipStatus(LightFrustum) == Outside) FAIL;
 	}
 
 	OK;

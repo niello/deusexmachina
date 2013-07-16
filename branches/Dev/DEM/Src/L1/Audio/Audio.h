@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_AUDIO_H__
 #define __DEM_L1_AUDIO_H__
 
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 #include <string.h>
 
 // Audio subsystem forward declarations

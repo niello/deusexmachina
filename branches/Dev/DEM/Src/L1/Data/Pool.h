@@ -2,8 +2,6 @@
 #ifndef __DEM_L1_POOL_H__
 #define __DEM_L1_POOL_H__
 
-// Only for n_assert
-#include <kernel/ntypes.h>
 #include <StdDEM.h>
 
 // Simple pool for fast allocation of multiple frequently used objects, typically small.

@@ -5,7 +5,7 @@
 #include <Data/Params.h>
 #include <AI/ActorFwd.h>
 #include <AI/Perception/Perceptor.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 
 // Sensors gather initial information from the world or actor itself either by event listening or
 // polling (or both). Sensor just reports stimuli sensed by actor. Perceptors then can interpret
@@ -38,7 +38,7 @@ public:
 	virtual bool		SenseStimulus(CActor* pActor, CStimulus* pStimulus) const = 0;
 	virtual bool		ValidatesFactType(const Core::CRTTI& Type) const { FAIL; }
 	virtual EExecStatus	ValidateFact(CActor* pActor, const CMemFact& Fact) const { return Running; }
-	virtual EClipStatus	GetBoxClipStatus(CActor* pActor, const bbox3& Box) const = 0;
+	virtual EClipStatus	GetBoxClipStatus(CActor* pActor, const CAABB& Box) const = 0;
 	//???bool IsExternal, or hard-split sensors to internal & external?
 
 	void				AddPerceptor(CPerceptor* pPerceptor);

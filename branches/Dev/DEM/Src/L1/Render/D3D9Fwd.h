@@ -6,6 +6,12 @@
 
 #include <StdDEM.h> // To declare LPCSTR etc
 
+// Macros to map unsigned 8 bits/channel to D3DCOLOR
+#define N_ARGB(a, r, g, b)			((uint)((((a)&0xff) << 24) | (((r)&0xff) << 16) | (((g)&0xff) << 8) | ((b)&0xff)))
+#define N_RGBA(r, g, b, a)			N_ARGB(a, r, g, b)
+#define N_XRGB(r, g, b)				N_ARGB(0xff, r, g, b)
+#define N_COLORVALUE(r, g, b, a)	N_RGBA((uint)((r)*255.f), (uint)((g)*255.f), (uint)((b)*255.f), (uint)((a)*255.f))
+
 #define DEM_D3D_DEBUG (0)
 #define DEM_D3D_USENVPERFHUD (0)
 

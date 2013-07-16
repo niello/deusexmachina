@@ -10,7 +10,7 @@
 
 //!!!don't forget that most of the light params are regular shader params!
 
-class bbox3;
+class CAABB;
 
 namespace Scene
 {
@@ -61,7 +61,7 @@ public:
 	virtual void	Update();
 
 	void			CalcFrustum(matrix44& OutFrustum);
-	void			GetGlobalAABB(bbox3& OutBox) const;
+	void			GetGlobalAABB(CAABB& OutBox) const;
 
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);

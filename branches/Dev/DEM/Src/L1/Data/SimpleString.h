@@ -5,7 +5,6 @@
 #include <string.h>
 #include <StdDEM.h>
 #include <Data/Hash.h>
-#include <kernel/ntypes.h>
 
 // Simple static string, a wrapper around an LPCSTR
 

@@ -67,7 +67,7 @@ void CPropSceneNode::InternalDeactivate()
 //---------------------------------------------------------------------
 
 //???to node or some scene utils?
-void CPropSceneNode::GetAABB(bbox3& OutBox) const
+void CPropSceneNode::GetAABB(CAABB& OutBox) const
 {
 	if (!Node.IsValid() || !Node->GetAttrCount()) return;
 
@@ -77,7 +77,7 @@ void CPropSceneNode::GetAABB(bbox3& OutBox) const
 		Scene::CNodeAttribute& Attr = *Node->GetAttr(i);
 		if (Attr.IsA<Scene::CModel>())
 		{
-			bbox3 AttrBox;
+			CAABB AttrBox;
 			((Scene::CModel&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}

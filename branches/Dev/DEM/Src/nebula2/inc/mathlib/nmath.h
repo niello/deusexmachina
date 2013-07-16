@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <stdlib.h>	// rand
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 
 // General math functions and macros.
 // (C) 2003 RadonLabs GmbH

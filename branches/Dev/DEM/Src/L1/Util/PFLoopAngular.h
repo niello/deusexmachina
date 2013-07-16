@@ -1,7 +1,7 @@
 #ifndef N_ANGULARPFEEDBACKLOOP_H
 #define N_ANGULARPFEEDBACKLOOP_H
 
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 
 // A proportional feedback loop with correct angular interpolation
 // (C) 2004 RadonLabs GmbH

@@ -22,7 +22,7 @@ class CAILevel: public Core::CRefCounted
 {
 protected:
 
-	bbox3					Box;
+	CAABB					Box;
 	CStimulusQT				StimulusQT;		// Quadtree containing stimuli and other AI hints
 	CDict<float, CNavData>	NavData;		// Mapped to maximum radius of agent
 
@@ -33,7 +33,7 @@ public:
 
 	~CAILevel();
 
-	bool			Init(const bbox3& LevelBox, uchar QuadTreeDepth);
+	bool			Init(const CAABB& LevelBox, uchar QuadTreeDepth);
 	void			RenderDebug();
 
 	bool			LoadNavMesh(const CString& FileName);

@@ -4,7 +4,7 @@
 
 #include <Game/Property.h>
 #include <Scene/SceneNode.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 
 // Scene node property associates entity transform with scene graph node
 
@@ -35,7 +35,7 @@ public:
 	//virtual ~CPropSceneNode() {}
 
 	Scene::CSceneNode*	GetNode() const { return Node.GetUnsafe(); }
-	void				GetAABB(bbox3& OutBox) const;
+	void				GetAABB(CAABB& OutBox) const;
 };
 
 }

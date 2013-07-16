@@ -161,7 +161,7 @@ void CModel::Update()
 
 //!!!differ between CalcBox - primary source, and GetGlobalAABB - return cached box from spatial record!
 //???inline?
-void CModel::GetGlobalAABB(bbox3& OutBox) const
+void CModel::GetGlobalAABB(CAABB& OutBox) const
 {
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)

@@ -1,7 +1,7 @@
 #ifndef N_PFEEDBACKLOOP_H
 #define N_PFEEDBACKLOOP_H
 
-#include <kernel/ntypes.h>
+#include <StdDEM.h>
 
 // A PFLoop (proportional feedback loop) is a simple object which moves a system's
 // current State towards a Goal, using the resulting error (difference between Goal

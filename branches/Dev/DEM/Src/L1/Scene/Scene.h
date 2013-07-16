@@ -24,7 +24,7 @@ class CScene: public Core::CRefCounted
 private:
 
 	PSceneNode				RootNode;
-	bbox3					SceneBBox;
+	CAABB					SceneBBox;
 	PCamera					DefaultCamera;
 	PCamera					MainCamera;
 
@@ -48,7 +48,7 @@ public:
 	CScene(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f), AutoAdjustCameraAspect(true) {  }
 	~CScene() { Clear(); }
 
-	void		Init(const bbox3& Bounds, DWORD SPSHierarchyDepth);
+	void		Init(const CAABB& Bounds, DWORD SPSHierarchyDepth);
 	void		Activate();
 	void		Deactivate();
 	void		Clear();

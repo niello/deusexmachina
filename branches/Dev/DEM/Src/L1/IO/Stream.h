@@ -4,7 +4,6 @@
 
 #include <IO/IOFwd.h>
 #include <Data/Flags.h>
-#include <kernel/ntypes.h>
 
 // Base stream interface for byte sequence access.
 // Partially based on Nebula 3 (c) IO::Stream class

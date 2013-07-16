@@ -1,9 +1,8 @@
 #include "PathRequestQueue.h"
 
-#include <kernel/ntypes.h> // for n_assert
 #include <DetourCommon.h>
 #include <DetourNavMeshQuery.h>
-#include <string.h>
+#include <memory.h> // memcpy
 
 namespace AI
 {

@@ -26,7 +26,7 @@ public:
 	virtual bool		SenseStimulus(CActor* pActor, CStimulus* pStimulus) const;
 	virtual bool		ValidatesFactType(const Core::CRTTI& Type) const;
 	virtual EExecStatus	ValidateFact(CActor* pActor, const CMemFact& Fact) const;
-	virtual EClipStatus	GetBoxClipStatus(CActor* pActor, const bbox3& Box) const;
+	virtual EClipStatus	GetBoxClipStatus(CActor* pActor, const CAABB& Box) const;
 };
 
 }

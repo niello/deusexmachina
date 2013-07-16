@@ -3,7 +3,7 @@
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsDebugDraw.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
 //#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
@@ -21,7 +21,7 @@ CPhysicsWorld::~CPhysicsWorld()
 //---------------------------------------------------------------------
 
 // Called by Physics::Server when the Level is attached to the server.
-bool CPhysicsWorld::Init(const bbox3& Bounds)
+bool CPhysicsWorld::Init(const CAABB& Bounds)
 {
 	n_assert(!pBtDynWorld);
 

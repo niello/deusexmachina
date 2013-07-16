@@ -1,6 +1,5 @@
-#include <StdCfg.h>
+#include <StdDEM.h> // keep before to disable warning
 #include "CEGUINebula2Logger.h"
-#include <kernel/ntypes.h>
 
 namespace CEGUI
 {

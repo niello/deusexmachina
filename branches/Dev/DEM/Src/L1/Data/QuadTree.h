@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_QUADTREE_H__
 #define __DEM_L1_QUADTREE_H__
 
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 #include <Data/FixedArray.h>
 
 //#ifdef GetObject
@@ -118,7 +118,7 @@ public:
 		bool		Contains(const TObject& Object) const;
 		bool		Contains(const vector2& Center, const vector2& HalfSize) const;
 		bool		SharesSpaceWith(const CNode& Other) const;
-		void		GetBounds(bbox3& Box) const;
+		void		GetBounds(CAABB& Box) const;
 
 		uchar		GetLevel() const { return Level; }
 		CNode*		GetParent() const { return pParent; }
@@ -347,7 +347,7 @@ inline bool CQuadTree<TObject, TStorage>::CNode::Contains(const TObject& Object)
 template<class TObject, class TStorage>
 inline bool CQuadTree<TObject, TStorage>::CNode::Contains(const vector2& Center, const vector2& HalfSize) const
 {
-	bbox3 Box;
+	CAABB Box;
 	GetBounds(Box);
 	return	Center.x - HalfSize.x >= Box.vmin.x &&
 			Center.x + HalfSize.x <= Box.vmax.x &&
@@ -385,7 +385,7 @@ inline bool CQuadTree<TObject, TStorage>::CNode::SharesSpaceWith(const CNode& Ot
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-void CQuadTree<TObject, TStorage>::CNode::GetBounds(bbox3& Box) const
+void CQuadTree<TObject, TStorage>::CNode::GetBounds(CAABB& Box) const
 {
 	float NodeSizeX, NodeSizeZ;
 	

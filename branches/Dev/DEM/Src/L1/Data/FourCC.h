@@ -3,7 +3,6 @@
 #define __DEM_L1_FOURCC_H__
 
 #include <StdDEM.h>
-#include <kernel/ntypes.h>
 
 // FourCC manipulation class
 

@@ -6,7 +6,7 @@
 namespace Scene
 {
 
-void CScene::Init(const bbox3& Bounds, DWORD SPSHierarchyDepth)
+void CScene::Init(const CAABB& Bounds, DWORD SPSHierarchyDepth)
 {
 	RootNode = n_new(CSceneNode(*this, CStrID::Empty));
 
@@ -22,8 +22,8 @@ void CScene::Init(const bbox3& Bounds, DWORD SPSHierarchyDepth)
 	MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
 
 	SceneBBox = Bounds;
-	vector3 Center = SceneBBox.center();
-	vector3 Size = SceneBBox.size();
+	vector3 Center = SceneBBox.Center();
+	vector3 Size = SceneBBox.Size();
 	SPS.Build(Center.x, Center.z, Size.x, Size.z, (uchar)SPSHierarchyDepth);
 
 	//!!!could subscribe only when AutoAdjustCameraAspect is set to true!
@@ -185,11 +185,11 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 
 	if (Clip == Clipped)
 	{
-		bbox3 NodeBox;
+		CAABB NodeBox;
 		pNode->GetBounds(NodeBox);
 		NodeBox.vmin.y = SceneBBox.vmin.y;
 		NodeBox.vmax.y = SceneBBox.vmax.y;
-		Clip = NodeBox.clipstatus(ViewProj);
+		Clip = NodeBox.GetClipStatus(ViewProj);
 		if (Clip == Outside) return;
 	}
 
@@ -206,7 +206,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
-				if ((*ItObj)->GlobalBox.clipstatus(ViewProj) != Outside)
+				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != Outside)
 					OutObjects->Add((CRenderObject*)&(*ItObj)->Attr);
 		}
 	}
@@ -224,7 +224,7 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 		{
 			//???test against global box or transform to model space and test against local box?
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
-				if ((*ItLight)->GlobalBox.clipstatus(ViewProj) != Outside)
+				if ((*ItLight)->GlobalBox.GetClipStatus(ViewProj) != Outside)
 					OutLights->Add((CLight*)&(*ItLight)->Attr);
 		}
 	}

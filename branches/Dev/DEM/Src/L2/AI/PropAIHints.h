@@ -40,11 +40,11 @@ public:
 	//CPropAIHints();
 	//virtual ~CPropAIHints();
 
-	//CreateStimulus(Name, Type, ExpirationTime, Confidence, ...)
+	//CreateStimulus(Name, Type, ExpiratioCTime, Confidence, ...)
 	void EnableStimulus(CStrID Name, bool Enable);
 	//EnableStimulus(Type, bool) - Type as RTTI?
 	//SetStimulusConfidence(Name/Type, Confidence)
-	//SetStimulusExpirationTime(Name, Time)
+	//SetStimulusExpiratioCTime(Name, Time)
 	//DestroyStimulus(Name)
 };
 

@@ -37,7 +37,7 @@ protected:
 public:
 
 	//!!!WRITE!
-	void			GetAABB(bbox3& AABB) const { n_error("CPropPhysics::GetAABB() -> IMPLEMENT ME!!!"); }
+	void			GetAABB(CAABB& AABB) const { n_error("CPropPhysics::GetAABB() -> IMPLEMENT ME!!!"); }
 };
 
 }

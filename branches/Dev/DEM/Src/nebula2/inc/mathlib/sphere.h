@@ -1,7 +1,7 @@
 #ifndef N_SPHERE_H
 #define N_SPHERE_H
 
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 #include <mathlib/rectangle.h>
 
 // A 3-dimensional sphere.
@@ -22,10 +22,10 @@ public:
 	void		set(const vector3& _p, float _r) { p = _p; r = _r; }
 	void		set(float _x, float _y, float _z, float _r) { p.set(_x, _y, _z); r = _r; }
 
-	bool		inside(const bbox3& box) const;
-	bool		intersects(const bbox3& box) const;
+	bool		inside(const CAABB& box) const;
+	bool		intersects(const CAABB& box) const;
 	bool		intersects(const sphere& s) const;
-	EClipStatus	clipstatus(const bbox3& box) const;
+	EClipStatus	GetClipStatus(const CAABB& box) const;
 	bool		intersect_sweep(const vector3& va, const sphere& sb, const vector3& vb, float& u0, float& u1) const;
 	rectangle	project_screen_rh(const matrix44& modelView, const matrix44& projection, float nearZ) const;
 };
@@ -37,7 +37,7 @@ inline bool sphere::intersects(const sphere& s) const
 }
 //---------------------------------------------------------------------
 
-inline bool sphere::inside(const bbox3& box) const
+inline bool sphere::inside(const CAABB& box) const
 {
 	return (((this->p.x - r) < box.vmin.x) &&
 			((this->p.x + r) > box.vmax.x) &&
@@ -51,7 +51,7 @@ inline bool sphere::inside(const bbox3& box) const
 // Check if sphere intersects with box.
 // Taken from "Simple Intersection Tests For Games",
 // Gamasutra, Oct 18 1999
-inline bool sphere::intersects(const bbox3& box) const
+inline bool sphere::intersects(const CAABB& box) const
 {
     float s, d = 0;
 
@@ -95,7 +95,7 @@ inline bool sphere::intersects(const bbox3& box) const
 
 // Get the clip status of a box against this sphere. Inside means:
 // the box is completely inside the sphere.
-inline EClipStatus sphere::clipstatus(const bbox3& box) const
+inline EClipStatus sphere::GetClipStatus(const CAABB& box) const
 {
 	if (inside(box)) return Inside;
 	if (intersects(box)) return Clipped;

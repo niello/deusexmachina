@@ -12,8 +12,8 @@ class CProfiler
 private:
 
 	CString	GlobalVarName;
-	nTime	StartTime;
-	nTime	AccumTime;
+	CTime	StartTime;
+	CTime	AccumTime;
 	bool	IsActive;
 
 public:
@@ -28,7 +28,7 @@ public:
 	void StartAccum() { Start(); }
 	void StopAccum();
 
-	nTime	GetTime() { return (TimeSrv->GetTrueTime() - StartTime) * 1000.0f; }
+	CTime	GetTime() { return (TimeSrv->GetTrueTime() - StartTime) * 1000.0f; }
 	bool	IsValid() const { return GlobalVarName.IsValid(); }
 	bool	IsStarted() const { return IsActive; }
 };

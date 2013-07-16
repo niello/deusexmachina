@@ -84,8 +84,8 @@ public:
 
 	//Transition service - to move entities from level to level, including store-unload level 1-load level 2-restore case
 
-	nTime			GetTime() const { return GameTimeSrc->GetTime(); }
-	nTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
+	CTime			GetTime() const { return GameTimeSrc->GetTime(); }
+	CTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
 	bool			IsGamePaused() const { return GameTimeSrc->IsPaused(); }
 	void			PauseGame(bool Pause = true) const;
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }

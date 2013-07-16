@@ -375,12 +375,12 @@ COGGTheoraPlayer::DecodeNextFrame()
     Decodes a timestep
 */
 void
-COGGTheoraPlayer::Decode(nTime DeltaTime)
+COGGTheoraPlayer::Decode(CTime DeltaTime)
 {
     n_assert(_IsOpen);
     // calculate how many frames need to be decoded
     currentTime += DeltaTime;
-    uint neededFrame = (uint)(currentTime * (nTime)ti.fps_numerator/(nTime)ti.fps_denominator);
+    uint neededFrame = (uint)(currentTime * (CTime)ti.fps_numerator/(CTime)ti.fps_denominator);
     uint framesToDo = neededFrame - decodedFrames;
     // disable automatic updating of the texture
     // we only need to do that once

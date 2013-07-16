@@ -4,7 +4,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsWorld.h>
 #include <Data/Params.h>
-#include <mathlib/bbox.h>
+#include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 
@@ -128,7 +128,7 @@ void CPhysicsObj::GetTransform(vector3& OutPos, quaternion& OutRot) const
 //---------------------------------------------------------------------
 
 // If possible, returns interpolated AABB from motion state. It matches the graphics representation.
-void CPhysicsObj::GetGlobalAABB(bbox3& OutBox) const
+void CPhysicsObj::GetGlobalAABB(CAABB& OutBox) const
 {
 	btTransform Tfm;
 	GetTransform(Tfm);
@@ -141,7 +141,7 @@ void CPhysicsObj::GetGlobalAABB(bbox3& OutBox) const
 //---------------------------------------------------------------------
 
 // Returns AABB from the physics world
-void CPhysicsObj::GetPhysicsAABB(bbox3& OutBox) const
+void CPhysicsObj::GetPhysicsAABB(CAABB& OutBox) const
 {
 	n_assert_dbg(pBtCollObj);
 

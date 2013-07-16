@@ -6,7 +6,7 @@
 
 // Physics world represents a space where physics bodies and collision objects live.
 
-class bbox3;
+class CAABB;
 class btDiscreteDynamicsWorld;
 
 namespace Physics
@@ -35,7 +35,7 @@ public:
 	CPhysicsWorld(): pBtDynWorld(NULL), StepTime(1.f / 60.f) {}
 	~CPhysicsWorld();
 
-	bool	Init(const bbox3& Bounds);
+	bool	Init(const CAABB& Bounds);
 	void	Term();
 	void	Trigger(float FrameTime);
 	void	RenderDebug();
