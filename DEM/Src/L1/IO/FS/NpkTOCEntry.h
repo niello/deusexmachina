@@ -51,8 +51,10 @@ public:
 	CString						GetFullName() const;
 	CNpkTOCEntry*				GetParent() const { return pParent; }
 	EFSEntryType				GetType() const { return Type; }
-	int							GetFileOffset() const { n_assert(Type == FSE_FILE); return Offset; }
-	int							GetFileLength() const { n_assert(Type == FSE_FILE); return Length; }
+	bool						IsFile() const { return Type == IO::FSE_FILE; }
+	bool						IsDir() const { return Type == IO::FSE_DIR; }
+	int							GetFileOffset() const { n_assert(IsFile()); return Offset; }
+	int							GetFileLength() const { n_assert(IsFile()); return Length; }
 	const char*					GetRootPath() const { return pRoot; }
 };
 

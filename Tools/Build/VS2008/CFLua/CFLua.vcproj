@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1_d.lib nkernel_d.lib lua5.1_d.lib TinyXML2_d.lib"
+				AdditionalDependencies="DEM_L1_d.lib lua5.1_d.lib TinyXML2_d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib;..\..\..\..\3rdParty\Lua\Lib;..\..\..\..\3rdParty\TinyXML2\Lib"
@@ -141,7 +141,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1.lib nkernel.lib lua5.1.lib TinyXML2.lib"
+				AdditionalDependencies="DEM_L1.lib lua5.1.lib TinyXML2.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib;..\..\..\..\3rdParty\Lua\Lib;..\..\..\..\3rdParty\TinyXML2\Lib"
 				GenerateDebugInformation="true"

@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1_d.lib nkernel_d.lib"
+				AdditionalDependencies="DEM_L1_d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib"
@@ -141,7 +141,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="DEM_L1.lib nkernel.lib"
+				AdditionalDependencies="DEM_L1.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\DEM\Lib"
 				GenerateDebugInformation="true"
