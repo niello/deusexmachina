@@ -139,7 +139,7 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int Data
 {
 	n_assert(pTOCEntry);
 
-	if (pTOCEntry->GetType() == IO::FSE_DIR)
+	if (pTOCEntry->IsDir())
 	{
 		IO::CNpkTOCEntry::CIterator ItSubEntry = pTOCEntry->GetEntryIterator();
 		while (ItSubEntry)
@@ -148,7 +148,7 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int Data
 			++ItSubEntry;
 		}
 	}
-	else if (pTOCEntry->GetType() == IO::FSE_FILE)
+	else if (pTOCEntry->IsFile())
 	{
 		// It was a very good assert, but now it can't be used since GetFileOffset() always returns 0
 		//n_assert(File.GetPosition() == (DataOffset + pTOCEntry->GetFileOffset()));
