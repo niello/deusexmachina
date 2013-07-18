@@ -31,7 +31,7 @@ void CActionUseSmartObj::StartSOAction(CActor* pActor)
 bool CActionUseSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
-	if (!pSOEntity) FAIL;
+	if (!pSOEntity || pSOEntity->GetLevel().GetID() != pActor->GetEntity()->GetLevel().GetID()) FAIL;
 
 	pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
@@ -117,7 +117,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 		pActor->GetMotorSystem().ResetRotation();
 
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
-	if (!pSOEntity) return;
+	if (!pSOEntity || pSOEntity->GetLevel().GetID() != pActor->GetEntity()->GetLevel().GetID()) return;
 
 	if (Action->FreeUserSlots >= 0) Action->FreeUserSlots++;
 	
