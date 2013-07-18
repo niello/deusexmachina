@@ -365,7 +365,7 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 
 bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 {
-	if (!Enabled || !pActorEnt || !Actions.GetCount()) FAIL;
+	if (!Enabled || !Actions.GetCount()) FAIL;
 
 	// Cmd can have the highest priority but be disabled. Imagine character under the 
 	// silence spell who left-clicks on NPC. Default cmd is "Talk" which is disabled
@@ -376,9 +376,8 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	CPropSmartObject* pSO = NULL;
 	if (ReflectSOActions)
 	{
-		pActor = pActorEnt->GetProperty<CPropActorBrain>();
+		if (pActorEnt) pActor = pActorEnt->GetProperty<CPropActorBrain>();
 		pSO = GetEntity()->GetProperty<CPropSmartObject>();
-		n_assert(pActor && pSO);
 	}
 
 	CAction* pTopAction = Actions.Begin();
@@ -386,12 +385,13 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	{
 		if (It->IsSOAction)
 		{
+			n_assert_dbg(pSO);
 			It->Enabled = pSO->GetAction(It->ID)->IsValid(pActor, pSO);
 			// Update Priority
 		}
 
 		// FIXME
-		// This line discards disbled actions, so for example door in transition between
+		// This line discards disabled actions, so for example door in transition between
 		// Opened and Closed has default action Explore, which is executed on left click.
 		// Need to solve this and choose desired behaviour. Force set default action?
 		if ((*It) < (*pTopAction)) pTopAction = It;
@@ -464,10 +464,13 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 
 	PParams P = ((const Events::CEvent&)Event).Params;
 
+	Game::CEntity* pActorEnt = (Game::CEntity*)P->Get<PVOID>(CStrID("ActorEntityPtr"));
+	n_assert(pActorEnt);
+
 	PTaskUseSmartObj Task = n_new(CTaskUseSmartObj);
 	Task->SetSmartObj(pSO);
 	Task->SetActionID(P->Get<CStrID>(CStrID("ActionID")));
-	((Game::CEntity*)P->Get<PVOID>(CStrID("ActorEntityPtr")))->FireEvent(Event::QueueTask(Task));
+	pActorEnt->FireEvent(Event::QueueTask(Task));
 
 	OK;
 }
