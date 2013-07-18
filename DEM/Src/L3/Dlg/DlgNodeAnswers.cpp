@@ -3,7 +3,7 @@
 #include "DialogueManager.h"
 #include "DlgLink.h"
 #include "DlgNodePhrase.h"
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Story
 {
@@ -36,13 +36,13 @@ CDlgNode* CDlgNodeAnswers::Trigger(CActiveDlg& Dlg)
 				//???send link index too?
 				PParams P = n_new(CParams);
 				P->Set(CStrID("Phrase"), (PVOID)((CDlgNodePhrase*)Links[Dlg.LinkIdx]->pTargetNode)->Phrase.CStr());
-				EventMgr->FireEvent(CStrID("OnDlgAnswerVariantAdded"), P);
+				EventSrv->FireEvent(CStrID("OnDlgAnswerVariantAdded"), P);
 			}
 			else if (Status == Running) return this;
 			Dlg.LinkIdx++;
 		}
 
-		EventMgr->FireEvent(CStrID((Dlg.ValidLinkIndices.GetCount() > 0) ? "OnDlgAnswersAvailable" : "OnDlgEndAvailable"));
+		EventSrv->FireEvent(CStrID((Dlg.ValidLinkIndices.GetCount() > 0) ? "OnDlgAnswersAvailable" : "OnDlgEndAvailable"));
 		Dlg.IsCheckingConditions = false;
 	}
 

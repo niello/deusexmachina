@@ -1,7 +1,7 @@
 #include "InputMappingState.h"
 
 #include <Input/InputServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/Params.h>
 
 namespace Input
@@ -60,7 +60,7 @@ bool CInputMappingState::OnInputUpdated(const Events::CEventBase& Event)
 	}
 
 	if (OldState != State && SendStateChangeEvent)
-		EventMgr->FireEvent(CStrID((State) ? EventOn : EventOff));
+		EventSrv->FireEvent(CStrID((State) ? EventOn : EventOff));
 
 	FAIL;
 }

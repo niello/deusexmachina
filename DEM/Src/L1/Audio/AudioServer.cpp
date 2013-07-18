@@ -5,7 +5,7 @@
 #include "AudioEntity.h"
 #include <Audio/Event/PlaySound.h>
 #include <Audio/DSUtil/DSUtil.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Time/TimeServer.h>
 #include <Core/CoreServer.h>
 

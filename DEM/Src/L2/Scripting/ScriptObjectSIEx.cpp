@@ -2,7 +2,7 @@
 #include <Scripting/ScriptObject.h>
 #include <Game/EntityManager.h>
 //#include <Scripting/EventHandlerScript.h>
-//#include <Events/EventManager.h>
+//#include <Events/EventServer.h>
 
 extern "C"
 {

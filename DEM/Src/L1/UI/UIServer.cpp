@@ -2,7 +2,7 @@
 
 #include "Window.h"
 #include <Render/RenderServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Input/InputServer.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
@@ -100,7 +100,7 @@ void CUIServer::Trigger(float FrameTime)
 
 	CEGUISystem->injectTimePulse(FrameTime);
 
-	EventMgr->FireEvent(CStrID("OnUIUpdate"));
+	EventSrv->FireEvent(CStrID("OnUIUpdate"));
 }
 //---------------------------------------------------------------------
 

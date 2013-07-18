@@ -62,9 +62,14 @@ public:
 	bool			SetActiveLevel(CStrID ID);
 	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
 	CGameLevel*		GetLevel(CStrID ID) const;
+	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
+
 	bool			StartGame(const CString& FileName, const CString& SaveGameName = CString::Empty);
 	bool			SaveGame(const CString& Name);
 	bool			LoadGame(const CString& Name) { return StartGame(GameFileName, Name); }
+	bool			LoadGameLevel(CStrID ID, const CString& SaveGameName = CString::Empty);
+	void			UnloadGameLevel(CStrID ID);
+
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
 

@@ -1,6 +1,6 @@
 #include "EventDispatcher.h"
 
-#include "EventManager.h"
+#include "EventServer.h"
 #include <Time/TimeServer.h>
 
 namespace Events
@@ -11,14 +11,14 @@ CEventDispatcher::~CEventDispatcher()
 	while (PendingEventsHead)
 	{
 		CEventNode* Next = PendingEventsHead->Next;
-		EventMgr->EventNodes.Destroy(PendingEventsHead);
+		EventSrv->EventNodes.Destroy(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
 
 	while (EventsToAdd)
 	{
 		CEventNode* Next = EventsToAdd->Next;
-		EventMgr->EventNodes.Destroy(EventsToAdd);
+		EventSrv->EventNodes.Destroy(EventsToAdd);
 		EventsToAdd = Next;
 	}
 }
@@ -58,7 +58,7 @@ DWORD CEventDispatcher::ScheduleEvent(CEventBase* Event, float RelTime)
 
 	if (Event->Flags & EV_ASYNC)
 	{
-		CEventNode* New = EventMgr->EventNodes.Construct();
+		CEventNode* New = EventSrv->EventNodes.Construct();
 		n_assert2(New, "Nervous system of the engine was paralyzed! Can't allocate event node");
 		New->Event = Event;
 		New->FireTime = (float)TimeSrv->GetTime() + RelTime;
@@ -181,7 +181,7 @@ void CEventDispatcher::ProcessPendingEvents()
 		n_assert(PendingEventsHead->Event);
 		DispatchEvent(*PendingEventsHead->Event);
 		CEventNode* Next = PendingEventsHead->Next;
-		EventMgr->EventNodes.Destroy(PendingEventsHead);
+		EventSrv->EventNodes.Destroy(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
 	if (!PendingEventsHead) PendingEventsTail = NULL;

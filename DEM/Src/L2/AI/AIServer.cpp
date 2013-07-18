@@ -2,7 +2,7 @@
 
 #include <AI/Planning/ActionTpl.h>
 #include <Data/Params.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourObstacleAvoidance.h>
 

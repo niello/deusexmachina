@@ -4,7 +4,7 @@
 #include <AI/Perception/Sensor.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <IO/Streams/FileStream.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <DetourDebugDraw.h>
 
 namespace AI
@@ -48,7 +48,7 @@ bool CAILevel::LoadNavMesh(const CString& FileName)
 		}
 	}
 
-	EventMgr->FireEvent(CStrID("OnNavMeshDataChanged"));
+	EventSrv->FireEvent(CStrID("OnNavMeshDataChanged"));
 	OK;
 }
 //---------------------------------------------------------------------
@@ -58,7 +58,7 @@ void CAILevel::UnloadNavMesh()
 	for (int i = 0; i < NavData.GetCount(); ++i)
 		NavData.ValueAt(i).Clear();
 	NavData.Clear();
-	EventMgr->FireEvent(CStrID("OnNavMeshDataChanged"));
+	EventSrv->FireEvent(CStrID("OnNavMeshDataChanged"));
 }
 //---------------------------------------------------------------------
 

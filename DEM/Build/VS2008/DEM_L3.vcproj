@@ -496,18 +496,22 @@
 		<Filter
 			Name="World"
 			>
-			<Filter
-				Name="Prop"
+			<File
+				RelativePath="..\..\Src\L3\World\PropTransitionZone.cpp"
 				>
-				<File
-					RelativePath="..\..\Src\L3\World\Prop\PropTransitionZone.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\World\Prop\PropTransitionZone.h"
-					>
-				</File>
-			</Filter>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\World\PropTransitionZone.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\World\WorldManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L3\World\WorldManager.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Dlg"

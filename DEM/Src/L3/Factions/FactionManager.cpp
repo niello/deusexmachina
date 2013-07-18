@@ -1,7 +1,7 @@
 #include "FactionManager.h"
 
 #include <Scripting/ScriptServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace RPG
 {

@@ -21,12 +21,12 @@ namespace Events
 
 using namespace Data;
 
-#define EventMgr Events::CEventManager::Instance()
+#define EventSrv Events::CEventServer::Instance()
 
-class CEventManager: public CEventDispatcher
+class CEventServer: public CEventDispatcher
 {
 	__DeclareClassNoFactory;
-	__DeclareSingleton(CEventManager);
+	__DeclareSingleton(CEventServer);
 
 public:
 
@@ -34,10 +34,10 @@ public:
 	CPool<CEventNode>		EventNodes;
 
 	//!!!cache pool of free events, get from here if can
-	//or store cache pools in CEventManager
+	//or store cache pools in CEventServer
 
-	CEventManager();
-	virtual ~CEventManager();
+	CEventServer();
+	virtual ~CEventServer();
 
 	//!!!use pool inside!
 	//Ptr<CEventNative>			CreateNativeEvent(const Core::CRTTI* RTTI);

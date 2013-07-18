@@ -1,19 +1,19 @@
-#include "EventManager.h"
+#include "EventServer.h"
 
 #include "EventDispatcher.h"
 
 namespace Events
 {
-__ImplementClassNoFactory(Events::CEventManager, Core::CRefCounted);
-__ImplementSingleton(Events::CEventManager);
+__ImplementClassNoFactory(Events::CEventServer, Core::CRefCounted);
+__ImplementSingleton(Events::CEventServer);
 
-CEventManager::CEventManager(): CEventDispatcher(256)
+CEventServer::CEventServer(): CEventDispatcher(256)
 {
 	__ConstructSingleton;
 }
 //---------------------------------------------------------------------
 
-CEventManager::~CEventManager()
+CEventServer::~CEventServer()
 {
 	//!!!FIXME!
 	//!!!duplicate code from CEventDispatcher destructor!
@@ -21,14 +21,14 @@ CEventManager::~CEventManager()
 	while (PendingEventsHead)
 	{
 		CEventNode* Next = PendingEventsHead->Next;
-		EventMgr->EventNodes.Destroy(PendingEventsHead);
+		EventSrv->EventNodes.Destroy(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
 
 	while (EventsToAdd)
 	{
 		CEventNode* Next = EventsToAdd->Next;
-		EventMgr->EventNodes.Destroy(EventsToAdd);
+		EventSrv->EventNodes.Destroy(EventsToAdd);
 		EventsToAdd = Next;
 	}
 

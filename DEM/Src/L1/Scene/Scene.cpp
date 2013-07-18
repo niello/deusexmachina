@@ -1,7 +1,7 @@
 #include "Scene.h"
 
 #include <Scene/SceneServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Scene
 {

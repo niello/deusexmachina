@@ -8,7 +8,7 @@
 #include <Debug/DebugServer.h>
 #include <IO/IOServer.h>
 #include <Data/DataServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Scripting/ScriptServer.h>
 #include <Render/RenderServer.h>
 #include <Render/DebugDraw.h>
@@ -55,7 +55,7 @@ protected:
 	Ptr<IO::CIOServer>				IOServer;
 	Ptr<Data::CDataServer>			DataServer;
 	Ptr<Scripting::CScriptServer>	ScriptServer;
-	Ptr<Events::CEventManager>		EventManager;
+	Ptr<Events::CEventServer>		EventServer;
 	Ptr<Render::CRenderServer>		RenderServer;
 	Ptr<Render::CDebugDraw>			DD;
 	Ptr<Scene::CSceneServer>		SceneServer;

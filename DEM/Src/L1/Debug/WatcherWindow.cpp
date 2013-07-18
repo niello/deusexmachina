@@ -1,7 +1,7 @@
 #include "WatcherWindow.h"
 
 #include <Scripting/ScriptServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Core/CoreServer.h>
 

@@ -11,7 +11,7 @@
 #include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>
 #include <Data/DataServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Physics
 {
@@ -75,19 +75,16 @@ bool CPropUIControl::InternalActivate()
 		ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
 		ushort Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 
-		//???or use OnUpdateTransform?
 		MousePickShape = n_new(Physics::CNodeAttrCollision);
 		MousePickShape->CollObj = n_new(Physics::CCollisionObjMoving);
 		MousePickShape->CollObj->Init(*Shape, Group, Mask); // Can specify offset
 		MousePickShape->CollObj->SetUserData(*(void**)&GetEntity()->GetUID());
 		MousePickShape->CollObj->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+		MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
 
 		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 		if (pProp && pProp->IsActive())
-		{
-			MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
 			pProp->GetNode()->AddAttr(*MousePickShape);
-		}
 	}
 
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropUIControl, ExposeSI);
@@ -135,7 +132,6 @@ bool CPropUIControl::OnPropActivated(const Events::CEventBase& Event)
 
 	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
 	{
-		MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
 		((CPropSceneNode*)pProp)->GetNode()->AddAttr(*MousePickShape);
 		OK;
 	}
@@ -159,7 +155,7 @@ bool CPropUIControl::OnPropDeactivating(const Events::CEventBase& Event)
 	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>())
 	{
 		MousePickShape->RemoveFromNode();
-		MousePickShape->CollObj->RemoveFromLevel();
+		//MousePickShape->CollObj->RemoveFromLevel();
 		OK;
 	}
 
@@ -265,7 +261,7 @@ void CPropUIControl::Enable(bool SetEnabled)
 	{
 		Data::PParams P = n_new(Data::CParams(1));
 		P->Set<PVOID>(CStrID("CtlPtr"), this);
-		EventMgr->FireEvent(CStrID("HideActionListPopup"), P);
+		EventSrv->FireEvent(CStrID("HideActionListPopup"), P);
 	}
 
 	Enabled = SetEnabled;
@@ -285,14 +281,14 @@ void CPropUIControl::ShowTip()
 	PParams P = n_new(CParams);
 	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : CString(GetEntity()->GetUID().CStr()));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
-	TipVisible = (EventMgr->FireEvent(CStrID("ShowIAOTip"), P) > 0);
+	TipVisible = (EventSrv->FireEvent(CStrID("ShowIAOTip"), P) > 0);
 }
 //---------------------------------------------------------------------
 
 void CPropUIControl::HideTip()
 {
 	if (!TipVisible) return;
-	EventMgr->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!
+	EventSrv->FireEvent(CStrID("HideIAOTip")); //!!!later should send entity ID here to identify which tip to hide!
 	TipVisible = false;
 }
 //---------------------------------------------------------------------
@@ -439,7 +435,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	PParams P = n_new(CParams);
 	P->Set(CStrID("ActorEntityPtr"), (PVOID)pActorEnt);
 	P->Set(CStrID("CtlPtr"), (PVOID)this);
-	EventMgr->FireEvent(CStrID("ShowActionListPopup"), P);
+	EventSrv->FireEvent(CStrID("ShowActionListPopup"), P);
 }
 //---------------------------------------------------------------------
 
@@ -448,7 +444,7 @@ bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
 	if (!UIDesc.IsValid()) FAIL;
 	PParams P = n_new(Data::CParams(1));
 	P->Set<CString>(CStrID("UIDesc"), UIDesc);
-	EventMgr->FireEvent(CStrID("OnObjectDescRequested"), P, EV_ASYNC);
+	EventSrv->FireEvent(CStrID("OnObjectDescRequested"), P, EV_ASYNC);
 	OK;
 }
 //---------------------------------------------------------------------

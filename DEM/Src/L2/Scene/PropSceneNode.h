@@ -32,10 +32,16 @@ protected:
 
 public:
 
+	enum
+	{
+		AABB_Gfx	= 0x01,
+		AABB_Phys	= 0x02
+	};
+
 	//virtual ~CPropSceneNode() {}
 
 	Scene::CSceneNode*	GetNode() const { return Node.GetUnsafe(); }
-	void				GetAABB(CAABB& OutBox) const;
+	void				GetAABB(CAABB& OutBox, DWORD TypeFlags = AABB_Gfx | AABB_Phys) const;
 };
 
 }

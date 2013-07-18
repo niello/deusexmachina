@@ -1009,19 +1009,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Events\EventManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Events\EventManager.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Events\EventNative.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Events\EventNative.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Events\EventServer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Events\EventServer.h"
 				>
 			</File>
 			<File

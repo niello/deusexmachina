@@ -5,7 +5,7 @@
 #include <AI/Movement/Actions/ActionFace.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace AI
 {
@@ -20,7 +20,7 @@ void CActionUseSmartObj::StartSOAction(CActor* pActor)
 	P->Set(CStrID("IAO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 	if (Action->OnStartCmd.IsValid()) pSO->GetEntity()->FireEvent(Action->OnStartCmd, P);
-	EventMgr->FireEvent(CStrID("OnIAOActionStart"), P);
+	EventSrv->FireEvent(CStrID("OnIAOActionStart"), P);
 
 	//!!!play anim for actor and for SO, if it has one for this action!
 
@@ -99,7 +99,7 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 		P->Set(CStrID("IAO"), TargetID);
 		P->Set(CStrID("Action"), ActionID);
 		if (Action->OnDoneCmd.IsValid()) pSO->GetEntity()->FireEvent(Action->OnDoneCmd, P);
-		EventMgr->FireEvent(CStrID("OnIAOActionDone"), P);
+		EventSrv->FireEvent(CStrID("OnIAOActionDone"), P);
 
 		if (EndOnDone) return Success;
 	}
@@ -130,13 +130,13 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	{
 		//???GetEntity()->FireEvent(CStrID("PathAnimStop"));?
 		if (Action->OnEndCmd.IsValid()) pSOEntity->FireEvent(Action->OnEndCmd, P);
-		EventMgr->FireEvent(CStrID("OnIAOActionEnd"), P);
+		EventSrv->FireEvent(CStrID("OnIAOActionEnd"), P);
 	}
 	else
 	{
 		if (Action->ResetOnAbort()) Action->Progress = 0.f;
 		if (Action->OnAbortCmd.IsValid()) pSOEntity->FireEvent(Action->OnAbortCmd, P);
-		EventMgr->FireEvent(CStrID("OnIAOActionAbort"), P);
+		EventSrv->FireEvent(CStrID("OnIAOActionAbort"), P);
 	}
 }
 //---------------------------------------------------------------------

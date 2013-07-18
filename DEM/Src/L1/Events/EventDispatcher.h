@@ -98,7 +98,7 @@ inline CEventDispatcher::CEventDispatcher(int HashTableCapacity):
 inline DWORD CEventDispatcher::FireEvent(CStrID ID, PParams Params, char Flags, float RelTime)
 {
 	//!!!event pools!
-	Ptr<CEvent> Event = n_new(CEvent)(ID, Flags, Params); //EventMgr->ParamEvents.Allocate();
+	Ptr<CEvent> Event = n_new(CEvent)(ID, Flags, Params); //EventSrv->ParamEvents.Allocate();
 	return ScheduleEvent(Event, RelTime);
 }
 //---------------------------------------------------------------------

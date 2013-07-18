@@ -3,7 +3,7 @@
 #include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
 #include <Debug/DebugServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Video/VideoServer.h>
 #include <Input/InputServer.h>
 #include <Core/CoreServer.h>
@@ -29,7 +29,7 @@ CStrID CAppStateVideo::OnFrame()
 
 	TimeSrv->Trigger();
 	DbgSrv->Trigger();
-	EventMgr->ProcessPendingEvents();
+	EventSrv->ProcessPendingEvents();
 
 	RenderSrv->GetDisplay().ProcessWindowMessages();
 

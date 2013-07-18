@@ -4,7 +4,7 @@
 #include <Items/Prop/PropInventory.h>
 #include <AI/PropActorBrain.h>
 #include <AI/AIServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Prop
 {

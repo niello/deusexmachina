@@ -11,7 +11,7 @@
 #include <Input/Events/MouseBtnUp.h>
 #include <Input/Events/MouseDoubleClick.h>
 #include <Input/Events/MouseWheel.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/DataServer.h>
 #include <Time/TimeServer.h>
 

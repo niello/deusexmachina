@@ -1,6 +1,6 @@
 #include "TimeServer.h"
 
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -195,7 +195,7 @@ void CTimeServer::Trigger()
 				//!!!???pre-create params once per timer?!
 				Data::PParams P = n_new(Data::CParams);
 				P->Set(CStrID("Name"), CString(Timers.KeyAt(i).CStr()));
-				EventMgr->FireEvent(Timer.EventID, P);
+				EventSrv->FireEvent(Timer.EventID, P);
 				if (Timer.Loop) Timer.CurrTime -= Timer.Time;
 				else
 				{

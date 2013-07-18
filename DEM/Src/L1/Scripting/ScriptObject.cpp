@@ -2,7 +2,7 @@
 
 #include "ScriptServer.h"
 #include "EventHandlerScript.h"
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/Buffer.h>
 #include <IO/IOServer.h>
 
@@ -246,13 +246,13 @@ void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, con
 
 bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority)
 {
-	return SubscribeEvent(EventID, HandlerFuncName, EventMgr, Priority);
+	return SubscribeEvent(EventID, HandlerFuncName, EventSrv, Priority);
 }
 //---------------------------------------------------------------------
 
 void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName)
 {
-	UnsubscribeEvent(EventID, HandlerFuncName, EventMgr);
+	UnsubscribeEvent(EventID, HandlerFuncName, EventSrv);
 }
 //---------------------------------------------------------------------
 

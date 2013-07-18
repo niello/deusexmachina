@@ -39,10 +39,10 @@ enum EEventPriority
 	bool Class::HandlerName##Proc(const Events::CEventBase& Event) { HandlerName(); OK; }
 
 #define SUBSCRIBE_NEVENT(EventName, Class, Handler) \
-	Sub_##EventName = EventMgr->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
+	Sub_##EventName = EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
 
 #define SUBSCRIBE_PEVENT(EventName, Class, Handler) \
-	Sub_##EventName = EventMgr->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
+	Sub_##EventName = EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
 
 #define DISP_SUBSCRIBE_NEVENT(Dispatcher, EventName, Class, Handler) \
 	Sub_##EventName = Dispatcher->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)

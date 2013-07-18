@@ -1,6 +1,6 @@
 #include "RenderServer.h"
 
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <IO/Stream.h>
 #include <Core/CoreServer.h>
 #include <dxerr.h>
@@ -130,7 +130,7 @@ void CRenderServer::ResetDevice()
 {
 	n_assert(pD3DDevice);
 
-	EventMgr->FireEvent(CStrID("OnRenderDeviceLost"));
+	EventSrv->FireEvent(CStrID("OnRenderDeviceLost"));
 
 	//!!!ReleaseQueries();
 	SAFE_RELEASE(pCurrDSSurface);
@@ -152,7 +152,7 @@ void CRenderServer::ResetDevice()
 
 	SetupDevice();
 
-	EventMgr->FireEvent(CStrID("OnRenderDeviceReset"));
+	EventSrv->FireEvent(CStrID("OnRenderDeviceReset"));
 
 	pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
 }
@@ -168,7 +168,7 @@ void CRenderServer::ReleaseDevice()
 		pD3DDevice->SetRenderTarget(i, NULL);
 	pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
 
-	EventMgr->FireEvent(CStrID("OnRenderDeviceRelease"));
+	EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
 
 	//!!!ReleaseQueries();
 

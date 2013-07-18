@@ -33,7 +33,6 @@ protected:
 	CDataDict		Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);
-	void SetLevel(CGameLevel* pNewLevel);
 	bool OnEvent(const Events::CEventBase& Event);
 
 	CEntity(CStrID _UID);
@@ -42,6 +41,7 @@ public:
 
 	~CEntity();
 
+	void						SetLevel(CGameLevel* pNewLevel);
 	void						Activate();
 	void						Deactivate();
 	void						Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
