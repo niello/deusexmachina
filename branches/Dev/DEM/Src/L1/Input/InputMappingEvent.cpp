@@ -8,7 +8,7 @@
 #include <Input/Events/MouseBtnUp.h>
 #include <Input/Events/MouseDoubleClick.h>
 #include <Input/Events/MouseWheel.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/Params.h>
 
 namespace Input
@@ -101,49 +101,49 @@ void CInputMappingEvent::Disable()
 
 bool CInputMappingEvent::OnKeyDown(const Events::CEventBase& Event)
 {
-	if (Key == ((const Event::KeyDown&)Event).ScanCode) return !!EventMgr->FireEvent(OutEventID);
+	if (Key == ((const Event::KeyDown&)Event).ScanCode) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputMappingEvent::OnKeyUp(const Events::CEventBase& Event)
 {
-	if (Key == ((const Event::KeyUp&)Event).ScanCode) return !!EventMgr->FireEvent(OutEventID);
+	if (Key == ((const Event::KeyUp&)Event).ScanCode) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputMappingEvent::OnCharInput(const Events::CEventBase& Event)
 {
-	if (Char == ((const Event::CharInput&)Event).Char) return !!EventMgr->FireEvent(OutEventID);
+	if (Char == ((const Event::CharInput&)Event).Char) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputMappingEvent::OnMouseBtnDown(const Events::CEventBase& Event)
 {
-	if (MouseBtn == ((const Event::MouseBtnDown&)Event).Button) return !!EventMgr->FireEvent(OutEventID);
+	if (MouseBtn == ((const Event::MouseBtnDown&)Event).Button) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputMappingEvent::OnMouseBtnUp(const Events::CEventBase& Event)
 {
-	if (MouseBtn == ((const Event::MouseBtnUp&)Event).Button) return !!EventMgr->FireEvent(OutEventID);
+	if (MouseBtn == ((const Event::MouseBtnUp&)Event).Button) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputMappingEvent::OnMouseDoubleClick(const Events::CEventBase& Event)
 {
-	if (MouseBtn == ((const Event::MouseDoubleClick&)Event).Button) return !!EventMgr->FireEvent(OutEventID);
+	if (MouseBtn == ((const Event::MouseDoubleClick&)Event).Button) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputMappingEvent::OnMouseWheel(const Events::CEventBase& Event)
 {
-	if (WheelFwd == (((const Event::MouseWheel&)Event).Delta > 0)) return !!EventMgr->FireEvent(OutEventID);
+	if (WheelFwd == (((const Event::MouseWheel&)Event).Delta > 0)) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------

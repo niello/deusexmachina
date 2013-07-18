@@ -1,6 +1,6 @@
 #include "AnimClip.h"
 
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Anim
 {
@@ -12,7 +12,7 @@ void CAnimClip::FireEvents(float ExactTime, bool Loop, Events::CEventDispatcher*
 
 	ExactTime = AdjustTime(ExactTime, Loop);
 
-	if (!pDisp) pDisp = EventMgr;
+	if (!pDisp) pDisp = EventSrv;
 
 	for (int i = 0; i < EventTracks.GetCount(); ++i)
 	{
@@ -43,7 +43,7 @@ void CAnimClip::FireEvents(float StartTime, float EndTime, bool Loop, Events::CE
 	EndTime = AdjustTime(EndTime, Loop);
 	if (StartTime == EndTime) return;
 
-	if (!pDisp) pDisp = EventMgr;
+	if (!pDisp) pDisp = EventSrv;
 
 	for (int i = 0; i < EventTracks.GetCount(); ++i)
 	{

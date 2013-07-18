@@ -3,8 +3,9 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scene/SceneServer.h>
-#include <Scene/Model.h>
 #include <Scene/Events/SetTransform.h>
+#include <Scene/Model.h>
+#include <Physics/NodeAttrCollision.h>
 #include <Render/DebugDraw.h>
 
 namespace Scene
@@ -67,7 +68,7 @@ void CPropSceneNode::InternalDeactivate()
 //---------------------------------------------------------------------
 
 //???to node or some scene utils?
-void CPropSceneNode::GetAABB(CAABB& OutBox) const
+void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 {
 	if (!Node.IsValid() || !Node->GetAttrCount()) return;
 
@@ -75,10 +76,16 @@ void CPropSceneNode::GetAABB(CAABB& OutBox) const
 	for (DWORD i = 0; i < Node->GetAttrCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node->GetAttr(i);
-		if (Attr.IsA<Scene::CModel>())
+		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Scene::CModel>())
 		{
 			CAABB AttrBox;
 			((Scene::CModel&)Attr).GetGlobalAABB(AttrBox);
+			OutBox.Extend(AttrBox);
+		}
+		else if ((TypeFlags & AABB_Phys) && Attr.IsA<Physics::CNodeAttrCollision>())
+		{
+			CAABB AttrBox;
+			((Physics::CNodeAttrCollision&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
 	}

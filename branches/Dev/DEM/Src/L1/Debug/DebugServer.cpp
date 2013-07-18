@@ -2,7 +2,7 @@
 
 #include <UI/UIServer.h>
 #include <Input/InputServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 //!!!Only for DebugBreak()!
 #ifdef _DEBUG

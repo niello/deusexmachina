@@ -1,6 +1,6 @@
 #include "LuaConsole.h"
 
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
 #include <Core/Logger.h>
@@ -122,7 +122,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 
 	Print(pCmd, 0xffffffff);
 
-	if (!strcmp(pCmd, "exit")) EventMgr->FireEvent(CStrID("CloseApplication"));
+	if (!strcmp(pCmd, "exit")) EventSrv->FireEvent(CStrID("CloseApplication"));
 	else if (!strcmp(pCmd, "cls")) pOutputWnd->resetList();
 	else if (!strcmp(pCmd, "help"))
 	{

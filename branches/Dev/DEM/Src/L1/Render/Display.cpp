@@ -3,7 +3,7 @@
 
 #include <Render/RenderServer.h>
 #include <Render/Events/DisplayInput.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Core/CoreServer.h>
 
 #include <Uxtheme.h>
@@ -311,7 +311,7 @@ void CDisplay::AdjustSize()
 	DisplayMode.Width = (ushort)r.right;
 	DisplayMode.Height = (ushort)r.bottom;
 
-	EventMgr->FireEvent(CStrID("OnDisplaySizeChanged"));
+	EventSrv->FireEvent(CStrID("OnDisplaySizeChanged"));
 }
 //---------------------------------------------------------------------
 
@@ -417,7 +417,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				if (!IsWndMinimized)
 				{
 					IsWndMinimized = true;
-					EventMgr->FireEvent(CStrID("OnDisplayMinimized"));
+					EventSrv->FireEvent(CStrID("OnDisplayMinimized"));
 					ReleaseCapture();
 				}
 			}
@@ -426,7 +426,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				if (IsWndMinimized)
 				{
 					IsWndMinimized = false;
-					EventMgr->FireEvent(CStrID("OnDisplayRestored"));
+					EventSrv->FireEvent(CStrID("OnDisplayRestored"));
 					ReleaseCapture();
 				}
 				if (hWnd && AutoAdjustSize && !Fullscreen) AdjustSize();
@@ -436,7 +436,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 
 		case WM_SETCURSOR:
-			if (EventMgr->FireEvent(CStrID("OnDisplaySetCursor")))
+			if (EventSrv->FireEvent(CStrID("OnDisplaySetCursor")))
 			{
 				Result = TRUE;
 				OK;
@@ -444,21 +444,21 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 
 		case WM_PAINT:
-			EventMgr->FireEvent(CStrID("OnDisplayPaint"));
+			EventSrv->FireEvent(CStrID("OnDisplayPaint"));
 			break;
 
 		case WM_SETFOCUS:
-			EventMgr->FireEvent(CStrID("OnDisplaySetFocus"));
+			EventSrv->FireEvent(CStrID("OnDisplaySetFocus"));
 			ReleaseCapture();
 			break;
 
 		case WM_KILLFOCUS:
-			EventMgr->FireEvent(CStrID("OnDisplayKillFocus"));
+			EventSrv->FireEvent(CStrID("OnDisplayKillFocus"));
 			ReleaseCapture();
 			break;
 
 		case WM_CLOSE:
-			EventMgr->FireEvent(CStrID("OnDisplayClose"));
+			EventSrv->FireEvent(CStrID("OnDisplayClose"));
 			hWnd = NULL;
 			break;
 
@@ -466,7 +466,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			switch (LOWORD(wParam))
 			{
 				case ACCEL_TOGGLEFULLSCREEN:
-					EventMgr->FireEvent(CStrID("OnDisplayToggleFullscreen"));
+					EventSrv->FireEvent(CStrID("OnDisplayToggleFullscreen"));
 					break;
 			}
 			break;
@@ -478,7 +478,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			Ev.Type = (uMsg == WM_KEYDOWN) ? Event::DisplayInput::KeyDown : Event::DisplayInput::KeyUp;
 			Ev.KeyCode = (Input::EKey)((uchar*)&lParam)[2];
 			if (lParam & (1 << 24)) Ev.KeyCode = (Input::EKey)(Ev.KeyCode | 0x80);
-			EventMgr->FireEvent(Ev);
+			EventSrv->FireEvent(Ev);
 			break;
 		}
 
@@ -490,7 +490,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			Event::DisplayInput Ev;
 			Ev.Type = Event::DisplayInput::CharInput;
 			Ev.Char = CharUTF16[0];
-			EventMgr->FireEvent(Ev);
+			EventSrv->FireEvent(Ev);
 			break;
 		}
 
@@ -508,7 +508,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				Ev.Type = Event::DisplayInput::MouseMoveRaw;
 				Ev.MouseInfo.x = Data.data.mouse.lLastX;
 				Ev.MouseInfo.y = Data.data.mouse.lLastY;
-				EventMgr->FireEvent(Ev);
+				EventSrv->FireEvent(Ev);
 			}
 
 			DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
@@ -576,7 +576,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
 			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			EventMgr->FireEvent(Ev);
+			EventSrv->FireEvent(Ev);
 			break;
 		}
 
@@ -586,7 +586,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			Ev.Type = Event::DisplayInput::MouseMove;
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
 			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			EventMgr->FireEvent(Ev);
+			EventSrv->FireEvent(Ev);
 			break;
 		}
 
@@ -595,7 +595,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			Event::DisplayInput Ev;
 			Ev.Type = Event::DisplayInput::MouseWheel;
 			Ev.WheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-			EventMgr->FireEvent(Ev);
+			EventSrv->FireEvent(Ev);
 			break;
 		}
 	}

@@ -3,7 +3,7 @@
 #include <Core/CoreServer.h>
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -62,12 +62,12 @@ void CLogger::PrintInternal(char* pOutStr, int BufLen, EMsgType Type, const char
 	LineBuffer.Put(pOutStr);
 
 	if (pLogFile && pLogFile->IsOpen()) pLogFile->Write(pOutStr, strlen(pOutStr));
-	if (Events::CEventManager::HasInstance())
+	if (Events::CEventServer::HasInstance())
 	{
 		Data::PParams P = n_new(Data::CParams(2));
 		P->Set(CStrID("pMsg"), (PVOID)pOutStr);
 		P->Set(CStrID("Type"), (int)Type);
-		EventMgr->FireEvent(CStrID("OnLogMsg"), P); //???or add direct listeners to log handler?
+		EventSrv->FireEvent(CStrID("OnLogMsg"), P); //???or add direct listeners to log handler?
 	}
 }
 //---------------------------------------------------------------------

@@ -11,7 +11,7 @@
 #include <Scripting/ScriptObject.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 /* User profile stuff:
 
@@ -81,14 +81,14 @@ void CGameServer::Trigger()
 {
 	UpdateMouseIntersectionInfo();
 
-	EventMgr->FireEvent(CStrID("OnBeginFrame"));
+	EventSrv->FireEvent(CStrID("OnBeginFrame"));
 
 	AISrv->Trigger(); // Pathfinding queries inside
 
 	//!!!trigger all levels, but send to the audio, video, scene and debug rendering only data from the active level!
 	if (ActiveLevel.IsValid()) ActiveLevel->Trigger();
 
-	EventMgr->FireEvent(CStrID("OnEndFrame"));
+	EventSrv->FireEvent(CStrID("OnEndFrame"));
 }
 //---------------------------------------------------------------------
 
@@ -146,7 +146,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 
 	Data::PParams P = n_new(Data::CParams);
 	P->Set(CStrID("ID"), ID);
-	EventMgr->FireEvent(CStrID("OnLevelLoading"), P); //???or after a level is added, but entities aren't loaded?
+	EventSrv->FireEvent(CStrID("OnLevelLoading"), P); //???or after a level is added, but entities aren't loaded?
 
 	PGameLevel Level = n_new(CGameLevel);
 	if (!Level->Init(ID, Desc)) FAIL;
@@ -182,7 +182,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 		for (int i = 0; i < SelArray->GetCount(); ++i)
 			Level->AddToSelection(SelArray->Get<CStrID>(i));
 
-	EventMgr->FireEvent(CStrID("OnLevelLoaded"), P);
+	EventSrv->FireEvent(CStrID("OnLevelLoaded"), P);
 
 	OK;
 }
@@ -195,16 +195,11 @@ void CGameServer::UnloadLevel(CStrID ID)
 
 	PGameLevel Level = Levels.ValueAt(LevelIdx);
 
-	//!!!if in game mode, save diff of this level to a continue set!
-	// re-entering location LoadLevel call will load continue diff
-	// If mode is not a game, but is a simple level, we don't need to save diff,
-	// moreover, we have no user profile
-
 	if (ActiveLevel == Level) SetActiveLevel(CStrID::Empty);
 
 	Data::PParams P = n_new(Data::CParams);
 	P->Set(CStrID("ID"), ID);
-	EventMgr->FireEvent(CStrID("OnLevelUnloading"), P);
+	EventSrv->FireEvent(CStrID("OnLevelUnloading"), P);
 
 	Level->FireEvent(CStrID("OnEntitiesUnloading"));
 	EntityMgr->DeleteEntities(*Level);
@@ -215,7 +210,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 
 	Level->Term();
 
-	EventMgr->FireEvent(CStrID("OnLevelUnloaded"), P); //???or before a level is removed, but entities are unloaded?
+	EventSrv->FireEvent(CStrID("OnLevelUnloaded"), P); //???or before a level is removed, but entities are unloaded?
 
 	n_assert_dbg(Level->GetRefCount() == 1);
 }
@@ -233,7 +228,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 
 	if (NewLevel != ActiveLevel)
 	{
-		EventMgr->FireEvent(CStrID("OnActiveLevelChanging"));
+		EventSrv->FireEvent(CStrID("OnActiveLevelChanging"));
 		ActiveLevel = NewLevel;
 		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValid() ? ID : CStrID::Empty);
 
@@ -241,7 +236,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 		HasMouseIsect = false;
 		UpdateMouseIntersectionInfo();
 
-		EventMgr->FireEvent(CStrID("OnActiveLevelChanged"));
+		EventSrv->FireEvent(CStrID("OnActiveLevelChanged"));
 	}
 
 	OK;
@@ -274,7 +269,7 @@ bool CGameServer::StartGame(const CString& FileName, const CString& SaveGameName
 	else TimeSrv->ResetAll();
 
 	// Allow custom gameplay managers to load their data
-	EventMgr->FireEvent(CStrID("OnGameDescLoaded"), GameDesc);
+	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc);
 
 	CStrID ActiveLevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
 	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
@@ -286,34 +281,53 @@ bool CGameServer::StartGame(const CString& FileName, const CString& SaveGameName
 	if (!LoadedLevels->Contains(ActiveLevelID)) LoadedLevels->Add(ActiveLevelID);
 
 	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
-	{
-		CStrID LevelID = LoadedLevels->Get<CStrID>(i);
-
-		CString RelLevelPath = CString("/Levels/") + LevelID.CStr() + ".prm";
-
-		Data::PParams InitialLvl = DataSrv->LoadPRM("Game:" + RelLevelPath);
-		n_assert(InitialLvl.IsValid());
-
-		//!!!DBG TMP PATH!
-		Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("AppData:SavesTMP/" + SaveGameName + RelLevelPath, false) : NULL;
-
-		Data::PParams LevelDesc;
-		if (SGLvl.IsValid())
-		{
-			LevelDesc = n_new(Data::CParams);
-			InitialLvl->MergeDiff(*LevelDesc, *SGLvl);
-		}
-		else LevelDesc = InitialLvl;
-
-		n_verify(LoadLevel(LevelID, *LevelDesc));
-	}
+		n_verify(LoadGameLevel(LoadedLevels->Get<CStrID>(i), SaveGameName));
 
 	GameFileName = FileName;
 
 	// Allow custom gameplay managers to load their data
-	EventMgr->FireEvent(CStrID("OnGameLoaded"), GameDesc);
+	EventSrv->FireEvent(CStrID("OnGameLoaded"), GameDesc);
 
 	return SetActiveLevel(ActiveLevelID);
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::LoadGameLevel(CStrID ID, const CString& SaveGameName)
+{
+	CString RelLevelPath = CString("/Levels/") + ID.CStr() + ".prm";
+
+	Data::PParams InitialLvl = DataSrv->LoadPRM("Game:" + RelLevelPath);
+	n_assert(InitialLvl.IsValid());
+
+	//!!!if no savegame, but game is specified, load diff from continue data!
+
+	//!!!DBG TMP PATH!
+	Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("AppData:SavesTMP/" + SaveGameName + RelLevelPath, false) : NULL;
+
+	Data::PParams LevelDesc;
+	if (SGLvl.IsValid())
+	{
+		LevelDesc = n_new(Data::CParams);
+		InitialLvl->MergeDiff(*LevelDesc, *SGLvl);
+	}
+	else LevelDesc = InitialLvl;
+
+	return LoadLevel(ID, *LevelDesc);
+}
+//---------------------------------------------------------------------
+
+void CGameServer::UnloadGameLevel(CStrID ID)
+{
+	//int LevelIdx = Levels.FindIndex(ID);
+	//if (ID == INVALID_INDEX) return;
+	//PGameLevel Level = Levels.ValueAt(LevelIdx);
+
+	//!!!save diff of this level to a continue set!
+	// re-entering location LoadLevel call will load continue diff
+	// If mode is not a game, but is a simple level, we don't need to save diff,
+	// moreover, we have no user profile
+
+	UnloadLevel(ID);
 }
 //---------------------------------------------------------------------
 
@@ -322,12 +336,12 @@ void CGameServer::PauseGame(bool Pause) const
 	if (Pause)
 	{
 		GameTimeSrc->Pause();
-		EventMgr->FireEvent(CStrID("OnGamePaused"));
+		EventSrv->FireEvent(CStrID("OnGamePaused"));
 	}
 	else
 	{
 		GameTimeSrc->Unpause();
-		EventMgr->FireEvent(CStrID("OnGameUnpaused"));
+		EventSrv->FireEvent(CStrID("OnGameUnpaused"));
 	}
 }
 //---------------------------------------------------------------------
@@ -361,7 +375,7 @@ bool CGameServer::SaveGame(const CString& Name)
 	if (SGTime->GetCount()) SGCommon->Set(CStrID("Time"), SGTime);
 
 	// Allow custom gameplay managers to save their data
-	EventMgr->FireEvent(CStrID("OnGameSaving"), SGCommon);
+	EventSrv->FireEvent(CStrID("OnGameSaving"), SGCommon);
 
 	//???diff here?
 	//mb special Extensions/Plugins section not to affect already saved data by diff

@@ -3,7 +3,7 @@
 #include "DialogueManager.h"
 #include "DlgLink.h"
 #include <Game/GameServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Story
 {
@@ -25,7 +25,7 @@ CDlgNode* CDlgNodePhrase::Trigger(CActiveDlg& Dlg)
 			if (Links[Dlg.LinkIdx]->pTargetNode)
 			{
 				Dlg.IsCheckingConditions = false;
-				EventMgr->FireEvent(CStrID("OnDlgContinueAvailable"));
+				EventSrv->FireEvent(CStrID("OnDlgContinueAvailable"));
 			}
 			break;
 		}
@@ -37,7 +37,7 @@ CDlgNode* CDlgNodePhrase::Trigger(CActiveDlg& Dlg)
 	{
 		Dlg.IsCheckingConditions = false;
 		Dlg.Continued = false;
-		EventMgr->FireEvent(CStrID("OnDlgEndAvailable"));
+		EventSrv->FireEvent(CStrID("OnDlgEndAvailable"));
 	}
 
 	if (!Dlg.Continued && (Timeout < 0.f || Dlg.NodeEnterTime + Timeout > GameSrv->GetTime())) return this;

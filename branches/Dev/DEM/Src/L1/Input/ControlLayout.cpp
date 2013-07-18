@@ -8,7 +8,7 @@
 #include <Input/Events/MouseBtnUp.h>
 #include <Input/Events/MouseDoubleClick.h>
 #include <Input/Events/MouseWheel.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Input
 {

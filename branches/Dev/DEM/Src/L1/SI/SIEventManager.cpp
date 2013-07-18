@@ -1,7 +1,7 @@
 #include <Scripting/ScriptServer.h>
 #include <Scripting/ScriptObject.h>
 #include <Scripting/EventHandlerScript.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 extern "C"
 {
@@ -71,7 +71,7 @@ int EventMgr_FireEvent(lua_State* l)
 		}
 	}
 
-	EventMgr->FireEvent(CStrID(lua_tostring(l, 1)), Params);
+	EventSrv->FireEvent(CStrID(lua_tostring(l, 1)), Params);
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -84,7 +84,7 @@ bool RegisterEventManager()
 	ScriptSrv->ExportCFunction("Subscribe", EventMgr_Subscribe);
 	ScriptSrv->ExportCFunction("Unsubscribe", EventMgr_Unsubscribe);
 	ScriptSrv->ExportCFunction("FireEvent", EventMgr_FireEvent);
-	lua_setglobal(l, "EventMgr");
+	lua_setglobal(l, "EventSrv");
 
 	OK;
 }

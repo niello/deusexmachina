@@ -22,7 +22,8 @@ public:
 
 	PCollisionObjMoving	CollObj;
 
-	virtual void Update();
+	virtual void	Update();
+	void			GetGlobalAABB(CAABB& OutBox) const { CollObj->GetGlobalAABB(OutBox); }
 };
 
 typedef Ptr<CNodeAttrCollision> PNodeAttrCollision;

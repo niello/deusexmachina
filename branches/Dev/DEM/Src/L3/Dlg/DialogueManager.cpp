@@ -10,7 +10,7 @@
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
 #include <Scripting/ScriptServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 
@@ -231,7 +231,7 @@ void CDialogueManager::StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool
 
 		SUBSCRIBE_PEVENT(OnDlgAnswersBegin, CDialogueManager, OnDlgAnswersBegin);
 
-		EventMgr->FireEvent(CStrID("OnDlgStart"));
+		EventSrv->FireEvent(CStrID("OnDlgStart"));
 
 		ForegroundDlg.EnterNode(ForegroundDlg.Dlg->StartNode);
 	}
@@ -255,14 +255,14 @@ void CDialogueManager::Trigger()
 				bool Continue = ForegroundDlg.pCurrNode->IsA(CDlgNodeAnswers::RTTI);
 				ForegroundDlg.EnterNode(pNewNode);
 				if (Continue) ForegroundDlg.Continued = true;
-				EventMgr->FireEvent(CStrID("OnDlgNoCmdAvailable"));
+				EventSrv->FireEvent(CStrID("OnDlgNoCmdAvailable"));
 				pNewNode = ForegroundDlg.Trigger();
 			}
 			else
 			{
 				n_assert2(!ForegroundDlg.ValidLinkIndices.GetCount(), "Dialogue was ended in answer mode!"); //???allow?
 
-				EventMgr->FireEvent(CStrID("OnDlgEnd"));
+				EventSrv->FireEvent(CStrID("OnDlgEnd"));
 
 				UNSUBSCRIBE_EVENT(OnDlgAnswersBegin);
 
@@ -317,7 +317,7 @@ void CDialogueManager::SayPhrase(CStrID SpeakerEntity, const CString& Phrase, CA
 		PParams P = n_new(CParams);
 		P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
 		P->Set(CStrID("Phrase"), (PVOID)Phrase.CStr());
-		EventMgr->FireEvent(CStrID("OnDlgPhrase"), P);
+		EventSrv->FireEvent(CStrID("OnDlgPhrase"), P);
 	}
 	else
 	{
@@ -342,7 +342,7 @@ void CDialogueManager::ContinueDialogue(int ValidLinkIdx)
 	ForegroundDlg.Continued = true;
 	if (ValidLinkIdx >= 0 && ValidLinkIdx < ForegroundDlg.ValidLinkIndices.GetCount())
 		ForegroundDlg.LinkIdx = ForegroundDlg.ValidLinkIndices[ValidLinkIdx];
-	//EventMgr->FireEvent(CStrID("OnDlgAnswerSelected"));
+	//EventSrv->FireEvent(CStrID("OnDlgAnswerSelected"));
 }
 //---------------------------------------------------------------------
 

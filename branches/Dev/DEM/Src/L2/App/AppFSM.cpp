@@ -1,6 +1,6 @@
 #include "AppFSM.h"
 
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace App
 {

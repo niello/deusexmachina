@@ -61,7 +61,7 @@ void CEnvironment::ReleaseCore()
 
 bool CEnvironment::InitEngine()
 {
-	EventManager = n_new(Events::CEventManager);
+	EventServer = n_new(Events::CEventServer);
 	ScriptServer = n_new(Scripting::CScriptServer);
 
 	TimeServer = n_new(Time::CTimeServer);
@@ -138,7 +138,7 @@ void CEnvironment::ReleaseEngine()
 	TimeServer = NULL;
 
 	ScriptServer = NULL;
-	EventManager = NULL;
+	EventServer = NULL;
 }
 //---------------------------------------------------------------------
 

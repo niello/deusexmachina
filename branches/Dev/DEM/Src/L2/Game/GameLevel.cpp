@@ -10,7 +10,7 @@
 #include <Physics/PhysicsWorld.h>
 #include <Physics/PhysicsServer.h>
 #include <AI/AILevel.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <IO/IOServer.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
@@ -135,7 +135,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		}
 	}
 
-	GlobalSub = EventMgr->Subscribe(NULL, this, &CGameLevel::OnEvent);
+	GlobalSub = EventSrv->Subscribe(NULL, this, &CGameLevel::OnEvent);
 
 	OK;
 }
@@ -383,7 +383,14 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 	if (!Scene.IsValid()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
-	if (!pNode) FAIL;
+	if (!pNode)
+	{
+		matrix44 Tfm;
+		if (!Entity.GetAttr(Tfm, CStrID("Transform"))) FAIL;
+		Scene->GetMainCamera().GetPoint2D(Tfm.Translation(), Out.v0.x, Out.v0.y);
+		Out.v1 = Out.v0;
+		OK;
+	}
 
 	CAABB AABB;
 	pNode->GetAABB(AABB);

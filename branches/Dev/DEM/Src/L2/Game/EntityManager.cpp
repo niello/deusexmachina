@@ -2,7 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Game
 {

@@ -1,7 +1,7 @@
 #include "Texture.h"
 
 #include <Render/RenderServer.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 
 namespace Data
 {

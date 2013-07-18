@@ -1,7 +1,7 @@
 #include "ScriptServer.h"
 
 #include "ScriptObject.h"
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
 #include <Data/Buffer.h>

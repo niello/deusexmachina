@@ -2,7 +2,7 @@
 
 #include <Items/ItemManager.h>
 #include <Game/EntityManager.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Data/DataArray.h>
 
 namespace Prop
@@ -115,7 +115,7 @@ bool CPropInventory::AddItem(PItem NewItem, WORD Count)
 		P->Set(CStrID("Item"), CString(NewItem->GetID().CStr()));
 		P->Set(CStrID("Count"), (int)Count);
 		P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));
-		EventMgr->FireEvent(CStrID("OnItemAdded"), P);
+		EventSrv->FireEvent(CStrID("OnItemAdded"), P);
 
 		OK;
 	}
@@ -154,7 +154,7 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 	}
 	else Items.Remove(Stack);
 
-	EventMgr->FireEvent(CStrID("OnItemRemoved"), P);
+	EventSrv->FireEvent(CStrID("OnItemRemoved"), P);
 
 	return ToRemove;
 }
