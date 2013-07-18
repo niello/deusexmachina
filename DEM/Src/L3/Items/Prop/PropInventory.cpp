@@ -52,6 +52,10 @@ void CPropInventory::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
+
+	Items.Clear();
+	CurrWeight = 0.f;
+	CurrVolume = 0.f;
 }
 //---------------------------------------------------------------------
 

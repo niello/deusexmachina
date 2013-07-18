@@ -62,6 +62,9 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 		//!!!DBG uncomment or move to app, see above!
 		//if (GameSrv->IsLevelLoaded(LevelID))
 			WorldMgr->MakeTransition(TravellerIDs, pActorEnt->GetLevel().GetID(), LevelID, MarkerID, false);
+
+			//!!!not here!
+			GameSrv->SetActiveLevel(LevelID);
 		//else
 		//{
 			//request
