@@ -143,12 +143,13 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 bool CActionUseSmartObj::IsValid(CActor* pActor) const
 {
-	return	EntityMgr->EntityExists(TargetID) &&
-			Action->Enabled &&
+	return	Action->Enabled &&
 			(WasDone || Action->Resource) &&
+			EntityMgr->EntityExists(TargetID) &&
+			pSO->GetEntity()->GetLevel().GetID() == pActor->GetEntity()->GetLevel().GetID() &&
 			((SubActFace.IsValid() && SubActFace->IsValid(pActor)) ||
 			 (!Action->UpdateValidator.IsValid() || Action->UpdateValidator->IsValid(pActor, pSO, Action)));
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}
