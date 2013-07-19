@@ -39,7 +39,7 @@ bool CWorldManager::OnGameSaving(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 // Level will be set as active externally, because here NPC may walk
-bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID DepartureLevelID, CStrID DestLevelID, CStrID DestMarkerID, bool UnloadDepartureLevel)
+bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
 {
 	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
 	for (int i = 0; i < EntityIDs.GetCount(); ++i)
@@ -47,7 +47,6 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Depar
 		Game::CEntity* pEnt = EntityMgr->GetEntity(EntityIDs[i]);
 		if (pEnt)
 		{
-			n_assert_dbg(pEnt->GetLevel().GetID() == DepartureLevelID);
 			Entities.Add(pEnt);
 			pEnt->Deactivate();
 		}
@@ -56,19 +55,16 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Depar
 	// May be all entities were already destroyed
 	if (!Entities.GetCount()) FAIL;
 
-	//!!!may need to unload several levels (or always all?)
-	if (UnloadDepartureLevel)
+	if (UnloadAllLevels)
 	{
 		for (int i = 0; i < Entities.GetCount(); ++i)
 			Entities[i]->SetLevel(NULL);
-		GameSrv->UnloadGameLevel(DepartureLevelID);
+		GameSrv->UnloadAllGameLevels();
 	}
 
-	if (!GameSrv->IsLevelLoaded(DestLevelID) && !GameSrv->LoadGameLevel(DestLevelID)) FAIL;
+	if (!GameSrv->IsLevelLoaded(LevelID) && !GameSrv->LoadGameLevel(LevelID)) FAIL;
 
-	//!!!if (UnloadDepartureLevel) UnloadUnreferencedResources();
-
-	Game::CEntity* pMarker = EntityMgr->GetEntity(DestMarkerID);
+	Game::CEntity* pMarker = EntityMgr->GetEntity(MarkerID);
 	n_assert(pMarker);
 
 	const matrix44& DestTfm = pMarker->GetAttr<matrix44>(CStrID("Transform"));
@@ -81,12 +77,15 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Depar
 	}
 	else Entities[0]->SetAttr<matrix44>(CStrID("Transform"), DestTfm);
 
-	Game::CGameLevel* pNewLevel = GameSrv->GetLevel(DestLevelID);
+	Game::CGameLevel* pNewLevel = GameSrv->GetLevel(LevelID);
 	n_assert(pNewLevel);
 	for (int i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->SetLevel(pNewLevel);
 	for (int i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->Activate();
+
+	//???!!!to application!?
+	//!!!if (UnloadAllLevels) EachResourceManager->UnloadUnreferencedResources();
 
 	OK;
 }

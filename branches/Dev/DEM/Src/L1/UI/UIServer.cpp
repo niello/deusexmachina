@@ -240,6 +240,18 @@ void CUIServer::SetDefaultMouseCursor(const CString& schemeName, const CString& 
 }
 //---------------------------------------------------------------------
 
+void CUIServer::ShowMouseCursor()
+{
+	CEGUI::MouseCursor::getSingleton().show();
+}
+//---------------------------------------------------------------------
+
+void CUIServer::HideMouseCursor()
+{
+	CEGUI::MouseCursor::getSingleton().hide();
+}
+//---------------------------------------------------------------------
+
 CEGUI::Point CUIServer::GetMousePosition() const
 {
 	return CEGUI::MouseCursor::getSingleton().getPosition();

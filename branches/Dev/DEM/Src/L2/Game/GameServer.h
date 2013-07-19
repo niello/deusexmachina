@@ -69,6 +69,7 @@ public:
 	bool			LoadGame(const CString& Name) { return StartGame(GameFileName, Name); }
 	bool			LoadGameLevel(CStrID ID, const CString& SaveGameName = CString::Empty);
 	void			UnloadGameLevel(CStrID ID);
+	void			UnloadAllGameLevels() { while (Levels.GetCount()) UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1)); }
 
 	//???EnumSavedGames?
 	//???Profile->GetSaveGamePath?
