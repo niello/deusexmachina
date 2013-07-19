@@ -94,6 +94,9 @@ public:
 	bool			IsGUIVisible() const;
 	bool			IsMouseOverGUI() const;
 
+	void			ShowMouseCursor();
+	void			HideMouseCursor();
+
 	// Internal use by UI system & windows
 	CEGUI::UVector2	GetMousePositionU() const;
 	CEGUI::Point	GetMousePosition() const; //???return nebula vector2, not point? vector2 can be used externally

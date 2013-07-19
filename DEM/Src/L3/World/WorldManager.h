@@ -32,7 +32,7 @@ public:
 	CWorldManager();
 	~CWorldManager();
 
-	bool	MakeTransition(const CArray<CStrID>& EntityIDs, CStrID DepartureLevelID, CStrID DestLevelID, CStrID DestMarkerID, bool UnloadDepartureLevel);
+	bool	MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels);
 };
 
 }
