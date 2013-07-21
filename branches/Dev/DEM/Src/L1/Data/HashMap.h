@@ -99,6 +99,9 @@ public:
 		size_t		GetKeyLength() const { n_assert(pNode); return pNode->len; }
 		const TVal&	GetValue() const { n_assert(pNode); return pNode->value; }
 		bool		IsEnd() const { return !pNode; }
+					operator bool() const { return !!pNode; }
+		TVal*		operator ->() const { n_assert_dbg(pNode); return &pNode->value; }
+		TVal&		operator *() const { n_assert_dbg(pNode); return pNode->value; }
 		CIterator&	operator ++()
 		{
 			pNode = pNode->next;

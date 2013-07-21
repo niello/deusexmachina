@@ -419,9 +419,15 @@ void CNavSystem::UpdatePosition()
 
 void CNavSystem::SetDestPoint(const vector3& Dest)
 {
-	if (!pNavQuery) return;
-
 	DestPoint = Dest;
+
+	if (pActor->IsAtPoint(DestPoint, true))
+	{
+		Reset();
+		return;
+	}
+
+	if (!pNavQuery) return;
 
 	//???!!!when can call Corridor.moveTargetPosition?!
 

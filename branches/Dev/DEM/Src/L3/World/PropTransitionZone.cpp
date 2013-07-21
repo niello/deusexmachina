@@ -40,9 +40,6 @@ bool CPropTransitionZone::OnTravel(const Events::CEventBase& Event)
 	// is intersected by a new character, and fire event only when transition can really be performed?
 	//need to implement such a continuous action mechanism.
 
-	//???wait group here or in prop? in prop is more logical, here we don't know
-	// anything about transition zone and its shape
-
 	//!!!if party, collect a group of travellers! for far travel, all party,
 	// for near - selection or wait for all selection is in a zone
 	Data::PDataArray IDs = n_new(Data::CDataArray(1, 5));

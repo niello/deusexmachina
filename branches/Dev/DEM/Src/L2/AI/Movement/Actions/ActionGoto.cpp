@@ -18,7 +18,11 @@ EExecStatus CActionGoto::Update(CActor* pActor)
 {
 	switch (pActor->NavStatus)
 	{
-		case AINav_Invalid:		//???Autocreate sub-action to restore validity? Now Fail.
+		case AINav_Invalid:
+		{
+			if (pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true)) return Success;
+			else return Failure; //???Autocreate sub-action to restore validity?
+		}
 		case AINav_Failed:		return Failure;
 		case AINav_Done:		return Success;
 		case AINav_DestSet:		return Running;
@@ -57,7 +61,8 @@ void CActionGoto::Deactivate(CActor* pActor)
 
 bool CActionGoto::IsValid(CActor* pActor) const
 {
-	return pActor->NavStatus != AINav_Invalid && pActor->NavStatus != AINav_Failed;
+	return	pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true) ||
+			(pActor->NavStatus != AINav_Invalid && pActor->NavStatus != AINav_Failed);
 }
 //---------------------------------------------------------------------
 
@@ -110,4 +115,4 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

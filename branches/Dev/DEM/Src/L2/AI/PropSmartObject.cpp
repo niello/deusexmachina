@@ -110,4 +110,4 @@ bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

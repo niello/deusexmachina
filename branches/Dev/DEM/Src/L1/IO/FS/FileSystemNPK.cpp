@@ -138,10 +138,10 @@ void* CFileSystemNPK::OpenDirectory(const CString& Path, const CString& Filter, 
 		pDir->Filter = (Filter == "*") ? CString::Empty : Filter;
 
 		if (Filter.IsValid())
-			while (!pDir->It.IsEnd() && !CString(pDir->It.GetValue()->GetName()).MatchPattern(Filter))
+			while (pDir->It && !CString(pDir->It.GetValue()->GetName()).MatchPattern(Filter))
 				++pDir->It;
 
-		if (!pDir->It.IsEnd())
+		if (pDir->It)
 		{
 			OutName = pDir->It.GetValue()->GetName();
 			OutType = pDir->It.GetValue()->GetType() == FSE_DIR ? FSE_DIR : FSE_FILE;
@@ -171,15 +171,15 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryTy
 {
 	n_assert(hDir);
 	CNPKDir* pDir = ((CNPKDir*)hDir);
-	if (!pDir->It.IsEnd())
+	if (pDir->It)
 	{
 		++pDir->It;
 
 		if (pDir->Filter.IsValid())
-			while (!pDir->It.IsEnd() && !CString(pDir->It.GetValue()->GetName()).MatchPattern(pDir->Filter))
+			while (pDir->It && !CString(pDir->It.GetValue()->GetName()).MatchPattern(pDir->Filter))
 				++pDir->It;
 
-		if (!pDir->It.IsEnd())
+		if (pDir->It)
 		{
 			OutName = pDir->It.GetValue()->GetName();
 			OutType = pDir->It.GetValue()->GetType() == FSE_DIR ? FSE_DIR : FSE_FILE;
