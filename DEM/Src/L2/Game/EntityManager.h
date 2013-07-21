@@ -107,13 +107,9 @@ bool CEntityManager::UnregisterProperty()
 
 	if (T::pStorage->GetCount())
 	{
-		CPropertyStorage::CIterator It = T::pStorage->Begin();
-		while (!It.IsEnd())
-		{
-			n_error("CEntityManager::UnregisterProperty() -> WRITE Deactivate and detach!");
-			//!!!Deactivate & detach property!
-			++It;
-		}
+		for (CPropertyStorage::CIterator It = T::pStorage->Begin(); It; ++It)
+			It->GetUnsafe()->Deactivate();
+		T::pStorage->Clear();
 	}
 
 	PropStorages.Remove(&T::RTTI);

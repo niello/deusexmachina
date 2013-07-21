@@ -83,7 +83,7 @@ inline CNpkTOCEntry::~CNpkTOCEntry()
 {
 	if (Type == FSE_DIR && pEntries)
 	{
-		for (CIterator It = pEntries->Begin(); !It.IsEnd(); ++It)
+		for (CIterator It = pEntries->Begin(); It; ++It)
 			n_delete(It.GetValue());
 		n_delete(pEntries);
 	}

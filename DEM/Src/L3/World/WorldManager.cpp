@@ -62,6 +62,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 		GameSrv->UnloadAllGameLevels();
 	}
 
+	//!!!must not preload resources inside, load level resources after freeing unreferenced ones!
 	if (!GameSrv->IsLevelLoaded(LevelID) && !GameSrv->LoadGameLevel(LevelID)) FAIL;
 
 	Game::CEntity* pMarker = EntityMgr->GetEntity(MarkerID);
@@ -83,9 +84,6 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 		Entities[i]->SetLevel(pNewLevel);
 	for (int i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->Activate();
-
-	//???!!!to application!?
-	//!!!if (UnloadAllLevels) EachResourceManager->UnloadUnreferencedResources();
 
 	OK;
 }

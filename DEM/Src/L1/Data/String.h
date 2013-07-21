@@ -126,9 +126,9 @@ public:
 	char			operator [](int i) const { n_assert(i >= 0 && i <= (int)Length()); return CStr()[i]; }
 	char&			operator [](int i) { n_assert(i >= 0 && i <= (int)Length()); return pString ? pString[i] : pLocalString[i]; }
 
-	friend bool		operator ==(const CString& a, const CString& b) { return !strcmp(a.CStr(), b.CStr()); }
+	friend bool		operator ==(const CString& a, const CString& b) { return a.Length() == b.Length() && !strcmp(a.CStr(), b.CStr()); }
 	friend bool		operator ==(const CString& a, const char* b) { return b ? (!strcmp(a.CStr(), b)) : a.IsEmpty(); }
-	friend bool		operator !=(const CString& a, const CString& b) { return !!strcmp(a.CStr(), b.CStr()); }
+	friend bool		operator !=(const CString& a, const CString& b) { return a.Length() != b.Length() || strcmp(a.CStr(), b.CStr()); }
 	friend bool		operator !=(const CString& a, const char* b) { return b ? (!!strcmp(a.CStr(), b)) : a.IsValid(); }
 	friend bool		operator <(const CString& a, const CString& b) { return strcmp(a.CStr(), b.CStr()) < 0; }
 	friend bool		operator >(const CString& a, const CString& b) { return strcmp(a.CStr(), b.CStr()) > 0; }

@@ -40,8 +40,7 @@ int IResourceManager::DeleteResource(CStrID UID)
 DWORD IResourceManager::UnloadUnreferenced()
 {
 	DWORD Released = 0;
-	CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin();
-	while (!It.IsEnd())
+	for (CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin(); It; ++It)
 		if (It.GetValue()->GetRefCount() == 1)
 		{
 			Released += It.GetValue()->GetSizeInBytes();
@@ -62,8 +61,7 @@ DWORD IResourceManager::DeleteUnreferenced()
 	CArray<CStrID> ToDelete;
 
 	DWORD Released = 0;
-	CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin();
-	while (!It.IsEnd())
+	for (CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin(); It; ++It)
 		if (It.GetValue()->GetRefCount() == 1)
 		{
 			Released += It.GetValue()->GetSizeInBytes();
@@ -89,8 +87,7 @@ DWORD IResourceManager::FreeMemory(DWORD DesiredBytes)
 DWORD IResourceManager::GetMemoryUsed() //const //!!!need const CIterator!
 {
 	DWORD Total = 0;
-	CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin();
-	while (!It.IsEnd())
+	for (CHashTable<CStrID, PResource>::CIterator It = UIDToResource.Begin(); It; ++It)
 		Total += It.GetValue()->GetSizeInBytes();
 	return Total;
 }

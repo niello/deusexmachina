@@ -38,14 +38,16 @@ public:
 	operator	DWORD() const { return (DWORD)String; }
 	operator	LPCSTR() const { return String; }
 
+	bool operator ==(const CSimpleString& Other) const { return Len == Other.Len && !strcmp(String, Other.String); }
 	bool operator ==(LPCSTR Str) const { return !strcmp(String, Str); }
+	bool operator !=(const CSimpleString& Other) const { return Len != Other.Len || strcmp(String, Other.String); }
 	bool operator !=(LPCSTR Str) const { return !!strcmp(String, Str); }
 	bool operator >(LPCSTR Str) const { return strcmp(String, Str) > 0; }
 	bool operator <(LPCSTR Str) const { return strcmp(String, Str) < 0; }
 	bool operator >=(LPCSTR Str) const { return strcmp(String, Str) >= 0; }
 	bool operator <=(LPCSTR Str) const { return strcmp(String, Str) <= 0; }
-	CSimpleString& operator =(LPCSTR Str) { Set(Str); return *this; }
 	CSimpleString& operator =(const CSimpleString& Str) { Set((LPCSTR)Str); return *this; }
+	CSimpleString& operator =(LPCSTR Str) { Set(Str); return *this; }
 };
 
 inline void CSimpleString::Set(LPCSTR Str)

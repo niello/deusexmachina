@@ -112,7 +112,7 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 void CWatcherWindow::AddAllGlobals()
 {
 	int i = Watched.GetCount();
-	for (CHashMap<CData>::CIterator It = CoreSrv->Globals.Begin(); !It.IsEnd(); ++It, ++i)
+	for (CHashMap<CData>::CIterator It = CoreSrv->Globals.Begin(); It; ++It, ++i)
 	{
 		CString Str(It.GetKey(), It.GetKeyLength());
 		AddWatched(DEM, Str.CStr());

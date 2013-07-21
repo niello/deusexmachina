@@ -24,7 +24,7 @@ class CSceneServer: public Core::CRefCounted
 private:
 
 	//CPool<CSceneNode>								NodePool;
-	CDict<CStrID, Render::PFrameShader>		FrameShaders;	//???to RenderServer?
+	CDict<CStrID, Render::PFrameShader>				FrameShaders;	//???to RenderServer?
 	CStrID											ScreenFrameShaderID;
 
 public:

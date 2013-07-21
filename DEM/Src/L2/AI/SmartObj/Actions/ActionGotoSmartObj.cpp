@@ -8,8 +8,6 @@ namespace AI
 {
 __ImplementClass(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
 
-using namespace Prop;
-
 bool CActionGotoSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
@@ -33,4 +31,4 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}
