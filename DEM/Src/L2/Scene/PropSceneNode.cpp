@@ -22,6 +22,8 @@ IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 
 bool CPropSceneNode::InternalActivate()
 {
+	if (!GetEntity()->GetLevel()->GetScene()) FAIL;
+
 	CString NodePath;
 	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
 	CString NodeFile;
@@ -32,7 +34,7 @@ bool CPropSceneNode::InternalActivate()
 	
 	if (NodePath.IsValid())
 	{
-		//???optimize duplicate search?
+		//???PERF: optimize duplicate search?
 		Node = GetEntity()->GetLevel()->GetScene()->GetNode(NodePath.CStr(), false);
 		ExistingNode = Node.IsValid();
 		if (!ExistingNode) Node = GetEntity()->GetLevel()->GetScene()->GetNode(NodePath.CStr(), true);
