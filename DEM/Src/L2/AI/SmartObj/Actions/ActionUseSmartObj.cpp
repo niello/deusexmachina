@@ -31,7 +31,7 @@ void CActionUseSmartObj::StartSOAction(CActor* pActor)
 bool CActionUseSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
-	if (!pSOEntity || pSOEntity->GetLevel().GetID() != pActor->GetEntity()->GetLevel().GetID()) FAIL;
+	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 
 	pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
@@ -117,7 +117,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 		pActor->GetMotorSystem().ResetRotation();
 
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
-	if (!pSOEntity || pSOEntity->GetLevel().GetID() != pActor->GetEntity()->GetLevel().GetID()) return;
+	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
 
 	if (Action->FreeUserSlots >= 0) Action->FreeUserSlots++;
 	
@@ -146,7 +146,7 @@ bool CActionUseSmartObj::IsValid(CActor* pActor) const
 	return	Action->Enabled &&
 			(WasDone || Action->Resource) &&
 			EntityMgr->EntityExists(TargetID) &&
-			pSO->GetEntity()->GetLevel().GetID() == pActor->GetEntity()->GetLevel().GetID() &&
+			pSO->GetEntity()->GetLevel() == pActor->GetEntity()->GetLevel() &&
 			((SubActFace.IsValid() && SubActFace->IsValid(pActor)) ||
 			 (!Action->UpdateValidator.IsValid() || Action->UpdateValidator->IsValid(pActor, pSO, Action)));
 }

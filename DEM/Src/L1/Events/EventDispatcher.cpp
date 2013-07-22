@@ -54,7 +54,7 @@ DWORD CEventDispatcher::ScheduleEvent(CEventBase* Event, float RelTime)
 {
 	n_assert(Event);
 
-	if (RelTime > 0.f) Event->Flags |= EV_ASYNC;
+ 	if (RelTime > 0.f) Event->Flags |= EV_ASYNC;
 
 	if (Event->Flags & EV_ASYNC)
 	{

@@ -155,7 +155,7 @@ void CGameLevel::Term()
 bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 {
 	// This is a chance for all properties to write their attrs to entities
-	FireEvent(CStrID("OnLevelSaving"), &OutDesc);
+	FireEvent(CStrID("OnLevelSaving")); //, &OutDesc);
 
 	// Save selection
 	Data::PDataArray SGSelection = n_new(Data::CDataArray);
@@ -240,7 +240,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		{
 			CStrID EntityID = InitialEntities->Get(i).GetName();
 			CEntity* pEntity = EntityMgr->GetEntity(EntityID, false);
-			if (!pEntity || &pEntity->GetLevel() != this)
+			if (!pEntity || pEntity->GetLevel() != this)
 			{
 				// Static objects never change, so we need no diff of them
 				CStaticObject* pStaticObj = StaticEnvMgr->GetStaticObject(EntityID);
@@ -252,7 +252,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 	//???is there any better way to iterate over all entities of this level? mb send them an event?
 	CArray<CEntity*> Entities(128, 128);
-	EntityMgr->GetEntitiesByLevel(ID, Entities);
+	EntityMgr->GetEntitiesByLevel(this, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
 	const Data::CParams* pInitialEntities = InitialEntities.IsValid() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
 	for (int i = 0; i < Entities.GetCount(); ++i)

@@ -12,6 +12,8 @@
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
 // from L2 & L3 (like dialogue, quest and item managers).
 
+//!!!!!!on exit game, if profile is set, write SGCommon to continue data, now only levels are in continue!
+
 namespace Game
 {
 #define GameSrv Game::CGameServer::Instance()
@@ -23,25 +25,24 @@ class CGameServer: public Core::CRefCounted
 
 protected:
 
-	bool								IsOpen;
-	CString								GameFileName;
-	CDataDict							Attrs;
+	bool							IsOpen;
+	CString							GameFileName;
+	CString							CurrProfile;
+	CDataDict						Attrs;
 
-	Time::PTimeSource					GameTimeSrc;
-	PEntityManager						EntityManager;
-	PStaticEnvManager					StaticEnvManager;
-
-	//!!!selected entities! or per-level?
+	Time::PTimeSource				GameTimeSrc;
+	PEntityManager					EntityManager;
+	PStaticEnvManager				StaticEnvManager;
 
 	CDict<CStrID, PGameLevel>		Levels;
-	PGameLevel							ActiveLevel;
+	PGameLevel						ActiveLevel;
 
 	CDict<CStrID, PEntityLoader>	Loaders;
-	PEntityLoader						DefaultLoader;
+	PEntityLoader					DefaultLoader;
 
-	CStrID								EntityUnderMouse;
-	bool								HasMouseIsect;
-	vector3								MousePos3D;
+	CStrID							EntityUnderMouse;
+	bool							HasMouseIsect;
+	vector3							MousePos3D;
 
 	void UpdateMouseIntersectionInfo();
 
@@ -64,15 +65,19 @@ public:
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
 
+	void			EnumProfiles(CArray<CString>& Out) const;
+	bool			CreateProfile(const CString& Name) const;
+	bool			DeleteProfile(const CString& Name) const;
+	bool			SetCurrentProfile(const CString& Name);
+	const CString&	GetCurrentProfile() const { return CurrProfile; }
+	void			EnumSavedGames(CArray<CString>& Out, const CString& Profile = CString::Empty) const;
+
 	bool			StartGame(const CString& FileName, const CString& SaveGameName = CString::Empty);
 	bool			SaveGame(const CString& Name);
 	bool			LoadGame(const CString& Name) { return StartGame(GameFileName, Name); }
 	bool			LoadGameLevel(CStrID ID, const CString& SaveGameName = CString::Empty);
 	void			UnloadGameLevel(CStrID ID);
 	void			UnloadAllGameLevels() { while (Levels.GetCount()) UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1)); }
-
-	//???EnumSavedGames?
-	//???Profile->GetSaveGamePath?
 
 	template<class T>
 	void			SetGlobalAttr(CStrID ID, const T& Value);
@@ -87,8 +92,6 @@ public:
 	template<>
 	bool			GetGlobalAttr(Data::CData& Out, CStrID ID) const;
 	bool			HasGlobalAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
-
-	//Transition service - to move entities from level to level, including store-unload level 1-load level 2-restore case
 
 	CTime			GetTime() const { return GameTimeSrc->GetTime(); }
 	CTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }

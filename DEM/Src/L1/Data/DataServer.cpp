@@ -14,7 +14,7 @@ namespace Data
 __ImplementClassNoFactory(Data::CDataServer, Core::CRefCounted);
 __ImplementSingleton(Data::CDataServer);
 
-CDataServer::CDataServer(): HRDCache(PParams())
+CDataServer::CDataServer(): HRDCache(256)
 {
 	__ConstructSingleton;
 }

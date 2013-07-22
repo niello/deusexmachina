@@ -10,7 +10,7 @@ namespace IO
 __ImplementClassNoFactory(IO::CIOServer, Core::CRefCounted);
 __ImplementSingleton(IO::CIOServer);
 
-CIOServer::CIOServer(): Assigns(CString())
+CIOServer::CIOServer(): Assigns(32)
 {
 	__ConstructSingleton;
 
@@ -66,10 +66,10 @@ bool CIOServer::FileExists(const CString& Path) const
 bool CIOServer::IsFileReadOnly(const CString& Path) const
 {
 	CString AbsPath = IOSrv->ManglePath(Path);
-	//if (DefaultFS->FileExists(AbsPath))
+	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->IsFileReadOnly(AbsPath);
 	for (int i = 0; i < FS.GetCount(); ++i)
-		//if (FS[i]->FileExists(AbsPath))
+		if (FS[i]->FileExists(AbsPath))
 			return FS[i]->IsFileReadOnly(AbsPath);
 	FAIL;
 }
@@ -78,10 +78,10 @@ bool CIOServer::IsFileReadOnly(const CString& Path) const
 bool CIOServer::SetFileReadOnly(const CString& Path, bool ReadOnly) const
 {
 	CString AbsPath = IOSrv->ManglePath(Path);
-	//if (DefaultFS->FileExists(AbsPath))
+	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->SetFileReadOnly(AbsPath, ReadOnly);
 	for (int i = 0; i < FS.GetCount(); ++i)
-		//if (FS[i]->FileExists(AbsPath))
+		if (FS[i]->FileExists(AbsPath))
 			return FS[i]->SetFileReadOnly(AbsPath, ReadOnly);
 	FAIL;
 }

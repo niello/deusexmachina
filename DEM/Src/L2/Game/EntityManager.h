@@ -43,6 +43,7 @@ public:
 	void		DeleteEntity(CStrID UID);
 	void		DeleteEntities(const CGameLevel& Level);
 	void		DeleteAllEntities() { while (Entities.GetCount() > 0) DeleteEntity(*Entities.Back()); }
+	void		DeleteMarkedEntities();
 
 	int			GetEntityCount() const { return Entities.GetCount(); }
 	CEntity*	GetEntity(int Idx) const { return Entities[Idx].GetUnsafe(); }
@@ -51,7 +52,7 @@ public:
 
 	CEntity*	FindEntityByAttr(CStrID AttrID, const Data::CData& Value) const; //???find first - find next?
 	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, CArray<CEntity*>& Out) const;
-	void		GetEntitiesByLevel(CStrID LevelID, CArray<CEntity*>& Out) const;
+	void		GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity*>& Out) const;
 
 	//???find first/all by property? - in fact iterates through the storage / CopyToArray
 

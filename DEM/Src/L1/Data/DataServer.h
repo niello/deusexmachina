@@ -4,7 +4,8 @@
 
 #include <Data/DataScheme.h>
 #include <Core/Singleton.h>
-#include <Data/HashMap.h>
+#include <Data/SimpleString.h>
+#include <Data/HashTable.h>
 
 // Data server manages descs and data serialization schemes
 
@@ -24,9 +25,9 @@ class CDataServer: public Core::CRefCounted
 
 private:
 
-	CHashMap<PParams>					HRDCache; //!!!need better hashmap with Clear, Find etc!
+	CHashTable<CSimpleString, PParams>	HRDCache; //!!!need better hashmap with Clear, Find etc!
 	//!!!Desc cache!
-	CDict<CStrID, PDataScheme>	DataSchemes;
+	CDict<CStrID, PDataScheme>			DataSchemes;
 
 public:
 

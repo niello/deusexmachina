@@ -5,7 +5,7 @@
 namespace Data
 {
 
-CStringIDStorage::CStringIDStorage(): Map(CStrID(""), 512)
+CStringIDStorage::CStringIDStorage(): Map(512)
 {
 	memset(Block, 0, STR_BLOCK_COUNT * sizeof(LPCSTR));
 	BlockIndex = 0;
@@ -16,20 +16,6 @@ CStringIDStorage::CStringIDStorage(): Map(CStrID(""), 512)
 CStringIDStorage::~CStringIDStorage()
 {
 	for (int i = 0; i <= BlockIndex; ++i) n_free(Block[i]);
-}
-//---------------------------------------------------------------------
-
-CStringID CStringIDStorage::AddString(LPCSTR String)
-{
-	//!!!can calc hash once!
-
-	CStringID ExistingID;
-	if (Map.Get(String, ExistingID)) return ExistingID;
-
-	CStringID New(StoreString(String), 0, 0);
-	Map[New.CStr()] = New;
-
-	return New;
 }
 //---------------------------------------------------------------------
 

@@ -35,11 +35,10 @@ void CPropAIHints::InternalDeactivate()
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
-		if (Rec.QTNode) GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.QTNode);
+		if (Rec.QTNode) GetEntity()->GetLevel()->GetAI()->RemoveStimulus(Rec.QTNode);
 	}
 
 	Hints.Clear();
-
 }
 //---------------------------------------------------------------------
 
@@ -110,7 +109,7 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 
 			//???Rec.Stimulus->Init(PrmVal);
 
-			Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus) : NULL;
+			Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : NULL;
 			Hints.Add(Prm.GetName(), Rec);
 		}
 		Hints.EndAdd();
@@ -131,13 +130,13 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 		if (Enable)
 		{
 			if (!Rec.QTNode)
-				Rec.QTNode = GetEntity()->GetLevel().GetAI()->RegisterStimulus(Rec.Stimulus);
+				Rec.QTNode = GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus);
 		}
 		else
 		{
 			if (Rec.QTNode)
 			{
-				GetEntity()->GetLevel().GetAI()->RemoveStimulus(Rec.QTNode);
+				GetEntity()->GetLevel()->GetAI()->RemoveStimulus(Rec.QTNode);
 				Rec.QTNode = NULL;
 			}
 		}
@@ -153,7 +152,7 @@ bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
-		if (Rec.QTNode) GetEntity()->GetLevel().GetAI()->UpdateStimulusLocation(Rec.QTNode);
+		if (Rec.QTNode) GetEntity()->GetLevel()->GetAI()->UpdateStimulusLocation(Rec.QTNode);
 	}
 
 	OK;
