@@ -5,7 +5,7 @@
 #include <Core/RefCounted.h>
 #include <Core/Singleton.h>
 #include <IO/IOFwd.h>
-#include <Data/HashMap.h>
+#include <Data/HashTable.h>
 
 // IO server manages input/output, file systems, generic file caching, path assigns
 
@@ -36,7 +36,7 @@ private:
 
 	PFileSystem							DefaultFS;
 	CArray<PFileSystem>					FS;
-	CHashMap<CString>					Assigns; //!!!need better hashmap with Clear, Find etc!
+	CHashTable<CString, CString>		Assigns;
 
 public:
 

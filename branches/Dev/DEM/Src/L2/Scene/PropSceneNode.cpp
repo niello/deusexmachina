@@ -33,9 +33,9 @@ bool CPropSceneNode::InternalActivate()
 	if (NodePath.IsValid())
 	{
 		//???optimize duplicate search?
-		Node = GetEntity()->GetLevel().GetScene()->GetNode(NodePath.CStr(), false);
+		Node = GetEntity()->GetLevel()->GetScene()->GetNode(NodePath.CStr(), false);
 		ExistingNode = Node.IsValid();
-		if (!ExistingNode) Node = GetEntity()->GetLevel().GetScene()->GetNode(NodePath.CStr(), true);
+		if (!ExistingNode) Node = GetEntity()->GetLevel()->GetScene()->GetNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));

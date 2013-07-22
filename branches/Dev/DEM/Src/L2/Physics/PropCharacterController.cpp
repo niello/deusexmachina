@@ -48,7 +48,7 @@ void CPropCharacterController::InternalDeactivate()
 
 void CPropCharacterController::CreateController()
 {
-	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel().GetPhysics();
+	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel()->GetPhysics();
 	if (!pPhysWorld) return;
 
 	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), NULL);    
@@ -102,7 +102,7 @@ bool CPropCharacterController::Enable()
 
 	//CharCtlr->GetBody()->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 	CharCtlr->GetBody()->SetTransform(pProp->GetNode()->GetWorldMatrix());
-	CharCtlr->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
+	CharCtlr->AttachToLevel(*GetEntity()->GetLevel()->GetPhysics());
 	pProp->GetNode()->SetController(NodeCtlr);
 	NodeCtlr->Activate(true);
 

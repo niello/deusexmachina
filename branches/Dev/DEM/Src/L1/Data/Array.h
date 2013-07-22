@@ -43,8 +43,8 @@ public:
 	~CArray();
 
 	CIterator	Add(const T& Val);
-	CIterator	AddBefore(CIterator It, const T& Val);
-	CIterator	AddAfter(CIterator It, const T& Val);
+	CIterator	AddBefore(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) : 0, Val); }
+	CIterator	AddAfter(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) + 1 : 0, Val); }
 	CIterator	Reserve(DWORD Num, bool Grow = true);
 	CIterator	Insert(int Idx, const T& Val);
 	CIterator	InsertSorted(const T& Val) { return Insert(FindClosestIndexSorted(Val), Val); }
@@ -64,11 +64,15 @@ public:
 	CIterator	End() const { return pData + Count; }
 	T&			At(int Idx) { MakeIndexValid(Idx); return pData[Idx]; }
 	T&			At(int Idx) const { n_assert(IsIndexValid(Idx)); return pData[Idx];}
+	CIterator	IteratorAt(int Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
+	int			IndexOf(CIterator It) const { return It - pData; }
 
-	CIterator	Find(const T& Val) const;
+	CIterator	Find(const T& Val) const { return IteratorAt(FindIndex(Val));  }
 	int			FindIndex(const T& Val) const;
+	CIterator	FindSorted(const T& Val) const { return IteratorAt(FindIndexSorted(Val)); }
 	int			FindIndexSorted(const T& Val) const;
-	int			FindClosestIndexSorted(const T& Val) const;
+	CIterator	FindClosestSorted(const T& Val, bool* pHasEqualElement = NULL) const { return IteratorAt(FindClosestIndexSorted(Val, pHasEqualElement)); }
+	int			FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;
 	bool		Contains(const T& Val) const { return FindIndex(Val) != INVALID_INDEX; }
 	bool		ContainsSorted(const T& Val) const { return FindIndexSorted(Val) != INVALID_INDEX; }
 	bool		IsIndexValid(int Idx) const { return Idx >= 0 && Idx < (int)Count; }
@@ -435,16 +439,6 @@ void CArray<T>::Clear(bool FreeMemory)
 //---------------------------------------------------------------------
 
 template<class T>
-typename CArray<T>::CIterator CArray<T>::Find(const T& Val) const
-{
-	for (DWORD i = 0; i < Count; ++i)
-		if (pData[i] == Val)
-			return pData + i;
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-template<class T>
 int CArray<T>::FindIndex(const T& Val) const
 {
 	for (DWORD i = 0; i < Count; ++i)
@@ -491,9 +485,13 @@ int CArray<T>::FindIndexSorted(const T& Val) const
 
 // Returns where this element should be inserted to keep array sorted
 template<class T>
-int CArray<T>::FindClosestIndexSorted(const T& Val) const
+int CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) const
 {
-	if (!Count) return 0;
+	if (!Count)
+	{
+		if (pHasEqualElement) *pHasEqualElement = false;
+		return 0;
+	}
 
 	int Num = Count, Low = 0, High = Num - 1;
 	while (Low <= High)
@@ -512,11 +510,26 @@ int CArray<T>::FindClosestIndexSorted(const T& Val) const
 				Low = Mid + 1;
 				Num = Half;
 			}
-			else return Mid + 1;
+			else
+			{
+				if (pHasEqualElement) *pHasEqualElement = true;
+				return Mid + 1;
+			}
 		}
-		else return (Val < pData[Low]) ? Low : Low + 1;
+		else
+		{
+			if (pHasEqualElement)
+			{
+				// The only place where == is required, may rewrite througn >, but it is less optimal (see CHashPairT)
+				bool IsEqual = (Val == pData[Low]);
+				*pHasEqualElement = IsEqual;
+				if (IsEqual) return Low + 1;
+			}
+			return (Val < pData[Low]) ? Low : Low + 1;
+		}
 	}
 
+	if (pHasEqualElement) *pHasEqualElement = false;
 	return Low;
 }
 //---------------------------------------------------------------------

@@ -28,7 +28,7 @@ void CProperty::SetEntity(CEntity* pNewEntity)
 
 void CProperty::Activate()
 {
-	n_assert_dbg(!Active && pEntity);
+	n_assert_dbg(!Active && pEntity && pEntity->GetLevel());
 
 	Active = InternalActivate();
 
@@ -43,7 +43,7 @@ void CProperty::Activate()
 
 void CProperty::Deactivate()
 {
-	n_assert_dbg(Active && pEntity);
+	n_assert_dbg(Active && pEntity && pEntity->GetLevel());
 
 	Data::PParams P = n_new(Data::CParams);
 	P->Set<PVOID>(CStrID("Prop"), this);

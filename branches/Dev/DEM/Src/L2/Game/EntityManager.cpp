@@ -83,7 +83,15 @@ void CEntityManager::DeleteEntity(int Idx)
 void CEntityManager::DeleteEntities(const CGameLevel& Level)
 {
 	for (int i = Entities.GetCount() - 1; i >= 0; --i)
-		if (&Entities[i]->GetLevel() == &Level)
+		if (Entities[i]->GetLevel() == &Level)
+			DeleteEntity(i);
+}
+//---------------------------------------------------------------------
+
+void CEntityManager::DeleteMarkedEntities()
+{
+	for (int i = Entities.GetCount() - 1; i >= 0; --i)
+		if (Entities[i]->IsWaitingForDestruction())
 			DeleteEntity(i);
 }
 //---------------------------------------------------------------------
@@ -102,12 +110,12 @@ CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::GetEntitiesByLevel(CStrID LevelID, CArray<CEntity*>& Out) const
+void CEntityManager::GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity*>& Out) const
 {
 	for (int i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i].GetUnsafe();
-		if (pEntity && pEntity->GetLevel().GetID() == LevelID)
+		if (pEntity && pEntity->GetLevel() == pLevel)
 			Out.Add(pEntity);
 	}
 }

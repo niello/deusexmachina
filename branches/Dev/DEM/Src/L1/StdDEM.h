@@ -192,6 +192,11 @@ void n_barf(const char*, const char*, int)
 void n_barf2(const char*, const char*, const char*, int)
     __attribute__((noreturn));
 
+template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
+template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }
+template<class T, class T2> inline T n_min(T a, T2 b) { return a < (T)b ? a : (T)b; }
+template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T)b; }
+
 template <class T> inline T Clamp(T Value, T Min, T Max){return (Value<Min)?Min:((Value>Max)?Max:Value);}
 
 inline bool IsPow2(int Value) { return Value >= 1 && (Value & (Value - 1)) == 0; }

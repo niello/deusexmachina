@@ -86,7 +86,7 @@ int CEntityScriptObject::GetField(LPCSTR Key) const
 {
 	if (!strcmp(Key, "LevelID"))
 	{
-		lua_pushstring(ScriptSrv->GetLuaState(), pEntity->GetLevel().GetID().CStr());
+		lua_pushstring(ScriptSrv->GetLuaState(), pEntity->GetLevel()->GetID().CStr());
 		return 1;
 	}
 

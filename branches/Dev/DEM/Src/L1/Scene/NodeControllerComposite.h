@@ -26,6 +26,7 @@ protected:
 
 		bool operator <(const CSource& Other) const { return Priority > Other.Priority; }
 		bool operator >(const CSource& Other) const { return Priority < Other.Priority; }
+		bool operator ==(const CSource& Other) const { return Priority == Other.Priority; }
 	};
 
 	// Sorted by priority. Search by controller is linear, but there are 2-3 sources in the most cases.

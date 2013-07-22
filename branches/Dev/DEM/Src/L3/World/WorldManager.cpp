@@ -38,6 +38,7 @@ bool CWorldManager::OnGameSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
+//???to L2 GameSrv?
 // Level will be set as active externally, because here NPC may walk
 bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
 {
@@ -48,6 +49,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 		if (pEnt)
 		{
 			Entities.Add(pEnt);
+			pEnt->FireEvent(CStrID("OnLevelSaving"));
 			pEnt->Deactivate();
 		}
 	}

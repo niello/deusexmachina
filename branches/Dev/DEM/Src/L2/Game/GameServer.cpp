@@ -5,6 +5,7 @@
 #include <Scene/Scene.h>
 #include <Physics/PhysicsWorld.h>
 #include <IO/IOServer.h>
+#include <IO/FSBrowser.h>
 #include <UI/UIServer.h>
 #include <Input/InputServer.h>
 #include <Time/TimeServer.h>
@@ -12,34 +13,6 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Events/EventServer.h>
-
-/* User profile stuff:
-
-//!!!must store settings!
-
-IOSrv->CreateDirectory("AppData:Profiles/Default");
-
-inline CString CLoaderServer::GetDatabasePath() const
-{
-	return "AppData:profiles/default/" + GameDBName + ".db3";
-}
-//---------------------------------------------------------------------
-
-// Returns the path to the user's savegame directory (inside the profile
-// directory) using the Nebula2 filesystem path conventions.
-inline CString CLoaderServer::GetSaveGameDirectory() const
-{
-	return "AppData:profiles/default/save";
-}
-//---------------------------------------------------------------------
-
-// Get the complete filename to a savegame file.
-inline CString CLoaderServer::GetSaveGamePath(const CString& SaveGameName) const
-{
-	return GetSaveGameDirectory() + "/" + SaveGameName + ".db3";
-}
-//---------------------------------------------------------------------
-*/
 
 namespace Game
 {
@@ -79,6 +52,8 @@ void CGameServer::Close()
 
 void CGameServer::Trigger()
 {
+	EntityMgr->DeleteMarkedEntities();
+
 	UpdateMouseIntersectionInfo();
 
 	EventSrv->FireEvent(CStrID("OnBeginFrame"));
@@ -243,14 +218,76 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 }
 //---------------------------------------------------------------------
 
-//???use ReloadPRM?
+void CGameServer::EnumProfiles(CArray<CString>& Out) const
+{
+	Out.Clear();
+
+	CString ProfilesDir = "AppData:Profiles";
+	if (!IOSrv->DirectoryExists(ProfilesDir))
+	{
+		IOSrv->CreateDirectory(ProfilesDir);
+		return;
+	}
+
+	IO::CFSBrowser Browser;
+	Browser.SetAbsolutePath(ProfilesDir);
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryDir()) Out.Add(Browser.GetCurrEntryName());
+	}
+	while (Browser.NextCurrDirEntry());
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::CreateProfile(const CString& Name) const
+{
+	CString ProfileDir = "AppData:Profiles/" + Name;
+	if (IOSrv->DirectoryExists(ProfileDir)) FAIL;
+	return IOSrv->CreateDirectory(ProfileDir + "/Saves") &&
+		IOSrv->CreateDirectory(ProfileDir + "/Continue/Levels");
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::DeleteProfile(const CString& Name) const
+{
+	if (CurrProfile == Name) FAIL; //???or stop game and set current to empty?
+	return IOSrv->DeleteDirectory("AppData:Profiles/" + Name);
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::SetCurrentProfile(const CString& Name)
+{
+	CurrProfile = Name;
+
+	//!!!load and apply settings!
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!pack saves to files! single PRM would suffice
+void CGameServer::EnumSavedGames(CArray<CString>& Out, const CString& Profile) const
+{
+	IO::CFSBrowser Browser;
+	Browser.SetAbsolutePath("AppData:Profiles/" + Profile + "/Saves");
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryFile()) Out.Add(Browser.GetCurrEntryName());
+	}
+	while (Browser.NextCurrDirEntry());
+}
+//---------------------------------------------------------------------
+
 bool CGameServer::StartGame(const CString& FileName, const CString& SaveGameName)
 {
+	n_assert(CurrProfile.IsValid());
+
 	Data::PParams InitialCommon = DataSrv->LoadPRM(FileName);
 	if (!InitialCommon.IsValid()) FAIL;
 
-	//!!!DBG TMP PATH!
-	Data::PParams SGCommon = SaveGameName.IsValid() ? DataSrv->LoadPRM("AppData:SavesTMP/" + SaveGameName + "/Main.prm", false) : NULL;
+	Data::PParams SGCommon;
+	if (SaveGameName.IsValid())
+		SGCommon = DataSrv->ReloadPRM("AppData:Profiles/" + CurrProfile + "/Saves/" + SaveGameName + "/Main.prm", false);
 
 	Data::PParams GameDesc;
 	if (SGCommon.IsValid())
@@ -294,15 +331,16 @@ bool CGameServer::StartGame(const CString& FileName, const CString& SaveGameName
 
 bool CGameServer::LoadGameLevel(CStrID ID, const CString& SaveGameName)
 {
+	n_assert(CurrProfile.IsValid());
+
 	CString RelLevelPath = CString("/Levels/") + ID.CStr() + ".prm";
 
 	Data::PParams InitialLvl = DataSrv->LoadPRM("Game:" + RelLevelPath);
 	n_assert(InitialLvl.IsValid());
 
-	//!!!if no savegame, but game is specified, load diff from continue data!
-
-	//!!!DBG TMP PATH!
-	Data::PParams SGLvl = SaveGameName.IsValid() ? DataSrv->LoadPRM("AppData:SavesTMP/" + SaveGameName + RelLevelPath, false) : NULL;
+	CString DiffPath = "AppData:Profiles/" + CurrProfile;
+	DiffPath += SaveGameName.IsValid() ? "/Saves/" + SaveGameName : "/Continue";
+	Data::PParams SGLvl = DataSrv->ReloadPRM(DiffPath + RelLevelPath, false);
 
 	Data::PParams LevelDesc;
 	if (SGLvl.IsValid())
@@ -318,14 +356,19 @@ bool CGameServer::LoadGameLevel(CStrID ID, const CString& SaveGameName)
 
 void CGameServer::UnloadGameLevel(CStrID ID)
 {
-	//int LevelIdx = Levels.FindIndex(ID);
-	//if (ID == INVALID_INDEX) return;
-	//PGameLevel Level = Levels.ValueAt(LevelIdx);
+	int LevelIdx = Levels.FindIndex(ID);
+	if (ID == INVALID_INDEX) return;
 
-	//!!!save diff of this level to a continue set!
-	// re-entering location LoadLevel call will load continue diff
-	// If mode is not a game, but is a simple level, we don't need to save diff,
-	// moreover, we have no user profile
+	n_assert(CurrProfile.IsValid());
+
+	Data::PParams SGLevel = n_new(Data::CParams);
+	Data::PParams LevelDesc = DataSrv->LoadPRM(CString("Levels:") + ID.CStr() + ".prm");
+	n_verify(Levels.ValueAt(LevelIdx)->Save(*SGLevel, LevelDesc));
+
+	DataSrv->SavePRM("AppData:Profiles/" + CurrProfile + "/Continue/Levels/" + ID.CStr() + ".prm", SGLevel);
+
+	//!!!DBG TMP!
+	DataSrv->SaveHRD("AppData:Profiles/" + CurrProfile + "/Continue/Levels/" + ID.CStr() + ".hrd", SGLevel);
 
 	UnloadLevel(ID);
 }
@@ -349,6 +392,8 @@ void CGameServer::PauseGame(bool Pause) const
 //???save delayed events?
 bool CGameServer::SaveGame(const CString& Name)
 {
+	n_assert(CurrProfile.IsValid());
+
 	//???!!!here or in Load/Unload level?
 	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
 	for (int i = 0; i < Levels.GetCount(); ++i)
@@ -377,18 +422,18 @@ bool CGameServer::SaveGame(const CString& Name)
 	// Allow custom gameplay managers to save their data
 	EventSrv->FireEvent(CStrID("OnGameSaving"), SGCommon);
 
-	//???diff here?
+	//???diff custom gameplay managers here?
 	//mb special Extensions/Plugins section not to affect already saved data by diff
 
-	//!!!TMP!
-//======
-	CString Path = "AppData:SavesTMP/" + Name;
+	CString Path = "AppData:Profiles/" + CurrProfile + "/Saves/" + Name;
 	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
 
 	//!!!DBG TMP!
 	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
-//======
+
+	Path += "/Levels/";
+	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 
 	// Save diffs of each level
 	Data::PParams SGLevel = n_new(Data::CParams);
@@ -399,19 +444,13 @@ bool CGameServer::SaveGame(const CString& Name)
 		n_verify(Levels.ValueAt(i)->Save(*SGLevel, LevelDesc));
 		if (!SGLevel->GetCount()) continue;
 
-		//!!!TMP!
-//======
-		CString Path = "AppData:SavesTMP/" + Name + "/Levels/";
-		if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 		DataSrv->SavePRM(Path + Levels.KeyAt(i).CStr() + ".prm", SGLevel);
 
 		//!!!DBG TMP!
 		DataSrv->SaveHRD(Path + Levels.KeyAt(i).CStr() + ".hrd", SGLevel);
-//======
 	}
 
 	//???pack savegame? on load can unpack to the override (continue) directory!
-	//!!!can pack the whole game set!
 
 	OK;
 }

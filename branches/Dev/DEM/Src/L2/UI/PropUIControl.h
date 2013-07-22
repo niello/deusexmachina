@@ -51,6 +51,7 @@ public:
 		LPCSTR	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
 		bool	operator <(const CAction& Other) const { return (Enabled && !Other.Enabled) || (Priority > Other.Priority); }
 		bool	operator >(const CAction& Other) const { return (!Enabled && Other.Enabled) || (Priority < Other.Priority); }
+		bool	operator ==(const CAction& Other) const { return ID == Other.ID; }
 	};
 
 protected:

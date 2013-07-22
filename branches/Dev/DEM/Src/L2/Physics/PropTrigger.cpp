@@ -124,7 +124,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 {
 	CArray<const btCollisionObject*> Collisions(16, 16);
 	Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
-	GetEntity()->GetLevel().GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
+	GetEntity()->GetLevel()->GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
 
 	CArray<CStrID> NewInsiders(16, 16);
 

@@ -23,7 +23,8 @@ protected:
 	enum
 	{
 		Active				= 0x01,
-		ChangingActivity	= 0x02	// If set: Active set - in Deactivate(), Active not set - in Activate()
+		ChangingActivity	= 0x02,	// If set: Active set - in Deactivate(), Active not set - in Activate()
+		DeleteMe			= 0x04	// Set when need to ddelete entity from inside its method. EntityManager will delete it later.
 	};
 
 	CStrID			UID;
@@ -50,7 +51,7 @@ public:
 	template<class T> bool		HasProperty() const { return GetProperty<T>() != NULL; }
 
 	CStrID						GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
-	CGameLevel&					GetLevel() const { return *Level.GetUnsafe(); }
+	CGameLevel*					GetLevel() const { return Level.GetUnsafe(); }
 
 	//???!!!need GetAttr with default?!
 	void						BeginNewAttrs(DWORD Count) { Attrs.BeginAdd(Count); }
@@ -69,6 +70,8 @@ public:
 	bool						IsInactive() const { return Flags.IsNot(Active) && Flags.IsNot(ChangingActivity); }
 	bool						IsActivating() const { return Flags.IsNot(Active) && Flags.Is(ChangingActivity); }
 	bool						IsDeactivating() const { return Flags.Is(Active) && Flags.Is(ChangingActivity); }
+	void						RequestDestruction() { Flags.Set(DeleteMe); }
+	bool						IsWaitingForDestruction() const { return Flags.Is(DeleteMe); }
 };
 
 typedef Ptr<CEntity> PEntity;

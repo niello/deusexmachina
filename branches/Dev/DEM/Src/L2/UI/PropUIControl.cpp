@@ -65,7 +65,7 @@ bool CPropUIControl::InternalActivate()
 	//???move to the IAO desc as field? per-entity allows not to spawn redundant IAO descs
 	//???Shape desc or collision object desc? CollObj can have offset, but Group & Mask must be overridden to support picking.
 	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
-	if (PickShapeID.IsValid() && GetEntity()->GetLevel().GetPhysics())
+	if (PickShapeID.IsValid() && GetEntity()->GetLevel()->GetPhysics())
 	{
 		Physics::PCollisionShape Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(PickShapeID);
 		if (!Shape.IsValid())
@@ -80,7 +80,7 @@ bool CPropUIControl::InternalActivate()
 		MousePickShape->CollObj->Init(*Shape, Group, Mask); // Can specify offset
 		MousePickShape->CollObj->SetUserData(*(void**)&GetEntity()->GetUID());
 		MousePickShape->CollObj->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-		MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel().GetPhysics());
+		MousePickShape->CollObj->AttachToLevel(*GetEntity()->GetLevel()->GetPhysics());
 
 		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 		if (pProp && pProp->IsActive())
@@ -451,7 +451,7 @@ bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
 
 bool CPropUIControl::OnExecuteSelectAction(const Events::CEventBase& Event)
 {
-	GetEntity()->GetLevel().AddToSelection(GetEntity()->GetUID());
+	GetEntity()->GetLevel()->AddToSelection(GetEntity()->GetUID());
 	OK;
 }
 //---------------------------------------------------------------------

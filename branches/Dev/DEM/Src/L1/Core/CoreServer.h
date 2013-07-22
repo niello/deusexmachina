@@ -4,7 +4,7 @@
 
 #include <Core/Singleton.h>
 #include <Data/Data.h>
-#include <Data/HashMap.h>
+#include <Data/HashTable.h>
 
 // Core server manages low-level object framework
 
@@ -22,7 +22,7 @@ private:
 
 public:
 
-	CHashMap<Data::CData> Globals;
+	CHashTable<CString, Data::CData> Globals;
 
 	CCoreServer();
 	~CCoreServer();

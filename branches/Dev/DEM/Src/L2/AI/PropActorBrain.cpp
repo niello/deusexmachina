@@ -306,7 +306,7 @@ void CPropActorBrain::OnBeginFrame()
 	{
 		//!!!only for external! also need to update internal sensors & actor's state through them
 		//???CStimulus -> CExternalStimulus?
-		GetEntity()->GetLevel().GetAI()->UpdateActorsSense(this, (*ppSensor));
+		GetEntity()->GetLevel()->GetAI()->UpdateActorsSense(this, (*ppSensor));
 	}
 
 	MemSystem.Update();
