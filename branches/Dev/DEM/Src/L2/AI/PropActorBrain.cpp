@@ -43,6 +43,8 @@ CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSyste
 
 bool CPropActorBrain::InternalActivate()
 {
+	if (!GetEntity()->GetLevel()->GetAI()) FAIL;
+
 // Blackboard
 
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));

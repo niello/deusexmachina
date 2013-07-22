@@ -51,7 +51,7 @@ void CStaticObject::Init(Data::CParams& ObjDesc)
 	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = UID.CStr();
 
-	if (NodePath.IsValid())
+	if (NodePath.IsValid() && Level->GetScene())
 	{
 		//???optimize duplicate search?
 		Node = Level->GetScene()->GetNode(NodePath.CStr(), false);

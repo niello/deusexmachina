@@ -29,7 +29,7 @@ int NavMesh_LockRegion(lua_State* l)
 
 	float Radius = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
 	Game::CGameLevel* pLevel = GameSrv->GetLevel(CStrID(lua_tostring(l, 1)));
-	if (pLevel) pLevel->GetAI()->SetNavRegionFlags(CStrID(lua_tostring(l, 2)), NAV_FLAG_LOCKED, Radius);
+	if (pLevel && pLevel->GetAI()) pLevel->GetAI()->SetNavRegionFlags(CStrID(lua_tostring(l, 2)), NAV_FLAG_LOCKED, Radius);
 
 	return 0;
 }
@@ -50,7 +50,7 @@ int NavMesh_UnlockRegion(lua_State* l)
 
 	float Radius = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
 	Game::CGameLevel* pLevel = GameSrv->GetLevel(CStrID(lua_tostring(l, 1)));
-	if (pLevel) pLevel->GetAI()->ClearNavRegionFlags(CStrID(lua_tostring(l, 2)), NAV_FLAG_LOCKED, Radius);
+	if (pLevel && pLevel->GetAI()) pLevel->GetAI()->ClearNavRegionFlags(CStrID(lua_tostring(l, 2)), NAV_FLAG_LOCKED, Radius);
 
 	return 0;
 }

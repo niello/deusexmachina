@@ -11,11 +11,13 @@ __ImplementClass(AI::CValidatorCanTalk, 'VCTK', AI::CValidator);
 
 bool CValidatorCanTalk::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {
-	n_assert(pActor && pSO);
-	CPropTalking* pPropTalking = pSO->GetEntity()->GetProperty<CPropTalking>();
-	return	pActor->GetEntity() != pSO->GetEntity() &&
-			pPropTalking && /*pPropTalking->GetDialogue() &&*/ !DlgMgr->IsDialogueActive();
+	n_assert(pSO);
+	return
+		pActor &&
+		pActor->GetEntity() != pSO->GetEntity() &&
+		pSO->GetEntity()->GetProperty<CPropTalking>() &&
+		!DlgMgr->IsDialogueActive();
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

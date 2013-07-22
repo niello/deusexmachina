@@ -17,6 +17,7 @@ static const CString StrStimulusPrefix("AI::CStimulus");
 
 bool CPropAIHints::InternalActivate()
 {
+	if (!GetEntity()->GetLevel()->GetAI()) FAIL;
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAIHints, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropAIHints, OnRenderDebug);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAIHints, ExposeSI);

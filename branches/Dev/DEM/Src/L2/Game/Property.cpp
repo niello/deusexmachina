@@ -65,7 +65,7 @@ bool CProperty::OnEntityActivated(const Events::CEventBase& Event)
 
 bool CProperty::OnEntityDeactivated(const Events::CEventBase& Event)
 {
-	Deactivate();
+	if (IsActive()) Deactivate();
 	OK;
 }
 //---------------------------------------------------------------------
