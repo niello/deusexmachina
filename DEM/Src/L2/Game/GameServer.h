@@ -45,6 +45,8 @@ protected:
 	vector3							MousePos3D;
 
 	void UpdateMouseIntersectionInfo();
+	bool CommitContinueData();
+	bool CommitLevelDiff(CGameLevel& Level);
 
 public:
 
@@ -71,13 +73,15 @@ public:
 	bool			SetCurrentProfile(const CString& Name);
 	const CString&	GetCurrentProfile() const { return CurrProfile; }
 	void			EnumSavedGames(CArray<CString>& Out, const CString& Profile = CString::Empty) const;
+	bool			SavedGameExists(const CString& Name, const CString& Profile = CString::Empty);
 
-	bool			StartGame(const CString& FileName, const CString& SaveGameName = CString::Empty);
+	bool			StartGame(const CString& FileName);
 	bool			SaveGame(const CString& Name);
-	bool			LoadGame(const CString& Name) { return StartGame(GameFileName, Name); }
-	bool			LoadGameLevel(CStrID ID, const CString& SaveGameName = CString::Empty);
+	bool			LoadGame(const CString& Name);
+	bool			LoadGameLevel(CStrID ID);
 	void			UnloadGameLevel(CStrID ID);
 	void			UnloadAllGameLevels() { while (Levels.GetCount()) UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1)); }
+	void			ExitGame();
 
 	template<class T>
 	void			SetGlobalAttr(CStrID ID, const T& Value);
