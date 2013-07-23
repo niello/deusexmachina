@@ -21,23 +21,28 @@ private:
 
 public:
 
+	typedef T* CIterator;
+
 	CFixedArray(): Count(0), pData(NULL) {}
 	CFixedArray(DWORD _Size): Count(0), pData(NULL) { Allocate(_Size); }
 	CFixedArray(const CFixedArray<T>& Other): Count(0), pData(NULL) { Copy(Other); }
 	~CFixedArray() { if (pData) n_delete_array(pData); }
 
-	void	Clear(T Elm = T()) { for (DWORD i = 0; i < Count; ++i) pData[i] = Elm; }
-	int		FindIndex(const T& Elm) const;
-	bool	Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
-	void	Sort() { std::sort(pData, pData + Count); }
+	CIterator	Begin() const { return pData; }
+	CIterator	End() const { return pData + Count; }
+
+	void		Clear(T Elm = T()) { for (DWORD i = 0; i < Count; ++i) pData[i] = Elm; }
+	int			FindIndex(const T& Elm) const;
+	bool		Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
+	void		Sort() { std::sort(pData, pData + Count); }
 	template<class TCmp>
-	void	Sort() { std::sort(pData, pData + Count, TCmp()); }
+	void		Sort() { std::sort(pData, pData + Count, TCmp()); }
 
-	void	SetSize(DWORD NewSize) { if (Count != NewSize) Allocate(NewSize); }
-	DWORD	GetCount() const { return Count; }
-	T*		GetPtr() { return pData; }
+	void		SetSize(DWORD NewSize) { if (Count != NewSize) Allocate(NewSize); }
+	DWORD		GetCount() const { return Count; }
+	T*			GetPtr() { return pData; }
 
-	void	RawCopyFrom(const T* pSrc, DWORD SrcCount);
+	void		RawCopyFrom(const T* pSrc, DWORD SrcCount);
 
 	void	operator =(const CFixedArray<T>& Other) { Copy(Other); }
 	T&		operator [](int Index) const;

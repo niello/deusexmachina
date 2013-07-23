@@ -47,17 +47,15 @@ bool CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub
 }
 //---------------------------------------------------------------------
 
-DWORD CEventDispatcher::ScheduleEvent(CEventBase* Event, float RelTime)
+DWORD CEventDispatcher::ScheduleEvent(CEventBase& Event, float RelTime)
 {
-	n_assert(Event);
+ 	if (RelTime > 0.f) Event.Flags |= EV_ASYNC;
 
- 	if (RelTime > 0.f) Event->Flags |= EV_ASYNC;
-
-	if (Event->Flags & EV_ASYNC)
+	if (Event.Flags & EV_ASYNC)
 	{
 		CEventNode* New = EventSrv->EventNodes.Construct();
 		n_assert2(New, "Nervous system of the engine was paralyzed! Can't allocate event node");
-		New->Event = Event;
+		New->Event = &Event;
 		New->FireTime = (float)TimeSrv->GetTime() + RelTime;
 		if (PendingEventsTail)
 		{
@@ -103,7 +101,7 @@ DWORD CEventDispatcher::ScheduleEvent(CEventBase* Event, float RelTime)
 
 		return (DWORD)(-1); // Can't count handle facts for async events
 	}
-	else return DispatchEvent(*Event);
+	else return DispatchEvent(Event);
 }
 //---------------------------------------------------------------------
 
@@ -201,7 +199,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 				else
 				{
 					if (pHandler->Next.IsValid()) (*pCurrSlot) = pHandler->Next;
-					else Subscriptions.Remove(ID); //???optimize duplicate search? use CIterator?
+					else Subscriptions.Remove(ID); //!!!optimize duplicate search! use CIterator!
 				}
 				return;
 			}
