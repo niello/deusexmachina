@@ -1,10 +1,16 @@
 #include "Property.h"
 
 #include <Game/Entity.h>
+#include <Events/Subscription.h>
 
 namespace Game
 {
 __ImplementClassNoFactory(Game::CProperty, Core::CRefCounted);
+
+CProperty::~CProperty()
+{
+}
+//---------------------------------------------------------------------
 
 void CProperty::SetEntity(CEntity* pNewEntity)
 {

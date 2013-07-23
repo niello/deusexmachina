@@ -17,9 +17,9 @@ private:
 public:
 
 	Ptr(): pObj(NULL) {}
-	Ptr(T* pSrcObj): pObj(pSrcObj) { if (pObj) pObj->AddRef(); }
-	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) pObj->AddRef(); }
-	~Ptr() { SAFE_RELEASE(pObj); }
+	Ptr(T* pSrcObj): pObj(pSrcObj) { if (pObj) ((Core::CRefCounted*)pObj)->AddRef(); }
+	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) ((Core::CRefCounted*)pObj)->AddRef(); }
+	~Ptr() { if (pObj) ((Core::CRefCounted*)pObj)->Release(); }
 
 	bool	IsValid() const { return !!pObj; }
 	T*		Get() const;
@@ -42,10 +42,10 @@ void Ptr<T>::operator =(const Ptr<T>& Other)
 {
 	if (pObj != Other.pObj)
 	{
-		T* NewPtr = Other.pObj;
-		if (NewPtr) NewPtr->AddRef();
-		if (pObj) pObj->Release();		// Here Other can be destructed so we remember it's Ptr before
-		pObj = NewPtr;
+		T* pNewPtr = Other.pObj;
+		if (pNewPtr) ((Core::CRefCounted*)pNewPtr)->AddRef();
+		if (pObj) ((Core::CRefCounted*)pObj)->Release();		// Here Other can be destructed so we remember it's ptr before
+		pObj = pNewPtr;
 	}
 }
 //---------------------------------------------------------------------
@@ -55,8 +55,8 @@ void Ptr<T>::operator =(T* Ptr)
 {
 	if (pObj != Ptr)
 	{
-		if (Ptr) Ptr->AddRef();
-		if (pObj) pObj->Release();
+		if (Ptr) ((Core::CRefCounted*)Ptr)->AddRef();
+		if (pObj) ((Core::CRefCounted*)pObj)->Release();
 		pObj = Ptr;
 	}
 }

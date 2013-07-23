@@ -312,7 +312,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHa
 	char EvIDString[64];
 	sprintf_s(EvIDString, 63, "OnUIAction%s", ID.CStr());
 	Act.EventID = CStrID(EvIDString);
-	Act.Sub = GetEntity()->AddHandler(Act.EventID, Handler);
+	GetEntity()->AddHandler(Act.EventID, Handler, &Act.Sub);
 	if (!Act.Sub.IsValid()) FAIL;
 	Act.IsSOAction = IsSOAction;
 

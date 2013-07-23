@@ -88,14 +88,6 @@ void CEntityManager::DeleteEntities(const CGameLevel& Level)
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::DeleteMarkedEntities()
-{
-	for (int i = Entities.GetCount() - 1; i >= 0; --i)
-		if (Entities[i]->IsWaitingForDestruction())
-			DeleteEntity(i);
-}
-//---------------------------------------------------------------------
-
 CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 {
 	if (SearchInAliases)

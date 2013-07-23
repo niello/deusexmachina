@@ -1,6 +1,7 @@
 #include "EventDispatcher.h"
 
-#include "EventServer.h"
+#include <Events/EventServer.h>
+#include <Events/Subscription.h>
 #include <Time/TimeServer.h>
 
 namespace Events
@@ -24,12 +25,12 @@ CEventDispatcher::~CEventDispatcher()
 }
 //---------------------------------------------------------------------
 
-PSub CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler)
+bool CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub)
 {
-	PEventHandler Curr;
-	if (Subscriptions.Get(ID, Curr))
+	PEventHandler& CurrSlot = Subscriptions.At(ID);
+	if (CurrSlot.IsValid())
 	{
-		PEventHandler Prev;
+		PEventHandler Prev, Curr = CurrSlot;
 		while (Curr.IsValid() && Curr->GetPriority() > Handler->GetPriority())
 		{
 			Prev = Curr;
@@ -37,16 +38,12 @@ PSub CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler)
 		}
 
 		if (Prev.IsValid()) Prev->Next = Handler;
-		else
-		{
-			//!!!rewrite to CHashTable.SetValue()!
-			Subscriptions.Remove(ID);
-			Subscriptions.Add(ID, Handler);
-		}
+		else CurrSlot = Handler;
 		Handler->Next = Curr;
 	}
-	else Subscriptions.Add(ID, Handler);
-	return n_new(CSubscription)(this, ID, Handler);
+	else CurrSlot = Handler;
+	if (pSub) *pSub = n_new(CSubscription)(this, ID, Handler);
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -192,6 +189,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* Handler)
 {
 	PEventHandler Sub, Prev;
 
+	//!!!double search! in Get & in [] / Remove
 	if (Subscriptions.Get(ID, Sub)) do
 	{
 		if (Sub.GetUnsafe() == Handler)
@@ -199,9 +197,8 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* Handler)
 			if (Prev.IsValid()) Prev->Next = Handler->Next;
 			else
 			{
-				//???rewrite to CHashTable.SetValue()?
-				Subscriptions.Remove(ID);
-				if (Handler->Next.IsValid()) Subscriptions.Add(ID, Handler->Next);
+				if (Handler->Next.IsValid()) Subscriptions[ID] = Handler->Next;
+				else Subscriptions.Remove(ID);
 			}
 			return;
 		}

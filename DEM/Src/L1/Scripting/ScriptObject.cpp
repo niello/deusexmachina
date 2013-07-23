@@ -222,8 +222,8 @@ EExecStatus CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData
 
 bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority)
 {
-	Events::PSub Sub = pDisp->AddHandler(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority));
-	if (!Sub.IsValid()) FAIL;
+	Events::PSub Sub;
+	if (!pDisp->AddHandler(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority), &Sub)) FAIL;
 	Subscriptions.Add(Sub);
 	OK;
 }

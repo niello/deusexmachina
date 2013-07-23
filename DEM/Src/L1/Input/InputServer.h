@@ -16,10 +16,10 @@
 	Events::PSub Sub_ALL_INPUT;
 
 #define SUBSCRIBE_INPUT_EVENT(EventName, Class, Handler, Priority) \
-	Sub_##EventName = InputSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, Priority)
+	InputSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
 
 #define SUBSCRIBE_ALL_INPUT(Class, Handler, Priority) \
-	Sub_ALL_INPUT = InputSrv->Subscribe<Class>(NULL, this, &Class::Handler, Priority)
+	InputSrv->Subscribe<Class>(NULL, this, &Class::Handler, &Sub_ALL_INPUT, Priority)
 
 #define UNBSUBSCRIBE_ALL_INPUT \
 	Sub_ALL_INPUT = NULL

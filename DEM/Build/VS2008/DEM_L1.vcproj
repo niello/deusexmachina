@@ -1029,10 +1029,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Events\Subscription.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Events\Subscription.h"
 				>
 			</File>
