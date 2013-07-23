@@ -52,7 +52,7 @@ void CGameServer::Close()
 
 void CGameServer::Trigger()
 {
-	EntityMgr->DeleteMarkedEntities();
+	EntityMgr->DeferredDeleteEntities();
 
 	UpdateMouseIntersectionInfo();
 

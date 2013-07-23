@@ -135,7 +135,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		}
 	}
 
-	GlobalSub = EventSrv->Subscribe(NULL, this, &CGameLevel::OnEvent);
+	EventSrv->Subscribe(NULL, this, &CGameLevel::OnEvent, &GlobalSub);
 
 	OK;
 }

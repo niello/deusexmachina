@@ -23,8 +23,7 @@ protected:
 	enum
 	{
 		Active				= 0x01,
-		ChangingActivity	= 0x02,	// If set: Active set - in Deactivate(), Active not set - in Activate()
-		DeleteMe			= 0x04	// Set when need to ddelete entity from inside its method. EntityManager will delete it later.
+		ChangingActivity	= 0x02	// If set: Active set - in Deactivate(), Active not set - in Activate()
 	};
 
 	CStrID			UID;
@@ -70,8 +69,6 @@ public:
 	bool						IsInactive() const { return Flags.IsNot(Active) && Flags.IsNot(ChangingActivity); }
 	bool						IsActivating() const { return Flags.IsNot(Active) && Flags.Is(ChangingActivity); }
 	bool						IsDeactivating() const { return Flags.Is(Active) && Flags.Is(ChangingActivity); }
-	void						RequestDestruction() { Flags.Set(DeleteMe); }
-	bool						IsWaitingForDestruction() const { return Flags.Is(DeleteMe); }
 };
 
 typedef Ptr<CEntity> PEntity;

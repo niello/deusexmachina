@@ -86,10 +86,11 @@ bool CPropItem::OnPickItem(const Events::CEventBase& Event)
 	CPropInventory* pInv = pActorEnt ? pActorEnt->GetProperty<CPropInventory>() : NULL;
 	if (pInv)
 	{
-		//!!!can add only part of the stack (check weight and volume)! kill entity only when empty
+		//!!!can add only part of the stack (check weight and volume)!
+		//kill entity only when empty. or deactivate prop?
 		pInv->AddItem(Items);
 		Items.Clear();
-		GetEntity()->RequestDestruction();
+		EntityMgr->RequestDestruction(GetEntity()->GetUID());
 	}
 
 	OK;

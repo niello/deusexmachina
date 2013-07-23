@@ -24,9 +24,10 @@ class CEntityManager: public Core::CRefCounted
 protected:
 
 	CDict<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
-	CArray<PEntity>										Entities;
-	CHashTable<CStrID, CEntity*>						UIDToEntity;
+	CArray<PEntity>									Entities;
+	CHashTable<CStrID, CEntity*>					UIDToEntity;
 	CDict<CStrID, CStrID>							Aliases;
+	CArray<CStrID>									EntitiesToDelete;
 
 	void		DeleteEntity(int Idx);
 	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
@@ -43,7 +44,8 @@ public:
 	void		DeleteEntity(CStrID UID);
 	void		DeleteEntities(const CGameLevel& Level);
 	void		DeleteAllEntities() { while (Entities.GetCount() > 0) DeleteEntity(*Entities.Back()); }
-	void		DeleteMarkedEntities();
+	void		RequestDestruction(CStrID UID) { EntitiesToDelete.Add(UID); }
+	void		DeferredDeleteEntities();
 
 	int			GetEntityCount() const { return Entities.GetCount(); }
 	CEntity*	GetEntity(int Idx) const { return Entities[Idx].GetUnsafe(); }
@@ -86,6 +88,14 @@ inline void CEntityManager::DeleteEntity(CStrID UID)
 {
 	CEntity* pEnt = GetEntity(UID, true);
 	if (pEnt) DeleteEntity(*pEnt);
+}
+//---------------------------------------------------------------------
+
+inline void CEntityManager::DeferredDeleteEntities()
+{
+	for (int i = 0; i < EntitiesToDelete.GetCount(); ++i)
+		DeleteEntity(EntitiesToDelete[i]);
+	EntitiesToDelete.Clear();
 }
 //---------------------------------------------------------------------
 

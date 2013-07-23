@@ -2,10 +2,10 @@
 #ifndef __DEM_L1_EVENT_SUB_H__
 #define __DEM_L1_EVENT_SUB_H__
 
-#include "EventID.h"
-#include "EventHandler.h"
+#include <Events/EventDispatcher.h>
 
-// Subscription handle is used to unsubscribe from event
+// Subscription handle is handy to automatically unsubscribe from event
+// NB: Subscription prevents its dispatcher from being destroyed (mb weak pointer would be better)
 
 namespace Events
 {
@@ -14,25 +14,20 @@ class CSubscription: public Core::CRefCounted
 {
 private:
 
-	friend class CEventDispatcher;
-
-	CEventDispatcher*	Dispatcher;
+	PEventDispatcher	Dispatcher; // Sometimes dispatcher is deleted while some subscriptions exist. Use weak ptr?
 	CEventID			Event;
 	PEventHandler		Handler;
-
-	void Unsubscribe();
 
 public:
 
 	CSubscription(CEventDispatcher* d, CEventID e, PEventHandler h):
 		Dispatcher(d), Event(e), Handler(h) {}
-	virtual ~CSubscription() { Unsubscribe(); }
+	virtual ~CSubscription() { Dispatcher->Unsubscribe(Event, Handler); }
 
 	CEventID				GetEvent() const { return Event; }
 	const CEventHandler*	GetHandler() const { return Handler; }
 	const CEventDispatcher*	GetDispatcher() const { return Dispatcher; }
 };
-//---------------------------------------------------------------------
 
 typedef Ptr<CSubscription> PSub;
 

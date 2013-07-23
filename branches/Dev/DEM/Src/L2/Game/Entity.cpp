@@ -33,7 +33,8 @@ void CEntity::SetLevel(CGameLevel* pNewLevel)
 	n_assert(IsInactive());
 	if (pNewLevel == Level.GetUnsafe()) return;
 	Level = pNewLevel;
-	LevelSub = pNewLevel ? Level->Subscribe(NULL, this, &CEntity::OnEvent) : NULL;
+	if (pNewLevel) Level->Subscribe(NULL, this, &CEntity::OnEvent, &LevelSub);
+	else LevelSub = NULL;
 }
 //---------------------------------------------------------------------
 
@@ -119,7 +120,7 @@ bool CEntity::OnEvent(const Events::CEventBase& Event)
 
 	if (EvID == CStrID("OnEntitiesUnloading"))
 	{
-		Deactivate();
+		Deactivate(); //???if (IsActive())?
 		OK;
 	}
 

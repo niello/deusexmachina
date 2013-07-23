@@ -26,8 +26,8 @@ protected:
 	CEntity*	pEntity;
 	bool		Active;
 
-	virtual bool	InternalActivate() = 0; // { OK; }
-	virtual void	InternalDeactivate() = 0; // {}
+	virtual bool	InternalActivate() = 0;
+	virtual void	InternalDeactivate() = 0;
 	void			SetEntity(CEntity* pNewEntity);
 
 	DECLARE_EVENT_HANDLER(OnEntityActivated, OnEntityActivated);
@@ -36,7 +36,7 @@ protected:
 public:
 
 	CProperty(): Active(false), pEntity(NULL) {}
-	virtual ~CProperty() = 0 {}
+	virtual ~CProperty();
 
 	void						Activate();
 	void						Deactivate();
@@ -58,8 +58,8 @@ public:
 	Game::CPropertyStorage* Class::GetStorage() const { return pStorage; }
 
 #define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \
-	Sub_##EventName = GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
+	GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
 #define PROP_SUBSCRIBE_PEVENT(EventName, Class, Handler) \
-	Sub_##EventName = GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
+	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
 
 #endif

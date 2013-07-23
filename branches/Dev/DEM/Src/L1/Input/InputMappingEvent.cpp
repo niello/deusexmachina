@@ -89,7 +89,7 @@ void CInputMappingEvent::Enable()
 	else if (InEventID == &Event::MouseWheel::RTTI) CB = &CInputMappingEvent::OnMouseWheel;
 	else n_error("Unsupported input event!");
 
-	Sub_InputEvent = InputSrv->Subscribe(InEventID, this, CB, InputPriority_Mapping);
+	InputSrv->Subscribe(InEventID, this, CB, &Sub_InputEvent, InputPriority_Mapping);
 }
 //---------------------------------------------------------------------
 
