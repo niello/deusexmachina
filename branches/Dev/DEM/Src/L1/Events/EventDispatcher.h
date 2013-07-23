@@ -64,7 +64,7 @@ public:
 	template<class T> bool	Subscribe(const CRTTI* RTTI, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
 	bool					Subscribe(CEventDispatcher& Listener, PSub* pSub = NULL, ushort Priority = Priority_Default);
 
-	void					Unsubscribe(CEventID ID, CEventHandler* Handler);
+	void					Unsubscribe(CEventID ID, CEventHandler* pHandler);
 	void					UnsubscribeAll() { Subscriptions.Clear(); }
 };
 
