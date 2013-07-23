@@ -185,27 +185,31 @@ void CEventDispatcher::ProcessPendingEvents()
 }
 //---------------------------------------------------------------------
 
-void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* Handler)
+void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 {
-	PEventHandler Sub, Prev;
+	n_assert_dbg(pHandler);
 
-	//!!!double search! in Get & in [] / Remove
-	if (Subscriptions.Get(ID, Sub)) do
+	PEventHandler* pCurrSlot = Subscriptions.Get(ID);
+	if (pCurrSlot)
 	{
-		if (Sub.GetUnsafe() == Handler)
+		PEventHandler Prev, Curr = *pCurrSlot;
+		do
 		{
-			if (Prev.IsValid()) Prev->Next = Handler->Next;
-			else
+			if (Curr.GetUnsafe() == pHandler)
 			{
-				if (Handler->Next.IsValid()) Subscriptions[ID] = Handler->Next;
-				else Subscriptions.Remove(ID);
+				if (Prev.IsValid()) Prev->Next = pHandler->Next;
+				else
+				{
+					if (pHandler->Next.IsValid()) (*pCurrSlot) = pHandler->Next;
+					else Subscriptions.Remove(ID); //???optimize duplicate search? use CIterator?
+				}
+				return;
 			}
-			return;
+			Prev = Curr;
+			Curr = Curr->Next;
 		}
-		Prev = Sub;
-		Sub = Sub->Next;
+		while (Curr.IsValid());
 	}
-	while (Sub.IsValid());
 
 	n_error("Subscription on '%s' not found, mb double unsubscription", ID.ID);
 }
