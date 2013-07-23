@@ -34,7 +34,7 @@ public:
 
 	typedef T* CIterator;
 
-	Data::CFlags	Flags; // CDict needs pDataDest access it
+	Data::CFlags	Flags; // CDict needs to access it
 
 	CArray(): pData(NULL), Allocated(0), Count(0), GrowSize(16), Flags(Array_KeepOrder) {}
 	CArray(DWORD _Count, DWORD _GrowSize);
@@ -56,6 +56,7 @@ public:
 	void		Remove(CIterator It, T* pOutValue = NULL);
 	void		RemoveAt(int Idx);
 	bool		RemoveByValue(const T& Val);
+	bool		RemoveByValueSorted(const T& Val);
 	void		Clear(bool FreeMemory = false);
 
 	T&			Front() const { n_assert(pData && Count > 0); return pData[0]; }
@@ -75,7 +76,7 @@ public:
 	int			FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;
 	bool		Contains(const T& Val) const { return FindIndex(Val) != INVALID_INDEX; }
 	bool		ContainsSorted(const T& Val) const { return FindIndexSorted(Val) != INVALID_INDEX; }
-	bool		IsIndexValid(int Idx) const { return Idx >= 0 && Idx < (int)Count; }
+	bool		IsIndexValid(int Idx) const { return ((DWORD)Idx) < Count; }
 
 	void		Resize(DWORD NewAllocSize);
 	void		Reallocate(DWORD NewAllocSize, DWORD NewGrowSize);
@@ -101,7 +102,7 @@ public:
 	bool		operator !=(const CArray<T>& Other) const { return !(*this == Other); }
 };
 
-// NB: '_GrowSize' can be zero pDataDest create a static preallocated array.
+// NB: '_GrowSize' can be zero to create a static preallocated array.
 template<class T>
 CArray<T>::CArray(DWORD _Count, DWORD _GrowSize):
 	GrowSize(_GrowSize),
@@ -327,7 +328,7 @@ template<class T>
 typename CArray<T>::CIterator CArray<T>::Insert(int Idx, const T& Val)
 {
 	n_assert2_dbg(Flags.Is(Array_KeepOrder), "Insertion has no much meaning if order isn't preserver, use Add(), it is faster!");
-	n_assert(Idx >= 0 && Idx <= (int)Count);
+	n_assert(((DWORD)Idx) <= Count);
 	if (Idx == Count) return Add(Val);
 	else
 	{
@@ -406,6 +407,16 @@ bool CArray<T>::RemoveByValue(const T& Val)
 //---------------------------------------------------------------------
 
 template<class T>
+bool CArray<T>::RemoveByValueSorted(const T& Val)
+{
+	int Idx = FindIndexSorted(Val);
+	if (Idx == INVALID_INDEX) FAIL;
+	RemoveAt(Idx);
+	OK;
+}
+//---------------------------------------------------------------------
+
+template<class T>
 void CArray<T>::RemoveAt(int Idx)
 {
 	n_assert(IsIndexValid(Idx));
@@ -441,9 +452,10 @@ void CArray<T>::Clear(bool FreeMemory)
 template<class T>
 int CArray<T>::FindIndex(const T& Val) const
 {
+	int Idx = &Val - pData;
+	if (IsIndexValid(Idx)) return Idx;
 	for (DWORD i = 0; i < Count; ++i)
-		if (pData[i] == Val)
-			return i;
+		if (pData[i] == Val) return i;
 	return INVALID_INDEX;
 }
 //---------------------------------------------------------------------
@@ -452,6 +464,9 @@ template<class T>
 int CArray<T>::FindIndexSorted(const T& Val) const
 {
 	if (!Count) return INVALID_INDEX;
+
+	int Idx = &Val - pData;
+	if (IsIndexValid(Idx)) return Idx;
 
 	int Num = Count, Low = 0, High = Num - 1;
 	while (Low <= High)

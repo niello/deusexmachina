@@ -37,11 +37,8 @@ protected:
 	// can use sorted array instead of list & implement subscription priority
 	CHashTable<CEventID, PEventHandler> Subscriptions;
 
-	DWORD	ScheduleEvent(CEventBase* Event, float RelTime);
+	DWORD	ScheduleEvent(CEventBase& Event, float RelTime);
 	DWORD	DispatchEvent(const CEventBase& Event);
-
-	// Event handler (to subscribe to other dispatcher and receive its events)
-	bool	OnEvent(const CEventBase& Event) { return !!DispatchEvent(Event); }
 
 public:
 
@@ -57,13 +54,8 @@ public:
 
 	void					ProcessPendingEvents();
 
-	//???leave 2 instead of 4 with CEventID first param?
-	bool					Subscribe(CStrID ID, CEventCallback Callback, PSub* pSub = NULL, ushort Priority = Priority_Default);
-	template<class T> bool	Subscribe(CStrID ID, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
-	bool					Subscribe(const CRTTI* RTTI, CEventCallback Callback, PSub* pSub = NULL, ushort Priority = Priority_Default);
-	template<class T> bool	Subscribe(const CRTTI* RTTI, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
-	bool					Subscribe(CEventDispatcher& Listener, PSub* pSub = NULL, ushort Priority = Priority_Default);
-
+	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, ushort Priority = Priority_Default);
+	template<class T> bool	Subscribe(CEventID ID, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
 	void					Unsubscribe(CEventID ID, CEventHandler* pHandler);
 	void					UnsubscribeAll() { Subscriptions.Clear(); }
 };
@@ -91,46 +83,27 @@ inline DWORD CEventDispatcher::FireEvent(CStrID ID, Data::PParams Params, char F
 {
 	//!!!event pools!
 	Ptr<CEvent> Event = n_new(CEvent)(ID, Flags, Params); //EventSrv->ParamEvents.Allocate();
-	return ScheduleEvent(Event, RelTime);
+	return ScheduleEvent(*Event, RelTime);
 }
 //---------------------------------------------------------------------
 
 inline DWORD CEventDispatcher::FireEvent(CEventNative& Event, char Flags, float RelTime)
 {
 	if (Flags != -1) Event.Flags = Flags;
-	return ScheduleEvent(&Event, RelTime);
+	return ScheduleEvent(Event, RelTime);
 }
 //---------------------------------------------------------------------
 
-inline bool CEventDispatcher::Subscribe(CStrID ID, CEventCallback Callback, PSub* pSub, ushort Priority)
+inline bool CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub, ushort Priority)
 {
 	return AddHandler(ID, n_new(CEventHandlerCallback)(Callback, Priority), pSub);
 }
 //---------------------------------------------------------------------
 
 template<class T>
-inline bool CEventDispatcher::Subscribe(CStrID ID, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub, ushort Priority)
+inline bool CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub, ushort Priority)
 {
 	return AddHandler(ID, n_new(CEventHandlerMember<T>)(Object, Callback, Priority), pSub);
-}
-//---------------------------------------------------------------------
-
-inline bool CEventDispatcher::Subscribe(const CRTTI* RTTI, CEventCallback Callback, PSub* pSub, ushort Priority)
-{
-	return AddHandler(RTTI, n_new(CEventHandlerCallback)(Callback, Priority), pSub);
-}
-//---------------------------------------------------------------------
-
-template<class T>
-inline bool CEventDispatcher::Subscribe(const CRTTI* RTTI, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub, ushort Priority)
-{
-	return AddHandler(RTTI, n_new(CEventHandlerMember<T>)(Object, Callback, Priority), pSub);
-}
-//---------------------------------------------------------------------
-
-inline bool CEventDispatcher::Subscribe(CEventDispatcher& Listener, PSub* pSub, ushort Priority)
-{
-	return AddHandler(NULL, n_new(CEventHandlerMember<CEventDispatcher>)(&Listener, &CEventDispatcher::OnEvent, Priority), pSub);
 }
 //---------------------------------------------------------------------
 

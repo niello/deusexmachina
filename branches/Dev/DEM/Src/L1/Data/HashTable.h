@@ -35,20 +35,25 @@ public:
 	{
 	private:
 
-		CHashTable<TKey, TVal>*		pTable;
-		DWORD						ChainIdx;
-		typename CChain::CIterator	It;
+		CHashTable<TKey, TVal>*					pTable;
+		typename CFixedArray<CChain>::CIterator	ItChain;
+		typename CChain::CIterator				It;
 
 	public:
 
-		CIterator(CHashTable<TKey, TVal>* Tbl): pTable(Tbl), ChainIdx(0)
+		CIterator(CHashTable<TKey, TVal>* Tbl): pTable(Tbl)
 		{
-			if (Tbl)
+			if (pTable)
 			{
-				while (ChainIdx < pTable->Chains.GetCount() && !pTable->Chains[ChainIdx].GetCount()) ++ChainIdx;
-				It = ChainIdx < pTable->Chains.GetCount() ? pTable->Chains[ChainIdx].Begin() : NULL;
+				ItChain = pTable->Chains.Begin();
+				while (ItChain < pTable->Chains.End() && !ItChain->GetCount()) ++ItChain;
+				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : NULL;
 			}
-			else It = NULL;
+			else
+			{
+				ItChain = NULL;
+				It = NULL;
+			}
 		}
 
 		const TKey&	GetKey() const { n_assert(It); return It->GetKey(); }
@@ -62,10 +67,10 @@ public:
 		{
 			n_assert(It);
 			++It;
-			if (It == pTable->Chains[ChainIdx].End())
+			if (It == ItChain->End())
 			{
-				do ++ChainIdx; while (ChainIdx < pTable->Chains.GetCount() && !pTable->Chains[ChainIdx].GetCount());
-				It = ChainIdx < pTable->Chains.GetCount() ? pTable->Chains[ChainIdx].Begin() : NULL;
+				do ++ItChain; while (ItChain < pTable->Chains.End() && !ItChain->GetCount());
+				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : NULL;
 			}
 			return *this;
 		}
@@ -73,19 +78,20 @@ public:
 
 	static const int DEFAULT_SIZE = 64;
 
-    CHashTable(int Capacity = DEFAULT_SIZE);
+	CHashTable(int Capacity = DEFAULT_SIZE);
 	CHashTable(const CHashTable<TKey, TVal>& Other): Chains(Other.Chains), Count(Other.Count) {}
 
-    void		Add(const CPair& Pair);
+	void		Add(const CPair& Pair);
 	void		Add(const TKey& Key, const TVal& Value) { Add(CPair(Key, Value)); }
-    bool		Remove(const TKey& Key);
+	bool		Remove(const TKey& Key);
+	//!!!bool		Remove(const CIterator& It);
 	void		Clear();
-    bool		Contains(const TKey& Key) const;
+	bool		Contains(const TKey& Key) const;
 	bool		Get(const TKey& Key, TVal& Value) const;
 	TVal*		Get(const TKey& Key) const;
 	TVal&		At(const TKey& Key) const { TVal* pVal = Get(Key); n_assert(pVal); return *pVal; } // Entry must exist
 	TVal&		At(const TKey& Key); // Entry will be added
-    void		CopyToArray(CChain& OutData) const;
+	void		CopyToArray(CChain& OutData) const;
 
 	CIterator	Begin() { return CIterator(this); }
 
@@ -139,9 +145,7 @@ bool CHashTable<TKey, TVal>::Remove(const TKey& Key)
 	if (!Count) FAIL;
 	CPair HashedKey(Key);
 	CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.GetCount()];
-	int ElmIdx = Chain.FindIndexSorted(HashedKey);
-	if (ElmIdx == INVALID_INDEX) FAIL;
-	Chain.RemoveAt(ElmIdx);
+	if (!Chain.RemoveByValueSorted(HashedKey)) FAIL;
 	--Count;
 	OK;
 }
