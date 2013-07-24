@@ -54,7 +54,7 @@ public:
 
 	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeICTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause) { Tasks[TaskID].SetPause(Pause); }
-	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f) { Tasks[TaskID].Stop(FadeOutTime); }
+	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f);
 	float			GetAnimLength(CStrID ClipID) const;
 };
 

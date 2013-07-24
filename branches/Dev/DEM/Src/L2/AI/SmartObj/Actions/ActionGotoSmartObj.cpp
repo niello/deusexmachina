@@ -8,13 +8,14 @@ namespace AI
 {
 __ImplementClass(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
 
+//???!!!in Updare when AINav_Done if target moved and we aren't in the dest, reactivate insterad of Success?!
+
 bool CActionGotoSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
-
 	CPropSmartObject* pSO = pEnt->GetProperty<CPropSmartObject>();
-	n_assert(pSO);
+	if (!pSO) FAIL;
 
 	vector3 Dest;
 	if (!pSO->GetDestination(ActionID, pActor->Radius, Dest, pActor->MinReachDist, pActor->MaxReachDist))
@@ -24,8 +25,6 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 	// Then actor will arrive exactly to the distance required.
 
 	pActor->GetNavSystem().SetDestPoint(Dest);
-
-	//return CActionGoto::Activate(pActor)
 
 	OK;
 }

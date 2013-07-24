@@ -250,7 +250,7 @@ bool CGameServer::CreateProfile(const CString& Name) const
 
 bool CGameServer::DeleteProfile(const CString& Name) const
 {
-	if (CurrProfile == Name) FAIL; //???or stop game and set current to empty?
+	if (CurrProfile == Name && GameFileName.IsValid()) FAIL; //???or stop game and set current to empty?
 	return IOSrv->DeleteDirectory("AppData:Profiles/" + Name);
 }
 //---------------------------------------------------------------------
@@ -307,8 +307,16 @@ bool CGameServer::SavedGameExists(const CString& Name, const CString& Profile)
 }
 //---------------------------------------------------------------------
 
-//!!!need separate Start and Continue or kill continue data before Start!
-bool CGameServer::StartGame(const CString& FileName)
+bool CGameServer::StartNewGame(const CString& FileName)
+{
+	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
+	CString ContinueDir = "AppData:Profiles/" + CurrProfile + "/Continue";
+	if (IOSrv->DirectoryExists(ContinueDir)) { n_verify_dbg(IOSrv->DeleteDirectory(ContinueDir)); }
+	return ContinueGame(FileName);
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::ContinueGame(const CString& FileName)
 {
 	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
 
@@ -488,7 +496,7 @@ bool CGameServer::SaveGame(const CString& Name)
 	//!!!pack savegame! on load can unpack to the override (continue) directory!
 	CString ProfileDir = "AppData:Profiles/" + CurrProfile;
 	CString SaveDir = ProfileDir + "/Saves/" + Name;
-	if (IOSrv->DirectoryExists(SaveDir)) IOSrv->DeleteDirectory(SaveDir);
+	if (IOSrv->DirectoryExists(SaveDir)) { n_verify_dbg(IOSrv->DeleteDirectory(SaveDir)); }
 	IOSrv->CopyDirectory(ProfileDir + "/Continue", SaveDir, true);
 
 	OK;
@@ -504,10 +512,10 @@ bool CGameServer::LoadGame(const CString& Name)
 
 	CString ProfileDir = "AppData:Profiles/" + CurrProfile;
 	CString ContinueDir = ProfileDir + "/Continue";
-	if (IOSrv->DirectoryExists(ContinueDir)) IOSrv->DeleteDirectory(ContinueDir);
+	if (IOSrv->DirectoryExists(ContinueDir)) { n_verify_dbg(IOSrv->DeleteDirectory(ContinueDir)); }
 	IOSrv->CopyDirectory(ProfileDir + "/Saves/" + Name, ContinueDir, true);
 
-	return StartGame(GameFileName);
+	return ContinueGame(GameFileName);
 }
 //---------------------------------------------------------------------
 
