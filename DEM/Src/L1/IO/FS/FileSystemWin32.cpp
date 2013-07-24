@@ -117,6 +117,38 @@ bool CFileSystemWin32::CreateDirectory(const CString& Path)
 
 bool CFileSystemWin32::DeleteDirectory(const CString& Path)
 {
+	if (RemoveDirectory(Path.CStr()) != FALSE) OK;
+
+	// Failed to delete, so clear directory contents before
+
+	// In the ANSI version of this function, the name is limited to MAX_PATH characters.
+	// To extend this limit to 32,767 widecharacters, call the Unicode version of the
+	// function and prepend "\\?\" to the path. For more information, see Naming a File.
+	// (c)) MSDN
+	char pPath[MAX_PATH];
+	sprintf_s(pPath, MAX_PATH - 1, "%s\\*", Path.CStr());
+
+	WIN32_FIND_DATA FindData;
+	HANDLE hRec = FindFirstFile(pPath, &FindData);
+
+	if (hRec == INVALID_HANDLE_VALUE) FAIL;
+
+	do
+	{
+		if (!strcmp(FindData.cFileName, "..") || !strcmp(FindData.cFileName, ".")) continue;
+
+		CString Name = Path + "/" + FindData.cFileName;
+		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			if (!DeleteDirectory(Name)) FAIL;
+		}
+		else if (::DeleteFile(Name.CStr()) == FALSE) FAIL;
+	}
+	while (FindNextFile(hRec, &FindData) != FALSE);
+
+	if (GetLastError() != ERROR_NO_MORE_FILES) FAIL;
+	FindClose(hRec);
+
 	return RemoveDirectory(Path.CStr()) != FALSE;
 }
 //---------------------------------------------------------------------

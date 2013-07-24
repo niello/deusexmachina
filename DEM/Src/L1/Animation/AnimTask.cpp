@@ -141,7 +141,6 @@ void CAnimTask::Clear()
 	State = Task_Invalid;
 	pEventDisp = NULL;
 	Params = NULL;
-	ClipID = CStrID::Empty;
 	Clip = NULL;
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{

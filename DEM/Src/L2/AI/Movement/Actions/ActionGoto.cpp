@@ -6,14 +6,6 @@ namespace AI
 {
 __ImplementClass(AI::CActionGoto, 'AGTO', AI::CAction);
 
-//bool CActionGoto::Activate(CActor* pActor)
-//{
-//	// Derived classes can setup destination here before calling base method:
-//	// pActor->GetNavSystem().SetDestPoint(...);
-//	OK;
-//}
-////---------------------------------------------------------------------
-
 EExecStatus CActionGoto::Update(CActor* pActor)
 {
 	switch (pActor->NavStatus)

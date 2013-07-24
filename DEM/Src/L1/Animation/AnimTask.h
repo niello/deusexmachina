@@ -62,9 +62,10 @@ public:
 	float							FadeOutTime;
 	bool							Loop;
 
-	CAnimTask(): Ctlrs(1, 2), pEventDisp(NULL) { Ctlrs.Flags.Set(Array_DoubleGrowSize); }
+	CAnimTask(): Ctlrs(1, 2), pEventDisp(NULL), State(Task_Invalid) { Ctlrs.Flags.Set(Array_DoubleGrowSize); }
 	~CAnimTask() { Clear(); }
 
+	bool IsEmpty() const { return State == Task_Invalid; }
 	void Update(float FrameTime);
 	void SetPause(bool Pause);
 	void Stop(float OverrideFadeOutTime = -1.f); // Use negative value to avoid override

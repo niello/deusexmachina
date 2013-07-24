@@ -42,6 +42,7 @@ EExecStatus CActionGotoTarget::Update(CActor* pActor)
 				Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 				if (!pEnt) return Failure;
 				pActor->GetNavSystem().SetDestPoint(pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation());
+				if (pActor->NavStatus == AINav_Done) return Success;
 			}
 			return AdvancePath(pActor);
 		}

@@ -104,8 +104,10 @@ void CNavSystem::Update(float FrameTime)
 		dtPolyRef Ref;
 		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
 
+		// A polygon we are on became valid, or we reached a valid polygon by falling or restoring valid position
 		if (Ref)
 		{
+			//!!!need to track code path below and make sure this Done won't override our target!
 			pActor->NavStatus = AINav_Done;
 			Corridor.reset(Ref, pActor->Position.v);
 			if (pBoundary) pBoundary->reset();
@@ -162,6 +164,10 @@ void CNavSystem::Update(float FrameTime)
 
 			if (Replan)
 			{
+				//!!!cancel request if pending!
+				//!!!DBG assert!
+				n_assert(PathRequestID == DT_PATHQ_INVALID);
+
 				pProcessingQueue = NULL;
 				PathRequestID = DT_PATHQ_INVALID;
 				pActor->NavStatus = DestRef ? AINav_DestSet : AINav_Failed;
@@ -169,6 +175,7 @@ void CNavSystem::Update(float FrameTime)
 		}
 		else
 		{
+			// We have lost our destination
 			Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
 			pActor->NavStatus = AINav_Done;
 			Replan = false;
@@ -365,7 +372,12 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 void CNavSystem::Reset()
 {
 	if (pActor->NavStatus == AINav_Following) EndEdgeTraversal();
-	if (pActor->NavStatus != AINav_Invalid) pActor->NavStatus = AINav_Done;	
+	if (pActor->NavStatus != AINav_Invalid)
+	{
+		DestPoint = pActor->Position;
+		pActor->DistanceToNavDest = 0.f;
+		pActor->NavStatus = AINav_Done;
+	}
 	if (pProcessingQueue)
 	{
 		pProcessingQueue->CancelRequest(PathRequestID);

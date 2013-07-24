@@ -75,7 +75,8 @@ public:
 	void			EnumSavedGames(CArray<CString>& Out, const CString& Profile = CString::Empty) const;
 	bool			SavedGameExists(const CString& Name, const CString& Profile = CString::Empty);
 
-	bool			StartGame(const CString& FileName);
+	bool			StartNewGame(const CString& FileName);
+	bool			ContinueGame(const CString& FileName);
 	bool			SaveGame(const CString& Name);
 	bool			LoadGame(const CString& Name);
 	bool			LoadGameLevel(CStrID ID);

@@ -174,15 +174,30 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 	{
 		Anim::CAnimTask& Task = Tasks[i];
 
-		if (Task.State == Anim::CAnimTask::Task_Invalid) continue;
+		if (Task.IsEmpty()) continue;
 
 		int j = 0;
 		for (; j < Task.Ctlrs.GetCount(); ++j)
 			if (Task.Ctlrs[j]->IsAttachedToNode()) break;
 
 		// Remove task if all its controllers were removed from target nodes
-		if (j == Task.Ctlrs.GetCount()) Task.Stop(0.f);
-		else Task.Update(FrameTime);
+		if (j == Task.Ctlrs.GetCount())
+		{
+			Task.Stop(0.f);
+			Data::PParams P = n_new(Data::CParams(1));
+			P->Set(CStrID("Clip"), Task.ClipID);
+			GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
+		}
+		else
+		{
+			Task.Update(FrameTime);
+			if (Task.IsEmpty())
+			{
+				Data::PParams P = n_new(Data::CParams(1));
+				P->Set(CStrID("Clip"), Task.ClipID);
+				GetEntity()->FireEvent(CStrID("OnAnimStop"));
+			}
+		}
 	}
 	OK;
 }
@@ -205,7 +220,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	int TaskID = INVALID_INDEX;
 	Anim::CAnimTask* pTask = NULL;
 	for (int i = 0; i < Tasks.GetCount(); ++i)
-		if (!Tasks[i].ClipID.IsValid())
+		if (Tasks[i].IsEmpty())
 		{
 			pTask = &Tasks[i];
 			TaskID = i;
@@ -325,7 +340,24 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	pTask->Params = n_new(Data::CParams);
 	pTask->Params->Set(CStrID("Clip"), ClipID);
 
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("Clip"), ClipID);
+	GetEntity()->FireEvent(CStrID("OnAnimStart"));
+
 	return TaskID;
+}
+//---------------------------------------------------------------------
+
+void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
+{
+	Anim::CAnimTask& Task = Tasks[TaskID];
+	Task.Stop(FadeOutTime);
+	if (Task.IsEmpty())
+	{
+		Data::PParams P = n_new(Data::CParams(1));
+		P->Set(CStrID("Clip"), Task.ClipID);
+		GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
+	}
 }
 //---------------------------------------------------------------------
 
