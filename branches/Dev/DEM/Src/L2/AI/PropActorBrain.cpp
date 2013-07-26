@@ -55,9 +55,9 @@ bool CPropActorBrain::InternalActivate()
 	Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
 	Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 
-	NavStatus = AINav_Done;
+	NavState = AINav_IdleInvalid;
 
-	MvmtStatus = AIMvmt_None;
+	MvmtState = AIMvmt_None;
 	MvmtType = AIMvmt_Type_Walk;
 	SteeringType = AISteer_Type_Seek;
 	MinReachDist = 0.f;
@@ -344,6 +344,7 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	bool PosChanged = (Position != Tfm.Translation());
 	Position = Tfm.Translation();
 	LookatDir = -Tfm.AxisZ();
 	NavSystem.UpdatePosition();
@@ -378,12 +379,10 @@ bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 
 bool CPropActorBrain::OnRenderDebug(const Events::CEventBase& Event)
 {
-	if (false) //FocusMgr->GetInputFocusEntity() == GetEntity())
-	{
+	if (GetEntity()->GetUID() == "GG") //!!!write debug focus or smth!
 		MotorSystem.RenderDebug();
-	}
 	OK;
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

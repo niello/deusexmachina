@@ -6,7 +6,6 @@
 #include <AI/ActorFwd.h>
 #include <Core/Ptr.h>
 #include <mathlib/vector.h>
-#include <DetourLocalBoundary.h>
 
 // Motor system is responsible for steering, facing and other position/orientation
 // changes of the actor. This system uses physics interface to perform actual movement.
@@ -20,7 +19,7 @@ namespace AI
 {
 class CMemFactObstacle;
 
-enum EMovementStatus
+enum EMovementState
 {
 	AIMvmt_None,		// No movement is currently performed
 	AIMvmt_DestSet,		// There is a valid destination for steering

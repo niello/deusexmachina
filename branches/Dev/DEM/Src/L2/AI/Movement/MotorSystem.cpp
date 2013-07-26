@@ -15,7 +15,7 @@ namespace AI
 void CMotorSystem::Init(const Data::CParams* Params)
 {
 	MaxSpeed[AIMvmt_Type_None] = 0.f;
-	
+
 	if (Params)
 	{
 		MaxSpeed[AIMvmt_Type_Walk] = Params->Get<float>(CStrID("MaxSpeedWalk"), 2.5f);
@@ -40,7 +40,7 @@ void CMotorSystem::Update()
 
 	vector4 LinearVel;
 
-	switch (pActor->MvmtStatus)
+	switch (pActor->MvmtState)
 	{
 		//???need both states?
 		case AIMvmt_None:
@@ -56,13 +56,13 @@ void CMotorSystem::Update()
 				//if (StuckTime > StuckForTooLongTime)
 				//{
 				//	ResetMovement();
-				//	pActor->MvmtStatus = AIMvmt_None;	//!!!???as argument to ResetMovement?! like bool Success?
+				//	pActor->MvmtState = AIMvmt_None;	//!!!???as argument to ResetMovement?! like bool Success?
 				//										//???need both AIMvmt_None & AIMvmt_Done at all?
 				//	break;
 				//}
 				//break;
 			}
-			else pActor->MvmtStatus = AIMvmt_DestSet;
+			else pActor->MvmtState = AIMvmt_DestSet;
 			break;
 		}
 		case AIMvmt_DestSet:
@@ -75,7 +75,7 @@ void CMotorSystem::Update()
 
 			if (IsStuck())
 			{
-				pActor->MvmtStatus = AIMvmt_Stuck;
+				pActor->MvmtState = AIMvmt_Stuck;
 				//StuckTime = 0.f; //or StuckTime = CurrTime;
 				break;
 			}
@@ -86,7 +86,7 @@ void CMotorSystem::Update()
 			if (Speed <= 0.f)
 			{
 				ResetMovement();
-				pActor->MvmtStatus = AIMvmt_None;	//!!!???as argument to ResetMovement?! like bool Success?
+				pActor->MvmtState = AIMvmt_None;	//!!!???as argument to ResetMovement?! like bool Success?
 													//???need both AIMvmt_None & AIMvmt_Done at all?
 				break;
 			}
@@ -127,8 +127,7 @@ void CMotorSystem::Update()
 			//!!!take obstacle into account only if it is close enough!
 			if (AvoidObstacles)
 			{
-//#define DETOUR_OBSTACLE_AVOIDANCE
-#ifdef DETOUR_OBSTACLE_AVOIDANCE
+#ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
 				float Range = pActor->Radius + OBSTACTLE_DETECTOR_MIN + Speed * OBSTACLE_PREDICTION_TIME;
 
 				//???here or global persistent?
@@ -138,10 +137,10 @@ void CMotorSystem::Update()
 				pActor->GetNavSystem().GetObstacles(Range, ObstacleQuery);
 
 				//???pre-filter mem facts? distance < Range, height intersects actor height etc
-				CMemFactNode* pCurr = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
-				for (; pCurr; pCurr = pCurr->GetSucc())
+				CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+				for (; It; ++It)
 				{
-					CMemFactObstacle* pObstacle = (CMemFactObstacle*)pCurr->Object.CStr();
+					CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
 					//!!!remember obstacle velocity in the fact and use here!
 					// desired velocity can be get from obstacles-actors only!
 					ObstacleQuery.addCircle(pObstacle->Position.v, pObstacle->Radius, vector3::Zero.v, vector3::Zero.v);
@@ -153,8 +152,10 @@ void CMotorSystem::Update()
 				if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
 				{
 					//!!!???track LinearVelocity in actor like position?
-					Prop::CPropActorPhysics* pPhysics = pActor->GetEntity()->GetProperty<Prop::CPropActorPhysics>();
-					const vector3& Velocity = pPhysics ? pPhysics->GetPhysicsEntity()->GetVelocity() : vector3::Zero;
+					//Prop::CPropCharacterController* pPhysics = pActor->GetEntity()->GetProperty<Prop::CPropActorPhysics>();
+					//const vector3& Velocity = pPhysics ? pPhysics->GetPhysicsEntity()->GetVelocity() : vector3::Zero;
+					vector3 Velocity;
+					n_error("IMPLEMENT ME!!! Get velocity!");
 
 					float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call
 					if (AdaptiveVelocitySampling)
@@ -268,7 +269,7 @@ void CMotorSystem::Update()
 
 			break;
 		}
-		default: n_error("CMotorSystem::Update(): Unexpected movement status '%d'", pActor->MvmtStatus);
+		default: n_error("CMotorSystem::Update(): Unexpected movement status '%d'", pActor->MvmtState);
 	}
 
 	if (pActor->FacingStatus == AIFacing_DirSet)
@@ -311,7 +312,7 @@ void CMotorSystem::Update()
 	//!!!CAN reset rotation if MaxAngularSpeed == 0.f!
 
 	// Delayed for a big turn check
-	if (pActor->MvmtStatus == AIMvmt_DestSet)
+	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
 		PParams PLinearVel = n_new(CParams);
 		PLinearVel->Set(CStrID("Velocity"), LinearVel);
@@ -322,7 +323,7 @@ void CMotorSystem::Update()
 
 void CMotorSystem::ResetMovement()
 {
-	pActor->MvmtStatus = AIMvmt_Done;
+	pActor->MvmtState = AIMvmt_Done;
 	PParams PLinearVel = n_new(CParams);
 	PLinearVel->Set(CStrID("Velocity"), vector4::Zero);
 	pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
@@ -367,11 +368,11 @@ void CMotorSystem::RenderDebug()
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
 	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
 
-	if (pActor->MvmtStatus == AIMvmt_DestSet || pActor->MvmtStatus == AIMvmt_Stuck)
+	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
 		DebugDraw->DrawLine(
 			vector3(DestPoint.x, pActor->Position.y, DestPoint.z),
 			vector3(DestPoint.x, pActor->Position.y + 1.f, DestPoint.z),
-			pActor->MvmtStatus == AIMvmt_DestSet ? ColorNormal : ColorStuck);
+			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
 
 	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; It; ++It)
@@ -390,15 +391,15 @@ void CMotorSystem::RenderDebug()
 	}
 
 	LPCSTR pMvmt = NULL;
-	if (pActor->MvmtStatus == AIMvmt_None) pMvmt = "None";
-	else if (pActor->MvmtStatus == AIMvmt_Done) pMvmt = "Done";
-	else if (pActor->MvmtStatus == AIMvmt_DestSet) pMvmt = "DestSet";
-	else if (pActor->MvmtStatus == AIMvmt_Stuck) pMvmt = "Stuck";
+	if (pActor->MvmtState == AIMvmt_None) pMvmt = "None";
+	else if (pActor->MvmtState == AIMvmt_Done) pMvmt = "Done";
+	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";
+	else if (pActor->MvmtState == AIMvmt_Stuck) pMvmt = "Stuck";
 
 	CString text;
 	text.Format("Mvmt status: %s\nFace direction set: %s\n", pMvmt, pActor->FacingStatus == AIFacing_DirSet ? "true" : "false");
 
-	if (pActor->MvmtStatus == AIMvmt_DestSet)
+	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
 		vector2 ToDest(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
 		
@@ -430,7 +431,7 @@ void CMotorSystem::SetDest(const vector3& Dest)
 	else
 	{
 		DestPoint = Dest;
-		pActor->MvmtStatus = AIMvmt_DestSet;
+		pActor->MvmtState = AIMvmt_DestSet;
 		FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
 		//pLastClosestObstacle = NULL;
 	}

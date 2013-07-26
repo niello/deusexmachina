@@ -4,6 +4,8 @@
 
 // Actor forward declaration
 
+//#define DETOUR_OBSTACLE_AVOIDANCE
+
 namespace Prop
 {
 	class CPropActorBrain;

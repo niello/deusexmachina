@@ -93,11 +93,11 @@ public:
 	float			Height;
 
 	// Navigation
-	ENavStatus		NavStatus;
+	ENavState		NavState;
 	float			DistanceToNavDest;
 
 	// Movement
-	EMovementStatus	MvmtStatus;
+	EMovementState	MvmtState;
 	EMovementType	MvmtType;
 	ESteeringType	SteeringType;
 	float			MinReachDist;
@@ -120,6 +120,8 @@ public:
 	void			RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
 
 	bool			IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
+	bool			IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
+	bool			IsAtValidLocation() const { return !(NavState & NAV_INVALID); }
 
 	CMemSystem&		GetMemSystem() { return MemSystem; }
 	CNavSystem&		GetNavSystem() { return NavSystem; }
