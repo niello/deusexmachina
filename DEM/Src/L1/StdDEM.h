@@ -139,8 +139,8 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #endif
 
 #define SAFE_RELEASE(n)			if (n) {(n)->Release(); (n)=NULL;}
-#define SAFE_DELETE(n)			if (n) {delete (n); (n) = NULL;}	//???n_delete?
-#define SAFE_DELETE_ARRAY(n)	if (n) {delete[] (n); (n) = NULL;}	//???n_delete_array?
+#define SAFE_DELETE(n)			if (n) {n_delete (n); (n) = NULL;}
+#define SAFE_DELETE_ARRAY(n)	if (n) {n_delete_array(n); (n) = NULL;}
 #define SAFE_FREE(n)			if (n) {n_free(n); (n) = NULL;}
 
 #define CAST(Pointer, Type)((Type*)((PVOID)(Pointer)))

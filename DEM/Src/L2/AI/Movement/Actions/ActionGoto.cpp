@@ -8,28 +8,26 @@ __ImplementClass(AI::CActionGoto, 'AGTO', AI::CAction);
 
 EExecStatus CActionGoto::Update(CActor* pActor)
 {
-	switch (pActor->NavStatus)
+	switch (pActor->NavState)
 	{
-		case AINav_Invalid:
+		case AINav_IdleInvalid:
 		{
+			//!!!???navsystem will check this inside?!
 			if (pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true)) return Success;
 			else return Failure; //???Autocreate sub-action to restore validity?
 		}
 		case AINav_Failed:		return Failure;
 		case AINav_Done:		return Success;
+		case AINav_Invalid:
 		case AINav_DestSet:		return Running;
 		case AINav_Planning:
-		{
-			// Can follow temporary path
-			return Running;
-		}
 		case AINav_Following:
 		{
 			// Derived classes can update target if necessary (if it is dynamic)
 			// pActor->GetNavSystem().SetDestPoint(...);
 			return AdvancePath(pActor);
 		}
-		default: n_error("CActionGoto::Update(): Unexpected navigation status '%d'", pActor->NavStatus);
+		default: n_error("CActionGoto::Update(): Unexpected navigation status '%d'", pActor->NavState);
 	}
 
 	return Failure;
@@ -44,22 +42,21 @@ void CActionGoto::Deactivate(CActor* pActor)
 		SubAction = NULL;
 	}
 
-	if (pActor->NavStatus != AINav_Done &&
-		pActor->NavStatus != AINav_Failed &&
-		pActor->NavStatus != AINav_Invalid)
-		pActor->GetNavSystem().Reset();
+	if (!pActor->IsNavSystemIdle()) pActor->GetNavSystem().Reset();
 }
 //---------------------------------------------------------------------
 
 bool CActionGoto::IsValid(CActor* pActor) const
 {
 	return	pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true) ||
-			(pActor->NavStatus != AINav_Invalid && pActor->NavStatus != AINav_Failed);
+			(pActor->NavState != AINav_IdleInvalid && pActor->NavState != AINav_Failed);
 }
 //---------------------------------------------------------------------
 
 EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 {
+	//???don't request edges every tick? Path remains valid until something happens!
+	//???smth like NavSys->HasPathChanged()? set to false in GetPathEdges, to true when path changes
 	bool OffMesh = pActor->GetNavSystem().IsTraversingOffMesh();
 	if (!pActor->GetNavSystem().GetPathEdges(Path, OffMesh ? 1 : 2)) return Failure;
 
@@ -98,7 +95,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 		}
 		else
 		{
-			pActor->GetNavSystem().Reset();
+			pActor->GetNavSystem().Reset(/*???bool SetSuccess?*/);
 			return Failure;
 		}
 	}

@@ -16,15 +16,9 @@ void CActionSteerToPosition::UpdatePathEdge(CActor* pActor, const CPathEdge* pEd
 }
 //---------------------------------------------------------------------
 
-//bool CActionSteerToPosition::Activate(CActor* pActor)
-//{
-//	OK;
-//}
-////---------------------------------------------------------------------
-
 EExecStatus CActionSteerToPosition::Update(CActor* pActor)
 {
-	switch (pActor->MvmtStatus)
+	switch (pActor->MvmtState)
 	{
 		case AIMvmt_None:
 		{
@@ -43,7 +37,7 @@ EExecStatus CActionSteerToPosition::Update(CActor* pActor)
 			// Remember that stuck can be released, so we may want to wait for some time here
 			// getting stuck time from BB / MotorSystem
 		}
-		default: n_error("CActionSteerToPosition::Update(): Unexpected movement status '%d'", pActor->MvmtStatus);
+		default: n_error("CActionSteerToPosition::Update(): Unexpected movement status '%d'", pActor->MvmtState);
 	}
 	return Failure;
 }
@@ -51,7 +45,7 @@ EExecStatus CActionSteerToPosition::Update(CActor* pActor)
 
 void CActionSteerToPosition::Deactivate(CActor* pActor)
 {
-	if (pActor->MvmtStatus == AIMvmt_DestSet || pActor->MvmtStatus == AIMvmt_Stuck)
+	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
 		pActor->GetMotorSystem().ResetMovement();
 
 	if (pActor->FacingStatus == AIFacing_DirSet)

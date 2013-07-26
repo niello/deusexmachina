@@ -25,15 +25,18 @@ class dtObstacleAvoidanceQuery;
 
 namespace AI
 {
+#define NAV_IDLE	0x80
+#define NAV_INVALID	0x40
 
-enum ENavStatus
+enum ENavState
 {
-	AINav_Invalid,		// Current actor's position is invalid for navigation
-	AINav_DestSet,		// Destination is set and path is required, trying to find path fast and sync
-	AINav_Planning,		// Fast sync pathfinding was not succeed, performing full async pathfinding
-	AINav_Following,	// Actor has valid path and follows it
-	AINav_Done,			// Actor is at the destination, NavSystem is idle
-	AINav_Failed		// Path planning or following failed, NavSystem is idle
+	AINav_Done = NAV_IDLE,							// Actor is at the destination, NavSystem is idle
+	AINav_Failed = (NAV_IDLE | 1),					// Actor failed to reach the destination, NavSystem is idle
+	AINav_DestSet = 2,								// Destination is set and path is required, trying to find path fast and sync
+	AINav_Planning = 3,								// Fast sync pathfinding was not succeed, performing full async pathfinding
+	AINav_Following = 4,							// Actor has valid path and follows it
+	AINav_Invalid = (NAV_INVALID | AINav_DestSet),	// Current actor's position is invalid for navigation, but destination is set
+	AINav_IdleInvalid = (NAV_IDLE | NAV_INVALID)	// Current actor's position is invalid for navigation, NavSystem is idle
 };
 
 class CPathRequestQueue;
@@ -52,24 +55,24 @@ protected:
 	vector3						DestPoint;
 	dtPolyRef					DestRef;
 
-	//CArray<CPathEdge>			Path;
-
 	dtPolyRef					OffMeshRef;
 	vector3						OffMeshPoint;
 	float						OffMeshRadius;
 	bool						TraversingOffMesh;
 
-	float						ReplaCTime;
+	float						ReplanTime;
 	float						TopologyOptTime;
 	CPathRequestQueue*			pProcessingQueue;
 	DWORD						PathRequestID;
 
 	//???personal or template?
-	CDict<int, CStrID>	EdgeTypeToAction;
+	CDict<int, CStrID>			EdgeTypeToAction;
 
 	//!!!Path info cache
 
 	CStrID	GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref);
+	void	UpdateDestination();
+	void	ResetPathRequest();
 
 public:
 

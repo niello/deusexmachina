@@ -24,17 +24,19 @@ bool CActionGotoTarget::Activate(CActor* pActor)
 
 EExecStatus CActionGotoTarget::Update(CActor* pActor)
 {
-	switch (pActor->NavStatus)
+	switch (pActor->NavState)
 	{
-		case AINav_Invalid:
+		case AINav_IdleInvalid:
+		{
+			//!!!???navsystem will check this inside?!
+			if (pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true)) return Success;
+			else return Failure; //???Autocreate sub-action to restore validity?
+		}
 		case AINav_Failed:		return Failure;
 		case AINav_Done:		return Success;
+		case AINav_Invalid:
 		case AINav_DestSet:		return Running;
 		case AINav_Planning:
-		{
-			// Can follow temporary path
-			return Running;
-		}
 		case AINav_Following:
 		{
 			if (IsDynamic)
@@ -42,15 +44,15 @@ EExecStatus CActionGotoTarget::Update(CActor* pActor)
 				Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 				if (!pEnt) return Failure;
 				pActor->GetNavSystem().SetDestPoint(pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation());
-				if (pActor->NavStatus == AINav_Done) return Success;
+				if (pActor->NavState == AINav_Done) return Success;
 			}
 			return AdvancePath(pActor);
 		}
-		default: n_error("CActionGotoTarget::Update(): Unexpected navigation status '%d'", pActor->NavStatus);
+		default: n_error("CActionGotoTarget::Update(): Unexpected navigation status '%d'", pActor->NavState);
 	}
 
 	return Failure;
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}
