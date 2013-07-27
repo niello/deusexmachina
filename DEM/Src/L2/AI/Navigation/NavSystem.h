@@ -57,7 +57,7 @@ protected:
 
 	dtPolyRef					OffMeshRef;
 	vector3						OffMeshPoint;
-	float						OffMeshRadius;
+	float						OffMeshRadiusSq;
 	bool						TraversingOffMesh;
 
 	float						ReplanTime;

@@ -96,6 +96,8 @@ void CNavSystem::SetupState()
 
 void CNavSystem::SetDestPoint(const vector3& Dest)
 {
+	//???OFM what if traversing offmesh?
+
 	DestPoint = Dest;
 
 	if (pActor->IsAtPoint(DestPoint, true))
@@ -131,16 +133,20 @@ void CNavSystem::Update(float FrameTime)
 
 	const float Extents[3] = { 0.f, pActor->Height, 0.f };
 
-	//???request new poly only in UpdatePosition()? if navmesh is immutable, here we can check
-	//the first corridor poly as it updated by UpdatePosition()
+	//!!!OFM need offmesh logic!
+	// Planning must work, following may be too, but if there is only optimization, it is not necessary
+	// Checking if we're at the dest must not work
+	// What if path became invalid in the middle of an offmesh connection? Break or finish traversal?
+	// Need some function of the offmesh - can break traversal. Say, ladder climbing may return true, but jumping may not
+	// Some traversals may want to be completed at the action level (climbing tries to be completed not to leave
+	// character on the ladder, if ladder is still valid and path broken farther ahead)
+	// If offmesh, validity check must be performed against its ref!
 
-	// Check if validity of our current location changed
-	dtPolyRef Ref;
-	pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
-	bool NewLocationIsValid = !!Ref;
-	if (pActor->IsAtValidLocation() != NewLocationIsValid)
+	// Check if validity of our current location changed. Location is updated in UpdatePosition().
+	bool PosIsValidNow = pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter);
+	if (pActor->IsAtValidLocation() != PosIsValidNow)
 	{
-		if (NewLocationIsValid)
+		if (PosIsValidNow)
 		{
 			if (pActor->IsNavSystemIdle()) pActor->NavState = AINav_Done;
 			else
@@ -150,7 +156,7 @@ void CNavSystem::Update(float FrameTime)
 			}
 		}
 		else pActor->NavState = pActor->IsNavSystemIdle() ? AINav_IdleInvalid : AINav_Invalid;
-		Corridor.reset(Ref, pActor->Position.v);
+		Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
 		if (pBoundary) pBoundary->reset();
 	}
 
@@ -158,7 +164,7 @@ void CNavSystem::Update(float FrameTime)
 	//blocked by a controller, we can even receive Invalid state fron it here!
 	//!!!can update smth like pActor->GroundInfo here!
 
-	if (!NewLocationIsValid) return; //!!!before return can check if at the destination! and return (Done | Invalid).
+	if (!PosIsValidNow) return; //!!!before return can check if at the destination! and return (Done | Invalid).
 
 	// We replan path if any of the following conditions is met:
 	// - destination polygon changed, and we aren't at the destination point
@@ -182,6 +188,7 @@ void CNavSystem::Update(float FrameTime)
 		if (DestRef)
 		{
 			// Our destination is valid. Check if we're already there.
+	//???OFM what if traversing offmesh?
 			if (pActor->IsAtPoint(DestPoint, true))
 			{
 				Reset();
@@ -375,7 +382,8 @@ void CNavSystem::UpdatePosition()
 {
 	if (!pNavQuery || TraversingOffMesh) return;
 
-	if (OffMeshRef && OffMeshPoint.lensquared() <= OffMeshRadius)
+	//!!!navmesh height and actual height may differ, so need to compensate or convert actor->navmesh or <- height!
+	if (OffMeshRef && (OffMeshPoint - pActor->Position).lensquared() <= OffMeshRadiusSq)
 	{
 		// We reached an enter to the offmesh connection that is the next edge of our path (see GetPathEdges())
 		//???check validity of the offmesh poly ref? what if we're at the invalid pos now?
@@ -385,68 +393,50 @@ void CNavSystem::UpdatePosition()
 		{
 			n_assert(OffMeshRef == Refs[1]);
 			TraversingOffMesh = true;
+			//???what with distance to nav dest? what if becomes too close to target traversing offmesh?
 		}
 		else n_error("CNavSystem::UpdatePosition() -> Entering invalid offmesh connection");
 	}
 	else
 	{
-		// We walk or teleport over the level
+		bool ResetPoly;
 
-		n_error("CNavSystem::UpdatePosition() -> IMPLEMENT ME!!!");
-
-		//if (!pActor->IsAtValidLocation()) return;
-
-		//!!!???what to do if was invalid and now invalid/valid?
-		//etc
-		//???unify SetState, Update & this logic
-
-		if (pActor->IsNavSystemIdle())
-		{
-			// find poly at the new pos
-			// if not found, set invalid
-			// if found, state = Done
-		}
+		if (pActor->IsNavSystemIdle()) ResetPoly = true;
 		else
 		{
+			// We walk over the level, so try to update position in the corridor
 			Corridor.movePosition(pActor->Position.v, pNavQuery, pNavFilter);
+
+			//???what if we remain on the same poly and it is invalid? is position updated?
+
+			//???always reset boundary? or only if first poly changed?
 
 			// The resulting position will differ from the desired position if the desired position
 			// is not on the navigation mesh, or it can't be reached using a local search
 			// (c) Detour docs
-			if (pActor->Position.x == Corridor.getPos()[0] &&
-				pActor->Position.z == Corridor.getPos()[2] &&
-				pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter))
-			{
-				// Found
-				Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
-			}
+			ResetPoly = pActor->Position.x != Corridor.getPos()[0] || pActor->Position.z != Corridor.getPos()[2];
+		}
+
+		if (ResetPoly)
+		{
+			// We walked too far from where we've been at the last update, or teleportation happened
+			const float Extents[3] = { 0.f, pActor->Height, 0.f };
+			dtPolyRef Ref = 0;
+			pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
+			if (pActor->IsNavSystemIdle())
+				pActor->NavState = Ref ? AINav_Done : AINav_IdleInvalid;
 			else
-			{
-				// find poly at the new pos
-				// if not found, set invalid
-				// if found, state = DestSet to replan path to dest
-			}
-
-			// if valid, update destination to the navmesh
+				pActor->NavState = Ref ? AINav_DestSet : AINav_Invalid;
+			ResetPathRequest();
+			Corridor.reset(Ref, pActor->Position.v);
+			if (pBoundary) pBoundary->reset();
 		}
-
-		// The resulting position will differ from the desired position if the desired position
-		// is not on the navigation mesh, or it can't be reached using a local search
-		// (c) Detour docs
-		if (pActor->Position.x == Corridor.getPos()[0] &&
-			pActor->Position.z == Corridor.getPos()[2] &&
-			pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter))
+		else if (!pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter))
 		{
-			if (pActor->NavState == AINav_Done)
-				Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
-		}
-		else
-		{
-			//!!!try to reset position from the scratch!
-			//if failed set invalid
-
+			// We try to walk through the invalid polygon
 			pActor->NavState = AINav_Invalid;
-			Corridor.reset(0, pActor->Position.v);
+			ResetPathRequest();
+			Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
 			if (pBoundary) pBoundary->reset();
 		}
 
@@ -509,7 +499,7 @@ bool CNavSystem::GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize)
 {
 	n_assert(MaxSize > 0);
 
-	if (!pNavQuery || pActor->NavState != AINav_Following) FAIL;
+	if (!pNavQuery || (pActor->NavState != AINav_Planning && pActor->NavState != AINav_Following)) FAIL;
 
 	const dtNavMesh* pNavMesh = pNavQuery->getAttachedNavMesh();
 
@@ -564,6 +554,12 @@ bool CNavSystem::GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize)
 			{
 				// AFAIR Detour has related feature implemented in findStraightPath() in the last revision.
 				// So can explore how they determine line-navpoly intersection.
+				///// Options for dtNavMeshQuery::findStraightPath.
+				//enum dtStraightPathOptions
+				//{
+				//	DT_STRAIGHTPATH_AREA_CROSSINGS = 0x01,	///< Add a vertex at every polygon edge crossing where area changes.
+				//	DT_STRAIGHTPATH_ALL_CROSSINGS = 0x02,	///< Add a vertex at every polygon edge crossing.
+				//};
 				n_error("IMPLEMENT ME!!! Navigation action change point");
 
 				float Intersection[3]; //!!!!!
@@ -587,7 +583,7 @@ bool CNavSystem::GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize)
 		//pNavQuery->getPolyHeight(CornerPolys[i] ? CornerPolys[i] : DestRef, &CornerVerts[i * 3], &pNode->Dest.y);
 	}
 
-	pEdge->IsLast = !!(CornerFlags[CornerCount - 1] & DT_STRAIGHTPATH_END);
+	pEdge->IsLast = (pActor->NavState == AINav_Following) && (CornerFlags[CornerCount - 1] & DT_STRAIGHTPATH_END);
 
 	//!!!when add node, determine navigation controller for the poly
 	//if action not changed, but controller has changed, finalize edge and start new one
@@ -599,7 +595,8 @@ bool CNavSystem::GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize)
 	{
 		OffMeshRef = CornerPolys[CornerCount - 1];
 		OffMeshPoint.set(&CornerVerts[(CornerCount - 1) * 3]);
-		OffMeshRadius = pActor->Radius * 1.2f; //!!!DetermineOffMeshConnectionTriggerRadius();
+		OffMeshRadiusSq = pActor->Radius * 1.2f; //!!!DetermineOffMeshConnectionTriggerRadius();
+		OffMeshRadiusSq *= OffMeshRadiusSq;
 	}
 	else OffMeshRef = 0;
 

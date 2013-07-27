@@ -450,14 +450,11 @@ bool CGameServer::CommitContinueData()
 	//mb special Extensions/Plugins section not to affect already saved data by diff
 
 	CString Path = "AppData:Profiles/" + CurrProfile + "/Continue";
-	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
+	IOSrv->CreateDirectory(Path);
 	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
 
 	//!!!DBG TMP!
 	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
-
-	Path += "/Levels/";
-	if (!IOSrv->DirectoryExists(Path)) IOSrv->CreateDirectory(Path);
 
 	// Save diffs of each level
 	for (int i = 0; i < Levels.GetCount(); ++i)
@@ -476,11 +473,12 @@ bool CGameServer::CommitLevelDiff(CGameLevel& Level)
 	if (!Level.Save(*SGLevel, LevelDesc)) FAIL;
 	if (SGLevel->GetCount())
 	{
-		CString FullName = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/" + Level.GetID().CStr();
-		DataSrv->SavePRM(FullName + ".prm", SGLevel);
+		CString DirName = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
+		IOSrv->CreateDirectory(DirName);
+		DataSrv->SavePRM(DirName + Level.GetID().CStr() + ".prm", SGLevel);
 
 		//!!!DBG TMP!
-		DataSrv->SaveHRD(FullName + ".hrd", SGLevel);
+		DataSrv->SaveHRD(DirName + Level.GetID().CStr() + ".hrd", SGLevel);
 	}
 
 	OK;
