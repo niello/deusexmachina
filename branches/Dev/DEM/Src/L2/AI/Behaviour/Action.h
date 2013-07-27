@@ -20,7 +20,7 @@ private:
 
 public:
 
-	CAction() {}
+	CAction(): pTpl(NULL) {}
 	CAction(const CActionTpl* pTemplate): pTpl(pTemplate) { }
 
 	virtual bool		Activate(CActor* pActor) { /*validate preconditions here*/ OK; }
