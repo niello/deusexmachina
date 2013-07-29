@@ -396,15 +396,15 @@ void CMotorSystem::RenderDebug()
 	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";
 	else if (pActor->MvmtState == AIMvmt_Stuck) pMvmt = "Stuck";
 
-	CString text;
-	text.Format("Mvmt status: %s\nFace direction set: %s\n", pMvmt, pActor->FacingStatus == AIFacing_DirSet ? "true" : "false");
+	CString Text;
+	Text.Format("Mvmt state: %s\nFace direction set: %s\n", pMvmt, pActor->FacingStatus == AIFacing_DirSet ? "true" : "false");
 
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
 		vector2 ToDest(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
-		
-		CString text2;
-		text2.Format("DestPoint: %.4f, %.4f, %.4f\n"
+
+		CString Text2;
+		Text2.Format("DestPoint: %.4f, %.4f, %.4f\n"
 			"Position: %.4f, %.4f, %.4f\n"
 			"DistToDest: %.4f\n"
 			"MinReach: %.4f\n"
@@ -418,10 +418,10 @@ void CMotorSystem::RenderDebug()
 			ToDest.len(),
 			pActor->MinReachDist,
 			pActor->MaxReachDist);
-		text += text2;
+		Text += Text2;
 	}
 
-	DebugDraw->DrawText(text.CStr(), 0.05f, 0.1f);
+	DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
 }
 //---------------------------------------------------------------------
 

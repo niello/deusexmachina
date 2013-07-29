@@ -225,24 +225,31 @@ bool CPropCharacterController::OnRenderDebug(const Events::CEventBase& Event)
 	const vector4& Color = CharCtlr->GetBody()->IsActive() ? ColorCapsuleActive : ColorCapsuleFrozen;
 	DebugDraw->DrawCapsule(CapsuleTfm, CharCtlr->GetRadius(), CapsuleHeight, Color);
 
-	/*
-	if (GetEntity()->GetUID() == CStrID("GG"))
+	if (GetEntity()->GetUID() == "GG" && CharCtlr->IsMotionRequested()) //!!!write debug focus or smth!
 	{
-		CString text;
-		text.Format("Velocity: %.4f, %.4f, %.4f\nDesired velocity: %.4f, %.4f, %.4f\nAngular desired: %.5f\n"
-					"Speed: %.4f\nDesired speed: %.4f",
-			PhysEntity->GetVelocity().x,
-			PhysEntity->GetVelocity().y,
-			PhysEntity->GetVelocity().z,
-			PhysEntity->GetDesiredLinearVelocity().x,
-			PhysEntity->GetDesiredLinearVelocity().y,
-			PhysEntity->GetDesiredLinearVelocity().z,
-			PhysEntity->GetDesiredAngularVelocity(),
-			PhysEntity->GetVelocity().len(),
-			PhysEntity->GetDesiredLinearVelocity().len());
-		DebugDraw->DrawText(text.CStr(), 0.5f, 0.0f);
+		vector3 LVel;
+		CharCtlr->GetLinearVelocity(LVel);
+
+		CString Text;
+		Text.Format("\n\n\n\n\n\n\n\n"
+			"Requested velocity: %.4f, %.4f, %.4f\n"
+			"Actual velocity: %.4f, %.4f, %.4f\n"
+			"Requested angular velocity: %.5f\n"
+			"Actual angular velocity: %.5f\n"
+			"Requested speed: %.4f\n"
+			"Actual speed: %.4f\n",
+			CharCtlr->GetRequestedLinearVelocity().x,
+			CharCtlr->GetRequestedLinearVelocity().y,
+			CharCtlr->GetRequestedLinearVelocity().z,
+			LVel.x,
+			LVel.y,
+			LVel.z,
+			CharCtlr->GetRequestedAngularVelocity(),
+			CharCtlr->GetAngularVelocity(),
+			CharCtlr->GetRequestedLinearVelocity().len(),
+			LVel.len());
+		DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
 	}
-	*/
 
 	OK;
 }

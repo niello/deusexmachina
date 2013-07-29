@@ -3,9 +3,12 @@
 #include <Game/GameLevel.h> //!!!???cache AI level instead of getting from entity every time?!
 #include <AI/AIServer.h>
 #include <AI/PropActorBrain.h>
+#include <AI/Navigation/NavMeshDebugDraw.h>
+#include <Render/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourLocalBoundary.h>
 #include <DetourObstacleAvoidance.h>
+#include <DetourDebugDraw.h>
 
 namespace AI
 {
@@ -618,6 +621,50 @@ void CNavSystem::GetObstacles(float Range, dtObstacleAvoidanceQuery& Query)
 		const float* pSeg = pBoundary->getSegment(j);
 		if (dtTriArea2D(pActor->Position.v, pSeg, pSeg + 3) >= 0.f)
 			Query.addSegment(pSeg, pSeg + 3);
+	}
+}
+//---------------------------------------------------------------------
+
+void CNavSystem::RenderDebug()
+{
+	if (!pNavQuery) return;
+
+	LPCSTR pNavStr = NULL;
+	if (pActor->NavState == AINav_Done) pNavStr = "Done";
+	else if (pActor->NavState == AINav_Failed) pNavStr = "Failed";
+	else if (pActor->NavState == AINav_DestSet) pNavStr = "DestSet";
+	else if (pActor->NavState == AINav_Planning) pNavStr = "Planning";
+	else if (pActor->NavState == AINav_Following) pNavStr = "Following";
+	else if (pActor->NavState == AINav_Invalid) pNavStr = "Invalid";
+	else if (pActor->NavState == AINav_IdleInvalid) pNavStr = "IdleInvalid";
+
+	CString Text;
+	Text.Format("Nav state: %s\n", pNavStr);
+	DebugDraw->DrawText(Text.CStr(), 0.65f, 0.1f);
+
+	// Path polys, path lines with corners as points
+	if (pActor->NavState == AINav_Planning || pActor->NavState == AINav_Following)
+	{
+		static const vector4 ColorPathLine(1.f, 0.75f, 0.5f, 1.f);
+		static const vector4 ColorPathCorner(1.f, 0.9f, 0.f, 1.f);
+
+		CNavMeshDebugDraw DD;
+		for (int i = 0; i < Corridor.getPathCount(); ++i)
+			duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Corridor.getPath()[i], duRGBA(255, 196, 0, 64));
+
+		const int MAX_CORNERS = 17;
+		float CornerVerts[MAX_CORNERS * 3];
+		unsigned char CornerFlags[MAX_CORNERS];
+		dtPolyRef CornerPolys[MAX_CORNERS];
+		int CornerCount = Corridor.findCorners(CornerVerts, CornerFlags, CornerPolys, MAX_CORNERS, pNavQuery, pNavFilter);
+		vector3 From = pActor->Position;
+		for (int i = 0; i < CornerCount; ++i)
+		{
+			vector3 To = CornerVerts + (i * 3);
+			DebugDraw->DrawLine(From, To, ColorPathLine);
+			DebugDraw->DrawPoint(To, 5, ColorPathCorner);
+			From = To;
+		}
 	}
 }
 //---------------------------------------------------------------------

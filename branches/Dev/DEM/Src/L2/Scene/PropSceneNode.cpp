@@ -69,7 +69,7 @@ void CPropSceneNode::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-//???to node or some scene utils?
+//???to node or some scene utils? recurse to subnodes?
 void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 {
 	if (!Node.IsValid() || !Node->GetAttrCount()) return;
@@ -81,6 +81,7 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Scene::CModel>())
 		{
 			CAABB AttrBox;
+			((Scene::CRenderObject&)Attr).ValidateResources();
 			((Scene::CModel&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
