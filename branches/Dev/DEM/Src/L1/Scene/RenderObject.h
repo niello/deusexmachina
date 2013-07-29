@@ -15,6 +15,8 @@ class CRenderObject: public CNodeAttribute
 	__DeclareClassNoFactory;
 
 public:
+
+	virtual bool ValidateResources() = 0;
 };
 
 typedef Ptr<CRenderObject> PRenderObject;

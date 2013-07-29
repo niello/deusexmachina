@@ -87,14 +87,6 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
 	if (!FeatFlags && !EnableLighting) FeatFlags = FeatFlagDefault;
 
-	CArray<CVertexComponent> PatchVC;
-	CVertexComponent& Cmp = *PatchVC.Reserve(1);
-	Cmp.Format = CVertexComponent::Float2;
-	Cmp.Semantic = CVertexComponent::Position;
-	Cmp.Index = 0;
-	Cmp.Stream = 0;
-	PatchVertexLayout = RenderSrv->GetVertexLayout(PatchVC);
-
 	CArray<CVertexComponent> InstCmps(2, 0);
 
 	// ScaleOffset
@@ -110,6 +102,14 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 	pCmp->Semantic = CVertexComponent::TexCoord;
 	pCmp->Index = 1;
 	pCmp->Stream = 1;
+
+	// NB: Depends on CTerrain mesh vertex format
+	CArray<CVertexComponent> PatchVC;
+	CVertexComponent& Cmp = *PatchVC.Reserve(1);
+	Cmp.Format = CVertexComponent::Float2;
+	Cmp.Semantic = CVertexComponent::Position;
+	Cmp.Index = 0;
+	Cmp.Stream = 0;
 
 	PatchVC.AddArray(InstCmps);
 	FinalVertexLayout = RenderSrv->GetVertexLayout(PatchVC);
@@ -478,7 +478,8 @@ void CTerrainRenderer::Render()
 			if (ObjIdx == 0) Shader->BeginPass(0);
 			else Shader->CommitChanges();
 
-			CMesh* pPatch = GetPatchMesh(Terrain.GetPatchSize());
+			CMesh* pPatch = Terrain.GetPatchMesh();
+			n_assert_dbg(pPatch);
 			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, PatchCount);
 			RenderSrv->SetVertexBuffer(0, pPatch->GetVertexBuffer());
 			RenderSrv->SetIndexBuffer(pPatch->GetIndexBuffer());
@@ -495,7 +496,8 @@ void CTerrainRenderer::Render()
 			if (ObjIdx == 0 && !PatchCount) Shader->BeginPass(0);
 			else Shader->CommitChanges();
 
-			CMesh* pPatch = GetPatchMesh(Terrain.GetPatchSize() >> 1);
+			CMesh* pPatch = Terrain.GetQuarterPatchMesh();
+			n_assert_dbg(pPatch);
 			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, QuarterPatchCount, MaxInstanceCount - QuarterPatchCount);
 			RenderSrv->SetVertexBuffer(0, pPatch->GetVertexBuffer());
 			RenderSrv->SetIndexBuffer(pPatch->GetIndexBuffer());
@@ -514,72 +516,6 @@ void CTerrainRenderer::Render()
 
 	TerrainObjects.Clear();
 	pLights = NULL;
-}
-//---------------------------------------------------------------------
-
-CMesh* CTerrainRenderer::GetPatchMesh(DWORD Size)
-{
-	if (!IsPow2(Size) || Size < 2) return NULL;
-
-	PMesh Patch;
-
-	int Idx = PatchMeshes.FindIndex(Size);
-	if (Idx == INVALID_INDEX)
-	{
-		CString PatchName;
-		PatchName.Format("Patch%dx%d", Size, Size);
-		Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.CStr()));
-		PatchMeshes.Add(Size, Patch.Get());
-	}
-	else Patch = PatchMeshes.ValueAt(Idx);
-
-	if (!Patch->IsLoaded())
-	{
-		float InvEdgeSize = 1.f / (float)Size;
-		DWORD VerticesPerEdge = Size + 1;
-		DWORD VertexCount = VerticesPerEdge * VerticesPerEdge;
-		n_assert(VertexCount <= 65535); // because of 16-bit index buffer
-
-		PVertexBuffer VB = n_new(CVertexBuffer);
-		n_assert(VB->Create(PatchVertexLayout, VertexCount, Usage_Immutable, CPU_NoAccess));
-		vector2* pVBData = (vector2*)VB->Map(Map_Setup);
-		for (DWORD z = 0; z < VerticesPerEdge; ++z)
-			for (DWORD x = 0; x < VerticesPerEdge; ++x)
-				pVBData[z * VerticesPerEdge + x].set(x * InvEdgeSize, z * InvEdgeSize);
-		VB->Unmap();
-
-		//???use TriStrip?
-		DWORD IndexCount = Size * Size * 6;
-
-		PIndexBuffer IB = n_new(CIndexBuffer);
-		n_assert(IB->Create(CIndexBuffer::Index16, IndexCount, Usage_Immutable, CPU_NoAccess));
-		ushort* pIBData = (ushort*)IB->Map(Map_Setup);
-		for (DWORD z = 0; z < Size; ++z)
-			for (DWORD x = 0; x < Size; ++x)
-			{
-				*pIBData++ = (ushort)(z * VerticesPerEdge + x);
-				*pIBData++ = (ushort)(z * VerticesPerEdge + (x + 1));
-				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + x);
-				*pIBData++ = (ushort)(z * VerticesPerEdge + (x + 1));
-				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + (x + 1));
-				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + x);
-			}
-		IB->Unmap();
-
-		CArray<CMeshGroup> MeshGroups(1, 0);
-		CMeshGroup& Group = *MeshGroups.Reserve(1);
-		Group.Topology = TriList;
-		Group.FirstVertex = 0;
-		Group.VertexCount = VertexCount;
-		Group.FirstIndex = 0;
-		Group.IndexCount = IndexCount;
-		Group.AABB.vmin = vector3::Zero;
-		Group.AABB.vmax.set(1.f, 0.f, 1.f);
-
-		n_assert(Patch->Setup(VB, IB, MeshGroups));
-	}
-
-	return Patch;
 }
 //---------------------------------------------------------------------
 

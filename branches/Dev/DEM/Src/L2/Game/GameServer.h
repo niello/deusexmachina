@@ -44,6 +44,7 @@ protected:
 	bool							HasMouseIsect;
 	vector3							MousePos3D;
 
+	bool ValidateLevel(CGameLevel& Level);
 	void UpdateMouseIntersectionInfo();
 	bool CommitContinueData();
 	bool CommitLevelDiff(CGameLevel& Level);
@@ -66,6 +67,9 @@ public:
 	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
+	bool			ValidateLevel(CStrID ID);
+	bool			ValidateActiveLevel() { return !ActiveLevel.IsValid() || ValidateLevel(*ActiveLevel); }
+	bool			ValidateAllLevels();
 
 	void			EnumProfiles(CArray<CString>& Out) const;
 	bool			CreateProfile(const CString& Name) const;
@@ -83,6 +87,7 @@ public:
 	void			UnloadGameLevel(CStrID ID);
 	void			UnloadAllGameLevels() { while (Levels.GetCount()) UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1)); }
 	void			ExitGame();
+	bool			IsGameStarted() const { return GameFileName.IsValid(); }
 
 	template<class T>
 	void			SetGlobalAttr(CStrID ID, const T& Value);
@@ -109,6 +114,28 @@ public:
 	CStrID			GetEntityUnderMouseUID() const { return EntityUnderMouse; }
 	const vector3&	GetMousePos3D() const { return MousePos3D; }
 };
+
+inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
+{
+	int Idx = Levels.FindIndex(ID);
+	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
+
+inline bool CGameServer::ValidateLevel(CStrID ID)
+{
+	CGameLevel* pLevel = GetLevel(ID);
+	return pLevel && ValidateLevel(*pLevel);
+}
+//---------------------------------------------------------------------
+
+inline bool CGameServer::ValidateAllLevels()
+{
+	for (int i = 0; i < Levels.GetCount(); ++i)
+		if (!ValidateLevel(*Levels.ValueAt(i))) FAIL;
+	OK;
+}
+//---------------------------------------------------------------------
 
 template<class T>
 inline void CGameServer::SetGlobalAttr(CStrID ID, const T& Value)
@@ -157,13 +184,6 @@ inline bool CGameServer::GetGlobalAttr(Data::CData& Out, CStrID ID) const
 	if (Idx == INVALID_INDEX) FAIL;
 	Out = Attrs.ValueAt(Idx);
 	OK;
-}
-//---------------------------------------------------------------------
-
-inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
-{
-	int Idx = Levels.FindIndex(ID);
-	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

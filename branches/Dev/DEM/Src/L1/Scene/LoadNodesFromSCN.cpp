@@ -8,7 +8,7 @@
 namespace Scene
 {
 
-bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResources = true)
+bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 {
 	if (!RootNode.IsValid()) FAIL;
 
@@ -26,19 +26,15 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResource
 		Reader.Read(DataBlockCount);
 		--DataBlockCount;
 
-		static const CString StrAttr("Scene::C");
-		char ClassName[256];
-		n_assert(Reader.ReadString(ClassName, sizeof(ClassName)));
+		char ClassName[256] = "Scene::C";
+		n_assert(Reader.ReadString(ClassName + 8, sizeof(ClassName) - 8));
 
-		PNodeAttribute Attr = (CNodeAttribute*)Factory->Create(StrAttr + ClassName);
+		PNodeAttribute Attr = (CNodeAttribute*)Factory->Create(CString(ClassName));
 
 		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
 		//may require to read data block count inside, or ignore it for such attrs.
 		for (ushort j = 0; j < DataBlockCount; ++j)
 			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
-
-		//!!!CModel used PreloadResources, can pass as parameter!
-		// If false, resources will be loaded at first access (first time node attrs are visible or smth)
 
 		RootNode->AddAttr(*Attr);
 	}
@@ -52,18 +48,18 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode, bool PreloadResource
 		//!!!REDUNDANCY! { [ { } ] } problem.
 		short SMTH = Reader.Read<short>();
 
-		if (!LoadNodesFromSCN(In, RootNode->CreateChild(CStrID(ChildName)), PreloadResources)) FAIL;
+		if (!LoadNodesFromSCN(In, RootNode->CreateChild(CStrID(ChildName)))) FAIL;
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode, bool PreloadResources = true)
+bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode)
 {
 	IO::CFileStream File;
 	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
-		LoadNodesFromSCN(File, RootNode, PreloadResources);
+		LoadNodesFromSCN(File, RootNode);
 }
 //---------------------------------------------------------------------
 

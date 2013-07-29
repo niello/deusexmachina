@@ -57,8 +57,6 @@ protected:
 	float							MorphStartRatio;
 	CArray<CMorphInfo>				MorphConsts;
 
-	CDict<DWORD, PMesh>				PatchMeshes;
-	PVertexLayout					PatchVertexLayout;
 	PVertexLayout					InstanceVertexLayout;
 	PVertexLayout					FinalVertexLayout;
 	PVertexBuffer					InstanceBuffer;
@@ -80,7 +78,6 @@ protected:
 	DWORD							LightFeatFlags[MaxLightsPerObject];
 	DWORD							FeatFlagDefault;
 
-	CMesh*			GetPatchMesh(DWORD Size);
 	ENodeStatus		ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, CPatchInstance* pInstances, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
 
 public:

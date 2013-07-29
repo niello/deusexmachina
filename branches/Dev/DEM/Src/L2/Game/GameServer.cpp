@@ -218,6 +218,19 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 }
 //---------------------------------------------------------------------
 
+bool CGameServer::ValidateLevel(CGameLevel& Level)
+{
+	bool Result = !Level.GetScene() || Level.GetScene()->GetRootNode().ValidateResources();
+
+	//!!!???activate entities here and not in level loading?!
+
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("ID"), Level.GetID());
+	EventSrv->FireEvent(CStrID("OnLevelValidated"), P);
+	return Result;
+}
+//---------------------------------------------------------------------
+
 void CGameServer::EnumProfiles(CArray<CString>& Out) const
 {
 	Out.Clear();
@@ -519,7 +532,7 @@ bool CGameServer::LoadGame(const CString& Name)
 
 void CGameServer::ExitGame()
 {
-	if (GameFileName.IsEmpty()) return;
+	if (!IsGameStarted()) return;
 
 	n_verify(CommitContinueData());
 	GameFileName = CString::Empty;

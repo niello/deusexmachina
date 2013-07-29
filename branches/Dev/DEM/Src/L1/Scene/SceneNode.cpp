@@ -1,9 +1,23 @@
 #include "SceneNode.h"
 
+#include <Scene/RenderObject.h>
 #include <Render/DebugDraw.h>
 
 namespace Scene
 {
+
+bool CSceneNode::ValidateResources()
+{
+	for (int i = 0; i < Attrs.GetCount(); ++i)
+		if (Attrs[i]->IsA<CRenderObject>())
+			if (!((CRenderObject*)Attrs[i].GetUnsafe())->ValidateResources()) FAIL;
+
+	for (int i = 0; i < Child.GetCount(); ++i)
+		if (!Child.ValueAt(i)->ValidateResources()) FAIL;
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 void CSceneNode::UpdateWorldFromLocal()
 {

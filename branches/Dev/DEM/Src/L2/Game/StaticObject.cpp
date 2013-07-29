@@ -9,7 +9,7 @@
 
 namespace Scene
 {
-	bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode, bool PreloadResources = true);
+	bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode);
 }
 
 namespace Game

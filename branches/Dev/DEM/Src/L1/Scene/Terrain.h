@@ -18,14 +18,14 @@ class CTerrain: public CRenderObject
 
 protected:
 
-	DWORD					HFWidth;
-	DWORD					HFHeight;
-	DWORD					PatchSize;
-	DWORD					LODCount;
-	DWORD					TopPatchCountX;
-	DWORD					TopPatchCountZ;
-	float					VerticalScale;
-	CAABB					Box;
+	DWORD				HFWidth;
+	DWORD				HFHeight;
+	DWORD				PatchSize;
+	DWORD				LODCount;
+	DWORD				TopPatchCountX;
+	DWORD				TopPatchCountZ;
+	float				VerticalScale;
+	CAABB				Box;
 
 	struct CMinMaxMap
 	{
@@ -34,16 +34,19 @@ protected:
 		short*	pData;
 	};
 
-	short*					pMinMaxData;
-	CArray<CMinMaxMap>		MinMaxMaps;
+	short*				pMinMaxData;
+	CArray<CMinMaxMap>	MinMaxMaps;
 
-	Render::PTexture		HeightMap;
+	Render::PMesh		PatchMesh;
+	Render::PMesh		QuarterPatchMesh;
+	Render::PTexture	HeightMap;
 
-	float					InvSplatSizeX;
-	float					InvSplatSizeZ;
+	float				InvSplatSizeX;
+	float				InvSplatSizeZ;
 
-	virtual bool		OnAttachToNode(CSceneNode* pSceneNode);
 	virtual void		OnDetachFromNode();
+	virtual bool		ValidateResources();
+	Render::CMesh*		GetPatchMesh(DWORD Size);
 
 public:
 
@@ -64,6 +67,8 @@ public:
 	DWORD				GetTopPatchCountX() const { return TopPatchCountX; }
 	DWORD				GetTopPatchCountZ() const { return TopPatchCountZ; }
 	float				GetVerticalScale() const { return VerticalScale; }
+	Render::CMesh*		GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
+	Render::CMesh*		GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
 	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
 	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
 	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;

@@ -47,7 +47,7 @@ bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 {
-	// Constructed as identity, no need to set explicitly now
+	// Default constructor sets it to identity, no need to set explicitly now
 	//SkinMatrix.ident();
 
 	// Since SkinMatrix is identity and node position doesn't change, it is not necessary:
