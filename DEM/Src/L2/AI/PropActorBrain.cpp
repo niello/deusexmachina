@@ -380,7 +380,10 @@ bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 bool CPropActorBrain::OnRenderDebug(const Events::CEventBase& Event)
 {
 	if (GetEntity()->GetUID() == "GG") //!!!write debug focus or smth!
+	{
+		NavSystem.RenderDebug();
 		MotorSystem.RenderDebug();
+	}
 	OK;
 }
 //---------------------------------------------------------------------

@@ -136,4 +136,10 @@ bool CCharacterController::GetLinearVelocity(vector3& Out) const
 }
 //---------------------------------------------------------------------
 
+float CCharacterController::GetAngularVelocity() const
+{
+	return Body->GetBtBody()->getAngularVelocity().y();
+}
+//---------------------------------------------------------------------
+
 }

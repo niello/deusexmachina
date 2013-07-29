@@ -83,9 +83,6 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 				CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
 				if (pNode)
 				{
-					//!!!TMP DBG sub on OnLevelValidated!
-					pNode->GetNode()->ValidateResources();
-
 					CAABB AABB;
 					pNode->GetAABB(AABB);
 					vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
