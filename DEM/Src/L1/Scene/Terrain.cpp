@@ -14,7 +14,7 @@ namespace Render
 
 namespace Scene
 {
-__ImplementClass(Scene::CTerrain, 'TERR', Scene::CNodeAttribute);
+__ImplementClass(Scene::CTerrain, 'TERR', Scene::CRenderObject);
 
 using namespace Render;
 
@@ -70,7 +70,73 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 }
 //---------------------------------------------------------------------
 
-bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
+CMesh* CTerrain::GetPatchMesh(DWORD Size)
+{
+	if (!IsPow2(Size) || Size < 2) return NULL;
+
+	CString PatchName;
+	PatchName.Format("Patch%dx%d", Size, Size);
+	PMesh Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.CStr()));
+
+	if (!Patch->IsLoaded())
+	{
+		float InvEdgeSize = 1.f / (float)Size;
+		DWORD VerticesPerEdge = Size + 1;
+		DWORD VertexCount = VerticesPerEdge * VerticesPerEdge;
+		n_assert(VertexCount <= 65535); // because of 16-bit index buffer
+
+		CArray<CVertexComponent> PatchVC;
+		CVertexComponent& Cmp = *PatchVC.Reserve(1);
+		Cmp.Format = CVertexComponent::Float2;
+		Cmp.Semantic = CVertexComponent::Position;
+		Cmp.Index = 0;
+		Cmp.Stream = 0;
+		PVertexLayout PatchVertexLayout = RenderSrv->GetVertexLayout(PatchVC);
+
+		PVertexBuffer VB = n_new(CVertexBuffer);
+		n_assert(VB->Create(PatchVertexLayout, VertexCount, Usage_Immutable, CPU_NoAccess));
+		vector2* pVBData = (vector2*)VB->Map(Map_Setup);
+		for (DWORD z = 0; z < VerticesPerEdge; ++z)
+			for (DWORD x = 0; x < VerticesPerEdge; ++x)
+				pVBData[z * VerticesPerEdge + x].set(x * InvEdgeSize, z * InvEdgeSize);
+		VB->Unmap();
+
+		//???use TriStrip?
+		DWORD IndexCount = Size * Size * 6;
+
+		PIndexBuffer IB = n_new(CIndexBuffer);
+		n_assert(IB->Create(CIndexBuffer::Index16, IndexCount, Usage_Immutable, CPU_NoAccess));
+		ushort* pIBData = (ushort*)IB->Map(Map_Setup);
+		for (DWORD z = 0; z < Size; ++z)
+			for (DWORD x = 0; x < Size; ++x)
+			{
+				*pIBData++ = (ushort)(z * VerticesPerEdge + x);
+				*pIBData++ = (ushort)(z * VerticesPerEdge + (x + 1));
+				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + x);
+				*pIBData++ = (ushort)(z * VerticesPerEdge + (x + 1));
+				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + (x + 1));
+				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + x);
+			}
+		IB->Unmap();
+
+		CArray<CMeshGroup> MeshGroups(1, 0);
+		CMeshGroup& Group = *MeshGroups.Reserve(1);
+		Group.Topology = TriList;
+		Group.FirstVertex = 0;
+		Group.VertexCount = VertexCount;
+		Group.FirstIndex = 0;
+		Group.IndexCount = IndexCount;
+		Group.AABB.vmin = vector3::Zero;
+		Group.AABB.vmax.set(1.f, 0.f, 1.f);
+
+		n_assert(Patch->Setup(VB, IB, MeshGroups));
+	}
+
+	return Patch;
+}
+//---------------------------------------------------------------------
+
+bool CTerrain::ValidateResources()
 {
 	IO::CFileStream CDLODFile;
 	if (!CDLODFile.Open(CString("Terrain:") + HeightMap->GetUID().CStr() + ".cdlod", IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
@@ -140,6 +206,9 @@ bool CTerrain::OnAttachToNode(CSceneNode* pSceneNode)
 			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
 		}
 	}
+
+	PatchMesh = GetPatchMesh(PatchSize);
+	QuarterPatchMesh = GetPatchMesh(PatchSize >> 1);
 
 	OK;
 }

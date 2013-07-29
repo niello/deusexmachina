@@ -26,9 +26,8 @@ class CModel: public CRenderObject
 
 protected:
 
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode);
 	virtual void	OnDetachFromNode();
-	bool			ValidateResources();
+	virtual bool	ValidateResources();
 
 public:
 

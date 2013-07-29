@@ -121,12 +121,6 @@ bool CModel::ValidateResources()
 }
 //---------------------------------------------------------------------
 
-bool CModel::OnAttachToNode(CSceneNode* pSceneNode)
-{
-	return ValidateResources();
-}
-//---------------------------------------------------------------------
-
 // Now resources are shared and aren't unloaded
 // If it is necessary to unload resources (decrement refcount), resource IDs must be saved,
 // so pointers can be cleared, but model is able to reload resources from IDs
@@ -165,6 +159,7 @@ void CModel::GetGlobalAABB(CAABB& OutBox) const
 {
 	// If local params changed, recompute AABB
 	// If transform of host node changed, update global space AABB (rotate, scale)
+	n_assert_dbg(Mesh->IsLoaded());
 	OutBox = Mesh->GetGroup(MeshGroupIndex).AABB;
 	OutBox.Transform(pNode->GetWorldMatrix());
 }

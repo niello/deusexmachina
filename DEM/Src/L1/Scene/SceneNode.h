@@ -91,6 +91,7 @@ public:
 	bool					SetController(CNodeController* pCtlr);
 	CNodeController*		GetController() const { return Controller.GetUnsafe(); }
 
+	bool					ValidateResources();
 	void					UpdateLocalSpace(bool UpdateWorldMatrix = true);
 	void					UpdateWorldSpace();
 	void					UpdateWorldFromLocal();
