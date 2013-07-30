@@ -14,7 +14,6 @@
 
 namespace Prop
 {
-using namespace AI;
 
 class CPropSmartObject: public Game::CProperty
 {
@@ -23,12 +22,12 @@ class CPropSmartObject: public Game::CProperty
 
 public:
 
-	typedef CDict<CStrID, PSmartObjAction> CActList;
+	typedef CDict<CStrID, AI::PSmartObjAction> CActList;
 
 protected:
 
-	//bool Enabled; or empty state?
 	CStrID		TypeID;
+	bool		Movable;
 	CActList	Actions;
 	CStrID		CurrState; //???empty state = disabled?
 
@@ -39,20 +38,21 @@ protected:
 
 public:
 
-	bool			SetState(CStrID ID);
-	bool			HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }
-	PSmartObjAction	GetAction(CStrID ID) const;
-	void			EnableAction(CStrID ActionID, bool Enable = true);
-	bool			IsActionEnabled(CStrID ID) const;
+	bool				SetState(CStrID ID);
+	bool				HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }
+	AI::PSmartObjAction	GetAction(CStrID ID) const;
+	void				EnableAction(CStrID ActionID, bool Enable = true);
+	bool				IsActionEnabled(CStrID ID) const;
 
-	bool			GetDestination(CStrID ActionID, float ActorRadius, vector3& OutDest, float& OutMinDist, float& OutMaxDist);
+	bool				CanDestinationChange() const { return Movable; }
+	bool				GetDestination(CStrID ActionID, float ActorRadius, vector3& OutDest, float& OutMinDist, float& OutMaxDist);
 
-	CStrID			GetTypeID() const { return TypeID; }
-	const CActList&	GetActions() const { return Actions; }
-	CStrID			GetCurrState() const { return CurrState; }
+	CStrID				GetTypeID() const { return TypeID; }
+	const CActList&		GetActions() const { return Actions; }
+	CStrID				GetCurrState() const { return CurrState; }
 };
 
-inline PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
+inline AI::PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
 {
 	int Idx = Actions.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? Actions.ValueAt(Idx) : NULL;
@@ -61,7 +61,6 @@ inline PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
 
 inline bool CPropSmartObject::IsActionEnabled(CStrID ID) const
 {
-	//???check is in this state?
 	int Idx = Actions.FindIndex(ID);
 	return (Idx != INVALID_INDEX) && Actions.ValueAt(Idx)->Enabled;
 }

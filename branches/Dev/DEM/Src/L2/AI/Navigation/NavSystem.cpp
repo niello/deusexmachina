@@ -111,10 +111,28 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 
 	if (!pNavQuery) return;
 
-	UpdateDestination();
+	// if we are following, try to move dest position
+	// else target may be partial
+	bool ResetPoly;
 
-	if (DestRef) pActor->NavState = pActor->IsAtValidLocation() ? AINav_DestSet : AINav_Invalid;
-	else pActor->NavState = pActor->IsAtValidLocation() ? AINav_Failed : AINav_IdleInvalid;
+	if (pActor->NavState == AINav_Following)
+	{
+		// Corridor target is the destination, try to update it through the corridor.
+		// In other states corridot target is unset or is a partial path target, so replanning is needed.
+		Corridor.moveTargetPosition(DestPoint.v, pNavQuery, pNavFilter);
+		ResetPoly = DestPoint.x != Corridor.getTarget()[0] || DestPoint.z != Corridor.getTarget()[2];
+	}
+	else ResetPoly = true;
+
+	if (ResetPoly)
+	{
+		UpdateDestination();
+		ResetPathRequest();
+		if (DestRef)
+			pActor->NavState = pActor->IsAtValidLocation() ? AINav_DestSet : AINav_Invalid;
+		else
+			pActor->NavState = pActor->IsAtValidLocation() ? AINav_Failed : AINav_IdleInvalid;
+	}
 }
 //---------------------------------------------------------------------
 

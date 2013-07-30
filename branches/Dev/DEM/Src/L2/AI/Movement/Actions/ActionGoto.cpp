@@ -21,12 +21,7 @@ EExecStatus CActionGoto::Update(CActor* pActor)
 		case AINav_Invalid:
 		case AINav_DestSet:		return Running;
 		case AINav_Planning:
-		case AINav_Following:
-		{
-			// Derived classes can update target if necessary (if it is dynamic)
-			// pActor->GetNavSystem().SetDestPoint(...);
-			return AdvancePath(pActor);
-		}
+		case AINav_Following:	return AdvancePath(pActor);
 		default: n_error("CActionGoto::Update(): Unexpected navigation status '%d'", pActor->NavState);
 	}
 

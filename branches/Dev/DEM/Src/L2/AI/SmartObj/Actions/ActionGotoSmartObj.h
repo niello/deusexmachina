@@ -16,17 +16,19 @@ class CActionGotoSmartObj: public CActionGoto
 
 private:
 
-	CStrID TargetID;
-	CStrID ActionID;
+	CStrID	TargetID;
+	CStrID	ActionID;
+	bool	IsDynamic;
 
-	//???can be dynamic?
+	bool UpdateDestination(CActor* pActor);
 
 public:
 
-	void			Init(CStrID Target, CStrID Action) { TargetID = Target; ActionID = Action; }
-	virtual bool	Activate(CActor* pActor);
+	void				Init(CStrID Target, CStrID Action) { TargetID = Target; ActionID = Action; }
+	virtual bool		Activate(CActor* pActor);
+	virtual EExecStatus	Update(CActor* pActor);
 
-	virtual void	GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
+	virtual void		GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };
 
 typedef Ptr<CActionGotoSmartObj> PActionGotoSmartObj;
