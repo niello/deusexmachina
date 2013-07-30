@@ -11,47 +11,26 @@ bool CActionGotoTarget::Activate(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
-
 	pActor->GetNavSystem().SetDestPoint(pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation());
 
 	//!!!Get IsDynamic as (BB->WantToFollow && IsTargetMovable)!
 	IsDynamic = false;
 
-	//CActionGoto::Activate(pActor)
 	OK;
 }
 //---------------------------------------------------------------------
 
 EExecStatus CActionGotoTarget::Update(CActor* pActor)
 {
-	switch (pActor->NavState)
+	if (IsDynamic && !pActor->IsNavSystemIdle())
 	{
-		case AINav_IdleInvalid:
-		{
-			//!!!???navsystem will check this inside?!
-			if (pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true)) return Success;
-			else return Failure; //???Autocreate sub-action to restore validity?
-		}
-		case AINav_Failed:		return Failure;
-		case AINav_Done:		return Success;
-		case AINav_Invalid:
-		case AINav_DestSet:		return Running;
-		case AINav_Planning:
-		case AINav_Following:
-		{
-			if (IsDynamic)
-			{
-				Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
-				if (!pEnt) return Failure;
-				pActor->GetNavSystem().SetDestPoint(pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation());
-				if (pActor->NavState == AINav_Done) return Success;
-			}
-			return AdvancePath(pActor);
-		}
-		default: n_error("CActionGotoTarget::Update(): Unexpected navigation status '%d'", pActor->NavState);
+		Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
+		if (!pEnt) return Failure;
+		pActor->GetNavSystem().SetDestPoint(pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation());
+		if (pActor->NavState == AINav_Done) return Success;
 	}
 
-	return Failure;
+	return CActionGoto::Update(pActor);
 }
 //---------------------------------------------------------------------
 

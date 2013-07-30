@@ -21,7 +21,8 @@ bool CPropSmartObject::InternalActivate()
 
 	if (Desc.IsValid())
 	{
-		TypeID = CStrID(Desc->Get<CString>(CStrID("TypeID"), NULL).CStr());
+		TypeID = Desc->Get(CStrID("TypeID"), CStrID::Empty);
+		Movable = Desc->Get(CStrID("Movable"), false);
 		
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Actions")))
@@ -32,8 +33,8 @@ bool CPropSmartObject::InternalActivate()
 				const CParam& Prm = DescSection->Get(i);
 				PParams ActDesc = Prm.GetValue<PParams>();
 				LPCSTR TplName = ActDesc->Get<CString>(CStrID("Tpl")).CStr();
-				const CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
-				if (pTpl) Actions.Add(Prm.GetName(), n_new(CSmartObjAction)(*pTpl, ActDesc));
+				const AI::CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
+				if (pTpl) Actions.Add(Prm.GetName(), n_new(AI::CSmartObjAction)(*pTpl, ActDesc));
 				else n_printf("AI, IAO, Warning: can't find smart object action template '%s'\n", TplName);
 			}
 			Actions.EndAdd();
@@ -91,7 +92,7 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 
 bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector3& OutDest, float& OutMinDist, float& OutMaxDist)
 {
-	PSmartObjAction Action = GetAction(ActionID);
+	AI::PSmartObjAction Action = GetAction(ActionID);
 
 	if (Action.IsValid())
 	{
