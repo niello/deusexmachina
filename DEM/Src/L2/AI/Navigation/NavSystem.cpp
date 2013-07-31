@@ -80,20 +80,11 @@ void CNavSystem::SetupState()
 	//TopologyOptTime = 0.f;
 	OffMeshRef = 0;
 	TraversingOffMesh = false;
-	ResetPathRequest();
-
-	dtPolyRef Ref = 0;
-
 	pNavQuery = pActor->GetEntity()->GetLevel()->GetAI()->GetSyncNavQuery(pActor->Radius);
-	if (pNavQuery)
-	{
-		const float Extents[3] = { 0.f, pActor->Height, 0.f };
-		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
-	}
 
-	pActor->NavState = Ref ? AINav_Done : AINav_IdleInvalid;
-	Corridor.reset(Ref, pActor->Position.v);
-	if (pBoundary) pBoundary->reset();
+	ResetPathRequest();
+	UpdatePositionPoly();
+	if (!pActor->IsNavSystemIdle()) UpdateDestinationPoly();
 }
 //---------------------------------------------------------------------
 
@@ -105,7 +96,7 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 
 	if (pActor->IsAtPoint(DestPoint, true))
 	{
-		Reset();
+		Reset(true);
 		return;
 	}
 
@@ -126,7 +117,7 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 
 	if (ResetPoly)
 	{
-		UpdateDestination();
+		UpdateDestinationPoly();
 		ResetPathRequest();
 		if (DestRef)
 			pActor->NavState = pActor->IsAtValidLocation() ? AINav_DestSet : AINav_Invalid;
@@ -136,10 +127,10 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 }
 //---------------------------------------------------------------------
 
-void CNavSystem::Reset()
+void CNavSystem::Reset(bool Success)
 {
 	if (pActor->NavState == AINav_Following) EndEdgeTraversal();
-	pActor->NavState = pActor->IsAtValidLocation() ? AINav_Done : AINav_IdleInvalid;
+	pActor->NavState = pActor->IsAtValidLocation() ? (Success ? AINav_Done : AINav_Failed) : AINav_IdleInvalid;
 	ResetPathRequest();
 	Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
 	if (pBoundary) pBoundary->reset();
@@ -202,7 +193,7 @@ void CNavSystem::Update(float FrameTime)
 		// If our destination became invalid, we try to find a new one
 		if (!pNavQuery->isValidPolyRef(DestRef, pNavFilter))
 		{
-			UpdateDestination();
+			UpdateDestinationPoly();
 			Replan = true;
 		}
 
@@ -212,7 +203,7 @@ void CNavSystem::Update(float FrameTime)
 	//???OFM what if traversing offmesh?
 			if (pActor->IsAtPoint(DestPoint, true))
 			{
-				Reset();
+				Reset(true);
 				return;
 			}
 
@@ -426,31 +417,24 @@ void CNavSystem::UpdatePosition()
 		else
 		{
 			// We walk over the level, so try to update position in the corridor
-			Corridor.movePosition(pActor->Position.v, pNavQuery, pNavFilter);
-
-			//???what if we remain on the same poly and it is invalid? is position updated?
-
-			//???always reset boundary? or only if first poly changed?
-
 			// The resulting position will differ from the desired position if the desired position
 			// is not on the navigation mesh, or it can't be reached using a local search
 			// (c) Detour docs
+			//???what if we remain on the same poly and it is invalid? is position updated?
+			//???always reset boundary? or only if first poly changed?
+			Corridor.movePosition(pActor->Position.v, pNavQuery, pNavFilter);
 			ResetPoly = pActor->Position.x != Corridor.getPos()[0] || pActor->Position.z != Corridor.getPos()[2];
 		}
 
+		//!!!if Invalid -> Valid and not idle, allow planning/following?
+		// Recovery shouldn't kill planned path if amount of recovery movement was small
+
 		if (ResetPoly)
 		{
-			// We walked too far from where we've been at the last update, or teleportation happened
-			const float Extents[3] = { 0.f, pActor->Height, 0.f };
-			dtPolyRef Ref = 0;
-			pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, NULL);
-			if (pActor->IsNavSystemIdle())
-				pActor->NavState = Ref ? AINav_Done : AINav_IdleInvalid;
-			else
-				pActor->NavState = Ref ? AINav_DestSet : AINav_Invalid;
+			// We walked too far from where we've been at the last update, or teleportation happened.
+			// If neither is the case, it means that we are at the invalid position.
 			ResetPathRequest();
-			Corridor.reset(Ref, pActor->Position.v);
-			if (pBoundary) pBoundary->reset();
+			UpdatePositionPoly();
 		}
 		else if (!pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter))
 		{
@@ -466,14 +450,42 @@ void CNavSystem::UpdatePosition()
 }
 //---------------------------------------------------------------------
 
-void CNavSystem::UpdateDestination()
+void CNavSystem::UpdatePositionPoly()
 {
-	//!!!'StrictDest' flag - if DestPoint != Nearest (with very low tolerance) fail to set dest!
-	//???!!!when can call Corridor.moveTargetPosition?!
+	dtPolyRef Ref = 0;
+
+	if (pNavQuery)
+	{
+		const float Extents[3] = { 0.f, pActor->Height, 0.f };
+		float Nearest[3];
+		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, Nearest);
+		if (pActor->Position.x != Nearest[0] || pActor->Position.z != Nearest[2]) Ref = 0;
+	}
+
+	if (Ref)
+		pActor->NavState = pActor->IsNavSystemIdle() ? AINav_Done : AINav_DestSet;
+	else
+		pActor->NavState = pActor->IsNavSystemIdle() ? AINav_IdleInvalid : AINav_Invalid;
+
+	Corridor.reset(Ref, pActor->Position.v);
+	if (pBoundary) pBoundary->reset();
+}
+//---------------------------------------------------------------------
+
+void CNavSystem::UpdateDestinationPoly()
+{
+	if (!pNavQuery) return;
+
 	const float Extents[3] = { 0.f, pActor->Height, 0.f };
 	float Nearest[3];
 	pNavQuery->findNearestPoly(DestPoint.v, Extents, pNavFilter, &DestRef, Nearest);
-	dtVcopy(DestPoint.v, Nearest);
+	if (pActor->DoesAcceptNearestValidDestination())
+		dtVcopy(DestPoint.v, Nearest);
+	else if (DestPoint.x != Nearest[0] || DestPoint.z != Nearest[2])
+	{
+		Reset(false);
+		return;
+	}
 	pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
 }
 //---------------------------------------------------------------------

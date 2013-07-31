@@ -35,7 +35,7 @@ EExecStatus CActionSteerToPosition::Update(CActor* pActor)
 			return Failure;
 
 			// Remember that stuck can be released, so we may want to wait for some time here
-			// getting stuck time from BB / MotorSystem
+			// getting stuck time from BlackBoard / MotorSystem
 		}
 		default: n_error("CActionSteerToPosition::Update(): Unexpected movement status '%d'", pActor->MvmtState);
 	}
@@ -53,4 +53,4 @@ void CActionSteerToPosition::Deactivate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

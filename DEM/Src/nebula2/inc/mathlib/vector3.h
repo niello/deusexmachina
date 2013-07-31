@@ -64,6 +64,8 @@ public:
 	bool operator <(const vector3& rhs) const { return x < rhs.x || y < rhs.y || z < rhs.z; }
 	bool operator ==(const vector3& rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
 	bool operator !=(const vector3& rhs) const { return x != rhs.x || y != rhs.y || z != rhs.z; }
+	bool operator ==(const float* v) const { return x == v[0] && y == v[1] && z == v[2]; }
+	bool operator !=(const float* v) const { return x != v[0] || y != v[1] || z != v[2]; }
 };
 
 static inline vector3 operator -(const vector3& v)

@@ -38,8 +38,6 @@ class CPropActorBrain: public Game::CProperty
 
 protected:
 
-	static const float			ArrivalTolerance;
-
 	CMemSystem					MemSystem;
 	CNavSystem					NavSystem;
 	CMotorSystem				MotorSystem;
@@ -63,7 +61,8 @@ protected:
 	{
 		AIMind_EnableDecisionMaking		= 0x0001,
 		AIMind_UpdateGoal				= 0x0002,
-		AIMind_InvalidatePlan			= 0x0004
+		AIMind_InvalidatePlan			= 0x0004,
+		AIMind_AcceptNearestValidDest	= 0x0008
 		//AIMind_TaskIsActive
 	};
 
@@ -84,6 +83,8 @@ protected:
 
 public:
 
+	static const float ArrivalTolerance;
+
 // Blackboard
 
 	// Common
@@ -102,7 +103,7 @@ public:
 	ESteeringType	SteeringType;
 	float			MinReachDist;
 	float			MaxReachDist;
-	EFacingStatus	FacingStatus;
+	EFacingState	FacingStatus;
 
 // END Blackboard
 	
@@ -122,6 +123,7 @@ public:
 	bool			IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
 	bool			IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
 	bool			IsAtValidLocation() const { return !(NavState & NAV_INVALID); }
+	bool			DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_AcceptNearestValidDest); }
 
 	CMemSystem&		GetMemSystem() { return MemSystem; }
 	CNavSystem&		GetNavSystem() { return NavSystem; }

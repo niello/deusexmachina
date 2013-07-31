@@ -22,6 +22,7 @@ EExecStatus CActionGotoSmartObj::Update(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
+//!!!can use intercept instead of pursue!
 bool CActionGotoSmartObj::UpdateDestination(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);

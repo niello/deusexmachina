@@ -505,7 +505,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\SI\SIEventManager.cpp"
+				RelativePath="..\..\Src\L1\SI\SIEventServer.cpp"
 				>
 			</File>
 			<File
