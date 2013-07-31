@@ -22,6 +22,7 @@ bool CActionGotoTarget::Activate(CActor* pActor)
 
 EExecStatus CActionGotoTarget::Update(CActor* pActor)
 {
+	//!!!can use intercept instead of pursue!
 	if (IsDynamic && !pActor->IsNavSystemIdle())
 	{
 		Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);

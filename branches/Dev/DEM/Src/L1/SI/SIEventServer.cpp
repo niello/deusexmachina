@@ -17,7 +17,7 @@ namespace SI
 using namespace Scripting;
 using namespace Events;
 
-int EventMgr_Subscribe(lua_State* l)
+int EventSrv_Subscribe(lua_State* l)
 {
 	//args: ScriptObject's this table or nil, event name, [func name = event name]
 	
@@ -31,7 +31,7 @@ int EventMgr_Subscribe(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-int EventMgr_Unsubscribe(lua_State* l)
+int EventSrv_Unsubscribe(lua_State* l)
 {
 	//args: ScriptObject's this table or nil, event name, [func name = event name]
 
@@ -45,7 +45,7 @@ int EventMgr_Unsubscribe(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-int EventMgr_FireEvent(lua_State* l)
+int EventSrv_FireEvent(lua_State* l)
 {
 	//args: event name, [parameter or parameter table]
 
@@ -76,14 +76,14 @@ int EventMgr_FireEvent(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool RegisterEventManager()
+bool RegisterEventServer()
 {
 	lua_State* l = ScriptSrv->GetLuaState();
 
 	lua_createtable(l, 0, 3);
-	ScriptSrv->ExportCFunction("Subscribe", EventMgr_Subscribe);
-	ScriptSrv->ExportCFunction("Unsubscribe", EventMgr_Unsubscribe);
-	ScriptSrv->ExportCFunction("FireEvent", EventMgr_FireEvent);
+	ScriptSrv->ExportCFunction("Subscribe", EventSrv_Subscribe);
+	ScriptSrv->ExportCFunction("Unsubscribe", EventSrv_Unsubscribe);
+	ScriptSrv->ExportCFunction("FireEvent", EventSrv_FireEvent);
 	lua_setglobal(l, "EventSrv");
 
 	OK;

@@ -45,33 +45,34 @@ class CNavSystem
 {
 protected:
 
-	CActor*						pActor;
+	CActor*					pActor;
 
-	dtNavMeshQuery*				pNavQuery;
-	const dtQueryFilter*		pNavFilter;
-	dtPathCorridor				Corridor;
-	dtLocalBoundary*			pBoundary;
+	dtNavMeshQuery*			pNavQuery;
+	const dtQueryFilter*	pNavFilter;
+	dtPathCorridor			Corridor;
+	dtLocalBoundary*		pBoundary;
 
-	vector3						DestPoint;
-	dtPolyRef					DestRef;
+	vector3					DestPoint;
+	dtPolyRef				DestRef;
 
-	dtPolyRef					OffMeshRef;
-	vector3						OffMeshPoint;
-	float						OffMeshRadiusSq;
-	bool						TraversingOffMesh;
+	dtPolyRef				OffMeshRef;
+	vector3					OffMeshPoint;
+	float					OffMeshRadiusSq;
+	bool					TraversingOffMesh;
 
-	float						ReplanTime;
-	float						TopologyOptTime;
-	CPathRequestQueue*			pProcessingQueue;
-	DWORD						PathRequestID;
+	float					ReplanTime;
+	float					TopologyOptTime;
+	CPathRequestQueue*		pProcessingQueue;
+	DWORD					PathRequestID;
 
 	//???personal or template?
-	CDict<int, CStrID>			EdgeTypeToAction;
+	CDict<int, CStrID>		EdgeTypeToAction;
 
 	//!!!Path info cache
 
 	CStrID	GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref);
-	void	UpdateDestination();
+	void	UpdatePositionPoly();
+	void	UpdateDestinationPoly();
 	void	ResetPathRequest();
 
 public:
@@ -81,7 +82,7 @@ public:
 	void			Init(const Data::CParams* Params);
 	void			Term();
 	void			Update(float FrameTime);
-	void			Reset();
+	void			Reset(bool Success);
 	void			SetupState();
 	void			RenderDebug();
 

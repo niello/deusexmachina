@@ -24,10 +24,10 @@ enum EMovementState
 	AIMvmt_None,		// No movement is currently performed
 	AIMvmt_DestSet,		// There is a valid destination for steering
 	AIMvmt_Done,		// Steering destination is reached
-	AIMvmt_Stuck		// Actor became stuck during the movement
+	AIMvmt_Stuck		// Actor got stuck during the movement
 };
 
-enum EFacingStatus
+enum EFacingState
 {
 	AIFacing_Done,
 	AIFacing_DirSet,

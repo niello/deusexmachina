@@ -37,7 +37,8 @@ void CActionGoto::Deactivate(CActor* pActor)
 		SubAction = NULL;
 	}
 
-	if (!pActor->IsNavSystemIdle()) pActor->GetNavSystem().Reset();
+	if (!pActor->IsNavSystemIdle())
+		pActor->GetNavSystem().Reset(pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true));
 }
 //---------------------------------------------------------------------
 
@@ -71,7 +72,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 		if (!SubAction->Activate(pActor))				
 		{
 			SubAction = NULL;
-			pActor->GetNavSystem().Reset();
+			pActor->GetNavSystem().Reset(false);
 			return Failure;
 		}
 	}
@@ -90,7 +91,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 		}
 		else
 		{
-			pActor->GetNavSystem().Reset(/*???bool SetSuccess?*/);
+			pActor->GetNavSystem().Reset(false);
 			return Failure;
 		}
 	}
