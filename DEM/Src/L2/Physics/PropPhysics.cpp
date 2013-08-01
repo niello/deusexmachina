@@ -3,6 +3,7 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
+#include <Scene/Events/SetTransform.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -18,6 +19,7 @@ bool CPropPhysics::InternalActivate()
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropPhysics, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropPhysics, OnPropDeactivating);
+	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropPhysics, OnSetTransform);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -26,6 +28,7 @@ void CPropPhysics::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
+	UNSUBSCRIBE_EVENT(SetTransform);
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
@@ -149,6 +152,15 @@ bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
 	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropPhysics::OnSetTransform(const Events::CEventBase& Event)
+{
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	for (int i = 0; i < Attrs.GetCount(); ++i)
+		Attrs[i]->CollObj->SetTransform(Tfm);
+	OK;
 }
 //---------------------------------------------------------------------
 

@@ -70,11 +70,6 @@ public:
 	bool			IsLinearMotionRequested() const { return ReqLinVel != vector3::Zero; }
 	bool			IsAngularMotionRequested() const { return ReqAngVel != 0.f; }
 
-	// SetTransform - teleport
-	// GetTransform
-	// GetLinearVelocity
-	// GetAngularVelocity
-
 	//!!!collision callbacks/events! fire from global or from here?
 
 	//IsOnTheGround / GetGroundInfo / IsFalling

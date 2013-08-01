@@ -33,6 +33,7 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
+	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
 
 public:
 
