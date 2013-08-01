@@ -91,6 +91,8 @@ void CMotorSystem::Update()
 				break;
 			}
 
+			//!!!write arrive that arrives to mvmt dest, not nav! We may want to arrive before big turns, for example!
+			//also navigational arrive must always be active independently of path edge count!
 			if (pActor->SteeringType == AISteer_Type_Arrive)
 			{
 				float DistToNavDest = pActor->DistanceToNavDest -
@@ -363,6 +365,26 @@ bool CMotorSystem::IsStuck()
 }
 //---------------------------------------------------------------------
 
+void CMotorSystem::SetDest(const vector3& Dest)
+{
+	if (pActor->IsAtPoint(Dest, false)) ResetMovement();
+	else
+	{
+		DestPoint = Dest;
+		pActor->MvmtState = AIMvmt_DestSet;
+		FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
+		//pLastClosestObstacle = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+void CMotorSystem::SetFaceDirection(const vector3& Dir)
+{
+	FaceDir = Dir;
+	pActor->FacingStatus = AIFacing_DirSet;
+}
+//---------------------------------------------------------------------
+
 void CMotorSystem::RenderDebug()
 {
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
@@ -379,7 +401,6 @@ void CMotorSystem::RenderDebug()
 	{
 		CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
 		matrix44 Tfm;
-		Tfm.rotate_x(PI * 0.5f);
 		Tfm.set_translation(pObstacle->Position);
 		vector4 Color(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
 		if (pObstacle == pLastClosestObstacle)
@@ -425,24 +446,4 @@ void CMotorSystem::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-void CMotorSystem::SetDest(const vector3& Dest)
-{
-	if (pActor->IsAtPoint(Dest, false)) ResetMovement();
-	else
-	{
-		DestPoint = Dest;
-		pActor->MvmtState = AIMvmt_DestSet;
-		FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
-		//pLastClosestObstacle = NULL;
-	}
 }
-//---------------------------------------------------------------------
-
-void CMotorSystem::SetFaceDirection(const vector3& Dir)
-{
-	FaceDir = Dir;
-	pActor->FacingStatus = AIFacing_DirSet;
-}
-//---------------------------------------------------------------------
-
-} //namespace AI

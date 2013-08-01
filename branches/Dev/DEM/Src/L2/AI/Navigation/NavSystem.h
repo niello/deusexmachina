@@ -25,18 +25,15 @@ class dtObstacleAvoidanceQuery;
 
 namespace AI
 {
-#define NAV_IDLE	0x80
-#define NAV_INVALID	0x40
+#define NAV_IDLE 0x80
 
 enum ENavState
 {
-	AINav_Done = NAV_IDLE,							// Actor is at the destination, NavSystem is idle
-	AINav_Failed = (NAV_IDLE | 1),					// Actor failed to reach the destination, NavSystem is idle
-	AINav_DestSet = 2,								// Destination is set and path is required, trying to find path fast and sync
-	AINav_Planning = 3,								// Fast sync pathfinding was not succeed, performing full async pathfinding
-	AINav_Following = 4,							// Actor has valid path and follows it
-	AINav_Invalid = (NAV_INVALID | AINav_DestSet),	// Current actor's position is invalid for navigation, but destination is set
-	AINav_IdleInvalid = (NAV_IDLE | NAV_INVALID)	// Current actor's position is invalid for navigation, NavSystem is idle
+	AINav_Failed = NAV_IDLE,		// Actor failed to reach the destination, NavSystem is idle
+	AINav_Done = (NAV_IDLE | 1),	// Actor is at the destination, NavSystem is idle
+	AINav_DestSet = 2,				// Destination is set and path is required, try to find quick path with sync query
+	AINav_Planning = 3,				// Fast sync pathfinding was not succeed, performing full async pathfinding
+	AINav_Following = 4				// Actor has valid path and follows it
 };
 
 class CPathRequestQueue;
@@ -71,8 +68,8 @@ protected:
 	//!!!Path info cache
 
 	CStrID	GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref);
-	void	UpdatePositionPoly();
-	void	UpdateDestinationPoly();
+	void	ResetPositionPoly(bool ForceResetState);
+	void	ResetDestinationPoly();
 	void	ResetPathRequest();
 
 public:
@@ -88,7 +85,7 @@ public:
 
 	void			UpdatePosition();
 	void			EndEdgeTraversal();
-	bool			GetPathEdges(CArray<CPathEdge>& OutPath, int MaxSize = MAX_SDWORD);
+	bool			GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count);
 	void			GetObstacles(float Range, dtObstacleAvoidanceQuery& Query);
 	//bool			GetRandomValidLocation(float Range, vector3& Location);
 
