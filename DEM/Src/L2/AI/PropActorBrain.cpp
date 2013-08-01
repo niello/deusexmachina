@@ -55,7 +55,9 @@ bool CPropActorBrain::InternalActivate()
 	Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
 	Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
 
-	NavState = AINav_IdleInvalid;
+	NavState = AINav_Done;
+	SetNavLocationValid(false);
+	AcceptNearestValidDestination(false);
 
 	MvmtState = AIMvmt_None;
 	MvmtType = AIMvmt_Type_Walk;
