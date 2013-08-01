@@ -3,6 +3,7 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
+#include <Scene/Events/SetTransform.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Render/DebugDraw.h>
@@ -25,6 +26,7 @@ bool CPropCharacterController::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(RequestAngularV, CPropCharacterController, OnRequestAngularVelocity);
 	PROP_SUBSCRIBE_PEVENT(BeforePhysicsTick, CPropCharacterController, OnPhysicsTick);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropCharacterController, OnRenderDebug);
+	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropCharacterController, OnSetTransform);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -37,6 +39,7 @@ void CPropCharacterController::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(RequestAngularV);
 	UNSUBSCRIBE_EVENT(BeforePhysicsTick);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
+	UNSUBSCRIBE_EVENT(SetTransform);
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
@@ -174,6 +177,14 @@ bool CPropCharacterController::OnPhysicsTick(const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
 	CharCtlr->Update();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropCharacterController::OnSetTransform(const Events::CEventBase& Event)
+{
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	CharCtlr->GetBody()->SetTransform(Tfm);
 	OK;
 }
 //---------------------------------------------------------------------

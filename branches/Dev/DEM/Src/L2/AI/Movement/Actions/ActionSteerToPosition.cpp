@@ -13,6 +13,8 @@ void CActionSteerToPosition::UpdatePathEdge(CActor* pActor, const CPathEdge* pEd
 	pActor->GetMotorSystem().SetDest(pEdge->Dest);
 	pActor->GetMotorSystem().SetNextDest(pNextEdge ? pNextEdge->Dest : pEdge->Dest);
 	pActor->SteeringType = (pEdge->IsLast || (pNextEdge && pNextEdge->IsLast)) ? AISteer_Type_Arrive : AISteer_Type_Seek;
+	//???always arrive? what if three short edges are near the dest? Actor won't stop on time.
+	//!!!arriwe to intermediate point where big turn must be performed!
 }
 //---------------------------------------------------------------------
 

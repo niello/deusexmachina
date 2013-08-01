@@ -101,7 +101,7 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 		BtTfm.getOrigin() = BtTfm * VectorToBtVector(ShapeOffset);
 		pMotionState->setWorldTransform(BtTfm);
 	}
-	else CPhysicsObj::SetTransform(Tfm);
+	if (!pMotionState || pWorld) CPhysicsObj::SetTransform(Tfm);
 }
 //---------------------------------------------------------------------
 
