@@ -32,6 +32,8 @@ CAIServer::CAIServer()
 	pNavFilter->setExcludeFlags(NAV_FLAG_LOCKED);
 	NavQueryFilters.Add(CStrID::Empty, pNavFilter);
 
+	pDebugFilter = n_new(dtQueryFilter);
+
 	for (int i = 0; i < DEM_THREAD_COUNT; ++i)
 		n_assert(PathQueues[i].Init(MAX_NAV_PATH)); //???reinit on each level loading?
 }
@@ -39,6 +41,8 @@ CAIServer::CAIServer()
 
 CAIServer::~CAIServer()
 {
+	n_delete(pDebugFilter);
+
 	for (int i = 0; i < NavQueryFilters.GetCount(); ++i)
 		n_delete(NavQueryFilters.ValueAt(i));
 
@@ -69,4 +73,4 @@ const CSmartObjActionTpl* CAIServer::GetSmartObjActionTpl(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}
