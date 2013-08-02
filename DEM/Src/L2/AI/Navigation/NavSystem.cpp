@@ -59,9 +59,6 @@ void CNavSystem::Init(const Data::CParams* Params)
 	//!!!DBG TMP!
 	EdgeTypeToAction.Add(0, CStrID("SteerToPosition"));
 
-	//DestPoint = pActor->Position; //???restore from attrs on load?
-	//DestRef = 0;
-
 	SetupState();
 }
 //---------------------------------------------------------------------
@@ -84,22 +81,15 @@ void CNavSystem::SetupState()
 	pNavQuery = pActor->GetEntity()->GetLevel()->GetAI()->GetSyncNavQuery(pActor->Radius);
 
 	ResetPositionPoly(true);
-
-	if (!pActor->IsNavSystemIdle())
-	{
-		ResetDestinationPoly();
-		if (!DestRef)
-		{
-			ResetPathRequest();
-			pActor->NavState = AINav_Failed;
-		}
-	}
+	if (!pActor->IsNavSystemIdle()) ResetDestinationPoly();
 }
 //---------------------------------------------------------------------
 
 void CNavSystem::SetDestPoint(const vector3& Dest)
 {
 	//???OFM what if traversing offmesh?
+
+	if (Dest == DestPoint && !pActor->IsNavSystemIdle()) return;
 
 	DestPoint = Dest;
 
@@ -115,7 +105,7 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 
 	if (pActor->NavState == AINav_Following)
 	{
-		// Corridor target is the destination, try to update it through the corridor.
+		// In AINav_Following corridor target is the destination, try to update it through the corridor.
 		// In other states corridor target is unset or is a partial path target, so replanning is needed.
 		Corridor.moveTargetPosition(DestPoint.v, pNavQuery, pNavFilter);
 		ResetPoly = DestPoint.x != Corridor.getTarget()[0] || DestPoint.z != Corridor.getTarget()[2];
@@ -125,14 +115,8 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 	if (ResetPoly)
 	{
 		ResetDestinationPoly();
-		ResetPathRequest();
-
-		if (DestRef)
-		{
-			pActor->NavState = AINav_DestSet;
-			if (!pActor->IsNavLocationValid()) ResetPositionPoly(false);
-		}
-		else pActor->NavState = AINav_Failed;
+		if (DestRef && !pActor->IsNavLocationValid())
+			ResetPositionPoly(false);
 	}
 }
 //---------------------------------------------------------------------
@@ -179,27 +163,12 @@ void CNavSystem::Update(float FrameTime)
 	static const int CHECK_LOOKAHEAD = 10;
 	static const float TARGET_REPLAN_DELAY = 1.f; // Seconds
 
-	// If our destination became invalid, we try to find a new one
+	// If our destination became invalid, we try to find a new one and replan path to reach it
 	if (!pNavQuery->isValidPolyRef(DestRef, pNavFilter))
 	{
 		ResetDestinationPoly();
-		if (DestRef) Replan = true; // Destination poly changed
-		else
-		{
-			// We have lost our destination
-			ResetPathRequest();
-			Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
-			pActor->NavState = AINav_Failed;
-			return;
-		}
-	}
-
-	// Our destination is valid. Check if we're already there.
-//???OFM what if traversing offmesh?
-	if (pActor->IsAtPoint(DestPoint, true))
-	{
-		Reset(true);
-		return;
+		if (pActor->IsNavSystemIdle()) return;
+		Replan = true;
 	}
 
 	if (!Corridor.isValid(CHECK_LOOKAHEAD, pNavQuery, pNavFilter))
@@ -217,15 +186,13 @@ void CNavSystem::Update(float FrameTime)
 						Corridor.getLastPoly() != DestRef &&
 						ReplanTime > TARGET_REPLAN_DELAY);
 
-	if (Replan)
-	{
-		ResetPathRequest();
-		pActor->NavState = AINav_DestSet;
-	}
+	if (Replan) pActor->NavState = AINav_DestSet;
 
 	if (pActor->NavState == AINav_DestSet)
 	{
 		n_assert(Corridor.getPathCount() > 0);
+
+		ResetPathRequest();
 
 		static const int MAX_QUICKSEARCH_ITER = 20;
 		static const int MAX_QUICKSEARCH_RES = 32;
@@ -308,30 +275,26 @@ void CNavSystem::Update(float FrameTime)
 
 				if (!dtStatusFailed(QueryStatus) && PathSize && Corridor.getLastPoly() == Path[0])
 				{
-					const int OldPathSize = Corridor.getPathCount();
-
-					//???can upload the path to the corridor manually? may be more optimal!
+					const int OldPathSize = Corridor.getPathCount() - 1;
 
 					// There was a quick path, merge it with full path returned
-					if (OldPathSize > 1)
+					if (OldPathSize)
 					{
-						//!!!!!!!!!???remove trackbacks before trimming?!!
-						if ((OldPathSize - 1) + PathSize > MAX_NAV_PATH)
-							PathSize = MAX_NAV_PATH - (OldPathSize - 1);
-						
-						memmove(Path + OldPathSize - 1, Path, sizeof(dtPolyRef) * PathSize);
-						memcpy(Path, Corridor.getPath(), sizeof(dtPolyRef) * (OldPathSize - 1));
-						PathSize += OldPathSize - 1;
-						
+						if (PathSize > MAX_NAV_PATH - OldPathSize)
+							PathSize = MAX_NAV_PATH - OldPathSize;
+
+						memmove(Path + OldPathSize, Path, sizeof(dtPolyRef) * PathSize);
+						memcpy(Path, Corridor.getPath(), sizeof(dtPolyRef) * OldPathSize);
+						PathSize += OldPathSize;
+
 						// Remove trackbacks
-						for (int j = 0; j < PathSize; ++j)
-							if (j - 1 >= 0 && j + 1 < PathSize)
-								if (Path[j - 1] == Path[j + 1])
-								{
-									memmove(Path + (j - 1), Path + (j + 1), sizeof(dtPolyRef) * (PathSize - (j + 1)));
-									PathSize -= 2;
-									j -= 2;
-								}						
+						for (int i = 1; i < PathSize - 1; ++i)
+							if (Path[i - 1] == Path[i + 1])
+							{
+								memmove(Path + i - 1, Path + i + 1, sizeof(dtPolyRef) * (PathSize - (i + 1)));
+								PathSize -= 2;
+								i = n_min(i - 2, 1);
+							}						
 					}
 
 					// Calculate new target position, since path may be partial
@@ -383,6 +346,7 @@ void CNavSystem::UpdatePosition()
 	if (!pNavQuery || TraversingOffMesh) return;
 
 	//!!!navmesh height and actual height may differ, so need to compensate or convert actor->navmesh or <- height!
+	//???or test with IsAtPoint() with OffMeshRadius?
 	if (OffMeshRef && (OffMeshPoint - pActor->Position).lensquared() <= OffMeshRadiusSq)
 	{
 		// We reached an enter to the offmesh connection that is the next edge of our path (see GetPathEdges())
@@ -399,39 +363,24 @@ void CNavSystem::UpdatePosition()
 	}
 	else
 	{
-		bool ResetPoly;
-
-		if (pActor->IsNavSystemIdle()) ResetPoly = true;
+		if (pActor->IsNavSystemIdle()) ResetPositionPoly(false);
 		else
 		{
-			// We walk over the level, so try to update position in the corridor
-			// The resulting position will differ from the desired position if the desired position
-			// is not on the navigation mesh, or it can't be reached using a local search
-			// (c) Detour docs
-			//???what if we remain on the same poly and it is invalid? is position updated?
-			//???always reset boundary? or only if first poly changed?
 			Corridor.movePosition(pActor->Position.v, pNavQuery, pNavFilter);
-			ResetPoly = pActor->Position.x != Corridor.getPos()[0] || pActor->Position.z != Corridor.getPos()[2];
-		}
-
-		if (ResetPoly)
-		{
-			// Teleportation or too far movement happened. If neither is the case, we are at the invalid position.
-			ResetPositionPoly(false);
-		}
-		else
-		{
-			if (!pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter))
+			if (pActor->Position.x == Corridor.getPos()[0] && pActor->Position.z == Corridor.getPos()[2])
 			{
-				// We try to walk through the invalid polygon
-				pActor->SetNavLocationValid(false);
-				ResetPathRequest();
-				Corridor.reset(Corridor.getFirstPoly(), pActor->Position.v);
-				if (pBoundary) pBoundary->reset();
+				n_assert_dbg(pNavQuery->isValidPolyRef(Corridor.getFirstPoly(), pNavFilter));
+				pActor->SetNavLocationValid(true);
+				if (pBoundary) pBoundary->reset(); //???only if corridor first poly changed?
 			}
-			else pActor->SetNavLocationValid(true);
-		}
+			else ResetPositionPoly(false);
 
+			if (!pActor->IsNavSystemIdle() && pActor->IsAtPoint(DestPoint, true))
+			{
+				Reset(true);
+				return;
+			}
+		}
 		pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
 	}
 }
@@ -448,7 +397,14 @@ void CNavSystem::ResetPositionPoly(bool ForceResetState)
 		float Nearest[3];
 		pNavQuery->findNearestPoly(pActor->Position.v, Extents, pNavFilter, &Ref, Nearest);
 
-		if (!Ref)
+		// If we're moving, we try to find the nearest valid poly. Else we set invalid
+		// curr poly if our position is invalid, without recovery and nearest-searching.
+		if (Ref)
+		{
+			pActor->SetNavLocationValid(pActor->Position.x == Nearest[0] && pActor->Position.z == Nearest[2]);
+			if (!pActor->IsNavLocationValid() && pActor->IsNavSystemIdle()) Ref = 0;
+		}
+		else
 		{
 			pActor->SetNavLocationValid(false);
 			if (!pActor->IsNavSystemIdle())
@@ -458,11 +414,6 @@ void CNavSystem::ResetPositionPoly(bool ForceResetState)
 				const float RecoveryExtents[3] = { RecoveryRadius, pActor->Height, RecoveryRadius };
 				pNavQuery->findNearestPoly(pActor->Position.v, RecoveryExtents, pNavFilter, &Ref, NULL);
 			}
-		}
-		else
-		{
-			pActor->SetNavLocationValid(pActor->Position.x == Nearest[0] && pActor->Position.z == Nearest[2]);
-			if (!pActor->IsNavLocationValid() && pActor->IsNavSystemIdle()) Ref = 0;
 		}
 	}
 	else pActor->SetNavLocationValid(false);
@@ -479,18 +430,13 @@ void CNavSystem::ResetPositionPoly(bool ForceResetState)
 
 	if (ForceResetState || Corridor.getFirstPoly() != Ref)
 	{
+		Corridor.reset(Ref, pActor->Position.v);
+		if (pBoundary) pBoundary->reset();
 		if (!pActor->IsNavSystemIdle())
 		{
 			if (Ref) pActor->NavState = AINav_DestSet;
-			else
-			{
-				if (pActor->NavState == AINav_Following) EndEdgeTraversal();
-				pActor->NavState = pActor->IsAtPoint(DestPoint, true) ? AINav_Done : AINav_Failed;
-			}
+			else Reset(pActor->IsAtPoint(DestPoint, true));
 		}
-		ResetPathRequest();
-		Corridor.reset(Ref, pActor->Position.v);
-		if (pBoundary) pBoundary->reset();
 	}
 	else if (pActor->IsNavSystemIdle())
 		Corridor.reset(Ref, pActor->Position.v); // movePosition() alternative for the idle state
@@ -520,11 +466,17 @@ void CNavSystem::ResetDestinationPoly()
 			return;
 		}
 	}
-	pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
+
+	if (pActor->IsAtPoint(DestPoint, true)) Reset(true);
+	else
+	{
+		pActor->NavState = AINav_DestSet;
+		pActor->DistanceToNavDest = dtVdist2D(pActor->Position.v, DestPoint.v);
+	}
 }
 //---------------------------------------------------------------------
 
-// We take path edges to the external actions, like steering, climbing, jumping, sweeming, door traversal etc.
+// We submit path edges to the external actions, like steering, climbing, jumping, swimming, door traversal etc.
 // When external action finishes, it must inform the navigation system that it ended with its edge.
 void CNavSystem::EndEdgeTraversal()
 {
@@ -548,7 +500,7 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 	const dtPoly* pPoly;
 	pNavMesh->getTileAndPolyByRefUnsafe(Ref, &pTile, &pPoly);
 	uchar PolyArea = pPoly->getArea();
-	ushort PolyFlags = pPoly->flags;
+	ushort PolyFlags = pPoly->flags; //???need? area crossings - all crossings difference!
 
 	//!!!DBG TMP!
 	int EdgeType = -1; //!!!Some calcs from ?PolyArea? and PolyFlags!
@@ -567,123 +519,114 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 
 bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 {
-	n_assert(pOutPath && MaxCount > 0);
-
+	if (!pOutPath || !MaxCount) FAIL;
 	if (!pNavQuery || (pActor->NavState != AINav_Planning && pActor->NavState != AINav_Following)) FAIL;
 
 	const dtNavMesh* pNavMesh = pNavQuery->getAttachedNavMesh();
 
+	//!!!when add an edge, determine navigation controller for the poly
+	//if action not changed, but controller has changed, finalize edge and start new one
+	//!!!if poly has controller, can determine action from a controller
+
+	CPathEdge* pEdge = NULL;
 	Count = 0;
 	if (TraversingOffMesh)
 	{
 		// We are at the offmesh connection, so add it as the first edge
-		pOutPath->Action = GetPolyAction(pNavMesh, OffMeshRef);
-		pOutPath->Dest = OffMeshPoint;
-		pOutPath->IsLast = false; //???can offmesh connection be the last edge?
+		pEdge = pOutPath;
+		pEdge->Action = GetPolyAction(pNavMesh, OffMeshRef);
+		pEdge->Dest = OffMeshPoint;
+		pEdge->IsLast = false; //???can offmesh connection be the last edge?
 		++Count;
 	}
 	else if (!pActor->IsNavLocationValid() && !pActor->IsAtPoint(Corridor.getPos(), false))
 	{
 		// We're recovering from an invalid state, add an edge from the current actor position to
 		// the nearest valid navmesh position, that doesn't break route. It also prevents tunneling.
-		pOutPath->Action = GetPolyAction(pNavMesh, 0);
-		pOutPath->Dest = Corridor.getPos();
-		pOutPath->IsLast = false; // Recovery is always a result of a movement request
+		pEdge = pOutPath;
+		pEdge->Action = GetPolyAction(pNavMesh, 0);
+		pEdge->Dest = Corridor.getPos();
+		pEdge->IsLast = false; // Recovery is always a result of a movement request
 		++Count;
 	}
 
 	if (Count == MaxCount) OK;
 
-	// Make buffers larger if more edges are required, can limit MaxCount value and set MAX_CORNERS = MaxCount + 1
+	//!!!since DT_STRAIGHTPATH_#_CROSSINGS is used, more than 3 corners could be requested!
+	//???request/implement iterative pNavQuery->getNextCorner until MaxCount edges are formed?
+	//???use DT_STRAIGHTPATH_ALL_CROSSINGS? can action change where area doesn't change? if controller, it can!
 	const int MAX_CORNERS = 3;
 	float CornerVerts[MAX_CORNERS * 3];
 	unsigned char CornerFlags[MAX_CORNERS];
 	dtPolyRef CornerPolys[MAX_CORNERS];
 	int CornerCount;
 	pNavQuery->findStraightPath(Corridor.getPos(), Corridor.getTarget(), Corridor.getPath(), Corridor.getPathCount(),
-								CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS);
+								CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS, DT_STRAIGHTPATH_AREA_CROSSINGS);
 
-	// The first one is our position, so skip it
-	const int FIRST_POLY_IDX = 1;
+	// The first one is our position, that can be skipped, or the first valid position with recovery edge already added.
+	const int FIRST_CORNER_IDX = 1;
+	if (CornerCount <= FIRST_CORNER_IDX) OK;
 
-	if (CornerCount <= FIRST_POLY_IDX) OK;
+	// Code below relies on these assumptions. Normally this can never happen.
+	n_assert_dbg(FIRST_CORNER_IDX > 0 && !(CornerFlags[0] & DT_STRAIGHTPATH_OFFMESH_CONNECTION));
 
 	//!!!Optimize not every frame but only when needed to fix path!
 	// (adjust call frequenCY, and mb force when path changes). More frequent when avoid obstacles
-	const float* pNextCorner = &CornerVerts[dtMin(1, CornerCount - 1) * 3];
+	//???mb actual polys have changed here and we must re-get edges?
+	//!!!now optimization effect is sensible only at the next call!
+	const float* pNextCorner = &CornerVerts[dtMin(FIRST_CORNER_IDX + 1, CornerCount - 1) * 3];
 	bool OptimizePathVis = true; //!!!to settings!
 	if (OptimizePathVis)
 		Corridor.optimizePathVisibility(pNextCorner, 30.f * pActor->Radius, pNavQuery, pNavFilter);
 
-	// Here we build path edges from corner points returned by the corridor.
-	// Path edge starts at the end of prev. edge (or at the current position) and ends at the
-	// next corner or at the action change point. Action change point lies at the intersection of
-	// the path edge and an edge shared between two path polygons with different traversal actions.
-	// This guarantees that one edge has exactly one traversal action, and no action is skipped.
+	// Each corner is a potential action or direction change point. Convert corners to path edges.
+	OffMeshRef = 0;
 	const dtPolyRef* pCurrPoly = Corridor.getPath();
 	const dtPolyRef* pLastPoly = Corridor.getPath() + Corridor.getPathCount();
-	CPathEdge* pEdge;
-	for (int i = FIRST_POLY_IDX; (i < CornerCount) && (Count < MaxCount); ++i)
+	for (int i = FIRST_CORNER_IDX; (i < CornerCount) && (Count < MaxCount); ++i)
 	{
-		pEdge = pOutPath + Count;
-		++Count;
-		pEdge->Action = CStrID::Empty;
-		pEdge->IsLast = false;
+		// Corner poly means "the poly that starts from this corner", so we get
+		// a previous poly, because we want to know the poly that ends at this corner.
+		CStrID CurrAction = GetPolyAction(pNavMesh, CornerPolys[i - 1]);
 
-		do
+		// If action or direction changes at this corner, start new edge
+		bool StartNewEdge = !Count || pEdge->Action != CurrAction;
+		if (!StartNewEdge && Count)
 		{
-			CStrID Action = GetPolyAction(pNavMesh, *pCurrPoly);
-			if (pEdge->Action == CStrID::Empty) pEdge->Action = Action;
-			else if (pEdge->Action != Action)
-			{
-				// AFAIR Detour has related feature implemented in findStraightPath() in the last revision.
-				// So can explore how they determine line-navpoly intersection.
-				///// Options for dtNavMeshQuery::findStraightPath.
-				//enum dtStraightPathOptions
-				//{
-				//	DT_STRAIGHTPATH_AREA_CROSSINGS = 0x01,	///< Add a vertex at every polygon edge crossing where area changes.
-				//	DT_STRAIGHTPATH_ALL_CROSSINGS = 0x02,	///< Add a vertex at every polygon edge crossing.
-				//};
-				n_error("IMPLEMENT ME!!! Navigation action change point");
-
-				float Intersection[3]; //!!!!!
-				pEdge->Dest.set(Intersection);
-				//???edge destination must have height of NavMesh or of actual geometry? Steering may depend on it.
-				//pNavQuery->getPolyHeight(*pCurrPoly, Intersection, &pNode->Dest.y);
-
-				if (Count == MaxCount) OK;
-
-				pEdge = pOutPath + Count;
-				++Count;
-				pEdge->Action = Action;
-				pEdge->IsLast = false;
-			}
-
-			if (*pCurrPoly == CornerPolys[i]) break;
+			// Check if horizontal direction changed more than by 1 degree
+			const vector3& Base = Count > 1 ? pOutPath[Count - 2].Dest : pActor->Position;
+			vector2 CurrDir(pEdge->Dest.x - Base.x, pEdge->Dest.z - Base.z);
+			vector2 NewDir(CornerVerts[i * 3] - Base.x, CornerVerts[i * 3 + 2] - Base.z);
+			float Dot = NewDir.dot(CurrDir);
+			const float CosOneDegreeSq = 0.999695f;
+			StartNewEdge = (Dot * Dot < NewDir.lensquared() * CurrDir.lensquared() * CosOneDegreeSq);
 		}
-		while (++pCurrPoly < pLastPoly);
+
+		if (StartNewEdge)
+		{
+			pEdge = pOutPath + Count;
+			pEdge->Action = CurrAction;
+			pEdge->IsLast = false;
+			++Count;
+		}
 
 		pEdge->Dest.set(&CornerVerts[i * 3]);
 		//???edge destination must have height of NavMesh or of actual geometry? Steering may depend on it.
-		//pNavQuery->getPolyHeight(CornerPolys[i] ? CornerPolys[i] : DestRef, &CornerVerts[i * 3], &pNode->Dest.y);
+		//pNavQuery->getPolyHeight(CurrPoly, &CornerVerts[i * 3], &pNode->Dest.y);
+
+		// If offmesh connection start encountered, we record its info and UpdatePosition() will detect
+		// if we are at the trigger radius to start traversal. We don't gather edges after this point.
+		if (CornerFlags[i] & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
+		{
+			OffMeshRef = CornerPolys[CornerCount - 1];
+			OffMeshPoint.set(&CornerVerts[(CornerCount - 1) * 3]);
+			OffMeshRadiusSq = pActor->Radius * 1.2f; //!!!DetermineOffMeshConnectionTriggerRadius();? from poly controller?
+			OffMeshRadiusSq *= OffMeshRadiusSq;
+			CornerCount = i + 1;
+		}
 	}
 
 	pEdge->IsLast = (pActor->NavState == AINav_Following) && (CornerFlags[CornerCount - 1] & DT_STRAIGHTPATH_END);
-
-	//!!!when add node, determine navigation controller for the poly
-	//if action not changed, but controller has changed, finalize edge and start new one
-	//!!!if poly has controller, can determine action from a controller
-
-	// If the last corner is an offmesh connection start, we record its info and
-	// UpdatePosition() will detect if we are at the trigger radius to start traversal
-	if (CornerFlags[CornerCount - 1] & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
-	{
-		OffMeshRef = CornerPolys[CornerCount - 1];
-		OffMeshPoint.set(&CornerVerts[(CornerCount - 1) * 3]);
-		OffMeshRadiusSq = pActor->Radius * 1.2f; //!!!DetermineOffMeshConnectionTriggerRadius();
-		OffMeshRadiusSq *= OffMeshRadiusSq;
-	}
-	else OffMeshRef = 0;
 
 	OK;
 }
@@ -737,16 +680,19 @@ void CNavSystem::RenderDebug()
 	{
 		static const vector4 ColorPathLine(1.f, 0.75f, 0.5f, 1.f);
 		static const vector4 ColorPathCorner(1.f, 0.9f, 0.f, 1.f);
+		static const unsigned int ColorPoly = duRGBA(255, 196, 0, 64);
 
 		CNavMeshDebugDraw DD;
 		for (int i = 0; i < Corridor.getPathCount(); ++i)
-			duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Corridor.getPath()[i], duRGBA(255, 196, 0, 64));
+			duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Corridor.getPath()[i], ColorPoly);
 
-		const int MAX_CORNERS = 17;
+		const int MAX_CORNERS = 32;
 		float CornerVerts[MAX_CORNERS * 3];
 		unsigned char CornerFlags[MAX_CORNERS];
 		dtPolyRef CornerPolys[MAX_CORNERS];
-		int CornerCount = Corridor.findCorners(CornerVerts, CornerFlags, CornerPolys, MAX_CORNERS, pNavQuery, pNavFilter);
+		int CornerCount;
+		pNavQuery->findStraightPath(Corridor.getPos(), Corridor.getTarget(), Corridor.getPath(), Corridor.getPathCount(),
+									CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS, DT_STRAIGHTPATH_AREA_CROSSINGS);
 		vector3 From = pActor->Position;
 		for (int i = 0; i < CornerCount; ++i)
 		{

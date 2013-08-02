@@ -33,7 +33,7 @@ public:
 	void	set(const vector2& v) { x = v.x; y = v.y; }
 	void	set(const float* p) { x = p[0]; y = p[1]; }
 
-	float	len() const { return sqrtf(x * x + y * y); }
+	float	len() const { return n_sqrt(x * x + y * y); }
 	float	lensquared() const { return x * x + y * y; }
 	void	norm();
 	float	dot(const vector2& v) const { return x * v.x + y * v.y; }
