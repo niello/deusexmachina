@@ -71,7 +71,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 		}
 	}
 
-	SubAction->UpdatePathEdge(pActor, &Path[0], (EdgeCount > 1) ? &Path[1] : NULL);
+	SubAction->UpdatePathEdge(pActor, &Path[0], (EdgeCount > 1 && NewActionID == Path[1].Action) ? &Path[1] : NULL);
 	EExecStatus Result = SubAction->Update(pActor);
 	if (Result != Running)
 	{
