@@ -6,6 +6,8 @@
 #include <IO/Streams/FileStream.h>
 #include <Events/EventServer.h>
 #include <DetourDebugDraw.h>
+#include <Render/DebugDraw.h>
+#include <Game/GameServer.h> // For the debug draw only
 
 namespace AI
 {
@@ -224,6 +226,22 @@ void CAILevel::RenderDebug()
 		duDebugDrawNavMesh(&DD, *pNavQuery->getAttachedNavMesh(), DU_DRAWNAVMESH_OFFMESHCONS);
 		duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
 		//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
+
+		if (GameSrv->HasMouseIntersection())
+		{
+			const float Extents[3] = { 0.f, 1.f, 0.f };
+			dtPolyRef Ref;
+			const vector3& Pos = GameSrv->GetMousePos3D();
+			float Nearest[3];
+			pNavQuery->findNearestPoly(Pos.v, Extents, AISrv->GetDebugNavQueryFilter(), &Ref, Nearest);
+			if (Pos.x == Nearest[0] && Pos.z == Nearest[2])
+			{
+				CString Text;
+				Text.Format("Nav. poly under mouse: %d\n", Ref);
+				DebugDraw->DrawText(Text.CStr(), 0.5f, 0.05f);
+				duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Ref, duRGBA(224, 224, 224, 32));
+			}
+		}
 	}
 }
 //---------------------------------------------------------------------

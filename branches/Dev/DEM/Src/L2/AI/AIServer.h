@@ -33,11 +33,12 @@ class CAIServer: public Core::CRefCounted
 
 private:
 
-	CPlanner								Planner; //???or singleton?
+	CPlanner							Planner; //???or singleton?
 	CDict<CStrID, CSmartObjActionTpl>	SOActTpls;
 	CDict<CStrID, dtQueryFilter*>		NavQueryFilters;
+	dtQueryFilter*						pDebugFilter;
 	CDict<CStrID, COAParams*>			ObstacleAvoidanceParams;
-	CPathRequestQueue						PathQueues[DEM_THREAD_COUNT];
+	CPathRequestQueue					PathQueues[DEM_THREAD_COUNT];
 
 public:
 
@@ -52,6 +53,7 @@ public:
 	void						AddNavQueryFilter(CStrID ID, const CParams& Desc);
 	const dtQueryFilter*		GetNavQueryFilter(CStrID ID) const;
 	const dtQueryFilter*		GetDefaultNavQueryFilter() const { return GetNavQueryFilter(CStrID::Empty); }
+	const dtQueryFilter*		GetDebugNavQueryFilter() const { return pDebugFilter; }
 
 	void						AddObstacleAvoidanceParams(CStrID ID, const CParams& Desc);
 	const COAParams*			GetObstacleAvoidanceParams(CStrID ID) const;

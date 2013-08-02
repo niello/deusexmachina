@@ -1,6 +1,6 @@
 #include "NavSystem.h"
 
-#include <Game/GameLevel.h> //!!!???cache AI level instead of getting from entity every time?!
+#include <Game/GameLevel.h>
 #include <AI/AIServer.h>
 #include <AI/PropActorBrain.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
@@ -665,8 +665,8 @@ void CNavSystem::RenderDebug()
 	Text.Format(
 		"Nav state: %s\n"
 		"Nav location is %s\n"
-		"Curr poly: %d\n"
-		"Dest poly: %d\n"
+		"Curr poly:        %d\n"
+		"Dest poly:        %d\n"
 		"Destination: %.4f, %.4f, %.4f\n",
 		pNavStr,
 		pActor->IsNavLocationValid() ? "valid" : "invalid",
