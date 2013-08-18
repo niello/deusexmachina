@@ -164,31 +164,21 @@ namespace HrdLib
 
         private void WriteReadValue(HrdIndentWriter writer, HrdSerializerTypeInfo valueType, string valueCodeString, HrdGeneratorQueue queue, bool allowNull)
         {
-            bool isNullable = !valueType.IsValueType;
-            if (!isNullable && valueType.IsGenericType)
-            {
-                var genericDefinition = valueType.GetGenericTypeDefinition();
-                if (genericDefinition == typeof(Nullable<>))
-                {
-                    isNullable = true;
-                    valueType = valueType.GetGenericArguments()[0];
-                }
-            }
+            bool isNullable = valueType.IsNullable;
 
             writer.WriteLine("if(!reader.HasValue)").WriteLine("{").IncreaseIndent();
             if (isNullable && allowNull)
             {
-                writer.WriteLine("{0} = ({1}) null;", valueCodeString,
-                                 ReflectionHelper.GetCsTypeName(valueType) + (valueType.IsValueType ? "?" : string.Empty));
+                writer.WriteLine("{0} = ({1}) null;", valueCodeString, valueType.Type);
             }
             else
             {
-                writer.WriteLine("throw new {0}({1});", ReflectionHelper.GetCsTypeName<HrdStructureValidationException>(),
+                writer.WriteLine("throw new {0}({1});", typeof(HrdStructureValidationException),
                                      MakeVerbatimString(SR.GetString(SR.NullValueNotAllowed)));
             }
             writer.DecreaseIndent().WriteLine("}").WriteLine("else").WriteLine("{").IncreaseIndent();
 
-            var typeCode = Type.GetTypeCode(valueType);
+            var typeCode = Type.GetTypeCode(valueType.Type);
             switch (typeCode)
             {
                 case TypeCode.Boolean:
@@ -212,10 +202,10 @@ namespace HrdLib
                     break;
 
                 default:
-                    if (valueType == typeof(object))
+                    if (valueType.Type == typeof(object))
                         writer.WriteLine("{0} = new {1}();", valueCodeString, ReflectionHelper.GetCsTypeName<object>());
                     else
-                        writer.WriteLine("{0} = Deserialize{1}(reader);", valueCodeString, queue.AddType(valueType));
+                        writer.WriteLine("{0} = Deserialize{1}(reader);", valueCodeString, queue.AddType(valueType.Type));
                     break;
             }
 

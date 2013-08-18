@@ -95,7 +95,7 @@ API const char* Categories_GetAttrDesc(CIDEAppHandle Handle, int Idx, char* Cat,
 	Data::PParams AttrDesc = DescParam.GetValue<Data::PParams>();
 	strcpy_s(Cat, 255, AttrDesc->Get<nString>(CStrID("Cat"), NULL).Get());
 	strcpy_s(Desc, 1023, AttrDesc->Get<nString>(CStrID("Desc"), NULL).Get());
-	strcpy_s(ResFilter, 1023, AttrDesc->Get<nString>(CStrID("ResourceFilter"), NULL).Get());
+	strcpy_s(ResFilter, 1023, AttrDesc->Get<>(CStrID("ResourceFilter"), NULL).Get());
 	*ReadOnly = AttrDesc->Get<bool>(CStrID("ReadOnly"), false);
 	*ShowInList = AttrDesc->Get<bool>(CStrID("ShowInList"), true);
 	*InstanceOnly = AttrDesc->Get<bool>(CStrID("InstanceOnly"), false);

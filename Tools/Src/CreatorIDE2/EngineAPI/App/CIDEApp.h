@@ -55,7 +55,8 @@ private:
 public:
 
 	Game::PEntity					EditorCamera;
-	Game::PEntity					CurrentEntity;
+	Game::PEntity					CurrentEntity;	// Entity on which entity operations are performed (attr read/write etc)
+	Game::PEntity					SelectedEntity;	// Entity selected in the editor window
 	Game::PEntity					CurrentTfmEntity;
 	CMouseButtonCallback			MouseCB;
 
@@ -64,16 +65,21 @@ public:
 	bool							TransformMode;
 	bool							LimitToGround;
 	bool							SnapToGround;
-	nString							OldInputPropClass;
+
+	// Ground constraints for the selected entity transformation
+	bool						DenyEntityAboveGround;
+	bool						DenyEntityBelowGround;
 
 	CCIDEApp();
 	~CCIDEApp();
 
-	nString	GetAppName() const { return "DeusExMachina API Library"; }
-	nString	GetAppVersion() const;
-	nString	GetVendorName() const { return "STILL NO TEAM NAME"; }
+	CString	GetAppName() const { return "DeusExMachina API Library"; }
+	CString	GetAppVersion() const;
+	CString	GetVendorName() const { return "STILL NO TEAM NAME"; }
 
 	void	SetParentWindow(HWND ParentWnd) { ParentHwnd = ParentWnd; }
+
+	void	ApplyGroundConstraints(const Game::CEntity& Entity, vector3& Position);
 
 	bool	Open();
 	void	RegisterAttributes();
@@ -88,9 +94,9 @@ typedef CCIDEApp* PCIDEApp;
 //!!! Do not use AppInst in any cases except creating and disposing. It is for consistence check only. !!!
 extern PCIDEApp AppInst;
 
-inline nString CCIDEApp::GetAppVersion() const
+inline CString CCIDEApp::GetAppVersion() const
 {
-	nString Ver;
+	CString Ver;
 #ifdef _DEBUG
 	Ver.Format("%d.%dd Step %d", DEM_API_VER_MAJOR, DEM_API_VER_MINOR, DEM_API_VER_STEP);
 #else

@@ -2,19 +2,12 @@
 
 #include "AppStateEditor.h"
 #include <App/Environment.h>
-#include <Loading/EntityFactory.h>
-#include <Loading/EntityLoader.h>
-#include <Loading/EnvironmentLoader.h>
+#include <Game/EntityLoader.h>
+#include <Physics/PropPhysics.h>
 #include <SI/SI_L1.h>
 #include <SI/SI_L2.h>
 #include <SI/SI_L3.h>
 #include "../Prop/PropEditorCamera.h"
-#include <Input/Prop/PropInput.h>
-#include <Physics/Prop/PropTransformable.h>
-#include <DB/StdAttrs.h>
-#include <Game/Mgr/FocusManager.h>
-
-#include <gfx2/ngfxserver2.h>
 
 #include <time.h>
 
@@ -55,8 +48,8 @@ void CCIDEApp::SetupDisplayMode()
 
 	//!!!SET FULLSCREEN / WINDOWED! //???to display mode?
 
-	nString WindowTitle = GetVendorName() + " - " + GetAppName() + " - " + GetAppVersion();
-	AppEnv->SetWindowTitle(WindowTitle.Get());
+	CString WindowTitle = GetVendorName() + " - " + GetAppName() + " - " + GetAppVersion();
+	AppEnv->SetWindowTitle(WindowTitle.CStr());
 
 	AppEnv->SetWindowIcon("Icon");
 }
@@ -81,33 +74,33 @@ bool CCIDEApp::Open()
 		FAIL;
 	}
 	
-	DataSrv->ReleaseMemoryCB = ReleaseMemoryCB;
-	DataSrv->DataPathCB = DataPathCB;
+	IOSrv->ReleaseMemoryCB = ReleaseMemoryCB;
+	IOSrv->DataPathCB = DataPathCB;
 	ReleaseMemoryCB = NULL;
 	DataPathCB = NULL;
 
-	nString Home = DataSrv->ManglePath("home:");
-	nString Proj = DataSrv->ManglePath("proj:");
-	nString Data = Proj + "/Project";
-	nString Export = Proj + "/export";
+	CString Home = IOSrv->ManglePath("home:");
+	CString Proj = IOSrv->ManglePath("proj:");
+	CString Data = Proj + "/Project";
+	CString Export = Proj + "/export";
 
 	// Path may be redefined by an external editor, so we need to query it after assignement
-	DataSrv->SetAssign("data", Data);
-	Data = DataSrv->ManglePath("data:");
-	DataSrv->SetAssign("export", Export);
-	Export = DataSrv->ManglePath("export:");
+	IOSrv->SetAssign("data", Data);
+	Data = IOSrv->ManglePath("data:");
+	IOSrv->SetAssign("export", Export);
+	Export = IOSrv->ManglePath("export:");
 
-	DataSrv->SetAssign("renderpath", Home + "/Shaders/");
-	DataSrv->SetAssign("scripts", Home + "/Scripts/");
-	DataSrv->SetAssign("physics", Export + "/physics/");
-	DataSrv->SetAssign("meshes", Export + "/meshes/");
-	DataSrv->SetAssign("textures", Export + "/textures/");
-	DataSrv->SetAssign("anims", Export + "/anims/");
-	DataSrv->SetAssign("gfxlib", Export + "/gfxlib/");
-	DataSrv->SetAssign("db", Export + "/db/");
-	DataSrv->SetAssign("game", Export + "/game/");
-	DataSrv->SetAssign("sound", Export + "/audio/");
-	DataSrv->SetAssign("cegui", Export + "/cegui/");
+	IOSrv->SetAssign("renderpath", Home + "/Shaders/");
+	IOSrv->SetAssign("scripts", Home + "/Scripts/");
+	IOSrv->SetAssign("physics", Export + "/physics/");
+	IOSrv->SetAssign("meshes", Export + "/meshes/");
+	IOSrv->SetAssign("textures", Export + "/textures/");
+	IOSrv->SetAssign("anims", Export + "/anims/");
+	IOSrv->SetAssign("gfxlib", Export + "/gfxlib/");
+	IOSrv->SetAssign("db", Export + "/db/");
+	IOSrv->SetAssign("game", Export + "/game/");
+	IOSrv->SetAssign("sound", Export + "/audio/");
+	IOSrv->SetAssign("cegui", Export + "/cegui/");
 
 	CoreSrv->SetGlobal("parent_hwnd", (int)ParentHwnd);
 
@@ -118,11 +111,11 @@ bool CCIDEApp::Open()
 		FAIL;
 	}
 
-	nGfxServer2::Instance()->SetCursorVisibility(nGfxServer2::System);
+	//nGfxServer2::Instance()->SetCursorVisibility(nGfxServer2::System);
 
 	//RegisterAttributes();
 	SI::RegisterGlobals();
-	SI::RegisterEventManager();
+	SI::RegisterEventServer();
 	SI::RegisterEntityManager();
 
 	InputSrv->SetContextLayout(CStrID("Debug"), CStrID("Debug"));
@@ -133,7 +126,7 @@ bool CCIDEApp::Open()
 
 	n_printf("Setup input - OK\n");
 
-	EntityFct->SetDefaultLoader(Loading::CEntityLoader::Create());
+	//EntityFct->SetDefaultLoader(Loading::CEntityLoader::Create());
 
 	// Editor must load all static entities separately, so we comment it
 	//EntityFct->SetLoader(CStrID("StaticEnv"), Loading::CEnvironmentLoader::Create());
@@ -155,29 +148,29 @@ bool CCIDEApp::Open()
 	}
 
 	//init gameplay
-	QuestSystem = Story::CQuestSystem::Create();
-	DlgSystem = Story::CDlgSystem::Create(); //???init into Game::Server as manager?
-	ItemManager = Items::CItemManager::Create(); //???init into Game::Server as manager?
+	QuestSystem = Story::CQuestManager::Instance();
+	DlgSystem = Story::CDialogueManager::Instance(); //???init into Game::Server as manager?
+	ItemManager = Items::CItemManager::Instance(); //???init into Game::Server as manager?
 
 	SI::RegisterQuestSystem();
 
 	FSM.AddStateHandler(n_new(CAppStateEditor(CStrID("Editor"), this)));
 	FSM.Init(CStrID("Editor"));
 
-	DB::PValueTable CameraTable = DB::CValueTable::Create();
+	/*DB::PValueTable CameraTable = DB::CValueTable::Create();
 	CameraTable->AddColumn(Attr::GUID);
 	CameraTable->AddColumn(Attr::FieldOfView);
-	CameraTable->AddColumn(Attr::Transform);
+	CameraTable->AddColumn(Attr::Transform);*/
 
-	EditorCamera = EntityFct->CreateTmpEntity(CStrID("__EditorCamera"), CStrID("Dummy"), CameraTable, CameraTable->AddRow());
-	EntityFct->AttachProperty<Properties::CPropEditorCamera>(*EditorCamera);
-	EntityFct->AttachProperty<Properties::CPropInput>(*EditorCamera);
-	EntityFct->AttachProperty<Properties::CPropTransformable>(*EditorCamera);
-	matrix44 Tfm;
-	//!!!bad hardcode!
-	Tfm.lookatRh(vector3(0.f, -3.f, -2.f), vector3(0.f, 1.f, 0.f));
-	Tfm.translate(vector3(300.f, 145.f, 300.f));
-	EditorCamera->Set<matrix44>(Attr::Transform, Tfm);
+	//EditorCamera = EntityFct->CreateTmpEntity(CStrID("__EditorCamera"), CStrID("Dummy"), CameraTable, CameraTable->AddRow());
+	//EntityFct->AttachProperty<Properties::CPropEditorCamera>(*EditorCamera);
+	//EntityFct->AttachProperty<Properties::CPropInput>(*EditorCamera);
+	//EntityFct->AttachProperty<Properties::CPropTransformable>(*EditorCamera);
+	//matrix44 Tfm;
+	////!!!bad hardcode!
+	//Tfm.lookatRh(vector3(0.f, -3.f, -2.f), vector3(0.f, 1.f, 0.f));
+	//Tfm.translate(vector3(300.f, 145.f, 300.f));
+	//EditorCamera->Set<matrix44>(Attr::Transform, Tfm);
 
 	OK;
 }
@@ -209,12 +202,12 @@ void CCIDEApp::Close()
 }
 //---------------------------------------------------------------------
 
-void CCIDEApp::SetDataPathCB(Data::CDataPathCallback Cb, Data::CReleaseMemoryCallback ReleaseCb)
+void CCIDEApp::SetDataPathCB(IO::CDataPathCallback Cb, IO::CReleaseMemoryCallback ReleaseCb)
 {
 	if(Data::CDataServer::HasInstance())
 	{
-		DataSrv->ReleaseMemoryCB = ReleaseCb;
-		DataSrv->DataPathCB = Cb;
+		IOSrv->ReleaseMemoryCB = ReleaseCb;
+		IOSrv->DataPathCB = Cb;
 	}
 	else
 	{	
@@ -224,58 +217,47 @@ void CCIDEApp::SetDataPathCB(Data::CDataPathCallback Cb, Data::CReleaseMemoryCal
 }
 //---------------------------------------------------------------------
 
-/*
-#include "tools/ncmdlineargs.h"
-
-void
-CApplication::SetupFromCmdLineArgs()
+void CCIDEApp::ApplyGroundConstraints(const Game::CEntity& Entity, vector3& Position)
 {
-    //// setup optional startup savegame or level paths
-    //this->SetStartupSavegame(this->cmdLineArgs.GetStringArg("-loadgame", 0));
-    //this->SetStartupLevel(this->cmdLineArgs.GetStringArg("-level", 0));
-    //this->SetWorldDb(this->cmdLineArgs.GetStringArg("-db", 0));
+	if (!DenyEntityAboveGround && !DenyEntityBelowGround) return;
 
-    // setup display mode
-    nDisplayMode2 mode = AppEnv->GetDisplayMode();
-    if (this->cmdLineArgs.HasArg("-fullscreen"))
-    {
-        if (this->cmdLineArgs.GetBoolArg("-fullscreen") | this->GetForceFullscreen())
-        {
-            mode.SetType(nDisplayMode2::Fullscreen);
-        }
-        else
-        {
-            mode.SetType(nDisplayMode2::Windowed);
-        }
-    }
-    mode.SetXPos(this->cmdLineArgs.GetIntArg("-x", mode.GetXPos()));
-    mode.SetYPos(this->cmdLineArgs.GetIntArg("-y", mode.GetYPos()));
-    mode.SetWidth(this->cmdLineArgs.GetIntArg("-w", mode.GetWidth()));
-    mode.SetHeight(this->cmdLineArgs.GetIntArg("-h", mode.GetHeight()));
-    mode.SetAntiAliasSamples(this->cmdLineArgs.GetIntArg("-aa", mode.GetAntiAliasSamples()));
-    AppEnv->SetDisplayMode(mode);
+	int SelfPhysicsID = -1;
+	Prop::CPropPhysics* pPhysProp = Entity.GetProperty<Prop::CPropPhysics>();
 
-    // set project directory override
-    nString projDirArg = this->cmdLineArgs.GetStringArg("-projdir", 0);
-    if (projDirArg.IsValid())
-    {
-        AppEnv->SetProjectDirectory(projDirArg);
-    }
+	float LocalMinY = 0.f;
+	if (pPhysProp)
+	{
+		Game::CEntity* pPhysEnt = pPhysProp->GetEntity();
+		if (pPhysEnt)
+		{
+			//SelfPhysicsID = pPhysProp->GetUID();
 
-    // set feature set override
-    nString featureSetArg = this->cmdLineArgs.GetStringArg("-featureset", 0);
-    if (featureSetArg.IsValid())
-    {
-        AppEnv->SetFeatureSet(featureSetArg);
-    }
+			CAABB AABB;
+			pPhysProp->GetAABB(AABB);
 
-    // set render path override
-    nString renderPathArg = this->cmdLineArgs.GetStringArg("-renderpath", 0);
-    if (renderPathArg.IsValid())
-    {
-        AppEnv->SetRenderPath(renderPathArg);
-    }
+			////!!!THIS SHOULDN'T BE THERE! Tfm must be adjusted inside entity that fixes it.
+			//// I.e. AABB must be translated in GetAABB or smth.
+			//float PhysEntY = pPhysProp->GetTransform().pos_component().y;
+			//float AABBPosY = AABB.center().y;
+
+			//LocalMinY -= (AABB.extents().y - AABBPosY + PhysEntY);
+
+			////!!!tmp hack, need more general code!
+			//if (pPhysEnt->IsA(Physics::CCharEntity::RTTI))
+			//	LocalMinY -= ((Physics::CCharEntity*)pPhysEnt)->Hover;
+		}
+		else SelfPhysicsID = -1;
+	}
+	else SelfPhysicsID = -1;
+
+	/*CEnvInfo Info;
+	EnvQueryMgr->GetEnvInfoAt(vector3(Position.x, Position.y + 500.f, Position.z), Info, 1000.f, SelfPhysicsID);
+
+	float MinY = Position.y + LocalMinY;
+	if ((DenyEntityAboveGround && MinY > Info.WorldHeight) ||
+		(DenyEntityBelowGround && MinY < Info.WorldHeight))
+		Position.y = Info.WorldHeight - LocalMinY;*/
 }
-*/
+//---------------------------------------------------------------------
 
 } // namespace App

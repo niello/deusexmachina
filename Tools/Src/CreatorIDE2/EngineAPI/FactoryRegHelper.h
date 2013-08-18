@@ -38,7 +38,6 @@
 #include <Physics/PropTrigger.h>
 #include <Scripting/PropScriptable.h>
 #include <Combat/Prop/PropDestructible.h>
-#include <World/Prop/PropTransitionZone.h>
 #include <Items/Prop/PropItem.h>
 #include <Items/Prop/PropEquipment.h>
 
