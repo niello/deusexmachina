@@ -76,7 +76,30 @@ namespace HrdLib
 
         public HrdIndentWriter Write(IFormatProvider formatProvider, string formatString, params object[] args)
         {
-            var text = string.Format(formatProvider, formatString, args);
+            if (args == null)
+                return Write(formatString);
+
+            object[] preparedArgs = null;
+            for (int i = 0; i < args.Length; i++)
+            {
+                var typeArg = args[i] as Type;
+                if (typeArg != null)
+                {
+                    var preparedArg = ReflectionHelper.GetCsTypeName(typeArg);
+                    if (preparedArgs == null)
+                    {
+                        preparedArgs = new object[args.Length];
+                        Array.Copy(args, preparedArgs, i);
+                    }
+                    preparedArgs[i] = preparedArg;
+                }
+                else if (preparedArgs != null)
+                    preparedArgs[i] = args[i];
+            }
+            if (preparedArgs == null)
+                preparedArgs = args;
+
+            var text = string.Format(formatProvider, formatString, preparedArgs);
             return Write(text);
         }
 

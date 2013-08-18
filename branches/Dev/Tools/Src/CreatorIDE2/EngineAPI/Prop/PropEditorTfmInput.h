@@ -2,7 +2,7 @@
 #ifndef __CIDE_PROP_EDITOR_TFM_INPUT_H__
 #define __CIDE_PROP_EDITOR_TFM_INPUT_H__
 
-#include <Input/PropInput.h>
+//#include <Input/PropInput.h>
 
 // Input processor that allows to transform current entity in the editor
 

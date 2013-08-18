@@ -91,6 +91,11 @@ namespace HrdLib
             }
         }
 
+        public bool IsGeneric
+        {
+            get { return Type.IsGenericType; }
+        }
+
         public int ArrayRank
         {
             get { return IsArray ? -1 : Type.GetArrayRank(); }

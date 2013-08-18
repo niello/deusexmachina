@@ -2,22 +2,22 @@
 #ifndef __CIDE_PROP_EDITOR_CAMERA_H__
 #define __CIDE_PROP_EDITOR_CAMERA_H__
 
-#include <Camera/Prop/PropCamera.h>
-#include <mathlib/polar.h>
+#include <Scene/Camera.h>
+#include <Math/Polar.h>
+#include <Events/EventsFwd.h>
 
 // Specialized editor camera
 
-namespace Properties
+namespace Scene
 {
 
-class CPropEditorCamera: public CPropCamera
+class CPropEditorCamera: public CCamera
 {
-	DeclareRTTI;
-	DeclareFactory(CPropEditorCamera);
+	__DeclareClass(CPropEditorCamera);
 
 private:
 
-	polar2		Angles;
+	CPolar		Angles;
 	float		Distance;
 	vector3		COI;				// Center of interest
 	bool		UpdateFromInside;
@@ -36,8 +36,6 @@ public:
 	virtual void Activate();
 	virtual void Deactivate();
 };
-
-RegisterFactory(CPropEditorCamera);
 
 }
 

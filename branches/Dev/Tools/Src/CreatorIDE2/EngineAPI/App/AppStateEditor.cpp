@@ -4,24 +4,22 @@
 //#include <Story/Dlg/DlgSystem.h>
 //#include <UI/UISystem.h>
 //#include <UI/IngameScreen.h>
-#include <Events/EventManager.h>
+#include <Events/EventServer.h>
 #include <Time/TimeServer.h>
-#include <Loading/LoaderServer.h> //???unload level here?
 #include <Game/GameServer.h>
 #include <Audio/AudioServer.h>
-#include <Gfx/GfxServer.h>
 #include <AI/AIServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
 #include <Input/Events/MouseBtnDown.h>
 #include <Input/Events/MouseBtnUp.h>
-#include <scene/nsceneserver.h>
+#include <Render/RenderServer.h>
 
 #include "CIDEApp.h" //!!!now only for click cb!
 
 namespace App
 {
-ImplementRTTI(App::CAppStateEditor, App::CStateHandler);
+__ImplementClassNoFactory(CAppStateEditor, CStateHandler)
 //ImplementFactory(App::CAppStateEditor);
 
 CAppStateEditor::CAppStateEditor(CStrID StateID, PCIDEApp pApp):
@@ -32,9 +30,9 @@ CAppStateEditor::CAppStateEditor(CStrID StateID, PCIDEApp pApp):
     RenderDbgEntities(false),
 	CIDEApp(pApp)
 {
-	PROFILER_INIT(profCompleteFrame, "profMangaCompleteFrame");
+	/*PROFILER_INIT(profCompleteFrame, "profMangaCompleteFrame");
 	PROFILER_INIT(profParticleUpdates, "profMangaParticleUpdates");
-	PROFILER_INIT(profRender, "profMangaRender");
+	PROFILER_INIT(profRender, "profMangaRender");*/
 }
 //---------------------------------------------------------------------
 
@@ -47,7 +45,7 @@ void CAppStateEditor::OnStateEnter(CStrID PrevState, PParams Params)
 {
 	// Loaded from db, not reset. TimeMgr now auto-reset timers if can't load them.
 	//TimeSrv->ResetAll();
-	TimeSrv->Update();
+	TimeSrv->Trigger();
 
 	GameSrv->PauseGame();
 
@@ -86,39 +84,37 @@ void CAppStateEditor::OnStateLeave(CStrID NextState)
 
 CStrID CAppStateEditor::OnFrame()
 {
-	PROFILER_START(profCompleteFrame);
+	//PROFILER_START(profCompleteFrame);
 	bool Running = true;
 
-	TimeSrv->Update();
+	TimeSrv->Trigger();
 
-	GfxSrv->Trigger();
+	//GfxSrv->Trigger();
 
-	EventMgr->ProcessPendingEvents();
+	EventSrv->ProcessPendingEvents();
 
 	//QuestSys->Trigger();
 	//DlgSys->Trigger();
 
-	AudioSrv->BeginScene();
-	GameSrv->OnFrame();
-	AudioSrv->EndScene();
+	//AudioSrv->BeginScene();
+	GameSrv->Trigger();
+	//AudioSrv->EndScene();
 
-	PROFILER_START(profRender);
-	if (GfxSrv->BeginRender())
+	//PROFILER_START(profRender);
+	if (RenderSrv->BeginFrame())
 	{
-		GfxSrv->Render();
-		//UISys->Render();
-		if (RenderDbgGfx) GfxSrv->RenderDebug();
-		if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
+		/*if (RenderDbgPhysics) PhysicsSrv->RenderDebug();
 		if (RenderDbgEntities) GameSrv->RenderDebug();
-		if (RenderDbgAI) AISrv->RenderDebug();
-		GfxSrv->EndRender();
+		if (RenderDbgAI) AISrv->RenderDebug();*/
+		RenderSrv->Draw();
+		RenderSrv->EndFrame();
 	}
-	PROFILER_STOP(profRender);
+	//PROFILER_STOP(profRender);
 
 	// Editor window receives window messages outside the frame, so clear input here, not in the beginning
 	InputSrv->Trigger();
 
-	PROFILER_STOP(profCompleteFrame);
+	//PROFILER_STOP(profCompleteFrame);
 
 	return (Running) ? GetID() : APP_STATE_EXIT;
 }
@@ -172,7 +168,7 @@ bool CAppStateEditor::OnToggleRenderDbgGfx(const Events::CEventBase& Event)
 
 bool CAppStateEditor::OnToggleRenderDbgScene(const Events::CEventBase& Event)
 {
-	nSceneServer::Instance()->SetRenderDebug(!nSceneServer::Instance()->GetRenderDebug());
+	//nSceneServer::Instance()->SetRenderDebug(!nSceneServer::Instance()->GetRenderDebug());
 	OK;
 }
 //---------------------------------------------------------------------

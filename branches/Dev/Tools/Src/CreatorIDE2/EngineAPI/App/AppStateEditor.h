@@ -3,8 +3,6 @@
 #define __CIDE_APP_STATE_EDITOR_H__
 
 #include <App/StateHandler.h>
-#include <kernel/nprofiler.h>
-#include <Events/Events.h>
 #include "CIDEApp.h"
 
 // The game state handler runs the game loop.
@@ -14,7 +12,7 @@ namespace App
 
 class CAppStateEditor: public CStateHandler
 {
-	DeclareRTTI;
+	__DeclareClassNoFactory
 	//DeclareFactory(CAppStateEditor);
 
 protected:
@@ -25,9 +23,9 @@ protected:
 	bool		RenderDbgEntities;
 	PCIDEApp	CIDEApp;
 
-	PROFILER_DECLARE(profCompleteFrame);
+	/*PROFILER_DECLARE(profCompleteFrame);
 	PROFILER_DECLARE(profParticleUpdates);
-	PROFILER_DECLARE(profRender);
+	PROFILER_DECLARE(profRender);*/
 
 	DECLARE_EVENT_HANDLER(MouseBtnDown, OnMouseBtnDown);
 	DECLARE_EVENT_HANDLER(MouseBtnUp, OnMouseBtnUp);

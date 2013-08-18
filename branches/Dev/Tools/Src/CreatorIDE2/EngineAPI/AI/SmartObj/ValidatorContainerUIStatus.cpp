@@ -2,7 +2,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CValidatorContainerUIStatus);
+__ImplementClass(CValidatorContainerUIStatus, "VCUS", CValidator);
 
 bool CValidatorContainerUIStatus::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {
