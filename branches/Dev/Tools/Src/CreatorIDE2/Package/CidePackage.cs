@@ -157,7 +157,7 @@ namespace CreatorIDE.Package
                     Debug.Assert(existingProject == null);
                     return false;
                 }
-                return _registeredProjects.Remove(projectNode.ProjectGuid);
+                return _registeredProjects.Remove(projectNode.ProjectIDGuid);
             }
         }
 
