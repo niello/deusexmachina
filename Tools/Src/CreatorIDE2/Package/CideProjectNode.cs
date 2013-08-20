@@ -34,11 +34,11 @@ namespace CreatorIDE.Package
             get { return base.ProjectIDGuid; }
             set
             {
-                if (ProjectIDGuid == value)
+                if (ProjectIDGuid == value || !IsProjectOpened)
                     base.ProjectIDGuid = value;
                 else
                 {
-                    // Every project registers itself in the package
+                    // Each project registers itself in the package
                     _package.UnregisterProject(this);
                     base.ProjectIDGuid = value;
                     _package.RegisterProject(this);
@@ -171,6 +171,21 @@ namespace CreatorIDE.Package
                 default:
                     return new CideFileNode(this, item);
             }
+        }
+
+        protected override void OnAfterProjectOpen(object sender, AfterProjectFileOpenedEventArgs e)
+        {
+            Debug.Assert(ProjectIDGuid != Guid.Empty);
+            _package.RegisterProject(this);
+
+            base.OnAfterProjectOpen(sender, e);
+        }
+
+        protected override void OnBeforeProjectClosed(object sender, BeforeProjectFileClosedEventArgs e)
+        {
+            base.OnBeforeProjectClosed(sender, e);
+
+            _package.UnregisterProject(this);
         }
 
         private void InitializeImageList()

@@ -200,9 +200,7 @@ namespace Microsoft.VisualStudio.Project
 
 		private bool isNewProject;
 
-		private bool projectOpened;
-
-		private bool buildIsPrepared;
+	    private bool buildIsPrepared;
 
 		private ImageHandler imageHandler;
 
@@ -623,7 +621,9 @@ namespace Microsoft.VisualStudio.Project
 			}
 		}
 
-		/// <summary>
+	    public bool IsProjectOpened { get; private set; }
+
+	    /// <summary>
 		/// Gets the path to the folder containing the project.
 		/// </summary>
 		public string ProjectFolder
@@ -844,7 +844,7 @@ namespace Microsoft.VisualStudio.Project
 		{
 			get
 			{
-				return this.projectOpened;
+				return this.IsProjectOpened;
 			}
 		}
 
@@ -3513,7 +3513,7 @@ namespace Microsoft.VisualStudio.Project
 			}
 
 			// Can't ask for the active config until the project is opened, so do nothing in that scenario
-			if(!this.projectOpened)
+			if(!this.IsProjectOpened)
 				return;
 
 			EnvDTE.Project automationObject = this.GetAutomationObject() as EnvDTE.Project;
@@ -3535,7 +3535,7 @@ namespace Microsoft.VisualStudio.Project
 			}
 
 			// Can't ask for the active config until the project is opened, so do nothing in that scenario
-			if(!projectOpened)
+			if(!IsProjectOpened)
 				return;
 
 			// We cannot change properties during the build so if the config
@@ -5495,16 +5495,18 @@ namespace Microsoft.VisualStudio.Project
 				if(null != this.projectEventsProvider)
 				{
 					this.projectEventsProvider.AfterProjectFileOpened -= this.OnAfterProjectOpen;
+				    this.projectEventsProvider.BeforeProjectFileClosed -= this.OnBeforeProjectClosed;
 				}
 				this.projectEventsProvider = value;
 				if(null != this.projectEventsProvider)
 				{
 					this.projectEventsProvider.AfterProjectFileOpened += this.OnAfterProjectOpen;
+				    this.projectEventsProvider.BeforeProjectFileClosed += this.OnBeforeProjectClosed;
 				}
 			}
 		}
 
-		#endregion
+	    #endregion
 
 		#region IVsAggregatableProject Members
 
@@ -5906,10 +5908,15 @@ namespace Microsoft.VisualStudio.Project
 			this.sccAuxPath = this.GetProjectProperty(ProjectFileConstants.SccAuxPath);
 		}
 
-		private void OnAfterProjectOpen(object sender, AfterProjectFileOpenedEventArgs e)
+		protected virtual void OnAfterProjectOpen(object sender, AfterProjectFileOpenedEventArgs e)
 		{
-			this.projectOpened = true;
+			this.IsProjectOpened = true;
 		}
+
+        protected virtual void OnBeforeProjectClosed(object sender, BeforeProjectFileClosedEventArgs e)
+        {
+            this.IsProjectOpened = false;
+        }
 
 		private static XmlElement WrapXmlFragment(XmlDocument document, XmlElement root, Guid flavor, string configuration, string fragment)
 		{
