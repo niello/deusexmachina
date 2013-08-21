@@ -6,22 +6,25 @@ namespace CreatorIDE.Package
 {
     internal sealed class SR: StringResources<ResourceProvider>
     {
-        public const string GuidString = "2C77FF92-B8B4-4653-8F4E-5C5AC52895AE";
+        public const string
+            GuidString = "2C77FF92-B8B4-4653-8F4E-5C5AC52895AE";
 
-        public const string EmptyNodeCaption = "EmptyNodeCaption",
-                            FileNotFound = "FileNotFound",
-                            FileNotFoundFormatString = "FileNotFoundFormatString",
-                            FullPathPropertyName = "FullPathPropertyName",
-                            LevelDatabaseFile = "LevelDatabaseFile",
-                            LevelObjectBrowserCaption = "LevelObjectBrowserCaption",
-                            MiscCategoryName = "MiscCategoryName",
-                            OpenLevelDatabaseFile = "OpenLevelDatabaseFile",
-                            PackagePathPropertyName = "PackagePathPropertyName",
-                            RelativePathPropertyName = "RelativePathPropertyName",
-                            ScopeIsAlreadyDeclaredFormatString = "ScopeIsAlreadyDeclaredFormatString",
-                            ScopeNameIsInvalidFormatString = "ScopeNameIsInvalidFormatString",
-                            ScopeNameIsTooShort = "ScopeNameIsTooShort",
-                            ScopePropertyName = "ScopePropertyName";
+        public const string
+            BuildActionPropertyName = "BuildActionPropertyName",
+            EmptyNodeCaption = "EmptyNodeCaption",
+            FileNotFound = "FileNotFound",
+            FileNotFoundFormatString = "FileNotFoundFormatString",
+            FullPathPropertyName = "FullPathPropertyName",
+            LevelDatabaseFile = "LevelDatabaseFile",
+            LevelObjectBrowserCaption = "LevelObjectBrowserCaption",
+            MiscCategoryName = "MiscCategoryName",
+            OpenLevelDatabaseFile = "OpenLevelDatabaseFile",
+            PackagePathPropertyName = "PackagePathPropertyName",
+            RelativePathPropertyName = "RelativePathPropertyName",
+            ScopeIsAlreadyDeclaredFormatString = "ScopeIsAlreadyDeclaredFormatString",
+            ScopeNameIsInvalidFormatString = "ScopeNameIsInvalidFormatString",
+            ScopeNameIsTooShort = "ScopeNameIsTooShort",
+            ScopePropertyName = "ScopePropertyName";
 
         private SR()
         {
