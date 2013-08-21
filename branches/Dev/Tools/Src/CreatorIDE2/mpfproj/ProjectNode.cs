@@ -4719,13 +4719,13 @@ namespace Microsoft.VisualStudio.Project
 					try
 					{
 						ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 1));
-						if(op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
+                        if(op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
 						{
 							this.AddFileFromTemplate(file, newFileName);
 						}
-						else
+						else if (op != VSADDITEMOPERATION.VSADDITEMOP_OPENFILE)
 						{
-							PackageUtilities.CopyUrlToLocal(new Uri(file), newFileName);
+						    PackageUtilities.CopyUrlToLocal(new Uri(file), newFileName);
 						}
 					}
 					finally
