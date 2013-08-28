@@ -2285,25 +2285,27 @@ namespace Microsoft.VisualStudio.Project
 			return false;
 		}
 
-		/// <summary>
-		/// Create a file node based on an msbuild item.
-		/// </summary>
-		/// <param name="item">msbuild item</param>
-		/// <returns>FileNode added</returns>
-		public virtual FileNode CreateFileNode(ProjectElement item)
+	    /// <summary>
+	    /// Create a file node based on an msbuild item.
+	    /// </summary>
+	    /// <param name="item">msbuild item</param>
+	    /// <param name="parentNode">parent node for the new file item</param>
+	    /// <returns>FileNode added</returns>
+	    public virtual FileNode CreateFileNode(ProjectElement item, HierarchyNode parentNode)
 		{
 			return new FileNode(this, item);
 		}
 
-		/// <summary>
-		/// Create a file node based on a string.
-		/// </summary>
-		/// <param name="file">filename of the new filenode</param>
-		/// <returns>File node added</returns>
-		public virtual FileNode CreateFileNode(string file)
+	    /// <summary>
+	    /// Create a file node based on a string.
+	    /// </summary>
+	    /// <param name="file">filename of the new filenode</param>
+	    /// <param name="parentNode">parent node for the new filenode</param>
+	    /// <returns>File node added</returns>
+	    public virtual FileNode CreateFileNode(string file, HierarchyNode parentNode)
 		{
 			ProjectElement item = this.AddFileToMsBuild(file);
-			return this.CreateFileNode(item);
+	        return this.CreateFileNode(item, parentNode);
 		}
 
 		/// <summary>
@@ -3424,7 +3426,7 @@ namespace Microsoft.VisualStudio.Project
 			else
 			{
 				//Create and add new filenode to the project
-				child = this.CreateFileNode(fileName);
+			    child = this.CreateFileNode(fileName, parentNode);
 			}
 
 			parentNode.AddChild(child);
@@ -5781,7 +5783,7 @@ namespace Microsoft.VisualStudio.Project
 		/// <returns>Added node</returns>
 		private HierarchyNode AddFileNodeToNode(MSBuild.BuildItem item, HierarchyNode parentNode)
 		{
-			FileNode node = this.CreateFileNode(new ProjectElement(this, item, false));
+			FileNode node = this.CreateFileNode(new ProjectElement(this, item, false), parentNode);
 			parentNode.AddChild(node);
 			return node;
 		}

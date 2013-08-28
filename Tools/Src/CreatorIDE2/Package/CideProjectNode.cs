@@ -148,24 +148,30 @@ namespace CreatorIDE.Package
             return folderNode;
         }
 
-        public override FileNode CreateFileNode(ProjectElement item)
+        public override FileNode CreateFileNode(ProjectElement item, HierarchyNode parentNode)
         {
-            var ext = item.GetMetadata(ProjectFileConstants.Include);
-            if (ext != null)
+            var buildAction = CideBuildAction.Inherited;
+            var buildActionStr = item.GetMetadata(CideProjectElements.FileBuildAction);
+            if (!string.IsNullOrEmpty(buildActionStr))
             {
-                int lastDotIdx = ext.LastIndexOf('.');
-                if (lastDotIdx == ext.Length - 1 || lastDotIdx < 0)
-                    ext = null;
-                else
-                    ext = ext.Substring(lastDotIdx + 1);
+                try
+                {
+                    buildAction = (CideBuildAction) Enum.Parse(typeof (CideBuildAction), buildActionStr, true);
+                }
+                catch (ArgumentException)
+                {
+                }
+            }
+            if (buildAction == CideBuildAction.Inherited)
+            {
+                var folder = parentNode as CideFolderNode;
+                if (folder != null)
+                    buildAction = folder.EffectiveBuildAction;
             }
 
-            if (ext == null)
-                return base.CreateFileNode(item);
-
-            switch(ext.ToLower(CultureInfo.InvariantCulture))
+            switch (buildAction)
             {
-                case LevelNode.FileExtension:
+                case CideBuildAction.Level:
                     return new LevelNode(this, item);
 
                 default:
@@ -257,6 +263,25 @@ namespace CreatorIDE.Package
                 return false;
             }
             return _scopeMap.TryGetValue(scope, out folder);
+        }
+
+        public void OnFileBuildActionChanged(CideFileNode cideFileNode)
+        {
+            switch (cideFileNode.EffectiveBuildAction)
+            {
+                case CideBuildAction.Level:
+                    if (cideFileNode is LevelNode)
+                        return;
+                    break;
+
+                default:
+                    if (cideFileNode.GetType() == typeof (CideFileNode))
+                        return;
+                    break;
+            }
+
+            var newNode = (CideFileNode) CreateFileNode(cideFileNode.ItemNode, cideFileNode.Parent);
+            cideFileNode.Replace(newNode);
         }
     }
 }

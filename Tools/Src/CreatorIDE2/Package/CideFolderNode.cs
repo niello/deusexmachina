@@ -84,9 +84,56 @@ namespace CreatorIDE.Package
             }
         }
 
+        public CideBuildAction BuildAction
+        {
+            get
+            {
+                var buildAction = ItemNode.GetMetadata(CideProjectElements.FolderBuildAction);
+                if (!string.IsNullOrEmpty(buildAction))
+                {
+                    try
+                    {
+                        return (CideBuildAction) Enum.Parse(typeof (CideBuildAction), buildAction, true);
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                }
+                return CideBuildAction.Inherited;
+            }
+            set
+            {
+                var oldAction = EffectiveBuildAction;
+                ItemNode.SetMetadata(CideProjectElements.FolderBuildAction, value == CideBuildAction.Inherited ? null : value.ToString());
+                if (oldAction != EffectiveBuildAction)
+                    OnBuildActionChanged(oldAction);
+            }
+        }
+
+        public CideBuildAction EffectiveBuildAction
+        {
+            get
+            {
+                var action = BuildAction;
+                if (action != CideBuildAction.Inherited)
+                    return action;
+
+                var parent = Parent as CideFolderNode;
+                if (parent != null)
+                    return parent.EffectiveBuildAction;
+
+                return CideBuildAction.None;
+            }
+        }
+
         public CideFolderNode(CideProjectNode root, string relativePath, ProjectElement element):
             base(root, relativePath, element)
         {
+        }
+
+        private void OnBuildActionChanged(CideBuildAction oldAction)
+        {
+            
         }
 
         protected override NodeProperties CreatePropertiesObject()
@@ -157,6 +204,13 @@ namespace CreatorIDE.Package
         {
             get { return ((CideFolderNode) Node).Scope; }
             set { ((CideFolderNode) Node).Scope = value; }
+        }
+
+        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.FolderBuildActionPropertyName)]
+        public CideBuildAction BuildAction
+        {
+            get { return ((CideFolderNode) Node).BuildAction; }
+            set { ((CideFolderNode) Node).BuildAction = value; }
         }
 
         public CideFolderNodeProperties(CideFolderNode node):

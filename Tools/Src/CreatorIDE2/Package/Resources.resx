@@ -120,6 +120,9 @@
   <data name="BuildActionPropertyName" xml:space="preserve">
     <value>Build Action</value>
   </data>
+  <data name="EffectiveBuildActionPropertyName" xml:space="preserve">
+    <value>Effective Build Action</value>
+  </data>
   <data name="EmptyNodeCaption" xml:space="preserve">
     <value>The project is empty.</value>
   </data>
@@ -128,6 +131,9 @@
   </data>
   <data name="FileNotFoundFormatString" xml:space="preserve">
     <value>File "{0}" not found.</value>
+  </data>
+  <data name="FolderBuildActionPropertyName" xml:space="preserve">
+    <value>Default Build Action</value>
   </data>
   <data name="FullPathPropertyName" xml:space="preserve">
     <value>Full Path</value>

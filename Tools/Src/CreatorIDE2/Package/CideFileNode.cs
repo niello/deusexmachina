@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Text;
 using CreatorIDE.Core;
 using Microsoft.VisualStudio.Project;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {
@@ -43,9 +41,65 @@ namespace CreatorIDE.Package
             }
         }
 
+        public CideBuildAction BuildAction
+        {
+            get
+            {
+                var value = ItemNode.GetMetadata(CideProjectElements.FileBuildAction);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    try
+                    {
+                        return (CideBuildAction) Enum.Parse(typeof (CideBuildAction), value, true);
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                }
+                return CideBuildAction.Inherited;
+            }
+            set
+            {
+                var oldAction = EffectiveBuildAction;
+                ItemNode.SetMetadata(CideProjectElements.FileBuildAction, value == CideBuildAction.Inherited ? null : value.ToString());
+                if (oldAction != EffectiveBuildAction)
+                    OnBuildActionChanged();
+            }
+        }
+
+        public CideBuildAction EffectiveBuildAction
+        {
+            get
+            {
+                var action = BuildAction;
+                if (action != CideBuildAction.Inherited)
+                    return action;
+
+                var folder = Parent as CideFolderNode;
+                if (folder != null)
+                    return folder.EffectiveBuildAction;
+
+                return CideBuildAction.None;
+            }
+        }
+
         public CideFileNode(CideProjectNode project, ProjectElement element):
             base(project, element)
         {
+        }
+
+        protected void OnBuildActionChanged()
+        {
+            ProjectMgr.OnFileBuildActionChanged(this);
+        }
+
+        public void Replace(CideFileNode newNode)
+        {
+            Close();
+
+            Parent.AddChild(newNode);
+            RaiseEvent(events => events.OnItemDeleted(ID));
+            Parent.RemoveChild(this);
         }
 
         protected override NodeProperties CreatePropertiesObject()
@@ -65,22 +119,14 @@ namespace CreatorIDE.Package
         [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.BuildActionPropertyName)]
         public new CideBuildAction BuildAction
         {
-            get
-            {
-                var value = Node.ItemNode.ItemName;
-                if (string.IsNullOrEmpty(value))
-                    return CideBuildAction.None;
-                
-                try
-                {
-                    return (CideBuildAction) Enum.Parse(typeof (CideBuildAction), value, true);
-                }
-                catch (ArgumentException)
-                {
-                    return CideBuildAction.None;
-                }
-            }
-            set { Node.ItemNode.ItemName = value.ToString(); }
+            get { return Node.BuildAction; }
+            set { Node.BuildAction = value; }
+        }
+
+        [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.EffectiveBuildActionPropertyName)]
+        public CideBuildAction EffectiveBuildAction
+        {
+            get { return Node.EffectiveBuildAction; }
         }
 
         [Browsable(true), AutomationBrowsable(true), SRCategory(SR.GuidString, SR.MiscCategoryName), SRDisplayName(SR.GuidString, SR.ScopePropertyName)]

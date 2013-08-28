@@ -11,9 +11,11 @@ namespace CreatorIDE.Package
 
         public const string
             BuildActionPropertyName = "BuildActionPropertyName",
+            EffectiveBuildActionPropertyName = "EffectiveBuildActionPropertyName",
             EmptyNodeCaption = "EmptyNodeCaption",
             FileNotFound = "FileNotFound",
             FileNotFoundFormatString = "FileNotFoundFormatString",
+            FolderBuildActionPropertyName = "BuildActionPropertyName",
             FullPathPropertyName = "FullPathPropertyName",
             LevelDatabaseFile = "LevelDatabaseFile",
             LevelObjectBrowserCaption = "LevelObjectBrowserCaption",
