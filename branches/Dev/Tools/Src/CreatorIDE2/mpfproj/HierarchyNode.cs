@@ -2205,7 +2205,20 @@ namespace Microsoft.VisualStudio.Project
 		{
 			return;
 		}
-		#endregion
+
+	    protected void RaiseEvent(Action<IVsHierarchyEvents> hierarchyEvent)
+	    {
+	        if (hierarchyEvent == null)
+	            return;
+
+	        var node = ProjectMgr ?? this;
+	        var eventList = node.hierarchyEventSinks.Cast<IVsHierarchyEvents>().ToArray();
+
+	        foreach (var events in eventList)
+	            hierarchyEvent(events);
+	    }
+
+        #endregion
 
 		#region public methods
 

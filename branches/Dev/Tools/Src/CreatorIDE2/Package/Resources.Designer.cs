@@ -70,6 +70,15 @@ namespace CreatorIDE.Package {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Effective Build Action.
+        /// </summary>
+        internal static string EffectiveBuildActionPropertyName {
+            get {
+                return ResourceManager.GetString("EffectiveBuildActionPropertyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The project is empty..
         /// </summary>
         internal static string EmptyNodeCaption {
@@ -93,6 +102,15 @@ namespace CreatorIDE.Package {
         internal static string FileNotFoundFormatString {
             get {
                 return ResourceManager.GetString("FileNotFoundFormatString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default Build Action.
+        /// </summary>
+        internal static string FolderBuildActionPropertyName {
+            get {
+                return ResourceManager.GetString("FolderBuildActionPropertyName", resourceCulture);
             }
         }
         

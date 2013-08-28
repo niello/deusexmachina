@@ -5,6 +5,8 @@
         public const string
             FolderPackagePath = "PackagePath",
             FolderScope = "Scope",
+            FolderBuildAction = "DefaultBuildAction",
+            FileBuildAction = "SubType",
             HomeFolder = "HomePath";
     }
 }
