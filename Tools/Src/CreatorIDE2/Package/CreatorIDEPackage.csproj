@@ -76,6 +76,7 @@
     <Compile Include="EngineHostControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ICideHierarchyNode.cs" />
     <Compile Include="ILevelEditorTool.cs" />
     <Compile Include="ILevelEditorToolPane.cs" />
     <Compile Include="LevelEditorPane.cs" />
