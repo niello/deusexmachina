@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Resources;
 using System.Runtime.InteropServices;
@@ -10,7 +11,9 @@ using System.Windows.Forms;
 using CreatorIDE.Engine;
 using Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.Project;
+using Microsoft.VisualStudio.Shell;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
+using VsMenus = Microsoft.VisualStudio.Project.VsMenus;
 
 namespace CreatorIDE.Package
 {
@@ -146,6 +149,47 @@ namespace CreatorIDE.Package
             if (folderNode.IsScopeRoot)
                 AddToScopeMap(folderNode.Scope, folderNode);
             return folderNode;
+        }
+
+        protected override ProjectElement AddFileToMsBuild(string file)
+        {
+            var fileExtension = Path.GetExtension(file);
+            if (fileExtension != null)
+                fileExtension = fileExtension.ToLowerInvariant();
+
+            CideBuildAction buildAction;
+            switch (fileExtension)
+            {
+                case ".hrd":
+                    buildAction = CideBuildAction.Inherited;
+                    break;
+
+                case ".dlg":
+                    buildAction = CideBuildAction.Dialogue;
+                    break;
+
+                case ".lua":
+                    buildAction = CideBuildAction.LuaCode;
+                    break;
+
+                case null:
+                case "":
+                    buildAction = CideBuildAction.None;
+                    break;
+
+                default:
+                    buildAction = CideBuildAction.Content;
+                    break;
+            }
+
+            var itemPath = PackageUtilities.MakeRelativeIfRooted(file, BaseURI);
+            Debug.Assert(!Path.IsPathRooted(itemPath), "Cannot add item with full path.");
+
+            // All files in the project are content files. Build action is managed by SubType property
+            var newItem = CreateMsBuildFileItem(itemPath, ProjectFileConstants.Content);
+            if (buildAction != CideBuildAction.Inherited)
+                newItem.SetMetadata(CideProjectElements.FileBuildAction, buildAction.ToString());
+            return newItem;
         }
 
         public override FileNode CreateFileNode(ProjectElement item, HierarchyNode parentNode)
