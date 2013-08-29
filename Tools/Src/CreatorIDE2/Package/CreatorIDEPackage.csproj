@@ -65,6 +65,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\..\Build\VS2008\CreatorIDE2.AssemblyInfo.cs">
+      <Link>Properties\CreatorIDE2.AssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\Build\VS2008\CreatorIDE2.Version.cs">
+      <Link>Properties\CreatorIDE2.Version.cs</Link>
+    </Compile>
     <Compile Include="AttrEditorProvider.cs" />
     <Compile Include="CideBuildAction.cs" />
     <Compile Include="CideEditorFactory.cs" />
