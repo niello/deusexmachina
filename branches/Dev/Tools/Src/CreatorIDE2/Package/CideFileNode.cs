@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {
-    public class CideFileNode: FileNode
+    public class CideFileNode: FileNode, ICideHierarchyNode
     {
         public new CideProjectNode ProjectMgr { get { return (CideProjectNode) base.ProjectMgr; } }
 
@@ -86,6 +86,11 @@ namespace CreatorIDE.Package
         public CideFileNode(CideProjectNode project, ProjectElement element):
             base(project, element)
         {
+        }
+
+        void ICideHierarchyNode.OnBuildActionChanged()
+        {
+            OnBuildActionChanged();
         }
 
         protected void OnBuildActionChanged()

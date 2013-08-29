@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 namespace CreatorIDE.Package
 {
     [ComVisible(true), Guid(GuidString)]
-    public class CideFolderNode: FolderNode
+    public class CideFolderNode: FolderNode, ICideHierarchyNode
     {
         private const string GuidString = "F13A5C9F-C62E-4FDA-954F-7537BC28228C";
 
@@ -106,7 +106,7 @@ namespace CreatorIDE.Package
                 var oldAction = EffectiveBuildAction;
                 ItemNode.SetMetadata(CideProjectElements.FolderBuildAction, value == CideBuildAction.Inherited ? null : value.ToString());
                 if (oldAction != EffectiveBuildAction)
-                    OnBuildActionChanged(oldAction);
+                    OnBuildActionChanged();
             }
         }
 
@@ -131,9 +131,22 @@ namespace CreatorIDE.Package
         {
         }
 
-        private void OnBuildActionChanged(CideBuildAction oldAction)
+        void ICideHierarchyNode.OnBuildActionChanged()
         {
-            
+            OnBuildActionChanged();
+        }
+
+        protected void OnBuildActionChanged()
+        {
+            for (var child = FirstChild; child != null; child = child.NextSibling)
+            {
+                var cideHier = child as ICideHierarchyNode;
+                if (cideHier == null)
+                    continue;
+
+                if (cideHier.BuildAction == CideBuildAction.Inherited)
+                    cideHier.OnBuildActionChanged();
+            }
         }
 
         protected override NodeProperties CreatePropertiesObject()

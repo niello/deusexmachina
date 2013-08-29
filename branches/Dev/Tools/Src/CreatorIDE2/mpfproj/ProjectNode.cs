@@ -4718,22 +4718,25 @@ namespace Microsoft.VisualStudio.Project
 						throw new InvalidOperationException();
 					}
 
-					try
-					{
-						ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 1));
-                        if(op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
-						{
-							this.AddFileFromTemplate(file, newFileName);
-						}
-						else if (op != VSADDITEMOPERATION.VSADDITEMOP_OPENFILE)
-						{
-						    PackageUtilities.CopyUrlToLocal(new Uri(file), newFileName);
-						}
-					}
-					finally
-					{
-						ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 0));
-					}
+				    try
+				    {
+				        ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 1));
+				        if (op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
+				        {
+				            AddFileFromTemplate(file, newFileName);
+				        }
+				        else
+				        {
+				            var directory = Path.GetDirectoryName(newFileName);
+				            if (directory != null && !Directory.Exists(directory))
+				                Directory.CreateDirectory(directory);
+				            PackageUtilities.CopyUrlToLocal(new Uri(file), newFileName);
+				        }
+				    }
+				    finally
+				    {
+				        ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 0));
+				    }
 				}
 
 				if(overwrite)
