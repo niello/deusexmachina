@@ -21,7 +21,7 @@ namespace CreatorIDE.Package
 
         public override int ImageIndex
         {
-            get { return ProjectMgr.ImageListOffset + Images.Globe; }
+            get { return ProjectMgr.ImageListOffset + Images.Map; }
         }
 
         protected override Guid DefaultEditorTypeID { get { return typeof(LevelEditorFactory).GUID; } }

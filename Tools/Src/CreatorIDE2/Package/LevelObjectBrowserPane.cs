@@ -23,7 +23,7 @@ namespace CreatorIDE.Package
         {
             Caption = SR.GetString(SR.LevelObjectBrowserCaption);
             BitmapResourceID = Images.ImageStripResID;
-            BitmapIndex = Images.GlobeView;
+            BitmapIndex = Images.MapView;
 
             _objectBrowser = new LevelObjectBrowserControl {Pane = this};
         }

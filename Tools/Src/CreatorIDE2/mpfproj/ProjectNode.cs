@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -590,7 +591,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				if(null == imageHandler)
 				{
-					imageHandler = new ImageHandler(typeof(ProjectNode).Assembly.GetManifestResourceStream("Microsoft.VisualStudio.Project.Resources.imagelis.bmp"));
+				    imageHandler = CreateImageHandler();
 				}
 				return imageHandler;
 			}
@@ -3741,6 +3742,11 @@ namespace Microsoft.VisualStudio.Project
 
 			this.buildProject.GlobalProperties.SetProperty(GlobalProperty.Platform.ToString(), platform);
 		}
+
+        protected virtual ImageHandler CreateImageHandler()
+        {
+            return new ImageHandler(typeof(ProjectNode).Assembly.GetManifestResourceStream("Microsoft.VisualStudio.Project.Resources.imagelis.bmp"));
+        }
 
 		#endregion
 
