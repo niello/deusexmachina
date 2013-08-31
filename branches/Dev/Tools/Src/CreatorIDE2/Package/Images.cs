@@ -5,12 +5,13 @@
         public const int
             ImageStripResID = 300,
 
-            Tree = 0,
+            Transparent = 0,
             House = 1,
-            Globe = 2,
-            WhiteBox = 3,
+            Map = 2,
+            Package = 3,
             Link = 4,
-            Transparent = 5,
-            GlobeView = 6;
+            FolderArrowGreen = 5,
+            MapView = 6,
+            Folder = 7;
     }
 }

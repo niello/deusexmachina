@@ -42,7 +42,7 @@ namespace Microsoft.VisualStudio.Project
 			{
 				throw new ArgumentNullException("resourceStream");
 			}
-			imageList = Utilities.GetImageList(resourceStream);
+		    imageList = Utilities.GetImageList(resourceStream);
 		}
 
 		/// <summary>

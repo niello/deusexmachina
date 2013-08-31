@@ -2633,8 +2633,12 @@ namespace Microsoft.VisualStudio.Project
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId = "cookie-1")]
 		public virtual int UnadviseHierarchyEvents(uint cookie)
 		{
-			this.hierarchyEventSinks.RemoveAt(cookie - 1);
-			return VSConstants.S_OK;
+            // We get -1 (which is equals to uint.MaxValue) when solution is closing
+		    if (cookie == 0 || cookie > hierarchyEventSinks.Count)
+		        return VSConstants.E_FAIL;
+		
+            hierarchyEventSinks.RemoveAt(cookie - 1);
+		    return VSConstants.S_OK;
 		}
 
 

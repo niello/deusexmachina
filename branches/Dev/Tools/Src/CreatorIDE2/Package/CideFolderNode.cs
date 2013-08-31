@@ -17,6 +17,11 @@ namespace CreatorIDE.Package
 
         public new CideProjectNode ProjectMgr { get { return (CideProjectNode) base.ProjectMgr; } }
 
+        public override int ImageIndex
+        {
+            get { return ProjectMgr.ImageListOffset + (IsScopeRoot ? Images.FolderArrowGreen : Images.Folder); }
+        }
+
         public string PackagePath
         {
             get
@@ -71,6 +76,8 @@ namespace CreatorIDE.Package
                     ProjectMgr.AddToScopeMap(value, this);
 
                 ItemNode.SetMetadata(CideProjectElements.FolderScope, value);
+
+                OnScopeChanged();
             }
         }
 
@@ -136,7 +143,12 @@ namespace CreatorIDE.Package
             OnBuildActionChanged();
         }
 
-        protected void OnBuildActionChanged()
+        private void OnScopeChanged()
+        {
+            ReDraw(UIHierarchyElement.Icon | UIHierarchyElement.Caption);
+        }
+
+        private void OnBuildActionChanged()
         {
             for (var child = FirstChild; child != null; child = child.NextSibling)
             {

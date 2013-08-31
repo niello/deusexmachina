@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Resources;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using CreatorIDE.Engine;
@@ -24,13 +22,22 @@ namespace CreatorIDE.Package
             GuidString = "42B325C6-0AEB-4f22-B72D-A486015F19E5",
             LanguageID = "11F12F75-2EC0-48e6-96DD-37368172FA18";
 
-        private readonly int _imageListOffset;
+        private int _imageListOffset;
         private readonly CidePackage _package;
         private readonly Dictionary<string, CideFolderNode> _scopeMap = new Dictionary<string, CideFolderNode>();
 
         public CideEngine Engine { get { return _package.Engine; } }
 
-        public int ImageListOffset { get { return _imageListOffset; } }
+        public int ImageListOffset
+        {
+            get
+            {
+                var handler = ImageHandler;
+                if (handler == null)
+                    return -1;
+                return _imageListOffset;
+            }
+        }
 
         public sealed override Guid ProjectIDGuid
         {
@@ -51,10 +58,7 @@ namespace CreatorIDE.Package
 
         public CideProjectNode(CidePackage package)
         {
-            _imageListOffset = ImageHandler.ImageList.Images.Count;
             _package = package;
-
-            InitializeImageList();
         }
 
         public new CidePackage Package { get { return (CidePackage)base.Package; } protected set { base.Package = value; } }
@@ -71,7 +75,7 @@ namespace CreatorIDE.Package
 
         public override int ImageIndex
         {
-            get { return ImageListOffset + Images.WhiteBox; }
+            get { return ImageListOffset + Images.Package; }
         }
 
         protected override ConfigProvider CreateConfigProvider()
@@ -238,25 +242,65 @@ namespace CreatorIDE.Package
             _package.UnregisterProject(this);
         }
 
-        private void InitializeImageList()
+        protected override ImageHandler CreateImageHandler()
         {
-            var asm = Assembly.GetAssembly(typeof (CideProjectNode));
-            var resourceManager = new ResourceManager("CreatorIDE.Package.VSPackage", asm);
-            var bitmap = resourceManager.GetObject(Images.ImageStripResID.ToString(CultureInfo.InvariantCulture)) as Bitmap;
-            Debug.Assert(bitmap != null);
+            ImageHandler baseHandler = null, result = null;
+            try
+            {
+                baseHandler = base.CreateImageHandler();
 
-            var customImageList = new ImageList
-                                      {
-                                          ColorDepth = ColorDepth.Depth24Bit,
-                                          ImageSize = new Size(16, 16),
-                                          TransparentColor = Color.Magenta
-                                      };
+                var customImageList = new ImageList
+                    {
+                        ColorDepth = ColorDepth.Depth32Bit,
+                        ImageSize = new Size(16, 16),
+                    };
 
-            customImageList.Images.AddStrip(bitmap);
+                result = new ImageHandler(customImageList);
+                foreach (Image img in baseHandler.ImageList.Images)
+                    result.AddImage(img);
+                _imageListOffset = result.ImageList.Images.Count;
 
-            foreach (Image img in customImageList.Images)
-                ImageHandler.AddImage(img);
+                var asm = Assembly.GetAssembly(typeof (CideProjectNode));
+                var stream = asm.GetManifestResourceStream("CreatorIDE.Package.Resources.ImageList32.bmp");
+                Debug.Assert(stream != null, "ImageList32.bmp not found!");
+                var bitmap = new Bitmap(stream);
+
+                result.ImageList.Images.AddStrip(bitmap);
+
+                return result;
+            }
+            catch
+            {
+                if (result != null)
+                    result.Dispose();
+                throw;
+            }
+            finally
+            {
+                if (baseHandler != null)
+                    baseHandler.Dispose();
+            }
         }
+
+        //private void InitializeImageList()
+        //{
+            
+        //    var resourceManager = new ResourceManager(, asm);
+        //    var bitmap = resourceManager.GetObject(Images.ImageStripResID.ToString(CultureInfo.InvariantCulture)) as Bitmap;
+        //    Debug.Assert(bitmap != null);
+
+        //    var customImageList = new ImageList
+        //                              {
+        //                                  ColorDepth = ColorDepth.Depth32Bit,
+        //                                  ImageSize = new Size(16, 16),
+        //                                  TransparentColor = Color.Transparent
+        //                              };
+
+        //    customImageList.Images.AddStrip(bitmap);
+
+        //    foreach (Image img in customImageList.Images)
+        //        ImageHandler.AddImage(img);
+        //}
 
         public bool RemoveFromScopeMap(CideFolderNode folder)
         {
