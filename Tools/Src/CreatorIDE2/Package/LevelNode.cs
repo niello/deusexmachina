@@ -32,14 +32,28 @@ namespace CreatorIDE.Package
 
         protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
         {
-            if (commandGroup == Commands.LevelsNodeMenuGuid)
+            if (commandGroup == Commands.FileNodeMenuGuid)
                 return false;
             return base.DisableCmdInCurrentMode(commandGroup, command);
         }
 
+        protected override int QueryStatusOnNode(Guid cmdGroup, uint cmd, IntPtr pCmdText, ref QueryStatusResult result)
+        {
+            if (cmdGroup == Commands.FileNodeMenuGuid)
+            {
+                switch (cmd)
+                {
+                    case Commands.FileNodeLink:
+                        result = QueryStatusResult.Supported | QueryStatusResult.Enabled;
+                        return HResult.Ok;
+                }
+            }
+            return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
+        }
+
         protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
-            if (cmdGroup == Commands.LevelsNodeMenuGuid)
+            if (cmdGroup == Commands.FileNodeMenuGuid)
             {
                 ExecNodeCommand(cmd);
                 return true;
@@ -50,9 +64,9 @@ namespace CreatorIDE.Package
 
         private void ExecNodeCommand(uint commandID)
         {
-            switch(commandID)
+            switch (commandID)
             {
-                case Commands.LevelsNodeLink:
+                case Commands.FileNodeLink:
                     LinkNode();
                     break;
 

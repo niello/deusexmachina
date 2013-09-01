@@ -38,7 +38,7 @@
 
 
     <Menus>
-      <!--<Menu guid="guidLevelsNodeMenu" id="root" priority="0x100" type="Context">
+      <!--<Menu guid="guidItemNodeMenu" id="root" priority="0x100" type="Context">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_PROJWIN"/>
         <Strings>
           <ButtonText>Levels Context Menu</ButtonText>
@@ -63,9 +63,21 @@
          must be a menu. -->
     <Groups>
 
-      <Group guid="guidLevelsNodeMenu" id="root" priority="0x100">
+      <Group guid="guidItemNodeMenu" id="root" priority="0x601">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
       </Group>
+
+      <Group guid="guidItemNodeMenu" id="root" priority="0x601">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_FOLDERNODE"/>
+      </Group>
+
+      <Group guid="guidItemNodeMenu" id="root" priority="0x601">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
+      </Group>
+
+      <Group guid="guidFileNodeMenu" id="root" priority="0x600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+      </Group>      
 
       <Group guid="guidLevelToolbar" id="toolbarGroup" priority="0x0000">
         <Parent guid="guidLevelToolbar" id="toolbar"/>
@@ -118,15 +130,28 @@
         </Strings>
       </Button>-->
 
-      <Button guid="guidLevelsNodeMenu" id="link" type="Button" priority="0x0100">
-        <Parent guid="guidLevelsNodeMenu" id="root"/>
+      <Button guid="guidFileNodeMenu" id="link" type="Button" priority="0x0100">
+        <Parent guid="guidFileNodeMenu" id="root"/>
         <Icon guid="guidImages" id="bmpPicLink"/>
         <CommandFlag>IconAndText</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
-          <CommandName>cmdidLinkLevelsNode</CommandName>
+          <CommandName>cmdLinkLevelsNode</CommandName>
           <ButtonText>Link File</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidItemNodeMenu" id="browseFolder" type="Button" priority="0x100">
+        <Parent guid="guidItemNodeMenu" id="root"/>
+        <Icon guid="guidImages" id="bmpPicFolder"/>
+        <CommandFlag>IconAndText</CommandFlag>
+        <Strings>
+          <CanonicalName>cmdBrowseFolder</CanonicalName>
+          <ButtonText>Browse Folder</ButtonText>
+        </Strings>
+      </Button>
+      
 
       <Button guid="guidLevelToolbar" id="objectBrowser" type="Button" priority="0x0001">
         <Parent guid="guidLevelToolbar" id="toolbarGroup"/>
@@ -183,9 +208,14 @@
     </GuidSymbol>
     
     <!-- This is the guid used to group the menu commands together -->
-    <GuidSymbol name="guidLevelsNodeMenu" value="{E96304E9-FE54-4ac7-9AC2-13EA54F29E82}">
+    <GuidSymbol name="guidItemNodeMenu" value="{E96304E9-FE54-4ac7-9AC2-13EA54F29E82}">
       <IDSymbol name="root" value="0x4200"/>
-      <IDSymbol name="link" value="0x4201"/>
+      <IDSymbol name="browseFolder" value="0x4202"/>
+    </GuidSymbol>
+
+    <GuidSymbol name="guidFileNodeMenu" value="{C3C10873-F69A-452a-B7CC-A4B177DAA39B}">
+      <IDSymbol name="root" value="0x4300"/>
+      <IDSymbol name="link" value="0x4301"/>
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{1890DE8D-A7A8-4420-8293-9CD5802DEB38}" >

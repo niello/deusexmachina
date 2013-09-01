@@ -76,6 +76,7 @@
     <Compile Include="CideEditorFactory.cs" />
     <Compile Include="CideEmptyNode.cs" />
     <Compile Include="CideFileNode.cs" />
+    <Compile Include="CideItemNodeCommand.cs" />
     <Compile Include="CidePathHelper.cs" />
     <Compile Include="CideProjectElements.cs" />
     <Compile Include="CideSelectionEvents.cs" />

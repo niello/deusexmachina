@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.IO;
 using CreatorIDE.Core;
 using Microsoft.VisualStudio.Project;
-using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CreatorIDE.Package
 {
@@ -41,6 +40,11 @@ namespace CreatorIDE.Package
             }
         }
 
+        ICideHierarchyNode ICideHierarchyNode.Parent
+        {
+            get { return Parent as ICideHierarchyNode; }
+        }
+
         public CideBuildAction BuildAction
         {
             get
@@ -69,19 +73,10 @@ namespace CreatorIDE.Package
 
         public CideBuildAction EffectiveBuildAction
         {
-            get
-            {
-                var action = BuildAction;
-                if (action != CideBuildAction.Inherited)
-                    return action;
-
-                var folder = Parent as CideFolderNode;
-                if (folder != null)
-                    return folder.EffectiveBuildAction;
-
-                return CideBuildAction.None;
-            }
+            get { return this.GetEffectiveBuildAction(); }
         }
+
+        public string FullPath { get { return Url; } }
 
         public CideFileNode(CideProjectNode project, ProjectElement element):
             base(project, element)
@@ -91,6 +86,31 @@ namespace CreatorIDE.Package
         void ICideHierarchyNode.OnBuildActionChanged()
         {
             OnBuildActionChanged();
+        }
+
+        protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
+        {
+            if (commandGroup == Commands.ItemNodeMenuGuid)
+            {
+                var status = this.QueryCommandStatus((CideItemNodeCommand)command);
+                return (status & (QueryStatusResult.Supported | QueryStatusResult.Enabled)) !=
+                       (QueryStatusResult.Supported | QueryStatusResult.Enabled);
+            }
+            return base.DisableCmdInCurrentMode(commandGroup, command);
+        }
+
+        protected override int QueryStatusOnNode(Guid cmdGroup, uint cmd, IntPtr pCmdText, ref QueryStatusResult result)
+        {
+            if (cmdGroup == Commands.ItemNodeMenuGuid)
+                return ComHelper.WrapFunction(false, this.QueryCommandStatus, (CideItemNodeCommand)cmd, out result);
+            return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
+        }
+
+        protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        {
+            if (cmdGroup == Commands.ItemNodeMenuGuid)
+                return this.ExecuteCommand((CideItemNodeCommand) cmd);
+            return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
         protected void OnBuildActionChanged()
