@@ -16,7 +16,7 @@ using VsMenus = Microsoft.VisualStudio.Project.VsMenus;
 namespace CreatorIDE.Package
 {
     [ComVisible(true), Guid(GuidString)]
-    public class CideProjectNode: ProjectNode
+    public class CideProjectNode: ProjectNode, ICideHierarchyNode
     {
         private const string
             GuidString = "42B325C6-0AEB-4f22-B72D-A486015F19E5",
@@ -37,6 +37,26 @@ namespace CreatorIDE.Package
                     return -1;
                 return _imageListOffset;
             }
+        }
+
+        ICideHierarchyNode ICideHierarchyNode.Parent
+        {
+            get { return Parent as ICideHierarchyNode; }
+        }
+
+        public CideBuildAction BuildAction
+        {
+            get { return EffectiveBuildAction; }
+        }
+
+        public CideBuildAction EffectiveBuildAction
+        {
+            get { return CideBuildAction.None; }
+        }
+
+        public string FullPath
+        {
+            get { return Url; }
         }
 
         public sealed override Guid ProjectIDGuid
@@ -81,20 +101,6 @@ namespace CreatorIDE.Package
         protected override ConfigProvider CreateConfigProvider()
         {
             return new CideConfigProvider(this);
-        }
-
-        protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
-        {
-            if (commandGroup == VsMenus.guidStandardCommandSet2K)
-            {
-                switch ((VsCommands2K)command)
-                {
-                    case VsCommands2K.ADDREFERENCE:
-                        return true;
-                }
-            }
-
-            return base.DisableCmdInCurrentMode(commandGroup, command);
         }
 
         public override Guid GetGuidProperty(VsHPropID propid)
@@ -282,26 +288,6 @@ namespace CreatorIDE.Package
             }
         }
 
-        //private void InitializeImageList()
-        //{
-            
-        //    var resourceManager = new ResourceManager(, asm);
-        //    var bitmap = resourceManager.GetObject(Images.ImageStripResID.ToString(CultureInfo.InvariantCulture)) as Bitmap;
-        //    Debug.Assert(bitmap != null);
-
-        //    var customImageList = new ImageList
-        //                              {
-        //                                  ColorDepth = ColorDepth.Depth32Bit,
-        //                                  ImageSize = new Size(16, 16),
-        //                                  TransparentColor = Color.Transparent
-        //                              };
-
-        //    customImageList.Images.AddStrip(bitmap);
-
-        //    foreach (Image img in customImageList.Images)
-        //        ImageHandler.AddImage(img);
-        //}
-
         public bool RemoveFromScopeMap(CideFolderNode folder)
         {
             if (folder == null)
@@ -370,6 +356,43 @@ namespace CreatorIDE.Package
 
             var newNode = (CideFileNode) CreateFileNode(cideFileNode.ItemNode, cideFileNode.Parent);
             cideFileNode.Replace(newNode);
+        }
+
+        protected override bool DisableCmdInCurrentMode(Guid commandGroup, uint command)
+        {
+            if (commandGroup == Commands.ItemNodeMenuGuid)
+            {
+                var status = this.QueryCommandStatus((CideItemNodeCommand)command);
+                return (status & (QueryStatusResult.Supported | QueryStatusResult.Enabled)) !=
+                       (QueryStatusResult.Supported | QueryStatusResult.Enabled);
+            }
+            if (commandGroup == VsMenus.guidStandardCommandSet2K)
+            {
+                switch ((VsCommands2K)command)
+                {
+                    case VsCommands2K.ADDREFERENCE:
+                        return true;
+                }
+            }
+            return base.DisableCmdInCurrentMode(commandGroup, command);
+        }
+
+        protected override int QueryStatusOnNode(Guid cmdGroup, uint cmd, IntPtr pCmdText, ref QueryStatusResult result)
+        {
+            if (cmdGroup == Commands.ItemNodeMenuGuid)
+                return ComHelper.WrapFunction(false, this.QueryCommandStatus, (CideItemNodeCommand)cmd, out result);
+            return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
+        }
+
+        protected override bool ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        {
+            if (cmdGroup == Commands.ItemNodeMenuGuid)
+                return this.ExecuteCommand((CideItemNodeCommand)cmd);
+            return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
+        }
+
+        void ICideHierarchyNode.OnBuildActionChanged()
+        {
         }
     }
 }
