@@ -53,12 +53,13 @@ namespace CreatorIDE.Package
             engine.PathRequest += OnEnginePathRequest;
             engine.MouseClick += OnEngineMouseClick;
             engine.Init(_engineHostControl.Handle, @"..\..\..\..\InsanePoet\Bin\data");
-            if (engine.GetLevelCount() > 0)
-            {
-                var level = engine.GetLevelRecord(0);
-                engine.LoadLevel(level.ID);
-            }
-            _engineHostControl.Engine = engine;
+            engine.LoadLevel(_levelNode.PackagePath);
+            //if (engine.GetLevelCount() > 0)
+            //{
+            //    var level = engine.GetLevelRecord(0);
+            //    engine.LoadLevel(level.ID);
+            //}
+            //_engineHostControl.Engine = engine;
 
             LoadEditorTools();
         }

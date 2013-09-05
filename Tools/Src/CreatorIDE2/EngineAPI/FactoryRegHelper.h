@@ -43,7 +43,10 @@
 
 // RENDERERS  ======================================
 
+#include <Render/Renderers/DebugGeomRenderer.h>
+#include <Render/Renderers/DebugTextRenderer.h>
 #include <Render/Renderers/ModelRenderer.h>
+#include <Render/Renderers/TerrainRenderer.h>
 
 // OTHER ===========================================
 
@@ -51,3 +54,16 @@
 #include <Items/ItemTplWeapon.h>
 #include <Debug/LuaConsole.h>
 #include <Debug/WatcherWindow.h>
+#include <UI/UIRenderer.h>
+
+void ForceFactoryRegistration()
+{
+	Render::CDebugGeomRenderer::ForceFactoryRegistration();
+	Render::CDebugTextRenderer::ForceFactoryRegistration();
+	Render::CModelRenderer::ForceFactoryRegistration();
+	Render::CTerrainRenderer::ForceFactoryRegistration();
+	
+	Debug::CLuaConsole::ForceFactoryRegistration();
+	Debug::CWatcherWindow::ForceFactoryRegistration();
+	Render::CUIRenderer::ForceFactoryRegistration();
+}

@@ -6,10 +6,16 @@
 using namespace App;
 
 bool Initialized = false;
+bool FactoryRegistrationRequired = true;
 
 API void* CreateEngine()
 {
 	n_assert(!AppInst);
+	if (FactoryRegistrationRequired)
+	{
+		ForceFactoryRegistration();
+		FactoryRegistrationRequired = false;
+	}
 	AppInst = new CCIDEApp();
 	return (void*)AppInst;
 }
@@ -18,6 +24,7 @@ API void* CreateEngine()
 API int Init(CIDEAppHandle Handle, HWND ParentWnd, LPCSTR ProjDir)
 {
 	DeclareCIDEApp(Handle);
+
 	CIDEApp->SetParentWindow(ParentWnd);
 	AppEnv->SetProjectDirectory(ProjDir);
 	if (CIDEApp->Open()) 
