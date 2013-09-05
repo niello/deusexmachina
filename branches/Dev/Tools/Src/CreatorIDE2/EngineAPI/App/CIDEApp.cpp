@@ -148,9 +148,9 @@ bool CCIDEApp::Open()
 	}
 
 	//init gameplay
-	QuestSystem = Story::CQuestManager::Instance();
-	DlgSystem = Story::CDialogueManager::Instance(); //???init into Game::Server as manager?
-	ItemManager = Items::CItemManager::Instance(); //???init into Game::Server as manager?
+	QuestSystem = n_new(Story::CQuestManager());
+	DlgSystem = n_new(Story::CDialogueManager()); //???init into Game::Server as manager?
+	ItemManager = n_new(Items::CItemManager()); //???init into Game::Server as manager?
 
 	SI::RegisterQuestSystem();
 
