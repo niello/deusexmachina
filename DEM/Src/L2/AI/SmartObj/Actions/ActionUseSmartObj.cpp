@@ -112,9 +112,12 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 
 void CActionUseSmartObj::Deactivate(CActor* pActor)
 {
-	//???or unset when actor face SO first time, and then begin anim Progress?
-	if (pActor->FacingStatus == AIFacing_DirSet)
-		pActor->GetMotorSystem().ResetRotation();
+	if (SubActFace.IsValid())
+	{
+		SubActFace->Deactivate(pActor);
+		SubActFace = NULL;
+		return;
+	}
 
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
@@ -128,7 +131,6 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 	if (WasDone)
 	{
-		//???GetEntity()->FireEvent(CStrID("PathAnimStop"));?
 		if (Action->OnEndCmd.IsValid()) pSOEntity->FireEvent(Action->OnEndCmd, P);
 		EventSrv->FireEvent(CStrID("OnIAOActionEnd"), P);
 	}

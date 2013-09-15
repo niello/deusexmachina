@@ -382,12 +382,12 @@ bool CGameServer::LoadGameLevel(CStrID ID)
 {
 	n_assert(CurrProfile.IsValid());
 
-	CString RelLevelPath = CString("/Levels/") + ID.CStr() + ".prm";
+	CString RelLevelPath = CString(ID.CStr()) + ".prm";
 
-	Data::PParams InitialLvl = DataSrv->LoadPRM("Game:" + RelLevelPath);
+	Data::PParams InitialLvl = DataSrv->LoadPRM("Levels:" + RelLevelPath);
 	n_assert(InitialLvl.IsValid());
 
-	CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue";
+	CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
 	Data::PParams SGLvl = DataSrv->ReloadPRM(DiffPath + RelLevelPath, false);
 
 	Data::PParams LevelDesc;

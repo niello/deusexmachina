@@ -105,6 +105,7 @@ public:
 
 	CTime			GetTime() const { return GameTimeSrc->GetTime(); }
 	CTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
+	DWORD			GetFrameID() const { return GameTimeSrc->GetFrameID(); }
 	bool			IsGamePaused() const { return GameTimeSrc->IsPaused(); }
 	void			PauseGame(bool Pause = true) const;
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }

@@ -522,6 +522,9 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 	if (!pOutPath || !MaxCount) FAIL;
 	if (!pNavQuery || (pActor->NavState != AINav_Planning && pActor->NavState != AINav_Following)) FAIL;
 
+	//!!!DBG!
+	n_printf("-> CNavSystem::GetPathEdges()\n");
+
 	const dtNavMesh* pNavMesh = pNavQuery->getAttachedNavMesh();
 
 	//!!!when add an edge, determine navigation controller for the poly
@@ -538,6 +541,9 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 		pEdge->Dest = OffMeshPoint;
 		pEdge->IsLast = false; //???can offmesh connection be the last edge?
 		++Count;
+
+		//!!!DBG!
+		n_printf("Path edge %d added (offmesh): %s\n", Count - 1, CString::FromVector3(pEdge->Dest).CStr());
 	}
 	else if (!pActor->IsNavLocationValid() && !pActor->IsAtPoint(Corridor.getPos(), false))
 	{
@@ -548,6 +554,9 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 		pEdge->Dest = Corridor.getPos();
 		pEdge->IsLast = false; // Recovery is always a result of a movement request
 		++Count;
+
+		//!!!DBG!
+		n_printf("Path edge %d added (recovery): %s\n", Count - 1, CString::FromVector3(pEdge->Dest).CStr());
 	}
 
 	if (Count == MaxCount) OK;
@@ -555,7 +564,7 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 	//!!!since DT_STRAIGHTPATH_#_CROSSINGS is used, more than 3 corners could be requested!
 	//???request/implement iterative pNavQuery->getNextCorner until MaxCount edges are formed?
 	//???use DT_STRAIGHTPATH_ALL_CROSSINGS? can action change where area doesn't change? if controller, it can!
-	const int MAX_CORNERS = 3;
+	const int MAX_CORNERS = 32; //!!!DBG uncomment! 3;
 	float CornerVerts[MAX_CORNERS * 3];
 	unsigned char CornerFlags[MAX_CORNERS];
 	dtPolyRef CornerPolys[MAX_CORNERS];
@@ -563,18 +572,59 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 	pNavQuery->findStraightPath(Corridor.getPos(), Corridor.getTarget(), Corridor.getPath(), Corridor.getPathCount(),
 								CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS, DT_STRAIGHTPATH_AREA_CROSSINGS);
 
+//!!!DBG!===================================================================
+	LPCSTR pNavStr = NULL;
+	if (pActor->NavState == AINav_Done) pNavStr = "Done";
+	else if (pActor->NavState == AINav_Failed) pNavStr = "Failed";
+	else if (pActor->NavState == AINav_DestSet) pNavStr = "DestSet";
+	else if (pActor->NavState == AINav_Planning) pNavStr = "Planning";
+	else if (pActor->NavState == AINav_Following) pNavStr = "Following";
+	n_printf("Pos: %s\n", CString::FromVector3(pActor->Position).CStr());
+	n_printf("Nav. corridor: %s\n", CString::FromVector3(vector3(Corridor.getPos())).CStr());
+
+		//n_printf("Begin corners:\n");
+
+		//for (int i = 0; i < CornerCount; ++i)
+		//{
+		//	vector3 To = CornerVerts + (i * 3);
+		//	n_printf("%s\n", CString::FromVector3(To).CStr());
+		//}
+
+		//n_printf("End corners\n");
+//!!!DBG!===================================================================
+
 	// The first one is our position, that can be skipped, or the first valid position with recovery edge already added.
-	const int FIRST_CORNER_IDX = 1;
-	if (CornerCount <= FIRST_CORNER_IDX) OK;
+	// Skip corners in the arrival tolerance.
+	int FirstIdx;
+	float ArrivalTolSq = pActor->ArrivalTolerance * pActor->ArrivalTolerance;
+	for (FirstIdx = 1; FirstIdx < CornerCount; ++FirstIdx)
+	{
+		float* pCrn = CornerVerts + FirstIdx * 3;
+		if (dtVdist2DSqr(pActor->Position.v, pCrn) > ArrivalTolSq || n_fabs(pActor->Position.y - pCrn[1]) > pActor->Height) break;
+	}
+
+	if (FirstIdx >= CornerCount) OK;
+
+//!!!DBG!===================================================================
+	//n_printf("Begin valid corners:\n");
+
+	//	for (int i = FirstIdx; i < CornerCount; ++i)
+	//	{
+	//		vector3 To = CornerVerts + (i * 3);
+	//		n_printf("%s\n", CString::FromVector3(To).CStr());
+	//	}
+
+	//	n_printf("End valid corners\n");
+//!!!DBG!===================================================================
 
 	// Code below relies on these assumptions. Normally this can never happen.
-	n_assert_dbg(FIRST_CORNER_IDX > 0 && !(CornerFlags[0] & DT_STRAIGHTPATH_OFFMESH_CONNECTION));
+	n_assert_dbg(FirstIdx > 0 && !(CornerFlags[0] & DT_STRAIGHTPATH_OFFMESH_CONNECTION));
 
 	//!!!Optimize not every frame but only when needed to fix path!
 	// (adjust call frequenCY, and mb force when path changes). More frequent when avoid obstacles
 	//???mb actual polys have changed here and we must re-get edges?
 	//!!!now optimization effect is sensible only at the next call!
-	const float* pNextCorner = &CornerVerts[dtMin(FIRST_CORNER_IDX + 1, CornerCount - 1) * 3];
+	const float* pNextCorner = &CornerVerts[dtMin(FirstIdx + 1, CornerCount - 1) * 3];
 	bool OptimizePathVis = true; //!!!to settings!
 	if (OptimizePathVis)
 		Corridor.optimizePathVisibility(pNextCorner, 30.f * pActor->Radius, pNavQuery, pNavFilter);
@@ -583,27 +633,29 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 	OffMeshRef = 0;
 	const dtPolyRef* pCurrPoly = Corridor.getPath();
 	const dtPolyRef* pLastPoly = Corridor.getPath() + Corridor.getPathCount();
-	for (int i = FIRST_CORNER_IDX; (i < CornerCount) && (Count < MaxCount); ++i)
+	for (int i = FirstIdx; (i < CornerCount) && (Count < MaxCount); ++i)
 	{
 		// Corner poly means "the poly that starts from this corner", so we get
 		// a previous poly, because we want to know the poly that ends at this corner.
 		CStrID CurrAction = GetPolyAction(pNavMesh, CornerPolys[i - 1]);
 
 		// If action or direction changes at this corner, start new edge
-		bool StartNewEdge = !Count || pEdge->Action != CurrAction;
+		bool StartNewEdge = (!Count) || (pEdge->Action != CurrAction);
 		if (!StartNewEdge && Count)
 		{
-			// Check if horizontal direction changed more than by 1 degree
+			// Check if horizontal direction changed (more than by very small angle, to handle float errors)
 			const vector3& Base = Count > 1 ? pOutPath[Count - 2].Dest : pActor->Position;
 			vector2 CurrDir(pEdge->Dest.x - Base.x, pEdge->Dest.z - Base.z);
 			vector2 NewDir(CornerVerts[i * 3] - Base.x, CornerVerts[i * 3 + 2] - Base.z);
 			float Dot = NewDir.dot(CurrDir);
-			const float CosOneDegreeSq = 0.999695f;
-			StartNewEdge = (Dot * Dot < NewDir.lensquared() * CurrDir.lensquared() * CosOneDegreeSq);
+			const float CosSmallAngleSq = 0.999999f;
+			StartNewEdge = (Dot * Dot < NewDir.lensquared() * CurrDir.lensquared() * CosSmallAngleSq);
 		}
 
 		if (StartNewEdge)
 		{
+		//!!!DBG!
+		n_printf("New regular edge started, Count = %d\n", Count);
 			pEdge = pOutPath + Count;
 			pEdge->Action = CurrAction;
 			pEdge->IsLast = false;
@@ -613,6 +665,9 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 		pEdge->Dest.set(&CornerVerts[i * 3]);
 		//???edge destination must have height of NavMesh or of actual geometry? Steering may depend on it.
 		//pNavQuery->getPolyHeight(CurrPoly, &CornerVerts[i * 3], &pNode->Dest.y);
+
+		//!!!DBG!
+		n_printf("Path edge %d added (regular): %s\n", Count - 1, CString::FromVector3(pEdge->Dest).CStr());
 
 		// If offmesh connection start encountered, we record its info and UpdatePosition() will detect
 		// if we are at the trigger radius to start traversal. We don't gather edges after this point.
@@ -627,6 +682,9 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 	}
 
 	pEdge->IsLast = (pActor->NavState == AINav_Following) && (CornerFlags[CornerCount - 1] & DT_STRAIGHTPATH_END);
+
+	//!!!DBG!
+	n_printf("<- CNavSystem::GetPathEdges()\n");
 
 	OK;
 }
@@ -665,8 +723,8 @@ void CNavSystem::RenderDebug()
 	Text.Format(
 		"Nav state: %s\n"
 		"Nav location is %s\n"
-		"Curr poly:        %d\n"
-		"Dest poly:        %d\n"
+		"Curr poly: %d\n"
+		"Dest poly: %d\n"
 		"Destination: %.4f, %.4f, %.4f\n",
 		pNavStr,
 		pActor->IsNavLocationValid() ? "valid" : "invalid",

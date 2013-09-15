@@ -21,17 +21,17 @@ class CMemFactObstacle;
 
 enum EMovementState
 {
-	AIMvmt_None,		// No movement is currently performed
-	AIMvmt_DestSet,		// There is a valid destination for steering
 	AIMvmt_Done,		// Steering destination is reached
+	AIMvmt_Failed,		// No movement is currently performed
+	AIMvmt_DestSet,		// There is a valid destination for steering
 	AIMvmt_Stuck		// Actor got stuck during the movement
 };
 
 enum EFacingState
 {
 	AIFacing_Done,
-	AIFacing_DirSet,
-	AIFacing_Failed
+	AIFacing_Failed,
+	AIFacing_DirSet
 };
 
 enum EMovementType
@@ -61,16 +61,17 @@ protected:
 	//???Here or on the BB?
 	float				MaxSpeed[AIMvmt_Type_Count]; // If <= 0.f, not available to this actor
 	float				MaxAngularSpeed;
+	float				ArriveCoeff;			// -1 / 2 * a, where a is a maximum braking acceleration, a < 0
 
 	//!!!???BB?!
-	float				SqShortStepThreshold;
-	float				BigTurnThreshold;
+	float				SqShortStepThreshold;	// Max amount of movement actor can move without facing a destination 
+	float				BigTurnThreshold;		// Max angle (in rad) actor can turn without stopping to move
 
 	vector3				DestPoint;
 	vector3				NextDestPoint;
 
 	vector3				FaceDir;
-	bool				WasFacingPrevFrame;
+	bool				WasFacingPrevFrame; //???can avoid this HACK?
 
 	//???!!!BB?!
 	bool				FaceDest;
@@ -97,9 +98,10 @@ public:
 	CMotorSystem(CActor* Actor);
 
 	void Init(const Data::CParams* Params);
-	void Update();
-	void ResetMovement();
-	void ResetRotation();
+	void Update(float FrameTime);
+	void UpdatePosition();
+	void ResetMovement(bool Success);
+	void ResetRotation(bool Success);
 	void RenderDebug();
 
 	void SetDest(const vector3& Dest);

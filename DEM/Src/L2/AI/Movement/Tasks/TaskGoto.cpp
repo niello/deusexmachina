@@ -32,4 +32,4 @@ bool CTaskGoto::OnPlanSet(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

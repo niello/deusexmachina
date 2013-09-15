@@ -27,14 +27,18 @@ CGameLevel::~CGameLevel()
 void PhysicsPreTick(btDynamicsWorld* world, btScalar timeStep)
 {
 	n_assert_dbg(world && world->getWorldUserInfo());
-	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("BeforePhysicsTick")); //???set time as param?
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("FrameTime"), (float)timeStep);
+	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("BeforePhysicsTick"), P);
 }
 //---------------------------------------------------------------------
 
 void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
 {
 	n_assert_dbg(world && world->getWorldUserInfo());
-	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("AfterPhysicsTick")); //???set time as param?
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("FrameTime"), (float)timeStep);
+	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("AfterPhysicsTick"), P);
 
 	/*for (int i = 0; i < world->getDispatcher()->getNumManifolds(); ++i)
 	{

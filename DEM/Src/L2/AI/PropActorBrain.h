@@ -75,10 +75,11 @@ protected:
 	virtual void		InternalDeactivate();
 	void				UpdateDecisionMaking();
 
-	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrameProc);
+	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
+	DECLARE_EVENT_HANDLER(AfterPhysicsTick, AfterPhysicsTick);
 	DECLARE_EVENT_HANDLER(QueueTask, OnAddTask);
 	DECLARE_EVENT_HANDLER(OnNavMeshDataChanged, OnNavMeshDataChanged);
 
@@ -104,14 +105,12 @@ public:
 	ESteeringType	SteeringType;
 	float			MinReachDist;
 	float			MaxReachDist;
-	EFacingState	FacingStatus;
+	EFacingState	FacingState;
 
 // END Blackboard
 	
-	CPropActorBrain();
+	CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSystem(this) {}
 	//virtual ~CPropActorBrain();
-
-	virtual void	OnBeginFrame();
 
 	bool			IsActionAvailable(const CActionTpl* pAction) const;
 	void			FillWorldState(CWorldState& WSCurr) const;
@@ -127,6 +126,7 @@ public:
 	bool			IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
 	void			AcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
 	bool			DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_Nav_AcceptNearestValidDest); }
+	bool			GetLinearVelocity(vector3& Out) const;
 
 	CMemSystem&		GetMemSystem() { return MemSystem; }
 	CNavSystem&		GetNavSystem() { return NavSystem; }

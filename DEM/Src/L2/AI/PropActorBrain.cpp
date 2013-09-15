@@ -5,6 +5,7 @@
 #include <AI/Behaviour/Action.h>
 #include <AI/Planning/GoalIdle.h>
 #include <AI/Events/QueueTask.h>
+#include <Physics/PropCharacterController.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Game/EntityManager.h>
@@ -36,11 +37,6 @@ static const CString StrGoalPrefix("AI::CGoal");
 // NB: may be square of this value MUST make sense with a single (float) precision too.
 const float CPropActorBrain::ArrivalTolerance = 0.009f;
 
-CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSystem(this)
-{
-}
-//---------------------------------------------------------------------
-
 bool CPropActorBrain::InternalActivate()
 {
 	if (!GetEntity()->GetLevel()->GetAI()) FAIL;
@@ -59,12 +55,12 @@ bool CPropActorBrain::InternalActivate()
 	SetNavLocationValid(false);
 	AcceptNearestValidDestination(false);
 
-	MvmtState = AIMvmt_None;
+	MvmtState = AIMvmt_Done;
 	MvmtType = AIMvmt_Type_Walk;
 	SteeringType = AISteer_Type_Seek;
 	MinReachDist = 0.f;
 	MaxReachDist = 0.f;
-	FacingStatus = AIFacing_Done;
+	FacingState = AIFacing_Done;
 
 // END Blackboard
 	
@@ -170,10 +166,11 @@ bool CPropActorBrain::InternalActivate()
 		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).GetUnsafe());
 	}
 
-	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropActorBrain, OnBeginFrameProc);
+	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropActorBrain, OnBeginFrame);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropActorBrain, OnRenderDebug);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropActorBrain, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropActorBrain, OnUpdateTransform);
+	PROP_SUBSCRIBE_PEVENT(AfterPhysicsTick, CPropActorBrain, AfterPhysicsTick);
 	PROP_SUBSCRIBE_NEVENT(QueueTask, CPropActorBrain, OnAddTask);
 	PROP_SUBSCRIBE_PEVENT(OnNavMeshDataChanged, CPropActorBrain, OnNavMeshDataChanged);
 	OK;
@@ -186,18 +183,12 @@ void CPropActorBrain::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(UpdateTransform);
+	UNSUBSCRIBE_EVENT(AfterPhysicsTick);
 	UNSUBSCRIBE_EVENT(QueueTask);
 	UNSUBSCRIBE_EVENT(OnNavMeshDataChanged);
 
 	NavSystem.Term();
 
-}
-//---------------------------------------------------------------------
-
-bool CPropActorBrain::OnBeginFrameProc(const Events::CEventBase& Event)
-{
-	OnBeginFrame(); //!!!only for possible virtual calls!
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -288,32 +279,26 @@ bool CPropActorBrain::SetPlan(CAction* pNewPlan)
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::OnBeginFrame()
+bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 {
 	float FrameTime = (float)GameSrv->GetFrameTime();
 
-	// Update blackboard
-	// ...
-
-#ifndef _EDITOR
-	NavSystem.Update(FrameTime);
-	MotorSystem.Update();
-#endif
-
-	// Update animation
-	// AnimSystem->Update();
-
-	//???where to update target system? or goal updates target?
-
 	//!!!update for some time, if not updated all return or allow to process next!
+	//!!!only for external (tests external stimuli placed in the level)!
+	//also need to update internal sensors & actor's state through them
+	//???CStimulus -> CExternalStimulus?
 	for (CArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
-	{
-		//!!!only for external! also need to update internal sensors & actor's state through them
-		//???CStimulus -> CExternalStimulus?
 		GetEntity()->GetLevel()->GetAI()->UpdateActorsSense(this, (*ppSensor));
-	}
 
 	MemSystem.Update();
+
+#ifndef _EDITOR
+	// Disable this flag for player- or script-controlled actors
+	//???mb some goals can abort command (as interrupt behaviours)? so check/clear cmd inside in interruption
+	if (Flags.Is(AIMind_EnableDecisionMaking) && !CurrTask.IsValid()) UpdateDecisionMaking();
+
+	NavSystem.Update(FrameTime);
+#endif
 
 	if (CurrPlan.IsValid() && (!CurrPlan->IsValid(this) || CurrPlan->Update(this) != Running))
 	{
@@ -323,12 +308,11 @@ void CPropActorBrain::OnBeginFrame()
 
 	if (CurrTask.IsValid() && CurrTask->IsSatisfied()) CurrTask = NULL;
 
-	// Disable this flag for player- or script-controlled actors
-	//???mb some goals can abort command (as interrupt behaviours)? so check/clear cmd inside in interruption
-//!!!???tmp?!
 #ifndef _EDITOR
-	if (Flags.Is(AIMind_EnableDecisionMaking) && !CurrTask.IsValid()) UpdateDecisionMaking();
+	MotorSystem.Update(FrameTime); //!!!update each physics tick!
 #endif
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -343,13 +327,43 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 }
 //---------------------------------------------------------------------
 
+//???velocity to attrs? good for passive physics in savegames
+bool CPropActorBrain::GetLinearVelocity(vector3& Out) const
+{
+	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
+	return pCC && pCC->GetController()->GetLinearVelocity(Out);
+}
+//---------------------------------------------------------------------
+
 bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
-	bool PosChanged = (Position != Tfm.Translation());
 	Position = Tfm.Translation();
 	LookatDir = -Tfm.AxisZ();
 	NavSystem.UpdatePosition();
+	MotorSystem.UpdatePosition();
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!BAD DESIGN! RREDESIGN IT! Need to update physics-controlled node's tfm per-tick? or at least offer access to subframe data
+// We need to react on subframe transform changes to drive physics correctly
+bool CPropActorBrain::AfterPhysicsTick(const Events::CEventBase& Event)
+{
+	float FrameTime = ((const Events::CEvent&)Event).Params->Get<float>(CStrID("FrameTime"));
+
+	//???or access node controller directly and read subframe data?
+	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
+	if (!pCC) OK;
+
+	quaternion Rot;
+	pCC->GetController()->GetBody()->GetTransform(Position, Rot);
+	LookatDir = Rot.rotate(vector3::BaseDir);
+
+	NavSystem.UpdatePosition();
+	MotorSystem.UpdatePosition();
+	MotorSystem.Update(FrameTime);
+
 	OK;
 }
 //---------------------------------------------------------------------

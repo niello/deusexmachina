@@ -44,4 +44,4 @@ void CRefCounted::DumpLeaks()
 //---------------------------------------------------------------------
 #endif
 
-} // namespace Core
+}
