@@ -7,7 +7,6 @@ using System.Resources;
 
 [assembly: AssemblyTitle("Microsoft.VisualStudio.Project")]
 [assembly: AssemblyDescription("MPF Implementation of VS Projects for CreatorIDE")]
-[assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
 [assembly: ComVisible(false)]
@@ -33,6 +32,7 @@ namespace CreatorIDE.Settings
         public const string
             Company = "Microsoft",
             Product = "Microsoft.VisualStudio.Project",
-            Copyright = "Copyright © Microsoft 2008";
+            Copyright = "Copyright © Microsoft 2008",
+            Trademark = Product;
     }
 }

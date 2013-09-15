@@ -1,3 +1,4 @@
+#if SLN_CREATORIDE2
 using System.Reflection;
 
 [assembly: AssemblyVersion(CreatorIDE.Settings.Properties.Version)]
@@ -10,3 +11,4 @@ namespace CreatorIDE.Settings
 		public const string Version = "0.1.0.0";
 	}
 }
+#endif
