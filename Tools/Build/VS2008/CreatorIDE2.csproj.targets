@@ -5,6 +5,7 @@
 	<PropertyGroup>
 		<CustomAssemblyInfo Condition="'$(CustomAssemblyInfo)'==''">False</CustomAssemblyInfo>
 		<CustomVersion Condition="'$(CustomVersion)'==''">False</CustomVersion>
+		<DefineConstants>$(DefineConstants);SLN_CREATORIDE2</DefineConstants>
 	</PropertyGroup>
 	
 	<ItemGroup>
@@ -17,10 +18,8 @@
 	<PropertyGroup>
 		<!-- Устанавливаем каталоги для скомпилированных файлов и для объектных файлов (VS, тем не менее, продолжит
 			создавать каталог obj\TempPE в каталоге с проектом -->
-		<OutputPath>$(SolutionDir)..\..\Bin\$(SolutionName)\</OutputPath>
+		<OutputPath>$(SolutionDir)..\..\Bin\$(SolutionName)\$(Configuration)\</OutputPath>
 		<BaseIntermediateOutputPath>$(SolutionDir)..\..\Obj\$(SolutionName)\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
-		<!--Добавляем суффикс "_d" к именам всех проектов, собранных в конфигурации "Debug"-->
-		<AssemblyName Condition = "'$(Configuration)' == 'Debug'">$(AssemblyName)_d</AssemblyName>
 	</PropertyGroup>
 	
 	<PropertyGroup>

@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{ACBB6164-0706-4416-9B8D-3804FB2C4216}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{BB7AB6AB-1CFA-48FE-8AFE-CD2982CB26EB}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CreatorIDE.Engine</RootNamespace>
-    <AssemblyName>CreatorIDE.Engine</AssemblyName>
+    <RootNamespace>CreatorIDE.Launcher</RootNamespace>
+    <AssemblyName>CreatorIDELauncher</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -17,7 +17,6 @@
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
@@ -27,7 +26,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\Release\</OutputPath>
     <DefineConstants>RELEASE;TRACE</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x86</PlatformTarget>
@@ -36,11 +34,15 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.9.0, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -51,46 +53,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActionRecord.cs" />
-    <Compile Include="AppHandle.cs" />
-    <Compile Include="AttrProperty.cs" />
-    <Compile Include="AttrPropertyDescriptor.cs" />
-    <Compile Include="CideEntityCategory.cs" />
-    <Compile Include="CideEngine.Categories.cs" />
-    <Compile Include="AttrID.cs" />
-    <Compile Include="CideEntity.cs" />
-    <Compile Include="CideEntityPropertyChangedEventArgs.cs" />
-    <Compile Include="DataTypes.cs" />
-    <Compile Include="CideEngine.cs" />
-    <Compile Include="EngineInitializationException.cs" />
-    <Compile Include="EngineMouseClickEventArgs.cs" />
-    <Compile Include="EnginePathRequestEventArgs.cs" />
-    <Compile Include="CideEngine.Entities.cs" />
-    <Compile Include="CideEntityCache.cs" />
-    <Compile Include="IAttrEditorProvider.cs" />
-    <Compile Include="LevelRecord.cs" />
+    <Compile Include="ProductRegistrationContext.cs" />
+    <Compile Include="ProductRegistrationKey.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertyChangingCancelEventArgs.cs" />
-    <Compile Include="Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="SR.cs" />
-    <Compile Include="Transform.cs" />
-    <Compile Include="Types.cs" />
-    <Compile Include="World.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Core\CreatorIDECore.csproj">
-      <Project>{4B50F105-EA88-452B-AA2E-75202C8E5B2A}</Project>
-      <Name>CreatorIDECore</Name>
+    <ProjectReference Include="..\mpfproj\mpfproj.csproj">
+      <Project>{D59E549B-6C7D-4653-8F72-15276D107914}</Project>
+      <Name>mpfproj</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Package\CreatorIDEPackage.csproj">
+      <Project>{1A08D46A-2B68-4781-9988-EE093B501BCF}</Project>
+      <Name>CreatorIDEPackage</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Condition="Exists('$(SolutionDir)$(SolutionName).csproj.targets')" Project="$(SolutionDir)$(SolutionName).csproj.targets" />

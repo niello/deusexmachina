@@ -1,30 +1,28 @@
+#if SLN_CREATORIDE2
 using System.Reflection;
 
 [assembly: AssemblyConfiguration(CreatorIDE.Settings.Properties.Configuration)]
 [assembly: AssemblyCompany(CreatorIDE.Settings.Properties.Company)]
 [assembly: AssemblyProduct(CreatorIDE.Settings.Properties.Product)]
 [assembly: AssemblyCopyright(CreatorIDE.Settings.Properties.Copyright)]
-//[assembly: AssemblyTrademark("")]
-//[assembly: AssemblyCulture("")]
+[assembly: AssemblyTrademark(CreatorIDE.Settings.Properties.Trademark)]
 
 namespace CreatorIDE.Settings
 {
-	static partial class Properties
-	{
-		public const string 
-			Configuration =
+    static partial class Properties
+    {
 #if DEBUG
-				"Debug"
+        public const string Configuration = "Debug";
 #elif RELEASE
-				"Release"
-#else
-				"Undefined"
+	    public const string Configuration = "Release";
 #endif
 #if !OVERRIDE_PRODUCT_INFO
-			, Company = "Still No Team Name"
-			, Product = "DemCreator"
-			, Copyright = "(c) 2011 - 2012"
+        public const string
+            Company = "Still No Team Name",
+            Product = "CreatorIDE 2",
+            Copyright = "(c) 2011 - 2013",
+            Trademark = Product;
 #endif
-			;
-	}
+    }
 }
+#endif
