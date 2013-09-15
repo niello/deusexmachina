@@ -243,8 +243,11 @@ void CHashTable<TKey, TVal>::CopyToArray(CChain& OutData) const
 	if (!Count) return;
 	OutData.Resize(OutData.GetCount() + Count);
 	for (DWORD i = 0; i < Chains.GetCount(); ++i)
-		for (CChain::CIterator It = Chains[i].Begin(); It; ++It)
+	{
+		CChain& Chain = Chains[i];
+		for (CChain::CIterator It = Chain.Begin(); It != Chain.End(); ++It)
 			OutData.Add(*It);
+	}
 }
 //---------------------------------------------------------------------
 

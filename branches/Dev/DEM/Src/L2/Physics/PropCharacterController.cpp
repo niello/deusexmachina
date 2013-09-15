@@ -158,8 +158,7 @@ bool CPropCharacterController::OnPropDeactivating(const Events::CEventBase& Even
 bool CPropCharacterController::OnRequestLinearVelocity(const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
-	const vector3& Velocity = (*((Events::CEvent&)Event).Params).Get<vector4>(CStrID("Velocity"));
-	CharCtlr->RequestLinearVelocity(Velocity);
+	CharCtlr->RequestLinearVelocity(((Events::CEvent&)Event).Params->Get<vector3>(CStrID("Velocity")));
 	OK;
 }
 //---------------------------------------------------------------------
@@ -167,7 +166,7 @@ bool CPropCharacterController::OnRequestLinearVelocity(const Events::CEventBase&
 bool CPropCharacterController::OnRequestAngularVelocity(const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
-	CharCtlr->RequestAngularVelocity((*((Events::CEvent&)Event).Params).Get<float>(CStrID("Velocity")));
+	CharCtlr->RequestAngularVelocity(((Events::CEvent&)Event).Params->Get<float>(CStrID("Velocity")));
 	OK;
 }
 //---------------------------------------------------------------------

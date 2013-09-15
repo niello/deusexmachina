@@ -19,6 +19,7 @@ public:
 	static const vector3 AxisX;
 	static const vector3 AxisY;
 	static const vector3 AxisZ;
+	static const vector3 BaseDir;
 
 	union
 	{

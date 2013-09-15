@@ -28,8 +28,11 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 
 	vector3 Offset(0.f, (Hover + Height) * 0.5f, 0.f);
 
+	static const ushort MaskCharacter = PhysicsSrv->CollisionGroups.GetMask("Character");
+	static const ushort MaskAll = PhysicsSrv->CollisionGroups.GetMask("All");
+
 	Body = n_new(CRigidBody);
-	Body->Init(*Shape, Mass, PhysicsSrv->CollisionGroups.GetMask("Character"), PhysicsSrv->CollisionGroups.GetMask("All"), Offset);
+	Body->Init(*Shape, Mass, MaskCharacter, MaskAll, Offset);
 	Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
 
 	ReqLinVel = vector3::Zero;

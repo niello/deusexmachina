@@ -10,11 +10,16 @@ void CActionSteerToPosition::UpdatePathEdge(CActor* pActor, const CPathEdge* pEd
 {
 	n_assert(pEdge);
 
+	//!!!may want to arrive if:
+	// big turn
+	// next action requires arrive
+	// real destination is within a slowdown radius //???rename DistToNavDest and use as final Arrive goal?
+
 	pActor->GetMotorSystem().SetDest(pEdge->Dest);
 	pActor->GetMotorSystem().SetNextDest(pNextEdge ? pNextEdge->Dest : pEdge->Dest);
-	pActor->SteeringType = (pEdge->IsLast || (pNextEdge && pNextEdge->IsLast)) ? AISteer_Type_Arrive : AISteer_Type_Seek;
-	//???always arrive? what if three short edges are near the dest? Actor won't stop on time.
-	//!!!arriwe to intermediate point where big turn must be performed!
+
+	//???here or in motor system? big turn, next action doesn't use steering, don't check IsLast
+	pActor->SteeringType = AISteer_Type_Seek; //(pEdge->IsLast || (pNextEdge && pNextEdge->IsLast)) ? AISteer_Type_Arrive : AISteer_Type_Seek;
 }
 //---------------------------------------------------------------------
 
@@ -22,7 +27,7 @@ EExecStatus CActionSteerToPosition::Update(CActor* pActor)
 {
 	switch (pActor->MvmtState)
 	{
-		case AIMvmt_None:
+		case AIMvmt_Failed:
 		{
 			// Restart movement here!
 			//!!!None can be set if we can't move with the selected movement type!
@@ -48,10 +53,10 @@ EExecStatus CActionSteerToPosition::Update(CActor* pActor)
 void CActionSteerToPosition::Deactivate(CActor* pActor)
 {
 	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
-		pActor->GetMotorSystem().ResetMovement();
+		pActor->GetMotorSystem().ResetMovement(false);
 
-	if (pActor->FacingStatus == AIFacing_DirSet)
-		pActor->GetMotorSystem().ResetRotation();
+	if (pActor->FacingState == AIFacing_DirSet)
+		pActor->GetMotorSystem().ResetRotation(false);
 }
 //---------------------------------------------------------------------
 

@@ -20,6 +20,9 @@ CEnvironment::~CEnvironment()
 
 bool CEnvironment::InitCore()
 {
+	//!!!need to redesign logger! it must be active on CoreSrv destruction to dump memory leaks!
+	n_new(Core::CLogger);
+
 	//!!!core server can check is app already running inside the Open method!
 	n_new(Core::CCoreServer());
 	CoreSrv->Open();
@@ -35,7 +38,6 @@ bool CEnvironment::InitCore()
 		for (int i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
 
-	n_new(Core::CLogger);
 	CoreLogger->Open((AppName + " - " + AppVersion).CStr());
 
 	CString AppData;
@@ -52,10 +54,11 @@ void CEnvironment::ReleaseCore()
 	IOServer = NULL;
 
 	CoreLogger->Close();
-	n_delete(CoreLogger);
 
 	CoreSrv->Close();
 	n_delete(CoreSrv);
+
+	n_delete(CoreLogger);
 }
 //---------------------------------------------------------------------
 

@@ -4,6 +4,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Render/DebugDraw.h>
+#include <Game/GameServer.h> // Game time for debug drawing
 #include <DetourObstacleAvoidance.h>
 
 #define OBSTACTLE_DETECTOR_MIN		0.1f
@@ -22,6 +23,7 @@ void CMotorSystem::Init(const Data::CParams* Params)
 		MaxSpeed[AIMvmt_Type_Run] = Params->Get<float>(CStrID("MaxSpeedRun"), 6.f);
 		MaxSpeed[AIMvmt_Type_Crouch] = Params->Get<float>(CStrID("MaxSpeedCrouch"), 1.f);
 		MaxAngularSpeed = Params->Get<float>(CStrID("MaxAngularSpeed"), PI);
+		ArriveCoeff = -0.5f / Params->Get<float>(CStrID("MaxBrakingAccel"), -10.f);
 	}
 	else
 	{
@@ -29,252 +31,257 @@ void CMotorSystem::Init(const Data::CParams* Params)
 		MaxSpeed[AIMvmt_Type_Run] = 6.f;
 		MaxSpeed[AIMvmt_Type_Crouch] = 1.f;
 		MaxAngularSpeed = PI;
+		ArriveCoeff = -0.5f / -10.f;
 	}
 }
 //---------------------------------------------------------------------
 
-void CMotorSystem::Update()
+//!!!update per physics tick!
+void CMotorSystem::Update(float FrameTime)
 {
 	//???where to test movement caps? here, read from BB?
-	//like: if new dest & can't move, set AIMvmt_CantMove/AIMvmt_Failed
+	//like: if new dest & _can't move_, set AIMvmt_Failed
 
-	vector4 LinearVel;
+	vector3 LinearVel;
 
-	switch (pActor->MvmtState)
+	// Update stuck info
+	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
 	{
-		//???need both states?
-		case AIMvmt_None:
-		case AIMvmt_Done:
+		if (IsStuck())
 		{
-			break;
-		}
-		case AIMvmt_Stuck:
-		{
-			if (IsStuck())
-			{
-				//StuckTime += FrameTime; //if we store relative time, not state entering time
-				//if (StuckTime > StuckForTooLongTime)
-				//{
-				//	ResetMovement();
-				//	pActor->MvmtState = AIMvmt_None;	//!!!???as argument to ResetMovement?! like bool Success?
-				//										//???need both AIMvmt_None & AIMvmt_Done at all?
-				//	break;
-				//}
-				//break;
-			}
-			else pActor->MvmtState = AIMvmt_DestSet;
-			break;
-		}
-		case AIMvmt_DestSet:
-		{
-			if (pActor->IsAtPoint(DestPoint, false))
-			{
-				ResetMovement();
-				break;
-			}
-
-			if (IsStuck())
+			if (pActor->MvmtState = AIMvmt_DestSet)
 			{
 				pActor->MvmtState = AIMvmt_Stuck;
 				//StuckTime = 0.f; //or StuckTime = CurrTime;
-				break;
 			}
+			//else StuckTime += FrameTime; //???!!!if we store relative time, not state entering time
+			//if (StuckTime > StuckForTooLongTime) ResetMovement(false);
+		}
+		else pActor->MvmtState = AIMvmt_DestSet;
+	}
 
-			float Speed = MaxSpeed[pActor->MvmtType];
+	// Check if actor reached or crossed the destination last frame (with some tolerance).
+	// For that we detect point on the last frame movement segment that is the closest to the destination
+	// and check distance (in XZ, + height difference to handle possible navmesh stages).
+	if (pActor->MvmtState == AIMvmt_DestSet)
+	{
 
-			// Movement type is unavailable to the actor
-			if (Speed <= 0.f)
+	//!!!DBG!
+	n_printf("-> CMotorSystem::Update(), frame = %d\n", GameSrv->GetFrameID());
+
+		vector3 LinVel;
+		if (pActor->GetLinearVelocity(LinVel))
+		{
+//!!!DBG!
+n_printf("Current linear V: %s\n", CString::FromVector3(LinVel).CStr());
+			vector3 FrameMovement = LinVel * FrameTime;
+			vector3 PrevPos = pActor->Position - FrameMovement;
+			float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.lensquared();
+			if (t >= 0.f && t <= 1.f)
 			{
-				ResetMovement();
-				pActor->MvmtState = AIMvmt_None;	//!!!???as argument to ResetMovement?! like bool Success?
-													//???need both AIMvmt_None & AIMvmt_Done at all?
-				break;
+				vector3 Closest = PrevPos + FrameMovement * t;
+				const float Tolerance = pActor->ArrivalTolerance * pActor->ArrivalTolerance;
+				if (vector3::SqDistance2D(Closest, DestPoint) < Tolerance && n_fabs(Closest.y - DestPoint.y) < pActor->Height)
+				{
+		//!!!DBG!
+		n_printf("Dest reached - overshot or near-exact arrival, t = %5f\n", t);
+					ResetMovement(true);
+				}
 			}
+		}
+	}
 
-			//!!!write arrive that arrives to mvmt dest, not nav! We may want to arrive before big turns, for example!
-			//also navigational arrive must always be active independently of path edge count!
-			if (pActor->SteeringType == AISteer_Type_Arrive)
-			{
-				float DistToNavDest = pActor->DistanceToNavDest -
-					(pActor->DistanceToNavDest > pActor->MaxReachDist ? pActor->MaxReachDist : pActor->MinReachDist);
+	// Check if movement type is not available to the actor
+	if (pActor->MvmtState == AIMvmt_DestSet && MaxSpeed[pActor->MvmtType] <= 0.f)
+		ResetMovement(false);
 
-				const float SlowDownRadius = Speed * 0.5f; // Distance actor moves by at 0.5 sec
+	if (pActor->MvmtState == AIMvmt_DestSet)
+	{
+		float Speed = MaxSpeed[pActor->MvmtType];
 
-				if (DistToNavDest < SlowDownRadius)
-					Speed *= ((2.f * SlowDownRadius - DistToNavDest) * DistToNavDest) / (SlowDownRadius * SlowDownRadius);
-			}
+		const float SlowDownRadius = ArriveCoeff * Speed * Speed; // S = -v0^2/2a for 0 = v0 + at (stop condition)
 
-			vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
+		//!!!AISteer_Type_Arrive - set somewhere!
 
-			if (SmoothSteering && DestPoint != NextDestPoint)
-			{
-				vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
+		// Big turn detected or the next traversal action requires stop
+		float LocalArrive = 1.f;
+		float LocalDist = vector3::Distance2D(pActor->Position, DestPoint);
+		if (pActor->SteeringType == AISteer_Type_Arrive && LocalDist < SlowDownRadius)
+			LocalArrive = ((2.f * SlowDownRadius - LocalDist) * LocalDist) / (SlowDownRadius * SlowDownRadius);
 
-				float Scale = DesiredDir.len() * 0.5f;
-				float DistToNext = ToNext.len();
-				if (DistToNext > 0.001f) Scale /= DistToNext;
+		// Path target is near
+		float DistToNavDest = pActor->DistanceToNavDest -
+			(pActor->DistanceToNavDest > pActor->MaxReachDist ? pActor->MaxReachDist : pActor->MinReachDist);
+		float GlobalArrive = (DistToNavDest < SlowDownRadius) ?
+			((2.f * SlowDownRadius - DistToNavDest) * DistToNavDest) / (SlowDownRadius * SlowDownRadius) :
+			1.f;
 
-				DesiredDir -= ToNext * Scale;
-			}
+		Speed *= n_min(LocalArrive, GlobalArrive);
 
-			DesiredDir.norm();
+		// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
+		// if frame rate is variable, so abowe we detect if actor crossed destination last frame.
+		if (LocalDist < Speed * FrameTime) Speed = LocalDist / FrameTime;
 
-			// Separation with neighbours here:
-			//!!!
+		vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
 
-			// y & w are 0.f as set in vector4 constructor
-			LinearVel.x = DesiredDir.x * Speed;
-			LinearVel.z = DesiredDir.y * Speed;
+		if (SmoothSteering && DestPoint != NextDestPoint)
+		{
+			vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
 
-			//!!!take obstacle into account only if it is close enough!
-			if (AvoidObstacles)
-			{
+			float Scale = DesiredDir.len() * 0.5f;
+			float DistToNext = ToNext.len();
+			if (DistToNext > 0.001f) Scale /= DistToNext;
+
+			DesiredDir -= ToNext * Scale;
+		}
+
+		DesiredDir.norm();
+
+		//!!!Separation with neighbours here:
+
+		LinearVel.set(DesiredDir.x * Speed, 0.f, DesiredDir.y * Speed);
+
+		if (AvoidObstacles)
+		{
 #ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
-				float Range = pActor->Radius + OBSTACTLE_DETECTOR_MIN + Speed * OBSTACLE_PREDICTION_TIME;
+			float Range = pActor->Radius + OBSTACTLE_DETECTOR_MIN + Speed * OBSTACLE_PREDICTION_TIME;
 
-				//???here or global persistent?
-				dtObstacleAvoidanceQuery ObstacleQuery;
-				ObstacleQuery.init(6, 8);
-				//ObstacleQuery.reset();
-				pActor->GetNavSystem().GetObstacles(Range, ObstacleQuery);
+			//???here or global persistent?
+			dtObstacleAvoidanceQuery ObstacleQuery;
+			ObstacleQuery.init(6, 8);
+			//ObstacleQuery.reset();
+			pActor->GetNavSystem().GetObstacles(Range, ObstacleQuery);
 
-				//???pre-filter mem facts? distance < Range, height intersects actor height etc
-				CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+			//???pre-filter mem facts? distance < Range, height intersects actor height etc
+			CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+			for (; It; ++It)
+			{
+				CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
+				//!!!remember obstacle velocity in the fact and use here!
+				// desired velocity can be get from obstacles-actors only!
+				ObstacleQuery.addCircle(pObstacle->Position.v, pObstacle->Radius, vector3::Zero.v, vector3::Zero.v);
+			}
+
+			//!!!GET AT ACTIVATION AND STORE!
+			const dtObstacleAvoidanceParams* pOAParams = AISrv->GetDefaultObstacleAvoidanceParams();
+
+			if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
+			{
+				vector3 LinearVel;
+				pActor->GetLinearVelocity(LinearVel);
+				float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call
+				if (AdaptiveVelocitySampling)
+					ObstacleQuery.sampleVelocityAdaptive(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
+														 Velocity.v, DesVel, LinearVel.v, pOAParams);
+				else
+					ObstacleQuery.sampleVelocityGrid(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
+													 Velocity.v, DesVel, LinearVel.v, pOAParams);
+			}
+
+#else
+			CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+
+			//!!!???dynamic obstacles - take velocity into account!?
+			//!!!read about VO & RVO!
+			//!!!if get stuck avoiding obstacle, try to select far point
+
+			if (It)
+			{
+				CMemFactObstacle* pClosest = NULL;
+				float MinIsect = FLT_MAX;
+				float MinExpRadius;
+
+				vector2 ActorPos(pActor->Position.x, pActor->Position.z);
+				vector2 ToDest(DestPoint.x - ActorPos.x, DestPoint.z - ActorPos.y);
+				float DistToDest = ToDest.len();
+				ToDest /= DistToDest;
+				vector2 ActorSide(-ToDest.y, ToDest.x);
+				float ActorRadius = pActor->Radius + AvoidanceMargin;
+
+				float DetectorLength = ActorRadius + OBSTACTLE_DETECTOR_MIN + Speed * OBSTACLE_PREDICTION_TIME;
+
 				for (; It; ++It)
 				{
 					CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
-					//!!!remember obstacle velocity in the fact and use here!
-					// desired velocity can be get from obstacles-actors only!
-					ObstacleQuery.addCircle(pObstacle->Position.v, pObstacle->Radius, vector3::Zero.v, vector3::Zero.v);
+
+					// Uncomment if obstacle has Height
+					//if ((pActor->Position.y + pActor->Height < pObstacle->Position.y) ||
+					//	(pObstacle->Position.y + pObstacle->Height < pActor->Position.y))
+					//	continue;
+
+					vector2 FromObstacleToDest(
+						DestPoint.x - pObstacle->Position.x,
+						DestPoint.z - pObstacle->Position.z);
+					float ExpRadius = ActorRadius + pObstacle->Radius;
+					float SqExpRadius = ExpRadius * ExpRadius;
+
+					// Don't avoid obstacles at the destination
+					if (FromObstacleToDest.lensquared() < SqExpRadius) continue;
+
+					vector2 ToObstacle(
+						pObstacle->Position.x - ActorPos.x,
+						pObstacle->Position.z - ActorPos.y);
+					float SqDistToObstacle = ToObstacle.lensquared();
+
+					if (SqDistToObstacle >= DistToDest * DistToDest) continue; 
+
+					float DetectRadius = DetectorLength + pObstacle->Radius;
+
+					if (SqDistToObstacle >= DetectRadius * DetectRadius) continue;
+
+					vector2 LocalPos(pObstacle->Position.x, pObstacle->Position.z);
+					LocalPos.ToLocalAsPoint(ToDest, ActorSide, ActorPos);
+
+					if (LocalPos.x <= 0.f || n_fabs(LocalPos.y) >= ExpRadius) continue;
+
+					float SqrtPart = sqrtf(SqExpRadius - LocalPos.y * LocalPos.y);
+					float Isect = (LocalPos.x <= SqrtPart) ? LocalPos.x + SqrtPart : LocalPos.x - SqrtPart;
+
+					if (Isect < MinIsect)
+					{
+						pClosest = pObstacle;
+						MinIsect = Isect;
+						MinExpRadius = ExpRadius;
+					}
 				}
 
-				//!!!GET AT ACTIVATION AND STORE!
-				const dtObstacleAvoidanceParams* pOAParams = AISrv->GetDefaultObstacleAvoidanceParams();
-
-				if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
+				if (pClosest)
 				{
-					//!!!???track LinearVelocity in actor like position?
-					//Prop::CPropCharacterController* pPhysics = pActor->GetEntity()->GetProperty<Prop::CPropActorPhysics>();
-					//const vector3& Velocity = pPhysics ? pPhysics->GetPhysicsEntity()->GetVelocity() : vector3::Zero;
-					vector3 Velocity;
-					n_error("IMPLEMENT ME!!! Get velocity!");
-
-					float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call
-					if (AdaptiveVelocitySampling)
-						ObstacleQuery.sampleVelocityAdaptive(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
-															 Velocity.v, DesVel, LinearVel.v, pOAParams);
+					// Will not work if raduis of obstacle can change. If so, check Radius too.
+					vector2 ObstaclePos(pClosest->Position.x, pClosest->Position.z);
+					if (pClosest == pLastClosestObstacle && LastClosestObstaclePos.isequal(ObstaclePos, 0.01f))
+						ToDest = LastAvoidDir;
 					else
-						ObstacleQuery.sampleVelocityGrid(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
-														 Velocity.v, DesVel, LinearVel.v, pOAParams);
-				}
-
-#else
-				CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
-
-				//!!!???dynamic obstacles - take velocity into account!?
-				//!!!if get stuck avoiding obstacle, try to select far point
-
-				if (It)
-				{
-					CMemFactObstacle* pClosest = NULL;
-					float MinIsect = FLT_MAX;
-					float MinExpRadius;
-
-					vector2 ActorPos(pActor->Position.x, pActor->Position.z);
-					vector2 ToDest(DestPoint.x - ActorPos.x, DestPoint.z - ActorPos.y);
-					float DistToDest = ToDest.len();
-					ToDest /= DistToDest;
-					vector2 ActorSide(-ToDest.y, ToDest.x);
-					float ActorRadius = pActor->Radius + AvoidanceMargin;
-
-					float DetectorLength = ActorRadius + OBSTACTLE_DETECTOR_MIN + Speed * OBSTACLE_PREDICTION_TIME;
-
-					for (; It; ++It)
 					{
-						CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
-
-						// Uncomment if obstacle has Height
-						//if ((pActor->Position.y + pActor->Height < pObstacle->Position.y) ||
-						//	(pObstacle->Position.y + pObstacle->Height < pActor->Position.y))
-						//	continue;
-
-						vector2 FromObstacleToDest(
-							DestPoint.x - pObstacle->Position.x,
-							DestPoint.z - pObstacle->Position.z);
-						float ExpRadius = ActorRadius + pObstacle->Radius;
-						float SqExpRadius = ExpRadius * ExpRadius;
-
-						// Don't avoid obstacles at the destination
-						if (FromObstacleToDest.lensquared() < SqExpRadius) continue;
-
-						vector2 ToObstacle(
-							pObstacle->Position.x - ActorPos.x,
-							pObstacle->Position.z - ActorPos.y);
-						float SqDistToObstacle = ToObstacle.lensquared();
-
-						if (SqDistToObstacle >= DistToDest * DistToDest) continue; 
-
-						float DetectRadius = DetectorLength + pObstacle->Radius;
-
-						if (SqDistToObstacle >= DetectRadius * DetectRadius) continue;
-
-						vector2 LocalPos(pObstacle->Position.x, pObstacle->Position.z);
-						LocalPos.ToLocalAsPoint(ToDest, ActorSide, ActorPos);
-
-						if (LocalPos.x <= 0.f || n_fabs(LocalPos.y) >= ExpRadius) continue;
-
-						float SqrtPart = sqrtf(SqExpRadius - LocalPos.y * LocalPos.y);
-						float Isect = (LocalPos.x <= SqrtPart) ? LocalPos.x + SqrtPart : LocalPos.x - SqrtPart;
-
-						if (Isect < MinIsect)
+						vector2 ToObstacle = ObstaclePos - ActorPos;
+						vector2 ProjDir = ToDest * ToObstacle.dot(ToDest) - ToObstacle;
+						float ProjDirLen = ProjDir.len();
+						if (ProjDirLen <= TINY)
 						{
-							pClosest = pObstacle;
-							MinIsect = Isect;
-							MinExpRadius = ExpRadius;
-						}
-					}
-
-					if (pClosest)
-					{
-						// Will not work if raduis of obstacle can change. If so, check Radius too.
-						vector2 ObstaclePos(pClosest->Position.x, pClosest->Position.z);
-						if (pClosest == pLastClosestObstacle && LastClosestObstaclePos.isequal(ObstaclePos, 0.01f))
-							ToDest = LastAvoidDir;
-						else
-						{
-							vector2 ToObstacle = ObstaclePos - ActorPos;
-							vector2 ProjDir = ToDest * ToObstacle.dot(ToDest) - ToObstacle;
-							float ProjDirLen = ProjDir.len();
-							if (ProjDirLen <= TINY)
-							{
-								ProjDir.set(-ToObstacle.y, ToObstacle.x);
-								ProjDirLen = ProjDir.len();
-							}
-
-							ToDest = ToObstacle + ProjDir * (MinExpRadius / ProjDirLen);
-							ToDest.norm();
-							LastAvoidDir = ToDest;
+							ProjDir.set(-ToObstacle.y, ToObstacle.x);
+							ProjDirLen = ProjDir.len();
 						}
 
-						//!!!SPEED needs adjusting to! brake or arrival effect elimination.
-						LinearVel.set(ToDest.x * Speed, 0.f, ToDest.y * Speed, 0.f);
-
-						LastClosestObstaclePos = ObstaclePos;
+						ToDest = ToObstacle + ProjDir * (MinExpRadius / ProjDirLen);
+						ToDest.norm();
+						LastAvoidDir = ToDest;
 					}
 
-					pLastClosestObstacle = pClosest;
+					//!!!SPEED needs adjusting to! brake or arrival effect elimination.
+					LinearVel.set(ToDest.x * Speed, 0.f, ToDest.y * Speed);
+
+					LastClosestObstaclePos = ObstaclePos;
 				}
-#endif
+
+				pLastClosestObstacle = pClosest;
 			}
-
-			if (FaceDest) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
-
-			break;
+#endif
 		}
-		default: n_error("CMotorSystem::Update(): Unexpected movement status '%d'", pActor->MvmtState);
+
+		if (FaceDest) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
 	}
 
-	if (pActor->FacingStatus == AIFacing_DirSet)
+	if (pActor->FacingState == AIFacing_DirSet)
 	{
 		// Since facing is performed in XZ plane, we simplify our calculations.
 		// Originally SinA = CrossY = (CurrLookat x FaceDir) * LookatPlaneNormal
@@ -286,60 +293,74 @@ void CMotorSystem::Update()
 		float Angle = atan2f(CrossY, Dot);
 		float AngleAbs = n_fabs(Angle);
 
-		float AngularVel;
-
 		// We want to turn
-		if (AngleAbs > 0.005f)
+		if (AngleAbs > 0.005f) //???recalc threshold? smth like AngularArrivalTolerance?
 		{
-			if (AngleAbs > BigTurnThreshold) LinearVel = vector4::Zero;
+			if (MaxAngularSpeed <= 0.f) ResetRotation(false); // We can't rotate
+			else
+			{
+				if (AngleAbs > BigTurnThreshold) LinearVel = vector4::Zero;
 
-			static const float InvAngularArrive = 1.f / n_deg2rad(20.f);
-			AngularVel = MaxAngularSpeed * AngleAbs * InvAngularArrive;
-			if (AngularVel > MaxAngularSpeed) AngularVel = MaxAngularSpeed;
-			if (Angle < 0) AngularVel = -AngularVel;
+				// Start arrive slowdown at 20 degrees to goal
+				float AngularVel = (Angle < 0) ? -MaxAngularSpeed : MaxAngularSpeed;
+				if (AngleAbs <= 0.34906585039886591538473815369772f) // 20 deg in rads
+					AngularVel *= AngleAbs * 2.8647889756541160438399077407053f; // 1 / (20 deg in rads)
 
-			PParams PAngularVel = n_new(CParams);
-			PAngularVel->Set(CStrID("Velocity"), AngularVel);
-			pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
-			WasFacingPrevFrame = true;
+				PParams PAngularVel = n_new(CParams(1));
+				PAngularVel->Set(CStrID("Velocity"), AngularVel);
+				pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
+//!!!DBG!
+n_printf("Request angular V: %.6f\n", AngularVel);
+
+				WasFacingPrevFrame = true;
+			}
 		}
-		else
-		{
-			pActor->FacingStatus = AIFacing_Done;
-			ResetRotation();
-		}
+		else ResetRotation(true);
 	}
-	else if (WasFacingPrevFrame) ResetRotation();
-
-	//!!!CAN reset rotation if MaxAngularSpeed == 0.f!
+	else if (WasFacingPrevFrame)
+	{
+		//???need?
+		ResetRotation(true);
+	}
 
 	// Delayed for a big turn check
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
-		PParams PLinearVel = n_new(CParams);
+//!!!DBG!
+n_printf("Request linear V: %s\n", CString::FromVector3(LinearVel).CStr());
+		PParams PLinearVel = n_new(CParams(1));
 		PLinearVel->Set(CStrID("Velocity"), LinearVel);
 		pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
+
+	//!!!DBG!
+	n_printf("<- CMotorSystem::Update()\n\n");
 	}
 }
 //---------------------------------------------------------------------
 
-void CMotorSystem::ResetMovement()
+void CMotorSystem::UpdatePosition()
 {
-	pActor->MvmtState = AIMvmt_Done;
+	if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint, false))
+	{
+		//!!!DBG!
+		n_printf("Dest reached - at point\n");
+		ResetMovement(true);
+	}
+}
+//---------------------------------------------------------------------
+
+void CMotorSystem::ResetMovement(bool Success)
+{
+	pActor->MvmtState = Success ? AIMvmt_Done : AIMvmt_Failed;
 	PParams PLinearVel = n_new(CParams);
-	PLinearVel->Set(CStrID("Velocity"), vector4::Zero);
+	PLinearVel->Set(CStrID("Velocity"), vector3::Zero);
 	pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
 }
 //---------------------------------------------------------------------
 
-void CMotorSystem::ResetRotation()
+void CMotorSystem::ResetRotation(bool Success)
 {
-	if (pActor->FacingStatus == AIFacing_DirSet)
-	{
-		//!!!???Threshold!? 0.85f is TOO ROUGH!
-		float Dot = pActor->LookatDir.x * FaceDir.x + pActor->LookatDir.z * FaceDir.z;
-		pActor->FacingStatus = (Dot > 0.85f) ? AIFacing_Done : AIFacing_Failed;
-	}
+	pActor->FacingState = Success ? AIFacing_Done : AIFacing_Failed;
 	PParams PAngularVel = n_new(CParams);
 	PAngularVel->Set(CStrID("Velocity"), 0.f);
 	pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
@@ -367,7 +388,25 @@ bool CMotorSystem::IsStuck()
 
 void CMotorSystem::SetDest(const vector3& Dest)
 {
-	if (pActor->IsAtPoint(Dest, false)) ResetMovement();
+	//!!!DBG!
+	static vector3 dest;
+	if (Dest != dest)
+	{
+		const char* pNavStr = "";
+		if (pActor->IsNavLocationValid()) pNavStr = " Valid ";
+		else pNavStr = "Invalid";
+		n_printf("Dest CHANGED %8lf, %s: %s\nPos: %s\n", GameSrv->GetTime(), pNavStr,
+			CString::FromVector3(Dest).CStr(), CString::FromVector3(pActor->Position).CStr());
+	}
+	else n_printf("Dest not changed\n");
+	dest = Dest;
+
+	if (pActor->IsAtPoint(Dest, false))
+	{
+		//!!!DBG!
+		n_printf("Dest reached - curr position requested\n");
+		ResetMovement(true);
+	}
 	else
 	{
 		DestPoint = Dest;
@@ -381,7 +420,7 @@ void CMotorSystem::SetDest(const vector3& Dest)
 void CMotorSystem::SetFaceDirection(const vector3& Dir)
 {
 	FaceDir = Dir;
-	pActor->FacingStatus = AIFacing_DirSet;
+	pActor->FacingState = AIFacing_DirSet;
 }
 //---------------------------------------------------------------------
 
@@ -392,9 +431,31 @@ void CMotorSystem::RenderDebug()
 
 	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
 		DebugDraw->DrawLine(
-			vector3(DestPoint.x, pActor->Position.y, DestPoint.z),
-			vector3(DestPoint.x, pActor->Position.y + 1.f, DestPoint.z),
+			DestPoint,
+			vector3(DestPoint.x, DestPoint.y + 1.f, DestPoint.z),
 			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
+ 
+	// Overshoot detection
+	vector3 LinVel;
+	if (pActor->GetLinearVelocity(LinVel) && LinVel.lensquared() > 0.f)
+	{
+		vector4 Color;
+		vector3 FrameMovement = LinVel * (float)GameSrv->GetFrameTime();
+		vector3 PrevPos = pActor->Position - FrameMovement;
+		float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.lensquared();
+		vector3 Isect = PrevPos + FrameMovement * t;
+		if (t >= 0.f && t <= 1.f &&
+			vector3::SqDistance2D(Isect, DestPoint) < 0.0009f && //???use arrival tolerance?
+			n_fabs(Isect.y - DestPoint.y) < pActor->Height)
+		{
+			Color = vector4::Green;
+		}
+		else Color = vector4::Red;
+		DebugDraw->DrawLine(pActor->Position, PrevPos, Color);
+		DebugDraw->DrawLine(DestPoint, Isect, Color);
+		Isect.y = DestPoint.y;
+		DebugDraw->DrawPoint(Isect, 6, vector4::White);
+	}
 
 	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; It; ++It)
@@ -412,13 +473,13 @@ void CMotorSystem::RenderDebug()
 	}
 
 	LPCSTR pMvmt = NULL;
-	if (pActor->MvmtState == AIMvmt_None) pMvmt = "None";
+	if (pActor->MvmtState == AIMvmt_Failed) pMvmt = "None";
 	else if (pActor->MvmtState == AIMvmt_Done) pMvmt = "Done";
 	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";
 	else if (pActor->MvmtState == AIMvmt_Stuck) pMvmt = "Stuck";
 
 	CString Text;
-	Text.Format("Mvmt state: %s\nFace direction set: %s\n", pMvmt, pActor->FacingStatus == AIFacing_DirSet ? "true" : "false");
+	Text.Format("Mvmt state: %s\nFace direction set: %s\n", pMvmt, pActor->FacingState == AIFacing_DirSet ? "true" : "false");
 
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{

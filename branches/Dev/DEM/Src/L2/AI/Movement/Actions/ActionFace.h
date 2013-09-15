@@ -15,14 +15,10 @@ class CActionFace: public CAction
 {
 	__DeclareClass(CActionFace);
 
-private:
-
 public:
 
-	//virtual bool		Activate(CActor* pActor);
 	virtual EExecStatus	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
-	//virtual bool		IsValid(CActor* pActor) const;
 };
 
 typedef Ptr<CActionFace> PActionFace;
