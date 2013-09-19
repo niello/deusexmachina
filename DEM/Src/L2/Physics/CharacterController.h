@@ -9,6 +9,7 @@
 // This is a dynamic implementation, that uses a rigid body and works from physics to scene.
 // Maybe later we will implement a kinematic one too. Kinematic controller is more controllable
 // and is bound to the navmesh, but all the collision detection and response must be processed manually.
+// Character controller represents actor's body
 
 namespace Data
 {
@@ -20,6 +21,13 @@ namespace Physics
 typedef Ptr<class CRigidBody> PRigidBody;
 class CPhysicsWorld;
 
+enum ECharacterState
+{
+	Char_Standing = 0,
+	Char_Jumping,
+	Char_Falling
+};
+
 class CCharacterController: public Core::CRefCounted
 {
 protected:
@@ -27,21 +35,25 @@ protected:
 	//!!!Slide down from where can't climb up and don't slide where can climb!
 	//Slide along vertical obstacles, don't bounce
 
-	float		Radius;
-	float		Height;
-	float		Hover;	//???is it MaxClimb itself?
-	float		MaxSlopeAngle;	// In radians //???recalc to cos?
-	float		MaxClimb; //???recalc to hover?
-	float		MaxJump; //???!!!recalc to max jump impulse?
-	float		Softness;		// Allowed penetration depth //???!!!recalc to bullet collision margin?!
+	ECharacterState	State;
+
+	float			Radius;
+	float			Height;
+	float			Hover;	//???is it MaxClimb itself?
+	float			MaxSlopeAngle;		// In radians //???recalc to cos?
+	float			MaxClimb; //???recalc to hover?
+	//float			MaxJumpImpulse;		// Maximum jump impulse (mass- and direction-independent)
+	float			MaxLandingImpulse;	//???speed? Maximum impulse the character can handle when landing. When exceeded, falling starts.
+	float			MaxStepDownHeight;	// Maximum height above the ground when character controls itself and doesn't fall
+	float			Softness;			// Allowed penetration depth //???!!!recalc to bullet collision margin?!
 
 	//???need here? or Bullet can do this? if zero or less, don't use
-	float		MaxAcceleration;
+	float			MaxAcceleration;
 
-	PRigidBody	Body;
+	PRigidBody		Body;
 
-	vector3		ReqLinVel;
-	float		ReqAngVel;
+	vector3			ReqLinVel;
+	float			ReqAngVel;
 
 public:
 

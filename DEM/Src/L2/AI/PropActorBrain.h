@@ -79,6 +79,7 @@ protected:
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
+	DECLARE_EVENT_HANDLER(BeforePhysicsTick, BeforePhysicsTick);
 	DECLARE_EVENT_HANDLER(AfterPhysicsTick, AfterPhysicsTick);
 	DECLARE_EVENT_HANDLER(QueueTask, OnAddTask);
 	DECLARE_EVENT_HANDLER(OnNavMeshDataChanged, OnNavMeshDataChanged);
@@ -148,9 +149,7 @@ inline bool CPropActorBrain::IsAtPoint(const vector3& Point, bool RespectReachDi
 {
 	const float MinReach = (RespectReachDistances ? MinReachDist : 0.f) - ArrivalTolerance;
 	const float MaxReach = (RespectReachDistances ? MaxReachDist : 0.f) + ArrivalTolerance;
-	const float OffsetX = Position.x - Point.x;
-	const float OffsetZ = Position.z - Point.z;
-	const float SqDistToDest2D = OffsetX * OffsetX + OffsetZ * OffsetZ;
+	const float SqDistToDest2D = vector3::SqDistance2D(Position, Point);
 	return (SqDistToDest2D <= MaxReach * MaxReach &&
 			(MinReach <= 0.f || SqDistToDest2D >= MinReach * MinReach) &&
 			n_fabs(Position.y - Point.y) < Height);

@@ -4,7 +4,6 @@
 #include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Render/DebugDraw.h>
-#include <Game/GameServer.h> // Game time for debug drawing
 #include <DetourObstacleAvoidance.h>
 
 #define OBSTACTLE_DETECTOR_MIN		0.1f
@@ -23,7 +22,7 @@ void CMotorSystem::Init(const Data::CParams* Params)
 		MaxSpeed[AIMvmt_Type_Run] = Params->Get<float>(CStrID("MaxSpeedRun"), 6.f);
 		MaxSpeed[AIMvmt_Type_Crouch] = Params->Get<float>(CStrID("MaxSpeedCrouch"), 1.f);
 		MaxAngularSpeed = Params->Get<float>(CStrID("MaxAngularSpeed"), PI);
-		ArriveCoeff = -0.5f / Params->Get<float>(CStrID("MaxBrakingAccel"), -10.f);
+		ArriveCoeff = -0.5f / Params->Get<float>(CStrID("MaxBrakingAccel"), -5.f);
 	}
 	else
 	{
@@ -65,15 +64,9 @@ void CMotorSystem::Update(float FrameTime)
 	// and check distance (in XZ, + height difference to handle possible navmesh stages).
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
-
-	//!!!DBG!
-	n_printf("-> CMotorSystem::Update(), frame = %d\n", GameSrv->GetFrameID());
-
 		vector3 LinVel;
 		if (pActor->GetLinearVelocity(LinVel))
 		{
-//!!!DBG!
-n_printf("Current linear V: %s\n", CString::FromVector3(LinVel).CStr());
 			vector3 FrameMovement = LinVel * FrameTime;
 			vector3 PrevPos = pActor->Position - FrameMovement;
 			float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.lensquared();
@@ -83,8 +76,6 @@ n_printf("Current linear V: %s\n", CString::FromVector3(LinVel).CStr());
 				const float Tolerance = pActor->ArrivalTolerance * pActor->ArrivalTolerance;
 				if (vector3::SqDistance2D(Closest, DestPoint) < Tolerance && n_fabs(Closest.y - DestPoint.y) < pActor->Height)
 				{
-		//!!!DBG!
-		n_printf("Dest reached - overshot or near-exact arrival, t = %5f\n", t);
 					ResetMovement(true);
 				}
 			}
@@ -128,7 +119,8 @@ n_printf("Current linear V: %s\n", CString::FromVector3(LinVel).CStr());
 		{
 			vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
 
-			float Scale = DesiredDir.len() * 0.5f;
+			const float SmoothnessCoeff = 0.5f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
+			float Scale = DesiredDir.len() * SmoothnessCoeff;
 			float DistToNext = ToNext.len();
 			if (DistToNext > 0.001f) Scale /= DistToNext;
 
@@ -303,14 +295,13 @@ n_printf("Current linear V: %s\n", CString::FromVector3(LinVel).CStr());
 
 				// Start arrive slowdown at 20 degrees to goal
 				float AngularVel = (Angle < 0) ? -MaxAngularSpeed : MaxAngularSpeed;
+				//???clamp to Angle / FrameTime to avoid overshoots for high speeds?
 				if (AngleAbs <= 0.34906585039886591538473815369772f) // 20 deg in rads
 					AngularVel *= AngleAbs * 2.8647889756541160438399077407053f; // 1 / (20 deg in rads)
 
 				PParams PAngularVel = n_new(CParams(1));
 				PAngularVel->Set(CStrID("Velocity"), AngularVel);
 				pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
-//!!!DBG!
-n_printf("Request angular V: %.6f\n", AngularVel);
 
 				WasFacingPrevFrame = true;
 			}
@@ -326,14 +317,9 @@ n_printf("Request angular V: %.6f\n", AngularVel);
 	// Delayed for a big turn check
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
-//!!!DBG!
-n_printf("Request linear V: %s\n", CString::FromVector3(LinearVel).CStr());
 		PParams PLinearVel = n_new(CParams(1));
 		PLinearVel->Set(CStrID("Velocity"), LinearVel);
 		pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
-
-	//!!!DBG!
-	n_printf("<- CMotorSystem::Update()\n\n");
 	}
 }
 //---------------------------------------------------------------------
@@ -341,11 +327,7 @@ n_printf("Request linear V: %s\n", CString::FromVector3(LinearVel).CStr());
 void CMotorSystem::UpdatePosition()
 {
 	if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint, false))
-	{
-		//!!!DBG!
-		n_printf("Dest reached - at point\n");
 		ResetMovement(true);
-	}
 }
 //---------------------------------------------------------------------
 
@@ -388,25 +370,7 @@ bool CMotorSystem::IsStuck()
 
 void CMotorSystem::SetDest(const vector3& Dest)
 {
-	//!!!DBG!
-	static vector3 dest;
-	if (Dest != dest)
-	{
-		const char* pNavStr = "";
-		if (pActor->IsNavLocationValid()) pNavStr = " Valid ";
-		else pNavStr = "Invalid";
-		n_printf("Dest CHANGED %8lf, %s: %s\nPos: %s\n", GameSrv->GetTime(), pNavStr,
-			CString::FromVector3(Dest).CStr(), CString::FromVector3(pActor->Position).CStr());
-	}
-	else n_printf("Dest not changed\n");
-	dest = Dest;
-
-	if (pActor->IsAtPoint(Dest, false))
-	{
-		//!!!DBG!
-		n_printf("Dest reached - curr position requested\n");
-		ResetMovement(true);
-	}
+	if (pActor->IsAtPoint(Dest, false)) ResetMovement(true);
 	else
 	{
 		DestPoint = Dest;
@@ -435,28 +399,6 @@ void CMotorSystem::RenderDebug()
 			vector3(DestPoint.x, DestPoint.y + 1.f, DestPoint.z),
 			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
  
-	// Overshoot detection
-	vector3 LinVel;
-	if (pActor->GetLinearVelocity(LinVel) && LinVel.lensquared() > 0.f)
-	{
-		vector4 Color;
-		vector3 FrameMovement = LinVel * (float)GameSrv->GetFrameTime();
-		vector3 PrevPos = pActor->Position - FrameMovement;
-		float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.lensquared();
-		vector3 Isect = PrevPos + FrameMovement * t;
-		if (t >= 0.f && t <= 1.f &&
-			vector3::SqDistance2D(Isect, DestPoint) < 0.0009f && //???use arrival tolerance?
-			n_fabs(Isect.y - DestPoint.y) < pActor->Height)
-		{
-			Color = vector4::Green;
-		}
-		else Color = vector4::Red;
-		DebugDraw->DrawLine(pActor->Position, PrevPos, Color);
-		DebugDraw->DrawLine(DestPoint, Isect, Color);
-		Isect.y = DestPoint.y;
-		DebugDraw->DrawPoint(Isect, 6, vector4::White);
-	}
-
 	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; It; ++It)
 	{

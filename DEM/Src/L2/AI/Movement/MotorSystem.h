@@ -112,7 +112,7 @@ public:
 inline CMotorSystem::CMotorSystem(CActor* Actor):
 	pActor(Actor),
 	SqShortStepThreshold(1.f * 1.f),
-	BigTurnThreshold(0.5f * PI),
+	BigTurnThreshold(PI / 3.f), //0.5f * PI),
 	WasFacingPrevFrame(false),
 	AvoidObstacles(true),
 	AdaptiveVelocitySampling(true),

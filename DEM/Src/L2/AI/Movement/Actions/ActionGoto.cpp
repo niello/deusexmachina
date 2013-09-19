@@ -44,9 +44,6 @@ bool CActionGoto::IsValid(CActor* pActor) const
 
 EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 {
-	//!!!DBG!
-	n_printf("-> CActionGoto::AdvancePath()\n");
-
 	//???don't request edges every tick? Path remains valid until something happens!
 	//???smth like NavSys->HasPathChanged()? set to false in GetPathEdges, to true when path changes
 	bool OffMesh = pActor->GetNavSystem().IsTraversingOffMesh();
@@ -92,9 +89,6 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 			return Failure;
 		}
 	}
-
-	//!!!DBG!
-	n_printf("<- CActionGoto::AdvancePath()\n\n");
 
 	return Running;
 }

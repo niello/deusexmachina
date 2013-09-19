@@ -59,7 +59,11 @@ public:
 
 #define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \
 	GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
+#define PROP_SUBSCRIBE_NEVENT_PRIORITY(EventName, Class, Handler, Priority) \
+	GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
 #define PROP_SUBSCRIBE_PEVENT(EventName, Class, Handler) \
 	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
+#define PROP_SUBSCRIBE_PEVENT_PRIORITY(EventName, Class, Handler, Priority) \
+	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
 
 #endif
