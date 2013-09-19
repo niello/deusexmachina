@@ -170,6 +170,7 @@ bool CPropActorBrain::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropActorBrain, OnRenderDebug);
 	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropActorBrain, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropActorBrain, OnUpdateTransform);
+	PROP_SUBSCRIBE_PEVENT_PRIORITY(BeforePhysicsTick, CPropActorBrain, BeforePhysicsTick, 20);
 	PROP_SUBSCRIBE_PEVENT(AfterPhysicsTick, CPropActorBrain, AfterPhysicsTick);
 	PROP_SUBSCRIBE_NEVENT(QueueTask, CPropActorBrain, OnAddTask);
 	PROP_SUBSCRIBE_PEVENT(OnNavMeshDataChanged, CPropActorBrain, OnNavMeshDataChanged);
@@ -183,6 +184,7 @@ void CPropActorBrain::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(UpdateTransform);
+	UNSUBSCRIBE_EVENT(BeforePhysicsTick);
 	UNSUBSCRIBE_EVENT(AfterPhysicsTick);
 	UNSUBSCRIBE_EVENT(QueueTask);
 	UNSUBSCRIBE_EVENT(OnNavMeshDataChanged);
@@ -300,17 +302,69 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 	NavSystem.Update(FrameTime);
 #endif
 
-	if (CurrPlan.IsValid() && (!CurrPlan->IsValid(this) || CurrPlan->Update(this) != Running))
+	if (CurrPlan.IsValid())
 	{
-		SetPlan(NULL);
-		//if (CurrTask.IsValid()) CurrTask->OnPlanDone(this, BhvResult);
+		EExecStatus BhvResult = CurrPlan->IsValid(this) ? CurrPlan->Update(this) : Failure;
+		if (BhvResult != Running)
+		{
+			SetPlan(NULL);
+			if (CurrTask.IsValid()) CurrTask->OnPlanDone(this, BhvResult);
+		}
 	}
 
 	if (CurrTask.IsValid() && CurrTask->IsSatisfied()) CurrTask = NULL;
 
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
+{
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	LookatDir = -Tfm.AxisZ();
+	if (Position != Tfm.Translation())
+	{
+		Position = Tfm.Translation();
+		NavSystem.UpdatePosition();
+		MotorSystem.UpdatePosition();
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::BeforePhysicsTick(const Events::CEventBase& Event)
+{
 #ifndef _EDITOR
-	MotorSystem.Update(FrameTime); //!!!update each physics tick!
+	MotorSystem.Update(((const Events::CEvent&)Event).Params->Get<float>(CStrID("FrameTime")));
 #endif
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!BAD DESIGN! REDESIGN IT! Need to update physics-controlled node's tfm per-tick? or at least offer access to subframe data
+// OnUpdateTransform() does the same thing. Updating physics-controlled scene nodes solves the problem.
+//???update all the scene graph with physics iterations? is it worthwhile?
+// We need to react on subframe transform changes to drive physics correctly
+bool CPropActorBrain::AfterPhysicsTick(const Events::CEventBase& Event)
+{
+	//???or access node controller directly and read subframe data?
+	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
+	if (!pCC) OK;
+
+	//!!!FIXME! write to the Bullet support:
+	// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
+	// has an outdated transformation here. So we have to access object's world tfm.
+	vector3 OldPos = Position;
+	quaternion Rot;
+	pCC->GetController()->GetBody()->Physics::CPhysicsObj::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	LookatDir = Rot.rotate(vector3::BaseDir);
+
+	if (OldPos != Position)
+	{
+		NavSystem.UpdatePosition();
+		MotorSystem.UpdatePosition();
+	}
 
 	OK;
 }
@@ -332,39 +386,6 @@ bool CPropActorBrain::GetLinearVelocity(vector3& Out) const
 {
 	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
 	return pCC && pCC->GetController()->GetLinearVelocity(Out);
-}
-//---------------------------------------------------------------------
-
-bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
-{
-	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
-	Position = Tfm.Translation();
-	LookatDir = -Tfm.AxisZ();
-	NavSystem.UpdatePosition();
-	MotorSystem.UpdatePosition();
-	OK;
-}
-//---------------------------------------------------------------------
-
-//!!!BAD DESIGN! RREDESIGN IT! Need to update physics-controlled node's tfm per-tick? or at least offer access to subframe data
-// We need to react on subframe transform changes to drive physics correctly
-bool CPropActorBrain::AfterPhysicsTick(const Events::CEventBase& Event)
-{
-	float FrameTime = ((const Events::CEvent&)Event).Params->Get<float>(CStrID("FrameTime"));
-
-	//???or access node controller directly and read subframe data?
-	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
-	if (!pCC) OK;
-
-	quaternion Rot;
-	pCC->GetController()->GetBody()->GetTransform(Position, Rot);
-	LookatDir = Rot.rotate(vector3::BaseDir);
-
-	NavSystem.UpdatePosition();
-	MotorSystem.UpdatePosition();
-	MotorSystem.Update(FrameTime);
-
-	OK;
 }
 //---------------------------------------------------------------------
 

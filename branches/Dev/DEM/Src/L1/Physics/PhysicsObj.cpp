@@ -121,7 +121,7 @@ void CPhysicsObj::GetTransform(btTransform& Out) const
 void CPhysicsObj::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
 	btTransform Tfm;
-	GetTransform(Tfm);
+	CPhysicsObj::GetTransform(Tfm); //???to nonvirtual GetWorldTransform()?
 	OutRot = BtQuatToQuat(Tfm.getRotation());
 	OutPos = BtVectorToVector(Tfm.getOrigin());
 }

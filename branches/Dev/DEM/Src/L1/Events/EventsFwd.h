@@ -41,14 +41,26 @@ enum EEventPriority
 #define SUBSCRIBE_NEVENT(EventName, Class, Handler) \
 	EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
 
+#define SUBSCRIBE_NEVENT_PRIORITY(EventName, Class, Handler, Priority) \
+	EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
+
 #define SUBSCRIBE_PEVENT(EventName, Class, Handler) \
 	EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
+
+#define SUBSCRIBE_PEVENT_PRIORITY(EventName, Class, Handler, Priority) \
+	EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
 
 #define DISP_SUBSCRIBE_NEVENT(Dispatcher, EventName, Class, Handler) \
 	Dispatcher->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
 
+#define DISP_SUBSCRIBE_NEVENT_PRIORITY(Dispatcher, EventName, Class, Handler, Priority) \
+	Dispatcher->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
+
 #define DISP_SUBSCRIBE_PEVENT(Dispatcher, EventName, Class, Handler) \
 	Dispatcher->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
+
+#define DISP_SUBSCRIBE_PEVENT_PRIORITY(Dispatcher, EventName, Class, Handler, Priority) \
+	Dispatcher->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
 
 #define UNSUBSCRIBE_EVENT(EventName) \
 	Sub_##EventName = NULL

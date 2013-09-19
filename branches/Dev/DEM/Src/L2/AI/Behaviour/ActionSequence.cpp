@@ -43,4 +43,4 @@ void CActionSequence::Deactivate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}
