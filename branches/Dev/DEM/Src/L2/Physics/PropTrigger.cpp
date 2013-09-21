@@ -15,10 +15,10 @@ namespace Prop
 __ImplementClass(Prop::CPropTrigger, 'PTRG', Game::CProperty);
 __ImplementPropertyStorage(CPropTrigger);
 
-CPropTrigger::~CPropTrigger()
-{
-}
-//---------------------------------------------------------------------
+//CPropTrigger::~CPropTrigger()
+//{
+//}
+////---------------------------------------------------------------------
 
 bool CPropTrigger::InternalActivate()
 {
@@ -46,9 +46,11 @@ bool CPropTrigger::InternalActivate()
 
 	SetEnabled(GetEntity()->GetAttr<bool>(CStrID("TrgEnabled")));
 
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropTrigger, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropTrigger, OnPropDeactivating);
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTrigger, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropTrigger, OnLevelSaving);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropTrigger, OnRenderDebug);
 	OK;
@@ -59,9 +61,11 @@ void CPropTrigger::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
-	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	SetEnabled(false);
 
@@ -80,6 +84,7 @@ bool CPropTrigger::OnPropActivated(const Events::CEventBase& Event)
 	{
 		CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 		pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
+		EnableSI(*pScriptable);
 		OK;
 	}
 
@@ -95,6 +100,7 @@ bool CPropTrigger::OnPropDeactivating(const Events::CEventBase& Event)
 
 	if (pProp->IsA<CPropScriptable>())
 	{
+		DisableSI(*(CPropScriptable*)pProp);
 		pScriptObj = NULL;
 		OK;
 	}

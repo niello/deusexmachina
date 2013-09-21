@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/Entity.h>
 
 extern "C"
@@ -75,14 +76,26 @@ int CPropAnimation_StopAnim(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::ExposeSI(const Events::CEventBase& Event)
+void CPropAnimation::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("GetAnimLength", CPropAnimation_GetAnimLength);
 	ScriptSrv->ExportCFunction("StartAnim", CPropAnimation_StartAnim);
 	ScriptSrv->ExportCFunction("PauseAnim", CPropAnimation_PauseAnim);
 	ScriptSrv->ExportCFunction("StopAnim", CPropAnimation_StopAnim);
-	OK;
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropAnimation::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("GetAnimLength");
+	ScriptSrv->ClearField("StartAnim");
+	ScriptSrv->ClearField("PauseAnim");
+	ScriptSrv->ClearField("StopAnim");
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+}

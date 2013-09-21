@@ -101,7 +101,7 @@ void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 			{
 				PParams SubDiff = n_new(CParams);
 				pInitialParam->GetValue<PParams>()->GetDiff(*SubDiff, *ChangedVal.GetValue<PParams>());
-				OutDiff.Set(Key, SubDiff);
+				if (SubDiff->GetCount()) OutDiff.Set(Key, SubDiff);
 			}
 			else OutDiff.Set(Key, ChangedVal);
 		}

@@ -145,14 +145,23 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const
+void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
 {
-	int Idx = PropStorages.FindIndex(&Type);
-	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + Type.GetName() + " is not registered!").CStr());
+	if (!pRTTI) return;
+	int Idx = PropStorages.FindIndex(pRTTI);
+	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
 	if (Idx == INVALID_INDEX) return;
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);
-	pStorage->Remove(Entity.GetUID());
+
+	PProperty Prop;
+	if (pStorage->Get(Entity.GetUID(), Prop))
+	{
+		if (Prop->IsActive()) Prop->Deactivate();
+
+		//!!!remove by iterator!
+		pStorage->Remove(Entity.GetUID());
+	}
 }
 //---------------------------------------------------------------------
 

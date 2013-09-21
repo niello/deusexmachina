@@ -35,12 +35,14 @@ protected:
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
+	virtual void	EnableSI(class CPropScriptable& Prop);
+	virtual void	DisableSI(class CPropScriptable& Prop);
+
 	WORD			RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan);
 
-	DECLARE_EVENT_HANDLER(ExposeSI, OnExposeSI);
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
-
-	virtual void ExposeSI();
 
 public:
 

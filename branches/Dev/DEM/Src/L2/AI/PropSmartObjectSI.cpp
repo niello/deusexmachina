@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/Entity.h>
 
 extern "C"
@@ -65,15 +66,28 @@ int CPropSmartObject_IsActionEnabled(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::ExposeSI(const Events::CEventBase& Event)
+void CPropSmartObject::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("SetState", CPropSmartObject_SetState);
 	ScriptSrv->ExportCFunction("GetState", CPropSmartObject_GetState);
 	ScriptSrv->ExportCFunction("IsInState", CPropSmartObject_IsInState);
 	ScriptSrv->ExportCFunction("EnableAction", CPropSmartObject_EnableAction);
 	ScriptSrv->ExportCFunction("IsActionEnabled", CPropSmartObject_IsActionEnabled);
-	OK;
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropSmartObject::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("SetState");
+	ScriptSrv->ClearField("GetState");
+	ScriptSrv->ClearField("IsInState");
+	ScriptSrv->ClearField("EnableAction");
+	ScriptSrv->ClearField("IsActionEnabled");
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+}

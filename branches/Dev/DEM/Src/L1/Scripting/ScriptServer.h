@@ -67,6 +67,7 @@ public:
 	void		EndMixin();
 	void		ExportCFunction(LPCSTR Name, lua_CFunction Function);
 	void		ExportIntegerConst(LPCSTR Name, int Value);
+	void		ClearField(LPCSTR Name);
 
 	bool		LoadClass(const CString& Name);
 	bool		ClassExists(LPCSTR Name);

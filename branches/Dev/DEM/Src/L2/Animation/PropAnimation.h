@@ -42,10 +42,11 @@ private:
 	void			InitSceneNodeModifiers(CPropSceneNode& Prop);
 	void			TermSceneNodeModifiers(CPropSceneNode& Prop);
 	void			AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, CDict<int, CStrID>& Bones);
+	void			EnableSI(class CPropScriptable& Prop);
+	void			DisableSI(class CPropScriptable& Prop);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
-	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame); //???OnMoveBefore?
 
 public:

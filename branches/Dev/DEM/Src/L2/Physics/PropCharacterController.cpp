@@ -18,7 +18,7 @@ bool CPropCharacterController::InternalActivate()
 	CreateController();
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*pProp);
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropCharacterController, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropCharacterController, OnPropDeactivating);
@@ -42,7 +42,7 @@ void CPropCharacterController::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(SetTransform);
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*pProp);
 
 	CharCtlr = NULL;
 

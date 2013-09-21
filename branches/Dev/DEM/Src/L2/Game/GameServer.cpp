@@ -355,7 +355,7 @@ bool CGameServer::ContinueGame(const CString& FileName)
 	else TimeSrv->ResetAll();
 
 	// Allow custom gameplay managers to load their data
-	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc);
+	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc->Get<Data::PParams>(CStrID("Managers"), NULL));
 
 	CStrID ActiveLevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
 	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
@@ -371,7 +371,6 @@ bool CGameServer::ContinueGame(const CString& FileName)
 
 	GameFileName = FileName;
 
-	// Allow custom gameplay managers to load their data
 	EventSrv->FireEvent(CStrID("OnGameLoaded"), GameDesc);
 
 	return SetActiveLevel(ActiveLevelID);
@@ -457,10 +456,17 @@ bool CGameServer::CommitContinueData()
 	if (SGTime->GetCount()) SGCommon->Set(CStrID("Time"), SGTime);
 
 	// Allow custom gameplay managers to save their data
-	EventSrv->FireEvent(CStrID("OnGameSaving"), SGCommon);
-
-	//???diff custom gameplay managers here?
-	//mb special Extensions/Plugins section not to affect already saved data by diff
+	Data::PParams SGManagers;
+	Data::PParams NewManagers = n_new(Data::CParams);
+	EventSrv->FireEvent(CStrID("OnGameSaving"), NewManagers);
+	Data::PParams InitialManagers;
+	if (GameDesc->Get<Data::PParams>(InitialManagers, CStrID("Managers")))
+	{
+		SGManagers = n_new(Data::CParams);
+		InitialManagers->GetDiff(*SGManagers, *NewManagers);
+	}
+	else SGManagers = NewManagers;
+	if (SGManagers->GetCount()) SGCommon->Set(CStrID("Managers"), SGManagers);
 
 	CString Path = "AppData:Profiles/" + CurrProfile + "/Continue";
 	IOSrv->CreateDirectory(Path);

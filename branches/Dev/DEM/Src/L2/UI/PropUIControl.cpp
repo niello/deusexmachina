@@ -87,7 +87,11 @@ bool CPropUIControl::InternalActivate()
 			pProp->GetNode()->AddAttr(*MousePickShape);
 	}
 
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropUIControl, ExposeSI);
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropUIControl, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropUIControl, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropUIControl, OnLevelSaving);
 	PROP_SUBSCRIBE_PEVENT(OnMouseEnter, CPropUIControl, OnMouseEnter);
 	PROP_SUBSCRIBE_PEVENT(OnMouseLeave, CPropUIControl, OnMouseLeave);
@@ -97,13 +101,17 @@ bool CPropUIControl::InternalActivate()
 
 void CPropUIControl::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(OnMouseEnter);
 	UNSUBSCRIBE_EVENT(OnMouseLeave);
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnSOActionAvailabile);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	HideTip();
 
@@ -136,6 +144,12 @@ bool CPropUIControl::OnPropActivated(const Events::CEventBase& Event)
 		OK;
 	}
 
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -156,6 +170,12 @@ bool CPropUIControl::OnPropDeactivating(const Events::CEventBase& Event)
 	{
 		MousePickShape->RemoveFromNode();
 		//MousePickShape->CollObj->RemoveFromLevel();
+		OK;
+	}
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
 		OK;
 	}
 

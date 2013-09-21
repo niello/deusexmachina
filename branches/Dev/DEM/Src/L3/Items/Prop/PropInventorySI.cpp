@@ -3,6 +3,7 @@
 #include <Items/Item.h>
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 
 extern "C"
@@ -66,19 +67,24 @@ int CPropInventory_HasItem(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-void CPropInventory::ExposeSI()
+void CPropInventory::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("AddItem", CPropInventory_AddItem);
 	ScriptSrv->ExportCFunction("RemoveItem", CPropInventory_RemoveItem);
 	ScriptSrv->ExportCFunction("HasItem", CPropInventory_HasItem);
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::OnExposeSI(const Events::CEventBase& Event)
+void CPropInventory::DisableSI(CPropScriptable& Prop)
 {
-	ExposeSI();
-	OK;
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("AddItem");
+	ScriptSrv->ClearField("RemoveItem");
+	ScriptSrv->ClearField("HasItem");
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

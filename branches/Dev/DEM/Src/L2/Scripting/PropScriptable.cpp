@@ -34,19 +34,12 @@ void CPropScriptable::InternalDeactivate()
 	
 	Obj->RunFunction("OnPropTerm");
 	Obj = NULL;
-	
 }
 //---------------------------------------------------------------------
 
 bool CPropScriptable::OnPropsActivated(const Events::CEventBase& Event)
 {
-	if (ScriptSrv->BeginMixin(Obj.GetUnsafe()))
-	{
-		GetEntity()->FireEvent(CStrID("ExposeSI"));
-		ScriptSrv->EndMixin();
-		Obj->RunFunction("OnPropInit");
-	}
-	else n_printf("Entity \"%s\": error when mixing-in script object\n", GetEntity()->GetUID().CStr());
+	Obj->RunFunction("OnPropInit"); //???or use event subscription?
 	OK;
 }
 //---------------------------------------------------------------------

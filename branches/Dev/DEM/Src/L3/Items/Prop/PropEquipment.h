@@ -16,7 +16,8 @@ class CPropEquipment: public CPropInventory
 
 protected:
 
-	virtual void ExposeSI();
+	virtual void EnableSI(class CPropScriptable& Prop);
+	virtual void DisableSI(class CPropScriptable& Prop);
 
 public:
 

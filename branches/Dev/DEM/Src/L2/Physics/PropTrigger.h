@@ -50,10 +50,11 @@ protected:
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
+	void			EnableSI(class CPropScriptable& Prop);
+	void			DisableSI(class CPropScriptable& Prop);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
-	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
@@ -61,7 +62,7 @@ protected:
 public:
 
 	CPropTrigger(): Enabled(false), pScriptObj(NULL), Period(0.f), TimeLastTriggered(0.f) {}
-	virtual ~CPropTrigger();
+	//virtual ~CPropTrigger();
 
 	void SetEnabled(bool Enable);
 	bool IsEnabled() const { return Enabled; }

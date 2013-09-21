@@ -6,6 +6,7 @@
 #include <AI/Planning/GoalIdle.h>
 #include <AI/Events/QueueTask.h>
 #include <Physics/PropCharacterController.h>
+#include <Scripting/PropScriptable.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Game/EntityManager.h>
@@ -166,9 +167,13 @@ bool CPropActorBrain::InternalActivate()
 		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).GetUnsafe());
 	}
 
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
 	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropActorBrain, OnBeginFrame);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropActorBrain, OnRenderDebug);
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropActorBrain, ExposeSI);
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropActorBrain, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropActorBrain, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropActorBrain, OnUpdateTransform);
 	PROP_SUBSCRIBE_PEVENT_PRIORITY(BeforePhysicsTick, CPropActorBrain, BeforePhysicsTick, 20);
 	PROP_SUBSCRIBE_PEVENT(AfterPhysicsTick, CPropActorBrain, AfterPhysicsTick);
@@ -182,15 +187,67 @@ void CPropActorBrain::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
-	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(UpdateTransform);
 	UNSUBSCRIBE_EVENT(BeforePhysicsTick);
 	UNSUBSCRIBE_EVENT(AfterPhysicsTick);
 	UNSUBSCRIBE_EVENT(QueueTask);
 	UNSUBSCRIBE_EVENT(OnNavMeshDataChanged);
 
-	NavSystem.Term();
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
+	NavSystem.Term();
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::SetPlan(CAction* pNewPlan)
+{
+	if (CurrPlan.IsValid()) CurrPlan->Deactivate(this);
+	//???deactivate and clear current goal, if has?
+	CurrPlan = pNewPlan;
+	if (pNewPlan && !pNewPlan->Activate(this))
+	{
+		Flags.Set(AIMind_InvalidatePlan);
+		CurrPlan = NULL;
+		FAIL;
+	}
+	else Flags.Set(AIMind_UpdateGoal); //???why need if valid plan set & activated?
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -261,23 +318,6 @@ void CPropActorBrain::UpdateDecisionMaking()
 			pTopGoal->InvalidateRelevance();
 		}
 	}
-}
-//---------------------------------------------------------------------
-
-bool CPropActorBrain::SetPlan(CAction* pNewPlan)
-{
-	if (CurrPlan.IsValid()) CurrPlan->Deactivate(this);
-	//???deactivate and clear current goal, if has?
-	CurrPlan = pNewPlan;
-	if (pNewPlan && !pNewPlan->Activate(this))
-	{
-		Flags.Set(AIMind_InvalidatePlan);
-		CurrPlan = NULL;
-		FAIL;
-	}
-	else Flags.Set(AIMind_UpdateGoal); //???why need if valid plan set & activated?
-
-	OK;
 }
 //---------------------------------------------------------------------
 

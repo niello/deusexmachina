@@ -129,4 +129,4 @@ bool CEntity::OnEvent(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Game
+}

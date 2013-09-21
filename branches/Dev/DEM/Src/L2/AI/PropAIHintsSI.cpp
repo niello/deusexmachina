@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/Entity.h>
 
 extern "C"
@@ -24,11 +25,20 @@ int CPropAIHints_EnableStimulus(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::ExposeSI(const Events::CEventBase& Event)
+void CPropAIHints::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("EnableStimulus", CPropAIHints_EnableStimulus);
-	OK;
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropAIHints::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("EnableStimulus");
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+}
