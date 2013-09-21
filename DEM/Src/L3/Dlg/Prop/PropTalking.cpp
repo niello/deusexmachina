@@ -1,6 +1,7 @@
 #include "PropTalking.h"
 
 #include <Dlg/DialogueManager.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 #include <Events/EventServer.h>
 
@@ -14,20 +15,59 @@ bool CPropTalking::InternalActivate()
 	const CString& Dlg = GetEntity()->GetAttr<CString>(CStrID("Dialogue"), NULL);
 	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
 
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropTalking, ExposeSI);
-	PROP_SUBSCRIBE_PEVENT(Talk, CPropTalking, OnTalk);
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
 
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropTalking, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropTalking, OnPropDeactivating);
+	PROP_SUBSCRIBE_PEVENT(Talk, CPropTalking, OnTalk);
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CPropTalking::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(Talk);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	//???check IsTalking and force abort dlg?
 	Dialogue = NULL;
+}
+//---------------------------------------------------------------------
+
+bool CPropTalking::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropTalking::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

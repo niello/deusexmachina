@@ -2,6 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
+#include <Game/EntityManager.h>
 #include <Events/Subscription.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
@@ -19,18 +20,22 @@ __ImplementClass(Scripting::CEntityScriptObject, 'ESCO', CScriptObject);
 
 int CEntityScriptObject_SubscribeLocalEvent(lua_State* l)
 {
-	//args: EntityScriptObject's this table, event name, [func name = event name]
+	// Args: EntityScriptObject's this table, event name, [func name = event name, int priority = default]
 	SETUP_ENT_SI_ARGS(2)
 
-	//!!!PRIORITY!
-	if (This) This->SubscribeLocalEvent(CStrID(lua_tostring(l, 2)), lua_tostring(l, -2));
+	if (This)
+	{
+		LPCSTR pHandlerName = (ArgCount < 4) ? lua_tostring(l, -2) : lua_tostring(l, 3);
+		ushort Priority = (ArgCount < 4) ? Events::Priority_Default : (ushort)lua_tointeger(l, 4);
+		This->SubscribeLocalEvent(CStrID(lua_tostring(l, 2)), pHandlerName, Priority);
+	}
 	return 0;
 }
 //---------------------------------------------------------------------
 
 int CEntityScriptObject_UnsubscribeLocalEvent(lua_State* l)
 {
-	//args: EntityScriptObject's this table or nil, event name, [func name = event name]
+	// Args: EntityScriptObject's this table or nil, event name, [func name = event name]
 	SETUP_ENT_SI_ARGS(2)
 
 	if (This) This->UnsubscribeLocalEvent(CStrID(lua_tostring(l, 2)), lua_tostring(l, -2));
@@ -68,6 +73,28 @@ int CEntityScriptObject_FireEvent(lua_State* l)
 }
 //---------------------------------------------------------------------
 
+int CEntityScriptObject_AttachProperty(lua_State* l)
+{
+	// Args: EntityScriptObject's this table, property class name
+	SETUP_ENT_SI_ARGS(2)
+	if (lua_isstring(l, 2))
+	{
+		Game::CProperty* pProp = EntityMgr->AttachProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
+		pProp->Activate();
+	}
+	return 0;
+}
+//---------------------------------------------------------------------
+
+int CEntityScriptObject_RemoveProperty(lua_State* l)
+{
+	// Args: EntityScriptObject's this table, property class name
+	SETUP_ENT_SI_ARGS(2)
+	if (lua_isstring(l, 2)) EntityMgr->RemoveProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
+	return 0;
+}
+//---------------------------------------------------------------------
+
 bool CEntityScriptObject::RegisterClass()
 {
 	if (ScriptSrv->BeginClass("CEntityScriptObject", "CScriptObject"))
@@ -75,6 +102,8 @@ bool CEntityScriptObject::RegisterClass()
 		ScriptSrv->ExportCFunction("SubscribeLocalEvent", CEntityScriptObject_SubscribeLocalEvent);
 		ScriptSrv->ExportCFunction("UnsubscribeLocalEvent", CEntityScriptObject_UnsubscribeLocalEvent);
 		ScriptSrv->ExportCFunction("FireEvent", CEntityScriptObject_FireEvent);
+		ScriptSrv->ExportCFunction("AttachProperty", CEntityScriptObject_AttachProperty);
+		ScriptSrv->ExportCFunction("RemoveProperty", CEntityScriptObject_RemoveProperty);
 		ScriptSrv->EndClass(true);
 		OK;
 	}

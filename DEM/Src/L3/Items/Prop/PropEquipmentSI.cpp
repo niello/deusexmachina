@@ -3,6 +3,7 @@
 #include <Items/Item.h>
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 
 extern "C"
@@ -36,11 +37,22 @@ int CPropEquipment_GetEquippedItemID(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-void CPropEquipment::ExposeSI()
+void CPropEquipment::EnableSI(CPropScriptable& Prop)
 {
-	CPropInventory::ExposeSI();
+	CPropInventory::EnableSI(Prop);
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("GetEquippedItemID", CPropEquipment_GetEquippedItemID);
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropEquipment::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("GetEquippedItemID");
+	ScriptSrv->EndMixin();
+	CPropInventory::DisableSI(Prop);
+}
+//---------------------------------------------------------------------
+
+}

@@ -1,6 +1,7 @@
 #include "PropInventory.h"
 
 #include <Items/ItemManager.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
@@ -42,7 +43,11 @@ bool CPropInventory::InternalActivate()
 		n_assert(MaxVolume < 0.f || CurrVolume <= MaxVolume);
 	}
 
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropInventory, OnExposeSI);
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropInventory, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropInventory, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropInventory, OnLevelSaving);
 	OK;
 }
@@ -50,12 +55,48 @@ bool CPropInventory::InternalActivate()
 
 void CPropInventory::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	Items.Clear();
 	CurrWeight = 0.f;
 	CurrVolume = 0.f;
+}
+//---------------------------------------------------------------------
+
+bool CPropInventory::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropInventory::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

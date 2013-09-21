@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 #include <AI/Events/QueueTask.h>
 #include <AI/PropSmartObject.h>
@@ -73,12 +74,22 @@ int CPropActorBrain_Go(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::ExposeSI(const Events::CEventBase& Event)
+void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("DoAction", CPropActorBrain_DoAction);
 	ScriptSrv->ExportCFunction("Go", CPropActorBrain_Go);
-	OK;
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropActorBrain::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("DoAction");
+	ScriptSrv->ClearField("Go");
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+}

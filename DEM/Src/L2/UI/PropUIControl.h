@@ -68,6 +68,8 @@ protected:
 	virtual void	InternalDeactivate();
 	void			AddSOActions(CPropSmartObject& Prop);
 	void			RemoveSOActions();
+	void			EnableSI(class CPropScriptable& Prop);
+	void			DisableSI(class CPropScriptable& Prop);
 
 	bool			AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction = false);
 	bool			ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
@@ -76,7 +78,6 @@ protected:
 	bool			OnExecuteSmartObjAction(const Events::CEventBase& Event);
 	CAction*		GetActionByID(CStrID ID);
 
-	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(OnMouseEnter, OnMouseEnter);
 	DECLARE_EVENT_HANDLER(OnMouseLeave, OnMouseLeave);

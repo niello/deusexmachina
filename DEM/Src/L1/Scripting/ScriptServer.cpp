@@ -362,6 +362,13 @@ void CScriptServer::ExportIntegerConst(LPCSTR Name, int Value)
 }
 //---------------------------------------------------------------------
 
+void CScriptServer::ClearField(LPCSTR Name)
+{
+	lua_pushnil(l);
+	lua_setfield(l, -2, Name); //???rawset?
+}
+//---------------------------------------------------------------------
+
 bool CScriptServer::LoadClass(const CString& Name)
 {
 	n_assert2(Name.IsValid(), "Invalid class name to register");

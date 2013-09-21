@@ -15,7 +15,7 @@ __ImplementPropertyStorage(CPropPhysics);
 bool CPropPhysics::InternalActivate()
 {
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*pProp);
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropPhysics, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropPhysics, OnPropDeactivating);
@@ -31,7 +31,7 @@ void CPropPhysics::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(SetTransform);
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*pProp);
 }
 //---------------------------------------------------------------------
 

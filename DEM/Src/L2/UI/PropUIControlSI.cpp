@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 
 extern "C"
@@ -75,14 +76,27 @@ int CPropUIControl_RemoveActionHandler(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::ExposeSI(const Events::CEventBase& Event)
+void CPropUIControl::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("EnableUI", CPropUIControl_EnableUI);
 	ScriptSrv->ExportCFunction("IsUIEnabled", CPropUIControl_IsUIEnabled);
 	ScriptSrv->ExportCFunction("SetUIName", CPropUIControl_SetUIName);
 	ScriptSrv->ExportCFunction("AddUIActionHandler", CPropUIControl_AddActionHandler);
 	ScriptSrv->ExportCFunction("RemoveUIActionHandler", CPropUIControl_RemoveActionHandler);
-	OK;
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+void CPropUIControl::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("EnableUI");
+	ScriptSrv->ClearField("IsUIEnabled");
+	ScriptSrv->ClearField("SetUIName");
+	ScriptSrv->ClearField("AddUIActionHandler");
+	ScriptSrv->ClearField("RemoveUIActionHandler");
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 

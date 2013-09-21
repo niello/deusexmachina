@@ -73,11 +73,14 @@ protected:
 
 	virtual bool		InternalActivate();
 	virtual void		InternalDeactivate();
+	void				EnableSI(class CPropScriptable& Prop);
+	void				DisableSI(class CPropScriptable& Prop);
 	void				UpdateDecisionMaking();
 
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
-	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
 	DECLARE_EVENT_HANDLER(BeforePhysicsTick, BeforePhysicsTick);
 	DECLARE_EVENT_HANDLER(AfterPhysicsTick, AfterPhysicsTick);

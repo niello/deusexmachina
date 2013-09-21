@@ -1,6 +1,7 @@
 #include "PropSmartObject.h"
 
 #include <Game/Entity.h>
+#include <Scripting/PropScriptable.h>
 #include <AI/AIServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
@@ -45,18 +46,57 @@ bool CPropSmartObject::InternalActivate()
 			SetState(CStrID(DefaultState.CStr()));
 	}
 
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropSmartObject, ExposeSI);
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropSmartObject, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropSmartObject, OnPropDeactivating);
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CPropSmartObject::InternalDeactivate()
 {
-	UNSUBSCRIBE_EVENT(ExposeSI);
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	CurrState = CStrID::Empty;
 	Actions.Clear();
+}
+//---------------------------------------------------------------------
 
+bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

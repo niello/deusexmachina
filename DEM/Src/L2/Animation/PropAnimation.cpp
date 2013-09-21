@@ -2,6 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameServer.h> // For the time
+#include <Scripting/PropScriptable.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Bone.h>
@@ -27,11 +28,13 @@ using namespace Data;
 bool CPropAnimation::InternalActivate()
 {
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) InitSceneNodeModifiers(*pProp);
+
+	CPropScriptable* pPropScr = GetEntity()->GetProperty<CPropScriptable>();
+	if (pPropScr && pPropScr->IsActive()) EnableSI(*pPropScr);
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropAnimation, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropAnimation, OnPropDeactivating);
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAnimation, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
 	OK;
 }
@@ -41,13 +44,59 @@ void CPropAnimation::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
-	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
+	CPropScriptable* pPropScr = GetEntity()->GetProperty<CPropScriptable>();
+	if (pPropScr && pPropScr->IsActive()) DisableSI(*pPropScr);
+
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*pProp);
 
 	Clips.Clear();
+}
+//---------------------------------------------------------------------
+
+bool CPropAnimation::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropAnimation::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -132,38 +181,6 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 			if (!pBone->IsTerminal()) AddChildrenToMapping(pNode, pRoot, Bones);
 		}
 	}
-}
-//---------------------------------------------------------------------
-
-bool CPropAnimation::OnPropActivated(const Events::CEventBase& Event)
-{
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
-	if (!pProp) FAIL;
-
-	if (pProp->IsA<CPropSceneNode>())
-	{
-		InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
-		OK;
-	}
-
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CPropAnimation::OnPropDeactivating(const Events::CEventBase& Event)
-{
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
-	if (!pProp) FAIL;
-
-	if (pProp->IsA<CPropSceneNode>())
-	{
-		TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
-		OK;
-	}
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 

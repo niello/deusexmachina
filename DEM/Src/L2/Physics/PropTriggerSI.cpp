@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/Entity.h>
 
 extern "C"
@@ -33,12 +34,22 @@ int CPropTrigger_DisableTrigger(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::ExposeSI(const Events::CEventBase& Event)
+void CPropTrigger::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("EnableTrigger", CPropTrigger_EnableTrigger);
 	ScriptSrv->ExportCFunction("DisableTrigger", CPropTrigger_DisableTrigger);
-	OK;
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropTrigger::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("EnableTrigger");
+	ScriptSrv->ClearField("DisableTrigger");
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+}

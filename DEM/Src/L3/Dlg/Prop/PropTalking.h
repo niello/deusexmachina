@@ -32,8 +32,11 @@ protected:
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
+	void			EnableSI(class CPropScriptable& Prop);
+	void			DisableSI(class CPropScriptable& Prop);
 
-	DECLARE_EVENT_HANDLER(ExposeSI, ExposeSI);
+	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
+	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(Talk, OnTalk);
 
 public:

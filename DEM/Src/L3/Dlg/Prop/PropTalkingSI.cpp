@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
+#include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 
 extern "C"
@@ -33,11 +34,20 @@ int CPropTalking_SayPhrase(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-bool CPropTalking::ExposeSI(const CEventBase& Event)
+void CPropTalking::EnableSI(CPropScriptable& Prop)
 {
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("SayPhrase", CPropTalking_SayPhrase);
-	OK;
+	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+void CPropTalking::DisableSI(CPropScriptable& Prop)
+{
+	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("SayPhrase");
+	ScriptSrv->EndMixin();
+}
+//---------------------------------------------------------------------
+
+}

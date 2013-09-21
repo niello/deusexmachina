@@ -4,6 +4,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PropPhysics.h>
+#include <Scripting/PropScriptable.h>
 #include <AI/AIServer.h>
 #include <Render/DebugDraw.h>
 #include <Data/DataServer.h>
@@ -18,9 +19,14 @@ static const CString StrStimulusPrefix("AI::CStimulus");
 bool CPropAIHints::InternalActivate()
 {
 	if (!GetEntity()->GetLevel()->GetAI()) FAIL;
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropAIHints, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropAIHints, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropAIHints, OnPropsActivated);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropAIHints, OnRenderDebug);
-	PROP_SUBSCRIBE_PEVENT(ExposeSI, CPropAIHints, ExposeSI);
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropAIHints, OnUpdateTransform);
 	OK;
 }
@@ -28,10 +34,14 @@ bool CPropAIHints::InternalActivate()
 
 void CPropAIHints::InternalDeactivate()
 {
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
-	UNSUBSCRIBE_EVENT(ExposeSI);
 	UNSUBSCRIBE_EVENT(UpdateTransform);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
@@ -40,6 +50,38 @@ void CPropAIHints::InternalDeactivate()
 	}
 
 	Hints.Clear();
+}
+//---------------------------------------------------------------------
+
+bool CPropAIHints::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropAIHints::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

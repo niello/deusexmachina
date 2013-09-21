@@ -30,7 +30,6 @@ protected:
 	CArray<CStrID>									EntitiesToDelete;
 
 	void		DeleteEntity(int Idx);
-	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 
 public:
 
@@ -67,9 +66,11 @@ public:
 	bool		UnregisterProperty();
 	CProperty*	AttachProperty(CEntity& Entity, const CString& ClassName) const { return AttachProperty(Entity, Factory->GetRTTI(ClassName)); }
 	CProperty*	AttachProperty(CEntity& Entity, Data::CFourCC ClassFourCC) const { return AttachProperty(Entity, Factory->GetRTTI(ClassFourCC)); }
+	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	template<class T>
 	T*			AttachProperty(CEntity& Entity) const;
-	void		RemoveProperty(CEntity& Entity, Core::CRTTI& Type) const;
+	void		RemoveProperty(CEntity& Entity, const CString& ClassName) const { return RemoveProperty(Entity, Factory->GetRTTI(ClassName)); }
+	void		RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
 	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
@@ -155,7 +156,15 @@ void CEntityManager::RemoveProperty(Game::CEntity& Entity) const
 	n_assert_dbg(T::RTTI.IsDerivedFrom(CProperty::RTTI));
 	n_assert2_dbg(T::pStorage, (CString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
 	if (!T::pStorage) return;
-	T::pStorage->Remove(Entity.GetUID());
+
+	PProperty Prop;
+	if (T::pStorage->Get(Entity.GetUID(), Prop))
+	{
+		if (Prop->IsActive()) Prop->Deactivate();
+
+		//!!!remove by iterator!
+		T::pStorage->Remove(Entity.GetUID());
+	}
 }
 //---------------------------------------------------------------------
 
