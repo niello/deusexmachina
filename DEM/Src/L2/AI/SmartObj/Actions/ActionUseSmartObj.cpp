@@ -13,18 +13,19 @@ __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 
 using namespace Prop;
 
-void CActionUseSmartObj::StartSOAction(CActor* pActor)
+void CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO, CSmartObjAction* pSOAction)
 {
 	PParams P = n_new(CParams);
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("IAO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
-	if (Action->OnStartCmd.IsValid()) pSO->GetEntity()->FireEvent(Action->OnStartCmd, P);
+	if (pSOAction->OnStartCmd.IsValid()) pSO->GetEntity()->FireEvent(pSOAction->OnStartCmd, P);
 	EventSrv->FireEvent(CStrID("OnIAOActionStart"), P);
 
+	//SOANIM
 	//!!!play anim for actor and for SO, if it has one for this action!
 
-	if (Action->FreeUserSlots > 0) Action->FreeUserSlots--;
+	if (pSOAction->FreeUserSlots > 0) pSOAction->FreeUserSlots--;
 }
 //---------------------------------------------------------------------
 
@@ -32,16 +33,14 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
-
-	pSO = pSOEntity->GetProperty<CPropSmartObject>();
-	n_assert(pSO);
-	Action = pSO->GetAction(ActionID);
-
-	if (!Action->IsValid(pActor, pSO)) FAIL;
+	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	if (!pSO) FAIL;
+	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSOAction || !pSOAction->IsValid(pActor, pSO)) FAIL;
 
 	WasDone = false;
 
-	if (Action->FaceObject())
+	if (pSOAction->FaceObject())
 	{
 		vector3 FaceDir = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 		FaceDir.norm();
@@ -49,7 +48,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 		SubActFace = n_new(CActionFace);
 		return SubActFace->Activate(pActor);
 	}
-	else StartSOAction(pActor);
+	else StartSOAction(pActor, pSO, pSOAction);
 
 	OK;
 }
@@ -57,6 +56,13 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 
 EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 {
+	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
+	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	if (!pSO) return Failure;
+	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSOAction) return Failure;
+
 	// Finish SO facing if started
 	if (SubActFace.IsValid())
 	{
@@ -67,7 +73,7 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 			case Success:
 				SubActFace->Deactivate(pActor);
 				SubActFace = NULL;
-				StartSOAction(pActor);
+				StartSOAction(pActor, pSO, pSOAction);
 				break;
 			case Failure:
 			case Error:
@@ -81,24 +87,24 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 
 	if (WasDone) return Running;
 
-	Action->Progress += (float)GameSrv->GetFrameTime();
+	pSOAction->Progress += (float)GameSrv->GetFrameTime();
 
-	float Duration = Action->GetTpl().Duration;
-	if (Duration >= 0.f && Action->Progress >= Duration)
+	float Duration = pSOAction->GetTpl().Duration;
+	if (Duration >= 0.f && pSOAction->Progress >= Duration)
 	{
-		if (Action->Resource > 0) Action->Resource--;
+		if (pSOAction->Resource > 0) pSOAction->Resource--;
 
 		WasDone = true;
-		Action->Progress = 0.f;
+		pSOAction->Progress = 0.f;
 
 		// SmartObj can be destroyed on action done, so cache this value
-		bool EndOnDone = Action->EndOnDone();
+		bool EndOnDone = pSOAction->EndOnDone();
 
 		PParams P = n_new(CParams);
 		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 		P->Set(CStrID("IAO"), TargetID);
 		P->Set(CStrID("Action"), ActionID);
-		if (Action->OnDoneCmd.IsValid()) pSO->GetEntity()->FireEvent(Action->OnDoneCmd, P);
+		if (pSOAction->OnDoneCmd.IsValid()) pSO->GetEntity()->FireEvent(pSOAction->OnDoneCmd, P);
 		EventSrv->FireEvent(CStrID("OnIAOActionDone"), P);
 
 		if (EndOnDone) return Success;
@@ -121,8 +127,12 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
+	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	if (!pSO) return;
+	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSOAction) return;
 
-	if (Action->FreeUserSlots >= 0) Action->FreeUserSlots++;
+	if (pSOAction->FreeUserSlots >= 0) pSOAction->FreeUserSlots++;
 	
 	PParams P = n_new(CParams);
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
@@ -131,13 +141,13 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 	if (WasDone)
 	{
-		if (Action->OnEndCmd.IsValid()) pSOEntity->FireEvent(Action->OnEndCmd, P);
+		if (pSOAction->OnEndCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnEndCmd, P);
 		EventSrv->FireEvent(CStrID("OnIAOActionEnd"), P);
 	}
 	else
 	{
-		if (Action->ResetOnAbort()) Action->Progress = 0.f;
-		if (Action->OnAbortCmd.IsValid()) pSOEntity->FireEvent(Action->OnAbortCmd, P);
+		if (pSOAction->ResetOnAbort()) pSOAction->Progress = 0.f;
+		if (pSOAction->OnAbortCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnAbortCmd, P);
 		EventSrv->FireEvent(CStrID("OnIAOActionAbort"), P);
 	}
 }
@@ -145,12 +155,16 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 bool CActionUseSmartObj::IsValid(CActor* pActor) const
 {
-	return	Action->Enabled &&
-			(WasDone || Action->Resource) &&
-			EntityMgr->EntityExists(TargetID) &&
-			pSO->GetEntity()->GetLevel() == pActor->GetEntity()->GetLevel() &&
+	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
+	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	if (!pSO) FAIL;
+	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
+	return	pSOAction &&
+			pSOAction->Enabled &&
+			(WasDone || pSOAction->Resource) &&
 			((SubActFace.IsValid() && SubActFace->IsValid(pActor)) ||
-			 (!Action->UpdateValidator.IsValid() || Action->UpdateValidator->IsValid(pActor, pSO, Action)));
+			 (!pSOAction->UpdateValidator.IsValid() || pSOAction->UpdateValidator->IsValid(pActor, pSO, pSOAction)));
 }
 //---------------------------------------------------------------------
 

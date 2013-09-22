@@ -49,8 +49,8 @@ public:
 		CAction(CStrID _ID, LPCSTR Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority), Enabled(true), Visible(true) {}
 
 		LPCSTR	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
-		bool	operator <(const CAction& Other) const { return (Enabled && !Other.Enabled) || (Priority > Other.Priority); }
-		bool	operator >(const CAction& Other) const { return (!Enabled && Other.Enabled) || (Priority < Other.Priority); }
+		bool	operator <(const CAction& Other) const { return (Enabled != Other.Enabled) ? Enabled : (Priority > Other.Priority); }
+		bool	operator >(const CAction& Other) const { return (Enabled != Other.Enabled) ? Other.Enabled : (Priority < Other.Priority); }
 		bool	operator ==(const CAction& Other) const { return ID == Other.ID; }
 	};
 

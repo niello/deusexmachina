@@ -77,7 +77,11 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	else if (Data.IsA<int>()) lua_pushinteger(l, Data.GetValue<int>());
 	else if (Data.IsA<float>()) lua_pushnumber(l, Data.GetValue<float>());
 	else if (Data.IsA<CString>()) lua_pushstring(l, Data.GetValue<CString>().CStr());
-	else if (Data.IsA<CStrID>()) lua_pushstring(l, Data.GetValue<CStrID>().CStr());
+	else if (Data.IsA<CStrID>())
+	{
+		CStrID ID = Data.GetValue<CStrID>();
+		lua_pushstring(l, ID.IsValid() ? ID.CStr() : "");
+	}
 	else if (Data.IsA<PVOID>()) lua_pushlightuserdata(l, Data.GetValue<PVOID>());
 	else if (Data.IsA<Data::PDataArray>())
 	{

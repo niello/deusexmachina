@@ -431,7 +431,6 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	{
 		pActor = pActorEnt->GetProperty<CPropActorBrain>();
 		pSO = GetEntity()->GetProperty<CPropSmartObject>();
-		n_assert(pActor && pSO);
 	}
 
 	int VisibleCount = 0;
@@ -451,7 +450,6 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 
 	Actions.Sort();
 
-	// Don't pass ptrs if async!
 	PParams P = n_new(CParams);
 	P->Set(CStrID("ActorEntityPtr"), (PVOID)pActorEnt);
 	P->Set(CStrID("CtlPtr"), (PVOID)this);
