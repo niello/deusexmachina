@@ -39,7 +39,7 @@ bool CWorldManager::OnGameSaving(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 //???to L2 GameSrv?
-// Level will be set as active externally, because here NPC may walk
+// Level will be set as active externally, because transition can be performed by NPCs too
 bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
 {
 	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
@@ -64,7 +64,6 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 		GameSrv->UnloadAllGameLevels();
 	}
 
-	//!!!must not preload resources inside, load level resources after freeing unreferenced ones!
 	if (!GameSrv->IsLevelLoaded(LevelID) && !GameSrv->LoadGameLevel(LevelID)) FAIL;
 
 	Game::CEntity* pMarker = EntityMgr->GetEntity(MarkerID);

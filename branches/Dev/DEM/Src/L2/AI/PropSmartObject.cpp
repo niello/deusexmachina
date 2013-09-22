@@ -24,7 +24,7 @@ bool CPropSmartObject::InternalActivate()
 	{
 		TypeID = Desc->Get(CStrID("TypeID"), CStrID::Empty);
 		Movable = Desc->Get(CStrID("Movable"), false);
-		
+
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Actions")))
 		{
@@ -102,9 +102,11 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 
 bool CPropSmartObject::SetState(CStrID ID)
 {
-	n_assert2(ID.IsValid(), "Tried to set empty SO state");
+	n_assert2(ID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
 
 	//!!!need to know what states are defined for this object!
+
+	if (ID == CurrState) OK;
 
 	PParams P = n_new(CParams(2));
 	P->Set(CStrID("From"), CurrState);
@@ -121,7 +123,11 @@ bool CPropSmartObject::SetState(CStrID ID)
 void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 {
 	int Idx = Actions.FindIndex(ID);
-	if (Idx != INVALID_INDEX) Actions.ValueAt(Idx)->Enabled = Enable;
+	if (Idx == INVALID_INDEX) return;
+
+	AI::CSmartObjAction* pAct = Actions.ValueAt(Idx).GetUnsafe();
+	if (pAct->Enabled == Enable) return;
+	pAct->Enabled = Enable;
 
 	PParams P = n_new(CParams(2));
 	P->Set(CStrID("ActionID"), ID);
@@ -144,6 +150,7 @@ bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector
 			OutMinDist += ActorRadius;
 			OutMaxDist += ActorRadius;
 		}
+		//???add SORadiusMatters? for items, enemies etc
 		OK;
 	}
 

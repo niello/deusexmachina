@@ -462,4 +462,28 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 }
 //---------------------------------------------------------------------
 
+void CGameLevel::AddToSelection(CStrID EntityID)
+{
+	if (IsSelected(EntityID) || !EntityID.IsValid()) return;
+	CEntity* pEnt = EntityMgr->GetEntity(EntityID);
+	if (pEnt && pEnt->GetLevel() == this) //???only if IsActive?
+	{
+		SelectedEntities.Add(EntityID);
+		Data::PParams P = n_new(Data::CParams(1));
+		P->Set(CStrID("EntityID"), EntityID);
+		FireEvent(CStrID("OnEntitySelected"), P);
+	}
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::RemoveFromSelection(CStrID EntityID)
+{
+	if (!SelectedEntities.RemoveByValue(EntityID)) FAIL; 
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("EntityID"), EntityID);
+	FireEvent(CStrID("OnEntityDeselected"), P);
+	OK;
+}
+//---------------------------------------------------------------------
+
 }

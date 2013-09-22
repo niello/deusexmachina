@@ -24,17 +24,12 @@ class CActionUseSmartObj: public CAction
 
 private:
 
-	CStrID					TargetID;
-	CStrID					ActionID;
+	CStrID	TargetID;
+	CStrID	ActionID;
+	bool	WasDone;
+	PAction	SubActFace;
 
-	bool					WasDone;
-
-	Prop::CPropSmartObject*	pSO;
-	CSmartObjAction*		Action;
-
-	PAction					SubActFace;
-
-	void				StartSOAction(CActor* pActor);
+	void				StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO, CSmartObjAction* pSOAction);
 
 public:
 

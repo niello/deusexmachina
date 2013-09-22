@@ -91,9 +91,8 @@ public:
 	DWORD					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
 
-	//!!!fire events!
-	void					AddToSelection(CStrID EntityID) { if (!IsSelected(EntityID)) SelectedEntities.Add(EntityID); }
-	bool					RemoveFromSelection(CStrID EntityID) { return SelectedEntities.RemoveByValue(EntityID); }
+	void					AddToSelection(CStrID EntityID);
+	bool					RemoveFromSelection(CStrID EntityID);
 	void					ClearSelection() { SelectedEntities.Clear(); }
 	const CArray<CStrID>&	GetSelection() const { return SelectedEntities; }
 	DWORD					GetSelectedCount() const { return SelectedEntities.GetCount(); }
