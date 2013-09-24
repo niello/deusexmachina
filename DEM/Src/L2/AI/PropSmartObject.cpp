@@ -36,11 +36,14 @@ bool CPropSmartObject::InternalActivate()
 				LPCSTR TplName = ActDesc->Get<CString>(CStrID("Tpl")).CStr();
 				const AI::CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
 				if (pTpl) Actions.Add(Prm.GetName(), n_new(AI::CSmartObjAction)(*pTpl, ActDesc));
-				else n_printf("AI, IAO, Warning: can't find smart object action template '%s'\n", TplName);
+				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", TplName);
 			}
 			Actions.EndAdd();
 		}
 
+		//!!!script won't be called!
+		//???to OnPropsActivated?
+		//!!!not DefaultState but state from attribute! if attr is empty, then default state!
 		CString DefaultState;
 		if (Desc->Get(DefaultState, CStrID("DefaultState")))
 			SetState(CStrID(DefaultState.CStr()));

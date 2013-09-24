@@ -62,7 +62,7 @@ bool CPropUIControl::InternalActivate()
 		EnableSmartObjReflection(Desc->Get<bool>(CStrID("AutoAddSmartObjActions"), true));
 	}
 
-	//???move to the IAO desc as field? per-entity allows not to spawn redundant IAO descs
+	//???move to the desc as field? per-entity allows not to spawn redundant IAO descs
 	//???Shape desc or collision object desc? CollObj can have offset, but Group & Mask must be overridden to support picking.
 	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
 	if (PickShapeID.IsValid() && GetEntity()->GetLevel()->GetPhysics())
@@ -195,7 +195,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 	{
 		CStrID ID = SOActions.KeyAt(i);
 		PSmartObjAction Act = SOActions.ValueAt(i);
-		if (Act.IsValid() && Act->AppearsInUI)
+		if (Act.IsValid() && Act->VisibleInUI)
 		{
 			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<CString>(ID, CString::Empty).CStr() : NULL;
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, Priority_Default, true));

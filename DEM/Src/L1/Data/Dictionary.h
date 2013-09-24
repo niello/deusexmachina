@@ -45,7 +45,7 @@ public:
 	void			Set(const TKey& Key, const TValue& Value);
 	bool			Contains(const TKey& Key) const { return Pairs.FindIndexSorted(Key) != -1; }
 	int				GetCount() const { return Pairs.GetCount(); }
-	void			Clear() { Pairs.Clear(); Pairs.Flags.Clear(Dict_InBeginAdd); }
+	void			Clear(bool FreeMemory = false) { Pairs.Clear(FreeMemory); Pairs.Flags.Clear(Dict_InBeginAdd); }
 	bool			IsEmpty() const { return !Pairs.GetCount(); }
 
 	const TKey&		KeyAt(int Idx) const { return Pairs[Idx].GetKey(); }

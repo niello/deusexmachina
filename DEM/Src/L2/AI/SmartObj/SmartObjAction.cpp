@@ -12,8 +12,7 @@ CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 	if (Desc.IsValid())
 	{
 		Enabled = Desc->Get<bool>(CStrID("Enabled"), true);
-
-		AppearsInUI = Desc->Get<bool>(CStrID("AppearsInUI"), true);
+		VisibleInUI = Desc->Get<bool>(CStrID("VisibleInUI"), true);
 		Resource = Desc->Get<int>(CStrID("Resource"), -1);
 
 		static const CString StrValidatorPfx("AI::CValidator");
@@ -57,8 +56,8 @@ CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 	}
 	else
 	{
-		Enabled =
-		AppearsInUI = true;
+		Enabled = true;
+		VisibleInUI = true;
 		Resource = -1;
 		ActivationValidator = NULL;
 		UpdateValidator = NULL;

@@ -22,7 +22,7 @@ using namespace Scripting;
 
 int CPropActorBrain_DoAction(lua_State* l)
 {
-	//args: EntityScriptObject's this table, IAO ID, Action ID
+	//args: EntityScriptObject's this table, SO ID, Action ID
 	SETUP_ENT_SI_ARGS(3);
 
 	Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));

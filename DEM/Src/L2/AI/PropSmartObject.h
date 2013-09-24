@@ -29,7 +29,7 @@ protected:
 	CStrID		TypeID;
 	bool		Movable;
 	CActList	Actions;
-	CStrID		CurrState; //???empty state = disabled?
+	CStrID		CurrState;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

@@ -15,7 +15,7 @@ using namespace Prop;
 
 void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {
-	//???special IAO stimulus, may be one per action or with action list?
+	//???special SO stimulus, may be one per action or with action list?
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
 		Game::PEntity Ent = EntityMgr->GetEntity(pStimulus->SourceEntityID);

@@ -5,8 +5,8 @@
 #include <AI/Planning/Goal.h>
 #include <Data/Dictionary.h>
 
-// This goal makes actor want to work, if he knows aboutsome IAO offering work and
-// if he is aware of overseer.
+// This goal makes actor want to work, if he knows about some SO offering work and
+// if he is aware of an overseer.
 
 namespace AI
 {
@@ -17,10 +17,10 @@ class CGoalWork: public CGoal
 
 protected:
 
-	// IAO type ID to action ID
+	// SO type ID to action ID
 	CDict<CStrID, CStrID> WorkActionMap;
 
-	CStrID IAO;
+	CStrID SO;
 	CStrID Action;
 
 public:

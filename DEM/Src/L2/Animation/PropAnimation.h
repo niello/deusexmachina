@@ -30,12 +30,9 @@ class CPropAnimation: public Game::CProperty
 
 private:
 
-	//???move this cache to CSceneNode? any Prop that manages node controlers may want to access it!
-	CDict<CStrID, Scene::CSceneNode*>		Nodes;
-
-	CDict<CStrID, Anim::PAnimClip>		Clips;
-	CArray<Anim::CAnimTask>						Tasks;
-	CArray<Scene::PNodeControllerStatic>		BasePose; // Captured pose for correct fading and blending
+	CDict<CStrID, Anim::PAnimClip>			Clips;
+	CArray<Anim::CAnimTask>					Tasks;
+	CArray<Scene::PNodeControllerStatic>	BasePose; // Captured pose for correct fading and blending
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -53,7 +50,7 @@ public:
 
 	CPropAnimation(): Tasks(1, 1) { Tasks.SetKeepOrder(false); }
 
-	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeICTime = 0.f, float FadeOutTime = 0.f);
+	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause) { Tasks[TaskID].SetPause(Pause); }
 	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f);
 	float			GetAnimLength(CStrID ClipID) const;

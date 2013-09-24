@@ -17,6 +17,7 @@ namespace Data
 namespace AI
 {
 
+//???store pSO inside?
 class CSmartObjAction: public Core::CRefCounted
 {
 protected:
@@ -26,9 +27,8 @@ protected:
 public:
 
 	bool				Enabled;
-
-	bool				AppearsInUI;
-	//LastActivatioCTime - for Timeout!
+	bool				VisibleInUI;
+	//LastActivationTime - for Timeout!
 	int					FreeUserSlots;
 	int					Resource;
 	float				Progress; //???per-user? can't place into Action, it is destructed on abort plan.
@@ -37,12 +37,12 @@ public:
 	//???planner worldstate source in validator or separate or in this? data-driven set of key-value pairs
 	PValidator			ActivationValidator;
 	PValidator			UpdateValidator;
+	PWorldStateSource	Preconditions;
+
 	CStrID				OnStartCmd;
 	CStrID				OnDoneCmd;
 	CStrID				OnEndCmd;
 	CStrID				OnAbortCmd;
-
-	PWorldStateSource	Preconditions;
 
 	CSmartObjAction(const CSmartObjActionTpl& _Tpl, Data::PParams Desc);
 

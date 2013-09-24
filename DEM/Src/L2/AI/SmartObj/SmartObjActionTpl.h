@@ -5,8 +5,8 @@
 #include <Data/Flags.h>
 #include <Core/RefCounted.h>
 
-// Template record for IAO actions, either hardcoded (like CSmartObjActionPickItem)
-// or custom (scripted CSmartObjActionCustom).
+// Template record for smart object action, contains shared properties
+// to reduce memory footprint and setup efforts
 
 namespace Data
 {
@@ -20,8 +20,8 @@ struct CSmartObjActionTpl
 {
 	enum
 	{
-		FACE_OBJECT				= 0x01,	// If set, actor will face this object
-		END_ON_DONE				= 0x02,	// If set, end action and stop animation when Duration passed
+		FACE_OBJECT				= 0x01,	// If set, actor will face host object before starting the action
+		END_ON_DONE				= 0x02,	// If set, end action when Duration passed
 		RESET_ON_ABORT			= 0x04,	// If set, clear progress of unfinished action
 		LOOP_ANIM				= 0x08,	// If set, action is done after Duration passed, anim looped, else done on anim done
 		ACTOR_RADIUS_MATTERS	= 0x10	// If set, distance is adjusted by the actor radius
@@ -33,18 +33,18 @@ struct CSmartObjActionTpl
 	// Destination
 	float			MinDistance;		// Can make union with navmesh region
 	float			MaxDistance;		// < 0 = no distance requirements
-	vector3			DestOffset;			// Offset from IAO position in local coords
+	vector3			DestOffset;			// Offset from SO position in local coords
 
 	// Facing
-	// - face dir
+	// - local face direction (angle from forward direction around Y axis)
 
 	// Animation and timing
 	float			Duration;			// Only for LOOP_ANIM. Can split to min & max to randomize
 	// - anim props or name or id
-	// - fidget period min, max
+	// - fidget period min, max (actor does some short non-looped busy animation)
 
 	// Usage restrictions
-	int				MaxUserCount;		// How much users at a time can execute this action on the same IAO
+	int				MaxUserCount;		// How much users at a time can execute this action on the same SO, -1 is no limit
 	//float			Timeout;			// Pause between two action executions
 
 	CSmartObjActionTpl() {}

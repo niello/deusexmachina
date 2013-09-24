@@ -17,10 +17,10 @@ void CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* p
 {
 	PParams P = n_new(CParams);
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
-	P->Set(CStrID("IAO"), TargetID);
+	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 	if (pSOAction->OnStartCmd.IsValid()) pSO->GetEntity()->FireEvent(pSOAction->OnStartCmd, P);
-	EventSrv->FireEvent(CStrID("OnIAOActionStart"), P);
+	EventSrv->FireEvent(CStrID("OnSOActionStart"), P);
 
 	//SOANIM
 	//!!!play anim for actor and for SO, if it has one for this action!
@@ -102,10 +102,10 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 
 		PParams P = n_new(CParams);
 		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
-		P->Set(CStrID("IAO"), TargetID);
+		P->Set(CStrID("SO"), TargetID);
 		P->Set(CStrID("Action"), ActionID);
 		if (pSOAction->OnDoneCmd.IsValid()) pSO->GetEntity()->FireEvent(pSOAction->OnDoneCmd, P);
-		EventSrv->FireEvent(CStrID("OnIAOActionDone"), P);
+		EventSrv->FireEvent(CStrID("OnSOActionDone"), P);
 
 		if (EndOnDone) return Success;
 	}
@@ -136,19 +136,19 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	
 	PParams P = n_new(CParams);
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
-	P->Set(CStrID("IAO"), TargetID);
+	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 
 	if (WasDone)
 	{
 		if (pSOAction->OnEndCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnEndCmd, P);
-		EventSrv->FireEvent(CStrID("OnIAOActionEnd"), P);
+		EventSrv->FireEvent(CStrID("OnSOActionEnd"), P);
 	}
 	else
 	{
 		if (pSOAction->ResetOnAbort()) pSOAction->Progress = 0.f;
 		if (pSOAction->OnAbortCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnAbortCmd, P);
-		EventSrv->FireEvent(CStrID("OnIAOActionAbort"), P);
+		EventSrv->FireEvent(CStrID("OnSOActionAbort"), P);
 	}
 }
 //---------------------------------------------------------------------
