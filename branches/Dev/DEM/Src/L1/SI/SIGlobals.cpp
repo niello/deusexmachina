@@ -22,11 +22,33 @@ int Print(lua_State* l)
 }
 //---------------------------------------------------------------------
 
+int RandomInt(lua_State* l)
+{
+	// Args: min, max
+	if (lua_gettop(l) < 2) return 0;
+	lua_pushnumber(l, n_rand_int(lua_tointeger(l, 1), lua_tointeger(l, 2)));
+	return 1;
+}
+//---------------------------------------------------------------------
+
+int RandomFloat(lua_State* l)
+{
+	// Args: [min, max]
+	int ArgCount = lua_gettop(l);
+	if (ArgCount == 1) return 0;
+	if (!ArgCount) lua_pushnumber(l, n_rand());
+	else lua_pushnumber(l, n_rand((float)lua_tonumber(l, 1), (float)lua_tonumber(l, 2)));
+	return 1;
+}
+//---------------------------------------------------------------------
+
 bool RegisterGlobals()
 {
 	lua_State* l = ScriptSrv->GetLuaState();
 
 	lua_register(l, "print", Print);
+	lua_register(l, "RandomInt", RandomInt);
+	lua_register(l, "RandomFloat", RandomFloat);
 
 	OK;
 }

@@ -18,17 +18,21 @@ class CPropSceneNode: public Game::CProperty
 
 protected:
 
-	Scene::PSceneNode	Node;
-	bool				ExistingNode;
+	Scene::PSceneNode					Node;
+	bool								ExistingNode;
+	CDict<CStrID, Scene::CSceneNode*>	ChildCache; //???PERF: is really useful?
+	CArray<CStrID>						ChildrenToSave;
 
-	virtual bool		InternalActivate();
-	virtual void		InternalDeactivate();
+	virtual bool	InternalActivate();
+	virtual void	InternalDeactivate();
+	void			FillSaveLoadList(Scene::CSceneNode* pNode, const CString& Path);
 
+	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
 	DECLARE_EVENT_HANDLER(OnWorldTfmsUpdated, OnWorldTfmsUpdated);
 	DECLARE_EVENT_HANDLER_VIRTUAL(OnRenderDebug, OnRenderDebug);
 
-	virtual void SetTransform(const matrix44& NewTfm);
+	virtual void	SetTransform(const matrix44& NewTfm);
 
 public:
 
@@ -38,11 +42,26 @@ public:
 		AABB_Phys	= 0x02
 	};
 
-	//virtual ~CPropSceneNode() {}
-
 	Scene::CSceneNode*	GetNode() const { return Node.GetUnsafe(); }
+	Scene::CSceneNode*	GetChildNode(CStrID ID);
 	void				GetAABB(CAABB& OutBox, DWORD TypeFlags = AABB_Gfx | AABB_Phys) const;
 };
+
+inline Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
+{
+	if (!ID.IsValid()) return Node.GetUnsafe();
+	if (!Node.IsValid()) return NULL;
+
+	int NodeIdx = ChildCache.FindIndex(ID);
+	if (NodeIdx == INVALID_INDEX)
+	{
+		Scene::CSceneNode* pNode = Node->GetChild(ID.CStr());
+		if (pNode) ChildCache.Add(ID, pNode);
+		return pNode;
+	}
+	else return ChildCache.ValueAt(NodeIdx);
+}
+//---------------------------------------------------------------------
 
 }
 

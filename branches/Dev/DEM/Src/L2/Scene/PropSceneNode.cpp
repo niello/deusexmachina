@@ -6,6 +6,7 @@
 #include <Scene/Events/SetTransform.h>
 #include <Scene/Model.h>
 #include <Physics/NodeAttrCollision.h>
+#include <Data/DataArray.h>
 #include <Render/DebugDraw.h>
 
 namespace Scene
@@ -42,12 +43,47 @@ bool CPropSceneNode::InternalActivate()
 
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
 
+		//???or do scene graph saving independently from entities? is this possible?
+		//save level & all scene graph tfms, load level, apply tfms on nodes found?
+		//64 (matrix) or 40 (SRT) bytes per node, no Transform and ChildTransforms attributes
+		//save scene graph as binary format (list or tree), either diff or overwrite, mb overwrite is better
+		//after loading transforms UpdateTransform or smth must be fired, and no prop should use tfm before this happens
+
 		if (ExistingNode)
 			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
-		else Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+		else
+		{
+			// Add children to the save-load list. All nodes externally attached won't be saved, which is desirable.
+			ChildCache.BeginAdd();
+			FillSaveLoadList(Node.GetUnsafe(), "");
+			ChildCache.EndAdd();
+
+			Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+
+			// Load child local transforms
+			Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), NULL);
+			if (ChildTfms.IsValid() && ChildTfms->GetCount())
+			{
+				for (int i = 0; i < ChildTfms->GetCount(); ++i)
+				{
+					Data::PParams ChildTfm = ChildTfms->Get<Data::PParams>(i);
+					CStrID ChildID = ChildTfm->Get<CStrID>(CStrID("ID"));
+					Scene::CSceneNode* pNode = GetChildNode(ChildID);
+					if (pNode)
+					{
+						pNode->SetScale(ChildTfm->Get<vector3>(CStrID("S")));
+						const vector4& Rot = ChildTfm->Get<vector4>(CStrID("R"));
+						pNode->SetRotation(quaternion(Rot.x, Rot.y, Rot.z, Rot.w));
+						pNode->SetPosition(ChildTfm->Get<vector3>(CStrID("T")));
+					}
+				}
+			}
+		}
+
 		GetEntity()->FireEvent(CStrID("UpdateTransform"));
 	}
 
+	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropSceneNode, OnLevelSaving);
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropSceneNode, OnSetTransform);
 	PROP_SUBSCRIBE_PEVENT(OnWorldTfmsUpdated, CPropSceneNode, OnWorldTfmsUpdated);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropSceneNode, OnRenderDebugProc);
@@ -57,14 +93,59 @@ bool CPropSceneNode::InternalActivate()
 
 void CPropSceneNode::InternalDeactivate()
 {
+	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(SetTransform);
 	UNSUBSCRIBE_EVENT(OnWorldTfmsUpdated);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
+
+	ChildCache.Clear();
+	ChildrenToSave.Clear();
 
 	if (Node.IsValid() && !ExistingNode)
 	{
 		Node->RemoveFromParent();
 		Node = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+bool CPropSceneNode::OnLevelSaving(const Events::CEventBase& Event)
+{
+	// Need to recreate array because else we may rewrite initial level desc in the HRD cache
+	Data::PDataArray ChildTfms = n_new(Data::CDataArray);
+	GetEntity()->SetAttr<Data::PDataArray>(CStrID("ChildTransforms"), ChildTfms);
+
+	Data::CData* pData = ChildTfms->Reserve(ChildrenToSave.GetCount());
+	for (int i = 0; i < ChildrenToSave.GetCount(); ++i)
+	{
+		CStrID ChildID = ChildrenToSave[i];
+		Scene::CSceneNode* pNode = GetChildNode(ChildID);
+		if (!pNode) continue;
+		if (!pNode->IsLocalTransformValid()) pNode->UpdateLocalFromWorld();
+		Data::PParams ChildTfm = n_new(Data::CParams(4));
+		ChildTfm->Set(CStrID("ID"), ChildID);
+		ChildTfm->Set(CStrID("S"), pNode->GetScale());
+		const quaternion& Rot = pNode->GetRotation();
+		ChildTfm->Set(CStrID("R"), vector4(Rot.x, Rot.y, Rot.z, Rot.w));
+		ChildTfm->Set(CStrID("T"), pNode->GetPosition());
+		*pData = ChildTfm;
+		++pData;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const CString& Path)
+{
+	for (DWORD i = 0; i < pNode->GetChildCount(); ++i)
+	{
+		Scene::CSceneNode* pChild = pNode->GetChild(i);
+		CString FullName = Path + pChild->GetName().CStr();
+		CStrID FullID = CStrID(FullName.CStr());
+		ChildCache.Add(FullID, pChild);
+		ChildrenToSave.Add(FullID);
+		FillSaveLoadList(pChild, FullName + ".");
 	}
 }
 //---------------------------------------------------------------------

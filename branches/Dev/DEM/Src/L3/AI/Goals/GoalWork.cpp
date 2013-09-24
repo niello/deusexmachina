@@ -40,7 +40,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 {
 	//???if working, keep relevance?
 
-	IAO = CStrID::Empty;
+	SO = CStrID::Empty;
 	Action = CStrID::Empty;
 
 	CMemFactSmartObj* pBest = NULL;
@@ -77,14 +77,14 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	for (; It; ++It)
 		TotalOverseersConf += ((CMemFactOverseer*)It->Get())->Confidence;
 
-	IAO = pBest->pSourceStimulus->SourceEntityID;
+	SO = pBest->pSourceStimulus->SourceEntityID;
 	Relevance *= (1.f + TotalOverseersConf) * PersonalityFactor;
 }
 //---------------------------------------------------------------------
 
 void CGoalWork::GetDesiredProps(CWorldState& Dest)
 {
-	Dest.SetProp(WSP_UsingSmartObj, IAO);
+	Dest.SetProp(WSP_UsingSmartObj, SO);
 	Dest.SetProp(WSP_Action, Action);
 }
 //---------------------------------------------------------------------

@@ -6,9 +6,6 @@
 
 // Destructible property allows to logically destroy owning entity by applying damage to it.
 
-// Adds IAO actions:
-// - Attack
-
 namespace Prop
 {
 

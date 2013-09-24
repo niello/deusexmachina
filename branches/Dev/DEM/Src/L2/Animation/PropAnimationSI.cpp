@@ -41,10 +41,10 @@ int CPropAnimation_StartAnim(lua_State* l)
 	float Speed = (ArgCount > 4) ? (float)lua_tonumber(l, 5) : 1.f;
 	DWORD Priority = (ArgCount > 5) ? lua_tointeger(l, 6) : 0;
 	float Weight = (ArgCount > 6) ? (float)lua_tonumber(l, 7) : 1.f;
-	float FadeICTime = (ArgCount > 7) ? (float)lua_tonumber(l, 8) : 0.f;
+	float FadeInTime = (ArgCount > 7) ? (float)lua_tonumber(l, 8) : 0.f;
 	float FadeOutTime = (ArgCount > 8) ? (float)lua_tonumber(l, 9) : 0.f;
 
-	int TaskID = pProp->StartAnim(ClipID, Loop, Offset, Speed, Priority, Weight, FadeICTime, FadeOutTime);
+	int TaskID = pProp->StartAnim(ClipID, Loop, Offset, Speed, Priority, Weight, FadeInTime, FadeOutTime);
 	lua_pushinteger(l, (lua_Integer)TaskID);
 	return 1;
 }

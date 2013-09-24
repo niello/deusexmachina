@@ -104,7 +104,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
 	if (!Prop.GetNode()) return; // Nothing to animate
 
-	// Remap bone indices to node relative pathes
+	// Remap bone indices to node relative pathes (NAX2-only)
 	CDict<int, CStrID> Bones;
 	Bones.Add(-1, CStrID::Empty);
 	AddChildrenToMapping(Prop.GetNode(), Prop.GetNode(), Bones);
@@ -157,7 +157,6 @@ void CPropAnimation::TermSceneNodeModifiers(CPropSceneNode& Prop)
 	for (int i = 0; i < Tasks.GetCount(); ++i)
 		Tasks[i].Stop(0.f);
 	Tasks.Clear();
-	Nodes.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -221,18 +220,18 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
-							  float Weight, float FadeICTime, float FadeOutTime)
+							  float Weight, float FadeInTime, float FadeOutTime)
 {
-	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeICTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
+	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeInTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
 	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
 	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) return INVALID_INDEX;
 	if (!Loop && (Offset < 0.f || Offset > Clip->GetDuration())) return INVALID_INDEX;
 
-	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (!pProp || !pProp->GetNode()) return INVALID_INDEX; // Nothing to animate
-	Scene::CSceneNode* pRoot = pProp->GetNode();
+	CPropSceneNode* pPropNode = GetEntity()->GetProperty<CPropSceneNode>();
+	if (!pPropNode || !pPropNode->GetNode()) return INVALID_INDEX; // Nothing to animate
+	Scene::CSceneNode* pRoot = pPropNode->GetNode();
 
 	int TaskID = INVALID_INDEX;
 	Anim::CAnimTask* pTask = NULL;
@@ -250,7 +249,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		pTask = Tasks.Reserve(1);
 	}
 
-	bool NeedWeight = (Weight < 1.f || FadeICTime > 0.f || FadeOutTime > 0.f);
+	bool NeedWeight = (Weight < 1.f || FadeInTime > 0.f || FadeOutTime > 0.f);
 	bool BlendingIsNotNecessary = (!NeedWeight && Priority == 0);
 
 	int FreePoseLockerIdx = 0;
@@ -260,16 +259,8 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i, ++ppCtlr)
 	{
 		// Get controller target node
-		Scene::CSceneNode* pNode;
-		CStrID Target = Clip->GetSamplerTarget(i);
-		int NodeIdx = Nodes.FindIndex(Target);
-		if (NodeIdx == INVALID_INDEX)
-		{
-			pNode = pRoot->GetChild(Target.CStr());
-			if (pNode) Nodes.Add(Target, pNode);
-			else continue;
-		}
-		else pNode = Nodes.ValueAt(NodeIdx);
+		Scene::CSceneNode* pNode = pPropNode->GetChildNode(Clip->GetSamplerTarget(i));
+		if (!pNode) continue;
 
 		*ppCtlr = Clip->CreateController(i);
 
@@ -318,14 +309,14 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	if (!Loop)
 	{
 		float RealDuration = Clip->GetDuration() / n_fabs(Speed);
-		if (FadeICTime + FadeOutTime > RealDuration)
+		if (FadeInTime + FadeOutTime > RealDuration)
 		{
-			FadeOutTime = n_max(0.f, RealDuration - FadeICTime);
-			FadeICTime = RealDuration - FadeOutTime;
+			FadeOutTime = n_max(0.f, RealDuration - FadeInTime);
+			FadeInTime = RealDuration - FadeOutTime;
 		}
 	}
 
-	FadeICTime *= Speed;
+	FadeInTime *= Speed;
 	FadeOutTime *= Speed;
 
 	if (!Loop)
@@ -349,7 +340,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	pTask->Speed = Speed;
 	pTask->Priority = Priority;
 	pTask->Weight = Weight;
-	pTask->FadeICTime = Offset + FadeICTime;	// Get a point in time because we know the start time
+	pTask->FadeInTime = Offset + FadeInTime;	// Get a point in time because we know the start time
 	pTask->FadeOutTime = FadeOutTime;			// Remember only the length, because we don't know the end time
 	pTask->State = Anim::CAnimTask::Task_Starting;
 	pTask->Loop = Loop;
