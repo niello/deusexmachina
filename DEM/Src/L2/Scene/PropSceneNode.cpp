@@ -45,7 +45,9 @@ bool CPropSceneNode::InternalActivate()
 
 		//???or do scene graph saving independently from entities? is this possible?
 		//save level & all scene graph tfms, load level, apply tfms on nodes found?
-		//64 (matrix) or 40 (SRT) bytes per node, no Transform and ChildTransforms attributes
+		//64 (matrix) or 40 (SRT) bytes per node, no ChildTransforms attribute
+		//Transform attr will be required because of many code abstracted from SceneNode is using Transform,
+		//but this attribute won't be required to save. even if saved, it is not too much overhead
 		//save scene graph as binary format (list or tree), either diff or overwrite, mb overwrite is better
 		//after loading transforms UpdateTransform or smth must be fired, and no prop should use tfm before this happens
 

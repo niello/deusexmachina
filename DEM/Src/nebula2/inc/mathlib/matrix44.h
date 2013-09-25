@@ -1,10 +1,8 @@
 #ifndef _MATRIX44_H
 #define _MATRIX44_H
 
-#include "mathlib/vector3.h"
 #include "mathlib/vector4.h"
-#include "mathlib/quaternion.h"
-#include "mathlib/euler.h"
+#include "mathlib/matrix33.h"
 #include "mathlib/matrixdefs.h"
 #include <memory.h>
 
@@ -30,6 +28,7 @@ public:
 
 	void		FromQuaternion(const quaternion& q);
     quaternion	ToQuaternion() const;
+	matrix33	ToMatrix33() const { return matrix33(AxisX(), AxisY(), AxisZ()); }
 
 	void set(const vector4& v0, const vector4& v1, const vector4& v2, const vector4& v3);
 	void set(const matrix44& m1) { memcpy(m, &(m1.m[0][0]), sizeof(matrix44)); }

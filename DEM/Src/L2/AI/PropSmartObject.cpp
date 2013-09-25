@@ -139,13 +139,14 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::GetDestination(CStrID ActionID, float ActorRadius, vector3& OutDest, float& OutMinDist, float& OutMaxDist)
+bool CPropSmartObject::GetDestinationParams(CStrID ActionID, float ActorRadius, vector3& OutOffset, float& OutMinDist, float& OutMaxDist)
 {
 	AI::PSmartObjAction Action = GetAction(ActionID);
 
 	if (Action.IsValid())
 	{
-		GetEntity()->GetAttr<matrix44>(CStrID("Transform")).mult(Action->GetTpl().DestOffset, OutDest);
+		matrix33 Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).ToMatrix33();
+		Tfm.mult(Action->GetTpl().DestOffset, OutOffset);
 		OutMinDist = Action->GetTpl().MinDistance;
 		OutMaxDist = Action->GetTpl().MaxDistance;
 		if (Action->ActorRadiusMatters())
