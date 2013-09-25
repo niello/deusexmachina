@@ -388,6 +388,12 @@ void CMotorSystem::SetFaceDirection(const vector3& Dir)
 }
 //---------------------------------------------------------------------
 
+float CMotorSystem::GetMaxSpeed() const
+{
+	return n_max(MaxSpeed[pActor->MvmtType], 0.f);
+}
+//---------------------------------------------------------------------
+
 void CMotorSystem::RenderDebug()
 {
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);

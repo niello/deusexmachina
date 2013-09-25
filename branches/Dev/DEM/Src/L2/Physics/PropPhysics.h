@@ -25,6 +25,7 @@ protected:
 
 	CArray<Physics::PNodeControllerRigidBody>	Ctlrs;
 	CArray<Physics::PNodeAttrCollision>			Attrs;
+	Physics::PRigidBody							RootBody; // Rigid body attached to a root node, velocity source
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -33,6 +34,7 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
+	DECLARE_EVENT_HANDLER(AfterPhysicsTick, AfterPhysicsTick);
 	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
 
 public:

@@ -25,6 +25,7 @@ bool CPropCharacterController::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(RequestLinearV, CPropCharacterController, OnRequestLinearVelocity);
 	PROP_SUBSCRIBE_PEVENT(RequestAngularV, CPropCharacterController, OnRequestAngularVelocity);
 	PROP_SUBSCRIBE_PEVENT_PRIORITY(BeforePhysicsTick, CPropCharacterController, BeforePhysicsTick, 10); //!!!???REDESIGN!? priority -> explicit call order
+	PROP_SUBSCRIBE_PEVENT(AfterPhysicsTick, CPropCharacterController, AfterPhysicsTick);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropCharacterController, OnRenderDebug);
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropCharacterController, OnSetTransform);
 	OK;
@@ -38,6 +39,7 @@ void CPropCharacterController::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(RequestLinearV);
 	UNSUBSCRIBE_EVENT(RequestAngularV);
 	UNSUBSCRIBE_EVENT(BeforePhysicsTick);
+	UNSUBSCRIBE_EVENT(AfterPhysicsTick);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 	UNSUBSCRIBE_EVENT(SetTransform);
 
@@ -174,8 +176,17 @@ bool CPropCharacterController::OnRequestAngularVelocity(const Events::CEventBase
 //???OR USE BULLET ACTION INTERFACE?
 bool CPropCharacterController::BeforePhysicsTick(const Events::CEventBase& Event)
 {
-	if (!IsEnabled()) FAIL;
+	if (!IsEnabled()) FAIL; //???or unsubscribe?
 	CharCtlr->Update();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropCharacterController::AfterPhysicsTick(const Events::CEventBase& Event)
+{
+	if (!IsEnabled()) FAIL; //???or unsubscribe?
+	vector3 LinVel;
+	if (CharCtlr->GetLinearVelocity(LinVel)) GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), LinVel);
 	OK;
 }
 //---------------------------------------------------------------------

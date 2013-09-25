@@ -1,11 +1,13 @@
 #include "PropPhysics.h"
 
+#include <Physics/BulletConv.h>
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/Events/SetTransform.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
+#include <BulletDynamics/Dynamics/btRigidBody.h>
 
 namespace Prop
 {
@@ -19,6 +21,7 @@ bool CPropPhysics::InternalActivate()
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropPhysics, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropPhysics, OnPropDeactivating);
+	PROP_SUBSCRIBE_PEVENT(AfterPhysicsTick, CPropPhysics, AfterPhysicsTick);
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropPhysics, OnSetTransform);
 	OK;
 }
@@ -28,10 +31,43 @@ void CPropPhysics::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
+	UNSUBSCRIBE_EVENT(AfterPhysicsTick);
 	UNSUBSCRIBE_EVENT(SetTransform);
 
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*pProp);
+}
+//---------------------------------------------------------------------
+
+bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropSceneNode>())
+	{
+		TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -75,7 +111,11 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			pCurrNode = Prop.GetNode()->GetChild(RelNodePath.CStr());
 			n_assert2_dbg(pCurrNode && "Child node not found", RelNodePath.CStr());
 		}
-		else pCurrNode = Prop.GetNode();
+		else
+		{
+			pCurrNode = Prop.GetNode();
+			if (!RootBody.IsValid() && IsDynamic) RootBody = (Physics::CRigidBody*)Obj.GetUnsafe();
+		}
 
 		if (IsDynamic)
 		{
@@ -99,6 +139,14 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		Obj->AttachToLevel(*pPhysWorld);
 	}
 
+	if (RootBody.IsValid())
+	{
+		//!!!angular too!
+		vector3 LinVel;
+		if (GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity")))
+			RootBody->GetBtBody()->setLinearVelocity(VectorToBtVector(LinVel));
+	}
+
 	//!!!load joints!
 }
 //---------------------------------------------------------------------
@@ -106,6 +154,8 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
 	//!!!unload joints!
+
+	RootBody = NULL;
 
 	for (int i = 0; i < Ctlrs.GetCount(); ++i)
 	{
@@ -123,35 +173,13 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 }
 //---------------------------------------------------------------------
 
-bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
+bool CPropPhysics::AfterPhysicsTick(const Events::CEventBase& Event)
 {
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
-	if (!pProp) FAIL;
-
-	if (pProp->IsA<CPropSceneNode>())
-	{
-		InitSceneNodeModifiers(*(CPropSceneNode*)pProp);
-		OK;
-	}
-
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
-{
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
-	if (!pProp) FAIL;
-
-	if (pProp->IsA<CPropSceneNode>())
-	{
-		TermSceneNodeModifiers(*(CPropSceneNode*)pProp);
-		OK;
-	}
-
-	FAIL;
+	//!!!subscribe only when has meaning!
+	//???!!!angular too?!
+	if (!RootBody.IsValid() || !RootBody->IsInitialized()) FAIL;
+	GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), BtVectorToVector(RootBody->GetBtBody()->getLinearVelocity()));
+	OK;
 }
 //---------------------------------------------------------------------
 

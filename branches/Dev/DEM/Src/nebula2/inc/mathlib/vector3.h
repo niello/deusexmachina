@@ -44,6 +44,7 @@ public:
 	void			set(const float* vec) { x = vec[0]; y = vec[1]; z = vec[2]; }
 	float			len() const { return n_sqrt(x * x + y * y + z * z); }
 	float			lensquared() const { return x * x + y * y + z * z; }
+	float			SqLength2D() const { return x * x + z * z; }
 	void			norm();
 
 	bool			isequal(const vector3& v, float tol) const { return n_fabs(v.x - x) <= tol && n_fabs(v.y - y) <= tol && n_fabs(v.z - z) <= tol; }
