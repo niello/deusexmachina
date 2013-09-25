@@ -7,6 +7,11 @@
 
 // Goto action that sets destination from smart object, calculating destination.
 
+namespace Prop
+{
+	class CPropSmartObject;
+}
+
 namespace AI
 {
 
@@ -18,9 +23,8 @@ private:
 
 	CStrID	TargetID;
 	CStrID	ActionID;
-	bool	IsSOMovable;
 
-	bool UpdateDestination(CActor* pActor);
+	bool UpdateDestination(CActor* pActor, Prop::CPropSmartObject* pSO);
 
 public:
 

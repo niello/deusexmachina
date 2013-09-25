@@ -36,6 +36,7 @@ protected:
 	DECLARE_EVENT_HANDLER(RequestLinearV, OnRequestLinearVelocity);
 	DECLARE_EVENT_HANDLER(RequestAngularV, OnRequestAngularVelocity);
 	DECLARE_EVENT_HANDLER(BeforePhysicsTick, BeforePhysicsTick);
+	DECLARE_EVENT_HANDLER(AfterPhysicsTick, AfterPhysicsTick);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
 	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
 

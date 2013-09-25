@@ -97,16 +97,18 @@ public:
 
 	CMotorSystem(CActor* Actor);
 
-	void Init(const Data::CParams* Params);
-	void Update(float FrameTime);
-	void UpdatePosition();
-	void ResetMovement(bool Success);
-	void ResetRotation(bool Success);
-	void RenderDebug();
+	void	Init(const Data::CParams* Params);
+	void	Update(float FrameTime);
+	void	UpdatePosition();
+	void	ResetMovement(bool Success);
+	void	ResetRotation(bool Success);
+	void	RenderDebug();
 
-	void SetDest(const vector3& Dest);
-	void SetNextDest(const vector3& NextDest) { NextDestPoint = NextDest; }
-	void SetFaceDirection(const vector3& Dir);
+	void	SetDest(const vector3& Dest);
+	void	SetNextDest(const vector3& NextDest) { NextDestPoint = NextDest; }
+	void	SetFaceDirection(const vector3& Dir);
+
+	float	GetMaxSpeed() const;
 };
 
 inline CMotorSystem::CMotorSystem(CActor* Actor):
