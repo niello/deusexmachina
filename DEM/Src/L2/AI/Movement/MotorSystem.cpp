@@ -62,10 +62,11 @@ void CMotorSystem::Update(float FrameTime)
 	// Check if actor reached or crossed the destination last frame (with some tolerance).
 	// For that we detect point on the last frame movement segment that is the closest to the destination
 	// and check distance (in XZ, + height difference to handle possible navmesh stages).
+	//!!!TEST is still useful after steering fixes?
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
 		vector3 LinVel;
-		if (pActor->GetLinearVelocity(LinVel))
+		if (pActor->GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity")))
 		{
 			vector3 FrameMovement = LinVel * FrameTime;
 			vector3 PrevPos = pActor->Position - FrameMovement;
@@ -160,7 +161,7 @@ void CMotorSystem::Update(float FrameTime)
 			if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
 			{
 				vector3 LinearVel;
-				pActor->GetLinearVelocity(LinearVel);
+				pActor->GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity"));
 				float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call
 				if (AdaptiveVelocitySampling)
 					ObstacleQuery.sampleVelocityAdaptive(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
