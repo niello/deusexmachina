@@ -16,7 +16,7 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 
 EExecStatus CActionGotoSmartObj::Update(CActor* pActor)
 {
-	if (IsDynamic && !pActor->IsNavSystemIdle())
+	if (IsSOMovable && !pActor->IsNavSystemIdle())
 		if (!UpdateDestination(pActor)) return Failure;
 	return CActionGoto::Update(pActor);
 }
@@ -33,15 +33,21 @@ bool CActionGotoSmartObj::UpdateDestination(CActor* pActor)
 	//???some interval instead of every frame check?
 	if (!pSO->GetAction(ActionID)->IsValid(pActor, pSO)) FAIL;
 
-	vector3 Dest;
-	if (!pSO->GetDestination(ActionID, pActor->Radius, Dest, pActor->MinReachDist, pActor->MaxReachDist))
+	vector3 DestOffset;
+	if (!pSO->GetDestinationParams(ActionID, pActor->Radius, DestOffset, pActor->MinReachDist, pActor->MaxReachDist))
 		FAIL;
 
 	// Can modify pActor->MinReachDist and pActor->MaxReachDist here with ArrivalTolerance, if they are more.
 	// Then actor will arrive exactly to the distance required.
 
+	vector3 Dest = pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation();
+
+	// Can intercept here if SO is movable and has nonzero velocity
+
+	Dest += DestOffset;
+
 	pActor->GetNavSystem().SetDestPoint(Dest);
-	IsDynamic = pSO->CanDestinationChange();
+	IsSOMovable = pSO->IsMovable();
 	OK;
 }
 //---------------------------------------------------------------------

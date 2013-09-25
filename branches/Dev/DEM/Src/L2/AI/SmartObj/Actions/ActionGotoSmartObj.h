@@ -18,7 +18,7 @@ private:
 
 	CStrID	TargetID;
 	CStrID	ActionID;
-	bool	IsDynamic;
+	bool	IsSOMovable;
 
 	bool UpdateDestination(CActor* pActor);
 

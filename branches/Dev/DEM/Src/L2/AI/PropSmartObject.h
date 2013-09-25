@@ -47,8 +47,8 @@ public:
 	void				EnableAction(CStrID ActionID, bool Enable = true);
 	bool				IsActionEnabled(CStrID ID) const;
 
-	bool				CanDestinationChange() const { return Movable; }
-	bool				GetDestination(CStrID ActionID, float ActorRadius, vector3& OutDest, float& OutMinDist, float& OutMaxDist);
+	bool				IsMovable() const { return Movable; }
+	bool				GetDestinationParams(CStrID ActionID, float ActorRadius, vector3& OutOffset, float& OutMinDist, float& OutMaxDist);
 
 	CStrID				GetTypeID() const { return TypeID; }
 	const CActList&		GetActions() const { return Actions; }
