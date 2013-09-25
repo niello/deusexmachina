@@ -382,9 +382,6 @@ bool CPropActorBrain::BeforePhysicsTick(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-//!!!BAD DESIGN! REDESIGN IT! Need to update physics-controlled node's tfm per-tick? or at least offer access to subframe data
-// OnUpdateTransform() does the same thing. Updating physics-controlled scene nodes solves the problem.
-//???update all the scene graph with physics iterations? is it worthwhile?
 // We need to react on subframe transform changes to drive physics correctly
 bool CPropActorBrain::AfterPhysicsTick(const Events::CEventBase& Event)
 {
@@ -418,14 +415,6 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 	WSCurr.SetProp(WSP_Action, CStrID::Empty);
 	WSCurr.SetProp(WSP_HasItem, CStrID::Empty);
 	WSCurr.SetProp(WSP_ItemEquipped, CStrID::Empty);
-}
-//---------------------------------------------------------------------
-
-//???velocity to attrs? good for passive physics in savegames
-bool CPropActorBrain::GetLinearVelocity(vector3& Out) const
-{
-	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
-	return pCC && pCC->GetController()->GetLinearVelocity(Out);
 }
 //---------------------------------------------------------------------
 

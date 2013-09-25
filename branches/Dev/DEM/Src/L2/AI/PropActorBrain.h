@@ -130,7 +130,6 @@ public:
 	bool			IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
 	void			AcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
 	bool			DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_Nav_AcceptNearestValidDest); }
-	bool			GetLinearVelocity(vector3& Out) const;
 
 	CMemSystem&		GetMemSystem() { return MemSystem; }
 	CNavSystem&		GetNavSystem() { return NavSystem; }
