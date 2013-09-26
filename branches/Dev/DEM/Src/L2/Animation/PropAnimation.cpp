@@ -10,6 +10,8 @@
 #include <Scene/NodeControllerStatic.h>
 #include <Animation/KeyframeClip.h>
 #include <Animation/MocapClip.h>
+#include <Animation/NodeControllerKeyframe.h>
+#include <Animation/NodeControllerMocap.h>
 #include <Data/DataServer.h>
 
 namespace Anim
@@ -22,8 +24,6 @@ namespace Prop
 {
 __ImplementClass(Prop::CPropAnimation, 'PANM', Game::CProperty);
 __ImplementPropertyStorage(CPropAnimation);
-
-using namespace Data;
 
 bool CPropAnimation::InternalActivate()
 {
@@ -109,8 +109,8 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	Bones.Add(-1, CStrID::Empty);
 	AddChildrenToMapping(Prop.GetNode(), Prop.GetNode(), Bones);
 
-//!!!to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
-	PParams Desc;
+//!!!move it all to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
+	Data::PParams Desc;
 	const CString& AnimDesc = GetEntity()->GetAttr<CString>(CStrID("AnimDesc"));
 	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(CString("GameAnim:") + AnimDesc + ".prm");
 
@@ -118,7 +118,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	{
 		for (int i = 0; i < Desc->GetCount(); ++i)
 		{
-			CParam& Prm = Desc->Get(i);
+			Data::CParam& Prm = Desc->Get(i);
 
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
 			CString FileName("Anims:");
@@ -147,6 +147,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 //!!!DBG TMP! some AI character controller must drive character animations
 //for self-animated objects without AI can store info about current animations, it will help with save-load
+//smart objects will restore their animation state from SO state
 	if (Clips.GetCount())
 		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.0f, 4.f, 4.f);
 }
@@ -192,27 +193,19 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 
 		if (Task.IsEmpty()) continue;
 
+		// Remove task if all its controllers were removed from target nodes
 		int j = 0;
 		for (; j < Task.Ctlrs.GetCount(); ++j)
 			if (Task.Ctlrs[j]->IsAttachedToNode()) break;
 
-		// Remove task if all its controllers were removed from target nodes
-		if (j == Task.Ctlrs.GetCount())
+		if (j == Task.Ctlrs.GetCount()) Task.Stop(0.f);
+		else Task.Update(FrameTime);
+
+		if (Task.IsEmpty())
 		{
-			Task.Stop(0.f);
 			Data::PParams P = n_new(Data::CParams(1));
 			P->Set(CStrID("Clip"), Task.ClipID);
 			GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
-		}
-		else
-		{
-			Task.Update(FrameTime);
-			if (Task.IsEmpty())
-			{
-				Data::PParams P = n_new(Data::CParams(1));
-				P->Set(CStrID("Clip"), Task.ClipID);
-				GetEntity()->FireEvent(CStrID("OnAnimStop"));
-			}
 		}
 	}
 	OK;
@@ -231,7 +224,6 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 	CPropSceneNode* pPropNode = GetEntity()->GetProperty<CPropSceneNode>();
 	if (!pPropNode || !pPropNode->GetNode()) return INVALID_INDEX; // Nothing to animate
-	Scene::CSceneNode* pRoot = pPropNode->GetNode();
 
 	int TaskID = INVALID_INDEX;
 	Anim::CAnimTask* pTask = NULL;
@@ -262,7 +254,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		Scene::CSceneNode* pNode = pPropNode->GetChildNode(Clip->GetSamplerTarget(i));
 		if (!pNode) continue;
 
-		*ppCtlr = Clip->CreateController(i);
+		*ppCtlr = Clip->CreateController(i); //???!!!PERF: use pools inside?!
 
 		Scene::PNodeControllerPriorityBlend BlendCtlr;
 		if (pNode->GetController() && pNode->GetController()->IsA<Scene::CNodeControllerPriorityBlend>())
@@ -345,12 +337,10 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	pTask->State = Anim::CAnimTask::Task_Starting;
 	pTask->Loop = Loop;
 	pTask->pEventDisp = GetEntity();
-	pTask->Params = n_new(Data::CParams);
+	pTask->Params = n_new(Data::CParams(1));
 	pTask->Params->Set(CStrID("Clip"), ClipID);
 
-	Data::PParams P = n_new(Data::CParams(1));
-	P->Set(CStrID("Clip"), ClipID);
-	GetEntity()->FireEvent(CStrID("OnAnimStart"));
+	GetEntity()->FireEvent(CStrID("OnAnimStart"), pTask->Params);
 
 	return TaskID;
 }
@@ -366,6 +356,46 @@ void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
 		P->Set(CStrID("Clip"), Task.ClipID);
 		GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
 	}
+}
+//---------------------------------------------------------------------
+
+// Doesn't support weights and blending for now, use animation tasks for that
+bool CPropAnimation::SetPose(CStrID ClipID, float Time, bool WrapTime) const
+{
+	int ClipIdx = Clips.FindIndex(ClipID);
+	if (ClipIdx == INVALID_INDEX) FAIL;
+	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
+	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) FAIL;
+
+	CPropSceneNode* pPropNode = GetEntity()->GetProperty<CPropSceneNode>();
+	if (!pPropNode || !pPropNode->GetNode()) FAIL; // Nothing to animate
+ 
+	int KeyIndex;
+	float IpolFactor, AdjTime;
+	if (Clip->IsA<Anim::CMocapClip>())
+		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(Time, WrapTime, KeyIndex, IpolFactor);
+	else if (Clip->IsA<Anim::CKeyframeClip>())
+		AdjTime = Clip->AdjustTime(Time, WrapTime);
+
+	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
+	{
+		Scene::CSceneNode* pNode = pPropNode->GetChildNode(Clip->GetSamplerTarget(i));
+		if (!pNode) continue;
+
+		Scene::PNodeController pCtlr = Clip->CreateController(i); //???!!!PERF: use pools inside?!
+
+		if (Clip->IsA<Anim::CMocapClip>())
+			((Anim::CNodeControllerMocap*)pCtlr.GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
+		else if (Clip->IsA<Anim::CKeyframeClip>())
+			((Anim::CNodeControllerKeyframe*)pCtlr.GetUnsafe())->SetTime(AdjTime);
+
+		// Controller may animate not all channels, so we want other channels to keep their value
+		Math::CTransform Tfm = pNode->GetLocalTransform();
+		pCtlr->ApplyTo(Tfm);
+		pNode->SetLocalTransform(Tfm);
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

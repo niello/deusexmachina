@@ -76,6 +76,23 @@ int CPropAnimation_StopAnim(lua_State* l)
 }
 //---------------------------------------------------------------------
 
+int CPropAnimation_SetPose(lua_State* l)
+{
+	//args: EntityScriptObject's this table, Clip ID, Time, [WrapTime]
+	//ret: bool success
+	SETUP_ENT_SI_ARGS(3);
+	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
+	if (pProp)
+	{
+		bool WrapTime = (ArgCount > 3) ? !!lua_toboolean(l, 4) : false;
+		bool Result = pProp->SetPose(CStrID(lua_tostring(l, 2)), (float)lua_tonumber(l, 3), WrapTime);
+		lua_pushboolean(l, Result ? 1 : 0);
+	}
+	else lua_pushboolean(l, 0);
+	return 1;
+}
+//---------------------------------------------------------------------
+
 void CPropAnimation::EnableSI(CPropScriptable& Prop)
 {
 	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
@@ -83,6 +100,7 @@ void CPropAnimation::EnableSI(CPropScriptable& Prop)
 	ScriptSrv->ExportCFunction("StartAnim", CPropAnimation_StartAnim);
 	ScriptSrv->ExportCFunction("PauseAnim", CPropAnimation_PauseAnim);
 	ScriptSrv->ExportCFunction("StopAnim", CPropAnimation_StopAnim);
+	ScriptSrv->ExportCFunction("SetPose", CPropAnimation_SetPose);
 	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
@@ -94,6 +112,7 @@ void CPropAnimation::DisableSI(CPropScriptable& Prop)
 	ScriptSrv->ClearField("StartAnim");
 	ScriptSrv->ClearField("PauseAnim");
 	ScriptSrv->ClearField("StopAnim");
+	ScriptSrv->ClearField("SetPose");
 	ScriptSrv->EndMixin();
 }
 //---------------------------------------------------------------------
