@@ -37,6 +37,7 @@ void CAnimTask::Update(float FrameTime)
 	// Stop non-looping clips automatically
 	if (!Loop && State == Task_Running)
 	{
+		// Such form of a condition supports both fwd & back animation directions
 		if (Speed * (CurrTime - StopTimeBase) > 0.f)
 			State = Task_Stopping;
 	}
@@ -67,8 +68,9 @@ void CAnimTask::Update(float FrameTime)
 			RealWeight *= (CurrTime - Offset) / (FadeInTime - Offset);
 	}
 
-	// Apply weight, if it was changed
+	// Apply weight, if it has changed
 	if (PrevRealWeight != RealWeight)
+	{
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 		{
 			Scene::CNodeController* pCtlr = Ctlrs[i];
@@ -79,6 +81,8 @@ void CAnimTask::Update(float FrameTime)
 			n_assert_dbg(Idx != INVALID_INDEX);
 			pBlendCtlr->SetWeight(Idx, RealWeight); //???mb store task ptr in controller?
 		}
+		PrevRealWeight = RealWeight;
+	}
 
 	// Feed node controllers
 	if (Clip->IsA<Anim::CMocapClip>())
