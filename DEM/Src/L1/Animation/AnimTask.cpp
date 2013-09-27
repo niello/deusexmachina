@@ -120,6 +120,12 @@ void CAnimTask::Stop(float OverrideFadeOutTime)
 {
 	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
 
+	if (FadeOutTime <= 0.f && OverrideFadeOutTime > 0.f)
+	{
+		n_printf("Anim,Warning: Overriding animation fade out time from 0 to any other value is not allowed due to disabled blending\n");
+		OverrideFadeOutTime = 0.f;
+	}
+
 	if (OverrideFadeOutTime < 0.f) OverrideFadeOutTime = FadeOutTime;
 	else OverrideFadeOutTime *= Speed;
 
