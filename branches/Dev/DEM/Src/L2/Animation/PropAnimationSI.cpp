@@ -39,7 +39,7 @@ int CPropAnimation_StartAnim(lua_State* l)
 	bool Loop = (ArgCount > 2) ? !!lua_toboolean(l, 3) : false;
 	float Offset = (ArgCount > 3) ? (float)lua_tonumber(l, 4) : 0.f;
 	float Speed = (ArgCount > 4) ? (float)lua_tonumber(l, 5) : 1.f;
-	DWORD Priority = (ArgCount > 5) ? lua_tointeger(l, 6) : 0;
+	DWORD Priority = (ArgCount > 5) ? lua_tointeger(l, 6) : AnimPriority_Default;
 	float Weight = (ArgCount > 6) ? (float)lua_tonumber(l, 7) : 1.f;
 	float FadeInTime = (ArgCount > 7) ? (float)lua_tonumber(l, 8) : 0.f;
 	float FadeOutTime = (ArgCount > 8) ? (float)lua_tonumber(l, 9) : 0.f;

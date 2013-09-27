@@ -48,7 +48,7 @@ public:
 
 	CPropAnimation(): Tasks(1, 1) { Tasks.SetKeepOrder(false); }
 
-	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = 0, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
+	int				StartAnim(CStrID ClipID, bool Loop = false, float Offset = 0.f, float Speed = 1.f, DWORD Priority = AnimPriority_Default, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
 	void			PauseAnim(DWORD TaskID, bool Pause) { if ((DWORD)Tasks.GetCount() > TaskID) Tasks[TaskID].SetPause(Pause); }
 	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f);
 	bool			SetPose(CStrID ClipID, float Time, bool WrapTime = false) const;

@@ -242,7 +242,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 	}
 
 	bool NeedWeight = (Weight < 1.f || FadeInTime > 0.f || FadeOutTime > 0.f);
-	bool BlendingIsNotNecessary = (!NeedWeight && Priority == 0);
+	bool BlendingIsNotNecessary = (!NeedWeight && Priority == AnimPriority_Default);
 
 	int FreePoseLockerIdx = 0;
 
@@ -260,8 +260,9 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		if (pNode->GetController() && pNode->GetController()->IsA<Scene::CNodeControllerPriorityBlend>())
 			BlendCtlr = (Scene::CNodeControllerPriorityBlend*)pNode->GetController();
 
-		if (BlendingIsNotNecessary && (!BlendCtlr.IsValid() || !BlendCtlr->GetSourceCount()))
+		if (BlendingIsNotNecessary) // && (!BlendCtlr.IsValid() || !BlendCtlr->GetSourceCount()))
 		{
+			// Discards locked pose. Decide when this is desirable and when it is not.
 			pNode->SetController(*ppCtlr);
 		}
 		else
@@ -269,7 +270,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 			if (!BlendCtlr.IsValid())
 			{
 				BlendCtlr = n_new(Scene::CNodeControllerPriorityBlend);
-				if (pNode->GetController()) BlendCtlr->AddSource(*pNode->GetController(), 0, 1.f);
+				if (pNode->GetController()) BlendCtlr->AddSource(*pNode->GetController(), AnimPriority_Default, 1.f);
 			}
 
 			// If blend controller is new, we capture current pose to it with full weight but the least priority,
@@ -285,7 +286,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 				if (!pNode->IsLocalTransformValid()) pNode->UpdateLocalFromWorld();
 				PoseLock->SetStaticTransform(pNode->GetLocalTransform(), true);
-				BlendCtlr->AddSource(*PoseLock, 0, 1.f);
+				BlendCtlr->AddSource(*PoseLock, AnimPriority_TheLeast, 1.f);
 				PoseLock->Activate(true); //???where to deactivate? when all tasks were stopped and it is the only source
 			}
 
@@ -372,9 +373,11 @@ bool CPropAnimation::SetPose(CStrID ClipID, float Time, bool WrapTime) const
  
 	int KeyIndex;
 	float IpolFactor, AdjTime;
-	if (Clip->IsA<Anim::CMocapClip>())
+	bool IsMocap = Clip->IsA<Anim::CMocapClip>();
+	bool IsKeyframe = !IsMocap && Clip->IsA<Anim::CKeyframeClip>();
+	if (IsMocap)
 		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(Time, WrapTime, KeyIndex, IpolFactor);
-	else if (Clip->IsA<Anim::CKeyframeClip>())
+	else if (IsKeyframe)
 		AdjTime = Clip->AdjustTime(Time, WrapTime);
 
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
@@ -384,9 +387,9 @@ bool CPropAnimation::SetPose(CStrID ClipID, float Time, bool WrapTime) const
 
 		Scene::PNodeController pCtlr = Clip->CreateController(i); //???!!!PERF: use pools inside?!
 
-		if (Clip->IsA<Anim::CMocapClip>())
+		if (IsMocap)
 			((Anim::CNodeControllerMocap*)pCtlr.GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
-		else if (Clip->IsA<Anim::CKeyframeClip>())
+		else if (IsKeyframe)
 			((Anim::CNodeControllerKeyframe*)pCtlr.GetUnsafe())->SetTime(AdjTime);
 
 		// Controller may animate not all channels, so we want other channels to keep their value

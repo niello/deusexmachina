@@ -10,6 +10,12 @@
 
 template<class TKey, class TVal> class CDict;
 
+enum
+{
+	AnimPriority_TheLeast = 0,	// For supplementary sources like static pose lockers
+	AnimPriority_Default = 1
+};
+
 namespace Anim
 {
 

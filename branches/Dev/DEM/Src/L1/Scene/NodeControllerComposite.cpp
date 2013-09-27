@@ -27,7 +27,7 @@ bool CNodeControllerComposite::AddSource(Scene::CNodeController& Ctlr, DWORD Pri
 {
 #ifdef _DEBUG
 	for (int i = 0; i < Sources.GetCount(); ++i)
-		if (Sources[i].Ctlr.GetUnsafe() == &Ctlr) FAIL;
+		n_assert(Sources[i].Ctlr.GetUnsafe() != &Ctlr);
 #endif
 
 	if (Sources.GetCount())
