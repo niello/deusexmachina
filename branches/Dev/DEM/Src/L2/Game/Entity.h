@@ -62,7 +62,6 @@ public:
 	template<class T> const T&	GetAttr(CStrID ID) const { return Attrs[ID].GetValue<T>(); }
 	template<class T> const T&	GetAttr(CStrID ID, const T& Default) const;
 	template<class T> bool		GetAttr(T& Out, CStrID ID) const;
-	template<> bool				GetAttr(Data::CData& Out, CStrID ID) const;
 	bool						HasAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
 	bool						IsActive() const { return Flags.Is(Active) && Flags.IsNot(ChangingActivity); }

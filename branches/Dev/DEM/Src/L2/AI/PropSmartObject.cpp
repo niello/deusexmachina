@@ -37,20 +37,26 @@ bool CPropSmartObject::InternalActivate()
 				const AI::CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
 				if (pTpl) Actions.Add(Prm.GetName(), n_new(AI::CSmartObjAction)(*pTpl, ActDesc));
 				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", TplName);
+
+				//!!!load action's Enabled and Progress!
 			}
 			Actions.EndAdd();
 		}
-
-		//!!!script won't be called!
-		//???to OnPropsActivated?
-		//!!!not DefaultState but state from attribute! if attr is empty, then default state!
-		CString DefaultState;
-		if (Desc->Get(DefaultState, CStrID("DefaultState")))
-			SetState(CStrID(DefaultState.CStr()));
 	}
 
+	Data::CData StateData;
+	if (GetEntity()->GetAttr(StateData, CStrID("SOState")) || (Desc.IsValid() && Desc->Get(StateData, CStrID("DefaultState"))))
+		CurrState = StateData.GetValue<CStrID>();
+	else CurrState = CStrID::Empty;
+
+	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
+
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
-	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+	if (pProp && pProp->IsActive())
+	{
+		EnableSI(*pProp);
+		GetEntity()->FireEvent(CStrID("OnSOLoaded")); //???or in OnPropsActivated?
+	}
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropSmartObject, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropSmartObject, OnPropDeactivating);
@@ -80,6 +86,7 @@ bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
 	if (pProp->IsA<CPropScriptable>())
 	{
 		EnableSI(*(CPropScriptable*)pProp);
+		GetEntity()->FireEvent(CStrID("OnSOLoaded")); //???or in OnPropsActivated?
 		OK;
 	}
 
@@ -117,6 +124,7 @@ bool CPropSmartObject::SetState(CStrID ID)
 
 	if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
 	CurrState = ID;
+	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
 	GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
 
 	OK;

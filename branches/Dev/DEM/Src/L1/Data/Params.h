@@ -166,6 +166,19 @@ inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
 }
 //---------------------------------------------------------------------
 
+template<>
+inline bool CParams::Get<CData>(CData& Dest, CStrID Name) const
+{
+	for (int i = 0; i < Params.GetCount(); i++)
+		if (Params[i].GetName() == Name)
+		{
+			Dest = Params[i].GetRawValue();
+			OK;
+		}
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 inline void CParams::Set(const CParam& Param)
 {
 	int Idx = IndexOf(Param.GetName());
