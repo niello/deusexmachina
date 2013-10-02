@@ -11,13 +11,13 @@ namespace Prop
 __ImplementClass(Prop::CPropSmartObject, 'PRSO', Game::CProperty);
 __ImplementPropertyStorage(CPropSmartObject);
 
-using namespace Data;
-
 bool CPropSmartObject::InternalActivate()
 {
-	PParams Desc;
-	
-	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SmartObjDesc"), NULL);
+	CurrState = GetEntity()->GetAttr(CStrID("SOState"), CStrID::Empty);
+	GetEntity()->SetAttr(CStrID("SOState"), CurrState); // Make sure the attribute is set
+
+	Data::PParams Desc;
+	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 
 	if (Desc.IsValid())
@@ -25,31 +25,36 @@ bool CPropSmartObject::InternalActivate()
 		TypeID = Desc->Get(CStrID("TypeID"), CStrID::Empty);
 		Movable = Desc->Get(CStrID("Movable"), false);
 
-		PParams DescSection;
-		if (Desc->Get<PParams>(DescSection, CStrID("Actions")))
+		Data::PParams ActionsData, ActionsEnabled, ActionsProgress;
+		if (GetEntity()->GetAttr(ActionsData, CStrID("SOActions")))
+		{
+			ActionsData->Get(ActionsEnabled, CStrID("Enabled"));
+			ActionsData->Get(ActionsProgress, CStrID("Progress"));
+		}
+
+		Data::PParams DescSection;
+		if (Desc->Get<Data::PParams>(DescSection, CStrID("Actions")))
 		{
 			Actions.BeginAdd(DescSection->GetCount());
 			for (int i = 0; i < DescSection->GetCount(); i++)
 			{
-				const CParam& Prm = DescSection->Get(i);
-				PParams ActDesc = Prm.GetValue<PParams>();
+				const Data::CParam& Prm = DescSection->Get(i);
+				Data::PParams ActDesc = Prm.GetValue<Data::PParams>();
 				LPCSTR TplName = ActDesc->Get<CString>(CStrID("Tpl")).CStr();
 				const AI::CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
-				if (pTpl) Actions.Add(Prm.GetName(), n_new(AI::CSmartObjAction)(*pTpl, ActDesc));
+				if (pTpl)
+				{
+					AI::PSmartObjAction Action = n_new(AI::CSmartObjAction)(*pTpl, ActDesc);
+					if (!CurrState.IsValid()) Action->Enabled = false;
+					else if (ActionsEnabled.IsValid()) ActionsEnabled->Get(Action->Enabled, Prm.GetName());
+					if (ActionsProgress.IsValid()) ActionsProgress->Get(Action->Progress, Prm.GetName());
+					Actions.Add(Prm.GetName(), Action);
+				}
 				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", TplName);
-
-				//!!!load action's Enabled and Progress!
 			}
 			Actions.EndAdd();
 		}
 	}
-
-	Data::CData StateData;
-	if (GetEntity()->GetAttr(StateData, CStrID("SOState")) || (Desc.IsValid() && Desc->Get(StateData, CStrID("DefaultState"))))
-		CurrState = StateData.GetValue<CStrID>();
-	else CurrState = CStrID::Empty;
-
-	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive())
@@ -58,22 +63,44 @@ bool CPropSmartObject::InternalActivate()
 		GetEntity()->FireEvent(CStrID("OnSOLoaded")); //???or in OnPropsActivated?
 	}
 
+	if (!CurrState.IsValid() && Desc.IsValid() && Desc->Has(CStrID("DefaultState")))
+	{
+		// Delayed default state setting, see comment to an OnPropsActivated()
+		PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropSmartObject, OnPropsActivated);
+	}
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropSmartObject, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropSmartObject, OnPropDeactivating);
+	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropSmartObject, OnLevelSaving);
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CPropSmartObject::InternalDeactivate()
 {
+	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
+	UNSUBSCRIBE_EVENT(OnLevelSaving);
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	CurrState = CStrID::Empty;
 	Actions.Clear();
+}
+//---------------------------------------------------------------------
+
+// Empty state has a non-conditional transition to DefaultState from the Desc, if it is defined.
+// Default state must be set through SetState, and script feedback is desired. We delay state
+// setting to make sure that a possible PropScriptable is activated. If you want to use empty
+// state as 'Disabled', create explicit 'Disabled' state without this hardcoded transition.
+// NB: all checks were already performed on subscription.
+bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
+{
+	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
+	Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
+	SetState(Desc->Get<CStrID>(CStrID("DefaultState")));
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -110,6 +137,28 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
+bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
+{
+	// Need to recreate params because else we may rewrite initial level desc in the HRD cache
+	Data::PParams P = n_new(Data::CParams(2));
+	Data::PParams PEnabled = n_new(Data::CParams(Actions.GetCount()));
+	Data::PParams PProgress = n_new(Data::CParams(Actions.GetCount()));
+
+	for (int i = 0; i < Actions.GetCount(); ++i)
+	{
+		AI::CSmartObjAction& Action = *Actions.ValueAt(i);
+		PEnabled->Set(Actions.KeyAt(i), Action.Enabled);
+		if (Action.Progress > 0.f) PProgress->Set(Actions.KeyAt(i), Action.Progress);
+	}
+
+	P->Set(CStrID("Enabled"), PEnabled);
+	if (PProgress->GetCount()) P->Set(CStrID("Progress"), PProgress);
+	GetEntity()->SetAttr<Data::PParams>(CStrID("SOActions"), P);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CPropSmartObject::SetState(CStrID ID)
 {
 	n_assert2(ID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
@@ -118,7 +167,7 @@ bool CPropSmartObject::SetState(CStrID ID)
 
 	if (ID == CurrState) OK;
 
-	PParams P = n_new(CParams(2));
+	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("From"), CurrState);
 	P->Set(CStrID("To"), ID);
 
@@ -140,7 +189,7 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 	if (pAct->Enabled == Enable) return;
 	pAct->Enabled = Enable;
 
-	PParams P = n_new(CParams(2));
+	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("ActionID"), ID);
 	P->Set(CStrID("Enabled"), Enable);
 	GetEntity()->FireEvent(CStrID("OnSOActionAvailabile"), P);
