@@ -361,7 +361,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 			FAIL;
 		}
 
-	if (Attrs->Get<CString>(AttrValue, CStrID("SmartObjDesc")))
+	if (Attrs->Get<CString>(AttrValue, CStrID("SODesc")))
 	{
 		if (!ProcessDesc("SrcSmarts:" + AttrValue + ".hrd", "Smarts:" + AttrValue + ".prm"))
 		{

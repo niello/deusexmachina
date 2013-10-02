@@ -15,7 +15,7 @@ using namespace Prop;
 
 void CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO, CSmartObjAction* pSOAction)
 {
-	PParams P = n_new(CParams);
+	PParams P = n_new(CParams(3));
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
@@ -100,7 +100,7 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 		// SmartObj can be destroyed on action done, so cache this value
 		bool EndOnDone = pSOAction->EndOnDone();
 
-		PParams P = n_new(CParams);
+		PParams P = n_new(CParams(3));
 		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 		P->Set(CStrID("SO"), TargetID);
 		P->Set(CStrID("Action"), ActionID);
@@ -109,8 +109,9 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 
 		if (EndOnDone) return Success;
 	}
-	//else
-		//???need to trigger some script function or fire OnActionProgressChanged event in certain time steps?
+	//else if duration is applicable
+		//???flag Action->FireProgressChangeEvent?
+		//???need to trigger some script function or fire OnSOActionProgressChanged event if progress changes?
 
 	return Running;
 }
@@ -134,7 +135,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 	if (pSOAction->FreeUserSlots >= 0) pSOAction->FreeUserSlots++;
 	
-	PParams P = n_new(CParams);
+	PParams P = n_new(CParams(3));
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
