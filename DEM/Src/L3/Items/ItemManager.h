@@ -33,7 +33,7 @@ public:
 	CItemManager() { __ConstructSingleton; }
 	~CItemManager() { __DestructSingleton; }
 
-	PItemTpl CreateItemTpl(CStrID ID, const CParams& Params); //???type from params?
+	PItemTpl CreateItemTpl(CStrID ID, const Data::CParams& Params); //???type from params?
 	PItemTpl GetItemTpl(CStrID ID);
 };
 

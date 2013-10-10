@@ -17,7 +17,7 @@ class CActionTplIdle: public CActionTpl
 
 public:
 
-	virtual void		Init(PParams Params);
+	virtual void		Init(Data::PParams Params);
 	virtual PAction		CreateInstance(const CWorldState& Context) const;
 };
 

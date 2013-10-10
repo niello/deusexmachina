@@ -7,7 +7,7 @@ namespace Items
 {
 __ImplementClass(Items::CItemTplWeapon, 'ITWP', Items::CItemTpl);
 
-void CItemTplWeapon::Init(CStrID SID, const CParams& Params)
+void CItemTplWeapon::Init(CStrID SID, const Data::CParams& Params)
 {
 	WpnClass = CStrID(Params.Get<CString>(CStrID("WpnClass"), "").CStr());
 	AmmoItemID = CStrID(Params.Get<CString>(CStrID("AmmoItemID"), "").CStr());
@@ -18,7 +18,7 @@ void CItemTplWeapon::Init(CStrID SID, const CParams& Params)
 	TwoHanded = Params.Get<bool>(CStrID("TwoHanded"), false);
 
 	//???where to store defaults and does need to store them?
-	const CParams& Dmg = *Params.Get<PParams>(CStrID("Dmg"));
+	const Data::CParams& Dmg = *Params.Get<Data::PParams>(CStrID("Dmg"));
 	DmgType = (EDmgType)Dmg.Get<int>(CStrID("Type"), 0);
 	if (!Dmg.Get<int>(x, CStrID("x"))) x = Dmg.Get<int>(CStrID("X"), 1);
 	if (!Dmg.Get<int>(y, CStrID("y"))) y = Dmg.Get<int>(CStrID("Y"), 6);

@@ -14,13 +14,13 @@ void CPerceptorOverseer::Init(const Data::CParams& Desc)
 {
 	//CPerceptor::Init(Desc);
 	
-	PDataArray Array = Desc.Get<PDataArray>(CStrID("Overseers"), NULL);
+	Data::PDataArray Array = Desc.Get<Data::PDataArray>(CStrID("Overseers"), NULL);
 	
 	//!!!need CStrID in PS!
 	//if (Array.IsValid()) Array->FillArray(Overseers);
 	
 	if (Array.IsValid())
-		for (CDataArray::CIterator It = Array->Begin(); It != Array->End(); It++)
+		for (Data::CDataArray::CIterator It = Array->Begin(); It != Array->End(); It++)
 			Overseers.Add(CStrID((*It).GetValue<CString>().CStr()));
 }
 //---------------------------------------------------------------------

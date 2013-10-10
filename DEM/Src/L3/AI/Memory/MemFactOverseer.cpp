@@ -6,7 +6,7 @@ namespace AI
 {
 __ImplementClass(AI::CMemFactOverseer, 'MFOV', AI::CMemFact);
 
-bool CMemFactOverseer::Match(const CMemFact& Pattern, CFlags FieldMask) const
+bool CMemFactOverseer::Match(const CMemFact& Pattern, Data::CFlags FieldMask) const
 {
 	if (!CMemFact::Match(Pattern, FieldMask)) FAIL;
 
@@ -18,4 +18,4 @@ bool CMemFactOverseer::Match(const CMemFact& Pattern, CFlags FieldMask) const
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

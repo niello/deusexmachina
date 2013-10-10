@@ -10,7 +10,6 @@
 
 namespace App
 {
-using namespace Data;
 
 class CStateHandler;
 
@@ -22,7 +21,7 @@ protected:
 	CStrID						RequestedState;
 	CArray<Ptr<CStateHandler>>	StateHandlers;
 	CStateHandler*				CurrStateHandler;
-	PParams						TransitionParams;
+	Data::PParams				TransitionParams;
 
 	void ChangeState(CStrID NextState);
 
@@ -37,7 +36,7 @@ public:
 	void			Clear();
 
 	void			AddStateHandler(CStateHandler* pHandler);
-	void			RequestState(CStrID NewState, PParams Params = NULL);
+	void			RequestState(CStrID NewState, Data::PParams Params = NULL);
 
 	CStateHandler*	FindStateHandlerByID(CStrID ID) const;
 	CStateHandler*	FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const;
@@ -46,7 +45,7 @@ public:
 	CStrID			GetCurrentStateID() const { return CurrState; }
 };
 
-inline void CAppFSM::RequestState(CStrID NewState, PParams Params)
+inline void CAppFSM::RequestState(CStrID NewState, Data::PParams Params)
 {
 	RequestedState = NewState;
 	TransitionParams = Params;

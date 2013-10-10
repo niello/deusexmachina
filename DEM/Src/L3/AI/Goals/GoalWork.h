@@ -25,7 +25,7 @@ protected:
 
 public:
 
-	virtual void Init(PParams Params);
+	virtual void Init(Data::PParams Params);
 	virtual void EvalRelevance(CActor* pActor);
 	virtual void GetDesiredProps(CWorldState& Dest);
 };

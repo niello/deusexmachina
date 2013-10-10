@@ -16,7 +16,9 @@ namespace AI
 {
 static CArray<CActionTpl*> ActionsAdded;
 
-void CPlanner::RegisterActionTpl(LPCSTR Name, PParams Params)
+using namespace Data;
+
+void CPlanner::RegisterActionTpl(LPCSTR Name, Data::PParams Params)
 {
 	if (!FindActionTpl(Name))
 	{

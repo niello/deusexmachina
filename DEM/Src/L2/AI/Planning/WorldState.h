@@ -16,7 +16,6 @@
 
 namespace AI
 {
-using namespace Data;
 
 enum EWSProp
 {
@@ -37,22 +36,22 @@ class CWorldState
 {
 private:
 
-	CData Props[WSP_Count];
+	Data::CData Props[WSP_Count];
 
 public:
 
 	//!!!getdiff etc
 
-	void			SetProp(EWSProp Key, const CData& Value);
-	void			SetPropFrom(EWSProp Key, const CWorldState& Src);
-	const CData&	GetProp(EWSProp Key) const { return Props[Key]; }
-	const CData&	GetProp(int Key) const { EWSPropAssertBounds(Key); return Props[Key]; }
-	bool			IsPropSet(EWSProp Key) const { EWSPropAssertBounds(Key); return Props[Key].IsValid(); }
-	int				GetDiffCount(const CWorldState& Other) const;
+	void				SetProp(EWSProp Key, const Data::CData& Value);
+	void				SetPropFrom(EWSProp Key, const CWorldState& Src);
+	const Data::CData&	GetProp(EWSProp Key) const { return Props[Key]; }
+	const Data::CData&	GetProp(int Key) const { EWSPropAssertBounds(Key); return Props[Key]; }
+	bool				IsPropSet(EWSProp Key) const { EWSPropAssertBounds(Key); return Props[Key].IsValid(); }
+	int					GetDiffCount(const CWorldState& Other) const;
 };
 //---------------------------------------------------------------------
 
-inline void CWorldState::SetProp(EWSProp Key, const CData& Value)
+inline void CWorldState::SetProp(EWSProp Key, const Data::CData& Value)
 {
 	//EWSPropAssertBounds(Key);
 	Props[Key] = Value;

@@ -14,7 +14,7 @@
 namespace Input
 {
 
-bool CInputMappingEvent::Init(CStrID Name, const CParams& Desc)
+bool CInputMappingEvent::Init(CStrID Name, const Data::CParams& Desc)
 {
 	const CString& InEvent = Desc.Get<CString>(CStrID("InEvent"));
 	if (InEvent == "KeyDown")

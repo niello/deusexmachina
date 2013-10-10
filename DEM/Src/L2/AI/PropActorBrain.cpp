@@ -25,6 +25,8 @@ namespace Prop
 __ImplementClass(Prop::CPropActorBrain, 'PRAB', Game::CProperty);
 __ImplementPropertyStorage(CPropActorBrain);
 
+using namespace Data;
+
 static const CString StrPercPrefix("AI::CPerceptor");
 static const CString StrSensorPrefix("AI::CSensor");
 static const CString StrGoalPrefix("AI::CGoal");

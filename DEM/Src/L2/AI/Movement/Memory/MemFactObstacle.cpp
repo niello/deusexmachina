@@ -6,7 +6,7 @@ namespace AI
 {
 __ImplementClass(AI::CMemFactObstacle, 'MFOB', AI::CMemFact);
 
-bool CMemFactObstacle::Match(const CMemFact& Pattern, CFlags FieldMask) const
+bool CMemFactObstacle::Match(const CMemFact& Pattern, Data::CFlags FieldMask) const
 {
 	if (!CMemFact::Match(Pattern, FieldMask)) FAIL;
 
@@ -18,4 +18,4 @@ bool CMemFactObstacle::Match(const CMemFact& Pattern, CFlags FieldMask) const
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

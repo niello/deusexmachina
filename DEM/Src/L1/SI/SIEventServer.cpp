@@ -57,16 +57,16 @@ int EventSrv_FireEvent(lua_State* l)
 		return 0;
 	}
 
-	PParams Params;
+	Data::PParams Params;
 	if (ArgCount > 1 && !lua_isnil(l, 2))
 	{
-		CData Data;
+		Data::CData Data;
 		ScriptSrv->LuaStackToData(Data, 2, l);
-		if (lua_istable(l, 2)) Params = (PParams)Data;
+		if (lua_istable(l, 2)) Params = (Data::PParams)Data;
 		else if (Data.IsValid())
 		{
 			//???for all args read and push into array?
-			Params = n_new(CParams(1));
+			Params = n_new(Data::CParams(1));
 			Params->Set(CStrID::Empty, Data);
 		}
 	}

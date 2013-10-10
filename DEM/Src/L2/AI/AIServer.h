@@ -22,8 +22,6 @@ typedef dtObstacleAvoidanceParams COAParams;
 
 namespace AI
 {
-using namespace Data;
-
 #define AISrv AI::CAIServer::Instance()
 
 class CAIServer: public Core::CRefCounted
@@ -47,15 +45,15 @@ public:
 
 	void						Trigger();
 
-	void						AddSmartObjActionTpl(CStrID ID, const CParams& Desc);
+	void						AddSmartObjActionTpl(CStrID ID, const Data::CParams& Desc);
 	const CSmartObjActionTpl*	GetSmartObjActionTpl(CStrID ID) const;
 
-	void						AddNavQueryFilter(CStrID ID, const CParams& Desc);
+	void						AddNavQueryFilter(CStrID ID, const Data::CParams& Desc);
 	const dtQueryFilter*		GetNavQueryFilter(CStrID ID) const;
 	const dtQueryFilter*		GetDefaultNavQueryFilter() const { return GetNavQueryFilter(CStrID::Empty); }
 	const dtQueryFilter*		GetDebugNavQueryFilter() const { return pDebugFilter; }
 
-	void						AddObstacleAvoidanceParams(CStrID ID, const CParams& Desc);
+	void						AddObstacleAvoidanceParams(CStrID ID, const Data::CParams& Desc);
 	const COAParams*			GetObstacleAvoidanceParams(CStrID ID) const;
 	const COAParams*			GetDefaultObstacleAvoidanceParams() const { return GetObstacleAvoidanceParams(CStrID::Empty); }
 

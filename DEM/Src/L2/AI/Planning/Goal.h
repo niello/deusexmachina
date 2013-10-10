@@ -30,7 +30,7 @@ public:
 
 	CGoal(): Relevance(0.f), PersonalityFactor(1.f) {}
 
-	virtual void	Init(PParams Params);
+	virtual void	Init(Data::PParams Params);
 	virtual void	EvalRelevance(CActor* pActor) = 0;
 	void			InvalidateRelevance() { Relevance = 0.f; }
 	virtual void	GetDesiredProps(CWorldState& Dest) = 0;

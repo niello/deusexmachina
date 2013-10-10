@@ -12,7 +12,7 @@ namespace App
 {
 __ImplementClassNoFactory(App::CAppStateVideo, App::CStateHandler);
 
-void CAppStateVideo::OnStateEnter(CStrID PrevState, PParams Params)
+void CAppStateVideo::OnStateEnter(CStrID PrevState, Data::PParams Params)
 {
 	TimeSrv->ResetAll();
 	TimeSrv->Trigger();

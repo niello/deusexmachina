@@ -32,7 +32,7 @@ void CActiveDlg::EnterNode(CDlgNode* pNewNode)
 }
 //---------------------------------------------------------------------
 
-PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const CString& Name)
+PDialogue CDialogueManager::CreateDialogue(const Data::CParams& Params, const CString& Name)
 {
 	CDict<CStrID, Ptr<CDlgNode>> LoadedNodes;
 
@@ -40,11 +40,11 @@ PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const CString&
 
 	PDialogue Dlg = n_new(CDialogue);
 
-	const PParams& Nodes = Params.Get<PParams>(CStrID("Nodes"));
+	const Data::PParams& Nodes = Params.Get<Data::PParams>(CStrID("Nodes"));
 	for (int i = 0; i < Nodes->GetCount(); i++)
 	{
-		const CParam& Node = (*Nodes)[i];
-		const PParams& NodeData = Node.GetValue<PParams>();
+		const Data::CParam& Node = (*Nodes)[i];
+		const Data::PParams& NodeData = Node.GetValue<Data::PParams>();
 		int Type = NodeData->Get<int>(CStrID("Type"));
 		Ptr<CDlgNode> NewNode;
 		switch (Type)
@@ -90,10 +90,10 @@ PDialogue CDialogueManager::CreateDialogue(const CParams& Params, const CString&
 
 	bool UsesScript = false;
 
-	const CDataArray& Links = *(Params.Get<PDataArray>(CStrID("Links")));
+	const Data::CDataArray& Links = *(Params.Get<Data::PDataArray>(CStrID("Links")));
 	for (int i = 0; i < Links.GetCount(); i++)
 	{
-		const CDataArray& Link = *(Links.Get(i).GetValue<PDataArray>());
+		const Data::CDataArray& Link = *(Links.Get(i).GetValue<Data::PDataArray>());
 
 		Ptr<CDlgLink> NewLink = n_new(CDlgLink);
 
@@ -141,7 +141,7 @@ PDialogue CDialogueManager::GetDialogue(const CString& Name) //???CStrID identif
 	if (Idx > -1) return DlgRegistry.ValueAt(Idx);
 	else
 	{
-		PParams Desc = DataSrv->LoadPRM(CString("Dlg:") + Name + ".prm", false);
+		Data::PParams Desc = DataSrv->LoadPRM(CString("Dlg:") + Name + ".prm", false);
 		if (Desc.IsValid())
 		{
 			PDialogue NewDlg = CreateDialogue(*Desc, Name);
@@ -314,7 +314,7 @@ void CDialogueManager::SayPhrase(CStrID SpeakerEntity, const CString& Phrase, CA
 			SpeakerName = Speaker->GetUID().CStr();
 		//FocusMgr->SetCameraFocusEntity(Speaker);
 
-		PParams P = n_new(CParams);
+		Data::PParams P = n_new(Data::CParams);
 		P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
 		P->Set(CStrID("Phrase"), (PVOID)Phrase.CStr());
 		EventSrv->FireEvent(CStrID("OnDlgPhrase"), P);

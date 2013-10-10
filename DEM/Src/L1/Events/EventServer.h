@@ -18,9 +18,6 @@ namespace Data
 
 namespace Events
 {
-
-using namespace Data;
-
 #define EventSrv Events::CEventServer::Instance()
 
 class CEventServer: public CEventDispatcher

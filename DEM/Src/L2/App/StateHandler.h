@@ -15,7 +15,6 @@
 
 namespace App
 {
-using namespace Data;
 
 class CStateHandler: public Core::CRefCounted
 {
@@ -32,7 +31,7 @@ public:
 
 	virtual void	OnAttachToApplication() {}
 	virtual void	OnRemoveFromApplication() {}
-	virtual void	OnStateEnter(CStrID PrevState, PParams Params = NULL) {}
+	virtual void	OnStateEnter(CStrID PrevState, Data::PParams Params = NULL) {}
 	virtual void	OnStateLeave(CStrID NextState) {}
 	virtual CStrID	OnFrame() { return CStrID::Empty; }
 

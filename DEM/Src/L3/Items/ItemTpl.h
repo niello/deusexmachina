@@ -17,9 +17,6 @@ namespace Data
 
 namespace Items
 {
-
-using namespace Data;
-
 class CItem;
 
 class CItemTpl: public Core::CRefCounted
@@ -42,7 +39,7 @@ public:
 	CString			UIName;
 
 	// When derive and need TemplateItem of specific type, call parent ::Init only after TemplateItem creation
-	virtual void	Init(CStrID SID, const CParams& Params);
+	virtual void	Init(CStrID SID, const Data::CParams& Params);
 
 	Ptr<CItem>		CreateNewItem() const; //!!!can call GetTemplateItem()->Clone() directly too!
 	//const CItem*	GetTemplateItem() const { return TemplateItem; }

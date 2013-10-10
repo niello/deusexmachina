@@ -30,7 +30,7 @@ public:
 	bool				VisibleInUI;
 	//LastActivationTime - for Timeout!
 	int					FreeUserSlots;
-	int					Resource;
+	int					Resource; // How much uses left for this action before it becomes unavailable
 	float				Progress; //???per-user? can't place into Action, it is destructed on abort plan.
 	//???bool IsRunning;? actorID & progress-tracking should be separate for each actor performing action!
 

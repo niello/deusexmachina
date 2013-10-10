@@ -12,6 +12,7 @@ namespace AI
 __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 
 using namespace Prop;
+using namespace Data;
 
 void CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO, CSmartObjAction* pSOAction)
 {

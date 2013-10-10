@@ -12,7 +12,7 @@ CInputMappingState::CInputMappingState(): CheckInOrder(false), SendStateChangeEv
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingState::Init(CStrID Name, const CParams& Desc)
+bool CInputMappingState::Init(CStrID Name, const Data::CParams& Desc)
 {
 	//!!!WRITE IT!
 	OK;

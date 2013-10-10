@@ -11,7 +11,7 @@ namespace AI
 {
 __ImplementClassNoFactory(AI::CActionTpl, Core::CRefCounted);
 
-void CActionTpl::Init(PParams Params)
+void CActionTpl::Init(Data::PParams Params)
 {
 	if (Params.IsValid())
 	{
@@ -21,4 +21,4 @@ void CActionTpl::Init(PParams Params)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

@@ -20,15 +20,15 @@ __ImplementClass(AI::CGoalWork, 'GWRK', AI::CGoal);
 
 using namespace Prop;
 
-void CGoalWork::Init(PParams Params)
+void CGoalWork::Init(Data::PParams Params)
 {
 	WorkActionMap.Add(CStrID::Empty, CStrID("Work")); // Default, may move to params too
 
-	PParams Map = Params->Get<PParams>(CStrID("ActionMap"), NULL);
+	Data::PParams Map = Params->Get<Data::PParams>(CStrID("ActionMap"), NULL);
 	if (Map.IsValid())
 		for (int i = 0; i < Map->GetCount(); ++i)
 		{
-			const CParam& Prm = Map->Get(i);
+			const Data::CParam& Prm = Map->Get(i);
 			WorkActionMap.Add(Prm.GetName(), CStrID(Prm.GetValue<CString>().CStr()));
 		}
 

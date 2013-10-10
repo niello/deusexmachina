@@ -4,9 +4,8 @@
 
 namespace AI
 {
-using namespace Data;
 
-CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
+	CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, Data::PParams Desc):
 	Tpl(_Tpl), FreeUserSlots(_Tpl.MaxUserCount), Progress(0.f)
 {
 	if (Desc.IsValid())
@@ -18,7 +17,7 @@ CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 		static const CString StrValidatorPfx("AI::CValidator");
 		static const CString StrWSSrcPfx("AI::CWorldStateSource");
 
-		PParams SubDesc = Desc->Get<PParams>(CStrID("Validator"), NULL);
+		Data::PParams SubDesc = Desc->Get<Data::PParams>(CStrID("Validator"), NULL);
 		if (SubDesc.IsValid())
 		{
 			ActivationValidator = (CValidator*)Factory->Create(StrValidatorPfx + SubDesc->Get<CString>(CStrID("Type")));
@@ -27,14 +26,14 @@ CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 		}
 		else
 		{
-			SubDesc = Desc->Get<PParams>(CStrID("ActivationValidator"), NULL);
+			SubDesc = Desc->Get<Data::PParams>(CStrID("ActivationValidator"), NULL);
 			if (SubDesc.IsValid())
 			{
 				ActivationValidator = (CValidator*)Factory->Create(StrValidatorPfx + SubDesc->Get<CString>(CStrID("Type")));
 				ActivationValidator->Init(SubDesc);
 			}
 
-			SubDesc = Desc->Get<PParams>(CStrID("UpdateValidator"), NULL);
+			SubDesc = Desc->Get<Data::PParams>(CStrID("UpdateValidator"), NULL);
 			if (SubDesc.IsValid())
 			{
 				UpdateValidator = (CValidator*)Factory->Create(StrValidatorPfx + SubDesc->Get<CString>(CStrID("Type")));
@@ -47,7 +46,7 @@ CSmartObjAction::CSmartObjAction(const CSmartObjActionTpl& _Tpl, PParams Desc):
 		OnEndCmd = CStrID(Desc->Get<CString>(CStrID("OnEndCmd"), CString::Empty).CStr());
 		OnAbortCmd = CStrID(Desc->Get<CString>(CStrID("OnAbortCmd"), CString::Empty).CStr());
 
-		SubDesc = Desc->Get<PParams>(CStrID("Preconditions"), NULL);
+		SubDesc = Desc->Get<Data::PParams>(CStrID("Preconditions"), NULL);
 		if (SubDesc.IsValid())
 		{
 			Preconditions = (CWorldStateSource*)Factory->Create(StrWSSrcPfx + SubDesc->Get<CString>(CStrID("Type")));

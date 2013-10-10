@@ -19,7 +19,7 @@ protected:
 
 public:
 
-	virtual void		Init(PParams Params);
+	virtual void		Init(Data::PParams Params);
 	virtual bool		GetPreconditions(CActor* pActor, CWorldState& WS, const CWorldState& WSGoal) const;
 	virtual bool		ValidateContextPreconditions(CActor* pActor, const CWorldState& WSGoal);
 	virtual PAction		CreateInstance(const CWorldState& Context) const;

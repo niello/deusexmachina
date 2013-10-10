@@ -26,7 +26,6 @@ namespace Game
 namespace Story
 {
 using namespace Game;
-using namespace Data;
 
 class CActiveDlg
 {
@@ -81,7 +80,7 @@ public:
 
 	void		Trigger();
 
-	PDialogue	CreateDialogue(const CParams& Params, const CString& Name);
+	PDialogue	CreateDialogue(const Data::CParams& Params, const CString& Name);
 	PDialogue	GetDialogue(const CString& Name); //???CStrID identifier?
 
 	void		StartDialogue(CEntity* pTarget, CEntity* pInitiator, bool Foreground);
