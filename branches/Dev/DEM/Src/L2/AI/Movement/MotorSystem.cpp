@@ -300,7 +300,7 @@ void CMotorSystem::Update(float FrameTime)
 				if (AngleAbs <= 0.34906585039886591538473815369772f) // 20 deg in rads
 					AngularVel *= AngleAbs * 2.8647889756541160438399077407053f; // 1 / (20 deg in rads)
 
-				PParams PAngularVel = n_new(CParams(1));
+				Data::PParams PAngularVel = n_new(Data::CParams(1));
 				PAngularVel->Set(CStrID("Velocity"), AngularVel);
 				pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
 
@@ -318,7 +318,7 @@ void CMotorSystem::Update(float FrameTime)
 	// Delayed for a big turn check
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
-		PParams PLinearVel = n_new(CParams(1));
+		Data::PParams PLinearVel = n_new(Data::CParams(1));
 		PLinearVel->Set(CStrID("Velocity"), LinearVel);
 		pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
 	}
@@ -335,7 +335,7 @@ void CMotorSystem::UpdatePosition()
 void CMotorSystem::ResetMovement(bool Success)
 {
 	pActor->MvmtState = Success ? AIMvmt_Done : AIMvmt_Failed;
-	PParams PLinearVel = n_new(CParams);
+	Data::PParams PLinearVel = n_new(Data::CParams(1));
 	PLinearVel->Set(CStrID("Velocity"), vector3::Zero);
 	pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
 }
@@ -344,7 +344,7 @@ void CMotorSystem::ResetMovement(bool Success)
 void CMotorSystem::ResetRotation(bool Success)
 {
 	pActor->FacingState = Success ? AIFacing_Done : AIFacing_Failed;
-	PParams PAngularVel = n_new(CParams);
+	Data::PParams PAngularVel = n_new(Data::CParams(1));
 	PAngularVel->Set(CStrID("Velocity"), 0.f);
 	pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
 	WasFacingPrevFrame = false;

@@ -13,34 +13,34 @@
 namespace Input
 {
 
-bool CControlLayout::Init(const CParams& Desc)
+bool CControlLayout::Init(const Data::CParams& Desc)
 {
-	PParams Mappings;
+	Data::PParams Mappings;
 
 	EventMappings.Clear();
-	if (Desc.Get<PParams>(Mappings, CStrID("Events")) && Mappings->GetCount())
+	if (Desc.Get<Data::PParams>(Mappings, CStrID("Events")) && Mappings->GetCount())
 	{
 		CInputMappingEvent* pNew = EventMappings.Reserve(Mappings->GetCount());
 		for (int i = 0; i < Mappings->GetCount(); ++i, ++pNew)
 		{
-			CParam& Prm = Mappings->Get(i);
+			Data::CParam& Prm = Mappings->Get(i);
 			if (Prm.IsA<int>())
 			{
 				// Syntax shortcut for KeyUp events
 				if (!pNew->Init(Prm.GetName(), Prm.GetValue<int>())) FAIL;
 			}
-			else if (!pNew->Init(Prm.GetName(), *Prm.GetValue<PParams>())) FAIL;
+			else if (!pNew->Init(Prm.GetName(), *Prm.GetValue<Data::PParams>())) FAIL;
 		}
 	}
 
 	StateMappings.Clear();
-	if (Desc.Get<PParams>(Mappings, CStrID("States")) && Mappings->GetCount())
+	if (Desc.Get<Data::PParams>(Mappings, CStrID("States")) && Mappings->GetCount())
 	{
 		CInputMappingState* pNew = StateMappings.Reserve(Mappings->GetCount());
 		for (int i = 0; i < Mappings->GetCount(); ++i, ++pNew)
 		{
-			CParam& Prm = Mappings->Get(i);
-			if (!pNew->Init(Prm.GetName(), *Prm.GetValue<PParams>())) FAIL;
+			Data::CParam& Prm = Mappings->Get(i);
+			if (!pNew->Init(Prm.GetName(), *Prm.GetValue<Data::PParams>())) FAIL;
 		}
 	}
 

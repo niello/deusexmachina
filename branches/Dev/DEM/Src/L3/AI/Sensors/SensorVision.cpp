@@ -11,7 +11,7 @@ namespace AI
 {
 __ImplementClass(AI::CSensorVision, 'SEVI', AI::CSensor);
 
-void CSensorVision::Init(const CParams& Desc)
+void CSensorVision::Init(const Data::CParams& Desc)
 {
 	//CSensor::Init(Desc);
 	FOV = cosf(n_deg2rad(Desc.Get<int>(CStrID("FOV"), 0)));

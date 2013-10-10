@@ -81,7 +81,7 @@ bool CPropItem::OnPickItem(const Events::CEventBase& Event)
 {
 	if (!Items.IsValid()) OK;
 
-	PParams P = ((const Events::CEvent&)Event).Params;
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
 	CPropInventory* pInv = pActorEnt ? pActorEnt->GetProperty<CPropInventory>() : NULL;
 	if (pInv)

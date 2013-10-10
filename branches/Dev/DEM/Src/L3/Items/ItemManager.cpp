@@ -8,7 +8,7 @@ namespace Items
 __ImplementClassNoFactory(Items::CItemManager, Core::CRefCounted);
 __ImplementSingleton(Items::CItemManager);
 
-PItemTpl CItemManager::CreateItemTpl(CStrID ID, const CParams& Params)
+PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)
 {
 	PItemTpl Tpl = (CItemTpl*)Factory->Create(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), NULL));
 	n_assert(Tpl.IsValid());
@@ -23,7 +23,7 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
 	else
 	{
-		PParams HRD = DataSrv->LoadPRM(CString("Items:") + ID.CStr() + ".prm", false);
+		Data::PParams HRD = DataSrv->LoadPRM(CString("Items:") + ID.CStr() + ".prm", false);
 		if (HRD.IsValid())
 		{
 			Tpl = CreateItemTpl(ID, *HRD);

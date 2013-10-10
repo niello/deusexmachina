@@ -27,7 +27,7 @@ public:
 
 	CMemFactObstacle(): Radius(0.f) { /*Type = CStrID("Obstacle");*/ }
 
-	virtual bool Match(const CMemFact& Pattern, CFlags FieldMask) const;
+	virtual bool Match(const CMemFact& Pattern, Data::CFlags FieldMask) const;
 };
 
 typedef Ptr<CMemFactObstacle> PMemFactObstacle;

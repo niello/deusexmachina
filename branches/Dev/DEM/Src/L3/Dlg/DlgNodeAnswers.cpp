@@ -34,7 +34,7 @@ CDlgNode* CDlgNodeAnswers::Trigger(CActiveDlg& Dlg)
 				Dlg.ValidLinkIndices.Add(Dlg.LinkIdx);
 
 				//???send link index too?
-				PParams P = n_new(CParams);
+				Data::PParams P = n_new(Data::CParams(1));
 				P->Set(CStrID("Phrase"), (PVOID)((CDlgNodePhrase*)Links[Dlg.LinkIdx]->pTargetNode)->Phrase.CStr());
 				EventSrv->FireEvent(CStrID("OnDlgAnswerVariantAdded"), P);
 			}

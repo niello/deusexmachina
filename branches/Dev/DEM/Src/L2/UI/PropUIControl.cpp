@@ -32,7 +32,7 @@ bool CPropUIControl::InternalActivate()
 	ReflectSOActions = false;
 
 	const CString& IAODesc = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
-	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
+	Data::PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
 	if (Desc.IsValid())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), NULL);
@@ -40,7 +40,7 @@ bool CPropUIControl::InternalActivate()
 
 		//???read priorities for actions? or all through scripts?
 
-		Data::PParams UIActionNames = Desc->Get<PParams>(CStrID("UIActionNames"), NULL);
+		Data::PParams UIActionNames = Desc->Get<Data::PParams>(CStrID("UIActionNames"), NULL);
 
 		if (Desc->Get<bool>(CStrID("Explorable"), false))
 		{
@@ -188,8 +188,8 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
 
 	const CString& IAODesc = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
-	PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
-	Data::PParams SOActionNames = Desc.IsValid() ? Desc->Get<PParams>(CStrID("SmartObjActionNames"), NULL) : NULL;
+	Data::PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
+	Data::PParams SOActionNames = Desc.IsValid() ? Desc->Get<Data::PParams>(CStrID("SmartObjActionNames"), NULL) : NULL;
 
 	for (int i = 0; i < SOActions.GetCount(); ++i)
 	{
@@ -298,7 +298,7 @@ void CPropUIControl::SetUIName(const CString& NewName)
 
 void CPropUIControl::ShowTip()
 {
-	PParams P = n_new(CParams);
+	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : CString(GetEntity()->GetUID().CStr()));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	TipVisible = (EventSrv->FireEvent(CStrID("ShowIAOTip"), P) > 0);
@@ -357,7 +357,7 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CAction& Action)
 {
 	if (!Enabled || !Action.Enabled) FAIL;
 
-	PParams P = n_new(CParams);
+	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("ActorEntityPtr"), (PVOID)pActorEnt);
 	P->Set(CStrID("ActionID"), Action.ID);
 	GetEntity()->FireEvent(Action.EventID, P);
@@ -450,7 +450,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 
 	Actions.Sort();
 
-	PParams P = n_new(CParams);
+	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("ActorEntityPtr"), (PVOID)pActorEnt);
 	P->Set(CStrID("CtlPtr"), (PVOID)this);
 	EventSrv->FireEvent(CStrID("ShowActionListPopup"), P);
@@ -460,7 +460,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
 {
 	if (!UIDesc.IsValid()) FAIL;
-	PParams P = n_new(Data::CParams(1));
+	Data::PParams P = n_new(Data::CParams(1));
 	P->Set<CString>(CStrID("UIDesc"), UIDesc);
 	EventSrv->FireEvent(CStrID("OnObjectDescRequested"), P, EV_ASYNC);
 	OK;
@@ -480,7 +480,7 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 	n_assert(pSO);
 
-	PParams P = ((const Events::CEvent&)Event).Params;
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
 
 	Game::CEntity* pActorEnt = (Game::CEntity*)P->Get<PVOID>(CStrID("ActorEntityPtr"));
 	n_assert(pActorEnt);

@@ -73,14 +73,14 @@ bool CPropTalking::OnPropDeactivating(const Events::CEventBase& Event)
 
 void CPropTalking::SayPhrase(CStrID PhraseID)
 {
-	PParams P = n_new(CParams);
+	Data::PParams P = n_new(Data::CParams);
 
 	//!!! Try to find the phrase by it's ID before saying it.
 	P->Set(CStrID("Text"), CString(PhraseID.CStr()));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	EventSrv->FireEvent(CStrID("ShowPhrase"), P);
 
-	P = n_new(CParams);
+	P = n_new(Data::CParams);
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	//!!! TODO: Calculate time
 	EventSrv->FireEvent(CStrID("HidePhrase"), P, 0, 5.f);
@@ -90,11 +90,11 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 // "Talk" command handler, starts dialogue of this entity and initiator
 bool CPropTalking::OnTalk(const Events::CEventBase& Event)
 {
-	PParams P = ((const Events::CEvent&)Event).Params;
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor"), CStrID::Empty));
 	DlgMgr->StartDialogue(GetEntity(), pActorEnt, true);
 	OK;
 }
 //---------------------------------------------------------------------
 
-} // namespace Prop
+}

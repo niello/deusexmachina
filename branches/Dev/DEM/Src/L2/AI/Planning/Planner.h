@@ -55,7 +55,7 @@ public:
 
 	CPlanner(): NewActIdx(0) {}
 
-	void				RegisterActionTpl(LPCSTR Name, PParams Params = NULL);
+	void				RegisterActionTpl(LPCSTR Name, Data::PParams Params = NULL);
 	void				EndActionTpls();
 	const CActionTpl*	FindActionTpl(LPCSTR Name) const;
 

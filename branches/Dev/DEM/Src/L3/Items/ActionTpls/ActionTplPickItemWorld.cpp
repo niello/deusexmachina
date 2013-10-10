@@ -20,7 +20,7 @@ __ImplementClass(AI::CActionTplPickItemWorld, 'ATIW', AI::CActionTpl);
 
 using namespace Prop;
 
-void CActionTplPickItemWorld::Init(PParams Params)
+void CActionTplPickItemWorld::Init(Data::PParams Params)
 {
 	CActionTpl::Init(Params);
 	WSEffects.SetProp(WSP_HasItem, WSP_HasItem);

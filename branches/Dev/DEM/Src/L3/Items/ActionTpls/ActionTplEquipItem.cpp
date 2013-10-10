@@ -17,7 +17,7 @@ __ImplementClass(AI::CActionTplEquipItem, 'ATEI', AI::CActionTpl);
 
 using namespace Prop;
 
-void CActionTplEquipItem::Init(PParams Params)
+void CActionTplEquipItem::Init(Data::PParams Params)
 {
 	CActionTpl::Init(Params);
 	WSEffects.SetProp(WSP_ItemEquipped, WSP_ItemEquipped);

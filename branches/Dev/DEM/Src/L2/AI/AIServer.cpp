@@ -60,7 +60,7 @@ void CAIServer::Trigger()
 }
 //---------------------------------------------------------------------
 
-void CAIServer::AddSmartObjActionTpl(CStrID ID, const CParams& Desc)
+void CAIServer::AddSmartObjActionTpl(CStrID ID, const Data::CParams& Desc)
 {
 	if (!SOActTpls.Contains(ID)) SOActTpls.Add(ID, CSmartObjActionTpl(Desc));
 }

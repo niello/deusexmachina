@@ -35,7 +35,7 @@ public:
 	EDmgType	DmgType;
 	int			x, y, z;	// Damage value, calculated as xdy+z
 	
-	virtual void Init(CStrID SID, const CParams& Params);
+	virtual void Init(CStrID SID, const Data::CParams& Params);
 };
 
 }

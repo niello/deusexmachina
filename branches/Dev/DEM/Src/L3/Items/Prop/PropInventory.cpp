@@ -112,7 +112,7 @@ bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
 	Data::PDataArray InvDesc = n_new(Data::CDataArray);
 	GetEntity()->SetAttr<Data::PDataArray>(CStrID("Inventory"), InvDesc);
 
-	CData* pData = InvDesc->Reserve(Items.GetCount());
+	Data::CData* pData = InvDesc->Reserve(Items.GetCount());
 	foreach_stack(Stack, Items)
 	{
 		n_assert_dbg(Stack->IsValid());
@@ -156,7 +156,7 @@ bool CPropInventory::AddItem(PItem NewItem, WORD Count)
 
 		if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields?!
 
-		PParams P = n_new(CParams);
+		Data::PParams P = n_new(Data::CParams);
 		P->Set(CStrID("Item"), CString(NewItem->GetID().CStr()));
 		P->Set(CStrID("Count"), (int)Count);
 		P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));
@@ -187,7 +187,7 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 	CurrWeight -= Stack->GetTpl()->Weight * ToRemove;
 	CurrVolume -= Stack->GetVolume();
 	
-	PParams P = n_new(CParams);
+	Data::PParams P = n_new(Data::CParams);
 	P->Set(CStrID("Item"), CString(Stack->GetItemID().CStr()));
 	P->Set(CStrID("Count"), (int)ToRemove);
 	P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));

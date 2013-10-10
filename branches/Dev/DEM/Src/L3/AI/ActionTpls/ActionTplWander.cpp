@@ -13,7 +13,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionTplWander, 'ATWN', AI::CActionTpl);
 
-void CActionTplWander::Init(PParams Params)
+void CActionTplWander::Init(Data::PParams Params)
 {
 	CActionTpl::Init(Params);
 	WSEffects.SetProp(WSP_Action, CStrID("Wander"));

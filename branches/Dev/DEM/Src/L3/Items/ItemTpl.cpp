@@ -8,7 +8,7 @@ namespace Items
 {
 __ImplementClass(Items::CItemTpl, 'ITPL', Core::CRefCounted);
 
-void CItemTpl::Init(CStrID SID, const CParams& Params)
+void CItemTpl::Init(CStrID SID, const Data::CParams& Params)
 {
 	ID = SID;
 	Type = CStrID(Params.Get<CString>(CStrID("Type"), NULL).CStr());

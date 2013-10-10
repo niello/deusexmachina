@@ -14,6 +14,8 @@ namespace Prop
 __ImplementClass(Prop::CPropAIHints, 'PRAH', Game::CProperty);
 __ImplementPropertyStorage(CPropAIHints);
 
+using namespace Data;
+
 static const CString StrStimulusPrefix("AI::CStimulus");
 
 bool CPropAIHints::InternalActivate()

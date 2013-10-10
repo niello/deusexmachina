@@ -24,7 +24,7 @@ public:
 	//???Position to validate this fact by vision?
 	//???need validation or simple forgetting is enough?
 
-	virtual bool Match(const CMemFact& Pattern, CFlags FieldMask) const;
+	virtual bool Match(const CMemFact& Pattern, Data::CFlags FieldMask) const;
 };
 
 typedef Ptr<CMemFactSmartObj> PMemFactSmartObj;

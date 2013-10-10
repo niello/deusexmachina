@@ -4,6 +4,7 @@
 
 #include "MemFact.h"
 #include <Data/KeyList.h>
+#include <Data/Flags.h>
 #include <AI/ActorFwd.h>
 
 // Memory stores facts known by the actor. Memory also provides the interface to query
@@ -11,7 +12,7 @@
 
 namespace AI
 {
-typedef CKeyList<const Core::CRTTI*, PMemFact> CMemFactListSet;
+typedef Data::CKeyList<const Core::CRTTI*, PMemFact> CMemFactListSet;
 typedef CMemFactListSet::CIterator CMemFactNode;
 
 class CMemSystem //: public Core::CRefCounted
@@ -37,7 +38,7 @@ public:
 	//???return CMemFactNode?
 	template<class T>
 	T*					AddFact();
-	CMemFact*			FindFact(const CMemFact& Pattern, CFlags FieldMask = CFlags(0xffffffff));
+	CMemFact*			FindFact(const CMemFact& Pattern, Data::CFlags FieldMask = Data::CFlags(0xffffffff));
 	CMemFactNode		GetFactsByType(const Core::CRTTI& Type) { return Facts.GetHead(&Type); }
 
 	//???GetTotalConfidence(const Core::CRTTI& Type)?

@@ -68,7 +68,7 @@ void CMemSystem::Update()
 }
 //---------------------------------------------------------------------
 
-CMemFact* CMemSystem::FindFact(const CMemFact& Pattern, CFlags FieldMask)
+CMemFact* CMemSystem::FindFact(const CMemFact& Pattern, Data::CFlags FieldMask)
 {
 	CMemFactNode ItCurr = Facts.GetHead(Pattern.GetKey());
 
@@ -83,4 +83,4 @@ CMemFact* CMemSystem::FindFact(const CMemFact& Pattern, CFlags FieldMask)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

@@ -15,7 +15,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionTplUseSmartObj, 'ATUS', AI::CActionTpl);
 
-void CActionTplUseSmartObj::Init(PParams Params)
+void CActionTplUseSmartObj::Init(Data::PParams Params)
 {
 	CActionTpl::Init(Params);
 	WSEffects.SetProp(WSP_UsingSmartObj, WSP_UsingSmartObj);
@@ -67,4 +67,4 @@ PAction CActionTplUseSmartObj::CreateInstance(const CWorldState& Context) const
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

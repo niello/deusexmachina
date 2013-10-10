@@ -12,7 +12,6 @@
 
 namespace AI
 {
-using namespace Data;
 
 class CMemFact: public Core::CRefCounted
 {
@@ -29,7 +28,7 @@ public:
 	float LastUpdateTime;
 	float ForgettingFactor;	// Decrease of confidence per second
 	
-	virtual bool	Match(const CMemFact& Pattern, CFlags FieldMask) const;
+	virtual bool	Match(const CMemFact& Pattern, Data::CFlags FieldMask) const;
 	
 	// For CKeyList
 	Core::CRTTI*	GetKey() const { return GetRTTI(); }

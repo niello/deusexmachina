@@ -13,7 +13,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionTplGotoSmartObj, 'ATGS', AI::CActionTpl);
 
-void CActionTplGotoSmartObj::Init(PParams Params)
+void CActionTplGotoSmartObj::Init(Data::PParams Params)
 {
 	CActionTpl::Init(Params);
 	WSEffects.SetProp(WSP_AtEntityPos, WSP_AtEntityPos);

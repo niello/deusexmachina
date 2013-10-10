@@ -43,16 +43,16 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	if (!pScriptObj) OK;
 
-	CData RetVal;
+	Data::CData RetVal;
 	if (pScriptObj->RunFunctionOneArg(Func, pActor->GetEntity()->GetUID(), &RetVal) != Error)
 	{
 		if (RetVal.IsA<bool>()) return (bool)RetVal;
-		if (RetVal.IsA<PParams>())
+		if (RetVal.IsA<Data::PParams>())
 		{
-			PParams Ret = RetVal;
+			Data::PParams Ret = RetVal;
 			for (int i = 0; i < Ret->GetCount(); ++i)
 			{
-				CParam& Prm = Ret->Get(i);
+				Data::CParam& Prm = Ret->Get(i);
 				EWSProp Key = GetPropKeyByName(Prm.GetName().CStr());
 				if (Key != WSP_Invalid)
 				{
@@ -61,7 +61,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 					{
 						LPCSTR Str = Prm.GetValue<CString>().CStr();
 						EWSProp Value = GetPropKeyByName(Str);
-						WS.SetProp(Key, (Value != WSP_Invalid) ? CData(Value) : CData(CStrID(Str)));
+						WS.SetProp(Key, (Value != WSP_Invalid) ? Data::CData(Value) : Data::CData(CStrID(Str)));
 					}
 					else WS.SetProp(Key, Prm.GetRawValue());
 				}
