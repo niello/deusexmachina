@@ -87,7 +87,7 @@ bool CPropSceneNode::InternalActivate()
 
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropSceneNode, OnLevelSaving);
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropSceneNode, OnSetTransform);
-	PROP_SUBSCRIBE_PEVENT(OnWorldTfmsUpdated, CPropSceneNode, OnWorldTfmsUpdated);
+	PROP_SUBSCRIBE_PEVENT(AfterTransforms, CPropSceneNode, AfterTransforms);
 	PROP_SUBSCRIBE_PEVENT(OnRenderDebug, CPropSceneNode, OnRenderDebugProc);
 	OK;
 }
@@ -97,7 +97,7 @@ void CPropSceneNode::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(SetTransform);
-	UNSUBSCRIBE_EVENT(OnWorldTfmsUpdated);
+	UNSUBSCRIBE_EVENT(AfterTransforms);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 
 	ChildCache.Clear();
@@ -194,7 +194,7 @@ bool CPropSceneNode::OnSetTransform(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSceneNode::OnWorldTfmsUpdated(const Events::CEventBase& Event)
+bool CPropSceneNode::AfterTransforms(const Events::CEventBase& Event)
 {
 	if (Node.IsValid() && Node->IsWorldMatrixChanged())
 	{

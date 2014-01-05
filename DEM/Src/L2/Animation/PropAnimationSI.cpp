@@ -39,12 +39,13 @@ int CPropAnimation_StartAnim(lua_State* l)
 	bool Loop = (ArgCount > 2) ? !!lua_toboolean(l, 3) : false;
 	float Offset = (ArgCount > 3) ? (float)lua_tonumber(l, 4) : 0.f;
 	float Speed = (ArgCount > 4) ? (float)lua_tonumber(l, 5) : 1.f;
-	DWORD Priority = (ArgCount > 5) ? lua_tointeger(l, 6) : AnimPriority_Default;
-	float Weight = (ArgCount > 6) ? (float)lua_tonumber(l, 7) : 1.f;
-	float FadeInTime = (ArgCount > 7) ? (float)lua_tonumber(l, 8) : 0.f;
-	float FadeOutTime = (ArgCount > 8) ? (float)lua_tonumber(l, 9) : 0.f;
+	bool Manual = (ArgCount > 5) ? !!lua_toboolean(l, 6) : false;
+	DWORD Priority = (ArgCount > 6) ? lua_tointeger(l, 7) : AnimPriority_Default;
+	float Weight = (ArgCount > 7) ? (float)lua_tonumber(l, 8) : 1.f;
+	float FadeInTime = (ArgCount > 8) ? (float)lua_tonumber(l, 9) : 0.f;
+	float FadeOutTime = (ArgCount > 9) ? (float)lua_tonumber(l, 10) : 0.f;
 
-	int TaskID = pProp->StartAnim(ClipID, Loop, Offset, Speed, Priority, Weight, FadeInTime, FadeOutTime);
+	int TaskID = pProp->StartAnim(ClipID, Loop, Offset, Speed, Manual, Priority, Weight, FadeInTime, FadeOutTime);
 	lua_pushinteger(l, (lua_Integer)TaskID);
 	return 1;
 }
@@ -53,7 +54,6 @@ int CPropAnimation_StartAnim(lua_State* l)
 int CPropAnimation_PauseAnim(lua_State* l)
 {
 	//args: EntityScriptObject's this table, Task ID, bool Pause
-	//ret: int task ID
 	SETUP_ENT_SI_ARGS(3);
 	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
 	if (pProp) pProp->PauseAnim(lua_tointeger(l, 2), !!lua_toboolean(l, 3));
@@ -64,7 +64,6 @@ int CPropAnimation_PauseAnim(lua_State* l)
 int CPropAnimation_StopAnim(lua_State* l)
 {
 	//args: EntityScriptObject's this table, Task ID, [fadeout time]
-	//ret: int task ID
 	SETUP_ENT_SI_ARGS(2);
 	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
 	if (!pProp) return 0;
@@ -72,6 +71,17 @@ int CPropAnimation_StopAnim(lua_State* l)
 	float FadeOutTime = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : -1.f;
 
 	pProp->StopAnim(lua_tointeger(l, 2), FadeOutTime);
+	return 0;
+}
+//---------------------------------------------------------------------
+
+int CPropAnimation_SetAnimCursorPos(lua_State* l)
+{
+	//args: EntityScriptObject's this table, Task ID, animation cursor pos
+	SETUP_ENT_SI_ARGS(3);
+	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
+	if (!pProp) return 0;
+	pProp->SetAnimCursorPos(lua_tointeger(l, 2), (float)lua_tonumber(l, 3));
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -100,6 +110,7 @@ void CPropAnimation::EnableSI(CPropScriptable& Prop)
 	ScriptSrv->ExportCFunction("StartAnim", CPropAnimation_StartAnim);
 	ScriptSrv->ExportCFunction("PauseAnim", CPropAnimation_PauseAnim);
 	ScriptSrv->ExportCFunction("StopAnim", CPropAnimation_StopAnim);
+	ScriptSrv->ExportCFunction("SetAnimCursorPos", CPropAnimation_SetAnimCursorPos);
 	ScriptSrv->ExportCFunction("SetPose", CPropAnimation_SetPose);
 	ScriptSrv->EndMixin();
 }
@@ -112,6 +123,7 @@ void CPropAnimation::DisableSI(CPropScriptable& Prop)
 	ScriptSrv->ClearField("StartAnim");
 	ScriptSrv->ClearField("PauseAnim");
 	ScriptSrv->ClearField("StopAnim");
+	ScriptSrv->ClearField("SetAnimCursorPos");
 	ScriptSrv->ClearField("SetPose");
 	ScriptSrv->EndMixin();
 }

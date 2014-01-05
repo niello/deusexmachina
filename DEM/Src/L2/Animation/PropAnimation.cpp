@@ -35,7 +35,7 @@ bool CPropAnimation::InternalActivate()
 
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropAnimation, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropAnimation, OnPropDeactivating);
-	PROP_SUBSCRIBE_PEVENT(OnBeginFrame, CPropAnimation, OnBeginFrame);
+	PROP_SUBSCRIBE_PEVENT(BeforeTransforms, CPropAnimation, BeforeTransforms);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -44,7 +44,7 @@ void CPropAnimation::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
-	UNSUBSCRIBE_EVENT(OnBeginFrame);
+	UNSUBSCRIBE_EVENT(BeforeTransforms);
 
 	CPropScriptable* pPropScr = GetEntity()->GetProperty<CPropScriptable>();
 	if (pPropScr && pPropScr->IsActive()) DisableSI(*pPropScr);
@@ -149,14 +149,14 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 //for self-animated objects without AI can store info about current animations, it will help with save-load
 //smart objects will restore their animation state from SO state
 	if (Clips.GetCount())
-		StartAnim(CStrID("Walk"), true, 0.f, 1.f, 10, 1.0f, 4.f, 4.f);
+		StartAnim(CStrID("Walk"), true, 0.f, 1.f, false, 10, 1.0f, 4.f, 4.f);
 }
 //---------------------------------------------------------------------
 
 void CPropAnimation::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
 	for (int i = 0; i < Tasks.GetCount(); ++i)
-		Tasks[i].Stop(0.f);
+		Tasks[i].AnimTask.Stop(0.f);
 	Tasks.Clear();
 }
 //---------------------------------------------------------------------
@@ -184,27 +184,35 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
+bool CPropAnimation::BeforeTransforms(const Events::CEventBase& Event)
 {
-	float FrameTime = (float)GameSrv->GetFrameTime();
 	for (int i = 0; i < Tasks.GetCount(); ++i)
 	{
-		Anim::CAnimTask& Task = Tasks[i];
+		CTask& Task = Tasks[i];
+		Anim::CAnimTask& AnimTask = Task.AnimTask;
 
-		if (Task.IsEmpty()) continue;
+		if (AnimTask.IsEmpty()) continue;
 
 		// Remove task if all its controllers were removed from target nodes
 		int j = 0;
-		for (; j < Task.Ctlrs.GetCount(); ++j)
-			if (Task.Ctlrs[j]->IsAttachedToNode()) break;
+		for (; j < AnimTask.Ctlrs.GetCount(); ++j)
+			if (AnimTask.Ctlrs[j]->IsAttachedToNode()) break;
 
-		if (j == Task.Ctlrs.GetCount()) Task.Stop(0.f);
-		else Task.Update(FrameTime);
-
-		if (Task.IsEmpty())
+		if (j == AnimTask.Ctlrs.GetCount()) AnimTask.Stop(0.f);
+		else
 		{
-			Data::PParams P = n_new(Data::CParams(1));
+			//!!!paused task must not resample tfms, but must be taken into account!
+			//But Ctlr.Activate() controls both at a time.
+			if (!Task.ManualControl && !Task.Paused)
+				AnimTask.MoveCursorPos((float)GameSrv->GetFrameTime() * AnimTask.GetSpeed());
+			AnimTask.Update();
+		}
+
+		if (AnimTask.IsEmpty())
+		{
+			Data::PParams P = n_new(Data::CParams(2));
 			P->Set(CStrID("Clip"), Task.ClipID);
+			P->Set(CStrID("Task"), i);
 			GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
 		}
 	}
@@ -212,23 +220,23 @@ bool CPropAnimation::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Speed, DWORD Priority,
-							  float Weight, float FadeInTime, float FadeOutTime)
+int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, float Speed, bool ManualControl,
+							  DWORD Priority, float Weight, float FadeInTime, float FadeOutTime)
 {
 	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeInTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
 	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
 	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) return INVALID_INDEX;
-	if (!Loop && (Offset < 0.f || Offset > Clip->GetDuration())) return INVALID_INDEX;
+	if (!Loop && (CursorOffset < 0.f || CursorOffset > Clip->GetDuration())) return INVALID_INDEX;
 
 	CPropSceneNode* pPropNode = GetEntity()->GetProperty<CPropSceneNode>();
 	if (!pPropNode || !pPropNode->GetNode()) return INVALID_INDEX; // Nothing to animate
 
 	int TaskID = INVALID_INDEX;
-	Anim::CAnimTask* pTask = NULL;
+	CTask* pTask = NULL;
 	for (int i = 0; i < Tasks.GetCount(); ++i)
-		if (Tasks[i].IsEmpty())
+		if (Tasks[i].AnimTask.IsEmpty())
 		{
 			pTask = &Tasks[i];
 			TaskID = i;
@@ -246,8 +254,8 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 	int FreePoseLockerIdx = 0;
 
-	n_assert_dbg(!pTask->Ctlrs.GetCount());
-	Scene::PNodeController* ppCtlr = pTask->Ctlrs.Reserve(Clip->GetSamplerCount());
+	n_assert_dbg(!pTask->AnimTask.Ctlrs.GetCount());
+	Scene::PNodeController* ppCtlr = pTask->AnimTask.Ctlrs.Reserve(Clip->GetSamplerCount());
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i, ++ppCtlr)
 	{
 		// Get controller target node
@@ -256,10 +264,6 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 		*ppCtlr = Clip->CreateController(i); //???!!!PERF: use pools inside?!
 
-		Scene::PNodeControllerPriorityBlend BlendCtlr;
-		if (pNode->GetController() && pNode->GetController()->IsA<Scene::CNodeControllerPriorityBlend>())
-			BlendCtlr = (Scene::CNodeControllerPriorityBlend*)pNode->GetController();
-
 		if (BlendingIsNotNecessary) // && (!BlendCtlr.IsValid() || !BlendCtlr->GetSourceCount()))
 		{
 			// Discards locked pose. Decide when this is desirable and when it is not.
@@ -267,6 +271,10 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		}
 		else
 		{
+			Scene::PNodeControllerPriorityBlend BlendCtlr;
+			if (pNode->GetController() && pNode->GetController()->IsA<Scene::CNodeControllerPriorityBlend>())
+				BlendCtlr = (Scene::CNodeControllerPriorityBlend*)pNode->GetController();
+			
 			if (!BlendCtlr.IsValid())
 			{
 				BlendCtlr = n_new(Scene::CNodeControllerPriorityBlend);
@@ -297,51 +305,18 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 		}
 	}
 
-	if (!pTask->Ctlrs.GetCount()) return INVALID_INDEX;
-
-	if (!Loop)
-	{
-		float RealDuration = Clip->GetDuration() / n_fabs(Speed);
-		if (FadeInTime + FadeOutTime > RealDuration)
-		{
-			FadeOutTime = n_max(0.f, RealDuration - FadeInTime);
-			FadeInTime = RealDuration - FadeOutTime;
-		}
-	}
-
-	FadeInTime *= Speed;
-	FadeOutTime *= Speed;
-
-	if (!Loop)
-	{
-		if (Speed > 0.f) pTask->StopTimeBase = Clip->GetDuration() - FadeOutTime;
-		else
-		{
-			pTask->StopTimeBase = -FadeOutTime;
-			if (Offset == 0.f)
-			{
-				n_printf("Anim,Warning: Reverse non-looping animation with offset = 0 will not be played, because offset 0 is its end");
-				Offset = Clip->GetDuration();
-			}
-		}
-	}
+	if (!pTask->AnimTask.Ctlrs.GetCount()) return INVALID_INDEX;
 
 	pTask->ClipID = ClipID;
-	pTask->Clip = Clip;
-	pTask->Offset = Offset;
-	pTask->CurrTime = Offset;
-	pTask->Speed = Speed;
-	pTask->Priority = Priority;
-	pTask->Weight = Weight;
-	pTask->FadeInTime = Offset + FadeInTime;	// Get a point in time because we know the start time
-	pTask->FadeOutTime = FadeOutTime;			// Remember only the length, because we don't know the end time
-	pTask->State = Anim::CAnimTask::Task_Starting;
-	pTask->Loop = Loop;
-	pTask->pEventDisp = GetEntity();
-	pTask->Params = n_new(Data::CParams(1));
-	pTask->Params->Set(CStrID("Clip"), ClipID);
+	pTask->ManualControl = ManualControl;
+	pTask->Paused = false;
+	pTask->AnimTask.pEventDisp = GetEntity();
+	pTask->AnimTask.Params = n_new(Data::CParams(2));
+	pTask->AnimTask.Params->Set(CStrID("Clip"), ClipID);
+	pTask->AnimTask.Params->Set(CStrID("Task"), TaskID);
+	pTask->AnimTask.Init(Clip, Loop, CursorOffset, Speed, Weight, FadeInTime, FadeOutTime);
 
-	GetEntity()->FireEvent(CStrID("OnAnimStart"), pTask->Params);
+	GetEntity()->FireEvent(CStrID("OnAnimStart"), pTask->AnimTask.Params);
 
 	return TaskID;
 }
@@ -349,19 +324,20 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float Offset, float Spee
 
 void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
 {
-	Anim::CAnimTask& Task = Tasks[TaskID];
-	Task.Stop(FadeOutTime);
-	if (Task.IsEmpty())
+	CTask& Task = Tasks[TaskID];
+	Task.AnimTask.Stop(FadeOutTime);
+	if (Task.AnimTask.IsEmpty())
 	{
-		Data::PParams P = n_new(Data::CParams(1));
+		Data::PParams P = n_new(Data::CParams(2));
 		P->Set(CStrID("Clip"), Task.ClipID);
+		P->Set(CStrID("Task"), (int)TaskID);
 		GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
 	}
 }
 //---------------------------------------------------------------------
 
 // Doesn't support weights and blending for now, use animation tasks for that
-bool CPropAnimation::SetPose(CStrID ClipID, float Time, bool WrapTime) const
+bool CPropAnimation::SetPose(CStrID ClipID, float CursorPos, bool WrapPos) const
 {
 	int ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) FAIL;
@@ -376,9 +352,9 @@ bool CPropAnimation::SetPose(CStrID ClipID, float Time, bool WrapTime) const
 	bool IsMocap = Clip->IsA<Anim::CMocapClip>();
 	bool IsKeyframe = !IsMocap && Clip->IsA<Anim::CKeyframeClip>();
 	if (IsMocap)
-		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(Time, WrapTime, KeyIndex, IpolFactor);
+		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CursorPos, WrapPos, KeyIndex, IpolFactor);
 	else if (IsKeyframe)
-		AdjTime = Clip->AdjustTime(Time, WrapTime);
+		AdjTime = Clip->AdjustCursorPos(CursorPos, WrapPos);
 
 	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
 	{
