@@ -11,6 +11,9 @@
 // Clip can have any number of tracks and target bones, so it can animate a single scene node as well.
 // Tracks are grouped in samplers. One sampler affects one node, referencing it by a relative path.
 // There are also event tracks that fire events when reach specified points on the timeline.
+// NB: TIMELINE scale corresponds the real TIME only when Speed = 1 (forward direction, no speed scaling).
+// To emphasize this difference, clip timeline is referenced as 'scale' or 'timeline', some point on that
+// scale - as 'animation cursor position', and duration of its segment - as 'length'.
 
 namespace Data
 {
@@ -38,17 +41,17 @@ class CAnimClip: public Resources::CResource
 protected:
 
 	CDict<CStrID, CSampler>	Samplers;
-	CArray<CEventTrack>				EventTracks; //???use fixed array? //???per-sampler event tracks (are 3D editors capable)?
-	float							Duration;
+	CArray<CEventTrack>		EventTracks; //???use fixed array? //???per-sampler event tracks (are 3D editors capable)?
+	float					Duration;
 
 public:
 
 	CAnimClip(CStrID ID): CResource(ID) {}
 
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
-	float							AdjustTime(float Time, bool Loop) const;
-	void							FireEvents(float ExactTime, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
-	void							FireEvents(float StartTime, float EndTime, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
+	float							AdjustCursorPos(float Pos, bool Loop) const;
+	void							FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
+	void							FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
 	DWORD							GetSamplerCount() const { return Samplers.GetCount(); }
 	CStrID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
 	float							GetDuration() const { return Duration; }
@@ -56,20 +59,20 @@ public:
 
 typedef Ptr<CAnimClip> PAnimClip;
 
-inline float CAnimClip::AdjustTime(float Time, bool Loop) const
+inline float CAnimClip::AdjustCursorPos(float Pos, bool Loop) const
 {
 	if (Loop)
 	{
-		Time = n_fmod(Time, Duration);
-		if (Time < 0.f) Time += Duration;
+		Pos = n_fmod(Pos, Duration);
+		if (Pos < 0.f) Pos += Duration;
 	}
 	else
 	{
-		if (Time < 0.f) Time = 0.f;
-		else if (Time > Duration) Time = Duration;
+		if (Pos < 0.f) Pos = 0.f;
+		else if (Pos > Duration) Pos = Duration;
 	}
 
-	return Time;
+	return Pos;
 }
 //---------------------------------------------------------------------
 

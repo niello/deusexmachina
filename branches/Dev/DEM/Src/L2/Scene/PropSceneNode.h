@@ -20,7 +20,7 @@ protected:
 
 	Scene::PSceneNode					Node;
 	bool								ExistingNode;
-	CDict<CStrID, Scene::CSceneNode*>	ChildCache; //???PERF: is really useful?
+	CDict<CStrID, Scene::CSceneNode*>	ChildCache;
 	CArray<CStrID>						ChildrenToSave;
 
 	virtual bool	InternalActivate();
@@ -29,7 +29,7 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 	DECLARE_EVENT_HANDLER(SetTransform, OnSetTransform);
-	DECLARE_EVENT_HANDLER(OnWorldTfmsUpdated, OnWorldTfmsUpdated);
+	DECLARE_EVENT_HANDLER(AfterTransforms, AfterTransforms);
 	DECLARE_EVENT_HANDLER_VIRTUAL(OnRenderDebug, OnRenderDebug);
 
 	virtual void	SetTransform(const matrix44& NewTfm);

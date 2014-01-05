@@ -275,6 +275,8 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 void CGameLevel::Trigger()
 {
+	FireEvent(CStrID("BeforeTransforms"));
+
 	if (Scene.IsValid())
 	{
 		Scene->ClearVisibleLists();
@@ -290,7 +292,7 @@ void CGameLevel::Trigger()
 
 	if (Scene.IsValid()) Scene->GetRootNode().UpdateWorldSpace();
 
-	FireEvent(CStrID("OnWorldTfmsUpdated"));
+	FireEvent(CStrID("AfterTransforms"));
 }
 //---------------------------------------------------------------------
 

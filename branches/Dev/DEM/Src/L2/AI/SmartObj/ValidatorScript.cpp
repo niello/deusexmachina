@@ -20,13 +20,11 @@ void CValidatorScript::Init(PParams Desc)
 
 bool CValidatorScript::IsValid(const CActor* pActor, const CPropSmartObject* pSO, const CSmartObjAction* pAction)
 {
-	if (ConditionFunc.IsValid())
-	{
-		CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<CPropScriptable>();
-		CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
-		if (pScriptObj && pScriptObj->RunFunctionOneArg(ConditionFunc, pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty) != Success) FAIL;
-	}
-	OK;
+	if (!ConditionFunc.IsValid()) OK;
+	CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<CPropScriptable>();
+	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
+	CStrID ActorID = pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty;
+	return pScriptObj && pScriptObj->RunFunctionOneArg(ConditionFunc, ActorID) == Success;
 }
 //---------------------------------------------------------------------
 
@@ -37,4 +35,4 @@ float CValidatorScript::GetRelevance(const CActor* pActor, const CPropSmartObjec
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

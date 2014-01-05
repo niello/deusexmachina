@@ -39,7 +39,7 @@ public:
 
 	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;
 
-	void							GetSamplingParams(float Time, bool Loop, int& KeyIndex, float& IpolFactor) const;
+	void							GetSamplingParams(float CursorPos, bool Loop, int& KeyIndex, float& IpolFactor) const;
 	const vector4&					GetKey(int FirstKey, int Index) const;
 };
 
@@ -53,9 +53,9 @@ inline const vector4& CMocapClip::GetKey(int FirstKey, int Index) const
 }
 //---------------------------------------------------------------------
 
-inline void CMocapClip::GetSamplingParams(float Time, bool Loop, int& OutKeyIndex, float& OutIpolFactor) const
+inline void CMocapClip::GetSamplingParams(float CursorPos, bool Loop, int& OutKeyIndex, float& OutIpolFactor) const
 {
-	float KeyIdx = AdjustTime(Time, Loop) * InvKeyTime;
+	float KeyIdx = AdjustCursorPos(CursorPos, Loop) * InvKeyTime;
 	OutKeyIndex = (int)KeyIdx;
 	OutIpolFactor = KeyIdx - (float)OutKeyIndex;
 

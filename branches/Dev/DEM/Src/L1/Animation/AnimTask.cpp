@@ -10,49 +10,94 @@
 namespace Anim
 {
 
-void CAnimTask::Update(float FrameTime)
+void CAnimTask::Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Speed, float _Weight, float FadeInTime, float FadeOutTime)
 {
-	if (State == Task_LastFrame)
+	n_assert(_Clip.IsValid() && _Speed != 0.f);
+
+	Clip = _Clip;
+	Loop = _Loop;
+	Offset = _Offset;
+	Speed = _Speed;
+	Weight = _Weight;
+
+	CursorPos = Offset;
+	NewCursorPos = CursorPos;
+
+	// Convert from real time to animation timeline scale
+	float FadeInLength = FadeInTime * Speed;
+	FadeOutLength = FadeOutTime * Speed;
+
+	if (!Loop)
 	{
-		Clear();
-		return;
+		if (Speed > 0.f)
+		{
+			if (Offset == Clip->GetDuration())
+			{
+				n_printf("Anim,Warning: Forward non-looping animation with offset = Duration will not be played, because it is its end. Fixed to 0.");
+				CursorPos = 0.f;
+			}
+			if (FadeInLength + FadeOutLength > Clip->GetDuration())
+			{
+				FadeOutLength = n_max(0.f, Clip->GetDuration() - FadeInLength);
+				FadeInLength = Clip->GetDuration() - FadeOutLength;
+			}
+			FadeOutStartPos = Clip->GetDuration() - FadeOutLength;
+		}
+		else
+		{
+			if (Offset == 0.f)
+			{
+				n_printf("Anim,Warning: Reverse non-looping animation with offset = 0 will not be played, because it is its end. Fixed to Duration.");
+				CursorPos = Clip->GetDuration();
+			}
+			if (FadeInLength + FadeOutLength < -Clip->GetDuration())
+			{
+				FadeOutLength = n_min(0.f, -Clip->GetDuration() - FadeInLength);
+				FadeInLength = -Clip->GetDuration() - FadeOutLength;
+			}
+			FadeOutStartPos = -FadeOutLength;
+		}
 	}
 
-	if (State == Task_Paused || State == Task_Invalid) return;
+	FadeInEndPos = Offset + FadeInLength * Speed;
 
-	float PrevTime = CurrTime;
+	State = Anim::CAnimTask::Task_Starting;
+}
+//---------------------------------------------------------------------
+
+void CAnimTask::Update()
+{
+	if (State == Task_LastFrame) Clear();
+	if (State == Task_Invalid) return;
+
+	float PrevCursorPos = CursorPos;
 	if (State == Task_Starting)
 	{
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 			Ctlrs[i]->Activate(true);
-		State = Task_Running;
-		PrevRealWeight = Weight;
+		State = Loop ? Task_Looping : Task_Running;
+		PrevRealWeight = 1.f; // Ensure the weight will be applied if it is not 1.f
 
 		// Fire events at initial time point, because interval-based firing below always excludes StartTime
-		Clip->FireEvents(CurrTime, Loop, pEventDisp, Params);
+		Clip->FireEvents(CursorPos, Loop, pEventDisp, Params);
 	}
-	else if (State == Task_Running || State == Task_Stopping)
-		CurrTime += FrameTime * Speed;
-
-	// Stop non-looping clips automatically
-	if (!Loop && State == Task_Running)
+	else // Running or Looping
 	{
-		// Such form of a condition supports both fwd & back animation directions
-		if (Speed * (CurrTime - StopTimeBase) > 0.f)
-			State = Task_Stopping;
+		if (NewCursorPos == CursorPos) return;
+		CursorPos = NewCursorPos;
 	}
 
 	// Apply optional fadein / fadeout, check for the end
 	float RealWeight = Weight;
-	if (State == Task_Stopping)
+	if (State != Task_Looping && Speed * (CursorPos - FadeOutStartPos) > 0.f)
 	{
-		float CurrFadeOutTime = CurrTime - StopTimeBase;
-		if (Speed * (CurrFadeOutTime - FadeOutTime) >= 0.f)
+		float CurrFadeOutLength = CursorPos - FadeOutStartPos;
+		if (Speed * (CurrFadeOutLength - FadeOutLength) >= 0.f)
 		{
-			if (FadeOutTime == 0.f)
+			if (FadeOutLength == 0.f)
 			{
 				State = Task_LastFrame;
-				CurrTime = StopTimeBase + FadeOutTime;
+				CursorPos = FadeOutStartPos + FadeOutLength;
 			}
 			else
 			{
@@ -60,13 +105,10 @@ void CAnimTask::Update(float FrameTime)
 				return;
 			}
 		}
-		else RealWeight *= (1.f - CurrFadeOutTime / FadeOutTime);
+		else RealWeight *= (1.f - CurrFadeOutLength / FadeOutLength);
 	}
-	else
-	{
-		if (Speed * (CurrTime - FadeInTime) < 0.f)
-			RealWeight *= (CurrTime - Offset) / (FadeInTime - Offset);
-	}
+	else if (Speed * (CursorPos - FadeInEndPos) < 0.f)
+		RealWeight *= (CursorPos - Offset) / (FadeInEndPos - Offset);
 
 	// Apply weight, if it has changed
 	if (PrevRealWeight != RealWeight)
@@ -89,59 +131,47 @@ void CAnimTask::Update(float FrameTime)
 	{
 		int KeyIndex;
 		float IpolFactor;
-		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CurrTime, Loop, KeyIndex, IpolFactor);
+		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CursorPos, Loop, KeyIndex, IpolFactor);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 			((Anim::CNodeControllerMocap*)Ctlrs[i].GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 	else if (Clip->IsA<Anim::CKeyframeClip>())
 	{
-		float Time = Clip->AdjustTime(CurrTime, Loop);
+		float Time = Clip->AdjustCursorPos(CursorPos, Loop);
 		for (int i = 0; i < Ctlrs.GetCount(); ++i)
 			((Anim::CNodeControllerKeyframe*)Ctlrs[i].GetUnsafe())->SetTime(Time);
 	}
 
 	// Fire animation events
 	// NB: pass unadjusted time
-	Clip->FireEvents(PrevTime, CurrTime, Loop, pEventDisp, Params);
-}
-//---------------------------------------------------------------------
-
-void CAnimTask::SetPause(bool Pause)
-{
-	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
-	if (Pause == (State == Task_Paused)) return;
-	for (int i = 0; i < Ctlrs.GetCount(); ++i)
-		Ctlrs[i]->Activate(!Pause);
-	State = Pause ? Task_Paused : Task_Running;
+	Clip->FireEvents(PrevCursorPos, CursorPos, Loop, pEventDisp, Params);
 }
 //---------------------------------------------------------------------
 
 void CAnimTask::Stop(float OverrideFadeOutTime)
 {
-	if (State == Task_Stopping || State == Task_Invalid) return; //???what to do with Starting?
-
-	if (FadeOutTime <= 0.f && OverrideFadeOutTime > 0.f)
+	if (State == Task_Starting || State == Task_Invalid)
 	{
+		n_printf("Anim,Warning: Can't stop starting or invalid animation task\n");
+		return;
+	}
+
+	if (FadeOutLength <= 0.f && OverrideFadeOutTime > 0.f)
 		n_printf("Anim,Warning: Overriding animation fade out time from 0 to any other value is not allowed due to disabled blending\n");
-		OverrideFadeOutTime = 0.f;
-	}
+	else if (OverrideFadeOutTime >= 0.f) FadeOutLength = OverrideFadeOutTime * Speed;
 
-	if (OverrideFadeOutTime < 0.f) OverrideFadeOutTime = FadeOutTime;
-	else OverrideFadeOutTime *= Speed;
-
-	if (!Loop)
+	if (!Loop) 
 	{
-		float MaxPossibleFadeOut = ((Speed > 0.f) ? Clip->GetDuration() : 0.f) - CurrTime;
-		if (Speed * (MaxPossibleFadeOut - OverrideFadeOutTime) < 0.f)
-			OverrideFadeOutTime = MaxPossibleFadeOut;
+		float MaxPossibleFadeOut = ((Speed > 0.f) ? Clip->GetDuration() : 0.f) - CursorPos;
+		if (Speed * (MaxPossibleFadeOut - FadeOutLength) < 0.f)
+			FadeOutLength = MaxPossibleFadeOut;
 	}
 
-	if (OverrideFadeOutTime == 0.f) Clear();
+	if (FadeOutLength == 0.f) Clear();
 	else
 	{
-		State = Task_Stopping;
-		StopTimeBase = CurrTime;
-		FadeOutTime = OverrideFadeOutTime;
+		if (Loop) State = Task_Running; // Stop looping, enable fade-out
+		FadeOutStartPos = CursorPos;
 	}
 }
 //---------------------------------------------------------------------

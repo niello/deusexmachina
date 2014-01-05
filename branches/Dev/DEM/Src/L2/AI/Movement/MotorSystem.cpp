@@ -120,7 +120,7 @@ void CMotorSystem::Update(float FrameTime)
 		{
 			vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
 
-			const float SmoothnessCoeff = 0.5f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
+			const float SmoothnessCoeff = 0.3f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
 			float Scale = DesiredDir.len() * SmoothnessCoeff;
 			float DistToNext = ToNext.len();
 			if (DistToNext > 0.001f) Scale /= DistToNext;

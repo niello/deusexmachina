@@ -17,7 +17,6 @@ namespace Data
 namespace AI
 {
 
-//???store pSO inside?
 class CSmartObjAction: public Core::CRefCounted
 {
 protected:

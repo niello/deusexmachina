@@ -50,12 +50,13 @@ typedef Ptr<CEntityScriptObject> PEntityScriptObject;
 
 }
 
-#define SETUP_ENT_SI_ARGS(ArgumentCount) \
+#define SETUP_ENT_SI_ARGS(MinArgumentCount) \
 	n_assert2_dbg(lua_istable(l, 1), "Entity script call argument 1 is not a table, make sure : and not . is used for the call!"); \
 	int ArgCount = lua_gettop(l);		\
-	if (ArgCount < ArgumentCount)		\
+	if (ArgCount < MinArgumentCount)		\
 	{									\
 		lua_settop(l, 0);				\
+		n_printf("%d argument(s) passed while at least %d required\n", ArgCount - 1, MinArgumentCount - 1); \
 		return 0;						\
 	}									\
 	Scripting::CEntityScriptObject* This = (Scripting::CEntityScriptObject*)CScriptObject::GetFromStack(l, 1);	\

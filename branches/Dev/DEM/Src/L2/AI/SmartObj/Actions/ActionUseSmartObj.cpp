@@ -43,7 +43,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 
 	if (pSOAction->FaceObject())
 	{
-		vector3 FaceDir = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
+		vector3 FaceDir = pSOEntity->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 		FaceDir.norm();
 		pActor->GetMotorSystem().SetFaceDirection(FaceDir);
 		SubActFace = n_new(CActionFace);
@@ -105,7 +105,7 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 		P->Set(CStrID("SO"), TargetID);
 		P->Set(CStrID("Action"), ActionID);
-		if (pSOAction->OnDoneCmd.IsValid()) pSO->GetEntity()->FireEvent(pSOAction->OnDoneCmd, P);
+		if (pSOAction->OnDoneCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnDoneCmd, P);
 		EventSrv->FireEvent(CStrID("OnSOActionDone"), P);
 
 		if (EndOnDone) return Success;
