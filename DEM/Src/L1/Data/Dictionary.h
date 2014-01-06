@@ -27,7 +27,7 @@ private:
 public:
 
 	CDictionary() {}
-	CDictionary(int Alloc, int Grow, bool DoubleGrow): Pairs(Alloc, Grow) { Pairs.Flags.Set(Array_DoubleGrowSize); }
+	CDictionary(int Alloc, int Grow, bool DoubleGrow = false): Pairs(Alloc, Grow) { Pairs.Flags.Set(Array_DoubleGrowSize); }
 	CDictionary(const CDictionary<TKey, TValue>& Other): Pairs(Other.Pairs) {}
 
 	void			BeginAdd() { n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd)); Pairs.Flags.Set(Dict_InBeginAdd); }

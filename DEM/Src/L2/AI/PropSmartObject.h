@@ -68,6 +68,8 @@ protected:
 	virtual void	InternalDeactivate();
 	void			EnableSI(class CPropScriptable& Prop);
 	void			DisableSI(class CPropScriptable& Prop);
+	void			LoadAnimationInfo(Data::PParams Desc, class CPropAnimation& Prop);
+	void			FillAnimationInfo(CAnimInfo& AnimInfo, const Data::CParams& Desc, class CPropAnimation& Prop);
 
 	void			CompleteTransition();
 	void			SwitchAnimation(const CAnimInfo* pAnimInfo);
@@ -80,7 +82,7 @@ protected:
 
 public:
 
-	CPropSmartObject(): AnimTaskID(INVALID_INDEX) {}
+	CPropSmartObject(): Actions(1, 2), ActionAnims(0, 2), StateAnims(0, 2), AnimTaskID(INVALID_INDEX) {}
 
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);
