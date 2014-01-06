@@ -127,7 +127,7 @@ void CAudioEntity::Update()
 		if (Flags.Is(IS_FADING_OUT))
 		{
 			float Age = float(TimeSrv->GetTime() - FadeOutStartTime);
-			if (Age < FadeOutTime) Volume = 1.0f - n_saturate(Age / float(FadeOutTime));
+			if (Age < FadeOutTime) Volume = 1.0f - Saturate(Age / float(FadeOutTime));
 			else
 			{
 				Stop();

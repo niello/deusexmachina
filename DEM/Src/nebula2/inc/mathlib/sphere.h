@@ -174,10 +174,10 @@ inline rectangle sphere::project_screen_rh(const matrix44& view, const matrix44&
     if (frontZ > -nearZ) frontZ = -nearZ;
     vector3 screenSize = projection.mult_divw(vector3(this->r, this->r, frontZ));
     screenSize.y = -screenSize.y;
-    float left   = n_saturate(0.5f * (1.0f + (screenPos.x - screenSize.x)));
-    float right  = n_saturate(0.5f * (1.0f + (screenPos.x + screenSize.x)));
-    float top    = n_saturate(0.5f * (1.0f + (screenPos.y + screenSize.y)));
-    float bottom = n_saturate(0.5f * (1.0f + (screenPos.y - screenSize.y)));
+    float left   = Saturate(0.5f * (1.0f + (screenPos.x - screenSize.x)));
+    float right  = Saturate(0.5f * (1.0f + (screenPos.x + screenSize.x)));
+    float top    = Saturate(0.5f * (1.0f + (screenPos.y + screenSize.y)));
+    float bottom = Saturate(0.5f * (1.0f + (screenPos.y - screenSize.y)));
 
     return rectangle(vector2(left, top), vector2(right, bottom));
 }

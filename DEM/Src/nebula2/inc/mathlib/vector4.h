@@ -496,10 +496,10 @@ inline
 void
 vector4::saturate()
 {
-    x = n_saturate(x);
-    y = n_saturate(y);
-    z = n_saturate(z);
-    w = n_saturate(w);
+    x = Saturate(x);
+    y = Saturate(y);
+    z = Saturate(z);
+    w = Saturate(w);
 }
 
 //------------------------------------------------------------------------------

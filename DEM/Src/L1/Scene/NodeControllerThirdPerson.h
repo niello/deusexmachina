@@ -75,7 +75,7 @@ inline void CNodeControllerThirdPerson::SetVerticalAngleLimits(float Min, float 
 	n_assert(Min <= Max);
 	MinVertAngle = Min;
 	MaxVertAngle = Max;
-	Angles.Theta = n_clamp(Angles.Theta, MinVertAngle, MaxVertAngle);
+	Angles.Theta = Clamp(Angles.Theta, MinVertAngle, MaxVertAngle);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -85,14 +85,14 @@ inline void CNodeControllerThirdPerson::SetDistanceLimits(float Min, float Max)
 	n_assert(Min <= Max);
 	MinDistance = Min;
 	MaxDistance = Max;
-	Distance = n_clamp(Distance, MinDistance, MaxDistance);
+	Distance = Clamp(Distance, MinDistance, MaxDistance);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
 
 inline void CNodeControllerThirdPerson::SetAngles(float Vertical, float Horizontal)
 {
-	Angles.Theta = n_clamp(Vertical, MinVertAngle, MaxVertAngle);
+	Angles.Theta = Clamp(Vertical, MinVertAngle, MaxVertAngle);
 	Angles.Phi = Horizontal;
 	Dirty = true;
 }
@@ -101,14 +101,14 @@ inline void CNodeControllerThirdPerson::SetAngles(float Vertical, float Horizont
 inline void CNodeControllerThirdPerson::SetDirection(const vector3& Dir)
 {
 	Angles.Set(Dir); //???or -Dir?
-	Angles.Theta = n_clamp(Angles.Theta, MinVertAngle, MaxVertAngle);
+	Angles.Theta = Clamp(Angles.Theta, MinVertAngle, MaxVertAngle);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
 
 inline void CNodeControllerThirdPerson::SetDistance(float Value)
 {
-	Distance = n_clamp(Value, MinDistance, MaxDistance);
+	Distance = Clamp(Value, MinDistance, MaxDistance);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -124,7 +124,7 @@ inline void CNodeControllerThirdPerson::SetCOI(const vector3& NewCOI)
 inline void CNodeControllerThirdPerson::OrbitVertical(float Angle)
 {
 	if (Angle == 0.f) return;
-	Angles.Theta = n_clamp(Angles.Theta + Angle, MinVertAngle, MaxVertAngle);
+	Angles.Theta = Clamp(Angles.Theta + Angle, MinVertAngle, MaxVertAngle);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -140,7 +140,7 @@ inline void CNodeControllerThirdPerson::OrbitHorizontal(float Angle)
 inline void CNodeControllerThirdPerson::Zoom(float Amount)
 {
 	if (Amount == 0.f) return;
-	Distance = n_clamp(Distance + Amount, MinDistance, MaxDistance);
+	Distance = Clamp(Distance + Amount, MinDistance, MaxDistance);
 	Dirty = true;
 }
 //---------------------------------------------------------------------

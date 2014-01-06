@@ -190,7 +190,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 	Data::PParams Desc = UIDesc.IsValid() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
 	if (!Desc.IsValid()) return;
 
-	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
+	const CPropSmartObject::CActionList& SOActions = Prop.GetActions();
 
 	for (int i = 0; i < Desc->GetCount(); ++i)
 	{

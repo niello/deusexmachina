@@ -74,7 +74,7 @@ bool CMemStream::Seek(int Offset, ESeekOrigin Origin)
 		case Seek_End:		SeekPos = DataSize + Offset; break;
 		default:			n_error("CMemStream::Seek -> Unknown origin");
 	}
-	Pos = n_iclamp(SeekPos, 0, DataSize);
+	Pos = Clamp<int>(SeekPos, 0, DataSize);
 	return Pos == SeekPos;
 }
 //---------------------------------------------------------------------

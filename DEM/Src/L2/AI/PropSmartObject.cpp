@@ -1,11 +1,12 @@
 #include "PropSmartObject.h"
 
-#include <Game/Entity.h>
-#include <Scripting/PropScriptable.h>
+#include <Game/GameServer.h>
 #include <AI/AIServer.h>
+#include <Animation/PropAnimation.h>
+#include <Scripting/PropScriptable.h>
+#include <Events/EventServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <Events/EventServer.h>
 
 namespace Prop
 {
@@ -145,22 +146,23 @@ bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
+bool CPropSmartObject::OnBeginFrame(const Events::CEventBase& Event)
+{
+	SetTransitionProgress(TrProgress + (float)GameSrv->GetFrameTime());
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float TransitionDuration, bool ManualControl)
 {
 	n_assert2(StateID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
 
-	CAction* pAction;
-	if (ActionID.IsValid())
-	{
-		pAction = GetAction(ActionID);
-		if (!pAction) FAIL;
-	}
-	else pAction = NULL;
-
+	int Idx = ActionAnims.FindIndex(ActionID);
+	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &ActionAnims.ValueAt(Idx) : NULL;
 	if (TransitionDuration < 0.f)
 	{
-		//get animation, get its duration and set as TransitionDuration
-		//If no animation, TransitionDuration = 0.f;
+		if (pAnimInfo) TransitionDuration = pAnimInfo->Duration; //???Speed?
+		else TransitionDuration = 0.f;
 	}
 
 	if (CurrState == StateID)
@@ -189,13 +191,6 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 	{
 		CompleteTransition();
 		OK;
-			//Data::PParams P = n_new(Data::CParams(2));
-			//P->Set(CStrID("From"), CurrState);
-			//P->Set(CStrID("To"), TargetState);
-			//GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
-
-			//CurrState = TargetState;
-			//GetEntity()->SetAttr(CStrID("SOState"), CurrState);
 	}
 
 	if (IsInTransition())
@@ -225,11 +220,92 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 	P->Set(CStrID("To"), TargetState);
 	if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
 
-	//init transition animation
+	SwitchAnimation(pAnimInfo);
 
 	if (!ManualControl) SUBSCRIBE_PEVENT(OnBeginFrame, CPropSmartObject, OnBeginFrame);
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::CompleteTransition()
+{
+	UNSUBSCRIBE_EVENT(OnBeginFrame);
+
+	int Idx = StateAnims.FindIndex(TargetState);
+	SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
+
+	Data::PParams P = n_new(Data::CParams(2));
+	P->Set(CStrID("From"), CurrState);
+	P->Set(CStrID("To"), TargetState);
+
+	CurrState = TargetState;
+	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
+
+	GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::SetTransitionDuration(float Time)
+{
+	//???update progress and animation?
+
+	if (!IsInTransition() || Time < 0.f) return;
+	TrDuration = Time;
+	if (TrProgress >= TrDuration) CompleteTransition();
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::SetTransitionProgress(float Time)
+{
+	if (!IsInTransition()) return;
+
+	TrProgress = Clamp(Time, 0.f, TrDuration);
+
+	if (AnimTaskID != INVALID_INDEX)
+	{
+		CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
+		if (pPropAnim) pPropAnim->SetAnimCursorPos(AnimTaskID, TrProgress);
+	}
+
+	if (TrProgress >= TrDuration) CompleteTransition();
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::AbortTransition(float Duration)
+{
+	//!!!implement nonzero duration!
+
+	//???interchange curr and target and complete transition?
+
+	int Idx = StateAnims.FindIndex(CurrState);
+	SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
+
+	TargetState = CurrState;
+	TrProgress = 0.f;
+	TrDuration = 0.f;
+	TrActionID = CStrID::Empty;
+
+	// Notify about state re-entering
+	Data::PParams P = n_new(Data::CParams(2));
+	P->Set(CStrID("From"), CurrState);
+	P->Set(CStrID("To"), CurrState);
+	GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::SwitchAnimation(const CAnimInfo* pAnimInfo)
+{
+	if (AnimTaskID == INVALID_INDEX && !pAnimInfo) return;
+	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
+	if (!pPropAnim) return;
+
+	//???!!!allow to update the last frame?!
+	if (AnimTaskID != INVALID_INDEX) pPropAnim->StopAnim(AnimTaskID);
+
+	AnimTaskID = pAnimInfo ?
+		pPropAnim->StartAnim(pAnimInfo->ClipID, pAnimInfo->Loop, pAnimInfo->Offset, pAnimInfo->Speed, true, AnimPriority_Default, pAnimInfo->Weight) :
+		INVALID_INDEX;
 }
 //---------------------------------------------------------------------
 
