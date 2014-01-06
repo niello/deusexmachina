@@ -4,7 +4,7 @@
 
 #include <Game/Property.h>
 #include <Data/Params.h>
-#include <AI/SmartObj/SmartObjAction.h>
+#include <AI/SmartObj/SmartAction.h>
 #include <Data/Dictionary.h>
 
 // Smart object provides set of actions that can be executed on it by actor either through command or AI.
@@ -22,14 +22,31 @@ class CPropSmartObject: public Game::CProperty
 
 public:
 
-	typedef CDict<CStrID, AI::PSmartObjAction> CActList;
+	struct CAction
+	{
+		const AI::CSmartAction*	pTpl;
+		bool					Enabled;
+		int						FreeUserSlots;
+
+		bool IsValid(const AI::CActor* pActor, const CPropSmartObject* pSO) const { return pTpl && Enabled && FreeUserSlots && pTpl->IsValid(pActor, pSO); }
+	};
+
+	typedef CDict<CStrID, CAction> CActList;
 
 protected:
 
+	// FSM stuff, Tr is for Transition
+	CStrID		CurrState;
+	CStrID		TargetState;
+	float		TrProgress;
+	float		TrDuration;
+	CStrID		TrActionID;
+	bool		TrManualControl;
+	CActList	Actions;
+
+	// Game object stuff
 	CStrID		TypeID;
 	bool		Movable;
-	CActList	Actions;
-	CStrID		CurrState;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -41,33 +58,45 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
 
+	//!!!listen frame event to update automatic transition!
+	//subscribe only when automatic transition is active
+
 public:
 
-	bool				SetState(CStrID ID);
+	bool				SetState(CStrID ID, CStrID ActionID, bool ManualControl = false);
+	void				SetTransitionDuration(float Time);
+	void				SetTransitionProgress(float Time);
+	void				StopTransition();
+	void				AbortTransition();
+	bool				IsInTransition() const { return CurrState != TargetState; }
+	CStrID				GetCurrState() const { return CurrState; }
+	CStrID				GetTargetState() const { return TargetState; }
+	float				GetTransitionDuration() const { return TrDuration; }
+	float				GetTransitionProgress() const { return TrProgress; } //???return 0 when no transition?
+	CStrID				GetTransitionActionID() const { return TrActionID; }
+
 	bool				HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }
-	AI::PSmartObjAction	GetAction(CStrID ID) const;
+	CAction*			GetAction(CStrID ID);
+	const CActList&		GetActions() const { return Actions; }
 	void				EnableAction(CStrID ActionID, bool Enable = true);
 	bool				IsActionEnabled(CStrID ID) const;
 
+	CStrID				GetTypeID() const { return TypeID; }
 	bool				IsMovable() const { return Movable; }
 	bool				GetDestinationParams(CStrID ActionID, float ActorRadius, vector3& OutOffset, float& OutMinDist, float& OutMaxDist);
-
-	CStrID				GetTypeID() const { return TypeID; }
-	const CActList&		GetActions() const { return Actions; }
-	CStrID				GetCurrState() const { return CurrState; }
 };
 
-inline AI::PSmartObjAction CPropSmartObject::GetAction(CStrID ID) const
+inline CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
 {
 	int Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? Actions.ValueAt(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 
 inline bool CPropSmartObject::IsActionEnabled(CStrID ID) const
 {
 	int Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) && Actions.ValueAt(Idx)->Enabled;
+	return (Idx != INVALID_INDEX) && Actions.ValueAt(Idx).Enabled;
 }
 //---------------------------------------------------------------------
 

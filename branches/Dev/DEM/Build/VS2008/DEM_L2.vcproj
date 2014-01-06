@@ -601,35 +601,11 @@
 				Name="SmartObj"
 				>
 				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\SmartObjAction.cpp"
+					RelativePath="..\..\Src\L2\AI\SmartObj\SmartAction.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\SmartObjAction.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\SmartObjActionTpl.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\SmartObjActionTpl.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\Validator.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\Validator.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\ValidatorScript.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\SmartObj\ValidatorScript.h"
+					RelativePath="..\..\Src\L2\AI\SmartObj\SmartAction.h"
 					>
 				</File>
 				<Filter

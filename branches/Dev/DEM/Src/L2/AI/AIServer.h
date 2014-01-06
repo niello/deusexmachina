@@ -6,7 +6,7 @@
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <AI/Planning/Planner.h>
-#include <AI/SmartObj/SmartObjActionTpl.h>
+#include <AI/SmartObj/SmartAction.h>
 #include <AI/AILevel.h>
 
 // AI server manages AI levels and high-level systems like planner or memory fact factory
@@ -32,7 +32,7 @@ class CAIServer: public Core::CRefCounted
 private:
 
 	CPlanner							Planner; //???or singleton?
-	CDict<CStrID, CSmartObjActionTpl>	SOActTpls;
+	CDict<CStrID, CSmartAction>	SOActTpls;
 	CDict<CStrID, dtQueryFilter*>		NavQueryFilters;
 	dtQueryFilter*						pDebugFilter;
 	CDict<CStrID, COAParams*>			ObstacleAvoidanceParams;
@@ -45,8 +45,8 @@ public:
 
 	void						Trigger();
 
-	void						AddSmartObjActionTpl(CStrID ID, const Data::CParams& Desc);
-	const CSmartObjActionTpl*	GetSmartObjActionTpl(CStrID ID) const;
+	void						AddSmartAction(CStrID ID, const Data::CParams& Desc);
+	const CSmartAction*	GetSmartAction(CStrID ID) const;
 
 	void						AddNavQueryFilter(CStrID ID, const Data::CParams& Desc);
 	const dtQueryFilter*		GetNavQueryFilter(CStrID ID) const;

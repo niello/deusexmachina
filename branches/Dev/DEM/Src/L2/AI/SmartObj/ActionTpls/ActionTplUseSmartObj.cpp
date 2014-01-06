@@ -42,9 +42,9 @@ bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, 
 		CPropSmartObject* pSO = pEntity->GetProperty<CPropSmartObject>();
 		n_assert(pSO);
 
-		PSmartObjAction Action = pSO->GetAction(ActionID);
-		if (Action.IsValid() && Action->Preconditions.IsValid())
-			return Action->Preconditions->FillWorldState(pActor, pSO, WS);
+		const CPropSmartObject::CAction* pAction = pSO->GetAction(ActionID);
+		if (pAction && pAction->pTpl->Preconditions.IsValid())
+			return pAction->pTpl->Preconditions->FillWorldState(pActor, pSO, WS);
 	}
 
 	FAIL;

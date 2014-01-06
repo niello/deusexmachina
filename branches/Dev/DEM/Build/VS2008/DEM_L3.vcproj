@@ -472,26 +472,6 @@
 					>
 				</File>
 			</Filter>
-			<Filter
-				Name="SmartObj"
-				>
-				<File
-					RelativePath="..\..\Src\L3\AI\SmartObj\ValidatorCanTalk.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\AI\SmartObj\ValidatorCanTalk.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\AI\SmartObj\ValidatorDlgRuns.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\AI\SmartObj\ValidatorDlgRuns.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="World"

@@ -60,13 +60,17 @@ void CAIServer::Trigger()
 }
 //---------------------------------------------------------------------
 
-void CAIServer::AddSmartObjActionTpl(CStrID ID, const Data::CParams& Desc)
+void CAIServer::AddSmartAction(CStrID ID, const Data::CParams& Desc)
 {
-	if (!SOActTpls.Contains(ID)) SOActTpls.Add(ID, CSmartObjActionTpl(Desc));
+	if (!SOActTpls.Contains(ID))
+	{
+		CSmartAction& SA = SOActTpls.Add(ID);
+		SA.Init(Desc);
+	}
 }
 //---------------------------------------------------------------------
 
-const CSmartObjActionTpl* CAIServer::GetSmartObjActionTpl(CStrID ID) const
+const CSmartAction* CAIServer::GetSmartAction(CStrID ID) const
 {
 	int Idx = SOActTpls.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAt(Idx) : NULL;

@@ -16,7 +16,7 @@ namespace Prop
 
 namespace AI
 {
-class CSmartObjAction;
+class CSmartAction;
 
 class CActionUseSmartObj: public CAction
 {
@@ -26,10 +26,14 @@ private:
 
 	CStrID	TargetID;
 	CStrID	ActionID;
+	float	Duration;
+	float	Progress;
 	bool	WasDone;
+
 	PAction	SubActFace;
 
-	void				StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO, CSmartObjAction* pSOAction);
+	bool				StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO);
+	EExecStatus			SetDone(CActor* pActor, const CSmartAction& ActTpl);
 
 public:
 
