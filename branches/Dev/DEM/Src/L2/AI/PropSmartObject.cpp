@@ -52,12 +52,15 @@ bool CPropSmartObject::InternalActivate()
 		}
 	}
 
-	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
-	if (pProp && pProp->IsActive())
+	CPropScriptable* pPropScript = GetEntity()->GetProperty<CPropScriptable>();
+	if (pPropScript && pPropScript->IsActive())
 	{
-		EnableSI(*pProp);
+		EnableSI(*pPropScript);
 		GetEntity()->FireEvent(CStrID("OnSOLoaded")); //???or in OnPropsActivated?
 	}
+
+	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
+	if (pPropAnim && pPropAnim->IsActive()) LoadAnimationInfo(Desc, *pPropAnim);
 
 	if (!CurrState.IsValid() && Desc.IsValid() && Desc->Has(CStrID("DefaultState")))
 	{
@@ -83,6 +86,8 @@ void CPropSmartObject::InternalDeactivate()
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	CurrState = CStrID::Empty;
+	ActionAnims.Clear();
+	StateAnims.Clear();
 	Actions.Clear();
 }
 //---------------------------------------------------------------------
@@ -96,8 +101,7 @@ bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
 {
 	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 	Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
-	SetTransitionDuration(0.f);
-	SetState(Desc->Get<CStrID>(CStrID("DefaultState")));
+	SetState(Desc->Get<CStrID>(CStrID("DefaultState")), CStrID::Empty, 0.f);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -115,6 +119,14 @@ bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
 		OK;
 	}
 
+	if (pProp->IsA<CPropAnimation>())
+	{
+		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
+		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
+		LoadAnimationInfo(Desc, *(CPropAnimation*)pProp);
+		OK;
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -128,6 +140,13 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 	if (pProp->IsA<CPropScriptable>())
 	{
 		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	if (pProp->IsA<CPropAnimation>())
+	{
+		ActionAnims.Clear();
+		StateAnims.Clear();
 		OK;
 	}
 
@@ -150,6 +169,46 @@ bool CPropSmartObject::OnBeginFrame(const Events::CEventBase& Event)
 {
 	SetTransitionProgress(TrProgress + (float)GameSrv->GetFrameTime());
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::LoadAnimationInfo(Data::PParams Desc, CPropAnimation& Prop)
+{
+	Data::PParams Anims;
+	if (Desc->Get<Data::PParams>(Anims, CStrID("ActionAnims")))
+	{
+		for (int i = 0; i < Anims->GetCount(); ++i)
+		{
+			Data::CParam& Prm = Anims->Get(i);
+			CAnimInfo& AnimInfo = ActionAnims.Add(Prm.GetName());
+			FillAnimationInfo(AnimInfo, *Prm.GetValue<Data::PParams>(), Prop);
+		}
+	}
+
+	if (Desc->Get<Data::PParams>(Anims, CStrID("StateAnims")))
+	{
+		for (int i = 0; i < Anims->GetCount(); ++i)
+		{
+			Data::CParam& Prm = Anims->Get(i);
+			CAnimInfo& AnimInfo = StateAnims.Add(Prm.GetName());
+			FillAnimationInfo(AnimInfo, *Prm.GetValue<Data::PParams>(), Prop);
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+//???priority, fadein, fadeout?
+void CPropSmartObject::FillAnimationInfo(CAnimInfo& AnimInfo, const Data::CParams& Desc, class CPropAnimation& Prop)
+{
+	AnimInfo.ClipID = Desc.Get<CStrID>(CStrID("Clip"), CStrID::Empty);
+	n_assert(AnimInfo.ClipID.IsValid());
+	AnimInfo.Loop = Desc.Get(CStrID("Loop"), false);
+	AnimInfo.Speed = Desc.Get(CStrID("Speed"), 1.f);
+	AnimInfo.Weight = Desc.Get(CStrID("Weight"), 1.f);
+	AnimInfo.Duration = Prop.GetAnimLength(AnimInfo.ClipID);
+	if (Desc.Get(AnimInfo.Offset, CStrID("RelOffset")))
+		AnimInfo.Offset *= AnimInfo.Duration;
+	else AnimInfo.Offset = Desc.Get(CStrID("Offset"), 0.f);
 }
 //---------------------------------------------------------------------
 
@@ -185,14 +244,6 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 		OK;
 	}
 
-	TargetState = StateID;
-
-	if (TrDuration == 0.f)
-	{
-		CompleteTransition();
-		OK;
-	}
-
 	if (IsInTransition())
 	{
 		if (TargetState == StateID)
@@ -210,6 +261,15 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 		}
 	}
 	else TrProgress = 0.f;
+
+	TargetState = StateID;
+
+	//???what if AbortTransition above was called?
+	if (TransitionDuration == 0.f)
+	{
+		CompleteTransition();
+		OK;
+	}
 
 	TrActionID = ActionID;
 	TrManualControl = ManualControl;

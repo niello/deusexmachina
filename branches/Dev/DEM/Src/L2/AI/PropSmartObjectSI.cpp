@@ -22,7 +22,7 @@ int CPropSmartObject_SetState(lua_State* l)
 	SETUP_ENT_SI_ARGS(2);
 	CStrID ActionID = (ArgCount > 2) ? CStrID(lua_tostring(l, 3)) : CStrID::Empty;
 	float Duration = (ArgCount > 3) ? (float)lua_tonumber(l, 4) : -1.f;
-	bool Manual = (ArgCount > 4) ? !!lua_toboolean(l, 5) : true;
+	bool Manual = (ArgCount > 4) ? !!lua_toboolean(l, 5) : false;
 	This->GetEntity()->GetProperty<CPropSmartObject>()->SetState(CStrID(lua_tostring(l, 2)), ActionID, Duration, Manual);
 	return 0;
 }
