@@ -14,19 +14,77 @@ __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 using namespace Prop;
 using namespace Data;
 
-void CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO, CSmartObjAction* pSOAction)
+bool CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO)
 {
-	PParams P = n_new(CParams(3));
-	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSOAction || !pSOAction->IsValid(pActor, pSO)) FAIL;
+
+	if (pSOAction->FreeUserSlots > 0) --pSOAction->FreeUserSlots;
+
+	const CSmartAction& ActTpl = *pSOAction->pTpl;
+	if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration)
+	{
+		CString AttrID("ActionProgress_");
+		AttrID += ActionID.CStr();
+
+		//!!!ActTpl.GetDuration()!
+		Duration = ActTpl.Duration;
+		Progress = ActTpl.ResetOnAbort() ? 0.f : pActor->GetEntity()->GetAttr<float>(CStrID(AttrID.CStr()), 0.f);
+
+		if (ActTpl.TargetState.IsValid())
+		{
+			pSO->SetTransitionDuration(Duration);
+			pSO->SetTransitionProgress(Progress);
+			pSO->SetState(ActTpl.TargetState, ActionID, ActTpl.ManualTransitionControl());
+		}
+	}
+	else if (ActTpl.ProgressDriver == CSmartAction::PDrv_SO_FSM)
+	{
+		n_assert_dbg(ActTpl.TargetState.IsValid());
+		pSO->SetState(ActTpl.TargetState, ActionID);
+		Duration = pSO->GetTransitionDuration();
+		//???Progress = pSO->IsInTransition() ? pSO->GetTransitionProgress() : 0.f;
+		Progress = pSO->GetTransitionProgress(); //!!!return 0 if no transition!
+	}
+	else if (ActTpl.ProgressDriver == CSmartAction::PDrv_None)
+	{
+		//???if _TARGET_STATE
+		//???	SO.FSM.SetState(_TARGET_STATE, _ACTION_ID, Auto)
+		Duration = -1.f;
+	}
+	else n_error("CActionUseSmartObj::StartSOAction(): Unknown ProgressDriver!");
+
+	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
+	if (pActorSO)
+	{
+		pActorSO->SetState(CStrID("UsingSO"), ActionID);
+		//if _SYNC_ACTOR_ANIM
+		//	Actor.FSM.SetDuration(_DURATION)
+	}
+
+	PParams P = n_new(CParams(2)); //3));
+	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
-	if (pSOAction->OnStartCmd.IsValid()) pSO->GetEntity()->FireEvent(pSOAction->OnStartCmd, P);
-	EventSrv->FireEvent(CStrID("OnSOActionStart"), P);
+	pActor->GetEntity()->FireEvent(CStrID("OnSOActionStart"), P);
 
-	//SOANIM
-	//!!!play anim for actor and for SO, if it has one for this action!
+	if (Duration == 0.f) SetDone(pActor, ActTpl);
 
-	if (pSOAction->FreeUserSlots > 0) pSOAction->FreeUserSlots--;
+	OK;
+}
+//---------------------------------------------------------------------
+
+EExecStatus CActionUseSmartObj::SetDone(CActor* pActor, const CSmartAction& ActTpl)
+{
+	WasDone = true;
+
+	PParams P = n_new(CParams(2));
+	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	P->Set(CStrID("SO"), TargetID);
+	P->Set(CStrID("Action"), ActionID);
+	pActor->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
+
+	return ActTpl.EndOnDone() ? Success : Running;
 }
 //---------------------------------------------------------------------
 
@@ -36,12 +94,13 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) FAIL;
-	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
-	if (!pSOAction || !pSOAction->IsValid(pActor, pSO)) FAIL;
 
 	WasDone = false;
 
-	if (pSOAction->FaceObject())
+	//!!!mb face externally, as go!
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSOAction) FAIL;
+	if (pSOAction->pTpl->FaceObject())
 	{
 		vector3 FaceDir = pSOEntity->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 		FaceDir.norm();
@@ -49,20 +108,17 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 		SubActFace = n_new(CActionFace);
 		return SubActFace->Activate(pActor);
 	}
-	else StartSOAction(pActor, pSO, pSOAction);
-
-	OK;
+	return StartSOAction(pActor, pSO);
 }
 //---------------------------------------------------------------------
 
 EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 {
+	//!!!IsValid() checks that values, second test may be not necessary!
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return Failure;
-	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
-	if (!pSOAction) return Failure;
 
 	// Finish SO facing if started
 	if (SubActFace.IsValid())
@@ -74,7 +130,7 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 			case Success:
 				SubActFace->Deactivate(pActor);
 				SubActFace = NULL;
-				StartSOAction(pActor, pSO, pSOAction);
+				if (!StartSOAction(pActor, pSO)) return Failure;
 				break;
 			case Failure:
 			case Error:
@@ -84,35 +140,38 @@ EExecStatus CActionUseSmartObj::Update(CActor* pActor)
 		}
 	}
 
-	// Update anim here
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSOAction) return Failure;
+	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
+	EExecStatus Result = Running; //!!!if UpdateFunc() call it!
+	if (Result == Failure || Result == Error) return Result;
 	if (WasDone) return Running;
-
-	pSOAction->Progress += (float)GameSrv->GetFrameTime();
-
-	float Duration = pSOAction->GetTpl().Duration;
-	if (Duration >= 0.f && pSOAction->Progress >= Duration)
+	if (Result == Success) return SetDone(pActor, ActTpl);
+	else if (ActTpl.ProgressDriver != CSmartAction::PDrv_None)
 	{
-		if (pSOAction->Resource > 0) pSOAction->Resource--;
+		float PrevProgress = Progress;
+		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration)
+		{
+			Progress += (float)GameSrv->GetFrameTime();
+			if (ActTpl.TargetState.IsValid() && ActTpl.ManualTransitionControl())
+				pSO->SetTransitionProgress(Progress);
+		}
+		else if (ActTpl.ProgressDriver == CSmartAction::PDrv_SO_FSM)
+			Progress = pSO->GetTransitionProgress();
 
-		WasDone = true;
-		pSOAction->Progress = 0.f;
-
-		// SmartObj can be destroyed on action done, so cache this value
-		bool EndOnDone = pSOAction->EndOnDone();
-
-		PParams P = n_new(CParams(3));
-		P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
-		P->Set(CStrID("SO"), TargetID);
-		P->Set(CStrID("Action"), ActionID);
-		if (pSOAction->OnDoneCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnDoneCmd, P);
-		EventSrv->FireEvent(CStrID("OnSOActionDone"), P);
-
-		if (EndOnDone) return Success;
+		if (Progress >= Duration) return SetDone(pActor, ActTpl);
+		else if (ActTpl.SendProgressEvent() && Progress != PrevProgress)
+		{
+			PParams P = n_new(CParams(4));
+			//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+			P->Set(CStrID("SO"), TargetID);
+			P->Set(CStrID("Action"), ActionID);
+			P->Set(CStrID("PrevValue"), PrevProgress);
+			P->Set(CStrID("Value"), Progress);
+			pActor->GetEntity()->FireEvent(CStrID("OnSOActionProgress"), P);
+		}
 	}
-	//else if duration is applicable
-		//???flag Action->FireProgressChangeEvent?
-		//???need to trigger some script function or fire OnSOActionProgressChanged event if progress changes?
 
 	return Running;
 }
@@ -131,27 +190,50 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return;
-	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	if (!pSOAction) return;
+	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
-	if (pSOAction->FreeUserSlots >= 0) pSOAction->FreeUserSlots++;
-	
-	PParams P = n_new(CParams(3));
-	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	PParams P = n_new(CParams(2));
+	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 
 	if (WasDone)
 	{
-		if (pSOAction->OnEndCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnEndCmd, P);
 		EventSrv->FireEvent(CStrID("OnSOActionEnd"), P);
+		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration && !ActTpl.ResetOnAbort())
+		{
+			CString AttrID("ActionProgress_");
+			AttrID += ActionID.CStr();
+			pActor->GetEntity()->DeleteAttr(CStrID(AttrID.CStr()));
+		}
 	}
 	else
 	{
-		if (pSOAction->ResetOnAbort()) pSOAction->Progress = 0.f;
-		if (pSOAction->OnAbortCmd.IsValid()) pSOEntity->FireEvent(pSOAction->OnAbortCmd, P);
 		EventSrv->FireEvent(CStrID("OnSOActionAbort"), P);
+		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration && !ActTpl.ResetOnAbort())
+		{
+			CString AttrID("ActionProgress_");
+			AttrID += ActionID.CStr();
+			pActor->GetEntity()->SetAttr(CStrID(AttrID.CStr()), Progress);
+		}
+		if (ActTpl.TargetState.IsValid())
+		{
+			//if _RESET_ON_ABORT [? and drv is so fsm or (_SO_TIMING_MODE = Manual and _FREE_SLOTS = _MAX_SLOTS - 1)?]
+			if (ActTpl.ResetOnAbort())
+				pSO->AbortTransition(); //[?time/speed, not to switch anim immediately but to perform reverse transition?]
+			else if (ActTpl.ProgressDriver == CSmartAction::PDrv_SO_FSM)
+				pSO->StopTransition();
+		}
 	}
+
+	// Abort might be caused by an actor state change, so don't affect that change
+	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
+	if (pActorSO && pActorSO->GetCurrState() == CStrID("UsingSO"))
+		pActorSO->SetState(CStrID("Idle"), ActionID);
+
+	if (pSOAction->FreeUserSlots >= 0) ++pSOAction->FreeUserSlots;
 }
 //---------------------------------------------------------------------
 
@@ -161,12 +243,10 @@ bool CActionUseSmartObj::IsValid(CActor* pActor) const
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) FAIL;
-	CSmartObjAction* pSOAction = pSO->GetAction(ActionID);
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	return	pSOAction &&
 			pSOAction->Enabled &&
-			(WasDone || pSOAction->Resource) &&
-			((SubActFace.IsValid() && SubActFace->IsValid(pActor)) ||
-			 (!pSOAction->UpdateValidator.IsValid() || pSOAction->UpdateValidator->IsValid(pActor, pSO, pSOAction)));
+			(!SubActFace.IsValid() || SubActFace->IsValid(pActor));
 }
 //---------------------------------------------------------------------
 

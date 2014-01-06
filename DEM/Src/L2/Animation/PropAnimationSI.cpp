@@ -53,10 +53,11 @@ int CPropAnimation_StartAnim(lua_State* l)
 
 int CPropAnimation_PauseAnim(lua_State* l)
 {
-	//args: EntityScriptObject's this table, Task ID, bool Pause
-	SETUP_ENT_SI_ARGS(3);
+	//args: EntityScriptObject's this table, Task ID, [bool Pause]
+	SETUP_ENT_SI_ARGS(2);
 	CPropAnimation* pProp = This->GetEntity()->GetProperty<CPropAnimation>();
-	if (pProp) pProp->PauseAnim(lua_tointeger(l, 2), !!lua_toboolean(l, 3));
+	bool Pause = (ArgCount > 2) ? !!lua_toboolean(l, 3) : true;
+	if (pProp) pProp->PauseAnim(lua_tointeger(l, 2), Pause);
 	return 0;
 }
 //---------------------------------------------------------------------

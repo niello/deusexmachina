@@ -173,7 +173,7 @@ bool CEnvironment::InitGameSystem()
 		for (int i = 0; i < SOActTpls->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SOActTpls->Get(i);
-			AISrv->AddSmartObjActionTpl(Prm.GetName(), *Prm.GetValue<Data::PParams>());
+			AISrv->AddSmartAction(Prm.GetName(), *Prm.GetValue<Data::PParams>());
 		}
 
 	OK;

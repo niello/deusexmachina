@@ -59,7 +59,7 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 	CString SortType;
 	if (Desc.Get<CString>(SortType, CStrID("Sort")))
 	{
-		SortType = SortType.Trim(N_WHITESPACE);
+		SortType.TrimInplace();
 		SortType.ToLower();
 		if (SortType == "fronttoback" || SortType == "ftb")
 			DistanceSorting = Sort_FrontToBack;

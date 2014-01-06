@@ -25,12 +25,8 @@ bool CPropSmartObject::InternalActivate()
 		TypeID = Desc->Get(CStrID("TypeID"), CStrID::Empty);
 		Movable = Desc->Get(CStrID("Movable"), false);
 
-		Data::PParams ActionsData, ActionsEnabled, ActionsProgress;
-		if (GetEntity()->GetAttr(ActionsData, CStrID("SOActions")))
-		{
-			ActionsData->Get(ActionsEnabled, CStrID("Enabled"));
-			ActionsData->Get(ActionsProgress, CStrID("Progress"));
-		}
+		Data::PParams ActionsEnabled;
+		GetEntity()->GetAttr(ActionsEnabled, CStrID("SOActionsEnabled"));
 
 		Data::PParams DescSection;
 		if (Desc->Get<Data::PParams>(DescSection, CStrID("Actions")))
@@ -39,18 +35,16 @@ bool CPropSmartObject::InternalActivate()
 			for (int i = 0; i < DescSection->GetCount(); i++)
 			{
 				const Data::CParam& Prm = DescSection->Get(i);
-				Data::PParams ActDesc = Prm.GetValue<Data::PParams>();
-				LPCSTR TplName = ActDesc->Get<CString>(CStrID("Tpl")).CStr();
-				const AI::CSmartObjActionTpl* pTpl = AISrv->GetSmartObjActionTpl(CStrID(TplName));
+				const AI::CSmartAction* pTpl = AISrv->GetSmartAction(Prm.GetValue<CStrID>());
 				if (pTpl)
 				{
-					AI::PSmartObjAction Action = n_new(AI::CSmartObjAction)(*pTpl, ActDesc);
-					if (!CurrState.IsValid()) Action->Enabled = false;
-					else if (ActionsEnabled.IsValid()) ActionsEnabled->Get(Action->Enabled, Prm.GetName());
-					if (ActionsProgress.IsValid()) ActionsProgress->Get(Action->Progress, Prm.GetName());
-					Actions.Add(Prm.GetName(), Action);
+					CAction& Action = Actions.Add(Prm.GetName());
+					Action.pTpl = pTpl;
+					Action.FreeUserSlots = pTpl->MaxUserCount;
+					if (CurrState.IsValid() && ActionsEnabled.IsValid()) ActionsEnabled->Get(Action.Enabled, Prm.GetName());
+					else Action.Enabled = false;
 				}
-				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", TplName);
+				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", Prm.GetValue<CStrID>().CStr());
 			}
 			Actions.EndAdd();
 		}
@@ -99,7 +93,8 @@ bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
 {
 	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 	Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
-	SetState(Desc->Get<CStrID>(CStrID("DefaultState")));
+	SetTransitionDuration(0.f);
+	SetState(Desc->Get<CStrID>(CStrID("DefaultState")), CStrID::Empty);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -140,41 +135,59 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 {
 	// Need to recreate params because else we may rewrite initial level desc in the HRD cache
-	Data::PParams P = n_new(Data::CParams(2));
-	Data::PParams PEnabled = n_new(Data::CParams(Actions.GetCount()));
-	Data::PParams PProgress = n_new(Data::CParams(Actions.GetCount()));
-
+	Data::PParams P = n_new(Data::CParams(Actions.GetCount()));
 	for (int i = 0; i < Actions.GetCount(); ++i)
-	{
-		AI::CSmartObjAction& Action = *Actions.ValueAt(i);
-		PEnabled->Set(Actions.KeyAt(i), Action.Enabled);
-		if (Action.Progress > 0.f) PProgress->Set(Actions.KeyAt(i), Action.Progress);
-	}
-
-	P->Set(CStrID("Enabled"), PEnabled);
-	if (PProgress->GetCount()) P->Set(CStrID("Progress"), PProgress);
-	GetEntity()->SetAttr<Data::PParams>(CStrID("SOActions"), P);
-
+		P->Set(Actions.KeyAt(i), Actions.ValueAt(i).Enabled);
+	GetEntity()->SetAttr<Data::PParams>(CStrID("SOActionsEnabled"), P);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::SetState(CStrID ID)
+bool CPropSmartObject::SetState(CStrID ID, CStrID ActionID, bool ManualControl)
 {
 	n_assert2(ID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
 
-	//!!!need to know what states are defined for this object!
-
 	if (ID == CurrState) OK;
+
+	//!!!if this transition is already active, resume it!
+
+	CAction* pAction;
+	if (ActionID.IsValid())
+	{
+		pAction = GetAction(ActionID);
+		if (!pAction) FAIL;
+	}
+	else pAction = NULL;
+
+	TargetState = ID;
+	TrActionID = ActionID;
 
 	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("From"), CurrState);
 	P->Set(CStrID("To"), ID);
-
 	if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
-	CurrState = ID;
-	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
-	GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
+
+	//???any other flag?
+	if (pAction->pTpl->ProgressDriver == AI::CSmartAction::PDrv_SO_FSM)
+	{
+		//get animation, get its duration and set as transition duration
+		TrProgress = 0.f;
+	}
+	// else transition duration and progress must be already initialized externally
+
+	if (TrDuration == 0.f)
+	{
+		//finish transition
+			//CurrState = TargetState;
+			//GetEntity()->SetAttr(CStrID("SOState"), CurrState);
+
+			//GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
+	}
+	else
+	{
+		//if not manual, subscribe events
+		//init transition animation
+	}
 
 	OK;
 }
@@ -185,9 +198,9 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 	int Idx = Actions.FindIndex(ID);
 	if (Idx == INVALID_INDEX) return;
 
-	AI::CSmartObjAction* pAct = Actions.ValueAt(Idx).GetUnsafe();
-	if (pAct->Enabled == Enable) return;
-	pAct->Enabled = Enable;
+	CAction& Action = Actions.ValueAt(Idx);
+	if (Action.Enabled == Enable) return;
+	Action.Enabled = Enable;
 
 	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("ActionID"), ID);
@@ -198,15 +211,15 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 
 bool CPropSmartObject::GetDestinationParams(CStrID ActionID, float ActorRadius, vector3& OutOffset, float& OutMinDist, float& OutMaxDist)
 {
-	AI::PSmartObjAction Action = GetAction(ActionID);
+	const CAction* pAction = GetAction(ActionID);
 
-	if (Action.IsValid())
+	if (pAction)
 	{
 		matrix33 Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).ToMatrix33();
-		Tfm.mult(Action->GetTpl().DestOffset, OutOffset);
-		OutMinDist = Action->GetTpl().MinDistance;
-		OutMaxDist = Action->GetTpl().MaxDistance;
-		if (Action->ActorRadiusMatters())
+		Tfm.mult(pAction->pTpl->DestOffset, OutOffset);
+		OutMinDist = pAction->pTpl->MinDistance;
+		OutMaxDist = pAction->pTpl->MaxDistance;
+		if (pAction->pTpl->ActorRadiusMatters())
 		{
 			OutMinDist += ActorRadius;
 			OutMaxDist += ActorRadius;

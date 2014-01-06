@@ -12,13 +12,11 @@ __ImplementClass(AI::CTaskUseSmartObj, 'TUSO', AI::CTask);
 
 bool CTaskUseSmartObj::IsAvailableTo(const CActor* pActor)
 {
-	//???could be use actions on self?!
-	n_assert(pActor->GetEntity() != pSO->GetEntity());
-
-	PSmartObjAction Action = pSO->GetAction(ActionID);
-
+	//???could be using actions on self?! cast spell, use item.
 	//???also validate GotoSO action?
-	return Action.IsValid() && Action->IsValid(pActor, pSO);
+	n_assert(pActor->GetEntity() != pSO->GetEntity());
+	const CPropSmartObject::CAction* pAction = pSO->GetAction(ActionID);
+	return pAction && pAction->IsValid(pActor, pSO);
 }
 //---------------------------------------------------------------------
 
@@ -40,4 +38,4 @@ PAction CTaskUseSmartObj::BuildPlan()
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

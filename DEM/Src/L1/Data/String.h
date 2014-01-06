@@ -61,8 +61,8 @@ public:
 	bool			ContainsOnly(const CString& CharSet) const;
 	void			ToLower();
 	void			ToUpper();
-	CString			Trim(const char* CharSet, bool Left = true, bool Right = true) const;
-	void			TrimInplace(const char* CharSet, bool Left = true, bool Right = true);
+	CString			Trim(const char* CharSet = N_WHITESPACE, bool Left = true, bool Right = true) const;
+	void			TrimInplace(const char* CharSet = N_WHITESPACE, bool Left = true, bool Right = true);
 	CString			Replace(const char* str, const char* pReplaceWith) const;
 	void			Replace(char c, char subst);
 	void			ReplaceChars(const char* CharSet, char replacement);

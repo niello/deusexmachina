@@ -18,9 +18,10 @@ using namespace Scripting;
 
 int CPropSmartObject_SetState(lua_State* l)
 {
-	//args: EntityScriptObject's this table, State ID
-	SETUP_ENT_SI_ARGS(2);
-	This->GetEntity()->GetProperty<CPropSmartObject>()->SetState(CStrID(lua_tostring(l, 2)));
+	//args: EntityScriptObject's this table, State ID, Action ID, [Manual control flag]
+	SETUP_ENT_SI_ARGS(3);
+	bool Manual = (ArgCount > 3) ? !!lua_toboolean(l, 4) : true;
+	This->GetEntity()->GetProperty<CPropSmartObject>()->SetState(CStrID(lua_tostring(l, 2)), CStrID(lua_tostring(l, 3)), Manual);
 	return 0;
 }
 //---------------------------------------------------------------------

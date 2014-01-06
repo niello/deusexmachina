@@ -31,8 +31,8 @@ bool CPropUIControl::InternalActivate()
 	UIDesc = GetEntity()->GetAttr<CString>(CStrID("Desc"), NULL);
 	ReflectSOActions = false;
 
-	const CString& IAODesc = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
-	Data::PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
+	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
+	Data::PParams Desc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
 	if (Desc.IsValid())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), NULL);
@@ -185,25 +185,26 @@ bool CPropUIControl::OnPropDeactivating(const Events::CEventBase& Event)
 
 void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
+	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
+	Data::PParams UIDesc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
+	Data::PParams Desc = UIDesc.IsValid() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
+	if (!Desc.IsValid()) return;
+
 	const CPropSmartObject::CActList& SOActions = Prop.GetActions();
 
-	const CString& IAODesc = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
-	Data::PParams Desc = IAODesc.IsValid() ? DataSrv->LoadPRM(CString("UI:") + IAODesc + ".prm") : NULL;
-	Data::PParams SOActionNames = Desc.IsValid() ? Desc->Get<Data::PParams>(CStrID("SmartObjActionNames"), NULL) : NULL;
-
-	for (int i = 0; i < SOActions.GetCount(); ++i)
+	for (int i = 0; i < Desc->GetCount(); ++i)
 	{
-		CStrID ID = SOActions.KeyAt(i);
-		PSmartObjAction Act = SOActions.ValueAt(i);
-		if (Act.IsValid() && Act->VisibleInUI)
-		{
-			LPCSTR pUIName = SOActionNames.IsValid() ? SOActionNames->Get<CString>(ID, CString::Empty).CStr() : NULL;
-			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, Priority_Default, true));
+		const Data::CParam& Prm = Desc->Get(i);
+		CStrID ID = Prm.GetName();
+		const CPropSmartObject::CAction* pSOAction = SOActions.Get(ID);
+		if (!pSOAction) continue;
 
-			CAction* pAction = GetActionByID(ID);
-			n_assert(pAction);
-			pAction->Visible = Act->Enabled;
-		}
+		LPCSTR pUIName = Prm.GetValue<CString>().CStr();
+		n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, Priority_Default, true));
+
+		CAction* pUIAction = GetActionByID(ID);
+		n_assert(pUIAction); // Action is added in AddActionHandler
+		pUIAction->Visible = pSOAction->Enabled;
 	}
 }
 //---------------------------------------------------------------------
