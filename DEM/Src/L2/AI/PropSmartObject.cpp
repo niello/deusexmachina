@@ -5,6 +5,7 @@
 #include <AI/AIServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
+#include <Events/EventServer.h>
 
 namespace Prop
 {
@@ -75,6 +76,7 @@ void CPropSmartObject::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
+	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
@@ -94,7 +96,7 @@ bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
 	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 	Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 	SetTransitionDuration(0.f);
-	SetState(Desc->Get<CStrID>(CStrID("DefaultState")), CStrID::Empty);
+	SetState(Desc->Get<CStrID>(CStrID("DefaultState")));
 	OK;
 }
 //---------------------------------------------------------------------
@@ -143,13 +145,9 @@ bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::SetState(CStrID ID, CStrID ActionID, bool ManualControl)
+bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float TransitionDuration, bool ManualControl)
 {
-	n_assert2(ID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
-
-	if (ID == CurrState) OK;
-
-	//!!!if this transition is already active, resume it!
+	n_assert2(StateID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
 
 	CAction* pAction;
 	if (ActionID.IsValid())
@@ -159,35 +157,77 @@ bool CPropSmartObject::SetState(CStrID ID, CStrID ActionID, bool ManualControl)
 	}
 	else pAction = NULL;
 
-	TargetState = ID;
-	TrActionID = ActionID;
-
-	Data::PParams P = n_new(Data::CParams(2));
-	P->Set(CStrID("From"), CurrState);
-	P->Set(CStrID("To"), ID);
-	if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
-
-	//???any other flag?
-	if (pAction->pTpl->ProgressDriver == AI::CSmartAction::PDrv_SO_FSM)
+	if (TransitionDuration < 0.f)
 	{
-		//get animation, get its duration and set as transition duration
-		TrProgress = 0.f;
+		//get animation, get its duration and set as TransitionDuration
+		//If no animation, TransitionDuration = 0.f;
 	}
-	// else transition duration and progress must be already initialized externally
+
+	if (CurrState == StateID)
+	{
+		if (IsInTransition())
+		{
+			//// We are in a transition from the current state and are requested
+			//// to return to this state. Get current transition progress and remap
+			//// it to the new duration to get return time.
+			//float Time;
+			//if (TrDuration == 0.f) Time = 0.f;
+			//else
+			//{
+			//	Time = TrProgress;
+			//	if (TransitionDuration != TrDuration)
+			//		Time *= (TransitionDuration / TrDuration);
+			//}
+			AbortTransition(/*Time*/); //???manul or always automatic?
+		}
+		OK;
+	}
+
+	TargetState = StateID;
 
 	if (TrDuration == 0.f)
 	{
-		//finish transition
+		CompleteTransition();
+		OK;
+			//Data::PParams P = n_new(Data::CParams(2));
+			//P->Set(CStrID("From"), CurrState);
+			//P->Set(CStrID("To"), TargetState);
+			//GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
+
 			//CurrState = TargetState;
 			//GetEntity()->SetAttr(CStrID("SOState"), CurrState);
+	}
 
-			//GetEntity()->FireEvent(CStrID("OnSOStateEnter"), P);
-	}
-	else
+	if (IsInTransition())
 	{
-		//if not manual, subscribe events
-		//init transition animation
+		if (TargetState == StateID)
+		{
+			// The same transition paused, resume it and remap progress to a new duration
+			if (TrDuration == 0.f) TrProgress = 0.f;
+			else if (TransitionDuration != TrDuration)
+				TrProgress *= (TransitionDuration / TrDuration);
+		}
+		else
+		{
+			// Other transition, abort it immediately and start requested one
+			AbortTransition();
+			TrProgress = 0.f;
+		}
 	}
+	else TrProgress = 0.f;
+
+	TrActionID = ActionID;
+	TrManualControl = ManualControl;
+	TrDuration = TransitionDuration;
+
+	Data::PParams P = n_new(Data::CParams(2));
+	P->Set(CStrID("From"), CurrState);
+	P->Set(CStrID("To"), TargetState);
+	if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
+
+	//init transition animation
+
+	if (!ManualControl) SUBSCRIBE_PEVENT(OnBeginFrame, CPropSmartObject, OnBeginFrame);
 
 	OK;
 }

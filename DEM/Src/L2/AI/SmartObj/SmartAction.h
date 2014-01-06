@@ -5,8 +5,7 @@
 #include <AI/Planning/WorldStateSource.h>
 #include <Data/SimpleString.h>
 
-// Template record for smart object action, contains shared properties
-// to reduce memory footprint and setup efforts
+// Smart action holds information for an interaction with a smart object
 
 namespace Data
 {
@@ -33,6 +32,7 @@ public:
 		RESET_ON_ABORT			= 0x02,	// If set, clear progress of unfinished action
 		MANUAL_TRANSITION		= 0x04,	// If set, transition progress is updated manually, not by the frame timer
 		SEND_PROGRESS_EVENT		= 0x08,	// If set, progress chaged event is sent from an AI action
+		//SYNC_ACTOR_ANIMATION	= 0x10,	// If set, actor animation duration is synchronized with an action duration
 		FACE_OBJECT				= 0x40,	// If set, actor will face host object before starting the action
 		ACTOR_RADIUS_MATTERS	= 0x80	// If set, distance is adjusted by the actor radius
 		// - disable after use

@@ -36,13 +36,16 @@ public:
 protected:
 
 	// FSM stuff, Tr is for Transition
+	CActList	Actions;
 	CStrID		CurrState;
 	CStrID		TargetState;
 	float		TrProgress;
 	float		TrDuration;
 	CStrID		TrActionID;
 	bool		TrManualControl;
-	CActList	Actions;
+	DWORD		AnimTaskID;
+
+	//!!!store animation mapping!
 
 	// Game object stuff
 	CStrID		TypeID;
@@ -53,17 +56,19 @@ protected:
 	void			EnableSI(class CPropScriptable& Prop);
 	void			DisableSI(class CPropScriptable& Prop);
 
+	void			CompleteTransition();
+
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
-
-	//!!!listen frame event to update automatic transition!
-	//subscribe only when automatic transition is active
+	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 
 public:
 
-	bool				SetState(CStrID ID, CStrID ActionID, bool ManualControl = false);
+	CPropSmartObject(): AnimTaskID(INVALID_INDEX) {}
+
+	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);
 	void				SetTransitionProgress(float Time);
 	void				StopTransition();

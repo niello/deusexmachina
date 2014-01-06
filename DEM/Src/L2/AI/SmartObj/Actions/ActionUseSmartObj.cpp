@@ -33,9 +33,8 @@ bool CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* p
 
 		if (ActTpl.TargetState.IsValid())
 		{
-			pSO->SetTransitionDuration(Duration);
+			pSO->SetState(ActTpl.TargetState, ActionID, Duration, ActTpl.ManualTransitionControl());
 			pSO->SetTransitionProgress(Progress);
-			pSO->SetState(ActTpl.TargetState, ActionID, ActTpl.ManualTransitionControl());
 		}
 	}
 	else if (ActTpl.ProgressDriver == CSmartAction::PDrv_SO_FSM)
@@ -56,11 +55,7 @@ bool CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* p
 
 	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
 	if (pActorSO)
-	{
-		pActorSO->SetState(CStrID("UsingSO"), ActionID);
-		//if _SYNC_ACTOR_ANIM
-		//	Actor.FSM.SetDuration(_DURATION)
-	}
+		pActorSO->SetState(CStrID("UsingSO"), ActionID); //!!!SYNC_ACTOR_ANIMATION ? Duration : -1.f
 
 	PParams P = n_new(CParams(2)); //3));
 	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
@@ -232,6 +227,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
 	if (pActorSO && pActorSO->GetCurrState() == CStrID("UsingSO"))
 		pActorSO->SetState(CStrID("Idle"), ActionID);
+	//???if in transition to UsingSO, reset to Idle too?
 
 	if (pSOAction->FreeUserSlots >= 0) ++pSOAction->FreeUserSlots;
 }
