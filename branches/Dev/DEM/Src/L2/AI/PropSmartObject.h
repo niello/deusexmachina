@@ -31,19 +31,32 @@ public:
 		bool IsValid(const AI::CActor* pActor, const CPropSmartObject* pSO) const { return pTpl && Enabled && FreeUserSlots && pTpl->IsValid(pActor, pSO); }
 	};
 
-	typedef CDict<CStrID, CAction> CActList;
+	typedef CDict<CStrID, CAction> CActionList;
 
 protected:
 
+	struct CAnimInfo
+	{
+		CStrID	ClipID;
+		float	Duration; // Cached value
+		bool	Loop;
+		float	Offset; //!!!due to RelOffset init CAnimInfo or at least Offset when CPropAnimation is activated!
+		float	Speed;
+		float	Weight;
+		//???priority, fadein, fadeout?
+	};
+
 	// FSM stuff, Tr is for Transition
-	CActList	Actions;
-	CStrID		CurrState;
-	CStrID		TargetState;
-	float		TrProgress;
-	float		TrDuration;
-	CStrID		TrActionID;
-	bool		TrManualControl;
-	DWORD		AnimTaskID;
+	CActionList					Actions;
+	CDict<CStrID, CAnimInfo>	ActionAnims;
+	CDict<CStrID, CAnimInfo>	StateAnims;
+	CStrID						CurrState;
+	CStrID						TargetState;
+	float						TrProgress;
+	float						TrDuration;
+	CStrID						TrActionID;
+	bool						TrManualControl;
+	DWORD						AnimTaskID;
 
 	//!!!store animation mapping!
 
@@ -57,6 +70,7 @@ protected:
 	void			DisableSI(class CPropScriptable& Prop);
 
 	void			CompleteTransition();
+	void			SwitchAnimation(const CAnimInfo* pAnimInfo);
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
@@ -71,18 +85,18 @@ public:
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);
 	void				SetTransitionProgress(float Time);
-	void				StopTransition();
-	void				AbortTransition();
+	void				StopTransition() { UNSUBSCRIBE_EVENT(OnBeginFrame); }
+	void				AbortTransition(float Duration = 0.f);
 	bool				IsInTransition() const { return CurrState != TargetState; }
 	CStrID				GetCurrState() const { return CurrState; }
 	CStrID				GetTargetState() const { return TargetState; }
 	float				GetTransitionDuration() const { return TrDuration; }
-	float				GetTransitionProgress() const { return TrProgress; } //???return 0 when no transition?
+	float				GetTransitionProgress() const { return TrProgress; } //IsInTransition() ? TrProgress : 0.f; }
 	CStrID				GetTransitionActionID() const { return TrActionID; }
 
 	bool				HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }
 	CAction*			GetAction(CStrID ID);
-	const CActList&		GetActions() const { return Actions; }
+	const CActionList&	GetActions() const { return Actions; }
 	void				EnableAction(CStrID ActionID, bool Enable = true);
 	bool				IsActionEnabled(CStrID ID) const;
 

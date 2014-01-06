@@ -197,7 +197,8 @@ template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }
 template<class T, class T2> inline T n_min(T a, T2 b) { return a < (T)b ? a : (T)b; }
 template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T)b; }
 
-template <class T> inline T Clamp(T Value, T Min, T Max){return (Value<Min)?Min:((Value>Max)?Max:Value);}
+template <class T> inline T Clamp(T Value, T Min, T Max) { return (Value < Min) ? Min : ((Value > Max) ? Max : Value); }
+inline float Saturate(float Value) { return Clamp(Value, 0.f, 1.f); }
 
 inline bool IsPow2(int Value) { return Value >= 1 && (Value & (Value - 1)) == 0; }
 

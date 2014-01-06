@@ -52,8 +52,8 @@ public:
 	void			rotate(const vector3& axis, float angle);
 	void			lerp(const vector3& v0, float lerpVal);
 	void			lerp(const vector3& v0, const vector3& v1, float lerpVal);
-	vector3		findortho() const;
-	void			saturate() { x = n_saturate(x); y = n_saturate(y); z = n_saturate(z); }
+	vector3			findortho() const;
+	void			saturate() { x = Saturate(x); y = Saturate(y); z = Saturate(z); }
 	float			dot(const vector3& v0) const { return x * v0.x + y * v0.y + z * v0.z; }
 
 	void operator +=(const vector3& v0) { x += v0.x; y += v0.y; z += v0.z; }

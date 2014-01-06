@@ -54,24 +54,6 @@ inline bool n_fless(float f0, float f1, float tol) { return f0 - f1 < tol; }
 inline bool n_fgreater(float f0, float f1, float tol) { return f0 - f1 > tol; }
 inline float n_fmod(float x, float y) { return fmodf(x, y); }
 
-inline int n_iclamp(int val, int minVal, int maxVal)
-{
-	return val < minVal ? minVal : (val > maxVal ? maxVal : val);
-}
-//---------------------------------------------------------------------
-
-inline float n_clamp(float val, float minVal, float maxVal)
-{
-	return val < minVal ? minVal : (val > maxVal ? maxVal : val);
-}
-//---------------------------------------------------------------------
-
-inline float n_saturate(float val)
-{
-	return n_clamp(val, 0.f, 1.f);
-}
-//---------------------------------------------------------------------
-
 // acos with value clamping.
 inline float n_acos(float x)
 {

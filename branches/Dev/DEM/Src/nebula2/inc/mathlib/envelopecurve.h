@@ -136,7 +136,7 @@ void nEnvelopeCurve::SetParameters(const nEnvelopeCurve& src)
 inline
 float nEnvelopeCurve::GetValue(float pos) const
 {
-    pos = n_saturate(pos);
+    pos = Saturate(pos);
 
     float value;
     if (pos < this->keyFramePos1)
