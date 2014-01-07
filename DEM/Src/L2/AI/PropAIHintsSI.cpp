@@ -27,7 +27,7 @@ int CPropAIHints_EnableStimulus(lua_State* l)
 
 void CPropAIHints::EnableSI(CPropScriptable& Prop)
 {
-	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("EnableStimulus", CPropAIHints_EnableStimulus);
 	ScriptSrv->EndMixin();
 }
@@ -35,7 +35,7 @@ void CPropAIHints::EnableSI(CPropScriptable& Prop)
 
 void CPropAIHints::DisableSI(CPropScriptable& Prop)
 {
-	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ClearField("EnableStimulus");
 	ScriptSrv->EndMixin();
 }

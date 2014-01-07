@@ -325,7 +325,13 @@ void CPropSmartObject::SetTransitionProgress(float Time)
 	if (AnimTaskID != INVALID_INDEX)
 	{
 		CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
-		if (pPropAnim) pPropAnim->SetAnimCursorPos(AnimTaskID, TrProgress);
+		if (pPropAnim)
+		{
+			float CursorPos = pCurrAnimInfo->Offset + TrProgress * pCurrAnimInfo->Speed;
+			if (!pCurrAnimInfo->Loop && pCurrAnimInfo->Duration != TrProgress && TrDuration != 0.f)
+				CursorPos *= pCurrAnimInfo->Duration / TrDuration;
+			pPropAnim->SetAnimCursorPos(AnimTaskID, CursorPos);
+		}
 	}
 
 	if (TrProgress >= TrDuration) CompleteTransition();
@@ -366,6 +372,7 @@ void CPropSmartObject::SwitchAnimation(const CAnimInfo* pAnimInfo)
 	AnimTaskID = pAnimInfo ?
 		pPropAnim->StartAnim(pAnimInfo->ClipID, pAnimInfo->Loop, pAnimInfo->Offset, pAnimInfo->Speed, true, AnimPriority_Default, pAnimInfo->Weight) :
 		INVALID_INDEX;
+	pCurrAnimInfo = pAnimInfo;
 }
 //---------------------------------------------------------------------
 

@@ -76,7 +76,7 @@ int CPropActorBrain_Go(lua_State* l)
 
 void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 {
-	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("DoAction", CPropActorBrain_DoAction);
 	ScriptSrv->ExportCFunction("Go", CPropActorBrain_Go);
 	ScriptSrv->EndMixin();
@@ -85,7 +85,7 @@ void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 
 void CPropActorBrain::DisableSI(CPropScriptable& Prop)
 {
-	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ClearField("DoAction");
 	ScriptSrv->ClearField("Go");
 	ScriptSrv->EndMixin();
