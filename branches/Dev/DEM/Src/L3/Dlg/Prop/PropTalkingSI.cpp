@@ -36,7 +36,7 @@ int CPropTalking_SayPhrase(lua_State* l)
 
 void CPropTalking::EnableSI(CPropScriptable& Prop)
 {
-	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("SayPhrase", CPropTalking_SayPhrase);
 	ScriptSrv->EndMixin();
 }
@@ -44,7 +44,7 @@ void CPropTalking::EnableSI(CPropScriptable& Prop)
 
 void CPropTalking::DisableSI(CPropScriptable& Prop)
 {
-	n_assert_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ClearField("SayPhrase");
 	ScriptSrv->EndMixin();
 }

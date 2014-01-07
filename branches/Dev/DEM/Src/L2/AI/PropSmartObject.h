@@ -57,6 +57,7 @@ protected:
 	CStrID						TrActionID;
 	bool						TrManualControl;
 	DWORD						AnimTaskID;
+	const CAnimInfo*			pCurrAnimInfo;
 
 	//!!!store animation mapping!
 
@@ -82,7 +83,7 @@ protected:
 
 public:
 
-	CPropSmartObject(): Actions(1, 2), ActionAnims(0, 2), StateAnims(0, 2), AnimTaskID(INVALID_INDEX) {}
+	CPropSmartObject(): Actions(1, 2), ActionAnims(0, 2), StateAnims(0, 2), AnimTaskID(INVALID_INDEX), pCurrAnimInfo(NULL) {}
 
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);
