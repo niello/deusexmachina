@@ -32,7 +32,7 @@ public:
 	virtual void	EvalRelevance(const CActor* pActor) { Relevance = 0.f; }
 	virtual PAction	BuildPlan() = 0;
 	virtual bool	OnPlanSet(CActor* pActor) { OK; }
-	virtual void	OnPlanDone(CActor* pActor, EExecStatus BhvResult) { Done = true; }
+	virtual void	OnPlanDone(CActor* pActor, DWORD BhvResult) { Done = true; }
 	virtual void	Abort(CActor* pActor) { }
 
 	bool			IsSatisfied() const { return Done; }

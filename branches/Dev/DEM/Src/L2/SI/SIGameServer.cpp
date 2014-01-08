@@ -26,7 +26,7 @@ int CGameServer_SetGlobal(lua_State* l)
 	}
 
 	Data::CData Value;
-	ScriptSrv->LuaStackToData(Value, 2, l);
+	ScriptSrv->LuaStackToData(Value, 2);
 	GameSrv->SetGlobalAttr(CStrID(lua_tostring(l, 1)), Value);
 	return 0;
 }

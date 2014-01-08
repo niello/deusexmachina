@@ -6,7 +6,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionFace, 'AFAC', AI::CAction)
 
-EExecStatus CActionFace::Update(CActor* pActor)
+DWORD CActionFace::Update(CActor* pActor)
 {
 	switch (pActor->FacingState)
 	{

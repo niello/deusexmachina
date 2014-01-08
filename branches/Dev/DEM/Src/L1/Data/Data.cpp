@@ -4,6 +4,15 @@
 
 namespace Data
 {
+
+//!!!int, float - rewrite better if possible!
+//???always use CTypeImpl<T>::ToString() { return Data::ValueToString<T>(); } and specialize that function?
+template<> inline LPCSTR CTypeImpl<bool>::ToString(const void* pObj) const { return pObj ? "true" : "false"; }
+template<> inline LPCSTR CTypeImpl<int>::ToString(const void* pObj) const { static CString Str; Str.SetInt((int)pObj); return Str.CStr(); }
+template<> inline LPCSTR CTypeImpl<float>::ToString(const void* pObj) const { static CString Str; Str.SetFloat(*((float*)&pObj)); return Str.CStr(); }
+template<> inline LPCSTR CTypeImpl<CString>::ToString(const void* pObj) const { return ((CString*)pObj)->CStr(); }
+template<> inline LPCSTR CTypeImpl<CStrID>::ToString(const void* pObj) const { return (LPCSTR)pObj; }
+
 //DEFINE_TYPE(void)
 DEFINE_TYPE(bool)
 DEFINE_TYPE(int)

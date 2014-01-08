@@ -58,7 +58,7 @@ int CEntityScriptObject_FireEvent(lua_State* l)
 	if (ArgCount > 2 && !lua_isnil(l, 3))
 	{
 		Data::CData Data;
-		ScriptSrv->LuaStackToData(Data, 3, l);
+		ScriptSrv->LuaStackToData(Data, 3);
 		if (lua_istable(l, 3)) Params = (Data::PParams)Data;
 		else if (Data.IsValid())
 		{

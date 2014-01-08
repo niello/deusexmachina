@@ -167,7 +167,11 @@ void CAnimTask::Stop(float OverrideFadeOutTime)
 			FadeOutLength = MaxPossibleFadeOut;
 	}
 
-	if (FadeOutLength == 0.f) Clear();
+	if (FadeOutLength == 0.f)
+	{
+		//Clear();
+		State = Task_LastFrame;
+	}
 	else
 	{
 		if (Loop) State = Task_Running; // Stop looping, enable fade-out

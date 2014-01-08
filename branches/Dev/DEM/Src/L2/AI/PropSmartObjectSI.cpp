@@ -42,7 +42,7 @@ int CPropSmartObject_IsInState(lua_State* l)
 {
 	//args: EntityScriptObject's this table, State ID
 	//ret:  bool is in state
-	SETUP_ENT_SI_ARGS(1);
+	SETUP_ENT_SI_ARGS(2);
 	CStrID State = This->GetEntity()->GetProperty<CPropSmartObject>()->GetCurrState();
 	lua_pushboolean(l, State == lua_tostring(l, 2));
 	return 1;

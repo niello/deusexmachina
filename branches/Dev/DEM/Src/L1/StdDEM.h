@@ -202,13 +202,17 @@ inline float Saturate(float Value) { return Clamp(Value, 0.f, 1.f); }
 
 inline bool IsPow2(int Value) { return Value >= 1 && (Value & (Value - 1)) == 0; }
 
-enum EExecStatus
-{
-	Failure = 0,
-	Success = 1,
-	Running = 2,
-	Error = 3		// Keep Error the last in the list, so you can use return value like (Error + ERRCODE)
-};
+// Execution results
+
+const DWORD Failure = 0;
+const DWORD Success = 1;
+const DWORD Running = 2;
+const DWORD Error = 3;
+// Use values bigger than Error to specify errors
+
+inline bool ExecResultIsError(DWORD Result) { return Result >= Error; }
+
+//
 
 enum EClipStatus
 {

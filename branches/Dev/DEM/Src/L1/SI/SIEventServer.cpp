@@ -61,7 +61,7 @@ int EventSrv_FireEvent(lua_State* l)
 	if (ArgCount > 1 && !lua_isnil(l, 2))
 	{
 		Data::CData Data;
-		ScriptSrv->LuaStackToData(Data, 2, l);
+		ScriptSrv->LuaStackToData(Data, 2); //??? l as arg?
 		if (lua_istable(l, 2)) Params = (Data::PParams)Data;
 		else if (Data.IsValid())
 		{

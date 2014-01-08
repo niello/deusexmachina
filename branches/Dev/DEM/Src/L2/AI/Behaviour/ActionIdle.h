@@ -18,7 +18,7 @@ class CActionIdle: public CAction
 
 public:
 
-	virtual EExecStatus	Update(CActor* pActor) { return Running; }
+	virtual DWORD	Update(CActor* pActor) { return Running; }
 };
 
 typedef Ptr<CActionIdle> PActionIdle;

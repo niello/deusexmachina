@@ -15,8 +15,7 @@ bool CTaskUseSmartObj::IsAvailableTo(const CActor* pActor)
 	//???could be using actions on self?! cast spell, use item.
 	//???also validate GotoSO action?
 	n_assert(pActor->GetEntity() != pSO->GetEntity());
-	const CPropSmartObject::CAction* pAction = pSO->GetAction(ActionID);
-	return pAction && pAction->IsValid(pActor, pSO);
+	return pSO->IsActionAvailable(ActionID, pActor);
 }
 //---------------------------------------------------------------------
 

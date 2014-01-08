@@ -44,7 +44,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 	if (!pScriptObj) OK;
 
 	Data::CData RetVal;
-	if (pScriptObj->RunFunctionOneArg(Func, pActor->GetEntity()->GetUID(), &RetVal) != Error)
+	if (!ExecResultIsError(pScriptObj->RunFunctionOneArg(Func, pActor->GetEntity()->GetUID(), &RetVal)))
 	{
 		if (RetVal.IsA<bool>()) return (bool)RetVal;
 		if (RetVal.IsA<Data::PParams>())
@@ -73,4 +73,4 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

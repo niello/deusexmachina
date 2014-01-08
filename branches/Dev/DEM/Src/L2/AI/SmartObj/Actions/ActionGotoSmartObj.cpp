@@ -19,7 +19,7 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CActionGotoSmartObj::Update(CActor* pActor)
+DWORD CActionGotoSmartObj::Update(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) return Failure;
@@ -35,7 +35,7 @@ EExecStatus CActionGotoSmartObj::Update(CActor* pActor)
 bool CActionGotoSmartObj::UpdateDestination(CActor* pActor, Prop::CPropSmartObject* pSO)
 {
 	//???some interval instead of every frame check?
-	if (!pSO->GetAction(ActionID)->IsValid(pActor, pSO)) FAIL;
+	if (!pSO->IsActionAvailable(ActionID, pActor)) FAIL;
 
 	//???move code from the inside here entirely? get action by ID, get its destination params, calc destination
 	vector3 DestOffset;

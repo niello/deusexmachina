@@ -12,13 +12,13 @@ bool CActionSequence::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CActionSequence::Update(CActor* pActor)
+DWORD CActionSequence::Update(CActor* pActor)
 {
 	n_assert(ppCurrChild);
 
 	while (true)
 	{
-		EExecStatus Result = (*ppCurrChild)->Update(pActor);
+		DWORD Result = (*ppCurrChild)->Update(pActor);
 
 		if (Result == Running) return Running;
 

@@ -26,7 +26,7 @@ CDlgNode* CDlgNodeAnswers::Trigger(CActiveDlg& Dlg)
 	{
 		while (Dlg.LinkIdx < Links.GetCount())
 		{
-			EExecStatus Status = Links[Dlg.LinkIdx]->Validate(Dlg);
+			DWORD Status = Links[Dlg.LinkIdx]->Validate(Dlg);
 			if (Status == Success)
 			{
 				n_assert2(Links[Dlg.LinkIdx]->pTargetNode->IsA(CDlgNodePhrase::RTTI), "Answer dlg node should contain ONLY phrase nodes!");

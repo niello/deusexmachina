@@ -36,6 +36,7 @@ public:
 	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const = 0;
 	virtual int			GetSize() const = 0;
 	virtual int			GetID() const = 0;
+	virtual LPCSTR		ToString(const void* pObj) const = 0;
 
 	template<class T>
 	static const CType*	GetType() { n_assert(CTypeID<T>::IsDeclared); return CTypeImpl<T>::Type; }
@@ -79,6 +80,7 @@ public:
 	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const;
 	virtual int			GetSize() const;
 	virtual int			GetID() const { return CTypeID<T>::TypeID; }
+	virtual LPCSTR		ToString(const void* pObj) const { return NULL; }
 
 	inline void*		GetPtr(void* pObj) const;
 	inline const void*	GetPtr(const void* pObj) const;

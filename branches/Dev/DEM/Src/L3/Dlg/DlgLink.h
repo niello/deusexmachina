@@ -22,7 +22,7 @@ public:
 
 	CDlgLink(): pTargetNode(NULL) {}
 
-	EExecStatus Validate(CActiveDlg& Dlg);
+	DWORD Validate(CActiveDlg& Dlg);
 	CDlgNode*	DoTransition(CActiveDlg& Dlg);
 };
 

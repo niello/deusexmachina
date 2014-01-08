@@ -346,7 +346,7 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 
 	if (CurrPlan.IsValid())
 	{
-		EExecStatus BhvResult = CurrPlan->IsValid(this) ? CurrPlan->Update(this) : Failure;
+		DWORD BhvResult = CurrPlan->IsValid(this) ? CurrPlan->Update(this) : Failure;
 		if (BhvResult != Running)
 		{
 			SetPlan(NULL);

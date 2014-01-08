@@ -33,13 +33,13 @@ private:
 	PAction	SubActFace;
 
 	bool				StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO);
-	EExecStatus			SetDone(CActor* pActor, const CSmartAction& ActTpl);
+	DWORD			SetDone(CActor* pActor, const CSmartAction& ActTpl);
 
 public:
 
 	void				Init(CStrID Target, CStrID Action) { TargetID = Target; ActionID = Action; }
 	virtual bool		Activate(CActor* pActor);
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
 	virtual bool		IsValid(CActor* pActor) const;
 

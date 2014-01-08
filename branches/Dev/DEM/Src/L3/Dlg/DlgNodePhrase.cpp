@@ -19,7 +19,7 @@ CDlgNode* CDlgNodePhrase::Trigger(CActiveDlg& Dlg)
 {
 	while (Dlg.IsCheckingConditions && Dlg.LinkIdx < Links.GetCount())
 	{
-		EExecStatus Status = Links[Dlg.LinkIdx]->Validate(Dlg);
+		DWORD Status = Links[Dlg.LinkIdx]->Validate(Dlg);
 		if (Status == Success)
 		{
 			if (Links[Dlg.LinkIdx]->pTargetNode)

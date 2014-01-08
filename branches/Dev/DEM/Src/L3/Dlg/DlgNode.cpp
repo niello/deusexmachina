@@ -11,7 +11,7 @@ CDlgNode* CDlgNode::Trigger(CActiveDlg& Dlg)
 {
 	while (Dlg.IsCheckingConditions && Dlg.LinkIdx < Links.GetCount())
 	{
-		EExecStatus Status = Links[Dlg.LinkIdx]->Validate(Dlg);
+		DWORD Status = Links[Dlg.LinkIdx]->Validate(Dlg);
 		if (Status == Success) Dlg.IsCheckingConditions = false;
 		else if (Status == Running) return this;
 		else ++Dlg.LinkIdx;

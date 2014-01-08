@@ -10,6 +10,12 @@
 
 // Script object is a base for all scripted objects. It can interact with scripts in both directions.
 
+//???!!!in script srv cache object on stack?!
+
+const DWORD Error_Scripting_NoObject = Error + 1;
+const DWORD Error_Scripting_NoFunction = Error + 2;
+const DWORD Error_Scripting_Parsing = Error + 3;
+
 struct lua_State;
 
 namespace Events
@@ -39,8 +45,8 @@ protected:
 
 	CScriptObject() {}
 
-	bool		PrepareToLuaCall(LPCSTR pFuncName) const;
-	EExecStatus	RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const;
+	DWORD	PrepareToLuaCall(LPCSTR pFuncName) const;
+	DWORD	RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const;
 
 public:
 
@@ -53,14 +59,13 @@ public:
 
 	bool			Init(LPCSTR LuaClassName = "CScriptObject");
 
-	EExecStatus		LoadScriptFile(const CString& FileName);
-	EExecStatus		LoadScript(LPCSTR Buffer, DWORD Length);
+	DWORD			LoadScriptFile(const CString& FileName);
+	DWORD			LoadScript(LPCSTR Buffer, DWORD Length);
 
-	EExecStatus		RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
-	EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal = NULL) const;
-	EExecStatus		RunFunctionOneArg(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
-	//int				RunFunction(LPCSTR pFuncName, const CArray<LPCSTR>& LuaArgs);
-	//int				RunFunction(LPCSTR pFuncName, CDataArray);????
+	DWORD			RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunction(LPCSTR pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunctionOneArg(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
 
 	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority);
 	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const Events::CEventDispatcher* pDisp);
@@ -79,9 +84,11 @@ public:
 
 typedef Ptr<CScriptObject> PScriptObject;
 
-inline EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* pRetVal) const
+inline DWORD CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* pRetVal) const
 {
-	return PrepareToLuaCall(pFuncName) ? RunFunctionInternal(pFuncName, 0, pRetVal) : Error;
+	DWORD Res = PrepareToLuaCall(pFuncName);
+	if (ExecResultIsError(Res)) return Res;
+	return RunFunctionInternal(pFuncName, 0, pRetVal);
 }
 //---------------------------------------------------------------------
 

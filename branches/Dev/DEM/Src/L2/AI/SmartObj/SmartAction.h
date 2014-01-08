@@ -66,7 +66,6 @@ public:
 	Data::CSimpleString	UpdateFunc;
 
 	void Init(const Data::CParams& Desc);
-	bool IsValid(const AI::CActor* pActor, const CPropSmartObject* pSO) const;
 	bool EndOnDone() const { return Flags.Is(CSmartAction::END_ON_DONE); }
 	bool ResetOnAbort() const { return Flags.Is(CSmartAction::RESET_ON_ABORT); }
 	bool ManualTransitionControl() const { return Flags.Is(CSmartAction::MANUAL_TRANSITION); }
@@ -74,21 +73,6 @@ public:
 	bool FaceObject() const { return Flags.Is(CSmartAction::FACE_OBJECT); }
 	bool ActorRadiusMatters() const { return Flags.Is(CSmartAction::ACTOR_RADIUS_MATTERS); }
 };
-
-inline bool CSmartAction::IsValid(const AI::CActor* pActor, const CPropSmartObject* pSO) const
-{
-	//if _TARGET_STATE and SO.FSM.IsInTransition() and SO.FSM.GetTransitionActionID() != _ACTION_ID
-	//	fail
-		//ActivationValidator.IsValid() ? ActivationValidator->IsValid(pActor, pSO, this) : !!pActor;
-		//if (!ConditionFunc.IsValid()) OK;
-		//CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<CPropScriptable>();
-		//CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
-		//CStrID ActorID = pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty;
-		//return pScriptObj && pScriptObj->RunFunctionOneArg(ConditionFunc, ActorID) == Success;
-	n_error("IMPLEMENT ME!!!");
-	FAIL;
-}
-//---------------------------------------------------------------------
 
 }
 

@@ -31,7 +31,7 @@ void CMemSystem::Update()
 
 			if (pFact->LastUpdateTime < Now)
 			{
-				EExecStatus Result = Running;
+				DWORD Result = Running;
 
 				CArray<CSensor*>::CIterator It = ValidationSensors.Begin();
 				for (; It != ValidationSensors.End(); It++)

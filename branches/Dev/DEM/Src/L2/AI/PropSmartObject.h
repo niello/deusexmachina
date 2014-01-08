@@ -27,8 +27,6 @@ public:
 		const AI::CSmartAction*	pTpl;
 		bool					Enabled;
 		int						FreeUserSlots;
-
-		bool IsValid(const AI::CActor* pActor, const CPropSmartObject* pSO) const { return pTpl && Enabled && FreeUserSlots && pTpl->IsValid(pActor, pSO); }
 	};
 
 	typedef CDict<CStrID, CAction> CActionList;
@@ -48,8 +46,8 @@ protected:
 
 	// FSM stuff, Tr is for Transition
 	CActionList					Actions;
-	CDict<CStrID, CAnimInfo>	ActionAnims;
-	CDict<CStrID, CAnimInfo>	StateAnims;
+	CDict<CStrID, CAnimInfo>	ActionAnims; //???one collection and associations? state1(anim1)->state2(anim1) will
+	CDict<CStrID, CAnimInfo>	StateAnims;	 //lead to no switch and it is very cool. Also data duplication will be avoided.
 	CStrID						CurrState;
 	CStrID						TargetState;
 	float						TrProgress;
@@ -100,8 +98,9 @@ public:
 	bool				HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }
 	CAction*			GetAction(CStrID ID);
 	const CActionList&	GetActions() const { return Actions; }
-	void				EnableAction(CStrID ActionID, bool Enable = true);
+	void				EnableAction(CStrID ID, bool Enable = true);
 	bool				IsActionEnabled(CStrID ID) const;
+	bool				IsActionAvailable(CStrID ID, const AI::CActor* pActor) const;
 
 	CStrID				GetTypeID() const { return TypeID; }
 	bool				IsMovable() const { return Movable; }
@@ -118,7 +117,9 @@ inline CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
 inline bool CPropSmartObject::IsActionEnabled(CStrID ID) const
 {
 	int Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) && Actions.ValueAt(Idx).Enabled;
+	if (Idx == INVALID_INDEX) FAIL;
+	const CAction& Action = Actions.ValueAt(Idx);
+	return Action.Enabled && Action.pTpl;
 }
 //---------------------------------------------------------------------
 

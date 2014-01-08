@@ -6,7 +6,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionGoto, 'AGTO', AI::CAction);
 
-EExecStatus CActionGoto::Update(CActor* pActor)
+DWORD CActionGoto::Update(CActor* pActor)
 {
 	switch (pActor->NavState)
 	{
@@ -42,7 +42,7 @@ bool CActionGoto::IsValid(CActor* pActor) const
 }
 //---------------------------------------------------------------------
 
-EExecStatus CActionGoto::AdvancePath(CActor* pActor)
+DWORD CActionGoto::AdvancePath(CActor* pActor)
 {
 	//???don't request edges every tick? Path remains valid until something happens!
 	//???smth like NavSys->HasPathChanged()? set to false in GetPathEdges, to true when path changes
@@ -72,7 +72,7 @@ EExecStatus CActionGoto::AdvancePath(CActor* pActor)
 	}
 
 	SubAction->UpdatePathEdge(pActor, &Path[0], (EdgeCount > 1 && NewActionID == Path[1].Action) ? &Path[1] : NULL);
-	EExecStatus Result = SubAction->Update(pActor);
+	DWORD Result = SubAction->Update(pActor);
 	if (Result != Running)
 	{
 		SubAction->Deactivate(pActor);
