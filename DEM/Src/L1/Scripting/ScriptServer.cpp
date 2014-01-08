@@ -112,9 +112,8 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State* l)
+bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 {
-	if (!l) l = l;
 	if (StackIdx < 0) StackIdx = lua_gettop(l) + StackIdx + 1;
 
 	int Type = lua_type(l, StackIdx);
@@ -165,7 +164,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State*
 			while (lua_next(l, StackIdx))
 			{
 				Key = lua_tointeger(l, -2) - 1;
-				LuaStackToData(Array->At(Key), -1, l);
+				LuaStackToData(Array->At(Key), -1);
 				lua_pop(l, 1);
 			}
 			
@@ -187,7 +186,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State*
 						strcmp(pStr, "__newindex") &&
 						strcmp(pStr, "this"))
 					{
-						LuaStackToData(ParamData, -1, l);
+						LuaStackToData(ParamData, -1);
 						Params->Set(CStrID(pStr), ParamData);
 					}
 					
@@ -207,7 +206,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx, lua_State*
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptServer::RunScriptFile(const CString& FileName)
+DWORD CScriptServer::RunScriptFile(const CString& FileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
@@ -215,26 +214,28 @@ EExecStatus CScriptServer::RunScriptFile(const CString& FileName)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal)
+DWORD CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal)
 {
+	DWORD Result;
 	if (luaL_loadbuffer(l, Buffer, ((Length > -1) ? Length : strlen(Buffer)), Buffer) != 0)
 	{
 		n_printf("Error parsing script for ScriptSrv: %s\n", lua_tostring(l, -1));
 		lua_pop(l, 1); // Error msg
+		Result = Error_Scripting_Parsing;
 	}
 	else
 	{
-		EExecStatus Result = PerformCall(0, pRetVal, "script for ScriptSrv");
-		if (Result != Error) return Result;
+		Result = PerformCall(0, pRetVal, "script for ScriptSrv");
+		if (!ExecResultIsError(Result)) return Result;
 	}
 
 	n_printf("Script is: %s\n", Buffer);
-	return Error;
+	return Result;
 }
 //---------------------------------------------------------------------
 
 // Mainly for internal use
-EExecStatus CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCSTR pDbgName)
+DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCSTR pDbgName)
 {
 	int ResultCount = lua_gettop(l) - ArgCount - 1;
 
@@ -253,10 +254,10 @@ EExecStatus CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCST
 	if (pRetVal)
 	{
 		n_assert(ResultCount == 1); //!!!later mb multiple return values - data array!
-		LuaStackToData(*pRetVal, -1, l);
+		LuaStackToData(*pRetVal, -1);
 	}
 
-	EExecStatus Result = lua_toboolean(l, -1) ? Success : Failure;
+	DWORD Result = lua_toboolean(l, -1) ? Success : Failure;
 	lua_pop(l, ResultCount);
 	return Result;
 }
@@ -411,7 +412,7 @@ bool CScriptServer::LoadClass(const CString& Name)
 			n_printf("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
 			if (pCodePrm->IsA<CString>()) n_printf("Script is: %s\n", pData);
 			lua_pop(l, 2);
-			FAIL;
+			FAIL; // return Error_Scripting_Parsing;
 		}
 		
 		lua_pushvalue(l, -2);

@@ -24,7 +24,7 @@ public:
 	CAction(const CActionTpl* pTemplate): pTpl(pTemplate) { }
 
 	virtual bool		Activate(CActor* pActor) { /*validate preconditions here*/ OK; }
-	virtual EExecStatus	Update(CActor* pActor) { /*check IsComplete*/ return Success; }
+	virtual DWORD	Update(CActor* pActor) { /*check IsComplete*/ return Success; }
 	virtual void		Deactivate(CActor* pActor) { }
 	
 	virtual bool		IsValid(CActor* pActor) const { OK; }

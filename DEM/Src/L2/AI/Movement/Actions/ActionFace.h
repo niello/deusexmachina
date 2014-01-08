@@ -17,7 +17,7 @@ class CActionFace: public CAction
 
 public:
 
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
 };
 

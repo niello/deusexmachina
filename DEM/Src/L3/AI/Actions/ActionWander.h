@@ -27,7 +27,7 @@ public:
 	//void				Init(action probabilities, timings, wander radius etc);
 
 	virtual bool		Activate(CActor* pActor);
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
 	//
 	//virtual bool		IsValid() const { return ppCurrChild && (*ppCurrChild)->IsValid(); }

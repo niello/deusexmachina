@@ -35,7 +35,7 @@ protected:
 		bool							As_bool;
 		int								As_int;
 		float							As_float;
-		CString*						As_nString;
+		CString*						As_CString;
 		LPCSTR							As_CStrID;
 		const CDataArray*				As_CDataArray;
 		const CParams*					As_CParams;
@@ -83,6 +83,8 @@ public:
 	template<class T> T*		GetValuePtr();
 	template<class T> const T*	GetValuePtr() const;
 	void* const*				GetValueObjectPtr() const { return &Value; }
+
+	LPCSTR						ToString() const { return Type ? Type->ToString(Value) : NULL; }
 
 	CData&						operator =(const CData& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(const T& Src) { SetTypeValue(Src); return *this; }

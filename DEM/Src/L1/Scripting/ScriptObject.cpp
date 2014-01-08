@@ -103,7 +103,7 @@ int CScriptObject_NewIndex(lua_State* l)
 		}
 
 		Data::CData Data;
-		if (ScriptSrv->LuaStackToData(Data, 3, l) && This->SetField(Key, Data)) return 0;
+		if (ScriptSrv->LuaStackToData(Data, 3) && This->SetField(Key, Data)) return 0;
 	}
 
 	lua_pushvalue(l, 2);
@@ -135,7 +135,7 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::LoadScriptFile(const CString& FileName)
+DWORD CScriptObject::LoadScriptFile(const CString& FileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
@@ -143,7 +143,7 @@ EExecStatus CScriptObject::LoadScriptFile(const CString& FileName)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
+DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 {
 	lua_State* l = ScriptSrv->GetLuaState();
 
@@ -152,7 +152,7 @@ EExecStatus CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 		n_printf("Error parsing script for %s: %s\n", Name.CStr(), lua_tostring(l, -1));
 		n_printf("Script is: %s\n", Buffer);
 		lua_pop(l, 1);
-		return Error;
+		return Error_Scripting_Parsing;
 	}
 
 	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr()))
@@ -164,57 +164,68 @@ EExecStatus CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 	if (Table.IsValid()) lua_remove(l, -2);
 	lua_setfenv(l, -2);
 
-	EExecStatus Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, NULL);
-	if (Result == Error) n_printf("Script is: %s\n", Buffer);
+	DWORD Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, NULL);
+	if (ExecResultIsError(Result)) n_printf("Script is: %s\n", Buffer);
 	return Result;
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
+DWORD CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
 {
 	n_assert(pFuncName);
 
 	lua_State* l = ScriptSrv->GetLuaState();
 
-	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) FAIL;
+	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) return Error_Scripting_NoObject;
 
 	if (Table.IsValid()) lua_remove(l, -2);
 
 	lua_getfield(l, -1, pFuncName);
 	if (!lua_isfunction(l, -1)) 
 	{
-		n_printf("Error: function \"%s\" not found in script object \"%s\"\n", pFuncName, Name.CStr());
 		lua_pop(l, 2);
-		FAIL;
+		return Error_Scripting_NoFunction;
 	}
 
 	// Set env for the case when function is inherited from metatable
 	lua_pushvalue(l, -2);
 	lua_setfenv(l, -2);
 
-	OK;
+	return Success;
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const
 {
-	EExecStatus Result = ScriptSrv->PerformCall(ArgCount, pRetVal, (Name + "." + pFuncName).CStr());
-	if (Result == Error) lua_pop(ScriptSrv->GetLuaState(), 1); // Object itself
+	DWORD Result = ScriptSrv->PerformCall(ArgCount, pRetVal, (Name + "." + pFuncName).CStr());
+	if (ExecResultIsError(Result)) lua_pop(ScriptSrv->GetLuaState(), 1); // Object itself
 	return Result;
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR LuaArg, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal, Data::CData* pRetVal) const
 {
-	if (!PrepareToLuaCall(pFuncName)) return Error;
-	lua_getglobal(ScriptSrv->GetLuaState(), LuaArg); //???only globals are allowed? //???assert nil?
+	DWORD Res = PrepareToLuaCall(pFuncName);
+	if (ExecResultIsError(Res)) return Res;
+	lua_getglobal(ScriptSrv->GetLuaState(), ArgLuaGlobal); //???only globals are allowed? //???assert nil?
 	return RunFunctionInternal(pFuncName, 1, pRetVal);
 }
 //---------------------------------------------------------------------
 
-EExecStatus CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal) const
 {
-	if (!PrepareToLuaCall(pFuncName)) return Error;
+	DWORD Res = PrepareToLuaCall(pFuncName);
+	if (ExecResultIsError(Res)) return Res;
+	for (DWORD i = 0; i < ArgCount; ++i)
+		ScriptSrv->DataToLuaStack(Args[i]);
+	return RunFunctionInternal(pFuncName, ArgCount, pRetVal);
+}
+//---------------------------------------------------------------------
+
+DWORD CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
+{
+	DWORD Res = PrepareToLuaCall(pFuncName);
+	if (ExecResultIsError(Res)) return Res;
 	ScriptSrv->DataToLuaStack(Arg);
 	return RunFunctionInternal(pFuncName, 1, pRetVal);
 }

@@ -378,7 +378,7 @@ bool CPropUIControl::ExecuteAction(Game::CEntity* pActorEnt, CStrID ID)
 		CPropActorBrain* pActor = pActorEnt->GetProperty<CPropActorBrain>();
 		CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
 		n_assert(pActor && pSO);
-		pAction->Enabled = pSO->GetAction(ID)->IsValid(pActor, pSO);
+		pAction->Enabled = pSO->IsActionAvailable(ID, pActor);
 	}
 	return pAction->Enabled && ExecuteAction(pActorEnt, *pAction);
 }
@@ -407,7 +407,7 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 		if (It->IsSOAction)
 		{
 			n_assert_dbg(pSO);
-			It->Enabled = pSO->GetAction(It->ID)->IsValid(pActor, pSO);
+			It->Enabled = pSO->IsActionAvailable(It->ID, pActor);
 			// Update Priority
 		}
 
@@ -440,7 +440,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 		{
 			if (It->IsSOAction)
 			{
-				It->Enabled = pSO->GetAction(It->ID)->IsValid(pActor, pSO);
+				It->Enabled = pSO->IsActionAvailable(It->ID, pActor);
 				// Update Priority
 			}
 

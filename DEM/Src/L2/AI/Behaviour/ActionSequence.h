@@ -25,7 +25,7 @@ public:
 	// RemoveAllChildren / Clear (deactivate current, remove all)
 
 	virtual bool		Activate(CActor* pActor);
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
 	
 	virtual bool		IsValid(CActor* pActor) const { return ppCurrChild && (*ppCurrChild)->IsValid(pActor); }

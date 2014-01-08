@@ -2,6 +2,7 @@
 
 #include <Game/GameServer.h>
 #include <AI/AIServer.h>
+#include <AI/PropActorBrain.h> // For GetEntity() only
 #include <Animation/PropAnimation.h>
 #include <Scripting/PropScriptable.h>
 #include <Events/EventServer.h>
@@ -85,6 +86,8 @@ void CPropSmartObject::InternalDeactivate()
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
+	SwitchAnimation(NULL);
+
 	CurrState = CStrID::Empty;
 	ActionAnims.Clear();
 	StateAnims.Clear();
@@ -145,6 +148,8 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 
 	if (pProp->IsA<CPropAnimation>())
 	{
+		AnimTaskID = INVALID_INDEX;
+		pCurrAnimInfo = NULL;
 		ActionAnims.Clear();
 		StateAnims.Clear();
 		OK;
@@ -219,10 +224,7 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 	int Idx = ActionAnims.FindIndex(ActionID);
 	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &ActionAnims.ValueAt(Idx) : NULL;
 	if (TransitionDuration < 0.f)
-	{
-		if (pAnimInfo) TransitionDuration = pAnimInfo->Duration; //???Speed?
-		else TransitionDuration = 0.f;
-	}
+		TransitionDuration = (pAnimInfo && pAnimInfo->Speed != 0.f) ? pAnimInfo->Duration / n_fabs(pAnimInfo->Speed) : 0.f;
 
 	if (CurrState == StateID)
 	{
@@ -362,16 +364,25 @@ void CPropSmartObject::AbortTransition(float Duration)
 
 void CPropSmartObject::SwitchAnimation(const CAnimInfo* pAnimInfo)
 {
+	if (pAnimInfo == pCurrAnimInfo) return;
 	if (AnimTaskID == INVALID_INDEX && !pAnimInfo) return;
 	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
 	if (!pPropAnim) return;
 
-	//???!!!allow to update the last frame?!
 	if (AnimTaskID != INVALID_INDEX) pPropAnim->StopAnim(AnimTaskID);
 
-	AnimTaskID = pAnimInfo ?
-		pPropAnim->StartAnim(pAnimInfo->ClipID, pAnimInfo->Loop, pAnimInfo->Offset, pAnimInfo->Speed, true, AnimPriority_Default, pAnimInfo->Weight) :
-		INVALID_INDEX;
+	if (pAnimInfo)
+	{
+		if (pAnimInfo->Speed == 0.f)
+		{
+			pPropAnim->SetPose(pAnimInfo->ClipID, pAnimInfo->Offset, pAnimInfo->Loop);
+			AnimTaskID = INVALID_INDEX;
+		}
+		else AnimTaskID = pPropAnim->StartAnim(pAnimInfo->ClipID, pAnimInfo->Loop, pAnimInfo->Offset, pAnimInfo->Speed,
+							true, AnimPriority_Default, pAnimInfo->Weight);
+	}
+	else AnimTaskID = INVALID_INDEX;
+
 	pCurrAnimInfo = pAnimInfo;
 }
 //---------------------------------------------------------------------
@@ -389,6 +400,29 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 	P->Set(CStrID("ActionID"), ID);
 	P->Set(CStrID("Enabled"), Enable);
 	GetEntity()->FireEvent(CStrID("OnSOActionAvailabile"), P);
+}
+//---------------------------------------------------------------------
+
+bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) const
+{
+	int Idx = Actions.FindIndex(ID);
+	if (Idx == INVALID_INDEX) FAIL;
+
+	const CAction& Action = Actions.ValueAt(Idx);
+	if (!Action.Enabled || !Action.FreeUserSlots || !Action.pTpl) FAIL;
+
+	const AI::CSmartAction& ActTpl = *Action.pTpl;
+	if (ActTpl.TargetState.IsValid() && IsInTransition() && TrActionID != ID) FAIL;
+
+	//!!!call action function! must not be per-object to avoid duplication!
+	//ScriptSrv->RunScript();
+
+	Prop::CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
+	if (!pScriptable || !pScriptable->GetScriptObject().IsValid()) return !!pActor; //???or OK?
+	Data::CData Args[] = { ID, pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty };
+	DWORD Res = pScriptable->GetScriptObject()->RunFunction("IsActionAvailableCallback", Args, 2);
+	if (Res == Error_Scripting_NoFunction) return !!pActor; //???or OK?
+	return Res == Success;
 }
 //---------------------------------------------------------------------
 

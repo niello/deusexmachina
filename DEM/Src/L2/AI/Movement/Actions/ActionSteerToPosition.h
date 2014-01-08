@@ -21,7 +21,7 @@ public:
 	virtual void		UpdatePathEdge(CActor* pActor, const CPathEdge* pEdge, const CPathEdge* pNextEdge);
 
 	//virtual bool		Activate(CActor* pActor);
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
 };
 

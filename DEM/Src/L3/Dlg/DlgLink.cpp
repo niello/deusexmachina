@@ -5,7 +5,7 @@
 namespace Story
 {
 
-EExecStatus CDlgLink::Validate(CActiveDlg& Dlg)
+DWORD CDlgLink::Validate(CActiveDlg& Dlg)
 {
 	return Condition.IsValid() ? Dlg.Dlg->ScriptObj->RunFunction(Condition.CStr()) : Success;
 }

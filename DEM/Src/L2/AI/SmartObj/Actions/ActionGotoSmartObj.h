@@ -30,7 +30,7 @@ public:
 
 	void				Init(CStrID Target, CStrID Action) { TargetID = Target; ActionID = Action; }
 	virtual bool		Activate(CActor* pActor);
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 
 	virtual void		GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };

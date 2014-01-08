@@ -326,7 +326,7 @@ void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
 {
 	CTask& Task = Tasks[TaskID];
 	Task.AnimTask.Stop(FadeOutTime);
-	if (Task.AnimTask.IsEmpty())
+	if (Task.AnimTask.IsEmpty()) //!!!now can never happen due to Task_LastFrame!
 	{
 		Data::PParams P = n_new(Data::CParams(2));
 		P->Set(CStrID("Clip"), Task.ClipID);

@@ -24,11 +24,11 @@ protected:
 	CStrID					SubActionID;
 	PActionTraversePathEdge SubAction;
 
-	EExecStatus AdvancePath(CActor* pActor);
+	DWORD AdvancePath(CActor* pActor);
 
 public:
 
-	virtual EExecStatus	Update(CActor* pActor);
+	virtual DWORD	Update(CActor* pActor);
 	virtual void		Deactivate(CActor* pActor);
 	virtual bool		IsValid(CActor* pActor) const;
 };

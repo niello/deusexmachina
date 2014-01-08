@@ -18,7 +18,7 @@ bool CActionFaceTarget::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-EExecStatus CActionFaceTarget::Update(CActor* pActor)
+DWORD CActionFaceTarget::Update(CActor* pActor)
 {
 	if (IsDynamic && !SetupDirFromTarget(pActor)) return Failure;
 	return CActionFace::Update(pActor);

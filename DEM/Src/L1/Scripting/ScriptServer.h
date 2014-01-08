@@ -47,17 +47,17 @@ public:
 	lua_State*	GetLuaState() const { return l; }
 
 	int			DataToLuaStack(const Data::CData& Data);
-	bool		LuaStackToData(Data::CData& Result, int StackIdx, lua_State* L = NULL);
+	bool		LuaStackToData(Data::CData& Result, int StackIdx);
 
-	EExecStatus	RunScriptFile(const CString& FileName);
-	EExecStatus	RunScript(LPCSTR Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
+	DWORD		RunScriptFile(const CString& FileName);
+	DWORD		RunScript(LPCSTR Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
 
-	EExecStatus	PerformCall(int ArgCount, Data::CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");
+	DWORD		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");
 	
-	//EExecStatus		RunFunction(LPCSTR pFuncName, int ArgsOnStack = 0);
-	//EExecStatus		RunFunction(LPCSTR pFuncName, LPCSTR LuaArg);
-	//EExecStatus		RunFunction(LPCSTR pFuncName, const CArray<LPCSTR>& LuaArgs);
-	//EExecStatus		RunFunction(LPCSTR pFuncName, PParams Args = NULL);
+	//DWORD		RunFunction(LPCSTR pFuncName, int ArgsOnStack = 0);
+	//DWORD		RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal);
+	//DWORD		RunFunction(LPCSTR pFuncName, const CArray<LPCSTR>& LuaArgs);
+	//DWORD		RunFunction(LPCSTR pFuncName, PParams Args = NULL);
 
 	// Class registration, Mixing-in
 	bool		BeginClass(LPCSTR Name, LPCSTR BaseClass = NULL, DWORD FieldCount = 0);
