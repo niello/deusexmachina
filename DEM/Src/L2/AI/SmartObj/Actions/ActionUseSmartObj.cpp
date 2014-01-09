@@ -42,8 +42,7 @@ bool CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* p
 		n_assert_dbg(ActTpl.TargetState.IsValid());
 		pSO->SetState(ActTpl.TargetState, ActionID);
 		Duration = pSO->GetTransitionDuration();
-		//???Progress = pSO->IsInTransition() ? pSO->GetTransitionProgress() : 0.f;
-		Progress = pSO->GetTransitionProgress(); //!!!return 0 if no transition!
+		Progress = pSO->GetTransitionProgress();
 	}
 	else if (ActTpl.ProgressDriver == CSmartAction::PDrv_None)
 	{

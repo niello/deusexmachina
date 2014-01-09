@@ -17,6 +17,10 @@ namespace AI
 
 class CSmartAction
 {
+protected:
+
+	Data::CFlags Flags;
+
 public:
 
 	enum EProgressDrv
@@ -28,17 +32,14 @@ public:
 
 	enum
 	{
-		END_ON_DONE				= 0x01,	// If set, end action when Duration passed
-		RESET_ON_ABORT			= 0x02,	// If set, clear progress of unfinished action
-		MANUAL_TRANSITION		= 0x04,	// If set, transition progress is updated manually, not by the frame timer
-		SEND_PROGRESS_EVENT		= 0x08,	// If set, progress chaged event is sent from an AI action
-		//SYNC_ACTOR_ANIMATION	= 0x10,	// If set, actor animation duration is synchronized with an action duration
-		FACE_OBJECT				= 0x40,	// If set, actor will face host object before starting the action
-		ACTOR_RADIUS_MATTERS	= 0x80	// If set, distance is adjusted by the actor radius
-		// - disable after use
+		END_ON_DONE				= 0x0001,	// If set, end action when Duration passed
+		RESET_ON_ABORT			= 0x0002,	// If set, clear progress of unfinished action
+		MANUAL_TRANSITION		= 0x0004,	// If set, transition progress is updated manually, not by the frame timer
+		SEND_PROGRESS_EVENT		= 0x0008,	// If set, progress chaged event is sent from an AI action
+		//SYNC_ACTOR_ANIMATION	= 0x0010,	// If set, actor animation duration is synchronized with an action duration
+		FACE_OBJECT				= 0x0040,	// If set, actor will face host object before starting the action
+		ACTOR_RADIUS_MATTERS	= 0x0080	// If set, distance is adjusted by the actor radius
 	};
-
-	Data::CFlags		Flags;
 
 	// Destination and facing //???or purely algorithmic? remove flags if so!
 	float				MinDistance;		// Can make union with navmesh region
@@ -57,13 +58,6 @@ public:
 	//???planner worldstate source in validator or separate or in this? data-driven set of key-value pairs
 	// AI
 	PWorldStateSource	Preconditions;
- 
-	// Optional(?) scripted functions
-	//???or use callbacks with predefined names and inside differ by action ID?
-	Data::CSimpleString	ValidateFunc;
-	Data::CSimpleString	GetDestinationFunc;
-	Data::CSimpleString	GetDurationFunc;
-	Data::CSimpleString	UpdateFunc;
 
 	void Init(const Data::CParams& Desc);
 	bool EndOnDone() const { return Flags.Is(CSmartAction::END_ON_DONE); }

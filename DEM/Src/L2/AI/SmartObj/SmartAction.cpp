@@ -37,10 +37,16 @@ void CSmartAction::Init(const Data::CParams& Desc)
 	}
 	else Preconditions = NULL;
 
-	ValidateFunc = Desc.Get<CString>(CStrID("ValidateFunc"), NULL).CStr();
-	GetDestinationFunc = Desc.Get<CString>(CStrID("GetDestinationFunc"), NULL).CStr();
-	GetDurationFunc = Desc.Get<CString>(CStrID("GetDurationFunc"), NULL).CStr();
-	UpdateFunc = Desc.Get<CString>(CStrID("UpdateFunc"), NULL).CStr();
+	//// Optional(?) scripted functions
+	////???or use callbacks with predefined names and inside differ by action ID?
+	//Data::CSimpleString	ValidateFunc;
+	//Data::CSimpleString	GetDestinationFunc;
+	//Data::CSimpleString	GetDurationFunc;
+	//Data::CSimpleString	UpdateFunc;
+	//ValidateFunc = Desc.Get<CString>(CStrID("ValidateFunc"), NULL).CStr();
+	//GetDestinationFunc = Desc.Get<CString>(CStrID("GetDestinationFunc"), NULL).CStr();
+	//GetDurationFunc = Desc.Get<CString>(CStrID("GetDurationFunc"), NULL).CStr();
+	//UpdateFunc = Desc.Get<CString>(CStrID("UpdateFunc"), NULL).CStr();
 }
 //---------------------------------------------------------------------
 

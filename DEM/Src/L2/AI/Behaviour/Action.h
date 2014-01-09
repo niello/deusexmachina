@@ -23,14 +23,14 @@ public:
 	CAction(): pTpl(NULL) {}
 	CAction(const CActionTpl* pTemplate): pTpl(pTemplate) { }
 
-	virtual bool		Activate(CActor* pActor) { /*validate preconditions here*/ OK; }
+	virtual bool	Activate(CActor* pActor) { /*validate preconditions here*/ OK; }
 	virtual DWORD	Update(CActor* pActor) { /*check IsComplete*/ return Success; }
-	virtual void		Deactivate(CActor* pActor) { }
+	virtual void	Deactivate(CActor* pActor) { }
 	
-	virtual bool		IsValid(CActor* pActor) const { OK; }
+	virtual bool	IsValid(CActor* pActor) const { OK; }
 	// IsInterruptible
 
-	virtual void		GetDebugString(CString& Out) const { Out = GetClassName(); }
+	virtual void	GetDebugString(CString& Out) const { Out = GetClassName(); }
 };
 
 typedef Ptr<CAction> PAction;

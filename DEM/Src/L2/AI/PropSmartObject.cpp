@@ -16,9 +16,6 @@ __ImplementPropertyStorage(CPropSmartObject);
 
 bool CPropSmartObject::InternalActivate()
 {
-	CurrState = GetEntity()->GetAttr(CStrID("SOState"), CStrID::Empty);
-	GetEntity()->SetAttr(CStrID("SOState"), CurrState); // Make sure the attribute is set
-
 	Data::PParams Desc;
 	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
@@ -44,14 +41,39 @@ bool CPropSmartObject::InternalActivate()
 					CAction& Action = Actions.Add(Prm.GetName());
 					Action.pTpl = pTpl;
 					Action.FreeUserSlots = pTpl->MaxUserCount;
-					if (CurrState.IsValid() && ActionsEnabled.IsValid()) ActionsEnabled->Get(Action.Enabled, Prm.GetName());
-					else Action.Enabled = false;
+					Action.Enabled = ActionsEnabled.IsValid() ? ActionsEnabled->Get(Action.Enabled, Prm.GetName()) : false;
 				}
 				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", Prm.GetValue<CStrID>().CStr());
 			}
 			Actions.EndAdd();
 		}
 	}
+
+	CurrState = GetEntity()->GetAttr(CStrID("SOState"), CStrID::Empty);
+	TargetState = GetEntity()->GetAttr(CStrID("SOTargetState"), CStrID::Empty);
+	if (!TargetState.IsValid())
+		TargetState = CurrState.IsValid() ? CurrState : Desc->Get<CStrID>(CStrID("DefaultState"), CStrID::Empty);
+
+	if (IsInTransition())
+	{
+		TrProgress = GetEntity()->GetAttr(CStrID("SOTrProgress"), 0.f);
+		TrDuration = GetEntity()->GetAttr(CStrID("SOTrDuration"), -1.f);
+		TrActionID = GetEntity()->GetAttr(CStrID("SOTrActionID"), CStrID::Empty);
+		TrManualControl = GetEntity()->GetAttr(CStrID("SOTrManualControl"), false);
+
+		//Start transition (check Progress >= Duration, subscribe on frame event if not manual etc)
+		//SetState(TargetState, TrActionID, TrDuration, TrManualControl);
+	}
+	else
+	{
+		TrProgress = 0.f;
+		TrDuration = -1.f;
+		TrActionID = CStrID::Empty;
+		TrManualControl = false;
+	}
+
+	// Make sure the attribute is set
+	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
 
 	CPropScriptable* pPropScript = GetEntity()->GetProperty<CPropScriptable>();
 	if (pPropScript && pPropScript->IsActive())
@@ -61,7 +83,7 @@ bool CPropSmartObject::InternalActivate()
 	}
 
 	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
-	if (pPropAnim && pPropAnim->IsActive()) LoadAnimationInfo(Desc, *pPropAnim);
+	if (pPropAnim && pPropAnim->IsActive()) InitAnimation(Desc, *pPropAnim);
 
 	if (!CurrState.IsValid() && Desc.IsValid() && Desc->Has(CStrID("DefaultState")))
 	{
@@ -87,6 +109,8 @@ void CPropSmartObject::InternalDeactivate()
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	SwitchAnimation(NULL);
+
+	//???delete related entity attrs?
 
 	CurrState = CStrID::Empty;
 	ActionAnims.Clear();
@@ -126,7 +150,7 @@ bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
 	{
 		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
-		LoadAnimationInfo(Desc, *(CPropAnimation*)pProp);
+		InitAnimation(Desc, *(CPropAnimation*)pProp);
 		OK;
 	}
 
@@ -177,7 +201,7 @@ bool CPropSmartObject::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-void CPropSmartObject::LoadAnimationInfo(Data::PParams Desc, CPropAnimation& Prop)
+void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 {
 	Data::PParams Anims;
 	if (Desc->Get<Data::PParams>(Anims, CStrID("ActionAnims")))
@@ -198,6 +222,17 @@ void CPropSmartObject::LoadAnimationInfo(Data::PParams Desc, CPropAnimation& Pro
 			CAnimInfo& AnimInfo = StateAnims.Add(Prm.GetName());
 			FillAnimationInfo(AnimInfo, *Prm.GetValue<Data::PParams>(), Prop);
 		}
+	}
+
+	if (IsInTransition())
+	{
+		//!!!get transition action anim
+		//!!!set cursor (progress)
+	}
+	else
+	{
+		int Idx = StateAnims.FindIndex(CurrState);
+		SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
 	}
 }
 //---------------------------------------------------------------------
@@ -277,12 +312,16 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 	TrManualControl = ManualControl;
 	TrDuration = TransitionDuration;
 
-	Data::PParams P = n_new(Data::CParams(2));
-	P->Set(CStrID("From"), CurrState);
-	P->Set(CStrID("To"), TargetState);
-	if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
+	if (TrProgress == 0.f) //???!!!setstate on pause, save, load - double-event!
+	{
+		Data::PParams P = n_new(Data::CParams(2));
+		P->Set(CStrID("From"), CurrState);
+		P->Set(CStrID("To"), TargetState);
+		if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
+	}
 
 	SwitchAnimation(pAnimInfo);
+	SetTransitionProgress(TrProgress);
 
 	if (!ManualControl) SUBSCRIBE_PEVENT(OnBeginFrame, CPropSmartObject, OnBeginFrame);
 
@@ -324,7 +363,7 @@ void CPropSmartObject::SetTransitionProgress(float Time)
 
 	TrProgress = Clamp(Time, 0.f, TrDuration);
 
-	if (AnimTaskID != INVALID_INDEX)
+	if (AnimTaskID != INVALID_INDEX && pCurrAnimInfo->Speed != 0.f)
 	{
 		CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
 		if (pPropAnim)
@@ -343,8 +382,10 @@ void CPropSmartObject::SetTransitionProgress(float Time)
 void CPropSmartObject::AbortTransition(float Duration)
 {
 	//!!!implement nonzero duration!
+	n_assert2(Duration == 0.f, "Implement nonzero duration!!!");
 
 	//???interchange curr and target and complete transition?
+	//???only if bidirectional transition available for this state pair?
 
 	int Idx = StateAnims.FindIndex(CurrState);
 	SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
@@ -416,6 +457,9 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 
 	//!!!call action function! must not be per-object to avoid duplication!
 	//ScriptSrv->RunScript();
+	//or
+	//PlaceOnStack("Actions"), Run function
+	//Or RunFunction("Actions.FuncName")
 
 	Prop::CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	if (!pScriptable || !pScriptable->GetScriptObject().IsValid()) return !!pActor; //???or OK?
