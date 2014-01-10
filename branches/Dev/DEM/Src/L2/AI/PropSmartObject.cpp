@@ -185,11 +185,20 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 
 bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 {
+	GetEntity()->SetAttr(CStrID("SOTargetState"), TargetState);
+	if (IsInTransition())
+	{
+		GetEntity()->SetAttr(CStrID("SOTrProgress"), TrProgress);
+		GetEntity()->SetAttr(CStrID("SOTrDuration"), TrDuration);
+		GetEntity()->SetAttr(CStrID("SOTrActionID"), TrActionID);
+		GetEntity()->SetAttr(CStrID("SOTrManualControl"), TrManualControl);
+	}
+
 	// Need to recreate params because else we may rewrite initial level desc in the HRD cache
 	Data::PParams P = n_new(Data::CParams(Actions.GetCount()));
 	for (int i = 0; i < Actions.GetCount(); ++i)
 		P->Set(Actions.KeyAt(i), Actions.ValueAt(i).Enabled);
-	GetEntity()->SetAttr<Data::PParams>(CStrID("SOActionsEnabled"), P);
+	GetEntity()->SetAttr(CStrID("SOActionsEnabled"), P);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -226,8 +235,9 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 
 	if (IsInTransition())
 	{
-		//!!!get transition action anim
-		//!!!set cursor (progress)
+		int Idx = ActionAnims.FindIndex(CurrState);
+		SwitchAnimation((Idx != INVALID_INDEX) ? &ActionAnims.ValueAt(Idx) : NULL);
+		UpdateAnimationCursor();
 	}
 	else
 	{
@@ -256,52 +266,45 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 {
 	n_assert2(StateID.IsValid(), "CPropSmartObject::SetState() > Tried to set empty state");
 
+	if (!IsInTransition() && StateID == CurrState) OK;
+
+	if (StateID != TargetState)
+	{
+		//if StateID == CurrState and bidirectional allowed
+		//	(x->y)->x case
+		//	invert params and launch normal transition (later in a regular way?)
+		//	invert progress here, remap to a new duration later
+		//	andmake params here looking as (x->y)->y
+		//else
+		AbortTransition();
+
+		//!!!if not bidirectional, exit (x->y)->x here because it becomes (x->x)->x!
+	}
+
 	int Idx = ActionAnims.FindIndex(ActionID);
 	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &ActionAnims.ValueAt(Idx) : NULL;
 	if (TransitionDuration < 0.f)
 		TransitionDuration = (pAnimInfo && pAnimInfo->Speed != 0.f) ? pAnimInfo->Duration / n_fabs(pAnimInfo->Speed) : 0.f;
 
-	if (CurrState == StateID)
+	if (TargetState == StateID)
 	{
-		if (IsInTransition())
-		{
-			//// We are in a transition from the current state and are requested
-			//// to return to this state. Get current transition progress and remap
-			//// it to the new duration to get return time.
-			//float Time;
-			//if (TrDuration == 0.f) Time = 0.f;
-			//else
-			//{
-			//	Time = TrProgress;
-			//	if (TransitionDuration != TrDuration)
-			//		Time *= (TransitionDuration / TrDuration);
-			//}
-			AbortTransition(/*Time*/); //???manul or always automatic?
-		}
-		OK;
-	}
-
-	if (IsInTransition())
-	{
-		if (TargetState == StateID)
-		{
-			// The same transition paused, resume it and remap progress to a new duration
-			if (TrDuration == 0.f) TrProgress = 0.f;
-			else if (TransitionDuration != TrDuration)
-				TrProgress *= (TransitionDuration / TrDuration);
-		}
-		else
-		{
-			// Other transition, abort it immediately and start requested one
-			AbortTransition();
-			TrProgress = 0.f;
-		}
+		// The same transition, remap progress to a new duration
+		if (TrDuration == 0.f) TrProgress = 0.f;
+		else if (TransitionDuration != TrDuration)
+			TrProgress *= (TransitionDuration / TrDuration);
 	}
 	else TrProgress = 0.f;
 
+	if (!IsInTransition())
+	{
+		Data::PParams P = n_new(Data::CParams(2));
+		P->Set(CStrID("From"), CurrState);
+		P->Set(CStrID("To"), StateID);
+		GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
+	}
+
 	TargetState = StateID;
 
-	//???what if AbortTransition above was called?
 	if (TransitionDuration == 0.f)
 	{
 		CompleteTransition();
@@ -312,18 +315,11 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 	TrManualControl = ManualControl;
 	TrDuration = TransitionDuration;
 
-	if (TrProgress == 0.f) //???!!!setstate on pause, save, load - double-event!
-	{
-		Data::PParams P = n_new(Data::CParams(2));
-		P->Set(CStrID("From"), CurrState);
-		P->Set(CStrID("To"), TargetState);
-		if (CurrState.IsValid()) GetEntity()->FireEvent(CStrID("OnSOStateLeave"), P);
-	}
-
 	SwitchAnimation(pAnimInfo);
-	SetTransitionProgress(TrProgress);
+	UpdateAnimationCursor();
 
-	if (!ManualControl) SUBSCRIBE_PEVENT(OnBeginFrame, CPropSmartObject, OnBeginFrame);
+	if (!ManualControl && !IS_SUBSCRIBED(OnBeginFrame))
+		SUBSCRIBE_PEVENT(OnBeginFrame, CPropSmartObject, OnBeginFrame);
 
 	OK;
 }
@@ -349,8 +345,6 @@ void CPropSmartObject::CompleteTransition()
 
 void CPropSmartObject::SetTransitionDuration(float Time)
 {
-	//???update progress and animation?
-
 	if (!IsInTransition() || Time < 0.f) return;
 	TrDuration = Time;
 	if (TrProgress >= TrDuration) CompleteTransition();
@@ -360,21 +354,8 @@ void CPropSmartObject::SetTransitionDuration(float Time)
 void CPropSmartObject::SetTransitionProgress(float Time)
 {
 	if (!IsInTransition()) return;
-
 	TrProgress = Clamp(Time, 0.f, TrDuration);
-
-	if (AnimTaskID != INVALID_INDEX && pCurrAnimInfo->Speed != 0.f)
-	{
-		CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
-		if (pPropAnim)
-		{
-			float CursorPos = pCurrAnimInfo->Offset + TrProgress * pCurrAnimInfo->Speed;
-			if (!pCurrAnimInfo->Loop && pCurrAnimInfo->Duration != TrProgress && TrDuration != 0.f)
-				CursorPos *= pCurrAnimInfo->Duration / TrDuration;
-			pPropAnim->SetAnimCursorPos(AnimTaskID, CursorPos);
-		}
-	}
-
+	UpdateAnimationCursor();
 	if (TrProgress >= TrDuration) CompleteTransition();
 }
 //---------------------------------------------------------------------
@@ -425,6 +406,19 @@ void CPropSmartObject::SwitchAnimation(const CAnimInfo* pAnimInfo)
 	else AnimTaskID = INVALID_INDEX;
 
 	pCurrAnimInfo = pAnimInfo;
+}
+//---------------------------------------------------------------------
+
+void CPropSmartObject::UpdateAnimationCursor()
+{
+	if (AnimTaskID == INVALID_INDEX || !pCurrAnimInfo || pCurrAnimInfo->Speed == 0.f) return;
+	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
+	if (!pPropAnim) return;
+
+	float CursorPos = pCurrAnimInfo->Offset + TrProgress * pCurrAnimInfo->Speed;
+	if (!pCurrAnimInfo->Loop && pCurrAnimInfo->Duration != TrProgress && TrDuration != 0.f)
+		CursorPos *= pCurrAnimInfo->Duration / TrDuration;
+	pPropAnim->SetAnimCursorPos(AnimTaskID, CursorPos);
 }
 //---------------------------------------------------------------------
 

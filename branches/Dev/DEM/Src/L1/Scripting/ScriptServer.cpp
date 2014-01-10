@@ -76,11 +76,15 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	else if (Data.IsA<bool>()) lua_pushboolean(l, Data.GetValue<bool>());
 	else if (Data.IsA<int>()) lua_pushinteger(l, Data.GetValue<int>());
 	else if (Data.IsA<float>()) lua_pushnumber(l, Data.GetValue<float>());
-	else if (Data.IsA<CString>()) lua_pushstring(l, Data.GetValue<CString>().CStr());
+	else if (Data.IsA<CString>())
+	{
+		const char* pStr = Data.GetValue<CString>().CStr();
+		lua_pushstring(l, pStr ? pStr : "");
+	}
 	else if (Data.IsA<CStrID>())
 	{
-		CStrID ID = Data.GetValue<CStrID>();
-		lua_pushstring(l, ID.IsValid() ? ID.CStr() : "");
+		const char* pStr = Data.GetValue<CStrID>().CStr();
+		lua_pushstring(l, pStr ? pStr : "");
 	}
 	else if (Data.IsA<PVOID>()) lua_pushlightuserdata(l, Data.GetValue<PVOID>());
 	else if (Data.IsA<Data::PDataArray>())
@@ -104,7 +108,8 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	}
 	else
 	{
-		n_printf("Can't push data to Lua stack, <TYPE needs dbg string>\n");
+		//???type string or value string?
+		n_printf_dbg("Can't push data to Lua stack: <%s>\n", Data.ToString());
 		return 0;
 	}
 

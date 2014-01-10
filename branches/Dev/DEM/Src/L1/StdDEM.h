@@ -70,10 +70,12 @@ typedef double				CTime;
 		#define n_verify_dbg(exp)		n_verify(exp)
 		#define n_assert_dbg(exp)		n_assert(exp)
 		#define n_assert2_dbg(exp, msg)	n_assert2(exp, msg)
+		#define n_printf_dbg(msg, ...)	n_printf(msg, __VA_ARGS__)
 	#else
 		#define n_verify_dbg(exp)		(exp)
 		#define n_assert_dbg(exp)
 		#define n_assert2_dbg(exp, msg)
+		#define n_printf_dbg(fmt, ...)
 	#endif
 #endif
 
