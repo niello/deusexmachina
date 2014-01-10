@@ -145,17 +145,30 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 	if (Result == Success) return SetDone(pActor, ActTpl);
 	else if (ActTpl.ProgressDriver != CSmartAction::PDrv_None)
 	{
+		bool IsDone = false;
 		float PrevProgress = Progress;
 		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration)
 		{
 			Progress += (float)GameSrv->GetFrameTime();
 			if (ActTpl.TargetState.IsValid() && ActTpl.ManualTransitionControl())
 				pSO->SetTransitionProgress(Progress);
+			IsDone = (Progress >= Duration);
 		}
 		else if (ActTpl.ProgressDriver == CSmartAction::PDrv_SO_FSM)
-			Progress = pSO->GetTransitionProgress();
+		{
+			if (pSO->IsInTransition())
+			{
+				if (pSO->GetTargetState() != ActTpl.TargetState || pSO->GetTransitionActionID() != ActionID) return Failure;
+				Progress = pSO->GetTransitionProgress();
+			}
+			else
+			{
+				if (pSO->GetCurrState() != ActTpl.TargetState) return Failure;
+				IsDone = true;
+			}
+		}
 
-		if (Progress >= Duration) return SetDone(pActor, ActTpl);
+		if (IsDone) return SetDone(pActor, ActTpl);
 		else if (ActTpl.SendProgressEvent() && Progress != PrevProgress)
 		{
 			PParams P = n_new(CParams(4));

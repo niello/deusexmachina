@@ -72,6 +72,7 @@ protected:
 
 	void			CompleteTransition();
 	void			SwitchAnimation(const CAnimInfo* pAnimInfo);
+	void			UpdateAnimationCursor();
 
 	DECLARE_EVENT_HANDLER(OnPropsActivated, OnPropsActivated);
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
