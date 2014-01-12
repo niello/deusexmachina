@@ -34,10 +34,13 @@ public:
 	vector3(const float* vec): x(vec[0]), y(vec[1]), z(vec[2]) {}
 
 	static float	Distance(const vector3& v0, const vector3& v1) { return n_sqrt(SqDistance(v0, v1)); }
-	static float	SqDistance(const vector3& v0, const vector3& v1);
 	static float	Distance2D(const vector3& v0, const vector3& v1) { return n_sqrt(SqDistance2D(v0, v1)); }
+	static float	SqDistance(const vector3& v0, const vector3& v1);
 	static float	SqDistance2D(const vector3& v0, const vector3& v1);
-	static float	angle(const vector3& v0, const vector3& v1);
+	static float	Angle(const vector3& v0, const vector3& v1);
+	static float	Angle2D(const vector3& v0, const vector3& v1);
+	static float	AngleNorm(const vector3& v0n, const vector3& v1n);
+	static float	Angle2DNorm(const vector3& v0n, const vector3& v1n);
 
 	void			set(const float _x, const float _y, const float _z) { x = _x; y = _y; z = _z; }
 	void			set(const vector3& vec) { x = vec.x; y = vec.y; z = vec.z; }
@@ -210,13 +213,41 @@ inline float vector3::SqDistance2D(const vector3& v0, const vector3& v1)
 }
 //---------------------------------------------------------------------
 
-inline float vector3::angle(const vector3& v0, const vector3& v1)
+inline float vector3::Angle(const vector3& v0, const vector3& v1)
 {
 	vector3 v0n = v0;
 	vector3 v1n = v1;
 	v0n.norm();
 	v1n.norm();
+	return AngleNorm(v0n, v1n);
+}
+//---------------------------------------------------------------------
+
+inline float vector3::AngleNorm(const vector3& v0n, const vector3& v1n)
+{
 	return n_acos(v0n % v1n);
+}
+//---------------------------------------------------------------------
+
+inline float vector3::Angle2D(const vector3& v0, const vector3& v1)
+{
+	vector3 v0n = v0;
+	vector3 v1n = v1;
+	v0n.norm();
+	v1n.norm();
+	return Angle2DNorm(v0n, v1n);
+}
+//---------------------------------------------------------------------
+
+inline float vector3::Angle2DNorm(const vector3& v0n, const vector3& v1n)
+{
+	// Since angle is calculated in XZ plane, we simplify our calculations.
+	// Originally SinA = CrossY = (v0n x v1n) * XZPlaneNormal
+	// and CosA = Dot = v0n * v1n
+	// XZPlaneNormal = Up = (0, 1, 0), so we need only Y component of Cross.
+	float CrossY = v0n.z * v1n.x - v0n.x * v1n.z;
+	float Dot = v0n.x * v1n.x + v0n.z * v1n.z;
+	return atan2f(CrossY, Dot);
 }
 //---------------------------------------------------------------------
 

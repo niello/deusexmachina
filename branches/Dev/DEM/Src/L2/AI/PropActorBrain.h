@@ -90,6 +90,7 @@ protected:
 public:
 
 	static const float ArrivalTolerance;
+	static const float AngularArrivalTolerance;
 
 // Blackboard
 
@@ -125,6 +126,7 @@ public:
 	void			RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
 
 	bool			IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
+	bool			IsLookingAtDir(const vector3& Direction) const;
 	bool			IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
 	void			SetNavLocationValid(bool Valid) { return Flags.SetTo(AIMind_Nav_IsLocationValid, Valid); }
 	bool			IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
@@ -155,6 +157,12 @@ inline bool CPropActorBrain::IsAtPoint(const vector3& Point, bool RespectReachDi
 	return (SqDistToDest2D <= MaxReach * MaxReach &&
 			(MinReach <= 0.f || SqDistToDest2D >= MinReach * MinReach) &&
 			n_fabs(Position.y - Point.y) < Height);
+}
+//---------------------------------------------------------------------
+
+inline bool CPropActorBrain::IsLookingAtDir(const vector3& Direction) const
+{
+	return n_fabs(vector3::Angle2DNorm(LookatDir, Direction)) < AngularArrivalTolerance;
 }
 //---------------------------------------------------------------------
 

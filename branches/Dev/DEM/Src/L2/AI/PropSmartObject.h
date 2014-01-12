@@ -38,7 +38,7 @@ protected:
 		CStrID	ClipID;
 		float	Duration; // Cached value
 		bool	Loop;
-		float	Offset; //!!!due to RelOffset init CAnimInfo or at least Offset when CPropAnimation is activated!
+		float	Offset;
 		float	Speed;
 		float	Weight;
 		//???priority, fadein, fadeout?
@@ -56,8 +56,6 @@ protected:
 	bool						TrManualControl;
 	DWORD						AnimTaskID;
 	const CAnimInfo*			pCurrAnimInfo;
-
-	//!!!store animation mapping!
 
 	// Game object stuff
 	CStrID		TypeID;
@@ -87,7 +85,7 @@ public:
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);
 	void				SetTransitionProgress(float Time);
-	void				StopTransition() { UNSUBSCRIBE_EVENT(OnBeginFrame); }
+	void				StopTransition() { UNSUBSCRIBE_EVENT(OnBeginFrame); TrManualControl = true; }
 	void				AbortTransition(float Duration = 0.f);
 	bool				IsInTransition() const { return CurrState != TargetState; }
 	CStrID				GetCurrState() const { return CurrState; }
@@ -105,7 +103,8 @@ public:
 
 	CStrID				GetTypeID() const { return TypeID; }
 	bool				IsMovable() const { return Movable; }
-	bool				GetDestinationParams(CStrID ActionID, float ActorRadius, vector3& OutOffset, float& OutMinDist, float& OutMaxDist);
+	bool				GetDestinationParams(CStrID ActionID, const AI::CActor* pActor, vector3& OutOffset, float& OutMinDist, float& OutMaxDist);
+	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };
 
 inline CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)

@@ -2,7 +2,6 @@
 
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
-#include <AI/Movement/Actions/ActionFace.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 #include <Events/EventServer.h>
@@ -14,14 +13,34 @@ __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 using namespace Prop;
 using namespace Data;
 
-bool CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* pSO)
+DWORD CActionUseSmartObj::SetDone(CActor* pActor, const CSmartAction& ActTpl)
 {
+	WasDone = true;
+
+	PParams P = n_new(CParams(2));
+	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	P->Set(CStrID("SO"), TargetID);
+	P->Set(CStrID("Action"), ActionID);
+	pActor->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
+
+	return ActTpl.EndOnDone() ? Success : Running;
+}
+//---------------------------------------------------------------------
+
+bool CActionUseSmartObj::Activate(CActor* pActor)
+{
+	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
+	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	if (!pSO) FAIL;
 	if (!pSO->IsActionAvailable(ActionID, pActor)) FAIL;
 	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	const CSmartAction& ActTpl = *pSOAction->pTpl;
+
+	WasDone = false;
 
 	if (pSOAction->FreeUserSlots > 0) --pSOAction->FreeUserSlots;
 
-	const CSmartAction& ActTpl = *pSOAction->pTpl;
 	if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration)
 	{
 		CString AttrID("ActionProgress_");
@@ -62,47 +81,13 @@ bool CActionUseSmartObj::StartSOAction(CActor* pActor, Prop::CPropSmartObject* p
 	P->Set(CStrID("Action"), ActionID);
 	pActor->GetEntity()->FireEvent(CStrID("OnSOActionStart"), P);
 
-	if (Duration == 0.f) SetDone(pActor, ActTpl);
+	if (Duration == 0.f)
+	{
+		WasDone = true;
+		pActor->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
+	}
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-DWORD CActionUseSmartObj::SetDone(CActor* pActor, const CSmartAction& ActTpl)
-{
-	WasDone = true;
-
-	PParams P = n_new(CParams(2));
-	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
-	P->Set(CStrID("SO"), TargetID);
-	P->Set(CStrID("Action"), ActionID);
-	pActor->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
-
-	return ActTpl.EndOnDone() ? Success : Running;
-}
-//---------------------------------------------------------------------
-
-bool CActionUseSmartObj::Activate(CActor* pActor)
-{
-	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
-	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
-	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
-	if (!pSO) FAIL;
-
-	WasDone = false;
-
-	//!!!mb face externally, as go!
-	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
-	if (!pSOAction) FAIL;
-	if (pSOAction->pTpl->FaceObject())
-	{
-		vector3 FaceDir = pSOEntity->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
-		FaceDir.norm();
-		pActor->GetMotorSystem().SetFaceDirection(FaceDir);
-		SubActFace = n_new(CActionFace);
-		return SubActFace->Activate(pActor);
-	}
-	return StartSOAction(pActor, pSO);
 }
 //---------------------------------------------------------------------
 
@@ -113,35 +98,13 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return Failure;
-
-//!!!facing to GotoSO! can go-face-go-face-... until requested position and orientation are reached!
-	// Finish SO facing if started
-	if (SubActFace.IsValid())
-	{
-		DWORD Status = SubActFace->Update(pActor);
-		switch (Status)
-		{
-			case Running: return Running;
-			case Success:
-				SubActFace->Deactivate(pActor);
-				SubActFace = NULL;
-				if (!StartSOAction(pActor, pSO)) return Failure;
-				break;
-			case Failure:
-			default: //case Error:
-				SubActFace->Deactivate(pActor);
-				SubActFace = NULL;
-				return Status;
-		}
-	}
-
 	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	if (!pSOAction) return Failure;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
 	DWORD Result = Running; //!!!if UpdateFunc() call it!
 	if (Result == Failure || ExecResultIsError(Result)) return Result;
-	if (WasDone) return Running;
+	if (WasDone) return ActTpl.EndOnDone() ? Success : Running;
 	if (Result == Success) return SetDone(pActor, ActTpl);
 	else if (ActTpl.ProgressDriver != CSmartAction::PDrv_None)
 	{
@@ -187,13 +150,6 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 
 void CActionUseSmartObj::Deactivate(CActor* pActor)
 {
-	if (SubActFace.IsValid())
-	{
-		SubActFace->Deactivate(pActor);
-		SubActFace = NULL;
-		return;
-	}
-
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
@@ -251,8 +207,7 @@ bool CActionUseSmartObj::IsValid(CActor* pActor) const
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
-	if (!pSO) FAIL;
-	return SubActFace.IsValid() ? SubActFace->IsValid(pActor) : pSO->IsActionEnabled(ActionID);
+	return pSO && pSO->IsActionEnabled(ActionID);
 }
 //---------------------------------------------------------------------
 

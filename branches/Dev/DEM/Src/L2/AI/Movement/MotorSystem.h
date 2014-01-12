@@ -71,7 +71,6 @@ protected:
 	vector3				NextDestPoint;
 
 	vector3				FaceDir;
-	bool				WasFacingPrevFrame; //???can avoid this HACK?
 
 	//???!!!BB?!
 	bool				FaceDest;
@@ -115,7 +114,6 @@ inline CMotorSystem::CMotorSystem(CActor* Actor):
 	pActor(Actor),
 	SqShortStepThreshold(1.f * 1.f),
 	BigTurnThreshold(PI / 3.f), //0.5f * PI),
-	WasFacingPrevFrame(false),
 	AvoidObstacles(true),
 	AdaptiveVelocitySampling(true),
 	AvoidanceMargin(0.1f),

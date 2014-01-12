@@ -49,47 +49,43 @@ bool CPropSmartObject::InternalActivate()
 		}
 	}
 
+	//AnimTaskID = INVALID_INDEX;
+	//pCurrAnimInfo = NULL;
+
 	CurrState = GetEntity()->GetAttr(CStrID("SOState"), CStrID::Empty);
-	TargetState = GetEntity()->GetAttr(CStrID("SOTargetState"), CStrID::Empty);
-	if (!TargetState.IsValid())
-		TargetState = CurrState.IsValid() ? CurrState : Desc->Get<CStrID>(CStrID("DefaultState"), CStrID::Empty);
+	TargetState = GetEntity()->GetAttr(CStrID("SOTargetState"), CurrState);
 
 	if (IsInTransition())
 	{
 		TrProgress = GetEntity()->GetAttr(CStrID("SOTrProgress"), 0.f);
-		TrDuration = GetEntity()->GetAttr(CStrID("SOTrDuration"), -1.f);
+		TrDuration = GetEntity()->GetAttr(CStrID("SOTrDuration"), 0.f);
 		TrActionID = GetEntity()->GetAttr(CStrID("SOTrActionID"), CStrID::Empty);
 		TrManualControl = GetEntity()->GetAttr(CStrID("SOTrManualControl"), false);
 
-		//Start transition (check Progress >= Duration, subscribe on frame event if not manual etc)
-		//SetState(TargetState, TrActionID, TrDuration, TrManualControl);
+		// Resume saved transition
+		PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropSmartObject, OnPropsActivated);
 	}
 	else
 	{
 		TrProgress = 0.f;
-		TrDuration = -1.f;
+		TrDuration = 0.f;
 		TrActionID = CStrID::Empty;
 		TrManualControl = false;
+
+		// Make transition from NULL state to DefaultState
+		if (!TargetState.IsValid() && Desc.IsValid() && Desc->Has(CStrID("DefaultState")))
+			PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropSmartObject, OnPropsActivated);
 	}
 
 	// Make sure the attribute is set
 	GetEntity()->SetAttr(CStrID("SOState"), CurrState);
 
 	CPropScriptable* pPropScript = GetEntity()->GetProperty<CPropScriptable>();
-	if (pPropScript && pPropScript->IsActive())
-	{
-		EnableSI(*pPropScript);
-		GetEntity()->FireEvent(CStrID("OnSOLoaded")); //???or in OnPropsActivated?
-	}
+	if (pPropScript && pPropScript->IsActive()) EnableSI(*pPropScript);
 
 	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
 	if (pPropAnim && pPropAnim->IsActive()) InitAnimation(Desc, *pPropAnim);
 
-	if (!CurrState.IsValid() && Desc.IsValid() && Desc->Has(CStrID("DefaultState")))
-	{
-		// Delayed default state setting, see comment to an OnPropsActivated()
-		PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropSmartObject, OnPropsActivated);
-	}
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropSmartObject, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropSmartObject, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropSmartObject, OnLevelSaving);
@@ -119,16 +115,18 @@ void CPropSmartObject::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-// Empty state has a non-conditional transition to DefaultState from the Desc, if it is defined.
-// Default state must be set through SetState, and script feedback is desired. We delay state
-// setting to make sure that a possible PropScriptable is activated. If you want to use empty
-// state as 'Disabled', create explicit 'Disabled' state without this hardcoded transition.
-// NB: all checks were already performed on subscription.
 bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
 {
-	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
-	Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
-	SetState(Desc->Get<CStrID>(CStrID("DefaultState")), CStrID::Empty, 0.f);
+	// Initialize current state and transition.
+	// Do it here to make sure that script is loaded and will process transition events.
+	if (TargetState.IsValid())
+		SetState(TargetState, TrActionID, TrDuration, TrManualControl);
+	else
+	{
+		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
+		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
+		SetState(Desc->Get<CStrID>(CStrID("DefaultState"), CStrID::Empty), TrActionID, -1.f, TrManualControl);
+	}
 	OK;
 }
 //---------------------------------------------------------------------
@@ -142,7 +140,6 @@ bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
 	if (pProp->IsA<CPropScriptable>())
 	{
 		EnableSI(*(CPropScriptable*)pProp);
-		GetEntity()->FireEvent(CStrID("OnSOLoaded")); //???or in OnPropsActivated?
 		OK;
 	}
 
@@ -185,13 +182,21 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 
 bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 {
-	GetEntity()->SetAttr(CStrID("SOTargetState"), TargetState);
 	if (IsInTransition())
 	{
+		GetEntity()->SetAttr(CStrID("SOTargetState"), TargetState);
 		GetEntity()->SetAttr(CStrID("SOTrProgress"), TrProgress);
 		GetEntity()->SetAttr(CStrID("SOTrDuration"), TrDuration);
 		GetEntity()->SetAttr(CStrID("SOTrActionID"), TrActionID);
 		GetEntity()->SetAttr(CStrID("SOTrManualControl"), TrManualControl);
+	}
+	else
+	{
+		GetEntity()->DeleteAttr(CStrID("SOTargetState"));
+		GetEntity()->DeleteAttr(CStrID("SOTrProgress"));
+		GetEntity()->DeleteAttr(CStrID("SOTrDuration"));
+		GetEntity()->DeleteAttr(CStrID("SOTrActionID"));
+		GetEntity()->DeleteAttr(CStrID("SOTrManualControl"));
 	}
 
 	// Need to recreate params because else we may rewrite initial level desc in the HRD cache
@@ -205,7 +210,8 @@ bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 
 bool CPropSmartObject::OnBeginFrame(const Events::CEventBase& Event)
 {
-	SetTransitionProgress(TrProgress + (float)GameSrv->GetFrameTime());
+	float Time = (float)GameSrv->GetFrameTime();
+	if (Time != 0.f) SetTransitionProgress(TrProgress + Time);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -268,7 +274,7 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 
 	if (!IsInTransition() && StateID == CurrState) OK;
 
-	if (StateID != TargetState)
+	if (IsInTransition() && StateID != TargetState)
 	{
 		//if StateID == CurrState and bidirectional allowed
 		//	(x->y)->x case
@@ -464,26 +470,32 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::GetDestinationParams(CStrID ActionID, float ActorRadius, vector3& OutOffset, float& OutMinDist, float& OutMaxDist)
+bool CPropSmartObject::GetDestinationParams(CStrID ActionID, const AI::CActor* pActor, vector3& OutOffset, float& OutMinDist, float& OutMaxDist)
 {
 	const CAction* pAction = GetAction(ActionID);
+	if (!pAction) FAIL;
 
-	if (pAction)
+	matrix33 Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).ToMatrix33();
+	Tfm.mult(pAction->pTpl->DestOffset, OutOffset);
+	OutMinDist = pAction->pTpl->MinDistance;
+	OutMaxDist = pAction->pTpl->MaxDistance;
+	if (pAction->pTpl->ActorRadiusMatters())
 	{
-		matrix33 Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).ToMatrix33();
-		Tfm.mult(pAction->pTpl->DestOffset, OutOffset);
-		OutMinDist = pAction->pTpl->MinDistance;
-		OutMaxDist = pAction->pTpl->MaxDistance;
-		if (pAction->pTpl->ActorRadiusMatters())
-		{
-			OutMinDist += ActorRadius;
-			OutMaxDist += ActorRadius;
-		}
-		//???add SORadiusMatters? for items, enemies etc
-		OK;
+		OutMinDist += pActor->Radius;
+		OutMaxDist += pActor->Radius;
 	}
+	//???add SORadiusMatters? for items, enemies etc
+	OK;
+}
+//---------------------------------------------------------------------
 
-	FAIL;
+bool CPropSmartObject::GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir)
+{
+	const CAction* pAction = GetAction(ActionID);
+	if (!pAction || !pAction->pTpl->FaceObject()) FAIL;
+	OutFaceDir = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
+	OutFaceDir.norm();
+	OK;
 }
 //---------------------------------------------------------------------
 
