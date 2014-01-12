@@ -276,18 +276,11 @@ void CMotorSystem::Update(float FrameTime)
 
 	if (pActor->FacingState == AIFacing_DirSet)
 	{
-		// Since facing is performed in XZ plane, we simplify our calculations.
-		// Originally SinA = CrossY = (CurrLookat x FaceDir) * LookatPlaneNormal
-		// and CosA = Dot = CurrLookat * FaceDir
-		// LookatPlaneNormal = Up = (0, 1, 0), so we need only Y component of Cross.
-
-		float CrossY = pActor->LookatDir.z * FaceDir.x - pActor->LookatDir.x * FaceDir.z;
-		float Dot = pActor->LookatDir.x * FaceDir.x + pActor->LookatDir.z * FaceDir.z;
-		float Angle = atan2f(CrossY, Dot);
+		float Angle = vector3::Angle2DNorm(pActor->LookatDir, FaceDir);
 		float AngleAbs = n_fabs(Angle);
 
-		// We want to turn
-		if (AngleAbs > 0.005f) //???recalc threshold? smth like AngularArrivalTolerance?
+		if (AngleAbs < pActor->AngularArrivalTolerance) ResetRotation(true);
+		else
 		{
 			if (MaxAngularSpeed <= 0.f) ResetRotation(false); // We can't rotate
 			else
@@ -303,16 +296,8 @@ void CMotorSystem::Update(float FrameTime)
 				Data::PParams PAngularVel = n_new(Data::CParams(1));
 				PAngularVel->Set(CStrID("Velocity"), AngularVel);
 				pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
-
-				WasFacingPrevFrame = true;
 			}
 		}
-		else ResetRotation(true);
-	}
-	else if (WasFacingPrevFrame)
-	{
-		//???need?
-		ResetRotation(true);
 	}
 
 	// Delayed for a big turn check
@@ -347,7 +332,6 @@ void CMotorSystem::ResetRotation(bool Success)
 	Data::PParams PAngularVel = n_new(Data::CParams(1));
 	PAngularVel->Set(CStrID("Velocity"), 0.f);
 	pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
-	WasFacingPrevFrame = false;
 }
 //---------------------------------------------------------------------
 
@@ -384,8 +368,12 @@ void CMotorSystem::SetDest(const vector3& Dest)
 
 void CMotorSystem::SetFaceDirection(const vector3& Dir)
 {
-	FaceDir = Dir;
-	pActor->FacingState = AIFacing_DirSet;
+	if (pActor->IsLookingAtDir(Dir)) pActor->FacingState = AIFacing_Done;
+	else
+	{
+		FaceDir = Dir;
+		pActor->FacingState = AIFacing_DirSet;
+	}
 }
 //---------------------------------------------------------------------
 

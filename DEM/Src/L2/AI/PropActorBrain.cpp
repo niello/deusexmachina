@@ -40,6 +40,9 @@ static const CString StrGoalPrefix("AI::CGoal");
 // NB: may be square of this value MUST make sense with a single (float) precision too.
 const float CPropActorBrain::ArrivalTolerance = 0.009f;
 
+// In radians
+const float CPropActorBrain::AngularArrivalTolerance = 0.005f;
+
 bool CPropActorBrain::InternalActivate()
 {
 	if (!GetEntity()->GetLevel()->GetAI()) FAIL;

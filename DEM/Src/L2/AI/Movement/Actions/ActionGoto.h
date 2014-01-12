@@ -29,8 +29,8 @@ protected:
 public:
 
 	virtual DWORD	Update(CActor* pActor);
-	virtual void		Deactivate(CActor* pActor);
-	virtual bool		IsValid(CActor* pActor) const;
+	virtual void	Deactivate(CActor* pActor);
+	virtual bool	IsValid(CActor* pActor) const;
 };
 
 typedef Ptr<CActionGoto> PActionGoto;
