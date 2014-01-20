@@ -24,8 +24,8 @@ public:
 	float	closestpoint(const vector3& Pt) const;
 
 	vector3	End() const { return Start + Vector; }
-	float	len() const { return Vector.len(); }
-	float	lensquared() const { return Vector.lensquared(); }
+	float	Length() const { return Vector.Length(); }
+	float	SqLength() const { return Vector.SqLength(); }
 	vector3	ipol(float t) const { return Start + Vector * t; }
 };
 
@@ -45,7 +45,7 @@ inline float line3::distance(const vector3& Pt) const
 	vector3 Diff(Pt - Start);
 	float l = (Vector % Vector);
 	if (l > 0.0f) Diff = Diff - Vector * (Vector % Diff) / l;
-	return Diff.len();
+	return Diff.Length();
 }
 //---------------------------------------------------------------------
 

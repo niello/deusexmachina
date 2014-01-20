@@ -33,8 +33,8 @@ public:
 	void	set(const vector2& v) { x = v.x; y = v.y; }
 	void	set(const float* p) { x = p[0]; y = p[1]; }
 
-	float	len() const { return n_sqrt(x * x + y * y); }
-	float	lensquared() const { return x * x + y * y; }
+	float	Length() const { return n_sqrt(x * x + y * y); }
+	float	SqLength() const { return x * x + y * y; }
 	void	norm();
 	float	dot(const vector2& v) const { return x * v.x + y * v.y; }
 	bool	isequal(const vector2& v, float tol) const { return n_fabs(v.x - x) <= tol && n_fabs(v.y - y) <= tol; } //???!!!use fast n_fabs!?
@@ -58,7 +58,7 @@ public:
 
 inline void vector2::norm()
 {
-	float l = len();
+	float l = Length();
 	if (l > TINY)
 	{
 		l = 1.f / l;

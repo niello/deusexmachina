@@ -98,7 +98,7 @@ bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithC
 	vector3 CorrectedGoalPos = DoCollideCheck(lookatPoint, goalPos);
 
 	//!!!define constant somewhere!
-	if ((lookatPoint - CorrectedGoalPos).lensquared() > 1.5f * 1.5f) goalPos = CorrectedGoalPos;
+	if ((lookatPoint - CorrectedGoalPos).SqLength() > 1.5f * 1.5f) goalPos = CorrectedGoalPos;
 
 	CTime Time = TimeSrv->GetTime();
 

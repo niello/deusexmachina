@@ -103,7 +103,8 @@ public:
 
 	CStrID				GetTypeID() const { return TypeID; }
 	bool				IsMovable() const { return Movable; }
-	bool				GetDestinationParams(CStrID ActionID, const AI::CActor* pActor, vector3& OutOffset, float& OutMinDist, float& OutMaxDist);
+	bool				IsActionAvailableFrom(CStrID ActionID, const vector3& ActorPos) const;
+	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, const vector3& SOPos, vector3& OutPos);
 	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };
 

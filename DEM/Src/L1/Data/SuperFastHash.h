@@ -45,18 +45,18 @@ typedef unsigned short uint16_t;
                        +(uint32_t)(((const uint8_t *)(d))[0]) )
 #endif
 
-inline uint32_t SuperFastHash(const char * data, int len)
+inline uint32_t SuperFastHash(const char * data, int Length)
 {
-	uint32_t hash = len, tmp;
+	uint32_t hash = Length, tmp;
 	int rem;
 
-	if (len <= 0 || data == NULL) return 0;
+	if (Length <= 0 || data == NULL) return 0;
 
-	rem = len & 3;
-	len >>= 2;
+	rem = Length & 3;
+	Length >>= 2;
 
 	/* Main loop */
-	for (; len > 0; --len)
+	for (; Length > 0; --Length)
 	{
 		hash  += get16bits (data);
 		tmp    = (get16bits (data+2) << 11) ^ hash;

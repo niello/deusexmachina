@@ -87,7 +87,6 @@ public:
 	void			EndEdgeTraversal();
 	bool			GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count);
 	void			GetObstacles(float Range, dtObstacleAvoidanceQuery& Query);
-	//bool			GetRandomValidLocation(float Range, vector3& Location);
 
 	bool			IsTraversingOffMesh() const { return TraversingOffMesh; }
 	void			SetDestPoint(const vector3& Dest);

@@ -70,7 +70,7 @@ void CMotorSystem::Update(float FrameTime)
 		{
 			vector3 FrameMovement = LinVel * FrameTime;
 			vector3 PrevPos = pActor->Position - FrameMovement;
-			float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.lensquared();
+			float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.SqLength();
 			if (t >= 0.f && t <= 1.f)
 			{
 				vector3 Closest = PrevPos + FrameMovement * t;
@@ -121,8 +121,8 @@ void CMotorSystem::Update(float FrameTime)
 			vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
 
 			const float SmoothnessCoeff = 0.3f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
-			float Scale = DesiredDir.len() * SmoothnessCoeff;
-			float DistToNext = ToNext.len();
+			float Scale = DesiredDir.Length() * SmoothnessCoeff;
+			float DistToNext = ToNext.Length();
 			if (DistToNext > 0.001f) Scale /= DistToNext;
 
 			DesiredDir -= ToNext * Scale;
@@ -186,7 +186,7 @@ void CMotorSystem::Update(float FrameTime)
 
 				vector2 ActorPos(pActor->Position.x, pActor->Position.z);
 				vector2 ToDest(DestPoint.x - ActorPos.x, DestPoint.z - ActorPos.y);
-				float DistToDest = ToDest.len();
+				float DistToDest = ToDest.Length();
 				ToDest /= DistToDest;
 				vector2 ActorSide(-ToDest.y, ToDest.x);
 				float ActorRadius = pActor->Radius + AvoidanceMargin;
@@ -209,12 +209,12 @@ void CMotorSystem::Update(float FrameTime)
 					float SqExpRadius = ExpRadius * ExpRadius;
 
 					// Don't avoid obstacles at the destination
-					if (FromObstacleToDest.lensquared() < SqExpRadius) continue;
+					if (FromObstacleToDest.SqLength() < SqExpRadius) continue;
 
 					vector2 ToObstacle(
 						pObstacle->Position.x - ActorPos.x,
 						pObstacle->Position.z - ActorPos.y);
-					float SqDistToObstacle = ToObstacle.lensquared();
+					float SqDistToObstacle = ToObstacle.SqLength();
 
 					if (SqDistToObstacle >= DistToDest * DistToDest) continue; 
 
@@ -248,11 +248,11 @@ void CMotorSystem::Update(float FrameTime)
 					{
 						vector2 ToObstacle = ObstaclePos - ActorPos;
 						vector2 ProjDir = ToDest * ToObstacle.dot(ToDest) - ToObstacle;
-						float ProjDirLen = ProjDir.len();
+						float ProjDirLen = ProjDir.Length();
 						if (ProjDirLen <= TINY)
 						{
 							ProjDir.set(-ToObstacle.y, ToObstacle.x);
-							ProjDirLen = ProjDir.len();
+							ProjDirLen = ProjDir.Length();
 						}
 
 						ToDest = ToObstacle + ProjDir * (MinExpRadius / ProjDirLen);
@@ -434,7 +434,7 @@ void CMotorSystem::RenderDebug()
 			pActor->Position.x,
 			pActor->Position.y,
 			pActor->Position.z,
-			ToDest.len(),
+			ToDest.Length(),
 			pActor->MinReachDist,
 			pActor->MaxReachDist);
 		Text += Text2;

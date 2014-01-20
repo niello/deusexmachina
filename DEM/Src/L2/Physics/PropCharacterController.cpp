@@ -267,8 +267,8 @@ bool CPropCharacterController::OnRenderDebug(const Events::CEventBase& Event)
 			LVel.z,
 			CharCtlr->GetRequestedAngularVelocity(),
 			CharCtlr->GetAngularVelocity(),
-			CharCtlr->GetRequestedLinearVelocity().len(),
-			LVel.len());
+			CharCtlr->GetRequestedLinearVelocity().Length(),
+			LVel.Length());
 		DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
 	}
 

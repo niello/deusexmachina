@@ -16,7 +16,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 		NPKData.Close();
 		FAIL;
 	}
-	NPKData.Read(&Value, sizeof(int)); // Skip int (block len)
+	NPKData.Read(&Value, sizeof(int)); // Skip int (block length)
 	NPKData.Read(&Value, sizeof(int));
 	int DataOffset = Value + 8;
 
@@ -27,7 +27,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 	{
 		int FourCC;
 		NPKData.Read(&FourCC, sizeof(int));
-		NPKData.Read(&Value, sizeof(int)); // Skip int (block len)
+		NPKData.Read(&Value, sizeof(int)); // Skip int (block length)
 
 		if (FourCC == 'DIR_')
 		{
