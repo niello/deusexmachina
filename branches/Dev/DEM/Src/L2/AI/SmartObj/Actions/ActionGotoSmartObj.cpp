@@ -3,6 +3,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <Game/EntityManager.h>
+#include <Math/Math.h>
 
 namespace AI
 {
@@ -79,39 +80,79 @@ void CActionGotoSmartObj::Deactivate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
+//???update only if SO position changes?
 bool CActionGotoSmartObj::UpdateNavDest(CActor* pActor, Prop::CPropSmartObject* pSO)
 {
-	//???move code from the inside here entirely? get action by ID, get its destination params, calc destination
-	vector3 DestOffset;
-	if (!pSO->GetDestinationParams(ActionID, pActor, DestOffset, pActor->MinReachDist, pActor->MaxReachDist))
-		FAIL;
+	if (pSO->IsActionAvailableFrom(ActionID, pActor->Position))
+	{
+		pActor->GetNavSystem().Reset(true);
+		//!!!reset failed dest timer! also reset in other places where needed!
+		OK;
+	}
 
-	// Can modify pActor->MinReachDist and pActor->MaxReachDist here with ArrivalTolerance, if they are more.
-	// Then actor will arrive exactly to the distance required.
+	//!!!if failed dest timer is over, fail as target is lost!
+	//!!!threshold value must be stored in pActor and may be changed in runtime!
 
-	vector3 Dest = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
+	const matrix44& Tfm = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	vector3 SOPos = Tfm.Translation();
 
-	// This is a pursue steering behaviour //???are pursue & intercept the same?
-	if (pSO->IsMovable())
+	if (pSO->IsMovable()) // && pActor->TargetPosPredictionMode != None
 	{
 		vector3 SOVelocity;
 		if (pSO->GetEntity()->GetAttr<vector3>(SOVelocity, CStrID("LinearVelocity")) && SOVelocity.SqLength2D() > 0.f)
 		{
-			float DistToDest = vector3::Distance2D(pActor->Position, Dest);
-			if (DistToDest > pActor->MaxReachDist || DistToDest < pActor->MinReachDist)
+			// Predict future SO position (No prediction, Pursue steering, Quadratic firing solution)
+
+			vector3 Dist = SOPos - pActor->Position;
+			float MaxSpeed = pActor->GetMotorSystem().GetMaxSpeed();
+			float Time;
+
+			if (true) // pActor->TargetPosPredictionMode == Quadratic
 			{
-				float MaxSpeed = pActor->GetMotorSystem().GetMaxSpeed();
-				const float MaxPredictionTime = 5.f; //???to settings?
-				float PredictionTime = (DistToDest >= MaxSpeed * MaxPredictionTime) ? MaxPredictionTime : DistToDest / MaxSpeed;
-				SOVelocity.y = 0.f;
-				Dest += SOVelocity * PredictionTime;
+				// Quadratic firing solution
+				float A = SOVelocity.SqLength2D() - MaxSpeed * MaxSpeed;
+				float B = 2.f * (Dist.x * SOVelocity.x + Dist.z * SOVelocity.z);
+				float C = Dist.SqLength2D();
+				float Time1, Time2;
+
+				DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &Time1, &Time2);
+
+				if (!RootCount) FAIL; //!!!keep a prev point some time! or use current pos?
+
+				Time = (RootCount == 1 || (Time1 < Time2 && Time1 > 0.f)) ? Time1 : Time2;
+
+				//???is possible?
+				if (Time < 0.f) FAIL; //!!!keep a prev point some time! or use current pos?
 			}
+			else
+			{
+				// Pursue steering
+				Time = Dist.Length2D() / MaxSpeed;
+			}
+
+			//???need? see if it adds realism!
+			//const float MaxPredictionTime = 5.f; //???to settings?
+			//if (Time > MaxPredictionTime) Time = MaxPredictionTime;
+
+			SOPos.x += SOVelocity.x * Time;
+			SOPos.z += SOVelocity.z * Time;
+
+			//!!!assumed that a moving SO with a relatively high speed (no short step!) tries
+			//to face to where it moves, predict facing smth like this:
+			// get angle between curr facing and velocity direction
+			// get maximum angle as Time * MaxAngularSpeed
+			// get min(angle_between, max_angle) and rotate curr direction towards a velocity direction
+			// this will be a predicted facing
+			// may be essential for AI-made backstabs
 		}
 	}
 
-	Dest += DestOffset;
+	vector3 Dest;
+	if (!pSO->GetRequiredActorPosition(ActionID, pActor, SOPos, Dest)) FAIL; //!!!keep a prev point some time! or fail?
 
 	pActor->GetNavSystem().SetDestPoint(Dest);
+	//!!!reset failed dest timer! also reset in other places where needed!
+
 	OK;
 }
 //---------------------------------------------------------------------

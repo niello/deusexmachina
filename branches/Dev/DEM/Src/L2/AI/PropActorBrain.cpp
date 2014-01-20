@@ -335,7 +335,7 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 	//also need to update internal sensors & actor's state through them
 	//???CStimulus -> CExternalStimulus?
 	for (CArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
-		GetEntity()->GetLevel()->GetAI()->UpdateActorsSense(this, (*ppSensor));
+		GetEntity()->GetLevel()->GetAI()->UpdateActorSense(this, (*ppSensor));
 
 	MemSystem.Update();
 

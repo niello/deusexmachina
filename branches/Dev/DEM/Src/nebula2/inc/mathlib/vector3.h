@@ -45,8 +45,9 @@ public:
 	void			set(const float _x, const float _y, const float _z) { x = _x; y = _y; z = _z; }
 	void			set(const vector3& vec) { x = vec.x; y = vec.y; z = vec.z; }
 	void			set(const float* vec) { x = vec[0]; y = vec[1]; z = vec[2]; }
-	float			len() const { return n_sqrt(x * x + y * y + z * z); }
-	float			lensquared() const { return x * x + y * y + z * z; }
+	float			Length() const { return n_sqrt(x * x + y * y + z * z); }
+	float			Length2D() const { return n_sqrt(x * x + z * z); }
+	float			SqLength() const { return x * x + y * y + z * z; }
 	float			SqLength2D() const { return x * x + z * z; }
 	void			norm();
 
@@ -124,7 +125,7 @@ static inline vector3 operator *(const vector3& v0, const vector3& v1)
 
 inline void vector3::norm()
 {
-	float l = len();
+	float l = Length();
 	if (l > TINY)
 	{
 		l = 1.f / l;

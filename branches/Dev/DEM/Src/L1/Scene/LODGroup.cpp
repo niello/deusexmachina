@@ -55,7 +55,7 @@ void CLODGroup::Update()
 	if (!pNode) return;
 
 	vector3 DistanceVector = pNode->GetWorldPosition() - pNode->GetScene()->GetMainCamera().GetPosition();
-	float SqDist = DistanceVector.lensquared();
+	float SqDist = DistanceVector.SqLength();
 
 	CStrID SelectedChild;
 	if (SqDist >= MinSqDistance && SqDist <= MaxSqDistance)

@@ -56,7 +56,7 @@ void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) cons
 	LocalMousePos.y = -LocalMousePos.y;
 	OutRay.Start = GetInvViewMatrix() * LocalMousePos;
 	OutRay.Vector = OutRay.Start - GetInvViewMatrix().Translation();
-	OutRay.Vector *= (Length / OutRay.len());
+	OutRay.Vector *= (Length / OutRay.Length());
 }
 //---------------------------------------------------------------------
 

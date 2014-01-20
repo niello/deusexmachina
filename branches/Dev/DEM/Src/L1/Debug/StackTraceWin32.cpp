@@ -14,8 +14,8 @@ void CStackTraceWin32::Print(const char* str, ...)
 	va_end(argList);
 
 	// append
-	int len = strlen(CharBuffer) + strlen(tmpLine);
-	if (len < (sizeof(CharBuffer) - 1))
+	int Length = strlen(CharBuffer) + strlen(tmpLine);
+	if (Length < (sizeof(CharBuffer) - 1))
 		strcat(CharBuffer, tmpLine);
 }
 //---------------------------------------------------------------------

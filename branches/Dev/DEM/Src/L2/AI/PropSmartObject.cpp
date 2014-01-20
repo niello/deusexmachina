@@ -470,25 +470,57 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::GetDestinationParams(CStrID ActionID, const AI::CActor* pActor, vector3& OutOffset, float& OutMinDist, float& OutMaxDist)
+bool CPropSmartObject::IsActionAvailableFrom(CStrID ActionID, const vector3& ActorPos) const
 {
-	const CAction* pAction = GetAction(ActionID);
-	if (!pAction) FAIL;
+	//n_assert(false);
 
-	matrix33 Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).ToMatrix33();
-	Tfm.mult(pAction->pTpl->DestOffset, OutOffset);
-	OutMinDist = pAction->pTpl->MinDistance;
-	OutMaxDist = pAction->pTpl->MaxDistance;
-	if (pAction->pTpl->ActorRadiusMatters())
-	{
-		OutMinDist += pActor->Radius;
-		OutMaxDist += pActor->Radius;
-	}
-	//???add SORadiusMatters? for items, enemies etc
+	//???use overrides?
+
+	// Nav region ID or nav polys can be specified as a valid action zone
+	// If not sppecified, zone is a SO position point only
+	// If max radius is defined
+	// - if zone, check closest point on poly from zone not farther
+	// - if no zone, check distance to SO
+	// if min radius is defined
+	// - if zone, ignore or use?
+	// - if no zone, check distance to SO
+
 	OK;
 }
 //---------------------------------------------------------------------
 
+bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, const vector3& SOPos, vector3& OutPos)
+{
+	//!!!pass SOFacing!
+
+	//Call action override
+
+	//???Call SO callback?
+
+	//Standard algorithm
+
+	const CAction* pAction = GetAction(ActionID);
+	if (!pAction) FAIL;
+
+	//OutMinDist = pAction->pTpl->MinDistance;
+	//OutMaxDist = pAction->pTpl->MaxDistance;
+	//if (pAction->pTpl->ActorRadiusMatters())
+	//{
+	//	OutMinDist += pActor->Radius;
+	//	OutMaxDist += pActor->Radius;
+	//}
+	//???add SORadiusMatters? for items, enemies etc
+
+	//OutPos = closest point on the closest reachable poly
+
+	//!!!TMP!
+	OutPos = SOPos;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Assumes that actor is at required position
 bool CPropSmartObject::GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir)
 {
 	const CAction* pAction = GetAction(ActionID);

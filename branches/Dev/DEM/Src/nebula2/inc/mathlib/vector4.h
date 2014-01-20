@@ -48,7 +48,7 @@ public:
     /// set to vector3 (w will be set to 1.0)
     void set(const vector3& v);
     /// return length
-    float len() const;
+    float Length() const;
     /// normalize
     void norm();
     /// inplace add
@@ -191,7 +191,7 @@ vector4::set(const vector3& v)
 */
 inline
 float
-vector4::len() const
+vector4::Length() const
 {
     return (float) sqrt(x * x + y * y + z * z + w * w);
 }
@@ -203,7 +203,7 @@ inline
 void
 vector4::norm()
 {
-    float l = len();
+    float l = Length();
     if (l > TINY)
     {
         float oneDivL = 1.0f / l;

@@ -37,7 +37,7 @@ bool CSensorVision::SenseStimulus(CActor* pActor, CStimulus* pStimulus) const
 	//y can be projected (clamped by cylinder top & bottom)
 	
 	vector3 DirToStimulus = pStimulus->Position - pActor->Position;
-	float SqDist = DirToStimulus.lensquared();
+	float SqDist = DirToStimulus.SqLength();
 
 	if (SqDist <= Radius * Radius)
 	{
@@ -89,7 +89,7 @@ DWORD CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) const
 
 	//!!!CODE DUPLICATION!
 	vector3 DirToFact = Obstacle.Position - pActor->Position;
-	float SqDist = DirToFact.lensquared();
+	float SqDist = DirToFact.SqLength();
 
 	if (SqDist <= Radius * Radius)
 	{

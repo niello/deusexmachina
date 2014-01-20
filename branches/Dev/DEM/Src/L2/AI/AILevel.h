@@ -41,24 +41,27 @@ public:
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
 	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);
+
 	bool			CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float ActorRadius = 0.f);
 	void			SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius = 0.f);
 	void			SetNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
 	void			ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
 	void			SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius = 0.f);
 
+	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos);
+
 	CStimulusNode	RegisterStimulus(CStimulus* pStimulus);
 	CStimulusNode	UpdateStimulusLocation(CStimulus* pStimulus) { n_assert(pStimulus && pStimulus->GetQuadTreeNode()); return StimulusQT.UpdateObject(pStimulus); }
 	void			UpdateStimulusLocation(CStimulusNode& StimulusNode) { n_assert(StimulusNode && (*StimulusNode)->GetQuadTreeNode()); StimulusQT.UpdateHandle(StimulusNode); }
 	void			RemoveStimulus(CStimulus* pStimulus);		//!!!autoremove on expire!
 	void			RemoveStimulus(CStimulusNode StimulusNode);	//!!!autoremove on expire!
-	void			UpdateActorsSense(CActor* pActor, CSensor* pSensor);
+	void			UpdateActorSense(CActor* pActor, CSensor* pSensor);
 };
 //---------------------------------------------------------------------
 
 typedef Ptr<CAILevel> PAILevel;
 
-inline void CAILevel::UpdateActorsSense(CActor* pActor, CSensor* pSensor)
+inline void CAILevel::UpdateActorSense(CActor* pActor, CSensor* pSensor)
 {
 	QTNodeUpdateActorsSense(StimulusQT.GetRootNode(), pActor, pSensor);
 }

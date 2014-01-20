@@ -347,7 +347,7 @@ void CNavSystem::UpdatePosition()
 
 	//!!!navmesh height and actual height may differ, so need to compensate or convert actor->navmesh or <- height!
 	//???or test with IsAtPoint() with OffMeshRadius?
-	if (OffMeshRef && (OffMeshPoint - pActor->Position).lensquared() <= OffMeshRadiusSq)
+	if (OffMeshRef && (OffMeshPoint - pActor->Position).SqLength() <= OffMeshRadiusSq)
 	{
 		// We reached an enter to the offmesh connection that is the next edge of our path (see GetPathEdges())
 		//???check validity of the offmesh poly ref? what if we're at the invalid pos now?
@@ -607,7 +607,7 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 			vector2 NewDir(CornerVerts[i * 3] - Base.x, CornerVerts[i * 3 + 2] - Base.z);
 			float Dot = NewDir.dot(CurrDir);
 			const float CosSmallAngleSq = 0.999999f;
-			StartNewEdge = (Dot * Dot < NewDir.lensquared() * CurrDir.lensquared() * CosSmallAngleSq);
+			StartNewEdge = (Dot * Dot < NewDir.SqLength() * CurrDir.SqLength() * CosSmallAngleSq);
 		}
 
 		if (StartNewEdge)
