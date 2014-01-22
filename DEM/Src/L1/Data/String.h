@@ -3,8 +3,7 @@
 
 #include <Data/Array.h>
 #include <Data/Hash.h>
-#include <mathlib/matrix44.h> // remove dependent code to utils
-#include <ctype.h> // tolower, toupper
+#include <mathlib/matrix44.h> //!!!remove dependent code to utils
 #include <stdarg.h>
 
 // Character string with local buffer for small strings to avoid allocations
@@ -61,8 +60,8 @@ public:
 	bool			ContainsOnly(const CString& CharSet) const;
 	void			ToLower();
 	void			ToUpper();
-	CString			Trim(const char* CharSet = N_WHITESPACE, bool Left = true, bool Right = true) const;
-	void			TrimInplace(const char* CharSet = N_WHITESPACE, bool Left = true, bool Right = true);
+	CString			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true) const;
+	void			TrimInplace(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true);
 	CString			Replace(const char* str, const char* pReplaceWith) const;
 	void			Replace(char c, char subst);
 	void			ReplaceChars(const char* CharSet, char replacement);
@@ -156,25 +155,15 @@ inline void CString::Clear()
 
 inline void CString::ToLower()
 {
-	char* pStr = pString ? pString : pLocalString;
-	if (!pStr) return;
-	while (*pStr)
-	{
-		*pStr = tolower(*pStr);
-		++pStr;
-	}
+	if (pString) _strlwr_s(pString, Len + 1);
+	else _strlwr_s(pLocalString, LocalLen + 1);
 }
 //---------------------------------------------------------------------
 
 inline void CString::ToUpper()
 {
-	char* pStr = pString ? pString : pLocalString;
-	if (!pStr) return;
-	while (*pStr)
-	{
-		*pStr = toupper(*pStr);
-		++pStr;
-	}
+	if (pString) _strupr_s(pString, Len + 1);
+	else _strupr_s(pLocalString, LocalLen + 1);
 }
 //---------------------------------------------------------------------
 

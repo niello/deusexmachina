@@ -100,7 +100,7 @@ bool CVideoServer::PlayFile(const char* pFileName)
 	}
 
 	//???use MultiByteToWideChar?
-	wchar_t WidePath[N_MAXPATH];
+	wchar_t WidePath[DEM_MAX_PATH];
 	CString Path = IOSrv->ManglePath(pFileName);
 	size_t CharsConverted;
 	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.Length() + 1);

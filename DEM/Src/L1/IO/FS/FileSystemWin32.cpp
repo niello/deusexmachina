@@ -155,7 +155,7 @@ bool CFileSystemWin32::DeleteDirectory(const CString& Path)
 
 bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 {
-    char pRawPath[N_MAXPATH];
+    char pRawPath[DEM_MAX_PATH];
 	if (Code == SF_TEMP)
 	{
 		if (!GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;

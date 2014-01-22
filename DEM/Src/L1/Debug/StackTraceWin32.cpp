@@ -35,7 +35,7 @@ const char* CStackTraceWin32::TraceStack()
 void CStackTraceWin32::WalkStack(HANDLE thread, CONTEXT& context)
 {
 	// add executable's directory to the search path
-	char buf[N_MAXPATH];
+	char buf[DEM_MAX_PATH];
 	DWORD strLen = GetModuleFileName(0,  buf, sizeof(buf));
 	CString path = buf;
 	CString dirPath = path.ExtractDirName();
