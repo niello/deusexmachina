@@ -10,7 +10,7 @@ void CNebula2Logger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel 
 		switch (level) 
 		{
 			case CEGUI::Errors:
-				//n_error("%s\n", message.c_str());
+				//Core::Error("%s\n", message.c_str());
 				//break;
 			case CEGUI::Standard:
 			case CEGUI::Informative:
@@ -18,7 +18,7 @@ void CNebula2Logger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel 
 				n_printf("%s\n", message.c_str());
 				break;
 			default:
-				n_error("Unknown CEGUI logging level\n");
+				Core::Error("Unknown CEGUI logging level\n");
         }
 }
 //---------------------------------------------------------------------

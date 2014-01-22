@@ -57,7 +57,7 @@ CDisplay::~CDisplay()
 	if (aWndClass)
 	{
 		if (!UnregisterClass((LPCSTR)aWndClass, hInst))
-			n_error("CDisplay::CloseWindow(): UnregisterClass() failed!\n");
+			Core::Error("CDisplay::CloseWindow(): UnregisterClass() failed!\n");
 		aWndClass = 0;
 	}
 }

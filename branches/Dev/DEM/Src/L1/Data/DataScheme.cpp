@@ -48,7 +48,7 @@ bool CDataScheme::Init(const CParams& Desc)
 				else if (!n_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
 				else Rec.TypeID = -1;
 			}
-			else n_error("CDataScheme::Init -> Wrong type of TypeID param. Must be int or string.");
+			else Core::Error("CDataScheme::Init -> Wrong type of TypeID param. Must be int or string.");
 		}
 		else Rec.TypeID = -1;
 
@@ -61,7 +61,7 @@ bool CDataScheme::Init(const CParams& Desc)
 				if (!Rec.Scheme->Init(*SchemeVal->GetValue<PParams>())) FAIL;
 			}
 			else if (SchemeVal->IsA<CStrID>()) Rec.SchemeID = SchemeVal->GetValue<CStrID>();
-			else n_error("CDataScheme::Init -> Wrong type of Scheme param. Must be params or strid.");
+			else Core::Error("CDataScheme::Init -> Wrong type of Scheme param. Must be params or strid.");
 		}
 
 		CParam* pDflt;

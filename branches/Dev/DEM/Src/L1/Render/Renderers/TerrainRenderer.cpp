@@ -56,7 +56,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 
 	if (!RenderSrv->CheckCaps(Caps_VSTexFiltering_Linear))
 	{
-		n_error("Fix feat flags for this case to use fallback tech with manual 4-sample filtering");
+		Core::Error("Fix feat flags for this case to use fallback tech with manual 4-sample filtering");
 	}
 
 	hHeightMap = Shader->GetVarHandleByName(CStrID("HeightMap"));
@@ -318,7 +318,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 		float MaxDistToCameraSq = AABB.MaxDistFromPointSq(RenderSrv->GetCameraPosition());
 		float MorphStart = MorphConsts[LOD + 1].Start;
 		if (MaxDistToCameraSq > MorphStart * MorphStart)
-			n_error("Visibility distance is too small!");
+			Core::Error("Visibility distance is too small!");
 	}
 #endif
 */

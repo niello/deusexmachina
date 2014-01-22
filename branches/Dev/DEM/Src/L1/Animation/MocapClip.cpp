@@ -33,7 +33,7 @@ bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>&
 			case Scene::Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
 			case Scene::Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
 			case Scene::Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
-			default: n_error("CMocapClip::Setup() -> Unsupported channel for an SRT sampler track!");
+			default: Core::Error("CMocapClip::Setup() -> Unsupported channel for an SRT sampler track!");
 		};
 	}
 

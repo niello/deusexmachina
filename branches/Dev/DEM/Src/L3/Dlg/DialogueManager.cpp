@@ -75,7 +75,7 @@ PDialogue CDialogueManager::CreateDialogue(const Data::CParams& Params, const CS
 					NewNode = n_new(CDlgNodeRandom);
 					break;
 				}
-			default: n_error("CDialogueManager::CreateDialogue: Unknown Dlg Node type!");
+			default: Core::Error("CDialogueManager::CreateDialogue: Unknown Dlg Node type!");
 		}
 		n_assert(NewNode.IsValid());
 		LoadedNodes.Add(Node.GetName(), NewNode);
@@ -305,7 +305,7 @@ void CDialogueManager::SayPhrase(CStrID SpeakerEntity, const CString& Phrase, CA
 	else if (SpeakerEntity == "$PlrSpeaker") SpeakerEntity = Dlg.PlrSpeaker;
 	PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
 	if (!Speaker.IsValid())
-		n_error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
+		Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
 
 	if (IsDialogueForeground(Dlg))
 	{

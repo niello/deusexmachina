@@ -46,7 +46,7 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 			case AIFacing_DirSet:	return Running;
 			case AIFacing_Done:		return Success;
 			case AIFacing_Failed:	return Failure;
-			default: n_error("CActionGotoSmartObj::Update(): Unexpected facing status '%d'", pActor->FacingState);
+			default: Core::Error("CActionGotoSmartObj::Update(): Unexpected facing status '%d'", pActor->FacingState);
 		}
 	}
 	else
@@ -64,7 +64,7 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 			case AINav_DestSet:		return Running;
 			case AINav_Planning:
 			case AINav_Following:	return AdvancePath(pActor);
-			default: n_error("CActionGotoSmartObj::Update(): Unexpected navigation status '%d'", pActor->NavState);
+			default: Core::Error("CActionGotoSmartObj::Update(): Unexpected navigation status '%d'", pActor->NavState);
 		}
 	}
 

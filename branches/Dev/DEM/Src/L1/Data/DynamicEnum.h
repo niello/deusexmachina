@@ -47,7 +47,7 @@ T CDynamicEnumT<T>::GetMask(const CString& FlagStr)
 		{
 			if (BitsUsed >= sizeof(T) * 8)
 			{
-				n_error("CDynamicEnumT: overflow, flag %s would be %d-th", Flag.CStr(), BitsUsed + 1);
+				Core::Error("CDynamicEnumT: overflow, flag %s would be %d-th", Flag.CStr(), BitsUsed + 1);
 				return 0;
 			}
 			Mask |= Flags.Add(Flag, (1 << BitsUsed));

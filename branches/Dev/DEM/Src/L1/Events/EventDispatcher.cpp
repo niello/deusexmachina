@@ -209,7 +209,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 		while (Curr.IsValid());
 	}
 
-	n_error("Subscription on '%s' not found, mb double unsubscription", ID.ID);
+	Core::Error("Subscription on '%s' not found, mb double unsubscription", ID.ID);
 }
 //---------------------------------------------------------------------
 

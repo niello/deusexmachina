@@ -74,7 +74,7 @@ bool CAudioServer::Open()
 
 	LPDIRECTSOUNDBUFFER pDSBPrimary = NULL;
 	if (FAILED(pDS->CreateSoundBuffer(&DSBufDesc, &pDSBPrimary, NULL)))
-		n_error("AudioSrv::Open(): pDS->CreateSoundBuffer(Primary) failed");
+		Core::Error("AudioSrv::Open(): pDS->CreateSoundBuffer(Primary) failed");
 
 	//???channels+samples+bits to settings HRD?
 	WAVEFORMATEX WaveFmt;
@@ -87,10 +87,10 @@ bool CAudioServer::Open()
 	WaveFmt.nAvgBytesPerSec = (DWORD)(WaveFmt.nSamplesPerSec * WaveFmt.nBlockAlign);
 
 	if (FAILED(pDSBPrimary->SetFormat(&WaveFmt)))
-		n_error("AudioSrv::Open(): pDSBPrimary->SetFormat failed");
+		Core::Error("AudioSrv::Open(): pDSBPrimary->SetFormat failed");
 
 	if (FAILED(pDSBPrimary->QueryInterface(IID_IDirectSound3DListener, (VOID**)&pDSListener)))
-		n_error("AudioSrv::Open(): pDSBPrimary->QueryInterface failed");
+		Core::Error("AudioSrv::Open(): pDSBPrimary->QueryInterface failed");
 
 	SAFE_RELEASE(pDSBPrimary);
 
@@ -279,7 +279,7 @@ const char* SoundCategoryToString(ESoundCategory Cat)
 		case Music:		return "music";
 		case Speech:	return "speech";
 		case Ambient:	return "ambient";
-		default: n_error("nAudioServer3: Invalid Category: %i!", Cat); return "";
+		default: Core::Error("nAudioServer3: Invalid Category: %i!", Cat); return "";
 	}
 }
 //---------------------------------------------------------------------
@@ -290,7 +290,7 @@ ESoundCategory StringToSoundCategory(const char* pStr)
 	if (!strcmp(pStr, "music")) return Music;
 	if (!strcmp(pStr, "speech")) return Speech;
 	if (!strcmp(pStr, "ambient")) return Ambient;
-	n_error("nAudioServer3: Invalid category string '%s'.\n", pStr);
+	Core::Error("nAudioServer3: Invalid category string '%s'.\n", pStr);
 	return InvalidSoundCategory;
 }
 //---------------------------------------------------------------------

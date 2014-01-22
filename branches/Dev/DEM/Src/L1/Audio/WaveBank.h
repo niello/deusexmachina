@@ -53,7 +53,7 @@
 //
 //inline void CWaveBank::SetFilename(const CString& FileName)
 //{
-//	if (FileName.IsEmpty()) n_error("Audio::CWaveBank::SetFilename(): got no filename!");
+//	if (FileName.IsEmpty()) Core::Error("Audio::CWaveBank::SetFilename(): got no filename!");
 //	XMLSheet.SetFilename(FileName);
 //}
 ////---------------------------------------------------------------------

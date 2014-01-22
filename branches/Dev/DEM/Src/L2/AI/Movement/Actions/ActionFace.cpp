@@ -13,7 +13,7 @@ DWORD CActionFace::Update(CActor* pActor)
 		case AIFacing_DirSet:	return Running;
 		case AIFacing_Done:		return Success;
 		case AIFacing_Failed:	return Failure;
-		default: n_error("CActionFace::Update(): Unexpected facing status '%d'", pActor->FacingState);
+		default: Core::Error("CActionFace::Update(): Unexpected facing status '%d'", pActor->FacingState);
 	}
 
 	return Failure;

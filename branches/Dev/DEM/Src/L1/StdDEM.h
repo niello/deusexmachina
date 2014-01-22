@@ -2,10 +2,10 @@
 #ifndef __DEM_STDDEM_H__
 #define __DEM_STDDEM_H__
 
-#include <stdio.h>	//???why error if comment?
-#include <stdlib.h>	// malloc, free
-#include <new>		// operator new
+#include <stdlib.h>		// malloc, free
+#include <new>			// operator new
 #include "StdCfg.h"
+#include <Core/Core.h>	// Platform-independent core functions, like Core::ReportAssertionFailure
 
 #define OK				return true
 #define FAIL			return false
@@ -54,29 +54,33 @@ typedef double				CTime;
 
 //---------------------------------------------------------------------
 //  Debug macros
+//
+// This code uses:
+// http://cnicholson.net/2009/02/stupid-c-tricks-adventures-in-assert/
 //---------------------------------------------------------------------
-#ifdef DEM_NO_ASSERT
-	#define n_verify(exp) (exp)
-	#define n_assert(exp)
-	#define n_assert2(exp, msg)
-	#define n_assert_dbg(exp)
-	#define n_assert2_dbg(exp, msg)
-#else
-	#define n_verify(exp)				{ if (!(exp)) n_barf(#exp, __FILE__, __LINE__); }
-	#define n_assert(exp)				{ if (!(exp)) n_barf(#exp, __FILE__, __LINE__); }
-	#define n_assert2(exp, msg)			{ if (!(exp)) n_barf2(#exp, msg, __FILE__, __LINE__); }
 
-	#ifdef _DEBUG
-		#define n_verify_dbg(exp)		n_verify(exp)
-		#define n_assert_dbg(exp)		n_assert(exp)
-		#define n_assert2_dbg(exp, msg)	n_assert2(exp, msg)
-		#define n_printf_dbg(msg, ...)	n_printf(msg, __VA_ARGS__)
-	#else
-		#define n_verify_dbg(exp)		(exp)
-		#define n_assert_dbg(exp)
-		#define n_assert2_dbg(exp, msg)
-		#define n_printf_dbg(fmt, ...)
-	#endif
+#define DBG_BREAK() __debugbreak()
+
+#ifdef DEM_NO_ASSERT
+	#define n_verify(exp)			do { (exp); } while(0)
+	#define n_assert(exp)			do { (void)sizeof(exp); } while(0)
+	#define n_assert2(exp, msg)		do { (void)sizeof(exp); } while(0)
+#else
+#define n_verify(exp)				do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__)) DBG_BREAK(); } while(0)
+	#define n_assert(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__)) DBG_BREAK(); } while(0)
+	#define n_assert2(exp, msg)		do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__)) DBG_BREAK(); } while(0)
+#endif
+
+#ifdef _DEBUG
+	#define n_verify_dbg(exp)		n_verify(exp)
+	#define n_assert_dbg(exp)		n_assert(exp)
+	#define n_assert2_dbg(exp, msg)	n_assert2(exp, msg)
+	#define n_printf_dbg(msg, ...)	n_printf(msg, __VA_ARGS__)
+#else
+	#define n_verify_dbg(exp)		do { (exp); } while(0)
+	#define n_assert_dbg(exp)		do { (void)sizeof(exp); } while(0)
+	#define n_assert2_dbg(exp, msg)	do { (void)sizeof(exp); } while(0)
+	#define n_printf_dbg(fmt, ...)
 #endif
 
 //------------------------------------------------------------------------------
@@ -156,11 +160,6 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #define n_stricmp stricmp
 #endif
 
-#ifdef __WIN32__
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#endif
-
 #ifdef _MSC_VER
 #define va_copy(d, s) d = s
 #endif
@@ -176,9 +175,6 @@ void n_free_dbg(void* memblock, const char* file, int line);
 //---------------------------------------------------------------------
 void __cdecl n_printf(const char*, ...)
     __attribute__((format(printf, 1, 2)));
-void __cdecl n_error(const char*, ...)
-    __attribute__((noreturn))
-    __attribute__((format(printf, 1, 2)));
 void __cdecl n_message(const char*, ...)
     __attribute__((format(printf, 1, 2)));
 void __cdecl n_dbgout(const char*, ...)
@@ -188,11 +184,6 @@ char* n_strdup(const char*);
 char* n_strncpy2(char*, const char*, size_t);
 bool n_strmatch(const char*, const char*);
 void n_strcat(char*, const char*, size_t);
-
-void n_barf(const char*, const char*, int)
-    __attribute__((noreturn));
-void n_barf2(const char*, const char*, const char*, int)
-    __attribute__((noreturn));
 
 template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
 template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }

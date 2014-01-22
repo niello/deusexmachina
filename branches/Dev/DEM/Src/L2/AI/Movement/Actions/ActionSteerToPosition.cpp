@@ -44,7 +44,7 @@ DWORD CActionSteerToPosition::Update(CActor* pActor)
 			// Remember that stuck can be released, so we may want to wait for some time here
 			// getting stuck time from BlackBoard / MotorSystem
 		}
-		default: n_error("CActionSteerToPosition::Update(): Unexpected movement status '%d'", pActor->MvmtState);
+		default: Core::Error("CActionSteerToPosition::Update(): Unexpected movement status '%d'", pActor->MvmtState);
 	}
 	return Failure;
 }

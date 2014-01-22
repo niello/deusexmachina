@@ -15,7 +15,7 @@ DWORD CActionGoto::Update(CActor* pActor)
 		case AINav_DestSet:		return Running;
 		case AINav_Planning:
 		case AINav_Following:	return AdvancePath(pActor);
-		default: n_error("CActionGoto::Update(): Unexpected navigation status '%d'", pActor->NavState);
+		default: Core::Error("CActionGoto::Update(): Unexpected navigation status '%d'", pActor->NavState);
 	}
 
 	return Failure;

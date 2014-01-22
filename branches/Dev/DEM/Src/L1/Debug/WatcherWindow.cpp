@@ -241,7 +241,7 @@ bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
 			else if (It->Type == Lua)
 			{
 				char Script[256];	
-				snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName);
+				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName);
 				CData Output;
 				ScriptSrv->RunScript(Script, -1, &Output);
 

@@ -124,7 +124,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	}
 
 	if (TaskID == CStrID::Empty) 
-		n_error("No quest task specified either explicitly (as an argument) or implicitly (in the quest description)");
+		Core::Error("No quest task specified either explicitly (as an argument) or implicitly (in the quest description)");
 	
 	CQuest::CTaskRec& Task = Quest->Tasks[TaskID];
 	Task.Status = CQuest::Opened;

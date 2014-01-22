@@ -2,7 +2,6 @@
 #ifndef __DEM_STDCFG_H__
 #define __DEM_STDCFG_H__
 
-//#define __USE_SSE__ (1)
 #define DEM_STATS
 //#define DEM_NO_ASSERT
 
