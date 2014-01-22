@@ -12,7 +12,7 @@ PResource IResourceManager::CreateResource(CStrID UID, const Core::CRTTI& Type)
 	if (!UID.IsValid())
 	{
 		char ID[20];
-		sprintf(ID, "Rsrc%d", UIDCounter++);
+		sprintf_s(ID, sizeof(ID), "Rsrc%d", UIDCounter++);
 		UID = CStrID(ID);
 		n_assert_dbg(!UIDToResource.Contains(UID));
 	}

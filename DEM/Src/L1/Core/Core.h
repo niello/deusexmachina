@@ -6,7 +6,7 @@
 
 namespace Core
 {
-	bool			ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line);
+	bool			ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc = NULL);
 	void __cdecl	Error(const char* pMsg, ...);
 }
 

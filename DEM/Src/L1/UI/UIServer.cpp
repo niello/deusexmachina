@@ -6,6 +6,10 @@
 #include <Input/InputServer.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
+// CEGUI uses insecure function in a template class -_-
+#pragma warning(push)
+#pragma warning(disable : 4996)       // _CRT_INSECURE_DEPRECATE, VS8: old string routines are deprecated
+
 #include <Input/Events/CharInput.h>
 #include <Input/Events/MouseMove.h>
 #include <Input/Events/MouseBtnDown.h>
@@ -272,3 +276,5 @@ bool CUIServer::IsMouseOverGUI() const
 //---------------------------------------------------------------------
 
 }
+
+#pragma warning(pop)

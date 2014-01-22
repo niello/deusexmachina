@@ -58,8 +58,6 @@ const int DEM_THREAD_COUNT = 1;
 #ifdef __VC__
 #pragma warning(disable : 4355)       // initialization list uses 'this'
 #pragma warning(disable : 4530)       // C++ exception handler used, but unwind semantics not enabled
-#pragma warning(disable : 4995)       // _OLD_IOSTREAMS_ARE_DEPRECATED
-#pragma warning(disable : 4996)       // _CRT_INSECURE_DEPRECATE, VS8: old string routines are deprecated
 #endif
 
 //------------------------------------------------------------------------------

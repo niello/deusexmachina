@@ -4,10 +4,9 @@
 
 #include "NpkTOCEntry.h"
 #include <Data/String.h>
+#include <Data/StringTokenizer.h>
 
-// Holds table of content entries for npk files.
-// (C) 2002 RadonLabs GmbH
-// Mofified by Niello (C) 2012
+// Holds table of content entries for NPK files.
 
 namespace IO
 {
@@ -73,31 +72,39 @@ inline CNpkTOCEntry* CNpkTOC::AddFileEntry(const char* pName, int Offset, int Le
 
 inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 {
-	n_assert(pRootDir);
+	n_assert(pRootDir && RootPath.IsValid());
 
-	CString LocalPath;
-	n_assert(RootPath.IsValid());
-	if (strncmp(RootPath.CStr(), pAbsPath, RootPath.Length())) return NULL;
-	if (strlen(pAbsPath) > (size_t)RootPath.Length() + 1)
-		LocalPath = &(pAbsPath[RootPath.Length() + 1]);
-	else return NULL;
+	if (_strnicmp(RootPath.CStr(), pAbsPath, RootPath.Length())) return NULL;
 
-	LocalPath.ToLower();
+	DWORD PathLen = strlen(pAbsPath);
+	DWORD RootPathLen = RootPath.Length() + 1; // 1 is for a directory separator
+	if (PathLen <= RootPathLen) return NULL;
+	PathLen = PathLen - RootPathLen + 1; // 1 is for a terminating null
+	char* pLocalPath = (char*)_malloca(PathLen);
+	memcpy_s(pLocalPath, PathLen, pAbsPath + RootPathLen, PathLen);
+	_strlwr_s(pLocalPath, PathLen);
 
-	char* pCurrToken = strtok((char*)LocalPath.CStr(), "/\\");
 	CNpkTOCEntry* pCurrEntry = pRootDir;
-	if (!strcmp(pCurrEntry->GetName(), pCurrToken))
+
+	char Buf[N_MAXPATH];
+	Data::CStringTokenizer StrTok(pLocalPath, "/\\", Buf, N_MAXPATH);
+	if (pCurrEntry->GetName() != StrTok.GetNextToken())
 	{
-		while (pCurrEntry && (pCurrToken = strtok(NULL, "/\\")))
-		{
-			if (!strcmp(pCurrToken, ".."))
-				pCurrEntry = pCurrEntry->GetParent();
-			else if (strcmp(pCurrToken, ".")) // if is NOT a dot (dot is a current dir)
-				pCurrEntry = pCurrEntry->FindEntry(pCurrToken);
-		}
-		return pCurrEntry;
+		_freea(pLocalPath);
+		return NULL;
 	}
-	else return NULL;
+
+	while (pCurrEntry && !StrTok.IsLast())
+	{
+		StrTok.GetNextToken();
+		if (!strcmp(StrTok.GetCurrToken(), ".."))
+			pCurrEntry = pCurrEntry->GetParent();
+		else if (strcmp(StrTok.GetCurrToken(), ".")) // NB: if is NOT a dot (dot is a current dir, no action needed)
+			pCurrEntry = pCurrEntry->FindEntry(StrTok.GetCurrToken());
+	}
+
+	_freea(pLocalPath);
+	return pCurrEntry;
 }
 //---------------------------------------------------------------------
 

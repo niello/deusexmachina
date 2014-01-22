@@ -33,7 +33,7 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			const char* pExt = FileName.GetExtension();
 			if (pExt)
 			{
-				if (!stricmp(pExt, "fx")) LoadShaderFromFX(FileName, ShaderPath, Shader);
+				if (!n_stricmp(pExt, "fx")) LoadShaderFromFX(FileName, ShaderPath, Shader);
 				else LoadShaderFromFXO(FileName, Shader);
 			}
 			else
