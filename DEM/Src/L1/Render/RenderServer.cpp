@@ -116,7 +116,7 @@ bool CRenderServer::CreateDevice()
 
 	if (FAILED(hr))
 	{
-		n_error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
+		Core::Error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
 		FAIL;
 	}
 
@@ -148,7 +148,7 @@ void CRenderServer::ResetDevice()
 
 	hr = pD3DDevice->Reset(&D3DPresentParams);
 	if (FAILED(hr))
-		n_error("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
+		Core::Error("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
 
 	SetupDevice();
 
@@ -264,7 +264,7 @@ void CRenderServer::SetupPresentParams()
 											D3DFMT_D24S8);
 	if (FAILED(hr))
 	{
-		n_error("Rendering device doesn't support D24S8 depth buffer!\n");
+		Core::Error("Rendering device doesn't support D24S8 depth buffer!\n");
 		return;
 	}
 
@@ -276,7 +276,7 @@ void CRenderServer::SetupPresentParams()
 										D3DFMT_D24S8);
 	if (FAILED(hr))
 	{
-		n_error("Backbuffer format is not compatible with D24S8 depth buffer!\n");
+		Core::Error("Backbuffer format is not compatible with D24S8 depth buffer!\n");
 		return;
 	}
 
@@ -545,7 +545,7 @@ void CRenderServer::Draw()
 		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
 		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
 		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
-		default:		n_error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
+		default:		Core::Error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
 	}
 
 	HRESULT hr;
@@ -606,7 +606,7 @@ EPixelFormat CRenderServer::GetPixelFormat(const CString& String)
 	if (String == "D24X8") return D3DFMT_D24X8;
 	if (String == "D24X4S4") return D3DFMT_D24X4S4;
 
-	n_error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.CStr());
+	Core::Error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.CStr());
 	return PixelFormat_Invalid;
 }
 //---------------------------------------------------------------------

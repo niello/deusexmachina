@@ -162,7 +162,7 @@ inline float n_lerp(float x, float y, float l)
 template<class T>
 inline void lerp(T & result, const T& val0, const T& val1, float lerpVal)
 {
-	n_error("Unimplemented lerp function!");
+	Core::Error("Unimplemented lerp function!");
 }
 //---------------------------------------------------------------------
 

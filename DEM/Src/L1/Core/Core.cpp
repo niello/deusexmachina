@@ -3,20 +3,32 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-void n_barf(const char* exp, const char* file, int line)
+namespace Core
 {
-	n_error("*** NEBULA ASSERTION ***\nexpression: %s\nfile: %s\nline: %d\n", exp, file, line);
-}
-//---------------------------------------------------------------------
 
-void n_barf2(const char* exp, const char* pMsg, const char* file, int line)
+bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line)
 {
-	n_error("*** NEBULA ASSERTION ***\nprogrammer says: %s\nexpression: %s\nfile: %s\nline: %d\n", pMsg, exp, file, line);
+	const char* pMsg = pMessage ? pMessage : "none";
+
+	//!!!msgbox can have buttons to continue or fail!
+	if (CoreLoggerExists)
+	{
+		//!!!refactor logger!
+		char Buf[8192];
+		sprintf_s(Buf, sizeof(Buf) - 1, "*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\n", pMsg, pExpression, pFile, Line);
+		CoreLogger->Error(Buf, NULL);
+	}
+	else
+	{
+		printf("*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\n", pMsg, pExpression, pFile, Line);
+		fflush(stdout);
+	}
+	OK; //!!!now always fails!
 }
 //---------------------------------------------------------------------
 
 // Critical error, program will be closed
-void __cdecl n_error(const char* pMsg, ...)
+void __cdecl Error(const char* pMsg, ...)
 {
 	va_list ArgList;
 	va_start(ArgList, pMsg);
@@ -30,6 +42,8 @@ void __cdecl n_error(const char* pMsg, ...)
 	abort();
 }
 //---------------------------------------------------------------------
+
+}
 
 // Message that will be shown to the user
 void __cdecl n_message(const char* pMsg, ...)

@@ -28,7 +28,7 @@ bool CPropInventory::InternalActivate()
 			if (ItemInst.IsValid())
 			{
 				Item = Item->Clone();
-				n_error("IMPLEMENT ME!!!");
+				Core::Error("IMPLEMENT ME!!!");
 				//!!!load per-instance fields!
 			}
 			pStack->SetItem(Item);
@@ -122,7 +122,7 @@ bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
 		StackDesc->Set(CStrID("ID"), Stack->GetItemID());
 		if (!Stack->GetItem()->IsTemplateInstance())
 		{
-			n_error("IMPLEMENT ME!!!");
+			Core::Error("IMPLEMENT ME!!!");
 			//!!!save per-instance fields!
 		}
 		StackDesc->Set(CStrID("Count"), (int)Stack->GetCount());

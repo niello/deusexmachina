@@ -63,7 +63,7 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID,
 			const vector4& Color = pPrm->GetValue<vector4>();
 			ClearColor = N_COLORVALUE(Color.x, Color.y, Color.z, Color.w);
 		}
-		else n_error("CPass::Init() -> Invalid type of ClearColor");
+		else Core::Error("CPass::Init() -> Invalid type of ClearColor");
 		ClearFlags |= Clear_Color;
 	}
 

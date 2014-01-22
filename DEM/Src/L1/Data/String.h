@@ -537,7 +537,7 @@ inline void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
 	va_end(ArgList);
 
 	char* pBuffer = (char*)_malloca(ReqLength);
-	vsnprintf(pBuffer, ReqLength, pFormatStr, Args);
+	_vsnprintf(pBuffer, ReqLength, pFormatStr, Args);
 	Set(pBuffer);
 	_freea(pBuffer);
 }

@@ -38,7 +38,7 @@ void CRefCounted::DumpLeaks()
 			n_dbgout(Msg.CStr());
 		}
 		n_dbgout("\n******** END OF REFCOUNT LEAK REPORT\n\n\n");
-		n_error("CRefCounted memory leaks detected");
+		Core::Error("CRefCounted memory leaks detected");
 	}
 }
 //---------------------------------------------------------------------

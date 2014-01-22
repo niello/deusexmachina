@@ -33,7 +33,7 @@ bool CPropTrigger::InternalActivate()
 		case 1: Shape = PhysicsSrv->CreateBoxShape(ShapeParams); break;
 		case 2: Shape = PhysicsSrv->CreateSphereShape(ShapeParams.x); break;
 		case 4: Shape = PhysicsSrv->CreateCapsuleShape(ShapeParams.x, ShapeParams.y); break;
-		default: n_error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
+		default: Core::Error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
 					 GetEntity()->GetUID().CStr(),
 					 GetEntity()->GetAttr<int>(CStrID("TrgShapeType")));
 	}

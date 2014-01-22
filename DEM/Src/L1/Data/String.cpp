@@ -5,7 +5,7 @@ const CString CString::Empty;
 //!!!Write preallocation and growing as in CArray!
 void CString::Reserve(DWORD NewLength)
 {
-	n_error("NOT IMPLEMENTED!");
+	Core::Error("NOT IMPLEMENTED!");
 	//Clear();
 	//if (NewLength >= LOCAL_STRING_SIZE)
 	//{

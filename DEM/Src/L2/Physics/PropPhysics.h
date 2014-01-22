@@ -40,7 +40,7 @@ protected:
 public:
 
 	//!!!WRITE!
-	void			GetAABB(CAABB& AABB) const { n_error("CPropPhysics::GetAABB() -> IMPLEMENT ME!!!"); }
+	void			GetAABB(CAABB& AABB) const { Core::Error("CPropPhysics::GetAABB() -> IMPLEMENT ME!!!"); }
 };
 
 }

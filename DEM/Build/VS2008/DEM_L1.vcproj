@@ -521,6 +521,14 @@
 			Name="Core"
 			>
 			<File
+				RelativePath="..\..\Src\L1\Core\Core.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Core\Core.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Core\CoreServer.cpp"
 				>
 			</File>
@@ -538,10 +546,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Core\Factory.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Kernel.cpp"
 				>
 			</File>
 			<File

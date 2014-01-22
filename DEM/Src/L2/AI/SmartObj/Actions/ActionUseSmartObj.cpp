@@ -69,7 +69,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 		//???	SO.FSM.SetState(_TARGET_STATE, _ACTION_ID, Auto)
 		Duration = -1.f;
 	}
-	else n_error("CActionUseSmartObj::StartSOAction(): Unknown ProgressDriver!");
+	else Core::Error("CActionUseSmartObj::StartSOAction(): Unknown ProgressDriver!");
 
 	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
 	if (pActorSO)
