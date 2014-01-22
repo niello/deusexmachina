@@ -86,8 +86,8 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 
 	CNpkTOCEntry* pCurrEntry = pRootDir;
 
-	char Buf[N_MAXPATH];
-	Data::CStringTokenizer StrTok(pLocalPath, "/\\", Buf, N_MAXPATH);
+	char Buf[DEM_MAX_PATH];
+	Data::CStringTokenizer StrTok(pLocalPath, "/\\", Buf, DEM_MAX_PATH);
 	if (pCurrEntry->GetName() != StrTok.GetNextToken())
 	{
 		_freea(pLocalPath);

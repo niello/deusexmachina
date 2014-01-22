@@ -20,7 +20,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 	NPKData.Read(&Value, sizeof(int));
 	int DataOffset = Value + 8;
 
-	char NameBuffer[N_MAXPATH];
+	char NameBuffer[DEM_MAX_PATH];
 
 	bool InsideTOC = true;
 	while (InsideTOC)
@@ -33,7 +33,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 		{
 			short NameLen;
 			NPKData.Read(&NameLen, sizeof(short));
-			n_assert(NameLen < N_MAXPATH);
+			n_assert(NameLen < DEM_MAX_PATH);
 			NPKData.Read(NameBuffer, NameLen);
 			NameBuffer[NameLen] = 0;
 
@@ -57,7 +57,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 
 			short NameLen;
 			NPKData.Read(&NameLen, sizeof(short));
-			n_assert(NameLen < N_MAXPATH);
+			n_assert(NameLen < DEM_MAX_PATH);
 			NPKData.Read(NameBuffer, NameLen);
 			NameBuffer[NameLen] = 0;
 

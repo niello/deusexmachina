@@ -16,8 +16,12 @@
 
 #define INVALID_INDEX	(-1)
 
-#define N_MAXPATH		(512)		// maximum length for complete path
-#define N_WHITESPACE	" \r\n\t"
+#define DEM_MAX_PATH	(512)		// Maximum length for complete path
+#define DEM_WHITESPACE	" \r\n\t"
+
+// http://cnicholson.net/2011/01/stupid-c-tricks-a-better-sizeof_array
+template<typename T, size_t N> char (&SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(T (&)[N]))[N];  
+#define sizeof_array(x) sizeof(SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(x))
 
 //---------------------------------------------------------------------
 //  Shortcut typedefs
@@ -42,8 +46,6 @@ typedef unsigned short		ushort;
 typedef unsigned char		uchar;
 typedef double				CTime;
 
-#define APP_STATE_EXIT		CStrID("Exit")
-
 #ifndef MAX_DWORD
 #define MAX_DWORD			(0xffffffff)
 #endif
@@ -66,7 +68,7 @@ typedef double				CTime;
 	#define n_assert(exp)			do { (void)sizeof(exp); } while(0)
 	#define n_assert2(exp, msg)		do { (void)sizeof(exp); } while(0)
 #else
-#define n_verify(exp)				do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
+	#define n_verify(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
 	#define n_assert(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
 	#define n_assert2(exp, msg)		do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
 #endif

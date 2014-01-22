@@ -2,6 +2,7 @@
 
 #include "DataArray.h"
 #include "Params.h"
+#include <ctype.h>
 
 namespace Data
 {
