@@ -99,9 +99,11 @@ bool CVideoServer::PlayFile(const char* pFileName)
 		FAIL;
 	}
 
+	//???use MultiByteToWideChar?
 	wchar_t WidePath[N_MAXPATH];
 	CString Path = IOSrv->ManglePath(pFileName);
-	mbstowcs(WidePath, Path.CStr(), Path.Length() + 1);
+	size_t CharsConverted;
+	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.Length() + 1);
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, NULL)))
 	{

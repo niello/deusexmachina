@@ -57,7 +57,7 @@ inline void CSimpleString::Set(LPCSTR Str)
 		DWORD NewLen = strlen(Str);
 		if (NewLen > Len || Len - NewLen > FREE_MEM_THRESHOLD)
 			String = (char*)n_realloc(String, NewLen + 1);
-		strcpy(String, Str);
+		strcpy_s(String, NewLen + 1, Str);
 		Len = NewLen;
 	}
 	else

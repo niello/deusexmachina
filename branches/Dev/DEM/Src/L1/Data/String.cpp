@@ -67,8 +67,8 @@ void CString::AppendRange(const char* str, uint CharCount)
         if (pString)
         {
             char* ptr = (char*)n_malloc(tlen + 1);
-            strcpy(ptr, pString);
-            strncat(ptr, str, CharCount);
+            strcpy_s(ptr, tlen + 1, pString);
+            strncat_s(ptr, tlen + 1, str, CharCount);
             n_free((void*)pString);
             pString = ptr;
             Len = tlen;
@@ -78,15 +78,15 @@ void CString::AppendRange(const char* str, uint CharCount)
             if (tlen >= LOCAL_STRING_SIZE)
             {
                 char* ptr = (char*)n_malloc(tlen + 1);
-                strcpy(ptr, pLocalString);
-                strncat(ptr, str, CharCount);
+                strcpy_s(ptr, tlen + 1, pLocalString);
+                strncat_s(ptr, tlen + 1, str, CharCount);
                 pLocalString[0] = 0;
                 pString = ptr;
                 Len = tlen;
             }
             else
             {
-                strncat(pLocalString, str, CharCount);
+                strncat_s(pLocalString, str, CharCount);
                 LocalLen = (ushort)tlen;
             }
         }

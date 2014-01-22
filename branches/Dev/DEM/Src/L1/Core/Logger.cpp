@@ -57,7 +57,7 @@ void CLogger::PrintInternal(char* pOutStr, int BufLen, EMsgType Type, const char
 {
 	if (!pMsg || !pOutStr) return;
 
-	_vsnprintf(pOutStr, BufLen - 1, pMsg, Args);
+	_vsnprintf_s(pOutStr, BufLen, BufLen - 1, pMsg, Args);
 	pOutStr[BufLen - 1] = 0;
 	LineBuffer.Put(pOutStr);
 

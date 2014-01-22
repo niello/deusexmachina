@@ -1,3 +1,7 @@
+// CEGUI uses insecure function in a template class -_-
+#pragma warning(push)
+#pragma warning(disable : 4996)       // _CRT_INSECURE_DEPRECATE, VS8: old string routines are deprecated
+
 #include "WatcherWindow.h"
 
 #include <Scripting/ScriptServer.h>
@@ -335,3 +339,5 @@ void CWatcherWindow::CWatched::Clear()
 //---------------------------------------------------------------------
 
 }
+
+#pragma warning(pop)

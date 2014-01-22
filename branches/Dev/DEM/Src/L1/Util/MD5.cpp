@@ -83,8 +83,8 @@ CString CMD5::PrintMD5(uchar md5Digest[16])
 
     for (nCount = 0; nCount < 16; nCount++)
     {
-        sprintf(chEach, "%02x", md5Digest[nCount]);
-        strncat(chBuffer, chEach, sizeof(chEach));
+        sprintf_s(chEach, "%02x", md5Digest[nCount]);
+        strncat_s(chBuffer, chEach, sizeof(chEach));
     }
 
     return chBuffer;

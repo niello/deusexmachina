@@ -66,9 +66,9 @@ typedef double				CTime;
 	#define n_assert(exp)			do { (void)sizeof(exp); } while(0)
 	#define n_assert2(exp, msg)		do { (void)sizeof(exp); } while(0)
 #else
-#define n_verify(exp)				do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__)) DBG_BREAK(); } while(0)
-	#define n_assert(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__)) DBG_BREAK(); } while(0)
-	#define n_assert2(exp, msg)		do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__)) DBG_BREAK(); } while(0)
+#define n_verify(exp)				do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
+	#define n_assert(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
+	#define n_assert2(exp, msg)		do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__, __FUNCTION__)) DBG_BREAK(); } while(0)
 #endif
 
 #ifdef _DEBUG
@@ -157,7 +157,7 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #if defined(__LINUX__) || defined(__MACOSX__)
 #define n_stricmp strcasecmp
 #else
-#define n_stricmp stricmp
+#define n_stricmp _stricmp
 #endif
 
 #ifdef _MSC_VER
@@ -181,9 +181,7 @@ void __cdecl n_dbgout(const char*, ...)
     __attribute__((format(printf, 1, 2)));
 void n_sleep(double);
 char* n_strdup(const char*);
-char* n_strncpy2(char*, const char*, size_t);
 bool n_strmatch(const char*, const char*);
-void n_strcat(char*, const char*, size_t);
 
 template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
 template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }

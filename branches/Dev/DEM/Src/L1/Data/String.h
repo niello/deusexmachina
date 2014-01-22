@@ -412,7 +412,7 @@ inline bool CString::CheckExtension(const char* Extension) const
 {
 	n_assert(Extension);
 	const char* pExt = GetExtension();
-	return pExt && !stricmp(Extension, pExt);
+	return pExt && !n_stricmp(Extension, pExt);
 }
 //---------------------------------------------------------------------
 
@@ -537,7 +537,7 @@ inline void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
 	va_end(ArgList);
 
 	char* pBuffer = (char*)_malloca(ReqLength);
-	_vsnprintf(pBuffer, ReqLength, pFormatStr, Args);
+	_vsnprintf_s(pBuffer, ReqLength, ReqLength, pFormatStr, Args);
 	Set(pBuffer);
 	_freea(pBuffer);
 }

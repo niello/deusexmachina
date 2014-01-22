@@ -43,7 +43,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 				CString NewName = Source.ExtractFileName();
 				NewName.StripExtension();
 				NewName.ToLower();
-				n_strncpy2(NameBuffer, NewName.CStr(), sizeof(NameBuffer));
+				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), sizeof(NameBuffer));
 			}
 
 			TOC.BeginDirEntry(NameBuffer);

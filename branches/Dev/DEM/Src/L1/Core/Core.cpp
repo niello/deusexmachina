@@ -6,7 +6,7 @@
 namespace Core
 {
 
-bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line)
+bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc)
 {
 	const char* pMsg = pMessage ? pMessage : "none";
 
@@ -14,16 +14,18 @@ bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const
 	if (CoreLoggerExists)
 	{
 		//!!!refactor logger!
+		//!!!log as in 'else', with equal offsets, but show in msg box as here!
 		char Buf[8192];
-		sprintf_s(Buf, sizeof(Buf) - 1, "*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\n", pMsg, pExpression, pFile, Line);
+		sprintf_s(Buf, sizeof(Buf) - 1, "*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
 		CoreLogger->Error(Buf, NULL);
+		OK; //!!!now always fails!
 	}
 	else
 	{
-		printf("*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\n", pMsg, pExpression, pFile, Line);
+		printf("*** DEM ASSERTION FAILED ***\nMessage:    %s\nExpression: %s\nFile:       %s\nLine:       %d\nFunction:   %s\n", pMsg, pExpression, pFile, Line, pFunc);
 		fflush(stdout);
+		OK;
 	}
-	OK; //!!!now always fails!
 }
 //---------------------------------------------------------------------
 
@@ -88,31 +90,14 @@ void n_sleep(double sec)
 }
 //---------------------------------------------------------------------
 
-// A strdup() implementation using Nebula's malloc() override.
+// A strdup() implementation using engine's malloc() override.
 char* n_strdup(const char* from)
 {
 	n_assert(from);
-	char* to = (char*)n_malloc(strlen(from) + 1);
-	if (to) strcpy(to, from);
+	int BufLen = strlen(from) + 1;
+	char* to = (char*)n_malloc(BufLen);
+	if (to) strcpy_s(to, BufLen, from);
 	return to;
-}
-//---------------------------------------------------------------------
-
-// A safe strncpy() implementation.
-char* n_strncpy2(char* dest, const char* src, size_t size)
-{
-	strncpy(dest, src, size);
-	dest[size - 1] = 0;
-	return dest;
-}
-//---------------------------------------------------------------------
-
-// A safe strcat implementation.
-void n_strcat(char* dest, const char* src, size_t dest_size)
-{
-	unsigned int l = strlen(dest) + strlen(src) + 1;
-	n_assert(l < dest_size);
-	strcat(dest, src);
 }
 //---------------------------------------------------------------------
 

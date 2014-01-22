@@ -3,20 +3,20 @@
 
 namespace Debug
 {
-char CStackTraceWin32::CharBuffer[1<<15] = { 0 };
+char CStackTraceWin32::CharBuffer[1 << 15] = { 0 };
 
 void CStackTraceWin32::Print(const char* str, ...)
 {
 	va_list argList;
 	va_start(argList, str);
 	char tmpLine[1024];
-	_vsnprintf(tmpLine, sizeof(tmpLine), str, argList);
+	_vsnprintf_s(tmpLine, sizeof(tmpLine) - 1, str, argList);
 	va_end(argList);
 
 	// append
 	int Length = strlen(CharBuffer) + strlen(tmpLine);
 	if (Length < (sizeof(CharBuffer) - 1))
-		strcat(CharBuffer, tmpLine);
+		strcat_s(CharBuffer, tmpLine);
 }
 //---------------------------------------------------------------------
 
