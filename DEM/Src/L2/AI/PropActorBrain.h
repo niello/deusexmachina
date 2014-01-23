@@ -117,25 +117,29 @@ public:
 	CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSystem(this) {}
 	//virtual ~CPropActorBrain();
 
-	bool			IsActionAvailable(const CActionTpl* pAction) const;
-	void			FillWorldState(CWorldState& WSCurr) const;
+	bool				IsActionAvailable(const CActionTpl* pAction) const;
+	void				FillWorldState(CWorldState& WSCurr) const;
 
 	// Mainly is an interface for commands
-	bool			SetPlan(CAction* pNewPlan);
+	bool				SetPlan(CAction* pNewPlan);
 
-	void			RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
+	void				RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
 
-	bool			IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
-	bool			IsLookingAtDir(const vector3& Direction) const;
-	bool			IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
-	void			SetNavLocationValid(bool Valid) { return Flags.SetTo(AIMind_Nav_IsLocationValid, Valid); }
-	bool			IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
-	void			AcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
-	bool			DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_Nav_AcceptNearestValidDest); }
+	bool				IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
+	bool				IsLookingAtDir(const vector3& Direction) const;
+	bool				IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
+	void				SetNavLocationValid(bool Valid) { return Flags.SetTo(AIMind_Nav_IsLocationValid, Valid); }
+	bool				IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
+	void				AcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
+	bool				DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_Nav_AcceptNearestValidDest); }
 
-	CMemSystem&		GetMemSystem() { return MemSystem; }
-	CNavSystem&		GetNavSystem() { return NavSystem; }
-	CMotorSystem&	GetMotorSystem() { return MotorSystem; }
+	//???!!!public members instead?!
+	CMemSystem&			GetMemSystem() { return MemSystem; }
+	const CMemSystem&	GetMemSystem() const { return MemSystem; }
+	CNavSystem&			GetNavSystem() { return NavSystem; }
+	const CNavSystem&	GetNavSystem() const { return NavSystem; }
+	CMotorSystem&		GetMotorSystem() { return MotorSystem; }
+	const CMotorSystem&	GetMotorSystem() const { return MotorSystem; }
 
 	const CArray<PSensor>& GetSensors() const { return Sensors; }
 };

@@ -96,6 +96,7 @@ public:
 
 	bool				HasAction(CStrID ID) const { return Actions.FindIndex(ID) != INVALID_INDEX; }
 	CAction*			GetAction(CStrID ID);
+	const CAction*		GetAction(CStrID ID) const;
 	const CActionList&	GetActions() const { return Actions; }
 	void				EnableAction(CStrID ID, bool Enable = true);
 	bool				IsActionEnabled(CStrID ID) const;
@@ -109,6 +110,13 @@ public:
 };
 
 inline CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
+{
+	int Idx = Actions.FindIndex(ID);
+	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
+}
+//---------------------------------------------------------------------
+
+inline const CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID) const
 {
 	int Idx = Actions.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;

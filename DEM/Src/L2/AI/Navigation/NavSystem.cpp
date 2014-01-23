@@ -4,6 +4,7 @@
 #include <AI/AIServer.h>
 #include <AI/PropActorBrain.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
+#include <Math/Math.h>
 #include <Render/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourLocalBoundary.h>
@@ -655,6 +656,132 @@ void CNavSystem::GetObstacles(float Range, dtObstacleAvoidanceQuery& Query)
 		if (dtTriArea2D(pActor->Position.v, pSeg, pSeg + 3) >= 0.f)
 			Query.addSegment(pSeg, pSeg + 3);
 	}
+}
+//---------------------------------------------------------------------
+
+// Finds a valid position in range of [MinRande, MaxRange] from Center, that is closest to the actor.
+// Fails if there is no valid location in the specified zone, or if error occured.
+// NB: this function can modify OutPos even if failed
+bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const
+{
+	if (!pNavQuery || MinRange > MaxRange) FAIL;
+
+	const float SqMinRange = MinRange * MinRange;
+	const float SqMaxRange = MaxRange * MaxRange;
+
+	//???need fast check that we are inside? see through the code below
+	//if actor is not in a valid location, but is in range, it may return wrong result
+	//so check may use actor nav. status or can be made externally
+	//float SqRange = vector3::SqDistance2D(pActor->Position, Center);
+	//if (SqRange >= SqMinRange && SqRange <= SqMaxRange) { OutPos = pActor->Position; OK; }
+
+	dtPolyRef Ref;
+	vector3 Pt;
+	const float Extents[3] = { MaxRange, 1.f, MaxRange };
+	pNavQuery->findNearestPoly(Center.v, Extents, pNavFilter, &Ref, Pt.v);
+	if (vector3::SqDistance2D(Center, Pt) > SqMaxRange) FAIL;
+
+	if (SqMaxRange == 0.f)
+	{
+		OutPos = Pt;
+		OK;
+	}
+
+	dtPolyRef NearRefs[32];
+	int NearCount;
+	if (!dtStatusSucceed(pNavQuery->findPolysAroundCircle(Ref, Pt.v, MaxRange, pNavFilter, NearRefs, NULL, NULL, &NearCount, 32))) FAIL;
+
+	// Exclude polys laying entirely in MinRange. Since polys are convex, there is no chance
+	// that some poly has all corners inside MinRange, but some part of area outside.
+	if (SqMinRange > 0.f)
+	{
+		const dtNavMesh* pNavMesh = pNavQuery->getAttachedNavMesh();
+		for (int i = 0; i < NearCount; )
+		{
+			dtPolyRef NearRef = NearRefs[i];
+			const dtMeshTile* pTile;
+			const dtPoly* pPoly;
+			pNavMesh->getTileAndPolyByRefUnsafe(NearRef, &pTile, &pPoly);
+
+			int j;
+			for (j = 0; j < pPoly->vertCount; ++j)
+				if (dtVdist2DSqr(pTile->verts + pPoly->verts[j] * 3, Center.v) > SqMinRange) break;
+
+			if (j < pPoly->vertCount) ++i;
+			else
+			{
+				--NearCount;
+				if (i < NearCount) NearRefs[i] = NearRefs[NearCount];
+			}
+		}
+	}
+
+	if (NearCount < 1) FAIL;
+
+	dtPolyRef NearestPoly = 0;
+
+	// Optimization: if one of polys found is a poly we are on, select it
+	Ref = Corridor.getFirstPoly();
+	if (Ref)
+		for (int i = 0; i < NearCount; ++i)
+			if (NearRefs[i] == Ref)
+			{
+				NearestPoly = Ref;
+				dtVcopy(OutPos.v, Corridor.getPos());
+				break;
+			}
+
+	if (!NearestPoly)
+	{
+		//!!!Copied from Detour dtNavMeshQuery::findNearestPoly
+		//???to utility function GetNearestPoly(Polys, Point)? ask memononen
+		float* pPos = pActor->Position.v;
+		float MinSqDist = FLT_MAX;
+		for (int i = 0; i < NearCount; ++i)
+		{
+			dtPolyRef NearRef = NearRefs[i];
+			float ClosestPtPoly[3];
+			pNavQuery->closestPointOnPoly(NearRef, pPos, ClosestPtPoly);
+			float SqDist = dtVdistSqr(pPos, ClosestPtPoly); //???dtVdist2DSqr
+			if (SqDist < MinSqDist)
+			{
+				MinSqDist = SqDist;
+				NearestPoly = NearRef;
+				dtVcopy(OutPos.v, ClosestPtPoly);
+			}
+		}
+	}
+
+	n_assert_dbg(NearestPoly);
+
+	// If OutPos is in [MinRange, MaxRange], return it, else select closest range
+
+	float SqRange = vector3::SqDistance2D(OutPos, Center);
+	if (SqRange > SqMaxRange) SqRange = SqMaxRange;
+	else if (SqRange < SqMinRange) SqRange = SqMinRange;
+	else OK;
+
+	// Use segment-circle intersection to project OutPos onto the closest range.
+	// Segment is defined by OutPos, which is an actor's position projected to the nearest poly,
+	// and by ProjCenter, which is a Center projected to the nearest poly, so the segment is the
+	// shortest path from an actor to the Center along the nearest poly surface.
+
+	vector3 ProjCenter;
+	pNavQuery->closestPointOnPoly(NearestPoly, Center.v, ProjCenter.v);
+
+	vector3 SegDir = OutPos - ProjCenter;
+	vector3 RelProjCenter = ProjCenter - Center;
+	float A = SegDir.SqLength2D();
+	float B = 2.f * RelProjCenter.Dot2D(SegDir);
+	float C = RelProjCenter.SqLength2D() - SqRange;
+	float t1, t2;
+	DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &t1, &t2);
+	n_assert2(RootCount, "No solution found for the closest point though theoretically there must be one");
+	float t = (RootCount == 1 || t1 > t2) ? t1 : t2; // Greater t is closer to actor, which is desired
+	n_assert_dbg(t >= 0.f && t <= 1.f);
+	OutPos = ProjCenter + SegDir * t;
+
+	OK;
 }
 //---------------------------------------------------------------------
 

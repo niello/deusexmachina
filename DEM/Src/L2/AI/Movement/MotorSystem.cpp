@@ -70,7 +70,7 @@ void CMotorSystem::Update(float FrameTime)
 		{
 			vector3 FrameMovement = LinVel * FrameTime;
 			vector3 PrevPos = pActor->Position - FrameMovement;
-			float t = (FrameMovement.dot(DestPoint) - FrameMovement.dot(PrevPos)) / FrameMovement.SqLength();
+			float t = (FrameMovement.Dot(DestPoint) - FrameMovement.Dot(PrevPos)) / FrameMovement.SqLength();
 			if (t >= 0.f && t <= 1.f)
 			{
 				vector3 Closest = PrevPos + FrameMovement * t;

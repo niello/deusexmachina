@@ -48,7 +48,7 @@ bool CSensorVision::SenseStimulus(CActor* pActor, CStimulus* pStimulus) const
 		if (!IsInFOV)
 		{
 			DirToStimulus /= n_sqrt(SqDist);
-			IsInFOV = pActor->LookatDir.dot(DirToStimulus) >= FOV;
+			IsInFOV = pActor->LookatDir.Dot(DirToStimulus) >= FOV;
 			//!!!adjust confidence by peripheral vision!
 		}
 
@@ -98,7 +98,7 @@ DWORD CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) const
 		if (!IsInFOV)
 		{
 			DirToFact /= n_sqrt(SqDist);
-			IsInFOV = pActor->LookatDir.dot(DirToFact) >= FOV;
+			IsInFOV = pActor->LookatDir.Dot(DirToFact) >= FOV;
 			//!!!if peripheral vision reduces confidence to 0, skip!
 		}
 
