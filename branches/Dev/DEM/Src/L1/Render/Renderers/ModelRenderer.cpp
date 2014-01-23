@@ -169,7 +169,7 @@ float CModelRenderer::CalcLightPriority(Scene::CModel& Model, Scene::CLight& Lig
 	{
 		vector3 ModelLight = Model.GetNode()->GetWorldPosition() - Light.GetNode()->GetWorldPosition();
 		ModelLight /= n_sqrt(SqDistance);
-		float CosAlpha = ModelLight.dot(-Light.GetDirection());
+		float CosAlpha = ModelLight.Dot(-Light.GetDirection());
 		float Falloff = (CosAlpha - Light.GetCosHalfPhi()) / (Light.GetCosHalfTheta() - Light.GetCosHalfPhi());
 		return SqIntensity * Attenuation * Clamp(Falloff, 0.f, 1.f);
 	}

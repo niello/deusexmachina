@@ -280,7 +280,7 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 		//	(x->y)->x case
 		//	invert params and launch normal transition (later in a regular way?)
 		//	invert progress here, remap to a new duration later
-		//	andmake params here looking as (x->y)->y
+		//	and make params here looking as (x->y)->y
 		//else
 		AbortTransition();
 
@@ -472,49 +472,57 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 
 bool CPropSmartObject::IsActionAvailableFrom(CStrID ActionID, const vector3& ActorPos) const
 {
-	//n_assert(false);
-
-	//???use overrides?
-
-	// Nav region ID or nav polys can be specified as a valid action zone
-	// If not sppecified, zone is a SO position point only
-	// If max radius is defined
-	// - if zone, check closest point on poly from zone not farther
-	// - if no zone, check distance to SO
-	// if min radius is defined
-	// - if zone, ignore or use?
-	// - if no zone, check distance to SO
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, const vector3& SOPos, vector3& OutPos)
-{
-	//!!!pass SOFacing!
-
-	//Call action override
-
-	//???Call SO callback?
-
-	//Standard algorithm
-
 	const CAction* pAction = GetAction(ActionID);
 	if (!pAction) FAIL;
 
-	//OutMinDist = pAction->pTpl->MinDistance;
-	//OutMaxDist = pAction->pTpl->MaxDistance;
+	//???use overrides? if use, do it here
+
+	//DistanceMin = pAction->pTpl->MinDistance;
+	//DistanceMax = pAction->pTpl->MaxDistance;
+
 	//if (pAction->pTpl->ActorRadiusMatters())
 	//{
-	//	OutMinDist += pActor->Radius;
-	//	OutMaxDist += pActor->Radius;
+	//	DistanceMin += pActor->Radius;
+	//	DistanceMax += pActor->Radius;
 	//}
+
+	float SqDistanceMin = 0.f * 0.f;
+	float SqDistanceMax = 1.f * 1.f;
+
+	//if ActionNavRegion.IsValid()
+	//	check if an actor is in this region (check region geometry, PointInShape)
+	//else
+	const vector3& SOPos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
+	float SqDistance = vector3::SqDistance2D(ActorPos, SOPos);
+	return SqDistance >= SqDistanceMin && SqDistance <= SqDistanceMax; //???!!! && n_fabs(SOPos.y - ActorPos.y) < Actor.Height
+}
+//---------------------------------------------------------------------
+
+//!!!pass SOFacing!
+bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, const vector3& SOPos, vector3& OutPos)
+{
+	const CAction* pAction = GetAction(ActionID);
+	if (!pAction) FAIL;
+
+	//???use overrides? if use, do it here
+
+	float MinRange = pAction->pTpl->MinDistance;
+	float MaxRange = pAction->pTpl->MaxDistance;
+	if (pAction->pTpl->ActorRadiusMatters())
+	{
+		MinRange += pActor->Radius;
+		MaxRange += pActor->Radius;
+	}
+
 	//???add SORadiusMatters? for items, enemies etc
+	//???if -1, get SO radius? won't work if SO radius + const needed
 
-	//OutPos = closest point on the closest reachable poly
-
-	//!!!TMP!
-	OutPos = SOPos;
+	//if ActionNavRegion.IsValid()
+	//	check if an actor is in this region (check region geometry, PointInShape)
+	//	if max radius is defined, check closest point on poly from zone not farther
+	//	???use min radius too?
+	//else
+	if (!pActor->GetNavSystem().GetNearestValidLocation(SOPos, MinRange, MaxRange, OutPos)) FAIL;
 
 	OK;
 }

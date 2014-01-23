@@ -43,23 +43,23 @@ public:
 	CAIServer();
 	~CAIServer();
 
-	void						Trigger();
+	void					Trigger();
 
-	void						AddSmartAction(CStrID ID, const Data::CParams& Desc);
-	const CSmartAction*	GetSmartAction(CStrID ID) const;
+	void					AddSmartAction(CStrID ID, const Data::CParams& Desc);
+	const CSmartAction*		GetSmartAction(CStrID ID) const;
 
-	void						AddNavQueryFilter(CStrID ID, const Data::CParams& Desc);
-	const dtQueryFilter*		GetNavQueryFilter(CStrID ID) const;
-	const dtQueryFilter*		GetDefaultNavQueryFilter() const { return GetNavQueryFilter(CStrID::Empty); }
-	const dtQueryFilter*		GetDebugNavQueryFilter() const { return pDebugFilter; }
+	void					AddNavQueryFilter(CStrID ID, const Data::CParams& Desc);
+	const dtQueryFilter*	GetNavQueryFilter(CStrID ID) const;
+	const dtQueryFilter*	GetDefaultNavQueryFilter() const { return GetNavQueryFilter(CStrID::Empty); }
+	const dtQueryFilter*	GetDebugNavQueryFilter() const { return pDebugFilter; }
 
-	void						AddObstacleAvoidanceParams(CStrID ID, const Data::CParams& Desc);
-	const COAParams*			GetObstacleAvoidanceParams(CStrID ID) const;
-	const COAParams*			GetDefaultObstacleAvoidanceParams() const { return GetObstacleAvoidanceParams(CStrID::Empty); }
+	void					AddObstacleAvoidanceParams(CStrID ID, const Data::CParams& Desc);
+	const COAParams*		GetObstacleAvoidanceParams(CStrID ID) const;
+	const COAParams*		GetDefaultObstacleAvoidanceParams() const { return GetObstacleAvoidanceParams(CStrID::Empty); }
 
-	CPathRequestQueue*			GetPathQueue(DWORD ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
+	CPathRequestQueue*		GetPathQueue(DWORD ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
 
-	CPlanner&					GetPlanner() { return Planner; } //???or singleton?
+	CPlanner&				GetPlanner() { return Planner; } //???or singleton?
 };
 
 inline const dtQueryFilter* CAIServer::GetNavQueryFilter(CStrID ID) const

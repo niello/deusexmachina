@@ -48,7 +48,8 @@ public:
 	void			ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
 	void			SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius = 0.f);
 
-	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos);
+	//bool			GetNearestValidLocation(const CActor& Actor, CStrID NavRegionID, float Range, vector3& OutPos) const; 
+	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos) const;
 
 	CStimulusNode	RegisterStimulus(CStimulus* pStimulus);
 	CStimulusNode	UpdateStimulusLocation(CStimulus* pStimulus) { n_assert(pStimulus && pStimulus->GetQuadTreeNode()); return StimulusQT.UpdateObject(pStimulus); }
