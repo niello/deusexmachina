@@ -517,12 +517,16 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 	//???add SORadiusMatters? for items, enemies etc
 	//???if -1, get SO radius? won't work if SO radius + const needed
 
-	//if ActionNavRegion.IsValid()
-	//	check if an actor is in this region (check region geometry, PointInShape)
-	//	if max radius is defined, check closest point on poly from zone not farther
-	//	???use min radius too?
-	//else
-	if (!pActor->GetNavSystem().GetNearestValidLocation(SOPos, MinRange, MaxRange, OutPos)) FAIL;
+	CStrID ActionNavRegion; //???
+	if (ActionNavRegion.IsValid())
+	{
+		//!!!SOPos not used, don't predict for this case!
+		if (!pActor->GetNavSystem().GetNearestValidLocation(ActionNavRegion, MaxRange, OutPos)) FAIL;
+	}
+	else
+	{
+		if (!pActor->GetNavSystem().GetNearestValidLocation(SOPos, MinRange, MaxRange, OutPos)) FAIL;
+	}
 
 	OK;
 }

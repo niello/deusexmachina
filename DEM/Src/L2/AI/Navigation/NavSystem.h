@@ -67,10 +67,11 @@ protected:
 
 	//!!!Path info cache
 
-	CStrID	GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref);
-	void	ResetPositionPoly(bool ForceResetState);
-	void	ResetDestinationPoly();
-	void	ResetPathRequest();
+	dtPolyRef	GetNearestPoly(dtPolyRef* pPolys, int PolyCount, vector3& OutPos) const;
+	CStrID		GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref);
+	void		ResetPositionPoly(bool ForceResetState);
+	void		ResetDestinationPoly();
+	void		ResetPathRequest();
 
 public:
 
@@ -88,8 +89,8 @@ public:
 	bool			GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count);
 	void			GetObstacles(float Range, dtObstacleAvoidanceQuery& Query);
 
-	bool			GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const; 
-	//bool			GetNearestValidLocation(const CActor& Actor, CStrID NavRegionID, float Range, vector3& OutPos) const; 
+	bool			GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const;
+	bool			GetNearestValidLocation(CStrID NavRegionID, float Range, vector3& OutPos) const;
 	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos) const;
 
 	bool			IsTraversingOffMesh() const { return TraversingOffMesh; }
