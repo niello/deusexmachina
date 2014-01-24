@@ -34,13 +34,13 @@ class CNavData
 {
 public:
 
-	float							AgentRadius;
-	float							AgentHeight;
+	float						AgentRadius;
+	float						AgentHeight;
 
-	dtNavMesh*						pNavMesh;
-	dtNavMeshQuery*					pNavMeshQuery[DEM_THREAD_COUNT]; // [0] is sync, main query
+	dtNavMesh*					pNavMesh;
+	dtNavMeshQuery*				pNavMeshQuery[DEM_THREAD_COUNT]; // [0] is sync, main query
 
-	CDict<CStrID, CNavRegion> Regions;
+	CDict<CStrID, CNavRegion>	Regions;
 
 	CNavData(): pNavMesh(NULL) { memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery)); }
 

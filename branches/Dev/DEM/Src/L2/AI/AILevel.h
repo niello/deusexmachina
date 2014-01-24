@@ -26,8 +26,7 @@ protected:
 	CStimulusQT				StimulusQT;		// Quadtree containing stimuli and other AI hints
 	CDict<float, CNavData>	NavData;		// Mapped to maximum radius of agent
 
-	void		QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = Clipped);
-	CNavData*	GetNavData(float ActorRadius);
+	void			QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = Clipped);
 
 public:
 
@@ -38,6 +37,7 @@ public:
 
 	bool			LoadNavMesh(const CString& FileName);
 	void			UnloadNavMesh();
+	CNavData*		GetNavData(float ActorRadius);
 	dtNavMesh*		GetNavMesh(float ActorRadius);
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
 	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);
