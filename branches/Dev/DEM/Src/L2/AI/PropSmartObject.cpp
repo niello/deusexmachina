@@ -8,6 +8,7 @@
 #include <Events/EventServer.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
+#include <Math/Math.h>
 
 namespace Prop
 {
@@ -492,40 +493,119 @@ bool CPropSmartObject::IsActionAvailableFrom(CStrID ActionID, const vector3& Act
 	//if ActionNavRegion.IsValid()
 	//	check if an actor is in this region (check region geometry, PointInShape)
 	//else
-	const vector3& SOPos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
-	float SqDistance = vector3::SqDistance2D(ActorPos, SOPos);
-	return SqDistance >= SqDistanceMin && SqDistance <= SqDistanceMax; //???!!! && n_fabs(SOPos.y - ActorPos.y) < Actor.Height
+	const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
+	float SqDistance = vector3::SqDistance2D(ActorPos, Pos);
+	return SqDistance >= SqDistanceMin && SqDistance <= SqDistanceMax; //???!!! && n_fabs(Pos.y - ActorPos.y) < Actor.Height
 }
 //---------------------------------------------------------------------
 
-//!!!pass SOFacing!
-bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, const vector3& SOPos, vector3& OutPos)
+// Smart object is smart because it can describe how to use it. Position prediction is handled
+// here too, though it may look like actor class should do this. The reason is that only a smart
+// object itself knows, when prediction against it is necessary.
+// Navigation cache stores polys around the object. It can be used for writing, when the first call
+// is made, or for reading in the subsequent calls, if SO didn't move since the cache was filled.
+bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, vector3& OutPos,
+												CArray<dtPolyRef>* pNavCache, bool UpdateCache)
 {
+//!!!predict and use facing!
+
 	const CAction* pAction = GetAction(ActionID);
 	if (!pAction) FAIL;
 
-	//???use overrides? if use, do it here
+	//!!!call overrides here!
+	// override may use nav region or even something completely different
+	//clear cache if specified and update needed
 
-	float MinRange = pAction->pTpl->MinDistance;
-	float MaxRange = pAction->pTpl->MaxDistance;
+	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	vector3 Pos = Tfm.Translation();
+
+	if (Movable) // && pActor->TargetPosPredictionMode != None
+	{
+		vector3 Vel;
+		if (GetEntity()->GetAttr<vector3>(Vel, CStrID("LinearVelocity")) && Vel.SqLength2D() > 0.f)
+		{
+			// Predict future SO position (No prediction, Pursue steering, Quadratic firing solution)
+
+			vector3 Dist = Pos - pActor->Position;
+			float MaxSpeed = pActor->GetMotorSystem().GetMaxSpeed();
+			float Time;
+
+			if (true) // pActor->TargetPosPredictionMode == Quadratic
+			{
+				// Quadratic firing solution
+				float A = Vel.SqLength2D() - MaxSpeed * MaxSpeed;
+				float B = 2.f * (Dist.x * Vel.x + Dist.z * Vel.z);
+				float C = Dist.SqLength2D();
+				float Time1, Time2;
+
+				DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &Time1, &Time2);
+				if (!RootCount) FAIL; //!!!keep a prev point some time! or use current pos?
+				Time = (RootCount == 1 || (Time1 < Time2 && Time1 > 0.f)) ? Time1 : Time2;
+
+				//???is possible?
+				if (Time < 0.f) FAIL; //!!!keep a prev point some time! or use current pos?
+			}
+			else
+			{
+				// Pursue steering
+				Time = Dist.Length2D() / MaxSpeed;
+			}
+
+			//???need? see if it adds realism!
+			//const float MaxPredictionTime = 5.f; //???to settings?
+			//if (Time > MaxPredictionTime) Time = MaxPredictionTime;
+
+			Pos.x += Vel.x * Time;
+			Pos.z += Vel.z * Time;
+
+			//!!!assumed that a moving SO with a relatively high speed (no short step!) tries
+			//to face to where it moves, predict facing smth like this:
+			// get angle between curr facing and velocity direction
+			// get maximum angle as Time * MaxAngularSpeed
+			// get min(angle_between, max_angle) and rotate curr direction towards a velocity direction
+			// this will be a predicted facing
+			// may be essential for AI-made backstabs
+		}
+	}
+
+	//!!!Apply local dest offset now, using predicted pos & facing!
+
+	float MinRange = pAction->pTpl->MinRange;
+	float MaxRange = pAction->pTpl->MaxRange;
 	if (pAction->pTpl->ActorRadiusMatters())
 	{
 		MinRange += pActor->Radius;
 		MaxRange += pActor->Radius;
 	}
+	//if (pAction->pTpl->SORadiusMatters())
+	//{
+	//	MinRange += GetAttr(Radius);
+	//	MaxRange += GetAttr(Radius);
+	//}
 
-	//???add SORadiusMatters? for items, enemies etc
-	//???if -1, get SO radius? won't work if SO radius + const needed
-
-	CStrID ActionNavRegion; //???
-	if (ActionNavRegion.IsValid())
+	if (pActor->IsAtPoint(Pos, MinRange, MaxRange))
 	{
-		//!!!SOPos not used, don't predict for this case!
-		if (!pActor->GetNavSystem().GetNearestValidLocation(ActionNavRegion, MaxRange, OutPos)) FAIL;
+		OutPos = pActor->Position;
+		OK;
+	}
+
+	if (pNavCache)
+	{
+		for (int i = 0; i < pNavCache->GetCount(); ++i)
+			if (!pActor->GetNavSystem().IsPolyValid(pNavCache->At(i)))
+			{
+				UpdateCache = true;
+				break;
+			}
+
+		if (UpdateCache)
+			if (!pActor->GetNavSystem().GetValidPolys(Pos, MinRange, MaxRange, *pNavCache)) FAIL;
+
+		if (!pActor->GetNavSystem().GetNearestValidLocation(pNavCache->Begin(), pNavCache->GetCount(), Pos, MinRange, MaxRange, OutPos)) FAIL;
 	}
 	else
 	{
-		if (!pActor->GetNavSystem().GetNearestValidLocation(SOPos, MinRange, MaxRange, OutPos)) FAIL;
+		if (!pActor->GetNavSystem().GetNearestValidLocation(Pos, MinRange, MaxRange, OutPos)) FAIL;
 	}
 
 	OK;

@@ -10,8 +10,8 @@ void CSmartAction::Init(const Data::CParams& Desc)
 	Flags.SetTo(MANUAL_TRANSITION, Desc.Get<bool>(CStrID("ManualTransition"), false));
 	Flags.SetTo(SEND_PROGRESS_EVENT, Desc.Get<bool>(CStrID("SendProgressEvent"), false));
 
-	MinDistance = GetFloat(Desc, CStrID("MinDistance"));
-	MaxDistance = GetFloat(Desc, CStrID("MaxDistance"), -1.f);
+	MinRange = GetFloat(Desc, CStrID("MinDistance"));
+	MaxRange = GetFloat(Desc, CStrID("MaxDistance"), -1.f);
 	//DestOffset = Desc.Get<PDataArray>(CStrID("DestOffset"))->AsVector3(vector3::Zero);
 	Flags.SetTo(ACTOR_RADIUS_MATTERS, Desc.Get<bool>(CStrID("ActorRadiusMatters"), true));
 	Flags.SetTo(FACE_OBJECT, Desc.Get<bool>(CStrID("Face"), false));

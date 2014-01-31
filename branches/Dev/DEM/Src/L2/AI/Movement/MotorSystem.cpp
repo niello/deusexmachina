@@ -102,10 +102,8 @@ void CMotorSystem::Update(float FrameTime)
 			LocalArrive = ((2.f * SlowDownRadius - LocalDist) * LocalDist) / (SlowDownRadius * SlowDownRadius);
 
 		// Path target is near
-		float DistToNavDest = pActor->DistanceToNavDest -
-			(pActor->DistanceToNavDest > pActor->MaxReachDist ? pActor->MaxReachDist : pActor->MinReachDist);
-		float GlobalArrive = (DistToNavDest < SlowDownRadius) ?
-			((2.f * SlowDownRadius - DistToNavDest) * DistToNavDest) / (SlowDownRadius * SlowDownRadius) :
+		float GlobalArrive = (pActor->DistanceToNavDest < SlowDownRadius) ?
+			((2.f * SlowDownRadius - pActor->DistanceToNavDest) * pActor->DistanceToNavDest) / (SlowDownRadius * SlowDownRadius) :
 			1.f;
 
 		Speed *= n_min(LocalArrive, GlobalArrive);
@@ -312,7 +310,7 @@ void CMotorSystem::Update(float FrameTime)
 
 void CMotorSystem::UpdatePosition()
 {
-	if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint, false))
+	if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
 		ResetMovement(true);
 }
 //---------------------------------------------------------------------
@@ -355,7 +353,7 @@ bool CMotorSystem::IsStuck()
 
 void CMotorSystem::SetDest(const vector3& Dest)
 {
-	if (pActor->IsAtPoint(Dest, false)) ResetMovement(true);
+	if (pActor->IsAtPoint(Dest)) ResetMovement(true);
 	else
 	{
 		DestPoint = Dest;
@@ -434,9 +432,7 @@ void CMotorSystem::RenderDebug()
 			pActor->Position.x,
 			pActor->Position.y,
 			pActor->Position.z,
-			ToDest.Length(),
-			pActor->MinReachDist,
-			pActor->MaxReachDist);
+			ToDest.Length());
 		Text += Text2;
 	}
 

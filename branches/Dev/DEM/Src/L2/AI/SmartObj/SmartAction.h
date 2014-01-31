@@ -41,11 +41,11 @@ public:
 		ACTOR_RADIUS_MATTERS	= 0x0080	// If set, distance is adjusted by the actor radius
 	};
 
-	// Destination and facing //???or purely algorithmic? remove flags if so!
-	float				MinDistance;		// Can make union with navmesh region
-	float				MaxDistance;		// < 0 = no distance requirements
-	vector3				DestOffset;			// Offset from SO position in local coords
-	// - local face direction (angle from forward direction around Y axis)
+	// Destination and facing
+	float				MinRange;
+	float				MaxRange;
+	vector3				PosOffset;	// Local
+	//float				FaceOffset;	// Local around Y axis
 
 	// State transition and timing
 	float				Duration;
@@ -55,11 +55,11 @@ public:
 	// Usage restrictions
 	int					MaxUserCount;		// How much users at a time can execute this action on the same SO, -1 is no limit
 
-	//???planner worldstate source in validator or separate or in this? data-driven set of key-value pairs
 	// AI
 	PWorldStateSource	Preconditions;
 
 	void Init(const Data::CParams& Desc);
+
 	bool EndOnDone() const { return Flags.Is(CSmartAction::END_ON_DONE); }
 	bool ResetOnAbort() const { return Flags.Is(CSmartAction::RESET_ON_ABORT); }
 	bool ManualTransitionControl() const { return Flags.Is(CSmartAction::MANUAL_TRANSITION); }

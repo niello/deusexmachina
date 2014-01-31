@@ -94,7 +94,7 @@ void CNavSystem::SetDestPoint(const vector3& Dest)
 
 	DestPoint = Dest;
 
-	if (pActor->IsAtPoint(DestPoint, true))
+	if (pActor->IsAtPoint(DestPoint))
 	{
 		Reset(true);
 		return;
@@ -376,7 +376,7 @@ void CNavSystem::UpdatePosition()
 			}
 			else ResetPositionPoly(false);
 
-			if (!pActor->IsNavSystemIdle() && pActor->IsAtPoint(DestPoint, true))
+			if (!pActor->IsNavSystemIdle() && pActor->IsAtPoint(DestPoint))
 			{
 				Reset(true);
 				return;
@@ -436,7 +436,7 @@ void CNavSystem::ResetPositionPoly(bool ForceResetState)
 		if (!pActor->IsNavSystemIdle())
 		{
 			if (Ref) pActor->NavState = AINav_DestSet;
-			else Reset(pActor->IsAtPoint(DestPoint, true));
+			else Reset(pActor->IsAtPoint(DestPoint));
 		}
 	}
 	else if (pActor->IsNavSystemIdle())
@@ -468,7 +468,7 @@ void CNavSystem::ResetDestinationPoly()
 		}
 	}
 
-	if (pActor->IsAtPoint(DestPoint, true)) Reset(true);
+	if (pActor->IsAtPoint(DestPoint)) Reset(true);
 	else
 	{
 		pActor->NavState = AINav_DestSet;
@@ -540,7 +540,7 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 		pEdge->IsLast = false; //???can offmesh connection be the last edge?
 		++Count;
 	}
-	else if (!pActor->IsNavLocationValid() && !pActor->IsAtPoint(Corridor.getPos(), false))
+	else if (!pActor->IsNavLocationValid() && !pActor->IsAtPoint(Corridor.getPos()))
 	{
 		// We're recovering from an invalid state, add an edge from the current actor position to
 		// the nearest valid navmesh position, that doesn't break route. It also prevents tunneling.
@@ -695,43 +695,29 @@ dtPolyRef CNavSystem::GetNearestPoly(dtPolyRef* pPolys, int PolyCount, vector3& 
 }
 //---------------------------------------------------------------------
 
-// Finds a valid position in range of [MinRande, MaxRange] from Center, that is the closest to the actor.
-// Fails if there is no valid location in the specified zone, or if error occured.
-// NB: this function can modify OutPos even if failed
-bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const
+DWORD CNavSystem::GetValidPolys(const vector3& Center, float MinRange, float MaxRange, CArray<dtPolyRef>& Polys) const
 {
-	if (!pNavQuery || MinRange > MaxRange) FAIL;
+	if (!pNavQuery || MinRange > MaxRange) return 0;
 
 	const float SqMinRange = MinRange * MinRange;
 	const float SqMaxRange = MaxRange * MaxRange;
 
-	// Optimization: fast check if we are in a valid position
-	if (pActor->IsNavLocationValid())
-	{
-		//!!!add arrival tolerance! now does not work
-		float SqRange = vector3::SqDistance2D(pActor->Position, Center);
-		if (SqRange >= SqMinRange && SqRange <= SqMaxRange)
-		{
-			OutPos = pActor->Position;
-			OK;
-		}
-	}
-
 	dtPolyRef Ref;
 	vector3 Pt;
-	const float Extents[3] = { MaxRange, 1.f, MaxRange };
+	const float Extents[3] = { MaxRange, pActor->Height, MaxRange }; //???pActor->Height or another height value?
 	pNavQuery->findNearestPoly(Center.v, Extents, pNavFilter, &Ref, Pt.v);
-	if (vector3::SqDistance2D(Center, Pt) > SqMaxRange) FAIL;
+	if (!Ref || vector3::SqDistance2D(Center, Pt) > SqMaxRange) return 0;
 
 	if (SqMaxRange == 0.f)
 	{
-		OutPos = Pt;
-		OK;
+		Polys.Add(Ref);
+		return 1;
 	}
 
-	dtPolyRef NearRefs[32];
+	const DWORD MAX_POLYS = 32; //!!!???to settings?!
+	Polys.AllocateFixed(MAX_POLYS);
 	int NearCount;
-	if (!dtStatusSucceed(pNavQuery->findPolysAroundCircle(Ref, Pt.v, MaxRange, pNavFilter, NearRefs, NULL, NULL, &NearCount, 32))) FAIL;
+	if (!dtStatusSucceed(pNavQuery->findPolysAroundCircle(Ref, Pt.v, MaxRange, pNavFilter, Polys.Begin(), NULL, NULL, &NearCount, MAX_POLYS))) return 0;
 
 	// Exclude polys laying entirely in MinRange. Since polys are convex, there is no chance
 	// that some poly has all corners inside MinRange, but some part of area outside.
@@ -740,7 +726,7 @@ bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, 
 		const dtNavMesh* pNavMesh = pNavQuery->getAttachedNavMesh();
 		for (int i = 0; i < NearCount; )
 		{
-			dtPolyRef NearRef = NearRefs[i];
+			dtPolyRef NearRef = Polys[i];
 			const dtMeshTile* pTile;
 			const dtPoly* pPoly;
 			pNavMesh->getTileAndPolyByRefUnsafe(NearRef, &pTile, &pPoly);
@@ -753,14 +739,115 @@ bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, 
 			else
 			{
 				--NearCount;
-				if (i < NearCount) NearRefs[i] = NearRefs[NearCount];
+				if (i < NearCount) Polys[i] = Polys[NearCount];
 			}
 		}
 	}
 
-	if (NearCount < 1) FAIL;
+	Polys.Truncate(Polys.GetCount() - NearCount);
+	return NearCount;
+}
+//---------------------------------------------------------------------
 
-	dtPolyRef NearestPoly = GetNearestPoly(NearRefs, NearCount, OutPos);
+bool CNavSystem::IsLocationValid(const vector3& Point) const
+{
+	if (!pNavQuery) FAIL;
+	dtPolyRef Ref;
+	float Pt[3];
+	const float Extents[3] = { 0.f, pActor->Height, 0.f };
+	return dtStatusSucceed(pNavQuery->findNearestPoly(Point.v, Extents, pNavFilter, &Ref, Pt)) && Ref;
+}
+//---------------------------------------------------------------------
+
+// Finds a valid position in range of [MinRande, MaxRange] from Center, that is the closest to the actor.
+// Fails if there is no valid location in the specified zone, or if error occured.
+// NB: this function can modify OutPos even if failed
+bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const
+{
+	if (!pNavQuery || MinRange > MaxRange) FAIL;
+
+	if (pActor->IsNavLocationValid() && pActor->IsAtPoint(Center, MinRange, MaxRange))
+	{
+		OutPos = pActor->Position;
+		OK;
+	}
+
+	CArray<dtPolyRef> NearRefs;
+	if (!GetValidPolys(Center, MinRange, MaxRange, NearRefs)) FAIL;
+
+	return GetNearestValidLocation(NearRefs.Begin(), NearRefs.GetCount(), Center, MinRange, MaxRange, OutPos);
+}
+//---------------------------------------------------------------------
+
+// Finds a valid position on specified nav region or in Range from its boundary, that is
+// the closest to the actor. Fails if there is no valid location in the specified zone, or if error occured.
+// NB: this function can modify OutPos even if failed
+bool CNavSystem::GetNearestValidLocation(CStrID NavRegionID, float Range, vector3& OutPos) const
+{
+	if (!pNavQuery) FAIL;
+
+	//???AILevel::GetNavRegion instead?
+	CNavData* pNav = pActor->GetEntity()->GetLevel()->GetAI()->GetNavData(pActor->Radius);
+	if (!pNav) FAIL;
+
+	int Idx = pNav->Regions.FindIndex(NavRegionID);
+	if (Idx == INVALID_INDEX) FAIL;
+	CNavRegion& Region = pNav->Regions.ValueAt(Idx);
+
+	return GetNearestValidLocation(Region.GetPtr(), Region.GetCount(), Range, OutPos);
+}
+//---------------------------------------------------------------------
+
+// Finds a valid position on specified nav poly set or in Range from its boundary, that is
+// the closest to the actor. Fails if there is no valid location in the specified zone, or if error occured.
+// NB: this function can modify OutPos even if failed
+bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, float Range, vector3& OutPos) const
+{
+	n_assert2_dbg(Range >= 0.f, "Use smaller regions or steer instead of using negative Range");
+
+	if (!pNavQuery || !pPolys || PolyCount < 1 || Range < 0.f) FAIL;
+
+	dtPolyRef NearestPoly = GetNearestPoly(pPolys, PolyCount, OutPos);
+	n_assert_dbg(NearestPoly);
+
+	// Optimization: we are already on the target poly, OutPos is our position, early exit
+	if (NearestPoly == Corridor.getFirstPoly()) OK;
+
+	if (Range == 0.f) OK;
+
+	// Project the nearest point on poly towards the actor to obtain the really nearest one
+	vector3 Diff = OutPos - pActor->Position;
+	float SqDistance = Diff.SqLength2D();
+	if (SqDistance <= Range * Range) OK;
+	float Distance = n_sqrt(SqDistance);
+	vector3 CandidatePos = pActor->Position + Diff * ((Distance - Range) / Distance);
+
+	if (IsLocationValid(CandidatePos)) OutPos = CandidatePos;
+	else
+	{
+		// Projected point is invalid, project back to find the first valid point between
+		// the nearest and valid ones. It will be the closest valid point we search for.
+		float t;
+		if (!dtStatusSucceed(pNavQuery->raycast(NearestPoly, OutPos.v, CandidatePos.v, pNavFilter, &t, NULL, NULL, NULL, 0))) FAIL;
+		n_assert(t != FLT_MAX); // OutPos is valid, CandidatePos is not. Intersection must exist.
+		OutPos += (CandidatePos - OutPos) * t;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// This version allows to query in-range position from specified set of polys. This one can be used
+// for non-moving targets, where poly set could be collected once.
+// NB: this function can modify OutPos even if failed
+bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const
+{
+	if (!pNavQuery || !pPolys || PolyCount < 1 || MinRange > MaxRange) FAIL;
+
+	const float SqMinRange = MinRange * MinRange;
+	const float SqMaxRange = MaxRange * MaxRange;
+
+	dtPolyRef NearestPoly = GetNearestPoly(pPolys, PolyCount, OutPos);
 	n_assert_dbg(NearestPoly);
 
 	// If OutPos is in [MinRange, MaxRange], return it, else select closest range
@@ -789,37 +876,6 @@ bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, 
 	float t = (RootCount == 1 || t1 > t2) ? t1 : t2; // Greater t is closer to actor, which is desired
 	n_assert_dbg(t >= 0.f && t <= 1.f);
 	OutPos = ProjCenter + SegDir * t;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-// Finds a valid position on specified nav region or in Range from its boundary, that is
-// the closest to the actor. Fails if there is no valid location in the specified zone, or if error occured.
-// NB: this function can modify OutPos even if failed
-bool CNavSystem::GetNearestValidLocation(CStrID NavRegionID, float Range, vector3& OutPos) const
-{
-	if (!pNavQuery) FAIL;
-
-	//???AILevel::GetNavRegion instead?
-	CNavData* pNav = pActor->GetEntity()->GetLevel()->GetAI()->GetNavData(pActor->Radius);
-	if (!pNav) FAIL;
-
-	int Idx = pNav->Regions.FindIndex(NavRegionID);
-	if (Idx == INVALID_INDEX) FAIL;
-	CNavRegion& Region = pNav->Regions.ValueAt(Idx);
-
-	dtPolyRef NearestPoly = GetNearestPoly(Region.GetPtr(), Region.GetCount(), OutPos);
-	n_assert_dbg(NearestPoly);
-
-	if (Range != 0.f)
-	{
-		vector3 Diff = OutPos - pActor->Position;
-		float SqDistance = Diff.SqLength2D();
-		if (SqDistance <= Range * Range) OK;
-		float Distance = n_sqrt(SqDistance);
-		OutPos = pActor->Position + Diff * ((Distance - Range) / Distance);
-	}
 
 	OK;
 }
