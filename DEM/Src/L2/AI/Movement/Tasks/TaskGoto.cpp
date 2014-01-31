@@ -25,8 +25,7 @@ bool CTaskGoto::OnPlanSet(CActor* pActor)
 {
 	n_assert(pActor);
 	pActor->GetNavSystem().SetDestPoint(Point);
-	pActor->MinReachDist = MinDistance;
-	pActor->MaxReachDist = MaxDistance;
+	//???use MinDistance, MaxDistance and GetNearestValidLocation?
 	pActor->MvmtType = MvmtType;
 	OK;
 }

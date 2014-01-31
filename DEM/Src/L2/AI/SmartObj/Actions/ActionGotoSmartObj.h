@@ -4,6 +4,7 @@
 
 #include <AI/Movement/Actions/ActionGoto.h>
 #include <Data/StringID.h>
+#include <DetourNavMesh.h> // for PolyCache
 
 // Action that makes actor go to a position from where a smart object is usable,
 // and also ensures an actor has a proper facing to use it.
@@ -22,11 +23,10 @@ class CActionGotoSmartObj: public CActionGoto
 
 private:
 
-	CStrID	TargetID;
-	CStrID	ActionID;
-	bool	IsFacing;
-
-	bool UpdateNavDest(CActor* pActor, Prop::CPropSmartObject* pSO);
+	CStrID				TargetID;
+	CStrID				ActionID;
+	CArray<dtPolyRef>	PolyCache;
+	bool				IsFacing;
 
 public:
 

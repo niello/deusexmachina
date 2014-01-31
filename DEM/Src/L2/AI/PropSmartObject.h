@@ -6,6 +6,7 @@
 #include <Data/Params.h>
 #include <AI/SmartObj/SmartAction.h>
 #include <Data/Dictionary.h>
+#include <DetourNavMesh.h> // for PolyCache
 
 // Smart object provides set of actions that can be executed on it by actor either through command or AI.
 
@@ -105,7 +106,7 @@ public:
 	CStrID				GetTypeID() const { return TypeID; }
 	bool				IsMovable() const { return Movable; }
 	bool				IsActionAvailableFrom(CStrID ActionID, const vector3& ActorPos) const;
-	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, const vector3& SOPos, vector3& OutPos);
+	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, vector3& OutPos, CArray<dtPolyRef>* pNavCache = NULL, bool UpdateCache = false);
 	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };
 

@@ -55,8 +55,8 @@ int CPropActorBrain_Go(lua_State* l)
 	if (ArgCount >= 4 && lua_isnumber(l, 2))
 	{
 		Task->Point.set((float)lua_tonumber(l, 2), (float)lua_tonumber(l, 3), (float)lua_tonumber(l, 4));
-		Task->MinDistance = 
-		Task->MaxDistance = (ArgCount > 4) ? (float)lua_tonumber(l, 5) : 0.f;
+		//Task->MinDistance = 
+		//Task->MaxDistance = (ArgCount > 4) ? (float)lua_tonumber(l, 5) : 0.f;
 	}
 	else
 	{
@@ -64,8 +64,8 @@ int CPropActorBrain_Go(lua_State* l)
 		Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
 		if (!pTarget) return 0;
 		Task->Point = pTarget->GetAttr<matrix44>(CStrID("Transform")).Translation();
-		Task->MinDistance = 
-		Task->MaxDistance = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
+		//Task->MinDistance = 
+		//Task->MaxDistance = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
 	}
 
 	This->GetEntity()->FireEvent(Event::QueueTask(Task));

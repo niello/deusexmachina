@@ -31,13 +31,13 @@ void CActionGoto::Deactivate(CActor* pActor)
 	}
 
 	if (!pActor->IsNavSystemIdle())
-		pActor->GetNavSystem().Reset(pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true));
+		pActor->GetNavSystem().Reset(pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint()));
 }
 //---------------------------------------------------------------------
 
 bool CActionGoto::IsValid(CActor* pActor) const
 {
-	return	pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint(), true) ||
+	return	pActor->IsAtPoint(pActor->GetNavSystem().GetDestPoint()) ||
 			pActor->NavState != AINav_Failed;
 }
 //---------------------------------------------------------------------

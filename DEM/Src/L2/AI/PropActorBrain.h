@@ -108,8 +108,6 @@ public:
 	EMovementState	MvmtState;
 	EMovementType	MvmtType;
 	ESteeringType	SteeringType;
-	float			MinReachDist;
-	float			MaxReachDist;
 	EFacingState	FacingState;
 
 // END Blackboard
@@ -125,7 +123,7 @@ public:
 
 	void				RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
 
-	bool				IsAtPoint(const vector3& Point, bool RespectReachDistances) const;
+	bool				IsAtPoint(const vector3& Point, float MinDistance = 0.f, float MaxDistance = 0.f) const;
 	bool				IsLookingAtDir(const vector3& Direction) const;
 	bool				IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
 	void				SetNavLocationValid(bool Valid) { return Flags.SetTo(AIMind_Nav_IsLocationValid, Valid); }
@@ -153,14 +151,14 @@ inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 }
 //---------------------------------------------------------------------
 
-inline bool CPropActorBrain::IsAtPoint(const vector3& Point, bool RespectReachDistances) const
+inline bool CPropActorBrain::IsAtPoint(const vector3& Point, float MinDistance, float MaxDistance) const
 {
-	const float MinReach = (RespectReachDistances ? MinReachDist : 0.f) - ArrivalTolerance;
-	const float MaxReach = (RespectReachDistances ? MaxReachDist : 0.f) + ArrivalTolerance;
+	if (MinDistance >= ArrivalTolerance) MinDistance -= ArrivalTolerance;
+	MaxDistance += ArrivalTolerance;
 	const float SqDistToDest2D = vector3::SqDistance2D(Position, Point);
-	return (SqDistToDest2D <= MaxReach * MaxReach &&
-			(MinReach <= 0.f || SqDistToDest2D >= MinReach * MinReach) &&
-			n_fabs(Position.y - Point.y) < Height);
+	return	SqDistToDest2D <= MaxDistance * MaxDistance &&
+			SqDistToDest2D >= MinDistance * MinDistance &&
+			n_fabs(Position.y - Point.y) < Height;
 }
 //---------------------------------------------------------------------
 

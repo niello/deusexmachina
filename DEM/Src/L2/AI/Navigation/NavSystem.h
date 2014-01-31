@@ -89,8 +89,14 @@ public:
 	bool			GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count);
 	void			GetObstacles(float Range, dtObstacleAvoidanceQuery& Query);
 
+	bool			IsPolyValid(dtPolyRef Poly) const { return pNavQuery && pNavQuery->isValidPolyRef(Poly, pNavFilter); }
+	DWORD			GetValidPolys(const vector3& Center, float MinRange, float MaxRange, CArray<dtPolyRef>& Polys) const;
+
+	bool			IsLocationValid(const vector3& Point) const;
 	bool			GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const;
 	bool			GetNearestValidLocation(CStrID NavRegionID, float Range, vector3& OutPos) const;
+	bool			GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, float Range, vector3& OutPos) const;
+	bool			GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const;
 	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos) const;
 
 	bool			IsTraversingOffMesh() const { return TraversingOffMesh; }

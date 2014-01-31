@@ -14,18 +14,10 @@ class CTaskGoto: public CTask
 {
 	__DeclareClass(CTaskGoto);
 
-protected:
-
-	//!!!store movement type, min & max reach dist, may be destination!
-
 public:
 
 	vector3			Point;
-	float			MinDistance;
-	float			MaxDistance;
 	EMovementType	MvmtType;
-
-	CTaskGoto(): MinDistance(0.f), MaxDistance(0.001f) {}
 
 	virtual bool	IsAvailableTo(const CActor* pActor);
 	virtual PAction	BuildPlan();

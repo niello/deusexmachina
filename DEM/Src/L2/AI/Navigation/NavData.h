@@ -7,9 +7,9 @@
 #include <Data/Dictionary.h>
 #include <DetourNavMesh.h>
 
-// AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysWorld),
-// that contains stimuli, AI hints and other AI-related world info. Also AILevel serves as
-// a navigation manager.
+// Navigation data classis a complete navigation data storage. It stores NavMesh for
+// particular radius and height, NavMesh params, set of pre-created query objects for it
+// and set of named navigation regions.
 
 static const int MAX_NAV_PATH = 256;
 static const int MAX_ITERS_PER_UPDATE = 100;

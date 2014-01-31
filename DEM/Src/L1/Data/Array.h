@@ -49,6 +49,7 @@ public:
 	CIterator	Insert(int Idx, const T& Val);
 	CIterator	InsertSorted(const T& Val) { return Insert(FindClosestIndexSorted(Val), Val); }
 	void		AddArray(const CArray<T>& Other);
+	void		AddArray(const T* pData, DWORD Size);
 	void		Copy(const CArray<T>& Other);
 	void		Fill(int First, DWORD Num, const T& Val);
 	void		AllocateFixed(DWORD Size);
@@ -346,6 +347,16 @@ void CArray<T>::AddArray(const CArray<T>& Other)
 		Resize(Count + Other.Count);
 	for (DWORD i = 0; i < Other.Count; ++i)
 		Add(Other[i]);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+void CArray<T>::AddArray(const T* pData, DWORD Size)
+{
+	if (Count + Size > Allocated)
+		Resize(Count + Size);
+	for (DWORD i = 0; i < Size; ++i)
+		Add(pData[i]);
 }
 //---------------------------------------------------------------------
 

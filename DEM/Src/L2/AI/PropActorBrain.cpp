@@ -64,8 +64,6 @@ bool CPropActorBrain::InternalActivate()
 	MvmtState = AIMvmt_Done;
 	MvmtType = AIMvmt_Type_Walk;
 	SteeringType = AISteer_Type_Seek;
-	MinReachDist = 0.f;
-	MaxReachDist = 0.f;
 	FacingState = AIFacing_Done;
 
 // END Blackboard
