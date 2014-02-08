@@ -105,7 +105,6 @@ public:
 
 	CStrID				GetTypeID() const { return TypeID; }
 	bool				IsMovable() const { return Movable; }
-	bool				IsActionAvailableFrom(CStrID ActionID, const vector3& ActorPos) const;
 	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, vector3& OutPos, CArray<dtPolyRef>* pNavCache = NULL, bool UpdateCache = false);
 	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };

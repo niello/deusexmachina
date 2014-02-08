@@ -471,34 +471,6 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::IsActionAvailableFrom(CStrID ActionID, const vector3& ActorPos) const
-{
-	const CAction* pAction = GetAction(ActionID);
-	if (!pAction) FAIL;
-
-	//???use overrides? if use, do it here
-
-	//DistanceMin = pAction->pTpl->MinDistance;
-	//DistanceMax = pAction->pTpl->MaxDistance;
-
-	//if (pAction->pTpl->ActorRadiusMatters())
-	//{
-	//	DistanceMin += pActor->Radius;
-	//	DistanceMax += pActor->Radius;
-	//}
-
-	float SqDistanceMin = 0.f * 0.f;
-	float SqDistanceMax = 1.f * 1.f;
-
-	//if ActionNavRegion.IsValid()
-	//	check if an actor is in this region (check region geometry, PointInShape)
-	//else
-	const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
-	float SqDistance = vector3::SqDistance2D(ActorPos, Pos);
-	return SqDistance >= SqDistanceMin && SqDistance <= SqDistanceMax; //???!!! && n_fabs(Pos.y - ActorPos.y) < Actor.Height
-}
-//---------------------------------------------------------------------
-
 // Smart object is smart because it can describe how to use it. Position prediction is handled
 // here too, though it may look like actor class should do this. The reason is that only a smart
 // object itself knows, when prediction against it is necessary.

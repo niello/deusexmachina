@@ -7,7 +7,8 @@
 #include <DetourNavMesh.h> // for PolyCache
 
 // Action that makes actor go to a position from where a smart object is usable,
-// and also ensures an actor has a proper facing to use it.
+// and also ensures an actor has a proper facing to use it. Implemented as a simple
+// FSM with 3 states, which helps an actor to behave intelligently.
 
 namespace Prop
 {
@@ -23,10 +24,18 @@ class CActionGotoSmartObj: public CActionGoto
 
 private:
 
+	enum EState
+	{
+		State_Walk,		// Go to a valid destination from where the target is usable
+		State_Face,		// Face a valid direction, if needed
+		State_Chance	// When no destination is found, give the world a chance to change before failing an action
+	};
+
 	CStrID				TargetID;
 	CStrID				ActionID;
 	CArray<dtPolyRef>	PolyCache;
-	bool				IsFacing;
+	EState				State;
+	vector3				PrevTargetPos; //!!!can store old face angle too or even whole matrix44 if orientation matters!
 
 public:
 
