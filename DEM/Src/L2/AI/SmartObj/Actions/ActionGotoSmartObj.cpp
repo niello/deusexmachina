@@ -15,8 +15,9 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 	CPropSmartObject* pSO = pEnt->GetProperty<CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
 
+	State = State_Walk;
+
 	PolyCache.Clear();
-	IsFacing = false;
 
 	vector3 Dest;
 	if (!pSO->GetRequiredActorPosition(ActionID, pActor, Dest, &PolyCache, true)) FAIL;
@@ -33,60 +34,69 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 	CPropSmartObject* pSO = pEnt->GetProperty<CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL; //???IsActionAvailable() - some interval instead of every frame check?
 
-//	if (pSO->IsMovable() && !UpdateNavDest(pActor, pSO)) return Failure;
-/*
-//???!!!need?!
-if (pSO->IsActionAvailableFrom(ActionID, pActor->Position))
-{
-	pActor->GetNavSystem().Reset(true);
-	//!!!reset failed dest timer! also reset in other places where needed!
-	OK;
-}
-//!!!if failed dest timer is over, fail as target is lost!
-//!!!threshold value must be stored in pActor and may be changed in runtime!
-vector3 Dest;
-if (!pSO->GetRequiredActorPosition(ActionID, pActor, Dest, &PolyCache, ...)) FAIL; //!!!keep a prev point some time! or fail?
-pActor->GetNavSystem().SetDestPoint(Dest);
-//!!!reset failed dest timer! also reset in other places where needed!
-*/
-
-	//!!!if navigation failed, replan path with updating cache!
-
-	if (pActor->NavState == AINav_Done)
+	switch (State)
 	{
-		if (!IsFacing || pSO->IsMovable())
+		case State_Walk:
 		{
-			vector3 FaceDir;
-			if (!pSO->GetRequiredActorFacing(ActionID, pActor, FaceDir)) return Success;
-			pActor->GetMotorSystem().SetFaceDirection(FaceDir);
-			IsFacing = true;
+			const vector3& TargetPos = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
+			vector3 Dest;
+			if (!pSO->GetRequiredActorPosition(ActionID, pActor, Dest, &PolyCache, PrevTargetPos != TargetPos))
+			{
+				// goto Chance
+				return Running;
+			}
+			
+			pActor->GetNavSystem().SetDestPoint(Dest);
+			
+			switch (pActor->NavState)
+			{
+				case AINav_Done:
+				{
+					vector3 FaceDir;
+					if (!pSO->GetRequiredActorFacing(ActionID, pActor, FaceDir)) return Success; // No facing required
+					pActor->GetMotorSystem().SetFaceDirection(FaceDir);
+					State = State_Face;
+					return Running;
+				}
+				case AINav_Failed:
+				{
+					// if no chance, return Failure;
+					// goto Chance
+					return Running;
+				}
+				case AINav_DestSet:		return Running;
+				case AINav_Planning:
+				case AINav_Following:	return AdvancePath(pActor);
+				default: Core::Error("CActionGotoSmartObj::Update(): Unexpected navigation status '%d'", pActor->NavState);
+			}
 		}
-
-		switch (pActor->FacingState)
+		case State_Face:
 		{
-			case AIFacing_DirSet:	return Running;
-			case AIFacing_Done:		return Success;
-			case AIFacing_Failed:	return Failure;
-			default: Core::Error("CActionGotoSmartObj::Update(): Unexpected facing status '%d'", pActor->FacingState);
-		}
-	}
-	else
-	{
-		if (IsFacing)
-		{
+			// if pos [/ orient] of SO changed, update dest
+			// if dest != curr actor pos, stop facing and goto Walk
 			if (pActor->FacingState == AIFacing_DirSet)
 				pActor->GetMotorSystem().ResetRotation(false);
-			IsFacing = false;
-		}
+			// if pos/ orient of SO changed, re-get direction of facing and set it to motor system
+					//vector3 FaceDir;
+					//if (!pSO->GetRequiredActorFacing(ActionID, pActor, FaceDir)) return Success; // No facing required
+					//pActor->GetMotorSystem().SetFaceDirection(FaceDir);
 
-		switch (pActor->NavState)
-		{
-			case AINav_Failed:		return Failure;
-			case AINav_DestSet:		return Running;
-			case AINav_Planning:
-			case AINav_Following:	return AdvancePath(pActor);
-			default: Core::Error("CActionGotoSmartObj::Update(): Unexpected navigation status '%d'", pActor->NavState);
+			switch (pActor->FacingState)
+			{
+				case AIFacing_DirSet:	return Running;
+				case AIFacing_Done:		return Success;
+				case AIFacing_Failed:	return Failure;
+				default: Core::Error("CActionGotoSmartObj::Update(): Unexpected facing status '%d'", pActor->FacingState);
+			}
 		}
+		case State_Chance:
+		{
+			// stand still or try to go to the last pos
+			//!!!chance threshold value must be stored in pActor and may be changed in runtime!
+			//!!!reset failed dest timer when leave Chance!
+			break;
+		}
+		default: Core::Error("CActionGotoSmartObj::Update > Unknown state");
 	}
 
 	return Failure;
