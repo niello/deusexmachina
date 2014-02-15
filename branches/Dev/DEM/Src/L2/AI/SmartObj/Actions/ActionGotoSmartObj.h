@@ -36,6 +36,7 @@ private:
 	CArray<dtPolyRef>	PolyCache;
 	EState				State;
 	vector3				PrevTargetPos; //!!!can store old face angle too or even whole matrix44 if orientation matters!
+	float				RecoveryTime;
 
 public:
 
