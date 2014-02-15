@@ -103,6 +103,7 @@ public:
 	// Navigation
 	ENavState		NavState;
 	float			DistanceToNavDest;
+	float			NavDestRecoveryTime;	// Time before failing if destination is lost with a chance to be recovered
 
 	// Movement
 	EMovementState	MvmtState;

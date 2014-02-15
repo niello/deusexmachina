@@ -162,9 +162,11 @@ bool CPropActorBrain::InternalActivate()
 			}
 		}
 
-		bool DecMaking = Desc->Get<bool>(CStrID("EnableDecisionMaking"), false);
+		bool DecMaking = Desc->Get(CStrID("EnableDecisionMaking"), false);
 		Flags.SetTo(AIMind_EnableDecisionMaking, DecMaking);
 		Flags.SetTo(AIMind_UpdateGoal, DecMaking);
+
+		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
 		
 		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), NULL).GetUnsafe());
 		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).GetUnsafe());
