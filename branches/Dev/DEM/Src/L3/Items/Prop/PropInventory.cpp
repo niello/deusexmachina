@@ -151,51 +151,68 @@ bool CPropInventory::OnSOActionDone(const Events::CEventBase& Event)
 		CPropItem* pPropItem = pItemEnt ? pItemEnt->GetProperty<CPropItem>() : NULL;
 		if (!pPropItem || !pPropItem->Items.IsValid()) OK;
 
-		//!!!can add only part of the stack (check weight and volume)!
-		AddItem(pPropItem->Items); //???AddItems(bool AsManyAsPossible) and return actually added count?
-		pPropItem->Items.Clear();
+		pPropItem->Items.Remove(AddItem(pPropItem->Items, true));
 
-		if (!pPropItem->Items.IsValid()) EntityMgr->RequestDestruction(SOID);
+		if (!pPropItem->Items.IsValid())
+		{
+			pPropItem->Items.Clear();
+			EntityMgr->RequestDestruction(SOID);
+		}
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::AddItem(PItem NewItem, WORD Count)
+WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
 {
-	float TotalW = NewItem->GetTpl()->Weight * Count;
-	float TotalV = NewItem->GetTpl()->Volume * Count;
+	if (!Count) return 0;
 
-	if ((MaxWeight < 0.f || TotalW <= (MaxWeight - CurrWeight)) &&
-		(MaxVolume < 0.f || TotalV <= (MaxVolume - CurrVolume)))
+	PItemTpl Tpl = NewItem->GetTpl();
+	float TotalW = Tpl->Weight * Count;
+	float TotalV = Tpl->Volume * Count;
+
+	float OverW = CurrWeight + TotalW - MaxWeight;
+	float OverV = CurrVolume + TotalV - MaxVolume;
+	if ((MaxWeight >= 0.f && OverW > 0.f) ||
+		(MaxVolume >= 0.f && OverV > 0.f))
 	{
-		CurrWeight += TotalW;
-		CurrVolume += TotalV;
-
-		foreach_stack(Stack, Items)
-			if (Stack->GetItem()->IsEqual(NewItem))
-			{
-				Stack->Add(Count);
-				break;
-			}
-
-		if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields?!
-
-		Data::PParams P = n_new(Data::CParams);
-		P->Set(CStrID("Item"), CString(NewItem->GetID().CStr()));
-		P->Set(CStrID("Count"), (int)Count);
-		P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));
-		EventSrv->FireEvent(CStrID("OnItemAdded"), P);
-
-		OK;
+		if (AsManyAsCan)
+		{
+			WORD ExcessCountW = (WORD)n_ceil(OverW / Tpl->Weight);
+			WORD ExcessCountV = (WORD)n_ceil(OverV / Tpl->Volume);
+			WORD ExcessCount = n_max(ExcessCountW, ExcessCountV);
+			if (Count <= ExcessCount) return 0;
+			Count -= ExcessCount;
+			TotalW = Tpl->Weight * Count;
+			TotalV = Tpl->Volume * Count;
+		}
+		else
+		{
+			n_printf_dbg("CEntity \"%s\": Item \"%s\" is too big or heavy\n", GetEntity()->GetUID(), NewItem->GetID());
+			return 0;
+		}
 	}
 
-#ifdef _DEBUG
-	n_printf("CEntity \"%s\": Item \"%s\" is too big or heavy\n", GetEntity()->GetUID(), NewItem->GetID());
-#endif
+	CurrWeight += TotalW;
+	CurrVolume += TotalV;
 
-	FAIL;
+	foreach_stack(Stack, Items)
+		if (Stack->GetItem()->IsEqual(NewItem))
+		{
+			Stack->Add(Count);
+			break;
+		}
+
+	if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields to avoid copying?!
+
+	Data::PParams P = n_new(Data::CParams);
+	P->Set(CStrID("Item"), NewItem->GetID());
+	P->Set(CStrID("Count"), (int)Count);
+	P->Set(CStrID("Entity"), GetEntity()->GetUID());
+	EventSrv->FireEvent(CStrID("OnItemAdded"), P);
+
+	return Count;
 }
 //---------------------------------------------------------------------
 
@@ -214,9 +231,9 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 	CurrVolume -= Stack->GetVolume();
 	
 	Data::PParams P = n_new(Data::CParams);
-	P->Set(CStrID("Item"), CString(Stack->GetItemID().CStr()));
+	P->Set(CStrID("Item"), Stack->GetItemID());
 	P->Set(CStrID("Count"), (int)ToRemove);
-	P->Set(CStrID("Entity"), CString(GetEntity()->GetUID().CStr()));
+	P->Set(CStrID("Entity"), GetEntity()->GetUID());
 
 	if (Stack->GetCount() > ToRemove)
 	{
