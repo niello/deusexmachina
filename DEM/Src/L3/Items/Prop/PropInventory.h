@@ -56,9 +56,9 @@ public:
 	CPropInventory(): MaxWeight(82.f), MaxVolume(146.f), CurrWeight(0.f), CurrVolume(0.f) {}
 	//virtual ~CPropInventory();
 
-	bool			AddItem(PItem NewItem, WORD Count = 1);
-	bool			AddItem(CStrID ItemID, WORD Count = 1);
-	bool			AddItem(const CItemStack& Items);
+	WORD			AddItem(PItem NewItem, WORD Count = 1, bool AsManyAsCan = false);
+	WORD			AddItem(CStrID ItemID, WORD Count = 1, bool AsManyAsCan = false);
+	WORD			AddItem(const CItemStack& Items, bool AsManyAsCan = false);
 	WORD			RemoveItem(PItem Item, WORD Count = 1, bool AsManyAsCan = false);
 	WORD			RemoveItem(CStrID ItemID, WORD Count = 1, bool AsManyAsCan = false);
 	bool			HasItem(CStrID ItemID, WORD Count = 1); //???GetItemCount(CStrID)?
@@ -71,15 +71,15 @@ public:
 };
 //---------------------------------------------------------------------
 
-inline bool CPropInventory::AddItem(CStrID ItemID, WORD Count)
+inline WORD CPropInventory::AddItem(CStrID ItemID, WORD Count, bool AsManyAsCan)
 {
-	return AddItem(ItemMgr->GetItemTpl(ItemID)->GetTemplateItem(), Count);
+	return AddItem(ItemMgr->GetItemTpl(ItemID)->GetTemplateItem(), Count, AsManyAsCan);
 }
 //---------------------------------------------------------------------
 
-inline bool CPropInventory::AddItem(const CItemStack& Items)
+inline WORD CPropInventory::AddItem(const CItemStack& Items, bool AsManyAsCan)
 {
-	return AddItem(Items.GetItem(), Items.GetCount());
+	return AddItem(Items.GetItem(), Items.GetCount(), AsManyAsCan);
 }
 //---------------------------------------------------------------------
 
