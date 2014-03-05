@@ -32,9 +32,8 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
-	if (!pSO) FAIL;
-	if (!pSO->IsActionAvailable(ActionID, pActor)) FAIL;
-	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
+	CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
 	WasDone = false;
@@ -46,8 +45,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 		CString AttrID("ActionProgress_");
 		AttrID += ActionID.CStr();
 
-		//!!!ActTpl.GetDuration()!
-		Duration = ActTpl.Duration;
+		Duration = ActTpl.GetDuration(pActor->GetEntity()->GetUID(), TargetID);
 		Progress = ActTpl.ResetOnAbort() ? 0.f : pActor->GetEntity()->GetAttr<float>(CStrID(AttrID.CStr()), 0.f);
 
 		if (ActTpl.TargetState.IsValid())
@@ -71,7 +69,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 	}
 	else Core::Error("CActionUseSmartObj::StartSOAction(): Unknown ProgressDriver!");
 
-	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
+	CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<CPropSmartObject>();
 	if (pActorSO)
 		pActorSO->SetState(CStrID("UsingSO"), ActionID); //!!!SYNC_ACTOR_ANIMATION ? Duration : -1.f
 
@@ -98,7 +96,7 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return Failure;
-	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	if (!pSOAction) return Failure;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
@@ -154,7 +152,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return;
-	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	if (!pSOAction) return;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
@@ -193,7 +191,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	}
 
 	// Abort might be caused by an actor state change, so don't affect that change
-	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
+	CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<CPropSmartObject>();
 	if (pActorSO && pActorSO->GetCurrState() == CStrID("UsingSO"))
 		pActorSO->SetState(CStrID("Idle"), ActionID);
 	//???if in transition to UsingSO, reset to Idle too?

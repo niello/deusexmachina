@@ -5,6 +5,7 @@
 #include <Game/Property.h>
 #include <Data/Params.h>
 #include <AI/SmartObj/SmartAction.h>
+#include <AI/ActorFwd.h>
 #include <Data/Dictionary.h>
 #include <DetourNavMesh.h> // for PolyCache
 
@@ -59,8 +60,7 @@ protected:
 	const CAnimInfo*			pCurrAnimInfo;
 
 	// Game object stuff
-	CStrID		TypeID;
-	bool		Movable;
+	CStrID						TypeID;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -104,7 +104,6 @@ public:
 	bool				IsActionAvailable(CStrID ID, const AI::CActor* pActor) const;
 
 	CStrID				GetTypeID() const { return TypeID; }
-	bool				IsMovable() const { return Movable; }
 	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, vector3& OutPos, CArray<dtPolyRef>* pNavCache = NULL, bool UpdateCache = false);
 	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };

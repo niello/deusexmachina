@@ -69,10 +69,12 @@ public:
 	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	template<class T>
 	T*			AttachProperty(CEntity& Entity) const;
-	void		RemoveProperty(CEntity& Entity, const CString& ClassName) const { return RemoveProperty(Entity, Factory->GetRTTI(ClassName)); }
+	void		RemoveProperty(CEntity& Entity, const CString& ClassName) const { RemoveProperty(Entity, Factory->GetRTTI(ClassName)); }
 	void		RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
+	CProperty*	GetProperty(CEntity& Entity, const CString& ClassName) const { return GetProperty(Entity, Factory->GetRTTI(ClassName)); }
+	CProperty*	GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
 };
 

@@ -43,6 +43,7 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
+	DECLARE_EVENT_HANDLER(OnSOActionDone, OnSOActionDone);
 
 public:
 

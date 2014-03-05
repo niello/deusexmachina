@@ -95,6 +95,58 @@ int CEntityScriptObject_RemoveProperty(lua_State* l)
 }
 //---------------------------------------------------------------------
 
+int CEntityScriptObject_HasProperty(lua_State* l)
+{
+	// Args: EntityScriptObject's this table, property class name
+	// Ret: bool
+	SETUP_ENT_SI_ARGS(2)
+
+	if (!lua_isstring(l, 2))
+	{
+		lua_pushboolean(l, false);
+		return 1;
+	}
+
+	static const char* pPrefix = "Prop::CProp";
+
+	Game::CProperty* pProp;
+	LPCSTR pClassName = lua_tostring(l, 2);
+	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
+		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
+	else
+		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pClassName));
+
+	lua_pushboolean(l, pProp != NULL);
+	return 1;
+}
+//---------------------------------------------------------------------
+
+int CEntityScriptObject_IsPropertyActive(lua_State* l)
+{
+	// Args: EntityScriptObject's this table, property class name
+	// Ret: bool
+	SETUP_ENT_SI_ARGS(2)
+
+	if (!lua_isstring(l, 2))
+	{
+		lua_pushboolean(l, false);
+		return 1;
+	}
+
+	static const char* pPrefix = "Prop::CProp";
+
+	Game::CProperty* pProp;
+	LPCSTR pClassName = lua_tostring(l, 2);
+	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
+		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
+	else
+		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pClassName));
+
+	lua_pushboolean(l, pProp && pProp->IsActive());
+	return 1;
+}
+//---------------------------------------------------------------------
+
 bool CEntityScriptObject::RegisterClass()
 {
 	if (ScriptSrv->BeginClass("CEntityScriptObject", "CScriptObject"))
@@ -104,6 +156,8 @@ bool CEntityScriptObject::RegisterClass()
 		ScriptSrv->ExportCFunction("FireEvent", CEntityScriptObject_FireEvent);
 		ScriptSrv->ExportCFunction("AttachProperty", CEntityScriptObject_AttachProperty);
 		ScriptSrv->ExportCFunction("RemoveProperty", CEntityScriptObject_RemoveProperty);
+		ScriptSrv->ExportCFunction("HasProperty", CEntityScriptObject_HasProperty);
+		ScriptSrv->ExportCFunction("IsPropertyActive", CEntityScriptObject_IsPropertyActive);
 		ScriptSrv->EndClass(true);
 		OK;
 	}

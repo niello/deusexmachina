@@ -1,10 +1,17 @@
 #include "SmartAction.h"
 
+#include <AI/Planning/WorldStateSource.h>
+#include <Scripting/ScriptObject.h>
+
 namespace AI
 {
 
-void CSmartAction::Init(const Data::CParams& Desc)
+void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 {
+	n_assert(ActionID.IsValid());
+
+	ID = ActionID;
+
 	Flags.SetTo(END_ON_DONE, Desc.Get<bool>(CStrID("EndOnDone"), true));
 	Flags.SetTo(RESET_ON_ABORT, Desc.Get<bool>(CStrID("ResetOnAbort"), true));
 	Flags.SetTo(MANUAL_TRANSITION, Desc.Get<bool>(CStrID("ManualTransition"), false));
@@ -37,16 +44,43 @@ void CSmartAction::Init(const Data::CParams& Desc)
 	}
 	else Preconditions = NULL;
 
-	//// Optional(?) scripted functions
-	////???or use callbacks with predefined names and inside differ by action ID?
-	//Data::CSimpleString	ValidateFunc;
-	//Data::CSimpleString	GetDestinationFunc;
-	//Data::CSimpleString	GetDurationFunc;
-	//Data::CSimpleString	UpdateFunc;
-	//ValidateFunc = Desc.Get<CString>(CStrID("ValidateFunc"), NULL).CStr();
-	//GetDestinationFunc = Desc.Get<CString>(CStrID("GetDestinationFunc"), NULL).CStr();
-	//GetDurationFunc = Desc.Get<CString>(CStrID("GetDurationFunc"), NULL).CStr();
-	//UpdateFunc = Desc.Get<CString>(CStrID("UpdateFunc"), NULL).CStr();
+	const CString& ScriptName = Desc.Get<CString>(CStrID("Script"), NULL);
+	if (ScriptName.IsValid())
+	{
+		ScriptObj = n_new(Scripting::CScriptObject(ID.CStr(), "Actions"));
+		ScriptObj->Init(); // No special class
+		CString ScriptFile = "Scripts:" + ScriptName + ".lua";
+		if (ScriptObj->LoadScriptFile(ScriptFile) != Success)
+			n_printf("Error loading script \"%s\" for an SO action", ScriptFile.CStr());
+	}
+}
+//---------------------------------------------------------------------
+
+bool CSmartAction::IsValid(CStrID ActorID, CStrID SOID) const
+{
+	if (!ScriptObj.IsValid()) OK;
+	Data::CData Args[] = { ActorID, SOID };
+	DWORD Res = ScriptObj->RunFunction("IsValid", Args, 2);
+	return Res == Success || Res == Error_Scripting_NoFunction;
+}
+//---------------------------------------------------------------------
+
+float CSmartAction::GetDuration(CStrID ActorID, CStrID SOID) const
+{
+	if (ScriptObj.IsValid())
+	{
+		Data::CData Args[] = { ActorID, SOID };
+		Data::CData RetVal;
+		DWORD Res = ScriptObj->RunFunction("GetDuration", Args, 2, &RetVal);
+		if (Res != Error_Scripting_NoFunction)
+		{
+			//!!!need conversion!
+			if (RetVal.IsA<float>()) return RetVal.GetValue<float>();
+			else if (RetVal.IsA<int>()) return (float)RetVal.GetValue<int>();
+		}
+	}
+
+	return Duration;
 }
 //---------------------------------------------------------------------
 

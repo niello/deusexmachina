@@ -2,8 +2,10 @@
 #ifndef __DEM_L2_IAO_USE_ACTION_TPL_H__
 #define __DEM_L2_IAO_USE_ACTION_TPL_H__
 
-#include <AI/Planning/WorldStateSource.h>
-#include <Data/SimpleString.h>
+#include <Core/Ptr.h>
+#include <Data/Flags.h>
+#include <Data/StringID.h>
+#include <mathlib/vector3.h>
 
 // Smart action holds information for an interaction with a smart object
 
@@ -12,14 +14,23 @@ namespace Data
 	class CParams;
 }
 
+namespace Scripting
+{
+	typedef Ptr<class CScriptObject> PScriptObject;
+}
+
 namespace AI
 {
+typedef Ptr<class CWorldStateSource> PWorldStateSource;
 
 class CSmartAction
 {
 protected:
 
-	Data::CFlags Flags;
+	CStrID						ID;
+	Data::CFlags				Flags;
+	Scripting::PScriptObject	ScriptObj;
+	float						Duration;
 
 public:
 
@@ -44,11 +55,10 @@ public:
 	// Destination and facing
 	float				MinRange;
 	float				MaxRange;
-	vector3				PosOffset;	// Local
+	vector3				PosOffset;	// Local //???is used?
 	//float				FaceOffset;	// Local around Y axis
 
 	// State transition and timing
-	float				Duration;
 	CStrID				TargetState;
 	EProgressDrv		ProgressDriver;
 
@@ -58,14 +68,18 @@ public:
 	// AI
 	PWorldStateSource	Preconditions;
 
-	void Init(const Data::CParams& Desc);
+	void	Init(CStrID ActionID, const Data::CParams& Desc);
 
-	bool EndOnDone() const { return Flags.Is(CSmartAction::END_ON_DONE); }
-	bool ResetOnAbort() const { return Flags.Is(CSmartAction::RESET_ON_ABORT); }
-	bool ManualTransitionControl() const { return Flags.Is(CSmartAction::MANUAL_TRANSITION); }
-	bool SendProgressEvent() const { return Flags.Is(CSmartAction::SEND_PROGRESS_EVENT); }
-	bool FaceObject() const { return Flags.Is(CSmartAction::FACE_OBJECT); }
-	bool ActorRadiusMatters() const { return Flags.Is(CSmartAction::ACTOR_RADIUS_MATTERS); }
+	bool	IsValid(CStrID ActorID, CStrID SOID) const;
+	float	GetDuration(CStrID ActorID, CStrID SOID) const;
+
+	CStrID	GetID() const { return ID; }
+	bool	EndOnDone() const { return Flags.Is(CSmartAction::END_ON_DONE); }
+	bool	ResetOnAbort() const { return Flags.Is(CSmartAction::RESET_ON_ABORT); }
+	bool	ManualTransitionControl() const { return Flags.Is(CSmartAction::MANUAL_TRANSITION); }
+	bool	SendProgressEvent() const { return Flags.Is(CSmartAction::SEND_PROGRESS_EVENT); }
+	bool	FaceObject() const { return Flags.Is(CSmartAction::FACE_OBJECT); }
+	bool	ActorRadiusMatters() const { return Flags.Is(CSmartAction::ACTOR_RADIUS_MATTERS); }
 };
 
 }

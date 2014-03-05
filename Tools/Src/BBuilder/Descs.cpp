@@ -369,9 +369,9 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 			FAIL;
 		}
 
-		if (!ProcessDesc("SrcAI:AISOActionTpls.hrd", "AI:AISOActionTpls.prm"))
+		if (!ProcessSOActionTplsDesc("SrcAI:AISOActionTpls.hrd", "AI:AISOActionTpls.prm"))
 		{
-			n_msg(VL_ERROR, "Error processing shared AI smart object action templates desc\n");
+			n_msg(VL_ERROR, "Error processing shared smart object action templates desc\n");
 			FAIL;
 		}
 	}
@@ -581,6 +581,43 @@ bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 		}
 	}
 	while (Browser.NextCurrDirEntry());
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessSOActionTplsDesc(const CString& SrcFilePath, const CString& ExportFilePath)
+{
+	if (IsFileAdded(ExportFilePath)) OK;
+
+	Data::PParams Desc;
+	if (ExportDescs)
+	{
+		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		Desc = DataSrv->LoadHRD(SrcFilePath, false);
+		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+	}
+	else Desc = DataSrv->LoadPRM(ExportFilePath);
+
+	if (!Desc.IsValid()) FAIL;
+
+	FilesToPack.InsertSorted(ExportFilePath);
+
+	for (int i = 0; i < Desc->GetCount(); ++i)
+	{
+		const Data::CParams& ActTpl = *Desc->Get<Data::PParams>(i);
+
+		CString ScriptFile;
+		if (ActTpl.Get<CString>(ScriptFile, CStrID("Script")))
+		{
+			CString ExportFilePath = "Scripts:" + ScriptFile + ".lua";
+			if (!IsFileAdded(ExportFilePath))
+			{
+				if (ExportDescs) BatchToolInOut(CStrID("CFLua"), "SrcScripts:" + ScriptFile + ".lua", ExportFilePath);
+				FilesToPack.InsertSorted(ExportFilePath);
+			}
+		}
+	}
 
 	OK;
 }

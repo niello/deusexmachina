@@ -24,7 +24,6 @@ bool CPropSmartObject::InternalActivate()
 	if (Desc.IsValid())
 	{
 		TypeID = Desc->Get(CStrID("TypeID"), CStrID::Empty);
-		Movable = Desc->Get(CStrID("Movable"), false);
 
 		Data::PParams ActionsEnabled;
 		GetEntity()->GetAttr(ActionsEnabled, CStrID("SOActionsEnabled"));
@@ -456,11 +455,7 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 	const AI::CSmartAction& ActTpl = *Action.pTpl;
 	if (ActTpl.TargetState.IsValid() && IsInTransition() && TrActionID != ID) FAIL;
 
-	//!!!call action function! must not be per-object to avoid duplication!
-	//ScriptSrv->RunScript();
-	//or
-	//PlaceOnStack("Actions"), Run function
-	//Or RunFunction("Actions.FuncName")
+	if (!ActTpl.IsValid(pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty, GetEntity()->GetUID())) FAIL;
 
 	Prop::CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	if (!pScriptable || !pScriptable->GetScriptObject().IsValid()) return !!pActor; //???or OK?
@@ -491,53 +486,49 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	vector3 Pos = Tfm.Translation();
 
-	if (Movable) // && pActor->TargetPosPredictionMode != None
+	vector3 Vel;
+	//!!!if (pActor->TargetPosPredictionMode != None && ...)
+	if (GetEntity()->GetAttr<vector3>(Vel, CStrID("LinearVelocity")) && Vel.SqLength2D() > 0.f)
 	{
-		vector3 Vel;
-		if (GetEntity()->GetAttr<vector3>(Vel, CStrID("LinearVelocity")) && Vel.SqLength2D() > 0.f)
+		vector3 Dist = Pos - pActor->Position;
+		float MaxSpeed = pActor->GetMotorSystem().GetMaxSpeed();
+		float Time;
+
+		if (true) // pActor->TargetPosPredictionMode == Quadratic
 		{
-			// Predict future SO position (No prediction, Pursue steering, Quadratic firing solution)
+			// Quadratic firing solution
+			float A = Vel.SqLength2D() - MaxSpeed * MaxSpeed;
+			float B = 2.f * (Dist.x * Vel.x + Dist.z * Vel.z);
+			float C = Dist.SqLength2D();
+			float Time1, Time2;
 
-			vector3 Dist = Pos - pActor->Position;
-			float MaxSpeed = pActor->GetMotorSystem().GetMaxSpeed();
-			float Time;
+			DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &Time1, &Time2);
+			if (!RootCount) FAIL; //!!!keep a prev point some time! or use current pos?
+			Time = (RootCount == 1 || (Time1 < Time2 && Time1 > 0.f)) ? Time1 : Time2;
 
-			if (true) // pActor->TargetPosPredictionMode == Quadratic
-			{
-				// Quadratic firing solution
-				float A = Vel.SqLength2D() - MaxSpeed * MaxSpeed;
-				float B = 2.f * (Dist.x * Vel.x + Dist.z * Vel.z);
-				float C = Dist.SqLength2D();
-				float Time1, Time2;
-
-				DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &Time1, &Time2);
-				if (!RootCount) FAIL; //!!!keep a prev point some time! or use current pos?
-				Time = (RootCount == 1 || (Time1 < Time2 && Time1 > 0.f)) ? Time1 : Time2;
-
-				//???is possible?
-				if (Time < 0.f) FAIL; //!!!keep a prev point some time! or use current pos?
-			}
-			else
-			{
-				// Pursue steering
-				Time = Dist.Length2D() / MaxSpeed;
-			}
-
-			//???need? see if it adds realism!
-			//const float MaxPredictionTime = 5.f; //???to settings?
-			//if (Time > MaxPredictionTime) Time = MaxPredictionTime;
-
-			Pos.x += Vel.x * Time;
-			Pos.z += Vel.z * Time;
-
-			//!!!assumed that a moving SO with a relatively high speed (no short step!) tries
-			//to face to where it moves, predict facing smth like this:
-			// get angle between curr facing and velocity direction
-			// get maximum angle as Time * MaxAngularSpeed
-			// get min(angle_between, max_angle) and rotate curr direction towards a velocity direction
-			// this will be a predicted facing
-			// may be essential for AI-made backstabs
+			//???is possible?
+			if (Time < 0.f) FAIL; //!!!keep a prev point some time! or use current pos?
 		}
+		else
+		{
+			// Pursue steering
+			Time = Dist.Length2D() / MaxSpeed;
+		}
+
+		//???need? see if it adds realism!
+		//const float MaxPredictionTime = 5.f; //???to settings?
+		//if (Time > MaxPredictionTime) Time = MaxPredictionTime;
+
+		Pos.x += Vel.x * Time;
+		Pos.z += Vel.z * Time;
+
+		//!!!assumed that a moving SO with a relatively high speed (no short step!) tries
+		//to face to where it moves, predict facing smth like this:
+		// get angle between curr facing and velocity direction
+		// get maximum angle as Time * MaxAngularSpeed
+		// get min(angle_between, max_angle) and rotate curr direction towards a velocity direction
+		// this will be a predicted facing
+		// may be essential for AI-made backstabs
 	}
 
 	//!!!Apply local dest offset now, using predicted pos & facing!
@@ -570,9 +561,7 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 				break;
 			}
 
-		if (UpdateCache)
-			if (!pActor->GetNavSystem().GetValidPolys(Pos, MinRange, MaxRange, *pNavCache)) FAIL;
-
+		if (UpdateCache && !pActor->GetNavSystem().GetValidPolys(Pos, MinRange, MaxRange, *pNavCache)) FAIL;
 		if (!pActor->GetNavSystem().GetNearestValidLocation(pNavCache->Begin(), pNavCache->GetCount(), Pos, MinRange, MaxRange, OutPos)) FAIL;
 	}
 	else

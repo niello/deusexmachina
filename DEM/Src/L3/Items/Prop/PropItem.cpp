@@ -1,7 +1,7 @@
 #include "PropItem.h"
 
 #include <Items/ItemManager.h>
-#include <Items/Prop/PropInventory.h>
+#include <AI/PropSmartObject.h>
 #include <UI/PropUIControl.h>
 #include <Game/EntityManager.h>
 
@@ -25,13 +25,14 @@ bool CPropItem::InternalActivate()
 	Items.SetItem(Item);
 	Items.SetCount((WORD)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
 
-	CPropUIControl* pProp = GetEntity()->GetProperty<CPropUIControl>();
-	if (pProp && pProp->IsActive())
-		pProp->SetUIName(Items.GetTpl()->UIName);
-	
+	CPropUIControl* pPropUI = GetEntity()->GetProperty<CPropUIControl>();
+	if (pPropUI && pPropUI->IsActive()) pPropUI->SetUIName(Items.GetTpl()->UIName);
+
+	CPropSmartObject* pPropSO = GetEntity()->GetProperty<CPropSmartObject>();
+	if (pPropSO && pPropSO->IsActive()) pPropSO->EnableAction(CStrID("PickItem"));
+
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropItem, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropItem, OnLevelSaving);
-	PROP_SUBSCRIBE_PEVENT(PickItem, CPropItem, OnPickItem);
 
 	OK;
 }
@@ -41,7 +42,10 @@ void CPropItem::InternalDeactivate()
 {
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
-	UNSUBSCRIBE_EVENT(PickItem);
+
+	CPropSmartObject* pPropSO = GetEntity()->GetProperty<CPropSmartObject>();
+	if (pPropSO && pPropSO->IsActive()) pPropSO->EnableAction(CStrID("PickItem"), false);
+
 	Items.Clear();
 }
 //---------------------------------------------------------------------
@@ -55,6 +59,12 @@ bool CPropItem::OnPropActivated(const Events::CEventBase& Event)
 	if (pProp->IsA<CPropUIControl>())
 	{
 		((CPropUIControl*)pProp)->SetUIName(Items.GetTpl()->UIName);
+		OK;
+	}
+
+	if (pProp->IsA<CPropSmartObject>())
+	{
+		((CPropSmartObject*)pProp)->EnableAction(CStrID("PickItem"));
 		OK;
 	}
 
@@ -72,27 +82,6 @@ bool CPropItem::OnLevelSaving(const Events::CEventBase& Event)
 		//!!!save per-instance fields!
 	}
 	GetEntity()->SetAttr<int>(CStrID("ItemCount"), (int)Items.GetCount());
-	OK;
-}
-//---------------------------------------------------------------------
-
-// "PickItem" command handler, actual item picking is here
-bool CPropItem::OnPickItem(const Events::CEventBase& Event)
-{
-	if (!Items.IsValid()) OK;
-
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor")));
-	CPropInventory* pInv = pActorEnt ? pActorEnt->GetProperty<CPropInventory>() : NULL;
-	if (pInv)
-	{
-		//!!!can add only part of the stack (check weight and volume)!
-		//kill entity only when empty. or deactivate prop?
-		pInv->AddItem(Items);
-		Items.Clear();
-		EntityMgr->RequestDestruction(GetEntity()->GetUID());
-	}
-
 	OK;
 }
 //---------------------------------------------------------------------

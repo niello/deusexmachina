@@ -1,8 +1,9 @@
 #include "ActionTplUseSmartObj.h"
 
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
-#include <Game/EntityManager.h>
 #include <AI/PropSmartObject.h>
+#include <AI/Planning/WorldStateSource.h>
+#include <Game/EntityManager.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp
@@ -39,10 +40,10 @@ bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, 
 	Game::CEntity* pEntity = EntityMgr->GetEntity(SOEntityID, true);
 	if (pEntity)
 	{
-		CPropSmartObject* pSO = pEntity->GetProperty<CPropSmartObject>();
+		Prop::CPropSmartObject* pSO = pEntity->GetProperty<Prop::CPropSmartObject>();
 		n_assert(pSO);
 
-		const CPropSmartObject::CAction* pAction = pSO->GetAction(ActionID);
+		const Prop::CPropSmartObject::CAction* pAction = pSO->GetAction(ActionID);
 		if (pAction && pAction->pTpl->Preconditions.IsValid())
 			return pAction->pTpl->Preconditions->FillWorldState(pActor, pSO, WS);
 	}

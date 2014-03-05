@@ -16,8 +16,6 @@ private:
 
 	PItem	Item;
 
-	// DWORD is needed only for money in character's cash. Not inv item.
-	// Items representing money will never exceed 65000 gold by the setting design
 	WORD	Count;
 	WORD	EquippedCount;
 

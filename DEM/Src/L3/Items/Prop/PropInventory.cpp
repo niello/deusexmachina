@@ -1,6 +1,7 @@
 #include "PropInventory.h"
 
 #include <Items/ItemManager.h>
+#include <Items/Prop/PropItem.h>
 #include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
 #include <Events/EventServer.h>
@@ -49,6 +50,7 @@ bool CPropInventory::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropInventory, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropInventory, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropInventory, OnLevelSaving);
+	PROP_SUBSCRIBE_PEVENT(OnSOActionDone, CPropInventory, OnSOActionDone);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -58,6 +60,7 @@ void CPropInventory::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
+	UNSUBSCRIBE_EVENT(OnSOActionDone);
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
@@ -130,6 +133,29 @@ bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
 
 		*pData = StackDesc;
 		++pData;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropInventory::OnSOActionDone(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	CStrID ActionID = P->Get<CStrID>(CStrID("Action"));
+
+	if (ActionID == CStrID("PickItem"))
+	{
+		CStrID SOID = P->Get<CStrID>(CStrID("SO"));
+		Game::CEntity* pItemEnt = EntityMgr->GetEntity(SOID);
+		CPropItem* pPropItem = pItemEnt ? pItemEnt->GetProperty<CPropItem>() : NULL;
+		if (!pPropItem || !pPropItem->Items.IsValid()) OK;
+
+		//!!!can add only part of the stack (check weight and volume)!
+		AddItem(pPropItem->Items); //???AddItems(bool AsManyAsPossible) and return actually added count?
+		pPropItem->Items.Clear();
+
+		if (!pPropItem->Items.IsValid()) EntityMgr->RequestDestruction(SOID);
 	}
 
 	OK;

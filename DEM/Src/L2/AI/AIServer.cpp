@@ -65,7 +65,7 @@ void CAIServer::AddSmartAction(CStrID ID, const Data::CParams& Desc)
 	if (!SOActTpls.Contains(ID))
 	{
 		CSmartAction& SA = SOActTpls.Add(ID);
-		SA.Init(Desc);
+		SA.Init(ID, Desc);
 	}
 }
 //---------------------------------------------------------------------
