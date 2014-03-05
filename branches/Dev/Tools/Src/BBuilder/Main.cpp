@@ -22,6 +22,9 @@ CArray<CString>			FilesToPack;
 CToolFileLists			InFileLists;
 CToolFileLists			OutFileLists;
 
+// Debug command line:
+// -export -waitkey -v 5 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
+
 int main(int argc, const char** argv)
 {
 	nCmdLineArgs Args(argc, argv);
@@ -78,9 +81,9 @@ int main(int argc, const char** argv)
 		IOSrv->CopyFile("Proj:PathList.hrd", "Build:PathList.hrd");
 	}
 
-	if (!DataSrv->LoadDataSchemes("home:DataSchemes/SceneNodes.dss"))
+	if (!DataSrv->LoadDataSchemes("Home:DataSchemes/SceneNodes.dss"))
 	{
-		n_msg(VL_ERROR, "BBuilder: Failed to read 'home:DataSchemes/SceneNodes.dss'");
+		n_msg(VL_ERROR, "BBuilder: Failed to read 'Home:DataSchemes/SceneNodes.dss'");
 		EXIT_APP_FAIL;
 	}
 

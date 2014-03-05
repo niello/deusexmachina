@@ -19,7 +19,7 @@ int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 {
 	n_msg(VL_DETAILS, "> %s %s\n", Name.CStr(), pCmdLine);
 
-	CString Path = IOSrv->ManglePath("home:");
+	CString Path = IOSrv->ManglePath("Home:");
 	Path += "\\..\\ContentForge\\";
 	Path += Name.CStr();
 	Path +=	".exe";

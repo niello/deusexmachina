@@ -7,9 +7,6 @@
 
 // Item property contains item instance and allows to pick it up.
 
-// Adds IAO actions:
-// - Pick
-
 namespace Prop
 {
 
@@ -25,7 +22,6 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);
-	DECLARE_EVENT_HANDLER(PickItem, OnPickItem);
 
 public:
 

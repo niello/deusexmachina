@@ -13,7 +13,7 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) FAIL;
-	CPropSmartObject* pSO = pEnt->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pSO = pEnt->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
 
 	RecoveryTime = 0.f;
@@ -32,7 +32,7 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) return Failure;
-	CPropSmartObject* pSO = pEnt->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pSO = pEnt->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL; //???IsActionAvailable() - some interval instead of every frame check?
 
 	const vector3& TargetPos = pSO->GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();

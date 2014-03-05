@@ -165,6 +165,21 @@ void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) c
 }
 //---------------------------------------------------------------------
 
+CProperty* CEntityManager::GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
+{
+	if (!pRTTI) return NULL;
+	int Idx = PropStorages.FindIndex(pRTTI);
+	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
+	if (Idx == INVALID_INDEX) return NULL;
+	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
+	n_assert_dbg(pStorage);
+
+	PProperty Prop;
+	pStorage->Get(Entity.GetUID(), Prop);
+	return Prop.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 void CEntityManager::GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const
 {
 	for (int i = 0; i < PropStorages.GetCount(); ++i)
