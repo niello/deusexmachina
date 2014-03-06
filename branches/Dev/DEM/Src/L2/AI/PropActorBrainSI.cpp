@@ -41,6 +41,15 @@ int CPropActorBrain_DoAction(lua_State* l)
 }
 //---------------------------------------------------------------------
 
+int CPropActorBrain_AbortCurrAction(lua_State* l)
+{
+	//args: EntityScriptObject's this table, [Result = Success]
+	SETUP_ENT_SI_ARGS(1);
+	This->GetEntity()->GetProperty<CPropActorBrain>()->AbortCurrAction((ArgCount > 1) ? (DWORD)lua_tonumber(l, 2) : Success);
+	return 0;
+}
+//---------------------------------------------------------------------
+
 int CPropActorBrain_Go(lua_State* l)
 {
 	//args1: EntityScriptObject's this table, X, Y, Z, [Arrive distance = 0]
@@ -78,6 +87,7 @@ void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 {
 	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ExportCFunction("DoAction", CPropActorBrain_DoAction);
+	ScriptSrv->ExportCFunction("AbortCurrAction", CPropActorBrain_AbortCurrAction);
 	ScriptSrv->ExportCFunction("Go", CPropActorBrain_Go);
 	ScriptSrv->EndMixin();
 }
@@ -87,6 +97,7 @@ void CPropActorBrain::DisableSI(CPropScriptable& Prop)
 {
 	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
 	ScriptSrv->ClearField("DoAction");
+	ScriptSrv->ClearField("AbortCurrAction");
 	ScriptSrv->ClearField("Go");
 	ScriptSrv->EndMixin();
 }

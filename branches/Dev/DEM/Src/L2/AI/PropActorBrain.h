@@ -121,6 +121,7 @@ public:
 
 	// Mainly is an interface for commands
 	bool				SetPlan(CAction* pNewPlan);
+	void				AbortCurrAction(DWORD Result); //???to event, like QueueTask?
 
 	void				RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
 

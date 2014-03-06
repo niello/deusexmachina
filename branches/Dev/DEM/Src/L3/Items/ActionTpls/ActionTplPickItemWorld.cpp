@@ -72,4 +72,4 @@ PAction CActionTplPickItemWorld::CreateInstance(const CWorldState& Context) cons
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

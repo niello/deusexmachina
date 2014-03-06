@@ -250,9 +250,20 @@ bool CPropActorBrain::SetPlan(CAction* pNewPlan)
 		CurrPlan = NULL;
 		FAIL;
 	}
-	else Flags.Set(AIMind_UpdateGoal); //???why need if valid plan set & activated?
+	else Flags.Set(AIMind_UpdateGoal); //???why need if valid plan set & activated? needed only in !pNewPlan case?
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropActorBrain::AbortCurrAction(DWORD Result)
+{
+	SetPlan(NULL);
+	if (CurrTask.IsValid())
+	{
+		CurrTask->OnPlanDone(this, Result);
+		CurrTask = NULL;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -442,7 +453,7 @@ bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 {
 	//!!!test when actor goes somewhere!
 	NavSystem.SetupState();
-	SetPlan(NULL);
+	SetPlan(NULL); //???what if task is active?
 	RequestGoalUpdate();
 	OK;
 }

@@ -62,7 +62,7 @@ public:
 	WORD			RemoveItem(PItem Item, WORD Count = 1, bool AsManyAsCan = false);
 	WORD			RemoveItem(CStrID ItemID, WORD Count = 1, bool AsManyAsCan = false);
 	bool			HasItem(CStrID ItemID, WORD Count = 1); //???GetItemCount(CStrID)?
-	CItemStack*		FindItemStack(PItem Item);
+	CItemStack*		FindItemStack(const CItem* pItem);
 	CItemStack*		FindItemStack(CStrID ItemID);
 	bool			SplitItems(PItem Item, WORD Ñount, CItemStack& OutStack);
 	void			MergeItems(PItem Item);
@@ -83,10 +83,11 @@ inline WORD CPropInventory::AddItem(const CItemStack& Items, bool AsManyAsCan)
 }
 //---------------------------------------------------------------------
 
-inline CItemStack* CPropInventory::FindItemStack(PItem Item)
+inline CItemStack* CPropInventory::FindItemStack(const CItem* pItem)
 {
+	if (!pItem) return NULL;
 	foreach_stack(Stack, Items)
-		if (Stack->GetItem()->IsEqual(Item)) return (CItemStack*)Stack;
+		if (Stack->GetItem()->IsEqual(pItem)) return (CItemStack*)Stack;
 	return NULL;
 }
 //---------------------------------------------------------------------
