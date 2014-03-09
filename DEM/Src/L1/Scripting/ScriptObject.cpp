@@ -57,6 +57,7 @@ int CScriptObject_Index(lua_State* l)
 
 	lua_pushstring(l, "cpp_ptr");
 	lua_rawget(l, 1);
+	
 	CScriptObject* This = (CScriptObject*)lua_touserdata(l, -1);
 
 	if (This)
@@ -180,7 +181,7 @@ DWORD CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
 
 	if (Table.IsValid()) lua_remove(l, -2);
 
-	lua_getfield(l, -1, pFuncName);
+	lua_getfield(l, -1, pFuncName); //???rawget?
 	if (!lua_isfunction(l, -1)) 
 	{
 		lua_pop(l, 2);

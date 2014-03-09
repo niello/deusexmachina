@@ -29,7 +29,7 @@ private:
 	float	Progress;
 	bool	WasDone;
 
-	DWORD			SetDone(CActor* pActor, const class CSmartAction& ActTpl);
+	DWORD			SetDone(CActor* pActor, Prop::CPropSmartObject* pSO, const class CSmartAction& ActTpl);
 
 public:
 

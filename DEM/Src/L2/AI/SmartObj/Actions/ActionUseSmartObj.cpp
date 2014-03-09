@@ -4,7 +4,6 @@
 #include <AI/PropSmartObject.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-#include <Events/EventServer.h>
 
 namespace AI
 {
@@ -13,15 +12,16 @@ __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 using namespace Prop;
 using namespace Data;
 
-DWORD CActionUseSmartObj::SetDone(CActor* pActor, const CSmartAction& ActTpl)
+DWORD CActionUseSmartObj::SetDone(CActor* pActor, CPropSmartObject* pSO, const CSmartAction& ActTpl)
 {
 	WasDone = true;
 
-	PParams P = n_new(CParams(2));
-	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	PParams P = n_new(CParams(3));
+	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 	pActor->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
+	pSO->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
 
 	return ActTpl.EndOnDone() ? Success : Running;
 }
@@ -73,16 +73,18 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 	if (pActorSO)
 		pActorSO->SetState(CStrID("UsingSO"), ActionID); //!!!SYNC_ACTOR_ANIMATION ? Duration : -1.f
 
-	PParams P = n_new(CParams(2)); //3));
-	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	PParams P = n_new(CParams(3));
+	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 	pActor->GetEntity()->FireEvent(CStrID("OnSOActionStart"), P);
+	pSOEntity->FireEvent(CStrID("OnSOActionStart"), P);
 
 	if (Duration == 0.f)
 	{
 		WasDone = true;
 		pActor->GetEntity()->FireEvent(CStrID("OnSOActionDone"), P);
+		pSOEntity->FireEvent(CStrID("OnSOActionDone"), P);
 	}
 
 	OK;
@@ -103,7 +105,7 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 	DWORD Result = Running; //!!!if UpdateFunc() call it!
 	if (Result == Failure || ExecResultIsError(Result)) return Result;
 	if (WasDone) return ActTpl.EndOnDone() ? Success : Running;
-	if (Result == Success) return SetDone(pActor, ActTpl);
+	if (Result == Success) return SetDone(pActor, pSO, ActTpl);
 	else if (ActTpl.ProgressDriver != CSmartAction::PDrv_None)
 	{
 		bool IsDone = false;
@@ -129,16 +131,17 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 			}
 		}
 
-		if (IsDone) return SetDone(pActor, ActTpl);
+		if (IsDone) return SetDone(pActor, pSO, ActTpl);
 		else if (ActTpl.SendProgressEvent() && Progress != PrevProgress)
 		{
-			PParams P = n_new(CParams(4));
-			//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+			PParams P = n_new(CParams(5));
+			P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 			P->Set(CStrID("SO"), TargetID);
 			P->Set(CStrID("Action"), ActionID);
 			P->Set(CStrID("PrevValue"), PrevProgress);
 			P->Set(CStrID("Value"), Progress);
 			pActor->GetEntity()->FireEvent(CStrID("OnSOActionProgress"), P);
+			pSOEntity->FireEvent(CStrID("OnSOActionProgress"), P);
 		}
 	}
 
@@ -156,14 +159,15 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	if (!pSOAction) return;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
-	PParams P = n_new(CParams(2));
-	//P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
+	PParams P = n_new(CParams(3));
+	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
 
 	if (WasDone)
 	{
-		EventSrv->FireEvent(CStrID("OnSOActionEnd"), P);
+		pActor->GetEntity()->FireEvent(CStrID("OnSOActionEnd"), P);
+		pSOEntity->FireEvent(CStrID("OnSOActionEnd"), P);
 		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration && !ActTpl.ResetOnAbort())
 		{
 			CString AttrID("ActionProgress_");
@@ -173,7 +177,8 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	}
 	else
 	{
-		EventSrv->FireEvent(CStrID("OnSOActionAbort"), P);
+		pActor->GetEntity()->FireEvent(CStrID("OnSOActionAbort"), P);
+		pSOEntity->FireEvent(CStrID("OnSOActionAbort"), P);
 		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration && !ActTpl.ResetOnAbort())
 		{
 			CString AttrID("ActionProgress_");

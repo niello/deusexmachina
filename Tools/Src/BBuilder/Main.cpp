@@ -162,6 +162,14 @@ int main(int argc, const char** argv)
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+	n_printf("\n"SEP_LINE"Processing items:\n"SEP_LINE);
+
+	if (!ProcessDescsInFolder(IOSrv->ManglePath("SrcItems:"), IOSrv->ManglePath("Items:")))
+	{
+		n_msg(VL_ERROR, "Error procesing items!\n");
+		EXIT_APP_FAIL;
+	}
+
 	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE);
 
 	if (!ProcessQuestsInFolder(IOSrv->ManglePath("SrcQuests:"), IOSrv->ManglePath("Quests:")))
@@ -273,7 +281,7 @@ int ExitApp(bool NoError, bool WaitKey)
 	if (WaitKey)
 	{
 		n_printf("\nPress any key to exit...\n");
-		getch();
+		_getch();
 	}
 
 	DataServer = NULL;
