@@ -312,14 +312,17 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 
 bool ProcessDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 {
-	if (IsFileAdded(ExportFilePath)) OK;
+	// Some descs can be loaded twice or more from different IO path assigns, avoid it
+	CString RealExportFilePath = IOSrv->ManglePath(ExportFilePath);
+
+	if (IsFileAdded(RealExportFilePath)) OK;
 
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		if (!DataSrv->SavePRM(ExportFilePath, DataSrv->LoadHRD(SrcFilePath, false))) FAIL;
+		IOSrv->CreateDirectory(RealExportFilePath.ExtractDirName());
+		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(SrcFilePath, false))) FAIL;
 	}
-	FilesToPack.InsertSorted(ExportFilePath);
+	FilesToPack.InsertSorted(RealExportFilePath);
 
 	OK;
 }
@@ -502,6 +505,44 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const CString& Name)
 			}
 		}
 	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessDescsInFolder(const CString& SrcPath, const CString& ExportPath)
+{
+	IO::CFSBrowser Browser;
+	if (!Browser.SetAbsolutePath(ExportDescs ? SrcPath : ExportPath))
+	{
+		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
+		FAIL;
+	}
+
+	if (ExportDescs) IOSrv->CreateDirectory(ExportPath);
+
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryFile())
+		{
+			CString DescName = Browser.GetCurrEntryName();
+			DescName.StripExtension();
+
+			n_msg(VL_INFO, "Processing desc '%s'...\n", DescName.CStr());
+
+			CString ExportFilePath = ExportPath + "/" + DescName + ".prm";
+			if (!ProcessDesc(Browser.GetCurrentPath() + "/" + Browser.GetCurrEntryName(), ExportFilePath))
+			{
+				n_msg(VL_ERROR, "Error loading desc '%s'\n", DescName.CStr());
+				continue;
+			}
+		}
+		else if (Browser.IsCurrEntryDir())
+		{
+			if (!ProcessDescsInFolder(SrcPath + "/" + Browser.GetCurrEntryName(), ExportPath + "/" + Browser.GetCurrEntryName())) FAIL;
+		}
+	}
+	while (Browser.NextCurrDirEntry());
 
 	OK;
 }

@@ -34,7 +34,7 @@ bool CEventHandlerScript::operator()(const CEventBase& Event)
 		//{
 			if (ScriptSrv->DataToLuaStack(((const CEvent&)Event).Params) == 1)
 			{
-				lua_pushstring(l, ((const CEvent&)Event).GetID().ID);
+				lua_pushstring(l, e.GetID().ID);
 				lua_setfield(l, -2, "EventName");
 				lua_setglobal(l, "CurrEventParams");
 			}

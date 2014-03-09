@@ -26,6 +26,7 @@ enum EWSProp
 	WSP_Action,
 	WSP_HasItem,
 	WSP_ItemEquipped,
+
 	WSP_Count
 };
 

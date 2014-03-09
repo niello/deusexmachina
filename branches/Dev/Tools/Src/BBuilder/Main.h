@@ -24,6 +24,7 @@ bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
 bool	ProcessFrameShader(const Data::CParams& Desc);
 bool	ProcessDesc(const CString& SrcFilePath, const CString& ExportFilePath);
 bool	ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileName);
+bool	ProcessDescsInFolder(const CString& SrcPath, const CString& ExportPath);
 bool	ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath);
 bool	ProcessSOActionTplsDesc(const CString& SrcFilePath, const CString& ExportFilePath);
 void	BatchToolInOut(CStrID Name, const CString& InStr, const CString& OutStr);
