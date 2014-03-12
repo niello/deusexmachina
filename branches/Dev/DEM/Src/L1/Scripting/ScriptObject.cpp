@@ -48,6 +48,9 @@ int CScriptObject_Index(lua_State* l)
 {
 	// Stack: current table at 1, key at 2
 
+	// If assertion failed, must process non-string keys
+	n_assert(lua_type(l, 2) == LUA_TSTRING);
+
 	LPCSTR Key = lua_tostring(l, 2);
 
 	//???can return 'this' through __index?
@@ -83,7 +86,10 @@ int CScriptObject_NewIndex(lua_State* l)
 {
 	// Stack: current table at 1, key at 2, value at 3
 
-	const char* Key = lua_tostring(l, 2);
+	// If assertion failed, must process non-string keys
+	n_assert(lua_type(l, 2) == LUA_TSTRING);
+
+	LPCSTR Key = lua_tostring(l, 2);
 
 	n_assert_dbg(strcmp(Key, "cpp_ptr"));
 
@@ -95,7 +101,7 @@ int CScriptObject_NewIndex(lua_State* l)
 	{
 		if (!strcmp(Key, "name"))
 		{
-			n_assert(lua_isstring(l, 3));
+			n_assert(lua_type(l, 3) == LUA_TSTRING);
 			This->SetName(lua_tostring(l, 3));
 
 			// Never cache the name, cause next rewrite will not call __newindex and will break object naming

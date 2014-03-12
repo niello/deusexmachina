@@ -76,7 +76,7 @@ public:
 	bool			IsPaused(CStrID SrcName = CStrID::Empty) const;
 
 	bool			CreateNamedTimer(CStrID Name, float Time, bool Loop = false,
-									 CStrID Event = CStrID("OCTimer"), CStrID TimeSrc = CStrID::Empty);
+									 CStrID Event = CStrID("OnTimer"), CStrID TimeSrc = CStrID::Empty);
 	void			PauseNamedTimer(CStrID Name, bool Pause = true);
 	void			DestroyNamedTimer(CStrID Name);
 };

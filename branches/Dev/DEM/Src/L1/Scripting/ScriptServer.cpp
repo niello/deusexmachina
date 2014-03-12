@@ -122,92 +122,99 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 	if (StackIdx < 0) StackIdx = lua_gettop(l) + StackIdx + 1;
 
 	int Type = lua_type(l, StackIdx);
-	if (Type == LUA_TNIL || Type == LUA_TNONE) Result.Clear();
-	else if (Type == LUA_TBOOLEAN) Result = (lua_toboolean(l, StackIdx) != 0);
-	else if (Type == LUA_TNUMBER)
+	switch (Type)
 	{
-		double Value = lua_tonumber(l, StackIdx);
-		if ((double)((int)Value) == Value) Result = (int)Value;
-		else Result = (float)Value;
-	}
-	else if (Type == LUA_TSTRING) Result = CString(lua_tostring(l, StackIdx));
-	else if (Type == LUA_TLIGHTUSERDATA) Result = lua_touserdata(l, StackIdx);
-	else if (Type == LUA_TTABLE)
-	{						
-		int Key, MaxKey = -1;	
-		
-		lua_pushnil(l);
-		while (lua_next(l, StackIdx))
-			if (lua_isstring(l, -2))
+		case LUA_TNONE:
+		case LUA_TNIL:				Result.Clear(); OK;
+		case LUA_TBOOLEAN:			Result = (lua_toboolean(l, StackIdx) != 0); OK;
+		case LUA_TSTRING:			Result = CString(lua_tostring(l, StackIdx)); OK;
+		case LUA_TLIGHTUSERDATA:	Result = lua_touserdata(l, StackIdx); OK;
+		case LUA_TNUMBER:
+		{
+			//???is really good way to detect integer?
+			double Value = lua_tonumber(l, StackIdx);
+			if ((double)((int)Value) == Value) Result = (int)Value;
+			else Result = (float)Value;
+			OK;
+		}
+		case LUA_TTABLE:
+		{						
+			int Key, MaxKey = -1;	
+			
+			lua_pushnil(l);
+			while (lua_next(l, StackIdx))
+				if (lua_type(l, -2) == LUA_TSTRING)
+				{
+					if (MaxKey > -1)
+						n_printf("CScriptServer::LuaStackToData, Warning: mixed table, int & string keys, "
+								 "will convert only string ones\n");
+					MaxKey = -1;
+					lua_pop(l, 2);
+					break;
+				}
+				else
+				{
+					Key = lua_tointeger(l, -2);
+					if (Key <= 0)
+					{
+						n_printf("CScriptServer::LuaStackToData: Incorrect array index (Idx < 0)\n");
+						lua_pop(l, 2);
+						FAIL;
+					}
+					if (Key > MaxKey) MaxKey = Key;
+					lua_pop(l, 1);
+				}
+
+			if (MaxKey > -1)
 			{
-				if (MaxKey > -1)
-					n_printf("CScriptServer::LuaStackToData, Warning: mixed table, int & string keys, "
-							 "will convert only string ones\n");
-				MaxKey = -1;
-				lua_pop(l, 2);
-				break;
+				Data::PDataArray Array = n_new(Data::CDataArray);
+				Array->Reserve(MaxKey);
+
+				lua_pushnil(l);
+				while (lua_next(l, StackIdx))
+				{
+					Key = lua_tointeger(l, -2) - 1;
+					LuaStackToData(Array->At(Key), -1);
+					lua_pop(l, 1);
+				}
+				
+				Result = Array;
 			}
 			else
 			{
-				Key = lua_tointeger(l, -2);
-				if (Key <= 0)
-				{
-					n_printf("CScriptServer::LuaStackToData: Incorrect array index (Idx < 0)\n");
-					lua_pop(l, 2);
-					FAIL;
-				}
-				if (Key > MaxKey) MaxKey = Key;
-				lua_pop(l, 1);
-			}
-
-		if (MaxKey > -1)
-		{
-			Data::PDataArray Array = n_new(Data::CDataArray);
-			Array->Reserve(MaxKey);
-
-			lua_pushnil(l);
-			while (lua_next(l, StackIdx))
-			{
-				Key = lua_tointeger(l, -2) - 1;
-				LuaStackToData(Array->At(Key), -1);
-				lua_pop(l, 1);
-			}
-			
-			Result = Array;
-		}
-		else
-		{
-			Data::CData ParamData;
-			Data::PParams Params = n_new(Data::CParams);
-			
-			lua_pushnil(l);
-			while (lua_next(l, StackIdx))
-				if (lua_isstring(l, -2))
-				{
-					LPCSTR pStr = lua_tostring(l, -2);
-
-					// Prevent diving into possible self-references
-					if (strcmp(pStr, "__index") &&
-						strcmp(pStr, "__newindex") &&
-						strcmp(pStr, "this"))
+				Data::CData ParamData;
+				Data::PParams Params = n_new(Data::CParams);
+				
+				lua_pushnil(l);
+				while (lua_next(l, StackIdx))
+					if (lua_type(l, -2) == LUA_TSTRING)
 					{
-						LuaStackToData(ParamData, -1);
-						Params->Set(CStrID(pStr), ParamData);
+						LPCSTR pStr = lua_tostring(l, -2);
+
+						// Prevent diving into possible self-references
+						if (strcmp(pStr, "__index") &&
+							strcmp(pStr, "__newindex") &&
+							strcmp(pStr, "this"))
+						{
+							LuaStackToData(ParamData, -1);
+							Params->Set(CStrID(pStr), ParamData);
+						}
+						
+						lua_pop(l, 1);
 					}
-					
-					lua_pop(l, 1);
-				}
-			
-			Result = Params;
+				
+				Result = Params;
+			}
+		}
+		case LUA_TFUNCTION:
+		case LUA_TUSERDATA:
+		case LUA_TTHREAD:		FAIL;
+		default:
+		{
+			n_printf("Conversion from Lua to CData failed, unknown Lua type %d\n", Type);
+			FAIL;
 		}
 	}
-	else
-	{
-		//n_printf("Conversion from Lua to CData failed, unsupported Lua type %d\n", Type);
-		FAIL;
-	}
-
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -647,16 +654,38 @@ bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 	while (lua_next(l, -2))
 	{
 		CString& New = *OutFields.Reserve(1);
-		New = lua_tostring(l, -2);
+		if (lua_type(l, -2) == LUA_TSTRING) New = lua_tostring(l, -2);
+		else if (lua_type(l, -2) == LUA_TNUMBER)
+		{
+			New = "[";
+			New += CString::FromInt(lua_tointeger(l, -2));
+			New += "]";
+		}
+		else
+		{
+			lua_pop(l, 1);
+			continue;
+		}
+
+		// Can use lua_typename
 		switch (lua_type(l, -1))
 		{
 			case LUA_TNIL:				New += "(nil)"; break;
-			case LUA_TBOOLEAN:			New += " = "; New += lua_tostring(l, -1); New += " (bool)"; break;
-			case LUA_TNUMBER:			New += " = "; New += lua_tostring(l, -1); New += " (number)"; break;
+			case LUA_TBOOLEAN:			New += " = "; New += CString::FromBool(lua_toboolean(l, -1) != 0); New += " (bool)"; break;
+			case LUA_TNUMBER:
+			{
+				//???is really good way to detect integer?
+				New += " = ";
+				double Value = lua_tonumber(l, -1);
+				if ((double)((int)Value) == Value) New += CString::FromInt((int)Value);
+				else New += CString::FromFloat((float)Value);
+				New += " (number)";
+				break;
+			}
 			case LUA_TSTRING:			New += " = "; New += lua_tostring(l, -1); New += " (string)"; break;
 			case LUA_TTABLE:			New += "(table)"; break;
 			case LUA_TFUNCTION:			New += "(function)"; break;
-			case LUA_TUSERDATA:
+			case LUA_TUSERDATA:			New += "(lightuserdata)"; break;
 			case LUA_TLIGHTUSERDATA:	New += "(userdata)"; break;
 		}
 

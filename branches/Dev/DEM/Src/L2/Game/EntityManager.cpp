@@ -169,14 +169,22 @@ CProperty* CEntityManager::GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI
 {
 	if (!pRTTI) return NULL;
 	int Idx = PropStorages.FindIndex(pRTTI);
+
+	const Core::CRTTI* pStorageRTTI = pRTTI;
+	while (Idx == INVALID_INDEX && pStorageRTTI && pStorageRTTI != &CProperty::RTTI)
+	{
+		pStorageRTTI = pStorageRTTI->GetParent();
+		Idx = PropStorages.FindIndex(pStorageRTTI);
+	}
 	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
 	if (Idx == INVALID_INDEX) return NULL;
+
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);
 
 	PProperty Prop;
 	pStorage->Get(Entity.GetUID(), Prop);
-	return Prop.GetUnsafe();
+	return pRTTI == pStorageRTTI || Prop->IsA(*pRTTI) ? Prop.GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

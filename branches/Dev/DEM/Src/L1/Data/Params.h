@@ -198,11 +198,28 @@ inline void CParams::Set(CStrID Name, const CData& Value)
 };
 
 //!!!Tmp while there are no conversions!
-inline float GetFloat(const Data::CParams& Desc, CStrID Name, float Default = 0.f)
+inline float GetFloat(const Data::CParams& P, CStrID Name, float Default = 0.f)
 {
 	Data::CParam* pPrm;
-	if (Desc.Get(pPrm, Name))
+	if (P.Get(pPrm, Name))
 		return pPrm->IsA<float>() ? pPrm->GetValue<float>() : (float)pPrm->GetValue<int>();
+	return Default;
+}
+//---------------------------------------------------------------------
+
+//!!!Tmp while there are no conversions!
+inline CStrID GetStrID(const Data::CData& Data)
+{
+	return Data.IsA<CStrID>() ? Data.GetValue<CStrID>() : CStrID(Data.GetValue<CString>().CStr());
+}
+//---------------------------------------------------------------------
+
+//!!!Tmp while there are no conversions!
+inline CStrID GetStrID(const Data::CParams& P, CStrID Name, CStrID Default = CStrID::Empty)
+{
+	Data::CParam* pPrm;
+	if (P.Get(pPrm, Name))
+		return pPrm->IsA<CStrID>() ? pPrm->GetValue<CStrID>() : CStrID(pPrm->GetValue<CString>().CStr());
 	return Default;
 }
 //---------------------------------------------------------------------

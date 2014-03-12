@@ -84,4 +84,19 @@ float CSmartAction::GetDuration(CStrID ActorID, CStrID SOID) const
 }
 //---------------------------------------------------------------------
 
+DWORD CSmartAction::Update(CStrID ActorID, CStrID SOID) const
+{
+	if (ScriptObj.IsValid())
+	{
+		Data::CData Args[] = { ActorID, SOID };
+		Data::CData RetVal;
+		DWORD Res = ScriptObj->RunFunction("Update", Args, 2, &RetVal);
+		if (Res != Error_Scripting_NoFunction)
+			return RetVal.GetValue<int>();
+	}
+
+	return Running;
+}
+//---------------------------------------------------------------------
+
 }
