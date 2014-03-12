@@ -564,7 +564,6 @@ bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
 		lua_getglobal(l, Table);
 		if (!lua_istable(l, -1))
 		{
-			n_printf("Error: table \"%s\" containing script object \"%s\" not found\n", Table, Name);
 			lua_pop(l, 1);
 			FAIL;
 		}
@@ -576,8 +575,6 @@ bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
 	if (lua_istable(l, -1) || lua_isuserdata(l, -1)) OK;
 	else
 	{
-		n_printf("Error: script object \"%s\" not found in table \"%s\"\n",
-			Name, (TableIdx == LUA_GLOBALSINDEX) ? "_Globals" : Table);
 		lua_pop(l, (TableIdx == LUA_GLOBALSINDEX) ? 1 : 2);
 		FAIL;
 	}

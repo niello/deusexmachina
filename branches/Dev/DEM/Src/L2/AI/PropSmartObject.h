@@ -47,27 +47,27 @@ protected:
 	};
 
 	// FSM stuff, Tr is for Transition
-	CActionList					Actions;
-	CDict<CStrID, CAnimInfo>	ActionAnims; //???one collection and associations? state1(anim1)->state2(anim1) will
-	CDict<CStrID, CAnimInfo>	StateAnims;	 //lead to no switch and it is very cool. Also data duplication will be avoided.
-	CStrID						CurrState;
-	CStrID						TargetState;
-	float						TrProgress;
-	float						TrDuration;
-	CStrID						TrActionID;
-	bool						TrManualControl;
-	DWORD						AnimTaskID;
-	const CAnimInfo*			pCurrAnimInfo;
+	CActionList			Actions;
+	CArray<CAnimInfo>	Anims;
+	CDict<CStrID, int>	ActionAnimIndices;
+	CDict<CStrID, int>	StateAnimIndices;
+	CStrID				CurrState;
+	CStrID				TargetState;
+	float				TrProgress;
+	float				TrDuration;
+	CStrID				TrActionID;
+	bool				TrManualControl;
+	DWORD				AnimTaskID;
+	const CAnimInfo*	pCurrAnimInfo;
 
 	// Game object stuff
-	CStrID						TypeID;
+	CStrID				TypeID;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
 	void			EnableSI(class CPropScriptable& Prop);
 	void			DisableSI(class CPropScriptable& Prop);
 	void			InitAnimation(Data::PParams Desc, class CPropAnimation& Prop);
-	void			FillAnimationInfo(CAnimInfo& AnimInfo, const Data::CParams& Desc, class CPropAnimation& Prop);
 
 	void			CompleteTransition();
 	void			SwitchAnimation(const CAnimInfo* pAnimInfo);
@@ -81,7 +81,7 @@ protected:
 
 public:
 
-	CPropSmartObject(): Actions(1, 2), ActionAnims(0, 2), StateAnims(0, 2), AnimTaskID(INVALID_INDEX), pCurrAnimInfo(NULL) {}
+	CPropSmartObject(): Actions(1, 2), Anims(0, 2), ActionAnimIndices(0, 2), StateAnimIndices(0, 2), AnimTaskID(INVALID_INDEX), pCurrAnimInfo(NULL) {}
 
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);

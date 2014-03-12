@@ -164,8 +164,10 @@ DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 
 	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr()))
 	{
+		n_printf("Error: script object \"%s.%s\" not found\n",
+			Name.CStr(), Table.IsEmpty() ? "_G" : Table.CStr());
 		lua_pop(l, 1);
-		return Error;
+		return Error_Scripting_NoObject;
 	}
 
 	if (Table.IsValid()) lua_remove(l, -2);
