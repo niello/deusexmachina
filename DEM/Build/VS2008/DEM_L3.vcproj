@@ -477,14 +477,6 @@
 			Name="World"
 			>
 			<File
-				RelativePath="..\..\Src\L3\World\PropTransitionZone.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L3\World\PropTransitionZone.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L3\World\WorldManager.cpp"
 				>
 			</File>

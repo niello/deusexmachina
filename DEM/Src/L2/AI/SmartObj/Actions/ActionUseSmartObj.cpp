@@ -102,7 +102,7 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 	if (!pSOAction) return Failure;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
-	DWORD Result = Running; //!!!if UpdateFunc() call it!
+	DWORD Result = ActTpl.Update(pActor->GetEntity()->GetUID(), TargetID);
 	if (Result == Failure || ExecResultIsError(Result)) return Result;
 	if (WasDone) return ActTpl.EndOnDone() ? Success : Running;
 	if (Result == Success) return SetDone(pActor, pSO, ActTpl);
