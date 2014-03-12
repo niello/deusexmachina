@@ -120,9 +120,9 @@ bool CPropActorBrain::InternalActivate()
 						}
 
 						if (!Found)
-							n_printf("Warning, AI: perceptor '%s' not found in '%s' on activation\n",
-									 ItPercName->GetValue<CString>().CStr(),
-									 GetEntity()->GetUID().CStr());
+							n_printf("AI,Warning: entity '%s', perceptor '%s' not found on brain activation\n",
+									GetEntity()->GetUID().CStr(),
+									ItPercName->GetValue<CString>().CStr());
 					}
 				}
 			}
@@ -158,7 +158,8 @@ bool CPropActorBrain::InternalActivate()
 				LPCSTR pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
 				if (pTpl) Actions.Add(pTpl);
-				else n_printf("Warning, AI: action template '%s' is not registered\n", pActionName);
+				else n_printf("AI,Warning: entity '%s' requested action template '%s' that is not registered\n",
+						GetEntity()->GetUID().CStr(), pActionName);
 			}
 		}
 

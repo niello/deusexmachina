@@ -43,7 +43,8 @@ bool CPropSmartObject::InternalActivate()
 					Action.FreeUserSlots = pTpl->MaxUserCount;
 					Action.Enabled = ActionsEnabled.IsValid() ? ActionsEnabled->Get(Action.Enabled, Prm.GetName()) : false;
 				}
-				else n_printf("AI, SO, Warning: can't find smart object action template '%s'\n", Prm.GetValue<CStrID>().CStr());
+				else n_printf("AI,SO,Warning: entity '%s', can't find smart object action template '%s'\n",
+						GetEntity()->GetUID().CStr(), Prm.GetValue<CStrID>().CStr());
 			}
 			Actions.EndAdd();
 		}
@@ -109,8 +110,9 @@ void CPropSmartObject::InternalDeactivate()
 	//???delete related entity attrs?
 
 	CurrState = CStrID::Empty;
-	ActionAnims.Clear();
-	StateAnims.Clear();
+	ActionAnimIndices.Clear();
+	StateAnimIndices.Clear();
+	Anims.Clear();
 	Actions.Clear();
 }
 //---------------------------------------------------------------------
@@ -171,8 +173,9 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 	{
 		AnimTaskID = INVALID_INDEX;
 		pCurrAnimInfo = NULL;
-		ActionAnims.Clear();
-		StateAnims.Clear();
+		ActionAnimIndices.Clear();
+		StateAnimIndices.Clear();
+		Anims.Clear();
 		OK;
 	}
 
@@ -218,53 +221,63 @@ bool CPropSmartObject::OnBeginFrame(const Events::CEventBase& Event)
 
 void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 {
-	Data::PParams Anims;
-	if (Desc->Get<Data::PParams>(Anims, CStrID("ActionAnims")))
+	Data::PDataArray AnimsDesc;
+	if (Desc->Get<Data::PDataArray>(AnimsDesc, CStrID("Anims")))
 	{
-		for (int i = 0; i < Anims->GetCount(); ++i)
+		CAnimInfo* pAnimInfo = Anims.Reserve(AnimsDesc->GetCount());
+		for (int i = 0; i < AnimsDesc->GetCount(); ++i)
 		{
-			Data::CParam& Prm = Anims->Get(i);
-			CAnimInfo& AnimInfo = ActionAnims.Add(Prm.GetName());
-			FillAnimationInfo(AnimInfo, *Prm.GetValue<Data::PParams>(), Prop);
+			const Data::CParams& SubDesc = *AnimsDesc->Get<Data::PParams>(i);
+			pAnimInfo->ClipID = SubDesc.Get<CStrID>(CStrID("Clip"), CStrID::Empty);
+			n_assert(pAnimInfo->ClipID.IsValid());
+			pAnimInfo->Loop = SubDesc.Get(CStrID("Loop"), false);
+			pAnimInfo->Speed = SubDesc.Get(CStrID("Speed"), 1.f);
+			pAnimInfo->Weight = SubDesc.Get(CStrID("Weight"), 1.f);
+			pAnimInfo->Duration = Prop.GetAnimLength(pAnimInfo->ClipID);
+			if (SubDesc.Get(pAnimInfo->Offset, CStrID("RelOffset")))
+				pAnimInfo->Offset *= pAnimInfo->Duration;
+			else pAnimInfo->Offset = SubDesc.Get(CStrID("Offset"), 0.f);
+			//???priority, fadein, fadeout?
+			++pAnimInfo;
 		}
 	}
 
-	if (Desc->Get<Data::PParams>(Anims, CStrID("StateAnims")))
+	Data::PParams AnimRefDesc;
+	if (Desc->Get<Data::PParams>(AnimRefDesc, CStrID("ActionAnims")))
 	{
-		for (int i = 0; i < Anims->GetCount(); ++i)
+		for (int i = 0; i < AnimRefDesc->GetCount(); ++i)
 		{
-			Data::CParam& Prm = Anims->Get(i);
-			CAnimInfo& AnimInfo = StateAnims.Add(Prm.GetName());
-			FillAnimationInfo(AnimInfo, *Prm.GetValue<Data::PParams>(), Prop);
+			Data::CParam& Prm = AnimRefDesc->Get(i);
+			int Idx = Prm.GetValue<int>();
+			if (Idx <= Anims.GetCount()) ActionAnimIndices.Add(Prm.GetName(), Idx);
+			else n_printf("AI,SO,Warning: entity '%s', action anim '%s' = '%d' idx is out of range, skipped\n",
+					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
+		}
+	}
+
+	if (Desc->Get<Data::PParams>(AnimRefDesc, CStrID("StateAnims")))
+	{
+		for (int i = 0; i < AnimRefDesc->GetCount(); ++i)
+		{
+			Data::CParam& Prm = AnimRefDesc->Get(i);
+			int Idx = Prm.GetValue<int>();
+			if (Idx <= Anims.GetCount()) StateAnimIndices.Add(Prm.GetName(), Idx);
+			else n_printf("AI,SO,Warning: entity '%s', state anim '%s' = '%d' idx is out of range, skipped\n",
+					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
 		}
 	}
 
 	if (IsInTransition())
 	{
-		int Idx = ActionAnims.FindIndex(CurrState);
-		SwitchAnimation((Idx != INVALID_INDEX) ? &ActionAnims.ValueAt(Idx) : NULL);
+		int Idx = ActionAnimIndices.FindIndex(CurrState);
+		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : NULL);
 		UpdateAnimationCursor();
 	}
 	else
 	{
-		int Idx = StateAnims.FindIndex(CurrState);
-		SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
+		int Idx = StateAnimIndices.FindIndex(CurrState);
+		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
 	}
-}
-//---------------------------------------------------------------------
-
-//???priority, fadein, fadeout?
-void CPropSmartObject::FillAnimationInfo(CAnimInfo& AnimInfo, const Data::CParams& Desc, class CPropAnimation& Prop)
-{
-	AnimInfo.ClipID = Desc.Get<CStrID>(CStrID("Clip"), CStrID::Empty);
-	n_assert(AnimInfo.ClipID.IsValid());
-	AnimInfo.Loop = Desc.Get(CStrID("Loop"), false);
-	AnimInfo.Speed = Desc.Get(CStrID("Speed"), 1.f);
-	AnimInfo.Weight = Desc.Get(CStrID("Weight"), 1.f);
-	AnimInfo.Duration = Prop.GetAnimLength(AnimInfo.ClipID);
-	if (Desc.Get(AnimInfo.Offset, CStrID("RelOffset")))
-		AnimInfo.Offset *= AnimInfo.Duration;
-	else AnimInfo.Offset = Desc.Get(CStrID("Offset"), 0.f);
 }
 //---------------------------------------------------------------------
 
@@ -287,8 +300,8 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 		//!!!if not bidirectional, exit (x->y)->x here because it becomes (x->x)->x!
 	}
 
-	int Idx = ActionAnims.FindIndex(ActionID);
-	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &ActionAnims.ValueAt(Idx) : NULL;
+	int Idx = ActionAnimIndices.FindIndex(ActionID);
+	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : NULL;
 	if (TransitionDuration < 0.f)
 		TransitionDuration = (pAnimInfo && pAnimInfo->Speed != 0.f) ? pAnimInfo->Duration / n_fabs(pAnimInfo->Speed) : 0.f;
 
@@ -335,8 +348,8 @@ void CPropSmartObject::CompleteTransition()
 {
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
-	int Idx = StateAnims.FindIndex(TargetState);
-	SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
+	int Idx = StateAnimIndices.FindIndex(TargetState);
+	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
 
 	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("From"), CurrState);
@@ -374,8 +387,8 @@ void CPropSmartObject::AbortTransition(float Duration)
 	//???interchange curr and target and complete transition?
 	//???only if bidirectional transition available for this state pair?
 
-	int Idx = StateAnims.FindIndex(CurrState);
-	SwitchAnimation((Idx != INVALID_INDEX) ? &StateAnims.ValueAt(Idx) : NULL);
+	int Idx = StateAnimIndices.FindIndex(CurrState);
+	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
 
 	TargetState = CurrState;
 	TrProgress = 0.f;
