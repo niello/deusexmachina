@@ -489,10 +489,6 @@
 			Name="Dlg"
 			>
 			<File
-				RelativePath="..\..\Src\L3\Dlg\Dialogue.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L3\Dlg\DialogueManager.cpp"
 				>
 			</File>
@@ -501,11 +497,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgLink.cpp"
+				RelativePath="..\..\Src\L3\Dlg\DlgContext.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgLink.h"
+				RelativePath="..\..\Src\L3\Dlg\DlgGraph.h"
 				>
 			</File>
 			<File
@@ -517,45 +513,17 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNodeAnswers.cpp"
+				RelativePath="..\..\Src\L3\Dlg\PropTalking.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNodeAnswers.h"
+				RelativePath="..\..\Src\L3\Dlg\PropTalking.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNodePhrase.cpp"
+				RelativePath="..\..\Src\L3\Dlg\PropTalkingSI.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNodePhrase.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNodeRandom.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNodeRandom.h"
-				>
-			</File>
-			<Filter
-				Name="Prop"
-				>
-				<File
-					RelativePath="..\..\Src\L3\Dlg\Prop\PropTalking.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Dlg\Prop\PropTalking.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L3\Dlg\Prop\PropTalkingSI.cpp"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="Quests"

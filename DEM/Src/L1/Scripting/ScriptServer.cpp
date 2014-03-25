@@ -131,9 +131,10 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 		case LUA_TLIGHTUSERDATA:	Result = lua_touserdata(l, StackIdx); OK;
 		case LUA_TNUMBER:
 		{
-			//???is really good way to detect integer?
 			double Value = lua_tonumber(l, StackIdx);
-			if ((double)((int)Value) == Value) Result = (int)Value;
+			int IntValue;
+			lua_number2int(IntValue, Value);
+			if (((double)IntValue) == Value) Result = IntValue;
 			else Result = (float)Value;
 			OK;
 		}
@@ -671,10 +672,11 @@ bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 			case LUA_TBOOLEAN:			New += " = "; New += CString::FromBool(lua_toboolean(l, -1) != 0); New += " (bool)"; break;
 			case LUA_TNUMBER:
 			{
-				//???is really good way to detect integer?
 				New += " = ";
 				double Value = lua_tonumber(l, -1);
-				if ((double)((int)Value) == Value) New += CString::FromInt((int)Value);
+				int IntValue;
+				lua_number2int(IntValue, Value);
+				if (((double)IntValue) == Value) New += CString::FromInt(IntValue);
 				else New += CString::FromFloat((float)Value);
 				New += " (number)";
 				break;
