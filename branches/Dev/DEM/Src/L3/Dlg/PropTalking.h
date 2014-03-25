@@ -10,13 +10,11 @@
 
 namespace Story
 {
-	typedef Ptr<class CDialogue> PDialogue;
+	typedef Ptr<class CDlgGraph> PDlgGraph;
 }
 
 namespace Prop
 {
-using namespace Events;
-using namespace Story;
 
 class CPropTalking: public Game::CProperty
 {
@@ -26,7 +24,7 @@ class CPropTalking: public Game::CProperty
 protected:
 
 	//??????!!!!!or just CStrID dlg name & resolve in DlgMgr
-	PDialogue Dialogue;
+	Story::PDlgGraph Dialogue;
 
 	//broken dialogue state (to restart or take into account)
 
@@ -41,9 +39,9 @@ protected:
 
 public:
 
-	virtual void	SayPhrase(CStrID PhraseID);
+	virtual void		SayPhrase(CStrID PhraseID);
 
-	CDialogue*		GetDialogue() { return Dialogue.GetUnsafe(); }
+	Story::CDlgGraph*	GetDialogue() { return Dialogue.GetUnsafe(); }
 };
 
 }

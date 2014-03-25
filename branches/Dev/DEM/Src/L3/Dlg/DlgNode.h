@@ -3,14 +3,14 @@
 #define __DEM_L3_DLG_NODE_H__
 
 #include <Core/RefCounted.h>
+#include <Data/StringID.h>
 
-// Dialogue node base. Can be used as start phrase-less node to determine real starting node by links evaluation.
-// Does transition along the first valid link.
+// Dialogue graph node is associated with optional phrase and offers links to next nodes.
+// One of valid links must be selected according to a link selection mode.
 
 namespace Story
 {
-class CDlgLink;
-class CActiveDlg;
+class CDlgContext;
 
 class CDlgNode: public Core::CRefCounted
 {
@@ -18,10 +18,28 @@ class CDlgNode: public Core::CRefCounted
 
 public:
 
-	CArray<Ptr<CDlgLink>> Links; //???!!!or nonptr array of structs declared here?!
+	enum ELinkMode
+	{
+		Link_Switch = 0,	// First valid link
+		Link_Random = 1,	// Random valid link
+		Link_Select = 2		// Valid link explicitly selected, for example in answer selection UI
+	};
 
-	virtual void		OnEnter(CActiveDlg& Dlg) {}
-	virtual CDlgNode*	Trigger(CActiveDlg& Dlg);
+	struct CLink
+	{
+		CString		Condition;	// Scripted function name
+		CString		Action;		// Scripted function name
+		CDlgNode*	pTargetNode;
+	};
+
+	CStrID			SpeakerEntity; // May be entity UID or dlg context participator alias
+	CString			Phrase;
+	//float			Timeout; //???here or in associated sound resource?
+	ELinkMode		LinkMode;
+	CArray<CLink>	Links;
+
+	virtual void	OnEnter(CDlgContext& Context);
+	CDlgNode*		FollowLink(CDlgContext& Context);
 };
 
 }
