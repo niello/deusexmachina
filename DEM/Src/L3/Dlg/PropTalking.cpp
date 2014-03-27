@@ -13,7 +13,7 @@ __ImplementPropertyStorage(CPropTalking);
 bool CPropTalking::InternalActivate()
 {
 	const CString& Dlg = GetEntity()->GetAttr<CString>(CStrID("Dialogue"), NULL);
-	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogue(Dlg);
+	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogueGraph(CStrID(Dlg.CStr()));
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) EnableSI(*pProp);
@@ -91,8 +91,7 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 bool CPropTalking::OnTalk(const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Game::CEntity* pActorEnt = EntityMgr->GetEntity(P->Get<CStrID>(CStrID("Actor"), CStrID::Empty));
-	DlgMgr->StartDialogue(GetEntity(), pActorEnt, true);
+	DlgMgr->RequestDialogue(GetEntity()->GetUID(), P->Get<CStrID>(CStrID("Actor")));
 	OK;
 }
 //---------------------------------------------------------------------

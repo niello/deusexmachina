@@ -13,10 +13,10 @@ class CDlgContext //???struct?
 {
 public:
 
-	CStrID		ID; //???need to store here?
 	PDlgGraph	Dlg;
 
-	//starter, target, third-party characters
+	CStrID		Initiator;
+	CStrID		Target;
 	CStrID		DlgOwner;
 	CStrID		PlrSpeaker;
 

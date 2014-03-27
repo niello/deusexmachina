@@ -17,9 +17,18 @@ using namespace Story;
 
 int CDlgSysem_IsDialogueActive(lua_State* l)
 {
-	//args: no
+	//args: dlg ID
 	//ret:	bool
-	lua_pushboolean(l, DlgMgr->IsDialogueActive());
+
+	int ArgCount = lua_gettop(l);
+
+	if (!ArgCount || !lua_isstring(l, 1))
+	{
+		lua_settop(l, 0);
+		lua_pushboolean(l, false);
+	}
+	else lua_pushboolean(l, DlgMgr->IsDialogueActive(CStrID(lua_tostring(l, 1))));
+
 	return 1;
 }
 //---------------------------------------------------------------------

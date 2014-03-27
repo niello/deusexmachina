@@ -87,10 +87,15 @@ PDlgGraph CDialogueManager::GetDialogueGraph(CStrID ID)
 }
 //---------------------------------------------------------------------
 
-//???how to assign ID? request from the outside or set here and return?
-CStrID CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode Mode)
+bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode Mode)
 {
 	n_assert(Initiator.IsValid() && Target.IsValid());
+
+	if (RunningDlgs.Contains(Initiator))
+	{
+		n_printf("Error,Dlg: Entity '%s' has already started another dialogue\n", Initiator.CStr());
+		FAIL;
+	}
 
 	//!!!???check if initiator or target is already talking?!
 
@@ -98,13 +103,13 @@ CStrID CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMo
 	bool InitiatorIsPlr = pFaction && pFaction->IsMember(Initiator);
 	bool TargetIsPlr = pFaction && pFaction->IsMember(Target);
 
-	if (Mode == Dlg_Auto)
-		Mode = (InitiatorIsPlr || TargetIsPlr) ? Dlg_Foreground : Dlg_Background;
+	if (Mode == DlgMode_Auto)
+		Mode = (InitiatorIsPlr || TargetIsPlr) ? DlgMode_Foreground : DlgMode_Background;
 
-	if (Mode == Dlg_Foreground && IsForegroundDialogueActive())
+	if (Mode == DlgMode_Foreground && IsForegroundDialogueActive())
 	{
-		n_printf("Error,Dlg: Trying to start new foreground dialogue when other is active.");
-		return CStrID::Empty;
+		n_printf("Error,Dlg: Trying to start new foreground dialogue when other is active\n");
+		FAIL;
 	}
 
 	CDlgContext NewDlg;
@@ -148,17 +153,14 @@ CStrID CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMo
 		}
 	}
 
-	if (!NewDlg.Dlg.IsValid()) return CStrID::Empty;
+	if (!NewDlg.Dlg.IsValid()) FAIL;
 
-	CString IDStr(Initiator.CStr());
-	IDStr.Add(Target.CStr());
-	NewDlg.ID = CStrID(IDStr.CStr());
-
-	n_assert(!RunningDlgs.Contains(NewDlg.ID));
+	NewDlg.Initiator = Initiator;
+	NewDlg.Target = Target;
 
 	if (NewDlg.Dlg->ScriptFile.IsValid() && !NewDlg.Dlg->ScriptObj.IsValid())
 	{
-		NewDlg.Dlg->ScriptObj = n_new(Scripting::CScriptObject(NewDlg.ID.CStr(), "Dialogues"));
+		NewDlg.Dlg->ScriptObj = n_new(Scripting::CScriptObject(Initiator.CStr(), "Dialogues"));
 		NewDlg.Dlg->ScriptObj->Init(); // No special class
 		if (NewDlg.Dlg->ScriptObj->LoadScriptFile(NewDlg.Dlg->ScriptFile) != Success)
 			n_printf("Error loading script \"%s\" for dialogue", NewDlg.Dlg->ScriptFile.CStr());
@@ -166,9 +168,9 @@ CStrID CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMo
 
 	if (NewDlg.Dlg->ScriptObj.IsValid()) NewDlg.Dlg->ScriptObj->RunFunction("OnStart"); //???send dlg id and actor ids?!
 
-	if (Mode == Dlg_Foreground)
+	if (Mode == DlgMode_Foreground)
 	{
-		ForegroundDlg = NewDlg.ID;
+		ForegroundDlgID = Initiator;
 
 		//???!!!redesign!?
 		if (NewDlg.PlrSpeaker.IsValid())
@@ -177,7 +179,8 @@ CStrID CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMo
 		EventSrv->FireEvent(CStrID("OnDlgStart"));
 	}
 
-	RunningDlgs.Add(NewDlg.ID, NewDlg);
+	RunningDlgs.Add(Initiator, NewDlg);
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -203,55 +206,8 @@ void CDialogueManager::RejectDialogue(CStrID Target, CStrID DlgID)
 
 void CDialogueManager::Trigger()
 {
-	if (IsDialogueActive())
-	{
-		CDlgNode* pNewNode = ForegroundDlg.Trigger();
-		while (pNewNode != ForegroundDlg.pCurrNode)
-		{
-			if (pNewNode)
-			{
-				bool Continue = ForegroundDlg.pCurrNode->IsA(CDlgNodeAnswers::RTTI);
-				ForegroundDlg.EnterNode(pNewNode);
-				if (Continue) ForegroundDlg.Continued = true;
-				EventSrv->FireEvent(CStrID("OnDlgNoCmdAvailable"));
-				pNewNode = ForegroundDlg.Trigger();
-			}
-			else
-			{
-				n_assert2(!ForegroundDlg.ValidLinkIndices.GetCount(), "Dialogue was ended in answer mode!"); //???allow?
-
-				EventSrv->FireEvent(CStrID("OnDlgEnd"));
-
-				if (ForegroundDlg.PlrSpeaker.IsValid())
-					EntityMgr->GetEntity(ForegroundDlg.PlrSpeaker)->FireEvent(CStrID("EnableInput"));
-
-				//FocusMgr->SetCameraFocusEntity(FocusMgr->GetInputFocusEntity());
-
-				ForegroundDlg.Dlg = NULL;
-				break;
-			}
-		}
-	}
-
-	for (CArray<CDlgContext>::CIterator pDlg = BackgroundDlgs.Begin(); pDlg != BackgroundDlgs.End(); )
-	{
-		CDlgNode* pNewNode = pDlg->Trigger();
-		while (pNewNode != pDlg->pCurrNode)
-		{
-			if (pNewNode)
-			{
-				pDlg->EnterNode(pNewNode);
-				pNewNode = pDlg->Trigger();
-			}
-			else
-			{
-				BackgroundDlgs.Remove(pDlg);
-				pDlg--;
-				break;
-			}
-		}
-		pDlg++;
-	}
+	//!!!count time for dialogues where node waits for a timeout end!
+	Core::Error(__FUNCTION__ " IMPLEMENT ME!!!");
 }
 //---------------------------------------------------------------------
 
@@ -261,13 +217,13 @@ void CDialogueManager::HandleNode(CDlgContext& Context)
 
 	CStrID SpeakerEntity = Context.pCurrNode->SpeakerEntity;
 
-	if (SpeakerEntity == "$DlgOwner") SpeakerEntity = Dlg.DlgOwner;
-	else if (SpeakerEntity == "$PlrSpeaker") SpeakerEntity = Dlg.PlrSpeaker;
-	PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
+	if (SpeakerEntity == "$DlgOwner") SpeakerEntity = Context.DlgOwner;
+	else if (SpeakerEntity == "$PlrSpeaker") SpeakerEntity = Context.PlrSpeaker;
+	Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
 	if (!Speaker.IsValid())
 		Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
 
-	if (IsDialogueForeground(Context.ID))
+	if (IsDialogueForeground(Context.Initiator))
 	{
 		CString SpeakerName;
 		if (!Speaker->GetAttr<CString>(SpeakerName, CStrID("Name")))
@@ -276,23 +232,14 @@ void CDialogueManager::HandleNode(CDlgContext& Context)
 
 		Data::PParams P = n_new(Data::CParams);
 		P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
-		P->Set(CStrID("Phrase"), (PVOID)Phrase.CStr());
+		P->Set(CStrID("Phrase"), (PVOID)Context.pCurrNode->Phrase.CStr());
 		EventSrv->FireEvent(CStrID("OnDlgPhrase"), P);
 	}
 	else
 	{
 		//!!!get timeout from the node!
-		Speaker->GetProperty<Prop::CPropTalking>()->SayPhrase(CStrID(Phrase.CStr()));
+		Speaker->GetProperty<Prop::CPropTalking>()->SayPhrase(CStrID(Context.pCurrNode->Phrase.CStr()));
 	}
-}
-//---------------------------------------------------------------------
-
-void CDialogueManager::ContinueDialogue(int ValidLinkIdx)
-{
-	ForegroundDlg.Continued = true;
-	if (ValidLinkIdx >= 0 && ValidLinkIdx < ForegroundDlg.ValidLinkIndices.GetCount())
-		ForegroundDlg.LinkIdx = ForegroundDlg.ValidLinkIndices[ValidLinkIdx];
-	//EventSrv->FireEvent(CStrID("OnDlgAnswerSelected"));
 }
 //---------------------------------------------------------------------
 

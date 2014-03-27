@@ -18,7 +18,7 @@ using namespace Story;
 int CQuestSystem_StartQuest(lua_State* l)
 {
 	//args: quest name, [task name = empty]
-	
+
 	int ArgCount = lua_gettop(l);
 
 	if (!ArgCount || !lua_isstring(l, 1))
