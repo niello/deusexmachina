@@ -1,15 +1,11 @@
 #include "DialogueManager.h"
 
-#include <Dlg/DlgNode.h>
 #include <Dlg/PropTalking.h>
 #include <Factions/FactionManager.h>
-#include <Data/Params.h>
+#include <Game/EntityManager.h>
 #include <Data/DataArray.h>
 #include <Data/DataServer.h>
-#include <Scripting/ScriptServer.h>
 #include <Events/EventServer.h>
-#include <Game/EntityManager.h>
-#include <Game/GameServer.h>
 
 namespace Story
 {
@@ -38,7 +34,8 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 	
 	Dlg->StartNode = LoadedNodes[Params.Get<CStrID>(CStrID("StartNode"))];
 
-	bool UsesScript = false;
+	const CString& Script = Params.Get<CString>(CStrID("Script"), NULL);
+	if (Script.IsValid()) Dlg->ScriptFile = CString("Scripts:") + Script + ".lua";
 
 	for (int i = 0; i < Nodes->GetCount(); ++i)
 	{
@@ -60,15 +57,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 
 			pLink->Condition = LinkDesc.Get<CString>(CStrID("Condition"), NULL);
 			pLink->Action = LinkDesc.Get<CString>(CStrID("Action"), NULL);
-
-			if (!UsesScript && (pLink->Condition.IsValid() || pLink->Action.IsValid())) UsesScript = true;
 		}
-	}
-
-	if (UsesScript)
-	{
-		const CString& Script = Params.Get<CString>(CStrID("Script"), NULL);
-		if (Script.IsValid()) Dlg->ScriptFile = CString("Scripts:") + Script + ".lua";
 	}
 
 	return Dlg;
@@ -179,7 +168,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("Initiator"), Initiator);
-	pTargetEnt->FireEvent(CStrID("OnDlgRequested"), P);
+	pTargetEnt->FireEvent(CStrID("OnDlgRequest"), P);
 
 	OK;
 }
@@ -194,21 +183,14 @@ bool CDialogueManager::AcceptDialogue(CStrID ID, CStrID Target)
 	Ctx.pCurrNode = Ctx.Dlg->StartNode;
 	Ctx.State = DlgState_InNode;
 
-	//???catch event instead?
-	//request and start are different now!
-	if (Ctx.Dlg->ScriptObj.IsValid()) Ctx.Dlg->ScriptObj->RunFunction("OnStart"); //???send dlg id and actor ids?!
+	//???send dlg id and actor ids?!
+	if (Ctx.Dlg->ScriptObj.IsValid()) Ctx.Dlg->ScriptObj->RunFunction("OnStart");
 
-	if (IsDialogueForeground(ID))
-	{
-		//???!!!redesign!?
-		//???catch dlg start event in Plr script class and disable input there?
-		//so no need to check plr speaker
-		if (Ctx.PlrSpeaker.IsValid())
-			EntityMgr->GetEntity(Ctx.PlrSpeaker)->FireEvent(CStrID("DisableInput"));
-
-		//???event dlg start with bool prm foreground?
-		EventSrv->FireEvent(CStrID("OnForegroundDlgStart"));
-	}
+	Data::PParams P = n_new(Data::CParams(3));
+	P->Set(CStrID("Initiator"), Ctx.Initiator);
+	P->Set(CStrID("Target"), Target);
+	P->Set(CStrID("IsForeground"), IsDialogueForeground(ID));
+	EventSrv->FireEvent(CStrID("OnDlgStart"), P);
 
 	OK;
 }
@@ -221,7 +203,14 @@ bool CDialogueManager::RejectDialogue(CStrID ID, CStrID Target)
 	CDlgContext& Ctx = RunningDlgs.ValueAt(Idx);
 	if (Ctx.Target != Target) FAIL;
 	Ctx.State = DlgState_Aborted;
-	//???!!!notify dlg failed, or actor will read state
+
+	//???and kill immediately? or allow actor to read the state?
+	//Data::PParams P = n_new(Data::CParams(3));
+	//P->Set(CStrID("Initiator"), Ctx.Initiator);
+	//P->Set(CStrID("Target"), Target);
+	//P->Set(CStrID("IsForeground"), IsDialogueForeground(ID));
+	//EventSrv->FireEvent(CStrID("OnDlgReject"), P);
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -229,6 +218,7 @@ bool CDialogueManager::RejectDialogue(CStrID ID, CStrID Target)
 void CDialogueManager::CloseDialogue(CStrID ID)
 {
 	Core::Error(__FUNCTION__ " IMPLEMENT ME!!!");
+	//EventSrv->FireEvent(CStrID("OnDlgEnd"), P);
 }
 //---------------------------------------------------------------------
 
@@ -237,64 +227,7 @@ void CDialogueManager::Trigger()
 	for (int i = 0; i < RunningDlgs.GetCount(); ++i)
 	{
 		CDlgContext& Ctx = RunningDlgs.ValueAt(i);
-
-		//!!!if waiting, process wait!
-		if (Ctx.State == DlgState_Waiting)// & waits timer)
-		{
-			//advance timer
-			//if time has come,
-				Ctx.State = DlgState_InLink;
-		}
-
-		//!!!can move it all into the CDlgContext, and call Ctx.Trigger(bool Foreground)!
-		//or use virtual dlg handler and refuse diff between fore & back in Ctx
-		while (Ctx.State == DlgState_InNode || Ctx.State == DlgState_InLink)
-		{
-			if (Ctx.State == DlgState_InNode)
-			{
-				Ctx.HandleNode();
-
-				if (!Ctx.pCurrNode || !Ctx.pCurrNode->Phrase.IsValid()) return;
-
-				CStrID SpeakerEntity = Ctx.pCurrNode->SpeakerEntity;
-				if (SpeakerEntity == CStrID("$DlgOwner")) SpeakerEntity = Ctx.DlgOwner;
-				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = Ctx.PlrSpeaker;
-				Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
-				if (!Speaker.IsValid())
-					Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
- 
-				if (IsDialogueForeground(Ctx.Initiator))
-				{
-					CString SpeakerName;
-					if (!Speaker->GetAttr<CString>(SpeakerName, CStrID("Name")))
-						SpeakerName = Speaker->GetUID().CStr();
-					//!!!can focus camera, or some special handler/script can catch global events and manage camera?
-
-					//if UI stores Ctx or Ctx ID (Initiator ID) since init time, we even don't need to send any params
-					EventSrv->FireEvent(CStrID("OnForegroundDlgNodeEnter"));
-
-					//Data::PParams P = n_new(Data::CParams(2));
-					//P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
-					//P->Set(CStrID("Phrase"), (PVOID)Ctx.pCurrNode->Phrase.CStr());
-					//EventSrv->FireEvent(CStrID("OnDlgPhrase"), P);
-
-					//!!!if no phrase and mode isn't answers, goto link immediately
-				}
-				else
-				{
-					n_assert2(Ctx.pCurrNode->LinkMode != CDlgNode::Link_Select, "Background dialogues don't support Link_Select!");
-
-					//!!!get timeout from the node!
-					//also can send entity event, catch it in CPropTalking
-					Speaker->GetProperty<Prop::CPropTalking>()->SayPhrase(CStrID(Ctx.pCurrNode->Phrase.CStr()));
-
-					if (Ctx.State == DlgState_Waiting)// & time to wait <= 0)
-						Ctx.State = DlgState_InLink;
-				}
-			}
-
-			if (Ctx.State == DlgState_InLink) Ctx.HandleLink();
-		}
+		Ctx.Trigger(IsDialogueForeground(Ctx.Initiator));
 	}
 }
 //---------------------------------------------------------------------

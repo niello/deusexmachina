@@ -28,39 +28,15 @@ bool ProcessDialogue(const CString& SrcContext, const CString& ExportContext, co
 
 	bool ScriptExported = false;
 
+	// Script can implements functions like OnStart(), so export anyway
 	const CString& ScriptFile = Desc->Get<CString>(CStrID("Script"), NULL);
-
-	const Data::CParams& Nodes = *Desc->Get<Data::PParams>(CStrID("Nodes"));
-	for (int i = 0; !ScriptExported && i < Nodes.GetCount(); ++i)
+	if (ScriptFile.IsValid())
 	{
-		const Data::CParams& NodeDesc = *Nodes.Get<Data::PParams>(i);
-
-		Data::PDataArray Links;
-		if (!NodeDesc.Get<Data::PDataArray>(Links, CStrID("Links")) || !Links->GetCount()) continue;
-
-		for (int j = 0; !ScriptExported && j < Links->GetCount(); ++j)
+		ExportFilePath = CString("Scripts:") + ScriptFile + ".lua";
+		if (!IsFileAdded(ExportFilePath))
 		{
-			const Data::CParams& LinkDesc = *Links->Get<Data::PParams>(j);
-
-			if (LinkDesc.Get<CString>(CStrID("Condition"), NULL).IsValid() ||
-				LinkDesc.Get<CString>(CStrID("Action"), NULL).IsValid())
-			{
-				if (!ScriptFile.IsValid())
-				{
-					n_msg(VL_WARNING, "Dialogue '%s' references script functions, but hasn't associated script\n", Name.CStr());
-				}
-				else
-				{
-					ExportFilePath = CString("Scripts:") + ScriptFile + ".lua";
-					if (!IsFileAdded(ExportFilePath))
-					{
-						if (ExportDescs) BatchToolInOut(CStrID("CFLua"), CString("SrcScripts:") + ScriptFile + ".lua", ExportFilePath);
-						FilesToPack.InsertSorted(ExportFilePath);
-					}
-				}
-
-				ScriptExported = true;
-			}
+			if (ExportDescs) BatchToolInOut(CStrID("CFLua"), CString("SrcScripts:") + ScriptFile + ".lua", ExportFilePath);
+			FilesToPack.InsertSorted(ExportFilePath);
 		}
 	}
 
