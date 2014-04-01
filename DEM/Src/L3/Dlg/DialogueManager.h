@@ -48,21 +48,29 @@ public:
 	CDialogueManager() { __ConstructSingleton; }
 	~CDialogueManager() { __DestructSingleton; }
 
-	void		Trigger();
+	void			Trigger();
 
-	PDlgGraph	CreateDialogueGraph(const Data::CParams& Params);
-	PDlgGraph	GetDialogueGraph(CStrID ID);
+	PDlgGraph		CreateDialogueGraph(const Data::CParams& Params);
+	PDlgGraph		GetDialogueGraph(CStrID ID);
 
-	bool		RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode Mode = DlgMode_Auto);
-	bool		AcceptDialogue(CStrID ID, CStrID Target);
-	bool		RejectDialogue(CStrID ID, CStrID Target);
-	void		CloseDialogue(CStrID ID);
+	bool			RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode Mode = DlgMode_Auto);
+	bool			AcceptDialogue(CStrID ID, CStrID Target);
+	bool			RejectDialogue(CStrID ID, CStrID Target);
+	void			CloseDialogue(CStrID ID);
 
-	EDlgState	GetDialogueState(CStrID ID) const;
-	bool		IsDialogueActive(CStrID ID) const { return RunningDlgs.Contains(ID); }
-	bool		IsForegroundDialogueActive() const { return ForegroundDlgID.IsValid(); }
-	bool		IsDialogueForeground(CStrID ID) const { return ID == ForegroundDlgID; }
+	CDlgContext*	GetDialogue(CStrID ID);
+	EDlgState		GetDialogueState(CStrID ID) const;
+	bool			IsDialogueActive(CStrID ID) const { return RunningDlgs.Contains(ID); }
+	bool			IsForegroundDialogueActive() const { return ForegroundDlgID.IsValid(); }
+	bool			IsDialogueForeground(CStrID ID) const { return ID == ForegroundDlgID; }
 };
+
+inline CDlgContext* CDialogueManager::GetDialogue(CStrID ID)
+{
+	int Idx = RunningDlgs.FindIndex(ID);
+	return (Idx == INVALID_INDEX) ? NULL : &RunningDlgs.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
 
 }
 

@@ -1,70 +1,111 @@
 #include "DlgContext.h"
 
-#include <Dlg/DialogueManager.h>
+//#include <Dlg/DialogueManager.h>
+#include <Game/EntityManager.h>
+//#include <Game/GameServer.h>
+#include <Events/EventServer.h>
 
 namespace Story
 {
 
-void CDlgContext::HandleNode()
+void CDlgContext::Trigger(bool IsForeground)
 {
-	n_assert(pCurrNode);
-	//NodeEnterTime = (float)GameSrv->GetTime();
-
-	ValidLinkIndices.Clear();
-	for (int i = 0; i < pCurrNode->Links.GetCount() ; ++i)
+	if (State == DlgState_Waiting && !IsForeground)// & waits timer)
 	{
-		CDlgNode::CLink& Link = pCurrNode->Links[i];
-		if (!Link.Condition.IsValid() || Dlg->ScriptObj->RunFunction(Link.Condition.CStr()) == Success)
+		//advance timer
+		//if time has come,
+			State = DlgState_InLink;
+	}
+
+	while (State == DlgState_InNode || State == DlgState_InLink)
+	{
+		n_assert(pCurrNode);
+
+		if (State == DlgState_InNode)
 		{
-			ValidLinkIndices.Add(i);
-			if (pCurrNode->LinkMode == CDlgNode::Link_Switch) break;
+			n_assert2(IsForeground || pCurrNode->LinkMode != CDlgNode::Link_Select,
+				"Background dialogues don't support Link_Select!");
+
+			//NodeEnterTime = (float)GameSrv->GetTime();
+
+			// Gather valid links
+			ValidLinkIndices.Clear();
+			for (int i = 0; i < pCurrNode->Links.GetCount() ; ++i)
+			{
+				CDlgNode::CLink& Link = pCurrNode->Links[i];
+				if (!Link.Condition.IsValid() || Dlg->ScriptObj->RunFunction(Link.Condition.CStr()) == Success)
+				{
+					ValidLinkIndices.Add(i);
+					if (pCurrNode->LinkMode == CDlgNode::Link_Switch) break;
+				}
+			}
+
+			// Select valid link, if possible
+			if (pCurrNode->LinkMode == CDlgNode::Link_Select) LinkIdx = -1;
+			else
+			{
+				// Select random link here because it may be NULL-link, and UI must
+				// know it to display proper text (Continue/End) on the button
+				int ValidLinkCount = ValidLinkIndices.GetCount();
+				if (ValidLinkCount == 0) LinkIdx = -1;
+				else if (ValidLinkCount == 1) LinkIdx = ValidLinkIndices[0];
+				else LinkIdx = ValidLinkIndices[n_rand_int(0, ValidLinkCount - 1)];
+			}
+
+			// Handle node enter externally
+			//!!!Looks stupid! Is there more clever way?
+			if (IsForeground)
+			{
+				EventSrv->FireEvent(CStrID("OnForegroundDlgNodeEnter"));
+				State = (pCurrNode->Phrase.IsValid() || pCurrNode->LinkMode == CDlgNode::Link_Select) ?
+					DlgState_Waiting :
+					DlgState_InLink;
+			}
+			else
+			{
+				CStrID SpeakerEntity = pCurrNode->SpeakerEntity;
+				if (SpeakerEntity == CStrID("$DlgOwner")) SpeakerEntity = DlgOwner;
+				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = PlrSpeaker;
+				Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
+				if (!Speaker.IsValid())
+					Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
+
+				Speaker->FireEvent(CStrID("OnDlgNodeEnter"));
+
+				float DBGTMPTimeToWait = 0.f;
+				State = DBGTMPTimeToWait > 0.f ? DlgState_Waiting : DlgState_InLink;
+			}
 		}
-	}
 
-	if (pCurrNode->LinkMode == CDlgNode::Link_Select) LinkIdx = -1;
-	else
-	{
-		// Select random link here because it may be NULL-link, and UI must
-		// know it to display proper text (Continue/End) on the button
-		int ValidLinkCount = ValidLinkIndices.GetCount();
-		if (ValidLinkCount == 0) LinkIdx = -1;
-		else if (ValidLinkCount == 1) LinkIdx = ValidLinkIndices[0];
-		else LinkIdx = ValidLinkIndices[n_rand_int(0, ValidLinkCount - 1)];
-	}
-
-	State = DlgState_Waiting;
-}
-//---------------------------------------------------------------------
-
-void CDlgContext::HandleLink()
-{
-	if (LinkIdx < 0 || LinkIdx > pCurrNode->Links.GetCount())
-	{
-		State = DlgState_Finished;
-		return;
-	}
-
-	CDlgNode::CLink& Link = pCurrNode->Links[LinkIdx];
-	if (Link.Action.IsEmpty())
-	{
-		pCurrNode = Link.pTargetNode;
-		State = pCurrNode ? DlgState_InNode : DlgState_Finished;
-		return;
-	}
-
-	switch (Dlg->ScriptObj->RunFunction(Link.Action.CStr()))
-	{
-		case Running:	return;
-		case Success:
+		if (State == DlgState_InLink)
 		{
-			pCurrNode = Link.pTargetNode;
-			State = pCurrNode ? DlgState_InNode : DlgState_Finished;
-			return;
-		}
-		default:
-		{
-			State = DlgState_Aborted;
-			return; // Action failure or error //???what to do on Failure?
+			if (LinkIdx < 0 || LinkIdx > pCurrNode->Links.GetCount()) State = DlgState_Finished;
+			else
+			{
+				CDlgNode::CLink& Link = pCurrNode->Links[LinkIdx];
+				DWORD Result = Link.Action.IsValid() ? Dlg->ScriptObj->RunFunction(Link.Action.CStr()) : Success;
+				switch (Result)
+				{
+					case Running: break;
+					case Success:
+					{
+						pCurrNode = Link.pTargetNode;
+						State = pCurrNode ? DlgState_InNode : DlgState_Finished;
+						break;
+					}
+					default: State = DlgState_Aborted; break; // Action failure or error //???what to do on Failure?
+				}
+			}
+
+			if (State == DlgState_Finished)
+			{
+				Data::PParams P = n_new(Data::CParams(3));
+				P->Set(CStrID("Initiator"), Initiator);
+				P->Set(CStrID("Target"), Target);
+				P->Set(CStrID("IsForeground"), IsForeground);
+				EventSrv->FireEvent(CStrID("OnDlgEnd"), P);
+			}
+			//???else if (State == DlgState_Aborted) OnDlgAbort?
 		}
 	}
 }
@@ -72,7 +113,7 @@ void CDlgContext::HandleLink()
 
 void CDlgContext::SelectValidLink(int Idx)
 {
-	n_assert(State == DlgState_InNode);
+	n_assert(State == DlgState_Waiting);
 	LinkIdx = ValidLinkIndices[Idx];
 	State = DlgState_InLink;
 }

@@ -4,7 +4,8 @@
 
 #include <Dlg/DlgGraph.h>
 
-// Dialogue context is an instance that stores execution state associated with a dialogue graph
+// Dialogue context is an instance that stores execution state associated with a dialogue graph,
+// and implements FSM traversal of that dialogue graph.
 
 namespace Story
 {
@@ -19,7 +20,7 @@ enum EDlgState
 	DlgState_Aborted	// Rejected or failed to execute script (or aborted by user?)
 };
 
-class CDlgContext //???struct?
+class CDlgContext
 {
 public:
 
@@ -38,8 +39,7 @@ public:
 
 	CDlgContext(): pCurrNode(NULL) {}
 
-	void HandleNode();
-	void HandleLink();
+	void Trigger(bool IsForeground);
 	void SelectValidLink(int Idx);
 };
 
