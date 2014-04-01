@@ -497,15 +497,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L3\Dlg\DlgContext.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L3\Dlg\DlgContext.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L3\Dlg\DlgGraph.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L3\Dlg\DlgNode.cpp"
 				>
 			</File>
 			<File

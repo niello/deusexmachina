@@ -17,7 +17,7 @@ bool ProcessDialogue(const CString& SrcContext, const CString& ExportContext, co
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		Desc = DataSrv->LoadHRD(SrcContext + Name + ".dlg", false);
+		Desc = DataSrv->LoadHRD(SrcContext + Name + ".hrd", false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
