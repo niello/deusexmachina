@@ -10,12 +10,9 @@
 
 namespace Story
 {
-class CDlgContext;
 
 class CDlgNode: public Core::CRefCounted
 {
-	__DeclareClass(CDlgNode);
-
 public:
 
 	enum ELinkMode
@@ -37,9 +34,6 @@ public:
 	//float			Timeout; //???here or in associated sound resource?
 	ELinkMode		LinkMode;
 	CArray<CLink>	Links;
-
-	virtual void	OnEnter(CDlgContext& Context);
-	CDlgNode*		FollowLink(CDlgContext& Context);
 };
 
 }

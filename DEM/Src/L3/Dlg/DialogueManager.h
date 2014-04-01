@@ -22,19 +22,12 @@ namespace Game
 
 namespace Story
 {
+
 enum EDlgMode
 {
 	DlgMode_Foreground,	// Main UI window, single instance
 	DlgMode_Background,	// Phrases above characters' heads, multiple instances
 	DlgMode_Auto		// Decide from participators' belonging to Party or NPC
-};
-
-enum EDlgState
-{
-	DlgState_Requested,
-	DlgState_Running,
-	DlgState_Finished,
-	DlgState_Aborted
 };
 
 #define DlgMgr Story::CDialogueManager::Instance()
@@ -61,14 +54,11 @@ public:
 	PDlgGraph	GetDialogueGraph(CStrID ID);
 
 	bool		RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode Mode = DlgMode_Auto);
-	void		AcceptDialogue(CStrID Target, CStrID DlgID);
-	void		RejectDialogue(CStrID Target, CStrID DlgID);
-	void		CloseDialogue(CStrID DlgID);
-	EDlgState	GetDialogueState(CStrID DlgID) const;
+	bool		AcceptDialogue(CStrID ID, CStrID Target);
+	bool		RejectDialogue(CStrID ID, CStrID Target);
+	void		CloseDialogue(CStrID ID);
 
-	void		HandleNode(CDlgContext& Context);
-	//!!!FollowLink(ID, Idx)!
-
+	EDlgState	GetDialogueState(CStrID ID) const;
 	bool		IsDialogueActive(CStrID ID) const { return RunningDlgs.Contains(ID); }
 	bool		IsForegroundDialogueActive() const { return ForegroundDlgID.IsValid(); }
 	bool		IsDialogueForeground(CStrID ID) const { return ID == ForegroundDlgID; }

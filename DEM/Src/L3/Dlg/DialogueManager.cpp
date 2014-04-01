@@ -28,8 +28,8 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 	{
 		const Data::CParam& Prm = Nodes->Get(i);
 		const Data::CParams& NodeDesc = *Prm.GetValue<Data::PParams>();
-		int Type = NodeDesc.Get<int>(CStrID("Type"));
 		PDlgNode NewNode = n_new(CDlgNode);
+		NewNode->LinkMode = (CDlgNode::ELinkMode)NodeDesc.Get<int>(CStrID("Type"));
 		NewNode->SpeakerEntity = NodeDesc.Get<CStrID>(CStrID("Speaker"), CStrID::Empty);
 		NewNode->Phrase = NodeDesc.Get<CString>(CStrID("Phrase"), CString::Empty);
 		LoadedNodes.Add(Prm.GetName(), NewNode);
@@ -97,7 +97,14 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		FAIL;
 	}
 
-	//!!!???check if initiator or target is already talking?!
+	n_assert_dbg(EntityMgr->EntityExists(Initiator));
+
+	Game::CEntity* pTargetEnt = EntityMgr->GetEntity(Target);
+	if (!pTargetEnt)
+	{
+		n_printf("Error,Dlg: Entity '%s' doesn't exist\n", Target.CStr());
+		FAIL;
+	}
 
 	RPG::CFaction* pFaction = FactionMgr->GetFaction(CStrID("Party"));
 	bool InitiatorIsPlr = pFaction && pFaction->IsMember(Initiator);
@@ -157,88 +164,137 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	NewDlg.Initiator = Initiator;
 	NewDlg.Target = Target;
+	NewDlg.State = DlgState_Requested;
+	RunningDlgs.Add(Initiator, NewDlg);
+
+	if (Mode == DlgMode_Foreground) ForegroundDlgID = Initiator;
 
 	if (NewDlg.Dlg->ScriptFile.IsValid() && !NewDlg.Dlg->ScriptObj.IsValid())
 	{
 		NewDlg.Dlg->ScriptObj = n_new(Scripting::CScriptObject(Initiator.CStr(), "Dialogues"));
 		NewDlg.Dlg->ScriptObj->Init(); // No special class
 		if (NewDlg.Dlg->ScriptObj->LoadScriptFile(NewDlg.Dlg->ScriptFile) != Success)
-			n_printf("Error loading script \"%s\" for dialogue", NewDlg.Dlg->ScriptFile.CStr());
+			n_printf("Error,Dlg: Error loading script \"%s\" for dialogue", NewDlg.Dlg->ScriptFile.CStr());
 	}
 
-	if (NewDlg.Dlg->ScriptObj.IsValid()) NewDlg.Dlg->ScriptObj->RunFunction("OnStart"); //???send dlg id and actor ids?!
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("Initiator"), Initiator);
+	pTargetEnt->FireEvent(CStrID("OnDlgRequested"), P);
 
-	if (Mode == DlgMode_Foreground)
-	{
-		ForegroundDlgID = Initiator;
-
-		//???!!!redesign!?
-		if (NewDlg.PlrSpeaker.IsValid())
-			EntityMgr->GetEntity(NewDlg.PlrSpeaker)->FireEvent(CStrID("DisableInput"));
-
-		EventSrv->FireEvent(CStrID("OnDlgStart"));
-	}
-
-	RunningDlgs.Add(Initiator, NewDlg);
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CDialogueManager::AcceptDialogue(CStrID Target, CStrID DlgID)
+bool CDialogueManager::AcceptDialogue(CStrID ID, CStrID Target)
 {
-	//get dlg
-	//CDlgContext& Ctx = 
-	//find waiting slot (for now can just store state Waiting or Accepted)
-	//remove waiting creature, mb add to list of participants
-	//if all required characters accepted dlg, start from start node
-	//Ctx.Dlg->StartNode->OnEnter(Ctx);
+	int Idx = RunningDlgs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) FAIL;
+	CDlgContext& Ctx = RunningDlgs.ValueAt(Idx);
+	if (Ctx.Target != Target) FAIL;
+	Ctx.pCurrNode = Ctx.Dlg->StartNode;
+	Ctx.State = DlgState_InNode;
+
+	//???catch event instead?
+	//request and start are different now!
+	if (Ctx.Dlg->ScriptObj.IsValid()) Ctx.Dlg->ScriptObj->RunFunction("OnStart"); //???send dlg id and actor ids?!
+
+	if (IsDialogueForeground(ID))
+	{
+		//???!!!redesign!?
+		//???catch dlg start event in Plr script class and disable input there?
+		//so no need to check plr speaker
+		if (Ctx.PlrSpeaker.IsValid())
+			EntityMgr->GetEntity(Ctx.PlrSpeaker)->FireEvent(CStrID("DisableInput"));
+
+		//???event dlg start with bool prm foreground?
+		EventSrv->FireEvent(CStrID("OnForegroundDlgStart"));
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CDialogueManager::RejectDialogue(CStrID Target, CStrID DlgID)
+bool CDialogueManager::RejectDialogue(CStrID ID, CStrID Target)
 {
-	//get dlg
-	//CDlgContext& Ctx = 
-	//find waiting slot
-	//if actor is listed, remove this context from running dlgs, notify end and set result to Failure
+	int Idx = RunningDlgs.FindIndex(ID);
+	if (Idx == INVALID_INDEX) FAIL;
+	CDlgContext& Ctx = RunningDlgs.ValueAt(Idx);
+	if (Ctx.Target != Target) FAIL;
+	Ctx.State = DlgState_Aborted;
+	//???!!!notify dlg failed, or actor will read state
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CDialogueManager::CloseDialogue(CStrID ID)
+{
+	Core::Error(__FUNCTION__ " IMPLEMENT ME!!!");
 }
 //---------------------------------------------------------------------
 
 void CDialogueManager::Trigger()
 {
-	//!!!count time for dialogues where node waits for a timeout end!
-	Core::Error(__FUNCTION__ " IMPLEMENT ME!!!");
-}
-//---------------------------------------------------------------------
-
-void CDialogueManager::HandleNode(CDlgContext& Context)
-{
-	if (!Context.pCurrNode || !Context.pCurrNode->Phrase.IsValid()) return;
-
-	CStrID SpeakerEntity = Context.pCurrNode->SpeakerEntity;
-
-	if (SpeakerEntity == "$DlgOwner") SpeakerEntity = Context.DlgOwner;
-	else if (SpeakerEntity == "$PlrSpeaker") SpeakerEntity = Context.PlrSpeaker;
-	Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
-	if (!Speaker.IsValid())
-		Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
-
-	if (IsDialogueForeground(Context.Initiator))
+	for (int i = 0; i < RunningDlgs.GetCount(); ++i)
 	{
-		CString SpeakerName;
-		if (!Speaker->GetAttr<CString>(SpeakerName, CStrID("Name")))
-			SpeakerName = Speaker->GetUID().CStr();
-		//FocusMgr->SetCameraFocusEntity(Speaker);
+		CDlgContext& Ctx = RunningDlgs.ValueAt(i);
 
-		Data::PParams P = n_new(Data::CParams);
-		P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
-		P->Set(CStrID("Phrase"), (PVOID)Context.pCurrNode->Phrase.CStr());
-		EventSrv->FireEvent(CStrID("OnDlgPhrase"), P);
-	}
-	else
-	{
-		//!!!get timeout from the node!
-		Speaker->GetProperty<Prop::CPropTalking>()->SayPhrase(CStrID(Context.pCurrNode->Phrase.CStr()));
+		//!!!if waiting, process wait!
+		if (Ctx.State == DlgState_Waiting)// & waits timer)
+		{
+			//advance timer
+			//if time has come,
+				Ctx.State = DlgState_InLink;
+		}
+
+		//!!!can move it all into the CDlgContext, and call Ctx.Trigger(bool Foreground)!
+		//or use virtual dlg handler and refuse diff between fore & back in Ctx
+		while (Ctx.State == DlgState_InNode || Ctx.State == DlgState_InLink)
+		{
+			if (Ctx.State == DlgState_InNode)
+			{
+				Ctx.HandleNode();
+
+				if (!Ctx.pCurrNode || !Ctx.pCurrNode->Phrase.IsValid()) return;
+
+				CStrID SpeakerEntity = Ctx.pCurrNode->SpeakerEntity;
+				if (SpeakerEntity == CStrID("$DlgOwner")) SpeakerEntity = Ctx.DlgOwner;
+				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = Ctx.PlrSpeaker;
+				Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
+				if (!Speaker.IsValid())
+					Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
+ 
+				if (IsDialogueForeground(Ctx.Initiator))
+				{
+					CString SpeakerName;
+					if (!Speaker->GetAttr<CString>(SpeakerName, CStrID("Name")))
+						SpeakerName = Speaker->GetUID().CStr();
+					//!!!can focus camera, or some special handler/script can catch global events and manage camera?
+
+					//if UI stores Ctx or Ctx ID (Initiator ID) since init time, we even don't need to send any params
+					EventSrv->FireEvent(CStrID("OnForegroundDlgNodeEnter"));
+
+					//Data::PParams P = n_new(Data::CParams(2));
+					//P->Set(CStrID("SpeakerName"), (PVOID)SpeakerName.CStr());
+					//P->Set(CStrID("Phrase"), (PVOID)Ctx.pCurrNode->Phrase.CStr());
+					//EventSrv->FireEvent(CStrID("OnDlgPhrase"), P);
+
+					//!!!if no phrase and mode isn't answers, goto link immediately
+				}
+				else
+				{
+					n_assert2(Ctx.pCurrNode->LinkMode != CDlgNode::Link_Select, "Background dialogues don't support Link_Select!");
+
+					//!!!get timeout from the node!
+					//also can send entity event, catch it in CPropTalking
+					Speaker->GetProperty<Prop::CPropTalking>()->SayPhrase(CStrID(Ctx.pCurrNode->Phrase.CStr()));
+
+					if (Ctx.State == DlgState_Waiting)// & time to wait <= 0)
+						Ctx.State = DlgState_InLink;
+				}
+			}
+
+			if (Ctx.State == DlgState_InLink) Ctx.HandleLink();
+		}
 	}
 }
 //---------------------------------------------------------------------
