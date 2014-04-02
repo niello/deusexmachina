@@ -12,12 +12,13 @@ namespace Story
 
 enum EDlgState
 {
-	DlgState_Requested,	// Requested, not accepted by target
-	DlgState_InNode,	// Accepted, current node must be processed
-	DlgState_Waiting,	// Current node was processed, wait for a time, UI or other response
-	DlgState_InLink,	// Response received, follow selected link
-	DlgState_Finished,	// Exited node with no valid links or with a link to NULL
-	DlgState_Aborted	// Rejected or failed to execute script (or aborted by user?)
+	DlgState_None = 0,		// Does not exist
+	DlgState_Requested = 1,	// Requested, not accepted by target
+	DlgState_InNode = 2,	// Accepted, current node must be processed
+	DlgState_Waiting = 3,	// Current node was processed, wait for a time, UI or other response
+	DlgState_InLink = 4,	// Response received, follow selected link
+	DlgState_Finished = 5,	// Exited node with no valid links or with a link to NULL
+	DlgState_Aborted = 6	// Rejected or failed to execute script (or aborted by user?)
 };
 
 class CDlgContext

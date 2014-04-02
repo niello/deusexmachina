@@ -36,9 +36,7 @@ protected:
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
 	DECLARE_EVENT_HANDLER(OnSOActionStart, OnSOActionStart);
-	DECLARE_EVENT_HANDLER(OnDlgRequest, OnDlgRequest); //???process in script?
 	//!!!OnDlgNodeEnter - SayPhrase!
-	//???listen OnDlgEnd? or close from SO action script?
 
 public:
 
