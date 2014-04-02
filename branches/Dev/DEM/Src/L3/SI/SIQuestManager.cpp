@@ -15,7 +15,7 @@ namespace SI
 {
 using namespace Story;
 
-int CQuestSystem_StartQuest(lua_State* l)
+int CQuestMgr_StartQuest(lua_State* l)
 {
 	//args: quest name, [task name = empty]
 
@@ -33,7 +33,7 @@ int CQuestSystem_StartQuest(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-int CQuestSystem_CompleteQuest(lua_State* l)
+int CQuestMgr_CompleteQuest(lua_State* l)
 {
 	//args: quest name, [task name = empty]
 	
@@ -51,7 +51,7 @@ int CQuestSystem_CompleteQuest(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-int CQuestSystem_GetQuestStatus(lua_State* l)
+int CQuestMgr_GetQuestStatus(lua_State* l)
 {
 	//args: quest name, [task name = empty]
 	
@@ -75,9 +75,9 @@ bool RegisterQuestSystem()
 
 	lua_createtable(l, 0, 7);
 
-	ScriptSrv->ExportCFunction("StartQuest", CQuestSystem_StartQuest);
-	ScriptSrv->ExportCFunction("CompleteQuest", CQuestSystem_CompleteQuest);
-	ScriptSrv->ExportCFunction("GetQuestStatus", CQuestSystem_GetQuestStatus);
+	ScriptSrv->ExportCFunction("StartQuest", CQuestMgr_StartQuest);
+	ScriptSrv->ExportCFunction("CompleteQuest", CQuestMgr_CompleteQuest);
+	ScriptSrv->ExportCFunction("GetQuestStatus", CQuestMgr_GetQuestStatus);
 
 	ScriptSrv->ExportIntegerConst("QSNo", CQuest::No);
 	ScriptSrv->ExportIntegerConst("QSOpened", CQuest::Opened);

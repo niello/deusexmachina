@@ -1,6 +1,5 @@
 #include "DlgContext.h"
 
-//#include <Dlg/DialogueManager.h>
 #include <Game/EntityManager.h>
 //#include <Game/GameServer.h>
 #include <Events/EventServer.h>
@@ -23,9 +22,6 @@ void CDlgContext::Trigger(bool IsForeground)
 
 		if (State == DlgState_InNode)
 		{
-			n_assert2(IsForeground || pCurrNode->LinkMode != CDlgNode::Link_Select,
-				"Background dialogues don't support Link_Select!");
-
 			//NodeEnterTime = (float)GameSrv->GetTime();
 
 			// Gather valid links
@@ -63,6 +59,8 @@ void CDlgContext::Trigger(bool IsForeground)
 			}
 			else
 			{
+				n_assert2(pCurrNode->LinkMode != CDlgNode::Link_Select, "Background dialogues don't support Link_Select!");
+
 				CStrID SpeakerEntity = pCurrNode->SpeakerEntity;
 				if (SpeakerEntity == CStrID("$DlgOwner")) SpeakerEntity = DlgOwner;
 				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = PlrSpeaker;
@@ -72,6 +70,7 @@ void CDlgContext::Trigger(bool IsForeground)
 
 				Speaker->FireEvent(CStrID("OnDlgNodeEnter"));
 
+				//!!!DBG TMP!
 				float DBGTMPTimeToWait = 0.f;
 				State = DBGTMPTimeToWait > 0.f ? DlgState_Waiting : DlgState_InLink;
 			}
@@ -106,6 +105,11 @@ void CDlgContext::Trigger(bool IsForeground)
 				EventSrv->FireEvent(CStrID("OnDlgEnd"), P);
 			}
 			//???else if (State == DlgState_Aborted) OnDlgAbort?
+				//Data::PParams P = n_new(Data::CParams(3));
+				//P->Set(CStrID("Initiator"), Ctx.Initiator);
+				//P->Set(CStrID("Target"), Target);
+				//P->Set(CStrID("IsForeground"), IsDialogueForeground(ID));
+				//EventSrv->FireEvent(CStrID("OnDlgReject"), P);
 		}
 	}
 }

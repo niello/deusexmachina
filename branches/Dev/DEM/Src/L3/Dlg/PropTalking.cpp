@@ -25,7 +25,6 @@ bool CPropTalking::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropTalking, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropTalking, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnSOActionStart, CPropTalking, OnSOActionStart);
-	PROP_SUBSCRIBE_PEVENT(OnDlgRequest, CPropTalking, OnDlgRequest);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -35,7 +34,6 @@ void CPropTalking::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnPropActivated);
 	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnSOActionStart);
-	UNSUBSCRIBE_EVENT(OnDlgRequest);
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
@@ -110,18 +108,6 @@ bool CPropTalking::OnSOActionStart(const Events::CEventBase& Event)
 
 	if (ActionID == CStrID("Talk") && SOID != GetEntity()->GetUID())
 		DlgMgr->RequestDialogue(GetEntity()->GetUID(), SOID);
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CPropTalking::OnDlgRequest(const Events::CEventBase& Event)
-{
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-
-	//!!!can script it in plr/npc classes!
-	//facing initiator, breaking least prioritized dialogue is here
-	DlgMgr->AcceptDialogue(P->Get<CStrID>(CStrID("Initiator")), GetEntity()->GetUID());
 
 	OK;
 }

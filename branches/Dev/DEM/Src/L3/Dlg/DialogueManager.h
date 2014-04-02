@@ -3,10 +3,8 @@
 #define __DEM_L3_DLG_SYSTEM_H__
 
 #include <Core/Singleton.h>
-#include <Data/Dictionary.h>
-#include <Data/StringID.h>
-#include <Events/EventsFwd.h>
 #include <Dlg/DlgContext.h>
+#include <Data/Dictionary.h>
 
 // Dialogue manager loads, stores and executes dialogues
 
@@ -59,8 +57,7 @@ public:
 	void			CloseDialogue(CStrID ID);
 
 	CDlgContext*	GetDialogue(CStrID ID);
-	EDlgState		GetDialogueState(CStrID ID) const;
-	bool			IsDialogueActive(CStrID ID) const { return RunningDlgs.Contains(ID); }
+	EDlgState		GetDialogueState(CStrID ID);
 	bool			IsForegroundDialogueActive() const { return ForegroundDlgID.IsValid(); }
 	bool			IsDialogueForeground(CStrID ID) const { return ID == ForegroundDlgID; }
 };
@@ -69,6 +66,13 @@ inline CDlgContext* CDialogueManager::GetDialogue(CStrID ID)
 {
 	int Idx = RunningDlgs.FindIndex(ID);
 	return (Idx == INVALID_INDEX) ? NULL : &RunningDlgs.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
+
+inline EDlgState CDialogueManager::GetDialogueState(CStrID ID)
+{
+	CDlgContext* pCtx = GetDialogue(ID);
+	return pCtx ? pCtx->State : DlgState_None;
 }
 //---------------------------------------------------------------------
 

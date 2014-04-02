@@ -204,7 +204,6 @@ bool CDialogueManager::RejectDialogue(CStrID ID, CStrID Target)
 	if (Ctx.Target != Target) FAIL;
 	Ctx.State = DlgState_Aborted;
 
-	//???and kill immediately? or allow actor to read the state?
 	//Data::PParams P = n_new(Data::CParams(3));
 	//P->Set(CStrID("Initiator"), Ctx.Initiator);
 	//P->Set(CStrID("Target"), Target);
@@ -217,8 +216,8 @@ bool CDialogueManager::RejectDialogue(CStrID ID, CStrID Target)
 
 void CDialogueManager::CloseDialogue(CStrID ID)
 {
-	Core::Error(__FUNCTION__ " IMPLEMENT ME!!!");
-	//EventSrv->FireEvent(CStrID("OnDlgEnd"), P);
+	//???kill script?
+	RunningDlgs.Remove(ID);
 }
 //---------------------------------------------------------------------
 
@@ -227,7 +226,10 @@ void CDialogueManager::Trigger()
 	for (int i = 0; i < RunningDlgs.GetCount(); ++i)
 	{
 		CDlgContext& Ctx = RunningDlgs.ValueAt(i);
-		Ctx.Trigger(IsDialogueForeground(Ctx.Initiator));
+		bool IsForeground = IsDialogueForeground(Ctx.Initiator);
+		Ctx.Trigger(IsForeground);
+		if (IsForeground && (Ctx.State == DlgState_Finished || Ctx.State == DlgState_Aborted))
+			ForegroundDlgID = CStrID::Empty;
 	}
 }
 //---------------------------------------------------------------------
