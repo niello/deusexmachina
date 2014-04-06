@@ -31,7 +31,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 			pFact = pActor->GetMemSystem().AddFact<CMemFactSmartObj>();
 			pFact->pSourceStimulus = pStimulus;
 			pFact->TypeID = pSO->GetTypeID();
-			pActor->RequestGoalUpdate();
+			pActor->RequestBehaviourUpdate();
 		}
 
 		//!!!CALC!

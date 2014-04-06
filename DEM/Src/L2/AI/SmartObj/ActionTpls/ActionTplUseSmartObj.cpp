@@ -43,9 +43,9 @@ bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, 
 		Prop::CPropSmartObject* pSO = pEntity->GetProperty<Prop::CPropSmartObject>();
 		n_assert(pSO);
 
-		const Prop::CPropSmartObject::CAction* pAction = pSO->GetAction(ActionID);
-		if (pAction && pAction->pTpl->Preconditions.IsValid())
-			return pAction->pTpl->Preconditions->FillWorldState(pActor, pSO, WS);
+		const Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+		if (pSOAction && pSOAction->pTpl->Preconditions.IsValid())
+			return pSOAction->pTpl->Preconditions->FillWorldState(pActor, pSO, WS);
 	}
 
 	FAIL;

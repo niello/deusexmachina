@@ -567,7 +567,7 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
 	// The first one is our position, that can be skipped, or the first valid position with recovery edge already added.
 	// Skip corners in the arrival tolerance.
 	int FirstIdx;
-	float ArrivalTolSq = pActor->ArrivalTolerance * pActor->ArrivalTolerance;
+	float ArrivalTolSq = pActor->LinearArrivalTolerance * pActor->LinearArrivalTolerance;
 	for (FirstIdx = 1; FirstIdx < CornerCount; ++FirstIdx)
 	{
 		float* pCrn = CornerVerts + FirstIdx * 3;

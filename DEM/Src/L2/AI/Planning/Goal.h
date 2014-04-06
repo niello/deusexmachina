@@ -9,6 +9,9 @@
 
 // Goal describes what actor wants to change in the world or inside itself. Goal has relevance,
 // actor can pursue only one or small number of goals at a time, relevance helps to choose them.
+// NB: relevance base normally should be between 0.f (don't want) and 1.f (want more than anything)
+// though it is only a convention and you may calculate relevances as you wish. Then this base is
+// multiplied on the personality factor, so each character may have its own goal preferences.
 
 namespace AI
 {

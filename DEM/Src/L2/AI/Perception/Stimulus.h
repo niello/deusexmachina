@@ -22,6 +22,7 @@ class CStimulus: public Core::CRefCounted
 
 protected:
 
+	//!!!only for external ones!
 	CStimulusQT::CNode*	pQTNode;
 
 	//!!!don't create immediately expiring stimuli if sensor that processes them updates too infrequently!

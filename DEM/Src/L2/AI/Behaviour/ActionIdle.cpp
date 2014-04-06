@@ -3,4 +3,4 @@
 namespace AI
 {
 __ImplementClass(AI::CActionIdle, 'AIDL', AI::CAction);
-} //namespace AI
+}

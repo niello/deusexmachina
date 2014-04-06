@@ -3,4 +3,4 @@
 namespace AI
 {
 __ImplementClassNoFactory(AI::CTask, Core::CRefCounted);
-} //namespace AI
+}

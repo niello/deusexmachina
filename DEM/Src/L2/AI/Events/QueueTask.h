@@ -5,7 +5,7 @@
 #include <Events/EventNative.h>
 #include <AI/Behaviour/Task.h>
 
-// Play a sound at the specific position.
+// Queues a new task into an actor's task queue
 
 namespace Event
 {

@@ -54,8 +54,8 @@ public:
 	void		Fill(int First, DWORD Num, const T& Val);
 	void		AllocateFixed(DWORD Size);
 
-	void		Remove(CIterator It, T* pOutValue = NULL);
-	void		RemoveAt(int Idx);
+	void		Remove(CIterator It, T* pOutValue = NULL) { n_assert_dbg(It); RemoveAt(int(It - pData), pOutValue); }
+	void		RemoveAt(int Idx, T* pOutValue = NULL);
 	bool		RemoveByValue(const T& Val);
 	bool		RemoveByValueSorted(const T& Val);
 	void		Clear(bool FreeMemory = false);
@@ -428,9 +428,10 @@ bool CArray<T>::RemoveByValueSorted(const T& Val)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::RemoveAt(int Idx)
+void CArray<T>::RemoveAt(int Idx, T* pOutValue)
 {
 	n_assert(IsIndexValid(Idx));
+	if (pOutValue) *pOutValue = pData[Idx];
 	if (Idx == Count - 1)
 	{
 		--Count;
@@ -439,8 +440,8 @@ void CArray<T>::RemoveAt(int Idx)
 	else if (Flags.Is(Array_KeepOrder)) Move(Idx + 1, Idx);
 	else
 	{
-		//???or use memcpy?
 		--Count;
+		//???or use memcpy instead of operator =?
 		pData[Idx] = pData[Count];
 		pData[Count].~T();
 	}
@@ -557,15 +558,6 @@ int CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) cons
 
 	if (pHasEqualElement) *pHasEqualElement = false;
 	return Low;
-}
-//---------------------------------------------------------------------
-
-template<class T>
-void CArray<T>::Remove(CIterator It, T* pOutValue)
-{
-	n_assert_dbg(It);
-	if (pOutValue) *pOutValue = *It;
-	RemoveAt(int(It - pData));
 }
 //---------------------------------------------------------------------
 
