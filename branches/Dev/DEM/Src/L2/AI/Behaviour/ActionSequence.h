@@ -5,7 +5,7 @@
 #include "Action.h"
 #include <Data/Array.h>
 
-// Action sequence is a composite action that executes children in a sequence.
+// Action sequence is a composite action that executes children in a sequence
 
 namespace AI
 {

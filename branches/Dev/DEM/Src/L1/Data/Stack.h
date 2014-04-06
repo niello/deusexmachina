@@ -16,18 +16,17 @@ private:
 public:
 
 	void		Push(const T& Elm) { Storage.Add(Elm); }
-	T			Pop();
+	bool		Pop(T* pOutValue = NULL);
 	const T&	Top() const { return Storage.Back(); }
 	bool		IsEmpty() const { return Storage.IsEmpty(); }
 };
 
 template<class T>
-inline T CStack<T>::Pop()
+inline bool CStack<T>::Pop(T* pOutValue)
 {
-	if (Storage.IsEmpty()) return T();
-	T Elm = Storage.Back();
-	Storage.RemoveAt(Storage.GetCount() - 1);
-	return Elm;
+	if (Storage.IsEmpty()) FAIL;
+	Storage.Remove(Storage.GetCount() - 1, pOutValue);
+	OK;
 }
 //---------------------------------------------------------------------
 

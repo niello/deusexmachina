@@ -31,14 +31,22 @@ static const CString StrPercPrefix("AI::CPerceptor");
 static const CString StrSensorPrefix("AI::CSensor");
 static const CString StrGoalPrefix("AI::CGoal");
 
+struct CGoalCmp_RelevanceDescending
+{
+	inline bool operator()(const PGoal& R1, const PGoal& R2) const
+	{
+		return R1->GetRelevance() > R2->GetRelevance();
+	}
+};
+
 // At very small speeds and physics step sizes body position stops updating because of limited
 // float precision. LinearSpeed = 0.0007f, StepSize = 0.01f, Pos + LinearSpeed * StepSize = Pos.
 // So body never reaches the desired destination and we must accept arrival at given tolerance.
 // The less is this value, the more precise is resulting position, but the more time arrival takes.
 // Empirical minimum value is somewhere around 0.0008f.
 // This value is measured in game world meters.
-// NB: may be square of this value MUST make sense with a single (float) precision too.
-const float CPropActorBrain::ArrivalTolerance = 0.009f;
+// NB: may be square of this value MUST make sense with a single (float) precision.
+const float CPropActorBrain::LinearArrivalTolerance = 0.009f;
 
 // In radians
 const float CPropActorBrain::AngularArrivalTolerance = 0.005f;
@@ -67,8 +75,6 @@ bool CPropActorBrain::InternalActivate()
 	FacingState = AIFacing_Done;
 
 // END Blackboard
-	
-	static const CString DefaultState("Default");
 
 	//???need to cache?
 	PParams Desc;
@@ -120,7 +126,7 @@ bool CPropActorBrain::InternalActivate()
 						}
 
 						if (!Found)
-							n_printf("AI,Warning: entity '%s', perceptor '%s' not found on brain activation\n",
+							n_printf("AI,Warning: CPropActorBrain::InternalActivate() > entity '%s', perceptor '%s' not found\n",
 									GetEntity()->GetUID().CStr(),
 									ItPercName->GetValue<CString>().CStr());
 					}
@@ -152,12 +158,12 @@ bool CPropActorBrain::InternalActivate()
 		PDataArray ActionArray;
 		if (Desc->Get<PDataArray>(ActionArray, CStrID("Actions")))
 		{
-			Actions.Reallocate(ActionArray->GetCount(), 0);
+			ActionTpls.Reallocate(ActionArray->GetCount(), 0);
 			for (int i = 0; i < ActionArray->GetCount(); i++)
 			{
 				LPCSTR pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
-				if (pTpl) Actions.Add(pTpl);
+				if (pTpl) ActionTpls.Add(pTpl);
 				else n_printf("AI,Warning: entity '%s' requested action template '%s' that is not registered\n",
 						GetEntity()->GetUID().CStr(), pActionName);
 			}
@@ -165,7 +171,7 @@ bool CPropActorBrain::InternalActivate()
 
 		bool DecMaking = Desc->Get(CStrID("EnableDecisionMaking"), false);
 		Flags.SetTo(AIMind_EnableDecisionMaking, DecMaking);
-		Flags.SetTo(AIMind_UpdateGoal, DecMaking);
+		Flags.SetTo(AIMind_SelectAction, DecMaking);
 
 		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
 		
@@ -240,18 +246,29 @@ bool CPropActorBrain::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::SetPlan(CAction* pNewPlan)
+bool CPropActorBrain::EnqueueTask(PTask Task)
 {
-	if (CurrPlan.IsValid()) CurrPlan->Deactivate(this);
-	//???deactivate and clear current goal, if has?
-	CurrPlan = pNewPlan;
-	if (pNewPlan && !pNewPlan->Activate(this))
-	{
-		Flags.Set(AIMind_InvalidatePlan);
-		CurrPlan = NULL;
-		FAIL;
-	}
-	else Flags.Set(AIMind_UpdateGoal); //???why need if valid plan set & activated? needed only in !pNewPlan case?
+	if (!Task.IsValid()) FAIL;
+	bool WasEmpty = TaskQueue.IsEmpty();
+	TaskQueue.AddBack(Task);
+	if (WasEmpty) Flags.Set(AIMind_SelectAction);
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CPropActorBrain::ClearTaskQueue()
+{
+	if (TaskQueue.IsEmpty()) return;
+	TaskQueue.Clear();
+	Flags.Set(AIMind_SelectAction);
+}
+//---------------------------------------------------------------------
+
+bool CPropActorBrain::OnAddTask(const Events::CEventBase& Event)
+{
+	PTask Task = ((const Event::QueueTask&)Event).Task;
+	if (Task->IsAvailableTo(this)) //!!!there will not be this check!
+		EnqueueTask(Task);
 
 	OK;
 }
@@ -259,80 +276,118 @@ bool CPropActorBrain::SetPlan(CAction* pNewPlan)
 
 void CPropActorBrain::AbortCurrAction(DWORD Result)
 {
-	SetPlan(NULL);
-	if (CurrTask.IsValid())
-	{
-		CurrTask->OnPlanDone(this, Result);
-		CurrTask = NULL;
-	}
+	//if task, deactivate task, discard
+	//if goal, request goal update
+
+	if (Plan.IsValid()) Plan->Deactivate(this);
+	//???deactivate and clear current goal, if has?
+	Plan = NULL;
+	Flags.Set(AIMind_SelectAction); //???why need if valid plan set & activated? needed only in !pNewPlan case?
+	//if (CurrTask.IsValid())
+	//{
+	//	CurrTask->OnPlanDone(this, Result);
+	//	CurrTask = NULL;
+	//}
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::UpdateDecisionMaking()
+void CPropActorBrain::UpdateBehaviour()
 {
 	bool NeedToReplan =
 		Flags.Is(AIMind_InvalidatePlan) ||
-		(CurrGoal.IsValid() && (!CurrPlan.IsValid() || CurrGoal->IsSatisfied()));
-	bool UpdateGoals = Flags.Is(AIMind_UpdateGoal) || NeedToReplan;
+		(CurrGoal.IsValid() && (!Plan.IsValid() || CurrGoal->IsSatisfied()));
 
-	Flags.Clear(AIMind_UpdateGoal | AIMind_InvalidatePlan);
+	if (!NeedToReplan && Flags.IsNot(AIMind_SelectAction)) return;
 
-	if (!UpdateGoals) return;
+	Flags.Clear(AIMind_SelectAction | AIMind_InvalidatePlan);
 
-	for (CArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
+	CGoal* pCurrGoal = CurrGoal.GetUnsafe();
+	CTask* pTask = TaskQueue.IsEmpty() ? NULL : TaskQueue.Front().GetUnsafe();
+
+	PAction NewPlan;
+
+	// Disable this flag for player- or script-controlled actors
+	if (Flags.Is(AIMind_EnableDecisionMaking))
 	{
-		//???all this to EvalRel?
-		// If not a time still, skip goal & invalidate its relevance
-		// If satisfied actor's WS and not reeval on satisfaction, invalidate
-		(*ppGoal)->EvalRelevance(this);
-		// Set new recalc time
-	}
+		for (CArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
+		{
+			//???all this to EvalRel?
+			// If not a time yet, skip goal & invalidate its relevance
+			// If satisfied actor's WS and not reeval on satisfaction, invalidate
+			(*ppGoal)->EvalRelevance(this);
+			// Set new recalc time
+		}
 
-	//???!!!add some constant value to curr goal's relevance to avoid too frequent changes?!
+		Goals.Sort<CGoalCmp_RelevanceDescending>();
 
-	//???or sort by priority?
-	while (true)
-	{
-		CGoal* pTopGoal = CurrGoal.GetUnsafe();
-		float MaxRelevance = CurrGoal.IsValid() ? CurrGoal->GetRelevance() : 0.f;
+		// We search for the valid goal or task with the highest priority
+		// When relevances are equal, prefer in order CurrentGoal->Task->Goal
+		float CurrGoalRelevance = pCurrGoal ? pCurrGoal->GetRelevance() : 0.f;
+		float TaskRelevance = pTask ? pTask->GetRelevance() : 0.f;
+		bool PreferTask = (CurrGoalRelevance < TaskRelevance);
 
 		for (CArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
-			if ((*ppGoal)->GetRelevance() > MaxRelevance)
+		{
+			CGoal* pTopGoal = *ppGoal;
+
+			// Since we always prefer the current goal, we do this before comparing relevances
+			if (pCurrGoal == pTopGoal && !NeedToReplan && !pCurrGoal->IsReplanningNeeded())
 			{
-				MaxRelevance = (*ppGoal)->GetRelevance();
-				pTopGoal = (*ppGoal).GetUnsafe();
+				n_assert_dbg(Plan.IsValid());
+				NewPlan = Plan;
+				break;
 			}
 
-		n_assert2(pTopGoal, "Actor has no goal, even GoalIdle");
+			// If need to interrupt, but can't, continue
+			// [Test against activation probability, if fails, continue]
 
-		if (CurrGoal.GetUnsafe() == pTopGoal && !NeedToReplan && !CurrGoal->IsReplanningNeeded()) break;
+			float Relevance = pTopGoal->GetRelevance();
+			if (Relevance < TaskRelevance || (Relevance == TaskRelevance && PreferTask)) break;
 
-		// If need to interrupt, but can't, invalidate relevance and continue
-		// [Test against probability, if fails, invalidate relevance and continue]
-
-		PAction Plan = AISrv->GetPlanner().BuildPlan(this, pTopGoal);
-		if (Plan.IsValid())
-		{
-			//???!!!use SetPlan here?
-
-			if (CurrPlan.IsValid()) CurrPlan->Deactivate(this);
-
-			// [Deactivate curr goal]
-			CurrGoal = pTopGoal;
-			// [Activate curr goal]
-
-			CurrPlan = Plan;
-			if (!CurrPlan->Activate(this))
+			NewPlan = AISrv->GetPlanner().BuildPlan(this, pTopGoal);
+			if (NewPlan.IsValid())
 			{
-				Flags.Set(AIMind_InvalidatePlan);
-				CurrPlan = NULL;
+				CurrGoal = pTopGoal;
+				break;
 			}
-			break;
-		}
-		else
-		{
-			//!!!HandleBuildPlanFailure!
+
+			//!!!HandleBuildPlanFailure() with ddefault impl as InvalidateRelevance()!
 			pTopGoal->InvalidateRelevance();
+		}
+
+		n_assert2(CurrGoal.GetUnsafe() || pTask, "Actor has no goal, even GoalIdle, nor task");
+	}
+
+	if (!NewPlan.IsValid())
+	{
+		CurrGoal = NULL;
+		if (pTask)
+		{
+			NewPlan = pTask->BuildPlan(); //!!!GetPlan() { return Plan; }! if was the same plan, will skip reactivation
+			n_assert_dbg(NewPlan.IsValid());
+		}
+	}
+
+	if (Plan != NewPlan)
+	{
+		if (Plan.IsValid()) Plan->Deactivate(this);
+
+		//!!!if prev was plan, (Plan == pTask->GetPlan(), deactivate task (abort)!
+		//???discard or keep aborted tasks?
+
+		/*if (CurrGoal.GetUnsafe() != pCurrGoal)
+		{
+			if (pCurrGoal) ; // [Deactivate pCurrGoal]
+			if (CurrGoal.GetUnsafe()) ; // [Activate CurrGoal]
+		}*/
+
+		//!!!if task activate task!
+
+		Plan = NewPlan;
+		if (Plan.IsValid() && !Plan->Activate(this))
+		{
+			Flags.Set(AIMind_InvalidatePlan);
+			Plan = NULL;
 		}
 	}
 }
@@ -352,24 +407,22 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 	MemSystem.Update();
 
 #ifndef _EDITOR
-	// Disable this flag for player- or script-controlled actors
-	//???mb some goals can abort command (as interrupt behaviours)? so check/clear cmd inside in interruption
-	if (Flags.Is(AIMind_EnableDecisionMaking) && !CurrTask.IsValid()) UpdateDecisionMaking();
+	UpdateBehaviour();
 
 	NavSystem.Update(FrameTime);
 #endif
 
-	if (CurrPlan.IsValid())
+	if (Plan.IsValid())
 	{
-		DWORD BhvResult = CurrPlan->IsValid(this) ? CurrPlan->Update(this) : Failure;
+		DWORD BhvResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
 		if (BhvResult != Running)
 		{
-			SetPlan(NULL);
-			if (CurrTask.IsValid()) CurrTask->OnPlanDone(this, BhvResult);
+			//SetPlan(NULL);
+			//if (CurrTask.IsValid()) CurrTask->OnPlanDone(this, BhvResult);
 		}
 	}
 
-	if (CurrTask.IsValid() && CurrTask->IsSatisfied()) CurrTask = NULL;
+	//if (CurrTask.IsValid() && CurrTask->IsSatisfied()) CurrTask = NULL;
 
 	OK;
 }
@@ -435,27 +488,12 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnAddTask(const Events::CEventBase& Event)
-{
-	AI::PTask Task = ((const Event::QueueTask&)Event).Task;
-	if (Task->IsAvailableTo(this))
-	{
-		//!!!now task is erased, can queue it instead! bool ClearQueue in event.
-		if (CurrTask.IsValid()) CurrTask->Abort(this);
-		CurrTask = Task;
-		if (SetPlan(Task->BuildPlan())) Task->OnPlanSet(this);
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 {
 	//!!!test when actor goes somewhere!
 	NavSystem.SetupState();
-	SetPlan(NULL); //???what if task is active?
-	RequestGoalUpdate();
+	//???need? SetPlan(NULL); //???what if task is active?
+	RequestBehaviourUpdate();
 	OK;
 }
 //---------------------------------------------------------------------

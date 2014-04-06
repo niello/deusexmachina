@@ -224,7 +224,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 
 	while (true)
 	{
-		//!!!
+		//!!!PERF
 		// Optimization: "How to Achieve Lightning-Fast A*",
 		// AI Game Programming Wisdom, p. 133.
 		// Specifically "Be a Cheapskate" on p. 140.
@@ -273,19 +273,20 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 
 			// Apply preconditions
 			if (pNeighbor->HasPreconditions)
+			{
 				for (DWORD i = 0; i < WSP_Count; ++i)
 				{
 					const CData& Precondition = pNeighbor->WSPreconditions.GetProp((EWSProp)i);
-
-					if (Precondition.IsValid())
-						if (Precondition.IsA<EWSProp>())
-						{
-							EWSProp PcVal = Precondition.GetValue<EWSProp>();
-							if (pNeighbor->WSGoal.IsPropSet(PcVal))
-								pNeighbor->WSGoal.SetProp((EWSProp)i, pNeighbor->WSGoal.GetProp(PcVal));
-						}
-						else pNeighbor->WSGoal.SetProp((EWSProp)i, Precondition);
+					if (!Precondition.IsValid()) continue;
+					if (Precondition.IsA<EWSProp>())
+					{
+						EWSProp PcVal = Precondition.GetValue<EWSProp>();
+						if (pNeighbor->WSGoal.IsPropSet(PcVal))
+							pNeighbor->WSGoal.SetProp((EWSProp)i, pNeighbor->WSGoal.GetProp(PcVal));
+					}
+					else pNeighbor->WSGoal.SetProp((EWSProp)i, Precondition);
 				}
+			}
 
 			MergeWorldStates(pNeighbor->WSCurr, pNeighbor->WSGoal, WSActor);
 
@@ -307,9 +308,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	PAction Plan;
 	PActionSequence Seq;
 
-#ifdef _DEBUG
-	n_printf("Planner -> '%s' Begin plan\n", pActor->GetEntity()->GetUID());
-#endif
+	n_printf_dbg("Planner -> '%s' Begin plan\n", pActor->GetEntity()->GetUID());
 
 	while (pCurrNode && pCurrNode->pAction)
 	{
@@ -320,8 +319,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 #ifdef _DEBUG
 			CString DbgString;
 			CurrAction->GetDebugString(DbgString);
-			n_printf("Planner -> '%s'     Action added: '%s'\n",
-				pActor->GetEntity()->GetUID(), DbgString.CStr());
+			n_printf("Planner -> '%s' Action added: '%s'\n", pActor->GetEntity()->GetUID(), DbgString.CStr());
 #endif
 
 			if (!Plan.IsValid()) Plan = CurrAction;
@@ -340,9 +338,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 		pCurrNode = pCurrNode->pParent;
 	}
 
-#ifdef _DEBUG
-	n_printf("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUID());
-#endif
+	n_printf_dbg("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUID());
 
 	while (OpenList.RemoveBack(&pCurrNode)) NodePool.Destroy(pCurrNode);
 	while (ClosedList.RemoveBack(&pCurrNode)) NodePool.Destroy(pCurrNode);

@@ -53,7 +53,7 @@ public:
 		const CIterator&	operator =(const CIterator& Other) { pNode = Other.pNode; return *this; }
 		const CIterator&	operator ++() { n_assert_dbg(pNode); pNode = pNode->pNext; return *this; }
 		CIterator			operator ++(int);
-		const CIterator&	operator --() { n_assert_dbg(pNode); pNode = pNode->GetPred(); return *this; }
+		const CIterator&	operator --() { n_assert_dbg(pNode); pNode = pNode->pPrev; return *this; }
 		CIterator			operator --(int);
 							operator bool() const { return !!pNode; }
 		T*					operator ->() const { n_assert_dbg(pNode); return &pNode->Value; }
@@ -64,6 +64,8 @@ public:
 	CList(const CList<T>& Other): pFront(NULL), pBack(NULL) { AddList(Other); }
 	~CList() { Clear(); }
 
+	//???add to collections API method family T& Add...() with no const T& param, adding an empty element
+	//and returning an object to fill. This will help to avoid copying!
 	CIterator	Add(const T& Val) { return AddAfter(pBack, Val); }
 	CIterator	AddBefore(CIterator It, const T& Val);
 	CIterator	AddAfter(CIterator It, const T& Val);
@@ -105,7 +107,7 @@ typename CList<T>::CIterator CList<T>::CIterator::operator --(int)
 {
 	n_assert_dbg(pNode);
 	CIterator Tmp(pNode);    
-	pNode = pNode->GetPred();
+	pNode = pNode->pPrev;
 	return Tmp;
 }
 //---------------------------------------------------------------------

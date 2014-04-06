@@ -15,13 +15,7 @@ void CPerceptorOverseer::Init(const Data::CParams& Desc)
 	//CPerceptor::Init(Desc);
 	
 	Data::PDataArray Array = Desc.Get<Data::PDataArray>(CStrID("Overseers"), NULL);
-	
-	//!!!need CStrID in PS!
-	//if (Array.IsValid()) Array->FillArray(Overseers);
-	
-	if (Array.IsValid())
-		for (Data::CDataArray::CIterator It = Array->Begin(); It != Array->End(); It++)
-			Overseers.Add(CStrID((*It).GetValue<CString>().CStr()));
+	if (Array.IsValid()) Array->FillArray(Overseers);
 }
 //---------------------------------------------------------------------
 
@@ -44,10 +38,10 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		{
 			pFact = pActor->GetMemSystem().AddFact<CMemFactOverseer>();
 			pFact->pSourceStimulus = pStimulus;
-			pActor->RequestGoalUpdate();
+			pActor->RequestBehaviourUpdate();
 		}
 
-		//!!!Must depend on distance & does overseer look actor!
+		//!!!Must depend on distance & does overseer see actor or not!
 		pFact->Confidence = Confidence;
 
 		pFact->LastPerceptioCTime =
@@ -57,4 +51,4 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

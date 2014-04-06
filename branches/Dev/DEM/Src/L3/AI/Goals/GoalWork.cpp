@@ -45,7 +45,9 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 
 	CMemFactSmartObj* pBest = NULL;
 	Relevance = 0.f;
-	
+
+	// Remember any known smart object to work on
+
 	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
 	for (; It; ++It)
 	{
@@ -71,11 +73,13 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 
 	if (!pBest || Relevance == 0.f) return;
 
+	// Increase relevance if overseers watch me
+
 	float TotalOverseersConf = 0.f;
-	
+
 	It = pActor->GetMemSystem().GetFactsByType(CMemFactOverseer::RTTI);
 	for (; It; ++It)
-		TotalOverseersConf += ((CMemFactOverseer*)It->Get())->Confidence;
+		TotalOverseersConf += It->Get()->Confidence;
 
 	SO = pBest->pSourceStimulus->SourceEntityID;
 	Relevance *= (1.f + TotalOverseersConf) * PersonalityFactor;
@@ -89,4 +93,4 @@ void CGoalWork::GetDesiredProps(CWorldState& Dest)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

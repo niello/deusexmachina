@@ -12,4 +12,4 @@ void CGoalIdle::GetDesiredProps(CWorldState& Dest)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

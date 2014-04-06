@@ -11,6 +11,7 @@
 #include <AI/Movement/MotorSystem.h>
 #include <AI/Memory/MemSystem.h>
 #include <Data/Flags.h>
+#include <Data/List.h>
 #include <Game/Entity.h> // Because too many modules using Brain use also Entity
 
 // Represents AI actor (agent). It is only a part of a whole character, which consists of brain and body.
@@ -49,18 +50,18 @@ protected:
 	CArray<PSensor>				Sensors;
 	CArray<PPerceptor>			Perceptors; //???may be store only in sensors? sensors die - perceptors die with no source. refcount.
 	CArray<PGoal>				Goals;
-	CArray<const CActionTpl*>	Actions;
+	CArray<const CActionTpl*>	ActionTpls;
 
-	PGoal						CurrGoal;
-	PAction						CurrPlan;
-	PTask						CurrTask; //!!!can store task queue!
+	PGoal						CurrGoal;	// If NULL, task is processed or actor is completely idle
+	Data::CList<PTask>			TaskQueue;	// Queue front is a current task
+	PAction						Plan;
 
 // Blackboard //???or private flags are not a part of the blackboard?
 
 	enum
 	{
 		AIMind_EnableDecisionMaking			= 0x0001,
-		AIMind_UpdateGoal					= 0x0002,
+		AIMind_SelectAction					= 0x0002,
 		AIMind_InvalidatePlan				= 0x0004,
 		AIMind_Nav_AcceptNearestValidDest	= 0x0008,
 		AIMind_Nav_IsLocationValid			= 0x0010
@@ -75,7 +76,7 @@ protected:
 	virtual void		InternalDeactivate();
 	void				EnableSI(class CPropScriptable& Prop);
 	void				DisableSI(class CPropScriptable& Prop);
-	void				UpdateDecisionMaking();
+	void				UpdateBehaviour();
 
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
@@ -89,7 +90,7 @@ protected:
 
 public:
 
-	static const float ArrivalTolerance;
+	static const float LinearArrivalTolerance;
 	static const float AngularArrivalTolerance;
 
 // Blackboard
@@ -119,11 +120,14 @@ public:
 	bool				IsActionAvailable(const CActionTpl* pAction) const;
 	void				FillWorldState(CWorldState& WSCurr) const;
 
-	// Mainly is an interface for commands
-	bool				SetPlan(CAction* pNewPlan);
-	void				AbortCurrAction(DWORD Result); //???to event, like QueueTask?
+	bool				EnqueueTask(PTask Task);
+	void				ClearTaskQueue();
 
-	void				RequestGoalUpdate() { Flags.Set(AIMind_UpdateGoal); }
+	//???rename? redesign logic!
+	void				AbortCurrAction(DWORD Result); //???to event, like QueueTask?
+	//DequeueTask(PTask or iterator, begin() by default)
+
+	void				RequestBehaviourUpdate() { Flags.Set(AIMind_SelectAction); }
 
 	bool				IsAtPoint(const vector3& Point, float MinDistance = 0.f, float MaxDistance = 0.f) const;
 	bool				IsLookingAtDir(const vector3& Direction) const;
@@ -147,7 +151,7 @@ public:
 
 inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 {
-	for (CArray<const CActionTpl*>::CIterator ppTpl = Actions.Begin(); ppTpl != Actions.End(); ppTpl++)
+	for (CArray<const CActionTpl*>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)
 		if (*ppTpl == pAction) OK;
 	FAIL;
 }
@@ -155,8 +159,8 @@ inline bool CPropActorBrain::IsActionAvailable(const CActionTpl* pAction) const
 
 inline bool CPropActorBrain::IsAtPoint(const vector3& Point, float MinDistance, float MaxDistance) const
 {
-	if (MinDistance >= ArrivalTolerance) MinDistance -= ArrivalTolerance;
-	MaxDistance += ArrivalTolerance;
+	if (MinDistance >= LinearArrivalTolerance) MinDistance -= LinearArrivalTolerance;
+	MaxDistance += LinearArrivalTolerance;
 	const float SqDistToDest2D = vector3::SqDistance2D(Position, Point);
 	return	SqDistToDest2D <= MaxDistance * MaxDistance &&
 			SqDistToDest2D >= MinDistance * MinDistance &&

@@ -74,7 +74,7 @@ void CMotorSystem::Update(float FrameTime)
 			if (t >= 0.f && t <= 1.f)
 			{
 				vector3 Closest = PrevPos + FrameMovement * t;
-				const float Tolerance = pActor->ArrivalTolerance * pActor->ArrivalTolerance;
+				const float Tolerance = pActor->LinearArrivalTolerance * pActor->LinearArrivalTolerance;
 				if (vector3::SqDistance2D(Closest, DestPoint) < Tolerance && n_fabs(Closest.y - DestPoint.y) < pActor->Height)
 				{
 					ResetMovement(true);
