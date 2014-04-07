@@ -4,10 +4,10 @@
 #include <Scripting/EntityScriptObject.h>
 #include <Scripting/PropScriptable.h>
 #include <Game/EntityManager.h>
-#include <AI/Events/QueueTask.h>
 #include <AI/PropSmartObject.h>
-#include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
-#include <AI/Movement/Tasks/TaskGoto.h>
+#include <AI/Behaviour/ActionSequence.h>
+#include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
+#include <AI/SmartObj/Actions/ActionUseSmartObj.h>
 
 extern "C"
 {
@@ -22,21 +22,30 @@ using namespace Scripting;
 
 int CPropActorBrain_DoAction(lua_State* l)
 {
-	//args: EntityScriptObject's this table, SO ID, Action ID
+	//args: EntityScriptObject's this table, SO ID, Action ID, [Relevance = 1.f, ClearQueueOnFailure = false]
 	SETUP_ENT_SI_ARGS(3);
 
-	Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
-	if (!pTarget) return 0;
+	CStrID TargetID = CStrID(lua_tostring(l, 2));
+	CStrID ActionID = CStrID(lua_tostring(l, 3));
 
-	CPropSmartObject* pSO = pTarget->GetProperty<CPropSmartObject>();
-	if (!pSO) return 0;
+	CTask Task;
 
-	//!!!can call function instead of sending event!
-	PTaskUseSmartObj Task = n_new(CTaskUseSmartObj);
-	Task->SetSmartObj(pSO);
-	Task->SetActionID(CStrID(lua_tostring(l, 3)));
-	This->GetEntity()->FireEvent(Event::QueueTask(Task));
+	PActionGotoSmartObj ActGoto = n_new(CActionGotoSmartObj);
+	ActGoto->Init(TargetID, ActionID);
 
+	PActionUseSmartObj ActUse = n_new(CActionUseSmartObj);
+	ActUse->Init(TargetID, ActionID);
+
+	PActionSequence Plan = n_new(CActionSequence);
+	Plan->AddChild(ActGoto);
+	Plan->AddChild(ActUse);
+
+	Task.Plan = Plan;
+
+	if (ArgCount > 3) Task.Relevance = (float)lua_tonumber(l, 4);
+	if (ArgCount > 4) Task.ClearQueueOnFailure = lua_toboolean(l, 5) != 0;
+
+	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -52,32 +61,30 @@ int CPropActorBrain_AbortCurrAction(lua_State* l)
 
 int CPropActorBrain_Go(lua_State* l)
 {
-	//args1: EntityScriptObject's this table, X, Y, Z, [Arrive distance = 0]
-	//args2: EntityScriptObject's this table, Target entity ID, [Arrive distance = 0]
+	//args1: EntityScriptObject's this table, X, Y, Z
+	//args2: EntityScriptObject's this table, Target entity ID
 	SETUP_ENT_SI_ARGS(2);
 
-	AI::PTaskGoto Task = n_new(AI::CTaskGoto);
+	CTask Task;
 
-	//!!!get from params!
-	Task->MvmtType = This->GetEntity()->GetProperty<CPropActorBrain>()->MvmtType;
+	//!!!get MvmtType from params, set to goto action?!
+	//vector3			Point;
+	//EMovementType	MvmtType;
+	//pActor->GetNavSystem().SetDestPoint(Point);
+	//pActor->MvmtType = MvmtType;
 
-	if (ArgCount >= 4 && lua_isnumber(l, 2))
-	{
-		Task->Point.set((float)lua_tonumber(l, 2), (float)lua_tonumber(l, 3), (float)lua_tonumber(l, 4));
-		//Task->MinDistance = 
-		//Task->MaxDistance = (ArgCount > 4) ? (float)lua_tonumber(l, 5) : 0.f;
-	}
-	else
-	{
-		//???autodetect smart object & use optional Action arg?
-		Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
-		if (!pTarget) return 0;
-		Task->Point = pTarget->GetAttr<matrix44>(CStrID("Transform")).Translation();
-		//Task->MinDistance = 
-		//Task->MaxDistance = (ArgCount > 2) ? (float)lua_tonumber(l, 3) : 0.f;
-	}
-
-	This->GetEntity()->FireEvent(Event::QueueTask(Task));
+	//if (ArgCount >= 4 && lua_type(l, 2) == LUA_TNUMBER)
+	//{
+	//	// XYZ case
+	//	Task->Point.set((float)lua_tonumber(l, 2), (float)lua_tonumber(l, 3), (float)lua_tonumber(l, 4));
+	//}
+	//else
+	//{
+	//	// Target entity case //???smart obj?
+	//	Game::CEntity* pTarget = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
+	//	if (!pTarget) return 0;
+	//	Task->Point = pTarget->GetAttr<matrix44>(CStrID("Transform")).Translation();
+	//}
 
 	return 0;
 }

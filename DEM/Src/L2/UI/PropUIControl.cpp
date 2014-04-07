@@ -2,10 +2,11 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <AI/Events/QueueTask.h>
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
-#include <AI/SmartObj/Tasks/TaskUseSmartObj.h>
+#include <AI/Behaviour/ActionSequence.h>
+#include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
+#include <AI/SmartObj/Actions/ActionUseSmartObj.h>
 #include <Physics/PhysicsServer.h>
 #include <Scene/PropSceneNode.h>
 #include <Scripting/PropScriptable.h>
@@ -478,18 +479,31 @@ bool CPropUIControl::OnExecuteSelectAction(const Events::CEventBase& Event)
 // Special handler for auto-added smart object actions
 bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 {
-	CPropSmartObject* pSO = GetEntity()->GetProperty<CPropSmartObject>();
-	n_assert(pSO);
-
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 
 	Game::CEntity* pActorEnt = (Game::CEntity*)P->Get<PVOID>(CStrID("ActorEntityPtr"));
 	n_assert(pActorEnt);
 
-	PTaskUseSmartObj Task = n_new(CTaskUseSmartObj);
-	Task->SetSmartObj(pSO);
-	Task->SetActionID(P->Get<CStrID>(CStrID("ActionID")));
-	pActorEnt->FireEvent(Event::QueueTask(Task));
+	CStrID ActionID = P->Get<CStrID>(CStrID("ActionID"));
+
+	//!!!CODE DUPLICATION, see brain SI! to method of AISrv CreateUseSOPlan?
+	CTask Task;
+
+	PActionGotoSmartObj ActGoto = n_new(CActionGotoSmartObj);
+	ActGoto->Init(GetEntity()->GetUID(), ActionID);
+
+	PActionUseSmartObj ActUse = n_new(CActionUseSmartObj);
+	ActUse->Init(GetEntity()->GetUID(), ActionID);
+
+	PActionSequence Plan = n_new(CActionSequence);
+	Plan->AddChild(ActGoto);
+	Plan->AddChild(ActUse);
+
+	Task.Plan = Plan;
+	Task.Relevance = Relevance_Absolute;
+	Task.ClearQueueOnFailure = true;
+
+	pActorEnt->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
 
 	OK;
 }
