@@ -25,7 +25,15 @@ namespace AI
 {
 	class CActionTpl;
 	typedef Ptr<class CAction> PAction;
-	typedef Ptr<class CTask> PTask;
+
+	const float Relevance_Absolute = FLT_MAX;
+
+	struct CTask
+	{
+		PAction	Plan;
+		float	Relevance;
+		bool	ClearQueueOnFailure;
+	};
 }
 
 namespace Prop
@@ -53,7 +61,7 @@ protected:
 	CArray<const CActionTpl*>	ActionTpls;
 
 	PGoal						CurrGoal;	// If NULL, task is processed or actor is completely idle
-	Data::CList<PTask>			TaskQueue;	// Queue front is a current task
+	Data::CList<CTask>			TaskQueue;	// Queue front is a current task
 	PAction						Plan;
 
 // Blackboard //???or private flags are not a part of the blackboard?
@@ -85,7 +93,6 @@ protected:
 	DECLARE_EVENT_HANDLER(UpdateTransform, OnUpdateTransform);
 	DECLARE_EVENT_HANDLER(BeforePhysicsTick, BeforePhysicsTick);
 	DECLARE_EVENT_HANDLER(AfterPhysicsTick, AfterPhysicsTick);
-	DECLARE_EVENT_HANDLER(QueueTask, OnAddTask);
 	DECLARE_EVENT_HANDLER(OnNavMeshDataChanged, OnNavMeshDataChanged);
 
 public:
@@ -120,7 +127,7 @@ public:
 	bool				IsActionAvailable(const CActionTpl* pAction) const;
 	void				FillWorldState(CWorldState& WSCurr) const;
 
-	bool				EnqueueTask(PTask Task);
+	void				EnqueueTask(const CTask& Task);
 	void				ClearTaskQueue();
 
 	//???rename? redesign logic!

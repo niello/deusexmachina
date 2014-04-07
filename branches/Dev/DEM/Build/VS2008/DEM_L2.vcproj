@@ -496,18 +496,6 @@
 						>
 					</File>
 				</Filter>
-				<Filter
-					Name="Tasks"
-					>
-					<File
-						RelativePath="..\..\Src\L2\AI\Movement\Tasks\TaskGoto.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\L2\AI\Movement\Tasks\TaskGoto.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="Planning"
@@ -609,18 +597,6 @@
 					>
 				</File>
 				<Filter
-					Name="Tasks"
-					>
-					<File
-						RelativePath="..\..\Src\L2\AI\SmartObj\Tasks\TaskUseSmartObj.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Src\L2\AI\SmartObj\Tasks\TaskUseSmartObj.h"
-						>
-					</File>
-				</Filter>
-				<Filter
 					Name="Actions"
 					>
 					<File
@@ -682,26 +658,6 @@
 				</File>
 				<File
 					RelativePath="..\..\Src\L2\AI\Behaviour\ActionSequence.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Behaviour\Task.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Behaviour\Task.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Events"
-				>
-				<File
-					RelativePath="..\..\Src\L2\AI\Events\QueueTask.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\L2\AI\Events\QueueTask.h"
 					>
 				</File>
 			</Filter>

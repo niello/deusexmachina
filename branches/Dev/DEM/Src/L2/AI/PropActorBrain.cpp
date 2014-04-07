@@ -4,7 +4,6 @@
 #include <AI/AIServer.h>
 #include <AI/Behaviour/Action.h>
 #include <AI/Planning/GoalIdle.h>
-#include <AI/Events/QueueTask.h>
 #include <Physics/PropCharacterController.h>
 #include <Scripting/PropScriptable.h>
 #include <Data/DataServer.h>
@@ -189,7 +188,6 @@ bool CPropActorBrain::InternalActivate()
 	PROP_SUBSCRIBE_PEVENT(UpdateTransform, CPropActorBrain, OnUpdateTransform);
 	PROP_SUBSCRIBE_PEVENT_PRIORITY(BeforePhysicsTick, CPropActorBrain, BeforePhysicsTick, 20);
 	PROP_SUBSCRIBE_PEVENT(AfterPhysicsTick, CPropActorBrain, AfterPhysicsTick);
-	PROP_SUBSCRIBE_NEVENT(QueueTask, CPropActorBrain, OnAddTask);
 	PROP_SUBSCRIBE_PEVENT(OnNavMeshDataChanged, CPropActorBrain, OnNavMeshDataChanged);
 	OK;
 }
@@ -204,7 +202,6 @@ void CPropActorBrain::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(UpdateTransform);
 	UNSUBSCRIBE_EVENT(BeforePhysicsTick);
 	UNSUBSCRIBE_EVENT(AfterPhysicsTick);
-	UNSUBSCRIBE_EVENT(QueueTask);
 	UNSUBSCRIBE_EVENT(OnNavMeshDataChanged);
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -246,13 +243,11 @@ bool CPropActorBrain::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::EnqueueTask(PTask Task)
+void CPropActorBrain::EnqueueTask(const CTask& Task)
 {
-	if (!Task.IsValid()) FAIL;
 	bool WasEmpty = TaskQueue.IsEmpty();
 	TaskQueue.AddBack(Task);
 	if (WasEmpty) Flags.Set(AIMind_SelectAction);
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -261,16 +256,6 @@ void CPropActorBrain::ClearTaskQueue()
 	if (TaskQueue.IsEmpty()) return;
 	TaskQueue.Clear();
 	Flags.Set(AIMind_SelectAction);
-}
-//---------------------------------------------------------------------
-
-bool CPropActorBrain::OnAddTask(const Events::CEventBase& Event)
-{
-	PTask Task = ((const Event::QueueTask&)Event).Task;
-	if (Task->IsAvailableTo(this)) //!!!there will not be this check!
-		EnqueueTask(Task);
-
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -302,7 +287,7 @@ void CPropActorBrain::UpdateBehaviour()
 	Flags.Clear(AIMind_SelectAction | AIMind_InvalidatePlan);
 
 	CGoal* pCurrGoal = CurrGoal.GetUnsafe();
-	CTask* pTask = TaskQueue.IsEmpty() ? NULL : TaskQueue.Front().GetUnsafe();
+	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
 
 	PAction NewPlan;
 
@@ -323,7 +308,7 @@ void CPropActorBrain::UpdateBehaviour()
 		// We search for the valid goal or task with the highest priority
 		// When relevances are equal, prefer in order CurrentGoal->Task->Goal
 		float CurrGoalRelevance = pCurrGoal ? pCurrGoal->GetRelevance() : 0.f;
-		float TaskRelevance = pTask ? pTask->GetRelevance() : 0.f;
+		float TaskRelevance = pTask ? pTask->Relevance : 0.f;
 		bool PreferTask = (CurrGoalRelevance < TaskRelevance);
 
 		for (CArray<PGoal>::CIterator ppGoal = Goals.Begin(); ppGoal != Goals.End(); ++ppGoal)
@@ -363,7 +348,7 @@ void CPropActorBrain::UpdateBehaviour()
 		CurrGoal = NULL;
 		if (pTask)
 		{
-			NewPlan = pTask->BuildPlan(); //!!!GetPlan() { return Plan; }! if was the same plan, will skip reactivation
+			NewPlan = pTask->Plan;
 			n_assert_dbg(NewPlan.IsValid());
 		}
 	}
