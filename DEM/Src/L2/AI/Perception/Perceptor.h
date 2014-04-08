@@ -5,9 +5,9 @@
 #include <Data/Params.h>
 #include <AI/ActorFwd.h>
 
-// If sensor is a passive stimulus collector, perceptor is an active brain part, that interprets
-// sensory information and produces memory facts about some kinds of symbols, which in turn are
-// operable by decision making and planning mechanisms.
+// When a sensor is a passive stimulus collector, a perceptor is an active brain part, that
+// interprets sensory information and produces memory facts about some kinds of symbols, which
+// in turn are operable by decision making and planning mechanisms.
 
 namespace AI
 {

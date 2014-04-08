@@ -24,7 +24,7 @@ protected:
 public:
 
 	float Confidence;
-	float LastPerceptioCTime;
+	float LastPerceptionTime;
 	float LastUpdateTime;
 	float ForgettingFactor;	// Decrease of confidence per second
 	

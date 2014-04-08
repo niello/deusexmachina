@@ -30,6 +30,7 @@ namespace AI
 
 	struct CTask
 	{
+		//???some int/strid ID to send in event OnTaskDone/Aborted?
 		PAction	Plan;
 		float	Relevance;
 		bool	ClearQueueOnFailure;
@@ -141,7 +142,7 @@ public:
 	bool				IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
 	void				SetNavLocationValid(bool Valid) { return Flags.SetTo(AIMind_Nav_IsLocationValid, Valid); }
 	bool				IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
-	void				AcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
+	void				SetAcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
 	bool				DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_Nav_AcceptNearestValidDest); }
 
 	//???!!!public members instead?!

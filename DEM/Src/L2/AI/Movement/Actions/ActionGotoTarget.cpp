@@ -22,7 +22,8 @@ bool CActionGotoTarget::Activate(CActor* pActor)
 
 DWORD CActionGotoTarget::Update(CActor* pActor)
 {
-	//!!!can use intercept instead of pursue!
+	//!!!can use intercept instead of pursue! see goto SO, extract
+	//prediction from CPropSmartObject::GetRequiredActorPosition()
 	if (IsDynamic && !pActor->IsNavSystemIdle())
 	{
 		Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);

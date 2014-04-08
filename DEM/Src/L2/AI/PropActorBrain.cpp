@@ -3,7 +3,6 @@
 #include <AI/PropSmartObject.h>
 #include <AI/AIServer.h>
 #include <AI/Behaviour/Action.h>
-#include <AI/Planning/GoalIdle.h>
 #include <Physics/PropCharacterController.h>
 #include <Scripting/PropScriptable.h>
 #include <Data/DataServer.h>
@@ -66,7 +65,7 @@ bool CPropActorBrain::InternalActivate()
 
 	NavState = AINav_Done;
 	SetNavLocationValid(false);
-	AcceptNearestValidDestination(false);
+	SetAcceptNearestValidDestination(false);
 
 	MvmtState = AIMvmt_Done;
 	MvmtType = AIMvmt_Type_Walk;
@@ -135,9 +134,9 @@ bool CPropActorBrain::InternalActivate()
 		
 		if (Desc->Get<PParams>(DescSection, CStrID("Goals")))
 		{
-			int HasIdleGoal = DescSection->Has(CStrID("Idle")) ? 1 : 0;
+			//int HasIdleGoal = DescSection->Has(CStrID("Idle")) ? 1 : 0;
 
-			Goals.Reallocate(DescSection->GetCount() + 1 - HasIdleGoal, 0);
+			Goals.Reallocate(DescSection->GetCount() /*+ 1 - HasIdleGoal*/, 0);
 			for (int i = 0; i < DescSection->GetCount(); i++)
 			{
 				const CParam& DescParam = DescSection->Get(i);
@@ -146,12 +145,12 @@ bool CPropActorBrain::InternalActivate()
 				Goals.Add(New);
 			}
 
-			if (!HasIdleGoal)
-			{
-				PGoal New = n_new(CGoalIdle);
-				New->Init(NULL);
-				Goals.Add(New);
-			}
+			//if (!HasIdleGoal)
+			//{
+			//	PGoal New = n_new(CGoalIdle);
+			//	New->Init(NULL);
+			//	Goals.Add(New);
+			//}
 		}
 
 		PDataArray ActionArray;
@@ -247,7 +246,7 @@ void CPropActorBrain::EnqueueTask(const CTask& Task)
 {
 	bool WasEmpty = TaskQueue.IsEmpty();
 	TaskQueue.AddBack(Task);
-	if (WasEmpty) Flags.Set(AIMind_SelectAction);
+	if (WasEmpty) RequestBehaviourUpdate();
 }
 //---------------------------------------------------------------------
 
@@ -255,7 +254,7 @@ void CPropActorBrain::ClearTaskQueue()
 {
 	if (TaskQueue.IsEmpty()) return;
 	TaskQueue.Clear();
-	Flags.Set(AIMind_SelectAction);
+	RequestBehaviourUpdate();
 }
 //---------------------------------------------------------------------
 
@@ -267,7 +266,7 @@ void CPropActorBrain::AbortCurrAction(DWORD Result)
 	if (Plan.IsValid()) Plan->Deactivate(this);
 	//???deactivate and clear current goal, if has?
 	Plan = NULL;
-	Flags.Set(AIMind_SelectAction); //???why need if valid plan set & activated? needed only in !pNewPlan case?
+	RequestBehaviourUpdate(); //???why need if valid plan set & activated? needed only in !pNewPlan case?
 	//if (CurrTask.IsValid())
 	//{
 	//	CurrTask->OnPlanDone(this, Result);
@@ -340,7 +339,7 @@ void CPropActorBrain::UpdateBehaviour()
 			pTopGoal->InvalidateRelevance();
 		}
 
-		n_assert2(CurrGoal.GetUnsafe() || pTask, "Actor has no goal, even GoalIdle, nor task");
+		//???n_assert2(CurrGoal.GetUnsafe() || pTask, "Actor has no goal, even GoalIdle, nor task");
 	}
 
 	if (!NewPlan.IsValid())
@@ -357,21 +356,33 @@ void CPropActorBrain::UpdateBehaviour()
 	{
 		if (Plan.IsValid()) Plan->Deactivate(this);
 
-		//!!!if prev was plan, (Plan == pTask->GetPlan(), deactivate task (abort)!
-		//???discard or keep aborted tasks?
-
-		/*if (CurrGoal.GetUnsafe() != pCurrGoal)
+		if (pTask && Plan == pTask->Plan) // Task was active and now is not
 		{
-			if (pCurrGoal) ; // [Deactivate pCurrGoal]
-			if (CurrGoal.GetUnsafe()) ; // [Activate CurrGoal]
-		}*/
-
-		//!!!if task activate task!
+			//!!!deactivate task (abort)!
+			//???event task done/aborted? use task UID?
+			//???discard or keep aborted tasks?
+			//!!!if discard, it is a failure, check clear queue flag!
+		}
+		else if (pCurrGoal && CurrGoal.GetUnsafe() != pCurrGoal) // Goal was active and now is not
+		{
+			// [Deactivate pCurrGoal]
+		}
 
 		Plan = NewPlan;
+
+		if (pTask && Plan == pTask->Plan) // Task becomes active
+		{
+			//!!!if task activate task!
+			//???event task activated? use task UID?
+		}
+		else if (CurrGoal.IsValid() && CurrGoal.GetUnsafe() != pCurrGoal) // Goal becomes active
+		{
+			//if (CurrGoal.GetUnsafe()) ; // [Activate CurrGoal]
+		}
+
 		if (Plan.IsValid() && !Plan->Activate(this))
 		{
-			Flags.Set(AIMind_InvalidatePlan);
+			Flags.Set(AIMind_InvalidatePlan); // Only for non-NULL new plan
 			Plan = NULL;
 		}
 	}
@@ -402,12 +413,17 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 		DWORD BhvResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
 		if (BhvResult != Running)
 		{
-			//SetPlan(NULL);
-			//if (CurrTask.IsValid()) CurrTask->OnPlanDone(this, BhvResult);
+			CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
+			if (pTask && pTask->Plan == Plan)
+			{
+				if (BhvResult == Failure && pTask->ClearQueueOnFailure) TaskQueue.Clear();
+				else TaskQueue.RemoveFront();
+				//???event task done/aborted? use task UID?
+			}
+			Plan = NULL;
+			RequestBehaviourUpdate();
 		}
 	}
-
-	//if (CurrTask.IsValid() && CurrTask->IsSatisfied()) CurrTask = NULL;
 
 	OK;
 }
@@ -477,7 +493,6 @@ bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 {
 	//!!!test when actor goes somewhere!
 	NavSystem.SetupState();
-	//???need? SetPlan(NULL); //???what if task is active?
 	RequestBehaviourUpdate();
 	OK;
 }
