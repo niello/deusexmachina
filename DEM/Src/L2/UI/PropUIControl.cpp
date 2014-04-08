@@ -486,9 +486,7 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 
 	CStrID ActionID = P->Get<CStrID>(CStrID("ActionID"));
 
-	//!!!CODE DUPLICATION, see brain SI! to method of AISrv CreateUseSOPlan?
-	CTask Task;
-
+	//!!!CODE DUPLICATION, see brain SI! to method AISrv->CreateUseSOPlan?
 	PActionGotoSmartObj ActGoto = n_new(CActionGotoSmartObj);
 	ActGoto->Init(GetEntity()->GetUID(), ActionID);
 
@@ -499,10 +497,11 @@ bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
 	Plan->AddChild(ActGoto);
 	Plan->AddChild(ActUse);
 
+	CTask Task;
 	Task.Plan = Plan;
 	Task.Relevance = Relevance_Absolute;
+	Task.FailOnInterruption = false;
 	Task.ClearQueueOnFailure = true;
-
 	pActorEnt->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
 
 	OK;

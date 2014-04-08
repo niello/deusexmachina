@@ -22,7 +22,7 @@ using namespace Scripting;
 
 int CPropActorBrain_DoAction(lua_State* l)
 {
-	//args: EntityScriptObject's this table, SO ID, Action ID, [Relevance = Absolute, ClearQueueOnFailure = false]
+	//args: EntityScriptObject's this table, SO ID, Action ID, [Relevance = Absolute, FailOnInterruption = false, ClearQueueOnFailure = false]
 	SETUP_ENT_SI_ARGS(3);
 
 	CStrID TargetID = CStrID(lua_tostring(l, 2));
@@ -41,8 +41,9 @@ int CPropActorBrain_DoAction(lua_State* l)
 	Plan->AddChild(ActUse);
 
 	Task.Plan = Plan;
-	Task.Relevance = ArgCount > 3 ? (float)lua_tonumber(l, 4) : AI::Relevance_Absolute;
-	Task.ClearQueueOnFailure = ArgCount > 4 && lua_toboolean(l, 5) != 0;
+	Task.Relevance = ArgCount >= 4 ? (float)lua_tonumber(l, 4) : AI::Relevance_Absolute;
+	Task.FailOnInterruption = ArgCount >= 5 && lua_toboolean(l, 5) != 0;
+	Task.ClearQueueOnFailure = ArgCount >= 6 && lua_toboolean(l, 6) != 0;
 
 	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
 	return 0;
@@ -51,8 +52,8 @@ int CPropActorBrain_DoAction(lua_State* l)
 
 int CPropActorBrain_Go(lua_State* l)
 {
-	//args1: EntityScriptObject's this table, X, Y, Z, [Relevance = Absolute, ClearQueueOnFailure = false]
-	//args2: EntityScriptObject's this table, Target entity ID, [Relevance = Absolute, ClearQueueOnFailure = false]
+	//args1: EntityScriptObject's this table, X, Y, Z, [Relevance = Absolute, FailOnInterruption = false, ClearQueueOnFailure = false]
+	//args2: EntityScriptObject's this table, Target entity ID, [Relevance = Absolute, FailOnInterruption = false, ClearQueueOnFailure = false]
 	SETUP_ENT_SI_ARGS(2);
 
 	//!!!get EMovementType MvmtType from params, set to goto action?!
@@ -79,7 +80,8 @@ int CPropActorBrain_Go(lua_State* l)
 	}
 
 	Task.Relevance = ArgCount >= NextArg ? (float)lua_tonumber(l, NextArg) : AI::Relevance_Absolute;
-	Task.ClearQueueOnFailure = ArgCount > NextArg + 1 && lua_toboolean(l, NextArg + 1) != 0;
+	Task.FailOnInterruption = ArgCount > NextArg + 1 && lua_toboolean(l, NextArg + 1) != 0;
+	Task.ClearQueueOnFailure = ArgCount > NextArg + 2 && lua_toboolean(l, NextArg + 2) != 0;
 
 	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
 	return 0;

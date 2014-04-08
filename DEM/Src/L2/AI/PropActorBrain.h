@@ -33,6 +33,7 @@ namespace AI
 		//???some int/strid ID to send in event OnTaskDone/Aborted?
 		PAction	Plan;
 		float	Relevance;
+		bool	FailOnInterruption;
 		bool	ClearQueueOnFailure;
 	};
 }
@@ -86,6 +87,7 @@ protected:
 	void				EnableSI(class CPropScriptable& Prop);
 	void				DisableSI(class CPropScriptable& Prop);
 	void				UpdateBehaviour();
+	void				SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD OldPlanResult);
 
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);

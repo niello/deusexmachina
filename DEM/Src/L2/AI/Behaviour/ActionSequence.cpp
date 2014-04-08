@@ -39,7 +39,11 @@ DWORD CActionSequence::Update(CActor* pActor)
 
 void CActionSequence::Deactivate(CActor* pActor)
 {
-	if (ppCurrChild) (*ppCurrChild)->Deactivate(pActor);
+	if (ppCurrChild)
+	{
+		(*ppCurrChild)->Deactivate(pActor);
+		ppCurrChild = NULL;
+	}
 }
 //---------------------------------------------------------------------
 

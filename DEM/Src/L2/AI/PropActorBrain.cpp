@@ -260,18 +260,59 @@ void CPropActorBrain::ClearTaskQueue()
 
 void CPropActorBrain::AbortCurrAction(DWORD Result)
 {
-	//if task, deactivate task, discard
-	//if goal, request goal update
+	SetPlan(NULL, CurrGoal.GetUnsafe(), Running);
+	RequestBehaviourUpdate();
+}
+//---------------------------------------------------------------------
 
-	if (Plan.IsValid()) Plan->Deactivate(this);
-	//???deactivate and clear current goal, if has?
-	Plan = NULL;
-	RequestBehaviourUpdate(); //???why need if valid plan set & activated? needed only in !pNewPlan case?
-	//if (CurrTask.IsValid())
-	//{
-	//	CurrTask->OnPlanDone(this, Result);
-	//	CurrTask = NULL;
-	//}
+void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD OldPlanResult)
+{
+	if (Plan == NewPlan) return;
+
+	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
+
+	if (Plan.IsValid())
+	{
+		Plan->Deactivate(this);
+
+		if (pTask && Plan == pTask->Plan) // Task was active and now is not
+		{
+			//!!!deactivate task (abort)!
+			//???event task done/aborted? use task UID?
+			if (!NewPlan.IsValid() || pTask->FailOnInterruption) // Valid NewPlan means an interruption
+			{
+				if (OldPlanResult == Failure && pTask->ClearQueueOnFailure) TaskQueue.Clear();
+				else TaskQueue.RemoveFront();
+			}
+		}
+		else if (CurrGoal.GetUnsafe() != pPrevGoal) // Goal was active and now is not
+		{
+			n_assert(pPrevGoal); // Prevoius plan is not set by task, so it MUST have been set by goal
+			// [Deactivate pCurrGoal]
+		}
+	}
+
+	Plan = NewPlan;
+
+	if (Plan.IsValid())
+	{
+		if (pTask && Plan == pTask->Plan) // Task becomes active
+		{
+			//!!!activate task!
+			//???event task activated? use task UID?
+		}
+		else if (CurrGoal.GetUnsafe() != pPrevGoal) // Goal becomes active
+		{
+			n_assert(CurrGoal.IsValid()); // New plan is not set by task, so it MUST have been set by goal
+			// [Activate CurrGoal]
+		}
+
+		if (!Plan->Activate(this))
+		{
+			Flags.Set(AIMind_InvalidatePlan);
+			Plan = NULL;
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -285,8 +326,10 @@ void CPropActorBrain::UpdateBehaviour()
 
 	Flags.Clear(AIMind_SelectAction | AIMind_InvalidatePlan);
 
-	CGoal* pCurrGoal = CurrGoal.GetUnsafe();
+	CGoal* pPrevGoal = CurrGoal.GetUnsafe();
 	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
+
+	//???!!!check can task action be interrupted, if task active?
 
 	PAction NewPlan;
 
@@ -306,7 +349,7 @@ void CPropActorBrain::UpdateBehaviour()
 
 		// We search for the valid goal or task with the highest priority
 		// When relevances are equal, prefer in order CurrentGoal->Task->Goal
-		float CurrGoalRelevance = pCurrGoal ? pCurrGoal->GetRelevance() : 0.f;
+		float CurrGoalRelevance = pPrevGoal ? pPrevGoal->GetRelevance() : 0.f;
 		float TaskRelevance = pTask ? pTask->Relevance : 0.f;
 		bool PreferTask = (CurrGoalRelevance < TaskRelevance);
 
@@ -315,7 +358,7 @@ void CPropActorBrain::UpdateBehaviour()
 			CGoal* pTopGoal = *ppGoal;
 
 			// Since we always prefer the current goal, we do this before comparing relevances
-			if (pCurrGoal == pTopGoal && !NeedToReplan && !pCurrGoal->IsReplanningNeeded())
+			if (pPrevGoal == pTopGoal && !NeedToReplan && !pPrevGoal->IsReplanningNeeded())
 			{
 				n_assert_dbg(Plan.IsValid());
 				NewPlan = Plan;
@@ -352,40 +395,7 @@ void CPropActorBrain::UpdateBehaviour()
 		}
 	}
 
-	if (Plan != NewPlan)
-	{
-		if (Plan.IsValid()) Plan->Deactivate(this);
-
-		if (pTask && Plan == pTask->Plan) // Task was active and now is not
-		{
-			//!!!deactivate task (abort)!
-			//???event task done/aborted? use task UID?
-			//???discard or keep aborted tasks?
-			//!!!if discard, it is a failure, check clear queue flag!
-		}
-		else if (pCurrGoal && CurrGoal.GetUnsafe() != pCurrGoal) // Goal was active and now is not
-		{
-			// [Deactivate pCurrGoal]
-		}
-
-		Plan = NewPlan;
-
-		if (pTask && Plan == pTask->Plan) // Task becomes active
-		{
-			//!!!if task activate task!
-			//???event task activated? use task UID?
-		}
-		else if (CurrGoal.IsValid() && CurrGoal.GetUnsafe() != pCurrGoal) // Goal becomes active
-		{
-			//if (CurrGoal.GetUnsafe()) ; // [Activate CurrGoal]
-		}
-
-		if (Plan.IsValid() && !Plan->Activate(this))
-		{
-			Flags.Set(AIMind_InvalidatePlan); // Only for non-NULL new plan
-			Plan = NULL;
-		}
-	}
+	SetPlan(NewPlan, pPrevGoal, Running);
 }
 //---------------------------------------------------------------------
 
@@ -410,17 +420,10 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 
 	if (Plan.IsValid())
 	{
-		DWORD BhvResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
-		if (BhvResult != Running)
+		DWORD PlanResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
+		if (PlanResult != Running)
 		{
-			CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
-			if (pTask && pTask->Plan == Plan)
-			{
-				if (BhvResult == Failure && pTask->ClearQueueOnFailure) TaskQueue.Clear();
-				else TaskQueue.RemoveFront();
-				//???event task done/aborted? use task UID?
-			}
-			Plan = NULL;
+			SetPlan(NULL, CurrGoal.GetUnsafe(), PlanResult);
 			RequestBehaviourUpdate();
 		}
 	}
