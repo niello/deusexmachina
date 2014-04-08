@@ -452,6 +452,14 @@
 						>
 					</File>
 					<File
+						RelativePath="..\..\Src\L2\AI\Movement\Actions\ActionGotoPosition.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\Src\L2\AI\Movement\Actions\ActionGotoPosition.h"
+						>
+					</File>
+					<File
 						RelativePath="..\..\Src\L2\AI\Movement\Actions\ActionGotoTarget.cpp"
 						>
 					</File>

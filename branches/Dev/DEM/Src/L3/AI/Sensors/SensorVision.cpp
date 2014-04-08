@@ -82,7 +82,7 @@ DWORD CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) const
 {
 	const CMemFactObstacle& Obstacle = (const CMemFactObstacle&)Fact;
 
-	if (Fact.LastUpdateTime == Fact.LastPerceptioCTime &&
+	if (Fact.LastUpdateTime == Fact.LastPerceptionTime &&
 		(!Obstacle.pSourceStimulus ||
 		!Obstacle.pSourceStimulus->IsActive() ||
 		Obstacle.pSourceStimulus->Intensity <= 0.f)) return Failure;
@@ -125,4 +125,4 @@ EClipStatus CSensorVision::GetBoxClipStatus(CActor* pActor, const CAABB& Box) co
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

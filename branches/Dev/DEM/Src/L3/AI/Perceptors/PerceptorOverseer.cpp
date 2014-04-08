@@ -44,7 +44,7 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		//!!!Must depend on distance & does overseer see actor or not!
 		pFact->Confidence = Confidence;
 
-		pFact->LastPerceptioCTime =
+		pFact->LastPerceptionTime =
 		pFact->LastUpdateTime = (float)GameSrv->GetTime();
 		pFact->ForgettingFactor = 0.02f;
 	}

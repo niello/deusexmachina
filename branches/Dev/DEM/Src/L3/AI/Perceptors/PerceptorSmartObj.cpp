@@ -37,7 +37,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		//!!!CALC!
 		pFact->Confidence = Confidence;
 
-		pFact->LastPerceptioCTime =
+		pFact->LastPerceptionTime =
 		pFact->LastUpdateTime = (float)GameSrv->GetTime();
 		pFact->ForgettingFactor = 0.005f;
 	}

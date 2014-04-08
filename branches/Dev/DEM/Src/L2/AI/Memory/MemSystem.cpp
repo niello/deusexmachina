@@ -25,7 +25,7 @@ void CMemSystem::Update()
 			if ((*It)->ValidatesFactType(*Facts.GetKeyAt(i)))
 				ValidationSensors.Add((*It));
 
-		for (CMemFactNode ItCurr = Facts.GetHeadAt(i); ItCurr; )
+		for (CMemFactNode ItCurr = Facts.GetHeadAt(i); ItCurr; /* empty */)
 		{
 			CMemFact* pFact = ItCurr->GetUnsafe();
 
