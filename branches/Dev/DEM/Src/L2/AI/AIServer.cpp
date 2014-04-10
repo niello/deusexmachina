@@ -1,6 +1,7 @@
 #include "AIServer.h"
 
 #include <AI/Planning/ActionTpl.h>
+#include <AI/Behaviour/Action.h>
 #include <Data/Params.h>
 #include <Events/EventServer.h>
 #include <DetourNavMeshQuery.h>
@@ -74,6 +75,18 @@ const CSmartAction* CAIServer::GetSmartAction(CStrID ID) const
 {
 	int Idx = SOActTpls.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAt(Idx) : NULL;
+}
+//---------------------------------------------------------------------
+
+PAction CAIServer::CreatePlanFromDesc(Data::PParams Desc)
+{
+	if (!Desc.IsValid()) return NULL;
+
+	CString StrClass("AI::CAction");
+	StrClass += Desc->Get<CString>(CStrID("Class"));
+	PAction Plan = (CAction*)Factory->Create(StrClass);
+	Plan->Init(*Desc);
+	return Plan;
 }
 //---------------------------------------------------------------------
 

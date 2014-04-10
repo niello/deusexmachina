@@ -41,4 +41,4 @@ CRefCounted* CFactory::Create(Data::CFourCC ClassFourCC, void* pParam) const
 }
 //---------------------------------------------------------------------
 
-} // namespace Core
+}

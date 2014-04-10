@@ -60,6 +60,7 @@ public:
 	CPathRequestQueue*		GetPathQueue(DWORD ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
 
 	CPlanner&				GetPlanner() { return Planner; } //???or singleton?
+	static PAction			CreatePlanFromDesc(Data::PParams Desc);
 };
 
 inline const dtQueryFilter* CAIServer::GetNavQueryFilter(CStrID ID) const

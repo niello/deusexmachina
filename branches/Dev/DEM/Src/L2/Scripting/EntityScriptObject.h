@@ -56,7 +56,7 @@ typedef Ptr<CEntityScriptObject> PEntityScriptObject;
 	if (ArgCount < MinArgumentCount)		\
 	{									\
 		lua_settop(l, 0);				\
-		n_printf("%d argument(s) passed while at least %d required\n", ArgCount - 1, MinArgumentCount - 1); \
+		n_printf(__FUNCTION__ " > %d argument(s) passed while at least %d required\n", ArgCount - 1, MinArgumentCount - 1); \
 		return 0;						\
 	}									\
 	Scripting::CEntityScriptObject* This = (Scripting::CEntityScriptObject*)CScriptObject::GetFromStack(l, 1);	\

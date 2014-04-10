@@ -3,6 +3,7 @@
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
 #include <Scripting/PropScriptable.h>
+#include <AI/AIServer.h>
 #include <AI/Behaviour/ActionSequence.h>
 #include <AI/Movement/Actions/ActionGotoPosition.h>
 #include <AI/Movement/Actions/ActionGotoTarget.h>
@@ -19,6 +20,34 @@ extern "C"
 namespace Prop
 {
 using namespace Scripting;
+
+int CPropActorBrain_EnqueueTask(lua_State* l)
+{
+	//args: EntityScriptObject's this table, plan desc table, [Relevance = Absolute, FailOnInterruption = false, ClearQueueOnFailure = false]
+	SETUP_ENT_SI_ARGS(2);
+
+	Data::CData PlanDescData;
+	ScriptSrv->LuaStackToData(PlanDescData, 2);
+	if (!PlanDescData.IsA<Data::PParams>()) return 0;
+
+	CTask Task;
+	Task.Plan = AI::CAIServer::CreatePlanFromDesc(PlanDescData.GetValue<Data::PParams>());
+	Task.Relevance = ArgCount >= 3 ? (float)lua_tonumber(l, 3) : AI::Relevance_Absolute;
+	Task.FailOnInterruption = ArgCount >= 4 && lua_toboolean(l, 4) != 0;
+	Task.ClearQueueOnFailure = ArgCount >= 5 && lua_toboolean(l, 5) != 0;
+	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
+	return 0;
+}
+//---------------------------------------------------------------------
+
+int CPropActorBrain_ClearTaskQueue(lua_State* l)
+{
+	//args: EntityScriptObject's this table
+	SETUP_ENT_SI_ARGS(1);
+	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->ClearTaskQueue();
+	return 0;
+}
+//---------------------------------------------------------------------
 
 int CPropActorBrain_DoAction(lua_State* l)
 {
@@ -100,6 +129,8 @@ int CPropActorBrain_AbortCurrAction(lua_State* l)
 void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 {
 	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ExportCFunction("EnqueueTask", CPropActorBrain_EnqueueTask);
+	ScriptSrv->ExportCFunction("ClearTaskQueue", CPropActorBrain_ClearTaskQueue);
 	ScriptSrv->ExportCFunction("DoAction", CPropActorBrain_DoAction);
 	ScriptSrv->ExportCFunction("Go", CPropActorBrain_Go);
 	ScriptSrv->ExportCFunction("AbortCurrAction", CPropActorBrain_AbortCurrAction);
@@ -110,6 +141,8 @@ void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 void CPropActorBrain::DisableSI(CPropScriptable& Prop)
 {
 	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	ScriptSrv->ClearField("EnqueueTask");
+	ScriptSrv->ClearField("ClearTaskQueue");
 	ScriptSrv->ClearField("DoAction");
 	ScriptSrv->ClearField("Go");
 	ScriptSrv->ClearField("AbortCurrAction");

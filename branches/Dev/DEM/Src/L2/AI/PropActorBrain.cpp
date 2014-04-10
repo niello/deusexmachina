@@ -82,7 +82,7 @@ bool CPropActorBrain::InternalActivate()
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))
 		{
 			Perceptors.Reallocate(DescSection->GetCount(), 0);
-			for (int i = 0; i < DescSection->GetCount(); i++)
+			for (int i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
 				PPerceptor New = (CPerceptor*)Factory->Create(StrPercPrefix + DescParam.GetName().CStr());
@@ -94,7 +94,7 @@ bool CPropActorBrain::InternalActivate()
 		if (Desc->Get<PParams>(DescSection, CStrID("Sensors")))
 		{
 			Sensors.Reallocate(DescSection->GetCount(), 0);
-			for (int i = 0; i < DescSection->GetCount(); i++)
+			for (int i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
 				PSensor New = (CSensor*)Factory->Create(StrSensorPrefix + DescParam.GetName().CStr());
@@ -137,7 +137,7 @@ bool CPropActorBrain::InternalActivate()
 			//int HasIdleGoal = DescSection->Has(CStrID("Idle")) ? 1 : 0;
 
 			Goals.Reallocate(DescSection->GetCount() /*+ 1 - HasIdleGoal*/, 0);
-			for (int i = 0; i < DescSection->GetCount(); i++)
+			for (int i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
 				PGoal New = (CGoal*)Factory->Create(StrGoalPrefix + DescParam.GetName().CStr());
@@ -157,7 +157,7 @@ bool CPropActorBrain::InternalActivate()
 		if (Desc->Get<PDataArray>(ActionArray, CStrID("Actions")))
 		{
 			ActionTpls.Reallocate(ActionArray->GetCount(), 0);
-			for (int i = 0; i < ActionArray->GetCount(); i++)
+			for (int i = 0; i < ActionArray->GetCount(); ++i)
 			{
 				LPCSTR pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
@@ -244,6 +244,7 @@ bool CPropActorBrain::OnPropDeactivating(const Events::CEventBase& Event)
 
 void CPropActorBrain::EnqueueTask(const CTask& Task)
 {
+	if (!Task.Plan.IsValid()) return;
 	bool WasEmpty = TaskQueue.IsEmpty();
 	TaskQueue.AddBack(Task);
 	if (WasEmpty) RequestBehaviourUpdate();
@@ -265,7 +266,7 @@ void CPropActorBrain::AbortCurrAction(DWORD Result)
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD OldPlanResult)
+void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanResult)
 {
 	if (Plan == NewPlan) return;
 
@@ -281,7 +282,8 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD OldPlanRe
 			//???event task done/aborted? use task UID?
 			if (!NewPlan.IsValid() || pTask->FailOnInterruption) // Valid NewPlan means an interruption
 			{
-				if (OldPlanResult == Failure && pTask->ClearQueueOnFailure) TaskQueue.Clear();
+				if (NewPlan.IsValid() && pTask->FailOnInterruption) PrevPlanResult = Failure;
+				if (PrevPlanResult == Failure && pTask->ClearQueueOnFailure) TaskQueue.Clear();
 				else TaskQueue.RemoveFront();
 			}
 		}

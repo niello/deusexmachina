@@ -1,7 +1,19 @@
 #include "ActionSequence.h"
 
+#include <AI/AIServer.h>
+#include <Data/DataArray.h>
+
 namespace AI
 {
+__ImplementClass(AI::CActionSequence, 'ASEQ', AI::CAction)
+
+void CActionSequence::Init(const Data::CParams& Desc)
+{
+	const Data::CDataArray& ChildDescs = *Desc.Get<Data::PDataArray>(CStrID("Child"));
+	for (int i = 0; i < ChildDescs.GetCount(); ++i)
+		AddChild(AI::CAIServer::CreatePlanFromDesc(ChildDescs.Get<Data::PParams>(i)));
+}
+//---------------------------------------------------------------------
 
 bool CActionSequence::Activate(CActor* pActor)
 {

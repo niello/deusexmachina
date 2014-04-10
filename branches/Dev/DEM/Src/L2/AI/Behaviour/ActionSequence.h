@@ -12,6 +12,8 @@ namespace AI
 
 class CActionSequence: public CAction
 {
+	__DeclareClass(CActionSequence);
+
 protected:
 
 	CArray<PAction>				Child; //???use linked list?
@@ -21,14 +23,15 @@ public:
 
 	CActionSequence(): ppCurrChild(NULL) {}
 
-	void				AddChild(CAction* pAction) { n_assert(pAction); Child.Add(pAction); }
+	void			AddChild(CAction* pAction) { n_assert(pAction); Child.Add(pAction); }
 	// RemoveAllChildren / Clear (deactivate current, remove all)
 
-	virtual bool		Activate(CActor* pActor);
+	virtual void	Init(const Data::CParams& Desc);
+	virtual bool	Activate(CActor* pActor);
 	virtual DWORD	Update(CActor* pActor);
-	virtual void		Deactivate(CActor* pActor);
+	virtual void	Deactivate(CActor* pActor);
 	
-	virtual bool		IsValid(CActor* pActor) const { return ppCurrChild && (*ppCurrChild)->IsValid(pActor); }
+	virtual bool	IsValid(CActor* pActor) const { return ppCurrChild && (*ppCurrChild)->IsValid(pActor); }
 };
 
 typedef Ptr<CActionSequence> PActionSequence;
