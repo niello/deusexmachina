@@ -7,6 +7,11 @@
 
 // Base class of all actions executed by actors
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace AI
 {
 
@@ -14,6 +19,7 @@ class CAction: public Core::CRefCounted
 {
 public:
 
+	virtual void	Init(const Data::CParams& Desc) { }
 	virtual bool	Activate(CActor* pActor) { /*validate preconditions here*/ OK; }
 	virtual DWORD	Update(CActor* pActor) { /*check IsComplete*/ return Success; }
 	virtual void	Deactivate(CActor* pActor) { }

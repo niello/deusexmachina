@@ -22,9 +22,10 @@ private:
 
 public:
 
-	void				Init(CStrID Target) { TargetID = Target; }
+	virtual void	Init(const Data::CParams& Desc);
+	void			Init(CStrID Target) { TargetID = Target; }
 
-	virtual bool		Activate(CActor* pActor);
+	virtual bool	Activate(CActor* pActor);
 	virtual DWORD	Update(CActor* pActor);
 };
 

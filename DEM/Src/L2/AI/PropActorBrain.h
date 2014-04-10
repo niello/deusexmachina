@@ -87,7 +87,7 @@ protected:
 	void				EnableSI(class CPropScriptable& Prop);
 	void				DisableSI(class CPropScriptable& Prop);
 	void				UpdateBehaviour();
-	void				SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD OldPlanResult);
+	void				SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanResult);
 
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);

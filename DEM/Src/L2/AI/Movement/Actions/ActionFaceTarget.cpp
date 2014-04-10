@@ -7,6 +7,12 @@ namespace AI
 {
 __ImplementClass(AI::CActionFaceTarget, 'AFTG', AI::CActionFace)
 
+void CActionFaceTarget::Init(const Data::CParams& Desc)
+{
+	TargetID = GetStrID(Desc, CStrID("Target"));
+}
+//---------------------------------------------------------------------
+
 bool CActionFaceTarget::Activate(CActor* pActor)
 {
 	if (!SetupDirFromTarget(pActor)) FAIL;
