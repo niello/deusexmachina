@@ -11,35 +11,35 @@ bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
 	{
-		case 'THGL': // LGHT
+		case 'LGHT':
 		{
 			return DataReader.Read<int>((int&)Type); // To force size
 		}
-		case 'DHSC': // CSHD
+		case 'CSHD':
 		{
 			//!!!Flags.SetTo(ShadowCaster, DataReader.Read<bool>());!
 			DataReader.Read<bool>();
 			OK;
 		}
-		case 'TNIL': // LINT
+		case 'LINT':
 		{
 			return DataReader.Read(Intensity);
 		}
-		case 'RLCL': // LCLR
+		case 'LCLR':
 		{
 			return DataReader.Read(Color);
 		}
-		case 'GNRL': // LRNG
+		case 'LRNG':
 		{
 			return DataReader.Read(Range);
 		}
-		case 'NICL': // LCIN
+		case 'LCIN':
 		{
 			if (!DataReader.Read(ConeInner)) FAIL;
 			SetSpotInnerAngle(n_deg2rad(ConeInner));
 			OK;
 		}
-		case 'UOCL': // LCOU
+		case 'LCOU':
 		{
 			if (!DataReader.Read(ConeOuter)) FAIL;
 			SetSpotOuterAngle(n_deg2rad(ConeOuter));

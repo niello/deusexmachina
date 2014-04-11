@@ -2,6 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
+#include <Scripting/PropScriptable.h>
 #include <Scene/SceneServer.h>
 #include <Scene/Events/SetTransform.h>
 #include <Scene/Model.h>
@@ -85,6 +86,11 @@ bool CPropSceneNode::InternalActivate()
 		GetEntity()->FireEvent(CStrID("UpdateTransform"));
 	}
 
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) EnableSI(*pProp);
+
+	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropSceneNode, OnPropActivated);
+	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropSceneNode, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropSceneNode, OnLevelSaving);
 	PROP_SUBSCRIBE_NEVENT(SetTransform, CPropSceneNode, OnSetTransform);
 	PROP_SUBSCRIBE_PEVENT(AfterTransforms, CPropSceneNode, AfterTransforms);
@@ -95,10 +101,15 @@ bool CPropSceneNode::InternalActivate()
 
 void CPropSceneNode::InternalDeactivate()
 {
+	UNSUBSCRIBE_EVENT(OnPropActivated);
+	UNSUBSCRIBE_EVENT(OnPropDeactivating);
 	UNSUBSCRIBE_EVENT(OnLevelSaving);
 	UNSUBSCRIBE_EVENT(SetTransform);
 	UNSUBSCRIBE_EVENT(AfterTransforms);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
+
+	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
+	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
 	ChildCache.Clear();
 	ChildrenToSave.Clear();
@@ -108,6 +119,38 @@ void CPropSceneNode::InternalDeactivate()
 		Node->RemoveFromParent();
 		Node = NULL;
 	}
+}
+//---------------------------------------------------------------------
+
+bool CPropSceneNode::OnPropActivated(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		EnableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CPropSceneNode::OnPropDeactivating(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
+	if (!pProp) FAIL;
+
+	if (pProp->IsA<CPropScriptable>())
+	{
+		DisableSI(*(CPropScriptable*)pProp);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

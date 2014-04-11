@@ -15,7 +15,7 @@ class CEntityLoaderCommon: public IEntityLoader
 
 public:
 
-	virtual bool Load(CStrID UID, CGameLevel& Level, Data::PParams Desc);
+	virtual bool Load(CStrID UID, CGameLevel& Level, const Data::CParams& Desc);
 };
 
 }

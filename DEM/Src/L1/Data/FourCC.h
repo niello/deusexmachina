@@ -36,19 +36,20 @@ public:
 };
 //---------------------------------------------------------------------
 
+// Convert "ABCD" as compiler converts 'ABCD' character constant
 inline void CFourCC::FromString(LPCSTR pString)
 {
 	n_assert_dbg(pString);
-	Code = pString[0] | (pString[1] << 8) | (pString[2] << 16) | (pString[3] << 24);
+	Code = pString[3] | (pString[2] << 8) | (pString[1] << 16) | (pString[0] << 24);
 }
 //---------------------------------------------------------------------
 
 inline void CFourCC::ToString(char* Out) const
 {
-	Out[0] = Code & 0xff;
-	Out[1] = (Code >> 8) & 0xff;
-	Out[2] = (Code >> 16) & 0xff;
-	Out[3] = (Code >> 24) & 0xff;
+	Out[0] = (Code >> 24) & 0xff;
+	Out[1] = (Code >> 16) & 0xff;
+	Out[2] = (Code >> 8) & 0xff;
+	Out[3] = Code & 0xff;
 	Out[4] = 0;
 }
 //---------------------------------------------------------------------

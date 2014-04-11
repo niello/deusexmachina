@@ -18,7 +18,7 @@ class IEntityLoader: public Core::CRefCounted
 
 public:
 
-	virtual bool Load(CStrID UID, CGameLevel& Level, Data::PParams Desc) = 0;
+	virtual bool Load(CStrID UID, CGameLevel& Level, const Data::CParams& Desc) = 0;
 };
 
 typedef Ptr<IEntityLoader> PEntityLoader;

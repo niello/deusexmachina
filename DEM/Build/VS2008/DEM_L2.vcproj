@@ -913,6 +913,10 @@
 				RelativePath="..\..\Src\L2\Scene\PropSceneNode.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\Src\L2\Scene\PropSceneNodeSI.cpp"
+				>
+			</File>
 			<Filter
 				Name="Events"
 				>

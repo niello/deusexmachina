@@ -8,16 +8,14 @@ namespace Game
 {
 __ImplementClass(Game::CEntityLoaderCommon, 'ELCM', Game::IEntityLoader);
 
-bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, Data::PParams Desc)
+bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, const Data::CParams& Desc)
 {
 	n_assert(UID.IsValid());
 	PEntity Entity = EntityMgr->CreateEntity(UID, Level);
 	if (!Entity.IsValid()) FAIL;
 
-	if (!Desc.IsValid()) OK;
-
 	Data::PParams SubDesc;
-	if (Desc->Get(SubDesc, CStrID("Attrs")) && SubDesc->GetCount())
+	if (Desc.Get(SubDesc, CStrID("Attrs")) && SubDesc->GetCount())
 	{
 		Entity->BeginNewAttrs(SubDesc->GetCount());
 		for (int i = 0; i < SubDesc->GetCount(); ++i)
@@ -29,7 +27,7 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, Data::PParams Desc
 	}
 
 	Data::PDataArray Props;
-	if (Desc->Get(Props, CStrID("Props")))
+	if (Desc.Get(Props, CStrID("Props")))
 		for (int i = 0; i < Props->GetCount(); ++i)
 		{
 			const Data::CData& PropID = Props->Get(i);

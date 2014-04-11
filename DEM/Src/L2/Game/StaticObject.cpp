@@ -34,7 +34,7 @@ void CStaticObject::SetUID(CStrID NewUID)
 }
 //---------------------------------------------------------------------
 
-void CStaticObject::Init(Data::CParams& ObjDesc)
+void CStaticObject::Init(const Data::CParams& ObjDesc)
 {
 	n_assert(!Desc.IsValid());
 

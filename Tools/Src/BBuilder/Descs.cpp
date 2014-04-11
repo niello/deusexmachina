@@ -7,6 +7,18 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
+void ConvertPropNamesToFourCC(Data::PDataArray Props)
+{
+	for (int i = 0; i < Props->GetCount(); ++i)
+	{
+		if (!Props->Get(i).IsA<CString>()) continue;
+		const CString& Name = Props->Get<CString>(i);
+		Data::CFourCC Value;
+		if (PropCodes.Get(Name, Value)) Props->At(i) = (int)Value.Code;
+	}
+}
+//---------------------------------------------------------------------
+
 bool ProcessDialogue(const CString& SrcContext, const CString& ExportContext, const CString& Name)
 {
 	CString ExportFilePath = ExportContext + Name + ".prm";
@@ -314,6 +326,9 @@ bool ProcessDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 
 bool ProcessEntity(const Data::CParams& EntityDesc)
 {
+	// Entity tpls aren't exported by ref here, because ALL that tpls are exported.
+	// This allows to instantiate unreferenced tpls at the runtime.
+
 	Data::PParams Attrs;
 	if (!EntityDesc.Get<Data::PParams>(Attrs, CStrID("Attrs"))) OK;
 
@@ -520,6 +535,70 @@ bool ProcessDescsInFolder(const CString& SrcPath, const CString& ExportPath)
 				n_msg(VL_ERROR, "Error loading desc '%s'\n", DescName.CStr());
 				continue;
 			}
+		}
+		else if (Browser.IsCurrEntryDir())
+		{
+			if (!ProcessDescsInFolder(SrcPath + "/" + Browser.GetCurrEntryName(), ExportPath + "/" + Browser.GetCurrEntryName())) FAIL;
+		}
+	}
+	while (Browser.NextCurrDirEntry());
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessEntityTplsInFolder(const CString& SrcPath, const CString& ExportPath)
+{
+	IO::CFSBrowser Browser;
+	if (!Browser.SetAbsolutePath(ExportDescs ? SrcPath : ExportPath))
+	{
+		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
+		FAIL;
+	}
+
+	if (ExportDescs) IOSrv->CreateDirectory(ExportPath);
+
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryFile())
+		{
+			CString DescName = Browser.GetCurrEntryName();
+			DescName.StripExtension();
+
+			n_msg(VL_INFO, "Processing entity tpl '%s'...\n", DescName.CStr());
+
+			CString SrcFilePath = Browser.GetCurrentPath() + "/" + Browser.GetCurrEntryName();
+			CString RealExportFilePath = IOSrv->ManglePath(ExportPath + "/" + DescName + ".prm");
+
+			if (IsFileAdded(RealExportFilePath)) continue;
+
+			if (ExportDescs)
+			{
+				Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
+				if (!Desc.IsValid())
+				{
+					n_msg(VL_ERROR, "Error loading entity tpl '%s'\n", DescName.CStr());
+					FAIL;
+				}
+
+				Data::PDataArray Props;
+				if (Desc->Get<Data::PDataArray>(Props, CStrID("Props")) && Props->GetCount())
+					ConvertPropNamesToFourCC(Props);
+
+				IOSrv->CreateDirectory(RealExportFilePath.ExtractDirName());
+				if (!DataSrv->SavePRM(RealExportFilePath, Desc))
+				{
+					n_msg(VL_ERROR, "Error saving entity tpl '%s'\n", DescName.CStr());
+					FAIL;
+				}
+
+				if (!ProcessEntity(*Desc))
+				{
+					n_msg(VL_ERROR, "Error processing entity tpl '%s'\n", DescName.CStr());
+					FAIL;
+				}
+			}
+			FilesToPack.InsertSorted(RealExportFilePath);
 		}
 		else if (Browser.IsCurrEntryDir())
 		{

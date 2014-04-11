@@ -22,22 +22,22 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 {
 	switch (FourCC.Code)
 	{
-		case 'DLDC': // CDLD
+		case 'CDLD':
 		{
 			HeightMap = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
-		case 'XSST': // TSSX
+		case 'TSSX':
 		{
 			InvSplatSizeX = 1.f / DataReader.Read<float>();
 			OK;
 		}
-		case 'ZSST': // TSSZ
+		case 'TSSZ':
 		{
 			InvSplatSizeZ = 1.f / DataReader.Read<float>();
 			OK;
 		}
-		case 'SRAV': // VARS
+		case 'VARS':
 		{
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
@@ -51,7 +51,7 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 			}
 			OK;
 		}
-		case 'SXET': // TEXS
+		case 'TEXS':
 		{
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
