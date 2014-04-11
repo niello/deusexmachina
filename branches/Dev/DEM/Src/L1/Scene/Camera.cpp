@@ -8,7 +8,7 @@ bool CCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
 	{
-		case 'XXXX': // XXXX
+		case 'XXXX':
 		{
 			//DataReader.Read();
 			//OK;

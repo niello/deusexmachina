@@ -139,12 +139,29 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
 			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
 
+			//!!!move to separate function to allow creating entities after level is loaded!
+
 			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
 			int LoaderIdx = Loaders.FindIndex(LoadingGroup);
 			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAt(LoaderIdx);
 			if (!Loader.IsValid()) continue;
 
-			if (!Loader->Load(EntityPrm.GetName(), *Level, EntityDesc))
+			const CString& TplName = EntityDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
+			if (TplName.IsValid())
+			{
+				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
+				if (!Tpl.IsValid())
+				{
+					n_printf("Entity template '%s' not found for entity %s in level %s\n",
+						TplName.CStr(), EntityPrm.GetName().CStr(), Level->GetID().CStr());
+					continue;
+				}
+				Data::PParams MergedDesc = n_new(Data::CParams(EntityDesc->GetCount()));
+				Tpl->MergeDiff(*MergedDesc, *EntityDesc);
+				EntityDesc = MergedDesc;
+			}
+
+			if (!Loader->Load(EntityPrm.GetName(), *Level, *EntityDesc))
 				n_printf("Entity %s not loaded in level %s, group is %s\n",
 					EntityPrm.GetName().CStr(), Level->GetID().CStr(), LoadingGroup.CStr());
 		}

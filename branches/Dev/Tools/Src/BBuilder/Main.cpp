@@ -22,6 +22,8 @@ CArray<CString>			FilesToPack;
 CToolFileLists			InFileLists;
 CToolFileLists			OutFileLists;
 
+CPropCodeMap			PropCodes;
+
 // Debug command line:
 // -export -waitkey -v 5 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
 
@@ -69,17 +71,37 @@ int main(int argc, const char** argv)
 
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
 	if (PathList.IsValid())
+	{
 		for (int i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
+		PathList = NULL;
+	}
 
 	PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValid())
 	{
 		for (int i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
+		PathList = NULL;
 
 		IOSrv->CopyFile("Proj:PathList.hrd", "Build:PathList.hrd");
 	}
+
+	//???rewrite HRD/PRM to return CData? change root symbol in grammar, so could store array and anything else
+	Data::PParams PropCodesDesc = DataSrv->LoadHRD("Proj:PropCodes.hrd", false);
+	Data::PDataArray PropCodesList;
+	if (PropCodesDesc.IsValid() &&
+		PropCodesDesc->Get<Data::PDataArray>(PropCodesList, CStrID("List")) &&
+		PropCodesList->GetCount())
+	{
+		for (int i = 0; i < PropCodesList->GetCount(); ++i)
+		{
+			Data::PParams Prm = PropCodesList->Get<Data::PParams>(i);
+			PropCodes.Add(Prm->Get<CString>(CStrID("Name")), Data::CFourCC(Prm->Get<CString>(CStrID("Code")).CStr()));
+		}
+	}
+	PropCodesList = NULL;
+	PropCodesDesc = NULL;
 
 	if (!DataSrv->LoadDataSchemes("Home:DataSchemes/SceneNodes.dss"))
 	{
@@ -131,6 +153,20 @@ int main(int argc, const char** argv)
 			if (ExportDescs)
 			{
 				LevelDesc = DataSrv->LoadHRD("SrcLevels:" + Browser.GetCurrEntryName(), false);
+
+				// Convert entity props from names to FourCC
+				Data::PParams SubDesc;
+				if (LevelDesc->Get<Data::PParams>(SubDesc, CStrID("Entities")))
+				{
+					for (int i = 0; i < SubDesc->GetCount(); ++i)
+					{
+						Data::PParams EntityDesc = SubDesc->Get<Data::PParams>(i);
+						Data::PDataArray Props;
+						if (EntityDesc->Get<Data::PDataArray>(Props, CStrID("Props")) && Props->GetCount())
+							ConvertPropNamesToFourCC(Props);
+					}
+				}
+
 				DataSrv->SavePRM(ExportFilePath, LevelDesc);
 			}
 			else LevelDesc = DataSrv->LoadPRM(ExportFilePath, false);
@@ -154,13 +190,11 @@ int main(int argc, const char** argv)
 
 	n_printf("\n"SEP_LINE"Processing entity templates:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
 
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!Export ALL entity templates!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if (!ProcessEntityTplsInFolder(IOSrv->ManglePath("SrcEntityTpls:"), IOSrv->ManglePath("EntityTpls:")))
+	{
+		n_msg(VL_ERROR, "Error procesing entity templates!\n");
+		EXIT_APP_FAIL;
+	}
 
 	n_printf("\n"SEP_LINE"Processing items:\n"SEP_LINE);
 

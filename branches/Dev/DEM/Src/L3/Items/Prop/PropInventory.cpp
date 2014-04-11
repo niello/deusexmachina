@@ -16,8 +16,8 @@ bool CPropInventory::InternalActivate()
 {
 	n_assert(CurrWeight == 0.f && CurrVolume == 0.f);
 
-	Data::PDataArray InvDesc = GetEntity()->GetAttr<Data::PDataArray>(CStrID("Inventory"), NULL);
-	if (InvDesc.IsValid() && InvDesc->GetCount())
+	Data::PDataArray InvDesc;
+	if (GetEntity()->GetAttr<Data::PDataArray>(InvDesc, CStrID("Inventory")) && InvDesc->GetCount())
 	{
 		CItemStack* pStack = Items.Reserve(InvDesc->GetCount());
 		for (int i = 0; i < InvDesc->GetCount(); ++i, ++pStack)

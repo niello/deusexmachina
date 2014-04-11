@@ -11,7 +11,7 @@ bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReade
 {
 	switch (FourCC.Code)
 	{
-		case 'HSRT': // TRSH
+		case 'TRSH':
 		{
 			//!!!node ID!
 
@@ -27,13 +27,13 @@ bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReade
 			}
 			OK;
 		}
-		case 'NIMD': // DMIN
+		case 'DMIN':
 		{
 			DataReader.Read<float>(MinSqDistance);
 			MinSqDistance *= MinSqDistance;
 			OK;
 		}
-		case 'XAMD': // DMAX
+		case 'DMAX':
 		{
 			DataReader.Read<float>(MaxSqDistance);
 			MaxSqDistance *= MaxSqDistance;

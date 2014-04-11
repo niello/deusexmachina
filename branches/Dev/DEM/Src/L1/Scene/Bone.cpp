@@ -15,23 +15,23 @@ bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
 	{
-		case 'TESP': // PSET
+		case 'PSET':
 		{
 			return DataReader.Read(BindPoseLocal.Translation);
 		}
-		case 'RESP': // PSER
+		case 'PSER':
 		{
 			return DataReader.Read(BindPoseLocal.Rotation);
 		}
-		case 'SESP': // PSES
+		case 'PSES':
 		{
 			return DataReader.Read(BindPoseLocal.Scale);
 		}
-		case 'XDIB': // BIDX
+		case 'BIDX':
 		{
 			return DataReader.Read(Index);
 		}
-		case 'PTNB': // BNTP
+		case 'BNTP':
 		{
 			char BoneType[64];
 			if (!DataReader.ReadString(BoneType, 63)) FAIL;

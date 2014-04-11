@@ -52,7 +52,7 @@ public:
 
 	~CStaticObject();
 
-	void				Init(Data::CParams& ObjDesc);
+	void				Init(const Data::CParams& ObjDesc);
 	void				Term();
 	bool				IsValid() const { return Desc.IsValid(); }
 

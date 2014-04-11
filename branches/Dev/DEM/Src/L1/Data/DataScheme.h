@@ -31,7 +31,7 @@ public:
 	struct CRecord
 	{
 		CStrID			ID;
-		CFourCC			FourCC; //!!!NEED CLASS!
+		CFourCC			FourCC;
 		int				TypeID; //???or type ptr?
 		CStrID			SchemeID;
 		PDataScheme		Scheme;

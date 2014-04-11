@@ -21,12 +21,12 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
 	{
-		case 'LRTM': // MTRL
+		case 'MTRL':
 		{
 			Material = RenderSrv->MaterialMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
-		case 'SRAV': // VARS
+		case 'VARS':
 		{
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
@@ -43,7 +43,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 			}
 			OK;
 		}
-		case 'SXET': // TEXS
+		case 'TEXS':
 		{
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
@@ -57,27 +57,27 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 			}
 			OK;
 		}
-		case 'TLPJ': // JPLT
+		case 'JPLT':
 		{
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
 			BoneIndices.SetSize(Count);
 			return DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) == Count * sizeof(int);
 		}
-		case 'HSEM': // MESH
+		case 'MESH':
 		{
 			Mesh = RenderSrv->MeshMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
 			OK;
 		}
-		case 'RGSM': // MSGR
+		case 'MSGR':
 		{
 			return DataReader.Read(MeshGroupIndex);
 		}
-		case 'PYTB': // BTYP
+		case 'BTYP':
 		{
 			return DataReader.Read(BatchType);
 		}
-		case 'GLFF': // FFLG
+		case 'FFLG':
 		{
 			CString FeatFlagsStr;
 			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;

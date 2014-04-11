@@ -75,7 +75,6 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	Data::PDataArray InitialProps;
 	if (pInitialDesc) pInitialDesc->Get<Data::PDataArray>(InitialProps, CStrID("Props"));
 
-	//!!!Save props! Get all props, try to find in initial, if all is equal, skip, else write all!
 	CArray<CProperty*> Props;
 	EntityMgr->GetPropertiesOfEntity(UID, Props);
 	bool Differs = (Props.GetCount() && !InitialProps.IsValid()) || Props.GetCount() != InitialProps->GetCount();
@@ -84,12 +83,22 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		// Quick difference detection is insufficient, do full comparison
 		for (int i = 0; i < Props.GetCount(); ++i)
 		{
-			//???!!!use FourCC!?
+			int ClassFourCC = (int)Props[i]->GetClassFourCC().Code;
 			const CString& ClassName = Props[i]->GetClassName();
 			int j;
 			for (j = 0; j < InitialProps->GetCount(); ++j)
-				if (InitialProps->Get<CString>(j) == ClassName)
-					break;
+			{
+				Data::CData& InitialProp = InitialProps->Get(j);
+				if (InitialProp.IsA<int>())
+				{
+					if (InitialProp == ClassFourCC) break;
+				}
+				else if (InitialProp.IsA<CString>())
+				{
+					if (InitialProp == ClassName) break;
+				}
+				else Core::Error("Inappropriate property record type, only string class name and int FourCC are allowed!");
+			}
 			if (j == InitialProps->GetCount())
 			{
 				Differs = true;
@@ -102,7 +111,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	{
 		Data::PDataArray SGProps = n_new(Data::CDataArray);
 		for (int i = 0; i < Props.GetCount(); ++i)
-			SGProps->Add(Props[i]->GetClassName());
+			SGProps->Add((int)Props[i]->GetClassFourCC().Code);
 		OutDesc.Set(CStrID("Props"), SGProps);
 	}
 }
