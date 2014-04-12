@@ -156,7 +156,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 						TplName.CStr(), EntityPrm.GetName().CStr(), Level->GetID().CStr());
 					continue;
 				}
-				Data::PParams MergedDesc = n_new(Data::CParams(EntityDesc->GetCount()));
+				Data::PParams MergedDesc = n_new(Data::CParams(EntityDesc->GetCount() + Tpl->GetCount()));
 				Tpl->MergeDiff(*MergedDesc, *EntityDesc);
 				EntityDesc = MergedDesc;
 			}
