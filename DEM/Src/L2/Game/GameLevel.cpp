@@ -12,6 +12,7 @@
 #include <AI/AILevel.h>
 #include <Events/EventServer.h>
 #include <IO/IOServer.h>
+#include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
@@ -263,7 +264,20 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	{
 		CEntity* pEntity = Entities[i];
 		if (SGEntity->GetCount()) SGEntity = n_new(Data::CParams);
-		pEntity->Save(*SGEntity, pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).GetUnsafe() : NULL);
+		Data::PParams InitialDesc = pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).GetUnsafe() : NULL;
+		if (InitialDesc.IsValid())
+		{
+			const CString& TplName = InitialDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
+			if (TplName.IsValid())
+			{
+				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
+				n_assert(Tpl.IsValid());
+				Data::PParams MergedDesc = n_new(Data::CParams(InitialDesc->GetCount() + Tpl->GetCount()));
+				Tpl->MergeDiff(*MergedDesc, *InitialDesc);
+				InitialDesc = MergedDesc;
+			}
+		}
+		pEntity->Save(*SGEntity, InitialDesc);
 		if (SGEntity->GetCount()) SGEntities->Set(pEntity->GetUID(), SGEntity);
 	}
 

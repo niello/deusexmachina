@@ -602,7 +602,7 @@ bool ProcessEntityTplsInFolder(const CString& SrcPath, const CString& ExportPath
 		}
 		else if (Browser.IsCurrEntryDir())
 		{
-			if (!ProcessDescsInFolder(SrcPath + "/" + Browser.GetCurrEntryName(), ExportPath + "/" + Browser.GetCurrEntryName())) FAIL;
+			if (!ProcessEntityTplsInFolder(SrcPath + "/" + Browser.GetCurrEntryName(), ExportPath + "/" + Browser.GetCurrEntryName())) FAIL;
 		}
 	}
 	while (Browser.NextCurrDirEntry());
