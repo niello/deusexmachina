@@ -1,9 +1,9 @@
 #include "Logger.h"
 
-#include <Core/CoreServer.h>
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
 #include <Events/EventServer.h>
+#include <Render/RenderServer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -104,15 +104,16 @@ void CLogger::OutputDebug(const char* pMsg, va_list Args)
 }
 //---------------------------------------------------------------------
 
+//!!!it is very stupid placing this stuff in logger! redesign logger!
 void CLogger::ShowMessageBox(EMsgType Type, const char* pMsg)
 {
 	// Find app window, and minimize it. This is necessary when in Fullscreen mode, otherwise
 	// the MessageBox() may not be visible.
-	//???Use DialogBoxMode?
+	//???Use D3D device DialogBoxMode?
 	if (Type == MsgTypeError)
 	{
-		HWND hWnd = NULL;
-		if (CoreSrv->GetGlobal("hwnd", (int&)hWnd) && hWnd) ShowWindow(hWnd, SW_MINIMIZE);
+		HWND hWnd = RenderSrv->GetDisplay().GetAppHwnd();
+		if (hWnd) ShowWindow(hWnd, SW_MINIMIZE);
 	}
 
 	UINT BoxType = (MB_OK | MB_APPLMODAL | MB_SETFOREGROUND | MB_TOPMOST);
@@ -122,7 +123,7 @@ void CLogger::ShowMessageBox(EMsgType Type, const char* pMsg)
 		case MsgTypeError:		BoxType |= MB_ICONERROR; break;
 	}
 
-	MessageBox(0, pMsg, AppName.CStr(), BoxType);
+	MessageBox(NULL, pMsg, AppName.CStr(), BoxType);
 }
 //---------------------------------------------------------------------
 

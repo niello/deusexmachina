@@ -103,8 +103,8 @@ public:
 	bool				IsWindowOpen() const { return IsWndOpen; }
 	bool				IsWindowMinimized() const { return IsWndMinimized; }
 	HWND				GetAppHwnd() const { return hWnd; }
-	void				SetParentHwnd(HWND Parent) { hWndParent = Parent; }
-	HWND				GetParentHwnd() const { return hWndParent; }
+	void				SetParentWindow(HWND Parent) { hWndParent = Parent; }
+	HWND				GetParentWindow() const { return hWndParent; }
 	ATOM				GetWndClass() const { return aWndClass; }
 };
 

@@ -9,7 +9,7 @@ namespace Story
 
 void CDlgContext::Trigger(bool IsForeground)
 {
-	if (State == DlgState_Waiting && !IsForeground)// & waits timer)
+	if (State == DlgState_Waiting && !IsForeground)
 	{
 		//advance timer
 		//if time has come,
@@ -92,24 +92,25 @@ void CDlgContext::Trigger(bool IsForeground)
 						State = pCurrNode ? DlgState_InNode : DlgState_Finished;
 						break;
 					}
-					default: State = DlgState_Aborted; break; // Action failure or error //???what to do on Failure?
+					default:
+					{
+						n_printf("CDlgContext::Trigger() > Initiator: '%s'. Scripted action '%s' %s\n",
+							Initiator.CStr(), Link.Action.CStr(), Result == Failure ? "failure" : "error");
+						State = DlgState_Aborted;
+						break;
+					}
 				}
 			}
 
-			if (State == DlgState_Finished)
+			if (State == DlgState_Finished || State == DlgState_Aborted)
 			{
 				Data::PParams P = n_new(Data::CParams(3));
 				P->Set(CStrID("Initiator"), Initiator);
 				P->Set(CStrID("Target"), Target);
 				P->Set(CStrID("IsForeground"), IsForeground);
+				P->Set(CStrID("IsAborted"), State == DlgState_Aborted);
 				EventSrv->FireEvent(CStrID("OnDlgEnd"), P);
 			}
-			//???else if (State == DlgState_Aborted) OnDlgAbort?
-				//Data::PParams P = n_new(Data::CParams(3));
-				//P->Set(CStrID("Initiator"), Ctx.Initiator);
-				//P->Set(CStrID("Target"), Target);
-				//P->Set(CStrID("IsForeground"), IsDialogueForeground(ID));
-				//EventSrv->FireEvent(CStrID("OnDlgReject"), P);
 		}
 	}
 }

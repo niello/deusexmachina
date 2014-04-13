@@ -4,7 +4,6 @@
 #include <Render/RenderServer.h>
 #include <Render/Events/DisplayInput.h>
 #include <Events/EventServer.h>
-#include <Core/CoreServer.h>
 
 #include <Uxtheme.h>
 #include <WindowsX.h>
@@ -71,16 +70,14 @@ bool CDisplay::OpenWindow()
 
 	// Calculate adjusted window rect
 
-	//!!!in N3 this is done through SetParentWindow!
 	// Parent HWND handling
-	if (CoreSrv->GetGlobal<int>("parent_hwnd", (int&)hWndParent))
+	if (hWndParent)
 	{
 		RECT r;
 		GetClientRect(hWndParent, &r);
 		DisplayMode.Width = (ushort)(r.right - r.left);
 		DisplayMode.Height = (ushort)(r.bottom - r.top);
 	}
-	else hWndParent = NULL;
 
 	if (!hAccel)
 	{
@@ -133,8 +130,6 @@ bool CDisplay::OpenWindow()
 
 	SetWindowLongPtr(hWnd, 0, (LONG)this);
 
-	CoreSrv->SetGlobal("hwnd", (int)hWnd);
-
 	RAWINPUTDEVICE RawInputDevices[1];
 	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC; 
 	RawInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE; 
@@ -169,7 +164,7 @@ void CDisplay::CloseWindow()
 
 // Polls for and processes window messages. Call this message once per
 // frame in your render loop. If the user clicks the window close
-// button, or hits Alt-F4, a CloseRequested input event will be sent.
+// button, or hits Alt-F4, an OnDisplayClose event will be sent.
 void CDisplay::ProcessWindowMessages()
 {
 	n_assert(IsWndOpen);
@@ -302,9 +297,6 @@ void CDisplay::MinimizeWindow()
 void CDisplay::AdjustSize()
 {
 	n_assert(hWnd);
-
-	float OldW = DisplayMode.Width;
-	float OldH = DisplayMode.Height;
 
 	RECT r;
 	GetClientRect(hWnd, &r);
@@ -482,6 +474,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 		}
 
+		//???how to handle situation when KeyDown was processed and Char should not be processed?
 		case WM_CHAR:
 		{
 			WCHAR CharUTF16[2];
