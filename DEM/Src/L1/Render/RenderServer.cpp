@@ -214,7 +214,7 @@ void CRenderServer::SetupPresentParams()
 		D3DPresentParams.Windowed = TRUE;
 	}
 
-	CDisplayMode DisplayMode = Display.GetRequestedDisplayMode();
+	CDisplayMode DisplayMode = Display.GetDisplayMode();
 	if (D3DPresentParams.Windowed)
 	{
 		CDisplayMode DesktopMode;
