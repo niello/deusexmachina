@@ -68,7 +68,7 @@ protected:
 
 public:
 
-	~CGameLevel();
+	virtual ~CGameLevel();
 
 	bool					Init(CStrID LevelID, const Data::CParams& Desc);
 	void					Term();

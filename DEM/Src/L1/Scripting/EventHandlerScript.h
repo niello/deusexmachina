@@ -4,7 +4,8 @@
 
 #include <Events/EventHandler.h>
 
-// Event handler that calls scripted function (global or owned by object)
+// Event handler that calls scripted function (global or owned by object).
+// For parametric events only, at least for now.
 
 namespace Scripting
 {

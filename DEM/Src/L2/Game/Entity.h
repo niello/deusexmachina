@@ -39,7 +39,7 @@ protected:
 
 public:
 
-	~CEntity();
+	virtual ~CEntity();
 
 	void						SetLevel(CGameLevel* pNewLevel);
 	void						Activate();

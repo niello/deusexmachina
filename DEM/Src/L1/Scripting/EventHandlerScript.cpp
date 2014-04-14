@@ -1,8 +1,8 @@
 #include "EventHandlerScript.h"
 
-#include "ScriptObject.h"
-#include "ScriptServer.h"
-#include <Events/EventDispatcher.h> //!!!now for PSub only!
+#include <Scripting/ScriptObject.h>
+#include <Scripting/ScriptServer.h>
+#include <Events/EventServer.h>
 
 extern "C"
 {
@@ -20,31 +20,35 @@ bool CEventHandlerScript::operator()(const CEventBase& Event)
 
 	if (e.Params.IsValid() && e.Params->GetCount())
 	{
-		//!!!now only parametrized events are supported!
-
+		// We cache e.Params in CurrEventParams table for multiple handlers to access
+		// without re-converting params each time. Here we check actuality of the cache.
 		lua_State* l = ScriptSrv->GetLuaState();
+		lua_getglobal(l, "CurrEventParams");
+		bool CacheIsActual = lua_istable(l, -1);
+		if (CacheIsActual)
+		{
+			lua_pushstring(l, "_EV_UID");
+			lua_rawget(l, -2);
+			CacheIsActual = (lua_type(l, -1) == LUA_TNUMBER && lua_tointeger(l, -1) == EventSrv->GetFiredEventsCount());
+			lua_pop(l, 2);
+		}
+		else lua_pop(l, 1);
 
-		//lua_getglobal(l, "CurrEvent");
-		//!!!FIXME!
-		//!!!not guaranteed that curr CEventBase was not reused in the same frame for other event!
-		//???use some event UID cleared to 0 each frame & compare by ID?
-		//or at first conversion set some flag into event params?
-		//???may be USE STATIC COUNTER and update on value changed?
-		//if (lua_isnil(l, -1) || lua_touserdata(l, -1) != &Event)
-		//{
-			if (ScriptSrv->DataToLuaStack(((const CEvent&)Event).Params) == 1)
-			{
-				lua_pushstring(l, e.GetID().ID);
-				lua_setfield(l, -2, "EventName");
-				lua_setglobal(l, "CurrEventParams");
-			}
-			//lua_pushlightuserdata(l, (void*)&Event);
-			//lua_setglobal(l, "CurrEvent");
-		//}
-		//lua_pop(l, 1);
+		// Update params cache. DataToLuaStack returns table, and we add a couple of fields into it. 
+		if (!CacheIsActual && ScriptSrv->DataToLuaStack(e.Params) == 1)
+		{
+			n_assert_dbg(lua_istable(l, -1));
+			lua_pushstring(l, "EventID");
+			lua_pushstring(l, e.GetID().ID);
+			lua_rawset(l, -3);
+			lua_pushstring(l, "_EV_UID");
+			lua_pushinteger(l, EventSrv->GetFiredEventsCount());
+			lua_rawset(l, -3);
+			lua_setglobal(l, "CurrEventParams");
+		}
 
 		if (pObject) pObject->RunFunction(Func.CStr(), "CurrEventParams");
-		//!!!else ScriptSrv->RunFunction(Func.CStr());! (global func call)
+		//!!!else ScriptSrv->RunFunction(Func.CStr(), "CurrEventParams");! (global func call)
 	}
 	else
 	{
