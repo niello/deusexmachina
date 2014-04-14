@@ -3,7 +3,6 @@
 #define __DEM_L1_EVENT_MANAGER_H__
 
 #include "EventDispatcher.h"
-#include "EventBase.h"
 #include <Data/Pool.h>
 #include <Core/Singleton.h>
 
@@ -25,18 +24,27 @@ class CEventServer: public CEventDispatcher
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CEventServer);
 
-public:
+protected:
 
-	// For internal usage
-	CPool<CEventNode>		EventNodes;
+	CPool<CEventNode>	EventNodes;
 
 	//!!!cache pool of free events, get from here if can
 	//or store cache pools in CEventServer
 
-	CEventServer();
-	virtual ~CEventServer();
+	int					EventsFiredTotal;
 
-	//!!!use pool inside!
+public:
+
+	CEventServer(): CEventDispatcher(256) { __ConstructSingleton; }
+	virtual ~CEventServer() { Clear(); __DestructSingleton; }
+
+	CEventNode*	CreateNode() { return EventNodes.Construct(); }
+	void		DestroyNode(CEventNode* pNode) { EventNodes.Destroy(pNode); }
+
+	void		IncrementFiredEventsCount() { ++EventsFiredTotal; }
+	int			GetFiredEventsCount() const { return EventsFiredTotal; }
+
+	//!!!use pool inside! from map RTTI->Pool (store such mapping in Factory?)
 	//Ptr<CEventNative>			CreateNativeEvent(const Core::CRTTI* RTTI);
 	//template<class T> Ptr<T>	CreateNativeEvent();
 };

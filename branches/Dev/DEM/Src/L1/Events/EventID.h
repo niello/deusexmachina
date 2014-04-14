@@ -9,7 +9,6 @@
 
 namespace Events
 {
-
 using namespace Core;
 
 struct CEventID

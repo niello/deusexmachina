@@ -7,19 +7,19 @@
 namespace Events
 {
 
-CEventDispatcher::~CEventDispatcher()
+void CEventDispatcher::Clear()
 {
 	while (PendingEventsHead)
 	{
 		CEventNode* Next = PendingEventsHead->Next;
-		EventSrv->EventNodes.Destroy(PendingEventsHead);
+		EventSrv->DestroyNode(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
 
 	while (EventsToAdd)
 	{
 		CEventNode* Next = EventsToAdd->Next;
-		EventSrv->EventNodes.Destroy(EventsToAdd);
+		EventSrv->DestroyNode(EventsToAdd);
 		EventsToAdd = Next;
 	}
 }
@@ -53,7 +53,7 @@ DWORD CEventDispatcher::ScheduleEvent(CEventBase& Event, float RelTime)
 
 	if (Event.Flags & EV_ASYNC)
 	{
-		CEventNode* New = EventSrv->EventNodes.Construct();
+		CEventNode* New = EventSrv->CreateNode();
 		n_assert2(New, "Nervous system of the engine was paralyzed! Can't allocate event node");
 		New->Event = &Event;
 		New->FireTime = (float)TimeSrv->GetTime() + RelTime;
@@ -123,16 +123,21 @@ DWORD CEventDispatcher::DispatchEvent(const CEventBase& Event)
 	while (Sub.IsValid());
 
 	// Look for subscriptions to any event
-	if (Subscriptions.Get(NULL, Sub)) do
+	if (!(Event.Flags & EV_IGNORE_NULL_SUBS))
 	{
-		if (Sub->operator ()(Event))
+		if (Subscriptions.Get(NULL, Sub)) do
 		{
-			++HandledCounter;
-			if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
+			if (Sub->operator ()(Event))
+			{
+				++HandledCounter;
+				if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
+			}
+			Sub = Sub->Next;
 		}
-		Sub = Sub->Next;
+		while (Sub.IsValid());
 	}
-	while (Sub.IsValid());
+
+	EventSrv->IncrementFiredEventsCount();
 
 	return HandledCounter;
 }
@@ -176,7 +181,7 @@ void CEventDispatcher::ProcessPendingEvents()
 		n_assert(PendingEventsHead->Event);
 		DispatchEvent(*PendingEventsHead->Event);
 		CEventNode* Next = PendingEventsHead->Next;
-		EventSrv->EventNodes.Destroy(PendingEventsHead);
+		EventSrv->DestroyNode(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
 	if (!PendingEventsHead) PendingEventsTail = NULL;

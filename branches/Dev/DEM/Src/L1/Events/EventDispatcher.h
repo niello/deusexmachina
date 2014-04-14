@@ -42,9 +42,8 @@ protected:
 
 public:
 
-	CEventDispatcher();
-	CEventDispatcher(int HashTableCapacity);
-	virtual ~CEventDispatcher();
+	CEventDispatcher(int HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE);
+	virtual ~CEventDispatcher() { Clear(); }
 
 	bool					AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub = NULL);
 
@@ -53,6 +52,7 @@ public:
 	DWORD					FireEvent(CEventNative& Event, char Flags = -1, float RelTime = 0.f); /// native
 
 	void					ProcessPendingEvents();
+	void					Clear();
 
 	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, ushort Priority = Priority_Default);
 	template<class T> bool	Subscribe(CEventID ID, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
@@ -61,14 +61,6 @@ public:
 };
 
 typedef Ptr<CEventDispatcher> PEventDispatcher;
-
-inline CEventDispatcher::CEventDispatcher():
-	PendingEventsHead(NULL),
-	PendingEventsTail(NULL),
-	EventsToAdd(NULL)
-{
-}
-//---------------------------------------------------------------------
 
 inline CEventDispatcher::CEventDispatcher(int HashTableCapacity):
 	Subscriptions(HashTableCapacity),
