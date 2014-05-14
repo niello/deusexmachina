@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_PHYSICS_SERVER_H__
 #define __DEM_L1_PHYSICS_SERVER_H__
 
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Resources/ResourceManager.h>
 #include <Physics/CollisionShape.h>
 #include <Data/DynamicEnum.h>
@@ -16,7 +16,7 @@ class CPhysicsDebugDraw;
 
 #define PhysicsSrv Physics::CPhysicsServer::Instance()
 
-class CPhysicsServer: public Core::CRefCounted
+class CPhysicsServer: public Core::CObject
 {
 	__DeclareClass(CPhysicsServer);
 	__DeclareSingleton(CPhysicsServer);

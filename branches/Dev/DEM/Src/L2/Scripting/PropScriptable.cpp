@@ -2,6 +2,7 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Game/Entity.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

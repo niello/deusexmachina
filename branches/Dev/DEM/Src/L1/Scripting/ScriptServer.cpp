@@ -22,7 +22,7 @@ extern "C"
 
 namespace Scripting
 {
-__ImplementClassNoFactory(Scripting::CScriptServer, Core::CRefCounted);
+__ImplementClassNoFactory(Scripting::CScriptServer, Core::CObject);
 __ImplementSingleton(CScriptServer);
 
 CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)
@@ -109,7 +109,7 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	else
 	{
 		//???type string or value string?
-		n_printf_dbg("Can't push data to Lua stack: <%s>\n", Data.ToString());
+		DBG_ONLY(Core::Log("Can't push data to Lua stack: <%s>\n", Data.ToString()));
 		return 0;
 	}
 
@@ -147,7 +147,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 				if (lua_type(l, -2) == LUA_TSTRING)
 				{
 					if (MaxKey > -1)
-						n_printf("CScriptServer::LuaStackToData, Warning: mixed table, int & string keys, "
+						Core::Log("CScriptServer::LuaStackToData, Warning: mixed table, int & string keys, "
 								 "will convert only string ones\n");
 					MaxKey = -1;
 					lua_pop(l, 2);
@@ -158,7 +158,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 					Key = lua_tointeger(l, -2);
 					if (Key <= 0)
 					{
-						n_printf("CScriptServer::LuaStackToData: Incorrect array index (Idx < 0)\n");
+						Core::Log("CScriptServer::LuaStackToData: Incorrect array index (Idx < 0)\n");
 						lua_pop(l, 2);
 						FAIL;
 					}
@@ -212,7 +212,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 		case LUA_TTHREAD:		FAIL;
 		default:
 		{
-			n_printf("Conversion from Lua to CData failed, unknown Lua type %d\n", Type);
+			Core::Log("Conversion from Lua to CData failed, unknown Lua type %d\n", Type);
 			FAIL;
 		}
 	}
@@ -232,7 +232,7 @@ DWORD CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal
 	DWORD Result;
 	if (luaL_loadbuffer(l, Buffer, ((Length > -1) ? Length : strlen(Buffer)), Buffer) != 0)
 	{
-		n_printf("Error parsing script for ScriptSrv: %s\n", lua_tostring(l, -1));
+		Core::Log("Error parsing script for ScriptSrv: %s\n", lua_tostring(l, -1));
 		lua_pop(l, 1); // Error msg
 		Result = Error_Scripting_Parsing;
 	}
@@ -242,7 +242,7 @@ DWORD CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal
 		if (!ExecResultIsError(Result)) return Result;
 	}
 
-	n_printf("Script is: %s\n", Buffer);
+	Core::Log("Script is: %s\n", Buffer);
 	return Result;
 }
 //---------------------------------------------------------------------
@@ -254,7 +254,7 @@ DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCSTR pDbg
 
 	if (lua_pcall(l, ArgCount, LUA_MULTRET, 0))
 	{
-		n_printf("Error running %s: %s\n", pDbgName, lua_tostring(l, -1));
+		Core::Log("Error running %s: %s\n", pDbgName, lua_tostring(l, -1));
 		lua_pop(l, 1); // Error msg
 		return Error;
 	}
@@ -422,8 +422,8 @@ bool CScriptServer::LoadClass(const CString& Name)
 	{
 		if (luaL_loadbuffer(l, pData, Size, Name.CStr()) != 0)
 		{
-			n_printf("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-			if (pCodePrm->IsA<CString>()) n_printf("Script is: %s\n", pData);
+			Core::Log("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+			if (pCodePrm->IsA<CString>()) Core::Log("Script is: %s\n", pData);
 			lua_pop(l, 2);
 			FAIL; // return Error_Scripting_Parsing;
 		}
@@ -433,8 +433,8 @@ bool CScriptServer::LoadClass(const CString& Name)
 
 		if (lua_pcall(l, 0, 0, 0))
 		{
-			n_printf("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-			if (pCodePrm->IsA<CString>()) n_printf("Script is: %s\n", pData);
+			Core::Log("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+			if (pCodePrm->IsA<CString>()) Core::Log("Script is: %s\n", pData);
 			lua_pop(l, 2); // Error msg, class table
 			FAIL;
 		}
@@ -487,7 +487,7 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 		lua_setfenv(l, -2);
 		if (lua_pcall(l, 0, 0, 0))
 		{
-			n_printf("Error running %s class constructor for %s: %s\n",
+			Core::Log("Error running %s class constructor for %s: %s\n",
 				LuaClassName, Obj.Name.CStr(), lua_tostring(l, -1));
 			lua_pop(l, 2);
 			FAIL;
@@ -511,7 +511,7 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 		else if (!lua_istable(l, -1))
 		{
 			//???assert?
-			n_printf("Error: table name \"%s\" is used by other non-table object\n", Obj.Table.CStr());
+			Core::Log("Error: table name \"%s\" is used by other non-table object\n", Obj.Table.CStr());
 			lua_pop(l, 2);
 			FAIL;
 		}

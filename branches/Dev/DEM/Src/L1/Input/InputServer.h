@@ -4,7 +4,7 @@
 
 #include <Events/EventDispatcher.h>
 #include <Events/EventsFwd.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Input/Keys.h>
 #include <Input/ControlLayout.h>
 #include <Data/Dictionary.h>

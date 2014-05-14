@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_AI_ACTION_H__
 #define __DEM_L2_AI_ACTION_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <AI/ActorFwd.h>
 
 // Base class of all actions executed by actors
@@ -15,7 +15,7 @@ namespace Data
 namespace AI
 {
 
-class CAction: public Core::CRefCounted
+class CAction: public Core::CObject
 {
 public:
 

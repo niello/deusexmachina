@@ -3,7 +3,7 @@
 #include <Events/EventServer.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
-#include <Core/Logger.h>
+#include <Core/Factory.h>
 
 #include <UI/CEGUI/CEGUIFmtLbTextItem.h>
 #include <elements/CEGUIEditbox.h>
@@ -15,7 +15,7 @@
 
 namespace Debug
 {
-__ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CRefCounted); //UI::CWindow);
+__ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CObject); //UI::CWindow);
 
 void CLuaConsole::Init(CEGUI::Window* pWindow)
 {
@@ -35,13 +35,13 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 	pOutputWnd = (CEGUI::Listbox*)pWnd->getChild(pWnd->getName() + "/OutputList");
 	pVertScroll = pOutputWnd->getVertScrollbar();
 
-	CLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();
-	if (pLineBuffer)
-	{
-		LPCSTR Lines[MAX_LINES_START];
-		int Count = pLineBuffer->GetLines(Lines, MAX_LINES_START);
-		while (--Count >= 0) Print(Lines[Count], 0xffb0b0b0);
-	}
+	//CLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();
+	//if (pLineBuffer)
+	//{
+	//	LPCSTR Lines[MAX_LINES_START];
+	//	int Count = pLineBuffer->GetLines(Lines, MAX_LINES_START);
+	//	while (--Count >= 0) Print(Lines[Count], 0xffb0b0b0);
+	//}
 
 	SUBSCRIBE_PEVENT(OnLogMsg, CLuaConsole, OnLogMsg);
 }
@@ -93,7 +93,7 @@ void CLuaConsole::Print(LPCSTR pMsg, DWORD Color)
 bool CLuaConsole::OnLogMsg(const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	DWORD Color = (P->Get<int>(CStrID("Type")) == Core::CLogger::MsgTypeError) ? 0xfff0c0c0 : 0xffb0b0b0;
+	DWORD Color = (P->Get<int>(CStrID("Type")) == Core::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;
 	Print((LPCSTR)P->Get<PVOID>(CStrID("pMsg")), Color);
 	OK;
 }
@@ -126,7 +126,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	else if (!strcmp(pCmd, "cls")) pOutputWnd->resetList();
 	else if (!strcmp(pCmd, "help"))
 	{
-		n_printf(	"Debug Lua console.\n"
+		Core::Log(	"Debug Lua console.\n"
 					" help                           - view this help\n"
 					" exit                           - close the application\n"
 					" cls                            - clear output window\n"
@@ -143,12 +143,12 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		if (ScriptSrv->PlaceOnStack(pTable))
 		{
 			ScriptSrv->GetTableFieldsDebug(Contents);
-			n_printf("----------\n");
+			Core::Log("----------\n");
 			for (int i = 0; i < Contents.GetCount(); ++i)
 				Print(Contents[i].CStr(), 0xffb0b0b0);
-			n_printf("----------\n");
+			Core::Log("----------\n");
 		}
-		else n_printf("Lua table not found\n");
+		else Core::Log("Lua table not found\n");
 	}
 	//else if (!strncmp(pCmd, "cd ", 3))
 	//{
@@ -159,7 +159,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	{
 		Data::CData RetVal;
 		ScriptSrv->RunScript(pCmd, -1, &RetVal);
-		if (RetVal.IsValid()) n_printf("Return value: %s\n", RetVal.ToString());
+		if (RetVal.IsValid()) Core::Log("Return value: %s\n", RetVal.ToString());
 	}
 
 	if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);

@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_IO_SERVER_H__
 #define __DEM_L1_IO_SERVER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <IO/IOFwd.h>
 #include <Data/HashTable.h>
 
@@ -27,7 +27,7 @@ typedef void (__stdcall *CReleaseMemoryCallback)(void* p);
 
 #define IOSrv IO::CIOServer::Instance()
 
-class CIOServer: public Core::CRefCounted
+class CIOServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CIOServer);

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_MATH_POLAR_H__
 #define __DEM_L1_MATH_POLAR_H__
 
-#include <mathlib/vector.h>
+#include <Math/Vector3.h>
 
 // A polar coordinate inline class, consisting of 2 angles Theta (latitude) and Phi (longitude).
 // Also offers conversion between cartesian and polar space.

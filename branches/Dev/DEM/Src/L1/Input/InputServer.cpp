@@ -17,7 +17,7 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputServer, Core::CRefCounted);
+__ImplementClassNoFactory(Input::CInputServer, Core::CObject);
 __ImplementSingleton(Input::CInputServer);
 
 CInputServer::CInputServer(): CEventDispatcher(16), _IsOpen(false)

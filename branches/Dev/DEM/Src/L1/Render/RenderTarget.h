@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_TARGET_H__
 #define __DEM_L1_RENDER_TARGET_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Render/RenderFwd.h>
 #include <Events/EventsFwd.h>
@@ -15,7 +15,7 @@ namespace Render
 {
 typedef Ptr<class CTexture> PTexture;
 
-class CRenderTarget: public Core::CRefCounted
+class CRenderTarget: public Core::CObject
 {
 protected:
 

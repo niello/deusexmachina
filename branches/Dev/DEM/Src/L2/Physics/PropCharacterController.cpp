@@ -7,6 +7,7 @@
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Render/DebugDraw.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

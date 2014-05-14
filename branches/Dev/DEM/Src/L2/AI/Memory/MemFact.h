@@ -3,7 +3,7 @@
 #define __DEM_L2_AI_MEM_FACT_H__
 
 #include <StdDEM.h>
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Flags.h>
 
 // Memory fact is a knowledge symbol instance, used for decision making. Symbols represent
@@ -13,7 +13,7 @@
 namespace AI
 {
 
-class CMemFact: public Core::CRefCounted
+class CMemFact: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

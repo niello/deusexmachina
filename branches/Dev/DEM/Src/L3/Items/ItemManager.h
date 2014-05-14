@@ -2,8 +2,8 @@
 #ifndef __DEM_L3_ITEM_MANAGER_H__
 #define __DEM_L3_ITEM_MANAGER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <Data/HashTable.h>
 #include <Items/ItemTpl.h>
 
@@ -19,7 +19,7 @@ namespace Items
 {
 #define ItemMgr Items::CItemManager::Instance()
 
-class CItemManager: public Core::CRefCounted
+class CItemManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CItemManager);

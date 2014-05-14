@@ -31,7 +31,7 @@
 
 namespace UI
 {
-__ImplementClassNoFactory(UI::CUIServer, Core::CRefCounted);
+__ImplementClassNoFactory(UI::CUIServer, Core::CObject);
 __ImplementSingleton(UI::CUIServer);
 
 CUIServer::CUIServer()

@@ -1,5 +1,6 @@
 #include "CollisionShape.h"
 
+#include <Core/Factory.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 
 namespace Physics

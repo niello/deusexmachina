@@ -1,6 +1,7 @@
 #include "GoalWander.h"
 
 #include <Data/StringID.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

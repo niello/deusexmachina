@@ -2,6 +2,7 @@
 
 #include <Render/RenderServer.h>
 #include <Events/EventServer.h>
+#include <Core/Factory.h>
 
 namespace Render
 {
@@ -37,7 +38,7 @@ bool CShader::Setup(ID3DXEffect* pFX)
 
 			n_assert_dbg(FlagsToTech.GetCount());
 		}
-		else n_printf("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
+		else Core::Log("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}
 	FlagsToTech.EndAdd();
 

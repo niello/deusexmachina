@@ -4,7 +4,7 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CCameraManager, Core::CRefCounted);
+__ImplementClassNoFactory(Scene::CCameraManager, Core::CObject);
 
 bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithCamera)
 {

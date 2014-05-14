@@ -1,6 +1,7 @@
 #include "DebugTextRenderer.h"
 
 #include <Render/DebugDraw.h>
+#include <Core/Factory.h>
 
 namespace Render
 {

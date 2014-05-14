@@ -5,6 +5,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/AIServer.h>
 #include <Events/EventServer.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

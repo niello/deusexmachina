@@ -4,7 +4,7 @@
 
 #include <Events/EventDispatcher.h>
 #include <Scene/CameraManager.h>
-#include <mathlib/rectangle.h>
+#include <Math/Rect.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
 // Game server allows to perform different queries on a location.

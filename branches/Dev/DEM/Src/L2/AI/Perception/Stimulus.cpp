@@ -2,5 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CStimulus, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CStimulus, Core::CObject);
 }

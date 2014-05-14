@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_UI_WINDOW_H__
 #define __DEM_L1_UI_WINDOW_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <StdDEM.h>
 #include <CEGUIWindow.h>
 
@@ -11,7 +11,7 @@
 namespace UI
 {
 
-class CWindow: public Core::CRefCounted
+class CWindow: public Core::CObject
 {
 	__DeclareClass(CWindow);
 

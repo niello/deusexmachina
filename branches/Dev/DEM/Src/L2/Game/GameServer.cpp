@@ -16,7 +16,7 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CGameServer, Core::CRefCounted);
+__ImplementClassNoFactory(Game::CGameServer, Core::CObject);
 __ImplementSingleton(CGameServer);
 
 bool CGameServer::Open()
@@ -152,7 +152,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
 				if (!Tpl.IsValid())
 				{
-					n_printf("Entity template '%s' not found for entity %s in level %s\n",
+					Core::Log("Entity template '%s' not found for entity %s in level %s\n",
 						TplName.CStr(), EntityPrm.GetName().CStr(), Level->GetID().CStr());
 					continue;
 				}
@@ -162,7 +162,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 			}
 
 			if (!Loader->Load(EntityPrm.GetName(), *Level, *EntityDesc))
-				n_printf("Entity %s not loaded in level %s, group is %s\n",
+				Core::Log("Entity %s not loaded in level %s, group is %s\n",
 					EntityPrm.GetName().CStr(), Level->GetID().CStr(), LoadingGroup.CStr());
 		}
 

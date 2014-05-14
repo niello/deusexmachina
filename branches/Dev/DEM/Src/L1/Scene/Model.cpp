@@ -3,6 +3,7 @@
 #include <Scene/Scene.h>
 #include <Render/RenderServer.h>
 #include <IO/BinaryReader.h>
+#include <Core/Factory.h>
 
 namespace Render
 {

@@ -5,7 +5,7 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CNodeController, Core::CRefCounted);
+__ImplementClassNoFactory(Scene::CNodeController, Core::CObject);
 
 void CNodeController::RemoveFromNode()
 {

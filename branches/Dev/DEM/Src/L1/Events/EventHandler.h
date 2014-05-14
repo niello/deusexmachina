@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_EVENT_HANDLER_H__
 #define __DEM_L1_EVENT_HANDLER_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Events/EventsFwd.h>
 
 // Event handler is an abstract wrapper to event handling function (functor)
@@ -10,7 +10,7 @@
 namespace Events
 {
 
-class CEventHandler: public Core::CRefCounted
+class CEventHandler: public Core::CObject
 {
 protected:
 

@@ -5,7 +5,7 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CProperty, Core::CRefCounted);
+__ImplementClassNoFactory(Game::CProperty, Core::CObject);
 
 CProperty::~CProperty()
 {

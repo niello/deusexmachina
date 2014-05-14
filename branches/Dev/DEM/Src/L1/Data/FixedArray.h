@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_FIXED_ARRAY_H__
 #define __DEM_L1_FIXED_ARRAY_H__
 
-#include <StdDEM.h>
+#include <Core/Core.h>
 #include <algorithm> // std::sort
 
 // A fixed count, bounds checked array.

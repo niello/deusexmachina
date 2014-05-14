@@ -9,7 +9,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CActionTpl, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CActionTpl, Core::CObject);
 
 void CActionTpl::Init(Data::PParams Params)
 {

@@ -11,7 +11,7 @@
 namespace Input
 {
 
-class CControlLayout: public Core::CRefCounted
+class CControlLayout: public Core::CObject
 {
 private:
 

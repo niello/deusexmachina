@@ -1,6 +1,7 @@
 #include "MocapClip.h"
 
 #include <Animation/NodeControllerMocap.h>
+#include <Core/Factory.h>
 
 namespace Anim
 {

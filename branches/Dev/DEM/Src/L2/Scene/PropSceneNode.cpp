@@ -9,6 +9,7 @@
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>
 #include <Render/DebugDraw.h>
+#include <Core/Factory.h>
 
 namespace Scene
 {

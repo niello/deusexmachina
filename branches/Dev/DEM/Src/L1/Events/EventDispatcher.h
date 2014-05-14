@@ -18,7 +18,7 @@ namespace Data
 namespace Events
 {
 
-class CEventDispatcher: public Core::CRefCounted
+class CEventDispatcher: public Core::CObject
 {
 protected:
 

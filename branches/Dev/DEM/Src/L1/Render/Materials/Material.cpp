@@ -1,6 +1,7 @@
 #include "Material.h"
 
 #include <Render/Materials/ShaderVar.h>
+#include <Core/Factory.h>
 
 namespace Render
 {

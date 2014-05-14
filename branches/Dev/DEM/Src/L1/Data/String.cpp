@@ -2,6 +2,83 @@
 
 const CString CString::Empty;
 
+//!!!to CString/Utils!
+// A strdup() implementation using engine's malloc() override.
+char* n_strdup(const char* from)
+{
+	n_assert(from);
+	int BufLen = strlen(from) + 1;
+	char* to = (char*)n_malloc(BufLen);
+	if (to) strcpy_s(to, BufLen, from);
+	return to;
+}
+//---------------------------------------------------------------------
+
+//!!!to CString/Utils!
+// A string matching function using Tcl's matching rules.
+bool n_strmatch(const char* str, const char* pat)
+{
+    char c2;
+
+    while (true)
+    {
+        if (!*pat) return !*str;
+        if (!*str && *pat != '*') return false;
+        if (*pat == '*')
+        {
+            ++pat;
+            if (!*pat) return true;
+            while (true)
+            {
+                if (n_strmatch(str, pat)) return true;
+                if (!*str) return false;
+                ++str;
+            }
+        }
+        if (*pat == '?') goto match;
+        if (*pat == '[')
+        {
+            ++pat;
+            while (true)
+            {
+                if (*pat == ']' || !*pat) return false;
+                if (*pat == *str) break;
+                if (pat[1] == '-')
+                {
+                    c2 = pat[2];
+                    if (!c2) return false;
+                    if (*pat <= *str && c2 >= *str) break;
+                    if (*pat >= *str && c2 <= *str) break;
+                    pat += 2;
+                }
+                ++pat;
+            }
+            while (*pat != ']')
+            {
+                if (!*pat)
+                {
+                    --pat;
+                    break;
+                }
+                ++pat;
+            }
+            goto match;
+        }
+
+        if (*pat == '\\')
+        {
+            ++pat;
+            if (!*pat) return false;
+        }
+        if (*pat != *str) return false;
+
+match:
+        ++pat;
+        ++str;
+    }
+}
+//---------------------------------------------------------------------
+
 //!!!Write preallocation and growing as in CArray!
 void CString::Reserve(DWORD NewLength)
 {

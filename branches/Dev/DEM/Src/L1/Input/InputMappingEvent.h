@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_INPUT_MAPPING_EVENT_H__
 #define __DEM_L1_INPUT_MAPPING_EVENT_H__
 
-//#include <Core/RefCounted.h>
+//#include <Core/Object.h>
 #include <Core/RTTI.h>
 #include <Events/EventsFwd.h>
 #include <Data/StringID.h>
@@ -22,7 +22,7 @@ namespace Data
 namespace Input
 {
 
-class CInputMappingEvent //: public Core::CRefCounted
+class CInputMappingEvent //: public Core::CObject
 {
 private:
 

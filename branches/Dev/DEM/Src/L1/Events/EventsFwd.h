@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_EVENTS_H__
 #define __DEM_L1_EVENTS_H__
 
-#include <Core/Ptr.h>
+#include <Data/Ptr.h>
 
 // Event system declarations and helpers
 

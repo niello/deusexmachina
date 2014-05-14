@@ -2,8 +2,9 @@
 #ifndef __DEM_L3_FACTION_H__
 #define __DEM_L3_FACTION_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
+#include <Data/Dictionary.h>
 
 // Faction is a group of characters that are on the same side of a conflict or has a common interest or goal.
 // Faction typically has a leader, and members can be ranked to determine weight or hierarchy of members.
@@ -12,7 +13,7 @@
 namespace RPG
 {
 
-class CFaction: public Core::CRefCounted
+class CFaction: public Core::CObject
 {
 protected:
 

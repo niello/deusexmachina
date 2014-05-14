@@ -43,7 +43,7 @@ bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PSh
 
 	if (FAILED(hr) || !pEffect)
 	{
-		n_message("FXLoader: failed to load fx file '%s' with:\n\n%s\n",
+		Core::Message("FXLoader: failed to load fx file '%s' with:\n\n%s\n",
 			FileName.CStr(),
 			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
 		if (pErrorBuffer) pErrorBuffer->Release();
@@ -51,7 +51,7 @@ bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PSh
 	}
 	else if (pErrorBuffer)
 	{
-		n_printf("FXLoader: fx file '%s' loaded with:\n\n%s\n", FileName.CStr(), pErrorBuffer->GetBufferPointer());
+		Core::Log("FXLoader: fx file '%s' loaded with:\n\n%s\n", FileName.CStr(), pErrorBuffer->GetBufferPointer());
 		pErrorBuffer->Release();
 	}
 

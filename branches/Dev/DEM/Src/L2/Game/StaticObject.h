@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_GAME_STATIC_OBJ_H__
 #define __DEM_L2_GAME_STATIC_OBJ_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 
 // Simplified entity, that represents a piece of static level geometry with
@@ -27,7 +27,7 @@ namespace Game
 {
 typedef Ptr<class CGameLevel> PGameLevel;
 
-class CStaticObject: public Core::CRefCounted
+class CStaticObject: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

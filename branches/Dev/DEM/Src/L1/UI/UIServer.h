@@ -3,7 +3,7 @@
 #define __DEM_L1_UI_SERVER_H__
 
 #include <UI/Window.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
@@ -33,7 +33,7 @@ typedef Ptr<class CWindow> PWindow;
 
 #define UISrv UI::CUIServer::Instance()
 
-class CUIServer: public Core::CRefCounted
+class CUIServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CUIServer);

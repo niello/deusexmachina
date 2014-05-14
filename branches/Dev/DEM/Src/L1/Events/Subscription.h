@@ -10,7 +10,7 @@
 namespace Events
 {
 
-class CSubscription: public Core::CRefCounted
+class CSubscription: public Core::CObject
 {
 private:
 

@@ -2,24 +2,23 @@
 #ifndef __DEM_L1_RTTI_H__
 #define __DEM_L1_RTTI_H__
 
-#include <StdDEM.h>
 #include <Data/FourCC.h>
 #include <Data/String.h>
 
 // Implements the runtime type information system of Mangalore. Every class
-// derived from CRefCounted should define a static RTTI object which is initialized
+// derived from CObject should define a static RTTI object which is initialized
 // with a pointer to a static string containing the human readable Name
 // of the class, and a pointer to the static RTTI object of the Parent class.
 
 namespace Core
 {
-class CRefCounted;
+class CObject;
 
 class CRTTI
 {
 private:
 
-	typedef CRefCounted* (*CFactoryFunc)(void* pParam);
+	typedef CObject* (*CFactoryFunc)(void* pParam);
 
 	CString			Name;
 	Data::CFourCC	FourCC;
@@ -33,7 +32,7 @@ public:
 
 	CRTTI(const CString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
 
-	CRefCounted*	CreateInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
+	CObject*	CreateInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
 	//void*			AllocInstanceMemory() const { return n_malloc(InstanceSize); }
 	//void			FreeInstanceMemory(void* pPtr) { n_free(pPtr); }
 
@@ -107,7 +106,7 @@ public: \
 	static Core::CRTTI	RTTI; \
 	static const bool	Registered; \
 	virtual Core::CRTTI*		GetRTTI() const; \
-	static Core::CRefCounted*	FactoryCreator(void* pParam); \
+	static Core::CObject*	FactoryCreator(void* pParam); \
 	static Class*				CreateInstance(void* pParam = NULL); \
 	static bool					RegisterInFactory(); \
 	static void					ForceFactoryRegistration(); \
@@ -122,7 +121,7 @@ private:
 #define __ImplementClass(Class, FourCC, ParentClass) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
 	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
-	Core::CRefCounted* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
+	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
 	{ \
@@ -143,7 +142,7 @@ private:
 #define __ImplementRootClass(Class, FourCC) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, NULL, sizeof(Class)); \
 	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
-	Core::CRefCounted* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
+	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
 	{ \

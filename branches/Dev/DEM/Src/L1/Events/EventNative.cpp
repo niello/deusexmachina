@@ -2,5 +2,5 @@
 
 namespace Events
 {
-__ImplementClassNoFactory(Events::CEventNative, Core::CRefCounted);
+__ImplementClassNoFactory(Events::CEventNative, Core::CObject);
 }

@@ -4,6 +4,7 @@
 #include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <IO/Streams/FileStream.h>
+#include <Core/Factory.h>
 
 namespace Scene
 {

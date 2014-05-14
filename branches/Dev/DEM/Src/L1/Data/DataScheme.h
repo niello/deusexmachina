@@ -5,6 +5,7 @@
 #include <Data/Params.h>
 #include <Data/Flags.h>
 #include <Data/Array.h>
+#include <Data/FourCC.h>
 
 // Data serialization scheme declares structure of CParams list and allows to omit saving
 // redundant info (types, keys etc). Use it to save CParams/HRD to custom binary files
@@ -15,7 +16,7 @@ namespace Data
 {
 typedef Ptr<class CDataScheme> PDataScheme;
 
-class CDataScheme: public Core::CRefCounted
+class CDataScheme: public CRefCounted
 {
 public:
 

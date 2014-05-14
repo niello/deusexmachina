@@ -1,9 +1,9 @@
 #include "Params.h"
 
+#include <Data/Dictionary.h>
+
 namespace Data
 {
-__ImplementClass(Data::CParams, 'PRMS', Core::CRefCounted);
-
 DEFINE_TYPE(PParams)
 
 void CParams::FromDataDict(const CDataDict& Dict)

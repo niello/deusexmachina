@@ -4,8 +4,9 @@
 
 #include <StdDEM.h>
 #include <AI/ActorFwd.h>
-#include <Core/Ptr.h>
-#include <mathlib/vector.h>
+#include <Data/Ptr.h>
+#include <Math/Vector2.h>
+#include <Math/Vector3.h>
 
 // Motor system is responsible for steering, facing and other position/orientation
 // changes of the actor. This system uses physics interface to perform actual movement.

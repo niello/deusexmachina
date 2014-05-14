@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_ITEM_TPL_H__
 #define __DEM_L3_ITEM_TPL_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 
 // Item template is a factory for creation of item instances. It is a "class" of concrete items like
@@ -19,7 +19,7 @@ namespace Items
 {
 class CItem;
 
-class CItemTpl: public Core::CRefCounted
+class CItemTpl: public Core::CObject
 {
 	__DeclareClass(CItemTpl);
 

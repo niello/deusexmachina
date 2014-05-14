@@ -7,7 +7,7 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CEntity, Core::CRefCounted);
+__ImplementClassNoFactory(Game::CEntity, Core::CObject);
 
 CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID)
 {

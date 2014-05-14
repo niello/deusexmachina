@@ -4,12 +4,13 @@
 #include <AI/Behaviour/Action.h>
 #include <Data/Params.h>
 #include <Events/EventServer.h>
+#include <Core/Factory.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourObstacleAvoidance.h>
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CAIServer, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CAIServer, Core::CObject);
 __ImplementSingleton(AI::CAIServer);
 
 CAIServer::CAIServer()

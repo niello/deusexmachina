@@ -2,15 +2,15 @@
 #ifndef __DEM_L1_DATA_ARRAY_H__
 #define __DEM_L1_DATA_ARRAY_H__
 
-#include <Core/RefCounted.h>
-#include "Data.h"
+#include <Data/RefCounted.h>
+#include <Data/Data.h>
 
 // Array of variant variables
 
 namespace Data
 {
 
-class CDataArray: public CArray<CData>, public Core::CRefCounted
+class CDataArray: public CArray<CData>, public CRefCounted
 {
 public:
 

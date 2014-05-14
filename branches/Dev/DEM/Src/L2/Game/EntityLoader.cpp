@@ -2,5 +2,5 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::IEntityLoader, Core::CRefCounted);
+__ImplementClassNoFactory(Game::IEntityLoader, Core::CObject);
 }

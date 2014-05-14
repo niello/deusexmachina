@@ -12,7 +12,7 @@ class btDiscreteDynamicsWorld;
 namespace Physics
 {
 
-class CPhysicsWorld: public Core::CRefCounted
+class CPhysicsWorld: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

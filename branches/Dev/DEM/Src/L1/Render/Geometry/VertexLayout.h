@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_VERTEX_LAYOUT_H__
 #define __DEM_L1_RENDER_VERTEX_LAYOUT_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Render/D3D9Fwd.h>
 
@@ -60,7 +60,7 @@ struct CVertexComponent
 
 typedef Ptr<class CVertexLayout> PVertexLayout;
 
-class CVertexLayout: public Core::CRefCounted
+class CVertexLayout: public Core::CObject
 {
 protected:
 

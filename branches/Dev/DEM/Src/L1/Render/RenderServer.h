@@ -10,7 +10,7 @@
 #include <Resources/ResourceManager.h>
 #include <Data/Data.h>
 #include <Data/DynamicEnum.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 
@@ -23,7 +23,7 @@ namespace Render
 {
 #define RenderSrv Render::CRenderServer::Instance()
 
-class CRenderServer: public Core::CRefCounted
+class CRenderServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CRenderServer);

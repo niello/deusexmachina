@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_AUDIO_SERVER_H__
 #define __DEM_L1_AUDIO_SERVER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <Events/EventsFwd.h>
 #include <Audio/Audio.h>
 #define WIN32_LEAN_AND_MEAN
@@ -25,7 +25,7 @@ class CSoundResource;
 
 #define AudioSrv Audio::CAudioServer::Instance()
 
-class CAudioServer: public Core::CRefCounted
+class CAudioServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CAudioServer);

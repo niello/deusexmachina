@@ -2,8 +2,8 @@
 #ifndef __DEM_L3_WORLD_MANAGER_H__
 #define __DEM_L3_WORLD_MANAGER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 
@@ -17,7 +17,7 @@ namespace RPG
 {
 #define WorldMgr RPG::CWorldManager::Instance()
 
-class CWorldManager: public Core::CRefCounted
+class CWorldManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CWorldManager);

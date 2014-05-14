@@ -38,7 +38,7 @@ bool LoadTextureUsingD3DX(IO::CStream& In, PTexture OutTexture)
 		return OutTexture->Setup((IDirect3DBaseTexture9*)pTex, CTexture::TextureCube);
 	}
 
-	n_printf("LoadTextureUsingD3DX() -> Unknown texture type!");
+	Core::Log("LoadTextureUsingD3DX() -> Unknown texture type!");
 	FAIL;
 }
 //---------------------------------------------------------------------

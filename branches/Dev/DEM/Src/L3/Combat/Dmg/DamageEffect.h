@@ -3,7 +3,7 @@
 #define __IPG_DMG_EFFECT_H__
 
 #include "Damage.h"
-//#include <Core/RefCounted.h>
+//#include <Core/Object.h>
 
 // Damage effect causes damage on Destructible object according to some rules incorporated into this effect.
 // Sends or feeds with data ObjDamageDone message.
@@ -20,7 +20,7 @@ namespace Dmg
 using namespace Prop;
 
 //???struct?
-class CDamageEffect //???public CEffect? //: public Core::CRefCounted
+class CDamageEffect //???public CEffect? //: public Core::CObject
 {
 public:
 

@@ -3,7 +3,7 @@
 #define __DEM_L1_FILE_SYSTEM_WIN32_H__
 
 #include <IO/FileSystem.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 
 // Win32 file system wrapper. It is always created as singleton.
 

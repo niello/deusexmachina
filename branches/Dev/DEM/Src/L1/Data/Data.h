@@ -7,7 +7,7 @@
 #include <Data/String.h>
 
 #ifdef _DEBUG
-	#include <Core/Ptr.h>
+	#include <Data/Ptr.h>
 #endif
 
 // Variant data type with compile-time extendable type list

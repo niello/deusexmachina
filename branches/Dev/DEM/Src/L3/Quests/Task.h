@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_STORY_TASK_H__
 #define __DEM_L3_STORY_TASK_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 
 // Task is an atomic part of the quest which can be activated and then completed or failed
@@ -16,7 +16,7 @@ namespace Scripting
 namespace Story
 {
 
-class CTask: public Core::CRefCounted
+class CTask: public Core::CObject
 {
 public:
 

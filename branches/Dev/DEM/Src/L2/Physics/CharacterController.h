@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_CHARACTER_CTLR_H__
 #define __DEM_L2_CHARACTER_CTLR_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 
 // Character controller is used to drive characters. It gets desired velocities and other commands
 // as input and calculates final transform, taking different character properties into account.
@@ -28,7 +28,7 @@ enum ECharacterState
 	Char_Falling
 };
 
-class CCharacterController: public Core::CRefCounted
+class CCharacterController: public Core::CObject
 {
 protected:
 

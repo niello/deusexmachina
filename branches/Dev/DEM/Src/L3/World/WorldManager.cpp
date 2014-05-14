@@ -5,7 +5,7 @@
 
 namespace RPG
 {
-__ImplementClassNoFactory(RPG::CWorldManager, Core::CRefCounted);
+__ImplementClassNoFactory(RPG::CWorldManager, Core::CObject);
 __ImplementSingleton(RPG::CWorldManager);
 
 CWorldManager::CWorldManager()

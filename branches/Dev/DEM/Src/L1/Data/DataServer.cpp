@@ -11,7 +11,7 @@
 
 namespace Data
 {
-__ImplementClassNoFactory(Data::CDataServer, Core::CRefCounted);
+__ImplementClassNoFactory(Data::CDataServer, Core::CObject);
 __ImplementSingleton(Data::CDataServer);
 
 CDataServer::CDataServer(): HRDCache(256)
@@ -39,7 +39,7 @@ PParams CDataServer::ReloadHRD(const CString& FileName, bool Cache)
 	{
 		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
-	//else n_printf("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
+	//else Core::Log("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
 
 	return Params;
 }
@@ -77,7 +77,7 @@ PParams CDataServer::ReloadPRM(const CString& FileName, bool Cache)
 	if (!File.Open(FileName, IO::SAM_READ)) return NULL;
 	IO::CBinaryReader Reader(File);
 
-	PParams Params = CParams::CreateInstance();
+	PParams Params = n_new(CParams);
 	if (Reader.ReadParams(*Params))
 	{
 		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle path to avoid duplicates?
@@ -85,7 +85,7 @@ PParams CDataServer::ReloadPRM(const CString& FileName, bool Cache)
 	else
 	{
 		Params = NULL;
-		//n_printf("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
+		//Core::Log("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
 	}
 
 	return Params;
@@ -116,7 +116,7 @@ PXMLDocument CDataServer::LoadXML(const CString& FileName) //, bool Cache)
 	}
 	else
 	{
-		//n_printf("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
+		//Core::Log("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
 		XML = NULL;
 	}
 

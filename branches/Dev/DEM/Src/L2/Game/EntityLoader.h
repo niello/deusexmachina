@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_ENTITY_LOADER_H__
 #define __DEM_L2_ENTITY_LOADER_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Params.h>
 
 // Abstract loader helper for game entities.
@@ -12,7 +12,7 @@ namespace Game
 {
 class CGameLevel;
 
-class IEntityLoader: public Core::CRefCounted
+class IEntityLoader: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

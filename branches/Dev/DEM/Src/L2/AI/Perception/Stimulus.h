@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_AI_STIMULUS_H__
 #define __DEM_L2_AI_STIMULUS_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Data/QuadTree.h>
 #include <Data/KeyList.h>
@@ -16,7 +16,7 @@ typedef Data::CKeyList<Core::CRTTI*, class CStimulus*> CStimulusListSet;
 typedef Data::CQuadTree<class CStimulus*, CStimulusListSet> CStimulusQT;
 typedef CStimulusQT::CHandle CStimulusNode;
 
-class CStimulus: public Core::CRefCounted
+class CStimulus: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

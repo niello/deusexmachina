@@ -1,6 +1,7 @@
 #include "ActionTplWander.h"
 
 #include <AI/Actions/ActionWander.h>
+#include <Core/Factory.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp

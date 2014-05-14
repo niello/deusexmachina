@@ -1,6 +1,7 @@
 #include "PropDestructible.h"
 
 #include <Combat/Event/ObjDamageDone.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {
@@ -30,7 +31,7 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 	const ObjDamageDone& e = (const ObjDamageDone&)Event;
 
 	HP -= e.Amount;
-	n_printf("CEntity \"%s\": Fucking shit! I was damaged. HP:%d/%d\n",
+	Core::Log("CEntity \"%s\": Fucking shit! I was damaged. HP:%d/%d\n",
 		GetEntity()->GetUID(),
 		HP,
 		HPMax);
@@ -39,7 +40,7 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 	{
 		//!!!send ObjDie/ObjDestructed msg!
 		//???notify killer entity about success to gain exp?
-		n_printf("CEntity \"%s\": I'm dead!\n", GetEntity()->GetUID());
+		Core::Log("CEntity \"%s\": I'm dead!\n", GetEntity()->GetUID());
 	}
 
 	OK;

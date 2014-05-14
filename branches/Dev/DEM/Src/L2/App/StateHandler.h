@@ -2,7 +2,7 @@
 #ifndef __IPG_APP_STATE_HANDLER_H__
 #define __IPG_APP_STATE_HANDLER_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Params.h>
 
 // State handlers implement actual application state behavior in subclasses
@@ -16,7 +16,7 @@
 namespace App
 {
 
-class CStateHandler: public Core::CRefCounted
+class CStateHandler: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

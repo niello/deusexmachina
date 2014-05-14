@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_NODE_CTLR_H__
 #define __DEM_L1_SCENE_NODE_CTLR_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Scene/SceneFwd.h>
 #include <Data/Flags.h>
 #include <Math/TransformSRT.h>
@@ -19,7 +19,7 @@ namespace Scene
 {
 class CNodeControllerComposite;
 
-class CNodeController: public Core::CRefCounted
+class CNodeController: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

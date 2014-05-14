@@ -8,7 +8,7 @@
 
 namespace Video
 {
-__ImplementClassNoFactory(Video::CVideoServer, Core::CRefCounted);
+__ImplementClassNoFactory(Video::CVideoServer, Core::CObject);
 __ImplementSingleton(Video::CVideoServer);
 
 CVideoServer::CVideoServer():

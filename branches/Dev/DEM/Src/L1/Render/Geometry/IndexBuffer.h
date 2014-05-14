@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_INDEX_BUFFER_H__
 #define __DEM_L1_RENDER_INDEX_BUFFER_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Render/GPUResourceDefs.h>
 #include <Render/D3D9Fwd.h>
 #include <Events/EventsFwd.h>
@@ -12,7 +12,7 @@
 namespace Render
 {
 
-class CIndexBuffer: public Core::CRefCounted
+class CIndexBuffer: public Core::CObject
 {
 public:
 

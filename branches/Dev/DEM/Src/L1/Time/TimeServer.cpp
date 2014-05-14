@@ -8,7 +8,7 @@
 
 namespace Time
 {
-__ImplementClassNoFactory(Time::CTimeServer, Core::CRefCounted);
+__ImplementClassNoFactory(Time::CTimeServer, Core::CObject);
 __ImplementSingleton(Time::CTimeServer);
 
 CTimeServer::CTimeServer(): _IsOpen(false), Time(0.0), FrameTime(0.0), TimeScale(1.f), LockTime(0.0), LockedFrameTime(0.0)

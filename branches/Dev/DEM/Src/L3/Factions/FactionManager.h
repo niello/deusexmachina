@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_FACTION_MANAGER_H__
 #define __DEM_L3_FACTION_MANAGER_H__
 
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Factions/Faction.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
@@ -16,7 +16,7 @@ namespace RPG
 {
 #define FactionMgr RPG::CFactionManager::Instance()
 
-class CFactionManager: public Core::CRefCounted
+class CFactionManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CFactionManager);

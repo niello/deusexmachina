@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_QUEST_SYSTEM_H__
 #define __DEM_L3_QUEST_SYSTEM_H__
 
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Quests/Quest.h>
 #include <Events/EventsFwd.h>
 
@@ -15,7 +15,7 @@ namespace Story
 {
 #define QuestMgr Story::CQuestManager::Instance()
 
-class CQuestManager: public Core::CRefCounted //???Game::CManager?
+class CQuestManager: public Core::CObject //???Game::CManager?
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CQuestManager);
@@ -56,14 +56,14 @@ public:
 
 inline bool CQuestManager::CompleteQuest(CStrID QuestID, CStrID TaskID)
 {
-	n_printf("QuestMgr: completed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
+	Core::Log("QuestMgr: completed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
 	return CloseQuest(QuestID, TaskID, true);
 }
 //---------------------------------------------------------------------
 
 inline bool CQuestManager::FailQuest(CStrID QuestID, CStrID TaskID)
 {
-	n_printf("QuestMgr: failed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
+	Core::Log("QuestMgr: failed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
 	return CloseQuest(QuestID, TaskID, false);
 }
 //---------------------------------------------------------------------

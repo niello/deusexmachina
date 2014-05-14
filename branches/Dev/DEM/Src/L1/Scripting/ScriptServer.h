@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_SCRIPT_SERVER_H__
 #define __DEM_L1_SCRIPT_SERVER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 
 // Script server is a central point for script objects creation, registration and script running
 // Should store script interpreter, loader from file etc
@@ -25,7 +25,7 @@ typedef Ptr<class CScriptObject> PScriptObject;
 
 #define ScriptSrv Scripting::CScriptServer::Instance()
 
-class CScriptServer: public Core::CRefCounted
+class CScriptServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CScriptServer);

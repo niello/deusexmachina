@@ -5,6 +5,7 @@
 #include <Events/EventServer.h>
 #include <Data/Buffer.h>
 #include <IO/IOServer.h>
+#include <Core/Factory.h>
 
 extern "C"
 {
@@ -15,7 +16,7 @@ extern "C"
 
 namespace Scripting
 {
-__ImplementClass(Scripting::CScriptObject, 'SOBJ', Core::CRefCounted);
+__ImplementClass(Scripting::CScriptObject, 'SOBJ', Core::CObject);
 
 CScriptObject::~CScriptObject()
 {
@@ -33,7 +34,7 @@ CScriptObject* CScriptObject::GetFromStack(lua_State* l, int StackIdx)
 {
 	if (!lua_istable(l, StackIdx))
 	{
-		n_message("Can't get 'this' table, may be you used '.' instead of ':' for member call\n");
+		Core::Message("Can't get 'this' table, may be you used '.' instead of ':' for member call\n");
 		lua_settop(l, 0);
 		return NULL;
 	}
@@ -156,15 +157,15 @@ DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 
 	if (luaL_loadbuffer(l, Buffer, Length, Buffer) != 0)
 	{
-		n_printf("Error parsing script for %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-		n_printf("Script is: %s\n", Buffer);
+		Core::Log("Error parsing script for %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+		Core::Log("Script is: %s\n", Buffer);
 		lua_pop(l, 1);
 		return Error_Scripting_Parsing;
 	}
 
 	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr()))
 	{
-		n_printf("Error: script object \"%s.%s\" not found\n",
+		Core::Log("Error: script object \"%s.%s\" not found\n",
 			Name.CStr(), Table.IsEmpty() ? "_G" : Table.CStr());
 		lua_pop(l, 1);
 		return Error_Scripting_NoObject;
@@ -174,7 +175,7 @@ DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 	lua_setfenv(l, -2);
 
 	DWORD Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, NULL);
-	if (ExecResultIsError(Result)) n_printf("Script is: %s\n", Buffer);
+	if (ExecResultIsError(Result)) Core::Log("Script is: %s\n", Buffer);
 	return Result;
 }
 //---------------------------------------------------------------------

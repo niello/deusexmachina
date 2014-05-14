@@ -2,10 +2,11 @@
 
 #include <Data/Params.h>
 #include <Data/DataServer.h>
+#include <Core/Factory.h>
 
 namespace Items
 {
-__ImplementClassNoFactory(Items::CItemManager, Core::CRefCounted);
+__ImplementClassNoFactory(Items::CItemManager, Core::CObject);
 __ImplementSingleton(Items::CItemManager);
 
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)

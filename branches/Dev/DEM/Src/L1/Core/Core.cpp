@@ -1,166 +1,98 @@
-#include <Core/Logger.h>
+#include "Core.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <Data/String.h>
 
 namespace Core
 {
+static FLogHandler pLogHandler = NULL;
+
+extern void DefaultLogHandler(EMsgType Type, const char* pMessage);
+
+void Crash(const char* pFile, int Line, const char* pMessage)
+{
+	int CRTReportMode = _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_WNDW);
+	_CrtSetReportMode(_CRT_ERROR, CRTReportMode);
+
+	int Result = _CrtDbgReport(_CRT_ERROR, pFile, Line, "DeusExMachina game engine", pMessage);
+	if (Result == 0 && CRTReportMode & _CRTDBG_MODE_WNDW) return;
+	else if (Result == 1) _CrtDbgBreak();
+
+	abort();
+}
+//---------------------------------------------------------------------
 
 bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc)
 {
 	const char* pMsg = pMessage ? pMessage : "none";
 
+	CString Buffer;
+	va_list Args;
+	va_start(Args, pMsg);
+	Buffer.Format("*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
+	va_end(Args);
+
+	if (!pLogHandler) pLogHandler = DefaultLogHandler;
+	(*pLogHandler)(MsgType_Error, Buffer.CStr());
+
 	//!!!msgbox can have buttons to continue or fail!
-	if (CoreLoggerExists)
-	{
-		//!!!refactor logger!
-		//!!!log as in 'else', with equal offsets, but show in msg box as here!
-		char Buf[8192];
-		sprintf_s(Buf, sizeof(Buf) - 1, "*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
-		CoreLogger->Error(Buf, NULL);
-		OK; //!!!now always fails!
-	}
-	else
-	{
-		printf("*** DEM ASSERTION FAILED ***\nMessage:    %s\nExpression: %s\nFile:       %s\nLine:       %d\nFunction:   %s\n", pMsg, pExpression, pFile, Line, pFunc);
-		fflush(stdout);
-		OK;
-	}
+	OK;
 }
 //---------------------------------------------------------------------
 
 // Critical error, program will be closed
 void __cdecl Error(const char* pMsg, ...)
 {
-	va_list ArgList;
-	va_start(ArgList, pMsg);
-	if (CoreLoggerExists) CoreLogger->Error(pMsg, ArgList);
-	else
-	{
-		vprintf(pMsg, ArgList);
-		fflush(stdout);
-	}
-	va_end(ArgList);
-	abort();
+	CString Buffer;
+	va_list Args;
+	va_start(Args, pMsg);
+	Buffer.FormatWithArgs(pMsg, Args);
+	va_end(Args);
+
+	if (!pLogHandler) pLogHandler = DefaultLogHandler;
+	(*pLogHandler)(MsgType_Error, Buffer.CStr());
+
+	//!!!file and line must be passed here in context!
+	Crash(__FILE__, __LINE__, Buffer.CStr());
 }
 //---------------------------------------------------------------------
 
-}
-
-// Message that will be shown to the user
-void __cdecl n_message(const char* pMsg, ...)
+void __cdecl Log(const char* pMsg, ...)
 {
-	va_list ArgList;
-	va_start(ArgList, pMsg);
-	if (CoreLoggerExists) CoreLogger->Message(pMsg, ArgList);
-	else vprintf(pMsg, ArgList);
-	va_end(ArgList);
+	CString Buffer;
+	va_list Args;
+	va_start(Args, pMsg);
+	Buffer.FormatWithArgs(pMsg, Args);
+	va_end(Args);
+
+	if (!pLogHandler) pLogHandler = DefaultLogHandler;
+	(*pLogHandler)(MsgType_Log, Buffer.CStr());
 }
 //---------------------------------------------------------------------
 
-// Logable version of printf
-void __cdecl n_printf(const char* pMsg, ...)
+void __cdecl DbgOut(const char* pMsg, ...)
 {
-	va_list ArgList;
-	va_start(ArgList,pMsg);
-	if (CoreLoggerExists) CoreLogger->Print(pMsg, ArgList);
-	else vprintf(pMsg, ArgList);
-	va_end(ArgList);
+	CString Buffer;
+	va_list Args;
+	va_start(Args, pMsg);
+	Buffer.FormatWithArgs(pMsg, Args);
+	va_end(Args);
+
+	if (!pLogHandler) pLogHandler = DefaultLogHandler;
+	(*pLogHandler)(MsgType_DbgOut, Buffer.CStr());
 }
 //---------------------------------------------------------------------
 
-// Message printed to the debug output window
-void __cdecl n_dbgout(const char* pMsg, ...)
+void __cdecl Message(const char* pMsg, ...)
 {
-	va_list ArgList;
-	va_start(ArgList,pMsg);
-	if (CoreLoggerExists) CoreLogger->OutputDebug(pMsg, ArgList);
-	else
-	{
-		vprintf(pMsg, ArgList);
-		fflush(stdout);
-	}
-	va_end(ArgList);
+	CString Buffer;
+	va_list Args;
+	va_start(Args, pMsg);
+	Buffer.FormatWithArgs(pMsg, Args);
+	va_end(Args);
+
+	if (!pLogHandler) pLogHandler = DefaultLogHandler;
+	(*pLogHandler)(MsgType_Message, Buffer.CStr());
 }
 //---------------------------------------------------------------------
 
-void n_sleep(double sec)
-{
-	Sleep((int)(sec * 1000.0));
 }
-//---------------------------------------------------------------------
-
-// A strdup() implementation using engine's malloc() override.
-char* n_strdup(const char* from)
-{
-	n_assert(from);
-	int BufLen = strlen(from) + 1;
-	char* to = (char*)n_malloc(BufLen);
-	if (to) strcpy_s(to, BufLen, from);
-	return to;
-}
-//---------------------------------------------------------------------
-
-// A string matching function using Tcl's matching rules.
-bool n_strmatch(const char* str, const char* pat)
-{
-    char c2;
-
-    while (true)
-    {
-        if (!*pat) return !*str;
-        if (!*str && *pat != '*') return false;
-        if (*pat == '*')
-        {
-            ++pat;
-            if (!*pat) return true;
-            while (true)
-            {
-                if (n_strmatch(str, pat)) return true;
-                if (!*str) return false;
-                ++str;
-            }
-        }
-        if (*pat == '?') goto match;
-        if (*pat == '[')
-        {
-            ++pat;
-            while (true)
-            {
-                if (*pat == ']' || !*pat) return false;
-                if (*pat == *str) break;
-                if (pat[1] == '-')
-                {
-                    c2 = pat[2];
-                    if (!c2) return false;
-                    if (*pat <= *str && c2 >= *str) break;
-                    if (*pat >= *str && c2 <= *str) break;
-                    pat += 2;
-                }
-                ++pat;
-            }
-            while (*pat != ']')
-            {
-                if (!*pat)
-                {
-                    --pat;
-                    break;
-                }
-                ++pat;
-            }
-            goto match;
-        }
-
-        if (*pat == '\\')
-        {
-            ++pat;
-            if (!*pat) return false;
-        }
-        if (*pat != *str) return false;
-
-match:
-        ++pat;
-        ++str;
-    }
-}
-//---------------------------------------------------------------------

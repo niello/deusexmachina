@@ -2,7 +2,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CMemFact, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CMemFact, Core::CObject);
 
 bool CMemFact::Match(const CMemFact& Pattern, Data::CFlags FieldMask) const
 {

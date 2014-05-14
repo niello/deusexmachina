@@ -189,7 +189,7 @@ WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
 		}
 		else
 		{
-			n_printf_dbg("CEntity \"%s\": Item \"%s\" is too big or heavy\n", GetEntity()->GetUID(), NewItem->GetID());
+			DBG_ONLY(Core::Log("CEntity \"%s\": Item \"%s\" is too big or heavy\n", GetEntity()->GetUID(), NewItem->GetID()));
 			return 0;
 		}
 	}

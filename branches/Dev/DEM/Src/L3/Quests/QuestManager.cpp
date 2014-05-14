@@ -13,7 +13,7 @@ const CString StrUnderline("_");
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CQuestManager, Core::CRefCounted);
+__ImplementClassNoFactory(Story::CQuestManager, Core::CObject);
 __ImplementSingleton(Story::CQuestManager);
 
 CQuestManager::CQuestManager()
@@ -96,7 +96,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 {
 	if (QuestID == CStrID::Empty || GetQuestStatus(QuestID, TaskID) != CQuest::No) FAIL;
 
-	n_printf("QuestMgr: starting quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
+	Core::Log("QuestMgr: starting quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
 
 	Ptr<CQuest> Quest;
 
@@ -139,7 +139,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	//add Story::CJournal record or it will receive event too
 
 #ifdef _DEBUG
-	n_printf("TASK \"%s\" started. %s\n", Task.Task->Name.CStr(), Task.Task->Description.CStr());
+	Core::Log("TASK \"%s\" started. %s\n", Task.Task->Name.CStr(), Task.Task->Description.CStr());
 #endif
 
 	//!!!there was some benefit to create script obj before event (close task before notifying it's opened?)
@@ -199,7 +199,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 #ifdef _DEBUG
 		CQuest* Quest = Quests.ValueAt(Idx).Quest;
-		n_printf("QUEST \"%s\" closed %s.\n",
+		Core::Log("QUEST \"%s\" closed %s.\n",
 			Quest->Name.CStr(),
 			Success ? "successfully" : "with failure");
 #endif
@@ -230,7 +230,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 			if (Task.Status != CQuest::Opened) FAIL;
 
 #ifdef _DEBUG
-			n_printf("TASK \"%s\" closed %s.\n", Task.Task->Name.CStr(),
+			Core::Log("TASK \"%s\" closed %s.\n", Task.Task->Name.CStr(),
 				Success ? "successfully" : "with failure");
 #endif
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_TIME_SOURCE_H__
 #define __DEM_L1_TIME_SOURCE_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <StdDEM.h>
 
 // A generic time source object which is attached to the CTimeServer.
@@ -15,7 +15,7 @@
 namespace Time
 {
 
-class CTimeSource: public Core::CRefCounted
+class CTimeSource: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

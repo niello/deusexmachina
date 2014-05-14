@@ -2,8 +2,9 @@
 #ifndef __DEM_L2_AI_WORLD_STATE_SOURCE_H__
 #define __DEM_L2_AI_WORLD_STATE_SOURCE_H__
 
-#include "WorldState.h"
+#include <Core/Object.h>
 #include <AI/ActorFwd.h>
+#include <AI/Planning/WorldState.h>
 #include <Data/Params.h>
 
 // World state source dynamically provides new or patches existing CWorldState.
@@ -19,7 +20,7 @@ namespace AI
 {
 using namespace Prop;
 
-class CWorldStateSource: public Core::CRefCounted
+class CWorldStateSource: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

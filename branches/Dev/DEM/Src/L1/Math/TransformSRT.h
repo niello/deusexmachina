@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_MATH_TFM_SRT_H__
 #define __DEM_L1_MATH_TFM_SRT_H__
 
-#include <mathlib/matrix44.h>
+#include <Math/Matrix44.h>
 
 // Transform defined by non-uniform scale, rotation quaternion and translation
 

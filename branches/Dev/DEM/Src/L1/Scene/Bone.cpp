@@ -4,6 +4,7 @@
 #include <Scene/Model.h>
 #include <Render/RenderServer.h>
 #include <IO/BinaryReader.h>
+#include <Core/Factory.h>
 
 namespace Scene
 {
@@ -47,10 +48,10 @@ bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 {
-	// Default constructor sets it to identity, no need to set explicitly now
+	// Default constructor sets it to Identity, no need to set explicitly now
 	//SkinMatrix.ident();
 
-	// Since SkinMatrix is identity and node position doesn't change, it is not necessary:
+	// Since SkinMatrix is Identity and node position doesn't change, it is not necessary:
 	// To undo inv. bind pose in initial state
 	pNode->SetLocalTransform(BindPoseLocal);
 
@@ -113,7 +114,7 @@ void CBone::OnDetachFromNode()
 
 	static CStrID sidJointPalette("JointPalette");
 
-	// Find all models in model node and clear matrix pointers in a JointPalette shader var to const identity matrix
+	// Find all models in model node and clear matrix pointers in a JointPalette shader var to const Identity matrix
 	for (DWORD i = 0; i < pModelNode->GetAttrCount(); ++i)
 	{
 		CNodeAttribute* pAttr = pModelNode->GetAttr(i);
@@ -127,12 +128,12 @@ void CBone::OnDetachFromNode()
 			CMatrixPtrArray* pPalette = &pModel->ShaderVars.ValueAt(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
 
 			if (!pModel->BoneIndices.GetCount())
-				pPalette->At(Index) = &matrix44::identity;
+				pPalette->At(Index) = &matrix44::Identity;
 			else
 				for (DWORD j = 0; j < pModel->BoneIndices.GetCount(); ++j)
 					if (pModel->BoneIndices[j] == Index)
 					{
-						pPalette->At(j) = &matrix44::identity;
+						pPalette->At(j) = &matrix44::Identity;
 						break;
 					}
 		}

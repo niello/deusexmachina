@@ -4,7 +4,7 @@
 //
 //namespace Audio
 //{
-//__ImplementClassNoFactory(Audio::CWaveResource, Core::CRefCounted);
+//__ImplementClassNoFactory(Audio::CWaveResource, Core::CObject);
 //__ImplementClass(Audio::CWaveResource);
 //
 //CWaveResource::~CWaveResource()

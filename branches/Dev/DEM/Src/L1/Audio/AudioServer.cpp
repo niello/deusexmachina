@@ -11,7 +11,7 @@
 
 namespace Audio
 {
-__ImplementClassNoFactory(Audio::CAudioServer, Core::CRefCounted);
+__ImplementClassNoFactory(Audio::CAudioServer, Core::CObject);
 
 __ImplementSingleton(Audio::CAudioServer);
 
@@ -60,7 +60,7 @@ bool CAudioServer::Open()
 		FAILED(pDS->SetCooperativeLevel(hWnd, DSSCL_PRIORITY));
 	if (NoSoundDevice)
 	{
-		n_printf("DirectSound device initialization failed, no sound device");
+		Core::Log("DirectSound device initialization failed, no sound device");
 		_IsOpen = true;
 		return false;
 	}

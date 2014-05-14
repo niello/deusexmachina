@@ -2,13 +2,61 @@
 #ifndef __DEM_L1_CORE_H__
 #define __DEM_L1_CORE_H__
 
-// Core functions
+#include <StdDEM.h>
+
+// Core functions and macros
 
 namespace Core
 {
+	enum EMsgType
+	{
+		MsgType_Log,		// Silent log message
+		MsgType_Message,	// Important message to the user, possibly in a form of message box
+		MsgType_DbgOut,		// Message to debug output window
+		MsgType_Error		// Error message
+	};
+
+	typedef void (*FLogHandler)(EMsgType Type, const char* pMessage);
+
+	// Assertions and program termination
 	bool			ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc = NULL);
-	void __cdecl	Error(const char* pMsg, ...);
+	void			Crash(const char* pFile, int Line, const char* pMessage);
+	void __cdecl	Error(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
+
+	// Logging
+	void __cdecl	Log(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
+	void __cdecl	DbgOut(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
+	void __cdecl	Message(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
+
+	// System UI
+	void			ShowMessageBox(EMsgType Type, const char* pHeaderText, const char* pMessage);
+
+	// Threading
+	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!
 }
+
+// See http://cnicholson.net/2009/02/stupid-c-tricks-adventures-in-assert/
+#ifdef DEM_NO_ASSERT
+	#define n_verify(exp)			do { (exp); } while(0)
+	#define n_assert(exp)			do { (void)sizeof(exp); } while(0)
+	#define n_assert2(exp, msg)		do { (void)sizeof(exp); } while(0)
+#else
+	#define n_verify(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_assert(exp)			do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_assert2(exp, msg)		do { if (!(exp)) if (Core::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+#endif
+
+#ifdef _DEBUG
+	#define n_verify_dbg(exp)		n_verify(exp)
+	#define n_assert_dbg(exp)		n_assert(exp)
+	#define n_assert2_dbg(exp, msg)	n_assert2(exp, msg)
+	#define DBG_ONLY(call)			call
+#else
+	#define n_verify_dbg(exp)		do { (exp); } while(0)
+	#define n_assert_dbg(exp)		do { (void)sizeof(exp); } while(0)
+	#define n_assert2_dbg(exp, msg)	do { (void)sizeof(exp); } while(0)
+	#define DBG_ONLY(call)
+#endif
 
 #endif
 

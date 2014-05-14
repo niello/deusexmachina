@@ -1,6 +1,7 @@
 #include "MemFactOverseer.h"
 
 #include <AI/Perception/Stimulus.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

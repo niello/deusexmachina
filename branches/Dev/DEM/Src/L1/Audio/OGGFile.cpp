@@ -53,7 +53,7 @@ uint COGGFile::Read(void* pBuffer, uint BytesToRead)
             if (Result == 0) break;
             if (Result < 0) // need more data
             {
-				n_printf("OGG: Corrupt or missing data in bitstream; continuing...\n");
+				Core::Log("OGG: Corrupt or missing data in bitstream; continuing...\n");
             }
             if (Result > 0)
             {
@@ -137,7 +137,7 @@ uint COGGFile::Read(void* pBuffer, uint BytesToRead)
                             if (clipFlag)
                             {
                                 // FIXME Floh: is this a serious error?
-                                // n_printf("Clipping in frame %ld\n", (long)(vDecoderState.sequence));
+                                // Core::Log("Clipping in frame %ld\n", (long)(vDecoderState.sequence));
                             }
 
                             samplesWritten+= samplesOut ;
@@ -244,11 +244,11 @@ COGGFile::InitOGG()
 
             pStream->Close();
 
-            n_printf("COggFile::Open:Done.\n");
+            Core::Log("COggFile::Open:Done.\n");
         }
 
         /* error case.  Must not be Vorbis data */
-        n_printf("COggFile::Open:Input does not appear to be an Ogg bitstream.\n");
+        Core::Log("COggFile::Open:Input does not appear to be an Ogg bitstream.\n");
         return false;
     }
 
@@ -269,21 +269,21 @@ COGGFile::InitOGG()
     if (ogg_stream_pagein(&oStreamState, &oBitStreamPage) < 0)
     {
         /* error; stream version mismatch perhaps */
-        n_printf("COggFile::Open:Error reading first page of Ogg bitstream data.\n");
+        Core::Log("COggFile::Open:Error reading first page of Ogg bitstream data.\n");
         return false;
     }
 
     if (ogg_stream_packetout(&oStreamState, &oRawPacket) != 1)
     {
         /* no page? must not be vorbis */
-        n_printf("COggFile::Open:Error reading initial header packet.\n");
+        Core::Log("COggFile::Open:Error reading initial header packet.\n");
         return false;
     }
 
     if (vorbis_synthesis_headerin(&vBitStreamInfo, &vComments, &oRawPacket) < 0)
     {
         /* error case; not a vorbis header */
-        n_printf("COggFile::Open:This Ogg bitstream does not contain Vorbis "
+        Core::Log("COggFile::Open:This Ogg bitstream does not contain Vorbis "
         "audio data.\n");
         return false;
     }
@@ -328,7 +328,7 @@ COGGFile::InitOGG()
                 {
                     /* Uh oh; data at some point was corrupted or missing!
                     We can't tolerate that in a header.  Die. */
-                    n_printf("COggFile::Open:Corrupt secondary header.  Exiting.\n");
+                    Core::Log("COggFile::Open:Corrupt secondary header.  Exiting.\n");
                     return false;
                 }
                 vorbis_synthesis_headerin(&vBitStreamInfo, &vComments, &oRawPacket);
@@ -341,7 +341,7 @@ COGGFile::InitOGG()
         bytesIn = pStream->Read(bufferIn, INPUTBUFFER);
         if (bytesIn == 0 && i < 2)
         {
-            n_printf("COggFile::Open:End of pStream before finding all Vorbis headers!\n");
+            Core::Log("COggFile::Open:End of pStream before finding all Vorbis headers!\n");
             return false;
         }
         ogg_sync_wrote(&oSyncState, bytesIn);
@@ -353,12 +353,12 @@ COGGFile::InitOGG()
         char **ptr = vComments.user_comments;
         while (*ptr)
         {
-            n_printf("COggFile::Open:%s\n",  *ptr);
+            Core::Log("COggFile::Open:%s\n",  *ptr);
             ++ptr;
         }
-        n_printf("COggFile::Open:\nBitstream is %d channel, %ldHz\n", vBitStreamInfo.channels,
+        Core::Log("COggFile::Open:\nBitstream is %d channel, %ldHz\n", vBitStreamInfo.channels,
             vBitStreamInfo.rate);
-        n_printf("COggFile::Open:Encoded by: %s\n\n", vComments.vendor);
+        Core::Log("COggFile::Open:Encoded by: %s\n\n", vComments.vendor);
 
         ZeroMemory(&wfx, sizeof(WAVEFORMATEX));
         wfx.nChannels         = vBitStreamInfo.channels;

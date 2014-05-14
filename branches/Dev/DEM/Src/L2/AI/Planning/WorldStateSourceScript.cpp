@@ -3,6 +3,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <Scripting/PropScriptable.h>
+#include <Core/Factory.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp

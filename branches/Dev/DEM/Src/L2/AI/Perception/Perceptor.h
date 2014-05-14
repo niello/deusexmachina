@@ -2,6 +2,7 @@
 #ifndef __DEM_L2_AI_PERCEPTOR_H__
 #define __DEM_L2_AI_PERCEPTOR_H__
 
+#include <Core/Object.h>
 #include <Data/Params.h>
 #include <AI/ActorFwd.h>
 
@@ -14,7 +15,7 @@ namespace AI
 class CSensor;
 class CStimulus;
 
-class CPerceptor: public Core::CRefCounted
+class CPerceptor: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

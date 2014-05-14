@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_CORE_SERVER_H__
 #define __DEM_L1_CORE_SERVER_H__
 
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Data/Data.h>
 #include <Data/HashTable.h>
 

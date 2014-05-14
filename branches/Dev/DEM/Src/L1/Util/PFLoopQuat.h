@@ -1,7 +1,7 @@
 #ifndef N_PQUATFEEDBACKLOOP_H
 #define N_PQUATFEEDBACKLOOP_H
 
-#include <mathlib/quaternion.h>
+#include <Math/Quaternion.h>
 
 // A specialized proportional feedback loop for quaternion rotations
 // (C) 2004 RadonLabs GmbH

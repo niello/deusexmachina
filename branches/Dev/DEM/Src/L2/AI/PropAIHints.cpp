@@ -8,6 +8,7 @@
 #include <AI/AIServer.h>
 #include <Render/DebugDraw.h>
 #include <Data/DataServer.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

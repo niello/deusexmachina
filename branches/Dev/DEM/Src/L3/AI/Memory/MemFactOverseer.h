@@ -4,7 +4,6 @@
 
 #include <AI/Memory/MemFact.h>
 #include <Data/StringID.h>
-#include <mathlib/vector.h>
 
 // Memory fact representing overseer, entity that controls this actor's behavoiur
 

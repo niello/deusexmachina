@@ -2,10 +2,10 @@
 #ifndef __DEM_L2_IAO_USE_ACTION_TPL_H__
 #define __DEM_L2_IAO_USE_ACTION_TPL_H__
 
-#include <Core/Ptr.h>
+#include <Data/Ptr.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
-#include <mathlib/vector3.h>
+#include <Math/vector3.h>
 
 // Smart action holds information for an interaction with a smart object
 

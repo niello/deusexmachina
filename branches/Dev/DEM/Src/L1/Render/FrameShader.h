@@ -9,7 +9,7 @@
 namespace Render
 {
 
-class CFrameShader: public Core::CRefCounted
+class CFrameShader: public Core::CObject
 {
 //protected:
 public:

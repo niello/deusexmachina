@@ -2,7 +2,7 @@
 
 namespace Time
 {
-__ImplementClassNoFactory(Time::CTimeSource, Core::CRefCounted);
+__ImplementClassNoFactory(Time::CTimeSource, Core::CObject);
 
 void CTimeSource::Update(float _FrameTime)
 {

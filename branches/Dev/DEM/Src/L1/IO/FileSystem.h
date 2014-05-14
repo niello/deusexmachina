@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_FILE_SYSTEM_H__
 #define __DEM_L1_FILE_SYSTEM_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <IO/IOFwd.h>
 
 // File system interface. Implementation can be real OS file system or any VFS.
@@ -10,7 +10,7 @@
 namespace IO
 {
 
-class IFileSystem: public Core::CRefCounted
+class IFileSystem: public Core::CObject
 {
 public:
 

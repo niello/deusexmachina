@@ -3,7 +3,7 @@
 #define __DEM_L1_TIME_SERVER_H__
 
 #include <Time/TimeSource.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
@@ -19,7 +19,7 @@ namespace Time
 {
 #define TimeSrv Time::CTimeServer::Instance()
 
-class CTimeServer: public Core::CRefCounted
+class CTimeServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CTimeServer);

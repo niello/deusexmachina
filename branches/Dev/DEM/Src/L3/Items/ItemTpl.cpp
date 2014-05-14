@@ -3,10 +3,11 @@
 #include "Item.h"
 #include <Data/Params.h>
 #include <Data/DataArray.h>
+#include <Core/Factory.h>
 
 namespace Items
 {
-__ImplementClass(Items::CItemTpl, 'ITPL', Core::CRefCounted);
+__ImplementClass(Items::CItemTpl, 'ITPL', Core::CObject);
 
 void CItemTpl::Init(CStrID SID, const Data::CParams& Params)
 {

@@ -17,7 +17,7 @@ namespace Scene
 {
 #define SceneSrv Scene::CSceneServer::Instance()
 
-class CSceneServer: public Core::CRefCounted
+class CSceneServer: public Core::CObject
 {
 	__DeclareSingleton(CSceneServer);
 

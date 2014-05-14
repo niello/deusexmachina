@@ -94,7 +94,7 @@ void CDlgContext::Trigger(bool IsForeground)
 					}
 					default:
 					{
-						n_printf("CDlgContext::Trigger() > Initiator: '%s'. Scripted action '%s' %s\n",
+						Core::Log("CDlgContext::Trigger() > Initiator: '%s'. Scripted action '%s' %s\n",
 							Initiator.CStr(), Link.Action.CStr(), Result == Failure ? "failure" : "error");
 						State = DlgState_Aborted;
 						break;

@@ -1,5 +1,7 @@
 #include "StaticMeshShape.h"
 
+#include <Core/Factory.h>
+
 namespace Physics
 {
 __ImplementResourceClass(Physics::CStaticMeshShape, 'SMSH', Physics::CCollisionShape);
