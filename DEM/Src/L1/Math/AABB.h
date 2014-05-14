@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_MATH_AABB_H__
 #define __DEM_L1_MATH_AABB_H__
 
-#include <mathlib/matrix44.h>
-#include <mathlib/plane.h>
+#include <Math/Matrix44.h>
+#include <Math/plane.h>
 
 // An axis-aligned bounding box class
 

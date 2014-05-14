@@ -1,5 +1,6 @@
 #include "HeightfieldShape.h"
 
+#include <Core/Factory.h>
 #include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
 
 namespace Physics

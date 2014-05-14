@@ -19,7 +19,7 @@ namespace Scene
 {
 class CLight;
 
-class CScene: public Core::CRefCounted
+class CScene: public Core::CObject
 {
 private:
 

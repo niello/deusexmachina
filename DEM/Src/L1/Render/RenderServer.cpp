@@ -7,7 +7,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CRenderServer, Core::CRefCounted);
+__ImplementClassNoFactory(Render::CRenderServer, Core::CObject);
 __ImplementSingleton(CRenderServer);
 
 bool CRenderServer::Open()
@@ -139,7 +139,7 @@ void CRenderServer::ResetDevice()
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
 	{
 		// NB: In single-threaded app, engine will stuck here until device can be reset
-		n_sleep(0.01);
+		Core::Sleep(10);
 		Display.ProcessWindowMessages();
 		hr = pD3DDevice->TestCooperativeLevel();
 	}

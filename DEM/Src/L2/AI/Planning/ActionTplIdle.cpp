@@ -1,6 +1,7 @@
 #include "ActionTplIdle.h"
 
 #include <AI/Behaviour/ActionIdle.h>
+#include <Core/Factory.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp

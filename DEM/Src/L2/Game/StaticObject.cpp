@@ -14,7 +14,7 @@ namespace Scene
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CStaticObject, Core::CRefCounted);
+__ImplementClassNoFactory(Game::CStaticObject, Core::CObject);
 
 CStaticObject::CStaticObject(CStrID _UID, CGameLevel& _Level): UID(_UID), Level(&_Level)
 {

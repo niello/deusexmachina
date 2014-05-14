@@ -2,7 +2,7 @@
 //#ifndef __DEM_L2_WAVE_BANK_H__ //!!!L1!
 //#define __DEM_L2_WAVE_BANK_H__
 //
-//#include <Core/RefCounted.h>
+//#include <Core/Object.h>
 //#include <xml/nxmlspreadsheet.h>
 //
 //// Holds a number of sound resources. There is usually one wave bank
@@ -17,7 +17,7 @@
 //{
 //typedef Ptr<class CWaveResource> PWaveResource;
 //
-//class CWaveBank: public Core::CRefCounted
+//class CWaveBank: public Core::CObject
 //{
 //	__DeclareClassNoFactory;
 //	__DeclareClass(CWaveBank);

@@ -2,7 +2,7 @@
 //#ifndef __DEM_L1_WAVE_RESOURCE_H__
 //#define __DEM_L1_WAVE_RESOURCE_H__
 //
-//#include <Core/RefCounted.h>
+//#include <Core/Object.h>
 //#include <kernel/nref.h>
 //#include <Data/String.h>
 //
@@ -11,7 +11,7 @@
 //namespace Audio
 //{
 //
-//class CWaveResource: public Core::CRefCounted
+//class CWaveResource: public Core::CObject
 //{
 //	__DeclareClassNoFactory;
 //	__DeclareClass(CWaveResource);

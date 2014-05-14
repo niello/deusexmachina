@@ -2,8 +2,10 @@
 #ifndef __DEM_L1_DATA_SERVER_H__
 #define __DEM_L1_DATA_SERVER_H__
 
+#include <Core/Object.h>
 #include <Data/DataScheme.h>
-#include <Core/Singleton.h>
+#include <Data/Dictionary.h>
+#include <Data/Singleton.h>
 #include <Data/SimpleString.h>
 #include <Data/HashTable.h>
 
@@ -18,7 +20,7 @@ typedef Ptr<class CXMLDocument> PXMLDocument;
 
 #define DataSrv Data::CDataServer::Instance()
 
-class CDataServer: public Core::CRefCounted
+class CDataServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CDataServer);

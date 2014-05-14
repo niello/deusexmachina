@@ -4,7 +4,7 @@
 
 #include "EventDispatcher.h"
 #include <Data/Pool.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 
 // Event manager is a central coordination point for the event processing. It works as:
 // - Factory/Cache, by producing event, subscription etc nodes for dispatchers' internal usage
@@ -35,7 +35,7 @@ protected:
 
 public:
 
-	CEventServer(): CEventDispatcher(256) { __ConstructSingleton; }
+	CEventServer(): CEventDispatcher(256), EventsFiredTotal(0) { __ConstructSingleton; }
 	virtual ~CEventServer() { Clear(); __DestructSingleton; }
 
 	CEventNode*	CreateNode() { return EventNodes.Construct(); }

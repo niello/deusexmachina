@@ -1,11 +1,12 @@
 #include "Window.h"
 
 #include <Render/RenderServer.h>
+#include <Core/Factory.h>
 #include <CEGUIWindowManager.h>
 
 namespace UI
 {
-__ImplementClass(UI::CWindow, 'UIWN', Core::CRefCounted);
+__ImplementClass(UI::CWindow, 'UIWN', Core::CObject);
 
 void CWindow::Init(CEGUI::Window* pWindow)
 {

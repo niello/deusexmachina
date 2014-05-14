@@ -10,7 +10,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysicsObj, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CPhysicsObj, Core::CObject);
 
 PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName);
 

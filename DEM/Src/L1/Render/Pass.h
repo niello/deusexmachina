@@ -20,7 +20,7 @@ namespace Scene
 namespace Render
 {
 
-class CPass: public Core::CRefCounted
+class CPass: public Core::CObject
 {
 //protected:
 public:

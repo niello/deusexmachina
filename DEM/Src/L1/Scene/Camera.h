@@ -4,7 +4,7 @@
 
 #include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
-#include <mathlib/line.h>
+#include <Math/line.h>
 
 // Camera is a scene node attribute describing camera properties.
 // Note - W and H are necessary for orthogonal projection matrix,

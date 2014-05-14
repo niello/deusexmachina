@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_LINE_BUFFER_H__
 #define __DEM_L1_LINE_BUFFER_H__
 
-#include <StdDEM.h>
+#include <Core/Core.h>
 
 // A ring buffer for strings.
 // (C) 2002 RadonLabs GmbH

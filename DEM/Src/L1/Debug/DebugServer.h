@@ -4,7 +4,7 @@
 
 #include <Data/SimpleString.h>
 #include <Data/StringID.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Events/EventsFwd.h>
 #include <UI/Window.h>
 #include <Data/Dictionary.h>
@@ -15,7 +15,7 @@ namespace Debug
 {
 #define DbgSrv Debug::CDebugServer::Instance()
 
-class CDebugServer: public Core::CRefCounted
+class CDebugServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CDebugServer);

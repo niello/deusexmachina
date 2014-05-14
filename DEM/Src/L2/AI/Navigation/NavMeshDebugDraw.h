@@ -6,7 +6,6 @@
 #include <Render/RenderFwd.h>
 #include <DebugDraw.h>
 #include <Data/Array.h>
-#include <mathlib/vector.h>
 
 // Debug draw interface implementation for Detour navigation mesh.
 

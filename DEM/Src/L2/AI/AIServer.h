@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_AI_SERVER_H__
 #define __DEM_L2_AI_SERVER_H__
 
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <AI/Planning/Planner.h>
@@ -24,7 +24,7 @@ namespace AI
 {
 #define AISrv AI::CAIServer::Instance()
 
-class CAIServer: public Core::CRefCounted
+class CAIServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CAIServer);

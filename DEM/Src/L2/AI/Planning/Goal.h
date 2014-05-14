@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_AI_GOAL_H__
 #define __DEM_L2_AI_GOAL_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <AI/Planning/WorldState.h>
 #include <AI/ActorFwd.h>
 #include <Data/Params.h>
@@ -16,7 +16,7 @@
 namespace AI
 {
 
-class CGoal: public Core::CRefCounted
+class CGoal: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

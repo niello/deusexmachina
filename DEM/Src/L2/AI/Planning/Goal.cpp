@@ -2,7 +2,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CGoal, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CGoal, Core::CObject);
 
 void CGoal::Init(Data::PParams Params)
 {

@@ -8,6 +8,7 @@
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Core/CoreServer.h>
+#include <Core/Factory.h>
 
 #include <elements/CEGUIEditbox.h>
 #include <elements/CEGUIMultiColumnList.h>

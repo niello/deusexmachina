@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_DLG_NODE_H__
 #define __DEM_L3_DLG_NODE_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 
 // Dialogue graph node is associated with optional phrase and offers links to next nodes.
@@ -11,7 +11,7 @@
 namespace Story
 {
 
-class CDlgNode: public Core::CRefCounted
+class CDlgNode: public Core::CObject
 {
 public:
 

@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_VIDEO_SERVER_H__
 #define __DEM_L1_VIDEO_SERVER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <dshow.h>
 
 // Server object to playback video streams.
@@ -15,7 +15,7 @@ class CVideoPlayer;
 
 #define VideoSrv Video::CVideoServer::Instance()
 
-class CVideoServer: public Core::CRefCounted
+class CVideoServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CVideoServer);

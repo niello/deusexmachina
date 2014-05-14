@@ -1,13 +1,11 @@
 #include "HRDParser.h"
 
-#include "DataArray.h"
-#include "Params.h"
+#include <Data/DataArray.h>
+#include <Data/Params.h>
 #include <ctype.h>
 
 namespace Data
 {
-__ImplementClassNoFactory(Data::CHRDParser, Core::CRefCounted);
-	
 enum
 {
 	RW_FALSE = 0,
@@ -27,7 +25,7 @@ enum
 	DLM_BR_CLOSE
 };
 
-CHRDParser::CHRDParser()
+CHRDParser::CHRDParser(): pErr(NULL)
 {
 	// NB: Keep sorted and keep enum above updated
 	TableRW.Add("false");
@@ -45,7 +43,7 @@ CHRDParser::CHRDParser()
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
+bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result, CString* pErrors)
 {
 	if (!Buffer) FAIL;
 
@@ -57,6 +55,8 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
 		Result = n_new(CParams);
 		OK;
 	}
+
+	pErr = pErrors;
 	
 	// Check for UTF-8 BOM signature (0xEF 0xBB 0xBF)
 	if (Length >= 3 && Buffer[0] == (char)0xEF && Buffer[1] == (char)0xBB && Buffer[2] == (char)0xBF)
@@ -72,7 +72,7 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
 	CArray<CToken> Tokens;
 	if (!Tokenize(Tokens))
 	{
-		n_printf("Lexical analysis of HRD failed\n");
+		if (pErr) pErr->Add("Lexical analysis of HRD failed\n");
 		TableID.Clear();
 		TableConst.Clear(); //???always keep "0" const?
 		FAIL;
@@ -81,7 +81,7 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
 	if (!Result.IsValid()) Result = n_new(CParams);
 	if (!ParseTokenStream(Tokens, Result))
 	{
-		n_printf("Syntax analysis of HRD failed\n");
+		if (pErr) pErr->Add("Syntax analysis of HRD failed\n");
 		Result = NULL;
 		TableID.Clear();
 		TableConst.Clear(); //???always keep "0" const?
@@ -92,6 +92,8 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result)
 	TableID.Clear();
 	TableConst.Clear(); //???always keep "0" const?
 	//Tokens.Clear();
+
+	pErr = NULL;
 
 	OK;
 }
@@ -223,11 +225,15 @@ bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
 		}
 		else break;
 	}
-	
+
 	if (!HasLetter)
 	{
-		n_printf("'_' allowed only in IDs, but ID should contain at least one letter (Ln:%u, Col:%u)\n",
-			Line, Col);
+		if (pErr)
+		{
+			CString S;
+			S.Format("'_' allowed only in IDs, but ID should contain at least one letter (Ln:%u, Col:%u)\n", Line, Col);
+			pErr->Add(S);
+		}
 		FAIL;
 	}
 	
@@ -264,8 +270,12 @@ bool CHRDParser::LexProcessHex(CArray<CToken>& Tokens)
 	int TokenLength = LexerCursor - TokenStart;
 	if (TokenLength < 3)
 	{
-		n_printf("Hexadecimal constant should contain at least one hex digit after '0x' (Ln:%u, Col:%u)\n",
-			Line, Col);
+		if (pErr)
+		{
+			CString S;
+			S.Format("Hexadecimal constant should contain at least one hex digit after '0x' (Ln:%u, Col:%u)\n", Line, Col);
+			pErr->Add(S);
+		}
 		FAIL;
 	}
 	
@@ -394,7 +404,13 @@ bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 		}
 	}
 	
-	n_printf("Unexpected end of file while parsing string constant (Ln:%u, Col:%u)\n", Line, Col);
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing string constant (Ln:%u, Col:%u)\n", Line, Col);
+		pErr->Add(S);
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -440,7 +456,13 @@ bool CHRDParser::LexProcessBigString(CArray<CToken>& Tokens)
 		Col++;
 	}
 	
-	n_printf("Unexpected end of file while parsing big string constant (Ln:%u, Col:%u)\n", Line, Col);
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing big string constant (Ln:%u, Col:%u)\n", Line, Col);
+		pErr->Add(S);
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -480,7 +502,12 @@ bool CHRDParser::LexProcessDlm(CArray<CToken>& Tokens)
 		
 		if (MatchStart == INVALID_INDEX)
 		{
-			n_printf("Unknown delimiter (Ln:%u, Col:%u)\n", Line, Col);
+			if (pErr)
+			{
+				CString S;
+				S.Format("Unknown delimiter (Ln:%u, Col:%u)\n", Line, Col);
+				pErr->Add(S);
+			}
 			FAIL;
 		}
 
@@ -490,7 +517,13 @@ bool CHRDParser::LexProcessDlm(CArray<CToken>& Tokens)
 	}
 	
 	// No matching dlm at all, invalid character in stream
-	n_printf("Invalid character '%c' (%u) (Ln:%u, Col:%u)\n", CurrChar, CurrChar, Line, Col);
+	if (pErr)
+	{
+		CString S;
+		S.Format("Invalid character '%c' (%u) (Ln:%u, Col:%u)\n", CurrChar, CurrChar, Line, Col);
+		pErr->Add(S);
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -530,8 +563,14 @@ bool CHRDParser::LexProcessCommentBlock()
 			OK;
 		}
 	}
-	
-	n_printf("Unexpected end of file while parsing comment block\n");
+
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing comment block\n");
+		pErr->Add(S);
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -625,7 +664,12 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, PParams Output)
 	CToken& CurrToken = Tokens[ParserCursor];
 	if (CurrToken.Table != TBL_ID)
 	{
-		n_printf("ID expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+		if (pErr)
+		{
+			CString S;
+			S.Format("ID expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+			pErr->Add(S);
+		}
 		FAIL;
 	}
 	
@@ -635,7 +679,12 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, PParams Output)
 		if (Tokens[ParserCursor].IsA(TBL_DLM, DLM_EQUAL) && ++ParserCursor >= Tokens.GetCount())
 		{
 			ParserCursor = CursorBackup;
-			n_printf("Unexpected end of file after ID in PARAM\n");
+			if (pErr)
+			{
+				CString S;
+				S.Format("Unexpected end of file after ID in PARAM\n");
+				pErr->Add(S);
+			}
 			FAIL;
 		}
 		
@@ -653,7 +702,12 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, PParams Output)
 	}
 	
 	ParserCursor--;
-	n_printf("Unexpected end of file while parsing PARAM\n");
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing PARAM\n");
+		pErr->Add(S);
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -704,7 +758,12 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 	
 	Output.Clear();
 	ParserCursor = CursorBackup;
-	n_printf("Parsing of DATA failed (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+	if (pErr)
+	{
+		CString S;
+		S.Format("Parsing of DATA failed (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+		pErr->Add(S);
+	}
 
 #ifdef _DEBUG
 	CString TokenValue;
@@ -714,7 +773,14 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 	else if (TableConst[CurrToken.Index].IsA<CString>())
 		TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
 	else TokenValue = CString("Non-string (numeric) constant");
-	n_printf("Current token: %s\n", TokenValue.CStr());
+	
+	if (pErr)
+	{
+		CString S;
+		S.Format("Current token: %s\n", TokenValue.CStr());
+		pErr->Add(S);
+	}
+
 	if (ParserCursor > 0)
 	{
 		CurrToken = Tokens[ParserCursor - 1];
@@ -724,7 +790,13 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 		else if (TableConst[CurrToken.Index].IsA<CString>())
 			TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
 		else TokenValue = CString("Non-string (numeric) constant");
-		n_printf("Previous token: %s\n", TokenValue.CStr());
+		
+		if (pErr)
+		{
+			CString S;
+			S.Format("Previous token: %s\n", TokenValue.CStr());
+			pErr->Add(S);
+		}
 	}
 #endif
 
@@ -767,13 +839,23 @@ bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, Ptr<CDataArray> Output
 		else
 		{
 			ParserCursor = CursorBackup;
-			n_printf("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+			if (pErr)
+			{
+				CString S;
+				S.Format("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+				pErr->Add(S);
+			}
 			FAIL;
 		}
 	}
 
 	ParserCursor = CursorBackup;
-	n_printf("Unexpected end of file while parsing ARRAY\n");
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing ARRAY\n");
+		pErr->Add(S);
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -802,7 +884,12 @@ bool CHRDParser::ParseSection(const CArray<CToken>& Tokens, PParams Output)
 	}
 
 	ParserCursor = CursorBackup;
-	n_printf("Unexpected end of file while parsing SECTION\n");
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing SECTION\n");
+		pErr->Add(S);
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -824,7 +911,12 @@ bool CHRDParser::ParseVector(const CArray<CToken>& Tokens, CData& Output)
 		CData Data;
 		if (!(ParseData(Tokens, Data) && (Data.IsA<int>() || Data.IsA<float>())))
 		{
-			n_printf("Numeric constant expected in vector (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+			if (pErr)
+			{
+				CString S;
+				S.Format("Numeric constant expected in vector (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+				pErr->Add(S);
+			}
 			ParserCursor = CursorBackup;
 			FAIL;
 		}
@@ -864,7 +956,12 @@ bool CHRDParser::ParseVector(const CArray<CToken>& Tokens, CData& Output)
 				
 				default:
 					ParserCursor = CursorBackup;
-					n_printf("Unexpected vector element count: %d (Ln:%u, Col:%u)\n", Floats.GetCount(), CurrToken.Ln, CurrToken.Cl);
+					if (pErr)
+					{
+						CString S;
+						S.Format("Unexpected vector element count: %d (Ln:%u, Col:%u)\n", Floats.GetCount(), CurrToken.Ln, CurrToken.Cl);
+						pErr->Add(S);
+					}
 					FAIL;
 			}
 
@@ -874,13 +971,23 @@ bool CHRDParser::ParseVector(const CArray<CToken>& Tokens, CData& Output)
 		else
 		{
 			ParserCursor = CursorBackup;
-			n_printf("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+			if (pErr)
+			{
+				CString S;
+				S.Format("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+				pErr->Add(S);
+			}
 			FAIL;
 		}
 	}
 
 	ParserCursor = CursorBackup;
-	n_printf("Unexpected end of file while parsing VECTOR\n");
+	if (pErr)
+	{
+		CString S;
+		S.Format("Unexpected end of file while parsing VECTOR\n");
+		pErr->Add(S);
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------

@@ -3,7 +3,7 @@
 #define __DEM_L1_ANIM_KEYFRAME_TRACK_H__
 
 #include <Animation/AnimFwd.h>
-#include <mathlib/quaternion.h>
+#include <Math/Quaternion.h>
 #include <Data/FixedArray.h>
 
 // Animation track is a set of float4 keys, forming a curve. Being sampled in a certain time,

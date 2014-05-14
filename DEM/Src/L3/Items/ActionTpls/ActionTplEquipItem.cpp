@@ -3,6 +3,7 @@
 #include <AI/PropActorBrain.h>
 #include <Items/Prop/PropEquipment.h>
 #include <Items/Actions/ActionEquipItem.h>
+#include <Core/Factory.h>
 
 #ifdef __WIN32__
 	#ifdef GetProp

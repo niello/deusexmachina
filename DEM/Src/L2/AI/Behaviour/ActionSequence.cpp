@@ -2,6 +2,7 @@
 
 #include <AI/AIServer.h>
 #include <Data/DataArray.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

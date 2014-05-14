@@ -3,7 +3,7 @@
 #define __IPG_DMG_SOURCE_H__
 
 #include <StdDEM.h> 
-//#include <Core/RefCounted.h>
+//#include <Core/Object.h>
 
 // Damage source produces DamageEffects and applies them at the right time to the right targets.
 // Triggered by source-owning entity.
@@ -29,7 +29,7 @@ enum ETargetType
 
 //!!!define effect types - immediate, projectile! projectile params: isHoming, radius etc.
 
-class CDamageSource //: public Core::CRefCounted //???effect source?
+class CDamageSource //: public Core::CObject //???effect source?
 {
 public:
 

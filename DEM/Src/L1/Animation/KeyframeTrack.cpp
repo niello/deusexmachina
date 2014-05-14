@@ -1,5 +1,7 @@
 #include "KeyframeTrack.h"
 
+#include <Core/Core.h>
+
 namespace Anim
 {
 

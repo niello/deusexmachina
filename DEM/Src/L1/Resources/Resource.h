@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RESOURCE_H__
 #define __DEM_L1_RESOURCE_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 
 // Resource wraps a piece of abstract data, used by other systems. It can be loaded and managed by
@@ -20,7 +20,7 @@ enum EResourceState
 	//Rsrc_Pending - for async
 };
 
-class CResource: public Core::CRefCounted
+class CResource: public Core::CObject
 {
 	__DeclareClassNoFactory;
 
@@ -51,7 +51,7 @@ typedef Ptr<CResource> PResource;
 #define __ImplementResourceClass(Class, FourCC, ParentClass) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
 	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
-	Core::CRefCounted* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
+	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class)(*(CStrID*)pParam); } \
 	bool Class::RegisterInFactory() \
 	{ \

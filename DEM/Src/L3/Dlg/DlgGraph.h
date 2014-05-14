@@ -17,7 +17,7 @@ namespace Story
 {
 typedef Ptr<class CDlgNode> PDlgNode;
 
-class CDlgGraph: public Core::CRefCounted
+class CDlgGraph: public Core::CObject
 {
 public:
 

@@ -1,4 +1,4 @@
-#include <StdDEM.h> // keep before to disable warning
+#include <Core/Core.h> // keep before to disable warning
 #include "CEGUINebula2Logger.h"
 
 namespace CEGUI
@@ -15,7 +15,7 @@ void CNebula2Logger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel 
 			case CEGUI::Standard:
 			case CEGUI::Informative:
 			case CEGUI::Insane:
-				n_printf("%s\n", message.c_str());
+				Core::Log("%s\n", message.c_str());
 				break;
 			default:
 				Core::Error("Unknown CEGUI logging level\n");

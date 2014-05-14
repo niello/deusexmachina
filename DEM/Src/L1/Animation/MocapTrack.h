@@ -3,7 +3,7 @@
 #define __DEM_L1_ANIM_MOCAP_TRACK_H__
 
 #include <Animation/AnimFwd.h>
-#include <mathlib/quaternion.h>
+#include <Math/Quaternion.h>
 
 // Animation track is a set of float4 keys, forming a curve. Being sampled in a certain time,
 // it returns single interpolated float4 value, that can be used as any transformation component

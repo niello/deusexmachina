@@ -4,7 +4,7 @@
 
 #include <StdDEM.h>
 #include <Scene/SceneFwd.h>
-#include <mathlib/vector.h>
+#include <Math/Vector4.h>
 
 // Animation system constants and forward declarations
 

@@ -1,6 +1,6 @@
 #include "CoreServer.h"
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 
 namespace Core
 {
@@ -18,7 +18,7 @@ CCoreServer::~CCoreServer()
 	n_assert(!_IsOpen);
 
 #ifdef _DEBUG
-	CRefCounted::DumpLeaks();
+	CObject::DumpLeaks();
 #endif
 
 	// It _dumps_ leaks!

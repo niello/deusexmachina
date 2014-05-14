@@ -2,6 +2,7 @@
 
 #include <Scene/Scene.h>
 #include <IO/BinaryReader.h>
+#include <Core/Factory.h>
 
 namespace Scene
 {

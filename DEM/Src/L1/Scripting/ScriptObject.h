@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCRIPT_OBJ_H__
 #define __DEM_L1_SCRIPT_OBJ_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Array.h>
 #include <Events/Subscription.h>
 
@@ -33,7 +33,7 @@ namespace Data
 namespace Scripting
 {
 
-class CScriptObject: public Core::CRefCounted
+class CScriptObject: public Core::CObject
 {
 	__DeclareClass(CScriptObject);
 

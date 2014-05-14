@@ -2,12 +2,13 @@
 #ifndef __DEM_L2_ENTITY_MANAGER_H__
 #define __DEM_L2_ENTITY_MANAGER_H__
 
-#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <Game/Entity.h>
 #include <Game/Property.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
+#include <Core/Factory.h>
 
 // The entity manager creates and manages entities and allows to
 // register properties to be usable by entities.
@@ -16,7 +17,7 @@ namespace Game
 {
 #define EntityMgr Game::CEntityManager::Instance()
 
-class CEntityManager: public Core::CRefCounted
+class CEntityManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CEntityManager);

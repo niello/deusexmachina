@@ -1,6 +1,7 @@
 #include "KeyframeClip.h"
 
 #include <Animation/NodeControllerKeyframe.h>
+#include <Core/Factory.h>
 
 namespace Anim
 {

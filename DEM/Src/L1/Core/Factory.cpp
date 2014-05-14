@@ -23,7 +23,7 @@ void CFactory::Register(const CRTTI& RTTI, const CString& Name, Data::CFourCC Fo
 }
 //---------------------------------------------------------------------
 
-CRefCounted* CFactory::Create(const CString& ClassName, void* pParam) const
+CObject* CFactory::Create(const CString& ClassName, void* pParam) const
 {
 	n_assert2_dbg(IsNameRegistered(ClassName), ClassName.CStr());
 	const CRTTI* pRTTI = GetRTTI(ClassName);
@@ -32,7 +32,7 @@ CRefCounted* CFactory::Create(const CString& ClassName, void* pParam) const
 }
 //---------------------------------------------------------------------
 
-CRefCounted* CFactory::Create(Data::CFourCC ClassFourCC, void* pParam) const
+CObject* CFactory::Create(Data::CFourCC ClassFourCC, void* pParam) const
 {
 	n_assert2_dbg(IsFourCCRegistered(ClassFourCC), ClassFourCC.ToString());
 	const CRTTI* pRTTI = GetRTTI(ClassFourCC);

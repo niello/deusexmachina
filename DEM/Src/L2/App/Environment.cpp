@@ -1,7 +1,6 @@
 #include "Environment.h"
 
 #include <Scripting/EntityScriptObject.h>
-#include <Core/Logger.h>
 
 #undef DeleteFile
 
@@ -21,7 +20,7 @@ CEnvironment::~CEnvironment()
 bool CEnvironment::InitCore()
 {
 	//!!!need to redesign logger! it must be active on CoreSrv destruction to dump memory leaks!
-	n_new(Core::CLogger);
+	//n_new(Core::CLogger);
 
 	//!!!core server can check is app already running inside the Open method!
 	n_new(Core::CCoreServer());
@@ -38,7 +37,7 @@ bool CEnvironment::InitCore()
 		for (int i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
 
-	CoreLogger->Open((AppName + " - " + AppVersion).CStr());
+	//CoreLogger->Open((AppName + " - " + AppVersion).CStr());
 
 	CString AppData;
 	AppData.Format("AppData:%s/%s", AppVendor.CStr(), AppName.CStr());
@@ -53,12 +52,12 @@ void CEnvironment::ReleaseCore()
 	DataServer = NULL;
 	IOServer = NULL;
 
-	CoreLogger->Close();
+	//CoreLogger->Close();
 
 	CoreSrv->Close();
 	n_delete(CoreSrv);
 
-	n_delete(CoreLogger);
+	//n_delete(CoreLogger);
 }
 //---------------------------------------------------------------------
 

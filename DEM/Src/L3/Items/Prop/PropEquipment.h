@@ -3,6 +3,7 @@
 #define __DEM_L3_PROP_EQUIPMENT_H__
 
 #include <Items/Prop/PropInventory.h>
+#include <Data/Dictionary.h>
 
 // Extends basic inventory with set of slots, accepting some volume/count of items of certain types
 // and allowing characters to use these items and gain their effects.

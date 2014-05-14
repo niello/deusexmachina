@@ -1,11 +1,13 @@
 #include "AudioEntity.h"
 
 #include "AudioServer.h"
+
 #include <Time/TimeServer.h>
+#include <Core/Factory.h>
 
 namespace Audio
 {
-__ImplementClass(Audio::CAudioEntity, 'AUEN', Core::CRefCounted);
+__ImplementClass(Audio::CAudioEntity, 'AUEN', Core::CObject);
 
 CAudioEntity::CAudioEntity():
 	Volume(1.0f),
@@ -92,7 +94,7 @@ void CAudioEntity::Start()
 	{
 		// Play as 2D sound
 		if (FAILED(pSound->Play(Priority, PlaybackFlags, GetDSVolume(), 0, 0, SoundIdx)))
-			n_printf("Sound: failed to start 2D sound '%s'\n", RsrcName.CStr());
+			Core::Log("Sound: failed to start 2D sound '%s'\n", RsrcName.CStr());
 	}
 	else
 	{
@@ -100,7 +102,7 @@ void CAudioEntity::Start()
 		// Play as 3D sound
 		PlaybackFlags |= DSBPLAY_TERMINATEBY_PRIORITY | DSBPLAY_TERMINATEBY_DISTANCE;
 		if (FAILED(pSound->Play3D(GetDS3DProps(), Priority, PlaybackFlags, GetDSVolume(), 0, SoundIdx)))
-			n_printf("Sound: failed to start 3D sound '%s'\n", RsrcName.CStr());
+			Core::Log("Sound: failed to start 3D sound '%s'\n", RsrcName.CStr());
 	}
 
 	Flags.Set(IS_FIRST_FRAME);

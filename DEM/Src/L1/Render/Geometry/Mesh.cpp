@@ -2,6 +2,7 @@
 
 #include <Render/RenderServer.h>
 #include <Events/EventServer.h>
+#include <Core/Factory.h>
 
 namespace Render
 {

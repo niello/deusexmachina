@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include <Core/Factory.h>
+
 namespace Scene
 {
 __ImplementClass(Scene::CCamera, 'CAMR', Scene::CNodeAttribute);

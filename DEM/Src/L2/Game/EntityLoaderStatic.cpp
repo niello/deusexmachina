@@ -1,6 +1,7 @@
 #include "EntityLoaderStatic.h"
 
 #include <Game/StaticEnvManager.h>
+#include <Core/Factory.h>
 
 namespace Game
 {

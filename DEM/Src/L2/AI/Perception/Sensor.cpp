@@ -2,5 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CSensor, Core::CRefCounted);
+__ImplementClassNoFactory(AI::CSensor, Core::CObject);
 }

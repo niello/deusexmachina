@@ -2,5 +2,5 @@
 
 namespace App
 {
-__ImplementClassNoFactory(App::CStateHandler, Core::CRefCounted);
+__ImplementClassNoFactory(App::CStateHandler, Core::CObject);
 } // namespace App

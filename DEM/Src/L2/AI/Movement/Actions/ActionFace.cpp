@@ -1,6 +1,7 @@
 #include "ActionFace.h"
 
 #include <AI/PropActorBrain.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

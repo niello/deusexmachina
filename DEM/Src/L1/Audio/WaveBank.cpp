@@ -4,7 +4,7 @@
 //
 //namespace Audio
 //{
-//__ImplementClassNoFactory(Audio::CWaveBank, Core::CRefCounted);
+//__ImplementClassNoFactory(Audio::CWaveBank, Core::CObject);
 //__ImplementClass(Audio::CWaveBank);
 //
 //nSound3* CWaveBank::CreateSoundObjectFromXmlTable(const nXmlTable& XMLTable, int Row, const CString& ColumnName)

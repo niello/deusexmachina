@@ -17,7 +17,7 @@ HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOI
 
 	if (!Loaded)
 	{
-		n_printf("D3DXDEMInclude: could not open include file '%s' nor\n\t'%s' nor\n\t'%s'!\n",
+		Core::Log("D3DXDEMInclude: could not open include file '%s' nor\n\t'%s' nor\n\t'%s'!\n",
 			pName, (ShaderDir + pName).CStr(), (ShaderRootDir + pName).CStr());
 		return E_FAIL;
 	}

@@ -25,7 +25,7 @@ namespace Scene
 class CScene;
 typedef Ptr<class CSceneNode> PSceneNode;
 
-class CSceneNode: public Core::CRefCounted
+class CSceneNode: public Core::CObject
 {
 protected:
 

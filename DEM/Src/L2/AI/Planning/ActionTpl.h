@@ -2,6 +2,7 @@
 #ifndef __DEM_L2_AI_ACTION_TPL_H__
 #define __DEM_L2_AI_ACTION_TPL_H__
 
+#include <Core/Object.h>
 #include <AI/Planning/WorldState.h>
 #include <AI/ActorFwd.h>
 #include <Data/Params.h>
@@ -15,7 +16,7 @@ namespace AI
 typedef Ptr<class CAction> PAction;
 
 //???need refcount & factory? can instantiate manually
-class CActionTpl: public Core::CRefCounted
+class CActionTpl: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

@@ -11,7 +11,7 @@ namespace Items
 {
 typedef Ptr<class CItem> PItem;
 
-class CItem: public Core::CRefCounted
+class CItem: public Core::CObject
 {
 protected:
 

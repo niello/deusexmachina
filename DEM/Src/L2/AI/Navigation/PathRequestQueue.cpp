@@ -1,5 +1,6 @@
 #include "PathRequestQueue.h"
 
+#include <Core/Core.h>
 #include <DetourCommon.h>
 #include <DetourNavMeshQuery.h>
 #include <memory.h> // memcpy

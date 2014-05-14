@@ -5,7 +5,7 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CStaticEnvManager, Core::CRefCounted);
+__ImplementClassNoFactory(Game::CStaticEnvManager, Core::CObject);
 __ImplementSingleton(CStaticEnvManager);
 
 bool CStaticEnvManager::CanEntityBeStatic(const Data::CParams& Desc) const

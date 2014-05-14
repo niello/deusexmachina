@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_RENDERER_H__
 #define __DEM_L1_RENDER_RENDERER_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Params.h>
 //#include <Render/RenderFwd.h>
 
@@ -21,7 +21,7 @@ namespace Scene
 namespace Render
 {
 
-class IRenderer: public Core::CRefCounted
+class IRenderer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

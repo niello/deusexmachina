@@ -13,7 +13,7 @@ namespace Story
 
 class CTask;
 
-class CQuest: public Core::CRefCounted
+class CQuest: public Core::CObject
 {
 public:
 

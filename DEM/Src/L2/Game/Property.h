@@ -4,7 +4,7 @@
 
 // Properties are attached to game entities to add specific functionality or behaviors to the entity.
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <Data/HashTable.h>
@@ -15,7 +15,7 @@ class CEntity;
 typedef Ptr<class CProperty> PProperty;
 typedef CHashTable<CStrID, PProperty> CPropertyStorage;
 
-class CProperty: public Core::CRefCounted
+class CProperty: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

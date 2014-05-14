@@ -18,7 +18,7 @@ namespace Game
 {
 #define GameSrv Game::CGameServer::Instance()
 
-class CGameServer: public Core::CRefCounted
+class CGameServer: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CGameServer);

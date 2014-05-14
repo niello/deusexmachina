@@ -65,7 +65,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		Script = n_new(Scripting::CScriptObject((CString("Level_") + ID.CStr()).CStr()));
 		Script->Init(); // No special class
 		if (ExecResultIsError(Script->LoadScriptFile(ScriptFile)))
-			n_printf("Error loading script for level %s\n", ID.CStr());
+			Core::Log("Error loading script for level %s\n", ID.CStr());
 	}
 
 	Data::PParams SubDesc;
@@ -131,7 +131,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		if (IOSrv->FileExists(NMFile))
 		{
 			if (!AILevel->LoadNavMesh(NMFile))
-				n_printf("Error loading navigation mesh for level %s\n", ID.CStr());
+				Core::Log("Error loading navigation mesh for level %s\n", ID.CStr());
 
 			//Data::PParams NavRegDesc;
 			//if (SubDesc->Get(NavRegDesc, CStrID("Regions")))

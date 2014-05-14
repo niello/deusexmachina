@@ -3,7 +3,7 @@
 #define __DEM_L1_HRD_WRITER_H__
 
 #include <IO/StreamWriter.h>
-#include <Core/Ptr.h>
+#include <Data/Ptr.h>
 
 // Serializer for HRD files
 

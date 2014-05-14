@@ -126,6 +126,11 @@ bool CDisplay::OpenWindow()
 						hWndParent, NULL, hInst, NULL);
 	n_assert(hWnd);
 
+	//!!!MSDN!
+	//!!!The first time an application calls ShowWindow, it should use the WinMain function's
+	//nCmdShow parameter as its nCmdShow parameter. Subsequent calls to ShowWindow must use
+	//one of the values in the given list, instead of the one specified by the WinMain function's nCmdShow parameter. 
+
 	if (AlwaysOnTop) SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 
 	SetWindowLongPtr(hWnd, 0, (LONG)this);
@@ -137,7 +142,7 @@ bool CDisplay::OpenWindow()
 	RawInputDevices[0].hwndTarget = hWnd;
 
 	if (RegisterRawInputDevices(RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-		n_printf("CDisplay: High-definition (raw) mouse device registration failed!\n");
+		Core::Log("CDisplay: High-definition (raw) mouse device registration failed!\n");
 
 	IsWndOpen = true;
 	IsWndMinimized = false;

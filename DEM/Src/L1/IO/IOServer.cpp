@@ -7,7 +7,7 @@
 
 namespace IO
 {
-__ImplementClassNoFactory(IO::CIOServer, Core::CRefCounted);
+__ImplementClassNoFactory(IO::CIOServer, Core::CObject);
 __ImplementSingleton(IO::CIOServer);
 
 CIOServer::CIOServer(): Assigns(32)
@@ -307,7 +307,7 @@ bool CIOServer::LoadFileToBuffer(const CString& FileName, Data::CBuffer& Buffer)
 	int FileSize = File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
-	//n_printf("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
+	//Core::Log("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
 	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------

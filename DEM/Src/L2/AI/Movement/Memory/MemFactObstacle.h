@@ -4,7 +4,7 @@
 
 #include <AI/Memory/MemFact.h>
 #include <Data/StringID.h>
-#include <mathlib/vector.h>
+#include <Math/Vector3.h>
 
 // Memory fact representing obstacle
 

@@ -2,6 +2,7 @@
 
 #include <Data/Params.h>
 #include <Data/DataArray.h>
+#include <Core/Factory.h>
 
 namespace Render
 {

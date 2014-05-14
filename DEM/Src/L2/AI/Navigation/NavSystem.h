@@ -3,7 +3,7 @@
 #define __DEM_L2_AI_NAV_SYSTEM_H__
 
 #include <StdDEM.h>
-#include <Core/Ptr.h>
+#include <Data/Ptr.h>
 #include <AI/Navigation/PathEdge.h>
 #include <AI/ActorFwd.h>
 #include <Data/Dictionary.h>

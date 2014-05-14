@@ -4,7 +4,7 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CNodeAttribute, Core::CRefCounted);
+__ImplementClassNoFactory(Scene::CNodeAttribute, Core::CObject);
 
 void CNodeAttribute::RemoveFromNode()
 {

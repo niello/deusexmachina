@@ -3,7 +3,7 @@
 #define __DEM_L2_AI_PATH_EDGE_H__
 
 #include <Data/StringID.h>
-#include <mathlib/vector.h>
+#include <Math/Vector3.h>
 
 // Path node is a waypoint/edge representation, produced as part of a path by path planner.
 // Path is just an array of path nodes.

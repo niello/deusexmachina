@@ -18,7 +18,7 @@ namespace AI
 class CStimulus;
 class CSensor;
 
-class CAILevel: public Core::CRefCounted
+class CAILevel: public Core::CObject
 {
 protected:
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_INPUT_MAPPING_STATE_H__
 #define __DEM_L1_INPUT_MAPPING_STATE_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Events/EventsFwd.h>
 #include <Data/StringID.h>
 #include <Input/Keys.h>
@@ -21,7 +21,7 @@ namespace Data
 namespace Input
 {
 
-class CInputMappingState //: public Core::CRefCounted
+class CInputMappingState //: public Core::CObject
 {
 private:
 

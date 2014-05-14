@@ -5,7 +5,7 @@
 #include <Render/Renderer.h>
 #include <Render/Geometry/Mesh.h>
 #include <Render/Materials/Shader.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 
 #undef DrawText
 
@@ -60,7 +60,7 @@ struct CDDText
 	bool	Wrap;
 };
 
-class CDebugDraw: public Core::CRefCounted
+class CDebugDraw: public Core::CObject
 {
 	__DeclareSingleton(CDebugDraw);
 

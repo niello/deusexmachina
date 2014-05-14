@@ -2,6 +2,7 @@
 
 #include <AI/PropActorBrain.h>
 #include <Items/Prop/PropEquipment.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

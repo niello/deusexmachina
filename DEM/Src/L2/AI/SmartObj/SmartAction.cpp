@@ -2,6 +2,7 @@
 
 #include <AI/Planning/WorldStateSource.h>
 #include <Scripting/ScriptObject.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
@@ -51,7 +52,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 		ScriptObj->Init(); // No special class
 		CString ScriptFile = "Scripts:" + ScriptName + ".lua";
 		if (ScriptObj->LoadScriptFile(ScriptFile) != Success)
-			n_printf("Error loading script \"%s\" for an SO action", ScriptFile.CStr());
+			Core::Log("Error loading script \"%s\" for an SO action", ScriptFile.CStr());
 	}
 }
 //---------------------------------------------------------------------

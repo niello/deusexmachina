@@ -5,7 +5,7 @@
 
 namespace RPG
 {
-__ImplementClassNoFactory(RPG::CFactionManager, Core::CRefCounted);
+__ImplementClassNoFactory(RPG::CFactionManager, Core::CObject);
 __ImplementSingleton(RPG::CFactionManager);
 
 CFactionManager::CFactionManager()

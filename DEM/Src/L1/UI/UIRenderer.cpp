@@ -1,5 +1,6 @@
 #include "UIRenderer.h"
 
+#include <Core/Factory.h>
 #include <CEGUISystem.h>
 
 namespace Render

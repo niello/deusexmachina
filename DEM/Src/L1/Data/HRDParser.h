@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_HRD_PARSER_H__
 #define __DEM_L1_HRD_PARSER_H__
 
-#include <Core/RefCounted.h>
+#include <Data/Ptr.h>
 #include <Data/Data.h>
 
 // Parser for HRD files
@@ -12,10 +12,8 @@ namespace Data
 typedef Ptr<class CDataArray> PDataArray;
 typedef Ptr<class CParams> PParams;
 
-class CHRDParser: public Core::CRefCounted
+class CHRDParser
 {
-	__DeclareClassNoFactory;
-
 private:
 
 	enum ETable
@@ -60,8 +58,8 @@ private:
 					Col;
 					
 	int				ParserCursor;
-	
-	//???CArray<CToken> Tokens;?
+
+	CString*		pErr;
 	
 	// Lexical analysis
 	//!!!void SetupRWAndDlm();
@@ -91,7 +89,7 @@ public:
 
 	CHRDParser();
 
-	bool ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result);
+	bool ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result, CString* pErrors = NULL);
 };
 
 }

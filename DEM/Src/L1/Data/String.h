@@ -3,7 +3,8 @@
 
 #include <Data/Array.h>
 #include <Data/Hash.h>
-#include <mathlib/matrix44.h> //!!!remove dependent code to utils
+#include <Math/Matrix44.h> //!!!remove dependent code to utils
+#include <Core/Core.h>
 #include <stdarg.h>
 
 // Character string with local buffer for small strings to avoid allocations
@@ -42,7 +43,7 @@ public:
 	void			Set(const char* pSrc) { Set(pSrc, pSrc ? (int)strlen(pSrc) : 0); }
 	void			Reserve(DWORD NewLength);
 	void			Add(char Chr) { AppendRange(&Chr, 1); }
-	void			Add(const char* str) { n_assert(str); AppendRange(str, strlen(str)); }
+	void			Add(const char* str, int Len = -1) { n_assert(str); AppendRange(str, Len == -1 ? strlen(str) : Len); }
 	void			Add(const CString& Str) { AppendRange(Str.CStr(), Str.Length()); }
 	void			AppendRange(const char* str, uint CharCount);
 	void			AppendInt(int val) { CString str; str.SetInt(val); Add(str); }
@@ -522,13 +523,25 @@ inline void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
 	va_list ArgList;
 	va_copy(ArgList, Args);
 	size_t ReqLength;
-	ReqLength = _vscprintf(pFormatStr, ArgList) + 1; // + 1 for terminating NULL char
+	ReqLength = _vscprintf(pFormatStr, ArgList) + 1; // + 1 for terminating \0
 	va_end(ArgList);
 
-	char* pBuffer = (char*)_malloca(ReqLength);
-	_vsnprintf_s(pBuffer, ReqLength, ReqLength, pFormatStr, Args);
-	Set(pBuffer);
-	_freea(pBuffer);
+	Clear();
+	if (ReqLength >= LOCAL_STRING_SIZE)
+	{
+		pString = (char*)n_malloc(ReqLength);
+		_vsnprintf_s(pString, ReqLength, ReqLength, pFormatStr, Args);
+		--ReqLength;
+		pString[ReqLength] = 0;
+		Len = ReqLength;
+	}
+	else
+	{
+		_vsnprintf_s(pLocalString, ReqLength, ReqLength, pFormatStr, Args);
+		--ReqLength;
+		pLocalString[ReqLength] = 0;
+		LocalLen = (ushort)ReqLength;
+	}
 }
 //---------------------------------------------------------------------
 

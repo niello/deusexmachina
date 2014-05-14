@@ -3,7 +3,7 @@
 #define __DEM_L2_STATIC_ENV_MANAGER_H__
 
 #include <Game/StaticObject.h>
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Data/Dictionary.h>
 
 // Static environment manager manages static objects. It includes graphics and collision shapes
@@ -16,7 +16,7 @@ namespace Game
 {
 #define StaticEnvMgr Game::CStaticEnvManager::Instance()
 
-class CStaticEnvManager: public Core::CRefCounted
+class CStaticEnvManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CStaticEnvManager);

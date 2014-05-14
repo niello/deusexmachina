@@ -3,12 +3,7 @@
 #include <UI/UIServer.h>
 #include <Input/InputServer.h>
 #include <Events/EventServer.h>
-
-//!!!Only for DebugBreak()!
-#ifdef _DEBUG
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
+#include <Core/Factory.h>
 
 // Dbg menu plugins:
 // console - OK
@@ -26,7 +21,7 @@
 
 namespace Debug
 {
-__ImplementClassNoFactory(Debug::CDebugServer, Core::CRefCounted);
+__ImplementClassNoFactory(Debug::CDebugServer, Core::CObject);
 __ImplementSingleton(Debug::CDebugServer);
 
 CDebugServer::CDebugServer(): UIAllowed(false)
@@ -81,7 +76,7 @@ void CDebugServer::AllowUI(bool Allow)
 bool CDebugServer::OnDebugBreak(const Events::CEventBase& Event)
 {
 #ifdef _DEBUG
-	DebugBreak();
+	__debugbreak();
 #endif
 	OK;
 }

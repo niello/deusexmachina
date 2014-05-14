@@ -15,7 +15,7 @@ namespace AI
 typedef Data::CKeyList<const Core::CRTTI*, PMemFact> CMemFactListSet;
 typedef CMemFactListSet::CIterator CMemFactNode;
 
-class CMemSystem //: public Core::CRefCounted
+class CMemSystem //: public Core::CObject
 {
 protected:
 

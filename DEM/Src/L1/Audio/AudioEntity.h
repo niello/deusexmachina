@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_AUDIO_ENTITY_H__
 #define __DEM_L1_AUDIO_ENTITY_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Flags.h>
 #include <Audio/Audio.h>
 #include <Audio/SoundResource.h>
@@ -18,7 +18,7 @@ namespace Audio
 {
 class CSoundResource;
 
-class CAudioEntity: public Core::CRefCounted
+class CAudioEntity: public Core::CObject
 {
 	__DeclareClass(CAudioEntity);
 

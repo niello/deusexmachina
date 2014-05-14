@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_PARAMS_H__
 #define __DEM_L1_PARAMS_H__
 
-#include <Core/RefCounted.h>
-#include "Param.h"
+#include <Data/RefCounted.h>
+#include <Data/Param.h>
 
 // Array of named variant variables
 
@@ -22,10 +22,8 @@ enum EMergeMethod
 
 typedef Ptr<class CParams> PParams;
 
-class CParams: public Core::CRefCounted
+class CParams: public CRefCounted
 {
-	__DeclareClass(CParams);
-
 private:
 
 	CArray<CParam> Params; //!!!order is important at least for HRDs!

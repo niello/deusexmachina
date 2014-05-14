@@ -2,8 +2,8 @@
 #ifndef __DEM_L2_CAMERA_MANAGER_H__
 #define __DEM_L2_CAMERA_MANAGER_H__
 
-//#include <Core/RefCounted.h>
-#include <Core/Singleton.h>
+//#include <Core/Object.h>
+#include <Data/Singleton.h>
 #include <Scene/NodeControllerThirdPerson.h>
 //#include <Scene/Camera.h>
 //#include <Util/PFLoop.h>
@@ -27,7 +27,7 @@ namespace Scene
 class CScene;
 class CSceneNode;
 
-class CCameraManager: public Core::CRefCounted
+class CCameraManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

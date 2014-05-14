@@ -12,7 +12,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysicsWorld, Core::CRefCounted);
+__ImplementClassNoFactory(Physics::CPhysicsWorld, Core::CObject);
 
 CPhysicsWorld::~CPhysicsWorld()
 {

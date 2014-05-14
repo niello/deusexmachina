@@ -2,6 +2,7 @@
 
 #include "Item.h"
 #include <Data/Params.h>
+#include <Core/Factory.h>
 
 namespace Items
 {

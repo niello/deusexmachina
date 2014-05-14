@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RESOURCE_MANAGER_H__
 #define __DEM_L1_RESOURCE_MANAGER_H__
 
-#include <Core/Ptr.h>
+#include <Data/Ptr.h>
 #include <Core/RTTI.h>
 #include <Data/StringID.h>
 #include <Data/HashTable.h>

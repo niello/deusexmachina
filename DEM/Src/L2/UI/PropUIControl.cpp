@@ -13,6 +13,7 @@
 #include <Scripting/EventHandlerScript.h>
 #include <Data/DataServer.h>
 #include <Events/EventServer.h>
+#include <Core/Factory.h>
 
 namespace Physics
 {

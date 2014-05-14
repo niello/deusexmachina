@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_NODE_ATTR_H__
 #define __DEM_L1_SCENE_NODE_ATTR_H__
 
-#include <Core/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
 
@@ -19,7 +19,7 @@ namespace Scene
 class CScene;
 class CSceneNode;
 
-class CNodeAttribute: public Core::CRefCounted
+class CNodeAttribute: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

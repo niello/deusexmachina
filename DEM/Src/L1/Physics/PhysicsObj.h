@@ -19,7 +19,7 @@ namespace Physics
 {
 class CPhysicsWorld;
 
-class CPhysicsObj: public Core::CRefCounted
+class CPhysicsObj: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

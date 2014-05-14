@@ -18,7 +18,7 @@ namespace AI
 class CStimulus;
 class CMemFact;
 
-class CSensor: public Core::CRefCounted
+class CSensor: public Core::CObject
 {
 	__DeclareClassNoFactory;
 

@@ -409,7 +409,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\Ptr.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\QuadTree.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\RefCounted.h"
 				>
 			</File>
 			<File
@@ -418,6 +426,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Data\SimpleString.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\Singleton.h"
 				>
 			</File>
 			<File
@@ -529,15 +541,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Core\Core_Win32.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Core\CoreServer.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Core\CoreServer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\DbgAlloc.cpp"
 				>
 			</File>
 			<File
@@ -549,31 +561,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Logger.cpp"
+				RelativePath="..\..\Src\L1\Core\Memory.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Logger.h"
+				RelativePath="..\..\Src\L1\Core\Memory.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Ptr.h"
+				RelativePath="..\..\Src\L1\Core\Object.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\RefCounted.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\RefCounted.h"
+				RelativePath="..\..\Src\L1\Core\Object.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Core\RTTI.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Singleton.h"
 				>
 			</File>
 		</Filter>
@@ -1205,11 +1209,71 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Math\EnvelopeCurve.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Euler.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\EulerAngles.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Line.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Math\Math.h"
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Math\Matrix33.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Matrix33.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Matrix44.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Matrix44.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\MatrixDefs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\PackedNormal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Plane.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Math\Polar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Quaternion.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Quaternion.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Rect.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Sphere.h"
 				>
 			</File>
 			<File
@@ -1220,110 +1284,38 @@
 				RelativePath="..\..\Src\L1\Math\TransformSRT.h"
 				>
 			</File>
-			<Filter
-				Name="Nebula2 (need to clean)"
+			<File
+				RelativePath="..\..\Src\L1\Math\Triangle.h"
 				>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\envelopecurve.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\euler.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\eulerangles.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\line.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\mathlib\matrix33.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\matrix33.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\mathlib\matrix44.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\matrix44.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\matrixdefs.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\nmath.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\pknorm.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\plane.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\mathlib\quaternion.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\quaternion.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\rectangle.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\sphere.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\triangle.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\vector.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\mathlib\vector2.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\vector2.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\mathlib\vector3.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\vector3.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\vector3envelopecurve.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\src\mathlib\vector4.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Src\nebula2\inc\mathlib\vector4.h"
-					>
-				</File>
-			</Filter>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector2.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector2.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector3.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector3.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector3EnvelopeCurve.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector4.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Math\Vector4.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Render"

@@ -11,7 +11,7 @@
 namespace Render
 {
 
-class CVertexBuffer: public Core::CRefCounted
+class CVertexBuffer: public Core::CObject
 {
 protected:
 

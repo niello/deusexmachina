@@ -1,6 +1,6 @@
 #include <Util/UtilFwd.h>
 
-#include <mathlib/nmath.h>
+#include <Math/Math.h>
 
 // Perlin CPerlinNoise class.
 // See http://mrl.nyu.edu/~perlin/CPerlinNoise/ for details.

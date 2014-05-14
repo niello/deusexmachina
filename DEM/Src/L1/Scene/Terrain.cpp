@@ -5,6 +5,7 @@
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <Data/DataServer.h>
+#include <Core/Factory.h>
 #include <d3d9.h> //!!!for a texture format only!
 
 namespace Render

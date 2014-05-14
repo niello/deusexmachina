@@ -2,7 +2,7 @@
 #ifndef __DEM_L3_DLG_SYSTEM_H__
 #define __DEM_L3_DLG_SYSTEM_H__
 
-#include <Core/Singleton.h>
+#include <Data/Singleton.h>
 #include <Dlg/DlgContext.h>
 #include <Data/Dictionary.h>
 
@@ -30,7 +30,7 @@ enum EDlgMode
 
 #define DlgMgr Story::CDialogueManager::Instance()
 
-class CDialogueManager: public Core::CRefCounted
+class CDialogueManager: public Core::CObject
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CDialogueManager);
