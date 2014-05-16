@@ -60,7 +60,7 @@ bool CAudioServer::Open()
 		FAILED(pDS->SetCooperativeLevel(hWnd, DSSCL_PRIORITY));
 	if (NoSoundDevice)
 	{
-		Core::Log("DirectSound device initialization failed, no sound device");
+		Sys::Log("DirectSound device initialization failed, no sound device");
 		_IsOpen = true;
 		return false;
 	}
@@ -74,7 +74,7 @@ bool CAudioServer::Open()
 
 	LPDIRECTSOUNDBUFFER pDSBPrimary = NULL;
 	if (FAILED(pDS->CreateSoundBuffer(&DSBufDesc, &pDSBPrimary, NULL)))
-		Core::Error("AudioSrv::Open(): pDS->CreateSoundBuffer(Primary) failed");
+		Sys::Error("AudioSrv::Open(): pDS->CreateSoundBuffer(Primary) failed");
 
 	//???channels+samples+bits to settings HRD?
 	WAVEFORMATEX WaveFmt;
@@ -87,10 +87,10 @@ bool CAudioServer::Open()
 	WaveFmt.nAvgBytesPerSec = (DWORD)(WaveFmt.nSamplesPerSec * WaveFmt.nBlockAlign);
 
 	if (FAILED(pDSBPrimary->SetFormat(&WaveFmt)))
-		Core::Error("AudioSrv::Open(): pDSBPrimary->SetFormat failed");
+		Sys::Error("AudioSrv::Open(): pDSBPrimary->SetFormat failed");
 
 	if (FAILED(pDSBPrimary->QueryInterface(IID_IDirectSound3DListener, (VOID**)&pDSListener)))
-		Core::Error("AudioSrv::Open(): pDSBPrimary->QueryInterface failed");
+		Sys::Error("AudioSrv::Open(): pDSBPrimary->QueryInterface failed");
 
 	SAFE_RELEASE(pDSBPrimary);
 
@@ -279,7 +279,7 @@ const char* SoundCategoryToString(ESoundCategory Cat)
 		case Music:		return "music";
 		case Speech:	return "speech";
 		case Ambient:	return "ambient";
-		default: Core::Error("nAudioServer3: Invalid Category: %i!", Cat); return "";
+		default: Sys::Error("nAudioServer3: Invalid Category: %i!", Cat); return "";
 	}
 }
 //---------------------------------------------------------------------
@@ -290,7 +290,7 @@ ESoundCategory StringToSoundCategory(const char* pStr)
 	if (!strcmp(pStr, "music")) return Music;
 	if (!strcmp(pStr, "speech")) return Speech;
 	if (!strcmp(pStr, "ambient")) return Ambient;
-	Core::Error("nAudioServer3: Invalid category string '%s'.\n", pStr);
+	Sys::Error("nAudioServer3: Invalid category string '%s'.\n", pStr);
 	return InvalidSoundCategory;
 }
 //---------------------------------------------------------------------

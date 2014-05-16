@@ -8,7 +8,7 @@
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
 
-// Manages the main application timer, time sources used by different subsystems, and named timers
+// Manages the main application timer, time sources, used by different subsystems, and named timers
 
 namespace Data
 {
@@ -36,16 +36,16 @@ protected:
 		CStrID	EventID; //???!!!CEventID?
 	};
 
-	bool								_IsOpen;
-	__int64								BasePerfTime;
-	CTime								PrevTime;
-	CTime								Time;
-	CTime								FrameTime;
-	CTime								LockedFrameTime;
-	CTime								LockTime;
-	float								TimeScale;
+	bool						_IsOpen;
+	CTime						BaseTime;
+	CTime						PrevTime;
+	CTime						Time;
+	CTime						FrameTime;
+	CTime						LockedFrameTime;
+	CTime						LockTime;
+	float						TimeScale;
 	CDict<CStrID, PTimeSource>	TimeSources;
-	CDict<CStrID, CTimer>			Timers;
+	CDict<CStrID, CTimer>		Timers;
 
 public:
 
@@ -68,7 +68,6 @@ public:
 	void			RemoveTimeSource(CStrID Name);
 	CTimeSource*	GetTimeSource(CStrID Name) const;
 	CTime			GetTime(CStrID SrcName = CStrID::Empty) const;
-	CTime			GetTrueTime();
 	CTime			GetFrameTime(CStrID SrcName = CStrID::Empty) const;
 	void			SetTimeScale(float SpeedScale) { n_assert(SpeedScale >= 0.f); TimeScale = SpeedScale; }
 	void			LockFrameRate(CTime DesiredFrameTime);

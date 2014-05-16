@@ -124,14 +124,14 @@ bool CWAVFile::Open(const CString& FileName)
 	m_hmmio = mmioOpen((LPSTR)MMIOFileName.CStr(), NULL, MMIO_ALLOCBUF | MMIO_READ);
 	if (!m_hmmio)
 	{
-		Core::Error("CWAVFile::Open(): failed to open file '%s'!", FileName.CStr());
+		Sys::Error("CWAVFile::Open(): failed to open file '%s'!", FileName.CStr());
 		return false;
 	}
 
 	if (!ReadMMIO())
 	{
 		mmioClose(m_hmmio, 0);
-		Core::Error("CWAVFile::Open(): not a wav file (%s)!", FileName.CStr());
+		Sys::Error("CWAVFile::Open(): not a wav file (%s)!", FileName.CStr());
 		return false;
 	}
 

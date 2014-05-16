@@ -23,7 +23,7 @@ protected:
 
 	LPCSTR String;
 
-	explicit CStringID(LPCSTR pString, int a, int b){ String = pString; }
+	explicit CStringID(LPCSTR pString, int /*a*/, int /*b*/){ String = pString; }
 
 public:
 

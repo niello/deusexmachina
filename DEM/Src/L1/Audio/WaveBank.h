@@ -8,7 +8,6 @@
 //// Holds a number of sound resources. There is usually one wave bank
 //// associated with a game level.
 //
-//// windows.h hack
 //#ifdef FindResource
 //#undef FindResource
 //#endif
@@ -53,7 +52,7 @@
 //
 //inline void CWaveBank::SetFilename(const CString& FileName)
 //{
-//	if (FileName.IsEmpty()) Core::Error("Audio::CWaveBank::SetFilename(): got no filename!");
+//	if (FileName.IsEmpty()) Sys::Error("Audio::CWaveBank::SetFilename(): got no filename!");
 //	XMLSheet.SetFilename(FileName);
 //}
 ////---------------------------------------------------------------------

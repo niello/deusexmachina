@@ -8,6 +8,9 @@
 
 // Core server manages low-level object framework
 
+//???!!!move to application bas class?! too little functionality and will not be more
+//doesn't worth a dedicated singleton
+
 namespace Core
 {
 #define CoreSrv Core::CCoreServer::Instance()

@@ -82,7 +82,7 @@ match:
 //!!!Write preallocation and growing as in CArray!
 void CString::Reserve(DWORD NewLength)
 {
-	Core::Error("NOT IMPLEMENTED!");
+	Sys::Error("NOT IMPLEMENTED!");
 	//Clear();
 	//if (NewLength >= LOCAL_STRING_SIZE)
 	//{

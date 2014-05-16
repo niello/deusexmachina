@@ -71,7 +71,7 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 				case AINav_DestSet:		return Running;
 				case AINav_Planning:
 				case AINav_Following:	return AdvancePath(pActor);
-				default: Core::Error("CActionGotoSmartObj::Update(): Unexpected navigation status '%d'", pActor->NavState);
+				default: Sys::Error("CActionGotoSmartObj::Update(): Unexpected navigation status '%d'", pActor->NavState);
 			}
 		}
 		case State_Face:
@@ -101,7 +101,7 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 				case AIFacing_DirSet:	return Running;
 				case AIFacing_Done:		return Success;
 				case AIFacing_Failed:	return Failure;
-				default: Core::Error("CActionGotoSmartObj::Update() > Unexpected facing status '%d'", pActor->FacingState);
+				default: Sys::Error("CActionGotoSmartObj::Update() > Unexpected facing status '%d'", pActor->FacingState);
 			}
 		}
 		case State_Chance:
@@ -117,7 +117,7 @@ DWORD CActionGotoSmartObj::Update(CActor* pActor)
 			RecoveryTime += (float)GameSrv->GetFrameTime();
 			return RecoveryTime < pActor->NavDestRecoveryTime ? Running : Failure;
 		}
-		default: Core::Error("CActionGotoSmartObj::Update() > Unknown state");
+		default: Sys::Error("CActionGotoSmartObj::Update() > Unknown state");
 	}
 
 	return Failure;

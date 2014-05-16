@@ -21,7 +21,7 @@ bool CAppFSM::Advance()
 	if (RequestedState.IsValid()) ChangeState(RequestedState);
 	else if (NewState != CurrStateHandler->GetID()) ChangeState(NewState);
 
-	Core::Sleep(0);
+	Sys::Sleep(0);
 
 	OK;
 }

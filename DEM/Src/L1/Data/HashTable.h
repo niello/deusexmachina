@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_HASH_TABLE_H__
 #define __DEM_L1_HASH_TABLE_H__
 
-#include <Core/Core.h>
+#include <System/System.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 #include <Data/HashPairT.h>

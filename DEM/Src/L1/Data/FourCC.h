@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_FOURCC_H__
 #define __DEM_L1_FOURCC_H__
 
-#include <Core/Core.h>
+#include <System/System.h>
 
 // FourCC manipulation class
 

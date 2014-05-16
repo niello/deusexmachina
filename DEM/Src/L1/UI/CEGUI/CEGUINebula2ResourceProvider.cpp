@@ -29,7 +29,7 @@ void CNebula2ResourceProvider::loadRawDataContainer(const String& filename, RawD
 		if (BytesRead != Size)
 		{
 			n_delete_array(pBuffer);
-			Core::Error("A problem occurred while reading file: %s", FinalFilename.c_str());
+			Sys::Error("A problem occurred while reading file: %s", FinalFilename.c_str());
 		}
 		File.Close();
 

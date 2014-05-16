@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_DATA_TYPE_H__
 #define __DEM_L1_DATA_TYPE_H__
 
-#include <Core/Core.h>
+#include <System/System.h>
 
 #define DECLARE_TYPE(T, ID)		namespace Data { template<> class CTypeID<T> { public: enum { TypeID = ID }; enum { IsDeclared = true }; }; }
 //#define DECLARE_TYPE(T)		DECLARE_TYPE(T, -1)
@@ -80,7 +80,7 @@ public:
 	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const;
 	virtual int			GetSize() const;
 	virtual int			GetID() const { return CTypeID<T>::TypeID; }
-	virtual LPCSTR		ToString(const void* pObj) const { return NULL; }
+	virtual LPCSTR		ToString(const void* /*pObj*/) const { return NULL; }
 
 	inline void*		GetPtr(void* pObj) const;
 	inline const void*	GetPtr(const void* pObj) const;

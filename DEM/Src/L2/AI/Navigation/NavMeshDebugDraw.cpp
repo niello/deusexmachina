@@ -12,8 +12,8 @@ void CNavMeshDebugDraw::begin(duDebugDrawPrimitives prim, float size)
 		case DU_DRAW_POINTS:	PrimType = Render::PointList; break;
 		case DU_DRAW_LINES:		PrimType = Render::LineList; break;
 		case DU_DRAW_TRIS:		PrimType = Render::TriList; break;
-		case DU_DRAW_QUADS:		Core::Error("CNavMeshDebugDraw::begin -> DU_DRAW_QUADS is not supported for now!"); //N2PrimType = nGfxServer2::TriangleList;
-		default: Core::Error("CNavMeshDebugDraw::begin -> unknown primitive type");
+		case DU_DRAW_QUADS:		Sys::Error("CNavMeshDebugDraw::begin -> DU_DRAW_QUADS is not supported for now!"); //N2PrimType = nGfxServer2::TriangleList;
+		default: Sys::Error("CNavMeshDebugDraw::begin -> unknown primitive type");
 	}
 
 	Size = size;

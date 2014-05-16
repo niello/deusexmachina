@@ -33,7 +33,7 @@ void CAnimTask::Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Sp
 		{
 			if (Offset == Clip->GetDuration())
 			{
-				Core::Log("Anim,Warning: Forward non-looping animation with offset = Duration will not be played, because it is its end. Fixed to 0.");
+				Sys::Log("Anim,Warning: Forward non-looping animation with offset = Duration will not be played, because it is its end. Fixed to 0.");
 				CursorPos = 0.f;
 			}
 			if (FadeInLength + FadeOutLength > Clip->GetDuration())
@@ -47,7 +47,7 @@ void CAnimTask::Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Sp
 		{
 			if (Offset == 0.f)
 			{
-				Core::Log("Anim,Warning: Reverse non-looping animation with offset = 0 will not be played, because it is its end. Fixed to Duration.");
+				Sys::Log("Anim,Warning: Reverse non-looping animation with offset = 0 will not be played, because it is its end. Fixed to Duration.");
 				CursorPos = Clip->GetDuration();
 			}
 			if (FadeInLength + FadeOutLength < -Clip->GetDuration())
@@ -152,12 +152,12 @@ void CAnimTask::Stop(float OverrideFadeOutTime)
 {
 	if (State == Task_Starting || State == Task_Invalid)
 	{
-		Core::Log("Anim,Warning: Can't stop starting or invalid animation task\n");
+		Sys::Log("Anim,Warning: Can't stop starting or invalid animation task\n");
 		return;
 	}
 
 	if (FadeOutLength <= 0.f && OverrideFadeOutTime > 0.f)
-		Core::Log("Anim,Warning: Overriding animation fade out time from 0 to any other value is not allowed due to disabled blending\n");
+		Sys::Log("Anim,Warning: Overriding animation fade out time from 0 to any other value is not allowed due to disabled blending\n");
 	else if (OverrideFadeOutTime >= 0.f) FadeOutLength = OverrideFadeOutTime * Speed;
 
 	if (!Loop) 

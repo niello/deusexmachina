@@ -154,7 +154,7 @@ inline void CPool<T, ChunkSize, MaxChunks>::Clear()
 {
 #ifdef _DEBUG
 	if (AllocationsCount != ReleasesCount)
-		Core::Error("Pool reports %d allocations and %d releases", AllocationsCount, ReleasesCount);
+		Sys::Error("Pool reports %d allocations and %d releases", AllocationsCount, ReleasesCount);
 #endif
 
 	if (Chunks) n_delete(Chunks);

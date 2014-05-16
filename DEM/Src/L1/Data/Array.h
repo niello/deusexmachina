@@ -3,7 +3,7 @@
 #define __DEM_L1_ARRAY_H__
 
 #include <Data/Flags.h>
-#include <Core/Core.h>
+#include <System/System.h>
 #include <algorithm> // std::sort
 
 // A dynamic array template class

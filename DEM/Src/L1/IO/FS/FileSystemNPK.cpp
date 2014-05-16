@@ -234,14 +234,14 @@ DWORD CFileSystemNPK::Read(void* hFile, void* pData, DWORD Size)
 
 DWORD CFileSystemNPK::Write(void* hFile, const void* pData, DWORD Size)
 {
-	Core::Error("CFileSystemNPK is read only");
+	Sys::Error("CFileSystemNPK is read only");
 	return 0;
 }
 //---------------------------------------------------------------------
 
 void CFileSystemNPK::Flush(void* hFile)
 {
-	Core::Error("CFileSystemNPK is read only");
+	Sys::Error("CFileSystemNPK is read only");
 }
 //---------------------------------------------------------------------
 

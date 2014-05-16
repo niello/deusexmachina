@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_PTR_H__
 #define __DEM_L1_PTR_H__
 
-#include <Core/Core.h>
+#include <System/System.h>
 
 // Smart pointer class which manages the life time of CRefCounted objects.
 // Can be used like a normal C++ pointer in most cases.

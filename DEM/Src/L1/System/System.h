@@ -18,13 +18,13 @@ namespace Sys
 
 	enum EMsgBoxButton
 	{
-		MBB_OK = 1,
-		MBB_Cancel = 2,
-		MBB_Abort = 3,
-		MBB_Retry = 4,
-		MBB_Ignore = 5,
-		MBB_Yes = 6,
-		MBB_No = 7
+		MBB_OK		= 0x01,
+		MBB_Cancel	= 0x02,
+		MBB_Abort	= 0x04,
+		MBB_Retry	= 0x08,
+		MBB_Ignore	= 0x10,
+		MBB_Yes		= 0x20,
+		MBB_No		= 0x40
 	};
 
 	typedef void (*FLogHandler)(EMsgType Type, const char* pMessage);

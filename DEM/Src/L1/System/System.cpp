@@ -25,34 +25,31 @@ bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const
 {
 	const char* pMsg = pMessage ? pMessage : "none";
 
-	CString Buffer, MsgBoxBuffer;
-	va_list Args;
-	va_start(Args, pMsg);
-	Buffer.Format("*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
-	//???can here? or copy args?
-	//???MsgBoxBuffer.Format("*** DEM ASSERTION FAILED ***\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
-	va_end(Args);
+	CString Buffer;
+	Buffer.Format("*** DEM ASSERTION FAILED ***\nMessage:    %s\nExpression: %s\nFile:       %s\nLine:       %d\nFunction:   %s\n", pMsg, pExpression, pFile, Line, pFunc);
 
 	char Trace[4096];
-	Sys::TraceStack(Trace, sizeof(Trace));
-	Buffer += "Call stack:\n";
-	Buffer += Trace;
+	if (Sys::TraceStack(Trace, sizeof(Trace)))
+	{
+		Buffer += "Call stack:\n";
+		Buffer += Trace;
+	}
 
 	if (!pLogHandler) pLogHandler = DefaultLogHandler;
 	(*pLogHandler)(MsgType_Error, Buffer.CStr());
 
-	Buffer.Clear();
+	Buffer.Format("*** DEM ASSERTION FAILED ***\n\nPRESS OK TO CONTINUE EXECUTION\n\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
 
 	// Clamp text to fit into a message box
-	Trace[2000] = 0;
-	MsgBoxBuffer += "\nCall stack:\n";
-	MsgBoxBuffer += Trace;
-
-	//!!!clamp text in message box! ShowMessageBox() flag?
 	//!!!need CString::SetLength/Truncate!
-	//!!!can show message box here instead of handling it in a log handler
-	//good effect is tha we can log one message and show other (formatting)
-	return Sys::ShowMessageBox(MsgType_Error, NULL, MsgBoxBuffer.CStr(), MBB_OK | MBB_Cancel) == MBB_OK;
+	Trace[1600] = 0;
+	if (Trace[0])
+	{
+		Buffer += "\nCall stack:\n";
+		Buffer += Trace;
+	}
+
+	return Sys::ShowMessageBox(MsgType_Error, NULL, Buffer.CStr(), MBB_OK | MBB_Cancel) != MBB_OK;
 }
 //---------------------------------------------------------------------
 

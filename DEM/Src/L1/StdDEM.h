@@ -3,7 +3,7 @@
 #define __DEM_STDDEM_H__
 
 #include "StdCfg.h"
-#include <Core/Memory.h>
+#include <System/Memory.h>
 
 #define OK				return true
 #define FAIL			return false

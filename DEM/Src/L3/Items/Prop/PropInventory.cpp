@@ -29,7 +29,7 @@ bool CPropInventory::InternalActivate()
 			if (ItemInst.IsValid())
 			{
 				Item = Item->Clone();
-				Core::Error("IMPLEMENT ME!!!");
+				Sys::Error("IMPLEMENT ME!!!");
 				//!!!load per-instance fields!
 			}
 			pStack->SetItem(Item);
@@ -125,7 +125,7 @@ bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
 		StackDesc->Set(CStrID("ID"), Stack->GetItemID());
 		if (!Stack->GetItem()->IsTemplateInstance())
 		{
-			Core::Error("IMPLEMENT ME!!!");
+			Sys::Error("IMPLEMENT ME!!!");
 			//!!!save per-instance fields!
 		}
 		StackDesc->Set(CStrID("Count"), (int)Stack->GetCount());
@@ -189,7 +189,7 @@ WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
 		}
 		else
 		{
-			DBG_ONLY(Core::Log("CEntity \"%s\": Item \"%s\" is too big or heavy\n", GetEntity()->GetUID(), NewItem->GetID()));
+			DBG_ONLY(Sys::Log("CEntity \"%s\": Item \"%s\" is too big or heavy\n", GetEntity()->GetUID(), NewItem->GetID()));
 			return 0;
 		}
 	}

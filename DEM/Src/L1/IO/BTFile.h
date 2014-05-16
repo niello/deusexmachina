@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_BT_FILE_H__
 #define __DEM_L1_BT_FILE_H__
 
-#include <Core/Core.h>
+#include <System/System.h>
 
 // Binary terrain (.bt) file wrapper
 // http://vterrain.org/Implementation/Formats/BT.html

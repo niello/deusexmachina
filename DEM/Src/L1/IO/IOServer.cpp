@@ -307,7 +307,7 @@ bool CIOServer::LoadFileToBuffer(const CString& FileName, Data::CBuffer& Buffer)
 	int FileSize = File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
-	//Core::Log("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
+	//Sys::Log("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
 	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------

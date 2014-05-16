@@ -31,7 +31,7 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 	const ObjDamageDone& e = (const ObjDamageDone&)Event;
 
 	HP -= e.Amount;
-	Core::Log("CEntity \"%s\": Fucking shit! I was damaged. HP:%d/%d\n",
+	Sys::Log("CEntity \"%s\": Fucking shit! I was damaged. HP:%d/%d\n",
 		GetEntity()->GetUID(),
 		HP,
 		HPMax);
@@ -40,7 +40,7 @@ bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
 	{
 		//!!!send ObjDie/ObjDestructed msg!
 		//???notify killer entity about success to gain exp?
-		Core::Log("CEntity \"%s\": I'm dead!\n", GetEntity()->GetUID());
+		Sys::Log("CEntity \"%s\": I'm dead!\n", GetEntity()->GetUID());
 	}
 
 	OK;

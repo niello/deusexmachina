@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_XML_DOCUMENT_H__
 #define __DEM_L1_XML_DOCUMENT_H__
 
-#include <Core/Object.h>
+#include <Data/RefCounted.h>
 #include <TinyXML2/Src/tinyxml2.h>
 
 // TinyXML-2 document wrapper with refcounting
@@ -10,7 +10,7 @@
 namespace Data
 {
 
-class CXMLDocument: public tinyxml2::XMLDocument, public Core::CObject
+class CXMLDocument: public tinyxml2::XMLDocument, public CRefCounted
 {
 public:
 };

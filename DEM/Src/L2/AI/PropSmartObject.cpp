@@ -43,7 +43,7 @@ bool CPropSmartObject::InternalActivate()
 					Action.FreeUserSlots = pTpl->MaxUserCount;
 					Action.Enabled = ActionsEnabled.IsValid() ? ActionsEnabled->Get(Action.Enabled, Prm.GetName()) : false;
 				}
-				else Core::Log("AI,SO,Warning: entity '%s', can't find smart object action template '%s'\n",
+				else Sys::Log("AI,SO,Warning: entity '%s', can't find smart object action template '%s'\n",
 						GetEntity()->GetUID().CStr(), Prm.GetValue<CStrID>().CStr());
 			}
 			Actions.EndAdd();
@@ -250,7 +250,7 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 			Data::CParam& Prm = AnimRefDesc->Get(i);
 			int Idx = Prm.GetValue<int>();
 			if (Idx <= Anims.GetCount()) ActionAnimIndices.Add(Prm.GetName(), Idx);
-			else Core::Log("AI,SO,Warning: entity '%s', action anim '%s' = '%d' idx is out of range, skipped\n",
+			else Sys::Log("AI,SO,Warning: entity '%s', action anim '%s' = '%d' idx is out of range, skipped\n",
 					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
 		}
 	}
@@ -262,7 +262,7 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 			Data::CParam& Prm = AnimRefDesc->Get(i);
 			int Idx = Prm.GetValue<int>();
 			if (Idx <= Anims.GetCount()) StateAnimIndices.Add(Prm.GetName(), Idx);
-			else Core::Log("AI,SO,Warning: entity '%s', state anim '%s' = '%d' idx is out of range, skipped\n",
+			else Sys::Log("AI,SO,Warning: entity '%s', state anim '%s' = '%d' idx is out of range, skipped\n",
 					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
 		}
 	}

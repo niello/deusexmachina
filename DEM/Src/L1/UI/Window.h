@@ -3,7 +3,6 @@
 #define __DEM_L1_UI_WINDOW_H__
 
 #include <Core/Object.h>
-#include <StdDEM.h>
 #include <CEGUIWindow.h>
 
 // CEGUI Window wrapper/controller/extender. Base class for all UI windows.

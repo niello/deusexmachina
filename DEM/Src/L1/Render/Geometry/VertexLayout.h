@@ -131,7 +131,7 @@ inline DWORD CVertexComponent::GetSize() const
 		case Short2N:   return 4;
 		case Short4N:   return 8;
 	}
-	Core::Error("Invalid vertex component format!");
+	Sys::Error("Invalid vertex component format!");
 	return 0;
 }
 //---------------------------------------------------------------------
