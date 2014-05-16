@@ -16,8 +16,8 @@ namespace SI
 int Print(lua_State* l)
 {
 	//???concat args if > 1?
-	if (lua_isboolean(l, 1)) Core::Log(lua_toboolean(l, 1) == 0 ? "false" : "true");
-	else Core::Log(lua_tostring(l, 1));
+	if (lua_isboolean(l, 1)) Sys::Log(lua_toboolean(l, 1) == 0 ? "false" : "true");
+	else Sys::Log(lua_tostring(l, 1));
 	return 0;
 }
 //---------------------------------------------------------------------

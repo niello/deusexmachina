@@ -46,7 +46,7 @@ bool CIndexBuffer::Create(EType IndexType, DWORD IndexCount, EUsage BufferUsage,
 			D3DPool = D3DPOOL_SYSTEMMEM;
 			D3DUsage = D3DUSAGE_DYNAMIC;
 			break;
-		default: Core::Error("Invalid IndexBuffer usage!");
+		default: Sys::Error("Invalid IndexBuffer usage!");
 	}
 
 	if (FAILED(RenderSrv->GetD3DDevice()->CreateIndexBuffer(Size, D3DUsage, D3DFormat, D3DPool, &pBuffer, NULL))) FAIL;

@@ -66,7 +66,7 @@ void CDlgContext::Trigger(bool IsForeground)
 				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = PlrSpeaker;
 				Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
 				if (!Speaker.IsValid())
-					Core::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
+					Sys::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
 
 				Speaker->FireEvent(CStrID("OnDlgNodeEnter"));
 
@@ -94,7 +94,7 @@ void CDlgContext::Trigger(bool IsForeground)
 					}
 					default:
 					{
-						Core::Log("CDlgContext::Trigger() > Initiator: '%s'. Scripted action '%s' %s\n",
+						Sys::Log("CDlgContext::Trigger() > Initiator: '%s'. Scripted action '%s' %s\n",
 							Initiator.CStr(), Link.Action.CStr(), Result == Failure ? "failure" : "error");
 						State = DlgState_Aborted;
 						break;

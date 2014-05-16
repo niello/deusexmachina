@@ -1,8 +1,6 @@
 #include "TimeServer.h"
 
 #include <Events/EventServer.h>
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #define MAX_FRAME_TIME 0.25f
 
@@ -27,9 +25,7 @@ void CTimeServer::Open()
 {
 	n_assert(!_IsOpen);
 	_IsOpen = true;
-
-	QueryPerformanceCounter((LARGE_INTEGER*)&(BasePerfTime)); // Resets time
-
+	BaseTime = Sys::GetAppTime();
 	PrevTime = 0;
 	Time = 0;
 }
@@ -42,15 +38,6 @@ void CTimeServer::Close()
 
 	n_assert(_IsOpen);
 	_IsOpen = false;
-}
-//---------------------------------------------------------------------
-
-CTime CTimeServer::GetTrueTime()
-{
-	LONGLONG PerfTime, PerfFreq;
-	QueryPerformanceCounter((LARGE_INTEGER*)&PerfTime);
-	QueryPerformanceFrequency((LARGE_INTEGER*)&PerfFreq);
-	return (CTime)((double)(PerfTime - BasePerfTime)) / ((double)PerfFreq);
 }
 //---------------------------------------------------------------------
 
@@ -171,7 +158,7 @@ void CTimeServer::Trigger()
 {
 	if (LockedFrameTime > 0.0) LockTime += LockedFrameTime;
 
-	CTime CurrTime = (LockedFrameTime > 0.0) ? LockTime : GetTrueTime();
+	CTime CurrTime = (LockedFrameTime > 0.0) ? LockTime : Sys::GetAppTime();
 
 	FrameTime = CurrTime - PrevTime;
 	if (FrameTime < 0.0) FrameTime = 0.0001;
@@ -212,15 +199,8 @@ void CTimeServer::LockFrameRate(CTime DesiredFrameTime)
 {
 	n_assert(DesiredFrameTime >= 0.0);
 	if (DesiredFrameTime == 0.0)
-	{
-		//SetTime(LockTime);
-		LONGLONG PerfFreq;
-		QueryPerformanceFrequency((LARGE_INTEGER*)&PerfFreq);
-		LONGLONG PerfTimeToSet = (LONGLONG)(LockTime * ((double)PerfFreq));
-		QueryPerformanceCounter((LARGE_INTEGER*)&(BasePerfTime));
-		BasePerfTime -= PerfTimeToSet;
-	}
-	else LockTime = GetTrueTime();
+		BaseTime = Sys::GetAppTime() - LockTime;
+	else LockTime = Sys::GetAppTime();
 	LockedFrameTime = DesiredFrameTime;
 }
 //---------------------------------------------------------------------

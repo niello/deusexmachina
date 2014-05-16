@@ -56,8 +56,8 @@ const int DEM_THREAD_COUNT = 1;
 //  NEVER add another warning ignores if you aren't the project lead
 //------------------------------------------------------------------------------
 #ifdef __VC__
-#pragma warning(disable : 4355)       // initialization list uses 'this'
-#pragma warning(disable : 4530)       // C++ exception handler used, but unwind semantics not enabled
+#pragma warning(disable : 4355)	// initialization list uses 'this'
+#pragma warning(disable : 4530)	// C++ exception handler used, but unwind semantics not enabled
 #endif
 
 //------------------------------------------------------------------------------

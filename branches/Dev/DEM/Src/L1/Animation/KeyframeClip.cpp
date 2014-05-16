@@ -26,7 +26,7 @@ bool CKeyframeClip::Setup(const CArray<CKeyframeTrack>& _Tracks, const CArray<CS
 			case Scene::Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
 			case Scene::Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
 			case Scene::Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
-			default: Core::Error("CKeyframeClip::Setup() -> Unsupported channel for an SRT sampler track!");
+			default: Sys::Error("CKeyframeClip::Setup() -> Unsupported channel for an SRT sampler track!");
 		};
 	}
 

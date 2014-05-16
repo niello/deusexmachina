@@ -96,7 +96,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 {
 	if (QuestID == CStrID::Empty || GetQuestStatus(QuestID, TaskID) != CQuest::No) FAIL;
 
-	Core::Log("QuestMgr: starting quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
+	Sys::Log("QuestMgr: starting quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
 
 	Ptr<CQuest> Quest;
 
@@ -124,7 +124,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	}
 
 	if (TaskID == CStrID::Empty) 
-		Core::Error("No quest task specified either explicitly (as an argument) or implicitly (in the quest description)");
+		Sys::Error("No quest task specified either explicitly (as an argument) or implicitly (in the quest description)");
 	
 	CQuest::CTaskRec& Task = Quest->Tasks[TaskID];
 	Task.Status = CQuest::Opened;
@@ -139,7 +139,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	//add Story::CJournal record or it will receive event too
 
 #ifdef _DEBUG
-	Core::Log("TASK \"%s\" started. %s\n", Task.Task->Name.CStr(), Task.Task->Description.CStr());
+	Sys::Log("TASK \"%s\" started. %s\n", Task.Task->Name.CStr(), Task.Task->Description.CStr());
 #endif
 
 	//!!!there was some benefit to create script obj before event (close task before notifying it's opened?)
@@ -199,7 +199,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 #ifdef _DEBUG
 		CQuest* Quest = Quests.ValueAt(Idx).Quest;
-		Core::Log("QUEST \"%s\" closed %s.\n",
+		Sys::Log("QUEST \"%s\" closed %s.\n",
 			Quest->Name.CStr(),
 			Success ? "successfully" : "with failure");
 #endif
@@ -230,7 +230,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 			if (Task.Status != CQuest::Opened) FAIL;
 
 #ifdef _DEBUG
-			Core::Log("TASK \"%s\" closed %s.\n", Task.Task->Name.CStr(),
+			Sys::Log("TASK \"%s\" closed %s.\n", Task.Task->Name.CStr(),
 				Success ? "successfully" : "with failure");
 #endif
 

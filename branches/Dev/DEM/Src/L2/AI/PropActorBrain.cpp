@@ -124,7 +124,7 @@ bool CPropActorBrain::InternalActivate()
 						}
 
 						if (!Found)
-							Core::Log("AI,Warning: CPropActorBrain::InternalActivate() > entity '%s', perceptor '%s' not found\n",
+							Sys::Log("AI,Warning: CPropActorBrain::InternalActivate() > entity '%s', perceptor '%s' not found\n",
 									GetEntity()->GetUID().CStr(),
 									ItPercName->GetValue<CString>().CStr());
 					}
@@ -162,7 +162,7 @@ bool CPropActorBrain::InternalActivate()
 				LPCSTR pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
 				if (pTpl) ActionTpls.Add(pTpl);
-				else Core::Log("AI,Warning: entity '%s' requested action template '%s' that is not registered\n",
+				else Sys::Log("AI,Warning: entity '%s' requested action template '%s' that is not registered\n",
 						GetEntity()->GetUID().CStr(), pActionName);
 			}
 		}

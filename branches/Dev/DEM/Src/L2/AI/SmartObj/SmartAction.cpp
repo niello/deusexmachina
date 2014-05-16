@@ -52,7 +52,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 		ScriptObj->Init(); // No special class
 		CString ScriptFile = "Scripts:" + ScriptName + ".lua";
 		if (ScriptObj->LoadScriptFile(ScriptFile) != Success)
-			Core::Log("Error loading script \"%s\" for an SO action", ScriptFile.CStr());
+			Sys::Log("Error loading script \"%s\" for an SO action", ScriptFile.CStr());
 	}
 }
 //---------------------------------------------------------------------

@@ -36,7 +36,7 @@ bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage
 			D3DPool = D3DPOOL_SYSTEMMEM;
 			D3DUsage = D3DUSAGE_DYNAMIC;
 			break;
-		default: Core::Error("Invalid IndexBuffer usage!");
+		default: Sys::Error("Invalid IndexBuffer usage!");
 	}
 
 	if (FAILED(RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL))) FAIL;

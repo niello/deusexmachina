@@ -39,7 +39,7 @@ PParams CDataServer::ReloadHRD(const CString& FileName, bool Cache)
 	{
 		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
-	//else Core::Log("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
+	//else Sys::Log("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
 
 	return Params;
 }
@@ -85,7 +85,7 @@ PParams CDataServer::ReloadPRM(const CString& FileName, bool Cache)
 	else
 	{
 		Params = NULL;
-		//Core::Log("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
+		//Sys::Log("FileIO: PRM loading from \"%s\" failed\n", FileName.CStr());
 	}
 
 	return Params;
@@ -116,7 +116,7 @@ PXMLDocument CDataServer::LoadXML(const CString& FileName) //, bool Cache)
 	}
 	else
 	{
-		//Core::Log("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
+		//Sys::Log("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
 		XML = NULL;
 	}
 

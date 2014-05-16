@@ -21,8 +21,8 @@ class CFactory
 {
 protected:
 
-	CHashTable<CString, const CRTTI*>		NameToRTTI;
-	CDict<Data::CFourCC, const CRTTI*>		FourCCToRTTI; //???hash table too?
+	CHashTable<CString, const CRTTI*>	NameToRTTI;
+	CDict<Data::CFourCC, const CRTTI*>	FourCCToRTTI; //???hash table too?
 
 	CFactory(): NameToRTTI(512) {}
 
@@ -35,8 +35,8 @@ public:
 	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
 	const CRTTI*	GetRTTI(const CString& ClassName) const { return NameToRTTI[ClassName]; }
 	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
-	CObject*	Create(const CString& ClassName, void* pParam = NULL) const;
-	CObject*	Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
+	CObject*		Create(const CString& ClassName, void* pParam = NULL) const;
+	CObject*		Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
 };
 
 }

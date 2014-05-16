@@ -93,7 +93,7 @@ void CLuaConsole::Print(LPCSTR pMsg, DWORD Color)
 bool CLuaConsole::OnLogMsg(const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	DWORD Color = (P->Get<int>(CStrID("Type")) == Core::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;
+	DWORD Color = (P->Get<int>(CStrID("Type")) == Sys::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;
 	Print((LPCSTR)P->Get<PVOID>(CStrID("pMsg")), Color);
 	OK;
 }
@@ -126,7 +126,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	else if (!strcmp(pCmd, "cls")) pOutputWnd->resetList();
 	else if (!strcmp(pCmd, "help"))
 	{
-		Core::Log(	"Debug Lua console.\n"
+		Sys::Log(	"Debug Lua console.\n"
 					" help                           - view this help\n"
 					" exit                           - close the application\n"
 					" cls                            - clear output window\n"
@@ -143,12 +143,12 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		if (ScriptSrv->PlaceOnStack(pTable))
 		{
 			ScriptSrv->GetTableFieldsDebug(Contents);
-			Core::Log("----------\n");
+			Sys::Log("----------\n");
 			for (int i = 0; i < Contents.GetCount(); ++i)
 				Print(Contents[i].CStr(), 0xffb0b0b0);
-			Core::Log("----------\n");
+			Sys::Log("----------\n");
 		}
-		else Core::Log("Lua table not found\n");
+		else Sys::Log("Lua table not found\n");
 	}
 	//else if (!strncmp(pCmd, "cd ", 3))
 	//{
@@ -159,7 +159,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	{
 		Data::CData RetVal;
 		ScriptSrv->RunScript(pCmd, -1, &RetVal);
-		if (RetVal.IsValid()) Core::Log("Return value: %s\n", RetVal.ToString());
+		if (RetVal.IsValid()) Sys::Log("Return value: %s\n", RetVal.ToString());
 	}
 
 	if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);

@@ -16,7 +16,7 @@ void CNodeController::RemoveFromNode()
 	{
 		n_verify_dbg(((CNodeControllerComposite*)pNode->GetController())->RemoveSource(*this));
 	}
-	if (pNode) Core::Error("Attached node controller was not found in the host node!");
+	if (pNode) Sys::Error("Attached node controller was not found in the host node!");
 }
 //---------------------------------------------------------------------
 

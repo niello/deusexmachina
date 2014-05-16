@@ -75,7 +75,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	{
 		// calculate destination, if there is more than one entity
 		//!!!need formation to calculate per-entity destinations!
-		Core::Error("IMPLEMENT ME!!! Need formations, if formation is NULL may auto-position.");
+		Sys::Error("IMPLEMENT ME!!! Need formations, if formation is NULL may auto-position.");
 	}
 	else Entities[0]->SetAttr<matrix44>(CStrID("Transform"), DestTfm);
 

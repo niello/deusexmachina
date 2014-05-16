@@ -11,8 +11,6 @@
 // Display handles a viewport (in the Win32 it is a window of the host OS)
 // and a display mode that is used by the render device.
 
-#define DEM_WINDOW_CLASS "DeusExMachina::MainWindow"
-
 namespace Render
 {
 
@@ -29,11 +27,6 @@ public:
 	};
 
 protected:
-
-	enum
-	{
-		ACCEL_TOGGLEFULLSCREEN = 1001,
-	};
 
 	CString			WindowTitle;
 	CString			IconName;

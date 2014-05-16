@@ -309,7 +309,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	PAction Plan;
 	PActionSequence Seq;
 
-	DBG_ONLY(Core::Log("Planner -> '%s' Begin plan\n", pActor->GetEntity()->GetUID()));
+	DBG_ONLY(Sys::Log("Planner -> '%s' Begin plan\n", pActor->GetEntity()->GetUID()));
 
 	while (pCurrNode && pCurrNode->pAction)
 	{
@@ -320,7 +320,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 #ifdef _DEBUG
 			CString DbgString;
 			CurrAction->GetDebugString(DbgString);
-			Core::Log("Planner -> '%s' Action added: '%s'\n", pActor->GetEntity()->GetUID(), DbgString.CStr());
+			Sys::Log("Planner -> '%s' Action added: '%s'\n", pActor->GetEntity()->GetUID(), DbgString.CStr());
 #endif
 
 			if (!Plan.IsValid()) Plan = CurrAction;
@@ -339,7 +339,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 		pCurrNode = pCurrNode->pParent;
 	}
 
-	DBG_ONLY(Core::Log("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUID()));
+	DBG_ONLY(Sys::Log("Planner -> '%s' End plan\n", pActor->GetEntity()->GetUID()));
 
 	while (OpenList.RemoveBack(&pCurrNode)) NodePool.Destroy(pCurrNode);
 	while (ClosedList.RemoveBack(&pCurrNode)) NodePool.Destroy(pCurrNode);

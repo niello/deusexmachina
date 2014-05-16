@@ -65,7 +65,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		Script = n_new(Scripting::CScriptObject((CString("Level_") + ID.CStr()).CStr()));
 		Script->Init(); // No special class
 		if (ExecResultIsError(Script->LoadScriptFile(ScriptFile)))
-			Core::Log("Error loading script for level %s\n", ID.CStr());
+			Sys::Log("Error loading script for level %s\n", ID.CStr());
 	}
 
 	Data::PParams SubDesc;
@@ -131,7 +131,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		if (IOSrv->FileExists(NMFile))
 		{
 			if (!AILevel->LoadNavMesh(NMFile))
-				Core::Log("Error loading navigation mesh for level %s\n", ID.CStr());
+				Sys::Log("Error loading navigation mesh for level %s\n", ID.CStr());
 
 			//Data::PParams NavRegDesc;
 			//if (SubDesc->Get(NavRegDesc, CStrID("Regions")))
@@ -368,7 +368,7 @@ DWORD CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle
 	// query scene quadtree with this frustum
 	// select only render objects
 	// return newly selected obj count
-	Core::Error("CGameLevel::GetEntitiesAtScreenRect() -> IMPLEMENT ME!");
+	Sys::Error("CGameLevel::GetEntitiesAtScreenRect() -> IMPLEMENT ME!");
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -445,7 +445,7 @@ DWORD CGameLevel::GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OB
 	// request physics level for shapes and bodies
 	// select ones that are attached to entities
 	// return newly selected obj count
-	Core::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
+	Sys::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -455,7 +455,7 @@ DWORD CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& 
 	// request physics level for shapes and bodies
 	// select ones that are attached to entities
 	// return newly selected obj count
-	Core::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
+	Sys::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
 	return 0;
 }
 //---------------------------------------------------------------------

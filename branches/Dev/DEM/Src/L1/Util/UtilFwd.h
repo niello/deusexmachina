@@ -3,8 +3,7 @@
 
 #include <StdDEM.h>
 
-// A CRC calculation routine
-// (C) 2004 RadonLabs GmbH
+// Utility algorithms
 
 namespace Util
 {

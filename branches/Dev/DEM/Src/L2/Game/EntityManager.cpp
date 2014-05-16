@@ -58,7 +58,7 @@ PEntity CEntityManager::CloneEntity(const CEntity& Entity, CStrID UID)
 	// copy attributes
 	// attach all the same properties
 	// if props have copy constructor or Clone method, exploit it
-	Core::Error("CEntityManager::CloneEntity() -> IMPLEMENT ME!!!");
+	Sys::Error("CEntityManager::CloneEntity() -> IMPLEMENT ME!!!");
 	return NULL;
 }
 //---------------------------------------------------------------------

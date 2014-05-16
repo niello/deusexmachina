@@ -28,7 +28,7 @@ public:
 	void StartAccum() { Start(); }
 	void StopAccum();
 
-	CTime	GetTime() { return (TimeSrv->GetTrueTime() - StartTime) * 1000.0f; }
+	CTime	GetTime() { return (Sys::GetAppTime() - StartTime) * 1000.0f; }
 	bool	IsValid() const { return GlobalVarName.IsValid(); }
 	bool	IsStarted() const { return IsActive; }
 };
@@ -64,7 +64,7 @@ inline void CProfiler::Initialize(const char* pName)
 inline void CProfiler::Start()
 {
 	if (IsActive) Stop();
-	StartTime = TimeSrv->GetTrueTime();
+	StartTime = Sys::GetAppTime();
 	IsActive = true;
 }
 //---------------------------------------------------------------------
@@ -80,7 +80,7 @@ inline void CProfiler::Stop()
 inline void CProfiler::StopAccum()
 {
 	n_assert(IsActive);
-	AccumTime += TimeSrv->GetTrueTime() - StartTime;
+	AccumTime += Sys::GetAppTime() - StartTime;
 	CoreSrv->SetGlobal(GlobalVarName, (float)AccumTime * 1000.0f);
 	IsActive = false;
 }

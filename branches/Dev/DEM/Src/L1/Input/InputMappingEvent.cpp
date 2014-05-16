@@ -57,7 +57,7 @@ bool CInputMappingEvent::Init(CStrID Name, const Data::CParams& Desc)
 		InEventID = &Event::MouseWheel::RTTI;
 		WheelFwd = false;
 	}
-	else Core::Error("CInputMappingEvent::Init -> Unsupported input event!");
+	else Sys::Error("CInputMappingEvent::Init -> Unsupported input event!");
 
 	OutEventID = Name;
 
@@ -87,7 +87,7 @@ void CInputMappingEvent::Enable()
 	else if (InEventID == &Event::MouseBtnUp::RTTI) CB = &CInputMappingEvent::OnMouseBtnUp;
 	else if (InEventID == &Event::MouseDoubleClick::RTTI) CB = &CInputMappingEvent::OnMouseDoubleClick;
 	else if (InEventID == &Event::MouseWheel::RTTI) CB = &CInputMappingEvent::OnMouseWheel;
-	else Core::Error("Unsupported input event!");
+	else Sys::Error("Unsupported input event!");
 
 	InputSrv->Subscribe(InEventID, this, CB, &Sub_InputEvent, InputPriority_Mapping);
 }

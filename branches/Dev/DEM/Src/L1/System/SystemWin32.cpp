@@ -34,19 +34,18 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 		default:			BoxType |= MB_ICONINFORMATION; break;
 	}
 
-	if (Buttons & MBB_Yes)
+	switch (Buttons)
 	{
+		case MBB_OK | MBB_Cancel:					BoxType |= MB_OKCANCEL; break;
+		case MBB_Yes | MBB_No:						BoxType |= MB_YESNO; break;
+		case MBB_Yes | MBB_No | MBB_Cancel:			BoxType |= MB_YESNOCANCEL; break;
+		case MBB_Retry | MBB_Cancel:				BoxType |= MB_RETRYCANCEL; break;
+		case MBB_Abort | MBB_Retry | MBB_Ignore:	BoxType |= MB_ABORTRETRYIGNORE; break;
+		default:									BoxType |= MB_OK; break;
 	}
-	else BoxType |= MB_OK; 
-
-//#define MB_OK                       0x00000000L
-//#define MB_OKCANCEL                 0x00000001L
-//#define MB_ABORTRETRYIGNORE         0x00000002L
-//#define MB_YESNOCANCEL              0x00000003L
-//#define MB_YESNO                    0x00000004L
-//#define MB_RETRYCANCEL              0x00000005L
 
 	int Ret = MessageBox(NULL, pMessage, pHeaderText, BoxType);
+
 	switch (Ret)
 	{
 		case IDOK:		return MBB_OK;
@@ -77,6 +76,7 @@ double GetAppTime()
 }
 //---------------------------------------------------------------------
 
+//!!!???to System.cpp, implement single Win32 calls as Sys:: functions here!
 void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt!
 {
 	//!!!see Qt: QString logMessage = qMessageFormatString(type, context, buf);!
@@ -130,7 +130,12 @@ static BOOL CALLBACK EnumSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize
 	if (pSymInfo->Flags & IMAGEHLP_SYMBOL_INFO_PARAMETER)
 	{
 		CStackTraceUserCtx* pUserCtx = (CStackTraceUserCtx*)pUserContext;
-		pUserCtx->pOut += _snprintf_s(pUserCtx->pOut, pUserCtx->pTrace + pUserCtx->MaxLength - 1 - pUserCtx->pOut, _TRUNCATE, "%s=%d ", pSymInfo->Name, *((DWORD*)(pUserCtx->Base + pSymInfo->Address - 8)));
+		pUserCtx->pOut += _snprintf_s(
+			pUserCtx->pOut,
+			pUserCtx->pTrace + pUserCtx->MaxLength - 1 - pUserCtx->pOut,
+			_TRUNCATE,
+			"%s=0x%x ",
+			pSymInfo->Name, *(DWORD*)(pUserCtx->Base + pSymInfo->Address - 8));
 	}
 	return true;
 }

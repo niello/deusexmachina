@@ -56,14 +56,14 @@ public:
 
 inline bool CQuestManager::CompleteQuest(CStrID QuestID, CStrID TaskID)
 {
-	Core::Log("QuestMgr: completed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
+	Sys::Log("QuestMgr: completed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
 	return CloseQuest(QuestID, TaskID, true);
 }
 //---------------------------------------------------------------------
 
 inline bool CQuestManager::FailQuest(CStrID QuestID, CStrID TaskID)
 {
-	Core::Log("QuestMgr: failed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
+	Sys::Log("QuestMgr: failed quest %s, task %s\n", QuestID.CStr(), TaskID.CStr());
 	return CloseQuest(QuestID, TaskID, false);
 }
 //---------------------------------------------------------------------

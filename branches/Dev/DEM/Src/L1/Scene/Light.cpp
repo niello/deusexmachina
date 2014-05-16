@@ -89,7 +89,7 @@ void CLight::GetGlobalAABB(CAABB& OutBox) const
 	//!!!If transform of host node changed, update global space AABB (rotate, scale)
 	switch (Type)
 	{
-		case Directional:	Core::Error("No AABB for directional lights, must not be requested!"); return;
+		case Directional:	Sys::Error("No AABB for directional lights, must not be requested!"); return;
 		case Point:			OutBox.Set(GetPosition(), vector3(Range, Range, Range)); return;
 		case Spot:
 		{
@@ -100,7 +100,7 @@ void CLight::GetGlobalAABB(CAABB& OutBox) const
 			OutBox.Transform(pNode->GetWorldMatrix());
 			return;
 		}
-		default:			Core::Error("Invalid light type!");
+		default:			Sys::Error("Invalid light type!");
 	};
 }
 //---------------------------------------------------------------------

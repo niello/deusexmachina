@@ -95,7 +95,7 @@ bool CVideoServer::PlayFile(const char* pFileName)
 
 	if (FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
 	{
-		Core::Error("CVideoServer: could not create DirectShow filter graph!");
+		Sys::Error("CVideoServer: could not create DirectShow filter graph!");
 		FAIL;
 	}
 
@@ -107,7 +107,7 @@ bool CVideoServer::PlayFile(const char* pFileName)
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, NULL)))
 	{
-		Core::Error("CVideoServer::PlayFile(): could not render file '%s'", Path.CStr());
+		Sys::Error("CVideoServer::PlayFile(): could not render file '%s'", Path.CStr());
 		FAIL;
 	}
 

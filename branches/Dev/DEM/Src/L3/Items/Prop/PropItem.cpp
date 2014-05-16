@@ -19,7 +19,7 @@ bool CPropItem::InternalActivate()
 	if (ItemInst.IsValid())
 	{
 		Item = Item->Clone();
-		Core::Error("IMPLEMENT ME!!!");
+		Sys::Error("IMPLEMENT ME!!!");
 		//!!!load per-instance fields!
 	}
 	Items.SetItem(Item);
@@ -78,7 +78,7 @@ bool CPropItem::OnLevelSaving(const Events::CEventBase& Event)
 	GetEntity()->SetAttr<CStrID>(CStrID("ItemTplID"), Items.GetItemID());
 	if (!Items.GetItem()->IsTemplateInstance())
 	{
-		Core::Error("IMPLEMENT ME!!!");
+		Sys::Error("IMPLEMENT ME!!!");
 		//!!!save per-instance fields!
 	}
 	GetEntity()->SetAttr<int>(CStrID("ItemCount"), (int)Items.GetCount());

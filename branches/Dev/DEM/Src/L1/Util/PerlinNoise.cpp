@@ -59,7 +59,7 @@ static inline float PNGrad(int hash, float x, float y, float z)
 }
 //---------------------------------------------------------------------
 
-inline float GeneratePerlinNoise(float x, float y, float z)
+float GeneratePerlinNoise(float x, float y, float z)
 {
 	float floorX = floorf(x);
 	float floorY = floorf(y);

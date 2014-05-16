@@ -635,7 +635,7 @@ void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Ty
 		case T_FLOAT:	Data = Const.AsFloat(); break;
 		case T_STRING:	Data = Const; break;
 		case T_STRID:	Data = CStrID(Const.CStr()); break;
-		default:		Core::Error("Unknown data type\n");
+		default:		Sys::Error("Unknown data type\n");
 	}
 	
 	int Idx = TableConst.FindIndex(Data);

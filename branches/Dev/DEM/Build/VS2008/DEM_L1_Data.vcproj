@@ -401,7 +401,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Src\L1\Data\Ptr.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Src\L1\Data\QuadTree.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\RefCounted.h"
 				>
 			</File>
 			<File
@@ -410,6 +418,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Data\SimpleString.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\Data\Singleton.h"
 				>
 			</File>
 			<File
@@ -470,42 +482,26 @@
 			</Filter>
 		</Filter>
 		<Filter
-			Name="Core"
+			Name="System"
 			>
 			<File
-				RelativePath="..\..\Src\L1\Core\Core.cpp"
+				RelativePath="..\..\Src\L1\System\Memory.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Core.h"
+				RelativePath="..\..\Src\L1\System\Memory.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Core_Win32.cpp"
+				RelativePath="..\..\Src\L1\System\System.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Memory.cpp"
+				RelativePath="..\..\Src\L1\System\System.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Src\L1\Core\Memory.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Ptr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\RefCounted.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\RefCounted.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\RTTI.h"
+				RelativePath="..\..\Src\L1\System\System_Win32.cpp"
 				>
 			</File>
 		</Filter>
@@ -554,10 +550,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Math\MatrixDefs.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Math\nmath.h"
 				>
 			</File>
 			<File

@@ -6,7 +6,7 @@
 #include <Data/Pool.h>
 #include <Data/Singleton.h>
 
-// Event manager is a central coordination point for the event processing. It works as:
+// Event server is a central coordination point for the event processing. It works as:
 // - Factory/Cache, by producing event, subscription etc nodes for dispatchers' internal usage
 // - Global event dispatcher if you want to send application-scope events
 

@@ -32,7 +32,7 @@ bool LoadShaderFromFXO(IO::CStream& In, PShader OutShader)
 
 	if (FAILED(hr) || !pEffect)
 	{
-		Core::Log("FXLoader: failed to load FXO shader with:\n\n%s\n",
+		Sys::Log("FXLoader: failed to load FXO shader with:\n\n%s\n",
 			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
 		if (pErrorBuffer) pErrorBuffer->Release();
 		FAIL;

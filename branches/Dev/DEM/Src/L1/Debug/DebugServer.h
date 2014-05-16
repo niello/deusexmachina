@@ -28,7 +28,7 @@ private:
 		UI::PWindow			Window;
 	};
 
-	bool							UIAllowed;
+	bool					UIAllowed;
 	CDict<CStrID, CPlugin>	Plugins;
 
 	void TogglePluginWindow(CStrID Name);

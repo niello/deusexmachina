@@ -133,7 +133,7 @@ bool CTexture::Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Heigh
 			D3DPool = D3DPOOL_SYSTEMMEM;
 			D3DUsage = D3DUSAGE_DYNAMIC;
 			break;
-		default: Core::Error("Invalid Texture usage!");
+		default: Sys::Error("Invalid Texture usage!");
 	}
 
 	bool Result = false;
@@ -254,7 +254,7 @@ void CTexture::Unmap(int MipLevel)
 	n_assert(LockCount > 0);
 	if (Texture2D == Type) pD3D9Tex2D->UnlockRect(MipLevel);
 	else if (Texture3D == Type) pD3D9Tex3D->UnlockBox(MipLevel);
-	else Core::Error("CTexture::Unmap -> Cube texture, use UnmapCubeFace");
+	else Sys::Error("CTexture::Unmap -> Cube texture, use UnmapCubeFace");
 	LockCount--;
 }
 //---------------------------------------------------------------------

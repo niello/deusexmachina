@@ -48,7 +48,7 @@ public:
 
 	Physics::CCharacterController* GetController() const { return CharCtlr.GetUnsafe(); }
 	//!!!WRITE!
-	void			GetAABB(CAABB& AABB) const { Core::Error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
+	void			GetAABB(CAABB& AABB) const { Sys::Error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
 };
 
 }

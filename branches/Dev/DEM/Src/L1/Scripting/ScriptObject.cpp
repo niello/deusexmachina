@@ -34,7 +34,7 @@ CScriptObject* CScriptObject::GetFromStack(lua_State* l, int StackIdx)
 {
 	if (!lua_istable(l, StackIdx))
 	{
-		Core::Message("Can't get 'this' table, may be you used '.' instead of ':' for member call\n");
+		Sys::Message("Can't get 'this' table, may be you used '.' instead of ':' for member call\n");
 		lua_settop(l, 0);
 		return NULL;
 	}
@@ -157,15 +157,15 @@ DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 
 	if (luaL_loadbuffer(l, Buffer, Length, Buffer) != 0)
 	{
-		Core::Log("Error parsing script for %s: %s\n", Name.CStr(), lua_tostring(l, -1));
-		Core::Log("Script is: %s\n", Buffer);
+		Sys::Log("Error parsing script for %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+		Sys::Log("Script is: %s\n", Buffer);
 		lua_pop(l, 1);
 		return Error_Scripting_Parsing;
 	}
 
 	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr()))
 	{
-		Core::Log("Error: script object \"%s.%s\" not found\n",
+		Sys::Log("Error: script object \"%s.%s\" not found\n",
 			Name.CStr(), Table.IsEmpty() ? "_G" : Table.CStr());
 		lua_pop(l, 1);
 		return Error_Scripting_NoObject;
@@ -175,7 +175,7 @@ DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 	lua_setfenv(l, -2);
 
 	DWORD Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, NULL);
-	if (ExecResultIsError(Result)) Core::Log("Script is: %s\n", Buffer);
+	if (ExecResultIsError(Result)) Sys::Log("Script is: %s\n", Buffer);
 	return Result;
 }
 //---------------------------------------------------------------------

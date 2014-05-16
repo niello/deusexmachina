@@ -116,7 +116,7 @@ bool CRenderServer::CreateDevice()
 
 	if (FAILED(hr))
 	{
-		Core::Error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
+		Sys::Error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
 		FAIL;
 	}
 
@@ -139,7 +139,7 @@ void CRenderServer::ResetDevice()
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
 	{
 		// NB: In single-threaded app, engine will stuck here until device can be reset
-		Core::Sleep(10);
+		Sys::Sleep(10);
 		Display.ProcessWindowMessages();
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
@@ -148,7 +148,7 @@ void CRenderServer::ResetDevice()
 
 	hr = pD3DDevice->Reset(&D3DPresentParams);
 	if (FAILED(hr))
-		Core::Error("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
+		Sys::Error("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
 
 	SetupDevice();
 
@@ -264,7 +264,7 @@ void CRenderServer::SetupPresentParams()
 											D3DFMT_D24S8);
 	if (FAILED(hr))
 	{
-		Core::Error("Rendering device doesn't support D24S8 depth buffer!\n");
+		Sys::Error("Rendering device doesn't support D24S8 depth buffer!\n");
 		return;
 	}
 
@@ -276,7 +276,7 @@ void CRenderServer::SetupPresentParams()
 										D3DFMT_D24S8);
 	if (FAILED(hr))
 	{
-		Core::Error("Backbuffer format is not compatible with D24S8 depth buffer!\n");
+		Sys::Error("Backbuffer format is not compatible with D24S8 depth buffer!\n");
 		return;
 	}
 
@@ -545,7 +545,7 @@ void CRenderServer::Draw()
 		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
 		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
 		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
-		default:		Core::Error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
+		default:		Sys::Error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
 	}
 
 	HRESULT hr;
@@ -606,7 +606,7 @@ EPixelFormat CRenderServer::GetPixelFormat(const CString& String)
 	if (String == "D24X8") return D3DFMT_D24X8;
 	if (String == "D24X4S4") return D3DFMT_D24X4S4;
 
-	Core::Error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.CStr());
+	Sys::Error("CRenderServer::GetPixelFormat() -> Format %s not found!\n", String.CStr());
 	return PixelFormat_Invalid;
 }
 //---------------------------------------------------------------------

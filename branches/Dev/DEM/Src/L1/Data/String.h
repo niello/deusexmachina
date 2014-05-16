@@ -4,7 +4,7 @@
 #include <Data/Array.h>
 #include <Data/Hash.h>
 #include <Math/Matrix44.h> //!!!remove dependent code to utils
-#include <Core/Core.h>
+#include <System/System.h>
 #include <stdarg.h>
 
 // Character string with local buffer for small strings to avoid allocations

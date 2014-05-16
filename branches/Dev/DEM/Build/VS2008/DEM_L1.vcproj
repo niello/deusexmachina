@@ -533,18 +533,6 @@
 			Name="Core"
 			>
 			<File
-				RelativePath="..\..\Src\L1\Core\Core.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Core.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Core_Win32.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Src\L1\Core\CoreServer.cpp"
 				>
 			</File>
@@ -558,14 +546,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Core\Factory.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Memory.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Core\Memory.h"
 				>
 			</File>
 			<File
@@ -694,14 +674,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Debug\Profiler.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Debug\StackTraceWin32.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Src\L1\Debug\StackTraceWin32.h"
 				>
 			</File>
 			<File
@@ -1942,6 +1914,30 @@
 			</File>
 			<File
 				RelativePath="..\..\Src\L1\Util\UtilFwd.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="System"
+			>
+			<File
+				RelativePath="..\..\Src\L1\System\Memory.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\System\Memory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\System\System.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\System\System.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Src\L1\System\SystemWin32.cpp"
 				>
 			</File>
 		</Filter>

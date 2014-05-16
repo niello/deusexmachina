@@ -97,7 +97,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 				{
 					if (InitialProp == ClassName) break;
 				}
-				else Core::Error("Inappropriate property record type, only string class name and int FourCC are allowed!");
+				else Sys::Error("Inappropriate property record type, only string class name and int FourCC are allowed!");
 			}
 			if (j == InitialProps->GetCount())
 			{

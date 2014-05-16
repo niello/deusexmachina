@@ -3,14 +3,11 @@
 #define __DEM_L1_TIME_SOURCE_H__
 
 #include <Core/Object.h>
-#include <StdDEM.h>
 
 // A generic time source object which is attached to the CTimeServer.
 // Each time source tracks its own time independently from the other
 // time sources, they can also be paused and unpaused independently from
 // each other, and they may also run faster or slower then real time.
-//
-// Based on mangalore TimeSource_(C) 2006 Radon Labs GmbH
 
 namespace Time
 {

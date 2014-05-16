@@ -83,7 +83,7 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 	//!!!set flags like SuppresResistance etc!
 
 #ifdef _DEBUG
-	Core::Log("CEntity \"%s\" : Hits entity \"%s\"; Damage = %d\n",
+	Sys::Log("CEntity \"%s\" : Hits entity \"%s\"; Damage = %d\n",
 		GetEntity()->GetUID(),
 		Target.GetUID(),
 		Event->Amount);

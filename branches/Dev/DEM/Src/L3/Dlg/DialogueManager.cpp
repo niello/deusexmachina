@@ -82,7 +82,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	if (RunningDlgs.Contains(Initiator))
 	{
-		Core::Log("Error,Dlg: Entity '%s' has already started another dialogue\n", Initiator.CStr());
+		Sys::Log("Error,Dlg: Entity '%s' has already started another dialogue\n", Initiator.CStr());
 		FAIL;
 	}
 
@@ -91,7 +91,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 	Game::CEntity* pTargetEnt = EntityMgr->GetEntity(Target);
 	if (!pTargetEnt)
 	{
-		Core::Log("Error,Dlg: Entity '%s' doesn't exist\n", Target.CStr());
+		Sys::Log("Error,Dlg: Entity '%s' doesn't exist\n", Target.CStr());
 		FAIL;
 	}
 
@@ -104,7 +104,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	if (Mode == DlgMode_Foreground && IsForegroundDialogueActive())
 	{
-		Core::Log("Error,Dlg: Trying to start new foreground dialogue when other is active\n");
+		Sys::Log("Error,Dlg: Trying to start new foreground dialogue when other is active\n");
 		FAIL;
 	}
 
@@ -163,7 +163,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		NewDlg.Dlg->ScriptObj = n_new(Scripting::CScriptObject(Initiator.CStr(), "Dialogues"));
 		NewDlg.Dlg->ScriptObj->Init(); // No special class
 		if (NewDlg.Dlg->ScriptObj->LoadScriptFile(NewDlg.Dlg->ScriptFile) != Success)
-			Core::Log("Error,Dlg: Error loading script \"%s\" for dialogue", NewDlg.Dlg->ScriptFile.CStr());
+			Sys::Log("Error,Dlg: Error loading script \"%s\" for dialogue", NewDlg.Dlg->ScriptFile.CStr());
 	}
 
 	Data::PParams P = n_new(Data::CParams(1));

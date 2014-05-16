@@ -16,6 +16,9 @@
 #define HID_USAGE_GENERIC_MOUSE	((USHORT) 0x02)
 #endif
 
+#define DEM_WINDOW_CLASS		"DeusExMachina::MainWindow"
+#define ACCEL_TOGGLEFULLSCREEN	1001
+
 namespace Render
 {
 
@@ -56,7 +59,7 @@ CDisplay::~CDisplay()
 	if (aWndClass)
 	{
 		if (!UnregisterClass((LPCSTR)aWndClass, hInst))
-			Core::Error("CDisplay::CloseWindow(): UnregisterClass() failed!\n");
+			Sys::Error("CDisplay::CloseWindow(): UnregisterClass() failed!\n");
 		aWndClass = 0;
 	}
 }
@@ -142,7 +145,7 @@ bool CDisplay::OpenWindow()
 	RawInputDevices[0].hwndTarget = hWnd;
 
 	if (RegisterRawInputDevices(RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-		Core::Log("CDisplay: High-definition (raw) mouse device registration failed!\n");
+		Sys::Log("CDisplay: High-definition (raw) mouse device registration failed!\n");
 
 	IsWndOpen = true;
 	IsWndMinimized = false;

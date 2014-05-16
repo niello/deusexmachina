@@ -43,7 +43,7 @@ void CNavSystem::Init(const Data::CParams* Params)
 	if (Params)
 	{
 		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<CString>(CStrID("NavFilterID"), NULL).CStr()));
-		Core::Error("CNavSystem::Init() -> IMPLEMENT ME!!!");
+		Sys::Error("CNavSystem::Init() -> IMPLEMENT ME!!!");
 		
 #ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
 		pBoundary = n_new(dtLocalBoundary); //!!!and only if obstacle avoidance enabled!
@@ -360,7 +360,7 @@ void CNavSystem::UpdatePosition()
 			TraversingOffMesh = true;
 			//???what with distance to nav dest? what if becomes too close to target traversing offmesh?
 		}
-		else Core::Error("CNavSystem::UpdatePosition() -> Entering invalid offmesh connection");
+		else Sys::Error("CNavSystem::UpdatePosition() -> Entering invalid offmesh connection");
 	}
 	else
 	{

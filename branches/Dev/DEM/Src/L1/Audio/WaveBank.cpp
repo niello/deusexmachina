@@ -36,7 +36,7 @@
 //{
 //	if (!XMLSheet.Open())
 //	{
-//		Core::Error("Audio::CWaveBank::Open(): failed to load '%s'", XMLSheet.GetFilename().CStr());
+//		Sys::Error("Audio::CWaveBank::Open(): failed to load '%s'", XMLSheet.GetFilename().CStr());
 //		return false;
 //	}
 //
