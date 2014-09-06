@@ -1,0 +1,524 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugEditor|Win32">
+      <Configuration>DebugEditor</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseEditor|Win32">
+      <Configuration>ReleaseEditor</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}</ProjectGuid>
+    <RootNamespace>DEM_L1</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\..\Lib\</OutDir>
+    <IntDir>..\..\Obj\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\..\Lib\</OutDir>
+    <IntDir>..\..\Obj\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|Win32'">
+    <OutDir>..\..\Lib\</OutDir>
+    <IntDir>..\..\Obj\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|Win32'">
+    <OutDir>..\..\Lib\</OutDir>
+    <IntDir>..\..\Obj\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling />
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(ProjectName)_d.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling />
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__WIN32__;WIN32;_DEBUG;_LIB;_EDITOR;CEGUI_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling />
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(ProjectName)_de.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\..\Src\L1;..\..\..\3rdParty;..\..\..\3rdParty\Bullet\src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\CEGUI\cegui\include;..\..\..\3rdParty\Xiph\ogg\include;..\..\..\3rdParty\Xiph\vorbis\include;..\..\..\3rdParty\Xiph\theora\include;..\..\Src\nebula2\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__WIN32__;WIN32;NDEBUG;_LIB;_EDITOR;CEGUI_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling />
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(ProjectName)_e.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Src\L1\Data\Array.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Buffer.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Data.h" />
+    <ClInclude Include="..\..\Src\L1\Data\DataArray.h" />
+    <ClInclude Include="..\..\Src\L1\Data\DataScheme.h" />
+    <ClInclude Include="..\..\Src\L1\Data\DataServer.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Dictionary.h" />
+    <ClInclude Include="..\..\Src\L1\Data\DynamicEnum.h" />
+    <ClInclude Include="..\..\Src\L1\Data\FixedArray.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Flags.h" />
+    <ClInclude Include="..\..\Src\L1\Data\FourCC.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Hash.h" />
+    <ClInclude Include="..\..\Src\L1\Data\HashPairT.h" />
+    <ClInclude Include="..\..\Src\L1\Data\HashTable.h" />
+    <ClInclude Include="..\..\Src\L1\Data\HRDParser.h" />
+    <ClInclude Include="..\..\Src\L1\Data\KeyList.h" />
+    <ClInclude Include="..\..\Src\L1\Data\LineBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\Data\List.h" />
+    <ClInclude Include="..\..\Src\L1\Data\PairT.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Param.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Params.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Pool.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Ptr.h" />
+    <ClInclude Include="..\..\Src\L1\Data\QuadTree.h" />
+    <ClInclude Include="..\..\Src\L1\Data\RefCounted.h" />
+    <ClInclude Include="..\..\Src\L1\Data\RingBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\Data\SimpleString.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Singleton.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Stack.h" />
+    <ClInclude Include="..\..\Src\L1\Data\String.h" />
+    <ClInclude Include="..\..\Src\L1\Data\StringID.h" />
+    <ClInclude Include="..\..\Src\L1\Data\StringIDStorage.h" />
+    <ClInclude Include="..\..\Src\L1\Data\StringTokenizer.h" />
+    <ClInclude Include="..\..\Src\L1\Data\SuperFastHash.h" />
+    <ClInclude Include="..\..\Src\L1\Data\TableT.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Type.h" />
+    <ClInclude Include="..\..\Src\L1\Data\XMLDocument.h" />
+    <ClInclude Include="..\..\Src\L1\Time\TimeServer.h" />
+    <ClInclude Include="..\..\Src\L1\Time\TimeSource.h" />
+    <ClInclude Include="..\..\Src\L1\SI\SI_L1.h" />
+    <ClInclude Include="..\..\Src\L1\Core\CoreServer.h" />
+    <ClInclude Include="..\..\Src\L1\Core\Factory.h" />
+    <ClInclude Include="..\..\Src\L1\Core\Object.h" />
+    <ClInclude Include="..\..\Src\L1\Core\RTTI.h" />
+    <ClInclude Include="..\..\Src\L1\Scripting\EventHandlerScript.h" />
+    <ClInclude Include="..\..\Src\L1\Scripting\ScriptObject.h" />
+    <ClInclude Include="..\..\Src\L1\Scripting\ScriptServer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\UIRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\UIServer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\Window.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2ResourceProvider.h" />
+    <ClInclude Include="..\..\Src\L1\Debug\DebugServer.h" />
+    <ClInclude Include="..\..\Src\L1\Debug\LuaConsole.h" />
+    <ClInclude Include="..\..\Src\L1\Debug\Profiler.h" />
+    <ClInclude Include="..\..\Src\L1\Debug\WatcherWindow.h" />
+    <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputMappingEvent.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputMappingState.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputServer.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Keys.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\CharInput.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\KeyDown.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\KeyUp.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseBtnDown.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseBtnUp.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseDoubleClick.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseMove.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseMoveRaw.h" />
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseWheel.h" />
+    <ClInclude Include="..\..\Src\L1\Video\OGGTheoraPlayer.h" />
+    <ClInclude Include="..\..\Src\L1\Video\VideoPlayer.h" />
+    <ClInclude Include="..\..\Src\L1\Video\VideoServer.h" />
+    <ClInclude Include="..\..\Src\L1\Events\Event.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventBase.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventDispatcher.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventHandler.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventID.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventNative.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventServer.h" />
+    <ClInclude Include="..\..\Src\L1\Events\EventsFwd.h" />
+    <ClInclude Include="..\..\Src\L1\Events\Subscription.h" />
+    <ClInclude Include="..\..\Src\L1\Resources\Resource.h" />
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceManager.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\Bone.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\Camera.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\Light.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\LODGroup.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\Model.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\NodeAttribute.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\NodeController.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerComposite.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerPriorityBlend.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerStatic.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerThirdPerson.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\RenderObject.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\Scene.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\SceneFwd.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\SceneNode.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\SceneServer.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\SPS.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\Terrain.h" />
+    <ClInclude Include="..\..\Src\L1\Math\AABB.h" />
+    <ClInclude Include="..\..\Src\L1\Math\EnvelopeCurve.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Euler.h" />
+    <ClInclude Include="..\..\Src\L1\Math\EulerAngles.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Line.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Math.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Matrix33.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Matrix44.h" />
+    <ClInclude Include="..\..\Src\L1\Math\MatrixDefs.h" />
+    <ClInclude Include="..\..\Src\L1\Math\PackedNormal.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Plane.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Polar.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Quaternion.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Rect.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Sphere.h" />
+    <ClInclude Include="..\..\Src\L1\Math\TransformSRT.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Triangle.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Vector2.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Vector3.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Vector3EnvelopeCurve.h" />
+    <ClInclude Include="..\..\Src\L1\Math\Vector4.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9Fwd.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3DXDEMInclude.h" />
+    <ClInclude Include="..\..\Src\L1\Render\DebugDraw.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Display.h" />
+    <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h" />
+    <ClInclude Include="..\..\Src\L1\Render\FrameShader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\GPUResourceDefs.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Pass.h" />
+    <ClInclude Include="..\..\Src\L1\Render\PassGeometry.h" />
+    <ClInclude Include="..\..\Src\L1\Render\PassOcclusion.h" />
+    <ClInclude Include="..\..\Src\L1\Render\PassPosteffect.h" />
+    <ClInclude Include="..\..\Src\L1\Render\PassShadows.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Renderer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h" />
+    <ClInclude Include="..\..\Src\L1\Render\RenderServer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Materials\Material.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Materials\Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Materials\ShaderVar.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Materials\Texture.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\IndexBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\Mesh.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\VertexBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\DebugGeomRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\DebugTextRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\FullscreenQuadRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\ModelRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\TerrainRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Events\DisplayInput.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\AnimClip.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\AnimFwd.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\AnimTask.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\EventTrack.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\KeyframeClip.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\KeyframeTrack.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\MocapClip.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\MocapTrack.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\NodeControllerKeyframe.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\NodeControllerMocap.h" />
+    <ClInclude Include="..\..\Src\L1\IO\BinaryReader.h" />
+    <ClInclude Include="..\..\Src\L1\IO\BinaryWriter.h" />
+    <ClInclude Include="..\..\Src\L1\IO\BTFile.h" />
+    <ClInclude Include="..\..\Src\L1\IO\FileSystem.h" />
+    <ClInclude Include="..\..\Src\L1\IO\FSBrowser.h" />
+    <ClInclude Include="..\..\Src\L1\IO\HRDWriter.h" />
+    <ClInclude Include="..\..\Src\L1\IO\IOFwd.h" />
+    <ClInclude Include="..\..\Src\L1\IO\IOServer.h" />
+    <ClInclude Include="..\..\Src\L1\IO\Stream.h" />
+    <ClInclude Include="..\..\Src\L1\IO\StreamReader.h" />
+    <ClInclude Include="..\..\Src\L1\IO\StreamWriter.h" />
+    <ClInclude Include="..\..\Src\L1\IO\TextReader.h" />
+    <ClInclude Include="..\..\Src\L1\IO\Streams\FileStream.h" />
+    <ClInclude Include="..\..\Src\L1\IO\Streams\MemStream.h" />
+    <ClInclude Include="..\..\Src\L1\IO\FS\FileSystemNPK.h" />
+    <ClInclude Include="..\..\Src\L1\IO\FS\FileSystemWin32.h" />
+    <ClInclude Include="..\..\Src\L1\IO\FS\NpkTOC.h" />
+    <ClInclude Include="..\..\Src\L1\IO\FS\NpkTOCEntry.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\BulletConv.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\ClosestNotMeRayResultCallback.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionObjMoving.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionObjStatic.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionShape.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\HeightfieldShape.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\MotionStateDynamic.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\MotionStateKinematic.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\NodeAttrCollision.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\NodeControllerRigidBody.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsDebugDraw.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObj.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsServer.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsWorld.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\RigidBody.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\StaticMeshShape.h" />
+    <ClInclude Include="..\..\Src\L1\Util\MD5.h" />
+    <ClInclude Include="..\..\Src\L1\Util\PFLoop.h" />
+    <ClInclude Include="..\..\Src\L1\Util\PFLoopAngular.h" />
+    <ClInclude Include="..\..\Src\L1\Util\PFLoopIntDrv.h" />
+    <ClInclude Include="..\..\Src\L1\Util\PFLoopQuat.h" />
+    <ClInclude Include="..\..\Src\L1\Util\UtilFwd.h" />
+    <ClInclude Include="..\..\Src\L1\System\Memory.h" />
+    <ClInclude Include="..\..\Src\L1\System\System.h" />
+    <ClInclude Include="..\..\Src\L1\StdCfg.h" />
+    <ClInclude Include="..\..\Src\L1\StdDEM.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\Data.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\DataArray.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\DataScheme.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\DataServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\HRDParser.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\Params.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\String.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\StringID.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\StringIDStorage.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp" />
+    <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp" />
+    <ClCompile Include="..\..\Src\L1\SI\SIEventServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\SI\SIGlobals.cpp" />
+    <ClCompile Include="..\..\Src\L1\SI\SITimeServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Core\CoreServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Core\Factory.cpp" />
+    <ClCompile Include="..\..\Src\L1\Core\Object.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scripting\EventHandlerScript.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scripting\ScriptObject.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scripting\ScriptServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\UIRenderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\Window.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2ResourceProvider.cpp" />
+    <ClCompile Include="..\..\Src\L1\Debug\DebugServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Debug\LuaConsole.cpp" />
+    <ClCompile Include="..\..\Src\L1\Debug\WatcherWindow.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\ControlLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputMappingEvent.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputMappingState.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\CharInput.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\KeyDown.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\KeyUp.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseBtnDown.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseBtnUp.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseDoubleClick.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseMove.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseMoveRaw.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseWheel.cpp" />
+    <ClCompile Include="..\..\Src\L1\Video\OGGTheoraPlayer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Video\VideoPlayer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Video\VideoServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Events\Event.cpp" />
+    <ClCompile Include="..\..\Src\L1\Events\EventDispatcher.cpp" />
+    <ClCompile Include="..\..\Src\L1\Events\EventNative.cpp" />
+    <ClCompile Include="..\..\Src\L1\Events\EventServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Resources\Resource.cpp" />
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceManager.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\Bone.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\Camera.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\Light.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\LoadNodesFromSCN.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\LODGroup.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\Model.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\NodeAttribute.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\NodeController.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\NodeControllerComposite.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\NodeControllerPriorityBlend.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\NodeControllerThirdPerson.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\RenderObject.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\Scene.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\SceneNode.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\SceneServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\Terrain.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Matrix33.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Matrix44.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Quaternion.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\TransformSRT.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Vector2.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Vector3.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Vector4.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3DXDEMInclude.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\DebugDraw.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Display.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Pass.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\PassGeometry.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\PassOcclusion.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\PassPosteffect.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\RenderServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadMaterialFromPRM.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadShaderFromFX.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadShaderFromFXO.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadTextureUsingD3DX.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\Material.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\Shader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Materials\Texture.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\IndexBuffer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\LoadMeshFromNVX2.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\Mesh.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\VertexBuffer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\DebugGeomRenderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\DebugTextRenderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\ModelRenderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\TerrainRenderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Events\DisplayInput.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\AnimClip.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\AnimTask.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\KeyframeClip.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\KeyframeTrack.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\LoadKeyframeClipFromKFA.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\LoadMocapClipFromNAX2.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\MocapClip.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\MocapTrack.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\NodeControllerKeyframe.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\NodeControllerMocap.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\BinaryReader.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\BinaryWriter.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\BTFile.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\FSBrowser.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\HRDWriter.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\IOServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\Stream.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\TextReader.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\Streams\FileStream.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\Streams\MemStream.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\FS\FileSystemNPK.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\FS\FileSystemWin32.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionObjMoving.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionObjStatic.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionShape.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\HeightfieldShape.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\NodeAttrCollision.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\NodeControllerRigidBody.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObj.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsWorld.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\RigidBody.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\StaticMeshShape.cpp" />
+    <ClCompile Include="..\..\Src\L1\Util\CRC.cpp" />
+    <ClCompile Include="..\..\Src\L1\Util\MD5.cpp" />
+    <ClCompile Include="..\..\Src\L1\Util\PerlinNoise.cpp" />
+    <ClCompile Include="..\..\Src\L1\System\Memory.cpp" />
+    <ClCompile Include="..\..\Src\L1\System\System.cpp" />
+    <ClCompile Include="..\..\Src\L1\System\SystemWin32.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

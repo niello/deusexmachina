@@ -127,8 +127,8 @@ CMesh* CTerrain::GetPatchMesh(DWORD Size)
 		Group.VertexCount = VertexCount;
 		Group.FirstIndex = 0;
 		Group.IndexCount = IndexCount;
-		Group.AABB.vmin = vector3::Zero;
-		Group.AABB.vmax.set(1.f, 0.f, 1.f);
+		Group.AABB.Min = vector3::Zero;
+		Group.AABB.Max.set(1.f, 0.f, 1.f);
 
 		n_assert(Patch->Setup(VB, IB, MeshGroups));
 	}
@@ -152,12 +152,12 @@ bool CTerrain::ValidateResources()
 	Reader.Read(LODCount);
 	DWORD MinMaxDataSize = Reader.Read<DWORD>();
 	Reader.Read(VerticalScale);
-	Reader.Read(Box.vmin.x);
-	Reader.Read(Box.vmin.y);
-	Reader.Read(Box.vmin.z);
-	Reader.Read(Box.vmax.x);
-	Reader.Read(Box.vmax.y);
-	Reader.Read(Box.vmax.z);
+	Reader.Read(Box.Min.x);
+	Reader.Read(Box.Min.y);
+	Reader.Read(Box.Min.z);
+	Reader.Read(Box.Max.x);
+	Reader.Read(Box.Max.y);
+	Reader.Read(Box.Max.z);
 
 	if (!HeightMap->IsLoaded())
 	{
@@ -226,15 +226,15 @@ void CTerrain::OnDetachFromNode()
 void CTerrain::Update()
 {
 	//!!!can check global Box before adding!
-	pNode->GetScene()->AddVisibleObject(*this);
+	pNode->GetScene()->AddVisibleObject(*this); // Add directly, without visibility checking through SPS
 }
 //---------------------------------------------------------------------
 
 void CTerrain::GetGlobalAABB(CAABB& Out) const
 {
 	const vector3& Translation = GetNode()->GetWorldPosition();
-	Out.vmin = Box.vmin + Translation;
-	Out.vmax = Box.vmax + Translation;
+	Out.Min = Box.Min + Translation;
+	Out.Max = Box.Max + Translation;
 }
 //---------------------------------------------------------------------
 

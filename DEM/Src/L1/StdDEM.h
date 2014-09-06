@@ -61,7 +61,7 @@ typedef double				CTime;
 #define n_stricmp _stricmp
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER < 1800 // 1800 is VS2013. Not tested vith VS2010&VS2012.
 #define va_copy(d, s) d = s
 #endif
 

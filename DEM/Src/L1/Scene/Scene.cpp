@@ -187,8 +187,8 @@ void CScene::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
 	{
 		CAABB NodeBox;
 		pNode->GetBounds(NodeBox);
-		NodeBox.vmin.y = SceneBBox.vmin.y;
-		NodeBox.vmax.y = SceneBBox.vmax.y;
+		NodeBox.Min.y = SceneBBox.Min.y;
+		NodeBox.Max.y = SceneBBox.Max.y;
 		Clip = NodeBox.GetClipStatus(ViewProj);
 		if (Clip == Outside) return;
 	}

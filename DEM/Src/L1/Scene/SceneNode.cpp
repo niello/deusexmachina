@@ -86,7 +86,7 @@ void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 }
 //---------------------------------------------------------------------
 
-// After UpdateLocalSpace provided possible constraints etc to physics, and simulation
+// After UpdateLocalSpace() provided possible constraints etc to physics, and simulation
 // was performed, we can finally update world-controlled nodes and their children.
 // After world transform is up-to-date, we update scene node attributes.
 void CSceneNode::UpdateWorldSpace()

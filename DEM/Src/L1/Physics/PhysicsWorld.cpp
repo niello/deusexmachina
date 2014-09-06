@@ -25,8 +25,8 @@ bool CPhysicsWorld::Init(const CAABB& Bounds)
 {
 	n_assert(!pBtDynWorld);
 
-	btVector3 Min = VectorToBtVector(Bounds.vmin);
-	btVector3 Max = VectorToBtVector(Bounds.vmax);
+	btVector3 Min = VectorToBtVector(Bounds.Min);
+	btVector3 Max = VectorToBtVector(Bounds.Max);
 	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
 	//btBroadphaseInterface* pBtBroadPhase = new btDbvtBroadphase();
 

@@ -39,12 +39,12 @@ inline bool sphere::intersects(const sphere& s) const
 
 inline bool sphere::inside(const CAABB& box) const
 {
-	return (((this->p.x - r) < box.vmin.x) &&
-			((this->p.x + r) > box.vmax.x) &&
-			((this->p.y - r) < box.vmin.y) &&
-			((this->p.y + r) > box.vmax.y) &&
-			((this->p.z - r) < box.vmin.z) &&
-			((this->p.z + r) > box.vmax.z));
+	return (((this->p.x - r) < box.Min.x) &&
+			((this->p.x + r) > box.Max.x) &&
+			((this->p.y - r) < box.Min.y) &&
+			((this->p.y + r) > box.Max.y) &&
+			((this->p.z - r) < box.Min.z) &&
+			((this->p.z + r) > box.Max.z));
 }
 //---------------------------------------------------------------------
 
@@ -56,36 +56,36 @@ inline bool sphere::intersects(const CAABB& box) const
     float s, d = 0;
 
     // find the square of the distance from the sphere to the box
-    if (p.x < box.vmin.x)
+    if (p.x < box.Min.x)
     {
-        s = p.x - box.vmin.x;
+        s = p.x - box.Min.x;
         d += s*s;
     }
-    else if (p.x > box.vmax.x)
+    else if (p.x > box.Max.x)
     {
-        s = p.x - box.vmax.x;
-        d += s*s;
-    }
-
-    if (p.y < box.vmin.y)
-    {
-        s = p.y - box.vmin.y;
-        d += s*s;
-    }
-    else if (p.y > box.vmax.y)
-    {
-        s = p.y - box.vmax.y;
+        s = p.x - box.Max.x;
         d += s*s;
     }
 
-    if (p.z < box.vmin.z)
+    if (p.y < box.Min.y)
     {
-        s = p.z - box.vmin.z;
+        s = p.y - box.Min.y;
         d += s*s;
     }
-    else if (p.z > box.vmax.z)
+    else if (p.y > box.Max.y)
     {
-        s = p.z - box.vmax.z;
+        s = p.y - box.Max.y;
+        d += s*s;
+    }
+
+    if (p.z < box.Min.z)
+    {
+        s = p.z - box.Min.z;
+        d += s*s;
+    }
+    else if (p.z > box.Max.z)
+    {
+        s = p.z - box.Max.z;
         d += s*s;
     }
 

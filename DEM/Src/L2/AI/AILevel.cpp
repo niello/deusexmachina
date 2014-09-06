@@ -196,8 +196,8 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 	{
 		CAABB BBox;
 		pNode->GetBounds(BBox);
-		BBox.vmin.y = Box.vmin.y;
-		BBox.vmax.y = Box.vmax.y;
+		BBox.Min.y = Box.Min.y;
+		BBox.Max.y = Box.Max.y;
 		EClipStatus = pSensor->GetBoxClipStatus(pActor, BBox);
 	}
 

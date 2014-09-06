@@ -82,12 +82,12 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 			Reader.Read<DWORD>(); // LODCount
 			Reader.Read<DWORD>(); // MinMaxDataSize
 			Reader.Read(HScale);
-			Reader.Read(AABB.vmin.x);
-			Reader.Read(AABB.vmin.y);
-			Reader.Read(AABB.vmin.z);
-			Reader.Read(AABB.vmax.x);
-			Reader.Read(AABB.vmax.y);
-			Reader.Read(AABB.vmax.z);
+			Reader.Read(AABB.Min.x);
+			Reader.Read(AABB.Min.y);
+			Reader.Read(AABB.Min.z);
+			Reader.Read(AABB.Max.x);
+			Reader.Read(AABB.Max.y);
+			Reader.Read(AABB.Max.z);
 
 			DWORD DataSize = HFWidth * HFHeight * sizeof(unsigned short);
 			pHFData = n_malloc(DataSize);
@@ -110,12 +110,12 @@ PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, Data::CParams& In)
 		if (HFShape.IsValid())
 		{
 			btHeightfieldTerrainShape* pBtShape =
-				new btHeightfieldTerrainShape(HFWidth, HFHeight, pHFData, HScale, AABB.vmin.y, AABB.vmax.y, 1, PHY_SHORT, false);
+				new btHeightfieldTerrainShape(HFWidth, HFHeight, pHFData, HScale, AABB.Min.y, AABB.Max.y, 1, PHY_SHORT, false);
 
-			btVector3 LocalScaling((AABB.vmax.x - AABB.vmin.x) / (float)(HFWidth - 1), 1.f, (AABB.vmax.z - AABB.vmin.z) / (float)(HFHeight - 1));
+			btVector3 LocalScaling((AABB.Max.x - AABB.Min.x) / (float)(HFWidth - 1), 1.f, (AABB.Max.z - AABB.Min.z) / (float)(HFHeight - 1));
 			pBtShape->setLocalScaling(LocalScaling);
 
-			vector3 Offset((AABB.vmax.x - AABB.vmin.x) * 0.5f, (AABB.vmin.y + AABB.vmax.y) * 0.5f, (AABB.vmax.z - AABB.vmin.z) * 0.5f);
+			vector3 Offset((AABB.Max.x - AABB.Min.x) * 0.5f, (AABB.Min.y + AABB.Max.y) * 0.5f, (AABB.Max.z - AABB.Min.z) * 0.5f);
 			if (HFShape->Setup(pBtShape, pHFData, Offset)) return HFShape.GetUnsafe();
 
 			delete pBtShape;

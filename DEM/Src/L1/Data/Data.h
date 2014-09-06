@@ -96,6 +96,7 @@ public:
 
 	template<class T>			operator T&() { return GetValue<T>(); }
 	template<class T>			operator const T&() const { return GetValue<T>(); }
+	template<class T>			operator T*() { return GetValuePtr<T>(); }
 	template<class T>			operator const T*() const { return GetValuePtr<T>(); }
 
 	//!!!save, load!
