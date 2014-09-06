@@ -20,20 +20,20 @@ public:
 		CLIPS       = (1<<3),
 	};
 
-	vector3 vmin;
-	vector3 vmax;
+	vector3 Min;
+	vector3 Max;
 
 	CAABB() {}
-	CAABB(const vector3& Center, const vector3& Extents): vmin(Center - Extents), vmax(Center + Extents) {}
+	CAABB(const vector3& Center, const vector3& Extents): Min(Center - Extents), Max(Center + Extents) {}
 	CAABB(const matrix44& m) { Set(m); }
 
-	vector3		Center() const { return (vmin + vmax) * 0.5f; }
-	vector3		Extents() const { return (vmax - vmin) * 0.5f; }
-	vector3		Size() const { return vmax - vmin; }
-	float		GetDiagonalLength() const { return vector3::Distance(vmin, vmax); }
+	vector3		Center() const { return (Min + Max) * 0.5f; }
+	vector3		Extents() const { return (Max - Min) * 0.5f; }
+	vector3		Size() const { return Max - Min; }
+	float		GetDiagonalLength() const { return vector3::Distance(Min, Max); }
 
 	void		Set(const matrix44& m);
-	void		Set(const vector3& Center, const vector3& Extents) { vmin = Center - Extents; vmax = Center + Extents; }
+	void		Set(const vector3& Center, const vector3& Extents) { Min = Center - Extents; Max = Center + Extents; }
 
 	void		BeginExtend();
 	void		BeginExtend(const vector3& InitialPoint);
@@ -63,9 +63,9 @@ public:
 	bool		isect_const_x(const float x, const line3& l, vector3& out) const;
 	bool		isect_const_y(const float y, const line3& l, vector3& out) const;
 	bool		isect_const_z(const float z, const line3& l, vector3& out) const;
-	bool		PointInPolyX(const vector3& p) const { return p.y >= vmin.y && p.y <= vmax.y && p.z >= vmin.z && p.z <= vmax.z; }
-	bool		PointInPolyY(const vector3& p) const { return p.x >= vmin.x && p.x <= vmax.x && p.z >= vmin.z && p.z <= vmax.z; }
-	bool		PointInPolyZ(const vector3& p) const { return p.x >= vmin.x && p.x <= vmax.x && p.y >= vmin.y && p.y <= vmax.y; }
+	bool		PointInPolyX(const vector3& p) const { return p.y >= Min.y && p.y <= Max.y && p.z >= Min.z && p.z <= Max.z; }
+	bool		PointInPolyY(const vector3& p) const { return p.x >= Min.x && p.x <= Max.x && p.z >= Min.z && p.z <= Max.z; }
+	bool		PointInPolyZ(const vector3& p) const { return p.x >= Min.x && p.x <= Max.x && p.y >= Min.y && p.y <= Max.y; }
 };
 
 // Construct a bounding box around a 4x4 matrix. The translational part defines the
@@ -77,65 +77,66 @@ inline void CAABB::Set(const matrix44& m)
 	float zExtent = n_max(n_max(n_fabs(m.M13), n_fabs(m.M23)), n_fabs(m.M33));
 	vector3 extent(xExtent, yExtent, zExtent);
 	vector3 Center = m.Translation();
-	vmin = Center - extent;
-	vmax = Center + extent;
+	Min = Center - extent;
+	Max = Center + extent;
 }
 //---------------------------------------------------------------------
 
 inline void CAABB::BeginExtend()
 {
-	vmin.set(FLT_MAX, FLT_MAX, FLT_MAX);
-	vmax.set(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	Min.set(FLT_MAX, FLT_MAX, FLT_MAX);
+	Max.set(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 }
 //---------------------------------------------------------------------
 
 inline void CAABB::BeginExtend(const vector3& InitialPoint)
 {
-	vmin = InitialPoint;
-	vmax = InitialPoint;
+	Min = InitialPoint;
+	Max = InitialPoint;
 }
 //---------------------------------------------------------------------
 
 inline void CAABB::EndExtend()
 {
-	if (vmin.x > vmax.x || vmin.y > vmax.y || vmin.z > vmax.z)
+	if (Min.x > Max.x || Min.y > Max.y || Min.z > Max.z)
 	{
-		vmin = vector3::Zero;
-		vmax = vector3::Zero;
+		Min = vector3::Zero;
+		Max = vector3::Zero;
 	}
 }
 //---------------------------------------------------------------------
 
 inline void CAABB::Extend(float x, float y, float z)
 {
-	if (x < vmin.x) vmin.x = x;
-	if (x > vmax.x) vmax.x = x;
-	if (y < vmin.y) vmin.y = y;
-	if (y > vmax.y) vmax.y = y;
-	if (z < vmin.z) vmin.z = z;
-	if (z > vmax.z) vmax.z = z;
+	if (x < Min.x) Min.x = x;
+	if (x > Max.x) Max.x = x;
+	if (y < Min.y) Min.y = y;
+	if (y > Max.y) Max.y = y;
+	if (z < Min.z) Min.z = z;
+	if (z > Max.z) Max.z = z;
 }
 //---------------------------------------------------------------------
 
+// Requires Min <= Max
 inline void CAABB::ExtendFast(float x, float y, float z)
 {
-	if (x < vmin.x) vmin.x = x;
-	else if (x > vmax.x) vmax.x = x;
-	if (y < vmin.y) vmin.y = y;
-	else if (y > vmax.y) vmax.y = y;
-	if (z < vmin.z) vmin.z = z;
-	else if (z > vmax.z) vmax.z = z;
+	if (x < Min.x) Min.x = x;
+	else if (x > Max.x) Max.x = x;
+	if (y < Min.y) Min.y = y;
+	else if (y > Max.y) Max.y = y;
+	if (z < Min.z) Min.z = z;
+	else if (z > Max.z) Max.z = z;
 }
 //---------------------------------------------------------------------
 
 inline void CAABB::Extend(const CAABB& box)
 {
-	if (box.vmin.x < vmin.x) vmin.x = box.vmin.x;
-	if (box.vmin.y < vmin.y) vmin.y = box.vmin.y;
-	if (box.vmin.z < vmin.z) vmin.z = box.vmin.z;
-	if (box.vmax.x > vmax.x) vmax.x = box.vmax.x;
-	if (box.vmax.y > vmax.y) vmax.y = box.vmax.y;
-	if (box.vmax.z > vmax.z) vmax.z = box.vmax.z;
+	if (box.Min.x < Min.x) Min.x = box.Min.x;
+	if (box.Min.y < Min.y) Min.y = box.Min.y;
+	if (box.Min.z < Min.z) Min.z = box.Min.z;
+	if (box.Max.x > Max.x) Max.x = box.Max.x;
+	if (box.Max.y > Max.y) Max.y = box.Max.y;
+	if (box.Max.z > Max.z) Max.z = box.Max.z;
 }
 //---------------------------------------------------------------------
 
@@ -144,14 +145,14 @@ inline vector3 CAABB::GetCorner(DWORD index) const
 	n_assert_dbg(index < 8);
 	switch (index)
 	{
-		case 0:		return vmin;
-		case 1:		return vector3(vmin.x, vmax.y, vmin.z);
-		case 2:		return vector3(vmax.x, vmax.y, vmin.z);
-		case 3:		return vector3(vmax.x, vmin.y, vmin.z);
-		case 4:		return vmax;
-		case 5:		return vector3(vmin.x, vmax.y, vmax.z);
-		case 6:		return vector3(vmin.x, vmin.y, vmax.z);
-		default:	return vector3(vmax.x, vmin.y, vmax.z);
+		case 0:		return Min;
+		case 1:		return vector3(Min.x, Max.y, Min.z);
+		case 2:		return vector3(Max.x, Max.y, Min.z);
+		case 3:		return vector3(Max.x, Min.y, Min.z);
+		case 4:		return Max;
+		case 5:		return vector3(Min.x, Max.y, Max.z);
+		case 6:		return vector3(Min.x, Min.y, Max.z);
+		default:	return vector3(Max.x, Min.y, Max.z);
 	}
 }
 //---------------------------------------------------------------------
@@ -164,12 +165,12 @@ inline void CAABB::GetClipPlanes(const matrix44& viewProj, plane outPlanes[6]) c
 	inv.transpose();
 
 	vector4 planes[6];
-	planes[0].set(-1, 0, 0, +vmax.x);
-	planes[1].set(+1, 0, 0, -vmin.x);
-	planes[2].set(0, -1, 0, +vmax.y);
-	planes[3].set(0, +1, 0, -vmin.y);
-	planes[4].set(0, 0, -1, +vmax.z);
-	planes[5].set(0, 0, +1, -vmin.z);
+	planes[0].set(-1, 0, 0, +Max.x);
+	planes[1].set(+1, 0, 0, -Min.x);
+	planes[2].set(0, -1, 0, +Max.y);
+	planes[3].set(0, +1, 0, -Min.y);
+	planes[4].set(0, 0, -1, +Max.z);
+	planes[5].set(0, 0, +1, -Min.z);
 
 	for (int i = 0; i < 6; ++i)
 	{
@@ -196,21 +197,21 @@ inline void CAABB::Transform(const matrix44& m)
 	Set(extentMatrix);
 	*/
 
-	vector3 Min = m * GetCorner(0);
-	vector3 Max = Min;
+	vector3 NewMin = m * GetCorner(0);
+	vector3 NewMax = Min;
 	for (int i = 1; i < 8; ++i)
 	{
 		vector3 OBBCorner = m * GetCorner(i);
-		if (OBBCorner.x < Min.x) Min.x = OBBCorner.x;
-		else if (OBBCorner.x > Max.x) Max.x = OBBCorner.x;
-		if (OBBCorner.y < Min.y) Min.y = OBBCorner.y;
-		else if (OBBCorner.y > Max.y) Max.y = OBBCorner.y;
-		if (OBBCorner.z < Min.z) Min.z = OBBCorner.z;
-		else if (OBBCorner.z > Max.z) Max.z = OBBCorner.z;
+		if (OBBCorner.x < NewMin.x) NewMin.x = OBBCorner.x;
+		else if (OBBCorner.x > NewMax.x) NewMax.x = OBBCorner.x;
+		if (OBBCorner.y < NewMin.y) NewMin.y = OBBCorner.y;
+		else if (OBBCorner.y > NewMax.y) NewMax.y = OBBCorner.y;
+		if (OBBCorner.z < NewMin.z) NewMin.z = OBBCorner.z;
+		else if (OBBCorner.z > NewMax.z) NewMax.z = OBBCorner.z;
 	}
 
-	vmin = Min;
-	vmax = Max;
+	Min = NewMin;
+	Max = NewMax;
 }
 //---------------------------------------------------------------------
 
@@ -237,8 +238,8 @@ inline void CAABB::TransformDivW(const matrix44& m)
 		else if (OBBCorner.z > Max.z) Max.z = OBBCorner.z;
 	}
 
-	vmin = Min;
-	vmax = Max;
+	Min = Min;
+	Max = Max;
 }
 //---------------------------------------------------------------------
 
@@ -252,27 +253,27 @@ inline void CAABB::TransformDivW(const matrix44& m, CAABB& Out) const
 // Check for intersection of 2 axis aligned bounding boxes in the same coordinate space
 inline bool CAABB::intersects(const CAABB& box) const
 {
-	return	vmax.x >= box.vmin.x && vmin.x <= box.vmax.x &&
-			vmax.y >= box.vmin.y && vmin.y <= box.vmax.y &&
-			vmax.z >= box.vmin.z && vmin.z <= box.vmax.z;
+	return	Max.x >= box.Min.x && Min.x <= box.Max.x &&
+			Max.y >= box.Min.y && Min.y <= box.Max.y &&
+			Max.z >= box.Min.z && Min.z <= box.Max.z;
 }
 //---------------------------------------------------------------------
 
 // Check if the other box is completely contained in this bounding box
 inline bool CAABB::contains(const CAABB& box) const
 {
-	return	vmin.x <= box.vmin.x && vmax.x >= box.vmax.x &&
-			vmin.y <= box.vmin.y && vmax.y >= box.vmax.y &&
-			vmin.z <= box.vmin.z && vmax.z >= box.vmax.z;
+	return	Min.x <= box.Min.x && Max.x >= box.Max.x &&
+			Min.y <= box.Min.y && Max.y >= box.Max.y &&
+			Min.z <= box.Min.z && Max.z >= box.Max.z;
 }
 //---------------------------------------------------------------------
 
 // Check if position is inside bounding box.
 inline bool CAABB::contains(const vector3& v) const
 {
-	return	vmin.x <= v.x && vmax.x >= v.x &&
-			vmin.y <= v.y && vmax.y >= v.y &&
-			vmin.z <= v.z && vmax.z >= v.z;
+	return	Min.x <= v.x && Max.x >= v.x &&
+			Min.y <= v.y && Max.y >= v.y &&
+			Min.z <= v.z && Max.z >= v.z;
 }
 //---------------------------------------------------------------------
 
@@ -311,10 +312,10 @@ inline EClipStatus CAABB::GetClipStatus(const matrix44& ViewProj) const
 // Create a transform matrix which transforms an unit cube to this box
 inline void CAABB::ToMatrix44(matrix44& Out) const
 {
-    Out.set(vmax.x - vmin.x, 0.f, 0.f, 0.f,
-			0.f, vmax.y - vmin.y, 0.f, 0.f,
-			0.f, 0.f, vmax.z - vmin.z, 0.f,
-			(vmin.x + vmax.x) * 0.5f, (vmin.y + vmax.y) * 0.5f, (vmin.z + vmax.z) * 0.5f, 1.f);
+    Out.set(Max.x - Min.x, 0.f, 0.f, 0.f,
+			0.f, Max.y - Min.y, 0.f, 0.f,
+			0.f, 0.f, Max.z - Min.z, 0.f,
+			(Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f, (Min.z + Max.z) * 0.5f, 1.f);
 }
 //---------------------------------------------------------------------
 
@@ -359,8 +360,8 @@ inline bool CAABB::isect_const_z(const float z, const line3& l, vector3& out) co
 inline bool CAABB::intersect(const line3& line, vector3& ipos) const
 {
     // Handle special case for start point inside box
-    if (line.Start.x >= vmin.x && line.Start.y >= vmin.y && line.Start.z >= vmin.z &&
-        line.Start.x <= vmax.x && line.Start.y <= vmax.y && line.Start.z <= vmax.z)
+    if (line.Start.x >= Min.x && line.Start.y >= Min.y && line.Start.z >= Min.z &&
+        line.Start.x <= Max.x && line.Start.y <= Max.y && line.Start.z <= Max.z)
     {
         ipos = line.Start;
         return true;
@@ -377,22 +378,22 @@ inline bool CAABB::intersect(const line3& line, vector3& ipos) const
         switch (plane[i])
         {
             case 0:
-                if (isect_const_x(vmin.x,line,ipos) && PointInPolyX(ipos)) return true;
+                if (isect_const_x(Min.x,line,ipos) && PointInPolyX(ipos)) return true;
                 break;
             case 1:
-                if (isect_const_x(vmax.x,line,ipos) && PointInPolyX(ipos)) return true;
+                if (isect_const_x(Max.x,line,ipos) && PointInPolyX(ipos)) return true;
                 break;
             case 2:
-                if (isect_const_y(vmin.y,line,ipos) && PointInPolyY(ipos)) return true;
+                if (isect_const_y(Min.y,line,ipos) && PointInPolyY(ipos)) return true;
                 break;
             case 3:
-                if (isect_const_y(vmax.y,line,ipos) && PointInPolyY(ipos)) return true;
+                if (isect_const_y(Max.y,line,ipos) && PointInPolyY(ipos)) return true;
                 break;
             case 4:
-                if (isect_const_z(vmin.z,line,ipos) && PointInPolyZ(ipos)) return true;
+                if (isect_const_z(Min.z,line,ipos) && PointInPolyZ(ipos)) return true;
                 break;
             case 5:
-                if (isect_const_z(vmax.z,line,ipos) && PointInPolyZ(ipos)) return true;
+                if (isect_const_z(Max.z,line,ipos) && PointInPolyZ(ipos)) return true;
                 break;
         }
     }
@@ -418,13 +419,13 @@ inline int CAABB::intersect(const CAABB& box)
 {
 	int and_code = 0xffff;
 	int or_code = 0;
-	int cx = line_test(vmin.x, vmax.x, box.vmin.x, box.vmax.x);
+	int cx = line_test(Min.x, Max.x, box.Min.x, box.Max.x);
 	and_code &= cx;
 	or_code |= cx;
-	int cy = line_test(vmin.y, vmax.y, box.vmin.y, box.vmax.y);
+	int cy = line_test(Min.y, Max.y, box.Min.y, box.Max.y);
 	and_code &= cy;
 	or_code |= cy;
-	int cz = line_test(vmin.z, vmax.z, box.vmin.z, box.vmax.z);
+	int cz = line_test(Min.z, Max.z, box.Min.z, box.Max.z);
 	and_code &= cz;
 	or_code |= cz;
 	if (or_code == 0) return OUTSIDE;

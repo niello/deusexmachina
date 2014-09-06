@@ -135,8 +135,8 @@ void CPhysicsObj::GetGlobalAABB(CAABB& OutBox) const
 
 	btVector3 Min, Max;
 	pBtCollObj->getCollisionShape()->getAabb(Tfm, Min, Max);
-	OutBox.vmin = BtVectorToVector(Min);
-	OutBox.vmax = BtVectorToVector(Max);
+	OutBox.Min = BtVectorToVector(Min);
+	OutBox.Max = BtVectorToVector(Max);
 }
 //---------------------------------------------------------------------
 
@@ -148,8 +148,8 @@ void CPhysicsObj::GetPhysicsAABB(CAABB& OutBox) const
 	btVector3 Min, Max;
 	if (pWorld) pWorld->GetBtWorld()->getBroadphase()->getAabb(pBtCollObj->getBroadphaseHandle(), Min, Max);
 	else pBtCollObj->getCollisionShape()->getAabb(pBtCollObj->getWorldTransform(), Min, Max);
-	OutBox.vmin = BtVectorToVector(Min);
-	OutBox.vmax = BtVectorToVector(Max);
+	OutBox.Min = BtVectorToVector(Min);
+	OutBox.Max = BtVectorToVector(Max);
 }
 //---------------------------------------------------------------------
 

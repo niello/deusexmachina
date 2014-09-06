@@ -207,12 +207,12 @@ void CPropActorPhysics::GetAABB(CAABB& AABB) const
 	if (pEnt && pEnt->GetComposite()) pEnt->GetComposite()->GetAABB(AABB);
 	else
 	{
-		AABB.vmin.x = 
-		AABB.vmin.y = 
-		AABB.vmin.z = 
-		AABB.vmax.x = 
-		AABB.vmax.y = 
-		AABB.vmax.z = 0.f;
+		AABB.Min.x = 
+		AABB.Min.y = 
+		AABB.Min.z = 
+		AABB.Max.x = 
+		AABB.Max.y = 
+		AABB.Max.z = 0.f;
 	}
 }
 //---------------------------------------------------------------------

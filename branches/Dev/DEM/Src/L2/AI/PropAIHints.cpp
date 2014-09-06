@@ -130,9 +130,9 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 				{
 					CAABB AABB;
 					pNode->GetAABB(AABB);
-					vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
+					vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
 					Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
-					//!!!Rec.Stimulus->Height = AABB.vmax.y - AABB.vmin.y;
+					//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
 				}
 			}
 			else if (SizeStr == "PhysBox")
@@ -142,9 +142,9 @@ bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
 				{
 					CAABB AABB;
 					pPropPhys->GetAABB(AABB);
-					vector2 HorizDiag(AABB.vmax.x - AABB.vmin.x, AABB.vmax.z - AABB.vmin.z);
+					vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
 					Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
-					//!!!Rec.Stimulus->Height = AABB.vmax.y - AABB.vmin.y;
+					//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
 				}
 			}
 			else if (SizeStr == "Attr")

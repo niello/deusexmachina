@@ -393,7 +393,7 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 	CAABB AABB;
 	pNode->GetAABB(AABB);
 	vector3 Center = AABB.Center();
-	Scene->GetMainCamera().GetPoint2D(vector3(Center.x, AABB.vmax.y, Center.z), Out.x, Out.y);
+	Scene->GetMainCamera().GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -417,8 +417,8 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 
 	if (Offset)
 	{
-		AABB.vmax += *Offset;
-		AABB.vmin += *Offset;
+		AABB.Max += *Offset;
+		AABB.Min += *Offset;
 	}
 
 	Scene->GetMainCamera().GetPoint2D(AABB.GetCorner(0), Out.v0.x, Out.v0.y);

@@ -305,6 +305,7 @@ bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
 	for (int i = 0; i < SGQuests->GetCount(); ++i)
 	{
 		Data::PParams SGQuest = SGQuests->Get(i);
+		//Data::PParams SGQuest = SGQuests->Get<Data::PParams>(i);
 
 		CStrID QuestID = SGQuest->Get<CStrID>(CStrID("ID"));
 

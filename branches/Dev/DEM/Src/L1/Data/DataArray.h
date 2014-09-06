@@ -24,6 +24,8 @@ public:
 	CData&			Get(int Index) { return At(Index); }
 	const CData&	Get(int Index) const { return operator [](Index); }
 	template<class T>
+	T&				Get(int Index) { return At(Index).GetValue<T>(); }
+	template<class T>
 	const T&		Get(int Index) const { return operator [](Index).GetValue<T>(); }
 
 	//template<class T> const T& operator [](int Index) const {}

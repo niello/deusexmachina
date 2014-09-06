@@ -95,8 +95,8 @@ void CLight::GetGlobalAABB(CAABB& OutBox) const
 		{
 			//!!!can cache local box!
 			float HalfFarExtent = Range * n_tan(ConeOuter / 2.f);
-			OutBox.vmin.set(-HalfFarExtent, -HalfFarExtent, -Range);
-			OutBox.vmax.set(HalfFarExtent, HalfFarExtent, 0.f);
+			OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -Range);
+			OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
 			OutBox.Transform(pNode->GetWorldMatrix());
 			return;
 		}

@@ -349,10 +349,10 @@ inline bool CQuadTree<TObject, TStorage>::CNode::Contains(const vector2& Center,
 {
 	CAABB Box;
 	GetBounds(Box);
-	return	Center.x - HalfSize.x >= Box.vmin.x &&
-			Center.x + HalfSize.x <= Box.vmax.x &&
-			Center.y - HalfSize.y >= Box.vmin.z &&
-			Center.y + HalfSize.y <= Box.vmax.z;
+	return	Center.x - HalfSize.x >= Box.Min.x &&
+			Center.x + HalfSize.x <= Box.Max.x &&
+			Center.y - HalfSize.y >= Box.Min.z &&
+			Center.y + HalfSize.y <= Box.Max.z;
 }
 //---------------------------------------------------------------------
 
@@ -401,10 +401,10 @@ void CQuadTree<TObject, TStorage>::CNode::GetBounds(CAABB& Box) const
 		NodeSizeZ = pOwner->GetSize().y;
 	}
 
-	Box.vmin.x = pOwner->Center.x + Col * NodeSizeX - pOwner->GetSize().x * 0.5f;
-	Box.vmin.z = pOwner->Center.y + Row * NodeSizeZ - pOwner->GetSize().y * 0.5f;
-	Box.vmax.x = Box.vmin.x + NodeSizeX;
-	Box.vmax.z = Box.vmin.z + NodeSizeZ;
+	Box.Min.x = pOwner->Center.x + Col * NodeSizeX - pOwner->GetSize().x * 0.5f;
+	Box.Min.z = pOwner->Center.y + Row * NodeSizeZ - pOwner->GetSize().y * 0.5f;
+	Box.Max.x = Box.Min.x + NodeSizeX;
+	Box.Max.z = Box.Min.z + NodeSizeZ;
 }
 //---------------------------------------------------------------------
 

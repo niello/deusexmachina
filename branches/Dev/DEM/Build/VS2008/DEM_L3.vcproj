@@ -565,6 +565,14 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="Chr"
+			>
+			<File
+				RelativePath="..\..\Src\L3\Chr\CharacterSheet.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

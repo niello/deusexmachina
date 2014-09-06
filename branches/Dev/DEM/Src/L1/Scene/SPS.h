@@ -60,8 +60,8 @@ inline void CSPSRecord::GetCenter(vector2& Out) const
 
 inline void CSPSRecord::GetHalfSize(vector2& Out) const
 {
-	Out.x = (GlobalBox.vmax.x - GlobalBox.vmin.x) * 0.5f;
-	Out.y = (GlobalBox.vmax.z - GlobalBox.vmin.z) * 0.5f;
+	Out.x = (GlobalBox.Max.x - GlobalBox.Min.x) * 0.5f;
+	Out.y = (GlobalBox.Max.z - GlobalBox.Min.z) * 0.5f;
 }
 //---------------------------------------------------------------------
 

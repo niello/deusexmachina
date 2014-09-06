@@ -13,7 +13,7 @@
 #include <Render/RenderServer.h>
 #include <Render/DebugDraw.h>
 #include <Scene/SceneServer.h>
-#include <Audio/AudioServer.h>
+//#include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
@@ -61,7 +61,7 @@ protected:
 	Ptr<Scene::CSceneServer>		SceneServer;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
-	Ptr<Audio::CAudioServer>		AudioServer;
+	//Ptr<Audio::CAudioServer>		AudioServer;
 	Ptr<Video::CVideoServer>		VideoServer;
 	Ptr<Game::CGameServer>			GameServer;
 	Ptr<AI::CAIServer>				AIServer;
