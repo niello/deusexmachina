@@ -1,0 +1,324 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Combat">
+      <UniqueIdentifier>{b6c7bf40-598a-4b8c-8efb-624188071eaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Combat\Dmg">
+      <UniqueIdentifier>{50062584-45e8-4a65-b606-a41067e3edd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Combat\Prop">
+      <UniqueIdentifier>{5eb2afd4-72eb-4251-972d-192a2d9968b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Combat\Event">
+      <UniqueIdentifier>{f554a7c9-0f49-4478-b84f-ccf6ad9e0b26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Items">
+      <UniqueIdentifier>{048e79ee-57eb-4cf1-8fe1-7d3cd6ab374c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Items\Prop">
+      <UniqueIdentifier>{51ca8bcc-d97b-4ddb-a988-12cecdfcb443}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Items\ActionTpls">
+      <UniqueIdentifier>{fae35cca-2f7c-4a28-af4c-e64cfaf4b984}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Items\Actions">
+      <UniqueIdentifier>{4dc8e57d-38eb-488d-a3af-7fdc07602645}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SI">
+      <UniqueIdentifier>{f0dfb46f-fb52-4252-926d-e4dbcc2eb89e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI">
+      <UniqueIdentifier>{befd736a-1eb9-4aa0-bcb7-7da63906bc3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Goals">
+      <UniqueIdentifier>{50bffac0-a3c2-41de-98cf-fc2163598935}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Actions">
+      <UniqueIdentifier>{5272277c-ca2e-42eb-a652-42162a12e60a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Sensors">
+      <UniqueIdentifier>{c80e1dbc-2c4e-4418-8615-ae03cab75d0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Perceptors">
+      <UniqueIdentifier>{1f7dad33-5af5-4e6a-aad3-91aa113e6e1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Stimuli">
+      <UniqueIdentifier>{adbed8b1-3421-4279-bba5-0851e433212a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\ActionTpls">
+      <UniqueIdentifier>{6f612da5-b68e-41ee-af96-c3a5c18934fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI\Memory">
+      <UniqueIdentifier>{6382fd8b-1dce-4d50-b307-7f030b31ac9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="World">
+      <UniqueIdentifier>{b12ca4a4-8824-4ae5-a7e5-3a1b36668d01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dlg">
+      <UniqueIdentifier>{01649a98-3a6a-4076-b899-4ba02c3c71cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quests">
+      <UniqueIdentifier>{6311a0d0-2cfe-4675-8703-afc591f2f8f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Factions">
+      <UniqueIdentifier>{7d08262e-a05d-416f-b2a9-94cf66568942}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Chr">
+      <UniqueIdentifier>{bf41f0d4-dfc3-438a-bdfa-a28a161195a8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Src\L3\Combat\Dmg\Damage.h">
+      <Filter>Combat\Dmg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Combat\Dmg\DamageEffect.h">
+      <Filter>Combat\Dmg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Combat\Dmg\DamageSource.h">
+      <Filter>Combat\Dmg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Combat\Prop\PropDestructible.h">
+      <Filter>Combat\Prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Combat\Prop\PropWeapon.h">
+      <Filter>Combat\Prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Combat\Event\ObjDamageDone.h">
+      <Filter>Combat\Event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\Item.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\ItemManager.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\ItemStack.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\ItemTpl.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\ItemTplWeapon.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\Prop\PropEquipment.h">
+      <Filter>Items\Prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\Prop\PropInventory.h">
+      <Filter>Items\Prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\Prop\PropItem.h">
+      <Filter>Items\Prop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\ActionTpls\ActionTplEquipItem.h">
+      <Filter>Items\ActionTpls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\ActionTpls\ActionTplPickItemWorld.h">
+      <Filter>Items\ActionTpls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Items\Actions\ActionEquipItem.h">
+      <Filter>Items\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\SI\SI_L3.h">
+      <Filter>SI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Goals\GoalWander.h">
+      <Filter>AI\Goals</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Goals\GoalWork.h">
+      <Filter>AI\Goals</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Actions\ActionWander.h">
+      <Filter>AI\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Sensors\SensorDamage.h">
+      <Filter>AI\Sensors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Sensors\SensorVision.h">
+      <Filter>AI\Sensors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Perceptors\PerceptorObstacle.h">
+      <Filter>AI\Perceptors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Perceptors\PerceptorOverseer.h">
+      <Filter>AI\Perceptors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Perceptors\PerceptorSmartObj.h">
+      <Filter>AI\Perceptors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Stimuli\StimulusSound.h">
+      <Filter>AI\Stimuli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Stimuli\StimulusVisible.h">
+      <Filter>AI\Stimuli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\ActionTpls\ActionTplWander.h">
+      <Filter>AI\ActionTpls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Memory\MemFactOverseer.h">
+      <Filter>AI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\AI\Memory\MemFactSmartObj.h">
+      <Filter>AI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\World\WorldManager.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Dlg\DialogueManager.h">
+      <Filter>Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Dlg\DlgContext.h">
+      <Filter>Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Dlg\DlgGraph.h">
+      <Filter>Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Dlg\DlgNode.h">
+      <Filter>Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Dlg\PropTalking.h">
+      <Filter>Dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Quests\Quest.h">
+      <Filter>Quests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Quests\QuestManager.h">
+      <Filter>Quests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Quests\Task.h">
+      <Filter>Quests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Factions\Faction.h">
+      <Filter>Factions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Factions\FactionManager.h">
+      <Filter>Factions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L3\Chr\CharacterSheet.h">
+      <Filter>Chr</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Src\L3\Combat\Dmg\DamageEffect.cpp">
+      <Filter>Combat\Dmg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Combat\Dmg\DamageSource.cpp">
+      <Filter>Combat\Dmg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Combat\Prop\PropDestructible.cpp">
+      <Filter>Combat\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Combat\Prop\PropWeapon.cpp">
+      <Filter>Combat\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Combat\Event\ObjDamageDone.cpp">
+      <Filter>Combat\Event</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Item.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\ItemManager.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\ItemTpl.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\ItemTplWeapon.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Prop\PropEquipment.cpp">
+      <Filter>Items\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Prop\PropEquipmentSI.cpp">
+      <Filter>Items\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Prop\PropInventory.cpp">
+      <Filter>Items\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Prop\PropInventorySI.cpp">
+      <Filter>Items\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Prop\PropItem.cpp">
+      <Filter>Items\Prop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\ActionTpls\ActionTplEquipItem.cpp">
+      <Filter>Items\ActionTpls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\ActionTpls\ActionTplPickItemWorld.cpp">
+      <Filter>Items\ActionTpls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Items\Actions\ActionEquipItem.cpp">
+      <Filter>Items\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\SI\SIDialogueManager.cpp">
+      <Filter>SI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\SI\SIFaction.cpp">
+      <Filter>SI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\SI\SIQuestManager.cpp">
+      <Filter>SI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Goals\GoalWander.cpp">
+      <Filter>AI\Goals</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Goals\GoalWork.cpp">
+      <Filter>AI\Goals</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Actions\ActionWander.cpp">
+      <Filter>AI\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Sensors\SensorVision.cpp">
+      <Filter>AI\Sensors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Perceptors\PerceptorObstacle.cpp">
+      <Filter>AI\Perceptors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Perceptors\PerceptorOverseer.cpp">
+      <Filter>AI\Perceptors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Perceptors\PerceptorSmartObj.cpp">
+      <Filter>AI\Perceptors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Stimuli\StimulusSound.cpp">
+      <Filter>AI\Stimuli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Stimuli\StimulusVisible.cpp">
+      <Filter>AI\Stimuli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\ActionTpls\ActionTplWander.cpp">
+      <Filter>AI\ActionTpls</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Memory\MemFactOverseer.cpp">
+      <Filter>AI\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\AI\Memory\MemFactSmartObj.cpp">
+      <Filter>AI\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\World\WorldManager.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Dlg\DialogueManager.cpp">
+      <Filter>Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Dlg\DlgContext.cpp">
+      <Filter>Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Dlg\PropTalking.cpp">
+      <Filter>Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Dlg\PropTalkingSI.cpp">
+      <Filter>Dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Quests\QuestManager.cpp">
+      <Filter>Quests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Factions\Faction.cpp">
+      <Filter>Factions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L3\Factions\FactionManager.cpp">
+      <Filter>Factions</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

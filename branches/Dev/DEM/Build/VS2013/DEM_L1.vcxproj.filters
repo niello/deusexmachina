@@ -1,0 +1,1160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Data">
+      <UniqueIdentifier>{555ef69e-15f3-4819-ae97-1e6b323e5fc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Loaders">
+      <UniqueIdentifier>{e35e141c-5185-43d4-b44a-e8073ebb595d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Time">
+      <UniqueIdentifier>{1d35060e-972a-4c46-8979-1e1299b61eab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SI">
+      <UniqueIdentifier>{1b6147f9-6e21-41fb-b299-9516b8f09dab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{15d8badd-ca4a-4c82-8e96-41760e7ea8ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scripting">
+      <UniqueIdentifier>{14e1898e-8f1b-45e8-91d9-69b09da7a115}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{57706d1f-0462-47b3-84ac-5b69f7fc750b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\CEGUI">
+      <UniqueIdentifier>{c6cc6eaf-eb00-4a0a-8ae9-e86731be3463}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Debug">
+      <UniqueIdentifier>{533a9a04-47fb-479c-88a8-c1bc90936fbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{b911e57a-e25b-4f4a-af87-b56794e6d66f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input\Events">
+      <UniqueIdentifier>{530e334f-da65-45ce-9457-df30811d0b29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Audio">
+      <UniqueIdentifier>{98875e22-2b26-41e7-a8eb-e08ce0660fbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Video">
+      <UniqueIdentifier>{eb522d83-5fa0-477d-9a70-fd5075bd8c0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Events">
+      <UniqueIdentifier>{5e0e3678-0b2d-4c7b-beb8-38d33d8f1c98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{f5eb4ce6-93aa-4d45-8156-f5fdb72d0f27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{f4790e7a-cf68-4ad4-9628-69e6f1b05e3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{8078341d-0a61-4b5f-bca1-2d57a0a8e14a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{79b1489a-9df9-4f5e-a2cc-56d06e064ffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Materials">
+      <UniqueIdentifier>{29dd41b1-6c1f-4f7f-84dc-3f52f2997dd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Geometry">
+      <UniqueIdentifier>{3616bb27-c111-4bce-af5d-17ac1f09923b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Renderers">
+      <UniqueIdentifier>{323dc298-a034-41cf-b981-2783da6c0e53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Events">
+      <UniqueIdentifier>{6331a26d-145e-4892-bd73-9038b9399062}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Animation">
+      <UniqueIdentifier>{4741893f-4973-4cd5-b0fb-9d650aa822cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IO">
+      <UniqueIdentifier>{ab8d01c0-6acf-4641-80e3-9b551b71822d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IO\Streams">
+      <UniqueIdentifier>{ee1dce5d-9f2e-4f6b-afb7-4722b4fd5a5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IO\FS">
+      <UniqueIdentifier>{3255f5a4-526e-48a2-9044-cdc66cd281b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Physics">
+      <UniqueIdentifier>{85f06ea1-b3b7-4bed-a637-b8bfb9f5b54b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{1c82061e-c330-450e-a5df-cabbe1f18113}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{4227a85c-49fd-4e34-a0b7-798cdafcdbab}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Src\L1\Data\Array.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Array2.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Buffer.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Data.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\DataArray.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\DataScheme.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\DataServer.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Dictionary.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\DynamicEnum.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\FixedArray.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Flags.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\FourCC.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Hash.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\HashPairT.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\HashTable.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\HRDParser.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\KeyList.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\LineBuffer.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\List.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\PairT.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Param.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Params.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Pool.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Ptr.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\QuadTree.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\RefCounted.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\RingBuffer.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\SimpleString.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Singleton.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Stack.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\String.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\StringID.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\StringIDStorage.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\StringTokenizer.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\SuperFastHash.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\TableT.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Type.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\XMLDocument.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Time\TimeServer.h">
+      <Filter>Time</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Time\TimeSource.h">
+      <Filter>Time</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\SI\SI_L1.h">
+      <Filter>SI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Core\CoreServer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Core\Factory.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Core\Object.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Core\RTTI.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scripting\EventHandlerScript.h">
+      <Filter>Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scripting\ScriptObject.h">
+      <Filter>Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scripting\ScriptServer.h">
+      <Filter>Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\UIRenderer.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\UIServer.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\Window.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2ResourceProvider.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Debug\DebugServer.h">
+      <Filter>Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Debug\LuaConsole.h">
+      <Filter>Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Debug\Profiler.h">
+      <Filter>Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Debug\WatcherWindow.h">
+      <Filter>Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputMappingEvent.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputMappingState.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputServer.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Keys.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\CharInput.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\KeyDown.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\KeyUp.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseBtnDown.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseBtnUp.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseDoubleClick.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseMove.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseMoveRaw.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\Events\MouseWheel.h">
+      <Filter>Input\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Video\OGGTheoraPlayer.h">
+      <Filter>Video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Video\VideoPlayer.h">
+      <Filter>Video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Video\VideoServer.h">
+      <Filter>Video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\Event.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventBase.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventDispatcher.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventHandler.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventID.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventNative.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventServer.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\EventsFwd.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Events\Subscription.h">
+      <Filter>Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Resources\Resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceManager.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\Bone.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\Camera.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\Light.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\LODGroup.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\Model.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeAttribute.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeController.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerComposite.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerPriorityBlend.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerStatic.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeControllerThirdPerson.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\RenderObject.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\Scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\SceneFwd.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\SceneNode.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\SceneServer.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\SPS.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\Terrain.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\AABB.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\EnvelopeCurve.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Euler.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\EulerAngles.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Line.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Math.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Matrix33.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Matrix44.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\MatrixDefs.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\PackedNormal.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Plane.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Polar.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Quaternion.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Rect.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Sphere.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\TransformSRT.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Triangle.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Vector2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Vector3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Vector3EnvelopeCurve.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Math\Vector4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9Fwd.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3DXDEMInclude.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\DebugDraw.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Display.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\FrameShader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\GPUResourceDefs.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Pass.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassGeometry.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassOcclusion.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassPosteffect.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassShadows.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderServer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Materials\Material.h">
+      <Filter>Render\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Materials\Shader.h">
+      <Filter>Render\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Materials\ShaderVar.h">
+      <Filter>Render\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Materials\Texture.h">
+      <Filter>Render\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\IndexBuffer.h">
+      <Filter>Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\Mesh.h">
+      <Filter>Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\VertexBuffer.h">
+      <Filter>Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Geometry\VertexLayout.h">
+      <Filter>Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\DebugGeomRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\DebugTextRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\FullscreenQuadRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\ModelRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderers\TerrainRenderer.h">
+      <Filter>Render\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Events\DisplayInput.h">
+      <Filter>Render\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\AnimClip.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\AnimFwd.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\AnimTask.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\EventTrack.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\KeyframeClip.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\KeyframeTrack.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\MocapClip.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\MocapTrack.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\NodeControllerKeyframe.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\NodeControllerMocap.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\BinaryReader.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\BinaryWriter.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\BTFile.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\FileSystem.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\FSBrowser.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\HRDWriter.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\IOFwd.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\IOServer.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\Stream.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\StreamReader.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\StreamWriter.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\TextReader.h">
+      <Filter>IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\Streams\FileStream.h">
+      <Filter>IO\Streams</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\Streams\MemStream.h">
+      <Filter>IO\Streams</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\FS\FileSystemNPK.h">
+      <Filter>IO\FS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\FS\FileSystemWin32.h">
+      <Filter>IO\FS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\FS\NpkTOC.h">
+      <Filter>IO\FS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\IO\FS\NpkTOCEntry.h">
+      <Filter>IO\FS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\BulletConv.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\ClosestNotMeRayResultCallback.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionObjMoving.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionObjStatic.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionShape.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\HeightfieldShape.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\MotionStateDynamic.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\MotionStateKinematic.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\NodeAttrCollision.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\NodeControllerRigidBody.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsDebugDraw.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObj.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsServer.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsWorld.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\RigidBody.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\StaticMeshShape.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Util\MD5.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Util\PFLoop.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Util\PFLoopAngular.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Util\PFLoopIntDrv.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Util\PFLoopQuat.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Util\UtilFwd.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\System\Memory.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\System\System.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\StdCfg.h" />
+    <ClInclude Include="..\..\Src\L1\StdDEM.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\Data.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\DataArray.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\DataScheme.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\DataServer.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\HRDParser.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\Params.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\String.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\StringID.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\StringIDStorage.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp">
+      <Filter>Data\Loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp">
+      <Filter>Time</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp">
+      <Filter>Time</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\SI\SIEventServer.cpp">
+      <Filter>SI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\SI\SIGlobals.cpp">
+      <Filter>SI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\SI\SITimeServer.cpp">
+      <Filter>SI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Core\CoreServer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Core\Factory.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Core\Object.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scripting\EventHandlerScript.cpp">
+      <Filter>Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scripting\ScriptObject.cpp">
+      <Filter>Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scripting\ScriptServer.cpp">
+      <Filter>Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\UIRenderer.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\Window.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2ResourceProvider.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Debug\DebugServer.cpp">
+      <Filter>Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Debug\LuaConsole.cpp">
+      <Filter>Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Debug\WatcherWindow.cpp">
+      <Filter>Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\ControlLayout.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputMappingEvent.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputMappingState.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputServer.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\CharInput.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\KeyDown.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\KeyUp.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseBtnDown.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseBtnUp.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseDoubleClick.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseMove.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseMoveRaw.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\Events\MouseWheel.cpp">
+      <Filter>Input\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Video\OGGTheoraPlayer.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Video\VideoPlayer.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Video\VideoServer.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Events\Event.cpp">
+      <Filter>Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Events\EventDispatcher.cpp">
+      <Filter>Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Events\EventNative.cpp">
+      <Filter>Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Events\EventServer.cpp">
+      <Filter>Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Resources\Resource.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceManager.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\Bone.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\Camera.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\Light.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\LoadNodesFromSCN.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\LODGroup.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\Model.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\NodeAttribute.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\NodeController.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\NodeControllerComposite.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\NodeControllerPriorityBlend.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\NodeControllerThirdPerson.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\RenderObject.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\Scene.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\SceneNode.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\SceneServer.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\Terrain.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\Matrix33.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\Matrix44.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\Quaternion.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\TransformSRT.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\Vector2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\Vector3.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Math\Vector4.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3DXDEMInclude.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\DebugDraw.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Display.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Pass.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassGeometry.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassOcclusion.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassPosteffect.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderServer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadMaterialFromPRM.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadShaderFromFX.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadShaderFromFXO.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadTextureUsingD3DX.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\Material.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\Shader.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Materials\Texture.cpp">
+      <Filter>Render\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\IndexBuffer.cpp">
+      <Filter>Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\LoadMeshFromNVX2.cpp">
+      <Filter>Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\Mesh.cpp">
+      <Filter>Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\VertexBuffer.cpp">
+      <Filter>Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Geometry\VertexLayout.cpp">
+      <Filter>Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\DebugGeomRenderer.cpp">
+      <Filter>Render\Renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\DebugTextRenderer.cpp">
+      <Filter>Render\Renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\ModelRenderer.cpp">
+      <Filter>Render\Renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderers\TerrainRenderer.cpp">
+      <Filter>Render\Renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Events\DisplayInput.cpp">
+      <Filter>Render\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\AnimClip.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\AnimTask.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\KeyframeClip.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\KeyframeTrack.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\LoadKeyframeClipFromKFA.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\LoadMocapClipFromNAX2.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\MocapClip.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\MocapTrack.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\NodeControllerKeyframe.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\NodeControllerMocap.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\BinaryReader.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\BinaryWriter.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\BTFile.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\FSBrowser.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\HRDWriter.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\IOServer.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\Stream.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\TextReader.cpp">
+      <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\Streams\FileStream.cpp">
+      <Filter>IO\Streams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\Streams\MemStream.cpp">
+      <Filter>IO\Streams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\FS\FileSystemNPK.cpp">
+      <Filter>IO\FS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\IO\FS\FileSystemWin32.cpp">
+      <Filter>IO\FS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionObjMoving.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionObjStatic.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionShape.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\HeightfieldShape.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\NodeAttrCollision.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\NodeControllerRigidBody.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObj.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsServer.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsWorld.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\RigidBody.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\StaticMeshShape.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Util\CRC.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Util\MD5.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Util\PerlinNoise.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\System\Memory.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\System\System.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\System\SystemWin32.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
