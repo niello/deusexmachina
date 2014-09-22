@@ -237,7 +237,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 
 bool CGameServer::ValidateLevel(CGameLevel& Level)
 {
-	bool Result = !Level.GetScene() || Level.GetScene()->GetRootNode().ValidateResources();
+	bool Result = !Level.GetSceneRoot() || Level.GetSceneRoot().ValidateResources();
 
 	//!!!???activate entities here and not in level loading?!
 

@@ -351,19 +351,7 @@
     <ClInclude Include="..\..\Src\L1\Resources\ResourceManager.h">
       <Filter>Resources</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\Bone.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\Camera.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\Light.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Scene\LODGroup.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\Model.h">
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Scene\NodeAttribute.h">
@@ -384,25 +372,10 @@
     <ClInclude Include="..\..\Src\L1\Scene\NodeControllerThirdPerson.h">
       <Filter>Scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\RenderObject.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\Scene.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Scene\SceneFwd.h">
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Scene\SceneNode.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\SceneServer.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\SPS.h">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\Terrain.h">
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Math\AABB.h">
@@ -716,6 +689,33 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\StdCfg.h" />
     <ClInclude Include="..\..\Src\L1\StdDEM.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderObject.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SPS.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Terrain.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Bone.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Camera.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Light.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Model.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -880,22 +880,10 @@
     <ClCompile Include="..\..\Src\L1\Resources\ResourceManager.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\Bone.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\Camera.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\Light.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\LoadNodesFromSCN.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\LODGroup.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\Model.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\NodeAttribute.cpp">
@@ -913,19 +901,7 @@
     <ClCompile Include="..\..\Src\L1\Scene\NodeControllerThirdPerson.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\RenderObject.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\Scene.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\SceneNode.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\SceneServer.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\Terrain.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Math\Matrix33.cpp">
@@ -1155,6 +1131,27 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\System\SystemWin32.cpp">
       <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Bone.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Camera.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Light.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Model.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

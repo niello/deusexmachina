@@ -2,14 +2,15 @@
 #ifndef __DEM_L1_SCENE_SPS_H__
 #define __DEM_L1_SCENE_SPS_H__
 
-#include <Scene/RenderObject.h>
-#include <Scene/Light.h>
-#include <Scene/SceneNode.h>
+#include <Render/RenderObject.h>
+#include <Render/Light.h>
 #include <Data/QuadTree.h>
 
-// Scene spatial partitioning structure stuff
+// Spatial partitioning structure specialization for culling
 
-namespace Scene
+//!!!here must NOT be any scene attributes! rendering is not dependent on a scene
+
+namespace Render
 {
 struct CSPSRecord;
 

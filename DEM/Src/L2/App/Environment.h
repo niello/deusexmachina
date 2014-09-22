@@ -12,7 +12,6 @@
 #include <Scripting/ScriptServer.h>
 #include <Render/RenderServer.h>
 #include <Render/DebugDraw.h>
-#include <Scene/SceneServer.h>
 //#include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
 #include <Physics/PhysicsServer.h>
@@ -58,7 +57,6 @@ protected:
 	Ptr<Events::CEventServer>		EventServer;
 	Ptr<Render::CRenderServer>		RenderServer;
 	Ptr<Render::CDebugDraw>			DD;
-	Ptr<Scene::CSceneServer>		SceneServer;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
 	//Ptr<Audio::CAudioServer>		AudioServer;

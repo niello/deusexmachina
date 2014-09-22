@@ -95,8 +95,10 @@ public:
 	template<class T> bool		operator !=(const T& Other) const { return !(*this == Other); }
 
 	template<class T>			operator T&() { return GetValue<T>(); }
+	template<class T>			operator const T&() { return GetValue<T>(); }
 	template<class T>			operator const T&() const { return GetValue<T>(); }
 	template<class T>			operator T*() { return GetValuePtr<T>(); }
+	template<class T>			operator const T*() { return GetValuePtr<T>(); }
 	template<class T>			operator const T*() const { return GetValuePtr<T>(); }
 
 	//!!!save, load!

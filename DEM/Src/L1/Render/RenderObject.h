@@ -1,16 +1,16 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_RENDER_OBJECT_H__
-#define __DEM_L1_SCENE_RENDER_OBJECT_H__
+#ifndef __DEM_L1_RENDER_OBJECT_H__
+#define __DEM_L1_RENDER_OBJECT_H__
 
 #include <Scene/NodeAttribute.h>
 
 // Base attribute class for any renderable scene objects, like
 // regular models, particle systems, terrain patches etc.
 
-namespace Scene
+namespace Render
 {
 
-class CRenderObject: public CNodeAttribute
+class CRenderObject: public Scene::CNodeAttribute
 {
 	__DeclareClassNoFactory;
 

@@ -3,7 +3,6 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scripting/PropScriptable.h>
-#include <Scene/SceneServer.h>
 #include <Scene/Events/SetTransform.h>
 #include <Scene/Model.h>
 #include <Physics/NodeAttrCollision.h>

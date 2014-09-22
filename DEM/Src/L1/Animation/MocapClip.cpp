@@ -31,9 +31,9 @@ bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>&
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
 		switch (Tracks[i].Channel)
 		{
-			case Scene::Chnl_Translation:	Sampler.pTrackT = &Tracks[i]; break;
-			case Scene::Chnl_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
-			case Scene::Chnl_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
+			case Scene::Tfm_Translation:	Sampler.pTrackT = &Tracks[i]; break;
+			case Scene::Tfm_Rotation:		Sampler.pTrackR = &Tracks[i]; break;
+			case Scene::Tfm_Scaling:		Sampler.pTrackS = &Tracks[i]; break;
 			default: Sys::Error("CMocapClip::Setup() -> Unsupported channel for an SRT sampler track!");
 		};
 	}

@@ -7,7 +7,7 @@
 #include <Data/Dictionary.h>
 
 // Animation clip is a set of tracks (curves), which defines single animation for a set of points
-// in space. Typically it consists of up to 3 tracks * number of animated bones in target sceleton.
+// in space. Typically it consists of up to 3 tracks * number of animated bones in target skeleton.
 // Clip can have any number of tracks and target bones, so it can animate a single scene node as well.
 // Tracks are grouped in samplers. One sampler affects one node, referencing it by a relative path.
 // There are also event tracks that fire events when reach specified points on the timeline.
@@ -27,7 +27,6 @@ namespace Events
 
 namespace Scene
 {
-	class CSceneNode;
 	typedef Ptr<class CNodeController> PNodeController;
 }
 
@@ -48,13 +47,14 @@ public:
 
 	CAnimClip(CStrID ID): CResource(ID) {}
 
-	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
-	float							AdjustCursorPos(float Pos, bool Loop) const;
-	void							FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
-	void							FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
-	DWORD							GetSamplerCount() const { return Samplers.GetCount(); }
-	CStrID							GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
-	float							GetDuration() const { return Duration; }
+	virtual Scene::PNodeController CreateController(DWORD SamplerIdx) const = 0;
+
+	float	AdjustCursorPos(float Pos, bool Loop) const;
+	void	FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
+	void	FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
+	DWORD	GetSamplerCount() const { return Samplers.GetCount(); }
+	CStrID	GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
+	float	GetDuration() const { return Duration; }
 };
 
 typedef Ptr<CAnimClip> PAnimClip;

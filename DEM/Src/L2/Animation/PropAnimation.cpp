@@ -4,7 +4,6 @@
 #include <Game/GameServer.h> // For the time
 #include <Scripting/PropScriptable.h>
 #include <Scene/PropSceneNode.h>
-#include <Scene/SceneServer.h>
 #include <Scene/Bone.h>
 #include <Scene/NodeControllerPriorityBlend.h>
 #include <Scene/NodeControllerStatic.h>
@@ -127,9 +126,9 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 			Anim::PAnimClip Clip;
 			if (IsMocap)
-				Clip = SceneSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CMocapClip>(ClipRsrcID);
+				Clip = GameSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CMocapClip>(ClipRsrcID);
 			else
-				Clip = SceneSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CKeyframeClip>(ClipRsrcID);
+				Clip = GameSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CKeyframeClip>(ClipRsrcID);
 
 			if (!Clip->IsLoaded())
 			{

@@ -5,7 +5,7 @@
 #include <Scene/NodeController.h>
 
 // Controller, that locks node in a static pose. Useful for blending with fading-in
-// animations or for transitions from arbitrary pose to animation start pose.
+// animations or for transitions from arbitrary pose to animation starting pose.
 
 namespace Scene
 {
@@ -18,7 +18,7 @@ protected:
 
 public:
 
-	CNodeControllerStatic() { Channels.Set(Chnl_Scaling | Chnl_Rotation | Chnl_Translation); }
+	CNodeControllerStatic() { Channels.Set(Tfm_Scaling | Tfm_Rotation | Tfm_Translation); }
 
 	void			SetStaticTransform(const Math::CTransformSRT Tfm, bool Local) { StaticTfm = Tfm; Flags.SetTo(LocalSpace, Local); }
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) { DestTfm = StaticTfm; OK; }
