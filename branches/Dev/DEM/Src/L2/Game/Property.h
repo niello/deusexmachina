@@ -36,7 +36,7 @@ protected:
 public:
 
 	CProperty(): Active(false), pEntity(NULL) {}
-	virtual ~CProperty();
+	virtual ~CProperty() {}
 
 	void						Activate();
 	void						Deactivate();

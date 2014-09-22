@@ -31,8 +31,8 @@ class CAnimTrack
 {
 public:
 
-	vector4			ConstValue;
-	Scene::EChannel	Channel; //!!!???can avoid storing it? needed only at Setup() time, move to loader?
+	vector4						ConstValue;
+	Scene::ETransformChannel	Channel; //!!!???can avoid storing it? needed only at Setup() time, move to loader?
 };
 
 struct CSampler

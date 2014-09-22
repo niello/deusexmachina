@@ -16,7 +16,6 @@ namespace IO
 
 namespace Scene
 {
-class CScene;
 class CSceneNode;
 
 class CNodeAttribute: public Core::CObject
@@ -35,6 +34,7 @@ protected:
 	CSceneNode*		pNode;
 	Data::CFlags	Flags;
 
+	//???!!!fill and clear node here?!
 	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { OK; }
 	virtual void	OnDetachFromNode() { }
 

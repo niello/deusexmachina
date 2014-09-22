@@ -81,13 +81,11 @@ bool CEnvironment::InitEngine()
 	RenderServer->GetDisplay().RequestDisplayMode(DisplayMode);
 	if (!RenderServer->Open()) FAIL;
 
-	//???manage frame shaders in a RenderSrv?
-	SceneServer = n_new(Scene::CSceneServer);
-	//???do it in Open()?
+	//???do it in RenderServer->Open()?
 	Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
 	n_assert(DefaultFrameShader->Init(*DataSrv->LoadPRM("Shaders:Default.prm")));
-	SceneServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
-	SceneServer->SetScreenFrameShaderID(CStrID("Default"));
+	RenderServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
+	RenderServer->SetScreenFrameShaderID(CStrID("Default"));
 
 	DD = n_new(Render::CDebugDraw);
 	if (!DD->Open()) FAIL;
@@ -121,8 +119,6 @@ void CEnvironment::ReleaseEngine()
 
 	DD->Close();
 	DD = NULL;
-
-	SceneServer = NULL;
 
 	if (RenderServer.IsValid() && RenderServer->IsOpen()) RenderServer->Close();
 	RenderServer = NULL;

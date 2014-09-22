@@ -7,11 +7,6 @@ namespace Game
 {
 __ImplementClassNoFactory(Game::CProperty, Core::CObject);
 
-CProperty::~CProperty()
-{
-}
-//---------------------------------------------------------------------
-
 void CProperty::SetEntity(CEntity* pNewEntity)
 {
 	if (pNewEntity == pEntity) return;

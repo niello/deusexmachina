@@ -21,6 +21,8 @@
 
 namespace Render
 {
+typedef Ptr<class CFrameShader> PFrameShader;
+
 #define RenderSrv Render::CRenderServer::Instance()
 
 class CRenderServer: public Core::CObject
@@ -44,10 +46,12 @@ protected:
 	bool								Wireframe;
 	DWORD								InstanceCount;	// If 0, non-instanced rendering is active
 
-	CDict<CStrID, PVertexLayout>	VertexLayouts;
+	CDict<CStrID, PVertexLayout>		VertexLayouts;
 	DWORD								FFlagSkinned;
 	DWORD								FFlagInstanced;
 
+	CDict<CStrID, PFrameShader>			FrameShaders;
+	CStrID								ScreenFrameShaderID;
 
 	CDisplay							Display;
 	PRenderTarget						DefaultRT;
@@ -115,6 +119,10 @@ public:
 	void				SetAmbientLight(const vector4& Color);
 	void				SetCameraPosition(const vector3& Pos);
 	void				SetViewProjection(const matrix44& VP);
+
+	void				AddFrameShader(CStrID ID, PFrameShader FrameShader); //???or always load internally?
+	void				SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
+	CFrameShader*		GetScreenFrameShader() const;
 
 	void				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	void				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
@@ -186,6 +194,20 @@ inline void CRenderServer::SetViewProjection(const matrix44& VP)
 {
 	CurrViewProj = VP;
 	if (hViewProj) SharedShader->SetMatrix(hViewProj, CurrViewProj);
+}
+//---------------------------------------------------------------------
+
+inline void CRenderServer::AddFrameShader(CStrID ID, PFrameShader FrameShader)
+{
+	n_assert(ID.IsValid() && FrameShader.IsValid());
+	FrameShaders.Add(ID, FrameShader);
+}
+//---------------------------------------------------------------------
+
+inline CFrameShader* CRenderServer::GetScreenFrameShader() const
+{
+	int Idx = FrameShaders.FindIndex(ScreenFrameShaderID);
+	return (Idx != INVALID_INDEX) ? FrameShaders.ValueAt(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
 

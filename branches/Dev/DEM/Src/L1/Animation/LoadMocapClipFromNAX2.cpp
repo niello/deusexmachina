@@ -64,27 +64,27 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 		Reader.Read(Curve);
 		if (!Curve.isAnimated) continue;
 		
-		Scene::EChannel Channel;
+		Scene::ETransformChannel Channel;
 		switch (i % 3)
 		{
-			case 0: Channel = Scene::Chnl_Translation; break;
-			case 1: Channel = Scene::Chnl_Rotation; break;
-			case 2: Channel = Scene::Chnl_Scaling; break;
+			case 0: Channel = Scene::Tfm_Translation; break;
+			case 1: Channel = Scene::Tfm_Rotation; break;
+			case 2: Channel = Scene::Tfm_Scaling; break;
 		}
 
 		// Skip unused tracks
 		if (Curve.firstKeyIndex == -1)
 		{
-			if ((Channel == Scene::Chnl_Scaling &&
+			if ((Channel == Scene::Tfm_Scaling &&
 				Curve.collapsedKey.x == 1.f &&
 				Curve.collapsedKey.y == 1.f &&
 				Curve.collapsedKey.z == 1.f) ||
-				(Channel == Scene::Chnl_Rotation &&
+				(Channel == Scene::Tfm_Rotation &&
 				Curve.collapsedKey.x == 0.f &&
 				Curve.collapsedKey.y == 0.f &&
 				Curve.collapsedKey.z == 0.f &&
 				Curve.collapsedKey.w == 1.f) ||
-				(Channel == Scene::Chnl_Translation &&
+				(Channel == Scene::Tfm_Translation &&
 				Curve.collapsedKey.x == 0.f &&
 				Curve.collapsedKey.y == 0.f &&
 				Curve.collapsedKey.z == 0.f))

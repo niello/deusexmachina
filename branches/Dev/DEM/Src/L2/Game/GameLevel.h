@@ -3,7 +3,9 @@
 #define __DEM_L2_GAME_LEVEL_H__
 
 #include <Events/EventDispatcher.h>
-#include <Scene/CameraManager.h>
+#include <Render/SPS.h>
+#include <Scene/CameraManager.h> //!!!not Scene!
+#include <Render/Camera.h>
 #include <Math/Rect.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
@@ -39,6 +41,7 @@ namespace Game
 {
 class CEntity;
 
+// Information about a world surface at the given point/region
 struct CSurfaceInfo
 {
 	//float					TerrainHeight;
@@ -55,19 +58,37 @@ protected:
 
 	CStrID						ID;
 	CString						Name;
+	CAABB						BBox;			// Now primarily for culling through a spatial partitioning structure
 	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
 	CArray<CStrID>				SelectedEntities;
 
-	Scene::PScene				Scene;
+	bool						AutoAdjustCameraAspect;
+
+	//!!!to World::CNatureManager or smth like (weather, time of day etc) and set to the render server directly!
+	vector4						AmbientLight;
+	//Fog settings
+	//???shadow settings?
+
+	Scene::PSceneNode			SceneRoot;
+	Render::CSPS				SPS;			// Spatial partitioning structure
 	Physics::PPhysicsWorld		PhysWorld;
 	AI::PAILevel				AILevel;
-	Scene::PCameraManager		CameraManager;
+	Scene::PCameraManager		CameraManager;	//???!!!Render::?! //???manage cameras here in a level itself?
+
+	//!!!???if PCameraManager is really useful, move it there!
+	Scene::PCamera				MainCamera;
+
+	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
+	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
+	//void		AddVisibleObject(CRenderObject& Obj) { VisibleObjects.Add(&Obj); }
+	//void		AddVisibleLight(CLight& Light) { VisibleLights.Add(&Light); }
 
 	bool OnEvent(const Events::CEventBase& Event);
 
 public:
 
+	CGameLevel(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f), AutoAdjustCameraAspect(true) {}
 	virtual ~CGameLevel();
 
 	bool					Init(CStrID LevelID, const Data::CParams& Desc);
@@ -79,6 +100,7 @@ public:
 
 	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
 
+	//!!!ensure there are SPS-accelerated queries!
 	// Screen queries
 	bool					GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
 	DWORD					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const;
@@ -101,7 +123,9 @@ public:
 	CStrID					GetID() const { return ID; }
 	const CString&			GetName() const { return Name; }
 
-	Scene::CScene*			GetScene() const { return Scene.GetUnsafe(); }
+	//!!!GetSceneNode() const and non-const variants w/ and w/out creation!
+	Scene::CSceneNode*		GetSceneNode(LPCSTR Path, bool Create = false) { return SceneRoot->GetChild(Path, Create); }
+	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.GetUnsafe(); }
 	Physics::CPhysicsWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
 	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }
 	Scene::CCameraManager*	GetCameraMgr() const { return CameraManager.GetUnsafe(); }

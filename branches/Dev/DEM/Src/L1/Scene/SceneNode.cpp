@@ -1,21 +1,24 @@
 #include "SceneNode.h"
 
-#include <Scene/RenderObject.h>
-#include <Render/DebugDraw.h>
+//#include <Scene/RenderObject.h>
+//#include <Render/DebugDraw.h>
+#include <Scene/NodeController.h>
 
 namespace Scene
 {
 
-bool CSceneNode::ValidateResources()
+CSceneNode::~CSceneNode()
 {
-	for (int i = 0; i < Attrs.GetCount(); ++i)
-		if (Attrs[i]->IsA<CRenderObject>())
-			if (!((CRenderObject*)Attrs[i].GetUnsafe())->ValidateResources()) FAIL;
+	Children.Clear();
 
-	for (int i = 0; i < Child.GetCount(); ++i)
-		if (!Child.ValueAt(i)->ValidateResources()) FAIL;
-
-	OK;
+	while (Attrs.GetCount()) RemoveAttr(Attrs.GetCount() - 1);
+	CArray<PNodeAttribute>::CIterator It = Attrs.Begin();
+	for (; It != Attrs.End(); ++It)
+	{
+		(*It)->OnDetachFromNode();
+		(*It)->pNode = NULL; //!!!???not here but inside detach callback?!
+	}
+	Attrs.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -80,9 +83,9 @@ void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
 	}
 	else Flags.Clear(WorldMatrixUpdated);
 
-	for (int i = 0; i < Child.GetCount(); ++i)
-		if (Child.ValueAt(i)->IsActive())
-			Child.ValueAt(i)->UpdateLocalSpace(UpdateWorldMatrix);
+	for (int i = 0; i < Children.GetCount(); ++i)
+		if (Children.ValueAt(i)->IsActive())
+			Children.ValueAt(i)->UpdateLocalSpace(UpdateWorldMatrix);
 }
 //---------------------------------------------------------------------
 
@@ -106,44 +109,51 @@ void CSceneNode::UpdateWorldSpace()
 	}
 	else if (!Flags.Is(WorldMatrixUpdated)) UpdateWorldFromLocal();
 
+	//???maybe move LOD completely into rendering and other attrs? anyway, AI, Render, Animation LODs are different
+	// Here only general scenegraph LOD should work, which manages activity of scene graph parts
+	// (not exactly a scene graph, but a dynamic scene manager which loads-unloads parts of the world)
+	// for this LOD to work node must have a parameter of distance to enable-disable. Store/pass viewer position
+	// into the scene graph or manage it by a View, externally?
+
 	// LODGroup attr may disable some children, so process attrs before children
 	for (int i = 0; i < Attrs.GetCount(); ++i)
 		if (Attrs[i]->IsActive())
 			Attrs[i]->Update();
 
-	for (int i = 0; i < Child.GetCount(); ++i)
-		if (Child.ValueAt(i)->IsActive())
-			Child.ValueAt(i)->UpdateWorldSpace();
+	for (int i = 0; i < Children.GetCount(); ++i)
+		if (Children.ValueAt(i)->IsActive())
+			Children.ValueAt(i)->UpdateWorldSpace();
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::RenderDebug()
-{
-	if (pParent)
-		DebugDraw->DrawLine(pParent->WorldMatrix.Translation(), WorldMatrix.Translation(), vector4::White);
-
-	for (int i = 0; i < Child.GetCount(); ++i)
-		Child.ValueAt(i)->RenderDebug();
-}
-//---------------------------------------------------------------------
+//!!!to visitor!
+//void CSceneNode::RenderDebug()
+//{
+//	if (pParent)
+//		DebugDraw->DrawLine(pParent->WorldMatrix.Translation(), WorldMatrix.Translation(), vector4::White);
+//
+//	for (int i = 0; i < Child.GetCount(); ++i)
+//		Child.ValueAt(i)->RenderDebug();
+//}
+////---------------------------------------------------------------------
 
 CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 {
-	//???!!!SceneSrv->CreateSceneNode?!
-	PSceneNode Node = n_new(CSceneNode)(*pScene, ChildName);
+	//!!!USE POOL!
+	PSceneNode Node = n_new(CSceneNode)(ChildName);
 	Node->pParent = this;
-	Child.Add(ChildName, Node);
+	Children.Add(ChildName, Node);
 	return Node;
 }
 //---------------------------------------------------------------------
 
-CSceneNode* CSceneNode::GetChild(LPCSTR Path, bool Create)
+CSceneNode* CSceneNode::GetChild(LPCSTR pPath, bool Create)
 {
-	n_assert(Path && *Path);
+	if (!pPath || !*pPath) return this;
 
 	const DWORD MAX_NODE_NAME = 64;
 	char Name[MAX_NODE_NAME];
-	const char* pSrcCurr = Path;
+	const char* pSrcCurr = pPath;
 	char* pDstCurr = Name;
 	while (*pSrcCurr != '.' && *pSrcCurr)
 	{
@@ -157,7 +167,7 @@ CSceneNode* CSceneNode::GetChild(LPCSTR Path, bool Create)
 	PSceneNode SelChild;
 
 	CStrID NameID(Name);
-	int Idx = Child.FindIndex(NameID);
+	int Idx = Children.FindIndex(NameID);
 	if (Idx == INVALID_INDEX)
 	{
 		if (!Create) return NULL;
@@ -201,11 +211,11 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 bool CSceneNode::SetController(CNodeController* pCtlr)
 {
 	if (Controller.GetUnsafe() == pCtlr) OK;
-	if (pCtlr && pCtlr->pNode) FAIL;
+	if (pCtlr && pCtlr->IsAttachedToNode()) FAIL;
 
 	if (Controller.IsValid())
 	{
-		n_assert(Controller->pNode == this);
+		n_assert(Controller->GetNode() == this);
 		Controller->OnDetachFromNode();
 	}
 
@@ -214,14 +224,6 @@ bool CSceneNode::SetController(CNodeController* pCtlr)
 	Controller = pCtlr;
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-void CSceneNode::SetWorldTransform(const matrix44& Transform)
-{
-	WorldMatrix = Transform;
-	Flags.Set(WorldMatrixChanged);
-	UpdateLocalFromWorld();
 }
 //---------------------------------------------------------------------
 

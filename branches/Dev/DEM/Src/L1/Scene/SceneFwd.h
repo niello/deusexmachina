@@ -7,11 +7,11 @@
 namespace Scene
 {
 
-enum EChannel
+enum ETransformChannel
 {
-	Chnl_Translation	= 0x01,
-	Chnl_Rotation		= 0x02,
-	Chnl_Scaling		= 0x04
+	Tfm_Translation	= 0x01,
+	Tfm_Rotation	= 0x02,
+	Tfm_Scaling		= 0x04
 };
 
 }

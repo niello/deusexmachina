@@ -29,7 +29,7 @@ bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 		Reader.Read(*pMap++);
 
 		CKeyframeTrack& Track = *Tracks.Reserve(1);
-		Track.Channel = (Scene::EChannel)Reader.Read<int>();
+		Track.Channel = (Scene::ETransformChannel)Reader.Read<int>();
 
 		DWORD KeyCount = Reader.Read<DWORD>();
 		if (!KeyCount) Reader.Read(Track.ConstValue);

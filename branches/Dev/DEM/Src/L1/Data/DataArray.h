@@ -22,14 +22,11 @@ public:
 	void			FillArray(CArray<T>& OutArray) const;
 
 	CData&			Get(int Index) { return At(Index); }
-	const CData&	Get(int Index) const { return operator [](Index); }
+	const CData&	Get(int Index) const { return At(Index); }
 	template<class T>
 	T&				Get(int Index) { return At(Index).GetValue<T>(); }
 	template<class T>
-	const T&		Get(int Index) const { return operator [](Index).GetValue<T>(); }
-
-	//template<class T> const T& operator [](int Index) const {}
-	//const CData& operator [](int Index) const { return (const CData&)At(Index); }
+	const T&		Get(int Index) const { return At(Index).GetValue<T>(); }
 };
 //---------------------------------------------------------------------
 

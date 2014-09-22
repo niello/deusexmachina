@@ -17,6 +17,7 @@
 
 namespace Scene
 {
+class CSceneNode;
 class CNodeControllerComposite;
 
 class CNodeController: public Core::CObject
@@ -24,8 +25,6 @@ class CNodeController: public Core::CObject
 	__DeclareClassNoFactory;
 
 protected:
-
-	friend class CSceneNode;
 
 	enum
 	{
@@ -54,7 +53,7 @@ public:
 	void			SetLocalSpace(bool Local) { Flags.SetTo(LocalSpace, Local); }
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
-	bool			HasChannel(EChannel Channel) const { return Channels.Is(Channel); }
+	bool			HasChannel(ETransformChannel Channel) const { return Channels.Is(Channel); }
 	DWORD			GetChannels() const { return Channels.GetMask(); }
 };
 

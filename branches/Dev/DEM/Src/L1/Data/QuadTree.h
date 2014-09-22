@@ -14,7 +14,7 @@
 
 // Template quadtree spatial partitioning structure.
 // Define TObject and TStorage classes to get it working.
-// TObject represents element placed in quadtree, TStorage stores objects in a node,
+// TObject represents element placed in quadtree, TStorage stores that objects in a node,
 // it can be linked list node, array or smth.
 
 // TObject interface:
@@ -24,13 +24,13 @@
 // - void	SetQuadTreeNode(CNode*);
 
 // TStorage interface:
-// - CIterator type (see below)
+// - typedef CIterator (see below)
 // - CIterator	Add(const TObject& Object);
 // - void		Remove(CIterator It);
 // - void		RemoveByValue(const TObject& Object);
 
 // TStorage::CIterator interface:
-// - TObject& CIterator::opreator *(); // or TObject as return type
+// - TObject& CIterator::operator *(); _or_ TObject CIterator::operator *();
 
 namespace Data
 {
@@ -141,7 +141,7 @@ public:
 	void	RemoveByValue(TObject& Object) { TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveByValue(Object); }
 	void	RemoveByHandle(CHandle Handle) { TObjTraits::GetPtr(*Handle)->GetQuadTreeNode()->RemoveByHandle(Handle); }
 
-	//!!!Test against circle & 2d box
+	//!!!Test against circle (center, r) & 2d box (two corners or center & half)
 
 	const vector2& GetSize() const { return Size; }
 };
@@ -207,6 +207,7 @@ inline typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage
 }
 //---------------------------------------------------------------------
 
+//!!!since method appears to be const and is called FindContainingNode, node's TotalObjCount changes inside! misleading thing. 
 template<class TObject, class TStorage>
 typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::FindContainingNode(const TObject& Object) const
 {
@@ -214,7 +215,7 @@ typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::Find
 	TObjTraits::GetPtr(Object)->GetCenter(Center);
 	TObjTraits::GetPtr(Object)->GetHalfSize(HalfSize);
 
-	CNode* pCurrNode =TObjTraits::GetPtr(Object)->GetQuadTreeNode();
+	CNode* pCurrNode = TObjTraits::GetPtr(Object)->GetQuadTreeNode();
 	CNode* pNewNode = pCurrNode;
 
 	while (pNewNode->pParent && !pNewNode->Contains(Center, HalfSize))
@@ -234,7 +235,7 @@ typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::Find
 				break;
 			}
 
-		if (i == 4) break; // No child contains the object, add right to this node
+		if (i == 4) break; // No child contains the object, this node is the one we search for
 	}
 
 	return pNewNode;

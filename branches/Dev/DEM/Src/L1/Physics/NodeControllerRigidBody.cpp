@@ -6,7 +6,7 @@ namespace Physics
 void CNodeControllerRigidBody::SetBody(CRigidBody& RigidBody)
 {
 	Body = &RigidBody;
-	Channels.Set(Scene::Chnl_Translation | Scene::Chnl_Rotation);
+	Channels.Set(Scene::Tfm_Translation | Scene::Tfm_Rotation);
 	Body->SetTransformChanged(true); // To enforce first update
 }
 //---------------------------------------------------------------------
