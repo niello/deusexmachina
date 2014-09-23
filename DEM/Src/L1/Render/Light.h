@@ -12,11 +12,11 @@
 
 class CAABB;
 
-namespace Scene
+namespace Render
 {
 struct CSPSRecord;
 
-class CLight: public CNodeAttribute
+class CLight: public Scene::CNodeAttribute
 {
 	__DeclareClass(CLight);
 

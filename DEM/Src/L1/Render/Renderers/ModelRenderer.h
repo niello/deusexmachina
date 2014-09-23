@@ -4,7 +4,7 @@
 
 #include <Render/Renderer.h>
 #include <Render/Materials/Shader.h>
-#include <Scene/Model.h>
+#include <Render/Model.h>
 
 // Model renderer is suited for rendering different 3D models, either static or skinned.
 // It is the most common renderer, which is used when some special LOD or rendering
@@ -50,19 +50,19 @@ protected:
 
 	struct CModelRecord
 	{
-		Scene::CModel*	pModel;
+		CModel*			pModel;
 		DWORD			FeatFlags;
 		CShader::HTech	hTech;
 		float			SqDistanceToCamera;
-		Scene::CLight*	Lights[MaxLightsPerObject];
+		CLight*			Lights[MaxLightsPerObject];
 		float			LightPriorities[MaxLightsPerObject];
 		DWORD			LightCount;
 	};
 
 	struct CLightRecord
 	{
-		Scene::CLight*	pLight;
-		matrix44		Frustum;
+		CLight*		pLight;
+		matrix44	Frustum;
 	};
 
 	//???sort by distance at the end? or separate sorting mode. may be good. at least for a early Z pass!
@@ -101,39 +101,39 @@ protected:
 		}
 	};
 
-	PShader							Shader;
-	CShaderVarMap					ShaderVars;
-	CStrID							BatchType;
-	DWORD							FeatFlags;
-	ESortingType					DistanceSorting;
-	bool							EnableLighting;
+	PShader					Shader;
+	CShaderVarMap			ShaderVars;
+	CStrID					BatchType;
+	DWORD					FeatFlags;
+	ESortingType			DistanceSorting;
+	bool					EnableLighting;
 
-	PVertexBuffer					InstanceBuffer;
-	DWORD							MaxInstanceCount;
+	PVertexBuffer			InstanceBuffer;
+	DWORD					MaxInstanceCount;
 
-	PShader							SharedShader;
-	CShader::HVar					hLightType;
-	CShader::HVar					hLightPos;
-	CShader::HVar					hLightDir;
-	CShader::HVar					hLightColor;
-	CShader::HVar					hLightParams;
+	PShader					SharedShader;
+	CShader::HVar			hLightType;
+	CShader::HVar			hLightPos;
+	CShader::HVar			hLightDir;
+	CShader::HVar			hLightColor;
+	CShader::HVar			hLightParams;
 
-	DWORD							LightFeatFlags[MaxLightsPerObject];
+	DWORD					LightFeatFlags[MaxLightsPerObject];
 
-	CArray<CModelRecord>			Models;
-	const CArray<Scene::CLight*>*	pLights; //???!!!not ptr?!
+	CArray<CModelRecord>	Models;
+	const CArray<CLight*>*	pLights; //???!!!not ptr?!
 
 	//???both to light?
-	bool			IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light);
-	float			CalcLightPriority(Scene::CModel& Model, Scene::CLight& Light);
+	bool			IsModelLitByLight(CModel& Model, CLight& Light);
+	float			CalcLightPriority(CModel& Model, CLight& Light);
 
 public:
 
 	CModelRenderer(): pLights(NULL), FeatFlags(0), DistanceSorting(Sort_None), EnableLighting(false) {}
 
 	virtual bool	Init(const Data::CParams& Desc);
-	virtual void	AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects);
-	virtual void	AddLights(const CArray<Scene::CLight*>& Lights);
+	virtual void	AddRenderObjects(const CArray<CRenderObject*>& Objects);
+	virtual void	AddLights(const CArray<CLight*>& Lights);
 	virtual void	Render();
 };
 

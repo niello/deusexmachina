@@ -18,8 +18,8 @@ class CLODGroup: public CNodeAttribute
 
 protected:
 
-	float						MinSqDistance;
-	float						MaxSqDistance;
+	float					MinSqDistance;
+	float					MaxSqDistance;
 	CDict<float, CStrID>	SqThresholds;	// Square threshold to child ID map
 
 public:

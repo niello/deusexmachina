@@ -1,22 +1,16 @@
 #include "Model.h"
 
-#include <Scene/Scene.h>
 #include <Render/RenderServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
 namespace Render
 {
-	bool LoadMaterialFromPRM(const CString& FileName, PMaterial OutMaterial);
-	bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
-	bool LoadMeshFromNVX2(const CString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh);
-}
+bool LoadMaterialFromPRM(const CString& FileName, PMaterial OutMaterial);
+bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
+bool LoadMeshFromNVX2(const CString& FileName, EUsage Usage, ECPUAccess Access, PMesh OutMesh);
 
-namespace Scene
-{
-__ImplementClass(Scene::CModel, 'MODL', Scene::CRenderObject);
-
-using namespace Render;
+__ImplementClass(Render::CModel, 'MODL', Render::CRenderObject);
 
 bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -133,6 +127,7 @@ void CModel::OnDetachFromNode()
 		n_delete(pSPSRecord);
 		pSPSRecord = NULL;
 	}
+	CRenderObject::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 

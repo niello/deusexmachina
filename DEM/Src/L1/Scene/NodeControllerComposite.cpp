@@ -6,7 +6,7 @@ __ImplementClassNoFactory(Scene::CNodeControllerComposite, CNodeController);
 
 bool CNodeControllerComposite::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 {
-	//if (!CNodeController::OnAttachToNode(pSceneNode)) FAIL;
+	if (!CNodeController::OnAttachToNode(pSceneNode)) FAIL;
 	pNode = pSceneNode;
 	for (int i = 0; i < Sources.GetCount(); ++i)
 		Sources[i].Ctlr->OnAttachToNode(pSceneNode);
@@ -18,8 +18,7 @@ void CNodeControllerComposite::OnDetachFromNode()
 {
 	for (int i = 0; i < Sources.GetCount(); ++i)
 		Sources[i].Ctlr->OnDetachFromNode();
-	//CNodeController::OnDetachFromNode();
-	pNode = NULL;
+	CNodeController::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 

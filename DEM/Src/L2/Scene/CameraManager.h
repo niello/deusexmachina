@@ -76,7 +76,7 @@ public:
 
 	CCameraManager(): pCameraNode(NULL), Sensitivity(0.05f), MoveSpeed(0.1f), ZoomSpeed(1.f) { }
 
-	bool				InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithCamera = NULL);
+	bool				InitThirdPersonCamera(CSceneNode& NodeWithCamera);
 	void				ResetCamera(); //???reset only orientation (and distance for 3P)?
 
 	void				SetTarget(const CSceneNode* pTarget, const vector3& Offset = vector3::Zero); //!!!assert target is in the same scene as the camera!

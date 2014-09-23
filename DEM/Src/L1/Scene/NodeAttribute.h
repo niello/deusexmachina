@@ -24,8 +24,6 @@ class CNodeAttribute: public Core::CObject
 
 protected:
 
-	friend class CSceneNode;
-
 	enum
 	{
 		Active = 0x01	// Attribute must be processed
@@ -34,13 +32,12 @@ protected:
 	CSceneNode*		pNode;
 	Data::CFlags	Flags;
 
-	//???!!!fill and clear node here?!
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { OK; }
-	virtual void	OnDetachFromNode() { }
-
 public:
 
 	CNodeAttribute(): pNode(NULL), Flags(Active) {}
+
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; return !!pNode; }
+	virtual void	OnDetachFromNode() { pNode = NULL; }
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
 	virtual void	Update() = 0;

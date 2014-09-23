@@ -1,6 +1,6 @@
 #include "ModelRenderer.h"
 
-#include <Scene/SPS.h>
+#include <Render/SPS.h>
 #include <Render/RenderServer.h>
 #include <Data/Params.h>
 #include <Math/Sphere.h>
@@ -99,13 +99,13 @@ bool CModelRenderer::Init(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-void CModelRenderer::AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects)
+void CModelRenderer::AddRenderObjects(const CArray<CRenderObject*>& Objects)
 {
 	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
 		//???use buckets instead?
-		if (!Objects[i]->IsA(Scene::CModel::RTTI)) continue;
-		Scene::CModel* pModel = (Scene::CModel*)Objects[i];
+		if (!Objects[i]->IsA(CModel::RTTI)) continue;
+		CModel* pModel = (CModel*)Objects[i];
 
 		n_assert_dbg(pModel->BatchType.IsValid());
 		if (pModel->BatchType != BatchType) continue;
@@ -119,16 +119,16 @@ void CModelRenderer::AddRenderObjects(const CArray<Scene::CRenderObject*>& Objec
 //---------------------------------------------------------------------
 
 //!!!skip black lights or lights with 0 intensity!
-void CModelRenderer::AddLights(const CArray<Scene::CLight*>& Lights)
+void CModelRenderer::AddLights(const CArray<CLight*>& Lights)
 {
 	pLights = EnableLighting ? &Lights : NULL;
 }
 //---------------------------------------------------------------------
 
 //!!!pass const refs! all calculations must be done earlier in scene or externally!
-bool CModelRenderer::IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Light)
+bool CModelRenderer::IsModelLitByLight(CModel& Model, CLight& Light)
 {
-	if (Light.Type == Scene::CLight::Directional) OK;
+	if (Light.Type == CLight::Directional) OK;
 
 	// Check whether this light potentially touches the model
 	if (!Model.pSPSRecord->pSPSNode->SharesSpaceWith(*Light.pSPSRecord->pSPSNode)) FAIL;
@@ -141,7 +141,7 @@ bool CModelRenderer::IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Ligh
 	sphere LightSphere(Light.GetNode()->GetWorldPosition(), Light.GetRange());
 	if (LightSphere.GetClipStatus(ModelBox) == Outside) FAIL;
 
-	if (Light.Type == Scene::CLight::Spot)
+	if (Light.Type == CLight::Spot)
 	{
 		//!!!precalculate once!
 		matrix44 LightFrustum;
@@ -155,18 +155,18 @@ bool CModelRenderer::IsModelLitByLight(Scene::CModel& Model, Scene::CLight& Ligh
 
 //!!!pass const refs! all calculations must be done earlier in scene or externally!
 // NB: always returns positive number.
-float CModelRenderer::CalcLightPriority(Scene::CModel& Model, Scene::CLight& Light)
+float CModelRenderer::CalcLightPriority(CModel& Model, CLight& Light)
 {
 	// I probably should test for a closest point on or inside bbox, but for now only position is used.
 	// Light shining from the center of the object doesn't affect it or does it wrong.
 
 	float SqIntensity = Light.Intensity * Light.Intensity;
-	if (Light.Type == Scene::CLight::Directional) return SqIntensity;
+	if (Light.Type == CLight::Directional) return SqIntensity;
 
 	float SqDistance = vector3::SqDistance(Model.GetNode()->GetWorldPosition(), Light.GetNode()->GetWorldPosition());
 	float Attenuation = (1.f - SqDistance * (Light.GetInvRange() * Light.GetInvRange()));
 
-	if (Light.Type == Scene::CLight::Spot && SqDistance != 0.f)
+	if (Light.Type == CLight::Spot && SqDistance != 0.f)
 	{
 		vector3 ModelLight = Model.GetNode()->GetWorldPosition() - Light.GetNode()->GetWorldPosition();
 		ModelLight /= n_sqrt(SqDistance);
@@ -211,7 +211,7 @@ void CModelRenderer::Render()
 			n_assert_dbg(pLights);
 			for (int j = 0; j < pLights->GetCount(); ++j)
 			{
-				Scene::CLight* pLight = (*pLights)[j];
+				CLight* pLight = (*pLights)[j];
 
 				if (!IsModelLitByLight(*Rec.pModel, *pLight)) continue;
 
@@ -400,10 +400,10 @@ void CModelRenderer::Render()
 			bool HasDirOrSpotLights = false;
 			for (DWORD LightIdx = 0; LightIdx < Rec.LightCount; ++LightIdx)
 			{
-				Scene::CLight& Light = *Rec.Lights[LightIdx];
+				CLight& Light = *Rec.Lights[LightIdx];
 				LightType[LightIdx] = (int)Light.Type;
 				LightColor[LightIdx] = Light.Color * Light.Intensity;
-				if (Light.Type == Scene::CLight::Directional)
+				if (Light.Type == CLight::Directional)
 				{
 					HasDirOrSpotLights = true;
 					LightDir[LightIdx] = Light.GetReverseDirection();
@@ -413,7 +413,7 @@ void CModelRenderer::Render()
 					HasPointOrSpotLights = true;
 					LightPos[LightIdx] = Light.GetPosition();
 					LightParams[LightIdx].x = Light.GetRange(); //!!!set inverse range!
-					if (Light.Type == Scene::CLight::Spot)
+					if (Light.Type == CLight::Spot)
 					{
 						HasDirOrSpotLights = true;
 						LightDir[LightIdx] = Light.GetDirection();

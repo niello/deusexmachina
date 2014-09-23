@@ -1,7 +1,5 @@
 #include "SceneNode.h"
 
-//#include <Scene/RenderObject.h>
-//#include <Render/DebugDraw.h>
 #include <Scene/NodeController.h>
 
 namespace Scene
@@ -10,14 +8,8 @@ namespace Scene
 CSceneNode::~CSceneNode()
 {
 	Children.Clear();
-
-	while (Attrs.GetCount()) RemoveAttr(Attrs.GetCount() - 1);
-	CArray<PNodeAttribute>::CIterator It = Attrs.Begin();
-	for (; It != Attrs.End(); ++It)
-	{
+	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
 		(*It)->OnDetachFromNode();
-		(*It)->pNode = NULL; //!!!???not here but inside detach callback?!
-	}
 	Attrs.Clear();
 }
 //---------------------------------------------------------------------
@@ -126,17 +118,6 @@ void CSceneNode::UpdateWorldSpace()
 }
 //---------------------------------------------------------------------
 
-//!!!to visitor!
-//void CSceneNode::RenderDebug()
-//{
-//	if (pParent)
-//		DebugDraw->DrawLine(pParent->WorldMatrix.Translation(), WorldMatrix.Translation(), vector4::White);
-//
-//	for (int i = 0; i < Child.GetCount(); ++i)
-//		Child.ValueAt(i)->RenderDebug();
-//}
-////---------------------------------------------------------------------
-
 CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 {
 	//!!!USE POOL!
@@ -181,8 +162,6 @@ CSceneNode* CSceneNode::GetChild(LPCSTR pPath, bool Create)
 
 bool CSceneNode::AddAttr(CNodeAttribute& Attr)
 {
-	if (Attr.pNode) FAIL;
-	Attr.pNode = this;
 	if (!Attr.OnAttachToNode(this)) FAIL;
 	Attrs.Add(&Attr);
 	OK;
@@ -191,9 +170,8 @@ bool CSceneNode::AddAttr(CNodeAttribute& Attr)
 
 void CSceneNode::RemoveAttr(CNodeAttribute& Attr)
 {
-	n_assert(Attr.pNode == this);
+	n_assert(Attr.GetNode() == this);
 	Attr.OnDetachFromNode();
-	Attr.pNode = NULL;
 	Attrs.RemoveByValue(&Attr);
 }
 //---------------------------------------------------------------------
@@ -203,7 +181,6 @@ void CSceneNode::RemoveAttr(DWORD Idx)
 	n_assert(Idx < (DWORD)Attrs.GetCount());
 	CNodeAttribute& Attr = *Attrs[Idx];
 	Attr.OnDetachFromNode();
-	Attr.pNode = NULL;
 	Attrs.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------

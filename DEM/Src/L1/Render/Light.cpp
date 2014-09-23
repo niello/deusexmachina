@@ -1,12 +1,11 @@
 #include "Light.h"
 
-#include <Scene/Scene.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
-namespace Scene
+namespace Render
 {
-__ImplementClass(Scene::CLight, 'LGHT', Scene::CNodeAttribute);
+__ImplementClass(Render::CLight, 'LGHT', Scene::CNodeAttribute);
 
 bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -59,6 +58,7 @@ void CLight::OnDetachFromNode()
 		n_delete(pSPSRecord);
 		pSPSRecord = NULL;
 	}
+	CNodeAttribute::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 

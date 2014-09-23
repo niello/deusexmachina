@@ -79,10 +79,8 @@ protected:
 	//!!!???if PCameraManager is really useful, move it there!
 	Scene::PCamera				MainCamera;
 
-	//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
-	void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
-	//void		AddVisibleObject(CRenderObject& Obj) { VisibleObjects.Add(&Obj); }
-	//void		AddVisibleLight(CLight& Light) { VisibleLights.Add(&Light); }
+	//void		AddVisibleObject(Render::CRenderObject& Obj) { VisibleObjects.Add(&Obj); }
+	//void		AddVisibleLight(Render::CLight& Light) { VisibleLights.Add(&Light); }
 
 	bool OnEvent(const Events::CEventBase& Event);
 
