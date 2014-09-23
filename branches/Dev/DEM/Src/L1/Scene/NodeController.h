@@ -18,7 +18,6 @@
 namespace Scene
 {
 class CSceneNode;
-class CNodeControllerComposite;
 
 class CNodeController: public Core::CObject
 {
@@ -35,14 +34,15 @@ protected:
 
 	CSceneNode*		pNode;
 	Data::CFlags	Flags;
-	Data::CFlags	Channels;
+	Data::CFlags	Channels; //!!!merge with flags!
 
 public:
 
 	CNodeController(): pNode(NULL) {}
 
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { pNode = pSceneNode; OK; }
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (!pNode) FAIL; pNode = pSceneNode; return !!pNode; }
 	virtual void	OnDetachFromNode() { pNode = NULL; }
+
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;
 	void			RemoveFromNode();
 

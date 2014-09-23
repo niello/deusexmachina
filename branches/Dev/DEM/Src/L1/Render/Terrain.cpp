@@ -220,6 +220,7 @@ void CTerrain::OnDetachFromNode()
 	MinMaxMaps.Clear();
 	SAFE_FREE(pMinMaxData);
 	//HeightMap->Unload(); //???unload or leave in resource manager? leaving is good for save-load
+	CRenderObject::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_SCENE_TERRAIN_H__
 #define __DEM_L1_SCENE_TERRAIN_H__
 
-#include <Scene/RenderObject.h>
+#include <Render/RenderObject.h>
 #include <Render/Materials/ShaderVar.h>
 #include <Render/Geometry/Mesh.h>
 

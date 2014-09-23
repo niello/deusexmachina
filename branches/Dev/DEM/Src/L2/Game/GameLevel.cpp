@@ -4,6 +4,7 @@
 #include <Game/GameServer.h>
 #include <Scripting/ScriptObject.h>
 #include <Render/FrameShader.h>
+#include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsWorld.h>
 #include <Physics/PhysicsServer.h>
@@ -73,7 +74,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
-		BBox.Set(Center, Extents); //???need to store?
+		BBox.Set(Center, Extents);
 
 		int SPSHierarchyDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 
@@ -110,7 +111,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 			if (IsThirdPerson)
 			{
-				CameraManager->InitThirdPersonCamera(*Scene);
+				CameraManager->InitThirdPersonCamera(*MainCamera->GetNode());
 				Scene::CNodeControllerThirdPerson* pCtlr = (Scene::CNodeControllerThirdPerson*)CameraManager->GetCameraController();
 				if (pCtlr)
 				{
@@ -311,11 +312,7 @@ void CGameLevel::Trigger()
 {
 	FireEvent(CStrID("BeforeTransforms"));
 
-	if (Scene.IsValid())
-	{
-		Scene->ClearVisibleLists(); // { VisibleObjects.Clear(); VisibleLights.Clear(); }
-		Scene->GetRootNode().UpdateLocalSpace();
-	}
+	if (SceneRoot.IsValid()) SceneRoot->UpdateLocalSpace();
 
 	if (PhysWorld.IsValid())
 	{
@@ -324,7 +321,7 @@ void CGameLevel::Trigger()
 		FireEvent(CStrID("AfterPhysics"));
 	}
 
-	if (Scene.IsValid()) Scene->GetRootNode().UpdateWorldSpace();
+	if (SceneRoot.IsValid()) SceneRoot->UpdateWorldSpace();
 
 	FireEvent(CStrID("AfterTransforms"));
 }
@@ -350,8 +347,8 @@ void CGameLevel::RenderScene()
 	Render::PFrameShader ScreenFrameShader = RenderSrv->GetScreenFrameShader();
 	if (!ScreenFrameShader.IsValid()) return;
 
-	CArray<CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
-	CArray<CLight*>			VisibleLights;
+	CArray<Render::CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
+	CArray<Render::CLight*>			VisibleLights;
 
 	/*
 	PCamera Camera = MainCamera; //???!!!if camera manager is useful, get from it?!
@@ -369,7 +366,7 @@ void CGameLevel::RenderScene()
 
 	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
 	CArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
-	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, &VisibleObjects, pVisibleLights);
+	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, BBox, &VisibleObjects, pVisibleLights);
 
 	RenderSrv->SetAmbientLight(AmbientLight);
 	RenderSrv->SetCameraPosition(Camera->GetPosition());
@@ -467,65 +464,6 @@ void CGameLevel::RenderScene()
 }
 //---------------------------------------------------------------------
 
-//???how and where to implement this traversal?
-void CGameLevel::SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj,
-										  CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights,
-										  EClipStatus Clip)
-{
-	if (!pNode || !pNode->GetTotalObjCount() || (!OutObjects && !OutLights)) return;
-
-	if (Clip == Clipped)
-	{
-		CAABB NodeBox;
-		pNode->GetBounds(NodeBox);
-		NodeBox.Min.y = SceneBBox.Min.y;
-		NodeBox.Max.y = SceneBBox.Max.y;
-		Clip = NodeBox.GetClipStatus(ViewProj);
-		if (Clip == Outside) return;
-	}
-
-	if (OutObjects && pNode->Data.Objects.GetCount())
-	{
-		CArray<CSPSRecord*>::CIterator ItObj = pNode->Data.Objects.Begin();
-		if (Clip == Inside)
-		{
-			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.GetCount());
-			for (; ItObj != pNode->Data.Objects.End(); ++ItObj, ++ppObj)
-				*ppObj = (CRenderObject*)&(*ItObj)->Attr;
-		}
-		else // Clipped
-		{
-			//???test against global box or transform to model space and test against local box?
-			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
-				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != Outside)
-					OutObjects->Add((CRenderObject*)&(*ItObj)->Attr);
-		}
-	}
-
-	if (OutLights && pNode->Data.Lights.GetCount())
-	{
-		CArray<CSPSRecord*>::CIterator ItLight = pNode->Data.Lights.Begin();
-		if (Clip == Inside)
-		{
-			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.GetCount());
-			for (; ItLight != pNode->Data.Lights.End(); ++ItLight, ++ppLight)
-				*ppLight = (CLight*)&(*ItLight)->Attr;
-		}
-		else // Clipped
-		{
-			//???test against global box or transform to model space and test against local box?
-			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
-				if ((*ItLight)->GlobalBox.GetClipStatus(ViewProj) != Outside)
-					OutLights->Add((CLight*)&(*ItLight)->Attr);
-		}
-	}
-
-	if (pNode->HasChildren())
-		for (DWORD i = 0; i < 4; i++)
-			SPSCollectVisibleObjects(pNode->GetChild(i), ViewProj, OutObjects, OutLights, Clip);
-}
-//---------------------------------------------------------------------
-
 //!!!???separate? or with bool flags?
 void CGameLevel::RenderDebug()
 {
@@ -533,8 +471,11 @@ void CGameLevel::RenderDebug()
 
 	FireEvent(CStrID("OnRenderDebug"));
 
-	if (Scene.IsValid())
-		Scene->GetRootNode().RenderDebug();
+	if (SceneRoot.IsValid())
+	{
+		Scene::CSceneNodeRenderDebug RD;
+		RD.Visit(*SceneRoot);
+	}
 }
 //---------------------------------------------------------------------
 

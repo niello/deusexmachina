@@ -10,6 +10,11 @@
 
 //!!!here must NOT be any scene attributes! rendering is not dependent on a scene
 
+namespace Scene
+{
+	class CNodeAttribute;
+}
+
 namespace Render
 {
 struct CSPSRecord;
@@ -30,15 +35,13 @@ struct CSPSCell
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;
 typedef CSPS::CNode CSPSNode;
 
-class CNodeAttribute;
-
 struct CSPSRecord
 {
-	CNodeAttribute&	Attr;
-	CAABB			GlobalBox;
-	CSPSNode*		pSPSNode;
+	Scene::CNodeAttribute&	Attr;
+	CAABB					GlobalBox;
+	CSPSNode*				pSPSNode;
 
-	CSPSRecord(CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
+	CSPSRecord(Scene::CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
 	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {} 
 
 	bool		IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }
@@ -92,6 +95,9 @@ inline bool CSPSCell::RemoveByValue(CSPSRecord* const & Object)
 	FAIL;
 }
 //---------------------------------------------------------------------
+
+//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
+void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, const CAABB& SceneBBox, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
 }
 

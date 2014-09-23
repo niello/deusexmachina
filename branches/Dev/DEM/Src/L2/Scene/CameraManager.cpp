@@ -1,19 +1,18 @@
 #include "CameraManager.h"
 
-#include <Scene/Scene.h>
+#include <Scene/SceneNode.h>
 
 namespace Scene
 {
 __ImplementClassNoFactory(Scene::CCameraManager, Core::CObject);
 
-bool CCameraManager::InitThirdPersonCamera(CScene& Scene, CSceneNode* pNodeWithCamera)
+bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 {
 	Ctlr = n_new(CNodeControllerThirdPerson);
 	if (!Ctlr.IsValid()) FAIL;
 	IsThirdPerson = true;
 
-	pCameraNode = pNodeWithCamera ? pNodeWithCamera : Scene.GetMainCamera().GetNode();
-	n_assert(pCameraNode);
+	pCameraNode = &NodeWithCamera;
 	pCameraNode->SetController(Ctlr);
 	Ctlr->Activate(true);
 

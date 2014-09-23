@@ -206,6 +206,7 @@
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeServer.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeSource.h" />
     <ClInclude Include="..\..\Src\L1\SI\SI_L1.h" />
@@ -388,7 +389,9 @@
     <ClCompile Include="..\..\Src\L1\Render\Model.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\SPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp" />
     <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp" />
     <ClCompile Include="..\..\Src\L1\SI\SIEventServer.cpp" />

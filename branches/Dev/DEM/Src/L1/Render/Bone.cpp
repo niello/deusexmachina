@@ -1,7 +1,7 @@
 #include "Bone.h"
 
 #include <Scene/SceneNode.h>
-#include <Scene/Model.h>
+#include <Render/Model.h>
 #include <Render/RenderServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
@@ -48,6 +48,8 @@ bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 {
+	if (!CNodeAttribute::OnAttachToNode(pSceneNode)) FAIL;
+
 	// Default constructor sets it to Identity, no need to set explicitly now
 	//SkinMatrix.ident();
 
@@ -138,6 +140,8 @@ void CBone::OnDetachFromNode()
 					}
 		}
 	}
+
+	CNodeAttribute::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 
