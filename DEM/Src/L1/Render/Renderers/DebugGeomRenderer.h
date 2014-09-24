@@ -16,8 +16,8 @@ class CDebugGeomRenderer: public IRenderer
 public:
 
 	virtual bool	Init(const Data::CParams& Desc) { OK; }
-	virtual void	AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects) {}
-	virtual void	AddLights(const CArray<Scene::CLight*>& Lights) {}
+	virtual void	AddRenderObjects(const CArray<CRenderObject*>& Objects) {}
+	virtual void	AddLights(const CArray<CLight*>& Lights) {}
 	virtual void	Render();
 };
 

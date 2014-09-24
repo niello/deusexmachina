@@ -25,10 +25,10 @@ protected:
 	// Cross-dependence of collision objects and the level.
 	// Only objects know, how to add them, but only the level knows, when it is killed.
 	// On level term all objects must be removed from it.
-	friend class CPhysicsObj;
+	friend class CPhysicsObject;
 
-	bool	AddCollisionObject(CPhysicsObj& Obj);
-	void	RemoveCollisionObject(CPhysicsObj& Obj);
+	bool	AddCollisionObject(CPhysicsObject& Obj);
+	void	RemoveCollisionObject(CPhysicsObject& Obj);
 
 public:
 

@@ -64,9 +64,12 @@ void CLight::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CLight::UpdateInSPS()
+void CLight::UpdateInSPS(CSPS& SPS, CArray<CLight*>* pVisibleLights)
 {
-	if (Type == Directional) VisibleLights.Add(this);
+	if (Type == Directional)
+	{
+		if (pVisibleLights) pVisibleLights->Add(this);
+	}
 	else
 	{
 		if (!pSPSRecord)

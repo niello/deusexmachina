@@ -3,9 +3,14 @@
 namespace Render
 {
 
-void CPassPosteffect::Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights)
+void CPassPosteffect::Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights)
 {
-	// fullscreen quad
+	// Posteffect path:
+	// - begin pass
+	// - Renderer: set posteffect shader
+	// - Renderer: set source textures and other params
+	// - Renderer: render fullscreen quad
+	// - end pass
 }
 //---------------------------------------------------------------------
 

@@ -14,6 +14,7 @@ class CAABB;
 
 namespace Render
 {
+class CSPS;
 struct CSPSRecord;
 
 class CLight: public Scene::CNodeAttribute
@@ -27,8 +28,8 @@ protected:
 	float		InvRange;
 
 	// Spot
-	float		ConeInner;	// In radians, full angle (not half), Theta
-	float		ConeOuter;	// In radians, full angle (not half), Phi
+	float		ConeInner;		// In radians, full angle (not half), Theta
+	float		ConeOuter;		// In radians, full angle (not half), Phi
 	float		CosHalfInner;
 	float		CosHalfOuter;
 
@@ -59,7 +60,7 @@ public:
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	OnDetachFromNode();
 
-	void			UpdateInSPS();
+	void			UpdateInSPS(CSPS& SPS, CArray<CLight*>* pVisibleLights);
 	void			CalcFrustum(matrix44& OutFrustum);
 	void			GetGlobalAABB(CAABB& OutBox) const;
 

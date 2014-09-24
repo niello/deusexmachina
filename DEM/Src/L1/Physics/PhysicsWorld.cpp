@@ -110,7 +110,7 @@ void CPhysicsWorld::RenderDebug()
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsWorld::AddCollisionObject(CPhysicsObj& Obj)
+bool CPhysicsWorld::AddCollisionObject(CPhysicsObject& Obj)
 {
 	n_assert(pBtDynWorld && Obj.GetBtObject());
 	Objects.Add(&Obj);
@@ -118,7 +118,7 @@ bool CPhysicsWorld::AddCollisionObject(CPhysicsObj& Obj)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsWorld::RemoveCollisionObject(CPhysicsObj& Obj)
+void CPhysicsWorld::RemoveCollisionObject(CPhysicsObject& Obj)
 {
 	Objects.RemoveByValue(&Obj);
 }
@@ -138,7 +138,7 @@ bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& En
 	if (!RayCB.hasHit()) FAIL;
 
 	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
-	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObj*)RayCB.m_collisionObject->getUserPointer() : NULL;
+	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObject*)RayCB.m_collisionObject->getUserPointer() : NULL;
 	n_assert_dbg(!pOutObj || !(*pOutObj).IsValid() || Objects.Contains(*pOutObj));
 
 	OK;

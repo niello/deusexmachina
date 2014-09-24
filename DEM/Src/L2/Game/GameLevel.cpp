@@ -348,36 +348,33 @@ void CGameLevel::RenderScene()
 	Render::PFrameShader ScreenFrameShader = RenderSrv->GetScreenFrameShader();
 	if (!ScreenFrameShader.IsValid()) return;
 
+	//???!!!if camera manager is useful, get from it instead of storing MainCamera?!
+	if (!MainCamera.IsValid()) return;
+
 	CArray<Render::CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
 	CArray<Render::CLight*>			VisibleLights;
 
 	Render::CSceneNodeUpdateInSPS Visitor;
-	//!!!fill visitor fields!
+	Visitor.pSPS = &SPS;
+	Visitor.pVisibleObjects = &VisibleObjects;
+	Visitor.pVisibleLights = &VisibleLights;
 	if (SceneRoot.IsValid()) Visitor.Visit(*SceneRoot);
-
-	/*
-	PCamera Camera = MainCamera; //???!!!if camera manager is useful, get from it?!
-	if (!Camera.IsValid())
-	{
-		ClearVisibleLists();
-		FAIL;
-	}
 
 	//!!!FrameShader OPTIONS!
 	bool FrameShaderUsesLights = true;
 	//!!!filters (ShadowCasters etc)!
 
-	const matrix44& ViewProj = Camera->GetViewProjMatrix();
+	const matrix44& ViewProj = MainCamera->GetViewProjMatrix();
 
 	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
-	CArray<CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
+	CArray<Render::CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
 	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, BBox, &VisibleObjects, pVisibleLights);
 
 	RenderSrv->SetAmbientLight(AmbientLight);
-	RenderSrv->SetCameraPosition(Camera->GetPosition());
+	RenderSrv->SetCameraPosition(MainCamera->GetPosition());
 	RenderSrv->SetViewProjection(ViewProj);
 
-	FrameShader.Render(&VisibleObjects, pVisibleLights);
+	ScreenFrameShader->Render(&VisibleObjects, pVisibleLights);
 
 // Dependent cameras:
 	// Some shapes may request textures that are RTs of specific cameras
@@ -385,12 +382,10 @@ void CGameLevel::RenderScene()
 	// Good way is to collect all cameras and recurse, filling required textures
 	// Pass may disable recursing into cameras to prevent infinite recursion
 	// Generally, only FrameBuffer pass should recurse
-	// Camera shouldn't render its texture more than once per frame (in won't change)!
+	// Camera shouldn't render its texture more than once per frame (it won't change)!
 	//???as "RenderDependentCameras" flag in Camera/Pass? maybe even filter by dependent camera type
 	// Collect - check all meshes to be rendered, check all their textures, select textures rendered from camera RTs
 	// Non-mesh dependent textures (shadows etc) must be rendered in one of the previous passes
-
-// Somewhere at here scene ends and renderer begins:
 
 	// Shapes are sorted by shader, by distance (None, FtB or BtF, depending on shader requirements),
 	// by geometry (for the instancing), may be by lights that affect them
@@ -416,6 +411,10 @@ void CGameLevel::RenderScene()
 	// - for each pass, render scene pass, occlusion pass, shadow pass (for shadow-casting lights) or posteffect pass
 	// - end frame shader
 	//
+	// After this some UI, text and debug shapes can be rendered
+	// Nebula treats all them as different batches or render plugins, it is good idea maybe...
+	// Then backbuffer is present
+	//
 	// Scene pass:
 	// - begin pass
 	// - if pass renders dependent textures
@@ -431,45 +430,10 @@ void CGameLevel::RenderScene()
 	//    (link meshes and lights(here?), sort meshes, batch instances, select lighting code,
 	//     set shared state of instance sets)
 	// - end pass
-	//
-	// Occlusion pass:
-	// - begin pass
-	// - issue occlusion query for AABBs of all visible meshes
-	// - remove occluded shapes [and lights] from visible shape [and light] array[s]
-	// - end pass
-	//
-	// Shadow pass:
-	// - begin pass
-	// - select shadow-casting light(s)
-	// - instead of collecting meshes visible from the light's camera, we collect ones in the light range
-	// - for directional lights and PSSM this process will differ, may be extruded shadow boxes will be necessary
-	// - collect ONLY shadow casters
-	// - do not modify the main mesh list
-	// - note: some caster meshes invisible from the main camera can have visible shadows. Anyway they are
-	//         casting shadows on all visible receivers as their shadows are rendered to shadow buffer texture
-	// - render casters to the shadow buffer texture
-	// - end pass
-	//
-	// Posteffect path:
-	// - begin pass
-	// - Renderer: set posteffect shader
-	// - Renderer: set source textures and other params
-	// - Renderer: render fullscreen quad
-	// - end pass
-	//
-	//
-	// After this some UI, text and debug shapes can be rendered
-	// Nebula treats all them as different batches or render plugins, it is good idea maybe...
-	// Then backbuffer is present
-
-	ClearVisibleLists();
-
-	OK;
-	*/
 }
 //---------------------------------------------------------------------
 
-//!!!???separate? or with bool flags?
+//!!!???bool flags what subsystems to render?
 void CGameLevel::RenderDebug()
 {
 	PhysWorld->RenderDebug();
@@ -487,10 +451,10 @@ void CGameLevel::RenderDebug()
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	if (!Scene.IsValid() || !PhysWorld.IsValid()) FAIL;
+	if (!MainCamera.IsValid() || !PhysWorld.IsValid()) FAIL;
 
 	line3 Ray;
-	Scene->GetMainCamera().GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
+	MainCamera->GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
 
 	ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
@@ -510,7 +474,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 DWORD CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const
 {
 	// calc frustum
-	// query scene quadtree with this frustum
+	// query SPS with this frustum
 	// select only render objects
 	// return newly selected obj count
 	Sys::Error("CGameLevel::GetEntitiesAtScreenRect() -> IMPLEMENT ME!");
@@ -520,17 +484,17 @@ DWORD CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle
 
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	if (!Scene.IsValid()) FAIL;
+	if (!MainCamera.IsValid()) FAIL;
 	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
 	if (Offset) EntityPos += *Offset;
-	Scene->GetMainCamera().GetPoint2D(EntityPos, Out.x, Out.y);
+	MainCamera->GetPoint2D(EntityPos, Out.x, Out.y);
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
 {
-	if (!Scene.IsValid()) FAIL;
+	if (!MainCamera.IsValid()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode) FAIL;
@@ -538,21 +502,21 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 	CAABB AABB;
 	pNode->GetAABB(AABB);
 	vector3 Center = AABB.Center();
-	Scene->GetMainCamera().GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
+	MainCamera->GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	if (!Scene.IsValid()) FAIL;
+	if (!MainCamera.IsValid()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode)
 	{
 		matrix44 Tfm;
 		if (!Entity.GetAttr(Tfm, CStrID("Transform"))) FAIL;
-		Scene->GetMainCamera().GetPoint2D(Tfm.Translation(), Out.v0.x, Out.v0.y);
+		MainCamera->GetPoint2D(Tfm.Translation(), Out.v0.x, Out.v0.y);
 		Out.v1 = Out.v0;
 		OK;
 	}
@@ -566,13 +530,13 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 		AABB.Min += *Offset;
 	}
 
-	Scene->GetMainCamera().GetPoint2D(AABB.GetCorner(0), Out.v0.x, Out.v0.y);
+	MainCamera->GetPoint2D(AABB.GetCorner(0), Out.v0.x, Out.v0.y);
 	Out.v1 = Out.v0;
 
 	vector2 ScreenPos;
 	for (DWORD i = 1; i < 8; i++)
 	{
-		Scene->GetMainCamera().GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
+		MainCamera->GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
 
 		if (ScreenPos.x < Out.v0.x) Out.v0.x = ScreenPos.x;
 		else if (ScreenPos.x > Out.v1.x) Out.v1.x = ScreenPos.x;
@@ -617,7 +581,7 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	if (!PhysWorld->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
 	Out.WorldHeight = ContactPos.y;
 
-	//!!!material from CPhysicsObj!
+	//!!!material from CPhysicsObject!
 
 	OK;
 }

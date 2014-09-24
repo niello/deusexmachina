@@ -8,7 +8,7 @@
 
 // Dynamic enum associates string names with bits. Use integer types as a template type.
 // This class is designed for flag enums, where each value reserves a bit, and values can
-// be logically combined. You can use aliases like All = X | Y | Z, like in regular enums.
+// be logically combined. You can use aliases like All = X | Y | Z, as with regular enums.
 
 namespace Data
 {

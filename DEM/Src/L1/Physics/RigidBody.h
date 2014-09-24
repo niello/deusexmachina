@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RIGID_BODY_H__
 #define __DEM_L1_RIGID_BODY_H__
 
-#include <Physics/PhysicsObj.h>
+#include <Physics/PhysicsObject.h>
 
 // Rigid body is a center of mass that has shape and transform. Rigid body is
 // simulated by physics world and can be used as transformation source.
@@ -17,7 +17,7 @@ namespace Scene
 namespace Physics
 {
 
-class CRigidBody: public CPhysicsObj
+class CRigidBody: public CPhysicsObject
 {
 	__DeclareClassNoFactory;
 

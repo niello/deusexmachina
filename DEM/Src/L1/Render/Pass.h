@@ -11,14 +11,10 @@ namespace Data
 	class CParams;
 }
 
-namespace Scene
-{
-	class CRenderObject;
-	class CLight;
-}
-
 namespace Render
 {
+class CRenderObject;
+class CLight;
 
 class CPass: public Core::CObject
 {
@@ -46,7 +42,7 @@ public:
 	virtual ~CPass() {}
 
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets);
-	virtual void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights) = 0;
+	virtual void Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights) = 0;
 };
 
 typedef Ptr<CPass> PPass;
