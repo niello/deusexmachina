@@ -3,7 +3,7 @@
 #include <Scene/SceneNode.h>
 #include <Render/DebugDraw.h>
 
-namespace Render
+namespace Scene
 {
 
 bool CSceneNodeRenderDebug::Visit(Scene::CSceneNode& Node)
@@ -12,7 +12,10 @@ bool CSceneNodeRenderDebug::Visit(Scene::CSceneNode& Node)
 		DebugDraw->DrawLine(Node.GetParent()->GetWorldMatrix().Translation(), Node.GetWorldMatrix().Translation(), vector4::White);
 
 	for (DWORD i = 0; i < Node.GetChildCount(); ++i)
-		if (!Node.GetChild(i)->AcceptVisitor(*this)) FAIL;
+	{
+		CSceneNode* pChild = Node.GetChild(i);
+		if (pChild && pChild->IsActive() && !pChild->AcceptVisitor(*this)) FAIL;
+	}
 
 	OK;
 }

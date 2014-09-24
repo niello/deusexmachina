@@ -58,8 +58,8 @@ public:
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	OnDetachFromNode();
-	virtual void	Update();
 
+	void			UpdateInSPS();
 	void			CalcFrustum(matrix44& OutFrustum);
 	void			GetGlobalAABB(CAABB& OutBox) const;
 

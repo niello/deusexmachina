@@ -16,6 +16,7 @@ class CRenderObject: public Scene::CNodeAttribute
 
 public:
 
+	virtual void UpdateInSPS() = 0;
 	virtual bool ValidateResources() = 0;
 };
 

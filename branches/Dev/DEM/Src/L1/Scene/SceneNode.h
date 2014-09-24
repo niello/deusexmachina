@@ -90,7 +90,7 @@ public:
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
-	bool					AcceptVisitor(CNodeVisitor& Visitor);
+	bool					AcceptVisitor(INodeVisitor& Visitor);
 
 	CStrID					GetName() const { return Name; }
 
@@ -169,7 +169,7 @@ inline void CSceneNode::SetWorldTransform(const matrix44& Transform)
 }
 //---------------------------------------------------------------------
 
-inline bool CSceneNode::AcceptVisitor(CNodeVisitor& Visitor)
+inline bool CSceneNode::AcceptVisitor(INodeVisitor& Visitor)
 {
 	if (!Visitor.Visit(*this)) FAIL;
 	for (int i = 0; i < Children.GetCount(); ++i)

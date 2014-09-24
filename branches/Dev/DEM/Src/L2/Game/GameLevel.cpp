@@ -4,6 +4,7 @@
 #include <Game/GameServer.h>
 #include <Scripting/ScriptObject.h>
 #include <Render/FrameShader.h>
+#include <Render/SceneNodeUpdateInSPS.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsWorld.h>
@@ -349,6 +350,10 @@ void CGameLevel::RenderScene()
 
 	CArray<Render::CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
 	CArray<Render::CLight*>			VisibleLights;
+
+	Render::CSceneNodeUpdateInSPS Visitor;
+	//!!!fill visitor fields!
+	if (SceneRoot.IsValid()) Visitor.Visit(*SceneRoot);
 
 	/*
 	PCamera Camera = MainCamera; //???!!!if camera manager is useful, get from it?!

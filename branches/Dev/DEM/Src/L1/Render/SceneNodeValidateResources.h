@@ -9,11 +9,11 @@
 namespace Render
 {
 
-class CSceneNodeValidateResources: public Scene::CNodeVisitor
+class CSceneNodeValidateResources: public Scene::INodeVisitor
 {
 public:
 
-	bool Visit(Scene::CSceneNode& Node);
+	virtual bool Visit(Scene::CSceneNode& Node);
 };
 
 }

@@ -94,9 +94,9 @@ public:
 
 		DWORD							TotalObjCount;	// Total object count inside this node & it's hierarchy
 
-		CQuadTree<TObject, TStorage>*	pOwner; //!!!now only for size, 2 floats!
+		CQuadTree<TObject, TStorage>*	pOwner;
 		CNode*							pParent;
-		CNode*							pChild;			// Pointer to first element of CNode[4]
+		CNode*							pChild;			// Pointer to the first element of CNode[4]
 
 		ushort							Col;
 		ushort							Row;
@@ -115,16 +115,18 @@ public:
 
 		CNode(): TotalObjCount(0) {}
 
-		bool		Contains(const TObject& Object) const;
-		bool		Contains(const vector2& Center, const vector2& HalfSize) const;
-		bool		SharesSpaceWith(const CNode& Other) const;
-		void		GetBounds(CAABB& Box) const;
+		bool							Contains(const TObject& Object) const;
+		bool							Contains(const vector2& Center, const vector2& HalfSize) const;
+		bool							SharesSpaceWith(const CNode& Other) const;
+		void							GetBounds(CAABB& Box) const;
 
-		uchar		GetLevel() const { return Level; }
-		CNode*		GetParent() const { return pParent; }
-		CNode*		GetChild(DWORD Index) const { n_assert(Index < 4); return pChild + Index; }
-		DWORD		GetTotalObjCount() const { return TotalObjCount; }
-		bool		HasChildren() const { return pChild != NULL; }
+		uchar							GetLevel() const { return Level; }
+		CNode*							GetParent() const { return pParent; }
+		CNode*							GetChild(DWORD Index) const { n_assert(Index < 4); return pChild + Index; }
+		DWORD							GetTotalObjCount() const { return TotalObjCount; }
+		bool							HasChildren() const { return pChild != NULL; }
+
+		CQuadTree<TObject, TStorage>*	GetOwner() { return pOwner; }
 	};
 
 	CQuadTree() {}

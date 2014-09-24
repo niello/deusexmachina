@@ -6,7 +6,7 @@
 #include <Data/Flags.h>
 #include <Data/StringID.h>
 
-// Scene node attributes implement specific logic, attached to 3D transform provided by scene nodes.
+// Scene node attributes implement specific logic, attached to a 3D transform provided by scene nodes.
 // Common examples are meshes, lights, cameras etc.
 
 namespace IO
@@ -26,7 +26,10 @@ protected:
 
 	enum
 	{
-		Active = 0x01	// Attribute must be processed
+		Active				= 0x01,	// Attribute must be processed
+		WorldMatrixChanged	= 0x02	// World matrix of the host node has changed, update of depended parts required
+			//???!!!may be it is not so good to add this flag here, because different attributes use it differently and some
+			//of them do not use at all. But doing it here is convinient.
 	};
 
 	CSceneNode*		pNode;
@@ -36,11 +39,11 @@ public:
 
 	CNodeAttribute(): pNode(NULL), Flags(Active) {}
 
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; return !!pNode; }
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; Flags.Set(WorldMatrixChanged); return !!pNode; }
 	virtual void	OnDetachFromNode() { pNode = NULL; }
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
-	virtual void	Update() = 0;
+	virtual void	Update();
 	void			RemoveFromNode();
 
 	bool			IsAttachedToNode() const { return !!pNode; }
