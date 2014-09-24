@@ -23,6 +23,8 @@ bool CCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 void CCamera::Update()
 {
+	CNodeAttribute::Update();
+
 	bool ViewOrProjChanged = false;
 
 	if (Flags.Is(ProjDirty))

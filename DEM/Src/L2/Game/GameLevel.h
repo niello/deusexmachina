@@ -79,9 +79,6 @@ protected:
 	//!!!???if PCameraManager is really useful, move it there!
 	Scene::PCamera				MainCamera;
 
-	//void		AddVisibleObject(Render::CRenderObject& Obj) { VisibleObjects.Add(&Obj); }
-	//void		AddVisibleLight(Render::CLight& Light) { VisibleLights.Add(&Light); }
-
 	bool OnEvent(const Events::CEventBase& Event);
 
 public:

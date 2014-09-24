@@ -147,6 +147,7 @@ void CBone::OnDetachFromNode()
 
 void CBone::Update()
 {
+	CNodeAttribute::Update();
 	if (pNode->IsWorldMatrixChanged())
 		SkinMatrix.mult2_simple(InvBindPose, pNode->GetWorldMatrix());
 }

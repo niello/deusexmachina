@@ -1,19 +1,22 @@
-#include "SceneNodeValidateResources.h"
+#include "SceneNodeUpdateInSPS.h"
 
 #include <Scene/SceneNode.h>
 #include <Render/RenderObject.h>
+#include <Render/Light.h>
 
 namespace Render
 {
 
-bool CSceneNodeValidateResources::Visit(Scene::CSceneNode& Node)
+bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 {
-	//???active only?
 	for (DWORD i = 0; i < Node.GetAttrCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node.GetAttr(i);
-		if (Attr.IsA<CRenderObject>())
-			if (!((CRenderObject&)Attr).ValidateResources()) FAIL;
+		if (Attr.IsActive())
+		{
+			if (Attr.IsA<CRenderObject>()) ((CRenderObject&)Attr).UpdateInSPS();
+			else if (Attr.IsA<CLight>()) ((CLight&)Attr).UpdateInSPS();
+		}
 	}
 
 	for (DWORD i = 0; i < Node.GetChildCount(); ++i)

@@ -719,6 +719,9 @@
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1161,6 +1164,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp">
       <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

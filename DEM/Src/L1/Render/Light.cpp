@@ -1,5 +1,6 @@
 #include "Light.h"
 
+#include <Render/SPS.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -52,9 +53,10 @@ bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 void CLight::OnDetachFromNode()
 {
+	//???do it on deactivation of an attribute?
 	if (pSPSRecord)
 	{
-		pNode->GetScene()->SPS.RemoveByValue(pSPSRecord);
+		pSPSRecord->pSPSNode->GetOwner()->RemoveByValue(pSPSRecord); //???write self-removal?
 		n_delete(pSPSRecord);
 		pSPSRecord = NULL;
 	}
@@ -62,21 +64,22 @@ void CLight::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CLight::Update()
+void CLight::UpdateInSPS()
 {
-	if (Type == Directional) pNode->GetScene()->AddVisibleLight(*this);
+	if (Type == Directional) VisibleLights.Add(this);
 	else
 	{
 		if (!pSPSRecord)
 		{
 			pSPSRecord = n_new(CSPSRecord)(*this);
 			GetGlobalAABB(pSPSRecord->GlobalBox);
-			pNode->GetScene()->SPS.AddObject(pSPSRecord);
+			SPS.AddObject(pSPSRecord);
 		}
-		else if (pNode->IsWorldMatrixChanged()) //!!! || Range/Cone changed
+		else if (Flags.Is(WorldMatrixChanged)) //!!! || Range/Cone changed
 		{
 			GetGlobalAABB(pSPSRecord->GlobalBox);
-			pNode->GetScene()->SPS.UpdateObject(pSPSRecord);
+			SPS.UpdateObject(pSPSRecord);
+			Flags.Clear(WorldMatrixChanged);
 		}
 	}
 }

@@ -9,7 +9,7 @@
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
 
-namespace Scene
+namespace Render
 {
 
 class CTerrain: public CRenderObject
@@ -55,8 +55,8 @@ public:
 	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) { }
 
 	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void		Update();
 
+	virtual void		UpdateInSPS();
 	const CAABB&		GetLocalAABB() const { return Box; }
 	void				GetGlobalAABB(CAABB& Out) const;
 

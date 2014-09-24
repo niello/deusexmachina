@@ -202,6 +202,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Light.h" />
     <ClInclude Include="..\..\Src\L1\Render\Model.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderObject.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />
@@ -388,6 +389,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Model.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />

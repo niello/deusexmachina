@@ -4,16 +4,16 @@
 
 #include <Scene/NodeVisitor.h>
 
-// Scene traversal that validates resources of render objects in a scene subtree
+// Scene traversal that renders a debug graphics for a scene graph part
 
-namespace Render
+namespace Scene
 {
 
-class CSceneNodeRenderDebug: public Scene::CNodeVisitor
+class CSceneNodeRenderDebug: public INodeVisitor
 {
 public:
 
-	bool Visit(Scene::CSceneNode& Node);
+	virtual bool Visit(Scene::CSceneNode& Node);
 };
 
 }

@@ -1,6 +1,5 @@
 #include "Terrain.h"
 
-#include <Scene/Scene.h>
 #include <Render/RenderServer.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
@@ -10,14 +9,9 @@
 
 namespace Render
 {
-	bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
-}
+bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
 
-namespace Scene
-{
-__ImplementClass(Scene::CTerrain, 'TERR', Scene::CRenderObject);
-
-using namespace Render;
+__ImplementClass(Render::CTerrain, 'TERR', Render::CRenderObject);
 
 bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -224,16 +218,18 @@ void CTerrain::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CTerrain::Update()
+void CTerrain::UpdateInSPS()
 {
-	//!!!can check global Box before adding!
-	pNode->GetScene()->AddVisibleObject(*this); // Add directly, without visibility checking through SPS
+	//!!!can check global Box before adding! if so, recalc it on world matrix changed!
+	Flags.Clear(WorldMatrixChanged);
+
+	VisibleObjects.Add(this); // Add directly, without visibility checking through SPS
 }
 //---------------------------------------------------------------------
 
 void CTerrain::GetGlobalAABB(CAABB& Out) const
 {
-	const vector3& Translation = GetNode()->GetWorldPosition();
+	const vector3& Translation = pNode->GetWorldPosition();
 	Out.Min = Box.Min + Translation;
 	Out.Max = Box.Max + Translation;
 }

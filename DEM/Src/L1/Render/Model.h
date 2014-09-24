@@ -47,8 +47,8 @@ public:
 	CModel(): pSPSRecord(NULL), MeshGroupIndex(0), FeatureFlags(0) {}
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	Update();
 
+	virtual void	UpdateInSPS();
 	const CAABB&	GetLocalAABB() const { return Mesh->GetGroup(MeshGroupIndex).AABB; }
 	void			GetGlobalAABB(CAABB& OutBox) const;
 };

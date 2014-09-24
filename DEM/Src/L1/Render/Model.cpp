@@ -1,6 +1,7 @@
 #include "Model.h"
 
 #include <Render/RenderServer.h>
+#include <Render/SPS.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -121,9 +122,10 @@ bool CModel::ValidateResources()
 // so pointers can be cleared, but model is able to reload resources from IDs
 void CModel::OnDetachFromNode()
 {
+	//???do it on deactivation of an attribute?
 	if (pSPSRecord)
 	{
-		pNode->GetScene()->SPS.RemoveByValue(pSPSRecord);
+		pSPSRecord->pSPSNode->GetOwner()->RemoveByValue(pSPSRecord); //???write self-removal?
 		n_delete(pSPSRecord);
 		pSPSRecord = NULL;
 	}
@@ -131,20 +133,19 @@ void CModel::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CModel::Update()
+void CModel::UpdateInSPS()
 {
-	//ValidateResources();
-
 	if (!pSPSRecord)
 	{
 		pSPSRecord = n_new(CSPSRecord)(*this);
 		GetGlobalAABB(pSPSRecord->GlobalBox);
-		pNode->GetScene()->SPS.AddObject(pSPSRecord);
+		SPS.AddObject(pSPSRecord);
 	}
 	else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
 	{
 		GetGlobalAABB(pSPSRecord->GlobalBox);
-		pNode->GetScene()->SPS.UpdateObject(pSPSRecord);
+		SPS.UpdateObject(pSPSRecord);
+		Flags.Clear(WorldMatrixChanged);
 	}
 }
 //---------------------------------------------------------------------
