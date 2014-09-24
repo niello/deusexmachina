@@ -9,6 +9,7 @@
 
 namespace Render
 {
+class CSPS;
 
 class CRenderObject: public Scene::CNodeAttribute
 {
@@ -16,7 +17,7 @@ class CRenderObject: public Scene::CNodeAttribute
 
 public:
 
-	virtual void UpdateInSPS() = 0;
+	virtual void UpdateInSPS(CSPS& SPS, CArray<CRenderObject*>* pVisibleObjects) = 0;
 	virtual bool ValidateResources() = 0;
 };
 

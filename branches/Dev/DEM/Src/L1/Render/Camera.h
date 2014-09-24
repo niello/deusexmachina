@@ -10,19 +10,22 @@
 // Note - W and H are necessary for orthogonal projection matrix,
 // aspect ratio for a prespective projection is calculated as W / H.
 
-namespace Scene
+namespace Render
 {
 
-class CCamera: public CNodeAttribute
+class CCamera: public Scene::CNodeAttribute
 {
 	__DeclareClass(CCamera);
 
 protected:
 
+	//!!!find some safe approach to declare flags in derived classes!
 	enum
 	{
-		ProjDirty	= 0x02,	// Projection params changed, matrix should be recomputed
-		Orthogonal	= 0x04	// Projection is orthogonal, not perspective
+		// Active
+		// WorldMatrixChanged
+		ProjDirty	= 0x04,	// Projection params changed, matrix should be recomputed
+		Orthogonal	= 0x08	// Projection is orthogonal, not perspective
 	};
 
 	float		FOV;

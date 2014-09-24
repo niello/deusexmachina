@@ -32,7 +32,7 @@ struct CSPSCell
 	CIterator	Find(CSPSRecord* const & Object) const { return NULL; } //???!!!implement?
 };
 
-typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPS;
+class CSPS: public Data::CQuadTree<CSPSRecord*, CSPSCell> {}; // Instead of typedef, to allow easy forward declaration
 typedef CSPS::CNode CSPSNode;
 
 struct CSPSRecord

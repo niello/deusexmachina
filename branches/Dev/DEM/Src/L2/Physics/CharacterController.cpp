@@ -80,7 +80,7 @@ void CCharacterController::Update()
 	// has an outdated transformation here. So we have to access object's world tfm.
 	vector3 Pos;
 	quaternion Rot;
-	Body->CPhysicsObj::GetTransform(Pos, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	Body->CPhysicsObject::GetTransform(Pos, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
 
 	const float GroundProbeLength = 0.5f;
 

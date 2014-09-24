@@ -133,7 +133,7 @@ void CModel::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CModel::UpdateInSPS()
+void CModel::UpdateInSPS(CSPS& SPS, CArray<CRenderObject*>* pVisibleObjects)
 {
 	if (!pSPSRecord)
 	{

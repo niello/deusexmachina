@@ -10,18 +10,18 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CPhysicsObj);
+__ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CPhysicsObject);
 
 bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 {
-	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
+	if (!CPhysicsObject::Init(Desc, Offset)) FAIL;
 	return InternalInit();
 }
 //---------------------------------------------------------------------
 
 bool CCollisionObjMoving::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
 {
-	if (!CPhysicsObj::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
+	if (!CPhysicsObject::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
 	return InternalInit();
 }
 //---------------------------------------------------------------------
@@ -29,7 +29,7 @@ bool CCollisionObjMoving::Init(CCollisionShape& CollShape, ushort CollGroup, ush
 void CCollisionObjMoving::Term()
 {
 	InternalTerm();
-	CPhysicsObj::Term();
+	CPhysicsObject::Term();
 }
 //---------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ void CCollisionObjMoving::InternalTerm()
 
 bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!CPhysicsObj::AttachToLevel(World)) FAIL;
+	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
 
 	// Enforce offline transform update to be taken into account
 	btRigidBody* pRB = (btRigidBody*)pBtCollObj;
@@ -81,7 +81,7 @@ void CCollisionObjMoving::RemoveFromLevel()
 {
 	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
-	CPhysicsObj::RemoveFromLevel();
+	CPhysicsObject::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 
@@ -97,7 +97,7 @@ void CCollisionObjMoving::SetTransform(const matrix44& Tfm)
 		pMotionState->Tfm = TfmToBtTfm(Tfm);
 		pMotionState->Tfm.getOrigin() = pMotionState->Tfm * VectorToBtVector(ShapeOffset);
 	}
-	else CPhysicsObj::SetTransform(Tfm);
+	else CPhysicsObject::SetTransform(Tfm);
 }
 //---------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ void CCollisionObjMoving::GetTransform(btTransform& Out) const
 		Out = pMotionState->Tfm;
 		Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
 	}
-	else CPhysicsObj::GetTransform(Out);
+	else CPhysicsObject::GetTransform(Out);
 }
 //---------------------------------------------------------------------
 

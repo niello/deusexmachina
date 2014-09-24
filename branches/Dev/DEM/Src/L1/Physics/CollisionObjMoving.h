@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_COLLISION_OBJECT_MOVING_H__
 #define __DEM_L1_COLLISION_OBJECT_MOVING_H__
 
-#include <Physics/PhysicsObj.h>
+#include <Physics/PhysicsObject.h>
 
 // Moving collision object inherits transform from the scene node, collides with
 // dynamic bodies as a moving object, but doesn't respond to collisions.
@@ -13,7 +13,7 @@ namespace Physics
 {
 
 //???own motion state or inherit from it?
-class CCollisionObjMoving: public CPhysicsObj
+class CCollisionObjMoving: public CPhysicsObject
 {
 	__DeclareClassNoFactory;
 

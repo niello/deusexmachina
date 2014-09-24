@@ -11,18 +11,18 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CRigidBody, Physics::CPhysicsObj);
+__ImplementClassNoFactory(Physics::CRigidBody, Physics::CPhysicsObject);
 
 bool CRigidBody::Init(const Data::CParams& Desc, const vector3& Offset)
 {
-	if (!CPhysicsObj::Init(Desc, Offset)) FAIL;
+	if (!CPhysicsObject::Init(Desc, Offset)) FAIL;
 	return InternalInit(Desc.Get<float>(CStrID("Mass"), 1.f));
 }
 //---------------------------------------------------------------------
 
 bool CRigidBody::Init(CCollisionShape& CollShape, float BodyMass, ushort CollGroup, ushort CollMask, const vector3& Offset)
 {
-	if (!CPhysicsObj::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
+	if (!CPhysicsObject::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
 	return InternalInit(BodyMass);
 }
 //---------------------------------------------------------------------
@@ -30,7 +30,7 @@ bool CRigidBody::Init(CCollisionShape& CollShape, float BodyMass, ushort CollGro
 void CRigidBody::Term()
 {
 	InternalTerm();
-	CPhysicsObj::Term();
+	CPhysicsObject::Term();
 }
 //---------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ void CRigidBody::InternalTerm()
 
 bool CRigidBody::AttachToLevel(CPhysicsWorld& World)
 {
-	if (!CPhysicsObj::AttachToLevel(World)) FAIL;
+	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
 
 	// Enforce offline transform update to be taken into account
 	btRigidBody* pRB = (btRigidBody*)pBtCollObj;
@@ -86,7 +86,7 @@ void CRigidBody::RemoveFromLevel()
 {
 	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
-	CPhysicsObj::RemoveFromLevel();
+	CPhysicsObject::RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 
@@ -101,7 +101,7 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 		BtTfm.getOrigin() = BtTfm * VectorToBtVector(ShapeOffset);
 		pMotionState->setWorldTransform(BtTfm);
 	}
-	if (!pMotionState || pWorld) CPhysicsObj::SetTransform(Tfm);
+	if (!pMotionState || pWorld) CPhysicsObject::SetTransform(Tfm);
 }
 //---------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
 		OutRot = BtQuatToQuat(pMotionState->Rotation);
 		OutPos = BtVectorToVector(pMotionState->Position) - OutRot.rotate(ShapeOffset);
 	}
-	else CPhysicsObj::GetTransform(OutPos, OutRot);
+	else CPhysicsObject::GetTransform(OutPos, OutRot);
 }
 //---------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ void CRigidBody::GetTransform(btTransform& Out) const
 		pMotionState->getWorldTransform(Out);
 		Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
 	}
-	else CPhysicsObj::GetTransform(Out);
+	else CPhysicsObject::GetTransform(Out);
 }
 //---------------------------------------------------------------------
 

@@ -20,7 +20,7 @@ protected:
 
 public:
 
-	virtual void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights);
+	virtual void Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights);
 };
 
 }

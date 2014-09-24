@@ -24,12 +24,12 @@ public:
 public:
 
 	bool Init(const Data::CParams& Desc);
-	void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights);
+	void Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights);
 };
 
 typedef Ptr<CFrameShader> PFrameShader;
 
-inline void CFrameShader::Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights)
+inline void CFrameShader::Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights)
 {
 	//!!!PERF: for passes and batches - if shader is the same as set, don't reset it!
 	for (int i = 0; i < Passes.GetCount(); ++i)

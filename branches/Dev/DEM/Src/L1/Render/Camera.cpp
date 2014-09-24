@@ -2,9 +2,9 @@
 
 #include <Core/Factory.h>
 
-namespace Scene
+namespace Render
 {
-__ImplementClass(Scene::CCamera, 'CAMR', Scene::CNodeAttribute);
+__ImplementClass(Render::CCamera, 'CAMR', Scene::CNodeAttribute);
 
 bool CCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {

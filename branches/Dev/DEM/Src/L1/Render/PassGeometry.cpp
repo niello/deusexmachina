@@ -24,7 +24,7 @@ bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const CDict
 }
 //---------------------------------------------------------------------
 
-void CPassGeometry::Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights)
+void CPassGeometry::Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights)
 {
 	if (Shader.IsValid())
 	{

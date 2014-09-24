@@ -1,6 +1,7 @@
 #include "Terrain.h"
 
 #include <Render/RenderServer.h>
+#include <Scene/SceneNode.h> // for AABB only
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <Data/DataServer.h>
@@ -218,12 +219,12 @@ void CTerrain::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CTerrain::UpdateInSPS()
+void CTerrain::UpdateInSPS(CSPS& SPS, CArray<CRenderObject*>* pVisibleObjects)
 {
 	//!!!can check global Box before adding! if so, recalc it on world matrix changed!
 	Flags.Clear(WorldMatrixChanged);
 
-	VisibleObjects.Add(this); // Add directly, without visibility checking through SPS
+	if (pVisibleObjects) pVisibleObjects->Add(this); // Add directly, without visibility checking through SPS
 }
 //---------------------------------------------------------------------
 

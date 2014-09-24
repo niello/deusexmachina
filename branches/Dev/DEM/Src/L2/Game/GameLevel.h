@@ -77,7 +77,7 @@ protected:
 	Scene::PCameraManager		CameraManager;	//???!!!Render::?! //???manage cameras here in a level itself?
 
 	//!!!???if PCameraManager is really useful, move it there!
-	Scene::PCamera				MainCamera;
+	Render::PCamera				MainCamera;
 
 	bool OnEvent(const Events::CEventBase& Event);
 

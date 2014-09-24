@@ -648,9 +648,6 @@
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsDebugDraw.h">
       <Filter>Physics</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObj.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsServer.h">
       <Filter>Physics</Filter>
     </ClInclude>
@@ -721,6 +718,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h">
       <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObject.h">
+      <Filter>Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1105,9 +1105,6 @@
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObj.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsServer.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
@@ -1166,6 +1163,12 @@
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObject.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassShadows.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

@@ -356,7 +356,7 @@
     <ClInclude Include="..\..\Src\L1\Physics\NodeAttrCollision.h" />
     <ClInclude Include="..\..\Src\L1\Physics\NodeControllerRigidBody.h" />
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsDebugDraw.h" />
-    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObj.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObject.h" />
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsServer.h" />
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsWorld.h" />
     <ClInclude Include="..\..\Src\L1\Physics\RigidBody.h" />
@@ -388,6 +388,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Model.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\PassShadows.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />
@@ -510,7 +511,7 @@
     <ClCompile Include="..\..\Src\L1\Physics\NodeAttrCollision.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\NodeControllerRigidBody.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp" />
-    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObj.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsWorld.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\RigidBody.cpp" />

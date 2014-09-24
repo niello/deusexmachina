@@ -8,7 +8,7 @@ __ImplementClassNoFactory(Scene::CNodeAttribute, Core::CObject);
 
 void CNodeAttribute::Update()
 {
-	Flags.SetTo(WorldMatrixChanged, pNode && pNode->IsWorldMatrixChanged());
+	if (pNode && pNode->IsWorldMatrixChanged()) Flags.Set(WorldMatrixChanged);
 }
 //---------------------------------------------------------------------
 

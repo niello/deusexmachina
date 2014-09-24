@@ -48,7 +48,7 @@ public:
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 
-	virtual void	UpdateInSPS();
+	virtual void	UpdateInSPS(CSPS& SPS, CArray<CRenderObject*>* pVisibleObjects);
 	const CAABB&	GetLocalAABB() const { return Mesh->GetGroup(MeshGroupIndex).AABB; }
 	void			GetGlobalAABB(CAABB& OutBox) const;
 };

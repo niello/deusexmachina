@@ -1,4 +1,4 @@
-#include "PhysicsObj.h"
+#include "PhysicsObject.h"
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
@@ -10,11 +10,11 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysicsObj, Core::CObject);
+__ImplementClassNoFactory(Physics::CPhysicsObject, Core::CObject);
 
 PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName);
 
-bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
+bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	n_assert(!pWorld);
 
@@ -37,7 +37,7 @@ bool CPhysicsObj::Init(const Data::CParams& Desc, const vector3& Offset)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsObj::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
+bool CPhysicsObject::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
 {
 	n_assert(CollShape.IsLoaded());
 	Shape = &CollShape;
@@ -55,9 +55,9 @@ bool CPhysicsObj::Init(CCollisionShape& CollShape, ushort CollGroup, ushort Coll
 //---------------------------------------------------------------------
 
 // Is required to aviod virtual call from destructor
-void CPhysicsObj::InternalTerm()
+void CPhysicsObject::InternalTerm()
 {
-	n_assert2(!pWorld, "CPhysicsObj::InternalTerm() -> Object must be removed from level");
+	n_assert2(!pWorld, "CPhysicsObject::InternalTerm() -> Object must be removed from level");
 
 	if (pBtCollObj)
 	{
@@ -69,14 +69,14 @@ void CPhysicsObj::InternalTerm()
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObj::Term()
+void CPhysicsObject::Term()
 {
 	RemoveFromLevel();
 	InternalTerm();
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsObj::AttachToLevel(CPhysicsWorld& World)
+bool CPhysicsObject::AttachToLevel(CPhysicsWorld& World)
 {
 	if (!pBtCollObj) FAIL;
 
@@ -88,7 +88,7 @@ bool CPhysicsObj::AttachToLevel(CPhysicsWorld& World)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObj::RemoveFromLevel()
+void CPhysicsObject::RemoveFromLevel()
 {
 	if (pWorld)
 	{
@@ -98,7 +98,7 @@ void CPhysicsObj::RemoveFromLevel()
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObj::SetTransform(const matrix44& Tfm)
+void CPhysicsObject::SetTransform(const matrix44& Tfm)
 {
 	n_assert_dbg(pBtCollObj);
 
@@ -110,7 +110,7 @@ void CPhysicsObj::SetTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObj::GetTransform(btTransform& Out) const
+void CPhysicsObject::GetTransform(btTransform& Out) const
 {
 	n_assert_dbg(pBtCollObj);
 	Out = pBtCollObj->getWorldTransform();
@@ -118,17 +118,17 @@ void CPhysicsObj::GetTransform(btTransform& Out) const
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObj::GetTransform(vector3& OutPos, quaternion& OutRot) const
+void CPhysicsObject::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
 	btTransform Tfm;
-	CPhysicsObj::GetTransform(Tfm); //???to nonvirtual GetWorldTransform()?
+	CPhysicsObject::GetTransform(Tfm); //???to nonvirtual GetWorldTransform()?
 	OutRot = BtQuatToQuat(Tfm.getRotation());
 	OutPos = BtVectorToVector(Tfm.getOrigin());
 }
 //---------------------------------------------------------------------
 
 // If possible, returns interpolated AABB from motion state. It matches the graphics representation.
-void CPhysicsObj::GetGlobalAABB(CAABB& OutBox) const
+void CPhysicsObject::GetGlobalAABB(CAABB& OutBox) const
 {
 	btTransform Tfm;
 	GetTransform(Tfm);
@@ -141,7 +141,7 @@ void CPhysicsObj::GetGlobalAABB(CAABB& OutBox) const
 //---------------------------------------------------------------------
 
 // Returns AABB from the physics world
-void CPhysicsObj::GetPhysicsAABB(CAABB& OutBox) const
+void CPhysicsObject::GetPhysicsAABB(CAABB& OutBox) const
 {
 	n_assert_dbg(pBtCollObj);
 

@@ -19,7 +19,7 @@ namespace Physics
 {
 class CPhysicsWorld;
 
-class CPhysicsObj: public Core::CObject
+class CPhysicsObject: public Core::CObject
 {
 	__DeclareClassNoFactory;
 
@@ -39,8 +39,8 @@ protected:
 
 public:
 
-	CPhysicsObj(): pBtCollObj(NULL), pWorld(NULL), pUserPtr(NULL) {}
-	virtual ~CPhysicsObj() { InternalTerm(); }
+	CPhysicsObject(): pBtCollObj(NULL), pWorld(NULL), pUserPtr(NULL) {}
+	virtual ~CPhysicsObject() { InternalTerm(); }
 
 	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	virtual void		Term();
@@ -62,7 +62,7 @@ public:
 	const vector3&		GetShapeOffset() const { return ShapeOffset; }
 };
 
-typedef Ptr<CPhysicsObj> PPhysicsObj;
+typedef Ptr<CPhysicsObject> PPhysicsObj;
 
 }
 

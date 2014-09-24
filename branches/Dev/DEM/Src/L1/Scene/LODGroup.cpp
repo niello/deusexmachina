@@ -1,5 +1,6 @@
 #include "LODGroup.h"
 
+#include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
