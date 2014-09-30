@@ -30,40 +30,45 @@ protected:
 	enum
 	{
 		Active				= 0x01,	// Node must be processed
-		RespectsLOD			= 0x02,	// This node is affected by parent's LODGroup attribute
+		LocalTransformValid	= 0x02,	// Local transform is actual and not invalidated by world space controller
 		LocalMatrixDirty	= 0x04,	// Local transform components were changed, but matrix is not updated
 		WorldMatrixDirty	= 0x08,	// Local matrix changed, and world matrix need to be updated
-		WorldMatrixChanged	= 0x10,	// World matrix of this node was changed this frame
-		WorldMatrixUpdated	= 0x20,	// World matrix of this node was already updated this frame
-		LocalTransformValid	= 0x40	// Local transform is actual, not invalidated by world space controller
+		WorldMatrixChanged	= 0x10	// World matrix of this node was changed this frame
 	};
 
-	Data::CFlags				Flags; // ?UniformScale?, LockTransform
+	CStrID						Name;
+	Data::CFlags				Flags; // ?UniformScale?, LockTransform (now lock tfm through static controller)
 
 	//!!!can write special 4x3 tfm matrix without 0,0,0,1 column to save memory! is good for SSE?
 	Math::CTransformSRT			Tfm;
 	matrix44					LocalMatrix;	// For caching only
 	matrix44					WorldMatrix;
 
-	CStrID						Name;
 	CSceneNode*					pParent;
 	CDict<CStrID, PSceneNode>	Children;
-
-	CArray<PNodeAttribute>		Attrs; //???or list? List seems to be better
 	PNodeController				Controller;
+	CArray<PNodeAttribute>		Attrs; //???or list? List seems to be better //???WHY?
 
 public:
 
 	CSceneNode(CStrID NodeName);
 	virtual ~CSceneNode();
 
+	void					UpdateTransform(const vector3* pCOIArray, DWORD COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = NULL);
+	void					UpdateWorldFromLocal();
+	void					UpdateLocalFromWorld();
+
+	void					Remove() { if (pParent) pParent->RemoveChild(*this); }
+
+	bool					AcceptVisitor(INodeVisitor& Visitor);
+
+	CStrID					GetName() const { return Name; }
+
 	CSceneNode*				CreateChild(CStrID ChildName);
 	void					AddChild(CSceneNode& Node);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(DWORD Idx);
 	void					RemoveChild(CStrID ChildName);
-	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
-
 	CSceneNode*				GetParent() const { return pParent; }
 	DWORD					GetChildCount() const { return Children.GetCount(); }
 	CSceneNode*				GetChild(DWORD Idx) const { return Children.ValueAt(Idx); }
@@ -71,32 +76,19 @@ public:
 	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
 	CSceneNode*				GetChild(LPCSTR pPath, bool Create = false);
 
-	//!!!to a visitor traversal action! specific to bones and animation
-	//!!!or two variants, general and skeletal (in anim visitor)
-	CSceneNode*				FindChildRecursively(CStrID ChildName, bool OnlyInCurrentSkeleton = true); // Handy to find bones, could stop on skeleton terminating nodes
-
-	bool					AddAttr(CNodeAttribute& Attr);
-	DWORD					GetAttrCount() const { return Attrs.GetCount(); }
-	CNodeAttribute*			GetAttr(DWORD Idx) const { return Attrs[Idx]; }
-	void					RemoveAttr(CNodeAttribute& Attr);
-	void					RemoveAttr(DWORD Idx);
-	template<class T> T*	FindFirstAttr() const;
-
 	bool					SetController(CNodeController* pCtlr);
 	CNodeController*		GetController() const { return Controller.GetUnsafe(); }
 
-	void					UpdateLocalSpace(bool UpdateWorldMatrix = true);
-	void					UpdateWorldSpace();
-	void					UpdateWorldFromLocal();
-	void					UpdateLocalFromWorld();
+	bool					AddAttribute(CNodeAttribute& Attr);
+	void					RemoveAttribute(CNodeAttribute& Attr);
+	void					RemoveAttribute(DWORD Idx);
+	DWORD					GetAttributeCount() const { return Attrs.GetCount(); }
+	CNodeAttribute*			GetAttribute(DWORD Idx) const { return Attrs[Idx]; }
+	template<class T> T*	FindFirstAttribute() const;
 
-	bool					AcceptVisitor(INodeVisitor& Visitor);
-
-	CStrID					GetName() const { return Name; }
-
+	bool					IsRoot() const { return !pParent; }
 	bool					IsActive() const { return Flags.Is(Active); }
 	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
-	bool					IsLODDependent() const { return Flags.Is(RespectsLOD); }
 	bool					IsLocalTransformValid() const { return Flags.Is(LocalTransformValid); }
 	bool					IsLocalMatrixDirty() const { return Flags.Is(LocalMatrixDirty); }
 	bool					IsWorldMatrixDirty() const { return Flags.Is(WorldMatrixDirty); }
@@ -141,7 +133,7 @@ inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
 }
 //---------------------------------------------------------------------
 
-template<class T> inline T* CSceneNode::FindFirstAttr() const
+template<class T> inline T* CSceneNode::FindFirstAttribute() const
 {
 	for (int i = 0; i < Attrs.GetCount(); ++i)
 	{

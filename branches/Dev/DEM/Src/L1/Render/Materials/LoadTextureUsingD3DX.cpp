@@ -4,6 +4,9 @@
 #include <Render/RenderServer.h>
 #include <IO/Streams/FileStream.h>
 #include <Data/Buffer.h>
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
+#include <d3dx9.h>
 
 namespace Render
 {

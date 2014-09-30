@@ -3,6 +3,9 @@
 #include <Render/RenderServer.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
+#include <d3dx9.h>
 
 namespace Render
 {
@@ -29,14 +32,14 @@ bool CShader::Setup(ID3DXEffect* pFX)
 		D3DXHANDLE hFeatureAnnotation = pEffect->GetAnnotationByName(hTech, "Mask");
 		if (hFeatureAnnotation)
 		{
-			LPCSTR pFeatMask = NULL;
-			n_assert(SUCCEEDED(pEffect->GetString(hFeatureAnnotation, &pFeatMask)));
+ CShader::LPCSTR pFeatMask = NULL;
+ CShader::n_assert(SUCCEEDED(pEffect->GetString(hFeatureAnnotation, &pFeatMask)));
 
-			Data::CStringTokenizer StrTok(pFeatMask, ",");
-			while (StrTok.GetNextTokenSingleChar())
-				FlagsToTech.Add(RenderSrv->ShaderFeatures.GetMask(StrTok.GetCurrToken()), hTech);
+ CShader::Data::CStringTokenizer StrTok(pFeatMask, ",");
+ CShader::while (StrTok.GetNextTokenSingleChar())
+ CShader::	FlagsToTech.Add(RenderSrv->ShaderFeatures.GetMask(StrTok.GetCurrToken()), hTech);
 
-			n_assert_dbg(FlagsToTech.GetCount());
+ CShader::n_assert_dbg(FlagsToTech.GetCount());
 		}
 		else Sys::Log("WARNING: No feature mask annotation in technique '%s'!\n", TechDesc.Name);
 	}
@@ -91,5 +94,45 @@ bool CShader::OnDeviceReset(const Events::CEventBase& Ev)
 	OK;
 }
 //---------------------------------------------------------------------
+
+DWORD CShader::Begin(bool SaveState)
+{
+	UINT Passes;
+	DWORD Flags = SaveState ? 0 : D3DXFX_DONOTSAVESTATE | D3DXFX_DONOTSAVESAMPLERSTATE | D3DXFX_DONOTSAVESHADERSTATE;
+	n_assert(SUCCEEDED(pEffect->Begin(&Passes, Flags)));
+	return Passes;
+}
+//---------------------------------------------------------------------
+
+bool CShader::SetTech(CShader::HTech hTech)
+{
+	if (hTech != hCurrTech)
+	{
+		hCurrTech = hTech;
+		n_assert(SUCCEEDED(pEffect->SetTechnique(hCurrTech)));
+	}
+	return !!hCurrTech;
+}
+//---------------------------------------------------------------------
+
+void CShader::SetBool(HVar Var, bool Value) { n_assert(SUCCEEDED(pEffect->SetBool(Var, Value))); }
+void CShader::SetInt(HVar Var, int Value) { n_assert(SUCCEEDED(pEffect->SetInt(Var, Value))); }
+void CShader::SetIntArray(HVar Var, const int* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetIntArray(Var, pArray, Count))); }
+void CShader::SetFloat(HVar Var, float Value) { n_assert(SUCCEEDED(pEffect->SetFloat(Var, Value))); }
+void CShader::SetFloatArray(HVar Var, const float* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetFloatArray(Var, pArray, Count))); }
+void CShader::SetFloat4(HVar Var, const vector4& Value) { n_assert(SUCCEEDED(pEffect->SetVector(Var, (CONST D3DXVECTOR4*)&Value))); }
+void CShader::SetFloat4Array(HVar Var, const vector4* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetVectorArray(Var, (CONST D3DXVECTOR4*)pArray, Count))); }
+void CShader::SetMatrix(HVar Var, const matrix44& Value) { n_assert(SUCCEEDED(pEffect->SetMatrix(Var, (CONST D3DXMATRIX*)&Value))); }
+void CShader::SetMatrixArray(HVar Var, const matrix44* pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetMatrixArray(Var, (CONST D3DXMATRIX*)pArray, Count))); }
+void CShader::SetMatrixPointerArray(HVar Var, const matrix44** pArray, DWORD Count) { n_assert(SUCCEEDED(pEffect->SetMatrixPointerArray(Var, (CONST D3DXMATRIX**)pArray, Count))); }
+void CShader::SetTexture(HVar Var, const CTexture& Value) { n_assert(SUCCEEDED(pEffect->SetTexture(Var, Value.GetD3D9BaseTexture()))); }
+//pEffect->SetRawValue
+
+void CShader::BeginPass(DWORD PassIdx) { n_assert(SUCCEEDED(pEffect->BeginPass(PassIdx))); }
+void CShader::CommitChanges() { n_assert(SUCCEEDED(pEffect->CommitChanges())); } // For changes inside a pass
+void CShader::EndPass() { n_assert(SUCCEEDED(pEffect->EndPass())); }
+void CShader::End() { n_assert(SUCCEEDED(pEffect->End())); }
+
+bool CShader::IsVarUsed(HVar hVar) const { return hCurrTech && pEffect->IsParameterUsed(hVar, hCurrTech); } //!!!can use lookup 2D table to eliminate virtual call and hidden complexity!
 
 }

@@ -37,7 +37,7 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 		for (ushort j = 0; j < DataBlockCount; ++j)
 			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
 
-		RootNode->AddAttr(*Attr);
+		RootNode->AddAttribute(*Attr);
 	}
 
 	Reader.Read(Count);

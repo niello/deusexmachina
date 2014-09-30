@@ -4,7 +4,7 @@
 #include <Game/GameServer.h> // For the time
 #include <Scripting/PropScriptable.h>
 #include <Scene/PropSceneNode.h>
-#include <Scene/Bone.h>
+#include <Render/Bone.h>
 #include <Scene/NodeControllerPriorityBlend.h>
 #include <Scene/NodeControllerStatic.h>
 #include <Animation/KeyframeClip.h>
@@ -165,7 +165,7 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 	for (DWORD i = 0; i < pParent->GetChildCount(); ++i)
 	{
 		Scene::CSceneNode* pNode = pParent->GetChild(i);
-		Scene::CBone* pBone = pNode->FindFirstAttr<Scene::CBone>();
+		Render::CBone* pBone = pNode->FindFirstAttribute<Render::CBone>();
 		if (pBone)
 		{
 			static const CString StrDot(".");

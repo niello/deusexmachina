@@ -2,7 +2,7 @@
 
 #include <Game/EntityLoaderCommon.h>
 #include <AI/AIServer.h>
-#include <Scene/Scene.h>
+#include <Render/SceneNodeValidateResources.h>
 #include <Physics/PhysicsWorld.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
@@ -237,7 +237,14 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 
 bool CGameServer::ValidateLevel(CGameLevel& Level)
 {
-	bool Result = !Level.GetSceneRoot() || Level.GetSceneRoot().ValidateResources();
+	bool Result;
+	
+	if (Level.GetSceneRoot())
+	{
+		Render::CSceneNodeValidateResources Visitor;
+		Result = Visitor.Visit(*Level.GetSceneRoot());
+	}
+	else Result = true; // Nothing to validate
 
 	//!!!???activate entities here and not in level loading?!
 

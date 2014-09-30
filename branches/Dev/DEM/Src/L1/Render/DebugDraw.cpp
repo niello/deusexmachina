@@ -1,6 +1,8 @@
 #include "DebugDraw.h"
 
 #include <Render/RenderServer.h>
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
 #include <d3dx9.h>
 
 namespace Render

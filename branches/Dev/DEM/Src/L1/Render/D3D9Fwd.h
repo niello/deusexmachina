@@ -36,6 +36,7 @@ typedef LPCSTR D3DXHANDLE;
 typedef UINT_PTR D3DXHANDLE;
 #endif
 
+struct IDirect3D9;
 struct IDirect3DDevice9;
 
 struct IDirect3DVertexBuffer9;

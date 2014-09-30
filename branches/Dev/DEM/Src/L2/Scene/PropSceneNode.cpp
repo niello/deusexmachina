@@ -4,7 +4,7 @@
 #include <Game/GameLevel.h>
 #include <Scripting/PropScriptable.h>
 #include <Scene/Events/SetTransform.h>
-#include <Scene/Model.h>
+#include <Render/Model.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>
 #include <Render/DebugDraw.h>
@@ -24,7 +24,7 @@ IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 
 bool CPropSceneNode::InternalActivate()
 {
-	if (!GetEntity()->GetLevel()->GetScene()) FAIL;
+	if (!GetEntity()->GetLevel()->GetSceneRoot()) FAIL;
 
 	CString NodePath;
 	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
@@ -37,9 +37,9 @@ bool CPropSceneNode::InternalActivate()
 	if (NodePath.IsValid())
 	{
 		//???PERF: optimize duplicate search?
-		Node = GetEntity()->GetLevel()->GetScene()->GetNode(NodePath.CStr(), false);
+		Node = GetEntity()->GetLevel()->GetSceneNode(NodePath.CStr(), false);
 		ExistingNode = Node.IsValid();
-		if (!ExistingNode) Node = GetEntity()->GetLevel()->GetScene()->GetNode(NodePath.CStr(), true);
+		if (!ExistingNode) Node = GetEntity()->GetLevel()->GetSceneNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
@@ -116,7 +116,7 @@ void CPropSceneNode::InternalDeactivate()
 
 	if (Node.IsValid() && !ExistingNode)
 	{
-		Node->RemoveFromParent();
+		Node->Remove();
 		Node = NULL;
 	}
 }
@@ -195,20 +195,20 @@ void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const CString& P
 }
 //---------------------------------------------------------------------
 
-//???to node or some scene utils? recurse to subnodes?
+//???to some scene utils? recurse to subnodes?
 void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 {
-	if (!Node.IsValid() || !Node->GetAttrCount()) return;
+	if (!Node.IsValid() || !Node->GetAttributeCount()) return;
 
 	OutBox.BeginExtend();
-	for (DWORD i = 0; i < Node->GetAttrCount(); ++i)
+	for (DWORD i = 0; i < Node->GetAttributeCount(); ++i)
 	{
-		Scene::CNodeAttribute& Attr = *Node->GetAttr(i);
-		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Scene::CModel>())
+		Scene::CNodeAttribute& Attr = *Node->GetAttribute(i);
+		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Render::CModel>())
 		{
 			CAABB AttrBox;
-			((Scene::CRenderObject&)Attr).ValidateResources();
-			((Scene::CModel&)Attr).GetGlobalAABB(AttrBox);
+			((Render::CRenderObject&)Attr).ValidateResources();
+			((Render::CModel&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
 		else if ((TypeFlags & AABB_Phys) && Attr.IsA<Physics::CNodeAttrCollision>())

@@ -1,6 +1,6 @@
 #include "TerrainRenderer.h"
 
-#include <Scene/Light.h>
+#include <Render/Light.h>
 #include <Render/RenderServer.h>
 #include <Data/Params.h>
 #include <Math/sphere.h>
@@ -127,18 +127,18 @@ bool CTerrainRenderer::Init(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects)
+void CTerrainRenderer::AddRenderObjects(const CArray<CRenderObject*>& Objects)
 {
 	for (int i = 0; i < Objects.GetCount(); ++i)
 	{
 		//???use buckets instead?
-		if (!Objects[i]->IsA<Scene::CTerrain>()) continue;
-		TerrainObjects.Add((Scene::CTerrain*)Objects[i]);
+		if (!Objects[i]->IsA<CTerrain>()) continue;
+		TerrainObjects.Add((CTerrain*)Objects[i]);
 	}
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::AddLights(const CArray<Scene::CLight*>& Lights)
+void CTerrainRenderer::AddLights(const CArray<CLight*>& Lights)
 {
 	pLights = EnableLighting ? &Lights : NULL;
 }
@@ -148,7 +148,7 @@ void CTerrainRenderer::AddLights(const CArray<Scene::CLight*>& Lights)
 // Can calculate distance to camera when sorting by distance is needed
 // Maybe sorting by LOD is enough
 // Also can return the highest and the lowest LODs
-CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z,
+CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(CTerrain& Terrain, DWORD X, DWORD Z,
 															DWORD LOD, float LODRange, CPatchInstance* pInstances,
 															DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip)
 {
@@ -161,16 +161,16 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 	DWORD NodeSize = Terrain.GetPatchSize() << LOD;
 	CAABB TerrainAABB;
 	Terrain.GetGlobalAABB(TerrainAABB); //???get once outside and pass as param?
-	float ScaleX = NodeSize * (TerrainAABB.vmax.x - TerrainAABB.vmin.x) / (float)(Terrain.GetHeightMapWidth() - 1);
-	float ScaleZ = NodeSize * (TerrainAABB.vmax.z - TerrainAABB.vmin.z) / (float)(Terrain.GetHeightMapHeight() - 1);
+	float ScaleX = NodeSize * (TerrainAABB.Max.x - TerrainAABB.Min.x) / (float)(Terrain.GetHeightMapWidth() - 1);
+	float ScaleZ = NodeSize * (TerrainAABB.Max.z - TerrainAABB.Min.z) / (float)(Terrain.GetHeightMapHeight() - 1);
 
 	CAABB AABB;
-	AABB.vmin.x = TerrainAABB.vmin.x + X * ScaleX;
-	AABB.vmax.x = TerrainAABB.vmin.x + (X + 1) * ScaleX;
-	AABB.vmin.y = MinY * Terrain.GetVerticalScale();
-	AABB.vmax.y = MaxY * Terrain.GetVerticalScale();
-	AABB.vmin.z = TerrainAABB.vmin.z + Z * ScaleZ;
-	AABB.vmax.z = TerrainAABB.vmin.z + (Z + 1) * ScaleZ;
+	AABB.Min.x = TerrainAABB.Min.x + X * ScaleX;
+	AABB.Max.x = TerrainAABB.Min.x + (X + 1) * ScaleX;
+	AABB.Min.y = MinY * Terrain.GetVerticalScale();
+	AABB.Max.y = MaxY * Terrain.GetVerticalScale();
+	AABB.Min.z = TerrainAABB.Min.z + Z * ScaleZ;
+	AABB.Max.z = TerrainAABB.Min.z + (Z + 1) * ScaleZ;
 
 	if (Clip == Clipped)
 	{
@@ -242,10 +242,10 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 	{
 		n_assert(PatchCount + QPatchCount < MaxInstanceCount);
 		CPatchInstance& Patch = pInstances[PatchCount];
-		Patch.ScaleOffset.x = AABB.vmax.x - AABB.vmin.x;
-		Patch.ScaleOffset.y = AABB.vmax.z - AABB.vmin.z;
-		Patch.ScaleOffset.z = AABB.vmin.x;
-		Patch.ScaleOffset.w = AABB.vmin.z;
+		Patch.ScaleOffset.x = AABB.Max.x - AABB.Min.x;
+		Patch.ScaleOffset.y = AABB.Max.z - AABB.Min.z;
+		Patch.ScaleOffset.z = AABB.Min.x;
+		Patch.ScaleOffset.w = AABB.Min.z;
 		Patch.MorphConsts[0] = MorphConsts[LOD].Const1;
 		Patch.MorphConsts[1] = MorphConsts[LOD].Const2;
 		++PatchCount;
@@ -254,8 +254,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 	{
 		// Add quarterpatches
 
-		float HalfScaleX = (AABB.vmax.x - AABB.vmin.x) * 0.5f;
-		float HalfScaleZ = (AABB.vmax.z - AABB.vmin.z) * 0.5f;
+		float HalfScaleX = (AABB.Max.x - AABB.Min.x) * 0.5f;
+		float HalfScaleZ = (AABB.Max.z - AABB.Min.z) * 0.5f;
 
 		if (TL)
 		{
@@ -263,8 +263,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 			CPatchInstance& Patch = pInstances[MaxInstanceCount - QPatchCount - 1];
 			Patch.ScaleOffset.x = HalfScaleX;
 			Patch.ScaleOffset.y = HalfScaleZ;
-			Patch.ScaleOffset.z = AABB.vmin.x;
-			Patch.ScaleOffset.w = AABB.vmin.z;
+			Patch.ScaleOffset.z = AABB.Min.x;
+			Patch.ScaleOffset.w = AABB.Min.z;
 			Patch.MorphConsts[0] = MorphConsts[LOD].Const1;
 			Patch.MorphConsts[1] = MorphConsts[LOD].Const2;
 			++QPatchCount;
@@ -276,8 +276,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 			CPatchInstance& Patch = pInstances[MaxInstanceCount - QPatchCount - 1];
 			Patch.ScaleOffset.x = HalfScaleX;
 			Patch.ScaleOffset.y = HalfScaleZ;
-			Patch.ScaleOffset.z = AABB.vmin.x + HalfScaleX;
-			Patch.ScaleOffset.w = AABB.vmin.z;
+			Patch.ScaleOffset.z = AABB.Min.x + HalfScaleX;
+			Patch.ScaleOffset.w = AABB.Min.z;
 			Patch.MorphConsts[0] = MorphConsts[LOD].Const1;
 			Patch.MorphConsts[1] = MorphConsts[LOD].Const2;
 			++QPatchCount;
@@ -289,8 +289,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 			CPatchInstance& Patch = pInstances[MaxInstanceCount - QPatchCount - 1];
 			Patch.ScaleOffset.x = HalfScaleX;
 			Patch.ScaleOffset.y = HalfScaleZ;
-			Patch.ScaleOffset.z = AABB.vmin.x;
-			Patch.ScaleOffset.w = AABB.vmin.z + HalfScaleZ;
+			Patch.ScaleOffset.z = AABB.Min.x;
+			Patch.ScaleOffset.w = AABB.Min.z + HalfScaleZ;
 			Patch.MorphConsts[0] = MorphConsts[LOD].Const1;
 			Patch.MorphConsts[1] = MorphConsts[LOD].Const2;
 			++QPatchCount;
@@ -302,8 +302,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessNode(Scene::CTerrain& Ter
 			CPatchInstance& Patch = pInstances[MaxInstanceCount - QPatchCount - 1];
 			Patch.ScaleOffset.x = HalfScaleX;
 			Patch.ScaleOffset.y = HalfScaleZ;
-			Patch.ScaleOffset.z = AABB.vmin.x + HalfScaleX;
-			Patch.ScaleOffset.w = AABB.vmin.z + HalfScaleZ;
+			Patch.ScaleOffset.z = AABB.Min.x + HalfScaleX;
+			Patch.ScaleOffset.w = AABB.Min.z + HalfScaleZ;
 			Patch.MorphConsts[0] = MorphConsts[LOD].Const1;
 			Patch.MorphConsts[1] = MorphConsts[LOD].Const2;
 			++QPatchCount;
@@ -344,7 +344,7 @@ void CTerrainRenderer::Render()
 
 	for (int ObjIdx = 0; ObjIdx < TerrainObjects.GetCount(); ++ObjIdx)
 	{
-		Scene::CTerrain& Terrain = *TerrainObjects[ObjIdx];
+		CTerrain& Terrain = *TerrainObjects[ObjIdx];
 
 		// Recalculate morphing consts (if cache, need to keep track of both VisibilityRange and LODCount)
 
@@ -394,15 +394,15 @@ void CTerrainRenderer::Render()
 
 		DWORD ActualFF = FeatFlags;
 
-		Scene::CLight* pLight = NULL;
+		CLight* pLight = NULL;
 
 		if (EnableLighting)
 		{
 			n_assert_dbg(pLights);
 			for (int j = 0; j < pLights->GetCount(); ++j)
 			{
-				Scene::CLight& CurrLight = *(*pLights)[j];
-				if ((*pLights)[j]->Type == Scene::CLight::Directional || (*pLights)[j]->Intensity == 0.f)
+				CLight& CurrLight = *(*pLights)[j];
+				if ((*pLights)[j]->Type == CLight::Directional || (*pLights)[j]->Intensity == 0.f)
 				{
 					pLight = (*pLights)[j];
 					break; // Now only one directional light is supported by this renderer
@@ -432,10 +432,10 @@ void CTerrainRenderer::Render()
 		CAABB TerrainAABB;
 		Terrain.GetGlobalAABB(TerrainAABB);
 		float WorldToHM[4];
-		WorldToHM[0] = 1.f / (TerrainAABB.vmax.x - TerrainAABB.vmin.x);
-		WorldToHM[1] = 1.f / (TerrainAABB.vmax.z - TerrainAABB.vmin.z);
-		WorldToHM[2] = -TerrainAABB.vmin.x * WorldToHM[0];
-		WorldToHM[3] = -TerrainAABB.vmin.z * WorldToHM[1];
+		WorldToHM[0] = 1.f / (TerrainAABB.Max.x - TerrainAABB.Min.x);
+		WorldToHM[1] = 1.f / (TerrainAABB.Max.z - TerrainAABB.Min.z);
+		WorldToHM[2] = -TerrainAABB.Min.x * WorldToHM[0];
+		WorldToHM[3] = -TerrainAABB.Min.z * WorldToHM[1];
 		Shader->SetFloatArray(hWorldToHM, WorldToHM, 4);
 
 		float TerrainYInvSplat[4];

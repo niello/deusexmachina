@@ -9,9 +9,9 @@ namespace Render
 bool CSceneNodeValidateResources::Visit(Scene::CSceneNode& Node)
 {
 	//???active only?
-	for (DWORD i = 0; i < Node.GetAttrCount(); ++i)
+	for (DWORD i = 0; i < Node.GetAttributeCount(); ++i)
 	{
-		Scene::CNodeAttribute& Attr = *Node.GetAttr(i);
+		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (Attr.IsA<CRenderObject>())
 			if (!((CRenderObject&)Attr).ValidateResources()) FAIL;
 	}

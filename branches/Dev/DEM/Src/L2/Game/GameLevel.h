@@ -21,11 +21,6 @@ namespace Scripting
 	typedef Ptr<class CScriptObject> PScriptObject;
 }
 
-namespace Scene
-{
-	typedef Ptr<class CScene> PScene;
-}
-
 namespace Physics
 {
 	typedef Ptr<class CPhysicsWorld> PPhysicsWorld;

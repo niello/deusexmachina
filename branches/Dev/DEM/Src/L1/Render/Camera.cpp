@@ -21,9 +21,9 @@ bool CCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-void CCamera::Update()
+void CCamera::Update(const vector3* pCOIArray, DWORD COICount)
 {
-	CNodeAttribute::Update();
+	CNodeAttribute::Update(pCOIArray, COICount);
 
 	bool ViewOrProjChanged = false;
 

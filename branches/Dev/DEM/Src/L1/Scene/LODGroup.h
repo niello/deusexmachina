@@ -18,16 +18,15 @@ class CLODGroup: public CNodeAttribute
 
 protected:
 
-	float					MinSqDistance;
-	float					MaxSqDistance;
-	CDict<float, CStrID>	SqThresholds;	// Square threshold to child ID map
+	// Square threshold to child ID map.
+	// Use FLT_MAX as a key if the last LOD must be active at any distance.
+	// Use CStrID::Empty as a value to disable all children at some distance.
+	CDict<float, CStrID> SqThresholds;
 
 public:
 
-	CLODGroup(): MinSqDistance(0.f), MaxSqDistance(FLT_MAX) {}
-
 	virtual bool LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void Update();
+	virtual void Update(const vector3* pCOIArray, DWORD COICount);
 };
 
 typedef Ptr<CLODGroup> PLODGroup;

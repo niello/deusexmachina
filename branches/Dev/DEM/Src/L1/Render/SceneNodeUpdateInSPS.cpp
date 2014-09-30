@@ -9,9 +9,9 @@ namespace Render
 
 bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 {
-	for (DWORD i = 0; i < Node.GetAttrCount(); ++i)
+	for (DWORD i = 0; i < Node.GetAttributeCount(); ++i)
 	{
-		Scene::CNodeAttribute& Attr = *Node.GetAttr(i);
+		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (Attr.IsActive())
 		{
 			//???!!!get rid of CRenderObject virtual call, since I already check types here

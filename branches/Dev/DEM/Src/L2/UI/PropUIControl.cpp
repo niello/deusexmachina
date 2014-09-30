@@ -86,7 +86,7 @@ bool CPropUIControl::InternalActivate()
 
 		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 		if (pProp && pProp->IsActive())
-			pProp->GetNode()->AddAttr(*MousePickShape);
+			pProp->GetNode()->AddAttribute(*MousePickShape);
 	}
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -142,7 +142,7 @@ bool CPropUIControl::OnPropActivated(const Events::CEventBase& Event)
 
 	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
 	{
-		((CPropSceneNode*)pProp)->GetNode()->AddAttr(*MousePickShape);
+		((CPropSceneNode*)pProp)->GetNode()->AddAttribute(*MousePickShape);
 		OK;
 	}
 
