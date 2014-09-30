@@ -24,7 +24,6 @@
 
 namespace Scene
 {
-class CScene;
 class CSceneNode;
 
 class CCameraManager: public Core::CObject
@@ -34,7 +33,6 @@ class CCameraManager: public Core::CObject
 protected:
 
 	bool			IsThirdPerson; //???need? // Cached to avoid RTTI checking
-	CScene*			pScene;
 	CSceneNode*		pCameraNode;
 	PNodeController	Ctlr;
 

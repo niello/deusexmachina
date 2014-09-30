@@ -10,11 +10,11 @@
 //???move to Anim or Render?
 //!!!dependent on rendering, used for skinning only!
 
-namespace Scene
+namespace Render
 {
 struct CSPSRecord;
 
-class CBone: public CNodeAttribute
+class CBone: public Scene::CNodeAttribute
 {
 	__DeclareClass(CBone);
 
@@ -33,13 +33,13 @@ protected:
 	matrix44			InvBindPose;
 	matrix44			SkinMatrix;
 
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode);
+	virtual bool	OnAttachToNode(Scene::CSceneNode* pSceneNode);
 	virtual void	OnDetachFromNode();
 
 public:
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	Update();
+	virtual void	Update(const vector3* pCOIArray, DWORD COICount);
 
 	//!!!Can be useful for ragdolls!
 	//void			GetGlobalAABB(CAABB& OutBox) const;

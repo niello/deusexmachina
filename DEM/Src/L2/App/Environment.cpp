@@ -1,6 +1,7 @@
 #include "Environment.h"
 
 #include <Scripting/EntityScriptObject.h>
+#include <Render/FrameShader.h>
 
 #undef DeleteFile
 
@@ -93,8 +94,8 @@ bool CEnvironment::InitEngine()
 	InputServer = n_new(Input::CInputServer);
 	InputServer->Open();
 
-	AudioServer = n_new(Audio::CAudioServer);
-	AudioServer->Open();
+	//AudioServer = n_new(Audio::CAudioServer);
+	//AudioServer->Open();
 
 	VideoServer = n_new(Video::CVideoServer);
 	VideoServer->Open();
@@ -114,8 +115,8 @@ void CEnvironment::ReleaseEngine()
 	if (VideoServer.IsValid() && VideoServer->IsOpen()) VideoServer->Close();
 	VideoServer = NULL;
 
-	if (AudioServer.IsValid() && AudioServer->IsOpen()) AudioServer->Close();
-	AudioServer = NULL;
+	//if (AudioServer.IsValid() && AudioServer->IsOpen()) AudioServer->Close();
+	//AudioServer = NULL;
 
 	DD->Close();
 	DD = NULL;

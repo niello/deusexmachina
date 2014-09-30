@@ -14,30 +14,19 @@ bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReade
 	{
 		case 'TRSH':
 		{
-			//!!!node ID!
-
 			short Count;
 			if (!DataReader.Read(Count)) FAIL;
+			SqThresholds.BeginAdd(Count);
 			for (short i = 0; i < Count; ++i)
 			{
-				float SqThreshold;
-				DataReader.Read<float>(SqThreshold);
-				SqThreshold *= SqThreshold;
-				//SqThresholds.Add(SqThreshold, ChildID);
-				//!!!it is normal to have CStrID::Empty as ID - LOD assumes no children!
+				float Threshold;
+				CStrID ChildID;
+				DataReader.Read<float>(Threshold);
+				DataReader.Read<CStrID>(ChildID);
+				//!!!check FLT_MAX and what if square it!
+				SqThresholds.Add(Threshold * Threshold, ChildID);
 			}
-			OK;
-		}
-		case 'DMIN':
-		{
-			DataReader.Read<float>(MinSqDistance);
-			MinSqDistance *= MinSqDistance;
-			OK;
-		}
-		case 'DMAX':
-		{
-			DataReader.Read<float>(MaxSqDistance);
-			MaxSqDistance *= MaxSqDistance;
+			SqThresholds.EndAdd();
 			OK;
 		}
 		default: FAIL;
@@ -45,30 +34,29 @@ bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReade
 }
 //---------------------------------------------------------------------
 
-void CLODGroup::Update()
+void CLODGroup::Update(const vector3* pCOIArray, DWORD COICount)
 {
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//???what if camera transform wasn't updated this frame yet?
-	//Update camera branch of scene graph before?
-	//Can use Updated(ThisFrame) flag and clear at each frame ending, with clearing visible meshes and lights
-	//Flag Changed(ThisFrame) is smth different but may be usable too
+	if (!pNode || !pCOIArray || !COICount) return;
 
-	if (!pNode) return;
-
-	vector3 DistanceVector = pNode->GetWorldPosition() - pNode->GetScene()->GetMainCamera().GetPosition();
-	float SqDist = DistanceVector.SqLength();
+	// Select minimal distance, if there are multiple COIs
+	const vector3& NodePos = pNode->GetWorldPosition();
+	float SqDistance = FLT_MAX;
+	for (DWORD i = 0; i < COICount; ++i)
+	{
+		vector3 DistanceVector = NodePos - pCOIArray[i];
+		float SqDist = DistanceVector.SqLength();
+		if (SqDistance > SqDist) SqDistance = SqDist;
+	}
 
 	CStrID SelectedChild;
-	if (SqDist >= MinSqDistance && SqDist <= MaxSqDistance)
-		for (int i = 0; i < SqThresholds.GetCount(); ++i)
-			if (SqThresholds.KeyAt(i) > SqDist) SelectedChild = SqThresholds.ValueAt(i);
-			else break;
+	for (int i = 0; i < SqThresholds.GetCount(); ++i)
+		if (SqThresholds.KeyAt(i) > SqDistance) SelectedChild = SqThresholds.ValueAt(i);
+		else break;
 
 	for (DWORD i = 0; i < pNode->GetChildCount(); ++i)
 	{
 		CSceneNode& Node = *pNode->GetChild(i);
-		if (Node.IsLODDependent())
-			Node.Activate(Node.GetName() == SelectedChild);
+		Node.Activate(Node.GetName() == SelectedChild);
 	}
 }
 //---------------------------------------------------------------------

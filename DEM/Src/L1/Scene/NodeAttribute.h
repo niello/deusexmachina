@@ -43,7 +43,7 @@ public:
 	virtual void	OnDetachFromNode() { pNode = NULL; }
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
-	virtual void	Update();
+	virtual void	Update(const vector3* pCOIArray, DWORD COICount);
 	void			RemoveFromNode();
 
 	bool			IsAttachedToNode() const { return !!pNode; }

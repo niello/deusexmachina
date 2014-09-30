@@ -30,7 +30,7 @@ protected:
 public:
 
 	virtual bool Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets);
-	virtual void Render(const CArray<Scene::CRenderObject*>* pObjects, const CArray<Scene::CLight*>* pLights);
+	virtual void Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights);
 };
 
 }

@@ -8,9 +8,65 @@ namespace Scene
 CSceneNode::~CSceneNode()
 {
 	Children.Clear();
+
+	if (Controller.IsValid()) Controller->OnDetachFromNode();
+
 	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
 		(*It)->OnDetachFromNode();
 	Attrs.Clear();
+}
+//---------------------------------------------------------------------
+
+// Some nodes may be driven by a deffered controller, i.e. a controller that is driven by some closed external system
+// like a physics simulation, but is dependent on a parent node transform. Example is a rigid body carried by an
+// animated character. So, we update character animation, those providing correct physical constraint position,
+// then leave scene graph branch, perform physics simulation and finally update deffered rigidbody-controlled nodes.
+// NB: Chains with more than one deffered node may not work properly.
+void CSceneNode::UpdateTransform(const vector3* pCOIArray, DWORD COICount,
+								 bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes)
+{
+	if (Controller.IsValid() && Controller->IsActive())
+	{
+		if (!ProcessDefferedController && Controller->IsDeffered())
+		{
+			if (pOutDefferedNodes) pOutDefferedNodes->Add(this);
+			return;
+		}
+
+		if (Controller->IsLocalSpace())
+		{
+			if (Controller->ApplyTo(Tfm)) Flags.Set(LocalMatrixDirty | LocalTransformValid);
+			UpdateWorldFromLocal();
+		}
+		else
+		{
+			Math::CTransformSRT WorldSRT;
+			if (Controller->ApplyTo(WorldSRT))
+			{
+				WorldSRT.ToMatrix(WorldMatrix);
+				Flags.Clear(WorldMatrixDirty);
+				Flags.Set(WorldMatrixChanged);
+				if (Controller->NeedToUpdateLocalSpace()) UpdateLocalFromWorld();
+				else Flags.Clear(LocalTransformValid);
+			}
+			else Flags.Clear(WorldMatrixChanged);
+		}
+	}
+	else UpdateWorldFromLocal();
+
+	// LOD attrs may disable some children, so process attrs before children
+	for (int i = 0; i < Attrs.GetCount(); ++i)
+		if (Attrs[i]->IsActive())
+			Attrs[i]->Update(pCOIArray, COICount);
+
+	//???!!!how to process deffered after deffered?
+	//how to determine is deffered
+	//physics after physics must be processed
+	//!!!test parent->isroot!!!
+
+	for (int i = 0; i < Children.GetCount(); ++i)
+		if (Children.ValueAt(i)->IsActive())
+			Children.ValueAt(i)->UpdateTransform(pCOIArray, COICount, false, pOutDefferedNodes);
 }
 //---------------------------------------------------------------------
 
@@ -23,7 +79,7 @@ void CSceneNode::UpdateWorldFromLocal()
 		Flags.Set(WorldMatrixDirty);
 	}
 
-	if (Flags.Is(WorldMatrixDirty) || (pParent && pParent->IsWorldMatrixChanged()))
+	if (Flags.Is(WorldMatrixDirty) || (pParent /*&& !pParent->IsRoot()*/ && pParent->IsWorldMatrixChanged()))
 	{
 		if (pParent) WorldMatrix.mult2_simple(LocalMatrix, pParent->WorldMatrix);
 		else WorldMatrix = LocalMatrix;
@@ -48,73 +104,6 @@ void CSceneNode::UpdateLocalFromWorld()
 	Tfm.FromMatrix(LocalMatrix);
 	Flags.Clear(WorldMatrixDirty | LocalMatrixDirty);
 	Flags.Set(LocalTransformValid);
-}
-//---------------------------------------------------------------------
-
-// Updates local transform of the node, if it has local controller.
-// Also tries to update world matrix of this node to provide correct world matrix to children
-// and possibly as a constraint to the physics simulation. Once we meet node with a world
-// controller, we update only local transform, because we can't rely on parent world matrix
-// which will be calculated by physics. UpdateWorldSpace() is called after the physics and
-// there we can finish updating dependent parts of the hierarchy.
-void CSceneNode::UpdateLocalSpace(bool UpdateWorldMatrix)
-{
-	if (Controller.IsValid() && Controller->IsActive())
-	{
-		if (Controller->IsLocalSpace())
-		{
-			if (Controller->ApplyTo(Tfm)) Flags.Set(LocalMatrixDirty | LocalTransformValid);
-		}
-		else UpdateWorldMatrix = false;
-	}
-
-	if (UpdateWorldMatrix)
-	{
-		UpdateWorldFromLocal();
-		Flags.Set(WorldMatrixUpdated);
-	}
-	else Flags.Clear(WorldMatrixUpdated);
-
-	for (int i = 0; i < Children.GetCount(); ++i)
-		if (Children.ValueAt(i)->IsActive())
-			Children.ValueAt(i)->UpdateLocalSpace(UpdateWorldMatrix);
-}
-//---------------------------------------------------------------------
-
-// After UpdateLocalSpace() provided possible constraints etc to physics, and simulation
-// was performed, we can finally update world-controlled nodes and their children.
-// After world transform is up-to-date, we update scene node attributes.
-void CSceneNode::UpdateWorldSpace()
-{
-	if (Controller.IsValid() && Controller->IsActive() && !Controller->IsLocalSpace())
-	{
-		Math::CTransformSRT WorldSRT;
-		if (Controller->ApplyTo(WorldSRT))
-		{
-			WorldSRT.ToMatrix(WorldMatrix);
-			Flags.Clear(WorldMatrixDirty);
-			Flags.Set(WorldMatrixChanged);
-			if (Controller->NeedToUpdateLocalSpace()) UpdateLocalFromWorld();
-			else Flags.Clear(LocalTransformValid);
-		}
-		else Flags.Clear(WorldMatrixChanged);
-	}
-	else if (!Flags.Is(WorldMatrixUpdated)) UpdateWorldFromLocal();
-
-	//???maybe move LOD completely into rendering and other attrs? anyway, AI, Render, Animation LODs are different
-	// Here only general scenegraph LOD should work, which manages activity of scene graph parts
-	// (not exactly a scene graph, but a dynamic scene manager which loads-unloads parts of the world)
-	// for this LOD to work node must have a parameter of distance to enable-disable. Store/pass viewer position
-	// into the scene graph or manage it by a View, externally?
-
-	// LODGroup attr may disable some children, so process attrs before children
-	for (int i = 0; i < Attrs.GetCount(); ++i)
-		if (Attrs[i]->IsActive())
-			Attrs[i]->Update();
-
-	for (int i = 0; i < Children.GetCount(); ++i)
-		if (Children.ValueAt(i)->IsActive())
-			Children.ValueAt(i)->UpdateWorldSpace();
 }
 //---------------------------------------------------------------------
 
@@ -160,31 +149,6 @@ CSceneNode* CSceneNode::GetChild(LPCSTR pPath, bool Create)
 }
 //---------------------------------------------------------------------
 
-bool CSceneNode::AddAttr(CNodeAttribute& Attr)
-{
-	if (!Attr.OnAttachToNode(this)) FAIL;
-	Attrs.Add(&Attr);
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CSceneNode::RemoveAttr(CNodeAttribute& Attr)
-{
-	n_assert(Attr.GetNode() == this);
-	Attr.OnDetachFromNode();
-	Attrs.RemoveByValue(&Attr);
-}
-//---------------------------------------------------------------------
-
-void CSceneNode::RemoveAttr(DWORD Idx)
-{
-	n_assert(Idx < (DWORD)Attrs.GetCount());
-	CNodeAttribute& Attr = *Attrs[Idx];
-	Attr.OnDetachFromNode();
-	Attrs.RemoveAt(Idx);
-}
-//---------------------------------------------------------------------
-
 bool CSceneNode::SetController(CNodeController* pCtlr)
 {
 	if (Controller.GetUnsafe() == pCtlr) OK;
@@ -201,6 +165,31 @@ bool CSceneNode::SetController(CNodeController* pCtlr)
 	Controller = pCtlr;
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CSceneNode::AddAttribute(CNodeAttribute& Attr)
+{
+	if (!Attr.OnAttachToNode(this)) FAIL;
+	Attrs.Add(&Attr);
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::RemoveAttribute(CNodeAttribute& Attr)
+{
+	n_assert(Attr.GetNode() == this);
+	Attr.OnDetachFromNode();
+	Attrs.RemoveByValue(&Attr);
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::RemoveAttribute(DWORD Idx)
+{
+	n_assert(Idx < (DWORD)Attrs.GetCount());
+	CNodeAttribute& Attr = *Attrs[Idx];
+	Attr.OnDetachFromNode();
+	Attrs.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
 

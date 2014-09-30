@@ -11,6 +11,8 @@
 // NB: for now this attribute is not loadable from .scn, because at the L1
 // there is no any link between certain scene and physics world.
 
+//???!!!can also add CNodeAttrJoint! to connect rigid bodies to non-physical scene nodes
+
 namespace Physics
 {
 
@@ -22,7 +24,7 @@ public:
 
 	PCollisionObjMoving	CollObj;
 
-	virtual void	Update();
+	virtual void	Update(const vector3* pCOIArray, DWORD COICount);
 	void			GetGlobalAABB(CAABB& OutBox) const { CollObj->GetGlobalAABB(OutBox); }
 };
 

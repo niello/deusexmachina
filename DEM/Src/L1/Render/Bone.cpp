@@ -6,11 +6,9 @@
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
-namespace Scene
+namespace Render
 {
-__ImplementClass(Scene::CBone, 'BONE', Scene::CNodeAttribute);
-
-using namespace Render;
+__ImplementClass(Render::CBone, 'BONE', Scene::CNodeAttribute);
 
 bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -46,7 +44,7 @@ bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
-bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
+bool CBone::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 {
 	if (!CNodeAttribute::OnAttachToNode(pSceneNode)) FAIL;
 
@@ -65,14 +63,14 @@ bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 	BindPoseWorld.invert_simple(InvBindPose);
 
 	CBone* pRootBone = GetRootBone();
-	CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
+	Scene::CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
 
 	static CStrID sidJointPalette("JointPalette");
 
 	// Find all models in model node and setup matrix pointers in a JointPalette shader var
-	for (DWORD i = 0; i < pModelNode->GetAttrCount(); ++i)
+	for (DWORD i = 0; i < pModelNode->GetAttributeCount(); ++i)
 	{
-		CNodeAttribute* pAttr = pModelNode->GetAttr(i);
+		CNodeAttribute* pAttr = pModelNode->GetAttribute(i);
 		if (pAttr->IsA(CModel::RTTI) &&
 			(((CModel*)pAttr)->FeatureFlags & RenderSrv->GetFeatureFlagSkinned()) &&
 			((CModel*)pAttr)->Material.IsValid())
@@ -112,14 +110,14 @@ bool CBone::OnAttachToNode(CSceneNode* pSceneNode)
 void CBone::OnDetachFromNode()
 {
 	CBone* pRootBone = GetRootBone();
-	CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
+	Scene::CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
 
 	static CStrID sidJointPalette("JointPalette");
 
 	// Find all models in model node and clear matrix pointers in a JointPalette shader var to const Identity matrix
-	for (DWORD i = 0; i < pModelNode->GetAttrCount(); ++i)
+	for (DWORD i = 0; i < pModelNode->GetAttributeCount(); ++i)
 	{
-		CNodeAttribute* pAttr = pModelNode->GetAttr(i);
+		CNodeAttribute* pAttr = pModelNode->GetAttribute(i);
 		if (pAttr->IsA(CModel::RTTI) &&
 			(((CModel*)pAttr)->FeatureFlags & RenderSrv->GetFeatureFlagSkinned()) &&
 			((CModel*)pAttr)->Material.IsValid())
@@ -145,9 +143,9 @@ void CBone::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-void CBone::Update()
+void CBone::Update(const vector3* pCOIArray, DWORD COICount)
 {
-	CNodeAttribute::Update();
+	CNodeAttribute::Update(pCOIArray, COICount);
 	if (pNode->IsWorldMatrixChanged())
 		SkinMatrix.mult2_simple(InvBindPose, pNode->GetWorldMatrix());
 }
@@ -157,7 +155,7 @@ CBone* CBone::GetParentBone() const
 {
 	n_assert_dbg(pNode);
 	if (Flags.Is(Bone_Root) || !pNode->GetParent()) return NULL;
-	return pNode->GetParent()->FindFirstAttr<CBone>();
+	return pNode->GetParent()->FindFirstAttribute<CBone>();
 }
 //---------------------------------------------------------------------
 

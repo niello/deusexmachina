@@ -6,7 +6,7 @@ namespace Scene
 {
 __ImplementClassNoFactory(Scene::CNodeAttribute, Core::CObject);
 
-void CNodeAttribute::Update()
+void CNodeAttribute::Update(const vector3* pCOIArray, DWORD COICount)
 {
 	if (pNode && pNode->IsWorldMatrixChanged()) Flags.Set(WorldMatrixChanged);
 }
@@ -14,7 +14,7 @@ void CNodeAttribute::Update()
 
 void CNodeAttribute::RemoveFromNode()
 {
-	if (pNode) pNode->RemoveAttr(*this);
+	if (pNode) pNode->RemoveAttribute(*this);
 }
 //---------------------------------------------------------------------
 

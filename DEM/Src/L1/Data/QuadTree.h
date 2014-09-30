@@ -367,8 +367,8 @@ inline bool CQuadTree<TObject, TStorage>::CNode::SharesSpaceWith(const CNode& Ot
 	if (Level == Other.Level) FAIL;
 
 	// If not the same node and not at equal levels, check if one node is a N-level parent of another
-	const Scene::CSPSNode* pMin;
-	const Scene::CSPSNode* pMax;
+	const CQuadTree<TObject, TStorage>::CNode* pMin;
+	const CQuadTree<TObject, TStorage>::CNode* pMax;
 	if (Level < Other.Level)
 	{
 		pMin = this;

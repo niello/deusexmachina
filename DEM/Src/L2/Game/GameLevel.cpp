@@ -313,7 +313,11 @@ void CGameLevel::Trigger()
 {
 	FireEvent(CStrID("BeforeTransforms"));
 
-	if (SceneRoot.IsValid()) SceneRoot->UpdateLocalSpace();
+	const vector3& CameraPos = MainCamera->GetPosition();
+
+	//!!!cache as member to avoid dynamic allocation per-frame!
+	CArray<Scene::CSceneNode*> DefferedNodes;
+	if (SceneRoot.IsValid()) SceneRoot->UpdateTransform(&CameraPos, 1, false, &DefferedNodes);
 
 	if (PhysWorld.IsValid())
 	{
@@ -322,7 +326,8 @@ void CGameLevel::Trigger()
 		FireEvent(CStrID("AfterPhysics"));
 	}
 
-	if (SceneRoot.IsValid()) SceneRoot->UpdateWorldSpace();
+	for (int i = 0; i < DefferedNodes.GetCount(); ++i)
+		DefferedNodes[i]->UpdateTransform(&CameraPos, 1, true, NULL);
 
 	FireEvent(CStrID("AfterTransforms"));
 }

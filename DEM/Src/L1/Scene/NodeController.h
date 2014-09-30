@@ -29,7 +29,8 @@ protected:
 	{
 		Active				= 0x01,	// Controller must be processed
 		LocalSpace			= 0x02,	// Controller produces local-space transform
-		UpdateLocalSpace	= 0x04	// Controller wants the host to update local transform from provided world one
+		UpdateLocalSpace	= 0x04,	// Controller wants the host to update local transform from provided world one
+		Deffered			= 0x08	// Controller is updated by an external system and dependent on parent world position (rigid bodies etc)
 	};
 
 	CSceneNode*		pNode;
@@ -52,6 +53,7 @@ public:
 	bool			IsActive() const { return Flags.Is(Active); }
 	void			SetLocalSpace(bool Local) { Flags.SetTo(LocalSpace, Local); }
 	bool			IsLocalSpace() const { return Flags.Is(LocalSpace); }
+	bool			IsDeffered() const { return Flags.Is(Deffered); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
 	bool			HasChannel(ETransformChannel Channel) const { return Channels.Is(Channel); }
 	DWORD			GetChannels() const { return Channels.GetMask(); }

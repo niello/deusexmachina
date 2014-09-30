@@ -4,7 +4,7 @@
 
 #include <Render/Renderer.h>
 #include <Render/Materials/ShaderVar.h>
-#include <Scene/Terrain.h>
+#include <Render/Terrain.h>
 
 // This terrain renderer implements CDLOD technique. It is paired with Scene::CTerrain
 // object, that feeds the renderer with a necessary data.
@@ -48,45 +48,45 @@ protected:
 		float	MorphConsts[2];
 	};
 
-	PShader							Shader;
-	CShaderVarMap					ShaderVars;
-	DWORD							FeatFlags;
-	bool							EnableLighting;
+	PShader						Shader;
+	CShaderVarMap				ShaderVars;
+	DWORD						FeatFlags;
+	bool						EnableLighting;
 
-	float							VisibilityRange;
-	float							MorphStartRatio;
-	CArray<CMorphInfo>				MorphConsts;
+	float						VisibilityRange;
+	float						MorphStartRatio;
+	CArray<CMorphInfo>			MorphConsts;
 
-	PVertexLayout					InstanceVertexLayout;
-	PVertexLayout					FinalVertexLayout;
-	PVertexBuffer					InstanceBuffer;
-	DWORD							MaxInstanceCount;
+	PVertexLayout				InstanceVertexLayout;
+	PVertexLayout				FinalVertexLayout;
+	PVertexBuffer				InstanceBuffer;
+	DWORD						MaxInstanceCount;
 
-	CArray<Scene::CTerrain*>		TerrainObjects;
-	const CArray<Scene::CLight*>*	pLights;
+	CArray<CTerrain*>			TerrainObjects;
+	const CArray<CLight*>*		pLights;
 
-	CShader::HVar					hHeightMap;
-	CShader::HVar					hWorldToHM;
-	CShader::HVar					hTerrainYInvSplat;
-	CShader::HVar					hGridConsts;
-	CShader::HVar					hHMTexInfo;
+	CShader::HVar				hHeightMap;
+	CShader::HVar				hWorldToHM;
+	CShader::HVar				hTerrainYInvSplat;
+	CShader::HVar				hGridConsts;
+	CShader::HVar				hHMTexInfo;
 
-	PShader							SharedShader;
-	CShader::HVar					hLightType;
-	CShader::HVar					hLightDir;
-	CShader::HVar					hLightColor;
-	DWORD							LightFeatFlags[MaxLightsPerObject];
-	DWORD							FeatFlagDefault;
+	PShader						SharedShader;
+	CShader::HVar				hLightType;
+	CShader::HVar				hLightDir;
+	CShader::HVar				hLightColor;
+	DWORD						LightFeatFlags[MaxLightsPerObject];
+	DWORD						FeatFlagDefault;
 
-	ENodeStatus		ProcessNode(Scene::CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, CPatchInstance* pInstances, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
+	ENodeStatus		ProcessNode(CTerrain& Terrain, DWORD X, DWORD Z, DWORD LOD, float LODRange, CPatchInstance* pInstances, DWORD& PatchCount, DWORD& QPatchCount, EClipStatus Clip = Clipped);
 
 public:
 
 	CTerrainRenderer();
 
 	virtual bool	Init(const Data::CParams& Desc);
-	virtual void	AddRenderObjects(const CArray<Scene::CRenderObject*>& Objects);
-	virtual void	AddLights(const CArray<Scene::CLight*>& Lights);
+	virtual void	AddRenderObjects(const CArray<CRenderObject*>& Objects);
+	virtual void	AddLights(const CArray<CLight*>& Lights);
 	virtual void	Render();
 
 	void			SetVisibilityRange(float Range) { n_assert(Range > 0.f); VisibilityRange = Range; }

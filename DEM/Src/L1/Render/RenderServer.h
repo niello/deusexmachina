@@ -13,6 +13,9 @@
 #include <Data/Singleton.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
+#include <d3d9.h>
 
 // Render device interface (currently D3D9). Renderer manages shaders, shader state, shared variables,
 // render targets, model, view and projection transforms, and performs actual rendering

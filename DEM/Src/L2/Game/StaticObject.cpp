@@ -1,7 +1,6 @@
 #include "StaticObject.h"
 
 #include <Game/GameLevel.h>
-#include <Scene/Scene.h>
 #include <Physics/CollisionObjStatic.h>
 #include <Physics/PhysicsWorld.h>
 #include <Data/DataServer.h>
@@ -51,12 +50,12 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 	if (NodePath.IsEmpty() && NodeFile.IsValid())
 		NodePath = UID.CStr();
 
-	if (NodePath.IsValid() && Level->GetScene())
+	if (NodePath.IsValid())
 	{
 		//???optimize duplicate search?
-		Node = Level->GetScene()->GetNode(NodePath.CStr(), false);
+		Node = Level->GetSceneNode(NodePath.CStr(), false);
 		ExistingNode = Node.IsValid();
-		if (!ExistingNode) Node = Level->GetScene()->GetNode(NodePath.CStr(), true);
+		if (!ExistingNode) Node = Level->GetSceneNode(NodePath.CStr(), true);
 		n_assert(Node.IsValid());
 
 		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
@@ -68,7 +67,7 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
 	// It is necessary because collision objects may require subnode world transformations.
-	if (Node.IsValid()) Node->UpdateLocalSpace();
+	if (Node.IsValid()) Node->UpdateTransform(NULL, 0, true, NULL);
 
 	const CString& PhysicsDescFile = Desc->Get<CString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
@@ -111,7 +110,7 @@ void CStaticObject::Term()
 
 	if (Node.IsValid() && !ExistingNode)
 	{
-		Node->RemoveFromParent();
+		Node->Remove();
 		Node = NULL;
 	}
 
