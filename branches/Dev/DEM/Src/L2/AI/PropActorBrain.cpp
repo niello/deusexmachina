@@ -10,14 +10,6 @@
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 
-#ifdef __WIN32__
-	#undef GetClassName
-	#ifdef GetProp
-		#undef GetProp
-		#undef SetProp
-	#endif
-#endif
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropActorBrain, 'PRAB', Game::CProperty);

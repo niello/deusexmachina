@@ -6,20 +6,22 @@
 
 namespace Render
 {
+//!!!LOC: my phone is dead and so offline dictionary bases are too. Some words below may be used
+//improperly just because I think they are in their places. Hopefully I'll fix mistakes soon.
 
-enum EUsage
-{
-	Usage_Immutable,	// can only be read by GPU, not written, cannot be accessed by CPU
-	Usage_Dynamic,		// can only be read by GPU, can only be written by CPU
-	Usage_CPU			// a resource which is only accessible by the CPU and can't be used for rendering
-};
+// Flags that indicate which hardware has which access to this resource data.
+// Some combinations may be unsupported by certain rendering APIs, so, implementations must
+// consider to satisfy the most possible features of a set requested.
+// Some common usage patterns are:
+// GPU_Read				- immutable resources, initialized on creation, the fastest ones for GPU access
+// GPU_Read | CPU_Write	- dynamic resources, suitable for a GPU data that is regularly updated by CPU
 
-enum ECPUAccess
+enum EResourceAccess
 {
-	CPU_NoAccess,		// CPU does not require access to the resource (best)
-	CPU_Read,			// CPU has read access
-	CPU_Write,			// CPU has write access
-	CPU_ReadWrite		// CPU has read/write access
+	CPU_Read	= 0x01,
+	CPU_Write	= 0x02,
+	GPU_Read	= 0x04,
+	GPU_Write	= 0x08
 };
 
 enum EMapType

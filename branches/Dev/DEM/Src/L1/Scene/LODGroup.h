@@ -6,7 +6,9 @@
 #include <Data/Dictionary.h>
 
 // Level of detail group activates and deactivates child nodes of its node
-// according to a distance to the main camera 
+// according to a distance to the main camera
+
+//!!!can add switch (activator) attr and dynamic loading attr!
 
 namespace Scene
 {

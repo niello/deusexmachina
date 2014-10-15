@@ -6,11 +6,14 @@
 #include <Math/Quaternion.h>
 #include <Data/FixedArray.h>
 
-// Animation track is a set of float4 keys, forming a curve. Being sampled in a certain time,
+// Animation track is a set of float4 keys, forming a curve. Being sampled at a certain time,
 // it returns single interpolated float4 value, that can be used as any transformation component
 // or as any other value that changes in time.
 // Keyframe track stores key data inside. It offers more flexibility and less memory consumption
 // in a cost of some calculations.
+
+//???templated track for different types?
+//!!!compressed track! for vectors/quaternions (and maybe other floats) only!
 
 namespace Anim
 {

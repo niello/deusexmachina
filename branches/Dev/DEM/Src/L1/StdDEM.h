@@ -14,9 +14,6 @@
 
 #define INVALID_INDEX	(-1)
 
-#define DEM_MAX_PATH	(512)		// Maximum length for complete path
-#define DEM_WHITESPACE	" \r\n\t"
-
 // http://cnicholson.net/2011/01/stupid-c-tricks-a-better-sizeof_array
 template<typename T, size_t N> char (&SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(T (&)[N]))[N];  
 #define sizeof_array(x) sizeof(SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(x))

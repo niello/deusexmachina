@@ -3,8 +3,6 @@
 #include <Scripting/EntityScriptObject.h>
 #include <Render/FrameShader.h>
 
-#undef DeleteFile
-
 namespace App
 {
 

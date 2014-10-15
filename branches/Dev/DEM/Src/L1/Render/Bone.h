@@ -28,10 +28,12 @@ protected:
 	};
 
 	DWORD				Index;
+	matrix44			SkinMatrix; //???or use some pointer or handle to a matrix palette array? cache coherence will be better
+
+	//!!!don't store per-object at all! use shared skinning info resorce with bone ID -> bind pose mapping!
 	Math::CTransformSRT	BindPoseLocal;	//!!!Needed only on init!
 	matrix44			BindPoseWorld;	//!!!Needed only on init!
 	matrix44			InvBindPose;
-	matrix44			SkinMatrix;
 
 	virtual bool	OnAttachToNode(Scene::CSceneNode* pSceneNode);
 	virtual void	OnDetachFromNode();

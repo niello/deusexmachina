@@ -4,13 +4,6 @@
 
 #include <Data/Data.h>
 
-#ifdef __WIN32__
-	#ifdef GetProp
-		#undef GetProp
-		#undef SetProp
-	#endif
-#endif
-
 // World state is a metric for action planning algorithm. It symbolically describes most important
 // parameters of the world, either in current, desired or some intermediate state.
 

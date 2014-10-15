@@ -7,19 +7,16 @@
 #include <Render/Materials/Shader.h>
 #include <Data/Singleton.h>
 
-#undef DrawText
-
 // Utility class for drawing common debug shapes
 
-//!!!MOVE LOWLEVEL code from CNavMeshDebugDraw!
-
 //!!!can write IRenderer and move all render-related stuff there!
+//!!!and move this facility into a Debug namespace and folder then!
 
 namespace Render
 {
 #define DebugDraw Render::CDebugDraw::Instance()
 
-#pragma pack(push, 1)
+#pragma pack(push, 1) // Since we want write them into hardware buffers as is, when possible
 struct CDDShapeInst
 {
 	matrix44	World;
@@ -36,7 +33,7 @@ struct CDDVertex
 enum EHAlign
 {
 	Align_Left,
-	Align_Center,
+	Align_HCenter,
 	Align_Right,
 	Align_Justify
 };
@@ -119,7 +116,7 @@ public:
 	bool	DrawBoxWireframe(const CAABB& Box, const vector4& Color = vector4::White);
 	bool	DrawArc();
 	bool	DrawCircle();
-	bool	DrawGridXZ();
+	bool	DrawGridXZ(); //???or pass arbitrary axes?
 	bool	DrawCoordAxes(const matrix44& Tfm, bool DrawX = true, bool DrawY = true, bool DrawZ = true);
 
 	bool	DrawPoint(const vector3& Pos, float Size, const vector4& Color = vector4::White);

@@ -9,8 +9,6 @@
 
 // Debug draw interface implementation for Detour navigation mesh.
 
-//!!!use calls to lowlevel methods of my debug draw!
-
 namespace AI
 {
 

@@ -1,21 +1,9 @@
-#include "VertexLayout.h"
+#include "D3D9VertexLayout.h"
 
 #include <Render/RenderServer.h>
 
 namespace Render
 {
-
-LPCSTR SemanticNames[] =
-{
-	"Pos",
-	"Nrm",
-	"Tgt",
-	"Bnm",
-	"Tex",        
-	"Clr",
-	"Bwh",
-	"Bix"
-};
 
 //???D3DDECLUSAGE_PSIZE?
 BYTE SemanticD3DUsages[] =
@@ -28,20 +16,6 @@ BYTE SemanticD3DUsages[] =
 	D3DDECLUSAGE_COLOR,
 	D3DDECLUSAGE_BLENDWEIGHT,
 	D3DDECLUSAGE_BLENDINDICES
-};
-
-LPCSTR FormatNames[] =
-{
-	"F",
-	"F2",
-	"F3",
-	"F4",
-	"UB4",        
-	"S2",        
-	"S4",        
-	"UB4N",
-	"S2N",
-	"S4N"
 };
 
 BYTE FormatD3DTypes[] =
@@ -58,7 +32,7 @@ BYTE FormatD3DTypes[] =
 	D3DDECLTYPE_SHORT4N
 };
 
-bool CVertexLayout::Create(const CArray<CVertexComponent>& VertexComponents)
+bool CD3D9VertexLayout::Create(const CArray<CVertexComponent>& VertexComponents)
 {
 	n_assert(!pDecl && VertexComponents.GetCount());
 
@@ -82,9 +56,9 @@ bool CVertexLayout::Create(const CArray<CVertexComponent>& VertexComponents)
 		n_assert(StreamIndex < CRenderServer::MaxVertexStreamCount);
 		DeclData[i].Stream = StreamIndex;
 		DeclData[i].Offset = (WORD)StreamOffset[StreamIndex];
-		DeclData[i].Type = Component.GetD3DDeclType();
+		DeclData[i].Type = FormatD3DTypes[Component.Format];
 		DeclData[i].Method = D3DDECLMETHOD_DEFAULT;
-		DeclData[i].Usage = Component.GetD3DUsage();
+		DeclData[i].Usage = SemanticD3DUsages[Component.Semantic];
 		DeclData[i].UsageIndex = (BYTE)Component.Index;
 		StreamOffset[StreamIndex] += Component.GetSize();
 	}
@@ -95,31 +69,9 @@ bool CVertexLayout::Create(const CArray<CVertexComponent>& VertexComponents)
 }
 //---------------------------------------------------------------------
 
-void CVertexLayout::Destroy()
+void CD3D9VertexLayout::InternalDestroy()
 {
 	SAFE_RELEASE(pDecl);
-	Components.Clear();
-	VertexSize = 0;
-}
-//---------------------------------------------------------------------
-
-CStrID CVertexLayout::BuildSignature(const CArray<CVertexComponent>& Components)
-{
-	if (!Components.GetCount()) return CStrID::Empty;
-	CString UID;
-	for (int i = 0; i < Components.GetCount(); ++i)
-	{
-		const CVertexComponent& Cmp = Components[i];
-		UID += Cmp.GetSemanticString();
-		if (Cmp.Index > 0) UID.AppendInt(Cmp.Index);
-		UID += Cmp.GetFormatString();
-		if (Cmp.Stream > 0)
-		{
-			UID += "s";
-			UID.AppendInt(Cmp.Stream);
-		}
-	}
-	return CStrID(UID.CStr());
 }
 //---------------------------------------------------------------------
 

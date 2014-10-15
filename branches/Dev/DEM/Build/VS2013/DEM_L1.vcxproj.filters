@@ -55,15 +55,6 @@
     <Filter Include="Render">
       <UniqueIdentifier>{79b1489a-9df9-4f5e-a2cc-56d06e064ffc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Render\Materials">
-      <UniqueIdentifier>{29dd41b1-6c1f-4f7f-84dc-3f52f2997dd7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Render\Geometry">
-      <UniqueIdentifier>{3616bb27-c111-4bce-af5d-17ac1f09923b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Render\Renderers">
-      <UniqueIdentifier>{323dc298-a034-41cf-b981-2783da6c0e53}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Render\Events">
       <UniqueIdentifier>{6331a26d-145e-4892-bd73-9038b9399062}</UniqueIdentifier>
     </Filter>
@@ -87,6 +78,12 @@
     </Filter>
     <Filter Include="System">
       <UniqueIdentifier>{4227a85c-49fd-4e34-a0b7-798cdafcdbab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\D3D9">
+      <UniqueIdentifier>{97b4011b-f11f-42a1-bc0b-7f70355f3147}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\D3D11">
+      <UniqueIdentifier>{7a31007e-6e10-43e6-a64c-405aa599a431}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -441,93 +438,6 @@
     <ClInclude Include="..\..\Src\L1\Math\Vector4.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3D9Fwd.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3DXDEMInclude.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\DebugDraw.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Display.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\FrameShader.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\GPUResourceDefs.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Pass.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\PassGeometry.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\PassOcclusion.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\PassPosteffect.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\PassShadows.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Renderer.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\RenderServer.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Materials\Material.h">
-      <Filter>Render\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Materials\Shader.h">
-      <Filter>Render\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Materials\ShaderVar.h">
-      <Filter>Render\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Materials\Texture.h">
-      <Filter>Render\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Geometry\IndexBuffer.h">
-      <Filter>Render\Geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Geometry\Mesh.h">
-      <Filter>Render\Geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Geometry\VertexBuffer.h">
-      <Filter>Render\Geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Geometry\VertexLayout.h">
-      <Filter>Render\Geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Renderers\DebugGeomRenderer.h">
-      <Filter>Render\Renderers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Renderers\DebugTextRenderer.h">
-      <Filter>Render\Renderers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Renderers\FullscreenQuadRenderer.h">
-      <Filter>Render\Renderers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Renderers\ModelRenderer.h">
-      <Filter>Render\Renderers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Renderers\TerrainRenderer.h">
-      <Filter>Render\Renderers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Events\DisplayInput.h">
       <Filter>Render\Events</Filter>
     </ClInclude>
@@ -686,13 +596,100 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\StdCfg.h" />
     <ClInclude Include="..\..\Src\L1\StdDEM.h" />
-    <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObject.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DXDEMInclude.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\ModelRenderer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\Shader.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\Texture.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Bone.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Camera.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Display.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\FrameShader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\GPUResourceDefs.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Light.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Material.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Mesh.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Model.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Pass.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassGeometry.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassOcclusion.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassPosteffect.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\PassShadows.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h">
+      <Filter>Render</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\RenderObject.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderVar.h">
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\SPS.h">
@@ -701,26 +698,35 @@
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Bone.h">
+    <ClInclude Include="..\..\Src\L1\Render\RenderServer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\IndexBuffer.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Camera.h">
+    <ClInclude Include="..\..\Src\L1\Render\VertexBuffer.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Light.h">
+    <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Model.h">
+    <ClInclude Include="..\..\Src\L1\Render\VertexLayout.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h">
-      <Filter>Scene</Filter>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h">
+      <Filter>Render\D3D9</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h">
+    <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h">
       <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Physics\PhysicsObject.h">
-      <Filter>Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -931,87 +937,6 @@
     <ClCompile Include="..\..\Src\L1\Math\Vector4.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3DXDEMInclude.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\DebugDraw.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Display.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Pass.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\PassGeometry.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\PassOcclusion.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\PassPosteffect.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\RenderServer.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadMaterialFromPRM.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadShaderFromFX.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadShaderFromFXO.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\LoadTextureUsingD3DX.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\Material.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\Shader.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Materials\Texture.cpp">
-      <Filter>Render\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Geometry\IndexBuffer.cpp">
-      <Filter>Render\Geometry</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Geometry\LoadMeshFromNVX2.cpp">
-      <Filter>Render\Geometry</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Geometry\Mesh.cpp">
-      <Filter>Render\Geometry</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Geometry\VertexBuffer.cpp">
-      <Filter>Render\Geometry</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Geometry\VertexLayout.cpp">
-      <Filter>Render\Geometry</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Renderers\DebugGeomRenderer.cpp">
-      <Filter>Render\Renderers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Renderers\DebugTextRenderer.cpp">
-      <Filter>Render\Renderers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Renderers\ModelRenderer.cpp">
-      <Filter>Render\Renderers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Renderers\TerrainRenderer.cpp">
-      <Filter>Render\Renderers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Events\DisplayInput.cpp">
       <Filter>Render\Events</Filter>
     </ClCompile>
@@ -1135,14 +1060,41 @@
     <ClCompile Include="..\..\Src\L1\System\SystemWin32.cpp">
       <Filter>System</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp">
-      <Filter>Render</Filter>
+    <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp">
+      <Filter>Scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp">
-      <Filter>Render</Filter>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObject.cpp">
+      <Filter>Physics</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp">
-      <Filter>Render</Filter>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DXDEMInclude.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadShaderFromFX.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadShaderFromFXO.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadTextureUsingD3DX.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\ModelRenderer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\Shader.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\Texture.cpp">
+      <Filter>Render\D3D9</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Bone.cpp">
       <Filter>Render</Filter>
@@ -1150,25 +1102,79 @@
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Display.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\LoadMaterialFromPRM.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\LoadMeshFromNVX2.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Material.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Mesh.cpp">
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Model.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\SPS.cpp">
+    <ClCompile Include="..\..\Src\L1\Render\Pass.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp">
-      <Filter>Scene</Filter>
+    <ClCompile Include="..\..\Src\L1\Render\PassGeometry.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassOcclusion.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassPosteffect.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\PassShadows.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Physics\PhysicsObject.cpp">
-      <Filter>Physics</Filter>
+    <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\PassShadows.cpp">
+    <ClCompile Include="..\..\Src\L1\Render\SPS.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderServer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

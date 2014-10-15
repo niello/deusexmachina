@@ -32,6 +32,7 @@ bool CBone::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		case 'BNTP':
 		{
+			//???store as fourcc or char flag instead of string?
 			char BoneType[64];
 			if (!DataReader.ReadString(BoneType, 63)) FAIL;
 			if (!n_stricmp(BoneType, "root")) Flags.Set(Bone_Root);

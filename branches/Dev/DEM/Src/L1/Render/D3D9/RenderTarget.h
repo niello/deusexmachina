@@ -5,6 +5,7 @@
 #include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Render/RenderFwd.h>
+#include <Render/D3D9Fwd.h>
 #include <Events/EventsFwd.h>
 
 // A surface render server renders to. Can be used as texture.

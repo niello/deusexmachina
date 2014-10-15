@@ -3,13 +3,6 @@
 #include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
 #include <Core/Factory.h>
 
-#ifdef __WIN32__
-	#ifdef GetProp
-		#undef GetProp
-		#undef SetProp
-	#endif
-#endif
-
 namespace AI
 {
 __ImplementClass(AI::CActionTplGotoSmartObj, 'ATGS', AI::CActionTpl);

@@ -4,6 +4,7 @@
 
 #include <Render/RenderFwd.h>
 #include <Data/String.h>
+#include <Render/D3D9Fwd.h> //!!!pixel format only! write own enum!
 
 // Contains display mode parameters.
 

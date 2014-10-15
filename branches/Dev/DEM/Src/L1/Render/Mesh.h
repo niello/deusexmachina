@@ -4,14 +4,17 @@
 
 #include <Resources/Resource.h>
 #include <Render/RenderFwd.h>
-#include <Render/Geometry/VertexBuffer.h>
-#include <Render/Geometry/IndexBuffer.h>
+#include <Render/VertexBuffer.h>
+#include <Render/IndexBuffer.h>
 #include <Events/EventsFwd.h>
-#include <Events/Subscription.h>
 #include <Math/AABB.h>
 
 // Mesh represents complete geometry information about a 3D model. It stores vertex buffer,
-// index buffer (if required) and list of primitive groups (also known as mesh subsets).
+// index buffer (if required) and a list of primitive groups (also known as mesh subsets).
+
+//!!!NEED LOD INFO!
+// Optimal if LODs are just different index buffers and corresponding mesh groups
+// LOD arrays may be defined irectly in a mesh group with a fixed array
 
 namespace Render
 {
@@ -32,7 +35,7 @@ class CMesh: public Resources::CResource
 
 protected:
 
-	//!!!if VB & IB are shared, need to store offset (and mb total size) here!
+	//!!!if VB & IB are shared, need to store offset (and mb total size) here! Or patch mesh group offsets.
 	PVertexBuffer		VB;
 	PIndexBuffer		IB;
 	CArray<CMeshGroup>	Groups;

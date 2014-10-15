@@ -17,7 +17,8 @@ class CEvent: public CEventBase
 
 protected:
 
-	//static CPool<CEvent, 512> Pool;
+	//!!!use small allocator!
+	//static CPoolAllocator<CEvent, 512> Pool;
 
 public:
 

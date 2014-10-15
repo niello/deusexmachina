@@ -1,3 +1,4 @@
+#pragma once
 #ifndef N_RINGBUFFER_H
 #define N_RINGBUFFER_H
 

@@ -87,7 +87,6 @@ bool CIOServer::SetFileReadOnly(const CString& Path, bool ReadOnly) const
 }
 //---------------------------------------------------------------------
 
-#undef DeleteFile
 bool CIOServer::DeleteFile(const CString& Path) const
 {
 	CString AbsPath = IOSrv->ManglePath(Path);

@@ -1,6 +1,5 @@
 #include "Mesh.h"
 
-#include <Render/RenderServer.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
 
@@ -15,7 +14,8 @@ bool CMesh::Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const 
 	IB = IndexBuffer;
 	Groups = MeshGroups;
 
-	if (VertexBuffer->GetUsage() == Usage_Dynamic || (IndexBuffer && IndexBuffer->GetUsage() == Usage_Dynamic))
+	//!!!D3D9-specific, redesign!
+	if (VertexBuffer->GetAccess().Is(GPU_Read | CPU_Write) || IndexBuffer->GetAccess().Is(GPU_Read | CPU_Write))
 	{
 		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CMesh, OnDeviceLost);
 	}

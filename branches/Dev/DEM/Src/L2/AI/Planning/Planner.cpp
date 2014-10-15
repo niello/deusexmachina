@@ -4,13 +4,6 @@
 #include <AI/PropActorBrain.h>
 #include <Core/Factory.h>
 
-#ifdef __WIN32__
-	#ifdef GetProp
-		#undef GetProp
-		#undef SetProp
-	#endif
-#endif
-
 const CString StrActTplPrefix("AI::CActionTpl");
 
 namespace AI

@@ -40,10 +40,10 @@ private:
 		CNode(): pAction(NULL), pParent(NULL), Fitness(MAX_SDWORD) {}
 	};
 
-	CPool<CNode, 32>	NodePool;
-	CArray<PActionTpl>	ActionTpls;
-	CArray<CActionTpl*>	EffectToActions[WSP_Count];
-	int					NewActIdx;
+	CPoolAllocator<CNode, 32>	NodePool;
+	CArray<PActionTpl>			ActionTpls;
+	CArray<CActionTpl*>			EffectToActions[WSP_Count];
+	int							NewActIdx;
 
 	static int CmpPlannerNodes(const void* First, const void* Second);
 
