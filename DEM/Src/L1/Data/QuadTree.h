@@ -5,10 +5,6 @@
 #include <Math/AABB.h>
 #include <Data/FixedArray.h>
 
-//#ifdef GetObject
-//#undef GetObject
-//#endif
-
 //???write loose quadtree? Current variant is not so good.
 //???create child nodes on demand, using node pool?
 

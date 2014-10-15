@@ -2,7 +2,14 @@
 #ifndef __DEM_L1_RENDER_H__
 #define __DEM_L1_RENDER_H__
 
-#include <Render/D3D9Fwd.h>
+#include <StdDEM.h>
+
+//???how and where? in project configuration, with appropriate libraries linkage?
+//or link all the libraries? or make a static library per render API? or use virtuals?
+//???HOW TO SPLIT DIFFERENT RENDERERS ON 1 PLATFORM?
+#ifdef __WIN32__
+#define DEM_RENDER_API_D3D9 1
+#endif
 
 // Render system definitions and forward declarations
 

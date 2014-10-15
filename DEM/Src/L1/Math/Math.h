@@ -36,11 +36,12 @@
 #endif
 
 const float LN_2 = 0.693147180559945f;
+const float INV_LN_2 = 1.442695040888964f;
 
 #define n_abs(a)        (((a)<0.0f) ? (-(a)) : (a))
 #define n_sgn(a)        (((a)<0.0f) ? (-1) : (1))
 #define n_deg2rad(d)    (((d)*PI)/180.0f)
-#define n_rad2deg(r)    (((r)*180.0f)/PI)
+#define n_rad2deg(r)    ((r)*180.0f*INV_PI)
 #define n_sin(x)        (float(sin(x)))
 #define n_cos(x)        (float(cos(x)))
 #define n_tan(x)        (float(tan(x)))
@@ -51,7 +52,7 @@ const float LN_2 = 0.693147180559945f;
 #define n_ceil(x)       (float(ceil(x)))
 #define n_pow(x,y)      (float(pow(x,y)))
 
-inline float n_log2(float f) { return logf(f) / LN_2; }
+inline float n_log2(float f) { return logf(f) * INV_LN_2; }
 inline bool n_fless(float f0, float f1, float tol) { return f0 - f1 < tol; }
 inline bool n_fgreater(float f0, float f1, float tol) { return f0 - f1 > tol; }
 inline float n_fmod(float x, float y) { return fmodf(x, y); }

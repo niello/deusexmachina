@@ -265,7 +265,7 @@ void CDebugDraw::RenderText()
 		switch (Text.HAlign)
 		{
 			case Align_Left:	Fmt |= DT_LEFT; break;
-			case Align_Center:	Fmt |= DT_CENTER; break;
+			case Align_HCenter:	Fmt |= DT_CENTER; break;
 			case Align_Right:	Fmt |= DT_RIGHT; break;
 		}
 

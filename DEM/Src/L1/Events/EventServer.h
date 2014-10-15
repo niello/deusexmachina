@@ -26,7 +26,7 @@ class CEventServer: public CEventDispatcher
 
 protected:
 
-	CPool<CEventNode>	EventNodes;
+	CPoolAllocator<CEventNode>	EventNodes;
 
 	//!!!cache pool of free events, get from here if can
 	//or store cache pools in CEventServer

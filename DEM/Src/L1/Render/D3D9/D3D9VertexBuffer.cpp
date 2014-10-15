@@ -1,4 +1,4 @@
-#include "IndexBuffer.h"
+#include "D3D9VertexBuffer.h"
 
 #include <Render/RenderServer.h>
 #include <Events/EventServer.h>
@@ -6,59 +6,57 @@
 namespace Render
 {
 
-bool CVertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, EUsage BufferUsage, ECPUAccess BufferAccess)
+bool CD3D9VertexBuffer::Create(PVertexLayout VertexLayout, DWORD VertexCount, DWORD BufferAccess)
 {
 	n_assert(VertexCount && VertexLayout.IsValid());
 
+	Access.ResetTo(BufferAccess);
 	Layout = VertexLayout;
-	Count = VertexCount;
-	Usage = BufferUsage;
-	Access = BufferAccess;
+	VtxCount = VertexCount;
 
-	DWORD Size = Count * Layout->GetVertexSize();
+	DWORD Size = GetSizeInBytes();
 	n_assert(Size);
 
 	D3DPOOL D3DPool;
 	DWORD D3DUsage;
-	switch (Usage)
+	if (Access.Is(GPU_Read | CPU_Write))
 	{
-		case Usage_Immutable:
-			n_assert(Access == CPU_NoAccess);
-			D3DPool = D3DPOOL_MANAGED;
-			D3DUsage = D3DUSAGE_WRITEONLY;
-			break;
-		case Usage_Dynamic:
-			n_assert(Access == CPU_Write);
-			D3DPool = D3DPOOL_DEFAULT;
-			D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
-			break;
-		case Usage_CPU:
-			D3DPool = D3DPOOL_SYSTEMMEM;
-			D3DUsage = D3DUSAGE_DYNAMIC;
-			break;
-		default: Sys::Error("Invalid IndexBuffer usage!");
+		Access.ResetTo(GPU_Read | CPU_Write);
+		D3DPool = D3DPOOL_DEFAULT;
+		D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
 	}
+	else if (Access.Is(GPU_Read))
+	{
+		Access.ResetTo(GPU_Read);
+		D3DPool = D3DPOOL_MANAGED;
+		D3DUsage = D3DUSAGE_WRITEONLY;
+	}
+	else if (Access.Is(CPU_Read) || Access.Is(CPU_Write))
+	{
+		Access.ResetTo(CPU_Read | CPU_Write); // Always supports both
+		D3DPool = D3DPOOL_SYSTEMMEM;
+		D3DUsage = D3DUSAGE_DYNAMIC;
+	}
+	else Sys::Error("!!!REWRITE D3D9 BUFFER ACCESS MAPPING!!!");
 
 	if (FAILED(RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL))) FAIL;
 
 	if (D3DPool == D3DPOOL_DEFAULT)
-		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CVertexBuffer, OnDeviceLost);
+		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CD3D9VertexBuffer, OnDeviceLost);
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CVertexBuffer::Destroy()
+void CD3D9VertexBuffer::InternalDestroy()
 {
 	n_assert(!LockCount);
-
 	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
-
 	SAFE_RELEASE(pBuffer);
 }
 //---------------------------------------------------------------------
 
-void* CVertexBuffer::Map(EMapType MapType)
+void* CD3D9VertexBuffer::Map(EMapType MapType)
 {
 	n_assert(pBuffer);
 
@@ -69,20 +67,20 @@ void* CVertexBuffer::Map(EMapType MapType)
 			LockFlags |= D3DLOCK_NOSYSLOCK;
 			break;
 		case Map_Read:
-			//n_assert((Usage == Usage_Dynamic || Usage == Usage_CPU) && (Access == CPU_Read));
+			n_assert(Access.Is(CPU_Read));
 			break;
 		case Map_Write:
-			n_assert((Usage == Usage_Dynamic || Usage == Usage_CPU) && (Access == CPU_Write));
+			n_assert(Access.Is(CPU_Write));
 			break;
 		case Map_ReadWrite:
-			n_assert((Usage == Usage_Dynamic || Usage == Usage_CPU) && (Access == CPU_ReadWrite));
+			n_assert(Access.Is(CPU_Read | CPU_Write));
 			break;
 		case Map_WriteDiscard:
-			n_assert((Usage == Usage_Dynamic) && (Access == CPU_Write));
+			n_assert(Access.Is(GPU_Read | CPU_Write));
 			LockFlags |= D3DLOCK_DISCARD;
 			break;
 		case Map_WriteNoOverwrite:
-			n_assert((Usage == Usage_Dynamic) && (Access == CPU_Write));
+			n_assert(Access.Is(GPU_Read | CPU_Write));
 			LockFlags |= D3DLOCK_NOOVERWRITE;
 			break;
 	}
@@ -94,7 +92,7 @@ void* CVertexBuffer::Map(EMapType MapType)
 }
 //---------------------------------------------------------------------
 
-void CVertexBuffer::Unmap()
+void CD3D9VertexBuffer::Unmap()
 {
 	n_assert(pBuffer && LockCount);
 	n_assert(SUCCEEDED(pBuffer->Unlock()));
@@ -102,7 +100,7 @@ void CVertexBuffer::Unmap()
 }
 //---------------------------------------------------------------------
 
-bool CVertexBuffer::OnDeviceLost(const Events::CEventBase& Ev)
+bool CD3D9VertexBuffer::OnDeviceLost(const Events::CEventBase& Ev)
 {
 	Destroy();
 	OK;

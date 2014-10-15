@@ -21,7 +21,8 @@ CSceneNode::~CSceneNode()
 // like a physics simulation, but is dependent on a parent node transform. Example is a rigid body carried by an
 // animated character. So, we update character animation, those providing correct physical constraint position,
 // then leave scene graph branch, perform physics simulation and finally update deffered rigidbody-controlled nodes.
-// NB: Chains with more than one deffered node may not work properly.
+// NB: All deffered nodes are either processed or not, so there are at most two steps of scene graph updating -
+// 1st update down to first deffered node (non-inclusive) in each branch, 2nd update all nodes not updated in a 1st step.
 void CSceneNode::UpdateTransform(const vector3* pCOIArray, DWORD COICount,
 								 bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes)
 {
@@ -59,14 +60,9 @@ void CSceneNode::UpdateTransform(const vector3* pCOIArray, DWORD COICount,
 		if (Attrs[i]->IsActive())
 			Attrs[i]->Update(pCOIArray, COICount);
 
-	//???!!!how to process deffered after deffered?
-	//how to determine is deffered
-	//physics after physics must be processed
-	//!!!test parent->isroot!!!
-
 	for (int i = 0; i < Children.GetCount(); ++i)
 		if (Children.ValueAt(i)->IsActive())
-			Children.ValueAt(i)->UpdateTransform(pCOIArray, COICount, false, pOutDefferedNodes);
+			Children.ValueAt(i)->UpdateTransform(pCOIArray, COICount, ProcessDefferedController, pOutDefferedNodes);
 }
 //---------------------------------------------------------------------
 

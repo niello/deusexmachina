@@ -3,13 +3,6 @@
 #include <AI/Actions/ActionWander.h>
 #include <Core/Factory.h>
 
-#ifdef __WIN32__
-	#ifdef GetProp
-		#undef GetProp
-		#undef SetProp
-	#endif
-#endif
-
 namespace AI
 {
 __ImplementClass(AI::CActionTplWander, 'ATWN', AI::CActionTpl);

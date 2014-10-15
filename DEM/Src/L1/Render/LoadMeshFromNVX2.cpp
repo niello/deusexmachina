@@ -40,7 +40,7 @@ enum ENVX2VertexComponent
 	Uv3      = (1<<5),
 	Color    = (1<<6),
 	Tangent  = (1<<7),
-	Binormal = (1<<8),
+	Bitangent = (1<<8),
 	Weights  = (1<<9),
 	JIndices = (1<<10),
 	Coord4   = (1<<11),
@@ -221,11 +221,11 @@ static void SetupVertexComponents(uint Mask, CArray<CVertexComponent>& Component
 		Cmp.Stream = 0;
 	}
 
-	if (Mask & Binormal)
+	if (Mask & Bitangent)
 	{
 		CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = CVertexComponent::Float3;
-		Cmp.Semantic = CVertexComponent::Binormal;
+		Cmp.Semantic = CVertexComponent::Bitangent;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 	}

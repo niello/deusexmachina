@@ -6,8 +6,6 @@
 #include <Data/Array.h>
 #include <Events/Subscription.h>
 
-#undef RegisterClass
-
 // Script object is a base for all scripted objects. It can interact with scripts in both directions.
 
 //???!!!in script srv cache object on stack?!

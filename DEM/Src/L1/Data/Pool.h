@@ -9,7 +9,7 @@
 //!!!TODO: use MaxChunks!
 
 template <class T, DWORD ChunkSize = 128, DWORD MaxChunks = 64>
-class CPool
+class CPoolAllocator
 {
 protected:
 
@@ -45,8 +45,8 @@ protected:
 
 public:
 
-	CPool();
-	~CPool() { Clear(); }
+	CPoolAllocator();
+	~CPoolAllocator() { Clear(); }
 
 	T*		Construct();
 	T*		Construct(const T& Other);
@@ -63,7 +63,7 @@ public:
 };
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-CPool<T, ChunkSize, MaxChunks>::CPool():
+CPoolAllocator<T, ChunkSize, MaxChunks>::CPoolAllocator():
 #ifdef _DEBUG
 	AllocationsCount(0),
 	ReleasesCount(0),
@@ -76,7 +76,7 @@ CPool<T, ChunkSize, MaxChunks>::CPool():
 //---------------------------------------------------------------------
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-T* CPool<T, ChunkSize, MaxChunks>::AllocRecord()
+T* CPoolAllocator<T, ChunkSize, MaxChunks>::AllocRecord()
 {
 	T* AllocatedRec(NULL);
 
@@ -116,7 +116,7 @@ T* CPool<T, ChunkSize, MaxChunks>::AllocRecord()
 //---------------------------------------------------------------------
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-inline T* CPool<T, ChunkSize, MaxChunks>::Construct()
+inline T* CPoolAllocator<T, ChunkSize, MaxChunks>::Construct()
 {
 	T* AllocatedRec = AllocRecord();
 	n_placement_new(AllocatedRec, T);
@@ -125,7 +125,7 @@ inline T* CPool<T, ChunkSize, MaxChunks>::Construct()
 //---------------------------------------------------------------------
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-inline T* CPool<T, ChunkSize, MaxChunks>::Construct(const T& Other)
+inline T* CPoolAllocator<T, ChunkSize, MaxChunks>::Construct(const T& Other)
 {
 	T* AllocatedRec = AllocRecord();
 	n_placement_new(AllocatedRec, T)(Other);
@@ -134,7 +134,7 @@ inline T* CPool<T, ChunkSize, MaxChunks>::Construct(const T& Other)
 //---------------------------------------------------------------------
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-inline void CPool<T, ChunkSize, MaxChunks>::Destroy(T* Handle)
+inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Destroy(T* Handle)
 {
 	if (!Handle) return;
 
@@ -150,7 +150,7 @@ inline void CPool<T, ChunkSize, MaxChunks>::Destroy(T* Handle)
 //---------------------------------------------------------------------
 
 template<class T, DWORD ChunkSize, DWORD MaxChunks>
-inline void CPool<T, ChunkSize, MaxChunks>::Clear()
+inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Clear()
 {
 #ifdef _DEBUG
 	if (AllocationsCount != ReleasesCount)

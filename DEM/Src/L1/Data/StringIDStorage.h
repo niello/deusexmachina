@@ -10,14 +10,13 @@
 #define STR_BLOCK_COUNT	64
 #define STR_BLOCK_SIZE	8192
 
-namespace Data //???need?
+namespace Data
 {
 
 class CStringIDStorage
 {
 protected:
 
-	//???CPool<LPCSTR>	Table;
 	CHashTable<CSimpleString, CStringID>	Map;
 	LPSTR									Block[STR_BLOCK_COUNT];
 	int										BlockIndex;

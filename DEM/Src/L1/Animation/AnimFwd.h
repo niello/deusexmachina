@@ -31,7 +31,7 @@ class CAnimTrack
 {
 public:
 
-	vector4						ConstValue;
+	vector4						ConstValue; //???need to store? or can store one key?
 	Scene::ETransformChannel	Channel; //!!!???can avoid storing it? needed only at Setup() time, move to loader?
 };
 
