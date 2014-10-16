@@ -728,6 +728,9 @@
     <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Debug\DebugDraw.h">
+      <Filter>Debug</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1176,6 +1179,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp">
+      <Filter>Debug</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
