@@ -7,15 +7,40 @@ namespace Render
 {
 __ImplementResourceClass(Render::CMesh, 'MESH', Resources::CResource);
 
-bool CMesh::Setup(CVertexBuffer* VertexBuffer, CIndexBuffer* IndexBuffer, const CArray<CMeshGroup>& MeshGroups)
+bool CMesh::Create(const CMeshInitData& InitData)
 {
-	if (!VertexBuffer || !MeshGroups.GetCount()) FAIL;
-	VB = VertexBuffer;
-	IB = IndexBuffer;
-	Groups = MeshGroups;
+	n_assert(!pGroupLODMapping && !pGroups);
+
+	if (!InitData.pVertexBuffer ||
+		!InitData.SubMeshCount ||
+		!InitData.LODCount ||
+		(InitData.UseMapping && !InitData.RealGroupCount)) FAIL;
+
+	VB = InitData.pVertexBuffer;
+	IB = InitData.pIndexBuffer;
+
+	SubMeshCount = InitData.SubMeshCount;
+	LODCount = InitData.LODCount;
+
+	if (InitData.UseMapping)
+	{
+		GroupCount = InitData.RealGroupCount;
+		DWORD MappingSize = sizeof(CMeshGroup*) * SubMeshCount * LODCount;
+		DWORD TotalSize = MappingSize + sizeof(CMeshGroup) * GroupCount;
+		pGroupLODMapping = (CMeshGroup**)n_malloc(TotalSize);
+		pGroups = (CMeshGroup*)((char*)pGroupLODMapping + MappingSize);
+		memcpy(pGroupLODMapping, InitData.pMeshGroupData, TotalSize);
+	}
+	else
+	{
+		GroupCount = (InitData.RealGroupCount == 0) ? SubMeshCount * LODCount : InitData.RealGroupCount;
+		DWORD TotalSize = sizeof(CMeshGroup) * GroupCount;
+		pGroups = (CMeshGroup*)n_malloc(TotalSize);
+		memcpy(pGroups, InitData.pMeshGroupData, TotalSize);
+	}
 
 	//!!!D3D9-specific, redesign!
-	if (VertexBuffer->GetAccess().Is(GPU_Read | CPU_Write) || IndexBuffer->GetAccess().Is(GPU_Read | CPU_Write))
+	if (VB->GetAccess().Is(GPU_Read | CPU_Write) || IB->GetAccess().Is(GPU_Read | CPU_Write))
 	{
 		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CMesh, OnDeviceLost);
 	}
@@ -29,9 +54,12 @@ void CMesh::Unload()
 {
 	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
 
-	VB = NULL;
+	n_free(pGroupLODMapping ? (void*)pGroupLODMapping : (void*)pGroups);
+	pGroups = NULL;
+	pGroupLODMapping = NULL;
+
 	IB = NULL;
-	Groups.Clear();
+	VB = NULL;
 	State = Resources::Rsrc_NotLoaded;
 }
 //---------------------------------------------------------------------

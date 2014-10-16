@@ -87,6 +87,7 @@ bool LoadMeshFromNVX2(IO::CStream& In, EUsage Usage, ECPUAccess Access, PMesh Ou
 	DWORD VBBegin = In.GetPosition();
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
+	//!!!create by factory - resource manager, that hides implementation class inside!
 	PVertexBuffer VB = n_new(CVertexBuffer);
 	if (!VB->Create(VertexLayout, Header.numVertices, Usage, Access)) FAIL;
 	void* pData = VB->Map(Map_Setup);
