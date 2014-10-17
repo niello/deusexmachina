@@ -572,19 +572,6 @@ void CRenderServer::Draw()
 }
 //---------------------------------------------------------------------
 
-PVertexLayout CRenderServer::GetVertexLayout(const CArray<CVertexComponent>& Components)
-{
-	if (!Components.GetCount()) return NULL;
-	CStrID Signature = CVertexLayout::BuildSignature(Components);
-	int Idx = VertexLayouts.FindIndex(Signature);
-	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx);
-	PVertexLayout Layout = n_new(CVertexLayout);
-	n_assert(Layout->Create(Components));
-	VertexLayouts.Add(Signature, Layout);
-	return Layout;
-}
-//---------------------------------------------------------------------
-
 EPixelFormat CRenderServer::GetPixelFormat(const CString& String)
 {
 	if (String.IsEmpty()) return PixelFormat_Invalid;
