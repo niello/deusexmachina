@@ -17,23 +17,6 @@ enum EClearFlag
 	Clear_All		= (Clear_Color | Clear_Depth | Clear_Stencil)
 };
 
-enum EMSAAQuality
-{
-	MSAA_None	= 0,
-	MSAA_2x		= 2,
-	MSAA_4x		= 4,
-	MSAA_8x		= 8
-};
-
-struct CMonitorInfo
-{
-	ushort	Left;
-	ushort	Top;
-	ushort	Width;
-	ushort	Height;
-	bool	IsPrimary;
-};
-
 enum EPrimitiveTopology
 {
 	PointList,
@@ -47,6 +30,13 @@ enum ECaps
 {
 	Caps_VSTex_L16,				// Unsigned short 16-bit texture as a vertex texture
 	Caps_VSTexFiltering_Linear	// Bilinear min & mag filtering for vertex textures
+};
+
+//!!!fill!
+enum EPixelFormat
+{
+	PixelFmt_Invalid = 0,
+	PixelFmt_X8R8G8B8
 };
 
 }

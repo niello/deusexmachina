@@ -1,10 +1,10 @@
 //#ifdef __WIN32__
 #include "Display.h"
 
-#include <Render/RenderServer.h>
-#include <Render/Events/DisplayInput.h>
+#include <Render/Events/DisplayInput.h> //???or custom listener for this?
 #include <Events/EventServer.h>
 
+//???XP or higher? put related code under define!
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
@@ -25,14 +25,8 @@ namespace Render
 CDisplay::CDisplay():
 	WindowTitle("DeusExMachina - Untitled"),
 	IsWndOpen(false),
-	Fullscreen(false),
-	VSync(false),
+	IsWndMinimized(false),
 	AlwaysOnTop(false),
-	AutoAdjustSize(true),
-	DisplayModeSwitchEnabled(true),
-	TripleBuffering(false),
-	Adapter(Adapter_Primary),
-	AntiAliasQuality(MSAA_None),
 	hInst(NULL),
 	hWnd(NULL),
 	hWndParent(NULL),

@@ -737,6 +737,12 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderServer.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1191,6 +1197,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp">
+      <Filter>Render\D3D9</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -43,10 +43,10 @@ public:
 	virtual CVertexBuffer*	CreateVertexBuffer() = 0;
 	virtual CIndexBuffer*	CreateIndexBuffer() = 0;
 	PVertexLayout			GetVertexLayout(const CArray<CVertexComponent>& Components);
-	PVertexLayout			GetVertexLayout(CStrID Signature);
+	PVertexLayout			GetVertexLayout(CStrID Signature) const;
 };
 
-PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature)
+PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 {
 	int Idx = VertexLayouts.FindIndex(Signature);
 	return Idx != INVALID_INDEX ? VertexLayouts.ValueAt(Idx) : NULL;
