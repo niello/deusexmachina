@@ -4,9 +4,11 @@
 
 #include <Render/RenderFwd.h>
 #include <Data/String.h>
-#include <Render/D3D9Fwd.h> //!!!pixel format only! write own enum!
 
-// Contains display mode parameters.
+// Contains display mode parameters
+
+namespace Render
+{
 
 class CDisplayMode
 {
@@ -27,14 +29,13 @@ public:
 	bool	operator ==(const CDisplayMode& Other) const;
 	bool	operator !=(const CDisplayMode& Other) const { return !(*this == Other); }
 };
-//---------------------------------------------------------------------
 
 inline CDisplayMode::CDisplayMode():
 	PosX(0),
 	PosY(0),
 	Width(1024),
 	Height(768),
-	PixelFormat(PixelFormat_Invalid) //X8R8G8B8)
+	PixelFormat(PixelFmt_Invalid) //X8R8G8B8)
 {
 }
 //---------------------------------------------------------------------
@@ -44,7 +45,7 @@ inline CDisplayMode::CDisplayMode(ushort x, ushort y, ushort w, ushort h):
 	PosY(y),
 	Width(w),
 	Height(h),
-	PixelFormat(PixelFormat_Invalid)
+	PixelFormat(PixelFmt_Invalid)
 {
 }
 //---------------------------------------------------------------------
@@ -68,5 +69,7 @@ inline bool CDisplayMode::operator ==(const CDisplayMode& Other) const
 		PixelFormat == Other.PixelFormat;
 }
 //---------------------------------------------------------------------
+
+}
 
 #endif
