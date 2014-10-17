@@ -698,9 +698,6 @@
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\RenderServer.h">
-      <Filter>Render\D3D9</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
@@ -730,6 +727,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Debug\DebugDraw.h">
       <Filter>Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\GPUDriver.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderServer.h">
+      <Filter>Render\D3D9</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1162,9 +1168,6 @@
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\RenderServer.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
@@ -1182,6 +1185,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp">
       <Filter>Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderServer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
