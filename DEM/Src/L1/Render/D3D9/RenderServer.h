@@ -2,7 +2,6 @@
 #ifndef __DEM_L1_RENDER_SERVER_H__
 #define __DEM_L1_RENDER_SERVER_H__
 
-#include <Render/Display.h>
 #include <Render/Materials/Material.h>
 #include <Render/Materials/Texture.h>
 #include <Render/RenderTarget.h>
@@ -55,7 +54,6 @@ protected:
 	CDict<CStrID, PFrameShader>			FrameShaders;
 	CStrID								ScreenFrameShaderID;
 
-	CDisplay							Display;
 	PRenderTarget						DefaultRT;
 
 	//???can write better?
@@ -146,7 +144,6 @@ public:
 	void				SetWireframe(bool Wire);
 	bool				IsWireframe() const { return Wireframe; }
 
-	CDisplay&			GetDisplay() { return Display; }
 	DWORD				GetFrameID() const { return FrameID; }
 	DWORD				GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
 	DWORD				GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }

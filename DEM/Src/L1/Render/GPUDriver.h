@@ -27,6 +27,8 @@ protected:
 
 	//!!!see RenderSrv!
 
+	//!!!in D3D at least - store display or adapter number!
+
 	CDict<CStrID, PVertexLayout>	VertexLayouts;
 
 	//default RT
@@ -45,6 +47,8 @@ public:
 	PVertexLayout			GetVertexLayout(const CArray<CVertexComponent>& Components);
 	PVertexLayout			GetVertexLayout(CStrID Signature) const;
 };
+
+typedef Ptr<CGPUDriver> PGPUDriver;
 
 PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 {

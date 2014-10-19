@@ -202,6 +202,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Camera.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DXDEMInclude.h" />
@@ -215,7 +216,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h" />
-    <ClInclude Include="..\..\Src\L1\Render\Display.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h" />
     <ClInclude Include="..\..\Src\L1\Render\FrameShader.h" />
@@ -243,8 +243,10 @@
     <ClInclude Include="..\..\Src\L1\Render\VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\VideoDriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
+    <ClInclude Include="..\..\Src\L1\System\OSWindowWin32.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeServer.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeSource.h" />
     <ClInclude Include="..\..\Src\L1\SI\SI_L1.h" />
@@ -257,7 +259,7 @@
     <ClInclude Include="..\..\Src\L1\Scripting\ScriptServer.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIRenderer.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIServer.h" />
-    <ClInclude Include="..\..\Src\L1\UI\Window.h" />
+    <ClInclude Include="..\..\Src\L1\UI\UIWindow.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.h" />
@@ -396,6 +398,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Bone.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DXDEMInclude.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp" />
@@ -411,7 +414,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\Display.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp" />
@@ -434,6 +436,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp" />
+    <ClCompile Include="..\..\Src\L1\System\OSWindowWin32.cpp" />
     <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp" />
     <ClCompile Include="..\..\Src\L1\SI\SIEventServer.cpp" />
@@ -447,7 +450,7 @@
     <ClCompile Include="..\..\Src\L1\Scripting\ScriptServer.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp" />
-    <ClCompile Include="..\..\Src\L1\UI\Window.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\UIWindow.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.cpp" />

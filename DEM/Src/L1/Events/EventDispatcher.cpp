@@ -1,29 +1,10 @@
 #include "EventDispatcher.h"
 
-#include <Events/EventServer.h>
 #include <Events/Subscription.h>
-#include <Time/TimeServer.h>
 
 namespace Events
 {
-
-void CEventDispatcher::Clear()
-{
-	while (PendingEventsHead)
-	{
-		CEventNode* Next = PendingEventsHead->Next;
-		EventSrv->DestroyNode(PendingEventsHead);
-		PendingEventsHead = Next;
-	}
-
-	while (EventsToAdd)
-	{
-		CEventNode* Next = EventsToAdd->Next;
-		EventSrv->DestroyNode(EventsToAdd);
-		EventsToAdd = Next;
-	}
-}
-//---------------------------------------------------------------------
+int CEventDispatcher::EventsFiredTotal = 0;
 
 bool CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub)
 {
@@ -44,64 +25,6 @@ bool CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub
 	else CurrSlot = Handler;
 	if (pSub) *pSub = n_new(CSubscription)(this, ID, Handler);
 	OK;
-}
-//---------------------------------------------------------------------
-
-DWORD CEventDispatcher::ScheduleEvent(CEventBase& Event, float RelTime)
-{
- 	if (RelTime > 0.f) Event.Flags |= EV_ASYNC;
-
-	if (Event.Flags & EV_ASYNC)
-	{
-		CEventNode* New = EventSrv->CreateNode();
-		n_assert2(New, "Nervous system of the engine was paralyzed! Can't allocate event node");
-		New->Event = &Event;
-		New->FireTime = (float)TimeSrv->GetTime() + RelTime;
-		if (PendingEventsTail)
-		{
-			n_assert(PendingEventsHead);
-
-			if (New->FireTime >= PendingEventsTail->FireTime)
-			{
-				PendingEventsTail->Next = New;
-				PendingEventsTail = New;
-			}
-			else
-			{
-				if (PendingEventsHead == PendingEventsTail)
-				{
-					PendingEventsHead = New;
-					PendingEventsHead->Next = PendingEventsTail;
-				}
-				else if (EventsToAdd)
-				{
-					CEventNode* Curr = EventsToAdd;
-					CEventNode* Next = EventsToAdd->Next;
-					while (Curr)
-					{
-						if (New->FireTime >= Curr->FireTime)
-						{
-							Curr->Next = New;
-							New->Next = Next;
-							break;
-						}
-						Curr = Next;
-						Next = Next->Next;
-					}
-				}
-				else EventsToAdd = New;
-			}
-		}
-		else
-		{
-			n_assert(!PendingEventsHead);
-			PendingEventsHead =
-			PendingEventsTail = New;
-		}
-
-		return (DWORD)(-1); // Can't count handle facts for async events
-	}
-	else return DispatchEvent(Event);
 }
 //---------------------------------------------------------------------
 
@@ -137,54 +60,9 @@ DWORD CEventDispatcher::DispatchEvent(const CEventBase& Event)
 		while (Sub.IsValid());
 	}
 
-	EventSrv->IncrementFiredEventsCount();
+	++EventsFiredTotal;
 
 	return HandledCounter;
-}
-//---------------------------------------------------------------------
-
-void CEventDispatcher::ProcessPendingEvents()
-{
-	if (EventsToAdd)
-	{
-		n_assert(PendingEventsHead);
-
-		CEventNode* Curr = PendingEventsHead;
-		CEventNode* Next = PendingEventsHead->Next;
-		while (Curr)
-		{
-			if (EventsToAdd->FireTime >= Curr->FireTime)
-			{
-				Curr->Next = EventsToAdd;
-				while (EventsToAdd->Next && EventsToAdd->Next->FireTime <= Next->FireTime)
-					EventsToAdd = EventsToAdd->Next;
-				if (!EventsToAdd->Next)
-				{
-					EventsToAdd->Next = Next;
-					EventsToAdd = NULL;
-					break;
-				}
-				CEventNode* NextToAdd = EventsToAdd->Next;
-				EventsToAdd->Next = Next;
-				EventsToAdd = NextToAdd;
-			}
-			Curr = Next;
-			n_assert(Next); // will always be because insertions to 1-elm list are done immediately on queuing above
-			Next = Next->Next;
-		}
-	}
-
-	float CurrTime = (float)TimeSrv->GetTime();
-
-	while (PendingEventsHead && PendingEventsHead->FireTime <= CurrTime)
-	{
-		n_assert(PendingEventsHead->Event);
-		DispatchEvent(*PendingEventsHead->Event);
-		CEventNode* Next = PendingEventsHead->Next;
-		EventSrv->DestroyNode(PendingEventsHead);
-		PendingEventsHead = Next;
-	}
-	if (!PendingEventsHead) PendingEventsTail = NULL;
 }
 //---------------------------------------------------------------------
 

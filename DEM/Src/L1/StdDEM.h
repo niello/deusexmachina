@@ -104,4 +104,16 @@ enum EClipStatus
 	//InvalidClipStatus - Clipped is used instead now
 };
 
+struct CRational
+{
+	short	Numerator;
+	ushort	Denominator;
+
+	float	GetFloat() const { return Denominator ? (float)Numerator / (float)Denominator : 0.f; }
+	double	GetDouble() const { return Denominator ? (double)Numerator / (double)Denominator : 0.0; }
+
+	bool operator ==(const CRational& Other) const { return Numerator == Other.Numerator && Denominator == Other.Denominator; }
+	bool operator !=(const CRational& Other) const { return Numerator != Other.Numerator || Denominator != Other.Denominator; }
+};
+
 #endif

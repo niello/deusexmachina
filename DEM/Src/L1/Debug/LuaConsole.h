@@ -20,7 +20,7 @@ namespace CEGUI
 namespace Debug
 {
 
-class CLuaConsole: public UI::CWindow
+class CLuaConsole: public UI::CUIWindow
 {
 	__DeclareClass(CLuaConsole);
 

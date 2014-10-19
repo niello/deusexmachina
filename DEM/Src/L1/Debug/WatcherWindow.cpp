@@ -22,13 +22,13 @@
 
 namespace Debug
 {
-__ImplementClass(Debug::CWatcherWindow, 'DWWW', UI::CWindow);
+__ImplementClass(Debug::CWatcherWindow, 'DWWW', UI::CUIWindow);
 
 using namespace Data;
 
 void CWatcherWindow::Init(CEGUI::Window* pWindow)
 {
-	CWindow::Init(pWindow);
+	CUIWindow::Init(pWindow);
 
 	pPatternEdit = (CEGUI::Editbox*)pWnd->getChild(pWnd->getName() + "/PatternEdit");
 
@@ -69,7 +69,7 @@ void CWatcherWindow::Term()
 	if (pWnd && pWnd->getParent())
 		pWnd->getParent()->removeChildWindow(pWnd);
 
-	//CWindow::Term();
+	//CUIWindow::Term();
 }
 //---------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ void CWatcherWindow::SetVisible(bool Visible)
 {
 	if (Visible) SUBSCRIBE_PEVENT(OnUIUpdate, CWatcherWindow, OnUIUpdate);
 	else UNSUBSCRIBE_EVENT(OnUIUpdate);
-	CWindow::SetVisible(Visible);
+	CUIWindow::SetVisible(Visible);
 }
 //---------------------------------------------------------------------
 

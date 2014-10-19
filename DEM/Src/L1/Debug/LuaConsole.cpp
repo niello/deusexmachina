@@ -15,11 +15,11 @@
 
 namespace Debug
 {
-__ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CObject); //UI::CWindow);
+__ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CObject); //UI::CUIWindow);
 
 void CLuaConsole::Init(CEGUI::Window* pWindow)
 {
-	CWindow::Init(pWindow);
+	CUIWindow::Init(pWindow);
 
 	ConnOnShow = pWnd->subscribeEvent(CEGUI::Window::EventShown, CEGUI::Event::Subscriber(&CLuaConsole::OnShow, this));
 
@@ -56,7 +56,7 @@ void CLuaConsole::Term()
 	if (pWnd && pWnd->getParent())
 		pWnd->getParent()->removeChildWindow(pWnd);
 
-	//CWindow::Term();
+	//CUIWindow::Term();
 }
 //---------------------------------------------------------------------
 

@@ -6,6 +6,8 @@
 
 // This UI renderer renders CEGUI
 
+//???maybe it must be frame phase, not renderer?
+
 namespace Render
 {
 

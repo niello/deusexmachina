@@ -22,7 +22,7 @@ namespace CEGUI
 namespace Debug
 {
 
-class CWatcherWindow: public UI::CWindow
+class CWatcherWindow: public UI::CUIWindow
 {
 	__DeclareClass(CWatcherWindow);
 

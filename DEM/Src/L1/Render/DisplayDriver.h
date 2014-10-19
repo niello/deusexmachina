@@ -5,12 +5,14 @@
 #include <Core/Object.h>
 #include <Render/DisplayMode.h>
 
-// Display adapter driver represents and provides interface to manipulate with a display,
-// including its mode, swap chain, refresh rate, buffer formats etc.
-// Implementations of this class are typically based on some graphics API, like D3D9 or DXGI.
+// Display adapter driver represents and provides interface to manipulate with a display device.
+// Display device is an output of some video adapter, typically a monitor. Create display
+// drivers with CVideoDriverFactory.
+// You can implement this class via some graphics API, like D3D9 or DXGI.
 
-//!!!what about connecting GPU to display adapter, display adapter to OS window etc?
-//???!!!singleton? or one per active display adapter? how multi-monitor/multi-viewport works?
+//???1 swap-chain + multiple outputs?
+// Fullscreen: SwapChain -> DisplayMode -> Output
+// Windowed: SwapChain -> Window rect -> Output(s)
 
 namespace Render
 {
@@ -18,14 +20,6 @@ namespace Render
 class CDisplayDriver: public Core::CObject
 {
 public:
-
-	//???UINT and defines for primary & secondary instead of enum?
-	enum EAdapter
-	{
-		Adapter_None = -1,
-		Adapter_Primary = 0,
-		Adapter_Secondary = 1
-	};
 
 	enum EMSAAQuality
 	{
@@ -35,70 +29,87 @@ public:
 		MSAA_8x		= 8
 	};
 
+	//???cache or get on demand?
 	struct CMonitorInfo
 	{
-		ushort	Left;
-		ushort	Top;
+		short	Left;
+		short	Top;
 		ushort	Width;
 		ushort	Height;
 		bool	IsPrimary;
+		//bool	IsAttachedToDesktop; // D3D9: HMONITOR -> DISPLAY_DEVICE
+		//Data::CSimpleString DeviceName; // D3D9 - from adapter info
+		//work area, monitor area in desktop coords (DPI-dependent)
+		//rotation (unspec, 0, 90, 180, 270)
 	};
 
 protected:
 
-	CDisplayMode	DisplayMode;
-	CDisplayMode	RequestedMode;
-	EMSAAQuality	AntiAliasQuality;
+	DWORD			Adapter;
+	DWORD			Output;
 
-	EAdapter		Adapter;
+	// CMonitorInfo MonitorInfo; //!!!Cache, if it makes sense
+
+	// We don't cache available display modes since they can change after display driver was created
+	CDisplayMode	CurrentMode;	// Real mode display operates in
+	CDisplayMode	RequestedMode;	// Mode requested by user
+	//???flag "need to update mode"? marks requested mode as dirty and reapply it to display!
+
+	// Swap chain and window:
+
+	// Backbuffer info (w, h, fmt, count)
+	// DepthStencil fmt
+	// Multisample info (type / sample count, quality)
+	// Swap effect
+	// Windowed/Fullscreen
+	//???refresh rate? 0 for windowed, from disp mode for fullscreen (at least in D3D9) // So needn't to store here.
+	// Presentation interval - relation between adapter refresh rate and Present() call rate
+	// Different additional Present() options
+
+	// Device window
+	// Alt-Enter focus window //???D3D9-only?
+	// D3D9: For fullscreen, one adapter can use focus window as device window, others should use other device windows
+
+	EMSAAQuality	AntiAliasQuality;
 
 	//!!!to flags!
 	bool			Fullscreen;
 	bool			VSync;
 	bool			AutoAdjustSize;				// Autoadjust viewport (display mode W & H) when window size changes
-	bool			DisplayModeSwitchEnabled;	//???
+	bool			DisplayModeSwitchEnabled;	// Allows to change display mode wnd->fullscr to closest to wnd size
 	bool			TripleBuffering;			// Use double or triple buffering when fullscreen
-
-	//!!!see RenderSrv, Display!
-
-	//adapter info (ID, prim/sec, vendor, device etc)
-	//mode, msaa, swapeffect, freq hz, fullscreen, vsync, back buffer count and settings
-	//   (see D3DPRESENT_PARAMETERS)
-	//requested display mode
-	//static methods for adapter manipulation
-	//allow switch, autoadjust size
-	//???swap chain?
 
 public:
 
-	CDisplayDriver() {}
+	CDisplayDriver();
 	virtual ~CDisplayDriver() { }
 
-	void				AdjustSize();
+	//!!!Make backbuffer size match window size -> Must have window reference. Or use RequestDisplayMode() to change backbuffer?
+	void					AdjustSize();
 
-	bool				AdapterExists(EAdapter Adapter);
-	void				GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, CArray<CDisplayMode>& OutModes);
-	bool				SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode);
-	bool				GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode);
-	//CAdapterInfo		GetAdapterInfo(EAdapter Adapter);
-	void				GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo);
+	virtual void			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
+	virtual bool			SupportsDisplayMode(const CDisplayMode& Mode) const = 0;
+	virtual bool			GetCurrentDisplayMode(CDisplayMode& OutMode) const = 0;
+	virtual void			GetMonitorInfo(CMonitorInfo& OutInfo) const = 0;
 
-	// Based on back buffer size
-	void				GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
-	void				GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
+	void					GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
+	void					GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
-	void				RequestDisplayMode(const CDisplayMode& Mode) { RequestedMode = Mode; }
-	const CDisplayMode&	GetDisplayMode() const { return DisplayMode; }
-	const CDisplayMode&	GetRequestedDisplayMode() const { return RequestedMode; }
+	void					RequestDisplayMode(const CDisplayMode& Mode) { RequestedMode = Mode; }
+	const CDisplayMode&		GetDisplayMode() const { return DisplayMode; }
+	const CDisplayMode&		GetRequestedDisplayMode() const { return RequestedMode; }
 };
 
-inline CDisplayDriver::CDisplayDriver():
+typedef Ptr<CDisplayDriver> PDisplayDriver;
+
+inline CDisplayDriver::CDisplayDriver(DWORD AdapterNumber, DWORD OutputNumber):
+	Adapter(AdapterNumber),
+	Output(OutputNumber),
 	Fullscreen(false),
 	VSync(false),
 	AutoAdjustSize(true),
 	DisplayModeSwitchEnabled(true),
 	TripleBuffering(false),
-	Adapter(Adapter_Primary),
 	AntiAliasQuality(MSAA_None)
 {
 }
@@ -106,15 +117,15 @@ inline CDisplayDriver::CDisplayDriver():
 
 inline void CDisplayDriver::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
 {
-	XAbs = (int)(XRel * DisplayMode.Width);
-	YAbs = (int)(YRel * DisplayMode.Height);
+	XAbs = (int)(XRel * CurrentMode.Width);
+	YAbs = (int)(YRel * CurrentMode.Height);
 }
 //---------------------------------------------------------------------
 
 inline void CDisplayDriver::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
 {
-	XRel = XAbs / float(DisplayMode.Width);
-	YRel = YAbs / float(DisplayMode.Height);
+	XRel = XAbs / float(CurrentMode.Width);
+	YRel = YAbs / float(CurrentMode.Height);
 }
 //---------------------------------------------------------------------
 

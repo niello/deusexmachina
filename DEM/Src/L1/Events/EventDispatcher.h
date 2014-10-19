@@ -22,37 +22,24 @@ class CEventDispatcher: public Core::CObject
 {
 protected:
 
-	struct CEventNode
-	{
-		float			FireTime; //???store int or packed to int for CPU fast
-		Ptr<CEventBase>	Event;
-		CEventNode*		Next;
-		CEventNode(): Next(NULL) {}
-	};
+	static int EventsFiredTotal; // Can be used as an event UID
 
-	CEventNode* PendingEventsHead;
-	CEventNode* PendingEventsTail; // to preserve events' fire order, insert to the end of the list
-	CEventNode* EventsToAdd;
-
-	// can use sorted array instead of list & implement subscription priority
 	CHashTable<CEventID, PEventHandler> Subscriptions;
-
-	DWORD	ScheduleEvent(CEventBase& Event, float RelTime);
-	DWORD	DispatchEvent(const CEventBase& Event);
 
 public:
 
-	CEventDispatcher(int HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE);
-	virtual ~CEventDispatcher() { Clear(); }
+	CEventDispatcher(int HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE): Subscriptions(HashTableCapacity) {}
+
+	static int				GetFiredEventsCount() { return EventsFiredTotal; }
 
 	bool					AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub = NULL);
 
 	// Returns handled counter (how much handlers have signed that they handled this event)
-	DWORD					FireEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0, float RelTime = 0.f); /// non-native
-	DWORD					FireEvent(CEventNative& Event, char Flags = -1, float RelTime = 0.f); /// native
+	DWORD					FireEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0); // parametrized
+	DWORD					FireEvent(CEventNative& Event, char Flags = -1); // native
 
-	void					ProcessPendingEvents();
-	void					Clear();
+	// Primarily for internal use, public because CEventServer can't call it otherwise
+	DWORD					DispatchEvent(const CEventBase& Event);
 
 	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, ushort Priority = Priority_Default);
 	template<class T> bool	Subscribe(CEventID ID, T* Object, bool (T::*Callback)(const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
@@ -62,27 +49,18 @@ public:
 
 typedef Ptr<CEventDispatcher> PEventDispatcher;
 
-inline CEventDispatcher::CEventDispatcher(int HashTableCapacity):
-	Subscriptions(HashTableCapacity),
-	PendingEventsHead(NULL),
-	PendingEventsTail(NULL),
-	EventsToAdd(NULL)
-{
-}
-//---------------------------------------------------------------------
-
-inline DWORD CEventDispatcher::FireEvent(CStrID ID, Data::PParams Params, char Flags, float RelTime)
+inline DWORD CEventDispatcher::FireEvent(CStrID ID, Data::PParams Params, char Flags)
 {
 	//!!!event pools!
-	Ptr<CEvent> Event = n_new(CEvent)(ID, Flags, Params); //EventSrv->ParamEvents.Allocate();
-	return ScheduleEvent(*Event, RelTime);
+	Ptr<CEvent> Event = n_new(CEvent)(ID, Flags, Params);
+	return DispatchEvent(*Event);
 }
 //---------------------------------------------------------------------
 
-inline DWORD CEventDispatcher::FireEvent(CEventNative& Event, char Flags, float RelTime)
+inline DWORD CEventDispatcher::FireEvent(CEventNative& Event, char Flags)
 {
 	if (Flags != -1) Event.Flags = Flags;
-	return ScheduleEvent(Event, RelTime);
+	return DispatchEvent(Event);
 }
 //---------------------------------------------------------------------
 
