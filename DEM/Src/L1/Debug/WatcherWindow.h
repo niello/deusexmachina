@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_DBG_WATCHER_WINDOW_H__
 #define __DEM_L1_DBG_WATCHER_WINDOW_H__
 
-#include <UI/Window.h>
+#include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 #include <Data/SimpleString.h>

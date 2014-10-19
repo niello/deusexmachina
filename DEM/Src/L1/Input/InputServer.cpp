@@ -79,8 +79,6 @@ void CInputServer::Trigger()
 {
 	n_assert(_IsOpen);
 
-	ProcessPendingEvents();
-
 	for (int i = 0; i < KeyCount; ++i)
 		if (KeyState[i] & KEY_IS_UP) KeyState[i] &= ~(KEY_IS_DOWN | KEY_IS_UP | KEY_IS_PRESSED);
 		else KeyState[i] &= ~KEY_IS_DOWN;

@@ -133,7 +133,6 @@ bool CEntity::OnEvent(const Events::CEventBase& Event)
 		OK;
 	}
 
-	if (EvID == CStrID("OnBeginFrame")) ProcessPendingEvents();
 	return !!DispatchEvent(Event);
 }
 //---------------------------------------------------------------------

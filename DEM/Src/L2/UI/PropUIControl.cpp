@@ -465,7 +465,7 @@ bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
 	if (!UIDesc.IsValid()) FAIL;
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set<CString>(CStrID("UIDesc"), UIDesc);
-	EventSrv->FireEvent(CStrID("OnObjectDescRequested"), P, EV_ASYNC);
+	EventSrv->ScheduleEvent(CStrID("OnObjectDescRequested"), P);
 	OK;
 }
 //---------------------------------------------------------------------
