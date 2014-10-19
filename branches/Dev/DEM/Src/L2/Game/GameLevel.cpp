@@ -337,8 +337,7 @@ bool CGameLevel::OnEvent(const Events::CEventBase& Event)
 {
 	CStrID EvID = ((Events::CEvent&)Event).ID;
 
-	if (EvID == CStrID("OnBeginFrame")) ProcessPendingEvents();
-	else if (AutoAdjustCameraAspect && MainCamera.IsValid() && EvID == CStrID("OnRenderDeviceReset"))
+	if (AutoAdjustCameraAspect && MainCamera.IsValid() && EvID == CStrID("OnRenderDeviceReset"))
 	{
 		MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
 		MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());

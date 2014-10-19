@@ -6,7 +6,7 @@
 #include <Data/StringID.h>
 #include <Data/Singleton.h>
 #include <Events/EventsFwd.h>
-#include <UI/Window.h>
+#include <UI/UIWindow.h>
 #include <Data/Dictionary.h>
 
 // Central point of all debug (and profiling/statistics???) functionality

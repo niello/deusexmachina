@@ -114,7 +114,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 		P->Set(CStrID("Status"), (int)CQuest::Opened);
 		P->Set(CStrID("Name"), Quest->Name);
 		P->Set(CStrID("Desc"), Quest->Description);
-		EventSrv->FireEvent(CStrID("OnQuestStatusChanged"), P, EV_ASYNC);
+		EventSrv->ScheduleEvent(CStrID("OnQuestStatusChanged"), P);
 		//add Story::CJournal record or it will receive event too
 	}
 	else
@@ -135,7 +135,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	P->Set(CStrID("Status"), (int)CQuest::Opened);
 	P->Set(CStrID("Name"), Task.Task->Name);
 	P->Set(CStrID("Desc"), Task.Task->Description);
-	EventSrv->FireEvent(CStrID("OnQuestStatusChanged"), P, EV_ASYNC);
+	EventSrv->ScheduleEvent(CStrID("OnQuestStatusChanged"), P);
 	//add Story::CJournal record or it will receive event too
 
 #ifdef _DEBUG
@@ -187,7 +187,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 				P->Set(CStrID("IsTask"), true);
 				P->Set(CStrID("Status"), (int)Status);
 				P->Set(CStrID("Name"), Task.Task->Name);
-				EventSrv->FireEvent(CStrID("OnQuestStatusChanged"), P, EV_ASYNC);
+				EventSrv->ScheduleEvent(CStrID("OnQuestStatusChanged"), P);
 				//add Story::CJournal record or it will receive event too
 
 				// Don't delete task, we need its name & desc for journal
@@ -214,7 +214,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 		P->Set(CStrID("IsTask"), false);
 		P->Set(CStrID("Status"), (int)Status);
 		P->Set(CStrID("Name"), Quests.ValueAt(Idx).Quest->Name);
-		EventSrv->FireEvent(CStrID("OnQuestStatusChanged"), P, EV_ASYNC);
+		EventSrv->ScheduleEvent(CStrID("OnQuestStatusChanged"), P);
 		//add Story::CJournal record or it will receive event too
 
 		OK;
@@ -239,7 +239,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 			P->Set(CStrID("IsTask"), true);
 			P->Set(CStrID("Status"), (int)Status);
 			P->Set(CStrID("Name"), Task.Task->Name);
-			EventSrv->FireEvent(CStrID("OnQuestStatusChanged"), P, EV_ASYNC);
+			EventSrv->ScheduleEvent(CStrID("OnQuestStatusChanged"), P);
 			//add Story::CJournal record or it will receive event too
 
 			// Don't delete task, we need its name & desc for journal

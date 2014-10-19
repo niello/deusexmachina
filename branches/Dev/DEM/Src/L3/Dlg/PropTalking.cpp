@@ -93,10 +93,10 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	EventSrv->FireEvent(CStrID("ShowPhrase"), P);
 
-	P = n_new(Data::CParams);
+	P = n_new(Data::CParams(1));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	//!!!TODO: Calculate time
-	EventSrv->FireEvent(CStrID("HidePhrase"), P, 0, 5.f);
+	EventSrv->ScheduleEvent(CStrID("HidePhrase"), P, 0, NULL, 5.f);
 }
 //---------------------------------------------------------------------
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_UI_SERVER_H__
 #define __DEM_L1_UI_SERVER_H__
 
-#include <UI/Window.h>
+#include <UI/UIWindow.h>
 #include <Data/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
