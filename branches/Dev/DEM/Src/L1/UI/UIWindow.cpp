@@ -6,22 +6,22 @@
 
 namespace UI
 {
-__ImplementClass(UI::CWindow, 'UIWN', Core::CObject);
+__ImplementClass(UI::CUIWindow, 'UIWN', Core::CObject);
 
-void CWindow::Init(CEGUI::Window* pWindow)
+void CUIWindow::Init(CEGUI::Window* pWindow)
 {
 	n_assert(!pWnd && pWindow);
 	pWnd = pWindow;
 }
 //---------------------------------------------------------------------
 
-void CWindow::Load(const CString& ResourceFile)
+void CUIWindow::Load(const CString& ResourceFile)
 {
 	Init(CEGUI::WindowManager::getSingleton().loadWindowLayout(ResourceFile.CStr(), ""));
 }
 //---------------------------------------------------------------------
 
-vector2 CWindow::GetSizeRel()
+vector2 CUIWindow::GetSizeRel()
 {
 	if (!pWnd) return vector2::zero;
 
@@ -30,7 +30,7 @@ vector2 CWindow::GetSizeRel()
 }
 //---------------------------------------------------------------------
 
-vector2 CWindow::GetParentBaseSize(CEGUI::Window* pWindow)
+vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 {
 	CEGUI::Window* pWndParent = pWindow->getParent();
 	if (!pWndParent)

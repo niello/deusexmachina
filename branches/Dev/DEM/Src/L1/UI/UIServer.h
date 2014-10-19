@@ -29,7 +29,7 @@ namespace CEGUI
 
 namespace UI
 {
-typedef Ptr<class CWindow> PWindow;
+typedef Ptr<class CUIWindow> PWindow;
 
 #define UISrv UI::CUIServer::Instance()
 
@@ -47,7 +47,7 @@ private:
 	CEGUI::CNebula2ResourceProvider*	ResourceProvider;
 
 	CDict<CStrID, PWindow>		Screens;
-	CWindow*							CurrRootScreen;
+	CUIWindow*							CurrRootScreen;
 
 	CArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
 
@@ -77,16 +77,16 @@ public:
 	void Render();
 
 	// Interface
-	bool			RegisterScreen(CStrID Name, CWindow* pScreen);
-	//Ptr<CWindow>	LoadScreen(CStrID Name, const CString& ResourceFile);
-	CWindow*		GetScreen(CStrID Name) const;
-	void			SetRootScreen(CWindow* pWindow);
-	CWindow*		GetRootScreen() const { return CurrRootScreen; }
+	bool			RegisterScreen(CStrID Name, CUIWindow* pScreen);
+	//Ptr<CUIWindow>	LoadScreen(CStrID Name, const CString& ResourceFile);
+	CUIWindow*		GetScreen(CStrID Name) const;
+	void			SetRootScreen(CUIWindow* pWindow);
+	CUIWindow*		GetRootScreen() const { return CurrRootScreen; }
 	void			SetRootWindow(CEGUI::Window* pWindow);
 	bool			SetRootWindow(CStrID Name);
-	//CWindow*
+	//CUIWindow*
 	CEGUI::Window*	GetRootWindow() const;
-	void			DestroyWindow(CWindow* pWindow);
+	void			DestroyWindow(CUIWindow* pWindow);
 	void			DestroyWindow(CStrID Name);
 
 	void			ShowGUI();
@@ -117,7 +117,7 @@ public:
 	*/
 };
 
-inline CWindow* CUIServer::GetScreen(CStrID Name) const
+inline CUIWindow* CUIServer::GetScreen(CStrID Name) const
 {
 	int Idx = Screens.FindIndex(Name);
 	return Idx != INVALID_INDEX ? Screens.ValueAt(Idx) : NULL;

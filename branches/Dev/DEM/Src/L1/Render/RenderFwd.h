@@ -8,6 +8,9 @@
 
 namespace Render
 {
+const DWORD Adapter_None = (DWORD)-1;
+const DWORD Adapter_Primary = 0;
+const DWORD Adapter_Secondary = 1;
 
 enum EClearFlag
 {

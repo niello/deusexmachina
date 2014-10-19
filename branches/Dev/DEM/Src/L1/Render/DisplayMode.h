@@ -5,7 +5,8 @@
 #include <Render/RenderFwd.h>
 #include <Data/String.h>
 
-// Contains display mode parameters
+// Display mode of some video adapter output. Use in CDisplayDriver to
+// change application display mode for curtain monitor.
 
 namespace Render
 {
@@ -14,59 +15,47 @@ class CDisplayMode
 {
 public:
 
-	ushort			PosX;
-	ushort			PosY;
+	CRational		RefreshRate;
+	EPixelFormat	PixelFormat;
 	ushort			Width;
 	ushort			Height;
-	EPixelFormat	PixelFormat;
+	//EScanLineOrder;	// Use "unspecified" where can't obtain
+	//EDisplayScaling;	// Use "unspecified" where can't obtain
+	bool			Stereo;
 
-	CDisplayMode();
-	CDisplayMode(ushort x, ushort y, ushort w, ushort h);
-	CDisplayMode(ushort w, ushort h, EPixelFormat Format);
+	CDisplayMode(ushort w = 1024, ushort h = 768, EPixelFormat Format = PixelFmt_Invalid);
 
 	float	GetAspectRatio() const { return Width / (float)Height; }
 
 	bool	operator ==(const CDisplayMode& Other) const;
-	bool	operator !=(const CDisplayMode& Other) const { return !(*this == Other); }
+	bool	operator !=(const CDisplayMode& Other) const;
 };
 
-inline CDisplayMode::CDisplayMode():
-	PosX(0),
-	PosY(0),
-	Width(1024),
-	Height(768),
-	PixelFormat(PixelFmt_Invalid) //X8R8G8B8)
-{
-}
-//---------------------------------------------------------------------
-
-inline CDisplayMode::CDisplayMode(ushort x, ushort y, ushort w, ushort h):
-	PosX(x),
-	PosY(y),
-	Width(w),
-	Height(h),
-	PixelFormat(PixelFmt_Invalid)
-{
-}
-//---------------------------------------------------------------------
-
 inline CDisplayMode::CDisplayMode(ushort w, ushort h, EPixelFormat Format):
-	PosX(0),
-	PosY(0),
 	Width(w),
 	Height(h),
 	PixelFormat(Format)
 {
+	RefreshRate.Numerator = 0;
+	RefreshRate.Denominator = 1;
 }
 //---------------------------------------------------------------------
 
 inline bool CDisplayMode::operator ==(const CDisplayMode& Other) const
 {
-	return PosX == Other.PosX &&
-		PosY == Other.PosY &&
-		Width == Other.Width &&
+	return Width == Other.Width &&
 		Height == Other.Height &&
-		PixelFormat == Other.PixelFormat;
+		PixelFormat == Other.PixelFormat &&
+		RefreshRate == Other.RefreshRate;
+}
+//---------------------------------------------------------------------
+
+inline bool CDisplayMode::operator !=(const CDisplayMode& Other) const
+{
+	return Width != Other.Width ||
+		Height != Other.Height ||
+		PixelFormat != Other.PixelFormat ||
+		RefreshRate != Other.RefreshRate;
 }
 //---------------------------------------------------------------------
 

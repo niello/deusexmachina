@@ -1,5 +1,6 @@
-//#ifdef __WIN32__
-#include "Display.h"
+#ifdef __WIN32__
+
+#include "OSWindowWin32.h"
 
 #include <Render/Events/DisplayInput.h> //???or custom listener for this?
 #include <Events/EventServer.h>
@@ -19,10 +20,10 @@
 #define DEM_WINDOW_CLASS		"DeusExMachina::MainWindow"
 #define ACCEL_TOGGLEFULLSCREEN	1001
 
-namespace Render
+namespace Sys
 {
 
-CDisplay::CDisplay():
+COSWindowWin32::COSWindowWin32():
 	WindowTitle("DeusExMachina - Untitled"),
 	IsWndOpen(false),
 	IsWndMinimized(false),
@@ -34,13 +35,13 @@ CDisplay::CDisplay():
 	aWndClass(0),
 	StyleWindowed(WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE),
 	StyleFullscreen(WS_POPUP | WS_SYSMENU | WS_VISIBLE),
-	StyleChild(WS_CHILD | WS_VISIBLE) //WS_CHILD | WS_TABSTOP - N2, now N3 variant is selected
+	StyleChild(WS_CHILD | WS_TABSTOP | WS_VISIBLE) //???need tabstop?
 {
 	hInst = GetModuleHandle(NULL);
 }
 //---------------------------------------------------------------------
 
-CDisplay::~CDisplay()
+COSWindowWin32::~COSWindowWin32()
 {
 	if (IsWndOpen) CloseWindow();
 
@@ -53,13 +54,13 @@ CDisplay::~CDisplay()
 	if (aWndClass)
 	{
 		if (!UnregisterClass((LPCSTR)aWndClass, hInst))
-			Sys::Error("CDisplay::CloseWindow(): UnregisterClass() failed!\n");
+			Sys::Error("COSWindowWin32::CloseWindow(): UnregisterClass() failed!\n");
 		aWndClass = 0;
 	}
 }
 //---------------------------------------------------------------------
 
-bool CDisplay::OpenWindow()
+bool COSWindowWin32::OpenWindow()
 {
 	n_assert(!IsWndOpen && hInst && !hWnd);
 
@@ -72,8 +73,8 @@ bool CDisplay::OpenWindow()
 	{
 		RECT r;
 		GetClientRect(hWndParent, &r);
-		DisplayMode.Width = (ushort)(r.right - r.left);
-		DisplayMode.Height = (ushort)(r.bottom - r.top);
+		//Width = (ushort)(r.right - r.left);
+		//Height = (ushort)(r.bottom - r.top);
 	}
 
 	if (!hAccel)
@@ -112,7 +113,7 @@ bool CDisplay::OpenWindow()
 
 	LONG WndStyle;
 	if (hWndParent) WndStyle = StyleChild;
-	else if (Fullscreen) WndStyle = StyleFullscreen;
+	else if (IsFullscreen) WndStyle = StyleFullscreen;
 	else WndStyle = StyleWindowed;
 
 	int X, Y, W, H;
@@ -139,7 +140,7 @@ bool CDisplay::OpenWindow()
 	RawInputDevices[0].hwndTarget = hWnd;
 
 	if (RegisterRawInputDevices(RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-		Sys::Log("CDisplay: High-definition (raw) mouse device registration failed!\n");
+		Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
 
 	IsWndOpen = true;
 	IsWndMinimized = false;
@@ -147,7 +148,7 @@ bool CDisplay::OpenWindow()
 }
 //---------------------------------------------------------------------
 
-void CDisplay::CloseWindow()
+void COSWindowWin32::CloseWindow()
 {
 	n_assert(IsWndOpen && hInst);
 
@@ -167,7 +168,7 @@ void CDisplay::CloseWindow()
 // Polls for and processes window messages. Call this message once per
 // frame in your render loop. If the user clicks the window close
 // button, or hits Alt-F4, an OnDisplayClose event will be sent.
-void CDisplay::ProcessWindowMessages()
+void COSWindowWin32::ProcessWindowMessages()
 {
 	n_assert(IsWndOpen);
 
@@ -185,14 +186,14 @@ void CDisplay::ProcessWindowMessages()
 }
 //---------------------------------------------------------------------
 
-void CDisplay::SetWindowTitle(const char* pTitle)
+void COSWindowWin32::SetWindowTitle(const char* pTitle)
 {
 	WindowTitle = pTitle;
 	if (hWnd) SetWindowText(hWnd, pTitle);
 }
 //---------------------------------------------------------------------
 
-void CDisplay::SetWindowIcon(const char* pIconName)
+void COSWindowWin32::SetWindowIcon(const char* pIconName)
 {
 	IconName = pIconName;
 	if (hWnd && IconName.IsValid())
@@ -203,7 +204,7 @@ void CDisplay::SetWindowIcon(const char* pIconName)
 }
 //---------------------------------------------------------------------
 
-void CDisplay::CalcWindowRect(int& X, int& Y, int& W, int& H)
+void COSWindowWin32::CalcWindowRect(int& X, int& Y, int& W, int& H)
 {
 	if (hWndParent)
 	{
@@ -227,7 +228,7 @@ void CDisplay::CalcWindowRect(int& X, int& Y, int& W, int& H)
 		CMonitorInfo MonitorInfo;
 		GetAdapterMonitorInfo(Adapter, MonitorInfo);
 
-		if (Fullscreen)
+		if (IsFullscreen)
 		{
 			if (DisplayModeSwitchEnabled)
 			{
@@ -255,14 +256,14 @@ void CDisplay::CalcWindowRect(int& X, int& Y, int& W, int& H)
 }
 //---------------------------------------------------------------------
 
-void CDisplay::ResetWindow()
+void COSWindowWin32::ResetWindow()
 {
 	n_assert(hWnd && IsWndOpen);
 
-	// Fullscreen mode breaks theme (at least aero glass) on Win7, so restore it
-	if (!hWndParent && !Fullscreen) SetWindowTheme(hWnd, NULL, NULL);
+	// IsFullscreen mode breaks theme (at least aero glass) on Win7, so restore it
+	if (!hWndParent && !IsFullscreen) SetWindowTheme(hWnd, NULL, NULL);
 
-	if (!hWndParent) SetWindowLongPtr(hWnd, GWL_STYLE, Fullscreen ? StyleFullscreen : StyleWindowed);
+	if (!hWndParent) SetWindowLongPtr(hWnd, GWL_STYLE, IsFullscreen ? StyleFullscreen : StyleWindowed);
 
 	int X, Y, W, H;
 	CalcWindowRect(X, Y, W, H);
@@ -276,7 +277,7 @@ void CDisplay::ResetWindow()
 }
 //---------------------------------------------------------------------
 
-void CDisplay::RestoreWindow()
+void COSWindowWin32::RestoreWindow()
 {
 	n_assert(hWnd && IsWndOpen);
 	::ShowWindow(hWnd, SW_RESTORE);
@@ -285,7 +286,7 @@ void CDisplay::RestoreWindow()
 }
 //---------------------------------------------------------------------
 
-void CDisplay::MinimizeWindow()
+void COSWindowWin32::MinimizeWindow()
 {
 	n_assert(hWnd && IsWndOpen);
 	if (!IsWndMinimized)
@@ -296,7 +297,7 @@ void CDisplay::MinimizeWindow()
 }
 //---------------------------------------------------------------------
 
-void CDisplay::AdjustSize()
+void COSWindowWin32::AdjustSize()
 {
 	n_assert(hWnd);
 
@@ -309,69 +310,9 @@ void CDisplay::AdjustSize()
 }
 //---------------------------------------------------------------------
 
-bool CDisplay::AdapterExists(EAdapter Adapter)
+LONG WINAPI COSWindowWin32::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return ((UINT)Adapter) < RenderSrv->GetD3D()->GetAdapterCount();
-}
-//---------------------------------------------------------------------
-
-void CDisplay::GetAvailableDisplayModes(EAdapter Adapter, EPixelFormat Format, CArray<CDisplayMode>& OutModes)
-{
-	n_assert(AdapterExists(Adapter));
-	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
-	UINT ModeCount = RenderSrv->GetD3D()->GetAdapterModeCount(Adapter, Format);
-	for (UINT i = 0; i < ModeCount; i++)
-	{
-		//HRESULT hr =
-		RenderSrv->GetD3D()->EnumAdapterModes(Adapter, Format, i, &D3DDisplayMode);
-		CDisplayMode Mode(D3DDisplayMode.Width, D3DDisplayMode.Height, D3DDisplayMode.Format);
-		if (OutModes.FindIndex(Mode) == INVALID_INDEX)
-			OutModes.Add(Mode);
-	}
-}
-//---------------------------------------------------------------------
-
-bool CDisplay::SupportsDisplayMode(EAdapter Adapter, const CDisplayMode& Mode)
-{
-	CArray<CDisplayMode> Modes;
-	GetAvailableDisplayModes(Adapter, Mode.PixelFormat, Modes);
-	return Modes.FindIndex(Mode) != INVALID_INDEX;
-}
-//---------------------------------------------------------------------
-
-bool CDisplay::GetCurrentAdapterDisplayMode(EAdapter Adapter, CDisplayMode& OutMode)
-{
-	n_assert(AdapterExists(Adapter));
-	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
-	HRESULT hr = RenderSrv->GetD3D()->GetAdapterDisplayMode((UINT)Adapter, &D3DDisplayMode);
-	if (hr == D3DERR_DEVICELOST) FAIL;
-	n_assert(SUCCEEDED(hr));
-	OutMode.PosX = 0;
-	OutMode.PosY = 0;
-	OutMode.Width = D3DDisplayMode.Width;
-	OutMode.Height = D3DDisplayMode.Height;
-	OutMode.PixelFormat = D3DDisplayMode.Format;
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CDisplay::GetAdapterMonitorInfo(EAdapter Adapter, CMonitorInfo& OutInfo)
-{
-	n_assert(AdapterExists(Adapter));
-	HMONITOR hMonitor = RenderSrv->GetD3D()->GetAdapterMonitor(Adapter);
-	MONITORINFO Win32MonitorInfo = { sizeof(Win32MonitorInfo), 0 };
-	GetMonitorInfo(hMonitor, &Win32MonitorInfo);
-	OutInfo.Left = (ushort)Win32MonitorInfo.rcMonitor.left;
-	OutInfo.Top = (ushort)Win32MonitorInfo.rcMonitor.top;
-	OutInfo.Width = (ushort)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
-	OutInfo.Height = (ushort)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
-	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
-}
-//---------------------------------------------------------------------
-
-LONG WINAPI CDisplay::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	CDisplay* pDisp = (CDisplay*)GetWindowLong(hWnd, 0);
+	COSWindowWin32* pDisp = (COSWindowWin32*)GetWindowLong(hWnd, 0);
 	LONG Result = 0;
 	if (pDisp && pDisp->HandleWindowMessage(hWnd, uMsg, wParam, lParam, Result)) return Result;
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -379,13 +320,13 @@ LONG WINAPI CDisplay::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 //---------------------------------------------------------------------
 
 //???need _hWnd param?
-bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result)
+bool COSWindowWin32::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result)
 {
 	switch (uMsg)
 	{
 		case WM_SYSCOMMAND:
 			// Prevent moving/sizing and power loss in fullscreen mode
-			if (Fullscreen)
+			if (IsFullscreen)
 			{
 				switch (wParam)
 				{
@@ -423,7 +364,7 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 					EventSrv->FireEvent(CStrID("OnDisplayRestored"));
 					ReleaseCapture();
 				}
-				if (hWnd && AutoAdjustSize && !Fullscreen) AdjustSize();
+				if (hWnd && AutoAdjustSize && !IsFullscreen) AdjustSize();
 			}
 			// Manually change window size in child mode
 			if (hWndParent) MoveWindow(hWnd, DisplayMode.PosX, DisplayMode.PosY, LOWORD(lParam), HIWORD(lParam), TRUE);
@@ -601,4 +542,4 @@ bool CDisplay::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 
 }
 
-//#endif //__WIN32__
+#endif //__WIN32__

@@ -175,7 +175,7 @@ bool CUIServer::OnDeviceReset(const Events::CEventBase& Ev)
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::RegisterScreen(CStrID Name, CWindow* pScreen)
+bool CUIServer::RegisterScreen(CStrID Name, CUIWindow* pScreen)
 {
 	if (Screens.Contains(Name)) FAIL;
 	Screens.Add(Name, pScreen);
@@ -196,13 +196,13 @@ void CUIServer::LoadFont(const CString& ResourceFile)
 }
 //---------------------------------------------------------------------
 
-void CUIServer::DestroyWindow(CWindow* pWindow)
+void CUIServer::DestroyWindow(CUIWindow* pWindow)
 {
 	CEGUI::WindowManager::getSingleton().destroyWindow(pWindow->GetWnd());
 }
 //---------------------------------------------------------------------
 
-void CUIServer::SetRootScreen(CWindow* pWindow)
+void CUIServer::SetRootScreen(CUIWindow* pWindow)
 {
 	n_assert(pWindow);
 	CurrRootScreen = pWindow;

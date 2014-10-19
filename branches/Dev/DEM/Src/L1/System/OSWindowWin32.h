@@ -1,7 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_DISPLAY_H__
-#define __DEM_L1_RENDER_DISPLAY_H__
-//#ifdef __WIN32__
+#ifdef __WIN32__
+#ifndef __DEM_L1_SYS_OS_WINDOW_WIN32_H__
+#define __DEM_L1_SYS_OS_WINDOW_WIN32_H__
 
 #include <Data/String.h>
 
@@ -10,21 +10,23 @@
 
 //!!!OS-based, so can avoid virtuality and use define-based approach as in N3!
 
-// Display handles a viewport (in the Win32 it is a window of the host OS)
-// and a display mode that is used by the render device.
+// Win32 operating system window implementation
 
-namespace Render
+namespace Sys
 {
 
-class CDisplay
+class COSWindowWin32//: public COSWindowBase or COSViewportBase - window also handles input, not only viewport
 {
 protected:
 
 	//???!!!use CSimpleString?!
 	CString			WindowTitle;
 	CString			IconName;
-	bool			IsWndOpen;
+
+	//!!!to flags!
+	bool			IsWndOpen;		//!!!remove Wnd from names!
 	bool			IsWndMinimized;
+	bool			IsFullscreen;	//???fullscreen window or fullscreen backbuffer/display or both or what?!
 	bool			AlwaysOnTop;
 
 	HINSTANCE		hInst;
@@ -43,8 +45,10 @@ protected:
 
 public:
 
-	CDisplay();
-	~CDisplay();
+	COSWindowWin32();
+	~COSWindowWin32();
+
+	//???virtual void* GetHandle() const;?
 
 	//!!!rename class to Window and remove this word from method names!
 	bool				OpenWindow();
@@ -73,7 +77,7 @@ public:
 	ATOM				GetWndClass() const { return aWndClass; }
 };
 
-inline bool CDisplay::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
+inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
 {
 	RECT r;
 	if (!hWnd || !GetClientRect(hWnd, &r)) FAIL;
@@ -83,7 +87,7 @@ inline bool CDisplay::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs
 }
 //---------------------------------------------------------------------
 
-inline bool CDisplay::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
+inline bool COSWindowWin32::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
 {
 	RECT r;
 	if (!hWnd || !GetClientRect(hWnd, &r)) FAIL;
@@ -95,5 +99,5 @@ inline bool CDisplay::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel
 
 }
 
-//#endif // __WIN32__
 #endif
+#endif //__WIN32__

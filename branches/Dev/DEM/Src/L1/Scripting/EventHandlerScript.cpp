@@ -16,6 +16,7 @@ namespace Events
 
 bool CEventHandlerScript::operator()(const CEventBase& Event)
 {
+	//???where do we check isn't it native?
 	const CEvent& e = (const CEvent&)Event;
 
 	if (e.Params.IsValid() && e.Params->GetCount())

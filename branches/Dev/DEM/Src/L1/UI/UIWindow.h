@@ -10,9 +10,9 @@
 namespace UI
 {
 
-class CWindow: public Core::CObject
+class CUIWindow: public Core::CObject
 {
-	__DeclareClass(CWindow);
+	__DeclareClass(CUIWindow);
 
 protected:
 
@@ -22,8 +22,8 @@ protected:
 
 public:
 
-	CWindow(): pWnd(NULL) {}
-	virtual ~CWindow() {}
+	CUIWindow(): pWnd(NULL) {}
+	virtual ~CUIWindow() {}
 
 	virtual void	Init(CEGUI::Window* pWindow);
 	virtual void	Term() {} //!!!if attached to parent, remove. Then unload.
@@ -46,7 +46,7 @@ public:
 	CEGUI::Window*	GetWnd() const { return pWnd; }
 };
 
-typedef Ptr<CWindow> PWindow;
+typedef Ptr<CUIWindow> PWindow;
 
 }
 

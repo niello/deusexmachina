@@ -14,9 +14,6 @@ bool CRenderServer::Open()
 {
 	n_assert(!_IsOpen);
 
-	pD3D = Direct3DCreate9(D3D_SDK_VERSION);
-	if (!pD3D) FAIL;
-
 	Display.SetDisplayMode(Display.GetRequestedDisplayMode());
 	if (!Display.OpenWindow()) FAIL;
 
@@ -60,8 +57,6 @@ void CRenderServer::Close()
 	ReleaseDevice();
 
 	if (Display.IsWindowOpen()) Display.CloseWindow();
-
-	SAFE_RELEASE(pD3D);
 
 	_IsOpen = false;
 }
@@ -109,9 +104,9 @@ bool CRenderServer::CreateDevice()
 	// NB: May fail if can't create requested number of backbuffers
 	HRESULT hr = pD3D->CreateDevice(D3DAdapter, 
 									DEM_D3D_DEVICETYPE,
-									Display.GetAppHwnd(),
+									Display.GetAppHwnd(),	//!!!focus window to react on alt-tab, one for all devices!
 									BhvFlags,
-									&D3DPresentParams,
+									&D3DPresentParams,		//!!!hDeviceWindow is a viewport for this device, used in Present()!
 									&pD3DDevice);
 
 	if (FAILED(hr))
@@ -218,7 +213,7 @@ void CRenderServer::SetupPresentParams()
 	if (D3DPresentParams.Windowed)
 	{
 		CDisplayMode DesktopMode;
-		n_assert(Display.GetCurrentAdapterDisplayMode((CDisplay::EAdapter)D3DAdapter, DesktopMode));
+		n_assert(Display.GetCurrentAdapterDisplayMode((CDisplay::DWORD)D3DAdapter, DesktopMode));
 		DisplayMode.PixelFormat = DesktopMode.PixelFormat;
 	}
 	else
@@ -227,7 +222,7 @@ void CRenderServer::SetupPresentParams()
 			DisplayMode.PixelFormat = D3DFMT_X8R8G8B8;
 
 		CArray<CDisplayMode> Modes;
-		Display.GetAvailableDisplayModes((CDisplay::EAdapter)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
+		Display.GetAvailableDisplayModes((CDisplay::DWORD)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
 		if (Modes.FindIndex(DisplayMode) == INVALID_INDEX)
 		{
 			// Find available mode the most close to the requested one

@@ -237,9 +237,6 @@
     <ClInclude Include="..\..\Src\L1\UI\UIServer.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\UI\Window.h">
-      <Filter>UI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.h">
       <Filter>UI\CEGUI</Filter>
     </ClInclude>
@@ -635,9 +632,6 @@
     <ClInclude Include="..\..\Src\L1\Render\Camera.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Display.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -743,6 +737,18 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\UIWindow.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\System\OSWindowWin32.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\VideoDriverFactory.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -815,9 +821,6 @@
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\UI\Window.cpp">
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.cpp">
@@ -1117,9 +1120,6 @@
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Display.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -1202,6 +1202,15 @@
       <Filter>Render\D3D9</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\UIWindow.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\System\OSWindowWin32.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
   </ItemGroup>
