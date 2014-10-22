@@ -3,6 +3,9 @@
 #include <Render/D3D11/D3D11DisplayDriver.h>
 //#include <Render/D3D11/D3D11GPUDriver.h>
 
+#define WIN32_LEAN_AND_MEAN
+#include <DXGI.h>
+
 namespace Render
 {
 
@@ -40,9 +43,15 @@ bool CD3D11DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) c
 
 	if (!Success) FAIL;
 
-	//WideCharToMultiByte(
-	//OutInfo.Description = D3DAdapterInfo.Description;
-	OutInfo.Description = "";
+	D3DAdapterInfo.Description[sizeof_array(D3DAdapterInfo.Description) - 1] = 0;
+	int Len = WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), NULL, 0, NULL, NULL);
+	if (Len > 0)
+	{
+		char* pBuf = (char*)_malloca(Len); // Len includes terminating NULL
+		WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), pBuf, Len, NULL, NULL);
+		OutInfo.Description = pBuf;
+		_freea(pBuf);
+	}
 
 	OutInfo.VendorID = D3DAdapterInfo.VendorId;
 	OutInfo.DeviceID = D3DAdapterInfo.DeviceId;
@@ -59,8 +68,9 @@ bool CD3D11DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) c
 
 PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Output)
 {
-	//return n_new(CD3D11DisplayDriver);
-	return NULL;
+	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
+	if (!Driver->Init(Adapter, Output)) Driver = NULL;
+	return Driver.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -72,6 +82,30 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, bool CreateSwapCh
 	// if !pFullscreenOutput - don't restrict, use default output from window
 	//return n_new(CD3D11GPUDriver);
 	return NULL;
+}
+//---------------------------------------------------------------------
+
+DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
+{
+	switch (Format)
+	{
+		//???
+		case PixelFmt_X8R8G8B8:	return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case PixelFmt_Invalid:
+		default:				return DXGI_FORMAT_UNKNOWN;
+	}
+}
+//---------------------------------------------------------------------
+
+EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
+{
+	switch (D3DFormat)
+	{
+		//???
+		case DXGI_FORMAT_B8G8R8X8_UNORM:	return PixelFmt_X8R8G8B8; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case DXGI_FORMAT_UNKNOWN:
+		default:							return PixelFmt_Invalid;
+	}
 }
 //---------------------------------------------------------------------
 

@@ -4,15 +4,17 @@
 
 #include <Render/VideoDriverFactory.h>
 #include <Data/Singleton.h>
-#define WIN32_LEAN_AND_MEAN
-#include <DXGI.h>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory
 
 //???rename to DXGI[version]DriverFactory?
 
+struct IDXGIFactory1;
+enum DXGI_FORMAT;
+
 namespace Render
 {
+#define D3D11DrvFactory CD3D11DriverFactory::Instance()
 
 class CD3D11DriverFactory: public CVideoDriverFactory
 {
@@ -21,13 +23,16 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDXGIFactory1*			pDXGIFactory;
-	DWORD					AdapterCount;	// Valid during a lifetime of the DXGI factory object
+	IDXGIFactory1*	pDXGIFactory;
+	DWORD			AdapterCount;	// Valid during a lifetime of the DXGI factory object
 
 public:
 
 	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
+
+	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
+	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);
 
 	bool					Open();
 	void					Close();
@@ -40,6 +45,8 @@ public:
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0);
 	//!!!need swap chain params!
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0, bool CreateSwapChain = true, Sys::COSWindow* pWindow = NULL, CDisplayDriver* pFullscreenOutput = NULL);
+
+	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };
 
 }

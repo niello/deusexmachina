@@ -8,7 +8,7 @@
 
 //???rename to DXGI[version]DisplayDriver?
 
-struct IDXGIOutput1;
+struct IDXGIOutput;
 
 namespace Render
 {
@@ -21,7 +21,7 @@ protected:
 
 	friend class CD3D11DriverFactory;
 
-	IDXGIOutput1*	pDXGIOutput;
+	IDXGIOutput*	pDXGIOutput;
 
 	CD3D11DisplayDriver(): pDXGIOutput(NULL) {}
 
@@ -33,11 +33,13 @@ public:
 
 	virtual ~CD3D11DisplayDriver() { InternalTerm(); }
 
-	virtual void		GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
+	virtual DWORD		GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
 	virtual bool		SupportsDisplayMode(const CDisplayMode& Mode) const;
 	virtual bool		GetCurrentDisplayMode(CDisplayMode& OutMode) const;
 	virtual bool		GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const;
 };
+
+typedef Ptr<CD3D11DisplayDriver> PD3D11DisplayDriver;
 
 }
 

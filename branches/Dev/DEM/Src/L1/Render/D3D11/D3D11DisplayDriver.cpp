@@ -1,5 +1,6 @@
 #include "D3D11DisplayDriver.h"
 
+#include <Render/D3D11/D3D11DriverFactory.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <DXGI.h>
@@ -12,88 +13,154 @@ bool CD3D11DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
 {
 	if (!CDisplayDriver::Init(AdapterNumber, OutputNumber)) FAIL;
 
-	//get dxgi factory, get adapter, get adapter output
+	IDXGIAdapter1* pAdapter = NULL;
+	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(Adapter, &pAdapter)))
+	{
+		Term();
+		FAIL;
+	}
 
+	if (!SUCCEEDED(pAdapter->EnumOutputs(Output, &pDXGIOutput)))
+	{
+		pAdapter->Release();
+		Term();
+		FAIL;
+	}
+
+	pAdapter->Release();
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+void CD3D11DisplayDriver::InternalTerm()
 {
-	n_assert(AdapterExists(Adapter));
-	D3DDISPLAYMODE D3DDisplayMode = { 0 };
-	D3DFORMAT D3DFormat = PixelFormatToD3DFormat(Format);
-	UINT ModeCount = pD3D9->GetAdapterModeCount(Adapter, D3DFormat);
-	for (UINT i = 0; i < ModeCount; i++)
+	SAFE_RELEASE(pDXGIOutput);
+}
+//---------------------------------------------------------------------
+
+DWORD CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+{
+	if (!pDXGIOutput) return 0;
+
+	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Format);
+
+	HRESULT hr;
+	UINT ModeCount = 0;
+	DXGI_MODE_DESC* pDXGIModes = NULL;
+	do
 	{
-		if (!SUCCEEDED(pD3D9->EnumAdapterModes(Adapter, D3DFormat, i, &D3DDisplayMode))) continue;
-		CDisplayMode Mode(D3DDisplayMode.Width, D3DDisplayMode.Height, D3DFormatToPixelFormat(D3DDisplayMode.Format));
-		if (OutModes.FindIndex(Mode) == INVALID_INDEX)
-			OutModes.Add(Mode);
+		if (pDXGIModes) _freea(pDXGIModes);
+		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, NULL)) || !ModeCount) return 0;
+		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
+		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, pDXGIModes);
 	}
+	while (hr == DXGI_ERROR_MORE_DATA); // Somtimes new modes become available right between two calls, see DXGI docs
+
+	// This code doesn't check for possible duplication with modes already in array
+	CDisplayMode* pNewMode = OutModes.Reserve(ModeCount);
+	for (UINT i = 0; i < ModeCount; ++i)
+	{
+		DXGI_MODE_DESC& DXGIMode = pDXGIModes[i];
+		pNewMode->Width = DXGIMode.Width;
+		pNewMode->Height = DXGIMode.Height;
+		pNewMode->PixelFormat = CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGIMode.Format);
+		pNewMode->RefreshRate.Numerator = DXGIMode.RefreshRate.Numerator;
+		pNewMode->RefreshRate.Denominator = DXGIMode.RefreshRate.Denominator;
+		pNewMode->Stereo = false; // DXGI 1.2 and above only
+	}
+
+	_freea(pDXGIModes);
+
+	return ModeCount;
 }
 //---------------------------------------------------------------------
 
 bool CD3D11DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 {
-	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
-	D3DFORMAT D3DFormat = PixelFormatToD3DFormat(Mode.PixelFormat);
-	UINT ModeCount = pD3D9->GetAdapterModeCount(Adapter, D3DFormat);
-	for (UINT i = 0; i < ModeCount; i++)
+	if (!pDXGIOutput) FAIL;
+
+	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Mode.PixelFormat);
+
+	HRESULT hr;
+	UINT ModeCount = 0;
+	DXGI_MODE_DESC* pDXGIModes = NULL;
+	do
 	{
-		if (!SUCCEEDED(pD3D9->EnumAdapterModes(Adapter, D3DFormat, i, &D3DDisplayMode))) continue;
-		if (Mode.Width == D3DDisplayMode.Width &&
-			Mode.Height == D3DDisplayMode.Height &&
-			Mode.PixelFormat == D3DFormatToPixelFormat(D3DDisplayMode.Format) &&
-			Mode.RefreshRate.Numerator == D3DDisplayMode.RefreshRate &&
-			Mode.RefreshRate.Denominator == 1 &&
-			!Mode.Stereo) OK;
+		if (pDXGIModes) _freea(pDXGIModes);
+		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, NULL)) || !ModeCount) FAIL;
+		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
+		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, pDXGIModes);
 	}
+	while (hr == DXGI_ERROR_MORE_DATA); // Sometimes new modes become available right between two calls, see DXGI docs
+
+	for (UINT i = 0; i < ModeCount; ++i)
+	{
+		DXGI_MODE_DESC& DXGIMode = pDXGIModes[i];
+		if (Mode.Width == DXGIMode.Width &&
+			Mode.Height == DXGIMode.Height &&
+			DXGIFormat == DXGIMode.Format && //???doesn't always match?
+			Mode.RefreshRate.Numerator == DXGIMode.RefreshRate.Numerator &&
+			Mode.RefreshRate.Denominator == DXGIMode.RefreshRate.Denominator &&
+			!Mode.Stereo)
+		{
+			_freea(pDXGIModes);
+			OK;
+		}
+	}
+
+	_freea(pDXGIModes);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 {
-	n_assert(AdapterExists(Adapter));
-	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
-	HRESULT hr = pD3D9->GetAdapterDisplayMode(Adapter, &D3DDisplayMode);
-	if (hr == D3DERR_DEVICELOST) FAIL;
-	n_assert(SUCCEEDED(hr));
-	OutMode.Width = D3DDisplayMode.Width;
-	OutMode.Height = D3DDisplayMode.Height;
-	OutMode.PixelFormat = D3DFormatToPixelFormat(D3DDisplayMode.Format);
-	OutMode.RefreshRate.Numerator = D3DDisplayMode.RefreshRate;
+	if (!pDXGIOutput) FAIL;
+
+	//???or adapter device name?
+
+	DXGI_OUTPUT_DESC Desc;
+	if (!SUCCEEDED(pDXGIOutput->GetDesc(&Desc))) FAIL;
+
+	MONITORINFOEX Win32MonitorInfo;
+	::ZeroMemory(&Win32MonitorInfo, sizeof(Win32MonitorInfo));
+	Win32MonitorInfo.cbSize = sizeof(Win32MonitorInfo);
+	if (!::GetMonitorInfo(Desc.Monitor, &Win32MonitorInfo)) FAIL;
+
+	// Can't believe, but there is no way to obtain current display mode via DXGI without a swap chain
+	DEVMODE DevMode = { 0 };
+	if (!::EnumDisplaySettings(Win32MonitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &DevMode)) FAIL;
+
+	//???enumerate all matching modes and select one?
+	OutMode.Width = DevMode.dmPelsWidth;
+	OutMode.Height = DevMode.dmPelsHeight;
+	OutMode.RefreshRate.Numerator = DevMode.dmDisplayFrequency;
 	OutMode.RefreshRate.Denominator = 1;
-	OutMode.Stereo = false;
+	//!!!OutMode.PixelFormat = 
+	OutMode.Stereo = false; //???how to be when it could be stereo?
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CD3D11DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 {
-}
-//---------------------------------------------------------------------
+	if (!pDXGIOutput) FAIL;
 
-D3DFORMAT CD3D11DisplayDriver::PixelFormatToD3DFormat(EPixelFormat Format)
-{
-	switch (Format)
-	{
-		case PixelFmt_X8R8G8B8:	return D3DFMT_X8R8G8B8;
-		case PixelFmt_Invalid:
-		default:				return D3DFMT_UNKNOWN;
-	}
-}
-//---------------------------------------------------------------------
+	DXGI_OUTPUT_DESC Desc;
+	if (!SUCCEEDED(pDXGIOutput->GetDesc(&Desc))) FAIL;
 
-EPixelFormat CD3D11DisplayDriver::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
-{
-	switch (D3DFormat)
-	{
-		case D3DFMT_X8R8G8B8:	return PixelFmt_X8R8G8B8;
-		case D3DFMT_UNKNOWN:
-		default:				return PixelFmt_Invalid;
-	}
+	MONITORINFO Win32MonitorInfo = { sizeof(Win32MonitorInfo), 0 };
+	if (!::GetMonitorInfo(Desc.Monitor, &Win32MonitorInfo)) FAIL;
+
+	OutInfo.Left = (ushort)Win32MonitorInfo.rcMonitor.left;
+	OutInfo.Top = (ushort)Win32MonitorInfo.rcMonitor.top;
+	OutInfo.Width = (ushort)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Height = (ushort)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
+	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
+	//!!!device name can be obtained from adapter or MONITORINFOEX!
+
+	OK;
 }
 //---------------------------------------------------------------------
 

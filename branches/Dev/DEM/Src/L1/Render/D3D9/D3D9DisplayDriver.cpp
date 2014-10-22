@@ -18,18 +18,32 @@ bool CD3D9DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
 //---------------------------------------------------------------------
 
 // We don't cache available display modes since they can change after display driver was created
-void CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+DWORD CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
 {
 	D3DDISPLAYMODE D3DDisplayMode = { 0 };
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Format);
 	UINT ModeCount = D3D9DrvFactory->GetDirect3D9()->GetAdapterModeCount(Adapter, D3DFormat);
+	DWORD Total = 0;
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
 		if (!SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->EnumAdapterModes(Adapter, D3DFormat, i, &D3DDisplayMode))) continue;
-		CDisplayMode Mode(D3DDisplayMode.Width, D3DDisplayMode.Height, CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDisplayMode.Format));
+		
+		CDisplayMode Mode(
+			D3DDisplayMode.Width,
+			D3DDisplayMode.Height,
+			CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDisplayMode.Format));
+		Mode.RefreshRate.Numerator = D3DDisplayMode.RefreshRate;
+		Mode.RefreshRate.Denominator = 1;
+		Mode.Stereo = false;
+		
 		if (OutModes.FindIndex(Mode) == INVALID_INDEX)
+		{
 			OutModes.Add(Mode);
+			++Total;
+		}
 	}
+
+	return Total;
 }
 //---------------------------------------------------------------------
 
@@ -38,12 +52,12 @@ bool CD3D9DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Mode.PixelFormat);
 	UINT ModeCount = D3D9DrvFactory->GetDirect3D9()->GetAdapterModeCount(Adapter, D3DFormat);
-	for (UINT i = 0; i < ModeCount; i++)
+	for (UINT i = 0; i < ModeCount; ++i)
 	{
 		if (!SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->EnumAdapterModes(Adapter, D3DFormat, i, &D3DDisplayMode))) continue;
 		if (Mode.Width == D3DDisplayMode.Width &&
 			Mode.Height == D3DDisplayMode.Height &&
-			Mode.PixelFormat == CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDisplayMode.Format) &&
+			D3DFormat == D3DDisplayMode.Format && //???doesn't always match?
 			Mode.RefreshRate.Numerator == D3DDisplayMode.RefreshRate &&
 			Mode.RefreshRate.Denominator == 1 &&
 			!Mode.Stereo) OK;

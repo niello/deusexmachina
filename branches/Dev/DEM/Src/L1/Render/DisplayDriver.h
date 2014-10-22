@@ -44,7 +44,7 @@ public:
 	virtual bool			Init(DWORD AdapterNumber, DWORD OutputNumber) { Adapter = AdapterNumber; Output = OutputNumber; OK; }
 	virtual void			Term() { Adapter = Adapter_None; Output = Output_None; }
 
-	virtual void			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
+	virtual DWORD			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
 	virtual bool			SupportsDisplayMode(const CDisplayMode& Mode) const = 0;
 	virtual bool			GetCurrentDisplayMode(CDisplayMode& OutMode) const = 0;
 	virtual bool			GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const = 0;
