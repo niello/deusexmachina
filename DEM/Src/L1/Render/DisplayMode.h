@@ -26,6 +26,8 @@ public:
 	CDisplayMode(ushort w = 1024, ushort h = 768, EPixelFormat Format = PixelFmt_Invalid);
 
 	float	GetAspectRatio() const { return Width / (float)Height; }
+	void	GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
+	void	GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
 	bool	operator ==(const CDisplayMode& Other) const;
 	bool	operator !=(const CDisplayMode& Other) const;
@@ -34,10 +36,25 @@ public:
 inline CDisplayMode::CDisplayMode(ushort w, ushort h, EPixelFormat Format):
 	Width(w),
 	Height(h),
-	PixelFormat(Format)
+	PixelFormat(Format),
+	Stereo(false)
 {
 	RefreshRate.Numerator = 0;
 	RefreshRate.Denominator = 1;
+}
+//---------------------------------------------------------------------
+
+inline void CDisplayMode::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
+{
+	XAbs = (int)(XRel * Width);
+	YAbs = (int)(YRel * Height);
+}
+//---------------------------------------------------------------------
+
+inline void CDisplayMode::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
+{
+	XRel = XAbs / float(Width);
+	YRel = YAbs / float(Height);
 }
 //---------------------------------------------------------------------
 

@@ -212,9 +212,10 @@ void CRenderServer::SetupPresentParams()
 	CDisplayMode DisplayMode = Display.GetDisplayMode();
 	if (D3DPresentParams.Windowed)
 	{
-		CDisplayMode DesktopMode;
-		n_assert(Display.GetCurrentAdapterDisplayMode((CDisplay::DWORD)D3DAdapter, DesktopMode));
-		DisplayMode.PixelFormat = DesktopMode.PixelFormat;
+		//CDisplayMode DesktopMode;
+		//n_assert(Display.GetCurrentAdapterDisplayMode((CDisplay::DWORD)D3DAdapter, DesktopMode));
+		//DisplayMode.PixelFormat = DesktopMode.PixelFormat;
+		DisplayMode.PixelFormat = D3DFMT_UNKNOWN;
 	}
 	else
 	{
@@ -227,7 +228,7 @@ void CRenderServer::SetupPresentParams()
 		{
 			// Find available mode the most close to the requested one
 			float IdealAspect = Display.GetDisplayMode().GetAspectRatio();
-			float IdealResolution = (float)Display.GetDisplayMode().Width * Display.GetDisplayMode().Height;
+			float IdealResolution = (float)Display.GetDisplayMode().Width * (float)Display.GetDisplayMode().Height;
 			float MinMetric = FLT_MAX;
 			int MinIdx = INVALID_INDEX;
 			for (int i = 0; i < Modes.GetCount(); ++i)

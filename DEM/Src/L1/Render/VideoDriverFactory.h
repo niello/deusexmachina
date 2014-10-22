@@ -4,7 +4,6 @@
 
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
-#include <Data/Singleton.h>
 #include <Data/SimpleString.h>
 
 // Central object to enumerate video hardware and obtain driver objects to control it.
@@ -16,6 +15,11 @@
 //???is singleton? what if I want to have D3D9 and OpenGL driver factories simultaneously?
 //???only D3D9 factory as a singleton? D3D9 must be only one.
 
+namespace Sys
+{
+	class COSWindow;
+}
+
 namespace Render
 {
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
@@ -24,7 +28,6 @@ typedef Ptr<class CGPUDriver> PGPUDriver;
 class CVideoDriverFactory: public Core::CObject
 {
 	__DeclareClassNoFactory;
-	__DeclareSingleton(CVideoDriverFactory);
 
 public:
 
@@ -35,25 +38,28 @@ public:
 		DWORD				DeviceID;
 		DWORD				SubSysID;
 		DWORD				Revision;
-		DWORD				VideoMemBytes;
-		DWORD				DedicatedSystemMemBytes;
-		DWORD				SharedSystemMemBytes;
+		QWORD				VideoMemBytes;
+		QWORD				DedicatedSystemMemBytes;
+		QWORD				SharedSystemMemBytes;
 		bool				IsSoftware;
 	};
 
 protected:
 
+	//???default/focus window? or D3D-only?
+
 public:
 
-	CVideoDriverFactory() { __ConstructSingleton; }
-	virtual ~CVideoDriverFactory() { __DestructSingleton; }
+	CVideoDriverFactory() { }
+	virtual ~CVideoDriverFactory() { }
 
-	virtual DWORD			GetAdapterCount() const = 0;
 	virtual bool			AdapterExists(DWORD Adapter) const = 0;
+	virtual DWORD			GetAdapterCount() const = 0;
 	virtual bool			GetAdapterInfo(CAdapterInfo& OutInfo) const = 0;
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const = 0;
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0) = 0;
-	//virtual PGPUDriver		CreateGPUDriver(CDisplayDriver* pDisplay) = 0;
+	//!!!need swap chain params!
+	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0, bool CreateSwapChain = true, Sys::COSWindow* pWindow = NULL, CDisplayDriver* pFullscreenOutput = NULL) = 0;
 };
 
 }

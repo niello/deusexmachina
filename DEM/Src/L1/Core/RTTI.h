@@ -104,23 +104,22 @@ inline bool CRTTI::IsDerivedFrom(const CString& OtherName) const
 #define __DeclareClass(Class) \
 public: \
 	static Core::CRTTI	RTTI; \
-	static const bool	Registered; \
-	virtual Core::CRTTI*		GetRTTI() const; \
+	static const bool	Factory_Registered; \
+	virtual Core::CRTTI*	GetRTTI() const { return &RTTI; } \
 	static Core::CObject*	FactoryCreator(void* pParam); \
-	static Class*				CreateInstance(void* pParam = NULL); \
-	static bool					RegisterInFactory(); \
-	static void					ForceFactoryRegistration(); \
+	static Class*			CreateInstance(void* pParam = NULL); \
+	static bool				RegisterInFactory(); \
+	static void				ForceFactoryRegistration(); \
 private:
 
 #define __DeclareClassNoFactory \
 public: \
 	static Core::CRTTI RTTI; \
-	virtual Core::CRTTI* GetRTTI() const; \
+	virtual Core::CRTTI* GetRTTI() const { return &RTTI; } \
 private:
 
 #define __ImplementClass(Class, FourCC, ParentClass) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
-	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
 	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
@@ -129,15 +128,11 @@ private:
 			Factory->Register(Class::RTTI, #Class, FourCC); \
 		OK; \
 	} \
-	void Class::ForceFactoryRegistration() { Class::Registered; } \
-	const bool Class::Registered = Class::RegisterInFactory();
+	void Class::ForceFactoryRegistration() { Class::Factory_Registered; } \
+	const bool Class::Factory_Registered = Class::RegisterInFactory();
 
-//#define __ImplementClassNoFactory(Class, FourCC, ParentClass) \
-//	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, &ParentClass::RTTI, 0); \
-//	Core::CRTTI* Class::GetRTTI() const { return &RTTI; }
-#define __ImplementClassNoFactory(Class, ParentClass) \
-	Core::CRTTI Class::RTTI(#Class, 0, NULL, &ParentClass::RTTI, 0); \
-	Core::CRTTI* Class::GetRTTI() const { return &RTTI; }
+#define __ImplementClassNoFactory(Class, FourCC, ParentClass) \
+	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, &ParentClass::RTTI, 0);
 
 #define __ImplementRootClass(Class, FourCC) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, NULL, sizeof(Class)); \

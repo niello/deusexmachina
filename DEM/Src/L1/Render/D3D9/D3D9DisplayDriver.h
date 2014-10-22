@@ -6,8 +6,6 @@
 
 // Direct3D9 display adapter driver
 
-typedef enum _D3DFORMAT D3DFORMAT;
-
 namespace Render
 {
 
@@ -17,22 +15,25 @@ class CD3D9DisplayDriver: public CDisplayDriver
 
 protected:
 
-	//???cache display modes?
-	//!!!device name can be get from adapter!
+	friend class CD3D9DriverFactory;
+
+	CD3D9DisplayDriver() {}
+
+	virtual bool	Init(DWORD AdapterNumber, DWORD OutputNumber);
+	virtual void	Term() { InternalTerm(); CDisplayDriver::Term(); } //???need? or never manually-destructible?
+	void			InternalTerm();
 
 public:
 
-	CD3D9DisplayDriver() {}
-	virtual ~CD3D9DisplayDriver() { }
+	virtual ~CD3D9DisplayDriver() { InternalTerm(); }
 
-	static D3DFORMAT	PixelFormatToD3DFormat(EPixelFormat Format);
-	static EPixelFormat	D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
-
-	virtual void		GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
-	virtual bool		SupportsDisplayMode(const CDisplayMode& Mode) const;
-	virtual bool		GetCurrentDisplayMode(CDisplayMode& OutMode) const;
-	virtual void		GetMonitorInfo(CMonitorInfo& OutInfo) const;
+	virtual void	GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
+	virtual bool	SupportsDisplayMode(const CDisplayMode& Mode) const;
+	virtual bool	GetCurrentDisplayMode(CDisplayMode& OutMode) const;
+	virtual bool	GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const;
 };
+
+typedef Ptr<CD3D9DisplayDriver> PD3D9DisplayDriver;
 
 }
 
