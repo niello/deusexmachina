@@ -1,6 +1,7 @@
 #include "D3D9DriverFactory.h"
 
 #include <Render/D3D9/D3D9DisplayDriver.h>
+//#include <Render/D3D9/D3D9GPUDriver.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -27,8 +28,8 @@ void CD3D9DriverFactory::Close()
 
 bool CD3D9DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const
 {
-	n_assert(Adapter < AdapterCount);
-	D3DADAPTER_IDENTIFIER9 D3DAdapterInfo = { 0 };
+	if (Adapter >= AdapterCount) FAIL;
+	D3DADAPTER_IDENTIFIER9 D3DAdapterInfo = { 0 }; // NB: there is a constructible object CSimpleString in this structure
 	if (!SUCCEEDED(pD3D9->GetAdapterIdentifier(Adapter, 0, &D3DAdapterInfo))) FAIL;
 	OutInfo.Description = D3DAdapterInfo.Description;
 	OutInfo.VendorID = D3DAdapterInfo.VendorId;
@@ -45,8 +46,46 @@ bool CD3D9DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) co
 
 PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Output)
 {
+	//???!!!what about multihead?! D3D9 additional swap chains can access different outputs.
+	//Disallow D3D9 multimonitor for now?
 	n_assert2(Output == 0, "D3D9 supports only one output (0) per video adapter");
-	return n_new(CD3D9DisplayDriver);
+	PD3D9DisplayDriver Driver = n_new(CD3D9DisplayDriver);
+	if (!Driver->Init(Adapter, Output)) Driver = NULL;
+	return Driver.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter, bool CreateSwapChain, Sys::COSWindow* pWindow, CDisplayDriver* pFullscreenOutput)
+{
+	n_assert2(!CreateSwapChain, "D3D9 device can't be created without a swap chain");
+	n_assert(!pFullscreenOutput || Adapter == pFullscreenOutput->GetAdapterID()); //???is necessary?
+
+	// if !pWindow - use focus window (global application window)
+	// if !pFullscreenOutput - don't restrict, use default output from window
+	//return n_new(CD3D9GPUDriver);
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+D3DFORMAT CD3D9DriverFactory::PixelFormatToD3DFormat(EPixelFormat Format)
+{
+	switch (Format)
+	{
+		case PixelFmt_X8R8G8B8:	return D3DFMT_X8R8G8B8;
+		case PixelFmt_Invalid:
+		default:				return D3DFMT_UNKNOWN;
+	}
+}
+//---------------------------------------------------------------------
+
+EPixelFormat CD3D9DriverFactory::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
+{
+	switch (D3DFormat)
+	{
+		case D3DFMT_X8R8G8B8:	return PixelFmt_X8R8G8B8;
+		case D3DFMT_UNKNOWN:
+		default:				return PixelFmt_Invalid;
+	}
 }
 //---------------------------------------------------------------------
 

@@ -749,6 +749,12 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1212,6 +1218,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp">
       <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -46,7 +46,6 @@ protected:
 	bool								_IsOpen;
 	bool								IsInsideFrame;
 	bool								Wireframe;
-	DWORD								InstanceCount;	// If 0, non-instanced rendering is active
 
 	DWORD								FFlagSkinned;
 	DWORD								FFlagInstanced;
@@ -63,26 +62,6 @@ protected:
 	CShader::HVar						hViewProj;
 	vector3								CurrCameraPos;
 	matrix44							CurrViewProj; //???or store camera ref?
-
-	DWORD								FrameID;
-	PRenderTarget						CurrRT[MaxRenderTargetCount];
-	PVertexBuffer						CurrVB[MaxVertexStreamCount];
-	DWORD								CurrVBOffset[MaxVertexStreamCount];
-	PVertexLayout						CurrVLayout;
-	PIndexBuffer						CurrIB;
-	CMeshGroup							CurrPrimGroup;
-	EPixelFormat						CurrDepthStencilFormat;
-	IDirect3DSurface9*					pCurrDSSurface;
-
-	UINT								D3DAdapter;
-	D3DCAPS9							D3DCaps;
-	D3DPRESENT_PARAMETERS				D3DPresentParams;
-	IDirect3D9*							pD3D;
-	IDirect3DDevice9*					pD3DDevice;
-	ID3DXEffectPool*					pEffectPool;
-
-	DWORD								PrimsRendered;
-	DWORD								DIPsRendered;
 
 	bool				CreateDevice();
 	void				ReleaseDevice();
@@ -109,13 +88,6 @@ public:
 	bool				IsOpen() const { return _IsOpen; }
 	void				ResetDevice(); // If display size changed or device lost
 
-	bool				CheckCaps(ECaps Cap);
-
-	bool				BeginFrame();
-	void				EndFrame();
-	void				Present();
-	void				SaveScreenshot(EImageFormat ImageFormat, IO::CStream& OutStream);
-
 	void				SetAmbientLight(const vector4& Color);
 	void				SetCameraPosition(const vector3& Pos);
 	void				SetViewProjection(const matrix44& VP);
@@ -124,33 +96,16 @@ public:
 	void				SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
 	CFrameShader*		GetScreenFrameShader() const;
 
-	void				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
-	void				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
-	void				SetVertexLayout(CVertexLayout* pVLayout);
-	void				SetIndexBuffer(CIndexBuffer* pIB);
-	void				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
-	void				SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
-	void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
-	void				ClearScreen(DWORD Color);
-	void				Draw();
-
-	PVertexLayout		GetVertexLayout(const CArray<CVertexComponent>& Components);
-	//???PVertexLayout		GetVertexLayout(const CString& Signature);
+	//!!!must be static utility methods!
+	//???to RenderFwd?
 	EPixelFormat		GetPixelFormat(const CString& String); //???CStrID?
 	int					GetFormatBits(EPixelFormat Format);
+
 	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
 	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }
 
 	void				SetWireframe(bool Wire);
 	bool				IsWireframe() const { return Wireframe; }
-
-	DWORD				GetFrameID() const { return FrameID; }
-	DWORD				GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
-	DWORD				GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
-	UINT				GetD3DAdapter() const { return D3DAdapter; }
-	IDirect3D9*			GetD3D() const { return pD3D; } //!!!static method in N3, creates D3D!
-	IDirect3DDevice9*	GetD3DDevice() const { return pD3DDevice; }
-	ID3DXEffectPool*	GetD3DEffectPool() const { return pEffectPool; }
 
 	const vector3&		GetCameraPosition() const { return CurrCameraPos; }
 	const matrix44&		GetViewProjection() const { return CurrViewProj; }
