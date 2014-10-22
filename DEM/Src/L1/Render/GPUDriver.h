@@ -148,7 +148,7 @@ public:
 	void				SaveScreenshot(EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 	//DWORD CreateSwapChain(swapchain params, OS window, CDisplayDriver* pFullscreenOutput = NULL)
 	//bool SetFullscreen(swapchain idx, CDisplayDriver* pOutput = NULL, const CDisplayMode* pMode = NULL)
-	//bool SetWindowed(swapchain idx)
+	//bool SetWindowed(swapchain idx) //???pass optional window position and size?
 	DWORD				GetFrameID() const { return FrameID; }
 	DWORD				GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
 	DWORD				GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
