@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_GPU_DRIVER_H__
 
 #include <Core/Object.h>
-#include <Render/RenderFwd.h>
+#include <Render/SwapChain.h>
 #include <Render/VertexComponent.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
@@ -29,100 +29,79 @@
 
 namespace Render
 {
+class CDisplayMode;
 typedef Ptr<class CVertexLayout> PVertexLayout;
 typedef Ptr<class CVertexBuffer> PVertexBuffer;
 typedef Ptr<class CIndexBuffer> PIndexBuffer;
 
-enum EMSAAQuality
-{
-	MSAA_None	= 0,
-	MSAA_2x		= 2,
-	MSAA_4x		= 4,
-	MSAA_8x		= 8
-};
-
 class CGPUDriver: public Core::CObject
 {
+public:
+
+	//!!!to variables!
+	//enum
+	//{
+	//	MaxTextureStageCount = 8, //???16?
+	//	MaxRenderTargetCount = 4,
+	//	MaxVertexStreamCount = 2 // Not sure why 2, N3 value
+	//};
+
 protected:
 
-	//!!!see RenderSrv!
-
-	//???to class?
-	//!!!all bools to flags!
-	struct CSwapChainData
-	{
-		POSWindow		TargetWindow;
-		PDisplayDriver	TargetDisplay; //???store restricted display separately and keep this up-to-date?
-		//???bool Fullscreen; or check TargetDisplay = NULL?
-
-		//???store refresh rate or always window = 0 full = from display mode?
-		//curr target display mode is always available
-
-		DWORD			BufferCount;		// Including the front buffer
-		ushort			BackBufferWidth;
-		ushort			BackBufferHeight;
-		EPixelFormat	BackBufferFormat;	//???or from display mode?
-		EPixelFormat	DepthStencilFormat;
-
-		EMSAAQuality	AntiAliasQuality;
-
-		// Swap effect
-		// Presentation interval (vsync or other possibilities)
-			//bool			VSync;
-		// Additional presentation flags
-
-		//!!!determine how they should work and do I need them!
-		//!!!to flags!
-		bool			AutoAdjustSize;				// Autoadjust viewport (display mode W & H) when window size changes
-		bool			DisplayModeSwitchEnabled;	// Allows to change display mode wnd->fullscr to closest to wnd size
-
-		//???need? what about other statistics?
-		DWORD			FrameID;
-
-		//???API-specific resource pointers?
-	};
-	//Fullscreen(false),
-	//VSync(false),
-	//AutoAdjustSize(true),
-	//DisplayModeSwitchEnabled(true),
-	//TripleBuffering(false),
-	//AntiAliasQuality(MSAA_None)
-
 	DWORD							Adapter;
-
-	//!!!Swap chains //!!!no direct control, manage through GPU driver! (D3D9 implicit swap chain can't be directly accessed)
 
 	CDict<CStrID, PVertexLayout>	VertexLayouts;
 
 	//default RT
-	//render stats (frame count, fps, dips, prims etc)
 	//???resource manager capabilities for VRAM resources? at least can handle OnLost-OnReset right here.
 
-	PRenderTarget						CurrRT[MaxRenderTargetCount];
-	PVertexBuffer						CurrVB[MaxVertexStreamCount];
-	DWORD								CurrVBOffset[MaxVertexStreamCount];
-	PVertexLayout						CurrVLayout;
-	PIndexBuffer						CurrIB;
-	CMeshGroup							CurrPrimGroup; //???or pointer? or don't store and pass by ref to Draw() calls?
-	DWORD								InstanceCount;	// If 0, non-instanced rendering is active
+	/*
+	PRenderTarget					CurrRT[MaxRenderTargetCount];
+	PVertexBuffer					CurrVB[MaxVertexStreamCount];
+	DWORD							CurrVBOffset[MaxVertexStreamCount];
+	PVertexLayout					CurrVLayout;
+	PIndexBuffer					CurrIB;
+	CMeshGroup						CurrPrimGroup; //???or pointer? or don't store and pass by ref to Draw() calls?
+	DWORD							InstanceCount;	// If 0, non-instanced rendering is active
+	*/
 
 	//???
-	EPixelFormat						CurrDepthStencilFormat;
-	IDirect3DSurface9*					pCurrDSSurface;
+	//!!!per-swapchain!? WHERE IS USED?
+	/*
+	EPixelFormat					CurrDepthStencilFormat;
+	IDirect3DSurface9*				pCurrDSSurface;
+	*/
 
 	//???per-swapchain? put under STATS define?
-	DWORD								PrimsRendered;
-	DWORD								DIPsRendered;
+	DWORD							PrimsRendered;
+	DWORD							DIPsRendered;
 
 public:
 
 	CGPUDriver() {}
-	virtual ~CGPUDriver() { }
+	virtual ~CGPUDriver() {}
 
-	bool					CheckCaps(ECaps Cap);
+	virtual bool			Init(DWORD AdapterNumber) { Adapter = AdapterNumber; OK; }
+	virtual bool			CheckCaps(ECaps Cap) = 0;
 
-	//!!!Make backbuffer size match window size -> Must have window reference. Or use RequestDisplayMode() to change backbuffer?
-	void					AdjustSize(/*swap chain index, 0 for default*/);
+	//???or call SetSwapChain and then operate on it without searching? see usage patterns, calls freq & order to decide.
+	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow) = 0;
+	virtual bool			DestroySwapChain(DWORD SwapChainID) = 0;
+	virtual bool			SwapChainExists(DWORD SwapChainID) const = 0;
+	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
+	//!!!n_assert(!pDisplay || Adapter == pDisplay->GetAdapterID());!
+	virtual bool			SwitchToWindowed(DWORD SwapChainID) = 0; //!!!set optional window pos & size! if not set, restore from somewhere!
+	virtual bool			IsFullscreen(DWORD SwapChainID) const = 0;
+	virtual void			AdjustSize(DWORD SwapChainID) = 0;
+	//!!!get info, change info (or only recreate?)
+	virtual void			Present(DWORD SwapChainID) = 0;
+	virtual void			PresentBlankScreen(DWORD SwapChainID, DWORD Color) = 0;
+	//virtual void			SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
+
+	bool					BeginFrame();
+	void					EndFrame();
+	void					Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
+	void					Draw();
 
 	virtual PVertexLayout	CreateVertexLayout() = 0; // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer	CreateVertexBuffer() = 0;
@@ -130,30 +109,18 @@ public:
 	PVertexLayout			GetVertexLayout(const CArray<CVertexComponent>& Components);
 	PVertexLayout			GetVertexLayout(CStrID Signature) const;
 
-	void				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
-	void				SetVertexLayout(CVertexLayout* pVLayout);
-	void				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
-	void				SetIndexBuffer(CIndexBuffer* pIB);
-	void				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
-	void				SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
-
-	bool				BeginFrame();
-	void				EndFrame();
-	void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
-	void				Draw();
+	//void					SetRenderTarget(DWORD Index, CRenderTarget* pRT);
+	void					SetVertexLayout(CVertexLayout* pVLayout);
+	void					SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
+	void					SetIndexBuffer(CIndexBuffer* pIB);
+	void					SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
+	//void					SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
 
 	//!!!need swap chain index!
-	void				Present();
-	void				ClearScreen(DWORD Color);
-	void				SaveScreenshot(EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
-	//DWORD CreateSwapChain(swapchain params, OS window, CDisplayDriver* pFullscreenOutput = NULL)
-	//bool SetFullscreen(swapchain idx, CDisplayDriver* pOutput = NULL, const CDisplayMode* pMode = NULL)
-	//bool SetWindowed(swapchain idx) //???pass optional window position and size?
-	DWORD				GetFrameID() const { return FrameID; }
-	DWORD				GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
-	DWORD				GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
+	//DWORD					GetFrameID() const { return FrameID; }
+	//DWORD					GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
+	//DWORD					GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
 	//???or return swap chain info struct?
-	//!!!in ToggleFullscreenMode, when true, must be specified display mode. If no, system autoselects it!
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;
@@ -162,6 +129,19 @@ PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 {
 	int Idx = VertexLayouts.FindIndex(Signature);
 	return Idx != INVALID_INDEX ? VertexLayouts.ValueAt(Idx) : NULL;
+}
+//---------------------------------------------------------------------
+
+inline void CGPUDriver::PresentBlankScreen(DWORD SwapChainID, DWORD Color)
+{
+	//???set swap chain render target? or pass id to beginframe and set inside?
+	//internal check must be performed not to reset target already set
+	if (BeginFrame())
+	{
+		Clear(Clear_Color, Color, 1.f, 0); //???clear depth and stencil too?
+		EndFrame();
+		Present(SwapChainID);
+	}
 }
 //---------------------------------------------------------------------
 

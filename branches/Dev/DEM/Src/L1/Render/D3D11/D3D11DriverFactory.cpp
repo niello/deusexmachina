@@ -91,6 +91,8 @@ DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 	{
 		//???
 		case PixelFmt_X8R8G8B8:	return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case PixelFmt_A8R8G8B8:	return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+		case PixelFmt_R5G6B5:	return DXGI_FORMAT_B5G6R5_UNORM;
 		case PixelFmt_Invalid:
 		default:				return DXGI_FORMAT_UNKNOWN;
 	}
@@ -103,6 +105,8 @@ EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
 	{
 		//???
 		case DXGI_FORMAT_B8G8R8X8_UNORM:	return PixelFmt_X8R8G8B8; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case DXGI_FORMAT_B8G8R8A8_UNORM:	return PixelFmt_A8R8G8B8; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+		case DXGI_FORMAT_B5G6R5_UNORM:		return PixelFmt_R5G6B5;
 		case DXGI_FORMAT_UNKNOWN:
 		default:							return PixelFmt_Invalid;
 	}

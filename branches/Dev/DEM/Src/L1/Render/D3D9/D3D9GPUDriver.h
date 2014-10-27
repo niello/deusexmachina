@@ -6,7 +6,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
-#include <d3d9.h>
+#include <d3d9.h> // At least for a CAPS structure
 
 // Direct3D9 GPU device driver
 
@@ -21,6 +21,16 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
+	class CSwapChain: public CSwapChainBase
+	{
+	public:
+
+		IDirect3DSwapChain9* pSwapChain; // NULL for implicit swap chain, device methods will be called
+	};
+
+	//???fixed-count swap chain array? and use free slots to obtain UIDs! and no dynamic allocation.
+	//2-3-4 swap chains are enough
+
 	D3DCAPS9			D3DCaps;
 	IDirect3DDevice9*	pD3DDevice;
 	ID3DXEffectPool*	pEffectPool;
@@ -31,7 +41,23 @@ protected:
 
 public:
 
-	virtual ~CD3D9GPUDriver() { }
+	virtual ~CD3D9GPUDriver() {}
+
+	//virtual bool			Init(DWORD AdapterNumber); // Use CreateSwapChain() to create device with implicit swap chain
+	virtual bool			CheckCaps(ECaps Cap);
+
+	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow);
+	virtual bool			DestroySwapChain(DWORD SwapChainID);
+	virtual bool			SwapChainExists(DWORD SwapChainID) const;
+	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
+	//!!!n_assert(!pDisplay || Adapter == pDisplay->GetAdapterID());!
+	virtual bool			SwitchToWindowed(DWORD SwapChainID); //!!!set optional window pos & size! if not set, restore from somewhere!
+	virtual bool			IsFullscreen(DWORD SwapChainID) const;
+	virtual void			AdjustSize(DWORD SwapChainID);
+	//!!!get info, change info (or only recreate?)
+	virtual void			Present(DWORD SwapChainID);
+	virtual void			PresentBlankScreen(DWORD SwapChainID, DWORD Color);
+	//virtual void			SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 
 	virtual PVertexLayout	CreateVertexLayout(); // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer	CreateVertexBuffer();

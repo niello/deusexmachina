@@ -755,6 +755,9 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.h">
       <Filter>Render\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SwapChain.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">

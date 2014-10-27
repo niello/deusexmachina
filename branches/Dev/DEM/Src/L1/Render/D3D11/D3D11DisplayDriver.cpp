@@ -119,6 +119,7 @@ bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 
 	//???or adapter device name?
 
+	/*
 	DXGI_OUTPUT_DESC Desc;
 	if (!SUCCEEDED(pDXGIOutput->GetDesc(&Desc))) FAIL;
 
@@ -129,15 +130,50 @@ bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 
 	// Can't believe, but there is no way to obtain current display mode via DXGI without a swap chain
 	DEVMODE DevMode = { 0 };
+	DevMode.dmSize = sizeof(DevMode);
 	if (!::EnumDisplaySettings(Win32MonitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &DevMode)) FAIL;
 
 	//???enumerate all matching modes and select one?
-	OutMode.Width = DevMode.dmPelsWidth;
-	OutMode.Height = DevMode.dmPelsHeight;
-	OutMode.RefreshRate.Numerator = DevMode.dmDisplayFrequency;
-	OutMode.RefreshRate.Denominator = 1;
 	//!!!OutMode.PixelFormat = 
 	OutMode.Stereo = false; //???how to be when it could be stereo?
+
+	DXGI_MODE_DESC ApproxMode, DXGIMode;
+
+	ApproxMode.Width = DevMode.dmPelsWidth;
+	ApproxMode.Height = DevMode.dmPelsHeight;
+	ApproxMode.RefreshRate.Numerator = DevMode.dmDisplayFrequency;
+	ApproxMode.RefreshRate.Denominator = 1;
+	ApproxMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	ApproxMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+
+	//???use SRGB formats?
+	switch (DevMode.dmBitsPerPel)
+	{
+		case 16: ApproxMode.Format = DXGI_FORMAT_B5G6R5_UNORM; break;
+		case 24: ApproxMode.Format = DXGI_FORMAT_B8G8R8X8_UNORM; break;
+		case 32: ApproxMode.Format = DXGI_FORMAT_B8G8R8A8_UNORM; break;
+		default: FAIL;
+	}
+	*/
+
+	DXGI_MODE_DESC ApproxMode, DXGIMode;
+
+	// Get current mode
+	ApproxMode.Width = 0;
+	ApproxMode.Height = 0;
+	ApproxMode.RefreshRate.Numerator = 0;
+	ApproxMode.RefreshRate.Denominator = 0;
+	ApproxMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	ApproxMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+
+	if (!SUCCEEDED(pDXGIOutput->FindClosestMatchingMode(&ApproxMode, &DXGIMode, NULL))) FAIL;
+
+	OutMode.Width = DXGIMode.Width;
+	OutMode.Height = DXGIMode.Height;
+	OutMode.PixelFormat = CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGIMode.Format);
+	OutMode.RefreshRate.Numerator = DXGIMode.RefreshRate.Numerator;
+	OutMode.RefreshRate.Denominator = DXGIMode.RefreshRate.Denominator;
+	OutMode.Stereo = false; // DXGI 1.2 and above only
 
 	OK;
 }
