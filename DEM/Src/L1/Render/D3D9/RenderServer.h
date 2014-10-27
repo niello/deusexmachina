@@ -32,15 +32,6 @@ class CRenderServer: public Core::CObject
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CRenderServer);
 
-public:
-
-	enum
-	{
-		MaxTextureStageCount = 8, //???16?
-		MaxRenderTargetCount = 4,
-		MaxVertexStreamCount = 2 // Not sure why 2, N3 value
-	};
-
 protected:
 
 	bool								_IsOpen;
@@ -162,17 +153,6 @@ inline CFrameShader* CRenderServer::GetScreenFrameShader() const
 {
 	int Idx = FrameShaders.FindIndex(ScreenFrameShaderID);
 	return (Idx != INVALID_INDEX) ? FrameShaders.ValueAt(Idx).GetUnsafe() : NULL;
-}
-//---------------------------------------------------------------------
-
-inline void CRenderServer::ClearScreen(DWORD Color)
-{
-	if (BeginFrame())
-	{
-		Clear(Clear_Color, Color, 1.f, 0);
-		EndFrame();
-		Present();
-	}
 }
 //---------------------------------------------------------------------
 

@@ -58,11 +58,13 @@ PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Outp
 PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter, bool CreateSwapChain, Sys::COSWindow* pWindow, CDisplayDriver* pFullscreenOutput)
 {
 	n_assert2(!CreateSwapChain, "D3D9 device can't be created without a swap chain");
-	n_assert(!pFullscreenOutput || Adapter == pFullscreenOutput->GetAdapterID()); //???is necessary?
 
 	// if !pWindow - use focus window (global application window)
 	// if !pFullscreenOutput - don't restrict, use default output from window
 	//return n_new(CD3D9GPUDriver);
+
+	//???call init (which is empty for D3D9) and then call createswapchain right here?
+
 	return NULL;
 }
 //---------------------------------------------------------------------
@@ -72,6 +74,8 @@ D3DFORMAT CD3D9DriverFactory::PixelFormatToD3DFormat(EPixelFormat Format)
 	switch (Format)
 	{
 		case PixelFmt_X8R8G8B8:	return D3DFMT_X8R8G8B8;
+		case PixelFmt_A8R8G8B8:	return D3DFMT_A8R8G8B8;
+		case PixelFmt_R5G6B5:	return D3DFMT_R5G6B5;
 		case PixelFmt_Invalid:
 		default:				return D3DFMT_UNKNOWN;
 	}
@@ -83,6 +87,8 @@ EPixelFormat CD3D9DriverFactory::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
 	switch (D3DFormat)
 	{
 		case D3DFMT_X8R8G8B8:	return PixelFmt_X8R8G8B8;
+		case D3DFMT_A8R8G8B8:	return PixelFmt_A8R8G8B8;
+		case D3DFMT_R5G6B5:		return PixelFmt_R5G6B5;
 		case D3DFMT_UNKNOWN:
 		default:				return PixelFmt_Invalid;
 	}

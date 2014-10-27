@@ -37,11 +37,26 @@ enum ECaps
 };
 
 //!!!fill!
+//???reverse component order? see DXGI formats
 enum EPixelFormat
 {
 	PixelFmt_Invalid = 0,
-	PixelFmt_X8R8G8B8
+	PixelFmt_X8R8G8B8,
+	PixelFmt_A8R8G8B8,
+	PixelFmt_R5G6B5
 };
+
+enum EMSAAQuality
+{
+	MSAA_None	= 0,
+	MSAA_2x		= 2,
+	MSAA_4x		= 4,
+	MSAA_8x		= 8
+};
+
+// Error codes
+#define ERR_MAX_SWAP_CHAIN_COUNT_EXCEEDED ((DWORD)-1);
+#define ERR_CREATION_ERROR ((DWORD)-2);
 
 }
 

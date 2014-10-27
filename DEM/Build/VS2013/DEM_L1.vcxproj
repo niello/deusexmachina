@@ -241,6 +241,7 @@
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderVar.h" />
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h" />
