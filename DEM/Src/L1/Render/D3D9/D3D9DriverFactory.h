@@ -22,8 +22,9 @@ class CD3D9DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDirect3D9* pD3D9;
-	DWORD		AdapterCount;	// Valid during a lifetime of the D3D9 object
+	IDirect3D9*		pD3D9;
+	Sys::COSWindow*	pFocusWindow;	// Focus window for fullscreen responses, see device creation
+	DWORD			AdapterCount;	// Valid during a lifetime of the D3D9 object
 
 public:
 
@@ -33,7 +34,7 @@ public:
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
 	static EPixelFormat		D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
 
-	bool					Open();
+	bool					Open(Sys::COSWindow* pWindow);
 	void					Close();
 	bool					IsOpened() const { return !!pD3D9; }
 
@@ -46,6 +47,7 @@ public:
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0, bool CreateSwapChain = true, Sys::COSWindow* pWindow = NULL, CDisplayDriver* pFullscreenOutput = NULL);
 
 	IDirect3D9*				GetDirect3D9() const { return pD3D9; }
+	Sys::COSWindow*			GetFocusWindow() const { return pFocusWindow; }
 };
 
 }

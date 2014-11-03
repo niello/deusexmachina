@@ -96,3 +96,35 @@ bool CD3D9DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 //---------------------------------------------------------------------
 
 }
+
+// Old own FindClosestMatchingMode()
+/*
+		if (DisplayMode.PixelFormat == D3DFMT_UNKNOWN)
+			DisplayMode.PixelFormat = D3DFMT_X8R8G8B8;
+
+		CArray<CDisplayMode> Modes;
+		Display.GetAvailableDisplayModes((CDisplay::DWORD)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
+		if (Modes.FindIndex(DisplayMode) == INVALID_INDEX)
+		{
+			// Find available mode the most close to the requested one
+			float IdealAspect = Display.GetDisplayMode().GetAspectRatio();
+			float IdealResolution = (float)Display.GetDisplayMode().Width * (float)Display.GetDisplayMode().Height;
+			float MinMetric = FLT_MAX;
+			int MinIdx = INVALID_INDEX;
+			for (int i = 0; i < Modes.GetCount(); ++i)
+			{
+				const CDisplayMode& Mode = Modes[i];
+				float AspectDiff = Mode.GetAspectRatio() - IdealAspect;
+				float ResolutionDiff = (float)(Mode.Width * Mode.Height) - IdealResolution;
+				float Metric = AspectDiff * AspectDiff + ResolutionDiff * ResolutionDiff;
+				if (Metric < MinMetric)
+				{
+					MinMetric = Metric;
+					MinIdx = i;
+				}
+			}
+			n_assert(MinIdx != INVALID_INDEX);
+			DisplayMode.Width = Modes[MinIdx].Width;
+			DisplayMode.Height = Modes[MinIdx].Height;
+		}
+*/

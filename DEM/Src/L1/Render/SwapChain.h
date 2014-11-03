@@ -14,7 +14,7 @@
 
 namespace Sys
 {
-	typedef Ptr<class COSWindow> POSWindow;
+	typedef Ptr<class COSWindow> POSWindow; //???need to make window RefCounted?
 }
 
 namespace Render
@@ -43,7 +43,7 @@ struct CSwapChainDesc
 	ESwapMode		SwapMode;
 
 	DWORD			BufferCount;		// Including the front buffer
-	//CDisplayMode	BufferMode;			//???are all members needed?  DXGI uses full display mode for a swap chain!
+	//CDisplayMode	BufferMode;			//???are all members needed?  DXGI uses full display mode for a swap chain! fullscreen only?
 	ushort			BackBufferWidth;	// Set to 0 to match window or display format
 	ushort			BackBufferHeight;	// Set to 0 to match window or display format
 	EPixelFormat	BackBufferFormat;	//???always get from passed display format?
@@ -62,9 +62,8 @@ class CSwapChainBase
 {
 public:
 
-	Sys::POSWindow	TargetWindow;
+	Sys::POSWindow	TargetWindow;	//???to desc?
 	PDisplayDriver	TargetDisplay;
-
 	CSwapChainDesc	Desc;
 
 	//???need? what about other statistics?

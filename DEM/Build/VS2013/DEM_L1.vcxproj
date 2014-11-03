@@ -249,6 +249,7 @@
     <ClInclude Include="..\..\Src\L1\Render\VideoDriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
+    <ClInclude Include="..\..\Src\L1\System\OSWindow.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindowWin32.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeServer.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeSource.h" />

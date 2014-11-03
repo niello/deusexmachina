@@ -28,14 +28,15 @@ protected:
 		IDirect3DSwapChain9* pSwapChain; // NULL for implicit swap chain, device methods will be called
 	};
 
-	//???fixed-count swap chain array? and use free slots to obtain UIDs! and no dynamic allocation.
-	//2-3-4 swap chains are enough
+	CArray<CSwapChain>	SwapChains;
 
 	D3DCAPS9			D3DCaps;
 	IDirect3DDevice9*	pD3DDevice;
 	ID3DXEffectPool*	pEffectPool;
 
-	CD3D9GPUDriver() {}
+	CD3D9GPUDriver(): SwapChains(1, 1) {}
+
+	static void FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams);
 
 	friend class CD3D9DriverFactory;
 

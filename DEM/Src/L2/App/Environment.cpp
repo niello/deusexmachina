@@ -74,11 +74,14 @@ bool CEnvironment::InitEngine()
 
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
 
-	RenderServer = n_new(Render::CRenderServer);
-	RenderServer->GetDisplay().SetWindowTitle(WindowTitle.CStr());
-	RenderServer->GetDisplay().SetWindowIcon(IconName.CStr());
-	RenderServer->GetDisplay().RequestDisplayMode(DisplayMode);
-	if (!RenderServer->Open()) FAIL;
+	MainWindow.SetWindowTitle(WindowTitle.CStr());
+	MainWindow.SetWindowIcon(IconName.CStr());
+	//!!!set size!
+	MainWindow.OpenWindow();
+
+	//!!!init render server with main window!
+	//RenderSrv->DriverFactory = n_new(CD3D9DriverFactory);
+	//RenderSrv->DriverFactory->Open(&MainWindow);
 
 	//???do it in RenderServer->Open()?
 	Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
@@ -86,7 +89,7 @@ bool CEnvironment::InitEngine()
 	RenderServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
 	RenderServer->SetScreenFrameShaderID(CStrID("Default"));
 
-	DD = n_new(Render::CDebugDraw);
+	DD = n_new(Debug::CDebugDraw);
 	if (!DD->Open()) FAIL;
 
 	InputServer = n_new(Input::CInputServer);
