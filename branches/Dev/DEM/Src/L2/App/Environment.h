@@ -4,6 +4,7 @@
 
 //???!!!forward declarations?
 #include <Core/CoreServer.h>
+#include <System/OSWindow.h>
 #include <Time/TimeServer.h>
 #include <Debug/DebugServer.h>
 #include <IO/IOServer.h>
@@ -11,7 +12,7 @@
 #include <Events/EventServer.h>
 #include <Scripting/ScriptServer.h>
 #include <Render/RenderServer.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 //#include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
 #include <Physics/PhysicsServer.h>
@@ -20,6 +21,8 @@
 #include <AI/AIServer.h>
 #include <UI/UIServer.h>
 #include <Render/DisplayMode.h>
+
+//???need at all? redesign application framework!
 
 // Environment class helps to setup and stores ptrs to engine subsystems. Use it to implement
 // application classes faster. Init & shutdown processes are split into parts
@@ -47,7 +50,8 @@ protected:
 
 	CString							WindowTitle;
 	CString							IconName;
-	CDisplayMode					DisplayMode;
+	//CDisplayMode					DisplayMode;
+	Sys::COSWindow					MainWindow;
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
@@ -56,7 +60,7 @@ protected:
 	Ptr<Scripting::CScriptServer>	ScriptServer;
 	Ptr<Events::CEventServer>		EventServer;
 	Ptr<Render::CRenderServer>		RenderServer;
-	Ptr<Render::CDebugDraw>			DD;
+	Ptr<Debug::CDebugDraw>			DD;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
 	//Ptr<Audio::CAudioServer>		AudioServer;

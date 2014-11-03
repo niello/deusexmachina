@@ -14,9 +14,6 @@ bool CRenderServer::Open()
 {
 	n_assert(!_IsOpen);
 
-	Display.SetDisplayMode(Display.GetRequestedDisplayMode());
-	if (!Display.OpenWindow()) FAIL;
-
 	CDisplayMode OldMode = Display.GetDisplayMode();
 	if (!CreateDevice()) FAIL;
 	if (Display.GetDisplayMode() != OldMode) Display.ResetWindow();
