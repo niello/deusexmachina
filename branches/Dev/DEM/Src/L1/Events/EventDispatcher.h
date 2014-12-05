@@ -18,7 +18,7 @@ namespace Data
 namespace Events
 {
 
-class CEventDispatcher: public Core::CObject
+class CEventDispatcher: public Core::CObject //???avoid refcounted/object inheritance? To use as mix-in. //???own refcounting inside or external lifetime control?
 {
 protected:
 

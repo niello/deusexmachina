@@ -3,43 +3,44 @@
 #ifndef __DEM_L1_SYS_OS_WINDOW_WIN32_H__
 #define __DEM_L1_SYS_OS_WINDOW_WIN32_H__
 
-#include <Data/String.h>
+#include <Data/RefCounted.h>
+#include <Data/SimpleString.h>
+#include <Data/Flags.h>
+#include <Data/Rect.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
-//!!!OS-based, so can avoid virtuality and use define-based approach as in N3!
 
 // Win32 operating system window implementation
 
 namespace Sys
 {
 
-class COSWindowWin32//: public COSWindowBase or COSViewportBase - window also handles input, not only viewport
+class COSWindowWin32: public CRefCounted //???make it dispatcher?
 {
 protected:
 
-	//???!!!use CSimpleString?!
-	CString			WindowTitle;
-	CString			IconName;
+	enum
+	{
+		Wnd_Open		= 0x01,
+		Wnd_Minimized	= 0x02,
+		Wnd_Topmost		= 0x04,
+		Wnd_Fullscreen	= 0x08
+	};
 
-	//!!!to flags!
-	bool			IsWndOpen;		//!!!remove Wnd from names!
-	bool			IsWndMinimized;
-	bool			IsFullscreen;	//???fullscreen window or fullscreen backbuffer/display or both or what?!
-	bool			AlwaysOnTop;
+	Data::CSimpleString	WindowTitle;
+	Data::CSimpleString	IconName;
 
-	HINSTANCE		hInst;
-	HWND			hWnd;
-	HWND			hWndParent;
-	HACCEL			hAccel;
-	ATOM			aWndClass;
-	LONG			StyleWindowed;		///< WS_* flags for windowed mode
-	LONG			StyleFullscreen;	///< WS_* flags for full-screen mode
-	LONG			StyleChild;			///< WS_* flags for child mode
+	Data::CFlags		Flags;
+	COSWindowWin32*		pParent;
+	Data::CRect			Rect;		// Client rect
 
-	bool				HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result);
-	void				CalcWindowRect(int& X, int& Y, int& W, int& H);
+	HINSTANCE			hInst;
+	HWND				hWnd;
+	HACCEL				hAccel;
+	ATOM				aWndClass;
+
+	bool				HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result);
 
 	static LONG WINAPI	WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -48,39 +49,41 @@ public:
 	COSWindowWin32();
 	~COSWindowWin32();
 
-	//???virtual void* GetHandle() const;?
+	bool				Open();
+	void				Close();
+	void				Minimize();
+	void				Restore();
+	void				ProcessMessages();
 
-	//!!!rename class to Window and remove this word from method names!
-	bool				OpenWindow();
-	void				CloseWindow();
-	void				ProcessWindowMessages();
-	void				ResetWindow();
-	void				RestoreWindow();
-	void				MinimizeWindow();
+	bool				SetRect(const Data::CRect& NewRect, bool FullscreenMode = false);
+	const Data::CRect&	GetRect() const { return Rect; }
+	unsigned int		GetWidth() const { return Rect.W; }
+	unsigned int		GetHeight() const { return Rect.H; }
 
-	void				SetWindowTitle(const char* pTitle);
-	const CString&		GetWindowTitle() const { return WindowTitle; }
-	void				SetWindowIcon(const char* pIconName);
-	const CString&		GetWindowIcon() const { return IconName; }
-
-	//???!!!SetSize?! store in members, use in GetAbsoluteXY/GetRelativeXY?!
-
-	// Based on real window size
 	bool				GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
 	bool				GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
-	bool				IsWindowOpen() const { return IsWndOpen; }
-	bool				IsWindowMinimized() const { return IsWndMinimized; }
+	void				SetTitle(const char* pTitle);
+	const char*			GetTitle() const { return WindowTitle; }
+	void				SetIcon(const char* pIconName);
+	const char*			GetIcon() const { return IconName; }
+
+	bool				IsOpen() const { return Flags.Is(Wnd_Open); }
+	bool				IsMinimized() const { return Flags.Is(Wnd_Minimized); }
+	bool				IsTopmost() const { return Flags.Is(Wnd_Topmost); }
+	bool				IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
+	bool				IsChild() const { return !!pParent; }
+	bool				SetTopmost(bool Topmost);
+
+	COSWindowWin32*		GetParent() const { return pParent; }
 	HWND				GetHWND() const { return hWnd; }
-	void				SetParentHWND(HWND Parent) { hWndParent = Parent; }
-	HWND				GetParentHWND() const { return hWndParent; }
 	ATOM				GetWndClass() const { return aWndClass; }
 };
 
 inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
 {
 	RECT r;
-	if (!hWnd || !GetClientRect(hWnd, &r)) FAIL;
+	if (!hWnd || !::GetClientRect(hWnd, &r)) FAIL;
 	XAbs = (int)(XRel * n_max(r.right - r.left, 1));
 	YAbs = (int)(YRel * n_max(r.bottom - r.top, 1));
 	OK;
@@ -90,7 +93,7 @@ inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int
 inline bool COSWindowWin32::GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const
 {
 	RECT r;
-	if (!hWnd || !GetClientRect(hWnd, &r)) FAIL;
+	if (!hWnd || !::GetClientRect(hWnd, &r)) FAIL;
 	XRel = XAbs / float(n_max(r.right - r.left, 1));
 	YRel = YAbs / float(n_max(r.bottom - r.top, 1));
 	OK;

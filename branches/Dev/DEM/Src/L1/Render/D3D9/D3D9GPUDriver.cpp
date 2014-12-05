@@ -78,8 +78,6 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 		return ERR_MAX_SWAP_CHAIN_COUNT_EXCEEDED;
 	}
 
-	//!!!n_assert(); there are no active swap chains!
-
 #if DEM_D3D_USENVPERFHUD
 	Adapter = D3D9DrvFactory->GetAdapterCount() - 1; // NVPerfHUD adapter //???is always the last, or read adapter info?
 #endif
@@ -226,3 +224,65 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID)
 //---------------------------------------------------------------------
 
 }
+
+/*
+
+void COSWindowWin32::CalcWindowRect(CRect& Rect)
+{
+	if (pParent)
+	{
+		Rect.X = 0;
+		Rect.Y = 0;
+
+		RECT r;
+		::GetClientRect(pParent->GetHWND(), &r);
+		::AdjustWindowRect(&r, STYLE_CHILD, FALSE);
+		Rect.W = r.right - r.left; //???clamp w & h to parent rect?
+		Rect.H = r.bottom - r.top;
+	}
+	else
+	{
+		CMonitorInfo MonitorInfo;
+		GetAdapterMonitorInfo(Adapter, MonitorInfo);
+
+		if (IsFullscreen)
+		{
+			if (DisplayModeSwitchEnabled)
+			{
+				X = MonitorInfo.Left;
+				Y = MonitorInfo.Top;
+			}
+			else
+			{
+				X = MonitorInfo.Left + ((MonitorInfo.Width - DisplayMode.Width) / 2);
+				Y = MonitorInfo.Top + ((MonitorInfo.Height - DisplayMode.Height) / 2);
+			}
+			W = DisplayMode.Width;
+			H = DisplayMode.Height;
+		}
+		else
+		{
+			X = MonitorInfo.Left + DisplayMode.PosX;
+			Y = MonitorInfo.Top + DisplayMode.PosY;
+			RECT r = { X, Y, X + DisplayMode.Width, Y + DisplayMode.Height };
+			::AdjustWindowRect(&r, STYLE_WINDOWED, FALSE);
+			W = r.right - r.left;
+			H = r.bottom - r.top;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+//void COSWindowWin32::AdjustSize()
+//{
+//	n_assert(hWnd);
+//
+//	RECT r;
+//	GetClientRect(hWnd, &r);
+//	DisplayMode.Width = (ushort)r.right;
+//	DisplayMode.Height = (ushort)r.bottom;
+//
+//	EventSrv->FireEvent(CStrID("OnDisplaySizeChanged"));
+//}
+////---------------------------------------------------------------------
+*/

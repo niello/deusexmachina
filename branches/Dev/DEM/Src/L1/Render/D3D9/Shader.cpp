@@ -3,9 +3,12 @@
 #include <Render/RenderServer.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
+
+#ifdef DEM_USE_D3DX9
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3dx9.h>
+#endif
 
 namespace Render
 {

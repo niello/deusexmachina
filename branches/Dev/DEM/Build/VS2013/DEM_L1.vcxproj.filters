@@ -761,6 +761,9 @@
     <ClInclude Include="..\..\Src\L1\System\OSWindow.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\Rect.h">
+      <Filter>Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">

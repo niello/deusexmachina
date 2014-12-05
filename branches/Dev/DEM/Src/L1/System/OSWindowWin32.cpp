@@ -18,32 +18,31 @@
 #endif
 
 #define DEM_WINDOW_CLASS		"DeusExMachina::MainWindow"
+#define DEM_DEFAULT_TITLE		"DeusExMachina - Untitled"
 #define ACCEL_TOGGLEFULLSCREEN	1001
+#define STYLE_WINDOWED			(WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE)
+#define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
+#define STYLE_CHILD				(WS_CHILD | WS_TABSTOP | WS_VISIBLE) //???need tabstop?
 
 namespace Sys
 {
 
 COSWindowWin32::COSWindowWin32():
-	WindowTitle("DeusExMachina - Untitled"),
-	IsWndOpen(false),
-	IsWndMinimized(false),
-	AlwaysOnTop(false),
+	WindowTitle(DEM_DEFAULT_TITLE),
+	pParent(NULL),
 	hInst(NULL),
 	hWnd(NULL),
-	hWndParent(NULL),
 	hAccel(NULL),
-	aWndClass(0),
-	StyleWindowed(WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE),
-	StyleFullscreen(WS_POPUP | WS_SYSMENU | WS_VISIBLE),
-	StyleChild(WS_CHILD | WS_TABSTOP | WS_VISIBLE) //???need tabstop?
+	aWndClass(0)
 {
-	hInst = GetModuleHandle(NULL);
+	hInst = ::GetModuleHandle(NULL);
 }
 //---------------------------------------------------------------------
 
+//!!!single-window approach! need to be rewritten to support multiple windows!
 COSWindowWin32::~COSWindowWin32()
 {
-	if (IsWndOpen) CloseWindow();
+	if (Flags.Is(Wnd_Open)) Close();
 
 	if (hAccel)
 	{
@@ -60,22 +59,11 @@ COSWindowWin32::~COSWindowWin32()
 }
 //---------------------------------------------------------------------
 
-bool COSWindowWin32::OpenWindow()
+bool COSWindowWin32::Open()
 {
-	n_assert(!IsWndOpen && hInst && !hWnd);
+	n_assert(!Flags.Is(Wnd_Open) && hInst && !hWnd && (!pParent || pParent->GetHWND()));
 
 	// Send DisplayOpen event
-
-	// Calculate adjusted window rect
-
-	// Parent HWND handling
-	if (hWndParent)
-	{
-		RECT r;
-		GetClientRect(hWndParent, &r);
-		//Width = (ushort)(r.right - r.left);
-		//Height = (ushort)(r.bottom - r.top);
-	}
 
 	if (!hAccel)
 	{
@@ -90,8 +78,8 @@ bool COSWindowWin32::OpenWindow()
 	if (!aWndClass)
 	{
 		HICON hIcon = NULL;
-		if (IconName.IsValid()) hIcon = LoadIcon(hInst, IconName.CStr());
-		if (!hIcon) hIcon = LoadIcon(NULL, IDI_APPLICATION);
+		if (IconName.IsValid()) hIcon = ::LoadIcon(hInst, IconName.CStr());
+		if (!hIcon) hIcon = ::LoadIcon(NULL, IDI_APPLICATION);
 
 		WNDCLASSEX WndClass;
 		memset(&WndClass, 0, sizeof(WndClass));
@@ -107,226 +95,209 @@ bool COSWindowWin32::OpenWindow()
 		WndClass.lpszMenuName  = NULL;
 		WndClass.lpszClassName = DEM_WINDOW_CLASS;
 		WndClass.hIconSm       = NULL;
-		aWndClass = RegisterClassEx(&WndClass);
-		n_assert(aWndClass);
+		aWndClass = ::RegisterClassEx(&WndClass);
+		if (!aWndClass) FAIL;
 	}
 
 	LONG WndStyle;
-	if (hWndParent) WndStyle = StyleChild;
-	else if (IsFullscreen) WndStyle = StyleFullscreen;
-	else WndStyle = StyleWindowed;
+	RECT r;
+	if (pParent)
+	{
+		WndStyle = STYLE_CHILD;
+		::GetClientRect(pParent->GetHWND(), &r);
+	}
+	else
+	{
+		WndStyle = Flags.Is(Wnd_Fullscreen) ? STYLE_FULLSCREEN : STYLE_WINDOWED;
+		r.left = Rect.Left();
+		r.top = Rect.Top();
+		r.right = Rect.Right();
+		r.bottom = Rect.Bottom();
+		::AdjustWindowRect(&r, WndStyle, FALSE);
+	}
 
-	int X, Y, W, H;
-	CalcWindowRect(X, Y, W, H);
+	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
+							(LPCSTR)(DWORD_PTR)aWndClass, WindowTitle.CStr(), WndStyle,
+							r.left, r.top, r.right - r.left, r.bottom - r.top,
+							pParent ? pParent->GetHWND() : NULL, NULL, hInst, NULL);
+	if (!hWnd) FAIL;
 
-	hWnd = CreateWindow((LPCSTR)(DWORD_PTR)aWndClass, WindowTitle.CStr(), WndStyle,
-						X, Y, W, H,
-						hWndParent, NULL, hInst, NULL);
-	n_assert(hWnd);
+	::SetWindowLongPtr(hWnd, 0, (LONG)this);
 
-	//!!!MSDN!
-	//!!!The first time an application calls ShowWindow, it should use the WinMain function's
-	//nCmdShow parameter as its nCmdShow parameter. Subsequent calls to ShowWindow must use
-	//one of the values in the given list, instead of the one specified by the WinMain function's nCmdShow parameter. 
+	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 
-	if (AlwaysOnTop) SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+	::GetClientRect(hWnd, &r);
+	Rect.X = r.left;
+	Rect.Y = r.top;
+	Rect.W = r.right - r.left;
+	Rect.H = r.bottom - r.top;
 
-	SetWindowLongPtr(hWnd, 0, (LONG)this);
+	RAWINPUTDEVICE RawInputDevices;
+	RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC; 
+	RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE; 
+	RawInputDevices.dwFlags = RIDEV_INPUTSINK;
+	RawInputDevices.hwndTarget = hWnd;
 
-	RAWINPUTDEVICE RawInputDevices[1];
-	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC; 
-	RawInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE; 
-	RawInputDevices[0].dwFlags = RIDEV_INPUTSINK;
-	RawInputDevices[0].hwndTarget = hWnd;
-
-	if (RegisterRawInputDevices(RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
+	if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
 		Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
 
-	IsWndOpen = true;
-	IsWndMinimized = false;
+	Flags.Set(Wnd_Open);
+	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
+
 	OK;
 }
 //---------------------------------------------------------------------
 
-void COSWindowWin32::CloseWindow()
+//!!!redesign display closing!
+void COSWindowWin32::Close()
 {
-	n_assert(IsWndOpen && hInst);
+	n_assert(Flags.Is(Wnd_Open) && hInst);
 
-	// Close if not already closed externally by (e.g. by Alt-F4)
+	// Close if not already closed externally (e.g. by Alt-F4)
 	if (hWnd)
 	{
-		DestroyWindow(hWnd);
+		::DestroyWindow(hWnd);
 		hWnd = NULL;
 	}
 
 	// send DisplayClose event
 
-	IsWndOpen = false;
+	Flags.Clear(Wnd_Open);
+}
+//---------------------------------------------------------------------
+
+void COSWindowWin32::Minimize()
+{
+	n_assert_dbg(hWnd && Flags.Is(Wnd_Open));
+	if (!Flags.Is(Wnd_Minimized) && !pParent)
+		::ShowWindow(hWnd, SW_MINIMIZE);
+}
+//---------------------------------------------------------------------
+
+void COSWindowWin32::Restore()
+{
+	n_assert_dbg(hWnd && Flags.Is(Wnd_Open));
+	::ShowWindow(hWnd, SW_RESTORE);
 }
 //---------------------------------------------------------------------
 
 // Polls for and processes window messages. Call this message once per
 // frame in your render loop. If the user clicks the window close
 // button, or hits Alt-F4, an OnDisplayClose event will be sent.
-void COSWindowWin32::ProcessWindowMessages()
+void COSWindowWin32::ProcessMessages()
 {
-	n_assert(IsWndOpen);
+	n_assert_dbg(Flags.Is(Wnd_Open));
 
 	// It may happen that the WinProc has already closed our window!
 	if (!hWnd) return;
 
 	// NB: we pass NULL instead of window handle to receive language switching messages
 	MSG Msg;
-	while (PeekMessage(&Msg, NULL /*hWnd*/, 0, 0, PM_REMOVE))
+	while (::PeekMessage(&Msg, NULL /*hWnd*/, 0, 0, PM_REMOVE))
 	{
-		if (hAccel && TranslateAccelerator(hWnd, hAccel, &Msg) != FALSE) continue;
-		TranslateMessage(&Msg);
-		DispatchMessage(&Msg);
+		if (hAccel && ::TranslateAccelerator(hWnd, hAccel, &Msg) != FALSE) continue;
+		::TranslateMessage(&Msg);
+		::DispatchMessage(&Msg);
 	}
 }
 //---------------------------------------------------------------------
 
-void COSWindowWin32::SetWindowTitle(const char* pTitle)
+bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 {
-	WindowTitle = pTitle;
-	if (hWnd) SetWindowText(hWnd, pTitle);
+	if (!hWnd)
+	{
+		Rect = NewRect;
+		OK;
+	}
+
+	UINT SWPFlags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS;
+
+	LONG PrevWndStyle = (LONG)::GetWindowLongPtr(hWnd, GWL_STYLE);
+	LONG NewWndStyle = pParent ? STYLE_CHILD : (FullscreenMode ? STYLE_FULLSCREEN : STYLE_WINDOWED);
+	
+	if (NewWndStyle != PrevWndStyle)
+	{
+		if (::SetWindowLongPtr(hWnd, GWL_STYLE, NewWndStyle) == 0) FAIL;
+		Flags.SetTo(Wnd_Fullscreen, FullscreenMode && !pParent);
+
+		SWPFlags |= SWP_FRAMECHANGED;
+		
+		// Fullscreen mode breaks theme (at least aero glass) on Win7, so restore it when returned from the fullscreen mode
+		if (PrevWndStyle == STYLE_FULLSCREEN) ::SetWindowTheme(hWnd, NULL, NULL);
+	}
+
+	//???default empty rect values? zero w & h
+
+	RECT r = { NewRect.Left(), NewRect.Top(), NewRect.Right(), NewRect.Bottom() };
+	::AdjustWindowRect(&r, NewWndStyle, FALSE);
+
+	if (::SetWindowPos(hWnd, NULL, Rect.X, Rect.Y, Rect.W, Rect.H, SWPFlags) == FALSE) FAIL;
+
+	::GetClientRect(hWnd, &r);
+	Rect.X = r.left;
+	Rect.Y = r.top;
+	Rect.W = r.right - r.left;
+	Rect.H = r.bottom - r.top;
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-void COSWindowWin32::SetWindowIcon(const char* pIconName)
+void COSWindowWin32::SetTitle(const char* pTitle)
+{
+	WindowTitle = pTitle;
+	if (hWnd) ::SetWindowText(hWnd, pTitle);
+}
+//---------------------------------------------------------------------
+
+void COSWindowWin32::SetIcon(const char* pIconName)
 {
 	IconName = pIconName;
 	if (hWnd && IconName.IsValid())
 	{
-		HICON hIcon = LoadIcon(hInst, IconName.CStr());
-		if (hIcon) SetClassLong(hWnd, GCL_HICON, (LONG)hIcon);
+		HICON hIcon = ::LoadIcon(hInst, IconName.CStr());
+		if (hIcon) ::SetClassLong(hWnd, GCL_HICON, (LONG)hIcon);
 	}
 }
 //---------------------------------------------------------------------
 
-void COSWindowWin32::CalcWindowRect(int& X, int& Y, int& W, int& H)
+bool COSWindowWin32::SetTopmost(bool Topmost)
 {
-	if (hWndParent)
+	if (pParent && Topmost) FAIL; //???or allow?
+	if (Flags.Is(Wnd_Topmost) == Topmost) OK;
+
+	if (hWnd)
 	{
-		X = 0;
-		Y = 0;
-
-		RECT r;
-		GetClientRect(hWndParent, &r);
-		AdjustWindowRect(&r, StyleChild, FALSE);
-		W = (ushort)(r.right - r.left); //???clamp w & h to parent rect?
-		H = (ushort)(r.bottom - r.top);
-
-		// Child window adjusts display mode values
-		DisplayMode.PosX = X;
-		DisplayMode.PosY = Y;
-		DisplayMode.Width = W;
-		DisplayMode.Height = H;
+		HWND hWndInsertAfter;
+		if (Topmost) hWndInsertAfter = HWND_TOPMOST;
+		else if (pParent) hWndInsertAfter = pParent->GetHWND();
+		else hWndInsertAfter = HWND_NOTOPMOST;
+	
+		if (::SetWindowPos(hWnd, hWndInsertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE) == FALSE) FAIL;
 	}
-	else
-	{
-		CMonitorInfo MonitorInfo;
-		GetAdapterMonitorInfo(Adapter, MonitorInfo);
-
-		if (IsFullscreen)
-		{
-			if (DisplayModeSwitchEnabled)
-			{
-				X = MonitorInfo.Left;
-				Y = MonitorInfo.Top;
-			}
-			else
-			{
-				X = MonitorInfo.Left + ((MonitorInfo.Width - DisplayMode.Width) / 2);
-				Y = MonitorInfo.Top + ((MonitorInfo.Height - DisplayMode.Height) / 2);
-			}
-			W = DisplayMode.Width;
-			H = DisplayMode.Height;
-		}
-		else
-		{
-			X = MonitorInfo.Left + DisplayMode.PosX;
-			Y = MonitorInfo.Top + DisplayMode.PosY;
-			RECT r = { X, Y, X + DisplayMode.Width, Y + DisplayMode.Height };
-			AdjustWindowRect(&r, StyleWindowed, FALSE);
-			W = r.right - r.left;
-			H = r.bottom - r.top;
-		}
-	}
-}
-//---------------------------------------------------------------------
-
-void COSWindowWin32::ResetWindow()
-{
-	n_assert(hWnd && IsWndOpen);
-
-	// IsFullscreen mode breaks theme (at least aero glass) on Win7, so restore it
-	if (!hWndParent && !IsFullscreen) SetWindowTheme(hWnd, NULL, NULL);
-
-	if (!hWndParent) SetWindowLongPtr(hWnd, GWL_STYLE, IsFullscreen ? StyleFullscreen : StyleWindowed);
-
-	int X, Y, W, H;
-	CalcWindowRect(X, Y, W, H);
-
-	HWND hWndInsertAfter;
-	if (AlwaysOnTop) hWndInsertAfter = HWND_TOPMOST;
-	else if (hWndParent) hWndInsertAfter = hWndParent;
-	else hWndInsertAfter = HWND_NOTOPMOST;
-
-	SetWindowPos(hWnd, hWndInsertAfter, X, Y, W, H, SWP_NOACTIVATE | SWP_NOMOVE);
-}
-//---------------------------------------------------------------------
-
-void COSWindowWin32::RestoreWindow()
-{
-	n_assert(hWnd && IsWndOpen);
-	::ShowWindow(hWnd, SW_RESTORE);
-	ResetWindow();
-	IsWndMinimized = false;
-}
-//---------------------------------------------------------------------
-
-void COSWindowWin32::MinimizeWindow()
-{
-	n_assert(hWnd && IsWndOpen);
-	if (!IsWndMinimized)
-	{
-		if (!hWndParent) ShowWindow(hWnd, SW_MINIMIZE);
-		IsWndMinimized = true;
-	}
-}
-//---------------------------------------------------------------------
-
-void COSWindowWin32::AdjustSize()
-{
-	n_assert(hWnd);
-
-	RECT r;
-	GetClientRect(hWnd, &r);
-	DisplayMode.Width = (ushort)r.right;
-	DisplayMode.Height = (ushort)r.bottom;
-
-	EventSrv->FireEvent(CStrID("OnDisplaySizeChanged"));
+	
+	Flags.SetTo(Wnd_Topmost, Topmost);
+	OK;
 }
 //---------------------------------------------------------------------
 
 LONG WINAPI COSWindowWin32::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	COSWindowWin32* pDisp = (COSWindowWin32*)GetWindowLong(hWnd, 0);
+	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLong(hWnd, 0);
 	LONG Result = 0;
-	if (pDisp && pDisp->HandleWindowMessage(hWnd, uMsg, wParam, lParam, Result)) return Result;
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+	if (pWnd && pWnd->HandleWindowMessage(uMsg, wParam, lParam, Result)) return Result;
+	return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 //---------------------------------------------------------------------
 
-//???need _hWnd param?
-bool COSWindowWin32::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG Result)
+//!!!many messages fall back as not processed. Check it!
+bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result)
 {
 	switch (uMsg)
 	{
 		case WM_SYSCOMMAND:
 			// Prevent moving/sizing and power loss in fullscreen mode
-			if (IsFullscreen)
+			if (Flags.Is(Wnd_Fullscreen))
 			{
 				switch (wParam)
 				{
@@ -341,34 +312,73 @@ bool COSWindowWin32::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, L
 			}
 			break;
 
+		case WM_COMMAND:
+			switch (LOWORD(wParam))
+			{
+				case ACCEL_TOGGLEFULLSCREEN:
+					EventSrv->FireEvent(CStrID("OnDisplayToggleFullscreen"));
+					break;
+			}
+			break;
+
+		case WM_PAINT:
+			EventSrv->FireEvent(CStrID("OnDisplayPaint"));
+			break;
+
 		case WM_ERASEBKGND:
 			// Prevent Windows from erasing the background
 			Result = 1;
 			OK;
 
+		case WM_MOVE:
+		{
+			unsigned int X = (unsigned int)(short)LOWORD(lParam);
+			unsigned int Y = (unsigned int)(short)HIWORD(lParam);
+
+			if (Rect.X != X || Rect.Y != Y)
+			{
+				Rect.X = X;
+				Rect.Y = Y;
+				EventSrv->FireEvent(CStrID("OnDisplayMoved"));
+			}
+			break;
+		}
+
 		case WM_SIZE:
+		{	
 			if (wParam == SIZE_MAXHIDE || wParam == SIZE_MINIMIZED)
 			{
-				if (!IsWndMinimized)
+				if (!Flags.Is(Wnd_Minimized))
 				{
-					IsWndMinimized = true;
+					Flags.Set(Wnd_Minimized);
 					EventSrv->FireEvent(CStrID("OnDisplayMinimized"));
 					ReleaseCapture();
 				}
 			}
 			else
 			{
-				if (IsWndMinimized)
+				if (Flags.Is(Wnd_Minimized))
 				{
-					IsWndMinimized = false;
+					Flags.Clear(Wnd_Minimized);
 					EventSrv->FireEvent(CStrID("OnDisplayRestored"));
 					ReleaseCapture();
 				}
-				if (hWnd && AutoAdjustSize && !IsFullscreen) AdjustSize();
+
+				n_assert_dbg(!Flags.Is(Wnd_Fullscreen));
+
+				unsigned int W = (unsigned int)(short)LOWORD(lParam);
+				unsigned int H = (unsigned int)(short)HIWORD(lParam);
+
+				if (Rect.W != W || Rect.H != H)
+				{
+					Rect.W = W;
+					Rect.H = H;
+					EventSrv->FireEvent(CStrID("OnDisplaySizeChanged"));
+				}
 			}
-			// Manually change window size in child mode
-			if (hWndParent) MoveWindow(hWnd, DisplayMode.PosX, DisplayMode.PosY, LOWORD(lParam), HIWORD(lParam), TRUE);
+			
 			break;
+		}
 
 		case WM_SETCURSOR:
 			if (EventSrv->FireEvent(CStrID("OnDisplaySetCursor")))
@@ -376,10 +386,6 @@ bool COSWindowWin32::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, L
 				Result = TRUE;
 				OK;
 			}
-			break;
-
-		case WM_PAINT:
-			EventSrv->FireEvent(CStrID("OnDisplayPaint"));
 			break;
 
 		case WM_SETFOCUS:
@@ -392,18 +398,10 @@ bool COSWindowWin32::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, L
 			ReleaseCapture();
 			break;
 
+		//!!!on close destroy window, on destroy post quit message if not child, or just send event to engine!
 		case WM_CLOSE:
 			EventSrv->FireEvent(CStrID("OnDisplayClose"));
 			hWnd = NULL;
-			break;
-
-		case WM_COMMAND:
-			switch (LOWORD(wParam))
-			{
-				case ACCEL_TOGGLEFULLSCREEN:
-					EventSrv->FireEvent(CStrID("OnDisplayToggleFullscreen"));
-					break;
-			}
 			break;
 
 		case WM_KEYDOWN:
@@ -462,7 +460,7 @@ bool COSWindowWin32::HandleWindowMessage(HWND _hWnd, UINT uMsg, WPARAM wParam, L
 		case WM_RBUTTONUP:
 		case WM_MBUTTONUP:
 		{
-			if (hWndParent) SetFocus(hWnd);
+			if (pParent) SetFocus(hWnd);
 
 			Event::DisplayInput Ev;
 

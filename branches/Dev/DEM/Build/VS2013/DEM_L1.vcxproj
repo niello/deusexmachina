@@ -184,6 +184,7 @@
     <ClInclude Include="..\..\Src\L1\Data\Pool.h" />
     <ClInclude Include="..\..\Src\L1\Data\Ptr.h" />
     <ClInclude Include="..\..\Src\L1\Data\QuadTree.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Rect.h" />
     <ClInclude Include="..\..\Src\L1\Data\RefCounted.h" />
     <ClInclude Include="..\..\Src\L1\Data\RingBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Data\SimpleString.h" />
