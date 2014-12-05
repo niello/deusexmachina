@@ -14,7 +14,7 @@
 namespace Core
 {
 
-class CObject: public CRefCounted
+class CObject: public CRefCounted //???make mix-in instead of refcounted child? rename to CRTTIClass, and CObject: public CRefCounted, CRTTIClass
 {
 	__DeclareClassNoFactory;
 

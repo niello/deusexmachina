@@ -11,4 +11,6 @@ namespace Sys { class COSWindow: public COSWindowWin32 {}; }
 #error "COSWindow is not defined for the target OS"
 #endif
 
+namespace Sys { typedef Ptr<COSWindow> POSWindow; }
+
 #endif
