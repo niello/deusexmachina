@@ -2,14 +2,11 @@
 
 #include "OSWindowWin32.h"
 
-#include <Render/Events/DisplayInput.h> //???or custom listener for this?
-#include <Events/EventServer.h>
+#include <System/Events/OSInput.h>
 
-//???XP or higher? put related code under define!
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
-//???in what header?
 #ifndef HID_USAGE_PAGE_GENERIC
 #define HID_USAGE_PAGE_GENERIC	((USHORT) 0x01)
 #endif
@@ -20,9 +17,9 @@
 #define DEM_WINDOW_CLASS		"DeusExMachina::MainWindow"
 #define DEM_DEFAULT_TITLE		"DeusExMachina - Untitled"
 #define ACCEL_TOGGLEFULLSCREEN	1001
-#define STYLE_WINDOWED			(WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE)
+#define STYLE_WINDOWED			(WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE)
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
-#define STYLE_CHILD				(WS_CHILD | WS_TABSTOP | WS_VISIBLE) //???need tabstop?
+#define STYLE_CHILD				(WS_CHILD | WS_TABSTOP | WS_VISIBLE)
 
 namespace Sys
 {
@@ -62,8 +59,6 @@ COSWindowWin32::~COSWindowWin32()
 bool COSWindowWin32::Open()
 {
 	n_assert(!Flags.Is(Wnd_Open) && hInst && !hWnd && (!pParent || pParent->GetHWND()));
-
-	// Send DisplayOpen event
 
 	if (!hAccel)
 	{
@@ -144,25 +139,16 @@ bool COSWindowWin32::Open()
 	Flags.Set(Wnd_Open);
 	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
 
+	FireEvent(CStrID("OnOpened"));
+
 	OK;
 }
 //---------------------------------------------------------------------
 
-//!!!redesign display closing!
 void COSWindowWin32::Close()
 {
-	n_assert(Flags.Is(Wnd_Open) && hInst);
-
-	// Close if not already closed externally (e.g. by Alt-F4)
-	if (hWnd)
-	{
-		::DestroyWindow(hWnd);
-		hWnd = NULL;
-	}
-
-	// send DisplayClose event
-
-	Flags.Clear(Wnd_Open);
+	n_assert(Flags.Is(Wnd_Open));
+	::SendMessage(hWnd, WM_CLOSE, 0, 0);
 }
 //---------------------------------------------------------------------
 
@@ -183,7 +169,7 @@ void COSWindowWin32::Restore()
 
 // Polls for and processes window messages. Call this message once per
 // frame in your render loop. If the user clicks the window close
-// button, or hits Alt-F4, an OnDisplayClose event will be sent.
+// button, or hits Alt-F4, an OnClose event will be sent.
 void COSWindowWin32::ProcessMessages()
 {
 	n_assert_dbg(Flags.Is(Wnd_Open));
@@ -210,6 +196,8 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 		OK;
 	}
 
+	//???set empty rect values to default? zero w & h at least.
+
 	UINT SWPFlags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS;
 
 	LONG PrevWndStyle = (LONG)::GetWindowLongPtr(hWnd, GWL_STYLE);
@@ -226,12 +214,13 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 		if (PrevWndStyle == STYLE_FULLSCREEN) ::SetWindowTheme(hWnd, NULL, NULL);
 	}
 
-	//???default empty rect values? zero w & h
+	if (Rect.X == NewRect.X && Rect.Y == NewRect.Y) SWPFlags |= SWP_NOMOVE;
+	if (Rect.W == NewRect.W && Rect.H == NewRect.H) SWPFlags |= SWP_NOSIZE;
 
 	RECT r = { NewRect.Left(), NewRect.Top(), NewRect.Right(), NewRect.Bottom() };
 	::AdjustWindowRect(&r, NewWndStyle, FALSE);
 
-	if (::SetWindowPos(hWnd, NULL, Rect.X, Rect.Y, Rect.W, Rect.H, SWPFlags) == FALSE) FAIL;
+	if (::SetWindowPos(hWnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWPFlags) == FALSE) FAIL;
 
 	::GetClientRect(hWnd, &r);
 	Rect.X = r.left;
@@ -290,7 +279,6 @@ LONG WINAPI COSWindowWin32::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 //---------------------------------------------------------------------
 
-//!!!many messages fall back as not processed. Check it!
 bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result)
 {
 	switch (uMsg)
@@ -316,13 +304,13 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			switch (LOWORD(wParam))
 			{
 				case ACCEL_TOGGLEFULLSCREEN:
-					EventSrv->FireEvent(CStrID("OnDisplayToggleFullscreen"));
+					FireEvent(CStrID("OnToggleFullscreen"));
 					break;
 			}
 			break;
 
 		case WM_PAINT:
-			EventSrv->FireEvent(CStrID("OnDisplayPaint"));
+			FireEvent(CStrID("OnPaint"));
 			break;
 
 		case WM_ERASEBKGND:
@@ -339,11 +327,13 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			{
 				Rect.X = X;
 				Rect.Y = Y;
-				EventSrv->FireEvent(CStrID("OnDisplayMoved"));
+				FireEvent(CStrID("OnMoved"));
 			}
+			
 			break;
 		}
 
+		//???does a child window receive this message from, say, .NET control? how to catch and handle resizing on parent resize?
 		case WM_SIZE:
 		{	
 			if (wParam == SIZE_MAXHIDE || wParam == SIZE_MINIMIZED)
@@ -351,7 +341,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (!Flags.Is(Wnd_Minimized))
 				{
 					Flags.Set(Wnd_Minimized);
-					EventSrv->FireEvent(CStrID("OnDisplayMinimized"));
+					FireEvent(CStrID("OnMinimized"));
 					ReleaseCapture();
 				}
 			}
@@ -360,7 +350,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (Flags.Is(Wnd_Minimized))
 				{
 					Flags.Clear(Wnd_Minimized);
-					EventSrv->FireEvent(CStrID("OnDisplayRestored"));
+					FireEvent(CStrID("OnRestored"));
 					ReleaseCapture();
 				}
 
@@ -373,7 +363,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				{
 					Rect.W = W;
 					Rect.H = H;
-					EventSrv->FireEvent(CStrID("OnDisplaySizeChanged"));
+					FireEvent(CStrID("OnSizeChanged"));
 				}
 			}
 			
@@ -381,7 +371,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 
 		case WM_SETCURSOR:
-			if (EventSrv->FireEvent(CStrID("OnDisplaySetCursor")))
+			if (FireEvent(CStrID("OnSetCursor")))
 			{
 				Result = TRUE;
 				OK;
@@ -389,29 +379,36 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			break;
 
 		case WM_SETFOCUS:
-			EventSrv->FireEvent(CStrID("OnDisplaySetFocus"));
+			FireEvent(CStrID("OnSetFocus"));
 			ReleaseCapture();
 			break;
 
 		case WM_KILLFOCUS:
-			EventSrv->FireEvent(CStrID("OnDisplayKillFocus"));
+			FireEvent(CStrID("OnKillFocus"));
 			ReleaseCapture();
 			break;
 
-		//!!!on close destroy window, on destroy post quit message if not child, or just send event to engine!
 		case WM_CLOSE:
-			EventSrv->FireEvent(CStrID("OnDisplayClose"));
+			FireEvent(CStrID("OnClosing"));
+			::DestroyWindow(hWnd);
+			Result = 0;
+			OK;
+
+		case WM_DESTROY:
+			Flags.Clear(Wnd_Open);
+			FireEvent(CStrID("OnClosed"));
 			hWnd = NULL;
-			break;
+			Result = 0;
+			OK;
 
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		{
-			Event::DisplayInput Ev;
-			Ev.Type = (uMsg == WM_KEYDOWN) ? Event::DisplayInput::KeyDown : Event::DisplayInput::KeyUp;
+			Event::OSInput Ev;
+			Ev.Type = (uMsg == WM_KEYDOWN) ? Event::OSInput::KeyDown : Event::OSInput::KeyUp;
 			Ev.KeyCode = (Input::EKey)((uchar*)&lParam)[2];
 			if (lParam & (1 << 24)) Ev.KeyCode = (Input::EKey)(Ev.KeyCode | 0x80);
-			EventSrv->FireEvent(Ev);
+			FireEvent(Ev);
 			break;
 		}
 
@@ -421,10 +418,10 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			WCHAR CharUTF16[2];
 			MultiByteToWideChar(CP_ACP, 0, (LPCSTR)&wParam, 1, CharUTF16, 1);
 
-			Event::DisplayInput Ev;
-			Ev.Type = Event::DisplayInput::CharInput;
+			Event::OSInput Ev;
+			Ev.Type = Event::OSInput::CharInput;
 			Ev.Char = CharUTF16[0];
-			EventSrv->FireEvent(Ev);
+			FireEvent(Ev);
 			break;
 		}
 
@@ -438,11 +435,11 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			if (Data.header.dwType == RIM_TYPEMOUSE && (Data.data.mouse.lLastX || Data.data.mouse.lLastY)) 
 			{
-				Event::DisplayInput Ev;
-				Ev.Type = Event::DisplayInput::MouseMoveRaw;
+				Event::OSInput Ev;
+				Ev.Type = Event::OSInput::MouseMoveRaw;
 				Ev.MouseInfo.x = Data.data.mouse.lLastX;
 				Ev.MouseInfo.y = Data.data.mouse.lLastY;
-				EventSrv->FireEvent(Ev);
+				FireEvent(Ev);
 			}
 
 			DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
@@ -462,27 +459,27 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			if (pParent) SetFocus(hWnd);
 
-			Event::DisplayInput Ev;
+			Event::OSInput Ev;
 
 			switch (uMsg)
 			{
 				case WM_LBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
-					Ev.Type = Event::DisplayInput::MouseDblClick;
+					Ev.Type = Event::OSInput::MouseDblClick;
 					break;
 
 				case WM_LBUTTONDOWN:
 				case WM_RBUTTONDOWN:
 				case WM_MBUTTONDOWN:
-					Ev.Type = Event::DisplayInput::MouseDown;
+					Ev.Type = Event::OSInput::MouseDown;
 					SetCapture(hWnd);
 					break;
 
 				case WM_LBUTTONUP:
 				case WM_RBUTTONUP:
 				case WM_MBUTTONUP:
-					Ev.Type = Event::DisplayInput::MouseUp;
+					Ev.Type = Event::OSInput::MouseUp;
 					ReleaseCapture();
 					break;
 			}
@@ -510,26 +507,26 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
 			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			EventSrv->FireEvent(Ev);
+			FireEvent(Ev);
 			break;
 		}
 
 		case WM_MOUSEMOVE:
 		{
-			Event::DisplayInput Ev;
-			Ev.Type = Event::DisplayInput::MouseMove;
+			Event::OSInput Ev;
+			Ev.Type = Event::OSInput::MouseMove;
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
 			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			EventSrv->FireEvent(Ev);
+			FireEvent(Ev);
 			break;
 		}
 
 		case WM_MOUSEWHEEL:
 		{
-			Event::DisplayInput Ev;
-			Ev.Type = Event::DisplayInput::MouseWheel;
+			Event::OSInput Ev;
+			Ev.Type = Event::OSInput::MouseWheel;
 			Ev.WheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-			EventSrv->FireEvent(Ev);
+			FireEvent(Ev);
 			break;
 		}
 	}

@@ -85,7 +85,7 @@ public:
 	virtual bool			CheckCaps(ECaps Cap) = 0;
 
 	//???or call SetSwapChain and then operate on it without searching? see usage patterns, calls freq & order to decide.
-	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow) = 0;
+	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow) = 0;
 	virtual bool			DestroySwapChain(DWORD SwapChainID) = 0;
 	virtual bool			SwapChainExists(DWORD SwapChainID) const = 0;
 	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;

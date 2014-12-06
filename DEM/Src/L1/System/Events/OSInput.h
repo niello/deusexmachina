@@ -10,9 +10,9 @@
 namespace Event
 {
 
-class DisplayInput: public Events::CEventNative
+class OSInput: public Events::CEventNative
 {
-	__DeclareClass(DisplayInput);
+	__DeclareClass(OSInput);
 
 protected:
 

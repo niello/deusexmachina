@@ -48,28 +48,17 @@ enum EInputPriority
 // GUI - next, CEGUI listeners, OK if input processed by CEGUI
 // Game - player control, world clicking etc
 
-// Device IDs:
-//#define N_IDEV_NONE         (0)
-//#define N_IDEV_KEYBOARD     (1<<16)     ///< the system keyboard
-//#define N_IDEV_MOUSE        (1<<17)     ///< the system mouse
-//
-//#define N_INPUT_KEYBOARD(x)     (N_IDEV_KEYBOARD | x)
-//#define N_INPUT_MOUSE(x)        (N_IDEV_MOUSE | x)
-
 #define InputSrv Input::CInputServer::Instance()
 
-class CInputServer: public CEventDispatcher //!!!CPriorityEventDispatcher!
+class CInputServer: public CEventDispatcher
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CInputServer);
 
 private:
 
-//reset()
 //set mouse sens, invert
 //long pressed time / time of event in polling devices
-//reactions on obtain/lose focus
-//mapping to event/state
 
 	bool	_IsOpen;
 
@@ -94,10 +83,9 @@ private:
 
 	CControlLayout*	LoadControlLayout(CStrID Name);
 
-	DECLARE_EVENT_HANDLER(DisplayInput, OnDisplayInput);
-	DECLARE_EVENT_HANDLER(OnDisplaySetFocus, OnDisplaySetFocus);
-	DECLARE_EVENT_HANDLER(OnDisplayKillFocus, OnDisplayKillFocus);
-	//!!!Handle display minimize & restore too (the same handling), but mb setfocus/killfocus are called in these cases?
+	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
+	DECLARE_EVENT_HANDLER(OnSetFocus, OnOSWindowSetFocus);
+	DECLARE_EVENT_HANDLER(OnKillFocus, OnOSWindowKillFocus);
 
 public:
 

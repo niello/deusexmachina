@@ -47,7 +47,7 @@ public:
 	//virtual bool			Init(DWORD AdapterNumber); // Use CreateSwapChain() to create device with implicit swap chain
 	virtual bool			CheckCaps(ECaps Cap);
 
-	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow);
+	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow);
 	virtual bool			DestroySwapChain(DWORD SwapChainID);
 	virtual bool			SwapChainExists(DWORD SwapChainID) const;
 	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
