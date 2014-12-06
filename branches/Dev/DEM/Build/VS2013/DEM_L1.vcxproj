@@ -250,6 +250,7 @@
     <ClInclude Include="..\..\Src\L1\Render\VideoDriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
+    <ClInclude Include="..\..\Src\L1\System\Events\OSInput.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindow.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindowWin32.h" />
     <ClInclude Include="..\..\Src\L1\Time\TimeServer.h" />
@@ -331,7 +332,6 @@
     <ClInclude Include="..\..\Src\L1\Math\Vector3.h" />
     <ClInclude Include="..\..\Src\L1\Math\Vector3EnvelopeCurve.h" />
     <ClInclude Include="..\..\Src\L1\Math\Vector4.h" />
-    <ClInclude Include="..\..\Src\L1\Render\Events\DisplayInput.h" />
     <ClInclude Include="..\..\Src\L1\Animation\AnimClip.h" />
     <ClInclude Include="..\..\Src\L1\Animation\AnimFwd.h" />
     <ClInclude Include="..\..\Src\L1\Animation\AnimTask.h" />
@@ -443,6 +443,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp" />
+    <ClCompile Include="..\..\Src\L1\System\Events\OSInput.cpp" />
     <ClCompile Include="..\..\Src\L1\System\OSWindowWin32.cpp" />
     <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp" />
@@ -502,7 +503,6 @@
     <ClCompile Include="..\..\Src\L1\Math\Vector2.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\Vector3.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\Vector4.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\Events\DisplayInput.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\AnimClip.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\AnimTask.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\KeyframeClip.cpp" />

@@ -131,8 +131,8 @@ private:
 	void Class::ForceFactoryRegistration() { Class::Factory_Registered; } \
 	const bool Class::Factory_Registered = Class::RegisterInFactory();
 
-#define __ImplementClassNoFactory(Class, FourCC, ParentClass) \
-	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, &ParentClass::RTTI, 0);
+#define __ImplementClassNoFactory(Class, /*FourCC,*/ ParentClass) \
+	Core::CRTTI Class::RTTI(#Class, /*FourCC*/ 0, NULL, &ParentClass::RTTI, 0);
 
 #define __ImplementRootClass(Class, FourCC) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, NULL, sizeof(Class)); \

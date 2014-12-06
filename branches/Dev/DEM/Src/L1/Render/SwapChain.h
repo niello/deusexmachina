@@ -62,14 +62,17 @@ class CSwapChainBase
 {
 public:
 
-	Sys::POSWindow	TargetWindow;	//???to desc?
-	PDisplayDriver	TargetDisplay;
-	CSwapChainDesc	Desc;
+	Sys::POSWindow			TargetWindow;	//???to desc?
+	const CDisplayDriver*	pTargetDisplay;
+	CSwapChainDesc			Desc;
+	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
 
 	//???need? what about other statistics?
-	DWORD			FrameID;
+	DWORD					FrameID;
 
-	bool IsFullscreen() const { return TargetDisplay.IsValid(); }
+	CSwapChainBase(): pTargetDisplay(NULL) {}
+
+	bool IsFullscreen() const { return !!pTargetDisplay; }
 };
 
 }

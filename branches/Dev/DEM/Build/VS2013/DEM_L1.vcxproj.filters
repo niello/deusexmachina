@@ -55,9 +55,6 @@
     <Filter Include="Render">
       <UniqueIdentifier>{79b1489a-9df9-4f5e-a2cc-56d06e064ffc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Render\Events">
-      <UniqueIdentifier>{6331a26d-145e-4892-bd73-9038b9399062}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Animation">
       <UniqueIdentifier>{4741893f-4973-4cd5-b0fb-9d650aa822cb}</UniqueIdentifier>
     </Filter>
@@ -84,6 +81,9 @@
     </Filter>
     <Filter Include="Render\D3D11">
       <UniqueIdentifier>{7a31007e-6e10-43e6-a64c-405aa599a431}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Events">
+      <UniqueIdentifier>{621d93d3-81c1-455d-b599-9d2866607f53}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -435,9 +435,6 @@
     <ClInclude Include="..\..\Src\L1\Math\Vector4.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Events\DisplayInput.h">
-      <Filter>Render\Events</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Animation\AnimClip.h">
       <Filter>Animation</Filter>
     </ClInclude>
@@ -764,6 +761,9 @@
     <ClInclude Include="..\..\Src\L1\Data\Rect.h">
       <Filter>Data</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\System\Events\OSInput.h">
+      <Filter>System\Events</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -969,9 +969,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Math\Vector4.cpp">
       <Filter>Math</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Events\DisplayInput.cpp">
-      <Filter>Render\Events</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Animation\AnimClip.cpp">
       <Filter>Animation</Filter>
@@ -1233,6 +1230,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.cpp">
       <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\System\Events\OSInput.cpp">
+      <Filter>System\Events</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

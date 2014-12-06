@@ -1,7 +1,7 @@
 #include "InputServer.h"
 
 #include <Render/RenderServer.h>
-#include <Render/Events/DisplayInput.h>
+#include <Render/Events/OSInput.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
 #include <Input/Events/CharInput.h>
@@ -50,7 +50,7 @@ bool CInputServer::Open()
 	MouseXRel =
 	MouseYRel = 0.f;
 
-	SUBSCRIBE_NEVENT(DisplayInput, CInputServer, OnDisplayInput);
+	SUBSCRIBE_NEVENT(OSInput, CInputServer, OnDisplayInput);
 	SUBSCRIBE_PEVENT(OnDisplaySetFocus, CInputServer, OnDisplaySetFocus);
 	SUBSCRIBE_PEVENT(OnDisplayKillFocus, CInputServer, OnDisplayKillFocus);
 
@@ -63,7 +63,7 @@ void CInputServer::Close()
 {
 	n_assert(_IsOpen);
 
-	UNSUBSCRIBE_EVENT(DisplayInput);
+	UNSUBSCRIBE_EVENT(OSInput);
 	UNSUBSCRIBE_EVENT(OnDisplaySetFocus);
 	UNSUBSCRIBE_EVENT(OnDisplayKillFocus);
 
@@ -205,11 +205,11 @@ void CInputServer::Reset()
 // Generates input events based on display input type & input settings like Invert Y, Sensitivity, axis smoothing etc
 bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 {
-	const Event::DisplayInput& Ev = (const Event::DisplayInput&)Event;
+	const Event::OSInput& Ev = (const Event::OSInput&)Event;
 
 	switch (Ev.Type)
 	{
-		case Event::DisplayInput::KeyDown:
+		case Event::OSInput::KeyDown:
 		{
 			n_assert(Ev.KeyCode < KeyCount);
 			uchar& State = KeyState[Ev.KeyCode];
@@ -218,32 +218,32 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			break;
 		}
 
-		case Event::DisplayInput::KeyUp:
+		case Event::OSInput::KeyUp:
 			n_assert(Ev.KeyCode < KeyCount);
 			KeyState[Ev.KeyCode] |= KEY_IS_UP;
 			FireEvent(Event::KeyUp(Ev.KeyCode), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::CharInput:
+		case Event::OSInput::CharInput:
 			n_assert(CharCount < CharBufferSize); // Last will be set to 0
 			Chars[CharCount++] = Ev.Char;
 			FireEvent(Event::CharInput(Ev.Char), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::MouseMove:
+		case Event::OSInput::MouseMove:
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
 			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseMove(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::MouseMoveRaw:
+		case Event::OSInput::MouseMoveRaw:
 			RawMouseMoveX += Ev.MouseInfo.x;
 			RawMouseMoveY += Ev.MouseInfo.y;
 			FireEvent(Event::MouseMoveRaw(Ev.MouseInfo.x, Ev.MouseInfo.y), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::MouseDown:
+		case Event::OSInput::MouseDown:
 			n_assert(Ev.MouseInfo.Button < MouseBtnCount);
 			MouseBtnState[Ev.MouseInfo.Button] |= (KEY_IS_DOWN | KEY_IS_PRESSED);
 			MouseXAbs = Ev.MouseInfo.x;
@@ -252,7 +252,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			FireEvent(Event::MouseBtnDown(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::MouseUp:
+		case Event::OSInput::MouseUp:
 			n_assert(Ev.MouseInfo.Button < MouseBtnCount);
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_UP;
 			MouseXAbs = Ev.MouseInfo.x;
@@ -261,7 +261,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			FireEvent(Event::MouseBtnUp(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::MouseDblClick:
+		case Event::OSInput::MouseDblClick:
 			n_assert(Ev.MouseInfo.Button < MouseBtnCount);
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_DBL_CLICKED;
 			MouseXAbs = Ev.MouseInfo.x;
@@ -270,7 +270,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			FireEvent(Event::MouseDoubleClick(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
-		case Event::DisplayInput::MouseWheel:
+		case Event::OSInput::MouseWheel:
 			if (Ev.WheelDelta > 0) WheelFwd += Ev.WheelDelta;
 			else WheelBack += Ev.WheelDelta;
 			FireEvent(Event::MouseWheel(Ev.WheelDelta), EV_TERM_ON_HANDLED);

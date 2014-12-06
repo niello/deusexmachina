@@ -68,13 +68,14 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 }
 //---------------------------------------------------------------------
 
-// If device exists, create additional swap chain. If device not exist, create device with implicit swap chain.
-DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow)
+// If device exists, creates additional swap chain. If device not exist, creates a device with implicit swap chain.
+DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow)
 {
 	if (pD3DDevice)
 	{
-		// create additional swap chain
-		// return its index
+		// Here we can create an additional swap chain and return its index
+		// Index is determined as the first free element in SwapChains array
+		// If there are no free elements, a new one must be reserved until a maximum is reached.
 		return ERR_MAX_SWAP_CHAIN_COUNT_EXCEEDED;
 	}
 
@@ -89,15 +90,39 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
 	n_assert(SUCCEEDED(pD3D9->GetDeviceCaps(Adapter, DEM_D3D_DEVICETYPE, &D3DCaps)));
 
-	const Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
+	Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
+	n_assert(pWnd);
 
-	//???why it is better to create windowed swap chain and then turn it fullscreen? except that it uses less aruments on creation.
+	// Zero means matching window or display size.
+	// But if at least one of these values specified, we should adjst window size.
+	// A child window is an exception, we don't want rederer to resize it,
+	// so we force a backbuffer size to a child window size.
+	UINT BBWidth = Desc.BackBufferWidth, BBHeight = Desc.BackBufferHeight;
+	if (BBWidth > 0 || BBHeight > 0)
+	{
+		if (pWnd->IsChild())
+		{
+			BBWidth = pWnd->GetWidth();
+			BBHeight = pWnd->GetHeight();
+		}
+		else
+		{
+			Data::CRect WindowRect = pWnd->GetRect();
+			if (BBWidth > 0) WindowRect.W = BBWidth;
+			else BBWidth = WindowRect.W;
+			if (BBHeight > 0) WindowRect.H = BBHeight;
+			else BBHeight = WindowRect.H;
+			pWnd->SetRect(WindowRect);
+		}
+	}
+
+	//???why it is better to create windowed swap chain and then turn it fullscreen? except that it uses less arguments on creation.
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
 	FillD3DPresentParams(Desc, pWnd, D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
-	D3DPresentParams.BackBufferWidth = pWnd->GetWidth();
-	D3DPresentParams.BackBufferHeight = pWnd->GetHeight();
+	D3DPresentParams.BackBufferWidth = BBWidth;
+	D3DPresentParams.BackBufferHeight = BBHeight;
 	D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 
 	// Make sure the device supports a depth buffer specified
@@ -111,7 +136,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 	if (FAILED(hr))
 	{
 		Sys::Error("Rendering device doesn't support D24S8 depth buffer!\n");
-		return;
+		return ERR_CREATION_ERROR;
 	}
 
 	// Check that the depth buffer format is compatible with the backbuffer format
@@ -124,7 +149,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 	if (FAILED(hr))
 	{
 		Sys::Error("Backbuffer format is not compatible with D24S8 depth buffer!\n");
-		return;
+		return ERR_CREATION_ERROR;
 	}
 
 	// Can setup W-buffer: D3DCaps.RasterCaps | D3DPRASTERCAPS_WBUFFER -> D3DZB_USEW
@@ -139,17 +164,17 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 #endif
 
 	// NB: May fail if can't create requested number of backbuffers
-	HRESULT hr = pD3D9->CreateDevice(Adapter,
-									 DEM_D3D_DEVICETYPE,
-									 D3D9DrvFactory->GetFocusWindow()->GetHWND(),
-									 BhvFlags,
-									 &D3DPresentParams,
-									 &pD3DDevice);
+	hr = pD3D9->CreateDevice(Adapter,
+							DEM_D3D_DEVICETYPE,
+							D3D9DrvFactory->GetFocusWindow()->GetHWND(),
+							BhvFlags,
+							&D3DPresentParams,
+							&pD3DDevice);
 
 	if (FAILED(hr))
 	{
 		//!!!DX9! Sys::Error("Failed to create Direct3D device object: %s!\n", DXGetErrorString(hr));
-		FAIL;
+		return ERR_CREATION_ERROR;
 	}
 
 	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
@@ -159,13 +184,14 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 	//!!!only to decide whether to clear stencil! clear if current DS surface includes stencil bits
 	//???!!!RT must not have embedded DS surface, it is a separate class!
 	//so there is no need in this field!
-	CurrDepthStencilFormat =
-		D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
+	//CurrDepthStencilFormat =
+	//	D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
 
 	CSwapChain& SC = *SwapChains.Reserve(1);
 	SC.Desc = Desc;
 	SC.pSwapChain = NULL;
 	SC.TargetWindow = pWnd;
+	SC.LastWindowRect = pWnd->GetRect();
 
 	return 0;
 }
@@ -173,10 +199,14 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, const Sys::COS
 
 bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay, const CDisplayMode* pMode)
 {
+	if (SwapChainID >= (DWORD)SwapChains.GetCount()) FAIL;
 	if (pDisplay && Adapter != pDisplay->GetAdapterID()) FAIL;
+
+	CSwapChain& SC = SwapChains[SwapChainID];
 
 	if (!pDisplay)
 	{
+		Sys::Error("CD3D9GPUDriver::SwitchToFullscreen > IMPLEMENT ME for pDisplay == NULL!!!");
 		// system will select from window
 		// or for d3d get adapter display format directly
 	}
@@ -184,42 +214,57 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 	CDisplayMode CurrentMode;
 	if (!pMode)
 	{
-		//if (!pDisplay->GetCurrentMode(CurrentMode)) FAIL;
+		if (!pDisplay->GetCurrentDisplayMode(CurrentMode)) FAIL;
 		pMode = &CurrentMode;
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SC->GetDesc(), SC->GetWindow(), D3DPresentParams);
+	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
 
 	D3DPresentParams.Windowed = FALSE;
 	D3DPresentParams.BackBufferWidth = pMode->Width;
 	D3DPresentParams.BackBufferHeight = pMode->Height;
 	D3DPresentParams.BackBufferFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(pMode->PixelFormat);
 
-	//!!!Reset()!
-	//Display.Fullscreen = !Display.Fullscreen;
+	SC.LastWindowRect = SC.TargetWindow->GetRect();
+	SC.TargetWindow->SetRect(Data::CRect(0, 0, pMode->Width, pMode->Height), true);
+
 	//ResetDevice();
-	//Display.ResetWindow();
+	//or reset swap chain
+
+	SC.pTargetDisplay = pDisplay;
 
 	OK;
 }
 //---------------------------------------------------------------------
 
 //!!!set optional window pos & size! if not set, restore from somewhere!
-bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID)
+bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect)
 {
+	if (SwapChainID >= (DWORD)SwapChains.GetCount()) FAIL;
+
+	CSwapChain& SC = SwapChains[SwapChainID];
+
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SC->GetDesc(), SC->GetWindow(), D3DPresentParams);
+	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
+
+	const Data::CRect* pNewRect = pWindowRect ? pWindowRect : &SC.LastWindowRect;
+	//!!!fill empty fields in passed rect with fields from a last rect!
+	//!!!reset last rect, if explicit rect passed!
 
 	D3DPresentParams.Windowed = TRUE;
-	D3DPresentParams.BackBufferWidth = SC->GetWindow()->GetWidth();
-	D3DPresentParams.BackBufferHeight = SC->GetWindow()->GetHeight();
+	D3DPresentParams.BackBufferWidth = pNewRect->W;
+	D3DPresentParams.BackBufferHeight = pNewRect->H;
 	D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 
-	//!!!Reset()!
-	//Display.Fullscreen = !Display.Fullscreen;
 	//ResetDevice();
 	//Display.ResetWindow();
+
+	SC.TargetWindow->SetRect(*pNewRect);
+
+	SC.pTargetDisplay = NULL;
+
+	OK;
 }
 //---------------------------------------------------------------------
 

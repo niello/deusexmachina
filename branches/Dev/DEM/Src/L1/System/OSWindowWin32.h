@@ -3,9 +3,8 @@
 #ifndef __DEM_L1_SYS_OS_WINDOW_WIN32_H__
 #define __DEM_L1_SYS_OS_WINDOW_WIN32_H__
 
-#include <Data/RefCounted.h>
+#include <Events/EventDispatcher.h>
 #include <Data/SimpleString.h>
-#include <Data/Flags.h>
 #include <Data/Rect.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -16,7 +15,7 @@
 namespace Sys
 {
 
-class COSWindowWin32: public CRefCounted //???make it dispatcher?
+class COSWindowWin32: public Events::CEventDispatcher
 {
 protected:
 
