@@ -4,8 +4,9 @@
 
 //#include <Render/DisplayMode.h>
 #include <Render/RenderFwd.h>
+#include <Events/EventsFwd.h>
 #include <Data/Flags.h>
-#include <Data/Ptr.h>
+#include <Data/Rect.h>
 
 // Swap chain is a set of a front buffer and one or more back buffers. GPU device renders into a
 // back buffer and presents it to a display (fullscreen) or a desktop (windowed). Presented back
@@ -25,9 +26,9 @@ enum ESwapChainFlags
 {
 	//ManualRotationHandling
 	//AutoSwitchModeOnResizeTarget // switches on resize target and on wnd->fullscr //???always handle by app?
-	//AutoAdjustSize // resize buffers to window / display mode
 	//FrameLatencyWaitable // DXGI since Win8.1
-	SwapChain_VSync //???need other intervals, like 2-4 (each 2nd-4th vsync)? if need, move to separate enum or use integer!
+	SwapChain_AutoAdjustSize	= 0x01,	// Listens OS window resize event and resizes buffers accordingly
+	SwapChain_VSync				= 0x02	//???need other intervals, like 2-4 (each 2nd-4th vsync)? if need, move to separate enum or use integer!
 };
 
 enum ESwapMode
@@ -52,9 +53,9 @@ struct CSwapChainDesc
 
 	EMSAAQuality	AntiAliasQuality;
 
-	//other flags, presentation and not (autoadjustsize - match backbuffer size to target size, or always?)
+	//other flags, presentation and not
 
-	CSwapChainDesc(): AntiAliasQuality(MSAA_None) {}
+	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync), AntiAliasQuality(MSAA_None) {}
 };
 
 // Inherit from this class to create API-specific implementations

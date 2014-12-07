@@ -21,10 +21,17 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
+	//???store index and driver pointer and subscribe events here?
 	class CSwapChain: public CSwapChainBase
 	{
 	public:
 
+		Events::PSub	Sub_OnToggleFullscreen;
+		Events::PSub	Sub_OnSizeChanged;
+		Events::PSub	Sub_OnPaint;
+		Events::PSub	Sub_OnClosing;
+
+		//???store present params along with a desc, or recreate from scratch each time?
 		IDirect3DSwapChain9* pSwapChain; // NULL for implicit swap chain, device methods will be called
 	};
 
@@ -36,7 +43,16 @@ protected:
 
 	CD3D9GPUDriver(): SwapChains(1, 1) {}
 
-	static void FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams);
+	//???subscribe swapchain itself? more handling and self-control into a swapchain class?
+	bool			OnOSWindowToggleFullscreen(const Events::CEventBase& Event);
+	bool			OnOSWindowSizeChanged(const Events::CEventBase& Event);
+	bool			OnOSWindowPaint(const Events::CEventBase& Event);
+	bool			OnOSWindowClosing(const Events::CEventBase& Event);
+
+	bool			Reset(D3DPRESENT_PARAMETERS& D3DPresentParams);
+	void			Release();
+
+	static void		FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams);
 
 	friend class CD3D9DriverFactory;
 
@@ -51,10 +67,9 @@ public:
 	virtual bool			DestroySwapChain(DWORD SwapChainID);
 	virtual bool			SwapChainExists(DWORD SwapChainID) const;
 	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
-	//!!!n_assert(!pDisplay || Adapter == pDisplay->GetAdapterID());!
-	virtual bool			SwitchToWindowed(DWORD SwapChainID); //!!!set optional window pos & size! if not set, restore from somewhere!
+	virtual bool			SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL);
+	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
 	virtual bool			IsFullscreen(DWORD SwapChainID) const;
-	virtual void			AdjustSize(DWORD SwapChainID);
 	//!!!get info, change info (or only recreate?)
 	virtual void			Present(DWORD SwapChainID);
 	virtual void			PresentBlankScreen(DWORD SwapChainID, DWORD Color);

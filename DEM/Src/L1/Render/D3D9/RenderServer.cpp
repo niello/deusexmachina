@@ -59,57 +59,6 @@ void CRenderServer::Close()
 }
 //---------------------------------------------------------------------
 
-void CRenderServer::ResetDevice()
-{
-	n_assert(pD3DDevice);
-
-	EventSrv->FireEvent(CStrID("OnRenderDeviceLost"));
-
-	//!!!ReleaseQueries();
-	SAFE_RELEASE(pCurrDSSurface);
-
-	HRESULT hr = pD3DDevice->TestCooperativeLevel();
-	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
-	{
-		// NB: In single-threaded app, engine will stuck here until device can be reset
-		Sys::Sleep(10);
-		Display.ProcessWindowMessages();
-		hr = pD3DDevice->TestCooperativeLevel();
-	}
-
-	SetupPresentParams();
-
-	hr = pD3DDevice->Reset(&D3DPresentParams);
-	if (FAILED(hr))
-		Sys::Error("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
-
-	SetupDevice();
-
-	EventSrv->FireEvent(CStrID("OnRenderDeviceReset"));
-
-	pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
-}
-//---------------------------------------------------------------------
-
-void CRenderServer::ReleaseDevice()
-{
-	n_assert(pD3D && pD3DDevice);
-
-	//!!!UnbindD3D9Resources();
-
-	for (int i = 1; i < MaxRenderTargetCount; i++)
-		pD3DDevice->SetRenderTarget(i, NULL);
-	pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
-
-	EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
-
-	//!!!ReleaseQueries();
-
-	pD3DDevice->Release();
-	pD3DDevice = NULL;
-}
-//---------------------------------------------------------------------
-
 void CRenderServer::SetWireframe(bool Wire)
 {
 	if (Wireframe == Wire) return;
@@ -455,33 +404,6 @@ int CRenderServer::GetFormatBits(EPixelFormat Format)
 		default:
 			return -1;
 	}
-}
-//---------------------------------------------------------------------
-
-bool CRenderServer::OnDisplayPaint(const Events::CEventBase& Event)
-{
-	if (Display.Fullscreen && pD3DDevice) //!!! && !InDialogBoxMode)
-		pD3DDevice->Present(0, 0, 0, 0);
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CRenderServer::OnToggleFullscreenWindowed(const Events::CEventBase& Event)
-{
-	Display.Fullscreen = !Display.Fullscreen;
-	ResetDevice();
-	Display.ResetWindow();
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CRenderServer::OnDisplaySizeChanged(const Events::CEventBase& Event)
-{
-	if (Display.Fullscreen) FAIL;
-	if (Display.GetDisplayMode().Width != D3DPresentParams.BackBufferWidth ||
-		Display.GetDisplayMode().Height != D3DPresentParams.BackBufferHeight)
-		ResetDevice();
-	OK;
 }
 //---------------------------------------------------------------------
 

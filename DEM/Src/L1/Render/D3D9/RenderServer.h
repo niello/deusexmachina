@@ -55,9 +55,6 @@ protected:
 	matrix44							CurrViewProj; //???or store camera ref?
 
 	bool				CreateDevice();
-	void				ReleaseDevice();
-	void				SetupDevice();
-	void				SetupPresentParams();
 
 	DECLARE_EVENT_HANDLER(OnDisplayPaint, OnDisplayPaint);
 	DECLARE_EVENT_HANDLER(OnDisplayToggleFullscreen, OnToggleFullscreenWindowed);

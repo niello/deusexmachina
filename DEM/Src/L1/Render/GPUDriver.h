@@ -84,15 +84,13 @@ public:
 	virtual bool			Init(DWORD AdapterNumber) { Adapter = AdapterNumber; OK; }
 	virtual bool			CheckCaps(ECaps Cap) = 0;
 
-	//???or call SetSwapChain and then operate on it without searching? see usage patterns, calls freq & order to decide.
 	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow) = 0;
 	virtual bool			DestroySwapChain(DWORD SwapChainID) = 0;
 	virtual bool			SwapChainExists(DWORD SwapChainID) const = 0;
 	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
-	//!!!n_assert(!pDisplay || Adapter == pDisplay->GetAdapterID());!
-	virtual bool			SwitchToWindowed(DWORD SwapChainID) = 0; //!!!set optional window pos & size! if not set, restore from somewhere!
+	virtual bool			SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL) = 0;
+	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
 	virtual bool			IsFullscreen(DWORD SwapChainID) const = 0;
-	virtual void			AdjustSize(DWORD SwapChainID) = 0;
 	//!!!get info, change info (or only recreate?)
 	virtual void			Present(DWORD SwapChainID) = 0;
 	virtual void			PresentBlankScreen(DWORD SwapChainID, DWORD Color) = 0;
