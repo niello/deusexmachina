@@ -30,6 +30,72 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
+{
+	if (!pD3DDevice) FAIL;
+
+	//EventSrv->FireEvent(CStrID("OnRenderDeviceLost"));
+
+	//!!!ReleaseQueries();
+	//SAFE_RELEASE(pCurrDSSurface);
+
+	Sys::COSWindow* pFocusWnd = D3D9DrvFactory->GetFocusWindow();
+
+	HRESULT hr = pD3DDevice->TestCooperativeLevel();
+	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
+	{
+		// NB: In single-threaded app, engine will stuck here until device can be reset
+		Sys::Sleep(10);
+		if (pFocusWnd) pFocusWnd->ProcessMessages();
+		hr = pD3DDevice->TestCooperativeLevel();
+	}
+
+	hr = pD3DDevice->Reset(&D3DPresentParams);
+	if (FAILED(hr))
+	{
+		//!!!DXERR!
+		//Sys::Log("Failed to reset Direct3D device object: %s!\n", DXGetErrorString(hr));
+		Sys::Log("Failed to reset Direct3D device object!\n");
+		FAIL;
+	}
+
+	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
+	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+	pD3DDevice->SetRenderState(D3DRS_FILLMODE, /*Wireframe ? D3DFILL_WIREFRAME :*/ D3DFILL_SOLID);
+
+	//!!!only to decide whether to clear stencil! clear if current DS surface includes stencil bits
+	//???!!!RT must not have embedded DS surface, it is a separate class!
+	//so there is no need in this field!
+	//CurrDepthStencilFormat =
+	//	D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
+
+	//EventSrv->FireEvent(CStrID("OnRenderDeviceReset"));
+
+	//pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::Release()
+{
+	if (!pD3DDevice) return;
+
+	//!!!UnbindD3D9Resources();
+
+	//for (int i = 1; i < MaxRenderTargetCount; i++)
+	//	pD3DDevice->SetRenderTarget(i, NULL);
+	pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
+
+	//EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
+
+	//!!!ReleaseQueries();
+
+	pD3DDevice->Release();
+	pD3DDevice = NULL;
+}
+//---------------------------------------------------------------------
+
 void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
 	DWORD BufferCount = Desc.BufferCount ? Desc.BufferCount : 2;
@@ -92,6 +158,8 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 
 	Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
 	n_assert(pWnd);
+
+	//???check all the swap chains not to use this window?
 
 	// Zero means matching window or display size.
 	// But if at least one of these values specified, we should adjst window size.
@@ -193,16 +261,58 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 	SC.TargetWindow = pWnd;
 	SC.LastWindowRect = pWnd->GetRect();
 
+	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &SC.Sub_OnToggleFullscreen);
+	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &SC.Sub_OnClosing);
+	if (Desc.Flags.Is(SwapChain_AutoAdjustSize))
+		pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &SC.Sub_OnSizeChanged);
+
 	return 0;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::DestroySwapChain(DWORD SwapChainID)
+{
+	if (!SwapChainExists(SwapChainID)) FAIL;
+	
+	CSwapChain& SC = SwapChains[SwapChainID];
+	SC.Sub_OnClosing = NULL;
+	SC.Sub_OnPaint = NULL;
+	SC.Sub_OnSizeChanged = NULL;
+	SC.Sub_OnToggleFullscreen = NULL;
+
+	if (SC.pSwapChain)
+	{
+		SC.pSwapChain->Release();
+		SC.pSwapChain = NULL;
+	}
+	else
+	{
+		// Implicit swap chain
+		//!!!destroy device!
+		//???or deny and require user to call DestroyDevice (Term)?
+	}
+	
+	SC.pTargetDisplay = NULL;
+	SC.TargetWindow = NULL;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SwapChainExists(DWORD SwapChainID) const
+{
+	return SwapChainID < (DWORD)SwapChains.GetCount() && SwapChains[SwapChainID].TargetWindow.IsValid();
 }
 //---------------------------------------------------------------------
 
 bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay, const CDisplayMode* pMode)
 {
-	if (SwapChainID >= (DWORD)SwapChains.GetCount()) FAIL;
+	if (!SwapChainExists(SwapChainID)) FAIL;
 	if (pDisplay && Adapter != pDisplay->GetAdapterID()) FAIL;
 
 	CSwapChain& SC = SwapChains[SwapChainID];
+
+	//???if (SC.TargetWindow->IsChild()) FAIL;
 
 	if (!pDisplay)
 	{
@@ -226,108 +336,177 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 	D3DPresentParams.BackBufferHeight = pMode->Height;
 	D3DPresentParams.BackBufferFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(pMode->PixelFormat);
 
+	CDisplayDriver::CMonitorInfo MonInfo;
+	if (!pDisplay->GetDisplayMonitorInfo(MonInfo)) FAIL;
 	SC.LastWindowRect = SC.TargetWindow->GetRect();
-	SC.TargetWindow->SetRect(Data::CRect(0, 0, pMode->Width, pMode->Height), true);
+	SC.TargetWindow->SetRect(Data::CRect(MonInfo.Left, MonInfo.Top, pMode->Width, pMode->Height), true);
 
-	//ResetDevice();
-	//or reset swap chain
+	if (SC.pSwapChain) {}
+	else if (!Reset(D3DPresentParams)) FAIL;
 
 	SC.pTargetDisplay = pDisplay;
+	SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &SC.Sub_OnPaint);
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-//!!!set optional window pos & size! if not set, restore from somewhere!
 bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect)
 {
-	if (SwapChainID >= (DWORD)SwapChains.GetCount()) FAIL;
+	if (!SwapChainExists(SwapChainID)) FAIL;
 
 	CSwapChain& SC = SwapChains[SwapChainID];
+
+	if (pWindowRect)
+	{
+		SC.LastWindowRect.X = pWindowRect->X;
+		SC.LastWindowRect.Y = pWindowRect->Y;
+		if (pWindowRect->W > 0) SC.LastWindowRect.W = pWindowRect->W;
+		if (pWindowRect->H > 0) SC.LastWindowRect.H = pWindowRect->H;
+	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
 	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
 
-	const Data::CRect* pNewRect = pWindowRect ? pWindowRect : &SC.LastWindowRect;
-	//!!!fill empty fields in passed rect with fields from a last rect!
-	//!!!reset last rect, if explicit rect passed!
-
 	D3DPresentParams.Windowed = TRUE;
-	D3DPresentParams.BackBufferWidth = pNewRect->W;
-	D3DPresentParams.BackBufferHeight = pNewRect->H;
+	D3DPresentParams.BackBufferWidth = SC.LastWindowRect.W;
+	D3DPresentParams.BackBufferHeight = SC.LastWindowRect.H;
 	D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 
-	//ResetDevice();
-	//Display.ResetWindow();
+	if (SC.pSwapChain) {}
+	else if (!Reset(D3DPresentParams)) FAIL;
 
-	SC.TargetWindow->SetRect(*pNewRect);
+	SC.TargetWindow->SetRect(SC.LastWindowRect);
 
+	SC.Sub_OnPaint = NULL;
 	SC.pTargetDisplay = NULL;
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-}
-
-/*
-
-void COSWindowWin32::CalcWindowRect(CRect& Rect)
+// Does not resize an OS window, since often is itself called in response to an OS window resize
+//???bool ResizeOSWindow?
+bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height)
 {
-	if (pParent)
-	{
-		Rect.X = 0;
-		Rect.Y = 0;
+	if (!SwapChainExists(SwapChainID)) FAIL;
 
-		RECT r;
-		::GetClientRect(pParent->GetHWND(), &r);
-		::AdjustWindowRect(&r, STYLE_CHILD, FALSE);
-		Rect.W = r.right - r.left; //???clamp w & h to parent rect?
-		Rect.H = r.bottom - r.top;
+	//!!!if W & H == curr W & H early exit OK;!!!
+
+	CSwapChain& SC = SwapChains[SwapChainID];
+
+	//???for child window, assert that size passed is a window size?
+
+	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
+	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
+
+	if (SC.IsFullscreen())
+	{
+		CDisplayMode Mode;
+		if (!SC.pTargetDisplay->GetCurrentDisplayMode(Mode)) FAIL;
+		if (Width) Mode.Width = Width;
+		if (Height) Mode.Height = Height;
+		if (!SC.pTargetDisplay->SupportsDisplayMode(Mode))
+		{
+			//!!!if (!SC.pTargetDisplay->GetClosestDisplayMode(inout Mode)) FAIL;!
+			FAIL;
+		}
+		D3DPresentParams.Windowed = FALSE;
+		D3DPresentParams.BackBufferWidth = Mode.Width;
+		D3DPresentParams.BackBufferHeight = Mode.Height;
+		D3DPresentParams.BackBufferFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Mode.PixelFormat);
+		//D3DPresentParams.FullScreen_RefreshRateInHz = Mode.RefreshRate.GetIntRounded();
 	}
 	else
 	{
-		CMonitorInfo MonitorInfo;
-		GetAdapterMonitorInfo(Adapter, MonitorInfo);
+		if (!Width) Width = SC.Desc.BackBufferWidth;
+		if (!Height) Height = SC.Desc.BackBufferHeight;
 
-		if (IsFullscreen)
-		{
-			if (DisplayModeSwitchEnabled)
-			{
-				X = MonitorInfo.Left;
-				Y = MonitorInfo.Top;
-			}
-			else
-			{
-				X = MonitorInfo.Left + ((MonitorInfo.Width - DisplayMode.Width) / 2);
-				Y = MonitorInfo.Top + ((MonitorInfo.Height - DisplayMode.Height) / 2);
-			}
-			W = DisplayMode.Width;
-			H = DisplayMode.Height;
-		}
-		else
-		{
-			X = MonitorInfo.Left + DisplayMode.PosX;
-			Y = MonitorInfo.Top + DisplayMode.PosY;
-			RECT r = { X, Y, X + DisplayMode.Width, Y + DisplayMode.Height };
-			::AdjustWindowRect(&r, STYLE_WINDOWED, FALSE);
-			W = r.right - r.left;
-			H = r.bottom - r.top;
-		}
+		D3DPresentParams.Windowed = TRUE;
+		D3DPresentParams.BackBufferWidth = Width;
+		D3DPresentParams.BackBufferHeight = Height;
+		D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 	}
+
+	if (SC.pSwapChain) {}
+	else if (!Reset(D3DPresentParams)) FAIL;
+
+	SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
+	SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+
+	OK;
 }
 //---------------------------------------------------------------------
 
-//void COSWindowWin32::AdjustSize()
-//{
-//	n_assert(hWnd);
-//
-//	RECT r;
-//	GetClientRect(hWnd, &r);
-//	DisplayMode.Width = (ushort)r.right;
-//	DisplayMode.Height = (ushort)r.bottom;
-//
-//	EventSrv->FireEvent(CStrID("OnDisplaySizeChanged"));
-//}
-////---------------------------------------------------------------------
-*/
+bool CD3D9GPUDriver::IsFullscreen(DWORD SwapChainID) const
+{
+	return SwapChainExists(SwapChainID) && SwapChains[SwapChainID].IsFullscreen();
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
+		{
+			if (SwapChains[i].IsFullscreen()) return SwitchToWindowed(i);
+			else return SwitchToFullscreen(i);
+		}
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::OnOSWindowSizeChanged(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
+		{
+			// May not fire in fullscreen mode by design, this assert checks it
+			// If assertion failed, we should rewrite this handler and maybe some other code
+			n_assert_dbg(!SwapChains[i].IsFullscreen());
+
+			ResizeSwapChain(i, pWnd->GetWidth(), pWnd->GetHeight());
+			OK; // Only one swap chain is allowed for each window
+		}
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::OnOSWindowPaint(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	{
+		CSwapChain& SC = SwapChains[i];
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		{
+			n_assert_dbg(SC.IsFullscreen());
+			if (SC.pSwapChain) SC.pSwapChain->Present(NULL, NULL, NULL, NULL, 0);
+			else pD3DDevice->Present(NULL, NULL, NULL, NULL);
+			OK; // Only one swap chain is allowed for each window
+		}
+	}
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::OnOSWindowClosing(const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
+		{
+			DestroySwapChain(i);
+			OK; // Only one swap chain is allowed for each window
+		}
+	OK;
+}
+//---------------------------------------------------------------------
+
+}

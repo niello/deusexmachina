@@ -109,6 +109,7 @@ struct CRational
 	short	Numerator;
 	ushort	Denominator;
 
+	short	GetIntRounded() const { return Denominator ? Numerator / Denominator : 0; }
 	float	GetFloat() const { return Denominator ? (float)Numerator / (float)Denominator : 0.f; }
 	double	GetDouble() const { return Denominator ? (double)Numerator / (double)Denominator : 0.0; }
 
