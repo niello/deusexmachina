@@ -65,6 +65,7 @@ public:
 
 	Sys::POSWindow			TargetWindow;	//???to desc?
 	const CDisplayDriver*	pTargetDisplay;
+	//CDisplayMode			DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
 	CSwapChainDesc			Desc;
 	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
 
@@ -73,6 +74,7 @@ public:
 
 	CSwapChainBase(): pTargetDisplay(NULL) {}
 
+	bool IsValid() const { return TargetWindow.IsValid(); }
 	bool IsFullscreen() const { return !!pTargetDisplay; }
 };
 
