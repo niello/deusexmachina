@@ -92,8 +92,8 @@ public:
 	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
 	virtual bool			IsFullscreen(DWORD SwapChainID) const = 0;
 	//!!!get info, change info (or only recreate?)
-	virtual void			Present(DWORD SwapChainID) = 0;
-	virtual void			PresentBlankScreen(DWORD SwapChainID, DWORD Color) = 0;
+	virtual bool			Present(DWORD SwapChainID) = 0;
+	bool					PresentBlankScreen(DWORD SwapChainID, DWORD Color);
 	//virtual void			SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
 
 	bool					BeginFrame();
@@ -130,7 +130,7 @@ PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 }
 //---------------------------------------------------------------------
 
-inline void CGPUDriver::PresentBlankScreen(DWORD SwapChainID, DWORD Color)
+inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, DWORD Color)
 {
 	//???set swap chain render target? or pass id to beginframe and set inside?
 	//internal check must be performed not to reset target already set

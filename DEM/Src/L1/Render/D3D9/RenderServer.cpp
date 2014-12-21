@@ -110,37 +110,6 @@ void CRenderServer::EndFrame()
 }
 //---------------------------------------------------------------------
 
-// NB: Present() should be called as late as possible after EndFrame()
-// to improve parallelism between the GPU and the CPU
-void CRenderServer::Present()
-{
-	n_assert(pD3DDevice && !IsInsideFrame);
-	if (Display.GetAppHwnd())
-	{
-		HRESULT hr = pD3DDevice->Present(NULL, NULL, NULL, NULL);
-		if (FAILED(hr))
-		{
-			CDisplayMode OldMode = Display.GetDisplayMode();
-			if (hr == D3DERR_DEVICELOST) ResetDevice();
-			else
-			{
-				ReleaseDevice();
-				if (!CreateDevice()) return;
-			}
-			if (Display.GetDisplayMode() != OldMode) Display.ResetWindow();
-		}
-	}    
-
-	++FrameID;
-
-	//// Sync CPU thread with GPU
-	//// wait till gpu has finsihed rendering the previous frame
-	//gpuSyncQuery[frameId % numSyncQueries]->Issue(D3DISSUE_END);                              
-	//++FrameID; //???why here?
-	//while (S_FALSE == gpuSyncQuery[frameId % numSyncQueries]->GetData(NULL, 0, D3DGETDATA_FLUSH)) ;
-}
-//---------------------------------------------------------------------
-
 void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, IO::CStream& OutStream)
 {
 	n_assert(pD3DDevice && !IsInsideFrame);
