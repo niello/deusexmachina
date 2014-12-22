@@ -10,7 +10,7 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9GPUDriver, 'D9GD', Render::CGPUDriver);
 
-void CD3D9GPUDriver::CSwapChain::Release()
+void CD3D9GPUDriver::CD3D9SwapChain::Release()
 {
 	Sub_OnClosing = NULL;
 	Sub_OnSizeChanged = NULL;
@@ -24,30 +24,10 @@ void CD3D9GPUDriver::CSwapChain::Release()
 	else
 	{
 		//???move this branch to a DestroySwapChain() method?
-		Sys::Error("CD3D9GPUDriver::CSwapChain::Release() > Implicit swap chain destroyed! IMPLEMENT ME!!!");
+		Sys::Error("CD3D9GPUDriver::CD3D9SwapChain::Release() > Implicit swap chain destroyed! IMPLEMENT ME!!!");
 		// Implicit swap chain
 		//!!!destroy device!
 		//???or deny and require user to call DestroyDevice (Term)?
-	}
-}
-//---------------------------------------------------------------------
-
-bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
-{
-	n_assert(pD3DDevice);
-
-	switch (Cap)
-	{
-		case Caps_VSTexFiltering_Linear:
-			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
-		case Caps_VSTex_L16:
-			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	Adapter,
-																				DEM_D3D_DEVICETYPE,
-																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
-																				D3DUSAGE_QUERY_VERTEXTEXTURE,
-																				D3DRTYPE_TEXTURE,
-																				D3DFMT_L16));
-		default: FAIL;
 	}
 }
 //---------------------------------------------------------------------
@@ -105,7 +85,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 
 		for (int i = 0; i < SwapChains.GetCount() ; ++i)
 		{
-			CSwapChain& SC = SwapChains[i];
+			CD3D9SwapChain& SC = SwapChains[i];
 
 			// Skip implicit swap chain, index is always 0
 			if (i != 0)
@@ -171,6 +151,26 @@ void CD3D9GPUDriver::Release()
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
+{
+	n_assert(pD3DDevice);
+
+	switch (Cap)
+	{
+		case Caps_VSTexFiltering_Linear:
+			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
+		case Caps_VSTex_L16:
+			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	Adapter,
+																				DEM_D3D_DEVICETYPE,
+																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
+																				D3DUSAGE_QUERY_VERTEXTEXTURE,
+																				D3DRTYPE_TEXTURE,
+																				D3DFMT_L16));
+		default: FAIL;
+	}
+}
+//---------------------------------------------------------------------
+
 void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
 	DWORD BufferCount = Desc.BufferCount ? Desc.BufferCount : 2;
@@ -213,7 +213,7 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CSwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams)
+bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
 	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
 
@@ -317,7 +317,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 		return ERR_CREATION_ERROR;
 	}
 
-	CArray<CSwapChain>::CIterator ItSC = NULL;
+	CArray<CD3D9SwapChain>::CIterator ItSC = NULL;
 
 	if (pD3DDevice)
 	{
@@ -407,7 +407,7 @@ bool CD3D9GPUDriver::DestroySwapChain(DWORD SwapChainID)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	
-	CSwapChain& SC = SwapChains[SwapChainID];
+	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 	SC.Release();
 	SC.pTargetDisplay = NULL;
 	SC.TargetWindow = NULL;
@@ -431,7 +431,7 @@ bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsi
 
 	//!!!if W & H == curr W & H early exit OK;!!!
 
-	CSwapChain& SC = SwapChains[SwapChainID];
+	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
 	//???for child window, assert that size passed is a window size?
 
@@ -477,7 +477,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	if (pDisplay && Adapter != pDisplay->GetAdapterID()) FAIL;
 
-	CSwapChain& SC = SwapChains[SwapChainID];
+	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
 	// Only one swap chain per adapter can be fullscreen in D3D9
 	// Moreover, it is always an implicit swap chain, so fail on any additional one
@@ -528,7 +528,7 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 
-	CSwapChain& SC = SwapChains[SwapChainID];
+	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
 	// Only one swap chain per adapter can be fullscreen in D3D9.
 	// Moreover, it is always an implicit swap chain, so skip transition for
@@ -579,7 +579,7 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 {
 	if (IsInsideFrame || !SwapChainExists(SwapChainID)) FAIL;
 
-	CSwapChain& SC = SwapChains[SwapChainID];
+	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
 	// For swap chain: Present will fail if called between BeginScene and EndScene pairs unless the
 	// render target is not the current render target. //???so don't fail if IsInsideFrame?
@@ -588,7 +588,7 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 	{
 		if (hr == D3DERR_DEVICELOST)
 		{
-			CSwapChain& ImplicitSC = SwapChains[0];
+			CD3D9SwapChain& ImplicitSC = SwapChains[0];
 
 			D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
 			if (!GetCurrD3DPresentParams(ImplicitSC, D3DPresentParams)) FAIL;
@@ -652,7 +652,7 @@ bool CD3D9GPUDriver::OnOSWindowPaint(const Events::CEventBase& Event)
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 	{
-		CSwapChain& SC = SwapChains[i];
+		CD3D9SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
 		{
 			n_assert_dbg(SC.IsFullscreen());

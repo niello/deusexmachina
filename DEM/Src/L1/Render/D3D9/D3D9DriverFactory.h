@@ -33,6 +33,7 @@ public:
 
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
 	static EPixelFormat		D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
+	static int				GetD3DFormatBits(D3DFORMAT D3DFormat);
 
 	bool					Open(Sys::COSWindow* pWindow);
 	void					Close();

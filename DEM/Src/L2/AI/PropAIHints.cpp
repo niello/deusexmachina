@@ -6,7 +6,7 @@
 #include <Physics/PropPhysics.h>
 #include <Scripting/PropScriptable.h>
 #include <AI/AIServer.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <Data/DataServer.h>
 #include <Core/Factory.h>
 

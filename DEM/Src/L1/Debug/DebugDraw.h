@@ -3,8 +3,8 @@
 #define __DEM_L1_RENDER_DEBUG_DRAW_H__
 
 #include <Render/Renderer.h>
-#include <Render/Geometry/Mesh.h>
-#include <Render/Materials/Shader.h>
+#include <Render/Mesh.h>
+#include <Render/Shader.h>
 #include <Data/Singleton.h>
 
 // Utility class for drawing common debug shapes

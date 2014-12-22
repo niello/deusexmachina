@@ -1,7 +1,7 @@
 #include "SceneNodeRenderDebug.h"
 
 #include <Scene/SceneNode.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 
 namespace Scene
 {

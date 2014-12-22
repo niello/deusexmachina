@@ -59,7 +59,7 @@ struct CSwapChainDesc
 };
 
 // Inherit from this class to create API-specific implementations
-class CSwapChainBase
+class CSwapChain
 {
 public:
 
@@ -72,7 +72,7 @@ public:
 	//???need? what about other statistics?
 	DWORD					FrameID;
 
-	CSwapChainBase(): pTargetDisplay(NULL) {}
+	CSwapChain(): pTargetDisplay(NULL) {}
 
 	bool IsValid() const { return TargetWindow.IsValid(); }
 	bool IsFullscreen() const { return !!pTargetDisplay; }
