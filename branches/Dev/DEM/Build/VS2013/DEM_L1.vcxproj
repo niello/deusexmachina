@@ -204,6 +204,7 @@
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h" />
@@ -404,6 +405,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp" />

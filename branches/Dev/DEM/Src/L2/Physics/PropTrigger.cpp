@@ -7,7 +7,7 @@
 #include <Physics/TriggerContactCallback.h>
 #include <Scripting/PropScriptable.h>
 #include <Events/Subscription.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Prop

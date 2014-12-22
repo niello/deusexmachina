@@ -2,10 +2,10 @@
 #ifndef __DEM_L1_RENDER_SERVER_H__
 #define __DEM_L1_RENDER_SERVER_H__
 
-#include <Render/Materials/Material.h>
-#include <Render/Materials/Texture.h>
+#include <Render/Material.h>
+#include <Render/Texture.h>
 #include <Render/RenderTarget.h>
-#include <Render/Geometry/Mesh.h>
+#include <Render/Mesh.h>
 #include <Resources/ResourceManager.h>
 #include <Data/Data.h>
 #include <Data/DynamicEnum.h>
@@ -35,8 +35,6 @@ class CRenderServer: public Core::CObject
 protected:
 
 	bool								_IsOpen;
-	bool								IsInsideFrame;
-	bool								Wireframe;
 
 	DWORD								FFlagSkinned;
 	DWORD								FFlagInstanced;
@@ -56,10 +54,6 @@ protected:
 
 	bool				CreateDevice();
 
-	DECLARE_EVENT_HANDLER(OnDisplayPaint, OnDisplayPaint);
-	DECLARE_EVENT_HANDLER(OnDisplayToggleFullscreen, OnToggleFullscreenWindowed);
-	DECLARE_EVENT_HANDLER(OnDisplaySizeChanged, OnDisplaySizeChanged);
-
 public:
 
 	Data::CDynamicEnum32					ShaderFeatures;
@@ -74,7 +68,6 @@ public:
 	bool				Open();
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
-	void				ResetDevice(); // If display size changed or device lost
 
 	void				SetAmbientLight(const vector4& Color);
 	void				SetCameraPosition(const vector3& Pos);
@@ -84,16 +77,8 @@ public:
 	void				SetScreenFrameShaderID(CStrID ID) { ScreenFrameShaderID = ID; }
 	CFrameShader*		GetScreenFrameShader() const;
 
-	//!!!must be static utility methods!
-	//???to RenderFwd?
-	EPixelFormat		GetPixelFormat(const CString& String); //???CStrID?
-	int					GetFormatBits(EPixelFormat Format);
-
 	DWORD				GetFeatureFlagSkinned() const { return FFlagSkinned; }
 	DWORD				GetFeatureFlagInstanced() const { return FFlagInstanced; }
-
-	void				SetWireframe(bool Wire);
-	bool				IsWireframe() const { return Wireframe; }
 
 	const vector3&		GetCameraPosition() const { return CurrCameraPos; }
 	const matrix44&		GetViewProjection() const { return CurrViewProj; }
@@ -101,8 +86,6 @@ public:
 
 inline CRenderServer::CRenderServer():
 	_IsOpen(false),
-	IsInsideFrame(false),
-	Wireframe(false),
 	InstanceCount(0),
 	hLightAmbient(NULL),
 	hEyePos(NULL),

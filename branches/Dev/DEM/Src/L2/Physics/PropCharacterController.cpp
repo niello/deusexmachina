@@ -6,7 +6,7 @@
 #include <Scene/Events/SetTransform.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <Core/Factory.h>
 
 namespace Prop

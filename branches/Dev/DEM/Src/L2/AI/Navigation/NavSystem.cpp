@@ -5,7 +5,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <Math/Math.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourLocalBoundary.h>
 #include <DetourObstacleAvoidance.h>

@@ -1,6 +1,6 @@
 #include "NavMeshDebugDraw.h"
 
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 
 namespace AI
 {

@@ -7,7 +7,7 @@
 #include <Render/Model.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <Core/Factory.h>
 
 namespace Scene

@@ -1,4 +1,7 @@
 #include "D3DXDEMInclude.h"
+
+#ifdef DEM_USE_D3DX9
+
 #include <IO/Streams/FileStream.h>
 
 HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
@@ -39,3 +42,5 @@ HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOI
 	return S_OK;
 }
 //---------------------------------------------------------------------
+
+#endif

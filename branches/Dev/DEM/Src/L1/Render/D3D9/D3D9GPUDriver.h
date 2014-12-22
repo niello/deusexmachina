@@ -24,7 +24,7 @@ class CD3D9GPUDriver: public CGPUDriver
 protected:
 
 	//???store index and driver pointer and subscribe events here?
-	class CSwapChain: public CSwapChainBase
+	class CD3D9SwapChain: public CSwapChain
 	{
 	public:
 
@@ -32,20 +32,20 @@ protected:
 		Events::PSub	Sub_OnSizeChanged;
 		Events::PSub	Sub_OnClosing;
 
-		//???store present params along with a desc, or recreate from scratch each time?
 		IDirect3DSwapChain9* pSwapChain; // NULL for implicit swap chain, device methods will be called
 
 		void Release();
 	};
 
-	CArray<CSwapChain>	SwapChains;
-	bool				IsInsideFrame;
+	CArray<CD3D9SwapChain>	SwapChains;
+	bool					IsInsideFrame;
+	//bool					Wireframe;
 
-	D3DCAPS9			D3DCaps;
-	IDirect3DDevice9*	pD3DDevice;
-	ID3DXEffectPool*	pEffectPool;
+	D3DCAPS9				D3DCaps;
+	IDirect3DDevice9*		pD3DDevice;
+	ID3DXEffectPool*		pEffectPool;
 
-	Events::PSub		Sub_OnPaint;
+	Events::PSub			Sub_OnPaint;
 
 	CD3D9GPUDriver(): SwapChains(1, 1), IsInsideFrame(false) {}
 
@@ -59,7 +59,7 @@ protected:
 	void			Release();
 
 	static void		FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams);
-	static bool		GetCurrD3DPresentParams(const CSwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams);
+	static bool		GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams);
 
 	friend class CD3D9DriverFactory;
 
@@ -84,6 +84,9 @@ public:
 	virtual PVertexLayout	CreateVertexLayout(); // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer	CreateVertexBuffer();
 	virtual PIndexBuffer	CreateIndexBuffer();
+
+	//void					SetWireframe(bool Wire);
+	//bool					IsWireframe() const { return Wireframe; }
 
 	IDirect3DDevice9*		GetD3DDevice() const { return pD3DDevice; }
 	ID3DXEffectPool*		GetD3DEffectPool() const { return pEffectPool; }

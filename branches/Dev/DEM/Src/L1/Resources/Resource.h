@@ -50,7 +50,6 @@ typedef Ptr<CResource> PResource;
 
 #define __ImplementResourceClass(Class, FourCC, ParentClass) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
-	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
 	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class)(*(CStrID*)pParam); } \
 	bool Class::RegisterInFactory() \
@@ -59,7 +58,7 @@ typedef Ptr<CResource> PResource;
 			Factory->Register(Class::RTTI, #Class, FourCC); \
 		OK; \
 	} \
-	void Class::ForceFactoryRegistration() { Class::Registered; } \
-	const bool Class::Registered = Class::RegisterInFactory();
+	void Class::ForceFactoryRegistration() { Class::Factory_Registered; } \
+	const bool Class::Factory_Registered = Class::RegisterInFactory();
 
 #endif

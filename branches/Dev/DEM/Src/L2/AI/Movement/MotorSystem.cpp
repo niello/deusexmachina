@@ -3,7 +3,7 @@
 #include <AI/AIServer.h>
 #include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <DetourObstacleAvoidance.h>
 
 #define OBSTACTLE_DETECTOR_MIN		0.1f

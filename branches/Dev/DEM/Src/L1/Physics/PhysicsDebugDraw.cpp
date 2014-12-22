@@ -1,7 +1,7 @@
 #include "PhysicsDebugDraw.h"
 
 #include <Physics/BulletConv.h>
-#include <Render/DebugDraw.h>
+#include <Debug/DebugDraw.h>
 
 namespace Physics
 {
