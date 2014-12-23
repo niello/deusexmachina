@@ -14,7 +14,7 @@
 // Override default include handling in D3DX FX files.
 // (C) 2004 RadonLabs GmbH
 
-class CD3DXDEMInclude: public ID3DXInclude
+class CD3DX9DEMInclude: public ID3DXInclude
 {
 private:
 
@@ -23,13 +23,13 @@ private:
 
 public:
 
-	CD3DXDEMInclude(const CString& ShdDir, const CString& ShdRootDir);
+	CD3DX9DEMInclude(const CString& ShdDir, const CString& ShdRootDir);
 
 	STDMETHOD(Open)(D3DXINCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes);
 	STDMETHOD(Close)(LPCVOID pData) { n_free((void*)pData); return S_OK; }
 };
 
-inline CD3DXDEMInclude::CD3DXDEMInclude(const CString& ShdDir, const CString& ShdRootDir):
+inline CD3DX9DEMInclude::CD3DX9DEMInclude(const CString& ShdDir, const CString& ShdRootDir):
 	ShaderDir(ShdDir),
 	ShaderRootDir(ShdRootDir)
 {

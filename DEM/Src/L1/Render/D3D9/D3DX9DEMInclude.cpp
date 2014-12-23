@@ -1,10 +1,10 @@
-#include "D3DXDEMInclude.h"
+#include "D3DX9DEMInclude.h"
 
 #ifdef DEM_USE_D3DX9
 
 #include <IO/Streams/FileStream.h>
 
-HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
+HRESULT CD3DX9DEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
 {
 	IO::CFileStream File;
 	CString FilePath = pName;
@@ -20,7 +20,7 @@ HRESULT CD3DXDEMInclude::Open(D3DXINCLUDE_TYPE IncludeType, LPCSTR pName, LPCVOI
 
 	if (!Loaded)
 	{
-		Sys::Log("D3DXDEMInclude: could not open include file '%s' nor\n\t'%s' nor\n\t'%s'!\n",
+		Sys::Log("D3DX9DEMInclude: could not open include file '%s' nor\n\t'%s' nor\n\t'%s'!\n",
 			pName, (ShaderDir + pName).CStr(), (ShaderRootDir + pName).CStr());
 		return E_FAIL;
 	}
