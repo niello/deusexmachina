@@ -7,6 +7,7 @@
 // Direct3D11 GPU device driver.
 
 struct IDXGISwapChain;
+//struct ID3D11Texture2D;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 
@@ -25,11 +26,13 @@ protected:
 	public:
 
 		//???need? DXGI handles OS window!
-		Events::PSub	Sub_OnToggleFullscreen;
-		Events::PSub	Sub_OnSizeChanged;
-		Events::PSub	Sub_OnClosing;
+		Events::PSub		Sub_OnToggleFullscreen;
+		Events::PSub		Sub_OnSizeChanged;
+		Events::PSub		Sub_OnClosing;
 
-		IDXGISwapChain* pSwapChain;
+		IDXGISwapChain*		pSwapChain;
+		//ID3D11Texture2D*	pBackBuffer;
+		//!!!RT View! or unify RT of swap chain and texture?
 
 		void Release();
 	};
@@ -38,7 +41,6 @@ protected:
 	//bool					IsInsideFrame;
 	//bool					Wireframe;
 
-	D3D_FEATURE_LEVEL		FeatureLevel;
 	ID3D11Device*			pD3DDevice;
 	ID3D11DeviceContext*	pD3DImmContext;
 	//???store also D3D11.1 interfaces? an use for 11.1 methods only.

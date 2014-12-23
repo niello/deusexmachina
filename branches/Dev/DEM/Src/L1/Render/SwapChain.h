@@ -43,8 +43,7 @@ struct CSwapChainDesc
 	Data::CFlags	Flags;
 	ESwapMode		SwapMode;
 
-	DWORD			BufferCount;		// Including the front buffer
-	//CDisplayMode	BufferMode;			//???are all members needed?  DXGI uses full display mode for a swap chain! fullscreen only?
+	DWORD			BackBufferCount;
 	ushort			BackBufferWidth;	// Set to 0 to match window or display format
 	ushort			BackBufferHeight;	// Set to 0 to match window or display format
 	EPixelFormat	BackBufferFormat;	//???always get from passed display format?

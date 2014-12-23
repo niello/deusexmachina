@@ -173,11 +173,11 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 
 void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
-	DWORD BufferCount = Desc.BufferCount ? Desc.BufferCount : 2;
+	DWORD BackBufferCount = Desc.BackBufferCount ? Desc.BackBufferCount : 1;
 
 	switch (Desc.SwapMode)
 	{
-		case SwapMode_CopyPersist:	D3DPresentParams.SwapEffect = BufferCount > 1 ? D3DSWAPEFFECT_FLIP : D3DSWAPEFFECT_COPY; break;
+		case SwapMode_CopyPersist:	D3DPresentParams.SwapEffect = BackBufferCount > 1 ? D3DSWAPEFFECT_FLIP : D3DSWAPEFFECT_COPY; break;
 		//case SwapMode_FlipPersist:	// D3DSWAPEFFECT_FLIPEX, but it is available only in D3D9Ex
 		case SwapMode_CopyDiscard:
 		default:					D3DPresentParams.SwapEffect = D3DSWAPEFFECT_DISCARD; break; // Allows runtime to select the best
@@ -198,7 +198,7 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 	}
 
 	D3DPresentParams.hDeviceWindow = pWindow->GetHWND();
-	D3DPresentParams.BackBufferCount = BufferCount - 1; //!!!N3 always sets 1 in windowed mode! why? //???in what swap effects should not substract 1?
+	D3DPresentParams.BackBufferCount = BackBufferCount; //!!!N3 always sets 1 in windowed mode! why?
 	D3DPresentParams.EnableAutoDepthStencil = TRUE;
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_D24S8; // D3DFMT_D32 if no need in stencil
 
@@ -242,13 +242,28 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 // If device exists, creates additional swap chain. If device not exist, creates a device with an implicit swap chain.
 DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow)
 {
+	IDirect3D9* pD3D9 = D3D9DrvFactory->GetDirect3D9();
+
 #if DEM_D3D_USENVPERFHUD
-	Adapter = D3D9DrvFactory->GetAdapterCount() - 1; // NVPerfHUD adapter //???is always the last, or read adapter info?
+	Sys::Error("IMPLEMENT ME!!! NVPerfHUD.");
+//for (UINT CurrAdapter = 0; CurrAdapter < pD3D9->GetAdapterCount(); ++CurrAdapter) 
+//{ 
+//	D3DADAPTER_IDENTIFIER9 Identifier;
+//	HRESULT Res = pD3D9->GetAdapterIdentifier(CurrAdapter, 0, &Identifier);
+//	if (strstr(Identifier.Description, "PerfHUD") != 0)
+//	{
+//		Adapter = CurrAdapter;
+//		DeviceType = D3DDEVTYPE_REF;
+//		break;
+//	}
+//} 
 #endif
 
-	n_assert(D3D9DrvFactory->AdapterExists(Adapter));
-
-	IDirect3D9* pD3D9 = D3D9DrvFactory->GetDirect3D9();
+	if (D3D9DrvFactory->AdapterExists(Adapter))
+	{
+		Sys::Error("Inexistent adapter specified on D3D9 swap chain creation!\n");
+		return ERR_CREATION_ERROR;
+	}
 
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
 	n_assert(SUCCEEDED(pD3D9->GetDeviceCaps(Adapter, DEM_D3D_DEVICETYPE, &D3DCaps)));
@@ -371,6 +386,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 		if (FAILED(hr))
 		{
 			//!!!DX9! Sys::Error("Failed to create Direct3D9 device object: %s!\n", DXGetErrorString(hr));
+			Sys::Error("Failed to create Direct3D9 device object!\n");
 			return ERR_CREATION_ERROR;
 		}
 
@@ -427,11 +443,10 @@ bool CD3D9GPUDriver::SwapChainExists(DWORD SwapChainID) const
 bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
-	if (!Width && !Height) OK;
-
-	//!!!if W & H == curr W & H early exit OK;!!!
 
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
+
+	if ((!Width || SC.Desc.BackBufferWidth == Width) && (!Height || SC.Desc.BackBufferHeight == Height)) OK;
 
 	//???for child window, assert that size passed is a window size?
 

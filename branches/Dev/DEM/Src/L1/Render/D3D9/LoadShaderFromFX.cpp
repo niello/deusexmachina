@@ -3,7 +3,7 @@
 // Use function declaration instead of header file where you want to call this loader.
 
 #include <Render/RenderServer.h>
-#include <Render/D3DXDEMInclude.h>
+#include <Render/D3DX9DEMInclude.h>
 #include <IO/Streams/FileStream.h>
 #include <Data/Buffer.h>
 
@@ -26,7 +26,7 @@ bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PSh
 	D3DEffFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
 #endif
 
-	CD3DXDEMInclude IncludeHandler(FileName.ExtractDirName(), ShaderRootDir);
+	CD3DX9DEMInclude IncludeHandler(FileName.ExtractDirName(), ShaderRootDir);
 	ID3DXBuffer* pErrorBuffer = NULL;
 	ID3DXEffect* pEffect = NULL;
 
