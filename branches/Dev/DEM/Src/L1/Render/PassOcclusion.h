@@ -9,7 +9,7 @@
 namespace Render
 {
 
-class CPassOcclusion: public CPass
+class CPassOcclusion: public CRenderPhase
 {
 protected:
 

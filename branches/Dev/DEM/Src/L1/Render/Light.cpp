@@ -68,7 +68,15 @@ void CLight::UpdateInSPS(CSPS& SPS, CArray<CLight*>* pVisibleLights)
 {
 	if (Type == Directional)
 	{
-		if (pVisibleLights) pVisibleLights->Add(this);
+		//!!!don't use node, store in arrays! node stores AABB, absolutely unnecessary!
+		//???or leave as is for unification?
+		if (!pSPSRecord)
+		{
+			pSPSRecord = n_new(CSPSRecord)(*this);
+			GetGlobalAABB(pSPSRecord->GlobalBox);
+			SPS.AddAlwaysVisibleObject(pSPSRecord);
+		}
+		//if (pVisibleLights) pVisibleLights->Add(this);
 	}
 	else
 	{

@@ -565,6 +565,14 @@ bool CD3D11GPUDriver::OnOSWindowSizeChanged(const Events::CEventBase& Event)
 */
 
 /*
+case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint( hWnd, &ps );
+			EndPaint( hWnd, &ps );
+			return 0;
+		}
+
 case WM_SIZE:
         if (g_pSwapChain)
         {

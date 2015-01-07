@@ -6,7 +6,7 @@
 namespace Render
 {
 
-bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
+bool CRenderPhase::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
 {
 	Name = PassName;
 
@@ -63,7 +63,7 @@ bool CPass::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID,
 			const vector4& Color = pPrm->GetValue<vector4>();
 			ClearColor = N_COLORVALUE(Color.x, Color.y, Color.z, Color.w);
 		}
-		else Sys::Error("CPass::Init() -> Invalid type of ClearColor");
+		else Sys::Error("CRenderPhase::Init() -> Invalid type of ClearColor");
 		ClearFlags |= Clear_Color;
 	}
 

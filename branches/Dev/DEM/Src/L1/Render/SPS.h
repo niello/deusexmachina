@@ -7,13 +7,10 @@
 #include <Data/QuadTree.h>
 
 // Spatial partitioning structure specialization for culling
-
-//!!!here must NOT be any scene attributes! rendering is not dependent on a scene
-
-namespace Scene
-{
-	class CNodeAttribute;
-}
+// CSPS       - spatial partitioning structure, that stores render objects spatially arranged
+// CSPSNode   - one node in an SPS hierarchy, internal
+// CSPSCell   - storage used by a node to store user data
+// CSPSRecord - render object (with some additional data) as it is stored in the spatial partitioning structure
 
 namespace Render
 {
@@ -32,7 +29,19 @@ struct CSPSCell
 	CIterator	Find(CSPSRecord* const & Object) const { return NULL; } //???!!!implement?
 };
 
-class CSPS: public Data::CQuadTree<CSPSRecord*, CSPSCell> {}; // Instead of typedef, to allow easy forward declaration
+class CSPS: public Data::CQuadTree<CSPSRecord*, CSPSCell>
+{
+protected:
+
+	CNode AlwaysVisible; // For always visible objects (skybox, may be terrain etc) and lights (directional)
+
+public:
+
+	CHandle	AddAlwaysVisibleObject(CSPSRecord* Object) { return AlwaysVisible.AddObject(Object); }
+	void	RemoveAlwaysVisibleByValue(CSPSRecord* Object);
+	void	RemoveAlwaysVisibleByHandle(CHandle Handle);
+};
+
 typedef CSPS::CNode CSPSNode;
 
 struct CSPSRecord
@@ -93,6 +102,18 @@ inline bool CSPSCell::RemoveByValue(CSPSRecord* const & Object)
 	if (Object->IsRenderObject()) return Objects.RemoveByValue(Object);
 	if (Object->IsLight()) return Lights.RemoveByValue(Object);
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+inline void CSPS::RemoveAlwaysVisibleByValue(CSPSRecord* Object)
+{
+	TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveByValue(Object);
+}
+//---------------------------------------------------------------------
+
+inline void CSPS::RemoveAlwaysVisibleByHandle(CHandle Handle)
+{
+	TObjTraits::GetPtr(*Handle)->GetQuadTreeNode()->RemoveByHandle(Handle);
 }
 //---------------------------------------------------------------------
 
