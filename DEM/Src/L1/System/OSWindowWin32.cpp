@@ -178,6 +178,7 @@ void COSWindowWin32::ProcessMessages()
 	if (!hWnd) return;
 
 	// NB: we pass NULL instead of window handle to receive language switching messages
+	//???need some main NULL-HWND proc for WM_QUIT and language, and per-window peekers for additional windows?
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL /*hWnd*/, 0, 0, PM_REMOVE))
 	{

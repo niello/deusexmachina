@@ -1,19 +1,22 @@
-#include "FrameShader.h"
+#include "RenderPath.h"
 
-#include <IO/IOServer.h>
-
-//!!!while no factory!
-#include <Render/PassGeometry.h>
-#include <Render/PassOcclusion.h>
-#include <Render/PassPosteffect.h>
+#include <Render/Camera.h>
+#include <Render/SPS.h>
+#include <Render/SceneNodeUpdateInSPS.h>
+//#include <IO/IOServer.h>
 
 namespace Render
 {
-bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PShader OutShader);
-bool LoadShaderFromFXO(const CString& FileName, PShader OutShader);
 
-bool CFrameShader::Init(const Data::CParams& Desc)
+bool CRenderPath::Init(CGPUDriver& Driver, const Data::CParams& Desc)
 {
+	// Load shared shader variables
+	// For once, optionally can read values
+	// For others can read default values
+	// Can use null (empty CData) if there is no default value
+
+
+/*
 	CString ShaderPath;
 	Desc.Get(ShaderPath, CStrID("ShaderPath"));
 
@@ -118,13 +121,41 @@ bool CFrameShader::Init(const Data::CParams& Desc)
 			if (PassType.IsEmpty()) *pCurrPass = n_new(CPassGeometry);
 			else if (PassType == "Occlusion") *pCurrPass = n_new(CPassOcclusion);
 			else if (PassType == "Posteffect") *pCurrPass = n_new(CPassPosteffect);
-			else /*if (PassType == "Geometry")*/ *pCurrPass = n_new(CPassGeometry);
+			else //if (PassType == "Geometry")
+				*pCurrPass = n_new(CPassGeometry);
 
 			if (!(*pCurrPass)->Init(PassPrm.GetName(), PassDesc, RenderTargets)) FAIL;
 		}
 	}
+	*/
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CRenderPath::Render(const CCamera& MainCamera, CSPS& SPS)
+{
+	if (!Phases.GetCount()) OK;
+
+	// request main visible list once (or on demand)?
+	//!!!on init, parse all phases and collect criteria for main visible list building!
+	// Objects (what flags must be set, what flags must not be set, i.e. shadow casters only)
+	// Lights (no need if no lighting)
+	// Execute general traversal algorithm
+	// Or better use All-Objects-All-Lights-All-Flags here and then select subsets from that list, which will be done anyway
+
+	CArray<Render::CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
+	CArray<Render::CLight*>			VisibleLights;
+
+	const matrix44& ViewProj = MainCamera.GetViewProjMatrix();
+
+	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
+	CArray<Render::CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
+	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, BBox, &VisibleObjects, pVisibleLights);
+
+	// set commons which will not be reset by the first phase
+
+	//
 }
 //---------------------------------------------------------------------
 

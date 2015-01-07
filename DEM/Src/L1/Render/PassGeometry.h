@@ -11,7 +11,7 @@
 namespace Render
 {
 
-class CPassGeometry: public CPass
+class CPassGeometry: public CRenderPhase
 {
 protected:
 

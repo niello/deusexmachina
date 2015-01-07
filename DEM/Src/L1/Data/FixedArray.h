@@ -5,7 +5,7 @@
 #include <System/System.h>
 #include <algorithm> // std::sort
 
-// A fixed count, bounds checked array.
+// A fixed count, bounds-checked array.
 
 template<class T>
 class CFixedArray
@@ -44,8 +44,8 @@ public:
 
 	void		RawCopyFrom(const T* pSrc, DWORD SrcCount);
 
-	void	operator =(const CFixedArray<T>& Other) { Copy(Other); }
-	T&		operator [](int Index) const;
+	void		operator =(const CFixedArray<T>& Other) { Copy(Other); }
+	T&			operator [](int Index) const;
 };
 
 template<class T> void CFixedArray<T>::Allocate(DWORD NewSize)
@@ -84,18 +84,18 @@ template<class T> void CFixedArray<T>::Delete()
 }
 //---------------------------------------------------------------------
 
-template<class T> T& CFixedArray<T>::operator [](int Index) const
-{
-	n_assert(pData && Index >= 0 && Index < (int)Count);
-	return pData[Index];
-}
-//---------------------------------------------------------------------
-
 template<class T> int CFixedArray<T>::FindIndex(const T& Elm) const
 {
 	for (DWORD i = 0; i < Count; ++i)
 		if (Elm == pData[i]) return i;
 	return -1;
+}
+//---------------------------------------------------------------------
+
+template<class T> T& CFixedArray<T>::operator [](int Index) const
+{
+	n_assert(pData && Index >= 0 && Index < (int)Count);
+	return pData[Index];
 }
 //---------------------------------------------------------------------
 

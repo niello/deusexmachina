@@ -602,9 +602,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DXDEMInclude.h">
-      <Filter>Render\D3D9</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
@@ -632,9 +629,6 @@
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\FrameShader.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\GPUResourceDefs.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -648,9 +642,6 @@
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Model.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\Pass.h">
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\PassGeometry.h">
@@ -688,9 +679,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h">
       <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h">
-      <Filter>Render\D3D9</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h">
       <Filter>Render\D3D9</Filter>
@@ -766,6 +754,18 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.h">
       <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderTarget.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderPath.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderPhase.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1099,9 +1099,6 @@
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsObject.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DXDEMInclude.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
@@ -1135,9 +1132,6 @@
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\FrameShader.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -1154,9 +1148,6 @@
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Model.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Pass.cpp">
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\PassGeometry.cpp">
@@ -1188,9 +1179,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp">
       <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp">
-      <Filter>Render\D3D9</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp">
       <Filter>Render\D3D9</Filter>
@@ -1239,6 +1227,18 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.cpp">
       <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderTarget.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderPath.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderPhase.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

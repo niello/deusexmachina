@@ -46,6 +46,8 @@ protected:
 	struct ObjTraits
 	{
 		typedef T& Ref;
+		static T*		GetPtr(T* Object) { return Object; }
+		static const T*	GetPtr(const T* Object) { return Object; }
 		static T*		GetPtr(T& Object) { return &Object; }
 		static const T*	GetPtr(const T& Object) { return &Object; }
 		static T&		GetRef(T& Object) { return Object; }
@@ -58,6 +60,8 @@ protected:
 		typedef T& Ref;
 		static T*		GetPtr(T* Object) { return Object; }
 		static const T*	GetPtr(const T* Object) { return Object; }
+		static T*		GetPtr(T& Object) { return &Object; }
+		static const T*	GetPtr(const T& Object) { return &Object; }
 		static T&		GetRef(T* const& Object) { return *Object; }
 		static bool		IsValid(const T* Object) { return Object != NULL; }
 	};
@@ -68,6 +72,8 @@ protected:
 		typedef T& Ref;
 		static T*		GetPtr(T* Object) { return Object; }
 		static const T*	GetPtr(const T* Object) { return Object; }
+		static T*		GetPtr(T& Object) { return &Object; }
+		static const T*	GetPtr(const T& Object) { return &Object; }
 		static T&		GetRef(T* const& Object) { return *Object; }
 		static bool		IsValid(const T* Object) { return Object.IsValid(); }
 	};
@@ -86,7 +92,7 @@ public:
 
 	class CNode
 	{
-	private:
+	protected:
 
 		DWORD							TotalObjCount;	// Total object count inside this node & it's hierarchy
 
@@ -98,18 +104,16 @@ public:
 		ushort							Row;
 		uchar							Level;
 
-		template<class TObject, class TStorage> friend class CQuadTree;
-		
-		CHandle	AddObject(TObject& Object);
-		CHandle	AddObject(TObject& Object, const vector2& Center, const vector2& HalfSize);
-		void	RemoveByValue(TObject& Object);
-		void	RemoveByHandle(CHandle Handle);
-
 	public:
 
 		TStorage						Data;
 
 		CNode(): TotalObjCount(0) {}
+		
+		CHandle							AddObject(TObject& Object);
+		CHandle							AddObject(TObject& Object, const vector2& Center, const vector2& HalfSize);
+		void							RemoveByValue(TObject& Object);
+		void							RemoveByHandle(CHandle Handle);
 
 		bool							Contains(const TObject& Object) const;
 		bool							Contains(const vector2& Center, const vector2& HalfSize) const;

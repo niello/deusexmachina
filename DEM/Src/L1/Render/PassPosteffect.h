@@ -9,7 +9,7 @@
 namespace Render
 {
 
-class CPassPosteffect: public CPass
+class CPassPosteffect: public CRenderPhase
 {
 protected:
 

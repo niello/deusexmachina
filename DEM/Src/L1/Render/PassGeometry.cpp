@@ -9,7 +9,7 @@ namespace Render
 
 bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
 {
-	if (!CPass::Init(PassName, Desc, RenderTargets)) FAIL;
+	if (!CRenderPhase::Init(PassName, Desc, RenderTargets)) FAIL;
 
 	Data::CDataArray& Batches = *Desc.Get<Data::PDataArray>(CStrID("Batches"));
 	for (int i = 0; i < Batches.GetCount(); ++i)
