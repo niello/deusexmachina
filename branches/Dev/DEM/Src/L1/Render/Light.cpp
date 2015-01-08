@@ -53,30 +53,18 @@ bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 void CLight::OnDetachFromNode()
 {
-	//???do it on deactivation of an attribute?
-	if (pSPSRecord)
-	{
-		pSPSRecord->pSPSNode->GetOwner()->RemoveByValue(pSPSRecord); //???write self-removal?
-		n_delete(pSPSRecord);
-		pSPSRecord = NULL;
-	}
+	//???do it on deactivation of an attribute? even it is not detached from node
+	SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
 	CNodeAttribute::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 
-void CLight::UpdateInSPS(CSPS& SPS, CArray<CLight*>* pVisibleLights)
+void CLight::UpdateInSPS(CSPS& SPS)
 {
 	if (Type == Directional)
 	{
-		//!!!don't use node, store in arrays! node stores AABB, absolutely unnecessary!
-		//???or leave as is for unification?
-		if (!pSPSRecord)
-		{
-			pSPSRecord = n_new(CSPSRecord)(*this);
-			GetGlobalAABB(pSPSRecord->GlobalBox);
-			SPS.AddAlwaysVisibleObject(pSPSRecord);
-		}
-		//if (pVisibleLights) pVisibleLights->Add(this);
+		SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
+		SPS.AlwaysVisibleLights.Add(this); //!!!shouldn't re-add itself if already added! //???use flag?
 	}
 	else
 	{
@@ -84,12 +72,12 @@ void CLight::UpdateInSPS(CSPS& SPS, CArray<CLight*>* pVisibleLights)
 		{
 			pSPSRecord = n_new(CSPSRecord)(*this);
 			GetGlobalAABB(pSPSRecord->GlobalBox);
-			SPS.AddObject(pSPSRecord);
+			SPS.AddObjectRecord(pSPSRecord);
 		}
 		else if (Flags.Is(WorldMatrixChanged)) //!!! || Range/Cone changed
 		{
 			GetGlobalAABB(pSPSRecord->GlobalBox);
-			SPS.UpdateObject(pSPSRecord);
+			SPS.UpdateObjectRecord(pSPSRecord);
 			Flags.Clear(WorldMatrixChanged);
 		}
 	}

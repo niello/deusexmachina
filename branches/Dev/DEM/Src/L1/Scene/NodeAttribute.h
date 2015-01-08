@@ -30,6 +30,8 @@ protected:
 		WorldMatrixChanged	= 0x02	// World matrix of the host node has changed, update of depended parts required
 			//???!!!may be it is not so good to add this flag here, because different attributes use it differently and some
 			//of them do not use at all. But doing it here is convinient.
+			//!!!this flag is cleared by SPS update code. Maybe better is to have some event/callback OnWorldTfmChanged and
+			//OnDimensionsChanged, and not rely on flag which state is managed by different parts in a counter-intuitive way!
 	};
 
 	CSceneNode*		pNode;

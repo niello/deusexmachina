@@ -344,10 +344,12 @@ typename CArray<T>::CIterator CArray<T>::Insert(int Idx, const T& Val)
 template<class T>
 void CArray<T>::AddArray(const CArray<T>& Other)
 {
-	if (Count + Other.Count > Allocated)
-		Resize(Count + Other.Count);
+	DWORD NewCount = Count + Other.Count;
+	if (NewCount > Allocated) Resize(NewCount);
+	T* pEnd = pData + Count;
 	for (DWORD i = 0; i < Other.Count; ++i)
-		Add(Other[i]);
+		n_placement_new(pEnd + i, T)(Other.pData[i]);
+	Count = NewCount;
 }
 //---------------------------------------------------------------------
 
