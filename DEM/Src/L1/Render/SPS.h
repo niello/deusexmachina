@@ -18,63 +18,68 @@ struct CSPSRecord;
 
 struct CSPSCell
 {
-	typedef CSPSRecord* CIterator;
+	typedef CSPSRecord** CIterator;
 
 	CArray<CSPSRecord*> Objects;
 	CArray<CSPSRecord*> Lights;
 
 	CIterator	Add(CSPSRecord* const & Object);
 	bool		RemoveByValue(CSPSRecord* const & Object);
-	void		Remove(CIterator It) { Sys::Error("There are no persistent handles for arrays due to possible data move!"); }
-	CIterator	Find(CSPSRecord* const & Object) const { return NULL; } //???!!!implement?
+	void		Remove(CIterator It) { Sys::Error("CSPSCell::Remove() > There are no persistent handles for arrays due to possible data move!"); }
+	CIterator	Find(CSPSRecord* const & Object) const { return NULL; } // Never used since handles aren't used
 };
 
-class CSPS: public Data::CQuadTree<CSPSRecord*, CSPSCell>
-{
-protected:
-
-	CNode AlwaysVisible; // For always visible objects (skybox, may be terrain etc) and lights (directional)
-
-public:
-
-	CHandle	AddAlwaysVisibleObject(CSPSRecord* Object) { return AlwaysVisible.AddObject(Object); }
-	void	RemoveAlwaysVisibleByValue(CSPSRecord* Object);
-	void	RemoveAlwaysVisibleByHandle(CHandle Handle);
-};
-
-typedef CSPS::CNode CSPSNode;
+typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPSQuadTree;
+typedef CSPSQuadTree::CNode CSPSNode;
 
 struct CSPSRecord
 {
-	Scene::CNodeAttribute&	Attr;
-	CAABB					GlobalBox;
-	CSPSNode*				pSPSNode;
+	const Scene::CNodeAttribute&	Attr;
+	CAABB							GlobalBox;
+	CSPSNode*						pSPSNode;
 
-	CSPSRecord(Scene::CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
-	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {} 
+	CSPSRecord(const Scene::CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
+	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {}
+	~CSPSRecord() { if (pSPSNode) pSPSNode->RemoveByValue(this); }
 
-	bool		IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }
-	bool		IsLight() const { return Attr.IsA(CLight::RTTI); }
-
-	void		GetCenter(vector2& Out) const;
-	void		GetHalfSize(vector2& Out) const;
-	CSPSNode*	GetQuadTreeNode() const { return pSPSNode; }
-	void		SetQuadTreeNode(CSPSNode* pNode) { pSPSNode = pNode; }
+	//???use node attr flags to improve speed? anyway both render objects and lights have additional flags,
+	//so we can use one flag to make difference before render objects lights despite of their subclassing.
+	bool IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }
+	bool IsLight() const { return Attr.IsA(CLight::RTTI); }
+	void GetDimensions(float& CenterX, float& CenterZ, float& HalfSizeX, float& HalfSizeZ) const;
 };
 
-inline void CSPSRecord::GetCenter(vector2& Out) const
+class CSPS
+{
+protected:
+
+	//!!!record pool! or use small object allocator!
+
+	void QueryVisibleObjectsAndLights(CSPSNode* pNode, const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped) const;
+
+public:
+
+	CArray<CRenderObject*>	AlwaysVisibleObjects;
+	CArray<CLight*>			AlwaysVisibleLights;
+	CSPSQuadTree			QuadTree;
+	float					SceneMinY;
+	float					SceneMaxY;
+
+	//!!!CSPSRecord* CreateRecord() const; (pool)!
+	void AddObjectRecord(CSPSRecord* pRecord);
+	void UpdateObjectRecord(CSPSRecord* pRecord);
+
+	void QueryVisibleObjectsAndLights(const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL) const;
+};
+
+inline void CSPSRecord::GetDimensions(float& CenterX, float& CenterZ, float& HalfSizeX, float& HalfSizeZ) const
 {
 	n_assert(Attr.GetNode());
 	const vector3& Pos = Attr.GetNode()->GetWorldPosition();
-	Out.x = Pos.x;
-	Out.y = Pos.z;
-}
-//---------------------------------------------------------------------
-
-inline void CSPSRecord::GetHalfSize(vector2& Out) const
-{
-	Out.x = (GlobalBox.Max.x - GlobalBox.Min.x) * 0.5f;
-	Out.y = (GlobalBox.Max.z - GlobalBox.Min.z) * 0.5f;
+	CenterX = Pos.x;
+	CenterZ = Pos.z;
+	HalfSizeX = (GlobalBox.Max.x - GlobalBox.Min.x) * 0.5f;
+	HalfSizeZ = (GlobalBox.Max.z - GlobalBox.Min.z) * 0.5f;
 }
 //---------------------------------------------------------------------
 
@@ -91,7 +96,7 @@ inline CSPSCell::CIterator CSPSCell::Add(CSPSRecord* const & Object)
 		Lights.Add(Object);
 		return NULL;
 	}
-	n_assert_dbg(false);
+	Sys::Error("CSPSCell::Add() > Object passed is not a render object nor a light source\n");
 	return NULL;
 }
 //---------------------------------------------------------------------
@@ -105,20 +110,21 @@ inline bool CSPSCell::RemoveByValue(CSPSRecord* const & Object)
 }
 //---------------------------------------------------------------------
 
-inline void CSPS::RemoveAlwaysVisibleByValue(CSPSRecord* Object)
+inline void CSPS::AddObjectRecord(CSPSRecord* pRecord)
 {
-	TObjTraits::GetPtr(Object)->GetQuadTreeNode()->RemoveByValue(Object);
+	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
+	pRecord->GetDimensions(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 }
 //---------------------------------------------------------------------
 
-inline void CSPS::RemoveAlwaysVisibleByHandle(CHandle Handle)
+inline void CSPS::UpdateObjectRecord(CSPSRecord* pRecord)
 {
-	TObjTraits::GetPtr(*Handle)->GetQuadTreeNode()->RemoveByHandle(Handle);
+	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
+	pRecord->GetDimensions(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	QuadTree.UpdateObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 }
 //---------------------------------------------------------------------
-
-//!!!need masks like ShadowCaster, ShadowReceiver for shadow camera etc!
-void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, const CAABB& SceneBBox, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights = NULL, EClipStatus Clip = Clipped);
 
 }
 

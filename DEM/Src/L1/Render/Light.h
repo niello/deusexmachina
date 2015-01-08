@@ -60,7 +60,7 @@ public:
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void	OnDetachFromNode();
 
-	void			UpdateInSPS(CSPS& SPS, CArray<CLight*>* pVisibleLights);
+	void			UpdateInSPS(CSPS& SPS);
 	void			CalcFrustum(matrix44& OutFrustum);
 	void			GetGlobalAABB(CAABB& OutBox) const;
 

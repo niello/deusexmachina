@@ -3,17 +3,32 @@
 namespace Render
 {
 
-void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, const CAABB& SceneBBox,
-							  CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights, EClipStatus Clip)
+void CSPS::QueryVisibleObjectsAndLights(const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights) const
 {
-	if (!pNode || !pNode->GetTotalObjCount() || (!OutObjects && !OutLights)) return;
+	if (!OutObjects && !OutLights) return;
+
+	if (OutObjects && AlwaysVisibleObjects.GetCount())
+		OutObjects->AddArray(AlwaysVisibleObjects);
+
+	if (OutLights && AlwaysVisibleLights.GetCount())
+		OutLights->AddArray(AlwaysVisibleLights);
+
+	CSPSNode* pRootNode = QuadTree.GetRootNode();
+	if (pRootNode && pRootNode->GetTotalObjCount())
+		QueryVisibleObjectsAndLights(pRootNode, ViewProj, OutObjects, OutLights, Clipped);
+}
+//---------------------------------------------------------------------
+
+void CSPS::QueryVisibleObjectsAndLights(CSPSNode* pNode, const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights, EClipStatus Clip) const
+{
+	n_assert_dbg(pNode && pNode->GetTotalObjCount() && (OutObjects || OutLights));
 
 	if (Clip == Clipped)
 	{
 		CAABB NodeBox;
 		pNode->GetBounds(NodeBox);
-		NodeBox.Min.y = SceneBBox.Min.y;
-		NodeBox.Max.y = SceneBBox.Max.y;
+		NodeBox.Min.y = SceneMinY;
+		NodeBox.Max.y = SceneMaxY;
 		Clip = NodeBox.GetClipStatus(ViewProj);
 		if (Clip == Outside) return;
 	}
@@ -29,7 +44,7 @@ void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, const C
 		}
 		else // Clipped
 		{
-			//???test against global box or transform to model space and test against local box?
+			//???test against global AABB or transform to model space and test against local AABB which fits tighter?
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
 				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != Outside)
 					OutObjects->Add((CRenderObject*)&(*ItObj)->Attr);
@@ -47,7 +62,7 @@ void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, const C
 		}
 		else // Clipped
 		{
-			//???test against global box or transform to model space and test against local box?
+			//???test against global AABB or transform to model space and test against local AABB which fits tighter?
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
 				if ((*ItLight)->GlobalBox.GetClipStatus(ViewProj) != Outside)
 					OutLights->Add((CLight*)&(*ItLight)->Attr);
@@ -55,8 +70,12 @@ void SPSCollectVisibleObjects(CSPSNode* pNode, const matrix44& ViewProj, const C
 	}
 
 	if (pNode->HasChildren())
-		for (DWORD i = 0; i < 4; i++)
-			SPSCollectVisibleObjects(pNode->GetChild(i), ViewProj, SceneBBox, OutObjects, OutLights, Clip);
+		for (DWORD i = 0; i < 4; ++i)
+		{
+			CSPSNode* pChildNode = pNode->GetChild(i);
+			if (pChildNode->GetTotalObjCount())
+				QueryVisibleObjectsAndLights(pChildNode, ViewProj, OutObjects, OutLights, Clip);
+		}
 }
 //---------------------------------------------------------------------
 

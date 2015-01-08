@@ -122,29 +122,24 @@ bool CModel::ValidateResources()
 // so pointers can be cleared, but model is able to reload resources from IDs
 void CModel::OnDetachFromNode()
 {
-	//???do it on deactivation of an attribute?
-	if (pSPSRecord)
-	{
-		pSPSRecord->pSPSNode->GetOwner()->RemoveByValue(pSPSRecord); //???write self-removal?
-		n_delete(pSPSRecord);
-		pSPSRecord = NULL;
-	}
+	//???do it on deactivation of an attribute? even it is not detached from node
+	SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
 	CRenderObject::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 
-void CModel::UpdateInSPS(CSPS& SPS, CArray<CRenderObject*>* pVisibleObjects)
+void CModel::UpdateInSPS(CSPS& SPS)
 {
 	if (!pSPSRecord)
 	{
 		pSPSRecord = n_new(CSPSRecord)(*this);
 		GetGlobalAABB(pSPSRecord->GlobalBox);
-		SPS.AddObject(pSPSRecord);
+		SPS.AddObjectRecord(pSPSRecord);
 	}
 	else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
 	{
 		GetGlobalAABB(pSPSRecord->GlobalBox);
-		SPS.UpdateObject(pSPSRecord);
+		SPS.UpdateObjectRecord(pSPSRecord);
 		Flags.Clear(WorldMatrixChanged);
 	}
 }
