@@ -3,6 +3,7 @@
 #include <Render/Camera.h>
 #include <Render/SPS.h>
 #include <Render/SceneNodeUpdateInSPS.h>
+#include <Render/RenderPhase.h>
 //#include <IO/IOServer.h>
 
 namespace Render
@@ -135,23 +136,30 @@ bool CRenderPath::Init(CGPUDriver& Driver, const Data::CParams& Desc)
 
 bool CRenderPath::Render(const CCamera& MainCamera, CSPS& SPS)
 {
+	n_assert_dbg(!VisibleObjects.GetCount() && !VisibleLights.GetCount());
+
 	if (!Phases.GetCount()) OK;
-
-	// Main visible list (move to members!)
-	CArray<CRenderObject*> VisibleObjects;
-	CArray<CLight*> VisibleLights;
-
-	const matrix44& ViewProj = MainCamera.GetViewProjMatrix();
 
 	bool UseLighting = true; //!!!settings/states!
 
-	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
+	//???apply cumulative filter which is an union of filters of each phase?
 	CArray<CLight*>* pVisibleLights = UseLighting ? &VisibleLights : NULL;
-	SPS.QueryVisibleObjectsAndLights(ViewProj, &VisibleObjects, pVisibleLights);
+	SPS.QueryVisibleObjectsAndLights(MainCamera.GetViewProjMatrix(), &VisibleObjects, pVisibleLights);
 
-	// set commons which will not be reset by the first phase //???or let the phase set them?
+	//!!!set commons which will not be reset by the first phase //???or let the phase set them?
 
-	//
+	for (DWORD i = 0; i < Phases.GetCount(); ++i)
+	{
+		if (!Phases[i]->Render(MainCamera, SPS, *this))
+		{
+			VisibleObjects.Clear();
+			VisibleLights.Clear();
+			FAIL;
+		}
+	}
+
+	VisibleObjects.Clear();
+	VisibleLights.Clear();
 
 	OK;
 }
