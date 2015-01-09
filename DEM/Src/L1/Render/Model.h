@@ -29,6 +29,8 @@ protected:
 	virtual void	OnDetachFromNode();
 	virtual bool	ValidateResources();
 
+	CSPSRecord*			pSPSRecord;
+
 public:
 
 	PMesh				Mesh;
@@ -41,8 +43,6 @@ public:
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling
 	//can use Flags field of CNodeAttribute
-
-	CSPSRecord*			pSPSRecord;
 
 	CModel(): pSPSRecord(NULL), MeshGroupIndex(0), FeatureFlags(0) {}
 

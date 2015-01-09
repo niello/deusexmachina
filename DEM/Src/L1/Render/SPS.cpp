@@ -38,16 +38,16 @@ void CSPS::QueryVisibleObjectsAndLights(CSPSNode* pNode, const matrix44& ViewPro
 		CArray<CSPSRecord*>::CIterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
-			CRenderObject** ppObj = OutObjects->Reserve(pNode->Data.Objects.GetCount());
+			CArray<CRenderObject*>::CIterator ppObj = OutObjects->Reserve(pNode->Data.Objects.GetCount());
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj, ++ppObj)
-				*ppObj = (CRenderObject*)&(*ItObj)->Attr;
+				*ppObj = (CRenderObject*)(*ItObj)->pUserData;
 		}
 		else // Clipped
 		{
 			//???test against global AABB or transform to model space and test against local AABB which fits tighter?
 			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
 				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != Outside)
-					OutObjects->Add((CRenderObject*)&(*ItObj)->Attr);
+					OutObjects->Add((CRenderObject*)(*ItObj)->pUserData);
 		}
 	}
 
@@ -56,16 +56,16 @@ void CSPS::QueryVisibleObjectsAndLights(CSPSNode* pNode, const matrix44& ViewPro
 		CArray<CSPSRecord*>::CIterator ItLight = pNode->Data.Lights.Begin();
 		if (Clip == Inside)
 		{
-			CLight** ppLight = OutLights->Reserve(pNode->Data.Lights.GetCount());
+			CArray<CLight*>::CIterator ppLight = OutLights->Reserve(pNode->Data.Lights.GetCount());
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight, ++ppLight)
-				*ppLight = (CLight*)&(*ItLight)->Attr;
+				*ppLight = (CLight*)(*ItLight)->pUserData;
 		}
 		else // Clipped
 		{
 			//???test against global AABB or transform to model space and test against local AABB which fits tighter?
 			for (; ItLight != pNode->Data.Lights.End(); ++ItLight)
 				if ((*ItLight)->GlobalBox.GetClipStatus(ViewProj) != Outside)
-					OutLights->Add((CLight*)&(*ItLight)->Attr);
+					OutLights->Add((CLight*)(*ItLight)->pUserData);
 		}
 	}
 

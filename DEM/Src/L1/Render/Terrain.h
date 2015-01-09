@@ -4,7 +4,7 @@
 
 #include <Render/RenderObject.h>
 #include <Render/Materials/ShaderVar.h>
-#include <Render/Geometry/Mesh.h>
+#include <Render/Mesh.h>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
@@ -44,6 +44,8 @@ protected:
 	float				InvSplatSizeX;
 	float				InvSplatSizeZ;
 
+	CSPS*				pSPS;
+
 	virtual void		OnDetachFromNode();
 	virtual bool		ValidateResources();
 	Render::CMesh*		GetPatchMesh(DWORD Size);
@@ -52,7 +54,7 @@ public:
 
 	Render::CShaderVarMap	ShaderVars;
 
-	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) { }
+	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f), pSPS(NULL) {}
 
 	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 

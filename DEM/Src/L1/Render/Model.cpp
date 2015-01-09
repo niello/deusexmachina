@@ -2,6 +2,7 @@
 
 #include <Render/RenderServer.h>
 #include <Render/SPS.h>
+#include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -132,7 +133,9 @@ void CModel::UpdateInSPS(CSPS& SPS)
 {
 	if (!pSPSRecord)
 	{
-		pSPSRecord = n_new(CSPSRecord)(*this);
+		pSPSRecord = n_new(CSPSRecord);
+		pSPSRecord->pUserData = this;
+		pSPSRecord->IsLight = false;
 		GetGlobalAABB(pSPSRecord->GlobalBox);
 		SPS.AddObjectRecord(pSPSRecord);
 	}
