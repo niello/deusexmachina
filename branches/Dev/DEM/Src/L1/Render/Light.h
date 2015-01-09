@@ -17,11 +17,18 @@ namespace Render
 class CSPS;
 struct CSPSRecord;
 
-class CLight: public Scene::CNodeAttribute
+class CLight: public Scene::CNodeAttribute //???some base render object class as base for both light and render object?
 {
 	__DeclareClass(CLight);
 
 protected:
+
+	enum // extends Scene::CNodeAttribute enum
+	{
+		AddedAsAlwaysVisible	= 0x04,	// To avoid searching in SPS AlwaysVisible array at each UpdateInSPS() call
+		DoOcclusionCulling		= 0x08,	// Don't use for directional lights
+		CastShadow				= 0x10
+	};
 
 	// Point & Spot
 	float		Range;
@@ -33,6 +40,12 @@ protected:
 	float		CosHalfInner;
 	float		CosHalfOuter;
 
+	union
+	{
+		CSPSRecord*	pSPSRecord;	// If added to a spatial structure
+		CSPS*		pSPS;		// If added as always visible
+	};
+
 public:
 
 	enum EType
@@ -42,18 +55,9 @@ public:
 		Spot		= 2
 	};
 
-	// ERenderFlag: ShadowCaster, DoOcclusionCulling (force disable for directionals)
-
 	EType		Type;
 	vector3		Color;		//???What with alpha color?
 	float		Intensity;
-
-	//shadow color(or calc?)
-	//???light diffuse component in reverse direction? (N2 sky node)
-	//???fog intensity?
-	//???bool cast light? draw volumetric, draw ground projection
-
-	CSPSRecord*	pSPSRecord;
 
 	CLight();
 
@@ -62,7 +66,7 @@ public:
 
 	void			UpdateInSPS(CSPS& SPS);
 	void			CalcFrustum(matrix44& OutFrustum);
-	void			GetGlobalAABB(CAABB& OutBox) const;
+	bool			GetGlobalAABB(CAABB& OutBox) const;
 
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);

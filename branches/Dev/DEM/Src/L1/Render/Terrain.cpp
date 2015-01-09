@@ -215,6 +215,11 @@ void CTerrain::OnDetachFromNode()
 	MinMaxMaps.Clear();
 	SAFE_FREE(pMinMaxData);
 	//HeightMap->Unload(); //???unload or leave in resource manager? leaving is good for save-load
+	if (pSPS)
+	{
+		pSPS->AlwaysVisibleObjects.RemoveByValue(this);
+		pSPS = NULL;
+	}
 	CRenderObject::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
@@ -223,7 +228,11 @@ void CTerrain::UpdateInSPS(CSPS& SPS)
 {
 	//!!!can check global Box before adding! if so, recalc it on world matrix changed!
 	Flags.Clear(WorldMatrixChanged);
-	SPS.AlwaysVisibleObjects.Add(this); //!!!shouldn't re-add itself if already added! //???use flag?
+	if (!pSPS)
+	{
+		pSPS = &SPS;
+		SPS.AlwaysVisibleObjects.Add(this);
+	}
 }
 //---------------------------------------------------------------------
 

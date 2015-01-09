@@ -10,18 +10,14 @@
 namespace Render
 {
 class CSPS;
-class CRenderObject;
-class CLight;
 
 class CSceneNodeUpdateInSPS: public Scene::INodeVisitor
 {
 public:
 
-	CSPS*					pSPS;
-	CArray<CRenderObject*>*	pVisibleObjects;
-	CArray<CLight*>*		pVisibleLights;
+	CSPS* pSPS;
 
-	CSceneNodeUpdateInSPS(): pSPS(NULL), pVisibleObjects(NULL), pVisibleLights(NULL) {} 
+	CSceneNodeUpdateInSPS(): pSPS(NULL) {} 
 
 	virtual bool Visit(Scene::CSceneNode& Node);
 };

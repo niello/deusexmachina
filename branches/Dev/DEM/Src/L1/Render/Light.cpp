@@ -54,7 +54,13 @@ bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 void CLight::OnDetachFromNode()
 {
 	//???do it on deactivation of an attribute? even it is not detached from node
-	SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
+	if (Flags.Is(AddedAsAlwaysVisible))
+	{
+		pSPS->AlwaysVisibleLights.RemoveByValue(this);
+		Flags.Clear(AddedAsAlwaysVisible);
+		pSPS = NULL;
+	}
+	else SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
 	CNodeAttribute::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
@@ -63,14 +69,28 @@ void CLight::UpdateInSPS(CSPS& SPS)
 {
 	if (Type == Directional)
 	{
-		SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
-		SPS.AlwaysVisibleLights.Add(this); //!!!shouldn't re-add itself if already added! //???use flag?
+		if (Flags.IsNot(AddedAsAlwaysVisible))
+		{
+			SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
+			pSPS = &SPS;
+			SPS.AlwaysVisibleLights.Add(this);
+			Flags.Set(AddedAsAlwaysVisible);
+		}
 	}
 	else
 	{
+		if (Flags.Is(AddedAsAlwaysVisible))
+		{
+			pSPS->AlwaysVisibleLights.RemoveByValue(this);
+			Flags.Clear(AddedAsAlwaysVisible);
+			pSPS = NULL;
+		}
+		
 		if (!pSPSRecord)
 		{
-			pSPSRecord = n_new(CSPSRecord)(*this);
+			pSPSRecord = n_new(CSPSRecord);
+			pSPSRecord->pUserData = this;
+			pSPSRecord->IsLight = true;
 			GetGlobalAABB(pSPSRecord->GlobalBox);
 			SPS.AddObjectRecord(pSPSRecord);
 		}
@@ -85,25 +105,27 @@ void CLight::UpdateInSPS(CSPS& SPS)
 //---------------------------------------------------------------------
 
 //!!!GetGlobalAABB & CalcBox must be separate!
-void CLight::GetGlobalAABB(CAABB& OutBox) const
+bool CLight::GetGlobalAABB(CAABB& OutBox) const
 {
 	//!!!If local params changed, recompute AABB
 	//!!!If transform of host node changed, update global space AABB (rotate, scale)
 	switch (Type)
 	{
-		case Directional:	Sys::Error("No AABB for directional lights, must not be requested!"); return;
-		case Point:			OutBox.Set(GetPosition(), vector3(Range, Range, Range)); return;
+		case Directional:	FAIL;
+		case Point:			OutBox.Set(GetPosition(), vector3(Range, Range, Range)); OK;
 		case Spot:
 		{
-			//!!!can cache local box!
-			float HalfFarExtent = Range * n_tan(ConeOuter / 2.f);
+			//!!!can cache local box! or HalfFarExtent (1 float instead of 6)
+			float HalfFarExtent = Range * n_tan(ConeOuter * 0.5f);
 			OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -Range);
 			OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
 			OutBox.Transform(pNode->GetWorldMatrix());
-			return;
+			OK;
 		}
 		default:			Sys::Error("Invalid light type!");
 	};
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

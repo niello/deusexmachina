@@ -137,25 +137,23 @@ bool CRenderPath::Render(const CCamera& MainCamera, CSPS& SPS)
 {
 	if (!Phases.GetCount()) OK;
 
-	// request main visible list once (or on demand)?
-	//!!!on init, parse all phases and collect criteria for main visible list building!
-	// Objects (what flags must be set, what flags must not be set, i.e. shadow casters only)
-	// Lights (no need if no lighting)
-	// Execute general traversal algorithm
-	// Or better use All-Objects-All-Lights-All-Flags here and then select subsets from that list, which will be done anyway
-
-	CArray<Render::CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
-	CArray<Render::CLight*>			VisibleLights;
+	// Main visible list (move to members!)
+	CArray<CRenderObject*> VisibleObjects;
+	CArray<CLight*> VisibleLights;
 
 	const matrix44& ViewProj = MainCamera.GetViewProjMatrix();
 
-	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
-	CArray<Render::CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
-	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, BBox, &VisibleObjects, pVisibleLights);
+	bool UseLighting = true; //!!!settings/states!
 
-	// set commons which will not be reset by the first phase
+	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
+	CArray<CLight*>* pVisibleLights = UseLighting ? &VisibleLights : NULL;
+	SPS.QueryVisibleObjectsAndLights(ViewProj, &VisibleObjects, pVisibleLights);
+
+	// set commons which will not be reset by the first phase //???or let the phase set them?
 
 	//
+
+	OK;
 }
 //---------------------------------------------------------------------
 

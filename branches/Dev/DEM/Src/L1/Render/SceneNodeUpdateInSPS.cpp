@@ -17,8 +17,8 @@ bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 			//???!!!get rid of CRenderObject virtual call, since I already check types here
 			//type check will also be faster if test against classes closer to the leaves of an hierarchy
 			//But it breaks extensibility of render objects family!
-			if (Attr.IsA<CRenderObject>()) ((CRenderObject&)Attr).UpdateInSPS(*pSPS, pVisibleObjects);
-			else if (Attr.IsA<CLight>()) ((CLight&)Attr).UpdateInSPS(*pSPS, pVisibleLights);
+			if (Attr.IsA<CRenderObject>()) ((CRenderObject&)Attr).UpdateInSPS(*pSPS);
+			else if (Attr.IsA<CLight>()) ((CLight&)Attr).UpdateInSPS(*pSPS);
 		}
 	}
 

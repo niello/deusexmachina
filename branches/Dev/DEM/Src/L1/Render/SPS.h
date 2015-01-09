@@ -2,9 +2,8 @@
 #ifndef __DEM_L1_SCENE_SPS_H__
 #define __DEM_L1_SCENE_SPS_H__
 
-#include <Render/RenderObject.h>
-#include <Render/Light.h>
 #include <Data/QuadTree.h>
+#include <Data/Array.h>
 
 // Spatial partitioning structure specialization for culling
 // CSPS       - spatial partitioning structure, that stores render objects spatially arranged
@@ -14,11 +13,13 @@
 
 namespace Render
 {
+class CRenderObject;
+class CLight;
 struct CSPSRecord;
 
 struct CSPSCell
 {
-	typedef CSPSRecord** CIterator;
+	typedef CArray<CSPSRecord*>::CIterator CIterator;
 
 	CArray<CSPSRecord*> Objects;
 	CArray<CSPSRecord*> Lights;
@@ -34,18 +35,15 @@ typedef CSPSQuadTree::CNode CSPSNode;
 
 struct CSPSRecord
 {
-	const Scene::CNodeAttribute&	Attr;
-	CAABB							GlobalBox;
-	CSPSNode*						pSPSNode;
+	CSPSNode*	pSPSNode;
+	void*		pUserData;
+	CAABB		GlobalBox;
+	bool		IsLight;	// Allows us to store lights and geometry in two different arrays for faster queries (//???is really such a benefit?)
 
-	CSPSRecord(const Scene::CNodeAttribute& NodeAttr): Attr(NodeAttr), pSPSNode(NULL) {} 
-	CSPSRecord(const CSPSRecord& Rec): Attr(Rec.Attr), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {}
+	CSPSRecord(): pUserData(NULL), pSPSNode(NULL) {} 
+	CSPSRecord(const CSPSRecord& Rec): pUserData(Rec.pUserData), GlobalBox(Rec.GlobalBox), pSPSNode(Rec.pSPSNode) {}
 	~CSPSRecord() { if (pSPSNode) pSPSNode->RemoveByValue(this); }
 
-	//???use node attr flags to improve speed? anyway both render objects and lights have additional flags,
-	//so we can use one flag to make difference before render objects lights despite of their subclassing.
-	bool IsRenderObject() const { return Attr.IsA(CRenderObject::RTTI); }
-	bool IsLight() const { return Attr.IsA(CLight::RTTI); }
 	void GetDimensions(float& CenterX, float& CenterZ, float& HalfSizeX, float& HalfSizeZ) const;
 };
 
@@ -74,39 +72,30 @@ public:
 
 inline void CSPSRecord::GetDimensions(float& CenterX, float& CenterZ, float& HalfSizeX, float& HalfSizeZ) const
 {
-	n_assert(Attr.GetNode());
-	const vector3& Pos = Attr.GetNode()->GetWorldPosition();
-	CenterX = Pos.x;
-	CenterZ = Pos.z;
-	HalfSizeX = (GlobalBox.Max.x - GlobalBox.Min.x) * 0.5f;
-	HalfSizeZ = (GlobalBox.Max.z - GlobalBox.Min.z) * 0.5f;
+	float HalfMinX = GlobalBox.Min.x * 0.5f;
+	float HalfMinZ = GlobalBox.Min.z * 0.5f;
+	float HalfMaxX = GlobalBox.Max.x * 0.5f;
+	float HalfMaxZ = GlobalBox.Max.z * 0.5f;
+	CenterX = HalfMaxX + HalfMinX;
+	CenterZ = HalfMaxZ + HalfMinZ;
+	HalfSizeX = HalfMaxX - HalfMinX;
+	HalfSizeZ = HalfMaxZ - HalfMinZ;
 }
 //---------------------------------------------------------------------
 
 // NB: no persistent handle for arrays
 inline CSPSCell::CIterator CSPSCell::Add(CSPSRecord* const & Object)
 {
-	if (Object->IsRenderObject())
-	{
-		Objects.Add(Object);
-		return NULL;
-	}
-	if (Object->IsLight())
-	{
-		Lights.Add(Object);
-		return NULL;
-	}
-	Sys::Error("CSPSCell::Add() > Object passed is not a render object nor a light source\n");
+	if (Object->IsLight) Lights.Add(Object);
+	else Objects.Add(Object);
 	return NULL;
 }
 //---------------------------------------------------------------------
 
-// Remove by value
 inline bool CSPSCell::RemoveByValue(CSPSRecord* const & Object)
 {
-	if (Object->IsRenderObject()) return Objects.RemoveByValue(Object);
-	if (Object->IsLight()) return Lights.RemoveByValue(Object);
-	FAIL;
+	if (Object->IsLight) return Lights.RemoveByValue(Object);
+	else return Objects.RemoveByValue(Object);
 }
 //---------------------------------------------------------------------
 

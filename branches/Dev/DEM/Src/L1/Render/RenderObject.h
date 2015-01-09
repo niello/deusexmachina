@@ -15,9 +15,19 @@ class CRenderObject: public Scene::CNodeAttribute
 {
 	__DeclareClassNoFactory;
 
+protected:
+
+	enum // extends Scene::CNodeAttribute enum
+	{
+		//AddedAsAlwaysVisible	= 0x04,	// To avoid searching in SPS AlwaysVisible array at each UpdateInSPS() call
+		DoOcclusionCulling		= 0x08,
+		CastShadow				= 0x10,
+		ReceiveShadow			= 0x20 //???needed for some particle systems?
+	};
+
 public:
 
-	virtual void UpdateInSPS(CSPS& SPS, CArray<CRenderObject*>* pVisibleObjects) = 0;
+	virtual void UpdateInSPS(CSPS& SPS) = 0;
 	virtual bool ValidateResources() = 0;
 };
 
