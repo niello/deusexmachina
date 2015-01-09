@@ -1,4 +1,4 @@
-#include "Pass.h"
+#include "RenderPhase.h"
 
 #include <Data/Params.h>
 #include <Data/DataArray.h>
@@ -6,8 +6,9 @@
 namespace Render
 {
 
-bool CRenderPhase::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
+bool CRenderPhase::Init(const Data::CParams& Desc, const CRenderPath& Owner)
 {
+	/*
 	Name = PassName;
 
 	CStrID ShaderID = Desc.Get(CStrID("Shader"), CStrID::Empty);
@@ -77,6 +78,9 @@ bool CRenderPhase::Init(CStrID PassName, const Data::CParams& Desc, const CDict<
 	}
 
 	OK;
+	*/
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

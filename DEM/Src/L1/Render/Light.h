@@ -25,6 +25,8 @@ protected:
 
 	enum // extends Scene::CNodeAttribute enum
 	{
+		// Active
+		// WorldMatrixChanged
 		AddedAsAlwaysVisible	= 0x04,	// To avoid searching in SPS AlwaysVisible array at each UpdateInSPS() call
 		DoOcclusionCulling		= 0x08,	// Don't use for directional lights
 		CastShadow				= 0x10

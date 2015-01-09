@@ -19,8 +19,7 @@ class CCamera: public Scene::CNodeAttribute
 
 protected:
 
-	//!!!find some safe approach to declare flags in derived classes!
-	enum
+	enum // extends Scene::CNodeAttribute enum
 	{
 		// Active
 		// WorldMatrixChanged
@@ -45,7 +44,7 @@ public:
 
 	//background color
 	//???clip planes computing? or from any matrix?
-	//???bool IsOrtho? bool ProjMatrixWasSetDirectly?
+	//???bool ProjMatrixWasSetDirectly?
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);

@@ -21,7 +21,7 @@ void CSPS::QueryVisibleObjectsAndLights(const matrix44& ViewProj, CArray<CRender
 
 void CSPS::QueryVisibleObjectsAndLights(CSPSNode* pNode, const matrix44& ViewProj, CArray<CRenderObject*>* OutObjects, CArray<CLight*>* OutLights, EClipStatus Clip) const
 {
-	n_assert_dbg(pNode && pNode->GetTotalObjCount() && (OutObjects || OutLights));
+	n_assert_dbg(pNode && pNode->GetTotalObjCount() && (OutObjects || OutLights) && Clip != Outside);
 
 	if (Clip == Clipped)
 	{

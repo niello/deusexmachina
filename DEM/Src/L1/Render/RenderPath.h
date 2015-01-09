@@ -22,6 +22,8 @@ namespace Data
 namespace Render
 {
 class CGPUDriver;
+class CRenderObject;
+class CLight;
 class CCamera;
 class CSPS;
 typedef Ptr<class CRenderPhase> PRenderPhase;
@@ -37,6 +39,10 @@ public:
 	// Driver states
 
 	CFixedArray<PRenderPhase>	Phases;
+
+	// Main camera visible list
+	CArray<CRenderObject*>		VisibleObjects;
+	CArray<CLight*>				VisibleLights;
 
 	bool Init(CGPUDriver& Driver, const Data::CParams& Desc);
 	bool Render(const CCamera& MainCamera, CSPS& SPS);

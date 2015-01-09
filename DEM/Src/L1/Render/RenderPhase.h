@@ -16,8 +16,9 @@ namespace Data
 
 namespace Render
 {
-class CRenderObject;
-class CLight;
+class CCamera;
+class CSPS;
+class CRenderPath;
 typedef Ptr<class CRenderTarget> PRenderTarget;
 typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 
@@ -36,8 +37,8 @@ public:
 
 	virtual ~CRenderPhase() {}
 
-	virtual bool Init(const Data::CParams& Desc);
-	virtual void Render() = 0;
+	virtual bool Init(const Data::CParams& Desc, const CRenderPath& Owner);
+	virtual bool Render(const CCamera& MainCamera, CSPS& SPS, const CRenderPath& Owner) = 0;
 };
 
 typedef Ptr<CRenderPhase> PRenderPhase;
