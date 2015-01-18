@@ -7,9 +7,7 @@
 
 // Matrix 4x4 class. Row-major.
 
-//!!!see ByHands and ByMemCmp below!
-
-class matrix44
+DEM_ALIGN_16 class matrix44
 {
 public:
 
@@ -93,9 +91,9 @@ public:
     /// inplace matrix multiply
     void operator *= (const matrix44& m1);
 	/// comparison
-	bool operator ==(const matrix44& Other) const;
+	bool operator ==(const matrix44& Other) const { return !memcmp(m, Other.m, sizeof(m)); }
 	/// comparison
-	bool operator !=(const matrix44& Other) const { return !(*this == Other); }
+	bool operator !=(const matrix44& Other) const { return !!memcmp(m, Other.m, sizeof(m)); }
     /// multiply source vector into target vector, eliminates tmp vector
     void mult(const vector4& src, vector4& dst) const;
     /// multiply source vector into target vector, eliminates tmp vector
@@ -634,26 +632,6 @@ matrix44::operator *= (const matrix44& m1)
         m[i][2] = mi0*m1.m[0][2] + mi1*m1.m[1][2] + mi2*m1.m[2][2] + mi3*m1.m[3][2];
         m[i][3] = mi0*m1.m[0][3] + mi1*m1.m[1][3] + mi2*m1.m[2][3] + mi3*m1.m[3][3];
     }
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-bool
-matrix44::operator == (const matrix44& Other) const
-{
-	bool ByHands = true;
-	for (int i=0; i<4; i++)
-		for (int j=0; j<4; j++)
-			if (m[i][j] != Other.m[i][j])
-			{
-				ByHands = false;
-				break;
-			}
-    bool ByMemCmp =  memcmp(m, Other.m, sizeof(m)) == 0;
-	//n_assert(ByHands == ByMemCmp);
-	return ByMemCmp;
 }
 
 //------------------------------------------------------------------------------

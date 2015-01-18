@@ -27,12 +27,18 @@
 // since so, D3D9DriverFactory may contain this window's reference
 //!!!GPU driver can be used without display, for stream-out, render to texture or compute shaders!
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace Render
 {
 class CDisplayMode;
 typedef Ptr<class CVertexLayout> PVertexLayout;
 typedef Ptr<class CVertexBuffer> PVertexBuffer;
 typedef Ptr<class CIndexBuffer> PIndexBuffer;
+typedef Ptr<class CRenderState> PRenderState;
 
 class CGPUDriver: public Core::CObject
 {
@@ -75,6 +81,8 @@ protected:
 	//???per-swapchain? put under STATS define?
 	DWORD							PrimsRendered;
 	DWORD							DIPsRendered;
+	
+	virtual PVertexLayout	InternalCreateVertexLayout() = 0;
 
 public:
 
@@ -101,11 +109,11 @@ public:
 	void					Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
 	void					Draw();
 
-	virtual PVertexLayout	CreateVertexLayout() = 0; // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer	CreateVertexBuffer() = 0;
 	virtual PIndexBuffer	CreateIndexBuffer() = 0;
-	PVertexLayout			GetVertexLayout(const CArray<CVertexComponent>& Components);
+	PVertexLayout			CreateVertexLayout(const CArray<CVertexComponent>& Components);
 	PVertexLayout			GetVertexLayout(CStrID Signature) const;
+	virtual PRenderState	CreateRenderState(const Data::CParams& Desc) = 0;
 
 	//void					SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	void					SetVertexLayout(CVertexLayout* pVLayout);
@@ -123,7 +131,7 @@ public:
 
 typedef Ptr<CGPUDriver> PGPUDriver;
 
-PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
+inline PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 {
 	int Idx = VertexLayouts.FindIndex(Signature);
 	return Idx != INVALID_INDEX ? VertexLayouts.ValueAt(Idx) : NULL;

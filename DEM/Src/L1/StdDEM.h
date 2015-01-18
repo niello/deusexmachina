@@ -62,6 +62,10 @@ typedef double				CTime;
 #define va_copy(d, s) d = s
 #endif
 
+#if defined(_MSC_VER)
+#define DEM_ALIGN_16 __declspec(align(16))
+#endif
+
 #ifdef __GNUC__
 // Hey! Look! A cute GNU C++ extension!
 #define min(a, b)   a <? b

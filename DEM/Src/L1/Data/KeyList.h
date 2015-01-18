@@ -5,7 +5,7 @@
 #include <Data/Dictionary.h>
 #include <Data/List.h>
 
-// keyList is an array of linked lists, sorted by a curtain key attribute.
+// KeyList is an array of linked lists, sorted by a curtain key attribute.
 // Elements are added to one of lists based on their key.
 // NB: if key value changes dynamically, element placing will not be adjusted automatically!
 

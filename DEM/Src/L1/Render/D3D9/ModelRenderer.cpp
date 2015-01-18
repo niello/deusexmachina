@@ -183,6 +183,7 @@ void CModelRenderer::Render()
 {
 	if (!Models.GetCount()) return;
 
+	//!!!create on load, at least for DX11!
 	if (MaxInstanceCount && !InstanceBuffer->IsValid())
 	{
 		CArray<CVertexComponent> InstCmps(4, 0);

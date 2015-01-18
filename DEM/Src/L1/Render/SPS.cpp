@@ -26,7 +26,7 @@ void CSPS::QueryVisibleObjectsAndLights(CSPSNode* pNode, const matrix44& ViewPro
 	if (Clip == Clipped)
 	{
 		CAABB NodeBox;
-		pNode->GetBounds(NodeBox);
+		pNode->GetBounds(NodeBox); //!!!can pass node box as arg and calculate for children, this will save some calculations!
 		NodeBox.Min.y = SceneMinY;
 		NodeBox.Max.y = SceneMaxY;
 		Clip = NodeBox.GetClipStatus(ViewProj);

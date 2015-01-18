@@ -148,6 +148,9 @@ bool CRenderPath::Render(const CCamera& MainCamera, CSPS& SPS)
 
 	//!!!set commons which will not be reset by the first phase //???or let the phase set them?
 
+	//!!!clear all phases' render targets and DS surfaces
+	//at the beginning of the frame, as recommended, especially for SLI
+
 	for (DWORD i = 0; i < Phases.GetCount(); ++i)
 	{
 		if (!Phases[i]->Render(MainCamera, SPS, *this))
