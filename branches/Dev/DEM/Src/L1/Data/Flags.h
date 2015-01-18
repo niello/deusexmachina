@@ -23,18 +23,29 @@ public:
 	void	Set(DWORD Flag) { Flags |= Flag; } //!!!can return old value!
 	void	SetTo(DWORD Flag, bool Value) { if (Value) Flags |= Flag; else Flags &= ~Flag; } //!!!do it better!
 	void	SetAll() { Flags = (DWORD)-1; }
-	void	ResetTo(DWORD Flag) { Flags = Flag; }
-	void	Clear(DWORD Flag) { Flags &= ~Flag; }
+	void	ResetTo(DWORD NewFlags) { Flags = NewFlags; }
+	void	Clear(DWORD Mask) { Flags &= ~Mask; }
 	void	ClearAll() { Flags = (DWORD)0; }
-	//void	Invert(DWORD Flag) { Flags ^= ~Flag; } ???
-	bool	Is(DWORD Flag) const { return (Flags & Flag) == Flag; }
-	bool	IsAll(DWORD FlagSet) const { return (Flags & FlagSet) == FlagSet; }
-	bool	IsAny(DWORD FlagSet) const { return (Flags & FlagSet) != 0; }
-	bool	IsNot(DWORD Flag) const { return (Flags & Flag) == 0; }
+	void	Invert(DWORD Mask) { Flags ^= Mask; }
+	void	InvertAll() { Flags = ~Flags; }
+	bool	Is(DWORD Mask) const { return (Flags & Mask) == Mask; }
+	bool	IsNot(DWORD Mask) const { return (Flags & Mask) == 0; }
+	bool	IsAny(DWORD Mask) const { return (Flags & Mask) != 0; }
 	DWORD	GetMask() const { return Flags; }
+	DWORD	NumberOfSetBits() const;
 
-	//!!!GetSetCount()
+	operator DWORD() const { return Flags; }
 };
+
+// Not tested, I copied it from
+// http://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
+DWORD CFlags::NumberOfSetBits() const
+{
+	DWORD Tmp = Flags - ((Flags >> 1) & 0x55555555);
+	Tmp = (Tmp & 0x33333333) + ((Tmp >> 2) & 0x33333333);
+	return (((Tmp + (Tmp >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+//---------------------------------------------------------------------
 
 }
 

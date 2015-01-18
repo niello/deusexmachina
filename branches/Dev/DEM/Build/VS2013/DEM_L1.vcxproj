@@ -205,6 +205,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h" />
@@ -216,7 +217,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\ModelRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderServer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderTarget.h" />
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
@@ -239,9 +240,14 @@
     <ClInclude Include="..\..\Src\L1\Render\Renderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderObject.h" />
+    <ClInclude Include="..\..\Src\L1\Render\RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderVar.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderVars.h" />
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />
@@ -419,7 +425,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\ModelRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderTarget.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\Shader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />

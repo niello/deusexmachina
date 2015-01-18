@@ -12,8 +12,7 @@
 
 #include <Math/Vector3.h>
 
-//------------------------------------------------------------------------------
-class vector4
+DEM_ALIGN_16 class vector4
 {
 public:
 

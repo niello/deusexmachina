@@ -127,7 +127,7 @@ template<class TObject, class TStorage>
 inline bool CQuadTree<TObject, TStorage>::CNode::Contains(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const
 {
 	CAABB Box;
-	GetBounds(Box);
+	GetBounds(Box); //???or better to cache box XZ?
 	return	CenterX - HalfSizeX >= Box.Min.x &&
 			CenterX + HalfSizeX <= Box.Max.x &&
 			CenterZ - HalfSizeZ >= Box.Min.z &&

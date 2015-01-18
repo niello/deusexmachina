@@ -611,9 +611,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\ModelRenderer.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\Shader.h">
-      <Filter>Render\D3D9</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
@@ -765,6 +762,27 @@
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\RenderPhase.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderState.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderVars.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Shader.h">
       <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1117,9 +1135,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\ModelRenderer.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\Shader.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
@@ -1239,6 +1254,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\RenderPhase.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp">
+      <Filter>Render\D3D9</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

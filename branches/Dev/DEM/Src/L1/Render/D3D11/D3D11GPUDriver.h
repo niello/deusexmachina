@@ -13,6 +13,7 @@ struct ID3D11DeviceContext;
 
 namespace Render
 {
+typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
@@ -37,13 +38,15 @@ protected:
 		void Release();
 	};
 
-	CArray<CD3D11SwapChain>	SwapChains;
-	//bool					IsInsideFrame;
-	//bool					Wireframe;
+	CArray<CD3D11SwapChain>		SwapChains;
+	//bool						IsInsideFrame;
+	//bool						Wireframe;
 
-	ID3D11Device*			pD3DDevice;
-	ID3D11DeviceContext*	pD3DImmContext;
+	ID3D11Device*				pD3DDevice;
+	ID3D11DeviceContext*		pD3DImmContext;
 	//???store also D3D11.1 interfaces? an use for 11.1 methods only.
+
+	CArray<PD3D11RenderState>	RenderStates;
 
 	CD3D11GPUDriver(): SwapChains(1, 1)/*, IsInsideFrame(false)*/ {}
 
@@ -59,6 +62,8 @@ protected:
 	//static bool		GetCurrD3DPresentParams(const CSwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams);
 
 	friend class CD3D11DriverFactory;
+
+	virtual PVertexLayout	InternalCreateVertexLayout();
 
 public:
 
@@ -81,6 +86,7 @@ public:
 	virtual PVertexLayout	CreateVertexLayout(); // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer	CreateVertexBuffer();
 	virtual PIndexBuffer	CreateIndexBuffer();
+	virtual PRenderState	CreateRenderState(const Data::CParams& Desc);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }
