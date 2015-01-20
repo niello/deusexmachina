@@ -246,8 +246,8 @@
     <ClInclude Include="..\..\Src\L1\Render\Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h" />
-    <ClInclude Include="..\..\Src\L1\Render\ShaderVar.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderVars.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderMetadata.h" />
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />

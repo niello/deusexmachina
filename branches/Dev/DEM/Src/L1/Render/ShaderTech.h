@@ -21,14 +21,17 @@ class CShaderTech
 {
 public:
 
-	CShaderVars			Vars; //???ptr to abstract base for API-specific class?
+	PShaderMetadata		Meta; //!!!describes only buffers/resources used here, and vertex input signature!
+	//per-object single and instanced buffers in a single instance created from meta
 	//???state?
 	CFeatureFlags		IncludedFFlags;	// Feature flags that must be set to use this tech
 	CFeatureFlags		ExcludedFFlags;	// Feature flags that must be unset to use this tech
 
 	CArray<CShaderPass>	Passes;
 
-	bool IsApplicableForFeatureFlags(CFeatureFlags FFlags) const { return FFlags.Is(IncludedFFlags) && FFlags.IsNot(ExcludedFFlags); }
+	bool					IsApplicableForFeatureFlags(CFeatureFlags FFlags) const { return FFlags.Is(IncludedFFlags) && FFlags.IsNot(ExcludedFFlags); }
+
+	const CShaderMetadata&	GetMetadata() const { return *Meta; }
 };
 
 }

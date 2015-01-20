@@ -2,34 +2,41 @@
 #ifndef __DEM_L1_RENDER_SHADER_VARS_H__
 #define __DEM_L1_RENDER_SHADER_VARS_H__
 
-#include <Data/StringID.h>
+#include <Render/ShaderMetadata.h>
 
-// Shader variable collection, maps variable names to API-specific locations and implements
-// passing of variable values to the shader. Shader variable is either a constant or a
-// resource, like a buffer or a texture.
-// NB: handle is valid only for that shader technique from where it was obtained, except for global vars
+// An instance of a shader variable data. Manages passing constants, textures, buffers
+// and sampler states to the GPU. Use contained metadata to obtain variable handles.
 
 namespace Render
 {
-typedef DWORD HShaderVar; // Opaque to user, so its internal meaning can be overridden in subclasses
 
-class CShaderVars
+class CShaderVars //???CObject? or at least CRefCouned?
 {
 protected:
 
-	// NameID -> Desc(Handle = Buffer | Offset, Type, Size)
-	// Set of buffers
+	PShaderMetadata Meta;
+
+	// Set of buffers (constant, texture), texture refs, sampler state refs
+
+	CShaderVars(CShaderMetadata* Metadata): Meta(Metadata) {}
+
+	friend class CShaderMetadata;
 
 public:
 
-	// CB, SRV, SS
+	//void	SetValue(HShaderVar Handle, const void* pData, DWORD Size);
+	//void	SetValueAligned16(HShaderVar Handle, const void* pData, DWORD Size);
 
-	HShaderVar	GetVarHandle(CStrID Name); //!!!get desc!
-	// BeginValues
-	// SetValue(Handle, Value)
-	// EndValues/ApplyValues
-	// Batch update? Or some internal access to update directly, faster?
-	// 2 + num vars virtual calls per buffer is really bad
+	virtual bool			BeginValues() = 0;
+	virtual bool			EndValues() = 0;
+	virtual void			SetBool(HShaderVar Handle, const bool* pValues, DWORD Count) = 0;
+	virtual void			SetIntAsBool(HShaderVar Handle, const int* pValues, DWORD Count) = 0;
+	virtual void			SetInt(HShaderVar Handle, const int* pValues, DWORD Count) = 0;
+	virtual void			SetFloat(HShaderVar Handle, const float* pValues, DWORD Count) = 0;
+	virtual void			SetVector4(HShaderVar Handle, const vector4* pValues, DWORD Count) = 0;
+	virtual void			SetMatrix44(HShaderVar Handle, const matrix44* pValues, DWORD Count) = 0;
+
+	const CShaderMetadata&	GetMetadata() const { return *Meta; }
 };
 
 }

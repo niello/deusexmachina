@@ -10,7 +10,7 @@
 namespace Data
 {
 
-class CXMLDocument: public tinyxml2::XMLDocument, public CRefCounted
+class CXMLDocument: public tinyxml2::XMLDocument, public Data::CRefCounted
 {
 public:
 };

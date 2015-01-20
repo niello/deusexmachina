@@ -10,7 +10,7 @@
 namespace Data
 {
 
-class CDataArray: public CArray<CData>, public CRefCounted
+class CDataArray: public CArray<CData>, public Data::CRefCounted
 {
 public:
 
