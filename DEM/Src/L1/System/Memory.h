@@ -38,9 +38,12 @@ void operator delete(void*, void*, const char* file, int line);
 void operator delete[](void* p);
 void operator delete[](void* p, const char* file, int line);
 void* n_malloc_dbg(size_t size, const char* file, int line);
+void* n_malloc_aligned_dbg(size_t size, size_t Alignment, const char* filename, int line);
 void* n_calloc_dbg(size_t num, size_t size, const char* file, int line);
 void* n_realloc_dbg(void* memblock, size_t size, const char* file, int line);
+void* n_realloc_aligned_dbg(void* memblock, size_t size, size_t Alignment, const char* filename, int line);
 void n_free_dbg(void* memblock, const char* file, int line);
+void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 
 #if defined(_DEBUG) && defined(__WIN32__)
 #define n_new(type) new(__FILE__,__LINE__) type
@@ -49,9 +52,12 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #define n_delete(ptr) delete ptr
 #define n_delete_array(ptr) delete[] ptr
 #define n_malloc(size) n_malloc_dbg(size, __FILE__, __LINE__)
+#define n_malloc_aligned(size, alignment) n_malloc_aligned_dbg(size, alignment, __FILE__, __LINE__)
 #define n_calloc(num, size) n_calloc_dbg(num, size, __FILE__, __LINE__)
 #define n_realloc(memblock, size) n_realloc_dbg(memblock, size, __FILE__, __LINE__)
+#define n_realloc_aligned(memblock, size, alignment) n_realloc_dbg(memblock, size, alignment, __FILE__, __LINE__)
 #define n_free(memblock) n_free_dbg(memblock, __FILE__, __LINE__)
+#define n_free_aligned(memblock) n_free_aligned_dbg(memblock, __FILE__, __LINE__)
 #else
 #define n_new(type) new type
 #define n_placement_new(place, type) new(place) type
@@ -59,9 +65,12 @@ void n_free_dbg(void* memblock, const char* file, int line);
 #define n_delete(ptr) delete ptr
 #define n_delete_array(ptr) delete[] ptr
 #define n_malloc(size) malloc(size)
+#define n_malloc_aligned(size, alignment) _aligned_malloc(size, alignment)
 #define n_calloc(num, size) calloc(num, size)
 #define n_realloc(memblock, size) realloc(memblock, size)
+#define n_realloc_aligned(memblock, size, alignment) _aligned_realloc(memblock, size, alignment)
 #define n_free(memblock) free(memblock)
+#define n_free_aligned(memblock) _aligned_free(memblock)
 #endif
 
 #define SAFE_RELEASE(n)			if (n) { n->Release(); n = NULL; }

@@ -63,7 +63,7 @@ typedef double				CTime;
 #endif
 
 #if defined(_MSC_VER)
-#define DEM_ALIGN_16 __declspec(align(16))
+#define DEM_ALIGN_16 //!!!commented until is properly supported by my code! __declspec(align(16))
 #endif
 
 #ifdef __GNUC__

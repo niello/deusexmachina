@@ -4,7 +4,7 @@
 
 #include <System/System.h>
 
-// Smart pointer class which manages the life time of CRefCounted objects.
+// Smart pointer class which manages the life time of Data::CRefCounted objects.
 // Can be used like a normal C++ pointer in most cases.
 
 template<class T>
@@ -17,9 +17,9 @@ private:
 public:
 
 	Ptr(): pObj(NULL) {}
-	Ptr(T* pSrcObj): pObj(pSrcObj) { if (pObj) ((CRefCounted*)pObj)->AddRef(); }
-	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) ((CRefCounted*)pObj)->AddRef(); }
-	~Ptr() { if (pObj) ((CRefCounted*)pObj)->Release(); }
+	Ptr(T* pSrcObj): pObj(pSrcObj) { if (pObj) ((Data::CRefCounted*)pObj)->AddRef(); }
+	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) ((Data::CRefCounted*)pObj)->AddRef(); }
+	~Ptr() { if (pObj) ((Data::CRefCounted*)pObj)->Release(); }
 
 	bool	IsValid() const { return !!pObj; }
 	T*		Get() const;
@@ -43,8 +43,8 @@ void Ptr<T>::operator =(const Ptr<T>& Other)
 	if (pObj != Other.pObj)
 	{
 		T* pNewPtr = Other.pObj;
-		if (pNewPtr) ((CRefCounted*)pNewPtr)->AddRef();
-		if (pObj) ((CRefCounted*)pObj)->Release();		// Here Other can be destructed so we remember it's ptr before
+		if (pNewPtr) ((Data::CRefCounted*)pNewPtr)->AddRef();
+		if (pObj) ((Data::CRefCounted*)pObj)->Release();		// Here Other can be destructed so we remember it's ptr before
 		pObj = pNewPtr;
 	}
 }
@@ -55,8 +55,8 @@ void Ptr<T>::operator =(T* Ptr)
 {
 	if (pObj != Ptr)
 	{
-		if (Ptr) ((CRefCounted*)Ptr)->AddRef();
-		if (pObj) ((CRefCounted*)pObj)->Release();
+		if (Ptr) ((Data::CRefCounted*)Ptr)->AddRef();
+		if (pObj) ((Data::CRefCounted*)pObj)->Release();
 		pObj = Ptr;
 	}
 }

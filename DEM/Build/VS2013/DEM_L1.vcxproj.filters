@@ -668,9 +668,6 @@
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\ShaderVar.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\SPS.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -783,6 +780,9 @@
       <Filter>Render\D3D9</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Shader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderMetadata.h">
       <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>

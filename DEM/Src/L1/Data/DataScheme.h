@@ -16,7 +16,7 @@ namespace Data
 {
 typedef Ptr<class CDataScheme> PDataScheme;
 
-class CDataScheme: public CRefCounted
+class CDataScheme: public Data::CRefCounted
 {
 public:
 

@@ -22,7 +22,7 @@ enum EMergeMethod
 
 typedef Ptr<class CParams> PParams;
 
-class CParams: public CRefCounted
+class CParams: public Data::CRefCounted
 {
 private:
 
