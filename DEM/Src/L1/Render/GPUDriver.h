@@ -23,7 +23,7 @@
 //also display driver should match display mode etc, for windowed can use D3DFMT_UNKNOWN and window size (or 0x0 for auto)
 //IDirect3DSwapChain9::GetDisplayMode() for multihead device
 //focus window must be shared among all swap chains, and at least in D3D9 - among all devices in application
-// also focus window should be a parent of any device winow, or be itself.
+// also focus window should be a parent of any device window, or be itself.
 // since so, D3D9DriverFactory may contain this window's reference
 //!!!GPU driver can be used without display, for stream-out, render to texture or compute shaders!
 
@@ -39,6 +39,7 @@ typedef Ptr<class CVertexLayout> PVertexLayout;
 typedef Ptr<class CVertexBuffer> PVertexBuffer;
 typedef Ptr<class CIndexBuffer> PIndexBuffer;
 typedef Ptr<class CRenderState> PRenderState;
+typedef Ptr<class CShader> PShader;
 
 class CGPUDriver: public Core::CObject
 {
@@ -54,7 +55,7 @@ public:
 
 protected:
 
-	DWORD							Adapter;
+	DWORD							AdapterID;
 
 	CDict<CStrID, PVertexLayout>	VertexLayouts;
 
@@ -82,23 +83,25 @@ protected:
 	DWORD							PrimsRendered;
 	DWORD							DIPsRendered;
 	
-	virtual PVertexLayout	InternalCreateVertexLayout() = 0;
+	//virtual PVertexLayout	InternalCreateVertexLayout() = 0;
+	//virtual HShaderParam	CreateShaderVarHandle(const CShaderConstantDesc& Meta) const = 0;
 
 public:
 
 	CGPUDriver() {}
 	virtual ~CGPUDriver() {}
 
-	virtual bool			Init(DWORD AdapterNumber) { Adapter = AdapterNumber; OK; }
+	virtual bool			Init(DWORD AdapterNumber) { AdapterID = AdapterNumber; OK; }
 	virtual bool			CheckCaps(ECaps Cap) = 0;
 
-	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow) = 0;
+	virtual DWORD			CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
 	virtual bool			DestroySwapChain(DWORD SwapChainID) = 0;
 	virtual bool			SwapChainExists(DWORD SwapChainID) const = 0;
 	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
 	virtual bool			SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL) = 0;
 	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
 	virtual bool			IsFullscreen(DWORD SwapChainID) const = 0;
+	virtual PRenderTarget	GetSwapChainRenderTarget(DWORD SwapChainID) const = 0;
 	//!!!get info, change info (or only recreate?)
 	virtual bool			Present(DWORD SwapChainID) = 0;
 	bool					PresentBlankScreen(DWORD SwapChainID, DWORD Color);
@@ -111,9 +114,14 @@ public:
 
 	virtual PVertexBuffer	CreateVertexBuffer() = 0;
 	virtual PIndexBuffer	CreateIndexBuffer() = 0;
-	PVertexLayout			CreateVertexLayout(const CArray<CVertexComponent>& Components);
-	PVertexLayout			GetVertexLayout(CStrID Signature) const;
-	virtual PRenderState	CreateRenderState(const Data::CParams& Desc) = 0;
+	PVertexLayout			CreateVertexLayout(const CArray<CVertexComponent>& Components /*, CStrID ShaderInputSignature = CStrID::Empty*/);
+	PVertexLayout			GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
+	//virtual PRenderState	CreateRenderState(const Data::CParams& Desc) = 0;
+	PShader					CreateShader(const Data::CParams& Desc);
+	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
+	//virtual PTexture				CreateTexture(dimensions, array size, format etc) = 0;
+	virtual PRenderTarget	CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
+	//virtual PDepthStencilBuffer	CreateDepthStencilBuffer(format, msaa etc, bool AllowReadingByShader) = 0;
 
 	//void					SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	void					SetVertexLayout(CVertexLayout* pVLayout);

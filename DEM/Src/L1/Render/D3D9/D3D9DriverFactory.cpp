@@ -1,7 +1,7 @@
 #include "D3D9DriverFactory.h"
 
 #include <Render/D3D9/D3D9DisplayDriver.h>
-//#include <Render/D3D9/D3D9GPUDriver.h>
+#include <Render/D3D9/D3D9GPUDriver.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -48,8 +48,7 @@ bool CD3D9DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) co
 
 PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Output)
 {
-	//???!!!what about multihead?! D3D9 additional swap chains can access different outputs.
-	//Disallow D3D9 multimonitor for now?
+	// No support for multihead devices, you may add it if you need
 	n_assert2(Output == 0, "D3D9 supports only one output (0) per video adapter");
 	PD3D9DisplayDriver Driver = n_new(CD3D9DisplayDriver);
 	if (!Driver->Init(Adapter, Output)) Driver = NULL;
@@ -57,17 +56,11 @@ PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Outp
 }
 //---------------------------------------------------------------------
 
-PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter, bool CreateSwapChain, Sys::COSWindow* pWindow, CDisplayDriver* pFullscreenOutput)
+PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter)
 {
-	n_assert2(!CreateSwapChain, "D3D9 device can't be created without a swap chain");
-
-	// if !pWindow - use focus window (global application window)
-	// if !pFullscreenOutput - don't restrict, use default output from window
-	//return n_new(CD3D9GPUDriver);
-
-	//???call init (which is empty for D3D9) and then call createswapchain right here?
-
-	return NULL;
+	PD3D9GPUDriver Driver = n_new(CD3D9GPUDriver);
+	if (!Driver->Init(Adapter)) Driver = NULL;
+	return Driver.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

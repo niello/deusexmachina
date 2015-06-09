@@ -62,10 +62,6 @@ typedef double				CTime;
 #define va_copy(d, s) d = s
 #endif
 
-#if defined(_MSC_VER)
-#define DEM_ALIGN_16 //!!!commented until is properly supported by my code! __declspec(align(16))
-#endif
-
 #ifdef __GNUC__
 // Hey! Look! A cute GNU C++ extension!
 #define min(a, b)   a <? b
@@ -86,7 +82,11 @@ template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T
 template <class T> inline T Clamp(T Value, T Min, T Max) { return (Value < Min) ? Min : ((Value > Max) ? Max : Value); }
 inline float Saturate(float Value) { return Clamp(Value, 0.f, 1.f); }
 
-inline bool IsPow2(int Value) { return Value >= 1 && (Value & (Value - 1)) == 0; }
+inline bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
+
+// Only for power-of-2 alignment //!!!C++11 static_assert may help!
+template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return (((unsigned int)Pointer) & (Alignment - 1)) == 0; }
+inline bool IsAligned16(const void* Pointer) { return (((unsigned int)Pointer) & 0x0f) == 0; }
 
 // Execution results
 

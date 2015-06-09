@@ -5,11 +5,13 @@
 #include <Core/Object.h>
 #include <Data/Params.h>
 
-// Renderer is responsible for rendering certain type of graphics elements, like meshes,
-// particles, terrain patches, debug shapes, text, UI etc. Renderer can be fed directly
-// and by frame shader (with visible scene node attributes). Renderer should use RenderSrv
-// methods to access hardware graphics device functionality.
-// Use renderers to implement different rendering strategies on CPU, and use shader for GPU variations.
+// Renderer is responsible for rendering certain type of 3D graphics elements, like models,
+// particles, terrain patches, debug shapes etc. Renderer can be fed directly or by render path
+// (with visible scene node attributes). Renderer should use GPUDriver methods to access hardware
+// graphics device functionality. Use renderers to implement different rendering techniques on the
+// CPU side, and use shaders for GPU variations.
+// Non-scene elements like debug text and UI aren't 3D objects and therefore are rendered through
+// specialized render phases.
 
 namespace Render
 {

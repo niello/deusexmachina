@@ -10,28 +10,6 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9GPUDriver, 'D9GD', Render::CGPUDriver);
 
-void CD3D9GPUDriver::CD3D9SwapChain::Release()
-{
-	Sub_OnClosing = NULL;
-	Sub_OnSizeChanged = NULL;
-	Sub_OnToggleFullscreen = NULL;
-
-	if (pSwapChain)
-	{
-		pSwapChain->Release();
-		pSwapChain = NULL;
-	}
-	else
-	{
-		//???move this branch to a DestroySwapChain() method?
-		Sys::Error("CD3D9GPUDriver::CD3D9SwapChain::Release() > Implicit swap chain destroyed! IMPLEMENT ME!!!");
-		// Implicit swap chain
-		//!!!destroy device!
-		//???or deny and require user to call DestroyDevice (Term)?
-	}
-}
-//---------------------------------------------------------------------
-
 bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
 	if (!pD3DDevice) FAIL;
@@ -160,7 +138,7 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 		case Caps_VSTexFiltering_Linear:
 			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
 		case Caps_VSTex_L16:
-			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	Adapter,
+			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
 																				DEM_D3D_DEVICETYPE,
 																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
 																				D3DUSAGE_QUERY_VERTEXTEXTURE,
@@ -236,6 +214,58 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+//???bool Windowed param?
+void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat,
+									  D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
+{
+#if DEM_D3D_DEBUG
+	OutType = D3DMULTISAMPLE_NONE;
+	OutQuality = 0;
+#else
+	switch (MSAA)
+	{
+		case MSAA_None:	OutType = D3DMULTISAMPLE_NONE; break;
+		case MSAA_2x:	OutType = D3DMULTISAMPLE_2_SAMPLES; break;
+		case MSAA_4x:	OutType = D3DMULTISAMPLE_4_SAMPLES; break;
+		case MSAA_8x:	OutType = D3DMULTISAMPLE_8_SAMPLES; break;
+	};
+
+	DWORD QualLevels = 0;
+	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
+																			DEM_D3D_DEVICETYPE, //???store as field per device driver?
+																			RTFormat,
+																			FALSE,
+																			OutType,
+																			&QualLevels);
+	if (hr == D3DERR_NOTAVAILABLE)
+	{
+		OutType = D3DMULTISAMPLE_NONE;
+		OutQuality = 0;
+		return;
+	}
+	n_assert(SUCCEEDED(hr));
+
+	OutQuality = QualLevels ? QualLevels - 1 : 0;
+
+	if (DSFormat == D3DFMT_UNKNOWN) return;
+
+	hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
+																	DEM_D3D_DEVICETYPE, //???store as field per device driver?
+																	DSFormat,
+																	FALSE,
+																	OutType,
+																	NULL);
+	if (hr == D3DERR_NOTAVAILABLE)
+	{
+		OutType = D3DMULTISAMPLE_NONE;
+		OutQuality = 0;
+		return;
+	}
+	n_assert(SUCCEEDED(hr));
+#endif
 }
 //---------------------------------------------------------------------
 

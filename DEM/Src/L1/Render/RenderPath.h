@@ -27,20 +27,23 @@ class CLight;
 class CCamera;
 class CSPS;
 typedef Ptr<class CRenderPhase> PRenderPhase;
+typedef Ptr<class CShaderMetadata> PShaderMetadata;
 
 class CRenderPath: public Core::CObject
 {
 public:
 
-	//???store driver here?
+	PShaderMetadata GlobalMeta;	// Global, cross-shader variables - constant, per-frame, per-camera, per-RT etc
+	// PShaderVars GlobalVars;	// Instance of GlobalMeta
+
+	//???store driver ref here?
 
 	//???RTVs and DSVs - store here?
-	// Shared shader variables (once, per-resize, per-frame etc)
 	// Driver states
 
 	CFixedArray<PRenderPhase>	Phases;
 
-	// Main camera visible list
+	// Main camera visible list //???use linked lists to easily remove occluded objects etc?
 	CArray<CRenderObject*>		VisibleObjects;
 	CArray<CLight*>				VisibleLights;
 

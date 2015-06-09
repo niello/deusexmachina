@@ -27,11 +27,12 @@ class CRenderPhase: public Core::CObject
 public:
 
 	CFixedArray<PRenderTarget>	RenderTargets;
-	CFixedArray<DWORD>			RTClearColors;		// 32-bit ARGB each
 	PDepthStencilBuffer			DepthStencil;
-	float						DepthClearValue;	// 0.f - 1.f
-	uchar						StencilClearValue;
+
 	Data::CFlags				ClearFlags;
+	CFixedArray<DWORD>			RTClearColors;		// 32-bit ARGB each
+	float						DepthClearValue;	// 0.f .. 1.f
+	uchar						StencilClearValue;
 
 	CRenderPhase(): ClearFlags(0), DepthClearValue(1.f), StencilClearValue(0) {}
 

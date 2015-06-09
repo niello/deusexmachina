@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_D3D11_GPU_DRIVER_H__
 
 #include <Render/GPUDriver.h>
+#include <Render/D3D11/D3D11SwapChain.h>
 
 // Direct3D11 GPU device driver.
 
@@ -20,23 +21,6 @@ class CD3D11GPUDriver: public CGPUDriver
 	__DeclareClass(CD3D11GPUDriver);
 
 protected:
-
-	//???store index and driver pointer and subscribe events here?
-	class CD3D11SwapChain: public CSwapChain
-	{
-	public:
-
-		//???need? DXGI handles OS window!
-		Events::PSub		Sub_OnToggleFullscreen;
-		Events::PSub		Sub_OnSizeChanged;
-		Events::PSub		Sub_OnClosing;
-
-		IDXGISwapChain*		pSwapChain;
-		//ID3D11Texture2D*	pBackBuffer;
-		//!!!RT View! or unify RT of swap chain and texture?
-
-		void Release();
-	};
 
 	CArray<CD3D11SwapChain>		SwapChains;
 	//bool						IsInsideFrame;
@@ -82,6 +66,7 @@ public:
 	//!!!get info, change info (or only recreate?)
 	virtual bool			Present(DWORD SwapChainID);
 	//virtual void			SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
+	//PRenderTarget GetSwapChainRenderTarget(DWORD SwapChainID);
 
 	virtual PVertexLayout	CreateVertexLayout(); // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer	CreateVertexBuffer();
@@ -93,6 +78,8 @@ public:
 
 	//IDirect3DDevice9*		GetD3DDevice() const { return pD3DDevice; }
 };
+
+typedef Ptr<CD3D11GPUDriver> PD3D11GPUDriver;
 
 }
 

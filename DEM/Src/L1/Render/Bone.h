@@ -7,9 +7,6 @@
 
 // Skeletal animation bone. Manages skinning matrix, which is used by shader through node's shader params.
 
-//???move to Anim or Render?
-//!!!dependent on rendering, used for skinning only!
-
 namespace Render
 {
 struct CSPSRecord;

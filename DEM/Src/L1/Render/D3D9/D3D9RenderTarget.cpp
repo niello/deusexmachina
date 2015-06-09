@@ -1,62 +1,10 @@
-#include "RenderTarget.h"
+#include "D3D9RenderTarget.h"
 
 #include <Render/RenderServer.h>
 #include <Events/EventServer.h>
 
 namespace Render
 {
-
-//???bool Windowed param?
-inline void CRenderTarget::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat,
-											D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality)
-{
-#if DEM_D3D_DEBUG
-	OutType = D3DMULTISAMPLE_NONE;
-	OutQuality = 0;
-#else
-	switch (MSAA)
-	{
-		case MSAA_None:	OutType = D3DMULTISAMPLE_NONE; break;
-		case MSAA_2x:	OutType = D3DMULTISAMPLE_2_SAMPLES; break;
-		case MSAA_4x:	OutType = D3DMULTISAMPLE_4_SAMPLES; break;
-		case MSAA_8x:	OutType = D3DMULTISAMPLE_8_SAMPLES; break;
-	};
-
-	DWORD QualLevels = 0;
-	HRESULT hr = RenderSrv->GetD3D()->CheckDeviceMultiSampleType(	RenderSrv->GetD3DAdapter(),
-																	DEM_D3D_DEVICETYPE,
-																	RTFormat,
-																	FALSE,
-																	OutType,
-																	&QualLevels);
-	if (hr == D3DERR_NOTAVAILABLE)
-	{
-		OutType = D3DMULTISAMPLE_NONE;
-		OutQuality = 0;
-		return;
-	}
-	n_assert(SUCCEEDED(hr));
-
-	OutQuality = QualLevels ? QualLevels - 1 : 0;
-
-	if (DSFormat == D3DFMT_UNKNOWN) return;
-
-	hr = RenderSrv->GetD3D()->CheckDeviceMultiSampleType(	RenderSrv->GetD3DAdapter(),
-															DEM_D3D_DEVICETYPE,
-															DSFormat,
-															FALSE,
-															OutType,
-															NULL);
-	if (hr == D3DERR_NOTAVAILABLE)
-	{
-		OutType = D3DMULTISAMPLE_NONE;
-		OutQuality = 0;
-		return;
-	}
-	n_assert(SUCCEEDED(hr));
-#endif
-}
-//---------------------------------------------------------------------
 
 bool CRenderTarget::CreateDefaultRT()
 {

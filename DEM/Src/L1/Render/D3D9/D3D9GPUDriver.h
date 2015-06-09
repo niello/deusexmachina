@@ -11,8 +11,8 @@
 
 // Direct3D9 GPU device driver.
 // Multihead (multimonitor) feature is not implemented.
-
-struct ID3DXEffectPool; // D3DX
+// NB: D3D9 device can't be created without a swap chain, so you MUST call CreateSwapChain()
+// before using any device-dependent methods.
 
 namespace Render
 {
@@ -23,27 +23,12 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
-	//???store index and driver pointer and subscribe events here?
-	class CD3D9SwapChain: public CSwapChain
-	{
-	public:
-
-		Events::PSub	Sub_OnToggleFullscreen;
-		Events::PSub	Sub_OnSizeChanged;
-		Events::PSub	Sub_OnClosing;
-
-		IDirect3DSwapChain9* pSwapChain; // NULL for implicit swap chain, device methods will be called
-
-		void Release();
-	};
-
 	CArray<CD3D9SwapChain>	SwapChains;
 	bool					IsInsideFrame;
 	//bool					Wireframe;
 
 	D3DCAPS9				D3DCaps;
 	IDirect3DDevice9*		pD3DDevice;
-	ID3DXEffectPool*		pEffectPool;
 
 	Events::PSub			Sub_OnPaint;
 
@@ -70,7 +55,7 @@ public:
 	//virtual bool			Init(DWORD AdapterNumber); // Use CreateSwapChain() to create device with implicit swap chain
 	virtual bool			CheckCaps(ECaps Cap);
 
-	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow);
+	virtual DWORD			CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
 	virtual bool			DestroySwapChain(DWORD SwapChainID);
 	virtual bool			SwapChainExists(DWORD SwapChainID) const;
 	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
@@ -88,9 +73,11 @@ public:
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }
 
+	void					GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const;
 	IDirect3DDevice9*		GetD3DDevice() const { return pD3DDevice; }
-	ID3DXEffectPool*		GetD3DEffectPool() const { return pEffectPool; }
 };
+
+typedef Ptr<CD3D9GPUDriver> PD3D9GPUDriver;
 
 }
 

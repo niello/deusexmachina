@@ -16,6 +16,8 @@ DEM_ALIGN_16 class vector4
 {
 public:
 
+	DEM_ALLOCATE_ALIGN16;
+
 	static const vector4 Zero;
 	static const vector4 Red;
 	static const vector4 Green;

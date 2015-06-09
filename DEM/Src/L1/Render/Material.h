@@ -21,6 +21,12 @@ class CMaterial: public Resources::CResource
 
 protected:
 
+	// All this matches any tech that is valid for this material:
+	// IndexInMeta -> CB
+	// Handle -> Rsrc
+	// Handle -> Samp
+
+	//???or in objects? how to sort in renderer? select one LOD and sort by it? (Mtl + LODIdx?)
 	struct CLOD
 	{
 		PShader			Shader;

@@ -3,8 +3,7 @@
 #define __DEM_L1_RENDER_SWAP_CHAIN_H__
 
 //#include <Render/DisplayMode.h>
-#include <Render/RenderFwd.h>
-#include <Events/EventsFwd.h>
+#include <Render/RenderTarget.h>
 #include <Data/Flags.h>
 #include <Data/Rect.h>
 
@@ -22,6 +21,7 @@ namespace Render
 {
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 
+//!!!other flags, presentation and not
 enum ESwapChainFlags
 {
 	//ManualRotationHandling
@@ -40,21 +40,12 @@ enum ESwapMode
 
 struct CSwapChainDesc
 {
-	Data::CFlags	Flags;
-	ESwapMode		SwapMode;
+	Data::CFlags		Flags;
+	ESwapMode			SwapMode;
+	DWORD				BackBufferCount;
+	EPixelFormat		DepthStencilFormat;
 
-	DWORD			BackBufferCount;
-	ushort			BackBufferWidth;	// Set to 0 to match window or display format
-	ushort			BackBufferHeight;	// Set to 0 to match window or display format
-	EPixelFormat	BackBufferFormat;	//???always get from passed display format?
-
-	EPixelFormat	DepthStencilFormat;
-
-	EMSAAQuality	AntiAliasQuality;
-
-	//other flags, presentation and not
-
-	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync), AntiAliasQuality(MSAA_None) {}
+	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync) {}
 };
 
 // Inherit from this class to create API-specific implementations
@@ -67,6 +58,7 @@ public:
 	//CDisplayMode			DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
 	CSwapChainDesc			Desc;
 	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
+	PRenderTarget			RenderTarget;
 
 	//???need? what about other statistics?
 	DWORD					FrameID;

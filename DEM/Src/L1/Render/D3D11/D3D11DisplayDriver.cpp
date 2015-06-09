@@ -14,13 +14,13 @@ bool CD3D11DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
 	if (!CDisplayDriver::Init(AdapterNumber, OutputNumber)) FAIL;
 
 	IDXGIAdapter1* pAdapter = NULL;
-	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(Adapter, &pAdapter)))
+	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter)))
 	{
 		Term();
 		FAIL;
 	}
 
-	if (!SUCCEEDED(pAdapter->EnumOutputs(Output, &pDXGIOutput)))
+	if (!SUCCEEDED(pAdapter->EnumOutputs(OutputID, &pDXGIOutput)))
 	{
 		pAdapter->Release();
 		Term();
@@ -56,7 +56,7 @@ DWORD CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<
 	}
 	while (hr == DXGI_ERROR_MORE_DATA); // Somtimes new modes become available right between two calls, see DXGI docs
 
-	// This code doesn't check for possible duplication with modes already in array
+	// This code doesn't check for possible duplication against modes already in array
 	CDisplayMode* pNewMode = OutModes.Reserve(ModeCount);
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
@@ -66,7 +66,7 @@ DWORD CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<
 		pNewMode->PixelFormat = CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGIMode.Format);
 		pNewMode->RefreshRate.Numerator = DXGIMode.RefreshRate.Numerator;
 		pNewMode->RefreshRate.Denominator = DXGIMode.RefreshRate.Denominator;
-		pNewMode->Stereo = false; // DXGI 1.2 and above only
+		pNewMode->Stereo = false; // Useful with DXGI 1.2 and above only
 	}
 
 	_freea(pDXGIModes);
@@ -166,6 +166,8 @@ bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 	ApproxMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	ApproxMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 
+	//???If pConcernedDevice is NULL, Format cannot be DXGI_FORMAT_UNKNOWN. (c) Docs?
+
 	if (!SUCCEEDED(pDXGIOutput->FindClosestMatchingMode(&ApproxMode, &DXGIMode, NULL))) FAIL;
 
 	OutMode.Width = DXGIMode.Width;
@@ -173,7 +175,7 @@ bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 	OutMode.PixelFormat = CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGIMode.Format);
 	OutMode.RefreshRate.Numerator = DXGIMode.RefreshRate.Numerator;
 	OutMode.RefreshRate.Denominator = DXGIMode.RefreshRate.Denominator;
-	OutMode.Stereo = false; // DXGI 1.2 and above only
+	OutMode.Stereo = false; // Useful with DXGI 1.2 and above only
 
 	OK;
 }

@@ -7,9 +7,13 @@
 
 // Matrix 4x4 class. Row-major.
 
+//???typedef __declspec(align(32)) struct matrix44 matrix44_16;?
+//!!!if so, DEM_ALLOCATE_ALIGN16 must be declared only in matrix44_16!
 DEM_ALIGN_16 class matrix44
 {
 public:
+
+	DEM_ALLOCATE_ALIGN16;
 
     float m[4][4];
 
@@ -100,8 +104,6 @@ public:
     void mult(const vector3& src, vector3& dst) const;
     /// multiply and divide by w
     vector3 mult_divw(const vector3& v) const;
-    /// fast multiply-add with weighting
-    void weighted_madd(const vector3& src, vector3& dst, float weight) const;
 };
 
 //------------------------------------------------------------------------------
@@ -266,8 +268,8 @@ matrix44::invert()
 {
     float s = det();
     if (s == 0.0) return;
-    s = 1/s;
-    this->set(
+    s = 1.f / s;
+    set(
         s*(M22*(M33*M44 - M34*M43) + M23*(M34*M42 - M32*M44) + M24*(M32*M43 - M33*M42)),
         s*(M32*(M13*M44 - M14*M43) + M33*(M14*M42 - M12*M44) + M34*(M12*M43 - M13*M42)),
         s*(M42*(M13*M24 - M14*M23) + M43*(M14*M22 - M12*M24) + M44*(M12*M23 - M13*M22)),
@@ -616,30 +618,7 @@ matrix44::billboard(const vector3& to, const vector3& up)
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-matrix44::operator *= (const matrix44& m1)
-{
-    int i;
-    for (i=0; i<4; i++)
-    {
-        float mi0 = m[i][0];
-        float mi1 = m[i][1];
-        float mi2 = m[i][2];
-        float mi3 = m[i][3];
-        m[i][0] = mi0*m1.m[0][0] + mi1*m1.m[1][0] + mi2*m1.m[2][0] + mi3*m1.m[3][0];
-        m[i][1] = mi0*m1.m[0][1] + mi1*m1.m[1][1] + mi2*m1.m[2][1] + mi3*m1.m[3][1];
-        m[i][2] = mi0*m1.m[0][2] + mi1*m1.m[1][2] + mi2*m1.m[2][2] + mi3*m1.m[3][2];
-        m[i][3] = mi0*m1.m[0][3] + mi1*m1.m[1][3] + mi2*m1.m[2][3] + mi3*m1.m[3][3];
-    }
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-matrix44::rotate(const vector3& vec, float a)
+inline void matrix44::rotate(const vector3& vec, float a)
 {
     vector3 v(vec);
     v.norm();
@@ -663,9 +642,7 @@ matrix44::rotate(const vector3& vec, float a)
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-matrix44::mult(const vector4& src, vector4& dst) const
+inline void matrix44::mult(const vector4& src, vector4& dst) const
 {
     dst.x = M11*src.x + M21*src.y + M31*src.z + M41*src.w;
     dst.y = M12*src.x + M22*src.y + M32*src.z + M42*src.w;
@@ -676,27 +653,11 @@ matrix44::mult(const vector4& src, vector4& dst) const
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-matrix44::mult(const vector3& src, vector3& dst) const
+inline void matrix44::mult(const vector3& src, vector3& dst) const
 {
     dst.x = M11*src.x + M21*src.y + M31*src.z + M41;
     dst.y = M12*src.x + M22*src.y + M32*src.z + M42;
     dst.z = M13*src.x + M23*src.y + M33*src.z + M43;
-}
-
-//------------------------------------------------------------------------------
-/**
-    Perform a multiply-add with weighting (this is quite specialized for
-    CPU-skinning)
-*/
-inline
-void
-matrix44::weighted_madd(const vector3& src, vector3& dst, float weight) const
-{
-    dst.x += (M11*src.x + M21*src.y + M31*src.z + M41) * weight;
-    dst.y += (M12*src.x + M22*src.y + M32*src.z + M42) * weight;
-    dst.z += (M13*src.x + M23*src.y + M33*src.z + M43) * weight;
 }
 
 //------------------------------------------------------------------------------
@@ -755,6 +716,27 @@ vector4 operator * (const matrix44& m, const vector4& v)
         m.M13*v.x + m.M23*v.y + m.M33*v.z + m.M43*v.w,
         m.M14*v.x + m.M24*v.y + m.M34*v.z + m.M44*v.w);
 };
+
+//------------------------------------------------------------------------------
+/**
+*/
+inline
+void
+matrix44::operator *= (const matrix44& m1)
+{
+    int i;
+    for (i=0; i<4; i++)
+    {
+        float mi0 = m[i][0];
+        float mi1 = m[i][1];
+        float mi2 = m[i][2];
+        float mi3 = m[i][3];
+        m[i][0] = mi0*m1.m[0][0] + mi1*m1.m[1][0] + mi2*m1.m[2][0] + mi3*m1.m[3][0];
+        m[i][1] = mi0*m1.m[0][1] + mi1*m1.m[1][1] + mi2*m1.m[2][1] + mi3*m1.m[3][1];
+        m[i][2] = mi0*m1.m[0][2] + mi1*m1.m[1][2] + mi2*m1.m[2][2] + mi3*m1.m[3][2];
+        m[i][3] = mi0*m1.m[0][3] + mi1*m1.m[1][3] + mi2*m1.m[2][3] + mi3*m1.m[3][3];
+    }
+}
 
 //------------------------------------------------------------------------------
 /**

@@ -1,7 +1,7 @@
 #include "D3D11DriverFactory.h"
 
 #include <Render/D3D11/D3D11DisplayDriver.h>
-//#include <Render/D3D11/D3D11GPUDriver.h>
+#include <Render/D3D11/D3D11GPUDriver.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <DXGI.h>
@@ -74,14 +74,11 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Out
 }
 //---------------------------------------------------------------------
 
-PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, bool CreateSwapChain, Sys::COSWindow* pWindow, CDisplayDriver* pFullscreenOutput)
+PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter)
 {
-	n_assert(!pFullscreenOutput || Adapter == pFullscreenOutput->GetAdapterID()); //???is necessary?
-
-	// if !pWindow - use focus window (global application window)
-	// if !pFullscreenOutput - don't restrict, use default output from window
-	//return n_new(CD3D11GPUDriver);
-	return NULL;
+	PD3D11GPUDriver Driver = n_new(CD3D11GPUDriver);
+	if (!Driver->Init(Adapter)) Driver = NULL;
+	return Driver.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

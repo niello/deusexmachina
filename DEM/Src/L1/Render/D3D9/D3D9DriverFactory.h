@@ -45,7 +45,7 @@ public:
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const { return 1; }
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0);
 	//!!!need swap chain params!
-	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0, bool CreateSwapChain = true, Sys::COSWindow* pWindow = NULL, CDisplayDriver* pFullscreenOutput = NULL);
+	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0);
 
 	IDirect3D9*				GetDirect3D9() const { return pD3D9; }
 	Sys::COSWindow*			GetFocusWindow() const { return pFocusWindow; }

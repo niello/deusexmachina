@@ -35,9 +35,9 @@ public:
 
 inline CD3D11RenderState::~CD3D11RenderState()
 {
-	SAFE_RELEASE(pRState);
-	SAFE_RELEASE(pDSState);
-	SAFE_RELEASE(pBState);
+	//SAFE_RELEASE(pRState);
+	//SAFE_RELEASE(pDSState);
+	//SAFE_RELEASE(pBState);
 }
 //---------------------------------------------------------------------
 

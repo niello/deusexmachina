@@ -58,8 +58,7 @@ public:
 	virtual bool			GetAdapterInfo(CAdapterInfo& OutInfo) const = 0;
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const = 0;
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0) = 0;
-	//!!!need swap chain params!
-	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0, bool CreateSwapChain = true, Sys::COSWindow* pWindow = NULL, CDisplayDriver* pFullscreenOutput = NULL) = 0;
+	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0) = 0;
 };
 
 }
