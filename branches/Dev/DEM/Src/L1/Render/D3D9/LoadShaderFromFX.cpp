@@ -22,7 +22,7 @@ bool LoadShaderFromFX(const CString& FileName, const CString& ShaderRootDir, PSh
 	n_assert(File.Read(Buffer.GetPtr(), FileSize) == FileSize);
 
 	DWORD D3DEffFlags = D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY | D3DXFX_NOT_CLONEABLE;
-#if DEM_D3D_DEBUG
+#if DEM_RENDER_DEBUG
 	D3DEffFlags |= (D3DXSHADER_DEBUG | D3DXSHADER_SKIPOPTIMIZATION);
 #endif
 

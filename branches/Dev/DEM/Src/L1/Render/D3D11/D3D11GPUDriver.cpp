@@ -14,57 +14,62 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11GPUDriver, '11GD', Render::CGPUDriver);
 
-bool CD3D11GPUDriver::Init(DWORD AdapterNumber)
+D3D_DRIVER_TYPE CD3D11GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 {
-	if (!CGPUDriver::Init(AdapterNumber)) FAIL;
+	// WARP adapter is skipped.
+	// You also create the render-only device when you specify D3D_DRIVER_TYPE_WARP in the DriverType parameter
+	// of D3D11CreateDevice because the WARP device also uses the render-only WARP adapter (c) Docs
+	switch (DriverType)
+	{
+		case GPU_AutoSelect:	return D3D_DRIVER_TYPE_UNKNOWN;
+		case GPU_Hardware:		return D3D_DRIVER_TYPE_HARDWARE;
+		case GPU_Reference:		return D3D_DRIVER_TYPE_REFERENCE;
+		case GPU_Software:		return D3D_DRIVER_TYPE_SOFTWARE;
+		case GPU_Null:			return D3D_DRIVER_TYPE_NULL;
+		default:				Sys::Error("CD3D11GPUDriver::GetD3DDriverType() > invalid GPU driver type"); return D3D_DRIVER_TYPE_UNKNOWN;
+	};
+}
+//---------------------------------------------------------------------
 
-#if DEM_D3D_USENVPERFHUD
-	Sys::Error("IMPLEMENT ME!!! NVPerfHUD.");
-//UINT nAdapter = 0;
-//IDXGIAdapter* adapter = NULL;
-//IDXGIAdapter* selectedAdapter = NULL;
-//D3D10_DRIVER_TYPE driverType = D3D10_DRIVER_TYPE_HARDWARE;  
-//while (pDXGIFactory->EnumAdapters(nAdapter, &adapter) != DXGI_ERROR_NOT_FOUND)
-//{
-//	if (adapter)
-//	{
-//		DXGI_ADAPTER_DESC adaptDesc;
-//		if (SUCCEEDED(adapter->GetDesc(&adaptDesc)))
-//		{
-//			const bool isPerfHUD = wcscmp(adaptDesc.Description, L"NVIDIA PerfHUD") == 0;  
-//			// Select the first adapter in normal circumstances or the PerfHUD one if it exists.  
-//			if (nAdapter == 0 || isPerfHUD) selectedAdapter = adapter;  
-//			if (isPerfHUD) driverType = D3D10_DRIVER_TYPE_REFERENCE;  
-//		}
-//	}
-//	++nAdapter;  
-//}
-#endif
+EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
+{
+	switch (DriverType)
+	{
+		case D3D_DRIVER_TYPE_UNKNOWN:	return GPU_AutoSelect;
+		case D3D_DRIVER_TYPE_HARDWARE:	return GPU_Hardware;
+		case D3D_DRIVER_TYPE_WARP:		return GPU_Reference;
+		case D3D_DRIVER_TYPE_REFERENCE:	return GPU_Reference;
+		case D3D_DRIVER_TYPE_SOFTWARE:	return GPU_Software;
+		case D3D_DRIVER_TYPE_NULL:		return GPU_Null;
+		default:						Sys::Error("CD3D11GPUDriver::GetD3DDriverType() > invalid D3D_DRIVER_TYPE"); return GPU_AutoSelect;
+	};
+}
+//---------------------------------------------------------------------
 
-	IDXGIAdapter1* pAdapter = NULL;
-	n_assert(D3D11DrvFactory->AdapterExists(AdapterNumber));
-	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterNumber, &pAdapter))) FAIL;
+bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
+{
+	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;
+
+	n_assert(AdapterID == Adapter_AutoSelect || D3D11DrvFactory->AdapterExists(AdapterID));
 
 	//!!!fix if will be multithreaded, forex job-based!
 	UINT CreateFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-#if DEM_D3D_DEBUG
+#if DEM_RENDER_DEBUG
 	CreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
 	// D3D11.1
 	//D3D11_CREATE_DEVICE_DEBUGGABLE - shader debugging
 	//Shader debugging requires a driver that is implemented to the WDDM for Windows 8 (WDDM 1.2)
 #endif
 
-	//D3D_DRIVER_TYPE DriverTypes[] =
-	//{
-	//	D3D_DRIVER_TYPE_HARDWARE,
-	//	D3D_DRIVER_TYPE_WARP
-	//};
-	//DWORD DriverTypeCount = sizeof_array(DriverTypes);
+	// If we use NULL adapter (Adapter_AutoSelect), new DXGI factory will be created. We avoid it.
+	IDXGIAdapter1* pAdapter = NULL;
+	if (AdapterID == Adapter_AutoSelect) AdapterID = 0;
+	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter))) FAIL;
 
 	D3D_FEATURE_LEVEL FeatureLevels[] =
 	{
-		//D3D_FEATURE_LEVEL_11_1, //!!!???use DXGI factory 2?!
+		//D3D_FEATURE_LEVEL_11_1, //!!!Can use D3D11.1 and DXGI 1.2 API on Win 7 with platform update!
 		D3D_FEATURE_LEVEL_11_0,
 		D3D_FEATURE_LEVEL_10_1,
 		D3D_FEATURE_LEVEL_10_0
@@ -73,22 +78,15 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber)
 
 	D3D_FEATURE_LEVEL FeatureLevel; //???to member or always get from device?
 
-	HRESULT hr = E_FAIL;
+	HRESULT hr = D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, CreateFlags,
+								   FeatureLevels, FeatureLevelCount, D3D11_SDK_VERSION,
+								   &pD3DDevice, &FeatureLevel, &pD3DImmContext);
 
-	//!!!can implement this loop externally, iterating adapters, if application needs a fallback driver!
-	//for (DWORD i = 0; i < DriverTypeCount; ++i)
+	//if (hr == E_INVALIDARG)
 	//{
-		hr = D3D11CreateDevice(	pAdapter, D3D_DRIVER_TYPE_UNKNOWN/*DriverTypes[i]*/, NULL, CreateFlags, FeatureLevels, FeatureLevelCount,
-								D3D11_SDK_VERSION, &pD3DDevice, &FeatureLevel, &pD3DImmContext);
-
-		//if (hr == E_INVALIDARG)
-		//{
-		//	// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
-		//	hr = D3D11CreateDevice(	pAdapter, DriverTypes[i], NULL, CreateFlags, FeatureLevels + 1, FeatureLevelCount - 1,
-		//							D3D11_SDK_VERSION, &pD3DDevice, &FeatureLevel, &pD3DImmContext);
-		//}
-
-	//	if (SUCCEEDED(hr)) break;
+	//	// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
+	//	hr = D3D11CreateDevice(	pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, CreateFlags, FeatureLevels + 1, FeatureLevelCount - 1,
+	//							D3D11_SDK_VERSION, &pD3DDevice, &FeatureLevel, &pD3DImmContext);
 	//}
 
 	pAdapter->Release();
@@ -99,6 +97,8 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber)
 		FAIL;
 	}
 
+	if (AdapterID == 0) Type = GPU_Hardware; //???else?
+
 	Sys::Log("Device created: %s, feature level %d\n", "HAL", (int)FeatureLevel);
 
 	OK;
@@ -106,35 +106,6 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber)
 ///////////////
 
 	/*
-
-    // Create depth stencil texture
-    D3D11_TEXTURE2D_DESC descDepth;
-    ZeroMemory( &descDepth, sizeof(descDepth) );
-    descDepth.Width = width;
-    descDepth.Height = height;
-    descDepth.MipLevels = 1;
-    descDepth.ArraySize = 1;
-    descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    descDepth.SampleDesc.Count = 1;
-    descDepth.SampleDesc.Quality = 0;
-    descDepth.Usage = D3D11_USAGE_DEFAULT;
-    descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    descDepth.CPUAccessFlags = 0;
-    descDepth.MiscFlags = 0;
-    hr = g_pd3dDevice->CreateTexture2D( &descDepth, nullptr, &g_pDepthStencil );
-    if( FAILED( hr ) )
-        return hr;
-
-    // Create the depth stencil view
-    D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
-    ZeroMemory( &descDSV, sizeof(descDSV) );
-    descDSV.Format = descDepth.Format;
-    descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    descDSV.Texture2D.MipSlice = 0;
-    hr = g_pd3dDevice->CreateDepthStencilView( g_pDepthStencil, &descDSV, &g_pDepthStencilView );
-    if( FAILED( hr ) )
-        return hr;
-
     g_pImmediateContext->OMSetRenderTargets( 1, &g_pRenderTargetView, g_pDepthStencilView );
 
     // Setup the viewport
@@ -330,49 +301,26 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow)
+DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
 	CArray<CD3D11SwapChain>::CIterator ItSC = SwapChains.Begin();
 	for (; ItSC != SwapChains.End(); ++ItSC)
 		if (!ItSC->IsValid()) break;
-
-	//if (ItSC == SwapChains.End() && SwapChains.GetCount() >= MaxSwapChainCount) return ERR_MAX_SWAP_CHAIN_COUNT_EXCEEDED;
 
 	Sys::COSWindow* pWnd = pWindow; //???the same as for D3D9? - pWindow ? pWindow : D3D11DrvFactory->GetFocusWindow();
 	n_assert(pWnd);
 
 	//???check all the swap chains not to use this window?
 
-	//!!!DUPLICATE CODE! D3D9!
-	// Zero means matching window or display size.
-	// But if at least one of these values specified, we should adjst window size.
-	// A child window is an exception, we don't want rederer to resize it,
-	// so we force a backbuffer size to a child window size.
-	UINT BBWidth = Desc.BackBufferWidth, BBHeight = Desc.BackBufferHeight;
-	if (BBWidth > 0 || BBHeight > 0)
-	{
-		if (pWnd->IsChild())
-		{
-			BBWidth = pWnd->GetWidth();
-			BBHeight = pWnd->GetHeight();
-		}
-		else
-		{
-			Data::CRect WindowRect = pWnd->GetRect();
-			if (BBWidth > 0) WindowRect.W = BBWidth;
-			else BBWidth = WindowRect.W;
-			if (BBHeight > 0) WindowRect.H = BBHeight;
-			else BBHeight = WindowRect.H;
-			pWnd->SetRect(WindowRect);
-		}
-	}
+	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
+	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
 
 	//!!!if VSync, use triple buffering, else double!
 	//!!!no VSync when windowed can cause jerking at low frame rates!
 
 	DXGI_SWAP_CHAIN_DESC SCDesc = { 0 };
 
-	switch (Desc.SwapMode)
+	switch (SwapChainDesc.SwapMode)
 	{
 		case SwapMode_CopyPersist:	SCDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL; break;
 		//case SwapMode_FlipPersist:	// DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL, starting from Win8, min 2 backbuffers
@@ -385,7 +333,7 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindo
 	SCDesc.BufferDesc.Format = DXGI_FORMAT_UNKNOWN; //!!!just to try default for windowed! GetDesktopFormat()?! //DXGI_FORMAT_R8G8B8A8_UNORM; //???use SRGB?
 	SCDesc.BufferDesc.RefreshRate.Numerator = 0;
 	SCDesc.BufferDesc.RefreshRate.Denominator = 0;
-	SCDesc.BufferCount = Desc.BackBufferCount; //!!! + 1 if front buffer must be included!
+	SCDesc.BufferCount = SwapChainDesc.BackBufferCount; //!!! + 1 if front buffer must be included!
 	SCDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	SCDesc.Windowed = TRUE; // Recommended, use SwitchToFullscreen()
 	SCDesc.OutputWindow = pWnd->GetHWND();
@@ -444,7 +392,8 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindo
 
 	if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 
-	ItSC->Desc = Desc;
+	//!!!init RT!
+	ItSC->Desc = SwapChainDesc;
 	ItSC->pSwapChain = pSwapChain;
 	ItSC->TargetWindow = pWnd;
 	ItSC->LastWindowRect = pWnd->GetRect();
@@ -480,9 +429,11 @@ bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, uns
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
-	if (!Width) Width = SC.Desc.BackBufferWidth;
-	if (!Height) Height = SC.Desc.BackBufferHeight;
-	if (SC.Desc.BackBufferWidth == Width && SC.Desc.BackBufferHeight == Height) OK;
+	const CRenderTargetDesc& BackBufDesc = SC.BackBufferRT->GetDesc();
+
+	if (!Width) Width = BackBufDesc.Width;
+	if (!Height) Height = BackBufDesc.Height;
+	if (BackBufDesc.Width == Width && BackBufDesc.Height == Height) OK;
 
 	//???for child window, assert that size passed is a window size?
 
@@ -494,8 +445,10 @@ bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, uns
 	//or clear only contexts that use this swap chain
 	//SC.pSwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0); //!!!swap chain flags as at creation!
 
-	SC.Desc.BackBufferWidth = Width;
-	SC.Desc.BackBufferHeight = Height;
+	//!!!update RT!
+	//SC.Desc.BackBufferWidth = Width;
+	//SC.Desc.BackBufferHeight = Height;
+	//!!update DS!
 
 	OK;
 }
@@ -504,7 +457,7 @@ bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, uns
 bool CD3D11GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay, const CDisplayMode* pMode)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
-	if (pDisplay && Adapter != pDisplay->GetAdapterID()) FAIL;
+	if (pDisplay && AdapterID != pDisplay->GetAdapterID()) FAIL;
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
@@ -525,6 +478,12 @@ bool CD3D11GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWi
 bool CD3D11GPUDriver::IsFullscreen(DWORD SwapChainID) const
 {
 	return SwapChainExists(SwapChainID) && SwapChains[SwapChainID].IsFullscreen();
+}
+//---------------------------------------------------------------------
+
+PRenderTarget CD3D11GPUDriver::GetSwapChainRenderTarget(DWORD SwapChainID) const
+{
+	return SwapChainExists(SwapChainID) ? SwapChains[SwapChainID].BackBufferRT : PRenderTarget();
 }
 //---------------------------------------------------------------------
 
@@ -601,6 +560,41 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 	RenderStates.Add(RS);
 
 	return RS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
+{
+	/*
+    // Create depth stencil texture
+    D3D11_TEXTURE2D_DESC descDepth;
+    ZeroMemory( &descDepth, sizeof(descDepth) );
+    descDepth.Width = width;
+    descDepth.Height = height;
+    descDepth.MipLevels = 1;
+    descDepth.ArraySize = 1;
+    descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    descDepth.SampleDesc.Count = 1;
+    descDepth.SampleDesc.Quality = 0;
+    descDepth.Usage = D3D11_USAGE_DEFAULT;
+    descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    descDepth.CPUAccessFlags = 0;
+    descDepth.MiscFlags = 0;
+    hr = g_pd3dDevice->CreateTexture2D( &descDepth, nullptr, &g_pDepthStencil );
+    if( FAILED( hr ) )
+        return hr;
+
+    // Create the depth stencil view
+    D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+    ZeroMemory( &descDSV, sizeof(descDSV) );
+    descDSV.Format = descDepth.Format;
+    descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    descDSV.Texture2D.MipSlice = 0;
+    hr = g_pd3dDevice->CreateDepthStencilView( g_pDepthStencil, &descDSV, &g_pDepthStencilView );
+    if( FAILED( hr ) )
+        return hr;
+	*/
+	return NULL;
 }
 //---------------------------------------------------------------------
 

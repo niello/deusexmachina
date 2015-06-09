@@ -12,15 +12,7 @@
 #define N_XRGB(r, g, b)				N_ARGB(0xff, r, g, b)
 #define N_COLORVALUE(r, g, b, a)	N_RGBA((uint)((r)*255.f), (uint)((g)*255.f), (uint)((b)*255.f), (uint)((a)*255.f))
 
-#define DEM_D3D_DEBUG (0)
-#define DEM_D3D_USENVPERFHUD (0)
 //#define DEM_USE_D3DX9
-
-#if DEM_D3D_USENVPERFHUD
-#define DEM_D3D_DEVICETYPE D3DDEVTYPE_REF
-#else
-#define DEM_D3D_DEVICETYPE D3DDEVTYPE_HAL
-#endif
 
 typedef enum _D3DFORMAT D3DFORMAT;
 typedef D3DFORMAT EPixelFormat;

@@ -22,6 +22,8 @@
 //two different samplers can sample one texture
 //D3D11: ???
 
+//!!!can control wireframe here, for D3D11 can store second rasterizer state block!
+
 namespace Render
 {
 

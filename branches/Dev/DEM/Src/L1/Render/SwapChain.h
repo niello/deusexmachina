@@ -2,24 +2,24 @@
 #ifndef __DEM_L1_RENDER_SWAP_CHAIN_H__
 #define __DEM_L1_RENDER_SWAP_CHAIN_H__
 
-//#include <Render/DisplayMode.h>
-#include <Render/RenderTarget.h>
+//#include <Render/RenderTarget.h>
 #include <Data/Flags.h>
 #include <Data/Rect.h>
 
 // Swap chain is a set of a front buffer and one or more back buffers. GPU device renders into a
 // back buffer and presents it to a display (fullscreen) or a desktop (windowed). Presented back
 // buffer becomes a front buffer, and a former front buffer becomes the last back buffer, and so on.
-// This header contains definitions for a swap chain description, as long as swap chain classes.
+// Inherit from CSwapChain to create API-specific implementationsþ
 
 namespace Sys
 {
-	typedef Ptr<class COSWindow> POSWindow; //???need to make window RefCounted?
+	typedef Ptr<class COSWindow> POSWindow;
 }
 
 namespace Render
 {
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
+typedef Ptr<class CRenderTarget> PRenderTarget;
 
 //!!!other flags, presentation and not
 enum ESwapChainFlags
@@ -38,17 +38,16 @@ enum ESwapMode
 	SwapMode_FlipPersist	// Flip buffers, persist back buffer contents
 };
 
+// Buffer size, format and MSAA is described with CRenderTargetDesc
 struct CSwapChainDesc
 {
 	Data::CFlags		Flags;
 	ESwapMode			SwapMode;
 	DWORD				BackBufferCount;
-	EPixelFormat		DepthStencilFormat;
 
 	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync) {}
 };
 
-// Inherit from this class to create API-specific implementations
 class CSwapChain
 {
 public:
@@ -58,7 +57,7 @@ public:
 	//CDisplayMode			DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
 	CSwapChainDesc			Desc;
 	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
-	PRenderTarget			RenderTarget;
+	PRenderTarget			BackBufferRT;
 
 	//???need? what about other statistics?
 	DWORD					FrameID;

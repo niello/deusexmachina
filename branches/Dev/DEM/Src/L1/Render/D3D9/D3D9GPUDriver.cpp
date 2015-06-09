@@ -10,6 +10,18 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9GPUDriver, 'D9GD', Render::CGPUDriver);
 
+bool CD3D9GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
+{
+	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;
+
+	n_assert(AdapterID != Adapter_AutoSelect || Type != GPU_AutoSelect);
+	n_assert(AdapterID == Adapter_AutoSelect || D3D9DrvFactory->AdapterExists(AdapterID));
+
+	Type = DriverType; // Cache requested value for further initialization
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
 	if (!pD3DDevice) FAIL;
@@ -50,12 +62,6 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
 	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 	pD3DDevice->SetRenderState(D3DRS_FILLMODE, /*Wireframe ? D3DFILL_WIREFRAME :*/ D3DFILL_SOLID);
-
-	//!!!only to decide whether to clear stencil! clear if current DS surface includes stencil bits
-	//???!!!RT must not have embedded DS surface, it is a separate class!
-	//so there is no need in this field!
-	//CurrDepthStencilFormat =
-	//	D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
 
 	if (D3DPresentParams.Windowed == TRUE)
 	{
@@ -139,7 +145,7 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
 		case Caps_VSTex_L16:
 			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
-																				DEM_D3D_DEVICETYPE,
+																				GetD3DDriverType(Type),
 																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
 																				D3DUSAGE_QUERY_VERTEXTEXTURE,
 																				D3DRTYPE_TEXTURE,
@@ -177,15 +183,15 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 
 	D3DPresentParams.hDeviceWindow = pWindow->GetHWND();
 	D3DPresentParams.BackBufferCount = BackBufferCount; //!!!N3 always sets 1 in windowed mode! why?
-	D3DPresentParams.EnableAutoDepthStencil = TRUE;
-	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_D24S8; // D3DFMT_D32 if no need in stencil
+	D3DPresentParams.EnableAutoDepthStencil = FALSE;
+	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
 
 	// D3DPRESENT_INTERVAL_ONE - as _DEFAULT, but improves VSync quality at a little cost of processing time (uses another timer)
 	D3DPresentParams.PresentationInterval = Desc.Flags.Is(SwapChain_VSync) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
 	D3DPresentParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
 
-#if DEM_D3D_DEBUG
+#if DEM_RENDER_DEBUG
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
 #endif
 }
@@ -207,9 +213,10 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 	}
 	else
 	{
+		const CRenderTargetDesc& BBDesc = SC.BackBufferRT->GetDesc();
 		D3DPresentParams.Windowed = TRUE;
-		D3DPresentParams.BackBufferWidth = SC.Desc.BackBufferWidth;
-		D3DPresentParams.BackBufferHeight = SC.Desc.BackBufferHeight;
+		D3DPresentParams.BackBufferWidth = BBDesc.Width;
+		D3DPresentParams.BackBufferHeight = BBDesc.Height;
 		D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 	}
 
@@ -217,11 +224,25 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 }
 //---------------------------------------------------------------------
 
+D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
+{
+	switch (DriverType)
+	{
+		case GPU_AutoSelect:	Sys::Error("CD3D9GPUDriver::GetD3DDriverType() > GPU_AutoSelect isn't an actual GPU driver type"); return D3DDEVTYPE_HAL;
+		case GPU_Hardware:		return D3DDEVTYPE_HAL;
+		case GPU_Reference:		return D3DDEVTYPE_REF;
+		case GPU_Software:		return D3DDEVTYPE_SW;
+		case GPU_Null:			return D3DDEVTYPE_NULLREF;
+		default:				Sys::Error("CD3D9GPUDriver::GetD3DDriverType() > invalid GPU driver type"); return D3DDEVTYPE_HAL;
+	};
+}
+//---------------------------------------------------------------------
+
 //???bool Windowed param?
 void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat,
 									  D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
 {
-#if DEM_D3D_DEBUG
+#if DEM_RENDER_DEBUG
 	OutType = D3DMULTISAMPLE_NONE;
 	OutQuality = 0;
 #else
@@ -235,7 +256,7 @@ void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3D
 
 	DWORD QualLevels = 0;
 	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
-																			DEM_D3D_DEVICETYPE, //???store as field per device driver?
+																			GetD3DDriverType(Type),
 																			RTFormat,
 																			FALSE,
 																			OutType,
@@ -253,7 +274,7 @@ void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3D
 	if (DSFormat == D3DFMT_UNKNOWN) return;
 
 	hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
-																	DEM_D3D_DEVICETYPE, //???store as field per device driver?
+																	GetD3DDriverType(Type),
 																	DSFormat,
 																	FALSE,
 																	OutType,
@@ -269,98 +290,60 @@ void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3D
 }
 //---------------------------------------------------------------------
 
-// If device exists, creates additional swap chain. If device not exist, creates a device with an implicit swap chain.
-DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow)
+bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams)
 {
 	IDirect3D9* pD3D9 = D3D9DrvFactory->GetDirect3D9();
 
-#if DEM_D3D_USENVPERFHUD
-	Sys::Error("IMPLEMENT ME!!! NVPerfHUD.");
-//for (UINT CurrAdapter = 0; CurrAdapter < pD3D9->GetAdapterCount(); ++CurrAdapter) 
-//{ 
-//	D3DADAPTER_IDENTIFIER9 Identifier;
-//	HRESULT Res = pD3D9->GetAdapterIdentifier(CurrAdapter, 0, &Identifier);
-//	if (strstr(Identifier.Description, "PerfHUD") != 0)
-//	{
-//		Adapter = CurrAdapter;
-//		DeviceType = D3DDEVTYPE_REF;
-//		break;
-//	}
-//} 
-#endif
-
-	if (D3D9DrvFactory->AdapterExists(Adapter))
-	{
-		Sys::Error("Inexistent adapter specified on D3D9 swap chain creation!\n");
-		return ERR_CREATION_ERROR;
-	}
+	D3DDEVTYPE D3DDriverType = GetD3DDriverType(CurrDriverType);
 
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
-	n_assert(SUCCEEDED(pD3D9->GetDeviceCaps(Adapter, DEM_D3D_DEVICETYPE, &D3DCaps)));
+	n_assert(SUCCEEDED(pD3D9->GetDeviceCaps(CurrAdapterID, D3DDriverType, &D3DCaps)));
 
+#if DEM_RENDER_DEBUG
+	DWORD BhvFlags = D3DCREATE_FPU_PRESERVE | D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+#else
+	DWORD BhvFlags = (D3DCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) ?
+		D3DCREATE_HARDWARE_VERTEXPROCESSING :
+		D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+#endif
+
+	// NB: May fail if can't create requested number of backbuffers
+	HRESULT hr = pD3D9->CreateDevice(CurrAdapterID,
+									D3DDriverType,
+									D3D9DrvFactory->GetFocusWindow()->GetHWND(),
+									BhvFlags,
+									&D3DPresentParams,
+									&pD3DDevice);
+
+	if (FAILED(hr))
+	{
+		//!!!DX9! Sys::Error("Failed to create Direct3D9 device object: %s!\n", DXGetErrorString(hr));
+		Sys::Log("Failed to create Direct3D9 device object!\n");
+		FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// If device exists, creates additional swap chain. If device does not exist, creates a device with an implicit swap chain.
+DWORD CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
+{
 	Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
 	n_assert(pWnd);
 
 	//???check all the swap chains not to use this window?
 
-	// Zero means matching window or display size.
-	// But if at least one of these values specified, we should adjst window size.
-	// A child window is an exception, we don't want rederer to resize it,
-	// so we force a backbuffer size to a child window size.
-	UINT BBWidth = Desc.BackBufferWidth, BBHeight = Desc.BackBufferHeight;
-	if (BBWidth > 0 || BBHeight > 0)
-	{
-		if (pWnd->IsChild())
-		{
-			BBWidth = pWnd->GetWidth();
-			BBHeight = pWnd->GetHeight();
-		}
-		else
-		{
-			Data::CRect WindowRect = pWnd->GetRect();
-			if (BBWidth > 0) WindowRect.W = BBWidth;
-			else BBWidth = WindowRect.W;
-			if (BBHeight > 0) WindowRect.H = BBHeight;
-			else BBHeight = WindowRect.H;
-			pWnd->SetRect(WindowRect);
-		}
-	}
+	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
+	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
 
-	//???why it is better to create windowed swap chain and then turn it fullscreen? except that it uses less arguments on creation.
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(Desc, pWnd, D3DPresentParams);
+	FillD3DPresentParams(SwapChainDesc, pWnd, D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
 	D3DPresentParams.BackBufferWidth = BBWidth;
 	D3DPresentParams.BackBufferHeight = BBHeight;
 	D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
-
-	// Make sure the device supports a depth buffer specified
-	//???does support D3DFMT_UNKNOWN? if not, need to explicitly determine adapter format.
-	HRESULT hr = pD3D9->CheckDeviceFormat(	Adapter,
-											DEM_D3D_DEVICETYPE,
-											D3DPresentParams.BackBufferFormat,
-											D3DUSAGE_DEPTHSTENCIL,
-											D3DRTYPE_SURFACE,
-											D3DPresentParams.AutoDepthStencilFormat);
-	if (FAILED(hr))
-	{
-		Sys::Error("Rendering device doesn't support D24S8 depth buffer!\n");
-		return ERR_CREATION_ERROR;
-	}
-
-	// Check that the depth buffer format is compatible with the backbuffer format
-	//???does support D3DFMT_UNKNOWN? if not, need to explicitly determine adapter (and also backbuffer) format.
-	hr = pD3D9->CheckDepthStencilMatch(	Adapter,
-										DEM_D3D_DEVICETYPE,
-										D3DPresentParams.BackBufferFormat,
-										D3DPresentParams.BackBufferFormat,
-										D3DPresentParams.AutoDepthStencilFormat);
-	if (FAILED(hr))
-	{
-		Sys::Error("Backbuffer format is not compatible with D24S8 depth buffer!\n");
-		return ERR_CREATION_ERROR;
-	}
 
 	CArray<CD3D9SwapChain>::CIterator ItSC = NULL;
 
@@ -369,10 +352,8 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 		// As device exists, implicit swap chain exists too, so create additional one.
 		// NB: additional swap chains work only in windowed mode
 
-		//???must specify unique window or can render into a focus window?
-
 		IDirect3DSwapChain9* pD3DSwapChain = NULL;
-		hr = pD3DDevice->CreateAdditionalSwapChain(&D3DPresentParams, &pD3DSwapChain);
+		HRESULT hr = pD3DDevice->CreateAdditionalSwapChain(&D3DPresentParams, &pD3DSwapChain);
 
 		if (FAILED(hr))
 		{
@@ -383,11 +364,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 		for (ItSC = SwapChains.Begin(); ItSC != SwapChains.End(); ++ItSC)
 			if (!ItSC->IsValid()) break;
 
-		if (ItSC == SwapChains.End())
-		{
-			//if (SwapChains.GetCount() >= MaxSwapChainCount) return ERR_MAX_SWAP_CHAIN_COUNT_EXCEEDED;
-			ItSC = SwapChains.Reserve(1);
-		}
+		if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 	
 		ItSC->pSwapChain = pD3DSwapChain;
 	}
@@ -395,54 +372,57 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow
 	{
 		// There is no swap chain nor device, create D3D9 device with an implicit swap chain
 
-		n_assert(!SwapChainExists(0));
+		n_assert(!SwapChains.GetCount());
 
-#if DEM_D3D_DEBUG
-		DWORD BhvFlags = D3DCREATE_FPU_PRESERVE | D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-#else
-		DWORD BhvFlags = (D3DCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) ?
-			D3DCREATE_HARDWARE_VERTEXPROCESSING :
-			D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-#endif
-
-		// NB: May fail if can't create requested number of backbuffers
-		hr = pD3D9->CreateDevice(Adapter,
-								DEM_D3D_DEVICETYPE,
-								D3D9DrvFactory->GetFocusWindow()->GetHWND(),
-								BhvFlags,
-								&D3DPresentParams,
-								&pD3DDevice);
-
-		if (FAILED(hr))
+		bool DeviceCreated = false;
+		if (AdapterID == Adapter_AutoSelect)
 		{
-			//!!!DX9! Sys::Error("Failed to create Direct3D9 device object: %s!\n", DXGetErrorString(hr));
-			Sys::Error("Failed to create Direct3D9 device object!\n");
-			return ERR_CREATION_ERROR;
+			DWORD AdapterCount = D3D9DrvFactory->GetAdapterCount();
+			for (DWORD CurrAdapterID = 0; CurrAdapterID < AdapterCount; ++CurrAdapterID)
+			{
+				DeviceCreated = CreateD3DDevice(CurrAdapterID, Type, D3DPresentParams);
+				if (DeviceCreated)
+				{
+					AdapterID = CurrAdapterID;
+					break;
+				}
+			}
 		}
+		else if (Type == GPU_AutoSelect)
+		{
+			DeviceCreated = CreateD3DDevice(AdapterID, GPU_Hardware, D3DPresentParams);
+			if (DeviceCreated) Type = GPU_Hardware;
+			else
+			{
+				DeviceCreated = CreateD3DDevice(AdapterID, GPU_Reference, D3DPresentParams);
+				if (DeviceCreated) Type = GPU_Reference;
+			}
+		}
+		else DeviceCreated = CreateD3DDevice(AdapterID, Type, D3DPresentParams);
+
+		if (!DeviceCreated) return ERR_CREATION_ERROR;
 
 		// Can setup W-buffer: D3DCaps.RasterCaps | D3DPRASTERCAPS_WBUFFER -> D3DZB_USEW
 
 		pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
 		pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-		pD3DDevice->SetRenderState(D3DRS_FILLMODE, /*Wireframe ? D3DFILL_WIREFRAME :*/ D3DFILL_SOLID);
+		pD3DDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
 
 		ItSC = SwapChains.IteratorAt(0); 
 		ItSC->pSwapChain = NULL;
 	}
 
-	//!!!only to decide whether to clear stencil! clear if current DS surface includes stencil bits
-	//???!!!RT must not have embedded DS surface, it is a separate class!
-	//so there is no need in this field!
-	//CurrDepthStencilFormat =
-	//	D3DPresentParams.EnableAutoDepthStencil ?  D3DPresentParams.AutoDepthStencilFormat : D3DFMT_UNKNOWN;
+	//pRTSurface = NULL;
+	//n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
 
-	ItSC->Desc = Desc;
+	//!!!init render target!
+	ItSC->Desc = SwapChainDesc;
 	ItSC->TargetWindow = pWnd;
 	ItSC->LastWindowRect = pWnd->GetRect();
 
 	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
 	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
-	if (Desc.Flags.Is(SwapChain_AutoAdjustSize))
+	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
 		pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
 
 	return SwapChains.IndexOf(ItSC);
@@ -475,8 +455,9 @@ bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsi
 	if (!SwapChainExists(SwapChainID)) FAIL;
 
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
+	const CRenderTargetDesc& BackBufDesc = SC.BackBufferRT->GetDesc();
 
-	if ((!Width || SC.Desc.BackBufferWidth == Width) && (!Height || SC.Desc.BackBufferHeight == Height)) OK;
+	if ((!Width || BackBufDesc.Width == Width) && (!Height || BackBufDesc.Height == Height)) OK;
 
 	//???for child window, assert that size passed is a window size?
 
@@ -510,8 +491,11 @@ bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsi
 	}
 	else if (!Reset(D3DPresentParams)) FAIL;
 
-	SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
-	SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+	//!!!reinitialize RT!
+	//SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
+	//SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+
+	//!!resize DS!
 
 	OK;
 }
@@ -520,7 +504,7 @@ bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsi
 bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay, const CDisplayMode* pMode)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
-	if (pDisplay && Adapter != pDisplay->GetAdapterID()) FAIL;
+	if (pDisplay && AdapterID != pDisplay->GetAdapterID()) FAIL;
 
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
@@ -559,8 +543,11 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 
 	if (!Reset(D3DPresentParams)) FAIL;
 
-	SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
-	SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+	//!!!reinitialize RT!
+	//SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
+	//SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+
+	//!!!resize DS!
 
 	SC.pTargetDisplay = pDisplay;
 	SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &Sub_OnPaint);
@@ -601,8 +588,11 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 
 	SC.TargetWindow->SetRect(SC.LastWindowRect);
 
-	SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
-	SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+	//!!!reinitialize RT!
+	//SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
+	//SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
+
+	//!!!resize DS!
 
 	SC.pTargetDisplay = NULL;
 
@@ -615,6 +605,12 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 bool CD3D9GPUDriver::IsFullscreen(DWORD SwapChainID) const
 {
 	return SwapChainExists(SwapChainID) && SwapChains[SwapChainID].IsFullscreen();
+}
+//---------------------------------------------------------------------
+
+PRenderTarget CD3D9GPUDriver::GetSwapChainRenderTarget(DWORD SwapChainID) const
+{
+	return SwapChainExists(SwapChainID) ? SwapChains[SwapChainID].BackBufferRT : PRenderTarget();
 }
 //---------------------------------------------------------------------
 
@@ -656,6 +652,43 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 	//while (S_FALSE == gpuSyncQuery[frameId % numSyncQueries]->GetData(NULL, 0, D3DGETDATA_FLUSH)) ;
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
+{
+	/*
+	if (D3DPresentParams.EnableAutoDepthStencil)
+	{
+		// Make sure the device supports a depth buffer specified
+		//???does support D3DFMT_UNKNOWN? if not, need to explicitly determine adapter format.
+		hr = pD3D9->CheckDeviceFormat(	AdapterID,
+										D3DDriverType,
+										D3DPresentParams.BackBufferFormat,
+										D3DUSAGE_DEPTHSTENCIL,
+										D3DRTYPE_SURFACE,
+										D3DPresentParams.AutoDepthStencilFormat);
+		if (FAILED(hr))
+		{
+			Sys::Log("Rendering device doesn't support D24S8 depth buffer!\n");
+			return ERR_CREATION_ERROR;
+		}
+
+		// Check that the depth buffer format is compatible with the backbuffer format
+		//???does support D3DFMT_UNKNOWN? if not, need to explicitly determine adapter (and also backbuffer) format.
+		hr = pD3D9->CheckDepthStencilMatch(	AdapterID,
+											D3DDriverType,
+											D3DPresentParams.BackBufferFormat,
+											D3DPresentParams.BackBufferFormat,
+											D3DPresentParams.AutoDepthStencilFormat);
+		if (FAILED(hr))
+		{
+			Sys::Log("Backbuffer format is not compatible with D24S8 depth buffer!\n");
+			return ERR_CREATION_ERROR;
+		}
+	}
+	*/
+	return NULL;
 }
 //---------------------------------------------------------------------
 

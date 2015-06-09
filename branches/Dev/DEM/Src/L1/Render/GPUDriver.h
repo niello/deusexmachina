@@ -2,7 +2,8 @@
 #ifndef __DEM_L1_RENDER_GPU_DRIVER_H__
 #define __DEM_L1_RENDER_GPU_DRIVER_H__
 
-#include <Core/Object.h>
+//#include <Core/Object.h>
+#include <Render/RenderTarget.h>
 #include <Render/SwapChain.h>
 #include <Render/VertexComponent.h>
 #include <Data/Dictionary.h>
@@ -38,24 +39,16 @@ class CDisplayMode;
 typedef Ptr<class CVertexLayout> PVertexLayout;
 typedef Ptr<class CVertexBuffer> PVertexBuffer;
 typedef Ptr<class CIndexBuffer> PIndexBuffer;
+typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 typedef Ptr<class CRenderState> PRenderState;
 typedef Ptr<class CShader> PShader;
 
 class CGPUDriver: public Core::CObject
 {
-public:
-
-	//!!!to variables!
-	//enum
-	//{
-	//	MaxTextureStageCount = 8, //???16?
-	//	MaxRenderTargetCount = 4,
-	//	MaxVertexStreamCount = 2 // Not sure why 2, N3 value
-	//};
-
 protected:
 
 	DWORD							AdapterID;
+	EGPUDriverType					Type;
 
 	CDict<CStrID, PVertexLayout>	VertexLayouts;
 
@@ -63,6 +56,13 @@ protected:
 	//???resource manager capabilities for VRAM resources? at least can handle OnLost-OnReset right here.
 
 	/*
+	//!!!to variables (caps)!
+	//enum
+	//{
+	//	MaxTextureStageCount = 8, //???16?
+	//	MaxRenderTargetCount = 4,
+	//	MaxVertexStreamCount = 2 // Not sure why 2, N3 value
+	//};
 	PRenderTarget					CurrRT[MaxRenderTargetCount];
 	PVertexBuffer					CurrVB[MaxVertexStreamCount];
 	DWORD							CurrVBOffset[MaxVertexStreamCount];
@@ -82,7 +82,8 @@ protected:
 	//???per-swapchain? put under STATS define?
 	DWORD							PrimsRendered;
 	DWORD							DIPsRendered;
-	
+
+	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UINT& Width, UINT& Height);
 	//virtual PVertexLayout	InternalCreateVertexLayout() = 0;
 	//virtual HShaderParam	CreateShaderVarHandle(const CShaderConstantDesc& Meta) const = 0;
 
@@ -91,37 +92,40 @@ public:
 	CGPUDriver() {}
 	virtual ~CGPUDriver() {}
 
-	virtual bool			Init(DWORD AdapterNumber) { AdapterID = AdapterNumber; OK; }
-	virtual bool			CheckCaps(ECaps Cap) = 0;
+	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
+	virtual bool				CheckCaps(ECaps Cap) = 0;
 
-	virtual DWORD			CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
-	virtual bool			DestroySwapChain(DWORD SwapChainID) = 0;
-	virtual bool			SwapChainExists(DWORD SwapChainID) const = 0;
-	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
-	virtual bool			SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL) = 0;
-	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
-	virtual bool			IsFullscreen(DWORD SwapChainID) const = 0;
-	virtual PRenderTarget	GetSwapChainRenderTarget(DWORD SwapChainID) const = 0;
+	virtual DWORD				CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
+	virtual bool				DestroySwapChain(DWORD SwapChainID) = 0;
+	virtual bool				SwapChainExists(DWORD SwapChainID) const = 0;
+	virtual bool				SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
+	virtual bool				SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL) = 0;
+	virtual bool				ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
+	virtual bool				IsFullscreen(DWORD SwapChainID) const = 0;
+	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const = 0;
+	// GetSwapChainDesc(), GetBackBufferDesc()
 	//!!!get info, change info (or only recreate?)
-	virtual bool			Present(DWORD SwapChainID) = 0;
-	bool					PresentBlankScreen(DWORD SwapChainID, DWORD Color);
-	//virtual void			SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
+	virtual bool				Present(DWORD SwapChainID) = 0;
+	bool						PresentBlankScreen(DWORD SwapChainID, DWORD Color);
+	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
 
-	bool					BeginFrame();
-	void					EndFrame();
-	void					Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
-	void					Draw();
+	bool						BeginFrame();
+	void						EndFrame();
+	void						Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
+	void						Draw();
 
-	virtual PVertexBuffer	CreateVertexBuffer() = 0;
-	virtual PIndexBuffer	CreateIndexBuffer() = 0;
-	PVertexLayout			CreateVertexLayout(const CArray<CVertexComponent>& Components /*, CStrID ShaderInputSignature = CStrID::Empty*/);
-	PVertexLayout			GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
-	//virtual PRenderState	CreateRenderState(const Data::CParams& Desc) = 0;
-	PShader					CreateShader(const Data::CParams& Desc);
+	virtual PVertexBuffer		CreateVertexBuffer() = 0;
+	virtual PIndexBuffer		CreateIndexBuffer() = 0;
+	PVertexLayout				CreateVertexLayout(const CArray<CVertexComponent>& Components /*, CStrID ShaderInputSignature = CStrID::Empty*/);
+	PVertexLayout				GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
+	//virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;
+	PShader						CreateShader(const Data::CParams& Desc);
 	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
 	//virtual PTexture				CreateTexture(dimensions, array size, format etc) = 0;
-	virtual PRenderTarget	CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
-	//virtual PDepthStencilBuffer	CreateDepthStencilBuffer(format, msaa etc, bool AllowReadingByShader) = 0;
+	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
+	//!!!another desc struct if can't use as shader input!
+	//!!!can describe as DepthBits & StencilBits, find closest on creation!
+	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) = 0;
 
 	//void					SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	void					SetVertexLayout(CVertexLayout* pVLayout);
@@ -135,6 +139,8 @@ public:
 	//DWORD					GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
 	//DWORD					GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
 	//???or return swap chain info struct?
+
+	EGPUDriverType			GetType() const { return Type; }
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;
