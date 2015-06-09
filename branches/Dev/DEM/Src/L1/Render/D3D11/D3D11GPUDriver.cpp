@@ -2,6 +2,7 @@
 
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11DisplayDriver.h>
+#include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11RenderState.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
@@ -359,11 +360,12 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 	// Instead, use CreateSwapChainForHwnd (c) Docs
 	//!!!can add requirement for a platform update for win 7 and use d3d11.1 + dxgi 1.2 codepath!
 
+	IDXGIFactory1* pDXGIFactory = D3D11DrvFactory->GetDXGIFactory();
 	IDXGISwapChain* pSwapChain = NULL;
-	HRESULT hr = D3D11DrvFactory->GetDXGIFactory()->CreateSwapChain(pD3DDevice, &SCDesc, &pSwapChain);
+	HRESULT hr = pDXGIFactory->CreateSwapChain(pD3DDevice, &SCDesc, &pSwapChain);
 
 	// They say if the first failure was due to wrong BufferCount, DX sets it to the correct value
-	if (FAILED(hr)) hr = D3D11DrvFactory->GetDXGIFactory()->CreateSwapChain(pD3DDevice, &SCDesc, &pSwapChain);
+	if (FAILED(hr)) hr = pDXGIFactory->CreateSwapChain(pD3DDevice, &SCDesc, &pSwapChain);
 
 	if (FAILED(hr))
 	{
@@ -371,32 +373,40 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 		return ERR_CREATION_ERROR;
 	}
 
-/*
-    // Create a render target view
-    ID3D11Texture2D* pBackBuffer = nullptr;
-    hr = g_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), reinterpret_cast<void**>( &pBackBuffer ) );
-    if( FAILED( hr ) )
-        return hr;
-
-    hr = g_pd3dDevice->CreateRenderTargetView( pBackBuffer, nullptr, &g_pRenderTargetView );
-    pBackBuffer->Release();
-    if( FAILED( hr ) )
-        return hr;
-*/
-
-	//!!!depthstencil surface! if requested!
-
-	//If you previously called IDXGIFactory::MakeWindowAssociation, the user can press the Alt-Enter
-	//key combination and DXGI will transition your application between windowed and full-screen mode.
-	//IDXGIFactory::MakeWindowAssociation is recommended, because a standard control mechanism for the user is strongly desired.
+	ID3D11Texture2D* pBackBuffer = NULL;
+	if (FAILED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer))))
+	{
+		pSwapChain->Release();
+		return ERR_CREATION_ERROR;
+	}
+	
+	ID3D11RenderTargetView* pRTV = NULL;
+	hr = pD3DDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRTV);
+	if (FAILED(hr))
+	{
+		pBackBuffer->Release();
+		pSwapChain->Release();
+		return ERR_CREATION_ERROR;
+	}
+	
+	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
+	RT->Create();
+	pBackBuffer->Release();
 
 	if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 
-	//!!!init RT!
-	ItSC->Desc = SwapChainDesc;
-	ItSC->pSwapChain = pSwapChain;
+	ItSC->BackBufferRT = RT.GetUnsafe();
 	ItSC->TargetWindow = pWnd;
 	ItSC->LastWindowRect = pWnd->GetRect();
+	ItSC->pTargetDisplay = NULL;
+	ItSC->Desc = SwapChainDesc;
+	ItSC->pSwapChain = pSwapChain;
+
+	//???!!!
+	//DXGI_MWA_NO_WINDOW_CHANGES - Prevent DXGI from monitoring an applications message queue; this makes DXGI unable to respond to mode changes.
+	//DXGI_MWA_NO_ALT_ENTER - Prevent DXGI from responding to an alt-enter sequence.
+	//DXGI_MWA_NO_PRINT_SCREEN - Prevent DXGI from responding to a print-screen key.
+	//pDXGIFactory->MakeWindowAssociation(pWnd->GetHWND(), );
 
 	return SwapChains.IndexOf(ItSC);
 }

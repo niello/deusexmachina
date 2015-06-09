@@ -10,6 +10,7 @@
 
 struct IDirect3D9;
 typedef enum _D3DFORMAT D3DFORMAT;
+typedef enum _D3DMULTISAMPLE_TYPE D3DMULTISAMPLE_TYPE;
 
 namespace Render
 {
@@ -34,6 +35,7 @@ public:
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
 	static EPixelFormat		D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
 	static int				GetD3DFormatBits(D3DFORMAT D3DFormat);
+	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE MultiSampleType, DWORD MultiSampleQuality);
 
 	bool					Open(Sys::COSWindow* pWindow);
 	void					Close();

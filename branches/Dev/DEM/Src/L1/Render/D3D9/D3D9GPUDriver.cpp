@@ -2,6 +2,7 @@
 
 #include <Render/D3D9/D3D9DriverFactory.h>
 #include <Render/D3D9/D3D9DisplayDriver.h>
+#include <Render/D3D9/D3D9RenderTarget.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
 #include <Core/Factory.h>
@@ -155,11 +156,12 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams)
+void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc,
+										  const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
-	DWORD BackBufferCount = Desc.BackBufferCount ? Desc.BackBufferCount : 1;
+	DWORD BackBufferCount = SwapChainDesc.BackBufferCount ? SwapChainDesc.BackBufferCount : 1;
 
-	switch (Desc.SwapMode)
+	switch (SwapChainDesc.SwapMode)
 	{
 		case SwapMode_CopyPersist:	D3DPresentParams.SwapEffect = BackBufferCount > 1 ? D3DSWAPEFFECT_FLIP : D3DSWAPEFFECT_COPY; break;
 		//case SwapMode_FlipPersist:	// D3DSWAPEFFECT_FLIPEX, but it is available only in D3D9Ex
@@ -169,10 +171,9 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 
 	if (D3DPresentParams.SwapEffect == D3DSWAPEFFECT_DISCARD)
 	{
-		// It is recommended to use non-MSAA swap chain, render to MSAA RT and then resolve it to the back buffer
-		//???support MSAA or enforce separate MSAA RT?
-		D3DPresentParams.MultiSampleType = D3DMULTISAMPLE_NONE;
-		D3DPresentParams.MultiSampleQuality = 0;
+		// NB: It is recommended to use non-MSAA swap chain, render to MSAA RT and then resolve it to the back buffer
+		GetD3DMSAAParams(BackBufferDesc.MSAAQuality, CD3D9DriverFactory::PixelFormatToD3DFormat(BackBufferDesc.Format),
+						 D3DFMT_UNKNOWN, D3DPresentParams.MultiSampleType, D3DPresentParams.MultiSampleQuality);
 	}
 	else
 	{
@@ -187,7 +188,7 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
 
 	// D3DPRESENT_INTERVAL_ONE - as _DEFAULT, but improves VSync quality at a little cost of processing time (uses another timer)
-	D3DPresentParams.PresentationInterval = Desc.Flags.Is(SwapChain_VSync) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
+	D3DPresentParams.PresentationInterval = SwapChainDesc.Flags.Is(SwapChain_VSync) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
 	D3DPresentParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
 
@@ -197,9 +198,9 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys:
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams)
+bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
-	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
+	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, SC.TargetWindow, D3DPresentParams);
 
 	if (SC.IsFullscreen())
 	{
@@ -329,6 +330,8 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 // If device exists, creates additional swap chain. If device does not exist, creates a device with an implicit swap chain.
 DWORD CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
+	n_assert2(!BackBufferDesc.UseAsShaderInput, "D3D9 backbuffer reading in shaders currently not supported!");
+
 	Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
 	n_assert(pWnd);
 
@@ -338,7 +341,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, c
 	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SwapChainDesc, pWnd, D3DPresentParams);
+	FillD3DPresentParams(BackBufferDesc, SwapChainDesc, pWnd, D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
 	D3DPresentParams.BackBufferWidth = BBWidth;
@@ -412,13 +415,16 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, c
 		ItSC->pSwapChain = NULL;
 	}
 
-	//pRTSurface = NULL;
-	//n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
+	IDirect3DSurface9* pRTSurface = NULL;
+	n_assert(SUCCEEDED(pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
+	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
+	RT->Create(pRTSurface);
 
-	//!!!init render target!
-	ItSC->Desc = SwapChainDesc;
+	ItSC->BackBufferRT = RT.GetUnsafe();
 	ItSC->TargetWindow = pWnd;
 	ItSC->LastWindowRect = pWnd->GetRect();
+	ItSC->pTargetDisplay = NULL;
+	ItSC->Desc = SwapChainDesc;
 
 	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
 	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
@@ -529,7 +535,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
+	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, SC.TargetWindow, D3DPresentParams);
 
 	D3DPresentParams.Windowed = FALSE;
 	D3DPresentParams.BackBufferWidth = pMode->Width;
@@ -577,7 +583,7 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SC.Desc, SC.TargetWindow, D3DPresentParams);
+	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, SC.TargetWindow, D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
 	D3DPresentParams.BackBufferWidth = SC.LastWindowRect.W;

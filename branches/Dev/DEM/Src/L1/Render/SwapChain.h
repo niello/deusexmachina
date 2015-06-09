@@ -52,12 +52,12 @@ class CSwapChain
 {
 public:
 
+	PRenderTarget			BackBufferRT;
 	Sys::POSWindow			TargetWindow;	//???to desc?
+	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
 	const CDisplayDriver*	pTargetDisplay;
 	//CDisplayMode			DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
 	CSwapChainDesc			Desc;
-	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
-	PRenderTarget			BackBufferRT;
 
 	//???need? what about other statistics?
 	DWORD					FrameID;
