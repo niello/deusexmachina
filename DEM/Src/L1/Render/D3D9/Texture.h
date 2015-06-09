@@ -4,11 +4,15 @@
 
 #include <Resources/Resource.h>
 #include <Render/GPUResourceDefs.h>
-#include <Render/D3D9Fwd.h>
 #include <Events/EventsFwd.h>
 #include <Data/Type.h>
 
 // Texture resource, usable by renderer
+
+struct IDirect3DBaseTexture9;
+struct IDirect3DTexture9;
+struct IDirect3DVolumeTexture9;
+struct IDirect3DCubeTexture9;
 
 namespace Render
 {
@@ -73,9 +77,7 @@ protected:
 
 public:
 
-	EUsage					Usage;
-	ECPUAccess				Access;
-	//int						SkippedMips;
+	Data::CFlags	Access; //!!!can use as generic flags!
 
 	CTexture(CStrID ID);
 	virtual ~CTexture() { if (IsLoaded()) Unload(); }

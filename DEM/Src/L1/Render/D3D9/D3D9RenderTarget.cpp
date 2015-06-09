@@ -1,43 +1,48 @@
 #include "D3D9RenderTarget.h"
 
-#include <Render/RenderServer.h>
-#include <Events/EventServer.h>
+#include <Render/D3D9/D3D9DriverFactory.h>
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
+#include <d3d9.h>
 
 namespace Render
 {
 
-bool CRenderTarget::CreateDefaultRT()
+bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface)
 {
-	n_assert(!RTTexture.IsValid());
-	//???assert not created? empty texture is not enough!
+	n_assert(pSurface);
 
-	IsDefaultRT = true;
+	D3DSURFACE_DESC RTDesc;
+	if (FAILED(pRTSurface->GetDesc(&RTDesc)) || !(RTDesc.Usage & D3DUSAGE_RENDERTARGET)) FAIL;
 
-	const CDisplayMode& DispMode = RenderSrv->GetDisplay().GetDisplayMode();
-	//float Width = RenderSrv->GetBackBufferWidth();
-	//float Height = RenderSrv->GetBackBufferHeight();
-	//EMSAAQuality MSAA = RenderSrv->GetDisplay().AntiAliasQuality;
-	RTFmt = DispMode.PixelFormat;
+	Desc.Width = RTDesc.Width;
+	Desc.Height = RTDesc.Height;
+	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(RTDesc.Format);
+	Desc.MSAAQuality = CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(RTDesc.MultiSampleType, RTDesc.MultiSampleQuality);
+	Desc.UseAsShaderInput = false; // As no texture associated
 
-	pRTSurface = NULL;
-	n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
-	pDSSurface = NULL;
-	n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->GetDepthStencilSurface(&pDSSurface)));
+	pRTSurface = pSurface;
+	RTTexture = NULL;
 
-	if (pDSSurface)
-	{
-		D3DSURFACE_DESC Desc;
-		memset(&Desc, 0, sizeof(Desc));
-		n_assert(SUCCEEDED(pDSSurface->GetDesc(&Desc)));
-		DSFmt = Desc.Format;
-	}
-	else DSFmt = PixelFormat_Invalid;
-
-	SUBSCRIBE_PEVENT(OnRenderDeviceRelease, CRenderTarget, OnDeviceRelease);
-	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CRenderTarget, OnDeviceLost);
-	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CRenderTarget, OnDeviceReset);
+	//!!!process GPU resources in driver!
+	//SUBSCRIBE_PEVENT(OnRenderDeviceRelease, CRenderTarget, OnDeviceRelease);
+	//SUBSCRIBE_PEVENT(OnRenderDeviceLost, CRenderTarget, OnDeviceLost);
+	//SUBSCRIBE_PEVENT(OnRenderDeviceReset, CRenderTarget, OnDeviceReset);
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CD3D9RenderTarget::Destroy()
+{
+	//!!!process GPU resources in driver!
+	//UNSUBSCRIBE_EVENT(OnRenderDeviceRelease);
+	//UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
+	//UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
+
+	SAFE_RELEASE(pRTSurface);
+	if (RTTexture.IsValid() && RTTexture->IsLoaded()) RTTexture->Unload();
+	RTTexture = NULL;
 }
 //---------------------------------------------------------------------
 
@@ -131,19 +136,6 @@ bool CRenderTarget::Create(CStrID TextureID, EPixelFormat RTFormat, EPixelFormat
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CRenderTarget, OnDeviceReset);
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-void CRenderTarget::Destroy()
-{
-	UNSUBSCRIBE_EVENT(OnRenderDeviceRelease);
-	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
-	UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
-
-	SAFE_RELEASE(pRTSurface);
-	SAFE_RELEASE(pDSSurface); //???what if shared? may AddRef in Create
-	if (RTTexture.IsValid() && RTTexture->IsLoaded()) RTTexture->Unload();
-	RTTexture = NULL;
 }
 //---------------------------------------------------------------------
 

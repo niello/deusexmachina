@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	virtual PTexture			GetShaderResource() const = 0; //???or store PTexture inside always and avoid virtualization here?
+	virtual CTexture*			GetShaderResource() const = 0; //???or store PTexture inside always and avoid virtualization here?
 	//virtual bool CopyToTexture/ResolveToTexture(const CTexture& Dest) const = 0;
 	const CRenderTargetDesc&	GetDesc() const { return Desc; }
 };
