@@ -1,16 +1,16 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_TARGET_H__
-#define __DEM_L1_RENDER_TARGET_H__
+#ifndef __DEM_L1_D3D9_RENDER_TARGET_H__
+#define __DEM_L1_D3D9_RENDER_TARGET_H__
 
 #include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Render/RenderFwd.h>
-#include <Render/D3D9Fwd.h>
 #include <Events/EventsFwd.h>
 
-// A surface render server renders to. Can be used as texture.
-// If resolve texture and RT surface are identical, this class uses one RT texture,
-// else it uses RT surface & resolve texture.
+// D3D9 implementation of a render target. Note that an MSAA target must be created as a
+// render target surface whereas a non-MSAA target can be created from a texture directly.
+
+struct IDirect3DSurface9;
 
 namespace Render
 {
@@ -19,6 +19,9 @@ typedef Ptr<class CTexture> PTexture;
 class CRenderTarget: public Core::CObject
 {
 protected:
+
+	PTexture			RTTexture;
+	IDirect3DSurface9*	pRTSurface;
 
 	bool				IsDefaultRT;		//???flags?
 	bool				ResolveToTexture;	//???flags?
@@ -34,8 +37,6 @@ protected:
 	DWORD				TexW;
 	DWORD				TexH;
 
-	PTexture			RTTexture;
-	IDirect3DSurface9*	pRTSurface;
 	IDirect3DSurface9*	pDSSurface;
 
 	void				GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality);

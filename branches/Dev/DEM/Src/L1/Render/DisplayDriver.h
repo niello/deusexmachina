@@ -33,16 +33,16 @@ public:
 
 protected:
 
-	DWORD			Adapter;
-	DWORD			Output;
+	DWORD			AdapterID;
+	DWORD			OutputID;
 
 public:
 
-	CDisplayDriver(): Adapter(Adapter_None), Output(Output_None) {}
+	CDisplayDriver(): AdapterID(Adapter_None), OutputID(Output_None) {}
 	virtual ~CDisplayDriver() {}
 
-	virtual bool			Init(DWORD AdapterNumber, DWORD OutputNumber) { Adapter = AdapterNumber; Output = OutputNumber; OK; }
-	virtual void			Term() { Adapter = Adapter_None; Output = Output_None; }
+	virtual bool			Init(DWORD AdapterNumber, DWORD OutputNumber) { AdapterID = AdapterNumber; OutputID = OutputNumber; OK; }
+	virtual void			Term() { AdapterID = Adapter_None; OutputID = Output_None; }
 
 	virtual DWORD			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
 	virtual bool			SupportsDisplayMode(const CDisplayMode& Mode) const = 0;
@@ -50,9 +50,9 @@ public:
 	virtual bool			GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const = 0;
 	//???find closest display mode? may be non-virtual with my own algorithm, but DXGI has its own implementation
 
-	DWORD					GetAdapterID() const {return Adapter; }
-	DWORD					GetAdapterOutputID() const {return Output; }
-	bool					IsInitialized() const { return Adapter != Adapter_None; }
+	DWORD					GetAdapterID() const {return AdapterID; }
+	DWORD					GetAdapterOutputID() const {return OutputID; }
+	bool					IsInitialized() const { return AdapterID != Adapter_None; }
 };
 
 typedef Ptr<CDisplayDriver> PDisplayDriver;

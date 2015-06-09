@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_PASS_GEOMETRY_H__
 #define __DEM_L1_RENDER_PASS_GEOMETRY_H__
 
-#include <Render/Pass.h>
+#include <Render/RenderPhase.h>
 #include <Render/Renderer.h>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
@@ -20,7 +20,7 @@ protected:
 // Input:
 // Geometry, lights (if lighting is enabled)
 // Output:
-// Mid-RT or frame RT
+// Mid-RT or frame RT (backbuffer)
 
 // Batch has batch shader (common), shader vars
 // shader feature flags of the batch + batch type + mesh filter

@@ -39,6 +39,7 @@ public:
 
 // Not tested, I copied it from
 // http://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
+//???is usable for non-32-bit flags? if less, will be adjusted with 0 bits, but what if more?
 DWORD CFlags::NumberOfSetBits() const
 {
 	DWORD Tmp = Flags - ((Flags >> 1) & 0x55555555);

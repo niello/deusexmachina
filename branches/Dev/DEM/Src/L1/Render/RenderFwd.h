@@ -8,6 +8,9 @@
 
 namespace Render
 {
+typedef DWORD HShaderParam; // Opaque to user, so its internal meaning can be different for different APIs
+struct CShaderConstantDesc;
+
 const DWORD Adapter_None = (DWORD)-1;
 const DWORD Adapter_Primary = 0;
 const DWORD Adapter_Secondary = 1;

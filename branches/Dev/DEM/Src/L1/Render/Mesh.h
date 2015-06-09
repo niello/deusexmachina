@@ -9,15 +9,15 @@
 #include <Events/EventsFwd.h>
 #include <Math/AABB.h>
 
-// Mesh represents complete geometry information about a 3D model. It stores vertex buffer,
-// index buffer (if required) and a list of primitive groups (also known as mesh subsets).
+// Mesh represents complete geometry information of a 3D model. It stores vertex buffer,
+// optional index buffer and a list of primitive groups (also known as mesh subsets).
 // This class also implements LOD based on using different primitive groups.
 // Renderers can determine desired LOD level, where 0 is the best, and request a mesh group
 // for the given submesh at the given LOD via GetGroup(Idx, LOD). Since some groups are shared between
 // multiple LODs, and some SubMeshes can have no group in a certain LOD, there is an additional
 // mapping layer, pGroupLODMapping.
 
-//!!!fix Setup()/Unload() vs Create()/Destroy() for resources!
+//!!!fix Setup()[Load()]/Unload() vs Create()/Destroy() for resources!
 
 namespace Render
 {
@@ -33,14 +33,15 @@ struct CMeshGroup
 };
 
 // Fill this in a resource loader and pass to the CMesh::Create()
+//!!!if VB & IB are shared and mesh starts not at buffers start, need to patch mesh group offsets in loader.
 struct CMeshInitData
 {
 	CVertexBuffer*	pVertexBuffer;
 	CIndexBuffer*	pIndexBuffer;
-	CMeshGroup*		pMeshGroupData;	// Optional mapping data, mesh groups
+	CMeshGroup*		pMeshGroupData;	// Mesh groups and optional mapping data
 	DWORD			SubMeshCount;
 	DWORD			LODCount;
-	DWORD			RealGroupCount;	// If UseMapping is false, must be SubMeshCount * LODCount
+	DWORD			RealGroupCount;	// If UseMapping is false, must be SubMeshCount * LODCount (0 also defaults to this value)
 	bool			UseMapping;
 };
 
@@ -50,7 +51,6 @@ class CMesh: public Resources::CResource
 
 protected:
 
-	//!!!if VB & IB are shared, need to store offset (and mb total size) here! Or patch mesh group offsets.
 	PVertexBuffer	VB;
 	PIndexBuffer	IB;
 
@@ -59,17 +59,14 @@ protected:
 	DWORD			GroupCount;
 
 	// To maintain cache coherency, these two are essentially one piece of memory, where
-	// pGroupLODMapping is at Offset = 0 and pGroups is at Offset = sizeof(CMeshGroup*) * SubMeshCount * LODCount
-	// If pGroupLODMapping is NULL, pGroups is at Offset = 0 & direct mapping is used. See GetGroup().
-	CMeshGroup**	pGroupLODMapping;	// CArray2D<CMeshGroup*>[LOD][SubMeshIndex]
+	// pGroups is at Offset = 0 and pGroupLODMapping is at Offset = sizeof(CMeshGroup) * GroupCount
+	// If direct mapping is used, GroupCount = SubMeshCount * LODCount and pGroupLODMapping = NULL
 	CMeshGroup*		pGroups;			// Real submesh data
-
-	//???need?
-	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
+	CMeshGroup**	pGroupLODMapping;	// CArray2D<CMeshGroup*>[LOD][SubMeshIndex]
 
 public:
 
-	CMesh(CStrID ID): CResource(ID), pGroupLODMapping(NULL), pGroups(NULL) {}
+	CMesh(CStrID ID): CResource(ID), pGroups(NULL), pGroupLODMapping(NULL) {}
 	virtual ~CMesh() { if (IsLoaded()) Unload(); }
 
 	bool				Create(const CMeshInitData& InitData);
@@ -79,7 +76,6 @@ public:
 	PIndexBuffer		GetIndexBuffer() const { return IB; }
 	DWORD				GetSubMeshCount() const { return SubMeshCount; }
 	const CMeshGroup*	GetGroup(DWORD SubMeshIdx, DWORD LOD = 0) const;
-	//!!!GetSizeInBytes for RAM & VRAM!
 };
 
 typedef Ptr<CMesh> PMesh;

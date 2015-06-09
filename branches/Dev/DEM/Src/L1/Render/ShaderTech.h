@@ -21,17 +21,29 @@ class CShaderTech
 {
 public:
 
-	PShaderMetadata		Meta; //!!!describes only buffers/resources used here, and vertex input signature!
-	//per-object single and instanced buffers in a single instance created from meta
-	//???state?
-	CFeatureFlags		IncludedFFlags;	// Feature flags that must be set to use this tech
-	CFeatureFlags		ExcludedFFlags;	// Feature flags that must be unset to use this tech
-
-	CArray<CShaderPass>	Passes;
+	CFeatureFlags			IncludedFFlags;		// Feature flags that must be set to use this tech
+	CFeatureFlags			ExcludedFFlags;		// Feature flags that must be unset to use this tech
+	PShaderParamsDesc		ParamsDesc;
+	CArray<PConstantBuffer>	ConstBuffers;		// References to constant buffers used by this tech, not used buffers are NULL
+	//???render state?
+	CArray<CShaderPass>		Passes;
 
 	bool					IsApplicableForFeatureFlags(CFeatureFlags FFlags) const { return FFlags.Is(IncludedFFlags) && FFlags.IsNot(ExcludedFFlags); }
 
-	const CShaderMetadata&	GetMetadata() const { return *Meta; }
+	//SetConst
+	//SetResource
+	//SetSampler
+	//ApplyParams
+	virtual void			SetBool(HShaderParam Handle, const bool* pValues, DWORD Count) = 0;
+	virtual void			SetIntAsBool(HShaderParam Handle, const int* pValues, DWORD Count) = 0;
+	virtual void			SetInt(HShaderParam Handle, const int* pValues, DWORD Count) = 0;
+	virtual void			SetFloat(HShaderParam Handle, const float* pValues, DWORD Count) = 0;
+	virtual void			SetVector4(HShaderParam Handle, const vector4* pValues, DWORD Count) = 0;
+	virtual void			SetMatrix44(HShaderParam Handle, const matrix44* pValues, DWORD Count) = 0;
+	//???need? virtual void			SetMatrix44Transpose(HShaderParam Handle, const matrix44* pValues, DWORD Count) = 0;
+	virtual void			SetTexture(HShaderParam Handle, CTexture* pTexture) = 0;
+	//???virtual void			SetBuffer(HShaderParam Handle, CTexture* pTexture) = 0;
+	virtual void			SetSamplerState(HShaderParam Handle, CSamplerState* pSamplerState) = 0;
 };
 
 }

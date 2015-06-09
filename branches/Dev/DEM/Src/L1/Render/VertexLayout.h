@@ -7,6 +7,8 @@
 #include <Data/StringID.h>
 
 // Vertex layout describes components of a vertex in a vertex buffer(s)
+// It is enough to define one reusable vertex layout per format, so
+// rendering system may cache layouts created once.
 
 namespace Render
 {

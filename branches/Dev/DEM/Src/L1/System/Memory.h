@@ -77,5 +77,22 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 #define SAFE_DELETE(n)			if (n) { n_delete(n); n = NULL; }
 #define SAFE_DELETE_ARRAY(n)	if (n) { n_delete_array(n); n = NULL; }
 #define SAFE_FREE(n)			if (n) { n_free(n); n = NULL; }
+#define SAFE_FREE_ALIGNED(n)	if (n) { n_free_aligned(n); n = NULL; }
+
+#if defined(_MSC_VER)
+#define DEM_ALIGN_16 __declspec(align(16))
+#else
+#error "Please define align 16 for your compiler"
+#endif
+
+#define DEM_ALLOCATE_ALIGN16 \
+   inline void* operator new(size_t sizeInBytes)   { return n_malloc_aligned(sizeInBytes, 16); }   \
+   inline void  operator delete(void* ptr)         { n_free_aligned(ptr); }   \
+   inline void* operator new(size_t, void* ptr)   { return ptr; }   \
+   inline void  operator delete(void*, void*)      { }   \
+   inline void* operator new[](size_t sizeInBytes)   { n_malloc_aligned(sizeInBytes, 16); }   \
+   inline void  operator delete[](void* ptr)         { n_free_aligned(ptr); }   \
+   inline void* operator new[](size_t, void* ptr)   { return ptr; }   \
+   inline void  operator delete[](void*, void*)      { }   \
 
 #endif

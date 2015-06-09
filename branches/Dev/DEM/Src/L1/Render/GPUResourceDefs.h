@@ -11,11 +11,10 @@ namespace Render
 
 // Flags that indicate which hardware has which access to this resource data.
 // Some combinations may be unsupported by certain rendering APIs, so, implementations must
-// consider to satisfy the most possible features of a set requested.
+// consider to satisfy the most of possible features of a set requested.
 // Some common usage patterns are:
 // GPU_Read				- immutable resources, initialized on creation, the fastest ones for GPU access
 // GPU_Read | CPU_Write	- dynamic resources, suitable for a GPU data that is regularly updated by CPU
-
 enum EResourceAccess
 {
 	CPU_Read	= 0x01,
@@ -26,12 +25,12 @@ enum EResourceAccess
 
 enum EMapType
 {
-	Map_Setup,				// gain write access for the initial filling of the buffer. Don't misuse!
-	Map_Read,				// gain read access, must be UsageDynamic and AccessRead
-	Map_Write,				// gain write access, must be UsageDynamic and AccessWrite
-	Map_ReadWrite,			// gain read/write access, must be UsageDynamic and AccessReadWrite
-	Map_WriteDiscard,		// gain write access, discard previous content, must be UsageDynamic and AccessWrite
-	Map_WriteNoOverwrite,	// gain write access, must be UsageDynamic and AccessWrite, see D3D10 docs for details
+	Map_Setup,				// Gain write access for the initial filling of the buffer. Don't misuse!
+	Map_Read,				// Gain read access, must be CPU_Read
+	Map_Write,				// Gain write access, must be CPU_Write
+	Map_ReadWrite,			// Gain read/write access, must be CPU_Read | CPU_Write
+	Map_WriteDiscard,		// Gain write access, discard previous content, must be GPU_Read | CPU_Write
+	Map_WriteNoOverwrite,	// Gain write access, must be GPU_Read | CPU_Write, see D3D11 docs for details
 };
 
 }

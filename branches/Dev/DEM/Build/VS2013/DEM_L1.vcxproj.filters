@@ -752,9 +752,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderTarget.h">
-      <Filter>Render\D3D9</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\RenderPath.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -770,9 +767,6 @@
     <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\ShaderVars.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -782,8 +776,23 @@
     <ClInclude Include="..\..\Src\L1\Render\Shader.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\ShaderMetadata.h">
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderParamsDesc.h">
       <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.h">
+      <Filter>Render\D3D11</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1246,9 +1255,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderTarget.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\RenderPath.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -1257,6 +1263,21 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp">
       <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
