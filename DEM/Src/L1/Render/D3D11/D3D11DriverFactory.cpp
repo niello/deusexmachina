@@ -74,10 +74,33 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Out
 }
 //---------------------------------------------------------------------
 
-PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter)
+// If adapter is specified, driver type will be automatically set to the type of that adapter.
+// If adapter is not specified, adapter will be selected automatically.
+PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType DriverType)
 {
+	n_assert(pDXGIFactory);
+
+//???to virtual CreateNVidiaPerfHUDDriver(), determine adapter and type and proced here?
+//or Adapter_NVPerfHUD and forced GPU_Reference?
+#if DEM_RENDER_USENVPERFHUD
+	UINT CurrAdapter = 0;
+	IDXGIAdapter1* pAdapter;
+	while (pDXGIFactory->EnumAdapters1(CurrAdapter, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+	{
+		DXGI_ADAPTER_DESC Desc;
+		if (SUCCEEDED(pAdapter->GetDesc(&Desc)) && wcscmp(Desc.Description, L"NVIDIA PerfHUD") == 0)
+		{
+			Adapter = CurrAdapter;
+			DriverType = GPU_Reference;
+			break;
+		}
+		pAdapter->Release(); // AddRef() is called in EnumAdapters1()
+		++CurrAdapter;
+	}
+#endif
+
 	PD3D11GPUDriver Driver = n_new(CD3D11GPUDriver);
-	if (!Driver->Init(Adapter)) Driver = NULL;
+	if (!Driver->Init(Adapter, DriverType)) Driver = NULL;
 	return Driver.GetUnsafe();
 }
 //---------------------------------------------------------------------

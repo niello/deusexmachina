@@ -15,6 +15,7 @@
 namespace Sys
 {
 
+//???need to make window RefCounted? CEventDispatcher may be implemented as a mix-in.
 class COSWindowWin32: public Events::CEventDispatcher
 {
 protected:

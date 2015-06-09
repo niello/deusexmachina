@@ -6,15 +6,31 @@
 
 // Render system definitions and forward declarations
 
+#define DEM_RENDER_DEBUG (0)
+#define DEM_RENDER_USENVPERFHUD (0)
+
 namespace Render
 {
 typedef DWORD HShaderParam; // Opaque to user, so its internal meaning can be different for different APIs
 struct CShaderConstantDesc;
 
+const DWORD Adapter_AutoSelect = (DWORD)-2;
 const DWORD Adapter_None = (DWORD)-1;
 const DWORD Adapter_Primary = 0;
 const DWORD Adapter_Secondary = 1;
 const DWORD Output_None = (DWORD)-1;
+
+enum EGPUDriverType
+{
+	// Prefers hardware driver when possible and falls back to reference device.
+	// Use it only as a creation parameter and never as an actual driver type.
+	GPU_AutoSelect = 0,
+
+	GPU_Hardware,	// Real hardware device
+	GPU_Reference,	// Software emulation (for debug purposes)
+	GPU_Software,	// Pluggable software driver
+	GPU_Null		// No rendering (for non-rendering API calls verification)
+};
 
 enum EClearFlag
 {
@@ -58,8 +74,8 @@ enum EMSAAQuality
 };
 
 // Error codes
-#define ERR_MAX_SWAP_CHAIN_COUNT_EXCEEDED ((DWORD)-1);
-#define ERR_CREATION_ERROR ((DWORD)-2);
+#define ERR_CREATION_ERROR ((DWORD)-1);
+#define ERR_DRIVER_TYPE_NOT_SUPPORTED ((DWORD)-2);
 
 }
 

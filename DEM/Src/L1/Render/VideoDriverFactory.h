@@ -11,6 +11,12 @@
 // Typical use case is:
 // Create factory -> Enumerate video adapters -> Create display driver for some adapter output ->
 // -> Set display mode and other parameters
+// When CreateGPUDriver() is called, both Adapter and DriverType may be specified or AutoSelect.
+// Behaviour may vary for different implementations. Basic guidelines are:
+// If both are specified, creation succeeds only if an Adapter supports requested DriverType.
+// If DriverType only is auto, default DriverType of the Adapter is used.
+// If Adapter only is auto, the first Adapter that supports requested DriverType is used.
+// If both are auto, system will try to create hardware driver if possible, falling back to reference one.
 
 //???is singleton? what if I want to have D3D9 and OpenGL driver factories simultaneously?
 //???only D3D9 factory as a singleton? D3D9 must be only one.
@@ -58,7 +64,7 @@ public:
 	virtual bool			GetAdapterInfo(CAdapterInfo& OutInfo) const = 0;
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const = 0;
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0) = 0;
-	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0) = 0;
+	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect) = 0;
 };
 
 }

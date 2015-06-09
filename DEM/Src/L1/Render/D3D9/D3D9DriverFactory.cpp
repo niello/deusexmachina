@@ -31,7 +31,7 @@ void CD3D9DriverFactory::Close()
 bool CD3D9DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const
 {
 	if (Adapter >= AdapterCount) FAIL;
-	D3DADAPTER_IDENTIFIER9 D3DAdapterInfo = { 0 }; // NB: there is a constructible object CSimpleString in this structure
+	D3DADAPTER_IDENTIFIER9 D3DAdapterInfo;
 	if (!SUCCEEDED(pD3D9->GetAdapterIdentifier(Adapter, 0, &D3DAdapterInfo))) FAIL;
 	OutInfo.Description = D3DAdapterInfo.Description;
 	OutInfo.VendorID = D3DAdapterInfo.VendorId;
@@ -56,10 +56,31 @@ PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Outp
 }
 //---------------------------------------------------------------------
 
-PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter)
+PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType DriverType)
 {
+	n_assert(pD3D9);
+
+//???to virtual CreateNVidiaPerfHUDDriver(), determine adapter and type and proced here?
+//or Adapter_NVPerfHUD and forced GPU_Reference?
+#if DEM_RENDER_USENVPERFHUD
+	for (UINT CurrAdapter = 0; CurrAdapter < pD3D9->GetAdapterCount(); ++CurrAdapter) 
+	{ 
+		D3DADAPTER_IDENTIFIER9 Identifier;
+		if (SUCCEEDED(pD3D9->GetAdapterIdentifier(CurrAdapter, 0, &Identifier)) &&
+			strstr(Identifier.Description, "PerfHUD") != 0)
+		{
+			Adapter = CurrAdapter;
+			DriverType = GPU_Reference;
+			break;
+		}
+	}
+#endif
+
+	if (Adapter == Adapter_AutoSelect && DriverType == GPU_AutoSelect) Adapter = 0;
+
+	// Since device is actually created only in CD3D9GPUDriver::CreateSwapChain(), creation logic is moved there
 	PD3D9GPUDriver Driver = n_new(CD3D9GPUDriver);
-	if (!Driver->Init(Adapter)) Driver = NULL;
+	if (!Driver->Init(Adapter, DriverType)) Driver = NULL;
 	return Driver.GetUnsafe();
 }
 //---------------------------------------------------------------------

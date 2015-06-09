@@ -43,7 +43,7 @@ public:
 	virtual bool			GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const;
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const;
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0);
-	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = 0);
+	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

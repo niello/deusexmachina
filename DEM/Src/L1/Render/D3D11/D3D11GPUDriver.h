@@ -8,9 +8,9 @@
 // Direct3D11 GPU device driver.
 
 struct IDXGISwapChain;
-//struct ID3D11Texture2D;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 
 namespace Render
 {
@@ -42,36 +42,39 @@ protected:
 
 	void			Release();
 
-	//static void		FillD3DPresentParams(const CSwapChainDesc& Desc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams);
-	//static bool		GetCurrD3DPresentParams(const CSwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams);
-
-	friend class CD3D11DriverFactory;
+	static D3D_DRIVER_TYPE	GetD3DDriverType(EGPUDriverType DriverType);
+	static EGPUDriverType	GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
 
 	virtual PVertexLayout	InternalCreateVertexLayout();
+
+	friend class CD3D11DriverFactory;
 
 public:
 
 	virtual ~CD3D11GPUDriver() {}
 
-	virtual bool			Init(DWORD AdapterNumber);
-	virtual bool			CheckCaps(ECaps Cap);
+	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
+	virtual bool				CheckCaps(ECaps Cap);
 
-	virtual DWORD			CreateSwapChain(const CSwapChainDesc& Desc, Sys::COSWindow* pWindow);
-	virtual bool			DestroySwapChain(DWORD SwapChainID);
-	virtual bool			SwapChainExists(DWORD SwapChainID) const;
-	virtual bool			ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
-	virtual bool			SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
-	virtual bool			SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL);
-	virtual bool			IsFullscreen(DWORD SwapChainID) const;
+	virtual DWORD				CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
+	virtual bool				DestroySwapChain(DWORD SwapChainID);
+	virtual bool				SwapChainExists(DWORD SwapChainID) const;
+	virtual bool				ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
+	virtual bool				SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
+	virtual bool				SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL);
+	virtual bool				IsFullscreen(DWORD SwapChainID) const;
+	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const;
 	//!!!get info, change info (or only recreate?)
-	virtual bool			Present(DWORD SwapChainID);
-	//virtual void			SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
+	virtual bool				Present(DWORD SwapChainID);
+	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 	//PRenderTarget GetSwapChainRenderTarget(DWORD SwapChainID);
 
-	virtual PVertexLayout	CreateVertexLayout(); // Prefer GetVertexLayout() when possible
-	virtual PVertexBuffer	CreateVertexBuffer();
-	virtual PIndexBuffer	CreateIndexBuffer();
-	virtual PRenderState	CreateRenderState(const Data::CParams& Desc);
+	virtual PVertexLayout		CreateVertexLayout(); // Prefer GetVertexLayout() when possible
+	virtual PVertexBuffer		CreateVertexBuffer();
+	virtual PIndexBuffer		CreateIndexBuffer();
+	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
+	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
+	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }
