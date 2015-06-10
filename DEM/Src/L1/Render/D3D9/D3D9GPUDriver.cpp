@@ -173,7 +173,7 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDes
 	{
 		// NB: It is recommended to use non-MSAA swap chain, render to MSAA RT and then resolve it to the back buffer
 		GetD3DMSAAParams(BackBufferDesc.MSAAQuality, CD3D9DriverFactory::PixelFormatToD3DFormat(BackBufferDesc.Format),
-						 D3DFMT_UNKNOWN, D3DPresentParams.MultiSampleType, D3DPresentParams.MultiSampleQuality);
+						 D3DPresentParams.MultiSampleType, D3DPresentParams.MultiSampleQuality);
 	}
 	else
 	{
@@ -239,13 +239,13 @@ D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 }
 //---------------------------------------------------------------------
 
-//???bool Windowed param?
-void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat,
-									  D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
+//???bool Windowed as parameter and re-check available MSAA on fullscreen transitions?
+bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
 {
 #if DEM_RENDER_DEBUG
 	OutType = D3DMULTISAMPLE_NONE;
 	OutQuality = 0;
+	OK;
 #else
 	switch (MSAA)
 	{
@@ -258,35 +258,21 @@ void CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3D
 	DWORD QualLevels = 0;
 	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
 																			GetD3DDriverType(Type),
-																			RTFormat,
-																			FALSE,
+																			Format,
+																			FALSE, // Windowed
 																			OutType,
 																			&QualLevels);
 	if (hr == D3DERR_NOTAVAILABLE)
 	{
 		OutType = D3DMULTISAMPLE_NONE;
 		OutQuality = 0;
-		return;
+		FAIL;
 	}
 	n_assert(SUCCEEDED(hr));
 
 	OutQuality = QualLevels ? QualLevels - 1 : 0;
 
-	if (DSFormat == D3DFMT_UNKNOWN) return;
-
-	hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
-																	GetD3DDriverType(Type),
-																	DSFormat,
-																	FALSE,
-																	OutType,
-																	NULL);
-	if (hr == D3DERR_NOTAVAILABLE)
-	{
-		OutType = D3DMULTISAMPLE_NONE;
-		OutQuality = 0;
-		return;
-	}
-	n_assert(SUCCEEDED(hr));
+	OK;
 #endif
 }
 //---------------------------------------------------------------------
@@ -661,40 +647,87 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
+//???need mips (add to desc)?
+//???allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
+PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
+{
+	D3DFORMAT RTFmt = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
+	D3DMULTISAMPLE_TYPE MSAAType;
+	DWORD MSAAQuality;
+	if (!GetD3DMSAAParams(Desc.MSAAQuality, RTFmt, MSAAType, MSAAQuality)) FAIL;
+
+	IDirect3DSurface9* pSurface = NULL;
+	IDirect3DTexture9* pTexture = NULL;
+
+	// Using RT as a shader inut requires a texture. Since MSAA textures are not supported in D3D9,
+	// MSAA RT will be created as a separate surface anyway and then it will be resolved into a texture.
+
+	if (Desc.UseAsShaderInput)
+	{
+		UINT Mips = 1;
+		DWORD Usage = D3DUSAGE_RENDERTARGET;
+		if (MSAAType == D3DMULTISAMPLE_NONE) // Can use texture as an RT and as a shader resource
+		{
+			//!!!only if requires Mips!
+			Usage = D3DUSAGE_AUTOGENMIPMAP; //???will work with RT texture? else must regenerate mips after rendering to this RT
+			Mips = 0; // Autogenerate full mip chain //!!!or some other value if specified!
+		}
+		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, 1, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, NULL))) return NULL;
+	}
+
+	// Initialize RT surface, use texture level 0 when possible, else create separate surface
+
+	HRESULT hr;
+	if (Desc.UseAsShaderInput && MSAAType == D3DMULTISAMPLE_NONE)
+		hr = pTexture->GetSurfaceLevel(0, &pSurface);
+	else hr = pD3DDevice->CreateRenderTarget(Desc.Width, Desc.Height, RTFmt, MSAAType, MSAAQuality, FALSE, &pSurface, NULL);
+
+	if (FAILED(hr))
+	{
+		if (pTexture) pTexture->Release();
+		return NULL;
+	}
+
+	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
+	RT->Create(pSurface);
+	return RT.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
 {
-	/*
-	if (D3DPresentParams.EnableAutoDepthStencil)
-	{
-		// Make sure the device supports a depth buffer specified
-		//???does support D3DFMT_UNKNOWN? if not, need to explicitly determine adapter format.
-		hr = pD3D9->CheckDeviceFormat(	AdapterID,
-										D3DDriverType,
-										D3DPresentParams.BackBufferFormat,
-										D3DUSAGE_DEPTHSTENCIL,
-										D3DRTYPE_SURFACE,
-										D3DPresentParams.AutoDepthStencilFormat);
-		if (FAILED(hr))
-		{
-			Sys::Log("Rendering device doesn't support D24S8 depth buffer!\n");
-			return ERR_CREATION_ERROR;
-		}
+	D3DFORMAT DSFmt = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
+	D3DMULTISAMPLE_TYPE MSAAType;
+	DWORD MSAAQuality;
+	if (!GetD3DMSAAParams(Desc.MSAAQuality, DSFmt, MSAAType, MSAAQuality)) FAIL;
 
-		// Check that the depth buffer format is compatible with the backbuffer format
-		//???does support D3DFMT_UNKNOWN? if not, need to explicitly determine adapter (and also backbuffer) format.
-		hr = pD3D9->CheckDepthStencilMatch(	AdapterID,
-											D3DDriverType,
-											D3DPresentParams.BackBufferFormat,
-											D3DPresentParams.BackBufferFormat,
-											D3DPresentParams.AutoDepthStencilFormat);
-		if (FAILED(hr))
-		{
-			Sys::Log("Backbuffer format is not compatible with D24S8 depth buffer!\n");
-			return ERR_CREATION_ERROR;
-		}
-	}
-	*/
+	// Make sure the device supports a depth buffer specified
+	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
+																	GetD3DDriverType(Type),
+																	D3DFMT_UNKNOWN,
+																	D3DUSAGE_DEPTHSTENCIL,
+																	D3DRTYPE_SURFACE,
+																	DSFmt);
+	if (FAILED(hr)) return NULL;
+
+	IDirect3DSurface9* pSurface = NULL;
+	if (FAILED(pD3DDevice->CreateDepthStencilSurface(Desc.Width, Desc.Height, DSFmt, MSAAType, MSAAQuality, TRUE, &pSurface, NULL))) return NULL;
+
+	//PD3D9DepthStencilBuffer DS = n_new(CD3D9DepthStencilBuffer);
+	//DS->Create(pSurface);
+	//return DS.GetUnsafe();
+
 	return NULL;
+
+	//!!!COMPATIBILITY TEST! (separate method)
+//!!!also test MSAA compatibility (all the same)!
+	//// Check that the depth buffer format is compatible with the backbuffer format
+	//hr = pD3D9->CheckDepthStencilMatch(	AdapterID,
+	//									D3DDriverType,
+	//									D3DPresentParams.BackBufferFormat,
+	//									D3DPresentParams.BackBufferFormat,
+	//									D3DPresentParams.AutoDepthStencilFormat);
+	//if (FAILED(hr)) return NULL;
 }
 //---------------------------------------------------------------------
 

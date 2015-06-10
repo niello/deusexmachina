@@ -4,6 +4,7 @@
 
 #include <Resources/Resource.h>
 #include <Render/GPUResourceDefs.h>
+#include <Render/RenderFwd.h>
 #include <Events/EventsFwd.h>
 #include <Data/Type.h>
 
@@ -85,8 +86,8 @@ public:
 	bool			Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType);
 	virtual void	Unload();
 
-	bool			Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips, EUsage _Usage, ECPUAccess _Access);
-	bool			CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height);
+	//bool			Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips, EUsage _Usage, ECPUAccess _Access);
+	//bool			CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height);
 	bool			Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
 	void			Unmap(int MipLevel);
 	bool			MapCubeFace(ECubeFace Face, int MipLevel, EMapType MapType, CMapInfo& OutMapInfo);
@@ -111,15 +112,15 @@ typedef Ptr<CTexture> PTexture;
 
 inline CTexture::CTexture(CStrID ID):
 	CResource(ID),
-	Usage(Usage_Immutable),
-	Access(CPU_NoAccess),
+	//Usage(Usage_Immutable),
+	//Access(CPU_NoAccess),
 	Type(InvalidType),
 	Width(0),
 	Height(0),
 	Depth(0),
 	MipCount(0),
 	//skippedMips(0),
-	PixelFormat(PixelFormat_Invalid),
+	//PixelFormat(PixelFormat_Invalid),
 	LockCount(0),
 	pD3D9Tex(NULL),
 	pD3D9Tex2D(NULL)

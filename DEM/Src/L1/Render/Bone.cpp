@@ -2,7 +2,7 @@
 
 #include <Scene/SceneNode.h>
 #include <Render/Model.h>
-#include <Render/RenderServer.h>
+//#include <Render/RenderServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -67,7 +67,7 @@ bool CBone::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 	Scene::CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
 
 	static CStrID sidJointPalette("JointPalette");
-
+/*
 	// Find all models in model node and setup matrix pointers in a JointPalette shader var
 	for (DWORD i = 0; i < pModelNode->GetAttributeCount(); ++i)
 	{
@@ -100,7 +100,7 @@ bool CBone::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 					}
 		}
 	}
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------
@@ -114,7 +114,7 @@ void CBone::OnDetachFromNode()
 	Scene::CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
 
 	static CStrID sidJointPalette("JointPalette");
-
+/*
 	// Find all models in model node and clear matrix pointers in a JointPalette shader var to const Identity matrix
 	for (DWORD i = 0; i < pModelNode->GetAttributeCount(); ++i)
 	{
@@ -139,7 +139,7 @@ void CBone::OnDetachFromNode()
 					}
 		}
 	}
-
+*/
 	CNodeAttribute::OnDetachFromNode();
 }
 //---------------------------------------------------------------------

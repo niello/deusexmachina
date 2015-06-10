@@ -81,7 +81,7 @@ public:
 typedef Ptr<CMesh> PMesh;
 
 // Can return NULL, which means that nothing sould be rendered
-const CMeshGroup* CMesh::GetGroup(DWORD SubMeshIdx, DWORD LOD) const
+inline const CMeshGroup* CMesh::GetGroup(DWORD SubMeshIdx, DWORD LOD) const
 {
 	n_assert(LOD < LODCount && SubMeshIdx < SubMeshCount);
 	if (pGroupLODMapping) return pGroupLODMapping[LOD * SubMeshCount + SubMeshIdx];

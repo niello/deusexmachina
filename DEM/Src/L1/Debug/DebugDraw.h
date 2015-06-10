@@ -83,8 +83,8 @@ protected:
 
 	PShader					ShapeShader;
 
-	ID3DXFont*				pD3DXFont;
-	ID3DXSprite*			pD3DXSprite;
+	//ID3DXFont*				pD3DXFont;
+	//ID3DXSprite*			pD3DXSprite;
 
 	CArray<CDDShapeInst>	ShapeInsts[ShapeCount];
 	CArray<CDDVertex>		Points;

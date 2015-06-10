@@ -2,12 +2,14 @@
 #ifndef __DEM_L1_RENDER_GPU_DRIVER_H__
 #define __DEM_L1_RENDER_GPU_DRIVER_H__
 
-//#include <Core/Object.h>
-#include <Render/RenderTarget.h>
-#include <Render/SwapChain.h>
+#include <Core/Object.h>
+//#include <Render/RenderTarget.h>
+//#include <Render/SwapChain.h>
+#include <Render/RenderFwd.h>
 #include <Render/VertexComponent.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
+#include <Data/Rect.h>
 
 // GPU device driver manages VRAM resources and provides an interface for rendering on a video card.
 // Create GPU device drivers with CVideoDriverFactory.
@@ -33,9 +35,18 @@ namespace Data
 	class CParams;
 }
 
+namespace Sys
+{
+	typedef Ptr<class COSWindow> POSWindow;
+}
+
 namespace Render
 {
+struct CRenderTargetDesc;
+struct CSwapChainDesc;
 class CDisplayMode;
+typedef Ptr<class CDisplayDriver> PDisplayDriver;
+typedef Ptr<class CRenderTarget> PRenderTarget;
 typedef Ptr<class CVertexLayout> PVertexLayout;
 typedef Ptr<class CVertexBuffer> PVertexBuffer;
 typedef Ptr<class CIndexBuffer> PIndexBuffer;
@@ -127,20 +138,14 @@ public:
 	//!!!can describe as DepthBits & StencilBits, find closest on creation!
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) = 0;
 
-	//void					SetRenderTarget(DWORD Index, CRenderTarget* pRT);
-	void					SetVertexLayout(CVertexLayout* pVLayout);
-	void					SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
-	void					SetIndexBuffer(CIndexBuffer* pIB);
-	void					SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
-	//void					SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
+	//void						SetRenderTarget(DWORD Index, CRenderTarget* pRT);
+	void						SetVertexLayout(CVertexLayout* pVLayout);
+	void						SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
+	void						SetIndexBuffer(CIndexBuffer* pIB);
+	void						SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
+	//void						SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
 
-	//!!!need swap chain index!
-	//DWORD					GetFrameID() const { return FrameID; }
-	//DWORD					GetBackBufferWidth() const { return D3DPresentParams.BackBufferWidth; }
-	//DWORD					GetBackBufferHeight() const { return D3DPresentParams.BackBufferHeight; }
-	//???or return swap chain info struct?
-
-	EGPUDriverType			GetType() const { return Type; }
+	EGPUDriverType				GetType() const { return Type; }
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;

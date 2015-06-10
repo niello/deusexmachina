@@ -49,7 +49,11 @@ void CPropAIHints::InternalDeactivate()
 	for (int i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
-		if (Rec.QTNode) GetEntity()->GetLevel()->GetAI()->RemoveStimulus(Rec.QTNode);
+		if (Rec.QTNode)
+		{
+			(*Rec.QTNode)->pQTNode->RemoveByHandle(Rec.QTNode);
+			(*Rec.QTNode)->pQTNode = NULL;
+		}
 	}
 
 	Hints.Clear();
@@ -182,7 +186,8 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 		{
 			if (Rec.QTNode)
 			{
-				GetEntity()->GetLevel()->GetAI()->RemoveStimulus(Rec.QTNode);
+				(*Rec.QTNode)->pQTNode->RemoveByHandle(Rec.QTNode);
+				(*Rec.QTNode)->pQTNode = NULL;
 				Rec.QTNode = NULL;
 			}
 		}

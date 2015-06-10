@@ -169,22 +169,27 @@ bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, C
 
 CStimulusNode CAILevel::RegisterStimulus(CStimulus* pStimulus)
 {
-	n_assert(pStimulus && !pStimulus->GetQuadTreeNode());
-	return StimulusQT.AddObject(pStimulus);
+	n_assert(pStimulus && !pStimulus->pQTNode);
+	CStimulusNode OutNode;
+	StimulusQT.AddObject(pStimulus, pStimulus->Position.x, pStimulus->Position.z, pStimulus->Radius, pStimulus->Radius, pStimulus->pQTNode, &OutNode);
+	return OutNode;
 }
 //---------------------------------------------------------------------
 
-void CAILevel::RemoveStimulus(CStimulus* pStimulus)
+CStimulusNode CAILevel::UpdateStimulusLocation(CStimulus* pStimulus)
 {
-	n_assert(pStimulus && pStimulus->GetQuadTreeNode());
-	StimulusQT.RemoveByValue(pStimulus);
+	n_assert(pStimulus && pStimulus->pQTNode);
+	CStimulusNode OutNode;
+	StimulusQT.UpdateObject(pStimulus, pStimulus->Position.x, pStimulus->Position.z, pStimulus->Radius, pStimulus->Radius, pStimulus->pQTNode, &OutNode);
+	return OutNode;
 }
 //---------------------------------------------------------------------
 
-void CAILevel::RemoveStimulus(CStimulusNode StimulusNode)
+void CAILevel::UpdateStimulusLocation(CStimulusNode& StimulusNode)
 {
-	n_assert(StimulusNode && (*StimulusNode)->GetQuadTreeNode());
-	StimulusQT.RemoveByHandle(StimulusNode);
+	n_assert(StimulusNode && (*StimulusNode)->pQTNode);
+	CStimulus* pStimulus = *StimulusNode;
+	StimulusQT.UpdateHandle(StimulusNode, pStimulus->Position.x, pStimulus->Position.z, pStimulus->Radius, pStimulus->Radius, pStimulus->pQTNode);
 }
 //---------------------------------------------------------------------
 

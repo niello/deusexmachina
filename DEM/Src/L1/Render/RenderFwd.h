@@ -67,7 +67,7 @@ enum EPixelFormat
 
 enum EMSAAQuality
 {
-	MSAA_None	= 0,
+	MSAA_None	= 1,
 	MSAA_2x		= 2,
 	MSAA_4x		= 4,
 	MSAA_8x		= 8

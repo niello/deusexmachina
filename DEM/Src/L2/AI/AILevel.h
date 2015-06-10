@@ -13,6 +13,8 @@
 // that contains stimuli, AI hints and other AI-related world info. Also AILevel serves as
 // a navigation manager.
 
+//!!!autoremove expired stimuli!
+
 namespace AI
 {
 class CStimulus;
@@ -52,10 +54,8 @@ public:
 	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos) const;
 
 	CStimulusNode	RegisterStimulus(CStimulus* pStimulus);
-	CStimulusNode	UpdateStimulusLocation(CStimulus* pStimulus) { n_assert(pStimulus && pStimulus->GetQuadTreeNode()); return StimulusQT.UpdateObject(pStimulus); }
-	void			UpdateStimulusLocation(CStimulusNode& StimulusNode) { n_assert(StimulusNode && (*StimulusNode)->GetQuadTreeNode()); StimulusQT.UpdateHandle(StimulusNode); }
-	void			RemoveStimulus(CStimulus* pStimulus);		//!!!autoremove on expire!
-	void			RemoveStimulus(CStimulusNode StimulusNode);	//!!!autoremove on expire!
+	CStimulusNode	UpdateStimulusLocation(CStimulus* pStimulus);
+	void			UpdateStimulusLocation(CStimulusNode& StimulusNode);
 	void			UpdateActorSense(CActor* pActor, CSensor* pSensor);
 };
 //---------------------------------------------------------------------

@@ -310,7 +310,7 @@ void CQuadTree<TObject, TStorage>::UpdateHandle(typename CQuadTree<TObject, TSto
 
 	if (pInOutNode != pNewNode)
 	{
-		CHandle NewHandle = pNewNode->Data.Add(Object);
+		CHandle NewHandle = pNewNode->Data.Add(*InOutHandle);
 		pInOutNode->Data.Remove(InOutHandle);		
 		pInOutNode = pNewNode;
 		InOutHandle = NewHandle;

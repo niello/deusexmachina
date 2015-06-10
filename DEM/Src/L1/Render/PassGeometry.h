@@ -4,6 +4,7 @@
 
 #include <Render/RenderPhase.h>
 #include <Render/Renderer.h>
+#include <Data/Dictionary.h>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
 // Batches are designed to minimize shader state switches.

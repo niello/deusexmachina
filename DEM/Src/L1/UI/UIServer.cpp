@@ -1,7 +1,6 @@
 #include "UIServer.h"
 
-#include "Window.h"
-#include <Render/RenderServer.h>
+#include "UIWindow.h"
 #include <Events/EventServer.h>
 #include <Input/InputServer.h>
 #include <Input/Events/KeyDown.h>
@@ -40,8 +39,9 @@ CUIServer::CUIServer()
 	Singleton = this;
 
 	Logger = n_new(CEGUI::CNebula2Logger);
-	//!!!N2 renderer!
-	Renderer = &CEGUI::Direct3D9Renderer::create(RenderSrv->GetD3DDevice());
+	//!!!DEM renderer!
+//n_assert(false);
+//	Renderer = &CEGUI::Direct3D9Renderer::create(RenderSrv->GetD3DDevice());
 	ResourceProvider = n_new(CEGUI::CNebula2ResourceProvider);
 	Parser = n_new(CEGUI::TinyXML2Parser); //???delete?
 
