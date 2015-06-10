@@ -3,7 +3,6 @@
 #include <Game/Entity.h>
 #include <Game/GameServer.h>
 #include <Scripting/ScriptObject.h>
-#include <Render/FrameShader.h>
 #include <Render/SceneNodeUpdateInSPS.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
@@ -79,7 +78,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 		int SPSHierarchyDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 
-		SPS.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (uchar)SPSHierarchyDepth);
+		SPS.QuadTree.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (uchar)SPSHierarchyDepth);
 
 		CameraManager = n_new(Scene::CCameraManager);
 
@@ -339,8 +338,8 @@ bool CGameLevel::OnEvent(const Events::CEventBase& Event)
 
 	if (AutoAdjustCameraAspect && MainCamera.IsValid() && EvID == CStrID("OnRenderDeviceReset"))
 	{
-		MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
-		MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
+		//MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
+		//MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
 	}
 
 	return !!DispatchEvent(Event);
@@ -348,7 +347,7 @@ bool CGameLevel::OnEvent(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 void CGameLevel::RenderScene()
-{
+{/*
 	Render::PFrameShader ScreenFrameShader = RenderSrv->GetScreenFrameShader();
 	if (!ScreenFrameShader.IsValid()) return;
 
@@ -379,7 +378,7 @@ void CGameLevel::RenderScene()
 	RenderSrv->SetViewProjection(ViewProj);
 
 	ScreenFrameShader->Render(&VisibleObjects, pVisibleLights);
-
+*/
 // Dependent cameras:
 	// Some shapes may request textures that are RTs of specific cameras
 	// These textures must be rendered before shapes are rendered

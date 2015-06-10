@@ -1,6 +1,5 @@
 #include "AppStateVideo.h"
 
-#include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
 #include <Debug/DebugServer.h>
 #include <Events/EventServer.h>
@@ -31,7 +30,7 @@ CStrID CAppStateVideo::OnFrame()
 	DbgSrv->Trigger();
 	EventSrv->ProcessPendingEvents();
 
-	RenderSrv->GetDisplay().ProcessWindowMessages();
+//	RenderSrv->GetDisplay().ProcessWindowMessages();
 
 	//???AudioSrv?
 	VideoSrv->Trigger();

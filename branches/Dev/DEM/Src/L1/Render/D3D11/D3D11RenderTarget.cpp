@@ -8,8 +8,13 @@
 namespace Render
 {
 
-bool CD3D11RenderTarget::Create()
+bool CD3D11RenderTarget::Create(ID3D11Texture2D* pTexture, ID3D11RenderTargetView* pRTV)
 {
+	n_assert(pTexture && pRTV);
+
+	// initialize RTTexture with ID3D11Texture2D
+	//???pass pD3DDevice here ad create RTView here??
+
 	OK;
 }
 //---------------------------------------------------------------------

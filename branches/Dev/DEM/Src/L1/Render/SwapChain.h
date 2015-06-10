@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_SWAP_CHAIN_H__
 
 //#include <Render/RenderTarget.h>
+#include <Data/Ptr.h>
 #include <Data/Flags.h>
 #include <Data/Rect.h>
 

@@ -136,7 +136,6 @@ private:
 
 #define __ImplementRootClass(Class, FourCC) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, NULL, sizeof(Class)); \
-	Core::CRTTI* Class::GetRTTI() const { return &RTTI; } \
 	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
 	Class* Class::CreateInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
@@ -147,7 +146,6 @@ private:
 	}
 
 #define __ImplementRootClassNoFactory(Class, FourCC) \
-	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, NULL, 0); \
-	Core::CRTTI* Class::GetRTTI() const { return &RTTI; }
+	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, NULL, 0);
 
 #endif

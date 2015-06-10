@@ -1,6 +1,5 @@
 #include "UIWindow.h"
 
-#include <Render/RenderServer.h>
 #include <Core/Factory.h>
 #include <CEGUIWindowManager.h>
 
@@ -35,8 +34,9 @@ vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 	CEGUI::Window* pWndParent = pWindow->getParent();
 	if (!pWndParent)
 	{
-		const CDisplayMode& Disp = RenderSrv->GetDisplay().GetDisplayMode();
-		return vector2((float)Disp.Width, (float)Disp.Height);
+n_assert(false);
+//		const CDisplayMode& Disp = RenderSrv->GetDisplay().GetDisplayMode();
+//		return vector2((float)Disp.Width, (float)Disp.Height);
 	}
 
 	vector2 GrandParentSize = GetParentBaseSize(pWndParent);

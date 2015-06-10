@@ -3,7 +3,7 @@
 #define __DEM_L1_SCENE_TERRAIN_H__
 
 #include <Render/RenderObject.h>
-#include <Render/Materials/ShaderVar.h>
+//#include <Render/Materials/ShaderVar.h>
 #include <Render/Mesh.h>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
@@ -39,7 +39,7 @@ protected:
 
 	Render::PMesh		PatchMesh;
 	Render::PMesh		QuarterPatchMesh;
-	Render::PTexture	HeightMap;
+	//Render::PTexture	HeightMap;
 
 	float				InvSplatSizeX;
 	float				InvSplatSizeZ;
@@ -52,7 +52,7 @@ protected:
 
 public:
 
-	Render::CShaderVarMap	ShaderVars;
+	//Render::CShaderVarMap	ShaderVars;
 
 	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f), pSPS(NULL) {}
 
@@ -71,7 +71,7 @@ public:
 	float				GetVerticalScale() const { return VerticalScale; }
 	Render::CMesh*		GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
 	Render::CMesh*		GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
-	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
+	//Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
 	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
 	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;
 	float				GetInvSplatSizeX() const { return InvSplatSizeX; }

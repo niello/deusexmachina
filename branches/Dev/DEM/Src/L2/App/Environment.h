@@ -11,7 +11,6 @@
 #include <Data/DataServer.h>
 #include <Events/EventServer.h>
 #include <Scripting/ScriptServer.h>
-#include <Render/RenderServer.h>
 #include <Debug/DebugDraw.h>
 //#include <Audio/AudioServer.h>
 #include <Video/VideoServer.h>
@@ -59,8 +58,7 @@ protected:
 	Ptr<Data::CDataServer>			DataServer;
 	Ptr<Scripting::CScriptServer>	ScriptServer;
 	Ptr<Events::CEventServer>		EventServer;
-	Ptr<Render::CRenderServer>		RenderServer;
-	Ptr<Debug::CDebugDraw>			DD;
+	//Ptr<Debug::CDebugDraw>			DD;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
 	//Ptr<Audio::CAudioServer>		AudioServer;
@@ -91,8 +89,8 @@ public:
 	const CString&			GetWindowTitle() const { return WindowTitle; }
 	void					SetWindowIcon(const char* pIconName) { IconName = pIconName; }
 	const CString&			GetWindowIcon() const { return IconName; }
-	void					SetDisplayMode(const CDisplayMode& DispMode) { DisplayMode = DispMode; }
-	const CDisplayMode&		GetDisplayMode() const { return DisplayMode; }
+	//void					SetDisplayMode(const CDisplayMode& DispMode) { DisplayMode = DispMode; }
+	//const CDisplayMode&		GetDisplayMode() const { return DisplayMode; }
 	void					SetAppName(const CString& ApplicationName) { AppName = ApplicationName; }
 	const CString&			GetAppName() const { return AppName; }
 	void					SetAppVersion(const CString& Version) { AppVersion = Version; }

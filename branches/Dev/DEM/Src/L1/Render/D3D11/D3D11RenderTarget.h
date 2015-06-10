@@ -6,6 +6,9 @@
 
 // D3D11 implementation of a render target
 
+struct ID3D11Texture2D;
+struct ID3D11RenderTargetView;
+
 namespace Render
 {
 //typedef Ptr<class CTexture> PTexture;
@@ -14,11 +17,14 @@ class CD3D11RenderTarget: public CRenderTarget
 {
 protected:
 
+	ID3D11RenderTargetView* pRTView;
+	PTexture				RTTexture;
+
 public:
 
-	CD3D11RenderTarget() {}
+	CD3D11RenderTarget(): pRTView(NULL) {}
 
-	bool				Create(); // For internal use
+	bool				Create(ID3D11Texture2D* pTexture, ID3D11RenderTargetView* pRTV); // For internal use
 	void				Destroy();
 
 	virtual CTexture*	GetShaderResource() const { return NULL; } //???or store PTexture inside always and avoid virtualization here?

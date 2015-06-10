@@ -1,7 +1,6 @@
 #include "VideoServer.h"
 
 #include <Video/OGGTheoraPlayer.h>
-#include <Render/RenderServer.h>
 #include <Time/TimeServer.h>
 #include <IO/IOServer.h>
 #include <Core/CoreServer.h>
@@ -88,7 +87,9 @@ bool CVideoServer::PlayFile(const char* pFileName)
 	n_assert(pFileName && !pGraphBuilder && !pMediaCtl && !pVideoWnd && !pMediaEvent && !pBasicVideo);
 	if (_IsPlaying) Stop();
 
-	RenderSrv->ClearScreen(0);
+n_assert(false);
+//	RenderSrv->ClearScreen(0);
+
 	//GFX
 	//nGfxServer2::Instance()->EnterDialogBoxMode();
 	//RenderSrv->ClearScreen(0);

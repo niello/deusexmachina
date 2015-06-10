@@ -14,7 +14,7 @@ class CShaderPass
 {
 public:
 
-	CStrID	InputSignatureID;
+	//CStrID	InputSignatureID;
 
 	//???state?
 

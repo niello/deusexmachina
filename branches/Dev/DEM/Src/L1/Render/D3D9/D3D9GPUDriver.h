@@ -78,7 +78,7 @@ public:
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }
 
-	void						GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT RTFormat, D3DFORMAT DSFormat, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const;
+	bool						GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const;
 	IDirect3DDevice9*			GetD3DDevice() const { return pD3DDevice; }
 };
 

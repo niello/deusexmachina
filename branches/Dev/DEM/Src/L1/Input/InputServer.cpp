@@ -1,7 +1,7 @@
 #include "InputServer.h"
 
-#include <Render/RenderServer.h>
-#include <Render/Events/OSInput.h>
+//#include <Render/RenderServer.h>
+#include <System/Events/OSInput.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
 #include <Input/Events/CharInput.h>
@@ -50,9 +50,9 @@ bool CInputServer::Open()
 	MouseXRel =
 	MouseYRel = 0.f;
 
-	SUBSCRIBE_NEVENT(OSInput, CInputServer, OnDisplayInput);
-	SUBSCRIBE_PEVENT(OnDisplaySetFocus, CInputServer, OnDisplaySetFocus);
-	SUBSCRIBE_PEVENT(OnDisplayKillFocus, CInputServer, OnDisplayKillFocus);
+	SUBSCRIBE_NEVENT(OSInput, CInputServer, OnOSWindowInput);
+	SUBSCRIBE_PEVENT(OnSetFocus, CInputServer, OnOSWindowSetFocus);
+	SUBSCRIBE_PEVENT(OnKillFocus, CInputServer, OnOSWindowKillFocus);
 
 	_IsOpen = true;
 	OK;
@@ -64,8 +64,8 @@ void CInputServer::Close()
 	n_assert(_IsOpen);
 
 	UNSUBSCRIBE_EVENT(OSInput);
-	UNSUBSCRIBE_EVENT(OnDisplaySetFocus);
-	UNSUBSCRIBE_EVENT(OnDisplayKillFocus);
+	UNSUBSCRIBE_EVENT(OnSetFocus);
+	UNSUBSCRIBE_EVENT(OnKillFocus);
 
 	//UnsubscribeAll();
 	Contexts.Clear();
@@ -203,7 +203,7 @@ void CInputServer::Reset()
 //---------------------------------------------------------------------
 
 // Generates input events based on display input type & input settings like Invert Y, Sensitivity, axis smoothing etc
-bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
+bool CInputServer::OnOSWindowInput(const Events::CEventBase& Event)
 {
 	const Event::OSInput& Ev = (const Event::OSInput&)Event;
 
@@ -233,7 +233,8 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 		case Event::OSInput::MouseMove:
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			//!!!
+			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseMove(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -248,7 +249,8 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			MouseBtnState[Ev.MouseInfo.Button] |= (KEY_IS_DOWN | KEY_IS_PRESSED);
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			//!!!
+			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseBtnDown(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -257,7 +259,8 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_UP;
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			//!!!
+			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseBtnUp(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -266,7 +269,8 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_DBL_CLICKED;
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			//!!!
+			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseDoubleClick(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -281,7 +285,7 @@ bool CInputServer::OnDisplayInput(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CInputServer::OnDisplaySetFocus(const Events::CEventBase& Event)
+bool CInputServer::OnOSWindowSetFocus(const Events::CEventBase& Event)
 {
 #ifndef _DEBUG
 	Reset();
@@ -315,7 +319,7 @@ bool CInputServer::OnDisplaySetFocus(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CInputServer::OnDisplayKillFocus(const Events::CEventBase& Event)
+bool CInputServer::OnOSWindowKillFocus(const Events::CEventBase& Event)
 {
 #ifndef _DEBUG
 	Reset();
@@ -329,4 +333,4 @@ bool CInputServer::OnDisplayKillFocus(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-} // namespace Input
+}

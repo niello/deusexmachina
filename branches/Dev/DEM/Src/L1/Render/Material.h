@@ -43,10 +43,10 @@ protected:
 
 public:
 
-	CMaterial(CStrID ID): CResource(ID), FeatureFlags(0) {}
+	CMaterial(CStrID ID): CResource(ID)/*, FeatureFlags(0)*/ {}
 	virtual ~CMaterial() { if (IsLoaded()) Unload(); }
 
-	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags) //, const CShaderVarMap& StaticShaderVars);
+	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags); //, const CShaderVarMap& StaticShaderVars);
 	virtual void			Unload();
 
 	//???GetTech(LOD, FFlags)? with auto-fallback

@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_TERRAIN_RENDERER_H__
 
 #include <Render/Renderer.h>
-#include <Render/Materials/ShaderVar.h>
+//#include <Render/Materials/ShaderVar.h>
 #include <Render/Terrain.h>
 
 // This terrain renderer implements CDLOD technique. It is paired with Scene::CTerrain
@@ -48,8 +48,8 @@ protected:
 		float	MorphConsts[2];
 	};
 
-	PShader						Shader;
-	CShaderVarMap				ShaderVars;
+	//PShader						Shader;
+	//CShaderVarMap				ShaderVars;
 	DWORD						FeatFlags;
 	bool						EnableLighting;
 
@@ -65,16 +65,16 @@ protected:
 	CArray<CTerrain*>			TerrainObjects;
 	const CArray<CLight*>*		pLights;
 
-	CShader::HVar				hHeightMap;
-	CShader::HVar				hWorldToHM;
-	CShader::HVar				hTerrainYInvSplat;
-	CShader::HVar				hGridConsts;
-	CShader::HVar				hHMTexInfo;
+	//CShader::HVar				hHeightMap;
+	//CShader::HVar				hWorldToHM;
+	//CShader::HVar				hTerrainYInvSplat;
+	//CShader::HVar				hGridConsts;
+	//CShader::HVar				hHMTexInfo;
 
-	PShader						SharedShader;
-	CShader::HVar				hLightType;
-	CShader::HVar				hLightDir;
-	CShader::HVar				hLightColor;
+	//PShader						SharedShader;
+	//CShader::HVar				hLightType;
+	//CShader::HVar				hLightDir;
+	//CShader::HVar				hLightColor;
 	DWORD						LightFeatFlags[MaxLightsPerObject];
 	DWORD						FeatFlagDefault;
 

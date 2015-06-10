@@ -336,6 +336,7 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 	SCDesc.BufferDesc.RefreshRate.Denominator = 0;
 	SCDesc.BufferCount = SwapChainDesc.BackBufferCount; //!!! + 1 if front buffer must be included!
 	SCDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	if (BackBufferDesc.UseAsShaderInput) SCDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
 	SCDesc.Windowed = TRUE; // Recommended, use SwitchToFullscreen()
 	SCDesc.OutputWindow = pWnd->GetHWND();
 
@@ -388,10 +389,12 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 		pSwapChain->Release();
 		return ERR_CREATION_ERROR;
 	}
+
+	//!!!when init check if use as shader input requested, desc must allow it!
 	
 	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
-	RT->Create();
-	pBackBuffer->Release();
+	RT->Create(pBackBuffer, pRTV);
+	//pBackBuffer->Release();
 
 	if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 
@@ -573,37 +576,100 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
+//???allow arrays? need mips (add to desc)?
+//???allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
+PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
+{
+	//!!!assert Format is not typeless!
+
+	//???disable MSAA for DEM_RENDER_DEBUG?
+	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+	UINT QualityLvlCount = 0;
+	if (Desc.MSAAQuality != MSAA_None)
+		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
+
+	D3D11_TEXTURE2D_DESC D3DDesc = {0};
+	D3DDesc.Width = Desc.Width;
+	D3DDesc.Height = Desc.Height;
+	D3DDesc.MipLevels = 1;
+	D3DDesc.ArraySize = 1;
+	D3DDesc.Format = Fmt;
+	if (Desc.MSAAQuality == MSAA_None)
+	{
+		D3DDesc.SampleDesc.Count = 1;
+		D3DDesc.SampleDesc.Quality = 0;
+	}
+	else
+	{
+		D3DDesc.SampleDesc.Count = (int)Desc.MSAAQuality;
+		D3DDesc.SampleDesc.Quality = QualityLvlCount - 1; // Can use predefined D3D11_STANDARD_MULTISAMPLE_PATTERN, D3D11_CENTER_MULTISAMPLE_PATTERN
+	}
+	D3DDesc.Usage = D3D11_USAGE_DEFAULT;
+	D3DDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+	if (Desc.UseAsShaderInput) D3DDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+	D3DDesc.CPUAccessFlags = 0;
+	D3DDesc.MiscFlags = 0;
+
+	ID3D11Texture2D* pTexture = NULL;
+	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTexture))) return NULL;
+	
+	ID3D11RenderTargetView* pRTV = NULL;
+	if (FAILED(pD3DDevice->CreateRenderTargetView(pTexture, NULL, &pRTV)))
+	{
+		pTexture->Release();
+		return NULL;
+	}
+
+	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
+	RT->Create(pTexture, pRTV);
+	return RT.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
 {
-	/*
-    // Create depth stencil texture
-    D3D11_TEXTURE2D_DESC descDepth;
-    ZeroMemory( &descDepth, sizeof(descDepth) );
-    descDepth.Width = width;
-    descDepth.Height = height;
-    descDepth.MipLevels = 1;
-    descDepth.ArraySize = 1;
-    descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    descDepth.SampleDesc.Count = 1;
-    descDepth.SampleDesc.Quality = 0;
-    descDepth.Usage = D3D11_USAGE_DEFAULT;
-    descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    descDepth.CPUAccessFlags = 0;
-    descDepth.MiscFlags = 0;
-    hr = g_pd3dDevice->CreateTexture2D( &descDepth, nullptr, &g_pDepthStencil );
-    if( FAILED( hr ) )
-        return hr;
+	//???disable MSAA for DEM_RENDER_DEBUG?
+	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+	UINT QualityLvlCount = 0;
+	if (Desc.MSAAQuality != MSAA_None)
+		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
 
-    // Create the depth stencil view
-    D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
-    ZeroMemory( &descDSV, sizeof(descDSV) );
-    descDSV.Format = descDepth.Format;
-    descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    descDSV.Texture2D.MipSlice = 0;
-    hr = g_pd3dDevice->CreateDepthStencilView( g_pDepthStencil, &descDSV, &g_pDepthStencilView );
-    if( FAILED( hr ) )
-        return hr;
-	*/
+	D3D11_TEXTURE2D_DESC D3DDesc = {0};
+	D3DDesc.Width = Desc.Width;
+	D3DDesc.Height = Desc.Height;
+	D3DDesc.MipLevels = 1;
+	D3DDesc.ArraySize = 1;
+	D3DDesc.Format = Fmt;
+	if (Desc.MSAAQuality == MSAA_None)
+	{
+		D3DDesc.SampleDesc.Count = 1;
+		D3DDesc.SampleDesc.Quality = 0;
+	}
+	else
+	{
+		D3DDesc.SampleDesc.Count = (int)Desc.MSAAQuality;
+		D3DDesc.SampleDesc.Quality = QualityLvlCount - 1; // Can use predefined D3D11_STANDARD_MULTISAMPLE_PATTERN, D3D11_CENTER_MULTISAMPLE_PATTERN
+	}
+	D3DDesc.Usage = D3D11_USAGE_DEFAULT;
+	D3DDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	if (Desc.UseAsShaderInput) D3DDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE; //???is allowed?
+	D3DDesc.CPUAccessFlags = 0;
+	D3DDesc.MiscFlags = 0;
+
+	ID3D11Texture2D* pTexture = NULL;
+	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTexture))) return NULL;
+	
+	ID3D11DepthStencilView* pDSV = NULL;
+	if (FAILED(pD3DDevice->CreateDepthStencilView(pTexture, NULL, &pDSV)))
+	{
+		pTexture->Release();
+		return NULL;
+	}
+
+	//PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
+	//DS->Create(pTexture, pDSV);
+	//return DS.GetUnsafe();
+
 	return NULL;
 }
 //---------------------------------------------------------------------

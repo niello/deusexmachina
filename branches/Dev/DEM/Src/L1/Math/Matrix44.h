@@ -9,11 +9,12 @@
 
 //???typedef __declspec(align(32)) struct matrix44 matrix44_16;?
 //!!!if so, DEM_ALLOCATE_ALIGN16 must be declared only in matrix44_16!
-DEM_ALIGN_16 class matrix44
+//DEM_ALIGN_16
+class matrix44
 {
 public:
 
-	DEM_ALLOCATE_ALIGN16;
+	//DEM_ALLOCATE_ALIGN16;
 
     float m[4][4];
 

@@ -86,13 +86,21 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 #endif
 
 #define DEM_ALLOCATE_ALIGN16 \
-   inline void* operator new(size_t sizeInBytes)   { return n_malloc_aligned(sizeInBytes, 16); }   \
-   inline void  operator delete(void* ptr)         { n_free_aligned(ptr); }   \
-   inline void* operator new(size_t, void* ptr)   { return ptr; }   \
-   inline void  operator delete(void*, void*)      { }   \
-   inline void* operator new[](size_t sizeInBytes)   { n_malloc_aligned(sizeInBytes, 16); }   \
-   inline void  operator delete[](void* ptr)         { n_free_aligned(ptr); }   \
-   inline void* operator new[](size_t, void* ptr)   { return ptr; }   \
-   inline void  operator delete[](void*, void*)      { }   \
+   inline void* operator new(size_t sizeInBytes)	{ return n_malloc_aligned(sizeInBytes, 16); }   \
+   inline void  operator delete(void* ptr)			{ n_free_aligned(ptr); }   \
+   inline void* operator new(size_t, void* ptr)		{ return ptr; }   \
+   inline void  operator delete(void*, void*)		{ }   \
+   inline void* operator new[](size_t sizeInBytes)	{ n_malloc_aligned(sizeInBytes, 16); }   \
+   inline void  operator delete[](void* ptr)		{ n_free_aligned(ptr); }   \
+   inline void* operator new[](size_t, void* ptr)	{ return ptr; }   \
+   inline void  operator delete[](void*, void*)		{ }   \
+   inline void* operator new(size_t sizeInBytes, const char* file, int line)	{ return n_malloc_aligned(sizeInBytes, 16); }   \
+   inline void  operator delete(void* ptr, const char* file, int line)			{ n_free_aligned(ptr); }   \
+   inline void* operator new(size_t, void* ptr, const char* file, int line)		{ return ptr; }   \
+   inline void  operator delete(void*, void*, const char* file, int line)		{ }   \
+   inline void* operator new[](size_t sizeInBytes, const char* file, int line)	{ n_malloc_aligned(sizeInBytes, 16); }   \
+   inline void  operator delete[](void* ptr, const char* file, int line)		{ n_free_aligned(ptr); }   \
+   inline void* operator new[](size_t, void* ptr, const char* file, int line)	{ return ptr; }   \
+   inline void  operator delete[](void*, void*, const char* file, int line)		{ }   \
 
 #endif

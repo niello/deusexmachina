@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_MODEL_RENDERER_H__
 
 #include <Render/Renderer.h>
-#include <Render/Materials/Shader.h>
+#include <Render/Shader.h>
 #include <Render/Model.h>
 
 // Model renderer is suited for rendering different 3D models, either static or skinned.
