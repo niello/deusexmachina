@@ -22,10 +22,10 @@ private:
 public:
 
 	CRingBuffer(): pStart(NULL), pEnd(NULL), pHead(NULL), pTail(NULL) {}
-	CRingBuffer(int Capacity): pStart(NULL) { Initialize(Capacity); }
+	CRingBuffer(DWORD Capacity): pStart(NULL) { Initialize(Capacity); }
 	~CRingBuffer() { if (pStart) n_delete_array(pStart); }
 
-	void Initialize(int Capacity);
+	void Initialize(DWORD Capacity);
 
 	T* Add();
 	void DeleteTail();
@@ -56,7 +56,7 @@ template<class T> void CRingBuffer<T>::Copy(const CRingBuffer<T>& Other)
 }
 //---------------------------------------------------------------------
 
-template<class T> void CRingBuffer<T>::Initialize(int Capacity)
+template<class T> void CRingBuffer<T>::Initialize(DWORD Capacity)
 {
 	n_assert(!pStart);
 	//_num++; // there is always 1 empty element in buffer

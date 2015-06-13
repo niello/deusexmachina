@@ -797,6 +797,15 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.h">
       <Filter>Render\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceObject.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceLoader.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1284,6 +1293,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.cpp">
       <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Core\RTTIBaseClass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceObject.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceLoader.cpp">
+      <Filter>Resources</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

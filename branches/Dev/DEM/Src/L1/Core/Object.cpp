@@ -2,7 +2,7 @@
 
 namespace Core
 {
-__ImplementRootClassNoFactory(Core::CObject, 'OBJT');
+__ImplementClassNoFactory(Core::CObject, Core::CRTTIBaseClass);
 
 #ifdef _DEBUG
 CObject::CObjList CObject::List;
