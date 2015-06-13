@@ -20,7 +20,7 @@ private:
 
 	typedef CObject* (*CFactoryFunc)(void* pParam);
 
-	CString			Name;
+	CString			Name; //???use CSimpleString?
 	Data::CFourCC	FourCC;
 	DWORD			InstanceSize;
 
@@ -37,7 +37,7 @@ public:
 	//void			FreeInstanceMemory(void* pPtr) { n_free(pPtr); }
 
 	const CString&	GetName() const { return Name; }
-	Data::CFourCC			GetFourCC() const { return FourCC; }
+	Data::CFourCC	GetFourCC() const { return FourCC; }
 	const CRTTI*	GetParent() const { return pParent; }
 	DWORD			GetInstanceSize() const;
 	bool			IsDerivedFrom(const CRTTI& Other) const;
@@ -47,7 +47,6 @@ public:
 	bool operator ==(const CRTTI& Other) const { return this == &Other; }
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
 };
-//---------------------------------------------------------------------
 
 inline CRTTI::CRTTI(const CString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize):
 	Name(ClassName),
@@ -103,8 +102,8 @@ inline bool CRTTI::IsDerivedFrom(const CString& OtherName) const
 //	void operator delete(void* p) { RTTI.FreeInstanceMemory(p); };
 #define __DeclareClass(Class) \
 public: \
-	static Core::CRTTI	RTTI; \
-	static const bool	Factory_Registered; \
+	static Core::CRTTI		RTTI; \
+	static const bool		Factory_Registered; \
 	virtual Core::CRTTI*	GetRTTI() const { return &RTTI; } \
 	static Core::CObject*	FactoryCreator(void* pParam); \
 	static Class*			CreateInstance(void* pParam = NULL); \
@@ -114,8 +113,8 @@ private:
 
 #define __DeclareClassNoFactory \
 public: \
-	static Core::CRTTI RTTI; \
-	virtual Core::CRTTI* GetRTTI() const { return &RTTI; } \
+	static Core::CRTTI		RTTI; \
+	virtual Core::CRTTI*	GetRTTI() const { return &RTTI; } \
 private:
 
 #define __ImplementClass(Class, FourCC, ParentClass) \

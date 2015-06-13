@@ -10,7 +10,7 @@
 namespace Events
 {
 #define EV_TERM_ON_HANDLED	0x01	// Stop calling handlers as one returns true = 'event is handled by me'
-#define EV_IGNORE_NULL_SUBS	0x02	// Don't send to default (NULL) handlers
+#define EV_IGNORE_NULL_SUBS	0x02	// Don't send to default (any-event, NULL) handlers
 
 class CEventBase: public Core::CObject
 {

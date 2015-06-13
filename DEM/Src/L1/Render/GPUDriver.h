@@ -19,6 +19,10 @@
 // Windowed swap chains are present to the desktop. Each swap chain requires a viewport, and now
 // I use COSWindow for it.
 
+//PERF:
+//!!!GCN says load shaders before textures, driver compiles to its ASM in the background!
+//then warm shader cache - bind all shaders and perform offscreen rendering
+
 //!!!each adapter output can display only one fullscreen swap chain! control it!
 //D3D9: multihead (multi-swap-chain) device must have all swap chains fullscreen
 //???can have multiple windowed swap chains?

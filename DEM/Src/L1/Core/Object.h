@@ -3,18 +3,18 @@
 #define __DEM_L1_OBJECT_H__
 
 #include <Data/RefCounted.h>
-#include <Core/RTTI.h>
+#include <Core/RTTIBaseClass.h>
 #ifdef _DEBUG
 #include <Data/List.h>
 #endif
 
-// Base class for objects. Provides refcounting, smart pointer support,
+// Base class for engine objects. Provides refcounting, smart pointer support,
 // fast custom RTTI and security check at application shutdown.
 
 namespace Core
 {
 
-class CObject: public Data::CRefCounted //???make mix-in instead of refcounted child? rename to CRTTIClass, and CObject: public CRefCounted, CRTTIClass
+class CObject: public Data::CRefCounted, public CRTTIBaseClass
 {
 	__DeclareClassNoFactory;
 
@@ -39,17 +39,6 @@ public:
 #ifdef _DEBUG
 	static void DumpLeaks();
 #endif
-
-	bool			IsInstanceOf(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
-	bool			IsInstanceOf(const CString& Name) const { return GetRTTI()->GetName() == Name; }
-	bool			IsInstanceOf(Data::CFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
-	template<class T>
-	bool			IsA() const { return IsA(T::RTTI); }
-	bool			IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
-	bool			IsA(const CString& Name) const { return GetRTTI()->IsDerivedFrom(Name); }
-	bool			IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
-	const CString&	GetClassName() const { return GetRTTI()->GetName(); }
-	Data::CFourCC	GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
 };
 //---------------------------------------------------------------------
 

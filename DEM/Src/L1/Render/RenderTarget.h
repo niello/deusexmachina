@@ -8,6 +8,9 @@
 // A surface in a video memory on which rendering is performed. It can be
 // a back buffer or a texture. It optionally can be used as a shader input.
 
+//PERF:
+//!!!always clear MSAARTs before rendering, at least AMD GCN benefits from it!
+
 namespace Render
 {
 typedef Ptr<class CTexture> PTexture;

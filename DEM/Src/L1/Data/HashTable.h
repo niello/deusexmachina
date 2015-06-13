@@ -76,9 +76,9 @@ public:
 		}
 	};
 
-	static const int DEFAULT_SIZE = 64;
+	static const DWORD DEFAULT_SIZE = 64;
 
-	CHashTable(int Capacity = DEFAULT_SIZE);
+	CHashTable(DWORD Capacity = DEFAULT_SIZE);
 	CHashTable(const CHashTable<TKey, TVal>& Other): Chains(Other.Chains), Count(Other.Count) {}
 
 	void		Add(const CPair& Pair);
@@ -105,7 +105,7 @@ public:
 };
 
 template<class TKey, class TVal>
-inline CHashTable<TKey, TVal>::CHashTable(int Capacity = DEFAULT_SIZE): Chains(Capacity), Count(0)
+inline CHashTable<TKey, TVal>::CHashTable(DWORD Capacity = DEFAULT_SIZE): Chains(Capacity), Count(0)
 {
 	// Since collision is more of exception, set grow size to 1 to economy memory
 	for (DWORD i = 0; i < Chains.GetCount(); ++i)

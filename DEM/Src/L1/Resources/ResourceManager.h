@@ -2,88 +2,48 @@
 #ifndef __DEM_L1_RESOURCE_MANAGER_H__
 #define __DEM_L1_RESOURCE_MANAGER_H__
 
-#include <Data/Ptr.h>
-#include <Core/RTTI.h>
 #include <Data/StringID.h>
+#include <Data/SimpleString.h>
 #include <Data/HashTable.h>
+#include <Data/Singleton.h>
 
-// Template resource manager that allows to manage different resources separately.
-// Resource manager ensures that each shared resource is loaded in memory exactly once.
-// Each manager has its ID namespace, so UIDs are unique only in a scope of one manager.
-// All managers can use the same singleton loading task dispatcher, that in turn can
-// feed job manager with async resource loading requests, keeping track of some statistics
-// for both profiling and level loading progress tracking.
-
-//!!!???derive CDescManager - for resources that are loaded from HRD?! base tpl support like in items?
+// Resource manager controls resource loading, lifetime, uniquity, and serves as
+// a hub for accessing any types of assets in an abstract way.
+// Resources are identified and located by URI (Uniform Resource Identifier).
+// Resource ID is its URI expanded and made relative to the RootPath, if possible.
+// It is necessary for file resources for two reasons:
+// 1. We avoid wasting memory for an absolute path to data root in each resource ID.
+// 2. We make resource IDs independent from data root location, so resource IDs
+//    will always stay the same no matter from which place we run our application.
+// You always can leave RootPath empty and use absolute resource IDs.
 
 namespace Resources
 {
 typedef Ptr<class CResource> PResource;
 
-class IResourceManager
+#define ResourceMgr Resources::ÑResourceManager::Instance()
+
+class ÑResourceManager //???refcounted / object?
 {
+	__DeclareSingleton(ÑResourceManager);
+
 protected:
 
-	DWORD UIDCounter;
+	//???what about empty hand-created resources, that aren't from file?
+	//PResource	RegisterResource(CStrID ID, PrecreatedRsrcObject); //???
 
 	//!!!???some pool?! if pool, hash table can store weak ptrs
 
-	CHashTable<CStrID, PResource>	UIDToResource;
-
-	//PResource Placeholder;
+	Data::CSimpleString				RootPath;
+	CHashTable<CStrID, PResource>	Registry;
 
 public:
 
-	IResourceManager(): UIDCounter(0) {}
+	ÑResourceManager(DWORD HashTableCapacity = 256): Registry(HashTableCapacity) { __ConstructSingleton; }
+	~ÑResourceManager() { __DestructSingleton; }
 
-	PResource	CreateResource(CStrID UID, const Core::CRTTI& Type);
-	PResource	GetResource(CStrID UID);
-	int			DeleteResource(CStrID UID); // returns remaining refcount, if 0, was really unloaded, if -1, was not found
-	bool		ResourceExists(CStrID UID) const { return UIDToResource.Contains(UID); }
-
-	DWORD		UnloadUnreferenced();
-	DWORD		DeleteUnreferenced();
-	DWORD		FreeMemory(DWORD DesiredBytes);
-	DWORD		GetMemoryUsed();
+	PResource	RegisterResource(const char* pURI); //!!!use URI structue, pre-parsed! one string w/ptrs to parts
 };
-
-inline PResource IResourceManager::GetResource(CStrID UID)
-{
-	PResource* ppRsrc = UIDToResource.Get(UID);
-	return ppRsrc ? *ppRsrc : NULL;
-}
-//---------------------------------------------------------------------
-
-template<class TRsrc>
-class CResourceManager: public IResourceManager
-{
-public:
-
-	Ptr<TRsrc>		CreateTypedResource(CStrID UID, const Core::CRTTI& Type = TRsrc::RTTI);
-	template<class TSubRsrc>
-	Ptr<TSubRsrc>	CreateTypedResource(CStrID UID) { return (TSubRsrc*)CreateTypedResource(UID, TSubRsrc::RTTI).GetUnsafe(); }
-	Ptr<TRsrc>		GetTypedResource(CStrID UID) { return (TRsrc*)GetResource(UID).GetUnsafe(); }
-	Ptr<TRsrc>		GetOrCreateTypedResource(CStrID UID, const Core::CRTTI& Type = TRsrc::RTTI);
-	template<class TSubRsrc>
-	Ptr<TSubRsrc>	GetOrCreateTypedResource(CStrID UID) { return (TSubRsrc*)GetOrCreateTypedResource(UID, TSubRsrc::RTTI).GetUnsafe(); }
-};
-
-template<class TRsrc>
-Ptr<TRsrc> CResourceManager<TRsrc>::CreateTypedResource(CStrID UID, const Core::CRTTI& Type)
-{
-	n_assert2_dbg(Type.IsDerivedFrom(TRsrc::RTTI), (Type.GetName() + " is not a " + TRsrc::RTTI.GetName() + " or a subclass!").CStr());
-	return (TRsrc*)CreateResource(UID, Type).GetUnsafe();
-}
-//---------------------------------------------------------------------
-
-template<class TRsrc>
-Ptr<TRsrc> CResourceManager<TRsrc>::GetOrCreateTypedResource(CStrID UID, const Core::CRTTI& Type)
-{
-	PResource* ppRsrc = UIDToResource.Get(UID);
-	if (ppRsrc) return (TRsrc*)(*ppRsrc).GetUnsafe();
-	return CreateTypedResource(UID, Type);
-}
-//---------------------------------------------------------------------
 
 }
 

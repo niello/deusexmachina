@@ -159,6 +159,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
     <ClInclude Include="..\..\Src\L1\Data\Buffer.h" />
@@ -259,6 +260,8 @@
     <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexLayout.h" />
     <ClInclude Include="..\..\Src\L1\Render\VideoDriverFactory.h" />
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceLoader.h" />
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceObject.h" />
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
     <ClInclude Include="..\..\Src\L1\System\Events\OSInput.h" />
@@ -399,6 +402,7 @@
     <ClInclude Include="..\..\Src\L1\StdDEM.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Src\L1\Core\RTTIBaseClass.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Data.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\DataArray.cpp" />
@@ -459,6 +463,8 @@
     <ClCompile Include="..\..\Src\L1\Render\SPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp" />
     <ClCompile Include="..\..\Src\L1\System\Events\OSInput.cpp" />
     <ClCompile Include="..\..\Src\L1\System\OSWindowWin32.cpp" />
