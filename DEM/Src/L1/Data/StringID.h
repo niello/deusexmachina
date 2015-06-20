@@ -2,7 +2,6 @@
 #ifndef __DEM_L1_STRING_ID_H__
 #define __DEM_L1_STRING_ID_H__
 
-#include <string.h>
 #include <StdDEM.h>
 #include <Data/Hash.h>
 

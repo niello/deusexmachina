@@ -145,7 +145,7 @@ void CEventServer::ProcessPendingEvents()
 	while (PendingEventsHead && PendingEventsHead->FireTime <= CurrTime)
 	{
 		n_assert(PendingEventsHead->Event);
-		PendingEventsHead->Dispatcher->DispatchEvent(*PendingEventsHead->Event);
+		PendingEventsHead->Dispatcher->FireEvent(*PendingEventsHead->Event);
 		CEventNode* Next = PendingEventsHead->Next;
 		EventSrv->DestroyNode(PendingEventsHead);
 		PendingEventsHead = Next;

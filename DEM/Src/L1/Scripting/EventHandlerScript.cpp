@@ -14,7 +14,7 @@ extern "C"
 namespace Events
 {
 
-bool CEventHandlerScript::operator()(const CEventBase& Event)
+bool CEventHandlerScript::Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event)
 {
 	//???where do we check isn't it native?
 	const CEvent& e = (const CEvent&)Event;

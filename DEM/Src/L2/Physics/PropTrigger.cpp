@@ -74,7 +74,7 @@ void CPropTrigger::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnPropActivated(const Events::CEventBase& Event)
+bool CPropTrigger::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -92,7 +92,7 @@ bool CPropTrigger::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropTrigger::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -126,7 +126,7 @@ void CPropTrigger::SetEnabled(bool Enable)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
+bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CArray<const btCollisionObject*> Collisions(16, 16);
 	Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
@@ -180,7 +180,7 @@ bool CPropTrigger::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnLevelSaving(const Events::CEventBase& Event)
+bool CPropTrigger::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	GetEntity()->SetAttr<bool>(CStrID("TrgEnabled"), Enabled);
 	if (Period > 0.f) GetEntity()->SetAttr<float>(CStrID("TrgTimeLastTriggered"), TimeLastTriggered);
@@ -188,7 +188,7 @@ bool CPropTrigger::OnLevelSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropTrigger::OnRenderDebug(const Events::CEventBase& Event)
+bool CPropTrigger::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	static const vector4 ColorOn(0.9f, 0.58f, 1.0f, 0.3f); // purple
 	static const vector4 ColorOff(0.0f, 0.0f, 0.0f, 0.08f); // black

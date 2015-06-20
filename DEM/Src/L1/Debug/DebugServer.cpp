@@ -73,7 +73,7 @@ void CDebugServer::AllowUI(bool Allow)
 }
 //---------------------------------------------------------------------
 
-bool CDebugServer::OnDebugBreak(const Events::CEventBase& Event)
+bool CDebugServer::OnDebugBreak(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 #ifdef _DEBUG
 	__debugbreak();
@@ -82,14 +82,14 @@ bool CDebugServer::OnDebugBreak(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CDebugServer::OnShowDebugConsole(const Events::CEventBase& Event)
+bool CDebugServer::OnShowDebugConsole(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	TogglePluginWindow(CStrID("Console"));
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CDebugServer::OnShowDebugWatcher(const Events::CEventBase& Event)
+bool CDebugServer::OnShowDebugWatcher(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	TogglePluginWindow(CStrID("Watcher"));
 	OK;

@@ -90,7 +90,7 @@ void CLuaConsole::Print(LPCSTR pMsg, DWORD Color)
 }
 //---------------------------------------------------------------------
 
-bool CLuaConsole::OnLogMsg(const Events::CEventBase& Event)
+bool CLuaConsole::OnLogMsg(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	DWORD Color = (P->Get<int>(CStrID("Type")) == Sys::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;

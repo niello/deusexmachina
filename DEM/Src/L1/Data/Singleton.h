@@ -5,7 +5,7 @@
 // Provides helper macros to implement singleton objects:
 //
 // - __DeclareSingleton      put this into class declaration
-// - __ImplementSingleton    put this into the implemention file
+// - __ImplementSingleton    put this into the implementation file
 // - __ConstructSingleton    put this into the constructor
 // - __DestructSingleton     put this into the destructor
 //

@@ -71,7 +71,7 @@ void CPropInventory::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::OnPropActivated(const Events::CEventBase& Event)
+bool CPropInventory::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -87,7 +87,7 @@ bool CPropInventory::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropInventory::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -103,7 +103,7 @@ bool CPropInventory::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
+bool CPropInventory::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!Items.GetCount())
 	{
@@ -139,7 +139,7 @@ bool CPropInventory::OnLevelSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::OnSOActionDone(const Events::CEventBase& Event)
+bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	CStrID ActionID = P->Get<CStrID>(CStrID("Action"));

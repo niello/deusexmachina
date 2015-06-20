@@ -26,7 +26,7 @@ void CPropDestructible::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropDestructible::OnObjDamageDone(const CEventBase& Event)
+bool CPropDestructible::OnObjDamageDone(CEventDispatcher* pDispatcher, const CEventBase& Event)
 {
 	const ObjDamageDone& e = (const ObjDamageDone&)Event;
 

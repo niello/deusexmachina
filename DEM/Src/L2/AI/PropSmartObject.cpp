@@ -117,7 +117,7 @@ void CPropSmartObject::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
+bool CPropSmartObject::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	// Initialize current state and transition.
 	// Do it here to make sure that script is loaded and will process transition events.
@@ -133,7 +133,7 @@ bool CPropSmartObject::OnPropsActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
+bool CPropSmartObject::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -157,7 +157,7 @@ bool CPropSmartObject::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropSmartObject::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -183,7 +183,7 @@ bool CPropSmartObject::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
+bool CPropSmartObject::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (IsInTransition())
 	{
@@ -211,7 +211,7 @@ bool CPropSmartObject::OnLevelSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSmartObject::OnBeginFrame(const Events::CEventBase& Event)
+bool CPropSmartObject::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	float Time = (float)GameSrv->GetFrameTime();
 	if (Time != 0.f) SetTransitionProgress(TrProgress + Time);

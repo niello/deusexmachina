@@ -26,13 +26,13 @@ CWorldManager::~CWorldManager()
 }
 //---------------------------------------------------------------------
 
-bool CWorldManager::OnGameDescLoaded(const Events::CEventBase& Event)
+bool CWorldManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CWorldManager::OnGameSaving(const Events::CEventBase& Event)
+bool CWorldManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	OK;
 }

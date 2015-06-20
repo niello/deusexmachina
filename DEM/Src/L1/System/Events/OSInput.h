@@ -12,7 +12,7 @@ namespace Event
 
 class OSInput: public Events::CEventNative
 {
-	__DeclareClass(OSInput);
+	__DeclareNativeEventClass;
 
 protected:
 

@@ -78,7 +78,7 @@ void CInputMappingEvent::Enable()
 {
 	if (Sub_InputEvent.IsValid()) return;
 
-	bool(CInputMappingEvent::*CB)(const CEventBase& Event);
+	bool(CInputMappingEvent::*CB)(CEventDispatcher* pDispatcher, const CEventBase& Event);
 
 	if (InEventID == &Event::KeyDown::RTTI) CB = &CInputMappingEvent::OnKeyDown;
 	else if (InEventID == &Event::KeyUp::RTTI) CB = &CInputMappingEvent::OnKeyUp;
@@ -99,49 +99,49 @@ void CInputMappingEvent::Disable()
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnKeyDown(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnKeyDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (Key == ((const Event::KeyDown&)Event).ScanCode) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnKeyUp(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnKeyUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (Key == ((const Event::KeyUp&)Event).ScanCode) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnCharInput(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnCharInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (Char == ((const Event::CharInput&)Event).Char) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnMouseBtnDown(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnMouseBtnDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (MouseBtn == ((const Event::MouseBtnDown&)Event).Button) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnMouseBtnUp(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnMouseBtnUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (MouseBtn == ((const Event::MouseBtnUp&)Event).Button) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnMouseDoubleClick(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnMouseDoubleClick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (MouseBtn == ((const Event::MouseDoubleClick&)Event).Button) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingEvent::OnMouseWheel(const Events::CEventBase& Event)
+bool CInputMappingEvent::OnMouseWheel(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (WheelFwd == (((const Event::MouseWheel&)Event).Delta > 0)) return !!EventSrv->FireEvent(OutEventID);
 	FAIL;

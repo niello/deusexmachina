@@ -46,7 +46,7 @@ void CPropTalking::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropTalking::OnPropActivated(const Events::CEventBase& Event)
+bool CPropTalking::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -68,7 +68,7 @@ bool CPropTalking::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropTalking::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropTalking::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -100,7 +100,7 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 }
 //---------------------------------------------------------------------
 
-bool CPropTalking::OnSOActionStart(const Events::CEventBase& Event)
+bool CPropTalking::OnSOActionStart(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	CStrID ActionID = P->Get<CStrID>(CStrID("Action"));

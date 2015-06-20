@@ -33,7 +33,7 @@ protected:
 	CDataDict		Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);
-	bool OnEvent(const Events::CEventBase& Event);
+	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 	CEntity(CStrID _UID);
 

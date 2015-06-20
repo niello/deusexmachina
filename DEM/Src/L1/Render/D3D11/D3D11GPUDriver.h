@@ -35,10 +35,10 @@ protected:
 	CD3D11GPUDriver(): SwapChains(1, 1)/*, IsInsideFrame(false)*/ {}
 
 	////???subscribe swapchain itself? more handling and self-control into a swapchain class?
-	//bool			OnOSWindowToggleFullscreen(const Events::CEventBase& Event);
-	//bool			OnOSWindowSizeChanged(const Events::CEventBase& Event);
-	//bool			OnOSWindowPaint(const Events::CEventBase& Event);
-	//bool			OnOSWindowClosing(const Events::CEventBase& Event);
+	//bool			OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	//bool			OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	//bool			OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	//bool			OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 	void			Release();
 

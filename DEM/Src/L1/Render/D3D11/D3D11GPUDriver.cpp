@@ -676,7 +676,7 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 
 //???handle in a swap chain? if all references ae inside. If device context may have one, pass through CD3D11GPUDriver
 /*
-bool CD3D11GPUDriver::OnOSWindowSizeChanged(const Events::CEventBase& Event)
+bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));

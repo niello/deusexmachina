@@ -8,11 +8,13 @@
 // Resource loader incapsulates an algorithm of loading a particular resource
 // object type from a particular data format. It also stores all data necessary
 // to create and initialize a resource object, if this data is not provided by
-// a data format itself. Derive from this class to implement different resource
-// object loader groups and loading algorithms.
+// a data format itself. Loader, being attached to a CResource, allows to reload
+// it automatically on resource lost. Derive from this class to implement different
+// resource object loader groups and loading algorithms.
 
 namespace Resources
 {
+typedef Ptr<class CResource> PResource;
 
 class CResourceLoader: public Core::CObject
 {
@@ -22,9 +24,10 @@ public:
 
 	virtual ~CResourceLoader() {}
 
-	// Get RTTI of resulting object
-	// Check data existence and format validity without loading
-	// Load (read data from URI etc), provided a resource ptr to fill //???control (a)sync in IO server or where?
+	virtual const Core::CRTTI&	GetResultType() const = 0;
+	virtual bool				IsProvidedDataValid() const = 0;
+	virtual bool				Load(CResource& Resource) const = 0; //???assert resource is NotLoaded? //???async?
+	//???Unload() - responsibility, ownership
 };
 
 typedef Ptr<CResourceLoader> PResourceLoader;

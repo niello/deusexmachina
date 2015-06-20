@@ -13,7 +13,7 @@ namespace Event
 //???inherit from InputEvent where DeviceID is stored?
 class MouseMoveRaw: public Events::CEventNative
 {
-	__DeclareClassNoFactory;
+	__DeclareNativeEventClass;
 
 public:
 

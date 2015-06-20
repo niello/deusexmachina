@@ -731,7 +731,7 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(const Events::CEventBase& Event)
+bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
@@ -745,7 +745,7 @@ bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::OnOSWindowSizeChanged(const Events::CEventBase& Event)
+bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
@@ -763,7 +763,7 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::OnOSWindowPaint(const Events::CEventBase& Event)
+bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
@@ -782,7 +782,7 @@ bool CD3D9GPUDriver::OnOSWindowPaint(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::OnOSWindowClosing(const Events::CEventBase& Event)
+bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));

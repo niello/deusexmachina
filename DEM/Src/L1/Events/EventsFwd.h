@@ -9,9 +9,10 @@
 namespace Events
 {
 class CEventBase;
+class CEventDispatcher;
 typedef Ptr<class CSubscription> PSub;
 typedef Ptr<class CEventHandler> PEventHandler;
-typedef bool (*CEventCallback)(const CEventBase&);
+typedef bool (*CEventCallback)(CEventDispatcher*, const CEventBase&);
 
 enum EEventPriority
 {
@@ -22,25 +23,25 @@ enum EEventPriority
 }
 
 #define DECLARE_EVENT_HANDLER(EventName, HandlerName) \
-	bool HandlerName(const Events::CEventBase& Event); \
+	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
 	Events::PSub Sub_##EventName;
 
 #define DECLARE_EVENT_HANDLER_VIRTUAL(EventName, HandlerName) \
-	bool HandlerName##Proc(const Events::CEventBase& Event); \
+	bool HandlerName##Proc(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
 	virtual void HandlerName(); \
 	Events::PSub Sub_##EventName;
 
 #define DECLARE_2_EVENTS_HANDLER(EventName1, EventName2, HandlerName) \
-	bool HandlerName(const Events::CEventBase& Event); \
+	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
 	Events::PSub Sub_##EventName1; \
 	Events::PSub Sub_##EventName2;
 
 #define DECLARE_ALL_EVENTS_HANDLER(HandlerName) \
-	bool HandlerName(const Events::CEventBase& Event); \
+	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
 	Events::PSub Sub_ALL_EVENTS;
 
 #define IMPL_EVENT_HANDLER_VIRTUAL(EventName, Class, HandlerName) \
-	bool Class::HandlerName##Proc(const Events::CEventBase& Event) { HandlerName(); OK; }
+	bool Class::HandlerName##Proc(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event) { HandlerName(); OK; }
 
 #define SUBSCRIBE_NEVENT(EventName, Class, Handler) \
 	EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)

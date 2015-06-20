@@ -73,9 +73,9 @@ protected:
 
 	bool			AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction = false);
 	bool			ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
-	bool			OnExecuteExploreAction(const Events::CEventBase& Event);
-	bool			OnExecuteSelectAction(const Events::CEventBase& Event);
-	bool			OnExecuteSmartObjAction(const Events::CEventBase& Event);
+	bool			OnExecuteExploreAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnExecuteSelectAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnExecuteSmartObjAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	CAction*		GetActionByID(CStrID ID);
 
 	DECLARE_EVENT_HANDLER(OnLevelSaving, OnLevelSaving);

@@ -2,18 +2,13 @@
 #ifndef __DEM_L1_EVENT_MANAGER_H__
 #define __DEM_L1_EVENT_MANAGER_H__
 
-#include "EventDispatcher.h"
+#include <Events/EventDispatcher.h>
 #include <Data/Pool.h>
 #include <Data/Singleton.h>
 
 // Event server is a central coordination point for the event processing. It works as:
 // - Factory/Cache, by producing event, subscription etc nodes for dispatchers' internal usage
 // - Global event dispatcher if you want to send application-scope events
-
-namespace Data
-{
-	class CParams;
-}
 
 namespace Events
 {
@@ -42,15 +37,13 @@ protected:
 
 	//!!!cache pool of free events!
 
-	void		ScheduleEventInternal(CEventBase& Event, CEventDispatcher* pDisp, float RelTime);
-
 public:
 
 	CEventServer();
 	virtual ~CEventServer() { RemoveAllScheduledEvents(); __DestructSingleton; }
 
-	void		ScheduleEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f); // parametrized
-	void		ScheduleEvent(CEventNative& Event, char Flags = -1, CEventDispatcher* pDisp = NULL, float RelTime = 0.f); // native
+	void		ScheduleEvent(CEventBase& Event, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
+	void		ScheduleEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
 	DWORD		RemoveScheduledEvents(CEventDispatcher* pDisp);
 	DWORD		RemoveAllScheduledEvents();
 
@@ -77,16 +70,9 @@ inline CEventServer::CEventServer():
 
 inline void CEventServer::ScheduleEvent(CStrID ID, Data::PParams Params, char Flags, CEventDispatcher* pDisp, float RelTime)
 {
-	//!!!event pools!
+	//!!!event pools! can't allocate on stack here!
 	Ptr<CEvent> Event = n_new(CEvent)(ID, Flags, Params);
-	ScheduleEventInternal(*Event, pDisp, RelTime);
-}
-//---------------------------------------------------------------------
-
-inline void CEventServer::ScheduleEvent(CEventNative& Event, char Flags, CEventDispatcher* pDisp, float RelTime)
-{
-	if (Flags != -1) Event.Flags = Flags;
-	ScheduleEventInternal(Event, pDisp, RelTime);
+	ScheduleEvent(*Event, pDisp, RelTime);
 }
 //---------------------------------------------------------------------
 

@@ -50,7 +50,7 @@ void CPropItem::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropItem::OnPropActivated(const Events::CEventBase& Event)
+bool CPropItem::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -72,7 +72,7 @@ bool CPropItem::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropItem::OnLevelSaving(const Events::CEventBase& Event)
+bool CPropItem::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!Items.IsValid()) OK;
 	GetEntity()->SetAttr<CStrID>(CStrID("ItemTplID"), Items.GetItemID());

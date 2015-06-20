@@ -32,7 +32,7 @@ void CInputMappingState::Disable()
 }
 //---------------------------------------------------------------------
 
-bool CInputMappingState::OnInputUpdated(const Events::CEventBase& Event)
+bool CInputMappingState::OnInputUpdated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	bool OldState = State;
 	State = true;

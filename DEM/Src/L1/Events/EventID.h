@@ -6,24 +6,24 @@
 #include <Data/StringID.h>
 
 // Event ID standardizes the identification process for Native & Parametrized events.
+// We use the fact that any C++ object has its unique address, so all native events
+// identified by RTTI and all parametrized events identified by StrIDs are unique.
 
 namespace Events
 {
-using namespace Core;
 
 struct CEventID
 {
 	union
 	{
-		const char*		ID;
-		const CRTTI*	RTTI;
+		const char*			ID;
+		const Core::CRTTI*	RTTI;
 	};
 
 	CEventID(): ID(NULL) {}
 	CEventID(CStrID _ID): ID(_ID) {}
-	CEventID(const CRTTI* _RTTI): RTTI(_RTTI) {}
-	CEventID(const CRTTI& _RTTI): RTTI(&_RTTI) {}
-	//???from CEvent/CEventNative/CEventBase?
+	CEventID(const Core::CRTTI* _RTTI): RTTI(_RTTI) {}
+	CEventID(const Core::CRTTI& _RTTI): RTTI(&_RTTI) {}
 
 	bool IsDefault() const { return ID == NULL; }
 
@@ -36,8 +36,8 @@ struct CEventID
 
 	operator DWORD() const { return (DWORD)ID; }
 	operator CStrID() const { return *(CStrID*)&ID; }
-	operator const CRTTI*() const { return RTTI; }
-	operator const CRTTI&() const { return *RTTI; }
+	operator const Core::CRTTI*() const { return RTTI; }
+	operator const Core::CRTTI&() const { return *RTTI; }
 };
 
 }

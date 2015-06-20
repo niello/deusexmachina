@@ -128,7 +128,7 @@ void CPropUIControl::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnPropActivated(const Events::CEventBase& Event)
+bool CPropUIControl::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -156,7 +156,7 @@ bool CPropUIControl::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropUIControl::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -245,7 +245,7 @@ void CPropUIControl::EnableSmartObjReflection(bool Enable)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnLevelSaving(const Events::CEventBase& Event)
+bool CPropUIControl::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (Enabled) GetEntity()->DeleteAttr(CStrID("UIEnabled"));
 	else GetEntity()->SetAttr(CStrID("UIEnabled"), false);
@@ -253,21 +253,21 @@ bool CPropUIControl::OnLevelSaving(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnMouseEnter(const Events::CEventBase& Event)
+bool CPropUIControl::OnMouseEnter(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	ShowTip();
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnMouseLeave(const Events::CEventBase& Event)
+bool CPropUIControl::OnMouseLeave(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	HideTip();
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnSOActionAvailabile(const Events::CEventBase& Event)
+bool CPropUIControl::OnSOActionAvailabile(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	CAction* pAction = GetActionByID(P->Get<CStrID>(CStrID("ActionID")));
@@ -460,7 +460,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
+bool CPropUIControl::OnExecuteExploreAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!UIDesc.IsValid()) FAIL;
 	Data::PParams P = n_new(Data::CParams(1));
@@ -470,7 +470,7 @@ bool CPropUIControl::OnExecuteExploreAction(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::OnExecuteSelectAction(const Events::CEventBase& Event)
+bool CPropUIControl::OnExecuteSelectAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	GetEntity()->GetLevel()->AddToSelection(GetEntity()->GetUID());
 	OK;
@@ -478,7 +478,7 @@ bool CPropUIControl::OnExecuteSelectAction(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 // Special handler for auto-added smart object actions
-bool CPropUIControl::OnExecuteSmartObjAction(const Events::CEventBase& Event)
+bool CPropUIControl::OnExecuteSmartObjAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 

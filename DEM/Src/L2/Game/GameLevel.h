@@ -74,7 +74,7 @@ protected:
 	//!!!???if PCameraManager is really useful, move it there!
 	Render::PCamera				MainCamera;
 
-	bool OnEvent(const Events::CEventBase& Event);
+	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 public:
 

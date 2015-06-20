@@ -275,7 +275,7 @@ CQuest::EStatus CQuestManager::GetQuestStatus(CStrID QuestID, CStrID TaskID)
 }
 //---------------------------------------------------------------------
 
-bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
+bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	QuestsToDelete.Clear();
 	TasksToDelete.Clear();
@@ -356,7 +356,7 @@ bool CQuestManager::OnGameDescLoaded(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CQuestManager::OnGameSaving(const Events::CEventBase& Event)
+bool CQuestManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
 

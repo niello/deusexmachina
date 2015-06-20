@@ -189,7 +189,7 @@ bool CWatcherWindow::OnAddVarsClick(const CEGUI::EventArgs& e)
 }
 //---------------------------------------------------------------------
 
-bool CWatcherWindow::OnUIUpdate(const Events::CEventBase& Event)
+bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const char* pPattern = pPatternEdit->getText().c_str();
 	bool CheckMatch = (pPattern && *pPattern && strcmp(pPattern, "*"));

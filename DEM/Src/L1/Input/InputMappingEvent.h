@@ -40,13 +40,13 @@ private:
 
 	Events::PSub		Sub_InputEvent;
 
-	bool OnKeyDown(const Events::CEventBase& Event);
-	bool OnKeyUp(const Events::CEventBase& Event);
-	bool OnCharInput(const Events::CEventBase& Event);
-	bool OnMouseBtnDown(const Events::CEventBase& Event);
-	bool OnMouseBtnUp(const Events::CEventBase& Event);
-	bool OnMouseDoubleClick(const Events::CEventBase& Event);
-	bool OnMouseWheel(const Events::CEventBase& Event);
+	bool OnKeyDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool OnKeyUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool OnCharInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool OnMouseBtnDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool OnMouseBtnUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool OnMouseDoubleClick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool OnMouseWheel(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 public:
 
