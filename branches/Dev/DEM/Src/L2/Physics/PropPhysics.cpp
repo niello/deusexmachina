@@ -40,7 +40,7 @@ void CPropPhysics::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
+bool CPropPhysics::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -56,7 +56,7 @@ bool CPropPhysics::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropPhysics::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropPhysics::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -174,7 +174,7 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 }
 //---------------------------------------------------------------------
 
-bool CPropPhysics::AfterPhysicsTick(const Events::CEventBase& Event)
+bool CPropPhysics::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//!!!subscribe only when has meaning!
 	//???!!!angular too?!
@@ -184,7 +184,7 @@ bool CPropPhysics::AfterPhysicsTick(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropPhysics::OnSetTransform(const Events::CEventBase& Event)
+bool CPropPhysics::OnSetTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	for (int i = 0; i < Attrs.GetCount(); ++i)

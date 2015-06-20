@@ -202,7 +202,7 @@ void CPropActorBrain::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnPropActivated(const Events::CEventBase& Event)
+bool CPropActorBrain::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -218,7 +218,7 @@ bool CPropActorBrain::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropActorBrain::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -393,7 +393,7 @@ void CPropActorBrain::UpdateBehaviour()
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
+bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	float FrameTime = (float)GameSrv->GetFrameTime();
 
@@ -426,7 +426,7 @@ bool CPropActorBrain::OnBeginFrame(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
+bool CPropActorBrain::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	LookatDir = -Tfm.AxisZ();
@@ -441,7 +441,7 @@ bool CPropActorBrain::OnUpdateTransform(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::BeforePhysicsTick(const Events::CEventBase& Event)
+bool CPropActorBrain::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 #ifndef _EDITOR
 	MotorSystem.Update(((const Events::CEvent&)Event).Params->Get<float>(CStrID("FrameTime")));
@@ -451,7 +451,7 @@ bool CPropActorBrain::BeforePhysicsTick(const Events::CEventBase& Event)
 //---------------------------------------------------------------------
 
 // We need to react on subframe transform changes to drive physics correctly
-bool CPropActorBrain::AfterPhysicsTick(const Events::CEventBase& Event)
+bool CPropActorBrain::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???or access node controller directly and read subframe data?
 	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
@@ -486,7 +486,7 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
+bool CPropActorBrain::OnNavMeshDataChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//!!!test when actor goes somewhere!
 	NavSystem.SetupState();
@@ -495,7 +495,7 @@ bool CPropActorBrain::OnNavMeshDataChanged(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropActorBrain::OnRenderDebug(const Events::CEventBase& Event)
+bool CPropActorBrain::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (GetEntity()->GetUID() == "GG") //!!!write debug focus or smth!
 	{

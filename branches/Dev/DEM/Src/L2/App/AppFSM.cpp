@@ -59,7 +59,7 @@ void CAppFSM::ChangeState(CStrID NextState)
 }
 //---------------------------------------------------------------------
 
-bool CAppFSM::OnCloseRequest(const Events::CEventBase& Event)
+bool CAppFSM::OnCloseRequest(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	RequestState(APP_STATE_EXIT);
 	OK;

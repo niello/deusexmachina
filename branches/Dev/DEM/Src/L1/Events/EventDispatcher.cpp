@@ -6,7 +6,46 @@ namespace Events
 {
 int CEventDispatcher::EventsFiredTotal = 0;
 
-bool CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub)
+DWORD CEventDispatcher::FireEvent(const CEventBase& Event)
+{
+	DWORD HandledCounter = 0;
+	PEventHandler Sub;
+
+	// Look for subscriptions to this event
+	if (Subscriptions.Get(Event.GetID(), Sub)) do
+	{
+		if (Sub->Invoke(this, Event))
+		{
+			++HandledCounter;
+			if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
+		}
+		Sub = Sub->Next;
+	}
+	while (Sub.IsValid());
+
+	// Look for subscriptions to any event
+	if (!(Event.Flags & EV_IGNORE_NULL_SUBS))
+	{
+		if (Subscriptions.Get(NULL, Sub)) do
+		{
+			if (Sub->Invoke(this, Event))
+			{
+				++HandledCounter;
+				if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
+			}
+			Sub = Sub->Next;
+		}
+		while (Sub.IsValid());
+	}
+
+	//!!!MT! need interlocked operation for MT safety!
+	++EventsFiredTotal;
+
+	return HandledCounter;
+}
+//---------------------------------------------------------------------
+
+bool CEventDispatcher::Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub)
 {
 	PEventHandler& CurrSlot = Subscriptions.At(ID);
 	if (CurrSlot.IsValid())
@@ -25,44 +64,6 @@ bool CEventDispatcher::AddHandler(CEventID ID, PEventHandler Handler, PSub* pSub
 	else CurrSlot = Handler;
 	if (pSub) *pSub = n_new(CSubscription)(this, ID, Handler);
 	OK;
-}
-//---------------------------------------------------------------------
-
-DWORD CEventDispatcher::DispatchEvent(const CEventBase& Event)
-{
-	DWORD HandledCounter = 0;
-	PEventHandler Sub;
-
-	// Look for subscriptions to this event
-	if (Subscriptions.Get(Event.GetID(), Sub)) do
-	{
-		if (Sub->operator ()(Event))
-		{
-			++HandledCounter;
-			if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
-		}
-		Sub = Sub->Next;
-	}
-	while (Sub.IsValid());
-
-	// Look for subscriptions to any event
-	if (!(Event.Flags & EV_IGNORE_NULL_SUBS))
-	{
-		if (Subscriptions.Get(NULL, Sub)) do
-		{
-			if (Sub->operator ()(Event))
-			{
-				++HandledCounter;
-				if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
-			}
-			Sub = Sub->Next;
-		}
-		while (Sub.IsValid());
-	}
-
-	++EventsFiredTotal;
-
-	return HandledCounter;
 }
 //---------------------------------------------------------------------
 

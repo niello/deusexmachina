@@ -332,7 +332,7 @@ void CGameLevel::Trigger()
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::OnEvent(const Events::CEventBase& Event)
+bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CStrID EvID = ((Events::CEvent&)Event).ID;
 
@@ -342,7 +342,7 @@ bool CGameLevel::OnEvent(const Events::CEventBase& Event)
 		//MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
 	}
 
-	return !!DispatchEvent(Event);
+	return !!FireEvent(Event);
 }
 //---------------------------------------------------------------------
 

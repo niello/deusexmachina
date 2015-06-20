@@ -60,7 +60,7 @@ void CPropAIHints::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::OnPropActivated(const Events::CEventBase& Event)
+bool CPropAIHints::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -76,7 +76,7 @@ bool CPropAIHints::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropAIHints::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -92,7 +92,7 @@ bool CPropAIHints::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::OnPropsActivated(const Events::CEventBase& Event)
+bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???read OnLoad, OnPropsActivated-Deactivate from initialized array?
 
@@ -195,7 +195,7 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
+bool CPropAIHints::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
 	
@@ -210,7 +210,7 @@ bool CPropAIHints::OnUpdateTransform(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropAIHints::OnRenderDebug(const Events::CEventBase& Event)
+bool CPropAIHints::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	static const vector4 ColorVisible(0.7f, 0.0f, 0.0f, 0.5f);
 	static const vector4 ColorSound(0.0f, 0.0f, 0.7f, 0.5f);

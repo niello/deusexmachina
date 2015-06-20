@@ -55,7 +55,7 @@ void CPropAnimation::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::OnPropActivated(const Events::CEventBase& Event)
+bool CPropAnimation::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -77,7 +77,7 @@ bool CPropAnimation::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropAnimation::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -183,7 +183,7 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 }
 //---------------------------------------------------------------------
 
-bool CPropAnimation::BeforeTransforms(const Events::CEventBase& Event)
+bool CPropAnimation::BeforeTransforms(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	for (int i = 0; i < Tasks.GetCount(); ++i)
 	{

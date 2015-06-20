@@ -12,7 +12,7 @@
 // The input server is the central object of the input subsystem
 
 #define DECLARE_ALL_INPUT_HANDLER(HandlerName) \
-	bool HandlerName(const Events::CEventBase& Event); \
+	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
 	Events::PSub Sub_ALL_INPUT;
 
 #define SUBSCRIBE_INPUT_EVENT(EventName, Class, Handler, Priority) \

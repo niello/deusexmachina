@@ -117,7 +117,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 }
 //---------------------------------------------------------------------
 
-bool CEntity::OnEvent(const Events::CEventBase& Event)
+bool CEntity::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CStrID EvID = ((Events::CEvent&)Event).ID;
 
@@ -133,7 +133,7 @@ bool CEntity::OnEvent(const Events::CEventBase& Event)
 		OK;
 	}
 
-	return !!DispatchEvent(Event);
+	return !!FireEvent(Event);
 }
 //---------------------------------------------------------------------
 

@@ -126,7 +126,7 @@ void CPropCharacterController::Disable()
 }
 //---------------------------------------------------------------------
 
-bool CPropCharacterController::OnPropActivated(const Events::CEventBase& Event)
+bool CPropCharacterController::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -142,7 +142,7 @@ bool CPropCharacterController::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropCharacterController::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropCharacterController::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -158,7 +158,7 @@ bool CPropCharacterController::OnPropDeactivating(const Events::CEventBase& Even
 }
 //---------------------------------------------------------------------
 
-bool CPropCharacterController::OnRequestLinearVelocity(const Events::CEventBase& Event)
+bool CPropCharacterController::OnRequestLinearVelocity(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
 	CharCtlr->RequestLinearVelocity(((Events::CEvent&)Event).Params->Get<vector3>(CStrID("Velocity")));
@@ -166,7 +166,7 @@ bool CPropCharacterController::OnRequestLinearVelocity(const Events::CEventBase&
 }
 //---------------------------------------------------------------------
 
-bool CPropCharacterController::OnRequestAngularVelocity(const Events::CEventBase& Event)
+bool CPropCharacterController::OnRequestAngularVelocity(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
 	CharCtlr->RequestAngularVelocity(((Events::CEvent&)Event).Params->Get<float>(CStrID("Velocity")));
@@ -175,7 +175,7 @@ bool CPropCharacterController::OnRequestAngularVelocity(const Events::CEventBase
 //---------------------------------------------------------------------
 
 //???OR USE BULLET ACTION INTERFACE?
-bool CPropCharacterController::BeforePhysicsTick(const Events::CEventBase& Event)
+bool CPropCharacterController::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
 	CharCtlr->Update();
@@ -183,7 +183,7 @@ bool CPropCharacterController::BeforePhysicsTick(const Events::CEventBase& Event
 }
 //---------------------------------------------------------------------
 
-bool CPropCharacterController::AfterPhysicsTick(const Events::CEventBase& Event)
+bool CPropCharacterController::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
 	vector3 LinVel;
@@ -192,7 +192,7 @@ bool CPropCharacterController::AfterPhysicsTick(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropCharacterController::OnSetTransform(const Events::CEventBase& Event)
+bool CPropCharacterController::OnSetTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	CharCtlr->GetBody()->SetTransform(Tfm);
@@ -218,7 +218,7 @@ void CPropActorPhysics::GetAABB(CAABB& AABB) const
 //---------------------------------------------------------------------
 */
 
-bool CPropCharacterController::OnRenderDebug(const Events::CEventBase& Event)
+bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) OK;
 

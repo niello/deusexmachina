@@ -306,7 +306,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			{
 				case ACCEL_TOGGLEFULLSCREEN:
 					Data::PParams P = n_new(Data::CParams(1));
-					P->Set(CStrID("Window"), (PVOID)this); //???in DispatchEvent add new parameter to all handlers 'Dispatcher'?
+					P->Set(CStrID("Window"), (PVOID)this); //???in FireEvent add new parameter to all handlers 'Dispatcher'?
 					FireEvent(CStrID("OnToggleFullscreen"), P);
 					break;
 			}
@@ -367,7 +367,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 					Rect.W = W;
 					Rect.H = H;
 					Data::PParams P = n_new(Data::CParams(1));
-					P->Set(CStrID("Window"), (PVOID)this); //???in DispatchEvent add new parameter to all handlers 'Dispatcher'?
+					P->Set(CStrID("Window"), (PVOID)this); //???in FireEvent add new parameter to all handlers 'Dispatcher'?
 					FireEvent(CStrID("OnSizeChanged"), P);
 				}
 			}
@@ -396,7 +396,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_CLOSE:
 		{
 			Data::PParams P = n_new(Data::CParams(1));
-			P->Set(CStrID("Window"), (PVOID)this); //???in DispatchEvent add new parameter to all handlers 'Dispatcher'?
+			P->Set(CStrID("Window"), (PVOID)this); //???in FireEvent add new parameter to all handlers 'Dispatcher'?
 			FireEvent(CStrID("OnClosing"), P);
 			::DestroyWindow(hWnd);
 			Result = 0;

@@ -216,6 +216,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.h" />
@@ -224,7 +225,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\RenderServer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.h" />
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
@@ -256,6 +256,8 @@
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Texture.h" />
+    <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexLayout.h" />
@@ -428,6 +430,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.cpp" />
@@ -439,7 +442,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderPath.cpp" />
@@ -462,6 +464,8 @@
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceObject.cpp" />

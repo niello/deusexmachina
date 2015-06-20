@@ -48,6 +48,7 @@ public:
 	CIOServer();
 	~CIOServer();
 
+	//???create FSs outside and mount all with priority?
 	bool			MountNPK(const CString& NPKPath, const CString& Root = NULL);
 
 	bool			FileExists(const CString& Path) const;
@@ -66,7 +67,6 @@ public:
 	void*			OpenFile(PFileSystem& OutFS, const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 	void*			OpenDirectory(const CString& Path, const CString& Filter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
 
-	//???LoadXML? then rename these functions not to bind name to data format.
 	void			SetAssign(const CString& Assign, const CString& Path);
 	CString			GetAssign(const CString& Assign) const;
 	CString			ManglePath(const CString& Path) const;

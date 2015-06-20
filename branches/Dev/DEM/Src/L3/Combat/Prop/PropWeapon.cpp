@@ -50,7 +50,7 @@ void CPropWeapon::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropWeapon::OnChrStrike(const Events::CEventBase& Event)
+bool CPropWeapon::OnChrStrike(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???or get from attr?
 	//CStrID TargetEntityID = (*((CEvent&)Event).Params).Get<CStrID>(CStrID("TargetEntityID"));

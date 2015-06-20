@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_EVENT_H__
 #define __DEM_L1_EVENT_H__
 
-#include "EventBase.h"
+#include <Events/EventBase.h>
 #include <Data/Params.h>
 //#include <Data/Pool.h>
 
@@ -27,7 +27,6 @@ public:
 
 	CEvent(CStrID _ID): ID(_ID) {}
 	CEvent(CStrID _ID, char _Flags, Data::PParams _Params = NULL): CEventBase(_Flags), ID(_ID), Params(_Params) {}
-	//virtual ~CEvent() {}
 
 	virtual CEventID GetID() const { return ID; }
 

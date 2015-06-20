@@ -614,9 +614,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\Texture.h">
-      <Filter>Render\D3D9</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Bone.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -805,6 +802,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Resources\ResourceLoader.h">
       <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Texture.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1159,9 +1165,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\Texture.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Bone.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -1302,6 +1305,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Resources\ResourceLoader.cpp">
       <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Texture.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

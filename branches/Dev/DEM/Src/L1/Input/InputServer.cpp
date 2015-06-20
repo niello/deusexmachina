@@ -203,7 +203,7 @@ void CInputServer::Reset()
 //---------------------------------------------------------------------
 
 // Generates input events based on display input type & input settings like Invert Y, Sensitivity, axis smoothing etc
-bool CInputServer::OnOSWindowInput(const Events::CEventBase& Event)
+bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const Event::OSInput& Ev = (const Event::OSInput&)Event;
 
@@ -285,7 +285,7 @@ bool CInputServer::OnOSWindowInput(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CInputServer::OnOSWindowSetFocus(const Events::CEventBase& Event)
+bool CInputServer::OnOSWindowSetFocus(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 #ifndef _DEBUG
 	Reset();
@@ -319,7 +319,7 @@ bool CInputServer::OnOSWindowSetFocus(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CInputServer::OnOSWindowKillFocus(const Events::CEventBase& Event)
+bool CInputServer::OnOSWindowKillFocus(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 #ifndef _DEBUG
 	Reset();

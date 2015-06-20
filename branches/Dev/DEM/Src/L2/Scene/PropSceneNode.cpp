@@ -122,7 +122,7 @@ void CPropSceneNode::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropSceneNode::OnPropActivated(const Events::CEventBase& Event)
+bool CPropSceneNode::OnPropActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -138,7 +138,7 @@ bool CPropSceneNode::OnPropActivated(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSceneNode::OnPropDeactivating(const Events::CEventBase& Event)
+bool CPropSceneNode::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
@@ -154,7 +154,7 @@ bool CPropSceneNode::OnPropDeactivating(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CPropSceneNode::OnLevelSaving(const Events::CEventBase& Event)
+bool CPropSceneNode::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	// Need to recreate array because else we may rewrite initial level desc in the HRD cache
 	Data::PDataArray ChildTfms = n_new(Data::CDataArray);
@@ -230,14 +230,14 @@ void CPropSceneNode::SetTransform(const matrix44& NewTfm)
 }
 //---------------------------------------------------------------------
 
-bool CPropSceneNode::OnSetTransform(const Events::CEventBase& Event)
+bool CPropSceneNode::OnSetTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	SetTransform(((Event::SetTransform&)Event).Transform);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPropSceneNode::AfterTransforms(const Events::CEventBase& Event)
+bool CPropSceneNode::AfterTransforms(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (Node.IsValid() && Node->IsWorldMatrixChanged())
 	{

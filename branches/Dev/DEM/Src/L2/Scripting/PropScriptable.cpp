@@ -38,7 +38,7 @@ void CPropScriptable::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropScriptable::OnPropsActivated(const Events::CEventBase& Event)
+bool CPropScriptable::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Obj->RunFunction("OnPropInit"); //???or use event subscription?
 	OK;

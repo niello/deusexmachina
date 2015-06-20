@@ -24,7 +24,7 @@ public:
 
 	virtual ~CResourceObject() {}
 
-	virtual bool	IsResourceValid() = 0;
+	virtual bool IsResourceValid() const = 0;
 };
 
 typedef Ptr<CResourceObject> PResourceObject;

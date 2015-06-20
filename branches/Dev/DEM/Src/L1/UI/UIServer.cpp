@@ -115,46 +115,46 @@ void CUIServer::Render()
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnKeyDown(const Events::CEventBase& Event)
+bool CUIServer::OnKeyDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	return CEGUISystem->injectKeyDown(((const Event::KeyDown&)Event).ScanCode);
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnKeyUp(const Events::CEventBase& Event)
+bool CUIServer::OnKeyUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	return CEGUISystem->injectKeyUp(((const Event::KeyDown&)Event).ScanCode);
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnCharInput(const Events::CEventBase& Event)
+bool CUIServer::OnCharInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	return CEGUISystem->injectChar(((const Event::CharInput&)Event).Char);
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnMouseMove(const Events::CEventBase& Event)
+bool CUIServer::OnMouseMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const Event::MouseMove& Ev = (const Event::MouseMove&)Event;
 	return CEGUISystem->injectMousePosition((float)Ev.X, (float)Ev.Y);
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnMouseBtnDown(const Events::CEventBase& Event)
+bool CUIServer::OnMouseBtnDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CEGUI::MouseButton Btn = (CEGUI::MouseButton)(((const Event::MouseBtnDown&)Event).Button);
 	return CEGUISystem->injectMouseButtonDown(Btn);
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnMouseBtnUp(const Events::CEventBase& Event)
+bool CUIServer::OnMouseBtnUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CEGUI::MouseButton Btn = (CEGUI::MouseButton)(((const Event::MouseBtnUp&)Event).Button);
 	return CEGUISystem->injectMouseButtonUp(Btn);
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnMouseWheel(const Events::CEventBase& Event)
+bool CUIServer::OnMouseWheel(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???!!!mul by some coeff!?
 	return CEGUISystem->injectMouseWheelChange((float)((const Event::MouseWheel&)Event).Delta);

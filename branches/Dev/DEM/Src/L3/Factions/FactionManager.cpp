@@ -31,7 +31,7 @@ CFactionManager::~CFactionManager()
 }
 //---------------------------------------------------------------------
 
-bool CFactionManager::OnGameDescLoaded(const Events::CEventBase& Event)
+bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???!!!make more implicit and/or safe!?
 	for (int i = 0; i < Factions.GetCount(); ++i)
@@ -72,7 +72,7 @@ bool CFactionManager::OnGameDescLoaded(const Events::CEventBase& Event)
 }
 //---------------------------------------------------------------------
 
-bool CFactionManager::OnGameSaving(const Events::CEventBase& Event)
+bool CFactionManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
 
