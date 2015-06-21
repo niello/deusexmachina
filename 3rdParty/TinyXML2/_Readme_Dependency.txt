@@ -8,7 +8,7 @@ License:
 See in the source files
 
 Current version used:
-1.0.8
+[2.]3.0.0
 
 Purpose in DEM:
 XML parser (:

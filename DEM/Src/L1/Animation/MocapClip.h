@@ -30,7 +30,7 @@ protected:
 public:
 
 	CMocapClip(): pKeys(NULL) {}
-	virtual ~CMocapClip();// { if (IsLoaded()) Unload(); }
+	virtual ~CMocapClip() { Unload(); }
 
 	bool							Setup(	const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 											const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,

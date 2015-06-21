@@ -2,8 +2,8 @@
 #ifndef __DEM_L1_CEGUI_N2_RESOURCE_PROVIDER_H__
 #define __DEM_L1_CEGUI_N2_RESOURCE_PROVIDER_H__
 
-#include "CEGUIBase.h"
-#include "CEGUIResourceProvider.h"
+#include "CEGUI/Base.h"
+#include "CEGUI/ResourceProvider.h"
 
 #include <Data/Dictionary.h>
 

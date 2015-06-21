@@ -3,6 +3,8 @@
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsWorld.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Data/Params.h>
 #include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
@@ -19,10 +21,14 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	n_assert(!pWorld);
 
 	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
-	Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(ShapeID);
-	if (!Shape.IsValid())
-		Shape = LoadCollisionShapeFromPRM(ShapeID, CString("Physics:") + ShapeID.CStr() + ".prm");
-	n_assert(Shape->IsLoaded());
+	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeID);
+	if (!RShape->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
+		ResourceMgr->LoadResource(RShape, Loader);
+		n_assert(RShape->IsLoaded());
+	}
+	Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
 
 	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), "Default"));
 	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), "All"));
@@ -39,7 +45,7 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 
 bool CPhysicsObject::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
 {
-	n_assert(CollShape.IsLoaded());
+	n_assert(CollShape.IsResourceValid());
 	Shape = &CollShape;
 	Group = CollGroup;
 	Mask = CollMask;

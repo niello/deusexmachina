@@ -4,6 +4,10 @@
 
 #include <Scripting/ScriptObject.h>
 
+#ifdef RegisterClass
+#undef RegisterClass
+#endif
+
 // Entity script object is bound to some game entity instance.
 
 namespace Game

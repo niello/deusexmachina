@@ -18,15 +18,14 @@
 #include <UI/CEGUI/CEGUINebula2Logger.h>
 #include <UI/CEGUI/CEGUINebula2ResourceProvider.h>
 
-#include <CEGUISystem.h>
-#include <CEGUIImageset.h>
-#include <CEGUIFont.h>
-#include <CEGUIScheme.h>
-#include <falagard/CEGUIFalWidgetLookManager.h>
-#include <CEGUIWindowManager.h>
-#include <CEGUIFontManager.h>
-#include <RendererModules/Direct3D9/CEGUIDirect3D9Renderer.h> //!!!use N2 renderer!
-#include <XMLParserModules/TinyXML2Parser/CEGUITinyXML2Parser.h>
+#include <CEGUI/System.h>
+#include <CEGUI/Font.h>
+#include <CEGUI/Scheme.h>
+#include <CEGUI/falagard/WidgetLookManager.h>
+#include <CEGUI/WindowManager.h>
+#include <CEGUI/FontManager.h>
+//#include <RendererModules/Direct3D9/CEGUIDirect3D9Renderer.h> //!!!use N2 renderer!
+#include <CEGUI/XMLParserModules/TinyXML2/XMLParser.h>
 
 namespace UI
 {
@@ -43,9 +42,9 @@ CUIServer::CUIServer()
 //n_assert(false);
 //	Renderer = &CEGUI::Direct3D9Renderer::create(RenderSrv->GetD3DDevice());
 	ResourceProvider = n_new(CEGUI::CNebula2ResourceProvider);
-	Parser = n_new(CEGUI::TinyXML2Parser); //???delete?
+	XMLParser = n_new(CEGUI::TinyXML2Parser);
 
-	CEGUI::System::create(*Renderer, ResourceProvider, Parser);
+	//CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = &CEGUI::System::getSingleton();
 
 	CEGUI::Logger::getSingleton().setLoggingLevel(CEGUI::Warnings);
@@ -57,7 +56,6 @@ CUIServer::CUIServer()
 	ResourceProvider->setResourceGroupDirectory("layouts", "CEGUI:layouts/");
 	ResourceProvider->setResourceGroupDirectory("looknfeels", "CEGUI:looknfeel/");
 	ResourceProvider->setResourceGroupDirectory("lua_scripts", "CEGUI:lua_scripts/");
-	CEGUI::Imageset::setDefaultResourceGroup("imagesets");
 	CEGUI::Font::setDefaultResourceGroup("fonts");
 	CEGUI::Scheme::setDefaultResourceGroup("schemes");
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
@@ -85,10 +83,10 @@ CUIServer::~CUIServer()
 	Screens.Clear();
 
 	CEGUI::System::destroy();
-	n_delete(Parser);
+	n_delete(XMLParser);
 	n_delete(ResourceProvider);
 	//!!!destroy resource provider etc (mb image codec)!
-	CEGUI::Direct3D9Renderer::destroy(*Renderer);
+//	CEGUI::Direct3D9Renderer::destroy(*Renderer);
 	n_delete(Logger);
 
 	Singleton = NULL;
@@ -103,6 +101,7 @@ void CUIServer::Trigger(float FrameTime)
 	ConnectionsToDisconnect.Clear();
 
 	CEGUISystem->injectTimePulse(FrameTime);
+	CEGUISystem->getDefaultGUIContext().injectTimePulse(FrameTime);
 
 	EventSrv->FireEvent(CStrID("OnUIUpdate"));
 }
@@ -111,66 +110,66 @@ void CUIServer::Trigger(float FrameTime)
 //???need this method? see UIRenderer
 void CUIServer::Render()
 {
-	CEGUI::System::getSingleton().renderGUI();
+	CEGUI::System::getSingleton().renderAllGUIContexts();
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnKeyDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	return CEGUISystem->injectKeyDown(((const Event::KeyDown&)Event).ScanCode);
+	return CEGUISystem->getDefaultGUIContext().injectKeyDown((CEGUI::Key::Scan)((const Event::KeyDown&)Event).ScanCode);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnKeyUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	return CEGUISystem->injectKeyUp(((const Event::KeyDown&)Event).ScanCode);
+	return CEGUISystem->getDefaultGUIContext().injectKeyUp((CEGUI::Key::Scan)((const Event::KeyDown&)Event).ScanCode);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnCharInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	return CEGUISystem->injectChar(((const Event::CharInput&)Event).Char);
+	return CEGUISystem->getDefaultGUIContext().injectChar(((const Event::CharInput&)Event).Char);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnMouseMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const Event::MouseMove& Ev = (const Event::MouseMove&)Event;
-	return CEGUISystem->injectMousePosition((float)Ev.X, (float)Ev.Y);
+	return CEGUISystem->getDefaultGUIContext().injectMousePosition((float)Ev.X, (float)Ev.Y);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnMouseBtnDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CEGUI::MouseButton Btn = (CEGUI::MouseButton)(((const Event::MouseBtnDown&)Event).Button);
-	return CEGUISystem->injectMouseButtonDown(Btn);
+	return CEGUISystem->getDefaultGUIContext().injectMouseButtonDown(Btn);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnMouseBtnUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CEGUI::MouseButton Btn = (CEGUI::MouseButton)(((const Event::MouseBtnUp&)Event).Button);
-	return CEGUISystem->injectMouseButtonUp(Btn);
+	return CEGUISystem->getDefaultGUIContext().injectMouseButtonUp(Btn);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnMouseWheel(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???!!!mul by some coeff!?
-	return CEGUISystem->injectMouseWheelChange((float)((const Event::MouseWheel&)Event).Delta);
+	return CEGUISystem->getDefaultGUIContext().injectMouseWheelChange((float)((const Event::MouseWheel&)Event).Delta);
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnDeviceLost(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Renderer->preD3DReset();
+	//Renderer->preD3DReset();
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::OnDeviceReset(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Renderer->postD3DReset();
+	//Renderer->postD3DReset();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -185,14 +184,14 @@ bool CUIServer::RegisterScreen(CStrID Name, CUIWindow* pScreen)
 
 void CUIServer::LoadScheme(const CString& ResourceFile)
 {
-	CEGUI::SchemeManager::getSingleton().create(ResourceFile.CStr());
+	CEGUI::SchemeManager::getSingleton().createFromFile(ResourceFile.CStr());
 }
 //---------------------------------------------------------------------
 
 //CEGUI::Font& 
 void CUIServer::LoadFont(const CString& ResourceFile)
 {
-	CEGUI::FontManager::getSingleton().create(ResourceFile.CStr());
+	CEGUI::FontManager::getSingleton().createFromFile(ResourceFile.CStr());
 }
 //---------------------------------------------------------------------
 
@@ -206,72 +205,73 @@ void CUIServer::SetRootScreen(CUIWindow* pWindow)
 {
 	n_assert(pWindow);
 	CurrRootScreen = pWindow;
-	CEGUISystem->setGUISheet(pWindow->GetWnd());
-	CEGUISystem->updateWindowContainingMouse();
+	CEGUISystem->getDefaultGUIContext().setRootWindow(pWindow->GetWnd());
+	CEGUISystem->getDefaultGUIContext().updateWindowContainingMouse();
 }
 //---------------------------------------------------------------------
 
 void CUIServer::SetRootWindow(CEGUI::Window* pWindow)
 {
 	n_assert(pWindow != NULL);
-	CEGUISystem->setGUISheet(pWindow);
+	CEGUISystem->getDefaultGUIContext().setRootWindow(pWindow);
 }
 //---------------------------------------------------------------------
 
 CEGUI::Window* CUIServer::GetRootWindow() const
 {
-	return CEGUISystem->getGUISheet();
+	return CEGUISystem->getDefaultGUIContext().getRootWindow();
 }
 //---------------------------------------------------------------------
 
 void CUIServer::ShowGUI()
 {
-	if (CEGUISystem->getGUISheet() != NULL)
-		CEGUISystem->getGUISheet()->setVisible(true);
+	CEGUI::Window* pRoot = CEGUISystem->getDefaultGUIContext().getRootWindow();
+	if (pRoot) pRoot->setVisible(true);
 }
 //---------------------------------------------------------------------
 
 void CUIServer::HideGUI()
 {
-	if (CEGUISystem->getGUISheet() != NULL)
-		CEGUISystem->getGUISheet()->setVisible(false);
+	CEGUI::Window* pRoot = CEGUISystem->getDefaultGUIContext().getRootWindow();
+	if (pRoot) pRoot->setVisible(false);
 }
 //---------------------------------------------------------------------
 
-void CUIServer::SetDefaultMouseCursor(const CString& schemeName, const CString& cursorName)
+void CUIServer::SetDefaultMouseCursor(const CString& ImageName)
 {
-	CEGUISystem->setDefaultMouseCursor(schemeName.CStr(), cursorName.CStr());
+	CEGUISystem->getDefaultGUIContext().getMouseCursor().setDefaultImage(ImageName.CStr());
 }
 //---------------------------------------------------------------------
 
 void CUIServer::ShowMouseCursor()
 {
-	CEGUI::MouseCursor::getSingleton().show();
+	CEGUISystem->getDefaultGUIContext().getMouseCursor().show();
 }
 //---------------------------------------------------------------------
 
 void CUIServer::HideMouseCursor()
 {
-	CEGUI::MouseCursor::getSingleton().hide();
+	CEGUISystem->getDefaultGUIContext().getMouseCursor().hide();
 }
 //---------------------------------------------------------------------
 
-CEGUI::Point CUIServer::GetMousePosition() const
+CEGUI::Vector2f CUIServer::GetMousePosition() const
 {
-	return CEGUI::MouseCursor::getSingleton().getPosition();
+	return CEGUISystem->getDefaultGUIContext().getMouseCursor().getPosition();
 }
 //---------------------------------------------------------------------
 
 CEGUI::UVector2 CUIServer::GetMousePositionU() const
 {
-	CEGUI::Point Pos = CEGUI::MouseCursor::getSingleton().getPosition();
+	CEGUI::Vector2f Pos = CEGUISystem->getDefaultGUIContext().getMouseCursor().getPosition();
 	return CEGUI::UVector2(CEGUI::UDim(0.f, Pos.d_x), CEGUI::UDim(0.f, Pos.d_y));
 }
 //---------------------------------------------------------------------
 
 bool CUIServer::IsMouseOverGUI() const
 {
-	return CEGUISystem->getWindowContainingMouse() != CEGUISystem->getGUISheet();
+	return CEGUISystem->getDefaultGUIContext().getWindowContainingMouse() !=
+		CEGUISystem->getDefaultGUIContext().getRootWindow();
 }
 //---------------------------------------------------------------------
 

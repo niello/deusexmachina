@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_CEGUI_LOGGER_H__
 #define __DEM_L1_CEGUI_LOGGER_H__
 
-#include <CEGUILogger.h>
+#include <CEGUI/Logger.h>
 
 namespace CEGUI
 {

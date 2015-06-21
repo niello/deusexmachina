@@ -1,7 +1,7 @@
 #include "UIRenderer.h"
 
 #include <Core/Factory.h>
-#include <CEGUISystem.h>
+#include <CEGUI/System.h>
 
 namespace Render
 {
@@ -9,7 +9,7 @@ __ImplementClass(Render::CUIRenderer, 'UIRN', Render::IRenderer);
 
 void CUIRenderer::Render()
 {
-	CEGUI::System::getSingleton().renderGUI();
+	CEGUI::System::getSingleton().renderAllGUIContexts();
 }
 //---------------------------------------------------------------------
 
