@@ -5,7 +5,7 @@
 //
 //namespace Render
 //{
-//__ImplementResourceClass(Render::CMaterial, 'MTRL', Resources::CResource);
+//__ImplementClass(Render::CMaterial, 'MTRL', Resources::CResourceObject);
 //
 //bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
 //

@@ -1,6 +1,5 @@
 #include "InputServer.h"
 
-//#include <Render/RenderServer.h>
 #include <System/Events/OSInput.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
@@ -19,12 +18,6 @@ namespace Input
 {
 __ImplementClassNoFactory(Input::CInputServer, Core::CObject);
 __ImplementSingleton(Input::CInputServer);
-
-CInputServer::CInputServer(): CEventDispatcher(16), _IsOpen(false)
-{
-	__ConstructSingleton;
-}
-//---------------------------------------------------------------------
 
 CInputServer::~CInputServer()
 {

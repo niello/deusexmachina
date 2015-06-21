@@ -10,6 +10,7 @@
 //???rename to DXGI[version]DriverFactory?
 
 struct IDXGIFactory1;
+struct DXGI_SAMPLE_DESC;
 enum DXGI_FORMAT;
 
 namespace Render
@@ -33,6 +34,7 @@ public:
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
 	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);
+	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc);
 
 	bool					Open();
 	void					Close();

@@ -5,12 +5,12 @@
 
 namespace Anim
 {
-__ImplementResourceClass(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
+__ImplementClass(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
 
 bool CKeyframeClip::Setup(const CArray<CKeyframeTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 						  const CArray<CEventTrack>* _EventTracks, float Length)
 {
-	if (State == Resources::Rsrc_Loaded) Unload();
+//	if (State == Resources::Rsrc_Loaded) Unload();
 
 	Tracks = _Tracks;
 	if (_EventTracks) EventTracks = *_EventTracks;
@@ -30,15 +30,12 @@ bool CKeyframeClip::Setup(const CArray<CKeyframeTrack>& _Tracks, const CArray<CS
 		};
 	}
 
-	State = Resources::Rsrc_Loaded;
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CKeyframeClip::Unload()
 {
-	State = Resources::Rsrc_NotLoaded;
-
 	//!!!sampler pointers will become invalid! use smartptrs?
 	// or in controller store clip ptr and clear sampler if clip becomes unloaded
 

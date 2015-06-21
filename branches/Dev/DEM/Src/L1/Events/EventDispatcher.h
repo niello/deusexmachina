@@ -33,6 +33,7 @@ public:
 
 	// Returns handled counter (how much handlers have signed that they handled this event)
 	DWORD					FireEvent(const CEventBase& Event);
+	DWORD					FireEvent(CEventBase& Event, char Flags) { Event.Flags = Flags; return FireEvent(Event); }
 	DWORD					FireEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0) { return FireEvent(CEvent(ID, Flags, Params)); }
 
 	bool					Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub = NULL);

@@ -18,8 +18,6 @@ namespace Prop
 __ImplementClass(Prop::CPropWeapon, 'PWPN', Game::CProperty);
 __ImplementPropertyStorage(CPropWeapon);
 
-using namespace Event;
-
 //!!!not here, in strid (static CStrID::Attack)!
 static CStrID SidAttack;
 
@@ -69,16 +67,16 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 
 	//!!!check hit (accurecy etc)!
 
-	Ptr<ObjDamageDone> Event = ObjDamageDone::CreateInstance();
-	Event->EntDamager = GetEntity()->GetUID();
-	Event->Type = DmgType;
+	Event::ObjDamageDone Event;
+	Event.EntDamager = GetEntity()->GetUID();
+	Event.Type = DmgType;
 
 	//!!!calc damage with all modifiers etc based on calculation rule!
 	//calc rule may involve target params, like "relative" that damages in % of target's health
 
-	Event->Amount = z;
+	Event.Amount = z;
 	for (int i = 0; i < x; i++)
-		Event->Amount += n_rand_int(1, y);
+		Event.Amount += n_rand_int(1, y);
 
 	//!!!set flags like SuppresResistance etc!
 
@@ -86,10 +84,10 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 	Sys::Log("CEntity \"%s\" : Hits entity \"%s\"; Damage = %d\n",
 		GetEntity()->GetUID(),
 		Target.GetUID(),
-		Event->Amount);
+		Event.Amount);
 #endif
 
-	Target.FireEvent(*Event);
+	Target.FireEvent(Event);
 }
 //---------------------------------------------------------------------
 

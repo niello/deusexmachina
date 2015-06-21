@@ -12,7 +12,7 @@
 //
 //namespace Render
 //{
-//__ImplementResourceClass(Render::CShader, 'SHDR', Resources::CResource);
+//__ImplementClass(Render::CShader, 'SHDR', Resources::CResourceObject);
 //
 //bool CShader::Setup(ID3DXEffect* pFX)
 //{

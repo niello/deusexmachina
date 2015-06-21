@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_MESH_H__
 #define __DEM_L1_RENDER_MESH_H__
 
-#include <Resources/Resource.h>
+#include <Resources/ResourceObject.h>
 #include <Render/RenderFwd.h>
 #include <Render/VertexBuffer.h>
 #include <Render/IndexBuffer.h>
@@ -45,7 +45,7 @@ struct CMeshInitData
 	bool			UseMapping;
 };
 
-class CMesh: public Resources::CResource
+class CMesh: public Resources::CResourceObject
 {
 	__DeclareClass(CMesh);
 
@@ -66,11 +66,13 @@ protected:
 
 public:
 
-	CMesh(CStrID ID): CResource(ID), pGroups(NULL), pGroupLODMapping(NULL) {}
-	virtual ~CMesh() { if (IsLoaded()) Unload(); }
+	CMesh(): pGroups(NULL), pGroupLODMapping(NULL) {}
+	virtual ~CMesh() { Unload(); }
 
 	bool				Create(const CMeshInitData& InitData);
-	virtual void		Unload();
+	void				Unload();
+
+	virtual bool		IsResourceValid() const { FAIL; }
 
 	PVertexBuffer		GetVertexBuffer() const { return VB; }
 	PIndexBuffer		GetIndexBuffer() const { return IB; }

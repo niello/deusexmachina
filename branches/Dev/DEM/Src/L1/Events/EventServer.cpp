@@ -7,27 +7,27 @@ namespace Events
 __ImplementClassNoFactory(Events::CEventServer, Core::CObject);
 __ImplementSingleton(Events::CEventServer);
 
-void CEventServer::ScheduleEventInternal(CEventBase& Event, CEventDispatcher* pDisp, float RelTime)
+void CEventServer::ScheduleEvent(CEventBase& Event, CEventDispatcher* pDisp, float RelTime)
 {
-	CEventNode* New = EventSrv->CreateNode();
-	n_assert2(New, "Nervous system of the engine was paralyzed! Can't allocate event node");
-	New->Event = &Event;
-	New->Dispatcher = pDisp ? pDisp : this;
-	New->FireTime = (float)TimeSrv->GetTime() + RelTime;
+	CEventNode* pNewNode = EventSrv->CreateNode();
+	n_assert2(pNewNode, "Nervous system of the engine was paralyzed! Can't allocate event node");
+	pNewNode->Event = &Event;
+	pNewNode->Dispatcher = pDisp ? pDisp : this;
+	pNewNode->FireTime = (float)TimeSrv->GetTime() + RelTime;
 	if (PendingEventsTail)
 	{
 		n_assert(PendingEventsHead);
 
-		if (New->FireTime >= PendingEventsTail->FireTime)
+		if (pNewNode->FireTime >= PendingEventsTail->FireTime)
 		{
-			PendingEventsTail->Next = New;
-			PendingEventsTail = New;
+			PendingEventsTail->Next = pNewNode;
+			PendingEventsTail = pNewNode;
 		}
 		else
 		{
 			if (PendingEventsHead == PendingEventsTail)
 			{
-				PendingEventsHead = New;
+				PendingEventsHead = pNewNode;
 				PendingEventsHead->Next = PendingEventsTail;
 			}
 			else if (EventsToAdd)
@@ -36,24 +36,24 @@ void CEventServer::ScheduleEventInternal(CEventBase& Event, CEventDispatcher* pD
 				CEventNode* Next = EventsToAdd->Next;
 				while (Curr)
 				{
-					if (New->FireTime >= Curr->FireTime)
+					if (pNewNode->FireTime >= Curr->FireTime)
 					{
-						Curr->Next = New;
-						New->Next = Next;
+						Curr->Next = pNewNode;
+						pNewNode->Next = Next;
 						break;
 					}
 					Curr = Next;
 					Next = Next->Next;
 				}
 			}
-			else EventsToAdd = New;
+			else EventsToAdd = pNewNode;
 		}
 	}
 	else
 	{
 		n_assert(!PendingEventsHead);
-		PendingEventsHead =
-		PendingEventsTail = New;
+		PendingEventsHead = pNewNode;
+		PendingEventsTail = pNewNode;
 	}
 }
 //---------------------------------------------------------------------
@@ -63,7 +63,7 @@ DWORD CEventServer::RemoveScheduledEvents(CEventDispatcher* pDisp)
 	CEventDispatcher* pRealDisp = pDisp ? pDisp : this;
 	DWORD Total = 0;
 
-	Sys::Error("IMPLEMENT ME!!!");
+	Sys::Error("CEventServer::RemoveScheduledEvents() > IMPLEMENT ME!!!");
 
 	//while (PendingEventsHead)
 	//{
@@ -135,7 +135,6 @@ void CEventServer::ProcessPendingEvents()
 				EventsToAdd = NextToAdd;
 			}
 			Curr = Next;
-			n_assert(Next); // will always be because insertions to 1-elm list are done immediately on queuing above
 			Next = Next->Next;
 		}
 	}

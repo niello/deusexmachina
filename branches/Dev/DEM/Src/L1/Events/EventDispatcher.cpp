@@ -10,9 +10,10 @@ DWORD CEventDispatcher::FireEvent(const CEventBase& Event)
 {
 	DWORD HandledCounter = 0;
 	PEventHandler Sub;
+	CEventID EvID = Event.GetID();
 
 	// Look for subscriptions to this event
-	if (Subscriptions.Get(Event.GetID(), Sub)) do
+	if (Subscriptions.Get(EvID, Sub)) do
 	{
 		if (Sub->Invoke(this, Event))
 		{

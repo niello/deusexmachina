@@ -1,6 +1,7 @@
 #include "PropDestructible.h"
 
 #include <Combat/Event/ObjDamageDone.h>
+#include <Game/Entity.h>
 #include <Core/Factory.h>
 
 namespace Prop

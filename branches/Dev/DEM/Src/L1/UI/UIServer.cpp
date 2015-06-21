@@ -161,14 +161,14 @@ bool CUIServer::OnMouseWheel(Events::CEventDispatcher* pDispatcher, const Events
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnDeviceLost(const Events::CEventBase& Ev)
+bool CUIServer::OnDeviceLost(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Renderer->preD3DReset();
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CUIServer::OnDeviceReset(const Events::CEventBase& Ev)
+bool CUIServer::OnDeviceReset(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Renderer->postD3DReset();
 	OK;
