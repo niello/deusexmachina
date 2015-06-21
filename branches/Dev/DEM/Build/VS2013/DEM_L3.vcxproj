@@ -47,6 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>..\..\Lib\</OutDir>
     <IntDir>..\..\Obj\$(ProjectName)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -55,7 +56,7 @@
       <AdditionalIncludeDirectories>..\..\Src\L3;..\..\Src\L2;..\..\Src\L1;..\..\..\3rdParty\SQLite\Src;..\..\..\3rdParty\Lua\Src;..\..\..\3rdParty\Recast\Detour\Include;..\..\..\3rdParty\Recast\DetourCrowd\Include;..\..\..\3rdParty;..\..\..\3rdParty\CEGUI\cegui\include;..\..\Src\nebula2\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__WIN32__;WIN32;NDEBUG;_LIB;CEGUI_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <ExceptionHandling />
+      <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -74,7 +75,7 @@
       <PreprocessorDefinitions>__WIN32__;WIN32;_DEBUG;_LIB;CEGUI_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
-      <ExceptionHandling />
+      <ExceptionHandling>false</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>

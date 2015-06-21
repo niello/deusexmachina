@@ -10,12 +10,14 @@ extern void DefaultLogHandler(EMsgType Type, const char* pMessage);
 
 void Crash(const char* pFile, int Line, const char* pMessage)
 {
+#ifdef _DEBUG
 	int CRTReportMode = _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_WNDW);
 	_CrtSetReportMode(_CRT_ERROR, CRTReportMode);
 
 	int Result = _CrtDbgReport(_CRT_ERROR, pFile, Line, "DeusExMachina game engine", pMessage);
 	if (Result == 0 && CRTReportMode & _CRTDBG_MODE_WNDW) return;
 	else if (Result == 1) _CrtDbgBreak();
+#endif
 
 	abort();
 }
