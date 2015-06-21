@@ -6,9 +6,9 @@
 #include <Core/Factory.h>
 
 #include <UI/CEGUI/CEGUIFmtLbTextItem.h>
-#include <elements/CEGUIEditbox.h>
-#include <elements/CEGUIListbox.h>
-#include <elements/CEGUIScrollbar.h>
+#include <CEGUI/widgets/Editbox.h>
+#include <CEGUI/widgets/Listbox.h>
+#include <CEGUI/widgets/Scrollbar.h>
 
 #define MAX_LINES_START	32
 #define MAX_LINES		128
@@ -54,7 +54,7 @@ void CLuaConsole::Term()
 	if (ConnOnShow.isValid()) ConnOnShow->disconnect();
 
 	if (pWnd && pWnd->getParent())
-		pWnd->getParent()->removeChildWindow(pWnd);
+		pWnd->getParent()->removeChild(pWnd);
 
 	//CUIWindow::Term();
 }
@@ -82,7 +82,7 @@ void CLuaConsole::Print(LPCSTR pMsg, DWORD Color)
 		pNewItem->setTextParsingEnabled(false);
 	}
 
-	pNewItem->setTextColours(CEGUI::colour(Color));
+	pNewItem->setTextColours(CEGUI::Colour(Color));
 
 	bool ShouldScroll = (pVertScroll->getScrollPosition() >= pVertScroll->getDocumentSize() - pVertScroll->getPageSize());
 	pOutputWnd->addItem(pNewItem);
@@ -183,7 +183,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 			if (++CmdHistoryCursor >= CmdHistory.GetCount())
 				CmdHistoryCursor = CmdHistory.GetCount() - 1;
 			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
-			pInputLine->setCaratIndex(pInputLine->getText().length());
+			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
 		OK;
 	}
@@ -194,7 +194,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 			if (--CmdHistoryCursor < 0)
 				CmdHistoryCursor = 0;
 			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
-			pInputLine->setCaratIndex(pInputLine->getText().length());
+			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
 		OK;
 	}

@@ -1,5 +1,5 @@
-//#include "DebugDraw.h"
-//
+#include "DebugDraw.h"
+
 //#include <Render/RenderServer.h>
 //
 //#ifdef DEM_USE_D3DX9
@@ -7,11 +7,11 @@
 //#define D3D_DISABLE_9EX
 //#include <d3dx9.h>
 //#endif
-//
-//namespace Render
-//{
-//__ImplementSingleton(CDebugDraw);
-//
+
+namespace Debug
+{
+__ImplementSingleton(CDebugDraw);
+
 //bool CDebugDraw::Open()
 //{
 //	D3DXCreateSprite(RenderSrv->GetD3DDevice(), &pD3DXSprite);
@@ -297,5 +297,5 @@
 //	Texts.Clear();
 //}
 ////---------------------------------------------------------------------
-//
-//}
+
+}

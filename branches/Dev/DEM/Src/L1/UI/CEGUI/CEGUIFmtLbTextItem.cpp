@@ -1,12 +1,12 @@
 #include <StdCfg.h>
 #include "CEGUIFmtLbTextItem.h"
 
-#include <CEGUILeftAlignedRenderedString.h>
-#include <CEGUIRightAlignedRenderedString.h>
-#include <CEGUICentredRenderedString.h>
-#include <CEGUIRenderedStringWordWrapper.h>
-#include <CEGUIImage.h>
-#include <elements/CEGUIListbox.h>
+#include <CEGUI/LeftAlignedRenderedString.h>
+#include <CEGUI/RightAlignedRenderedString.h>
+#include <CEGUI/CentredRenderedString.h>
+#include <CEGUI/RenderedStringWordWrapper.h>
+#include <CEGUI/Image.h>
+#include <CEGUI/widgets/Listbox.h>
 
 namespace CEGUI
 {
@@ -42,7 +42,7 @@ void FormattedListboxTextItem::setFormatting(const HorizontalTextFormatting fmt)
 	d_formatting = fmt;
 	delete d_formattedRenderedString;
 	d_formattedRenderedString = NULL;
-	d_formattingAreaSize = Size(0, 0);
+	d_formattingAreaSize = Sizef(0, 0);
 }
 
 //----------------------------------------------------------------------------//
@@ -56,35 +56,35 @@ void FormattedListboxTextItem::updateString() const
 
 	// get size of render area from target window, to see if we need to reformat
 	// NB: We do not use targetRect, since it may not represent the same area.
-	const Size area_sz(static_cast<const Listbox*>(d_owner)->getListRenderArea().getSize());
+	const Sizef area_sz(static_cast<const Listbox*>(d_owner)->getListRenderArea().getSize());
 	if (StringChanged || area_sz != d_formattingAreaSize)
 	{
-		d_formattedRenderedString->format(area_sz);
+		d_formattedRenderedString->format(d_owner, area_sz);
 		d_formattingAreaSize = area_sz;
 	}
 }
 
 //----------------------------------------------------------------------------//
-Size FormattedListboxTextItem::getPixelSize(void) const
+Sizef FormattedListboxTextItem::getPixelSize(void) const
 {
-	if (!d_owner) return Size(0, 0);
+	if (!d_owner) return Sizef(0, 0);
 
 	updateString();
 
-	return Size(d_formattedRenderedString->getHorizontalExtent(),
-		d_formattedRenderedString->getVerticalExtent());
+	return Sizef(d_formattedRenderedString->getHorizontalExtent(d_owner),
+		d_formattedRenderedString->getVerticalExtent(d_owner));
 }
 
 //----------------------------------------------------------------------------//
 void FormattedListboxTextItem::draw(GeometryBuffer& buffer,
-	const Rect& targetRect,
-	float alpha, const Rect* clipper) const
+	const Rectf& targetRect,
+	float alpha, const Rectf* clipper) const
 {
 	updateString();
 
 	// draw selection imagery
 	if (d_selected && d_selectBrush != 0)
-		d_selectBrush->draw(buffer, targetRect, clipper,
+		d_selectBrush->render(buffer, targetRect, clipper,
 		getModulateAlphaColourRect(d_selectCols, alpha));
 
 	// factor the window alpha into our colours.
@@ -92,7 +92,7 @@ void FormattedListboxTextItem::draw(GeometryBuffer& buffer,
 		getModulateAlphaColourRect(ColourRect(0xFFFFFFFF), alpha));
 
 	// draw the formatted text
-	d_formattedRenderedString->draw(buffer, targetRect.getPosition(),
+	d_formattedRenderedString->draw(d_owner, buffer, targetRect.getPosition(),
 		&final_colours, clipper);
 }
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_CEGUI_FMT_LABEL_TEXT_ITEM_H__
 #define __DEM_L1_CEGUI_FMT_LABEL_TEXT_ITEM_H__
 
-#include <elements/CEGUIListboxTextItem.h>
+#include <CEGUI/widgets/ListboxTextItem.h>
 
 namespace CEGUI
 {
@@ -33,9 +33,9 @@ public:
 	void setFormatting(const HorizontalTextFormatting fmt);
 
 	// overridden functions.
-	Size getPixelSize(void) const;
-	void draw(GeometryBuffer& buffer, const Rect& targetRect,
-		float alpha, const Rect* clipper) const;
+	Sizef getPixelSize(void) const;
+	void draw(GeometryBuffer& buffer, const Rectf& targetRect,
+		float alpha, const Rectf* clipper) const;
 
 protected:
 	//! Helper to create a FormattedRenderedString of an appropriate type.
@@ -46,7 +46,7 @@ protected:
 	//! Class that renders RenderedString with some formatting.
 	mutable FormattedRenderedString* d_formattedRenderedString;
 	//! Tracks target area for rendering so we can reformat when needed
-	mutable Size d_formattingAreaSize;
+	mutable Sizef d_formattingAreaSize;
 };
 
 }

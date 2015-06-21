@@ -1,20 +1,19 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_DEBUG_DRAW_H__
-#define __DEM_L1_RENDER_DEBUG_DRAW_H__
+#ifndef __DEM_L1_DEBUG_DRAW_H__
+#define __DEM_L1_DEBUG_DRAW_H__
 
-#include <Render/Renderer.h>
-#include <Render/Mesh.h>
-#include <Render/Shader.h>
+#include <Data/RefCounted.h>
+#include <Data/Array.h>
+#include <Data/SimpleString.h>
 #include <Data/Singleton.h>
+#include <Math/AABB.h>
 
-// Utility class for drawing common debug shapes
+// Utility class for drawing common debug shapes. It buffers all shapes and text requested and
+// then can pass them to a renderers. DebugDraw doesn't render anything itself.
 
-//!!!can write IRenderer and move all render-related stuff there!
-//!!!and move this facility into a Debug namespace and folder then!
-
-namespace Render
+namespace Debug
 {
-#define DebugDraw Render::CDebugDraw::Instance()
+#define DebugDraw Debug::CDebugDraw::Instance()
 
 #pragma pack(push, 1) // Since we want write them into hardware buffers as is, when possible
 struct CDDShapeInst
@@ -47,17 +46,17 @@ enum EVAlign
 
 struct CDDText
 {
-	CString	Text;
-	vector4	Color;
-	float	Left;
-	float	Top;
-	float	Width;
-	EHAlign	HAlign;
-	EVAlign	VAlign;
-	bool	Wrap;
+	Data::CSimpleString	Text;
+	vector4				Color;
+	float				Left;
+	float				Top;
+	float				Width;
+	EHAlign				HAlign;
+	EVAlign				VAlign;
+	bool				Wrap;
 };
 
-class CDebugDraw: public Core::CObject
+class CDebugDraw: public Data::CRefCounted
 {
 	__DeclareSingleton(CDebugDraw);
 
@@ -75,13 +74,13 @@ public:
 
 protected:
 
-	PVertexLayout			ShapeInstVL;
-	PVertexLayout			InstVL;
-	PVertexLayout			PrimVL;
-	PMesh					Shapes;
-	PVertexBuffer			InstanceBuffer;
+	//PVertexLayout			ShapeInstVL;
+	//PVertexLayout			InstVL;
+	//PVertexLayout			PrimVL;
+	//PMesh					Shapes;
+	//PVertexBuffer			InstanceBuffer;
 
-	PShader					ShapeShader;
+	//PShader					ShapeShader;
 
 	//ID3DXFont*				pD3DXFont;
 	//ID3DXSprite*			pD3DXSprite;
@@ -101,8 +100,8 @@ public:
 	void	Close();
 
 	//???!!!move code to renderers?!
-	void	RenderGeometry();
-	void	RenderText();
+	//void	RenderGeometry();
+	//void	RenderText();
 
 	bool	DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color = vector4::White);
 	bool	DrawBox(const matrix44& Tfm, const vector4& Color = vector4::White);

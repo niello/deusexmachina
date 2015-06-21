@@ -10,11 +10,11 @@
 #include <Core/CoreServer.h>
 #include <Core/Factory.h>
 
-#include <elements/CEGUIEditbox.h>
-#include <elements/CEGUIMultiColumnList.h>
-#include <elements/CEGUIListboxTextItem.h>
-#include <elements/CEGUIRadioButton.h>
-#include <elements/CEGUIPushButton.h>
+#include <CEGUI/widgets/Editbox.h>
+#include <CEGUI/widgets/MultiColumnList.h>
+#include <CEGUI/widgets/ListboxTextItem.h>
+#include <CEGUI/widgets/RadioButton.h>
+#include <CEGUI/widgets/PushButton.h>
 
 #define COL_NAME	0
 #define COL_TYPE	1
@@ -67,7 +67,7 @@ void CWatcherWindow::Term()
 	UNSUBSCRIBE_EVENT(OnUIUpdate);
 
 	if (pWnd && pWnd->getParent())
-		pWnd->getParent()->removeChildWindow(pWnd);
+		pWnd->getParent()->removeChild(pWnd);
 
 	//CUIWindow::Term();
 }
@@ -90,8 +90,8 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 	if (!Curr.pNameItem)
 	{
 		Curr.pNameItem = n_new(CEGUI::ListboxTextItem((CEGUI::utf8*)Name, 0, 0, false, false));
-		Curr.pNameItem->setSelectionBrushImage("TaharezLook", "MultiListSelectionBrush");
-		Curr.pNameItem->setSelectionColours(CEGUI::colour(0xff606099));
+		Curr.pNameItem->setSelectionBrushImage("TaharezLook/MultiListSelectionBrush");
+		Curr.pNameItem->setSelectionColours(CEGUI::Colour(0xff606099));
 		Curr.pNameItem->setTextParsingEnabled(false);
 	}
 	else Curr.pNameItem->setText((CEGUI::utf8*)Name);
@@ -99,16 +99,16 @@ void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
 	if (!Curr.pTypeItem)
 	{
 		Curr.pTypeItem = n_new(CEGUI::ListboxTextItem("", 0, 0, false, false));
-		Curr.pTypeItem->setSelectionBrushImage("TaharezLook", "MultiListSelectionBrush");
-		Curr.pTypeItem->setSelectionColours(CEGUI::colour(0xff606099));
+		Curr.pTypeItem->setSelectionBrushImage("TaharezLook/MultiListSelectionBrush");
+		Curr.pTypeItem->setSelectionColours(CEGUI::Colour(0xff606099));
 		Curr.pTypeItem->setTextParsingEnabled(false);
 	}
 
 	if (!Curr.pValueItem)
 	{
 		Curr.pValueItem = n_new(CEGUI::ListboxTextItem("", 0, 0, false, false));
-		Curr.pValueItem->setSelectionBrushImage("TaharezLook", "MultiListSelectionBrush");
-		Curr.pValueItem->setSelectionColours(CEGUI::colour(0xff606099));
+		Curr.pValueItem->setSelectionBrushImage("TaharezLook/MultiListSelectionBrush");
+		Curr.pValueItem->setSelectionColours(CEGUI::Colour(0xff606099));
 		Curr.pValueItem->setTextParsingEnabled(false);
 	}
 }

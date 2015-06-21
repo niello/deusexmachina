@@ -7,8 +7,8 @@
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
-#include <CEGUIEvent.h>
-#include <CEGUIVector.h>
+#include <CEGUI/Event.h>
+#include <CEGUI/Vector.h>
 
 // UI server (CEGUI launcher & manager). This server creates top-level screens and manages
 // their switching (or provides switching functionality to application states).
@@ -41,12 +41,12 @@ class CUIServer: public Core::CObject
 private:
 
 	CEGUI::Direct3D9Renderer*			Renderer; //!!!use N2 renderer!
-	CEGUI::TinyXML2Parser*				Parser;
 	CEGUI::System*						CEGUISystem;
 	CEGUI::CNebula2Logger*				Logger;
 	CEGUI::CNebula2ResourceProvider*	ResourceProvider;
+	CEGUI::TinyXML2Parser*				XMLParser;
 
-	CDict<CStrID, PWindow>		Screens;
+	CDict<CStrID, PWindow>				Screens;
 	CUIWindow*							CurrRootScreen;
 
 	CArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
@@ -69,7 +69,7 @@ public:
 	// Internal use, set by config
 	void			LoadScheme(const CString& ResourceFile);
 	void			LoadFont(const CString& ResourceFile); //???retval CEGUI::Font&?
-	void			SetDefaultMouseCursor(const CString& SchemeName, const CString& CursorName);
+	void			SetDefaultMouseCursor(const CString& ImageName);
 	//!!!create dynamic fonts! see article!
 
 	//bool Init(PParams Cfg);
@@ -99,7 +99,7 @@ public:
 
 	// Internal use by UI system & windows
 	CEGUI::UVector2	GetMousePositionU() const;
-	CEGUI::Point	GetMousePosition() const; //???return nebula vector2, not point? vector2 can be used externally
+	CEGUI::Vector2f	GetMousePosition() const; //???return nebula vector2, not point? vector2 can be used externally
 	
 	// Event will be disconnected at the end of GUI render loop.
 	// Attention! This method is not thread safe. You must call

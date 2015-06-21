@@ -46,9 +46,9 @@ public:
 	~CResourceManager() { __DestructSingleton; }
 
 	void			RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, const Core::CRTTI* pLoaderType);
-	PResourceLoader	CreateDefaultLoader(const char* pFmtExtension);
+	PResourceLoader	CreateDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType = NULL);
 	template<class TRsrc>
-	PResourceLoader	CreateDefaultLoaderFor(const char* pFmtExtension);
+	PResourceLoader	CreateDefaultLoaderFor(const char* pFmtExtension) { return CreateDefaultLoader(pFmtExtension, &TRsrc::RTTI); }
 
 	PResource		RegisterResource(CStrID URI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
 	PResource		RegisterResource(const char* pURI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts

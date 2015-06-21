@@ -2,6 +2,10 @@
 
 #include <Scripting/EntityScriptObject.h>
 
+#ifdef RegisterClass
+#undef RegisterClass
+#endif
+
 namespace App
 {
 

@@ -113,7 +113,7 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 		}
 		if (UI.GetWnd()->getParent() != UISrv->GetRootScreen()->GetWnd())
 		{
-			UISrv->GetRootScreen()->GetWnd()->addChildWindow(UI.GetWnd());
+			UISrv->GetRootScreen()->GetWnd()->addChild(UI.GetWnd());
 			UI.Hide(); // To force OnShow event
 			UI.Show();
 		}
