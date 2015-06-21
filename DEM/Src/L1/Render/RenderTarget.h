@@ -7,6 +7,8 @@
 
 // A surface in a video memory on which rendering is performed. It can be
 // a back buffer or a texture. It optionally can be used as a shader input.
+// If you want to manage RT texture as a named resource you should get texture
+// with GetShaderResource() and then manually register it in a resource manager.
 
 //PERF:
 //!!!always clear MSAARTs before rendering, at least AMD GCN benefits from it!
@@ -28,12 +30,13 @@ class CRenderTarget: public Core::CObject
 {
 protected:
 
-	CRenderTargetDesc	Desc;
+	CRenderTargetDesc Desc;
 
 public:
 
-	virtual CTexture*			GetShaderResource() const = 0; //???or store PTexture inside always and avoid virtualization here?
-	//virtual bool CopyToTexture/ResolveToTexture(CTexture& Dest) const = 0; // copy to another size and/or MSAA
+	virtual void				Destroy() = 0;
+	virtual bool				CopyResolveToTexture(PTexture Dest /*, region*/) const = 0; // Copy to texture of another size and/or MSAA
+	virtual CTexture*			GetShaderResource() const = 0;
 	const CRenderTargetDesc&	GetDesc() const { return Desc; }
 };
 

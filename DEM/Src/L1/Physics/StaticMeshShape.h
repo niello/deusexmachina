@@ -20,8 +20,7 @@ protected:
 
 public:
 
-	CStaticMeshShape(CStrID ID): CCollisionShape(ID) {}
-	virtual ~CStaticMeshShape() { if (IsLoaded()) Unload(); }
+	virtual ~CStaticMeshShape();// { if (IsLoaded()) Unload(); }
 
 	//???can I get mesh iface from the shape itself?
 	//bool			Setup(btBvhTriangleMeshShape* pShape, btStridingMeshInterface* pIMesh);

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_ANIM_CLIP_H__
 #define __DEM_L1_ANIM_CLIP_H__
 
-#include <Resources/Resource.h>
+#include <Resources/ResourceObject.h>
 #include <Animation/EventTrack.h>
 #include <Data/Dictionary.h>
 
@@ -33,7 +33,7 @@ namespace Scene
 namespace Anim
 {
 
-class CAnimClip: public Resources::CResource
+class CAnimClip: public Resources::CResourceObject
 {
 	__DeclareClassNoFactory;
 
@@ -45,9 +45,9 @@ protected:
 
 public:
 
-	CAnimClip(CStrID ID): CResource(ID) {}
+	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
 
-	virtual Scene::PNodeController CreateController(DWORD SamplerIdx) const = 0;
+	virtual bool					IsResourceValid() const { FAIL; }
 
 	float	AdjustCursorPos(float Pos, bool Loop) const;
 	void	FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;

@@ -3,6 +3,8 @@
 #include <Render/D3D9/D3D9DriverFactory.h>
 #include <Render/D3D9/D3D9DisplayDriver.h>
 #include <Render/D3D9/D3D9RenderTarget.h>
+#include <Render/D3D9/D3D9DepthStencilBuffer.h>
+#include <Render/D3D9/D3D9Texture.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
 #include <Core/Factory.h>
@@ -404,7 +406,7 @@ DWORD CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, c
 	IDirect3DSurface9* pRTSurface = NULL;
 	n_assert(SUCCEEDED(pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
 	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
-	RT->Create(pRTSurface);
+	RT->Create(pRTSurface, NULL);
 
 	ItSC->BackBufferRT = RT.GetUnsafe();
 	ItSC->TargetWindow = pWnd;
@@ -659,7 +661,7 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	IDirect3DSurface9* pSurface = NULL;
 	IDirect3DTexture9* pTexture = NULL;
 
-	// Using RT as a shader inut requires a texture. Since MSAA textures are not supported in D3D9,
+	// Using RT as a shader input requires a texture. Since MSAA textures are not supported in D3D9,
 	// MSAA RT will be created as a separate surface anyway and then it will be resolved into a texture.
 
 	if (Desc.UseAsShaderInput)
@@ -669,17 +671,17 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 		if (MSAAType == D3DMULTISAMPLE_NONE) // Can use texture as an RT and as a shader resource
 		{
 			//!!!only if requires Mips!
-			Usage = D3DUSAGE_AUTOGENMIPMAP; //???will work with RT texture? else must regenerate mips after rendering to this RT
+			Usage |= D3DUSAGE_AUTOGENMIPMAP; //???will work with RT texture? else must regenerate mips after rendering to this RT
 			Mips = 0; // Autogenerate full mip chain //!!!or some other value if specified!
 		}
-		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, 1, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, NULL))) return NULL;
+		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, Mips, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, NULL))) return NULL;
 	}
 
 	// Initialize RT surface, use texture level 0 when possible, else create separate surface
 
 	HRESULT hr;
-	if (Desc.UseAsShaderInput && MSAAType == D3DMULTISAMPLE_NONE)
-		hr = pTexture->GetSurfaceLevel(0, &pSurface);
+	bool UseTexSurface = (Desc.UseAsShaderInput && MSAAType == D3DMULTISAMPLE_NONE);
+	if (UseTexSurface) hr = pTexture->GetSurfaceLevel(0, &pSurface);
 	else hr = pD3DDevice->CreateRenderTarget(Desc.Width, Desc.Height, RTFmt, MSAAType, MSAAQuality, FALSE, &pSurface, NULL);
 
 	if (FAILED(hr))
@@ -688,8 +690,15 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 		return NULL;
 	}
 
+	PD3D9Texture Tex = NULL;
+	if (pTexture)
+	{
+		Tex = n_new(CD3D9Texture);
+		Tex->Create(pTexture);
+	}
+
 	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
-	RT->Create(pSurface);
+	RT->Create(pSurface, Tex);
 	return RT.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -713,11 +722,9 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 	IDirect3DSurface9* pSurface = NULL;
 	if (FAILED(pD3DDevice->CreateDepthStencilSurface(Desc.Width, Desc.Height, DSFmt, MSAAType, MSAAQuality, TRUE, &pSurface, NULL))) return NULL;
 
-	//PD3D9DepthStencilBuffer DS = n_new(CD3D9DepthStencilBuffer);
-	//DS->Create(pSurface);
-	//return DS.GetUnsafe();
-
-	return NULL;
+	PD3D9DepthStencilBuffer DS = n_new(CD3D9DepthStencilBuffer);
+	DS->Create(pSurface);
+	return DS.GetUnsafe();
 
 	//!!!COMPATIBILITY TEST! (separate method)
 //!!!also test MSAA compatibility (all the same)!
@@ -733,8 +740,7 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 
 bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
 		{
@@ -747,8 +753,7 @@ bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispa
 
 bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
 		{
@@ -765,8 +770,7 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 
 bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];

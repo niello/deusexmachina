@@ -12,14 +12,15 @@ typedef enum _D3DFORMAT D3DFORMAT;
 
 namespace Render
 {
-typedef Ptr<class CTexture> PTexture;
+typedef Ptr<class CD3D9Texture> PD3D9Texture;
 
 class CD3D9RenderTarget: public CRenderTarget
 {
 protected:
 
 	IDirect3DSurface9*	pRTSurface;
-	PTexture			RTTexture;
+	PD3D9Texture		SRTexture;
+	bool				NeedResolve; // Autoresolve RT surface to SR texture
 
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceRelease, OnDeviceRelease);
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
@@ -29,13 +30,10 @@ public:
 
 	CD3D9RenderTarget(): pRTSurface(NULL) {}
 
-	bool				Create(IDirect3DSurface9* pSurface); // For internal use
-	void				Destroy();
-
-	////void				Set/ClearResolveRect();
-	//void				Resolve();
-
-	virtual CTexture*	GetShaderResource() const { return RTTexture.GetUnsafe(); } //???or store PTexture inside always and avoid virtualization here?
+	bool				Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture); // For internal use
+	virtual void		Destroy();
+	virtual bool		CopyResolveToTexture(PTexture Dest /*, region*/) const;
+	virtual CTexture*	GetShaderResource() const;
 	IDirect3DSurface9*	GetD3DSurface() const { return pRTSurface; }
 };
 

@@ -8,7 +8,6 @@
 #include <Game/EntityManager.h>
 #include <Game/StaticEnvManager.h>
 #include <Animation/AnimClip.h>
-#include <Resources/ResourceManager.h>
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
@@ -55,8 +54,6 @@ public:
 
 	CGameServer(): IsOpen(false) { __ConstructSingleton; }
 	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
-
-	Resources::CResourceManager<Anim::CAnimClip> AnimationMgr; // Until a better place is found
 
 	bool			Open();
 	void			Close();

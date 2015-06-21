@@ -11,6 +11,8 @@
 #include <Scene/PropSceneNode.h>
 #include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Data/DataServer.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
@@ -69,10 +71,14 @@ bool CPropUIControl::InternalActivate()
 	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
 	if (PickShapeID.IsValid() && GetEntity()->GetLevel()->GetPhysics())
 	{
-		Physics::PCollisionShape Shape = PhysicsSrv->CollisionShapeMgr.GetTypedResource(PickShapeID);
-		if (!Shape.IsValid())
-			Shape = Physics::LoadCollisionShapeFromPRM(PickShapeID, CString("Physics:") + PickShapeID.CStr() + ".prm");
-		n_assert(Shape->IsLoaded());
+		Resources::PResource RShape = ResourceMgr->RegisterResource(PickShapeID);
+		if (!RShape->IsLoaded())
+		{
+			Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
+			ResourceMgr->LoadResource(RShape, Loader);
+			n_assert(RShape->IsLoaded());
+		}
+		Physics::PCollisionShape Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
 
 		ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
 		ushort Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
@@ -335,7 +341,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHa
 	char EvIDString[64];
 	sprintf_s(EvIDString, 63, "OnUIAction%s", ID.CStr());
 	Act.EventID = CStrID(EvIDString);
-	GetEntity()->AddHandler(Act.EventID, Handler, &Act.Sub);
+	GetEntity()->Subscribe(Act.EventID, Handler, &Act.Sub);
 	if (!Act.Sub.IsValid()) FAIL;
 	Act.IsSOAction = IsSOAction;
 

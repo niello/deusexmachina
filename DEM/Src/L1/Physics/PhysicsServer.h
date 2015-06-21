@@ -28,8 +28,7 @@ protected:
 
 public:
 
-	Data::CDynamicEnum16							CollisionGroups;
-	Resources::CResourceManager<CCollisionShape>	CollisionShapeMgr;
+	Data::CDynamicEnum16	CollisionGroups;
 
 	CPhysicsServer();
 	~CPhysicsServer();
@@ -38,9 +37,9 @@ public:
 	void				Close();
 	bool				IsOpen() const { return _IsOpen; }
 
-	PCollisionShape		CreateBoxShape(const vector3& Size, CStrID UID = CStrID::Empty);
-	PCollisionShape		CreateSphereShape(float Radius, CStrID UID = CStrID::Empty);
-	PCollisionShape		CreateCapsuleShape(float Radius, float Height, CStrID UID = CStrID::Empty);
+	PCollisionShape		CreateBoxShape(const vector3& Size);
+	PCollisionShape		CreateSphereShape(float Radius);
+	PCollisionShape		CreateCapsuleShape(float Radius, float Height);
 
 	CPhysicsDebugDraw*	GetDebugDrawer() { return pDD; }
 };

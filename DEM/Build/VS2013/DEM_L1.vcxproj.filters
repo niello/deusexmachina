@@ -812,6 +812,18 @@
     <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\DepthStencilBuffer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1314,6 +1326,18 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

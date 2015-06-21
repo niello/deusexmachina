@@ -133,4 +133,18 @@ EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
+EMSAAQuality CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc)
+{
+	switch (SampleDesc.Count)
+	{
+		case 0:
+		case 1:		return MSAA_None;
+		case 2:		return MSAA_2x;
+		case 4:		return MSAA_4x;
+		case 8:		return MSAA_8x;
+		default:	Sys::Error("CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality() > Unsupported MSAA type %d", SampleDesc.Count); return MSAA_None;
+	}
+}
+//---------------------------------------------------------------------
+
 }

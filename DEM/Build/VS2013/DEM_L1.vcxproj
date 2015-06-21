@@ -203,6 +203,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Bone.h" />
     <ClInclude Include="..\..\Src\L1\Render\Camera.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.h" />
@@ -210,6 +211,8 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h" />
@@ -227,6 +230,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderPath.h" />
@@ -419,12 +423,15 @@
     <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Bone.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp" />
@@ -444,6 +451,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\TerrainRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderPath.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp" />

@@ -5,7 +5,7 @@
 
 namespace Physics
 {
-__ImplementResourceClass(Physics::CHeightfieldShape, 'HFSH', Physics::CCollisionShape);
+__ImplementClass(Physics::CHeightfieldShape, 'HFSH', Physics::CCollisionShape);
 
 bool CHeightfieldShape::Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset)
 {
@@ -16,7 +16,6 @@ bool CHeightfieldShape::Setup(btHeightfieldTerrainShape* pShape, void* pHeightMa
 		OK;
 	}
 
-	State = Resources::Rsrc_Failed;
 	FAIL;
 }
 //---------------------------------------------------------------------

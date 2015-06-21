@@ -11,7 +11,7 @@
 //
 //namespace Render
 //{
-//__ImplementResourceClass(Render::CTexture, 'RTEX', Resources::CResource);
+//__ImplementClass(Render::CTexture, 'RTEX', Resources::CResourceObject);
 //
 //bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 //{

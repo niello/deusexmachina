@@ -31,9 +31,6 @@
 
 namespace Input
 {
-using namespace Events;
-
-const int CharBufferSize = 256;
 
 enum EInputPriority
 {
@@ -50,10 +47,14 @@ enum EInputPriority
 
 #define InputSrv Input::CInputServer::Instance()
 
-class CInputServer: public CEventDispatcher
+class CInputServer: public Events::CEventDispatcher
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CInputServer);
+
+public:
+
+	static const int CharBufferSize = 256;
 
 private:
 
@@ -89,7 +90,7 @@ private:
 
 public:
 
-	CInputServer();
+	CInputServer(): CEventDispatcher(16), _IsOpen(false) { __ConstructSingleton; }
 	~CInputServer();
 
 	bool			Open();

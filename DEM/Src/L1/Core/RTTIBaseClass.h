@@ -23,6 +23,10 @@ public:
 	bool			IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
 	bool			IsA(const CString& Name) const { return GetRTTI()->IsDerivedFrom(Name); }
 	bool			IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
+	template<class T>
+	T*				As() { return IsA(T::RTTI) ? static_cast<T*>(this) : NULL; }
+	template<class T>
+	const T*		As() const { return IsA(T::RTTI) ? static_cast<T*>(this) : NULL; }
 	const CString&	GetClassName() const { return GetRTTI()->GetName(); }
 	Data::CFourCC	GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
 };

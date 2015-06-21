@@ -3,6 +3,7 @@
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11DisplayDriver.h>
 #include <Render/D3D11/D3D11RenderTarget.h>
+#include <Render/D3D11/D3D11DepthStencilBuffer.h>
 #include <Render/D3D11/D3D11RenderState.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
@@ -390,11 +391,9 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 		return ERR_CREATION_ERROR;
 	}
 
-	//!!!when init check if use as shader input requested, desc must allow it!
-	
+	//!!!Tex is not necessary, can pass only dimensions and MSAA quality, then release pBackBuffer!
 	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
-	RT->Create(pBackBuffer, pRTV);
-	//pBackBuffer->Release();
+	RT->Create(pRTV, NULL);
 
 	if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 
@@ -620,8 +619,19 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 		return NULL;
 	}
 
+	ID3D11ShaderResourceView* pSRV = NULL;
+	if (Desc.UseAsShaderInput)
+	{
+		if (FAILED(pD3DDevice->CreateShaderResourceView(pTexture, NULL, &pSRV)))
+		{
+			pRTV->Release();
+			pTexture->Release();
+			return NULL;
+		}
+	}
+
 	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
-	RT->Create(pTexture, pRTV);
+	RT->Create(pRTV, pSRV);
 	return RT.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -666,11 +676,9 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 		return NULL;
 	}
 
-	//PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
-	//DS->Create(pTexture, pDSV);
-	//return DS.GetUnsafe();
-
-	return NULL;
+	PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
+	DS->Create(pDSV);
+	return DS.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -678,8 +686,7 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 /*
 bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
 		{

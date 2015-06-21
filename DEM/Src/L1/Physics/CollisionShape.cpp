@@ -5,21 +5,14 @@
 
 namespace Physics
 {
-__ImplementResourceClass(Physics::CCollisionShape, 'CSHP', Resources::CResource);
+__ImplementClass(Physics::CCollisionShape, 'CSHP', Resources::CResourceObject);
 
 bool CCollisionShape::Setup(btCollisionShape* pShape)
 {
-	if (!pShape)
-	{
-		State = Resources::Rsrc_Failed;
-		FAIL;
-	}
-
+	if (!pShape) FAIL;
 	n_assert(!pShape->getUserPointer());
 	pShape->setUserPointer(this);
-
 	pBtShape = pShape;
-	State = Resources::Rsrc_Loaded;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -32,7 +25,6 @@ void CCollisionShape::Unload()
 		delete pBtShape;
 		pBtShape = NULL;
 	}
-	State = Resources::Rsrc_NotLoaded;
 }
 //---------------------------------------------------------------------
 

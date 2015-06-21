@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_MATERIAL_H__
 
 #include <Render/Shader.h>
-#include <Resources/Resource.h>
+#include <Resources/ResourceObject.h>
 
 // Material consists of a shader, material feature flags (which will be combined with
 // other feature flags to determine shader techniques) and shader variable values, that
@@ -15,7 +15,7 @@ namespace Render
 {
 typedef Ptr<class CMaterial> PMaterial;
 
-class CMaterial: public Resources::CResource
+class CMaterial: public Resources::CResourceObject
 {
 	__DeclareClass(CMaterial);
 
@@ -43,11 +43,12 @@ protected:
 
 public:
 
-	CMaterial(CStrID ID): CResource(ID)/*, FeatureFlags(0)*/ {}
-	virtual ~CMaterial() { if (IsLoaded()) Unload(); }
+	virtual ~CMaterial();// { if (IsLoaded()) Unload(); }
 
 	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags); //, const CShaderVarMap& StaticShaderVars);
 	virtual void			Unload();
+
+	virtual bool			IsResourceValid() const { FAIL; }
 
 	//???GetTech(LOD, FFlags)? with auto-fallback
 

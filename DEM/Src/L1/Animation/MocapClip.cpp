@@ -5,7 +5,7 @@
 
 namespace Anim
 {
-__ImplementResourceClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
+__ImplementClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
 
 bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 					   const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,
@@ -13,7 +13,7 @@ bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>&
 {
 	n_assert(_pKeys);
 
-	if (State == Resources::Rsrc_Loaded) Unload();
+//	if (State == Resources::Rsrc_Loaded) Unload();
 
 	pKeys = _pKeys;
 	Tracks = _Tracks;
@@ -38,15 +38,12 @@ bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>&
 		};
 	}
 
-	State = Resources::Rsrc_Loaded;
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CMocapClip::Unload()
 {
-	State = Resources::Rsrc_NotLoaded;
-
 	//!!!sampler pointers will become invalid! use smartptrs?
 	// or in controller store clip ptr and clear sampler if clip becomes unloaded
 

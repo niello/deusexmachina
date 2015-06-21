@@ -1,6 +1,7 @@
 #include "D3D9RenderTarget.h"
 
 #include <Render/D3D9/D3D9DriverFactory.h>
+#include <Render/D3D9/D3D9Texture.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3d9.h>
@@ -8,21 +9,35 @@
 namespace Render
 {
 
-bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface)
+//!!!???assert destroyed?!
+bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture)
 {
 	n_assert(pSurface);
 
 	D3DSURFACE_DESC RTDesc;
-	if (FAILED(pRTSurface->GetDesc(&RTDesc)) || !(RTDesc.Usage & D3DUSAGE_RENDERTARGET)) FAIL;
+	if (FAILED(pSurface->GetDesc(&RTDesc)) || !(RTDesc.Usage & D3DUSAGE_RENDERTARGET)) FAIL;
 
 	Desc.Width = RTDesc.Width;
 	Desc.Height = RTDesc.Height;
 	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(RTDesc.Format);
 	Desc.MSAAQuality = CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(RTDesc.MultiSampleType, RTDesc.MultiSampleQuality);
-	Desc.UseAsShaderInput = false; // As no texture associated
+
+	if (Texture.IsValid())
+	{
+		IDirect3DSurface9* pTmpSurf = NULL;
+		if (FAILED(Texture->GetD3DTexture()->GetSurfaceLevel(0, &pTmpSurf))) FAIL;
+		NeedResolve = (pTmpSurf != pSurface);
+		Desc.UseAsShaderInput = true;
+		SRTexture = Texture;
+	}
+	else
+	{
+		NeedResolve = false;
+		Desc.UseAsShaderInput = false;
+		SRTexture = NULL;
+	}
 
 	pRTSurface = pSurface;
-	RTTexture = NULL;
 
 	//!!!process GPU resources in driver!
 	//SUBSCRIBE_PEVENT(OnRenderDeviceRelease, CRenderTarget, OnDeviceRelease);
@@ -41,23 +56,45 @@ void CD3D9RenderTarget::Destroy()
 	//UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
 
 	SAFE_RELEASE(pRTSurface);
-//	if (RTTexture.IsValid() && RTTexture->IsLoaded()) RTTexture->Unload();
-	RTTexture = NULL;
+//	if (SRTexture.IsValid() && SRTexture->IsLoaded()) RTTexture->Unload();
+	SRTexture = NULL;
+}
+//---------------------------------------------------------------------
+
+//???or GPUDriver method?
+bool CD3D9RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
+{
+	n_assert_dbg(Dest->IsA<CD3D9Texture>());
+
+	if (!Dest.IsValid()) FAIL;
+	IDirect3DTexture9* pDestTex = ((CD3D9Texture*)Dest.GetUnsafe())->GetD3DTexture();
+
+	IDirect3DDevice9* pDev = NULL;
+	if (FAILED(pDestTex->GetDevice(&pDev))) FAIL;
+
+	IDirect3DSurface9* pResolveSurface = NULL;
+	if (FAILED(pDestTex->GetSurfaceLevel(0, &pResolveSurface)))
+	{
+		pDev->Release();
+		FAIL;
+	}
+
+	bool Result = SUCCEEDED(pDev->StretchRect(pRTSurface, NULL, pResolveSurface, NULL, D3DTEXF_NONE));
+	pResolveSurface->Release();
+	pDev->Release();
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
+CTexture* CD3D9RenderTarget::GetShaderResource() const
+{
+	//???!!!detect need autoresolve?! or call resolve at render phase end? RT::OnRenderingComplete()
+	return SRTexture.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
 /*
-// Resolves RT to texture, if necessary
-void CRenderTarget::Resolve()
-{
-	if (!ResolveToTexture) return;
-	IDirect3DSurface9* pResolveSurface = NULL;
-	n_assert(SUCCEEDED(RTTexture->GetD3D9Texture()->GetSurfaceLevel(0, &pResolveSurface)));
-	n_assert(SUCCEEDED(RenderSrv->GetD3DDevice()->StretchRect(pRTSurface, NULL, pResolveSurface, NULL, D3DTEXF_NONE)));
-	pResolveSurface->Release();
-}
-//---------------------------------------------------------------------
-
 bool CRenderTarget::OnDeviceRelease(const Events::CEventBase& Ev)
 {
 	Destroy();

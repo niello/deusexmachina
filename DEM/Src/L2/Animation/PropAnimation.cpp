@@ -11,13 +11,9 @@
 #include <Animation/MocapClip.h>
 #include <Animation/NodeControllerKeyframe.h>
 #include <Animation/NodeControllerMocap.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Data/DataServer.h>
-
-namespace Anim
-{
-	bool LoadMocapClipFromNAX2(const CString& FileName, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip);
-	bool LoadKeyframeClipFromKFA(const CString& FileName, PKeyframeClip OutClip);
-}
 
 namespace Prop
 {
@@ -122,24 +118,16 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
 			CString FileName("Anims:");
 			FileName += ClipRsrcID.CStr();
-			bool IsMocap = FileName.CheckExtension("mca") || FileName.CheckExtension("nax2");
 
-			Anim::PAnimClip Clip;
-			if (IsMocap)
-				Clip = GameSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CMocapClip>(ClipRsrcID);
-			else
-				Clip = GameSrv->AnimationMgr.GetOrCreateTypedResource<Anim::CKeyframeClip>(ClipRsrcID);
-
-			if (!Clip->IsLoaded())
+			Resources::PResource RClip = ResourceMgr->RegisterResource(ClipRsrcID);
+			if (!RClip->IsLoaded())
 			{
-				if (IsMocap)
-					LoadMocapClipFromNAX2(FileName, Bones, (Anim::CMocapClip*)Clip.GetUnsafe());
-				else
-					LoadKeyframeClipFromKFA(FileName, (Anim::CKeyframeClip*)Clip.GetUnsafe());
+				Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(FileName.GetExtension());
+				ResourceMgr->LoadResource(RClip, Loader);
+				n_assert(RClip->IsLoaded());
 			}
-			n_assert(Clip->IsLoaded());
 
-			Clips.Add(Prm.GetName(), Clip);
+			Clips.Add(Prm.GetName(), RClip->GetObject()->As<Anim::CAnimClip>());
 		}
 	}
 //!!!to Activate() -

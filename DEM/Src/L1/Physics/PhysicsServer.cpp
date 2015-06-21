@@ -69,18 +69,18 @@ void CPhysicsServer::Close()
 }
 //---------------------------------------------------------------------
 
-PCollisionShape CPhysicsServer::CreateBoxShape(const vector3& Size, CStrID UID)
+PCollisionShape CPhysicsServer::CreateBoxShape(const vector3& Size)
 {
-	PCollisionShape Shape = CollisionShapeMgr.CreateTypedResource(UID);
+	PCollisionShape Shape = n_new(CCollisionShape);
 	btBoxShape* pBtShape = new btBoxShape(VectorToBtVector(Size * 0.5f));
 	Shape->Setup(pBtShape);
 	return Shape;
 }
 //---------------------------------------------------------------------
 
-PCollisionShape CPhysicsServer::CreateSphereShape(float Radius, CStrID UID)
+PCollisionShape CPhysicsServer::CreateSphereShape(float Radius)
 {
-	PCollisionShape Shape = CollisionShapeMgr.CreateTypedResource(UID);
+	PCollisionShape Shape = n_new(CCollisionShape);
 	btSphereShape* pBtShape = new btSphereShape(Radius);
 	Shape->Setup(pBtShape);
 	return Shape;
@@ -88,9 +88,9 @@ PCollisionShape CPhysicsServer::CreateSphereShape(float Radius, CStrID UID)
 //---------------------------------------------------------------------
 
 // Vertical capsule (around Y axis)
-PCollisionShape CPhysicsServer::CreateCapsuleShape(float Radius, float Height, CStrID UID)
+PCollisionShape CPhysicsServer::CreateCapsuleShape(float Radius, float Height)
 {
-	PCollisionShape Shape = CollisionShapeMgr.CreateTypedResource(UID);
+	PCollisionShape Shape = n_new(CCollisionShape);
 	btCapsuleShape* pBtShape = new btCapsuleShape(Radius, Height);
 	Shape->Setup(pBtShape);
 	return Shape;

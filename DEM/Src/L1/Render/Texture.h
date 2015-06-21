@@ -44,14 +44,15 @@ public:
 protected:
 
 	//???desc structure?
-	//EType					Type;
+	EType					Type;
 	//DWORD					Width;
 	//DWORD					Height;
 	//DWORD					Depth;
 	//DWORD					MipCount;
+	//!!!array size!
 	//EPixelFormat			PixelFormat;
 
-	//DWORD					LockCount;
+	DWORD					LockCount;
 
 public:
 

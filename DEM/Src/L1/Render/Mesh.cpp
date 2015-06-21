@@ -5,7 +5,7 @@
 
 namespace Render
 {
-__ImplementResourceClass(Render::CMesh, 'MESH', Resources::CResource);
+__ImplementClass(Render::CMesh, 'MESH', Resources::CResourceObject);
 
 bool CMesh::Create(const CMeshInitData& InitData)
 {
@@ -38,7 +38,6 @@ bool CMesh::Create(const CMeshInitData& InitData)
 	memcpy(pGroups, InitData.pMeshGroupData, TotalSize);
 	if (InitData.UseMapping) pGroupLODMapping = (CMeshGroup**)(pGroups + GroupCount);
 
-	State = Resources::Rsrc_Loaded;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -51,7 +50,6 @@ void CMesh::Unload()
 
 	IB = NULL;
 	VB = NULL;
-	State = Resources::Rsrc_NotLoaded;
 }
 //---------------------------------------------------------------------
 

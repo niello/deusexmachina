@@ -244,7 +244,7 @@ DWORD CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData& Arg,
 bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority)
 {
 	Events::PSub Sub;
-	if (!pDisp->AddHandler(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority), &Sub)) FAIL;
+	if (!pDisp->Subscribe(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority), &Sub)) FAIL;
 	Subscriptions.Add(Sub);
 	OK;
 }

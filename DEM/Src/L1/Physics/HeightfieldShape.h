@@ -25,8 +25,8 @@ protected:
 
 public:
 
-	CHeightfieldShape(CStrID ID): CCollisionShape(ID), pHFData(NULL) {}
-	virtual ~CHeightfieldShape() { if (IsLoaded()) Unload(); }
+	CHeightfieldShape(): pHFData(NULL) {}
+	virtual ~CHeightfieldShape();// { if (IsLoaded()) Unload(); }
 
 	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset);
 	virtual void	Unload();

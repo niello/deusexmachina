@@ -50,6 +50,7 @@ public:
 	template<class TRsrc>
 	PResourceLoader	CreateDefaultLoaderFor(const char* pFmtExtension);
 
+	PResource		RegisterResource(CStrID URI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
 	PResource		RegisterResource(const char* pURI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
 	PResource		RegisterResource(const char* pURN, CResourceObject* pObject = NULL); //!!!assert valid URN!
 

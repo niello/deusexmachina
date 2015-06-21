@@ -99,7 +99,7 @@ public:
 
 	bool					AddActionHandler(CStrID ID, LPCSTR UIName, Events::CEventCallback Callback, int Priority = Priority_Default, bool IsSOAction = false);
 	template<class T>
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, T* Object, bool (T::*Callback)(const Events::CEventBase&), int Priority = Priority_Default, bool IsSOAction = false);
+	bool					AddActionHandler(CStrID ID, LPCSTR UIName, T* Object, bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&), int Priority = Priority_Default, bool IsSOAction = false);
 	bool					AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority = Priority_Default, bool IsSOAction = false);
 	void					RemoveActionHandler(CStrID ID);
 
@@ -122,7 +122,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
 
 template<class T>
 inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, T* Object,
-											 bool (T::*Callback)(const Events::CEventBase&),
+											 bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&),
 											 int Priority, bool IsSOAction)
 {
 	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerMember<T>)(Object, Callback), Priority, IsSOAction);
