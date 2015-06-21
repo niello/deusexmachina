@@ -1,9 +1,9 @@
 #include "Model.h"
 
 //#include <Render/RenderServer.h>
-//#include <Render/SPS.h>
-//#include <Scene/SceneNode.h>
-//#include <IO/BinaryReader.h>
+#include <Render/SPS.h>
+#include <Scene/SceneNode.h>
+#include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -66,10 +66,10 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 //		{
 //			return DataReader.Read(MeshGroupIndex);
 //		}
-//		case 'BTYP':
-//		{
-//			return DataReader.Read(BatchType);
-//		}
+		case 'BTYP':
+		{
+			return DataReader.Read(BatchType);
+		}
 //		case 'FFLG':
 //		{
 //			CString FeatFlagsStr;
@@ -127,20 +127,20 @@ void CModel::OnDetachFromNode()
 
 void CModel::UpdateInSPS(CSPS& SPS)
 {
-	//if (!pSPSRecord)
-	//{
-	//	pSPSRecord = n_new(CSPSRecord);
-	//	pSPSRecord->pUserData = this;
-	//	pSPSRecord->IsLight = false;
-	//	GetGlobalAABB(pSPSRecord->GlobalBox);
-	//	SPS.AddObjectRecord(pSPSRecord);
-	//}
-	//else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
-	//{
-	//	GetGlobalAABB(pSPSRecord->GlobalBox);
-	//	SPS.UpdateObjectRecord(pSPSRecord);
-	//	Flags.Clear(WorldMatrixChanged);
-	//}
+	if (!pSPSRecord)
+	{
+		pSPSRecord = n_new(CSPSRecord);
+		pSPSRecord->pUserData = this;
+		pSPSRecord->IsLight = false;
+		GetGlobalAABB(pSPSRecord->GlobalBox);
+		SPS.AddObjectRecord(pSPSRecord);
+	}
+	else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
+	{
+		GetGlobalAABB(pSPSRecord->GlobalBox);
+		SPS.UpdateObjectRecord(pSPSRecord);
+		Flags.Clear(WorldMatrixChanged);
+	}
 }
 //---------------------------------------------------------------------
 

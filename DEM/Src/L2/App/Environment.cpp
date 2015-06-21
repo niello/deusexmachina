@@ -2,22 +2,8 @@
 
 #include <Scripting/EntityScriptObject.h>
 
-#ifdef RegisterClass
-#undef RegisterClass
-#endif
-
 namespace App
 {
-
-CEnvironment::CEnvironment(): AllowMultipleInstances(false)
-{
-}
-//---------------------------------------------------------------------
-
-CEnvironment::~CEnvironment()
-{
-}
-//---------------------------------------------------------------------
 
 bool CEnvironment::InitCore()
 {
@@ -77,10 +63,11 @@ bool CEnvironment::InitEngine()
 
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
 
-	MainWindow.SetTitle(WindowTitle.CStr());
-	MainWindow.SetIcon(IconName.CStr());
+	MainWindow = n_new(Sys::COSWindow);
+	MainWindow->SetTitle(WindowTitle.CStr());
+	MainWindow->SetIcon(IconName.CStr());
 	//!!!set size!
-	MainWindow.Open();
+	MainWindow->Open();
 
 	//!!!init render server with main window!
 	//RenderSrv->DriverFactory = n_new(CD3D9DriverFactory);

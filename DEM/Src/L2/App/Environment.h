@@ -4,7 +4,6 @@
 
 //???!!!forward declarations?
 #include <Core/CoreServer.h>
-#include <System/OSWindow.h>
 #include <Time/TimeServer.h>
 #include <Debug/DebugServer.h>
 #include <IO/IOServer.h>
@@ -13,13 +12,17 @@
 #include <Scripting/ScriptServer.h>
 #include <Debug/DebugDraw.h>
 //#include <Audio/AudioServer.h>
-#include <Video/VideoServer.h>
 #include <Physics/PhysicsServer.h>
 #include <Input/InputServer.h>
 #include <Game/GameServer.h>
 #include <AI/AIServer.h>
 #include <UI/UIServer.h>
 #include <Render/DisplayMode.h>
+#include <System/OSWindow.h>
+#include <Video/VideoServer.h>
+#ifdef RegisterClass
+#undef RegisterClass
+#endif
 
 //???need at all? redesign application framework!
 
@@ -30,6 +33,11 @@
 
 // NOTE: this class doesn't handle L3 initialization since it belongs to L2. Derive from it into
 // your L3 lib or application framework or initialize/release L3 systems manually in application.
+
+namespace Sys
+{
+	typedef Ptr<class COSWindow> POSWindow;
+}
 
 namespace App
 {
@@ -50,7 +58,7 @@ protected:
 	CString							WindowTitle;
 	CString							IconName;
 	//CDisplayMode					DisplayMode;
-	Sys::COSWindow					MainWindow;
+	Sys::POSWindow					MainWindow;
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
@@ -71,8 +79,7 @@ protected:
 
 public:
 
-	CEnvironment();
-	virtual ~CEnvironment(); //???virtual?
+	CEnvironment(): AllowMultipleInstances(false) {}
 	
 	static CEnvironment* Instance() { static CEnvironment Singleton; return &Singleton; }
 
