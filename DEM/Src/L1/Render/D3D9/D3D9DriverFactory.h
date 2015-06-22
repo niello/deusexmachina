@@ -53,6 +53,8 @@ public:
 	Sys::COSWindow*			GetFocusWindow() const { return pFocusWindow; }
 };
 
+typedef Ptr<CD3D9DriverFactory> PD3D9DriverFactory;
+
 }
 
 #endif

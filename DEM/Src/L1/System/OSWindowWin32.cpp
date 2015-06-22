@@ -147,7 +147,7 @@ bool COSWindowWin32::Open()
 
 void COSWindowWin32::Close()
 {
-	n_assert(Flags.Is(Wnd_Open));
+	if (!Flags.Is(Wnd_Open)) return;
 	::SendMessage(hWnd, WM_CLOSE, 0, 0);
 }
 //---------------------------------------------------------------------

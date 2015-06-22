@@ -1,18 +1,25 @@
-//#include "Texture.h"
-//
+#include "D3D9Texture.h"
+
 //#include <Render/RenderServer.h>
 //#include <Events/EventServer.h>
-//#include <Core/Factory.h>
-//
+#include <Core/Factory.h>
+
 //namespace Data
 //{
 //DEFINE_TYPE_EX(Render::PTexture, PTexture)
 //}
-//
-//namespace Render
-//{
-//__ImplementClass(Render::CTexture, 'RTEX', Resources::CResourceObject);
-//
+
+namespace Render
+{
+__ImplementClass(Render::CD3D9Texture, 'TEX9', Render::CTexture);
+
+bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
+{
+	n_assert(false);
+	OK;
+}
+//---------------------------------------------------------------------
+
 //bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
 //{
 //	n_assert(pTextureCastToBase);
@@ -336,5 +343,5 @@
 //}
 ////---------------------------------------------------------------------
 //*/
-//
-//}
+
+}

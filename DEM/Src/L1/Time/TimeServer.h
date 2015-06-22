@@ -19,9 +19,8 @@ namespace Time
 {
 #define TimeSrv Time::CTimeServer::Instance()
 
-class CTimeServer: public Core::CObject
+class CTimeServer
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CTimeServer);
 
 protected:
@@ -36,7 +35,6 @@ protected:
 		CStrID	EventID; //???!!!CEventID?
 	};
 
-	bool						_IsOpen;
 	CTime						BaseTime;
 	CTime						PrevTime;
 	CTime						Time;
@@ -52,13 +50,9 @@ public:
 	CTimeServer();
 	virtual ~CTimeServer();
 
-	void			Open();
-	void			Close();
 	void			Trigger();
 	void			Save(Data::CParams& TimeParams);
 	void			Load(const Data::CParams& TimeParams);
-
-	bool			IsOpen() const { return _IsOpen; }
 
 	void			ResetAll();
 	void			PauseAll();
@@ -79,6 +73,27 @@ public:
 	void			PauseNamedTimer(CStrID Name, bool Pause = true);
 	void			DestroyNamedTimer(CStrID Name);
 };
+
+inline CTimeServer::CTimeServer():
+	Time(0.0),
+	PrevTime(0.0),
+	FrameTime(0.0),
+	TimeScale(1.f),
+	LockTime(0.0),
+	LockedFrameTime(0.0)
+{
+	__ConstructSingleton;
+	BaseTime = Sys::GetAppTime();
+}
+//---------------------------------------------------------------------
+
+inline CTimeServer::~CTimeServer()
+{
+	TimeSources.Clear();
+	Timers.Clear();
+	__DestructSingleton;
+}
+//---------------------------------------------------------------------
 
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::ResetAll()

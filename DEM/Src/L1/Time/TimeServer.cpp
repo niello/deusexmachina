@@ -6,40 +6,7 @@
 
 namespace Time
 {
-__ImplementClassNoFactory(Time::CTimeServer, Core::CObject);
 __ImplementSingleton(Time::CTimeServer);
-
-CTimeServer::CTimeServer(): _IsOpen(false), Time(0.0), FrameTime(0.0), TimeScale(1.f), LockTime(0.0), LockedFrameTime(0.0)
-{
-	__ConstructSingleton;
-}
-//---------------------------------------------------------------------
-
-CTimeServer::~CTimeServer()
-{
-	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
-void CTimeServer::Open()
-{
-	n_assert(!_IsOpen);
-	_IsOpen = true;
-	BaseTime = Sys::GetAppTime();
-	PrevTime = 0;
-	Time = 0;
-}
-//---------------------------------------------------------------------
-
-void CTimeServer::Close()
-{
-	TimeSources.Clear();
-	Timers.Clear();
-
-	n_assert(_IsOpen);
-	_IsOpen = false;
-}
-//---------------------------------------------------------------------
 
 void CTimeServer::AttachTimeSource(CStrID Name, PTimeSource TimeSrc)
 {

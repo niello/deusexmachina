@@ -28,7 +28,7 @@ typedef Ptr<class CResourceObject> PResourceObject;
 
 #define ResourceMgr Resources::CResourceManager::Instance()
 
-class CResourceManager //???refcounted / object?
+class CResourceManager
 {
 	__DeclareSingleton(CResourceManager);
 

@@ -22,7 +22,6 @@ extern "C"
 
 namespace Scripting
 {
-__ImplementClassNoFactory(Scripting::CScriptServer, Core::CObject);
 __ImplementSingleton(CScriptServer);
 
 CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)

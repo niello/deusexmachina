@@ -32,7 +32,7 @@ protected:
 
 	Events::PSub			Sub_OnPaint;
 
-	CD3D9GPUDriver(): SwapChains(1, 1), IsInsideFrame(false) {}
+	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
 	//???subscribe swapchain itself? more handling and self-control into a swapchain class?
 	bool				OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -69,9 +69,9 @@ public:
 	virtual bool				Present(DWORD SwapChainID);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 
-	virtual PVertexLayout		CreateVertexLayout(); // Prefer GetVertexLayout() when possible
-	virtual PVertexBuffer		CreateVertexBuffer();
-	virtual PIndexBuffer		CreateIndexBuffer();
+	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
+	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
+	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 

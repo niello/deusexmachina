@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0) { __ConstructSingleton; Open(); }
+	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
@@ -49,6 +49,8 @@ public:
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };
+
+typedef Ptr<CD3D11DriverFactory> PD3D11DriverFactory;
 
 }
 
