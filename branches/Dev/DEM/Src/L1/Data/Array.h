@@ -67,6 +67,7 @@ public:
 	CIterator	End() const { return pData + Count; }
 	T&			At(int Idx) { MakeIndexValid(Idx); return pData[Idx]; }
 	T&			At(int Idx) const { n_assert(IsIndexValid(Idx)); return pData[Idx];}
+	CIterator	IteratorAt(int Idx) { MakeIndexValid(Idx); return pData + Idx; }
 	CIterator	IteratorAt(int Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
 	int			IndexOf(CIterator It) const { return It - pData; }
 

@@ -303,7 +303,7 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
+int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
 	CArray<CD3D11SwapChain>::CIterator ItSC = SwapChains.Begin();
 	for (; ItSC != SwapChains.End(); ++ItSC)
@@ -506,7 +506,26 @@ PRenderTarget CD3D11GPUDriver::GetSwapChainRenderTarget(DWORD SwapChainID) const
 // to improve parallelism between the GPU and the CPU
 bool CD3D11GPUDriver::Present(DWORD SwapChainID)
 {
+	if (!SwapChainExists(SwapChainID)) FAIL;
+	CD3D11SwapChain& SC = SwapChains[SwapChainID];
+	return SUCCEEDED(SC.pSwapChain->Present(0, 0));
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::BeginFrame()
+{
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::EndFrame()
+{
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil)
+{
+	//pD3DImmContext->ClearRenderTargetView(pRTV, color);
 }
 //---------------------------------------------------------------------
 

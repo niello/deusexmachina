@@ -57,7 +57,7 @@ public:
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap);
 
-	virtual DWORD				CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
+	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
 	virtual bool				DestroySwapChain(DWORD SwapChainID);
 	virtual bool				SwapChainExists(DWORD SwapChainID) const;
 	virtual bool				ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
@@ -68,6 +68,10 @@ public:
 	//!!!get info, change info (or only recreate?)
 	virtual bool				Present(DWORD SwapChainID);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
+
+	virtual bool				BeginFrame();
+	virtual void				EndFrame();
+	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
