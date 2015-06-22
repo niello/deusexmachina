@@ -8,6 +8,8 @@
 
 namespace Render
 {
+__ImplementClassNoFactory(Render::CD3D11DriverFactory, Render::CVideoDriverFactory);
+__ImplementSingleton(Render::CD3D11DriverFactory);
 
 bool CD3D11DriverFactory::Open()
 {
@@ -63,6 +65,27 @@ bool CD3D11DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) c
 	OutInfo.IsSoftware = ((D3DAdapterInfo.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0);
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+DWORD CD3D11DriverFactory::GetAdapterOutputCount(DWORD Adapter) const
+{
+	if (Adapter >= AdapterCount) FAIL;
+
+	IDXGIAdapter1* pAdapter;
+	if (!SUCCEEDED(pDXGIFactory->EnumAdapters1(Adapter, &pAdapter))) FAIL;
+
+	UINT OutputCount = 0;
+	IDXGIOutput* pOutput;
+	while (pAdapter->EnumOutputs(OutputCount, &pOutput) != DXGI_ERROR_NOT_FOUND)
+	{
+		pOutput->Release(); // AddRef() is called in EnumOutputs()
+		++OutputCount;
+	}
+
+	pAdapter->Release(); // AddRef() is called in EnumAdapters1()
+
+	return OutputCount;
 }
 //---------------------------------------------------------------------
 

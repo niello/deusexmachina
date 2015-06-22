@@ -237,18 +237,6 @@
     <ClInclude Include="..\..\Src\L1\UI\UIServer.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.h">
-      <Filter>UI\CEGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.h">
-      <Filter>UI\CEGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.h">
-      <Filter>UI\CEGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2ResourceProvider.h">
-      <Filter>UI\CEGUI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Debug\DebugServer.h">
       <Filter>Debug</Filter>
     </ClInclude>
@@ -824,6 +812,18 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.h">
       <Filter>Render\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\FmtLbTextItem.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMRenderer.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMLogger.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMResourceProvider.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -897,18 +897,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp">
       <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUIFmtLbTextItem.cpp">
-      <Filter>UI\CEGUI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Logger.cpp">
-      <Filter>UI\CEGUI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2Renderer.cpp">
-      <Filter>UI\CEGUI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\UI\CEGUI\CEGUINebula2ResourceProvider.cpp">
-      <Filter>UI\CEGUI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Debug\DebugServer.cpp">
       <Filter>Debug</Filter>
@@ -1338,6 +1326,18 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp">
       <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\FmtLbTextItem.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMRenderer.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMLogger.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMResourceProvider.cpp">
+      <Filter>UI\CEGUI</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

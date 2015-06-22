@@ -1,22 +1,23 @@
 #include "UIServer.h"
 
-#include "UIWindow.h"
+#include <UI/UIWindow.h>
 #include <Events/EventServer.h>
 #include <Input/InputServer.h>
 #include <Input/Events/KeyDown.h>
 #include <Input/Events/KeyUp.h>
-// CEGUI uses insecure function in a template class -_-
-#pragma warning(push)
-#pragma warning(disable : 4996)       // _CRT_INSECURE_DEPRECATE, VS8: old string routines are deprecated
-
 #include <Input/Events/CharInput.h>
 #include <Input/Events/MouseMove.h>
 #include <Input/Events/MouseBtnDown.h>
 #include <Input/Events/MouseBtnUp.h>
 #include <Input/Events/MouseWheel.h>
 
-#include <UI/CEGUI/CEGUINebula2Logger.h>
-#include <UI/CEGUI/CEGUINebula2ResourceProvider.h>
+#include <UI/CEGUI/DEMLogger.h>
+#include <UI/CEGUI/DEMRenderer.h>
+#include <UI/CEGUI/DEMResourceProvider.h>
+
+// CEGUI uses insecure function in a template class -_-
+#pragma warning(push)
+#pragma warning(disable : 4996)       // _CRT_INSECURE_DEPRECATE, VS8: old string routines are deprecated
 
 #include <CEGUI/System.h>
 #include <CEGUI/Font.h>
@@ -24,7 +25,6 @@
 #include <CEGUI/falagard/WidgetLookManager.h>
 #include <CEGUI/WindowManager.h>
 #include <CEGUI/FontManager.h>
-//#include <RendererModules/Direct3D9/CEGUIDirect3D9Renderer.h> //!!!use N2 renderer!
 #include <CEGUI/XMLParserModules/TinyXML2/XMLParser.h>
 
 namespace UI
@@ -37,11 +37,9 @@ CUIServer::CUIServer()
 	n_assert(!Singleton);
 	Singleton = this;
 
-	Logger = n_new(CEGUI::CNebula2Logger);
-	//!!!DEM renderer!
-//n_assert(false);
-//	Renderer = &CEGUI::Direct3D9Renderer::create(RenderSrv->GetD3DDevice());
-	ResourceProvider = n_new(CEGUI::CNebula2ResourceProvider);
+	Logger = n_new(CEGUI::CDEMLogger);
+	//Renderer = &CEGUI::CDEMRenderer::create();
+	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
 
 	//CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
@@ -60,7 +58,6 @@ CUIServer::CUIServer()
 	CEGUI::Scheme::setDefaultResourceGroup("schemes");
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
-	//CEGUI::ScriptModule::setDefaultResourceGroup("lua_scripts");
 
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
 	// as layout root with the MousePassThroughEnabled property set to true.

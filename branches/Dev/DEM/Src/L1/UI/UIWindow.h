@@ -46,7 +46,7 @@ public:
 	CEGUI::Window*	GetWnd() const { return pWnd; }
 };
 
-typedef Ptr<CUIWindow> PWindow;
+typedef Ptr<CUIWindow> PUIWindow;
 
 }
 

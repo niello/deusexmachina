@@ -1,6 +1,10 @@
 #include "Environment.h"
 
 #include <Scripting/EntityScriptObject.h>
+#include <Render/D3D11/D3D11DriverFactory.h>
+#include <Render/GPUDriver.h>
+#include <Render/RenderTarget.h>
+#include <Render/SwapChain.h>
 
 namespace App
 {
@@ -63,26 +67,31 @@ bool CEnvironment::InitEngine()
 
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
 
-	MainWindow = n_new(Sys::COSWindow);
-	MainWindow->SetTitle(WindowTitle.CStr());
-	MainWindow->SetIcon(IconName.CStr());
-	//!!!set size!
-	MainWindow->Open();
+	VideoDrvFct = n_new(Render::CD3D11DriverFactory);
+	Render::PGPUDriver GPU = VideoDrvFct->CreateGPUDriver(0, Render::GPU_Hardware);
 
-	//!!!init render server with main window!
-	//RenderSrv->DriverFactory = n_new(CD3D9DriverFactory);
-	//RenderSrv->DriverFactory->Open(&MainWindow);
+	Render::CRenderTargetDesc BBDesc;
+	BBDesc.Format = Render::PixelFmt_X8R8G8B8;
+	BBDesc.MSAAQuality = Render::MSAA_None;
+	BBDesc.UseAsShaderInput = false;
+	BBDesc.Width = 0;
+	BBDesc.Height = 0;
+
+	Render::CSwapChainDesc SCDesc;
+	SCDesc.BackBufferCount = 2;
+	SCDesc.SwapMode = Render::SwapMode_CopyDiscard;
+	SCDesc.Flags = Render::SwapChain_AutoAdjustSize | Render::SwapChain_VSync;
+
+	DWORD SCIdx = GPU->CreateSwapChain(BBDesc, SCDesc, MainWindow);
 
 	//???do it in RenderServer->Open()?
-n_assert(false);
 	//Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);
 	//n_assert(DefaultFrameShader->Init(*DataSrv->LoadPRM("Shaders:Default.prm")));
 	//RenderServer->AddFrameShader(CStrID("Default"), DefaultFrameShader);
 	//RenderServer->SetScreenFrameShaderID(CStrID("Default"));
 
-n_assert(false);
-	//DD = n_new(Debug::CDebugDraw);
-	//if (!DD->Open()) FAIL;
+	DD = n_new(Debug::CDebugDraw);
+	if (!DD->Open()) FAIL;
 
 	InputServer = n_new(Input::CInputServer);
 	InputServer->Open();
@@ -93,8 +102,8 @@ n_assert(false);
 	VideoServer = n_new(Video::CVideoServer);
 	VideoServer->Open();
 	
-	UIServer = n_new(UI::CUIServer);
-	DbgSrv->AllowUI(true);
+	//UIServer = n_new(UI::CUIServer);
+	//DbgSrv->AllowUI(true);
 
 	OK;
 }
@@ -111,11 +120,9 @@ void CEnvironment::ReleaseEngine()
 	//if (AudioServer.IsValid() && AudioServer->IsOpen()) AudioServer->Close();
 	//AudioServer = NULL;
 
-n_assert(false);
-	//DD->Close();
-	//DD = NULL;
+	DD->Close();
+	DD = NULL;
 
-n_assert(false);
 	//if (RenderServer.IsValid() && RenderServer->IsOpen()) RenderServer->Close();
 	//RenderServer = NULL;
 

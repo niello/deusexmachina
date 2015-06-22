@@ -1,10 +1,16 @@
 #include "D3D11Texture.h"
 
-//#include <Render/RenderServer.h>
-//#include <Events/EventServer.h>
-//#include <Core/Factory.h>
+#include <Core/Factory.h>
 
 namespace Render
 {
-//__ImplementClass(Render::CTexture, 'RTEX', Resources::CResourceObject);
+__ImplementClass(Render::CD3D11Texture, 'TEX1', Render::CTexture);
+
+bool CD3D11Texture::Create(ID3D11Texture2D* pTexture)
+{
+	n_assert(false);
+	OK;
+}
+//---------------------------------------------------------------------
+
 }

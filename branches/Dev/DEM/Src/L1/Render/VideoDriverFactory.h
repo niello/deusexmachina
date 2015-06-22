@@ -33,8 +33,6 @@ typedef Ptr<class CGPUDriver> PGPUDriver;
 
 class CVideoDriverFactory: public Core::CObject
 {
-	__DeclareClassNoFactory;
-
 public:
 
 	struct CAdapterInfo
@@ -61,7 +59,7 @@ public:
 
 	virtual bool			AdapterExists(DWORD Adapter) const = 0;
 	virtual DWORD			GetAdapterCount() const = 0;
-	virtual bool			GetAdapterInfo(CAdapterInfo& OutInfo) const = 0;
+	virtual bool			GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const = 0;
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const = 0;
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0) = 0;
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect) = 0;

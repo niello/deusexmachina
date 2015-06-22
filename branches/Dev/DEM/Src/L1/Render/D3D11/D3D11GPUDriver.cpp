@@ -330,9 +330,12 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 		default:					SCDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD; break; // Allows runtime to select the best
 	}
 
+	DXGI_FORMAT BBFmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(BackBufferDesc.Format); //???GetDesktopFormat()?! //???use SRGB?
+	if (BBFmt == DXGI_FORMAT_B8G8R8X8_UNORM) BBFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+
 	SCDesc.BufferDesc.Width = BBWidth;
 	SCDesc.BufferDesc.Height = BBHeight;
-	SCDesc.BufferDesc.Format = DXGI_FORMAT_UNKNOWN; //!!!just to try default for windowed! GetDesktopFormat()?! //DXGI_FORMAT_R8G8B8A8_UNORM; //???use SRGB?
+	SCDesc.BufferDesc.Format = BBFmt;
 	SCDesc.BufferDesc.RefreshRate.Numerator = 0;
 	SCDesc.BufferDesc.RefreshRate.Denominator = 0;
 	SCDesc.BufferCount = SwapChainDesc.BackBufferCount; //!!! + 1 if front buffer must be included!

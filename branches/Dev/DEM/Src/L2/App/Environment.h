@@ -18,6 +18,7 @@
 #include <AI/AIServer.h>
 #include <UI/UIServer.h>
 #include <Render/DisplayMode.h>
+#include <Render/VideoDriverFactory.h>
 #include <System/OSWindow.h>
 #include <Video/VideoServer.h>
 #ifdef RegisterClass
@@ -58,7 +59,6 @@ protected:
 	CString							WindowTitle;
 	CString							IconName;
 	//CDisplayMode					DisplayMode;
-	Sys::POSWindow					MainWindow;
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
@@ -66,9 +66,10 @@ protected:
 	Ptr<Data::CDataServer>			DataServer;
 	Ptr<Scripting::CScriptServer>	ScriptServer;
 	Ptr<Events::CEventServer>		EventServer;
-	//Ptr<Debug::CDebugDraw>			DD;
+	Ptr<Debug::CDebugDraw>			DD;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
+	Ptr<Render::CVideoDriverFactory>	VideoDrvFct;
 	//Ptr<Audio::CAudioServer>		AudioServer;
 	Ptr<Video::CVideoServer>		VideoServer;
 	Ptr<Game::CGameServer>			GameServer;
@@ -78,6 +79,8 @@ protected:
 	void RegisterAttributes();
 
 public:
+
+	Sys::POSWindow					MainWindow;
 
 	CEnvironment(): AllowMultipleInstances(false) {}
 	
