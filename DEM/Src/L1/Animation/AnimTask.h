@@ -19,11 +19,6 @@ namespace Events
 	class CEventDispatcher;
 }
 
-namespace Scene
-{
-	class CSceneNode;
-}
-
 namespace Anim
 {
 typedef Ptr<class CAnimClip> PAnimClip;

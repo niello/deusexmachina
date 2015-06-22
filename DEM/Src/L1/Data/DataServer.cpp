@@ -11,7 +11,6 @@
 
 namespace Data
 {
-__ImplementClassNoFactory(Data::CDataServer, Core::CObject);
 __ImplementSingleton(Data::CDataServer);
 
 CDataServer::CDataServer(): HRDCache(256)

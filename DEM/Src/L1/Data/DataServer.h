@@ -20,9 +20,8 @@ typedef Ptr<class CXMLDocument> PXMLDocument;
 
 #define DataSrv Data::CDataServer::Instance()
 
-class CDataServer: public Core::CObject
+class CDataServer
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CDataServer);
 
 private:

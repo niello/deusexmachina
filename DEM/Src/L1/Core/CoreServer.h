@@ -19,10 +19,6 @@ class CCoreServer
 {
 	__DeclareSingleton(CCoreServer);
 
-private:
-
-	bool _IsOpen;
-
 public:
 
 	CHashTable<CString, Data::CData> Globals;
@@ -30,8 +26,6 @@ public:
 	CCoreServer();
 	~CCoreServer();
 
-	bool Open();
-	void Close();
 	void Trigger();
 
 	template<class T> void		SetGlobal(const CString& Name, const T& Value) { Globals.At(Name.CStr()) = Value; }

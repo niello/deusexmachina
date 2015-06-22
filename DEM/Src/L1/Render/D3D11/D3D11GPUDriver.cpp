@@ -325,7 +325,7 @@ DWORD CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, 
 	switch (SwapChainDesc.SwapMode)
 	{
 		case SwapMode_CopyPersist:	SCDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL; break;
-		//case SwapMode_FlipPersist:	// DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL, starting from Win8, min 2 backbuffers
+		case SwapMode_FlipPersist:	SCDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; break; //!!! starting from Win8, min 2 backbuffers
 		case SwapMode_CopyDiscard:
 		default:					SCDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD; break; // Allows runtime to select the best
 	}

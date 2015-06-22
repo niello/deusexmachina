@@ -6,7 +6,7 @@ namespace Core
 {
 __ImplementSingleton(Core::CCoreServer);
 
-CCoreServer::CCoreServer(): _IsOpen(false)
+CCoreServer::CCoreServer()
 {
 	__ConstructSingleton;
 	n_dbgmeminit();
@@ -15,8 +15,6 @@ CCoreServer::CCoreServer(): _IsOpen(false)
 
 CCoreServer::~CCoreServer()
 {
-	n_assert(!_IsOpen);
-
 #ifdef _DEBUG
 	CObject::DumpLeaks();
 #endif
@@ -26,21 +24,6 @@ CCoreServer::~CCoreServer()
 	//	n_dbgout("n_dbgmemdumpleaks detected and dumped memory leaks");
 
 	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
-bool CCoreServer::Open()
-{
-	n_assert(!_IsOpen);
-	_IsOpen = true;
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CCoreServer::Close()
-{
-	n_assert(_IsOpen);
-	_IsOpen = false;
 }
 //---------------------------------------------------------------------
 

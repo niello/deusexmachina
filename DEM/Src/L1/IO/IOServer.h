@@ -27,9 +27,8 @@ typedef void (__stdcall *CReleaseMemoryCallback)(void* p);
 
 #define IOSrv IO::CIOServer::Instance()
 
-class CIOServer: public Core::CObject
+class CIOServer
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CIOServer);
 
 private:
