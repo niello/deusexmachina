@@ -5,7 +5,7 @@ URLs:
 xiph.org
 
 Current version used:
-Revision 18636
+Revision 19483
 
 Purpose in DEM:
-Main scripting language
+Audio and video playback
