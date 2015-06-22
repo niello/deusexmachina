@@ -20,14 +20,6 @@ void CD3D9SwapChain::Release()
 		pSwapChain->Release();
 		pSwapChain = NULL;
 	}
-	else
-	{
-		//???move this branch to a DestroySwapChain() method?
-		Sys::Error("CD3D9SwapChain::Release() > Implicit swap chain destroyed! IMPLEMENT ME!!!");
-		// Implicit swap chain
-		//!!!destroy device!
-		//???or deny and require user to call DestroyDevice (Term)?
-	}
 }
 //---------------------------------------------------------------------
 

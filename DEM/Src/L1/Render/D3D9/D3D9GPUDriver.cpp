@@ -192,7 +192,11 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDes
 	// D3DPRESENT_INTERVAL_ONE - as _DEFAULT, but improves VSync quality at a little cost of processing time (uses another timer)
 	D3DPresentParams.PresentationInterval = SwapChainDesc.Flags.Is(SwapChain_VSync) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
 	D3DPresentParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+
+//!!!TEST IT! (fails on debug at least)
+#ifndef _DEBUG
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
+#endif
 
 #if DEM_RENDER_DEBUG
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
@@ -316,7 +320,7 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 //---------------------------------------------------------------------
 
 // If device exists, creates additional swap chain. If device does not exist, creates a device with an implicit swap chain.
-DWORD CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
+int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
 	n_assert2(!BackBufferDesc.UseAsShaderInput, "D3D9 backbuffer reading in shaders currently not supported!");
 
@@ -428,9 +432,18 @@ bool CD3D9GPUDriver::DestroySwapChain(DWORD SwapChainID)
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
+
+	bool DefaultSC = !SC.pSwapChain;
+
 	SC.Release();
 	SC.pTargetDisplay = NULL;
 	SC.TargetWindow = NULL;
+
+	if (DefaultSC)
+	{
+		//!!!other device destroy code here too!
+		SAFE_RELEASE(pD3DDevice);
+	}
 
 	OK;
 }
@@ -649,6 +662,82 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::BeginFrame()
+{
+	return pD3DDevice && SUCCEEDED(pD3DDevice->BeginScene());
+
+//	n_assert(!IsInsideFrame);
+//
+//	PrimsRendered = 0;
+//	DIPsRendered = 0;
+//
+//	//???where? once per frame shader change
+//	if (!SharedShader.IsValid())
+//	{
+//		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
+//		n_assert(SharedShader->IsLoaded());
+//		hLightAmbient = SharedShader->GetVarHandleByName(CStrID("LightAmbient"));
+//		hEyePos = SharedShader->GetVarHandleByName(CStrID("EyePos"));
+//		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
+//	}
+//
+//	// CEGUI overwrites this value without restoring it, so restore each frame
+//	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
+//
+//	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
+//	return IsInsideFrame;
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::EndFrame()
+{
+	pD3DDevice->EndScene();
+
+//	n_assert(IsInsideFrame);
+//	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
+//	IsInsideFrame = false;
+//
+//	//???is all below necessary? PIX requires it for debugging frame
+//	for (int i = 0; i < MaxVertexStreamCount; ++i)
+//		CurrVB[i] = NULL;
+//	CurrVLayout = NULL;
+//	CurrIB = NULL;
+//	//!!!UnbindD3D9Resources()
+//
+//	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
+//	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil)
+{
+	if (!Flags) return;
+
+	DWORD D3DFlags = 0;
+
+	// if (M)RT bound
+	if (Flags & Clear_Color) D3DFlags |= D3DCLEAR_TARGET;
+
+	// If DS bound
+	//if (CurrDepthStencilFormat != PixelFormat_Invalid)
+	//{
+	//	if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
+	//
+	//	if (Flags & Clear_Stencil)
+	//	{// If DS has stencil bits
+	//		bool HasStencil =
+	//			CurrDepthStencilFormat == D3DFMT_D24S8 ||
+	//			CurrDepthStencilFormat == D3DFMT_D24X4S4 ||
+	//			CurrDepthStencilFormat == D3DFMT_D24FS8 ||
+	//			CurrDepthStencilFormat == D3DFMT_D15S1;
+	//		if (HasStencil) D3DFlags |= D3DCLEAR_STENCIL;
+	//	}
+	//}
+
+	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, Color, Depth, Stencil)));
+}
+//---------------------------------------------------------------------
+
 //???need mips (add to desc)?
 //???allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
 PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
@@ -788,8 +877,7 @@ bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, cons
 
 bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)P->Get<PVOID>(CStrID("Window"));
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
 		{

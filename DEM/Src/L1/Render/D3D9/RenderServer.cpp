@@ -67,49 +67,6 @@
 //}
 ////---------------------------------------------------------------------
 //
-//bool CRenderServer::BeginFrame()
-//{
-//	n_assert(!IsInsideFrame);
-//
-//	PrimsRendered = 0;
-//	DIPsRendered = 0;
-//
-//	//???where? once per frame shader change
-//	if (!SharedShader.IsValid())
-//	{
-//		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
-//		n_assert(SharedShader->IsLoaded());
-//		hLightAmbient = SharedShader->GetVarHandleByName(CStrID("LightAmbient"));
-//		hEyePos = SharedShader->GetVarHandleByName(CStrID("EyePos"));
-//		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
-//	}
-//
-//	// CEGUI overwrites this value without restoring it, so restore each frame
-//	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
-//
-//	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
-//	return IsInsideFrame;
-//}
-////---------------------------------------------------------------------
-//
-//void CRenderServer::EndFrame()
-//{
-//	n_assert(IsInsideFrame);
-//	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
-//	IsInsideFrame = false;
-//
-//	//???is all below necessary? PIX requires it for debugging frame
-//	for (int i = 0; i < MaxVertexStreamCount; ++i)
-//		CurrVB[i] = NULL;
-//	CurrVLayout = NULL;
-//	CurrIB = NULL;
-//	//!!!UnbindD3D9Resources()
-//
-//	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
-//	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
-//}
-////---------------------------------------------------------------------
-//
 //void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, IO::CStream& OutStream)
 //{
 //	n_assert(pD3DDevice && !IsInsideFrame);
@@ -221,33 +178,6 @@
 //		pD3DDevice->SetStreamSourceFreq(0, 1);
 //		pD3DDevice->SetStreamSourceFreq(Index, 1);
 //	}
-//}
-////---------------------------------------------------------------------
-//
-//void CRenderServer::Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil)
-//{
-//	if (!Flags) return;
-//
-//	DWORD D3DFlags = 0;
-//
-//	if (Flags & Clear_Color) D3DFlags |= D3DCLEAR_TARGET;
-//
-//	if (CurrDepthStencilFormat != PixelFormat_Invalid)
-//	{
-//		if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
-//
-//		if (Flags & Clear_Stencil)
-//		{
-//			bool HasStencil =
-//				CurrDepthStencilFormat == D3DFMT_D24S8 ||
-//				CurrDepthStencilFormat == D3DFMT_D24X4S4 ||
-//				CurrDepthStencilFormat == D3DFMT_D24FS8 ||
-//				CurrDepthStencilFormat == D3DFMT_D15S1;
-//			if (HasStencil) D3DFlags |= D3DCLEAR_STENCIL;
-//		}
-//	}
-//
-//	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, Color, Depth, Stencil)));
 //}
 ////---------------------------------------------------------------------
 //

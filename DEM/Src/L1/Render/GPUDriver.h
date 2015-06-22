@@ -110,7 +110,7 @@ public:
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
 	virtual bool				CheckCaps(ECaps Cap) = 0;
 
-	virtual DWORD				CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
+	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
 	virtual bool				DestroySwapChain(DWORD SwapChainID) = 0;
 	virtual bool				SwapChainExists(DWORD SwapChainID) const = 0;
 	virtual bool				SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
@@ -124,10 +124,10 @@ public:
 	bool						PresentBlankScreen(DWORD SwapChainID, DWORD Color);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
 
-	bool						BeginFrame();
-	void						EndFrame();
-	void						Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
-	void						Draw();
+	virtual bool				BeginFrame() = 0;
+	virtual void				EndFrame() = 0;
+	//???what if clear float RT?
+	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil) = 0;
 
 	virtual PVertexBuffer		CreateVertexBuffer() = 0;
 	virtual PIndexBuffer		CreateIndexBuffer() = 0;
