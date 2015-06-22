@@ -9,11 +9,6 @@
 
 class btRigidBody;
 
-namespace Scene
-{
-	class CSceneNode;
-}
-
 namespace Physics
 {
 

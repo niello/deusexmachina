@@ -1,57 +1,9 @@
 #include "Environment.h"
 
 #include <Scripting/EntityScriptObject.h>
-#include <Render/D3D11/D3D11DriverFactory.h>
-#include <Render/GPUDriver.h>
-#include <Render/RenderTarget.h>
-#include <Render/SwapChain.h>
 
 namespace App
 {
-
-bool CEnvironment::InitCore()
-{
-	//!!!need to redesign logger! it must be active on CoreSrv destruction to dump memory leaks!
-	//n_new(Core::CLogger);
-
-	//!!!core server can check is app already running inside the Open method!
-	n_new(Core::CCoreServer());
-	CoreSrv->Open();
-
-	IOServer = n_new(IO::CIOServer);
-	DataServer = n_new(Data::CDataServer);
-
-	if (!ProjDir.IsValid()) ProjDir = IOSrv->GetAssign("Home");
-	IOSrv->SetAssign("Proj", ProjDir);
-
-	Data::PParams PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
-	if (PathList.IsValid())
-		for (int i = 0; i < PathList->GetCount(); ++i)
-			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
-
-	//CoreLogger->Open((AppName + " - " + AppVersion).CStr());
-
-	CString AppData;
-	AppData.Format("AppData:%s/%s", AppVendor.CStr(), AppName.CStr());
-	IOSrv->SetAssign("AppData", IOSrv->ManglePath(AppData));
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CEnvironment::ReleaseCore()
-{
-	DataServer = NULL;
-	IOServer = NULL;
-
-	//CoreLogger->Close();
-
-	CoreSrv->Close();
-	n_delete(CoreSrv);
-
-	//n_delete(CoreLogger);
-}
-//---------------------------------------------------------------------
 
 bool CEnvironment::InitEngine()
 {
@@ -66,23 +18,6 @@ bool CEnvironment::InitEngine()
 	DebugServer->RegisterPlugin(CStrID("Watcher"), "Debug::CWatcherWindow", "Watcher.layout");
 
 	if (!Scripting::CEntityScriptObject::RegisterClass()) FAIL;
-
-	VideoDrvFct = n_new(Render::CD3D11DriverFactory);
-	Render::PGPUDriver GPU = VideoDrvFct->CreateGPUDriver(0, Render::GPU_Hardware);
-
-	Render::CRenderTargetDesc BBDesc;
-	BBDesc.Format = Render::PixelFmt_X8R8G8B8;
-	BBDesc.MSAAQuality = Render::MSAA_None;
-	BBDesc.UseAsShaderInput = false;
-	BBDesc.Width = 0;
-	BBDesc.Height = 0;
-
-	Render::CSwapChainDesc SCDesc;
-	SCDesc.BackBufferCount = 2;
-	SCDesc.SwapMode = Render::SwapMode_CopyDiscard;
-	SCDesc.Flags = Render::SwapChain_AutoAdjustSize | Render::SwapChain_VSync;
-
-	DWORD SCIdx = GPU->CreateSwapChain(BBDesc, SCDesc, MainWindow);
 
 	//???do it in RenderServer->Open()?
 	//Render::PFrameShader DefaultFrameShader = n_new(Render::CFrameShader);

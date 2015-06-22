@@ -19,7 +19,6 @@
 #include <UI/UIServer.h>
 #include <Render/DisplayMode.h>
 #include <Render/VideoDriverFactory.h>
-#include <System/OSWindow.h>
 #include <Video/VideoServer.h>
 #ifdef RegisterClass
 #undef RegisterClass
@@ -35,11 +34,6 @@
 // NOTE: this class doesn't handle L3 initialization since it belongs to L2. Derive from it into
 // your L3 lib or application framework or initialize/release L3 systems manually in application.
 
-namespace Sys
-{
-	typedef Ptr<class COSWindow> POSWindow;
-}
-
 namespace App
 {
 
@@ -52,13 +46,11 @@ protected:
 	CString							AppName;
 	CString							AppVersion;
 	CString							AppVendor;
-	CString							ProjDir;
 
 	bool							AllowMultipleInstances;
 
 	CString							WindowTitle;
 	CString							IconName;
-	//CDisplayMode					DisplayMode;
 
 	Ptr<Time::CTimeServer>			TimeServer;
 	Ptr<Debug::CDebugServer>		DebugServer;
@@ -69,7 +61,6 @@ protected:
 	Ptr<Debug::CDebugDraw>			DD;
 	Ptr<Physics::CPhysicsServer>	PhysicsServer;
 	Ptr<Input::CInputServer>		InputServer;
-	Ptr<Render::CVideoDriverFactory>	VideoDrvFct;
 	//Ptr<Audio::CAudioServer>		AudioServer;
 	Ptr<Video::CVideoServer>		VideoServer;
 	Ptr<Game::CGameServer>			GameServer;
@@ -80,33 +71,16 @@ protected:
 
 public:
 
-	Sys::POSWindow					MainWindow;
 
 	CEnvironment(): AllowMultipleInstances(false) {}
 	
 	static CEnvironment* Instance() { static CEnvironment Singleton; return &Singleton; }
 
-	bool InitCore();			//L0, Nebula, L1 kernel
-	void ReleaseCore();
 	bool InitEngine();			//L1 systems, L2 non-game systems
 	void ReleaseEngine();
 	bool InitGameSystem();		//L2 game system
 	void ReleaseGameSystem();
 
-	void					SetProjectDirectory(const CString& NewProjDir) { ProjDir = NewProjDir; }
-	const CString&			GetProjectDirectory() const { return ProjDir; }
-	void					SetWindowTitle(const char* pTitle) { WindowTitle = pTitle; }
-	const CString&			GetWindowTitle() const { return WindowTitle; }
-	void					SetWindowIcon(const char* pIconName) { IconName = pIconName; }
-	const CString&			GetWindowIcon() const { return IconName; }
-	//void					SetDisplayMode(const CDisplayMode& DispMode) { DisplayMode = DispMode; }
-	//const CDisplayMode&		GetDisplayMode() const { return DisplayMode; }
-	void					SetAppName(const CString& ApplicationName) { AppName = ApplicationName; }
-	const CString&			GetAppName() const { return AppName; }
-	void					SetAppVersion(const CString& Version) { AppVersion = Version; }
-	const CString&			GetAppVersion() const { return AppVersion; }
-	void					SetVendorName(const CString& Vendor) { AppVendor = Vendor; }
-	const CString&			GetVendorName() const { return AppVendor; }
 	void					SetAllowMultipleInstances(bool Allow) { AllowMultipleInstances = Allow; }
 	bool					GetAllowMultipleInstances() const { return AllowMultipleInstances; }
 };

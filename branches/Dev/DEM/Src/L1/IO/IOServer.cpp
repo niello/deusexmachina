@@ -7,7 +7,6 @@
 
 namespace IO
 {
-__ImplementClassNoFactory(IO::CIOServer, Core::CObject);
 __ImplementSingleton(IO::CIOServer);
 
 CIOServer::CIOServer(): Assigns(32)
