@@ -25,9 +25,8 @@ typedef Ptr<class CScriptObject> PScriptObject;
 
 #define ScriptSrv Scripting::CScriptServer::Instance()
 
-class CScriptServer: public Core::CObject
+class CScriptServer
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CScriptServer);
 
 private:

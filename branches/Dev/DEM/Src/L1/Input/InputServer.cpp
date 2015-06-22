@@ -13,6 +13,7 @@
 #include <Events/EventServer.h>
 #include <Data/DataServer.h>
 #include <Time/TimeServer.h>
+#include <System/OSWindow.h>
 
 namespace Input
 {
@@ -200,6 +201,8 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 {
 	const Event::OSInput& Ev = (const Event::OSInput&)Event;
 
+	Sys::COSWindow* pCurrWnd = (Sys::COSWindow*)pDispatcher;
+
 	switch (Ev.Type)
 	{
 		case Event::OSInput::KeyDown:
@@ -226,8 +229,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 		case Event::OSInput::MouseMove:
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			//!!!
-			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			pCurrWnd->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseMove(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -242,8 +244,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 			MouseBtnState[Ev.MouseInfo.Button] |= (KEY_IS_DOWN | KEY_IS_PRESSED);
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			//!!!
-			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			pCurrWnd->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseBtnDown(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -252,8 +253,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_UP;
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			//!!!
-			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			pCurrWnd->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseBtnUp(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 
@@ -262,8 +262,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 			MouseBtnState[Ev.MouseInfo.Button] |= KEY_IS_DBL_CLICKED;
 			MouseXAbs = Ev.MouseInfo.x;
 			MouseYAbs = Ev.MouseInfo.y;
-			//!!!
-			//RenderSrv->GetDisplay().GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
+			pCurrWnd->GetRelativeXY(MouseXAbs, MouseYAbs, MouseXRel, MouseYRel);
 			FireEvent(Event::MouseDoubleClick(Ev.MouseInfo.Button, MouseXAbs, MouseYAbs, MouseXRel, MouseYRel), EV_TERM_ON_HANDLED);
 			break;
 

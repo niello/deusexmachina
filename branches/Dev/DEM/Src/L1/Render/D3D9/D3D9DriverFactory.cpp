@@ -9,6 +9,8 @@
 
 namespace Render
 {
+__ImplementClassNoFactory(Render::CD3D9DriverFactory, Render::CVideoDriverFactory);
+__ImplementSingleton(Render::CD3D9DriverFactory);
 
 bool CD3D9DriverFactory::Open(Sys::COSWindow* pWindow)
 {

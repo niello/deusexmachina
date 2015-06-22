@@ -20,12 +20,12 @@ protected:
 	CD3D9DisplayDriver() {}
 
 	virtual bool	Init(DWORD AdapterNumber, DWORD OutputNumber);
-	virtual void	Term() { InternalTerm(); CDisplayDriver::Term(); } //???need? or never manually-destructible?
-	void			InternalTerm();
+	//virtual void	Term() { InternalTerm(); CDisplayDriver::Term(); } //???need? or never manually-destructible?
+	//void			InternalTerm();
 
 public:
 
-	virtual ~CD3D9DisplayDriver() { InternalTerm(); }
+	//virtual ~CD3D9DisplayDriver() { InternalTerm(); }
 
 	virtual DWORD	GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
 	virtual bool	SupportsDisplayMode(const CDisplayMode& Mode) const;

@@ -65,6 +65,8 @@ public:
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect) = 0;
 };
 
+typedef Ptr<CVideoDriverFactory> PVideoDriverFactory;
+
 }
 
 #endif

@@ -216,7 +216,6 @@
     <ClInclude Include="..\..\Src\L2\Game\StaticObject.h" />
     <ClInclude Include="..\..\Src\L2\App\AppFSM.h" />
     <ClInclude Include="..\..\Src\L2\App\AppStateVideo.h" />
-    <ClInclude Include="..\..\Src\L2\App\Environment.h" />
     <ClInclude Include="..\..\Src\L2\App\StateHandler.h" />
     <ClInclude Include="..\..\Src\L2\Physics\CharacterController.h" />
     <ClInclude Include="..\..\Src\L2\Physics\PropCharacterController.h" />
@@ -288,7 +287,6 @@
     <ClCompile Include="..\..\Src\L2\Game\StaticObject.cpp" />
     <ClCompile Include="..\..\Src\L2\App\AppFSM.cpp" />
     <ClCompile Include="..\..\Src\L2\App\AppStateVideo.cpp" />
-    <ClCompile Include="..\..\Src\L2\App\Environment.cpp" />
     <ClCompile Include="..\..\Src\L2\App\StateHandler.cpp" />
     <ClCompile Include="..\..\Src\L2\Physics\CharacterController.cpp" />
     <ClCompile Include="..\..\Src\L2\Physics\PropCharacterController.cpp" />

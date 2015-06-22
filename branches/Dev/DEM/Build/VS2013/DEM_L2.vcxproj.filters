@@ -240,9 +240,6 @@
     <ClInclude Include="..\..\Src\L2\App\AppStateVideo.h">
       <Filter>App</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L2\App\Environment.h">
-      <Filter>App</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L2\App\StateHandler.h">
       <Filter>App</Filter>
     </ClInclude>
@@ -450,9 +447,6 @@
       <Filter>App</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\App\AppStateVideo.cpp">
-      <Filter>App</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\App\Environment.cpp">
       <Filter>App</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\App\StateHandler.cpp">

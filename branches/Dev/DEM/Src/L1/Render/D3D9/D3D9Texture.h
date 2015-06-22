@@ -42,8 +42,8 @@ public:
 
 	Data::CFlags	Access; //!!!can use as generic flags!
 
-	CD3D9Texture();
-	virtual ~CD3D9Texture(); // { if (IsLoaded()) Unload(); }
+	//CD3D9Texture();
+	//virtual ~CD3D9Texture(); // { if (IsLoaded()) Unload(); }
 
 	bool			Create(IDirect3DTexture9* pTexture); // For internal use
 
