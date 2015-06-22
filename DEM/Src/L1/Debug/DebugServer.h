@@ -25,7 +25,7 @@ private:
 	struct CPlugin
 	{
 		Data::CSimpleString	UIResource;
-		UI::PWindow			Window;
+		UI::PUIWindow		Window;
 	};
 
 	bool					UIAllowed;

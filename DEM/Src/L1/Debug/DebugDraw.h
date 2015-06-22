@@ -96,8 +96,8 @@ public:
 	CDebugDraw(): Lines(0, 256) { __ConstructSingleton; }
 	~CDebugDraw() { __DestructSingleton; }
 
-	bool	Open();
-	void	Close();
+	bool	Open(){OK;}
+	void	Close(){}
 
 	//???!!!move code to renderers?!
 	//void	RenderGeometry();

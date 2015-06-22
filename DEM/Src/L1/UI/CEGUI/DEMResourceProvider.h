@@ -10,7 +10,7 @@
 namespace CEGUI
 {
 
-class CNebula2ResourceProvider: public ResourceProvider
+class CDEMResourceProvider: public ResourceProvider
 {
 protected:
 
@@ -18,8 +18,8 @@ protected:
 
 public:
 
-	CNebula2ResourceProvider(): ResourceGroups(0, 8, false) {}
-	~CNebula2ResourceProvider(void) {}
+	CDEMResourceProvider(): ResourceGroups(0, 8, false) {}
+	~CDEMResourceProvider(void) {}
 
 	void			setResourceGroupDirectory(const String& resourceGroup, const String& directory);
 	const String&	getResourceGroupDirectory(const String& resourceGroup);

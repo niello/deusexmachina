@@ -14,7 +14,7 @@ void CAppFSM::Init(CStrID InitialState)
 	
 bool CAppFSM::Advance()
 {
-	if (CurrState == APP_STATE_EXIT) FAIL;
+	if (CurrState == CStrID::Empty) FAIL;
 
 	CStrID NewState = CurrStateHandler->OnFrame();
 
@@ -52,7 +52,7 @@ void CAppFSM::ChangeState(CStrID NextState)
 	{
 		CurrStateHandler = FindStateHandlerByID(NextState);
 		if (CurrStateHandler) CurrStateHandler->OnStateEnter(PrevState, TransitionParams);
-		else n_assert(CurrState == APP_STATE_EXIT);
+		else n_assert(CurrState == CStrID::Empty);
 	}
 	RequestedState = CStrID::Empty;
 	//???TransitionParams = NULL;?
@@ -61,7 +61,7 @@ void CAppFSM::ChangeState(CStrID NextState)
 
 bool CAppFSM::OnCloseRequest(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	RequestState(APP_STATE_EXIT);
+	RequestState(CStrID::Empty);
 	OK;
 }
 //---------------------------------------------------------------------

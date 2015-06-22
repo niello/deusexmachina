@@ -1,10 +1,10 @@
 #include <System/System.h> // keep before to disable warning
-#include "CEGUINebula2Logger.h"
+#include "DEMLogger.h"
 
 namespace CEGUI
 {
 
-void CNebula2Logger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel level)
+void CDEMLogger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel level)
 {
 	if (Enable && level <= getLoggingLevel())
 		switch (level) 
@@ -23,4 +23,4 @@ void CNebula2Logger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel 
 }
 //---------------------------------------------------------------------
 
-} //namespace CEGUI
+}

@@ -21,8 +21,8 @@ protected:
 
 public:
 
-	CD3D11Texture();
-	virtual ~CD3D11Texture(); // { if (IsLoaded()) Unload(); }
+	//CD3D11Texture();
+	//virtual ~CD3D11Texture(); // { if (IsLoaded()) Unload(); }
 
 	bool				Create(ID3D11Texture2D* pTexture); // For internal use
 

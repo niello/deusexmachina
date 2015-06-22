@@ -1,5 +1,5 @@
 #include <StdCfg.h>
-#include "CEGUIFmtLbTextItem.h"
+#include "FmtLbTextItem.h"
 
 #include <CEGUI/LeftAlignedRenderedString.h>
 #include <CEGUI/RightAlignedRenderedString.h>

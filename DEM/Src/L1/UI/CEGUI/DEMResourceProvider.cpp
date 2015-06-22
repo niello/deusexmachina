@@ -1,13 +1,13 @@
 #include <StdCfg.h>
-#include "CEGUINebula2ResourceProvider.h"
+#include "DEMResourceProvider.h"
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
 
 namespace CEGUI
 {
 
-void CNebula2ResourceProvider::loadRawDataContainer(const String& filename, RawDataContainer& output,
-													const String& resourceGroup)
+void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataContainer& output,
+												const String& resourceGroup)
 {
 	n_assert2(!filename.empty(), "Filename supplied for data loading must be valid");
 
@@ -39,7 +39,7 @@ void CNebula2ResourceProvider::loadRawDataContainer(const String& filename, RawD
 }
 //---------------------------------------------------------------------
 
-void CNebula2ResourceProvider::unloadRawDataContainer(RawDataContainer& data)
+void CDEMResourceProvider::unloadRawDataContainer(RawDataContainer& data)
 {
 	uint8* const ptr = data.getDataPtr();
 	n_delete_array(ptr);
@@ -48,7 +48,7 @@ void CNebula2ResourceProvider::unloadRawDataContainer(RawDataContainer& data)
 }
 //---------------------------------------------------------------------
 
-void CNebula2ResourceProvider::setResourceGroupDirectory(const String& resourceGroup, const String& directory)
+void CDEMResourceProvider::setResourceGroupDirectory(const String& resourceGroup, const String& directory)
 {
 	if (directory.length() == 0) return;
 	const String separators("\\/");
@@ -58,19 +58,19 @@ void CNebula2ResourceProvider::setResourceGroupDirectory(const String& resourceG
 }
 //---------------------------------------------------------------------
 
-const String& CNebula2ResourceProvider::getResourceGroupDirectory(const String& resourceGroup)
+const String& CDEMResourceProvider::getResourceGroupDirectory(const String& resourceGroup)
 {
 	return ResourceGroups[resourceGroup];
 }
 //---------------------------------------------------------------------
 
-void CNebula2ResourceProvider::clearResourceGroupDirectory(const String& resourceGroup)
+void CDEMResourceProvider::clearResourceGroupDirectory(const String& resourceGroup)
 {
 	ResourceGroups.Clear();
 }
 //---------------------------------------------------------------------
 
-size_t CNebula2ResourceProvider::getResourceGroupFileNames(std::vector<String>& out_vec,
+size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_vec,
 														   const String& file_pattern,
 														   const String& resource_group)
 {

@@ -69,9 +69,9 @@ public:
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 	//PRenderTarget GetSwapChainRenderTarget(DWORD SwapChainID);
 
-	virtual PVertexLayout		CreateVertexLayout(); // Prefer GetVertexLayout() when possible
-	virtual PVertexBuffer		CreateVertexBuffer();
-	virtual PIndexBuffer		CreateIndexBuffer();
+	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
+	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
+	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
 	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);

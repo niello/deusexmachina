@@ -8,8 +8,6 @@
 // Application state machine manages different application states and their transitions.
 // Use it into your application class if app has more than one state.
 
-#define APP_STATE_EXIT CStrID("Exit") //???or use empty ID?
-
 namespace App
 {
 class CStateHandler;

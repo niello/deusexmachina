@@ -7,7 +7,7 @@
 namespace CEGUI
 {
 
-class CNebula2Logger: public CEGUI::Logger
+class CDEMLogger: public CEGUI::Logger
 {
 private:
 
@@ -15,7 +15,7 @@ private:
 
 public:
 
-	CNebula2Logger(): Enable(true) {}
+	CDEMLogger(): Enable(true) {}
 
 	virtual void	logEvent(const CEGUI::String& message, CEGUI::LoggingLevel level);
 	virtual void	setLogFilename(const CEGUI::String& filename, bool append) {}

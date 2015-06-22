@@ -15,7 +15,7 @@ namespace Render
 
 class CD3D11RenderState: public CRenderState
 {
-	__DeclareClass(CD3D11RenderState);
+	//__DeclareClass(CD3D11RenderState);
 
 public:
 

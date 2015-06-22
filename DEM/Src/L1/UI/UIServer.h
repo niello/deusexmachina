@@ -13,23 +13,19 @@
 // UI server (CEGUI launcher & manager). This server creates top-level screens and manages
 // their switching (or provides switching functionality to application states).
 
-//???May be should control global state of UI (all tips
-//above IAOs are visible or not etc). Should load windows.
+//???May be should control global state of UI (all tips above IAOs are visible or not etc). Should load windows.
 
 namespace CEGUI
 {
-	class Direct3D9Renderer;
-	class CNebula2Logger;
-	class CNebula2ResourceProvider;
+	class CDEMLogger;
+	class CDEMRenderer;
+	class CDEMResourceProvider;
 	class TinyXML2Parser;
-	class System;
-	class Font;
-	class Window;
 }
 
 namespace UI
 {
-typedef Ptr<class CUIWindow> PWindow;
+typedef Ptr<class CUIWindow> PUIWindow;
 
 #define UISrv UI::CUIServer::Instance()
 
@@ -40,13 +36,13 @@ class CUIServer: public Core::CObject
 
 private:
 
-	CEGUI::Direct3D9Renderer*			Renderer; //!!!use N2 renderer!
+	CEGUI::CDEMRenderer*				Renderer;
 	CEGUI::System*						CEGUISystem;
-	CEGUI::CNebula2Logger*				Logger;
-	CEGUI::CNebula2ResourceProvider*	ResourceProvider;
+	CEGUI::CDEMLogger*					Logger;
+	CEGUI::CDEMResourceProvider*		ResourceProvider;
 	CEGUI::TinyXML2Parser*				XMLParser;
 
-	CDict<CStrID, PWindow>				Screens;
+	CDict<CStrID, PUIWindow>			Screens;
 	CUIWindow*							CurrRootScreen;
 
 	CArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
