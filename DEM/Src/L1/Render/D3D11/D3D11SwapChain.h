@@ -26,6 +26,7 @@ public:
 	//ID3D11Texture2D*	pBackBuffer;
 	//!!!RT View! or unify RT of swap chain and texture?
 
+	CD3D11SwapChain(): pSwapChain(NULL) {}
 	~CD3D11SwapChain() { Release(); }
 
 	void Release();

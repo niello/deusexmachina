@@ -4,6 +4,7 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/D3D9/D3D9SwapChain.h>
+#include <Data/FixedArray.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -16,6 +17,7 @@
 
 namespace Render
 {
+typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -23,14 +25,15 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
-	CArray<CD3D9SwapChain>	SwapChains;
-	bool					IsInsideFrame;
-	//bool					Wireframe;
+	CFixedArray<PD3D9RenderTarget>	CurrRT;
+	CArray<CD3D9SwapChain>			SwapChains;
+	bool							IsInsideFrame;
+	//bool							Wireframe;
 
-	D3DCAPS9				D3DCaps;
-	IDirect3DDevice9*		pD3DDevice;
+	D3DCAPS9						D3DCaps;
+	IDirect3DDevice9*				pD3DDevice;
 
-	Events::PSub			Sub_OnPaint;
+	Events::PSub					Sub_OnPaint;
 
 	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
@@ -71,6 +74,8 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
+	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
+	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* RT);
 	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible

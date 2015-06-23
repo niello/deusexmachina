@@ -1,6 +1,6 @@
 #include "D3D9SwapChain.h"
 
-#include <Events/EventServer.h>
+#include <Render/RenderTarget.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -15,11 +15,11 @@ void CD3D9SwapChain::Release()
 	Sub_OnSizeChanged = NULL;
 	Sub_OnToggleFullscreen = NULL;
 
-	if (pSwapChain)
-	{
-		pSwapChain->Release();
-		pSwapChain = NULL;
-	}
+	BackBufferRT->Destroy();
+	pTargetDisplay = NULL;
+	TargetWindow = NULL;
+
+	SAFE_RELEASE(pSwapChain);
 }
 //---------------------------------------------------------------------
 

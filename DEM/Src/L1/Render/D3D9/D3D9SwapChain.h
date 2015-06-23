@@ -23,6 +23,7 @@ public:
 	Events::PSub			Sub_OnSizeChanged;
 	Events::PSub			Sub_OnClosing;
 
+	CD3D9SwapChain(): pSwapChain(NULL) {}
 	~CD3D9SwapChain() { Release(); }
 
 	void Release();

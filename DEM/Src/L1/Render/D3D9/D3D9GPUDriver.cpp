@@ -315,6 +315,8 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 		FAIL;
 	}
 
+	CurrRT.SetSize(D3DCaps.NumSimultaneousRTs);
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -341,6 +343,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 	D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 
 	CArray<CD3D9SwapChain>::CIterator ItSC = NULL;
+	IDirect3DSurface9* pRTSurface = NULL;
 
 	if (pD3DDevice)
 	{
@@ -362,6 +365,8 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 		if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 	
 		ItSC->pSwapChain = pD3DSwapChain;
+
+		n_assert(SUCCEEDED(pD3DSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
 	}
 	else
 	{
@@ -405,12 +410,20 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 
 		ItSC = SwapChains.IteratorAt(0); 
 		ItSC->pSwapChain = NULL;
+
+		n_assert(SUCCEEDED(pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
 	}
 
-	IDirect3DSurface9* pRTSurface = NULL;
-	n_assert(SUCCEEDED(pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
 	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
 	RT->Create(pRTSurface, NULL);
+
+	// Default swap chain may be automatically set as a render target
+	if (!ItSC->pSwapChain)
+	{
+		IDirect3DSurface9* pCurrRTSurface = NULL;
+		if (SUCCEEDED(pD3DDevice->GetRenderTarget(0, &pCurrRTSurface)) && pCurrRTSurface == pRTSurface)
+			CurrRT[0] = RT;
+	}
 
 	ItSC->BackBufferRT = RT.GetUnsafe();
 	ItSC->TargetWindow = pWnd;
@@ -432,16 +445,22 @@ bool CD3D9GPUDriver::DestroySwapChain(DWORD SwapChainID)
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
-
 	bool DefaultSC = !SC.pSwapChain;
 
-	SC.Release();
-	SC.pTargetDisplay = NULL;
-	SC.TargetWindow = NULL;
+	if (!DefaultSC)
+	{
+		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+			if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
+				SetRenderTarget(i, NULL);
+	}
 
+	SC.Release();
+
+	// Default swap chain destroyed means device is destroyed too
 	if (DefaultSC)
 	{
 		//!!!other device destroy code here too!
+		CurrRT.SetSize(0);
 		SAFE_RELEASE(pD3DDevice);
 	}
 
@@ -706,6 +725,44 @@ void CD3D9GPUDriver::EndFrame()
 //
 //	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
 //	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
+{
+	if (Index >= CurrRT.GetCount()) FAIL;
+	if (CurrRT[Index].GetUnsafe() == pRT) OK;
+
+	if (!pRT && Index == 0)
+	{
+		// Invalid case for D3D9. Restore main RT to default backbuffer.
+		for (int i = 0; i < SwapChains.GetCount(); ++i)
+			if (!SwapChains[i].pSwapChain)
+			{
+				pRT = SwapChains[i].BackBufferRT.GetUnsafe();
+				break;
+			}
+	}
+
+	IDirect3DSurface9* pRTSurface = pRT ? ((CD3D9RenderTarget*)pRT)->GetD3DSurface() : NULL;
+
+	n_assert(SUCCEEDED(pD3DDevice->SetRenderTarget(Index, pRTSurface)));
+	CurrRT[Index] = (CD3D9RenderTarget*)pRT;
+
+	OK;
+
+//
+//	// NB: DS can be set to NULL only by main RT (index 0)
+//	//???mb set DS only from main RT?
+//	//???doesn't this kill an auto DS surface?
+//	IDirect3DSurface9* pDSSurface = pRT ? pRT->GetD3DDepthStencilSurface() : NULL;
+//	if ((pDSSurface || Index == 0) && pDSSurface != pCurrDSSurface)
+//	{
+//		CurrDepthStencilFormat = pRT ? pRT->GetDepthStencilFormat() : D3DFMT_UNKNOWN;
+//		SAFE_RELEASE(pCurrDSSurface);
+//		pCurrDSSurface = pDSSurface;
+//		n_assert(SUCCEEDED(pD3DDevice->SetDepthStencilSurface(pDSSurface)));
+//	}
 }
 //---------------------------------------------------------------------
 

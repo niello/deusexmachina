@@ -422,9 +422,12 @@ bool CD3D11GPUDriver::DestroySwapChain(DWORD SwapChainID)
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
+
+	//for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+	//	if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
+	//		SetRenderTarget(i, NULL);
+
 	SC.Release();
-	SC.pTargetDisplay = NULL;
-	SC.TargetWindow = NULL;
 
 	OK;
 }
@@ -520,6 +523,14 @@ bool CD3D11GPUDriver::BeginFrame()
 
 void CD3D11GPUDriver::EndFrame()
 {
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
+{
+	// Cache set
+	// If really changed, set dirty flag
+	FAIL;
 }
 //---------------------------------------------------------------------
 

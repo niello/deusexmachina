@@ -127,6 +127,8 @@ public:
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
 	//???what if clear float RT?
+	virtual DWORD				GetMaxMultipleRenderTargetCount() = 0;
+	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* RT) = 0;
 	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil) = 0;
 
 	virtual PVertexBuffer		CreateVertexBuffer() = 0;
@@ -170,7 +172,9 @@ inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, DWORD Color)
 		Clear(Clear_Color, Color, 1.f, 0); //???clear depth and stencil too?
 		EndFrame();
 		Present(SwapChainID);
+		OK;
 	}
+	FAIL;
 }
 //---------------------------------------------------------------------
 
