@@ -2,6 +2,7 @@
 
 #include "OSWindowWin32.h"
 
+#include <System/OSWindowClassWin32.h>
 #include <System/Events/OSInput.h>
 
 #include <Uxtheme.h>
@@ -14,8 +15,6 @@
 #define HID_USAGE_GENERIC_MOUSE	((USHORT) 0x02)
 #endif
 
-#define DEM_WINDOW_CLASS		"DeusExMachina::MainWindow"
-#define DEM_DEFAULT_TITLE		"DeusExMachina - Untitled"
 #define ACCEL_TOGGLEFULLSCREEN	1001
 #define STYLE_WINDOWED			(WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE)
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
@@ -24,19 +23,6 @@
 namespace Sys
 {
 
-COSWindowWin32::COSWindowWin32():
-	WindowTitle(DEM_DEFAULT_TITLE),
-	pParent(NULL),
-	hInst(NULL),
-	hWnd(NULL),
-	hAccel(NULL),
-	aWndClass(0)
-{
-	hInst = ::GetModuleHandle(NULL);
-}
-//---------------------------------------------------------------------
-
-//!!!single-window approach! need to be rewritten to support multiple windows!
 COSWindowWin32::~COSWindowWin32()
 {
 	if (Flags.Is(Wnd_Open)) Close();
@@ -46,53 +32,14 @@ COSWindowWin32::~COSWindowWin32()
 		DestroyAcceleratorTable(hAccel);
 		hAccel = NULL;
 	}
-
-	if (aWndClass)
-	{
-		if (!UnregisterClass((LPCSTR)aWndClass, hInst))
-			Sys::Error("COSWindowWin32::CloseWindow(): UnregisterClass() failed!\n");
-		aWndClass = 0;
-	}
 }
 //---------------------------------------------------------------------
 
 bool COSWindowWin32::Open()
 {
-	n_assert(!Flags.Is(Wnd_Open) && hInst && !hWnd && (!pParent || pParent->GetHWND()));
+	n_assert(!hWnd && (!pParent || pParent->GetHWND()));
 
-	if (!hAccel)
-	{
-		ACCEL Acc[1];
-		Acc[0].fVirt = FALT | FNOINVERT | FVIRTKEY;
-		Acc[0].key = VK_RETURN;
-		Acc[0].cmd = ACCEL_TOGGLEFULLSCREEN;
-		hAccel = CreateAcceleratorTable(Acc, 1);
-		n_assert(hAccel);
-	}
-
-	if (!aWndClass)
-	{
-		HICON hIcon = NULL;
-		if (IconName.IsValid()) hIcon = ::LoadIcon(hInst, IconName.CStr());
-		if (!hIcon) hIcon = ::LoadIcon(NULL, IDI_APPLICATION);
-
-		WNDCLASSEX WndClass;
-		memset(&WndClass, 0, sizeof(WndClass));
-		WndClass.cbSize        = sizeof(WndClass);
-		WndClass.style         = CS_DBLCLKS;
-		WndClass.lpfnWndProc   = WinProc;
-		WndClass.cbClsExtra    = 0;
-		WndClass.cbWndExtra    = sizeof(void*);   // used to hold 'this' pointer
-		WndClass.hInstance     = hInst;
-		WndClass.hIcon         = hIcon;
-		WndClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
-		WndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		WndClass.lpszMenuName  = NULL;
-		WndClass.lpszClassName = DEM_WINDOW_CLASS;
-		WndClass.hIconSm       = NULL;
-		aWndClass = ::RegisterClassEx(&WndClass);
-		if (!aWndClass) FAIL;
-	}
+	if (Flags.Is(Wnd_Open)) OK;
 
 	LONG WndStyle;
 	RECT r;
@@ -112,9 +59,9 @@ bool COSWindowWin32::Open()
 	}
 
 	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
-							(LPCSTR)(DWORD_PTR)aWndClass, WindowTitle.CStr(), WndStyle,
+							(LPCSTR)(DWORD_PTR)WndClass->GetWin32WindowClass(), WindowTitle.CStr(), WndStyle,
 							r.left, r.top, r.right - r.left, r.bottom - r.top,
-							pParent ? pParent->GetHWND() : NULL, NULL, hInst, NULL);
+							pParent ? pParent->GetHWND() : NULL, NULL, WndClass->GetWin32HInstance(), NULL);
 	if (!hWnd) FAIL;
 
 	::SetWindowLongPtr(hWnd, 0, (LONG)this);
@@ -135,6 +82,16 @@ bool COSWindowWin32::Open()
 
 	if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
 		Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
+
+	if (!hAccel)
+	{
+		ACCEL Acc[1];
+		Acc[0].fVirt = FALT | FNOINVERT | FVIRTKEY;
+		Acc[0].key = VK_RETURN;
+		Acc[0].cmd = ACCEL_TOGGLEFULLSCREEN;
+		hAccel = CreateAcceleratorTable(Acc, 1);
+		n_assert(hAccel);
+	}
 
 	Flags.Set(Wnd_Open);
 	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
@@ -240,13 +197,14 @@ void COSWindowWin32::SetTitle(const char* pTitle)
 }
 //---------------------------------------------------------------------
 
+// Changes class icon, but needs hWnd, so placed here
 void COSWindowWin32::SetIcon(const char* pIconName)
 {
 	IconName = pIconName;
 	if (hWnd && IconName.IsValid())
 	{
-		HICON hIcon = ::LoadIcon(hInst, IconName.CStr());
-		if (hIcon) ::SetClassLong(hWnd, GCL_HICON, (LONG)hIcon);
+		HICON hIcon = ::LoadIcon(WndClass->GetWin32HInstance(), IconName.CStr());
+		if (hIcon) ::SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR)hIcon);
 	}
 }
 //---------------------------------------------------------------------
@@ -268,15 +226,6 @@ bool COSWindowWin32::SetTopmost(bool Topmost)
 	
 	Flags.SetTo(Wnd_Topmost, Topmost);
 	OK;
-}
-//---------------------------------------------------------------------
-
-LONG WINAPI COSWindowWin32::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLong(hWnd, 0);
-	LONG Result = 0;
-	if (pWnd && pWnd->HandleWindowMessage(uMsg, wParam, lParam, Result)) return Result;
-	return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 //---------------------------------------------------------------------
 

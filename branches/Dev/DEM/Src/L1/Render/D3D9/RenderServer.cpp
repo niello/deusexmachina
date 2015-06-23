@@ -98,34 +98,6 @@
 //}
 ////---------------------------------------------------------------------
 //
-//void CRenderServer::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
-//{
-//	n_assert(Index < MaxRenderTargetCount);
-//	if (CurrRT[Index].GetUnsafe() == pRT) return;
-//
-//	// Restore main RT to backbuffer and autodepthstencil (or NULL if no auto)
-//	if (!pRT && Index == 0) pRT = DefaultRT.GetUnsafe();
-//
-//	IDirect3DSurface9* pRTSurface = pRT ? pRT->GetD3DRenderTargetSurface() : NULL;
-//	IDirect3DSurface9* pDSSurface = pRT ? pRT->GetD3DDepthStencilSurface() : NULL;
-//
-//	n_assert(SUCCEEDED(pD3DDevice->SetRenderTarget(Index, pRTSurface)));
-//
-//	// NB: DS can be set to NULL only by main RT (index 0)
-//	//???mb set DS only from main RT?
-//	//???doesn't this kill an auto DS surface?
-//	if ((pDSSurface || Index == 0) && pDSSurface != pCurrDSSurface)
-//	{
-//		CurrDepthStencilFormat = pRT ? pRT->GetDepthStencilFormat() : D3DFMT_UNKNOWN;
-//		SAFE_RELEASE(pCurrDSSurface);
-//		pCurrDSSurface = pDSSurface;
-//		n_assert(SUCCEEDED(pD3DDevice->SetDepthStencilSurface(pDSSurface)));
-//	}
-//
-//	CurrRT[Index] = pRT;
-//}
-////---------------------------------------------------------------------
-//
 //void CRenderServer::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
 //{
 //	n_assert(Index < MaxVertexStreamCount && (!pVB || OffsetVertex < pVB->GetVertexCount()));

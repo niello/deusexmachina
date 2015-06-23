@@ -70,6 +70,8 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
+	virtual DWORD				GetMaxMultipleRenderTargetCount() { return 0; }
+	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* RT);
 	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible

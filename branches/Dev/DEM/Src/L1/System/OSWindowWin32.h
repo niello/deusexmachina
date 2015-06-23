@@ -14,8 +14,8 @@
 
 namespace Sys
 {
+typedef Ptr<class COSWindowClassWin32> POSWindowClassWin32;
 
-//???need to make window RefCounted? CEventDispatcher may be implemented as a mix-in.
 class COSWindowWin32: public Events::CEventDispatcher
 {
 protected:
@@ -35,49 +35,46 @@ protected:
 	COSWindowWin32*		pParent;
 	Data::CRect			Rect;		// Client rect
 
-	HINSTANCE			hInst;
 	HWND				hWnd;
 	HACCEL				hAccel;
-	ATOM				aWndClass;
-
-	bool				HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result);
-
-	static LONG WINAPI	WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	POSWindowClassWin32	WndClass;
 
 public:
 
-	COSWindowWin32();
+	COSWindowWin32(): pParent(NULL), hWnd(NULL), hAccel(NULL) {}
 	~COSWindowWin32();
 
-	bool				Open();
-	void				Close();
-	void				Minimize();
-	void				Restore();
-	void				ProcessMessages();
+	bool					Open();
+	void					Close();
+	void					Minimize();
+	void					Restore();
+	void					ProcessMessages();
+	bool					HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result); // Mainly for internal use
 
-	bool				SetRect(const Data::CRect& NewRect, bool FullscreenMode = false);
-	const Data::CRect&	GetRect() const { return Rect; }
-	unsigned int		GetWidth() const { return Rect.W; }
-	unsigned int		GetHeight() const { return Rect.H; }
+	bool					SetRect(const Data::CRect& NewRect, bool FullscreenMode = false);
+	const Data::CRect&		GetRect() const { return Rect; }
+	unsigned int			GetWidth() const { return Rect.W; }
+	unsigned int			GetHeight() const { return Rect.H; }
 
-	bool				GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
-	bool				GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
+	bool					GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
+	bool					GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
-	void				SetTitle(const char* pTitle);
-	const char*			GetTitle() const { return WindowTitle; }
-	void				SetIcon(const char* pIconName);
-	const char*			GetIcon() const { return IconName; }
+	void					SetWindowClass(COSWindowClassWin32& WindowClass) { WndClass = &WindowClass; }
+	COSWindowClassWin32*	GetWindowClass() const { return WndClass.GetUnsafe(); }
+	void					SetTitle(const char* pTitle);
+	const char*				GetTitle() const { return WindowTitle; }
+	void					SetIcon(const char* pIconName);
+	const char*				GetIcon() const { return IconName; }
 
-	bool				IsOpen() const { return Flags.Is(Wnd_Open); }
-	bool				IsMinimized() const { return Flags.Is(Wnd_Minimized); }
-	bool				IsTopmost() const { return Flags.Is(Wnd_Topmost); }
-	bool				IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
-	bool				IsChild() const { return !!pParent; }
-	bool				SetTopmost(bool Topmost);
+	bool					IsOpen() const { return Flags.Is(Wnd_Open); }
+	bool					IsMinimized() const { return Flags.Is(Wnd_Minimized); }
+	bool					IsTopmost() const { return Flags.Is(Wnd_Topmost); }
+	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
+	bool					IsChild() const { return !!pParent; }
+	bool					SetTopmost(bool Topmost);
 
-	COSWindowWin32*		GetParent() const { return pParent; }
-	HWND				GetHWND() const { return hWnd; }
-	ATOM				GetWndClass() const { return aWndClass; }
+	COSWindowWin32*			GetParent() const { return pParent; }
+	HWND					GetHWND() const { return hWnd; }
 };
 
 inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const
