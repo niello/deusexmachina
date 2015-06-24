@@ -24,7 +24,7 @@ public:
 	Events::PSub			Sub_OnClosing;
 
 	CD3D9SwapChain(): pSwapChain(NULL) {}
-	~CD3D9SwapChain() { Release(); }
+	~CD3D9SwapChain() { if (IsValid()) Release(); }
 
 	void Release();
 };

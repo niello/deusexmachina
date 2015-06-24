@@ -12,7 +12,7 @@ __ImplementClass(Render::CD3D9DisplayDriver, 'D9DD', Render::CDisplayDriver);
 
 bool CD3D9DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
 {
-	n_assert2(OutputID == 0, "D3D9 supports only one output (0) per video adapter");
+	n_assert2(OutputNumber == 0, "D3D9 supports only one output (0) per video adapter");
 	return CDisplayDriver::Init(AdapterNumber, OutputNumber);
 }
 //---------------------------------------------------------------------

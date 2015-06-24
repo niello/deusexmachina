@@ -7,13 +7,13 @@ __ImplementClassNoFactory(Core::CObject, Core::CRTTIBaseClass);
 #ifdef _DEBUG
 CObject::CObjList CObject::List;
 
-void CObject::DumpLeaks()
+void CObject::DumpLeaks() //???dump CRefCounted leaks too? without class names.
 {
 	if (List.IsEmpty()) Sys::DbgOut("\n>>> NO REFCOUNT LEAKS\n\n\n");
 	else
 	{
 		Sys::DbgOut("\n\n\n******** REFCOUNTING LEAKS DETECTED:\n\n");
-		for (CObjList::CIterator It = List.Begin(); It != List.End(); It++)
+		for (CObjList::CIterator It = List.Begin(); It != List.End(); ++It)
 		{
 			Sys::DbgOut("*** REFCOUNT LEAK: Object of class '%s' at address '0x%08lx', refcount is '%d'\n",
 				(*It)->GetClassName().CStr(),

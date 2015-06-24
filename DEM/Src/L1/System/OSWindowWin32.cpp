@@ -69,10 +69,15 @@ bool COSWindowWin32::Open()
 	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 
 	::GetClientRect(hWnd, &r);
-	Rect.X = r.left;
-	Rect.Y = r.top;
 	Rect.W = r.right - r.left;
 	Rect.H = r.bottom - r.top;
+
+	POINT p;
+	p.x = r.left;
+	p.y = r.top;
+	::ClientToScreen(hWnd, &p);
+	Rect.X = p.x;
+	Rect.Y = p.y;
 
 	RAWINPUTDEVICE RawInputDevices;
 	RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC; 
@@ -124,28 +129,6 @@ void COSWindowWin32::Restore()
 }
 //---------------------------------------------------------------------
 
-// Polls for and processes window messages. Call this message once per
-// frame in your render loop. If the user clicks the window close
-// button, or hits Alt-F4, an OnClose event will be sent.
-void COSWindowWin32::ProcessMessages()
-{
-	n_assert_dbg(Flags.Is(Wnd_Open));
-
-	// It may happen that the WinProc has already closed our window!
-	if (!hWnd) return;
-
-	// NB: we pass NULL instead of window handle to receive language switching messages
-	//???need some main NULL-HWND proc for WM_QUIT and language, and per-window peekers for additional windows?
-	MSG Msg;
-	while (::PeekMessage(&Msg, NULL /*hWnd*/, 0, 0, PM_REMOVE))
-	{
-		if (hAccel && ::TranslateAccelerator(hWnd, hAccel, &Msg) != FALSE) continue;
-		::TranslateMessage(&Msg);
-		::DispatchMessage(&Msg);
-	}
-}
-//---------------------------------------------------------------------
-
 bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 {
 	if (!hWnd)
@@ -178,15 +161,17 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 	RECT r = { NewRect.Left(), NewRect.Top(), NewRect.Right(), NewRect.Bottom() };
 	::AdjustWindowRect(&r, NewWndStyle, FALSE);
 
+	// Rect is updated in a window procedure
 	if (::SetWindowPos(hWnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWPFlags) == FALSE) FAIL;
 
-	::GetClientRect(hWnd, &r);
-	Rect.X = r.left;
-	Rect.Y = r.top;
-	Rect.W = r.right - r.left;
-	Rect.H = r.bottom - r.top;
-
 	OK;
+}
+//---------------------------------------------------------------------
+
+void COSWindowWin32::SetWindowClass(COSWindowClassWin32& WindowClass)
+{
+	n_assert2(!hWnd, "COSWindowWin32::SetWindowClass() > Can't change a class of a created window");
+	WndClass = &WindowClass;
 }
 //---------------------------------------------------------------------
 
@@ -303,8 +288,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 					FireEvent(CStrID("OnRestored"));
 					ReleaseCapture();
 				}
-
-				n_assert_dbg(!Flags.Is(Wnd_Fullscreen));
 
 				unsigned int W = (unsigned int)(short)LOWORD(lParam);
 				unsigned int H = (unsigned int)(short)HIWORD(lParam);
