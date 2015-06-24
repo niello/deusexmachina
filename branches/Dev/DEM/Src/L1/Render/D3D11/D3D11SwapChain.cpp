@@ -15,7 +15,9 @@ void CD3D11SwapChain::Release()
 	Sub_OnToggleFullscreen = NULL;
 
 	BackBufferRT->Destroy();
-	pTargetDisplay = NULL;
+
+	//???
+	TargetDisplay = NULL;
 	TargetWindow = NULL;
 
 	if (pSwapChain)

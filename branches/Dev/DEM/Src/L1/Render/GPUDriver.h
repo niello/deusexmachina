@@ -113,7 +113,7 @@ public:
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
 	virtual bool				DestroySwapChain(DWORD SwapChainID) = 0;
 	virtual bool				SwapChainExists(DWORD SwapChainID) const = 0;
-	virtual bool				SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
+	virtual bool				SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
 	virtual bool				SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL) = 0;
 	virtual bool				ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height) = 0;
 	virtual bool				IsFullscreen(DWORD SwapChainID) const = 0;

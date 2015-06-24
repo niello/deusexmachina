@@ -53,20 +53,20 @@ class CSwapChain
 {
 public:
 
-	PRenderTarget			BackBufferRT;
-	Sys::POSWindow			TargetWindow;	//???to desc?
-	Data::CRect				LastWindowRect;	// Stores a window size in a windowed mode
-	const CDisplayDriver*	pTargetDisplay;
-	//CDisplayMode			DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
-	CSwapChainDesc			Desc;
+	PRenderTarget	BackBufferRT;
+	Sys::POSWindow	TargetWindow;	//???to desc?
+	Data::CRect		LastWindowRect;	// Stores a window size in a windowed mode
+	PDisplayDriver	TargetDisplay;
+	//CDisplayMode	DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
+	CSwapChainDesc	Desc;
 
 	//???need? what about other statistics?
-	DWORD					FrameID;
+	DWORD			FrameID;
 
-	CSwapChain(): pTargetDisplay(NULL) {}
+	CSwapChain(): FrameID(0) {}
 
 	bool IsValid() const { return TargetWindow.IsValid(); }
-	bool IsFullscreen() const { return !!pTargetDisplay; }
+	bool IsFullscreen() const { return TargetDisplay.IsValid(); }
 };
 
 }

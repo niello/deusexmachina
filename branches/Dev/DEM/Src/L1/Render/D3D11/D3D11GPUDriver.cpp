@@ -403,7 +403,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	ItSC->BackBufferRT = RT.GetUnsafe();
 	ItSC->TargetWindow = pWnd;
 	ItSC->LastWindowRect = pWnd->GetRect();
-	ItSC->pTargetDisplay = NULL;
+	ItSC->TargetDisplay = NULL;
 	ItSC->Desc = SwapChainDesc;
 	ItSC->pSwapChain = pSwapChain;
 
@@ -472,7 +472,7 @@ bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, uns
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay, const CDisplayMode* pMode)
+bool CD3D11GPUDriver::SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisplay, const CDisplayMode* pMode)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	if (pDisplay && AdapterID != pDisplay->GetAdapterID()) FAIL;
