@@ -31,6 +31,11 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 
 	Sub_OnPaint = NULL;
 
+	//!!!unbind and release all resources!
+
+	for (int i = 0; i < CurrRT.GetCount() ; ++i)
+		if (CurrRT[i].IsValid()) CurrRT[i]->Destroy();
+
 	for (int i = 0; i < SwapChains.GetCount() ; ++i)
 		SwapChains[i].Release();
 
@@ -40,14 +45,14 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 	//!!!ReleaseQueries();
 	//SAFE_RELEASE(pCurrDSSurface);
 
-	Sys::COSWindow* pFocusWnd = D3D9DrvFactory->GetFocusWindow();
+	//Sys::COSWindow* pFocusWnd = D3D9DrvFactory->GetFocusWindow();
 
 	HRESULT hr = pD3DDevice->TestCooperativeLevel();
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
 	{
 		// NB: In single-threaded app, engine will stuck here until device can be reset
 		Sys::Sleep(10);
-		if (pFocusWnd) pFocusWnd->ProcessMessages();
+		//!!!if (pFocusWnd) pFocusWnd->ProcessMessages();
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
 
@@ -536,15 +541,18 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 
 	// Only one swap chain per adapter can be fullscreen in D3D9
 	// Moreover, it is always an implicit swap chain, so fail on any additional one
-	if (SC.pSwapChain) FAIL;
+	// MJP: I'm pretty sure the only way to go fullscreen is to use the implicit swap chain that's part of the device. (c)
+	//!!!if any can be, check here there are no fullscreen swap chains currently!
+	//if (SC.pSwapChain) FAIL;
 
 	//???if (SC.TargetWindow->IsChild()) FAIL;
 
+	PDisplayDriver DispDrv = NULL;
 	if (!pDisplay)
 	{
-		Sys::Error("CD3D9GPUDriver::SwitchToFullscreen > IMPLEMENT ME for pDisplay == NULL!!!");
-		// system will select from window
-		// or for d3d get adapter display format directly
+		// Only one output per adapter in a current implementation
+		DispDrv = D3D9DrvFactory->CreateDisplayDriver(AdapterID, 0);
+		pDisplay = DispDrv.Get();
 	}
 
 	CDisplayMode CurrentMode;
@@ -561,13 +569,18 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver*
 	D3DPresentParams.BackBufferWidth = pMode->Width;
 	D3DPresentParams.BackBufferHeight = pMode->Height;
 	D3DPresentParams.BackBufferFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(pMode->PixelFormat);
+	//D3DPresentParams.FullScreen_RefreshRateInHz = pMode->RefreshRate.GetIntRounded();
 
 	CDisplayDriver::CMonitorInfo MonInfo;
 	if (!pDisplay->GetDisplayMonitorInfo(MonInfo)) FAIL;
 	SC.LastWindowRect = SC.TargetWindow->GetRect();
 	SC.TargetWindow->SetRect(Data::CRect(MonInfo.Left, MonInfo.Top, pMode->Width, pMode->Height), true);
 
-	if (!Reset(D3DPresentParams)) FAIL;
+	if (!Reset(D3DPresentParams))
+	{
+		SC.TargetWindow->SetRect(SC.LastWindowRect);
+		FAIL;
+	}
 
 	//!!!reinitialize RT!
 	//SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;

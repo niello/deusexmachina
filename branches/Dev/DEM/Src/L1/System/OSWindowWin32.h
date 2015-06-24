@@ -48,7 +48,6 @@ public:
 	void					Close();
 	void					Minimize();
 	void					Restore();
-	void					ProcessMessages();
 	bool					HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result); // Mainly for internal use
 
 	bool					SetRect(const Data::CRect& NewRect, bool FullscreenMode = false);
@@ -59,7 +58,7 @@ public:
 	bool					GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
 	bool					GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
 
-	void					SetWindowClass(COSWindowClassWin32& WindowClass) { WndClass = &WindowClass; }
+	void					SetWindowClass(COSWindowClassWin32& WindowClass);
 	COSWindowClassWin32*	GetWindowClass() const { return WndClass.GetUnsafe(); }
 	void					SetTitle(const char* pTitle);
 	const char*				GetTitle() const { return WindowTitle; }
@@ -75,6 +74,7 @@ public:
 
 	COSWindowWin32*			GetParent() const { return pParent; }
 	HWND					GetHWND() const { return hWnd; }
+	HACCEL					GetWin32AcceleratorTable() const { return hAccel; }
 };
 
 inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const

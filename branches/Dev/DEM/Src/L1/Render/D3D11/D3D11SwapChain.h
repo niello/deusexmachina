@@ -27,7 +27,7 @@ public:
 	//!!!RT View! or unify RT of swap chain and texture?
 
 	CD3D11SwapChain(): pSwapChain(NULL) {}
-	~CD3D11SwapChain() { Release(); }
+	~CD3D11SwapChain() { if (IsValid()) Release(); }
 
 	void Release();
 };
