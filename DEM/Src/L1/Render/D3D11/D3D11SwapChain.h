@@ -12,7 +12,6 @@ struct IDXGISwapChain;
 namespace Render
 {
 
-//???store index and driver pointer and subscribe events here?
 class CD3D11SwapChain: public CSwapChain
 {
 public:
@@ -23,8 +22,6 @@ public:
 	Events::PSub		Sub_OnClosing;
 
 	IDXGISwapChain*		pSwapChain;
-	//ID3D11Texture2D*	pBackBuffer;
-	//!!!RT View! or unify RT of swap chain and texture?
 
 	CD3D11SwapChain(): pSwapChain(NULL) {}
 	~CD3D11SwapChain() { if (IsValid()) Release(); }

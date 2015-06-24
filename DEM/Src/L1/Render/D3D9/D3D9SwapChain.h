@@ -12,7 +12,6 @@ struct IDirect3DSwapChain9;
 namespace Render
 {
 
-//???store index and driver pointer and subscribe events here?
 class CD3D9SwapChain: public CSwapChain
 {
 public:

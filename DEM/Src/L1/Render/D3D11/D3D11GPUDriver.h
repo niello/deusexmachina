@@ -60,7 +60,7 @@ public:
 	virtual bool				DestroySwapChain(DWORD SwapChainID);
 	virtual bool				SwapChainExists(DWORD SwapChainID) const;
 	virtual bool				ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height);
-	virtual bool				SwitchToFullscreen(DWORD SwapChainID, const CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
+	virtual bool				SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
 	virtual bool				SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL);
 	virtual bool				IsFullscreen(DWORD SwapChainID) const;
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const;

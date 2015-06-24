@@ -6,7 +6,7 @@
 
 // Render system definitions and forward declarations
 
-#define DEM_RENDER_DEBUG (0)
+#define DEM_RENDER_DEBUG (1)
 #define DEM_RENDER_USENVPERFHUD (0)
 
 namespace Render
