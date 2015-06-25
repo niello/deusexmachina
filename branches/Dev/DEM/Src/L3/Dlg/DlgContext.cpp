@@ -65,7 +65,7 @@ void CDlgContext::Trigger(bool IsForeground)
 				if (SpeakerEntity == CStrID("$DlgOwner")) SpeakerEntity = DlgOwner;
 				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = PlrSpeaker;
 				Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
-				if (!Speaker.IsValid())
+				if (Speaker.IsNullPtr())
 					Sys::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
 
 				Speaker->FireEvent(CStrID("OnDlgNodeEnter"));

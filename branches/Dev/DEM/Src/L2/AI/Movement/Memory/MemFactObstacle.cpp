@@ -13,7 +13,7 @@ bool CMemFactObstacle::Match(const CMemFact& Pattern, Data::CFlags FieldMask) co
 
 	const CMemFactObstacle& PatternCast = (const CMemFactObstacle&)Pattern;
 
-	if (pSourceStimulus.IsValid() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
+	if (pSourceStimulus.IsValidPtr() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
 
 	OK;
 }

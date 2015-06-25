@@ -81,7 +81,7 @@ const CSmartAction* CAIServer::GetSmartAction(CStrID ID) const
 
 PAction CAIServer::CreatePlanFromDesc(Data::PParams Desc)
 {
-	if (!Desc.IsValid()) return NULL;
+	if (Desc.IsNullPtr()) return NULL;
 
 	CString StrClass("AI::CAction");
 	StrClass += Desc->Get<CString>(CStrID("Class"));

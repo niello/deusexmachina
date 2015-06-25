@@ -44,7 +44,7 @@ public:
 
 	bool			Enable();
 	void			Disable();
-	bool			IsEnabled() const { return NodeCtlr.IsValid() && NodeCtlr->IsActive(); }
+	bool			IsEnabled() const { return NodeCtlr.IsValidPtr() && NodeCtlr->IsActive(); }
 
 	Physics::CCharacterController* GetController() const { return CharCtlr.GetUnsafe(); }
 	//!!!WRITE!

@@ -76,7 +76,7 @@ bool CInputMappingEvent::Init(CStrID Name, int KeyCode)
 
 void CInputMappingEvent::Enable()
 {
-	if (Sub_InputEvent.IsValid()) return;
+	if (Sub_InputEvent.IsValidPtr()) return;
 
 	bool(CInputMappingEvent::*CB)(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 

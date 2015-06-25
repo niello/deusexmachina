@@ -18,7 +18,7 @@ void CGoalWork::Init(Data::PParams Params)
 	WorkActionMap.Add(CStrID::Empty, CStrID("Work")); // Default, may move to params too
 
 	Data::PParams Map = Params->Get<Data::PParams>(CStrID("ActionMap"), NULL);
-	if (Map.IsValid())
+	if (Map.IsValidPtr())
 		for (int i = 0; i < Map->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = Map->Get(i);

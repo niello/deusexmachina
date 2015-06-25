@@ -101,7 +101,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 	const CString& DescName = GetEntity()->GetAttr<CString>(CStrID("AIHintsDesc"), NULL);
 	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(CString("AIHints:") + DescName + ".prm");
 
-	if (Desc.IsValid())
+	if (Desc.IsValidPtr())
 	{
 		const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
 
@@ -175,7 +175,7 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 	if (Idx != INVALID_INDEX)
 	{
 		CRecord& Rec = Hints.ValueAt(Idx);
-		n_assert(Rec.Stimulus.IsValid());
+		n_assert(Rec.Stimulus.IsValidPtr());
 
 		if (Enable)
 		{

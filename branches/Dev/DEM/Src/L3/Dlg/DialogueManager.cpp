@@ -71,7 +71,7 @@ PDlgGraph CDialogueManager::GetDialogueGraph(CStrID ID)
 	else
 	{
 		Data::PParams Desc = DataSrv->LoadPRM(CString("Dlg:") + ID.CStr() + ".prm", false);
-		return Desc.IsValid() ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : NULL;
+		return Desc.IsValidPtr() ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : NULL;
 	}
 }
 //---------------------------------------------------------------------
@@ -113,7 +113,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 	if (TargetIsPlr == InitiatorIsPlr) // Plr-Plr & NPC-NPC
 	{
 		NewDlg.Dlg = EntityMgr->GetEntity(Target)->GetProperty<Prop::CPropTalking>()->GetDialogue();
-		if (NewDlg.Dlg.IsValid())
+		if (NewDlg.Dlg.IsValidPtr())
 		{
 			NewDlg.DlgOwner = Target;
 			if (InitiatorIsPlr) NewDlg.PlrSpeaker = Initiator;
@@ -121,7 +121,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		else
 		{
 			NewDlg.Dlg = EntityMgr->GetEntity(Initiator)->GetProperty<Prop::CPropTalking>()->GetDialogue();
-			if (NewDlg.Dlg.IsValid())
+			if (NewDlg.Dlg.IsValidPtr())
 			{
 				NewDlg.DlgOwner = Initiator;
 				if (TargetIsPlr) NewDlg.PlrSpeaker = Target;
@@ -133,7 +133,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		CStrID NPC = TargetIsPlr ? Initiator : Target;
 		CStrID Plr = TargetIsPlr ? Target : Initiator;
 		NewDlg.Dlg = EntityMgr->GetEntity(NPC)->GetProperty<Prop::CPropTalking>()->GetDialogue();
-		if (NewDlg.Dlg.IsValid())
+		if (NewDlg.Dlg.IsValidPtr())
 		{
 			NewDlg.DlgOwner = NPC;
 			NewDlg.PlrSpeaker = Plr;
@@ -141,7 +141,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		else //???need? NPC talking with Player with player-attached dlg
 		{
 			NewDlg.Dlg = EntityMgr->GetEntity(Plr)->GetProperty<Prop::CPropTalking>()->GetDialogue();
-			if (NewDlg.Dlg.IsValid())
+			if (NewDlg.Dlg.IsValidPtr())
 			{
 				NewDlg.DlgOwner = Plr;
 				NewDlg.PlrSpeaker = NPC;
@@ -149,7 +149,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		}
 	}
 
-	if (!NewDlg.Dlg.IsValid()) FAIL;
+	if (NewDlg.Dlg.IsNullPtr()) FAIL;
 
 	NewDlg.Initiator = Initiator;
 	NewDlg.Target = Target;
@@ -158,7 +158,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	if (Mode == DlgMode_Foreground) ForegroundDlgID = Initiator;
 
-	if (NewDlg.Dlg->ScriptFile.IsValid() && !NewDlg.Dlg->ScriptObj.IsValid())
+	if (NewDlg.Dlg->ScriptFile.IsValid() && !NewDlg.Dlg->ScriptObj.IsValidPtr())
 	{
 		NewDlg.Dlg->ScriptObj = n_new(Scripting::CScriptObject(Initiator.CStr(), "Dialogues"));
 		NewDlg.Dlg->ScriptObj->Init(); // No special class
@@ -184,7 +184,7 @@ bool CDialogueManager::AcceptDialogue(CStrID ID, CStrID Target)
 	Ctx.State = DlgState_InNode;
 
 	//???send dlg id and actor ids?!
-	if (Ctx.Dlg->ScriptObj.IsValid()) Ctx.Dlg->ScriptObj->RunFunction("OnStart");
+	if (Ctx.Dlg->ScriptObj.IsValidPtr()) Ctx.Dlg->ScriptObj->RunFunction("OnStart");
 
 	Data::PParams P = n_new(Data::CParams(3));
 	P->Set(CStrID("Initiator"), Ctx.Initiator);

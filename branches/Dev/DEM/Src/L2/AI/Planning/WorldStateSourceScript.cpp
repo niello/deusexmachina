@@ -11,7 +11,7 @@ __ImplementClass(AI::CWorldStateSourceScript, 'WSSS', AI::CWorldStateSource);
 
 void CWorldStateSourceScript::Init(Data::PParams Desc)
 {
-	n_assert(Desc.IsValid());
+	n_assert(Desc.IsValidPtr());
 	Func = Desc->Get<CString>(CStrID("Func")).CStr();
 }
 //---------------------------------------------------------------------

@@ -43,7 +43,7 @@ void CQuestManager::Trigger()
 	{
 		for (int i = 0; i < TasksToDelete.GetCount(); i++)
 		{
-			if (TasksToDelete[i]->ScriptObj.IsValid())
+			if (TasksToDelete[i]->ScriptObj.IsValidPtr())
 			{
 				DeletedScriptObjects.Add(TasksToDelete[i]->ScriptObj->GetFullName());
 				TasksToDelete[i]->ScriptObj = NULL;
@@ -57,7 +57,7 @@ void CQuestManager::Trigger()
 bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 {
 	Data::PParams QuestDesc = DataSrv->LoadPRM(CString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
-	if (!QuestDesc.IsValid()) FAIL;
+	if (QuestDesc.IsNullPtr()) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);
 	Quest->Name = QuestDesc->Get<CString>(CStrID("Name"), "<No quest name>");
@@ -264,7 +264,7 @@ CQuest::EStatus CQuestManager::GetQuestStatus(CStrID QuestID, CStrID TaskID)
 	else
 	{
 		Ptr<CQuest> Quest = Quests.ValueAt(Idx).Quest;
-		if (Quest.IsValid())
+		if (Quest.IsValidPtr())
 		{
 			Idx = Quest->Tasks.FindIndex(TaskID);
 			if (Idx != INVALID_INDEX) return Quest->Tasks.ValueAt(Idx).Status;

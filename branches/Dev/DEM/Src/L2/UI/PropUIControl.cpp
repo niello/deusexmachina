@@ -37,7 +37,7 @@ bool CPropUIControl::InternalActivate()
 
 	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
 	Data::PParams Desc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
-	if (Desc.IsValid())
+	if (Desc.IsValidPtr())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), NULL);
 		if (UIDesc.IsEmpty()) UIDesc = Desc->Get<CString>(CStrID("UIDesc"), NULL);
@@ -49,7 +49,7 @@ bool CPropUIControl::InternalActivate()
 		if (Desc->Get<bool>(CStrID("Explorable"), false))
 		{
 			CStrID ID("Explore");
-			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
+			LPCSTR pUIName = UIActionNames.IsValidPtr() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteExploreAction, 1, false));
 			CAction* pAct = GetActionByID(ID);
 			pAct->Enabled = UIDesc.IsValid();
@@ -59,7 +59,7 @@ bool CPropUIControl::InternalActivate()
 		if (Desc->Get<bool>(CStrID("Selectable"), false))
 		{
 			CStrID ID("Select");
-			LPCSTR pUIName = UIActionNames.IsValid() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
+			LPCSTR pUIName = UIActionNames.IsValidPtr() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSelectAction, Priority_Top, false));
 		}
 
@@ -125,7 +125,7 @@ void CPropUIControl::InternalDeactivate()
 
 	Actions.Clear();
 
-	if (MousePickShape.IsValid())
+	if (MousePickShape.IsValidPtr())
 	{
 		MousePickShape->RemoveFromNode();
 		MousePickShape->CollObj->RemoveFromLevel();
@@ -146,7 +146,7 @@ bool CPropUIControl::OnPropActivated(Events::CEventDispatcher* pDispatcher, cons
 		OK;
 	}
 
-	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
+	if (MousePickShape.IsValidPtr() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
 	{
 		((CPropSceneNode*)pProp)->GetNode()->AddAttribute(*MousePickShape);
 		OK;
@@ -174,7 +174,7 @@ bool CPropUIControl::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, c
 		OK;
 	}
 
-	if (MousePickShape.IsValid() && pProp->IsA<CPropSceneNode>())
+	if (MousePickShape.IsValidPtr() && pProp->IsA<CPropSceneNode>())
 	{
 		MousePickShape->RemoveFromNode();
 		//MousePickShape->CollObj->RemoveFromLevel();
@@ -195,8 +195,8 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
 	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
 	Data::PParams UIDesc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
-	Data::PParams Desc = UIDesc.IsValid() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
-	if (!Desc.IsValid()) return;
+	Data::PParams Desc = UIDesc.IsValidPtr() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
+	if (Desc.IsNullPtr()) return;
 
 	const CPropSmartObject::CActionList& SOActions = Prop.GetActions();
 
@@ -342,7 +342,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHa
 	sprintf_s(EvIDString, 63, "OnUIAction%s", ID.CStr());
 	Act.EventID = CStrID(EvIDString);
 	GetEntity()->Subscribe(Act.EventID, Handler, &Act.Sub);
-	if (!Act.Sub.IsValid()) FAIL;
+	if (Act.Sub.IsNullPtr()) FAIL;
 	Act.IsSOAction = IsSOAction;
 
 	Actions.InsertSorted(Act);

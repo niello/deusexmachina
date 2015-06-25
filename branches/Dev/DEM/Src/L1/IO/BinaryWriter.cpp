@@ -85,7 +85,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 			if (Rec.SchemeID.IsValid())
 			{
 				SubScheme = DataSrv->GetDataScheme(Rec.SchemeID);
-				if (!SubScheme.IsValid()) FAIL;
+				if (SubScheme.IsNullPtr()) FAIL;
 			}
 			else SubScheme = Rec.Scheme;
 			
@@ -104,7 +104,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 					if (!Write<short>(CountWritten)) FAIL;
 				}
 
-				if (SubScheme.IsValid() && Rec.Flags.Is(CDataScheme::APPLY_SCHEME_TO_SELF))
+				if (SubScheme.IsValidPtr() && Rec.Flags.Is(CDataScheme::APPLY_SCHEME_TO_SELF))
 				{
 					// Apply scheme on self, then fix element count of self
 					DWORD Count;
@@ -141,7 +141,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 							if (!Write<short>(CountWritten)) FAIL;
 						}
 
-						if (SubScheme.IsValid())
+						if (SubScheme.IsValidPtr())
 						{
 							// If subscheme is declared, write this child by subscheme and fix its element count
 							DWORD Count;
@@ -186,7 +186,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 				for (int j = 0; j < PrmArray.GetCount(); ++j)
 				{
 					const CData& Element = PrmArray[j];
-					if (SubScheme.IsValid() && Element.IsA<PParams>())
+					if (SubScheme.IsValidPtr() && Element.IsA<PParams>())
 					{
 						CParams& SubPrmParams = *Element.GetValue<PParams>();
 

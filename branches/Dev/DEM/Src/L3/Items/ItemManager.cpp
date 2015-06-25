@@ -12,7 +12,7 @@ __ImplementSingleton(Items::CItemManager);
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)
 {
 	PItemTpl Tpl = (CItemTpl*)Factory->Create(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), NULL));
-	n_assert(Tpl.IsValid());
+	n_assert(Tpl.IsValidPtr());
 	Tpl->Init(ID, Params);
 	return Tpl;
 }
@@ -25,10 +25,10 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 	else
 	{
 		Data::PParams HRD = DataSrv->LoadPRM(CString("Items:") + ID.CStr() + ".prm", false);
-		if (HRD.IsValid())
+		if (HRD.IsValidPtr())
 		{
 			Tpl = CreateItemTpl(ID, *HRD);
-			n_assert(Tpl.IsValid());
+			n_assert(Tpl.IsValidPtr());
 			ItemTplRegistry.Add(ID, Tpl);
 			return Tpl;
 		}

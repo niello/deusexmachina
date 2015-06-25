@@ -9,7 +9,7 @@ CSceneNode::~CSceneNode()
 {
 	Children.Clear();
 
-	if (Controller.IsValid()) Controller->OnDetachFromNode();
+	if (Controller.IsValidPtr()) Controller->OnDetachFromNode();
 
 	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
 		(*It)->OnDetachFromNode();
@@ -26,7 +26,7 @@ CSceneNode::~CSceneNode()
 void CSceneNode::UpdateTransform(const vector3* pCOIArray, DWORD COICount,
 								 bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes)
 {
-	if (Controller.IsValid() && Controller->IsActive())
+	if (Controller.IsValidPtr() && Controller->IsActive())
 	{
 		if (!ProcessDefferedController && Controller->IsDeffered())
 		{
@@ -150,7 +150,7 @@ bool CSceneNode::SetController(CNodeController* pCtlr)
 	if (Controller.GetUnsafe() == pCtlr) OK;
 	if (pCtlr && pCtlr->IsAttachedToNode()) FAIL;
 
-	if (Controller.IsValid())
+	if (Controller.IsValidPtr())
 	{
 		n_assert(Controller->GetNode() == this);
 		Controller->OnDetachFromNode();

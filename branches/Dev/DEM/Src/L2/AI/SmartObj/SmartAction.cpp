@@ -59,7 +59,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 
 bool CSmartAction::IsValid(CStrID ActorID, CStrID SOID) const
 {
-	if (!ScriptObj.IsValid()) OK;
+	if (ScriptObj.IsNullPtr()) OK;
 	Data::CData Args[] = { ActorID, SOID };
 	DWORD Res = ScriptObj->RunFunction("IsValid", Args, 2);
 	return Res == Success || Res == Error_Scripting_NoFunction;
@@ -68,7 +68,7 @@ bool CSmartAction::IsValid(CStrID ActorID, CStrID SOID) const
 
 float CSmartAction::GetDuration(CStrID ActorID, CStrID SOID) const
 {
-	if (ScriptObj.IsValid())
+	if (ScriptObj.IsValidPtr())
 	{
 		Data::CData Args[] = { ActorID, SOID };
 		Data::CData RetVal;
@@ -87,7 +87,7 @@ float CSmartAction::GetDuration(CStrID ActorID, CStrID SOID) const
 
 DWORD CSmartAction::Update(CStrID ActorID, CStrID SOID) const
 {
-	if (ScriptObj.IsValid())
+	if (ScriptObj.IsValidPtr())
 	{
 		Data::CData Args[] = { ActorID, SOID };
 		Data::CData RetVal;

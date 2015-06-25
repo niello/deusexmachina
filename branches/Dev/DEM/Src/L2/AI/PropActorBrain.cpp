@@ -95,7 +95,7 @@ bool CPropActorBrain::InternalActivate()
 				Sensors.Add(New);
 				
 				PDataArray Percs = NewDesc->Get<PDataArray>(CStrID("Perceptors"), NULL);
-				if (Percs.IsValid())
+				if (Percs.IsValidPtr())
 				{
 					CDataArray::CIterator ItPercName;
 					for (ItPercName = Percs->Begin(); ItPercName != Percs->End(); ItPercName++)
@@ -236,7 +236,7 @@ bool CPropActorBrain::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, 
 
 void CPropActorBrain::EnqueueTask(const CTask& Task)
 {
-	if (!Task.Plan.IsValid()) return;
+	if (Task.Plan.IsNullPtr()) return;
 	bool WasEmpty = TaskQueue.IsEmpty();
 	TaskQueue.AddBack(Task);
 	if (WasEmpty) RequestBehaviourUpdate();
@@ -264,7 +264,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanR
 
 	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
 
-	if (Plan.IsValid())
+	if (Plan.IsValidPtr())
 	{
 		Plan->Deactivate(this);
 
@@ -272,9 +272,9 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanR
 		{
 			//!!!deactivate task (abort)!
 			//???event task done/aborted? use task UID?
-			if (!NewPlan.IsValid() || pTask->FailOnInterruption) // Valid NewPlan means an interruption
+			if (NewPlan.IsNullPtr() || pTask->FailOnInterruption) // Valid NewPlan means an interruption
 			{
-				if (NewPlan.IsValid() && pTask->FailOnInterruption) PrevPlanResult = Failure;
+				if (NewPlan.IsValidPtr() && pTask->FailOnInterruption) PrevPlanResult = Failure;
 				if (PrevPlanResult == Failure && pTask->ClearQueueOnFailure) TaskQueue.Clear();
 				else TaskQueue.RemoveFront();
 			}
@@ -288,7 +288,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanR
 
 	Plan = NewPlan;
 
-	if (Plan.IsValid())
+	if (Plan.IsValidPtr())
 	{
 		if (pTask && Plan == pTask->Plan) // Task becomes active
 		{
@@ -297,7 +297,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanR
 		}
 		else if (CurrGoal.GetUnsafe() != pPrevGoal) // Goal becomes active
 		{
-			n_assert(CurrGoal.IsValid()); // New plan is not set by task, so it MUST have been set by goal
+			n_assert(CurrGoal.IsValidPtr()); // New plan is not set by task, so it MUST have been set by goal
 			// [Activate CurrGoal]
 		}
 
@@ -314,7 +314,7 @@ void CPropActorBrain::UpdateBehaviour()
 {
 	bool NeedToReplan =
 		Flags.Is(AIMind_InvalidatePlan) ||
-		(CurrGoal.IsValid() && (!Plan.IsValid() || CurrGoal->IsSatisfied()));
+		(CurrGoal.IsValidPtr() && (Plan.IsNullPtr() || CurrGoal->IsSatisfied()));
 
 	if (!NeedToReplan && Flags.IsNot(AIMind_SelectAction)) return;
 
@@ -354,7 +354,7 @@ void CPropActorBrain::UpdateBehaviour()
 			// Since we always prefer the current goal, we do this before comparing relevances
 			if (pPrevGoal == pTopGoal && !NeedToReplan && !pPrevGoal->IsReplanningNeeded())
 			{
-				n_assert_dbg(Plan.IsValid());
+				n_assert_dbg(Plan.IsValidPtr());
 				NewPlan = Plan;
 				break;
 			}
@@ -366,7 +366,7 @@ void CPropActorBrain::UpdateBehaviour()
 			if (Relevance < TaskRelevance || (Relevance == TaskRelevance && PreferTask)) break;
 
 			NewPlan = AISrv->GetPlanner().BuildPlan(this, pTopGoal);
-			if (NewPlan.IsValid())
+			if (NewPlan.IsValidPtr())
 			{
 				CurrGoal = pTopGoal;
 				break;
@@ -379,13 +379,13 @@ void CPropActorBrain::UpdateBehaviour()
 		//???n_assert2(CurrGoal.GetUnsafe() || pTask, "Actor has no goal, even GoalIdle, nor task");
 	}
 
-	if (!NewPlan.IsValid())
+	if (NewPlan.IsNullPtr())
 	{
 		CurrGoal = NULL;
 		if (pTask)
 		{
 			NewPlan = pTask->Plan;
-			n_assert_dbg(NewPlan.IsValid());
+			n_assert_dbg(NewPlan.IsValidPtr());
 		}
 	}
 
@@ -412,7 +412,7 @@ bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const 
 	NavSystem.Update(FrameTime);
 #endif
 
-	if (Plan.IsValid())
+	if (Plan.IsValidPtr())
 	{
 		DWORD PlanResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
 		if (PlanResult != Running)

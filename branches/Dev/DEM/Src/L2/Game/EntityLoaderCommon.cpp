@@ -12,7 +12,7 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, const Data::CParam
 {
 	n_assert(UID.IsValid());
 	PEntity Entity = EntityMgr->CreateEntity(UID, Level);
-	if (!Entity.IsValid()) FAIL;
+	if (Entity.IsNullPtr()) FAIL;
 
 	Data::PParams SubDesc;
 	if (Desc.Get(SubDesc, CStrID("Attrs")) && SubDesc->GetCount())

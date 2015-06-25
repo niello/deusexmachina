@@ -21,8 +21,8 @@ public:
 	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) ((Data::CRefCounted*)pObj)->AddRef(); }
 	~Ptr() { if (pObj) ((Data::CRefCounted*)pObj)->Release(); }
 
-	//???rename IsValidPtr? Not to confuse what T has IsValid()
-	bool	IsValid() const { return !!pObj; }
+	bool	IsValidPtr() const { return !!pObj; }
+	bool	IsNullPtr() const { return !pObj; }
 	T*		Get() const;
 	T*		GetUnsafe() const { return pObj; }
 
@@ -35,6 +35,7 @@ public:
 	T*		operator ->() const;
 	T&		operator *() const;
 			operator T*() const;
+			operator bool() const { return !!pObj; }
 };
 //---------------------------------------------------------------------
 

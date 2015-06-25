@@ -34,7 +34,7 @@ public:
 	Data::CFlags	GetAccess() const { return Access; }
 	PVertexLayout	GetVertexLayout() const { return Layout; }
 	DWORD			GetVertexCount() const { return VtxCount; }
-	DWORD			GetSizeInBytes() const { return Layout.IsValid() ? Layout->GetVertexSize() * VtxCount : 0; }
+	DWORD			GetSizeInBytes() const { return Layout.IsValidPtr() ? Layout->GetVertexSize() * VtxCount : 0; }
 	//virtual bool	IsValid() const = 0; //???or check Layout & VtxCount & Access are not 0?
 };
 

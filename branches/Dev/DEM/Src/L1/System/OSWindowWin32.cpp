@@ -214,6 +214,12 @@ bool COSWindowWin32::SetTopmost(bool Topmost)
 }
 //---------------------------------------------------------------------
 
+bool COSWindowWin32::SetInputFocus()
+{
+	return ::SetFocus(hWnd) != NULL;
+}
+//---------------------------------------------------------------------
+
 bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result)
 {
 	switch (uMsg)

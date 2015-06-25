@@ -6,7 +6,7 @@ __ImplementClassNoFactory(AI::CGoal, Core::CObject);
 
 void CGoal::Init(Data::PParams Params)
 {
-	if (Params.IsValid())
+	if (Params.IsValidPtr())
 		PersonalityFactor = Params->Get(CStrID("PersonalityFactor"), 1.f);
 }
 //---------------------------------------------------------------------

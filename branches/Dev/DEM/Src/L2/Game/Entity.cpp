@@ -40,7 +40,7 @@ void CEntity::SetLevel(CGameLevel* pNewLevel)
 
 void CEntity::Activate()
 {
-	n_assert(IsInactive() && Level.IsValid());
+	n_assert(IsInactive() && Level.IsValidPtr());
 	Flags.Set(ChangingActivity);
 
 	FireEvent(CStrID("OnEntityActivated"));
@@ -77,8 +77,8 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 	CArray<CProperty*> Props;
 	EntityMgr->GetPropertiesOfEntity(UID, Props);
-	bool Differs = (Props.GetCount() && !InitialProps.IsValid()) || Props.GetCount() != InitialProps->GetCount();
-	if (!Differs && Props.GetCount() && InitialProps.IsValid())
+	bool Differs = (Props.GetCount() && InitialProps.IsNullPtr()) || Props.GetCount() != InitialProps->GetCount();
+	if (!Differs && Props.GetCount() && InitialProps.IsValidPtr())
 	{
 		// Quick difference detection is insufficient, do full comparison
 		for (int i = 0; i < Props.GetCount(); ++i)

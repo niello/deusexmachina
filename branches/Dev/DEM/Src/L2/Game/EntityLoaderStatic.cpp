@@ -14,7 +14,7 @@ bool CEntityLoaderStatic::Load(CStrID UID, CGameLevel& Level, const Data::CParam
 	if (!StaticEnvMgr->CanEntityBeStatic(Desc)) FAIL; //???or try to add as common?
 
 	PStaticObject Obj = StaticEnvMgr->CreateStaticObject(UID, Level);
-	if (!Obj.IsValid()) FAIL;
+	if (Obj.IsNullPtr()) FAIL;
 
 	Obj->Init(Desc);
 

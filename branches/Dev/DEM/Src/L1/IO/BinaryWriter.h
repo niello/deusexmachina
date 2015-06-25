@@ -45,11 +45,11 @@ public:
 	template<> bool		Write<CString>(const CString& Value) { return WriteString(Value); }
 	template<> bool		Write<CStrID>(const CStrID& Value) { return WriteString(Value.CStr()); }
 	template<> bool		Write<Data::CParams>(const Data::CParams& Value) { return WriteParams(Value); }
-	template<> bool		Write<Data::PParams>(const Data::PParams& Value) { return Value.IsValid() ? WriteParams(*Value) : true; }
+	template<> bool		Write<Data::PParams>(const Data::PParams& Value) { return Value.IsValidPtr() ? WriteParams(*Value) : true; }
 	template<> bool		Write<Data::CParam>(const Data::CParam& Value) { return WriteParam(Value); }
 	template<> bool		Write<Data::CData>(const Data::CData& Value) { return WriteData(Value); }
 	template<> bool		Write<Data::CDataArray>(const Data::CDataArray& Value);
-	template<> bool		Write<Data::PDataArray>(const Data::PDataArray& Value) { return Value.IsValid() ? Write<Data::CDataArray>(*Value) : true; }
+	template<> bool		Write<Data::PDataArray>(const Data::PDataArray& Value) { return Value.IsValidPtr() ? Write<Data::CDataArray>(*Value) : true; }
 	template<> bool		Write<Data::CBuffer>(const Data::CBuffer& Value);
 };
 

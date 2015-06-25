@@ -11,7 +11,7 @@ namespace Scene
 
 bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 {
-	if (!RootNode.IsValid()) FAIL;
+	if (RootNode.IsNullPtr()) FAIL;
 
 	IO::CBinaryReader Reader(In);
 

@@ -10,7 +10,7 @@ __ImplementSingleton(Time::CTimeServer);
 
 void CTimeServer::AttachTimeSource(CStrID Name, PTimeSource TimeSrc)
 {
-	n_assert(TimeSrc.IsValid());
+	n_assert(TimeSrc.IsValidPtr());
 	n_assert(!TimeSources.Contains(Name));
 	TimeSrc->Reset();
 	//TimeSrc->ForceUnpause(); //???needed?

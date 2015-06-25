@@ -22,7 +22,7 @@ DWORD CEventDispatcher::FireEvent(const CEventBase& Event)
 		}
 		Sub = Sub->Next;
 	}
-	while (Sub.IsValid());
+	while (Sub.IsValidPtr());
 
 	// Look for subscriptions to any event
 	if (!(Event.Flags & EV_IGNORE_NULL_SUBS))
@@ -36,7 +36,7 @@ DWORD CEventDispatcher::FireEvent(const CEventBase& Event)
 			}
 			Sub = Sub->Next;
 		}
-		while (Sub.IsValid());
+		while (Sub.IsValidPtr());
 	}
 
 	//!!!MT! need interlocked operation for MT safety!
@@ -49,16 +49,16 @@ DWORD CEventDispatcher::FireEvent(const CEventBase& Event)
 bool CEventDispatcher::Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub)
 {
 	PEventHandler& CurrSlot = Subscriptions.At(ID);
-	if (CurrSlot.IsValid())
+	if (CurrSlot.IsValidPtr())
 	{
 		PEventHandler Prev, Curr = CurrSlot;
-		while (Curr.IsValid() && Curr->GetPriority() > Handler->GetPriority())
+		while (Curr.IsValidPtr() && Curr->GetPriority() > Handler->GetPriority())
 		{
 			Prev = Curr;
 			Curr = Curr->Next;
 		}
 
-		if (Prev.IsValid()) Prev->Next = Handler;
+		if (Prev.IsValidPtr()) Prev->Next = Handler;
 		else CurrSlot = Handler;
 		Handler->Next = Curr;
 	}
@@ -80,10 +80,10 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 		{
 			if (Curr.GetUnsafe() == pHandler)
 			{
-				if (Prev.IsValid()) Prev->Next = pHandler->Next;
+				if (Prev.IsValidPtr()) Prev->Next = pHandler->Next;
 				else
 				{
-					if (pHandler->Next.IsValid()) (*pCurrSlot) = pHandler->Next;
+					if (pHandler->Next.IsValidPtr()) (*pCurrSlot) = pHandler->Next;
 					else Subscriptions.Remove(ID); //!!!optimize duplicate search! use CIterator!
 				}
 				return;
@@ -91,7 +91,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 			Prev = Curr;
 			Curr = Curr->Next;
 		}
-		while (Curr.IsValid());
+		while (Curr.IsValidPtr());
 	}
 
 	Sys::Error("Subscription on '%s' not found, mb double unsubscription", ID.ID);

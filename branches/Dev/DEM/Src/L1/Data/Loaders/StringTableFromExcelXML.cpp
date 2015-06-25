@@ -40,7 +40,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
 {
-	if (!Doc.IsValid() || Doc->Error()) FAIL;
+	if (Doc.IsNullPtr() || Doc->Error()) FAIL;
 
 	tinyxml2::XMLHandle hDoc(Doc);
 	tinyxml2::XMLElement* pSheet = hDoc.FirstChildElement("Workbook").FirstChildElement("Worksheet").ToElement();

@@ -69,7 +69,7 @@ public:
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
 	bool			ValidateLevel(CStrID ID);
-	bool			ValidateActiveLevel() { return !ActiveLevel.IsValid() || ValidateLevel(*ActiveLevel); }
+	bool			ValidateActiveLevel() { return ActiveLevel.IsNullPtr() || ValidateLevel(*ActiveLevel); }
 	bool			ValidateAllLevels();
 
 	void			EnumProfiles(CArray<CString>& Out) const;

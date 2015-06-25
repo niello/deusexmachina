@@ -16,7 +16,7 @@ bool CPropItem::InternalActivate()
 {
 	PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
 	Data::PParams ItemInst = GetEntity()->GetAttr<Data::PParams>(CStrID("ItemInstance"), NULL);
-	if (ItemInst.IsValid())
+	if (ItemInst.IsValidPtr())
 	{
 		Item = Item->Clone();
 		Sys::Error("IMPLEMENT ME!!!");

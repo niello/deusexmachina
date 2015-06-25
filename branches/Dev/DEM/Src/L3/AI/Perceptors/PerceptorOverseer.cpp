@@ -15,7 +15,7 @@ void CPerceptorOverseer::Init(const Data::CParams& Desc)
 	//CPerceptor::Init(Desc);
 	
 	Data::PDataArray Array = Desc.Get<Data::PDataArray>(CStrID("Overseers"), NULL);
-	if (Array.IsValid()) Array->FillArray(Overseers);
+	if (Array.IsValidPtr()) Array->FillArray(Overseers);
 }
 //---------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		CMemFactOverseer Pattern;
 		Pattern.pSourceStimulus = pStimulus;
 		PMemFactOverseer pFact = (CMemFactOverseer*)pActor->GetMemSystem().FindFact(Pattern);
-		if (!pFact.IsValid())
+		if (pFact.IsNullPtr())
 		{
 			pFact = pActor->GetMemSystem().AddFact<CMemFactOverseer>();
 			pFact->pSourceStimulus = pStimulus;

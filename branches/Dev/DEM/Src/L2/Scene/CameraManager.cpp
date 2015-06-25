@@ -9,7 +9,7 @@ __ImplementClassNoFactory(Scene::CCameraManager, Core::CObject);
 bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 {
 	Ctlr = n_new(CNodeControllerThirdPerson);
-	if (!Ctlr.IsValid()) FAIL;
+	if (Ctlr.IsNullPtr()) FAIL;
 	IsThirdPerson = true;
 
 	pCameraNode = &NodeWithCamera;

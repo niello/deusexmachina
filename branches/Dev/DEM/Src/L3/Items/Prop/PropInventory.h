@@ -74,7 +74,7 @@ public:
 inline WORD CPropInventory::AddItem(CStrID ItemID, WORD Count, bool AsManyAsCan)
 {
 	PItemTpl Tpl = ItemMgr->GetItemTpl(ItemID);
-	return Tpl.IsValid() ? AddItem(Tpl->GetTemplateItem(), Count, AsManyAsCan) : 0;
+	return Tpl.IsValidPtr() ? AddItem(Tpl->GetTemplateItem(), Count, AsManyAsCan) : 0;
 }
 //---------------------------------------------------------------------
 

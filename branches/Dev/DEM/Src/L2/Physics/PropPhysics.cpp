@@ -83,7 +83,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	if (PhysicsDescFile.IsEmpty()) return;
 
 	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
-	if (!PhysicsDesc.IsValid()) return;
+	if (PhysicsDesc.IsNullPtr()) return;
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
 	// It is necessary because dynamic bodies may require subnode world tfm to set their initial tfm.
@@ -115,7 +115,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		else
 		{
 			pCurrNode = Prop.GetNode();
-			if (!RootBody.IsValid() && IsDynamic) RootBody = (Physics::CRigidBody*)Obj.GetUnsafe();
+			if (RootBody.IsNullPtr() && IsDynamic) RootBody = (Physics::CRigidBody*)Obj.GetUnsafe();
 		}
 
 		if (IsDynamic)
@@ -140,7 +140,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		Obj->AttachToLevel(*pPhysWorld);
 	}
 
-	if (RootBody.IsValid())
+	if (RootBody.IsValidPtr())
 	{
 		//!!!angular too!
 		vector3 LinVel;
@@ -178,7 +178,7 @@ bool CPropPhysics::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const
 {
 	//!!!subscribe only when has meaning!
 	//???!!!angular too?!
-	if (!RootBody.IsValid() || !RootBody->IsInitialized()) FAIL;
+	if (RootBody.IsNullPtr() || !RootBody->IsInitialized()) FAIL;
 	GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), BtVectorToVector(RootBody->GetBtBody()->getLinearVelocity()));
 	OK;
 }

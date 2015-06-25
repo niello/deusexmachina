@@ -139,7 +139,7 @@ bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& En
 
 	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
 	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObject*)RayCB.m_collisionObject->getUserPointer() : NULL;
-	n_assert_dbg(!pOutObj || !(*pOutObj).IsValid() || Objects.Contains(*pOutObj));
+	n_assert_dbg(!pOutObj || !(*pOutObj).IsValidPtr() || Objects.Contains(*pOutObj));
 
 	OK;
 }

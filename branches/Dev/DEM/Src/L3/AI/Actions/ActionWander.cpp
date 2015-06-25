@@ -16,7 +16,7 @@ __ImplementClass(AI::CActionWander, 'AWDR', AI::CAction);
 
 bool CActionWander::SelectAction(CActor* pActor)
 {
-	if (CurrAction.IsValid()) CurrAction->Deactivate(pActor);
+	if (CurrAction.IsValidPtr()) CurrAction->Deactivate(pActor);
 
 	//!!!can tune all these probabilities and timings!
 	float Rnd = n_rand();
@@ -64,7 +64,7 @@ bool CActionWander::Activate(CActor* pActor)
 
 DWORD CActionWander::Update(CActor* pActor)
 {
-	if ((CurrAction.IsValid() && CurrAction->Update(pActor) == Running) ||
+	if ((CurrAction.IsValidPtr() && CurrAction->Update(pActor) == Running) ||
 		NextActSelectioCTime > (float)GameSrv->GetTime())
 	{
 		return Running;
@@ -76,7 +76,7 @@ DWORD CActionWander::Update(CActor* pActor)
 
 void CActionWander::Deactivate(CActor* pActor)
 {
-	if (CurrAction.IsValid())
+	if (CurrAction.IsValidPtr())
 	{
 		CurrAction->Deactivate(pActor);
 		CurrAction = NULL;

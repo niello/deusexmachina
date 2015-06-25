@@ -18,7 +18,7 @@ void CItemTpl::Init(CStrID SID, const Data::CParams& Params)
 	UIName = Params.Get<CString>(CStrID("UIName"), NULL);
 
 	// Can be created by derived type if CItem's derived type needed
-	if (!TemplateItem.IsValid()) TemplateItem = n_new(CItem)(this);
+	if (TemplateItem.IsNullPtr()) TemplateItem = n_new(CItem)(this);
 
 	// Init CItem params here
 }
@@ -26,7 +26,7 @@ void CItemTpl::Init(CStrID SID, const Data::CParams& Params)
 
 Ptr<CItem> CItemTpl::CreateNewItem() const
 {
-	n_assert(TemplateItem.IsValid());
+	n_assert(TemplateItem.IsValidPtr());
 	return TemplateItem->Clone();
 }
 //---------------------------------------------------------------------

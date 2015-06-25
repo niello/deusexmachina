@@ -128,7 +128,7 @@ bool CDataServer::LoadDesc(PParams& Out, const CString& Context, const CString& 
 {
 	PParams Main = LoadPRM(Context + Name + ".prm", Cache);
 
-	if (!Main.IsValid()) FAIL;
+	if (Main.IsNullPtr()) FAIL;
 
 	CString BaseName;
 	if (Main->Get(BaseName, CStrID("_Base_")))
@@ -146,7 +146,7 @@ bool CDataServer::LoadDesc(PParams& Out, const CString& Context, const CString& 
 bool CDataServer::LoadDataSchemes(const CString& FileName)
 {
 	PParams SchemeDescs = LoadHRD(FileName, false);
-	if (!SchemeDescs.IsValid()) FAIL;
+	if (SchemeDescs.IsNullPtr()) FAIL;
 
 	for (int i = 0; i < SchemeDescs->GetCount(); ++i)
 	{

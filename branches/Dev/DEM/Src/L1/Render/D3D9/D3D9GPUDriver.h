@@ -33,11 +33,11 @@ protected:
 	D3DCAPS9						D3DCaps;
 	IDirect3DDevice9*				pD3DDevice;
 
-	Events::PSub					Sub_OnPaint;
+	Events::PSub					Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
 	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
-	//???subscribe swapchain itself? more handling and self-control into a swapchain class?
+	// Events are received from swap chain windows, so subscriptions are in swap chains
 	bool				OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);

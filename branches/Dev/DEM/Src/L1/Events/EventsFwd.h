@@ -83,6 +83,6 @@ enum EEventPriority
 	Sub_##EventName = NULL
 
 #define IS_SUBSCRIBED(EventName) \
-	(Sub_##EventName.IsValid())
+	(Sub_##EventName.IsValidPtr())
 
 #endif

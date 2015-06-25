@@ -392,7 +392,7 @@ bool CScriptServer::LoadClass(const CString& Name)
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
 	Data::PParams ClassDesc = DataSrv->LoadPRM("ScriptClasses:" + Name + ".cls", false);
-	if (!ClassDesc.IsValid()) FAIL;
+	if (ClassDesc.IsNullPtr()) FAIL;
 
 	const CString& BaseClass = ClassDesc->Get<CString>(CStrID("Base"), CString::Empty);
 	if (!BeginClass(Name.CStr(), BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;

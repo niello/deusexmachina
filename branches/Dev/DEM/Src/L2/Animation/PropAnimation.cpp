@@ -109,7 +109,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	const CString& AnimDesc = GetEntity()->GetAttr<CString>(CStrID("AnimDesc"));
 	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(CString("GameAnim:") + AnimDesc + ".prm");
 
-	if (Desc.IsValid())
+	if (Desc.IsValidPtr())
 	{
 		for (int i = 0; i < Desc->GetCount(); ++i)
 		{
@@ -262,7 +262,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, floa
 			if (pNode->GetController() && pNode->GetController()->IsA<Scene::CNodeControllerPriorityBlend>())
 				BlendCtlr = (Scene::CNodeControllerPriorityBlend*)pNode->GetController();
 			
-			if (!BlendCtlr.IsValid())
+			if (BlendCtlr.IsNullPtr())
 			{
 				BlendCtlr = n_new(Scene::CNodeControllerPriorityBlend);
 				if (pNode->GetController()) BlendCtlr->AddSource(*pNode->GetController(), AnimPriority_Default, 1.f);

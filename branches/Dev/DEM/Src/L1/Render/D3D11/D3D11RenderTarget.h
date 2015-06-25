@@ -27,6 +27,7 @@ public:
 
 	bool				Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV); // For internal use
 	virtual void		Destroy();
+	virtual bool		IsValid() const { return !!pRTView; }
 	virtual bool		CopyResolveToTexture(PTexture Dest /*, region*/) const;
 	virtual CTexture*	GetShaderResource() const;
 };

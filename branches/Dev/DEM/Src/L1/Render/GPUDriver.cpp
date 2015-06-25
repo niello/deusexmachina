@@ -41,7 +41,7 @@ PVertexLayout CGPUDriver::CreateVertexLayout(const CArray<CVertexComponent>& Com
 	int Idx = VertexLayouts.FindIndex(Signature);
 	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx);
 	PVertexLayout Layout = NULL; //InternalCreateVertexLayout();
-	if (!Layout.IsValid() || !Layout->Create(Components)) return NULL;
+	if (Layout.IsNullPtr() || !Layout->Create(Components)) return NULL;
 	VertexLayouts.Add(Signature, Layout);
 	return Layout;
 }
