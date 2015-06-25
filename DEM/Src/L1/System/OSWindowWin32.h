@@ -71,6 +71,7 @@ public:
 	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
 	bool					IsChild() const { return !!pParent; }
 	bool					SetTopmost(bool Topmost);
+	bool					SetInputFocus();
 
 	COSWindowWin32*			GetParent() const { return pParent; }
 	HWND					GetHWND() const { return hWnd; }

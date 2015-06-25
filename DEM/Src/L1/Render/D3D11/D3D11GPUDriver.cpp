@@ -57,10 +57,15 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	//!!!fix if will be multithreaded, forex job-based!
 	UINT CreateFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-#if DEM_RENDER_DEBUG
+#if !defined(_DEBUG) && (DEM_RENDER_DEBUG == 0)
+	// Prevents end-users from debugging an application
+	CreateFlags |= D3D11_CREATE_DEVICE_PREVENT_ALTERING_LAYER_SETTINGS_FROM_REGISTRY;
+#elif (DEM_RENDER_DEBUG != 0)
+	// Enable D3D11 debug layer only in debug builds with render debugging on
 	CreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
-	// D3D11.1
-	//D3D11_CREATE_DEVICE_DEBUGGABLE - shader debugging
+//const char c_szName[] = "mytexture.jpg";
+//pTexture->SetPrivateData( WKPDID_D3DDebugObjectName, sizeof( c_szName ) - 1, c_szName );
+	// D3D11.1: D3D11_CREATE_DEVICE_DEBUGGABLE - shader debugging
 	//Shader debugging requires a driver that is implemented to the WDDM for Windows 8 (WDDM 1.2)
 #endif
 

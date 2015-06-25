@@ -38,9 +38,9 @@ bool CPropSceneNode::InternalActivate()
 	{
 		//???PERF: optimize duplicate search?
 		Node = GetEntity()->GetLevel()->GetSceneNode(NodePath.CStr(), false);
-		ExistingNode = Node.IsValid();
+		ExistingNode = Node.IsValidPtr();
 		if (!ExistingNode) Node = GetEntity()->GetLevel()->GetSceneNode(NodePath.CStr(), true);
-		n_assert(Node.IsValid());
+		n_assert(Node.IsValidPtr());
 
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
 
@@ -65,7 +65,7 @@ bool CPropSceneNode::InternalActivate()
 
 			// Load child local transforms
 			Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), NULL);
-			if (ChildTfms.IsValid() && ChildTfms->GetCount())
+			if (ChildTfms.IsValidPtr() && ChildTfms->GetCount())
 			{
 				for (int i = 0; i < ChildTfms->GetCount(); ++i)
 				{
@@ -114,7 +114,7 @@ void CPropSceneNode::InternalDeactivate()
 	ChildCache.Clear();
 	ChildrenToSave.Clear();
 
-	if (Node.IsValid() && !ExistingNode)
+	if (Node.IsValidPtr() && !ExistingNode)
 	{
 		Node->Remove();
 		Node = NULL;
@@ -198,7 +198,7 @@ void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const CString& P
 //???to some scene utils? recurse to subnodes?
 void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 {
-	if (!Node.IsValid() || !Node->GetAttributeCount()) return;
+	if (Node.IsNullPtr() || !Node->GetAttributeCount()) return;
 
 	OutBox.BeginExtend();
 	for (DWORD i = 0; i < Node->GetAttributeCount(); ++i)
@@ -224,7 +224,7 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 
 void CPropSceneNode::SetTransform(const matrix44& NewTfm)
 {
-	if (Node.IsValid()) Node->SetWorldTransform(NewTfm);
+	if (Node.IsValidPtr()) Node->SetWorldTransform(NewTfm);
 	GetEntity()->SetAttr<matrix44>(CStrID("Transform"), NewTfm);
 	GetEntity()->FireEvent(CStrID("UpdateTransform"));
 }
@@ -239,7 +239,7 @@ bool CPropSceneNode::OnSetTransform(Events::CEventDispatcher* pDispatcher, const
 
 bool CPropSceneNode::AfterTransforms(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	if (Node.IsValid() && Node->IsWorldMatrixChanged())
+	if (Node.IsValidPtr() && Node->IsWorldMatrixChanged())
 	{
 		GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
 		GetEntity()->FireEvent(CStrID("UpdateTransform"));

@@ -23,7 +23,7 @@ void CNodeControllerRigidBody::Clear()
 //be read-only, but I can't find a better way for now.
 bool CNodeControllerRigidBody::ApplyTo(Math::CTransformSRT& DestTfm)
 {
-	if (!Body.IsValid() || !Body->IsTransformChanged()) FAIL;
+	if (Body.IsNullPtr() || !Body->IsTransformChanged()) FAIL;
 
 	Body->GetTransform(DestTfm.Translation, DestTfm.Rotation);
 	Body->SetTransformChanged(false);

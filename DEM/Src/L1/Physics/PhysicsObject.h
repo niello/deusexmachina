@@ -46,7 +46,7 @@ public:
 	virtual void		Term();
 	virtual bool		AttachToLevel(CPhysicsWorld& World);
 	virtual void		RemoveFromLevel();
-	bool				IsInitialized() const { return Shape.IsValid() && pBtCollObj; }
+	bool				IsInitialized() const { return Shape.IsValidPtr() && pBtCollObj; }
 	bool				IsAttachedToLevel() const { return !!pWorld; }
 
 	virtual void		SetTransform(const matrix44& Tfm);

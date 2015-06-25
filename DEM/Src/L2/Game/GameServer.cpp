@@ -29,7 +29,7 @@ bool CGameServer::Open()
 	EntityManager = n_new(CEntityManager);
 	StaticEnvManager = n_new(CStaticEnvManager);
 
-	if (!DefaultLoader.IsValid()) DefaultLoader = n_new(CEntityLoaderCommon);
+	if (DefaultLoader.IsNullPtr()) DefaultLoader = n_new(CEntityLoaderCommon);
 
 	IsOpen = true;
 	OK;
@@ -61,7 +61,7 @@ void CGameServer::Trigger()
 	AISrv->Trigger(); // Pathfinding queries inside
 
 	//!!!trigger all levels, but send to the audio, video, scene and debug rendering only data from the active level!
-	if (ActiveLevel.IsValid()) ActiveLevel->Trigger();
+	if (ActiveLevel.IsValidPtr()) ActiveLevel->Trigger();
 
 	EventSrv->FireEvent(CStrID("OnEndFrame"));
 }
@@ -71,7 +71,7 @@ void CGameServer::UpdateMouseIntersectionInfo()
 {
 	CStrID OldEntityUnderMouse = EntityUnderMouse;
 
-	if (UISrv->IsMouseOverGUI() || !ActiveLevel.IsValid()) HasMouseIsect = false;
+	if (UISrv->IsMouseOverGUI() || ActiveLevel.IsNullPtr()) HasMouseIsect = false;
 	else
 	{
 		float XRel, YRel;
@@ -144,13 +144,13 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
 			int LoaderIdx = Loaders.FindIndex(LoadingGroup);
 			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAt(LoaderIdx);
-			if (!Loader.IsValid()) continue;
+			if (Loader.IsNullPtr()) continue;
 
 			const CString& TplName = EntityDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
 			if (TplName.IsValid())
 			{
 				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
-				if (!Tpl.IsValid())
+				if (Tpl.IsNullPtr())
 				{
 					Sys::Log("Entity template '%s' not found for entity %s in level %s\n",
 						TplName.CStr(), EntityPrm.GetName().CStr(), Level->GetID().CStr());
@@ -222,7 +222,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 	{
 		EventSrv->FireEvent(CStrID("OnActiveLevelChanging"));
 		ActiveLevel = NewLevel;
-		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValid() ? ID : CStrID::Empty);
+		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValidPtr() ? ID : CStrID::Empty);
 
 		EntityUnderMouse = CStrID::Empty;
 		HasMouseIsect = false;
@@ -358,12 +358,12 @@ bool CGameServer::ContinueGame(const CString& FileName)
 	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
 
 	Data::PParams InitialCommon = DataSrv->LoadPRM(FileName);
-	if (!InitialCommon.IsValid()) FAIL;
+	if (InitialCommon.IsNullPtr()) FAIL;
 
 	Data::PParams SGCommon = DataSrv->ReloadPRM("AppData:Profiles/" + CurrProfile + "/Continue/Main.prm", false);
 
 	Data::PParams GameDesc;
-	if (SGCommon.IsValid())
+	if (SGCommon.IsValidPtr())
 	{
 		GameDesc = n_new(Data::CParams);
 		InitialCommon->MergeDiff(*GameDesc, *SGCommon);
@@ -383,7 +383,7 @@ bool CGameServer::ContinueGame(const CString& FileName)
 
 	CStrID ActiveLevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
 	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
-	if (!LoadedLevels.IsValid())
+	if (LoadedLevels.IsNullPtr())
 	{
 		LoadedLevels = n_new(Data::CDataArray);
 		SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
@@ -408,13 +408,13 @@ bool CGameServer::LoadGameLevel(CStrID ID)
 	CString RelLevelPath = CString(ID.CStr()) + ".prm";
 
 	Data::PParams InitialLvl = DataSrv->LoadPRM("Levels:" + RelLevelPath);
-	n_assert(InitialLvl.IsValid());
+	n_assert(InitialLvl.IsValidPtr());
 
 	CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
 	Data::PParams SGLvl = DataSrv->ReloadPRM(DiffPath + RelLevelPath, false);
 
 	Data::PParams LevelDesc;
-	if (SGLvl.IsValid())
+	if (SGLvl.IsValidPtr())
 	{
 		LevelDesc = n_new(Data::CParams);
 		InitialLvl->MergeDiff(*LevelDesc, *SGLvl);
@@ -461,7 +461,7 @@ bool CGameServer::CommitContinueData()
 	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
 	Data::PParams GameDesc = DataSrv->LoadPRM(GameFileName);
-	if (!GameDesc.IsValid()) FAIL;
+	if (GameDesc.IsNullPtr()) FAIL;
 
 	// Save main game file with common data
 	Data::PParams SGCommon = n_new(Data::CParams);

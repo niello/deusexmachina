@@ -61,7 +61,7 @@ void CPropCharacterController::CreateController()
 	if (PhysicsDescFile.IsEmpty()) return;
 
 	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
-	if (!PhysicsDesc.IsValid()) return;
+	if (PhysicsDesc.IsNullPtr()) return;
 
 	//???init by entity attrs like R & H instead?
 	//???or take them into account?
@@ -74,7 +74,7 @@ void CPropCharacterController::CreateController()
 
 void CPropCharacterController::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
-	if (!Prop.GetNode() || !CharCtlr.IsValid()) return;
+	if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
 
 	NodeCtlr = n_new(Physics::CNodeControllerRigidBody);
 	NodeCtlr->SetBody(*CharCtlr->GetBody());
@@ -85,11 +85,11 @@ void CPropCharacterController::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 void CPropCharacterController::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
-	if (!Prop.GetNode() || !CharCtlr.IsValid()) return;
+	if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
 
 	Disable();
 
-	if (NodeCtlr.IsValid())
+	if (NodeCtlr.IsValidPtr())
 	{
 		NodeCtlr->RemoveFromNode();
 		NodeCtlr = NULL; //???create once and attach/detach?
@@ -99,7 +99,7 @@ void CPropCharacterController::TermSceneNodeModifiers(CPropSceneNode& Prop)
 
 bool CPropCharacterController::Enable()
 {
-	if (!NodeCtlr.IsValid() || !CharCtlr.IsValid()) FAIL;
+	if (NodeCtlr.IsNullPtr() || CharCtlr.IsNullPtr()) FAIL;
 
 	if (IsEnabled()) OK;
 

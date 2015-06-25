@@ -21,7 +21,7 @@ bool CPropSmartObject::InternalActivate()
 	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 
-	if (Desc.IsValid())
+	if (Desc.IsValidPtr())
 	{
 		TypeID = Desc->Get(CStrID("TypeID"), CStrID::Empty);
 
@@ -41,7 +41,7 @@ bool CPropSmartObject::InternalActivate()
 					CAction& Action = Actions.Add(Prm.GetName());
 					Action.pTpl = pTpl;
 					Action.FreeUserSlots = pTpl->MaxUserCount;
-					Action.Enabled = ActionsEnabled.IsValid() ? ActionsEnabled->Get(Action.Enabled, Prm.GetName()) : false;
+					Action.Enabled = ActionsEnabled.IsValidPtr() ? ActionsEnabled->Get(Action.Enabled, Prm.GetName()) : false;
 				}
 				else Sys::Log("AI,SO,Warning: entity '%s', can't find smart object action template '%s'\n",
 						GetEntity()->GetUID().CStr(), Prm.GetValue<CStrID>().CStr());
@@ -74,7 +74,7 @@ bool CPropSmartObject::InternalActivate()
 		TrManualControl = false;
 
 		// Make transition from NULL state to DefaultState
-		if (!TargetState.IsValid() && Desc.IsValid() && Desc->Has(CStrID("DefaultState")))
+		if (!TargetState.IsValid() && Desc.IsValidPtr() && Desc->Has(CStrID("DefaultState")))
 			PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropSmartObject, OnPropsActivated);
 	}
 
@@ -471,7 +471,7 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 	if (!ActTpl.IsValid(pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty, GetEntity()->GetUID())) FAIL;
 
 	Prop::CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
-	if (!pScriptable || !pScriptable->GetScriptObject().IsValid()) return !!pActor; //???or OK?
+	if (!pScriptable || pScriptable->GetScriptObject().IsNullPtr()) return !!pActor; //???or OK?
 	Data::CData Args[] = { ID, pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty };
 	DWORD Res = pScriptable->GetScriptObject()->RunFunction("IsActionAvailableCallback", Args, 2);
 	if (Res == Error_Scripting_NoFunction) return !!pActor; //???or OK?

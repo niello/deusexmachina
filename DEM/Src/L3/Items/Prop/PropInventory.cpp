@@ -26,7 +26,7 @@ bool CPropInventory::InternalActivate()
 
 			PItem Item = ItemMgr->GetItemTpl(StackDesc->Get<CStrID>(CStrID("ID")))->GetTemplateItem();
 			Data::PParams ItemInst = StackDesc->Get<Data::PParams>(CStrID("Instance"), NULL);
-			if (ItemInst.IsValid())
+			if (ItemInst.IsValidPtr())
 			{
 				Item = Item->Clone();
 				Sys::Error("IMPLEMENT ME!!!");

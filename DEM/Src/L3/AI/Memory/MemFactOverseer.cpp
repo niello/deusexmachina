@@ -13,7 +13,7 @@ bool CMemFactOverseer::Match(const CMemFact& Pattern, Data::CFlags FieldMask) co
 
 	const CMemFactOverseer& PatternCast = (const CMemFactOverseer&)Pattern;
 
-	if (pSourceStimulus.IsValid() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
+	if (pSourceStimulus.IsValidPtr() && pSourceStimulus != PatternCast.pSourceStimulus) FAIL;
 
 	OK;
 }

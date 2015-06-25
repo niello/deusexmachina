@@ -25,7 +25,7 @@ DWORD CActionGoto::Update(CActor* pActor)
 
 void CActionGoto::Deactivate(CActor* pActor)
 {
-	if (SubAction.IsValid())
+	if (SubAction.IsValidPtr())
 	{
 		SubAction->Deactivate(pActor);
 		SubAction = NULL;
@@ -58,7 +58,7 @@ DWORD CActionGoto::AdvancePath(CActor* pActor)
 
 	if (NewActionID != SubActionID)
 	{
-		if (SubAction.IsValid()) SubAction->Deactivate(pActor);
+		if (SubAction.IsValidPtr()) SubAction->Deactivate(pActor);
 
 		SubActionID = NewActionID;
 

@@ -19,7 +19,7 @@ void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		CMemFactObstacle Pattern;
 		Pattern.pSourceStimulus = pStimulus;
 		PMemFactObstacle pFact = (CMemFactObstacle*)pActor->GetMemSystem().FindFact(Pattern);
-		if (!pFact.IsValid())
+		if (pFact.IsNullPtr())
 		{
 			pFact = pActor->GetMemSystem().AddFact<CMemFactObstacle>();
 			pFact->pSourceStimulus = pStimulus;

@@ -35,6 +35,7 @@ protected:
 public:
 
 	virtual void				Destroy() = 0;
+	virtual bool				IsValid() const = 0;
 	virtual bool				CopyResolveToTexture(PTexture Dest /*, region*/) const = 0; // Copy to texture of another size and/or MSAA
 	virtual CTexture*			GetShaderResource() const = 0;
 	const CRenderTargetDesc&	GetDesc() const { return Desc; }

@@ -308,7 +308,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 	{
 		PAction CurrAction = pCurrNode->pAction->CreateInstance(pCurrNode->pParent->WSGoal);
 
-		if (CurrAction.IsValid())
+		if (CurrAction.IsValidPtr())
 		{
 #ifdef _DEBUG
 			CString DbgString;
@@ -316,10 +316,10 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 			Sys::Log("Planner -> '%s' Action added: '%s'\n", pActor->GetEntity()->GetUID(), DbgString.CStr());
 #endif
 
-			if (!Plan.IsValid()) Plan = CurrAction;
+			if (Plan.IsNullPtr()) Plan = CurrAction;
 			else
 			{
-				if (!Seq.IsValid())
+				if (Seq.IsNullPtr())
 				{
 					Seq = n_new(CActionSequence);
 					Seq->AddChild(Plan);

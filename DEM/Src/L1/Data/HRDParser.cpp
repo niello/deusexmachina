@@ -78,7 +78,7 @@ bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result, CStri
 		FAIL;
 	}
 	
-	if (!Result.IsValid()) Result = n_new(CParams);
+	if (Result.IsNullPtr()) Result = n_new(CParams);
 	if (!ParseTokenStream(Tokens, Result))
 	{
 		if (pErr) pErr->Add("Syntax analysis of HRD failed\n");

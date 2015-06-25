@@ -19,7 +19,7 @@ bool CEventHandlerScript::Invoke(CEventDispatcher* pDispatcher, const CEventBase
 	//???where do we check isn't it native?
 	const CEvent& e = (const CEvent&)Event;
 
-	if (e.Params.IsValid() && e.Params->GetCount())
+	if (e.Params.IsValidPtr() && e.Params->GetCount())
 	{
 		// We cache e.Params in CurrEventParams table for multiple handlers to access
 		// without re-converting params each time. Here we check actuality of the cache.

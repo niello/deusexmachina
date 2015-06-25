@@ -12,7 +12,7 @@ namespace Anim
 
 void CAnimTask::Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Speed, float _Weight, float FadeInTime, float FadeOutTime)
 {
-	n_assert(_Clip.IsValid() && _Speed != 0.f);
+	n_assert(_Clip.IsValidPtr() && _Speed != 0.f);
 
 	Clip = _Clip;
 	Loop = _Loop;

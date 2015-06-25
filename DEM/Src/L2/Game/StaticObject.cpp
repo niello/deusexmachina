@@ -35,7 +35,7 @@ void CStaticObject::SetUID(CStrID NewUID)
 
 void CStaticObject::Init(const Data::CParams& ObjDesc)
 {
-	n_assert(!Desc.IsValid());
+	n_assert(Desc.IsNullPtr());
 
 	Data::PParams Attrs;
 	n_verify_dbg(ObjDesc.Get(Attrs, CStrID("Attrs")));
@@ -54,9 +54,9 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 	{
 		//???optimize duplicate search?
 		Node = Level->GetSceneNode(NodePath.CStr(), false);
-		ExistingNode = Node.IsValid();
+		ExistingNode = Node.IsValidPtr();
 		if (!ExistingNode) Node = Level->GetSceneNode(NodePath.CStr(), true);
-		n_assert(Node.IsValid());
+		n_assert(Node.IsValidPtr());
 
 		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
 	}
@@ -67,13 +67,13 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
 	// It is necessary because collision objects may require subnode world transformations.
-	if (Node.IsValid()) Node->UpdateTransform(NULL, 0, true, NULL);
+	if (Node.IsValidPtr()) Node->UpdateTransform(NULL, 0, true, NULL);
 
 	const CString& PhysicsDescFile = Desc->Get<CString>(CStrID("Physics"), NULL);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
 		Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
-		if (PhysicsDesc.IsValid())
+		if (PhysicsDesc.IsValidPtr())
 		{
 			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
 			for (int i = 0; i < Objects.GetCount(); ++i)
@@ -102,13 +102,13 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 
 void CStaticObject::Term()
 {
-	if (CollObj.IsValid())
+	if (CollObj.IsValidPtr())
 	{
 		CollObj->RemoveFromLevel();
 		CollObj = NULL;
 	}
 
-	if (Node.IsValid() && !ExistingNode)
+	if (Node.IsValidPtr() && !ExistingNode)
 	{
 		Node->Remove();
 		Node = NULL;
@@ -120,9 +120,9 @@ void CStaticObject::Term()
 
 void CStaticObject::SetTransform(const matrix44& Tfm)
 {
-	if (CollObj.IsValid()) CollObj->SetTransform(Tfm);
-	if (Node.IsValid()) Node->SetWorldTransform(Tfm);
+	if (CollObj.IsValidPtr()) CollObj->SetTransform(Tfm);
+	if (Node.IsValidPtr()) Node->SetWorldTransform(Tfm);
 }
 //---------------------------------------------------------------------
 
-} // namespace Game
+}

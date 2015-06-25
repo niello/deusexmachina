@@ -54,7 +54,7 @@ public:
 inline Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
 {
 	if (!ID.IsValid()) return Node.GetUnsafe();
-	if (!Node.IsValid()) return NULL;
+	if (Node.IsNullPtr()) return NULL;
 
 	int NodeIdx = ChildCache.FindIndex(ID);
 	if (NodeIdx == INVALID_INDEX)

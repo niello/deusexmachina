@@ -26,7 +26,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		CMemFactSmartObj Pattern;
 		Pattern.pSourceStimulus = pStimulus;
 		PMemFactSmartObj pFact = (CMemFactSmartObj*)pActor->GetMemSystem().FindFact(Pattern);
-		if (!pFact.IsValid())
+		if (pFact.IsNullPtr())
 		{
 			pFact = pActor->GetMemSystem().AddFact<CMemFactSmartObj>();
 			pFact->pSourceStimulus = pStimulus;

@@ -37,7 +37,7 @@ struct CNAX2Curve
 
 bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
-	if (!OutClip.IsValid()) FAIL;
+	if (OutClip.IsNullPtr()) FAIL;
 
 	IO::CBinaryReader Reader(In);
 

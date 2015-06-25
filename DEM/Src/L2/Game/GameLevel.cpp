@@ -190,7 +190,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
 
 	// Save camera state
-	if (CameraManager.IsValid())
+	if (CameraManager.IsValidPtr())
 	{
 		Data::PParams SGScene = n_new(Data::CParams);
 
@@ -280,19 +280,19 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	CArray<CEntity*> Entities(128, 128);
 	EntityMgr->GetEntitiesByLevel(this, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
-	const Data::CParams* pInitialEntities = InitialEntities.IsValid() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
+	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
 	for (int i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i];
 		if (SGEntity->GetCount()) SGEntity = n_new(Data::CParams);
 		Data::PParams InitialDesc = pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).GetUnsafe() : NULL;
-		if (InitialDesc.IsValid())
+		if (InitialDesc.IsValidPtr())
 		{
 			const CString& TplName = InitialDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
 			if (TplName.IsValid())
 			{
 				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
-				n_assert(Tpl.IsValid());
+				n_assert(Tpl.IsValidPtr());
 				Data::PParams MergedDesc = n_new(Data::CParams(InitialDesc->GetCount() + Tpl->GetCount()));
 				Tpl->MergeDiff(*MergedDesc, *InitialDesc);
 				InitialDesc = MergedDesc;
@@ -316,9 +316,9 @@ void CGameLevel::Trigger()
 
 	//!!!cache as member to avoid dynamic allocation per-frame!
 	CArray<Scene::CSceneNode*> DefferedNodes;
-	if (SceneRoot.IsValid()) SceneRoot->UpdateTransform(&CameraPos, 1, false, &DefferedNodes);
+	if (SceneRoot.IsValidPtr()) SceneRoot->UpdateTransform(&CameraPos, 1, false, &DefferedNodes);
 
-	if (PhysWorld.IsValid())
+	if (PhysWorld.IsValidPtr())
 	{
 		FireEvent(CStrID("BeforePhysics"));
 		PhysWorld->Trigger((float)GameSrv->GetFrameTime());
@@ -336,7 +336,7 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 {
 	CStrID EvID = ((Events::CEvent&)Event).ID;
 
-	if (AutoAdjustCameraAspect && MainCamera.IsValid() && EvID == CStrID("OnRenderDeviceReset"))
+	if (AutoAdjustCameraAspect && MainCamera.IsValidPtr() && EvID == CStrID("OnRenderDeviceReset"))
 	{
 		//MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
 		//MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
@@ -443,7 +443,7 @@ void CGameLevel::RenderDebug()
 
 	FireEvent(CStrID("OnRenderDebug"));
 
-	if (SceneRoot.IsValid())
+	if (SceneRoot.IsValidPtr())
 	{
 		Scene::CSceneNodeRenderDebug RD;
 		RD.Visit(*SceneRoot);
@@ -454,7 +454,7 @@ void CGameLevel::RenderDebug()
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	if (!MainCamera.IsValid() || !PhysWorld.IsValid()) FAIL;
+	if (MainCamera.IsNullPtr() || PhysWorld.IsNullPtr()) FAIL;
 
 	line3 Ray;
 	MainCamera->GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
@@ -466,7 +466,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 
 	if (pOutEntityUID)
 	{
-		void* pUserData = PhysObj.IsValid() ? PhysObj->GetUserData() : NULL;
+		void* pUserData = PhysObj.IsValidPtr() ? PhysObj->GetUserData() : NULL;
 		*pOutEntityUID = pUserData ? *(CStrID*)&pUserData : CStrID::Empty;
 	}
 
@@ -487,7 +487,7 @@ DWORD CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle
 
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	if (!MainCamera.IsValid()) FAIL;
+	if (MainCamera.IsNullPtr()) FAIL;
 	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
 	if (Offset) EntityPos += *Offset;
 	MainCamera->GetPoint2D(EntityPos, Out.x, Out.y);
@@ -497,7 +497,7 @@ bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, c
 
 bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
 {
-	if (!MainCamera.IsValid()) FAIL;
+	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode) FAIL;
@@ -512,7 +512,7 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 
 bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	if (!MainCamera.IsValid()) FAIL;
+	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
 	if (!pNode)

@@ -22,7 +22,7 @@ bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture
 	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(RTDesc.Format);
 	Desc.MSAAQuality = CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(RTDesc.MultiSampleType, RTDesc.MultiSampleQuality);
 
-	if (Texture.IsValid())
+	if (Texture.IsValidPtr())
 	{
 		IDirect3DSurface9* pTmpSurf = NULL;
 		if (FAILED(Texture->GetD3DTexture()->GetSurfaceLevel(0, &pTmpSurf))) FAIL;
@@ -66,7 +66,7 @@ bool CD3D9RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 {
 	n_assert_dbg(Dest->IsA<CD3D9Texture>());
 
-	if (!Dest.IsValid()) FAIL;
+	if (Dest.IsNullPtr()) FAIL;
 	IDirect3DTexture9* pDestTex = ((CD3D9Texture*)Dest.GetUnsafe())->GetD3DTexture();
 
 	IDirect3DDevice9* pDev = NULL;

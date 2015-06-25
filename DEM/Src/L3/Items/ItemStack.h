@@ -22,8 +22,8 @@ private:
 public:
 
 	CItemStack(): Item(NULL), Count(0), EquippedCount(0) {}
-	CItemStack(PItem pItem, WORD Num = 1): Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.IsValid() && Num > 0); }
-	CItemStack(const CItemStack& pItem): Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.IsValid()); }
+	CItemStack(PItem pItem, WORD Num = 1): Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.IsValidPtr() && Num > 0); }
+	CItemStack(const CItemStack& pItem): Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.IsValidPtr()); }
 
 	void			Add(WORD Num) { SetCount(Count + Num); }
 	void			Remove(WORD Num) { n_assert(Num <= Count); SetCount(Count - Num); }
@@ -31,9 +31,9 @@ public:
 	void			Unequip(WORD Num) { n_assert(Num <= EquippedCount); SetEquippedCount(EquippedCount - Num); }
 	void			Merge(const CItemStack* pOther);
 	void			Clear() { Item = NULL; Count = EquippedCount = 0; }
-	bool			IsValid() const { return Item.IsValid() && Count > 0; }
+	bool			IsValid() const { return Item.IsValidPtr() && Count > 0; }
 
-	void			SetItem(PItem NewItem) { n_assert(NewItem.IsValid()); Item = NewItem; }
+	void			SetItem(PItem NewItem) { n_assert(NewItem.IsValidPtr()); Item = NewItem; }
 	void			SetCount(WORD NewCount) { n_assert(NewCount >= EquippedCount); Count = NewCount; }
 	void			SetEquippedCount(WORD NewCount) { n_assert(NewCount <= Count); EquippedCount = NewCount; }
 	CStrID			GetItemID() const { return Item->GetID(); }

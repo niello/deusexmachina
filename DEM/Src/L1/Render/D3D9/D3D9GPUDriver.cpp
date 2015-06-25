@@ -29,29 +29,30 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 {
 	if (!pD3DDevice) FAIL;
 
-	Sub_OnPaint = NULL;
+	UNSUBSCRIBE_EVENT(OnPaint);
 
 	//!!!unbind and release all resources!
 
 	for (DWORD i = 0; i < CurrRT.GetCount() ; ++i)
-		if (CurrRT[i].IsValid()) CurrRT[i]->Destroy();
+		if (CurrRT[i].IsValidPtr())
+		{
+			CurrRT[i]->Destroy();
+			CurrRT[i] = NULL;
+		}
 
 	for (int i = 0; i < SwapChains.GetCount() ; ++i)
 		SwapChains[i].Release();
 
-	//???call some Release() code instead? kill all except the device itself!
-	EventSrv->FireEvent(CStrID("OnRenderDeviceLost"));
-
 	//!!!ReleaseQueries();
 
-	//Sys::COSWindow* pFocusWnd = D3D9DrvFactory->GetFocusWindow();
-	//!!!In loop: if (pFocusWnd) pFocusWnd->ProcessMessages();
-	//???wrong design?
+	//???call some Release() code instead? kill all except the device itself!
+	EventSrv->FireEvent(CStrID("OnRenderDeviceLost"));
 
 	HRESULT hr = pD3DDevice->TestCooperativeLevel();
 	while (hr != S_OK && hr != D3DERR_DEVICENOTRESET)
 	{
 		// NB: In single-threaded app, engine will stuck here until device can be reset
+		//???instead of Sleep() return and allow application to do frame & msg processing? then start from here again.
 		Sys::Sleep(10);
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
@@ -69,56 +70,74 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 	pD3DDevice->SetRenderState(D3DRS_FILLMODE, /*Wireframe ? D3DFILL_WIREFRAME :*/ D3DFILL_SOLID);
 
-	if (D3DPresentParams.Windowed == TRUE)
+	bool IsFullscreenNow = (D3DPresentParams.Windowed == FALSE);
+	bool Failed = false;
+
+	for (int i = 0; i < SwapChains.GetCount() ; ++i)
 	{
-		bool Failed = false;
-
-		for (int i = 0; i < SwapChains.GetCount() ; ++i)
+		CD3D9SwapChain& SC = SwapChains[i];
+		
+		if (IsFullscreenNow)
 		{
-			CD3D9SwapChain& SC = SwapChains[i];
-
-			// Skip implicit swap chain, index is always 0
+			if (!SC.IsFullscreen()) continue;
+			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &Sub_OnPaint);
+		}
+		else
+		{
+//???may it be that non-implicit swap chain was full->wnd to index 0?
+//!!!!When full->wnd, always resore 0th SC by reset and others by create additional SC!!!!
+			// Recreate additional swap chains. Skip implicit swap chain, index is always 0.
 			if (i != 0)
 			{
-				D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-				if (!GetCurrD3DPresentParams(SC, D3DPresentParams) ||
-					FAILED(pD3DDevice->CreateAdditionalSwapChain(&D3DPresentParams, &SC.pSwapChain)))
+//!!!wrong backbuffer size!
+				D3DPRESENT_PARAMETERS SCD3DPresentParams = { 0 };
+				if (!GetCurrD3DPresentParams(SC, SCD3DPresentParams) ||
+					FAILED(pD3DDevice->CreateAdditionalSwapChain(&SCD3DPresentParams, &SC.pSwapChain)))
 				{
+					n_assert_dbg(false);
 					DestroySwapChain(i);
-					Failed = false;
+					Failed = true;
+					continue;
 				}
 			}
 
-			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &SC.Sub_OnToggleFullscreen);
-			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &SC.Sub_OnClosing);
 			if (SC.Desc.Flags.Is(SwapChain_AutoAdjustSize))
 				SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &SC.Sub_OnSizeChanged);
 		}
 
-		if (Failed)
+		SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &SC.Sub_OnToggleFullscreen);
+		SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &SC.Sub_OnClosing);
+
+		IDirect3DSurface9* pRTSurface = NULL;
+		if (SC.pSwapChain)
+			n_assert(SUCCEEDED(SC.pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
+		else
+			n_assert(SUCCEEDED(pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
+		SC.BackBufferRT->As<CD3D9RenderTarget>()->Create(pRTSurface, NULL);
+
+		// Default swap chain may be automatically set as a render target
+		if (!SC.pSwapChain)
 		{
-			// Partially failed, can handle specifically
-			FAIL;
+			IDirect3DSurface9* pCurrRTSurface = NULL;
+			if (SUCCEEDED(pD3DDevice->GetRenderTarget(0, &pCurrRTSurface)) && pCurrRTSurface == pRTSurface)
+				CurrRT[0] = (CD3D9RenderTarget*)(SC.BackBufferRT.GetUnsafe());
+			if (pCurrRTSurface) pCurrRTSurface->Release();
 		}
-	}
-	else
-	{
-		for (int i = 0; i < SwapChains.GetCount() ; ++i)
-		{
-			CD3D9SwapChain& SC = SwapChains[i];
-			if (SC.IsFullscreen())
-			{
-				SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &Sub_OnPaint);
-SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &SC.Sub_OnToggleFullscreen);
-SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &SC.Sub_OnClosing);
-				break; // Only one fullscreen swap chain is supported per device
-			}
-		}
+
+		if (IsFullscreenNow) break;
 	}
 
 	EventSrv->FireEvent(CStrID("OnRenderDeviceReset"));
 
 	IsInsideFrame = false;
+
+	//???!!!resize DS!? (if auto-resize enabled or DS is attached to an SC)
+
+	if (Failed)
+	{
+		// Partially failed, can handle specifically
+		FAIL;
+	}
 
 	OK;
 }
@@ -128,7 +147,7 @@ void CD3D9GPUDriver::Release()
 {
 	if (!pD3DDevice) return;
 
-	Sub_OnPaint = NULL;
+	UNSUBSCRIBE_EVENT(OnPaint);
 
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
@@ -531,14 +550,10 @@ bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsi
 	{
 		SC.pSwapChain->Release();
 		if (FAILED(pD3DDevice->CreateAdditionalSwapChain(&D3DPresentParams, &SC.pSwapChain))) FAIL;
+
+		//!!!restore RT!
 	}
 	else if (!Reset(D3DPresentParams)) FAIL;
-
-	//!!!reinitialize RT!
-	//SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
-	//SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
-
-	//!!resize DS!
 
 	OK;
 }
@@ -589,6 +604,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisp
 	SC.Sub_OnSizeChanged = NULL;
 	SC.LastWindowRect = SC.TargetWindow->GetRect();
 	SC.TargetWindow->SetRect(Data::CRect(MonInfo.Left, MonInfo.Top, pMode->Width, pMode->Height), true);
+	//!!!check what system does with window on fullscreen transition!
 
 	SC.TargetDisplay = pDisplay;
 
@@ -601,29 +617,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisp
 		FAIL;
 	}
 
-	IDirect3DSurface9* pRTSurface = NULL;
-	if (SC.pSwapChain)
-		n_assert(SUCCEEDED(SC.pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
-	else
-		n_assert(SUCCEEDED(pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pRTSurface)));
-	SC.BackBufferRT->As<CD3D9RenderTarget>()->Create(pRTSurface, NULL);
-
-	//!!!DUPLICATE CODE!
-	// Default swap chain may be automatically set as a render target
-	if (!SC.pSwapChain)
-	{
-		IDirect3DSurface9* pCurrRTSurface = NULL;
-		if (SUCCEEDED(pD3DDevice->GetRenderTarget(0, &pCurrRTSurface)) && pCurrRTSurface == pRTSurface)
-			CurrRT[0] = (CD3D9RenderTarget*)(SC.BackBufferRT.GetUnsafe());
-		if (pCurrRTSurface) pCurrRTSurface->Release();
-	}
-
-	//!!!resize DS!
-
-	//???here or in Reset()?
-	SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &Sub_OnPaint);
-	if (SC.Desc.Flags.Is(SwapChain_AutoAdjustSize))
-		SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &SC.Sub_OnSizeChanged);
+	SC.TargetWindow->SetInputFocus();
 
 	OK;
 }
@@ -639,7 +633,7 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 	// Moreover, it is always an implicit swap chain, so skip transition for
 	// any additional swap chain, as it always is in a windowed mode.
 	// Use ResizeSwapChain() to change the swap chain size.
-	if (SC.pSwapChain) OK;
+	//if (SC.pSwapChain) OK;
 
 	if (pWindowRect)
 	{
@@ -657,20 +651,11 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 	D3DPresentParams.BackBufferHeight = SC.LastWindowRect.H;
 	D3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN; // Uses current desktop mode
 
-	if (!Reset(D3DPresentParams)) FAIL;
-
 	SC.TargetDisplay = NULL;
-	SC.TargetWindow->SetRect(SC.LastWindowRect); //!!!???should not subscribe with resize swap chain?!
+	SC.Sub_OnSizeChanged = NULL;
+	SC.TargetWindow->SetRect(SC.LastWindowRect);
 
-	//!!!reinitialize RT!
-	//SC.Desc.BackBufferWidth = D3DPresentParams.BackBufferWidth;
-	//SC.Desc.BackBufferHeight = D3DPresentParams.BackBufferHeight;
-
-	//!!!resize DS!
-
-	Sub_OnPaint = NULL;
-
-	OK;
+	return Reset(D3DPresentParams);
 }
 //---------------------------------------------------------------------
 
@@ -930,16 +915,16 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.Sub_OnToggleFullscreen.IsValid() && SC.TargetWindow.GetUnsafe() == pWnd)
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
 		{
-			if (SC.IsFullscreen()) return SwitchToWindowed(i);
-			else return SwitchToFullscreen(i);
+			DestroySwapChain(i);
+			OK; // Only one swap chain is allowed for each window
 		}
 	}
 	OK;
@@ -952,7 +937,7 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.Sub_OnSizeChanged.IsValid() && SC.TargetWindow.GetUnsafe() == pWnd)
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
 		{
 			// May not fire in fullscreen mode by design, this assert checks it
 			// If assertion failed, we should rewrite this handler and maybe some other code
@@ -966,7 +951,25 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 }
 //---------------------------------------------------------------------
 
-//???Should OnPaint sub be in SC?
+bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	{
+		CD3D9SwapChain& SC = SwapChains[i];
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		{
+//!!!DBG TMP!
+Sys::DbgOut("Toggle %s: %s\n", SC.IsFullscreen() ? "Full -> Wnd": "Wnd -> Full", pWnd->GetTitle());
+			if (SC.IsFullscreen()) n_assert(SwitchToWindowed(i));
+			else n_assert(SwitchToFullscreen(i));
+			OK;
+		}
+	}
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
@@ -978,22 +981,6 @@ bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, cons
 			n_assert_dbg(SC.IsFullscreen());
 			if (SC.pSwapChain) SC.pSwapChain->Present(NULL, NULL, NULL, NULL, 0);
 			else pD3DDevice->Present(NULL, NULL, NULL, NULL);
-			OK; // Only one swap chain is allowed for each window
-		}
-	}
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
-	{
-		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.Sub_OnClosing.IsValid() && SC.TargetWindow.GetUnsafe() == pWnd)
-		{
-			DestroySwapChain(i);
 			OK; // Only one swap chain is allowed for each window
 		}
 	}

@@ -65,8 +65,8 @@ public:
 
 	CSwapChain(): FrameID(0) {}
 
-	bool IsValid() const { return TargetWindow.IsValid(); }
-	bool IsFullscreen() const { return TargetDisplay.IsValid(); }
+	bool IsValid() const { return TargetWindow.IsValidPtr(); }
+	bool IsFullscreen() const { return TargetDisplay.IsValidPtr(); }
 };
 
 }

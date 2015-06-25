@@ -54,7 +54,7 @@ public:
 
 	void				Init(const Data::CParams& ObjDesc);
 	void				Term();
-	bool				IsValid() const { return Desc.IsValid(); }
+	bool				IsValidPtr() const { return Desc.IsValidPtr(); }
 
 	void				SetTransform(const matrix44& Tfm);
 

@@ -32,6 +32,7 @@ public:
 
 	bool				Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture); // For internal use
 	virtual void		Destroy();
+	virtual bool		IsValid() const { return !!pRTSurface; }
 	virtual bool		CopyResolveToTexture(PTexture Dest /*, region*/) const;
 	virtual CTexture*	GetShaderResource() const;
 	IDirect3DSurface9*	GetD3DSurface() const { return pRTSurface; }

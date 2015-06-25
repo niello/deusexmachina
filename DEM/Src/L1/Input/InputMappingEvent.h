@@ -56,7 +56,7 @@ public:
 	bool Init(CStrID Name, int KeyCode);
 	void Enable();
 	void Disable();
-	bool IsEnabled() const { return Sub_InputEvent.IsValid(); }
+	bool IsEnabled() const { return Sub_InputEvent.IsValidPtr(); }
 };
 
 }

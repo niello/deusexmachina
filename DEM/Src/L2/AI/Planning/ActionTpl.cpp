@@ -6,7 +6,7 @@ __ImplementClassNoFactory(AI::CActionTpl, Core::CObject);
 
 void CActionTpl::Init(Data::PParams Params)
 {
-	if (Params.IsValid())
+	if (Params.IsValidPtr())
 	{
 		Precedence = Params->Get(CStrID("Precedence"), 1);
 		Cost = Params->Get(CStrID("Cost"), 1);

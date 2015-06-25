@@ -55,19 +55,19 @@ void CCharacterController::Term()
 
 bool CCharacterController::AttachToLevel(CPhysicsWorld& World)
 {
-	return Body.IsValid() && Body->AttachToLevel(World);
+	return Body.IsValidPtr() && Body->AttachToLevel(World);
 }
 //---------------------------------------------------------------------
 
 void CCharacterController::RemoveFromLevel()
 {
-	if (Body.IsValid()) Body->RemoveFromLevel();
+	if (Body.IsValidPtr()) Body->RemoveFromLevel();
 }
 //---------------------------------------------------------------------
 
 bool CCharacterController::IsAttachedToLevel() const
 {
-	return Body.IsValid() && Body->IsAttachedToLevel();
+	return Body.IsValidPtr() && Body->IsAttachedToLevel();
 }
 //---------------------------------------------------------------------
 

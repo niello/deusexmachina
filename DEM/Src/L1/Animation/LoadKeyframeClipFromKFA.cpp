@@ -11,7 +11,7 @@ using namespace Data;
 
 bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 {
-	if (!OutClip.IsValid()) FAIL;
+	if (OutClip.IsNullPtr()) FAIL;
 
 	IO::CBinaryReader Reader(In);
 
