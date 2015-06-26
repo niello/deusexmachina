@@ -539,9 +539,25 @@ bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil)
+bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 {
+	// Cache set
+	// If really changed, set dirty flag
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil)
+{
+	//!!!only when bound!
 	//pD3DImmContext->ClearRenderTargetView(pRTV, color);
+	//if (CurrDS.IsValidPtr())
+	//{
+	//	//	if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
+	//	//	if ((Flags & Clear_Stencil) && CurrDS.Format.StencilBits)
+	//	//		D3DFlags |= D3DCLEAR_STENCIL;
+	//	pD3DImmContext->ClearDepthStencilView(pRTV, color);
+	//}
 }
 //---------------------------------------------------------------------
 

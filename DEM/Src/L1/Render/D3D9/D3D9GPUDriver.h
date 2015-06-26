@@ -18,6 +18,7 @@
 namespace Render
 {
 typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
+typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -26,6 +27,8 @@ class CD3D9GPUDriver: public CGPUDriver
 protected:
 
 	CFixedArray<PD3D9RenderTarget>	CurrRT;
+	PD3D9DepthStencilBuffer			CurrDS;
+
 	CArray<CD3D9SwapChain>			SwapChains;
 	bool							IsInsideFrame;
 	//bool							Wireframe;
@@ -43,7 +46,8 @@ protected:
 	bool				OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD SwapChainID);
+	bool				InitSwapChainRenderTarget(CD3D9SwapChain& SC);
+	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TergetSwapChainID);
 	void				Release();
 
 	void				FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
@@ -75,8 +79,9 @@ public:
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
 	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
-	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* RT);
-	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
+	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
+	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
