@@ -43,7 +43,7 @@ protected:
 	bool				OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams);
+	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD SwapChainID);
 	void				Release();
 
 	void				FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;

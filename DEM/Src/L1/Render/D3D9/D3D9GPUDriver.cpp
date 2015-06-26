@@ -25,7 +25,7 @@ bool CD3D9GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
+bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD SwapChainID)
 {
 	if (!pD3DDevice) FAIL;
 
@@ -57,7 +57,19 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 		hr = pD3DDevice->TestCooperativeLevel();
 	}
 
-	hr = pD3DDevice->Reset(&D3DPresentParams);
+	// When we make fullscreen -> windowed transition, we must set implicit params
+	// from swap chain 0, but params passed may belong to another swap chain that was
+	// fullscreen. In that case we apply params passed later in CreateAdditionalSwapChain().
+	D3DPRESENT_PARAMETERS SwapChainD3DPresentParams;
+	D3DPRESENT_PARAMETERS* pD3DParams;
+	if (SwapChainID == 0) pD3DParams = &D3DPresentParams;
+	else
+	{
+		if (!GetCurrD3DPresentParams(SwapChains[0], SwapChainD3DPresentParams)) FAIL;
+		pD3DParams = &SwapChainD3DPresentParams;
+	}
+
+	hr = pD3DDevice->Reset(pD3DParams);
 	if (FAILED(hr))
 	{
 		Sys::Log("Failed to reset Direct3D9 device object!\n");
@@ -79,20 +91,29 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams)
 		
 		if (IsFullscreenNow)
 		{
+			// In a fullscreen mode only the fullscreen swap chain will be valid
 			if (!SC.IsFullscreen()) continue;
 			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &Sub_OnPaint);
 		}
 		else
 		{
-//???may it be that non-implicit swap chain was full->wnd to index 0?
-//!!!!When full->wnd, always resore 0th SC by reset and others by create additional SC!!!!
 			// Recreate additional swap chains. Skip implicit swap chain, index is always 0.
 			if (i != 0)
 			{
-//!!!wrong backbuffer size!
-				D3DPRESENT_PARAMETERS SCD3DPresentParams = { 0 };
-				if (!GetCurrD3DPresentParams(SC, SCD3DPresentParams) ||
-					FAILED(pD3DDevice->CreateAdditionalSwapChain(&SCD3DPresentParams, &SC.pSwapChain)))
+				if (SwapChainID == i) pD3DParams = &D3DPresentParams;
+				else
+				{
+					if (!GetCurrD3DPresentParams(SC, SwapChainD3DPresentParams))
+					{
+						n_assert_dbg(false);
+						DestroySwapChain(i);
+						Failed = true;
+						continue;
+					}
+					pD3DParams = &SwapChainD3DPresentParams;
+				}
+
+				if (FAILED(pD3DDevice->CreateAdditionalSwapChain(pD3DParams, &SC.pSwapChain)))
 				{
 					n_assert_dbg(false);
 					DestroySwapChain(i);
@@ -200,6 +221,8 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc,
 										  const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
+	D3DPresentParams.Flags = 0;
+
 	DWORD BackBufferCount = SwapChainDesc.BackBufferCount ? SwapChainDesc.BackBufferCount : 1;
 
 	switch (SwapChainDesc.SwapMode)
@@ -553,7 +576,7 @@ bool CD3D9GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsi
 
 		//!!!restore RT!
 	}
-	else if (!Reset(D3DPresentParams)) FAIL;
+	else if (!Reset(D3DPresentParams, SwapChainID)) FAIL;
 
 	OK;
 }
@@ -608,7 +631,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisp
 
 	SC.TargetDisplay = pDisplay;
 
-	if (!Reset(D3DPresentParams))
+	if (!Reset(D3DPresentParams, 0)) // Fullscreen swap chain may only be implicit
 	{
 		//???call SwitchToWindowed?
 		SC.TargetWindow->SetRect(SC.LastWindowRect);
@@ -655,7 +678,7 @@ bool CD3D9GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWin
 	SC.Sub_OnSizeChanged = NULL;
 	SC.TargetWindow->SetRect(SC.LastWindowRect);
 
-	return Reset(D3DPresentParams);
+	return Reset(D3DPresentParams, SwapChainID);
 }
 //---------------------------------------------------------------------
 
@@ -690,7 +713,7 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 
 			D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
 			if (!GetCurrD3DPresentParams(ImplicitSC, D3DPresentParams)) FAIL;
-			if (!Reset(D3DPresentParams)) FAIL;
+			if (!Reset(D3DPresentParams, 0)) FAIL;
 		}
 		else if (hr == D3DERR_INVALIDCALL) FAIL;
 		else // D3DERR_DRIVERINTERNALERROR, D3DERR_OUTOFVIDEOMEMORY, E_OUTOFMEMORY
