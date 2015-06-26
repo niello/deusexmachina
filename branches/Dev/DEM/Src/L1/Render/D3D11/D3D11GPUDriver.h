@@ -4,6 +4,7 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/D3D11/D3D11SwapChain.h>
+#include <Data/FixedArray.h>
 
 // Direct3D11 GPU device driver.
 
@@ -14,6 +15,8 @@ typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 
 namespace Render
 {
+typedef Ptr<class CD3D11RenderTarget> PD3D11RenderTarget;
+typedef Ptr<class CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;
 typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
 
 class CD3D11GPUDriver: public CGPUDriver
@@ -22,15 +25,25 @@ class CD3D11GPUDriver: public CGPUDriver
 
 protected:
 
-	CArray<CD3D11SwapChain>		SwapChains;
-	//bool						IsInsideFrame;
-	//bool						Wireframe;
+	enum
+	{
+		GPU_Dirty_RT = 0x0001,
+		GPU_Dirty_DS = 0x0002
+	};
 
-	ID3D11Device*				pD3DDevice;
-	ID3D11DeviceContext*		pD3DImmContext;
+	CFixedArray<PD3D11RenderTarget>	CurrRT;
+	PD3D11DepthStencilBuffer		CurrDS;
+	Data::CFlags					CurrDirtyFlags;
+
+	CArray<CD3D11SwapChain>			SwapChains;
+	//bool							IsInsideFrame;
+	//bool							Wireframe;
+
+	ID3D11Device*					pD3DDevice;
+	ID3D11DeviceContext*			pD3DImmContext;
 	//???store also D3D11.1 interfaces? an use for 11.1 methods only.
 
-	CArray<PD3D11RenderState>	RenderStates;
+	CArray<PD3D11RenderState>		RenderStates;
 
 	CD3D11GPUDriver(): SwapChains(1, 1)/*, IsInsideFrame(false)*/ {}
 
@@ -51,7 +64,7 @@ protected:
 
 public:
 
-	virtual ~CD3D11GPUDriver() {}
+	virtual ~CD3D11GPUDriver() { Release(); }
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap);
@@ -70,7 +83,7 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
-	virtual DWORD				GetMaxMultipleRenderTargetCount() { return 0; }
+	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);

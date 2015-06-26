@@ -47,7 +47,7 @@ protected:
 	bool				OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 	bool				InitSwapChainRenderTarget(CD3D9SwapChain& SC);
-	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TergetSwapChainID);
+	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
 	void				Release();
 
 	void				FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
@@ -59,7 +59,7 @@ protected:
 
 public:
 
-	virtual ~CD3D9GPUDriver() { n_assert(!pD3DDevice); }
+	virtual ~CD3D9GPUDriver() { Release(); }
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap);
