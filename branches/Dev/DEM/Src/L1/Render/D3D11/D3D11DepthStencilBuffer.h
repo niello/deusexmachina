@@ -23,8 +23,10 @@ public:
 
 	CD3D11DepthStencilBuffer(): pDSView(NULL) {}
 
-	bool			Create(ID3D11DepthStencilView* pDSV); // For internal use
-	virtual void	Destroy();
+	bool					Create(ID3D11DepthStencilView* pDSV); // For internal use
+	virtual void			Destroy();
+	virtual bool			IsValid() const { return !!pDSView; }
+	ID3D11DepthStencilView*	GetD3DDSView() const { return pDSView; }
 };
 
 typedef Ptr<CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;

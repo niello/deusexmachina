@@ -417,7 +417,9 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 	Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
 	n_assert(pWnd);
 
-	//???check all the swap chains not to use this window?
+	//???or destroy and recreate with new params?
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd) return ERR_CREATION_ERROR;
 
 	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
 	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);

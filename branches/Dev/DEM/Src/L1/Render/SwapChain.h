@@ -23,6 +23,7 @@ typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CRenderTarget> PRenderTarget;
 
 //!!!other flags, presentation and not
+// No VSync when windowed can cause jerking at low frame rates
 enum ESwapChainFlags
 {
 	//ManualRotationHandling
