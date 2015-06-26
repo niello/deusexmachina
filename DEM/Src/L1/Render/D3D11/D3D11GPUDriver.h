@@ -41,7 +41,7 @@ protected:
 
 	ID3D11Device*					pD3DDevice;
 	ID3D11DeviceContext*			pD3DImmContext;
-	//???store also D3D11.1 interfaces? an use for 11.1 methods only.
+	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
 
 	CArray<PD3D11RenderState>		RenderStates;
 

@@ -19,6 +19,7 @@ protected:
 public:
 
 	virtual void				Destroy() = 0;
+	virtual bool				IsValid() const = 0;
 	//const CRenderTargetDesc&	GetDesc() const { return Desc; }
 };
 

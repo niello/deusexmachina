@@ -25,6 +25,7 @@ public:
 
 	bool				Create(IDirect3DSurface9* pSurface); // For internal use
 	virtual void		Destroy();
+	virtual bool		IsValid() const { return !!pDSSurface; }
 	IDirect3DSurface9*	GetD3DSurface() const { return pDSSurface; }
 };
 

@@ -16,7 +16,7 @@ void CD3D11SwapChain::Release()
 
 	BackBufferRT->Destroy();
 
-	//???
+	//???here?
 	TargetDisplay = NULL;
 	TargetWindow = NULL;
 

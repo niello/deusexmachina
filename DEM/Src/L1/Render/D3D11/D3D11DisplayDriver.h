@@ -37,6 +37,7 @@ public:
 	virtual bool		SupportsDisplayMode(const CDisplayMode& Mode) const;
 	virtual bool		GetCurrentDisplayMode(CDisplayMode& OutMode) const;
 	virtual bool		GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const;
+	IDXGIOutput*		GetDXGIOutput() const { return pDXGIOutput; }
 };
 
 typedef Ptr<CD3D11DisplayDriver> PD3D11DisplayDriver;
