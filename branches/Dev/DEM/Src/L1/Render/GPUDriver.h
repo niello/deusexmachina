@@ -121,15 +121,16 @@ public:
 	// GetSwapChainDesc(), GetBackBufferDesc()
 	//!!!get info, change info (or only recreate?)
 	virtual bool				Present(DWORD SwapChainID) = 0;
-	bool						PresentBlankScreen(DWORD SwapChainID, DWORD Color);
+	bool						PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
 
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
 	//???what if clear float RT?
 	virtual DWORD				GetMaxMultipleRenderTargetCount() = 0;
-	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* RT) = 0;
-	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil) = 0;
+	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
+	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
 
 	virtual PVertexBuffer		CreateVertexBuffer() = 0;
 	virtual PIndexBuffer		CreateIndexBuffer() = 0;
@@ -163,13 +164,13 @@ inline PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 }
 //---------------------------------------------------------------------
 
-inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, DWORD Color)
+inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA)
 {
 	//???set swap chain render target? or pass id to beginframe and set inside?
 	//internal check must be performed not to reset target already set
 	if (BeginFrame())
 	{
-		Clear(Clear_Color, Color, 1.f, 0); //???clear depth and stencil too?
+		Clear(Clear_Color, ColorRGBA, 1.f, 0); //???clear depth and stencil too?
 		EndFrame();
 		Present(SwapChainID);
 		OK;

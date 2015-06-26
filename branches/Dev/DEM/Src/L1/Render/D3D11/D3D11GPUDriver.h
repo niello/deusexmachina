@@ -71,8 +71,9 @@ public:
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
 	virtual DWORD				GetMaxMultipleRenderTargetCount() { return 0; }
-	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* RT);
-	virtual void				Clear(DWORD Flags, DWORD Color, float Depth, uchar Stencil);
+	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
+	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
