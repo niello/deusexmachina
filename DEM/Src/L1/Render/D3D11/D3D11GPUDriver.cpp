@@ -108,23 +108,18 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 
 	Sys::Log("Device created: %s, feature level %d\n", "HAL", (int)FeatureLevel);
 
+	DWORD MRTCount = 0;
+	if (FeatureLevel >= D3D_FEATURE_LEVEL_11_0) MRTCount = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+	else if (FeatureLevel >= D3D_FEATURE_LEVEL_10_0) MRTCount = D3D10_SIMULTANEOUS_RENDER_TARGET_COUNT;
+	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_3) MRTCount = D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT;
+	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_1) MRTCount = D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT;
+	CurrRT.SetSize(MRTCount);
+
 	OK;
 
 ///////////////
 
 	/*
-    g_pImmediateContext->OMSetRenderTargets( 1, &g_pRenderTargetView, g_pDepthStencilView );
-
-    // Setup the viewport
-    D3D11_VIEWPORT vp;
-    vp.Width = (FLOAT)width;
-    vp.Height = (FLOAT)height;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    g_pImmediateContext->RSSetViewports( 1, &vp );
-
     // Compile the vertex shader
     ID3DBlob* pVSBlob = nullptr;
     hr = CompileShaderFromFile( L"Tutorial07.fx", "VS", "vs_4_0", &pVSBlob );
@@ -283,7 +278,9 @@ void CD3D11GPUDriver::Release()
 	for (int i = 0; i < SwapChains.GetCount() ; ++i)
 		SwapChains[i].Release();
 
-	//!!!UnbindD3D9Resources();
+	CurrRT.SetSize(0);
+
+	//!!!UnbindD3DResources();
 	//!!!can call the same event as on lost device!
 
 	//for (int i = 1; i < MaxRenderTargetCount; i++)
@@ -536,6 +533,18 @@ bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 	// Cache set
 	// If really changed, set dirty flag
 	FAIL;
+ 
+	//g_pImmediateContext->OMSetRenderTargets( 1, &g_pRenderTargetView, g_pDepthStencilView );
+
+	//// Setup the viewport
+	//D3D11_VIEWPORT vp;
+	//vp.Width = (FLOAT)width;
+	//vp.Height = (FLOAT)height;
+	//vp.MinDepth = 0.0f;
+	//vp.MaxDepth = 1.0f;
+	//vp.TopLeftX = 0;
+	//vp.TopLeftY = 0;
+	//g_pImmediateContext->RSSetViewports( 1, &vp );
 }
 //---------------------------------------------------------------------
 

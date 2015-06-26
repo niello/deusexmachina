@@ -56,7 +56,7 @@ bool CD3D9GPUDriver::InitSwapChainRenderTarget(CD3D9SwapChain& SC)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TergetSwapChainID)
+bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID)
 {
 	if (!pD3DDevice) FAIL;
 
@@ -77,7 +77,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Terget
 		CurrDS = NULL;
 	}
 
-	for (int i = 0; i < SwapChains.GetCount() ; ++i)
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
 		SwapChains[i].Release();
 
 	//!!!ReleaseQueries();
@@ -99,7 +99,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Terget
 	// fullscreen. In that case we apply params passed later in CreateAdditionalSwapChain().
 	D3DPRESENT_PARAMETERS SwapChainD3DPresentParams;
 	D3DPRESENT_PARAMETERS* pD3DParams;
-	if (TergetSwapChainID == 0) pD3DParams = &D3DPresentParams;
+	if (TargetSwapChainID == 0) pD3DParams = &D3DPresentParams;
 	else
 	{
 		if (!GetCurrD3DPresentParams(SwapChains[0], SwapChainD3DPresentParams)) FAIL;
@@ -122,9 +122,11 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Terget
 	bool IsFullscreenNow = (D3DPresentParams.Windowed == FALSE);
 	bool Failed = false;
 
-	for (int i = 0; i < SwapChains.GetCount() ; ++i)
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
+
+		if (!SC.IsValid()) continue;
 		
 		if (IsFullscreenNow)
 		{
@@ -137,7 +139,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Terget
 			// Recreate additional swap chains. Skip implicit swap chain, index is always 0.
 			if (i != 0)
 			{
-				if (TergetSwapChainID == i) pD3DParams = &D3DPresentParams;
+				if (TargetSwapChainID == i) pD3DParams = &D3DPresentParams;
 				else
 				{
 					if (!GetCurrD3DPresentParams(SC, SwapChainD3DPresentParams))
@@ -199,11 +201,13 @@ void CD3D9GPUDriver::Release()
 	CurrRT.SetSize(0);
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
-	for (int i = 0; i < SwapChains.GetCount() ; ++i)
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
 	{
-		SwapChains[i].Release();
-		SwapChains[i].TargetDisplay = NULL;
-		SwapChains[i].TargetWindow = NULL;
+		CD3D9SwapChain& SC = SwapChains[i];
+		if (!SC.IsValid()) return;
+		SC.Release();
+		SC.TargetDisplay = NULL;
+		SC.TargetWindow = NULL;
 	}
 
 	//for (int i = 1; i < MaxRenderTargetCount; i++)
@@ -514,22 +518,21 @@ bool CD3D9GPUDriver::DestroySwapChain(DWORD SwapChainID)
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
-	bool DefaultSC = !SC.pSwapChain;
+	bool ImplicitSC = (SwapChainID == 0);
 
-	if (!DefaultSC)
-	{
-		// Never unset 0'th RT. //???Maybe force it to an implicit SC?
-		for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
-			if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
-				SetRenderTarget(i, NULL);
-	}
+	// Never unset 0'th RT
+	for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
+		if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
+			SetRenderTarget(i, NULL);
+
+	if (!ImplicitSC && SC.IsFullscreen()) SwitchToWindowed(SwapChainID);
 
 	SC.Release();
 	SC.TargetDisplay = NULL;
 	SC.TargetWindow = NULL;
 
 	// Default swap chain destroyed means device is destroyed too
-	if (DefaultSC) Release();
+	if (ImplicitSC) Release();
 
 	OK;
 }
@@ -787,11 +790,14 @@ bool CD3D9GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 	{
 		// Invalid case for D3D9. Restore main RT to default backbuffer.
 		for (int i = 0; i < SwapChains.GetCount(); ++i)
-			if (!SwapChains[i].pSwapChain)
+		{
+			CD3D9SwapChain& SC = SwapChains[i];
+			if (SC.IsValid() && !SC.pSwapChain)
 			{
-				pRT = SwapChains[i].BackBufferRT.GetUnsafe();
+				pRT = SC.BackBufferRT.GetUnsafe();
 				break;
 			}
+		}
 	}
 
 	n_assert_dbg(pRT || Index > 0); // D3D9 can't set NULL to 0'th RT
