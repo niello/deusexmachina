@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_H__
 #define __DEM_L1_RENDER_H__
 
-#include <StdDEM.h>
+#include <Data/Ptr.h>
 
 // Render system definitions and forward declarations
 
@@ -11,8 +11,21 @@
 
 namespace Render
 {
-typedef DWORD HShaderParam; // Opaque to user, so its internal meaning can be different for different APIs
-struct CShaderConstantDesc;
+//typedef DWORD HShaderParam; // Opaque to user, so its internal meaning can be different for different APIs
+//struct CShaderConstantDesc;
+struct CTextureDesc;
+struct CRenderTargetDesc;
+struct CSwapChainDesc;
+class CDisplayMode;
+typedef Ptr<class CDisplayDriver> PDisplayDriver;
+typedef Ptr<class CTexture> PTexture;
+typedef Ptr<class CRenderTarget> PRenderTarget;
+typedef Ptr<class CVertexLayout> PVertexLayout;
+typedef Ptr<class CVertexBuffer> PVertexBuffer;
+typedef Ptr<class CIndexBuffer> PIndexBuffer;
+typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
+typedef Ptr<class CRenderState> PRenderState;
+typedef Ptr<class CShader> PShader;
 
 const DWORD Adapter_AutoSelect = (DWORD)-2;
 const DWORD Adapter_None = (DWORD)-1;
@@ -61,11 +74,14 @@ enum EPixelFormat
 {
 	PixelFmt_Invalid = 0,
 	PixelFmt_DefaultBackBuffer,
-	PixelFmt_X8B8G8R8,
-	PixelFmt_A8B8G8R8,
-	PixelFmt_X8R8G8B8,
-	PixelFmt_A8R8G8B8,
-	PixelFmt_R5G6B5
+	PixelFmt_R8G8B8X8,
+	PixelFmt_R8G8B8A8,
+	PixelFmt_B8G8R8X8,
+	PixelFmt_B8G8R8A8,
+	PixelFmt_B5G6R5,
+	PixelFmt_DXT1,
+	PixelFmt_DXT3,
+	PixelFmt_DXT5
 };
 
 enum EMSAAQuality
@@ -74,6 +90,38 @@ enum EMSAAQuality
 	MSAA_2x		= 2,
 	MSAA_4x		= 4,
 	MSAA_8x		= 8
+};
+
+enum ETextureType
+{
+	Texture_1D,
+	Texture_2D,
+	Texture_3D,
+	Texture_Cube
+};
+
+// Flags that indicate which hardware has which access to this resource data.
+// Some combinations may be unsupported by certain rendering APIs, so, implementations must
+// consider to satisfy the most of possible features of a set requested.
+// Some common usage patterns are:
+// GPU_Read				- immutable resources, initialized on creation, the fastest ones for GPU access
+// GPU_Read | CPU_Write	- dynamic resources, suitable for a GPU data that is regularly updated by CPU
+enum EResourceAccess
+{
+	Access_CPU_Read		= 0x01,
+	Access_CPU_Write	= 0x02,
+	Access_GPU_Read		= 0x04,
+	Access_GPU_Write	= 0x08
+};
+
+enum EMapType
+{
+	Map_Setup,				// Gain write access for the initial filling of the buffer. Don't misuse!
+	Map_Read,				// Gain read access, must be CPU_Read
+	Map_Write,				// Gain write access, must be CPU_Write
+	Map_ReadWrite,			// Gain read/write access, must be CPU_Read | CPU_Write
+	Map_WriteDiscard,		// Gain write access, discard previous content, must be GPU_Read | CPU_Write
+	Map_WriteNoOverwrite,	// Gain write access, must be GPU_Read | CPU_Write, see D3D11 docs for details
 };
 
 // Error codes

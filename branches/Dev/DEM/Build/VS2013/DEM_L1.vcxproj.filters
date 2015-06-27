@@ -830,6 +830,21 @@
     <ClInclude Include="..\..\Src\L1\System\OSWindowClassWin32.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMTexture.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMTextureTarget.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMRenderTarget.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMGeometryBuffer.h">
+      <Filter>UI\CEGUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1348,5 +1363,22 @@
     <ClCompile Include="..\..\Src\L1\System\OSWindowClassWin32.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMTexture.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMTextureTarget.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMGeometryBuffer.cpp">
+      <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Src\L1\UI\CEGUI\DEMRenderTarget.inl">
+      <Filter>UI\CEGUI</Filter>
+    </None>
   </ItemGroup>
 </Project>

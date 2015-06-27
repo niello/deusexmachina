@@ -1,201 +1,177 @@
 #include "D3D9Texture.h"
 
-//#include <Render/RenderServer.h>
-//#include <Events/EventServer.h>
+#include <Render/D3D9/D3D9DriverFactory.h>
 #include <Core/Factory.h>
-
-//namespace Data
-//{
-//DEFINE_TYPE_EX(Render::PTexture, PTexture)
-//}
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
+#include <d3d9.h>
 
 namespace Render
 {
 __ImplementClass(Render::CD3D9Texture, 'TEX9', Render::CTexture);
 
+bool CD3D9Texture::Create(IDirect3DBaseTexture9* pTexture)
+{
+	if (!pTexture) FAIL;
+
+	bool Result = false;
+	IDirect3DTexture9* pTex = NULL;
+	IDirect3DCubeTexture9* pTexC = NULL;
+	IDirect3DVolumeTexture9* pTexV = NULL;
+	if (SUCCEEDED(pTexture->QueryInterface(IID_IDirect3DTexture9, (void**)&pTex)))
+	{
+		Result = Create(pTex);
+		pTex->Release();
+	}
+	else if (SUCCEEDED(pTexture->QueryInterface(IID_IDirect3DCubeTexture9, (void**)&pTexC)))
+	{
+		Result = Create(pTexC);
+		pTexC->Release();
+	}
+	else if (SUCCEEDED(pTexture->QueryInterface(IID_IDirect3DVolumeTexture9, (void**)&pTexV)))
+	{
+		Result = Create(pTexV);
+		pTexV->Release();
+	}
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 {
-	n_assert(false);
+	if (!pTexture) FAIL;
+
+	D3DSURFACE_DESC D3DDesc;
+	ZeroMemory(&D3DDesc, sizeof(Desc));
+	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
+
+	Desc.Type = Texture_2D;
+	Desc.Width = D3DDesc.Width;
+	Desc.Height = D3DDesc.Height;
+	Desc.Depth = 0;
+	Desc.MipLevels = pTexture->GetLevelCount();
+	Desc.ArraySize = 1;
+	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
+	Desc.MSAAQuality = MSAA_None;
+
+	Access.ClearAll();
+	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
+	{
+		Access.Set(Access_CPU_Read | Access_CPU_Write);
+	}
+	else
+	{
+		Access.Set(Access_GPU_Read);
+		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
+		else Access.Set(Access_GPU_Write);
+	}
+
+	pD3DTex = pTexture;
 	OK;
 }
 //---------------------------------------------------------------------
 
-//bool CTexture::Setup(IDirect3DBaseTexture9* pTextureCastToBase, EType TexType)
-//{
-//	n_assert(pTextureCastToBase);
-//
-//	Type = TexType;
-//
-//	bool IsVideoMem;
-//
-//	//???really can't just cast ptr?
-//	// Need to query for base interface under Win32
-//	//???move query from switch?
-//	if (Type == Texture2D)
-//	{
-//		pD3D9Tex2D = (IDirect3DTexture9*)pTextureCastToBase;
-//		n_assert(SUCCEEDED(pD3D9Tex2D->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
-//
-//		D3DSURFACE_DESC Desc;
-//		memset(&Desc, 0, sizeof(Desc));
-//		n_assert(SUCCEEDED(pD3D9Tex2D->GetLevelDesc(0, &Desc)));
-//		Width = Desc.Width;
-//		Height = Desc.Height;
-//		Depth = 1;
-//		PixelFormat = Desc.Format;
-//		IsVideoMem = (Desc.Pool == D3DPOOL_DEFAULT);
-//		//!!!fill usage, access!
-//	}
-//	else if (Type == Texture3D)
-//	{
-//		pD3D9Tex3D = (IDirect3DVolumeTexture9*)pTextureCastToBase;
-//		n_assert(SUCCEEDED(pD3D9Tex3D->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
-//
-//		D3DVOLUME_DESC Desc;
-//		memset(&Desc, 0, sizeof(Desc));
-//		n_assert(SUCCEEDED(pD3D9Tex3D->GetLevelDesc(0, &Desc)));
-//		Width = Desc.Width;
-//		Height = Desc.Height;
-//		Depth = Desc.Depth;
-//		PixelFormat = Desc.Format;
-//		IsVideoMem = (Desc.Pool == D3DPOOL_DEFAULT);
-//		//!!!fill usage, access!
-//	}
-//	else if (Type == TextureCube)
-//	{
-//		pD3D9TexCube = (IDirect3DCubeTexture9*)pTextureCastToBase;
-//		n_assert(SUCCEEDED(pD3D9TexCube->QueryInterface(IID_IDirect3DBaseTexture9, (void**)&pD3D9Tex)));
-//
-//		D3DSURFACE_DESC Desc;
-//		memset(&Desc, 0, sizeof(Desc));
-//		n_assert(SUCCEEDED(pD3D9TexCube->GetLevelDesc(0, &Desc)));
-//		Width = Desc.Width;
-//		Height = Desc.Height;
-//		PixelFormat = Desc.Format;
-//		IsVideoMem = (Desc.Pool == D3DPOOL_DEFAULT);
-//		//!!!fill usage, access!
-//	}
-//	else
-//	{
-//		State = Resources::Rsrc_Failed;
-//		FAIL;
-//	}
-//
-//	MipCount = pTextureCastToBase->GetLevelCount();
-//
-//	if (IsVideoMem)
-//	{
-//		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CTexture, OnDeviceLost);
-//		//SUBSCRIBE_PEVENT(OnRenderDeviceReset, CTexture, OnDeviceReset);
-//	}
-//
-//	State = Resources::Rsrc_Loaded;
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-//void CTexture::Unload()
-//{
+bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
+{
+	if (!pTexture) FAIL;
+
+	D3DSURFACE_DESC D3DDesc;
+	ZeroMemory(&D3DDesc, sizeof(Desc));
+	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
+
+	Desc.Type = Texture_Cube;
+	Desc.Width = D3DDesc.Width;
+	Desc.Height = D3DDesc.Height;
+	Desc.Depth = 0;
+	Desc.MipLevels = pTexture->GetLevelCount();
+	Desc.ArraySize = 1;
+	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
+	Desc.MSAAQuality = MSAA_None;
+
+	Access.ClearAll();
+	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
+	{
+		Access.Set(Access_CPU_Read | Access_CPU_Write);
+	}
+	else
+	{
+		Access.Set(Access_GPU_Read);
+		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
+		else Access.Set(Access_GPU_Write);
+	}
+
+	pD3DTex = pTexture;
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
+{
+	if (!pTexture) FAIL;
+
+	D3DVOLUME_DESC D3DDesc;
+	ZeroMemory(&D3DDesc, sizeof(Desc));
+	n_assert(SUCCEEDED(pTexture->GetLevelDesc(0, &D3DDesc)));
+
+	Desc.Type = Texture_2D;
+	Desc.Width = D3DDesc.Width;
+	Desc.Height = D3DDesc.Height;
+	Desc.Depth = D3DDesc.Depth;
+	Desc.MipLevels = pTexture->GetLevelCount();
+	Desc.ArraySize = 1;
+	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
+	Desc.MSAAQuality = MSAA_None;
+
+	Access.ClearAll();
+	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
+	{
+		Access.Set(Access_CPU_Read | Access_CPU_Write);
+	}
+	else
+	{
+		Access.Set(Access_GPU_Read);
+		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
+		else Access.Set(Access_GPU_Write);
+	}
+
+	pD3DTex = pTexture;
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CD3D9Texture::Destroy()
+{
 //	n_assert(!LockCount);
-//
-//	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
-//	//UNSUBSCRIBE_EVENT(OnRenderDeviceReset);
-//
-//	switch (Type)
-//	{
-//		case Texture2D:		SAFE_RELEASE(pD3D9Tex2D); break;
-//		case Texture3D:		SAFE_RELEASE(pD3D9Tex3D); break;
-//		case TextureCube:	SAFE_RELEASE(pD3D9TexCube); break;
-//	}
-//	SAFE_RELEASE(pD3D9Tex);
-//	State = Resources::Rsrc_NotLoaded; //CResource::Unload();
-//}
-////---------------------------------------------------------------------
-//
-//bool CTexture::Create(EType _Type, D3DFORMAT _Format, DWORD _Width, DWORD _Height, DWORD _Depth, DWORD Mips,
-//					  EUsage _Usage, ECPUAccess _Access)
-//{
-//	if (!_Width || !_Height) FAIL;
-//
-//	n_assert(!pD3D9Tex); //???or unload old?
-//
-//	Usage = _Usage;
-//	Access = _Access;
-//
-//	D3DPOOL D3DPool;
-//	DWORD D3DUsage;
-//	switch (Usage)
-//	{
-//		case Usage_Immutable:
-//			n_assert(Access == CPU_NoAccess);
-//			D3DPool = D3DPOOL_MANAGED;
-//			D3DUsage = 0;
-//			break;
-//		case Usage_Dynamic:
-//			n_assert(Access == CPU_Write);
-//			D3DPool = D3DPOOL_DEFAULT;
-//			D3DUsage = D3DUSAGE_DYNAMIC;
-//			break;
-//		case Usage_CPU:
-//			D3DPool = D3DPOOL_SYSTEMMEM;
-//			D3DUsage = D3DUSAGE_DYNAMIC;
-//			break;
-//		default: Sys::Error("Invalid Texture usage!");
-//	}
-//
-//	bool Result = false;
-//	if (_Type == Texture2D)
-//	{
-//		HRESULT hr =
-//			RenderSrv->GetD3DDevice()->CreateTexture(_Width, _Height, Mips, D3DUsage, _Format, D3DPool, &pD3D9Tex2D, NULL);
-//		n_assert(SUCCEEDED(hr));
-//		Result = Setup(pD3D9Tex2D, _Type);
-//	}
-//	else if (_Type == Texture3D)
-//	{
-//		HRESULT hr =
-//			RenderSrv->GetD3DDevice()->CreateVolumeTexture(_Width, _Height, _Depth, Mips, D3DUsage, _Format, D3DPool, &pD3D9Tex3D, NULL);
-//		n_assert(SUCCEEDED(hr));
-//		Result = Setup(pD3D9Tex3D, _Type);
-//	}
-//	else if (_Type == TextureCube)
-//	{
-//		HRESULT hr =
-//			RenderSrv->GetD3DDevice()->CreateCubeTexture(_Width, Mips, D3DUsage, _Format, D3DPool, &pD3D9TexCube, NULL);
-//		n_assert(SUCCEEDED(hr));
-//		Result = Setup(pD3D9TexCube, _Type);
-//	}
-//
-//	return Result;
-//}
-////---------------------------------------------------------------------
-//
-//bool CTexture::CreateRenderTarget(D3DFORMAT _Format, DWORD _Width, DWORD _Height)
-//{
-//	if (!_Width || !_Height) FAIL;
-//
-//	n_assert(!pD3D9Tex); //???or unload old?
-//
-//	Usage = Usage_Immutable;
-//	Access = CPU_NoAccess;
-//
-//	HRESULT hr = RenderSrv->GetD3DDevice()->CreateTexture(
-//		_Width,
-//		_Height,
-//		1,
-//		D3DUSAGE_RENDERTARGET,
-//		_Format,
-//		D3DPOOL_DEFAULT,
-//		&pD3D9Tex2D,
-//		NULL);
-//	n_assert(SUCCEEDED(hr));
-//
-//	bool Result = Setup(pD3D9Tex2D, Texture2D);
-//
-//	return Result;
-//}
-////---------------------------------------------------------------------
-//
+	SAFE_RELEASE(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+DWORD CD3D9Texture::GetPixelCount(bool IncludeMips) const
+{
+	DWORD BaseCount;
+	switch (Desc.Type)
+	{
+		case Texture_2D:	BaseCount = Desc.Width * Desc.Height;
+		case Texture_3D:	BaseCount = Desc.Width * Desc.Height * Desc.Depth;
+		case Texture_Cube:	BaseCount = Desc.Width * Desc.Height * 6;
+		default:			return 0;
+	}
+
+	if (!IncludeMips) return BaseCount;
+
+	DWORD DivShift = ((Desc.Type == Texture_3D) ? 3 : 2); // Divide by 8 or 4
+	DWORD Accum = BaseCount;
+	for (DWORD i = 1; i < Desc.MipLevels; ++i)
+	{
+		BaseCount >>= DivShift;
+		Accum += BaseCount;
+	}
+
+	return Accum;
+}
+//---------------------------------------------------------------------
+
 //inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 //{
 //	switch (MapType)
@@ -301,30 +277,6 @@ bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 //
 //	// Doesn't work on pool = DEFAULT & usage != DYNAMIC
 //	//n_assert(SUCCEEDED(D3DXFilterTexture(pD3D9Tex, NULL, 0, D3DX_FILTER_LINEAR)));
-//}
-////---------------------------------------------------------------------
-//
-//DWORD CTexture::GetPixelCount(bool IncludeMips) const
-//{
-//	DWORD BaseCount;
-//	switch (Type)
-//	{
-//		case Texture2D:		BaseCount = Width * Height;
-//		case Texture3D:		BaseCount = Width * Height * Depth;
-//		case TextureCube:	BaseCount = Width * Height * 6;
-//		default: return 0;
-//	}
-//
-//	if (!IncludeMips) return BaseCount;
-//
-//	DWORD Accum = BaseCount;
-//	for (DWORD i = 1; i < MipCount; ++i)
-//	{
-//		BaseCount /= (Type == Texture3D) ? 8 : 4;
-//		Accum += BaseCount;
-//	}
-//
-//	return Accum;
 //}
 ////---------------------------------------------------------------------
 //

@@ -46,17 +46,6 @@ namespace Sys
 
 namespace Render
 {
-struct CRenderTargetDesc;
-struct CSwapChainDesc;
-class CDisplayMode;
-typedef Ptr<class CDisplayDriver> PDisplayDriver;
-typedef Ptr<class CRenderTarget> PRenderTarget;
-typedef Ptr<class CVertexLayout> PVertexLayout;
-typedef Ptr<class CVertexBuffer> PVertexBuffer;
-typedef Ptr<class CIndexBuffer> PIndexBuffer;
-typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
-typedef Ptr<class CRenderState> PRenderState;
-typedef Ptr<class CShader> PShader;
 
 class CGPUDriver: public Core::CObject
 {
@@ -139,7 +128,7 @@ public:
 	//virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;
 	PShader						CreateShader(const Data::CParams& Desc);
 	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
-	//virtual PTexture				CreateTexture(dimensions, array size, format etc) = 0;
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, void* pData = NULL) = 0;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
 	//!!!another desc struct if can't use as shader input!
 	//!!!can describe as DepthBits & StencilBits, find closest on creation!

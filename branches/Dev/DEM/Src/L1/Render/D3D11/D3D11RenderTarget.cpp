@@ -21,7 +21,6 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 		RTDesc.ViewDimension != D3D11_RTV_DIMENSION_TEXTURE2DMS &&
 		RTDesc.ViewDimension != D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY) FAIL;
 	Desc.Format = CD3D11DriverFactory::DXGIFormatToPixelFormat(RTDesc.Format);
-	Desc.UseAsShaderInput = !!pSRV;
 
 	ID3D11Resource* pTexRsrc = NULL;
 	pRTV->GetResource(&pTexRsrc);
@@ -38,15 +37,16 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 	Desc.Width = TexDesc.Width;
 	Desc.Height = TexDesc.Height;
 	Desc.MSAAQuality = CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality(TexDesc.SampleDesc);
+	Desc.UseAsShaderInput = !!pSRV; // (TexDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE) != 0;
 	
 	pTexRsrc->Release();
 
 	pRTView = pRTV;
-	pSRView = pSRV;
-	if (pSRV)
+
+	if (Desc.UseAsShaderInput)
 	{
 		Texture = n_new(CD3D11Texture);
-		if (!Texture->Create(pTex))
+		if (!Texture->Create(pTex, pSRV))
 		{
 			pTex->Release();
 			FAIL;
@@ -60,8 +60,8 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 
 void CD3D11RenderTarget::Destroy()
 {
+	Texture = NULL;
 	SAFE_RELEASE(pRTView);
-	SAFE_RELEASE(pSRView); //???store in Texture?
 }
 //---------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ bool CD3D11RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 	n_assert_dbg(Dest->IsA<CD3D11Texture>());
 
 	if (Dest.IsNullPtr()) FAIL;
-	ID3D11Texture2D* pDestTex = ((CD3D11Texture*)Dest.GetUnsafe())->GetD3DTexture();
+	ID3D11Texture2D* pDestTex = ((CD3D11Texture*)Dest.GetUnsafe())->GetD3DTexture2D();
 
 	ID3D11Device* pDev = NULL;
 	pDestTex->GetDevice(&pDev);

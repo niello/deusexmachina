@@ -19,8 +19,8 @@ typedef Ptr<class CTexture> PTexture;
 
 struct CRenderTargetDesc
 {
-	ushort			Width;
-	ushort			Height;
+	DWORD			Width;
+	DWORD			Height;
 	EPixelFormat	Format;
 	EMSAAQuality	MSAAQuality;
 	bool			UseAsShaderInput;

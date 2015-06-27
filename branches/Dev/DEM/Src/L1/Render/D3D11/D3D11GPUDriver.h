@@ -12,6 +12,7 @@ struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
+enum D3D11_USAGE;
 
 namespace Render
 {
@@ -61,6 +62,7 @@ protected:
 
 	static D3D_DRIVER_TYPE	GetD3DDriverType(EGPUDriverType DriverType);
 	static EGPUDriverType	GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
+	static void				GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
 
 	virtual PVertexLayout	InternalCreateVertexLayout();
 
@@ -98,6 +100,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
 	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
 	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, void* pData = NULL);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 
