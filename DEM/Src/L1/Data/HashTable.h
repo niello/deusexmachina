@@ -57,6 +57,7 @@ public:
 		}
 
 		const TKey&	GetKey() const { n_assert(It); return It->GetKey(); }
+		TVal&		GetValue() { n_assert(It); return It->GetValue(); }
 		const TVal&	GetValue() const { n_assert(It); return It->GetValue(); }
 		bool		IsEnd() const { return !It; }
 					operator bool() const { return !!It; }

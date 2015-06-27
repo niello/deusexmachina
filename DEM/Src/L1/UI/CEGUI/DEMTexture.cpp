@@ -1,6 +1,8 @@
 #include <StdCfg.h>
 #include "DEMTexture.h"
 
+#include <UI/CEGUI/DEMRenderer.h>
+#include <Render/GPUDriver.h>
 #include <Render/Texture.h>
 
 #include <CEGUI/System.h>
@@ -75,6 +77,16 @@ static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, siz
 }
 //---------------------------------------------------------------------
 
+CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& name):
+	Owner(Renderer),
+	Size(0, 0),
+	DataSize(0, 0),
+	TexelScaling(0, 0),
+	Name(name)
+{
+}
+//--------------------------------------------------------------------
+
 bool CDEMTexture::isPixelFormatSupported(const PixelFormat fmt) const
 {
 	switch (fmt)
@@ -103,6 +115,29 @@ void CDEMTexture::setTexture(Render::CTexture* tex)
 }
 //---------------------------------------------------------------------
 
+void CDEMTexture::createEmptyTexture(const Sizef& sz)
+{
+	Render::CTextureDesc Desc;
+	Desc.Type = Render::Texture_2D;
+	Desc.Width = (DWORD)sz.d_width;
+	Desc.Height = (DWORD)sz.d_height;
+	Desc.Depth = 0;
+	Desc.MipLevels = 1;
+	Desc.ArraySize = 1;
+	Desc.Format = Render::PixelFmt_R8G8B8A8;
+	Desc.MSAAQuality = Render::MSAA_None;
+
+	//???is there any way to know will CEGUI write to texture or not?
+	//can create immutable textures!
+	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write);
+	n_assert(DEMTexture.IsValidPtr());
+
+	DataSize = sz;
+	updateTextureSize();
+	updateCachedScaleValues();
+}
+//--------------------------------------------------------------------
+
 void CDEMTexture::loadFromFile(const String& filename, const String& resourceGroup)
 {
 	System* sys = System::getSingletonPtr();
@@ -115,46 +150,54 @@ void CDEMTexture::loadFromFile(const String& filename, const String& resourceGro
 }
 //--------------------------------------------------------------------
 
-/*
 void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, PixelFormat pixel_format)
 {
-    n_assert(isPixelFormatSupported(pixel_format));
+	n_assert(isPixelFormatSupported(pixel_format));
 
-    DEMTexture = NULL; //???Destroy?
+	const void* img_src = buffer;
+	if (pixel_format == PF_RGB)
+	{
+		const unsigned char* src = static_cast<const unsigned char*>(buffer);
+		unsigned char* dest = new unsigned char[static_cast<unsigned int>( buffer_size.d_width * buffer_size.d_height * 4 )];
 
-    const void* img_src = buffer;
-    if (pixel_format == PF_RGB)
-    {
-        const unsigned char* src = static_cast<const unsigned char*>(buffer);
-        unsigned char* dest = new unsigned char[static_cast<unsigned int>( buffer_size.d_width * buffer_size.d_height * 4 )];
+		for (int i = 0; i < buffer_size.d_width * buffer_size.d_height; ++i)
+		{
+			dest[i * 4 + 0] = src[i * 3 + 0];
+			dest[i * 4 + 1] = src[i * 3 + 1];
+			dest[i * 4 + 2] = src[i * 3 + 2];
+			dest[i * 4 + 3] = 0xFF;
+		}
 
-        for (int i = 0; i < buffer_size.d_width * buffer_size.d_height; ++i)
-        {
-            dest[i * 4 + 0] = src[i * 3 + 0];
-            dest[i * 4 + 1] = src[i * 3 + 1];
-            dest[i * 4 + 2] = src[i * 3 + 2];
-            dest[i * 4 + 3] = 0xFF;
-        }
+		img_src = dest;
+	}
 
-        img_src = dest;
-    }
+	//???destroy DEMTexture here if valid?
 
-// Load texture from memory data
+	Render::CTextureDesc Desc;
+	Desc.Type = Render::Texture_2D;
+	Desc.Width = (DWORD)buffer_size.d_width;
+	Desc.Height = (DWORD)buffer_size.d_height;
+	Desc.Depth = 0;
+	Desc.MipLevels = 1;
+	Desc.ArraySize = 1;
+	Desc.Format = CEGUIFormatToPixelFormat(pixel_format);
+	Desc.MSAAQuality = Render::MSAA_None;
 
+	//???is there any way to know will CEGUI write to texture or not?
+	//can create immutable textures!
+	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write, img_src);
 
-    if (pixel_format == PF_RGB)
-        delete[] img_src;
+	if (pixel_format == PF_RGB) delete[] img_src;
 
-    if (FAILED(hr))
-        CEGUI_THROW(RendererException(
-            "Failed to create texture from memory buffer."));
+	n_assert(DEMTexture.IsValidPtr());
 
-    d_dataSize = buffer_size;
-    updateTextureSize();
-    updateCachedScaleValues();
+	DataSize = buffer_size;
+	updateTextureSize();
+	updateCachedScaleValues();
 }
 //--------------------------------------------------------------------
 
+/*
 void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
     if (!d_texture)
@@ -224,121 +267,32 @@ void CDEMTexture::blitToMemory(void* targetData)
         CEGUI_THROW(RendererException(exception_msg));
 }
 //--------------------------------------------------------------------
+*/
 
 void CDEMTexture::updateCachedScaleValues()
 {
-    //
-    // calculate what to use for x scale
-    //
-    const float orgW = d_dataSize.d_width;
-    const float texW = d_size.d_width;
+	const float orgW = DataSize.d_width;
+	const float texW = Size.d_width;
+	const float orgH = DataSize.d_height;
+	const float texH = Size.d_height;
 
-    // if texture and original data width are the same, scale is based
-    // on the original size.
-    // if texture is wider (and source data was not stretched), scale
-    // is based on the size of the resulting texture.
-    d_texelScaling.d_x = 1.0f / ((orgW == texW) ? orgW : texW);
-
-    //
-    // calculate what to use for y scale
-    //
-    const float orgH = d_dataSize.d_height;
-    const float texH = d_size.d_height;
-
-    // if texture and original data height are the same, scale is based
-    // on the original size.
-    // if texture is taller (and source data was not stretched), scale
-    // is based on the size of the resulting texture.
-    d_texelScaling.d_y = 1.0f / ((orgH == texH) ? orgH : texH);
+	// If texture and original data dimensions are the same, scale is based on the original size.
+	// If they aren't (and source data was not stretched), scale is based on the size of the resulting texture.
+	TexelScaling.d_x = 1.0f / ((orgW == texW) ? orgW : texW);
+	TexelScaling.d_y = 1.0f / ((orgH == texH) ? orgH : texH);
 }
 //--------------------------------------------------------------------
 
 void CDEMTexture::updateTextureSize()
 {
-    if (d_texture)
-    {
-        D3D11_TEXTURE2D_DESC surfDesc;
-        d_texture->GetDesc(&surfDesc);
-        d_size.d_width  = static_cast<float>(surfDesc.Width);
-        d_size.d_height = static_cast<float>(surfDesc.Height);
-    }
-    else
-        d_size.d_height = d_size.d_width = 0.0f;
+	if (DEMTexture)
+	{
+		const Render::CTextureDesc& Desc = DEMTexture->GetDesc();
+		Size.d_width  = static_cast<float>(Desc.Width);
+		Size.d_height = static_cast<float>(Desc.Height);
+	}
+	else Size.d_height = Size.d_width = 0.0f;
 }
 //--------------------------------------------------------------------
 
-CDEMTexture::CDEMTexture(IDevice11& device, const String& name) :
-    d_device(device),
-    d_texture(0),
-    d_resourceView(0),
-    d_size(0, 0),
-    d_dataSize(0, 0),
-    d_texelScaling(0, 0),
-    d_name(name)
-{
-}
-//--------------------------------------------------------------------
-
-CDEMTexture::CDEMTexture(IDevice11& device, const String& name,
-                                     const String& filename,
-                                     const String& resourceGroup) :
-    d_device(device),
-    d_texture(0),
-    d_resourceView(0),
-    d_size(0, 0),
-    d_dataSize(0, 0),
-    d_texelScaling(0, 0),
-    d_name(name)
-{
-    loadFromFile(filename, resourceGroup);
-}
-
-//----------------------------------------------------------------------------//
-Direct3D11Texture::Direct3D11Texture(IDevice11& device, const String& name,
-                                     const Sizef& sz) :
-    d_device(device),
-    d_texture(0),
-    d_resourceView(0),
-    d_size(0, 0),
-    d_dataSize(0, 0),
-    d_texelScaling(0, 0),
-    d_name(name)
-{
-    D3D11_TEXTURE2D_DESC tex_desc;
-    ZeroMemory(&tex_desc, sizeof(tex_desc));
-    tex_desc.Width = static_cast<UINT>(sz.d_width);
-    tex_desc.Height = static_cast<UINT>(sz.d_height);
-    tex_desc.ArraySize = 1;
-    tex_desc.SampleDesc.Count = 1;
-    tex_desc.SampleDesc.Quality = 0;
-    tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    tex_desc.Usage = D3D11_USAGE_DEFAULT;
-    tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    tex_desc.CPUAccessFlags = 0;
-    tex_desc.MiscFlags = 0;
-    tex_desc.MipLevels = 1;
-
-    if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &d_texture)))
-        CEGUI_THROW(RendererException(
-            "Failed to create texture with specified size."));
-
-    DataSize = sz;
-    updateTextureSize();
-    updateCachedScaleValues();
-}
-
-//----------------------------------------------------------------------------//
-Direct3D11Texture::Direct3D11Texture(IDevice11& device, const String& name,
-                                     ID3D11Texture2D* tex) :
-    d_device(device),
-    d_texture(0),
-    d_resourceView(0),
-    d_size(0, 0),
-    d_dataSize(0, 0),
-    d_texelScaling(0, 0),
-    d_name(name)
-{
-    setDirect3DTexture(tex);
-}
-*/
 }

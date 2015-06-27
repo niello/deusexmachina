@@ -2,6 +2,7 @@
 #ifndef __DEM_L1_CEGUI_TEXTURE_H__
 #define __DEM_L1_CEGUI_TEXTURE_H__
 
+#include <UI/CEGUI/DEMRenderer.h>
 #include <CEGUI/Texture.h>
 #include <Data/RefCounted.h>
 
@@ -12,28 +13,28 @@ namespace Render
 
 namespace CEGUI
 {
+class CDEMRenderer;
 
 class CDEMTexture: public Texture
 {
 protected:
 
-	//friend Texture& CDEMRenderer::createTexture(const String&);
-	//friend Texture& CDEMRenderer::createTexture(const String&, const String&, const String&);
-	//friend Texture& CDEMRenderer::createTexture(const String&, const Sizef&);
-	//friend void CDEMRenderer::destroyTexture(Texture&);
-	//friend void CDEMRenderer::destroyTexture(const String&);
+	friend Texture& CDEMRenderer::createTexture(const String&);
+	friend Texture& CDEMRenderer::createTexture(const String&, const String&, const String&);
+	friend Texture& CDEMRenderer::createTexture(const String&, const Sizef&);
+	friend void CDEMRenderer::destroyTexture(const String&);
+	friend void CDEMRenderer::destroyTexture(Texture&);
+	friend void CDEMRenderer::destroyAllTextures();
 
+	CDEMRenderer&		Owner;
 	Render::PTexture	DEMTexture;
 	Sizef				Size;			// tex size //???get from desc?
 	Sizef				DataSize;		// size of original data loaded to tex
 	Vector2f			TexelScaling;
 	const String		Name;
 
-	//CDEMTexture(IDevice11& device, const String& name);
-	//CDEMTexture(IDevice11& device, const String& name, const String& filename, const String& resourceGroup);
-	//CDEMTexture(IDevice11& device, const String& name, const Sizef& sz);
-	//CDEMTexture(IDevice11& device, const String& name, ID3D11Texture2D* tex);
-	//virtual ~CDEMTexture() { }
+	CDEMTexture(CDEMRenderer& Renderer, const String& name);
+	virtual ~CDEMTexture() {}
 
 	void updateCachedScaleValues();
 	void updateTextureSize();
@@ -43,6 +44,8 @@ public:
 	void					setTexture(Render::CTexture* tex);
 	Render::CTexture*		getTexture() const { return DEMTexture.GetUnsafe(); }
 	void					setOriginalDataSize(const Sizef& sz) { DataSize = sz; updateCachedScaleValues(); }
+
+	void					createEmptyTexture(const Sizef& sz);
 
 	// implement abstract members from base class.
 	virtual const String&	getName() const { return Name; }

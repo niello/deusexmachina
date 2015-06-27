@@ -895,7 +895,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, void* pData)
+PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData)
 {
 	if (!pD3DDevice) return NULL;
 
