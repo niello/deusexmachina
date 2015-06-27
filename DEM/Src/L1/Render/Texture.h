@@ -10,19 +10,23 @@
 namespace Render
 {
 
+struct CTextureDesc
+{
+	ETextureType	Type;
+	DWORD			Width;
+	DWORD			Height;
+	DWORD			Depth;
+	DWORD			MipLevels;
+	DWORD			ArraySize;
+	EPixelFormat	Format;
+	EMSAAQuality	MSAAQuality;
+};
+
 class CTexture: public Resources::CResourceObject
 {
 public:
 
-	enum EType
-	{
-		InvalidType,
-		Texture2D,
-		Texture3D,
-		TextureCube
-	};
-
-	enum ECubeFace
+	enum ECubeMapFace
 	{
 		PosX = 0,
 		NegX,
@@ -43,23 +47,17 @@ public:
 
 protected:
 
-	//???desc structure?
-	EType					Type;
-	//DWORD					Width;
-	//DWORD					Height;
-	//DWORD					Depth;
-	//DWORD					MipCount;
-	//!!!array size!
-	//EPixelFormat			PixelFormat;
+	CTextureDesc	Desc;
+	Data::CFlags	Access;
 
-	DWORD					LockCount;
+	//DWORD			LockCount;
 
 public:
 
-	//Data::CFlags	Access; //!!!can use as generic flags!
-
 	//CTexture();
 	//virtual ~CTexture() { if (IsLoaded()) Unload(); }
+
+	virtual void Destroy() = 0;
 };
 
 typedef Ptr<CTexture> PTexture;

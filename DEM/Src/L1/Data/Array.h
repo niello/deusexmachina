@@ -71,9 +71,9 @@ public:
 	CIterator	IteratorAt(int Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
 	int			IndexOf(CIterator It) const { return It - pData; }
 
-	CIterator	Find(const T& Val) const { return IteratorAt(FindIndex(Val));  }
+	CIterator	Find(const T& Val) const { int Idx = FindIndex(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
 	int			FindIndex(const T& Val) const;
-	CIterator	FindSorted(const T& Val) const { return IteratorAt(FindIndexSorted(Val)); }
+	CIterator	FindSorted(const T& Val) const { int Idx = FindIndexSorted(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
 	int			FindIndexSorted(const T& Val) const;
 	CIterator	FindClosestSorted(const T& Val, bool* pHasEqualElement = NULL) const { return IteratorAt(FindClosestIndexSorted(Val, pHasEqualElement)); }
 	int			FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;

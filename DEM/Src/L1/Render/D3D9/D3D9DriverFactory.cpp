@@ -91,12 +91,15 @@ D3DFORMAT CD3D9DriverFactory::PixelFormatToD3DFormat(EPixelFormat Format)
 {
 	switch (Format)
 	{
-		case PixelFmt_X8B8G8R8:				return D3DFMT_X8B8G8R8;
-		case PixelFmt_A8B8G8R8:				return D3DFMT_A8B8G8R8;
-		case PixelFmt_X8R8G8B8:				return D3DFMT_X8R8G8B8;
+		case PixelFmt_R8G8B8X8:				return D3DFMT_X8B8G8R8;
+		case PixelFmt_R8G8B8A8:				return D3DFMT_A8B8G8R8;
+		case PixelFmt_B8G8R8X8:				return D3DFMT_X8R8G8B8;
 		case PixelFmt_DefaultBackBuffer:
-		case PixelFmt_A8R8G8B8:				return D3DFMT_A8R8G8B8;
-		case PixelFmt_R5G6B5:				return D3DFMT_R5G6B5;
+		case PixelFmt_B8G8R8A8:				return D3DFMT_A8R8G8B8;
+		case PixelFmt_B5G6R5:				return D3DFMT_R5G6B5;
+		case PixelFmt_DXT1:					return D3DFMT_DXT1;
+		case PixelFmt_DXT3:					return D3DFMT_DXT3;
+		case PixelFmt_DXT5:					return D3DFMT_DXT5;
 		case PixelFmt_Invalid:
 		default:							return D3DFMT_UNKNOWN;
 	}
@@ -107,9 +110,14 @@ EPixelFormat CD3D9DriverFactory::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
-		case D3DFMT_X8R8G8B8:	return PixelFmt_X8R8G8B8;
-		case D3DFMT_A8R8G8B8:	return PixelFmt_A8R8G8B8;
-		case D3DFMT_R5G6B5:		return PixelFmt_R5G6B5;
+		case D3DFMT_X8B8G8R8:	return PixelFmt_R8G8B8X8;
+		case D3DFMT_A8B8G8R8:	return PixelFmt_R8G8B8A8;
+		case D3DFMT_X8R8G8B8:	return PixelFmt_B8G8R8X8;
+		case D3DFMT_A8R8G8B8:	return PixelFmt_B8G8R8A8;
+		case D3DFMT_R5G6B5:		return PixelFmt_B5G6R5;
+		case D3DFMT_DXT1:		return PixelFmt_DXT1;
+		case D3DFMT_DXT3:		return PixelFmt_DXT3;
+		case D3DFMT_DXT5:		return PixelFmt_DXT5;
 		case D3DFMT_UNKNOWN:
 		default:				return PixelFmt_Invalid;
 	}

@@ -24,42 +24,36 @@ class CD3D9Texture: public CTexture
 
 protected:
 
-	IDirect3DBaseTexture9*	pD3DTex;
-
-	union
-	{
-		IDirect3DTexture9*			pD3DTex2D;
-		IDirect3DVolumeTexture9*	pD3DTex3D;
-		IDirect3DCubeTexture9*		pD3DTexCube;
-	};
+	IDirect3DBaseTexture9*	pD3DTex; //???or union?
 
 	void MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags);
 
-	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
+	//!!!only for D3DPOOL_DEFAULT! now manage in GPUDrv?
+	//DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
 public:
 
-	Data::CFlags	Access; //!!!can use as generic flags!
+	CD3D9Texture(): pD3DTex(NULL) {}
+	virtual ~CD3D9Texture() { Destroy(); }
 
-	//CD3D9Texture();
-	//virtual ~CD3D9Texture(); // { if (IsLoaded()) Unload(); }
+	bool						Create(IDirect3DBaseTexture9* pTexture);
+	bool						Create(IDirect3DTexture9* pTexture);
+	bool						Create(IDirect3DCubeTexture9* pTexture);
+	bool						Create(IDirect3DVolumeTexture9* pTexture);
+	virtual void				Destroy();
 
-	bool			Create(IDirect3DTexture9* pTexture); // For internal use
+	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 
-	virtual bool	IsResourceValid() const { return !!pD3DTex; }
-
-	//IDirect3DBaseTexture9*		GetD3DBaseTexture() const { n_assert(!LockCount); return pD3D9Tex; }
-	IDirect3DTexture9*			GetD3DTexture() const { n_assert(!LockCount && Type == Texture2D); return pD3DTex2D; }
-	//IDirect3DCubeTexture9*		GetD3DCubeTexture() const { n_assert(!LockCount && Type == TextureCube); return pD3D9TexCube; }
-	//IDirect3DVolumeTexture9*	GetD3DVolumeTexture() const { n_assert(!LockCount && Type == Texture3D); return pD3D9Tex3D; }
+	DWORD						GetPixelCount(bool IncludeMips) const; //???virtual?
+	IDirect3DBaseTexture9*		GetD3DBaseTexture() const { /*n_assert(!LockCount);*/ return pD3DTex; }
+	IDirect3DTexture9*			GetD3DTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_2D); return (IDirect3DTexture9*)pD3DTex; }
+	IDirect3DCubeTexture9*		GetD3DCubeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_Cube); return (IDirect3DCubeTexture9*)pD3DTex; }
+	IDirect3DVolumeTexture9*	GetD3DVolumeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_3D); return (IDirect3DVolumeTexture9*)pD3DTex; }
 };
 
 typedef Ptr<CD3D9Texture> PD3D9Texture;
 
 }
-
-DECLARE_TYPE(Render::PTexture, 14)
-#define TTexture DATA_TYPE(Render::PTexture)
 
 #endif

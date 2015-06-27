@@ -14,7 +14,7 @@ class CRefCounted
 {
 private:
 
-	int RefCount; // volatile
+	mutable int RefCount; // volatile
 
 public:
 

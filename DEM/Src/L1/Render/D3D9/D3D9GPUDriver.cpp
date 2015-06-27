@@ -328,6 +328,27 @@ D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 }
 //---------------------------------------------------------------------
 
+void CD3D9GPUDriver::GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool)
+{
+	Data::CFlags AccessFlags(InAccessFlags);
+	if (AccessFlags.IsNot(Access_CPU_Write | Access_CPU_Read))
+	{
+		OutPool = D3DPOOL_MANAGED; //!!!set default if resmgr will manage reloading!
+		OutUsage = 0;
+	}
+	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
+	{
+		OutPool = D3DPOOL_DEFAULT;
+		OutUsage = D3DUSAGE_DYNAMIC;
+	}
+	else
+	{
+		OutPool = D3DPOOL_SYSTEMMEM;
+		OutUsage = D3DUSAGE_DYNAMIC;
+	}
+}
+//---------------------------------------------------------------------
+
 //???bool Windowed as parameter and re-check available MSAA on fullscreen transitions?
 bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
 {
@@ -854,6 +875,57 @@ void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, u
 		(((uchar)(ColorRGBA.y * 255.f)) << 8) +
 		((uchar)(ColorRGBA.z * 255.f));
 	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, ColorARGB, Depth, Stencil)));
+}
+//---------------------------------------------------------------------
+
+PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, void* pData)
+{
+	if (!pD3DDevice) return NULL;
+
+	n_assert2(!pData, "CD3D9GPUDriver::CreateTexture() > Loading initial data - IMPLEMENT ME!");
+
+	PD3D9Texture Tex = n_new(CD3D9Texture);
+	if (Tex.IsNullPtr()) return NULL;
+
+	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
+
+	DWORD Usage;
+	D3DPOOL Pool;
+	GetUsagePool(AccessFlags, Usage, Pool);
+
+	IDirect3DBaseTexture9* pTexBase = NULL;
+	if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
+	{
+		UINT Height = (Desc.Type == Texture_1D) ? 1 : Desc.Height;
+		IDirect3DTexture9* pD3DTex = NULL;
+		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Height, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
+		pTexBase = pD3DTex;
+	}
+	else if (Desc.Type == Texture_3D)
+	{
+		IDirect3DVolumeTexture9* pD3DTex = NULL;
+		if (FAILED(pD3DDevice->CreateVolumeTexture(Desc.Width, Desc.Height, Desc.Depth, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
+		pTexBase = pD3DTex;
+	}
+	else if (Desc.Type == Texture_Cube)
+	{
+		IDirect3DCubeTexture9* pD3DTex = NULL;
+		if (FAILED(pD3DDevice->CreateCubeTexture(Desc.Width, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
+		pTexBase = pD3DTex;
+	}
+	else
+	{
+		Sys::Error("CD3D9GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
+		return NULL;
+	}
+
+	if (!Tex->Create(pTexBase))
+	{
+		pTexBase->Release();
+		return NULL;
+	}
+
+	return Tex.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

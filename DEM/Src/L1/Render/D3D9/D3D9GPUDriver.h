@@ -46,6 +46,7 @@ protected:
 	bool				OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
+	bool				CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
 	bool				InitSwapChainRenderTarget(CD3D9SwapChain& SC);
 	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
 	void				Release();
@@ -53,7 +54,7 @@ protected:
 	void				FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool				GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	static D3DDEVTYPE	GetD3DDriverType(EGPUDriverType DriverType);
-	bool				CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
+	static void			GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
 
 	friend class CD3D9DriverFactory;
 
@@ -86,6 +87,7 @@ public:
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
 	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, void* pData = NULL);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 

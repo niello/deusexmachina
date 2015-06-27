@@ -18,12 +18,12 @@ class CD3D11RenderTarget: public CRenderTarget
 protected:
 
 	ID3D11RenderTargetView*		pRTView;
-	ID3D11ShaderResourceView*	pSRView; //???store in Texture?
 	PD3D11Texture				Texture;
 
 public:
 
-	CD3D11RenderTarget(): pRTView(NULL), pSRView(NULL) {}
+	CD3D11RenderTarget(): pRTView(NULL) {}
+	//!!!destructor and internal destroy!
 
 	bool					Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV); // For internal use
 	virtual void			Destroy();

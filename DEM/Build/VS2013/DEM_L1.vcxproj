@@ -286,6 +286,11 @@
     <ClInclude Include="..\..\Src\L1\Scripting\EventHandlerScript.h" />
     <ClInclude Include="..\..\Src\L1\Scripting\ScriptObject.h" />
     <ClInclude Include="..\..\Src\L1\Scripting\ScriptServer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMGeometryBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMRenderTarget.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMTexture.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMTextureTarget.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIRenderer.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIServer.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIWindow.h" />
@@ -495,6 +500,10 @@
     <ClCompile Include="..\..\Src\L1\Scripting\EventHandlerScript.cpp" />
     <ClCompile Include="..\..\Src\L1\Scripting\ScriptObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Scripting\ScriptServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMGeometryBuffer.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMTexture.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMTextureTarget.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIWindow.cpp" />
@@ -583,6 +592,9 @@
     <ClCompile Include="..\..\Src\L1\System\Memory.cpp" />
     <ClCompile Include="..\..\Src\L1\System\System.cpp" />
     <ClCompile Include="..\..\Src\L1\System\SystemWin32.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Src\L1\UI\CEGUI\DEMRenderTarget.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
