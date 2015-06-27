@@ -166,11 +166,9 @@ inline PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
 
 inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA)
 {
-	//???set swap chain render target? or pass id to beginframe and set inside?
-	//internal check must be performed not to reset target already set
 	if (BeginFrame())
 	{
-		Clear(Clear_Color, ColorRGBA, 1.f, 0); //???clear depth and stencil too?
+		Clear(Clear_Color, ColorRGBA, 1.f, 0);
 		EndFrame();
 		Present(SwapChainID);
 		OK;

@@ -23,13 +23,17 @@ class CD3D11GPUDriver: public CGPUDriver
 {
 	__DeclareClass(CD3D11GPUDriver);
 
-protected:
+public:
 
 	enum
 	{
 		GPU_Dirty_RT = 0x0001,
-		GPU_Dirty_DS = 0x0002
+		GPU_Dirty_DS = 0x0002,
+
+		GPU_Dirty_All = -1 // All bits set, for convenience in ApplyChanges() call
 	};
+
+protected:
 
 	CFixedArray<PD3D11RenderTarget>	CurrRT;
 	PD3D11DepthStencilBuffer		CurrDS;
@@ -87,6 +91,8 @@ public:
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
+
+	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }

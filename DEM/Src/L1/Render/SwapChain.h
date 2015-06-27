@@ -58,7 +58,7 @@ public:
 	Sys::POSWindow	TargetWindow;	//???to desc?
 	Data::CRect		LastWindowRect;	// Stores a window size in a windowed mode
 	PDisplayDriver	TargetDisplay;
-	//CDisplayMode	DisplayMode;	// Valid when fullscreen. Now get through Display->GetCurrentDisplayMode().
+	//CDisplayMode	DisplayMode;	//???store as (p)LastDisplayMode? to preserve selected mode when full -> wnd -> full
 	CSwapChainDesc	Desc;
 
 	//???need? what about other statistics?

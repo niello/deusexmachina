@@ -719,18 +719,6 @@ bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 	CurrDirtyFlags.Set(GPU_Dirty_RT);
 
 	FAIL;
- 
-	//g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, g_pDepthStencilView);
-
-	//// Setup the viewport
-	//D3D11_VIEWPORT vp;
-	//vp.Width = (FLOAT)width;
-	//vp.Height = (FLOAT)height;
-	//vp.MinDepth = 0.0f;
-	//vp.MaxDepth = 1.0f;
-	//vp.TopLeftX = 0;
-	//vp.TopLeftY = 0;
-	//g_pImmediateContext->RSSetViewports( 1, &vp );
 }
 //---------------------------------------------------------------------
 
@@ -761,6 +749,54 @@ void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, 
 			D3DFlags |= D3D11_CLEAR_STENCIL;
 		pD3DImmContext->ClearDepthStencilView(CurrDS->GetD3DDSView(), D3DFlags, Depth, Stencil);
 	}
+}
+//---------------------------------------------------------------------
+
+DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
+{
+	Data::CFlags Update(ChangesToUpdate);
+	DWORD Errors = 0;
+
+	// All render targets and a depth-stencil buffer are set atomically in D3D11
+	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
+	{
+		CD3D11RenderTarget* pValidRT = NULL;
+		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)_malloca(sizeof(ID3D11RenderTargetView*) * CurrRT.GetCount());
+		n_assert(pRTV);
+		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+		{
+			CD3D11RenderTarget* pRT = CurrRT[i].GetUnsafe();
+			if (pRT)
+			{
+				pRTV[i] = pRT->GetD3DRTView();
+				pValidRT = pRT;
+			}
+			else pRTV[i] = NULL;
+		}
+
+		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : NULL;
+ 
+		pD3DImmContext->OMSetRenderTargets(CurrRT.GetCount(), pRTV, pDSV);
+
+		_freea(pRTV);
+
+		//???user API for viewports?
+		if (pValidRT)
+		{
+			D3D11_VIEWPORT VP;
+			VP.Width = (FLOAT)pValidRT->GetDesc().Width;
+			VP.Height = (FLOAT)pValidRT->GetDesc().Height;
+			VP.MinDepth = 0.0f;
+			VP.MaxDepth = 1.0f;
+			VP.TopLeftX = 0;
+			VP.TopLeftY = 0;
+			pD3DImmContext->RSSetViewports(1, &VP);
+		}
+
+		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
+	}
+
+	return Errors;
 }
 //---------------------------------------------------------------------
 
