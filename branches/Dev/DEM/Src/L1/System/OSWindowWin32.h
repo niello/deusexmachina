@@ -76,6 +76,7 @@ public:
 	COSWindowWin32*			GetParent() const { return pParent; }
 	HWND					GetHWND() const { return hWnd; }
 	HACCEL					GetWin32AcceleratorTable() const { return hAccel; }
+	LONG					GetWin32Style() const;
 };
 
 inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const

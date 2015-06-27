@@ -97,6 +97,17 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Out
 }
 //---------------------------------------------------------------------
 
+PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(IDXGIOutput* pOutput)
+{
+	if (!pOutput) return NULL;
+	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
+	Driver->pDXGIOutput = pOutput;
+	//???determine adapter and output?
+	//if (!Driver->Init(Adapter, Output)) Driver = NULL;
+	return Driver.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 // If adapter is specified, driver type will be automatically set to the type of that adapter.
 // If adapter is not specified, adapter will be selected automatically.
 PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType DriverType)
@@ -132,12 +143,13 @@ DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 {
 	switch (Format)
 	{
-		//???
-		case PixelFmt_X8R8G8B8:	return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
-		case PixelFmt_A8R8G8B8:	return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
-		case PixelFmt_R5G6B5:	return DXGI_FORMAT_B5G6R5_UNORM;
+		case PixelFmt_DefaultBackBuffer:
+		case PixelFmt_A8B8G8R8:				return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case PixelFmt_X8R8G8B8:				return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case PixelFmt_A8R8G8B8:				return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+		case PixelFmt_R5G6B5:				return DXGI_FORMAT_B5G6R5_UNORM;
 		case PixelFmt_Invalid:
-		default:				return DXGI_FORMAT_UNKNOWN;
+		default:							return DXGI_FORMAT_UNKNOWN;
 	}
 }
 //---------------------------------------------------------------------

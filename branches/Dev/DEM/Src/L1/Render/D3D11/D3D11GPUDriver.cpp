@@ -7,6 +7,7 @@
 #include <Render/D3D11/D3D11RenderState.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
+#include <Data/StringID.h>
 #include <Core/Factory.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -268,6 +269,28 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 }
 //---------------------------------------------------------------------
 
+bool CD3D11GPUDriver::InitSwapChainRenderTarget(CD3D11SwapChain& SC)
+{
+	n_assert(SC.pSwapChain);
+
+	// Already initialized, can't reinitialize
+	if (SC.BackBufferRT.IsValidPtr() && SC.BackBufferRT->IsValid()) FAIL;
+
+	ID3D11Texture2D* pBackBuffer = NULL;
+	if (FAILED(SC.pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)))) FAIL;
+	
+	ID3D11RenderTargetView* pRTV = NULL;
+	HRESULT hr = pD3DDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRTV);
+	pBackBuffer->Release();
+	if (FAILED(hr)) FAIL;
+
+	if (!SC.BackBufferRT.IsValidPtr()) SC.BackBufferRT = n_new(CD3D11RenderTarget);
+	SC.BackBufferRT->As<CD3D11RenderTarget>()->Create(pRTV, NULL);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 void CD3D11GPUDriver::Release()
 {
 	if (!pD3DDevice) return;
@@ -276,7 +299,7 @@ void CD3D11GPUDriver::Release()
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
 	for (int i = 0; i < SwapChains.GetCount() ; ++i)
-		SwapChains[i].Release();
+		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
 
 	CurrRT.SetSize(0);
 
@@ -365,15 +388,12 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	SCDesc.BufferDesc.Format = BackBufferFormat;
 	SCDesc.BufferDesc.RefreshRate.Numerator = 0;
 	SCDesc.BufferDesc.RefreshRate.Denominator = 0;
-	SCDesc.BufferCount = BackBufferCount;
+	SCDesc.BufferCount = n_min(BackBufferCount, DXGI_MAX_SWAP_CHAIN_BUFFERS);
 	SCDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	if (BackBufferDesc.UseAsShaderInput) SCDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
 	SCDesc.Windowed = TRUE; // Recommended, use SwitchToFullscreen()
 	SCDesc.OutputWindow = pWnd->GetHWND();
-	SCDesc.Flags = 0;
-
-	// DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH - to allow automatic display mode switch on wnd->fullscr
-	// else use ResizeTarget when fullscreen
+	SCDesc.Flags = 0; //DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // Allows automatic display mode switch on wnd->fullscr
 
 	if (SCDesc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD)
 	{
@@ -407,46 +427,32 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 		return ERR_CREATION_ERROR;
 	}
 
-	ID3D11Texture2D* pBackBuffer = NULL;
-	if (FAILED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer))))
-	{
-		pSwapChain->Release();
-		return ERR_CREATION_ERROR;
-	}
-	
-	ID3D11RenderTargetView* pRTV = NULL;
-	hr = pD3DDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRTV);
-	if (FAILED(hr))
-	{
-		pBackBuffer->Release();
-		pSwapChain->Release();
-		return ERR_CREATION_ERROR;
-	}
-
-	pBackBuffer->Release();
-
-	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
-	RT->Create(pRTV, NULL);
-
 	CArray<CD3D11SwapChain>::CIterator ItSC = SwapChains.Begin();
 	for (; ItSC != SwapChains.End(); ++ItSC)
 		if (!ItSC->IsValid()) break;
 
 	if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
 
-	ItSC->BackBufferRT = RT.GetUnsafe();
+	ItSC->pSwapChain = pSwapChain;
+
+	if (!InitSwapChainRenderTarget(*ItSC))
+	{
+		ItSC->Destroy();
+		return ERR_CREATION_ERROR;
+	}
+
 	ItSC->TargetWindow = pWnd;
 	ItSC->LastWindowRect = pWnd->GetRect();
 	ItSC->TargetDisplay = NULL;
 	ItSC->Desc = SwapChainDesc;
-	ItSC->pSwapChain = pSwapChain;
 
-	//???!!!
-	// DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH (above)
-	//DXGI_MWA_NO_WINDOW_CHANGES - Prevent DXGI from monitoring an applications message queue; this makes DXGI unable to respond to mode changes.
-	//DXGI_MWA_NO_ALT_ENTER - Prevent DXGI from responding to an alt-enter sequence.
-	//DXGI_MWA_NO_PRINT_SCREEN - Prevent DXGI from responding to a print-screen key.
-	//pDXGIFactory->MakeWindowAssociation(pWnd->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES);
+	//DXGI_MWA_NO_WINDOW_CHANGES, DXGI_MWA_NO_ALT_ENTER
+	pDXGIFactory->MakeWindowAssociation(pWnd->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES);
+
+	pWnd->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
+	pWnd->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
+	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
+		pWnd->Subscribe<CD3D11GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D11GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -465,7 +471,7 @@ bool CD3D11GPUDriver::DestroySwapChain(DWORD SwapChainID)
 			break; // Some RT may be only in one slot at a time
 		}
 
-	SC.Release();
+	SC.Destroy();
 
 	OK;
 }
@@ -477,6 +483,8 @@ bool CD3D11GPUDriver::SwapChainExists(DWORD SwapChainID) const
 }
 //---------------------------------------------------------------------
 
+//!!!call ResizeTarget to resize fullscreen or windowed to resize a target window too!
+//!!!use what is written now to respond do changes!
 // Does not resize an OS window, since often is called in response to an OS window resize
 //???bool ResizeOSWindow?
 bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height)
@@ -485,8 +493,16 @@ bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, uns
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
+//!!!DBG TMP!
+BOOL FScr;
+SC.pSwapChain->GetFullscreenState(&FScr, NULL);
+Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, Width, Height, FScr == TRUE ? "Full" : "Wnd");
+//!!!DBG TMP!
+
 	const CRenderTargetDesc& BackBufDesc = SC.BackBufferRT->GetDesc();
 
+	//???Or automatically choose the 0 width and height to match the client rect for HWNDs?
+	// Then can pass 0 to ResizeBuffers
 	if (!Width) Width = BackBufDesc.Width;
 	if (!Height) Height = BackBufDesc.Height;
 	if (BackBufDesc.Width == Width && BackBufDesc.Height == Height) OK;
@@ -496,57 +512,33 @@ bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, uns
 	//???or this method must resize target? in fact, need two swap chain resizing methods?
 	//one as command (ResizeTarget), one as handler (ResizeBuffers), second can be OnOSWindowSizeChanged handler
 
-	//release all references to back buffers
-	//can use device's ClearState, which must call ID3D11DeviceContext::ClearState inside for all contexts,
-	//or clear only contexts that use this swap chain
-	//SC.pSwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0); //!!!swap chain flags as at creation!
+	DWORD RemovedRTIdx;
+	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.GetCount(); ++RemovedRTIdx)
+		if (CurrRT[RemovedRTIdx] == SC.BackBufferRT)
+		{
+			CurrRT[RemovedRTIdx] = NULL;
+			//!!!commit changes! pD3DImmContext->OMSetRenderTargets(0, NULL, NULL);
+			break;
+		}
 
-	//!!!update RT!
-	//SC.Desc.BackBufferWidth = Width;
-	//SC.Desc.BackBufferHeight = Height;
+	SC.BackBufferRT->Destroy();
+
+	UINT SCFlags = 0; //DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+
+	// Preserve the existing buffer count and format.
+	HRESULT hr = SC.pSwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SCFlags);
+	n_assert(SUCCEEDED(hr));
+
+	if (!InitSwapChainRenderTarget(SC))
+	{
+		SC.Destroy();
+		FAIL;
+	}
+
 	//!!update DS!
-/*
-        if (g_pSwapChain)
-        {
-            g_pd3dDeviceContext->OMSetRenderTargets(0, 0, 0);
 
-            // Release all outstanding references to the swap chain's buffers.
-            g_pRenderTargetView->Release();
+	if (RemovedRTIdx < CurrRT.GetCount()) SetRenderTarget(RemovedRTIdx, SC.BackBufferRT);
 
-            HRESULT hr;
-            // Preserve the existing buffer count and format.
-            // Automatically choose the width and height to match the client rect for HWNDs.
-            hr = g_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
-			//???what about fullscreen? gets target size?
-			//???how to go fullscreen? what is the order of SetFullscreenState() and ResizeTarget()?
-                                            
-            // Perform error handling here!
-
-            // Get buffer and create a render-target-view.
-            ID3D11Texture2D* pBuffer;
-            hr = g_pSwapChain->GetBuffer(0, __uuidof( ID3D11Texture2D),
-                                         (void**) &pBuffer );
-            // Perform error handling here!
-
-            hr = g_pd3dDevice->CreateRenderTargetView(pBuffer, NULL,
-                                                     &g_pRenderTargetView);
-            // Perform error handling here!
-            pBuffer->Release();
-
-            g_pd3dDeviceContext->OMSetRenderTargets(1, &g_pRenderTargetView, NULL );
-
-            // Set up the viewport.
-            D3D11_VIEWPORT vp;
-            vp.Width = width;
-            vp.Height = height;
-            vp.MinDepth = 0.0f;
-            vp.MaxDepth = 1.0f;
-            vp.TopLeftX = 0;
-            vp.TopLeftY = 0;
-            g_pd3dDeviceContext->RSSetViewports( 1, &vp );
-        }
-        return 1;
-*/
 	OK;
 }
 //---------------------------------------------------------------------
@@ -558,28 +550,94 @@ bool CD3D11GPUDriver::SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDis
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
-	//MWA:
-//If the application switches to full-screen mode, DXGI will choose a full-screen resolution
-//to be the smallest supported resolution that is larger or the same size as the current back buffer size.
-//a call to ResizeBuffers on WM_SIZE is always recommended, since WM_SIZE is always sent during a fullscreen transition
-//Applications that want to handle mode changes or Alt+Enter themselves should call MakeWindowAssociation with
-//the DXGI_MWA_NO_WINDOW_CHANGES flag after swap chain creation. The WindowHandle argument, if non-NULL, specifies
-//that the application message queues will not be handled by the DXGI runtime for all swap chains of a particular
-//target HWND. Calling MakeWindowAssociation with the DXGI_MWA_NO_WINDOW_CHANGES flag after swapchain creation
-//ensures that DXGI will not interfere with application's handling of window mode changes or Alt+Enter.
+	if (SC.TargetWindow->IsChild())
+	{
+		n_assert2(false, "WORTH TESTING!");
+		FAIL;
+	}
 
-	//???change mode before or after? how to do it at all?
-	//DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
-	//if not allowed, how to switch?
+	if (pDisplay) SC.TargetDisplay = pDisplay;
+	else
+	{
+		IDXGIOutput* pOutput = NULL;
+		if (FAILED(SC.pSwapChain->GetContainingOutput(&pOutput))) FAIL;
+		SC.TargetDisplay = D3D11DrvFactory->CreateDisplayDriver(pOutput);
+		if (SC.TargetDisplay.IsNullPtr())
+		{
+			pOutput->Release();
+			FAIL;
+		}
+	}
 
-	HRESULT hr = SC.pSwapChain->SetFullscreenState(FALSE, pDisplay ? ((CD3D11DisplayDriver*)pDisplay)->GetDXGIOutput() : NULL);
-	// DXGI_STATUS_MODE_CHANGE_IN_PROGRESS if already in progress
-	// DXGI_ERROR_NOT_CURRENTLY_AVAILABLE - not now
-	// else hard failure
+	IDXGIOutput* pDXGIOutput = SC.TargetDisplay->As<CD3D11DisplayDriver>()->GetDXGIOutput();
+	n_assert(pDXGIOutput);
 
-	// For the flip presentation model, after you transition the display state to full screen,
-	// you must call ResizeBuffers to ensure that your call to IDXGISwapChain1::Present1 succeeds
-	// (c) Docs
+	// If pMode is NULL, DXGI will default mode to a desktop mode if
+	// DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH flag is not set and to
+	// a closest mode to a window size if this flag is set. We don't set it.
+	DXGI_MODE_DESC DXGIMode;
+	if (pMode)
+	{
+		// If either Width or Height are 0, both must be 0 (c) Docs for FindClosestMatchingMode()
+		DXGI_MODE_DESC RequestedDXGIMode;
+		RequestedDXGIMode.Width = pMode->Height ? pMode->Width : 0;
+		RequestedDXGIMode.Height = pMode->Width ? pMode->Height : 0;
+		RequestedDXGIMode.Format = CD3D11DriverFactory::PixelFormatToDXGIFormat(pMode->PixelFormat);
+		RequestedDXGIMode.RefreshRate.Numerator = pMode->RefreshRate.Numerator;
+		RequestedDXGIMode.RefreshRate.Denominator = pMode->RefreshRate.Denominator;
+		RequestedDXGIMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+		RequestedDXGIMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+
+		// We don't use a requested mode directly since it may be unsupported.
+		// We find closest supported mode instead of it.
+		// DX 11.1: IDXGIOutput1::FindClosestMatchingMode1()
+		if (FAILED(pDXGIOutput->FindClosestMatchingMode(&RequestedDXGIMode, &DXGIMode, pD3DDevice)))
+		{
+			SC.TargetDisplay = NULL;
+			FAIL;
+		}
+
+		// NB: it is recommended to call ResizeTarget() _before_ SetFullscreenState()
+		if (FAILED(SC.pSwapChain->ResizeTarget(&DXGIMode)))
+		{
+			SC.TargetDisplay = NULL;
+			FAIL;
+		}
+	}
+
+	SC.LastWindowRect = SC.TargetWindow->GetRect();
+
+//!!!DBG TMP!
+Sys::DbgOut("Before Wnd -> Full, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
+//!!!DBG TMP!
+
+	HRESULT hr = SC.pSwapChain->SetFullscreenState(TRUE, pDXGIOutput);
+
+//!!!DBG TMP!
+Sys::DbgOut("After Wnd -> Full, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
+//!!!DBG TMP!
+
+	if (FAILED(hr))
+	{
+		if (hr == DXGI_STATUS_MODE_CHANGE_IN_PROGRESS) OK;
+		else FAIL; //???resize back?
+	}
+
+	//???is really necessary?
+	// After calling SetFullscreenState, it is advisable to call ResizeTarget again with the
+	// RefreshRate member of DXGI_MODE_DESC zeroed out. This amounts to a no-operation instruction
+	// in DXGI, but it can avoid issues with the refresh rate. (c) Docs
+	if (pMode)
+	{
+		DXGIMode.RefreshRate.Numerator = 0;
+		DXGIMode.RefreshRate.Denominator = 0;
+		if (FAILED(SC.pSwapChain->ResizeTarget(&DXGIMode)))
+		{
+			SC.pSwapChain->SetFullscreenState(FALSE, NULL);
+			SC.TargetDisplay = NULL;
+			FAIL;
+		}
+	}
 
 	OK;
 }
@@ -591,7 +649,23 @@ bool CD3D11GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWi
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
-	HRESULT hr = SC.pSwapChain->SetFullscreenState(TRUE, NULL);
+	SC.TargetDisplay = NULL;
+
+//!!!DBG TMP!
+Sys::DbgOut("Before Full -> Wnd, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
+//!!!DBG TMP!
+
+	HRESULT hr = SC.pSwapChain->SetFullscreenState(FALSE, NULL);
+
+//!!!DBG TMP!
+Sys::DbgOut("After Full -> Wnd, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
+//!!!DBG TMP!
+
+	if (FAILED(hr))
+	{
+		if (hr == DXGI_STATUS_MODE_CHANGE_IN_PROGRESS) OK;
+		else FAIL; //???resize back?
+	}
 
 	OK;
 }
@@ -865,24 +939,54 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 }
 //---------------------------------------------------------------------
 
-/*
+bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	{
+		CD3D11SwapChain& SC = SwapChains[i];
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		{
+			DestroySwapChain(i);
+			OK; // Only one swap chain is allowed for each window
+		}
+	}
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
-		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd)
+	{
+		CD3D11SwapChain& SC = SwapChains[i];
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
 		{
-			// May not fire in fullscreen mode by design, this assert checks it
-			// If assertion failed, we should rewrite this handler and maybe some other code
-			n_assert_dbg(!SwapChains[i].IsFullscreen());
-
 			ResizeSwapChain(i, pWnd->GetWidth(), pWnd->GetHeight());
 			OK; // Only one swap chain is allowed for each window
 		}
+	}
 	OK;
 }
 //---------------------------------------------------------------------
-*/
+
+bool CD3D11GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	{
+		CD3D11SwapChain& SC = SwapChains[i];
+		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		{
+			if (SC.IsFullscreen()) n_assert(SwitchToWindowed(i));
+			else n_assert(SwitchToFullscreen(i));
+			OK;
+		}
+	}
+	OK;
+}
+//---------------------------------------------------------------------
 
 /*
 case WM_PAINT:

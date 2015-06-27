@@ -45,14 +45,14 @@ protected:
 
 	CArray<PD3D11RenderState>		RenderStates;
 
-	CD3D11GPUDriver(): SwapChains(1, 1)/*, IsInsideFrame(false)*/ {}
+	CD3D11GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), pD3DImmContext(NULL) /*, IsInsideFrame(false)*/ {}
 
-	////???subscribe swapchain itself? more handling and self-control into a swapchain class?
-	//bool			OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	//bool			OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	//bool			OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	//bool			OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
+	bool			InitSwapChainRenderTarget(CD3D11SwapChain& SC);
 	void			Release();
 
 	static D3D_DRIVER_TYPE	GetD3DDriverType(EGPUDriverType DriverType);
