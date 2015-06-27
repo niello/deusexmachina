@@ -24,9 +24,9 @@ public:
 	IDXGISwapChain*		pSwapChain;
 
 	CD3D11SwapChain(): pSwapChain(NULL) {}
-	~CD3D11SwapChain() { if (IsValid()) Release(); }
+	~CD3D11SwapChain() { if (IsValid()) Destroy(); }
 
-	void Release();
+	void Destroy();
 };
 
 }

@@ -15,9 +15,18 @@ void CD3D9SwapChain::Release()
 	Sub_OnSizeChanged = NULL;
 	Sub_OnToggleFullscreen = NULL;
 
-	BackBufferRT->Destroy();
+	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();
 
 	SAFE_RELEASE(pSwapChain);
+}
+//---------------------------------------------------------------------
+
+void CD3D9SwapChain::Destroy()
+{
+	Release();
+	TargetDisplay = NULL;
+	TargetWindow = NULL;
+	BackBufferRT = NULL;
 }
 //---------------------------------------------------------------------
 

@@ -91,11 +91,14 @@ D3DFORMAT CD3D9DriverFactory::PixelFormatToD3DFormat(EPixelFormat Format)
 {
 	switch (Format)
 	{
-		case PixelFmt_X8R8G8B8:	return D3DFMT_X8R8G8B8;
-		case PixelFmt_A8R8G8B8:	return D3DFMT_A8R8G8B8;
-		case PixelFmt_R5G6B5:	return D3DFMT_R5G6B5;
+		case PixelFmt_X8B8G8R8:				return D3DFMT_X8B8G8R8;
+		case PixelFmt_A8B8G8R8:				return D3DFMT_A8B8G8R8;
+		case PixelFmt_X8R8G8B8:				return D3DFMT_X8R8G8B8;
+		case PixelFmt_DefaultBackBuffer:
+		case PixelFmt_A8R8G8B8:				return D3DFMT_A8R8G8B8;
+		case PixelFmt_R5G6B5:				return D3DFMT_R5G6B5;
 		case PixelFmt_Invalid:
-		default:				return D3DFMT_UNKNOWN;
+		default:							return D3DFMT_UNKNOWN;
 	}
 }
 //---------------------------------------------------------------------

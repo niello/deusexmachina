@@ -60,6 +60,9 @@ enum ECaps
 enum EPixelFormat
 {
 	PixelFmt_Invalid = 0,
+	PixelFmt_DefaultBackBuffer,
+	PixelFmt_X8B8G8R8,
+	PixelFmt_A8B8G8R8,
 	PixelFmt_X8R8G8B8,
 	PixelFmt_A8R8G8B8,
 	PixelFmt_R5G6B5

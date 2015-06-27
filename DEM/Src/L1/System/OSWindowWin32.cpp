@@ -216,7 +216,14 @@ bool COSWindowWin32::SetTopmost(bool Topmost)
 
 bool COSWindowWin32::SetInputFocus()
 {
-	return ::SetFocus(hWnd) != NULL;
+	return hWnd && (::SetFocus(hWnd) != NULL);
+}
+//---------------------------------------------------------------------
+
+LONG COSWindowWin32::GetWin32Style() const
+{
+	n_assert(hWnd);
+	return (LONG)::GetWindowLongPtr(hWnd, GWL_STYLE); //GWL_EXSTYLE
 }
 //---------------------------------------------------------------------
 

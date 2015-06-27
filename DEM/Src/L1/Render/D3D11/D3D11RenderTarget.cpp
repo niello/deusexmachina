@@ -60,6 +60,8 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 
 void CD3D11RenderTarget::Destroy()
 {
+	SAFE_RELEASE(pRTView);
+	SAFE_RELEASE(pSRView); //???store in Texture?
 }
 //---------------------------------------------------------------------
 

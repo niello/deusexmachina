@@ -10,6 +10,7 @@
 //???rename to DXGI[version]DriverFactory?
 
 struct IDXGIFactory1;
+struct IDXGIOutput;
 struct DXGI_SAMPLE_DESC;
 enum DXGI_FORMAT;
 
@@ -45,6 +46,7 @@ public:
 	virtual bool			GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const;
 	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const;
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0);
+	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }

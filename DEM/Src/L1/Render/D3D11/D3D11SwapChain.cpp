@@ -8,17 +8,13 @@
 namespace Render
 {
 
-void CD3D11SwapChain::Release()
+void CD3D11SwapChain::Destroy()
 {
 	Sub_OnClosing = NULL;
 	Sub_OnSizeChanged = NULL;
 	Sub_OnToggleFullscreen = NULL;
 
-	BackBufferRT->Destroy();
-
-	//???here?
-	TargetDisplay = NULL;
-	TargetWindow = NULL;
+	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();
 
 	if (pSwapChain)
 	{
@@ -26,6 +22,10 @@ void CD3D11SwapChain::Release()
 		pSwapChain->Release();
 		pSwapChain = NULL;
 	}
+
+	TargetDisplay = NULL;
+	TargetWindow = NULL;
+	BackBufferRT = NULL;
 }
 //---------------------------------------------------------------------
 
