@@ -878,7 +878,7 @@ void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, u
 }
 //---------------------------------------------------------------------
 
-PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, void* pData)
+PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData)
 {
 	if (!pD3DDevice) return NULL;
 

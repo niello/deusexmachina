@@ -54,10 +54,11 @@ protected:
 
 public:
 
-	//CTexture();
-	//virtual ~CTexture() { if (IsLoaded()) Unload(); }
+	//virtual ~CTexture() {}
 
-	virtual void Destroy() = 0;
+	virtual void		Destroy() = 0;
+
+	const CTextureDesc&	GetDesc() const { return Desc; }
 };
 
 typedef Ptr<CTexture> PTexture;

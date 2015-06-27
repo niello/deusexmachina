@@ -8,9 +8,7 @@
 //#include "CEGUI/DefaultResourceProvider.h"
 #include "CEGUI/Logger.h"
 //#include <algorithm>
-//
-//#include "d3dx11effect.h"
-//
+
 //#include "shader.txt"
 
 namespace CEGUI
@@ -196,12 +194,11 @@ void CDEMRenderer::destroyAllTextureTargets()
 	TexTargets.Clear(true);
 }
 //--------------------------------------------------------------------
-/*
-//!!!???implement differences right here and not in multiple texture constructors?!
+
 Texture& CDEMRenderer::createTexture(const String& name)
 {
 	n_assert(!Textures.Contains(name));
-	CDEMTexture* tex = n_new(CDEMTexture)(d_device, name);
+	CDEMTexture* tex = n_new(CDEMTexture)(*this, name);
 	Textures.Add(name, tex);
 	logTextureCreation(name);
 	return *tex;
@@ -211,7 +208,8 @@ Texture& CDEMRenderer::createTexture(const String& name)
 Texture& CDEMRenderer::createTexture(const String& name, const String& filename, const String& resourceGroup)
 {
 	n_assert(!Textures.Contains(name));
-	CDEMTexture* tex = n_new(CDEMTexture)(d_device, name, filename, resourceGroup);
+	CDEMTexture* tex = n_new(CDEMTexture)(*this, name);
+	tex->loadFromFile(filename, resourceGroup);
 	Textures.Add(name, tex);
 	logTextureCreation(name);
 	return *tex;
@@ -221,7 +219,8 @@ Texture& CDEMRenderer::createTexture(const String& name, const String& filename,
 Texture& CDEMRenderer::createTexture(const String& name, const Sizef& size)
 {
 	n_assert(!Textures.Contains(name));
-	CDEMTexture* tex = n_new(CDEMTexture)(d_device, name, size);
+	CDEMTexture* tex = n_new(CDEMTexture)(*this, name);
+	tex->createEmptyTexture(size);
 	Textures.Add(name, tex);
 	logTextureCreation(name);
 	return *tex;
@@ -230,42 +229,43 @@ Texture& CDEMRenderer::createTexture(const String& name, const Sizef& size)
 
 void CDEMRenderer::destroyTexture(Texture& texture)
 {
-	destroyTexture(texture.getName());
+	if (Textures.Remove(texture.getName()))
+	{
+		logTextureDestruction(texture.getName());
+		n_delete(&texture);
+	}
 }
 //--------------------------------------------------------------------
-*/
-/*
+
 void CDEMRenderer::destroyTexture(const String& name)
 {
-	TextureMap::iterator i = d_textures.find(name);
-
-	if (d_textures.end() != i)
+	CDEMTexture* pTexture;
+	if (Textures.Get(name, pTexture))
 	{
 		logTextureDestruction(name);
-		delete i->second;
-		d_textures.erase(i);
+		n_delete(pTexture);
+		Textures.Remove(name); //!!!double search! need iterator!
 	}
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::destroyAllTextures()
 {
-	while (!d_textures.empty())
-		destroyTexture(d_textures.begin()->first);
+	for (CHashTable<String, CDEMTexture*>::CIterator It = Textures.Begin(); It; ++It)
+		n_delete(*It);
+	Textures.Clear();
 }
 //--------------------------------------------------------------------
 
 Texture& CDEMRenderer::getTexture(const String& name) const
 {
-    TextureMap::const_iterator i = d_textures.find(name);
-    
-    if (i == d_textures.end())
-        CEGUI_THROW(UnknownObjectException("Texture does not exist: " + name));
-
-    return *i->second;
+	CDEMTexture** ppTex = Textures.Get(name);
+	n_assert(ppTex && *ppTex);
+	return **ppTex;
 }
 //--------------------------------------------------------------------
 
+/*
 void CDEMRenderer::beginRendering()
 {
 	d_device.d_context->IASetInputLayout(d_inputLayout);
