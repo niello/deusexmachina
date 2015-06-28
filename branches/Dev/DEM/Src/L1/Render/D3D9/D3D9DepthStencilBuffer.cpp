@@ -13,6 +13,9 @@ __ImplementClass(Render::CD3D9DepthStencilBuffer, 'DSB9', Render::CDepthStencilB
 bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)
 {
 	n_assert(pSurface);
+
+	//!!!fill desc!
+
 	pDSSurface = pSurface;
 	OK;
 }

@@ -12,6 +12,9 @@ __ImplementClass(Render::CD3D11DepthStencilBuffer, 'DSB1', Render::CDepthStencil
 bool CD3D11DepthStencilBuffer::Create(ID3D11DepthStencilView* pDSV)
 {
 	n_assert(pDSV);
+
+	//!!!fill desc!
+
 	pDSView = pDSV;
 	OK;
 }
