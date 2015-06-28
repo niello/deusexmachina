@@ -314,79 +314,6 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 }
 //---------------------------------------------------------------------
 
-D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
-{
-	switch (DriverType)
-	{
-		case GPU_AutoSelect:	Sys::Error("CD3D9GPUDriver::GetD3DDriverType() > GPU_AutoSelect isn't an actual GPU driver type"); return D3DDEVTYPE_HAL;
-		case GPU_Hardware:		return D3DDEVTYPE_HAL;
-		case GPU_Reference:		return D3DDEVTYPE_REF;
-		case GPU_Software:		return D3DDEVTYPE_SW;
-		case GPU_Null:			return D3DDEVTYPE_NULLREF;
-		default:				Sys::Error("CD3D9GPUDriver::GetD3DDriverType() > invalid GPU driver type"); return D3DDEVTYPE_HAL;
-	};
-}
-//---------------------------------------------------------------------
-
-void CD3D9GPUDriver::GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool)
-{
-	Data::CFlags AccessFlags(InAccessFlags);
-	if (AccessFlags.IsNot(Access_CPU_Write | Access_CPU_Read))
-	{
-		OutPool = D3DPOOL_MANAGED; //!!!set default if resmgr will manage reloading!
-		OutUsage = 0;
-	}
-	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
-	{
-		OutPool = D3DPOOL_DEFAULT;
-		OutUsage = D3DUSAGE_DYNAMIC;
-	}
-	else
-	{
-		OutPool = D3DPOOL_SYSTEMMEM;
-		OutUsage = D3DUSAGE_DYNAMIC;
-	}
-}
-//---------------------------------------------------------------------
-
-//???bool Windowed as parameter and re-check available MSAA on fullscreen transitions?
-bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
-{
-#if DEM_RENDER_DEBUG
-	OutType = D3DMULTISAMPLE_NONE;
-	OutQuality = 0;
-	OK;
-#else
-	switch (MSAA)
-	{
-		case MSAA_None:	OutType = D3DMULTISAMPLE_NONE; break;
-		case MSAA_2x:	OutType = D3DMULTISAMPLE_2_SAMPLES; break;
-		case MSAA_4x:	OutType = D3DMULTISAMPLE_4_SAMPLES; break;
-		case MSAA_8x:	OutType = D3DMULTISAMPLE_8_SAMPLES; break;
-	};
-
-	DWORD QualLevels = 0;
-	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
-																			GetD3DDriverType(Type),
-																			Format,
-																			FALSE, // Windowed
-																			OutType,
-																			&QualLevels);
-	if (hr == D3DERR_NOTAVAILABLE)
-	{
-		OutType = D3DMULTISAMPLE_NONE;
-		OutQuality = 0;
-		FAIL;
-	}
-	n_assert(SUCCEEDED(hr));
-
-	OutQuality = QualLevels ? QualLevels - 1 : 0;
-
-	OK;
-#endif
-}
-//---------------------------------------------------------------------
-
 bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams)
 {
 	IDirect3D9* pD3D9 = D3D9DrvFactory->GetDirect3D9();
@@ -882,8 +809,6 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 {
 	if (!pD3DDevice) return NULL;
 
-	n_assert2(!pData, "CD3D9GPUDriver::CreateTexture() > Loading initial data - IMPLEMENT ME!");
-
 	PD3D9Texture Tex = n_new(CD3D9Texture);
 	if (Tex.IsNullPtr()) return NULL;
 
@@ -892,26 +817,56 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 	DWORD Usage;
 	D3DPOOL Pool;
 	GetUsagePool(AccessFlags, Usage, Pool);
+	if (Desc.MipLevels != 1) Usage |= D3DUSAGE_AUTOGENMIPMAP;
 
-	IDirect3DBaseTexture9* pTexBase = NULL;
 	if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
 	{
 		UINT Height = (Desc.Type == Texture_1D) ? 1 : Desc.Height;
 		IDirect3DTexture9* pD3DTex = NULL;
 		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Height, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
-		pTexBase = pD3DTex;
+		
+		if (!Tex->Create(pD3DTex))
+		{
+			pD3DTex->Release();
+			return NULL;
+		}
+		
+		if (pData)
+		{
+			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures cannot be locked, but must be
+			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
+			D3DLOCKED_RECT LockedRect = { 0 };
+			if (SUCCEEDED(pD3DTex->LockRect(0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
+			{
+				//memcpy(LockedRect.pBits, pData, DATA_SIZE);
+				n_assert(SUCCEEDED(pD3DTex->UnlockRect(0)));
+			}
+			else
+			{
+				pD3DTex->Release();
+				return NULL;
+			}
+		}
 	}
 	else if (Desc.Type == Texture_3D)
 	{
 		IDirect3DVolumeTexture9* pD3DTex = NULL;
 		if (FAILED(pD3DDevice->CreateVolumeTexture(Desc.Width, Desc.Height, Desc.Depth, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
-		pTexBase = pD3DTex;
+		if (!Tex->Create(pD3DTex))
+		{
+			pD3DTex->Release();
+			return NULL;
+		}
 	}
 	else if (Desc.Type == Texture_Cube)
 	{
 		IDirect3DCubeTexture9* pD3DTex = NULL;
 		if (FAILED(pD3DDevice->CreateCubeTexture(Desc.Width, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
-		pTexBase = pD3DTex;
+		if (!Tex->Create(pD3DTex))
+		{
+			pD3DTex->Release();
+			return NULL;
+		}
 	}
 	else
 	{
@@ -919,11 +874,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 		return NULL;
 	}
 
-	if (!Tex->Create(pTexBase))
-	{
-		pTexBase->Release();
-		return NULL;
-	}
+	n_assert2(!pData, "CD3D9GPUDriver::CreateTexture() > Loading initial data - IMPLEMENT ME!");
 
 	return Tex.GetUnsafe();
 }
@@ -1005,6 +956,79 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 	PD3D9DepthStencilBuffer DS = n_new(CD3D9DepthStencilBuffer);
 	DS->Create(pSurface);
 	return DS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
+{
+	switch (DriverType)
+	{
+		case GPU_AutoSelect:	Sys::Error("CD3D9GPUDriver::GetD3DDriverType() > GPU_AutoSelect isn't an actual GPU driver type"); return D3DDEVTYPE_HAL;
+		case GPU_Hardware:		return D3DDEVTYPE_HAL;
+		case GPU_Reference:		return D3DDEVTYPE_REF;
+		case GPU_Software:		return D3DDEVTYPE_SW;
+		case GPU_Null:			return D3DDEVTYPE_NULLREF;
+		default:				Sys::Error("CD3D9GPUDriver::GetD3DDriverType() > invalid GPU driver type"); return D3DDEVTYPE_HAL;
+	};
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool)
+{
+	Data::CFlags AccessFlags(InAccessFlags);
+	if (AccessFlags.IsNot(Access_CPU_Write | Access_CPU_Read))
+	{
+		OutPool = D3DPOOL_MANAGED; //!!!set default if resmgr will manage reloading!
+		OutUsage = 0;
+	}
+	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
+	{
+		OutPool = D3DPOOL_DEFAULT;
+		OutUsage = D3DUSAGE_DYNAMIC;
+	}
+	else
+	{
+		OutPool = D3DPOOL_SYSTEMMEM;
+		OutUsage = D3DUSAGE_DYNAMIC;
+	}
+}
+//---------------------------------------------------------------------
+
+//???bool Windowed as parameter and re-check available MSAA on fullscreen transitions?
+bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const
+{
+#if DEM_RENDER_DEBUG
+	OutType = D3DMULTISAMPLE_NONE;
+	OutQuality = 0;
+	OK;
+#else
+	switch (MSAA)
+	{
+		case MSAA_None:	OutType = D3DMULTISAMPLE_NONE; break;
+		case MSAA_2x:	OutType = D3DMULTISAMPLE_2_SAMPLES; break;
+		case MSAA_4x:	OutType = D3DMULTISAMPLE_4_SAMPLES; break;
+		case MSAA_8x:	OutType = D3DMULTISAMPLE_8_SAMPLES; break;
+	};
+
+	DWORD QualLevels = 0;
+	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
+																			GetD3DDriverType(Type),
+																			Format,
+																			FALSE, // Windowed
+																			OutType,
+																			&QualLevels);
+	if (hr == D3DERR_NOTAVAILABLE)
+	{
+		OutType = D3DMULTISAMPLE_NONE;
+		OutQuality = 0;
+		FAIL;
+	}
+	n_assert(SUCCEEDED(hr));
+
+	OutQuality = QualLevels ? QualLevels - 1 : 0;
+
+	OK;
+#endif
 }
 //---------------------------------------------------------------------
 

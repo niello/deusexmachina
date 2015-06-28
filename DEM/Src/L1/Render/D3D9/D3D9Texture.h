@@ -45,7 +45,6 @@ public:
 
 	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 
-	DWORD						GetPixelCount(bool IncludeMips) const; //???virtual?
 	IDirect3DBaseTexture9*		GetD3DBaseTexture() const { /*n_assert(!LockCount);*/ return pD3DTex; }
 	IDirect3DTexture9*			GetD3DTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_2D); return (IDirect3DTexture9*)pD3DTex; }
 	IDirect3DCubeTexture9*		GetD3DCubeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_Cube); return (IDirect3DCubeTexture9*)pD3DTex; }

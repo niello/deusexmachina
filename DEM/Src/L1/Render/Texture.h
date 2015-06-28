@@ -26,16 +26,6 @@ class CTexture: public Resources::CResourceObject
 {
 public:
 
-	enum ECubeMapFace
-	{
-		PosX = 0,
-		NegX,
-		PosY,
-		NegY,
-		PosZ,
-		NegZ
-	};
-
 	struct CMapInfo
 	{        
 		void*	pData;
@@ -58,6 +48,7 @@ public:
 
 	virtual void		Destroy() = 0;
 
+	DWORD				GetPixelCount(bool IncludeSubsequentMips) const;
 	const CTextureDesc&	GetDesc() const { return Desc; }
 };
 
