@@ -18,64 +18,6 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11GPUDriver, '11GD', Render::CGPUDriver);
 
-D3D_DRIVER_TYPE CD3D11GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
-{
-	// WARP adapter is skipped.
-	// You also create the render-only device when you specify D3D_DRIVER_TYPE_WARP in the DriverType parameter
-	// of D3D11CreateDevice because the WARP device also uses the render-only WARP adapter (c) Docs
-	switch (DriverType)
-	{
-		case GPU_AutoSelect:	return D3D_DRIVER_TYPE_UNKNOWN;
-		case GPU_Hardware:		return D3D_DRIVER_TYPE_HARDWARE;
-		case GPU_Reference:		return D3D_DRIVER_TYPE_REFERENCE;
-		case GPU_Software:		return D3D_DRIVER_TYPE_SOFTWARE;
-		case GPU_Null:			return D3D_DRIVER_TYPE_NULL;
-		default:				Sys::Error("CD3D11GPUDriver::GetD3DDriverType() > invalid GPU driver type"); return D3D_DRIVER_TYPE_UNKNOWN;
-	};
-}
-//---------------------------------------------------------------------
-
-EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
-{
-	switch (DriverType)
-	{
-		case D3D_DRIVER_TYPE_UNKNOWN:	return GPU_AutoSelect;
-		case D3D_DRIVER_TYPE_HARDWARE:	return GPU_Hardware;
-		case D3D_DRIVER_TYPE_WARP:		return GPU_Reference;
-		case D3D_DRIVER_TYPE_REFERENCE:	return GPU_Reference;
-		case D3D_DRIVER_TYPE_SOFTWARE:	return GPU_Software;
-		case D3D_DRIVER_TYPE_NULL:		return GPU_Null;
-		default:						Sys::Error("CD3D11GPUDriver::GetD3DDriverType() > invalid D3D_DRIVER_TYPE"); return GPU_AutoSelect;
-	};
-}
-//---------------------------------------------------------------------
-
-void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
-{
-	if (InAccessFlags == Access_GPU_Read)
-	{
-		OutUsage = InitDataProvided ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
-	}
-	else if (InAccessFlags == (Access_GPU_Read | Access_GPU_Write) ||
-			 InAccessFlags == Access_GPU_Write)
-	{
-		OutUsage = D3D11_USAGE_DEFAULT;
-	}
-	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
-	{
-		OutUsage = D3D11_USAGE_DYNAMIC;
-	}
-	else
-	{
-		OutUsage = D3D11_USAGE_STAGING; // Can't be a depth-stencil buffer or a multisampled render target
-	}
-
-	OutCPUAccess = 0;
-	if (InAccessFlags & Access_CPU_Read) OutCPUAccess |= D3D11_CPU_ACCESS_READ;
-	if (InAccessFlags & Access_CPU_Write) OutCPUAccess |= D3D11_CPU_ACCESS_WRITE;
-}
-//---------------------------------------------------------------------
-
 bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 {
 	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;
@@ -1138,6 +1080,64 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
 	DS->Create(pDSV);
 	return DS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+D3D_DRIVER_TYPE CD3D11GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
+{
+	// WARP adapter is skipped.
+	// You also create the render-only device when you specify D3D_DRIVER_TYPE_WARP in the DriverType parameter
+	// of D3D11CreateDevice because the WARP device also uses the render-only WARP adapter (c) Docs
+	switch (DriverType)
+	{
+		case GPU_AutoSelect:	return D3D_DRIVER_TYPE_UNKNOWN;
+		case GPU_Hardware:		return D3D_DRIVER_TYPE_HARDWARE;
+		case GPU_Reference:		return D3D_DRIVER_TYPE_REFERENCE;
+		case GPU_Software:		return D3D_DRIVER_TYPE_SOFTWARE;
+		case GPU_Null:			return D3D_DRIVER_TYPE_NULL;
+		default:				Sys::Error("CD3D11GPUDriver::GetD3DDriverType() > invalid GPU driver type"); return D3D_DRIVER_TYPE_UNKNOWN;
+	};
+}
+//---------------------------------------------------------------------
+
+EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
+{
+	switch (DriverType)
+	{
+		case D3D_DRIVER_TYPE_UNKNOWN:	return GPU_AutoSelect;
+		case D3D_DRIVER_TYPE_HARDWARE:	return GPU_Hardware;
+		case D3D_DRIVER_TYPE_WARP:		return GPU_Reference;
+		case D3D_DRIVER_TYPE_REFERENCE:	return GPU_Reference;
+		case D3D_DRIVER_TYPE_SOFTWARE:	return GPU_Software;
+		case D3D_DRIVER_TYPE_NULL:		return GPU_Null;
+		default:						Sys::Error("CD3D11GPUDriver::GetD3DDriverType() > invalid D3D_DRIVER_TYPE"); return GPU_AutoSelect;
+	};
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
+{
+	if (InAccessFlags == Access_GPU_Read)
+	{
+		OutUsage = InitDataProvided ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+	}
+	else if (InAccessFlags == (Access_GPU_Read | Access_GPU_Write) ||
+			 InAccessFlags == Access_GPU_Write)
+	{
+		OutUsage = D3D11_USAGE_DEFAULT;
+	}
+	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
+	{
+		OutUsage = D3D11_USAGE_DYNAMIC;
+	}
+	else
+	{
+		OutUsage = D3D11_USAGE_STAGING; // Can't be a depth-stencil buffer or a multisampled render target
+	}
+
+	OutCPUAccess = 0;
+	if (InAccessFlags & Access_CPU_Read) OutCPUAccess |= D3D11_CPU_ACCESS_READ;
+	if (InAccessFlags & Access_CPU_Write) OutCPUAccess |= D3D11_CPU_ACCESS_WRITE;
 }
 //---------------------------------------------------------------------
 

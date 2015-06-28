@@ -147,31 +147,6 @@ void CD3D9Texture::Destroy()
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D9Texture::GetPixelCount(bool IncludeMips) const
-{
-	DWORD BaseCount;
-	switch (Desc.Type)
-	{
-		case Texture_2D:	BaseCount = Desc.Width * Desc.Height;
-		case Texture_3D:	BaseCount = Desc.Width * Desc.Height * Desc.Depth;
-		case Texture_Cube:	BaseCount = Desc.Width * Desc.Height * 6;
-		default:			return 0;
-	}
-
-	if (!IncludeMips) return BaseCount;
-
-	DWORD DivShift = ((Desc.Type == Texture_3D) ? 3 : 2); // Divide by 8 or 4
-	DWORD Accum = BaseCount;
-	for (DWORD i = 1; i < Desc.MipLevels; ++i)
-	{
-		BaseCount >>= DivShift;
-		Accum += BaseCount;
-	}
-
-	return Accum;
-}
-//---------------------------------------------------------------------
-
 //inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
 //{
 //	switch (MapType)
@@ -265,18 +240,6 @@ DWORD CD3D9Texture::GetPixelCount(bool IncludeMips) const
 //	n_assert(Type == TextureCube && LockCount > 0);
 //	GetD3D9CubeTexture()->UnlockRect((D3DCUBEMAP_FACES)Face, MipLevel);
 //	LockCount--;
-//}
-////---------------------------------------------------------------------
-//
-//void CTexture::GenerateMipLevels()
-//{
-//	// To have mipmap sublevels generated automatically at texture
-//	// creation time, specify D3DUSAGE_AUTOGENMIPMAP (c) D3D9 docs
-//	n_assert(pD3D9Tex);
-//	pD3D9Tex->GenerateMipSubLevels();
-//
-//	// Doesn't work on pool = DEFAULT & usage != DYNAMIC
-//	//n_assert(SUCCEEDED(D3DXFilterTexture(pD3D9Tex, NULL, 0, D3DX_FILTER_LINEAR)));
 //}
 ////---------------------------------------------------------------------
 //

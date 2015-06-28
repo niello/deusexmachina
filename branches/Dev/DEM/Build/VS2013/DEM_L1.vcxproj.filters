@@ -1330,9 +1330,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Texture.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -1374,6 +1371,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMGeometryBuffer.cpp">
       <Filter>UI\CEGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Texture.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

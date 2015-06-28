@@ -100,6 +100,16 @@ enum ETextureType
 	Texture_Cube
 };
 
+enum ECubeMapFace
+{
+	PosX = 0,
+	NegX,
+	PosY,
+	NegY,
+	PosZ,
+	NegZ
+};
+
 // Flags that indicate which hardware has which access to this resource data.
 // Some combinations may be unsupported by certain rendering APIs, so, implementations must
 // consider to satisfy the most of possible features of a set requested.
