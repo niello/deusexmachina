@@ -9,6 +9,7 @@
 
 namespace Render
 {
+struct CRenderTargetDesc;
 
 class CDepthStencilBuffer: public Core::CObject
 {
@@ -20,7 +21,7 @@ public:
 
 	virtual void				Destroy() = 0;
 	virtual bool				IsValid() const = 0;
-	//const CRenderTargetDesc&	GetDesc() const { return Desc; }
+	const CRenderTargetDesc&	GetDesc() const { n_assert(false); return CRenderTargetDesc(); }
 };
 
 typedef Ptr<CDepthStencilBuffer> PDepthStencilBuffer;

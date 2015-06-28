@@ -792,7 +792,9 @@ void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, u
 	if (CurrDS.IsValidPtr())
 	{
 		if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
-		if ((Flags & Clear_Stencil))// && CurrDS.Format.StencilBits)
+
+		D3DFORMAT Fmt = CD3D9DriverFactory::PixelFormatToD3DFormat(CurrDS->GetDesc().Format);
+		if ((Flags & Clear_Stencil) && CD3D9DriverFactory::D3DFormatStencilBits(Fmt) > 0)
 			D3DFlags |= D3DCLEAR_STENCIL;
 	}
 
@@ -830,15 +832,16 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 			pD3DTex->Release();
 			return NULL;
 		}
-		
+
 		if (pData)
 		{
-			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures cannot be locked, but must be
+			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
 			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
 			D3DLOCKED_RECT LockedRect = { 0 };
 			if (SUCCEEDED(pD3DTex->LockRect(0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
 			{
-				//memcpy(LockedRect.pBits, pData, DATA_SIZE);
+				DWORD SizeInBytes = (Desc.Width * Height * CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat)) >> 3;
+				memcpy(LockedRect.pBits, pData, SizeInBytes);
 				n_assert(SUCCEEDED(pD3DTex->UnlockRect(0)));
 			}
 			else
@@ -857,6 +860,24 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 			pD3DTex->Release();
 			return NULL;
 		}
+
+		if (pData)
+		{
+			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
+			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
+			D3DLOCKED_BOX LockedBox = { 0 };
+			if (SUCCEEDED(pD3DTex->LockBox(0, &LockedBox, NULL, D3DLOCK_NOSYSLOCK)))
+			{
+				DWORD SizeInBytes = (Desc.Width * Desc.Height * Desc.Depth * CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat)) >> 3;
+				memcpy(LockedBox.pBits, pData, SizeInBytes);
+				n_assert(SUCCEEDED(pD3DTex->UnlockBox(0)));
+			}
+			else
+			{
+				pD3DTex->Release();
+				return NULL;
+			}
+		}
 	}
 	else if (Desc.Type == Texture_Cube)
 	{
@@ -866,6 +887,27 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 		{
 			pD3DTex->Release();
 			return NULL;
+		}
+
+		if (pData)
+		{
+			Sys::Error("CD3D9GPUDriver::CreateTexture() > Cubemap loading face by face - IMPLEMENT ME!\n");
+			/*
+			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
+			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
+			D3DLOCKED_RECT LockedRect = { 0 };
+			if (SUCCEEDED(pD3DTex->LockRect(0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
+			{
+				DWORD SizeInBytes = (Desc.Width * Height * CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat)) >> 3;
+				memcpy(LockedRect.pBits, pData, SizeInBytes);
+				n_assert(SUCCEEDED(pD3DTex->UnlockRect(0)));
+			}
+			else
+			{
+				pD3DTex->Release();
+				return NULL;
+			}
+			*/
 		}
 	}
 	else

@@ -700,22 +700,28 @@ bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
-// Even if RTs and DS set are still dirty (not bound) clear operation can be performed.
+// Even if RTs and DS set are still dirty (not bound), clear operation can be performed.
 void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil)
 {
-	for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+	if (Flags & Clear_Color)
 	{
-		CD3D11RenderTarget* pRT = CurrRT[i].GetUnsafe();
-		if (pRT && pRT->IsValid())
-			pD3DImmContext->ClearRenderTargetView(pRT->GetD3DRTView(), ColorRGBA.v);
+		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+		{
+			CD3D11RenderTarget* pRT = CurrRT[i].GetUnsafe();
+			if (pRT && pRT->IsValid())
+				pD3DImmContext->ClearRenderTargetView(pRT->GetD3DRTView(), ColorRGBA.v);
+		}
 	}
 
 	if (CurrDS.IsValidPtr() && ((Flags & Clear_Depth) || (Flags & Clear_Stencil)))
 	{
 		UINT D3DFlags = 0;
 		if (Flags & Clear_Depth) D3DFlags |= D3D11_CLEAR_DEPTH;
-		if ((Flags & Clear_Stencil)) //!!! && CurrDS.Format.StencilBits)
+
+		DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(CurrDS->GetDesc().Format);
+		if ((Flags & Clear_Stencil) && CD3D11DriverFactory::DXGIFormatStencilBits(Fmt) > 0)
 			D3DFlags |= D3D11_CLEAR_STENCIL;
+
 		pD3DImmContext->ClearDepthStencilView(CurrDS->GetD3DDSView(), D3DFlags, Depth, Stencil);
 	}
 }
@@ -874,17 +880,35 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		BindFlags |= D3D11_BIND_RENDER_TARGET;
 	}
 
+/*
+	DWORD Width = Desc.Width;
+	if (DXGIFormat == DXGI_FORMAT_BC1_UNORM ||
+		DXGIFormat == DXGI_FORMAT_BC2_UNORM ||
+		DXGIFormat == DXGI_FORMAT_BC3_UNORM)
+	{
+		Width = ((Width + 3) >> 2) << 2;
+	}
+*/
+
 	//???is different for different dimensions?
-	D3D11_SUBRESOURCE_DATA InitData;
+	//!!!can pass array!
+	D3D11_SUBRESOURCE_DATA InitData = { 0 };
 	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
 	if (pData)
 	{
-		ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+		DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
+		n_assert_dbg(BPP > 0);
+
 		InitData.pSysMem = pData;
-		InitData.SysMemPitch = 0; //CalcTexturePitch(Desc.Width, DXGIFormat);
-		//InitData.SysMemSlicePitch;
+		InitData.SysMemPitch = 0; //total bytes of 1d, bytes from row to row; CalcTexturePitch(Desc.Width, DXGIFormat);
+		InitData.SysMemSlicePitch = 0; //total bytes of 2d, bytes from 3d slice to slice
+
 		pInitData = &InitData;
 	}
+//case DXGI_FORMAT_R8G8B8A8_UNORM:	return width * 4;
+//case DXGI_FORMAT_BC1_UNORM:		return ((width + 3) / 4) * 8;
+//case DXGI_FORMAT_BC2_UNORM:
+//case DXGI_FORMAT_BC3_UNORM:		return ((width + 3) / 4) * 16;
 
 	ID3D11Resource* pTexRsrc = NULL;
 	if (Desc.Type == Texture_1D)
