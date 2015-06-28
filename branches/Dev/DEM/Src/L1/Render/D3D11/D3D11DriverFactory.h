@@ -35,6 +35,9 @@ public:
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
 	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);
+	static DWORD			DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat);
+	static DWORD			DXGIFormatDepthBits(DXGI_FORMAT D3DFormat);
+	static DWORD			DXGIFormatStencilBits(DXGI_FORMAT D3DFormat);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc);
 
 	bool					Open();
