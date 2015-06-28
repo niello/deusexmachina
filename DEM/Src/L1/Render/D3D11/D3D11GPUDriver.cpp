@@ -870,7 +870,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	if (!CPUAccess &&
 		(BindFlags & D3D11_BIND_SHADER_RESOURCE) &&
 		Desc.MipLevels != 1 &&
-		DXGIFormat != DXGI_FORMAT_BC1_UNORM) // Can't be bound as RT
+		DXGIFormat != DXGI_FORMAT_BC1_UNORM) // Can't be bound as RT //???all BC?
 	{
 		// D3D11_RESOURCE_MISC_GENERATE_MIPS for ID3D11DeviceContext::GenerateMips()
 		// D3D11_RESOURCE_MISC_RESOURCE_CLAMP for ID3D11DeviceContext::SetResourceMinLOD()
@@ -880,18 +880,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		BindFlags |= D3D11_BIND_RENDER_TARGET;
 	}
 
-/*
-	DWORD Width = Desc.Width;
-	if (DXGIFormat == DXGI_FORMAT_BC1_UNORM ||
-		DXGIFormat == DXGI_FORMAT_BC2_UNORM ||
-		DXGIFormat == DXGI_FORMAT_BC3_UNORM)
-	{
-		Width = ((Width + 3) >> 2) << 2;
-	}
-*/
-
-	//???is different for different dimensions?
-	//!!!can pass array!
+	//!!!can pass array for arraysize > 1! at least for a cubemap!?
 	D3D11_SUBRESOURCE_DATA InitData = { 0 };
 	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
 	if (pData)
@@ -899,16 +888,27 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 		n_assert_dbg(BPP > 0);
 
+		if (DXGIFormat == DXGI_FORMAT_BC1_UNORM ||
+			DXGIFormat == DXGI_FORMAT_BC2_UNORM ||
+			DXGIFormat == DXGI_FORMAT_BC3_UNORM)
+		{
+			//???all BC the same? DXGIFormatIsBlockCompressed? or even get block size
+			//if get block W & H (even if 1) can unify all calculations
+
+			// Block count = (Desc.Width + 3) / 4; Pixel count = Block count * 16; Bits = Pixel count * BPP; Bytes = Bits / 8.
+			InitData.SysMemPitch = (((Desc.Width + 3) >> 2) << 1) * BPP;
+			InitData.SysMemSlicePitch = InitData.SysMemPitch * ((Desc.Height + 3) >> 2);
+		}
+		else
+		{
+			InitData.SysMemPitch = (Desc.Width * BPP) >> 3;
+			InitData.SysMemSlicePitch = InitData.SysMemPitch * Desc.Height;
+		}
+
 		InitData.pSysMem = pData;
-		InitData.SysMemPitch = 0; //total bytes of 1d, bytes from row to row; CalcTexturePitch(Desc.Width, DXGIFormat);
-		InitData.SysMemSlicePitch = 0; //total bytes of 2d, bytes from 3d slice to slice
 
 		pInitData = &InitData;
 	}
-//case DXGI_FORMAT_R8G8B8A8_UNORM:	return width * 4;
-//case DXGI_FORMAT_BC1_UNORM:		return ((width + 3) / 4) * 8;
-//case DXGI_FORMAT_BC2_UNORM:
-//case DXGI_FORMAT_BC3_UNORM:		return ((width + 3) / 4) * 16;
 
 	ID3D11Resource* pTexRsrc = NULL;
 	if (Desc.Type == Texture_1D)
