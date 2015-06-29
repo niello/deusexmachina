@@ -5,23 +5,23 @@
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
 
-// A video memory buffer for depth and stencil information used during rendering
+// A video memory buffer for depth and stencil information.
 
 namespace Render
 {
-struct CRenderTargetDesc;
 
 class CDepthStencilBuffer: public Core::CObject
 {
 protected:
 
-	//CRenderTargetDesc Desc;
+	CRenderTargetDesc Desc;
 
 public:
 
 	virtual void				Destroy() = 0;
 	virtual bool				IsValid() const = 0;
-	const CRenderTargetDesc&	GetDesc() const { n_assert(false); return CRenderTargetDesc(); }
+	virtual CTexture*			GetShaderResource() const = 0;
+	const CRenderTargetDesc&	GetDesc() const { return Desc; }
 };
 
 typedef Ptr<CDepthStencilBuffer> PDepthStencilBuffer;

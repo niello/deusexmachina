@@ -14,7 +14,6 @@ namespace Render
 //typedef DWORD HShaderParam; // Opaque to user, so its internal meaning can be different for different APIs
 //struct CShaderConstantDesc;
 struct CTextureDesc;
-struct CRenderTargetDesc;
 struct CSwapChainDesc;
 class CDisplayMode;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
@@ -65,7 +64,8 @@ enum EPrimitiveTopology
 enum ECaps
 {
 	Caps_VSTex_L16,				// Unsigned short 16-bit texture as a vertex texture
-	Caps_VSTexFiltering_Linear	// Bilinear min & mag filtering for vertex textures
+	Caps_VSTexFiltering_Linear,	// Bilinear min & mag filtering for vertex textures
+	Caps_ReadDepthAsTexture		// Use depth buffer as a shader input
 };
 
 //!!!fill!
@@ -126,12 +126,21 @@ enum EResourceAccess
 
 enum EMapType
 {
-	Map_Setup,				// Gain write access for the initial filling of the buffer. Don't misuse!
+	//Map_Setup,				// Gain write access for the initial filling of the buffer. Don't misuse!
 	Map_Read,				// Gain read access, must be CPU_Read
 	Map_Write,				// Gain write access, must be CPU_Write
 	Map_ReadWrite,			// Gain read/write access, must be CPU_Read | CPU_Write
 	Map_WriteDiscard,		// Gain write access, discard previous content, must be GPU_Read | CPU_Write
 	Map_WriteNoOverwrite,	// Gain write access, must be GPU_Read | CPU_Write, see D3D11 docs for details
+};
+
+struct CRenderTargetDesc
+{
+	DWORD			Width;
+	DWORD			Height;
+	EPixelFormat	Format;
+	EMSAAQuality	MSAAQuality;
+	bool			UseAsShaderInput;
 };
 
 // Error codes
