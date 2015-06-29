@@ -12,6 +12,8 @@ namespace Render
 
 class CDepthStencilBuffer: public Core::CObject
 {
+	__DeclareClass(CDepthStencilBuffer);
+
 protected:
 
 	CRenderTargetDesc Desc;

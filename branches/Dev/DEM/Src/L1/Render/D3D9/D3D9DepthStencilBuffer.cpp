@@ -15,13 +15,13 @@ bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)
 {
 	n_assert(pSurface);
 
-	D3DSURFACE_DESC RTDesc;
-	if (FAILED(pSurface->GetDesc(&RTDesc)) || !(RTDesc.Usage & D3DUSAGE_RENDERTARGET)) FAIL;
+	D3DSURFACE_DESC DSDesc;
+	if (FAILED(pSurface->GetDesc(&DSDesc)) || !(DSDesc.Usage & D3DUSAGE_DEPTHSTENCIL)) FAIL;
 
-	Desc.Width = RTDesc.Width;
-	Desc.Height = RTDesc.Height;
-	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(RTDesc.Format);
-	Desc.MSAAQuality = CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(RTDesc.MultiSampleType, RTDesc.MultiSampleQuality);
+	Desc.Width = DSDesc.Width;
+	Desc.Height = DSDesc.Height;
+	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(DSDesc.Format);
+	Desc.MSAAQuality = CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(DSDesc.MultiSampleType, DSDesc.MultiSampleQuality);
 	Desc.UseAsShaderInput = false; //!!!may add support!
 
 	//!!!validate format if shader input!

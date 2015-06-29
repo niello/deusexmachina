@@ -16,6 +16,8 @@ typedef Ptr<class CD3D9Texture> PD3D9Texture;
 
 class CD3D9RenderTarget: public CRenderTarget
 {
+	__DeclareClass(CD3D9RenderTarget);
+
 protected:
 
 	IDirect3DSurface9*	pRTSurface;

@@ -15,6 +15,8 @@ typedef Ptr<class CD3D11Texture> PD3D11Texture;
 
 class CD3D11RenderTarget: public CRenderTarget
 {
+	__DeclareClass(CD3D11RenderTarget);
+
 protected:
 
 	ID3D11RenderTargetView*		pRTView;

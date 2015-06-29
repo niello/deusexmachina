@@ -2,11 +2,13 @@
 
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11Texture.h>
+#include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
 namespace Render
 {
+__ImplementClass(Render::CD3D11RenderTarget, 'RT11', Render::CRenderTarget);
 
 //!!!???assert destroyed?!
 bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV)

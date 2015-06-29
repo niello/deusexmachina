@@ -19,6 +19,8 @@ typedef Ptr<class CTexture> PTexture;
 
 class CRenderTarget: public Core::CObject
 {
+	__DeclareClass(CRenderTarget);
+
 protected:
 
 	CRenderTargetDesc Desc;

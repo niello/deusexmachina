@@ -74,6 +74,8 @@ enum EPixelFormat
 {
 	PixelFmt_Invalid = 0,
 	PixelFmt_DefaultBackBuffer,
+	PixelFmt_DefaultDepthBuffer,
+	PixelFmt_DefaultDepthStencilBuffer,
 	PixelFmt_R8G8B8X8,
 	PixelFmt_R8G8B8A8,
 	PixelFmt_B8G8R8X8,
@@ -81,7 +83,11 @@ enum EPixelFormat
 	PixelFmt_B5G6R5,
 	PixelFmt_DXT1,
 	PixelFmt_DXT3,
-	PixelFmt_DXT5
+	PixelFmt_DXT5,
+	PixelFmt_D24,
+	PixelFmt_D24S8,
+	PixelFmt_D32,
+	PixelFmt_D32S8
 };
 
 enum EMSAAQuality
