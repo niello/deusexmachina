@@ -254,7 +254,11 @@ bool CD3D11GPUDriver::InitSwapChainRenderTarget(CD3D11SwapChain& SC)
 	if (FAILED(hr)) FAIL;
 
 	if (!SC.BackBufferRT.IsValidPtr()) SC.BackBufferRT = n_new(CD3D11RenderTarget);
-	SC.BackBufferRT->As<CD3D11RenderTarget>()->Create(pRTV, NULL);
+	if (!SC.BackBufferRT->As<CD3D11RenderTarget>()->Create(pRTV, NULL))
+	{
+		pRTV->Release();
+		FAIL;
+	}
 
 	OK;
 }
@@ -855,7 +859,12 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
 	UINT QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
+	{
 		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DXGIFormat, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
+
+		// MSAA resources can't be initialized with data
+		pData = NULL;
+	}
 
 	D3D11_USAGE Usage;
 	UINT CPUAccess;
@@ -881,34 +890,42 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		BindFlags |= D3D11_BIND_RENDER_TARGET;
 	}
 
-	//!!!can pass array for arraysize > 1! at least for a cubemap!?
-	D3D11_SUBRESOURCE_DATA InitData = { 0 };
 	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+
+	// In a current implementation pData should never contain mips, only top-level data
 	if (pData)
 	{
 		DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 		n_assert_dbg(BPP > 0);
 
-		if (DXGIFormat == DXGI_FORMAT_BC1_UNORM ||
-			DXGIFormat == DXGI_FORMAT_BC2_UNORM ||
-			DXGIFormat == DXGI_FORMAT_BC3_UNORM)
-		{
-			//???all BC the same? DXGIFormatIsBlockCompressed? or even get block size
-			//if get block W & H (even if 1) can unify all calculations
+		DWORD BlockW, BlockH;
+		CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat, BlockW, BlockH);
 
-			// Block count = (Desc.Width + 3) / 4; Pixel count = Block count * 16; Bits = Pixel count * BPP; Bytes = Bits / 8.
-			InitData.SysMemPitch = (((Desc.Width + 3) >> 2) << 1) * BPP;
-			InitData.SysMemSlicePitch = InitData.SysMemPitch * ((Desc.Height + 3) >> 2);
+		UINT Pitch;
+		UINT SlicePitch;
+		if (BlockW == 1 && BlockH == 1)
+		{
+			Pitch = (Desc.Width * BPP) >> 3;
+			SlicePitch = Pitch * Desc.Height;
 		}
 		else
 		{
-			InitData.SysMemPitch = (Desc.Width * BPP) >> 3;
-			InitData.SysMemSlicePitch = InitData.SysMemPitch * Desc.Height;
+			DWORD BlockCountW = (Desc.Width + BlockW - 1) / BlockW;
+			Pitch = (BlockCountW * BlockW * BlockH * BPP) >> 3;
+			SlicePitch = Pitch * ((Desc.Height + BlockH - 1) / BlockH);
 		}
 
-		InitData.pSysMem = pData;
-
-		pInitData = &InitData;
+		DWORD ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 : Desc.ArraySize);
+		pInitData = (D3D11_SUBRESOURCE_DATA*)_malloca(ArraySize * sizeof(D3D11_SUBRESOURCE_DATA));
+		char* pCurrData = (char*)pData;
+		for (DWORD i = 0; i < ArraySize; ++i)
+		{
+			D3D11_SUBRESOURCE_DATA& InitData = pInitData[i];
+			InitData.pSysMem = pCurrData;
+			InitData.SysMemPitch = Pitch;
+			InitData.SysMemSlicePitch = SlicePitch;
+			pCurrData += SlicePitch;
+		}
 	}
 
 	ID3D11Resource* pTexRsrc = NULL;
@@ -925,7 +942,9 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		D3DDesc.MiscFlags = MiscFlags;
 
 		ID3D11Texture1D* pD3DTex = NULL;
-		if (FAILED(pD3DDevice->CreateTexture1D(&D3DDesc, pInitData, &pD3DTex))) return NULL;
+		HRESULT hr = pD3DDevice->CreateTexture1D(&D3DDesc, pInitData, &pD3DTex);
+		if (pInitData) _freea(pInitData);
+		if (FAILED(hr)) return NULL;
 		pTexRsrc = pD3DTex;
 	}
 	else if (Desc.Type == Texture_2D || Desc.Type == Texture_Cube)
@@ -956,7 +975,9 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		}
 
 		ID3D11Texture2D* pD3DTex = NULL;
-		if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, pInitData, &pD3DTex))) return NULL;
+		HRESULT hr = pD3DDevice->CreateTexture2D(&D3DDesc, pInitData, &pD3DTex);
+		if (pInitData) _freea(pInitData);
+		if (FAILED(hr)) return NULL;
 		pTexRsrc = pD3DTex;
 	}
 	else if (Desc.Type == Texture_3D)
@@ -973,7 +994,9 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		D3DDesc.MiscFlags = MiscFlags;
 
 		ID3D11Texture3D* pD3DTex = NULL;
-		if (FAILED(pD3DDevice->CreateTexture3D(&D3DDesc, pInitData, &pD3DTex))) return NULL;
+		HRESULT hr = pD3DDevice->CreateTexture3D(&D3DDesc, pInitData, &pD3DTex);
+		if (pInitData) _freea(pInitData);
+		if (FAILED(hr)) return NULL;
 		pTexRsrc = pD3DTex;
 	}
 	else
@@ -1057,7 +1080,13 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	}
 
 	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
-	RT->Create(pRTV, pSRV);
+	if (!RT->Create(pRTV, pSRV))
+	{
+		if (pSRV) pSRV->Release();
+		pRTV->Release();
+		pTexture->Release();
+		return NULL;
+	}
 	return RT.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -1147,7 +1176,13 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	}
 
 	PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
-	DS->Create(pDSV, pSRV);
+	if (!DS->Create(pDSV, pSRV))
+	{
+		if (pSRV) pSRV->Release();
+		pDSV->Release();
+		pTexture->Release();
+		return NULL;
+	}
 	return DS.GetUnsafe();
 }
 //---------------------------------------------------------------------

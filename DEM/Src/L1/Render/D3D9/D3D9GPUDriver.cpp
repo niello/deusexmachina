@@ -41,7 +41,11 @@ bool CD3D9GPUDriver::InitSwapChainRenderTarget(CD3D9SwapChain& SC)
 	}
 
 	if (!SC.BackBufferRT.IsValidPtr()) SC.BackBufferRT = n_new(CD3D9RenderTarget);
-	SC.BackBufferRT->As<CD3D9RenderTarget>()->Create(pRTSurface, NULL);
+	if (!SC.BackBufferRT->As<CD3D9RenderTarget>()->Create(pRTSurface, NULL))
+	{
+		pRTSurface->Release();
+		FAIL;
+	}
 
 	// Default swap chain may be automatically set as a render target
 	if (!SC.pSwapChain)
@@ -972,11 +976,21 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	if (pTexture)
 	{
 		Tex = n_new(CD3D9Texture);
-		Tex->Create(pTexture);
+		if (!Tex->Create(pTexture))
+		{
+			pSurface->Release();
+			pTexture->Release();
+			return NULL;
+		}
 	}
 
 	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
-	RT->Create(pSurface, Tex);
+	if (!RT->Create(pSurface, Tex))
+	{
+		Tex = NULL;
+		pSurface->Release();
+		return NULL;
+	}
 	return RT.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -988,10 +1002,12 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 	DWORD MSAAQuality;
 	if (!GetD3DMSAAParams(Desc.MSAAQuality, DSFmt, MSAAType, MSAAQuality)) FAIL;
 
+	D3DFORMAT BBFmt = CD3D9DriverFactory::PixelFormatToD3DFormat(PixelFmt_DefaultBackBuffer);
+
 	// Make sure the device supports a depth buffer specified
 	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
 																	GetD3DDriverType(Type),
-																	D3DFMT_UNKNOWN,
+																	BBFmt,
 																	D3DUSAGE_DEPTHSTENCIL,
 																	D3DRTYPE_SURFACE,
 																	DSFmt);
@@ -1007,11 +1023,16 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 		//or create depthstencil texture (D fmt, usage DS)
 		//need to CheckDeviceFormat (through CheckCaps())
 		Sys::Log("Current D3D9 implementation doesn't support UseAsShaderInput for depth-stencil buffers\n");
+		pSurface->Release();
 		return NULL;
 	}
 
 	PD3D9DepthStencilBuffer DS = n_new(CD3D9DepthStencilBuffer);
-	DS->Create(pSurface);
+	if (!DS->Create(pSurface))
+	{
+		pSurface->Release();
+		return NULL;
+	}
 	return DS.GetUnsafe();
 }
 //---------------------------------------------------------------------

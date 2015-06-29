@@ -144,15 +144,21 @@ DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 	switch (Format)
 	{
 		case PixelFmt_DefaultBackBuffer:
-		case PixelFmt_R8G8B8A8:				return DXGI_FORMAT_R8G8B8A8_UNORM;
-		case PixelFmt_B8G8R8X8:				return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
-		case PixelFmt_B8G8R8A8:				return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
-		case PixelFmt_B5G6R5:				return DXGI_FORMAT_B5G6R5_UNORM;
-		case PixelFmt_DXT1:					return DXGI_FORMAT_BC1_UNORM;
-		case PixelFmt_DXT3:					return DXGI_FORMAT_BC2_UNORM;
-		case PixelFmt_DXT5:					return DXGI_FORMAT_BC3_UNORM;
+		case PixelFmt_R8G8B8A8:					return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case PixelFmt_B8G8R8X8:					return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case PixelFmt_B8G8R8A8:					return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+		case PixelFmt_B5G6R5:					return DXGI_FORMAT_B5G6R5_UNORM;
+		case PixelFmt_DXT1:						return DXGI_FORMAT_BC1_UNORM;
+		case PixelFmt_DXT3:						return DXGI_FORMAT_BC2_UNORM;
+		case PixelFmt_DXT5:						return DXGI_FORMAT_BC3_UNORM;
+		case PixelFmt_DefaultDepthStencilBuffer:
+		case PixelFmt_D24S8:
+		case PixelFmt_D24:						return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case PixelFmt_DefaultDepthBuffer:
+		case PixelFmt_D32:						return DXGI_FORMAT_D32_FLOAT;
+		case PixelFmt_D32S8:					return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		case PixelFmt_Invalid:
-		default:							return DXGI_FORMAT_UNKNOWN;
+		default:								return DXGI_FORMAT_UNKNOWN;
 	}
 }
 //---------------------------------------------------------------------
@@ -161,15 +167,18 @@ EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
-		case DXGI_FORMAT_R8G8B8A8_UNORM:	return PixelFmt_R8G8B8A8;
-		case DXGI_FORMAT_B8G8R8X8_UNORM:	return PixelFmt_B8G8R8X8; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
-		case DXGI_FORMAT_B8G8R8A8_UNORM:	return PixelFmt_B8G8R8A8; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
-		case DXGI_FORMAT_B5G6R5_UNORM:		return PixelFmt_B5G6R5;
-		case DXGI_FORMAT_BC1_UNORM:			return PixelFmt_DXT1;
-		case DXGI_FORMAT_BC2_UNORM:			return PixelFmt_DXT3;
-		case DXGI_FORMAT_BC3_UNORM:			return PixelFmt_DXT5;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		return PixelFmt_R8G8B8A8;
+		case DXGI_FORMAT_B8G8R8X8_UNORM:		return PixelFmt_B8G8R8X8; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
+		case DXGI_FORMAT_B8G8R8A8_UNORM:		return PixelFmt_B8G8R8A8; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
+		case DXGI_FORMAT_B5G6R5_UNORM:			return PixelFmt_B5G6R5;
+		case DXGI_FORMAT_BC1_UNORM:				return PixelFmt_DXT1;
+		case DXGI_FORMAT_BC2_UNORM:				return PixelFmt_DXT3;
+		case DXGI_FORMAT_BC3_UNORM:				return PixelFmt_DXT5;
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:		return PixelFmt_D24S8;
+		case DXGI_FORMAT_D32_FLOAT:				return PixelFmt_D32;
+		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:	return PixelFmt_D32S8;
 		case DXGI_FORMAT_UNKNOWN:
-		default:							return PixelFmt_Invalid;
+		default:								return PixelFmt_Invalid;
 	}
 }
 //---------------------------------------------------------------------
@@ -319,6 +328,47 @@ DWORD CD3D11DriverFactory::DXGIFormatStencilBits(DXGI_FORMAT D3DFormat)
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:	return 8;
 		default:								return 0;
+	}
+}
+//---------------------------------------------------------------------
+
+void CD3D11DriverFactory::DXGIFormatBlockSize(DXGI_FORMAT D3DFormat, DWORD& OutWidth, DWORD& OutHeight)
+{
+	switch (D3DFormat)
+	{
+		case DXGI_FORMAT_BC1_TYPELESS:
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC2_TYPELESS:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_TYPELESS:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC4_TYPELESS:
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_SNORM:
+		case DXGI_FORMAT_BC5_TYPELESS:
+		case DXGI_FORMAT_BC5_UNORM:
+		case DXGI_FORMAT_BC5_SNORM:
+		case DXGI_FORMAT_BC6H_TYPELESS:
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+		case DXGI_FORMAT_BC7_TYPELESS:
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+		{
+			OutWidth = 4;
+			OutHeight = 4;
+			return;
+		}
+
+		default:
+		{
+			OutWidth = 1;
+			OutHeight = 1;
+			return;
+		}
 	}
 }
 //---------------------------------------------------------------------

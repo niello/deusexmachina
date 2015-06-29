@@ -2,12 +2,14 @@
 
 #include <Render/D3D9/D3D9DriverFactory.h>
 #include <Render/D3D9/D3D9Texture.h>
+#include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3d9.h>
 
 namespace Render
 {
+__ImplementClass(Render::CD3D9RenderTarget, 'RT09', Render::CRenderTarget);
 
 //!!!???assert destroyed?!
 bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture)

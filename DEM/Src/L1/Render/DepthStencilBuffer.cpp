@@ -2,4 +2,5 @@
 
 namespace Render
 {
+__ImplementClassNoFactory(Render::CDepthStencilBuffer, Core::CObject);
 }
