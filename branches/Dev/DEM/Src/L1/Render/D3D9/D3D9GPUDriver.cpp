@@ -818,6 +818,25 @@ void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, u
 }
 //---------------------------------------------------------------------
 
+void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA)
+{
+	if (!RT.IsValid()) return;
+
+	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
+	pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
+
+	for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
+		if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
+			pD3DDevice->SetRenderTarget(i, NULL);
+
+	Clear(Clear_Color, ColorRGBA, 1.f, 0);
+
+	for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+		if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
+			pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
+}
+//---------------------------------------------------------------------
+
 PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData)
 {
 	if (!pD3DDevice) return NULL;

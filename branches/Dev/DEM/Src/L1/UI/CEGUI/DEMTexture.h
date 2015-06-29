@@ -59,6 +59,16 @@ public:
 	virtual bool			isPixelFormatSupported(const PixelFormat fmt) const;
 };
 
+inline CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& name):
+	Owner(Renderer),
+	Size(0, 0),
+	DataSize(0, 0),
+	TexelScaling(0, 0),
+	Name(name)
+{
+}
+//--------------------------------------------------------------------
+
 }
 
 #endif

@@ -1,13 +1,11 @@
 #include "DEMRenderTarget.h"
 #include "DEMGeometryBuffer.h"
-/*
 namespace CEGUI
 {
 
 template <typename T>
-CDEMRenderTarget<T>::CDEMRenderTarget(Direct3D11Renderer& owner):
+CDEMRenderTarget<T>::CDEMRenderTarget(CDEMRenderer& owner):
 	d_owner(owner),
-	d_device(d_owner.getDirect3DDevice()),
 	d_area(0, 0, 0, 0),
 	d_viewDistance(0),
 	d_matrixValid(false)
@@ -26,6 +24,7 @@ void CDEMRenderTarget<T>::setArea(const Rectf& area)
 }
 //---------------------------------------------------------------------
 
+/*
 template <typename T>
 void CDEMRenderTarget<T>::activate()
 {
@@ -141,6 +140,5 @@ void CDEMRenderTarget<T>::setupViewport(D3D11_VIEWPORT& vp) const
 	vp.MaxDepth = 1.0f;
 }
 //---------------------------------------------------------------------
-
-}
 */
+}

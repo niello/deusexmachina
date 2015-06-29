@@ -732,6 +732,14 @@ void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, 
 }
 //---------------------------------------------------------------------
 
+void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA)
+{
+	if (!RT.IsValid()) return;
+	CD3D11RenderTarget& D3D11RT = (CD3D11RenderTarget&)RT;
+	pD3DImmContext->ClearRenderTargetView(D3D11RT.GetD3DRTView(), ColorRGBA.v);
+}
+//---------------------------------------------------------------------
+
 DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 {
 	Data::CFlags Update(ChangesToUpdate);
