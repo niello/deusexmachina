@@ -4,7 +4,8 @@
 
 #include <Render/DepthStencilBuffer.h>
 
-// D3D9 implementation of depth-stencil buffer
+// D3D9 implementation of a depth-stencil buffer.
+// Reading as a texture is currently unsupported though it can be added through INTZ.
 
 struct IDirect3DSurface9;
 
@@ -26,6 +27,7 @@ public:
 	bool				Create(IDirect3DSurface9* pSurface); // For internal use
 	virtual void		Destroy();
 	virtual bool		IsValid() const { return !!pDSSurface; }
+	virtual CTexture*	GetShaderResource() const { return NULL; }
 	IDirect3DSurface9*	GetD3DSurface() const { return pDSSurface; }
 };
 

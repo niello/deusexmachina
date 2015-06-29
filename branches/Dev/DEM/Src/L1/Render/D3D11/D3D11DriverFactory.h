@@ -16,6 +16,18 @@ enum DXGI_FORMAT;
 
 namespace Render
 {
+
+enum EFormatType
+{
+	FmtType_Typeless,
+	FmtType_DefaultTyped,
+	FmtType_UInt,
+	FmtType_UNorm,
+	FmtType_SInt,
+	FmtType_SNorm,
+	FmtType_Float
+};
+
 #define D3D11DrvFactory CD3D11DriverFactory::Instance()
 
 class CD3D11DriverFactory: public CVideoDriverFactory
@@ -38,6 +50,7 @@ public:
 	static DWORD			DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat);
 	static DWORD			DXGIFormatDepthBits(DXGI_FORMAT D3DFormat);
 	static DWORD			DXGIFormatStencilBits(DXGI_FORMAT D3DFormat);
+	static DXGI_FORMAT		GetCorrespondingFormat(DXGI_FORMAT D3DFormat, EFormatType Type, bool PreferSRGB = false);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc);
 
 	bool					Open();

@@ -17,15 +17,6 @@ namespace Render
 {
 typedef Ptr<class CTexture> PTexture;
 
-struct CRenderTargetDesc
-{
-	DWORD			Width;
-	DWORD			Height;
-	EPixelFormat	Format;
-	EMSAAQuality	MSAAQuality;
-	bool			UseAsShaderInput;
-};
-
 class CRenderTarget: public Core::CObject
 {
 protected:

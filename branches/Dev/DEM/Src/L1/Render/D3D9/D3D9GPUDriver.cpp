@@ -234,6 +234,13 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 																				D3DUSAGE_QUERY_VERTEXTEXTURE,
 																				D3DRTYPE_TEXTURE,
 																				D3DFMT_L16));
+		case Caps_ReadDepthAsTexture:
+			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
+																				GetD3DDriverType(Type),
+																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
+																				D3DUSAGE_DEPTHSTENCIL,
+																				D3DRTYPE_SURFACE,
+																				(D3DFORMAT)MAKEFOURCC('I','N','T','Z')));
 		default: FAIL;
 	}
 }
@@ -916,8 +923,6 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 		return NULL;
 	}
 
-	n_assert2(!pData, "CD3D9GPUDriver::CreateTexture() > Loading initial data - IMPLEMENT ME!");
-
 	return Tex.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -994,6 +999,16 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 
 	IDirect3DSurface9* pSurface = NULL;
 	if (FAILED(pD3DDevice->CreateDepthStencilSurface(Desc.Width, Desc.Height, DSFmt, MSAAType, MSAAQuality, TRUE, &pSurface, NULL))) return NULL;
+
+	if (Desc.UseAsShaderInput)
+	{
+		// INTZ for reading DS as texture
+		// May be unsupported, if so, use another tech like rendering depth into an RT
+		//or create depthstencil texture (D fmt, usage DS)
+		//need to CheckDeviceFormat (through CheckCaps())
+		Sys::Log("Current D3D9 implementation doesn't support UseAsShaderInput for depth-stencil buffers\n");
+		return NULL;
+	}
 
 	PD3D9DepthStencilBuffer DS = n_new(CD3D9DepthStencilBuffer);
 	DS->Create(pSurface);

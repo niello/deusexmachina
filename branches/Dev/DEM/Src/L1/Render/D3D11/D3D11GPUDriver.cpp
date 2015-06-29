@@ -299,7 +299,8 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 	switch (Cap)
 	{
 		case Caps_VSTex_L16:
-		case Caps_VSTexFiltering_Linear: OK;
+		case Caps_VSTexFiltering_Linear:
+		case Caps_ReadDepthAsTexture:		OK;
 	}
 
 	FAIL;
@@ -1063,18 +1064,31 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 
 PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
 {
+	DXGI_FORMAT DSVFmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+	if (DSVFmt == DXGI_FORMAT_UNKNOWN) FAIL;
+
+	DXGI_FORMAT RsrcFmt, SRVFmt;
+	if (Desc.UseAsShaderInput)
+	{
+		RsrcFmt = CD3D11DriverFactory::GetCorrespondingFormat(DSVFmt, FmtType_Typeless);
+		if (RsrcFmt == DXGI_FORMAT_UNKNOWN) FAIL;
+		SRVFmt = CD3D11DriverFactory::GetCorrespondingFormat(RsrcFmt, FmtType_Float, false);
+		if (SRVFmt == DXGI_FORMAT_UNKNOWN) FAIL;
+	}
+	else RsrcFmt = DSVFmt;
+
 	//???disable MSAA for DEM_RENDER_DEBUG?
-	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+	//???check DSV or texture fmt?
 	UINT QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
-		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
+		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DSVFmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
 
 	D3D11_TEXTURE2D_DESC D3DDesc = {0};
 	D3DDesc.Width = Desc.Width;
 	D3DDesc.Height = Desc.Height;
 	D3DDesc.MipLevels = 1;
 	D3DDesc.ArraySize = 1;
-	D3DDesc.Format = Fmt;
+	D3DDesc.Format = RsrcFmt;
 	if (Desc.MSAAQuality == MSAA_None)
 	{
 		D3DDesc.SampleDesc.Count = 1;
@@ -1087,22 +1101,53 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	}
 	D3DDesc.Usage = D3D11_USAGE_DEFAULT;
 	D3DDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	if (Desc.UseAsShaderInput) D3DDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE; //???is allowed?
+	if (Desc.UseAsShaderInput) D3DDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
 	D3DDesc.CPUAccessFlags = 0;
 	D3DDesc.MiscFlags = 0;
 
 	ID3D11Texture2D* pTexture = NULL;
 	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTexture))) return NULL;
-	
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc;
+	if (Desc.MSAAQuality == MSAA_None)
+	{
+		DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		DSVDesc.Texture2D.MipSlice = 0;
+	}
+	else DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	DSVDesc.Format = DSVFmt;
+	DSVDesc.Flags = 0; // D3D11_DSV_READ_ONLY_DEPTH, D3D11_DSV_READ_ONLY_STENCIL
+
 	ID3D11DepthStencilView* pDSV = NULL;
-	if (FAILED(pD3DDevice->CreateDepthStencilView(pTexture, NULL, &pDSV)))
+	if (FAILED(pD3DDevice->CreateDepthStencilView(pTexture, &DSVDesc, &pDSV)))
 	{
 		pTexture->Release();
 		return NULL;
 	}
 
+	ID3D11ShaderResourceView* pSRV = NULL;
+	if (Desc.UseAsShaderInput)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		if (Desc.MSAAQuality == MSAA_None)
+		{
+			SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+			SRVDesc.Texture2D.MipLevels = -1;
+			SRVDesc.Texture2D.MostDetailedMip = 0;
+		}
+		else SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+		SRVDesc.Format = SRVFmt;
+
+		if (FAILED(pD3DDevice->CreateShaderResourceView(pTexture, &SRVDesc, &pSRV)))
+		{
+			pDSV->Release();
+			pTexture->Release();
+			return NULL;
+		}
+	}
+
 	PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
-	DS->Create(pDSV);
+	DS->Create(pDSV, pSRV);
 	return DS.GetUnsafe();
 }
 //---------------------------------------------------------------------
