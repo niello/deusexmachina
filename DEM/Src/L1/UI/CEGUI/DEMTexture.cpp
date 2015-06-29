@@ -25,39 +25,6 @@ static Render::EPixelFormat CEGUIFormatToPixelFormat(const Texture::PixelFormat 
 }
 //--------------------------------------------------------------------
 
-static size_t calculateDataWidth(const size_t width, Texture::PixelFormat fmt)
-{
-	switch (fmt)
-	{
-		case Texture::PF_RGB: // also 4 because we convert to RGBA
-		case Texture::PF_RGBA:		return width * 4;
-		case Texture::PF_RGBA_DXT1:	return ((width + 3) / 4) * 8;
-		case Texture::PF_RGBA_DXT3:
-		case Texture::PF_RGBA_DXT5:	return ((width + 3) / 4) * 16;
-		default:					return 0;
-	}
-}
-//--------------------------------------------------------------------
-
-// Helper utility function that copies an RGBA buffer into a region of a second
-// buffer as D3DCOLOR data values
-static void blitToSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t dest_pitch)
-{
-	for (uint i = 0; i < sz.d_height; ++i)
-	{
-		for (uint j = 0; j < sz.d_width; ++j)
-		{
-			const uint32 pixel = src[j];
-			const uint32 tmp = pixel & 0x00FF00FF;
-			dst[j] = pixel & 0xFF00FF00 | (tmp << 16) | (tmp >> 16);
-		}
-
-		dst += dest_pitch / sizeof(uint32);
-		src += static_cast<uint32>(sz.d_width);
-	}
-}
-//--------------------------------------------------------------------
-
 // Helper utility function that copies a region of a buffer containing D3DCOLOR
 // values into a second buffer as RGBA values.
 static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t source_pitch)
@@ -77,16 +44,6 @@ static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, siz
 }
 //---------------------------------------------------------------------
 
-CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& name):
-	Owner(Renderer),
-	Size(0, 0),
-	DataSize(0, 0),
-	TexelScaling(0, 0),
-	Name(name)
-{
-}
-//--------------------------------------------------------------------
-
 bool CDEMTexture::isPixelFormatSupported(const PixelFormat fmt) const
 {
 	switch (fmt)
@@ -103,12 +60,8 @@ bool CDEMTexture::isPixelFormatSupported(const PixelFormat fmt) const
 
 void CDEMTexture::setTexture(Render::CTexture* tex)
 {
-	if (DEMTexture.GetUnsafe() != tex)
-	{
-		DataSize.d_width = DataSize.d_height = 0;
-		DEMTexture = tex;
-	}
-
+	if (DEMTexture.GetUnsafe() == tex) return;
+	DEMTexture = tex;
 	updateTextureSize();
 	DataSize = Size;
 	updateCachedScaleValues();
@@ -127,8 +80,7 @@ void CDEMTexture::createEmptyTexture(const Sizef& sz)
 	Desc.Format = Render::PixelFmt_R8G8B8A8;
 	Desc.MSAAQuality = Render::MSAA_None;
 
-	//???is there any way to know will CEGUI write to texture or not?
-	//can create immutable textures!
+	//???or CPU Write? to upload data. Or by UpdateTexture?
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write);
 	n_assert(DEMTexture.IsValidPtr());
 
@@ -197,12 +149,11 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 }
 //--------------------------------------------------------------------
 
-/*
 void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
-    if (!d_texture)
-        return;
+    if (DEMTexture.IsNullPtr()) return;
 
+/*
     uint32* buff = new uint32[static_cast<size_t>(area.getWidth()) *
                               static_cast<size_t>(area.getHeight())];
     blitFromSurface(static_cast<const uint32*>(sourceData), buff,
@@ -220,14 +171,14 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
                                           0);
 
     delete[] buff;
+*/
 }
 //--------------------------------------------------------------------
 
 void CDEMTexture::blitToMemory(void* targetData)
 {
-    if (!d_texture)
-        return;
-
+    if (DEMTexture.IsNullPtr()) return;
+/*
     String exception_msg;
 
     D3D11_TEXTURE2D_DESC tex_desc;
@@ -265,9 +216,9 @@ void CDEMTexture::blitToMemory(void* targetData)
 
     if (!exception_msg.empty())
         CEGUI_THROW(RendererException(exception_msg));
+*/
 }
 //--------------------------------------------------------------------
-*/
 
 void CDEMTexture::updateCachedScaleValues()
 {

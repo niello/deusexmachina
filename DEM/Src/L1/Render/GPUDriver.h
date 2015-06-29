@@ -120,6 +120,7 @@ public:
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
+	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
 
 	virtual PVertexBuffer		CreateVertexBuffer() = 0;
 	virtual PIndexBuffer		CreateIndexBuffer() = 0;
