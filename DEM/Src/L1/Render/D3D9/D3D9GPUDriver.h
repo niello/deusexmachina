@@ -88,7 +88,7 @@ public:
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
 	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
-	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL);
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 

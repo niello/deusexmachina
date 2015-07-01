@@ -30,12 +30,14 @@ bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture
 		if (FAILED(Texture->GetD3DTexture()->GetSurfaceLevel(0, &pTmpSurf))) FAIL;
 		NeedResolve = (pTmpSurf != pSurface);
 		Desc.UseAsShaderInput = true;
+		Desc.MipLevels = Texture->GetD3DTexture()->GetLevelCount();
 		SRTexture = Texture;
 	}
 	else
 	{
 		NeedResolve = false;
 		Desc.UseAsShaderInput = false;
+		Desc.MipLevels = 1;
 		SRTexture = NULL;
 	}
 
@@ -92,6 +94,8 @@ bool CD3D9RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 CTexture* CD3D9RenderTarget::GetShaderResource() const
 {
 	//???!!!detect need autoresolve?! or call resolve at render phase end? RT::OnRenderingComplete()
+	//!!!on render to texture end, if MipLevels > 0, generate mips!
+	//autogen mipmap flag is set, but will it work? if will, mips will be generated only as required by driver
 	return SRTexture.GetUnsafe();
 }
 //---------------------------------------------------------------------

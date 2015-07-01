@@ -837,7 +837,8 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 }
 //---------------------------------------------------------------------
 
-PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData)
+//???how to handle MipDataProvided? lock levels one by one and upload data?
+PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData, bool MipDataProvided)
 {
 	if (!pD3DDevice) return NULL;
 
@@ -969,11 +970,11 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	{
 		UINT Mips = 1;
 		DWORD Usage = D3DUSAGE_RENDERTARGET;
-		if (MSAAType == D3DMULTISAMPLE_NONE) // Can use texture as an RT and as a shader resource
+		if (MSAAType == D3DMULTISAMPLE_NONE && Desc.MipLevels != 1)
 		{
-			//!!!only if requires Mips!
-			Usage |= D3DUSAGE_AUTOGENMIPMAP; //???will work with RT texture? else must regenerate mips after rendering to this RT
-			Mips = 0; // Autogenerate full mip chain //!!!or some other value if specified!
+			// API will expose only mip level 0
+			Usage |= D3DUSAGE_AUTOGENMIPMAP;
+			Mips = Desc.MipLevels; //???or always 0 for D3DUSAGE_AUTOGENMIPMAP?
 		}
 		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, Mips, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, NULL))) return NULL;
 	}
