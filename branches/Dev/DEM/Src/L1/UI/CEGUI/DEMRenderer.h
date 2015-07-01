@@ -41,8 +41,6 @@ protected:
 	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain);
 	virtual ~CDEMRenderer();
 
-	Sizef getViewportSize();
-
 	static void logTextureCreation(const String& name);
 	static void logTextureDestruction(const String& name);
 

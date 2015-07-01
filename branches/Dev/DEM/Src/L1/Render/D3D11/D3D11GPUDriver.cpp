@@ -298,9 +298,6 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 {
 	n_assert(pD3DDevice);
 
-//D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION etc GetMaxTextureSize
-	//???use consts or request from HW?!
-
 	//pD3DDevice->GetFeatureLevel()
 
 	switch (Cap)
@@ -311,6 +308,66 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+DWORD CD3D11GPUDriver::GetMaxTextureSize(ETextureType Type)
+{
+	switch (pD3DDevice->GetFeatureLevel())
+	{
+		case D3D_FEATURE_LEVEL_9_1:
+		case D3D_FEATURE_LEVEL_9_2:
+		{
+			switch (Type)
+			{
+				case Texture_1D: return D3D_FL9_1_REQ_TEXTURE1D_U_DIMENSION;
+				case Texture_2D: return D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+				case Texture_3D: return D3D_FL9_1_REQ_TEXTURE3D_U_V_OR_W_DIMENSION;
+				case Texture_Cube: return D3D_FL9_1_REQ_TEXTURECUBE_DIMENSION;
+				default: return 0;
+			}
+		}
+
+		case D3D_FEATURE_LEVEL_9_3:
+		{
+			switch (Type)
+			{
+				case Texture_1D: return D3D_FL9_3_REQ_TEXTURE1D_U_DIMENSION;
+				case Texture_2D: return D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+				case Texture_3D: return D3D_FL9_1_REQ_TEXTURE3D_U_V_OR_W_DIMENSION;
+				case Texture_Cube: return D3D_FL9_3_REQ_TEXTURECUBE_DIMENSION;
+				default: return 0;
+			}
+		}
+
+		case D3D_FEATURE_LEVEL_10_0:
+		case D3D_FEATURE_LEVEL_10_1:
+		{
+			switch (Type)
+			{
+				case Texture_1D: return D3D10_REQ_TEXTURE1D_U_DIMENSION;
+				case Texture_2D: return D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+				case Texture_3D: return D3D10_REQ_TEXTURE3D_U_V_OR_W_DIMENSION;
+				case Texture_Cube: return D3D10_REQ_TEXTURECUBE_DIMENSION;
+				default: return 0;
+			}
+		}
+
+		case D3D_FEATURE_LEVEL_11_0:
+		case D3D_FEATURE_LEVEL_11_1:
+		{
+			switch (Type)
+			{
+				case Texture_1D: return D3D11_REQ_TEXTURE1D_U_DIMENSION;
+				case Texture_2D: return D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+				case Texture_3D: return D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION;
+				case Texture_Cube: return D3D11_REQ_TEXTURECUBE_DIMENSION;
+				default: return 0;
+			}
+		}
+
+		default: return 0;
+	}
 }
 //---------------------------------------------------------------------
 

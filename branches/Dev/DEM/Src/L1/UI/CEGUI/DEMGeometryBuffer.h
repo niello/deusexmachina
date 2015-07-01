@@ -37,22 +37,22 @@ protected:
 		bool				clip;
 	};
 
-	CDEMRenderer&			d_owner;
-	CDEMTexture*			d_activeTexture;
-	Render::PVertexBuffer	d_vertexBuffer;
-	mutable UINT			d_bufferSize;
-	mutable bool			d_bufferIsSync;
-	CArray<BatchInfo>		d_batches;
-	CArray<D3DVertex>		d_vertices;
-	Rectf					d_clipRect;
-	bool					d_clippingActive;
-	RenderEffect*			d_effect;
-	mutable matrix44		d_matrix;
-	mutable bool			d_matrixValid;
+	CDEMRenderer&					d_owner;
+	CDEMTexture*					d_activeTexture;
+	mutable Render::PVertexBuffer	d_vertexBuffer;
+	mutable UINT					d_bufferSize;
+	mutable bool					d_bufferIsSync;
+	CArray<BatchInfo>				d_batches;
+	CArray<D3DVertex>				d_vertices;
+	Rectf							d_clipRect;
+	bool							d_clippingActive;
+	RenderEffect*					d_effect;
+	mutable matrix44				d_matrix;
+	mutable bool					d_matrixValid;
 
-	Vector3f				d_translation;
-	Quaternion				d_rotation;
-	Vector3f				d_pivot;
+	Vector3f						d_translation;
+	Quaternion						d_rotation;
+	Vector3f						d_pivot;
 
 	void updateMatrix() const;
 	void syncHardwareBuffer() const;

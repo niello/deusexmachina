@@ -1,4 +1,6 @@
 #include "DEMRenderer.h"
+
+#include <Render/GPUDriver.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
@@ -22,7 +24,14 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 	DisplayDPI(96, 96) //???how to get real DPI?
 	//d_inputLayout(0),
 {
-	DisplaySize = getViewportSize();
+	n_assert(GPU->SwapChainExists(SwapChainID));
+
+	UINT vp_count = 1;
+	//D3D11_VIEWPORT vp;
+	//d_device.d_context->RSGetViewports(&vp_count, &vp);
+	if (vp_count != 1) Sys::Error("CDEMRenderer::CDEMRenderer() > Unable to access required view port information from DEM GPU driver.");
+//	else DisplaySize = Sizef((float)vp.Width, (float)vp.Height);
+
 /*
     // create the main effect from the shader source.
     ID3D10Blob* errors = 0;
@@ -38,27 +47,19 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 		std::string msg(static_cast<const char*>(errors->GetBufferPointer()),
 			errors->GetBufferSize());
 		errors->Release();
-		CEGUI_THROW(RendererException(msg));
+		Sys::Error(msg.c_str());
 	}
 
-	if (FAILED(D3DX11CreateEffectFromMemory(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(),0, 
-		d_device.d_device, &d_effect) ))
-	{
-		CEGUI_THROW(RendererException("failed to create effect!"));
-	}
+	n_assert(SUCCEEDED(D3DX11CreateEffectFromMemory(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(),0, 
+		d_device.d_device, &d_effect) ));
 
-	if(ShaderBlob) 
-		ShaderBlob->Release();
+	if (ShaderBlob) ShaderBlob->Release();
 
     // extract the rendering techniques
-    d_normalClippedTechnique =
-            d_effect->GetTechniqueByName("BM_NORMAL_Clipped_Rendering");
-    d_normalUnclippedTechnique =
-            d_effect->GetTechniqueByName("BM_NORMAL_Unclipped_Rendering");
-    d_premultipliedClippedTechnique =
-            d_effect->GetTechniqueByName("BM_RTT_PREMULTIPLIED_Clipped_Rendering");
-    d_premultipliedClippedTechnique =
-            d_effect->GetTechniqueByName("BM_RTT_PREMULTIPLIED_Unclipped_Rendering");
+    d_normalClippedTechnique = d_effect->GetTechniqueByName("BM_NORMAL_Clipped_Rendering");
+    d_normalUnclippedTechnique = d_effect->GetTechniqueByName("BM_NORMAL_Unclipped_Rendering");
+    d_premultipliedClippedTechnique = d_effect->GetTechniqueByName("BM_RTT_PREMULTIPLIED_Clipped_Rendering");
+    d_premultipliedClippedTechnique = d_effect->GetTechniqueByName("BM_RTT_PREMULTIPLIED_Unclipped_Rendering");
 
     // Get the variables from the shader we need to be able to access
     d_boundTextureVariable =
@@ -78,19 +79,12 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 
     const UINT element_count = sizeof(vertex_layout) / sizeof(vertex_layout[0]);
 
-    D3DX11_PASS_DESC pass_desc;
-    if (FAILED(d_normalClippedTechnique->GetPassByIndex(0)->GetDesc(&pass_desc)))
-        CEGUI_THROW(RendererException(
-            "failed to obtain technique description for pass 0."));
-
-    if (FAILED(d_device.d_device->CreateInputLayout(vertex_layout, element_count,
+	D3DX11_PASS_DESC pass_desc;
+    n_assert(SUCCEEDED(d_normalClippedTechnique->GetPassByIndex(0)->GetDesc(&pass_desc)));
+    n_assert(SUCCEEDED(d_device.d_device->CreateInputLayout(vertex_layout, element_count,
                                             pass_desc.pIAInputSignature,
                                             pass_desc.IAInputSignatureSize,
-                                            &d_inputLayout)))
-    {
-        CEGUI_THROW(RendererException(
-            "failed to create D3D 11 input layout."));
-    }
+                                            &d_inputLayout)));
 	*/
 
 	pDefaultRT = n_new(CDEMViewportTarget)(*this);
@@ -102,15 +96,10 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllTextureTargets();
 	destroyAllTextures();
 	destroyAllGeometryBuffers();
-    n_delete(pDefaultRT);
-/*
+	n_delete(pDefaultRT);
 
-    if (d_effect)
-        d_effect->Release();
-
-    if (d_inputLayout)
-        d_inputLayout->Release();
-		*/
+	//if (d_effect) d_effect->Release();
+	//if (d_inputLayout) d_inputLayout->Release();
 }
 //--------------------------------------------------------------------
 
@@ -268,11 +257,11 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 /*
 void CDEMRenderer::beginRendering()
 {
-	d_device.d_context->IASetInputLayout(d_inputLayout);
-	d_device.d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	GPU->IASetInputLayout(d_inputLayout);
+	GPU->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 //---------------------------------------------------------------------
-
+*/
 
 void CDEMRenderer::endRendering()
 {
@@ -293,63 +282,10 @@ void CDEMRenderer::setDisplaySize(const Sizef& sz)
 }
 //---------------------------------------------------------------------
 
-//----------------------------------------------------------------------------//
-uint Direct3D11Renderer::getMaxTextureSize() const
+uint CDEMRenderer::getMaxTextureSize() const
 {
-    return 8192;//DIRECTX11 may support even 16384, but most users will use it as feauture level 10, so keep it for now
+	return GPU->GetMaxTextureSize(Render::Texture_2D);
 }
-
-//----------------------------------------------------------------------------//
-Sizef Direct3D11Renderer::getViewportSize()
-{
-    D3D11_VIEWPORT vp;
-    UINT vp_count = 1;
-
-    d_device.d_context->RSGetViewports(&vp_count, &vp);
-
-    if (vp_count != 1)
-        CEGUI_THROW(RendererException(
-            "Unable to access required view port information from "
-            "ID3D11Device."));
-    else
-        return Sizef(static_cast<float>(vp.Width),
-                      static_cast<float>(vp.Height));
-}
-
-//----------------------------------------------------------------------------//
-void Direct3D11Renderer::bindTechniquePass(const BlendMode mode,
-                                           const bool clipped)
-{
-    if (mode == BM_RTT_PREMULTIPLIED)
-        if (clipped)
-            d_premultipliedClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-        else
-            d_premultipliedUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-    else if (clipped)
-        d_normalClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-    else
-        d_normalUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-}
-
-//----------------------------------------------------------------------------//
-void Direct3D11Renderer::setCurrentTextureShaderResource(
-    ID3D11ShaderResourceView* srv)
-{
-    d_boundTextureVariable->SetResource(srv);
-}
-
-//----------------------------------------------------------------------------//
-void Direct3D11Renderer::setProjectionMatrix(D3DXMATRIX& matrix)
-{
-    d_projectionMatrixVariable->SetMatrix(reinterpret_cast<float*>(&matrix));
-}
-//----------------------------------------------------------------------------//
-void Direct3D11Renderer::setWorldMatrix(D3DXMATRIX& matrix)
-{
-    d_worldMatrixVariable->SetMatrix(reinterpret_cast<float*>(&matrix));
-}
-
-//----------------------------------------------------------------------------//
-*/
+//---------------------------------------------------------------------
 
 }

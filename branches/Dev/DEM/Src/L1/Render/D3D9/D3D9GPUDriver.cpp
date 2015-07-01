@@ -250,6 +250,17 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
+DWORD CD3D9GPUDriver::GetMaxTextureSize(ETextureType Type)
+{
+	switch (Type)
+	{
+		case Texture_1D: return D3DCaps.MaxTextureWidth;
+		case Texture_3D: return D3DCaps.MaxVolumeExtent;
+		default: return n_min(D3DCaps.MaxTextureWidth, D3DCaps.MaxTextureHeight);
+	}
+}
+//---------------------------------------------------------------------
+
 void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc,
 										  const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
