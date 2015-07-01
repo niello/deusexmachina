@@ -22,13 +22,15 @@ protected:
 	ID3D11DepthStencilView* pDSView;
 	PD3D11Texture			Texture;
 
+	void					InternalDestroy();
+
 public:
 
 	CD3D11DepthStencilBuffer(): pDSView(NULL) {}
-	//!!!destructor and internal destroy!
+	virtual ~CD3D11DepthStencilBuffer() { InternalDestroy(); }
 
 	bool					Create(ID3D11DepthStencilView* pDSV, ID3D11ShaderResourceView* pSRV); // For internal use
-	virtual void			Destroy();
+	virtual void			Destroy() { InternalDestroy(); }
 	virtual bool			IsValid() const { return !!pDSView; }
 	virtual CTexture*		GetShaderResource() const;
 	ID3D11DepthStencilView*	GetD3DDSView() const { return pDSView; }

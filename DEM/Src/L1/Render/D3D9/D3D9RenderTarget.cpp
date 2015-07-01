@@ -52,7 +52,7 @@ bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture
 }
 //---------------------------------------------------------------------
 
-void CD3D9RenderTarget::Destroy()
+void CD3D9RenderTarget::InternalDestroy()
 {
 	//!!!process GPU resources in driver!
 	//UNSUBSCRIBE_EVENT(OnRenderDeviceRelease);

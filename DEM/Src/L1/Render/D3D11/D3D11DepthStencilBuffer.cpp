@@ -59,7 +59,7 @@ bool CD3D11DepthStencilBuffer::Create(ID3D11DepthStencilView* pDSV, ID3D11Shader
 }
 //---------------------------------------------------------------------
 
-void CD3D11DepthStencilBuffer::Destroy()
+void CD3D11DepthStencilBuffer::InternalDestroy()
 {
 	Texture = NULL;
 	SAFE_RELEASE(pDSView);
