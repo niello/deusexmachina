@@ -151,14 +151,13 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 
 void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
-    if (DEMTexture.IsNullPtr()) return;
+	if (DEMTexture.IsNullPtr()) return;
+
+	uint32* pBuf = n_new_array(uint32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
+	UINT SrcPitch = ((UINT)area.getWidth()) * 4;
+	blitFromSurface(static_cast<const uint32*>(sourceData), pBuf, area.getSize(), SrcPitch);
 
 /*
-    uint32* buff = new uint32[static_cast<size_t>(area.getWidth()) *
-                              static_cast<size_t>(area.getHeight())];
-    blitFromSurface(static_cast<const uint32*>(sourceData), buff,
-                    area.getSize(), static_cast<size_t>(area.getWidth()) * 4);
-
     D3D11_BOX dst_box = {static_cast<UINT>(area.left()),
                          static_cast<UINT>(area.top()),
                          0,
@@ -166,12 +165,10 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
                          static_cast<UINT>(area.bottom()),
                          1};
 
-    d_device.d_context->UpdateSubresource(d_texture, 0, &dst_box, buff,
-                                          static_cast<UINT>(area.getWidth()) * 4,
-                                          0);
-
-    delete[] buff;
+    Owner.getGPUDriver()->UpdateSubresource(d_texture, 0, &dst_box, pBuf, SrcPitch, 0);
 */
+
+	n_delete_array(pBuf);
 }
 //--------------------------------------------------------------------
 
@@ -179,8 +176,6 @@ void CDEMTexture::blitToMemory(void* targetData)
 {
     if (DEMTexture.IsNullPtr()) return;
 /*
-    String exception_msg;
-
     D3D11_TEXTURE2D_DESC tex_desc;
     d_texture->GetDesc(&tex_desc);
 
@@ -206,16 +201,12 @@ void CDEMTexture::blitToMemory(void* targetData)
             d_device.d_context->Unmap(offscreen, 0);
         }
         else
-            exception_msg.assign("ID3D11Texture2D::Map failed.");
-
-        offscreen->Release();
+		{
+			offscreen->Release();
+			Sys::Error("ID3D11Texture2D::Map failed.");
+		}
     }
-    else
-        exception_msg.assign(
-            "ID3D11Device::CreateTexture2D failed for 'offscreen'.");
-
-    if (!exception_msg.empty())
-        CEGUI_THROW(RendererException(exception_msg));
+    else Sys::Error("ID3D11Device::CreateTexture2D failed for 'offscreen'.");
 */
 }
 //--------------------------------------------------------------------

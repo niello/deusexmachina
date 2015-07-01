@@ -3,8 +3,6 @@
 #define __DEM_L1_RENDER_GPU_DRIVER_H__
 
 #include <Core/Object.h>
-//#include <Render/RenderTarget.h>
-//#include <Render/SwapChain.h>
 #include <Render/RenderFwd.h>
 #include <Render/VertexComponent.h>
 #include <Data/Dictionary.h>
@@ -98,6 +96,8 @@ public:
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
 	virtual bool				CheckCaps(ECaps Cap) = 0;
+	virtual DWORD				GetMaxTextureSize(ETextureType Type) = 0;
+	virtual DWORD				GetMaxMultipleRenderTargetCount() = 0;
 
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
 	virtual bool				DestroySwapChain(DWORD SwapChainID) = 0;
@@ -115,8 +115,6 @@ public:
 
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
-	//???what if clear float RT?
-	virtual DWORD				GetMaxMultipleRenderTargetCount() = 0;
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;

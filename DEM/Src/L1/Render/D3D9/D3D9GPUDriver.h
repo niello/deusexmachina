@@ -64,6 +64,8 @@ public:
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap);
+	virtual DWORD				GetMaxTextureSize(ETextureType Type);
+	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
 
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
 	virtual bool				DestroySwapChain(DWORD SwapChainID);
@@ -79,7 +81,6 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
-	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);

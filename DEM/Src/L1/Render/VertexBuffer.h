@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_VERTEX_BUFFER_H__
 
 #include <Render/VertexLayout.h>
-#include <Render/GPUResourceDefs.h>
+#include <Render/RenderFwd.h>
 
 // A hardware GPU buffer that stores vertices
 

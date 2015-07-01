@@ -34,7 +34,7 @@ void CDEMRenderTarget<T>::activate()
 	setupViewport(vp);
 	d_device.d_context->RSSetViewports(1, &vp);
 
-	d_owner.setProjectionMatrix(d_matrix);
+	d_projectionMatrixVariable->SetMatrix(reinterpret_cast<float*>(&d_matrix));
 }
 //---------------------------------------------------------------------
 
