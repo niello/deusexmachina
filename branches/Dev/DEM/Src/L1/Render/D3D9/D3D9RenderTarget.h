@@ -24,6 +24,8 @@ protected:
 	PD3D9Texture		SRTexture;
 	bool				NeedResolve; // Autoresolve RT surface to SR texture
 
+	void				InternalDestroy();
+
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceRelease, OnDeviceRelease);
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
@@ -31,9 +33,10 @@ protected:
 public:
 
 	CD3D9RenderTarget(): pRTSurface(NULL) {}
+	virtual ~CD3D9RenderTarget() { InternalDestroy(); }
 
 	bool				Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture); // For internal use
-	virtual void		Destroy();
+	virtual void		Destroy() { InternalDestroy(); }
 	virtual bool		IsValid() const { return !!pRTSurface; }
 	virtual bool		CopyResolveToTexture(PTexture Dest /*, region*/) const;
 	virtual CTexture*	GetShaderResource() const;

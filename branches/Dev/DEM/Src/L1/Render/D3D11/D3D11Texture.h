@@ -24,10 +24,12 @@ protected:
 	ID3D11Resource*				pD3DTex; //???or union?
 	ID3D11ShaderResourceView*	pSRView;
 
+	void						InternalDestroy();
+
 public:
 
 	CD3D11Texture(): pD3DTex(NULL), pSRView(NULL) {}
-	virtual ~CD3D11Texture() { Destroy(); }
+	virtual ~CD3D11Texture() { InternalDestroy(); }
 
 	//???assert destroyed?
 	bool						Create(ID3D11ShaderResourceView* pSRV); 
@@ -35,7 +37,7 @@ public:
 	bool						Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* pSRV);
 	bool						Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* pSRV);
 	bool						Create(ID3D11Texture3D* pTexture, ID3D11ShaderResourceView* pSRV);
-	virtual void				Destroy();
+	virtual void				Destroy() { InternalDestroy(); }
 
 	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 

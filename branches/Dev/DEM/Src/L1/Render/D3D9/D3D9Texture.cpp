@@ -140,7 +140,7 @@ bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
 }
 //---------------------------------------------------------------------
 
-void CD3D9Texture::Destroy()
+void CD3D9Texture::InternalDestroy()
 {
 //	n_assert(!LockCount);
 	SAFE_RELEASE(pD3DTex);

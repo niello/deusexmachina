@@ -45,7 +45,7 @@ bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)
 }
 //---------------------------------------------------------------------
 
-void CD3D9DepthStencilBuffer::Destroy()
+void CD3D9DepthStencilBuffer::InternalDestroy()
 {
 	SAFE_RELEASE(pDSSurface);
 }

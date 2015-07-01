@@ -22,13 +22,15 @@ protected:
 	ID3D11RenderTargetView*		pRTView;
 	PD3D11Texture				Texture;
 
+	void					InternalDestroy();
+
 public:
 
 	CD3D11RenderTarget(): pRTView(NULL) {}
-	//!!!destructor and internal destroy!
+	virtual ~CD3D11RenderTarget() { InternalDestroy(); }
 
 	bool					Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV); // For internal use
-	virtual void			Destroy();
+	virtual void			Destroy() { InternalDestroy(); }
 	virtual bool			IsValid() const { return !!pRTView; }
 	virtual bool			CopyResolveToTexture(PTexture Dest /*, region*/) const;
 	virtual CTexture*		GetShaderResource() const;

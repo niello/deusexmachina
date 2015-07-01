@@ -26,7 +26,8 @@ protected:
 
 	IDirect3DBaseTexture9*	pD3DTex; //???or union?
 
-	void MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags);
+	//void MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags);
+	void InternalDestroy();
 
 	//!!!only for D3DPOOL_DEFAULT! now manage in GPUDrv?
 	//DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
@@ -35,13 +36,13 @@ protected:
 public:
 
 	CD3D9Texture(): pD3DTex(NULL) {}
-	virtual ~CD3D9Texture() { Destroy(); }
+	virtual ~CD3D9Texture() { InternalDestroy(); }
 
 	bool						Create(IDirect3DBaseTexture9* pTexture);
 	bool						Create(IDirect3DTexture9* pTexture);
 	bool						Create(IDirect3DCubeTexture9* pTexture);
 	bool						Create(IDirect3DVolumeTexture9* pTexture);
-	virtual void				Destroy();
+	virtual void				Destroy() { InternalDestroy(); }
 
 	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 

@@ -1142,12 +1142,13 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 		}
 	}
 
+	pTexture->Release();
+
 	PD3D11RenderTarget RT = n_new(CD3D11RenderTarget);
 	if (!RT->Create(pRTV, pSRV))
 	{
 		if (pSRV) pSRV->Release();
 		pRTV->Release();
-		pTexture->Release();
 		return NULL;
 	}
 	return RT.GetUnsafe();
@@ -1237,12 +1238,13 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 		}
 	}
 
+	pTexture->Release();
+
 	PD3D11DepthStencilBuffer DS = n_new(CD3D11DepthStencilBuffer);
 	if (!DS->Create(pDSV, pSRV))
 	{
 		if (pSRV) pSRV->Release();
 		pDSV->Release();
-		pTexture->Release();
 		return NULL;
 	}
 	return DS.GetUnsafe();

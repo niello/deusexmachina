@@ -20,12 +20,15 @@ protected:
 
 	IDirect3DSurface9* pDSSurface;
 
+	void				InternalDestroy();
+
 public:
 
 	CD3D9DepthStencilBuffer(): pDSSurface(NULL) {}
+	virtual ~CD3D9DepthStencilBuffer() { InternalDestroy(); }
 
 	bool				Create(IDirect3DSurface9* pSurface); // For internal use
-	virtual void		Destroy();
+	virtual void		Destroy() { InternalDestroy(); }
 	virtual bool		IsValid() const { return !!pDSSurface; }
 	virtual CTexture*	GetShaderResource() const { return NULL; }
 	IDirect3DSurface9*	GetD3DSurface() const { return pDSSurface; }

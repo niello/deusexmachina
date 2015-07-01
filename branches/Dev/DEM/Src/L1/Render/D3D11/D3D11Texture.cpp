@@ -130,7 +130,7 @@ bool CD3D11Texture::Create(ID3D11Texture3D* pTexture, ID3D11ShaderResourceView* 
 }
 //---------------------------------------------------------------------
 
-void CD3D11Texture::Destroy()
+void CD3D11Texture::InternalDestroy()
 {
 	SAFE_RELEASE(pSRView);
 	SAFE_RELEASE(pD3DTex);
