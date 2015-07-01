@@ -163,6 +163,7 @@
     <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
+    <ClInclude Include="..\..\Src\L1\Data\Box.h" />
     <ClInclude Include="..\..\Src\L1\Data\Buffer.h" />
     <ClInclude Include="..\..\Src\L1\Data\Data.h" />
     <ClInclude Include="..\..\Src\L1\Data\DataArray.h" />

@@ -157,7 +157,84 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 	UINT SrcPitch = ((UINT)area.getWidth()) * 4;
 	blitFromSurface(static_cast<const uint32*>(sourceData), pBuf, area.getSize(), SrcPitch);
 
-/*
+// RAM -> VRAM
+/*//D3D9
+        if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
+        {
+			if (!d_offscreen)
+				if (FAILED(d_device->CreateOffscreenPlainSurface(
+					d_surfDesc.Width, d_surfDesc.Height, d_surfDesc.Format,
+					D3DPOOL_SYSTEMMEM, &d_offscreen, 0)))
+
+			if (!d_renderTarget)
+				if (FAILED(d_texture->GetSurfaceLevel(0, &d_renderTarget)))
+					CEGUI_THROW(RendererException(
+						"IDirect3DTexture9::GetSurfaceLevel failed."));
+
+            if (for_reading)
+				if (FAILED(d_device->GetRenderTargetData(d_renderTarget, d_offscreen)))
+
+			if (FAILED(d_offscreen->LockRect(&d_lockedRect, area, 0)))
+				CEGUI_THROW(RendererException(
+					"IDirect3DSurface9::LockRect failed."));
+
+			//PERFORM
+             
+			 d_offscreen->UnlockRect();
+
+            if (blitFROMMemory)
+				POINT pt = {area ? area->left : 0, area ? area->top : 0};
+				if (FAILED(d_device->UpdateSurface(d_offscreen,
+												   area ? area : &d_fullArea,
+												   d_renderTarget, &pt)))
+       }
+        else
+        {
+			if (FAILED(d_texture->LockRect(0, &d_lockedRect, area, 0)))
+				CEGUI_THROW(RendererException(
+					"IDirect3DTexture9::LockRect failed."));
+
+//!!!convert only if format is not supported!
+
+// Helper utility function that copies a region of a buffer containing D3DCOLOR
+// values into a second buffer as RGBA values.
+static void blitD3DCOLORSurfaceToRGBA(const uint32* src, uint32* dst,
+                                      const Sizef& sz, size_t source_pitch)
+{
+    for (uint i = 0; i < sz.d_height; ++i)
+    {
+        for (uint j = 0; j < sz.d_width; ++j)
+        {
+            const uint32 pixel = src[j];
+            const uint32 tmp = pixel & 0x00FF00FF;
+            dst[j] = pixel & 0xFF00FF00 | (tmp << 16) | (tmp >> 16);
+        }
+
+        src += source_pitch / sizeof(uint32);
+        dst += static_cast<uint32>(sz.d_width);
+    }
+}
+static void blitRGBAToD3DCOLORSurface(const uint32* src, uint32* dst,
+                                      const Sizef& sz, size_t dest_pitch)
+{
+    for (uint i = 0; i < sz.d_height; ++i)
+    {
+        for (uint j = 0; j < sz.d_width; ++j)
+        {
+            const uint32 pixel = src[j];
+            const uint32 tmp = pixel & 0x00FF00FF;
+            dst[j] = pixel & 0xFF00FF00 | (tmp << 16) | (tmp >> 16);
+        }
+
+        dst += dest_pitch / sizeof(uint32);
+        src += static_cast<uint32>(sz.d_width);
+    }
+}
+             
+             d_texture->UnlockRect(0);
+       }
+
+//D3D11
     D3D11_BOX dst_box = {static_cast<UINT>(area.left()),
                          static_cast<UINT>(area.top()),
                          0,
@@ -175,7 +252,11 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 void CDEMTexture::blitToMemory(void* targetData)
 {
     if (DEMTexture.IsNullPtr()) return;
-/*
+
+/*//D3D9 lock 0 - read - unlock
+
+// VRAM -> RAM
+//D3D11
     D3D11_TEXTURE2D_DESC tex_desc;
     d_texture->GetDesc(&tex_desc);
 
@@ -184,29 +265,25 @@ void CDEMTexture::blitToMemory(void* targetData)
     tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
     ID3D11Texture2D* offscreen;
-    if (SUCCEEDED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &offscreen)))
-    {
-        d_device.d_context->CopyResource(offscreen, d_texture);
+    if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &offscreen)))
+		Sys::Error("ID3D11Device::CreateTexture2D failed for 'offscreen'.");
 
-        D3D11_MAPPED_SUBRESOURCE mapped_tex;
-        if (SUCCEEDED(d_device.d_context->Map(offscreen, 0, D3D11_MAP_READ,
-                                              0, &mapped_tex)))
-        {
-            blitFromSurface(static_cast<uint32*>(mapped_tex.pData),
-                            static_cast<uint32*>(targetData),
-                            Sizef(static_cast<float>(tex_desc.Width),
-                                   static_cast<float>(tex_desc.Height)),
-                            mapped_tex.RowPitch);
+	d_device.d_context->CopyResource(offscreen, d_texture);
 
-            d_device.d_context->Unmap(offscreen, 0);
-        }
-        else
-		{
-			offscreen->Release();
-			Sys::Error("ID3D11Texture2D::Map failed.");
-		}
-    }
-    else Sys::Error("ID3D11Device::CreateTexture2D failed for 'offscreen'.");
+    D3D11_MAPPED_SUBRESOURCE mapped_tex;
+    if (FAILED(d_device.d_context->Map(offscreen, 0, D3D11_MAP_READ, 0, &mapped_tex)))
+	{
+		offscreen->Release();
+		Sys::Error("ID3D11Texture2D::Map failed.");
+	}
+
+	blitFromSurface(static_cast<uint32*>(mapped_tex.pData),
+                    static_cast<uint32*>(targetData),
+                    Sizef(static_cast<float>(tex_desc.Width),
+                            static_cast<float>(tex_desc.Height)),
+                    mapped_tex.RowPitch);
+
+    d_device.d_context->Unmap(offscreen, 0);
 */
 }
 //--------------------------------------------------------------------

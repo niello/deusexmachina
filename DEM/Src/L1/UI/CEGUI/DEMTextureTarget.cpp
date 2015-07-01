@@ -74,6 +74,7 @@ void CDEMTextureTarget::initialiseRenderTexture()
 	RTDesc.Format = Render::PixelFmt_R8G8B8A8;
 	RTDesc.MSAAQuality = Render::MSAA_None;
 	RTDesc.UseAsShaderInput = true;
+	RTDesc.MipLevels = 1; // Can test 0 = full mipmap chain
 
 	RT = d_owner.getGPUDriver()->CreateRenderTarget(RTDesc);
 	n_assert(RT.IsValidPtr());

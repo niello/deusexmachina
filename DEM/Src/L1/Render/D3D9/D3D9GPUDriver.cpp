@@ -977,15 +977,18 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	// Using RT as a shader input requires a texture. Since MSAA textures are not supported in D3D9,
 	// MSAA RT will be created as a separate surface anyway and then it will be resolved into a texture.
 
+	DWORD Usage = 0;
 	if (Desc.UseAsShaderInput)
 	{
 		UINT Mips = 1;
-		DWORD Usage = D3DUSAGE_RENDERTARGET;
-		if (MSAAType == D3DMULTISAMPLE_NONE && Desc.MipLevels != 1)
+		if (MSAAType == D3DMULTISAMPLE_NONE)
 		{
-			// API will expose only mip level 0
-			Usage |= D3DUSAGE_AUTOGENMIPMAP;
-			Mips = Desc.MipLevels; //???or always 0 for D3DUSAGE_AUTOGENMIPMAP?
+			Usage |= D3DUSAGE_RENDERTARGET;
+			if (Desc.MipLevels != 1)
+			{
+				Usage |= D3DUSAGE_AUTOGENMIPMAP;
+				Mips = Desc.MipLevels; //???or always 0 for D3DUSAGE_AUTOGENMIPMAP?
+			}
 		}
 		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, Mips, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, NULL))) return NULL;
 	}
@@ -993,8 +996,7 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	// Initialize RT surface, use texture level 0 when possible, else create separate surface
 
 	HRESULT hr;
-	bool UseTexSurface = (Desc.UseAsShaderInput && MSAAType == D3DMULTISAMPLE_NONE);
-	if (UseTexSurface) hr = pTexture->GetSurfaceLevel(0, &pSurface);
+	if (Usage & D3DUSAGE_RENDERTARGET) hr = pTexture->GetSurfaceLevel(0, &pSurface);
 	else hr = pD3DDevice->CreateRenderTarget(Desc.Width, Desc.Height, RTFmt, MSAAType, MSAAQuality, FALSE, &pSurface, NULL);
 
 	if (FAILED(hr))

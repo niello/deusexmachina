@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RECT_H__
 #define __DEM_L1_RECT_H__
 
-// Rectangular region description
+// Rectangular 2D region description
 
 namespace Data
 {
