@@ -2,10 +2,9 @@
 #ifndef __DEM_L1_RENDER_SWAP_CHAIN_H__
 #define __DEM_L1_RENDER_SWAP_CHAIN_H__
 
-//#include <Render/RenderTarget.h>
 #include <Data/Ptr.h>
 #include <Data/Flags.h>
-#include <Data/Rect.h>
+#include <Data/Regions.h>
 
 // Swap chain is a set of a front buffer and one or more back buffers. GPU device renders into a
 // back buffer and presents it to a display (fullscreen) or a desktop (windowed). Presented back

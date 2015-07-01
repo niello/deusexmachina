@@ -5,7 +5,7 @@
 
 #include <Events/EventDispatcher.h>
 #include <Data/SimpleString.h>
-#include <Data/Rect.h>
+#include <Data/Regions.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
