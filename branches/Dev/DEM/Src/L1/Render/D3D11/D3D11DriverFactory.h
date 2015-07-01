@@ -50,7 +50,7 @@ public:
 	static DWORD			DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat);
 	static DWORD			DXGIFormatDepthBits(DXGI_FORMAT D3DFormat);
 	static DWORD			DXGIFormatStencilBits(DXGI_FORMAT D3DFormat);
-	static void				DXGIFormatBlockSize(DXGI_FORMAT D3DFormat, DWORD& OutWidth, DWORD& OutHeight);
+	static DWORD			DXGIFormatBlockSize(DXGI_FORMAT D3DFormat);
 	static DXGI_FORMAT		GetCorrespondingFormat(DXGI_FORMAT D3DFormat, EFormatType Type, bool PreferSRGB = false);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc);
 

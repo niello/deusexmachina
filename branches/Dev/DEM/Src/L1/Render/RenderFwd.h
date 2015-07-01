@@ -132,7 +132,6 @@ enum EResourceAccess
 
 enum EMapType
 {
-	//Map_Setup,				// Gain write access for the initial filling of the buffer. Don't misuse!
 	Map_Read,				// Gain read access, must be CPU_Read
 	Map_Write,				// Gain write access, must be CPU_Write
 	Map_ReadWrite,			// Gain read/write access, must be CPU_Read | CPU_Write
@@ -146,12 +145,26 @@ struct CRenderTargetDesc
 	DWORD			Height;
 	EPixelFormat	Format;
 	EMSAAQuality	MSAAQuality;
+	DWORD			MipLevels;			// Has meaning only for texture RTs (UseAsShaderInput = true, not depth-stencil)
 	bool			UseAsShaderInput;
 };
 
 // Error codes
 #define ERR_CREATION_ERROR ((DWORD)-1);
 #define ERR_DRIVER_TYPE_NOT_SUPPORTED ((DWORD)-2);
+
+inline DWORD GetMipLevelCount(DWORD Width, DWORD Height, DWORD BlockSize = 1)
+{
+	DWORD MaxDim = n_max(Width, Height);
+	DWORD MipLevels = 1;
+	while (MaxDim > BlockSize)
+	{
+		MaxDim >>= 1;
+		++MipLevels;
+	}
+	return MipLevels;
+}
+//---------------------------------------------------------------------
 
 }
 

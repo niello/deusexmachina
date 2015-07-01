@@ -298,6 +298,9 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 {
 	n_assert(pD3DDevice);
 
+//D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION etc GetMaxTextureSize
+	//???use consts or request from HW?!
+
 	//pD3DDevice->GetFeatureLevel()
 
 	switch (Cap)
@@ -856,83 +859,128 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData)
+// pData - initial data to be uploaded to a texture.
+// if MipDataProvided, order is ArrayElement[0] { Mip[0] ... Mip[N] } ... ArrayElement[M] { Mip[0] ... Mip[N] },
+// else order is ArrayElement[0] { Mip[0] } ... ArrayElement[M] { Mip[0] }, where Mip[0] is an original data.
+PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData, bool MipDataProvided)
 {
-	if (!pD3DDevice) return NULL;
+	if (!pD3DDevice || !Desc.Width || !Desc.Height) return NULL;
 
 	PD3D11Texture Tex = n_new(CD3D11Texture);
 	if (Tex.IsNullPtr()) return NULL;
 
-	//???disable MSAA for DEM_RENDER_DEBUG?
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
 	UINT QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
 	{
 		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DXGIFormat, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
-
-		// MSAA resources can't be initialized with data
-		pData = NULL;
+		pData = NULL; // MSAA resources can't be initialized with data
 	}
 
-	D3D11_USAGE Usage;
+	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
+	DWORD MipLevels = Desc.MipLevels;
+	DWORD ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize);
+	UINT MiscFlags = 0; //???if (MipLevels != 1) D3D11_RESOURCE_MISC_RESOURCE_CLAMP for ID3D11DeviceContext::SetResourceMinLOD()
+	UINT BindFlags = (Usage != D3D11_USAGE_STAGING) ? D3D11_BIND_SHADER_RESOURCE : 0;
+
 	// Dynamic SRV: The resource can only be created with a single subresource.
 	// The resource cannot be a texture array. The resource cannot be a mipmap chain (c) Docs
-	if (Usage == D3D11_USAGE_DYNAMIC && (Desc.MipLevels != 1 || Desc.ArraySize != 1))
-		Sys::DbgOut("Dynamic SRV: The resource can only be created with a single subresource. The resource cannot be a texture array. The resource cannot be a mipmap chain (c) Docs\n");
-
-	UINT MiscFlags = 0;
-	UINT BindFlags = (Usage != D3D11_USAGE_STAGING) ? D3D11_BIND_SHADER_RESOURCE : 0;
-	if (!CPUAccess &&
-		(BindFlags & D3D11_BIND_SHADER_RESOURCE) &&
-		Desc.MipLevels != 1 &&
-		DXGIFormat != DXGI_FORMAT_BC1_UNORM) // Can't be bound as RT //???all BC?
+	if (Usage == D3D11_USAGE_DYNAMIC && (MipLevels != 1 || ArraySize != 1))
 	{
-		// D3D11_RESOURCE_MISC_GENERATE_MIPS for ID3D11DeviceContext::GenerateMips()
-		// D3D11_RESOURCE_MISC_RESOURCE_CLAMP for ID3D11DeviceContext::SetResourceMinLOD()
-		MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS; // | D3D11_RESOURCE_MISC_RESOURCE_CLAMP
-
-		// Required by D3D11_RESOURCE_MISC_GENERATE_MIPS //???only default usage?
-		BindFlags |= D3D11_BIND_RENDER_TARGET;
+#ifdef _DEBUG
+		Sys::DbgOut("Dynamic SRV: The resource can only be created with a single subresource. The resource cannot be a texture array. The resource cannot be a mipmap chain (c) Docs\n");
+#endif
+		//MipLevels = 1; //!!!uncomment after a trial!
+		//ArraySize = 1;
 	}
 
 	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
-
-	// In a current implementation pData should never contain mips, only top-level data
 	if (pData)
 	{
+		DWORD BlockSize = CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat);
+
+		if (!MipLevels) MipLevels = GetMipLevelCount(Desc.Width, Desc.Height, BlockSize);
+
 		DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 		n_assert_dbg(BPP > 0);
 
-		DWORD BlockW, BlockH;
-		CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat, BlockW, BlockH);
+		// To avoid dynamic allocation of pitch arrays
+		const DWORD MAX_MIPS = 16;
+		n_assert_dbg(MipLevels <= MAX_MIPS);
+		if (MipLevels > MAX_MIPS) MipLevels = MAX_MIPS;
 
-		UINT Pitch;
-		UINT SlicePitch;
-		if (BlockW == 1 && BlockH == 1)
+		UINT Pitch[MAX_MIPS], SlicePitch[MAX_MIPS];
+		if (BlockSize == 1)
 		{
-			Pitch = (Desc.Width * BPP) >> 3;
-			SlicePitch = Pitch * Desc.Height;
+			for (DWORD Mip = 0; Mip < MipLevels; ++Mip)
+			{
+				Pitch[Mip] = ((Desc.Width >> Mip) * BPP) >> 3;
+				SlicePitch[Mip] = Pitch[Mip] * (Desc.Height >> Mip);
+			}
 		}
 		else
 		{
-			DWORD BlockCountW = (Desc.Width + BlockW - 1) / BlockW;
-			Pitch = (BlockCountW * BlockW * BlockH * BPP) >> 3;
-			SlicePitch = Pitch * ((Desc.Height + BlockH - 1) / BlockH);
+			for (DWORD Mip = 0; Mip < MipLevels; ++Mip)
+			{
+				DWORD BlockCountW = ((Desc.Width >> Mip) + BlockSize - 1) / BlockSize;
+				DWORD BlockCountH = ((Desc.Height >> Mip) + BlockSize - 1) / BlockSize;
+				Pitch[Mip] = (BlockCountW * BlockSize * BlockSize * BPP) >> 3;
+				SlicePitch[Mip] = Pitch[Mip] * BlockCountH;
+			}
 		}
 
-		DWORD ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 : Desc.ArraySize);
-		pInitData = (D3D11_SUBRESOURCE_DATA*)_malloca(ArraySize * sizeof(D3D11_SUBRESOURCE_DATA));
-		char* pCurrData = (char*)pData;
-		for (DWORD i = 0; i < ArraySize; ++i)
+		// GPU mipmap generation is supported only for SRV + RT textures and is intended for
+		// generating mips for texture render targets. Static mips are either pregenerated by a
+		// toolchain or are omitted to save HDD loading time and will be generated now on CPU.
+		// Order is ArrayElement[0] { Mip[1] ... Mip[N] } ... ArrayElement[M] { Mip[1] ... Mip[N] }.
+		// Most detailed data Mip[0] is not copied to this buffer. Can also generate mips async in loader.
+		char* pGeneratedMips = NULL;
+		if (!MipDataProvided && MipLevels > 1)
 		{
-			D3D11_SUBRESOURCE_DATA& InitData = pInitData[i];
-			InitData.pSysMem = pCurrData;
-			InitData.SysMemPitch = Pitch;
-			InitData.SysMemSlicePitch = SlicePitch;
-			pCurrData += SlicePitch;
+			//!!!generate mips by DirectXTex code or smth like that!
+			//!!!take this into account when setting pointers below!
+#ifdef _DEBUG
+			if (!pGeneratedMips)
+				Sys::DbgOut("CD3D11GPUDriver::CreateTexture() > Mipmaps are not generated\n");
+#endif
+		}
+
+		pInitData = (D3D11_SUBRESOURCE_DATA*)_malloca(MipLevels * ArraySize * sizeof(D3D11_SUBRESOURCE_DATA));
+		D3D11_SUBRESOURCE_DATA* pCurrInitData = pInitData;
+		char* pCurrData = (char*)pData;
+		for (DWORD Elm = 0; Elm < ArraySize; ++Elm, ++pCurrInitData)
+		{
+			pCurrInitData->pSysMem = pCurrData;
+			pCurrInitData->SysMemPitch = Pitch[0];
+			pCurrInitData->SysMemSlicePitch = SlicePitch[0];
+			pCurrData += SlicePitch[0];
+
+			for (DWORD Mip = 1; Mip < MipLevels; ++Mip, ++pCurrInitData)
+			{
+				if (MipDataProvided)
+				{
+					pCurrInitData->pSysMem = pCurrData;
+					pCurrInitData->SysMemPitch = Pitch[Mip];
+					pCurrInitData->SysMemSlicePitch = SlicePitch[Mip];
+					pCurrData += SlicePitch[Mip];
+				}
+				else if (pGeneratedMips)
+				{
+					pCurrInitData->pSysMem = pGeneratedMips;
+					pCurrInitData->SysMemPitch = Pitch[Mip];
+					pCurrInitData->SysMemSlicePitch = SlicePitch[Mip];
+					pGeneratedMips += SlicePitch[Mip];
+				}
+				else
+				{
+					pCurrInitData->pSysMem = NULL;
+					pCurrInitData->SysMemPitch = 0;
+					pCurrInitData->SysMemSlicePitch = 0;
+				}
+			}
 		}
 	}
 
@@ -941,8 +989,8 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	{
 		D3D11_TEXTURE1D_DESC D3DDesc = { 0 };
 		D3DDesc.Width = Desc.Width;
-		D3DDesc.MipLevels = Desc.MipLevels;
-		D3DDesc.ArraySize = Desc.ArraySize;
+		D3DDesc.MipLevels = MipLevels;
+		D3DDesc.ArraySize = ArraySize;
 		D3DDesc.Format = DXGIFormat;
 		D3DDesc.Usage = Usage;
 		D3DDesc.BindFlags = BindFlags;
@@ -960,16 +1008,16 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		D3D11_TEXTURE2D_DESC D3DDesc = { 0 };
 		D3DDesc.Width = Desc.Width;
 		D3DDesc.Height = Desc.Height;
-		D3DDesc.MipLevels = Desc.MipLevels;
-		D3DDesc.ArraySize = (Desc.Type == Texture_Cube) ? 6 : Desc.ArraySize;
+		D3DDesc.MipLevels = MipLevels;
+		D3DDesc.ArraySize = ArraySize;
 		D3DDesc.Format = DXGIFormat;
 		D3DDesc.Usage = Usage;
 		D3DDesc.BindFlags = BindFlags;
 		D3DDesc.CPUAccessFlags = CPUAccess;	
 		D3DDesc.MiscFlags = MiscFlags;
 
-		//???what if CPUAccess != 0? MiscFlags must be 0.
-		if (Desc.Type == Texture_Cube) D3DDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+		if (Desc.Type == Texture_Cube)
+			D3DDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
 		if (Desc.MSAAQuality == MSAA_None)
 		{
@@ -994,7 +1042,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		D3DDesc.Width = Desc.Width;
 		D3DDesc.Height = Desc.Height;
 		D3DDesc.Depth = Desc.Depth;
-		D3DDesc.MipLevels = Desc.MipLevels;
+		D3DDesc.MipLevels = MipLevels;
 		D3DDesc.Format = DXGIFormat;
 		D3DDesc.Usage = Usage;
 		D3DDesc.BindFlags = BindFlags;
@@ -1020,6 +1068,12 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		return NULL;
 	}
 
+//!!!check D3D11_SRV_DIMENSION_TEXTURECUBEARRAY etc!
+//!!!DBG TMP!
+D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+pSRV->GetDesc(&SRVDesc);
+int test = 0;
+
 	if (!Tex->Create(pTexRsrc, pSRV))
 	{
 		pSRV->Release();
@@ -1031,23 +1085,19 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 }
 //---------------------------------------------------------------------
 
-//???allow arrays? need mips (add to desc)?
-//???allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
+//???allow arrays? allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
 PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 {
-	//!!!assert Format is not typeless!
-
-	//???disable MSAA for DEM_RENDER_DEBUG?
 	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+
 	UINT QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
 		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
 
-	//???call CreateTexture?
 	D3D11_TEXTURE2D_DESC D3DDesc = {0};
 	D3DDesc.Width = Desc.Width;
 	D3DDesc.Height = Desc.Height;
-	D3DDesc.MipLevels = 1;
+	D3DDesc.MipLevels = Desc.UseAsShaderInput ? Desc.MipLevels : 1;
 	D3DDesc.ArraySize = 1;
 	D3DDesc.Format = Fmt;
 	if (Desc.MSAAQuality == MSAA_None)
@@ -1062,9 +1112,14 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	}
 	D3DDesc.Usage = D3D11_USAGE_DEFAULT;
 	D3DDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
-	if (Desc.UseAsShaderInput) D3DDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
 	D3DDesc.CPUAccessFlags = 0;
 	D3DDesc.MiscFlags = 0;
+	if (Desc.UseAsShaderInput)
+	{
+		D3DDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+		if (Desc.MipLevels != 1)
+			D3DDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS; // | D3D11_RESOURCE_MISC_RESOURCE_CLAMP
+	}
 
 	ID3D11Texture2D* pTexture = NULL;
 	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTexture))) return NULL;
@@ -1114,7 +1169,6 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	}
 	else RsrcFmt = DSVFmt;
 
-	//???disable MSAA for DEM_RENDER_DEBUG?
 	//???check DSV or texture fmt?
 	UINT QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)

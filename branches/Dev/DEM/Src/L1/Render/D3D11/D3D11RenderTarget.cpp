@@ -40,6 +40,7 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 	Desc.Height = TexDesc.Height;
 	Desc.MSAAQuality = CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality(TexDesc.SampleDesc);
 	Desc.UseAsShaderInput = !!pSRV; // (TexDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE) != 0;
+	Desc.MipLevels = TexDesc.MipLevels;
 	
 	pTexRsrc->Release();
 
@@ -104,6 +105,7 @@ bool CD3D11RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 
 CTexture* CD3D11RenderTarget::GetShaderResource() const
 {
+	//!!!on render to texture end, if MipLevels > 0, generate mips!
 	return Texture.GetUnsafe();
 }
 //---------------------------------------------------------------------

@@ -332,7 +332,7 @@ DWORD CD3D11DriverFactory::DXGIFormatStencilBits(DXGI_FORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-void CD3D11DriverFactory::DXGIFormatBlockSize(DXGI_FORMAT D3DFormat, DWORD& OutWidth, DWORD& OutHeight)
+DWORD CD3D11DriverFactory::DXGIFormatBlockSize(DXGI_FORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -356,19 +356,9 @@ void CD3D11DriverFactory::DXGIFormatBlockSize(DXGI_FORMAT D3DFormat, DWORD& OutW
 		case DXGI_FORMAT_BC6H_SF16:
 		case DXGI_FORMAT_BC7_TYPELESS:
 		case DXGI_FORMAT_BC7_UNORM:
-		case DXGI_FORMAT_BC7_UNORM_SRGB:
-		{
-			OutWidth = 4;
-			OutHeight = 4;
-			return;
-		}
+		case DXGI_FORMAT_BC7_UNORM_SRGB:	return 4;
 
-		default:
-		{
-			OutWidth = 1;
-			OutHeight = 1;
-			return;
-		}
+		default:							return 1;
 	}
 }
 //---------------------------------------------------------------------
