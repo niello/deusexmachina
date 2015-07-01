@@ -7,7 +7,7 @@
 #include <Render/VertexComponent.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
-#include <Data/Rect.h>
+#include <Data/Regions.h>
 
 // GPU device driver manages VRAM resources and provides an interface for rendering on a video card.
 // Create GPU device drivers with CVideoDriverFactory.
