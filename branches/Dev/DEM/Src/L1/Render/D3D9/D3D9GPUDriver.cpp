@@ -939,84 +939,52 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 
 PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
 {
-//	n_assert(VertexCount && VertexLayout.IsValid());
-//
-//	Access.ResetTo(BufferAccess);
-//	Layout = VertexLayout;
-//	VtxCount = VertexCount;
-//
-//	DWORD Size = GetSizeInBytes();
-//	n_assert(Size);
-//
-//	D3DPOOL D3DPool;
-//	DWORD D3DUsage;
-//	if (Access.Is(GPU_Read | CPU_Write))
-//	{
-//		Access.ResetTo(GPU_Read | CPU_Write);
-//		D3DPool = D3DPOOL_DEFAULT;
-//		D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
-//	}
-//	else if (Access.Is(GPU_Read))
-//	{
-//		Access.ResetTo(GPU_Read);
-//		D3DPool = D3DPOOL_MANAGED;
-//		D3DUsage = D3DUSAGE_WRITEONLY;
-//	}
-//	else if (Access.Is(CPU_Read) || Access.Is(CPU_Write))
-//	{
-//		Access.ResetTo(CPU_Read | CPU_Write); // Always supports both
-//		D3DPool = D3DPOOL_SYSTEMMEM;
-//		D3DUsage = D3DUSAGE_DYNAMIC;
-//	}
-//	else Sys::Error("!!!REWRITE D3D9 BUFFER ACCESS MAPPING!!!");
-//
-//	if (FAILED(RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL))) FAIL;
-//
-//	if (D3DPool == D3DPOOL_DEFAULT)
-//		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CD3D9VertexBuffer, OnDeviceLost);
+	if (!pD3DDevice || !VertexCount) return NULL;
+
+	DWORD Usage;
+	D3DPOOL Pool;
+	GetUsagePool(AccessFlags, Usage, Pool);
+	if (Pool == D3DPOOL_DEFAULT) Usage |= D3DUSAGE_WRITEONLY;
+
+	DWORD ByteSize = 0; //!!!VertexCount * VertexLayout.GetVertexByteSize();
+
+	IDirect3DVertexBuffer9* pD3DBuf = NULL;
+	if (FAILED(pD3DDevice->CreateVertexBuffer(ByteSize, Usage, 0, Pool, &pD3DBuf, NULL))) return NULL;
+
+	//PD3D9VertexBuffer VB = n_new(CD3D9VertexBuffer);
+	//if (!VB->Create(VertexLayout, pD3DBuf))
+	//{
+	//	pD3DBuf->Release();
+	//	return NULL;
+	//}
+
+	//return VB.GetUnsafe();
 	return NULL;
 }
 //---------------------------------------------------------------------
 
 PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData)
 {
-//	n_assert(IndexCount);
-//
-//	Access.ResetTo(BufferAccess);
-//	IdxFormat = IndexType;
-//	IdxCount = IndexCount;
-//
-//	DWORD Size = GetSizeInBytes();
-//	n_assert(Size);
-//
-//	D3DPOOL D3DPool;
-//	DWORD D3DUsage;
-//	if (Access.Is(GPU_Read | CPU_Write))
-//	{
-//		Access.ResetTo(GPU_Read | CPU_Write);
-//		D3DPool = D3DPOOL_DEFAULT;
-//		D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
-//	}
-//	else if (Access.Is(GPU_Read))
-//	{
-//		Access.ResetTo(GPU_Read);
-//		D3DPool = D3DPOOL_MANAGED;
-//		D3DUsage = D3DUSAGE_WRITEONLY;
-//	}
-//	else if (Access.Is(CPU_Read) || Access.Is(CPU_Write))
-//	{
-//		Access.ResetTo(CPU_Read | CPU_Write); // Always supports both
-//		D3DPool = D3DPOOL_SYSTEMMEM;
-//		D3DUsage = D3DUSAGE_DYNAMIC;
-//	}
-//	else Sys::Error("!!!REWRITE D3D9 BUFFER ACCESS MAPPING!!!");
-//
-//	D3DFORMAT D3DFormat = (IdxFormat == Index16) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
-//
-//	if (FAILED(RenderSrv->GetD3DDevice()->CreateIndexBuffer(Size, D3DUsage, D3DFormat, D3DPool, &pBuffer, NULL))) FAIL;
-//
-//	if (D3DPool == D3DPOOL_DEFAULT)
-//		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CD3D9IndexBuffer, OnDeviceLost);
+	if (!pD3DDevice || !IndexCount) return NULL;
+
+	DWORD Usage;
+	D3DPOOL Pool;
+	GetUsagePool(AccessFlags, Usage, Pool);
+	if (Pool == D3DPOOL_DEFAULT) Usage |= D3DUSAGE_WRITEONLY;
+
+	D3DFORMAT Format = (IndexType == Index_16) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
+
+	IDirect3DIndexBuffer9* pD3DBuf = NULL;
+	if (FAILED(pD3DDevice->CreateIndexBuffer(IndexCount * (DWORD)IndexType, Usage, Format, Pool, &pD3DBuf, NULL))) return NULL;
+
+	//PD3D9IndexBuffer IB = n_new(CD3D9IndexBuffer);
+	//if (!IB->Create(IndexType, pD3DBuf))
+	//{
+	//	pD3DBuf->Release();
+	//	return NULL;
+	//}
+
+	//return IB.GetUnsafe();
 	return NULL;
 }
 //---------------------------------------------------------------------
@@ -1273,7 +1241,7 @@ void CD3D9GPUDriver::GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL&
 	else
 	{
 		OutPool = D3DPOOL_SYSTEMMEM;
-		OutUsage = D3DUSAGE_DYNAMIC;
+		OutUsage = D3DUSAGE_DYNAMIC; //???has meaning?
 	}
 }
 //---------------------------------------------------------------------
