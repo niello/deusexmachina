@@ -1095,6 +1095,82 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
+PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
+{
+	if (!VertexCount) return NULL;
+
+	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	UINT CPUAccess;
+	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+
+	D3D11_BUFFER_DESC Desc;
+	Desc.Usage = Usage;
+	Desc.ByteWidth = 0; //!!!VertexCount * VertexLayout.GetVertexByteSize();
+	Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	Desc.CPUAccessFlags = CPUAccess;
+	Desc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA InitData;
+	if (pData)
+	{
+		InitData.pSysMem = pData;
+		pInitData = &InitData;
+	}
+
+	ID3D11Buffer* pD3DBuf = NULL;
+	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
+
+	//PD3D11VertexBuffer VB = n_new(CD3D11VertexBuffer);
+	//if (!VB->Create(VertexLayout, pD3DBuf))
+	//{
+	//	pD3DBuf->Release();
+	//	return NULL;
+	//}
+
+	//return VB.GetUnsafe();
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData)
+{
+	if (!IndexCount) return NULL;
+
+	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	UINT CPUAccess;
+	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+
+	D3D11_BUFFER_DESC Desc;
+	Desc.Usage = Usage;
+	Desc.ByteWidth = IndexCount * (DWORD)IndexType;
+	Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	Desc.CPUAccessFlags = CPUAccess;
+	Desc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA InitData;
+	if (pData)
+	{
+		InitData.pSysMem = pData;
+		pInitData = &InitData;
+	}
+
+	ID3D11Buffer* pD3DBuf = NULL;
+	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
+
+	//PD3D11IndexBuffer IB = n_new(CD3D11IndexBuffer);
+	//if (!IB->Create(IndexType, pD3DBuf))
+	//{
+	//	pD3DBuf->Release();
+	//	return NULL;
+	//}
+
+	//return IB.GetUnsafe();
+	return NULL;
+}
+//---------------------------------------------------------------------
+
 // pData - initial data to be uploaded to a texture.
 // if MipDataProvided, order is ArrayElement[0] { Mip[0] ... Mip[N] } ... ArrayElement[M] { Mip[0] ... Mip[N] },
 // else order is ArrayElement[0] { Mip[0] } ... ArrayElement[M] { Mip[0] }, where Mip[0] is an original data.
@@ -1177,6 +1253,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		char* pGeneratedMips = NULL;
 		if (!MipDataProvided && MipLevels > 1)
 		{
+			Sys::Error("IMPLEMENT ME!\n");
 			//!!!generate mips by DirectXTex code or smth like that!
 			//!!!take this into account when setting pointers below!
 #ifdef _DEBUG
@@ -1299,18 +1376,12 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	}
 
 	ID3D11ShaderResourceView* pSRV = NULL;
-	if (FAILED(pD3DDevice->CreateShaderResourceView(pTexRsrc, NULL, &pSRV)))
+	if ((BindFlags & D3D11_BIND_SHADER_RESOURCE) &&
+		FAILED(pD3DDevice->CreateShaderResourceView(pTexRsrc, NULL, &pSRV)))
 	{
 		pTexRsrc->Release();
 		return NULL;
 	}
-
-//!!!check D3D11_SRV_DIMENSION_TEXTURECUBEARRAY etc!
-//!!!DBG TMP!
-//tex 2D - OK
-D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-pSRV->GetDesc(&SRVDesc);
-int test = 0;
 
 	if (!Tex->Create(pTexRsrc, pSRV))
 	{

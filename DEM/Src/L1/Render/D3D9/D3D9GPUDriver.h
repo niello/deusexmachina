@@ -91,9 +91,9 @@ public:
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
-	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
-	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
