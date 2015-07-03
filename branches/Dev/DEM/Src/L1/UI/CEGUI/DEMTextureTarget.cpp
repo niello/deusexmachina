@@ -106,6 +106,9 @@ void CDEMTextureTarget::enableRenderTexture()
 	//???don't store prev?
 	//d_device.d_context->OMGetRenderTargets(1, &d_previousRenderTargetView, &d_previousDepthStencilView);
 	d_owner.getGPUDriver()->SetRenderTarget(0, RT.GetUnsafe());
+	DWORD MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
+	for (DWORD i = 1; i < MaxRT; ++i)
+		d_owner.getGPUDriver()->SetRenderTarget(i, NULL);
 	d_owner.getGPUDriver()->SetDepthStencilBuffer(NULL);
 }
 //---------------------------------------------------------------------

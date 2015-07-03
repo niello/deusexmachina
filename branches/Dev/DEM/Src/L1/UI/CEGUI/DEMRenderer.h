@@ -6,8 +6,6 @@
 #include <Data/HashTable.h>
 
 #include <CEGUI/Renderer.h>
-//#include <CEGUI/Size.h>
-//#include <CEGUI/Vector.h>
 
 namespace Render
 {

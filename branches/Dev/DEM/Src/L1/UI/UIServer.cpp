@@ -38,7 +38,7 @@ CUIServer::CUIServer()
 	Singleton = this;
 
 	Logger = n_new(CEGUI::CDEMLogger);
-	//Renderer = &CEGUI::CDEMRenderer::create();
+	//Renderer = &CEGUI::CDEMRenderer::create(GPUDriver, SwapChainID);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
 

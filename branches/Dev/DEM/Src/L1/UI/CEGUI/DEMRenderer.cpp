@@ -21,8 +21,8 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 	GPU(&GPUDriver),
 	SwapChainID(SwapChain),
 	pDefaultRT(NULL),
-	DisplayDPI(96, 96) //???how to get real DPI?
-	//d_inputLayout(0),
+	DisplayDPI(96, 96)
+	//d_inputLayout(NULL),
 {
 	n_assert(GPU->SwapChainExists(SwapChainID));
 
@@ -97,6 +97,7 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllGeometryBuffers();
 	n_delete(pDefaultRT);
 
+	n_assert(false);
 	//if (d_effect) d_effect->Release();
 	//if (d_inputLayout) d_inputLayout->Release();
 }

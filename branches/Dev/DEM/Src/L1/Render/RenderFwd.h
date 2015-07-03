@@ -61,6 +61,13 @@ enum EPrimitiveTopology
 	TriStrip
 };
 
+// Value is a size of one index in bytes
+enum EIndexType
+{
+	Index_16 = 2,
+	Index_32 = 4
+};
+
 enum ECaps
 {
 	Caps_VSTex_L16,				// Unsigned short 16-bit texture as a vertex texture

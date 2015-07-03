@@ -177,14 +177,24 @@ const matrix44* CDEMGeometryBuffer::getMatrix() const
 void CDEMGeometryBuffer::syncHardwareBuffer() const
 {
 	const DWORD vertex_count = (DWORD)d_vertices.GetCount();
-
-	if (vertex_count > d_bufferSize)
+	if (!vertex_count)
 	{
 		d_vertexBuffer = NULL;
-		allocateVertexBuffer(vertex_count);
+		return;
 	}
 
-	if (vertex_count > 0)
+	if (vertex_count > d_bufferSize) d_vertexBuffer = NULL;
+
+	if (d_vertexBuffer.IsNullPtr())
+	{
+		n_assert(false);
+		//d_vertexBuffer = d_owner.createVertexBuffer(vertex_count, d_vertices.Begin());
+		//or even
+		//d_vertexBuffer = d_owner.createVertexBuffer(d_vertices); //store the only vertex layout inside
+		//d_vertexBuffer = d_owner.getGPUDriver()->CreateVertexBuffer(THE_ONLY_VLAYOUT, vertex_count, Render::Access_GPU_Read | Render::Access_CPU_Write, d_vertices.Begin());
+		d_bufferSize = vertex_count;
+	}
+	else
 	{
 	n_assert(false);
 		//D3D11_MAPPED_SUBRESOURCE SubRes;
@@ -194,23 +204,6 @@ void CDEMGeometryBuffer::syncHardwareBuffer() const
 	}
 
 	d_bufferIsSync = true;
-}
-//--------------------------------------------------------------------
-
-void CDEMGeometryBuffer::allocateVertexBuffer(const size_t count) const
-{
-	n_assert(false);
-	/*
-	D3D11_BUFFER_DESC buffer_desc;
-	buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
-	buffer_desc.ByteWidth = count * sizeof(D3DVertex);
-	buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	buffer_desc.MiscFlags = 0;
-	n_assert(SUCCEEDED(d_device.d_device->CreateBuffer(&buffer_desc, 0, &d_vertexBuffer)));
-	*/
-
-	d_bufferSize = count;
 }
 //--------------------------------------------------------------------
 

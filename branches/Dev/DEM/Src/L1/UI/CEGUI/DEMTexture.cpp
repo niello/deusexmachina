@@ -156,6 +156,7 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 	UINT SrcPitch = ((UINT)area.getWidth()) * 4;
 	blitFromSurface(static_cast<const uint32*>(sourceData), pBuf, area.getSize(), SrcPitch);
 
+	n_assert(false);
 // RAM -> VRAM
 /*//D3D9
         if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
@@ -252,6 +253,7 @@ void CDEMTexture::blitToMemory(void* targetData)
 {
     if (DEMTexture.IsNullPtr()) return;
 
+	n_assert(false);
 /*//D3D9 lock 0 - read - unlock
 
 // VRAM -> RAM

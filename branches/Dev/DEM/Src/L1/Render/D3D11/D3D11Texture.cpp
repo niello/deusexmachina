@@ -23,7 +23,7 @@ bool CD3D11Texture::Create(ID3D11ShaderResourceView* pSRV)
 
 bool CD3D11Texture::Create(ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV)
 {
-	if (!pTexture || !pSRV) FAIL;
+	if (!pTexture) FAIL;
 
 	bool Result = false;
 	ID3D11Texture1D* pTex1D = NULL;
@@ -51,7 +51,7 @@ bool CD3D11Texture::Create(ID3D11Resource* pTexture, ID3D11ShaderResourceView* p
 
 bool CD3D11Texture::Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* pSRV)
 {
-	if (!pTexture || !pSRV) FAIL;
+	if (!pTexture) FAIL;
 
 	D3D11_TEXTURE1D_DESC D3DDesc;
 	pTexture->GetDesc(&D3DDesc);
@@ -78,7 +78,7 @@ bool CD3D11Texture::Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* 
 
 bool CD3D11Texture::Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* pSRV)
 {
-	if (!pTexture || !pSRV) FAIL;
+	if (!pTexture) FAIL;
 
 	D3D11_TEXTURE2D_DESC D3DDesc;
 	pTexture->GetDesc(&D3DDesc);
@@ -105,7 +105,7 @@ bool CD3D11Texture::Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* 
 
 bool CD3D11Texture::Create(ID3D11Texture3D* pTexture, ID3D11ShaderResourceView* pSRV)
 {
-	if (!pTexture || !pSRV) FAIL;
+	if (!pTexture) FAIL;
 
 	D3D11_TEXTURE3D_DESC D3DDesc;
 	pTexture->GetDesc(&D3DDesc);

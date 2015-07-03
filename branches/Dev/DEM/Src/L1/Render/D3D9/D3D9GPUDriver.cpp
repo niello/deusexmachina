@@ -937,6 +937,90 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 }
 //---------------------------------------------------------------------
 
+PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
+{
+//	n_assert(VertexCount && VertexLayout.IsValid());
+//
+//	Access.ResetTo(BufferAccess);
+//	Layout = VertexLayout;
+//	VtxCount = VertexCount;
+//
+//	DWORD Size = GetSizeInBytes();
+//	n_assert(Size);
+//
+//	D3DPOOL D3DPool;
+//	DWORD D3DUsage;
+//	if (Access.Is(GPU_Read | CPU_Write))
+//	{
+//		Access.ResetTo(GPU_Read | CPU_Write);
+//		D3DPool = D3DPOOL_DEFAULT;
+//		D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
+//	}
+//	else if (Access.Is(GPU_Read))
+//	{
+//		Access.ResetTo(GPU_Read);
+//		D3DPool = D3DPOOL_MANAGED;
+//		D3DUsage = D3DUSAGE_WRITEONLY;
+//	}
+//	else if (Access.Is(CPU_Read) || Access.Is(CPU_Write))
+//	{
+//		Access.ResetTo(CPU_Read | CPU_Write); // Always supports both
+//		D3DPool = D3DPOOL_SYSTEMMEM;
+//		D3DUsage = D3DUSAGE_DYNAMIC;
+//	}
+//	else Sys::Error("!!!REWRITE D3D9 BUFFER ACCESS MAPPING!!!");
+//
+//	if (FAILED(RenderSrv->GetD3DDevice()->CreateVertexBuffer(Size, D3DUsage, 0, D3DPool, &pBuffer, NULL))) FAIL;
+//
+//	if (D3DPool == D3DPOOL_DEFAULT)
+//		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CD3D9VertexBuffer, OnDeviceLost);
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData)
+{
+//	n_assert(IndexCount);
+//
+//	Access.ResetTo(BufferAccess);
+//	IdxFormat = IndexType;
+//	IdxCount = IndexCount;
+//
+//	DWORD Size = GetSizeInBytes();
+//	n_assert(Size);
+//
+//	D3DPOOL D3DPool;
+//	DWORD D3DUsage;
+//	if (Access.Is(GPU_Read | CPU_Write))
+//	{
+//		Access.ResetTo(GPU_Read | CPU_Write);
+//		D3DPool = D3DPOOL_DEFAULT;
+//		D3DUsage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY;
+//	}
+//	else if (Access.Is(GPU_Read))
+//	{
+//		Access.ResetTo(GPU_Read);
+//		D3DPool = D3DPOOL_MANAGED;
+//		D3DUsage = D3DUSAGE_WRITEONLY;
+//	}
+//	else if (Access.Is(CPU_Read) || Access.Is(CPU_Write))
+//	{
+//		Access.ResetTo(CPU_Read | CPU_Write); // Always supports both
+//		D3DPool = D3DPOOL_SYSTEMMEM;
+//		D3DUsage = D3DUSAGE_DYNAMIC;
+//	}
+//	else Sys::Error("!!!REWRITE D3D9 BUFFER ACCESS MAPPING!!!");
+//
+//	D3DFORMAT D3DFormat = (IdxFormat == Index16) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
+//
+//	if (FAILED(RenderSrv->GetD3DDevice()->CreateIndexBuffer(Size, D3DUsage, D3DFormat, D3DPool, &pBuffer, NULL))) FAIL;
+//
+//	if (D3DPool == D3DPOOL_DEFAULT)
+//		SUBSCRIBE_PEVENT(OnRenderDeviceLost, CD3D9IndexBuffer, OnDeviceLost);
+	return NULL;
+}
+//---------------------------------------------------------------------
+
 //???how to handle MipDataProvided? lock levels one by one and upload data?
 PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData, bool MipDataProvided)
 {

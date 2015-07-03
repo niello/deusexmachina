@@ -125,8 +125,8 @@ public:
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
 
-	virtual PVertexBuffer		CreateVertexBuffer() = 0;
-	virtual PIndexBuffer		CreateIndexBuffer() = 0;
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	PVertexLayout				CreateVertexLayout(const CArray<CVertexComponent>& Components /*, CStrID ShaderInputSignature = CStrID::Empty*/);
 	PVertexLayout				GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
 	//virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;

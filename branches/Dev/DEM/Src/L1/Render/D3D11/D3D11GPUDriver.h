@@ -113,9 +113,12 @@ public:
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured
 
+	//!!!D3D11 vertex layout must be a key to a list of different layout interfaces, each for a particular shader input signature!
+	//it will be resolved at a draw call, when both shader and VB are bound
+	//???!!!support multichannel VBs?!
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
-	virtual PVertexBuffer		CreateVertexBuffer() { return NULL; }
-	virtual PIndexBuffer		CreateIndexBuffer() { return NULL; }
 	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);

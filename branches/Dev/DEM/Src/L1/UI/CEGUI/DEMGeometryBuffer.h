@@ -56,7 +56,6 @@ protected:
 
 	void updateMatrix() const;
 	void syncHardwareBuffer() const;
-	void allocateVertexBuffer(const size_t count) const;
 
 public:
 
