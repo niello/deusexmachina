@@ -1097,7 +1097,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 
 PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
 {
-	if (!VertexCount) return NULL;
+	if (!pD3DDevice || !VertexCount) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1135,7 +1135,7 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, D
 
 PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData)
 {
-	if (!IndexCount) return NULL;
+	if (!pD3DDevice || !IndexCount) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
