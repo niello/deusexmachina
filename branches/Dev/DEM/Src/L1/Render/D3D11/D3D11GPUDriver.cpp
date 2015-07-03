@@ -14,6 +14,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
+//!!!D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE!
+//each scissor rect belongs to a viewport
+
 namespace Render
 {
 __ImplementClass(Render::CD3D11GPUDriver, '11GD', Render::CGPUDriver);
@@ -44,6 +47,8 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	if (AdapterID == Adapter_AutoSelect) AdapterID = 0;
 	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter))) FAIL;
 
+	// NB: All mapped pointers will be SSE-friendly 16-byte aligned for these feature levels, and other
+	// code relies on it. Adding feature levels 9.x may require to change resource mapping code.
 	D3D_FEATURE_LEVEL FeatureLevels[] =
 	{
 		//D3D_FEATURE_LEVEL_11_1, //!!!Can use D3D11.1 and DXGI 1.2 API on Win 7 with platform update!
@@ -84,6 +89,20 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_3) MRTCount = D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT;
 	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_1) MRTCount = D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT;
 	CurrRT.SetSize(MRTCount);
+
+	// To determine whether viewport is set or not at a particular index, we use a bitfield.
+	// So we are not only limited by a D3D11 caps but also by a bit count in a mask.
+	//???!!!use each bit for pair, is there any reason to set VP & SR separately?!
+	//???and also one dirty flag? when set VP do D3D11 remember its SR or it resets SR size?
+	//!!!need static assert!
+	n_assert_dbg(sizeof(VPSRSetFlags) * 4 >= VP_OR_SR_SET_FLAG_COUNT);
+	DWORD MaxViewportCountCaps = 1;
+	if (FeatureLevel >= D3D_FEATURE_LEVEL_11_0) MaxViewportCountCaps = D3D10_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
+	else if (FeatureLevel >= D3D_FEATURE_LEVEL_10_0) MaxViewportCountCaps = D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
+	MaxViewportCount = n_min(MaxViewportCountCaps, VP_OR_SR_SET_FLAG_COUNT);
+	CurrVP = n_new_array(D3D11_VIEWPORT, MaxViewportCount);
+	CurrSR = n_new_array(RECT, MaxViewportCount);
+	VPSRSetFlags.ClearAll();
 
 	OK;
 
@@ -274,8 +293,12 @@ void CD3D11GPUDriver::Release()
 	for (int i = 0; i < SwapChains.GetCount() ; ++i)
 		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
 
+	SAFE_DELETE_ARRAY(CurrVP);
+	SAFE_DELETE_ARRAY(CurrSR);
+
 	CurrRT.SetSize(0);
 
+	//ctx->ClearState()
 	//!!!UnbindD3DResources();
 	//!!!can call the same event as on lost device!
 
@@ -298,7 +321,9 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 {
 	n_assert(pD3DDevice);
 
-	//pD3DDevice->GetFeatureLevel()
+//pD3DDevice->GetFeatureLevel()
+//CheckFeatureSupport
+//CheckFormatSupport
 
 	switch (Cap)
 	{
@@ -727,6 +752,124 @@ bool CD3D11GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
+//!!!!!!!!!!!!???how to handle set viewport and then set another RT?
+
+bool CD3D11GPUDriver::SetViewport(DWORD Index, const CViewport* pViewport)
+{
+	if (Index >= MaxViewportCount) FAIL;
+
+	D3D11_VIEWPORT& CurrViewport = CurrVP[Index];
+	DWORD IsSetBit = (1 << Index);
+	if (pViewport)
+	{
+		if (VPSRSetFlags.Is(IsSetBit) &&
+			pViewport->Left == CurrViewport.TopLeftX &&
+			pViewport->Top == CurrViewport.TopLeftY &&
+			pViewport->Width == CurrViewport.Width &&
+			pViewport->Height == CurrViewport.Height &&
+			pViewport->MinDepth == CurrViewport.MinDepth &&
+			pViewport->MaxDepth == CurrViewport.MaxDepth)
+		{
+			OK;
+		}
+		
+		CurrViewport.TopLeftX = pViewport->Left;
+		CurrViewport.TopLeftY = pViewport->Top;
+		CurrViewport.Width = pViewport->Width;
+		CurrViewport.Height = pViewport->Height;
+		CurrViewport.MinDepth = pViewport->MinDepth;
+		CurrViewport.MaxDepth = pViewport->MaxDepth;
+
+		VPSRSetFlags.Set(IsSetBit);
+	}
+	else
+	{
+		Sys::Error("FILL WITH RT DEFAULTS!!!\n");
+		CurrViewport.TopLeftX = pViewport->Left;
+		CurrViewport.TopLeftY = pViewport->Top;
+		CurrViewport.Width = pViewport->Width;
+		CurrViewport.Height = pViewport->Height;
+		CurrViewport.MinDepth = pViewport->MinDepth;
+		CurrViewport.MaxDepth = pViewport->MaxDepth;
+
+		VPSRSetFlags.Clear(IsSetBit);
+	}
+
+	CurrDirtyFlags.Set(GPU_Dirty_VP);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::GetViewport(DWORD Index, CViewport& OutViewport)
+{
+	if (Index >= MaxViewportCount || (Index > 0 && VPSRSetFlags.IsNot(1 << Index))) FAIL;
+
+	D3D11_VIEWPORT& CurrViewport = CurrVP[Index];
+	OutViewport.Left = CurrViewport.TopLeftX;
+	OutViewport.Top = CurrViewport.TopLeftY;
+	OutViewport.Width = CurrViewport.Width;
+	OutViewport.Height = CurrViewport.Height;
+	OutViewport.MinDepth = CurrViewport.MinDepth;
+	OutViewport.MaxDepth = CurrViewport.MaxDepth;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::SetScissorRect(DWORD Index, const Data::CRect* pScissorRect)
+{
+	if (Index >= MaxViewportCount) FAIL;
+
+	RECT& CurrRect = CurrSR[Index];
+	DWORD IsSetBit = (1 << (VP_OR_SR_SET_FLAG_COUNT + Index)); // Use higher half of bits for SR
+	if (pScissorRect)
+	{
+		if (VPSRSetFlags.Is(IsSetBit) &&
+			pScissorRect->X == CurrRect.left &&
+			pScissorRect->Y == CurrRect.top &&
+			pScissorRect->Right() == CurrRect.right &&
+			pScissorRect->Bottom() == CurrRect.bottom)
+		{
+			OK;
+		}
+
+		CurrRect.left = pScissorRect->X;
+		CurrRect.top = pScissorRect->X;
+		CurrRect.right = pScissorRect->Right();
+		CurrRect.bottom = pScissorRect->Bottom();
+
+		VPSRSetFlags.Set(IsSetBit);
+	}
+	else
+	{
+		Sys::Error("FILL WITH RT DEFAULTS!!!\n");
+		CurrRect.left = pScissorRect->X;
+		CurrRect.top = pScissorRect->X;
+		CurrRect.right = pScissorRect->Right();
+		CurrRect.bottom = pScissorRect->Bottom();
+
+		VPSRSetFlags.Clear(IsSetBit);
+	}
+
+	CurrDirtyFlags.Set(GPU_Dirty_SR);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::GetScissorRect(DWORD Index, Data::CRect& OutScissorRect)
+{
+	if (Index >= MaxViewportCount || VPSRSetFlags.IsNot(1 << (VP_OR_SR_SET_FLAG_COUNT + Index))) FAIL;
+	RECT& CurrRect = CurrSR[Index];
+	OutScissorRect.X = CurrRect.left;
+	OutScissorRect.Y = CurrRect.top;
+	OutScissorRect.W = CurrRect.right - CurrRect.left;
+	OutScissorRect.H = CurrRect.bottom - CurrRect.top;
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::BeginFrame()
 {
 	OK;
@@ -802,13 +945,16 @@ void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorR
 
 DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 {
+	if (CurrDirtyFlags.IsNotAll()) return 0;
+
 	Data::CFlags Update(ChangesToUpdate);
 	DWORD Errors = 0;
+
+	CD3D11RenderTarget* pValidRT = NULL;
 
 	// All render targets and a depth-stencil buffer are set atomically in D3D11
 	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
 	{
-		CD3D11RenderTarget* pValidRT = NULL;
 		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)_malloca(sizeof(ID3D11RenderTargetView*) * CurrRT.GetCount());
 		n_assert(pRTV);
 		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
@@ -825,23 +971,56 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : NULL;
  
 		pD3DImmContext->OMSetRenderTargets(CurrRT.GetCount(), pRTV, pDSV);
+		//OMSetRenderTargetsAndUnorderedAccessViews
 
 		_freea(pRTV);
 
-		//???user API for viewports?
+		// If at least one valid RT and at least one default (unset) VP exist, we check
+		// if RT dimensions are changed, and refill all default (unset) VPs properly.
+		// If no valid RTs are set, we cancel VP updating as it has no meaning.
 		if (pValidRT)
 		{
-			D3D11_VIEWPORT VP;
-			VP.Width = (FLOAT)pValidRT->GetDesc().Width;
-			VP.Height = (FLOAT)pValidRT->GetDesc().Height;
-			VP.MinDepth = 0.0f;
-			VP.MaxDepth = 1.0f;
-			VP.TopLeftX = 0;
-			VP.TopLeftY = 0;
-			pD3DImmContext->RSSetViewports(1, &VP);
+			DWORD RTWidth = pValidRT->GetDesc().Width;
+			DWORD RTHeight = pValidRT->GetDesc().Height;
+			bool UnsetVPFound = false;
+			for (DWORD i = 0; i < MaxViewportCount; ++i)
+			{
+				if (VPSRSetFlags.Is(1 << i)) continue;
+				
+				D3D11_VIEWPORT& D3DVP = CurrVP[i];
+				if (!UnsetVPFound)
+				{
+					// All other default values are fixed: X = 0, Y = 0, MinDepth = 0.f, MaxDepth = 1.f
+					if ((DWORD)D3DVP.Width == RTWidth && (DWORD)D3DVP.Height == RTHeight) break;
+					UnsetVPFound = true;
+					CurrDirtyFlags.Set(GPU_Dirty_VP);
+				}
+
+				// If we are here, RT dimensions were changed, so update default VP values
+				D3DVP.Width = (float)RTWidth;
+				D3DVP.Height = (float)RTHeight;
+			}
 		}
+		else CurrDirtyFlags.Clear(GPU_Dirty_VP);
 
 		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
+	}
+
+	//???set viewports and scissor rects atomically?
+	//???what hapens with set SRs when VPs are set?
+	if (Update.Is(GPU_Dirty_VP) && CurrDirtyFlags.Is(GPU_Dirty_VP))
+	{
+		// Find the last set VP, as we must set all viewports from 0'th to it
+		UINT NumVP = 0;
+		for (DWORD i = 0; i < MaxViewportCount; ++i)
+			if (VPSRSetFlags.Is(1 << i)) NumVP = i + 1;
+
+		// At least one default viewport must be specified
+		if (!NumVP) NumVP = 1;
+
+		pD3DImmContext->RSSetViewports(NumVP, CurrVP);
+
+		CurrDirtyFlags.Clear(GPU_Dirty_VP);
 	}
 
 	return Errors;
@@ -948,10 +1127,10 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	if (Usage == D3D11_USAGE_DYNAMIC && (MipLevels != 1 || ArraySize != 1))
 	{
 #ifdef _DEBUG
-		Sys::DbgOut("Dynamic SRV: The resource can only be created with a single subresource. The resource cannot be a texture array. The resource cannot be a mipmap chain (c) Docs\n");
+		Sys::DbgOut("CD3D11GPUDriver::CreateTexture() > Dynamic texture requested %d mips and %d array slices. D3D11 requires 1 for both. Values are changed to 1.\n", MipLevels, ArraySize);
 #endif
-		//MipLevels = 1; //!!!uncomment after a trial!
-		//ArraySize = 1;
+		MipLevels = 1;
+		ArraySize = 1;
 	}
 
 	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
@@ -969,6 +1148,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		n_assert_dbg(MipLevels <= MAX_MIPS);
 		if (MipLevels > MAX_MIPS) MipLevels = MAX_MIPS;
 
+		//???texture and/or utility [inline] methods GetRowPitch(level, w, [h], fmt), GetSlicePitch(level, w, h, fmt OR rowpitch, h)?
 		UINT Pitch[MAX_MIPS], SlicePitch[MAX_MIPS];
 		if (BlockSize == 1)
 		{
@@ -1127,6 +1307,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 
 //!!!check D3D11_SRV_DIMENSION_TEXTURECUBEARRAY etc!
 //!!!DBG TMP!
+//tex 2D - OK
 D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 pSRV->GetDesc(&SRVDesc);
 int test = 0;

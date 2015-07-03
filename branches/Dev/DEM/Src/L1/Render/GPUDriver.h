@@ -113,6 +113,11 @@ public:
 	bool						PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
 
+	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport) = 0; // NULL to reset
+	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport) = 0;
+	virtual bool				SetScissorRect(DWORD Index, const Data::CRect* pScissorRect) = 0; // NULL to reset
+	virtual bool				GetScissorRect(DWORD Index, Data::CRect& OutScissorRect) = 0;
+
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;

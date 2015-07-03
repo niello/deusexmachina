@@ -11,7 +11,7 @@
 namespace CEGUI
 {
 
-static Render::EPixelFormat CEGUIFormatToPixelFormat(const Texture::PixelFormat fmt)
+static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFormat fmt)
 {
 	switch (fmt)
 	{
@@ -80,7 +80,6 @@ void CDEMTexture::createEmptyTexture(const Sizef& sz)
 	Desc.Format = Render::PixelFmt_R8G8B8A8;
 	Desc.MSAAQuality = Render::MSAA_None;
 
-	//???or CPU Write? to upload data. Or by UpdateTexture?
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write);
 	n_assert(DEMTexture.IsValidPtr());
 
@@ -110,7 +109,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	if (pixel_format == PF_RGB)
 	{
 		const unsigned char* src = static_cast<const unsigned char*>(buffer);
-		unsigned char* dest = new unsigned char[static_cast<unsigned int>( buffer_size.d_width * buffer_size.d_height * 4 )];
+		unsigned char* dest = n_new_array(unsigned char, static_cast<unsigned int>(buffer_size.d_width * buffer_size.d_height) * 4);
 
 		for (int i = 0; i < buffer_size.d_width * buffer_size.d_height; ++i)
 		{
@@ -123,7 +122,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 		img_src = dest;
 	}
 
-	//???destroy DEMTexture here if valid?
+	//!!!can reuse texture without recreation if desc is the same and not immutable!
 
 	Render::CTextureDesc Desc;
 	Desc.Type = Render::Texture_2D;
@@ -132,14 +131,14 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	Desc.Depth = 0;
 	Desc.MipLevels = 1;
 	Desc.ArraySize = 1;
-	Desc.Format = CEGUIFormatToPixelFormat(pixel_format);
+	Desc.Format = CEGUIPixelFormatToPixelFormat(pixel_format);
 	Desc.MSAAQuality = Render::MSAA_None;
 
 	//???is there any way to know will CEGUI write to texture or not?
 	//can create immutable textures!
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write, img_src);
 
-	if (pixel_format == PF_RGB) delete[] img_src;
+	if (pixel_format == PF_RGB) n_delete_array(img_src);
 
 	n_assert(DEMTexture.IsValidPtr());
 

@@ -22,7 +22,6 @@ protected:
 	mutable float		d_viewDistance; // is set up at the same time as d_matrix
 
 	void updateMatrix() const;
-	//void setupViewport(D3D11_VIEWPORT& vp) const;
 
 public:
 

@@ -11,8 +11,10 @@
 struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+struct D3D11_VIEWPORT;
 typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 enum D3D11_USAGE;
+typedef struct tagRECT RECT;
 
 namespace Render
 {
@@ -28,17 +30,24 @@ public:
 
 	enum
 	{
-		GPU_Dirty_RT = 0x0001,
-		GPU_Dirty_DS = 0x0002,
+		GPU_Dirty_RT = 0x0001,	// Render target(s)
+		GPU_Dirty_DS = 0x0002,	// Depth-stencil buffer
+		GPU_Dirty_VP = 0x0004,	// Viewport(s)
+		GPU_Dirty_SR = 0x0008,	// Scissor rect(s)
 
 		GPU_Dirty_All = -1 // All bits set, for convenience in ApplyChanges() call
 	};
 
 protected:
 
+	Data::CFlags					CurrDirtyFlags;
 	CFixedArray<PD3D11RenderTarget>	CurrRT;
 	PD3D11DepthStencilBuffer		CurrDS;
-	Data::CFlags					CurrDirtyFlags;
+	DWORD							MaxViewportCount;
+	D3D11_VIEWPORT*					CurrVP;
+	RECT*							CurrSR;			//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
+	Data::CFlags					VPSRSetFlags;	// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
+	static const DWORD				VP_OR_SR_SET_FLAG_COUNT = 16;
 
 	CArray<CD3D11SwapChain>			SwapChains;
 	//bool							IsInsideFrame;
@@ -50,7 +59,7 @@ protected:
 
 	CArray<PD3D11RenderState>		RenderStates;
 
-	CD3D11GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), pD3DImmContext(NULL) /*, IsInsideFrame(false)*/ {}
+	CD3D11GPUDriver();
 
 	bool			OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool			OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -89,6 +98,11 @@ public:
 	virtual bool				Present(DWORD SwapChainID);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 
+	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport); // NULL to reset
+	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport);
+	virtual bool				SetScissorRect(DWORD Index, const Data::CRect* pScissorRect); // NULL to reset
+	virtual bool				GetScissorRect(DWORD Index, Data::CRect& OutScissorRect);
+
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
@@ -96,6 +110,7 @@ public:
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 
+	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured
 
 	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
@@ -113,6 +128,17 @@ public:
 };
 
 typedef Ptr<CD3D11GPUDriver> PD3D11GPUDriver;
+
+inline CD3D11GPUDriver::CD3D11GPUDriver():
+	SwapChains(1, 1),
+	pD3DDevice(NULL),
+	pD3DImmContext(NULL),
+	CurrVP(NULL),
+	CurrSR(NULL),
+	MaxViewportCount(0) /*, IsInsideFrame(false)*/
+{
+}
+//---------------------------------------------------------------------
 
 }
 

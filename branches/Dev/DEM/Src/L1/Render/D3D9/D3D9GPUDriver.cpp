@@ -315,6 +315,7 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 
 	if (SC.IsFullscreen())
 	{
+		//!!!Can also request pDevice / pSC ->GetDisplayMode D3D9 method!
 		CDisplayMode Mode;
 		if (!SC.TargetDisplay->GetCurrentDisplayMode(Mode)) FAIL;
 		D3DPresentParams.Windowed = FALSE;
@@ -707,6 +708,86 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
+//!!!if cache VP, handle implicit cjanges like on set RT!
+
+bool CD3D9GPUDriver::SetViewport(DWORD Index, const CViewport* pViewport)
+{
+	if (!pD3DDevice || Index > 0) FAIL;
+
+	//???store curr VP not to reset?
+
+	D3DVIEWPORT9* pD3DVP = NULL;
+	if (pViewport)
+	{
+		D3DVIEWPORT9 D3DVP;
+		D3DVP.X = (DWORD)pViewport->Left;
+		D3DVP.Y = (DWORD)pViewport->Top;
+		D3DVP.Width = (DWORD)pViewport->Width;
+		D3DVP.Height = (DWORD)pViewport->Height;
+		D3DVP.MinZ = pViewport->MinDepth;
+		D3DVP.MaxZ = pViewport->MaxDepth;
+		pD3DVP = &D3DVP;
+	}
+
+	return SUCCEEDED(pD3DDevice->SetViewport(pD3DVP));
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::GetViewport(DWORD Index, CViewport& OutViewport)
+{
+	if (!pD3DDevice || Index > 0) FAIL;
+
+	D3DVIEWPORT9 D3DVP = { 0 };
+	if (FAILED(pD3DDevice->GetViewport(&D3DVP))) FAIL;
+
+	OutViewport.Left = (float)D3DVP.X;
+	OutViewport.Top = (float)D3DVP.Y;
+	OutViewport.Width = (float)D3DVP.Width;
+	OutViewport.Height = (float)D3DVP.Height;
+	OutViewport.MinDepth = D3DVP.MinZ;
+	OutViewport.MaxDepth = D3DVP.MaxZ;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SetScissorRect(DWORD Index, const Data::CRect* pScissorRect)
+{
+	if (!pD3DDevice || Index > 0) FAIL;
+
+	//???store curr SR not to reset?
+
+	RECT* pSR = NULL;
+	if (pScissorRect)
+	{
+		RECT SR;
+		SR.left = pScissorRect->X;
+		SR.top = pScissorRect->Y;
+		SR.right = pScissorRect->Right();
+		SR.bottom = pScissorRect->Bottom();
+		pSR = &SR;
+	}
+
+	return SUCCEEDED(pD3DDevice->SetScissorRect(pSR));
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::GetScissorRect(DWORD Index, Data::CRect& OutScissorRect)
+{
+	if (!pD3DDevice || Index > 0) FAIL;
+
+	RECT SR = { 0 };
+	if (FAILED(pD3DDevice->GetScissorRect(&SR))) FAIL;
+
+	OutScissorRect.X = SR.left;
+	OutScissorRect.Y = SR.top;
+	OutScissorRect.W = SR.right - SR.left;
+	OutScissorRect.H = SR.bottom - SR.top;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::BeginFrame()
 {
 	return pD3DDevice && SUCCEEDED(pD3DDevice->BeginScene());
@@ -833,18 +914,26 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 {
 	if (!RT.IsValid()) return;
 
+	DWORD ColorARGB =
+		(((uchar)(ColorRGBA.w * 255.f)) << 24) +
+		(((uchar)(ColorRGBA.x * 255.f)) << 16) +
+		(((uchar)(ColorRGBA.y * 255.f)) << 8) +
+		((uchar)(ColorRGBA.z * 255.f));
+
 	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
-	pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
+	pD3DDevice->ColorFill(D3D9RT.GetD3DSurface(), NULL, ColorARGB);
 
-	for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
-		if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
-			pD3DDevice->SetRenderTarget(i, NULL);
+	//pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
 
-	Clear(Clear_Color, ColorRGBA, 1.f, 0);
+	//for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
+	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
+	//		pD3DDevice->SetRenderTarget(i, NULL);
 
-	for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
-		if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
-			pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
+	//Clear(Clear_Color, ColorRGBA, 1.f, 0);
+
+	//for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
+	//		pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
 }
 //---------------------------------------------------------------------
 

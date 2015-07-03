@@ -79,6 +79,11 @@ public:
 	virtual bool				Present(DWORD SwapChainID);
 	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
 
+	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport); // NULL to reset
+	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport);
+	virtual bool				SetScissorRect(DWORD Index, const Data::CRect* pScissorRect); // NULL to reset
+	virtual bool				GetScissorRect(DWORD Index, Data::CRect& OutScissorRect);
+
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);

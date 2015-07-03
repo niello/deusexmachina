@@ -3,10 +3,12 @@
 #define __DEM_L1_REGIONS_H__
 
 // Line 1D, rect 2D and cuboid 3D axis-aligned region descriptions.
-// Implicit constructors allow to interchange objects in one direction.
+// Implicit constructors allow to interchange these objects.
 
 namespace Data
 {
+struct CRect;
+struct CBox;
 
 struct CSegment
 {
@@ -15,6 +17,8 @@ struct CSegment
 
 	CSegment(): X(0), W(0) {}
 	CSegment(int x, unsigned int w): X(x), W(w) {}
+	CSegment(const CRect& Rect);
+	CSegment(const CBox& Box);
 
 	int	Left() const { return X; }
 	int	Right() const { return X + W; }
@@ -28,6 +32,7 @@ struct CRect
 	CRect(): X(0), Y(0), W(0), H(0) {}
 	CRect(int x, int y, unsigned int w, unsigned int h): X(x), Y(y), W(w), H(h) {}
 	CRect(const CSegment& Seg): X(Seg.X), Y(0), W(Seg.W), H(0) {}
+	CRect(const CBox& Box);
 
 	int	Left() const { return X; }
 	int	Top() const { return Y; }
@@ -47,11 +52,15 @@ struct CBox
 
 	int	Left() const { return X; }
 	int	Top() const { return Y; }
-	int	Near() const { return Z; }
+	int	Front() const { return Z; }
 	int	Right() const { return X + W; }
 	int	Bottom() const { return Y + H; }
-	int	Far() const { return Z + D; }
+	int	Back() const { return Z + D; }
 };
+
+inline CSegment::CSegment(const CRect& Rect): X(Rect.X), W(Rect.W) {}
+inline CSegment::CSegment(const CBox& Box): X(Box.X), W(Box.W) {}
+inline CRect::CRect(const CBox& Box): X(Box.X), Y(Box.Y), W(Box.W), H(Box.H) {}
 
 }
 
