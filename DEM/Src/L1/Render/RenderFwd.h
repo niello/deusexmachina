@@ -149,6 +149,17 @@ struct CRenderTargetDesc
 	bool			UseAsShaderInput;
 };
 
+struct CViewport
+{
+	//???use CRectT<float, float> for L, T, W, H?
+	float	Left;
+	float	Top;
+	float	Width;
+	float	Height;
+	float	MinDepth;
+	float	MaxDepth;
+};
+
 // Error codes
 #define ERR_CREATION_ERROR ((DWORD)-1);
 #define ERR_DRIVER_TYPE_NOT_SUPPORTED ((DWORD)-2);

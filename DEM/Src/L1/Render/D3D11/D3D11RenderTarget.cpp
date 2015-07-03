@@ -105,6 +105,8 @@ bool CD3D11RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 
 CTexture* CD3D11RenderTarget::GetShaderResource() const
 {
+	//???resolve to single-AA texture with possible mips, or may reuse as multisapled input?
+	//can resolve manually when needed using CopyResolveToTexture()!
 	//!!!on render to texture end, if MipLevels > 0, generate mips!
 	return Texture.GetUnsafe();
 }

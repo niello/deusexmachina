@@ -26,12 +26,11 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 {
 	n_assert(GPU->SwapChainExists(SwapChainID));
 
-	UINT vp_count = 1;
-	//D3D11_VIEWPORT vp;
-	//d_device.d_context->RSGetViewports(&vp_count, &vp);
-	if (vp_count != 1) Sys::Error("CDEMRenderer::CDEMRenderer() > Unable to access required view port information from DEM GPU driver.");
-//	else DisplaySize = Sizef((float)vp.Width, (float)vp.Height);
+	Render::CViewport VP;
+	n_assert(GPU->GetViewport(0, VP));
+	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);
 
+	n_assert(false);
 /*
     // create the main effect from the shader source.
     ID3D10Blob* errors = 0;
@@ -254,14 +253,15 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 }
 //--------------------------------------------------------------------
 
-/*
 void CDEMRenderer::beginRendering()
 {
+	n_assert(false);
+/*
 	GPU->IASetInputLayout(d_inputLayout);
 	GPU->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+*/
 }
 //---------------------------------------------------------------------
-*/
 
 void CDEMRenderer::endRendering()
 {
