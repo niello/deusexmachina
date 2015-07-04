@@ -38,7 +38,7 @@ public:
 	template<class TCmp>
 	void		Sort() { std::sort(pData, pData + Count, TCmp()); }
 
-	void		SetSize(DWORD NewSize) { if (Count != NewSize) Allocate(NewSize); }
+	void		SetSize(DWORD NewSize) { Allocate(NewSize); }
 	DWORD		GetCount() const { return Count; }
 	T*			GetPtr() { return pData; }
 
@@ -65,11 +65,12 @@ template<class T> void CFixedArray<T>::Copy(const CFixedArray<T>& Other)
 }
 //---------------------------------------------------------------------
 
-// Doesn't call element constructors
+// NB: Doesn't call element constructors
 template<class T> void CFixedArray<T>::RawCopyFrom(const T* pSrc, DWORD SrcCount)
 {
 	n_assert(pSrc);
-	memcpy(pData, pSrc, n_min(SrcCount, Count));
+	Allocate(SrcCount);
+	memcpy(pData, pSrc, SrcCount * sizeof(T));
 }
 //---------------------------------------------------------------------
 

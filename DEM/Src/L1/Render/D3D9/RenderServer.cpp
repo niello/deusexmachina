@@ -1,61 +1,9 @@
-//#include "RenderServer.h"
-//
-//#include <Events/EventServer.h>
-//#include <IO/Stream.h>
-//#include <Core/CoreServer.h>
-//#include <dxerr.h>
-//
-//namespace Render
-//{
-//__ImplementClassNoFactory(Render::CRenderServer, Core::CObject);
-//__ImplementSingleton(CRenderServer);
-//
 //bool CRenderServer::Open()
 //{
-//	n_assert(!_IsOpen);
-//
-//	CDisplayMode OldMode = Display.GetDisplayMode();
-//	if (!CreateDevice()) FAIL;
-//	if (Display.GetDisplayMode() != OldMode) Display.ResetWindow();
-//
 //	FFlagSkinned = ShaderFeatures.GetMask("Skinned");
 //	FFlagInstanced = ShaderFeatures.GetMask("Instanced");
 //
-//	if (!DefaultRT.IsValid())
-//	{
-//		DefaultRT = n_new(CRenderTarget);
-//		if (!DefaultRT->CreateDefaultRT()) FAIL;
-//	}
-//	pCurrDSSurface = DefaultRT->GetD3DDepthStencilSurface();
-//
 //	n_assert(SUCCEEDED(D3DXCreateEffectPool(&pEffectPool)));
-//
-//	SUBSCRIBE_PEVENT(OnDisplayPaint, CRenderServer, OnDisplayPaint);
-//	SUBSCRIBE_PEVENT(OnDisplayToggleFullscreen, CRenderServer, OnToggleFullscreenWindowed);
-//	SUBSCRIBE_PEVENT(OnDisplaySizeChanged, CRenderServer, OnDisplaySizeChanged);
-//
-//	_IsOpen = true;
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-//void CRenderServer::Close()
-//{
-//	n_assert(_IsOpen);
-//
-//	UNSUBSCRIBE_EVENT(OnDisplayPaint);
-//	UNSUBSCRIBE_EVENT(OnDisplayToggleFullscreen);
-//	UNSUBSCRIBE_EVENT(OnDisplaySizeChanged);
-//
-//	SAFE_RELEASE(pCurrDSSurface);
-//	DefaultRT->Destroy();
-//	DefaultRT = NULL;
-//
-//	ReleaseDevice();
-//
-//	if (Display.IsWindowOpen()) Display.CloseWindow();
-//
-//	_IsOpen = false;
 //}
 ////---------------------------------------------------------------------
 //
@@ -220,7 +168,7 @@
 ////---------------------------------------------------------------------
 //
 ///*
-//void D3D9RenderDevice::UnbindD3D9Resources()
+//void D3D9RenderDevice::UnbindD3DResources()
 //{
 //    d3d9Device->SetVertexShader(NULL);
 //    d3d9Device->SetPixelShader(NULL);
@@ -249,6 +197,4 @@
 //	// create double buffer query to avoid gpu to render more than 1 frame ahead
 //	for (int i = 0; i < numSyncQueries; ++i)
 //		d3d9Device->CreateQuery(D3DQUERYTYPE_EVENT, &gpuSyncQuery[i]);  	
-//}
-//*/
 //}

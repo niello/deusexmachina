@@ -2,6 +2,7 @@
 
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11DisplayDriver.h>
+#include <Render/D3D11/D3D11VertexLayout.h>
 #include <Render/D3D11/D3D11VertexBuffer.h>
 #include <Render/D3D11/D3D11IndexBuffer.h>
 #include <Render/D3D11/D3D11Texture.h>
@@ -289,6 +290,8 @@ void CD3D11GPUDriver::Release()
 {
 	if (!pD3DDevice) return;
 
+	VertexLayouts.Clear();
+	ShaderInputSignatures.Clear();
 	RenderStates.Clear();
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
@@ -335,6 +338,15 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+DWORD CD3D11GPUDriver::GetMaxVertexStreams()
+{
+	D3D_FEATURE_LEVEL FeatLevel = pD3DDevice->GetFeatureLevel();
+	if (FeatLevel >= D3D_FEATURE_LEVEL_11_0) return D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+	else if (FeatLevel >= D3D_FEATURE_LEVEL_10_0) return D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+	else return 4; // Relatively safe value
 }
 //---------------------------------------------------------------------
 
@@ -1029,13 +1041,6 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 }
 //---------------------------------------------------------------------
 
-PVertexLayout CD3D11GPUDriver::InternalCreateVertexLayout()
-{
-	//ID3D11InputLayout* pLayout = NULL;
-	return NULL;
-}
-//---------------------------------------------------------------------
-
 //???is AddRef invoked if runtime finds existing state?
 //???allow relative states? or always absolute and filter out redundant Set() calls?
 PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
@@ -1097,9 +1102,108 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
+// Gets or creates an actual layout for the given vertex layout and shader input signature
+ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature)
+{
+	ID3D11InputLayout* pLayout = VertexLayout.GetD3DInputLayout(ShaderInputSignatureID);
+	if (pLayout) return pLayout;
+
+	const D3D11_INPUT_ELEMENT_DESC* pD3DDesc = VertexLayout.GetCachedD3DLayoutDesc();
+	if (!pD3DDesc) return NULL;
+
+	if (!pSignature)
+	{
+		int Idx = ShaderInputSignatures.FindIndex(ShaderInputSignatureID);
+		if (Idx == INVALID_INDEX) FAIL;
+		pSignature = &ShaderInputSignatures.ValueAt(Idx);
+	}
+
+	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pSignature->GetPtr(), pSignature->GetSize(), &pLayout))) return NULL;
+
+	n_verify_dbg(VertexLayout.AddLayoutObject(ShaderInputSignatureID, pLayout));
+
+	return pLayout;
+}
+//---------------------------------------------------------------------
+
+// Creates transparent user object
+PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count)
+{
+	const DWORD MAX_VERTEX_COMPONENTS = 32;
+
+	if (!pComponents || !Count || Count > MAX_VERTEX_COMPONENTS) return NULL;
+
+	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
+
+	int Idx = VertexLayouts.FindIndex(Signature);
+	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).GetUnsafe();
+
+	DWORD MaxVertexStreams = GetMaxVertexStreams();
+
+	D3D11_INPUT_ELEMENT_DESC DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
+	for (DWORD i = 0; i < Count; i++)
+	{
+		const CVertexComponent& Component = pComponents[i];
+
+		DWORD StreamIndex = Component.Stream;
+		if (StreamIndex >= MaxVertexStreams) return NULL;
+
+		D3D11_INPUT_ELEMENT_DESC& DeclElement = DeclData[i];
+
+		switch (Component.Semantic)
+		{
+			case VCSem_Position:	DeclElement.SemanticName = "POSITION"; break;
+			case VCSem_Normal:		DeclElement.SemanticName = "NORMAL"; break;
+			case VCSem_Tangent:		DeclElement.SemanticName = "TANGENT"; break;
+			case VCSem_Bitangent:	DeclElement.SemanticName = "BINORMAL"; break;
+			case VCSem_TexCoord:	DeclElement.SemanticName = "TEXCOORD"; break;
+			case VCSem_Color:		DeclElement.SemanticName = "COLOR"; break;
+			case VCSem_BoneWeights:	DeclElement.SemanticName = "BLENDWEIGHT"; break;
+			case VCSem_BoneIndices:	DeclElement.SemanticName = "BLENDINDICES"; break;
+			case VCSem_UserDefined:	DeclElement.SemanticName = Component.UserDefinedName; break;
+			default:				return NULL;
+		}
+
+		DeclElement.SemanticIndex = Component.Index;
+
+		switch (Component.Format)
+		{
+			case VCFmt_Float32_1:		DeclElement.Format = DXGI_FORMAT_R32_FLOAT; break;
+			case VCFmt_Float32_2:		DeclElement.Format = DXGI_FORMAT_R32G32_FLOAT; break;
+			case VCFmt_Float32_3:		DeclElement.Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+			case VCFmt_Float32_4:		DeclElement.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			case VCFmt_Float16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_FLOAT; break;
+			case VCFmt_Float16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			case VCFmt_UInt8_4:			DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case VCFmt_UInt8_4_Norm:	DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+			case VCFmt_SInt16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_SINT; break;
+			case VCFmt_SInt16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			case VCFmt_SInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_SNORM; break;
+			case VCFmt_SInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			case VCFmt_UInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_UNORM; break;
+			case VCFmt_UInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			default:					return NULL;
+		}
+
+		DeclElement.InputSlot = StreamIndex;
+		DeclElement.AlignedByteOffset =
+			(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? D3D11_APPEND_ALIGNED_ELEMENT : Component.OffsetInVertex;
+		DeclElement.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		DeclElement.InstanceDataStepRate = 0;
+	}
+
+	PD3D11VertexLayout Layout = n_new(CD3D11VertexLayout);
+	if (!Layout->Create(pComponents, Count, DeclData)) return NULL;
+
+	VertexLayouts.Add(Signature, Layout);
+
+	return Layout.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
 {
-	if (!pD3DDevice || !VertexCount) return NULL;
+	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1107,7 +1211,7 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, D
 
 	D3D11_BUFFER_DESC Desc;
 	Desc.Usage = Usage;
-	Desc.ByteWidth = 0; //!!!VertexCount * VertexLayout.GetVertexByteSize();
+	Desc.ByteWidth = VertexCount * VertexLayout.GetVertexSizeInBytes();
 	Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	Desc.CPUAccessFlags = CPUAccess;
 	Desc.MiscFlags = 0;

@@ -52,8 +52,6 @@ protected:
 	DWORD							AdapterID;
 	EGPUDriverType					Type;
 
-	CDict<CStrID, PVertexLayout>	VertexLayouts;
-
 	//default RT
 	//???resource manager capabilities for VRAM resources? at least can handle OnLost-OnReset right here.
 
@@ -86,7 +84,6 @@ protected:
 	DWORD							DIPsRendered;
 
 	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UINT& Width, UINT& Height);
-	//virtual PVertexLayout	InternalCreateVertexLayout() = 0;
 	//virtual HShaderParam	CreateShaderVarHandle(const CShaderConstantDesc& Meta) const = 0;
 
 public:
@@ -96,6 +93,7 @@ public:
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
 	virtual bool				CheckCaps(ECaps Cap) = 0;
+	virtual DWORD				GetMaxVertexStreams() = 0;
 	virtual DWORD				GetMaxTextureSize(ETextureType Type) = 0;
 	virtual DWORD				GetMaxMultipleRenderTargetCount() = 0;
 
@@ -125,10 +123,10 @@ public:
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
 
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
-	PVertexLayout				CreateVertexLayout(const CArray<CVertexComponent>& Components /*, CStrID ShaderInputSignature = CStrID::Empty*/);
-	PVertexLayout				GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
+	//PVertexLayout				GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
 	//virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;
 	PShader						CreateShader(const Data::CParams& Desc);
 	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
@@ -149,13 +147,6 @@ public:
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;
-
-inline PVertexLayout CGPUDriver::GetVertexLayout(CStrID Signature) const
-{
-	int Idx = VertexLayouts.FindIndex(Signature);
-	return Idx != INVALID_INDEX ? VertexLayouts.ValueAt(Idx) : NULL;
-}
-//---------------------------------------------------------------------
 
 inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA)
 {

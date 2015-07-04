@@ -3,6 +3,7 @@
 #define __DEM_L1_CEGUI_GEOMETRY_BUFFER_H__
 
 #include <CEGUI/GeometryBuffer.h>
+#include <UI/CEGUI/DEMFwd.h>
 #include <Math/Matrix44.h>
 #include <Data/RefCounted.h>
 #include <Data/Array.h>
@@ -22,13 +23,6 @@ class CDEMTexture;
 class CDEMGeometryBuffer: public GeometryBuffer
 {
 protected:
-
-	struct D3DVertex
-	{
-		FLOAT x, y, z; // Transformed
-		DWORD diffuse;
-		float tu, tv;
-	};
 
 	struct BatchInfo
 	{

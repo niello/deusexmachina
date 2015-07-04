@@ -17,6 +17,7 @@
 
 namespace Render
 {
+typedef Ptr<class CD3D9VertexLayout> PD3D9VertexLayout;
 typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 
@@ -26,17 +27,18 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
-	CFixedArray<PD3D9RenderTarget>	CurrRT;
-	PD3D9DepthStencilBuffer			CurrDS;
+	CFixedArray<PD3D9RenderTarget>		CurrRT;
+	PD3D9DepthStencilBuffer				CurrDS;
 
-	CArray<CD3D9SwapChain>			SwapChains;
-	bool							IsInsideFrame;
-	//bool							Wireframe;
+	CArray<CD3D9SwapChain>				SwapChains;
+	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
+	bool								IsInsideFrame;
+	//bool								Wireframe;
 
-	D3DCAPS9						D3DCaps;
-	IDirect3DDevice9*				pD3DDevice;
+	D3DCAPS9							D3DCaps;
+	IDirect3DDevice9*					pD3DDevice;
 
-	Events::PSub					Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
+	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
 	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
@@ -64,6 +66,7 @@ public:
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap);
+	virtual DWORD				GetMaxVertexStreams();
 	virtual DWORD				GetMaxTextureSize(ETextureType Type);
 	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
 
@@ -91,9 +94,9 @@ public:
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
-	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);

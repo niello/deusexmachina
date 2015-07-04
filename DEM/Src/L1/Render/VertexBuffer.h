@@ -33,7 +33,7 @@ public:
 	CVertexLayout*	GetVertexLayout() const { return VertexLayout.GetUnsafe(); }
 	DWORD			GetVertexCount() const { return VertexCount; }
 	Data::CFlags	GetAccess() const { return Access; }
-	DWORD			GetSizeInBytes() const { return VertexLayout.IsValidPtr() ? VertexLayout->GetVertexSize() * VertexCount : 0; }
+	DWORD			GetSizeInBytes() const { return VertexLayout.IsValidPtr() ? VertexLayout->GetVertexSizeInBytes() * VertexCount : 0; }
 	bool			IsValid() const { VertexLayout.IsValidPtr(); }
 };
 

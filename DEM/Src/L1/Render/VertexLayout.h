@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Render/VertexComponent.h>
+#include <Data/FixedArray.h>
 #include <Data/StringID.h>
 
 // Vertex layout describes components of a vertex in a vertex buffer(s)
@@ -15,24 +16,28 @@ namespace Render
 
 class CVertexLayout: public Core::CObject
 {
+	__DeclareClassNoFactory;
+
 protected:
 
-	CArray<CVertexComponent>	Components;
-	DWORD						VertexSize;
+	CFixedArray<CVertexComponent>	Components;
+	DWORD							VertexSize;
 
 	void InternalDestroy() { Components.Clear(); VertexSize = 0; }
 
 public:
 
 	CVertexLayout(): VertexSize(0) {}
-	virtual ~CVertexLayout() { }
+	virtual ~CVertexLayout() { InternalDestroy(); }
 
-	virtual bool	Create(const CArray<CVertexComponent>& VertexComponents) = 0;
-	virtual void	Destroy() { InternalDestroy(); }
+	static CStrID					BuildSignature(const CVertexComponent* pComponents, DWORD Count);
 
-	static CStrID					BuildSignature(const CArray<CVertexComponent>& Components);
-	const CArray<CVertexComponent>&	GetComponents() const { return Components; }
-	DWORD							GetVertexSize() const { return VertexSize; }
+	virtual void					Destroy() { InternalDestroy(); }
+	virtual bool					IsValid() const = 0;
+
+	const CVertexComponent*			GetComponent(DWORD Index) const { return Index < Components.GetCount() ? &Components[Index] : NULL; }
+	DWORD							GetComponentCount() const { return Components.GetCount(); }
+	DWORD							GetVertexSizeInBytes() const { return VertexSize; }
 };
 
 typedef Ptr<CVertexLayout> PVertexLayout;

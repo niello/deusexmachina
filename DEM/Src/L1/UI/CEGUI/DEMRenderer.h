@@ -4,12 +4,15 @@
 
 #include <Data/RefCounted.h>
 #include <Data/HashTable.h>
+#include <UI/CEGUI/DEMFwd.h>
 
 #include <CEGUI/Renderer.h>
 
 namespace Render
 {
 	typedef Ptr<class CGPUDriver> PGPUDriver;
+	typedef Ptr<class CVertexLayout> PVertexLayout;
+	typedef Ptr<class CVertexBuffer> PVertexBuffer;
 }
 
 namespace CEGUI
@@ -35,6 +38,7 @@ protected:
 	CHashTable<String, CDEMTexture*>	Textures;
 
 	RenderTarget*						pDefaultRT;
+	Render::PVertexLayout				VertexLayout;
 
 	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain);
 	virtual ~CDEMRenderer();
@@ -43,7 +47,6 @@ protected:
 	static void logTextureDestruction(const String& name);
 
 	/*
-	ID3D11InputLayout* d_inputLayout;
 	ID3DX11EffectShaderResourceVariable* d_boundTextureVariable;
 	ID3DX11EffectMatrixVariable* d_worldMatrixVariable;
 	ID3DX11EffectMatrixVariable* d_projectionMatrixVariable;
@@ -55,6 +58,7 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }
+	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, DWORD VertexCount);
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() { return *pDefaultRT; }
