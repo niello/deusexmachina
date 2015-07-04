@@ -2,6 +2,8 @@
 
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11DisplayDriver.h>
+#include <Render/D3D11/D3D11VertexBuffer.h>
+#include <Render/D3D11/D3D11IndexBuffer.h>
 #include <Render/D3D11/D3D11Texture.h>
 #include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11DepthStencilBuffer.h>
@@ -1121,15 +1123,14 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, D
 	ID3D11Buffer* pD3DBuf = NULL;
 	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
 
-	//PD3D11VertexBuffer VB = n_new(CD3D11VertexBuffer);
-	//if (!VB->Create(VertexLayout, pD3DBuf))
-	//{
-	//	pD3DBuf->Release();
-	//	return NULL;
-	//}
+	PD3D11VertexBuffer VB = n_new(CD3D11VertexBuffer);
+	if (!VB->Create(VertexLayout, pD3DBuf))
+	{
+		pD3DBuf->Release();
+		return NULL;
+	}
 
-	//return VB.GetUnsafe();
-	return NULL;
+	return VB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -1159,15 +1160,14 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Inde
 	ID3D11Buffer* pD3DBuf = NULL;
 	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
 
-	//PD3D11IndexBuffer IB = n_new(CD3D11IndexBuffer);
-	//if (!IB->Create(IndexType, pD3DBuf))
-	//{
-	//	pD3DBuf->Release();
-	//	return NULL;
-	//}
+	PD3D11IndexBuffer IB = n_new(CD3D11IndexBuffer);
+	if (!IB->Create(IndexType, pD3DBuf))
+	{
+		pD3DBuf->Release();
+		return NULL;
+	}
 
-	//return IB.GetUnsafe();
-	return NULL;
+	return IB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

@@ -3,7 +3,6 @@
 #define __DEM_L1_RENDER_D3D9_VERTEX_BUFFER_H__
 
 #include <Render/VertexBuffer.h>
-#include <Events/EventsFwd.h>
 
 // Direct3D9 implementation of a vertex buffer
 
@@ -14,6 +13,8 @@ namespace Render
 
 class CD3D9VertexBuffer: public CVertexBuffer
 {
+	__DeclareClass(CD3D9VertexBuffer);
+
 protected:
 
 	IDirect3DVertexBuffer9*	pBuffer;
@@ -21,19 +22,14 @@ protected:
 
 	void InternalDestroy();
 
-	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
-
 public:
 
 	CD3D9VertexBuffer(): pBuffer(NULL), LockCount(0) {}
 	virtual ~CD3D9VertexBuffer() { InternalDestroy(); }
 
-	virtual bool	Create(PVertexLayout VertexLayout, DWORD VertexCount, DWORD BufferAccess);
-	virtual void	Destroy() { InternalDestroy(); CVertexBuffer::InternalDestroy(); }
-	virtual void*	Map(EMapType MapType);
-	virtual void	Unmap();
+	bool					Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB);
+	virtual void			Destroy() { InternalDestroy(); CVertexBuffer::InternalDestroy(); }
 
-	bool					IsValid() const { return !!pBuffer; }
 	IDirect3DVertexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 };
 

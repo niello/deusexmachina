@@ -24,6 +24,8 @@ struct CTextureDesc
 
 class CTexture: public Resources::CResourceObject
 {
+	__DeclareClassNoFactory;
+
 public:
 
 	struct CMapInfo
@@ -50,6 +52,7 @@ public:
 
 	DWORD				GetPixelCount(bool IncludeSubsequentMips) const;
 	const CTextureDesc&	GetDesc() const { return Desc; }
+	Data::CFlags		GetAccess() const { return Access; }
 };
 
 typedef Ptr<CTexture> PTexture;

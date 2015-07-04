@@ -2,6 +2,7 @@
 
 namespace Render
 {
+__ImplementClassNoFactory(Render::CTexture, Resources::CResourceObject);
 
 DWORD CTexture::GetPixelCount(bool IncludeSubsequentMips) const
 {
