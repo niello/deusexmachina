@@ -219,7 +219,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h" />
@@ -288,6 +287,7 @@
     <ClInclude Include="..\..\Src\L1\Scripting\EventHandlerScript.h" />
     <ClInclude Include="..\..\Src\L1\Scripting\ScriptObject.h" />
     <ClInclude Include="..\..\Src\L1\Scripting\ScriptServer.h" />
+    <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMFwd.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMGeometryBuffer.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMRenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMTexture.h" />

@@ -22,7 +22,6 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 	SwapChainID(SwapChain),
 	pDefaultRT(NULL),
 	DisplayDPI(96, 96)
-	//d_inputLayout(NULL),
 {
 	n_assert(GPU->SwapChainExists(SwapChainID));
 
@@ -68,23 +67,18 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
     d_projectionMatrixVariable =
             d_effect->GetVariableByName("ProjectionMatrix")->AsMatrix();
 
-    // Create the input layout
-    const D3D11_INPUT_ELEMENT_DESC vertex_layout[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,	  0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-
-    const UINT element_count = sizeof(vertex_layout) / sizeof(vertex_layout[0]);
-
-	D3DX11_PASS_DESC pass_desc;
-    n_assert(SUCCEEDED(d_normalClippedTechnique->GetPassByIndex(0)->GetDesc(&pass_desc)));
-    n_assert(SUCCEEDED(d_device.d_device->CreateInputLayout(vertex_layout, element_count,
-                                            pass_desc.pIAInputSignature,
-                                            pass_desc.IAInputSignatureSize,
-                                            &d_inputLayout)));
 	*/
+
+	Render::CVertexComponent Components[] = {
+			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0 },
+			{ Render::VCSem_Color, NULL, 0, Render::VCFmt_UInt8_4_Norm, 0, 12 },
+			{ Render::VCSem_TexCoord, NULL, 0, Render::VCFmt_Float32_2, 0, 16 } };
+
+	VertexLayout = GPU->CreateVertexLayout(Components, sizeof_array(Components));
+	n_assert(VertexLayout.IsValidPtr());
+
+	//???when to create actual layout? need some method to precreate actual value by passing a shader!
+	//but this may require knowledge about D3D11 nature of otherwise abstract GPU
 
 	pDefaultRT = n_new(CDEMViewportTarget)(*this);
 }
@@ -99,7 +93,6 @@ CDEMRenderer::~CDEMRenderer()
 
 	n_assert(false);
 	//if (d_effect) d_effect->Release();
-	//if (d_inputLayout) d_inputLayout->Release();
 }
 //--------------------------------------------------------------------
 
@@ -154,6 +147,13 @@ void CDEMRenderer::destroyAllGeometryBuffers()
 	for (CArray<CDEMGeometryBuffer*>::CIterator It = GeomBuffers.Begin(); It < GeomBuffers.End(); ++It)
 		n_delete(*It);
 	GeomBuffers.Clear(true);
+}
+//--------------------------------------------------------------------
+
+Render::PVertexBuffer CDEMRenderer::createVertexBuffer(D3DVertex* pVertexData, DWORD VertexCount)
+{
+	if (!pVertexData || !VertexCount || VertexLayout.IsNullPtr()) return NULL;
+	return GPU->CreateVertexBuffer(*VertexLayout, VertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
 }
 //--------------------------------------------------------------------
 

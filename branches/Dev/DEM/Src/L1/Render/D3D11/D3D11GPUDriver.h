@@ -5,12 +5,14 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
+#include <Data/Buffer.h>
 
 // Direct3D11 GPU device driver.
 
 struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+struct ID3D11InputLayout;
 struct D3D11_VIEWPORT;
 typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 enum D3D11_USAGE;
@@ -18,6 +20,7 @@ typedef struct tagRECT RECT;
 
 namespace Render
 {
+typedef Ptr<class CD3D11VertexLayout> PD3D11VertexLayout;
 typedef Ptr<class CD3D11RenderTarget> PD3D11RenderTarget;
 typedef Ptr<class CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;
 typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
@@ -40,24 +43,27 @@ public:
 
 protected:
 
-	Data::CFlags					CurrDirtyFlags;
-	CFixedArray<PD3D11RenderTarget>	CurrRT;
-	PD3D11DepthStencilBuffer		CurrDS;
-	DWORD							MaxViewportCount;
-	D3D11_VIEWPORT*					CurrVP;
-	RECT*							CurrSR;			//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
-	Data::CFlags					VPSRSetFlags;	// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
-	static const DWORD				VP_OR_SR_SET_FLAG_COUNT = 16;
+	Data::CFlags						CurrDirtyFlags;
+	CFixedArray<PD3D11RenderTarget>		CurrRT;
+	PD3D11DepthStencilBuffer			CurrDS;
+	DWORD								MaxViewportCount;
+	D3D11_VIEWPORT*						CurrVP;
+	RECT*								CurrSR;			//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
+	Data::CFlags						VPSRSetFlags;	// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
+	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
+	ID3D11InputLayout*					pCurrIL;
 
-	CArray<CD3D11SwapChain>			SwapChains;
-	//bool							IsInsideFrame;
-	//bool							Wireframe;
+	CArray<CD3D11SwapChain>				SwapChains;
+	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
+	CDict<CStrID, Data::CBuffer>		ShaderInputSignatures;
+	//bool								IsInsideFrame;
+	//bool								Wireframe;
 
-	ID3D11Device*					pD3DDevice;
-	ID3D11DeviceContext*			pD3DImmContext;
+	ID3D11Device*						pD3DDevice;
+	ID3D11DeviceContext*				pD3DImmContext;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
 
-	CArray<PD3D11RenderState>		RenderStates;
+	CArray<PD3D11RenderState>			RenderStates;
 
 	CD3D11GPUDriver();
 
@@ -73,7 +79,7 @@ protected:
 	static EGPUDriverType	GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
 	static void				GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
 
-	virtual PVertexLayout	InternalCreateVertexLayout();
+	ID3D11InputLayout*		GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
 
 	friend class CD3D11DriverFactory;
 
@@ -83,6 +89,7 @@ public:
 
 	virtual bool				Init(DWORD AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap);
+	virtual DWORD				GetMaxVertexStreams();
 	virtual DWORD				GetMaxTextureSize(ETextureType Type);
 	virtual DWORD				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
 
@@ -116,9 +123,9 @@ public:
 	//!!!D3D11 vertex layout must be a key to a list of different layout interfaces, each for a particular shader input signature!
 	//it will be resolved at a draw call, when both shader and VB are bound
 	//???!!!support multichannel VBs?!
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
-	virtual PVertexLayout		CreateVertexLayout() { return NULL; } // Prefer GetVertexLayout() when possible
 	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
@@ -138,6 +145,7 @@ inline CD3D11GPUDriver::CD3D11GPUDriver():
 	pD3DImmContext(NULL),
 	CurrVP(NULL),
 	CurrSR(NULL),
+	pCurrIL(NULL),
 	MaxViewportCount(0) /*, IsInsideFrame(false)*/
 {
 }

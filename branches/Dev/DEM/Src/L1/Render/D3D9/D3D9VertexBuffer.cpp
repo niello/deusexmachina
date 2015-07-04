@@ -9,11 +9,12 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9VertexBuffer, 'VB09', Render::CVertexBuffer);
 
+//!!!???assert destroyed?!
 bool CD3D9VertexBuffer::Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB)
 {
 	if (!pVB) FAIL;
 
-	DWORD VertexSize = Layout.GetVertexSize();
+	DWORD VertexSize = Layout.GetVertexSizeInBytes();
 	if (!VertexSize) FAIL;
 
 	D3DVERTEXBUFFER_DESC D3DDesc;

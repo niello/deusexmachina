@@ -2,6 +2,7 @@
 
 #include <Render/D3D9/D3D9DriverFactory.h>
 #include <Render/D3D9/D3D9DisplayDriver.h>
+#include <Render/D3D9/D3D9VertexLayout.h>
 #include <Render/D3D9/D3D9VertexBuffer.h>
 #include <Render/D3D9/D3D9IndexBuffer.h>
 #include <Render/D3D9/D3D9Texture.h>
@@ -69,6 +70,13 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Target
 	UNSUBSCRIBE_EVENT(OnPaint);
 
 	//!!!unbind and release all resources!
+
+	//for (int i = 0; i < VertexLayouts.GetCount() ; ++i)
+	//{
+	//	CVertexLayout* pVL = VertexLayouts.ValueAt(i).GetUnsafe();
+	//	if (pVL) pVL->Destroy();
+	//}
+	//VertexLayouts.Clear();
 
 	for (DWORD i = 0; i < CurrRT.GetCount() ; ++i)
 		if (CurrRT[i].IsValidPtr())
@@ -204,6 +212,7 @@ void CD3D9GPUDriver::Release()
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
 
+	VertexLayouts.Clear();
 	CurrRT.SetSize(0);
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
@@ -212,7 +221,7 @@ void CD3D9GPUDriver::Release()
 
 	//for (int i = 1; i < MaxRenderTargetCount; i++)
 	//	pD3DDevice->SetRenderTarget(i, NULL);
-	pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
+	pD3DDevice->SetDepthStencilSurface(NULL);
 
 	//EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
 
@@ -252,8 +261,16 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
+DWORD CD3D9GPUDriver::GetMaxVertexStreams()
+{
+	n_assert(pD3DDevice);
+	return D3DCaps.MaxStreams;
+}
+//---------------------------------------------------------------------
+
 DWORD CD3D9GPUDriver::GetMaxTextureSize(ETextureType Type)
 {
+	n_assert(pD3DDevice);
 	switch (Type)
 	{
 		case Texture_1D: return D3DCaps.MaxTextureWidth;
@@ -939,16 +956,119 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 }
 //---------------------------------------------------------------------
 
+PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count)
+{
+	const DWORD MAX_VERTEX_COMPONENTS = 32;
+
+	if (!pComponents || !Count || Count > MAX_VERTEX_COMPONENTS) return NULL;
+
+	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
+
+	int Idx = VertexLayouts.FindIndex(Signature);
+	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).GetUnsafe();
+
+	D3DVERTEXELEMENT9 DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
+
+	DWORD* StreamOffset = (DWORD*)_malloca(D3DCaps.MaxStreams * sizeof(DWORD));
+	ZeroMemory(StreamOffset, D3DCaps.MaxStreams * sizeof(DWORD));
+
+	DWORD i = 0;
+	for (i = 0; i < Count; i++)
+	{
+		const CVertexComponent& Component = pComponents[i];
+
+		WORD StreamIndex = (WORD)Component.Stream;
+		if (StreamIndex >= D3DCaps.MaxStreams)
+		{
+			_freea(StreamOffset);
+			return NULL;
+		}
+
+		D3DVERTEXELEMENT9& DeclElement = DeclData[i];
+
+		DeclElement.Stream = StreamIndex;
+
+		DeclElement.Offset =
+			(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? (WORD)StreamOffset[StreamIndex] : (WORD)Component.OffsetInVertex;
+		StreamOffset[StreamIndex] = DeclElement.Offset + Component.GetSize();
+
+		switch (Component.Format)
+		{
+			case VCFmt_Float32_1:		DeclElement.Type = D3DDECLTYPE_FLOAT1; break;
+			case VCFmt_Float32_2:		DeclElement.Type = D3DDECLTYPE_FLOAT2; break;
+			case VCFmt_Float32_3:		DeclElement.Type = D3DDECLTYPE_FLOAT3; break;
+			case VCFmt_Float32_4:		DeclElement.Type = D3DDECLTYPE_FLOAT4; break;
+			case VCFmt_Float16_2:		DeclElement.Type = D3DDECLTYPE_FLOAT16_2; break;
+			case VCFmt_Float16_4:		DeclElement.Type = D3DDECLTYPE_FLOAT16_4; break;
+			case VCFmt_UInt8_4:			DeclElement.Type = D3DDECLTYPE_UBYTE4; break;
+			case VCFmt_UInt8_4_Norm:	DeclElement.Type = D3DDECLTYPE_UBYTE4N; break;
+			case VCFmt_SInt16_2:		DeclElement.Type = D3DDECLTYPE_SHORT2; break;
+			case VCFmt_SInt16_4:		DeclElement.Type = D3DDECLTYPE_SHORT4; break;
+			case VCFmt_SInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT2N; break;
+			case VCFmt_SInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT4N; break;
+			case VCFmt_UInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT2N; break;
+			case VCFmt_UInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT4N; break;
+			default:
+			{
+				_freea(StreamOffset);
+				return NULL;
+			}
+		}
+
+		DeclElement.Method = D3DDECLMETHOD_DEFAULT;
+
+		//???D3DDECLUSAGE_PSIZE?
+		switch (Component.Semantic)
+		{
+			case VCSem_Position:	DeclElement.Usage = D3DDECLUSAGE_POSITION; break;
+			case VCSem_Normal:		DeclElement.Usage = D3DDECLUSAGE_NORMAL; break;
+			case VCSem_Tangent:		DeclElement.Usage = D3DDECLUSAGE_TANGENT; break;
+			case VCSem_Bitangent:	DeclElement.Usage = D3DDECLUSAGE_BINORMAL; break;
+			case VCSem_TexCoord:	DeclElement.Usage = D3DDECLUSAGE_TEXCOORD; break;
+			case VCSem_Color:		DeclElement.Usage = D3DDECLUSAGE_COLOR; break;
+			case VCSem_BoneWeights:	DeclElement.Usage = D3DDECLUSAGE_BLENDWEIGHT; break;
+			case VCSem_BoneIndices:	DeclElement.Usage = D3DDECLUSAGE_BLENDINDICES; break;
+			default:
+			{
+				_freea(StreamOffset);
+				return NULL;
+			}
+		}
+
+		DeclElement.UsageIndex = (BYTE)Component.Index;
+	}
+
+	_freea(StreamOffset);
+
+	DeclData[i].Stream = 0xff;
+	DeclData[i].Type = D3DDECLTYPE_UNUSED;
+
+	IDirect3DVertexDeclaration9* pDecl = NULL;
+	if (FAILED(pD3DDevice->CreateVertexDeclaration(DeclData, &pDecl))) return NULL;
+
+	PD3D9VertexLayout Layout = n_new(CD3D9VertexLayout);
+	if (!Layout->Create(pComponents, Count, pDecl))
+	{
+		pDecl->Release();
+		return NULL;
+	}
+
+	VertexLayouts.Add(Signature, Layout);
+
+	return Layout.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
 {
-	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSize()) return NULL;
+	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return NULL;
 
 	DWORD Usage;
 	D3DPOOL Pool;
 	GetUsagePool(AccessFlags, Usage, Pool);
 	if (Pool == D3DPOOL_DEFAULT) Usage |= D3DUSAGE_WRITEONLY;
 
-	DWORD ByteSize = 0; //!!!VertexCount * VertexLayout.GetVertexByteSize();
+	DWORD ByteSize = VertexCount * VertexLayout.GetVertexSizeInBytes();
 
 	IDirect3DVertexBuffer9* pD3DBuf = NULL;
 	if (FAILED(pD3DDevice->CreateVertexBuffer(ByteSize, Usage, 0, Pool, &pD3DBuf, NULL))) return NULL;

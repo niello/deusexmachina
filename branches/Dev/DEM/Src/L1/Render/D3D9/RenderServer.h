@@ -1,28 +1,3 @@
-//#pragma once
-//#ifndef __DEM_L1_RENDER_SERVER_H__
-//#define __DEM_L1_RENDER_SERVER_H__
-//
-//#include <Render/Material.h>
-//#include <Render/Texture.h>
-//#include <Render/RenderTarget.h>
-//#include <Render/Mesh.h>
-//#include <Resources/ResourceManager.h>
-//#include <Data/Data.h>
-//#include <Data/DynamicEnum.h>
-//#include <Data/Singleton.h>
-//#include <Events/EventsFwd.h>
-//#include <Events/Subscription.h>
-//#define WIN32_LEAN_AND_MEAN
-//#define D3D_DISABLE_9EX
-//#include <d3d9.h>
-//
-//// Render device interface (currently D3D9). Renderer manages shaders, shader state, shared variables,
-//// render targets, model, view and projection transforms, and performs actual rendering
-//
-////!!!need FrameLog - logging of rendering calls for one particular frame!
-//
-//namespace Render
-//{
 //typedef Ptr<class CFrameShader> PFrameShader;
 //
 //#define RenderSrv Render::CRenderServer::Instance()
@@ -34,15 +9,11 @@
 //
 //protected:
 //
-//	bool								_IsOpen;
-//
 //	DWORD								FFlagSkinned;
 //	DWORD								FFlagInstanced;
 //
 //	CDict<CStrID, PFrameShader>			FrameShaders;
 //	CStrID								ScreenFrameShaderID;
-//
-//	PRenderTarget						DefaultRT;
 //
 //	//???can write better?
 //	PShader								SharedShader;
@@ -52,8 +23,6 @@
 //	vector3								CurrCameraPos;
 //	matrix44							CurrViewProj; //???or store camera ref?
 //
-//	bool				CreateDevice();
-//
 //public:
 //
 //	Data::CDynamicEnum32					ShaderFeatures;
@@ -61,13 +30,6 @@
 //	Resources::CResourceManager<CTexture>	TextureMgr;
 //	Resources::CResourceManager<CShader>	ShaderMgr;
 //	Resources::CResourceManager<CMaterial>	MaterialMgr;
-//
-//	CRenderServer();
-//	~CRenderServer() { __DestructSingleton; }
-//
-//	bool				Open();
-//	void				Close();
-//	bool				IsOpen() const { return _IsOpen; }
 //
 //	void				SetAmbientLight(const vector4& Color);
 //	void				SetCameraPosition(const vector3& Pos);
@@ -85,19 +47,12 @@
 //};
 //
 //inline CRenderServer::CRenderServer():
-//	_IsOpen(false),
 //	InstanceCount(0),
 //	hLightAmbient(NULL),
 //	hEyePos(NULL),
 //	hViewProj(NULL),
-//	FrameID(0),
-//	pD3D(NULL),
-//	pD3DDevice(NULL),
-//	pEffectPool(NULL),
-//	CurrDepthStencilFormat(PixelFormat_Invalid),
-//	pCurrDSSurface(NULL)
+//	FrameID(0)
 //{
-//	__ConstructSingleton;
 //	memset(CurrVBOffset, 0, sizeof(CurrVBOffset));
 //}
 ////---------------------------------------------------------------------
@@ -135,7 +90,3 @@
 //	return (Idx != INVALID_INDEX) ? FrameShaders.ValueAt(Idx).GetUnsafe() : NULL;
 //}
 ////---------------------------------------------------------------------
-//
-//}
-//
-//#endif

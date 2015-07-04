@@ -95,6 +95,7 @@ public:
 	void		CopyToArray(CChain& OutData) const;
 
 	CIterator	Begin() { return CIterator(this); }
+	CIterator	End() { return CIterator(NULL); }
 
 	int			GetCount() const { return Count; }
 	int			Capacity() const { return Chains.GetCount(); }

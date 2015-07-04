@@ -187,11 +187,7 @@ void CDEMGeometryBuffer::syncHardwareBuffer() const
 
 	if (d_vertexBuffer.IsNullPtr())
 	{
-		n_assert(false);
-		//d_vertexBuffer = d_owner.createVertexBuffer(vertex_count, d_vertices.Begin());
-		//or even
-		//d_vertexBuffer = d_owner.createVertexBuffer(d_vertices); //store the only vertex layout inside
-		//d_vertexBuffer = d_owner.getGPUDriver()->CreateVertexBuffer(THE_ONLY_VLAYOUT, vertex_count, Render::Access_GPU_Read | Render::Access_CPU_Write, d_vertices.Begin());
+		d_vertexBuffer = d_owner.createVertexBuffer(d_vertices.Begin(), vertex_count);
 		d_bufferSize = vertex_count;
 	}
 	else

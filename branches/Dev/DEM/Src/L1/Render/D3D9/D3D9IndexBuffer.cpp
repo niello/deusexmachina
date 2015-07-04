@@ -9,6 +9,7 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9IndexBuffer, 'IB09', Render::CIndexBuffer);
 
+//!!!???assert destroyed?!
 bool CD3D9IndexBuffer::Create(EIndexType Type, IDirect3DIndexBuffer9* pIB)
 {
 	if (!pIB) FAIL;
