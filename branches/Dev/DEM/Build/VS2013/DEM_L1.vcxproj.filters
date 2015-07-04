@@ -611,9 +611,6 @@
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h">
       <Filter>Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\GPUResourceDefs.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Light.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -844,6 +841,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\Regions.h">
       <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.h">
+      <Filter>Render\D3D11</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1374,6 +1380,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -12,7 +12,7 @@ namespace Render
 
 class CDepthStencilBuffer: public Core::CObject
 {
-	__DeclareClass(CDepthStencilBuffer);
+	__DeclareClassNoFactory;
 
 protected:
 

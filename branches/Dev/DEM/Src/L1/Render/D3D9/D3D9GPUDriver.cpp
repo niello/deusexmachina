@@ -2,9 +2,11 @@
 
 #include <Render/D3D9/D3D9DriverFactory.h>
 #include <Render/D3D9/D3D9DisplayDriver.h>
+#include <Render/D3D9/D3D9VertexBuffer.h>
+#include <Render/D3D9/D3D9IndexBuffer.h>
+#include <Render/D3D9/D3D9Texture.h>
 #include <Render/D3D9/D3D9RenderTarget.h>
 #include <Render/D3D9/D3D9DepthStencilBuffer.h>
-#include <Render/D3D9/D3D9Texture.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
 #include <Core/Factory.h>
@@ -939,7 +941,7 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 
 PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
 {
-	if (!pD3DDevice || !VertexCount) return NULL;
+	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSize()) return NULL;
 
 	DWORD Usage;
 	D3DPOOL Pool;
@@ -951,15 +953,32 @@ PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DW
 	IDirect3DVertexBuffer9* pD3DBuf = NULL;
 	if (FAILED(pD3DDevice->CreateVertexBuffer(ByteSize, Usage, 0, Pool, &pD3DBuf, NULL))) return NULL;
 
-	//PD3D9VertexBuffer VB = n_new(CD3D9VertexBuffer);
-	//if (!VB->Create(VertexLayout, pD3DBuf))
-	//{
-	//	pD3DBuf->Release();
-	//	return NULL;
-	//}
+	if (pData)
+	{
+		void* pDestData = NULL;
+		if (FAILED(pD3DBuf->Lock(0, 0, &pDestData, D3DLOCK_NOSYSLOCK)))
+		{
+			pD3DBuf->Release();
+			return NULL;
+		}
 
-	//return VB.GetUnsafe();
-	return NULL;
+		memcpy_s(pDestData, ByteSize, pData, ByteSize);
+
+		if (FAILED(pD3DBuf->Unlock()))
+		{
+			pD3DBuf->Release();
+			return NULL;
+		}
+	}
+
+	PD3D9VertexBuffer VB = n_new(CD3D9VertexBuffer);
+	if (!VB->Create(VertexLayout, pD3DBuf))
+	{
+		pD3DBuf->Release();
+		return NULL;
+	}
+
+	return VB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -973,19 +992,37 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Index
 	if (Pool == D3DPOOL_DEFAULT) Usage |= D3DUSAGE_WRITEONLY;
 
 	D3DFORMAT Format = (IndexType == Index_16) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
+	DWORD ByteSize = IndexCount * (DWORD)IndexType;
 
 	IDirect3DIndexBuffer9* pD3DBuf = NULL;
-	if (FAILED(pD3DDevice->CreateIndexBuffer(IndexCount * (DWORD)IndexType, Usage, Format, Pool, &pD3DBuf, NULL))) return NULL;
+	if (FAILED(pD3DDevice->CreateIndexBuffer(ByteSize, Usage, Format, Pool, &pD3DBuf, NULL))) return NULL;
 
-	//PD3D9IndexBuffer IB = n_new(CD3D9IndexBuffer);
-	//if (!IB->Create(IndexType, pD3DBuf))
-	//{
-	//	pD3DBuf->Release();
-	//	return NULL;
-	//}
+	if (pData)
+	{
+		void* pDestData = NULL;
+		if (FAILED(pD3DBuf->Lock(0, 0, &pDestData, D3DLOCK_NOSYSLOCK)))
+		{
+			pD3DBuf->Release();
+			return NULL;
+		}
 
-	//return IB.GetUnsafe();
-	return NULL;
+		memcpy_s(pDestData, ByteSize, pData, ByteSize);
+
+		if (FAILED(pD3DBuf->Unlock()))
+		{
+			pD3DBuf->Release();
+			return NULL;
+		}
+	}
+
+	PD3D9IndexBuffer IB = n_new(CD3D9IndexBuffer);
+	if (!IB->Create(IndexType, pD3DBuf))
+	{
+		pD3DBuf->Release();
+		return NULL;
+	}
+
+	return IB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

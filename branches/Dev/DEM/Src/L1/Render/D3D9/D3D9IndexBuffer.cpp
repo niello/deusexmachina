@@ -1,68 +1,47 @@
-//#include "D3D9IndexBuffer.h"
-//
-//#include <Render/RenderServer.h>
-//#include <Events/EventServer.h>
-//
-//namespace Render
-//{
-//
-//void CD3D9IndexBuffer::InternalDestroy()
-//{
-//	n_assert(!LockCount);
-//	UNSUBSCRIBE_EVENT(OnRenderDeviceLost);
-//	SAFE_RELEASE(pBuffer);
-//}
-////---------------------------------------------------------------------
-//
-//void* CD3D9IndexBuffer::Map(EMapType MapType)
-//{
-//	n_assert(pBuffer);
-//
-//	DWORD LockFlags = 0;
-//	switch (MapType)
-//	{
-//		case Map_Setup:
-//			LockFlags |= D3DLOCK_NOSYSLOCK;
-//			break;
-//		case Map_Read:
-//			n_assert(Access.Is(CPU_Read));
-//			break;
-//		case Map_Write:
-//			n_assert(Access.Is(CPU_Write));
-//			break;
-//		case Map_ReadWrite:
-//			n_assert(Access.Is(CPU_Read | CPU_Write));
-//			break;
-//		case Map_WriteDiscard:
-//			n_assert(Access.Is(GPU_Read | CPU_Write));
-//			LockFlags |= D3DLOCK_DISCARD;
-//			break;
-//		case Map_WriteNoOverwrite:
-//			n_assert(Access.Is(GPU_Read | CPU_Write));
-//			LockFlags |= D3DLOCK_NOOVERWRITE;
-//			break;
-//	}
-//
-//	void* pData = NULL;
-//	n_assert(SUCCEEDED(pBuffer->Lock(0, 0, &pData, LockFlags)));
-//	++LockCount;
-//	return pData;
-//}
-////---------------------------------------------------------------------
-//
-//void CD3D9IndexBuffer::Unmap()
-//{
-//	n_assert(pBuffer && LockCount);
-//	n_assert(SUCCEEDED(pBuffer->Unlock()));
-//	--LockCount;
-//}
-////---------------------------------------------------------------------
-//
-//bool CD3D9IndexBuffer::OnDeviceLost(const Events::CEventBase& Ev)
-//{
-//	Destroy();
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-//}
+#include "D3D9IndexBuffer.h"
+
+#include <Core/Factory.h>
+#define WIN32_LEAN_AND_MEAN
+#define D3D_DISABLE_9EX
+#include <d3d9.h>
+
+namespace Render
+{
+__ImplementClass(Render::CD3D9IndexBuffer, 'IB09', Render::CIndexBuffer);
+
+bool CD3D9IndexBuffer::Create(EIndexType Type, IDirect3DIndexBuffer9* pIB)
+{
+	if (!pIB) FAIL;
+
+	D3DINDEXBUFFER_DESC D3DDesc;
+	if (FAILED(pIB->GetDesc(&D3DDesc))) FAIL;
+
+	Access.ClearAll();
+	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
+	{
+		Access.Set(Access_CPU_Read | Access_CPU_Write);
+	}
+	else
+	{
+		Access.Set(Access_GPU_Read);
+		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
+		else Access.Set(Access_GPU_Write);
+	}
+
+	IndexType = Type;
+	IndexCount = D3DDesc.Size / (DWORD)Type;
+	pBuffer = pIB;
+	LockCount = 0;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CD3D9IndexBuffer::InternalDestroy()
+{
+	n_assert(!LockCount);
+	SAFE_RELEASE(pBuffer);
+}
+//---------------------------------------------------------------------
+
+}

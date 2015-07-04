@@ -13,29 +13,28 @@ namespace Render
 //!!!GPU resource, Buffer, Resource!
 class CVertexBuffer: public Core::CObject
 {
+	//__DeclareClassNoFactory;
+
 protected:
 
-	Data::CFlags	Access; //!!!can use as generic flags!
-	PVertexLayout	Layout;
-	DWORD			VtxCount;
+	PVertexLayout	VertexLayout;
+	DWORD			VertexCount;
+	Data::CFlags	Access;
 
-	void InternalDestroy() { Layout = NULL; VtxCount = 0; Access.ClearAll(); }
+	void InternalDestroy() { VertexLayout = NULL; VertexCount = 0; Access.ClearAll(); }
 
 public:
 
-	CVertexBuffer(): VtxCount(0) {}
-	virtual ~CVertexBuffer() { }
+	CVertexBuffer(): VertexCount(0) {}
+	virtual ~CVertexBuffer() { InternalDestroy(); }
 
-	virtual bool	Create(PVertexLayout VertexLayout, DWORD VertexCount, DWORD BufferAccess) = 0;
-	virtual void	Destroy() { InternalDestroy(); }	// GPU rsrc
-	virtual void*	Map(EMapType MapType) = 0;			// Buffer or GPU rsrc
-	virtual void	Unmap() = 0;						// Buffer or GPU rsrc
+	virtual void	Destroy() { InternalDestroy(); }
 
+	CVertexLayout*	GetVertexLayout() const { return VertexLayout.GetUnsafe(); }
+	DWORD			GetVertexCount() const { return VertexCount; }
 	Data::CFlags	GetAccess() const { return Access; }
-	PVertexLayout	GetVertexLayout() const { return Layout; }
-	DWORD			GetVertexCount() const { return VtxCount; }
-	DWORD			GetSizeInBytes() const { return Layout.IsValidPtr() ? Layout->GetVertexSize() * VtxCount : 0; }
-	//virtual bool	IsValid() const = 0; //???or check Layout & VtxCount & Access are not 0?
+	DWORD			GetSizeInBytes() const { return VertexLayout.IsValidPtr() ? VertexLayout->GetVertexSize() * VertexCount : 0; }
+	bool			IsValid() const { VertexLayout.IsValidPtr(); }
 };
 
 typedef Ptr<CVertexBuffer> PVertexBuffer;

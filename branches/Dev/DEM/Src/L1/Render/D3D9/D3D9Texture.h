@@ -3,10 +3,6 @@
 #define __DEM_L1_RENDER_D3D9_TEXTURE_H__
 
 #include <Render/Texture.h>
-#include <Render/GPUResourceDefs.h>
-#include <Render/RenderFwd.h>
-#include <Events/EventsFwd.h>
-#include <Data/Type.h>
 
 // D3D9 implementation of VRAM texture
 
