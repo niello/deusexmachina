@@ -28,8 +28,29 @@ CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner):
 
 void CDEMGeometryBuffer::draw() const
 {
-	if (!d_bufferIsSync) syncHardwareBuffer();
-	if (!d_matrixValid) updateMatrix();
+	if (!d_bufferIsSync)
+	{
+		const DWORD vertex_count = (DWORD)d_vertices.GetCount();
+		if (!vertex_count)
+		{
+			d_vertexBuffer = NULL;
+			return; // Nothing to draw
+		}
+
+		if (vertex_count > d_bufferSize) d_vertexBuffer = NULL;
+
+		if (d_vertexBuffer.IsNullPtr())
+		{
+			d_vertexBuffer = d_owner.createVertexBuffer(d_vertices.Begin(), vertex_count);
+			d_bufferSize = vertex_count;
+		}
+		else d_owner.getGPUDriver()->WriteToResource(*d_vertexBuffer, d_vertices.Begin(), sizeof(D3DVertex) * vertex_count);
+
+		d_bufferIsSync = true;
+	}
+
+	n_assert(false);
+	//d_owner.getGPUDriver()->SetVertexBuffer(0, d_vertexBuffer);
 
 	Data::CRect SR;
 	SR.X = (int)d_clipRect.left();
@@ -38,15 +59,10 @@ void CDEMGeometryBuffer::draw() const
 	SR.H = (unsigned int)(d_clipRect.bottom() - d_clipRect.top());
 	d_owner.getGPUDriver()->SetScissorRect(0, &SR);
 
-	n_assert(false);
-/*
-	d_worldMatrixVariable->SetMatrix(reinterpret_cast<float*>(&d_matrix));
+	if (!d_matrixValid) updateMatrix();
 
-    // set our buffer as the vertex source.
-    const UINT stride = sizeof(D3DVertex);
-    const UINT offset = 0;
-    d_device.d_context->IASetVertexBuffers(0, 1, &d_vertexBuffer, &stride, &offset);
-*/
+	n_assert(false);
+	//d_worldMatrixVariable->SetMatrix(reinterpret_cast<float*>(&d_matrix));
 
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
@@ -60,20 +76,16 @@ void CDEMGeometryBuffer::draw() const
 			{
 	n_assert(false);
 				/* 
-				if (i->clip)
-					d_premultipliedClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-				else
-					d_premultipliedUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
+				if (i->clip) d_premultipliedClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
+				else d_premultipliedUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
 				*/
 			}
 			else
 			{
 	n_assert(false);
 				/* 
-				if (i->clip)
-					d_normalClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-				else
-					d_normalUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
+				if (i->clip) d_normalClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
+				else d_normalUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
 				*/
 			}
  
@@ -81,7 +93,8 @@ void CDEMGeometryBuffer::draw() const
 			/* 
 			d_boundTextureVariable->SetResource(const_cast<ID3D11ShaderResourceView*>(i->texture));
 
-			d_device.d_context->Draw(i->vertexCount, pos);
+			//!!!set primitive (mesh) group!
+			d_owner.getGPUDriver()->Draw(i->vertexCount, pos);
 			*/
 			pos += i->vertexCount;
 		}
@@ -160,10 +173,8 @@ void CDEMGeometryBuffer::reset()
 void CDEMGeometryBuffer::updateMatrix() const
 {
 	n_assert(false);
-/*
-    D3DXMatrixTransformation(&d_matrix, 0, 0, 0, &d_pivot, &d_rotation, &d_translation);
-    d_matrixValid = true;
-*/
+	//D3DXMatrixTransformation(&d_matrix, 0, 0, 0, &d_pivot, &d_rotation, &d_translation);
+	d_matrixValid = true;
 }
 //--------------------------------------------------------------------
 
@@ -171,35 +182,6 @@ const matrix44* CDEMGeometryBuffer::getMatrix() const
 {
 	if (!d_matrixValid) updateMatrix();
 	return &d_matrix;
-}
-//--------------------------------------------------------------------
-
-void CDEMGeometryBuffer::syncHardwareBuffer() const
-{
-	const DWORD vertex_count = (DWORD)d_vertices.GetCount();
-	if (!vertex_count)
-	{
-		d_vertexBuffer = NULL;
-		return;
-	}
-
-	if (vertex_count > d_bufferSize) d_vertexBuffer = NULL;
-
-	if (d_vertexBuffer.IsNullPtr())
-	{
-		d_vertexBuffer = d_owner.createVertexBuffer(d_vertices.Begin(), vertex_count);
-		d_bufferSize = vertex_count;
-	}
-	else
-	{
-	n_assert(false);
-		//D3D11_MAPPED_SUBRESOURCE SubRes;
-		//n_assert(SUCCEEDED(d_device.d_context->Map(d_vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubRes)));
-		//memcpy(SubRes.pData, &d_vertices[0], sizeof(D3DVertex) * vertex_count);
-		//d_device.d_context->Unmap(d_vertexBuffer, 0);
-	}
-
-	d_bufferIsSync = true;
 }
 //--------------------------------------------------------------------
 

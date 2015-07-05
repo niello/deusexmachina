@@ -85,8 +85,8 @@ inline float Saturate(float Value) { return Clamp(Value, 0.f, 1.f); }
 inline bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
 
 // Only for power-of-2 alignment //!!!C++11 static_assert may help!
-template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return (((unsigned int)Pointer) & (Alignment - 1)) == 0; }
-inline bool IsAligned16(const void* Pointer) { return (((unsigned int)Pointer) & 0x0f) == 0; }
+template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return !((unsigned int)Pointer) & (Alignment - 1); }
+inline bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
 
 // Execution results
 

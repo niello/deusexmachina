@@ -13,9 +13,11 @@ struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11InputLayout;
+struct ID3D11Buffer;
 struct D3D11_VIEWPORT;
 typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 enum D3D11_USAGE;
+enum D3D11_MAP;
 typedef struct tagRECT RECT;
 
 namespace Render
@@ -78,8 +80,10 @@ protected:
 	static D3D_DRIVER_TYPE	GetD3DDriverType(EGPUDriverType DriverType);
 	static EGPUDriverType	GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
 	static void				GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
+	static void				GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags);
 
 	ID3D11InputLayout*		GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
+	bool					WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
 
 	friend class CD3D11DriverFactory;
 
@@ -130,6 +134,16 @@ public:
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
+
+	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
+	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);
+	virtual bool				MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice = 0, DWORD MipLevel = 0);
+	virtual bool				UnmapResource(const CVertexBuffer& Resource);
+	virtual bool				UnmapResource(const CIndexBuffer& Resource);
+	virtual bool				UnmapResource(const CTexture& Resource, DWORD ArraySlice = 0, DWORD MipLevel = 0);
+	virtual bool				WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+	virtual bool				WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+	virtual bool				WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }

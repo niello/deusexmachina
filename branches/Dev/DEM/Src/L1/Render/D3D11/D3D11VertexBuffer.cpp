@@ -29,6 +29,7 @@ bool CD3D11VertexBuffer::Create(CVertexLayout& Layout, ID3D11Buffer* pVB)
 	VertexLayout = &Layout;
 	VertexCount = D3DDesc.ByteWidth / VertexSize;
 	pBuffer = pVB;
+	D3DUsage = D3DDesc.Usage;
 
 	OK;
 }

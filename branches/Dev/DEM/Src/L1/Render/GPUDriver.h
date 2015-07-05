@@ -136,11 +136,35 @@ public:
 	//!!!can describe as DepthBits & StencilBits, find closest on creation!
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) = 0;
 
+	//!!!constant buffers are not present in D3D9 and are handled differently
+	//!!!???need copy subresource?! (has meaning for textures only! ArraySlice, MipLevel)
+	//???allow copying subresource region? to CopySubresource as optional arg
+	//!!!ArraySlice is valid for cubemap faces even in D3D9, with enum consts! need proper indexing!
+	//MapSubresource -> OutMappedData (pointer and 2 pitches where applicable), buffers can only return a pointer!
+	//UnmapResource returns is still mapped
+	//???how to handle texture-less render target? allow it at all? RT without texture may not be mapped?!
+	//???can make these calls async? copy, map etc.
+	//!!!all sync for now until I run async job manager!
+	//???for read and write optional callback for memory copying? with memcpy by default. may use for aligned copying with SSE
+	// It is a good rule of thumb to supply at least 16-byte aligned pointers to WriteToResource and ReadFromResource
+	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode) = 0;
+	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode) = 0;
+	virtual bool				MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice = 0, DWORD MipLevel = 0) = 0;
+	virtual bool				UnmapResource(const CVertexBuffer& Resource) = 0;
+	virtual bool				UnmapResource(const CIndexBuffer& Resource) = 0;
+	virtual bool				UnmapResource(const CTexture& Resource, DWORD ArraySlice = 0, DWORD MipLevel = 0) = 0;
+	virtual bool				WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
+	virtual bool				WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
+	virtual bool				WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL) = 0;
+	//virtual PVertexBuffer		CopyResource(const CVertexBuffer& Source, DWORD NewAccessFlags) = 0;
+	//virtual PIndexBuffer		CopyResource(const CIndexBuffer& Source, DWORD NewAccessFlags) = 0;
+	//virtual PTexture			CopyResource(const CTexture& Source, DWORD NewAccessFlags) = 0;
+
 	//void						SetRenderTarget(DWORD Index, CRenderTarget* pRT);
-	void						SetVertexLayout(CVertexLayout* pVLayout);
-	void						SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
-	void						SetIndexBuffer(CIndexBuffer* pIB);
-	void						SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
+	//void						SetVertexLayout(CVertexLayout* pVLayout);
+	//void						SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
+	//void						SetIndexBuffer(CIndexBuffer* pIB);
+	//void						SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
 	//void						SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
 
 	EGPUDriverType				GetType() const { return Type; }

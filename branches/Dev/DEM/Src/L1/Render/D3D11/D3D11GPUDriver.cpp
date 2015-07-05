@@ -1664,6 +1664,217 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 }
 //---------------------------------------------------------------------
 
+// Pointer will be 16-byte aligned
+bool CD3D11GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode)
+{
+	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
+	if (!ppOutData) FAIL;
+
+	ID3D11Buffer* pVB = ((const CD3D11VertexBuffer&)Resource).GetD3DBuffer();
+	if (!pVB) FAIL;
+
+	//???set locked flag on resource or can check it by API?
+	//???assert or check CPU access?! or Resource.CanMap()?
+
+	D3D11_MAP MapType;
+	UINT MapFlags;
+	GetD3DMapTypeAndFlags(Mode, MapType, MapFlags);
+
+	D3D11_MAPPED_SUBRESOURCE D3DData;
+	if (FAILED(pD3DImmContext->Map(pVB, 0, MapType, MapFlags, &D3DData))) FAIL;
+	*ppOutData = D3DData.pData;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!DUPLICATE CODE, move to internal MapD3DBuffer()?!
+// Pointer will be 16-byte aligned
+bool CD3D11GPUDriver::MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode)
+{
+	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
+	if (!ppOutData) FAIL;
+
+	ID3D11Buffer* pIB = ((const CD3D11IndexBuffer&)Resource).GetD3DBuffer();
+	if (!pIB) FAIL;
+
+	//???set locked flag on resource or can check it by API?
+	//???assert or check CPU access?! or Resource.CanMap()?
+
+	D3D11_MAP MapType;
+	UINT MapFlags;
+	GetD3DMapTypeAndFlags(Mode, MapType, MapFlags);
+
+	D3D11_MAPPED_SUBRESOURCE D3DData;
+	if (FAILED(pD3DImmContext->Map(pIB, 0, MapType, MapFlags, &D3DData))) FAIL;
+	*ppOutData = D3DData.pData;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Pointer will be 16-byte aligned
+bool CD3D11GPUDriver::MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
+{
+	n_assert_dbg(Resource.IsA<CD3D11Texture>());
+	ID3D11Resource* pD3DTexRsrc = ((const CD3D11Texture&)Resource).GetD3DResource();
+	if (!pD3DTexRsrc) FAIL;
+
+	//???set locked flag on SUBresource or can check it by API?
+	//???assert or check CPU access?! or Resource.CanMap()?
+
+	const CTextureDesc& TexDesc = Resource.GetDesc();
+
+/*
+	// Perform cubemap face mapping, if necesary. Can avoid it if cubemap faces are loaded in ECubeMapFace order.
+	if (TexDesc.Type == Texture_Cube)
+	{
+		DWORD ArrayIndex = ArraySlice / 6;
+		DWORD Face = ArraySlice - (ArrayIndex * 6);
+		switch ((ECubeMapFace)Face)
+		{
+			case CubeFace_PosX:	return D3DCUBEMAP_FACE_POSITIVE_X;
+			case CubeFace_NegX:	return D3DCUBEMAP_FACE_NEGATIVE_X;
+			case CubeFace_PosY:	return D3DCUBEMAP_FACE_POSITIVE_Y;
+			case CubeFace_NegY:	return D3DCUBEMAP_FACE_NEGATIVE_Y;
+			case CubeFace_PosZ:	return D3DCUBEMAP_FACE_POSITIVE_Z;
+			case CubeFace_NegZ:	return D3DCUBEMAP_FACE_NEGATIVE_Z;
+		}
+	}
+*/
+
+	D3D11_MAP MapType;
+	UINT MapFlags;
+	GetD3DMapTypeAndFlags(Mode, MapType, MapFlags);
+
+	D3D11_MAPPED_SUBRESOURCE D3DData;
+	if (FAILED(pD3DImmContext->Map(pD3DTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, TexDesc.MipLevels), MapType, MapFlags, &D3DData))) FAIL;
+
+	OutData.pData = (char*)D3DData.pData;
+	OutData.RowPitch = D3DData.RowPitch;
+	OutData.SlicePitch = D3DData.DepthPitch;
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::UnmapResource(const CVertexBuffer& Resource)
+{
+	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
+	//???!!!return are outstanding locks or resource was unlocked?!
+	ID3D11Buffer* pVB = ((const CD3D11VertexBuffer&)Resource).GetD3DBuffer();
+	if (!pVB) FAIL;
+	pD3DImmContext->Unmap(pVB, 0);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::UnmapResource(const CIndexBuffer& Resource)
+{
+	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
+	//???!!!return are outstanding locks or resource was unlocked?!
+	ID3D11Buffer* pIB = ((const CD3D11IndexBuffer&)Resource).GetD3DBuffer();
+	if (!pIB) FAIL;
+	pD3DImmContext->Unmap(pIB, 0);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, DWORD MipLevel)
+{
+	n_assert_dbg(Resource.IsA<CD3D11Texture>());
+	ID3D11Resource* pD3DTexRsrc = ((const CD3D11Texture&)Resource).GetD3DResource();
+	if (!pD3DTexRsrc) FAIL;
+
+	const CTextureDesc& TexDesc = Resource.GetDesc();
+
+/*
+	// Perform cubemap face mapping, if necesary. Can avoid it if cubemap faces are loaded in ECubeMapFace order.
+	if (TexDesc.Type == Texture_Cube)
+	{
+		DWORD ArrayIndex = ArraySlice / 6;
+		DWORD Face = ArraySlice - (ArrayIndex * 6);
+		switch ((ECubeMapFace)Face)
+		{
+			case CubeFace_PosX:	return D3DCUBEMAP_FACE_POSITIVE_X;
+			case CubeFace_NegX:	return D3DCUBEMAP_FACE_NEGATIVE_X;
+			case CubeFace_PosY:	return D3DCUBEMAP_FACE_POSITIVE_Y;
+			case CubeFace_NegY:	return D3DCUBEMAP_FACE_NEGATIVE_Y;
+			case CubeFace_PosZ:	return D3DCUBEMAP_FACE_POSITIVE_Z;
+			case CubeFace_NegZ:	return D3DCUBEMAP_FACE_NEGATIVE_Z;
+		}
+	}
+*/
+
+	pD3DImmContext->Unmap(pD3DTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, TexDesc.MipLevels));
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset)
+{
+	if (!pBuf || Usage == D3D11_USAGE_IMMUTABLE || !pData || !BufferSize) FAIL;
+
+	DWORD RequestedSize = Size ? Size : BufferSize;
+	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	if (!SizeToCopy) OK;
+
+	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
+
+	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too?
+	{
+		//!!!for textures - only non-DS and non-MSAA!
+
+		if (UpdateWhole) pD3DImmContext->UpdateSubresource(pBuf, 0, NULL, pData, 0, 0);
+		else
+		{
+			D3D11_BOX D3DBox;
+			D3DBox.left = Offset;
+			D3DBox.right = Offset + SizeToCopy;
+			D3DBox.top = 0;
+			D3DBox.bottom = 1;
+			D3DBox.front = 0;
+			D3DBox.back = 1;
+			pD3DImmContext->UpdateSubresource(pBuf, 0, &D3DBox, pData, 0, 0);
+		}
+
+		OK;
+	}
+
+	//!!!D3DData.pData is 16-byte aligned for feature level 10 and above! may exploit it!
+	//if (IsAligned16(pData)) perform SSE copy!
+	D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+	D3D11_MAPPED_SUBRESOURCE D3DData;
+	if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
+	const bool Success = (memcpy_s(((char*)D3DData.pData) + Offset, SizeToCopy, pData, SizeToCopy) == 0);
+	pD3DImmContext->Unmap(pBuf, 0);
+
+	return Success;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+{
+	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
+	const CD3D11VertexBuffer& VB11 = (const CD3D11VertexBuffer&)Resource;
+	return WriteToD3DBuffer(VB11.GetD3DBuffer(), VB11.GetD3DUsage(), VB11.GetSizeInBytes(), pData, Size, Offset);
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+{
+	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
+	const CD3D11IndexBuffer& IB11 = (const CD3D11IndexBuffer&)Resource;
+	return WriteToD3DBuffer(IB11.GetD3DBuffer(), IB11.GetD3DUsage(), IB11.GetSizeInBytes(), pData, Size, Offset);
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 D3D_DRIVER_TYPE CD3D11GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 {
 	// WARP adapter is skipped.
@@ -1698,7 +1909,7 @@ EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
 
 void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
 {
-	if (InAccessFlags == Access_GPU_Read)
+	if (InAccessFlags == Access_GPU_Read || InAccessFlags == 0)
 	{
 		OutUsage = InitDataProvided ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
 	}
@@ -1707,11 +1918,11 @@ void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided,
 	{
 		OutUsage = D3D11_USAGE_DEFAULT;
 	}
-	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
+	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write)) //???allow GPU_Write?
 	{
 		OutUsage = D3D11_USAGE_DYNAMIC;
 	}
-	else
+	else //???are there any unsupported combinations? user wants to get a resource with a specified access or NULL!
 	{
 		OutUsage = D3D11_USAGE_STAGING; // Can't be a depth-stencil buffer or a multisampled render target
 	}
@@ -1719,6 +1930,41 @@ void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided,
 	OutCPUAccess = 0;
 	if (InAccessFlags & Access_CPU_Read) OutCPUAccess |= D3D11_CPU_ACCESS_READ;
 	if (InAccessFlags & Access_CPU_Write) OutCPUAccess |= D3D11_CPU_ACCESS_WRITE;
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags)
+{
+	OutMapFlags = 0;
+	switch (MapMode)
+	{
+		case Map_Read:
+		{
+			OutMapType = D3D11_MAP_READ;
+			return;
+		}
+		case Map_Write:
+		{
+			OutMapType = D3D11_MAP_WRITE;
+			return;
+		}
+		case Map_ReadWrite:
+		{
+			OutMapType = D3D11_MAP_READ_WRITE;
+			return;
+		}
+		case Map_WriteDiscard:
+		{
+			OutMapType = D3D11_MAP_WRITE_DISCARD;
+			return;
+		}
+		case Map_WriteNoOverwrite:
+		{
+			OutMapType = D3D11_MAP_WRITE_NO_OVERWRITE;
+			return;
+		}
+		default: Sys::Error("CD3D11GPUDriver::GetD3DMapTypeAndFlags() > Invalid map mode\n"); return;
+	}
 }
 //---------------------------------------------------------------------
 

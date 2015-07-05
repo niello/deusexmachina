@@ -26,6 +26,7 @@ bool CD3D11IndexBuffer::Create(EIndexType Type, ID3D11Buffer* pIB)
 	IndexType = Type;
 	IndexCount = D3DDesc.ByteWidth / (DWORD)Type;
 	pBuffer = pIB;
+	D3DUsage = D3DDesc.Usage;
 
 	OK;
 }

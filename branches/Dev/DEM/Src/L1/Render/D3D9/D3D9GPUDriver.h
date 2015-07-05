@@ -43,20 +43,22 @@ protected:
 	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
-	bool				OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool				OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool				OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool				OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool					OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool					OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool					OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool					OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	bool				CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
-	bool				InitSwapChainRenderTarget(CD3D9SwapChain& SC);
-	bool				Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
-	void				Release();
+	bool					CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
+	bool					InitSwapChainRenderTarget(CD3D9SwapChain& SC);
+	bool					Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
+	void					Release();
 
-	void				FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
-	bool				GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
-	static D3DDEVTYPE	GetD3DDriverType(EGPUDriverType DriverType);
-	static void			GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
+	void					FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
+	bool					GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
+	static D3DDEVTYPE		GetD3DDriverType(EGPUDriverType DriverType);
+	static void				GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
+	static UINT				GetD3DLockFlags(EResourceMapMode MapMode);
+	static D3DCUBEMAP_FACES	GetD3DCubeMapFace(ECubeMapFace Face);
 
 	friend class CD3D9DriverFactory;
 
@@ -100,6 +102,16 @@ public:
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
+
+	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
+	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);
+	virtual bool				MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice = 0, DWORD MipLevel = 0);
+	virtual bool				UnmapResource(const CVertexBuffer& Resource);
+	virtual bool				UnmapResource(const CIndexBuffer& Resource);
+	virtual bool				UnmapResource(const CTexture& Resource, DWORD ArraySlice = 0, DWORD MipLevel = 0);
+	virtual bool				WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+	virtual bool				WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+	virtual bool				WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL);
 
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }

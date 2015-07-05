@@ -18,6 +18,7 @@ class CD3D9IndexBuffer: public CIndexBuffer
 protected:
 
 	IDirect3DIndexBuffer9*	pBuffer;
+	UINT					Usage;
 	DWORD					LockCount;
 
 	void InternalDestroy();
@@ -32,6 +33,7 @@ public:
 	virtual bool			IsValid() const { return !!pBuffer; }
 
 	IDirect3DIndexBuffer9*	GetD3DBuffer() const { return pBuffer; }
+	UINT					GetD3DUsage() const { return Usage; }
 };
 
 typedef Ptr<CD3D9IndexBuffer> PD3D9IndexBuffer;
