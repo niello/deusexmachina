@@ -27,7 +27,7 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 
 // Helper utility function that copies a region of a buffer containing D3DCOLOR
 // values into a second buffer as RGBA values.
-static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t source_pitch)
+static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t source_pitch) //size_t dest_pitch - blitRGBAToD3DCOLORSurface
 {
 	for (uint i = 0; i < sz.d_height; ++i)
 	{
@@ -40,6 +40,8 @@ static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, siz
 
 		src += source_pitch / sizeof(uint32);
 		dst += static_cast<uint32>(sz.d_width);
+        //dst += dest_pitch / sizeof(uint32); - blitRGBAToD3DCOLORSurface
+        //src += static_cast<uint32>(sz.d_width);
 	}
 }
 //---------------------------------------------------------------------
@@ -152,51 +154,11 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
 	if (DEMTexture.IsNullPtr()) return;
 
-	uint32* pBuf = n_new_array(uint32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
 	UINT SrcPitch = ((UINT)area.getWidth()) * 4;
+
+	//!!!convert only if format is not supported!
+	uint32* pBuf = n_new_array(uint32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
 	blitFromSurface(static_cast<const uint32*>(sourceData), pBuf, area.getSize(), SrcPitch);
-
-	n_assert(false);
-// RAM -> VRAM
-/*
-//!!!convert only if format is not supported!
-//same texture file, same fmt - all must work
-
-// Helper utility function that copies a region of a buffer containing D3DCOLOR
-// values into a second buffer as RGBA values.
-static void blitD3DCOLORSurfaceToRGBA(const uint32* src, uint32* dst,
-                                      const Sizef& sz, size_t source_pitch)
-{
-    for (uint i = 0; i < sz.d_height; ++i)
-    {
-        for (uint j = 0; j < sz.d_width; ++j)
-        {
-            const uint32 pixel = src[j];
-            const uint32 tmp = pixel & 0x00FF00FF;
-            dst[j] = pixel & 0xFF00FF00 | (tmp << 16) | (tmp >> 16);
-        }
-
-        src += source_pitch / sizeof(uint32);
-        dst += static_cast<uint32>(sz.d_width);
-    }
-}
-static void blitRGBAToD3DCOLORSurface(const uint32* src, uint32* dst,
-                                      const Sizef& sz, size_t dest_pitch)
-{
-    for (uint i = 0; i < sz.d_height; ++i)
-    {
-        for (uint j = 0; j < sz.d_width; ++j)
-        {
-            const uint32 pixel = src[j];
-            const uint32 tmp = pixel & 0x00FF00FF;
-            dst[j] = pixel & 0xFF00FF00 | (tmp << 16) | (tmp >> 16);
-        }
-
-        dst += dest_pitch / sizeof(uint32);
-        src += static_cast<uint32>(sz.d_width);
-    }
-}
-	  */
 
 	Render::CMappedTexture SrcData;
 	SrcData.pData = (char*)pBuf;
@@ -221,30 +183,31 @@ void CDEMTexture::blitToMemory(void* targetData)
     if (DEMTexture.IsNullPtr()) return;
 
 	n_assert(false);
-/*//D3D9 lock 0 - read - unlock
-        if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
-        {
-			if (FAILED(d_device->CreateOffscreenPlainSurface(Width, Height, Format, D3DPOOL_SYSTEMMEM, &d_offscreen, 0)))
-			if (FAILED(d_texture->GetSurfaceLevel(0, &d_renderTarget)))
-			if (FAILED(d_device->GetRenderTargetData(d_renderTarget, d_offscreen)))
-			d_renderTarget->Release();
-
-			if (FAILED(d_offscreen->LockRect(&d_lockedRect, area, 0)))
-
-			//PERFORM
-             
-			 d_offscreen->UnlockRect();
-       }
-        else
-        {
-			if (FAILED(d_texture->LockRect(0, &d_lockedRect, area, 0)))
-
-			// PERFORM
-             
-             d_texture->UnlockRect(0);
-       }
-
 // VRAM -> RAM
+/*//D3D9 lock 0 - read - unlock
+	if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
+	{
+		if (FAILED(d_device->CreateOffscreenPlainSurface(Width, Height, Format, D3DPOOL_SYSTEMMEM, &d_offscreen, 0)))
+		if (FAILED(d_texture->GetSurfaceLevel(0, &d_renderTarget)))
+		if (FAILED(d_device->GetRenderTargetData(d_renderTarget, d_offscreen)))
+		d_renderTarget->Release();
+
+		if (FAILED(d_offscreen->LockRect(&d_lockedRect, area, 0)))
+
+		//PERFORM
+             
+		d_offscreen->UnlockRect();
+		d_offscreen->Release();
+	}
+	else
+	{
+		if (FAILED(d_texture->LockRect(0, &d_lockedRect, area, 0)))
+
+		// PERFORM
+             
+		d_texture->UnlockRect(0);
+	}
+
 //D3D11
     D3D11_TEXTURE2D_DESC tex_desc;
     d_texture->GetDesc(&tex_desc);
@@ -266,6 +229,7 @@ void CDEMTexture::blitToMemory(void* targetData)
 		Sys::Error("ID3D11Texture2D::Map failed.");
 	}
 
+//!!!convert only if format is not supported!
 	blitFromSurface(static_cast<uint32*>(mapped_tex.pData),
                     static_cast<uint32*>(targetData),
                     Sizef(static_cast<float>(tex_desc.Width),
