@@ -1853,7 +1853,7 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DW
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
 	const CD3D11VertexBuffer& VB11 = (const CD3D11VertexBuffer&)Resource;
@@ -1861,7 +1861,7 @@ bool CD3D11GPUDriver::WriteToResource(const CVertexBuffer& Resource, const void*
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
 	const CD3D11IndexBuffer& IB11 = (const CD3D11IndexBuffer&)Resource;
@@ -1869,8 +1869,16 @@ bool CD3D11GPUDriver::WriteToResource(const CIndexBuffer& Resource, const void* 
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
+//D3D11_BOX dst_box = {static_cast<UINT>(area.left()),
+//static_cast<UINT>(area.top()),
+//0,
+//static_cast<UINT>(area.right()),
+//static_cast<UINT>(area.bottom()),
+//1};
+//
+//Owner.getGPUDriver()->UpdateSubresource(d_texture, 0, &dst_box, pBuf, SrcPitch, 0);
 	FAIL;
 }
 //---------------------------------------------------------------------
