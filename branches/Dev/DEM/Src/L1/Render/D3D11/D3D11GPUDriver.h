@@ -141,9 +141,9 @@ public:
 	virtual bool				UnmapResource(const CVertexBuffer& Resource);
 	virtual bool				UnmapResource(const CIndexBuffer& Resource);
 	virtual bool				UnmapResource(const CTexture& Resource, DWORD ArraySlice = 0, DWORD MipLevel = 0);
-	virtual bool				WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
-	virtual bool				WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
-	virtual bool				WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL);
+	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+	virtual bool				WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }

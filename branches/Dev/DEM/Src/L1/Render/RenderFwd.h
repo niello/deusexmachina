@@ -116,11 +116,11 @@ enum ETextureType
 enum ECubeMapFace
 {
 	CubeFace_PosX = 0,
-	CubeFace_NegX,
-	CubeFace_PosY,
-	CubeFace_NegY,
-	CubeFace_PosZ,
-	CubeFace_NegZ
+	CubeFace_NegX = 1,
+	CubeFace_PosY = 2,
+	CubeFace_NegY = 3,
+	CubeFace_PosZ = 4,
+	CubeFace_NegZ = 5
 };
 
 // Flags that indicate which hardware has which access to this resource data.

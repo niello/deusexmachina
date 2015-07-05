@@ -1498,7 +1498,7 @@ bool CD3D9GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, D
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D9GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());
 	const CD3D9VertexBuffer& VB9 = (const CD3D9VertexBuffer&)Resource;
@@ -1523,7 +1523,7 @@ bool CD3D9GPUDriver::WriteToResource(const CVertexBuffer& Resource, const void* 
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D9GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D9IndexBuffer>());
 	const CD3D9IndexBuffer& IB9 = (const CD3D9IndexBuffer&)Resource;
@@ -1549,16 +1549,36 @@ bool CD3D9GPUDriver::WriteToResource(const CIndexBuffer& Resource, const void* p
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
-	EResourceMapMode Mode = (!pRegion && (((const CD3D9Texture&)Resource).GetD3DUsage() & D3DUSAGE_DYNAMIC)) ? Map_WriteDiscard : Map_Write;
-	CMappedTexture DestData;
-	if (!MapResource(DestData, Resource, Mode, ArraySlice, MipLevel)) FAIL;
-
 	const CTextureDesc& Desc = Resource.GetDesc();
 
-	// No format conversion for now, src & dest texel formats must match
+	if (MipLevel >= Desc.MipLevels) FAIL;
+	if (Desc.Type == Texture_Cube && ArraySlice > 5) FAIL;
+
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
+	UINT Usage = ((const CD3D9Texture&)Resource).GetD3DUsage();
+
+	CMappedTexture DestData;
+
+	IDirect3DSurface9* pSurf = NULL;
+	if (Usage & D3DUSAGE_RENDERTARGET)
+	{
+		if (FAILED(pD3DDevice->CreateOffscreenPlainSurface(Desc.Width, Desc.Height, D3DFormat, D3DPOOL_SYSTEMMEM, &pSurf, NULL))) FAIL;
+
+		D3DLOCKED_RECT D3DRect;
+		if (FAILED(pSurf->LockRect(&D3DRect, NULL, 0))) FAIL;
+		DestData.pData = (char*)D3DRect.pBits;
+		DestData.RowPitch = D3DRect.Pitch;
+		DestData.SlicePitch = 0;
+	}
+	else
+	{
+		EResourceMapMode Mode = (!pRegion && (Usage & D3DUSAGE_DYNAMIC)) ? Map_WriteDiscard : Map_Write;
+		if (!MapResource(DestData, Resource, Mode, ArraySlice, MipLevel)) FAIL;
+	}
+
+	// No format conversion for now, src & dest texel formats must match
 	DWORD TexelSize = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat) >> 3;
 	n_assert_dbg(TexelSize);
 
@@ -1584,6 +1604,8 @@ bool CD3D9GPUDriver::WriteToResource(const CTexture& Resource, const CMappedText
 	const char* pSrc = SrcData.pData;
 	char* pDest = DestData.pData + (Region.Z * DestData.SlicePitch + Region.Y * DestData.RowPitch + Region.X) * TexelSize;
 
+	//!!!check slice comparison for 2D textures! must copy whole, pitch 0!
+	//!!!check data size calculation for 2D, since pitch is 0. Calc real slice pitch?
 	bool Result;
 	const bool WholeRow = (Region.W == Desc.Width && SrcData.RowPitch == DestData.RowPitch);
 	const bool WholeSlice = (WholeRow && Region.H == Desc.Height && SrcData.SlicePitch == DestData.SlicePitch);
@@ -1633,7 +1655,42 @@ bool CD3D9GPUDriver::WriteToResource(const CTexture& Resource, const CMappedText
 		}
 	}
 
-	if (!UnmapResource(Resource, ArraySlice, MipLevel)) FAIL;
+	if (Usage & D3DUSAGE_RENDERTARGET)
+	{
+		if (FAILED(pSurf->UnlockRect())) FAIL;
+
+		IDirect3DSurface9* pDestSurf = NULL;
+		if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
+		{
+			IDirect3DTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DTexture();
+			if (FAILED(pTex->GetSurfaceLevel(MipLevel, &pDestSurf)))
+			{
+				pSurf->Release();
+				FAIL;
+			}
+		}
+		else if (Desc.Type == Texture_Cube)
+		{
+			IDirect3DCubeTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DCubeTexture();
+			if (FAILED(pTex->GetCubeMapSurface(GetD3DCubeMapFace((ECubeMapFace)ArraySlice), MipLevel, &pDestSurf)))
+			{
+				pSurf->Release();
+				FAIL;
+			}
+		}
+		else Sys::Error("CD3D9GPUDriver::WriteToResource() > Unsupported RT texture type\n");
+
+		RECT r = { Region.X, Region.Y, Region.Right(), Region.Bottom() };
+		POINT p = { Region.X, Region.Y };
+		Result = SUCCEEDED(pD3DDevice->UpdateSurface(pSurf, &r, pDestSurf, &p));
+
+		pDestSurf->Release();
+		pSurf->Release();
+	}
+	else
+	{
+		if (!UnmapResource(Resource, ArraySlice, MipLevel)) FAIL;
+	}
 
 	return Result;
 }

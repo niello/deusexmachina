@@ -158,43 +158,9 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 
 	n_assert(false);
 // RAM -> VRAM
-/*//D3D9
-        if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
-        {
-			if (!d_offscreen)
-				if (FAILED(d_device->CreateOffscreenPlainSurface(
-					d_surfDesc.Width, d_surfDesc.Height, d_surfDesc.Format,
-					D3DPOOL_SYSTEMMEM, &d_offscreen, 0)))
-
-			if (!d_renderTarget)
-				if (FAILED(d_texture->GetSurfaceLevel(0, &d_renderTarget)))
-					CEGUI_THROW(RendererException(
-						"IDirect3DTexture9::GetSurfaceLevel failed."));
-
-            if (for_reading)
-				if (FAILED(d_device->GetRenderTargetData(d_renderTarget, d_offscreen)))
-
-			if (FAILED(d_offscreen->LockRect(&d_lockedRect, area, 0)))
-				CEGUI_THROW(RendererException(
-					"IDirect3DSurface9::LockRect failed."));
-
-			//PERFORM
-             
-			 d_offscreen->UnlockRect();
-
-            if (blitFROMMemory)
-				POINT pt = {area ? area->left : 0, area ? area->top : 0};
-				if (FAILED(d_device->UpdateSurface(d_offscreen,
-												   area ? area : &d_fullArea,
-												   d_renderTarget, &pt)))
-       }
-        else
-        {
-			if (FAILED(d_texture->LockRect(0, &d_lockedRect, area, 0)))
-				CEGUI_THROW(RendererException(
-					"IDirect3DTexture9::LockRect failed."));
-
+/*
 //!!!convert only if format is not supported!
+//same texture file, same fmt - all must work
 
 // Helper utility function that copies a region of a buffer containing D3DCOLOR
 // values into a second buffer as RGBA values.
@@ -230,20 +196,21 @@ static void blitRGBAToD3DCOLORSurface(const uint32* src, uint32* dst,
         src += static_cast<uint32>(sz.d_width);
     }
 }
-             
-             d_texture->UnlockRect(0);
-       }
+	  */
 
-//D3D11
-    D3D11_BOX dst_box = {static_cast<UINT>(area.left()),
-                         static_cast<UINT>(area.top()),
-                         0,
-                         static_cast<UINT>(area.right()),
-                         static_cast<UINT>(area.bottom()),
-                         1};
+	Render::CMappedTexture SrcData;
+	SrcData.pData = (char*)pBuf;
+	SrcData.RowPitch = SrcPitch;
 
-    Owner.getGPUDriver()->UpdateSubresource(d_texture, 0, &dst_box, pBuf, SrcPitch, 0);
-*/
+	Data::CBox Region(
+		static_cast<int>(area.left()),
+		static_cast<int>(area.top()),
+		0,
+		static_cast<unsigned int>(area.getWidth()),
+		static_cast<unsigned int>(area.getHeight()),
+		0);
+
+	Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region);
 
 	n_delete_array(pBuf);
 }
@@ -255,6 +222,27 @@ void CDEMTexture::blitToMemory(void* targetData)
 
 	n_assert(false);
 /*//D3D9 lock 0 - read - unlock
+        if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
+        {
+			if (FAILED(d_device->CreateOffscreenPlainSurface(Width, Height, Format, D3DPOOL_SYSTEMMEM, &d_offscreen, 0)))
+			if (FAILED(d_texture->GetSurfaceLevel(0, &d_renderTarget)))
+			if (FAILED(d_device->GetRenderTargetData(d_renderTarget, d_offscreen)))
+			d_renderTarget->Release();
+
+			if (FAILED(d_offscreen->LockRect(&d_lockedRect, area, 0)))
+
+			//PERFORM
+             
+			 d_offscreen->UnlockRect();
+       }
+        else
+        {
+			if (FAILED(d_texture->LockRect(0, &d_lockedRect, area, 0)))
+
+			// PERFORM
+             
+             d_texture->UnlockRect(0);
+       }
 
 // VRAM -> RAM
 //D3D11
