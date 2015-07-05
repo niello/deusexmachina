@@ -183,6 +183,20 @@ DWORD CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
+DWORD CD3D9DriverFactory::D3DFormatBlockSize(D3DFORMAT D3DFormat)
+{
+	switch (D3DFormat)
+	{
+		case D3DFMT_DXT1:
+		case D3DFMT_DXT2:
+		case D3DFMT_DXT3:
+		case D3DFMT_DXT4:
+		case D3DFMT_DXT5:	return 4;
+		default:			return 1;
+	}
+}
+//---------------------------------------------------------------------
+
 DWORD CD3D9DriverFactory::D3DFormatDepthBits(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)

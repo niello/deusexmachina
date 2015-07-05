@@ -35,6 +35,7 @@ public:
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
 	static EPixelFormat		D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
 	static DWORD			D3DFormatBitsPerPixel(D3DFORMAT D3DFormat);
+	static DWORD			D3DFormatBlockSize(D3DFORMAT D3DFormat);
 	static DWORD			D3DFormatDepthBits(D3DFORMAT D3DFormat);
 	static DWORD			D3DFormatStencilBits(D3DFORMAT D3DFormat);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE MultiSampleType, DWORD MultiSampleQuality);
