@@ -35,6 +35,7 @@ bool CD3D9VertexBuffer::Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pV
 	VertexLayout = &Layout;
 	VertexCount = D3DDesc.Size / VertexSize;
 	pBuffer = pVB;
+	Usage = D3DDesc.Usage;
 	LockCount = 0;
 
 	OK;

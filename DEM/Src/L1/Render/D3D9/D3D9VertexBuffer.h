@@ -18,6 +18,7 @@ class CD3D9VertexBuffer: public CVertexBuffer
 protected:
 
 	IDirect3DVertexBuffer9*	pBuffer;
+	UINT					Usage;
 	DWORD					LockCount;
 
 	void InternalDestroy();
@@ -31,6 +32,7 @@ public:
 	virtual void			Destroy() { InternalDestroy(); CVertexBuffer::InternalDestroy(); }
 
 	IDirect3DVertexBuffer9*	GetD3DBuffer() const { return pBuffer; }
+	UINT					GetD3DUsage() const { return Usage; }
 };
 
 typedef Ptr<CD3D9VertexBuffer> PD3D9VertexBuffer;

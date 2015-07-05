@@ -58,8 +58,8 @@ bool CD3D11Texture::Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* 
 
 	Desc.Type = Texture_1D;
 	Desc.Width = D3DDesc.Width;
-	Desc.Height = 0;
-	Desc.Depth = 0;
+	Desc.Height = 1;
+	Desc.Depth = 1;
 	Desc.MipLevels = D3DDesc.MipLevels;
 	Desc.ArraySize = D3DDesc.ArraySize;
 	Desc.Format = CD3D11DriverFactory::DXGIFormatToPixelFormat(D3DDesc.Format);
@@ -72,6 +72,7 @@ bool CD3D11Texture::Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* 
 
 	pD3DTex = pTexture;
 	pSRView = pSRV;
+	D3DUsage = D3DDesc.Usage;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -86,7 +87,7 @@ bool CD3D11Texture::Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* 
 	Desc.Type = (D3DDesc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? Texture_Cube : Texture_2D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
-	Desc.Depth = 0;
+	Desc.Depth = 1;
 	Desc.MipLevels = D3DDesc.MipLevels;
 	Desc.ArraySize = D3DDesc.ArraySize;
 	Desc.Format = CD3D11DriverFactory::DXGIFormatToPixelFormat(D3DDesc.Format);
@@ -99,6 +100,7 @@ bool CD3D11Texture::Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* 
 
 	pD3DTex = pTexture;
 	pSRView = pSRV;
+	D3DUsage = D3DDesc.Usage;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -126,6 +128,7 @@ bool CD3D11Texture::Create(ID3D11Texture3D* pTexture, ID3D11ShaderResourceView* 
 
 	pD3DTex = pTexture;
 	pSRView = pSRV;
+	D3DUsage = D3DDesc.Usage;
 	OK;
 }
 //---------------------------------------------------------------------

@@ -1326,7 +1326,7 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 }
 //---------------------------------------------------------------------
 
-PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
+PDepthStencilBuffer CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTargetDesc& Desc)
 {
 	D3DFORMAT DSFmt = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 	D3DMULTISAMPLE_TYPE MSAAType;
@@ -1368,6 +1368,277 @@ PDepthStencilBuffer	CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode)
+{
+	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());
+	if (!ppOutData) FAIL;
+
+	IDirect3DVertexBuffer9* pVB = ((const CD3D9VertexBuffer&)Resource).GetD3DBuffer();
+	if (!pVB) FAIL;
+
+	//???increment internal lock count of resource?
+	//???assert or check CPU access?! or Resource.CanMap()?
+
+	return SUCCEEDED(pVB->Lock(0, 0, ppOutData, GetD3DLockFlags(Mode)));
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode)
+{
+	n_assert_dbg(Resource.IsA<CD3D9IndexBuffer>());
+	if (!ppOutData) FAIL;
+
+	IDirect3DIndexBuffer9* pIB = ((const CD3D9IndexBuffer&)Resource).GetD3DBuffer();
+	if (!pIB) FAIL;
+
+	//???increment internal lock count of resource?
+	//???assert or check CPU access?! or Resource.CanMap()?
+
+	return SUCCEEDED(pIB->Lock(0, 0, ppOutData, GetD3DLockFlags(Mode)));
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
+{
+	n_assert_dbg(Resource.IsA<CD3D9Texture>());
+	IDirect3DBaseTexture9* pD3DBaseTex = ((const CD3D9Texture&)Resource).GetD3DBaseTexture();
+	if (!pD3DBaseTex) FAIL;
+
+	//???increment internal lock count of resource?
+	//???assert or check CPU access?! or Resource.CanMap()?
+
+	switch (Resource.GetDesc().Type)
+	{
+		case Texture_1D:
+		case Texture_2D:
+		{
+			IDirect3DTexture9* pD3DTex = (IDirect3DTexture9*)pD3DBaseTex;
+			D3DLOCKED_RECT D3DRect;
+			if (FAILED(pD3DTex->LockRect(MipLevel, &D3DRect, NULL, GetD3DLockFlags(Mode)))) FAIL;
+
+			OutData.pData = (char*)D3DRect.pBits;
+			OutData.RowPitch = (DWORD)D3DRect.Pitch;
+			OutData.SlicePitch = 0;
+
+			OK;
+		}
+
+		case Texture_3D:
+		{
+			IDirect3DVolumeTexture9* pD3DTex = (IDirect3DVolumeTexture9*)pD3DBaseTex;
+			D3DLOCKED_BOX D3DBox;
+			if (FAILED(pD3DTex->LockBox(MipLevel, &D3DBox, NULL, GetD3DLockFlags(Mode)))) FAIL;
+
+			OutData.pData = (char*)D3DBox.pBits;
+			OutData.RowPitch = (DWORD)D3DBox.RowPitch;
+			OutData.SlicePitch = (DWORD)D3DBox.SlicePitch;
+
+			OK;
+		}
+
+		case Texture_Cube:
+		{
+			IDirect3DCubeTexture9* pD3DTex = (IDirect3DCubeTexture9*)pD3DBaseTex;
+			D3DLOCKED_RECT D3DRect;
+			if (FAILED(pD3DTex->LockRect(GetD3DCubeMapFace((ECubeMapFace)ArraySlice), MipLevel, &D3DRect, NULL, GetD3DLockFlags(Mode)))) FAIL;
+
+			OutData.pData = (char*)D3DRect.pBits;
+			OutData.RowPitch = (DWORD)D3DRect.Pitch;
+			OutData.SlicePitch = 0;
+
+			OK;
+		}
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::UnmapResource(const CVertexBuffer& Resource)
+{
+	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());
+	//???!!!return are outstanding locks or resource was unlocked?!
+	IDirect3DVertexBuffer9* pVB = ((const CD3D9VertexBuffer&)Resource).GetD3DBuffer();
+	if (!pVB) FAIL;
+	return SUCCEEDED(pVB->Unlock());
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::UnmapResource(const CIndexBuffer& Resource)
+{
+	n_assert_dbg(Resource.IsA<CD3D9IndexBuffer>());
+	//???!!!return are outstanding locks or resource was unlocked?!
+	IDirect3DIndexBuffer9* pIB = ((const CD3D9IndexBuffer&)Resource).GetD3DBuffer();
+	if (!pIB) FAIL;
+	return SUCCEEDED(pIB->Unlock());
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, DWORD MipLevel)
+{
+	n_assert_dbg(Resource.IsA<CD3D9Texture>());
+	IDirect3DBaseTexture9* pD3DBaseTex = ((const CD3D9Texture&)Resource).GetD3DBaseTexture();
+	if (!pD3DBaseTex) FAIL;
+
+	//???!!!return are outstanding locks or resource was unlocked?!
+	switch (Resource.GetDesc().Type)
+	{
+		case Texture_1D:
+		case Texture_2D:
+			return SUCCEEDED(((IDirect3DTexture9*)pD3DBaseTex)->UnlockRect(MipLevel));
+
+		case Texture_3D:
+			return SUCCEEDED(((IDirect3DVolumeTexture9*)pD3DBaseTex)->UnlockBox(MipLevel));
+
+		case Texture_Cube:
+			return SUCCEEDED(((IDirect3DCubeTexture9*)pD3DBaseTex)->UnlockRect(GetD3DCubeMapFace((ECubeMapFace)ArraySlice), MipLevel));
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::WriteToResource(const CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+{
+	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());
+	const CD3D9VertexBuffer& VB9 = (const CD3D9VertexBuffer&)Resource;
+	IDirect3DVertexBuffer9* pBuf = VB9.GetD3DBuffer();
+	if (!pBuf || !pData) FAIL;
+
+	DWORD BufferSize = VB9.GetSizeInBytes();
+	DWORD RequestedSize = Size ? Size : BufferSize;
+	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	if (!SizeToCopy) OK;
+
+	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
+
+	//???check both pointers to be align-16?
+	UINT LockFlags = ((VB9.GetD3DUsage() & D3DUSAGE_DYNAMIC) && UpdateWhole) ? D3DLOCK_DISCARD : 0;
+	char* pDest = NULL;
+	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pDest, LockFlags))) FAIL;
+	const bool Success = (memcpy_s(pDest, SizeToCopy, pData, SizeToCopy) == 0);
+	if (FAILED(pBuf->Unlock())) FAIL;
+
+	return Success;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::WriteToResource(const CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+{
+	n_assert_dbg(Resource.IsA<CD3D9IndexBuffer>());
+	const CD3D9IndexBuffer& IB9 = (const CD3D9IndexBuffer&)Resource;
+
+	IDirect3DIndexBuffer9* pBuf = IB9.GetD3DBuffer();
+	if (!pBuf || !pData) FAIL;
+
+	DWORD BufferSize = IB9.GetSizeInBytes();
+	DWORD RequestedSize = Size ? Size : BufferSize;
+	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	if (!SizeToCopy) OK;
+
+	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
+
+	//???check both pointers to be align-16?
+	UINT LockFlags = ((IB9.GetD3DUsage() & D3DUSAGE_DYNAMIC) && UpdateWhole) ? D3DLOCK_DISCARD : 0;
+	char* pDest = NULL;
+	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pDest, LockFlags))) FAIL;
+	const bool Success = (memcpy_s(pDest, SizeToCopy, pData, SizeToCopy) == 0);
+	if (FAILED(pBuf->Unlock())) FAIL;
+
+	return Success;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::WriteToResource(const CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+{
+	EResourceMapMode Mode = (!pRegion && (((const CD3D9Texture&)Resource).GetD3DUsage() & D3DUSAGE_DYNAMIC)) ? Map_WriteDiscard : Map_Write;
+	CMappedTexture DestData;
+	if (!MapResource(DestData, Resource, Mode, ArraySlice, MipLevel)) FAIL;
+
+	const CTextureDesc& Desc = Resource.GetDesc();
+
+	// No format conversion for now, src & dest texel formats must match
+	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
+	DWORD TexelSize = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat) >> 3;
+	n_assert_dbg(TexelSize);
+
+	Data::CBox Region;
+	if (pRegion)
+	{
+		Region.X = n_max(pRegion->X, 0);
+		Region.Y = n_max(pRegion->Y, 0);
+		Region.Z = n_max(pRegion->Z, 0);
+		Region.W = n_min(pRegion->W, Desc.Width - pRegion->X);
+		Region.H = n_min(pRegion->H, Desc.Height - pRegion->Y);
+		Region.D = n_min(pRegion->D, Desc.Depth - pRegion->Z);
+	}
+	else
+	{
+		// X, Y, Z are 0 by constructor
+		Region.W = Desc.Width;
+		Region.H = Desc.Height;
+		Region.D = Desc.Depth;
+	}
+	pRegion = &Region;
+
+	const char* pSrc = SrcData.pData;
+	char* pDest = DestData.pData + (Region.Z * DestData.SlicePitch + Region.Y * DestData.RowPitch + Region.X) * TexelSize;
+
+	bool Result;
+	const bool WholeRow = (Region.W == Desc.Width && SrcData.RowPitch == DestData.RowPitch);
+	const bool WholeSlice = (WholeRow && Region.H == Desc.Height && SrcData.SlicePitch == DestData.SlicePitch);
+	if (WholeSlice)
+	{
+		DWORD DataSize = SrcData.SlicePitch * Region.D * TexelSize;
+		Result = (memcpy_s(pDest, DataSize, pSrc, DataSize) != 0);
+	}
+	else if (WholeRow)
+	{
+		Result = true;
+		DWORD SlicePartSize = SrcData.RowPitch * Region.H * TexelSize;
+		for (DWORD i = 0; i < Region.D; ++i)
+		{
+			if (memcpy_s(pDest, SlicePartSize, pSrc, SlicePartSize) != 0)
+			{
+				Result = false;
+				break;
+			}
+			pSrc += SrcData.SlicePitch;
+			pDest += DestData.SlicePitch;
+		}
+	}
+	else
+	{
+		Result = true;
+		DWORD RowPartSize = Region.W * TexelSize;
+		for (DWORD i = 0; i < Region.D; ++i)
+		{
+			const char* pSrcRow = pSrc;
+			char* pDestRow = pDest;
+			for (DWORD j = 0; j < Region.H; ++j)
+			{
+				if (memcpy_s(pDest, RowPartSize, pSrc, RowPartSize) != 0)
+				{
+					Result = false;
+					break;
+				}
+				pSrcRow += SrcData.RowPitch;
+				pDestRow += DestData.RowPitch;
+			}
+
+			if (!Result) break;
+			
+			pSrc += SrcData.SlicePitch;
+			pDest += DestData.SlicePitch;
+		}
+	}
+
+	if (!UnmapResource(Resource, ArraySlice, MipLevel)) FAIL;
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
 D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 {
 	switch (DriverType)
@@ -1399,6 +1670,35 @@ void CD3D9GPUDriver::GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL&
 	{
 		OutPool = D3DPOOL_SYSTEMMEM;
 		OutUsage = D3DUSAGE_DYNAMIC; //???has meaning?
+	}
+}
+//---------------------------------------------------------------------
+
+UINT CD3D9GPUDriver::GetD3DLockFlags(EResourceMapMode MapMode)
+{
+	switch (MapMode)
+	{
+		case Map_Read:				return D3DLOCK_READONLY;
+		case Map_Write:				return 0;
+		case Map_ReadWrite:			return 0;
+		case Map_WriteDiscard:		return D3DLOCK_DISCARD;
+		case Map_WriteNoOverwrite:	return D3DLOCK_NOOVERWRITE;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DLockFlags() > Invalid map mode\n"); return 0;
+	}
+}
+//---------------------------------------------------------------------
+
+D3DCUBEMAP_FACES CD3D9GPUDriver::GetD3DCubeMapFace(ECubeMapFace Face)
+{
+	switch (Face)
+	{
+		case CubeFace_PosX:	return D3DCUBEMAP_FACE_POSITIVE_X;
+		case CubeFace_NegX:	return D3DCUBEMAP_FACE_NEGATIVE_X;
+		case CubeFace_PosY:	return D3DCUBEMAP_FACE_POSITIVE_Y;
+		case CubeFace_NegY:	return D3DCUBEMAP_FACE_NEGATIVE_Y;
+		case CubeFace_PosZ:	return D3DCUBEMAP_FACE_POSITIVE_Z;
+		case CubeFace_NegZ:	return D3DCUBEMAP_FACE_NEGATIVE_Z;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DCubeMapFace() > Invalid cubemap face\n"); return D3DCUBEMAP_FACE_FORCE_DWORD;
 	}
 }
 //---------------------------------------------------------------------

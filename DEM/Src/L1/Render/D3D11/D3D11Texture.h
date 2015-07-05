@@ -11,6 +11,7 @@ struct ID3D11Texture1D;
 struct ID3D11Texture2D;
 struct ID3D11Texture3D;
 struct ID3D11ShaderResourceView;
+enum D3D11_USAGE;
 
 namespace Render
 {
@@ -23,6 +24,7 @@ protected:
 
 	ID3D11Resource*				pD3DTex; //???or union?
 	ID3D11ShaderResourceView*	pSRView;
+	D3D11_USAGE					D3DUsage;
 
 	void						InternalDestroy();
 
@@ -46,6 +48,7 @@ public:
 	ID3D11Texture2D*			GetD3DTexture2D() const { n_assert(Desc.Type == Texture_2D || Desc.Type == Texture_Cube); return (ID3D11Texture2D*)pD3DTex; }
 	ID3D11Texture3D*			GetD3DTexture3D() const { n_assert(Desc.Type == Texture_3D); return (ID3D11Texture3D*)pD3DTex; }
 	ID3D11ShaderResourceView*	GetD3DSRView() const { return pSRView; }
+	D3D11_USAGE					GetD3DUsage() const { return D3DUsage; }
 };
 
 typedef Ptr<CD3D11Texture> PD3D11Texture;

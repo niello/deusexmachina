@@ -49,7 +49,7 @@ bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 	Desc.Type = Texture_2D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
-	Desc.Depth = 0;
+	Desc.Depth = 1;
 	Desc.MipLevels = pTexture->GetLevelCount();
 	Desc.ArraySize = 1;
 	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
@@ -68,6 +68,7 @@ bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 	}
 
 	pD3DTex = pTexture;
+	Usage = D3DDesc.Usage;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -83,7 +84,7 @@ bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
 	Desc.Type = Texture_Cube;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
-	Desc.Depth = 0;
+	Desc.Depth = 1;
 	Desc.MipLevels = pTexture->GetLevelCount();
 	Desc.ArraySize = 1;
 	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
@@ -102,6 +103,7 @@ bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
 	}
 
 	pD3DTex = pTexture;
+	Usage = D3DDesc.Usage;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -136,6 +138,7 @@ bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
 	}
 
 	pD3DTex = pTexture;
+	Usage = D3DDesc.Usage;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -146,117 +149,5 @@ void CD3D9Texture::InternalDestroy()
 	SAFE_RELEASE(pD3DTex);
 }
 //---------------------------------------------------------------------
-
-//inline void CTexture::MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags)
-//{
-//	switch (MapType)
-//	{
-//		//!!!Map_Setup!
-//
-//		case Map_Read:
-//			n_assert((Usage_Dynamic == Usage) && (CPU_Read == Access));
-//			LockFlags |= D3DLOCK_READONLY;
-//			break;
-//		case Map_Write:
-//			n_assert((Usage_Dynamic == Usage) && (CPU_Write == Access));
-//			break;
-//		case Map_ReadWrite:
-//			n_assert((Usage_Dynamic == Usage) && (CPU_ReadWrite == Access));
-//			break;
-//		case Map_WriteDiscard:
-//			n_assert((Usage_Dynamic == Usage) && (CPU_Write == Access));
-//			LockFlags |= D3DLOCK_DISCARD;
-//			break;
-//	}
-//}
-////---------------------------------------------------------------------
-//
-//bool CTexture::Map(int MipLevel, EMapType MapType, CMapInfo& OutMapInfo)
-//{
-//	n_assert((Type == Texture2D || Type == Texture3D) && MapType != Map_WriteNoOverwrite);
-//
-//	DWORD LockFlags = 0;
-//	MapTypeToLockFlags(MapType, LockFlags);
-//
-//	if (Type == Texture2D)
-//	{
-//		D3DLOCKED_RECT LockedRect = { 0 };
-//		if (SUCCEEDED(GetD3D9Texture()->LockRect(MipLevel, &LockedRect, NULL, LockFlags)))
-//		{
-//			OutMapInfo.pData = LockedRect.pBits;
-//			OutMapInfo.RowPitch = LockedRect.Pitch;
-//			OutMapInfo.DepthPitch = 0;
-//			LockCount++;
-//			OK;
-//		}
-//	}
-//	else if (Type == Texture3D)
-//	{
-//		D3DLOCKED_BOX LockedBox = { 0 };
-//		if (SUCCEEDED(GetD3D9VolumeTexture()->LockBox(MipLevel, &LockedBox, NULL, LockFlags)))
-//		{
-//			OutMapInfo.pData = LockedBox.pBits;
-//			OutMapInfo.RowPitch = LockedBox.RowPitch;
-//			OutMapInfo.DepthPitch = LockedBox.SlicePitch;
-//			LockCount++;
-//			OK;
-//		}
-//	}
-//
-//	FAIL;
-//}
-////---------------------------------------------------------------------
-//
-//void CTexture::Unmap(int MipLevel)
-//{
-//	n_assert(LockCount > 0);
-//	if (Texture2D == Type) pD3D9Tex2D->UnlockRect(MipLevel);
-//	else if (Texture3D == Type) pD3D9Tex3D->UnlockBox(MipLevel);
-//	else Sys::Error("CTexture::Unmap -> Cube texture, use UnmapCubeFace");
-//	LockCount--;
-//}
-////---------------------------------------------------------------------
-//
-//bool CTexture::MapCubeFace(ECubeFace Face, int MipLevel, EMapType MapType, CMapInfo& OutMapInfo)
-//{
-//	n_assert(Type == TextureCube && MapType != Map_WriteNoOverwrite);
-//
-//	DWORD LockFlags = D3DLOCK_NO_DIRTY_UPDATE | D3DLOCK_NOSYSLOCK;
-//	MapTypeToLockFlags(MapType, LockFlags);
-//
-//	D3DLOCKED_RECT LockedRect = { 0 };
-//	if (FAILED(GetD3D9CubeTexture()->LockRect((D3DCUBEMAP_FACES)Face, MipLevel, &LockedRect, NULL, LockFlags))) FAIL;
-//
-//	OutMapInfo.pData = LockedRect.pBits;
-//	OutMapInfo.RowPitch = LockedRect.Pitch;
-//	OutMapInfo.DepthPitch = 0;
-//	LockCount++;
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-//void CTexture::UnmapCubeFace(ECubeFace Face, int MipLevel)
-//{
-//	n_assert(Type == TextureCube && LockCount > 0);
-//	GetD3D9CubeTexture()->UnlockRect((D3DCUBEMAP_FACES)Face, MipLevel);
-//	LockCount--;
-//}
-////---------------------------------------------------------------------
-//
-//bool CTexture::OnDeviceLost(const Events::CEventBase& Ev)
-//{
-//	if (IsLoaded()) Unload(); //!!!will unsubscribe OnDeviceReset!
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-///*
-//bool CTexture::OnDeviceReset(const Events::CEventBase& Ev)
-//{
-//	//???reload? or recreate, need to set flag 'I am valid, but empty'. Or leave recreation to the resource owner.
-//	OK;
-//}
-////---------------------------------------------------------------------
-//*/
 
 }

@@ -49,7 +49,6 @@ protected:
 	Vector3f						d_pivot;
 
 	void updateMatrix() const;
-	void syncHardwareBuffer() const;
 
 public:
 

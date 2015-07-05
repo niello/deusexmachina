@@ -115,20 +115,21 @@ enum ETextureType
 
 enum ECubeMapFace
 {
-	PosX = 0,
-	NegX,
-	PosY,
-	NegY,
-	PosZ,
-	NegZ
+	CubeFace_PosX = 0,
+	CubeFace_NegX,
+	CubeFace_PosY,
+	CubeFace_NegY,
+	CubeFace_PosZ,
+	CubeFace_NegZ
 };
 
 // Flags that indicate which hardware has which access to this resource data.
 // Some combinations may be unsupported by certain rendering APIs, so, implementations must
 // consider to satisfy the most of possible features of a set requested.
 // Some common usage patterns are:
-// GPU_Read				- immutable resources, initialized on creation, the fastest ones for GPU access
-// GPU_Read | CPU_Write	- dynamic resources, suitable for a GPU data that is regularly updated by CPU
+// Access_GPU_Read						- immutable resources, initialized on creation, the fastest ones for GPU access
+// Access_GPU_Read | Access_CPU_Write	- dynamic resources, suitable for a GPU data that is regularly updated by CPU
+// Access_GPU_Read | Access_GPU_Write	- texture render targets or very infrequently updated VRAM resources
 enum EResourceAccess
 {
 	Access_CPU_Read		= 0x01,
@@ -137,13 +138,20 @@ enum EResourceAccess
 	Access_GPU_Write	= 0x08
 };
 
-enum EMapType
+enum EResourceMapMode
 {
-	Map_Read,				// Gain read access, must be CPU_Read
-	Map_Write,				// Gain write access, must be CPU_Write
-	Map_ReadWrite,			// Gain read/write access, must be CPU_Read | CPU_Write
-	Map_WriteDiscard,		// Gain write access, discard previous content, must be GPU_Read | CPU_Write
-	Map_WriteNoOverwrite,	// Gain write access, must be GPU_Read | CPU_Write, see D3D11 docs for details
+	Map_Read,				// Gain read access, must be Access_CPU_Read
+	Map_Write,				// Gain write access, must be Access_CPU_Write
+	Map_ReadWrite,			// Gain read/write access, must be Access_CPU_Read | Access_CPU_Write
+	Map_WriteDiscard,		// Gain write access, discard previous content, must be Access_GPU_Read | Access_CPU_Write
+	Map_WriteNoOverwrite,	// Gain write access, must be Access_GPU_Read | Access_CPU_Write, see D3D11 docs for details
+};
+
+struct CMappedTexture
+{
+	char*	pData;			// Mapped data
+	DWORD	RowPitch;		// Distance in bytes between first bytes of two rows
+	DWORD	SlicePitch;		// Distance in bytes between first bytes of two depth slices
 };
 
 struct CRenderTargetDesc

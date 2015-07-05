@@ -21,13 +21,9 @@ class CD3D9Texture: public CTexture
 protected:
 
 	IDirect3DBaseTexture9*	pD3DTex; //???or union?
+	UINT					Usage;
 
-	//void MapTypeToLockFlags(EMapType MapType, DWORD& LockFlags);
 	void InternalDestroy();
-
-	//!!!only for D3DPOOL_DEFAULT! now manage in GPUDrv?
-	//DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
-	//DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
 public:
 
@@ -46,6 +42,7 @@ public:
 	IDirect3DTexture9*			GetD3DTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_2D); return (IDirect3DTexture9*)pD3DTex; }
 	IDirect3DCubeTexture9*		GetD3DCubeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_Cube); return (IDirect3DCubeTexture9*)pD3DTex; }
 	IDirect3DVolumeTexture9*	GetD3DVolumeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_3D); return (IDirect3DVolumeTexture9*)pD3DTex; }
+	UINT						GetD3DUsage() const { return Usage; }
 };
 
 typedef Ptr<CD3D9Texture> PD3D9Texture;
