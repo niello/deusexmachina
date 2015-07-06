@@ -153,6 +153,7 @@ public:
 	virtual bool				UnmapResource(const CVertexBuffer& Resource) = 0;
 	virtual bool				UnmapResource(const CIndexBuffer& Resource) = 0;
 	virtual bool				UnmapResource(const CTexture& Resource, DWORD ArraySlice = 0, DWORD MipLevel = 0) = 0;
+	//virtual bool				ReadFromResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice = 0, DWORD MipLevel = 0) = 0;
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
 	virtual bool				WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL) = 0;
