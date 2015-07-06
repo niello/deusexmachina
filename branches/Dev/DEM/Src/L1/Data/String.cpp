@@ -221,10 +221,9 @@ void CString::TrimInplace(const char* CharSet, bool Left, bool Right)
 	}
 	else if (pStrEnd > pStrStart)
 	{
-		//!!!use memmove!
 		DWORD NewLen = pStrEnd - pStrStart;
 		char* pBuffer = (char*)_malloca(NewLen);
-		memcpy_s(pBuffer, NewLen, pStrStart, NewLen);
+		memcpy(pBuffer, pStrStart, NewLen);
 		Set(pBuffer, NewLen);
 		_freea(pBuffer);
 	}

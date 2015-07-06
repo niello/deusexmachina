@@ -1821,10 +1821,8 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DW
 
 	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
 
-	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too?
+	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too? need perf test!
 	{
-		//!!!for textures - only non-DS and non-MSAA!
-
 		if (UpdateWhole) pD3DImmContext->UpdateSubresource(pBuf, 0, NULL, pData, 0, 0);
 		else
 		{
@@ -1846,10 +1844,10 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DW
 	D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
 	D3D11_MAPPED_SUBRESOURCE D3DData;
 	if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
-	const bool Success = (memcpy_s(((char*)D3DData.pData) + Offset, SizeToCopy, pData, SizeToCopy) == 0);
+	memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
 	pD3DImmContext->Unmap(pBuf, 0);
 
-	return Success;
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -1871,15 +1869,84 @@ bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData,
 
 bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
-//D3D11_BOX dst_box = {static_cast<UINT>(area.left()),
-//static_cast<UINT>(area.top()),
-//0,
-//static_cast<UINT>(area.right()),
-//static_cast<UINT>(area.bottom()),
-//1};
-//
-//Owner.getGPUDriver()->UpdateSubresource(d_texture, 0, &dst_box, pBuf, SrcPitch, 0);
-	FAIL;
+	n_assert_dbg(Resource.IsA<CD3D11Texture>());
+	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
+	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
+	D3D11_USAGE Usage = Tex11.GetD3DUsage();
+	const CTextureDesc& Desc = Resource.GetDesc();
+	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !SrcData.pData || MipLevel >= Desc.MipLevels) FAIL;
+
+	DWORD RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
+	if (ArraySlice >= RealArraySize) FAIL;
+
+	//int OffsetX, OffsetY, OffsetZ, Width, Height, Depth;
+	//if (pRegion)
+	//{
+	//	OffsetX = n_max(pRegion->X, 0);
+	//	OffsetY = n_max(pRegion->Y, 0);
+	//	Width = n_min(pRegion->W, Desc.Width - OffsetX);
+	//	Height = n_min(pRegion->H, Desc.Height - OffsetY);
+
+	//	if (Width <= 0 || Height <= 0) FAIL;
+
+	//	if (Desc.Type == Texture_3D)
+	//	{
+	//		OffsetZ = n_max(pRegion->Z, 0);
+	//		Depth = n_min(pRegion->D, Desc.Depth - OffsetZ);
+	//		if (Depth <= 0) FAIL;
+	//	}
+	//	else
+	//	{
+	//		OffsetZ = 0;
+	//		Depth = 1;
+	//	}
+	//}
+	//else
+	//{
+	//	OffsetX = 0;
+	//	OffsetY = 0;
+	//	OffsetZ = 0;
+	//	Width = Desc.Width;
+	//	Height = Desc.Height;	// Will be 1 for 1D textures
+	//	Depth = Desc.Depth;		// Will be 1 for non-3D textures
+	//}
+
+	const int UpdateWhole = false; // !pRegion or pRegion is a whole texture
+
+	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too? need perf test!
+	{
+		//!!!only non-DS and non-MSAA!
+
+		if (UpdateWhole)
+		{
+			pD3DImmContext->UpdateSubresource(pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels),
+											  NULL, SrcData.pData, SrcData.RowPitch, SrcData.SlicePitch);
+		}
+		else
+		{
+			D3D11_BOX D3DBox;
+			D3DBox.left = 0;
+			D3DBox.right = 1;
+			D3DBox.top = 0;
+			D3DBox.bottom = 1;
+			D3DBox.front = 0;
+			D3DBox.back = 1;
+			pD3DImmContext->UpdateSubresource(pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels),
+											  &D3DBox, SrcData.pData, SrcData.RowPitch, SrcData.SlicePitch);
+		}
+
+		OK;
+	}
+
+	//!!!D3DData.pData is 16-byte aligned for feature level 10 and above! may exploit it!
+	//if (IsAligned16(pData)) perform SSE copy!
+	D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+	D3D11_MAPPED_SUBRESOURCE D3DData;
+	//if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
+	//memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
+	//pD3DImmContext->Unmap(pBuf, 0);
+
+	OK;
 }
 //---------------------------------------------------------------------
 

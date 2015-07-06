@@ -81,7 +81,7 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 	if (PathLen <= RootPathLen) return NULL;
 	PathLen = PathLen - RootPathLen + 1; // 1 is for a terminating null
 	char* pLocalPath = (char*)_malloca(PathLen);
-	memcpy_s(pLocalPath, PathLen, pAbsPath + RootPathLen, PathLen);
+	memcpy(pLocalPath, pAbsPath + RootPathLen, PathLen);
 	_strlwr_s(pLocalPath, PathLen);
 
 	CNpkTOCEntry* pCurrEntry = pRootDir;
