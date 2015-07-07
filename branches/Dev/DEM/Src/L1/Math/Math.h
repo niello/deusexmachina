@@ -98,6 +98,8 @@ inline int n_frnd(float f)
 }
 //---------------------------------------------------------------------
 
+#define n_fabs fabs
+/*
 // fast float absolute value
 // NB: this relies on IEEE floating point standard.
 //???mb there is a FPU instruction and this method isn't preferable?
@@ -107,6 +109,7 @@ inline float n_fabs(float val)
 	return (float&)tmp;
 }
 //---------------------------------------------------------------------
+*/
 
 inline bool n_fequal(float f0, float f1, float tol)
 {

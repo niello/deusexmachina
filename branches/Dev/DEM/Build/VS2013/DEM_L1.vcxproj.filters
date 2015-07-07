@@ -851,6 +851,9 @@
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMFwd.h">
       <Filter>UI\CEGUI</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ImageUtils.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1389,6 +1392,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.cpp">
       <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\ImageUtils.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

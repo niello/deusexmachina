@@ -9,6 +9,7 @@
 #include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11DepthStencilBuffer.h>
 #include <Render/D3D11/D3D11RenderState.h>
+#include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
 #include <Data/StringID.h>
@@ -1839,8 +1840,6 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DW
 		OK;
 	}
 
-	//!!!D3DData.pData is 16-byte aligned for feature level 10 and above! may exploit it!
-	//if (IsAligned16(pData)) perform SSE copy!
 	D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
 	D3D11_MAPPED_SUBRESOURCE D3DData;
 	if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
@@ -1870,81 +1869,86 @@ bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData,
 bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
-	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
-	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
-	D3D11_USAGE Usage = Tex11.GetD3DUsage();
+
 	const CTextureDesc& Desc = Resource.GetDesc();
-	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !SrcData.pData || MipLevel >= Desc.MipLevels) FAIL;
+	if (!SrcData.pData || MipLevel >= Desc.MipLevels) FAIL;
 
 	DWORD RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
 	if (ArraySlice >= RealArraySize) FAIL;
 
-	//int OffsetX, OffsetY, OffsetZ, Width, Height, Depth;
-	//if (pRegion)
-	//{
-	//	OffsetX = n_max(pRegion->X, 0);
-	//	OffsetY = n_max(pRegion->Y, 0);
-	//	Width = n_min(pRegion->W, Desc.Width - OffsetX);
-	//	Height = n_min(pRegion->H, Desc.Height - OffsetY);
+	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
+	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
+	D3D11_USAGE Usage = Tex11.GetD3DUsage();
+	DWORD Dims = Resource.GetDimensionCount();
+	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !Dims) FAIL;
 
-	//	if (Width <= 0 || Height <= 0) FAIL;
+	CCopyImageParams Params;
 
-	//	if (Desc.Type == Texture_3D)
-	//	{
-	//		OffsetZ = n_max(pRegion->Z, 0);
-	//		Depth = n_min(pRegion->D, Desc.Depth - OffsetZ);
-	//		if (Depth <= 0) FAIL;
-	//	}
-	//	else
-	//	{
-	//		OffsetZ = 0;
-	//		Depth = 1;
-	//	}
-	//}
-	//else
-	//{
-	//	OffsetX = 0;
-	//	OffsetY = 0;
-	//	OffsetZ = 0;
-	//	Width = Desc.Width;
-	//	Height = Desc.Height;	// Will be 1 for 1D textures
-	//	Depth = Desc.Depth;		// Will be 1 for non-3D textures
-	//}
-
-	const int UpdateWhole = false; // !pRegion or pRegion is a whole texture
+	DWORD OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
+	if (!CalcValidImageRegion(pRegion, Dims, Desc.Width, Desc.Height, Desc.Depth,
+							  OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ))
+	{
+		OK;
+	}
 
 	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too? need perf test!
 	{
 		//!!!only non-DS and non-MSAA!
+		//!!!can also use staging ring buffer! PERF?
 
-		if (UpdateWhole)
-		{
-			pD3DImmContext->UpdateSubresource(pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels),
-											  NULL, SrcData.pData, SrcData.RowPitch, SrcData.SlicePitch);
-		}
-		else
-		{
-			D3D11_BOX D3DBox;
-			D3DBox.left = 0;
-			D3DBox.right = 1;
-			D3DBox.top = 0;
-			D3DBox.bottom = 1;
-			D3DBox.front = 0;
-			D3DBox.back = 1;
-			pD3DImmContext->UpdateSubresource(pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels),
-											  &D3DBox, SrcData.pData, SrcData.RowPitch, SrcData.SlicePitch);
-		}
+		D3D11_BOX D3DBox; // In texels
+		D3DBox.left = OffsetX;
+		D3DBox.right = OffsetX + SizeX;
+		D3DBox.top = OffsetY;
+		D3DBox.bottom = OffsetY + SizeY;
+		D3DBox.front = OffsetZ;
+		D3DBox.back = OffsetZ + SizeZ;
+		pD3DImmContext->UpdateSubresource(pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels),
+										  &D3DBox, SrcData.pData, SrcData.RowPitch, SrcData.SlicePitch);
 
 		OK;
 	}
 
-	//!!!D3DData.pData is 16-byte aligned for feature level 10 and above! may exploit it!
-	//if (IsAligned16(pData)) perform SSE copy!
-	D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+
+	// No format conversion for now, src & dest texel formats must match
+	DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
+	if (!BPP) FAIL;
+
+	D3D11_MAP MapType;
+	if (Usage == D3D11_USAGE_DYNAMIC)
+	{
+		const bool UpdateWhole = !pRegion || (SizeX == Desc.Width && (Dims < 2 || SizeY == Desc.Height && (Dims < 3 || SizeZ == Desc.Depth)));
+		MapType = UpdateWhole ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+	}
+	else MapType = D3D11_MAP_WRITE;
+
 	D3D11_MAPPED_SUBRESOURCE D3DData;
-	//if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
-	//memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
-	//pD3DImmContext->Unmap(pBuf, 0);
+	if (FAILED(pD3DImmContext->Map(pTexRsrc, 0, MapType, 0, &D3DData))) FAIL;
+
+	CMappedTexture DestData;
+	DestData.pData = (char*)D3DData.pData;
+	DestData.RowPitch = D3DData.RowPitch;
+	DestData.SlicePitch = D3DData.DepthPitch;
+
+	Params.BitsPerPixel = BPP;
+	Params.Offset[0] = OffsetX;
+	Params.Offset[1] = OffsetY;
+	Params.Offset[2] = OffsetZ;
+	Params.CopySize[0] = SizeX;
+	Params.CopySize[1] = SizeY;
+	Params.CopySize[2] = SizeZ;
+	Params.TotalSize[0] = Desc.Width;
+	Params.TotalSize[1] = Desc.Height;
+
+	DWORD ImageCopyFlags = CopyImage_AdjustDest;
+	if (CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat) > 1)
+		ImageCopyFlags |= CopyImage_BlockCompressed;
+	if (Desc.Type == Texture_3D) ImageCopyFlags |= CopyImage_3DImage;
+
+	CopyImage(SrcData, DestData, ImageCopyFlags, Params);
+
+	pD3DImmContext->Unmap(pTexRsrc, 0);
 
 	OK;
 }
