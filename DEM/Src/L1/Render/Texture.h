@@ -53,9 +53,23 @@ public:
 	DWORD				GetPixelCount(bool IncludeSubsequentMips) const;
 	const CTextureDesc&	GetDesc() const { return Desc; }
 	Data::CFlags		GetAccess() const { return Access; }
+	DWORD				GetDimensionCount() const;
 };
 
 typedef Ptr<CTexture> PTexture;
+
+inline DWORD CTexture::GetDimensionCount() const
+{
+	switch (Desc.Type)
+	{
+		case Texture_1D:	return 1;
+		case Texture_2D:
+		case Texture_Cube:	return 2;
+		case Texture_3D:	return 3;
+		default:			return 0;
+	};
+}
+//---------------------------------------------------------------------
 
 }
 

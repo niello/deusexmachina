@@ -15,9 +15,9 @@
 
 #define __DeclareSingleton(type) \
 public: \
-	static type * Singleton; \
-    static type * Instance() { n_assert(Singleton); return Singleton; }; \
-    static bool HasInstance() { return Singleton != NULL; }; \
+	static type* Singleton; \
+    static inline type* Instance() { n_assert(Singleton); return Singleton; }; \
+    static inline bool HasInstance() { return Singleton != NULL; }; \
 private:
 
 #define __ImplementSingleton(type) \

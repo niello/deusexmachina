@@ -8,6 +8,7 @@
 #include <Render/D3D9/D3D9Texture.h>
 #include <Render/D3D9/D3D9RenderTarget.h>
 #include <Render/D3D9/D3D9DepthStencilBuffer.h>
+#include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
 #include <Core/Factory.h>
@@ -317,12 +318,11 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDes
 	D3DPresentParams.PresentationInterval = SwapChainDesc.Flags.Is(SwapChain_VSync) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
 	D3DPresentParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 
-//!!!TEST IT! (fails on debug at least)
-#ifndef _DEBUG
+#if !defined(_DEBUG) && (!defined(DEM_RENDER_DEBUG) || DEM_RENDER_DEBUG == 0)
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_DISCARD_DEPTHSTENCIL;
 #endif
 
-#if DEM_RENDER_DEBUG
+#if defined(_DEBUG) && DEM_RENDER_DEBUG
 	D3DPresentParams.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
 #endif
 }
@@ -383,7 +383,7 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 
 	if (FAILED(hr))
 	{
-		Sys::Log("Failed to create Direct3D9 device object!\n");
+		Sys::Log("Failed to create Direct3D9 device object, hr = 0x%x!\n", hr);
 		FAIL;
 	}
 
@@ -1180,8 +1180,9 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 			D3DLOCKED_RECT LockedRect = { 0 };
 			if (SUCCEEDED(pD3DTex->LockRect(0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
 			{
-				DWORD SizeInBytes = (Desc.Width * Height * CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat)) >> 3;
-				memcpy(LockedRect.pBits, pData, SizeInBytes);
+				DWORD BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
+				DWORD BlocksH = (BlockSize == 1) ? Height : ((Height + BlockSize - 1) / BlockSize);
+				memcpy(LockedRect.pBits, pData, LockedRect.Pitch * BlocksH);
 				n_assert(SUCCEEDED(pD3DTex->UnlockRect(0)));
 			}
 			else
@@ -1208,8 +1209,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 			D3DLOCKED_BOX LockedBox = { 0 };
 			if (SUCCEEDED(pD3DTex->LockBox(0, &LockedBox, NULL, D3DLOCK_NOSYSLOCK)))
 			{
-				DWORD SizeInBytes = (Desc.Width * Desc.Height * Desc.Depth * CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat)) >> 3;
-				memcpy(LockedBox.pBits, pData, SizeInBytes);
+				memcpy(LockedBox.pBits, pData, LockedBox.SlicePitch * Desc.Depth);
 				n_assert(SUCCEEDED(pD3DTex->UnlockBox(0)));
 			}
 			else
@@ -1232,22 +1232,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 		if (pData)
 		{
 			Sys::Error("CD3D9GPUDriver::CreateTexture() > Cubemap loading face by face - IMPLEMENT ME!\n");
-			/*
-			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
-			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
-			D3DLOCKED_RECT LockedRect = { 0 };
-			if (SUCCEEDED(pD3DTex->LockRect(0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
-			{
-				DWORD SizeInBytes = (Desc.Width * Height * CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat)) >> 3;
-				memcpy(LockedRect.pBits, pData, SizeInBytes);
-				n_assert(SUCCEEDED(pD3DTex->UnlockRect(0)));
-			}
-			else
-			{
-				pD3DTex->Release();
-				return NULL;
-			}
-			*/
+			//!!!faces must be loaded in ECubemapFace/D3D enum order!
 		}
 	}
 	else
@@ -1551,10 +1536,11 @@ bool CD3D9GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, 
 
 bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
-	const CTextureDesc& Desc = Resource.GetDesc();
+	n_assert_dbg(Resource.IsA<CD3D9Texture>());
 
-	if (MipLevel >= Desc.MipLevels) FAIL;
-	if (Desc.Type == Texture_Cube && ArraySlice > 5) FAIL;
+	const CTextureDesc& Desc = Resource.GetDesc();
+	DWORD Dims = Resource.GetDimensionCount();
+	if (!Dims || MipLevel >= Desc.MipLevels || (Desc.Type == Texture_Cube && ArraySlice > 5)) FAIL;
 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 
@@ -1562,60 +1548,14 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 	DWORD BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
 	if (!BPP) FAIL;
 
-	int OffsetX, OffsetY, OffsetZ, Width, Height, Depth;
-	if (pRegion)
-	{
-		OffsetX = n_max(pRegion->X, 0);
-		OffsetY = n_max(pRegion->Y, 0);
-		Width = n_min(pRegion->W, Desc.Width - OffsetX);
-		Height = n_min(pRegion->H, Desc.Height - OffsetY);
+	CCopyImageParams Params;
+	Params.BitsPerPixel = BPP;
 
-		if (Width <= 0 || Height <= 0) OK;
-
-		if (Desc.Type == Texture_3D)
-		{
-			OffsetZ = n_max(pRegion->Z, 0);
-			Depth = n_min(pRegion->D, Desc.Depth - OffsetZ);
-			if (Depth <= 0) OK;
-		}
-		else
-		{
-			OffsetZ = 0;
-			Depth = 1;
-		}
-	}
-	else
+	DWORD OffsetX, OffsetY, SizeX, SizeY;
+	if (!CalcValidImageRegion(pRegion, Dims, Desc.Width, Desc.Height, Desc.Depth,
+							  OffsetX, OffsetY, Params.Offset[2], SizeX, SizeY, Params.CopySize[2]))
 	{
-		OffsetX = 0;
-		OffsetY = 0;
-		OffsetZ = 0;
-		Width = Desc.Width;
-		Height = Desc.Height;
-		Depth = Desc.Depth;		// Will be 1 for non-3D textures
-	}
-
-	DWORD BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
-	DWORD BitsPerBlock, OffsetBytesX, OffsetBlocksY, CopyBlocksW, CopyBlocksH, TotalBlocksW, TotalBlocksH;
-	if (BlockSize > 1)
-	{
-		// 3D DXT textures would compress each slice separately, don't recalculate Depth
-		BitsPerBlock = BPP * BlockSize * BlockSize;
-		OffsetBytesX = ((OffsetX / BlockSize) * BitsPerBlock) >> 3;
-		OffsetBlocksY = OffsetY / BlockSize;
-		CopyBlocksW = (Width + BlockSize - 1) / BlockSize;
-		CopyBlocksH = (Height + BlockSize - 1) / BlockSize;
-		TotalBlocksW = (Desc.Width + BlockSize - 1) / BlockSize;
-		TotalBlocksH = (Desc.Height + BlockSize - 1) / BlockSize;
-	}
-	else
-	{
-		BitsPerBlock = BPP;
-		OffsetBytesX = (OffsetX * BPP) >> 3;
-		OffsetBlocksY = OffsetY;
-		CopyBlocksW = Width;
-		CopyBlocksH = Height;
-		TotalBlocksW = Desc.Width;
-		TotalBlocksH = Desc.Height;
+		OK;
 	}
 
 	CMappedTexture DestData;
@@ -1656,55 +1596,38 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 	}
 	else
 	{
-		EResourceMapMode Mode = ((Usage & D3DUSAGE_DYNAMIC) && !pRegion) ? Map_WriteDiscard : Map_Write;
+		EResourceMapMode Mode;
+		if (Usage & D3DUSAGE_DYNAMIC)
+		{
+			const bool UpdateWhole =
+				!pRegion || (SizeX == Desc.Width && (Dims < 2 || SizeY == Desc.Height && (Dims < 3 || Params.CopySize[2] == Desc.Depth)));
+			Mode = UpdateWhole ? Map_WriteDiscard : Map_Write;
+		}
+		else Mode = Map_Write;
+
 		if (!MapResource(DestData, Resource, Mode, ArraySlice, MipLevel)) FAIL;
 	}
 
-	const char* pSrc = SrcData.pData;
-	char* pDest = DestData.pData + OffsetZ * DestData.SlicePitch + OffsetBlocksY * DestData.RowPitch + OffsetBytesX;
+	Params.Offset[0] = OffsetX;
+	Params.Offset[1] = OffsetY;
+	Params.CopySize[0] = SizeX;
+	Params.CopySize[1] = SizeY;
+	Params.TotalSize[0] = Desc.Width;
+	Params.TotalSize[1] = Desc.Height;
 
-	const bool WholeRow = (CopyBlocksW == TotalBlocksW && SrcData.RowPitch == DestData.RowPitch);
-	const bool WholeSlice = (WholeRow && Desc.Type == Texture_3D && CopyBlocksH == TotalBlocksH && SrcData.SlicePitch == DestData.SlicePitch);
-	if (WholeSlice)
-	{
-		DWORD DataSize = SrcData.SlicePitch * Depth;
-		memcpy(pDest, pSrc, DataSize);
-	}
-	else if (WholeRow)
-	{
-		DWORD SlicePartSize = SrcData.RowPitch * CopyBlocksH;
-		for (int i = 0; i < Depth; ++i)
-		{
-			memcpy(pDest, pSrc, SlicePartSize);
-			pSrc += SrcData.SlicePitch;
-			pDest += DestData.SlicePitch;
-		}
-	}
-	else
-	{
-		DWORD RowPartSize = (BitsPerBlock * CopyBlocksW) >> 3;
-		for (int i = 0; i < Depth; ++i)
-		{
-			const char* pSrcRow = pSrc;
-			char* pDestRow = pDest;
-			for (DWORD j = 0; j < CopyBlocksH; ++j)
-			{
-				memcpy(pDest, pSrc, RowPartSize);
-				pSrcRow += SrcData.RowPitch;
-				pDestRow += DestData.RowPitch;
-			}
+	DWORD ImageCopyFlags = CopyImage_AdjustDest;
+	if (CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat) > 1)
+		ImageCopyFlags |= CopyImage_BlockCompressed;
+	if (Desc.Type == Texture_3D) ImageCopyFlags |= CopyImage_3DImage;
 
-			pSrc += SrcData.SlicePitch;
-			pDest += DestData.SlicePitch;
-		}
-	}
+	CopyImage(SrcData, DestData, ImageCopyFlags, Params);
 
 	bool Result;
 	if (Usage & D3DUSAGE_RENDERTARGET)
 	{
 		if (SUCCEEDED(pSrcSurf->UnlockRect()))
 		{
-			RECT r = { OffsetX, OffsetY, OffsetX + Width, OffsetY + Height };
+			RECT r = { OffsetX, OffsetY, OffsetX + SizeX, OffsetY + SizeY };
 			POINT p = { OffsetX, OffsetY };
 			Result = SUCCEEDED(pD3DDevice->UpdateSurface(pSrcSurf, &r, pDestSurf, &p));
 		}
