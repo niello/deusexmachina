@@ -41,6 +41,8 @@ protected:
 
 	CTextureDesc	Desc;
 	Data::CFlags	Access;
+	DWORD			RowPitch;
+	DWORD			SlicePitch;
 
 	//DWORD			LockCount;
 
@@ -54,6 +56,8 @@ public:
 	const CTextureDesc&	GetDesc() const { return Desc; }
 	Data::CFlags		GetAccess() const { return Access; }
 	DWORD				GetDimensionCount() const;
+	DWORD				GetRowPitch() const { return RowPitch; }
+	DWORD				GetSlicePitch() const { return SlicePitch; }
 };
 
 typedef Ptr<CTexture> PTexture;

@@ -6,7 +6,7 @@
 namespace Render
 {
 
-void __fastcall CopyImage(const CMappedTexture& Src, const CMappedTexture& Dest, DWORD Flags, const CCopyImageParams& Params)
+void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD Flags, const CCopyImageParams& Params)
 {
 	const int X = 0, Y = 1, Z = 2;
 
@@ -35,6 +35,9 @@ void __fastcall CopyImage(const CMappedTexture& Src, const CMappedTexture& Dest,
 	}
 
 	const char* pSrc = Src.pData;
+	if (Flags & CopyImage_AdjustSrc)
+		pSrc = pSrc + Params.Offset[Z] * Src.SlicePitch + OffsetBlocksY * Src.RowPitch + OffsetBytesX;
+
 	char* pDest = Dest.pData;
 	if (Flags & CopyImage_AdjustDest)
 		pDest = pDest + Params.Offset[Z] * Dest.SlicePitch + OffsetBlocksY * Dest.RowPitch + OffsetBytesX;

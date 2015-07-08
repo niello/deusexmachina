@@ -1,6 +1,7 @@
 #include "D3D9Texture.h"
 
 #include <Render/D3D9/D3D9DriverFactory.h>
+#include <Render/ImageUtils.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -67,8 +68,15 @@ bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 		else Access.Set(Access_GPU_Write);
 	}
 
+	RowPitch = CalcImageRowPitch(
+		CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DDesc.Format),
+		D3DDesc.Width,
+		CD3D9DriverFactory::D3DFormatBlockSize(D3DDesc.Format) > 1);
+	SlicePitch = 0;
+
 	pD3DTex = pTexture;
-	Usage = D3DDesc.Usage;
+	D3DUsage = D3DDesc.Usage;
+	D3DPool = D3DDesc.Pool;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -102,8 +110,15 @@ bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
 		else Access.Set(Access_GPU_Write);
 	}
 
+	RowPitch = CalcImageRowPitch(
+		CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DDesc.Format),
+		D3DDesc.Width,
+		CD3D9DriverFactory::D3DFormatBlockSize(D3DDesc.Format) > 1);
+	SlicePitch = 0;
+
 	pD3DTex = pTexture;
-	Usage = D3DDesc.Usage;
+	D3DUsage = D3DDesc.Usage;
+	D3DPool = D3DDesc.Pool;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -137,8 +152,13 @@ bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
 		else Access.Set(Access_GPU_Write);
 	}
 
+	bool IsBC = (CD3D9DriverFactory::D3DFormatBlockSize(D3DDesc.Format) > 1);
+	RowPitch = CalcImageRowPitch(CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DDesc.Format), D3DDesc.Width, IsBC);
+	SlicePitch = CalcImageSlicePitch(RowPitch, D3DDesc.Height, IsBC);
+
 	pD3DTex = pTexture;
-	Usage = D3DDesc.Usage;
+	D3DUsage = D3DDesc.Usage;
+	D3DPool = D3DDesc.Pool;
 	OK;
 }
 //---------------------------------------------------------------------

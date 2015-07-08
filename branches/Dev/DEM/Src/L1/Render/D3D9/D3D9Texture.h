@@ -10,6 +10,7 @@ struct IDirect3DBaseTexture9;
 struct IDirect3DTexture9;
 struct IDirect3DVolumeTexture9;
 struct IDirect3DCubeTexture9;
+typedef enum _D3DPOOL D3DPOOL;
 
 namespace Render
 {
@@ -21,7 +22,8 @@ class CD3D9Texture: public CTexture
 protected:
 
 	IDirect3DBaseTexture9*	pD3DTex; //???or union?
-	UINT					Usage;
+	UINT					D3DUsage;
+	D3DPOOL					D3DPool;
 
 	void InternalDestroy();
 
@@ -42,7 +44,8 @@ public:
 	IDirect3DTexture9*			GetD3DTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_2D); return (IDirect3DTexture9*)pD3DTex; }
 	IDirect3DCubeTexture9*		GetD3DCubeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_Cube); return (IDirect3DCubeTexture9*)pD3DTex; }
 	IDirect3DVolumeTexture9*	GetD3DVolumeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_3D); return (IDirect3DVolumeTexture9*)pD3DTex; }
-	UINT						GetD3DUsage() const { return Usage; }
+	UINT						GetD3DUsage() const { return D3DUsage; }
+	D3DPOOL						GetD3DPool() const { return D3DPool; }
 };
 
 typedef Ptr<CD3D9Texture> PD3D9Texture;

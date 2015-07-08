@@ -13,13 +13,14 @@ namespace Data
 
 namespace Render
 {
-struct CMappedTexture;
+struct CImageData;
 
 enum ECopyImageFlags
 {
-	CopyImage_AdjustDest		= 0x01,	// States that dest pointer is a pointer to image start and must be adjusted to offset
-	CopyImage_BlockCompressed	= 0x02,	// Data is in DXT or BC format and therefore is packed into 4x4 pixel blocks
-	CopyImage_3DImage			= 0x03	// Source and destination are 3D images (volumes)
+	CopyImage_AdjustSrc			= 0x01,	// States that src pointer must be adjusted to offset
+	CopyImage_AdjustDest		= 0x02,	// States that dest pointer must be adjusted to offset
+	CopyImage_BlockCompressed	= 0x04,	// Data is in DXT or BC format and therefore is packed into 4x4 pixel blocks
+	CopyImage_3DImage			= 0x08	// Source and destination are 3D images (volumes)
 };
 
 struct CCopyImageParams
@@ -31,7 +32,7 @@ struct CCopyImageParams
 };
 
 // Source and destination formats must match, no conversion occurs //!!!can use custom memcpy substitutes as arg to allow conversion algorithms!
-void __fastcall CopyImage(const CMappedTexture& Src, const CMappedTexture& Dest, DWORD Flags, const CCopyImageParams& Params);
+void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD Flags, const CCopyImageParams& Params);
 
 // pInRegion may be NULL, which means that region covers the whole image
 // Dimensions is a number of image dimensions from 1 to 3
@@ -40,6 +41,21 @@ bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, DWORD Dimensio
 									 DWORD ImageWidth, DWORD ImageHeight, DWORD ImageDepth,
 									 DWORD& OutOffsetX, DWORD& OutOffsetY, DWORD& OutOffsetZ,
 									 DWORD& OutSizeX, DWORD& OutSizeY, DWORD& OutSizeZ);
+
+inline DWORD __fastcall CalcImageRowPitch(DWORD BitsPerPixel, DWORD Width, bool IsBlockCompressed = false)
+{
+	if (IsBlockCompressed) return (((Width + 3) >> 2) * BitsPerPixel) << 1;
+	else return (Width * BitsPerPixel + 7) >> 3;
+}
+//---------------------------------------------------------------------
+
+inline DWORD __fastcall CalcImageSlicePitch(DWORD RowPitch, DWORD Height, bool IsBlockCompressed = false)
+{
+	if (IsBlockCompressed) return ((Height + 3) >> 2) * RowPitch;
+	else return Height * RowPitch;
+}
+//---------------------------------------------------------------------
+
 }
 
 #endif

@@ -1383,7 +1383,7 @@ bool CD3D9GPUDriver::MapResource(void** ppOutData, const CIndexBuffer& Resource,
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
+bool CD3D9GPUDriver::MapResource(CImageData& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
 {
 	n_assert_dbg(Resource.IsA<CD3D9Texture>());
 	IDirect3DBaseTexture9* pD3DBaseTex = ((const CD3D9Texture&)Resource).GetD3DBaseTexture();
@@ -1483,6 +1483,122 @@ bool CD3D9GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, D
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource, DWORD Size, DWORD Offset)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource, DWORD Size, DWORD Offset)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Resource, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+{
+	n_assert_dbg(Resource.IsA<CD3D9Texture>());
+
+	const CTextureDesc& Desc = Resource.GetDesc();
+	DWORD Dims = Resource.GetDimensionCount();
+	if (!Dest.pData || !Dims || MipLevel >= Desc.MipLevels || (Desc.Type == Texture_Cube && ArraySlice > 5)) FAIL;
+
+	UINT Usage = ((const CD3D9Texture&)Resource).GetD3DUsage();
+	const bool IsNonMappable = (((const CD3D9Texture&)Resource).GetD3DPool() == D3DPOOL_DEFAULT);
+	if (IsNonMappable && !(Usage & D3DUSAGE_RENDERTARGET)) FAIL;
+
+	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
+
+	// No format conversion for now, src & dest texel formats must match
+	DWORD BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
+	if (!BPP) FAIL;
+
+	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+
+	CCopyImageParams Params;
+	Params.BitsPerPixel = BPP;
+
+	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
+							  Params.Offset[0], Params.Offset[1], Params.Offset[2],
+							  Params.CopySize[0], Params.CopySize[1], Params.CopySize[2]))
+	{
+		OK;
+	}
+
+	CImageData SrcData;
+	IDirect3DSurface9* pOffscreenSurf = NULL;
+	if (IsNonMappable)
+	{
+		IDirect3DSurface9* pSrcSurf = NULL;
+		if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
+		{
+			IDirect3DTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DTexture();
+			if (FAILED(pTex->GetSurfaceLevel(MipLevel, &pSrcSurf)))  FAIL;
+		}
+		else if (Desc.Type == Texture_Cube)
+		{
+			IDirect3DCubeTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DCubeTexture();
+			if (FAILED(pTex->GetCubeMapSurface(GetD3DCubeMapFace((ECubeMapFace)ArraySlice), MipLevel, &pSrcSurf))) FAIL;
+		}
+		else Sys::Error("CD3D9GPUDriver::ReadFromResource() > Unsupported non-mappable texture type\n");
+
+		if (FAILED(pD3DDevice->CreateOffscreenPlainSurface(TotalSizeX, TotalSizeY, D3DFormat, D3DPOOL_SYSTEMMEM, &pOffscreenSurf, NULL)))
+		{
+			pSrcSurf->Release();
+			FAIL;
+		}
+
+		const bool Result = SUCCEEDED(pD3DDevice->GetRenderTargetData(pSrcSurf, pOffscreenSurf));
+			
+		pSrcSurf->Release();
+			
+		if (!Result)
+		{
+			pOffscreenSurf->Release();
+			FAIL;
+		}
+
+		D3DLOCKED_RECT D3DRect;
+		if (FAILED(pOffscreenSurf->LockRect(&D3DRect, NULL, 0)))
+		{
+			pOffscreenSurf->Release();
+			FAIL;
+		}
+		SrcData.pData = (char*)D3DRect.pBits;
+		SrcData.RowPitch = D3DRect.Pitch;
+	}
+	else
+	{
+		if (!MapResource(SrcData, Resource, Map_Read, ArraySlice, MipLevel)) FAIL;
+	}
+
+	Params.TotalSize[0] = TotalSizeX;
+	Params.TotalSize[1] = TotalSizeY;
+
+	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
+	if (CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat) > 1)
+		ImageCopyFlags |= CopyImage_BlockCompressed;
+	if (Desc.Type == Texture_3D) ImageCopyFlags |= CopyImage_3DImage;
+
+	CopyImage(SrcData, Dest, ImageCopyFlags, Params);
+
+	bool Result;
+	if (IsNonMappable)
+	{
+		Result = SUCCEEDED(pOffscreenSurf->UnlockRect());
+		pOffscreenSurf->Release();
+	}
+	else
+	{
+		Result = UnmapResource(Resource, ArraySlice, MipLevel);
+	}
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());
@@ -1534,13 +1650,13 @@ bool CD3D9GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, 
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
 	n_assert_dbg(Resource.IsA<CD3D9Texture>());
 
 	const CTextureDesc& Desc = Resource.GetDesc();
 	DWORD Dims = Resource.GetDimensionCount();
-	if (!Dims || MipLevel >= Desc.MipLevels || (Desc.Type == Texture_Cube && ArraySlice > 5)) FAIL;
+	if (!SrcData.pData || !Dims || MipLevel >= Desc.MipLevels || (Desc.Type == Texture_Cube && ArraySlice > 5)) FAIL;
 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 
@@ -1548,24 +1664,29 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 	DWORD BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
 	if (!BPP) FAIL;
 
+	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+
 	CCopyImageParams Params;
 	Params.BitsPerPixel = BPP;
 
 	DWORD OffsetX, OffsetY, SizeX, SizeY;
-	if (!CalcValidImageRegion(pRegion, Dims, Desc.Width, Desc.Height, Desc.Depth,
+	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
 							  OffsetX, OffsetY, Params.Offset[2], SizeX, SizeY, Params.CopySize[2]))
 	{
 		OK;
 	}
 
-	CMappedTexture DestData;
+	CImageData DestData;
 
+	IDirect3DTexture9* pSrcTex = NULL;
 	IDirect3DSurface9* pSrcSurf = NULL;
 	IDirect3DSurface9* pDestSurf = NULL;
 	UINT Usage = ((const CD3D9Texture&)Resource).GetD3DUsage();
-	if (Usage & D3DUSAGE_RENDERTARGET)
+	const bool IsNonMappable = (((const CD3D9Texture&)Resource).GetD3DPool() == D3DPOOL_DEFAULT);
+	if (IsNonMappable)
 	{
-		IDirect3DSurface9* pDestSurf = NULL;
 		if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
 		{
 			IDirect3DTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DTexture();
@@ -1576,18 +1697,36 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 			IDirect3DCubeTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DCubeTexture();
 			if (FAILED(pTex->GetCubeMapSurface(GetD3DCubeMapFace((ECubeMapFace)ArraySlice), MipLevel, &pDestSurf))) FAIL;
 		}
-		else Sys::Error("CD3D9GPUDriver::WriteToResource() > Unsupported RT texture type\n");
+		else Sys::Error("CD3D9GPUDriver::WriteToResource() > Unsupported non-mappable texture type\n");
 
-		if (FAILED(pD3DDevice->CreateOffscreenPlainSurface(Desc.Width, Desc.Height, D3DFormat, D3DPOOL_SYSTEMMEM, &pSrcSurf, NULL)))
+		if (Usage & D3DUSAGE_RENDERTARGET)
 		{
-			pDestSurf->Release();
-			FAIL;
+			if (FAILED(pD3DDevice->CreateOffscreenPlainSurface(TotalSizeX, TotalSizeY, D3DFormat, D3DPOOL_SYSTEMMEM, &pSrcSurf, NULL)))
+			{
+				pDestSurf->Release();
+				FAIL;
+			}
+		}
+		else
+		{
+			if (FAILED(pD3DDevice->CreateTexture(TotalSizeX, TotalSizeY, 1, 0, D3DFormat, D3DPOOL_SYSTEMMEM, &pSrcTex, NULL)))
+			{
+				pDestSurf->Release();
+				FAIL;
+			}
+			if (FAILED(pSrcTex->GetSurfaceLevel(0, &pSrcSurf)))
+			{
+				pSrcTex->Release();
+				pDestSurf->Release();
+				FAIL;
+			}
 		}
 
 		D3DLOCKED_RECT D3DRect;
 		if (FAILED(pSrcSurf->LockRect(&D3DRect, NULL, 0)))
 		{
 			pSrcSurf->Release();
+			if (pSrcTex) pSrcTex->Release();
 			pDestSurf->Release();
 			FAIL;
 		}
@@ -1600,7 +1739,7 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 		if (Usage & D3DUSAGE_DYNAMIC)
 		{
 			const bool UpdateWhole =
-				!pRegion || (SizeX == Desc.Width && (Dims < 2 || SizeY == Desc.Height && (Dims < 3 || Params.CopySize[2] == Desc.Depth)));
+				!pRegion || (SizeX == TotalSizeX && (Dims < 2 || SizeY == TotalSizeY && (Dims < 3 || Params.CopySize[2] == TotalSizeZ)));
 			Mode = UpdateWhole ? Map_WriteDiscard : Map_Write;
 		}
 		else Mode = Map_Write;
@@ -1612,8 +1751,8 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 	Params.Offset[1] = OffsetY;
 	Params.CopySize[0] = SizeX;
 	Params.CopySize[1] = SizeY;
-	Params.TotalSize[0] = Desc.Width;
-	Params.TotalSize[1] = Desc.Height;
+	Params.TotalSize[0] = TotalSizeX;
+	Params.TotalSize[1] = TotalSizeY;
 
 	DWORD ImageCopyFlags = CopyImage_AdjustDest;
 	if (CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat) > 1)
@@ -1623,7 +1762,7 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 	CopyImage(SrcData, DestData, ImageCopyFlags, Params);
 
 	bool Result;
-	if (Usage & D3DUSAGE_RENDERTARGET)
+	if (IsNonMappable)
 	{
 		if (SUCCEEDED(pSrcSurf->UnlockRect()))
 		{
@@ -1635,6 +1774,7 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& S
 
 		pDestSurf->Release();
 		pSrcSurf->Release();
+		if (pSrcTex) pSrcTex->Release();
 	}
 	else
 	{
