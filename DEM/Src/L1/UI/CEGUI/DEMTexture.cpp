@@ -16,7 +16,7 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 	switch (fmt)
 	{
 		case Texture::PF_RGBA:
-		case Texture::PF_RGB:		return Render::PixelFmt_R8G8B8A8;
+		case Texture::PF_RGB:		return Render::PixelFmt_R8G8B8A8; //???need inverse format to avoid blitFromSurface?
 		case Texture::PF_RGBA_DXT1:	return Render::PixelFmt_DXT1;
 		case Texture::PF_RGBA_DXT3:	return Render::PixelFmt_DXT3;
 		case Texture::PF_RGBA_DXT5:	return Render::PixelFmt_DXT5;
@@ -29,6 +29,7 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 // values into a second buffer as RGBA values.
 static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t source_pitch) //size_t dest_pitch - blitRGBAToD3DCOLORSurface
 {
+	//!!!__mm_shuffle_epi8
 	for (uint i = 0; i < sz.d_height; ++i)
 	{
 		for (uint j = 0; j < sz.d_width; ++j)
@@ -160,7 +161,7 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 	uint32* pBuf = n_new_array(uint32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
 	blitFromSurface(static_cast<const uint32*>(sourceData), pBuf, area.getSize(), SrcPitch);
 
-	Render::CMappedTexture SrcData;
+	Render::CImageData SrcData;
 	SrcData.pData = (char*)pBuf;
 	SrcData.RowPitch = SrcPitch;
 
@@ -172,9 +173,10 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 		static_cast<unsigned int>(area.getHeight()),
 		0);
 
-	Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region);
+	bool Result = Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region);
 
 	n_delete_array(pBuf);
+	n_assert(Result);
 }
 //--------------------------------------------------------------------
 
@@ -182,62 +184,18 @@ void CDEMTexture::blitToMemory(void* targetData)
 {
     if (DEMTexture.IsNullPtr()) return;
 
-	n_assert(false);
-// VRAM -> RAM
-/*//D3D9 lock 0 - read - unlock
-	if (d_surfDesc.Usage == D3DUSAGE_RENDERTARGET)
-	{
-		if (FAILED(d_device->CreateOffscreenPlainSurface(Width, Height, Format, D3DPOOL_SYSTEMMEM, &d_offscreen, 0)))
-		if (FAILED(d_texture->GetSurfaceLevel(0, &d_renderTarget)))
-		if (FAILED(d_device->GetRenderTargetData(d_renderTarget, d_offscreen)))
-		d_renderTarget->Release();
+	Render::CImageData Dest;
+	Dest.pData = (char*)targetData;
+	Dest.RowPitch = DEMTexture->GetRowPitch();
 
-		if (FAILED(d_offscreen->LockRect(&d_lockedRect, area, 0)))
+////!!!convert only if format is not supported!
+//	blitFromSurface(static_cast<uint32*>(mapped_tex.pData),
+//                    static_cast<uint32*>(targetData),
+//                    Sizef(static_cast<float>(tex_desc.Width),
+//                            static_cast<float>(tex_desc.Height)),
+//                    mapped_tex.RowPitch);
 
-		//PERFORM
-             
-		d_offscreen->UnlockRect();
-		d_offscreen->Release();
-	}
-	else
-	{
-		if (FAILED(d_texture->LockRect(0, &d_lockedRect, area, 0)))
-
-		// PERFORM
-             
-		d_texture->UnlockRect(0);
-	}
-
-//D3D11
-    D3D11_TEXTURE2D_DESC tex_desc;
-    d_texture->GetDesc(&tex_desc);
-
-    tex_desc.Usage = D3D11_USAGE_STAGING;
-    tex_desc.BindFlags = 0;
-    tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-    ID3D11Texture2D* offscreen;
-    if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &offscreen)))
-		Sys::Error("ID3D11Device::CreateTexture2D failed for 'offscreen'.");
-
-	d_device.d_context->CopyResource(offscreen, d_texture);
-
-    D3D11_MAPPED_SUBRESOURCE mapped_tex;
-    if (FAILED(d_device.d_context->Map(offscreen, 0, D3D11_MAP_READ, 0, &mapped_tex)))
-	{
-		offscreen->Release();
-		Sys::Error("ID3D11Texture2D::Map failed.");
-	}
-
-//!!!convert only if format is not supported!
-	blitFromSurface(static_cast<uint32*>(mapped_tex.pData),
-                    static_cast<uint32*>(targetData),
-                    Sizef(static_cast<float>(tex_desc.Width),
-                            static_cast<float>(tex_desc.Height)),
-                    mapped_tex.RowPitch);
-
-    d_device.d_context->Unmap(offscreen, 0);
-*/
+	n_assert(Owner.getGPUDriver()->ReadFromResource(Dest, *DEMTexture));
 }
 //--------------------------------------------------------------------
 

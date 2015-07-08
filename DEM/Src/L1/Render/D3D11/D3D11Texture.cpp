@@ -1,8 +1,8 @@
 #include "D3D11Texture.h"
 
 #include <Render/D3D11/D3D11DriverFactory.h>
+#include <Render/ImageUtils.h>
 #include <Core/Factory.h>
-
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
@@ -70,6 +70,9 @@ bool CD3D11Texture::Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* 
 	if (D3DDesc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) Access.Set(Access_CPU_Write);
 	if (D3DDesc.Usage == D3D11_USAGE_DEFAULT || D3DDesc.Usage == D3D11_USAGE_STAGING) Access.Set(Access_GPU_Write); //???staging to?
 
+	RowPitch = 0;
+	SlicePitch = 0;
+
 	pD3DTex = pTexture;
 	pSRView = pSRV;
 	D3DUsage = D3DDesc.Usage;
@@ -98,6 +101,12 @@ bool CD3D11Texture::Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* 
 	if (D3DDesc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) Access.Set(Access_CPU_Write);
 	if (D3DDesc.Usage == D3D11_USAGE_DEFAULT || D3DDesc.Usage == D3D11_USAGE_STAGING) Access.Set(Access_GPU_Write); //???staging to?
 
+	RowPitch = CalcImageRowPitch(
+		CD3D11DriverFactory::DXGIFormatBitsPerPixel(D3DDesc.Format),
+		D3DDesc.Width,
+		CD3D11DriverFactory::DXGIFormatBlockSize(D3DDesc.Format) > 1);
+	SlicePitch = 0;
+
 	pD3DTex = pTexture;
 	pSRView = pSRV;
 	D3DUsage = D3DDesc.Usage;
@@ -125,6 +134,10 @@ bool CD3D11Texture::Create(ID3D11Texture3D* pTexture, ID3D11ShaderResourceView* 
 	if (D3DDesc.CPUAccessFlags & D3D11_CPU_ACCESS_READ) Access.Set(Access_CPU_Read);
 	if (D3DDesc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) Access.Set(Access_CPU_Write);
 	if (D3DDesc.Usage == D3D11_USAGE_DEFAULT || D3DDesc.Usage == D3D11_USAGE_STAGING) Access.Set(Access_GPU_Write); //???staging to?
+
+	bool IsBC = (CD3D11DriverFactory::DXGIFormatBlockSize(D3DDesc.Format) > 1);
+	RowPitch = CalcImageRowPitch(CD3D11DriverFactory::DXGIFormatBitsPerPixel(D3DDesc.Format), D3DDesc.Width, IsBC);
+	SlicePitch = CalcImageSlicePitch(RowPitch, D3DDesc.Height, IsBC);
 
 	pD3DTex = pTexture;
 	pSRView = pSRV;

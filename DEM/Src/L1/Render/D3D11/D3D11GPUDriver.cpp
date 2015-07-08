@@ -1715,7 +1715,7 @@ bool CD3D11GPUDriver::MapResource(void** ppOutData, const CIndexBuffer& Resource
 //---------------------------------------------------------------------
 
 // Pointer will be 16-byte aligned
-bool CD3D11GPUDriver::MapResource(CMappedTexture& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
+bool CD3D11GPUDriver::MapResource(CImageData& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 	ID3D11Resource* pD3DTexRsrc = ((const CD3D11Texture&)Resource).GetD3DResource();
@@ -1812,6 +1812,92 @@ bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, 
 }
 //---------------------------------------------------------------------
 
+bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource, DWORD Size, DWORD Offset)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource, DWORD Size, DWORD Offset)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Resource, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+{
+	n_assert_dbg(Resource.IsA<CD3D11Texture>());
+
+	const CTextureDesc& Desc = Resource.GetDesc();
+	if (!Dest.pData || MipLevel >= Desc.MipLevels) FAIL;
+
+	DWORD RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
+	if (ArraySlice >= RealArraySize) FAIL;
+
+	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
+	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
+	D3D11_USAGE Usage = Tex11.GetD3DUsage();
+	DWORD Dims = Resource.GetDimensionCount();
+	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !Dims) FAIL;
+
+	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+
+	CCopyImageParams Params;
+
+	DWORD OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
+	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
+							  OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ))
+	{
+		OK;
+	}
+
+
+
+	//!!!
+	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
+
+/*
+get rsrc
+
+if rsrc non-mappable
+
+    D3D11_TEXTURE2D_DESC tex_desc;
+    d_texture->GetDesc(&tex_desc);
+
+    tex_desc.Usage = D3D11_USAGE_STAGING;
+    tex_desc.BindFlags = 0;
+    tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+    ID3D11Texture2D* offscreen;
+    if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &offscreen)))
+		Sys::Error("ID3D11Device::CreateTexture2D failed for 'offscreen'.");
+
+	d_device.d_context->CopyResource(offscreen, d_texture);
+
+also may copy subresource to size created specially for it, but many BC handling may be needed, not worth it
+set rsrc to copy
+
+map rsrc
+
+    D3D11_MAPPED_SUBRESOURCE mapped_tex;
+    if (FAILED(d_device.d_context->Map(offscreen, 0, D3D11_MAP_READ, 0, &mapped_tex)))
+	{
+		offscreen->Release();
+		Sys::Error("ID3D11Texture2D::Map failed.");
+	}
+
+	//BLIT
+
+    d_device.d_context->Unmap(offscreen, 0);
+
+if rsrc is copy, free it (may use ring buffer)
+*/
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset)
 {
 	if (!pBuf || Usage == D3D11_USAGE_IMMUTABLE || !pData || !BufferSize) FAIL;
@@ -1866,7 +1952,7 @@ bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData,
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 
@@ -1882,10 +1968,14 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& 
 	DWORD Dims = Resource.GetDimensionCount();
 	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !Dims) FAIL;
 
+	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+
 	CCopyImageParams Params;
 
 	DWORD OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
-	if (!CalcValidImageRegion(pRegion, Dims, Desc.Width, Desc.Height, Desc.Depth,
+	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
 							  OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ))
 	{
 		OK;
@@ -1918,7 +2008,7 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& 
 	D3D11_MAP MapType;
 	if (Usage == D3D11_USAGE_DYNAMIC)
 	{
-		const bool UpdateWhole = !pRegion || (SizeX == Desc.Width && (Dims < 2 || SizeY == Desc.Height && (Dims < 3 || SizeZ == Desc.Depth)));
+		const bool UpdateWhole = !pRegion || (SizeX == TotalSizeX && (Dims < 2 || SizeY == TotalSizeY && (Dims < 3 || SizeZ == TotalSizeZ)));
 		MapType = UpdateWhole ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
 	}
 	else MapType = D3D11_MAP_WRITE;
@@ -1926,7 +2016,7 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& 
 	D3D11_MAPPED_SUBRESOURCE D3DData;
 	if (FAILED(pD3DImmContext->Map(pTexRsrc, 0, MapType, 0, &D3DData))) FAIL;
 
-	CMappedTexture DestData;
+	CImageData DestData;
 	DestData.pData = (char*)D3DData.pData;
 	DestData.RowPitch = D3DData.RowPitch;
 	DestData.SlicePitch = D3DData.DepthPitch;
@@ -1938,8 +2028,8 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CMappedTexture& 
 	Params.CopySize[0] = SizeX;
 	Params.CopySize[1] = SizeY;
 	Params.CopySize[2] = SizeZ;
-	Params.TotalSize[0] = Desc.Width;
-	Params.TotalSize[1] = Desc.Height;
+	Params.TotalSize[0] = TotalSizeX;
+	Params.TotalSize[1] = TotalSizeY;
 
 	DWORD ImageCopyFlags = CopyImage_AdjustDest;
 	if (CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat) > 1)

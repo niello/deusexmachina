@@ -147,9 +147,9 @@ enum EResourceMapMode
 	Map_WriteNoOverwrite,	// Gain write access, must be Access_GPU_Read | Access_CPU_Write, see D3D11 docs for details
 };
 
-struct CMappedTexture
+struct CImageData
 {
-	char*	pData;			// Mapped data
+	char*	pData;			// Data sequentially placed in memory
 	DWORD	RowPitch;		// Distance in bytes between first bytes of two rows
 	DWORD	SlicePitch;		// Distance in bytes between first bytes of two depth slices
 };
