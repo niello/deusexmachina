@@ -1838,7 +1838,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
 	D3D11_USAGE Usage = Tex11.GetD3DUsage();
 	DWORD Dims = Resource.GetDimensionCount();
-	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !Dims) FAIL;
+	if (!pTexRsrc || !Dims) FAIL;
 
 	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
 	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
@@ -1846,6 +1846,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 
 	CCopyImageParams Params;
 
+	//???!!!write directly to Params?!
 	DWORD OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
 	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
 							  OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ))
@@ -1853,48 +1854,45 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 		OK;
 	}
 
+	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
 
-
-	//!!!
-	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
-
-/*
-get rsrc
-
-if rsrc non-mappable
-
-    D3D11_TEXTURE2D_DESC tex_desc;
-    d_texture->GetDesc(&tex_desc);
-
-    tex_desc.Usage = D3D11_USAGE_STAGING;
-    tex_desc.BindFlags = 0;
-    tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-    ID3D11Texture2D* offscreen;
-    if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &offscreen)))
-		Sys::Error("ID3D11Device::CreateTexture2D failed for 'offscreen'.");
-
-	d_device.d_context->CopyResource(offscreen, d_texture);
-
-also may copy subresource to size created specially for it, but many BC handling may be needed, not worth it
-set rsrc to copy
-
-map rsrc
-
-    D3D11_MAPPED_SUBRESOURCE mapped_tex;
-    if (FAILED(d_device.d_context->Map(offscreen, 0, D3D11_MAP_READ, 0, &mapped_tex)))
+	ID3D11Resource* pRsrcToMap = NULL;
+	if (IsNonMappable)
 	{
-		offscreen->Release();
-		Sys::Error("ID3D11Texture2D::Map failed.");
+		// create D3D11_USAGE_STAGING (may use pool/ringbuffer)
+		// try to create single-subresource (with mip dims!) and CopySubresourceRegion, copying a whole subresource
+		// if impossible, create an exact copy:
+/*
+	D3D11_TEXTURE2D_DESC tex_desc;
+	pTexRsrc->GetDesc(&tex_desc);
+
+	tex_desc.Usage = D3D11_USAGE_STAGING;
+	tex_desc.BindFlags = 0;
+	//tex_desc.MiscFlags = 0;
+	tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+	if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &pRsrcToMap))) FAIL;
+
+	d_device.d_context->CopyResource(pRsrcToMap, pTexRsrc);
+*/
+	}
+	else pRsrcToMap = pTexRsrc;
+
+	D3D11_MAPPED_SUBRESOURCE MappedTex;
+	if (FAILED(pD3DImmContext->Map(pRsrcToMap, 0, D3D11_MAP_READ, 0, &MappedTex)))
+	{
+		if (pRsrcToMap != pTexRsrc) pRsrcToMap->Release();
+		FAIL;
 	}
 
-	//BLIT
+	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
 
-    d_device.d_context->Unmap(offscreen, 0);
+	//!!!BLIT
 
-if rsrc is copy, free it (may use ring buffer)
-*/
-	FAIL;
+	pD3DImmContext->Unmap(pRsrcToMap, 0);
+	if (pRsrcToMap != pTexRsrc) pRsrcToMap->Release(); // or return it to ring buffer
+
+	OK;
 }
 //---------------------------------------------------------------------
 
