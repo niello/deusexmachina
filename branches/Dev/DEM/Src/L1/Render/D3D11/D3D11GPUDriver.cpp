@@ -1840,57 +1840,125 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 	DWORD Dims = Resource.GetDimensionCount();
 	if (!pTexRsrc || !Dims) FAIL;
 
+	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
+	DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
+	if (!BPP) FAIL;
+
 	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
 	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
 	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
+	Params.BitsPerPixel = BPP;
 
-	//???!!!write directly to Params?!
-	DWORD OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
 	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
-							  OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ))
+							  Params.Offset[0], Params.Offset[1], Params.Offset[2],
+							  Params.CopySize[0], Params.CopySize[1], Params.CopySize[2]))
 	{
 		OK;
 	}
 
 	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
 
+	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
+
 	ID3D11Resource* pRsrcToMap = NULL;
 	if (IsNonMappable)
 	{
-		// create D3D11_USAGE_STAGING (may use pool/ringbuffer)
-		// try to create single-subresource (with mip dims!) and CopySubresourceRegion, copying a whole subresource
-		// if impossible, create an exact copy:
-/*
-	D3D11_TEXTURE2D_DESC tex_desc;
-	pTexRsrc->GetDesc(&tex_desc);
+		//!!!instead of creation may use ring buffer of precreated resources!
+		const ETextureType TexType = Desc.Type;
+		switch (TexType)
+		{
+			case Texture_1D:
+			{
+				D3D11_TEXTURE1D_DESC D3DDesc;
+				Tex11.GetD3DTexture1D()->GetDesc(&D3DDesc);
+				D3DDesc.MipLevels = 1;
+				D3DDesc.ArraySize = 1;
+				D3DDesc.Width = TotalSizeX;
+				D3DDesc.Usage = D3D11_USAGE_STAGING;
+				D3DDesc.BindFlags = 0;
+				D3DDesc.MiscFlags = 0;
+				D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-	tex_desc.Usage = D3D11_USAGE_STAGING;
-	tex_desc.BindFlags = 0;
-	//tex_desc.MiscFlags = 0;
-	tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+				ID3D11Texture1D* pTex = NULL;
+				if (FAILED(pD3DDevice->CreateTexture1D(&D3DDesc, NULL, &pTex))) FAIL;
+				pRsrcToMap = pTex;
 
-	if (FAILED(d_device.d_device->CreateTexture2D(&tex_desc, 0, &pRsrcToMap))) FAIL;
+				break;
+			}
 
-	d_device.d_context->CopyResource(pRsrcToMap, pTexRsrc);
-*/
+			case Texture_2D:
+			case Texture_Cube:
+			{
+				D3D11_TEXTURE2D_DESC D3DDesc;
+				Tex11.GetD3DTexture2D()->GetDesc(&D3DDesc);
+				D3DDesc.MipLevels = 1;
+				D3DDesc.ArraySize = 1;
+				D3DDesc.Width = TotalSizeX;
+				D3DDesc.Height = TotalSizeY;
+				D3DDesc.Usage = D3D11_USAGE_STAGING;
+				D3DDesc.BindFlags = 0;
+				D3DDesc.MiscFlags = 0;
+				D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+				ID3D11Texture2D* pTex = NULL;
+				if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTex))) FAIL;
+				pRsrcToMap = pTex;
+
+				break;
+			}
+
+			case Texture_3D:
+			{
+				D3D11_TEXTURE3D_DESC D3DDesc;
+				Tex11.GetD3DTexture3D()->GetDesc(&D3DDesc);
+				D3DDesc.MipLevels = 1;
+				D3DDesc.Width = TotalSizeX;
+				D3DDesc.Height = TotalSizeY;
+				D3DDesc.Depth = TotalSizeZ;
+				D3DDesc.Usage = D3D11_USAGE_STAGING;
+				D3DDesc.BindFlags = 0;
+				D3DDesc.MiscFlags = 0;
+				D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+				ID3D11Texture3D* pTex = NULL;
+				if (FAILED(pD3DDevice->CreateTexture3D(&D3DDesc, NULL, &pTex))) FAIL;
+				pRsrcToMap = pTex;
+
+				ImageCopyFlags |= CopyImage_3DImage;
+
+				break;
+			}
+		};
+
+		// PERF: Async, immediate reading may cause stall. Allow processing multiple read requests per call or make ReadFromResource async?
+		pD3DImmContext->CopySubresourceRegion(pRsrcToMap, 0, 0, 0, 0, pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels), NULL);
 	}
 	else pRsrcToMap = pTexRsrc;
 
 	D3D11_MAPPED_SUBRESOURCE MappedTex;
 	if (FAILED(pD3DImmContext->Map(pRsrcToMap, 0, D3D11_MAP_READ, 0, &MappedTex)))
 	{
-		if (pRsrcToMap != pTexRsrc) pRsrcToMap->Release();
+		if (IsNonMappable) pRsrcToMap->Release(); // or return it to the ring buffer
 		FAIL;
 	}
 
-	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
+	CImageData SrcData;
+	SrcData.pData = (char*)MappedTex.pData;
+	SrcData.RowPitch = MappedTex.RowPitch;
+	SrcData.SlicePitch = MappedTex.DepthPitch;
 
-	//!!!BLIT
+	Params.TotalSize[0] = TotalSizeX;
+	Params.TotalSize[1] = TotalSizeY;
+
+	if (CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat) > 1)
+		ImageCopyFlags |= CopyImage_BlockCompressed;
+
+	CopyImage(SrcData, Dest, ImageCopyFlags, Params);
 
 	pD3DImmContext->Unmap(pRsrcToMap, 0);
-	if (pRsrcToMap != pTexRsrc) pRsrcToMap->Release(); // or return it to ring buffer
+	if (IsNonMappable) pRsrcToMap->Release(); // or return it to the ring buffer
 
 	OK;
 }
