@@ -1485,13 +1485,43 @@ bool CD3D9GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, D
 
 bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource, DWORD Size, DWORD Offset)
 {
-	FAIL;
+	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());
+	const CD3D9VertexBuffer& VB9 = (const CD3D9VertexBuffer&)Resource;
+	IDirect3DVertexBuffer9* pBuf = VB9.GetD3DBuffer();
+	if (!pBuf || !pDest) FAIL;
+
+	DWORD BufferSize = VB9.GetSizeInBytes();
+	DWORD RequestedSize = Size ? Size : BufferSize;
+	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	if (!SizeToCopy) OK;
+
+	char* pSrc = NULL;
+	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pSrc, D3DLOCK_READONLY))) FAIL;
+	memcpy(pDest, pSrc, SizeToCopy);
+	if (FAILED(pBuf->Unlock())) FAIL;
+
+	OK;
 }
 //---------------------------------------------------------------------
 
 bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource, DWORD Size, DWORD Offset)
 {
-	FAIL;
+	n_assert_dbg(Resource.IsA<CD3D9IndexBuffer>());
+	const CD3D9IndexBuffer& IB9 = (const CD3D9IndexBuffer&)Resource;
+	IDirect3DIndexBuffer9* pBuf = IB9.GetD3DBuffer();
+	if (!pBuf || !pDest) FAIL;
+
+	DWORD BufferSize = IB9.GetSizeInBytes();
+	DWORD RequestedSize = Size ? Size : BufferSize;
+	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	if (!SizeToCopy) OK;
+
+	char* pSrc = NULL;
+	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pSrc, D3DLOCK_READONLY))) FAIL;
+	memcpy(pDest, pSrc, SizeToCopy);
+	if (FAILED(pBuf->Unlock())) FAIL;
+
+	OK;
 }
 //---------------------------------------------------------------------
 
