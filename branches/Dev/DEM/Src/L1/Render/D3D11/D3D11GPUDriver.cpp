@@ -1812,15 +1812,63 @@ bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, 
 }
 //---------------------------------------------------------------------
 
+bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset)
+{
+	if (!pDest || !pBuf || !BufferSize) FAIL;
+
+	DWORD RequestedSize = Size ? Size : BufferSize;
+	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	if (!SizeToCopy) OK;
+
+	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
+
+	ID3D11Buffer* pBufToMap = NULL;
+	if (IsNonMappable)
+	{
+		// Instead of creation may use ring buffer of precreated resources!
+		D3D11_BUFFER_DESC D3DDesc;
+		pBuf->GetDesc(&D3DDesc);
+		D3DDesc.Usage = D3D11_USAGE_STAGING;
+		D3DDesc.BindFlags = 0;
+		D3DDesc.MiscFlags = 0;
+		D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+		if (FAILED(pD3DDevice->CreateBuffer(&D3DDesc, NULL, &pBufToMap))) FAIL;
+
+		// PERF: Async, immediate reading may cause stall. Allow processing multiple read requests per call or make ReadFromResource async?
+		pD3DImmContext->CopyResource(pBufToMap, pBuf);
+	}
+	else pBufToMap = pBuf;
+
+	D3D11_MAPPED_SUBRESOURCE D3DData;
+	if (FAILED(pD3DImmContext->Map(pBufToMap, 0, D3D11_MAP_READ, 0, &D3DData)))
+	{
+		if (IsNonMappable) pBufToMap->Release(); // Or return it to the ring buffer
+		FAIL;
+	}
+
+	memcpy(pDest, (char*)D3DData.pData + Offset, SizeToCopy);
+
+	pD3DImmContext->Unmap(pBufToMap, 0);
+	if (IsNonMappable) pBufToMap->Release(); // Or return it to the ring buffer
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource, DWORD Size, DWORD Offset)
 {
-	FAIL;
+	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
+	const CD3D11VertexBuffer& VB11 = (const CD3D11VertexBuffer&)Resource;
+	return ReadFromD3DBuffer(pDest, VB11.GetD3DBuffer(), VB11.GetD3DUsage(), VB11.GetSizeInBytes(), Size, Offset);
 }
 //---------------------------------------------------------------------
 
 bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource, DWORD Size, DWORD Offset)
 {
-	FAIL;
+	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
+	const CD3D11IndexBuffer& IB11 = (const CD3D11IndexBuffer&)Resource;
+	return ReadFromD3DBuffer(pDest, IB11.GetD3DBuffer(), IB11.GetD3DUsage(), IB11.GetSizeInBytes(), Size, Offset);
 }
 //---------------------------------------------------------------------
 
@@ -1865,7 +1913,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 	ID3D11Resource* pRsrcToMap = NULL;
 	if (IsNonMappable)
 	{
-		//!!!instead of creation may use ring buffer of precreated resources!
+		// Instead of creation may use ring buffer of precreated resources!
 		const ETextureType TexType = Desc.Type;
 		switch (TexType)
 		{
@@ -1940,7 +1988,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 	D3D11_MAPPED_SUBRESOURCE MappedTex;
 	if (FAILED(pD3DImmContext->Map(pRsrcToMap, 0, D3D11_MAP_READ, 0, &MappedTex)))
 	{
-		if (IsNonMappable) pRsrcToMap->Release(); // or return it to the ring buffer
+		if (IsNonMappable) pRsrcToMap->Release(); // Or return it to the ring buffer
 		FAIL;
 	}
 
@@ -1958,7 +2006,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 	CopyImage(SrcData, Dest, ImageCopyFlags, Params);
 
 	pD3DImmContext->Unmap(pRsrcToMap, 0);
-	if (IsNonMappable) pRsrcToMap->Release(); // or return it to the ring buffer
+	if (IsNonMappable) pRsrcToMap->Release(); // Or return it to the ring buffer
 
 	OK;
 }
