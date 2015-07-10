@@ -65,13 +65,13 @@
 //	if (Header.magic != 'NVX2') FAIL;
 //	Header.numIndices *= 3;
 //
-//	CArray<CMeshGroup> MeshGroups(Header.numGroups, 0);
+//	CArray<CPrimitiveGroup> MeshGroups(Header.numGroups, 0);
 //	for (uint i = 0; i < Header.numGroups; ++i)
 //	{
 //		CNVX2Group Group;
 //		Reader.Read(Group);
 //
-//		CMeshGroup& MeshGroup = MeshGroups.At(i);
+//		CPrimitiveGroup& MeshGroup = MeshGroups.At(i);
 //		MeshGroup.FirstVertex = Group.firstVertex;
 //		MeshGroup.VertexCount = Group.numVertices;
 //		MeshGroup.FirstIndex = Group.firstTriangle * 3;
@@ -113,7 +113,7 @@
 //
 //	for (int i = 0; i < MeshGroups.GetCount(); ++i)
 //	{
-//		CMeshGroup& MeshGroup = MeshGroups[i];
+//		CPrimitiveGroup& MeshGroup = MeshGroups[i];
 //		MeshGroup.AABB.BeginExtend();
 //		ushort* pIndex = pIBData + MeshGroup.FirstIndex;
 //		for (uint j = 0; j < MeshGroup.IndexCount; ++j)

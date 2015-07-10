@@ -99,12 +99,12 @@ __ImplementSingleton(CDebugDraw);
 //		FAIL;
 //	}
 //
-//	CArray<CMeshGroup> Groups(ShapeCount, 0);
+//	CArray<CPrimitiveGroup> Groups(ShapeCount, 0);
 //
 //	DWORD VertexOffset = 0, IndexOffset = 0;
 //	vector3* pVBData = (vector3*)VB->Map(Map_Setup);
 //	ushort* pIBData = (ushort*)IB->Map(Map_Setup);
-//	CMeshGroup* pGroup = Groups.Reserve(ShapeCount);
+//	CPrimitiveGroup* pGroup = Groups.Reserve(ShapeCount);
 //	for (int i = 0; i < ShapeCount; ++i)
 //	{
 //		DWORD VertexCount = pDXMesh[i]->GetNumVertices();

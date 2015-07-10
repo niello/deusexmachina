@@ -854,6 +854,42 @@ void CD3D9GPUDriver::EndFrame()
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
+{
+	if (CurrVL.GetUnsafe() == pVLayout) OK;
+	IDirect3DVertexDeclaration9* pDecl = pVLayout ? ((CD3D9VertexLayout*)pVLayout)->GetD3DVertexDeclaration() : NULL;
+	if (FAILED(pD3DDevice->SetVertexDeclaration(pDecl))) FAIL;
+	CurrVL = (CD3D9VertexLayout*)pVLayout;
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
+{
+	if (Index >= CurrVB.GetCount() || (pVB && OffsetVertex >= pVB->GetVertexCount())) FAIL;
+
+	if (CurrVB[Index].GetUnsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) OK;
+
+	IDirect3DVertexBuffer9* pD3DVB = pVB ? ((CD3D9VertexBuffer*)pVB)->GetD3DBuffer() : NULL;
+	DWORD VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
+	if (FAILED(pD3DDevice->SetStreamSource(Index, pD3DVB, VertexSize * OffsetVertex, VertexSize))) FAIL;
+	CurrVB[Index] = (CD3D9VertexBuffer*)pVB;
+	CurrVBOffset[Index] = OffsetVertex;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
+{
+	if (CurrIB.GetUnsafe() == pIB) OK;
+	IDirect3DIndexBuffer9* pD3DIB = pIB ? ((CD3D9IndexBuffer*)pIB)->GetD3DBuffer() : NULL;
+	if (FAILED(pD3DDevice->SetIndices(pD3DIB))) FAIL;
+	CurrIB = (CD3D9IndexBuffer*)pIB;
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 {
 	if (Index >= CurrRT.GetCount()) FAIL;
@@ -953,6 +989,47 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 	//for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
 	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
 	//		pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+{
+	n_assert_dbg(pD3DDevice && IsInsideFrame);
+
+	D3DPRIMITIVETYPE D3DPrimType;
+	DWORD PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
+	switch (PrimGroup.Topology)
+	{
+		case Prim_PointList:	D3DPrimType = D3DPT_POINTLIST; break;
+		case Prim_LineList:		D3DPrimType = D3DPT_LINELIST; PrimCount >>= 1; break;
+		case Prim_LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
+		case Prim_TriList:		D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
+		case Prim_TriStrip:		D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
+		default:				Sys::Error("CRenderServer::Draw() -> Invalid primitive topology!"); FAIL;
+	}
+
+	HRESULT hr;
+	if (PrimGroup.IndexCount > 0)
+	{
+		n_assert_dbg(CurrIB.IsValidPtr());
+		//n_assert_dbg(!InstanceCount || CurrVB[0].IsValid());
+		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
+												0,
+												PrimGroup.FirstVertex,
+												PrimGroup.VertexCount,
+												PrimGroup.FirstIndex,
+												PrimCount);
+	}
+	else
+	{
+		//n_assert2_dbg(!InstanceCount, "Non-indexed instanced rendereng is not supported by design!");
+		hr = pD3DDevice->DrawPrimitive(D3DPrimType, PrimGroup.FirstVertex, PrimCount);
+	}
+
+	//PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
+	//++DIPsRendered;
+
+	return SUCCEEDED(hr);
 }
 //---------------------------------------------------------------------
 

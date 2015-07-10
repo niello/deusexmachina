@@ -7,7 +7,6 @@
 #include <Render/VertexBuffer.h>
 #include <Render/IndexBuffer.h>
 #include <Events/EventsFwd.h>
-#include <Math/AABB.h>
 
 // Mesh represents complete geometry information of a 3D model. It stores vertex buffer,
 // optional index buffer and a list of primitive groups (also known as mesh subsets).
@@ -17,32 +16,19 @@
 // multiple LODs, and some SubMeshes can have no group in a certain LOD, there is an additional
 // mapping layer, pGroupLODMapping.
 
-//!!!fix Setup()[Load()]/Unload() vs Create()/Destroy() for resources!
-
 namespace Render
 {
 
-struct CMeshGroup
-{
-	DWORD				FirstVertex;
-	DWORD				VertexCount;
-	DWORD				FirstIndex;
-	DWORD				IndexCount;
-	EPrimitiveTopology	Topology;
-	CAABB				AABB;
-};
-
 // Fill this in a resource loader and pass to the CMesh::Create()
-//!!!if VB & IB are shared and mesh starts not at buffers start, need to patch mesh group offsets in loader.
 struct CMeshInitData
 {
-	CVertexBuffer*	pVertexBuffer;
-	CIndexBuffer*	pIndexBuffer;
-	CMeshGroup*		pMeshGroupData;	// Mesh groups and optional mapping data
-	DWORD			SubMeshCount;
-	DWORD			LODCount;
-	DWORD			RealGroupCount;	// If UseMapping is false, must be SubMeshCount * LODCount (0 also defaults to this value)
-	bool			UseMapping;
+	CVertexBuffer*		pVertexBuffer;
+	CIndexBuffer*		pIndexBuffer;
+	CPrimitiveGroup*	pMeshGroupData;	// Mesh groups and optional mapping data
+	DWORD				SubMeshCount;
+	DWORD				LODCount;
+	DWORD				RealGroupCount;	// If UseMapping is false, must be SubMeshCount * LODCount (0 also defaults to this value)
+	bool				UseMapping;
 };
 
 class CMesh: public Resources::CResourceObject
@@ -51,39 +37,43 @@ class CMesh: public Resources::CResourceObject
 
 protected:
 
-	PVertexBuffer	VB;
-	PIndexBuffer	IB;
+	//???multiple VBs? if shared, store offset per VB! store vertex layout(s) for different use cases,
+	//or make it completely external. Or use offset in SetVertexBuffer? But it may cause many
+	//SetVertexBuffer calls, which is bad. If IB shared, store offset in VB (or patch in mesh groups,
+	//but it is worse as it kills reusability when buffer offsets change)!
+	PVertexBuffer		VB;
+	PIndexBuffer		IB;
 
-	DWORD			SubMeshCount;
-	DWORD			LODCount;
-	DWORD			GroupCount;
+	DWORD				SubMeshCount;
+	DWORD				LODCount;
+	DWORD				GroupCount;
 
-	// To maintain cache coherency, these two are essentially one piece of memory, where
-	// pGroups is at Offset = 0 and pGroupLODMapping is at Offset = sizeof(CMeshGroup) * GroupCount
+	// To maintain cache coherency and reduce number of allocations, these two are essentially one piece of memory,
+	// where pGroups is at Offset = 0 and pGroupLODMapping is at Offset = sizeof(CPrimitiveGroup) * GroupCount
 	// If direct mapping is used, GroupCount = SubMeshCount * LODCount and pGroupLODMapping = NULL
-	CMeshGroup*		pGroups;			// Real submesh data
-	CMeshGroup**	pGroupLODMapping;	// CArray2D<CMeshGroup*>[LOD][SubMeshIndex]
+	CPrimitiveGroup*	pGroups;			// Real submesh data
+	CPrimitiveGroup**	pGroupLODMapping;	// CArray2D<CPrimitiveGroup*>[LOD][SubMeshIndex]
 
 public:
 
 	CMesh(): pGroups(NULL), pGroupLODMapping(NULL) {}
-	virtual ~CMesh() { Unload(); }
+	virtual ~CMesh() { Destroy(); }
 
-	bool				Create(const CMeshInitData& InitData);
-	void				Unload();
+	bool					Create(const CMeshInitData& InitData);
+	void					Destroy();
 
-	virtual bool		IsResourceValid() const { FAIL; }
+	virtual bool			IsResourceValid() const { FAIL; }
 
-	PVertexBuffer		GetVertexBuffer() const { return VB; }
-	PIndexBuffer		GetIndexBuffer() const { return IB; }
-	DWORD				GetSubMeshCount() const { return SubMeshCount; }
-	const CMeshGroup*	GetGroup(DWORD SubMeshIdx, DWORD LOD = 0) const;
+	PVertexBuffer			GetVertexBuffer() const { return VB; }
+	PIndexBuffer			GetIndexBuffer() const { return IB; }
+	DWORD					GetSubMeshCount() const { return SubMeshCount; }
+	const CPrimitiveGroup*	GetGroup(DWORD SubMeshIdx, DWORD LOD = 0) const;
 };
 
 typedef Ptr<CMesh> PMesh;
 
 // Can return NULL, which means that nothing sould be rendered
-inline const CMeshGroup* CMesh::GetGroup(DWORD SubMeshIdx, DWORD LOD) const
+inline const CPrimitiveGroup* CMesh::GetGroup(DWORD SubMeshIdx, DWORD LOD) const
 {
 	n_assert(LOD < LODCount && SubMeshIdx < SubMeshCount);
 	if (pGroupLODMapping) return pGroupLODMapping[LOD * SubMeshCount + SubMeshIdx];

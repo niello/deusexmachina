@@ -26,23 +26,23 @@ bool CMesh::Create(const CMeshInitData& InitData)
 	if (InitData.UseMapping)
 	{
 		GroupCount = InitData.RealGroupCount;
-		TotalSize = sizeof(CMeshGroup) * GroupCount + sizeof(CMeshGroup*) * SubMeshCount * LODCount;
+		TotalSize = sizeof(CPrimitiveGroup) * GroupCount + sizeof(CPrimitiveGroup*) * SubMeshCount * LODCount;
 	}
 	else
 	{
 		n_assert(InitData.RealGroupCount == 0 || InitData.RealGroupCount == SubMeshCount * LODCount);
 		GroupCount = SubMeshCount * LODCount;
-		TotalSize = sizeof(CMeshGroup) * GroupCount;
+		TotalSize = sizeof(CPrimitiveGroup) * GroupCount;
 	}
-	pGroups = (CMeshGroup*)n_malloc(TotalSize);
+	pGroups = (CPrimitiveGroup*)n_malloc(TotalSize);
 	memcpy(pGroups, InitData.pMeshGroupData, TotalSize);
-	if (InitData.UseMapping) pGroupLODMapping = (CMeshGroup**)(pGroups + GroupCount);
+	if (InitData.UseMapping) pGroupLODMapping = (CPrimitiveGroup**)(pGroups + GroupCount);
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CMesh::Unload()
+void CMesh::Destroy()
 {
 	n_free(pGroups);
 	pGroups = NULL;

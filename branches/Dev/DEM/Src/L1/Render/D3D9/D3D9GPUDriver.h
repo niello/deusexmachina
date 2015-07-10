@@ -18,6 +18,8 @@
 namespace Render
 {
 typedef Ptr<class CD3D9VertexLayout> PD3D9VertexLayout;
+typedef Ptr<class CD3D9VertexBuffer> PD3D9VertexBuffer;
+typedef Ptr<class CD3D9IndexBuffer> PD3D9IndexBuffer;
 typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 
@@ -27,6 +29,10 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
+	PD3D9VertexLayout					CurrVL;
+	CFixedArray<PD3D9VertexBuffer>		CurrVB;
+	CFixedArray<DWORD>					CurrVBOffset;
+	PD3D9IndexBuffer					CurrIB;
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
 
@@ -91,10 +97,15 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
+	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
+	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
+	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
+	//virtual bool				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
