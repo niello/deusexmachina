@@ -30,6 +30,7 @@ public:
 	void	InvertAll() { Flags = ~Flags; }
 	bool	Is(DWORD Mask) const { return (Flags & Mask) == Mask; }
 	bool	IsNot(DWORD Mask) const { return (Flags & Mask) == 0; }
+	bool	IsAny() const { return !!Flags; }
 	bool	IsAny(DWORD Mask) const { return (Flags & Mask) != 0; }
 	bool	IsAll() const { return Flags == ((DWORD)-1); }
 	bool	IsNotAll() const { return Flags == 0; }

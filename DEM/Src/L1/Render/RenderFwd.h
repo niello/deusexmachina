@@ -57,7 +57,8 @@ enum EPrimitiveTopology
 	Prim_LineList,
 	Prim_LineStrip,
 	Prim_TriList,
-	Prim_TriStrip
+	Prim_TriStrip,
+	Prim_Invalid
 };
 
 // Value is a size of one index in bytes

@@ -23,6 +23,8 @@ typedef struct tagRECT RECT;
 namespace Render
 {
 typedef Ptr<class CD3D11VertexLayout> PD3D11VertexLayout;
+typedef Ptr<class CD3D11VertexBuffer> PD3D11VertexBuffer;
+typedef Ptr<class CD3D11IndexBuffer> PD3D11IndexBuffer;
 typedef Ptr<class CD3D11RenderTarget> PD3D11RenderTarget;
 typedef Ptr<class CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;
 typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
@@ -35,25 +37,33 @@ public:
 
 	enum
 	{
-		GPU_Dirty_RT = 0x0001,	// Render target(s)
-		GPU_Dirty_DS = 0x0002,	// Depth-stencil buffer
-		GPU_Dirty_VP = 0x0004,	// Viewport(s)
-		GPU_Dirty_SR = 0x0008,	// Scissor rect(s)
+		GPU_Dirty_VL = 0x0001,		// Vertex layout
+		GPU_Dirty_VB = 0x0002,		// Vertex buffer(s)
+		GPU_Dirty_IB = 0x0004,		// Index buffer
+		GPU_Dirty_RT = 0x0010,		// Render target(s)
+		GPU_Dirty_DS = 0x0020,		// Depth-stencil buffer
+		GPU_Dirty_VP = 0x0040,		// Viewport(s)
+		GPU_Dirty_SR = 0x0080,		// Scissor rect(s)
 
-		GPU_Dirty_All = -1 // All bits set, for convenience in ApplyChanges() call
+		GPU_Dirty_All = 0xffffffff	// All bits set, for convenience in ApplyChanges() call
 	};
 
 protected:
 
 	Data::CFlags						CurrDirtyFlags;
+	PD3D11VertexLayout					CurrVL;
+	ID3D11InputLayout*					pCurrIL;
+	CFixedArray<PD3D11VertexBuffer>		CurrVB;
+	CFixedArray<DWORD>					CurrVBOffset;
+	PD3D11IndexBuffer					CurrIB;
+	EPrimitiveTopology					CurrPT;
 	CFixedArray<PD3D11RenderTarget>		CurrRT;
 	PD3D11DepthStencilBuffer			CurrDS;
-	DWORD								MaxViewportCount;
 	D3D11_VIEWPORT*						CurrVP;
-	RECT*								CurrSR;			//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
-	Data::CFlags						VPSRSetFlags;	// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
+	RECT*								CurrSR;				//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
+	DWORD								MaxViewportCount;
+	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
-	ID3D11InputLayout*					pCurrIL;
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
@@ -166,9 +176,10 @@ inline CD3D11GPUDriver::CD3D11GPUDriver():
 	SwapChains(1, 1),
 	pD3DDevice(NULL),
 	pD3DImmContext(NULL),
+	pCurrIL(NULL),
+	CurrPT(Prim_Invalid),
 	CurrVP(NULL),
 	CurrSR(NULL),
-	pCurrIL(NULL),
 	MaxViewportCount(0) /*, IsInsideFrame(false)*/
 {
 }
