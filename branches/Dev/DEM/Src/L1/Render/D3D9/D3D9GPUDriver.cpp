@@ -1005,7 +1005,7 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 		case Prim_LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
 		case Prim_TriList:		D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
 		case Prim_TriStrip:		D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
-		default:				Sys::Error("CRenderServer::Draw() -> Invalid primitive topology!"); FAIL;
+		default:				Sys::Error("CD3D9GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
 	}
 
 	HRESULT hr;

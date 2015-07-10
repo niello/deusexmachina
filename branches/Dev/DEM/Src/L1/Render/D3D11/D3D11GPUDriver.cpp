@@ -898,22 +898,30 @@ void CD3D11GPUDriver::EndFrame()
 
 bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
-	FAIL;
+	if (CurrVL.GetUnsafe() == pVLayout) OK;
+	CurrVL = (CD3D11VertexLayout*)pVLayout;
+	CurrDirtyFlags.Set(GPU_Dirty_VL);
+	OK;
 }
 //---------------------------------------------------------------------
 
 bool CD3D11GPUDriver::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
-	FAIL;
+	if (Index >= CurrVB.GetCount()) FAIL;
+	if (CurrVB[Index].GetUnsafe() == pVB) OK;
+	CurrVB[Index] = (CD3D11VertexBuffer*)pVB;
+	CurrVBOffset[Index] = pVB ? OffsetVertex * pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
+	CurrDirtyFlags.Set(GPU_Dirty_VB);
+	OK;
 }
 //---------------------------------------------------------------------
 
 bool CD3D11GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
-	FAIL;
+	if (CurrIB.GetUnsafe() == pIB) OK;
+	CurrIB = (CD3D11IndexBuffer*)pIB;
+	CurrDirtyFlags.Set(GPU_Dirty_IB);
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -931,7 +939,7 @@ bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 	CurrRT[Index] = (CD3D11RenderTarget*)pRT;
 	CurrDirtyFlags.Set(GPU_Dirty_RT);
 
-	FAIL;
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -981,19 +989,130 @@ void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorR
 
 bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
-//!!!set once, cache curr value! cache DEM enum value not to convert if the same, will be more optimal!
-//IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	FAIL;
+	n_assert_dbg(pD3DDevice); // && IsInsideFrame);
+
+	DWORD PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
+	if (CurrPT != PrimGroup.Topology)
+	{
+		D3D11_PRIMITIVE_TOPOLOGY D3DPrimType;
+		switch (PrimGroup.Topology)
+		{
+			case Prim_PointList:	D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break;
+			case Prim_LineList:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; PrimCount >>= 1; break;
+			case Prim_LineStrip:	D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; --PrimCount; break;
+			case Prim_TriList:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; PrimCount /= 3; break;
+			case Prim_TriStrip:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; PrimCount -= 2; break;
+			default:				Sys::Error("CD3D11GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+		}
+
+		pD3DImmContext->IASetPrimitiveTopology(D3DPrimType);
+		CurrPT = PrimGroup.Topology;
+	}
+	else
+	{
+		switch (CurrPT)
+		{
+			case Prim_PointList:	break;
+			case Prim_LineList:		PrimCount >>= 1; break;
+			case Prim_LineStrip:	--PrimCount; break;
+			case Prim_TriList:		PrimCount /= 3; break;
+			case Prim_TriStrip:		PrimCount -= 2; break;
+			default:				Sys::Error("CD3D11GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+		}
+	}
+
+	if (CurrDirtyFlags.IsAny() && ApplyChanges(CurrDirtyFlags.GetMask()) != 0) FAIL;
+	n_assert_dbg(CurrDirtyFlags.IsNotAll());
+
+	if (PrimGroup.IndexCount > 0)
+	{
+		//!!!if InstanceCount < 2!
+//StartIndexLocation [in]
+//Type: UINT
+//The location of the first index read by the GPU from the index buffer.
+//BaseVertexLocation [in]
+//Type: INT
+//A value added to each index before reading a vertex from the vertex buffer.
+		pD3DImmContext->DrawIndexed(PrimGroup.IndexCount, PrimGroup.FirstIndex, PrimGroup.FirstVertex);
+	}
+	else
+	{
+		//!!!if InstanceCount < 2!
+//StartVertexLocation [in]
+//Type: UINT
+//Index of the first vertex, which is usually an offset in a vertex buffer.
+		pD3DImmContext->Draw(PrimGroup.VertexCount, PrimGroup.FirstVertex);
+	}
+
+	//PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
+	//++DIPsRendered;
+
+	OK;
 }
 //---------------------------------------------------------------------
 
 DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 {
-	if (CurrDirtyFlags.IsNotAll()) return 0;
-
-	Data::CFlags Update(ChangesToUpdate);
+	const Data::CFlags Update(ChangesToUpdate);
 	DWORD Errors = 0;
+
+	//!!!process VL and SH (shader)!
+	if (Update.Is(GPU_Dirty_VL) && CurrDirtyFlags.Is(GPU_Dirty_VL))
+	{
+		// Determine pCurrIL value based on shader and vertex layout
+
+		pD3DImmContext->IASetInputLayout(pCurrIL);
+
+		CurrDirtyFlags.Clear(GPU_Dirty_VL);
+	}
+
+	if (Update.Is(GPU_Dirty_VB) && CurrDirtyFlags.Is(GPU_Dirty_VB))
+	{
+		const DWORD MaxVBCount = CurrVB.GetCount();
+		const DWORD PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
+		const DWORD UINTsSize = sizeof(UINT) * MaxVBCount;
+		char* pMem = (char*)_malloca(PtrsSize + UINTsSize + UINTsSize);
+		n_assert(pMem);
+
+		ID3D11Buffer** pVBs = (ID3D11Buffer**)pMem;
+		UINT* pStrides = (UINT*)(pMem + PtrsSize);
+		UINT* pOffsets = (UINT*)(pMem + PtrsSize + UINTsSize);
+
+		//???PERF: skip all NULL buffers prior to the first non-NULL and all NULL after the last non-NULL and reduce count?
+		for (DWORD i = 0; i < MaxVBCount; ++i)
+		{
+			CD3D11VertexBuffer* pVB = CurrVB[i].GetUnsafe();
+			if (pVB)
+			{
+				pVBs[i] = pVB->GetD3DBuffer();
+				pStrides[i] = pVB->GetVertexLayout()->GetVertexSizeInBytes();
+			}
+			else
+			{
+				pVBs[i] = NULL;
+				pStrides[i] = 0;
+			}
+			pOffsets[i] = 0;
+		}
+
+		pD3DImmContext->IASetVertexBuffers(0, MaxVBCount, pVBs, pStrides, pOffsets);
+
+		_freea(pMem);
+
+		CurrDirtyFlags.Clear(GPU_Dirty_VB);
+	}
+
+	if (Update.Is(GPU_Dirty_IB) && CurrDirtyFlags.Is(GPU_Dirty_IB))
+	{
+		if (CurrIB.IsValidPtr())
+		{
+			const DXGI_FORMAT Fmt = CurrIB.GetUnsafe()->GetIndexType() == Index_32 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+			pD3DImmContext->IASetIndexBuffer(CurrIB.GetUnsafe()->GetD3DBuffer(), Fmt, 0);
+		}
+		else pD3DImmContext->IASetIndexBuffer(NULL, DXGI_FORMAT_UNKNOWN, 0);
+
+		CurrDirtyFlags.Clear(GPU_Dirty_IB);
+	}
 
 	CD3D11RenderTarget* pValidRT = NULL;
 
@@ -1014,7 +1133,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		}
 
 		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : NULL;
- 
+
 		pD3DImmContext->OMSetRenderTargets(CurrRT.GetCount(), pRTV, pDSV);
 		//OMSetRenderTargetsAndUnorderedAccessViews
 
