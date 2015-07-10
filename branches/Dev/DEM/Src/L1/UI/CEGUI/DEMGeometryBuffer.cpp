@@ -172,8 +172,16 @@ void CDEMGeometryBuffer::reset()
 
 void CDEMGeometryBuffer::updateMatrix() const
 {
-	n_assert(false);
-	//D3DXMatrixTransformation(&d_matrix, 0, 0, 0, &d_pivot, &d_rotation, &d_translation);
+	d_matrix.set(1.f, 0.f, 0.f, 0.f,
+				0.f, 1.f, 0.f, 0.f,
+				0.f, 0.f, 1.f, 0.f,
+				-d_pivot.d_x, -d_pivot.d_y, -d_pivot.d_z, 1.f);
+	d_matrix.mult_simple(matrix44(quaternion(d_rotation.d_x, d_rotation.d_y, d_rotation.d_z, d_rotation.d_w)));
+	matrix44 ToFinalPos(1.f, 0.f, 0.f, 0.f,
+						0.f, 1.f, 0.f, 0.f,
+						0.f, 0.f, 1.f, 0.f,
+						d_pivot.d_x + d_translation.d_x, d_pivot.d_y + d_translation.d_y, d_pivot.d_z + d_translation.d_z, 1.f);
+	d_matrix.mult_simple(ToFinalPos);
 	d_matrixValid = true;
 }
 //--------------------------------------------------------------------
