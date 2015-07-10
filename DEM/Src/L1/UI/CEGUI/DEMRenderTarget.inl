@@ -1,5 +1,7 @@
 #include "DEMRenderTarget.h"
-#include "DEMGeometryBuffer.h"
+
+#include <UI/CEGUI/DEMGeometryBuffer.h>
+#include <Math/Plane.h>
 
 namespace CEGUI
 {
@@ -51,59 +53,41 @@ void CDEMRenderTarget<T>::unprojectPoint(const GeometryBuffer& buff, const Vecto
 
 	const CDEMGeometryBuffer& gb = static_cast<const CDEMGeometryBuffer&>(buff);
 
-	n_assert(false);
-/*
-	D3D11_VIEWPORT vp_;
-	vp_.TopLeftX = static_cast<FLOAT>(d_area.left());
-	vp_.TopLeftY = static_cast<FLOAT>(d_area.top());
-	vp_.Width = static_cast<FLOAT>(d_area.getWidth());
-	vp_.Height = static_cast<FLOAT>(d_area.getHeight());
-	vp_.MinDepth = 0.0f;
-	vp_.MaxDepth = 1.0f;
+	vector3 p1(0.f, 0.f, 0.f), p2(1.f, 0.f, 0.f), p3(0.f, 1.f, 0.f);
 
-	D3DXVECTOR3 in_vec;
-	in_vec.z = 0.0f;
+	float HalfW = d_area.getWidth() * 0.5f;
+	float HalfH = d_area.getHeight() * 0.5f;
+	matrix44 m2 = d_matrix * (*gb.getMatrix());
 
-	// project points to create a plane orientated with GeometryBuffer's data
-	D3DXVECTOR3 p1;
-	D3DXVECTOR3 p2;
-	D3DXVECTOR3 p3;
-	in_vec.x = 0;
-	in_vec.y = 0;
-	D3DXVec3Project(&p1, &in_vec, &vp, &d_matrix, 0, gb.getMatrix()); 
+	p1 = m2.transform_coord(p1);
+	p1.x = d_area.left() + (1.0f + p1.x) * HalfW; 
+	p1.y = d_area.top() + (1.0f - p1.y) * HalfH;
 
-	in_vec.x = 1;
-	in_vec.y = 0;
-	D3DXVec3Project(&p2, &in_vec, &vp, &d_matrix, 0, gb.getMatrix()); 
+	p2 = m2.transform_coord(p2);
+	p2.x = d_area.left() + (1.0f + p2.x) * HalfW; 
+	p2.y = d_area.top() + (1.0f - p2.y) * HalfH;
 
-	in_vec.x = 0;
-	in_vec.y = 1;
-	D3DXVec3Project(&p3, &in_vec, &vp, &d_matrix, 0, gb.getMatrix()); 
+	p3 = m2.transform_coord(p3);
+	p3.x = d_area.left() + (1.0f + p3.x) * HalfW; 
+	p3.y = d_area.top() + (1.0f - p3.y) * HalfH;
 
-	// create plane from projected points
-	D3DXPLANE surface_plane;
-	D3DXPlaneFromPoints(&surface_plane, &p1, &p2, &p3);
+	plane Plane(p1, p2, p3);
 
-	// unproject ends of ray
-	in_vec.x = vp.Width * 0.5f;
-	in_vec.y = vp.Height * 0.5f;
-	in_vec.z = -d_viewDistance;
-	D3DXVECTOR3 t1;
-	D3DXVec3Unproject(&t1, &in_vec, &vp, &d_matrix, 0, gb.getMatrix()); 
+	m2.invert();
 
-	in_vec.x = p_in.d_x;
-	in_vec.y = p_in.d_y;
-	in_vec.z = 0.0f;
-	D3DXVECTOR3 t2;
-	D3DXVec3Unproject(&t2, &in_vec, &vp, &d_matrix, 0, gb.getMatrix()); 
+	vector3 ray1(-d_area.left() / HalfW, d_area.top() / HalfH, -d_viewDistance);
+	ray1 = m2.transform_coord(ray1);
 
-	// get intersection of ray and plane
-	D3DXVECTOR3 intersect;
-	D3DXPlaneIntersectLine(&intersect, &surface_plane, &t1, &t2);
+	vector3 ray2((p_in.d_x - d_area.left()) / HalfW - 1.0f, 1.0f - (p_in.d_y - d_area.top()) / HalfH, 0.0f);
+	ray2 = m2.transform_coord(ray1);
 
-	p_out.d_x = intersect.x;
-	p_out.d_y = intersect.y;
-*/
+	float Factor = 0.f;
+	line3 Ray(ray1, ray2);
+	Plane.intersect(Ray, Factor);
+	vector3 intersection = Ray.Start + Ray.Vector * Factor;
+
+	p_out.d_x = intersection.x;
+	p_out.d_y = intersection.y;
 }
 //---------------------------------------------------------------------
 
@@ -118,19 +102,19 @@ void CDEMRenderTarget<T>::updateMatrix() const
 	const float midy = h * 0.5f;
 	d_viewDistance = midx / (aspect * 0.267949192431123f);
 
-	n_assert(false);
-/*
-	D3DXVECTOR3 eye(midx, midy, -d_viewDistance);
-	D3DXVECTOR3 at(midx, midy, 1);
-	D3DXVECTOR3 up(0, -1, 0);
+	// Set eye vector
+	d_matrix.M41 = midx;
+	d_matrix.M42 = midy;
+	d_matrix.M43 = -d_viewDistance;
 
-	D3DXMATRIX tmp;
-	D3DXMatrixMultiply(&d_matrix,
-		D3DXMatrixLookAtRH(&d_matrix, &eye, &at, &up),
-		D3DXMatrixPerspectiveFovRH(&tmp, fov, aspect,
-			d_viewDistance * 0.5f,
-			d_viewDistance * 2.0f));
-*/
+	vector3 at(midx, midy, 1);
+	vector3 up(0, -1, 0);
+	d_matrix.lookatRh(at, up);
+
+	matrix44 Perspective;
+	Perspective.perspFovRh(fov, aspect, d_viewDistance * 0.5f, d_viewDistance * 2.0f);
+
+	d_matrix *= Perspective;
 
 	d_matrixValid = false;
 }
