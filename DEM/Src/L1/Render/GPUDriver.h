@@ -19,18 +19,7 @@
 
 //PERF:
 //!!!GCN says load shaders before textures, driver compiles to its ASM in the background!
-//then warm shader cache - bind all shaders and perform offscreen rendering
-
-//!!!each adapter output can display only one fullscreen swap chain! control it!
-//D3D9: multihead (multi-swap-chain) device must have all swap chains fullscreen
-//???can have multiple windowed swap chains?
-//when going from windowed to fullscreen, use display driver of monitor that contains majority of window area
-//also display driver should match display mode etc, for windowed can use D3DFMT_UNKNOWN and window size (or 0x0 for auto)
-//IDirect3DSwapChain9::GetDisplayMode() for multihead device
-//focus window must be shared among all swap chains, and at least in D3D9 - among all devices in application
-// also focus window should be a parent of any device window, or be itself.
-// since so, D3D9DriverFactory may contain this window's reference
-//!!!GPU driver can be used without display, for stream-out, render to texture or compute shaders!
+//then warmup shader cache - bind all shaders and perform offscreen rendering
 
 namespace Data
 {
@@ -52,7 +41,6 @@ protected:
 	DWORD							AdapterID;
 	EGPUDriverType					Type;
 
-	//default RT
 	//???resource manager capabilities for VRAM resources? at least can handle OnLost-OnReset right here.
 
 	/*
@@ -60,31 +48,15 @@ protected:
 	//enum
 	//{
 	//	MaxTextureStageCount = 8, //???16?
-	//	MaxRenderTargetCount = 4,
 	//	MaxVertexStreamCount = 2 // Not sure why 2, N3 value
 	//};
-	PRenderTarget					CurrRT[MaxRenderTargetCount];
-	PVertexBuffer					CurrVB[MaxVertexStreamCount];
-	DWORD							CurrVBOffset[MaxVertexStreamCount];
-	PVertexLayout					CurrVLayout;
-	PIndexBuffer					CurrIB;
-	CMeshGroup						CurrPrimGroup; //???or pointer? or don't store and pass by ref to Draw() calls?
 	DWORD							InstanceCount;	// If 0, non-instanced rendering is active
 	*/
 
-	//???
-	//!!!per-swapchain!? WHERE IS USED?
-	/*
-	EPixelFormat					CurrDepthStencilFormat;
-	IDirect3DSurface9*				pCurrDSSurface;
-	*/
-
-	//???per-swapchain? put under STATS define?
-	DWORD							PrimsRendered;
-	DWORD							DIPsRendered;
+	//DWORD							PrimsRendered;
+	//DWORD							DIPsRendered;
 
 	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UINT& Width, UINT& Height);
-	//virtual HShaderParam	CreateShaderVarHandle(const CShaderConstantDesc& Meta) const = 0;
 
 public:
 
@@ -118,15 +90,19 @@ public:
 
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
+	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) = 0;
+	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0) = 0;
+	virtual bool				SetIndexBuffer(CIndexBuffer* pIB) = 0;
+	//virtual bool				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0) = 0;
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
-	//PVertexLayout				GetVertexLayout(CStrID Signature /*, CStrID ShaderInputSignature = CStrID::Empty*/) const;
 	//virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;
 	PShader						CreateShader(const Data::CParams& Desc);
 	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
@@ -162,13 +138,6 @@ public:
 	//virtual PVertexBuffer		CopyResource(const CVertexBuffer& Source, DWORD NewAccessFlags) = 0;
 	//virtual PIndexBuffer		CopyResource(const CIndexBuffer& Source, DWORD NewAccessFlags) = 0;
 	//virtual PTexture			CopyResource(const CTexture& Source, DWORD NewAccessFlags) = 0;
-
-	//void						SetRenderTarget(DWORD Index, CRenderTarget* pRT);
-	//void						SetVertexLayout(CVertexLayout* pVLayout);
-	//void						SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
-	//void						SetIndexBuffer(CIndexBuffer* pIB);
-	//void						SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
-	//void						SetPrimitiveGroup(const CMeshGroup& Group) { CurrPrimGroup = Group; }
 
 	EGPUDriverType				GetType() const { return Type; }
 };

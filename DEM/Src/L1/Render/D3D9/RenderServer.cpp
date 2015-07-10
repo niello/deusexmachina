@@ -46,36 +46,6 @@
 //}
 ////---------------------------------------------------------------------
 //
-//void CRenderServer::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
-//{
-//	n_assert(Index < MaxVertexStreamCount && (!pVB || OffsetVertex < pVB->GetVertexCount()));
-//	if (CurrVB[Index].GetUnsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) return;
-//	IDirect3DVertexBuffer9* pD3DVB = pVB ? pVB->GetD3DBuffer() : NULL;
-//	DWORD VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSize() : 0;
-//	n_assert(SUCCEEDED(pD3DDevice->SetStreamSource(Index, pD3DVB, VertexSize * OffsetVertex, VertexSize)));
-//	CurrVB[Index] = pVB;
-//	CurrVBOffset[Index] = OffsetVertex;
-//}
-////---------------------------------------------------------------------
-//
-//void CRenderServer::SetVertexLayout(CVertexLayout* pVLayout)
-//{
-//	if (CurrVLayout.GetUnsafe() == pVLayout) return;
-//	IDirect3DVertexDeclaration9* pDecl = pVLayout ? pVLayout->GetD3DVertexDeclaration() : NULL;
-//	n_assert(SUCCEEDED(pD3DDevice->SetVertexDeclaration(pDecl)));
-//	CurrVLayout = pVLayout;
-//}
-////---------------------------------------------------------------------
-//
-//void CRenderServer::SetIndexBuffer(CIndexBuffer* pIB)
-//{
-//	if (CurrIB.GetUnsafe() == pIB) return;
-//	IDirect3DIndexBuffer9* pD3DIB = pIB ? pIB->GetD3DBuffer() : NULL;
-//	n_assert(SUCCEEDED(pD3DDevice->SetIndices(pD3DIB)));
-//	CurrIB = pIB;
-//}
-////---------------------------------------------------------------------
-//
 //// Docs: Note that D3DSTREAMSOURCE_INDEXEDDATA and the number of instances to draw must always be set in stream zero.
 //void CRenderServer::SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex)
 //{
@@ -98,46 +68,6 @@
 //		pD3DDevice->SetStreamSourceFreq(0, 1);
 //		pD3DDevice->SetStreamSourceFreq(Index, 1);
 //	}
-//}
-////---------------------------------------------------------------------
-//
-//void CRenderServer::Draw()
-//{
-//	n_assert_dbg(pD3DDevice && IsInsideFrame);
-//
-//	D3DPRIMITIVETYPE D3DPrimType;
-//	DWORD PrimCount = (CurrPrimGroup.IndexCount > 0) ? CurrPrimGroup.IndexCount : CurrPrimGroup.VertexCount;
-//	switch (CurrPrimGroup.Topology)
-//	{
-//		case PointList:	D3DPrimType = D3DPT_POINTLIST; break;
-//		case LineList:	D3DPrimType = D3DPT_LINELIST; PrimCount /= 2; break;
-//		case LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
-//		case TriList:	D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
-//		case TriStrip:	D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
-//		default:		Sys::Error("CRenderServer::Draw() -> Invalid primitive topology!"); return;
-//	}
-//
-//	HRESULT hr;
-//	if (CurrPrimGroup.IndexCount > 0)
-//	{
-//		n_assert_dbg(CurrIB.IsValid());
-//		n_assert_dbg(!InstanceCount || CurrVB[0].IsValid());
-//		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
-//												0,
-//												CurrPrimGroup.FirstVertex,
-//												CurrPrimGroup.VertexCount,
-//												CurrPrimGroup.FirstIndex,
-//												PrimCount);
-//	}
-//	else
-//	{
-//		n_assert2_dbg(!InstanceCount, "Non-indexed instanced rendereng is not supported by design!");
-//		hr = pD3DDevice->DrawPrimitive(D3DPrimType, CurrPrimGroup.FirstVertex, PrimCount);
-//	}
-//	n_assert(SUCCEEDED(hr));
-//
-//	PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
-//	++DIPsRendered;
 //}
 ////---------------------------------------------------------------------
 //

@@ -115,8 +115,8 @@
 //			}
 //		IB->Unmap();
 //
-//		CArray<CMeshGroup> MeshGroups(1, 0);
-//		CMeshGroup& Group = *MeshGroups.Reserve(1);
+//		CArray<CPrimitiveGroup> MeshGroups(1, 0);
+//		CPrimitiveGroup& Group = *MeshGroups.Reserve(1);
 //		Group.Topology = TriList;
 //		Group.FirstVertex = 0;
 //		Group.VertexCount = VertexCount;

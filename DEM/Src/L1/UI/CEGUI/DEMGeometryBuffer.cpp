@@ -46,11 +46,17 @@ void CDEMGeometryBuffer::draw() const
 		}
 		else d_owner.getGPUDriver()->WriteToResource(*d_vertexBuffer, d_vertices.Begin(), sizeof(D3DVertex) * vertex_count);
 
+		d_primGroup.FirstVertex = 0;
+		d_primGroup.VertexCount = vertex_count;
+		d_primGroup.FirstIndex = 0;
+		d_primGroup.IndexCount = 0;
+		d_primGroup.Topology = Render::Prim_TriList;
+		// We don't use AABB, so we don't update it
+
 		d_bufferIsSync = true;
 	}
 
-	n_assert(false);
-	//d_owner.getGPUDriver()->SetVertexBuffer(0, d_vertexBuffer);
+	d_owner.getGPUDriver()->SetVertexBuffer(0, d_vertexBuffer.GetUnsafe());
 
 	Data::CRect SR;
 	SR.X = (int)d_clipRect.left();
@@ -90,12 +96,9 @@ void CDEMGeometryBuffer::draw() const
 			}
  
 	n_assert(false);
-			/* 
-			d_boundTextureVariable->SetResource(const_cast<ID3D11ShaderResourceView*>(i->texture));
+			//d_boundTextureVariable->SetResource(const_cast<ID3D11ShaderResourceView*>(i->texture));
 
-			//!!!set primitive (mesh) group!
-			d_owner.getGPUDriver()->Draw(i->vertexCount, pos);
-			*/
+			d_owner.getGPUDriver()->Draw(d_primGroup);
 			pos += i->vertexCount;
 		}
 	}

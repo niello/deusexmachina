@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_H__
 
 #include <Data/Ptr.h>
+#include <Math/AABB.h>
 
 // Render system definitions and forward declarations
 
@@ -11,8 +12,6 @@
 
 namespace Render
 {
-//typedef DWORD HShaderParam; // Opaque to user, so its internal meaning can be different for different APIs
-//struct CShaderConstantDesc;
 struct CTextureDesc;
 struct CSwapChainDesc;
 class CDisplayMode;
@@ -54,11 +53,11 @@ enum EClearFlag
 
 enum EPrimitiveTopology
 {
-	PointList,
-	LineList,
-	LineStrip,
-	TriList,
-	TriStrip
+	Prim_PointList,
+	Prim_LineList,
+	Prim_LineStrip,
+	Prim_TriList,
+	Prim_TriStrip
 };
 
 // Value is a size of one index in bytes
@@ -75,8 +74,6 @@ enum ECaps
 	Caps_ReadDepthAsTexture		// Use depth buffer as a shader input
 };
 
-//!!!fill!
-//???reverse component order? see DXGI formats
 enum EPixelFormat
 {
 	PixelFmt_Invalid = 0,
@@ -143,15 +140,15 @@ enum EResourceMapMode
 	Map_Read,				// Gain read access, must be Access_CPU_Read
 	Map_Write,				// Gain write access, must be Access_CPU_Write
 	Map_ReadWrite,			// Gain read/write access, must be Access_CPU_Read | Access_CPU_Write
-	Map_WriteDiscard,		// Gain write access, discard previous content, must be Access_GPU_Read | Access_CPU_Write
-	Map_WriteNoOverwrite,	// Gain write access, must be Access_GPU_Read | Access_CPU_Write, see D3D11 docs for details
+	Map_WriteDiscard,		// Gain write access, discard previous content, must be Access_GPU_Read | Access_CPU_Write (dynamic)
+	Map_WriteNoOverwrite,	// Gain write access, must be Access_GPU_Read | Access_CPU_Write (dynamic)
 };
 
 struct CImageData
 {
 	char*	pData;			// Data sequentially placed in memory
-	DWORD	RowPitch;		// Distance in bytes between first bytes of two rows
-	DWORD	SlicePitch;		// Distance in bytes between first bytes of two depth slices
+	DWORD	RowPitch;		// Distance in bytes between first bytes of two rows (undefined for 1D)
+	DWORD	SlicePitch;		// Distance in bytes between first bytes of two depth slices (undefined for 1D & 2D)
 };
 
 struct CRenderTargetDesc
@@ -166,13 +163,22 @@ struct CRenderTargetDesc
 
 struct CViewport
 {
-	//???use CRectT<float, float> for L, T, W, H?
 	float	Left;
 	float	Top;
 	float	Width;
 	float	Height;
 	float	MinDepth;
 	float	MaxDepth;
+};
+
+struct CPrimitiveGroup
+{
+	DWORD				FirstVertex;
+	DWORD				VertexCount;
+	DWORD				FirstIndex;
+	DWORD				IndexCount;
+	EPrimitiveTopology	Topology;
+	CAABB				AABB;
 };
 
 // Error codes

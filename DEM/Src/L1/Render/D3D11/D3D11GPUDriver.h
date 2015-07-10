@@ -117,10 +117,15 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
+	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
+	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
+	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
+	//virtual bool				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
 
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured

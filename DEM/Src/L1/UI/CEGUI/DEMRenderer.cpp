@@ -256,11 +256,7 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 
 void CDEMRenderer::beginRendering()
 {
-	n_assert(false);
-/*
-	GPU->IASetInputLayout(d_inputLayout);
-	GPU->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-*/
+	GPU->SetVertexLayout(VertexLayout.GetUnsafe());
 }
 //---------------------------------------------------------------------
 

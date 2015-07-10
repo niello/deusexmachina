@@ -896,6 +896,27 @@ void CD3D11GPUDriver::EndFrame()
 }
 //---------------------------------------------------------------------
 
+bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 {
 	if (Index >= CurrRT.GetCount()) FAIL;
@@ -955,6 +976,15 @@ void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorR
 	if (!RT.IsValid()) return;
 	CD3D11RenderTarget& D3D11RT = (CD3D11RenderTarget&)RT;
 	pD3DImmContext->ClearRenderTargetView(D3D11RT.GetD3DRTView(), ColorRGBA.v);
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+//!!!set once, cache curr value! cache DEM enum value not to convert if the same, will be more optimal!
+//IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	FAIL;
 }
 //---------------------------------------------------------------------
 
