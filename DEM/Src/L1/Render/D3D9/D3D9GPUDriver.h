@@ -24,6 +24,7 @@ typedef Ptr<class CD3D9VertexBuffer> PD3D9VertexBuffer;
 typedef Ptr<class CD3D9IndexBuffer> PD3D9IndexBuffer;
 typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
+typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -40,6 +41,7 @@ protected:
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
+	CArray<PD3D9RenderState>			RenderStates;
 	bool								IsInsideFrame;
 	//bool								Wireframe;
 

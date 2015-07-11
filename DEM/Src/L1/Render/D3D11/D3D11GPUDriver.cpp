@@ -1766,63 +1766,48 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 //---------------------------------------------------------------------
 
 //???is AddRef invoked if runtime finds existing state?
-//???allow relative states? or always absolute and filter out redundant Set() calls?
+//???or special Desc?
 PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 {
-	// States supported by D3D11:
-	// Rasterizer:
-	//  - D3D11_FILL_MODE FillMode;
-	//D3D11_CULL_MODE CullMode;
-	//BOOL            FrontCounterClockwise;
-	//INT             DepthBias;
-	//FLOAT           DepthBiasClamp;
-	//FLOAT           SlopeScaledDepthBias;
-	//BOOL            DepthClipEnable;
-	//BOOL            ScissorEnable;
-	//BOOL            MultisampleEnable;
-	//BOOL            AntialiasedLineEnable;
-//???multisample mask - where?
-	// Depth-stencil:
-	//BOOL                       DepthEnable;
-	//D3D11_DEPTH_WRITE_MASK     DepthWriteMask;
-	//D3D11_COMPARISON_FUNC      DepthFunc;
-	//BOOL                       StencilEnable;
-	//UINT8                      StencilReadMask;
-	//UINT8                      StencilWriteMask;
-	//D3D11_DEPTH_STENCILOP_DESC FrontFace;
-	//D3D11_DEPTH_STENCILOP_DESC BackFace;
-		//D3D11_STENCIL_OP      StencilFailOp;
-		//D3D11_STENCIL_OP      StencilDepthFailOp;
-		//D3D11_STENCIL_OP      StencilPassOp;
-		//D3D11_COMPARISON_FUNC StencilFunc;
-	// Blend:
-	//BOOL                           AlphaToCoverageEnable;
-	//BOOL                           IndependentBlendEnable;
-	//D3D11_RENDER_TARGET_BLEND_DESC RenderTarget[8];
-		//BOOL           BlendEnable;
-		//D3D11_BLEND    SrcBlend;
-		//D3D11_BLEND    DestBlend;
-		//D3D11_BLEND_OP BlendOp;
-		//D3D11_BLEND    SrcBlendAlpha;
-		//D3D11_BLEND    DestBlendAlpha;
-		//D3D11_BLEND_OP BlendOpAlpha;
-		//UINT8          RenderTargetWriteMask;
+	ID3D11VertexShader* pVS = NULL;
+	ID3D11HullShader* pHS = NULL;
+	ID3D11DomainShader* pDS = NULL;
+	ID3D11GeometryShader* pGS = NULL;
+	ID3D11PixelShader* pPS = NULL;
 
+	// try to find each shader already loaded (some compiled shader file)
+	// if not loaded, load and add into the cache
+	//???how to determine final compiled shader file? when compile my effect, serialize it
+	//with final shader file names? can even use DSS for effects!
+
+	//???multisample mask - where?
 	D3D11_RASTERIZER_DESC RDesc;
+	//D3D11_FILL_MODE FillMode; //!!!can create solid and wireframe variants of the same state for the fast switching!
+	//D3D11_CULL_MODE CullMode;
+	//BOOL FrontCounterClockwise;
+	RDesc.DepthBias = Desc.Get(CStrID("DepthBias"), 0);
+	RDesc.DepthBiasClamp = Desc.Get(CStrID("DepthBiasClamp"), 0.f);
+	RDesc.SlopeScaledDepthBias = Desc.Get(CStrID("SlopeScaledDepthBias"), 0.f);
 	RDesc.DepthClipEnable = Desc.Get(CStrID("DepthClip"), true);
-	// Init desc, use default values when unspecified
+	RDesc.ScissorEnable = Desc.Get(CStrID("ScissorTest"), true);
+	RDesc.MultisampleEnable = Desc.Get(CStrID("Multisampling"), true);
+	RDesc.AntialiasedLineEnable = Desc.Get(CStrID("AntialiasedLines"), true);
+
 	ID3D11RasterizerState* pRState = NULL;
-	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) return NULL;
+	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) goto ProcessFailure;
 
 	D3D11_DEPTH_STENCIL_DESC DSDesc;
 	DSDesc.DepthEnable = Desc.Get(CStrID("DepthEnable"), true);
-	// Init desc, use default values when unspecified
+	//D3D11_DEPTH_WRITE_MASK DepthWriteMask;
+	//D3D11_COMPARISON_FUNC DepthFunc;
+	DSDesc.StencilEnable = Desc.Get(CStrID("StencilEnable"), true);
+	//UINT8 StencilReadMask;
+	//UINT8 StencilWriteMask;
+	//D3D11_DEPTH_STENCILOP_DESC FrontFace;
+	//D3D11_DEPTH_STENCILOP_DESC BackFace;
+
 	ID3D11DepthStencilState* pDSState = NULL;
-	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState)))
-	{
-		pRState->Release();
-		return NULL;
-	}
+	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState))) goto ProcessFailure;
 
 	D3D11_BLEND_DESC BDesc;
 	BDesc.IndependentBlendEnable = Desc.Get(CStrID("IndependentBlendPerTarget"), false);
@@ -1832,36 +1817,79 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 		// CDataArray of sub-descs
 		// Init desc, use default values when unspecified
 		//!!!AVOID DUPLICATE CODE!
+		//BOOL BlendEnable;
+		//D3D11_BLEND SrcBlend;
+		//D3D11_BLEND DestBlend;
+		//D3D11_BLEND_OP BlendOp;
+		//D3D11_BLEND SrcBlendAlpha;
+		//D3D11_BLEND DestBlendAlpha;
+		//D3D11_BLEND_OP BlendOpAlpha;
+		//UINT8 RenderTargetWriteMask;
 	}
 	else
 	{
 		BDesc.RenderTarget[0].BlendEnable = Desc.Get(CStrID("BlendEnable"), false);
 		// Init desc, use default values when unspecified
 		//!!!AVOID DUPLICATE CODE!
-	}
-	ID3D11BlendState* pBState = NULL;
-	if (FAILED(pD3DDevice->CreateBlendState(&BDesc, &pBState)))
-	{
-		pRState->Release();
-		pDSState->Release();
-		return NULL;
+		//BOOL BlendEnable;
+		//D3D11_BLEND SrcBlend;
+		//D3D11_BLEND DestBlend;
+		//D3D11_BLEND_OP BlendOp;
+		//D3D11_BLEND SrcBlendAlpha;
+		//D3D11_BLEND DestBlendAlpha;
+		//D3D11_BLEND_OP BlendOpAlpha;
+		//UINT8 RenderTargetWriteMask;
 	}
 
-	// Since render state creation should be load-time, it is not performance critical
+	ID3D11BlendState* pBState = NULL;
+	if (FAILED(pD3DDevice->CreateBlendState(&BDesc, &pBState))) goto ProcessFailure;
+
+	// Since render state creation should be load-time, it is not performance critical. If we
+	// skip this and create new CRenderState, sorting will consider them as different state sets.
 	for (int i = 0; i < RenderStates.GetCount(); ++i)
 	{
 		CD3D11RenderState* pRS = RenderStates[i].GetUnsafe();
-		if (pRS->pRState == pRState && pRS->pDSState == pDSState && pRS->pBState == pBState) return pRS;
+		if (pRS->pVS == pVS &&
+			pRS->pHS == pHS &&
+			pRS->pDS == pDS &&
+			pRS->pGS == pGS &&
+			pRS->pPS == pPS &&
+			pRS->pRState == pRState &&
+			pRS->pDSState == pDSState &&
+			pRS->pBState == pBState)
+		{
+			return pRS;
+		}
 	}
 
-	PD3D11RenderState RS = n_new(CD3D11RenderState);
-	RS->pRState = pRState;
-	RS->pDSState = pDSState;
-	RS->pBState = pBState;
+	{
+		PD3D11RenderState RS = n_new(CD3D11RenderState);
+		RS->pVS = pVS;
+		RS->pHS = pHS;
+		RS->pDS = pDS;
+		RS->pGS = pGS;
+		RS->pPS = pPS;
+		RS->pRState = pRState;
+		RS->pDSState = pDSState;
+		RS->pBState = pBState;
 
-	RenderStates.Add(RS);
+		RenderStates.Add(RS);
 
-	return RS.GetUnsafe();
+		return RS.GetUnsafe();
+	}
+
+ProcessFailure:
+
+	if (pVS) pVS->Release();
+	if (pHS) pHS->Release();
+	if (pDS) pDS->Release();
+	if (pGS) pGS->Release();
+	if (pPS) pPS->Release();
+	if (pRState) pRState->Release();
+	if (pDSState) pDSState->Release();
+	if (pBState) pBState->Release();
+
+	return NULL;
 }
 //---------------------------------------------------------------------
 
