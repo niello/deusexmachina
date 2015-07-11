@@ -15,37 +15,6 @@
 //}
 ////---------------------------------------------------------------------
 //
-//void CRenderServer::SaveScreenshot(EImageFormat ImageFormat, IO::CStream& OutStream)
-//{
-//	n_assert(pD3DDevice && !IsInsideFrame);
-//
-//	IDirect3DSurface9* pCaptureSurface = NULL;
-//	HRESULT hr = pD3DDevice->CreateOffscreenPlainSurface(	D3DPresentParams.BackBufferWidth,
-//															D3DPresentParams.BackBufferHeight,
-//															D3DPresentParams.BackBufferFormat,
-//															D3DPOOL_SYSTEMMEM,
-//															&pCaptureSurface,
-//															NULL);
-//	n_assert(SUCCEEDED(hr) && pCaptureSurface);
-//
-//	// If BackBuffer(0) surface ptr changes, need to update DefaultRT RTSurface ptr every frame
-//	// Capturing DefaultRT is better since we always get actual data even if don't render to swap chain
-//	n_assert(SUCCEEDED(pD3DDevice->GetRenderTargetData(DefaultRT->GetD3DRenderTargetSurface(), pCaptureSurface)));
-//
-//	ID3DXBuffer* pBuf = NULL;    
-//	hr = D3DXSaveSurfaceToFileInMemory(&pBuf, ImageFormat, pCaptureSurface, NULL, NULL);
-//	n_assert(SUCCEEDED(hr));
-//	pCaptureSurface->Release();
-//
-//	if (OutStream.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) //???or open outside? here assert IsOpen and write access
-//	{
-//		OutStream.Write(pBuf->GetBufferPointer(), pBuf->GetBufferSize());
-//		OutStream.Close();
-//	}
-//	pBuf->Release();
-//}
-////---------------------------------------------------------------------
-//
 //// Docs: Note that D3DSTREAMSOURCE_INDEXEDDATA and the number of instances to draw must always be set in stream zero.
 //void CRenderServer::SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex)
 //{
