@@ -8,7 +8,6 @@
 
 struct IDirect3DVertexShader9;
 struct IDirect3DPixelShader9;
-struct IDirect3DStateBlock9;
 
 namespace Render
 {
@@ -19,16 +18,19 @@ class CD3D9RenderState: public CRenderState
 
 public:
 
-	//can store all shaders in one hash map URI -> ID3D11DeviceChild
-	//or pass through resource manager!
-	IDirect3DVertexShader9*		pVS;
-	IDirect3DPixelShader9*		pPS;
-	IDirect3DStateBlock9*		pState;
-	//???store CD3D9RenderState* parent, as state blocks can be relative?
+	IDirect3DVertexShader9*	pVS;
+	IDirect3DPixelShader9*	pPS;
 
-	CD3D9RenderState(): pVS(NULL), pPS(NULL), pState(NULL) {}
+	//???store full desc here in key-value pairs, use only leaves and set RS by diff?!
+	//can choose supported RS and setup O(1) index mapping to a key-value array
+	//can store static array of Idx -> RS, so can store keys only once and not per CRenderState
+	//RS -> Idx by switch-case function
+
+	CD3D9RenderState(): pVS(NULL), pPS(NULL) {}
 	virtual ~CD3D9RenderState();
 };
+
+typedef Ptr<CD3D9RenderState> PD3D9RenderState;
 
 }
 

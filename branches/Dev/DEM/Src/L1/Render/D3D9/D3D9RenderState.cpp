@@ -13,7 +13,6 @@ CD3D9RenderState::~CD3D9RenderState()
 {
 	SAFE_RELEASE(pVS);
 	SAFE_RELEASE(pPS);
-	SAFE_RELEASE(pState);
 }
 //---------------------------------------------------------------------
 

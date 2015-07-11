@@ -37,6 +37,8 @@ public:
 	virtual ~CD3D11RenderState();
 };
 
+typedef Ptr<CD3D11RenderState> PD3D11RenderState;
+
 }
 
 #endif

@@ -68,14 +68,13 @@ protected:
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
 	CDict<CStrID, Data::CBuffer>		ShaderInputSignatures;
+	CArray<PD3D11RenderState>			RenderStates;
 	//bool								IsInsideFrame;
 	//bool								Wireframe;
 
 	ID3D11Device*						pD3DDevice;
 	ID3D11DeviceContext*				pD3DImmContext;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
-
-	CArray<PD3D11RenderState>			RenderStates;
 
 	CD3D11GPUDriver();
 
