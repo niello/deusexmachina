@@ -767,6 +767,13 @@ bool CD3D11GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
+bool CD3D11GPUDriver::WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
+{
+	Sys::Error("IMPLEMENT ME!!! CD3D11GPUDriver::WriteScreenshot()\n");
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 //!!!!!!!!!!!!???how to handle set viewport and then set another RT?
 
 bool CD3D11GPUDriver::SetViewport(DWORD Index, const CViewport* pViewport)
@@ -1060,8 +1067,13 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	if (Update.Is(GPU_Dirty_VL) && CurrDirtyFlags.Is(GPU_Dirty_VL))
 	{
 		// Determine pCurrIL value based on shader and vertex layout
+		//ID3D11InputLayout* pNewCurrIL = GetD3DInputLayout(CurrVL, InputSigID, pSig = NULL);
 
-		pD3DImmContext->IASetInputLayout(pCurrIL);
+		//if (pCurrIL != pNewCurrIL)
+		{
+			pD3DImmContext->IASetInputLayout(pCurrIL);
+//			pCurrIL = pNewCurrIL;
+		}
 
 		CurrDirtyFlags.Clear(GPU_Dirty_VL);
 	}
@@ -1188,67 +1200,6 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	}
 
 	return Errors;
-}
-//---------------------------------------------------------------------
-
-//???is AddRef invoked if runtime finds existing state?
-//???allow relative states? or always absolute and filter out redundant Set() calls?
-PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
-{
-	D3D11_RASTERIZER_DESC RDesc;
-	RDesc.DepthClipEnable = Desc.Get(CStrID("DepthClip"), true);
-	// Init desc, use default values when unspecified
-	ID3D11RasterizerState* pRState = NULL;
-	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) return NULL;
-
-	D3D11_DEPTH_STENCIL_DESC DSDesc;
-	DSDesc.DepthEnable = Desc.Get(CStrID("DepthEnable"), true);
-	// Init desc, use default values when unspecified
-	ID3D11DepthStencilState* pDSState = NULL;
-	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState)))
-	{
-		pRState->Release();
-		return NULL;
-	}
-
-	D3D11_BLEND_DESC BDesc;
-	BDesc.IndependentBlendEnable = Desc.Get(CStrID("IndependentBlendPerTarget"), false);
-	BDesc.AlphaToCoverageEnable = Desc.Get(CStrID("AlphaToCoverage"), false);
-	if (BDesc.IndependentBlendEnable)
-	{
-		// CDataArray of sub-descs
-		// Init desc, use default values when unspecified
-		//!!!AVOID DUPLICATE CODE!
-	}
-	else
-	{
-		BDesc.RenderTarget[0].BlendEnable = Desc.Get(CStrID("BlendEnable"), false);
-		// Init desc, use default values when unspecified
-		//!!!AVOID DUPLICATE CODE!
-	}
-	ID3D11BlendState* pBState = NULL;
-	if (FAILED(pD3DDevice->CreateBlendState(&BDesc, &pBState)))
-	{
-		pRState->Release();
-		pDSState->Release();
-		return NULL;
-	}
-
-	// Since render state creation should be load-time, it is not performance critical
-	for (int i = 0; i < RenderStates.GetCount(); ++i)
-	{
-		CD3D11RenderState* pRS = RenderStates[i].GetUnsafe();
-		if (pRS->pRState == pRState && pRS->pDSState == pDSState && pRS->pBState == pBState) return pRS;
-	}
-
-	PD3D11RenderState RS = n_new(CD3D11RenderState);
-	RS->pRState = pRState;
-	RS->pDSState = pDSState;
-	RS->pBState = pBState;
-
-	RenderStates.Add(RS);
-
-	return RS.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -1811,6 +1762,106 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 		return NULL;
 	}
 	return DS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+//???is AddRef invoked if runtime finds existing state?
+//???allow relative states? or always absolute and filter out redundant Set() calls?
+PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
+{
+	// States supported by D3D11:
+	// Rasterizer:
+	//  - D3D11_FILL_MODE FillMode;
+	//D3D11_CULL_MODE CullMode;
+	//BOOL            FrontCounterClockwise;
+	//INT             DepthBias;
+	//FLOAT           DepthBiasClamp;
+	//FLOAT           SlopeScaledDepthBias;
+	//BOOL            DepthClipEnable;
+	//BOOL            ScissorEnable;
+	//BOOL            MultisampleEnable;
+	//BOOL            AntialiasedLineEnable;
+//???multisample mask - where?
+	// Depth-stencil:
+	//BOOL                       DepthEnable;
+	//D3D11_DEPTH_WRITE_MASK     DepthWriteMask;
+	//D3D11_COMPARISON_FUNC      DepthFunc;
+	//BOOL                       StencilEnable;
+	//UINT8                      StencilReadMask;
+	//UINT8                      StencilWriteMask;
+	//D3D11_DEPTH_STENCILOP_DESC FrontFace;
+	//D3D11_DEPTH_STENCILOP_DESC BackFace;
+		//D3D11_STENCIL_OP      StencilFailOp;
+		//D3D11_STENCIL_OP      StencilDepthFailOp;
+		//D3D11_STENCIL_OP      StencilPassOp;
+		//D3D11_COMPARISON_FUNC StencilFunc;
+	// Blend:
+	//BOOL                           AlphaToCoverageEnable;
+	//BOOL                           IndependentBlendEnable;
+	//D3D11_RENDER_TARGET_BLEND_DESC RenderTarget[8];
+		//BOOL           BlendEnable;
+		//D3D11_BLEND    SrcBlend;
+		//D3D11_BLEND    DestBlend;
+		//D3D11_BLEND_OP BlendOp;
+		//D3D11_BLEND    SrcBlendAlpha;
+		//D3D11_BLEND    DestBlendAlpha;
+		//D3D11_BLEND_OP BlendOpAlpha;
+		//UINT8          RenderTargetWriteMask;
+
+	D3D11_RASTERIZER_DESC RDesc;
+	RDesc.DepthClipEnable = Desc.Get(CStrID("DepthClip"), true);
+	// Init desc, use default values when unspecified
+	ID3D11RasterizerState* pRState = NULL;
+	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) return NULL;
+
+	D3D11_DEPTH_STENCIL_DESC DSDesc;
+	DSDesc.DepthEnable = Desc.Get(CStrID("DepthEnable"), true);
+	// Init desc, use default values when unspecified
+	ID3D11DepthStencilState* pDSState = NULL;
+	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState)))
+	{
+		pRState->Release();
+		return NULL;
+	}
+
+	D3D11_BLEND_DESC BDesc;
+	BDesc.IndependentBlendEnable = Desc.Get(CStrID("IndependentBlendPerTarget"), false);
+	BDesc.AlphaToCoverageEnable = Desc.Get(CStrID("AlphaToCoverage"), false);
+	if (BDesc.IndependentBlendEnable)
+	{
+		// CDataArray of sub-descs
+		// Init desc, use default values when unspecified
+		//!!!AVOID DUPLICATE CODE!
+	}
+	else
+	{
+		BDesc.RenderTarget[0].BlendEnable = Desc.Get(CStrID("BlendEnable"), false);
+		// Init desc, use default values when unspecified
+		//!!!AVOID DUPLICATE CODE!
+	}
+	ID3D11BlendState* pBState = NULL;
+	if (FAILED(pD3DDevice->CreateBlendState(&BDesc, &pBState)))
+	{
+		pRState->Release();
+		pDSState->Release();
+		return NULL;
+	}
+
+	// Since render state creation should be load-time, it is not performance critical
+	for (int i = 0; i < RenderStates.GetCount(); ++i)
+	{
+		CD3D11RenderState* pRS = RenderStates[i].GetUnsafe();
+		if (pRS->pRState == pRState && pRS->pDSState == pDSState && pRS->pBState == pBState) return pRS;
+	}
+
+	PD3D11RenderState RS = n_new(CD3D11RenderState);
+	RS->pRState = pRState;
+	RS->pDSState = pDSState;
+	RS->pBState = pBState;
+
+	RenderStates.Add(RS);
+
+	return RS.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

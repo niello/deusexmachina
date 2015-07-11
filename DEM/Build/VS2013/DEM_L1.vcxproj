@@ -220,6 +220,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h" />
@@ -439,6 +440,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.cpp" />
@@ -449,6 +451,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp" />

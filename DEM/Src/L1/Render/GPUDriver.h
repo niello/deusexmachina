@@ -21,6 +21,11 @@
 //!!!GCN says load shaders before textures, driver compiles to its ASM in the background!
 //then warmup shader cache - bind all shaders and perform offscreen rendering
 
+namespace IO
+{
+	class CStream;
+}
+
 namespace Data
 {
 	class CParams;
@@ -41,17 +46,7 @@ protected:
 	DWORD							AdapterID;
 	EGPUDriverType					Type;
 
-	//???resource manager capabilities for VRAM resources? at least can handle OnLost-OnReset right here.
-
-	/*
-	//!!!to variables (caps)!
-	//enum
-	//{
-	//	MaxTextureStageCount = 8, //???16?
-	//	MaxVertexStreamCount = 2 // Not sure why 2, N3 value
-	//};
-	DWORD							InstanceCount;	// If 0, non-instanced rendering is active
-	*/
+//	DWORD							InstanceCount;	// If 0, non-instanced rendering is active //???if 1? instanced shader + 1 inst data?
 
 	//DWORD							PrimsRendered;
 	//DWORD							DIPsRendered;
@@ -77,11 +72,9 @@ public:
 	virtual bool				ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height) = 0;
 	virtual bool				IsFullscreen(DWORD SwapChainID) const = 0;
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const = 0;
-	// GetSwapChainDesc(), GetBackBufferDesc()
-	//!!!get info, change info (or only recreate?)
 	virtual bool				Present(DWORD SwapChainID) = 0;
 	bool						PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA);
-	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream) = 0;
+	virtual bool				WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const = 0;
 
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport) = 0; // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport) = 0;
@@ -103,7 +96,7 @@ public:
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
-	//virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;
+	virtual PRenderState		CreateRenderState(const Data::CParams& Desc) = 0;
 	PShader						CreateShader(const Data::CParams& Desc);
 	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false) = 0;

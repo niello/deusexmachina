@@ -116,9 +116,8 @@ public:
 	virtual bool				SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect = NULL);
 	virtual bool				IsFullscreen(DWORD SwapChainID) const;
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const;
-	//!!!get info, change info (or only recreate?)
 	virtual bool				Present(DWORD SwapChainID);
-	//virtual void				SaveScreenshot(DWORD SwapChainID, EImageFormat ImageFormat /*use image codec ref?*/, IO::CStream& OutStream);
+	virtual bool				WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
 
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport); // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport);
@@ -146,10 +145,10 @@ public:
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
-	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
+	virtual PRenderState		CreateRenderState(const Data::CParams& Desc);
 
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
 	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);

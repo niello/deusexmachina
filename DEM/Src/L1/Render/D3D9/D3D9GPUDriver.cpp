@@ -10,6 +10,7 @@
 #include <Render/D3D9/D3D9DepthStencilBuffer.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
+#include <IO/Stream.h>
 #include <System/OSWindow.h>
 #include <Core/Factory.h>
 
@@ -727,6 +728,47 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
+{
+	if (!pD3DDevice || IsInsideFrame || !SwapChainExists(SwapChainID)) FAIL;
+
+	CD3D9SwapChain& SC = SwapChains[SwapChainID];
+	const CD3D9RenderTarget* pRT = (const CD3D9RenderTarget*)SC.BackBufferRT.GetUnsafe();
+	if (!pRT) FAIL;
+
+	const CRenderTargetDesc& Desc = pRT->GetDesc();
+
+	IDirect3DSurface9* pCaptureSurface = NULL;
+	HRESULT hr = pD3DDevice->CreateOffscreenPlainSurface(	Desc.Width,
+															Desc.Height,
+															CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format),
+															D3DPOOL_SYSTEMMEM,
+															&pCaptureSurface,
+															NULL);
+	if (FAILED(hr) || !pCaptureSurface) FAIL;
+
+	if (FAILED(pD3DDevice->GetRenderTargetData(pRT->GetD3DSurface(), pCaptureSurface))) FAIL;
+
+	D3DLOCKED_RECT D3DRect;
+	if (FAILED(pCaptureSurface->LockRect(&D3DRect, NULL, D3DLOCK_READONLY)))
+	{
+		pCaptureSurface->Release();
+		FAIL;
+	}
+
+	bool WasOpen = OutStream.IsOpen();
+	if (WasOpen || OutStream.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+	{
+		OutStream.Write(D3DRect.pBits, D3DRect.Pitch * Desc.Height);
+		if (!WasOpen) OutStream.Close();
+	}
+
+	const bool Result = SUCCEEDED(pCaptureSurface->UnlockRect());
+	pCaptureSurface->Release();
+	return Result;
+}
+//---------------------------------------------------------------------
+
 //!!!if cache VP, handle implicit cjanges like on set RT!
 
 bool CD3D9GPUDriver::SetViewport(DWORD Index, const CViewport* pViewport)
@@ -1427,6 +1469,87 @@ PDepthStencilBuffer CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 		return NULL;
 	}
 	return DS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+PRenderState CD3D9GPUDriver::CreateRenderState(const Data::CParams& Desc)
+{
+	// States supported by D3D9:
+	// D3D9-only:
+	//D3DRS_SRGBWRITEENABLE             = 194,
+	//D3DRS_ALPHATESTENABLE             = 15,
+	//D3DRS_ALPHAREF                    = 24,
+	//D3DRS_ALPHAFUNC                   = 25,
+	//D3DRS_LASTPIXEL                   = 16,
+	//D3DRS_DITHERENABLE                = 26,
+	//D3DRS_WRAP0-15                    = 128,
+	//D3DRS_CLIPPLANEENABLE             = 152,
+	//D3DRS_POINTSIZE                   = 154,
+	//D3DRS_POINTSIZE_MIN               = 155,
+	//D3DRS_POINTSPRITEENABLE           = 156,
+	//D3DRS_POINTSCALEENABLE            = 157,
+	//D3DRS_POINTSCALE_A                = 158,
+	//D3DRS_POINTSCALE_B                = 159,
+	//D3DRS_POINTSCALE_C                = 160,
+	//D3DRS_POINTSIZE_MAX               = 166,
+	//D3DRS_PATCHEDGESTYLE              = 163,
+	//D3DRS_DEBUGMONITORTOKEN           = 165,
+	//D3DRS_POSITIONDEGREE              = 172,
+	//D3DRS_NORMALDEGREE                = 173,
+	//D3DRS_MINTESSELLATIONLEVEL        = 178,
+	//D3DRS_MAXTESSELLATIONLEVEL        = 179,
+	//D3DRS_ADAPTIVETESS_X              = 180,
+	//D3DRS_ADAPTIVETESS_Y              = 181,
+	//D3DRS_ADAPTIVETESS_Z              = 182,
+	//D3DRS_ADAPTIVETESS_W              = 183,
+	//D3DRS_ENABLEADAPTIVETESSELLATION  = 184,
+	//
+	// Rasterizer:
+	//D3DRS_FILLMODE                    = 8,
+	//D3DRS_CULLMODE                    = 22,
+	//D3DRS_MULTISAMPLEANTIALIAS        = 161,
+	//D3DRS_MULTISAMPLEMASK             = 162,
+	//D3DRS_ANTIALIASEDLINEENABLE       = 176,
+	//D3DRS_CLIPPING                    = 136, //???is as DX11 DepthClipEnable?
+	//D3DRS_DEPTHBIAS                   = 195,
+	//D3DRS_SLOPESCALEDEPTHBIAS         = 175,
+	//D3DRS_SCISSORTESTENABLE           = 174,
+	//
+	// Depth-stencil:
+	//D3DRS_ZENABLE                     = 7,	// bool + D3DZB_USEW
+	//D3DRS_ZWRITEENABLE                = 14,
+	//D3DRS_ZFUNC                       = 23,
+	//D3DRS_STENCILENABLE               = 52,
+	//D3DRS_STENCILFAIL                 = 53,
+	//D3DRS_STENCILZFAIL                = 54,
+	//D3DRS_STENCILPASS                 = 55,
+	//D3DRS_STENCILFUNC                 = 56,
+	//D3DRS_STENCILREF                  = 57,
+	//D3DRS_STENCILMASK                 = 58,
+	//D3DRS_STENCILWRITEMASK            = 59,
+	//D3DRS_TWOSIDEDSTENCILMODE         = 185,
+	//D3DRS_CCW_STENCILFAIL             = 186,
+	//D3DRS_CCW_STENCILZFAIL            = 187,
+	//D3DRS_CCW_STENCILPASS             = 188,
+	//D3DRS_CCW_STENCILFUNC             = 189,
+	//
+	// Blend:
+	//D3DRS_SRCBLEND                    = 19,
+	//D3DRS_DESTBLEND                   = 20,
+	//D3DRS_ALPHABLENDENABLE            = 27,
+	//D3DRS_TEXTUREFACTOR               = 60, // Color for blending
+	//D3DRS_BLENDOP                     = 171,
+	//D3DRS_SEPARATEALPHABLENDENABLE    = 206,
+	//D3DRS_SRCBLENDALPHA               = 207,
+	//D3DRS_DESTBLENDALPHA              = 208,
+	//D3DRS_BLENDOPALPHA                = 209
+	//D3DRS_COLORWRITEENABLE            = 168,
+	//D3DRS_COLORWRITEENABLE1           = 190,
+	//D3DRS_COLORWRITEENABLE2           = 191,
+	//D3DRS_COLORWRITEENABLE3           = 192,
+	//D3DRS_BLENDFACTOR                 = 193,
+
+	return NULL;
 }
 //---------------------------------------------------------------------
 
