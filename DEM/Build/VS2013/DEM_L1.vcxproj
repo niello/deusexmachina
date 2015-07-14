@@ -254,6 +254,7 @@
     <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderObject.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderState.h" />
+    <ClInclude Include="..\..\Src\L1\Render\RenderStateDesc.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h" />
@@ -485,6 +486,7 @@
     <ClCompile Include="..\..\Src\L1\Render\PassShadows.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\RenderStateDesc.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />

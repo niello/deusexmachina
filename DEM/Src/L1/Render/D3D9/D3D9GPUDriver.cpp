@@ -9,6 +9,7 @@
 #include <Render/D3D9/D3D9RenderTarget.h>
 #include <Render/D3D9/D3D9DepthStencilBuffer.h>
 #include <Render/D3D9/D3D9RenderState.h>
+#include <Render/RenderStateDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <IO/Stream.h>
@@ -1473,9 +1474,9 @@ PDepthStencilBuffer CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 }
 //---------------------------------------------------------------------
 
-//???or special Desc?
-PRenderState CD3D9GPUDriver::CreateRenderState(const Data::CParams& Desc)
+PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
+	//!!!need D3D render state to array index and array index to d3drenderstate!
 	// States supported by D3D9:
 	// D3D9-only:
 	//D3DRS_SRGBWRITEENABLE             = 194,

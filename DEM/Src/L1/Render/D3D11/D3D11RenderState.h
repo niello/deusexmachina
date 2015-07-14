@@ -32,6 +32,8 @@ public:
 	ID3D11RasterizerState*		pRState;
 	ID3D11DepthStencilState*	pDSState;
 	ID3D11BlendState*			pBState;
+	float						BlendFactor[4]; //???get from stored desc?
+	unsigned int				SampleMask; //???get from stored desc?
 
 	CD3D11RenderState(): pVS(NULL), pHS(NULL), pDS(NULL), pGS(NULL), pPS(NULL), pRState(NULL), pDSState(NULL), pBState(NULL) {}
 	virtual ~CD3D11RenderState();
