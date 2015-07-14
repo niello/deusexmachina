@@ -14,6 +14,7 @@ namespace Render
 {
 struct CTextureDesc;
 struct CSwapChainDesc;
+struct CRenderStateDesc;
 class CDisplayMode;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CTexture> PTexture;

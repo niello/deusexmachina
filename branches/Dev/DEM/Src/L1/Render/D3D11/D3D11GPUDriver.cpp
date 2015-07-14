@@ -9,6 +9,7 @@
 #include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11DepthStencilBuffer.h>
 #include <Render/D3D11/D3D11RenderState.h>
+#include <Render/RenderStateDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
@@ -1766,8 +1767,8 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 //---------------------------------------------------------------------
 
 //???is AddRef invoked if runtime finds existing state?
-//???or special Desc?
-PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
+//!!!can create solid and wireframe variants of the same state for the fast switching!
+PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
 	ID3D11VertexShader* pVS = NULL;
 	ID3D11HullShader* pHS = NULL;
@@ -1780,29 +1781,32 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 	//???how to determine final compiled shader file? when compile my effect, serialize it
 	//with final shader file names? can even use DSS for effects!
 
-	//???multisample mask - where?
 	D3D11_RASTERIZER_DESC RDesc;
-	//D3D11_FILL_MODE FillMode; //!!!can create solid and wireframe variants of the same state for the fast switching!
-	//D3D11_CULL_MODE CullMode;
-	//BOOL FrontCounterClockwise;
-	RDesc.DepthBias = Desc.Get(CStrID("DepthBias"), 0);
-	RDesc.DepthBiasClamp = Desc.Get(CStrID("DepthBiasClamp"), 0.f);
-	RDesc.SlopeScaledDepthBias = Desc.Get(CStrID("SlopeScaledDepthBias"), 0.f);
-	RDesc.DepthClipEnable = Desc.Get(CStrID("DepthClip"), true);
-	RDesc.ScissorEnable = Desc.Get(CStrID("ScissorTest"), true);
-	RDesc.MultisampleEnable = Desc.Get(CStrID("Multisampling"), true);
-	RDesc.AntialiasedLineEnable = Desc.Get(CStrID("AntialiasedLines"), true);
+	RDesc.FillMode = Desc.Flags.Is(CRenderStateDesc::Rasterizer_Wireframe) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+	const bool CullFront = Desc.Flags.Is(CRenderStateDesc::Rasterizer_CullFront);
+	const bool CullBack = Desc.Flags.Is(CRenderStateDesc::Rasterizer_CullBack);
+	if (!CullFront && !CullBack) RDesc.CullMode = D3D11_CULL_NONE;
+	else if (CullBack) RDesc.CullMode = D3D11_CULL_BACK;
+	else RDesc.CullMode = D3D11_CULL_FRONT;
+	RDesc.FrontCounterClockwise = Desc.Flags.Is(CRenderStateDesc::Rasterizer_FrontCCW);
+	RDesc.DepthBias = Desc.DepthBias;
+	RDesc.DepthBiasClamp = Desc.DepthBiasClamp;
+	RDesc.SlopeScaledDepthBias = Desc.SlopeScaledDepthBias;
+	RDesc.DepthClipEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_DepthClipEnable);
+	RDesc.ScissorEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_ScissorEnable);
+	RDesc.MultisampleEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAAEnable);
+	RDesc.AntialiasedLineEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAALinesEnable);
 
 	ID3D11RasterizerState* pRState = NULL;
 	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) goto ProcessFailure;
 
 	D3D11_DEPTH_STENCIL_DESC DSDesc;
-	DSDesc.DepthEnable = Desc.Get(CStrID("DepthEnable"), true);
-	//D3D11_DEPTH_WRITE_MASK DepthWriteMask;
+	DSDesc.DepthEnable = Desc.Flags.Is(CRenderStateDesc::DS_DepthEnable);
+	DSDesc.DepthWriteMask = Desc.Flags.Is(CRenderStateDesc::DS_DepthWriteEnable) ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
 	//D3D11_COMPARISON_FUNC DepthFunc;
-	DSDesc.StencilEnable = Desc.Get(CStrID("StencilEnable"), true);
-	//UINT8 StencilReadMask;
-	//UINT8 StencilWriteMask;
+	DSDesc.StencilEnable = Desc.Flags.Is(CRenderStateDesc::DS_StencilEnable);
+	DSDesc.StencilReadMask = Desc.StencilReadMask;
+	DSDesc.StencilWriteMask = Desc.StencilWriteMask;
 	//D3D11_DEPTH_STENCILOP_DESC FrontFace;
 	//D3D11_DEPTH_STENCILOP_DESC BackFace;
 
@@ -1810,8 +1814,8 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState))) goto ProcessFailure;
 
 	D3D11_BLEND_DESC BDesc;
-	BDesc.IndependentBlendEnable = Desc.Get(CStrID("IndependentBlendPerTarget"), false);
-	BDesc.AlphaToCoverageEnable = Desc.Get(CStrID("AlphaToCoverage"), false);
+	BDesc.IndependentBlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_Independent);
+	BDesc.AlphaToCoverageEnable = Desc.Flags.Is(CRenderStateDesc::Blend_AlphaToCoverage);
 	if (BDesc.IndependentBlendEnable)
 	{
 		// CDataArray of sub-descs
@@ -1828,10 +1832,9 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const Data::CParams& Desc)
 	}
 	else
 	{
-		BDesc.RenderTarget[0].BlendEnable = Desc.Get(CStrID("BlendEnable"), false);
+		BDesc.RenderTarget[0].BlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_RTBlendEnable);
 		// Init desc, use default values when unspecified
 		//!!!AVOID DUPLICATE CODE!
-		//BOOL BlendEnable;
 		//D3D11_BLEND SrcBlend;
 		//D3D11_BLEND DestBlend;
 		//D3D11_BLEND_OP BlendOp;
