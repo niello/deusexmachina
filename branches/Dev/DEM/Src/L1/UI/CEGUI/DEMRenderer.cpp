@@ -1,6 +1,7 @@
 #include "DEMRenderer.h"
 
 #include <Render/GPUDriver.h>
+#include <Render/RenderStateDesc.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
@@ -17,57 +18,83 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI):
 	GPU(&GPUDriver),
 	SwapChainID(SwapChain),
 	pDefaultRT(NULL),
 	DisplayDPI(96, 96)
 {
 	n_assert(GPU->SwapChainExists(SwapChainID));
+	n_assert_dbg(pVertexShaderURI && pPixelShaderURI);
 
 	Render::CViewport VP;
 	n_assert(GPU->GetViewport(0, VP));
 	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);
 
+	Render::CRenderStateDesc RSDesc;
+	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
+	RSDesc.SetDefaults();
+	RSDesc.VertexShaderURI = pVertexShaderURI;
+	RSDesc.VertexShaderURI = pPixelShaderURI;
+	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
+	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
+					   Render::CRenderStateDesc::DS_DepthWriteEnable |
+					   Render::CRenderStateDesc::Rasterizer_DepthClipEnable |
+					   Render::CRenderStateDesc::Rasterizer_Wireframe |
+					   Render::CRenderStateDesc::Rasterizer_CullFront |
+					   Render::CRenderStateDesc::Rasterizer_CullBack |
+					   Render::CRenderStateDesc::Blend_AlphaToCoverage |
+					   Render::CRenderStateDesc::Blend_Independent);
+
+	// Normal blend
+	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_InvDestAlpha;
+	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_One;
+	RTBlendDesc.SrcBlendArg = Render::BlendArg_SrcAlpha;
+	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
+
+	// Unclipped
+	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
+
+	NormalUnclipped = GPU->CreateRenderState(RSDesc);
+	n_assert(NormalUnclipped.IsValidPtr());
+
+	// Clipped
+	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
+
+	NormalClipped = GPU->CreateRenderState(RSDesc);
+	n_assert(NormalClipped.IsValidPtr());
+
+	// Premultiplied alpha blend
+	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_One;
+	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_InvSrcAlpha;
+	RTBlendDesc.SrcBlendArg = Render::BlendArg_One;
+	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
+
+	PremultipliedClipped = GPU->CreateRenderState(RSDesc);
+	n_assert(PremultipliedClipped.IsValidPtr());
+
+	// Unclipped
+	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
+
+	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
+	n_assert(PremultipliedUnclipped.IsValidPtr());
+
+/*
+SamplerState LinearSampler
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+*/
+
 	n_assert(false);
 /*
-    // create the main effect from the shader source.
-    ID3D10Blob* errors = 0;
-
 	DWORD DefaultOptions=NULL;//D3D10_SHADER_PACK_MATRIX_ROW_MAJOR|D3D10_SHADER_PARTIAL_PRECISION|D3D10_SHADER_SKIP_VALIDATION;
-
-	ID3D10Blob* ShaderBlob=NULL;//first we compile shader, then create effect from it
-
-	if (FAILED(D3DX11CompileFromMemory(shaderSource,sizeof(shaderSource),
-		"shaderSource",NULL,NULL,NULL,"fx_5_0",
-		DefaultOptions,NULL,NULL,&ShaderBlob,&errors,NULL)))
-	{
-		std::string msg(static_cast<const char*>(errors->GetBufferPointer()),
-			errors->GetBufferSize());
-		errors->Release();
-		Sys::Error(msg.c_str());
-	}
-
-	n_assert(SUCCEEDED(D3DX11CreateEffectFromMemory(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(),0, 
-		d_device.d_device, &d_effect) ));
-
-	if (ShaderBlob) ShaderBlob->Release();
-
-    // extract the rendering techniques
-    d_normalClippedTechnique = d_effect->GetTechniqueByName("BM_NORMAL_Clipped_Rendering");
-    d_normalUnclippedTechnique = d_effect->GetTechniqueByName("BM_NORMAL_Unclipped_Rendering");
-    d_premultipliedClippedTechnique = d_effect->GetTechniqueByName("BM_RTT_PREMULTIPLIED_Clipped_Rendering");
-    d_premultipliedClippedTechnique = d_effect->GetTechniqueByName("BM_RTT_PREMULTIPLIED_Unclipped_Rendering");
-
-    // Get the variables from the shader we need to be able to access
-    d_boundTextureVariable =
-            d_effect->GetVariableByName("BoundTexture")->AsShaderResource();
-    d_worldMatrixVariable =
-            d_effect->GetVariableByName("WorldMatrix")->AsMatrix();
-    d_projectionMatrixVariable =
-            d_effect->GetVariableByName("ProjectionMatrix")->AsMatrix();
-
-	*/
+    d_boundTextureVariable = d_effect->GetVariableByName("BoundTexture")->AsShaderResource();
+    d_worldMatrixVariable = d_effect->GetVariableByName("WorldMatrix")->AsMatrix();
+    d_projectionMatrixVariable = d_effect->GetVariableByName("ProjectionMatrix")->AsMatrix();
+*/
 
 	Render::CVertexComponent Components[] = {
 			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0 },
@@ -79,6 +106,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain):
 
 	//???when to create actual layout? need some method to precreate actual value by passing a shader!
 	//but this may require knowledge about D3D11 nature of otherwise abstract GPU
+	//???call GPU->CreateRenderCache() and then reuse it?
 
 	pDefaultRT = n_new(CDEMViewportTarget)(*this);
 }
@@ -154,6 +182,15 @@ Render::PVertexBuffer CDEMRenderer::createVertexBuffer(D3DVertex* pVertexData, D
 {
 	if (!pVertexData || !VertexCount || VertexLayout.IsNullPtr()) return NULL;
 	return GPU->CreateVertexBuffer(*VertexLayout, VertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
+}
+//--------------------------------------------------------------------
+
+void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
+{
+	if (BlendMode == BM_RTT_PREMULTIPLIED)
+		GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
+	else
+		GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
 }
 //--------------------------------------------------------------------
 

@@ -18,6 +18,10 @@ struct D3D11_VIEWPORT;
 typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 enum D3D11_USAGE;
 enum D3D11_MAP;
+enum D3D11_COMPARISON_FUNC;
+enum D3D11_STENCIL_OP;
+enum D3D11_BLEND;
+enum D3D11_BLEND_OP;
 typedef struct tagRECT RECT;
 
 namespace Render
@@ -40,6 +44,7 @@ public:
 		GPU_Dirty_VL = 0x0001,		// Vertex layout
 		GPU_Dirty_VB = 0x0002,		// Vertex buffer(s)
 		GPU_Dirty_IB = 0x0004,		// Index buffer
+		// SH or RS
 		GPU_Dirty_RT = 0x0010,		// Render target(s)
 		GPU_Dirty_DS = 0x0020,		// Depth-stencil buffer
 		GPU_Dirty_VP = 0x0040,		// Viewport(s)
@@ -78,22 +83,26 @@ protected:
 
 	CD3D11GPUDriver();
 
-	bool			OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool			OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool			OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	//bool			OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool							OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool							OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool							OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	//bool							OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	bool			InitSwapChainRenderTarget(CD3D11SwapChain& SC);
-	void			Release();
+	bool							InitSwapChainRenderTarget(CD3D11SwapChain& SC);
+	void							Release();
 
-	static D3D_DRIVER_TYPE	GetD3DDriverType(EGPUDriverType DriverType);
-	static EGPUDriverType	GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
-	static void				GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
-	static void				GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags);
+	static D3D_DRIVER_TYPE			GetD3DDriverType(EGPUDriverType DriverType);
+	static EGPUDriverType			GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
+	static void						GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
+	static void						GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags);
+	static D3D11_COMPARISON_FUNC	GetD3DCmpFunc(ECmpFunc Func);
+	static D3D11_STENCIL_OP			GetD3DStencilOp(EStencilOp Operation);
+	static D3D11_BLEND				GetD3DBlendArg(EBlendArg Arg);
+	static D3D11_BLEND_OP			GetD3DBlendOp(EBlendOp Operation);
 
-	ID3D11InputLayout*		GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
-	bool					ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset);
-	bool					WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
+	ID3D11InputLayout*				GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
+	bool							ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset);
+	bool							WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
 
 	friend class CD3D11DriverFactory;
 
@@ -116,7 +125,7 @@ public:
 	virtual bool				IsFullscreen(DWORD SwapChainID) const;
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const;
 	virtual bool				Present(DWORD SwapChainID);
-	virtual bool				WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
+	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
 
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport); // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport);
@@ -129,13 +138,16 @@ public:
 	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
 	//virtual bool				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
+	virtual bool				SetRenderState(CRenderState* pState);
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup); //???instance count?
 
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
+	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
+	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
 	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured
 
 	//!!!D3D11 vertex layout must be a key to a list of different layout interfaces, each for a particular shader input signature!

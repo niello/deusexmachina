@@ -74,7 +74,7 @@ public:
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const = 0;
 	virtual bool				Present(DWORD SwapChainID) = 0;
 	bool						PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA);
-	virtual bool				WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const = 0;
+	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const = 0;
 
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport) = 0; // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport) = 0;
@@ -87,6 +87,7 @@ public:
 	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0) = 0;
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB) = 0;
 	//virtual bool				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0) = 0;
+	virtual bool				SetRenderState(CRenderState* pState) = 0;
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;

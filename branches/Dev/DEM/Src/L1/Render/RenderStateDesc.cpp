@@ -3,6 +3,59 @@
 namespace Render
 {
 
+void CRenderStateDesc::SetDefaults()
+{
+	Flags.ResetTo(Rasterizer_CullBack |
+				  Rasterizer_DepthClipEnable |
+				  DS_DepthEnable |
+				  DS_DepthWriteEnable);
+
+	VertexShaderURI = NULL;
+	HullShaderURI = NULL;
+	DomainShaderURI = NULL;
+	GeometryShaderURI = NULL;
+	PixelShaderURI = NULL;
+
+	DepthBias = 0.f;
+	DepthBiasClamp = 0.f;
+	SlopeScaledDepthBias = 0.f;
+
+	DepthFunc = Cmp_Less;
+	StencilReadMask = 0xff;
+	StencilWriteMask = 0xff;
+	StencilFrontFace.StencilFunc = Cmp_Always;
+	StencilFrontFace.StencilPassOp = StencilOp_Keep;
+	StencilFrontFace.StencilFailOp = StencilOp_Keep;
+	StencilFrontFace.StencilDepthFailOp = StencilOp_Keep;
+	StencilBackFace.StencilFunc = Cmp_Always;
+	StencilBackFace.StencilPassOp = StencilOp_Keep;
+	StencilBackFace.StencilFailOp = StencilOp_Keep;
+	StencilBackFace.StencilDepthFailOp = StencilOp_Keep;
+	StencilRef = 0;
+
+	BlendFactorRGBA[0] = 0.f;
+	BlendFactorRGBA[1] = 0.f;
+	BlendFactorRGBA[2] = 0.f;
+	BlendFactorRGBA[3] = 0.f;
+	SampleMask = 0xffffffff;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		CRTBlend& RTB = RTBlend[i];
+		RTB.SrcBlendArg = BlendArg_One;
+		RTB.DestBlendArg = BlendArg_Zero;
+		RTB.BlendOp = BlendOp_Add;
+		RTB.SrcBlendArgAlpha = BlendArg_One;
+		RTB.DestBlendArgAlpha = BlendArg_Zero;
+		RTB.BlendOpAlpha = BlendOp_Add;
+		RTB.WriteMask = 0xff;
+	}
+
+	AlphaTestRef = 0;
+	AlphaTestFunc = Cmp_Always;
+}
+//---------------------------------------------------------------------
+
 /*
 	RDesc.DepthBias = Desc.Get(CStrID("DepthBias"), 0);
 	RDesc.DepthBiasClamp = Desc.Get(CStrID("DepthBiasClamp"), 0.f);

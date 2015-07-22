@@ -69,6 +69,10 @@ protected:
 	static void				GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
 	static UINT				GetD3DLockFlags(EResourceMapMode MapMode);
 	static D3DCUBEMAP_FACES	GetD3DCubeMapFace(ECubeMapFace Face);
+	static D3DCMPFUNC		GetD3DCmpFunc(ECmpFunc Func);
+	static D3DSTENCILOP		GetD3DStencilOp(EStencilOp Operation);
+	static D3DBLEND			GetD3DBlendArg(EBlendArg Arg);
+	static D3DBLENDOP		GetD3DBlendOp(EBlendOp Operation);
 
 	friend class CD3D9DriverFactory;
 
@@ -91,7 +95,7 @@ public:
 	virtual bool				IsFullscreen(DWORD SwapChainID) const;
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const;
 	virtual bool				Present(DWORD SwapChainID);
-	virtual bool				WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
+	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
 
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport); // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport);
@@ -104,6 +108,7 @@ public:
 	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
 	//virtual bool				SetInstanceBuffer(DWORD Index, CVertexBuffer* pVB, DWORD Instances, DWORD OffsetVertex = 0);
+	virtual bool				SetRenderState(CRenderState* pState);
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);

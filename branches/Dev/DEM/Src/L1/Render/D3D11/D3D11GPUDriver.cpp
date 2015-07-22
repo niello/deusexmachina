@@ -768,9 +768,9 @@ bool CD3D11GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
+bool CD3D11GPUDriver::CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
 {
-	Sys::Error("IMPLEMENT ME!!! CD3D11GPUDriver::WriteScreenshot()\n");
+	Sys::Error("IMPLEMENT ME!!! CD3D11GPUDriver::CaptureScreenshot()\n");
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -930,6 +930,13 @@ bool CD3D11GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 	CurrIB = (CD3D11IndexBuffer*)pIB;
 	CurrDirtyFlags.Set(GPU_Dirty_IB);
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::SetRenderState(CRenderState* pState)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -1781,6 +1788,16 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	//???how to determine final compiled shader file? when compile my effect, serialize it
 	//with final shader file names? can even use DSS for effects!
 
+	// Not supported (implement in D3D11 shaders):
+	// - Misc_AlphaTestEnable
+	// - AlphaTestRef
+	// - AlphaTestFunc
+	// - Misc_ClipPlaneEnable
+
+	// Convert absolute depth bias to D3D11-style.
+	// Depth buffer is always floating-point, let it be 32-bit, with 23 bits for mantissa.
+	float DepthBias = Desc.DepthBias * (float)(1 << 23);
+
 	D3D11_RASTERIZER_DESC RDesc;
 	RDesc.FillMode = Desc.Flags.Is(CRenderStateDesc::Rasterizer_Wireframe) ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
 	const bool CullFront = Desc.Flags.Is(CRenderStateDesc::Rasterizer_CullFront);
@@ -1789,7 +1806,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	else if (CullBack) RDesc.CullMode = D3D11_CULL_BACK;
 	else RDesc.CullMode = D3D11_CULL_FRONT;
 	RDesc.FrontCounterClockwise = Desc.Flags.Is(CRenderStateDesc::Rasterizer_FrontCCW);
-	RDesc.DepthBias = Desc.DepthBias;
+	RDesc.DepthBias = (INT)DepthBias;
 	RDesc.DepthBiasClamp = Desc.DepthBiasClamp;
 	RDesc.SlopeScaledDepthBias = Desc.SlopeScaledDepthBias;
 	RDesc.DepthClipEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_DepthClipEnable);
@@ -1803,12 +1820,18 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	D3D11_DEPTH_STENCIL_DESC DSDesc;
 	DSDesc.DepthEnable = Desc.Flags.Is(CRenderStateDesc::DS_DepthEnable);
 	DSDesc.DepthWriteMask = Desc.Flags.Is(CRenderStateDesc::DS_DepthWriteEnable) ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-	//D3D11_COMPARISON_FUNC DepthFunc;
+	DSDesc.DepthFunc = GetD3DCmpFunc(Desc.DepthFunc);
 	DSDesc.StencilEnable = Desc.Flags.Is(CRenderStateDesc::DS_StencilEnable);
 	DSDesc.StencilReadMask = Desc.StencilReadMask;
 	DSDesc.StencilWriteMask = Desc.StencilWriteMask;
-	//D3D11_DEPTH_STENCILOP_DESC FrontFace;
-	//D3D11_DEPTH_STENCILOP_DESC BackFace;
+	DSDesc.FrontFace.StencilFunc = GetD3DCmpFunc(Desc.StencilFrontFace.StencilFunc);
+	DSDesc.FrontFace.StencilPassOp = GetD3DStencilOp(Desc.StencilFrontFace.StencilPassOp);
+	DSDesc.FrontFace.StencilFailOp = GetD3DStencilOp(Desc.StencilFrontFace.StencilFailOp);
+	DSDesc.FrontFace.StencilDepthFailOp = GetD3DStencilOp(Desc.StencilFrontFace.StencilDepthFailOp);
+	DSDesc.BackFace.StencilFunc = GetD3DCmpFunc(Desc.StencilBackFace.StencilFunc);
+	DSDesc.BackFace.StencilPassOp = GetD3DStencilOp(Desc.StencilBackFace.StencilPassOp);
+	DSDesc.BackFace.StencilFailOp = GetD3DStencilOp(Desc.StencilBackFace.StencilFailOp);
+	DSDesc.BackFace.StencilDepthFailOp = GetD3DStencilOp(Desc.StencilBackFace.StencilDepthFailOp);
 
 	ID3D11DepthStencilState* pDSState = NULL;
 	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState))) goto ProcessFailure;
@@ -1816,32 +1839,22 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	D3D11_BLEND_DESC BDesc;
 	BDesc.IndependentBlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_Independent);
 	BDesc.AlphaToCoverageEnable = Desc.Flags.Is(CRenderStateDesc::Blend_AlphaToCoverage);
-	if (BDesc.IndependentBlendEnable)
+	for (DWORD i = 0; i < 8; ++i)
 	{
-		// CDataArray of sub-descs
-		// Init desc, use default values when unspecified
-		//!!!AVOID DUPLICATE CODE!
-		//BOOL BlendEnable;
-		//D3D11_BLEND SrcBlend;
-		//D3D11_BLEND DestBlend;
-		//D3D11_BLEND_OP BlendOp;
-		//D3D11_BLEND SrcBlendAlpha;
-		//D3D11_BLEND DestBlendAlpha;
-		//D3D11_BLEND_OP BlendOpAlpha;
-		//UINT8 RenderTargetWriteMask;
-	}
-	else
-	{
-		BDesc.RenderTarget[0].BlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_RTBlendEnable);
-		// Init desc, use default values when unspecified
-		//!!!AVOID DUPLICATE CODE!
-		//D3D11_BLEND SrcBlend;
-		//D3D11_BLEND DestBlend;
-		//D3D11_BLEND_OP BlendOp;
-		//D3D11_BLEND SrcBlendAlpha;
-		//D3D11_BLEND DestBlendAlpha;
-		//D3D11_BLEND_OP BlendOpAlpha;
-		//UINT8 RenderTargetWriteMask;
+		if (i == 0 || BDesc.IndependentBlendEnable)
+		{
+			const CRenderStateDesc::CRTBlend& SrcRTDesc = Desc.RTBlend[i];
+			D3D11_RENDER_TARGET_BLEND_DESC& RTDesc = BDesc.RenderTarget[i];
+			RTDesc.BlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_RTBlendEnable << i);
+			RTDesc.SrcBlend = GetD3DBlendArg(SrcRTDesc.SrcBlendArg);
+			RTDesc.DestBlend = GetD3DBlendArg(SrcRTDesc.DestBlendArg);
+			RTDesc.BlendOp = GetD3DBlendOp(SrcRTDesc.BlendOp);
+			RTDesc.SrcBlendAlpha = GetD3DBlendArg(SrcRTDesc.SrcBlendArgAlpha);
+			RTDesc.DestBlendAlpha = GetD3DBlendArg(SrcRTDesc.DestBlendArgAlpha);
+			RTDesc.BlendOpAlpha = GetD3DBlendOp(SrcRTDesc.BlendOpAlpha);
+			RTDesc.RenderTargetWriteMask = SrcRTDesc.WriteMask;
+		}
+		else BDesc.RenderTarget[i].BlendEnable = FALSE;
 	}
 
 	ID3D11BlendState* pBState = NULL;
@@ -1875,6 +1888,12 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		RS->pRState = pRState;
 		RS->pDSState = pDSState;
 		RS->pBState = pBState;
+		RS->StencilRef = Desc.StencilRef;
+		RS->BlendFactorRGBA[0] = Desc.BlendFactorRGBA[0];
+		RS->BlendFactorRGBA[1] = Desc.BlendFactorRGBA[1];
+		RS->BlendFactorRGBA[2] = Desc.BlendFactorRGBA[2];
+		RS->BlendFactorRGBA[3] = Desc.BlendFactorRGBA[3];
+		RS->SampleMask = Desc.SampleMask;
 
 		RenderStates.Add(RS);
 
@@ -2478,6 +2497,80 @@ void CD3D11GPUDriver::GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP&
 			return;
 		}
 		default: Sys::Error("CD3D11GPUDriver::GetD3DMapTypeAndFlags() > Invalid map mode\n"); return;
+	}
+}
+//---------------------------------------------------------------------
+
+D3D11_COMPARISON_FUNC CD3D11GPUDriver::GetD3DCmpFunc(ECmpFunc Func)
+{
+	switch (Func)
+	{
+		case Cmp_Never:			return D3D11_COMPARISON_NEVER;
+		case Cmp_Less:			return D3D11_COMPARISON_LESS;
+		case Cmp_LessEqual:		return D3D11_COMPARISON_LESS_EQUAL;
+		case Cmp_Greater:		return D3D11_COMPARISON_GREATER;
+		case Cmp_GreaterEqual:	return D3D11_COMPARISON_GREATER_EQUAL;
+		case Cmp_Equal:			return D3D11_COMPARISON_EQUAL;
+		case Cmp_NotEqual:		return D3D11_COMPARISON_NOT_EQUAL;
+		case Cmp_Always:		return D3D11_COMPARISON_ALWAYS;
+		default: Sys::Error("CD3D11GPUDriver::GetD3DCmpFunc() > invalid function"); return D3D11_COMPARISON_NEVER;
+	}
+}
+//---------------------------------------------------------------------
+
+D3D11_STENCIL_OP CD3D11GPUDriver::GetD3DStencilOp(EStencilOp Operation)
+{
+	switch (Operation)
+	{
+		case StencilOp_Keep:	return D3D11_STENCIL_OP_KEEP;
+		case StencilOp_Zero:	return D3D11_STENCIL_OP_ZERO;
+		case StencilOp_Replace:	return D3D11_STENCIL_OP_REPLACE;
+		case StencilOp_Inc:		return D3D11_STENCIL_OP_INCR;
+		case StencilOp_IncSat:	return D3D11_STENCIL_OP_INCR_SAT;
+		case StencilOp_Dec:		return D3D11_STENCIL_OP_DECR;
+		case StencilOp_DecSat:	return D3D11_STENCIL_OP_DECR_SAT;
+		case StencilOp_Invert:	return D3D11_STENCIL_OP_INVERT;
+		default: Sys::Error("CD3D11GPUDriver::GetD3DStencilOp() > invalid operation"); return D3D11_STENCIL_OP_KEEP;
+	}
+}
+//---------------------------------------------------------------------
+
+D3D11_BLEND CD3D11GPUDriver::GetD3DBlendArg(EBlendArg Arg)
+{
+	switch (Arg)
+	{
+		case BlendArg_Zero:				return D3D11_BLEND_ZERO;
+		case BlendArg_One:				return D3D11_BLEND_ONE;
+		case BlendArg_SrcColor:			return D3D11_BLEND_SRC_COLOR;
+		case BlendArg_InvSrcColor:		return D3D11_BLEND_INV_SRC_COLOR;
+		case BlendArg_Src1Color:		return D3D11_BLEND_SRC1_COLOR;
+		case BlendArg_InvSrc1Color:		return D3D11_BLEND_INV_SRC1_COLOR;
+		case BlendArg_SrcAlpha:			return D3D11_BLEND_SRC_ALPHA;
+		case BlendArg_SrcAlphaSat:		return D3D11_BLEND_SRC_ALPHA_SAT;
+		case BlendArg_InvSrcAlpha:		return D3D11_BLEND_INV_SRC_ALPHA;
+		case BlendArg_Src1Alpha:		return D3D11_BLEND_SRC1_ALPHA;
+		case BlendArg_InvSrc1Alpha:		return D3D11_BLEND_INV_SRC1_ALPHA;
+		case BlendArg_DestColor:		return D3D11_BLEND_DEST_COLOR;
+		case BlendArg_InvDestColor:		return D3D11_BLEND_INV_DEST_COLOR;
+		case BlendArg_DestAlpha:		return D3D11_BLEND_DEST_ALPHA;
+		case BlendArg_InvDestAlpha:		return D3D11_BLEND_INV_DEST_ALPHA;
+		case BlendArg_BlendFactor:		return D3D11_BLEND_BLEND_FACTOR;
+		case BlendArg_InvBlendFactor:	return D3D11_BLEND_INV_BLEND_FACTOR;
+		default: Sys::Error("CD3D11GPUDriver::GetD3DStencilOp() > invalid argument"); return D3D11_BLEND_ZERO;
+	}
+}
+//---------------------------------------------------------------------
+
+D3D11_BLEND_OP CD3D11GPUDriver::GetD3DBlendOp(EBlendOp Operation)
+{
+	switch (Operation)
+	{
+		case BlendOp_Add:		return D3D11_BLEND_OP_ADD;
+		case BlendOp_Sub:		return D3D11_BLEND_OP_SUBTRACT;
+		case BlendOp_RevSub:	return D3D11_BLEND_OP_REV_SUBTRACT;
+		case BlendOp_Min:		return D3D11_BLEND_OP_MIN;
+		case BlendOp_Max:		return D3D11_BLEND_OP_MAX;
+		default: Sys::Error("CD3D11GPUDriver::GetD3DBlendOp() > invalid operation"); return D3D11_BLEND_OP_ADD;
 	}
 }
 //---------------------------------------------------------------------

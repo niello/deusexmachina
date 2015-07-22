@@ -12,60 +12,6 @@
 namespace Render
 {
 
-enum ECmpFunc //???to core enums?
-{
-	Cmp_Never,
-	Cmp_Less,
-	Cmp_LessEqual,
-	Cmp_Greater,
-	Cmp_GreaterEqual,
-	Cmp_Equal,
-	Cmp_NotEqual,
-	Cmp_Always
-};
-
-enum EStencilOp
-{
-	StencilOp_Keep,
-	StencilOp_Zero,
-	StencilOp_Replace,
-	StencilOp_Inc,
-	StencilOp_IncSat,
-	StencilOp_Dec,
-	StencilOp_DecSat,
-	StencilOp_Invert
-};
-
-enum EBlendArg
-{
-	BlendArg_Zero,
-	BlendArg_One,
-	BlendArg_SrcColor,
-	BlendArg_InvSrcColor,
-	BlendArg_Src1Color,
-	BlendArg_InvSrc1Color,
-	BlendArg_SrcAlpha,
-	BlendArg_SrcAlphaSat,
-	BlendArg_InvSrcAlpha,
-	BlendArg_Src1Alpha,
-	BlendArg_InvSrc1Alpha,
-	BlendArg_DestColor,
-	BlendArg_InvDestColor,
-	BlendArg_DestAlpha,
-	BlendArg_InvDestAlpha,
-	BlendArg_BlendFactor,
-	BlendArg_InvBlendFactor
-};
-
-enum EBlendOp
-{
-	BlendOp_Add,
-	BlendOp_Sub,
-	BlendOp_RevSub,
-	BlendOp_Min,
-	BlendOp_Max
-};
-
 //!!!need const static member with defaults! or method "FillWithDefaults"
 
 struct CRenderStateDesc
@@ -94,7 +40,7 @@ struct CRenderStateDesc
 		Rasterizer_MSAALinesEnable	= 0x00000080
 	};
 
-	int					DepthBias;
+	float				DepthBias;
 	float				DepthBiasClamp;
 	float				SlopeScaledDepthBias;
 
@@ -110,7 +56,7 @@ struct CRenderStateDesc
 	ECmpFunc			DepthFunc;
 	unsigned char		StencilReadMask;
 	unsigned char		StencilWriteMask;
-	struct
+	struct CStencilSide
 	{
 		EStencilOp		StencilFailOp;
 		EStencilOp		StencilDepthFailOp;
@@ -119,6 +65,7 @@ struct CRenderStateDesc
 	}
 						StencilFrontFace,
 						StencilBackFace;
+	unsigned int		StencilRef;
 
 	// Blend
 
@@ -127,22 +74,36 @@ struct CRenderStateDesc
 		Blend_AlphaToCoverage		= 0x00010000,
 		Blend_Independent			= 0x00020000,	// If not, only RTBlend[0] is used
 		Blend_RTBlendEnable			= 0x00040000	// Use (Blend_RTBlendEnable << Index), Index = [0 .. 7]
-		// flags from 0x00040000 to 0x02000000 inclusive are reserved for Blend_RTBlendEnable
+		// flags from				  0x00040000
+		//       to					  0x02000000
+		// inclusive are reserved for Blend_RTBlendEnable
 	};
 
-	struct
+	struct CRTBlend
 	{
-		EBlendArg		SrcBlend;
-		EBlendArg		DestBlend;
+		EBlendArg		SrcBlendArg;
+		EBlendArg		DestBlendArg;
 		EBlendOp		BlendOp;
-		EBlendArg		SrcBlendAlpha;
-		EBlendArg		DestBlendAlpha;
+		EBlendArg		SrcBlendArgAlpha;
+		EBlendArg		DestBlendArgAlpha;
 		EBlendOp		BlendOpAlpha;
 		unsigned char	WriteMask;
 	}
 						RTBlend[8];
-	float				BlendFactor[4];
+	float				BlendFactorRGBA[4];
 	unsigned int		SampleMask;
+
+	// Misc
+
+	enum // For boolean variables
+	{
+		Misc_AlphaTestEnable		= 0x04000000,
+		Misc_ClipPlaneEnable		= 0x08000000
+	};
+	unsigned char		AlphaTestRef;
+	ECmpFunc			AlphaTestFunc;
+
+	void SetDefaults();
 };
 
 }

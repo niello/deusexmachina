@@ -730,7 +730,7 @@ bool CD3D9GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::WriteScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
+bool CD3D9GPUDriver::CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
 {
 	if (!pD3DDevice || IsInsideFrame || !SwapChainExists(SwapChainID)) FAIL;
 
@@ -931,6 +931,14 @@ bool CD3D9GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 	if (FAILED(pD3DDevice->SetIndices(pD3DIB))) FAIL;
 	CurrIB = (CD3D9IndexBuffer*)pIB;
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+	//!!!don't set substates for disabled states!
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -1476,82 +1484,6 @@ PDepthStencilBuffer CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 
 PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
-	//!!!need D3D render state to array index and array index to d3drenderstate!
-	// States supported by D3D9:
-	// D3D9-only:
-	//D3DRS_SRGBWRITEENABLE             = 194,
-	//D3DRS_ALPHATESTENABLE             = 15,
-	//D3DRS_ALPHAREF                    = 24,
-	//D3DRS_ALPHAFUNC                   = 25,
-	//D3DRS_LASTPIXEL                   = 16,
-	//D3DRS_DITHERENABLE                = 26,
-	//D3DRS_WRAP0-15                    = 128,
-	//D3DRS_CLIPPLANEENABLE             = 152,
-	//D3DRS_POINTSIZE                   = 154,
-	//D3DRS_POINTSIZE_MIN               = 155,
-	//D3DRS_POINTSPRITEENABLE           = 156,
-	//D3DRS_POINTSCALEENABLE            = 157,
-	//D3DRS_POINTSCALE_A                = 158,
-	//D3DRS_POINTSCALE_B                = 159,
-	//D3DRS_POINTSCALE_C                = 160,
-	//D3DRS_POINTSIZE_MAX               = 166,
-	//D3DRS_PATCHEDGESTYLE              = 163,
-	//D3DRS_DEBUGMONITORTOKEN           = 165,
-	//D3DRS_POSITIONDEGREE              = 172,
-	//D3DRS_NORMALDEGREE                = 173,
-	//D3DRS_MINTESSELLATIONLEVEL        = 178,
-	//D3DRS_MAXTESSELLATIONLEVEL        = 179,
-	//D3DRS_ADAPTIVETESS_X              = 180,
-	//D3DRS_ADAPTIVETESS_Y              = 181,
-	//D3DRS_ADAPTIVETESS_Z              = 182,
-	//D3DRS_ADAPTIVETESS_W              = 183,
-	//D3DRS_ENABLEADAPTIVETESSELLATION  = 184,
-	//
-	// Rasterizer:
-	//D3DRS_FILLMODE                    = 8,
-	//D3DRS_CULLMODE                    = 22,
-	//D3DRS_MULTISAMPLEANTIALIAS        = 161,
-	//D3DRS_MULTISAMPLEMASK             = 162,
-	//D3DRS_ANTIALIASEDLINEENABLE       = 176,
-	//D3DRS_CLIPPING                    = 136, //???is as DX11 DepthClipEnable?
-	//D3DRS_DEPTHBIAS                   = 195,
-	//D3DRS_SLOPESCALEDEPTHBIAS         = 175,
-	//D3DRS_SCISSORTESTENABLE           = 174,
-	//
-	// Depth-stencil:
-	//D3DRS_ZENABLE                     = 7,	// bool + D3DZB_USEW
-	//D3DRS_ZWRITEENABLE                = 14,
-	//D3DRS_ZFUNC                       = 23,
-	//D3DRS_STENCILENABLE               = 52,
-	//D3DRS_STENCILFAIL                 = 53,
-	//D3DRS_STENCILZFAIL                = 54,
-	//D3DRS_STENCILPASS                 = 55,
-	//D3DRS_STENCILFUNC                 = 56,
-	//D3DRS_STENCILREF                  = 57,
-	//D3DRS_STENCILMASK                 = 58,
-	//D3DRS_STENCILWRITEMASK            = 59,
-	//D3DRS_TWOSIDEDSTENCILMODE         = 185,
-	//D3DRS_CCW_STENCILFAIL             = 186,
-	//D3DRS_CCW_STENCILZFAIL            = 187,
-	//D3DRS_CCW_STENCILPASS             = 188,
-	//D3DRS_CCW_STENCILFUNC             = 189,
-	//
-	// Blend:
-	//D3DRS_SRCBLEND                    = 19,
-	//D3DRS_DESTBLEND                   = 20,
-	//D3DRS_ALPHABLENDENABLE            = 27,
-	//D3DRS_TEXTUREFACTOR               = 60, // Color for blending
-	//D3DRS_BLENDOP                     = 171,
-	//D3DRS_SEPARATEALPHABLENDENABLE    = 206,
-	//D3DRS_SRCBLENDALPHA               = 207,
-	//D3DRS_DESTBLENDALPHA              = 208,
-	//D3DRS_BLENDOPALPHA                = 209
-	//D3DRS_COLORWRITEENABLE            = 168,
-	//D3DRS_COLORWRITEENABLE1           = 190,
-	//D3DRS_COLORWRITEENABLE2           = 191,
-	//D3DRS_COLORWRITEENABLE3           = 192,
-	//D3DRS_BLENDFACTOR                 = 193,
-
 	IDirect3DVertexShader9* pVS = NULL;
 	IDirect3DPixelShader9* pPS = NULL;
 
@@ -1563,6 +1495,92 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	PD3D9RenderState RS = n_new(CD3D9RenderState);
 	RS->pVS = pVS;
 	RS->pPS = pPS;
+
+	DWORD* pValues = RS->D3DStateValues;
+
+	// Not supported:
+	// - Rasterizer_DepthClipEnable
+	// - DepthBiasClamp
+	// - Blend_AlphaToCoverage
+	// - Blend_Independent
+	// - D3DRS_COLORWRITEENABLE1, 2, 3
+
+	// Rasterizer
+
+	pValues[CD3D9RenderState::D3D9_FILLMODE] = Desc.Flags.Is(CRenderStateDesc::Rasterizer_Wireframe) ? D3DFILL_WIREFRAME : D3DFILL_SOLID;
+	const bool CullFront = Desc.Flags.Is(CRenderStateDesc::Rasterizer_CullFront);
+	const bool CullBack = Desc.Flags.Is(CRenderStateDesc::Rasterizer_CullBack);
+	const bool FrontCCW = Desc.Flags.Is(CRenderStateDesc::Rasterizer_FrontCCW);
+	if (!CullFront && !CullBack) pValues[CD3D9RenderState::D3D9_CULLMODE] = D3DCULL_NONE;
+	else if (CullBack) pValues[CD3D9RenderState::D3D9_CULLMODE] = FrontCCW ? D3DCULL_CW : D3DCULL_CCW;
+	else pValues[CD3D9RenderState::D3D9_CULLMODE] = FrontCCW ? D3DCULL_CCW : D3DCULL_CW;
+	pValues[CD3D9RenderState::D3D9_SCISSORTESTENABLE] = Desc.Flags.Is(CRenderStateDesc::Rasterizer_ScissorEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_MULTISAMPLEANTIALIAS] = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAAEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_ANTIALIASEDLINEENABLE] = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAALinesEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_DEPTHBIAS] = *((DWORD*)&Desc.DepthBias);
+	pValues[CD3D9RenderState::D3D9_SLOPESCALEDEPTHBIAS] = *((DWORD*)&Desc.SlopeScaledDepthBias);
+
+	// Depth-stencil
+
+	pValues[CD3D9RenderState::D3D9_ZENABLE] = Desc.Flags.Is(CRenderStateDesc::DS_DepthEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_ZWRITEENABLE] = Desc.Flags.Is(CRenderStateDesc::DS_DepthWriteEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_STENCILENABLE] = Desc.Flags.Is(CRenderStateDesc::DS_StencilEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_ZFUNC] = GetD3DCmpFunc(Desc.DepthFunc);
+	pValues[CD3D9RenderState::D3D9_STENCILMASK] = Desc.StencilReadMask;
+	pValues[CD3D9RenderState::D3D9_STENCILWRITEMASK] = Desc.StencilWriteMask;
+	pValues[CD3D9RenderState::D3D9_STENCILREF] = Desc.StencilRef;
+
+	//???to separate bool TWOSIDEDSTENCILMODE in Desc? always on in D3D11
+	pValues[CD3D9RenderState::D3D9_TWOSIDEDSTENCILMODE] = (!CullFront && !CullBack) ? TRUE : FALSE;
+	const CRenderStateDesc::CStencilSide& StencilCW = FrontCCW ? Desc.StencilBackFace : Desc.StencilFrontFace;
+	const CRenderStateDesc::CStencilSide& StencilCCW = FrontCCW ? Desc.StencilFrontFace : Desc.StencilBackFace;
+	pValues[CD3D9RenderState::D3D9_STENCILFUNC] = GetD3DCmpFunc(StencilCW.StencilFunc);
+	pValues[CD3D9RenderState::D3D9_STENCILPASS] = GetD3DStencilOp(StencilCW.StencilPassOp);
+	pValues[CD3D9RenderState::D3D9_STENCILFAIL] = GetD3DStencilOp(StencilCW.StencilFailOp);
+	pValues[CD3D9RenderState::D3D9_STENCILZFAIL] = GetD3DStencilOp(StencilCW.StencilDepthFailOp);
+	pValues[CD3D9RenderState::D3D9_CCW_STENCILFUNC] = GetD3DCmpFunc(StencilCCW.StencilFunc);
+	pValues[CD3D9RenderState::D3D9_CCW_STENCILPASS] = GetD3DStencilOp(StencilCCW.StencilPassOp);
+	pValues[CD3D9RenderState::D3D9_CCW_STENCILFAIL] = GetD3DStencilOp(StencilCCW.StencilFailOp);
+	pValues[CD3D9RenderState::D3D9_CCW_STENCILZFAIL] = GetD3DStencilOp(StencilCCW.StencilDepthFailOp);
+
+	// Blend
+
+	pValues[CD3D9RenderState::D3D9_MULTISAMPLEMASK] = Desc.SampleMask;
+	pValues[CD3D9RenderState::D3D9_BLENDFACTOR] =
+		D3DCOLOR_COLORVALUE(Desc.BlendFactorRGBA[0], Desc.BlendFactorRGBA[1], Desc.BlendFactorRGBA[2], Desc.BlendFactorRGBA[3]);
+
+	const CRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[0];
+	pValues[CD3D9RenderState::D3D9_ALPHABLENDENABLE] = Desc.Flags.Is(CRenderStateDesc::Blend_RTBlendEnable << 0) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_SEPARATEALPHABLENDENABLE] = TRUE;
+	pValues[CD3D9RenderState::D3D9_SRCBLEND] = GetD3DBlendArg(RTBlend.SrcBlendArg);
+	pValues[CD3D9RenderState::D3D9_DESTBLEND] = GetD3DBlendArg(RTBlend.DestBlendArg);
+	pValues[CD3D9RenderState::D3D9_BLENDOP] = GetD3DBlendOp(RTBlend.BlendOp);
+	pValues[CD3D9RenderState::D3D9_SRCBLENDALPHA] = GetD3DBlendArg(RTBlend.SrcBlendArgAlpha);
+	pValues[CD3D9RenderState::D3D9_DESTBLENDALPHA] = GetD3DBlendArg(RTBlend.DestBlendArgAlpha);
+	pValues[CD3D9RenderState::D3D9_BLENDOPALPHA] = GetD3DBlendOp(RTBlend.BlendOpAlpha);
+	pValues[CD3D9RenderState::D3D9_COLORWRITEENABLE] = RTBlend.WriteMask;
+
+	//!!!can add D3D9_COLORWRITEENABLE1, 2, 3!
+
+	// Misc
+
+	pValues[CD3D9RenderState::D3D9_ALPHATESTENABLE] = Desc.Flags.Is(CRenderStateDesc::Misc_AlphaTestEnable) ? TRUE : FALSE;
+	pValues[CD3D9RenderState::D3D9_ALPHAREF] = Desc.AlphaTestRef;
+	pValues[CD3D9RenderState::D3D9_ALPHAFUNC] = GetD3DCmpFunc(Desc.AlphaTestFunc);
+	pValues[CD3D9RenderState::D3D9_CLIPPLANEENABLE] = Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable) ? TRUE : FALSE;
+
+	// Since render state creation should be load-time, it is not performance critical. If we
+	// skip this and create new CRenderState, sorting will consider them as different state sets.
+	for (int i = 0; i < RenderStates.GetCount(); ++i)
+	{
+		CD3D9RenderState* pRS = RenderStates[i].GetUnsafe();
+		if (pRS->pVS == pVS &&
+			pRS->pPS == pPS &&
+			memcmp(pRS->D3DStateValues, RS->D3DStateValues, sizeof(pRS->D3DStateValues)) == 0)
+		{
+			return pRS;
+		}
+	}
 
 	RenderStates.Add(RS);
 
@@ -2092,6 +2110,80 @@ D3DCUBEMAP_FACES CD3D9GPUDriver::GetD3DCubeMapFace(ECubeMapFace Face)
 		case CubeFace_PosZ:	return D3DCUBEMAP_FACE_POSITIVE_Z;
 		case CubeFace_NegZ:	return D3DCUBEMAP_FACE_NEGATIVE_Z;
 		default: Sys::Error("CD3D9GPUDriver::GetD3DCubeMapFace() > Invalid cubemap face\n"); return D3DCUBEMAP_FACE_FORCE_DWORD;
+	}
+}
+//---------------------------------------------------------------------
+
+D3DCMPFUNC CD3D9GPUDriver::GetD3DCmpFunc(ECmpFunc Func)
+{
+	switch (Func)
+	{
+		case Cmp_Never:			return D3DCMP_NEVER;
+		case Cmp_Less:			return D3DCMP_LESS;
+		case Cmp_LessEqual:		return D3DCMP_LESSEQUAL;
+		case Cmp_Greater:		return D3DCMP_GREATER;
+		case Cmp_GreaterEqual:	return D3DCMP_GREATEREQUAL;
+		case Cmp_Equal:			return D3DCMP_EQUAL;
+		case Cmp_NotEqual:		return D3DCMP_NOTEQUAL;
+		case Cmp_Always:		return D3DCMP_ALWAYS;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DCmpFunc() > invalid function"); return D3DCMP_NEVER;
+	}
+}
+//---------------------------------------------------------------------
+
+D3DSTENCILOP CD3D9GPUDriver::GetD3DStencilOp(EStencilOp Operation)
+{
+	switch (Operation)
+	{
+		case StencilOp_Keep:	return D3DSTENCILOP_KEEP;
+		case StencilOp_Zero:	return D3DSTENCILOP_ZERO;
+		case StencilOp_Replace:	return D3DSTENCILOP_REPLACE;
+		case StencilOp_Inc:		return D3DSTENCILOP_INCR;
+		case StencilOp_IncSat:	return D3DSTENCILOP_INCRSAT;
+		case StencilOp_Dec:		return D3DSTENCILOP_DECR;
+		case StencilOp_DecSat:	return D3DSTENCILOP_DECRSAT;
+		case StencilOp_Invert:	return D3DSTENCILOP_INVERT;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DStencilOp() > invalid operation"); return D3DSTENCILOP_KEEP;
+	}
+}
+//---------------------------------------------------------------------
+
+D3DBLEND CD3D9GPUDriver::GetD3DBlendArg(EBlendArg Arg)
+{
+	switch (Arg)
+	{
+		case BlendArg_Zero:				return D3DBLEND_ZERO;
+		case BlendArg_One:				return D3DBLEND_ONE;
+		case BlendArg_SrcColor:			return D3DBLEND_SRCCOLOR;
+		case BlendArg_InvSrcColor:		return D3DBLEND_INVSRCCOLOR;
+		//case BlendArg_Src1Color:		return D3D11_BLEND_SRC1_COLOR;
+		//case BlendArg_InvSrc1Color:		return D3D11_BLEND_INV_SRC1_COLOR;
+		case BlendArg_SrcAlpha:			return D3DBLEND_SRCALPHA;
+		case BlendArg_SrcAlphaSat:		return D3DBLEND_SRCALPHASAT;
+		case BlendArg_InvSrcAlpha:		return D3DBLEND_INVSRCALPHA;
+		case BlendArg_Src1Alpha:		return D3DBLEND_BOTHSRCALPHA;
+		case BlendArg_InvSrc1Alpha:		return D3DBLEND_BOTHINVSRCALPHA;
+		case BlendArg_DestColor:		return D3DBLEND_DESTCOLOR;
+		case BlendArg_InvDestColor:		return D3DBLEND_INVDESTCOLOR;
+		case BlendArg_DestAlpha:		return D3DBLEND_DESTALPHA;
+		case BlendArg_InvDestAlpha:		return D3DBLEND_INVDESTALPHA;
+		case BlendArg_BlendFactor:		return D3DBLEND_BLENDFACTOR;
+		case BlendArg_InvBlendFactor:	return D3DBLEND_INVBLENDFACTOR;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DStencilOp() > invalid argument"); return D3DBLEND_ZERO;
+	}
+}
+//---------------------------------------------------------------------
+
+D3DBLENDOP CD3D9GPUDriver::GetD3DBlendOp(EBlendOp Operation)
+{
+	switch (Operation)
+	{
+		case BlendOp_Add:		return D3DBLENDOP_ADD;
+		case BlendOp_Sub:		return D3DBLENDOP_SUBTRACT;
+		case BlendOp_RevSub:	return D3DBLENDOP_REVSUBTRACT;
+		case BlendOp_Min:		return D3DBLENDOP_MIN;
+		case BlendOp_Max:		return D3DBLENDOP_MAX;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DBlendOp() > invalid operation"); return D3DBLENDOP_ADD;
 	}
 }
 //---------------------------------------------------------------------
