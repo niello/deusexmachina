@@ -13,6 +13,7 @@ namespace Render
 	typedef Ptr<class CGPUDriver> PGPUDriver;
 	typedef Ptr<class CVertexLayout> PVertexLayout;
 	typedef Ptr<class CVertexBuffer> PVertexBuffer;
+	typedef Ptr<class CRenderState> PRenderState;
 }
 
 namespace CEGUI
@@ -39,8 +40,12 @@ protected:
 
 	RenderTarget*						pDefaultRT;
 	Render::PVertexLayout				VertexLayout;
+	Render::PRenderState				NormalUnclipped;
+	Render::PRenderState				NormalClipped;
+	Render::PRenderState				PremultipliedUnclipped;
+	Render::PRenderState				PremultipliedClipped;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -59,6 +64,7 @@ public:
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }
 	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, DWORD VertexCount);
+	void					setRenderState(BlendMode BlendMode, bool Clipped);
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() { return *pDefaultRT; }

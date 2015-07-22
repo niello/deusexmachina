@@ -146,6 +146,60 @@ enum EResourceMapMode
 	Map_WriteNoOverwrite,	// Gain write access, must be Access_GPU_Read | Access_CPU_Write (dynamic)
 };
 
+enum ECmpFunc //???to core enums?
+{
+	Cmp_Never,
+	Cmp_Less,
+	Cmp_LessEqual,
+	Cmp_Greater,
+	Cmp_GreaterEqual,
+	Cmp_Equal,
+	Cmp_NotEqual,
+	Cmp_Always
+};
+
+enum EStencilOp
+{
+	StencilOp_Keep,
+	StencilOp_Zero,
+	StencilOp_Replace,
+	StencilOp_Inc,
+	StencilOp_IncSat,
+	StencilOp_Dec,
+	StencilOp_DecSat,
+	StencilOp_Invert
+};
+
+enum EBlendArg
+{
+	BlendArg_Zero,
+	BlendArg_One,
+	BlendArg_SrcColor,
+	BlendArg_InvSrcColor,
+	BlendArg_Src1Color,
+	BlendArg_InvSrc1Color,
+	BlendArg_SrcAlpha,
+	BlendArg_SrcAlphaSat,
+	BlendArg_InvSrcAlpha,
+	BlendArg_Src1Alpha,
+	BlendArg_InvSrc1Alpha,
+	BlendArg_DestColor,
+	BlendArg_InvDestColor,
+	BlendArg_DestAlpha,
+	BlendArg_InvDestAlpha,
+	BlendArg_BlendFactor,
+	BlendArg_InvBlendFactor
+};
+
+enum EBlendOp
+{
+	BlendOp_Add,
+	BlendOp_Sub,
+	BlendOp_RevSub,
+	BlendOp_Min,
+	BlendOp_Max
+};
+
 struct CImageData
 {
 	char*	pData;			// Data sequentially placed in memory

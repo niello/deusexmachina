@@ -78,22 +78,7 @@ void CDEMGeometryBuffer::draw() const
 		size_t pos = 0;
 		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)
 		{
-			if (d_blendMode == BM_RTT_PREMULTIPLIED)
-			{
-	n_assert(false);
-				/* 
-				if (i->clip) d_premultipliedClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-				else d_premultipliedUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-				*/
-			}
-			else
-			{
-	n_assert(false);
-				/* 
-				if (i->clip) d_normalClippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-				else d_normalUnclippedTechnique->GetPassByIndex(0)->Apply(0, d_device.d_context);
-				*/
-			}
+			d_owner.setRenderState(d_blendMode, i->clip);
  
 	n_assert(false);
 			//d_boundTextureVariable->SetResource(const_cast<ID3D11ShaderResourceView*>(i->texture));
