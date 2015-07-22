@@ -59,7 +59,7 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }

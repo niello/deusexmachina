@@ -35,7 +35,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
 	RSDesc.SetDefaults();
 	RSDesc.VertexShaderURI = pVertexShaderURI;
-	RSDesc.VertexShaderURI = pPixelShaderURI;
+	RSDesc.PixelShaderURI = pPixelShaderURI;
 	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
 	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
 					   Render::CRenderStateDesc::DS_DepthWriteEnable |
@@ -124,10 +124,10 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, SwapChain);
+	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, pVertexShaderURI, pPixelShaderURI);
 }
 //--------------------------------------------------------------------
 

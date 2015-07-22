@@ -1775,6 +1775,8 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 
 //???is AddRef invoked if runtime finds existing state?
 //!!!can create solid and wireframe variants of the same state for the fast switching!
+//???unused substates force default? say, stencil off - all stencil settings are default,
+//not to duplicate states.
 PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
 	ID3D11VertexShader* pVS = NULL;
@@ -1841,10 +1843,10 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	BDesc.AlphaToCoverageEnable = Desc.Flags.Is(CRenderStateDesc::Blend_AlphaToCoverage);
 	for (DWORD i = 0; i < 8; ++i)
 	{
+		D3D11_RENDER_TARGET_BLEND_DESC& RTDesc = BDesc.RenderTarget[i];
 		if (i == 0 || BDesc.IndependentBlendEnable)
 		{
 			const CRenderStateDesc::CRTBlend& SrcRTDesc = Desc.RTBlend[i];
-			D3D11_RENDER_TARGET_BLEND_DESC& RTDesc = BDesc.RenderTarget[i];
 			RTDesc.BlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_RTBlendEnable << i);
 			RTDesc.SrcBlend = GetD3DBlendArg(SrcRTDesc.SrcBlendArg);
 			RTDesc.DestBlend = GetD3DBlendArg(SrcRTDesc.DestBlendArg);
@@ -1852,9 +1854,19 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 			RTDesc.SrcBlendAlpha = GetD3DBlendArg(SrcRTDesc.SrcBlendArgAlpha);
 			RTDesc.DestBlendAlpha = GetD3DBlendArg(SrcRTDesc.DestBlendArgAlpha);
 			RTDesc.BlendOpAlpha = GetD3DBlendOp(SrcRTDesc.BlendOpAlpha);
-			RTDesc.RenderTargetWriteMask = SrcRTDesc.WriteMask;
+			RTDesc.RenderTargetWriteMask = SrcRTDesc.WriteMask & 0x0f;
 		}
-		else BDesc.RenderTarget[i].BlendEnable = FALSE;
+		else
+		{
+			RTDesc.BlendEnable = FALSE;
+			RTDesc.SrcBlend = D3D11_BLEND_ONE;
+			RTDesc.DestBlend = D3D11_BLEND_ZERO;
+			RTDesc.BlendOp = D3D11_BLEND_OP_ADD;
+			RTDesc.SrcBlendAlpha = D3D11_BLEND_ONE;
+			RTDesc.DestBlendAlpha = D3D11_BLEND_ZERO;
+			RTDesc.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			RTDesc.RenderTargetWriteMask = 0;
+		}
 	}
 
 	ID3D11BlendState* pBState = NULL;
@@ -1894,6 +1906,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		RS->BlendFactorRGBA[2] = Desc.BlendFactorRGBA[2];
 		RS->BlendFactorRGBA[3] = Desc.BlendFactorRGBA[3];
 		RS->SampleMask = Desc.SampleMask;
+		//???store alpha ref as shader var? store clip plane enable as flag that signs to set clip plane vars?
 
 		RenderStates.Add(RS);
 

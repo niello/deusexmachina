@@ -48,7 +48,7 @@ void CRenderStateDesc::SetDefaults()
 		RTB.SrcBlendArgAlpha = BlendArg_One;
 		RTB.DestBlendArgAlpha = BlendArg_Zero;
 		RTB.BlendOpAlpha = BlendOp_Add;
-		RTB.WriteMask = 0xff;
+		RTB.WriteMask = 0x0f;
 	}
 
 	AlphaTestRef = 0;
