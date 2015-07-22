@@ -1558,7 +1558,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	pValues[CD3D9RenderState::D3D9_SRCBLENDALPHA] = GetD3DBlendArg(RTBlend.SrcBlendArgAlpha);
 	pValues[CD3D9RenderState::D3D9_DESTBLENDALPHA] = GetD3DBlendArg(RTBlend.DestBlendArgAlpha);
 	pValues[CD3D9RenderState::D3D9_BLENDOPALPHA] = GetD3DBlendOp(RTBlend.BlendOpAlpha);
-	pValues[CD3D9RenderState::D3D9_COLORWRITEENABLE] = RTBlend.WriteMask;
+	pValues[CD3D9RenderState::D3D9_COLORWRITEENABLE] = RTBlend.WriteMask & 0x0f;
 
 	//!!!can add D3D9_COLORWRITEENABLE1, 2, 3!
 
