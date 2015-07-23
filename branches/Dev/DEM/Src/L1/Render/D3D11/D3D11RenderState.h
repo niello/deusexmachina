@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_D3D11_STATE_H__
 
 #include <Render/RenderState.h>
+#include <Data/StringID.h>
 
 // Direct3D11 render state implementation
 
@@ -24,6 +25,7 @@ class CD3D11RenderState: public CRenderState
 
 public:
 
+	CStrID						InputSigID;
 	ID3D11VertexShader*			pVS;
 	ID3D11HullShader*			pHS;
 	ID3D11DomainShader*			pDS;

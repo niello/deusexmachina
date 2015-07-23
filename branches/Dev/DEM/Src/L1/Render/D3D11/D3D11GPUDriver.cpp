@@ -935,8 +935,10 @@ bool CD3D11GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 
 bool CD3D11GPUDriver::SetRenderState(CRenderState* pState)
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
-	FAIL;
+	if (CurrRS.GetUnsafe() == pState || NewRS.GetUnsafe() == pState) OK;
+	NewRS = (CD3D11RenderState*)pState;
+	CurrDirtyFlags.Set(GPU_Dirty_RS);
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -1002,6 +1004,7 @@ void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorR
 }
 //---------------------------------------------------------------------
 
+//???instance count as param?
 bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 {
 	n_assert_dbg(pD3DDevice); // && IsInsideFrame);
@@ -1071,19 +1074,71 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	const Data::CFlags Update(ChangesToUpdate);
 	DWORD Errors = 0;
 
-	//!!!process VL and SH (shader)!
-	if (Update.Is(GPU_Dirty_VL) && CurrDirtyFlags.Is(GPU_Dirty_VL))
+	bool InputLayoutDirty = false;
+	if (Update.Is(GPU_Dirty_RS) && CurrDirtyFlags.Is(GPU_Dirty_RS))
 	{
-		// Determine pCurrIL value based on shader and vertex layout
-		//ID3D11InputLayout* pNewCurrIL = GetD3DInputLayout(CurrVL, InputSigID, pSig = NULL);
+		CD3D11RenderState* pD3DState = NewRS.GetUnsafe();
 
-		//if (pCurrIL != pNewCurrIL)
+		if (pD3DState)
 		{
-			pD3DImmContext->IASetInputLayout(pCurrIL);
-//			pCurrIL = pNewCurrIL;
+			if (pD3DState->InputSigID != CurrRS->InputSigID) InputLayoutDirty = true;
+
+			if (pD3DState->pVS != CurrRS->pVS) pD3DImmContext->VSSetShader(pD3DState->pVS, NULL, 0);
+			if (pD3DState->pHS != CurrRS->pHS) pD3DImmContext->HSSetShader(pD3DState->pHS, NULL, 0);
+			if (pD3DState->pDS != CurrRS->pDS) pD3DImmContext->DSSetShader(pD3DState->pDS, NULL, 0);
+			if (pD3DState->pGS != CurrRS->pGS) pD3DImmContext->GSSetShader(pD3DState->pGS, NULL, 0);
+			if (pD3DState->pPS != CurrRS->pPS) pD3DImmContext->PSSetShader(pD3DState->pPS, NULL, 0);
+
+			if (pD3DState->pBState != CurrRS->pBState ||
+				pD3DState->BlendFactorRGBA[0] != CurrRS->BlendFactorRGBA[0] ||
+				pD3DState->BlendFactorRGBA[1] != CurrRS->BlendFactorRGBA[1] ||
+				pD3DState->BlendFactorRGBA[2] != CurrRS->BlendFactorRGBA[2] ||
+				pD3DState->BlendFactorRGBA[3] != CurrRS->BlendFactorRGBA[3] ||
+				pD3DState->SampleMask != CurrRS->SampleMask)
+			{
+				pD3DImmContext->OMSetBlendState(pD3DState->pBState, pD3DState->BlendFactorRGBA, pD3DState->SampleMask);
+			}
+
+			if (pD3DState->pDSState != CurrRS->pDSState ||
+				pD3DState->StencilRef != CurrRS->StencilRef)
+			{
+				pD3DImmContext->OMSetDepthStencilState(pD3DState->pDSState, pD3DState->StencilRef);
+			}
+
+			if (pD3DState->pRState != CurrRS->pRState) pD3DImmContext->RSSetState(pD3DState->pRState);
+		}
+		else
+		{
+			const float EmptyFloats[4] = { 0 };
+			pD3DImmContext->VSSetShader(NULL, NULL, 0);
+			pD3DImmContext->HSSetShader(NULL, NULL, 0);
+			pD3DImmContext->DSSetShader(NULL, NULL, 0);
+			pD3DImmContext->GSSetShader(NULL, NULL, 0);
+			pD3DImmContext->PSSetShader(NULL, NULL, 0);
+			pD3DImmContext->OMSetBlendState(NULL, EmptyFloats, 0xffffffff);
+			pD3DImmContext->OMSetDepthStencilState(NULL, 0);
+			pD3DImmContext->RSSetState(NULL);
 		}
 
+		CurrRS = NewRS;
+		CurrDirtyFlags.Clear(GPU_Dirty_RS);
+	}
+
+	if (Update.Is(GPU_Dirty_VL) && CurrDirtyFlags.Is(GPU_Dirty_VL))
+	{
+		InputLayoutDirty = true;
 		CurrDirtyFlags.Clear(GPU_Dirty_VL);
+	}
+
+	if (InputLayoutDirty)
+	{
+		CStrID InputSigID = CurrRS.IsValidPtr() ? CurrRS->InputSigID : CStrID::Empty;
+		ID3D11InputLayout* pNewCurrIL = GetD3DInputLayout(*CurrVL, InputSigID);
+		if (pCurrIL != pNewCurrIL)
+		{
+			pD3DImmContext->IASetInputLayout(pNewCurrIL);
+			pCurrIL = pNewCurrIL;
+		}
 	}
 
 	if (Update.Is(GPU_Dirty_VB) && CurrDirtyFlags.Is(GPU_Dirty_VB))
@@ -1214,6 +1269,8 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 // Gets or creates an actual layout for the given vertex layout and shader input signature
 ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature)
 {
+	if (!ShaderInputSignatureID.IsValid()) return NULL;
+
 	ID3D11InputLayout* pLayout = VertexLayout.GetD3DInputLayout(ShaderInputSignatureID);
 	if (pLayout) return pLayout;
 
@@ -1789,6 +1846,9 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	// if not loaded, load and add into the cache
 	//???how to determine final compiled shader file? when compile my effect, serialize it
 	//with final shader file names? can even use DSS for effects!
+
+	//!!!if VS loaded first time and has new input sig!
+	//!!!ShaderInputSignatures.Add(shader input sig blob)!
 
 	// Not supported (implement in D3D11 shaders):
 	// - Misc_AlphaTestEnable

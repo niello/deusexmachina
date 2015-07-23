@@ -44,7 +44,7 @@ public:
 		GPU_Dirty_VL = 0x0001,		// Vertex layout
 		GPU_Dirty_VB = 0x0002,		// Vertex buffer(s)
 		GPU_Dirty_IB = 0x0004,		// Index buffer
-		// SH or RS
+		GPU_Dirty_RS = 0x0008,		// Render state
 		GPU_Dirty_RT = 0x0010,		// Render target(s)
 		GPU_Dirty_DS = 0x0020,		// Depth-stencil buffer
 		GPU_Dirty_VP = 0x0040,		// Viewport(s)
@@ -64,6 +64,8 @@ protected:
 	EPrimitiveTopology					CurrPT;
 	CFixedArray<PD3D11RenderTarget>		CurrRT;
 	PD3D11DepthStencilBuffer			CurrDS;
+	PD3D11RenderState					CurrRS;
+	PD3D11RenderState					NewRS;
 	D3D11_VIEWPORT*						CurrVP;
 	RECT*								CurrSR;				//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
 	DWORD								MaxViewportCount;

@@ -131,11 +131,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Target
 		FAIL;
 	}
 
-	// Can setup W-buffer: D3DCaps.RasterCaps | D3DPRASTERCAPS_WBUFFER -> D3DZB_USEW
-
-	pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
-	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-	pD3DDevice->SetRenderState(D3DRS_FILLMODE, /*Wireframe ? D3DFILL_WIREFRAME :*/ D3DFILL_SOLID);
+	SetDefaultRenderState();
 
 	bool IsFullscreenNow = (D3DPresentParams.Windowed == FALSE);
 	bool Failed = false;
@@ -396,6 +392,72 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 }
 //---------------------------------------------------------------------
 
+void CD3D9GPUDriver::SetDefaultRenderState()
+{
+	// Current state of just created device is a default state. Setting it as current,
+	// we avoid resetting default render states when this->SetRenderState() is called.
+	// Default values are described in D3DRENDERSTATETYPE docs at
+	// https://msdn.microsoft.com/en-us/library/windows/desktop/bb172599(v=vs.85).aspx.
+	// Some default values may be manually overridden and must be set just before
+	// setting DefaultRenderState as current.
+	if (DefaultRenderState.IsNullPtr())
+	{
+		DefaultRenderState = n_new(CD3D9RenderState);
+		DefaultRenderState->pVS = NULL;
+		DefaultRenderState->pPS = NULL;
+
+		DWORD* pValues = DefaultRenderState->D3DStateValues;
+
+		pValues[CD3D9RenderState::D3D9_FILLMODE] = D3DFILL_SOLID;
+		pValues[CD3D9RenderState::D3D9_CULLMODE] = D3DCULL_CCW;
+		pValues[CD3D9RenderState::D3D9_SCISSORTESTENABLE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_MULTISAMPLEANTIALIAS] = TRUE;
+		pValues[CD3D9RenderState::D3D9_ANTIALIASEDLINEENABLE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_DEPTHBIAS] = 0;
+		pValues[CD3D9RenderState::D3D9_SLOPESCALEDEPTHBIAS] = 0;
+		pValues[CD3D9RenderState::D3D9_ZENABLE] = D3DZB_FALSE;
+		pValues[CD3D9RenderState::D3D9_ZWRITEENABLE] = TRUE;
+		pValues[CD3D9RenderState::D3D9_STENCILENABLE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_ZFUNC] = D3DCMP_LESSEQUAL;
+		pValues[CD3D9RenderState::D3D9_STENCILMASK] = 0xFFFFFFFF;
+		pValues[CD3D9RenderState::D3D9_STENCILWRITEMASK] = 0xFFFFFFFF;
+		pValues[CD3D9RenderState::D3D9_STENCILREF] = 0;
+		pValues[CD3D9RenderState::D3D9_TWOSIDEDSTENCILMODE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_STENCILFUNC] = D3DCMP_ALWAYS;
+		pValues[CD3D9RenderState::D3D9_STENCILPASS] = D3DSTENCILOP_KEEP;
+		pValues[CD3D9RenderState::D3D9_STENCILFAIL] = D3DSTENCILOP_KEEP;
+		pValues[CD3D9RenderState::D3D9_STENCILZFAIL] = D3DSTENCILOP_KEEP;
+		pValues[CD3D9RenderState::D3D9_CCW_STENCILFUNC] = D3DCMP_ALWAYS;
+		pValues[CD3D9RenderState::D3D9_CCW_STENCILPASS] = D3DSTENCILOP_KEEP;
+		pValues[CD3D9RenderState::D3D9_CCW_STENCILFAIL] = D3DSTENCILOP_KEEP;
+		pValues[CD3D9RenderState::D3D9_CCW_STENCILZFAIL] = D3DSTENCILOP_KEEP;
+		pValues[CD3D9RenderState::D3D9_MULTISAMPLEMASK] = 0xFFFFFFFF;
+		pValues[CD3D9RenderState::D3D9_BLENDFACTOR] = 0xffffffff;
+		pValues[CD3D9RenderState::D3D9_ALPHABLENDENABLE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_SEPARATEALPHABLENDENABLE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_SRCBLEND] = D3DBLEND_ONE;
+		pValues[CD3D9RenderState::D3D9_DESTBLEND] = D3DBLEND_ZERO;
+		pValues[CD3D9RenderState::D3D9_BLENDOP] = D3DBLENDOP_ADD;
+		pValues[CD3D9RenderState::D3D9_SRCBLENDALPHA] = D3DBLEND_ONE;
+		pValues[CD3D9RenderState::D3D9_DESTBLENDALPHA] = D3DBLEND_ZERO;
+		pValues[CD3D9RenderState::D3D9_BLENDOPALPHA] = D3DBLENDOP_ADD;
+		pValues[CD3D9RenderState::D3D9_COLORWRITEENABLE] = 0x0000000F;
+		pValues[CD3D9RenderState::D3D9_ALPHATESTENABLE] = FALSE;
+		pValues[CD3D9RenderState::D3D9_ALPHAREF] = 0;
+		pValues[CD3D9RenderState::D3D9_ALPHAFUNC] = D3DCMP_ALWAYS;
+		pValues[CD3D9RenderState::D3D9_CLIPPLANEENABLE] = 0;
+
+		RenderStates.Add(DefaultRenderState);
+	}
+
+	// Can setup W-buffer: D3DCaps.RasterCaps | D3DPRASTERCAPS_WBUFFER -> D3DZB_USEW
+
+	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
+	CurrRS = DefaultRenderState;
+}
+//---------------------------------------------------------------------
+
 // If device exists, creates additional swap chain. If device does not exist, creates a device with an implicit swap chain.
 int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
@@ -476,11 +538,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 
 		if (!DeviceCreated) return ERR_CREATION_ERROR;
 
-		// Can setup W-buffer: D3DCaps.RasterCaps | D3DPRASTERCAPS_WBUFFER -> D3DZB_USEW
-
-		pD3DDevice->SetRenderState(D3DRS_DITHERENABLE, FALSE);
-		pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-		pD3DDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
+		SetDefaultRenderState();
 
 		ItSC = SwapChains.IteratorAt(0); 
 		ItSC->pSwapChain = NULL;
@@ -936,9 +994,23 @@ bool CD3D9GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 
 bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
-	//!!!don't set substates for disabled states!
-	FAIL;
+	CD3D9RenderState* pD3DState = pState ? (CD3D9RenderState*)pState : DefaultRenderState.GetUnsafe();
+	n_assert_dbg(pD3DState);
+
+	if (CurrRS.GetUnsafe() == pD3DState) OK;
+
+	if (pD3DState->pVS != CurrRS->pVS) pD3DDevice->SetVertexShader(pD3DState->pVS);
+	if (pD3DState->pPS != CurrRS->pPS) pD3DDevice->SetPixelShader(pD3DState->pPS);
+	DWORD* pValues = pD3DState->D3DStateValues;
+	for (int i = 0; i < CD3D9RenderState::D3D9_RS_COUNT; ++i)
+	{
+		DWORD Value = pValues[i];
+		if (Value != CurrRS->D3DStateValues[i])
+			n_verify_dbg(SUCCEEDED(pD3DDevice->SetRenderState(CD3D9RenderState::D3DStates[i], Value)));
+	}
+
+	CurrRS = pD3DState;
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -1567,7 +1639,10 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	pValues[CD3D9RenderState::D3D9_ALPHATESTENABLE] = Desc.Flags.Is(CRenderStateDesc::Misc_AlphaTestEnable) ? TRUE : FALSE;
 	pValues[CD3D9RenderState::D3D9_ALPHAREF] = Desc.AlphaTestRef;
 	pValues[CD3D9RenderState::D3D9_ALPHAFUNC] = GetD3DCmpFunc(Desc.AlphaTestFunc);
+
+n_assert(false);
 	pValues[CD3D9RenderState::D3D9_CLIPPLANEENABLE] = Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable) ? TRUE : FALSE;
+	//!!!D3DCLIPPLANEn
 
 	// Since render state creation should be load-time, it is not performance critical. If we
 	// skip this and create new CRenderState, sorting will consider them as different state sets.

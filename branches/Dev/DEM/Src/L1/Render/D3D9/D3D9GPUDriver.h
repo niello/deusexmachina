@@ -38,10 +38,12 @@ protected:
 	PD3D9IndexBuffer					CurrIB;
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
+	PD3D9RenderState					CurrRS;
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
 	CArray<PD3D9RenderState>			RenderStates;
+	PD3D9RenderState					DefaultRenderState; //!!!destroy along with RenderStates[]!
 	bool								IsInsideFrame;
 	//bool								Wireframe;
 
@@ -59,6 +61,7 @@ protected:
 	bool					OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 	bool					CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
+	void					SetDefaultRenderState();
 	bool					InitSwapChainRenderTarget(CD3D9SwapChain& SC);
 	bool					Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
 	void					Release();

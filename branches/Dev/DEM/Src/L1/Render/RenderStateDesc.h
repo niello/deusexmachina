@@ -98,7 +98,7 @@ struct CRenderStateDesc
 	enum // For boolean variables
 	{
 		Misc_AlphaTestEnable		= 0x04000000,
-		Misc_ClipPlaneEnable		= 0x08000000
+		Misc_ClipPlaneEnable		= 0x08000000 //!!!need 6 bits! or uchar/DWORD w/lower 6 bits
 	};
 	unsigned char		AlphaTestRef;
 	ECmpFunc			AlphaTestFunc;
