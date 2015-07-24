@@ -3,6 +3,7 @@
 #define __DEM_L1_SCENE_NODE_CTLR_COMPOSITE_H__
 
 #include <Scene/NodeController.h>
+#include <Data/Array.h>
 
 // Allows to select or blend output of multiple source controllers. Control values are now restricted
 // to Weight and Priority, which is sufficient for priority blending (W + P) as well as simple weighted

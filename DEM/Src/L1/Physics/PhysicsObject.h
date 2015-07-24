@@ -9,6 +9,7 @@
 
 class CAABB;
 class quaternion;
+class matrix44;
 class btTransform;
 class btCollisionObject;
 

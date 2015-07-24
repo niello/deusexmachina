@@ -7,6 +7,7 @@
 #include <Resources/Resource.h>
 #include <Data/Params.h>
 #include <Math/AABB.h>
+#include <Math/Matrix44.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 

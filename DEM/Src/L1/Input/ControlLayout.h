@@ -4,6 +4,7 @@
 
 #include <Input/InputMappingEvent.h>
 #include <Input/InputMappingState.h>
+#include <Data/Array.h>
 
 // Control layout is a set of mappings, each of which translates input
 // into abstract events and states.

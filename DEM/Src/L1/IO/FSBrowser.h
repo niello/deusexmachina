@@ -3,6 +3,7 @@
 #define __DEM_L1_FILE_SYSTEM_BROWSER_H__
 
 #include <IO/FileSystem.h>
+#include <Data/Array.h>
 
 // Utility class that encapsulates file system browsing session.
 // Use it to browse file system(s) and to retrieve directory contents and params.

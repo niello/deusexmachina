@@ -35,6 +35,7 @@
 
 #include "MD5.h"
 
+#include <stdio.h>
 
 static unsigned char PADDING[64] =
 {

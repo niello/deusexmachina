@@ -2,6 +2,7 @@
 
 #include <Data/DataArray.h>
 #include <Data/Params.h>
+#include <Data/StringUtils.h>
 #include <ctype.h>
 
 namespace Data
@@ -630,9 +631,9 @@ void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Ty
 	CData Data;
 	switch (Type)
 	{
-		case T_INT:		Data = Const.AsInt(); break;
+		case T_INT:		Data = StringUtils::ToInt(Const.CStr()); break;
 		case T_INT_HEX:	Data = (int)strtoul(Const.CStr(), NULL, 16); break; //!!!can use 0 base to autodetect radix
-		case T_FLOAT:	Data = Const.AsFloat(); break;
+		case T_FLOAT:	Data = StringUtils::ToFloat(Const.CStr()); break;
 		case T_STRING:	Data = Const; break;
 		case T_STRID:	Data = CStrID(Const.CStr()); break;
 		default:		Sys::Error("Unknown data type\n");

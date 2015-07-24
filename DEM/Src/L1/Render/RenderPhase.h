@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
+#include <Data/Flags.h>
 
 // Rendering phase implements a process of rendering into RT, MRT or DSV, in various forms,
 // including color rendering, Z-prepass, occlusion culling, shadow map, fullscreen quad for

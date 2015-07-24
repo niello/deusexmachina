@@ -8,6 +8,8 @@
 // Simplified entity, that represents a piece of static level geometry with
 // optional graphics and collision shapes. It can be referenced by UID too.
 
+class matrix44;
+
 namespace Data
 {
 	typedef Ptr<class CParams> PParams;

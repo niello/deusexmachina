@@ -3,6 +3,7 @@
 #define __DEM_L2_CHARACTER_CTLR_H__
 
 #include <Core/Object.h>
+#include <Math/Vector3.h>
 
 // Character controller is used to drive characters. It gets desired velocities and other commands
 // as input and calculates final transform, taking different character properties into account.

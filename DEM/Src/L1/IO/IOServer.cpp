@@ -266,7 +266,7 @@ void CIOServer::SetAssign(const char* pAssign, const CString& Path)
 
 CString CIOServer::GetAssign(const char* pAssign) const
 {
-	CString RealAssign = Assign;
+	CString RealAssign(pAssign);
 	RealAssign.ToLower();
 	CString Str;
 	return Assigns.Get(RealAssign, Str) ? Str : CString::Empty;
