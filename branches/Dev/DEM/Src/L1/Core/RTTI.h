@@ -30,7 +30,7 @@ private:
 public:
 
 
-	CRTTI(const CString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
+	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
 
 	CObject*	CreateInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
 	//void*			AllocInstanceMemory() const { return n_malloc(InstanceSize); }
@@ -48,14 +48,14 @@ public:
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
 };
 
-inline CRTTI::CRTTI(const CString& ClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize):
-	Name(ClassName),
+inline CRTTI::CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize):
+	Name(pClassName),
 	FourCC(ClassFourCC),
 	InstanceSize(InstSize),
 	pParent(pParentClass),
 	pFactoryFunc(pFactoryCreator)
 {
-	n_assert(ClassName.IsValid());
+	n_assert(pClassName && *pClassName);
 	n_assert(pParentClass != this);
 }
 //---------------------------------------------------------------------

@@ -11,8 +11,6 @@
 // an order of keys in D3DStates[], because all values are referenced by hardcoded indices instead of
 // implementing a switch-case method like GetIndexForD3D9RenderStateKey().
 
-struct IDirect3DVertexShader9;
-struct IDirect3DPixelShader9;
 typedef enum _D3DRENDERSTATETYPE D3DRENDERSTATETYPE;
 
 //???!!! D3D9-only:
@@ -25,6 +23,7 @@ typedef enum _D3DRENDERSTATETYPE D3DRENDERSTATETYPE;
 
 namespace Render
 {
+typedef Ptr<class CD3D9Shader> PD3D9Shader;
 
 class CD3D9RenderState: public CRenderState
 {
@@ -89,12 +88,11 @@ public:
 
 	static const D3DRENDERSTATETYPE D3DStates[D3D9_RS_COUNT];
 
-	IDirect3DVertexShader9*	pVS;
-	IDirect3DPixelShader9*	pPS;
-	DWORD					D3DStateValues[D3D9_RS_COUNT];
+	PD3D9Shader	VS;
+	PD3D9Shader	PS;
+	DWORD		D3DStateValues[D3D9_RS_COUNT];
 
-	CD3D9RenderState(): pVS(NULL), pPS(NULL) {}
-	virtual ~CD3D9RenderState();
+	//virtual ~CD3D9RenderState();
 };
 
 typedef Ptr<CD3D9RenderState> PD3D9RenderState;

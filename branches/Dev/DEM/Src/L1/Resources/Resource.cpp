@@ -5,7 +5,7 @@
 namespace Resources
 {
 
-CResourceObject* CResource::GetObject()
+CResourceObject* CResource::GetObject() const
 {
 	if (State == Rsrc_Loaded)
 	{

@@ -6,6 +6,7 @@
 
 // Shared collision shape, which can be used by multiple collision objects and rigid bodies
 
+class vector3;
 class btCollisionShape;
 
 namespace Physics

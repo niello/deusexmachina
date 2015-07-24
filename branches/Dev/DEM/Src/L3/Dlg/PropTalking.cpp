@@ -13,7 +13,7 @@ __ImplementPropertyStorage(CPropTalking);
 
 bool CPropTalking::InternalActivate()
 {
-	const CString& Dlg = GetEntity()->GetAttr<CString>(CStrID("Dialogue"), NULL);
+	const CString& Dlg = GetEntity()->GetAttr<CString>(CStrID("Dialogue"), CString::Empty);
 	if (Dlg.IsValid()) Dialogue = DlgMgr->GetDialogueGraph(CStrID(Dlg.CStr()));
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();

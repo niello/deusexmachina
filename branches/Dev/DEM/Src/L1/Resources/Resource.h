@@ -31,25 +31,29 @@ class CResource: public Data::CRefCounted
 protected:
 
 	//!!!loader must access these fields! Method Init(CLoadedResourceStruct)?
-	CStrID				UID;			// If resource is not created manually, UID stores URI that locates resource data
-	EResourceState		State;
-	DWORD				ByteSize;
-	PResourceObject		Object;			// Actual object, such as a texture or a game object description
+	CStrID					UID;			// If resource is not created manually, UID stores URI that locates resource data
+	mutable EResourceState	State;
+	DWORD					ByteSize;
+	PResourceObject			Object;			// Actual object, such as a texture or a game object description
 	//???PResourceObject		Placeholder; //???here or register per RTTI in Mgr?
-	PResourceLoader		Loader;			// Optional, for recreation of lost resource object
+	PResourceLoader			Loader;			// Optional, for recreation of lost resource object
 
 public:
 
 	CResource(): ByteSize(0), State(Rsrc_NotLoaded) {}
 
-	CResourceObject*	GetObject();
+	CResourceObject*	GetObject() const;
 	//template<class T>
 	//T*					GetObject();
 
 	CStrID				GetUID() const { return UID; }
 	DWORD				GetSizeInBytes() const { return ByteSize; }
-	EResourceState		GetState() const { return State; }
+	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
 	bool				IsLoaded() const { return State == Rsrc_Loaded; }
+
+	// For internal use by loaders and manager
+	void				SetState(EResourceState NewState) const { State = NewState; } //!!!must be thread-safe!
+	void				Init(PResourceObject NewObject, PResourceLoader NewLoader = NULL) { Object = NewObject; Loader = NewLoader;} //!!!must be thread-safe!
 };
 
 typedef Ptr<CResource> PResource;

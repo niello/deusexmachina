@@ -4,6 +4,7 @@
 
 #include <Resources/ResourceObject.h>
 #include <Render/RenderFwd.h>
+#include <Data/Flags.h>
 
 // Texture resource object that may be stored in VRAM and used for rendering
 

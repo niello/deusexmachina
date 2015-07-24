@@ -3,6 +3,7 @@
 #define __DEM_L3_AI_ACTION_WANDER_H__
 
 #include <AI/Behaviour/Action.h> //Sequence.h>
+#include <Math/Vector2.h>
 
 // Wander action switches actor between moving in certain radius and standing still,
 // sometimes facing random directions.
@@ -24,13 +25,13 @@ protected:
 
 public:
 
-	//void				Init(action probabilities, timings, wander radius etc);
+	//void			Init(action probabilities, timings, wander radius etc);
 
-	virtual bool		Activate(CActor* pActor);
+	virtual bool	Activate(CActor* pActor);
 	virtual DWORD	Update(CActor* pActor);
-	virtual void		Deactivate(CActor* pActor);
-	//
-	//virtual bool		IsValid() const { return ppCurrChild && (*ppCurrChild)->IsValid(); }
+	virtual void	Deactivate(CActor* pActor);
+
+	//virtual bool	IsValid() const { return ppCurrChild && (*ppCurrChild)->IsValid(); }
 };
 
 typedef Ptr<CActionWander> PActionWander;

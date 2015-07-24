@@ -2,6 +2,7 @@
 
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
+#include <Math/Matrix44.h>
 
 namespace Data
 {

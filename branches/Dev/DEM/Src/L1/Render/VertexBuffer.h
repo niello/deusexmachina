@@ -4,6 +4,7 @@
 
 #include <Render/VertexLayout.h>
 #include <Render/RenderFwd.h>
+#include <Data/Flags.h>
 
 // A hardware GPU buffer that stores vertices
 

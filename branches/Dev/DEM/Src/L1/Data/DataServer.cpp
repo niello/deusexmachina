@@ -19,24 +19,24 @@ CDataServer::CDataServer(): HRDCache(256)
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::LoadHRD(const CString& FileName, bool Cache)
+PParams CDataServer::LoadHRD(const char* pFileName, bool Cache)
 {
 	PParams P;
-	if (HRDCache.Get(FileName.CStr(), P)) return P;
-	else return ReloadHRD(FileName, Cache);
+	if (HRDCache.Get(pFileName, P)) return P;
+	else return ReloadHRD(pFileName, Cache);
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::ReloadHRD(const CString& FileName, bool Cache)
+PParams CDataServer::ReloadHRD(const char* pFileName, bool Cache)
 {
 	CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return NULL;
+	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return NULL;
 
 	PParams Params;
 	CHRDParser Parser; //???static?
 	if (Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
 	{
-		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle/unmangle path to avoid duplicates?
+		if (Cache) HRDCache.Add(pFileName, Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
 	//else Sys::Log("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
 
@@ -45,41 +45,41 @@ PParams CDataServer::ReloadHRD(const CString& FileName, bool Cache)
 //---------------------------------------------------------------------
 
 //???remove from here? make user use readers/writers directly?
-void CDataServer::SaveHRD(const CString& FileName, const CParams* pContent)
+void CDataServer::SaveHRD(const char* pFileName, const CParams* pContent)
 {
 	if (!pContent) return;
 
 	IO::CFileStream File;
-	if (!File.Open(FileName, IO::SAM_WRITE)) return;
+	if (!File.Open(pFileName, IO::SAM_WRITE)) return;
 	IO::CHRDWriter Writer(File);
 	Writer.WriteParams(*pContent);
 }
 //---------------------------------------------------------------------
 
-void CDataServer::UnloadHRD(const CString& FileName)
+void CDataServer::UnloadHRD(const char* pFileName)
 {
-	HRDCache.Remove(FileName.CStr());
+	HRDCache.Remove(pFileName);
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::LoadPRM(const CString& FileName, bool Cache)
+PParams CDataServer::LoadPRM(const char* pFileName, bool Cache)
 {
 	PParams P;
-	if (HRDCache.Get(FileName.CStr(), P)) return P;
-	else return ReloadPRM(FileName, Cache);
+	if (HRDCache.Get(pFileName, P)) return P;
+	else return ReloadPRM(pFileName, Cache);
 }
 //---------------------------------------------------------------------
 
-PParams CDataServer::ReloadPRM(const CString& FileName, bool Cache)
+PParams CDataServer::ReloadPRM(const char* pFileName, bool Cache)
 {
 	IO::CFileStream File;
-	if (!File.Open(FileName, IO::SAM_READ)) return NULL;
+	if (!File.Open(pFileName, IO::SAM_READ)) return NULL;
 	IO::CBinaryReader Reader(File);
 
 	PParams Params = n_new(CParams);
 	if (Reader.ReadParams(*Params))
 	{
-		if (Cache) HRDCache.Add(FileName.CStr(), Params); //!!!???mangle path to avoid duplicates?
+		if (Cache) HRDCache.Add(pFileName, Params); //!!!???mangle path to avoid duplicates?
 	}
 	else
 	{
@@ -92,21 +92,21 @@ PParams CDataServer::ReloadPRM(const CString& FileName, bool Cache)
 //---------------------------------------------------------------------
 
 //???remove from here? make user use readers/writers directly?
-bool CDataServer::SavePRM(const CString& FileName, const CParams* pContent)
+bool CDataServer::SavePRM(const char* pFileName, const CParams* pContent)
 {
 	if (!pContent) FAIL;
 
 	IO::CFileStream File;
-	if (!File.Open(FileName, IO::SAM_WRITE)) FAIL;
+	if (!File.Open(pFileName, IO::SAM_WRITE)) FAIL;
 	IO::CBinaryWriter Writer(File);
 	return Writer.WriteParams(*pContent);
 }
 //---------------------------------------------------------------------
 
-PXMLDocument CDataServer::LoadXML(const CString& FileName) //, bool Cache)
+PXMLDocument CDataServer::LoadXML(const char* pFileName) //, bool Cache)
 {
 	CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
+	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) FAIL;
 
 	PXMLDocument XML = n_new(CXMLDocument);
 	if (XML->Parse((LPCSTR)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)

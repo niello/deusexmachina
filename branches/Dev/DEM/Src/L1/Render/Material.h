@@ -3,7 +3,6 @@
 #define __DEM_L1_RENDER_MATERIAL_H__
 
 #include <Render/Shader.h>
-#include <Resources/ResourceObject.h>
 
 // Material consists of a shader, material feature flags (which will be combined with
 // other feature flags to determine shader techniques) and shader variable values, that
@@ -30,7 +29,7 @@ protected:
 	struct CLOD
 	{
 		PShader			Shader;
-		CFeatureFlags	FeatureFlags;
+		//CFeatureFlags	FeatureFlags;
 		//!!!var values!
 		//one shader var can store Name, Handle and Value (for binding)
 		//???or how to implement binding now?

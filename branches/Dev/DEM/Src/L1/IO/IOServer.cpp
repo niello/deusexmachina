@@ -35,11 +35,11 @@ CIOServer::~CIOServer()
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::MountNPK(const CString& NPKPath, const CString& Root)
+bool CIOServer::MountNPK(const char* pNPKPath, const CString& Root)
 {
 	PFileSystem NewFS = n_new(CFileSystemNPK);
 
-	CString AbsNPKPath = IOSrv->ManglePath(NPKPath);
+	CString AbsNPKPath = IOSrv->ManglePath(pNPKPath);
 	//!!!check if this NPK is already mounted!
 
 	CString RealRoot;
@@ -52,9 +52,9 @@ bool CIOServer::MountNPK(const CString& NPKPath, const CString& Root)
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::FileExists(const CString& Path) const
+bool CIOServer::FileExists(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->FileExists(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->FileExists(AbsPath)) OK;
@@ -62,9 +62,9 @@ bool CIOServer::FileExists(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::IsFileReadOnly(const CString& Path) const
+bool CIOServer::IsFileReadOnly(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->IsFileReadOnly(AbsPath);
 	for (int i = 0; i < FS.GetCount(); ++i)
@@ -74,9 +74,9 @@ bool CIOServer::IsFileReadOnly(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::SetFileReadOnly(const CString& Path, bool ReadOnly) const
+bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->SetFileReadOnly(AbsPath, ReadOnly);
 	for (int i = 0; i < FS.GetCount(); ++i)
@@ -86,9 +86,9 @@ bool CIOServer::SetFileReadOnly(const CString& Path, bool ReadOnly) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::DeleteFile(const CString& Path) const
+bool CIOServer::DeleteFile(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->DeleteFile(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DeleteFile(AbsPath)) OK;
@@ -96,10 +96,10 @@ bool CIOServer::DeleteFile(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::CopyFile(const CString& SrcPath, const CString& DestPath)
+bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
-	CString AbsSrcPath = ManglePath(SrcPath);
-	CString AbsDestPath = ManglePath(DestPath);
+	CString AbsSrcPath = ManglePath(pSrcPath);
+	CString AbsDestPath = ManglePath(pDestPath);
 
 	// Try to copy inside a single FS
 
@@ -130,10 +130,11 @@ bool CIOServer::CopyFile(const CString& SrcPath, const CString& DestPath)
 }
 //---------------------------------------------------------------------
 
-DWORD CIOServer::GetFileSize(const CString& Path) const
+//???QWORD?
+DWORD CIOServer::GetFileSize(const char* pPath) const
 {
 	PFileSystem FS;
-	void* hFile = OpenFile(FS, Path, SAM_READ);
+	void* hFile = OpenFile(FS, pPath, SAM_READ);
 	if (hFile)
 	{
 		DWORD Size = FS->GetFileSize(hFile);
@@ -144,9 +145,9 @@ DWORD CIOServer::GetFileSize(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::DirectoryExists(const CString& Path) const
+bool CIOServer::DirectoryExists(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->DirectoryExists(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DirectoryExists(AbsPath)) OK;
@@ -154,9 +155,9 @@ bool CIOServer::DirectoryExists(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::CreateDirectory(const CString& Path) const
+bool CIOServer::CreateDirectory(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->CreateDirectory(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->CreateDirectory(AbsPath)) OK;
@@ -164,9 +165,9 @@ bool CIOServer::CreateDirectory(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::DeleteDirectory(const CString& Path) const
+bool CIOServer::DeleteDirectory(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(Path);
+	CString AbsPath = IOSrv->ManglePath(pPath);
 	if (DefaultFS->DeleteDirectory(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DeleteDirectory(AbsPath)) OK;
@@ -174,10 +175,10 @@ bool CIOServer::DeleteDirectory(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::CopyDirectory(const CString& SrcPath, const CString& DestPath, bool Recursively)
+bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively)
 {
-	CString AbsSrcPath = ManglePath(SrcPath);
-	CString AbsDestPath = ManglePath(DestPath);
+	CString AbsSrcPath = ManglePath(pSrcPath);
+	CString AbsDestPath = ManglePath(pDestPath);
 
 	CFSBrowser Browser;
 	if (!Browser.SetAbsolutePath(AbsSrcPath)) FAIL;
@@ -189,11 +190,11 @@ bool CIOServer::CopyDirectory(const CString& SrcPath, const CString& DestPath, b
 		CString EntryName = "/" + Browser.GetCurrEntryName();
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!CopyFile(SrcPath + EntryName, DestPath + EntryName)) FAIL;
+			if (!CopyFile(AbsSrcPath + EntryName, AbsDestPath + EntryName)) FAIL;
 		}
 		else if (Recursively && Browser.IsCurrEntryDir())
 		{
-			if (!CopyDirectory(SrcPath + EntryName, DestPath + EntryName, Recursively)) FAIL;
+			if (!CopyDirectory(AbsSrcPath + EntryName, AbsDestPath + EntryName, Recursively)) FAIL;
 		}
 	}
 	while (Browser.NextCurrDirEntry());
@@ -202,9 +203,9 @@ bool CIOServer::CopyDirectory(const CString& SrcPath, const CString& DestPath, b
 }
 //---------------------------------------------------------------------
 
-void* CIOServer::OpenFile(PFileSystem& OutFS, const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
+void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
 {
-	CString AbsPath = ManglePath(Path);
+	CString AbsPath = ManglePath(pPath);
 
 	void* hFile = DefaultFS->OpenFile(AbsPath, Mode, Pattern);
 	if (hFile)
@@ -227,12 +228,11 @@ void* CIOServer::OpenFile(PFileSystem& OutFS, const CString& Path, EStreamAccess
 }
 //---------------------------------------------------------------------
 
-void* CIOServer::OpenDirectory(const CString& Path, const CString& Filter,
-								 PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const
+void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const
 {
-	CString AbsPath = ManglePath(Path);
+	CString AbsPath = ManglePath(pPath);
 
-	void* hDir = DefaultFS->OpenDirectory(AbsPath, Filter, OutName, OutType);
+	void* hDir = DefaultFS->OpenDirectory(AbsPath, pFilter, OutName, OutType);
 	if (hDir)
 	{
 		OutFS = DefaultFS;
@@ -241,7 +241,7 @@ void* CIOServer::OpenDirectory(const CString& Path, const CString& Filter,
 
 	for (int i = 0; i < FS.GetCount(); ++i)
 	{
-		hDir = FS[i]->OpenDirectory(AbsPath, Filter, OutName, OutType);
+		hDir = FS[i]->OpenDirectory(AbsPath, pFilter, OutName, OutType);
 		if (hDir)
 		{
 			OutFS = FS[i];
@@ -253,29 +253,29 @@ void* CIOServer::OpenDirectory(const CString& Path, const CString& Filter,
 }
 //---------------------------------------------------------------------
 
-void CIOServer::SetAssign(const CString& Assign, const CString& Path)
+void CIOServer::SetAssign(const char* pAssign, const CString& Path)
 {
-	CString RealAssign = Assign;
+	CString RealAssign(pAssign);
 	RealAssign.ToLower();
-	CString& PathString = Assigns.At(RealAssign.CStr());
+	CString& PathString = Assigns.At(RealAssign);
 	PathString = Path;
 	PathString.ConvertBackslashes();
-	if (PathString[PathString.Length() - 1] != '/') PathString.Add('/');
+	if (PathString[PathString.GetLength() - 1] != '/') PathString.Add('/');
 }
 //---------------------------------------------------------------------
 
-CString CIOServer::GetAssign(const CString& Assign) const
+CString CIOServer::GetAssign(const char* pAssign) const
 {
 	CString RealAssign = Assign;
 	RealAssign.ToLower();
 	CString Str;
-	return Assigns.Get(RealAssign.CStr(), Str) ? Str : CString::Empty;
+	return Assigns.Get(RealAssign, Str) ? Str : CString::Empty;
 }
 //---------------------------------------------------------------------
 
-CString CIOServer::ManglePath(const CString& Path) const
+CString CIOServer::ManglePath(const char* pPath) const
 {
-	CString PathString = Path;
+	CString PathString(pPath);
 	PathString.ConvertBackslashes();
 
 	int ColonIdx;
@@ -298,10 +298,10 @@ CString CIOServer::ManglePath(const CString& Path) const
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::LoadFileToBuffer(const CString& FileName, Data::CBuffer& Buffer)
+bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
 {
 	CFileStream File;
-	if (!File.Open(FileName, SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	if (!File.Open(pFileName, SAM_READ, SAP_SEQUENTIAL)) FAIL;
 	int FileSize = File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));

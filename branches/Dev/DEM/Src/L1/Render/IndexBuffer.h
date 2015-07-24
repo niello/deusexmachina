@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
+#include <Data/Flags.h>
 
 // A hardware GPU buffer that stores indices in a corresponding array of vertices
 

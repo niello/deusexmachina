@@ -48,28 +48,28 @@ public:
 	~CIOServer();
 
 	//???create FSs outside and mount all with priority?
-	bool			MountNPK(const CString& NPKPath, const CString& Root = NULL);
+	bool			MountNPK(const char* pNPKPath, const CString& Root = CString::Empty);
 
-	bool			FileExists(const CString& Path) const;
-	bool			IsFileReadOnly(const CString& Path) const;
-	bool			SetFileReadOnly(const CString& Path, bool ReadOnly) const;
-	bool			DeleteFile(const CString& Path) const;
-	DWORD			GetFileSize(const CString& Path) const;
-	bool			CopyFile(const CString& SrcPath, const CString& DestPath);
-	bool			DirectoryExists(const CString& Path) const;
-	bool			CreateDirectory(const CString& Path) const;
-	bool			DeleteDirectory(const CString& Path) const;
-	bool			CopyDirectory(const CString& SrcPath, const CString& DestPath, bool Recursively);
+	bool			FileExists(const char* pPath) const;
+	bool			IsFileReadOnly(const char* pPath) const;
+	bool			SetFileReadOnly(const char* pPath, bool ReadOnly) const;
+	bool			DeleteFile(const char* pPath) const;
+	DWORD			GetFileSize(const char* pPath) const; //???QWORD?
+	bool			CopyFile(const char* pSrcPath, const char* pDestPath);
+	bool			DirectoryExists(const char* pPath) const;
+	bool			CreateDirectory(const char* pPath) const;
+	bool			DeleteDirectory(const char* pPath) const;
+	bool			CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively);
 	//bool Checksum(const CString& filename, uint& crc);
 	//nFileTime GetFileWriteTime(const CString& pathName);
 
-	void*			OpenFile(PFileSystem& OutFS, const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
-	void*			OpenDirectory(const CString& Path, const CString& Filter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
+	void*			OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
+	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
 
-	void			SetAssign(const CString& Assign, const CString& Path);
-	CString			GetAssign(const CString& Assign) const;
-	CString			ManglePath(const CString& Path) const;
-	bool			LoadFileToBuffer(const CString& FileName, Data::CBuffer& Buffer);
+	void			SetAssign(const char* pAssign, const CString& Path);
+	CString			GetAssign(const char* pAssign) const;
+	CString			ManglePath(const char* pPath) const;
+	bool			LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer);
 
 #ifdef _EDITOR
 	bool			QueryMangledPath(const CString& FileName, CString& MangledFileName) const;

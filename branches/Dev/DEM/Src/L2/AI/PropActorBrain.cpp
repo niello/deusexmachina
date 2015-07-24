@@ -68,7 +68,7 @@ bool CPropActorBrain::InternalActivate()
 
 	//???need to cache?
 	PParams Desc;
-	if (DataSrv->LoadDesc(Desc, "Actors:", GetEntity()->GetAttr<CString>(CStrID("ActorDesc"))))
+	if (DataSrv->LoadDesc(Desc, CString("Actors:"), GetEntity()->GetAttr<CString>(CStrID("ActorDesc"))))
 	{
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))

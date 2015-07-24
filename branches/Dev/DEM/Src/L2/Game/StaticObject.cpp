@@ -69,7 +69,7 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 	// It is necessary because collision objects may require subnode world transformations.
 	if (Node.IsValidPtr()) Node->UpdateTransform(NULL, 0, true, NULL);
 
-	const CString& PhysicsDescFile = Desc->Get<CString>(CStrID("Physics"), NULL);    
+	const CString& PhysicsDescFile = Desc->Get<CString>(CStrID("Physics"), CString::Empty);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
 		Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");

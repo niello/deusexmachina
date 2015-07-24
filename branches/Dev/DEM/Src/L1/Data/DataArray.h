@@ -4,6 +4,7 @@
 
 #include <Data/RefCounted.h>
 #include <Data/Data.h>
+#include <Data/Array.h>
 
 // Array of variant variables
 

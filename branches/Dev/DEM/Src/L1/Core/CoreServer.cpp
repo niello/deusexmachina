@@ -6,7 +6,10 @@ namespace Core
 {
 __ImplementSingleton(Core::CCoreServer);
 
-CCoreServer::CCoreServer()
+CCoreServer::CCoreServer():
+	Mem_HighWaterSize("Mem_HighWaterSize"),
+	Mem_TotalSize("Mem_TotalSize"),
+	Mem_TotalCount("Mem_TotalCount")
 {
 	__ConstructSingleton;
 	n_dbgmeminit();
@@ -30,9 +33,9 @@ CCoreServer::~CCoreServer()
 void CCoreServer::Trigger()
 {
 	nMemoryStats Stats = n_dbgmemgetstats();
-	CoreSrv->SetGlobal<int>("Mem_HighWaterSize", Stats.HighWaterSize);
-	CoreSrv->SetGlobal<int>("Mem_TotalSize", Stats.TotalSize);
-	CoreSrv->SetGlobal<int>("Mem_TotalCount", Stats.TotalCount);
+	CoreSrv->SetGlobal<int>(Mem_HighWaterSize, Stats.HighWaterSize);
+	CoreSrv->SetGlobal<int>(Mem_TotalSize, Stats.TotalSize);
+	CoreSrv->SetGlobal<int>(Mem_TotalCount, Stats.TotalCount);
 }
 //---------------------------------------------------------------------
 

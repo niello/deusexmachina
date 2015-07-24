@@ -1,6 +1,7 @@
 #include "Data.h"
 
-#include "StringID.h"
+#include <Data/StringID.h>
+#include <Data/StringUtils.h>
 
 namespace Data
 {
@@ -8,8 +9,8 @@ namespace Data
 //!!!int, float - rewrite better if possible!
 //???always use CTypeImpl<T>::ToString() { return Data::ValueToString<T>(); } and specialize that function?
 template<> inline LPCSTR CTypeImpl<bool>::ToString(const void* pObj) const { return pObj ? "true" : "false"; }
-template<> inline LPCSTR CTypeImpl<int>::ToString(const void* pObj) const { static CString Str; Str.SetInt((int)pObj); return Str.CStr(); }
-template<> inline LPCSTR CTypeImpl<float>::ToString(const void* pObj) const { static CString Str; Str.SetFloat(*((float*)&pObj)); return Str.CStr(); }
+template<> inline LPCSTR CTypeImpl<int>::ToString(const void* pObj) const { return StringUtils::FromInt(*((int*)&pObj)); }
+template<> inline LPCSTR CTypeImpl<float>::ToString(const void* pObj) const { return StringUtils::FromFloat(*((float*)&pObj)); }
 template<> inline LPCSTR CTypeImpl<CString>::ToString(const void* pObj) const { return ((CString*)pObj)->CStr(); }
 template<> inline LPCSTR CTypeImpl<CStrID>::ToString(const void* pObj) const { return (LPCSTR)pObj; }
 
@@ -20,10 +21,6 @@ DEFINE_TYPE(float)
 DEFINE_TYPE(CString)
 DEFINE_TYPE(CStrID)
 DEFINE_TYPE(PVOID)
-DEFINE_TYPE(vector3)
-DEFINE_TYPE(vector4)
-DEFINE_TYPE(matrix44)
-DEFINE_TYPE(CMatrixPtrArray)
 
 void CData::SetType(const CType* SrcType)
 {

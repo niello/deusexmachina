@@ -104,7 +104,7 @@ n_assert(false);
 	wchar_t WidePath[DEM_MAX_PATH];
 	CString Path = IOSrv->ManglePath(pFileName);
 	size_t CharsConverted;
-	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.Length() + 1);
+	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.GetLength() + 1);
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, NULL)))
 	{
@@ -118,7 +118,7 @@ n_assert(false);
 	pGraphBuilder->QueryInterface(IID_IBasicVideo, (void**)&pBasicVideo);
 
 	OAHWND OwnerHWnd = NULL;
-	CoreSrv->GetGlobal("hwnd", (int&)OwnerHWnd);
+	CoreSrv->GetGlobal(CString("hwnd"), (int&)OwnerHWnd);
 	RECT Rect;
 	GetClientRect((HWND)OwnerHWnd, &Rect);
 	LONG VideoLeft, VideoTop, VideoWidth, VideoHeight;
@@ -166,7 +166,7 @@ void CVideoServer::Stop()
 	SAFE_RELEASE(pGraphBuilder);
 
 	HWND hWnd = NULL;
-	CoreSrv->GetGlobal("hwnd", (int&)hWnd);
+	CoreSrv->GetGlobal(CString("hwnd"), (int&)hWnd);
 	ShowWindow(hWnd, SW_RESTORE);
 
     _IsPlaying = false;

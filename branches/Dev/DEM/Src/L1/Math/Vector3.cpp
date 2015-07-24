@@ -10,6 +10,11 @@ const vector3 vector3::AxisY(0.f, 1.f, 0.f);
 const vector3 vector3::AxisZ(0.f, 0.f, 1.f);
 const vector3 vector3::BaseDir(0.f, 0.f, -1.f);
 
+namespace Data
+{
+DEFINE_TYPE(vector3)
+}
+
 vector3::vector3(const vector4& vec): x(vec.x), y(vec.y), z(vec.z)
 {
 }

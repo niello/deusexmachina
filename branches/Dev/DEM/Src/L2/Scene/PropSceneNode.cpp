@@ -58,7 +58,7 @@ bool CPropSceneNode::InternalActivate()
 		{
 			// Add children to the save-load list. All nodes externally attached won't be saved, which is desirable.
 			ChildCache.BeginAdd();
-			FillSaveLoadList(Node.GetUnsafe(), "");
+			FillSaveLoadList(Node.GetUnsafe(), CString::Empty);
 			ChildCache.EndAdd();
 
 			Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));

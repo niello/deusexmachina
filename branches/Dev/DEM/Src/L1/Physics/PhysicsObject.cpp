@@ -30,8 +30,8 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	}
 	Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
 
-	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), "Default"));
-	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), "All"));
+	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), CString("Default")));
+	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), CString("All")));
 
 	ShapeOffset = Offset;
 

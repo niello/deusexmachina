@@ -21,7 +21,7 @@ bool CStaticEnvManager::CanEntityBeStatic(const Data::CParams& Desc) const
 	//scene allows node without an entity to be controlled
 
 	// We have animations that can move us
-	if (Attrs->Get<CString>(CStrID("AnimDesc"), NULL).IsValid()) FAIL;
+	if (Attrs->Get<CString>(CStrID("AnimDesc"), CString::Empty).IsValid()) FAIL;
 
 	OK;
 }

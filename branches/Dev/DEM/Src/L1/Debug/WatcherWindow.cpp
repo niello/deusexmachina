@@ -7,6 +7,7 @@
 #include <Scripting/ScriptServer.h>
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
+#include <Data/StringUtils.h>
 #include <Core/CoreServer.h>
 #include <Core/Factory.h>
 
@@ -203,22 +204,22 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 			{
 				CData CurrVar;
 
-				if (CoreSrv->GetGlobal(It->VarName.CStr(), CurrVar))
+				if (CoreSrv->GetGlobal(CString(It->VarName.CStr()), CurrVar))
 				{
 					if (CurrVar.IsA<bool>())
 					{
 						It->pTypeItem->setText("DEM bool");
-						It->pValueItem->setText(CString::FromBool(CurrVar.GetValue<bool>()).CStr());
+						It->pValueItem->setText(StringUtils::FromBool(CurrVar.GetValue<bool>()).CStr());
 					}
 					else if (CurrVar.IsA<int>())
 					{
 						It->pTypeItem->setText("DEM int");
-						It->pValueItem->setText(CString::FromInt(CurrVar.GetValue<int>()).CStr());
+						It->pValueItem->setText(StringUtils::FromInt(CurrVar.GetValue<int>()).CStr());
 					}
 					else if (CurrVar.IsA<float>())
 					{
 						It->pTypeItem->setText("DEM float");
-						It->pValueItem->setText(CString::FromFloat(CurrVar.GetValue<float>()).CStr());
+						It->pValueItem->setText(StringUtils::FromFloat(CurrVar.GetValue<float>()).CStr());
 					}
 					else if (CurrVar.IsA<CString>())
 					{
@@ -228,7 +229,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 					else if (CurrVar.IsA<vector4>())
 					{
 						It->pTypeItem->setText("DEM vector4");
-						It->pValueItem->setText(CString::FromVector4(CurrVar.GetValue<vector4>()).CStr());
+						It->pValueItem->setText(StringUtils::FromVector4(CurrVar.GetValue<vector4>()).CStr());
 					}
 					else
 					{
@@ -264,12 +265,12 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 				else if (Output.IsA<int>())
 				{
 					It->pTypeItem->setText("Lua int");
-					It->pValueItem->setText(CString::FromInt(Output).CStr());
+					It->pValueItem->setText(StringUtils::FromInt(Output).CStr());
 				}
 				else if (Output.IsA<float>())
 				{
 					It->pTypeItem->setText("Lua float");
-					It->pValueItem->setText(CString::FromFloat(Output).CStr());
+					It->pValueItem->setText(StringUtils::FromFloat(Output).CStr());
 				}
 				else if (Output.IsA<CString>())
 				{
@@ -279,12 +280,12 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 				else if (Output.IsA<vector4>())
 				{
 					It->pTypeItem->setText("Lua vector4");
-					It->pValueItem->setText(CString::FromVector4(Output).CStr());
+					It->pValueItem->setText(StringUtils::FromVector4(Output).CStr());
 				}
 				else if (Output.IsA<PVOID>())
 				{
 					It->pTypeItem->setText("Lua userdata");
-					It->pValueItem->setText(CString::FromInt((int)Output.GetValue<PVOID>()).CStr());
+					It->pValueItem->setText(StringUtils::FromInt((int)Output.GetValue<PVOID>()).CStr());
 				}
 				else if (Output.IsA<PDataArray>())
 				{

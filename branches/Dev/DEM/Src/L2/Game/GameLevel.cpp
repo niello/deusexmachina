@@ -53,9 +53,9 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	//n_assert(!Initialized);
 
 	ID = LevelID; //Desc.Get<CStrID>(CStrID("ID"), CStrID::Empty);
-	Name = Desc.Get<CString>(CStrID("Name"), NULL);
+	Name = Desc.Get<CString>(CStrID("Name"), CString::Empty);
 
-	CString PathBase = "Levels:";
+	CString PathBase("Levels:");
 	PathBase += LevelID.CStr();
 
 	CString ScriptFile = PathBase + ".lua";

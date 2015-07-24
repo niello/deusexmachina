@@ -196,11 +196,13 @@
     <ClInclude Include="..\..\Src\L1\Data\StringID.h" />
     <ClInclude Include="..\..\Src\L1\Data\StringIDStorage.h" />
     <ClInclude Include="..\..\Src\L1\Data\StringTokenizer.h" />
+    <ClInclude Include="..\..\Src\L1\Data\StringUtils.h" />
     <ClInclude Include="..\..\Src\L1\Data\SuperFastHash.h" />
     <ClInclude Include="..\..\Src\L1\Data\TableT.h" />
     <ClInclude Include="..\..\Src\L1\Data\Type.h" />
     <ClInclude Include="..\..\Src\L1\Data\XMLDocument.h" />
     <ClInclude Include="..\..\Src\L1\Debug\DebugDraw.h" />
+    <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
     <ClInclude Include="..\..\Src\L1\Render\Bone.h" />
     <ClInclude Include="..\..\Src\L1\Render\Camera.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
@@ -211,6 +213,8 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderLoaders.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h" />
@@ -259,6 +263,7 @@
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Render\Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderParamsDesc.h" />
@@ -433,6 +438,7 @@
     <ClCompile Include="..\..\Src\L1\Data\StringID.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\StringIDStorage.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\StringUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Bone.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp" />
@@ -443,6 +449,8 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Shader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderLoaders.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp" />
@@ -490,6 +498,7 @@
     <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\ShaderLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />

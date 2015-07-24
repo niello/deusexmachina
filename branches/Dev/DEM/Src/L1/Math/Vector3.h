@@ -2,6 +2,7 @@
 #define _VECTOR3_H
 
 #include <Math/Math.h>
+#include <Data/Type.h>
 #include <float.h>
 
 // Generic vector3 class. SSE-unfriendly, 12-byte size.
@@ -74,6 +75,8 @@ public:
 	bool operator ==(const float* v) const { return x == v[0] && y == v[1] && z == v[2]; }
 	bool operator !=(const float* v) const { return x != v[0] || y != v[1] || z != v[2]; }
 };
+
+DECLARE_TYPE(vector3, 16) //???need or completely replace with vector4 for CData uses?
 
 static inline vector3 operator -(const vector3& v)
 {

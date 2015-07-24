@@ -15,9 +15,9 @@ void CUIWindow::Init(CEGUI::Window* pWindow)
 }
 //---------------------------------------------------------------------
 
-void CUIWindow::Load(const CString& ResourceFile)
+void CUIWindow::Load(const char* pResourceFile)
 {
-	Init(CEGUI::WindowManager::getSingleton().loadLayoutFromFile(ResourceFile.CStr()));
+	Init(CEGUI::WindowManager::getSingleton().loadLayoutFromFile(pResourceFile));
 }
 //---------------------------------------------------------------------
 

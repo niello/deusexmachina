@@ -18,7 +18,7 @@ __ImplementPropertyStorage(CPropSmartObject);
 bool CPropSmartObject::InternalActivate()
 {
 	Data::PParams Desc;
-	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
+	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
 	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 
 	if (Desc.IsValidPtr())
@@ -125,7 +125,7 @@ bool CPropSmartObject::OnPropsActivated(Events::CEventDispatcher* pDispatcher, c
 		SetState(TargetState, TrActionID, TrDuration, TrManualControl);
 	else
 	{
-		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
+		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
 		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 		SetState(Desc->Get<CStrID>(CStrID("DefaultState"), CStrID::Empty), TrActionID, -1.f, TrManualControl);
 	}
@@ -147,7 +147,7 @@ bool CPropSmartObject::OnPropActivated(Events::CEventDispatcher* pDispatcher, co
 
 	if (pProp->IsA<CPropAnimation>())
 	{
-		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), NULL);
+		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
 		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
 		InitAnimation(Desc, *(CPropAnimation*)pProp);
 		OK;

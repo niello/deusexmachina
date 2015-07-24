@@ -6,6 +6,7 @@
 #include <Data/DataServer.h>
 #include <Data/Buffer.h>
 #include <Data/StringTokenizer.h>
+#include <Data/StringUtils.h>
 #include <IO/IOServer.h>
 
 extern const CString StrLuaObjects;
@@ -386,16 +387,16 @@ void CScriptServer::ClearField(LPCSTR Name)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::LoadClass(const CString& Name)
+bool CScriptServer::LoadClass(LPCSTR Name)
 {
-	n_assert2(Name.IsValid(), "Invalid class name to register");
+	n_assert2(Name, "Invalid class name to register");
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
-	Data::PParams ClassDesc = DataSrv->LoadPRM("ScriptClasses:" + Name + ".cls", false);
+	Data::PParams ClassDesc = DataSrv->LoadPRM(CString("ScriptClasses:") + Name + ".cls", false);
 	if (ClassDesc.IsNullPtr()) FAIL;
 
 	const CString& BaseClass = ClassDesc->Get<CString>(CStrID("Base"), CString::Empty);
-	if (!BeginClass(Name.CStr(), BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;
+	if (!BeginClass(Name, BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;
 
 	const char* pData = NULL;
 	DWORD Size = 0;
@@ -413,15 +414,15 @@ bool CScriptServer::LoadClass(const CString& Name)
 		{
 			const CString& Code = pCodePrm->GetValue<CString>();
 			pData = Code.CStr();
-			Size = Code.Length();
+			Size = Code.GetLength();
 		}
 	}
 
 	if (pData && Size)
 	{
-		if (luaL_loadbuffer(l, pData, Size, Name.CStr()) != 0)
+		if (luaL_loadbuffer(l, pData, Size, Name) != 0)
 		{
-			Sys::Log("Error parsing script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+			Sys::Log("Error parsing script for class %s: %s\n", Name, lua_tostring(l, -1));
 			if (pCodePrm->IsA<CString>()) Sys::Log("Script is: %s\n", pData);
 			lua_pop(l, 2);
 			FAIL; // return Error_Scripting_Parsing;
@@ -432,7 +433,7 @@ bool CScriptServer::LoadClass(const CString& Name)
 
 		if (lua_pcall(l, 0, 0, 0))
 		{
-			Sys::Log("Error running script for class %s: %s\n", Name.CStr(), lua_tostring(l, -1));
+			Sys::Log("Error running script for class %s: %s\n", Name, lua_tostring(l, -1));
 			if (pCodePrm->IsA<CString>()) Sys::Log("Script is: %s\n", pData);
 			lua_pop(l, 2); // Error msg, class table
 			FAIL;
@@ -655,7 +656,7 @@ bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 		else if (lua_type(l, -2) == LUA_TNUMBER)
 		{
 			New = "[";
-			New += CString::FromInt(lua_tointeger(l, -2));
+			New += StringUtils::FromInt(lua_tointeger(l, -2));
 			New += "]";
 		}
 		else
@@ -668,15 +669,15 @@ bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 		switch (lua_type(l, -1))
 		{
 			case LUA_TNIL:				New += "(nil)"; break;
-			case LUA_TBOOLEAN:			New += " = "; New += CString::FromBool(lua_toboolean(l, -1) != 0); New += " (bool)"; break;
+			case LUA_TBOOLEAN:			New += " = "; New += StringUtils::FromBool(lua_toboolean(l, -1) != 0); New += " (bool)"; break;
 			case LUA_TNUMBER:
 			{
 				New += " = ";
 				double Value = lua_tonumber(l, -1);
 				int IntValue;
 				lua_number2int(IntValue, Value);
-				if (((double)IntValue) == Value) New += CString::FromInt(IntValue);
-				else New += CString::FromFloat((float)Value);
+				if (((double)IntValue) == Value) New += StringUtils::FromInt(IntValue);
+				else New += StringUtils::FromFloat((float)Value);
 				New += " (number)";
 				break;
 			}

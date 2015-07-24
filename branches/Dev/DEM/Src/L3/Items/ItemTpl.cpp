@@ -12,10 +12,10 @@ __ImplementClass(Items::CItemTpl, 'ITPL', Core::CObject);
 void CItemTpl::Init(CStrID SID, const Data::CParams& Params)
 {
 	ID = SID;
-	Type = CStrID(Params.Get<CString>(CStrID("Type"), NULL).CStr());
+	Type = CStrID(Params.Get<CString>(CStrID("Type"), CString::Empty).CStr());
 	Weight = Params.Get<float>(CStrID("Weight"), 0.f);
 	Volume = Params.Get<float>(CStrID("Volume"), 0.f);
-	UIName = Params.Get<CString>(CStrID("UIName"), NULL);
+	UIName = Params.Get<CString>(CStrID("UIName"), CString::Empty);
 
 	// Can be created by derived type if CItem's derived type needed
 	if (TemplateItem.IsNullPtr()) TemplateItem = n_new(CItem)(this);

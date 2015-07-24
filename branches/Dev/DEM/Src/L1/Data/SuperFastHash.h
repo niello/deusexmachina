@@ -50,7 +50,7 @@ inline uint32_t SuperFastHash(const char * data, int Length)
 	uint32_t hash = Length, tmp;
 	int rem;
 
-	if (Length <= 0 || data == NULL) return 0;
+	if (Length <= 0 || data == 0) return 0;
 
 	rem = Length & 3;
 	Length >>= 2;

@@ -78,7 +78,7 @@ CString CMD5::PrintMD5(uchar md5Digest[16])
     char chEach[10];
     int nCount;
 
-    memset(chBuffer,0,256);
+    memset(chBuffer, 0, 256);
     memset(chEach, 0, 10);
 
     for (nCount = 0; nCount < 16; nCount++)
@@ -87,7 +87,7 @@ CString CMD5::PrintMD5(uchar md5Digest[16])
         strncat_s(chBuffer, chEach, sizeof(chEach));
     }
 
-    return chBuffer;
+    return CString(chBuffer);
 }
 
 /// md5::Init
