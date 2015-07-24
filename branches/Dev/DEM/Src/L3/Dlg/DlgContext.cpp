@@ -1,8 +1,8 @@
 #include "DlgContext.h"
 
 #include <Game/EntityManager.h>
-//#include <Game/GameServer.h>
 #include <Events/EventServer.h>
+#include <Math/Math.h>
 
 namespace Story
 {

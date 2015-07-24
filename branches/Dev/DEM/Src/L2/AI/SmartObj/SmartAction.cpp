@@ -28,7 +28,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 	TargetState = Desc.Get<CStrID>(CStrID("TargetState"), CStrID::Empty);
 
 	CString PD = Desc.Get<CString>(CStrID("ProgressDriver"), CString::Empty);
-	PD.TrimInplace();
+	PD.Trim();
 	PD.ToLower();
 	if (PD == "dur" || PD == "duration") ProgressDriver = PDrv_Duration;
 	else if (PD == "fsm" || PD == "so.fsm") ProgressDriver = PDrv_SO_FSM;

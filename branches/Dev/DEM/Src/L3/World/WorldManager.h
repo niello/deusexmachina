@@ -5,6 +5,7 @@
 #include <Core/Object.h>
 #include <Data/Singleton.h>
 #include <Data/StringID.h>
+#include <Data/Array.h>
 #include <Events/EventsFwd.h>
 
 // This class manages all aspects of the game world in its pseudo-realistic aspects.

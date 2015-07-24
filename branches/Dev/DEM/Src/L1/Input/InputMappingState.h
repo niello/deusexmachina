@@ -5,6 +5,7 @@
 #include <Core/Object.h>
 #include <Events/EventsFwd.h>
 #include <Data/StringID.h>
+#include <Data/Array.h>
 #include <Input/Keys.h>
 
 // Input state mapping maps set of input state conditions to abstract global state,

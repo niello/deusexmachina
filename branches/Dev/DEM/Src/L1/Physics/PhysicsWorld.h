@@ -3,6 +3,7 @@
 #define __DEM_L1_PHYSICS_WORLD_H__
 
 #include <Physics/CollisionObjStatic.h>
+#include <Data/Array.h>
 
 // Physics world represents a space where physics bodies and collision objects live.
 

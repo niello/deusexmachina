@@ -3,6 +3,7 @@
 #define __DEM_L1_HEIGHTFIELD_SHAPE_H__
 
 #include <Physics/CollisionShape.h>
+#include <Math/Vector3.h>
 
 // Heightfield collision shape, which owns heightmap data (and possibly can modify it)
 

@@ -1,5 +1,6 @@
 #include "FileSystemWin32.h"
 
+#include <Data/Array.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shlobj.h>
@@ -194,8 +195,10 @@ void* CFileSystemWin32::OpenDirectory(const CString& Path, const char* pFilter, 
 	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 
-	CString SearchString(Path, n_max(Filter.GetLength(), 4));
-	SearchString += Filter.IsValid() ? Filter.CStr() : "/*.*"; //???or "/*" ?
+	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
+	DWORD FilterLength = strlen(pActualFilter);
+	CString SearchString(Path, FilterLength);
+	SearchString.Add(pActualFilter, FilterLength);
 
 	WIN32_FIND_DATA FindData;
 	HANDLE hDir = FindFirstFile(SearchString.CStr(), &FindData);

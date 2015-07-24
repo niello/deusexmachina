@@ -1,5 +1,6 @@
 #include <Scripting/ScriptServer.h>
 #include <StdDEM.h>
+#include <Math/Math.h>
 
 extern "C"
 {

@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
+#include <Data/Array.h>
 
 // Render path incapsulates a full algorithm to render a frame, allowing to
 // define it in a data-driven manner and to avoid hardcoding frame rendering.

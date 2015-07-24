@@ -1,6 +1,7 @@
 #include "System.h"
 
 #include <Data/String.h>
+#include <crtdbg.h>
 
 namespace Sys
 {
