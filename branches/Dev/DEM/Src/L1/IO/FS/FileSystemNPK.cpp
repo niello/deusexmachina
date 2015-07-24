@@ -5,11 +5,11 @@
 namespace IO
 {
 
-bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
+bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 {
-	if (!NPKData.Open(Source, SAM_READ, SAP_RANDOM)) FAIL;
+	if (!NPKData.Open(pSource, SAM_READ, SAP_RANDOM)) FAIL;
 
-	TOC.SetRootPath(Root.CStr());
+	TOC.SetRootPath(pRoot);
 
 	int Value;
 	NPKData.Read(&Value, sizeof(int));
@@ -42,8 +42,7 @@ bool CFileSystemNPK::Mount(const CString& Source, const CString& Root)
 			// Placeholder root directory name
 			if (!strcmp(NameBuffer, "<noname>"))
 			{
-				CString NewName = Source.ExtractFileName();
-				NewName.StripExtension();
+				CString NewName = pSource.ExtractFileNameWithoutExtension();
 				NewName.ToLower();
 				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), sizeof(NameBuffer));
 			}
@@ -79,45 +78,45 @@ void CFileSystemNPK::Unmount()
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::FileExists(const CString& Path)
+bool CFileSystemNPK::FileExists(const char* pPath)
 {
-	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
 	return pTE && pTE->GetType() == FSE_FILE;
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::IsFileReadOnly(const CString& Path)
+bool CFileSystemNPK::IsFileReadOnly(const char* pPath)
 {
 	OK; // All NPK files are readonly
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::DeleteFile(const CString& Path)
+bool CFileSystemNPK::DeleteFile(const char* pPath)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::CopyFile(const CString& SrcPath, const CString& DestPath)
+bool CFileSystemNPK::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::DirectoryExists(const CString& Path)
+bool CFileSystemNPK::DirectoryExists(const char* pPath)
 {
-	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
 	return pTE && pTE->GetType() == FSE_DIR;
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::CreateDirectory(const CString& Path)
+bool CFileSystemNPK::CreateDirectory(const char* pPath)
 {
 	FAIL; // Readonly FS
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::DeleteDirectory(const CString& Path)
+bool CFileSystemNPK::DeleteDirectory(const char* pPath)
 {
 	FAIL; // Readonly FS
 }
@@ -131,9 +130,9 @@ bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNPK::OpenDirectory(const CString& Path, const char* pFilter, CString& OutName, EFSEntryType& OutType)
+void* CFileSystemNPK::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
-	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
+	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
 	if (pTE && pTE->GetType() == FSE_DIR)
 	{
 		CNPKDir* pDir = n_new(CNPKDir(pTE));
@@ -194,10 +193,10 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryTy
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNPK::OpenFile(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern /*Pattern*/)
+void* CFileSystemNPK::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern /*Pattern*/)
 {
-	n_assert(Path.IsValid());
-	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
+	if (!pPath || !*pPath) return NULL;
+	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
 	if (pTE && pTE->GetType() == FSE_FILE)
 	{
 		CNPKFile* pFile = n_new(CNPKFile);

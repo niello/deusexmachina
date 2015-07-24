@@ -4,6 +4,7 @@
 
 #include <IO/StreamReader.h>
 #include <Data/String.h>
+#include <Data/Array.h>
 
 // Text data reader, aware of line endings
 

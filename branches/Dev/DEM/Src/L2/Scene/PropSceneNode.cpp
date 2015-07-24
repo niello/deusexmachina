@@ -181,12 +181,13 @@ bool CPropSceneNode::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const 
 }
 //---------------------------------------------------------------------
 
-void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const CString& Path)
+void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const char* pPath)
 {
 	for (DWORD i = 0; i < pNode->GetChildCount(); ++i)
 	{
 		Scene::CSceneNode* pChild = pNode->GetChild(i);
-		CString FullName = Path + pChild->GetName().CStr();
+		CString FullName(pPath);
+		FullName += pChild->GetName().CStr();
 		CStrID FullID = CStrID(FullName.CStr());
 		ChildCache.Add(FullID, pChild);
 		ChildrenToSave.Add(FullID);

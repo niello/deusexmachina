@@ -3,7 +3,6 @@
 #define __DEM_L2_AI_WORLD_STATE_SOURCE_SCRIPT_H__
 
 #include "WorldStateSource.h"
-#include <Data/SimpleString.h>
 
 // Fills world state from the conventional script output.
 
@@ -16,7 +15,7 @@ class CWorldStateSourceScript: public CWorldStateSource
 
 protected:
 
-	Data::CSimpleString Func;
+	CString Func;
 
 public:
 

@@ -27,7 +27,7 @@ protected:
 	virtual void	InternalDeactivate();
 	virtual void	EnableSI(class CPropScriptable& Prop);
 	virtual void	DisableSI(class CPropScriptable& Prop);
-	void			FillSaveLoadList(Scene::CSceneNode* pNode, const CString& Path);
+	void			FillSaveLoadList(Scene::CSceneNode* pNode, const char* pPath);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);

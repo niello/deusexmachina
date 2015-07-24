@@ -20,7 +20,7 @@ private:
 
 	typedef CObject* (*CFactoryFunc)(void* pParam);
 
-	CString			Name; //???use CSimpleString?
+	CString			Name; //???use CString?
 	Data::CFourCC	FourCC;
 	DWORD			InstanceSize;
 
@@ -42,7 +42,7 @@ public:
 	DWORD			GetInstanceSize() const;
 	bool			IsDerivedFrom(const CRTTI& Other) const;
 	bool			IsDerivedFrom(Data::CFourCC OtherFourCC) const;
-	bool			IsDerivedFrom(const CString& OtherName) const;
+	bool			IsDerivedFrom(const char* pOtherName) const;
 
 	bool operator ==(const CRTTI& Other) const { return this == &Other; }
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
@@ -84,12 +84,12 @@ inline bool CRTTI::IsDerivedFrom(Data::CFourCC OtherFourCC) const
 }
 //---------------------------------------------------------------------
 
-inline bool CRTTI::IsDerivedFrom(const CString& OtherName) const
+inline bool CRTTI::IsDerivedFrom(const char* pOtherName) const
 {
 	const CRTTI* pCurr = this;
 	while (pCurr)
 	{
-		if (pCurr->Name == OtherName) OK;
+		if (pCurr->Name == pOtherName) OK;
 		pCurr = pCurr->pParent;
 	}
 	FAIL;

@@ -3,7 +3,6 @@
 #define __DEM_L1_NPK_TOC_ENTRY_H__
 
 #include <IO/FileSystem.h>
-#include <Data/SimpleString.h>
 #include <Data/HashTable.h>
 
 // A table of content entry in a CNpkTOC object. Toc entries are organized
@@ -17,12 +16,12 @@ class CNpkTOCEntry
 {
 public:
 
-	typedef CHashTable<Data::CSimpleString, CNpkTOCEntry*> CEntryTable;
+	typedef CHashTable<CString, CNpkTOCEntry*> CEntryTable;
 	typedef CEntryTable::CIterator CIterator;
 
 private:
 
-	Data::CSimpleString	Name;
+	CString	Name;
 	const char*			pRoot;		// Root path string (not owned!)
 	CNpkTOCEntry*		pParent;
 	EFSEntryType		Type;
@@ -47,7 +46,7 @@ public:
 	CNpkTOCEntry*				FindEntry(const char* name);
 	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(NULL); }
 
-	const Data::CSimpleString&	GetName() const { return Name; }
+	const CString&	GetName() const { return Name; }
 	CString						GetFullName() const;
 	CNpkTOCEntry*				GetParent() const { return pParent; }
 	EFSEntryType				GetType() const { return Type; }
@@ -116,7 +115,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName)
 {
 	n_assert(Type == FSE_DIR);
 	CNpkTOCEntry* pResult;
-	return (pEntries && pEntries->Get(pName, pResult)) ? pResult : NULL;
+	return (pEntries && pEntries->Get(CString(pName), pResult)) ? pResult : NULL;
 }
 //---------------------------------------------------------------------
 

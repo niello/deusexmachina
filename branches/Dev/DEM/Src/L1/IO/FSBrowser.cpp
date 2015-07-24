@@ -14,20 +14,20 @@ bool CFSBrowser::ForceToFirstEntry()
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::SetRelativePath(const CString& Path)
+bool CFSBrowser::SetRelativePath(const char* pPath)
 {
 	n_assert(CurrPath.IsValid());
 	CurrPath.StripTrailingSlash();
-	return SetAbsolutePath(CurrPath + "/" + Path);
+	return SetAbsolutePath(CurrPath + "/" + pPath);
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes, const CString& Filter)
+bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes, const char* pFilter)
 {
 	AtFirstEntry = false;
 
 	if (hDir) FS->CloseDirectory(hDir);
-	hDir = IOSrv->OpenDirectory(CurrPath, Filter, FS, CurrEntryName, CurrEntryType);
+	hDir = IOSrv->OpenDirectory(CurrPath, pFilter, FS, CurrEntryName, CurrEntryType);
 	if (!hDir) FAIL;
 
 	while (CurrEntryType != FSE_NONE)

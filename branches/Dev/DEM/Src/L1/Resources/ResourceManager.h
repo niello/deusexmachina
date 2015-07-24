@@ -4,7 +4,6 @@
 
 #include <Data/RefCounted.h>	// For Ptr<>
 #include <Data/StringID.h>
-#include <Data/SimpleString.h>
 #include <Data/HashTable.h>
 #include <Data/Singleton.h>
 //#include <Data/Pool.h>
@@ -36,7 +35,7 @@ protected:
 
 	//!!!???CResource pool?! if pool, hash table can store weak ptrs. How to deallocate on destroy?
 
-	Data::CSimpleString				RootPath;
+	CString				RootPath;
 	CHashTable<CStrID, PResource>	Registry;
 	//Map <FmtExt, RsrcType => LoaderType>
 

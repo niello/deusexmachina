@@ -35,7 +35,7 @@ public:
 	{
 		CStrID			ID;
 		CStrID			EventID;	// cached
-		CString			UIName;		//???use CSimpleString to reduce size of struct?
+		CString			UIName;		//???use CString to reduce size of struct?
 		short			Priority;	// The higher is value the closer an action to the top of the list
 		bool			Enabled;	//!!!add methods to control it!
 		bool			Visible;

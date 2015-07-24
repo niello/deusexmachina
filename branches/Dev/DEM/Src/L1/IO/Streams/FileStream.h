@@ -35,7 +35,7 @@ public:
 	virtual void*	Map();
 	virtual void	Unmap();
 
-	void			SetFileName(const CString& Path) { n_assert(!IsOpen()); FileName = Path; }
+	void			SetFileName(const char* pPath) { n_assert(!IsOpen()); FileName = pPath; }
 	const CString&	GetFileName() const { return FileName; }
 	virtual DWORD	GetSize() const;
 	virtual DWORD	GetPosition() const;

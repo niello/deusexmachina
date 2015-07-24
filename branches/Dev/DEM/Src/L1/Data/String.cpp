@@ -96,7 +96,7 @@ int CString::FindStringIndex(const CString& Str, DWORD StartIdx) const
 	DWORD OtherLen = Str.Length();
 	for (DWORD i = StartIdx; i < StrLen; ++i)
 	{
-		if (StrLen - i < OtherLen) break;
+		if (StrLen - i < OtherLen) break; //!!!to the main condition!
 		if (!strncmp(pStr + i, pOtherStr, OtherLen)) return i;
 	}
 	return INVALID_INDEX;

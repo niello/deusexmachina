@@ -168,9 +168,6 @@
     <ClInclude Include="..\..\Src\L1\Data\RingBuffer.h">
       <Filter>Data</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Data\SimpleString.h">
-      <Filter>Data</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\Singleton.h">
       <Filter>Data</Filter>
     </ClInclude>

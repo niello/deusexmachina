@@ -3,7 +3,6 @@
 #define __DEM_L1_RENDER_STATE_DESC_H__
 
 #include <Render/RenderFwd.h>
-//#include <Data/SimpleString.h>
 #include <Data/Flags.h>
 
 // API-independent description of a rendering pipeline state. It can be
@@ -16,11 +15,11 @@ struct CRenderStateDesc
 {
 	// Shaders
 
-	//Data::CSimpleString	VertexShaderURI;
-	//Data::CSimpleString	HullShaderURI;
-	//Data::CSimpleString	DomainShaderURI;
-	//Data::CSimpleString	GeometryShaderURI;
-	//Data::CSimpleString	PixelShaderURI;
+	//CString	VertexShaderURI;
+	//CString	HullShaderURI;
+	//CString	DomainShaderURI;
+	//CString	GeometryShaderURI;
+	//CString	PixelShaderURI;
 	PShader				VertexShader;
 	PShader				HullShader;
 	PShader				DomainShader;

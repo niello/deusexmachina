@@ -4,7 +4,7 @@
 #define __DEM_L1_SYS_OS_WINDOW_CLASS_WIN32_H__
 
 #include <Data/RefCounted.h>
-#include <Data/SimpleString.h>
+#include <Data/String.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -18,8 +18,8 @@ class COSWindowClassWin32: public Data::CRefCounted
 {
 protected:
 
-	Data::CSimpleString	Name;
-	Data::CSimpleString	IconName;
+	CString	Name;
+	CString	IconName;
 
 	HINSTANCE			hInst;
 	ATOM				aWndClass;

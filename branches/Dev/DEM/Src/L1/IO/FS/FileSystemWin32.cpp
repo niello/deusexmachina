@@ -21,64 +21,64 @@ CFileSystemWin32::~CFileSystemWin32()
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::FileExists(const CString& Path)
+bool CFileSystemWin32::FileExists(const char* pPath)
 {
-	DWORD FileAttrs = GetFileAttributes(Path.CStr());
+	DWORD FileAttrs = GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::IsFileReadOnly(const CString& Path)
+bool CFileSystemWin32::IsFileReadOnly(const char* pPath)
 {
-	DWORD FileAttrs = GetFileAttributes(Path.CStr());
+	DWORD FileAttrs = GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_READONLY);
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::SetFileReadOnly(const CString& Path, bool ReadOnly)
+bool CFileSystemWin32::SetFileReadOnly(const char* pPath, bool ReadOnly)
 {
-	DWORD FileAttrs = GetFileAttributes(Path.CStr());
+	DWORD FileAttrs = GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES) FAIL;
 	if (ReadOnly) FileAttrs |= FILE_ATTRIBUTE_READONLY;
 	else FileAttrs &= ~FILE_ATTRIBUTE_READONLY;
-	return SetFileAttributes(Path.CStr(), FileAttrs) != FALSE;
+	return SetFileAttributes(pPath, FileAttrs) != FALSE;
 }
 //---------------------------------------------------------------------
 
 #undef DeleteFile
-bool CFileSystemWin32::DeleteFile(const CString& Path)
+bool CFileSystemWin32::DeleteFile(const char* pPath)
 {
 #ifdef UNICODE
 #define DeleteFile  DeleteFileW
 #else
 #define DeleteFile  DeleteFileA
 #endif
-	return ::DeleteFile(Path.CStr()) != 0;
+	return ::DeleteFile(pPath) != 0;
 }
 //---------------------------------------------------------------------
 
 #undef CopyFile
-bool CFileSystemWin32::CopyFile(const CString& SrcPath, const CString& DestPath)
+bool CFileSystemWin32::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
 #ifdef UNICODE
 #define CopyFile  CopyFileW
 #else
 #define CopyFile  CopyFileA
 #endif
-	if (IsFileReadOnly(DestPath) && !SetFileReadOnly(DestPath, false)) FAIL;
-	return ::CopyFile(SrcPath.CStr(), DestPath.CStr(), FALSE) != 0;
+	if (IsFileReadOnly(pDestPath) && !SetFileReadOnly(pDestPath, false)) FAIL;
+	return ::CopyFile(pSrcPath, pDestPath, FALSE) != 0;
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::DirectoryExists(const CString& Path)
+bool CFileSystemWin32::DirectoryExists(const char* pPath)
 {
-	DWORD FileAttrs = GetFileAttributes(Path.CStr());
+	DWORD FileAttrs = GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
 
 #undef CreateDirectory
-bool CFileSystemWin32::CreateDirectory(const CString& Path)
+bool CFileSystemWin32::CreateDirectory(const char* pPath)
 {
 #ifdef UNICODE
 #define CreateDirectory  CreateDirectoryW
@@ -86,7 +86,7 @@ bool CFileSystemWin32::CreateDirectory(const CString& Path)
 #define CreateDirectory  CreateDirectoryA
 #endif
 
-	CString AbsPath = Path;
+	CString AbsPath(pPath);
 
 	CArray<CString> DirStack;
 	while (!DirectoryExists(AbsPath))
@@ -116,9 +116,9 @@ bool CFileSystemWin32::CreateDirectory(const CString& Path)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::DeleteDirectory(const CString& Path)
+bool CFileSystemWin32::DeleteDirectory(const char* pPath)
 {
-	if (RemoveDirectory(Path.CStr()) != FALSE) OK;
+	if (RemoveDirectory(pPath) != FALSE) OK;
 
 	// Failed to delete, so clear directory contents before
 
@@ -126,11 +126,11 @@ bool CFileSystemWin32::DeleteDirectory(const CString& Path)
 	// To extend this limit to 32,767 widecharacters, call the Unicode version of the
 	// function and prepend "\\?\" to the path. For more information, see Naming a File.
 	// (c)) MSDN
-	char pPath[MAX_PATH];
-	sprintf_s(pPath, MAX_PATH - 1, "%s\\*", Path.CStr());
+	char pPathBuf[MAX_PATH];
+	sprintf_s(pPathBuf, MAX_PATH - 1, "%s\\*", pPath);
 
 	WIN32_FIND_DATA FindData;
-	HANDLE hRec = FindFirstFile(pPath, &FindData);
+	HANDLE hRec = FindFirstFile(pPathBuf, &FindData);
 
 	if (hRec == INVALID_HANDLE_VALUE) FAIL;
 
@@ -138,7 +138,9 @@ bool CFileSystemWin32::DeleteDirectory(const CString& Path)
 	{
 		if (!strcmp(FindData.cFileName, "..") || !strcmp(FindData.cFileName, ".")) continue;
 
-		CString Name = Path + "/" + FindData.cFileName;
+		CString Name(pPath);
+		Name += "/";
+		Name += FindData.cFileName;
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
 			if (!DeleteDirectory(Name)) FAIL;
@@ -150,7 +152,7 @@ bool CFileSystemWin32::DeleteDirectory(const CString& Path)
 	if (GetLastError() != ERROR_NO_MORE_FILES) FAIL;
 	FindClose(hRec);
 
-	return RemoveDirectory(Path.CStr()) != FALSE;
+	return RemoveDirectory(pPath) != FALSE;
 }
 //---------------------------------------------------------------------
 
@@ -190,14 +192,14 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemWin32::OpenDirectory(const CString& Path, const char* pFilter, CString& OutName, EFSEntryType& OutType)
+void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
-	DWORD FileAttrs = GetFileAttributes(Path.CStr());
+	DWORD FileAttrs = GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 
 	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
 	DWORD FilterLength = strlen(pActualFilter);
-	CString SearchString(Path, FilterLength);
+	CString SearchString(pPath, FilterLength);
 	SearchString.Add(pActualFilter, FilterLength);
 
 	WIN32_FIND_DATA FindData;
@@ -248,9 +250,9 @@ bool CFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntry
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemWin32::OpenFile(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert(Path.IsValid());
+	if (!pPath && !*pPath) return NULL;
 
 	DWORD Access = 0;
 	if ((Mode & SAM_READ) || (Mode & SAM_APPEND)) Access |= GENERIC_READ;
@@ -270,7 +272,7 @@ void* CFileSystemWin32::OpenFile(const CString& Path, EStreamAccessMode Mode, ES
 		case SAM_APPEND:	Disposition = OPEN_ALWAYS; break;
 	}
 
-	HANDLE hFile = CreateFile(	Path.CStr(),
+	HANDLE hFile = CreateFile(	pPath,
 								Access,
 								ShareMode,
 								0,

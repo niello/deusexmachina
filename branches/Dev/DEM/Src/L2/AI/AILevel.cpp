@@ -28,10 +28,10 @@ bool CAILevel::Init(const CAABB& LevelBox, uchar QuadTreeDepth)
 }
 //---------------------------------------------------------------------
 
-bool CAILevel::LoadNavMesh(const CString& FileName)
+bool CAILevel::LoadNavMesh(const char* pFileName)
 {
 	IO::CFileStream File;
-	if (!File.Open(FileName, IO::SAM_READ)) FAIL;
+	if (!File.Open(pFileName, IO::SAM_READ)) FAIL;
 
 	if (File.Get<int>() != '_NM_') FAIL;
 	int Version = File.Get<int>();

@@ -16,12 +16,12 @@ class CRTTIBaseClass
 public:
 
 	bool			IsInstanceOf(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
-	bool			IsInstanceOf(const CString& Name) const { return GetRTTI()->GetName() == Name; }
+	bool			IsInstanceOf(const char* pName) const { return GetRTTI()->GetName() == pName; }
 	bool			IsInstanceOf(Data::CFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
 	template<class T>
 	bool			IsA() const { return IsA(T::RTTI); }
 	bool			IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
-	bool			IsA(const CString& Name) const { return GetRTTI()->IsDerivedFrom(Name); }
+	bool			IsA(const char* pName) const { return GetRTTI()->IsDerivedFrom(pName); }
 	bool			IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
 	template<class T>
 	T*				As() { return IsA(T::RTTI) ? static_cast<T*>(this) : NULL; }

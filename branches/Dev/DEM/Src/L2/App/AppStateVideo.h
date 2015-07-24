@@ -30,7 +30,7 @@ public:
 
 	void			SetNextState(CStrID State) { NextState = State; }
 	CStrID			GetNextState() const { return NextState; }
-	void			SetVideoFile(const CString& FileName) { VideoFileName = FileName; }
+	void			SetVideoFile(const char* pFileName) { VideoFileName = pFileName; }
 	const CString&	GetVideoFile() const { return VideoFileName; }
 };
 

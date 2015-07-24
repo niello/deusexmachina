@@ -37,7 +37,7 @@ public:
 	bool			Init(const CAABB& LevelBox, uchar QuadTreeDepth);
 	void			RenderDebug();
 
-	bool			LoadNavMesh(const CString& FileName);
+	bool			LoadNavMesh(const char* pFileName);
 	void			UnloadNavMesh();
 	CNavData*		GetNavData(float ActorRadius);
 	dtNavMesh*		GetNavMesh(float ActorRadius);

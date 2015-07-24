@@ -73,17 +73,17 @@ public:
 	bool			ValidateAllLevels();
 
 	void			EnumProfiles(CArray<CString>& Out) const;
-	bool			CreateProfile(const CString& Name) const;
-	bool			DeleteProfile(const CString& Name) const;
-	bool			SetCurrentProfile(const CString& Name);
+	bool			CreateProfile(const char* pName) const;
+	bool			DeleteProfile(const char* pName) const;
+	bool			SetCurrentProfile(const char* pName);
 	const CString&	GetCurrentProfile() const { return CurrProfile; }
-	void			EnumSavedGames(CArray<CString>& Out, const CString& Profile = CString::Empty) const;
-	bool			SavedGameExists(const CString& Name, const CString& Profile = CString::Empty);
+	void			EnumSavedGames(CArray<CString>& Out, const char* pProfile = NULL) const;
+	bool			SavedGameExists(const char* pName, const char* pProfile = NULL);
 
-	bool			StartNewGame(const CString& FileName);
-	bool			ContinueGame(const CString& FileName);
-	bool			SaveGame(const CString& Name);
-	bool			LoadGame(const CString& Name);
+	bool			StartNewGame(const char* pFileName);
+	bool			ContinueGame(const char* pFileName);
+	bool			SaveGame(const char* pName);
+	bool			LoadGame(const char* pName);
 	bool			LoadGameLevel(CStrID ID);
 	void			UnloadGameLevel(CStrID ID);
 	void			UnloadAllGameLevels() { while (Levels.GetCount()) UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1)); }

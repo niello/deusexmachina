@@ -4,7 +4,6 @@
 
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
-#include <Data/SimpleString.h>
 
 // Central object to enumerate video hardware and obtain driver objects to control it.
 // This class should be subclassed and implemented via some video subsystem API like D3D9 or DXGI.
@@ -37,7 +36,7 @@ public:
 
 	struct CAdapterInfo
 	{
-		Data::CSimpleString	Description;
+		CString	Description;
 		DWORD				VendorID;
 		DWORD				DeviceID;
 		DWORD				SubSysID;

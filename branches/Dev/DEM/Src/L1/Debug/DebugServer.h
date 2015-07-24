@@ -2,7 +2,6 @@
 #ifndef __DEM_L1_DEBUG_SERVER_H__
 #define __DEM_L1_DEBUG_SERVER_H__
 
-#include <Data/SimpleString.h>
 #include <Data/StringID.h>
 #include <Data/Singleton.h>
 #include <Events/EventsFwd.h>
@@ -24,7 +23,7 @@ private:
 
 	struct CPlugin
 	{
-		Data::CSimpleString	UIResource;
+		CString	UIResource;
 		UI::PUIWindow		Window;
 	};
 

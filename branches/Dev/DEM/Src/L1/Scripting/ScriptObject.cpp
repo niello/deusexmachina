@@ -143,10 +143,10 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::LoadScriptFile(const CString& FileName)
+DWORD CScriptObject::LoadScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
+	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return Error;
 	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
