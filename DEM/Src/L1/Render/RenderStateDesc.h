@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_STATE_DESC_H__
 
 #include <Render/RenderFwd.h>
-#include <Data/SimpleString.h>
+//#include <Data/SimpleString.h>
 #include <Data/Flags.h>
 
 // API-independent description of a rendering pipeline state. It can be
@@ -12,17 +12,20 @@
 namespace Render
 {
 
-//!!!need const static member with defaults! or method "FillWithDefaults"
-
 struct CRenderStateDesc
 {
 	// Shaders
 
-	Data::CSimpleString	VertexShaderURI;
-	Data::CSimpleString	HullShaderURI;
-	Data::CSimpleString	DomainShaderURI;
-	Data::CSimpleString	GeometryShaderURI;
-	Data::CSimpleString	PixelShaderURI;
+	//Data::CSimpleString	VertexShaderURI;
+	//Data::CSimpleString	HullShaderURI;
+	//Data::CSimpleString	DomainShaderURI;
+	//Data::CSimpleString	GeometryShaderURI;
+	//Data::CSimpleString	PixelShaderURI;
+	PShader				VertexShader;
+	PShader				HullShader;
+	PShader				DomainShader;
+	PShader				GeometryShader;
+	PShader				PixelShader;
 
 	Data::CFlags		Flags; // For boolean variables, see enums below
 

@@ -30,12 +30,12 @@ public:
 
 	static CFactory* Instance();
 
-	void			Register(const CRTTI& RTTI, const CString& Name, Data::CFourCC FourCC = 0);
-	bool			IsNameRegistered(const CString& ClassName) const { return NameToRTTI.Contains(ClassName); }
+	void			Register(const CRTTI& RTTI, const char* pClassName, Data::CFourCC FourCC = 0);
+	bool			IsNameRegistered(const char* pClassName) const { return NameToRTTI.Contains(CString(pClassName)); }
 	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
-	const CRTTI*	GetRTTI(const CString& ClassName) const { return NameToRTTI[ClassName]; }
+	const CRTTI*	GetRTTI(const char* pClassName) const { return NameToRTTI[CString(pClassName)]; }
 	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
-	CObject*		Create(const CString& ClassName, void* pParam = NULL) const;
+	CObject*		Create(const char* pClassName, void* pParam = NULL) const;
 	CObject*		Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
 };
 

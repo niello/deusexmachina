@@ -27,7 +27,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 	Duration = GetFloat(Desc, CStrID("Duration"));
 	TargetState = Desc.Get<CStrID>(CStrID("TargetState"), CStrID::Empty);
 
-	CString PD = Desc.Get<CString>(CStrID("ProgressDriver"), NULL);
+	CString PD = Desc.Get<CString>(CStrID("ProgressDriver"), CString::Empty);
 	PD.TrimInplace();
 	PD.ToLower();
 	if (PD == "dur" || PD == "duration") ProgressDriver = PDrv_Duration;
@@ -45,7 +45,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 	}
 	else Preconditions = NULL;
 
-	const CString& ScriptName = Desc.Get<CString>(CStrID("Script"), NULL);
+	const CString& ScriptName = Desc.Get<CString>(CStrID("Script"), CString::Empty);
 	if (ScriptName.IsValid())
 	{
 		ScriptObj = n_new(Scripting::CScriptObject(ID.CStr(), "Actions"));

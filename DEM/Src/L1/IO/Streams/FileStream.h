@@ -25,7 +25,7 @@ public:
 	CFileStream(): hFile(NULL) {}
 	virtual ~CFileStream() { if (IsOpen()) Close(); }
 
-	bool			Open(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
+	bool			Open(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();
 	virtual DWORD	Read(void* pData, DWORD Size);
@@ -46,9 +46,9 @@ public:
 	virtual bool	CanBeMapped() const { OK; }
 };
 
-inline bool CFileStream::Open(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+inline bool CFileStream::Open(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	FileName = Path;
+	FileName = pPath;
 	return Open(Mode, Pattern);
 }
 //---------------------------------------------------------------------

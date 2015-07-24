@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <CEGUI/Window.h>
+#include <Math/Vector2.h>
 
 // CEGUI Window wrapper/controller/extender. Base class for all UI windows.
 
@@ -27,7 +28,7 @@ public:
 
 	virtual void	Init(CEGUI::Window* pWindow);
 	virtual void	Term() {} //!!!if attached to parent, remove. Then unload.
-	void			Load(const CString& ResourceFile);
+	void			Load(const char* pResourceFile);
 	
 	bool			IsVisible() const { return pWnd->isVisible(); }
 	void			Show() { if (!IsVisible()) SetVisible(true); }

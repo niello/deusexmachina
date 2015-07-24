@@ -129,16 +129,16 @@ bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNPK::OpenDirectory(const CString& Path, const CString& Filter, CString& OutName, EFSEntryType& OutType)
+void* CFileSystemNPK::OpenDirectory(const CString& Path, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(Path.CStr());
 	if (pTE && pTE->GetType() == FSE_DIR)
 	{
 		CNPKDir* pDir = n_new(CNPKDir(pTE));
-		pDir->Filter = (Filter == "*") ? CString::Empty : Filter;
+		pDir->Filter = !strcmp(pFilter, "*") ? CString::Empty : CString(pFilter);
 
-		if (Filter.IsValid())
-			while (pDir->It && !CString(pDir->It.GetValue()->GetName()).MatchPattern(Filter))
+		if (pFilter && *pFilter)
+			while (pDir->It && !StringUtils::MatchesPattern(pDir->It.GetValue()->GetName(), pFilter))
 				++pDir->It;
 
 		if (pDir->It)
@@ -162,8 +162,7 @@ void* CFileSystemNPK::OpenDirectory(const CString& Path, const CString& Filter, 
 
 void CFileSystemNPK::CloseDirectory(void* hDir)
 {
-	n_assert(hDir);
-	n_delete(hDir);
+	if (hDir) n_delete(hDir);
 }
 //---------------------------------------------------------------------
 
@@ -176,7 +175,7 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryTy
 		++pDir->It;
 
 		if (pDir->Filter.IsValid())
-			while (pDir->It && !CString(pDir->It.GetValue()->GetName()).MatchPattern(pDir->Filter))
+			while (pDir->It && !StringUtils::MatchesPattern(pDir->It.GetValue()->GetName(), pDir->Filter.CStr()))
 				++pDir->It;
 
 		if (pDir->It)

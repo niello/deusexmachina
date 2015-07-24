@@ -3,10 +3,12 @@
 #define __DEM_L1_PHYSICS_OBJECT_H__
 
 #include <Physics/CollisionShape.h>
+#include <Math/Vector3.h>
 
 // Base class for all physics objects. Instantiates shared shape and locates it in a physics world.
 
 class CAABB;
+class quaternion;
 class btTransform;
 class btCollisionObject;
 

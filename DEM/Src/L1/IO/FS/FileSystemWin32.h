@@ -33,7 +33,7 @@ public:
 	virtual bool	DeleteDirectory(const CString& Path);
 	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath);
 
-	virtual void*	OpenDirectory(const CString& Path, const CString& Filter, CString& OutName, EFSEntryType& OutType);
+	virtual void*	OpenDirectory(const CString& Path, const char* pFilter, CString& OutName, EFSEntryType& OutType);
 	virtual void	CloseDirectory(void* hDir);
 	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType);
 

@@ -62,8 +62,8 @@ inline bool CBinaryWriter::WriteString(LPCSTR Value)
 
 inline bool CBinaryWriter::WriteString(const CString& Value)
 {
-	return Write<ushort>((ushort)Value.Length()) &&
-		(!Value.Length() || Stream.Write(Value.CStr(), Value.Length()) == Value.Length());
+	return Write<ushort>((ushort)Value.GetLength()) &&
+		(!Value.GetLength() || Stream.Write(Value.CStr(), Value.GetLength()) == Value.GetLength());
 }
 //---------------------------------------------------------------------
 

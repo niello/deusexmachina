@@ -14,19 +14,19 @@ CFactory* CFactory::Instance()
 }
 //---------------------------------------------------------------------
 
-void CFactory::Register(const CRTTI& RTTI, const CString& Name, Data::CFourCC FourCC)
+void CFactory::Register(const CRTTI& RTTI, const char* pClassName, Data::CFourCC FourCC)
 {
-	n_assert2(!IsNameRegistered(Name), Name.CStr());
+	n_assert2(!IsNameRegistered(pClassName), pClassName);
 	if (FourCC != 0) n_assert2(!IsFourCCRegistered(FourCC), FourCC.ToString());
-	NameToRTTI.Add(Name, &RTTI);
+	NameToRTTI.Add(CString(pClassName), &RTTI);
 	if (FourCC != 0) FourCCToRTTI.Add(FourCC, &RTTI);
 }
 //---------------------------------------------------------------------
 
-CObject* CFactory::Create(const CString& ClassName, void* pParam) const
+CObject* CFactory::Create(const char* pClassName, void* pParam) const
 {
-	n_assert2_dbg(IsNameRegistered(ClassName), ClassName.CStr());
-	const CRTTI* pRTTI = GetRTTI(ClassName);
+	n_assert2_dbg(IsNameRegistered(pClassName), pClassName);
+	const CRTTI* pRTTI = GetRTTI(pClassName);
 	n_assert_dbg(pRTTI);
 	return pRTTI->CreateInstance(pParam);
 }

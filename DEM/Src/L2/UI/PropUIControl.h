@@ -93,7 +93,7 @@ public:
 
 	void					Enable(bool SetEnabled);
 	bool					IsEnabled() const { return Enabled; }
-	void					SetUIName(const CString& NewName);
+	void					SetUIName(const char* pNewName);
 	void					ShowTip();
 	void					HideTip();
 

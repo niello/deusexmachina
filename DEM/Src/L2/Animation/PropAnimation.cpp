@@ -157,7 +157,7 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 		if (pBone)
 		{
 			static const CString StrDot(".");
-			CString Name = pNode->GetName().CStr();
+			CString Name(pNode->GetName().CStr());
 			Scene::CSceneNode* pCurrParent = pParent;
 			while (pCurrParent && pCurrParent != pRoot)
 			{

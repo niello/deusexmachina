@@ -98,7 +98,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 
 	//???need to cache?
 	Data::PParams Desc;
-	const CString& DescName = GetEntity()->GetAttr<CString>(CStrID("AIHintsDesc"), NULL);
+	const CString& DescName = GetEntity()->GetAttr<CString>(CStrID("AIHintsDesc"), CString::Empty);
 	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(CString("AIHints:") + DescName + ".prm");
 
 	if (Desc.IsValidPtr())
@@ -113,14 +113,14 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 			PParams PrmVal = Prm.GetValue<PParams>();
 			CRecord Rec;
 			
-			Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), NULL));
+			Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), CString::Empty));
 
 			Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
 			Rec.Stimulus->Position = Pos; //!!!offset * tfm!
 			Rec.Stimulus->Intensity = PrmVal->Get<float>(CStrID("Intensity"), 1.f);
 			Rec.Stimulus->ExpireTime = PrmVal->Get<float>(CStrID("ExpireTime"), -1.f);
 
-			const CString& SizeStr = PrmVal->Get<CString>(CStrID("Size"), NULL);
+			const CString& SizeStr = PrmVal->Get<CString>(CStrID("Size"), CString::Empty);
 
 			if (SizeStr.IsEmpty())
 			{

@@ -210,7 +210,6 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 };
 
 typedef Data::CStringID CStrID;
-typedef CArray<const matrix44*> CMatrixPtrArray;			// Shader parameter type
 template<class TKey, class TVal> class CDictionary;
 typedef CDictionary<CStrID, Data::CData> CDataDict;	// Is used oftenly
 
@@ -222,10 +221,6 @@ DECLARE_TYPE(float, 3)
 DECLARE_TYPE(CString, 4) //???define char* too?
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(PVOID, 6)
-DECLARE_TYPE(vector3, 16) //???need or completely replace with vector4 for CData uses?
-DECLARE_TYPE(vector4, 7)
-DECLARE_TYPE(matrix44, 8)
-DECLARE_TYPE(CMatrixPtrArray, 15)
 
 #define TVoid			-1
 #define TBool			DATA_TYPE(bool)

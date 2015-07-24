@@ -1,6 +1,7 @@
 #include "ResourceManager.h"
 
 #include <Resources/Resource.h>
+#include <Resources/ResourceLoader.h>
 
 namespace Resources
 {
@@ -30,7 +31,24 @@ PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension,
 
 void CResourceManager::LoadResource(PResource Rsrc, PResourceLoader Loader, bool Async)
 {
-	n_assert(false);
+	if (Rsrc.IsNullPtr() || Loader.IsNullPtr()) return;
+
+	CResource* pRsrc = Rsrc.GetUnsafe();
+
+	if (Async)
+	{
+		Sys::Error("IMPLEMENT ME!!!\n");
+		//create job(task) that will call this method with Async = false from another thread
+		//must return some handle to cancel/wait/check task
+		//???store async handle in a resource?
+		pRsrc->SetState(Rsrc_LoadingRequested);
+	}
+	else
+	{
+		pRsrc->SetState(Rsrc_LoadingInProgress);
+		if (Loader->Load(*pRsrc)) pRsrc->SetState(Rsrc_Loaded);
+		else pRsrc->SetState(Rsrc_LoadingFailed);
+	}
 }
 //---------------------------------------------------------------------
 

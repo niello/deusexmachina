@@ -37,7 +37,7 @@ public:
 	bool			FirstCurrDirEntry() { return hDir && (AtFirstEntry || ForceToFirstEntry()); }
 	bool			NextCurrDirEntry();
 
-	bool			ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes = FSE_DIR | FSE_FILE, const CString& Filter = "*");
+	bool			ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes = FSE_DIR | FSE_FILE, const CString& Filter = CString("*"));
 
 	bool			IsCurrPathValid() const { return !!hDir; }
 	bool			IsCurrDirEmpty();

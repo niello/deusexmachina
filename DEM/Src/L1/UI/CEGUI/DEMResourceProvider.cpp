@@ -1,7 +1,9 @@
 #include <StdCfg.h>
 #include "DEMResourceProvider.h"
+
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
+#include <Data/StringUtils.h>
 
 namespace CEGUI
 {
@@ -21,7 +23,7 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 	}
 
 	IO::CFileStream File;
-	if (File.Open(FinalFilename.c_str(), IO::SAM_READ))
+	if (File.Open(CString(FinalFilename.c_str()), IO::SAM_READ))
 	{
 		const long Size = File.GetSize();
 		unsigned char* const pBuffer = n_new_array(unsigned char, Size);
@@ -85,14 +87,14 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
 
     size_t Entries = 0;
 
-	CString Pattern = DirName.c_str();
+	CString Pattern(DirName.c_str());
 	Pattern += file_pattern.c_str();
 
 	IO::PFileSystem FS;
 	CString EntryName;
 	IO::EFSEntryType EntryType;
 	CString RootDir(DirName.c_str());
-	void* hDir = IOSrv->OpenDirectory(RootDir, NULL, FS, EntryName, EntryType);
+	void* hDir = IOSrv->OpenDirectory(RootDir, CString::Empty, FS, EntryName, EntryType);
 	if (hDir)
 	{
 		if (EntryType != IO::FSE_NONE) do
@@ -100,7 +102,7 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
 			if (EntryType == IO::FSE_FILE)
 			{
 				CString FullEntryName = RootDir + EntryName;
-				if (FullEntryName.MatchPattern(Pattern))
+				if (StringUtils::MatchesPattern(FullEntryName.CStr(), Pattern.CStr()))
 				{
 					out_vec.push_back(String(FullEntryName.CStr()));
 					++Entries;

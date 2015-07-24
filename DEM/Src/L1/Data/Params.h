@@ -3,6 +3,7 @@
 #define __DEM_L1_PARAMS_H__
 
 #include <Data/RefCounted.h>
+#include <Data/Array.h>
 #include <Data/Param.h>
 
 // Array of named variant variables

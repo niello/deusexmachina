@@ -60,8 +60,8 @@ bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 	if (QuestDesc.IsNullPtr()) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);
-	Quest->Name = QuestDesc->Get<CString>(CStrID("Name"), "<No quest name>");
-	Quest->Description = QuestDesc->Get<CString>(CStrID("Desc"), "<No quest desc>");
+	Quest->Name = QuestDesc->Get<CString>(CStrID("Name"), CString("<No quest name>"));
+	Quest->Description = QuestDesc->Get<CString>(CStrID("Desc"), CString("<No quest desc>"));
 
 	const Data::CParams& Tasks = *QuestDesc->Get<Data::PParams>(CStrID("Tasks"));
 	for (int i = 0; i < Tasks.GetCount(); i++)
@@ -70,8 +70,8 @@ bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 		const Data::CParams& TaskDesc = *TaskPrm.GetValue<Data::PParams>();
 
 		Ptr<CTask> NewTask = n_new(CTask);
-		NewTask->Name = TaskDesc.Get<CString>(CStrID("Name"), "<No task name>");
-		NewTask->Description = TaskDesc.Get<CString>(CStrID("Desc"), "<No task desc>");
+		NewTask->Name = TaskDesc.Get<CString>(CStrID("Name"), CString("<No task name>"));
+		NewTask->Description = TaskDesc.Get<CString>(CStrID("Desc"), CString("<No task desc>"));
 
 		CQuest::CTaskRec NewTR;
 		NewTR.Task = NewTask;

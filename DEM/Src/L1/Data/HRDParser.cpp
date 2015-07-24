@@ -28,18 +28,18 @@ enum
 CHRDParser::CHRDParser(): pErr(NULL)
 {
 	// NB: Keep sorted and keep enum above updated
-	TableRW.Add("false");
-	TableRW.Add("null");
-	TableRW.Add("true");
+	TableRW.Add(CString("false"));
+	TableRW.Add(CString("null"));
+	TableRW.Add(CString("true"));
 	
-	TableDlm.Add("=");
-	TableDlm.Add("[");
-	TableDlm.Add(",");
-	TableDlm.Add("]");
-	TableDlm.Add("{");
-	TableDlm.Add("}");
-	TableDlm.Add("(");
-	TableDlm.Add(")");
+	TableDlm.Add(CString("="));
+	TableDlm.Add(CString("["));
+	TableDlm.Add(CString(","));
+	TableDlm.Add(CString("]"));
+	TableDlm.Add(CString("{"));
+	TableDlm.Add(CString("}"));
+	TableDlm.Add(CString("("));
+	TableDlm.Add(CString(")"));
 }
 //---------------------------------------------------------------------
 
@@ -581,7 +581,7 @@ void CHRDParser::DlmMatchChar(char Char, int Index, int Start, int End, int& Mat
 	int i = Start;
 	for (; i < End; i++)
 	{
-		if ((int)TableDlm[i].Length() < Index) continue;
+		if ((int)TableDlm[i].GetLength() < Index) continue;
 
 		if (MatchStart == INVALID_INDEX)
 		{

@@ -9,13 +9,13 @@
 #include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11DepthStencilBuffer.h>
 #include <Render/D3D11/D3D11RenderState.h>
+#include <Render/D3D11/D3D11Shader.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
 #include <Data/StringID.h>
 #include <Core/Factory.h>
-
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
@@ -1083,11 +1083,16 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		{
 			if (pD3DState->InputSigID != CurrRS->InputSigID) InputLayoutDirty = true;
 
-			if (pD3DState->pVS != CurrRS->pVS) pD3DImmContext->VSSetShader(pD3DState->pVS, NULL, 0);
-			if (pD3DState->pHS != CurrRS->pHS) pD3DImmContext->HSSetShader(pD3DState->pHS, NULL, 0);
-			if (pD3DState->pDS != CurrRS->pDS) pD3DImmContext->DSSetShader(pD3DState->pDS, NULL, 0);
-			if (pD3DState->pGS != CurrRS->pGS) pD3DImmContext->GSSetShader(pD3DState->pGS, NULL, 0);
-			if (pD3DState->pPS != CurrRS->pPS) pD3DImmContext->PSSetShader(pD3DState->pPS, NULL, 0);
+			if (pD3DState->VS != CurrRS->VS)
+				pD3DImmContext->VSSetShader(pD3DState->VS.IsValidPtr() ? pD3DState->VS.GetUnsafe()->GetD3DVertexShader() : NULL, NULL, 0);
+			if (pD3DState->HS != CurrRS->HS)
+				pD3DImmContext->HSSetShader(pD3DState->HS.IsValidPtr() ? pD3DState->HS.GetUnsafe()->GetD3DHullShader() : NULL, NULL, 0);
+			if (pD3DState->DS != CurrRS->DS)
+				pD3DImmContext->DSSetShader(pD3DState->DS.IsValidPtr() ? pD3DState->DS.GetUnsafe()->GetD3DDomainShader() : NULL, NULL, 0);
+			if (pD3DState->GS != CurrRS->GS)
+				pD3DImmContext->GSSetShader(pD3DState->GS.IsValidPtr() ? pD3DState->GS.GetUnsafe()->GetD3DGeometryShader() : NULL, NULL, 0);
+			if (pD3DState->PS != CurrRS->PS)
+				pD3DImmContext->PSSetShader(pD3DState->PS.IsValidPtr() ? pD3DState->PS.GetUnsafe()->GetD3DPixelShader() : NULL, NULL, 0);
 
 			if (pD3DState->pBState != CurrRS->pBState ||
 				pD3DState->BlendFactorRGBA[0] != CurrRS->BlendFactorRGBA[0] ||
@@ -1836,12 +1841,26 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 //not to duplicate states.
 PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
-	ID3D11VertexShader* pVS = NULL;
-	ID3D11HullShader* pHS = NULL;
-	ID3D11DomainShader* pDS = NULL;
-	ID3D11GeometryShader* pGS = NULL;
-	ID3D11PixelShader* pPS = NULL;
+	//ID3D11VertexShader* pVS = NULL;
+	//ID3D11HullShader* pHS = NULL;
+	//ID3D11DomainShader* pDS = NULL;
+	//ID3D11GeometryShader* pGS = NULL;
+	//ID3D11PixelShader* pPS = NULL;
 
+	////???make external to decouple render from resources?
+	////!!!VS loader must accept GPU and store input signature!
+	////or load signature here separately
+	////or all this in Effect, pass already loaded shaders to Desc?
+	//if (Desc.VertexShaderURI.IsValid())
+	//{
+	//	Resources::PResource Shader = ResourceMgr->RegisterResource(Desc.VertexShaderURI.CStr());
+	//	if (!Shader->IsLoaded())
+	//	{
+	//		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(FileName.GetExtension());
+	//		ResourceMgr->LoadResource(Shader, Loader);
+	//		n_assert(Shader->IsLoaded());
+	//	}
+	//}
 	// try to find each shader already loaded (some compiled shader file)
 	// if not loaded, load and add into the cache
 	//???how to determine final compiled shader file? when compile my effect, serialize it
@@ -1937,11 +1956,11 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	for (int i = 0; i < RenderStates.GetCount(); ++i)
 	{
 		CD3D11RenderState* pRS = RenderStates[i].GetUnsafe();
-		if (pRS->pVS == pVS &&
-			pRS->pHS == pHS &&
-			pRS->pDS == pDS &&
-			pRS->pGS == pGS &&
-			pRS->pPS == pPS &&
+		if (pRS->VS == Desc.VertexShader &&
+			pRS->HS == Desc.HullShader &&
+			pRS->DS == Desc.DomainShader &&
+			pRS->GS == Desc.GeometryShader &&
+			pRS->PS == Desc.PixelShader &&
 			pRS->pRState == pRState &&
 			pRS->pDSState == pDSState &&
 			pRS->pBState == pBState)
@@ -1952,11 +1971,11 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 	{
 		PD3D11RenderState RS = n_new(CD3D11RenderState);
-		RS->pVS = pVS;
-		RS->pHS = pHS;
-		RS->pDS = pDS;
-		RS->pGS = pGS;
-		RS->pPS = pPS;
+		RS->VS = Desc.VertexShader->As<CD3D11Shader>();
+		RS->HS = Desc.HullShader->As<CD3D11Shader>();
+		RS->DS = Desc.DomainShader->As<CD3D11Shader>();
+		RS->GS = Desc.GeometryShader->As<CD3D11Shader>();
+		RS->PS = Desc.PixelShader->As<CD3D11Shader>();
 		RS->pRState = pRState;
 		RS->pDSState = pDSState;
 		RS->pBState = pBState;
@@ -1975,11 +1994,6 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 ProcessFailure:
 
-	if (pVS) pVS->Release();
-	if (pHS) pHS->Release();
-	if (pDS) pDS->Release();
-	if (pGS) pGS->Release();
-	if (pPS) pPS->Release();
 	if (pRState) pRState->Release();
 	if (pDSState) pDSState->Release();
 	if (pBState) pBState->Release();

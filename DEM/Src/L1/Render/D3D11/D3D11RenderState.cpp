@@ -10,11 +10,6 @@ __ImplementClass(Render::CD3D11RenderState, 'RS11', Render::CRenderState);
 
 CD3D11RenderState::~CD3D11RenderState()
 {
-	SAFE_RELEASE(pVS);
-	SAFE_RELEASE(pHS);
-	SAFE_RELEASE(pDS);
-	SAFE_RELEASE(pGS);
-	SAFE_RELEASE(pPS);
 	SAFE_RELEASE(pRState);
 	SAFE_RELEASE(pDSState);
 	SAFE_RELEASE(pBState);

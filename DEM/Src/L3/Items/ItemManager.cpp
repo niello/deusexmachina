@@ -11,7 +11,7 @@ __ImplementSingleton(Items::CItemManager);
 
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)
 {
-	PItemTpl Tpl = (CItemTpl*)Factory->Create(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), NULL));
+	PItemTpl Tpl = (CItemTpl*)Factory->Create(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), CString::Empty));
 	n_assert(Tpl.IsValidPtr());
 	Tpl->Init(ID, Params);
 	return Tpl;

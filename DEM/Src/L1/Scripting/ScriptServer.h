@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/Singleton.h>
+#include <Data/Array.h>
 
 // Script server is a central point for script objects creation, registration and script running
 // Should store script interpreter, loader from file etc
@@ -66,7 +67,7 @@ public:
 	void		ExportIntegerConst(LPCSTR Name, int Value);
 	void		ClearField(LPCSTR Name);
 
-	bool		LoadClass(const CString& Name);
+	bool		LoadClass(LPCSTR Name);
 	bool		ClassExists(LPCSTR Name);
 
 	//!!!can add functions to subscribe global functions to events!

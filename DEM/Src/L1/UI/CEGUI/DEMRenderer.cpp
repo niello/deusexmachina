@@ -2,6 +2,9 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/Shader.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
@@ -31,11 +34,29 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	n_assert(GPU->GetViewport(0, VP));
 	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);
 
+	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
+	if (!RVS->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pVertexShaderURI.GetExtension());
+		//!!!set GPU!
+		ResourceMgr->LoadResource(RVS, Loader);
+		n_assert(RVS->IsLoaded());
+	}
+
+	Resources::PResource RPS = ResourceMgr->RegisterResource(pPixelShaderURI);
+	if (!RPS->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pPixelShaderURI.GetExtension());
+		//!!!set GPU!
+		ResourceMgr->LoadResource(RPS, Loader);
+		n_assert(RPS->IsLoaded());
+	}
+
 	Render::CRenderStateDesc RSDesc;
 	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
 	RSDesc.SetDefaults();
-	RSDesc.VertexShaderURI = pVertexShaderURI;
-	RSDesc.PixelShaderURI = pPixelShaderURI;
+	RSDesc.VertexShader = RVS->GetObject()->As<Render::CShader>();
+	RSDesc.PixelShader = RPS->GetObject()->As<Render::CShader>();
 	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
 	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
 					   Render::CRenderStateDesc::DS_DepthWriteEnable |

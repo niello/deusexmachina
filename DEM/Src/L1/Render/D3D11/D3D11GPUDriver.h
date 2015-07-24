@@ -74,7 +74,7 @@ protected:
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
-	CDict<CStrID, Data::CBuffer>		ShaderInputSignatures;
+	//CDict<CStrID, Data::CBuffer>		ShaderInputSignatures; //!!!to D3D11 fct or resource mgr!
 	CArray<PD3D11RenderState>			RenderStates;
 	//bool								IsInsideFrame;
 	//bool								Wireframe;
@@ -179,7 +179,7 @@ public:
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }
 
-	//IDirect3DDevice9*		GetD3DDevice() const { return pD3DDevice; }
+	ID3D11Device*				GetD3DDevice() const { return pD3DDevice; }
 };
 
 typedef Ptr<CD3D11GPUDriver> PD3D11GPUDriver;

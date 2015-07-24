@@ -9,6 +9,7 @@
 #include <Render/D3D9/D3D9RenderTarget.h>
 #include <Render/D3D9/D3D9DepthStencilBuffer.h>
 #include <Render/D3D9/D3D9RenderState.h>
+#include <Render/D3D9/D3D9Shader.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
@@ -403,8 +404,8 @@ void CD3D9GPUDriver::SetDefaultRenderState()
 	if (DefaultRenderState.IsNullPtr())
 	{
 		DefaultRenderState = n_new(CD3D9RenderState);
-		DefaultRenderState->pVS = NULL;
-		DefaultRenderState->pPS = NULL;
+		DefaultRenderState->VS = NULL;
+		DefaultRenderState->PS = NULL;
 
 		DWORD* pValues = DefaultRenderState->D3DStateValues;
 
@@ -999,8 +1000,11 @@ bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
 
 	if (CurrRS.GetUnsafe() == pD3DState) OK;
 
-	if (pD3DState->pVS != CurrRS->pVS) pD3DDevice->SetVertexShader(pD3DState->pVS);
-	if (pD3DState->pPS != CurrRS->pPS) pD3DDevice->SetPixelShader(pD3DState->pPS);
+	if (pD3DState->VS != CurrRS->VS)
+		pD3DDevice->SetVertexShader(pD3DState->VS.IsValidPtr() ? pD3DState->VS.GetUnsafe()->GetD3DVertexShader() : NULL);
+	if (pD3DState->PS != CurrRS->PS)
+		pD3DDevice->SetPixelShader(pD3DState->PS.IsValidPtr() ? pD3DState->PS.GetUnsafe()->GetD3DPixelShader() : NULL);
+
 	DWORD* pValues = pD3DState->D3DStateValues;
 	for (int i = 0; i < CD3D9RenderState::D3D9_RS_COUNT; ++i)
 	{
@@ -1565,8 +1569,8 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	//with final shader file names? can even use DSS for effects!
 
 	PD3D9RenderState RS = n_new(CD3D9RenderState);
-	RS->pVS = pVS;
-	RS->pPS = pPS;
+	RS->VS = Desc.VertexShader->As<CD3D9Shader>();
+	RS->PS = Desc.PixelShader->As<CD3D9Shader>();
 
 	DWORD* pValues = RS->D3DStateValues;
 
@@ -1649,8 +1653,8 @@ n_assert(false);
 	for (int i = 0; i < RenderStates.GetCount(); ++i)
 	{
 		CD3D9RenderState* pRS = RenderStates[i].GetUnsafe();
-		if (pRS->pVS == pVS &&
-			pRS->pPS == pPS &&
+		if (pRS->VS == Desc.VertexShader &&
+			pRS->PS == Desc.PixelShader &&
 			memcmp(pRS->D3DStateValues, RS->D3DStateValues, sizeof(pRS->D3DStateValues)) == 0)
 		{
 			return pRS;

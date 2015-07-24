@@ -5,6 +5,7 @@
 #include <Core/Object.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
+#include <Math/Vector3.h>
 
 // Scene node attributes implement specific logic, attached to a 3D transform provided by scene nodes.
 // Common examples are meshes, lights, cameras etc.

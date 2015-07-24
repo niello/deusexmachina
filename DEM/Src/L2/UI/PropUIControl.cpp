@@ -31,16 +31,16 @@ bool CPropUIControl::InternalActivate()
 {
 	Enable(GetEntity()->GetAttr<bool>(CStrID("UIEnabled"), true));
 
-	UIName = GetEntity()->GetAttr<CString>(CStrID("Name"), NULL);
-	UIDesc = GetEntity()->GetAttr<CString>(CStrID("Desc"), NULL);
+	UIName = GetEntity()->GetAttr<CString>(CStrID("Name"), CString::Empty);
+	UIDesc = GetEntity()->GetAttr<CString>(CStrID("Desc"), CString::Empty);
 	ReflectSOActions = false;
 
-	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
+	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
 	Data::PParams Desc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
 	if (Desc.IsValidPtr())
 	{
-		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), NULL);
-		if (UIDesc.IsEmpty()) UIDesc = Desc->Get<CString>(CStrID("UIDesc"), NULL);
+		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), CString::Empty);
+		if (UIDesc.IsEmpty()) UIDesc = Desc->Get<CString>(CStrID("UIDesc"), CString::Empty);
 
 		//???read priorities for actions? or all through scripts?
 
@@ -193,7 +193,7 @@ bool CPropUIControl::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, c
 
 void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
-	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), NULL);
+	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
 	Data::PParams UIDesc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
 	Data::PParams Desc = UIDesc.IsValidPtr() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
 	if (Desc.IsNullPtr()) return;
@@ -297,10 +297,10 @@ void CPropUIControl::Enable(bool SetEnabled)
 }
 //---------------------------------------------------------------------
 
-void CPropUIControl::SetUIName(const CString& NewName)
+void CPropUIControl::SetUIName(const char* pNewName)
 {
 	//???use attribute?
-	UIName = NewName;
+	UIName = pNewName;
 	if (TipVisible) ShowTip();
 }
 //---------------------------------------------------------------------

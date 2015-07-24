@@ -9,13 +9,6 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9RenderState, 'RS09', Render::CRenderState);
 
-CD3D9RenderState::~CD3D9RenderState()
-{
-	SAFE_RELEASE(pVS);
-	SAFE_RELEASE(pPS);
-}
-//---------------------------------------------------------------------
-
 const D3DRENDERSTATETYPE CD3D9RenderState::D3DStates[D3D9_RS_COUNT] =
 {
 	// Rasterizer

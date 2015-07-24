@@ -4,6 +4,7 @@
 
 #include <Data/Ptr.h>
 #include <Data/Data.h>
+#include <Data/Array.h>
 
 // Parser for HRD files
 

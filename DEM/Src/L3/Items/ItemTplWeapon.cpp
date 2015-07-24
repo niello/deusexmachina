@@ -10,8 +10,8 @@ __ImplementClass(Items::CItemTplWeapon, 'ITWP', Items::CItemTpl);
 
 void CItemTplWeapon::Init(CStrID SID, const Data::CParams& Params)
 {
-	WpnClass = CStrID(Params.Get<CString>(CStrID("WpnClass"), "").CStr());
-	AmmoItemID = CStrID(Params.Get<CString>(CStrID("AmmoItemID"), "").CStr());
+	WpnClass = CStrID(Params.Get<CString>(CStrID("WpnClass"), CString::Empty).CStr());
+	AmmoItemID = CStrID(Params.Get<CString>(CStrID("AmmoItemID"), CString::Empty).CStr());
 	RangeMin = Params.Get<float>(CStrID("RangeMin"), 0.f);
 	RangeMax = Params.Get<float>(CStrID("RangeMax"), 0.f);
 	ROF = Params.Get<float>(CStrID("ROF"), 0.f);

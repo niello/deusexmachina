@@ -259,7 +259,7 @@ void CGameServer::EnumProfiles(CArray<CString>& Out) const
 {
 	Out.Clear();
 
-	CString ProfilesDir = "AppData:Profiles";
+	CString ProfilesDir("AppData:Profiles");
 	if (!IOSrv->DirectoryExists(ProfilesDir))
 	{
 		IOSrv->CreateDirectory(ProfilesDir);
@@ -307,7 +307,7 @@ void CGameServer::EnumSavedGames(CArray<CString>& Out, const CString& Profile) c
 {
 	Out.Clear();
 
-	CString Path = "AppData:Profiles/";
+	CString Path("AppData:Profiles/");
 	if (Profile.IsEmpty())
 	{
 		if (CurrProfile.IsEmpty()) return;
@@ -330,7 +330,7 @@ bool CGameServer::SavedGameExists(const CString& Name, const CString& Profile)
 {
 	if (Name.IsEmpty()) FAIL;
 
-	CString Path = "AppData:Profiles/";
+	CString Path("AppData:Profiles/");
 	if (Profile.IsEmpty())
 	{
 		if (CurrProfile.IsEmpty()) FAIL;

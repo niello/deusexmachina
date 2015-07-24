@@ -94,7 +94,7 @@ bool CFileSystemWin32::CreateDirectory(const CString& Path)
 		int LastSepIdx = AbsPath.GetLastDirSeparatorIndex();
 		if (LastSepIdx >= 0)
 		{
-			DirStack.Add(AbsPath.SubString(LastSepIdx + 1, AbsPath.Length() - (LastSepIdx + 1)));
+			DirStack.Add(AbsPath.SubString(LastSepIdx + 1, AbsPath.GetLength() - (LastSepIdx + 1)));
 			AbsPath = AbsPath.SubString(0, LastSepIdx);
 		}
 		else
@@ -189,15 +189,16 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemWin32::OpenDirectory(const CString& Path, const CString& Filter, CString& OutName, EFSEntryType& OutType)
+void* CFileSystemWin32::OpenDirectory(const CString& Path, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
 	DWORD FileAttrs = GetFileAttributes(Path.CStr());
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 
-	char* pFilter = Filter.IsValid() ? Filter.CStr() : "/*.*"; //???or "/*" ?
+	CString SearchString(Path, n_max(Filter.GetLength(), 4));
+	SearchString += Filter.IsValid() ? Filter.CStr() : "/*.*"; //???or "/*" ?
 
 	WIN32_FIND_DATA FindData;
-	HANDLE hDir = FindFirstFile((Path + pFilter).CStr(), &FindData);
+	HANDLE hDir = FindFirstFile(SearchString.CStr(), &FindData);
 
 	if (hDir == INVALID_HANDLE_VALUE)
 	{

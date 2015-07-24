@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_HASH_H__
 #define __DEM_L1_HASH_H__
 
-#include "SuperFastHash.h"
+#include "SuperFastHash.h" //!!!they say Murmur2 is better!
 #include <string.h>			// strlen
 
 // Hash functions

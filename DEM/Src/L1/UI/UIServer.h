@@ -63,9 +63,9 @@ public:
 	~CUIServer();
 	
 	// Internal use, set by config
-	void			LoadScheme(const CString& ResourceFile);
-	void			LoadFont(const CString& ResourceFile); //???retval CEGUI::Font&?
-	void			SetDefaultMouseCursor(const CString& ImageName);
+	void			LoadScheme(const char* pResourceFile);
+	void			LoadFont(const char* pResourceFile); //???retval CEGUI::Font&?
+	void			SetDefaultMouseCursor(const char* pImageName);
 	//!!!create dynamic fonts! see article!
 
 	//bool Init(PParams Cfg);

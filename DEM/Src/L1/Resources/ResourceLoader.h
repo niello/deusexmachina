@@ -22,11 +22,11 @@ class CResourceLoader: public Core::CObject
 
 public:
 
-	virtual ~CResourceLoader() {}
+	//virtual ~CResourceLoader() {}
 
 	virtual const Core::CRTTI&	GetResultType() const = 0;
 	virtual bool				IsProvidedDataValid() const = 0;
-	virtual bool				Load(CResource& Resource) const = 0; //???assert resource is NotLoaded? //???async?
+	virtual bool				Load(CResource& Resource) = 0; //???assert resource is NotLoaded? //???async? //!!!call Mgr->LoadResource!
 	//???Unload() - responsibility, ownership
 };
 

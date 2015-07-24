@@ -34,7 +34,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 	
 	Dlg->StartNode = LoadedNodes[Params.Get<CStrID>(CStrID("StartNode"))];
 
-	const CString& Script = Params.Get<CString>(CStrID("Script"), NULL);
+	const CString& Script = Params.Get<CString>(CStrID("Script"), CString::Empty);
 	if (Script.IsValid()) Dlg->ScriptFile = CString("Scripts:") + Script + ".lua";
 
 	for (int i = 0; i < Nodes->GetCount(); ++i)
@@ -55,8 +55,8 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 			int ToIdx = LinkDesc.IndexOf(CStrID("To"));
 			pLink->pTargetNode = (ToIdx == INVALID_INDEX) ? NULL : LoadedNodes[LinkDesc.Get<CStrID>(ToIdx)];
 
-			pLink->Condition = LinkDesc.Get<CString>(CStrID("Condition"), NULL);
-			pLink->Action = LinkDesc.Get<CString>(CStrID("Action"), NULL);
+			pLink->Condition = LinkDesc.Get<CString>(CStrID("Condition"), CString::Empty);
+			pLink->Action = LinkDesc.Get<CString>(CStrID("Action"), CString::Empty);
 		}
 	}
 

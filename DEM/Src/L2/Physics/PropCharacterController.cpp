@@ -57,7 +57,7 @@ void CPropCharacterController::CreateController()
 	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel()->GetPhysics();
 	if (!pPhysWorld) return;
 
-	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), NULL);    
+	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), CString::Empty);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
 	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");

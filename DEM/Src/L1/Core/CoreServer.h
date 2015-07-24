@@ -19,6 +19,12 @@ class CCoreServer
 {
 	__DeclareSingleton(CCoreServer);
 
+protected:
+
+	CString Mem_HighWaterSize;
+	CString Mem_TotalSize;
+	CString Mem_TotalCount;
+
 public:
 
 	CHashTable<CString, Data::CData> Globals;
@@ -28,16 +34,16 @@ public:
 
 	void Trigger();
 
-	template<class T> void		SetGlobal(const CString& Name, const T& Value) { Globals.At(Name.CStr()) = Value; }
-	template<class T> T&		GetGlobal(const CString& Name) { return Globals[Name.CStr()].GetValue<T>(); }
+	template<class T> void		SetGlobal(const CString& Name, const T& Value) { Globals.At(Name) = Value; }
+	template<class T> T&		GetGlobal(const CString& Name) { return Globals[Name].GetValue<T>(); }
 	template<class T> bool		GetGlobal(const CString& Name, T& OutValue) const;
-	template<> bool				GetGlobal(const CString& Name, Data::CData& OutValue) const { return Globals.Get(Name.CStr(), OutValue); }
+	template<> bool				GetGlobal(const CString& Name, Data::CData& OutValue) const { return Globals.Get(Name, OutValue); }
 };
 
 template<class T> inline bool CCoreServer::GetGlobal(const CString& Name, T& OutValue) const
 {
 	Data::CData Data;
-	return Globals.Get(Name.CStr(), Data) ? Data.GetValue<T>(OutValue) : false;
+	return Globals.Get(Name, Data) ? Data.GetValue<T>(OutValue) : false;
 }
 //---------------------------------------------------------------------
 

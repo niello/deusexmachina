@@ -1,5 +1,7 @@
 #include "RenderStateDesc.h"
 
+#include <Render/Shader.h>
+
 namespace Render
 {
 
@@ -10,11 +12,11 @@ void CRenderStateDesc::SetDefaults()
 				  DS_DepthEnable |
 				  DS_DepthWriteEnable);
 
-	VertexShaderURI = NULL;
-	HullShaderURI = NULL;
-	DomainShaderURI = NULL;
-	GeometryShaderURI = NULL;
-	PixelShaderURI = NULL;
+	VertexShader = NULL;
+	HullShader = NULL;
+	DomainShader = NULL;
+	GeometryShader = NULL;
+	PixelShader = NULL;
 
 	DepthBias = 0.f;
 	DepthBiasClamp = 0.f;
