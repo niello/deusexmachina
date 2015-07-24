@@ -57,7 +57,7 @@ public:
 
 	bool			Init(LPCSTR LuaClassName = "CScriptObject");
 
-	DWORD			LoadScriptFile(const CString& FileName);
+	DWORD			LoadScriptFile(const char* pFileName);
 	DWORD			LoadScript(LPCSTR Buffer, DWORD Length);
 
 	DWORD			RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;

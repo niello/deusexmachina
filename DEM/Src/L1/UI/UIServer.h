@@ -74,7 +74,7 @@ public:
 
 	// Interface
 	bool			RegisterScreen(CStrID Name, CUIWindow* pScreen);
-	//Ptr<CUIWindow>	LoadScreen(CStrID Name, const CString& ResourceFile);
+	//Ptr<CUIWindow>	LoadScreen(CStrID Name, const char* pResourceFile);
 	CUIWindow*		GetScreen(CStrID Name) const;
 	void			SetRootScreen(CUIWindow* pWindow);
 	CUIWindow*		GetRootScreen() const { return CurrRootScreen; }
@@ -102,12 +102,12 @@ public:
 	// it only from GUI thread.
 	void			DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.Add(Connection); }
 	/*
-	void UnloadScheme(const CString& schemeName);
+	void UnloadScheme(const char* schemeName);
 	void UnloadAllSchemes();
-	void CreateImageSet(const CString& imagesetName, const CString& fileName);
-	void DestroyImageSet(const CString& imagesetName);
+	void CreateImageSet(const char* imagesetName, const char* fileName);
+	void DestroyImageSet(const char* imagesetName);
 	void DestroyAllImageSets();
-	void UnloadFont(const CString& FontName);
+	void UnloadFont(const char* FontName);
 	void DestroyAllFonts();
 	void DestroyAllWindows();
 	*/

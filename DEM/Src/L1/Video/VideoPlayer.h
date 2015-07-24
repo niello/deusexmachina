@@ -48,7 +48,7 @@ public:
 	uint			GetHeight() const { return videoHeight; }
 	float			GetFpS() const { return videoFpS; }
 	uint			GetFrameCount() const { return videoFrameCount; }
-	void			SetFilename(const CString& _FileName);
+	void			SetFilename(const char* pFileName);
 	const CString&	GetFilename() const { return FileName; }
 	//void			SetTexture(nTexture2* pTex) { pTexture = pTex; }
 	//nTexture2*		GetTexture() const { return pTexture; }

@@ -87,7 +87,7 @@ public:
 	CBTFile(): Header(NULL), HeightsF(NULL), SelfAllocated(false), MinHeight(NoDataF), MaxHeight(NoDataF) {}
 	CBTFile(const void* Data);
 	//CBTFile(const CStream& File) {}
-	//CBTFile(const CString& FileName) {}
+	//CBTFile(const char* pFileName) {}
 	~CBTFile() { if (SelfAllocated && Header) n_free(Header); }
 
 	EVersion	GetFileVersion() const { return Version; }

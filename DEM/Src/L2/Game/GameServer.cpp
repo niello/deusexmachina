@@ -276,25 +276,26 @@ void CGameServer::EnumProfiles(CArray<CString>& Out) const
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::CreateProfile(const CString& Name) const
+bool CGameServer::CreateProfile(const char* pName) const
 {
-	CString ProfileDir = "AppData:Profiles/" + Name;
+	CString ProfileDir("AppData:Profiles/");
+	ProfileDir += pName;
 	if (IOSrv->DirectoryExists(ProfileDir)) FAIL;
 	return IOSrv->CreateDirectory(ProfileDir + "/Saves") &&
 		IOSrv->CreateDirectory(ProfileDir + "/Continue/Levels");
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::DeleteProfile(const CString& Name) const
+bool CGameServer::DeleteProfile(const char* pName) const
 {
-	if (CurrProfile == Name && GameFileName.IsValid()) FAIL; //???or stop game and set current to empty?
-	return IOSrv->DeleteDirectory("AppData:Profiles/" + Name);
+	if (CurrProfile == pName && GameFileName.IsValid()) FAIL; //???or stop game and set current to empty?
+	return IOSrv->DeleteDirectory(CString("AppData:Profiles/") + pName);
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::SetCurrentProfile(const CString& Name)
+bool CGameServer::SetCurrentProfile(const char* pName)
 {
-	CurrProfile = Name;
+	CurrProfile = pName;
 
 	//!!!load and apply settings!
 
@@ -303,17 +304,17 @@ bool CGameServer::SetCurrentProfile(const CString& Name)
 //---------------------------------------------------------------------
 
 //!!!pack saves to files! single PRM would suffice
-void CGameServer::EnumSavedGames(CArray<CString>& Out, const CString& Profile) const
+void CGameServer::EnumSavedGames(CArray<CString>& Out, const char* pProfile) const
 {
 	Out.Clear();
 
 	CString Path("AppData:Profiles/");
-	if (Profile.IsEmpty())
+	if (!pProfile || !*pProfile)
 	{
 		if (CurrProfile.IsEmpty()) return;
 		Path += CurrProfile;
 	}
-	else Path += Profile;
+	else Path += pProfile;
 	Path += "/Saves";
 
 	IO::CFSBrowser Browser;
@@ -326,38 +327,38 @@ void CGameServer::EnumSavedGames(CArray<CString>& Out, const CString& Profile) c
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::SavedGameExists(const CString& Name, const CString& Profile)
+bool CGameServer::SavedGameExists(const char* pName, const char* pProfile)
 {
-	if (Name.IsEmpty()) FAIL;
+	if (!pName || !*pName) FAIL;
 
 	CString Path("AppData:Profiles/");
-	if (Profile.IsEmpty())
+	if (!pProfile || !*pProfile)
 	{
 		if (CurrProfile.IsEmpty()) FAIL;
 		Path += CurrProfile;
 	}
-	else Path += Profile;
+	else Path += pProfile;
 	Path += "/Saves/";
-	Path += Name;
+	Path += pName;
 
 	return IOSrv->DirectoryExists(Path);
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::StartNewGame(const CString& FileName)
+bool CGameServer::StartNewGame(const char* pFileName)
 {
 	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
 	CString ContinueDir = "AppData:Profiles/" + CurrProfile + "/Continue";
 	if (IOSrv->DirectoryExists(ContinueDir)) { n_verify_dbg(IOSrv->DeleteDirectory(ContinueDir)); }
-	return ContinueGame(FileName);
+	return ContinueGame(pFileName);
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::ContinueGame(const CString& FileName)
+bool CGameServer::ContinueGame(const char* pFileName)
 {
 	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
 
-	Data::PParams InitialCommon = DataSrv->LoadPRM(FileName);
+	Data::PParams InitialCommon = DataSrv->LoadPRM(pFileName);
 	if (InitialCommon.IsNullPtr()) FAIL;
 
 	Data::PParams SGCommon = DataSrv->ReloadPRM("AppData:Profiles/" + CurrProfile + "/Continue/Main.prm", false);
@@ -393,7 +394,7 @@ bool CGameServer::ContinueGame(const CString& FileName)
 	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
 		n_verify(LoadGameLevel(LoadedLevels->Get<CStrID>(i)));
 
-	GameFileName = FileName;
+	GameFileName = pFileName;
 
 	EventSrv->FireEvent(CStrID("OnGameLoaded"), GameDesc);
 
@@ -528,7 +529,7 @@ bool CGameServer::CommitLevelDiff(CGameLevel& Level)
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::SaveGame(const CString& Name)
+bool CGameServer::SaveGame(const char* pName)
 {
 	n_assert(CurrProfile.IsValid());
 
@@ -536,7 +537,7 @@ bool CGameServer::SaveGame(const CString& Name)
 
 	//!!!pack savegame! on load can unpack to the override (continue) directory!
 	CString ProfileDir = "AppData:Profiles/" + CurrProfile;
-	CString SaveDir = ProfileDir + "/Saves/" + Name;
+	CString SaveDir = ProfileDir + "/Saves/" + pName;
 	if (IOSrv->DirectoryExists(SaveDir)) { n_verify_dbg(IOSrv->DeleteDirectory(SaveDir)); }
 	IOSrv->CopyDirectory(ProfileDir + "/Continue", SaveDir, true);
 
@@ -544,7 +545,7 @@ bool CGameServer::SaveGame(const CString& Name)
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::LoadGame(const CString& Name)
+bool CGameServer::LoadGame(const char* pName)
 {
 	//???event?
 
@@ -554,7 +555,7 @@ bool CGameServer::LoadGame(const CString& Name)
 	CString ProfileDir = "AppData:Profiles/" + CurrProfile;
 	CString ContinueDir = ProfileDir + "/Continue";
 	if (IOSrv->DirectoryExists(ContinueDir)) { n_verify_dbg(IOSrv->DeleteDirectory(ContinueDir)); }
-	IOSrv->CopyDirectory(ProfileDir + "/Saves/" + Name, ContinueDir, true);
+	IOSrv->CopyDirectory(ProfileDir + "/Saves/" + pName, ContinueDir, true);
 
 	return ContinueGame(GameFileName);
 }

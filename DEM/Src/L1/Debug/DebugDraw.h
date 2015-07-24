@@ -3,9 +3,9 @@
 #define __DEM_L1_DEBUG_DRAW_H__
 
 #include <Data/RefCounted.h>
-#include <Data/Array.h>
-#include <Data/SimpleString.h>
 #include <Data/Singleton.h>
+#include <Data/Array.h>
+#include <Data/String.h>
 #include <Math/AABB.h>
 
 // Utility class for drawing common debug shapes. It buffers all shapes and text requested and
@@ -46,14 +46,14 @@ enum EVAlign
 
 struct CDDText
 {
-	Data::CSimpleString	Text;
-	vector4				Color;
-	float				Left;
-	float				Top;
-	float				Width;
-	EHAlign				HAlign;
-	EVAlign				VAlign;
-	bool				Wrap;
+	CString	Text;
+	vector4	Color;
+	float	Left;
+	float	Top;
+	float	Width;
+	EHAlign	HAlign;
+	EVAlign	VAlign;
+	bool	Wrap;
 };
 
 class CDebugDraw: public Data::CRefCounted

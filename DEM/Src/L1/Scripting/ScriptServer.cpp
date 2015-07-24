@@ -219,10 +219,10 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptServer::RunScriptFile(const CString& FileName)
+DWORD CScriptServer::RunScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) return Error;
+	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return Error;
 	return RunScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------

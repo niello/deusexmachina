@@ -52,6 +52,14 @@ inline CString ExtractFileName()
 }
 //---------------------------------------------------------------------
 
+inline CString ExtractFileNameWithoutExtension()
+{
+	char* pLastDirSep = GetLastDirSeparator();
+	CString Path = pLastDirSep ? pLastDirSep + 1 : CStr();
+	return Path;
+}
+//---------------------------------------------------------------------
+
 // Return a CString object containing the last directory of the path, i.e. a category
 inline CString ExtractLastDirName()
 {

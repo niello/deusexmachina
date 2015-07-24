@@ -2,7 +2,6 @@
 #ifndef __DEM_L1_TEMPLATE_TABLE_H__
 #define __DEM_L1_TEMPLATE_TABLE_H__
 
-#include <Data/SimpleString.h>
 #include <Data/StringID.h>
 #include <Data/Array2.h>
 #include <Data/Dictionary.h>
@@ -18,7 +17,7 @@ class CTableT: public CArray2<T>
 public:
 
 	// Made public for loader access
-	CSimpleString		Name;
+	CString		Name;
 	CDict<CStrID, int>	ColMap;
 	CDict<CStrID, int>	RowMap;
 

@@ -35,7 +35,7 @@ CIOServer::~CIOServer()
 }
 //---------------------------------------------------------------------
 
-bool CIOServer::MountNPK(const char* pNPKPath, const CString& Root)
+bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 {
 	PFileSystem NewFS = n_new(CFileSystemNPK);
 
@@ -43,7 +43,7 @@ bool CIOServer::MountNPK(const char* pNPKPath, const CString& Root)
 	//!!!check if this NPK is already mounted!
 
 	CString RealRoot;
-	if (Root.IsValid()) RealRoot = IOSrv->ManglePath(Root);
+	if (pRoot && *pRoot) RealRoot = IOSrv->ManglePath(pRoot);
 	else RealRoot = AbsNPKPath.ExtractDirName();
 
 	if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
@@ -253,12 +253,12 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 }
 //---------------------------------------------------------------------
 
-void CIOServer::SetAssign(const char* pAssign, const CString& Path)
+void CIOServer::SetAssign(const char* pAssign, const char* pPath)
 {
 	CString RealAssign(pAssign);
 	RealAssign.ToLower();
 	CString& PathString = Assigns.At(RealAssign);
-	PathString = Path;
+	PathString = pPath;
 	PathString.ConvertBackslashes();
 	if (PathString[PathString.GetLength() - 1] != '/') PathString.Add('/');
 }
@@ -289,8 +289,8 @@ CString CIOServer::ManglePath(const char* pPath) const
 		CString Assign = PathString.SubString(0, ColonIdx);
 		Assign.ToLower();
 		CString AssignValue;
-		if (!Assigns.Get(Assign.CStr(), AssignValue)) return CString::Empty;
-		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.Length() - (ColonIdx + 1));
+		if (!Assigns.Get(Assign, AssignValue)) return CString::Empty;
+		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.GetLength() - (ColonIdx + 1));
 	}
 
 	PathString.StripTrailingSlash();
@@ -311,12 +311,12 @@ bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
 //---------------------------------------------------------------------
 
 #ifdef _EDITOR
-bool CIOServer::QueryMangledPath(const CString& FileName, CString& MangledFileName) const
+bool CIOServer::QueryMangledPath(const char* pFileName, CString& MangledFileName) const
 {
 	if (!DataPathCB) FAIL;
 
 	LPSTR pMangledStr = NULL;
-	if (!DataPathCB(FileName.CStr(), &pMangledStr))
+	if (!DataPathCB(pFileName, &pMangledStr))
 	{
 		if (pMangledStr && ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
 		FAIL;

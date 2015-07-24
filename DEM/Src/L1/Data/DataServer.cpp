@@ -22,7 +22,7 @@ CDataServer::CDataServer(): HRDCache(256)
 PParams CDataServer::LoadHRD(const char* pFileName, bool Cache)
 {
 	PParams P;
-	if (HRDCache.Get(pFileName, P)) return P;
+	if (HRDCache.Get(CString(pFileName), P)) return P;
 	else return ReloadHRD(pFileName, Cache);
 }
 //---------------------------------------------------------------------
@@ -36,7 +36,7 @@ PParams CDataServer::ReloadHRD(const char* pFileName, bool Cache)
 	CHRDParser Parser; //???static?
 	if (Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
 	{
-		if (Cache) HRDCache.Add(pFileName, Params); //!!!???mangle/unmangle path to avoid duplicates?
+		if (Cache) HRDCache.Add(CString(pFileName), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
 	//else Sys::Log("FileIO: HRD parsing of \"%s\" failed\n", FileName.CStr());
 
@@ -58,14 +58,14 @@ void CDataServer::SaveHRD(const char* pFileName, const CParams* pContent)
 
 void CDataServer::UnloadHRD(const char* pFileName)
 {
-	HRDCache.Remove(pFileName);
+	HRDCache.Remove(CString(pFileName));
 }
 //---------------------------------------------------------------------
 
 PParams CDataServer::LoadPRM(const char* pFileName, bool Cache)
 {
 	PParams P;
-	if (HRDCache.Get(pFileName, P)) return P;
+	if (HRDCache.Get(CString(pFileName), P)) return P;
 	else return ReloadPRM(pFileName, Cache);
 }
 //---------------------------------------------------------------------
@@ -79,7 +79,7 @@ PParams CDataServer::ReloadPRM(const char* pFileName, bool Cache)
 	PParams Params = n_new(CParams);
 	if (Reader.ReadParams(*Params))
 	{
-		if (Cache) HRDCache.Add(pFileName, Params); //!!!???mangle path to avoid duplicates?
+		if (Cache) HRDCache.Add(CString(pFileName), Params); //!!!???mangle path to avoid duplicates?
 	}
 	else
 	{
@@ -124,17 +124,17 @@ PXMLDocument CDataServer::LoadXML(const char* pFileName) //, bool Cache)
 //---------------------------------------------------------------------
 
 //!!!need desc cache! (independent from HRD cache) OR pre-unwind descs on export!
-bool CDataServer::LoadDesc(PParams& Out, const CString& Context, const CString& Name, bool Cache)
+bool CDataServer::LoadDesc(PParams& Out, const char* pContext, const char* pName, bool Cache)
 {
-	PParams Main = LoadPRM(Context + Name + ".prm", Cache);
+	PParams Main = LoadPRM(CString(pContext) + pName + ".prm", Cache);
 
 	if (Main.IsNullPtr()) FAIL;
 
 	CString BaseName;
 	if (Main->Get(BaseName, CStrID("_Base_")))
 	{
-		n_assert(BaseName != Name);
-		if (!LoadDesc(Out, Context, BaseName, Cache)) FAIL;
+		n_assert(BaseName != pName);
+		if (!LoadDesc(Out, pContext, BaseName, Cache)) FAIL;
 		Out->Merge(*Main, Merge_AddNew | Merge_Replace | Merge_Deep); //!!!can specify merge flags in Desc!
 	}
 	else Out = n_new(CParams(*Main));
@@ -143,9 +143,9 @@ bool CDataServer::LoadDesc(PParams& Out, const CString& Context, const CString& 
 }
 //---------------------------------------------------------------------
 
-bool CDataServer::LoadDataSchemes(const CString& FileName)
+bool CDataServer::LoadDataSchemes(const char* pFileName)
 {
-	PParams SchemeDescs = LoadHRD(FileName, false);
+	PParams SchemeDescs = LoadHRD(pFileName, false);
 	if (SchemeDescs.IsNullPtr()) FAIL;
 
 	for (int i = 0; i < SchemeDescs->GetCount(); ++i)

@@ -2,7 +2,7 @@
 
 #include <Core/RTTI.h>
 
-//???RTTI class name CStrID, CSimpleString or CString?
+//???RTTI class name CStrID, CString or CString?
 
 namespace Core
 {

@@ -173,10 +173,10 @@ void CVideoServer::Stop()
 }
 //---------------------------------------------------------------------
 
-CVideoPlayer* CVideoServer::NewVideoPlayer(const CString& Name)
+CVideoPlayer* CVideoServer::NewVideoPlayer(const char* pName)
 {
 	CVideoPlayer* pPlayer = n_new(COGGTheoraPlayer);
-	pPlayer->SetFilename(Name);
+	pPlayer->SetFilename(pName);
 	Players.Add(pPlayer);
 	return pPlayer;
 }

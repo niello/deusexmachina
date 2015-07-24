@@ -5,7 +5,6 @@
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
-#include <Data/SimpleString.h>
 
 // Lua console window, that allows to see engine output and to execute Lua commands.
 
@@ -33,7 +32,7 @@ protected:
 	CEGUI::Event::Connection	ConnOnShow;
 	//CEGUI::Event::Connection	ConnOnChar;
 
-	CArray<Data::CSimpleString>	CmdHistory;
+	CArray<CString>	CmdHistory;
 	int							CmdHistoryCursor;
 
 	void Print(LPCSTR pMsg, DWORD Color);

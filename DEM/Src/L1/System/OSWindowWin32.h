@@ -4,7 +4,6 @@
 #define __DEM_L1_SYS_OS_WINDOW_WIN32_H__
 
 #include <Events/EventDispatcher.h>
-#include <Data/SimpleString.h>
 #include <Data/Regions.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -28,8 +27,8 @@ protected:
 		Wnd_Fullscreen	= 0x08
 	};
 
-	Data::CSimpleString	WindowTitle;
-	Data::CSimpleString	IconName;
+	CString	WindowTitle;
+	CString	IconName;
 
 	Data::CFlags		Flags;
 	COSWindowWin32*		pParent;

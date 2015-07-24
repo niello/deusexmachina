@@ -27,7 +27,7 @@ public:
 		ushort	Height;
 		bool	IsPrimary;
 		//bool	IsAttachedToDesktop; // D3D9: HMONITOR -> DISPLAY_DEVICE
-		//Data::CSimpleString DeviceName; // D3D9 - from adapter info
+		//CString DeviceName; // D3D9 - from adapter info
 		//work area, monitor area in desktop coords (DPI-dependent)
 		//rotation (unspec, 0, 90, 180, 270)
 	};

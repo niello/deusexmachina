@@ -47,7 +47,7 @@ public:
 	int			DataToLuaStack(const Data::CData& Data);
 	bool		LuaStackToData(Data::CData& Result, int StackIdx);
 
-	DWORD		RunScriptFile(const CString& FileName);
+	DWORD		RunScriptFile(const char* pFileName);
 	DWORD		RunScript(LPCSTR Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
 
 	DWORD		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");

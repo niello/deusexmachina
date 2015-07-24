@@ -48,7 +48,7 @@ public:
 	~CIOServer();
 
 	//???create FSs outside and mount all with priority?
-	bool			MountNPK(const char* pNPKPath, const CString& Root = CString::Empty);
+	bool			MountNPK(const char* pNPKPath, const char* pRoot = NULL);
 
 	bool			FileExists(const char* pPath) const;
 	bool			IsFileReadOnly(const char* pPath) const;
@@ -60,19 +60,19 @@ public:
 	bool			CreateDirectory(const char* pPath) const;
 	bool			DeleteDirectory(const char* pPath) const;
 	bool			CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively);
-	//bool Checksum(const CString& filename, uint& crc);
-	//nFileTime GetFileWriteTime(const CString& pathName);
+	//bool Checksum(const char* pFileName, uint& crc);
+	//nFileTime GetFileWriteTime(const char* pFileName);
 
 	void*			OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
 
-	void			SetAssign(const char* pAssign, const CString& Path);
+	void			SetAssign(const char* pAssign, const char* pPath);
 	CString			GetAssign(const char* pAssign) const;
 	CString			ManglePath(const char* pPath) const;
 	bool			LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer);
 
 #ifdef _EDITOR
-	bool			QueryMangledPath(const CString& FileName, CString& MangledFileName) const;
+	bool			QueryMangledPath(const char* pFileName, CString& MangledFileName) const;
 #endif
 };
 

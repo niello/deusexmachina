@@ -17,11 +17,6 @@
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
 
-namespace Physics
-{
-	PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName);
-}
-
 namespace Prop
 {
 __ImplementClass(Prop::CPropUIControl, 'PUIC', Game::CProperty);

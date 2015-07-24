@@ -6,7 +6,6 @@
 #include <Data/DataScheme.h>
 #include <Data/Dictionary.h>
 #include <Data/Singleton.h>
-#include <Data/SimpleString.h>
 #include <Data/HashTable.h>
 
 // Data server manages descs and data serialization schemes
@@ -26,7 +25,7 @@ class CDataServer
 
 private:
 
-	CHashTable<CSimpleString, PParams>	HRDCache; //!!!need better hashmap with Clear, Find etc!
+	CHashTable<CString, PParams>	HRDCache; //!!!need better hashmap with Clear, Find etc!
 	//!!!Desc cache!
 	CDict<CStrID, PDataScheme>			DataSchemes;
 
@@ -49,9 +48,9 @@ public:
 	
 	PXMLDocument	LoadXML(const char* pFileName); //, bool Cache = true);
 
-	bool			LoadDesc(PParams& Out, const CString& Context, const CString& Name, bool Cache = true);
+	bool			LoadDesc(PParams& Out, const char* pContext, const char* pName, bool Cache = true);
 
-	bool			LoadDataSchemes(const CString& FileName);
+	bool			LoadDataSchemes(const char* pFileName);
 	CDataScheme*	GetDataScheme(CStrID ID);
 };
 

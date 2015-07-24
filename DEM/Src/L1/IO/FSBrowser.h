@@ -31,14 +31,14 @@ public:
 	CFSBrowser(): hDir(NULL), AtFirstEntry(false) {}
 	~CFSBrowser() { Close(); }
 
-	bool			SetAbsolutePath(const CString& Path) { CurrPath = Path; return ForceToFirstEntry(); }
-	bool			SetRelativePath(const CString& Path);
+	bool			SetAbsolutePath(const char* pPath) { CurrPath = pPath; return ForceToFirstEntry(); }
+	bool			SetRelativePath(const char* pPath);
 	void			Close() { if (hDir) FS->CloseDirectory(hDir); }
 
 	bool			FirstCurrDirEntry() { return hDir && (AtFirstEntry || ForceToFirstEntry()); }
 	bool			NextCurrDirEntry();
 
-	bool			ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes = FSE_DIR | FSE_FILE, const CString& Filter = CString("*"));
+	bool			ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes = FSE_DIR | FSE_FILE, const char* pFilter = "*");
 
 	bool			IsCurrPathValid() const { return !!hDir; }
 	bool			IsCurrDirEmpty();

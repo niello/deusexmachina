@@ -16,25 +16,25 @@ public:
 
 	virtual ~IFileSystem() {}
 
-	virtual bool	Mount(const CString& Source, const CString& Root) = 0;
+	virtual bool	Mount(const char* pSource, const char* pRoot) = 0;
 	virtual void	Unmount() = 0;
 	virtual bool	ProvidesFileCursor() = 0;
 
-	virtual bool	FileExists(const CString& Path) = 0;
-	virtual bool	IsFileReadOnly(const CString& Path) = 0;
-	virtual bool	SetFileReadOnly(const CString& Path, bool ReadOnly) = 0;
-	virtual bool	DeleteFile(const CString& Path) = 0;
-	virtual bool	CopyFile(const CString& SrcPath, const CString& DestPath) = 0;
-	virtual bool	DirectoryExists(const CString& Path) = 0;
-	virtual bool	CreateDirectory(const CString& Path) = 0;
-	virtual bool	DeleteDirectory(const CString& Path) = 0;
+	virtual bool	FileExists(const char* pPath) = 0;
+	virtual bool	IsFileReadOnly(const char* pPath) = 0;
+	virtual bool	SetFileReadOnly(const char* pPath, bool ReadOnly) = 0;
+	virtual bool	DeleteFile(const char* pPath) = 0;
+	virtual bool	CopyFile(const char* pSrcPath, const char* pDestPath) = 0;
+	virtual bool	DirectoryExists(const char* pPath) = 0;
+	virtual bool	CreateDirectory(const char* pPath) = 0;
+	virtual bool	DeleteDirectory(const char* pPath) = 0;
 	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath) = 0;
 
-	virtual void*	OpenDirectory(const CString& Path, const char* pFilter, CString& OutName, EFSEntryType& OutType) = 0;
+	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType) = 0;
 	virtual void	CloseDirectory(void* hDir) = 0;
 	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType) = 0;
 
-	virtual void*	OpenFile(const CString& Path, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
+	virtual void*	OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	CloseFile(void* hFile) = 0;
 	virtual DWORD	Read(void* hFile, void* pData, DWORD Size) = 0;
 	virtual DWORD	Write(void* hFile, const void* pData, DWORD Size) = 0;

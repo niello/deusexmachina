@@ -189,7 +189,6 @@
     <ClInclude Include="..\..\Src\L1\Data\QuadTree.h" />
     <ClInclude Include="..\..\Src\L1\Data\RefCounted.h" />
     <ClInclude Include="..\..\Src\L1\Data\RingBuffer.h" />
-    <ClInclude Include="..\..\Src\L1\Data\SimpleString.h" />
     <ClInclude Include="..\..\Src\L1\Data\Singleton.h" />
     <ClInclude Include="..\..\Src\L1\Data\Stack.h" />
     <ClInclude Include="..\..\Src\L1\Data\String.h" />
