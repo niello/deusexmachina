@@ -23,12 +23,12 @@ public:
 	nCmdLineArgs(): argCount(0), argVector(NULL) {}
 	nCmdLineArgs(int argc, const char** argv): argCount(argc), argVector(argv) {}
 
-	void	Initialize(int argc, const char** argv) { argCount = argc; argVector = argv; }
-	float	GetFloatArg(const char* option, float defaultValue = 0.0f) const;
-	int		GetIntArg(const char* option, int defaultValue = 0) const;
-	bool	GetBoolArg(const char* option) const { return FindArg(option) > 0; }
-	CString	GetStringArg(const char* option, const CString& defaultValue = CString::Empty) const;
-	bool	HasArg(const CString& option) const { return FindArg(option) != 0; }
+	void		Initialize(int argc, const char** argv) { argCount = argc; argVector = argv; }
+	float		GetFloatArg(const char* option, float defaultValue = 0.0f) const;
+	int			GetIntArg(const char* option, int defaultValue = 0) const;
+	bool		GetBoolArg(const char* option) const { return FindArg(option) > 0; }
+	const char*	GetStringArg(const char* option, const char* defaultValue = NULL) const;
+	bool		HasArg(const CString& option) const { return FindArg(option) != 0; }
 };
 
 inline int nCmdLineArgs::FindArg(const char* option) const
@@ -58,11 +58,11 @@ inline int nCmdLineArgs::GetIntArg(const char* option, int defaultValue) const
 }
 //---------------------------------------------------------------------
 
-inline CString nCmdLineArgs::GetStringArg(const char* option, const CString& defaultValue) const
+inline const char* nCmdLineArgs::GetStringArg(const char* option, const char* defaultValue) const
 {
 	int i = FindArg(option);
 	if (i == -1) return defaultValue;
-	else if (++i < argCount) return CString(argVector[i]);
+	else if (++i < argCount) return argVector[i];
 	else return defaultValue;
 }
 //---------------------------------------------------------------------
