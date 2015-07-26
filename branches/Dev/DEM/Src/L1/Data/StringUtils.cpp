@@ -3,6 +3,28 @@
 namespace StringUtils
 {
 
+char* LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, DWORD SubStrLen)
+{
+	if (!pStrStart || !pSubStr || !*pStrStart || !*pSubStr) return NULL;
+
+	if (!pStrEnd) pStrEnd = pStrStart + strlen(pStrStart);
+	else if (pStrEnd <= pStrStart) return NULL;
+
+	DWORD SubStrLastIdx = (SubStrLen ? SubStrLen : strlen(pSubStr)) - 1;
+
+	const char LastChar = pSubStr[SubStrLastIdx];
+	const char* pCurr = pStrEnd;
+	const char* pStop = pStrStart + SubStrLastIdx;
+	while (pCurr >= pStop)
+	{
+		if (*pCurr == LastChar && memcmp(pCurr - SubStrLastIdx, pSubStr, SubStrLastIdx) == 0) return (char*)(pCurr - SubStrLastIdx);
+		--pCurr;
+	}
+
+	return NULL;
+}
+//---------------------------------------------------------------------
+
 // A string matching function using Tcl's matching rules.
 bool MatchesPattern(const char* pStr, const char* pPattern)
 {

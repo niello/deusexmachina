@@ -14,121 +14,111 @@ class CStringTokenizer
 protected:
 
 	LPCSTR	pString;
-	LPCSTR	pSplitChars;
 	LPCSTR	pCursor;
-	LPSTR	pBuffer;		// Can write static variant with array of predefined size (inherit from this? or allow set ext buffer?)
+	LPSTR	pBuffer;
 	DWORD	BufferSize;
 	bool	FreeBuffer;
 
 public:
 
-	CStringTokenizer(LPCSTR String, LPCSTR SplitChars, LPSTR Buffer = NULL, DWORD BufSize = 0);
+	CStringTokenizer(LPCSTR String, LPSTR Buffer = NULL, DWORD BufSize = 0);
 	~CStringTokenizer() { if (FreeBuffer) n_free(pBuffer); }
 
 	void	ResetCursor() { pCursor = pString; }
 	LPCSTR	GetCurrToken() const { return pBuffer; }
-	LPCSTR	GetNextToken();
-	LPCSTR	GetNextTokenSingleChar();
+	LPCSTR	GetNextToken(LPCSTR pSplitChars);
+	LPCSTR	GetNextToken(char SplitChar);
+	LPCSTR	GetNextToken(LPCSTR pSplitChars, char Fence);
 	bool	IsLast() const { return !pCursor || !*pCursor; }
 };
 
-inline CStringTokenizer::CStringTokenizer(LPCSTR String, LPCSTR SplitChars, LPSTR Buffer, DWORD BufSize):
+inline CStringTokenizer::CStringTokenizer(LPCSTR String, LPSTR Buffer, DWORD BufSize):
 	pString(String),
-	pSplitChars(SplitChars),
 	pCursor(String),
 	pBuffer(Buffer),
-	BufferSize(BufSize),
-	FreeBuffer(false)
+	BufferSize(BufSize)
 {
-	n_assert_dbg(pSplitChars);
-	n_assert_dbg(!pBuffer || BufferSize);
-
-	if (!pBuffer)
+	if (pBuffer)
 	{
-		BufferSize = 0;
-		DWORD CurrSize = 0;
-		if (pCursor)
-		{
-			while (*pCursor)
-			{
-				char Chr = *pCursor;
-				if (strchr(pSplitChars, Chr))
-				{
-					if (CurrSize > BufferSize) BufferSize = CurrSize;
-					CurrSize = 0;
-				}
-				else ++CurrSize;
-				++pCursor;
-			}
-		}
-		if (CurrSize > BufferSize) BufferSize = CurrSize;
-
-		++BufferSize;
+		n_assert_dbg(BufferSize);
+		FreeBuffer = false;
+	}
+	else
+	{
+		BufferSize = strlen(String) + 1;
 		pBuffer = (LPSTR)n_malloc(BufferSize);
 		FreeBuffer = true;
-
-		ResetCursor();
 	}
+
+	pBuffer[0] = 0;
 }
 //---------------------------------------------------------------------
 
-inline LPCSTR CStringTokenizer::GetNextToken()
+inline LPCSTR CStringTokenizer::GetNextToken(LPCSTR pSplitChars)
+{
+	if (!pCursor) return NULL;
+
+	const char* pTokenEnd = strpbrk(pCursor, pSplitChars);
+	if (pTokenEnd)
+	{
+		DWORD TokenSize = pTokenEnd - pCursor;
+		n_assert2_dbg(TokenSize < BufferSize, "CStringTokenizer > Buffer overflow");
+		memcpy(pBuffer, pCursor, TokenSize);
+		pBuffer[TokenSize] = 0;
+	}
+	else n_verify_dbg(strcpy_s(pBuffer, BufferSize, pCursor) == 0);
+
+	pCursor = pTokenEnd;
+	return pBuffer;
+}
+//---------------------------------------------------------------------
+
+inline LPCSTR CStringTokenizer::GetNextToken(char SplitChar)
+{
+	if (!pCursor) return NULL;
+
+	const char* pTokenEnd = strchr(pCursor, SplitChar);
+	if (pTokenEnd)
+	{
+		DWORD TokenSize = pTokenEnd - pCursor;
+		n_assert2_dbg(TokenSize < BufferSize, "CStringTokenizer > Buffer overflow");
+		memcpy(pBuffer, pCursor, TokenSize);
+		pBuffer[TokenSize] = 0;
+	}
+	else n_verify_dbg(strcpy_s(pBuffer, BufferSize, pCursor) == 0);
+
+	pCursor = pTokenEnd;
+	return pBuffer;
+}
+//---------------------------------------------------------------------
+
+inline LPCSTR CStringTokenizer::GetNextToken(LPCSTR pSplitChars, char Fence)
 {
 	if (!pCursor) return NULL;
 
 	LPSTR pBuf = pBuffer;
 
-	while (*pCursor)
+	char Chr = *pCursor;
+	if (Chr)
 	{
-		n_assert_dbg(pBuf < pBuffer + BufferSize);
-
-		char Chr = *pCursor;
-		++pCursor;
-		if (strchr(pSplitChars, Chr))
+		const char* pTokenEnd;
+		if (Chr == Fence && (pTokenEnd = strchr(pCursor + 1, Fence)))
 		{
-			*pBuf = 0;
+			++pCursor;
+			DWORD TokenSize = pTokenEnd - pCursor;
+			n_assert2_dbg(TokenSize < BufferSize, "CStringTokenizer > Buffer overflow");
+			memcpy(pBuffer, pCursor, TokenSize);
+			pBuffer[TokenSize] = 0;
+			pCursor = pTokenEnd;
 			return pBuffer;
 		}
-		else *pBuf++ = Chr;
+		else return GetNextToken(pSplitChars);
 	}
-
-	n_assert_dbg(pBuf < pBuffer + BufferSize);
-
-	pCursor = NULL;
-	*pBuf = 0;
-	return pBuffer;
-}
-//---------------------------------------------------------------------
-
-// This method is written to avoid indirection when string is tokenized
-// by a single character. Be careful using this with self-allocated buffer,
-// because it calculates its length based on all characters of a split set.
-inline LPCSTR CStringTokenizer::GetNextTokenSingleChar()
-{
-	if (!pCursor) return NULL;
-
-	LPSTR pBuf = pBuffer;
-	char SplitChr = *pSplitChars;
-
-	while (*pCursor)
+	else
 	{
-		n_assert_dbg(pBuf < pBuffer + BufferSize);
-
-		char Chr = *pCursor;
-		++pCursor;
-		if (Chr == SplitChr)
-		{
-			*pBuf = 0;
-			return pBuffer;
-		}
-		else *pBuf++ = Chr;
+		pCursor = NULL;
+		return NULL;
 	}
-
-	n_assert_dbg(pBuf < pBuffer + BufferSize);
-
-	pCursor = NULL;
-	*pBuf = 0;
-	return pBuffer;
 }
 //---------------------------------------------------------------------
 

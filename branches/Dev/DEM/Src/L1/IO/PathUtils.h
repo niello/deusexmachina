@@ -2,20 +2,27 @@
 #ifndef __DEM_L1_IO_PATH_UTILS_H__
 #define __DEM_L1_IO_PATH_UTILS_H__
 
-#include <StdDEM.h>
+#include <Data/String.h>
 
 // Path and URI utility functions
 
-namespace IO { namespace PathUtils
+namespace PathUtils
 {
 
 // Get a pointer to the last directory separator.
-inline const char* GetLastDirSeparator(const char* pPath)
+//!!!use FindLastIndex(pCharSet)!
+inline const char* GetLastDirSeparator(const char* pPath, DWORD PathLen = 0)
 {
-	const char* pLastSlash = strrchr(pPath, '/');
-	if (!pLastSlash) pLastSlash = strrchr(pPath, '\\');
-	if (!pLastSlash) pLastSlash = strrchr(pPath, ':');
-	return pLastSlash;
+	if (!pPath) return NULL;
+	if (!PathLen) PathLen = strlen(pPath);
+
+	const char* pCurr = pPath + PathLen - 1;
+	while (pCurr >= pPath)
+	{
+		if (strchr("/\\:", *pCurr)) return pCurr;
+		--pCurr;
+	};
+	return NULL;
 }
 //---------------------------------------------------------------------
 
@@ -44,96 +51,90 @@ inline bool CheckExtension(const char* pPath, const char* pExtension)
 }
 //---------------------------------------------------------------------
 
-inline CString ExtractFileName()
+inline CString ExtractFileName(const char* pPath)
 {
-	char* pLastDirSep = GetLastDirSeparator();
-	CString Path = pLastDirSep ? pLastDirSep + 1 : CStr();
-	return Path;
+	const char* pLastDirSep = GetLastDirSeparator(pPath);
+	return CString(pLastDirSep ? pLastDirSep + 1 : pPath);
 }
 //---------------------------------------------------------------------
 
-inline CString ExtractFileNameWithoutExtension()
+inline CString ExtractFileNameWithoutExtension(const char* pPath)
 {
-	char* pLastDirSep = GetLastDirSeparator();
-	CString Path = pLastDirSep ? pLastDirSep + 1 : CStr();
-	return Path;
+	const char* pLastDirSep = GetLastDirSeparator(pPath);
+	const char* pStr = pLastDirSep ? pLastDirSep + 1 : pPath;
+	const char* pExt = GetExtension(pStr);
+	if (pExt) return CString(pStr, pExt - pStr - 1); // - 1 to skip dot
+	else return CString(pStr);
 }
 //---------------------------------------------------------------------
 
-// Return a CString object containing the last directory of the path, i.e. a category
-inline CString ExtractLastDirName()
+// Return a CString object containing the last directory of the path
+inline CString ExtractLastDirName(const char* pPath)
 {
-    CString pathString(*this);
-    char* lastSlash = pathString.GetLastDirSeparator();
+	DWORD PathLen = strlen(pPath);
+	const char* pLastDirSep = GetLastDirSeparator(pPath, PathLen);
 
-    // special case if path ends with a slash
-    if (lastSlash)
-    {
-        if (!lastSlash[1])
-        {
-            *lastSlash = 0;
-            lastSlash = pathString.GetLastDirSeparator();
-        }
+	if (pLastDirSep)
+	{
+		const char* pEnd = pPath + PathLen;
+		if (!pLastDirSep[1])
+		{
+			--pEnd;
+			pLastDirSep = GetLastDirSeparator(pPath, pEnd - pPath);
+		}
 
-        char* secLastSlash = 0;
-        if (lastSlash)
-        {
-            *lastSlash = 0; // cut filename
-            secLastSlash = pathString.GetLastDirSeparator();
-            if (secLastSlash)
-            {
-                *secLastSlash = 0;
-                return CString(secLastSlash+1);
-            }
-        }
-    }
-    return "";
+		const char* pSecondLastDirSep = NULL;
+		if (pLastDirSep)
+		{
+			pEnd = pLastDirSep;
+			pSecondLastDirSep = GetLastDirSeparator(pPath, pEnd - pPath);
+			if (pSecondLastDirSep) return CString(pSecondLastDirSep + 1, pEnd - pSecondLastDirSep - 1);
+		}
+	}
+
+	return CString::Empty;
 }
 //---------------------------------------------------------------------
 
 // Return a CString object containing the part before the last directory separator.
 // NOTE (floh): I left my fix in that returns the last slash (or colon), this was
 // necessary to tell if a dirname is a normal directory or an assign.
-inline CString ExtractDirName()
+inline CString ExtractDirName(const char* pPath, DWORD PathLength = 0)
 {
-	CString Path(*this);
-	char* pLastDirSep = Path.GetLastDirSeparator();
+	if (!PathLength) PathLength = strlen(pPath);
+	const char* pLastDirSep = GetLastDirSeparator(pPath, PathLength);
 
-	if (pLastDirSep) // If path ends with a slash
+	const char* pEnd = pPath + PathLength;
+	if (pLastDirSep)
 	{
 		if (!pLastDirSep[1])
 		{
-			*pLastDirSep = 0;
-			pLastDirSep = Path.GetLastDirSeparator();
+			--pEnd;
+			pLastDirSep = GetLastDirSeparator(pPath, pEnd - pPath);
 		}
-		if (pLastDirSep) *++pLastDirSep = 0;
+		if (pLastDirSep) pEnd = pLastDirSep + 1;
 	}
 
-	Path.SetLength(strlen(Path.CStr()));
-	return Path;
+	return CString(pPath, pEnd - pPath);
+}
+//---------------------------------------------------------------------
+
+inline CString ExtractDirName(const CString& Path)
+{
+	return ExtractDirName(Path.CStr(), Path.GetLength());
 }
 //---------------------------------------------------------------------
 
 // Return a path pString object which contains of the complete path up to the last slash.
 // Returns an empty pString if there is no slash in the path.
-inline CString ExtractToLastSlash()
+inline CString ExtractToLastSlash(const char* pPath)
 {
-	CString Path(*this);
-	char* pLastDirSep = Path.GetLastDirSeparator();
-	if (pLastDirSep) pLastDirSep[1] = 0;
-	else Path = "";
-	return Path;
+	const char* pLastDirSep = GetLastDirSeparator(pPath);
+	if (pLastDirSep) return CString(pPath, pLastDirSep - pPath);
+	else return CString::Empty;
 }
 //---------------------------------------------------------------------
 
-inline CString StripExtension()
-{
-	char* ext = (char*)GetExtension();
-	if (ext) ext[-1] = 0;
-	SetLength(strlen(CStr()));
 }
-//---------------------------------------------------------------------
-
-} }
 
 #endif

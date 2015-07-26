@@ -17,7 +17,7 @@ bool CFSBrowser::ForceToFirstEntry()
 bool CFSBrowser::SetRelativePath(const char* pPath)
 {
 	n_assert(CurrPath.IsValid());
-	CurrPath.StripTrailingSlash();
+	CurrPath.Trim(" \r\n\t\\/", false);
 	return SetAbsolutePath(CurrPath + "/" + pPath);
 }
 //---------------------------------------------------------------------

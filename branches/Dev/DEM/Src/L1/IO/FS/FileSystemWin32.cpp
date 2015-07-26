@@ -1,6 +1,7 @@
 #include "FileSystemWin32.h"
 
 #include <Data/Array.h>
+#include <IO/PathUtils.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shlobj.h>
@@ -91,8 +92,8 @@ bool CFileSystemWin32::CreateDirectory(const char* pPath)
 	CArray<CString> DirStack;
 	while (!DirectoryExists(AbsPath))
 	{
-		AbsPath.StripTrailingSlash();
-		int LastSepIdx = AbsPath.GetLastDirSeparatorIndex();
+		AbsPath.Trim(" \r\n\t\\/", false);
+		int LastSepIdx = PathUtils::GetLastDirSeparatorIndex(AbsPath);
 		if (LastSepIdx >= 0)
 		{
 			DirStack.Add(AbsPath.SubString(LastSepIdx + 1, AbsPath.GetLength() - (LastSepIdx + 1)));
@@ -163,14 +164,14 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 	{
 		if (!GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
 		OutPath = pRawPath;
-		OutPath.ConvertBackslashes();
+		OutPath.Replace('\\', '/');
 	}
 	else if (Code == SF_HOME || Code == SF_BIN)
 	{
 		if (!GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
 		CString PathToExe(pRawPath);
-		PathToExe.ConvertBackslashes();
-		OutPath = PathToExe.ExtractDirName();
+		PathToExe.Replace('\\', '/');
+		OutPath = PathUtils::ExtractDirName(PathToExe);
 	}
 	else
 	{
@@ -185,7 +186,7 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 
 		if (FAILED(SHGetFolderPath(0, CSIDL, NULL, 0, pRawPath))) FAIL;
 		OutPath = pRawPath;
-		OutPath.ConvertBackslashes();
+		OutPath.Replace('\\', '/');
 	}
 
 	OK;
@@ -199,7 +200,7 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 
 	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
 	DWORD FilterLength = strlen(pActualFilter);
-	CString SearchString(pPath, FilterLength);
+	CString SearchString(pPath, strlen(pPath), FilterLength);
 	SearchString.Add(pActualFilter, FilterLength);
 
 	WIN32_FIND_DATA FindData;

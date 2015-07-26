@@ -588,12 +588,12 @@ bool CScriptServer::PlaceOnStack(LPCSTR FullPath, bool Create)
 	if (!l || !FullPath) FAIL;
 
 	//char Buffer[512];
-	Data::CStringTokenizer StrTok(FullPath, "."); //, Buffer, 512);
+	Data::CStringTokenizer StrTok(FullPath); //, Buffer, 512);
 
 	lua_getglobal(l, "_G");
 
 	LPCSTR pTok;
-	while (pTok = StrTok.GetNextTokenSingleChar())
+	while (pTok = StrTok.GetNextToken('.'))
 	{
 		if (!*pTok) continue;
 

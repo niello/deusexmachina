@@ -1569,8 +1569,8 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	//with final shader file names? can even use DSS for effects!
 
 	PD3D9RenderState RS = n_new(CD3D9RenderState);
-	RS->VS = Desc.VertexShader->As<CD3D9Shader>();
-	RS->PS = Desc.PixelShader->As<CD3D9Shader>();
+	RS->VS = (CD3D9Shader*)Desc.VertexShader.GetUnsafe();
+	RS->PS = (CD3D9Shader*)Desc.PixelShader.GetUnsafe();
 
 	DWORD* pValues = RS->D3DStateValues;
 

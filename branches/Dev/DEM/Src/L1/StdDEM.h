@@ -71,8 +71,6 @@ typedef double				CTime;
 //---------------------------------------------------------------------
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
-bool n_strmatch(const char*, const char*);
-
 template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
 template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }
 template<class T, class T2> inline T n_min(T a, T2 b) { return a < (T)b ? a : (T)b; }
