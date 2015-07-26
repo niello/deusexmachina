@@ -68,11 +68,11 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 
 bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 {
-	CString Code = LoadedHRD.Get<CString>(CStrID("Code"), NULL);
+	CString Code = LoadedHRD.Get<CString>(CStrID("Code"), CString::Empty);
 
 	if (Code.IsValid())
 	{
-		if (luaL_loadbuffer(l, Code.CStr(), Code.Length(), Name) != 0)
+		if (luaL_loadbuffer(l, Code.CStr(), Code.GetLength(), Name) != 0)
 		{
 			n_msg(VL_ERROR, "Error parsing Lua file '%s': %s\n", Name, lua_tostring(l, -1));
 			lua_pop(l, 1); // Error msg

@@ -30,7 +30,7 @@
 #define VL_DETAILS	4
 #define VL_DEBUG	5
 
-#define n_msg(Verbosity, String, ...) { if (Verbose >= Verbosity) n_printf(String, __VA_ARGS__); }
+#define n_msg(Verbosity, String, ...) { if (Verbose >= Verbosity) Sys::Log(String, __VA_ARGS__); }
 
 //???to console application class?
 extern int Verbose;

@@ -333,4 +333,4 @@ bool CIOServer::QueryMangledPath(const char* pFileName, CString& MangledFileName
 }
 #endif
 
-} //namespace Data
+}

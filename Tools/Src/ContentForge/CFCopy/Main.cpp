@@ -1,4 +1,5 @@
 #include <IO/IOServer.h>
+#include <IO/PathUtils.h>
 #include <Data/StringTokenizer.h>
 #include <ConsoleApp.h>
 
@@ -23,15 +24,15 @@ int main(int argc, const char** argv)
 	CArray<CString> InList, OutList;
 
 	{
-		Data::CStringTokenizer StrTok(In.CStr(), ";");
-		while (StrTok.GetNextTokenSingleChar())
-			InList.Add(StrTok.GetCurrToken());
+		Data::CStringTokenizer StrTok(In.CStr());
+		while (StrTok.GetNextToken(';'))
+			InList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	{
-		Data::CStringTokenizer StrTok(Out.CStr(), ";");
-		while (StrTok.GetNextTokenSingleChar())
-			OutList.Add(StrTok.GetCurrToken());
+		Data::CStringTokenizer StrTok(Out.CStr());
+		while (StrTok.GetNextToken(';'))
+			OutList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
@@ -53,7 +54,7 @@ int main(int argc, const char** argv)
 		else
 		{
 			if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			IOSrv->CreateDirectory(Out.ExtractDirName());
+			IOSrv->CreateDirectory(PathUtils::ExtractDirName(Out));
 			if (!IOSrv->CopyFile(In, Out)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 		}
 	}
@@ -67,8 +68,8 @@ int ExitApp(int Code, bool WaitKey)
 	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occured with code %d\n", Code);
 	if (WaitKey)
 	{
-		n_printf("\nPress any key to exit...\n");
-		getch();
+		Sys::Log("\nPress any key to exit...\n");
+		_getch();
 	}
 
 	return Code;

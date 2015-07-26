@@ -1,5 +1,4 @@
 #include <IO/IOServer.h>
-#include <Render/D3DXDEMInclude.h>
 #include <Data/StringTokenizer.h>
 #include <ConsoleApp.h>
 
@@ -31,15 +30,15 @@ int main(int argc, const char** argv)
 	CArray<CString> InList, OutList;
 
 	{
-		Data::CStringTokenizer StrTok(In.CStr(), ";");
-		while (StrTok.GetNextTokenSingleChar())
-			InList.Add(StrTok.GetCurrToken());
+		Data::CStringTokenizer StrTok(In.CStr());
+		while (StrTok.GetNextToken(';'))
+			InList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	{
-		Data::CStringTokenizer StrTok(Out.CStr(), ";");
-		while (StrTok.GetNextTokenSingleChar())
-			OutList.Add(StrTok.GetCurrToken());
+		Data::CStringTokenizer StrTok(Out.CStr());
+		while (StrTok.GetNextToken(';'))
+			OutList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
@@ -76,8 +75,8 @@ int ExitApp(int Code, bool WaitKey)
 
 	if (WaitKey)
 	{
-		n_printf("\nPress any key to exit...\n");
-		getch();
+		Sys::Log("\nPress any key to exit...\n");
+		_getch();
 	}
 
 	return Code;
