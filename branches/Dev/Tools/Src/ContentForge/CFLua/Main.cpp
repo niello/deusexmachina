@@ -1,4 +1,5 @@
 #include <IO/IOServer.h>
+#include <IO/PathUtils.h>
 #include <Data/Params.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
@@ -20,8 +21,7 @@ void	LuaRelease();
 
 bool ProcessSingleFile(const CString& InFileName, const CString& OutFileName, bool CheckFileType = true, bool IsClass = false)
 {
-	CString Name = InFileName.ExtractFileName();
-	Name.StripExtension();
+	CString Name = PathUtils::ExtractFileNameWithoutExtension(InFileName);
 
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(InFileName, Buffer))
@@ -41,7 +41,7 @@ bool ProcessSingleFile(const CString& InFileName, const CString& OutFileName, bo
 		}
 	}
 
-	IOSrv->CreateDirectory(OutFileName.ExtractDirName());
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(OutFileName));
 
 	if (IsClass) return LuaCompileClass(*ClassDesc, Name.CStr(), OutFileName.CStr());
 	else return LuaCompile((char*)Buffer.GetPtr(), Buffer.GetSize(), Name.CStr(), OutFileName.CStr());
@@ -64,15 +64,15 @@ int main(int argc, const char** argv)
 	CArray<CString> InList, OutList;
 
 	{
-		Data::CStringTokenizer StrTok(In.CStr(), ";");
-		while (StrTok.GetNextTokenSingleChar())
-			InList.Add(StrTok.GetCurrToken());
+		Data::CStringTokenizer StrTok(In.CStr());
+		while (StrTok.GetNextToken(';'))
+			InList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	{
-		Data::CStringTokenizer StrTok(Out.CStr(), ";");
-		while (StrTok.GetNextTokenSingleChar())
-			OutList.Add(StrTok.GetCurrToken());
+		Data::CStringTokenizer StrTok(Out.CStr());
+		while (StrTok.GetNextToken(';'))
+			OutList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
@@ -111,8 +111,8 @@ int ExitApp(int Code, bool WaitKey)
 
 	if (WaitKey)
 	{
-		n_printf("\nPress any key to exit...\n");
-		getch();
+		Sys::Log("\nPress any key to exit...\n");
+		_getch();
 	}
 
 	return Code;

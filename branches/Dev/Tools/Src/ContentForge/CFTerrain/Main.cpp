@@ -2,6 +2,7 @@
 #include <IO/BTFile.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryWriter.h>
+#include <IO/PathUtils.h>
 #include <Data/Buffer.h>
 #include <ConsoleApp.h>
 
@@ -61,7 +62,7 @@ int main(int argc, const char** argv)
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
-	if (InFileName.CheckExtension("bt"))
+	if (PathUtils::CheckExtension(InFileName, "bt"))
 	{
 		Data::CBuffer Buffer;
 		IOSrv->LoadFileToBuffer(InFileName, Buffer);
@@ -70,7 +71,7 @@ int main(int argc, const char** argv)
 		DWORD Width = BTFile.GetWidth();
 		DWORD Height = BTFile.GetHeight();
 
-		CString OutPath = OutFileName.ExtractDirName();
+		CString OutPath = PathUtils::ExtractDirName(OutFileName);
 		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
 
 		IO::CFileStream OutFile;
@@ -225,8 +226,8 @@ int ExitApp(int Code, bool WaitKey)
 
 	if (WaitKey)
 	{
-		n_printf("\nPress any key to exit...\n");
-		getch();
+		Sys::Log("\nPress any key to exit...\n");
+		_getch();
 	}
 
 	return Code;
