@@ -23,6 +23,11 @@ namespace CEGUI
 	class TinyXML2Parser;
 }
 
+namespace Render
+{
+	class CGPUDriver;
+}
+
 namespace UI
 {
 typedef Ptr<class CUIWindow> PUIWindow;
@@ -59,7 +64,7 @@ private:
 
 public:
 
-	CUIServer();
+	CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char* pVertexShaderURI, const char* pPixelShaderURI);
 	~CUIServer();
 	
 	// Internal use, set by config

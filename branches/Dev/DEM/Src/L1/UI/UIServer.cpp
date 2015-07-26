@@ -32,17 +32,17 @@ namespace UI
 __ImplementClassNoFactory(UI::CUIServer, Core::CObject);
 __ImplementSingleton(UI::CUIServer);
 
-CUIServer::CUIServer()
+CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char* pVertexShaderURI, const char* pPixelShaderURI)
 {
 	n_assert(!Singleton);
 	Singleton = this;
 
 	Logger = n_new(CEGUI::CDEMLogger);
-	//Renderer = &CEGUI::CDEMRenderer::create(GPUDriver, SwapChainID);
+	Renderer = &CEGUI::CDEMRenderer::create(GPUDriver, SwapChainID, pVertexShaderURI, pPixelShaderURI);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
 
-	//CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
+	CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = &CEGUI::System::getSingleton();
 
 	CEGUI::Logger::getSingleton().setLoggingLevel(CEGUI::Warnings);
@@ -83,7 +83,7 @@ CUIServer::~CUIServer()
 	n_delete(XMLParser);
 	n_delete(ResourceProvider);
 	//!!!destroy resource provider etc (mb image codec)!
-//	CEGUI::Direct3D9Renderer::destroy(*Renderer);
+	CEGUI::CDEMRenderer::destroy(*Renderer);
 	n_delete(Logger);
 
 	Singleton = NULL;

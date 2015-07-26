@@ -45,7 +45,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 			{
 				CString NewName = PathUtils::ExtractFileNameWithoutExtension(pSource);
 				NewName.ToLower();
-				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), sizeof(NameBuffer));
+				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), _TRUNCATE);
 			}
 
 			TOC.BeginDirEntry(NameBuffer);

@@ -3,17 +3,14 @@
 
 namespace Data
 {
-static CStringIDStorage StringIDStorage;
-
-//CStringIDStorage* CStringID::Storage = n_new(CStringIDStorage()); //???!!!where to delete and is it needed?
-CStringIDStorage* CStringID::Storage = &StringIDStorage;
+CStringIDStorage CStringID::Storage;
 
 const CStringID CStringID::Empty;
 
 CStringID::CStringID(LPCSTR pString, bool OnlyExisting)
 {
 	if (pString && *pString)
-		String = OnlyExisting ? Storage->GetIDByString(pString) : Storage->AddString(pString);
+		String = OnlyExisting ? Storage.Get(pString) : Storage.GetOrAdd(pString);
 	else String = CStringID::Empty.CStr();
 }
 //---------------------------------------------------------------------

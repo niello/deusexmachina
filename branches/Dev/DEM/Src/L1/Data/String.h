@@ -114,13 +114,11 @@ inline CString::CString(const char* pSrc)
 
 inline CString::CString(const char* pSrc, DWORD SrcLength, DWORD PreallocatedFreeSpace)
 {
-	SrcLength = pSrc ? n_min(SrcLength, strlen(pSrc)) : 0;
-	if (SrcLength)
+	if (pSrc && SrcLength)
 	{
 		MaxLength = SrcLength + PreallocatedFreeSpace;
 		pString = (char*)n_malloc(MaxLength + 1);
-		memmove(pString, pSrc, SrcLength);
-		pString[SrcLength] = 0;
+		strncpy_s(pString, MaxLength + 1, pSrc, SrcLength);
 		Length = SrcLength;
 	}
 	else

@@ -17,6 +17,8 @@ PResource CResourceManager::RegisterResource(CStrID URI) //???need? avoid recrea
 
 PResource CResourceManager::RegisterResource(const char* pURI)
 {
+	// Absolutize URI
+	// Get CStrID
 	// If registered return it
 	// else create empty container
 	return NULL;
