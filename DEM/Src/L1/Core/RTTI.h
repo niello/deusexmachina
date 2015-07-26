@@ -5,20 +5,20 @@
 #include <Data/FourCC.h>
 #include <Data/String.h>
 
-// Implements the runtime type information system of Mangalore. Every class
-// derived from CObject should define a static RTTI object which is initialized
+// Implements the runtime type information system of Mangalore. Every class derived
+// from CRTTIBaseClass should define a static RTTI object which is initialized
 // with a pointer to a static string containing the human readable Name
 // of the class, and a pointer to the static RTTI object of the Parent class.
 
 namespace Core
 {
-class CObject;
+class CRTTIBaseClass;
 
 class CRTTI
 {
 private:
 
-	typedef CObject* (*CFactoryFunc)(void* pParam);
+	typedef CRTTIBaseClass* (*CFactoryFunc)(void* pParam);
 
 	CString			Name; //???use CString?
 	Data::CFourCC	FourCC;
@@ -32,7 +32,7 @@ public:
 
 	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
 
-	CObject*	CreateInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
+	CRTTIBaseClass*	CreateClassInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
 	//void*			AllocInstanceMemory() const { return n_malloc(InstanceSize); }
 	//void			FreeInstanceMemory(void* pPtr) { n_free(pPtr); }
 
@@ -98,29 +98,23 @@ inline bool CRTTI::IsDerivedFrom(const char* pOtherName) const
 
 }
 
-//	void* operator new(size_t size) return RTTI.AllocInstanceMemory(); };
+// With factory
+
+//	void* operator new(size_t size) { return RTTI.AllocInstanceMemory(); };
 //	void operator delete(void* p) { RTTI.FreeInstanceMemory(p); };
 #define __DeclareClass(Class) \
 public: \
-	static Core::CRTTI		RTTI; \
-	static const bool		Factory_Registered; \
-	virtual Core::CRTTI*	GetRTTI() const { return &RTTI; } \
-	static Core::CObject*	FactoryCreator(void* pParam); \
-	static Class*			CreateInstance(void* pParam = NULL); \
-	static bool				RegisterInFactory(); \
-	static void				ForceFactoryRegistration(); \
-private:
-
-#define __DeclareClassNoFactory \
-public: \
-	static Core::CRTTI		RTTI; \
-	virtual Core::CRTTI*	GetRTTI() const { return &RTTI; } \
+	static Core::CRTTI				RTTI; \
+	static const bool				Factory_Registered; \
+	virtual Core::CRTTI*			GetRTTI() const { return &RTTI; } \
+	static Core::CRTTIBaseClass*	CreateClassInstance(void* pParam = NULL); \
+	static bool						RegisterInFactory(); \
+	static void						ForceFactoryRegistration(); \
 private:
 
 #define __ImplementClass(Class, FourCC, ParentClass) \
-	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, &ParentClass::RTTI, sizeof(Class)); \
-	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
-	Class* Class::CreateInstance(void* pParam) { return n_new(Class); } \
+	Core::CRTTI Class::RTTI(#Class, FourCC, Class::CreateClassInstance, &ParentClass::RTTI, sizeof(Class)); \
+	Core::CRTTIBaseClass* Class::CreateClassInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
 	{ \
 		if (!Factory->IsNameRegistered(#Class)) \
@@ -130,19 +124,26 @@ private:
 	void Class::ForceFactoryRegistration() { Class::Factory_Registered; } \
 	const bool Class::Factory_Registered = Class::RegisterInFactory();
 
-#define __ImplementClassNoFactory(Class, /*FourCC,*/ ParentClass) \
-	Core::CRTTI Class::RTTI(#Class, /*FourCC*/ 0, NULL, &ParentClass::RTTI, 0);
-
 #define __ImplementRootClass(Class, FourCC) \
-	Core::CRTTI Class::RTTI(#Class, FourCC, Class::FactoryCreator, NULL, sizeof(Class)); \
-	Core::CObject* Class::FactoryCreator(void* pParam) { return Class::CreateInstance(pParam); } \
-	Class* Class::CreateInstance(void* pParam) { return n_new(Class); } \
+	Core::CRTTI Class::RTTI(#Class, FourCC, Class::CreateClassInstance, NULL, sizeof(Class)); \
+	Core::CRTTIBaseClass* Class::CreateClassInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
 	{ \
 		if (!Factory->IsNameRegistered(#Class)) \
 			Factory->Register(Class::RTTI, #Class, FourCC); \
 		OK; \
 	}
+
+// Without factory
+
+#define __DeclareClassNoFactory \
+public: \
+	static Core::CRTTI				RTTI; \
+	virtual Core::CRTTI*			GetRTTI() const { return &RTTI; } \
+private:
+
+#define __ImplementClassNoFactory(Class, ParentClass) \
+	Core::CRTTI Class::RTTI(#Class, 0, NULL, &ParentClass::RTTI, 0);
 
 #define __ImplementRootClassNoFactory(Class, FourCC) \
 	Core::CRTTI Class::RTTI(#Class, FourCC, NULL, NULL, 0);

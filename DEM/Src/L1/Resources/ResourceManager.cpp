@@ -21,35 +21,47 @@ PResource CResourceManager::RegisterResource(const char* pURI)
 	// Get CStrID
 	// If registered return it
 	// else create empty container
-	return NULL;
+	PResource Rsrc = n_new(CResource);
+	Rsrc->SetUID(CStrID(pURI));
+	return Rsrc;
 }
 //---------------------------------------------------------------------
 
+void CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, const Core::CRTTI* pLoaderType)
+{
+	CLoaderKey Key;
+	Key.Extension = CStrID(pFmtExtension);
+	Key.pRsrcType = pRsrcType;
+	DefaultLoaders.Add(Key, pLoaderType, true);
+}
+//---------------------------------------------------------------------
+
+//!!!check IsDerivedFrom! select the best matching loader (minimal hierarchy offset from requested type)!
 PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType)
 {
-	return NULL;
+	CLoaderKey Key;
+	Key.Extension = CStrID(pFmtExtension);
+	Key.pRsrcType = pRsrcType;
+	const Core::CRTTI** ppRTTI = DefaultLoaders.Get(Key);
+	return ppRTTI ? (CResourceLoader*)(*ppRTTI)->CreateClassInstance() : NULL;
 }
 //---------------------------------------------------------------------
 
-void CResourceManager::LoadResource(PResource Rsrc, PResourceLoader Loader, bool Async)
+void CResourceManager::LoadResource(CResource& Rsrc, CResourceLoader& Loader, bool Async)
 {
-	if (Rsrc.IsNullPtr() || Loader.IsNullPtr()) return;
-
-	CResource* pRsrc = Rsrc.GetUnsafe();
-
 	if (Async)
 	{
 		Sys::Error("IMPLEMENT ME!!!\n");
 		//create job(task) that will call this method with Async = false from another thread
 		//must return some handle to cancel/wait/check task
 		//???store async handle in a resource?
-		pRsrc->SetState(Rsrc_LoadingRequested);
+		Rsrc.SetState(Rsrc_LoadingRequested);
 	}
 	else
 	{
-		pRsrc->SetState(Rsrc_LoadingInProgress);
-		if (Loader->Load(*pRsrc)) pRsrc->SetState(Rsrc_Loaded);
-		else pRsrc->SetState(Rsrc_LoadingFailed);
+		Rsrc.SetState(Rsrc_LoadingInProgress);
+		if (Loader.Load(Rsrc)) Rsrc.SetState(Rsrc_Loaded);
+		else Rsrc.SetState(Rsrc_LoadingFailed);
 	}
 }
 //---------------------------------------------------------------------

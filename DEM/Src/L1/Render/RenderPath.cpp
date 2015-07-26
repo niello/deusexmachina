@@ -24,7 +24,7 @@ bool CRenderPath::Init(CGPUDriver& Driver, const Data::CParams& Desc)
 	Data::CParam* pPrm;
 	if (Desc.Get(pPrm, CStrID("Shaders")))
 	{
-		CString ShaderPathMangled = IOSrv->ManglePath(ShaderPath) + "/";
+		CString ShaderPathMangled = IOSrv->ResolveAssigns(ShaderPath) + "/";
 		Data::CParams& List = *pPrm->GetValue<Data::PParams>();
 		for (int i = 0; i < List.GetCount(); ++i)
 		{

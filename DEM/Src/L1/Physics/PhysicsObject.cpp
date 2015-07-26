@@ -26,7 +26,7 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	if (!RShape->IsLoaded())
 	{
 		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
-		ResourceMgr->LoadResource(RShape, Loader);
+		ResourceMgr->LoadResource(*RShape, *Loader);
 		n_assert(RShape->IsLoaded());
 	}
 	Shape = RShape->GetObject()->As<Physics::CCollisionShape>();

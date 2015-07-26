@@ -12,8 +12,8 @@
 
 namespace Core
 {
-class CObject;
 class CRTTI;
+class CRTTIBaseClass;
 
 #define Factory Core::CFactory::Instance()
 
@@ -35,8 +35,8 @@ public:
 	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
 	const CRTTI*	GetRTTI(const char* pClassName) const { return NameToRTTI[CString(pClassName)]; }
 	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
-	CObject*		Create(const char* pClassName, void* pParam = NULL) const;
-	CObject*		Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
+	CRTTIBaseClass*	Create(const char* pClassName, void* pParam = NULL) const;
+	CRTTIBaseClass*	Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
 };
 
 }

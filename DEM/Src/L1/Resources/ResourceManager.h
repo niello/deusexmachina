@@ -33,11 +33,22 @@ class CResourceManager
 
 protected:
 
+	struct CLoaderKey
+	{
+		CStrID				Extension;
+		const Core::CRTTI*	pRsrcType;
+
+		//!!!use IsDerivedFrom or hierarchy depth!
+		bool operator ==(const CLoaderKey& Other) const { return Extension == Other.Extension && pRsrcType == Other.pRsrcType; }
+		bool operator >(const CLoaderKey& Other) const { return Extension > Other.Extension || (Extension == Other.Extension && pRsrcType > Other.pRsrcType); }
+		bool operator <(const CLoaderKey& Other) const { return Extension < Other.Extension || (Extension == Other.Extension && pRsrcType < Other.pRsrcType); }
+	};
+
 	//!!!???CResource pool?! if pool, hash table can store weak ptrs. How to deallocate on destroy?
 
-	CString				RootPath;
-	CHashTable<CStrID, PResource>	Registry;
-	//Map <FmtExt, RsrcType => LoaderType>
+	CString										RootPath;
+	CHashTable<CStrID, PResource>				Registry;
+	CHashTable<CLoaderKey, const Core::CRTTI*>	DefaultLoaders;
 
 public:
 
@@ -53,7 +64,7 @@ public:
 	PResource		RegisterResource(const char* pURI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
 	PResource		RegisterResource(const char* pURN, CResourceObject* pObject); //!!!assert valid URN!
 
-	void			LoadResource(PResource Rsrc, PResourceLoader Loader, bool Async = false);
+	void			LoadResource(CResource& Rsrc, CResourceLoader& Loader, bool Async = false);
 };
 
 }
