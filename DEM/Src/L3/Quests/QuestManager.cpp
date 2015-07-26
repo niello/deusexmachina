@@ -151,7 +151,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 	{
 		CString Name = CString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
-		Name.ReplaceChars("/", '_');
+		Name.Replace('/', '_');
 		Task.Task->ScriptObj = n_new(Scripting::CScriptObject(Name.CStr(), StrQuests.CStr()));
 		Task.Task->ScriptObj->Init(); // No special class
 		Task.Task->ScriptObj->LoadScriptFile(TaskScriptFile);
@@ -337,7 +337,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 					if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?
 					{
 						CString Name = CString(QuestID.CStr()) + StrUnderline + TaskID.CStr();
-						Name.ReplaceChars("/", '_');
+						Name.Replace('/', '_');
 						TaskRec.Task->ScriptObj = n_new(Scripting::CScriptObject(Name.CStr(), StrQuests.CStr()));
 						TaskRec.Task->ScriptObj->Init();
 						TaskRec.Task->ScriptObj->LoadScriptFile(TaskScriptFile);

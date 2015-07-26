@@ -14,6 +14,7 @@
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/DataServer.h>
+#include <IO/PathUtils.h>
 
 namespace Prop
 {
@@ -122,7 +123,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			Resources::PResource RClip = ResourceMgr->RegisterResource(ClipRsrcID);
 			if (!RClip->IsLoaded())
 			{
-				Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(FileName.GetExtension());
+				Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(FileName));
 				ResourceMgr->LoadResource(RClip, Loader);
 				n_assert(RClip->IsLoaded());
 			}

@@ -5,6 +5,7 @@
 #include <Render/Shader.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
+#include <IO/PathUtils.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
@@ -37,7 +38,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
 	if (!RVS->IsLoaded())
 	{
-		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pVertexShaderURI.GetExtension());
+		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pVertexShaderURI));
 		//!!!set GPU!
 		ResourceMgr->LoadResource(RVS, Loader);
 		n_assert(RVS->IsLoaded());
@@ -46,7 +47,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	Resources::PResource RPS = ResourceMgr->RegisterResource(pPixelShaderURI);
 	if (!RPS->IsLoaded())
 	{
-		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pPixelShaderURI.GetExtension());
+		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pPixelShaderURI));
 		//!!!set GPU!
 		ResourceMgr->LoadResource(RPS, Loader);
 		n_assert(RPS->IsLoaded());

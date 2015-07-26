@@ -293,7 +293,7 @@ void CD3D11GPUDriver::Release()
 	if (!pD3DDevice) return;
 
 	VertexLayouts.Clear();
-	ShaderInputSignatures.Clear();
+//!!!to drv fct!	ShaderInputSignatures.Clear();
 	RenderStates.Clear();
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
@@ -1284,9 +1284,10 @@ ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& Vertex
 
 	if (!pSignature)
 	{
-		int Idx = ShaderInputSignatures.FindIndex(ShaderInputSignatureID);
-		if (Idx == INVALID_INDEX) FAIL;
-		pSignature = &ShaderInputSignatures.ValueAt(Idx);
+		//!!!to drv fct!
+		//int Idx = ShaderInputSignatures.FindIndex(ShaderInputSignatureID);
+		//if (Idx == INVALID_INDEX) FAIL;
+		//pSignature = &ShaderInputSignatures.ValueAt(Idx);
 	}
 
 	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pSignature->GetPtr(), pSignature->GetSize(), &pLayout))) return NULL;
@@ -1971,11 +1972,11 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 	{
 		PD3D11RenderState RS = n_new(CD3D11RenderState);
-		RS->VS = Desc.VertexShader->As<CD3D11Shader>();
-		RS->HS = Desc.HullShader->As<CD3D11Shader>();
-		RS->DS = Desc.DomainShader->As<CD3D11Shader>();
-		RS->GS = Desc.GeometryShader->As<CD3D11Shader>();
-		RS->PS = Desc.PixelShader->As<CD3D11Shader>();
+		RS->VS = (CD3D11Shader*)Desc.VertexShader.GetUnsafe();
+		RS->HS = (CD3D11Shader*)Desc.HullShader.GetUnsafe();
+		RS->DS = (CD3D11Shader*)Desc.DomainShader.GetUnsafe();
+		RS->GS = (CD3D11Shader*)Desc.GeometryShader.GetUnsafe();
+		RS->PS = (CD3D11Shader*)Desc.PixelShader.GetUnsafe();
 		RS->pRState = pRState;
 		RS->pDSState = pDSState;
 		RS->pBState = pBState;

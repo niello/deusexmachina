@@ -38,8 +38,8 @@ T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
 {
 	T Mask = 0;
 
-	Data::CStringTokenizer StrTok(pFlagStr, "\t |");
-	while (StrTok.GetNextToken() && *StrTok.GetCurrToken())
+	Data::CStringTokenizer StrTok(pFlagStr);
+	while (StrTok.GetNextToken("\t |") && *StrTok.GetCurrToken())
 	{
 		CStrID Flag = CStrID(StrTok.GetCurrToken());
 		int Idx = Flags.FindIndex(Flag);

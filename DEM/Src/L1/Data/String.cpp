@@ -1,5 +1,6 @@
 #include "String.h"
 
+#include <Data/StringUtils.h>
 #include <stdio.h>
 
 const CString CString::Empty;
@@ -32,25 +33,40 @@ void CString::Reallocate(DWORD NewMaxLength)
 }
 //---------------------------------------------------------------------
 
-void CString::Trim(const char* CharSet, bool Left, bool Right)
+void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
 {
-	if (!CharSet || IsEmpty() || !(Left || Right)) return;
+	va_list ArgList;
+	va_copy(ArgList, Args);
+	DWORD ReqLength = _vscprintf(pFormatStr, ArgList);
+	va_end(ArgList);
 
-	const char* pStrFirst = CStr();
-	const char* pStrLast = pStrFirst + Length;
-	const char* pStrStart = pStrFirst;
-	char* pStrEnd = (char*)pStrLast;
+	DWORD BufferSize = ReqLength + 1;
+	if (ReqLength > MaxLength)
+		pString = (char*)n_realloc(pString, BufferSize);
+	_vsnprintf_s(pString, BufferSize, BufferSize, pFormatStr, Args);
+	MaxLength = ReqLength;
+	Length = ReqLength;
+}
+//---------------------------------------------------------------------
+
+void CString::Trim(const char* pCharSet, bool Left, bool Right)
+{
+	if (!pCharSet || IsEmpty() || !(Left || Right)) return;
+
+	const char* pStrStart = pString;
+	char* pStrEnd = pString + Length;
+	const char* pStrLast = pStrEnd;
 
 	if (Left)
-		while (pStrStart < pStrLast && strchr(CharSet, *pStrStart)) ++pStrStart;
+		while (pStrStart < pStrLast && strchr(pCharSet, *pStrStart)) ++pStrStart;
 
 	if (Right)
 	{
-		while (pStrEnd >= pStrFirst && strchr(CharSet, *pStrEnd)) --pStrEnd;
+		while (pStrEnd >= pString && strchr(pCharSet, *pStrEnd)) --pStrEnd;
 		if (pStrEnd < pStrLast) ++pStrEnd;
 	}
 
-	if (pStrStart == pStrFirst)
+	if (pStrStart == pString)
 	{
 		if (pStrEnd < pStrLast)
 		{
@@ -61,65 +77,110 @@ void CString::Trim(const char* CharSet, bool Left, bool Right)
 	else if (pStrEnd > pStrStart)
 	{
 		DWORD NewLen = pStrEnd - pStrStart;
-		char* pBuffer = (char*)_malloca(NewLen);
-		memmove(pBuffer, pStrStart, NewLen);
-		Set(pBuffer, NewLen);
-		_freea(pBuffer);
+		memmove(pString, pStrStart, NewLen);
+		*pStrEnd = 0;
+		Length = NewLen;
 	}
 	else Clear();
 }
 //---------------------------------------------------------------------
 
-void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
+void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 {
-	va_list ArgList;
-	va_copy(ArgList, Args);
-	DWORD ReqLength = _vscprintf(pFormatStr, ArgList);
-	va_end(ArgList);
+	if (!pSubStr || !pString || !*pSubStr || !*pString) return;
 
-	if (ReqLength > MaxLength)
-		pString = (char*)n_realloc(pString, ReqLength + 1);
-	_vsnprintf_s(pString, ReqLength, ReqLength, pFormatStr, Args);
-	pString[ReqLength] = 0;
-	MaxLength = ReqLength;
-	Length = ReqLength;
-}
-//---------------------------------------------------------------------
+	char* pCurr = strstr(pString, pSubStr);
+	if (!pCurr) return;
 
-/*
-int CString::FindStringIndex(const CString& Str, DWORD StartIdx) const
-{
-	DWORD StrLen = Length();
-	n_assert(Str.IsValid() && StartIdx >= 0 && StartIdx < StrLen);
-	const char* pStr = CStr();
-	const char* pOtherStr = Str.CStr();
-	DWORD OtherLen = Str.Length();
-	for (DWORD i = StartIdx; i < StrLen; ++i)
+	DWORD SrcLen = strlen(pSubStr);
+	DWORD ReplaceLen = pReplaceWith ? strlen(pReplaceWith) : 0;
+	char* pEnd = pString + Length;
+
+	if (ReplaceLen < SrcLen)
 	{
-		if (StrLen - i < OtherLen) break; //!!!to the main condition!
-		if (!strncmp(pStr + i, pOtherStr, OtherLen)) return i;
+		char* pDest = pCurr;
+		char* pPrev;
+
+		DWORD NewLength = Length;
+		DWORD LengthDiff = SrcLen - ReplaceLen;
+		do
+		{
+			if (ReplaceLen)
+			{
+				memmove(pDest, pReplaceWith, ReplaceLen);
+				pDest += ReplaceLen;
+			}
+			NewLength -= LengthDiff;
+			pPrev = pCurr + SrcLen;
+			pCurr = strstr(pPrev, pSubStr);
+			if (!pCurr) pCurr = pEnd;
+			if (pPrev < pCurr)
+			{
+				DWORD MidLen = pCurr - pPrev;
+				memmove(pDest, pPrev, MidLen);
+				pDest += MidLen;
+			}
+		}
+		while (pCurr < pEnd);
+
+		pString[NewLength] = 0;
+		Length = NewLength;
 	}
-	return INVALID_INDEX;
-}
-//---------------------------------------------------------------------
-
-CString CString::Replace(const char* pMatch, const char* pReplaceWith) const
-{
-	n_assert(pMatch && pReplaceWith);
-
-	const char* pStr = CStr();
-	int MatchLen = strlen(pMatch);
-	CString Result;
-
-	const char* pFound;
-	while (pFound = strstr(pStr, pMatch))
+	else if (ReplaceLen == SrcLen)
 	{
-		Result.AppendRange(pStr, pFound - pStr);
-		Result.Add(pReplaceWith);
-		pStr = pFound + MatchLen;
+		do
+		{
+			memmove(pCurr, pReplaceWith, ReplaceLen);
+			pCurr = strstr(pCurr + SrcLen, pSubStr);
+		}
+		while (pCurr);
 	}
-	Result.Add(pStr);
-	return Result;
+	else
+	{
+		// We may need to reallocate string. Calc the room required.
+		DWORD ReplaceCount = 0;
+		do
+		{
+			++ReplaceCount;
+			pCurr = strstr(pCurr + SrcLen, pSubStr);
+		}
+		while (pCurr);
+
+		DWORD NewLength = Length + ReplaceCount * (ReplaceLen - SrcLen);
+		char* pNewString = (NewLength > MaxLength) ? (char*)n_malloc(NewLength + 1) : pString;
+
+		pCurr = pEnd;
+		char* pDestEnd = pNewString + NewLength;
+		char* pPrev;
+		do
+		{
+			pPrev = pCurr;
+			pCurr = StringUtils::LastOccurrenceOf(pString, pCurr, pSubStr, SrcLen);
+			if (!pCurr) break;
+
+			const char* pIntactStart = pCurr + SrcLen;
+			if (pIntactStart < pPrev)
+			{
+				DWORD IntactLen = pPrev - pIntactStart;
+				pDestEnd -= IntactLen;
+				memmove(pDestEnd, pIntactStart, IntactLen);
+			}
+
+			pDestEnd -= ReplaceLen;
+			memmove(pDestEnd, pReplaceWith, ReplaceLen);
+		}
+		while (true);
+
+		if (pNewString != pString)
+		{
+			if (pString < pPrev) memmove(pNewString, pString, pPrev - pString);
+			n_free(pString);
+			pString = pNewString;
+			MaxLength = NewLength;
+		}
+
+		pString[NewLength] = 0;
+		Length = NewLength;
+	}
 }
 //---------------------------------------------------------------------
-*/

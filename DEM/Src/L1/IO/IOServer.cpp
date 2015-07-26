@@ -4,6 +4,7 @@
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/FS/FileSystemNPK.h>
 #include <IO/FSBrowser.h>
+#include <IO/PathUtils.h>
 
 namespace IO
 {
@@ -44,7 +45,7 @@ bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 
 	CString RealRoot;
 	if (pRoot && *pRoot) RealRoot = IOSrv->ManglePath(pRoot);
-	else RealRoot = AbsNPKPath.ExtractDirName();
+	else RealRoot = PathUtils::ExtractDirName(AbsNPKPath);
 
 	if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
 	FS.Add(NewFS);
@@ -259,7 +260,7 @@ void CIOServer::SetAssign(const char* pAssign, const char* pPath)
 	RealAssign.ToLower();
 	CString& PathString = Assigns.At(RealAssign);
 	PathString = pPath;
-	PathString.ConvertBackslashes();
+	PathString.Replace('\\', '/');
 	if (PathString[PathString.GetLength() - 1] != '/') PathString.Add('/');
 }
 //---------------------------------------------------------------------
@@ -276,12 +277,12 @@ CString CIOServer::GetAssign(const char* pAssign) const
 CString CIOServer::ManglePath(const char* pPath) const
 {
 	CString PathString(pPath);
-	PathString.ConvertBackslashes();
+	PathString.Replace('\\', '/');
 
 	int ColonIdx;
 
 	// Ignore one character "assigns" because they are really DOS drive letters
-	while ((ColonIdx = PathString.FindCharIndex(':')) > 1)
+	while ((ColonIdx = PathString.FindIndex(':')) > 1)
 	{
 #ifdef _EDITOR
 		if (QueryMangledPath(PathString, PathString)) continue;
@@ -293,7 +294,7 @@ CString CIOServer::ManglePath(const char* pPath) const
 		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.GetLength() - (ColonIdx + 1));
 	}
 
-	PathString.StripTrailingSlash();
+	PathString.Trim(" \r\n\t\\/", false);
 	return PathString;
 }
 //---------------------------------------------------------------------

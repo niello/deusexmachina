@@ -39,7 +39,7 @@ public:
 
 	CNpkTOCEntry*	GetRootEntry() const { return pRootDir; }
 	CNpkTOCEntry*	GetCurrentDirEntry() { return pCurrDir; }
-	void			SetRootPath(const char* pPath) { n_assert(pPath); RootPath = pPath; RootPath.ConvertBackslashes(); RootPath.StripTrailingSlash(); }
+	void			SetRootPath(const char* pPath) { n_assert(pPath); RootPath = pPath; RootPath.Trim(" \r\n\t\\/", false); RootPath.Replace('\\', '/'); }
 	const char*		GetRootPath() const { return RootPath.IsEmpty() ? NULL : RootPath.CStr(); }
 };
 
@@ -87,8 +87,8 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 	CNpkTOCEntry* pCurrEntry = pRootDir;
 
 	char Buf[DEM_MAX_PATH];
-	Data::CStringTokenizer StrTok(pLocalPath, "/\\", Buf, DEM_MAX_PATH);
-	if (pCurrEntry->GetName() != StrTok.GetNextToken())
+	Data::CStringTokenizer StrTok(pLocalPath, Buf, DEM_MAX_PATH);
+	if (pCurrEntry->GetName() != StrTok.GetNextToken("/\\"))
 	{
 		_freea(pLocalPath);
 		return NULL;
@@ -96,7 +96,7 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 
 	while (pCurrEntry && !StrTok.IsLast())
 	{
-		StrTok.GetNextToken();
+		StrTok.GetNextToken("/\\");
 		if (!strcmp(StrTok.GetCurrToken(), ".."))
 			pCurrEntry = pCurrEntry->GetParent();
 		else if (strcmp(StrTok.GetCurrToken(), ".")) // NB: if is NOT a dot (dot is a current dir, no action needed)

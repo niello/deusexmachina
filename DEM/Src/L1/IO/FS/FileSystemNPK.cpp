@@ -1,6 +1,7 @@
 #include "FileSystemNPK.h"
 
 #include <Data/StringUtils.h>
+#include <IO/PathUtils.h>
 
 namespace IO
 {
@@ -42,7 +43,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 			// Placeholder root directory name
 			if (!strcmp(NameBuffer, "<noname>"))
 			{
-				CString NewName = pSource.ExtractFileNameWithoutExtension();
+				CString NewName = PathUtils::ExtractFileNameWithoutExtension(pSource);
 				NewName.ToLower();
 				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), sizeof(NameBuffer));
 			}
