@@ -2,6 +2,7 @@
 #include <IO/Streams/FileStream.h>
 #include <IO/PathUtils.h>
 #include <Data/Buffer.h>
+#include <Data/HRDParser.h>
 #include <ConsoleApp.h>
 #include <DEMD3DInclude.h>
 #include <D3DCompiler.h>
@@ -10,19 +11,11 @@
 
 extern CString RootPath;
 
-int CompileShader(const CString& InFilePath, const CString& OutFilePath, bool Debug, int OptimizationLevel)
+//!!!compile old sm3.0 shaders for DX9!
+int CompileShader(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 {
 	Data::CBuffer In;
-	if (!IOSrv->LoadFileToBuffer(InFilePath, In)) return ERR_IO_READ;
-
-	// D3DCOMPILE_DEBUG - debug info
-	// D3DCOMPILE_SKIP_OPTIMIZATION - only for active debug
-	// D3DCOMPILE_SKIP_VALIDATION - faster, if successfully compiled
-	// D3DCOMPILE_PACK_MATRIX_ROW_MAJOR, D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR (more efficient, vec*mtx dots)
-	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
-	// D3DCOMPILE_ENABLE_STRICTNESS - kill deprecated syntax
-
-	// D3D_COMPILE_STANDARD_FILE_INCLUDE
+	if (!IOSrv->LoadFileToBuffer(pInFilePath, In)) return ERR_IO_READ;
 
 	//D3DCompile
 	//D3DCompile2
@@ -32,69 +25,94 @@ int CompileShader(const CString& InFilePath, const CString& OutFilePath, bool De
 	//D3DCompressShaders
 	//D3DDecompressShaders
 
-	DWORD Flags = 0;
+	// D3DCOMPILE_DEBUG - debug info
+	// D3DCOMPILE_SKIP_OPTIMIZATION - only for active debug
+	// D3DCOMPILE_SKIP_VALIDATION - faster, if successfully compiled
+	// D3DCOMPILE_PACK_MATRIX_ROW_MAJOR, D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR (more efficient, vec*mtx dots)
+	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
+	// D3DCOMPILE_ENABLE_STRICTNESS - kill deprecated syntax
+	//???do col-major matrices make GPU constants setting harder and slower?
+	DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS;
 	if (Debug)
 	{
 		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION);
 		n_msg(VL_DEBUG, "Debug compilation on\n");
 	}
-	else
+//ds_5_0	Domain shader
+//gs_5_0	Geometry shader
+//hs_5_0	Hull shader
+//ps_5_0	Pixel shader
+//vs_5_0	Vertex shader
+//gs_4_1	Geometry shader
+//ps_4_1	Pixel shader
+//vs_4_1	Vertex shader
+//gs_4_0	Geometry shader
+//ps_4_0	Pixel shader
+//vs_4_0	Vertex shader
+//ps_4_0_level_9_1
+//ps_4_0_level_9_3
+//vs_4_0_level_9_1
+//vs_4_0_level_9_3
+//ps_3_0	Pixel shader 3.0 
+//vs_3_0	Vertex shader 3.0
+
+	D3D_SHADER_MACRO Defines[] = { "zero", "0", NULL, NULL };
+
+	//???create once, in main, pass by param?
+	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pInFilePath), RootPath);
+
+	//!!!DBG TMP!
+	const char* pEntryPoint = NULL;
+	const char* pTarget = NULL;
+
+	ID3DBlob* pCode = NULL;
+	ID3DBlob* pErrors = NULL;
+	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), pInFilePath, Defines, &IncHandler, pEntryPoint, pTarget, Flags, 0, &pCode, &pErrors);
+
+	if (FAILED(hr) || !pCode)
 	{
-		//switch (OptimizationLevel)
-		//{
-		//	case 0:		Flags |= D3DXSHADER_OPTIMIZATION_LEVEL0; break;
-		//	case 1:		Flags |= D3DXSHADER_OPTIMIZATION_LEVEL1; break;
-		//	case 2:		Flags |= D3DXSHADER_OPTIMIZATION_LEVEL2; break;
-		//	default:	Flags |= D3DXSHADER_OPTIMIZATION_LEVEL3; break;
-		//}
-	}
-
-	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(InFilePath), RootPath);
-
-	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), InFilePath, Defines, &IncHandler, Entry, Target, Fl1, Fl2, &pOutCode, &pOutErrors);
-/*
-	ID3DXEffectCompiler* pCompiler = NULL;
-	ID3DXBuffer* pErrorBuffer = NULL;
-	HRESULT hr =
-		D3DXCreateEffectCompiler((LPCSTR)In.GetPtr(), In.GetSize(), NULL, &IncHandler, Flags, &pCompiler, &pErrorBuffer);
-
-	if (FAILED(hr) || !pCompiler)
-	{
-		n_msg(VL_ERROR, "Failed to load FX file '%s' with:\n\n%s\n",
-			InFilePath.CStr(),
-			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
-		if (pErrorBuffer) pErrorBuffer->Release();
+		n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n",
+			pOutFilePath,
+			pErrors ? pErrors->GetBufferPointer() : "No D3D error message.");
+		if (pCode) pCode->Release();
+		if (pErrors) pErrors->Release();
 		return ERR_MAIN_FAILED;
 	}
-	else if (pErrorBuffer)
+	else if (pErrors)
 	{
-		n_msg(VL_WARNING, "FX file '%s' loaded with:\n\n%s\n", InFilePath.CStr(), pErrorBuffer->GetBufferPointer());
-		pErrorBuffer->Release();
+		n_msg(VL_WARNING, "'%s' compiled with:\n\n%s\n", pOutFilePath, pErrors->GetBufferPointer());
+		pErrors->Release();
 	}
 
-	ID3DXBuffer* pEffect = NULL;
-	hr = pCompiler->CompileEffect(Flags, &pEffect, &pErrorBuffer);
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
 
-	if (FAILED(hr) || !pEffect)
-	{
-		n_msg(VL_ERROR, "Failed to compile FXO file '%s' with:\n\n%s\n",
-			OutFilePath.CStr(),
-			pErrorBuffer ? pErrorBuffer->GetBufferPointer() : "No D3DX error message.");
-		if (pErrorBuffer) pErrorBuffer->Release();
-		return ERR_MAIN_FAILED;
-	}
-	else if (pErrorBuffer)
-	{
-		n_msg(VL_WARNING, "FXO file '%s' compiled with:\n\n%s\n", OutFilePath.CStr(), pErrorBuffer->GetBufferPointer());
-		pErrorBuffer->Release();
-	}
-
-	IOSrv->CreateDirectory(OutFilePath.ExtractDirName());
-*/
-
+	bool Written = false;
 	IO::CFileStream File;
-	if (!File.Open(OutFilePath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
-	if (File.Write(pEffect->GetBufferPointer(), pEffect->GetBufferSize()) != pEffect->GetBufferSize()) return ERR_IO_WRITE;
+	if (File.Open(pOutFilePath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		Written = File.Write(pCode->GetBufferPointer(), pCode->GetBufferSize()) == pCode->GetBufferSize();
+
+	pCode->Release();
+
+	return Written ? SUCCESS : ERR_IO_WRITE;
+}
+//---------------------------------------------------------------------
+
+int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
+{
+	Data::CBuffer Buffer;
+	if (!IOSrv->LoadFileToBuffer(pInFilePath, Buffer)) return ERR_IO_READ;
+
+	Data::PParams Params;
+	{
+		Data::CHRDParser Parser;
+		if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params)) return ERR_IO_READ;
+	}
+
+	// Techniques
+	//???Samplers?
+	// RenderStates (hierarchy) -> save with scheme, strings to enum codes
+	// VS - get input blob, check if exists, else save with signature
+	// All shaders - register mappings
 
 	return SUCCESS;
 }

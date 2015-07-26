@@ -722,9 +722,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.h">
       <Filter>Render\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.h">
-      <Filter>Render\D3D9</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\RenderPath.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -1314,9 +1311,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11GPUDriver.cpp">
       <Filter>Render\D3D11</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.cpp">
-      <Filter>Render\D3D9</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\RenderPath.cpp">
       <Filter>Render</Filter>

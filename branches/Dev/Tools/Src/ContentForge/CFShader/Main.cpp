@@ -2,14 +2,17 @@
 #include <Data/StringTokenizer.h>
 #include <ConsoleApp.h>
 
+// Debug args:
+// -waitkey -v 5 -root "..\..\..\..\..\InsanePoet\Content" -in "..\..\..\..\..\InsanePoet\Content\Src\Shaders\SM_4_0\CEGUI.hrd" -out "..\..\..\..\..\InsanePoet\Content\Export\Shaders\SM_4_0\CEGUI.eff"
+
 #define TOOL_NAME	"CFShader"
 #define VERSION		"1.0"
 
 int		Verbose = VL_ERROR;
 CString	RootPath;
 
-int		ExitApp(int Code, bool WaitKey);
-int		CompileShader(const CString& InFilePath, const CString& OutFilePath, bool Debug, int OptimizationLevel);
+int ExitApp(int Code, bool WaitKey);
+int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug);
 
 int main(int argc, const char** argv)
 {
@@ -17,26 +20,25 @@ int main(int argc, const char** argv)
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
 	Verbose = Args.GetIntArg("-v");
-	CString In = Args.GetStringArg("-in");
-	CString Out = Args.GetStringArg("-out");
+	const char* pIn = Args.GetStringArg("-in");
+	const char* pOut = Args.GetStringArg("-out");
 	RootPath = Args.GetStringArg("-root");
-	int OptLevel = Args.GetIntArg("-o");
 	bool Debug = Args.GetBoolArg("-d");
 
-	if (In.IsEmpty() || Out.IsEmpty()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
 	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
 
 	CArray<CString> InList, OutList;
 
 	{
-		Data::CStringTokenizer StrTok(In.CStr());
+		Data::CStringTokenizer StrTok(pIn);
 		while (StrTok.GetNextToken(';'))
 			InList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	{
-		Data::CStringTokenizer StrTok(Out.CStr());
+		Data::CStringTokenizer StrTok(pOut);
 		while (StrTok.GetNextToken(';'))
 			OutList.Add(CString(StrTok.GetCurrToken()));
 	}
@@ -45,22 +47,23 @@ int main(int argc, const char** argv)
 
 	for (int i = 0; i < InList.GetCount(); ++i)
 	{
-		In = InList[i];
-		Out = OutList[i];
+		const CString& InRec = InList[i];
+		const CString& OutRec = OutList[i];
 
-		n_msg(VL_INFO, "Compiling pair %d: '%s' -> '%s'\n", i, In.CStr(), Out.CStr());
+		n_msg(VL_INFO, "Compiling pair %d: '%s' -> '%s'\n", i, InRec.CStr(), OutRec.CStr());
 
-		bool Dir = IOSrv->DirectoryExists(In);
-		if (!Dir && IOSrv->DirectoryExists(Out)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
+		bool Dir = IOSrv->DirectoryExists(InRec);
+		if (!Dir && IOSrv->DirectoryExists(OutRec)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
 
 		if (Dir)
 		{
+			n_msg(VL_ERROR, "Whole directory compilation is not supported yet\n");
 			return ExitApp(ERR_NOT_IMPLEMENTED_YET, WaitKey);
 		}
 		else
 		{
-			if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			int Code = CompileShader(In, Out, Debug, OptLevel);
+			if (!IOSrv->FileExists(InRec)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
+			int Code = CompileEffect(InRec, OutRec, Debug);
 			if (Code != 0) return ExitApp(Code, WaitKey);
 		}
 	}

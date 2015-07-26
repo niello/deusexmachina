@@ -227,7 +227,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h" />
-    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.h" />
@@ -463,7 +462,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3DX9DEMInclude.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.cpp" />
