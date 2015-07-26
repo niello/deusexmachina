@@ -3,9 +3,12 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/Shader.h>
+#include <Render/ShaderLoader.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <IO/PathUtils.h>
+#include <IO/IOServer.h>
+#include <Data/Buffer.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
@@ -35,12 +38,17 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	n_assert(GPU->GetViewport(0, VP));
 	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);
 
+	//!!!stupid - loads stream twice!
+	Data::CBuffer Buf;
+	n_verify(IOSrv->LoadFileToBuffer(pVertexShaderURI, Buf));
+	//!!!register input sig blob from VS!
+
 	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
 	if (!RVS->IsLoaded())
 	{
 		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pVertexShaderURI));
-		//!!!set GPU!
-		ResourceMgr->LoadResource(RVS, Loader);
+		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
+		ResourceMgr->LoadResource(*RVS, *Loader);
 		n_assert(RVS->IsLoaded());
 	}
 
@@ -48,8 +56,8 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	if (!RPS->IsLoaded())
 	{
 		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pPixelShaderURI));
-		//!!!set GPU!
-		ResourceMgr->LoadResource(RPS, Loader);
+		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
+		ResourceMgr->LoadResource(*RPS, *Loader);
 		n_assert(RPS->IsLoaded());
 	}
 

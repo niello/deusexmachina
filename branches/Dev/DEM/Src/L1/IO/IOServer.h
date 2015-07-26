@@ -68,7 +68,7 @@ public:
 
 	void			SetAssign(const char* pAssign, const char* pPath);
 	CString			GetAssign(const char* pAssign) const;
-	CString			ManglePath(const char* pPath) const;
+	CString			ResolveAssigns(const char* pPath) const;
 	bool			LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer);
 
 #ifdef _EDITOR

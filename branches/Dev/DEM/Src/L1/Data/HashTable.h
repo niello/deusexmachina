@@ -82,8 +82,8 @@ public:
 	CHashTable(DWORD Capacity = DEFAULT_SIZE);
 	CHashTable(const CHashTable<TKey, TVal>& Other): Chains(Other.Chains), Count(Other.Count) {}
 
-	void		Add(const CPair& Pair);
-	void		Add(const TKey& Key, const TVal& Value) { Add(CPair(Key, Value)); }
+	void		Add(const CPair& Pair, bool Replace = false);
+	void		Add(const TKey& Key, const TVal& Value, bool Replace = false) { Add(CPair(Key, Value), Replace); }
 	bool		Remove(const TKey& Key);
 	//!!!bool		Remove(const CIterator& It);
 	void		Clear();
@@ -127,16 +127,22 @@ void CHashTable<TKey, TVal>::Grow(DWORD NewCapacity)
 //---------------------------------------------------------------------
 
 template<class TKey, class TVal>
-void CHashTable<TKey, TVal>::Add(const CPair& Pair)
+void CHashTable<TKey, TVal>::Add(const CPair& Pair, bool Replace)
 {
 	if (Count >= (DWORD)(Chains.GetCount() * GROW_THRESHOLD))
 		Grow((DWORD)(Chains.GetCount() * GROW_FACTOR));
 	CChain& Chain = Chains[Pair.GetKeyHash() % Chains.GetCount()];
 	bool HasEqual;
 	int Idx = Chain.FindClosestIndexSorted(Pair, &HasEqual);
-	n_assert(!HasEqual);
-	Chain.Insert(Idx, Pair);
-	++Count;
+	if (HasEqual)
+	{
+		if (Replace) Chain[Idx] = Pair;
+	}
+	else
+	{
+		Chain.Insert(Idx, Pair);
+		++Count;
+	}
 }
 //---------------------------------------------------------------------
 

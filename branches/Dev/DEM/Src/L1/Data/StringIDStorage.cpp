@@ -80,12 +80,14 @@ CStringID CStringIDStorage::GetOrAdd(const char* pString)
 	}
 	else if (Chain.GetCount() > 1)
 	{
+		// If equal element found, FindClosestIndexSorted() returns the next index for
+		// insertion optimality. So, equal element must be referenced as [Idx - 1].
 		CRecord CmpRec;
 		CmpRec.Hash = HashValue;
 		CmpRec.pStr = pString;
 		bool HasEqual;
 		Idx = Chain.FindClosestIndexSorted(CmpRec, &HasEqual);
-		if (HasEqual) return CStringID(Chain[Idx].pStr, 0, 0);
+		if (HasEqual) return CStringID(Chain[Idx - 1].pStr, 0, 0);
 		DBG_ONLY(++Stats_CollisionCount);
 	}
 

@@ -132,7 +132,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 	}
 	*/
 
-	PProperty Prop = (CProperty*)pRTTI->CreateInstance();
+	PProperty Prop = (CProperty*)pRTTI->CreateClassInstance();
 	CPropertyStorage* pStorage = Prop->GetStorage();
 	n_assert2_dbg(pStorage, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
 

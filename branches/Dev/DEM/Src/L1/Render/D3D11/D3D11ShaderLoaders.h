@@ -11,7 +11,7 @@ namespace Resources
 
 class CD3D11VertexShaderLoader: public CShaderLoader
 {
-	__DeclareClassNoFactory;
+	__DeclareClass(CD3D11VertexShaderLoader);
 
 public:
 
@@ -21,6 +21,19 @@ public:
 };
 
 typedef Ptr<CD3D11VertexShaderLoader> PD3D11VertexShaderLoader;
+
+class CD3D11PixelShaderLoader: public CShaderLoader
+{
+	__DeclareClass(CD3D11PixelShaderLoader);
+
+public:
+
+	virtual const Core::CRTTI&	GetResultType() const;
+	virtual bool				IsProvidedDataValid() const;
+	virtual bool				Load(CResource& Resource);
+};
+
+typedef Ptr<CD3D11PixelShaderLoader> PD3D11PixelShaderLoader;
 
 }
 

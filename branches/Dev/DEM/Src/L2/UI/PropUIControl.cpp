@@ -70,7 +70,7 @@ bool CPropUIControl::InternalActivate()
 		if (!RShape->IsLoaded())
 		{
 			Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
-			ResourceMgr->LoadResource(RShape, Loader);
+			ResourceMgr->LoadResource(*RShape, *Loader);
 			n_assert(RShape->IsLoaded());
 		}
 		Physics::PCollisionShape Shape = RShape->GetObject()->As<Physics::CCollisionShape>();

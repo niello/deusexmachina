@@ -102,7 +102,7 @@ n_assert(false);
 
 	//???use MultiByteToWideChar?
 	wchar_t WidePath[DEM_MAX_PATH];
-	CString Path = IOSrv->ManglePath(pFileName);
+	CString Path = IOSrv->ResolveAssigns(pFileName);
 	size_t CharsConverted;
 	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.GetLength() + 1);
 

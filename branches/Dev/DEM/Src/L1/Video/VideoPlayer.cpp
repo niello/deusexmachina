@@ -31,7 +31,7 @@ void CVideoPlayer::Close()
 
 void CVideoPlayer::SetFilename(const char* pFileName)
 {
-	FileName = IOSrv->ManglePath(pFileName);
+	FileName = IOSrv->ResolveAssigns(pFileName);
 }
 //---------------------------------------------------------------------
 

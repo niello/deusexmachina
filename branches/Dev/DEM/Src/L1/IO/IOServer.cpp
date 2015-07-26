@@ -40,11 +40,11 @@ bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 {
 	PFileSystem NewFS = n_new(CFileSystemNPK);
 
-	CString AbsNPKPath = IOSrv->ManglePath(pNPKPath);
+	CString AbsNPKPath = IOSrv->ResolveAssigns(pNPKPath);
 	//!!!check if this NPK is already mounted!
 
 	CString RealRoot;
-	if (pRoot && *pRoot) RealRoot = IOSrv->ManglePath(pRoot);
+	if (pRoot && *pRoot) RealRoot = IOSrv->ResolveAssigns(pRoot);
 	else RealRoot = PathUtils::ExtractDirName(AbsNPKPath);
 
 	if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
@@ -55,7 +55,7 @@ bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 
 bool CIOServer::FileExists(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->FileExists(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->FileExists(AbsPath)) OK;
@@ -65,7 +65,7 @@ bool CIOServer::FileExists(const char* pPath) const
 
 bool CIOServer::IsFileReadOnly(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->IsFileReadOnly(AbsPath);
 	for (int i = 0; i < FS.GetCount(); ++i)
@@ -77,7 +77,7 @@ bool CIOServer::IsFileReadOnly(const char* pPath) const
 
 bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->SetFileReadOnly(AbsPath, ReadOnly);
 	for (int i = 0; i < FS.GetCount(); ++i)
@@ -89,7 +89,7 @@ bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 
 bool CIOServer::DeleteFile(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->DeleteFile(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DeleteFile(AbsPath)) OK;
@@ -99,8 +99,8 @@ bool CIOServer::DeleteFile(const char* pPath) const
 
 bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
-	CString AbsSrcPath = ManglePath(pSrcPath);
-	CString AbsDestPath = ManglePath(pDestPath);
+	CString AbsSrcPath = ResolveAssigns(pSrcPath);
+	CString AbsDestPath = ResolveAssigns(pDestPath);
 
 	// Try to copy inside a single FS
 
@@ -148,7 +148,7 @@ DWORD CIOServer::GetFileSize(const char* pPath) const
 
 bool CIOServer::DirectoryExists(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->DirectoryExists(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DirectoryExists(AbsPath)) OK;
@@ -158,7 +158,7 @@ bool CIOServer::DirectoryExists(const char* pPath) const
 
 bool CIOServer::CreateDirectory(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->CreateDirectory(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->CreateDirectory(AbsPath)) OK;
@@ -168,7 +168,7 @@ bool CIOServer::CreateDirectory(const char* pPath) const
 
 bool CIOServer::DeleteDirectory(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ManglePath(pPath);
+	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->DeleteDirectory(AbsPath)) OK;
 	for (int i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DeleteDirectory(AbsPath)) OK;
@@ -178,8 +178,8 @@ bool CIOServer::DeleteDirectory(const char* pPath) const
 
 bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively)
 {
-	CString AbsSrcPath = ManglePath(pSrcPath);
-	CString AbsDestPath = ManglePath(pDestPath);
+	CString AbsSrcPath = ResolveAssigns(pSrcPath);
+	CString AbsDestPath = ResolveAssigns(pDestPath);
 
 	CFSBrowser Browser;
 	if (!Browser.SetAbsolutePath(AbsSrcPath)) FAIL;
@@ -206,7 +206,7 @@ bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool 
 
 void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
 {
-	CString AbsPath = ManglePath(pPath);
+	CString AbsPath = ResolveAssigns(pPath);
 
 	void* hFile = DefaultFS->OpenFile(AbsPath, Mode, Pattern);
 	if (hFile)
@@ -231,7 +231,7 @@ void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMo
 
 void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const
 {
-	CString AbsPath = ManglePath(pPath);
+	CString AbsPath = ResolveAssigns(pPath);
 
 	void* hDir = DefaultFS->OpenDirectory(AbsPath, pFilter, OutName, OutType);
 	if (hDir)
@@ -274,7 +274,7 @@ CString CIOServer::GetAssign(const char* pAssign) const
 }
 //---------------------------------------------------------------------
 
-CString CIOServer::ManglePath(const char* pPath) const
+CString CIOServer::ResolveAssigns(const char* pPath) const
 {
 	CString PathString(pPath);
 	PathString.Replace('\\', '/');
