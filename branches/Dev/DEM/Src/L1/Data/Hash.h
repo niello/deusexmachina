@@ -2,14 +2,18 @@
 #ifndef __DEM_L1_HASH_H__
 #define __DEM_L1_HASH_H__
 
-#include "SuperFastHash.h" //!!!they say Murmur2 is better!
+//#include "SuperFastHash.h"
+#include "MurmurHash3.h"
 #include <string.h>			// strlen
 
 // Hash functions
 
 inline unsigned int Hash(const void* pData, int Length)
 {
-	return SuperFastHash((const char*)pData, Length);
+	unsigned int Result;
+	MurmurHash3_x86_32(pData, Length, 0xB0F57EE3, &Result);
+	return Result;
+	//return SuperFastHash((const char*)pData, Length);
 }
 //---------------------------------------------------------------------
 

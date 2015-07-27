@@ -869,6 +869,9 @@
     <ClInclude Include="..\..\Src\L1\Data\StringUtils.h">
       <Filter>Data</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\MurmurHash3.h">
+      <Filter>Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1427,6 +1430,9 @@
       <Filter>Render\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Data\StringUtils.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\MurmurHash3.cpp">
       <Filter>Data</Filter>
     </ClCompile>
   </ItemGroup>

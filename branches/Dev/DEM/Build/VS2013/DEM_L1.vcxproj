@@ -163,6 +163,7 @@
     <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
+    <ClInclude Include="..\..\Src\L1\Data\MurmurHash3.h" />
     <ClInclude Include="..\..\Src\L1\Data\Regions.h" />
     <ClInclude Include="..\..\Src\L1\Data\Buffer.h" />
     <ClInclude Include="..\..\Src\L1\Data\Data.h" />
@@ -431,6 +432,7 @@
     <ClCompile Include="..\..\Src\L1\Data\DataScheme.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\DataServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\HRDParser.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\MurmurHash3.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Params.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\String.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\StringID.cpp" />
