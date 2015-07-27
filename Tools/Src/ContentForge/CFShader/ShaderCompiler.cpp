@@ -25,6 +25,13 @@ int CompileShader(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	//D3DCompressShaders
 	//D3DDecompressShaders
 
+//D3DCOMPILE_IEEE_STRICTNESS
+//#define D3DCOMPILE_IEEE_STRICTNESS                (1 << 13)
+//#define D3DCOMPILE_OPTIMIZATION_LEVEL0            (1 << 14) // fast creation, lowest opt
+//#define D3DCOMPILE_OPTIMIZATION_LEVEL1            0
+//#define D3DCOMPILE_OPTIMIZATION_LEVEL2            ((1 << 14) | (1 << 15))
+//#define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15) // final opt
+	//D3DCOMPILE_WARNINGS_ARE_ERRORS
 	// D3DCOMPILE_DEBUG - debug info
 	// D3DCOMPILE_SKIP_OPTIMIZATION - only for active debug
 	// D3DCOMPILE_SKIP_VALIDATION - faster, if successfully compiled
@@ -109,10 +116,14 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	}
 
 	// Techniques
+	// collect only used render states
+
 	//???Samplers?
 	// RenderStates (hierarchy) -> save with scheme, strings to enum codes
 	// VS - get input blob, check if exists, else save with signature
 	// All shaders - register mappings
+	// Unwind hierarchy here, store value-only whole RS descs
+	// read ony referenced states, load bases on demand once and cache
 
 	return SUCCESS;
 }

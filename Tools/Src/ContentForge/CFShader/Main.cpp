@@ -27,7 +27,7 @@ int main(int argc, const char** argv)
 
 	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
-	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
+	IO::CIOServer IOServer;
 
 	CArray<CString> InList, OutList;
 

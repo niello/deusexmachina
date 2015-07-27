@@ -15,22 +15,24 @@ int main(int argc, const char** argv)
 	nCmdLineArgs Args(argc, argv);
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
-	CString In = Args.GetStringArg("-in");
-	CString Out = Args.GetStringArg("-out");
+	const char* pIn = Args.GetStringArg("-in");
+	const char* pOut = Args.GetStringArg("-out");
 	Verbose = Args.GetIntArg("-v");
 
-	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
+	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+
+	IO::CIOServer IOServer;
 
 	CArray<CString> InList, OutList;
 
 	{
-		Data::CStringTokenizer StrTok(In.CStr());
+		Data::CStringTokenizer StrTok(pIn);
 		while (StrTok.GetNextToken(';'))
 			InList.Add(CString(StrTok.GetCurrToken()));
 	}
 
 	{
-		Data::CStringTokenizer StrTok(Out.CStr());
+		Data::CStringTokenizer StrTok(pOut);
 		while (StrTok.GetNextToken(';'))
 			OutList.Add(CString(StrTok.GetCurrToken()));
 	}
@@ -39,23 +41,23 @@ int main(int argc, const char** argv)
 
 	for (int i = 0; i < InList.GetCount(); ++i)
 	{
-		In = InList[i];
-		Out = OutList[i];
+		const CString& InRec = InList[i];
+		const CString& OutRec = OutList[i];
 
-		n_msg(VL_INFO, "Copying pair %d: '%s' -> '%s'\n", i, In.CStr(), Out.CStr());
+		n_msg(VL_INFO, "Copying pair %d: '%s' -> '%s'\n", i, InRec.CStr(), OutRec.CStr());
 
-		bool Dir = IOSrv->DirectoryExists(In);
-		if (!Dir && IOSrv->DirectoryExists(Out)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
+		bool Dir = IOSrv->DirectoryExists(InRec);
+		if (!Dir && IOSrv->DirectoryExists(OutRec)) return ExitApp(ERR_IN_OUT_TYPES_DONT_MATCH, WaitKey);
 
 		if (Dir)
 		{
-			if (!IOSrv->CopyDirectory(In, Out, Args.GetBoolArg("-r"))) return ExitApp(ERR_MAIN_FAILED, WaitKey);
+			if (!IOSrv->CopyDirectory(InRec, OutRec, Args.GetBoolArg("-r"))) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 		}
 		else
 		{
-			if (!IOSrv->FileExists(In)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			IOSrv->CreateDirectory(PathUtils::ExtractDirName(Out));
-			if (!IOSrv->CopyFile(In, Out)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
+			if (!IOSrv->FileExists(InRec)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
+			IOSrv->CreateDirectory(PathUtils::ExtractDirName(OutRec));
+			if (!IOSrv->CopyFile(InRec, OutRec)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 		}
 	}
 

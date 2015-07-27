@@ -37,8 +37,8 @@ int main(int argc, const char** argv)
 		return ExitApp(SUCCESS_HELP, WaitKey);
 	}
 
-	CString InFileName = Args.GetStringArg("-in");
-	CString OutFileName = Args.GetStringArg("-out");
+	CString InFileName(Args.GetStringArg("-in"));
+	CString OutFileName(Args.GetStringArg("-out"));
 	DWORD PatchSize = Args.GetIntArg("-patch");
 	DWORD LODCount = Args.GetIntArg("-lod");
 
@@ -60,7 +60,7 @@ int main(int argc, const char** argv)
 	    return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 	}
 
-	Ptr<IO::CIOServer> IOServer = n_new(IO::CIOServer);
+	IO::CIOServer IOServer;
 
 	if (PathUtils::CheckExtension(InFileName, "bt"))
 	{
