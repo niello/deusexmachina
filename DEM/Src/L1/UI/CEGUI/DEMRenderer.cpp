@@ -46,18 +46,20 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
 	if (!RVS->IsLoaded())
 	{
-		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pVertexShaderURI));
+		Resources::PResourceLoader Loader = RVS->GetLoader();
+		if (Loader.IsNullPtr()) ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pVertexShaderURI));
 		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-		ResourceMgr->LoadResource(*RVS, *Loader);
+		ResourceMgr->LoadResourceSync(*RVS, *Loader);
 		n_assert(RVS->IsLoaded());
 	}
 
 	Resources::PResource RPS = ResourceMgr->RegisterResource(pPixelShaderURI);
 	if (!RPS->IsLoaded())
 	{
-		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pPixelShaderURI));
+		Resources::PResourceLoader Loader = RPS->GetLoader();
+		if (Loader.IsNullPtr()) ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pPixelShaderURI));
 		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-		ResourceMgr->LoadResource(*RPS, *Loader);
+		ResourceMgr->LoadResourceSync(*RPS, *Loader);
 		n_assert(RPS->IsLoaded());
 	}
 

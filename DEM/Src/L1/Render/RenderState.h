@@ -17,10 +17,6 @@
 // partial overriding. Actual API objects will be created only when all required data
 // is gathered from an hierarchy.
 
-//!!!D3D9 - state hierarchy, others - only leaf states?!
-//???how to process rollback up the tree
-// n0 - n0_0 - n0_0_0, then back to n0_0 to set n0_0_1
-
 //!!!D3D12 encapsulates an input layout, primitive type, RT, DS formats inc MSAA here
 //all except input layout are just restrictions, anyway OMSetRenderTargets, IASetPrimitiveTopology exist
 //since input layout is baked inside, there will be one PSO per vertex buffer layout, if can't reuse
@@ -49,6 +45,8 @@ public:
 	// need comparison by internal representation, for 2 already created state objects
 	// need sorting by the key and non-keyed values like a depth bias, to minimize state changes
 };
+
+typedef Ptr<CRenderState> PRenderState;
 
 };
 

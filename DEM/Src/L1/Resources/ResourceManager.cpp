@@ -17,7 +17,9 @@ PResource CResourceManager::RegisterResource(CStrID URI) //???need? avoid recrea
 
 PResource CResourceManager::RegisterResource(const char* pURI)
 {
-	// Absolutize URI
+	// Absolutize URI:
+	// - resolve assigns
+	// - if file system path, make relative to resource root (save space)
 	// Get CStrID
 	// If registered return it
 	// else create empty container
@@ -47,22 +49,23 @@ PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension,
 }
 //---------------------------------------------------------------------
 
-void CResourceManager::LoadResource(CResource& Rsrc, CResourceLoader& Loader, bool Async)
+void CResourceManager::LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader)
 {
-	if (Async)
-	{
-		Sys::Error("IMPLEMENT ME!!!\n");
-		//create job(task) that will call this method with Async = false from another thread
-		//must return some handle to cancel/wait/check task
-		//???store async handle in a resource?
-		Rsrc.SetState(Rsrc_LoadingRequested);
-	}
-	else
-	{
-		Rsrc.SetState(Rsrc_LoadingInProgress);
-		if (Loader.Load(Rsrc)) Rsrc.SetState(Rsrc_Loaded);
-		else Rsrc.SetState(Rsrc_LoadingFailed);
-	}
+	//???process URI and IO here as common code?
+
+	Rsrc.SetState(Rsrc_LoadingInProgress);
+	if (Loader.Load(Rsrc)) Rsrc.SetState(Rsrc_Loaded);
+	else Rsrc.SetState(Rsrc_LoadingFailed);
+}
+//---------------------------------------------------------------------
+
+void CResourceManager::LoadResourceAsync(CResource& Rsrc, CResourceLoader& Loader)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
+	//create job(task) that will call this method with Async = false from another thread
+	//must return some handle to cancel/wait/check task
+	//???store async handle in a resource?
+	Rsrc.SetState(Rsrc_LoadingRequested);
 }
 //---------------------------------------------------------------------
 

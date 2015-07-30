@@ -213,6 +213,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Sampler.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderLoaders.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.h" />
@@ -226,6 +227,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Sampler.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.h" />
@@ -240,6 +242,7 @@
     <ClInclude Include="..\..\Src\L1\Render\DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Effect.h" />
     <ClInclude Include="..\..\Src\L1\Render\ImageUtils.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderPath.h" />
     <ClInclude Include="..\..\Src\L1\Render\GPUDriver.h" />
@@ -259,12 +262,13 @@
     <ClInclude Include="..\..\Src\L1\Render\RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderStateDesc.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderTarget.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Sampler.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SamplerDesc.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Render\Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />
-    <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h" />
-    <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h" />
+    <ClInclude Include="..\..\Src\L1\Render\EffectTech.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderParamsDesc.h" />
     <ClInclude Include="..\..\Src\L1\Render\SPS.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
@@ -449,6 +453,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11IndexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11RenderTarget.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Sampler.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Shader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderLoaders.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderVars.cpp" />
@@ -462,6 +467,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Sampler.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp" />
@@ -495,6 +501,7 @@
     <ClCompile Include="..\..\Src\L1\Render\RenderObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderStateDesc.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\SamplerDesc.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ShaderLoader.cpp" />

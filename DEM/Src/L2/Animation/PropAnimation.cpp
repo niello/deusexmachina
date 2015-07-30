@@ -124,7 +124,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			if (!RClip->IsLoaded())
 			{
 				Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(FileName));
-				ResourceMgr->LoadResource(*RClip, *Loader);
+				ResourceMgr->LoadResourceSync(*RClip, *Loader);
 				n_assert(RClip->IsLoaded());
 			}
 

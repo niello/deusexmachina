@@ -49,6 +49,7 @@ public:
 	DWORD				GetSizeInBytes() const { return ByteSize; }
 	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
 	bool				IsLoaded() const { return State == Rsrc_Loaded; }
+	CResourceLoader*	GetLoader() const { return Loader.GetUnsafe(); }
 
 	// For internal use by loaders and manager
 	void				SetUID(CStrID NewUID) { UID = NewUID; }

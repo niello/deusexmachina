@@ -15,11 +15,6 @@ struct CRenderStateDesc
 {
 	// Shaders
 
-	//CString	VertexShaderURI;
-	//CString	HullShaderURI;
-	//CString	DomainShaderURI;
-	//CString	GeometryShaderURI;
-	//CString	PixelShaderURI;
 	PShader				VertexShader;
 	PShader				HullShader;
 	PShader				DomainShader;
