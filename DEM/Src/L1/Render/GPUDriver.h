@@ -101,6 +101,7 @@ public:
 	PShader						CreateShader(const Data::CParams& Desc);
 	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false) = 0;
+	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
 	//!!!another desc struct if can't use as shader input!
 	//!!!can describe as DepthBits & StencilBits, find closest on creation!

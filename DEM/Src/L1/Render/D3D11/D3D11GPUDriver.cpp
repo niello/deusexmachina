@@ -9,8 +9,10 @@
 #include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11DepthStencilBuffer.h>
 #include <Render/D3D11/D3D11RenderState.h>
+#include <Render/D3D11/D3D11Sampler.h>
 #include <Render/D3D11/D3D11Shader.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/SamplerDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
@@ -1670,6 +1672,34 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 }
 //---------------------------------------------------------------------
 
+PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
+{
+	D3D11_SAMPLER_DESC D3DDesc;
+	D3DDesc.AddressU = GetD3DTexAddressMode(Desc.AddressU);
+	D3DDesc.AddressV = GetD3DTexAddressMode(Desc.AddressV);
+	D3DDesc.AddressW = GetD3DTexAddressMode(Desc.AddressW);
+	memcpy(D3DDesc.BorderColor, Desc.BorderColorRGBA, sizeof(D3DDesc.BorderColor));
+	D3DDesc.ComparisonFunc = GetD3DCmpFunc(Desc.CmpFunc);
+	D3DDesc.Filter = GetD3DTexFilter(Desc.Filter, (Desc.CmpFunc != Cmp_Never));
+	D3DDesc.MaxAnisotropy = Clamp<unsigned int>(Desc.MaxAnisotropy, 1, 16);
+	D3DDesc.MaxLOD = Desc.CoarsestMipMapLOD;
+	D3DDesc.MinLOD = Desc.FinestMipMapLOD;
+	D3DDesc.MipLODBias = Desc.MipMapLODBias;
+
+	ID3D11SamplerState* pState = NULL;
+	if (FAILED(pD3DDevice->CreateSamplerState(&D3DDesc, &pState))) return NULL;
+
+	PD3D11Sampler Samp = n_new(CD3D11Sampler);
+	if (!Samp->Create(pState))
+	{
+		pState->Release();
+		return NULL;
+	}
+
+	return Samp.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 //???allow arrays? allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
 PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 {
@@ -2659,6 +2689,47 @@ D3D11_BLEND_OP CD3D11GPUDriver::GetD3DBlendOp(EBlendOp Operation)
 		case BlendOp_Min:		return D3D11_BLEND_OP_MIN;
 		case BlendOp_Max:		return D3D11_BLEND_OP_MAX;
 		default: Sys::Error("CD3D11GPUDriver::GetD3DBlendOp() > invalid operation"); return D3D11_BLEND_OP_ADD;
+	}
+}
+//---------------------------------------------------------------------
+
+D3D11_TEXTURE_ADDRESS_MODE CD3D11GPUDriver::GetD3DTexAddressMode(ETexAddressMode Mode)
+{
+	switch (Mode)
+	{
+		case TexAddr_Wrap:			return D3D11_TEXTURE_ADDRESS_WRAP;
+		case TexAddr_Mirror:		return D3D11_TEXTURE_ADDRESS_MIRROR;
+		case TexAddr_Clamp:			return D3D11_TEXTURE_ADDRESS_CLAMP;
+		case TexAddr_Border:		return D3D11_TEXTURE_ADDRESS_BORDER;
+		case TexAddr_MirrorOnce:	return D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
+		default: Sys::Error("CD3D11GPUDriver::GetD3DTexAddressMode() > invalid mode"); return D3D11_TEXTURE_ADDRESS_WRAP;
+	}
+}
+//---------------------------------------------------------------------
+
+D3D11_FILTER CD3D11GPUDriver::GetD3DTexFilter(ETexFilter Filter, bool Comparison)
+{
+	switch (Filter)
+	{
+		case TexFilter_MinMagMip_Point:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_POINT;
+		case TexFilter_MinMag_Point_Mip_Linear:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR : D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+		case TexFilter_Min_Point_Mag_Linear_Mip_Point:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT : D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+		case TexFilter_Min_Point_MagMip_Linear:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_POINT_MAG_MIP_LINEAR : D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+		case TexFilter_Min_Linear_MagMip_Point:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT : D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+		case TexFilter_Min_Linear_Mag_Point_Mip_Linear:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR : D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+		case TexFilter_MinMag_Linear_Mip_Point:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT : D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		case TexFilter_MinMagMip_Linear:
+			return Comparison ? D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		case TexFilter_Anisotropic:
+			return Comparison ? D3D11_FILTER_COMPARISON_ANISOTROPIC : D3D11_FILTER_ANISOTROPIC;
+		default: Sys::Error("CD3D11GPUDriver::GetD3DTexFilter() > invalid mode"); return D3D11_FILTER_MIN_MAG_MIP_POINT;
 	}
 }
 //---------------------------------------------------------------------
