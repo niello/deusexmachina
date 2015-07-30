@@ -12,6 +12,8 @@
 // it automatically on resource lost. Derive from this class to implement different
 // resource object loader groups and loading algorithms.
 
+//???pass stream to loader, process URI and IO in Mgr->LoadResource? common code.
+
 namespace Resources
 {
 typedef Ptr<class CResource> PResource;

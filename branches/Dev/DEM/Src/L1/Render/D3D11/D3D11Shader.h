@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_D3D11_SHADER_H__
 
 #include <Render/Shader.h>
+#include <Data/Dictionary.h>
 
 // Direct3D11 shader object implementation
 
@@ -22,6 +23,19 @@ class CD3D11Shader: public CShader
 
 protected:
 
+	struct CParamMetadata
+	{
+		DWORD Size;
+		DWORD Register;
+	};
+
+	//const metadata - type, size(count), offset
+	//store fixed array in buffer
+	//need some offset(address) value GetConstAddress([buffer, - can skip if no name clashes] const name)
+	//anyway need to return in what buffer const resides
+
+	CDict<CStrID, CParamMetadata> Metadata;
+
 	ID3D11DeviceChild*	pD3DShader;
 
 	void			InternalDestroy();
@@ -40,6 +54,10 @@ public:
 	virtual void			Destroy() { InternalDestroy(); }
 
 	virtual bool			IsResourceValid() const { return !!pD3DShader; }
+
+	virtual HConstBuffer	GetConstBufferHandle(CStrID ID) const;
+	virtual HResource		GetResourceHandle(CStrID ID) const;
+	virtual HSampler		GetSamplerHandle(CStrID ID) const;
 
 	ID3D11DeviceChild*		GetD3DShader() const { return pD3DShader; }
 	ID3D11VertexShader*		GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return (ID3D11VertexShader*)pD3DShader; }

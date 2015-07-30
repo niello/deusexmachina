@@ -91,6 +91,8 @@ int CompileShader(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		pErrors->Release();
 	}
 
+//!!!strip out reflection and debug data for release builds!
+
 	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
 
 	bool Written = false;

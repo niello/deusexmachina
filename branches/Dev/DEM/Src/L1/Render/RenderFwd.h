@@ -200,6 +200,25 @@ enum EBlendOp
 	BlendOp_Max
 };
 
+enum ETexAddressMode
+{
+	TexAddr_Wrap,
+	TexAddr_Mirror,
+	TexAddr_Clamp,
+	TexAddr_Border,
+	TexAddr_MirrorOnce
+//D3DTADDRESS_WRAP            = 1,
+//D3DTADDRESS_MIRROR          = 2,
+//D3DTADDRESS_CLAMP           = 3,
+//D3DTADDRESS_BORDER          = 4,
+//D3DTADDRESS_MIRRORONCE      = 5,
+//    D3D11_TEXTURE_ADDRESS_WRAP	= 1,
+//    D3D11_TEXTURE_ADDRESS_MIRROR	= 2,
+//    D3D11_TEXTURE_ADDRESS_CLAMP	= 3,
+//    D3D11_TEXTURE_ADDRESS_BORDER	= 4,
+//    D3D11_TEXTURE_ADDRESS_MIRROR_ONCE	= 5
+};
+
 struct CImageData
 {
 	char*	pData;			// Data sequentially placed in memory

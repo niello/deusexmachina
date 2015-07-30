@@ -734,12 +734,6 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11RenderState.h">
       <Filter>Render\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\ShaderPass.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\ShaderTech.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
@@ -871,6 +865,24 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\MurmurHash3.h">
       <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\EffectTech.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Effect.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Sampler.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Sampler.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Sampler.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SamplerDesc.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1434,6 +1446,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Data\MurmurHash3.cpp">
       <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Sampler.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Sampler.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\SamplerDesc.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

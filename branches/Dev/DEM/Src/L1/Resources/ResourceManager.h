@@ -64,7 +64,8 @@ public:
 	PResource		RegisterResource(const char* pURI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
 	PResource		RegisterResource(const char* pURN, CResourceObject* pObject); //!!!assert valid URN!
 
-	void			LoadResource(CResource& Rsrc, CResourceLoader& Loader, bool Async = false);
+	void			LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader);
+	void			LoadResourceAsync(CResource& Rsrc, CResourceLoader& Loader);
 };
 
 }

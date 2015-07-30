@@ -37,9 +37,9 @@ protected:
 	short*				pMinMaxData;
 	CArray<CMinMaxMap>	MinMaxMaps;
 
-	Render::PMesh		PatchMesh;
-	Render::PMesh		QuarterPatchMesh;
-	//Render::PTexture	HeightMap;
+	PMesh				PatchMesh;
+	PMesh				QuarterPatchMesh;
+	PTexture			HeightMap;
 
 	float				InvSplatSizeX;
 	float				InvSplatSizeZ;
@@ -48,7 +48,7 @@ protected:
 
 	virtual void		OnDetachFromNode();
 	virtual bool		ValidateResources();
-	Render::CMesh*		GetPatchMesh(DWORD Size);
+	CMesh*				GetPatchMesh(DWORD Size);
 
 public:
 
@@ -56,26 +56,26 @@ public:
 
 	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f), pSPS(NULL) {}
 
-	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 
-	virtual void		UpdateInSPS(CSPS& SPS);
-	const CAABB&		GetLocalAABB() const { return Box; }
-	void				GetGlobalAABB(CAABB& Out) const;
+	virtual void	UpdateInSPS(CSPS& SPS);
+	const CAABB&	GetLocalAABB() const { return Box; }
+	void			GetGlobalAABB(CAABB& Out) const;
 
-	DWORD				GetHeightMapWidth() const { return HFWidth; }
-	DWORD				GetHeightMapHeight() const { return HFHeight; }
-	DWORD				GetPatchSize() const { return PatchSize; }
-	DWORD				GetLODCount() const { return LODCount; }
-	DWORD				GetTopPatchCountX() const { return TopPatchCountX; }
-	DWORD				GetTopPatchCountZ() const { return TopPatchCountZ; }
-	float				GetVerticalScale() const { return VerticalScale; }
-	Render::CMesh*		GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
-	Render::CMesh*		GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
-	//Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
-	void				GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
-	bool				HasNode(DWORD X, DWORD Z, DWORD LOD) const;
-	float				GetInvSplatSizeX() const { return InvSplatSizeX; }
-	float				GetInvSplatSizeZ() const { return InvSplatSizeZ; }
+	DWORD			GetHeightMapWidth() const { return HFWidth; }
+	DWORD			GetHeightMapHeight() const { return HFHeight; }
+	DWORD			GetPatchSize() const { return PatchSize; }
+	DWORD			GetLODCount() const { return LODCount; }
+	DWORD			GetTopPatchCountX() const { return TopPatchCountX; }
+	DWORD			GetTopPatchCountZ() const { return TopPatchCountZ; }
+	float			GetVerticalScale() const { return VerticalScale; }
+	CMesh*			GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
+	CMesh*			GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
+	CTexture*		GetHeightMap() const { return HeightMap.GetUnsafe(); }
+	void			GetMinMaxHeight(DWORD X, DWORD Z, DWORD LOD, short& MinY, short& MaxY) const;
+	bool			HasNode(DWORD X, DWORD Z, DWORD LOD) const;
+	float			GetInvSplatSizeX() const { return InvSplatSizeX; }
+	float			GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };
 
 typedef Ptr<CTerrain> PTerrain;
