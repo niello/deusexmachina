@@ -25,6 +25,7 @@ typedef Ptr<class CD3D9IndexBuffer> PD3D9IndexBuffer;
 typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
+typedef Ptr<class CD3D9Sampler> PD3D9Sampler;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -44,6 +45,7 @@ protected:
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
 	CArray<PD3D9RenderState>			RenderStates;
 	PD3D9RenderState					DefaultRenderState; //!!!destroy along with RenderStates[]!
+	PD3D9Sampler						DefaultSampler;
 	bool								IsInsideFrame;
 	//bool								Wireframe;
 
@@ -55,27 +57,30 @@ protected:
 	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
-	bool					OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool					OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool					OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool					OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool						OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool						OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool						OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool						OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	bool					CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
-	void					SetDefaultRenderState();
-	bool					InitSwapChainRenderTarget(CD3D9SwapChain& SC);
-	bool					Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
-	void					Release();
+	bool						CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
+	void						SetDefaultRenderState();
+	void						SetDefaultSampler(DWORD Index);
+	bool						InitSwapChainRenderTarget(CD3D9SwapChain& SC);
+	bool						Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
+	void						Release();
 
-	void					FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
-	bool					GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
-	static D3DDEVTYPE		GetD3DDriverType(EGPUDriverType DriverType);
-	static void				GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
-	static UINT				GetD3DLockFlags(EResourceMapMode MapMode);
-	static D3DCUBEMAP_FACES	GetD3DCubeMapFace(ECubeMapFace Face);
-	static D3DCMPFUNC		GetD3DCmpFunc(ECmpFunc Func);
-	static D3DSTENCILOP		GetD3DStencilOp(EStencilOp Operation);
-	static D3DBLEND			GetD3DBlendArg(EBlendArg Arg);
-	static D3DBLENDOP		GetD3DBlendOp(EBlendOp Operation);
+	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
+	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
+	static D3DDEVTYPE			GetD3DDriverType(EGPUDriverType DriverType);
+	static void					GetUsagePool(DWORD InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
+	static UINT					GetD3DLockFlags(EResourceMapMode MapMode);
+	static D3DCUBEMAP_FACES		GetD3DCubeMapFace(ECubeMapFace Face);
+	static D3DCMPFUNC			GetD3DCmpFunc(ECmpFunc Func);
+	static D3DSTENCILOP			GetD3DStencilOp(EStencilOp Operation);
+	static D3DBLEND				GetD3DBlendArg(EBlendArg Arg);
+	static D3DBLENDOP			GetD3DBlendOp(EBlendOp Operation);
+	static D3DTEXTUREADDRESS	GetD3DTexAddressMode(ETexAddressMode Mode);
+	static void					GetD3DTexFilter(ETexFilter Filter, D3DTEXTUREFILTERTYPE& OutMin, D3DTEXTUREFILTERTYPE& OutMag, D3DTEXTUREFILTERTYPE& OutMip);
 
 	friend class CD3D9DriverFactory;
 
@@ -122,6 +127,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
+	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);

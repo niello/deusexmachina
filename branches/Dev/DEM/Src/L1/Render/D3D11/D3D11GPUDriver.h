@@ -22,6 +22,8 @@ enum D3D11_COMPARISON_FUNC;
 enum D3D11_STENCIL_OP;
 enum D3D11_BLEND;
 enum D3D11_BLEND_OP;
+enum D3D11_TEXTURE_ADDRESS_MODE;
+enum D3D11_FILTER;
 typedef struct tagRECT RECT;
 
 namespace Render
@@ -85,26 +87,28 @@ protected:
 
 	CD3D11GPUDriver();
 
-	bool							OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool							OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool							OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	//bool							OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool								OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool								OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool								OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	//bool								OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	bool							InitSwapChainRenderTarget(CD3D11SwapChain& SC);
-	void							Release();
+	bool								InitSwapChainRenderTarget(CD3D11SwapChain& SC);
+	void								Release();
 
-	static D3D_DRIVER_TYPE			GetD3DDriverType(EGPUDriverType DriverType);
-	static EGPUDriverType			GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
-	static void						GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
-	static void						GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags);
-	static D3D11_COMPARISON_FUNC	GetD3DCmpFunc(ECmpFunc Func);
-	static D3D11_STENCIL_OP			GetD3DStencilOp(EStencilOp Operation);
-	static D3D11_BLEND				GetD3DBlendArg(EBlendArg Arg);
-	static D3D11_BLEND_OP			GetD3DBlendOp(EBlendOp Operation);
+	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
+	static EGPUDriverType				GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
+	static void							GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
+	static void							GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags);
+	static D3D11_COMPARISON_FUNC		GetD3DCmpFunc(ECmpFunc Func);
+	static D3D11_STENCIL_OP				GetD3DStencilOp(EStencilOp Operation);
+	static D3D11_BLEND					GetD3DBlendArg(EBlendArg Arg);
+	static D3D11_BLEND_OP				GetD3DBlendOp(EBlendOp Operation);
+	static D3D11_TEXTURE_ADDRESS_MODE	GetD3DTexAddressMode(ETexAddressMode Mode);
+	static D3D11_FILTER					GetD3DTexFilter(ETexFilter Filter, bool Comparison);
 
-	ID3D11InputLayout*				GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
-	bool							ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset);
-	bool							WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
+	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
+	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset);
+	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
 
 	friend class CD3D11DriverFactory;
 
@@ -159,6 +163,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
+	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);

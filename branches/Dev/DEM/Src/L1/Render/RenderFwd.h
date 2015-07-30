@@ -15,6 +15,7 @@ namespace Render
 struct CTextureDesc;
 struct CSwapChainDesc;
 struct CRenderStateDesc;
+struct CSamplerDesc;
 class CDisplayMode;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CTexture> PTexture;
@@ -24,6 +25,7 @@ typedef Ptr<class CVertexBuffer> PVertexBuffer;
 typedef Ptr<class CIndexBuffer> PIndexBuffer;
 typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 typedef Ptr<class CRenderState> PRenderState;
+typedef Ptr<class CSampler> PSampler;
 typedef Ptr<class CShader> PShader;
 
 const DWORD Adapter_AutoSelect = (DWORD)-2;
@@ -207,16 +209,19 @@ enum ETexAddressMode
 	TexAddr_Clamp,
 	TexAddr_Border,
 	TexAddr_MirrorOnce
-//D3DTADDRESS_WRAP            = 1,
-//D3DTADDRESS_MIRROR          = 2,
-//D3DTADDRESS_CLAMP           = 3,
-//D3DTADDRESS_BORDER          = 4,
-//D3DTADDRESS_MIRRORONCE      = 5,
-//    D3D11_TEXTURE_ADDRESS_WRAP	= 1,
-//    D3D11_TEXTURE_ADDRESS_MIRROR	= 2,
-//    D3D11_TEXTURE_ADDRESS_CLAMP	= 3,
-//    D3D11_TEXTURE_ADDRESS_BORDER	= 4,
-//    D3D11_TEXTURE_ADDRESS_MIRROR_ONCE	= 5
+};
+
+enum ETexFilter
+{
+	TexFilter_MinMagMip_Point,
+	TexFilter_MinMag_Point_Mip_Linear,
+	TexFilter_Min_Point_Mag_Linear_Mip_Point,
+	TexFilter_Min_Point_MagMip_Linear,
+	TexFilter_Min_Linear_MagMip_Point,
+	TexFilter_Min_Linear_Mag_Point_Mip_Linear,
+	TexFilter_MinMag_Linear_Mip_Point,
+	TexFilter_MinMagMip_Linear,
+	TexFilter_Anisotropic
 };
 
 struct CImageData

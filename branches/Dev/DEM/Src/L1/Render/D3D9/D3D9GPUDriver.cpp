@@ -9,8 +9,10 @@
 #include <Render/D3D9/D3D9RenderTarget.h>
 #include <Render/D3D9/D3D9DepthStencilBuffer.h>
 #include <Render/D3D9/D3D9RenderState.h>
+#include <Render/D3D9/D3D9Sampler.h>
 #include <Render/D3D9/D3D9Shader.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/SamplerDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <IO/Stream.h>
@@ -456,6 +458,12 @@ void CD3D9GPUDriver::SetDefaultRenderState()
 	pD3DDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 
 	CurrRS = DefaultRenderState;
+}
+//---------------------------------------------------------------------
+	
+void CD3D9GPUDriver::SetDefaultSampler(DWORD Index)
+{
+	Sys::Error("IMPLEMENT ME!!!\n");
 }
 //---------------------------------------------------------------------
 
@@ -1450,6 +1458,31 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFla
 }
 //---------------------------------------------------------------------
 
+// CmpFunc is not supported, no comparison samplers
+PSampler CD3D9GPUDriver::CreateSampler(const CSamplerDesc& Desc)
+{
+	if (!pD3DDevice) return NULL;
+
+	PD3D9Sampler Samp = n_new(CD3D9Sampler);
+
+	DWORD* pValues = Samp->D3DStateValues;
+	pValues[CD3D9Sampler::D3D9_ADDRESSU] = GetD3DTexAddressMode(Desc.AddressU);
+	pValues[CD3D9Sampler::D3D9_ADDRESSV] = GetD3DTexAddressMode(Desc.AddressV);
+	pValues[CD3D9Sampler::D3D9_ADDRESSW] = GetD3DTexAddressMode(Desc.AddressW);
+	pValues[CD3D9Sampler::D3D9_BORDERCOLOR] =
+		D3DCOLOR_COLORVALUE(Desc.BorderColorRGBA[0], Desc.BorderColorRGBA[1], Desc.BorderColorRGBA[2], Desc.BorderColorRGBA[3]);
+	GetD3DTexFilter(Desc.Filter,
+					(D3DTEXTUREFILTERTYPE&)pValues[CD3D9Sampler::D3D9_MINFILTER],
+					(D3DTEXTUREFILTERTYPE&)pValues[CD3D9Sampler::D3D9_MAGFILTER],
+					(D3DTEXTUREFILTERTYPE&)pValues[CD3D9Sampler::D3D9_MIPFILTER]);
+	pValues[CD3D9Sampler::D3D9_MAXANISOTROPY] = Clamp<unsigned int>(Desc.MaxAnisotropy, 1, D3DCaps.MaxAnisotropy);
+	pValues[CD3D9Sampler::D3D9_MAXMIPLEVEL] = *(DWORD*)&Desc.FinestMipMapLOD;
+	pValues[CD3D9Sampler::D3D9_MIPMAPLODBIAS] = *(DWORD*)&Desc.MipMapLODBias;
+
+	return Samp.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 //???need mips (add to desc)?
 //???allow 3D and cubes? will need RT.Create or CreateRenderTarget(Texture, SurfaceLocation)
 PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
@@ -2263,6 +2296,74 @@ D3DBLENDOP CD3D9GPUDriver::GetD3DBlendOp(EBlendOp Operation)
 		case BlendOp_Min:		return D3DBLENDOP_MIN;
 		case BlendOp_Max:		return D3DBLENDOP_MAX;
 		default: Sys::Error("CD3D9GPUDriver::GetD3DBlendOp() > invalid operation"); return D3DBLENDOP_ADD;
+	}
+}
+//---------------------------------------------------------------------
+
+D3DTEXTUREADDRESS CD3D9GPUDriver::GetD3DTexAddressMode(ETexAddressMode Mode)
+{
+	switch (Mode)
+	{
+		case TexAddr_Wrap:			return D3DTADDRESS_WRAP;
+		case TexAddr_Mirror:		return D3DTADDRESS_MIRROR;
+		case TexAddr_Clamp:			return D3DTADDRESS_CLAMP;
+		case TexAddr_Border:		return D3DTADDRESS_BORDER;
+		case TexAddr_MirrorOnce:	return D3DTADDRESS_MIRRORONCE;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DTexAddressMode() > invalid mode"); return D3DTADDRESS_WRAP;
+	}
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::GetD3DTexFilter(ETexFilter Filter, D3DTEXTUREFILTERTYPE& OutMin, D3DTEXTUREFILTERTYPE& OutMag, D3DTEXTUREFILTERTYPE& OutMip)
+{
+	switch (Filter)
+	{
+		case TexFilter_MinMagMip_Point:
+			OutMin = D3DTEXF_POINT;
+			OutMag = D3DTEXF_POINT;
+			OutMip = D3DTEXF_POINT;
+			return;
+		case TexFilter_MinMag_Point_Mip_Linear:
+			OutMin = D3DTEXF_POINT;
+			OutMag = D3DTEXF_POINT;
+			OutMip = D3DTEXF_LINEAR;
+			return;
+		case TexFilter_Min_Point_Mag_Linear_Mip_Point:
+			OutMin = D3DTEXF_POINT;
+			OutMag = D3DTEXF_LINEAR;
+			OutMip = D3DTEXF_POINT;
+			return;
+		case TexFilter_Min_Point_MagMip_Linear:
+			OutMin = D3DTEXF_POINT;
+			OutMag = D3DTEXF_LINEAR;
+			OutMip = D3DTEXF_LINEAR;
+			return;
+		case TexFilter_Min_Linear_MagMip_Point:
+			OutMin = D3DTEXF_LINEAR;
+			OutMag = D3DTEXF_POINT;
+			OutMip = D3DTEXF_POINT;
+			return;
+		case TexFilter_Min_Linear_Mag_Point_Mip_Linear:
+			OutMin = D3DTEXF_LINEAR;
+			OutMag = D3DTEXF_POINT;
+			OutMip = D3DTEXF_LINEAR;
+			return;
+		case TexFilter_MinMag_Linear_Mip_Point:
+			OutMin = D3DTEXF_LINEAR;
+			OutMag = D3DTEXF_LINEAR;
+			OutMip = D3DTEXF_POINT;
+			return;
+		case TexFilter_MinMagMip_Linear:
+			OutMin = D3DTEXF_LINEAR;
+			OutMag = D3DTEXF_LINEAR;
+			OutMip = D3DTEXF_LINEAR;
+			return;
+		case TexFilter_Anisotropic:
+			OutMin = D3DTEXF_ANISOTROPIC;
+			OutMag = D3DTEXF_ANISOTROPIC;
+			OutMip = D3DTEXF_ANISOTROPIC;
+			return;
+		default: Sys::Error("CD3D9GPUDriver::GetD3DTexFilter() > invalid mode"); return;
 	}
 }
 //---------------------------------------------------------------------
