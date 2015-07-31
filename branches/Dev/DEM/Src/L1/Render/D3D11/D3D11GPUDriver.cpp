@@ -1071,6 +1071,16 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 }
 //---------------------------------------------------------------------
 
+bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler)
+{
+	DWORD Index = (DWORD)Handle;
+	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
+
+	n_assert(false);
+	OK;
+}
+//---------------------------------------------------------------------
+
 DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 {
 	const Data::CFlags Update(ChangesToUpdate);

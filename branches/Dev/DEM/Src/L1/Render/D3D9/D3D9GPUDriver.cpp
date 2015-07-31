@@ -135,6 +135,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Target
 	}
 
 	SetDefaultRenderState();
+	SetDefaultSamplers();
 
 	bool IsFullscreenNow = (D3DPresentParams.Windowed == FALSE);
 	bool Failed = false;
@@ -214,6 +215,8 @@ void CD3D9GPUDriver::Release()
 
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
+
+	CurrSS.SetSize(0);
 
 	VertexLayouts.Clear();
 	CurrRT.SetSize(0);
@@ -391,6 +394,8 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 
 	CurrRT.SetSize(D3DCaps.NumSimultaneousRTs);
 
+	CurrSS.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -461,9 +466,35 @@ void CD3D9GPUDriver::SetDefaultRenderState()
 }
 //---------------------------------------------------------------------
 	
-void CD3D9GPUDriver::SetDefaultSampler(DWORD Index)
+void CD3D9GPUDriver::SetDefaultSamplers()
 {
-	Sys::Error("IMPLEMENT ME!!!\n");
+	// Setting default sampler state as current, we avoid resetting default sampler
+	// states when this->BindSampler() is called. Default values are described in
+	// D3DSAMPLERSTATETYPE docs. Some default values may be manually overridden and
+	// must be set just before setting SetDefaultSampler as current.
+	if (DefaultSampler.IsNullPtr())
+	{
+		DefaultSampler = n_new(CD3D9Sampler);
+
+		DWORD* pValues = DefaultSampler->D3DStateValues;
+
+		float Zero = 0;
+		pValues[CD3D9Sampler::D3D9_ADDRESSU] = D3DTADDRESS_WRAP;
+		pValues[CD3D9Sampler::D3D9_ADDRESSV] = D3DTADDRESS_WRAP;
+		pValues[CD3D9Sampler::D3D9_ADDRESSW] = D3DTADDRESS_WRAP;
+		pValues[CD3D9Sampler::D3D9_BORDERCOLOR] = 0x00000000;
+		pValues[CD3D9Sampler::D3D9_MINFILTER] = D3DTEXF_POINT;
+		pValues[CD3D9Sampler::D3D9_MAGFILTER] = D3DTEXF_POINT;
+		pValues[CD3D9Sampler::D3D9_MIPFILTER] = D3DTEXF_NONE;
+		pValues[CD3D9Sampler::D3D9_MAXANISOTROPY] = 1;
+		pValues[CD3D9Sampler::D3D9_MAXMIPLEVEL] = *(DWORD*)&Zero;
+		pValues[CD3D9Sampler::D3D9_MIPMAPLODBIAS] = *(DWORD*)&Zero;
+
+		Samplers.Add(DefaultSampler);
+	}
+
+	for (DWORD i = 0; i < CurrSS.GetCount(); ++i)
+		CurrSS[i] = DefaultSampler;
 }
 //---------------------------------------------------------------------
 
@@ -548,6 +579,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 		if (!DeviceCreated) return ERR_CREATION_ERROR;
 
 		SetDefaultRenderState();
+		SetDefaultSamplers();
 
 		ItSC = SwapChains.IteratorAt(0); 
 		ItSC->pSwapChain = NULL;
@@ -1169,6 +1201,47 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler)
+{
+	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.GetUnsafe();
+	n_assert_dbg(pD3DSampler);
+
+	DWORD Index = (DWORD)Handle;
+	DWORD D3DSSIndex;
+	if (ShaderType == ShaderType_Vertex)
+	{
+		switch (Index)
+		{
+			case 0: D3DSSIndex = D3DVERTEXTEXTURESAMPLER0; break;
+			case 1: D3DSSIndex = D3DVERTEXTEXTURESAMPLER1; break;
+			case 2: D3DSSIndex = D3DVERTEXTEXTURESAMPLER2; break;
+			case 3: D3DSSIndex = D3DVERTEXTEXTURESAMPLER3; break;
+			default: FAIL;
+		}
+		Index += SM30_PS_SamplerCount; // Vertex samplers are located after pixel ones in CurrSS
+	}
+	else if (ShaderType == ShaderType_Pixel)
+	{
+		D3DSSIndex = Index;
+	}
+	else FAIL;
+
+	CD3D9Sampler* pCurrSampler = CurrSS[Index].GetUnsafe();
+	if (pCurrSampler == pD3DSampler) OK;
+
+	DWORD* pValues = pD3DSampler->D3DStateValues;
+	for (int i = 0; i < CD3D9Sampler::D3D9_SS_COUNT; ++i)
+	{
+		DWORD Value = pValues[i];
+		if (Value != pCurrSampler->D3DStateValues[i])
+			n_verify_dbg(SUCCEEDED(pD3DDevice->SetSamplerState(D3DSSIndex, CD3D9Sampler::D3DStates[i], Value)));
+	}
+
+	CurrSS[Index] = pD3DSampler;
+	OK;
+}
+//---------------------------------------------------------------------
+
 PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count)
 {
 	const DWORD MAX_VERTEX_COMPONENTS = 32;
@@ -1479,6 +1552,17 @@ PSampler CD3D9GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	pValues[CD3D9Sampler::D3D9_MAXMIPLEVEL] = *(DWORD*)&Desc.FinestMipMapLOD;
 	pValues[CD3D9Sampler::D3D9_MIPMAPLODBIAS] = *(DWORD*)&Desc.MipMapLODBias;
 
+	// Since sampler creation should be load-time, it is not performance critical.
+	// We can omit it and allow to create duplicate samplers, but maintaining uniquity
+	// serves both for memory saving and early exits on redundant binding.
+	for (int i = 0; i < Samplers.GetCount(); ++i)
+	{
+		CD3D9Sampler* pSamp = Samplers[i].GetUnsafe();
+		if (memcmp(pSamp->D3DStateValues, pValues, sizeof(pSamp->D3DStateValues)) == 0) return pSamp;
+	}
+
+	Samplers.Add(Samp);
+
 	return Samp.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -1688,7 +1772,7 @@ n_assert(false);
 		CD3D9RenderState* pRS = RenderStates[i].GetUnsafe();
 		if (pRS->VS == Desc.VertexShader &&
 			pRS->PS == Desc.PixelShader &&
-			memcmp(pRS->D3DStateValues, RS->D3DStateValues, sizeof(pRS->D3DStateValues)) == 0)
+			memcmp(pRS->D3DStateValues, pValues, sizeof(pRS->D3DStateValues)) == 0)
 		{
 			return pRS;
 		}

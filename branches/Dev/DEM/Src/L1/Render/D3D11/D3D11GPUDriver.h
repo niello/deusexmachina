@@ -151,6 +151,8 @@ public:
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup); //???instance count?
 
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler);
+
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
 	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
