@@ -33,6 +33,9 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
+	static const DWORD SM30_PS_SamplerCount = 16;
+	static const DWORD SM30_VS_SamplerCount = 4;
+
 	PD3D9VertexLayout					CurrVL;
 	CFixedArray<PD3D9VertexBuffer>		CurrVB;
 	CFixedArray<DWORD>					CurrVBOffset;
@@ -40,12 +43,14 @@ protected:
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
 	PD3D9RenderState					CurrRS;
+	CFixedArray<PD3D9Sampler>			CurrSS; // Pixel, then vertex
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
 	CArray<PD3D9RenderState>			RenderStates;
 	PD3D9RenderState					DefaultRenderState; //!!!destroy along with RenderStates[]!
-	PD3D9Sampler						DefaultSampler;
+	CArray<PD3D9Sampler>				Samplers;
+	PD3D9Sampler						DefaultSampler; //!!!destroy along with Samplers[]!
 	bool								IsInsideFrame;
 	//bool								Wireframe;
 
@@ -64,7 +69,7 @@ protected:
 
 	bool						CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams);
 	void						SetDefaultRenderState();
-	void						SetDefaultSampler(DWORD Index);
+	void						SetDefaultSamplers();
 	bool						InitSwapChainRenderTarget(CD3D9SwapChain& SC);
 	bool						Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
 	void						Release();
@@ -122,6 +127,8 @@ public:
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
+
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler);
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);

@@ -10,20 +10,6 @@
 
 namespace Render
 {
-// Binding handlers for shader parameters
-typedef DWORD HConstBuffer;
-typedef DWORD HResource;
-typedef DWORD HSampler;
-
-enum EShaderType
-{
-	ShaderType_Invalid,
-	ShaderType_Vertex,
-	ShaderType_Hull,
-	ShaderType_Domain,
-	ShaderType_Geometry,
-	ShaderType_Pixel
-};
 
 //enum EShaderParamType
 //{

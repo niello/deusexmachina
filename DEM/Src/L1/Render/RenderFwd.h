@@ -34,6 +34,11 @@ const DWORD Adapter_Primary = 0;
 const DWORD Adapter_Secondary = 1;
 const DWORD Output_None = (DWORD)-1;
 
+// Binding handlers for shader parameters
+typedef DWORD HConstBuffer;
+typedef DWORD HResource;
+typedef DWORD HSampler;
+
 enum EGPUDriverType
 {
 	// Prefers hardware driver when possible and falls back to reference device.
@@ -44,6 +49,16 @@ enum EGPUDriverType
 	GPU_Reference,	// Software emulation (for debug purposes)
 	GPU_Software,	// Pluggable software driver
 	GPU_Null		// No rendering (for non-rendering API calls verification)
+};
+
+enum EShaderType
+{
+	ShaderType_Invalid,
+	ShaderType_Vertex,
+	ShaderType_Hull,
+	ShaderType_Domain,
+	ShaderType_Geometry,
+	ShaderType_Pixel
 };
 
 enum EClearFlag
