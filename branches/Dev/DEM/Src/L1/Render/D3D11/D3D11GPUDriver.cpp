@@ -111,96 +111,12 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	CurrSR = n_new_array(RECT, MaxViewportCount);
 	VPSRSetFlags.ClearAll();
 
+	CurrSS.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT);
+
 	OK;
 
 ///////////////
-
-	/*
-    // Compile the vertex shader
-    ID3DBlob* pVSBlob = nullptr;
-    hr = CompileShaderFromFile( L"Tutorial07.fx", "VS", "vs_4_0", &pVSBlob );
-    if( FAILED( hr ) )
-    {
-        MessageBox( nullptr,
-                    L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK );
-        return hr;
-    }
-
-    // Create the vertex shader
-    hr = g_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &g_pVertexShader );
-    if( FAILED( hr ) )
-    {    
-        pVSBlob->Release();
-        return hr;
-    }
-
-    // Define the input layout
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-    UINT numElements = ARRAYSIZE( layout );
-
-    // Create the input layout
-    hr = g_pd3dDevice->CreateInputLayout( layout, numElements, pVSBlob->GetBufferPointer(),
-                                          pVSBlob->GetBufferSize(), &g_pVertexLayout );
-    pVSBlob->Release();
-    if( FAILED( hr ) )
-        return hr;
-
-    // Set the input layout
-    g_pImmediateContext->IASetInputLayout( g_pVertexLayout );
-
-    // Compile the pixel shader
-    ID3DBlob* pPSBlob = nullptr;
-    hr = CompileShaderFromFile( L"Tutorial07.fx", "PS", "ps_4_0", &pPSBlob );
-    if( FAILED( hr ) )
-    {
-        MessageBox( nullptr,
-                    L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK );
-        return hr;
-    }
-
-    // Create the pixel shader
-    hr = g_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader );
-    pPSBlob->Release();
-    if( FAILED( hr ) )
-        return hr;
-
-    D3D11_BUFFER_DESC bd;
-    ZeroMemory( &bd, sizeof(bd) );
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof( SimpleVertex ) * 24;
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.CPUAccessFlags = 0;
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(InitData) );
-    InitData.pSysMem = vertices;
-    hr = g_pd3dDevice->CreateBuffer( &bd, &InitData, &g_pVertexBuffer );
-    if( FAILED( hr ) )
-        return hr;
-
-    // Set vertex buffer
-    UINT stride = sizeof( SimpleVertex );
-    UINT offset = 0;
-    g_pImmediateContext->IASetVertexBuffers( 0, 1, &g_pVertexBuffer, &stride, &offset );
-
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof( WORD ) * 36;
-    bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bd.CPUAccessFlags = 0;
-    InitData.pSysMem = indices;
-    hr = g_pd3dDevice->CreateBuffer( &bd, &InitData, &g_pIndexBuffer );
-    if( FAILED( hr ) )
-        return hr;
-
-    // Set index buffer
-    g_pImmediateContext->IASetIndexBuffer( g_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0 );
-
-    // Set primitive topology
-    g_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-
+/*
     // Create the constant buffers
     bd.Usage = D3D11_USAGE_DEFAULT;
     bd.ByteWidth = sizeof(CBNeverChanges);
@@ -220,40 +136,9 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
     if( FAILED( hr ) )
         return hr;
 
-    // Load the Texture
-    hr = CreateDDSTextureFromFile( g_pd3dDevice, L"seafloor.dds", nullptr, &g_pTextureRV );
-    if( FAILED( hr ) )
-        return hr;
-
-    // Create the sample state
-    D3D11_SAMPLER_DESC sampDesc;
-    ZeroMemory( &sampDesc, sizeof(sampDesc) );
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    sampDesc.MinLOD = 0;
-    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    hr = g_pd3dDevice->CreateSamplerState( &sampDesc, &g_pSamplerLinear );
-    if( FAILED( hr ) )
-        return hr;
-
-    // Initialize the world matrices
-    g_World = XMMatrixIdentity();
-
-    // Initialize the view matrix
-    XMVECTOR Eye = XMVectorSet( 0.0f, 3.0f, -6.0f, 0.0f );
-    XMVECTOR At = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
-    XMVECTOR Up = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
-    g_View = XMMatrixLookAtLH( Eye, At, Up );
-
     CBNeverChanges cbNeverChanges;
     cbNeverChanges.mView = XMMatrixTranspose( g_View );
     g_pImmediateContext->UpdateSubresource( g_pCBNeverChanges, 0, nullptr, &cbNeverChanges, 0, 0 );
-
-    // Initialize the projection matrix
-    g_Projection = XMMatrixPerspectiveFovLH( XM_PIDIV4, width / (FLOAT)height, 0.01f, 100.0f );
     
     CBChangeOnResize cbChangesOnResize;
     cbChangesOnResize.mProjection = XMMatrixTranspose( g_Projection );
@@ -297,6 +182,7 @@ void CD3D11GPUDriver::Release()
 	VertexLayouts.Clear();
 //!!!to drv fct!	ShaderInputSignatures.Clear();
 	RenderStates.Clear();
+	Samplers.Clear();
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
 	for (int i = 0; i < SwapChains.GetCount() ; ++i)
@@ -304,7 +190,8 @@ void CD3D11GPUDriver::Release()
 
 	SAFE_DELETE_ARRAY(CurrVP);
 	SAFE_DELETE_ARRAY(CurrSR);
-
+	CurrSRV.Clear();
+	CurrSS.SetSize(0);
 	CurrRT.SetSize(0);
 
 	//ctx->ClearState()
@@ -1071,12 +958,29 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler)
+bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
+{
+	n_assert(false);
+	CurrDirtyFlags.Set(GPU_Dirty_SRV);
+	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
 {
 	DWORD Index = (DWORD)Handle;
 	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
 
-	n_assert(false);
+	Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+	const CD3D11Sampler* pCurrSamp = CurrSS[Index].GetUnsafe();
+	if (pCurrSamp == pSampler) OK;
+	if (pCurrSamp && pSampler && pCurrSamp->GetD3DSampler() == ((const CD3D11Sampler*)pSampler)->GetD3DSampler()) OK;
+
+	CurrSS[Index] = (CD3D11Sampler*)pSampler;
+	CurrDirtyFlags.Set(GPU_Dirty_SS);
+	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Samplers + ShaderType));
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -1156,6 +1060,46 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 			pD3DImmContext->IASetInputLayout(pNewCurrIL);
 			pCurrIL = pNewCurrIL;
 		}
+	}
+
+	if (Update.Is(GPU_Dirty_SS) && CurrDirtyFlags.Is(GPU_Dirty_SS))
+	{
+		ID3D11SamplerState* D3DSamplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+		DWORD Offset = 0;
+		for (DWORD Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
+		{
+			DWORD ShdDirtyFlag = (1 << (Shader_Dirty_Samplers + Sh));
+			if (ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag)) continue;
+
+			for (DWORD i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
+			{
+				const CD3D11Sampler* pSamp = CurrSS[Offset + i].GetUnsafe();
+				D3DSamplers[i] = pSamp ? pSamp->GetD3DSampler() : NULL;
+			}
+
+			switch ((EShaderType)Sh)
+			{
+				case ShaderType_Vertex:
+					pD3DImmContext->VSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, D3DSamplers);
+					break;
+				case ShaderType_Pixel:
+					pD3DImmContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, D3DSamplers);
+					break;
+				case ShaderType_Geometry:
+					pD3DImmContext->GSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, D3DSamplers);
+					break;
+				case ShaderType_Hull:
+					pD3DImmContext->HSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, D3DSamplers);
+					break;
+				case ShaderType_Domain:
+					pD3DImmContext->DSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, D3DSamplers);
+					break;
+			};
+
+			ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+		}
+
+		CurrDirtyFlags.Clear(GPU_Dirty_SS);
 	}
 
 	if (Update.Is(GPU_Dirty_VB) && CurrDirtyFlags.Is(GPU_Dirty_VB))
@@ -1696,15 +1640,26 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	D3DDesc.MinLOD = Desc.FinestMipMapLOD;
 	D3DDesc.MipLODBias = Desc.MipMapLODBias;
 
-	ID3D11SamplerState* pState = NULL;
-	if (FAILED(pD3DDevice->CreateSamplerState(&D3DDesc, &pState))) return NULL;
+	ID3D11SamplerState* pD3DSamplerState = NULL;
+	if (FAILED(pD3DDevice->CreateSamplerState(&D3DDesc, &pD3DSamplerState))) return NULL;
+
+	// Since sampler creation should be load-time, it is not performance critical.
+	// We can omit it and allow to create duplicate samplers, but maintaining uniquity
+	// serves both for memory saving and early exits on redundant binding.
+	for (int i = 0; i < Samplers.GetCount(); ++i)
+	{
+		CD3D11Sampler* pSamp = Samplers[i].GetUnsafe();
+		if (pSamp->GetD3DSampler() == pD3DSamplerState) return pSamp; //???release pD3DSamplerState?
+	}
 
 	PD3D11Sampler Samp = n_new(CD3D11Sampler);
-	if (!Samp->Create(pState))
+	if (!Samp->Create(pD3DSamplerState))
 	{
-		pState->Release();
+		pD3DSamplerState->Release();
 		return NULL;
 	}
+
+	Samplers.Add(Samp);
 
 	return Samp.GetUnsafe();
 }
@@ -1882,31 +1837,6 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 //not to duplicate states.
 PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
-	//ID3D11VertexShader* pVS = NULL;
-	//ID3D11HullShader* pHS = NULL;
-	//ID3D11DomainShader* pDS = NULL;
-	//ID3D11GeometryShader* pGS = NULL;
-	//ID3D11PixelShader* pPS = NULL;
-
-	////???make external to decouple render from resources?
-	////!!!VS loader must accept GPU and store input signature!
-	////or load signature here separately
-	////or all this in Effect, pass already loaded shaders to Desc?
-	//if (Desc.VertexShaderURI.IsValid())
-	//{
-	//	Resources::PResource Shader = ResourceMgr->RegisterResource(Desc.VertexShaderURI.CStr());
-	//	if (!Shader->IsLoaded())
-	//	{
-	//		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(FileName.GetExtension());
-	//		ResourceMgr->LoadResource(Shader, Loader);
-	//		n_assert(Shader->IsLoaded());
-	//	}
-	//}
-	// try to find each shader already loaded (some compiled shader file)
-	// if not loaded, load and add into the cache
-	//???how to determine final compiled shader file? when compile my effect, serialize it
-	//with final shader file names? can even use DSS for effects!
-
 	//!!!if VS loaded first time and has new input sig!
 	//!!!ShaderInputSignatures.Add(shader input sig blob)!
 
@@ -2006,7 +1936,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 			pRS->pDSState == pDSState &&
 			pRS->pBState == pBState)
 		{
-			return pRS;
+			return pRS; //???release state interfaces?
 		}
 	}
 

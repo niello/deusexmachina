@@ -26,6 +26,7 @@ typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
 typedef Ptr<class CD3D9Sampler> PD3D9Sampler;
+typedef Ptr<class CD3D9Texture> PD3D9Texture;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -44,6 +45,7 @@ protected:
 	PD3D9DepthStencilBuffer				CurrDS;
 	PD3D9RenderState					CurrRS;
 	CFixedArray<PD3D9Sampler>			CurrSS; // Pixel, then vertex
+	CFixedArray<PD3D9Texture>			CurrTex; // Pixel, then vertex
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
@@ -128,7 +130,8 @@ public:
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
 
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler);
+	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);

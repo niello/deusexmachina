@@ -34,6 +34,8 @@ typedef Ptr<class CD3D11IndexBuffer> PD3D11IndexBuffer;
 typedef Ptr<class CD3D11RenderTarget> PD3D11RenderTarget;
 typedef Ptr<class CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;
 typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
+typedef Ptr<class CD3D11Sampler> PD3D11Sampler;
+typedef Ptr<class CD3D11Texture> PD3D11Texture;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
@@ -51,13 +53,38 @@ public:
 		GPU_Dirty_DS = 0x0020,		// Depth-stencil buffer
 		GPU_Dirty_VP = 0x0040,		// Viewport(s)
 		GPU_Dirty_SR = 0x0080,		// Scissor rect(s)
+		GPU_Dirty_SS = 0x0100,		// Sampler state(s)
+		GPU_Dirty_SRV = 0x0100,		// Shader resource view(s)
 
 		GPU_Dirty_All = 0xffffffff	// All bits set, for convenience in ApplyChanges() call
 	};
 
 protected:
 
+	enum
+	{
+		Shader_Dirty_Samplers		= 0,
+		Shader_Dirty_Resources		= 8,
+		Shader_Dirty_CBuffers		= 16,
+		Shader_Dirty_VS_Samplers	= (1 << (Shader_Dirty_Samplers + ShaderType_Vertex)),
+		Shader_Dirty_PS_Samplers	= (1 << (Shader_Dirty_Samplers + ShaderType_Pixel)),
+		Shader_Dirty_GS_Samplers	= (1 << (Shader_Dirty_Samplers + ShaderType_Geometry)),
+		Shader_Dirty_HS_Samplers	= (1 << (Shader_Dirty_Samplers + ShaderType_Hull)),
+		Shader_Dirty_DS_Samplers	= (1 << (Shader_Dirty_Samplers + ShaderType_Domain)),
+		Shader_Dirty_VS_Resources	= (1 << (Shader_Dirty_Resources + ShaderType_Vertex)),
+		Shader_Dirty_PS_Resources	= (1 << (Shader_Dirty_Resources + ShaderType_Pixel)),
+		Shader_Dirty_GS_Resources	= (1 << (Shader_Dirty_Resources + ShaderType_Geometry)),
+		Shader_Dirty_HS_Resources	= (1 << (Shader_Dirty_Resources + ShaderType_Hull)),
+		Shader_Dirty_DS_Resources	= (1 << (Shader_Dirty_Resources + ShaderType_Domain)),
+		Shader_Dirty_VS_CBuffers	= (1 << (Shader_Dirty_CBuffers + ShaderType_Vertex)),
+		Shader_Dirty_PS_CBuffers	= (1 << (Shader_Dirty_CBuffers + ShaderType_Pixel)),
+		Shader_Dirty_GS_CBuffers	= (1 << (Shader_Dirty_CBuffers + ShaderType_Geometry)),
+		Shader_Dirty_HS_CBuffers	= (1 << (Shader_Dirty_CBuffers + ShaderType_Hull)),
+		Shader_Dirty_DS_CBuffers	= (1 << (Shader_Dirty_CBuffers + ShaderType_Domain))
+	};
+
 	Data::CFlags						CurrDirtyFlags;
+	Data::CFlags						ShaderParamsDirtyFlags;
 	PD3D11VertexLayout					CurrVL;
 	ID3D11InputLayout*					pCurrIL;
 	CFixedArray<PD3D11VertexBuffer>		CurrVB;
@@ -73,11 +100,14 @@ protected:
 	DWORD								MaxViewportCount;
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
+	CFixedArray<PD3D11Sampler>			CurrSS;
+	CArray<PD3D11Texture>				CurrSRV;
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
 	//CDict<CStrID, Data::CBuffer>		ShaderInputSignatures; //!!!to D3D11 fct or resource mgr!
 	CArray<PD3D11RenderState>			RenderStates;
+	CArray<PD3D11Sampler>				Samplers;
 	//bool								IsInsideFrame;
 	//bool								Wireframe;
 
@@ -151,7 +181,8 @@ public:
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup); //???instance count?
 
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler);
+	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
 
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
@@ -199,6 +230,9 @@ inline CD3D11GPUDriver::CD3D11GPUDriver():
 	CurrPT(Prim_Invalid),
 	CurrVP(NULL),
 	CurrSR(NULL),
+	CurrSRV(16, 16),
+	RenderStates(32, 32),
+	Samplers(16, 16),
 	MaxViewportCount(0) /*, IsInsideFrame(false)*/
 {
 }
