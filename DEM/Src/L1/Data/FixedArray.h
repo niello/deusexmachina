@@ -68,19 +68,15 @@ template<class T> void CFixedArray<T>::Copy(const CFixedArray<T>& Other)
 // NB: Doesn't call element constructors
 template<class T> void CFixedArray<T>::RawCopyFrom(const T* pSrc, DWORD SrcCount)
 {
-	n_assert(pSrc);
+	if (!pSrc) return;
 	Allocate(SrcCount);
-	memcpy(pData, pSrc, SrcCount * sizeof(T));
+	if (SrcCount) memcpy(pData, pSrc, SrcCount * sizeof(T));
 }
 //---------------------------------------------------------------------
 
 template<class T> void CFixedArray<T>::Delete()
 {
-	if (pData)
-	{
-		n_delete_array(pData);
-		pData = NULL;
-	}
+	SAFE_DELETE_ARRAY(pData);
 	Count = 0;
 }
 //---------------------------------------------------------------------
@@ -89,7 +85,7 @@ template<class T> int CFixedArray<T>::FindIndex(const T& Elm) const
 {
 	for (DWORD i = 0; i < Count; ++i)
 		if (Elm == pData[i]) return i;
-	return -1;
+	return INVALID_INDEX;
 }
 //---------------------------------------------------------------------
 

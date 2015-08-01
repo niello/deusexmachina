@@ -395,6 +395,7 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 	CurrRT.SetSize(D3DCaps.NumSimultaneousRTs);
 
 	CurrSS.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
+	CurrTex.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 
 	OK;
 }
@@ -1201,7 +1202,40 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler)
+bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
+{
+	DWORD Index = (DWORD)Handle;
+	DWORD D3DSamplerIndex;
+	if (ShaderType == ShaderType_Vertex)
+	{
+		switch (Index)
+		{
+			case 0: D3DSamplerIndex = D3DVERTEXTEXTURESAMPLER0; break;
+			case 1: D3DSamplerIndex = D3DVERTEXTEXTURESAMPLER1; break;
+			case 2: D3DSamplerIndex = D3DVERTEXTEXTURESAMPLER2; break;
+			case 3: D3DSamplerIndex = D3DVERTEXTEXTURESAMPLER3; break;
+			default: FAIL;
+		}
+		Index += SM30_PS_SamplerCount; // Vertex samplers are located after pixel ones in CurrTex
+	}
+	else if (ShaderType == ShaderType_Pixel)
+	{
+		if (Index >= SM30_PS_SamplerCount) FAIL;
+		D3DSamplerIndex = Index;
+	}
+	else FAIL;
+
+	CD3D9Texture* pCurrTex = CurrTex[Index].GetUnsafe();
+	if (pCurrTex == pResource) OK;
+
+	if (FAILED(pD3DDevice->SetTexture(D3DSamplerIndex, pResource ? ((CD3D9Texture*)pResource)->GetD3DBaseTexture() : NULL))) FAIL;
+
+	CurrTex[Index] = (CD3D9Texture*)pResource;
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
 {
 	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.GetUnsafe();
 	n_assert_dbg(pD3DSampler);
@@ -1222,6 +1256,7 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, const 
 	}
 	else if (ShaderType == ShaderType_Pixel)
 	{
+		if (Index >= SM30_PS_SamplerCount) FAIL;
 		D3DSSIndex = Index;
 	}
 	else FAIL;

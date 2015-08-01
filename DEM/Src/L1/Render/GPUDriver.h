@@ -94,7 +94,8 @@ public:
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
 
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, const CSampler* pSampler) = 0;
+	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) = 0;
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) = 0;
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;

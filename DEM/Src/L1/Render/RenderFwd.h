@@ -53,12 +53,14 @@ enum EGPUDriverType
 
 enum EShaderType
 {
-	ShaderType_Invalid,
-	ShaderType_Vertex,
+	ShaderType_Vertex = 0,
+	ShaderType_Pixel,
+	ShaderType_Geometry,
 	ShaderType_Hull,
 	ShaderType_Domain,
-	ShaderType_Geometry,
-	ShaderType_Pixel
+
+	ShaderType_COUNT,
+	ShaderType_Invalid
 };
 
 enum EClearFlag
