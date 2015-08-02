@@ -16,7 +16,9 @@ protected:
 public:
 
 	// set value to some offset/register
-	//align16 variant for DX11 only
+
+	virtual void	Destroy() = 0;
+	virtual bool	IsValid() const = 0;
 };
 
 typedef Ptr<CConstantBuffer> PConstantBuffer;

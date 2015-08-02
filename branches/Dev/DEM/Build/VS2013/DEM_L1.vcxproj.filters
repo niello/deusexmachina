@@ -884,6 +884,9 @@
     <ClInclude Include="..\..\Src\L1\Render\SamplerDesc.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1210,15 +1213,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadShaderFromFX.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadShaderFromFXO.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadTextureUsingD3DX.cpp">
-      <Filter>Render\D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\ModelRenderer.cpp">
       <Filter>Render\D3D9</Filter>
     </ClCompile>
@@ -1455,6 +1449,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\SamplerDesc.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

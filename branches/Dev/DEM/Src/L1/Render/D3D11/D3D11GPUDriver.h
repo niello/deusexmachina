@@ -88,7 +88,7 @@ protected:
 	PD3D11VertexLayout					CurrVL;
 	ID3D11InputLayout*					pCurrIL;
 	CFixedArray<PD3D11VertexBuffer>		CurrVB;
-	CFixedArray<DWORD>					CurrVBOffset;
+	CFixedArray<DWORD>					CurrVBOffset; //???where to use?!
 	PD3D11IndexBuffer					CurrIB;
 	EPrimitiveTopology					CurrPT;
 	CFixedArray<PD3D11RenderTarget>		CurrRT;
@@ -101,7 +101,7 @@ protected:
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11Sampler>			CurrSS;
-	CDict<DWORD, PD3D11Texture>			CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible per shader type
+	CDict<DWORD, PD3D11Texture>			CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
 	DWORD								MaxSRVSlotIndex;
 
 	CArray<CD3D11SwapChain>				SwapChains;

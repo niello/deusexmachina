@@ -1,16 +1,6 @@
-//typedef Ptr<class CFrameShader> PFrameShader;
-//
-//#define RenderSrv Render::CRenderServer::Instance()
-//
 //class CRenderServer: public Core::CObject
 //{
-//	__DeclareClassNoFactory;
-//	__DeclareSingleton(CRenderServer);
-//
 //protected:
-//
-//	DWORD								FFlagSkinned;
-//	DWORD								FFlagInstanced;
 //
 //	CDict<CStrID, PFrameShader>			FrameShaders;
 //	CStrID								ScreenFrameShaderID;
@@ -26,10 +16,6 @@
 //public:
 //
 //	Data::CDynamicEnum32					ShaderFeatures;
-//	Resources::CResourceManager<CMesh>		MeshMgr;
-//	Resources::CResourceManager<CTexture>	TextureMgr;
-//	Resources::CResourceManager<CShader>	ShaderMgr;
-//	Resources::CResourceManager<CMaterial>	MaterialMgr;
 //
 //	void				SetAmbientLight(const vector4& Color);
 //	void				SetCameraPosition(const vector3& Pos);

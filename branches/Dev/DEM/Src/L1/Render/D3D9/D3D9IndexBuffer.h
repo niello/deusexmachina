@@ -29,7 +29,7 @@ public:
 	virtual ~CD3D9IndexBuffer() { InternalDestroy(); }
 
 	bool					Create(EIndexType Type, IDirect3DIndexBuffer9* pIB);
-	virtual void			Destroy() { InternalDestroy(); CIndexBuffer::InternalDestroy(); }
+	virtual void			Destroy() { InternalDestroy(); CIndexBuffer::Destroy(); }
 	virtual bool			IsValid() const { return !!pBuffer; }
 
 	IDirect3DIndexBuffer9*	GetD3DBuffer() const { return pBuffer; }
