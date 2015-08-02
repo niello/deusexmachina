@@ -35,6 +35,10 @@ public:
 
 	virtual bool			IsResourceValid() const { return !!pD3DShader; }
 
+	virtual HConstBuffer	GetConstBufferHandle(CStrID ID) const;
+	virtual HResource		GetResourceHandle(CStrID ID) const;
+	virtual HSampler		GetSamplerHandle(CStrID ID) const;
+
 	IUnknown*				GetD3DShader() const { return pD3DShader; }
 	IDirect3DVertexShader9*	GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return (IDirect3DVertexShader9*)pD3DShader; }
 	IDirect3DPixelShader9*	GetD3DPixelShader() const { n_assert_dbg(Type == ShaderType_Pixel); return (IDirect3DPixelShader9*)pD3DShader; }

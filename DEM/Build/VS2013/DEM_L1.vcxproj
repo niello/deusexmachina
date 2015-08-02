@@ -206,6 +206,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Bone.h" />
     <ClInclude Include="..\..\Src\L1\Render\Camera.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.h" />
@@ -446,6 +447,7 @@
     <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Bone.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Camera.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DisplayDriver.cpp" />
@@ -473,9 +475,6 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugTextRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadShaderFromFX.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadShaderFromFXO.cpp" />
-    <ClCompile Include="..\..\Src\L1\Render\D3D9\LoadTextureUsingD3DX.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\ModelRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\RenderServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp" />

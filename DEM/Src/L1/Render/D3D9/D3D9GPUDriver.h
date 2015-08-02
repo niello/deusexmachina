@@ -61,7 +61,7 @@ protected:
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
-	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
+	CD3D9GPUDriver();
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
 	bool						OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -163,6 +163,13 @@ public:
 };
 
 typedef Ptr<CD3D9GPUDriver> PD3D9GPUDriver;
+
+inline CD3D9GPUDriver::CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false)
+{
+	//???CurrVBOffset.SetSize()?
+	//memset(CurrVBOffset.GetPtr(), 0, sizeof(DWORD) * CurrVBOffset.GetCount());
+}
+//---------------------------------------------------------------------
 
 }
 

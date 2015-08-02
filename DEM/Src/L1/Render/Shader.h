@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_SHADER_H__
 
 #include <Resources/ResourceObject.h>
+#include <Render/RenderFwd.h>
 #include <Data/StringID.h>
 
 // Shader resource object, created from a compiled shader binary and used

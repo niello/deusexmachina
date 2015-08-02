@@ -76,13 +76,22 @@ public:
 	bool						PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA);
 	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const = 0;
 
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
+	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
+	//???CreateShader? instead of D3D11 API code in loaders?
+	virtual PConstantBuffer		CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData = NULL) = 0;
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false) = 0;
+	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
+	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
+	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) = 0;
+
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport) = 0; // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport) = 0;
 	virtual bool				SetScissorRect(DWORD Index, const Data::CRect* pScissorRect) = 0; // NULL to reset
 	virtual bool				GetScissorRect(DWORD Index, Data::CRect& OutScissorRect) = 0;
 
-	virtual bool				BeginFrame() = 0;
-	virtual void				EndFrame() = 0;
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) = 0;
 	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0) = 0;
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB) = 0;
@@ -90,25 +99,16 @@ public:
 	virtual bool				SetRenderState(CRenderState* pState) = 0;
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
-	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
-	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
 
+	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pResource) = 0;
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) = 0;
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) = 0;
 
-	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
-	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
-	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
-	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
-	PShader						CreateShader(const Data::CParams& Desc);
-	//virtual PConstantBuffer		CreateConstantBuffer(const CShaderConstantDesc& Meta) = 0;
-	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false) = 0;
-	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
-	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
-	//!!!another desc struct if can't use as shader input!
-	//!!!can describe as DepthBits & StencilBits, find closest on creation!
-	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) = 0;
+	virtual bool				BeginFrame() = 0;
+	virtual void				EndFrame() = 0;
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
+	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
 
 	//!!!constant buffers are not present in D3D9 and are handled differently
 	//!!!???need copy subresource?! (has meaning for textures only! ArraySlice, MipLevel)
