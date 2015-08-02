@@ -960,7 +960,25 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 
 bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
-	n_assert(false);
+	DWORD Index = (DWORD)Handle;
+	if (Index >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
+
+	if (MaxSRVSlotIndex < Index) MaxSRVSlotIndex = Index;
+	Index |= (ShaderType << 16); // Encode shader type in a high word
+
+	int DictIdx = CurrSRV.FindIndex(Index);
+	if (DictIdx != INVALID_INDEX)
+	{
+		PD3D11Texture& CurrRsrc = CurrSRV.ValueAt(DictIdx);
+		if (CurrRsrc == pResource) OK;
+		CurrRsrc = (CD3D11Texture*)pResource;
+	}
+	else
+	{
+		if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
+		CurrSRV.Add(Index, (CD3D11Texture*)pResource);
+	}
+
 	CurrDirtyFlags.Set(GPU_Dirty_SRV);
 	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
 	OK;
@@ -1100,6 +1118,85 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		}
 
 		CurrDirtyFlags.Clear(GPU_Dirty_SS);
+	}
+
+	if (Update.Is(GPU_Dirty_SRV) && CurrDirtyFlags.Is(GPU_Dirty_SRV))
+	{
+		if (CurrSRV.IsInAddMode()) CurrSRV.EndAdd();
+
+		if (CurrSRV.GetCount())
+		{
+			const DWORD SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
+			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)_malloca(SRVArrayMemSize);
+
+			DWORD CurrShaderType = ShaderType_Invalid;
+			DWORD ShdDirtyFlag = 0;
+			bool SkipShaderType = false;
+			DWORD FirstSRVSlot;
+			DWORD CurrSRVSlot;
+			for (int i = 0; ; ++i)
+			{
+				DWORD ShaderType;
+				DWORD SRVSlot;
+				bool AtTheEnd = (i >= CurrSRV.GetCount());
+				if (!AtTheEnd)
+				{
+					const DWORD CurrKey = CurrSRV.KeyAt(i);
+					ShaderType = (CurrKey >> 16);
+					SRVSlot = (CurrKey & 0x0000ffff);
+				}
+
+				if (AtTheEnd || ShaderType != CurrShaderType)
+				{
+					if (!SkipShaderType)
+					{
+						switch ((EShaderType)CurrShaderType)
+						{
+							case ShaderType_Vertex:
+								pD3DImmContext->VSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
+								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+								break;
+							case ShaderType_Pixel:
+								pD3DImmContext->PSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
+								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+								break;
+							case ShaderType_Geometry:
+								pD3DImmContext->GSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
+								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+								break;
+							case ShaderType_Hull:
+								pD3DImmContext->HSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
+								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+								break;
+							case ShaderType_Domain:
+								pD3DImmContext->DSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
+								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+								break;
+						};
+					}
+
+					if (AtTheEnd) break;
+
+					ZeroMemory(ppSRV, SRVArrayMemSize);
+
+					CurrShaderType = ShaderType;
+					FirstSRVSlot = SRVSlot;
+
+					ShdDirtyFlag = (1 << (Shader_Dirty_Resources + CurrShaderType));
+					SkipShaderType = ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag);
+				}
+
+				if (SkipShaderType) continue;
+
+				const CD3D11Texture* pTex = CurrSRV.ValueAt(i).GetUnsafe();
+				ppSRV[SRVSlot] = pTex ? pTex->GetD3DSRView() : NULL;
+				CurrSRVSlot = SRVSlot;
+			}
+
+			_freea(ppSRV);
+		}
+
+		CurrDirtyFlags.Clear(GPU_Dirty_SRV);
 	}
 
 	if (Update.Is(GPU_Dirty_VB) && CurrDirtyFlags.Is(GPU_Dirty_VB))

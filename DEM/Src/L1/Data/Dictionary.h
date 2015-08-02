@@ -33,6 +33,7 @@ public:
 	void			BeginAdd() { n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd)); Pairs.Flags.Set(Dict_InBeginAdd); }
 	void			BeginAdd(int num);
 	void			EndAdd() { n_assert(Pairs.Flags.Is(Dict_InBeginAdd)); Pairs.Flags.Clear(Dict_InBeginAdd); Pairs.Sort(); }
+	bool			IsInAddMode() const { return Pairs.Flags.Is(Dict_InBeginAdd); }
 	TValue&			Add(const CPairT<TKey, TValue>& Pair) { return Pairs.Flags.Is(Dict_InBeginAdd) ? Pairs.Add(Pair)->GetValue() : Pairs.InsertSorted(Pair)->GetValue(); }
 	TValue&			Add(const TKey& Key, const TValue& Value) { return Add(CPair(Key, Value)); }
 	TValue&			Add(const TKey& Key) { return Add(CPair(Key)); }

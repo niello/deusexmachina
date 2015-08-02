@@ -101,7 +101,8 @@ protected:
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11Sampler>			CurrSS;
-	CArray<PD3D11Texture>				CurrSRV;
+	CDict<DWORD, PD3D11Texture>			CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible per shader type
+	DWORD								MaxSRVSlotIndex;
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
@@ -231,6 +232,7 @@ inline CD3D11GPUDriver::CD3D11GPUDriver():
 	CurrVP(NULL),
 	CurrSR(NULL),
 	CurrSRV(16, 16),
+	MaxSRVSlotIndex(0),
 	RenderStates(32, 32),
 	Samplers(16, 16),
 	MaxViewportCount(0) /*, IsInsideFrame(false)*/
