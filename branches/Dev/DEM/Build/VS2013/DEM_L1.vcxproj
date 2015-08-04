@@ -222,6 +222,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
@@ -463,6 +464,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.cpp" />

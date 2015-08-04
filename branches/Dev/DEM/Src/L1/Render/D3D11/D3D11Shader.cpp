@@ -99,4 +99,25 @@ void CD3D11Shader::InternalDestroy()
 }
 //---------------------------------------------------------------------
 
+HConstBuffer CD3D11Shader::GetConstBufferHandle(CStrID ID) const
+{
+	NOT_IMPLEMENTED;
+	return 0;
+}
+//---------------------------------------------------------------------
+
+HResource CD3D11Shader::GetResourceHandle(CStrID ID) const
+{
+	NOT_IMPLEMENTED;
+	return 0;
+}
+//---------------------------------------------------------------------
+
+HSampler CD3D11Shader::GetSamplerHandle(CStrID ID) const
+{
+	NOT_IMPLEMENTED;
+	return 0;
+}
+//---------------------------------------------------------------------
+
 }

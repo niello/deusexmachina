@@ -887,6 +887,9 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h">
       <Filter>Render\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1452,6 +1455,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp">
       <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.cpp">
+      <Filter>Render\D3D9</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
