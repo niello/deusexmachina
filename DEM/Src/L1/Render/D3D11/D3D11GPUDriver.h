@@ -164,13 +164,22 @@ public:
 	virtual bool				Present(DWORD SwapChainID);
 	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
 
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
+	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
+	//???CreateShader? instead of D3D11 API code in loaders?
+	virtual PConstantBuffer		CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData = NULL);
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
+	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
+	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
+	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
+
 	virtual bool				SetViewport(DWORD Index, const CViewport* pViewport); // NULL to reset
 	virtual bool				GetViewport(DWORD Index, CViewport& OutViewport);
 	virtual bool				SetScissorRect(DWORD Index, const Data::CRect* pScissorRect); // NULL to reset
 	virtual bool				GetScissorRect(DWORD Index, Data::CRect& OutScissorRect);
 
-	virtual bool				BeginFrame();
-	virtual void				EndFrame();
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
 	virtual bool				SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex = 0);
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
@@ -178,29 +187,24 @@ public:
 	virtual bool				SetRenderState(CRenderState* pState);
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
+
+	virtual bool				BeginShaderConstants(CConstantBuffer& CBuffer);
+	virtual bool				SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size); //???offset or HConst Address?
+	virtual void				EndShaderConstants(CConstantBuffer& CBuffer);
+	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer);
+	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
+
+	virtual bool				BeginFrame();
+	virtual void				EndFrame();
 	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup); //???instance count?
-
-	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
 
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
 	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
 	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured
-
-	//!!!D3D11 vertex layout must be a key to a list of different layout interfaces, each for a particular shader input signature!
-	//it will be resolved at a draw call, when both shader and VB are bound
-	//???!!!support multichannel VBs?!
-	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
-	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
-	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
-	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
-	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
-	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
-	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
-	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
 
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
 	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);

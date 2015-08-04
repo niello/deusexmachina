@@ -952,53 +952,6 @@ bool CD3D9GPUDriver::GetScissorRect(DWORD Index, Data::CRect& OutScissorRect)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BeginFrame()
-{
-	return pD3DDevice && SUCCEEDED(pD3DDevice->BeginScene());
-
-//	n_assert(!IsInsideFrame);
-//
-//	PrimsRendered = 0;
-//	DIPsRendered = 0;
-//
-//	//???where? once per frame shader change
-//	if (!SharedShader.IsValid())
-//	{
-//		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
-//		n_assert(SharedShader->IsLoaded());
-//		hLightAmbient = SharedShader->GetVarHandleByName(CStrID("LightAmbient"));
-//		hEyePos = SharedShader->GetVarHandleByName(CStrID("EyePos"));
-//		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
-//	}
-//
-//	// CEGUI overwrites this value without restoring it, so restore each frame
-//	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
-//
-//	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
-//	return IsInsideFrame;
-}
-//---------------------------------------------------------------------
-
-void CD3D9GPUDriver::EndFrame()
-{
-	pD3DDevice->EndScene();
-
-//	n_assert(IsInsideFrame);
-//	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
-//	IsInsideFrame = false;
-//
-//	//???is all below necessary? PIX requires it for debugging frame
-//	for (int i = 0; i < MaxVertexStreamCount; ++i)
-//		CurrVB[i] = NULL;
-//	CurrVLayout = NULL;
-//	CurrIB = NULL;
-//	//!!!UnbindD3D9Resources()
-//
-//	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
-//	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
-}
-//---------------------------------------------------------------------
-
 bool CD3D9GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 {
 	if (CurrVL.GetUnsafe() == pVLayout) OK;
@@ -1109,97 +1062,30 @@ bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil)
+bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& CBuffer)
 {
-	if (!Flags) return;
-
-	DWORD D3DFlags = 0;
-
-	if (Flags & Clear_Color) D3DFlags |= D3DCLEAR_TARGET;
-
-	if (CurrDS.IsValidPtr())
-	{
-		if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
-
-		D3DFORMAT Fmt = CD3D9DriverFactory::PixelFormatToD3DFormat(CurrDS->GetDesc().Format);
-		if ((Flags & Clear_Stencil) && CD3D9DriverFactory::D3DFormatStencilBits(Fmt) > 0)
-			D3DFlags |= D3DCLEAR_STENCIL;
-	}
-
-	DWORD ColorARGB =
-		(((uchar)(ColorRGBA.w * 255.f)) << 24) +
-		(((uchar)(ColorRGBA.x * 255.f)) << 16) +
-		(((uchar)(ColorRGBA.y * 255.f)) << 8) +
-		((uchar)(ColorRGBA.z * 255.f));
-	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, ColorARGB, Depth, Stencil)));
+	NOT_IMPLEMENTED;
+	OK;
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA)
+bool CD3D9GPUDriver::SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size)
 {
-	if (!RT.IsValid()) return;
-
-	DWORD ColorARGB =
-		(((uchar)(ColorRGBA.w * 255.f)) << 24) +
-		(((uchar)(ColorRGBA.x * 255.f)) << 16) +
-		(((uchar)(ColorRGBA.y * 255.f)) << 8) +
-		((uchar)(ColorRGBA.z * 255.f));
-
-	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
-	pD3DDevice->ColorFill(D3D9RT.GetD3DSurface(), NULL, ColorARGB);
-
-	//pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
-
-	//for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
-	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
-	//		pD3DDevice->SetRenderTarget(i, NULL);
-
-	//Clear(Clear_Color, ColorRGBA, 1.f, 0);
-
-	//for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
-	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
-	//		pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
+	NOT_IMPLEMENTED;
+	OK;
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+void CD3D9GPUDriver::EndShaderConstants(CConstantBuffer& CBuffer)
 {
-	n_assert_dbg(pD3DDevice && IsInsideFrame);
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
 
-	D3DPRIMITIVETYPE D3DPrimType;
-	DWORD PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
-	switch (PrimGroup.Topology)
-	{
-		case Prim_PointList:	D3DPrimType = D3DPT_POINTLIST; break;
-		case Prim_LineList:		D3DPrimType = D3DPT_LINELIST; PrimCount >>= 1; break;
-		case Prim_LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
-		case Prim_TriList:		D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
-		case Prim_TriStrip:		D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
-		default:				Sys::Error("CD3D9GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
-	}
-
-	HRESULT hr;
-	if (PrimGroup.IndexCount > 0)
-	{
-		n_assert_dbg(CurrIB.IsValidPtr());
-		//n_assert_dbg(!InstanceCount || CurrVB[0].IsValid());
-		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
-												0,
-												PrimGroup.FirstVertex,
-												PrimGroup.VertexCount,
-												PrimGroup.FirstIndex,
-												PrimCount);
-	}
-	else
-	{
-		//n_assert2_dbg(!InstanceCount, "Non-indexed instanced rendereng is not supported by design!");
-		hr = pD3DDevice->DrawPrimitive(D3DPrimType, PrimGroup.FirstVertex, PrimCount);
-	}
-
-	//PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
-	//++DIPsRendered;
-
-	return SUCCEEDED(hr);
+bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
+{
+	NOT_IMPLEMENTED;
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -1275,6 +1161,139 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 
 	CurrSS[Index] = pD3DSampler;
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::BeginFrame()
+{
+	return pD3DDevice && SUCCEEDED(pD3DDevice->BeginScene());
+
+//	n_assert(!IsInsideFrame);
+//
+//	PrimsRendered = 0;
+//	DIPsRendered = 0;
+//
+//	//???where? once per frame shader change
+//	if (!SharedShader.IsValid())
+//	{
+//		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
+//		n_assert(SharedShader->IsLoaded());
+//		hLightAmbient = SharedShader->GetVarHandleByName(CStrID("LightAmbient"));
+//		hEyePos = SharedShader->GetVarHandleByName(CStrID("EyePos"));
+//		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
+//	}
+//
+//	// CEGUI overwrites this value without restoring it, so restore each frame
+//	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
+//
+//	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
+//	return IsInsideFrame;
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::EndFrame()
+{
+	pD3DDevice->EndScene();
+
+//	n_assert(IsInsideFrame);
+//	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
+//	IsInsideFrame = false;
+//
+//	//???is all below necessary? PIX requires it for debugging frame
+//	for (int i = 0; i < MaxVertexStreamCount; ++i)
+//		CurrVB[i] = NULL;
+//	CurrVLayout = NULL;
+//	CurrIB = NULL;
+//	//!!!UnbindD3D9Resources()
+//
+//	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
+//	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil)
+{
+	if (!Flags) return;
+
+	DWORD D3DFlags = 0;
+
+	if (Flags & Clear_Color) D3DFlags |= D3DCLEAR_TARGET;
+
+	if (CurrDS.IsValidPtr())
+	{
+		if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
+
+		D3DFORMAT Fmt = CD3D9DriverFactory::PixelFormatToD3DFormat(CurrDS->GetDesc().Format);
+		if ((Flags & Clear_Stencil) && CD3D9DriverFactory::D3DFormatStencilBits(Fmt) > 0)
+			D3DFlags |= D3DCLEAR_STENCIL;
+	}
+
+	DWORD ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
+	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, ColorARGB, Depth, Stencil)));
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA)
+{
+	if (!RT.IsValid()) return;
+
+	DWORD ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
+
+	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
+	pD3DDevice->ColorFill(D3D9RT.GetD3DSurface(), NULL, ColorARGB);
+
+	//pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
+
+	//for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
+	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
+	//		pD3DDevice->SetRenderTarget(i, NULL);
+
+	//Clear(Clear_Color, ColorRGBA, 1.f, 0);
+
+	//for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
+	//		pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+{
+	n_assert_dbg(pD3DDevice && IsInsideFrame);
+
+	D3DPRIMITIVETYPE D3DPrimType;
+	DWORD PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
+	switch (PrimGroup.Topology)
+	{
+		case Prim_PointList:	D3DPrimType = D3DPT_POINTLIST; break;
+		case Prim_LineList:		D3DPrimType = D3DPT_LINELIST; PrimCount >>= 1; break;
+		case Prim_LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
+		case Prim_TriList:		D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
+		case Prim_TriStrip:		D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
+		default:				Sys::Error("CD3D9GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+	}
+
+	HRESULT hr;
+	if (PrimGroup.IndexCount > 0)
+	{
+		n_assert_dbg(CurrIB.IsValidPtr());
+		//n_assert_dbg(!InstanceCount || CurrVB[0].IsValid());
+		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
+												0,
+												PrimGroup.FirstVertex,
+												PrimGroup.VertexCount,
+												PrimGroup.FirstIndex,
+												PrimCount);
+	}
+	else
+	{
+		//n_assert2_dbg(!InstanceCount, "Non-indexed instanced rendereng is not supported by design!");
+		hr = pD3DDevice->DrawPrimitive(D3DPrimType, PrimGroup.FirstVertex, PrimCount);
+	}
+
+	//PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
+	//++DIPsRendered;
+
+	return SUCCEEDED(hr);
 }
 //---------------------------------------------------------------------
 
@@ -1465,6 +1484,13 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Index
 	}
 
 	return IB.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData)
+{
+	NOT_IMPLEMENTED;
+	return NULL;
 }
 //---------------------------------------------------------------------
 
