@@ -7,6 +7,8 @@
 
 // A Direct3D9 implementation of a shader constant buffer.
 
+struct IDirect3DDevice9;
+
 namespace Render
 {
 
@@ -16,24 +18,35 @@ class CD3D9ConstantBuffer: public CConstantBuffer
 
 protected:
 
+	enum { RegisterDataIsDirty = 0x80000000 };
+
+	//!!!can allocate all data as one block of memory and save offsets!
+	float*				pFloatData;
+	DWORD*				pFloatRegisters;
+	DWORD				FloatCount;
+
+	int*				pIntData;
+	DWORD*				pIntRegisters;
+	DWORD				IntCount;
+
+	IDirect3DDevice9*	pDevice;
+
 	void InternalDestroy();
 
 public:
 
-	CD3D9ConstantBuffer() {}
+	CD3D9ConstantBuffer(): pDevice(NULL), pFloatData(NULL), pIntData(NULL) {}
 	virtual ~CD3D9ConstantBuffer() { InternalDestroy(); }
 
-	bool			Create(/*ID3D11Buffer* pCB, ID3D11DeviceContext* pD3DDeviceCtx, bool StoreRAMCopy*/);
+	bool			Create();
 	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
-	virtual bool	IsValid() const { OK; }
+	virtual bool	IsValid() const { return !!pDevice; }
 
 	virtual bool	BeginChanges();
 	virtual bool	SetFloat(DWORD Offset, const float* pData, DWORD Count);
 	virtual bool	SetInt(DWORD Offset, const int* pData, DWORD Count);
-	virtual bool	SetRawData(DWORD Offset, const void* pData, DWORD Size);
+	virtual bool	SetRawData(DWORD Offset, const void* pData, DWORD Size) { FAIL; } // Not supported
 	virtual bool	CommitChanges();
-
-	//DWORD			GetSize() const { return SizeInBytes; }
 };
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;

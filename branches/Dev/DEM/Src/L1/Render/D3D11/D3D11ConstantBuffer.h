@@ -36,8 +36,7 @@ protected:
 	char*					pMapped;
 	D3D11_USAGE				D3DUsage;
 	Data::CFlags			Flags;
-	DWORD					SizeInBytes; //???store size in a parent class?
-	//???store access in a parent class?
+	DWORD					SizeInBytes;
 
 	void InternalDestroy();
 
@@ -87,6 +86,8 @@ inline bool CD3D11ConstantBuffer::SetRawData(DWORD Offset, const void* pData, DW
 inline bool CD3D11ConstantBuffer::WriteChangesToRAM(DWORD Offset, const void* pData, DWORD Size)
 {
 	n_assert_dbg(pData && Size && pMapped && (Offset + Size <= SizeInBytes));
+	//!!!???PERF:?!
+	//if (!memcmp(pMapped + Offset, pData, Size)) OK;
 	memcpy(pMapped + Offset, pData, Size);
 	Flags.Set(RAMCopyDirty);
 	OK;

@@ -19,12 +19,6 @@ bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11DeviceContext* pD3DDe
 	//???allow texture buffers?
 	if (!(D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER)) FAIL;
 
-	//???!!!can't be staging?!
-	//Access.ResetTo(Access_GPU_Read); //???staging to?
-	//if (D3DDesc.CPUAccessFlags & D3D11_CPU_ACCESS_READ) Access.Set(Access_CPU_Read);
-	//if (D3DDesc.CPUAccessFlags & D3D11_CPU_ACCESS_WRITE) Access.Set(Access_CPU_Write);
-	//if (D3DDesc.Usage == D3D11_USAGE_DEFAULT || D3DDesc.Usage == D3D11_USAGE_STAGING) Access.Set(Access_GPU_Write); //???staging to?
-
 	Flags.ClearAll();
 
 	if (StoreRAMCopy)
