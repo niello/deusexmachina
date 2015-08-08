@@ -55,7 +55,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../Src;../../../Src/ContentForge/CFShader;../../../../DEM/Src/L1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;DEM_TOOLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling />
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -81,7 +81,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>../../../Src;../../../Src/ContentForge/CFShader;../../../../DEM/Src/L1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;DEM_TOOLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling />
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -106,11 +106,13 @@
     <ClInclude Include="..\..\..\Src\CmdLineArgs.h" />
     <ClInclude Include="..\..\..\Src\ConsoleApp.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.h" />
+    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderCompiler.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\Main.cpp" />
+    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

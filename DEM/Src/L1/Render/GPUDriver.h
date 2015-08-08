@@ -100,11 +100,6 @@ public:
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 
-	virtual bool				BeginShaderConstants(CConstantBuffer& CBuffer) = 0;
-	virtual bool				SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size) = 0; //???offset or HConst Address?
-	template<typename T> bool	SetShaderConstant(CConstantBuffer& CBuffer, DWORD Offset, const T& Data);
-	template<typename T> bool	SetShaderConstantArray(CConstantBuffer& CBuffer, DWORD Offset, const T* pData, DWORD Count);
-	virtual void				EndShaderConstants(CConstantBuffer& CBuffer) = 0;
 	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer) = 0;
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) = 0;
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) = 0;
@@ -157,18 +152,6 @@ inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, const vector4& Col
 		OK;
 	}
 	FAIL;
-}
-//---------------------------------------------------------------------
-
-template<typename T> inline bool CGPUDriver::SetShaderConstant(CConstantBuffer& CBuffer, DWORD Offset, const T& Data)
-{
-	return SetShaderConstants(CBuffer, Offset, &Data, sizeof(T));
-}
-//---------------------------------------------------------------------
-
-template<typename T> inline bool CGPUDriver::SetShaderConstantArray(CConstantBuffer& CBuffer, DWORD Offset, const T* pData, DWORD Count)
-{
-	return SetShaderConstants(CBuffer, Offset, pData, Count * sizeof(T));
 }
 //---------------------------------------------------------------------
 

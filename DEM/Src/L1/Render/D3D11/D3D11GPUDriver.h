@@ -34,6 +34,7 @@ typedef Ptr<class CD3D11IndexBuffer> PD3D11IndexBuffer;
 typedef Ptr<class CD3D11RenderTarget> PD3D11RenderTarget;
 typedef Ptr<class CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;
 typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
+typedef Ptr<class CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 typedef Ptr<class CD3D11Sampler> PD3D11Sampler;
 typedef Ptr<class CD3D11Texture> PD3D11Texture;
 
@@ -45,16 +46,17 @@ public:
 
 	enum
 	{
-		GPU_Dirty_VL = 0x0001,		// Vertex layout
-		GPU_Dirty_VB = 0x0002,		// Vertex buffer(s)
-		GPU_Dirty_IB = 0x0004,		// Index buffer
-		GPU_Dirty_RS = 0x0008,		// Render state
-		GPU_Dirty_RT = 0x0010,		// Render target(s)
-		GPU_Dirty_DS = 0x0020,		// Depth-stencil buffer
-		GPU_Dirty_VP = 0x0040,		// Viewport(s)
-		GPU_Dirty_SR = 0x0080,		// Scissor rect(s)
-		GPU_Dirty_SS = 0x0100,		// Sampler state(s)
-		GPU_Dirty_SRV = 0x0100,		// Shader resource view(s)
+		GPU_Dirty_VL	= 0x0001,		// Vertex layout
+		GPU_Dirty_VB	= 0x0002,		// Vertex buffer(s)
+		GPU_Dirty_IB	= 0x0004,		// Index buffer
+		GPU_Dirty_RS	= 0x0008,		// Render state
+		GPU_Dirty_RT	= 0x0010,		// Render target(s)
+		GPU_Dirty_DS	= 0x0020,		// Depth-stencil buffer
+		GPU_Dirty_VP	= 0x0040,		// Viewport(s)
+		GPU_Dirty_SR	= 0x0080,		// Scissor rect(s)
+		GPU_Dirty_CB	= 0x0100,		// Sampler state(s)
+		GPU_Dirty_SS	= 0x0200,		// Sampler state(s)
+		GPU_Dirty_SRV	= 0x0400,		// Shader resource view(s)
 
 		GPU_Dirty_All = 0xffffffff	// All bits set, for convenience in ApplyChanges() call
 	};
@@ -100,6 +102,7 @@ protected:
 	DWORD								MaxViewportCount;
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
+	CFixedArray<PD3D11ConstantBuffer>	CurrCB;
 	CFixedArray<PD3D11Sampler>			CurrSS;
 	CDict<DWORD, PD3D11Texture>			CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
 	DWORD								MaxSRVSlotIndex;
@@ -188,9 +191,6 @@ public:
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 
-	virtual bool				BeginShaderConstants(CConstantBuffer& CBuffer);
-	virtual bool				SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size); //???offset or HConst Address?
-	virtual void				EndShaderConstants(CConstantBuffer& CBuffer);
 	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer);
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);

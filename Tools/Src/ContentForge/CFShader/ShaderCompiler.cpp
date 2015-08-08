@@ -2,7 +2,10 @@
 #include <IO/Streams/FileStream.h>
 #include <IO/PathUtils.h>
 #include <Data/Buffer.h>
+#include <Data/Params.h>
+#include <Data/DataArray.h>
 #include <Data/HRDParser.h>
+#include <ToolRenderStateDesc.h>
 #include <ConsoleApp.h>
 #include <DEMD3DInclude.h>
 #include <D3DCompiler.h>
@@ -106,6 +109,220 @@ int CompileShader(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 }
 //---------------------------------------------------------------------
 
+Render::ECmpFunc StringToCmpFunc(const CString& Str)
+{
+	if (Str == "less" || Str == "l") return Render::Cmp_Less;
+	if (Str == "lessequal" || Str == "le") return Render::Cmp_LessEqual;
+	if (Str == "greater" || Str == "g") return Render::Cmp_Greater;
+	if (Str == "greaterequal" || Str == "ge") return Render::Cmp_GreaterEqual;
+	if (Str == "equal" || Str == "e") return Render::Cmp_Equal;
+	if (Str == "notequal" || Str == "ne") return Render::Cmp_NotEqual;
+	if (Str == "always") return Render::Cmp_Always;
+	return Render::Cmp_Never;
+}
+//---------------------------------------------------------------------
+
+Render::EStencilOp StringToStencilOp(const CString& Str)
+{
+	if (Str == "zero") return Render::StencilOp_Zero;
+	if (Str == "zero") return Render::StencilOp_Replace;
+	if (Str == "zero") return Render::StencilOp_Inc;
+	if (Str == "zero") return Render::StencilOp_IncSat;
+	if (Str == "zero") return Render::StencilOp_Dec;
+	if (Str == "zero") return Render::StencilOp_DecSat;
+	if (Str == "zero") return Render::StencilOp_Invert;
+	return Render::StencilOp_Keep;
+}
+//---------------------------------------------------------------------
+
+bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRenderStateDesc& Desc)
+{
+	Data::PParams RS;
+	if (!RenderStates->Get(RS, ID)) FAIL;
+
+	Data::CParam* pPrmBaseID;
+	if (RS->Get(pPrmBaseID, CStrID("Base")))
+	{
+		if (!ReadRenderStateDesc(RenderStates, pPrmBaseID->GetValue<CStrID>(), Desc)) FAIL;
+	}
+
+	//!!!shader refs must be converted to output shaders!
+	//store src here, replace with export after compilation outside this method
+	//???or compile here and store variants in cache?
+	//!!!each variation of the same HLSL will be a separate compiled shader!
+	//or here use compiled shader IDs and separate section Shaders where all defines and targets specified?
+
+	RS->Get(Desc.VertexShader, CStrID("VertexShader"));
+	RS->Get(Desc.PixelShader, CStrID("PixelShader"));
+	RS->Get(Desc.GeometryShader, CStrID("GeometryShader"));
+	RS->Get(Desc.HullShader, CStrID("HullShader"));
+	RS->Get(Desc.DomainShader, CStrID("DomainShader"));
+
+	CString StrValue;
+	int IntValue;
+	//float FloatValue;
+	bool FlagValue;
+
+	// Rasterizer
+
+	if (RS->Get(StrValue, CStrID("Cull")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		if (StrValue == "none")
+		{
+			Desc.Flags.Clear(Render::CToolRenderStateDesc::Rasterizer_CullFront);
+			Desc.Flags.Clear(Render::CToolRenderStateDesc::Rasterizer_CullBack);
+		}
+		else if (StrValue == "front")
+		{
+			Desc.Flags.Set(Render::CToolRenderStateDesc::Rasterizer_CullFront);
+			Desc.Flags.Clear(Render::CToolRenderStateDesc::Rasterizer_CullBack);
+		}
+		else if (StrValue == "back")
+		{
+			Desc.Flags.Clear(Render::CToolRenderStateDesc::Rasterizer_CullFront);
+			Desc.Flags.Set(Render::CToolRenderStateDesc::Rasterizer_CullBack);
+		}
+		else
+		{
+			n_msg(VL_ERROR, "Unrecognized 'Cull' value: %s\n", StrValue.CStr());
+			FAIL;
+		}
+	}
+
+	if (RS->Get(FlagValue, CStrID("Wireframe")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Rasterizer_Wireframe, FlagValue);
+	if (RS->Get(FlagValue, CStrID("FrontCCW")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Rasterizer_FrontCCW, FlagValue);
+	if (RS->Get(FlagValue, CStrID("DepthClipEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Rasterizer_DepthClipEnable, FlagValue);
+	if (RS->Get(FlagValue, CStrID("ScissorEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Rasterizer_ScissorEnable, FlagValue);
+	if (RS->Get(FlagValue, CStrID("MSAAEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Rasterizer_MSAAEnable, FlagValue);
+	if (RS->Get(FlagValue, CStrID("MSAALinesEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Rasterizer_MSAALinesEnable, FlagValue);
+
+	RS->Get(Desc.DepthBias, CStrID("DepthBias"));
+	RS->Get(Desc.DepthBiasClamp, CStrID("DepthBiasClamp"));
+	RS->Get(Desc.SlopeScaledDepthBias, CStrID("SlopeScaledDepthBias"));
+
+	// Depth-stencil
+
+	if (RS->Get(FlagValue, CStrID("DepthEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::DS_DepthEnable, FlagValue);
+	if (RS->Get(FlagValue, CStrID("DepthWriteEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::DS_DepthWriteEnable, FlagValue);
+	if (RS->Get(FlagValue, CStrID("StencilEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::DS_StencilEnable, FlagValue);
+
+	if (RS->Get(StrValue, CStrID("DepthFunc")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.DepthFunc = StringToCmpFunc(StrValue);
+	}
+	if (RS->Get(IntValue, CStrID("StencilReadMask"))) Desc.StencilReadMask = IntValue;
+	if (RS->Get(IntValue, CStrID("StencilWriteMask"))) Desc.StencilWriteMask = IntValue;
+	if (RS->Get(StrValue, CStrID("StencilFrontFunc")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilFrontFace.StencilFunc = StringToCmpFunc(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilFrontPassOp")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilFrontFace.StencilPassOp = StringToStencilOp(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilFrontFailOp")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilFrontFace.StencilFailOp = StringToStencilOp(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilFrontDepthFailOp")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilFrontFace.StencilDepthFailOp = StringToStencilOp(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilBackFunc")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilBackFace.StencilFunc = StringToCmpFunc(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilBackPassOp")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilBackFace.StencilPassOp = StringToStencilOp(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilBackFailOp")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilBackFace.StencilFailOp = StringToStencilOp(StrValue);
+	}
+	if (RS->Get(StrValue, CStrID("StencilBackDepthFailOp")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.StencilBackFace.StencilDepthFailOp = StringToStencilOp(StrValue);
+	}
+	if (RS->Get(IntValue, CStrID("StencilRef"))) Desc.StencilRef = IntValue;
+
+	// Blend
+
+	if (RS->Get(FlagValue, CStrID("AlphaToCoverage")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Blend_AlphaToCoverage, FlagValue);
+	//if (RS->Get(FlagValue, CStrID("IndependentBlendEnable")))
+	//	Desc.Flags.SetTo(Render::CToolRenderStateDesc::Blend_Independent, FlagValue);
+	//Blend_RTBlendEnable			= 0x00040000	// Use (Blend_RTBlendEnable << Index), Index = [0 .. 7]
+	//// flags from				  0x00040000
+	////       to					  0x02000000
+	//// inclusive are reserved for Blend_RTBlendEnable
+
+	//BlendFactorRGBA[0] = 0.f;
+	//BlendFactorRGBA[1] = 0.f;
+	//BlendFactorRGBA[2] = 0.f;
+	//BlendFactorRGBA[3] = 0.f;
+	//SampleMask = 0xffffffff;
+
+	//for (int i = 0; i < 8; ++i)
+	//{
+	//	CRTBlend& RTB = RTBlend[i];
+	//	RTB.SrcBlendArg = BlendArg_One;
+	//	RTB.DestBlendArg = BlendArg_Zero;
+	//	RTB.BlendOp = BlendOp_Add;
+	//	RTB.SrcBlendArgAlpha = BlendArg_One;
+	//	RTB.DestBlendArgAlpha = BlendArg_Zero;
+	//	RTB.BlendOpAlpha = BlendOp_Add;
+	//	RTB.WriteMask = 0x0f;
+	//}
+
+	// Misc
+
+	if (RS->Get(FlagValue, CStrID("AlphaTestEnable")))
+		Desc.Flags.SetTo(Render::CToolRenderStateDesc::Misc_AlphaTestEnable, FlagValue);
+
+	if (RS->Get(IntValue, CStrID("AlphaTestRef"))) Desc.AlphaTestRef = IntValue;
+	if (RS->Get(StrValue, CStrID("AlphaTestFunc")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AlphaTestFunc = StringToCmpFunc(StrValue);
+	}
+
+	//Misc_ClipPlaneEnable		= 0x08000000 //!!!need 6 bits! or uchar/DWORD w/lower 6 bits
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 {
 	Data::CBuffer Buffer;
@@ -117,10 +334,42 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params)) return ERR_IO_READ;
 	}
 
-	// Techniques
-	// collect only used render states
+	Data::PParams Techs;
+	Data::PParams RenderStates;
+	if (!Params->Get(Techs, CStrID("Techniques"))) return ERR_INVALID_DATA;
+	if (!Params->Get(RenderStates, CStrID("RenderStates"))) return ERR_INVALID_DATA;
 
-	//???Samplers?
+	// Collect used render state references
+
+	CArray<CStrID> UsedRenderStates;
+	for (int TechIdx = 0; TechIdx < Techs->GetCount(); ++TechIdx)
+	{
+		Data::CParam& Tech = Techs->Get(TechIdx);
+		Data::PDataArray Passes;
+		if (!Tech.GetValue<Data::PParams>()->Get(Passes, CStrID("Passes"))) continue;
+
+		for (int PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
+		{
+			CStrID PassID = Passes->Get<CStrID>(PassIdx);
+			n_msg(VL_DETAILS, "Tech %s, Pass %d: %s\n", Tech.GetName().CStr(), PassIdx, PassID.CStr());
+			if (!UsedRenderStates.Contains(PassID)) UsedRenderStates.Add(PassID);
+		}
+	}
+
+	// Unwind render state hierarchy and save leaf states
+
+	for (int i = 0; i < UsedRenderStates.GetCount(); ++i)
+	{
+		CStrID ID = UsedRenderStates[i];
+		Render::CToolRenderStateDesc Desc;
+		Desc.SetDefaults();
+		if (!ReadRenderStateDesc(RenderStates, ID, Desc)) return ERR_INVALID_DATA;
+		int dbg = 0;
+		// Save desc under ID
+		// Store shader pathes
+	}
+
+	//???Samplers? descs and per-tech register assignmemts? or per-whole-effect?
 	// RenderStates (hierarchy) -> save with scheme, strings to enum codes
 	// VS - get input blob, check if exists, else save with signature
 	// All shaders - register mappings

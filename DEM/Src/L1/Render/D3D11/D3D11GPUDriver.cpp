@@ -112,6 +112,7 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	CurrSR = n_new_array(RECT, MaxViewportCount);
 	VPSRSetFlags.ClearAll();
 
+	CurrCB.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT);
 	CurrSS.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT);
 
 	OK;
@@ -192,6 +193,7 @@ void CD3D11GPUDriver::Release()
 	SAFE_DELETE_ARRAY(CurrVP);
 	SAFE_DELETE_ARRAY(CurrSR);
 	CurrSRV.Clear();
+	CurrCB.SetSize(0);
 	CurrSS.SetSize(0);
 	CurrRT.SetSize(0);
 
@@ -848,105 +850,19 @@ bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BeginShaderConstants(CConstantBuffer& CBuffer)
-{
-	n_assert_dbg(CBuffer.IsA<CD3D11ConstantBuffer>());
-	CD3D11ConstantBuffer& CB = (CD3D11ConstantBuffer&)CBuffer;
-
-	if (CB.GetD3DUsage() == D3D11_USAGE_DYNAMIC)
-	{
-		ID3D11Buffer* pBuffer = CB.GetD3DBuffer();
-		if (!pBuffer) FAIL;
-
-		D3D11_MAPPED_SUBRESOURCE D3DData;
-		if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &D3DData))) FAIL;
-		CB.pVRAMMapped = (char*)D3DData.pData;
-
-		OK;
-	}
-	else if (CB.GetD3DUsage() == D3D11_USAGE_DEFAULT) OK;
-
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-//???!!!need typed templates for single and array! in CGPUDriver.
-bool CD3D11GPUDriver::SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size)
-{
-	n_assert_dbg(CBuffer.IsA<CD3D11ConstantBuffer>());
-	CD3D11ConstantBuffer& CB = (CD3D11ConstantBuffer&)CBuffer;
-
-	if (!pData || (Offset + Size > CB.GetSize())) FAIL;
-
-	if (CB.GetRAMCopy())
-	{
-		//!!!can separate updating CPU copy and committing it! update CPU copy through the buffer methods
-		memcpy(CB.GetRAMCopy() + Offset, pData, Size);
-		CB.RAMCopyDirty = true;
-	}
-	else
-	{
-		if (CB.GetD3DUsage() == D3D11_USAGE_DYNAMIC)
-		{
-			// NB: contents of the buffer are discarded, user must refill all the data that
-			// gonna be used. No old values persist. Use RAM-backed CB for partial updates.
-			if (!CB.pVRAMMapped) FAIL;
-			memcpy(CB.pVRAMMapped + Offset, pData, Size);
-		}
-		else if (CB.GetD3DUsage() == D3D11_USAGE_DEFAULT)
-		{
-			if (!Offset && Size == CB.GetSize())
-			{
-				// Update whole buffer
-				pD3DImmContext->UpdateSubresource(CB.GetD3DBuffer(), 0, NULL, pData, 0, 0);
-			}
-			else
-			{
-				DBG_ONLY(Sys::Log(__FUNCTION__"() > Partial updating of D3D11_USAGE_DEFAULT constant buffers without a RAM copy is not supported\n"));
-				FAIL;
-			}
-		}
-		else FAIL;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CD3D11GPUDriver::EndShaderConstants(CConstantBuffer& CBuffer)
-{
-	n_assert_dbg(CBuffer.IsA<CD3D11ConstantBuffer>());
-	CD3D11ConstantBuffer& CB = (CD3D11ConstantBuffer&)CBuffer;
-
-	if (CB.GetD3DUsage() == D3D11_USAGE_DYNAMIC)
-	{
-		if (!CB.pVRAMMapped) return; //???or map, if CommitRAMChanges?
-		if (CB.GetRAMCopy() && CB.RAMCopyDirty)
-		{
-			memcpy(CB.pVRAMMapped, CB.GetRAMCopy(), CB.GetSize());
-			CB.RAMCopyDirty = false;
-		}
-		pD3DImmContext->Unmap(CB.GetD3DBuffer(), 0);
-	}
-	else if (CB.GetD3DUsage() == D3D11_USAGE_DEFAULT)
-	{
-		if (CB.GetRAMCopy() && CB.RAMCopyDirty)
-		{
-			pD3DImmContext->UpdateSubresource(CB.GetD3DBuffer(), 0, NULL, CB.GetRAMCopy(), 0, 0);
-			CB.RAMCopyDirty = false;
-		}
-	}
-}
-//---------------------------------------------------------------------
-
 bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
-	//pD3DImmContext->VSSetConstantBuffers();
-	//pD3DImmContext->PSSetConstantBuffers();
-	//pD3DImmContext->GSSetConstantBuffers();
-	//pD3DImmContext->HSSetConstantBuffers();
-	//pD3DImmContext->DSSetConstantBuffers();
-	NOT_IMPLEMENTED;
+	DWORD Index = (DWORD)Handle;
+	if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
+
+	Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
+	const CD3D11ConstantBuffer* pCurrCB = CurrCB[Index].GetUnsafe();
+	if (pCurrCB == pCBuffer) OK;
+
+	CurrCB[Index] = (CD3D11ConstantBuffer*)pCBuffer;
+	CurrDirtyFlags.Set(GPU_Dirty_CB);
+	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_CBuffers + ShaderType));
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -1182,6 +1098,46 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 			pD3DImmContext->IASetInputLayout(pNewCurrIL);
 			pCurrIL = pNewCurrIL;
 		}
+	}
+
+	if (Update.Is(GPU_Dirty_CB) && CurrDirtyFlags.Is(GPU_Dirty_CB))
+	{
+		ID3D11Buffer* D3DBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+		DWORD Offset = 0;
+		for (DWORD Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
+		{
+			DWORD ShdDirtyFlag = (1 << (Shader_Dirty_CBuffers + Sh));
+			if (ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag)) continue;
+
+			for (DWORD i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
+			{
+				const CD3D11ConstantBuffer* pCB = CurrCB[Offset + i].GetUnsafe();
+				D3DBuffers[i] = pCB ? pCB->GetD3DBuffer() : NULL;
+			}
+
+			switch ((EShaderType)Sh)
+			{
+				case ShaderType_Vertex:
+					pD3DImmContext->VSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, D3DBuffers);
+					break;
+				case ShaderType_Pixel:
+					pD3DImmContext->PSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, D3DBuffers);
+					break;
+				case ShaderType_Geometry:
+					pD3DImmContext->GSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, D3DBuffers);
+					break;
+				case ShaderType_Hull:
+					pD3DImmContext->HSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, D3DBuffers);
+					break;
+				case ShaderType_Domain:
+					pD3DImmContext->DSSetConstantBuffers(0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, D3DBuffers);
+					break;
+			};
+
+			ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
+		}
+
+		CurrDirtyFlags.Clear(GPU_Dirty_CB);
 	}
 
 	if (Update.Is(GPU_Dirty_SS) && CurrDirtyFlags.Is(GPU_Dirty_SS))

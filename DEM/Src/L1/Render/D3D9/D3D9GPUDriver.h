@@ -136,9 +136,6 @@ public:
 	virtual bool				SetRenderTarget(DWORD Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
 
-	virtual bool				BeginShaderConstants(CConstantBuffer& CBuffer);
-	virtual bool				SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size); //???offset or HConst Address?
-	virtual void				EndShaderConstants(CConstantBuffer& CBuffer);
 	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer);
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
