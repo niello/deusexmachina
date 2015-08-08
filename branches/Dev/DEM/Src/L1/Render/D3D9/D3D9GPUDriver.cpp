@@ -1062,26 +1062,6 @@ bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& CBuffer)
-{
-	NOT_IMPLEMENTED;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9GPUDriver::SetShaderConstants(CConstantBuffer& CBuffer, DWORD Offset, void const* const pData, DWORD Size)
-{
-	NOT_IMPLEMENTED;
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CD3D9GPUDriver::EndShaderConstants(CConstantBuffer& CBuffer)
-{
-	NOT_IMPLEMENTED;
-}
-//---------------------------------------------------------------------
-
 bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	NOT_IMPLEMENTED;

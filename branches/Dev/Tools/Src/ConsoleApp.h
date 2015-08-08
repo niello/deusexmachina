@@ -19,6 +19,7 @@
 #define ERR_INVALID_CMD_LINE		5
 #define ERR_IO_READ					6
 #define ERR_IO_WRITE				7
+#define ERR_INVALID_DATA			8
 
 #define SEP_LINE "--------------------------------------------------------------------------------"
 
