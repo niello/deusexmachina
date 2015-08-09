@@ -96,6 +96,14 @@ enum ECaps
 	Caps_ReadDepthAsTexture		// Use depth buffer as a shader input
 };
 
+enum EColorMask
+{
+	ColorMask_Red	= 0x01,
+	ColorMask_Green	= 0x02,
+	ColorMask_Blue	= 0x04,
+	ColorMask_Alpha	= 0x08
+};
+
 enum EPixelFormat
 {
 	PixelFmt_Invalid = 0,
