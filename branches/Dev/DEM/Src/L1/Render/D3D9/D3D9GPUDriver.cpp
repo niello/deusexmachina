@@ -1826,6 +1826,44 @@ n_assert(false);
 }
 //---------------------------------------------------------------------
 
+PShader CD3D9GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, DWORD Size)
+{
+	if (!pData || !Size) return NULL;
+
+	IUnknown* pShader = NULL;
+
+	switch (ShaderType)
+	{
+		case ShaderType_Vertex:
+		{
+			IDirect3DVertexShader9* pVS = NULL;
+			pD3DDevice->CreateVertexShader((const DWORD*)pData, &pVS);
+			pShader = pVS;
+			break;
+		}
+		case ShaderType_Pixel:
+		{
+			IDirect3DPixelShader9* pPS = NULL;
+			pD3DDevice->CreatePixelShader((const DWORD*)pData, &pPS);
+			pShader = pPS;
+			break;
+		}
+		default: return NULL;
+	};
+
+	if (!pShader) return NULL;
+
+	Render::PD3D9Shader Shader = n_new(Render::CD3D9Shader);
+	if (!Shader->Create(pShader))
+	{
+		pShader->Release();
+		return NULL;
+	}
+
+	return Shader.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode)
 {
 	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());

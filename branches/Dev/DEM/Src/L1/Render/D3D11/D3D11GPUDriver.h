@@ -171,7 +171,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
-	//???CreateShader? instead of D3D11 API code in loaders?
+	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, DWORD Size);
 	virtual PConstantBuffer		CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData = NULL);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);

@@ -2137,6 +2137,66 @@ ProcessFailure:
 }
 //---------------------------------------------------------------------
 
+PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, DWORD Size)
+{
+	if (!pData || !Size) return NULL;
+
+	ID3D11DeviceChild* pShader = NULL;
+
+	switch (ShaderType)
+	{
+		case ShaderType_Vertex:
+		{
+			ID3D11VertexShader* pVS = NULL;
+			pD3DDevice->CreateVertexShader(pData, Size, NULL, &pVS);
+			pShader = pVS;
+			break;
+		}
+		case ShaderType_Pixel:
+		{
+			ID3D11PixelShader* pPS = NULL;
+			pD3DDevice->CreatePixelShader(pData, Size, NULL, &pPS);
+			pShader = pPS;
+			break;
+		}
+		case ShaderType_Geometry:
+		{
+			//???need stream output? or separate method? or separate shader type?
+			ID3D11GeometryShader* pGS = NULL;
+			pD3DDevice->CreateGeometryShader(pData, Size, NULL, &pGS);
+			pShader = pGS;
+			break;
+		}
+		case ShaderType_Hull:
+		{
+			ID3D11HullShader* pHS = NULL;
+			pD3DDevice->CreateHullShader(pData, Size, NULL, &pHS);
+			pShader = pHS;
+			break;
+		}
+		case ShaderType_Domain:
+		{
+			ID3D11DomainShader* pDS = NULL;
+			pD3DDevice->CreateDomainShader(pData, Size, NULL, &pDS);
+			pShader = pDS;
+			break;
+		}
+		default: return NULL;
+	};
+
+	if (!pShader) return NULL;
+
+	Render::PD3D11Shader Shader = n_new(Render::CD3D11Shader);
+	if (!Shader->Create(pShader))
+	{
+		pShader->Release();
+		return NULL;
+	}
+
+	return Shader.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 // Pointer will be 16-byte aligned
 bool CD3D11GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode)
 {
