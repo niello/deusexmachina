@@ -5,6 +5,7 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/HRDParser.h>
+#include <Data/StringTokenizer.h>
 #include <ToolRenderStateDesc.h>
 #include <ConsoleApp.h>
 #include <DEMD3DInclude.h>
@@ -131,9 +132,23 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 
 	//!!!if export path is empty, construct it here!
 
+	CArray<D3D_SHADER_MACRO> Defines;
+	char* pDefineString = NULL;
+	if (Desc.Defines.GetLength())
+	{
+		pDefineString = (char*)n_malloc(Desc.Defines.GetLength() + 1);
+		strcpy_s(pDefineString, Desc.Defines.GetLength() + 1, Desc.Defines.CStr());
+
+		D3D_SHADER_MACRO CurrMacro = { 0 };
+
+		while (pDefineString)
+		{
+			//strpbrk(
+		}
+	}
 	//!!!tokenize (may be with fence)!
 	//may even destruct existing string!
-	D3D_SHADER_MACRO Defines[] = { "zero", "0", NULL, NULL };
+	//D3D_SHADER_MACRO Defines[] = { "zero", "0", NULL, NULL };
 
 	//???create once, in main, pass by param?
 	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(Desc.SrcPath), RootPath);
@@ -141,8 +156,10 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 	ID3DBlob* pCode = NULL;
 	ID3DBlob* pErrors = NULL;
 	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), Desc.SrcPath.CStr(),
-							Defines, &IncHandler, Desc.EntryPoint.CStr(), pTarget,
+							&Defines[0], &IncHandler, Desc.EntryPoint.CStr(), pTarget,
 							Flags, 0, &pCode, &pErrors);
+
+	if (pDefineString) n_free(pDefineString);
 
 	if (FAILED(hr) || !pCode)
 	{
@@ -249,6 +266,7 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 	ShaderSection->Get(Desc.Defines, CStrID("Defines")); // NAME=VALUE;NAME=VALUE;...NAME=VALUE
 
 	Desc.SrcPath = IOSrv->ResolveAssigns(Desc.SrcPath);
+	Desc.Defines.Trim();
 
 	// compare with all registered //???use database?
 	// if found, return export path from it

@@ -17,6 +17,7 @@ protected:
 	LPCSTR	pCursor;
 	LPSTR	pBuffer;
 	DWORD	BufferSize;
+	char	CurrDelimiter;
 	bool	FreeBuffer;
 
 public:
@@ -26,6 +27,7 @@ public:
 
 	void	ResetCursor() { pCursor = pString; }
 	LPCSTR	GetCurrToken() const { return pBuffer; }
+	char	GetCurrDelimiter() const { return CurrDelimiter; }
 	LPCSTR	GetNextToken(LPCSTR pSplitChars);
 	LPCSTR	GetNextToken(char SplitChar);
 	LPCSTR	GetNextToken(LPCSTR pSplitChars, char Fence);
@@ -36,7 +38,8 @@ inline CStringTokenizer::CStringTokenizer(LPCSTR String, LPSTR Buffer, DWORD Buf
 	pString(String),
 	pCursor(String),
 	pBuffer(Buffer),
-	BufferSize(BufSize)
+	BufferSize(BufSize),
+	CurrDelimiter(0)
 {
 	if (pBuffer)
 	{
@@ -65,8 +68,13 @@ inline LPCSTR CStringTokenizer::GetNextToken(LPCSTR pSplitChars)
 		n_assert2_dbg(TokenSize < BufferSize, "CStringTokenizer > Buffer overflow");
 		memcpy(pBuffer, pCursor, TokenSize);
 		pBuffer[TokenSize] = 0;
+		CurrDelimiter = *pTokenEnd;
 	}
-	else n_verify_dbg(strcpy_s(pBuffer, BufferSize, pCursor) == 0);
+	else
+	{
+		n_verify_dbg(strcpy_s(pBuffer, BufferSize, pCursor) == 0);
+		CurrDelimiter = 0;
+	}
 
 	pCursor = pTokenEnd;
 	return pBuffer;
@@ -84,8 +92,13 @@ inline LPCSTR CStringTokenizer::GetNextToken(char SplitChar)
 		n_assert2_dbg(TokenSize < BufferSize, "CStringTokenizer > Buffer overflow");
 		memcpy(pBuffer, pCursor, TokenSize);
 		pBuffer[TokenSize] = 0;
+		CurrDelimiter = *pTokenEnd;
 	}
-	else n_verify_dbg(strcpy_s(pBuffer, BufferSize, pCursor) == 0);
+	else
+	{
+		n_verify_dbg(strcpy_s(pBuffer, BufferSize, pCursor) == 0);
+		CurrDelimiter = 0;
+	}
 
 	pCursor = pTokenEnd;
 	return pBuffer;
@@ -110,6 +123,7 @@ inline LPCSTR CStringTokenizer::GetNextToken(LPCSTR pSplitChars, char Fence)
 			memcpy(pBuffer, pCursor, TokenSize);
 			pBuffer[TokenSize] = 0;
 			pCursor = pTokenEnd;
+			CurrDelimiter = *pTokenEnd;
 			return pBuffer;
 		}
 		else return GetNextToken(pSplitChars);
@@ -117,6 +131,7 @@ inline LPCSTR CStringTokenizer::GetNextToken(LPCSTR pSplitChars, char Fence)
 	else
 	{
 		pCursor = NULL;
+		CurrDelimiter = 0;
 		return NULL;
 	}
 }

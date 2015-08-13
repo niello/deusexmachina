@@ -3,7 +3,7 @@
 #include <ConsoleApp.h>
 
 // Debug args:
-// -waitkey -v 5 -root "..\..\..\..\..\InsanePoet\Content" -in "..\..\..\..\..\InsanePoet\Content\Src\Shaders\SM_4_0\CEGUI.hrd" -out "..\..\..\..\..\InsanePoet\Content\Export\Shaders\SM_4_0\CEGUI.eff"
+// -waitkey -v 5 -root "..\..\..\..\..\InsanePoet\Content" -db "..\..\..\..\..\InsanePoet\Content\Src\Shaders\ShaderDB.db3" -in "..\..\..\..\..\InsanePoet\Content\Src\Shaders\SM_4_0\CEGUI.hrd" -out "..\..\..\..\..\InsanePoet\Content\Export\Shaders\SM_4_0\CEGUI.eff"
 
 #define TOOL_NAME	"CFShader"
 #define VERSION		"1.0"
@@ -13,6 +13,8 @@ CString	RootPath;
 
 int ExitApp(int Code, bool WaitKey);
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug);
+bool OpenDB(const char* pURI);
+void CloseDB();
 
 int main(int argc, const char** argv)
 {
@@ -23,9 +25,12 @@ int main(int argc, const char** argv)
 	const char* pIn = Args.GetStringArg("-in");
 	const char* pOut = Args.GetStringArg("-out");
 	RootPath = Args.GetStringArg("-root");
+	const char* pDB = Args.GetStringArg("-db");
 	bool Debug = Args.GetBoolArg("-d");
 
-	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+	if (!pIn || !pOut || !pDB || !*pIn || !*pOut || !*pDB) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+
+	if (!OpenDB(pDB)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 
 	IO::CIOServer IOServer;
 
@@ -74,6 +79,8 @@ int main(int argc, const char** argv)
 
 int ExitApp(int Code, bool WaitKey)
 {
+	CloseDB();
+
 	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occured with code %d\n", Code);
 
 	if (WaitKey)
