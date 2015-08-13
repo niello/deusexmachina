@@ -9,10 +9,8 @@ Public Domain
 http://www.sqlite.org/copyright.html
 
 Current version used:
-3.7.14
+3.8.11.1
 
 Purpose in DEM:
-Level and savegame data storage
+Database for tools (currently shader DB)
 
-Status:
-Not used
