@@ -106,7 +106,9 @@
     <ClInclude Include="..\..\..\Src\CmdLineArgs.h" />
     <ClInclude Include="..\..\..\Src\ConsoleApp.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.h" />
+    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ShaderDB.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.h" />
+    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ValueTable.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.cpp" />
@@ -114,6 +116,7 @@
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\Main.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderDB.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.cpp" />
+    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ValueTable.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

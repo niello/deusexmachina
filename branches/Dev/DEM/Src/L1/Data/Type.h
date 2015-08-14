@@ -4,13 +4,12 @@
 
 #include <System/System.h>
 
-#define DECLARE_TYPE(T, ID)		namespace Data { template<> class CTypeID<T> { public: enum { TypeID = ID }; enum { IsDeclared = true }; }; }
-//#define DECLARE_TYPE(T)		DECLARE_TYPE(T, -1)
-#define DEFINE_TYPE(T)			static CTypeImpl<T> DataType_##T; const CType* CTypeImpl<T>::Type = &DataType_##T;
-#define DEFINE_TYPE_EX(T, Name)	static CTypeImpl<T> DataType_##Name; const CType* CTypeImpl<T>::Type = &DataType_##Name;
-#define DATA_TYPE(T)			(Data::CType::GetType<T>())
-#define DATA_TYPE_ID(T)			(Data::CType::GetTypeID<T>())
-#define DATA_TYPE_NV(T)			Data::CTypeImpl<T>::GetNVType()->CTypeImpl<T>
+#define DECLARE_TYPE(T, ID)					namespace Data { template<> class CTypeID<T> { public: enum { TypeID = ID }; enum { IsDeclared = true }; }; }
+#define DEFINE_TYPE(T, DEFAULT)				static CTypeImpl<T> DataType_##T; const CType* CTypeImpl<T>::Type = &DataType_##T; const T CTypeImpl<T>::DefaultValue = DEFAULT;
+#define DEFINE_TYPE_EX(T, Name, DEFAULT)	static CTypeImpl<T> DataType_##Name; const CType* CTypeImpl<T>::Type = &DataType_##Name; const T CTypeImpl<T>::DefaultValue = DEFAULT;
+#define DATA_TYPE(T)						(Data::CType::GetType<T>())
+#define DATA_TYPE_ID(T)						(Data::CType::GetTypeID<T>())
+#define DATA_TYPE_NV(T)						Data::CTypeImpl<T>::GetNVType()->CTypeImpl<T>
 
 // Template data type implementation.
 
@@ -42,8 +41,6 @@ public:
 	static const CType*	GetType() { n_assert(CTypeID<T>::IsDeclared); return CTypeImpl<T>::Type; }
 	template<class T>
 	static int			GetTypeID() { n_assert(CTypeID<T>::IsDeclared); return CTypeID<T>::TypeID; }
-	//template<class T>
-	//static const T&		GetDefault() { n_assert(CTypeID<T>::IsDeclared); return CTypeImpl<T>::Default; }
 };
 
 // Needed only for assertions, can remove when disable asserts
@@ -63,7 +60,7 @@ class CTypeImpl: public CType
 public:
 	
 	static const CType* Type;
-	//static const T		Default;
+	static const T		DefaultValue;
 
 	CTypeImpl() { n_assert(CTypeID<T>::IsDeclared); /*n_assert(CTypeID<T>::TypeID != -1);*/ }
 	
@@ -90,9 +87,9 @@ public:
 
 template<class T> void CTypeImpl<T>::New(void** pObj) const
 {
-	//!!!see disassembly here (in Release)!
-	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)();
-	else *(T**)pObj = n_new(T)();
+	//!!!check disassembly here (in Release)!
+	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(DefaultValue);
+	else *(T**)pObj = n_new(T)(DefaultValue);
 }
 //---------------------------------------------------------------------
 

@@ -3,7 +3,7 @@
 
 namespace Data
 {
-DEFINE_TYPE(CBuffer)
+DEFINE_TYPE(CBuffer, CBuffer())
 
 int CBuffer::BinaryCompare(const CBuffer& Other) const
 {
