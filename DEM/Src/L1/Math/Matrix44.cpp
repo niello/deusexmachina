@@ -12,6 +12,6 @@ const matrix44 matrix44::Ortho = matrix44(0.5f, 0.0f,    0.0f, 0.0f,
 
 namespace Data
 {
-DEFINE_TYPE(matrix44)
+DEFINE_TYPE(matrix44, matrix44::Identity)
 //DEFINE_TYPE(CMatrixPtrArray)
 }

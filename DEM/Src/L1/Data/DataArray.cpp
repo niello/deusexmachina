@@ -2,5 +2,5 @@
 
 namespace Data
 {
-DEFINE_TYPE(PDataArray)
+DEFINE_TYPE(PDataArray, PDataArray())
 };

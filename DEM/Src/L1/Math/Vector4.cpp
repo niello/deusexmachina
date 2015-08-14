@@ -8,5 +8,5 @@ const vector4 vector4::White(1.f, 1.f, 1.f, 1.f);
 
 namespace Data
 {
-DEFINE_TYPE(vector4)
+DEFINE_TYPE(vector4, vector4::Zero)
 }

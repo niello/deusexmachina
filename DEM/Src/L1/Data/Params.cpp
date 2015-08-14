@@ -4,7 +4,7 @@
 
 namespace Data
 {
-DEFINE_TYPE(PParams)
+DEFINE_TYPE(PParams, PParams())
 
 void CParams::FromDataDict(const CDataDict& Dict)
 {

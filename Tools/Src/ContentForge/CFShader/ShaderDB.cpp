@@ -1,8 +1,148 @@
 #include <ConsoleApp.h>
+#include <ValueTable.h>
+#include <Util/UtilFwd.h> // CRC
 #include <sqlite3.h>
 
 sqlite3* SQLiteHandle = NULL;
 
+//!!!store concrete statements, provide interface like "ShaderExists" or "GetShaderPath" or smth!
+//or use struct with fields same as DB attributes!
+
+bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NULL)
+{
+	int Result;
+	do
+	{
+		Result = sqlite3_step(SQLiteStmt);
+		switch (Result)
+		{
+			case SQLITE_BUSY:	Sys::Sleep(1); break;
+			case SQLITE_DONE:	break;
+			case SQLITE_ROW:
+			{
+				if (!pOutTable) break;
+
+				int RowIdx = pOutTable->AddRow();
+				int ResultColIdx;
+				const int ColCount = sqlite3_data_count(SQLiteStmt);
+				for (ResultColIdx = 0; ResultColIdx < ColCount; ++ResultColIdx)
+				{
+					int ResultColType = sqlite3_column_type(SQLiteStmt, ResultColIdx);
+					if (SQLITE_NULL == ResultColType) continue;
+
+					int ColIdx = pOutTable->GetColumnIndex(CStrID(sqlite3_column_name(SQLiteStmt, ResultColIdx)));
+					if (ColIdx < 0) continue;
+
+					const Data::CType* Type = pOutTable->GetColumnValueType(ColIdx);
+					if (Type == TInt)
+					{
+						n_assert(SQLITE_INTEGER == ResultColType);
+						int Val = sqlite3_column_int(SQLiteStmt, ResultColIdx);
+						pOutTable->Set<int>(ColIdx, RowIdx, Val);
+					}
+					else if (Type == TFloat)
+					{
+						n_assert(SQLITE_FLOAT == ResultColType);
+						float Val = (float)sqlite3_column_double(SQLiteStmt, ResultColIdx);                        
+						pOutTable->Set<float>(ColIdx, RowIdx, Val);
+					}
+					else if (Type == TBool)
+					{
+						n_assert(SQLITE_INTEGER == ResultColType);
+						int Val = sqlite3_column_int(SQLiteStmt, ResultColIdx);
+						pOutTable->Set<bool>(ColIdx, RowIdx, (Val == 1));
+					}
+					else if (Type == TString)
+					{
+						n_assert(SQLITE_TEXT == ResultColType);
+						CString Val((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx));
+						pOutTable->Set<CString>(ColIdx, RowIdx, Val);
+					}
+					else if (Type == TStrID)
+					{
+						n_assert(SQLITE_TEXT == ResultColType);
+						CStrID Val((LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx));
+						pOutTable->Set<CStrID>(ColIdx, RowIdx, Val);
+					}
+					else if (Type == TBuffer)
+					{
+						n_assert(SQLITE_BLOB == ResultColType);
+						const void* ptr = sqlite3_column_blob(SQLiteStmt, ResultColIdx);
+						int size = sqlite3_column_bytes(SQLiteStmt, ResultColIdx);
+						Data::CBuffer Blob(ptr, size);
+						pOutTable->Set<Data::CBuffer>(ColIdx, RowIdx, Blob);
+					}
+					else if (!Type)
+					{
+						// Variable type column, it supports int, float & string. Bool is represented as int.
+						// If ScriptObject wants to save bool to DB & then restore it, this object should
+						// implement OnLoad scripted method or smth and convert int values to bool inside.
+						switch (ResultColType)
+						{
+							case SQLITE_INTEGER:
+								pOutTable->Set<int>(ColIdx, RowIdx, sqlite3_column_int(SQLiteStmt, ResultColIdx));
+								break;
+							case SQLITE_FLOAT:
+								pOutTable->Set<float>(ColIdx, RowIdx, (float)sqlite3_column_double(SQLiteStmt, ResultColIdx));
+								break;
+							case SQLITE_TEXT:
+								pOutTable->Set<CString>(ColIdx, RowIdx, CString((LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx)));
+								break;
+							default: Sys::Error("ExecuteStatement() > unsupported variable-type DB column type!");
+						}
+					}
+					else Sys::Error("ExecuteStatement() > unsupported type!");
+				}
+
+				break;
+			}
+			case SQLITE_ERROR:
+			{
+				n_msg(VL_ERROR, "SQLite error during sqlite3_step(): %s\n", sqlite3_errmsg(SQLiteHandle));
+				FAIL;
+			}
+			default:
+			{
+				n_msg(VL_ERROR, "sqlite3_step() returned error code %d\n", Result);
+				FAIL;
+			}
+		}
+	}
+	while (Result != SQLITE_DONE);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL)
+{
+	if (!pSQL) OK;
+
+	bool Result = true;
+	do
+	{
+		while (*pSQL && strchr(DEM_WHITESPACE, *pSQL)) ++pSQL;
+		if (!*pSQL) break;
+
+		sqlite3_stmt* SQLiteStmt = NULL;
+		if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLiteStmt, &pSQL) != SQLITE_OK)
+		{
+			n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+			FAIL;
+		}
+
+		//bind params
+
+		Result = ExecuteStatement(SQLiteStmt, pOutTable);
+		sqlite3_finalize(SQLiteStmt);
+	}
+	while (Result);
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
+// NB: pURI must be encoded in UTF-8
 bool OpenDB(const char* pURI)
 {
 	n_assert(!SQLiteHandle);
@@ -24,57 +164,49 @@ bool OpenDB(const char* pURI)
 		FAIL;
 	}
 
-	//???sync mode?
+	//???synchronous mode?
 	const char* pSQL =
-		"PRAGMA journal_mode=MEMORY;\
-		PRAGMA locking_mode=EXCLUSIVE;\
-		PRAGMA cache_size=2048;\
-		PRAGMA synchronous=ON;\
-		PRAGMA temp_store=MEMORY";
-
-	while (pSQL && *pSQL)
+"PRAGMA journal_mode=MEMORY;\
+PRAGMA locking_mode=EXCLUSIVE;\
+PRAGMA cache_size=2048;\
+PRAGMA synchronous=ON;\
+PRAGMA temp_store=MEMORY";
+	if (!ExecuteSQLQuery(pSQL))
 	{
-		sqlite3_stmt* SQLiteStmt = NULL;
-		if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLiteStmt, &pSQL) != SQLITE_OK)
+		sqlite3_close(SQLiteHandle);
+		SQLiteHandle = NULL;
+		FAIL;
+	}
+
+	// Query tables and create them if DB is empty
+	DB::CValueTable Tables;
+	if (!ExecuteSQLQuery("SELECT name FROM sqlite_master WHERE type='table'", &Tables))
+	{
+		sqlite3_close(SQLiteHandle);
+		SQLiteHandle = NULL;
+		FAIL;
+	}
+
+	if (!Tables.GetRowCount())
+	{
+		const char* pCreateDBSQL = "\
+CREATE TABLE 'Shaders' (\
+	'ID' INTEGER,\
+	'ShaderType' INTEGER,\
+	'Target' INTEGER,\
+	PRIMARY KEY (ID) ON CONFLICT REPLACE);\
+\
+CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target)";
+		if (!ExecuteSQLQuery(pCreateDBSQL))
 		{
-			n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+			sqlite3_close(SQLiteHandle);
+			SQLiteHandle = NULL;
 			FAIL;
 		}
 
-		bool Done = false;
-		while (!Done)
-		{
-			Result = sqlite3_step(SQLiteStmt);
-			switch (Result)
-			{
-				case SQLITE_DONE:	Done = true; break;
-				case SQLITE_BUSY:	Sys::Sleep(1); break;
-				case SQLITE_ROW:	break;
-				case SQLITE_ERROR:
-				{
-					n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
-					sqlite3_close(SQLiteHandle);
-					SQLiteHandle = NULL;
-					FAIL;
-				}
-				case SQLITE_MISUSE:
-				{
-					n_msg(VL_ERROR, "CCommand::Execute(): sqlite3_step() returned SQLITE_MISUSE!\n");
-					sqlite3_close(SQLiteHandle);
-					SQLiteHandle = NULL;
-					FAIL;
-				}
-				default:
-				{
-					n_msg(VL_ERROR, "CCommand::Execute(): unknown error code %d returned from sqlite3_step()\n", Result);
-					sqlite3_close(SQLiteHandle);
-					SQLiteHandle = NULL;
-					FAIL;
-				}
-			}
-		}
-
-		sqlite3_finalize(SQLiteStmt);
+//const nString RealFrag(" REAL");
+//const nString TextFrag(" TEXT");
+//const nString BlobFrag(" BLOB");
 	}
 
 	OK;

@@ -15,12 +15,12 @@ template<> inline LPCSTR CTypeImpl<CString>::ToString(const void* pObj) const { 
 template<> inline LPCSTR CTypeImpl<CStrID>::ToString(const void* pObj) const { return (LPCSTR)pObj; }
 
 //DEFINE_TYPE(void)
-DEFINE_TYPE(bool)
-DEFINE_TYPE(int)
-DEFINE_TYPE(float)
-DEFINE_TYPE(CString)
-DEFINE_TYPE(CStrID)
-DEFINE_TYPE(PVOID)
+DEFINE_TYPE(bool, false)
+DEFINE_TYPE(int, 0)
+DEFINE_TYPE(float, 0.f)
+DEFINE_TYPE(CString, CString::Empty)
+DEFINE_TYPE(CStrID, CStrID::Empty)
+DEFINE_TYPE(PVOID, NULL)
 
 void CData::SetType(const CType* SrcType)
 {
