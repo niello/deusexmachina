@@ -191,6 +191,7 @@ inline CString CString::SubString(DWORD Start, DWORD Size) const
 
 inline void CString::Replace(char CurrChar, char NewChar)
 {
+	if (!pString) return;
 	char* pChar = pString;
 	char Char = *pChar;
 	while (Char)

@@ -53,7 +53,7 @@ public:
 	CData(): Type(NULL), Value(NULL) {}
 	CData(const CData& Data): Type(NULL) { SetTypeValue(Data); }
 	template<class T> CData(const T& Val) { Type = DATA_TYPE(T); DATA_TYPE_NV(T)::NewT(&Value, &Val); }
-	explicit CData(const CType* type): Type(type) { Type->New(&Value); }
+	explicit CData(const CType* type): Type(type) { if (Type) Type->New(&Value); }
 	~CData() { if (Type) Type->Delete(&Value); }
 
 	template<class T> T&		New();

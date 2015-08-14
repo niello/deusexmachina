@@ -121,9 +121,6 @@ bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL)
 	bool Result = true;
 	do
 	{
-		while (*pSQL && strchr(DEM_WHITESPACE, *pSQL)) ++pSQL;
-		if (!*pSQL) break;
-
 		sqlite3_stmt* SQLiteStmt = NULL;
 		if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLiteStmt, &pSQL) != SQLITE_OK)
 		{
@@ -131,12 +128,36 @@ bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL)
 			FAIL;
 		}
 
+		while (*pSQL && strchr(DEM_WHITESPACE, *pSQL)) ++pSQL;
+
 		//bind params
 
-		Result = ExecuteStatement(SQLiteStmt, pOutTable);
+		if (!*pSQL && pOutTable) // The last query, fill table
+		{
+			pOutTable->TrackModifications(false);
+			
+			int ColCount = sqlite3_column_count(SQLiteStmt);
+			if (ColCount > 0)
+			{
+				if (!pOutTable->GetColumnCount())
+				{
+					// SELECT * -> add all table columns, ignore unknown
+					pOutTable->BeginAddColumns();
+					for (int ResultColIdx = 0; ResultColIdx < ColCount; ++ResultColIdx)
+						pOutTable->AddColumn(CStrID(sqlite3_column_name(SQLiteStmt, ResultColIdx)), NULL, false);
+					pOutTable->EndAddColumns();
+				}
+			}
+		
+			Result = ExecuteStatement(SQLiteStmt, pOutTable);
+			
+			pOutTable->TrackModifications(true);
+		}
+		else Result = ExecuteStatement(SQLiteStmt);
+
 		sqlite3_finalize(SQLiteStmt);
 	}
-	while (Result);
+	while (Result && *pSQL);
 
 	return Result;
 }
@@ -165,8 +186,8 @@ bool OpenDB(const char* pURI)
 	}
 
 	//???synchronous mode?
-	const char* pSQL =
-"PRAGMA journal_mode=MEMORY;\
+	const char* pSQL = "\
+PRAGMA journal_mode=MEMORY;\
 PRAGMA locking_mode=EXCLUSIVE;\
 PRAGMA cache_size=2048;\
 PRAGMA synchronous=ON;\
@@ -196,6 +217,13 @@ CREATE TABLE 'Shaders' (\
 	'Target' INTEGER,\
 	PRIMARY KEY (ID) ON CONFLICT REPLACE);\
 \
+CREATE TABLE 'Macros' (\
+	'ShaderID' INTEGER,\
+	'Name' TEXT,\
+	'Value' TEXT,\
+	PRIMARY KEY (ShaderID, Name) ON CONFLICT REPLACE,\
+	FOREIGN KEY (ShaderID) REFERENCES Shaders(ID));\
+\
 CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target)";
 		if (!ExecuteSQLQuery(pCreateDBSQL))
 		{
@@ -203,10 +231,6 @@ CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target)";
 			SQLiteHandle = NULL;
 			FAIL;
 		}
-
-//const nString RealFrag(" REAL");
-//const nString TextFrag(" TEXT");
-//const nString BlobFrag(" BLOB");
 	}
 
 	OK;

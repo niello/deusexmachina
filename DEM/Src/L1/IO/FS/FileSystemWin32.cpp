@@ -253,7 +253,7 @@ bool CFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntry
 
 void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	if (!pPath && !*pPath) return NULL;
+	if (!pPath || !*pPath) return NULL;
 
 	DWORD Access = 0;
 	if ((Mode & SAM_READ) || (Mode & SAM_APPEND)) Access |= GENERIC_READ;

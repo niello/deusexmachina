@@ -103,8 +103,8 @@ public:
 	bool				IsRowModified(int RowIdx) const;
 	bool				IsModified() const { return Flags.Is(_IsModified); }
 	bool				HasModifiedRows() const { return Flags.Is(_HasModifiedRows); }
-	void				SetModifiedTracking(bool Track) { Flags.SetTo(_TrackModifications, Track); }
-	bool				GetModifiedTracking() const { return Flags.Is(_TrackModifications); }
+	void				TrackModifications(bool Track) { Flags.SetTo(_TrackModifications, Track); }
+	bool				IsTrackingModifications() const { return Flags.Is(_TrackModifications); }
 	void				ClearNewRowStats();
 	void				ClearDeletedRows();
 	void				ClearRowFlags(int RowIdx);
