@@ -101,8 +101,6 @@ void CValueTable::BeginAddColumns()
 
 void CValueTable::AddColumn(CStrID ID, const Data::CType* Type, bool RecAsNewCol)
 {
-	n_assert(Type);
-
 	if (ColumnIndexMap.Contains(ID)) return;
 
 	ColumnInfo NewColInfo;
