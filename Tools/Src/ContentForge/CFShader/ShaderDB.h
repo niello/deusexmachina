@@ -32,4 +32,7 @@ struct CShaderDBRec
 	//C???Fixed???Array defines?
 };
 
+bool OpenDB(const char* pURI);
+void CloseDB();
+
 #endif

@@ -204,7 +204,7 @@ public:
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
 	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
-	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occured
+	DWORD						ApplyChanges(DWORD ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occurred
 
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
 	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);
