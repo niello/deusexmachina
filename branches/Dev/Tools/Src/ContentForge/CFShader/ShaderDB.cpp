@@ -1,12 +1,65 @@
+#include <ShaderDB.h>
 #include <ConsoleApp.h>
 #include <ValueTable.h>
 #include <Util/UtilFwd.h> // CRC
+#include <Data/Params.h>
 #include <sqlite3.h>
 
 sqlite3* SQLiteHandle = NULL;
 
 //!!!store concrete statements, provide interface like "ShaderExists" or "GetShaderPath" or smth!
 //or use struct with fields same as DB attributes!
+
+bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
+{
+	if (!SQLiteStmt || sqlite3_reset(SQLiteStmt) != SQLITE_OK) FAIL;
+
+	CString ParamName(NULL, 0, 64);
+	for (int i = 0; i < Params.GetCount(); ++i)
+	{
+		const Data::CParam& Prm = Params.Get(i);
+
+		ParamName = ":";
+		ParamName += Prm.GetName().CStr();
+		int Idx = sqlite3_bind_parameter_index(SQLiteStmt, ParamName.CStr());
+		if (Idx == 0) continue;
+
+		const Data::CData& Val = Prm.GetRawValue();
+		int Error = SQLITE_OK;
+		if (Val.IsVoid()) ; //equal to "Error = sqlite3_bind_null(SQLiteStmt, Idx);"
+		else if (Val.IsA<int>()) Error = sqlite3_bind_int(SQLiteStmt, Idx, Val);
+		else if (Val.IsA<float>()) Error = sqlite3_bind_double(SQLiteStmt, Idx, (double)Val.GetValue<float>());
+		else if (Val.IsA<bool>()) Error = sqlite3_bind_int(SQLiteStmt, Idx, (bool)Val ? 1 : 0);
+		else if (Val.IsA<CString>())
+		{
+			// NOTE: the string should be in UTF-8 format.
+			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValuePtr<CString>()->CStr(),
+				-1, SQLITE_TRANSIENT);
+		}
+		else if (Val.IsA<CStrID>())
+		{
+			// NOTE: the string should be in UTF-8 format.
+			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValue<CStrID>().CStr(),
+				-1, SQLITE_TRANSIENT);
+		}
+		else if (Val.IsA<Data::CBuffer>())
+		{
+			const Data::CBuffer* Blob = Val.GetValuePtr<Data::CBuffer>();
+			if (Blob->IsValid())
+				Error = sqlite3_bind_blob(SQLiteStmt, Idx, Blob->GetPtr(), Blob->GetSize(), SQLITE_TRANSIENT);
+		}
+		else
+		{
+			n_msg(VL_ERROR, "BindQueryParams() > invalid parameter type!");
+			FAIL;
+		}
+
+		if (Error != SQLITE_OK) FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NULL)
 {
@@ -114,7 +167,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 }
 //---------------------------------------------------------------------
 
-bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL)
+bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL, const Data::CParams* pParams = NULL)
 {
 	if (!pSQL) OK;
 
@@ -130,7 +183,7 @@ bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL)
 
 		while (*pSQL && strchr(DEM_WHITESPACE, *pSQL)) ++pSQL;
 
-		//bind params
+		if (pParams && !BindQueryParams(SQLiteStmt, *pParams)) FAIL;
 
 		if (!*pSQL && pOutTable) // The last query, fill table
 		{
@@ -211,20 +264,35 @@ PRAGMA temp_store=MEMORY";
 	if (!Tables.GetRowCount())
 	{
 		const char* pCreateDBSQL = "\
+CREATE TABLE 'Files' (\
+	'ID' INTEGER,\
+	'Path' VARCHAR(1024) NOT NULL,\
+	'ModifyTimestamp' INTEGER,\
+	'Size' INTEGER,\
+	'CRC' INTEGER,\
+	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE);\
+\
 CREATE TABLE 'Shaders' (\
 	'ID' INTEGER,\
 	'ShaderType' INTEGER,\
 	'Target' INTEGER,\
-	PRIMARY KEY (ID) ON CONFLICT REPLACE);\
+	'CompilerFlags' INTEGER,\
+	'EntryPoint' VARCHAR(64),\
+	'SrcFileID' INTEGER,\
+	'ObjFileID' INTEGER,\
+	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE,\
+	FOREIGN KEY (SrcFileID) REFERENCES Files(ID),\
+	FOREIGN KEY (ObjFileID) REFERENCES Files(ID));\
 \
 CREATE TABLE 'Macros' (\
 	'ShaderID' INTEGER,\
-	'Name' TEXT,\
-	'Value' TEXT,\
+	'Name' VARCHAR(64),\
+	'Value' VARCHAR(1024),\
 	PRIMARY KEY (ShaderID, Name) ON CONFLICT REPLACE,\
 	FOREIGN KEY (ShaderID) REFERENCES Shaders(ID));\
 \
-CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target)";
+CREATE INDEX Files_MainIndex ON Files (Path);\
+CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target, CompilerFlags)";
 		if (!ExecuteSQLQuery(pCreateDBSQL))
 		{
 			sqlite3_close(SQLiteHandle);
@@ -247,162 +315,3 @@ void CloseDB()
 	SQLiteHandle = NULL;
 }
 //---------------------------------------------------------------------
-
-/*
-int Idx = sqlite3_bind_parameter_index(SQLiteStmt, ":param1");
-
-void CCommand::BindValue(int Idx, const CData& Val)
-{
-	n_assert(SQLiteStmt);
-	int Error = SQLITE_OK;
-	if (Val.IsVoid()) ; //equal to "Error = sqlite3_bind_null(SQLiteStmt, Idx + 1);"
-	else if (Val.IsA<int>()) Error = sqlite3_bind_int(SQLiteStmt, Idx + 1, Val);
-	else if (Val.IsA<float>()) Error = sqlite3_bind_double(SQLiteStmt, Idx + 1, (double)Val.GetValue<float>());
-	else if (Val.IsA<bool>()) Error = sqlite3_bind_int(SQLiteStmt, Idx + 1, (bool)Val ? 1 : 0);
-	else if (Val.IsA<nString>())
-	{
-		// NOTE: the string should be in UTF-8 format.
-		Error = sqlite3_bind_text(SQLiteStmt, Idx + 1, Val.GetValuePtr<nString>()->Get(),
-			-1, SQLITE_TRANSIENT);
-	}
-	else if (Val.IsA<CStrID>())
-	{
-		// NOTE: the string should be in UTF-8 format.
-		Error = sqlite3_bind_text(SQLiteStmt, Idx + 1, Val.GetValue<CStrID>().CStr(),
-			-1, SQLITE_TRANSIENT);
-	}
-	else if (Val.IsA<vector4>())
-	{
-		// NOTE: float4's will be saved as blobs in the DB, since the 
-		// float4 may go away at any time, let SQLite make its own copy of the data
-		Error = sqlite3_bind_blob(SQLiteStmt, Idx + 1, Val.GetValuePtr<vector4>(),
-			sizeof(vector4), SQLITE_TRANSIENT);
-	}
-	else if (Val.IsA<matrix44>())
-	{
-		// NOTE: matrix44's will be saved as blobs in the DB, since the 
-		// matrix44 may go away at any time, let SQLite make its own copy of the data
-		Error = sqlite3_bind_blob(SQLiteStmt, Idx + 1, Val.GetValuePtr<matrix44>(),
-			sizeof(matrix44), SQLITE_TRANSIENT);
-	}                   
-	else if (Val.IsA<CBuffer>())
-	{
-		const CBuffer* Blob = Val.GetValuePtr<CBuffer>();
-		if (!Blob->IsValid()) return;
-		Error = sqlite3_bind_blob(SQLiteStmt, Idx + 1, Blob->GetPtr(), Blob->GetSize(), SQLITE_TRANSIENT);
-	}
-	else n_error("CCommand::ReadResultRow(): invalid attribute type!");
-	n_assert(SQLITE_OK == Error);
-}
-//---------------------------------------------------------------------
-
-
-// Reset the command, this clears the bound values
-n_assert(sqlite3_reset(SQLiteStmt) == SQLITE_OK);
-
-void CCommand::ReadRow()
-{
-	n_assert(SQLiteStmt);
-	n_assert(VT.isvalid());
-
-	int RowIdx = VT->AddRow();
-	int ResultColIdx;
-	const int ColCount = sqlite3_data_count(SQLiteStmt);
-	for (ResultColIdx = 0; ResultColIdx < ColCount; ResultColIdx++)
-	{
-		int ResultColType = sqlite3_column_type(SQLiteStmt, ResultColIdx);
-		if (SQLITE_NULL == ResultColType) continue;
-
-		int ColIdx = ResultIdxMap[ResultColIdx];
-		if (ColIdx < 0) continue;
-
-		const CType* Type = VT->GetColumnValueType(ColIdx);
-		if (Type == TInt)
-		{
-			n_assert(SQLITE_INTEGER == ResultColType);
-			int Val = sqlite3_column_int(SQLiteStmt, ResultColIdx);
-			VT->Set<int>(ColIdx, RowIdx, Val);
-		}
-		else if (Type == TFloat)
-		{
-			n_assert(SQLITE_FLOAT == ResultColType);
-			float Val = (float)sqlite3_column_double(SQLiteStmt, ResultColIdx);                        
-			VT->Set<float>(ColIdx, RowIdx, Val);
-		}
-		else if (Type == TBool)
-		{
-			n_assert(SQLITE_INTEGER == ResultColType);
-			int Val = sqlite3_column_int(SQLiteStmt, ResultColIdx);
-			VT->Set<bool>(ColIdx, RowIdx, (Val == 1));
-		}
-		else if (Type == TString)
-		{
-			n_assert(SQLITE_TEXT == ResultColType);
-			nString Val = (LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx);
-			VT->Set<nString>(ColIdx, RowIdx, Val);
-		}
-		else if (Type == TStrID)
-		{
-			n_assert(SQLITE_TEXT == ResultColType);
-			CStrID Val((LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx));
-			VT->Set<CStrID>(ColIdx, RowIdx, Val);
-		}
-		else if (Type == TVector4)
-		{
-			n_assert(SQLITE_BLOB == ResultColType);
-			const void* ptr = sqlite3_column_blob(SQLiteStmt, ResultColIdx);
-			uint size = sqlite3_column_bytes(SQLiteStmt, ResultColIdx);                        
-			const float* fptr = (const float*)ptr;
-
-			vector4 value;
-			if (size < sizeof(vector4))
-			{
-				n_assert(size == 12); // vector3
-				value.set(fptr[0], fptr[1], fptr[2], 0);
-			}
-			else
-			{
-				n_assert(size == sizeof(vector4));
-				value.set(fptr[0], fptr[1], fptr[2], fptr[3]);
-			}
-
-			VT->Set<vector4>(ColIdx, RowIdx, value);
-		}
-		else if (Type == TMatrix44)
-		{
-			n_assert(SQLITE_BLOB == ResultColType);
-			n_assert(sqlite3_column_bytes(SQLiteStmt, ResultColIdx) == sizeof(matrix44));
-			matrix44 mtx(*(const matrix44*)sqlite3_column_blob(SQLiteStmt, ResultColIdx));
-			VT->Set<matrix44>(ColIdx, RowIdx, mtx);                                            
-		}                   
-		else if (Type == TBuffer)
-		{
-			n_assert(SQLITE_BLOB == ResultColType);
-			const void* ptr = sqlite3_column_blob(SQLiteStmt, ResultColIdx);
-			int size = sqlite3_column_bytes(SQLiteStmt, ResultColIdx);
-			CBuffer Blob(ptr, size);
-			VT->Set<CBuffer>(ColIdx, RowIdx, Blob);
-		}
-		else if (!Type)
-		{
-			// Variable type column, it supports int, float & string. Bool is represented as int.
-			// If ScriptObject wants to save bool to DB & then restore it, this object should
-			// implement OnLoad scripted method or smth and convert int values to bool inside.
-			switch (ResultColType)
-			{
-				case SQLITE_INTEGER:
-					VT->Set<int>(ColIdx, RowIdx, sqlite3_column_int(SQLiteStmt, ResultColIdx));
-					break;
-				case SQLITE_FLOAT:
-					VT->Set<float>(ColIdx, RowIdx, (float)sqlite3_column_double(SQLiteStmt, ResultColIdx));
-					break;
-				case SQLITE_TEXT:
-					VT->Set<nString>(ColIdx, RowIdx, nString((LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx)));
-					break;
-				default: n_error("CCommand::ReadResultRow(): invalid attribute type!");
-			}
-		}
-		else n_error("CCommand::ReadResultRow(): invalid attribute type!");
-	}
-}
-*/

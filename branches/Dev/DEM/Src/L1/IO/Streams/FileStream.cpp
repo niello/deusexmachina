@@ -7,7 +7,8 @@ namespace IO
 
 bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert(!IsOpen() && FileName.IsValid() && !hFile);
+	n_assert(!IsOpen() && !hFile);
+	if (!FileName.IsValid()) FAIL;
 	if (!CStream::Open(Mode, Pattern)) FAIL;
 	hFile = IOSrv->OpenFile(FS, FileName, Mode, Pattern);
 	if (!hFile) FAIL;

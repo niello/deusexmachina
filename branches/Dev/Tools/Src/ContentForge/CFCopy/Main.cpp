@@ -67,7 +67,7 @@ int main(int argc, const char** argv)
 
 int ExitApp(int Code, bool WaitKey)
 {
-	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occured with code %d\n", Code);
+	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occurred with code %d\n", Code);
 	if (WaitKey)
 	{
 		Sys::Log("\nPress any key to exit...\n");
