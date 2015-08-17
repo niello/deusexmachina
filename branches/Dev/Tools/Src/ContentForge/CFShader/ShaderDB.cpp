@@ -5,10 +5,8 @@
 #include <Data/Params.h>
 #include <sqlite3.h>
 
-sqlite3* SQLiteHandle = NULL;
-
-//!!!store concrete statements, provide interface like "ShaderExists" or "GetShaderPath" or smth!
-//or use struct with fields same as DB attributes!
+sqlite3*		SQLiteHandle = NULL;
+sqlite3_stmt*	SQLFindShader = NULL;
 
 bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
@@ -61,8 +59,12 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 }
 //---------------------------------------------------------------------
 
-bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NULL)
+bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NULL, const Data::CParams* pParams = NULL)
 {
+	if (!SQLiteStmt) FAIL;
+
+	if (pParams && !BindQueryParams(SQLiteStmt, *pParams)) FAIL;
+
 	int Result;
 	do
 	{
@@ -183,8 +185,6 @@ bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL, const 
 
 		while (*pSQL && strchr(DEM_WHITESPACE, *pSQL)) ++pSQL;
 
-		if (pParams && !BindQueryParams(SQLiteStmt, *pParams)) FAIL;
-
 		if (!*pSQL && pOutTable) // The last query, fill table
 		{
 			pOutTable->TrackModifications(false);
@@ -202,11 +202,11 @@ bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL, const 
 				}
 			}
 		
-			Result = ExecuteStatement(SQLiteStmt, pOutTable);
+			Result = ExecuteStatement(SQLiteStmt, pOutTable, pParams);
 			
 			pOutTable->TrackModifications(true);
 		}
-		else Result = ExecuteStatement(SQLiteStmt);
+		else Result = ExecuteStatement(SQLiteStmt, NULL, pParams);
 
 		sqlite3_finalize(SQLiteStmt);
 	}
@@ -233,8 +233,7 @@ bool OpenDB(const char* pURI)
 		sqlite3_extended_result_codes(SQLiteHandle, 1) != SQLITE_OK)
 	{
 		n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
-		sqlite3_close(SQLiteHandle);
-		SQLiteHandle = NULL;
+		CloseDB();
 		FAIL;
 	}
 
@@ -247,8 +246,7 @@ PRAGMA synchronous=ON;\
 PRAGMA temp_store=MEMORY";
 	if (!ExecuteSQLQuery(pSQL))
 	{
-		sqlite3_close(SQLiteHandle);
-		SQLiteHandle = NULL;
+		CloseDB();
 		FAIL;
 	}
 
@@ -256,8 +254,7 @@ PRAGMA temp_store=MEMORY";
 	DB::CValueTable Tables;
 	if (!ExecuteSQLQuery("SELECT name FROM sqlite_master WHERE type='table'", &Tables))
 	{
-		sqlite3_close(SQLiteHandle);
-		SQLiteHandle = NULL;
+		CloseDB();
 		FAIL;
 	}
 
@@ -276,12 +273,15 @@ CREATE TABLE 'Shaders' (\
 	'ID' INTEGER,\
 	'ShaderType' INTEGER,\
 	'Target' INTEGER,\
-	'CompilerFlags' INTEGER,\
 	'EntryPoint' VARCHAR(64),\
-	'SrcFileID' INTEGER,\
+	'CompilerFlags' INTEGER,\
+	'SrcPath' VARCHAR(1024) NOT NULL,\
+	'SrcModifyTimestamp' INTEGER,\
+	'SrcSize' INTEGER,\
+	'SrcCRC' INTEGER,\
 	'ObjFileID' INTEGER,\
+	'InputSigFileID' INTEGER,\
 	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE,\
-	FOREIGN KEY (SrcFileID) REFERENCES Files(ID),\
 	FOREIGN KEY (ObjFileID) REFERENCES Files(ID));\
 \
 CREATE TABLE 'Macros' (\
@@ -291,14 +291,21 @@ CREATE TABLE 'Macros' (\
 	PRIMARY KEY (ShaderID, Name) ON CONFLICT REPLACE,\
 	FOREIGN KEY (ShaderID) REFERENCES Shaders(ID));\
 \
-CREATE INDEX Files_MainIndex ON Files (Path);\
-CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target, CompilerFlags)";
+CREATE INDEX Files_MainIndex ON Files (Size, CRC);\
+\
+CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoint)";
 		if (!ExecuteSQLQuery(pCreateDBSQL))
 		{
-			sqlite3_close(SQLiteHandle);
-			SQLiteHandle = NULL;
+			CloseDB();
 			FAIL;
 		}
+	}
+
+	pSQL = "SELECT * FROM Shaders WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND EntryPoint=:Entry";
+	if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLFindShader, &pSQL) != SQLITE_OK)
+	{
+		CloseDB();
+		FAIL;
 	}
 
 	OK;
@@ -307,11 +314,45 @@ CREATE INDEX Shaders_MainIndex ON Shaders (ShaderType, Target, CompilerFlags)";
 
 void CloseDB()
 {
-	if (!SQLiteHandle) return;
-	if (sqlite3_close(SQLiteHandle) != SQLITE_OK)
+	if (SQLFindShader)
 	{
-		n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+		sqlite3_finalize(SQLFindShader);
+		SQLFindShader = NULL;
 	}
-	SQLiteHandle = NULL;
+
+	if (SQLiteHandle)
+	{
+		if (sqlite3_close(SQLiteHandle) != SQLITE_OK)
+		{
+			n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+		}
+		SQLiteHandle = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+bool FindShaderRec(CShaderDBRec& InOut)
+{
+	Data::CParams Params(4);
+	Params.Set(CStrID("Path"), InOut.SrcFile.Path);
+	Params.Set(CStrID("Type"), (int)InOut.ShaderType);
+	Params.Set(CStrID("Target"), (int)InOut.Target);
+	Params.Set(CStrID("Entry"), InOut.EntryPoint);
+
+	DB::CValueTable Shaders;
+	if (!ExecuteStatement(SQLFindShader, &Shaders, &Params)) FAIL;
+
+	int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
+	for (int i = 0; i < Shaders.GetRowCount(); ++i)
+	{
+		//request and compare defines
+		n_msg(VL_DEBUG, "ID = %d\n", Shaders.Get<int>(Col_ID, 0));
+	}
+
+	InOut.ID = 0;
+	InOut.CompilerFlags = 0;
+	InOut.ObjFile.Path = CString::Empty;
+
+	FAIL;
 }
 //---------------------------------------------------------------------

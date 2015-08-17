@@ -8,9 +8,9 @@ CDEMD3DInclude::CDEMD3DInclude(const CString& ShdDir, const CString& ShdRootDir)
 	ShaderRootDir(ShdRootDir)
 {
 	ShaderDir.Trim(" \r\n\t\\", false);
-	if (ShaderDir[ShaderDir.GetLength() - 1] != '/') ShaderDir += '/';
+	if (ShaderDir.GetLength() && ShaderDir[ShaderDir.GetLength() - 1] != '/') ShaderDir += '/';
 	ShaderRootDir.Trim(" \r\n\t\\", false);
-	if (ShaderRootDir[ShaderRootDir.GetLength() - 1] != '/') ShaderRootDir += '/';
+	if (ShaderRootDir.GetLength() && ShaderRootDir[ShaderRootDir.GetLength() - 1] != '/') ShaderRootDir += '/';
 }
 //---------------------------------------------------------------------
 

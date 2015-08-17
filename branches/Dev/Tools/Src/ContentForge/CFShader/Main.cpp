@@ -1,10 +1,13 @@
 #include <IO/IOServer.h>
 #include <Data/StringTokenizer.h>
+#include <Data/Params.h>
+#include <Data/HRDParser.h>
+#include <Data/Buffer.h>
 #include <ConsoleApp.h>
 #include <ShaderDB.h>
 
 // Debug args:
-// -waitkey -v 5 -root "..\..\..\..\..\InsanePoet\Content\Src\Shaders" -in "..\..\..\..\..\InsanePoet\Content\Src\Shaders\SM_4_0\CEGUI.hrd" -out "..\..\..\..\..\InsanePoet\Content\Export\Shaders\SM_4_0\CEGUI.eff"
+// -waitkey -v 5 -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_4_0\CEGUI.eff"
 
 #define TOOL_NAME	"CFShader"
 #define VERSION		"1.0"
@@ -30,10 +33,11 @@ int main(int argc, const char** argv)
 				"Command line args:\n"
 				"------------------\n"
 				"-help OR /?                 show this help\n"
-				"-in [filepath{;filepath}]   input file(s)\n"
-				"-out [filepath{;filepath}]  output file(s), count must be the same\n"
+				"-proj [path]                project path\n"
 				"-root [path]                root path to shaders, typically the same as\n"
 				"                            'Shaders:' assign\n"
+				"-in [filepath{;filepath}]   input file(s)\n"
+				"-out [filepath{;filepath}]  output file(s), count must be the same\n"
 				"-db [filepath]              path to persistent shader DB,\n"
 				"                            default: -root + 'ShaderDB.db3'\n"
 				"-d                          build shaders with debug info\n"
@@ -46,22 +50,55 @@ int main(int argc, const char** argv)
 	const char* pIn = Args.GetStringArg("-in");
 	const char* pOut = Args.GetStringArg("-out");
 	RootPath = Args.GetStringArg("-root");
+	const char* pProjPath = Args.GetStringArg("-proj");
 	CString DB(Args.GetStringArg("-db"));
 	bool Debug = Args.GetBoolArg("-d");
 
 	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
+	IO::CIOServer IOServer;
+
+	if (pProjPath) IOSrv->SetAssign("Proj", pProjPath);
+	else IOSrv->SetAssign("Proj", IOSrv->GetAssign("Home"));
+
+	{
+		Data::CBuffer Buffer;
+		Data::CHRDParser Parser;
+		if (IOSrv->LoadFileToBuffer("Proj:PathList.hrd", Buffer))
+		{
+			Data::PParams PathList;
+			if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
+
+			if (PathList.IsValidPtr())
+				for (int i = 0; i < PathList->GetCount(); ++i)
+					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
+		}
+
+		if (IOSrv->LoadFileToBuffer("Proj:SrcPathList.hrd", Buffer))
+		{
+			Data::PParams PathList;
+			if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
+
+			if (PathList.IsValidPtr())
+				for (int i = 0; i < PathList->GetCount(); ++i)
+					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
+		}
+	}
+
+	if (RootPath.IsEmpty()) RootPath = IOSrv->ResolveAssigns("Proj:Src/Shaders");
+	else RootPath = IOSrv->ResolveAssigns(RootPath);
+	RootPath.Trim();
+	RootPath.Replace('\\', '/');
+	if (RootPath[RootPath.GetLength() - 1] != '/') RootPath += '/';
+	if (RootPath.IsEmpty()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
+
 	if (DB.IsEmpty())
 	{
 		DB = RootPath;
-		DB.Trim();
-		DB.Replace('\\', '/');
-		if (DB.IsValid() && DB[DB.GetLength() - 1] != '/') DB += '/';
 		DB += "ShaderDB.db3";
 	}
+	else DB = IOSrv->ResolveAssigns(DB);
 	if (!OpenDB(DB)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
-
-	IO::CIOServer IOServer;
 
 	CArray<CString> InList, OutList;
 

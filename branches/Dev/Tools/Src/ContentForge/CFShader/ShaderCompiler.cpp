@@ -8,6 +8,7 @@
 #include <Data/StringTokenizer.h>
 #include <ToolRenderStateDesc.h>
 #include <ConsoleApp.h>
+#include <ShaderDB.h>
 #include <DEMD3DInclude.h>
 #include <D3DCompiler.h>
 
@@ -15,68 +16,52 @@
 
 extern CString RootPath;
 
-struct CShaderCompileDesc
+int CompileShader(CShaderDBRec& Rec, bool Debug)
 {
-	CString				SrcPath;	// Assigns must be resolved
-	CString				ExportPath;	// Assigns must be resolved
-	Render::EShaderType	Type;
-	int					Target;
-	CString				EntryPoint;
-	CString				Defines;
+// D3DCOMPILE_IEEE_STRICTNESS
+// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
 
-	bool operator =(const CShaderCompileDesc& Other) const
-	{
-		return
-			Type == Other.Type &&
-			Target == Other.Target &&
-			SrcPath == Other.SrcPath &&
-			EntryPoint == Other.EntryPoint &&
-			Defines == Other.Defines;
-	}
-};
-
-//!!!compile old sm3.0 shaders for DX9!
-int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
-{
 	Data::CBuffer In;
-	if (!IOSrv->LoadFileToBuffer(Desc.SrcPath, In)) return ERR_IO_READ;
+	if (!IOSrv->LoadFileToBuffer(RootPath + Rec.SrcFile.Path, In)) return ERR_IO_READ;
 
-	//D3DCompile
-	//D3DCompile2
-	//D3DPreprocess - apply preprocessor to text
-	//D3DGetBlobPart, D3D_BLOB_INPUT_SIGNATURE_BLOB
-	//D3DStripShader - remove blobs
-	//D3DCompressShaders
-	//D3DDecompressShaders
+	// Setup compiler flags
 
-//D3DCOMPILE_IEEE_STRICTNESS
-//#define D3DCOMPILE_IEEE_STRICTNESS                (1 << 13)
-//#define D3DCOMPILE_OPTIMIZATION_LEVEL0            (1 << 14) // fast creation, lowest opt
-//#define D3DCOMPILE_OPTIMIZATION_LEVEL1            0
-//#define D3DCOMPILE_OPTIMIZATION_LEVEL2            ((1 << 14) | (1 << 15))
-//#define D3DCOMPILE_OPTIMIZATION_LEVEL3            (1 << 15) // final opt
-	//D3DCOMPILE_WARNINGS_ARE_ERRORS
-	// D3DCOMPILE_DEBUG - debug info
-	// D3DCOMPILE_SKIP_OPTIMIZATION - only for active debug
-	// D3DCOMPILE_SKIP_VALIDATION - faster, if successfully compiled
-	// D3DCOMPILE_PACK_MATRIX_ROW_MAJOR, D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR (more efficient, vec*mtx dots)
-	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
-	// D3DCOMPILE_ENABLE_STRICTNESS - kill deprecated syntax
-	//???do col-major matrices make GPU constants setting harder and slower?
-	DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS;
+	DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR; // (more efficient, vec*mtx dots) //???does touch CPU-side const binding code?
+	if (Rec.Target >= 0x0400)
+	{
+		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Denies deprecated syntax
+	}
+	else
+	{
+		Flags |= D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
+	}
 	if (Debug)
 	{
 		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION);
 		n_msg(VL_DEBUG, "Debug compilation on\n");
 	}
-	else Flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+	else Flags |= (D3DCOMPILE_OPTIMIZATION_LEVEL3); // | D3DCOMPILE_SKIP_VALIDATION);
+
+	// Get info about previous compilation, skip if no changes
+
+	if (FindShaderRec(Rec))
+	{
+		//!!!compare CRC, size, contents!
+		if (Rec.CompilerFlags == Flags )//&&
+			//Rec.SrcFile.ModifyTimestamp == GetFileModifyTimestamp())
+		{
+			return SUCCESS;
+		}
+	}
+
+	// Determine D3D target
 
 	const char* pTarget = NULL;
-	switch (Desc.Type)
+	switch (Rec.ShaderType)
 	{
 		case Render::ShaderType_Vertex:
 		{
-			switch (Desc.Target)
+			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "vs_5_0"; break;
 				case 0x0401: pTarget = "vs_4_1"; break;
@@ -88,7 +73,7 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 		}
 		case Render::ShaderType_Pixel:
 		{
-			switch (Desc.Target)
+			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "ps_5_0"; break;
 				case 0x0401: pTarget = "ps_4_1"; break;
@@ -100,7 +85,7 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 		}
 		case Render::ShaderType_Geometry:
 		{
-			switch (Desc.Target)
+			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "gs_5_0"; break;
 				case 0x0401: pTarget = "gs_4_1"; break;
@@ -111,7 +96,7 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 		}
 		case Render::ShaderType_Hull:
 		{
-			switch (Desc.Target)
+			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "hs_5_0"; break;
 				default: FAIL;
@@ -120,7 +105,7 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 		}
 		case Render::ShaderType_Domain:
 		{
-			switch (Desc.Target)
+			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "ds_5_0"; break;
 				default: FAIL;
@@ -130,41 +115,37 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 		default: FAIL;
 	};
 
-	//!!!if export path is empty, construct it here!
+	// Setup shader macros
 
-	CArray<D3D_SHADER_MACRO> Defines;
-	char* pDefineString = NULL;
-	if (Desc.Defines.GetLength())
+	CArray<D3D_SHADER_MACRO> Defines(8, 4);
+	D3D_SHADER_MACRO* pDefines;
+	if (Rec.Defines.GetCount())
 	{
-		pDefineString = (char*)n_malloc(Desc.Defines.GetLength() + 1);
-		strcpy_s(pDefineString, Desc.Defines.GetLength() + 1, Desc.Defines.CStr());
-
-		D3D_SHADER_MACRO CurrMacro = { 0 };
-
-		while (pDefineString)
+		for (int i = 0; i < Rec.Defines.GetCount(); ++i)
 		{
-			//strpbrk(
+			const CMacroDBRec& Macro = Rec.Defines[i];
+			D3D_SHADER_MACRO D3DMacro = { Macro.Name, Macro.Value };
+			Defines.Add(D3DMacro);
 		}
-	}
-	//!!!tokenize (may be with fence)!
-	//may even destruct existing string!
-	//D3D_SHADER_MACRO Defines[] = { "zero", "0", NULL, NULL };
 
-	//???create once, in main, pass by param?
-	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(Desc.SrcPath), RootPath);
+		pDefines = &Defines[0];
+	}
+	else pDefines = NULL;
+
+	// Compile shader
+
+	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(Rec.SrcFile.Path), RootPath);
 
 	ID3DBlob* pCode = NULL;
 	ID3DBlob* pErrors = NULL;
-	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), Desc.SrcPath.CStr(),
-							&Defines[0], &IncHandler, Desc.EntryPoint.CStr(), pTarget,
+	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), Rec.SrcFile.Path.CStr(),
+							pDefines, &IncHandler, Rec.EntryPoint.CStr(), pTarget,
 							Flags, 0, &pCode, &pErrors);
-
-	if (pDefineString) n_free(pDefineString);
 
 	if (FAILED(hr) || !pCode)
 	{
 		n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n",
-			Desc.ExportPath.CStr(),
+			Rec.ObjFile.Path.CStr(),
 			pErrors ? pErrors->GetBufferPointer() : "No D3D error message.");
 		if (pCode) pCode->Release();
 		if (pErrors) pErrors->Release();
@@ -172,24 +153,54 @@ int CompileShader(const CShaderCompileDesc& Desc, bool Debug)
 	}
 	else if (pErrors)
 	{
-		n_msg(VL_WARNING, "'%s' compiled with warnings:\n\n%s\n", Desc.ExportPath.CStr(), pErrors->GetBufferPointer());
+		n_msg(VL_WARNING, "'%s' compiled with warnings:\n\n%s\n", Rec.ObjFile.Path.CStr(), pErrors->GetBufferPointer());
 		pErrors->Release();
 	}
 
-//!!!strip out reflection and debug data for release builds!
-	if (!Debug)
+	// Strip unnecessary info for release builds, making object files smaller
+
+	ID3DBlob* pFinalCode;
+	if (Debug) pFinalCode = pCode;
+	else
 	{
-		//D3DStripShader(pCode->GetBufferPointer(), pCode->GetBufferSize(), flags, &pNewCode);
+		hr = D3DStripShader(pCode->GetBufferPointer(),
+							pCode->GetBufferSize(),
+							D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
+							&pFinalCode);
+		pCode->Release();
+		if (FAILED(hr)) return ERR_MAIN_FAILED;
 	}
 
-	IOSrv->CreateDirectory(PathUtils::ExtractDirName(Desc.ExportPath));
+	//check size - CRC - file contents
+	//if different, rewrite result
+	//can find the same object file compiled from another source, use it, don't save copy
+
+	//!!!if new record (empty ObjFile.Path), form export path!
+	//if (lastindexof('.') > lastindexof(dirseparators)) setlen(lastindexof('.'))
+	//get file name
+	//attach DB ID
+	//attach extension (by shader type?)
+	//set Shaders:Bin/ path
+
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
 	bool Written = false;
 	IO::CFileStream File;
-	if (File.Open(Desc.ExportPath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
-		Written = File.Write(pCode->GetBufferPointer(), pCode->GetBufferSize()) == pCode->GetBufferSize();
+	if (File.Open(Rec.ObjFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		Written = File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize()) == pFinalCode->GetBufferSize();
 
-	pCode->Release();
+	if (Rec.ShaderType == Render::ShaderType_Vertex)
+	{
+		// try to find the same file
+		// if not found, save
+		// add reference to input signature
+		// D3DGetBlobPart(), D3D_BLOB_INPUT_SIGNATURE_BLOB
+	}
+
+	//if was not found, insert record
+	//else update it
+
+	pFinalCode->Release();
 
 	return Written ? SUCCESS : ERR_IO_WRITE;
 }
@@ -258,31 +269,78 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 	Data::PParams ShaderSection;
 	if (!RenderState->Get(ShaderSection, SectionID)) OK;
 
-	CShaderCompileDesc Desc;
-	Desc.Type = ShaderType;
-	ShaderSection->Get(Desc.SrcPath, CStrID("Src"));
-	ShaderSection->Get(Desc.EntryPoint, CStrID("Entry"));
-	ShaderSection->Get(Desc.Target, CStrID("Target"));
-	ShaderSection->Get(Desc.Defines, CStrID("Defines")); // NAME=VALUE;NAME=VALUE;...NAME=VALUE
+	int IntValue;
 
-	Desc.SrcPath = IOSrv->ResolveAssigns(Desc.SrcPath);
-	Desc.Defines.Trim();
+	CShaderDBRec Rec;
+	Rec.ShaderType = ShaderType;
+	ShaderSection->Get(Rec.SrcFile.Path, CStrID("Src"));
+	ShaderSection->Get(Rec.EntryPoint, CStrID("Entry"));
+	if (ShaderSection->Get(IntValue, CStrID("Target"))) Rec.Target = IntValue;
 
-	// compare with all registered //???use database?
-	// if found, return export path from it
+	CString Defines;
+	if (ShaderSection->Get(Defines, CStrID("Defines"))) // NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]
+	{
+		Defines.Trim();
 
-	//!!!form export path!
-	Desc.ExportPath = Desc.SrcPath + ".compiled"; // just for test!
+		if (Defines.GetLength())
+		{
+			Rec.pDefineString = (char*)n_malloc(Defines.GetLength() + 1);
+			strcpy_s(Rec.pDefineString, Defines.GetLength() + 1, Defines.CStr());
 
-	if (CompileShader(Desc, Debug) != SUCCESS) FAIL;
+			CMacroDBRec CurrMacro = { 0 };
 
-	// compare binary with all binaries existing for that target(type+model) (optionally)
-	//   compare size, then binary itself. may even store size not to reload binaries from disc
-	// if binary found, reuse, return its export path
-	// else save new binary to a newly formed export path, replacing existing file and asserting
-	// that it is a previous version of the same shader, NO NAME COLLISIONS!
+			char* pCurrPos = Rec.pDefineString;
+			const char* pBothDlms = "=;";
+			const char* pSemicolonOnly = ";";
+			const char* pCurrDlms = pBothDlms;
+			while (true)
+			{
+				char* pDlm = strpbrk(pCurrPos, pCurrDlms);
+				if (pDlm)
+				{
+					char Dlm = *pDlm;
+					if (Dlm == '=')
+					{
+						CurrMacro.Name = pCurrPos;
+						CurrMacro.Value = pDlm + 1;
+						Rec.Defines.Add(CurrMacro);
+						pCurrDlms = pSemicolonOnly;
+					}
+					else // ';'
+					{
+						CurrMacro.Value = NULL;
+						if (!CurrMacro.Name)
+						{
+							CurrMacro.Name = pCurrPos;
+							Rec.Defines.Add(CurrMacro);
+						}
+						CurrMacro.Name = NULL;
+						pCurrDlms = pBothDlms;
+					}
+					*pDlm = 0;
+					pCurrPos = pDlm + 1;
+				}
+				else
+				{
+					CurrMacro.Value = NULL;
+					if (!CurrMacro.Name)
+					{
+						CurrMacro.Name = pCurrPos;
+						Rec.Defines.Add(CurrMacro);
+					}
+					CurrMacro.Name = NULL;
+					break;
+				}
+			}
 
-	OK;
+			Rec.Defines.Add(CurrMacro); // Both NULLs in all control pathes
+		}
+	}
+
+	Rec.SrcFile.Path = IOSrv->ResolveAssigns(Rec.SrcFile.Path);
+	Rec.SrcFile.Path.Replace(RootPath, "");
+
+	return (CompileShader(Rec, Debug) == SUCCESS);
 }
 //---------------------------------------------------------------------
 

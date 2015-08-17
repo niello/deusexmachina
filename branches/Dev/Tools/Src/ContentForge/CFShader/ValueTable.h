@@ -273,12 +273,12 @@ inline void CValueTable::GetValue(int ColIdx, int RowIdx, Data::CData& Val) cons
 
 template<class T> inline const T& CValueTable::Get(int ColIdx, int RowIdx) const
 {
-	const CType* Type = GetColumnValueType(ColIdx);
+	const Data::CType* Type = GetColumnValueType(ColIdx);
 	n_assert(!Type || Type == DATA_TYPE(T));
 	void** pObj = GetValuePtr(ColIdx, RowIdx);
 	return (Type) ?
 		*(T*)DATA_TYPE_NV(T)::GetPtr(IsSpecialType(Type) ? (void**)&pObj : pObj) :
-		((CData*)pObj)->GetValue<T>();
+		((Data::CData*)pObj)->GetValue<T>();
 }
 //---------------------------------------------------------------------
 
