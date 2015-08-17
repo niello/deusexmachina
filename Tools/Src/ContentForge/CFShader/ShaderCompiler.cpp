@@ -6,6 +6,7 @@
 #include <Data/DataArray.h>
 #include <Data/HRDParser.h>
 #include <Data/StringTokenizer.h>
+#include <Util/UtilFwd.h> // CRC
 #include <ToolRenderStateDesc.h>
 #include <ConsoleApp.h>
 #include <ShaderDB.h>
@@ -18,13 +19,16 @@ extern CString RootPath;
 
 int CompileShader(CShaderDBRec& Rec, bool Debug)
 {
-// D3DCOMPILE_IEEE_STRICTNESS
-// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
-
+	CString SrcPath = RootPath + Rec.SrcFile.Path;
 	Data::CBuffer In;
-	if (!IOSrv->LoadFileToBuffer(RootPath + Rec.SrcFile.Path, In)) return ERR_IO_READ;
+	if (!IOSrv->LoadFileToBuffer(SrcPath, In)) return ERR_IO_READ;
+	DWORD CurrWriteTime = IOSrv->GetFileWriteTime(SrcPath);
+	DWORD SrcCRC = Util::CalcCRC((uchar*)In.GetPtr(), In.GetSize());
 
 	// Setup compiler flags
+
+	// D3DCOMPILE_IEEE_STRICTNESS
+	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
 
 	DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR; // (more efficient, vec*mtx dots) //???does touch CPU-side const binding code?
 	if (Rec.Target >= 0x0400)
@@ -44,14 +48,15 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 	// Get info about previous compilation, skip if no changes
 
-	if (FindShaderRec(Rec))
+	bool RecFound = FindShaderRec(Rec);
+	if (RecFound &&
+		Rec.CompilerFlags == Flags &&
+		Rec.SrcFile.Size == In.GetSize() &&
+		Rec.SrcFile.CRC == SrcCRC &&
+		CurrWriteTime &&
+		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
-		//!!!compare CRC, size, contents!
-		if (Rec.CompilerFlags == Flags )//&&
-			//Rec.SrcFile.ModifyTimestamp == GetFileModifyTimestamp())
-		{
-			return SUCCESS;
-		}
+		return SUCCESS;
 	}
 
 	// Determine D3D target
@@ -171,16 +176,28 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		if (FAILED(hr)) return ERR_MAIN_FAILED;
 	}
 
-	//check size - CRC - file contents
-	//if different, rewrite result
-	//can find the same object file compiled from another source, use it, don't save copy
+	DWORD ObjCRC = Util::CalcCRC((uchar*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
-	//!!!if new record (empty ObjFile.Path), form export path!
-	//if (lastindexof('.') > lastindexof(dirseparators)) setlen(lastindexof('.'))
-	//get file name
-	//attach DB ID
-	//attach extension (by shader type?)
-	//set Shaders:Bin/ path
+	// Try to find exactly the same binary and reuse it, or save our result
+
+//check size - CRC - file contents
+
+// If found and ID is the same as old, do nothing
+// else if found another one, patch reference to the new binary and delete old
+// else save new binary and add record; set reference
+
+//!!!if new record (empty ObjFile.Path), form export path!
+//if (lastindexof('.') > lastindexof(dirseparators)) setlen(lastindexof('.'))
+//get file name
+//attach DB ID
+//attach extension (by shader type/target?)
+//set Shaders:Bin/ path
+
+//???maybe pack shaders to some 'DB' file which maps DB ID to offset
+//and reference shaders by DB ID, not by a file name?
+//can even order shaders in memory and load one-by-one to minimize seek time
+//may pack by use (common, menu, game, cinematic etc) and load only used.
+//can store debug and release binary packages and read from what user wants
 
 	IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
@@ -189,16 +206,34 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	if (File.Open(Rec.ObjFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		Written = File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize()) == pFinalCode->GetBufferSize();
 
+	// For vertex shaders, store input signature separately.
+	// It saves RAM since input signatures must reside there as a raw data.
+
 	if (Rec.ShaderType == Render::ShaderType_Vertex)
 	{
-		// try to find the same file
-		// if not found, save
-		// add reference to input signature
-		// D3DGetBlobPart(), D3D_BLOB_INPUT_SIGNATURE_BLOB
+		ID3DBlob* pInputSig;
+		if (SUCCEEDED(D3DGetBlobPart(pFinalCode->GetBufferPointer(),
+									 pFinalCode->GetBufferSize(),
+									 D3D_BLOB_INPUT_SIGNATURE_BLOB,
+									 0,
+									 &pInputSig)))
+		{
+			DWORD InputSigCRC = Util::CalcCRC((uchar*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+
+// try to find the same file
+// if not found, save
+// set reference to input signature
+
+			pInputSig->Release();
+		}
+		else
+		{
+			//reference the whole VS binary as input sig
+		}
 	}
 
-	//if was not found, insert record
-	//else update it
+//if was not found, insert record
+//else update it
 
 	pFinalCode->Release();
 

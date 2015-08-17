@@ -146,6 +146,20 @@ DWORD CIOServer::GetFileSize(const char* pPath) const
 }
 //---------------------------------------------------------------------
 
+DWORD CIOServer::GetFileWriteTime(const char* pPath) const
+{
+	PFileSystem FS;
+	void* hFile = OpenFile(FS, pPath, SAM_READ);
+	if (hFile)
+	{
+		DWORD Time = FS->GetFileWriteTime(hFile);
+		FS->CloseFile(hFile);
+		return Time;
+	}
+	return 0;
+}
+//---------------------------------------------------------------------
+
 bool CIOServer::DirectoryExists(const char* pPath) const
 {
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);

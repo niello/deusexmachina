@@ -9,7 +9,6 @@ struct CFileData
 {
 	DWORD	Size;
 	DWORD	CRC;
-	DWORD	ModifyTimestamp;
 	CString	Path;
 };
 
@@ -29,6 +28,7 @@ struct CShaderDBRec
 	DWORD				CompilerFlags;
 	CString				EntryPoint;
 	CFileData			SrcFile;
+	DWORD				SrcModifyTimestamp;
 	CFileData			ObjFile;
 	char*				pDefineString;
 	CArray<CMacroDBRec>	Defines;

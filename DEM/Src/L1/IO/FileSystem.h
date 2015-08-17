@@ -6,6 +6,7 @@
 #include <IO/IOFwd.h>
 
 // File system interface. Implementation can be real OS file system or any VFS.
+// NB: file times are seconds from 1970-01-01
 
 namespace IO
 {
@@ -39,6 +40,7 @@ public:
 	virtual DWORD	Read(void* hFile, void* pData, DWORD Size) = 0;
 	virtual DWORD	Write(void* hFile, const void* pData, DWORD Size) = 0;
 	virtual DWORD	GetFileSize(void* hFile) const = 0;
+	virtual DWORD	GetFileWriteTime(void* hFile) const = 0;
 	virtual bool	Seek(void* hFile, int Offset, ESeekOrigin Origin) = 0;
 	virtual DWORD	Tell(void* hFile) const = 0;
 	virtual void	Flush(void* hFile) = 0; //???flush MMF views too right here?
