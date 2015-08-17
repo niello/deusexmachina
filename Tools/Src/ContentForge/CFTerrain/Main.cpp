@@ -10,9 +10,9 @@
 #define VERSION			"1.0"
 #define CDLOD_VERSION	((DWORD)1)
 
-int		Verbose = VL_ERROR;
+int Verbose = VL_ERROR;
 
-int		ExitApp(int Code, bool WaitKey);
+int ExitApp(int Code, bool WaitKey);
 
 int main(int argc, const char** argv)
 {

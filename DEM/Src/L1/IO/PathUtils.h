@@ -101,6 +101,8 @@ inline CString ExtractLastDirName(const char* pPath)
 // necessary to tell if a dirname is a normal directory or an assign.
 inline CString ExtractDirName(const char* pPath, DWORD PathLength = 0)
 {
+	if (!pPath) return CString::Empty;
+
 	if (!PathLength) PathLength = strlen(pPath);
 	const char* pLastDirSep = GetLastDirSeparator(pPath, PathLength);
 
