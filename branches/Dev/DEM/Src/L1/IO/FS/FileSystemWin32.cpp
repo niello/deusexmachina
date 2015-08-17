@@ -351,6 +351,19 @@ DWORD CFileSystemWin32::GetFileSize(void* hFile) const
 }
 //---------------------------------------------------------------------
 
+DWORD CFileSystemWin32::GetFileWriteTime(void* hFile) const
+{
+	FILETIME WriteTime;
+	if (!GetFileTime(hFile, NULL, NULL, &WriteTime)) return 0;
+
+	ULARGE_INTEGER UL;
+	UL.LowPart = WriteTime.dwLowDateTime;
+	UL.HighPart = WriteTime.dwHighDateTime;
+	UL.QuadPart /= 10000000; // To seconds
+	return (DWORD)(UL.QuadPart - 11644473600LL); // Seconds from Win file time base to unix epoch base
+}
+//---------------------------------------------------------------------
+
 DWORD CFileSystemWin32::Tell(void* hFile) const
 {
 	n_assert(hFile);

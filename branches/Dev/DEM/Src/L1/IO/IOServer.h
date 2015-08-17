@@ -8,6 +8,7 @@
 #include <Data/HashTable.h>
 
 // IO server manages input/output, file systems, generic file caching, path assigns
+// NB: file times are seconds from 1970-01-01
 
 //!!!implement file caching if needed!
 
@@ -55,13 +56,12 @@ public:
 	bool			SetFileReadOnly(const char* pPath, bool ReadOnly) const;
 	bool			DeleteFile(const char* pPath) const;
 	DWORD			GetFileSize(const char* pPath) const; //???QWORD?
+	DWORD			GetFileWriteTime(const char* pPath) const;
 	bool			CopyFile(const char* pSrcPath, const char* pDestPath);
 	bool			DirectoryExists(const char* pPath) const;
 	bool			CreateDirectory(const char* pPath) const;
 	bool			DeleteDirectory(const char* pPath) const;
 	bool			CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively);
-	//bool Checksum(const char* pFileName, uint& crc);
-	//nFileTime GetFileWriteTime(const char* pFileName);
 
 	void*			OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;

@@ -1,7 +1,6 @@
 #include <ShaderDB.h>
 #include <ConsoleApp.h>
 #include <ValueTable.h>
-#include <Util/UtilFwd.h> // CRC
 #include <Data/Params.h>
 #include <sqlite3.h>
 
@@ -20,7 +19,7 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 		ParamName = ":";
 		ParamName += Prm.GetName().CStr();
 		int Idx = sqlite3_bind_parameter_index(SQLiteStmt, ParamName.CStr());
-		if (Idx == 0) continue;
+		if (Idx < 1) continue;
 
 		const Data::CData& Val = Prm.GetRawValue();
 		int Error = SQLITE_OK;
@@ -264,7 +263,6 @@ PRAGMA temp_store=MEMORY";
 CREATE TABLE 'Files' (\
 	'ID' INTEGER,\
 	'Path' VARCHAR(1024) NOT NULL,\
-	'ModifyTimestamp' INTEGER,\
 	'Size' INTEGER,\
 	'CRC' INTEGER,\
 	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE);\
