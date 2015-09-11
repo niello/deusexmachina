@@ -14,8 +14,15 @@
 #include <D3DCompiler.h>
 
 #undef CreateDirectory
+#undef DeleteFile
 
 extern CString RootPath;
+
+//???maybe pack shaders to some 'DB' file which maps DB ID to offset
+//and reference shaders by DB ID, not by a file name?
+//can even order shaders in memory and load one-by-one to minimize seek time
+//may pack by use (common, menu, game, cinematic etc) and load only used.
+//can store debug and release binary packages and read from what user wants
 
 int CompileShader(CShaderDBRec& Rec, bool Debug)
 {
@@ -48,6 +55,8 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 	// Get info about previous compilation, skip if no changes
 
+	Rec.SrcFile.Path = SrcPath;
+
 	bool RecFound = FindShaderRec(Rec);
 	if (RecFound &&
 		Rec.CompilerFlags == Flags &&
@@ -58,6 +67,11 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	{
 		return SUCCESS;
 	}
+
+	Rec.CompilerFlags = Flags;
+	Rec.SrcFile.Size = In.GetSize();
+	Rec.SrcFile.CRC = SrcCRC;
+	Rec.SrcModifyTimestamp = CurrWriteTime;
 
 	// Determine D3D target
 
@@ -176,35 +190,39 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		if (FAILED(hr)) return ERR_MAIN_FAILED;
 	}
 
-	DWORD ObjCRC = Util::CalcCRC((uchar*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+	Rec.ObjFile.Size = pFinalCode->GetBufferSize();
+	Rec.ObjFile.CRC = Util::CalcCRC((uchar*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 	// Try to find exactly the same binary and reuse it, or save our result
 
-//check size - CRC - file contents
+	DWORD OldObjFileID = Rec.ObjFile.ID;
+	bool ObjFound = FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer());
+	if (!ObjFound)
+	{
+		if (!RegisterObjFile(Rec.ObjFile, "cso")) // Fills empty ID and path inside
+		{
+			pFinalCode->Release();
+			return ERR_MAIN_FAILED;
+		}
 
-// If found and ID is the same as old, do nothing
-// else if found another one, patch reference to the new binary and delete old
-// else save new binary and add record; set reference
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
-//!!!if new record (empty ObjFile.Path), form export path!
-//if (lastindexof('.') > lastindexof(dirseparators)) setlen(lastindexof('.'))
-//get file name
-//attach DB ID
-//attach extension (by shader type/target?)
-//set Shaders:Bin/ path
+		IO::CFileStream File;
+		if (!File.Open(Rec.ObjFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		{
+			pFinalCode->Release();
+			return ERR_MAIN_FAILED;
+		}
+		File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+		File.Close();
+	}
 
-//???maybe pack shaders to some 'DB' file which maps DB ID to offset
-//and reference shaders by DB ID, not by a file name?
-//can even order shaders in memory and load one-by-one to minimize seek time
-//may pack by use (common, menu, game, cinematic etc) and load only used.
-//can store debug and release binary packages and read from what user wants
-
-	IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
-
-	bool Written = false;
-	IO::CFileStream File;
-	if (File.Open(Rec.ObjFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
-		Written = File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize()) == pFinalCode->GetBufferSize();
+	if (OldObjFileID > 0 && OldObjFileID != Rec.ObjFile.ID)
+	{
+		CString OldObjPath;
+		if (ReleaseObjFile(OldObjFileID, OldObjPath))
+			IOSrv->DeleteFile(OldObjPath);
+	}
 
 	// For vertex shaders, store input signature separately.
 	// It saves RAM since input signatures must reside there as a raw data.
@@ -218,26 +236,51 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 									 0,
 									 &pInputSig)))
 		{
-			DWORD InputSigCRC = Util::CalcCRC((uchar*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+			pFinalCode->Release();
 
-// try to find the same file
-// if not found, save
-// set reference to input signature
+			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
+			Rec.InputSigFile.CRC = Util::CalcCRC((uchar*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+
+			DWORD OldInputSigID = Rec.InputSigFile.ID;
+			bool ObjFound = FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer());
+			if (!ObjFound)
+			{
+				if (!RegisterObjFile(Rec.InputSigFile, "sig")) // Fills empty ID and path inside
+				{
+					pInputSig->Release();
+					return ERR_MAIN_FAILED;
+				}
+
+				IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
+
+				IO::CFileStream File;
+				if (!File.Open(Rec.InputSigFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+				{
+					pInputSig->Release();
+					return ERR_MAIN_FAILED;
+				}
+				File.Write(pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+				File.Close();
+			}
+
+			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
+			{
+				CString OldObjPath;
+				if (ReleaseObjFile(OldInputSigID, OldObjPath))
+					IOSrv->DeleteFile(OldObjPath);
+			}
 
 			pInputSig->Release();
 		}
 		else
 		{
-			//reference the whole VS binary as input sig
+			Rec.InputSigFile.ID = Rec.ObjFile.ID;
+			pFinalCode->Release();
 		}
 	}
+	else pFinalCode->Release();
 
-//if was not found, insert record
-//else update it
-
-	pFinalCode->Release();
-
-	return Written ? SUCCESS : ERR_IO_WRITE;
+	return WriteShaderRec(Rec) ? SUCCESS : ERR_MAIN_FAILED;
 }
 //---------------------------------------------------------------------
 

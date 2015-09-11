@@ -2,7 +2,7 @@
 
 namespace Data
 {
-DEFINE_TYPE_EX(AI::EWSProp, EWSProp)
+DEFINE_TYPE_EX(AI::EWSProp, EWSProp, AI::EWSProp())
 }
 
 namespace AI

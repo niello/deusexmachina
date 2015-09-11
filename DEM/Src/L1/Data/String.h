@@ -67,14 +67,15 @@ public:
 	operator		const char*() const { return pString; }
 	operator		bool() const { return pString && *pString; }
 
-	bool			operator ==(const char* pOther) const { return !strcmp(pString, pOther); }
-	bool			operator ==(const CString& Other) const { return Length == Other.Length && !strcmp(pString, Other.pString); }
-	bool			operator !=(const char* pOther) const { return !!strcmp(pString, pOther); }
-	bool			operator !=(const CString& Other) const { return Length != Other.Length || strcmp(pString, Other.pString); }
-	bool			operator >(const char* pOther) const { return strcmp(pString, pOther) > 0; }
-	bool			operator <(const char* pOther) const { return strcmp(pString, pOther) < 0; }
-	bool			operator >=(const char* pOther) const { return strcmp(pString, pOther) >= 0; }
-	bool			operator <=(const char* pOther) const { return strcmp(pString, pOther) <= 0; }
+	//???simplify by using const "" instead of NULL in CString::pString?
+	bool			operator ==(const char* pOther) const { return pString == pOther || (pString && pOther && !strcmp(pString, pOther)); }
+	bool			operator ==(const CString& Other) const { return Length == Other.Length && (pString == Other.pString || (pString && Other.pString && !strcmp(pString, Other.pString))); }
+	bool			operator !=(const char* pOther) const { return pString != pOther && (!pString || !pOther || strcmp(pString, pOther)); }
+	bool			operator !=(const CString& Other) const { return Length != Other.Length || (pString != Other.pString && (!pString || !Other.pString || strcmp(pString, Other.pString))); }
+	bool			operator >(const char* pOther) const { return pString && (!pOther || strcmp(pString, pOther) > 0); }
+	bool			operator <(const char* pOther) const { return pOther && (!pString || strcmp(pString, pOther) < 0); }
+	bool			operator >=(const char* pOther) const { return pString == pOther || (pString && (!pOther || strcmp(pString, pOther) >= 0)); }
+	bool			operator <=(const char* pOther) const { return pString == pOther || (pOther && (!pString || strcmp(pString, pOther) <= 0)); }
 
 	CString&		operator =(const char* pSrc) { Set(pSrc); return *this; }
 	CString&		operator =(const CString& Src) { Set(Src); return *this; }
