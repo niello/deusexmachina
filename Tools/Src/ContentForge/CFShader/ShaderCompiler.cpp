@@ -1,6 +1,7 @@
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/PathUtils.h>
+#include <IO/BinaryWriter.h>
 #include <Data/Buffer.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
@@ -710,16 +711,29 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	// Unwind render state hierarchy and save leaf states
 
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
+	
+	IO::CFileStream File;
+	if (!File.Open(pOutFilePath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
+	IO::CBinaryWriter W(File);
+
+	W.Write('SHFX');
+	W.Write(0x0100);
+	W.Write(UsedRenderStates.GetCount());
+
 	for (int i = 0; i < UsedRenderStates.GetCount(); ++i)
 	{
 		CStrID ID = UsedRenderStates[i];
 		Render::CToolRenderStateDesc Desc;
 		Desc.SetDefaults();
 		if (!ReadRenderStateDesc(RenderStates, ID, Desc, Debug, true)) return ERR_INVALID_DATA;
-		int dbg = 0;
+
+		if (!W.Write(ID)) return ERR_IO_WRITE;
 		// Save desc under ID
 		// Store shader pathes
 	}
+
+	File.Close();
 
 	//???Samplers? descs and per-tech register assignmemts? or per-whole-effect?
 	// RenderStates (hierarchy) -> save with scheme, strings to enum codes
