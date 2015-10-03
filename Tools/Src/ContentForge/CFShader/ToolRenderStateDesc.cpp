@@ -10,11 +10,11 @@ void CToolRenderStateDesc::SetDefaults()
 				  DS_DepthEnable |
 				  DS_DepthWriteEnable);
 
-	VertexShader = CString::Empty;
-	HullShader = CString::Empty;
-	DomainShader = CString::Empty;
-	GeometryShader = CString::Empty;
-	PixelShader = CString::Empty;
+	VertexShader = 0;
+	HullShader = 0;
+	DomainShader = 0;
+	GeometryShader = 0;
+	PixelShader = 0;
 
 	DepthBias = 0.f;
 	DepthBiasClamp = 0.f;

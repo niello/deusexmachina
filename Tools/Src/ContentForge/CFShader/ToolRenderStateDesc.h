@@ -4,7 +4,6 @@
 
 #include <Render/RenderFwd.h>
 #include <Data/Flags.h>
-#include <Data/String.h>
 
 // API-independent description of a rendering pipeline state.
 // This is a tool version of desc, using strings instead of resource objects.
@@ -16,11 +15,13 @@ struct CToolRenderStateDesc
 {
 	// Shaders
 
-	CString				VertexShader;
-	CString				HullShader;
-	CString				DomainShader;
-	CString				GeometryShader;
-	CString				PixelShader;
+	DWORD				VertexShader;
+	DWORD				HullShader;
+	DWORD				DomainShader;
+	DWORD				GeometryShader;
+	DWORD				PixelShader;
+
+	DWORD				InputSignature;
 
 	Data::CFlags		Flags; // For boolean variables, see enums below
 

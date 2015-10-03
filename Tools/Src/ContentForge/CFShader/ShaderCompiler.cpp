@@ -343,10 +343,13 @@ Render::EBlendOp StringToBlendOp(const CString& Str)
 }
 //---------------------------------------------------------------------
 
-bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, CString& OutShaderExportPath)
+bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, DWORD& OutShaderID, DWORD* pOutInputSigID = NULL)
 {
 	Data::PParams ShaderSection;
 	if (!RenderState->Get(ShaderSection, SectionID)) OK;
+
+	OutShaderID = 0;
+	if (pOutInputSigID) *pOutInputSigID = 0;
 
 	int IntValue;
 
@@ -419,7 +422,12 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 	Rec.SrcFile.Path = IOSrv->ResolveAssigns(Rec.SrcFile.Path);
 	Rec.SrcFile.Path.Replace(RootPath, "");
 
-	return (CompileShader(Rec, Debug) == SUCCESS);
+	int Result = CompileShader(Rec, Debug);
+	if (Result != SUCCESS) FAIL;
+
+	OutShaderID = Rec.ObjFile.ID;
+	if (pOutInputSigID) *pOutInputSigID = Rec.InputSigFile.ID;
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -501,7 +509,7 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 	//for that need to store defaults in a blend desc
 	//if (Leaf) //!!!merge shader descs (partial in base, final in a leaf)
 	//{
-		if (!ProcessShaderSection(RS, CStrID("VS"), Render::ShaderType_Vertex, Debug, Desc.VertexShader)) FAIL;
+		if (!ProcessShaderSection(RS, CStrID("VS"), Render::ShaderType_Vertex, Debug, Desc.VertexShader, &Desc.InputSignature)) FAIL;
 		if (!ProcessShaderSection(RS, CStrID("PS"), Render::ShaderType_Pixel, Debug, Desc.PixelShader)) FAIL;
 		if (!ProcessShaderSection(RS, CStrID("GS"), Render::ShaderType_Geometry, Debug, Desc.GeometryShader)) FAIL;
 		if (!ProcessShaderSection(RS, CStrID("HS"), Render::ShaderType_Hull, Debug, Desc.HullShader)) FAIL;
@@ -692,7 +700,20 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	if (!Params->Get(Techs, CStrID("Techniques"))) return ERR_INVALID_DATA;
 	if (!Params->Get(RenderStates, CStrID("RenderStates"))) return ERR_INVALID_DATA;
 
-	// Collect used render state references
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
+	
+	IO::CFileStream File;
+	if (!File.Open(pOutFilePath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
+	IO::CBinaryWriter W(File);
+
+	if (!W.Write('SHFX')) return ERR_IO_WRITE;
+	if (!W.Write(0x0100)) return ERR_IO_WRITE;
+
+	// Save techs, collect used render state references
+
+	//???exclude all techs not compiled as invalid techs here?
+
+	if (!W.Write(Techs->GetCount())) return ERR_IO_WRITE;
 
 	CArray<CStrID> UsedRenderStates;
 	for (int TechIdx = 0; TechIdx < Techs->GetCount(); ++TechIdx)
@@ -701,25 +722,23 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		Data::PDataArray Passes;
 		if (!Tech.GetValue<Data::PParams>()->Get(Passes, CStrID("Passes"))) continue;
 
+		if (!W.Write(Tech.GetName())) return ERR_IO_WRITE;
+		if (!W.Write(Passes->GetCount())) return ERR_IO_WRITE;
+
 		for (int PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
 		{
 			CStrID PassID = Passes->Get<CStrID>(PassIdx);
 			n_msg(VL_DETAILS, "Tech %s, Pass %d: %s\n", Tech.GetName().CStr(), PassIdx, PassID.CStr());
 			if (!UsedRenderStates.Contains(PassID)) UsedRenderStates.Add(PassID);
+			if (!W.Write(PassID)) return ERR_IO_WRITE;
+
+			//???reference passes by UsedRenderStates index, not by name? slightly smaller file and faster init.
 		}
 	}
 
 	// Unwind render state hierarchy and save leaf states
 
-	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
-	
-	IO::CFileStream File;
-	if (!File.Open(pOutFilePath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
-	IO::CBinaryWriter W(File);
-
-	W.Write('SHFX');
-	W.Write(0x0100);
-	W.Write(UsedRenderStates.GetCount());
+	if (!W.Write(UsedRenderStates.GetCount())) return ERR_IO_WRITE;
 
 	for (int i = 0; i < UsedRenderStates.GetCount(); ++i)
 	{
@@ -728,10 +747,70 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		Desc.SetDefaults();
 		if (!ReadRenderStateDesc(RenderStates, ID, Desc, Debug, true)) return ERR_INVALID_DATA;
 
+		//!!!if passes are referenced by index, don't save IDs!
+		//???or by ID store in some global cross-effect renderstate database (res mgr)
 		if (!W.Write(ID)) return ERR_IO_WRITE;
-		// Save desc under ID
-		// Store shader pathes
-	}
+
+		if (!W.Write(Desc.VertexShader)) return ERR_IO_WRITE;
+		if (!W.Write(Desc.PixelShader)) return ERR_IO_WRITE;
+		if (!W.Write(Desc.GeometryShader)) return ERR_IO_WRITE;
+		if (!W.Write(Desc.DomainShader)) return ERR_IO_WRITE;
+		if (!W.Write(Desc.HullShader)) return ERR_IO_WRITE;
+
+		if (!W.Write(Desc.InputSignature)) return ERR_IO_WRITE;
+
+		if (!W.Write(Desc.Flags.GetMask())) return ERR_IO_WRITE;
+		
+		if (!W.Write(Desc.DepthBias)) return ERR_IO_WRITE;
+		if (!W.Write(Desc.DepthBiasClamp)) return ERR_IO_WRITE;
+		if (!W.Write(Desc.SlopeScaledDepthBias)) return ERR_IO_WRITE;
+		
+		if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_DepthEnable))
+		{
+			if (!W.Write((int)Desc.DepthFunc)) return ERR_IO_WRITE;
+		}
+	
+		if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_StencilEnable))
+		{
+			if (!W.Write(Desc.StencilReadMask)) return ERR_IO_WRITE;
+			if (!W.Write(Desc.StencilWriteMask)) return ERR_IO_WRITE;
+			if (!W.Write(Desc.StencilRef)) return ERR_IO_WRITE;
+
+			if (!W.Write((int)Desc.StencilFrontFace.StencilFailOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)Desc.StencilFrontFace.StencilDepthFailOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)Desc.StencilFrontFace.StencilPassOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)Desc.StencilFrontFace.StencilFunc)) return ERR_IO_WRITE;
+
+			if (!W.Write((int)Desc.StencilBackFace.StencilFailOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)Desc.StencilBackFace.StencilDepthFailOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)Desc.StencilBackFace.StencilPassOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)Desc.StencilBackFace.StencilFunc)) return ERR_IO_WRITE;
+		}
+
+		for (int BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+		{
+			if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_Independent)) break;
+			if (Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
+
+			Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
+			if (!W.Write((int)RTBlend.SrcBlendArg)) return ERR_IO_WRITE;
+			if (!W.Write((int)RTBlend.DestBlendArg)) return ERR_IO_WRITE;
+			if (!W.Write((int)RTBlend.BlendOp)) return ERR_IO_WRITE;
+			if (!W.Write((int)RTBlend.SrcBlendArgAlpha)) return ERR_IO_WRITE;
+			if (!W.Write((int)RTBlend.DestBlendArgAlpha)) return ERR_IO_WRITE;
+			if (!W.Write((int)RTBlend.BlendOpAlpha)) return ERR_IO_WRITE;
+			if (!W.Write((int)RTBlend.WriteMask)) return ERR_IO_WRITE;
+		}
+
+		if (!W.Write(Desc.BlendFactorRGBA[0])) return ERR_IO_WRITE;
+		if (!W.Write(Desc.BlendFactorRGBA[1])) return ERR_IO_WRITE;
+		if (!W.Write(Desc.BlendFactorRGBA[2])) return ERR_IO_WRITE;
+		if (!W.Write(Desc.BlendFactorRGBA[3])) return ERR_IO_WRITE;
+		if (!W.Write(Desc.SampleMask)) return ERR_IO_WRITE;
+
+		if (!W.Write(Desc.AlphaTestRef)) return ERR_IO_WRITE;
+		if (!W.Write((int)Desc.AlphaTestFunc)) return ERR_IO_WRITE;
+	};
 
 	File.Close();
 

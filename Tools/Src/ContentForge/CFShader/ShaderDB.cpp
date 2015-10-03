@@ -444,6 +444,8 @@ bool FindShaderRec(CShaderDBRec& InOut)
 			InOut.SrcModifyTimestamp = Shaders.Get<int>(CStrID("SrcModifyTimestamp"), ShIdx);
 			InOut.SrcFile.Size = Shaders.Get<int>(CStrID("SrcSize"), ShIdx);
 			InOut.SrcFile.CRC = Shaders.Get<int>(CStrID("SrcCRC"), ShIdx);
+			InOut.ObjFile.ID = Shaders.Get<int>(CStrID("ObjFileID"), ShIdx);
+			InOut.InputSigFile.ID = Shaders.Get<int>(CStrID("InputSigFileID"), ShIdx);
 			OK;
 		}
 	}
