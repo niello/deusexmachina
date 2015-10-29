@@ -5,6 +5,7 @@
 #include <Data/RefCounted.h>
 #include <Data/HashTable.h>
 #include <UI/CEGUI/DEMFwd.h>
+#include <Render/RenderFwd.h>
 
 #include <CEGUI/Renderer.h>
 
@@ -44,18 +45,17 @@ protected:
 	Render::PRenderState				NormalClipped;
 	Render::PRenderState				PremultipliedUnclipped;
 	Render::PRenderState				PremultipliedClipped;
+	Render::PSampler					LinearSampler;
+	Render::HConst						HWorldMatrix;
+	Render::HConst						HProjMatrix;
+	Render::HResource					HTexture;
+	Render::HSampler					HSampler;
 
 	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
 	static void logTextureDestruction(const String& name);
-
-	/*
-	ID3DX11EffectShaderResourceVariable* d_boundTextureVariable;
-	ID3DX11EffectMatrixVariable* d_worldMatrixVariable;
-	ID3DX11EffectMatrixVariable* d_projectionMatrixVariable;
-	*/
 
 public:
 

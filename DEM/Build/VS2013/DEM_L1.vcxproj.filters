@@ -890,6 +890,15 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\EffectLoader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderMetadata.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\HandleManager.h">
+      <Filter>Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1458,6 +1467,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.cpp">
       <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\EffectLoader.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\HandleManager.cpp">
+      <Filter>Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

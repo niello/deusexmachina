@@ -35,6 +35,7 @@ public:
 
 	virtual bool			IsResourceValid() const { return !!pD3DShader; }
 
+	virtual HConst			GetConstHandle(CStrID ID) const;
 	virtual HConstBuffer	GetConstBufferHandle(CStrID ID) const;
 	virtual HResource		GetResourceHandle(CStrID ID) const;
 	virtual HSampler		GetSamplerHandle(CStrID ID) const;

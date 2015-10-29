@@ -28,11 +28,11 @@ void CMemStream::Close()
 
 DWORD CMemStream::Read(void* pData, DWORD Size)
 {
-	n_assert(IsOpen() && pBuffer && !IsMapped() && (AccessMode & SAM_READ));
+	n_assert(IsOpen() && pConstBuffer && !IsMapped() && (AccessMode & SAM_READ));
 	DWORD BytesToRead = n_min(Size, DataSize - Pos);
 	if (BytesToRead > 0)
 	{
-		memcpy(pData, pBuffer + Pos, BytesToRead);
+		memcpy(pData, pConstBuffer + Pos, BytesToRead);
 		Pos += BytesToRead;
 	}
 	return BytesToRead;

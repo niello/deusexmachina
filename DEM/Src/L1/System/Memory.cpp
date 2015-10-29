@@ -166,11 +166,11 @@ int n_dbgmemdumpleaks()
 //---------------------------------------------------------------------
 
 // Create debug memory statistics.
-nMemoryStats n_dbgmemgetstats()
+CMemoryStats n_dbgmemgetstats()
 {
 	_CrtMemState crtState = { 0 };
 	_CrtMemCheckpoint(&crtState);
-	nMemoryStats MemStats = { 0 };
+	CMemoryStats MemStats = { 0 };
 	MemStats.HighWaterSize = crtState.lHighWaterCount;
 
 	for (int i = 0; i < _MAX_BLOCKS; ++i)

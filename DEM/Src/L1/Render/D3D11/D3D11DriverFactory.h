@@ -4,6 +4,7 @@
 
 #include <Render/VideoDriverFactory.h>
 #include <Data/Singleton.h>
+#include <Data/HandleManager.h>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory
 
@@ -37,10 +38,12 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDXGIFactory1*	pDXGIFactory;
-	DWORD			AdapterCount;	// Valid during a lifetime of the DXGI factory object
+	IDXGIFactory1*			pDXGIFactory;
+	DWORD					AdapterCount;	// Valid during a lifetime of the DXGI factory object
 
 public:
+
+	Data::CHandleManager	HandleMgr;		// Primarily for shader metadata handles
 
 	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }

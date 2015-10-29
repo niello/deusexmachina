@@ -7,7 +7,7 @@
 #include <ShaderDB.h>
 
 // Debug args:
-// -waitkey -v 5 -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_4_0\CEGUI.eff"
+// -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_4_0\CEGUI.eff"
 
 #define TOOL_NAME	"CFShader"
 #define VERSION		"1.0"
@@ -41,6 +41,7 @@ int main(int argc, const char** argv)
 				"-db [filepath]              path to persistent shader DB,\n"
 				"                            default: -root + 'ShaderDB.db3'\n"
 				"-d                          build shaders with debug info\n"
+				"-r                          rebuild shaders even if not changed\n"
 				"-waitkey                    wait for a key press when tool has finished\n"
 				"-v [verbosity]              output verbosity level, [ 0 .. 5 ]\n");
 
@@ -53,6 +54,7 @@ int main(int argc, const char** argv)
 	const char* pProjPath = Args.GetStringArg("-proj");
 	CString DB(Args.GetStringArg("-db"));
 	bool Debug = Args.GetBoolArg("-d");
+	bool Rebuild = Args.GetBoolArg("-r"); //!!!or if tool version changed (store in DB)!
 
 	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
@@ -98,6 +100,8 @@ int main(int argc, const char** argv)
 		DB += "ShaderDB.db3";
 	}
 	else DB = IOSrv->ResolveAssigns(DB);
+
+	if (Rebuild) IOSrv->DeleteFile(DB);
 	if (!OpenDB(DB)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 
 	CArray<CString> InList, OutList;

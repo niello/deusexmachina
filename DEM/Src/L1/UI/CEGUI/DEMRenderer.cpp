@@ -4,6 +4,7 @@
 #include <Render/RenderStateDesc.h>
 #include <Render/Shader.h>
 #include <Render/ShaderLoader.h>
+#include <Render/SamplerDesc.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <IO/PathUtils.h>
@@ -13,9 +14,7 @@
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
 #include "DEMTexture.h"
-//#include "CEGUI/Exceptions.h"
 #include "CEGUI/System.h"
-//#include "CEGUI/DefaultResourceProvider.h"
 #include "CEGUI/Logger.h"
 //#include <algorithm>
 
@@ -32,11 +31,12 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	DisplayDPI(96, 96)
 {
 	n_assert(GPU->SwapChainExists(SwapChainID));
-	n_assert_dbg(pVertexShaderURI && pPixelShaderURI);
 
 	Render::CViewport VP;
 	n_assert(GPU->GetViewport(0, VP));
 	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);
+
+	n_assert_dbg(pVertexShaderURI && pPixelShaderURI);
 
 	//!!!stupid - loads stream twice!
 	Data::CBuffer Buf;
@@ -113,22 +113,18 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
-/*
-SamplerState LinearSampler
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-*/
+	Render::CSamplerDesc SampDesc;
+	SampDesc.SetDefaults();
+	SampDesc.AddressU = Render::TexAddr_Clamp;
+	SampDesc.AddressV = Render::TexAddr_Clamp;
+	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+	LinearSampler = GPU->CreateSampler(SampDesc);
+	n_assert(LinearSampler.IsValidPtr());
 
-	n_assert(false);
-/*
-	DWORD DefaultOptions=NULL;//D3D10_SHADER_PACK_MATRIX_ROW_MAJOR|D3D10_SHADER_PARTIAL_PRECISION|D3D10_SHADER_SKIP_VALIDATION;
-    d_boundTextureVariable = d_effect->GetVariableByName("BoundTexture")->AsShaderResource();
-    d_worldMatrixVariable = d_effect->GetVariableByName("WorldMatrix")->AsMatrix();
-    d_projectionMatrixVariable = d_effect->GetVariableByName("ProjectionMatrix")->AsMatrix();
-*/
+	HWorldMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("WorldMatrix"));
+	HProjMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("ProjectionMatrix"));
+	HTexture = RPS->GetObject()->As<Render::CShader>()->GetResourceHandle(CStrID("BoundTexture"));
+	HSampler = RPS->GetObject()->As<Render::CShader>()->GetSamplerHandle(CStrID("LinearSampler"));
 
 	Render::CVertexComponent Components[] = {
 			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0 },
@@ -328,6 +324,7 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 void CDEMRenderer::beginRendering()
 {
 	GPU->SetVertexLayout(VertexLayout.GetUnsafe());
+	GPU->BindSampler(Render::ShaderType_Pixel, HSampler, LinearSampler);
 }
 //---------------------------------------------------------------------
 

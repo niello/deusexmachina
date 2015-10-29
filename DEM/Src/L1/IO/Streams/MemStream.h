@@ -14,7 +14,12 @@ class CMemStream: public CStream
 {
 protected:
 
-	char*	pBuffer;
+	union
+	{
+		char*		pBuffer;
+		const char*	pConstBuffer;
+	};
+
 	DWORD	Pos;
 	DWORD	DataSize;
 	DWORD	AllocSize;
@@ -26,6 +31,7 @@ public:
 	virtual ~CMemStream() { if (IsOpen()) Close(); }
 
 	bool			Open(void* pData, DWORD Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
+	bool			Open(const void* pData, DWORD Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();
 	virtual DWORD	Read(void* pData, DWORD Size);
@@ -49,6 +55,14 @@ inline bool CMemStream::Open(void* pData, DWORD Size, EStreamAccessMode Mode, ES
 	pBuffer = (char*)pData;
 	DataSize = Size;
 	return Open(Mode, Pattern);
+}
+//---------------------------------------------------------------------
+
+inline bool CMemStream::Open(const void* pData, DWORD Size, EStreamAccessPattern Pattern)
+{
+	pConstBuffer = (const char*)pData;
+	DataSize = Size;
+	return Open(SAM_READ, Pattern);
 }
 //---------------------------------------------------------------------
 

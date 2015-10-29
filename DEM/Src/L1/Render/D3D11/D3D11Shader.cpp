@@ -1,5 +1,6 @@
 #include "D3D11Shader.h"
 
+#include <Render/D3D11/D3D11DriverFactory.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
@@ -96,27 +97,100 @@ bool CD3D11Shader::Create(ID3D11PixelShader* pShader)
 void CD3D11Shader::InternalDestroy()
 {
 	SAFE_RELEASE(pD3DShader);
+
+	Data::CHandleManager& HandleMgr = D3D11DrvFactory->HandleMgr;
+
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	{
+		HHandle Handle = Consts[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Consts.Clear();
+
+	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	{
+		HHandle Handle = Buffers[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Buffers.Clear();
+
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	{
+		HHandle Handle = Resources[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Resources.Clear();
+
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		HHandle Handle = Samplers[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Samplers.Clear();
+}
+//---------------------------------------------------------------------
+
+HConst CD3D11Shader::GetConstHandle(CStrID ID) const
+{
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	{
+		CConstMeta* pMeta = &Consts[i];
+		if (pMeta->Name == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D11DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
 HConstBuffer CD3D11Shader::GetConstBufferHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	{
+		CBufferMeta* pMeta = &Buffers[i];
+		if (pMeta->Name == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D11DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
 HResource CD3D11Shader::GetResourceHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	{
+		CRsrcMeta* pMeta = &Resources[i];
+		if (pMeta->Name == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D11DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
 HSampler CD3D11Shader::GetSamplerHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		CRsrcMeta* pMeta = &Samplers[i];
+		if (pMeta->Name == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D11DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 

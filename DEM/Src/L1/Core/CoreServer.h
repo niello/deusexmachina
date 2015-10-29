@@ -27,7 +27,7 @@ protected:
 
 public:
 
-	CHashTable<CString, Data::CData> Globals;
+	CHashTable<CString, Data::CData> Globals; // Left public for iteration
 
 	CCoreServer();
 	~CCoreServer();

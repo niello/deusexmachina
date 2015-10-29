@@ -4,6 +4,7 @@
 
 #include "StdCfg.h"
 #include <System/Memory.h>
+#include <stdint.h>
 
 #define OK				return true
 #define FAIL			return false
@@ -21,6 +22,32 @@ template<typename T, size_t N> char (&SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(T (&)
 //---------------------------------------------------------------------
 //  Shortcut typedefs
 //---------------------------------------------------------------------
+
+// New types
+
+typedef uintptr_t			UPTR;	// Unsigned int of a pointer size
+typedef intptr_t			IPTR;	// Signed int of a pointer size
+typedef int8_t				I8;
+typedef uint8_t				U8;
+typedef int16_t				I16;
+typedef uint16_t			U16;
+typedef int32_t				I32;
+typedef uint32_t			U32;
+typedef int64_t				I64;
+typedef uint64_t			U64;
+
+const UPTR HalfRegisterBits	= sizeof(UPTR) << 2; // Bytes * 8 / 2
+const UPTR INVALID_HALF_INDEX = (1 << HalfRegisterBits) - 1;
+
+#define UPTR_LOW_HALF_MASK	INVALID_HALF_INDEX
+#define UPTR_LOW_HALF(x)	((x) & UPTR_LOW_HALF_MASK)
+#define UPTR_HIGH_HALF(x)	((x) >> HalfRegisterBits)
+
+typedef UPTR				HHandle;
+#define INVALID_HANDLE		((HHandle)(0))
+
+// Old types
+
 typedef unsigned long       DWORD;
 typedef int                 BOOL;
 typedef unsigned char       BYTE;

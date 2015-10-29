@@ -80,7 +80,6 @@ bool CDictionary<TKey, TValue>::Remove(const TKey& Key)
 }
 //---------------------------------------------------------------------
 
-//???TValue*& Out to avoid copying?
 template<class TKey, class TValue>
 bool CDictionary<TKey, TValue>::Get(const TKey& Key, TValue& Out) const
 {

@@ -36,9 +36,10 @@ const DWORD Adapter_Secondary = 1;
 const DWORD Output_None = (DWORD)-1;
 
 // Binding handlers for shader parameters
-typedef DWORD HConstBuffer;
-typedef DWORD HResource;
-typedef DWORD HSampler;
+typedef HHandle HConst;
+typedef HHandle HConstBuffer;
+typedef HHandle HResource;
+typedef HHandle HSampler;
 
 enum EGPUDriverType
 {

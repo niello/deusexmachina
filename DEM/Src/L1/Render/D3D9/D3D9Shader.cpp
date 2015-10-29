@@ -55,24 +55,31 @@ void CD3D9Shader::InternalDestroy()
 }
 //---------------------------------------------------------------------
 
+HConst CD3D9Shader::GetConstHandle(CStrID ID) const
+{
+	NOT_IMPLEMENTED;
+	return INVALID_INDEX;
+}
+//---------------------------------------------------------------------
+
 HConstBuffer CD3D9Shader::GetConstBufferHandle(CStrID ID) const
 {
 	NOT_IMPLEMENTED;
-	return 0;
+	return INVALID_INDEX;
 }
 //---------------------------------------------------------------------
 
 HResource CD3D9Shader::GetResourceHandle(CStrID ID) const
 {
 	NOT_IMPLEMENTED;
-	return 0;
+	return INVALID_INDEX;
 }
 //---------------------------------------------------------------------
 
 HSampler CD3D9Shader::GetSamplerHandle(CStrID ID) const
 {
 	NOT_IMPLEMENTED;
-	return 0;
+	return INVALID_INDEX;
 }
 //---------------------------------------------------------------------
 

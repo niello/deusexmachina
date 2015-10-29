@@ -8,7 +8,7 @@
 // Memory management overrides
 
 extern bool DEM_LogMemory;
-struct nMemoryStats
+struct CMemoryStats
 {
 	int HighWaterSize;      // max allocated size so far
 	int TotalCount;         // total number of allocations
@@ -17,7 +17,7 @@ struct nMemoryStats
 
 int n_dbgmemdumpleaks();
 void n_dbgmeminit();                // initialize memory debugging system
-nMemoryStats n_dbgmemgetstats();    // defined in ndbgalloc.cc
+CMemoryStats n_dbgmemgetstats();    // defined in ndbgalloc.cc
 
 #ifdef new
 #undef new

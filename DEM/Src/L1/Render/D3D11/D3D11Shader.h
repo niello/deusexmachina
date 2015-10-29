@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_D3D11_SHADER_H__
 
 #include <Render/Shader.h>
-#include <Data/Dictionary.h>
+#include <Render/D3D11/D3D11ShaderMetadata.h>
 
 // Direct3D11 shader object implementation
 
@@ -23,24 +23,41 @@ class CD3D11Shader: public CShader
 
 protected:
 
-	struct CParamMetadata
-	{
-		DWORD Size;
-		DWORD Register;
-	};
+	ID3D11DeviceChild*		pD3DShader;
 
-	//const metadata - type, size(count), offset
-	//store fixed array in buffer
-	//need some offset(address) value GetConstAddress([buffer, - can skip if no name clashes] const name)
-	//anyway need to return in what buffer const resides
-
-	CDict<CStrID, CParamMetadata> Metadata;
-
-	ID3D11DeviceChild*	pD3DShader;
-
-	void			InternalDestroy();
+	void					InternalDestroy();
 
 public:
+
+	struct CConstMeta
+	{
+		CStrID	Name;
+		HHandle	Handle;
+		HHandle	BufferHandle;
+		U32		Offset;
+		U32		Size;
+	};
+
+	struct CBufferMeta
+	{
+		CStrID	Name;
+		HHandle	Handle;
+		U32		Register;	// High bits store type mask, Register >> 30, 0 = CB, 1 = TB, 2 = Structured
+		U32		Size;		//!!!for structured may need structure size + count!
+	};
+
+	struct CRsrcMeta
+	{
+		CStrID	Name;
+		HHandle	Handle;
+		U32		Register;
+	};
+
+	//!!!must be sorted by name! //???sort in tool?
+	CFixedArray<CConstMeta>		Consts;
+	CFixedArray<CBufferMeta>	Buffers;
+	CFixedArray<CRsrcMeta>		Resources;
+	CFixedArray<CRsrcMeta>		Samplers;
 
 	CD3D11Shader(): pD3DShader(NULL) {}
 	virtual ~CD3D11Shader() { InternalDestroy(); }
@@ -55,6 +72,7 @@ public:
 
 	virtual bool			IsResourceValid() const { return !!pD3DShader; }
 
+	virtual HConst			GetConstHandle(CStrID ID) const;
 	virtual HConstBuffer	GetConstBufferHandle(CStrID ID) const;
 	virtual HResource		GetResourceHandle(CStrID ID) const;
 	virtual HSampler		GetSamplerHandle(CStrID ID) const;

@@ -12,7 +12,7 @@
 #include <ConsoleApp.h>
 #include <ShaderDB.h>
 #include <DEMD3DInclude.h>
-#include <D3DCompiler.h>
+#include <D3DCompiler.inl>
 
 #undef CreateDirectory
 #undef DeleteFile
@@ -24,6 +24,30 @@ extern CString RootPath;
 //can even order shaders in memory and load one-by-one to minimize seek time
 //may pack by use (common, menu, game, cinematic etc) and load only used.
 //can store debug and release binary packages and read from what user wants
+
+#define SRV_BUFFER 0xf000 // Highest bit of CVar::Register, SRV if set, CB if not
+
+struct CShaderBufferMeta
+{
+	CString	Name;
+	U32		Register;
+	U32		Size;
+};
+
+struct CShaderConstMeta
+{
+	CString	Name;
+	U32		BufferIndex;
+	U32		Offset;
+	U32		Size;
+	//type, array size
+};
+
+struct CShaderRsrcMeta
+{
+	CString	Name;
+	U32		Register;
+};
 
 int CompileShader(CShaderDBRec& Rec, bool Debug)
 {
@@ -74,13 +98,15 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	Rec.SrcFile.CRC = SrcCRC;
 	Rec.SrcModifyTimestamp = CurrWriteTime;
 
-	// Determine D3D target
+	// Determine D3D target and output file extension
 
 	const char* pTarget = NULL;
+	const char* pExt = NULL;
 	switch (Rec.ShaderType)
 	{
 		case Render::ShaderType_Vertex:
 		{
+			pExt = "vsh";
 			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "vs_5_0"; break;
@@ -93,6 +119,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		}
 		case Render::ShaderType_Pixel:
 		{
+			pExt = "psh";
 			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "ps_5_0"; break;
@@ -105,6 +132,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		}
 		case Render::ShaderType_Geometry:
 		{
+			pExt = "gsh";
 			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "gs_5_0"; break;
@@ -116,6 +144,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		}
 		case Render::ShaderType_Hull:
 		{
+			pExt = "hsh";
 			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "hs_5_0"; break;
@@ -125,6 +154,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		}
 		case Render::ShaderType_Domain:
 		{
+			pExt = "dsh";
 			switch (Rec.Target)
 			{
 				case 0x0500: pTarget = "ds_5_0"; break;
@@ -187,8 +217,11 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 							pCode->GetBufferSize(),
 							D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
 							&pFinalCode);
-		pCode->Release();
-		if (FAILED(hr)) return ERR_MAIN_FAILED;
+		if (FAILED(hr))
+		{
+			pCode->Release();
+			return ERR_MAIN_FAILED;
+		}
 	}
 
 	Rec.ObjFile.Size = pFinalCode->GetBufferSize();
@@ -200,11 +233,133 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	bool ObjFound = FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer());
 	if (!ObjFound)
 	{
-		if (!RegisterObjFile(Rec.ObjFile, "cso")) // Fills empty ID and path inside
+		if (!RegisterObjFile(Rec.ObjFile, pExt)) // Fills empty ID and path inside
 		{
+			pCode->Release();
 			pFinalCode->Release();
 			return ERR_MAIN_FAILED;
 		}
+
+		CString ShortPath(Rec.SrcFile.Path);
+		ShortPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
+		n_msg(VL_DEBUG, "Shader: %s -> %s\n", ShortPath.CStr(), Rec.ObjFile.Path.CStr());
+
+		// Save metadata
+
+		ID3D11ShaderReflection* pReflector = NULL;
+		hr = D3D11Reflect(pCode->GetBufferPointer(), pCode->GetBufferSize(), &pReflector);
+
+		pCode->Release();
+
+		if (FAILED(hr))
+		{
+			n_msg(VL_WARNING, "	Shader reflection failed: '%s'\n", Rec.ObjFile.Path.CStr());
+			pFinalCode->Release();
+			return ERR_MAIN_FAILED;
+		}
+
+		//D3D_FEATURE_LEVEL FeatureLevel;
+		//pReflector->GetMinFeatureLevel(&FeatureLevel);
+
+		//pReflector->GetRequiresFlags();
+
+		D3D11_SHADER_DESC D3DDesc;
+		pReflector->GetDesc(&D3DDesc);
+
+		CArray<CShaderConstMeta> Consts;
+		CArray<CShaderBufferMeta> Buffers;
+		CArray<CShaderRsrcMeta> Resources;
+		CArray<CShaderRsrcMeta> Samplers;
+
+		for (UINT RsrcIdx = 0; RsrcIdx < D3DDesc.BoundResources; ++RsrcIdx)
+		{
+			D3D11_SHADER_INPUT_BIND_DESC RsrcDesc;
+			pReflector->GetResourceBindingDesc(RsrcIdx, &RsrcDesc);
+
+			// D3D_SIF_USERPACKED - may fail assertion if not set!
+
+			switch (RsrcDesc.Type)
+			{
+				case D3D_SIT_TEXTURE:
+				{
+					n_msg(VL_DEBUG, "  Texture: %s, %d slot(s) from %d\n", RsrcDesc.Name, RsrcDesc.BindCount, RsrcDesc.BindPoint);
+					n_assert(RsrcDesc.BindCount == 1);
+					CShaderRsrcMeta* pMeta = Resources.Reserve(1);
+					pMeta->Name = RsrcDesc.Name;
+					pMeta->Register = RsrcDesc.BindPoint;
+					break;
+				}
+				case D3D_SIT_SAMPLER:
+				{
+					n_msg(VL_DEBUG, "  Sampler: %s, %d slot(s) from %d\n", RsrcDesc.Name, RsrcDesc.BindCount, RsrcDesc.BindPoint);
+					// D3D_SIF_COMPARISON_SAMPLER
+					n_assert(RsrcDesc.BindCount == 1);
+					CShaderRsrcMeta* pMeta = Samplers.Reserve(1);
+					pMeta->Name = RsrcDesc.Name;
+					pMeta->Register = RsrcDesc.BindPoint;
+					break;
+				}
+				case D3D_SIT_CBUFFER:
+				case D3D_SIT_TBUFFER: //!!!resource, not cb! Var address = resource register (up to 128!) and Offset (big)
+				case D3D_SIT_STRUCTURED: //!!!resource, not cb! Var address = resource register (up to 128!) and Offset (big)
+				{
+					n_msg(VL_DEBUG, "  CBuffer: %s, %d slot(s) from %d\n", RsrcDesc.Name, RsrcDesc.BindCount, RsrcDesc.BindPoint);
+					n_assert(RsrcDesc.BindCount == 1);
+
+					ID3D11ShaderReflectionConstantBuffer* pCB = pReflector->GetConstantBufferByName(RsrcDesc.Name);
+					if (!pCB) continue;
+
+					D3D11_SHADER_BUFFER_DESC D3DBufDesc;
+					pCB->GetDesc(&D3DBufDesc);
+					if (!D3DBufDesc.Variables) continue;
+
+					DWORD TypeMask;
+					if (RsrcDesc.Type == D3D_SIT_TBUFFER) TypeMask = (1 << 30);
+					else if (RsrcDesc.Type == D3D_SIT_STRUCTURED) TypeMask = (2 << 30);
+					else TypeMask = 0;
+
+					n_assert_dbg(!TypeMask);
+
+					CShaderBufferMeta* pMeta = Buffers.Reserve(1);
+					pMeta->Name = RsrcDesc.Name;
+					pMeta->Register = (RsrcDesc.BindPoint | TypeMask);
+					pMeta->Size = D3DBufDesc.Size;
+
+					for (UINT VarIdx = 0; VarIdx < D3DBufDesc.Variables; ++VarIdx)
+					{
+						ID3D11ShaderReflectionVariable* pVar = pCB->GetVariableByIndex(VarIdx);
+						if (!pVar) continue;
+
+						D3D11_SHADER_VARIABLE_DESC D3DVarDesc;
+						pVar->GetDesc(&D3DVarDesc);
+
+						//D3D_SVF_USERPACKED             = 1,
+						//D3D_SVF_USED                   = 2,
+
+						ID3D11ShaderReflectionType* pVarType = pVar->GetType();
+						if (!pVarType) continue;
+
+						D3D11_SHADER_TYPE_DESC D3DTypeDesc;
+						pVarType->GetDesc(&D3DTypeDesc);
+
+						n_msg(VL_DEBUG, "    Var: %s, offset %d, size %d, type %d\n",
+							  D3DVarDesc.Name, D3DVarDesc.StartOffset, D3DVarDesc.Size, D3DTypeDesc.Type);
+
+						CShaderConstMeta* pMeta = Consts.Reserve(1);
+						pMeta->Name = D3DVarDesc.Name;
+						pMeta->BufferIndex = Buffers.GetCount() - 1;
+						pMeta->Offset = D3DVarDesc.StartOffset;
+						pMeta->Size = D3DVarDesc.Size;
+
+						//D3D11_SHADER_TYPE_DESC
+					}
+
+					break;
+				}
+			}
+		}
+
+		pReflector->Release();
 
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
@@ -214,8 +369,53 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pFinalCode->Release();
 			return ERR_MAIN_FAILED;
 		}
+
+		IO::CBinaryWriter W(File);
+
+		W.Write(Buffers.GetCount());
+		for (int i = 0; i < Buffers.GetCount(); ++i)
+		{
+			const CShaderBufferMeta& B = Buffers[i];
+			W.Write(B.Name);
+			W.Write(B.Register);
+			W.Write(B.Size);
+		}
+
+		W.Write(Consts.GetCount());
+		for (int i = 0; i < Consts.GetCount(); ++i)
+		{
+			const CShaderConstMeta& B = Consts[i];
+			W.Write(B.Name);
+			W.Write(B.BufferIndex);
+			W.Write(B.Offset);
+			W.Write(B.Size);
+		}
+
+		W.Write(Resources.GetCount());
+		for (int i = 0; i < Resources.GetCount(); ++i)
+		{
+			const CShaderRsrcMeta& B = Resources[i];
+			W.Write(B.Name);
+			W.Write(B.Register);
+		}
+
+		W.Write(Samplers.GetCount());
+		for (int i = 0; i < Samplers.GetCount(); ++i)
+		{
+			const CShaderRsrcMeta& B = Samplers[i];
+			W.Write(B.Name);
+			W.Write(B.Register);
+		}
+
+		// Save shader binary
+
 		File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+
 		File.Close();
+	}
+	else
+	{
+		pCode->Release();
 	}
 
 	if (OldObjFileID > 0 && OldObjFileID != Rec.ObjFile.ID)
@@ -500,6 +700,7 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 	Data::PParams RS;
 	if (!RenderStates->Get(RS, ID)) FAIL;
 
+	//!!!may store already loaded in cache to avoid unnecessary reloading!
 	Data::CParam* pPrmBaseID;
 	if (RS->Get(pPrmBaseID, CStrID("Base")))
 	{
@@ -815,8 +1016,6 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	File.Close();
 
 	//???Samplers? descs and per-tech register assignmemts? or per-whole-effect?
-	// RenderStates (hierarchy) -> save with scheme, strings to enum codes
-	// VS - get input blob, check if exists, else save with signature
 	// All shaders - register mappings
 	// Unwind hierarchy here, store value-only whole RS descs
 	// read ony referenced states, load bases on demand once and cache

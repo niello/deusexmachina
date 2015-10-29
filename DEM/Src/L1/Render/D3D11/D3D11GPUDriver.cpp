@@ -16,6 +16,8 @@
 #include <Render/SamplerDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
+#include <IO/Streams/MemStream.h>
+#include <IO/BinaryReader.h>
 #include <System/OSWindow.h>
 #include <Data/StringID.h>
 #include <Core/Factory.h>
@@ -852,7 +854,11 @@ bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 
 bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
-	DWORD Index = (DWORD)Handle;
+	if (!Handle) FAIL;
+	CD3D11Shader::CBufferMeta* pMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	if (!pMeta) FAIL;
+
+	DWORD Index = pMeta->Register;
 	if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
 	Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
@@ -869,7 +875,11 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 
 bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
-	DWORD Index = (DWORD)Handle;
+	if (!Handle) FAIL;
+	CD3D11Shader::CRsrcMeta* pMeta = (CD3D11Shader::CRsrcMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	if (!pMeta) FAIL;
+
+	DWORD Index = pMeta->Register;
 	if (Index >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
 
 	if (MaxSRVSlotIndex < Index) MaxSRVSlotIndex = Index;
@@ -896,7 +906,11 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 
 bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
 {
-	DWORD Index = (DWORD)Handle;
+	if (!Handle) FAIL;
+	CD3D11Shader::CRsrcMeta* pMeta = (CD3D11Shader::CRsrcMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	if (!pMeta) FAIL;
+
+	DWORD Index = pMeta->Register;
 	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
 
 	Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
@@ -2143,6 +2157,67 @@ PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData,
 
 	ID3D11DeviceChild* pShader = NULL;
 
+	//!!!move metadata loading code into loaders! not all file formats support exactly this binary metadata format!
+	//may use C++11 '&&' move by reference to avoid copying metadata structures read.
+
+	IO::CMemStream IOStream;
+	if (!IOStream.Open(pData, Size)) return NULL;
+	IO::CBinaryReader R(IOStream);
+
+	PD3D11Shader Shader = n_new(Render::CD3D11Shader);
+
+	CFixedArray<CD3D11Shader::CBufferMeta>& Buffers = Shader->Buffers;
+	Buffers.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	{
+		CD3D11Shader::CBufferMeta* pMeta = &Buffers[i];
+		if (!R.Read(pMeta->Name)) return NULL;
+		if (!R.Read<U32>(pMeta->Register)) return NULL;
+		if (!R.Read<U32>(pMeta->Size)) return NULL;
+
+		// For non-empty buffers open handles to reference them from constants
+		pMeta->Handle = pMeta->Size ? D3D11DrvFactory->HandleMgr.OpenHandle(pMeta) : INVALID_HANDLE;
+	}
+
+	CFixedArray<CD3D11Shader::CConstMeta>& Consts = Shader->Consts;
+	Consts.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	{
+		CD3D11Shader::CConstMeta* pMeta = &Consts[i];
+		if (!R.Read(pMeta->Name)) return NULL;
+
+		U32 BufIdx;
+		if (!R.Read(BufIdx)) return NULL;
+		pMeta->BufferHandle = Buffers[BufIdx].Handle;
+
+		if (!R.Read<U32>(pMeta->Offset)) return NULL;
+		if (!R.Read<U32>(pMeta->Size)) return NULL;
+		pMeta->Handle = INVALID_HANDLE;
+	}
+
+	CFixedArray<CD3D11Shader::CRsrcMeta>& Resources = Shader->Resources;
+	Resources.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	{
+		CD3D11Shader::CRsrcMeta* pMeta = &Resources[i];
+		if (!R.Read(pMeta->Name)) return NULL;
+		if (!R.Read<U32>(pMeta->Register)) return NULL;
+		pMeta->Handle = INVALID_HANDLE;
+	}
+
+	CFixedArray<CD3D11Shader::CRsrcMeta>& Samplers = Shader->Samplers;
+	Samplers.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		CD3D11Shader::CRsrcMeta* pMeta = &Samplers[i];
+		if (!R.Read(pMeta->Name)) return NULL;
+		if (!R.Read<U32>(pMeta->Register)) return NULL;
+		pMeta->Handle = INVALID_HANDLE;
+	}
+
+	pData = (const char*)pData + IOStream.GetPosition();
+	Size -= IOStream.GetPosition();
+
 	switch (ShaderType)
 	{
 		case ShaderType_Vertex:
@@ -2186,7 +2261,6 @@ PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData,
 
 	if (!pShader) return NULL;
 
-	Render::PD3D11Shader Shader = n_new(Render::CD3D11Shader);
 	if (!Shader->Create(pShader))
 	{
 		pShader->Release();

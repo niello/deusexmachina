@@ -27,8 +27,8 @@ protected:
 		Wnd_Fullscreen	= 0x08
 	};
 
-	CString	WindowTitle;
-	CString	IconName;
+	CString				WindowTitle;
+	CString				IconName;
 
 	Data::CFlags		Flags;
 	COSWindowWin32*		pParent;
