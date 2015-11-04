@@ -31,7 +31,8 @@ struct CShaderBufferMeta
 {
 	CString	Name;
 	U32		Register;
-	U32		Size;
+	U32		ElementSize;
+	U32		ElementCount;
 };
 
 struct CShaderConstMeta
@@ -98,10 +99,11 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	Rec.SrcFile.CRC = SrcCRC;
 	Rec.SrcModifyTimestamp = CurrWriteTime;
 
-	// Determine D3D target and output file extension
+	// Determine D3D target, output file extension and file signature
 
 	const char* pTarget = NULL;
 	const char* pExt = NULL;
+	Data::CFourCC FileSig;
 	switch (Rec.ShaderType)
 	{
 		case Render::ShaderType_Vertex:
@@ -109,10 +111,10 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pExt = "vsh";
 			switch (Rec.Target)
 			{
-				case 0x0500: pTarget = "vs_5_0"; break;
-				case 0x0401: pTarget = "vs_4_1"; break;
-				case 0x0400: pTarget = "vs_4_0"; break;
-				case 0x0300: pTarget = "vs_3_0"; break;
+				case 0x0500: pTarget = "vs_5_0"; FileSig.Code = 'VS50'; break;
+				case 0x0401: pTarget = "vs_4_1"; FileSig.Code = 'VS41'; break;
+				case 0x0400: pTarget = "vs_4_0"; FileSig.Code = 'VS40'; break;
+				case 0x0300: pTarget = "vs_3_0"; FileSig.Code = 'VS30'; break;
 				default: FAIL;
 			}
 			break;
@@ -122,10 +124,10 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pExt = "psh";
 			switch (Rec.Target)
 			{
-				case 0x0500: pTarget = "ps_5_0"; break;
-				case 0x0401: pTarget = "ps_4_1"; break;
-				case 0x0400: pTarget = "ps_4_0"; break;
-				case 0x0300: pTarget = "ps_3_0"; break;
+				case 0x0500: pTarget = "ps_5_0"; FileSig.Code = 'PS50'; break;
+				case 0x0401: pTarget = "ps_4_1"; FileSig.Code = 'PS41'; break;
+				case 0x0400: pTarget = "ps_4_0"; FileSig.Code = 'PS40'; break;
+				case 0x0300: pTarget = "ps_3_0"; FileSig.Code = 'PS30'; break;
 				default: FAIL;
 			}
 			break;
@@ -135,9 +137,9 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pExt = "gsh";
 			switch (Rec.Target)
 			{
-				case 0x0500: pTarget = "gs_5_0"; break;
-				case 0x0401: pTarget = "gs_4_1"; break;
-				case 0x0400: pTarget = "gs_4_0"; break;
+				case 0x0500: pTarget = "gs_5_0"; FileSig.Code = 'GS50'; break;
+				case 0x0401: pTarget = "gs_4_1"; FileSig.Code = 'GS41'; break;
+				case 0x0400: pTarget = "gs_4_0"; FileSig.Code = 'GS40'; break;
 				default: FAIL;
 			}
 			break;
@@ -147,7 +149,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pExt = "hsh";
 			switch (Rec.Target)
 			{
-				case 0x0500: pTarget = "hs_5_0"; break;
+				case 0x0500: pTarget = "hs_5_0"; FileSig.Code = 'HS50'; break;
 				default: FAIL;
 			}
 			break;
@@ -157,7 +159,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pExt = "dsh";
 			switch (Rec.Target)
 			{
-				case 0x0500: pTarget = "ds_5_0"; break;
+				case 0x0500: pTarget = "ds_5_0"; FileSig.Code = 'DS50'; break;
 				default: FAIL;
 			}
 			break;
@@ -207,10 +209,67 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		pErrors->Release();
 	}
 
+	// For vertex shaders, store input signature in a separate binary file.
+	// It saves RAM since input signatures must reside in it at the runtime.
+	//???geometry shaders may have sig too?
+
+	if (Rec.ShaderType == Render::ShaderType_Vertex)
+	{
+		ID3DBlob* pInputSig;
+		if (SUCCEEDED(D3DGetBlobPart(pCode->GetBufferPointer(),
+									 pCode->GetBufferSize(),
+									 D3D_BLOB_INPUT_SIGNATURE_BLOB,
+									 0,
+									 &pInputSig)))
+		{
+			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
+			Rec.InputSigFile.CRC = Util::CalcCRC((uchar*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+
+			DWORD OldInputSigID = Rec.InputSigFile.ID;
+			bool ObjFound = FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false);
+			if (!ObjFound)
+			{
+				if (!RegisterObjFile(Rec.InputSigFile, "sig")) // Fills empty ID and path inside
+				{
+					pCode->Release();
+					pInputSig->Release();
+					return ERR_MAIN_FAILED;
+				}
+
+				IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
+
+				IO::CFileStream File(Rec.InputSigFile.Path);
+				if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+				{
+					pCode->Release();
+					pInputSig->Release();
+					return ERR_MAIN_FAILED;
+				}
+				File.Write(pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+				File.Close();
+			}
+
+			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
+			{
+				CString OldObjPath;
+				if (ReleaseObjFile(OldInputSigID, OldObjPath))
+					IOSrv->DeleteFile(OldObjPath);
+			}
+
+			pInputSig->Release();
+		}
+		else Rec.InputSigFile.ID = 0;
+	}
+	else Rec.InputSigFile.ID = 0;
+
 	// Strip unnecessary info for release builds, making object files smaller
 
 	ID3DBlob* pFinalCode;
-	if (Debug) pFinalCode = pCode;
+	if (Debug)
+	{
+		pFinalCode = pCode;
+		pFinalCode->AddRef();
+	}
 	else
 	{
 		hr = D3DStripShader(pCode->GetBufferPointer(),
@@ -230,7 +289,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	// Try to find exactly the same binary and reuse it, or save our result
 
 	DWORD OldObjFileID = Rec.ObjFile.ID;
-	bool ObjFound = FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer());
+	bool ObjFound = FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer(), true);
 	if (!ObjFound)
 	{
 		if (!RegisterObjFile(Rec.ObjFile, pExt)) // Fills empty ID and path inside
@@ -323,7 +382,8 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 					CShaderBufferMeta* pMeta = Buffers.Reserve(1);
 					pMeta->Name = RsrcDesc.Name;
 					pMeta->Register = (RsrcDesc.BindPoint | TypeMask);
-					pMeta->Size = D3DBufDesc.Size;
+					pMeta->ElementSize = D3DBufDesc.Size;
+					pMeta->ElementCount = 1;
 
 					for (UINT VarIdx = 0; VarIdx < D3DBufDesc.Variables; ++VarIdx)
 					{
@@ -363,8 +423,8 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
-		IO::CFileStream File;
-		if (!File.Open(Rec.ObjFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		IO::CFileStream File(Rec.ObjFile.Path);
+		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
 			pFinalCode->Release();
 			return ERR_MAIN_FAILED;
@@ -372,16 +432,26 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 		IO::CBinaryWriter W(File);
 
-		W.Write(Buffers.GetCount());
+		W.Write(FileSig);
+
+		// Offset of a shader binary, will fill later
+		DWORD OffsetOffset = File.GetPosition();
+		W.Write<U32>(0);
+
+		W.Write<U32>(Rec.ObjFile.ID);
+		W.Write<U32>(Rec.InputSigFile.ID);
+
+		W.Write<U32>(Buffers.GetCount());
 		for (int i = 0; i < Buffers.GetCount(); ++i)
 		{
 			const CShaderBufferMeta& B = Buffers[i];
 			W.Write(B.Name);
 			W.Write(B.Register);
-			W.Write(B.Size);
+			W.Write(B.ElementSize);
+			W.Write(B.ElementCount);
 		}
 
-		W.Write(Consts.GetCount());
+		W.Write<U32>(Consts.GetCount());
 		for (int i = 0; i < Consts.GetCount(); ++i)
 		{
 			const CShaderConstMeta& B = Consts[i];
@@ -391,7 +461,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			W.Write(B.Size);
 		}
 
-		W.Write(Resources.GetCount());
+		W.Write<U32>(Resources.GetCount());
 		for (int i = 0; i < Resources.GetCount(); ++i)
 		{
 			const CShaderRsrcMeta& B = Resources[i];
@@ -399,7 +469,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			W.Write(B.Register);
 		}
 
-		W.Write(Samplers.GetCount());
+		W.Write<U32>(Samplers.GetCount());
 		for (int i = 0; i < Samplers.GetCount(); ++i)
 		{
 			const CShaderRsrcMeta& B = Samplers[i];
@@ -409,7 +479,10 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 		// Save shader binary
 
+		DWORD BinaryOffset = File.GetPosition();
 		File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+		File.Seek(OffsetOffset, IO::Seek_Begin);
+		W.Write<U32>(BinaryOffset);
 
 		File.Close();
 	}
@@ -424,62 +497,6 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		if (ReleaseObjFile(OldObjFileID, OldObjPath))
 			IOSrv->DeleteFile(OldObjPath);
 	}
-
-	// For vertex shaders, store input signature separately.
-	// It saves RAM since input signatures must reside there as a raw data.
-
-	if (Rec.ShaderType == Render::ShaderType_Vertex)
-	{
-		ID3DBlob* pInputSig;
-		if (SUCCEEDED(D3DGetBlobPart(pFinalCode->GetBufferPointer(),
-									 pFinalCode->GetBufferSize(),
-									 D3D_BLOB_INPUT_SIGNATURE_BLOB,
-									 0,
-									 &pInputSig)))
-		{
-			pFinalCode->Release();
-
-			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
-			Rec.InputSigFile.CRC = Util::CalcCRC((uchar*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
-
-			DWORD OldInputSigID = Rec.InputSigFile.ID;
-			bool ObjFound = FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer());
-			if (!ObjFound)
-			{
-				if (!RegisterObjFile(Rec.InputSigFile, "sig")) // Fills empty ID and path inside
-				{
-					pInputSig->Release();
-					return ERR_MAIN_FAILED;
-				}
-
-				IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
-
-				IO::CFileStream File;
-				if (!File.Open(Rec.InputSigFile.Path, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
-				{
-					pInputSig->Release();
-					return ERR_MAIN_FAILED;
-				}
-				File.Write(pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
-				File.Close();
-			}
-
-			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
-			{
-				CString OldObjPath;
-				if (ReleaseObjFile(OldInputSigID, OldObjPath))
-					IOSrv->DeleteFile(OldObjPath);
-			}
-
-			pInputSig->Release();
-		}
-		else
-		{
-			Rec.InputSigFile.ID = Rec.ObjFile.ID;
-			pFinalCode->Release();
-		}
-	}
-	else pFinalCode->Release();
 
 	return WriteShaderRec(Rec) ? SUCCESS : ERR_MAIN_FAILED;
 }
@@ -543,13 +560,12 @@ Render::EBlendOp StringToBlendOp(const CString& Str)
 }
 //---------------------------------------------------------------------
 
-bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, DWORD& OutShaderID, DWORD* pOutInputSigID = NULL)
+bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, DWORD& OutShaderID)
 {
 	Data::PParams ShaderSection;
 	if (!RenderState->Get(ShaderSection, SectionID)) OK;
 
 	OutShaderID = 0;
-	if (pOutInputSigID) *pOutInputSigID = 0;
 
 	int IntValue;
 
@@ -626,7 +642,7 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 	if (Result != SUCCESS) FAIL;
 
 	OutShaderID = Rec.ObjFile.ID;
-	if (pOutInputSigID) *pOutInputSigID = Rec.InputSigFile.ID;
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -710,7 +726,7 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 	//for that need to store defaults in a blend desc
 	//if (Leaf) //!!!merge shader descs (partial in base, final in a leaf)
 	//{
-		if (!ProcessShaderSection(RS, CStrID("VS"), Render::ShaderType_Vertex, Debug, Desc.VertexShader, &Desc.InputSignature)) FAIL;
+		if (!ProcessShaderSection(RS, CStrID("VS"), Render::ShaderType_Vertex, Debug, Desc.VertexShader)) FAIL;
 		if (!ProcessShaderSection(RS, CStrID("PS"), Render::ShaderType_Pixel, Debug, Desc.PixelShader)) FAIL;
 		if (!ProcessShaderSection(RS, CStrID("GS"), Render::ShaderType_Geometry, Debug, Desc.GeometryShader)) FAIL;
 		if (!ProcessShaderSection(RS, CStrID("HS"), Render::ShaderType_Hull, Debug, Desc.HullShader)) FAIL;
@@ -903,8 +919,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
 	
-	IO::CFileStream File;
-	if (!File.Open(pOutFilePath, IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
+	IO::CFileStream File(pOutFilePath);
+	if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
 	IO::CBinaryWriter W(File);
 
 	if (!W.Write('SHFX')) return ERR_IO_WRITE;
@@ -957,8 +973,6 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write(Desc.GeometryShader)) return ERR_IO_WRITE;
 		if (!W.Write(Desc.DomainShader)) return ERR_IO_WRITE;
 		if (!W.Write(Desc.HullShader)) return ERR_IO_WRITE;
-
-		if (!W.Write(Desc.InputSignature)) return ERR_IO_WRITE;
 
 		if (!W.Write(Desc.Flags.GetMask())) return ERR_IO_WRITE;
 		

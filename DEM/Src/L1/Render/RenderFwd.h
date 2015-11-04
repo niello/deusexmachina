@@ -62,7 +62,8 @@ enum EShaderType
 	ShaderType_Domain,
 
 	ShaderType_COUNT,
-	ShaderType_Invalid
+	ShaderType_Invalid,
+	ShaderType_Unknown = ShaderType_Invalid
 };
 
 enum EClearFlag

@@ -26,6 +26,8 @@ public:
 	int		GetRefCount() const { return RefCount; }
 };
 
+typedef Ptr<CRefCounted> PRefCounted;
+
 }
 
 #endif

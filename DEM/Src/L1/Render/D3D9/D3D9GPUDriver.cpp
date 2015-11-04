@@ -1467,7 +1467,8 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Index
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData)
+// Float, int, bool count and registers
+PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData)
 {
 	NOT_IMPLEMENTED;
 	return NULL;
@@ -2323,6 +2324,27 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 	}
 
 	return Result;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
+{
+	NOT_IMPLEMENTED;
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size)
+{
+	NOT_IMPLEMENTED;
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
+{
+	NOT_IMPLEMENTED;
+	OK;
 }
 //---------------------------------------------------------------------
 

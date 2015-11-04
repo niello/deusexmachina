@@ -9,28 +9,19 @@ namespace Render
 __ImplementClass(Render::CD3D11ConstantBuffer, 'CB11', Render::CConstantBuffer);
 
 //!!!???assert destroyed?!
-bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11DeviceContext* pD3DDeviceCtx, bool StoreRAMCopy)
+bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV)
 {
-	if (!pCB || !pD3DDeviceCtx) FAIL;
+	if (!pCB) FAIL;
 
 	D3D11_BUFFER_DESC D3DDesc;
 	pCB->GetDesc(&D3DDesc);
 
-	//???allow texture buffers?
-	if (!(D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER)) FAIL;
+	if (!((D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) || (pSRV && (D3DDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE)))) FAIL;
 
 	Flags.ClearAll();
 
-	if (StoreRAMCopy)
-	{
-		pMapped = (char*)n_malloc_aligned(D3DDesc.ByteWidth, 16);
-		memset(pMapped, 0, D3DDesc.ByteWidth);
-		Flags.Set(UsesRAMCopy);
-	}
-
 	pBuffer = pCB;
-	pD3DCtx = pD3DDeviceCtx;
-	pD3DCtx->AddRef();
+	pSRView = pSRV;
 	D3DUsage = D3DDesc.Usage;
 	SizeInBytes = D3DDesc.ByteWidth;
 
@@ -40,103 +31,66 @@ bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11DeviceContext* pD3DDe
 
 void CD3D11ConstantBuffer::InternalDestroy()
 {
+	SAFE_RELEASE(pSRView);
 	SAFE_RELEASE(pBuffer);
-	SAFE_RELEASE(pD3DCtx);
-	if (Flags.Is(UsesRAMCopy))
+	if (Flags.Is(CB11_UsesRAMCopy))
 	{
+		n_assert_dbg(!SizeInBytes || pMapped);
 		SAFE_FREE_ALIGNED(pMapped);
 	}
 	else n_assert(!pMapped);
 }
 //---------------------------------------------------------------------
 
-bool CD3D11ConstantBuffer::BeginChanges()
+bool CD3D11ConstantBuffer::CreateRAMCopy()
 {
-	if (!pBuffer || D3DUsage == D3D11_USAGE_IMMUTABLE) FAIL;
-
-	if (Flags.IsNot(UsesRAMCopy))
-	{
-		if (D3DUsage == D3D11_USAGE_DYNAMIC)
-		{
-			D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
-			if (FAILED(pD3DCtx->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
-			pMapped = (char*)MappedSubRsrc.pData;
-		}
-		else FAIL;
-	}
-
+	if (Flags.Is(CB11_UsesRAMCopy)) OK;
+	if (!pBuffer || !SizeInBytes) FAIL;
+	pMapped = (char*)n_malloc_aligned(SizeInBytes, 16);
+	if (!pMapped) FAIL;
+	memset(pMapped, 0, SizeInBytes);
+	Flags.Set(CB11_UsesRAMCopy); // | CB11_Dirty);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CD3D11ConstantBuffer::CommitChanges()
+void CD3D11ConstantBuffer::ResetRAMCopy(const void* pVRAMData)
 {
-	if (Flags.Is(UsesRAMCopy))
+	if (Flags.Is(CB11_UsesRAMCopy))
 	{
-		if (Flags.Is(RAMCopyDirty))
-		{
-			if (D3DUsage == D3D11_USAGE_DYNAMIC)
-			{
-				D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
-				if (FAILED(pD3DCtx->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
-				memcpy(MappedSubRsrc.pData, pMapped, SizeInBytes);
-				pD3DCtx->Unmap(pBuffer, 0);
-			}
-			else if (D3DUsage == D3D11_USAGE_DEFAULT)
-			{
-				pD3DCtx->UpdateSubresource(pBuffer, 0, NULL, pMapped, 0, 0);
-			}
-			else FAIL;
-
-			Flags.Clear(RAMCopyDirty);
-		}
+		if (pVRAMData) memcpy(pMapped, pVRAMData, SizeInBytes);
+		else memset(pMapped, 0, SizeInBytes);
+		Flags.Clear(CB11_Dirty);
 	}
-	else if (D3DUsage == D3D11_USAGE_DYNAMIC)
-	{
-		if (pMapped)
-		{
-			n_assert_dbg(Flags.Is(RAMCopyDirty)); // Else all the buffer contents are discarded
-			pD3DCtx->Unmap(pBuffer, 0);
-			pMapped = NULL;
-			Flags.Clear(RAMCopyDirty);
-		}
-	}
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-// Updates whole buffer contents, especially useful for VRAM-only D3D11_USAGE_DEFAULT buffers
-bool CD3D11ConstantBuffer::WriteCommitToVRAM(const void* pData)
+void CD3D11ConstantBuffer::DestroyRAMCopy()
 {
-	if (!pData) FAIL;
+	if (Flags.IsNot(CB11_UsesRAMCopy)) return;
+	SAFE_FREE_ALIGNED(pMapped);
+	Flags.Clear(CB11_UsesRAMCopy | CB11_Dirty);
+}
+//---------------------------------------------------------------------
 
-	if (D3DUsage == D3D11_USAGE_DEFAULT)
+void CD3D11ConstantBuffer::OnBegin(void* pMappedVRAM)
+{
+	if (Flags.Is(CB11_UsesRAMCopy))
 	{
-		pD3DCtx->UpdateSubresource(pBuffer, 0, NULL, pData, 0, 0);
+		n_assert_dbg(!pMappedVRAM);
 	}
-	else if (D3DUsage == D3D11_USAGE_DYNAMIC)
+	else
 	{
-		void* pDest = Flags.Is(UsesRAMCopy) ? NULL : pMapped;
-		if (pDest) pMapped = NULL;
-		else
-		{
-			D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
-			if (FAILED(pD3DCtx->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
-			pDest = MappedSubRsrc.pData;
-		}
-		memcpy(pDest, pData, SizeInBytes);
-		pD3DCtx->Unmap(pBuffer, 0);
+		n_assert_dbg(!pMapped && pMappedVRAM);
+		pMapped = (char*)pMappedVRAM;
 	}
-	else FAIL;
+}
+//---------------------------------------------------------------------
 
-	if (Flags.Is(UsesRAMCopy))
-	{
-		memcpy(pMapped, pData, SizeInBytes);
-		Flags.Clear(RAMCopyDirty);
-	}
-
-	OK;
+void CD3D11ConstantBuffer::OnCommit()
+{
+	if (Flags.IsNot(CB11_UsesRAMCopy)) pMapped = NULL;
+	Flags.Clear(CB11_Dirty);
 }
 //---------------------------------------------------------------------
 

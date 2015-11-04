@@ -66,9 +66,9 @@ void CDEMGeometryBuffer::draw() const
 	d_owner.getGPUDriver()->SetScissorRect(0, &SR);
 
 	if (!d_matrixValid) updateMatrix();
+	d_owner.setWorldMatrix(d_matrix);
 
-	n_assert(false);
-	//d_worldMatrixVariable->SetMatrix(reinterpret_cast<float*>(&d_matrix));
+	//???where to bind, where to commit changes?
 
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
@@ -79,10 +79,7 @@ void CDEMGeometryBuffer::draw() const
 		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)
 		{
 			d_owner.setRenderState(d_blendMode, i->clip);
- 
-	n_assert(false);
-			//d_boundTextureVariable->SetResource(const_cast<ID3D11ShaderResourceView*>(i->texture));
-
+			d_owner.getGPUDriver()->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.GetUnsafe());
 			d_owner.getGPUDriver()->Draw(d_primGroup);
 			pos += i->vertexCount;
 		}

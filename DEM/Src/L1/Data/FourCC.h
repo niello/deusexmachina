@@ -13,17 +13,17 @@ class CFourCC
 {
 public:
 
-	DWORD Code;
+	U32 Code;
 
 	CFourCC(): Code(0) {}
 	CFourCC(int IntCode): Code(IntCode) { }
-	CFourCC(DWORD IntCode): Code(IntCode) { }
-	CFourCC(LPCSTR pString) { FromString(pString); }
+	CFourCC(U32 IntCode): Code(IntCode) { }
+	CFourCC(const char* pString) { FromString(pString); }
 
-	char		GetChar(DWORD Idx) const { n_assert_dbg(Idx < 4); return (Code >> (Idx << 3)) & 0xff; } // Intel endianness
-	void		FromString(LPCSTR pString);
+	char		GetChar(U32 Idx) const { n_assert_dbg(Idx < 4); return (Code >> (Idx << 3)) & 0xff; } // Intel endianness
+	void		FromString(const char* pString);
 	void		ToString(char* Out) const;
-	LPCSTR		ToString() const;
+	const char*	ToString() const;
 	bool		IsValid() const { return !!Code; }
 
 	CFourCC&	operator =(const CFourCC& Other) { Code = Other.Code; return *this; }
@@ -37,7 +37,7 @@ public:
 //---------------------------------------------------------------------
 
 // Convert "ABCD" as compiler converts 'ABCD' character constant
-inline void CFourCC::FromString(LPCSTR pString)
+inline void CFourCC::FromString(const char* pString)
 {
 	n_assert_dbg(pString);
 	Code = pString[3] | (pString[2] << 8) | (pString[1] << 16) | (pString[0] << 24);

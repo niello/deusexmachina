@@ -5,6 +5,7 @@
 #include <Render/VideoDriverFactory.h>
 #include <Data/Singleton.h>
 #include <Data/HandleManager.h>
+#include <Data/HashTable.h>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory
 
@@ -29,7 +30,7 @@ enum EFormatType
 	FmtType_Float
 };
 
-#define D3D11DrvFactory CD3D11DriverFactory::Instance()
+#define D3D11DrvFactory Render::CD3D11DriverFactory::Instance()
 
 class CD3D11DriverFactory: public CVideoDriverFactory
 {
@@ -38,12 +39,13 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDXGIFactory1*			pDXGIFactory;
-	DWORD					AdapterCount;	// Valid during a lifetime of the DXGI factory object
+	IDXGIFactory1*					pDXGIFactory;
+	DWORD							AdapterCount;		// Valid during a lifetime of the DXGI factory object
+	//CHashTable<UPTR, Data::CBuffer>	ShaderSignatures;
 
 public:
 
-	Data::CHandleManager	HandleMgr;		// Primarily for shader metadata handles
+	Data::CHandleManager			HandleMgr;			// Primarily for shader metadata handles
 
 	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
@@ -68,6 +70,9 @@ public:
 	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0);
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
+
+	bool					RegisterShaderInputSignature(UPTR ID, const void* pData, UPTR Size);
+	bool					GetShaderInputSignature(UPTR ID, const void*& pOutData, UPTR& OutSize);
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

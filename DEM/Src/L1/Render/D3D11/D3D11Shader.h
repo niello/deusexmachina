@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_D3D11_SHADER_H__
 
 #include <Render/Shader.h>
-#include <Render/D3D11/D3D11ShaderMetadata.h>
+#include <Data/FixedArray.h>
 
 // Direct3D11 shader object implementation
 
@@ -29,21 +29,30 @@ protected:
 
 public:
 
+	enum EBufferType
+	{
+		ConstantBuffer		= 0,
+		TextureBuffer		= 1,
+		StructuredBuffer	= 2
+	};
+
 	struct CConstMeta
 	{
 		CStrID	Name;
 		HHandle	Handle;
 		HHandle	BufferHandle;
 		U32		Offset;
-		U32		Size;
+		U32		Size;	//!!!arrays  vectors may need ElementCount & ElementSize!
 	};
 
 	struct CBufferMeta
 	{
-		CStrID	Name;
-		HHandle	Handle;
-		U32		Register;	// High bits store type mask, Register >> 30, 0 = CB, 1 = TB, 2 = Structured
-		U32		Size;		//!!!for structured may need structure size + count!
+		CStrID		Name;
+		HHandle		Handle;
+		U32			Register;
+		U32			ElementSize;
+		U32			ElementCount;	// 1 for CB
+		EBufferType	Type;
 	};
 
 	struct CRsrcMeta
@@ -59,7 +68,9 @@ public:
 	CFixedArray<CRsrcMeta>		Resources;
 	CFixedArray<CRsrcMeta>		Samplers;
 
-	CD3D11Shader(): pD3DShader(NULL) {}
+	UPTR						InputSignatureID;
+
+	CD3D11Shader(): pD3DShader(NULL), InputSignatureID(0) {}
 	virtual ~CD3D11Shader() { InternalDestroy(); }
 
 	bool					Create(ID3D11DeviceChild* pShader); 

@@ -29,12 +29,13 @@ protected:
 		CNPKDir(CNpkTOCEntry* pEntry): pTOCEntry(pEntry), It(pTOCEntry->GetEntryIterator()) {}
 	};
 
-	CNpkTOC		TOC;
-	CFileStream NPKData; //!!!can use MMF and create views when big files are read!
+	CNpkTOC			TOC;
+	CFileStream*	pNPKData; //!!!can use MMF and create views when big files are read!
 
 public:
 
-	virtual ~CFileSystemNPK() { if (NPKData.IsOpen()) Unmount(); }
+	CFileSystemNPK(): pNPKData(NULL) {}
+	virtual ~CFileSystemNPK() { if (pNPKData) Unmount(); }
 
 	virtual bool	Mount(const char* pSource, const char* pRoot);
 	virtual void	Unmount();

@@ -81,7 +81,7 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
 	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, DWORD Size) = 0;
-	virtual PConstantBuffer		CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData = NULL) = 0;
+	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData = NULL) = 0;
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false) = 0;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
@@ -110,16 +110,13 @@ public:
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
 
-	//!!!constant buffers are not present in D3D9 and are handled differently
 	//!!!???need copy subresource?! (has meaning for textures only! ArraySlice, MipLevel)
 	//???allow copying subresource region? to CopySubresource as optional arg
 	//!!!ArraySlice is valid for cubemap faces even in D3D9, with enum consts! need proper indexing!
 	//MapSubresource -> OutMappedData (pointer and 2 pitches where applicable), buffers can only return a pointer!
 	//UnmapResource returns is still mapped
-	//???how to handle texture-less render target? allow it at all? RT without texture may not be mapped?!
 	//???can make these calls async? copy, map etc.
 	//!!!all sync for now until I run async job manager!
-	//???for read and write optional callback for memory copying? with memcpy by default. may use for aligned copying with SSE
 	// It is a good rule of thumb to supply at least 16-byte aligned pointers to WriteToResource and ReadFromResource
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode) = 0;
 	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode) = 0;
@@ -133,9 +130,15 @@ public:
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
 	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL) = 0;
+	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
 	//virtual PVertexBuffer		CopyResource(const CVertexBuffer& Source, DWORD NewAccessFlags) = 0;
 	//virtual PIndexBuffer		CopyResource(const CIndexBuffer& Source, DWORD NewAccessFlags) = 0;
 	//virtual PTexture			CopyResource(const CTexture& Source, DWORD NewAccessFlags) = 0;
+
+	//???or auto-begin if not?!
+	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) = 0;
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
+	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
 	EGPUDriverType				GetType() const { return Type; }
 };

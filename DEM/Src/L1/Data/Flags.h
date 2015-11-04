@@ -13,37 +13,37 @@ class CFlags //!!!can make template for 8, 16, 32, 64 bit capacity!
 {
 protected:
 
-	DWORD Flags;
+	U32 Flags;
 
 public:
 
 	CFlags(): Flags(0) {}
-	CFlags(DWORD InitialFlags): Flags(InitialFlags) {}
+	CFlags(U32 InitialFlags): Flags(InitialFlags) {}
 
-	void	Set(DWORD Flag) { Flags |= Flag; } //!!!can return old value!
-	void	SetTo(DWORD Flag, bool Value) { if (Value) Flags |= Flag; else Flags &= ~Flag; } //!!!do it better!
-	void	SetAll() { Flags = (DWORD)-1; }
-	void	ResetTo(DWORD NewFlags) { Flags = NewFlags; }
-	void	Clear(DWORD Mask) { Flags &= ~Mask; }
-	void	ClearAll() { Flags = (DWORD)0; }
-	void	Invert(DWORD Mask) { Flags ^= Mask; }
+	void	Set(U32 Flag) { Flags |= Flag; } //!!!can return old value!
+	void	SetTo(U32 Flag, bool Value) { if (Value) Flags |= Flag; else Flags &= ~Flag; } //!!!do it better!
+	void	SetAll() { Flags = (U32)-1; }
+	void	ResetTo(U32 NewFlags) { Flags = NewFlags; }
+	void	Clear(U32 Mask) { Flags &= ~Mask; }
+	void	ClearAll() { Flags = (U32)0; }
+	void	Invert(U32 Mask) { Flags ^= Mask; }
 	void	InvertAll() { Flags = ~Flags; }
-	bool	Is(DWORD Mask) const { return (Flags & Mask) == Mask; }
-	bool	IsNot(DWORD Mask) const { return (Flags & Mask) == 0; }
+	bool	Is(U32 Mask) const { return (Flags & Mask) == Mask; }
+	bool	IsNot(U32 Mask) const { return (Flags & Mask) == 0; }
 	bool	IsAny() const { return !!Flags; }
-	bool	IsAny(DWORD Mask) const { return (Flags & Mask) != 0; }
-	bool	IsAll() const { return Flags == ((DWORD)-1); }
+	bool	IsAny(U32 Mask) const { return (Flags & Mask) != 0; }
+	bool	IsAll() const { return Flags == ((U32)-1); }
 	bool	IsNotAll() const { return Flags == 0; }
-	DWORD	GetMask() const { return Flags; }
-	DWORD	NumberOfSetBits() const;
+	U32		GetMask() const { return Flags; }
+	U32		NumberOfSetBits() const;
 
-	operator DWORD() const { return Flags; }
+	operator U32() const { return Flags; }
 };
 
 // Not tested, I copied it from
 // http://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
 //???is usable for non-32-bit flags? if less, will be adjusted with 0 bits, but what if more?
-inline DWORD CFlags::NumberOfSetBits() const
+inline U32 CFlags::NumberOfSetBits() const
 {
 	DWORD Tmp = Flags - ((Flags >> 1) & 0x55555555);
 	Tmp = (Tmp & 0x33333333) + ((Tmp >> 2) & 0x33333333);

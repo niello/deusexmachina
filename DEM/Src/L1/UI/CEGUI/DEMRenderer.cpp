@@ -38,11 +38,6 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 
 	n_assert_dbg(pVertexShaderURI && pPixelShaderURI);
 
-	//!!!stupid - loads stream twice!
-	Data::CBuffer Buf;
-	n_verify(IOSrv->LoadFileToBuffer(pVertexShaderURI, Buf));
-	//!!!register input sig blob from VS!
-
 	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
 	if (!RVS->IsLoaded())
 	{
@@ -113,6 +108,17 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
+	hWorldMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("WorldMatrix"));
+	hProjMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("ProjectionMatrix"));
+	hCBOnResize = RPS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangeOnResize"));
+	hCBPerObject = RPS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangePerObject"));
+	hTexture = RPS->GetObject()->As<Render::CShader>()->GetResourceHandle(CStrID("BoundTexture"));
+	hLinearSampler = RPS->GetObject()->As<Render::CShader>()->GetSamplerHandle(CStrID("LinearSampler"));
+
+	//???or two buffers? proj matrix is far less frequently set than world!
+	CBOnResize = GPU->CreateConstantBuffer(hCBOnResize, Render::Access_GPU_Read | Render::Access_CPU_Write);
+	CBPerObject = GPU->CreateConstantBuffer(hCBPerObject, Render::Access_GPU_Read | Render::Access_CPU_Write);
+
 	Render::CSamplerDesc SampDesc;
 	SampDesc.SetDefaults();
 	SampDesc.AddressU = Render::TexAddr_Clamp;
@@ -120,11 +126,6 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
 	LinearSampler = GPU->CreateSampler(SampDesc);
 	n_assert(LinearSampler.IsValidPtr());
-
-	HWorldMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("WorldMatrix"));
-	HProjMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("ProjectionMatrix"));
-	HTexture = RPS->GetObject()->As<Render::CShader>()->GetResourceHandle(CStrID("BoundTexture"));
-	HSampler = RPS->GetObject()->As<Render::CShader>()->GetSamplerHandle(CStrID("LinearSampler"));
 
 	Render::CVertexComponent Components[] = {
 			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0 },
@@ -149,8 +150,21 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllGeometryBuffers();
 	n_delete(pDefaultRT);
 
-	n_assert(false);
-	//if (d_effect) d_effect->Release();
+	hWorldMatrix = INVALID_HANDLE;
+	hProjMatrix = INVALID_HANDLE;
+	hCBOnResize = INVALID_HANDLE;
+	hCBPerObject = INVALID_HANDLE;
+	hTexture = INVALID_HANDLE;
+	hLinearSampler = INVALID_HANDLE;
+	VertexLayout = NULL;
+	NormalUnclipped = NULL;
+	NormalClipped = NULL;
+	PremultipliedUnclipped = NULL;
+	PremultipliedClipped = NULL;
+	CBOnResize = NULL;
+	CBPerObject = NULL;
+	LinearSampler = NULL;
+	GPU = NULL;
 }
 //--------------------------------------------------------------------
 
@@ -221,6 +235,28 @@ void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
 		GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
 	else
 		GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
+}
+//--------------------------------------------------------------------
+
+void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
+{
+	if (CBPerObject.IsValidPtr())
+	{
+		GPU->BeginShaderConstants(*CBPerObject.GetUnsafe());
+		GPU->SetShaderConstant(*CBPerObject.GetUnsafe(), hWorldMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+		GPU->CommitShaderConstants(*CBPerObject.GetUnsafe());
+	}
+}
+//--------------------------------------------------------------------
+
+void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
+{
+	if (CBOnResize.IsValidPtr())
+	{
+		GPU->BeginShaderConstants(*CBOnResize.GetUnsafe());
+		GPU->SetShaderConstant(*CBOnResize.GetUnsafe(), hProjMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+		GPU->CommitShaderConstants(*CBOnResize.GetUnsafe());
+	}
 }
 //--------------------------------------------------------------------
 
@@ -324,7 +360,9 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 void CDEMRenderer::beginRendering()
 {
 	GPU->SetVertexLayout(VertexLayout.GetUnsafe());
-	GPU->BindSampler(Render::ShaderType_Pixel, HSampler, LinearSampler);
+	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hCBOnResize, CBOnResize.GetUnsafe());
+	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hCBPerObject, CBPerObject.GetUnsafe());
+	GPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.GetUnsafe());
 }
 //---------------------------------------------------------------------
 

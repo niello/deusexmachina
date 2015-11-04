@@ -40,9 +40,7 @@ void CDEMRenderTarget<T>::activate()
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	d_owner.getGPUDriver()->SetViewport(0, &VP);
-
-	n_assert(false);
-	//!!!d_projectionMatrixVariable->SetMatrix(reinterpret_cast<float*>(&d_matrix));
+	d_owner.setProjMatrix(d_matrix);
 }
 //---------------------------------------------------------------------
 

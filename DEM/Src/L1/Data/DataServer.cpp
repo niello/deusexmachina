@@ -49,8 +49,8 @@ void CDataServer::SaveHRD(const char* pFileName, const CParams* pContent)
 {
 	if (!pContent) return;
 
-	IO::CFileStream File;
-	if (!File.Open(pFileName, IO::SAM_WRITE)) return;
+	IO::CFileStream File(pFileName);
+	if (!File.Open(IO::SAM_WRITE)) return;
 	IO::CHRDWriter Writer(File);
 	Writer.WriteParams(*pContent);
 }
@@ -72,8 +72,8 @@ PParams CDataServer::LoadPRM(const char* pFileName, bool Cache)
 
 PParams CDataServer::ReloadPRM(const char* pFileName, bool Cache)
 {
-	IO::CFileStream File;
-	if (!File.Open(pFileName, IO::SAM_READ)) return NULL;
+	IO::CFileStream File(pFileName);
+	if (!File.Open(IO::SAM_READ)) return NULL;
 	IO::CBinaryReader Reader(File);
 
 	PParams Params = n_new(CParams);
@@ -96,8 +96,8 @@ bool CDataServer::SavePRM(const char* pFileName, const CParams* pContent)
 {
 	if (!pContent) FAIL;
 
-	IO::CFileStream File;
-	if (!File.Open(pFileName, IO::SAM_WRITE)) FAIL;
+	IO::CFileStream File(pFileName);
+	if (!File.Open(IO::SAM_WRITE)) FAIL;
 	IO::CBinaryWriter Writer(File);
 	return Writer.WriteParams(*pContent);
 }

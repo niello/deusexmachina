@@ -19,22 +19,32 @@
 template<typename T, size_t N> char (&SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(T (&)[N]))[N];  
 #define sizeof_array(x) sizeof(SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(x))
 
+#if defined(_MSC_VER) // __FUNCTION__ ## "()"
+#   define DEM_FUNCTION_NAME __FUNCSIG__
+#elif defined(__GNUC__)
+#   define DEM_FUNCTION_NAME __PRETTY_FUNCTION__
+#elif __STDC_VERSION__ >= 199901L
+#   define DEM_FUNCTION_NAME __func__
+#else
+#   define DEM_FUNCTION_NAME "<DEM_FUNCTION_NAME>"
+#endif
+
 //---------------------------------------------------------------------
 //  Shortcut typedefs
 //---------------------------------------------------------------------
 
 // New types
 
-typedef uintptr_t			UPTR;	// Unsigned int of a pointer size
-typedef intptr_t			IPTR;	// Signed int of a pointer size
-typedef int8_t				I8;
-typedef uint8_t				U8;
-typedef int16_t				I16;
-typedef uint16_t			U16;
-typedef int32_t				I32;
-typedef uint32_t			U32;
-typedef int64_t				I64;
-typedef uint64_t			U64;
+typedef intptr_t			IPTR;	// Signed integer of a pointer size
+typedef uintptr_t			UPTR;	// Unsigned integer of a pointer size
+typedef int8_t				I8;		// Signed 8-bit integer
+typedef uint8_t				U8;		// Unsigned 8-bit integer
+typedef int16_t				I16;	// Signed 16-bit integer
+typedef uint16_t			U16;	// Unsigned 16-bit integer
+typedef int32_t				I32;	// Signed 32-bit integer
+typedef uint32_t			U32;	// Unsigned 32-bit integer
+typedef int64_t				I64;	// Signed 64-bit integer
+typedef uint64_t			U64;	// Unsigned 64-bit integer
 
 const UPTR HalfRegisterBits	= sizeof(UPTR) << 2; // Bytes * 8 / 2
 const UPTR INVALID_HALF_INDEX = (1 << HalfRegisterBits) - 1;

@@ -112,9 +112,9 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	if (IsFileReadOnly(AbsDestPath) && !SetFileReadOnly(AbsDestPath, false)) FAIL;
 
-	CFileStream Src, Dest;
-	if (!Src.Open(AbsSrcPath, SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	if (!Dest.Open(AbsDestPath, SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
+	CFileStream Src(AbsSrcPath), Dest(AbsDestPath);
+	if (!Src.Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	if (!Dest.Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
 
 	DWORD Size = Src.GetSize();
 	void* pBuffer = n_malloc(Size);
@@ -315,8 +315,8 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 
 bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
 {
-	CFileStream File;
-	if (!File.Open(pFileName, SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	CFileStream File(pFileName);
+	if (!File.Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
 	int FileSize = File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));

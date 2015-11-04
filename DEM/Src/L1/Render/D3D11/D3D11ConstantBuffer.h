@@ -13,6 +13,7 @@
 // Use WriteCommitToVRAM() to update non-mappable VRAM-only buffers.
 
 struct ID3D11Buffer;
+struct ID3D11ShaderResourceView;
 struct ID3D11DeviceContext;
 enum D3D11_USAGE;
 
@@ -27,70 +28,60 @@ protected:
 
 	enum
 	{
-		UsesRAMCopy		= 0x01,
-		RAMCopyDirty	= 0x02
+		CB11_UsesRAMCopy	= 0x01,
+		CB11_Dirty			= 0x02
 	};
 
-	ID3D11Buffer*			pBuffer;
-	ID3D11DeviceContext*	pD3DCtx;
-	char*					pMapped;
-	D3D11_USAGE				D3DUsage;
-	Data::CFlags			Flags;
-	DWORD					SizeInBytes;
+	ID3D11Buffer*				pBuffer;
+	ID3D11ShaderResourceView*	pSRView;
+	char*						pMapped;
+	D3D11_USAGE					D3DUsage;
+	Data::CFlags				Flags;
+	DWORD						SizeInBytes;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D11ConstantBuffer(): pBuffer(NULL), pD3DCtx(NULL), pMapped(NULL) {}
+	CD3D11ConstantBuffer(): pBuffer(NULL), pSRView(NULL), pMapped(NULL) {}
 	virtual ~CD3D11ConstantBuffer() { InternalDestroy(); }
 
-	bool			Create(ID3D11Buffer* pCB, ID3D11DeviceContext* pD3DDeviceCtx, bool StoreRAMCopy);
-	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
-	virtual bool	IsValid() const { return !!pBuffer; }
+	bool						Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV);
+	virtual void				Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
+	virtual bool				IsValid() const { return !!pBuffer; }
 
-	virtual bool	BeginChanges();
-	virtual bool	SetFloat(DWORD Offset, const float* pData, DWORD Count);
-	virtual bool	SetInt(DWORD Offset, const int* pData, DWORD Count);
-	virtual bool	SetRawData(DWORD Offset, const void* pData, DWORD Size);
-	virtual bool	CommitChanges();
+	bool						CreateRAMCopy();
+	void						ResetRAMCopy(const void* pVRAMData);
+	void						DestroyRAMCopy();
 
-	bool			WriteChangesToRAM(DWORD Offset, const void* pData, DWORD Size);
-	bool			WriteCommitToVRAM(const void* pData);
+	//???need int and float? is *(*float)pData = X faster than memcpy(pData, &X, sizeof(float))? same for int?
+	//is it faster for float4, int4? is scalar SetFloat/SetInt realy so frequent in shaders?
+	//virtual bool				SetFloat(DWORD Offset, const float* pData, DWORD Count);
+	//virtual bool				SetInt(DWORD Offset, const int* pData, DWORD Count);
+	void						WriteData(DWORD Offset, const void* pData, DWORD Size);
 
-	ID3D11Buffer*	GetD3DBuffer() const { return pBuffer; }
-	D3D11_USAGE		GetD3DUsage() const { return D3DUsage; }
-	DWORD			GetSize() const { return SizeInBytes; }
+	void						OnBegin(void* pMappedVRAM = NULL);	// For internal use by the GPUDriver
+	void						OnCommit();							// For internal use by the GPUDriver
+
+	ID3D11Buffer*				GetD3DBuffer() const { return pBuffer; }
+	ID3D11ShaderResourceView*	GetD3DSRView() const { return pSRView; }
+	char*						GetMappedVRAM() { return Flags.Is(CB11_UsesRAMCopy) ? NULL : pMapped; }
+	char*						GetRAMCopy() { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
+	D3D11_USAGE					GetD3DUsage() const { return D3DUsage; }
+	DWORD						GetSizeInBytes() const { return SizeInBytes; }
+	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
+	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
 };
 
 typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 
-inline bool CD3D11ConstantBuffer::SetFloat(DWORD Offset, const float* pData, DWORD Count)
-{
-	return WriteChangesToRAM(Offset, pData, Count * sizeof(float));
-}
-//---------------------------------------------------------------------
-
-inline bool CD3D11ConstantBuffer::SetInt(DWORD Offset, const int* pData, DWORD Count)
-{
-	return WriteChangesToRAM(Offset, pData, Count * sizeof(int));
-}
-//---------------------------------------------------------------------
-
-inline bool CD3D11ConstantBuffer::SetRawData(DWORD Offset, const void* pData, DWORD Size)
-{
-	return WriteChangesToRAM(Offset, pData, Size);
-}
-//---------------------------------------------------------------------
-
-inline bool CD3D11ConstantBuffer::WriteChangesToRAM(DWORD Offset, const void* pData, DWORD Size)
+inline void CD3D11ConstantBuffer::WriteData(DWORD Offset, const void* pData, DWORD Size)
 {
 	n_assert_dbg(pData && Size && pMapped && (Offset + Size <= SizeInBytes));
-	//!!!???PERF:?!
-	//if (!memcmp(pMapped + Offset, pData, Size)) OK;
+	//!!!???PERF:?! at least must NEVER read from mapped VRAM!
+	//if (memcmp(pMapped + Offset, pData, Size) == 0) return;
 	memcpy(pMapped + Offset, pData, Size);
-	Flags.Set(RAMCopyDirty);
-	OK;
+	Flags.Set(CB11_Dirty);
 }
 //---------------------------------------------------------------------
 

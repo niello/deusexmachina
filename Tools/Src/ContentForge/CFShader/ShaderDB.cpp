@@ -3,7 +3,9 @@
 #include <ValueTable.h>
 #include <Data/Params.h>
 #include <Data/StringUtils.h>
+#include <Data/Buffer.h>
 #include <IO/IOServer.h>
+#include <IO/Streams/FileStream.h>
 #include <sqlite3.h>
 
 #define INIT_SQL(Stmt, SQL) \
@@ -505,7 +507,7 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 }
 //---------------------------------------------------------------------
 
-bool FindObjFile(CFileData& InOut, const void* pBinaryData)
+bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 {
 	if (InOut.Size)
 	{
@@ -522,13 +524,34 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData)
 		for (int i = 0; i < Result.GetRowCount(); ++i)
 		{
 			CString Path = Result.Get<CString>(Col_Path, i);
-			if (!IOSrv->LoadFileToBuffer(Path, Buf) || Buf.GetSize() != InOut.Size) continue;
-			if (!memcmp(pBinaryData, Buf.GetPtr(), Buf.GetSize()))
+
+			if (pBinaryData)
 			{
-				InOut.ID = Result.Get<int>(Col_ID, i);
-				InOut.Path = Path;
-				OK; // Found
+				IO::CFileStream File(Path);
+				if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) continue;
+
+				DWORD FileSize = File.GetSize();
+
+				if (SkipHeader)
+				{
+					U32 BinaryOffset;
+					if (!File.Seek(4, IO::Seek_Begin)) continue;
+					if (!File.Read(&BinaryOffset, sizeof(BinaryOffset))) continue;
+					if (!File.Seek(BinaryOffset, IO::Seek_Begin)) continue;
+					FileSize -= BinaryOffset;
+				}
+
+				if (FileSize != InOut.Size) continue;
+
+				Data::CBuffer Buffer(FileSize);
+				if (File.Read(Buffer.GetPtr(), FileSize) != FileSize) continue;
+			
+				if (memcmp(pBinaryData, Buf.GetPtr(), FileSize) != 0) continue;
 			}
+
+			InOut.ID = Result.Get<int>(Col_ID, i);
+			InOut.Path = Path;
+			OK; // Found
 		}
 	}
 

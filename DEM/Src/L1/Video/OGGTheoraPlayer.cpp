@@ -231,8 +231,8 @@ COGGTheoraPlayer::Open()
 {
     n_assert(FileName != "");
     // open file
-	infile = n_new(IO::CFileStream);
-	infile->Open(FileName, IO::SAM_READ);
+	infile = n_new(IO::CFileStream)(FileName);
+	infile->Open(IO::SAM_READ);
     // rewind
     Rewind();
     // setup framebuffer

@@ -16,17 +16,23 @@ CDEMD3DInclude::CDEMD3DInclude(const CString& ShdDir, const CString& ShdRootDir)
 
 HRESULT CDEMD3DInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
-	IO::CFileStream File;
-	CString FilePath(pFileName);
-
 	// Try absolute path first
-	bool Loaded = File.Open(FilePath, IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	IO::CFileStream File(pFileName);
+	bool Loaded = File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL);
 
 	// Try in shader dir
-	if (!Loaded) Loaded = File.Open(ShaderDir + pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	if (!Loaded)
+	{
+		File.SetFileName(ShaderDir + pFileName);
+		Loaded = File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	}
 
 	// Try in shader root dir
-	if (!Loaded) Loaded = File.Open(ShaderRootDir + pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	if (!Loaded)
+	{
+		File.SetFileName(ShaderRootDir + pFileName);
+		Loaded = File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	}
 
 	if (!Loaded)
 	{

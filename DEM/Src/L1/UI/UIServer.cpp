@@ -25,6 +25,7 @@
 #include <CEGUI/falagard/WidgetLookManager.h>
 #include <CEGUI/WindowManager.h>
 #include <CEGUI/FontManager.h>
+#include <CEGUI/ImageManager.h>
 #include <CEGUI/XMLParserModules/TinyXML2/XMLParser.h>
 
 namespace UI
@@ -56,6 +57,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char*
 	ResourceProvider->setResourceGroupDirectory("lua_scripts", "CEGUI:lua_scripts/");
 	CEGUI::Font::setDefaultResourceGroup("fonts");
 	CEGUI::Scheme::setDefaultResourceGroup("schemes");
+	CEGUI::ImageManager::setImagesetDefaultResourceGroup("imagesets");
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
 

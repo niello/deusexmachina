@@ -58,8 +58,8 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 
 bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode)
 {
-	IO::CFileStream File;
-	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
+	IO::CFileStream File(FileName);
+	return File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadNodesFromSCN(File, RootNode);
 }
 //---------------------------------------------------------------------

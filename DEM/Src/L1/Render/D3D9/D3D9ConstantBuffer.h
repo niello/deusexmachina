@@ -3,11 +3,9 @@
 #define __DEM_L1_RENDER_D3D9_CONSTANT_BUFFER_H__
 
 #include <Render/ConstantBuffer.h>
-#include <Data/Flags.h>
+//#include <Data/Flags.h>
 
 // A Direct3D9 implementation of a shader constant buffer.
-
-struct IDirect3DDevice9;
 
 namespace Render
 {
@@ -18,35 +16,30 @@ class CD3D9ConstantBuffer: public CConstantBuffer
 
 protected:
 
-	enum { RegisterDataIsDirty = 0x80000000 };
+	//enum { RegisterDataIsDirty = 0x80000000 };
 
-	//!!!can allocate all data as one block of memory and save offsets!
-	float*				pFloatData;
-	DWORD*				pFloatRegisters;
-	DWORD				FloatCount;
+	float*				pFloat4Data;
+	DWORD*				pFloat4Registers;
+	DWORD				Float4Count;
 
-	int*				pIntData;
-	DWORD*				pIntRegisters;
-	DWORD				IntCount;
+	int*				pInt4Data;
+	DWORD*				pInt4Registers;
+	DWORD				Int4Count;
 
-	IDirect3DDevice9*	pDevice;
+	//BOOL*				pBoolData;
+	//DWORD*				pBoolRegisters;
+	//DWORD				BoolCount;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9ConstantBuffer(): pDevice(NULL), pFloatData(NULL), pIntData(NULL) {}
+	CD3D9ConstantBuffer(): pFloat4Data(NULL), pInt4Data(NULL) {}
 	virtual ~CD3D9ConstantBuffer() { InternalDestroy(); }
 
-	bool			Create();
+	bool			Create(/**/);
 	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
-	virtual bool	IsValid() const { return !!pDevice; }
-
-	virtual bool	BeginChanges();
-	virtual bool	SetFloat(DWORD Offset, const float* pData, DWORD Count);
-	virtual bool	SetInt(DWORD Offset, const int* pData, DWORD Count);
-	virtual bool	SetRawData(DWORD Offset, const void* pData, DWORD Size) { FAIL; } // Not supported
-	virtual bool	CommitChanges();
+	virtual bool	IsValid() const { return pFloat4Data || pInt4Data /*|| pBoolData*/; }
 };
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;

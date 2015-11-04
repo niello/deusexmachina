@@ -16,8 +16,6 @@
 #include <Render/SamplerDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
-#include <IO/Streams/MemStream.h>
-#include <IO/BinaryReader.h>
 #include <System/OSWindow.h>
 #include <Data/StringID.h>
 #include <Core/Factory.h>
@@ -761,10 +759,10 @@ bool CD3D11GPUDriver::SetScissorRect(DWORD Index, const Data::CRect* pScissorRec
 	else
 	{
 		Sys::Error("FILL WITH RT DEFAULTS!!!\n");
-		CurrRect.left = pScissorRect->X;
-		CurrRect.top = pScissorRect->X;
-		CurrRect.right = pScissorRect->Right();
-		CurrRect.bottom = pScissorRect->Bottom();
+		CurrRect.left = -1;
+		CurrRect.top = -1;
+		CurrRect.right = -1;
+		CurrRect.bottom = -1;
 
 		VPSRSetFlags.Clear(IsSetBit);
 	}
@@ -852,6 +850,33 @@ bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
+//!!!ID3D11ShaderResourceView* or PObject!
+bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UINT SlotIndex, ID3D11ShaderResourceView* pSRV)
+{
+	if (!pSRV || SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
+
+	if (MaxSRVSlotIndex < SlotIndex) MaxSRVSlotIndex = SlotIndex;
+	SlotIndex |= (ShaderType << 16); // Encode shader type in a high word
+
+	int DictIdx = CurrSRV.FindIndex(SlotIndex);
+	if (DictIdx != INVALID_INDEX)
+	{
+		ID3D11ShaderResourceView*& pCurrSRV = CurrSRV.ValueAt(DictIdx);
+		if (pCurrSRV == pSRV) OK;
+		pCurrSRV = pSRV;
+	}
+	else
+	{
+		if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
+		CurrSRV.Add(SlotIndex, pSRV);
+	}
+
+	CurrDirtyFlags.Set(GPU_Dirty_SRV);
+	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	if (!Handle) FAIL;
@@ -859,17 +884,26 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 	if (!pMeta) FAIL;
 
 	DWORD Index = pMeta->Register;
-	if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
-	Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
-	const CD3D11ConstantBuffer* pCurrCB = CurrCB[Index].GetUnsafe();
-	if (pCurrCB == pCBuffer) OK;
+	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
+	{
+		if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
-	CurrCB[Index] = (CD3D11ConstantBuffer*)pCBuffer;
-	CurrDirtyFlags.Set(GPU_Dirty_CB);
-	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_CBuffers + ShaderType));
+		Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
+		const CD3D11ConstantBuffer* pCurrCB = CurrCB[Index].GetUnsafe();
+		if (pCurrCB == pCBuffer) OK;
 
-	OK;
+		CurrCB[Index] = (CD3D11ConstantBuffer*)pCBuffer;
+		CurrDirtyFlags.Set(GPU_Dirty_CB);
+		ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_CBuffers + ShaderType));
+
+		OK;
+	}
+	else
+	{
+		ID3D11ShaderResourceView* pSRV = pCBuffer ? ((CD3D11ConstantBuffer*)pCBuffer)->GetD3DSRView() : NULL;
+		return BindSRV(ShaderType, pMeta->Register, pSRV);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -879,28 +913,8 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 	CD3D11Shader::CRsrcMeta* pMeta = (CD3D11Shader::CRsrcMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
-	DWORD Index = pMeta->Register;
-	if (Index >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
-
-	if (MaxSRVSlotIndex < Index) MaxSRVSlotIndex = Index;
-	Index |= (ShaderType << 16); // Encode shader type in a high word
-
-	int DictIdx = CurrSRV.FindIndex(Index);
-	if (DictIdx != INVALID_INDEX)
-	{
-		PD3D11Texture& CurrRsrc = CurrSRV.ValueAt(DictIdx);
-		if (CurrRsrc == pResource) OK;
-		CurrRsrc = (CD3D11Texture*)pResource;
-	}
-	else
-	{
-		if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
-		CurrSRV.Add(Index, (CD3D11Texture*)pResource);
-	}
-
-	CurrDirtyFlags.Set(GPU_Dirty_SRV);
-	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
-	OK;
+	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : NULL;
+	return BindSRV(ShaderType, pMeta->Register, pSRV);
 }
 //---------------------------------------------------------------------
 
@@ -1045,40 +1059,47 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	bool InputLayoutDirty = false;
 	if (Update.Is(GPU_Dirty_RS) && CurrDirtyFlags.Is(GPU_Dirty_RS))
 	{
-		CD3D11RenderState* pD3DState = NewRS.GetUnsafe();
+		CD3D11RenderState* pNewRS = NewRS.GetUnsafe();
 
-		if (pD3DState)
+		if (pNewRS)
 		{
-			if (pD3DState->InputSigID != CurrRS->InputSigID) InputLayoutDirty = true;
+			CD3D11RenderState* pCurrRS = CurrRS.GetUnsafe();
 
-			if (pD3DState->VS != CurrRS->VS)
-				pD3DImmContext->VSSetShader(pD3DState->VS.IsValidPtr() ? pD3DState->VS.GetUnsafe()->GetD3DVertexShader() : NULL, NULL, 0);
-			if (pD3DState->HS != CurrRS->HS)
-				pD3DImmContext->HSSetShader(pD3DState->HS.IsValidPtr() ? pD3DState->HS.GetUnsafe()->GetD3DHullShader() : NULL, NULL, 0);
-			if (pD3DState->DS != CurrRS->DS)
-				pD3DImmContext->DSSetShader(pD3DState->DS.IsValidPtr() ? pD3DState->DS.GetUnsafe()->GetD3DDomainShader() : NULL, NULL, 0);
-			if (pD3DState->GS != CurrRS->GS)
-				pD3DImmContext->GSSetShader(pD3DState->GS.IsValidPtr() ? pD3DState->GS.GetUnsafe()->GetD3DGeometryShader() : NULL, NULL, 0);
-			if (pD3DState->PS != CurrRS->PS)
-				pD3DImmContext->PSSetShader(pD3DState->PS.IsValidPtr() ? pD3DState->PS.GetUnsafe()->GetD3DPixelShader() : NULL, NULL, 0);
+			UPTR CurrSigID = pCurrRS && pCurrRS->VS.IsValidPtr() ? pCurrRS->VS.GetUnsafe()->InputSignatureID : 0;
+			UPTR NewSigID = pNewRS->VS.IsValidPtr() ? pNewRS->VS.GetUnsafe()->InputSignatureID : 0;
 
-			if (pD3DState->pBState != CurrRS->pBState ||
-				pD3DState->BlendFactorRGBA[0] != CurrRS->BlendFactorRGBA[0] ||
-				pD3DState->BlendFactorRGBA[1] != CurrRS->BlendFactorRGBA[1] ||
-				pD3DState->BlendFactorRGBA[2] != CurrRS->BlendFactorRGBA[2] ||
-				pD3DState->BlendFactorRGBA[3] != CurrRS->BlendFactorRGBA[3] ||
-				pD3DState->SampleMask != CurrRS->SampleMask)
+			if (!pCurrRS || NewSigID != CurrSigID) InputLayoutDirty = true;
+
+			if (!pCurrRS || pNewRS->VS != pCurrRS->VS)
+				pD3DImmContext->VSSetShader(pNewRS->VS.IsValidPtr() ? pNewRS->VS.GetUnsafe()->GetD3DVertexShader() : NULL, NULL, 0);
+			if (!pCurrRS || pNewRS->HS != pCurrRS->HS)
+				pD3DImmContext->HSSetShader(pNewRS->HS.IsValidPtr() ? pNewRS->HS.GetUnsafe()->GetD3DHullShader() : NULL, NULL, 0);
+			if (!pCurrRS || pNewRS->DS != pCurrRS->DS)
+				pD3DImmContext->DSSetShader(pNewRS->DS.IsValidPtr() ? pNewRS->DS.GetUnsafe()->GetD3DDomainShader() : NULL, NULL, 0);
+			if (!pCurrRS || pNewRS->GS != pCurrRS->GS)
+				pD3DImmContext->GSSetShader(pNewRS->GS.IsValidPtr() ? pNewRS->GS.GetUnsafe()->GetD3DGeometryShader() : NULL, NULL, 0);
+			if (!pCurrRS || pNewRS->PS != pCurrRS->PS)
+				pD3DImmContext->PSSetShader(pNewRS->PS.IsValidPtr() ? pNewRS->PS.GetUnsafe()->GetD3DPixelShader() : NULL, NULL, 0);
+
+			if (!pCurrRS ||
+				pNewRS->pBState != pCurrRS->pBState ||
+				pNewRS->BlendFactorRGBA[0] != pCurrRS->BlendFactorRGBA[0] ||
+				pNewRS->BlendFactorRGBA[1] != pCurrRS->BlendFactorRGBA[1] ||
+				pNewRS->BlendFactorRGBA[2] != pCurrRS->BlendFactorRGBA[2] ||
+				pNewRS->BlendFactorRGBA[3] != pCurrRS->BlendFactorRGBA[3] ||
+				pNewRS->SampleMask != pCurrRS->SampleMask)
 			{
-				pD3DImmContext->OMSetBlendState(pD3DState->pBState, pD3DState->BlendFactorRGBA, pD3DState->SampleMask);
+				pD3DImmContext->OMSetBlendState(pNewRS->pBState, pNewRS->BlendFactorRGBA, pNewRS->SampleMask);
 			}
 
-			if (pD3DState->pDSState != CurrRS->pDSState ||
-				pD3DState->StencilRef != CurrRS->StencilRef)
+			if (!pCurrRS ||
+				pNewRS->pDSState != pCurrRS->pDSState ||
+				pNewRS->StencilRef != pCurrRS->StencilRef)
 			{
-				pD3DImmContext->OMSetDepthStencilState(pD3DState->pDSState, pD3DState->StencilRef);
+				pD3DImmContext->OMSetDepthStencilState(pNewRS->pDSState, pNewRS->StencilRef);
 			}
 
-			if (pD3DState->pRState != CurrRS->pRState) pD3DImmContext->RSSetState(pD3DState->pRState);
+			if (!pCurrRS || pNewRS->pRState != pCurrRS->pRState) pD3DImmContext->RSSetState(pNewRS->pRState);
 		}
 		else
 		{
@@ -1105,7 +1126,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 
 	if (InputLayoutDirty)
 	{
-		CStrID InputSigID = CurrRS.IsValidPtr() ? CurrRS->InputSigID : CStrID::Empty;
+		UPTR InputSigID = CurrRS.IsValidPtr() && CurrRS->VS.IsValidPtr() ? CurrRS->VS->InputSignatureID : 0;
 		ID3D11InputLayout* pNewCurrIL = GetD3DInputLayout(*CurrVL, InputSigID);
 		if (pCurrIL != pNewCurrIL)
 		{
@@ -1200,7 +1221,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 
 		if (CurrSRV.GetCount())
 		{
-			const DWORD SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
+			const UPTR SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
 			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)_malloca(SRVArrayMemSize);
 
 			DWORD CurrShaderType = ShaderType_Invalid;
@@ -1262,8 +1283,9 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 
 				if (SkipShaderType) continue;
 
-				const CD3D11Texture* pTex = CurrSRV.ValueAt(i).GetUnsafe();
-				ppSRV[SRVSlot] = pTex ? pTex->GetD3DSRView() : NULL;
+				//const CD3D11Texture* pTex = CurrSRV.ValueAt(i).GetUnsafe();
+				//ppSRV[SRVSlot] = pTex ? pTex->GetD3DSRView() : NULL;
+				ppSRV[SRVSlot] = CurrSRV.ValueAt(i);
 				CurrSRVSlot = SRVSlot;
 			}
 
@@ -1377,8 +1399,6 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
 	}
 
-	//???set viewports and scissor rects atomically?
-	//???what hapens with set SRs when VPs are set?
 	if (Update.Is(GPU_Dirty_VP) && CurrDirtyFlags.Is(GPU_Dirty_VP))
 	{
 		// Find the last set VP, as we must set all viewports from 0'th to it
@@ -1394,14 +1414,29 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		CurrDirtyFlags.Clear(GPU_Dirty_VP);
 	}
 
+	//???set viewports and scissor rects atomically?
+	//???what hapens with set SRs when VPs are set?
+	if (Update.Is(GPU_Dirty_SR) && CurrDirtyFlags.Is(GPU_Dirty_SR))
+	{
+		// Find the last set SR, as we must set all rects from 0'th to it
+		UINT NumSR = 0;
+		for (DWORD i = 0; i < MaxViewportCount; ++i)
+			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + i))) NumSR = i + 1;
+
+		if (NumSR) pD3DImmContext->RSSetScissorRects(NumSR, CurrSR);
+		else pD3DImmContext->RSSetScissorRects(0, NULL);
+
+		CurrDirtyFlags.Clear(GPU_Dirty_SR);
+	}
+
 	return Errors;
 }
 //---------------------------------------------------------------------
 
 // Gets or creates an actual layout for the given vertex layout and shader input signature
-ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature)
+ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature)
 {
-	if (!ShaderInputSignatureID.IsValid()) return NULL;
+	if (!ShaderInputSignatureID) return NULL;
 
 	ID3D11InputLayout* pLayout = VertexLayout.GetD3DInputLayout(ShaderInputSignatureID);
 	if (pLayout) return pLayout;
@@ -1411,7 +1446,7 @@ ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& Vertex
 
 	if (!pSignature)
 	{
-		//!!!to drv fct!
+		NOT_IMPLEMENTED_MSG("Input signature find by ID (read)");
 		//int Idx = ShaderInputSignatures.FindIndex(ShaderInputSignatureID);
 		//if (Idx == INVALID_INDEX) FAIL;
 		//pSignature = &ShaderInputSignatures.ValueAt(Idx);
@@ -1574,10 +1609,84 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Inde
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData)
+PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData)
 {
-	NOT_IMPLEMENTED;
-	return NULL;
+	if (!pD3DDevice || !hBuffer) return NULL;
+	CD3D11Shader::CBufferMeta* pMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hBuffer);
+	if (!pMeta) return NULL;
+
+	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	UINT CPUAccess;
+	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+
+	D3D11_BUFFER_DESC Desc;
+	Desc.Usage = Usage;
+	Desc.CPUAccessFlags = CPUAccess;
+
+	UINT TotalSize = pMeta->ElementSize * pMeta->ElementCount;
+	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
+	{
+		UINT ElementCount = (TotalSize + 15) >> 4;
+		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return NULL;
+		Desc.ByteWidth = ElementCount << 4;
+		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	}
+	else
+	{
+		Desc.ByteWidth = TotalSize;
+		Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	}
+
+	if (pMeta->Type == CD3D11Shader::StructuredBuffer)
+	{
+		Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		Desc.StructureByteStride = pMeta->ElementSize;
+	}
+	else
+	{
+		Desc.MiscFlags = 0;
+		Desc.StructureByteStride = 0;
+	}
+
+	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA InitData;
+	if (pData)
+	{
+		//!!!need constant handle metadata!
+		//!!!also need an array of values per const, to init tbuffers/structured buffers!
+		//InitData.pSysMem = pData;
+		InitData.pSysMem = NULL; //!!!DBG TMP!
+		pInitData = &InitData;
+	}
+
+	ID3D11Buffer* pD3DBuf = NULL;
+	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
+
+	ID3D11ShaderResourceView* pSRV = NULL;
+	if (pMeta->Type != CD3D11Shader::ConstantBuffer)
+	{
+		if (FAILED(pD3DDevice->CreateShaderResourceView(pD3DBuf, NULL, &pSRV)))
+		{
+			pD3DBuf->Release();
+			return NULL;
+		}
+	}
+
+	PD3D11ConstantBuffer CB = n_new(CD3D11ConstantBuffer);
+	if (!CB->Create(pD3DBuf, pSRV))
+	{
+		if (pSRV) pSRV->Release();
+		pD3DBuf->Release();
+		return NULL;
+	}
+
+	//???or add manual control / some flag in a metadata?
+	if (Usage != D3D11_USAGE_IMMUTABLE)
+	{
+		if (!CB->CreateRAMCopy()) return NULL;
+	}
+
+	return CB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -2157,67 +2266,6 @@ PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData,
 
 	ID3D11DeviceChild* pShader = NULL;
 
-	//!!!move metadata loading code into loaders! not all file formats support exactly this binary metadata format!
-	//may use C++11 '&&' move by reference to avoid copying metadata structures read.
-
-	IO::CMemStream IOStream;
-	if (!IOStream.Open(pData, Size)) return NULL;
-	IO::CBinaryReader R(IOStream);
-
-	PD3D11Shader Shader = n_new(Render::CD3D11Shader);
-
-	CFixedArray<CD3D11Shader::CBufferMeta>& Buffers = Shader->Buffers;
-	Buffers.SetSize(R.Read<U32>());
-	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
-	{
-		CD3D11Shader::CBufferMeta* pMeta = &Buffers[i];
-		if (!R.Read(pMeta->Name)) return NULL;
-		if (!R.Read<U32>(pMeta->Register)) return NULL;
-		if (!R.Read<U32>(pMeta->Size)) return NULL;
-
-		// For non-empty buffers open handles to reference them from constants
-		pMeta->Handle = pMeta->Size ? D3D11DrvFactory->HandleMgr.OpenHandle(pMeta) : INVALID_HANDLE;
-	}
-
-	CFixedArray<CD3D11Shader::CConstMeta>& Consts = Shader->Consts;
-	Consts.SetSize(R.Read<U32>());
-	for (UPTR i = 0; i < Consts.GetCount(); ++i)
-	{
-		CD3D11Shader::CConstMeta* pMeta = &Consts[i];
-		if (!R.Read(pMeta->Name)) return NULL;
-
-		U32 BufIdx;
-		if (!R.Read(BufIdx)) return NULL;
-		pMeta->BufferHandle = Buffers[BufIdx].Handle;
-
-		if (!R.Read<U32>(pMeta->Offset)) return NULL;
-		if (!R.Read<U32>(pMeta->Size)) return NULL;
-		pMeta->Handle = INVALID_HANDLE;
-	}
-
-	CFixedArray<CD3D11Shader::CRsrcMeta>& Resources = Shader->Resources;
-	Resources.SetSize(R.Read<U32>());
-	for (UPTR i = 0; i < Resources.GetCount(); ++i)
-	{
-		CD3D11Shader::CRsrcMeta* pMeta = &Resources[i];
-		if (!R.Read(pMeta->Name)) return NULL;
-		if (!R.Read<U32>(pMeta->Register)) return NULL;
-		pMeta->Handle = INVALID_HANDLE;
-	}
-
-	CFixedArray<CD3D11Shader::CRsrcMeta>& Samplers = Shader->Samplers;
-	Samplers.SetSize(R.Read<U32>());
-	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
-	{
-		CD3D11Shader::CRsrcMeta* pMeta = &Samplers[i];
-		if (!R.Read(pMeta->Name)) return NULL;
-		if (!R.Read<U32>(pMeta->Register)) return NULL;
-		pMeta->Handle = INVALID_HANDLE;
-	}
-
-	pData = (const char*)pData + IOStream.GetPosition();
-	Size -= IOStream.GetPosition();
-
 	switch (ShaderType)
 	{
 		case ShaderType_Vertex:
@@ -2261,6 +2309,7 @@ PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData,
 
 	if (!pShader) return NULL;
 
+	PD3D11Shader Shader = n_new(Render::CD3D11Shader);
 	if (!Shader->Create(pShader))
 	{
 		pShader->Release();
@@ -2642,15 +2691,15 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DW
 			D3DBox.back = 1;
 			pD3DImmContext->UpdateSubresource(pBuf, 0, &D3DBox, pData, 0, 0);
 		}
-
-		OK;
 	}
-
-	D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
-	D3D11_MAPPED_SUBRESOURCE D3DData;
-	if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
-	memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
-	pD3DImmContext->Unmap(pBuf, 0);
+	else
+	{
+		D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+		D3D11_MAPPED_SUBRESOURCE D3DData;
+		if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
+		memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
+		pD3DImmContext->Unmap(pBuf, 0);
+	}
 
 	OK;
 }
@@ -2759,6 +2808,143 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 	CopyImage(SrcData, DestData, ImageCopyFlags, Params);
 
 	pD3DImmContext->Unmap(pTexRsrc, 0);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Especially useful for VRAM-only D3D11_USAGE_DEFAULT buffers. May not support partial updates.
+bool CD3D11GPUDriver::WriteToResource(CConstantBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+{
+	n_assert_dbg(Resource.IsA<CD3D11ConstantBuffer>());
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Resource;
+
+	// Can't write to D3D 11.0 constant buffers partially
+	if (Offset || (Size && Size != CB11.GetSizeInBytes())) FAIL;
+
+	ID3D11Buffer* pBuffer = CB11.GetD3DBuffer();
+	D3D11_USAGE D3DUsage = CB11.GetD3DUsage();
+
+	if (D3DUsage == D3D11_USAGE_DEFAULT)
+	{
+		pD3DImmContext->UpdateSubresource(pBuffer, 0, NULL, pData, 0, 0);
+	}
+	else if (D3DUsage == D3D11_USAGE_DYNAMIC)
+	{
+		if (CB11.GetMappedVRAM()) FAIL; // Buffer is already mapped, can't write with a commit
+		D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
+		if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
+		memcpy(MappedSubRsrc.pData, pData, CB11.GetSizeInBytes());
+		pD3DImmContext->Unmap(pBuffer, 0);
+	}
+	else FAIL;
+
+	CB11.ResetRAMCopy(pData);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Only dynamic buffers and buffers with a RAM copy support setting constants.
+// Default buffers support only the whole buffer update via WriteToResource().
+bool CD3D11GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
+{
+	n_assert_dbg(Buffer.IsA<CD3D11ConstantBuffer>());
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
+
+	ID3D11Buffer* pBuffer = CB11.GetD3DBuffer();
+	D3D11_USAGE D3DUsage = CB11.GetD3DUsage();
+
+	// Invalid or read-only
+	if (!pBuffer || D3DUsage == D3D11_USAGE_IMMUTABLE) FAIL;
+
+	// Writes to the RAM copy, no additional actions required
+	if (CB11.UsesRAMCopy())
+	{
+		CB11.OnBegin();
+		OK;
+	}
+
+	// VRAM-only, non-mappable, can't write constants without a RAM copy
+	if (D3DUsage != D3D11_USAGE_DYNAMIC) FAIL;
+
+	if (!CB11.GetMappedVRAM())
+	{
+		D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
+		if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
+		CB11.OnBegin(MappedSubRsrc.pData);
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!may use abstract CShaderConst, CShaderConstFloatArray, CD3D11ShaderConstFloatArray etc and cache offset or any
+//other precomputed location there for fast setting!
+bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size)
+{
+	if (!hConst || !pData || !Size) FAIL;
+
+	n_assert_dbg(Buffer.IsA<CD3D11ConstantBuffer>());
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
+
+	CD3D11Shader::CConstMeta* pMeta = (CD3D11Shader::CConstMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hConst);
+	if (!pMeta) FAIL;
+
+	UPTR Offset = pMeta->Offset; 
+
+	if (ElementIndex)
+	{
+		CD3D11Shader::CBufferMeta* pBufMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(pMeta->BufferHandle);
+		if (!pBufMeta || ElementIndex >= pBufMeta->ElementCount) FAIL;
+		Offset += pBufMeta->ElementSize * ElementIndex;
+	}
+
+	CB11.WriteData(Offset, pData, Size);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
+{
+	n_assert_dbg(Buffer.IsA<CD3D11ConstantBuffer>());
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
+
+	ID3D11Buffer* pBuffer = CB11.GetD3DBuffer();
+	D3D11_USAGE D3DUsage = CB11.GetD3DUsage();
+
+	if (CB11.UsesRAMCopy())
+	{
+		// Commit RAM copy to VRAM
+
+		if (!CB11.IsDirty()) OK;
+
+		if (D3DUsage == D3D11_USAGE_DEFAULT)
+		{
+			pD3DImmContext->UpdateSubresource(pBuffer, 0, NULL, CB11.GetRAMCopy(), 0, 0);
+		}
+		else if (D3DUsage == D3D11_USAGE_DYNAMIC)
+		{
+			D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
+			if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
+			memcpy(MappedSubRsrc.pData, CB11.GetRAMCopy(), CB11.GetSizeInBytes());
+			pD3DImmContext->Unmap(pBuffer, 0);
+		}
+		else FAIL;
+	}
+	else if (D3DUsage == D3D11_USAGE_DYNAMIC)
+	{
+		// Unmap previously mapped VRAM-only dynamic buffer
+
+		if (CB11.GetMappedVRAM())
+		{
+			n_assert_dbg(CB11.IsDirty()); // Ensure something was written. Else all the buffer contents are discarded.
+			pD3DImmContext->Unmap(pBuffer, 0);
+		}
+	}
+
+	CB11.OnCommit();
 
 	OK;
 }

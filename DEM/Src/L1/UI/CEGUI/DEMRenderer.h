@@ -45,11 +45,15 @@ protected:
 	Render::PRenderState				NormalClipped;
 	Render::PRenderState				PremultipliedUnclipped;
 	Render::PRenderState				PremultipliedClipped;
+	Render::PConstantBuffer				CBOnResize;
+	Render::PConstantBuffer				CBPerObject;
+	Render::HConstBuffer				hCBOnResize;
+	Render::HConstBuffer				hCBPerObject;
 	Render::PSampler					LinearSampler;
-	Render::HConst						HWorldMatrix;
-	Render::HConst						HProjMatrix;
-	Render::HResource					HTexture;
-	Render::HSampler					HSampler;
+	Render::HConst						hWorldMatrix;
+	Render::HConst						hProjMatrix;
+	Render::HResource					hTexture;
+	Render::HSampler					hLinearSampler;
 
 	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI);
 	virtual ~CDEMRenderer();
@@ -65,6 +69,9 @@ public:
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }
 	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, DWORD VertexCount);
 	void					setRenderState(BlendMode BlendMode, bool Clipped);
+	Render::HResource		getTextureHandle() const { return hTexture; }
+	void					setWorldMatrix(const matrix44& Matrix);
+	void					setProjMatrix(const matrix44& Matrix);
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() { return *pDefaultRT; }

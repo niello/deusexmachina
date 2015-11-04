@@ -14,8 +14,9 @@ bool CD3D9ConstantBuffer::Create(/*pfloatregs, floatcount, pintregs, intcount*/)
 {
 	//if (!pCB || !pD3DDeviceCtx) FAIL;
 
-	//!!!allocate float4/int4!
-	//???or not float count but float4 count everywhere?
+	//!!!allocate one chunk of memory and setup pointers!
+	//sort by register, if !sorted
+	//can check if sorted or just always sort
 
 	NOT_IMPLEMENTED;
 	OK;
@@ -24,51 +25,20 @@ bool CD3D9ConstantBuffer::Create(/*pfloatregs, floatcount, pintregs, intcount*/)
 
 void CD3D9ConstantBuffer::InternalDestroy()
 {
-	if (pFloatData)
+	if (pFloat4Data)
 	{
-		n_free(pFloatData);
-		pFloatData = NULL;
+		n_free(pFloat4Data);
+		pFloat4Data = NULL;
 	}
-	else if (pIntData)
+	else if (pInt4Data)
 	{
-		n_free(pIntData);
+		n_free(pInt4Data);
 	}
-	pFloatRegisters = NULL;
-	FloatCount = 0;
-	pIntData = NULL;
-	pIntRegisters = NULL;
-	IntCount = 0;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9ConstantBuffer::BeginChanges()
-{
-	NOT_IMPLEMENTED;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9ConstantBuffer::SetFloat(DWORD Offset, const float* pData, DWORD Count)
-{
-	NOT_IMPLEMENTED;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9ConstantBuffer::SetInt(DWORD Offset, const int* pData, DWORD Count)
-{
-	NOT_IMPLEMENTED;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9ConstantBuffer::CommitChanges()
-{
-	//pDevice->SetVertexShaderConstantF(StartReg, pdata, float4_count);
-	//pDevice->SetVertexShaderConstantI(StartReg, pInt, int4_count);
-	//pDevice->SetVertexShaderConstantB(StartReg, pBool, bool_count);
-	NOT_IMPLEMENTED;
-	OK;
+	pFloat4Registers = NULL;
+	Float4Count = 0;
+	pInt4Data = NULL;
+	pInt4Registers = NULL;
+	Int4Count = 0;
 }
 //---------------------------------------------------------------------
 

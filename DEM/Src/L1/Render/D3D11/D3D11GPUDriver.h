@@ -14,6 +14,7 @@ struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11InputLayout;
 struct ID3D11Buffer;
+struct ID3D11ShaderResourceView;
 struct D3D11_VIEWPORT;
 typedef enum D3D_DRIVER_TYPE D3D_DRIVER_TYPE;
 enum D3D11_USAGE;
@@ -104,8 +105,9 @@ protected:
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11ConstantBuffer>	CurrCB;
 	CFixedArray<PD3D11Sampler>			CurrSS;
-	CDict<DWORD, PD3D11Texture>			CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
-	DWORD								MaxSRVSlotIndex;
+	CDict<UINT, ID3D11ShaderResourceView*>	CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
+//!!!ID3D11ShaderResourceView* or PObject!
+	UINT								MaxSRVSlotIndex;
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
@@ -140,9 +142,10 @@ protected:
 	static D3D11_TEXTURE_ADDRESS_MODE	GetD3DTexAddressMode(ETexAddressMode Mode);
 	static D3D11_FILTER					GetD3DTexFilter(ETexFilter Filter, bool Comparison);
 
-	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, CStrID ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
+	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
+	bool								BindSRV(EShaderType ShaderType, UINT SlotIndex, ID3D11ShaderResourceView* pSRV); //!!!ID3D11ShaderResourceView* or PObject!
 
 	friend class CD3D11DriverFactory;
 
@@ -172,7 +175,7 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
 	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, DWORD Size);
-	virtual PConstantBuffer		CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData = NULL);
+	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData = NULL);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
@@ -218,6 +221,11 @@ public:
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
 	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL);
+	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
+
+	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer);
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size);
+	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }

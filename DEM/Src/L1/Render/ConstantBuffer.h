@@ -4,7 +4,9 @@
 
 #include <Core/Object.h>
 
-// A hardware GPU buffer that contains shader uniform constants
+// Storage that contains shader uniform constant values.
+// For modern APIs it is implemented as a hardware buffer.
+// For older APIs like DX9 a buffer is emulated in RAM.
 
 namespace Render
 {
@@ -13,16 +15,14 @@ class CConstantBuffer: public Core::CObject
 {
 protected:
 
+	//???store handle?
+
 public:
 
 	virtual void	Destroy() = 0;
 	virtual bool	IsValid() const = 0;
 
-	virtual bool	BeginChanges() = 0;
-	virtual bool	SetFloat(DWORD Offset, const float* pData, DWORD Count) = 0; //???Offset or HConst Address?
-	virtual bool	SetInt(DWORD Offset, const int* pData, DWORD Count) = 0; //???Offset or HConst Address?
-	virtual bool	SetRawData(DWORD Offset, const void* pData, DWORD Size) = 0; //???Offset or HConst Address?
-	virtual bool	CommitChanges() = 0;
+	//???variable creation methods?
 };
 
 typedef Ptr<CConstantBuffer> PConstantBuffer;

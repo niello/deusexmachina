@@ -117,8 +117,8 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 
 bool LoadMocapClipFromNAX2(const CString& FileName, const CDict<int, CStrID>& BoneToNode, PMocapClip OutClip)
 {
-	IO::CFileStream File;
-	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
+	IO::CFileStream File(FileName);
+	return File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadMocapClipFromNAX2(File, BoneToNode, OutClip);
 }
 //---------------------------------------------------------------------

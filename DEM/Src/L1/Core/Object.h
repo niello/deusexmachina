@@ -40,7 +40,8 @@ public:
 	static void DumpLeaks();
 #endif
 };
-//---------------------------------------------------------------------
+
+typedef Ptr<CObject> PObject;
 
 inline CObject::CObject()
 {

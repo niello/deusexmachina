@@ -43,7 +43,7 @@ bool OpenDB(const char* pURI);
 void CloseDB();
 bool FindShaderRec(CShaderDBRec& InOut);
 bool WriteShaderRec(CShaderDBRec& InOut);
-bool FindObjFile(CFileData& InOut, const void* pBinaryData);
+bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader);
 bool RegisterObjFile(CFileData& InOut, const char* Extension);
 bool ReleaseObjFile(DWORD ID, CString& OutPath);
 

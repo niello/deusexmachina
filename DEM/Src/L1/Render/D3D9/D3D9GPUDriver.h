@@ -117,7 +117,7 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
 	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, DWORD Size);
-	virtual PConstantBuffer		CreateConstantBuffer(const CShader& Shader, CStrID ID, DWORD AccessFlags, const void* pData = NULL);
+	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData = NULL);
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
@@ -158,6 +158,11 @@ public:
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0);
 	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL);
+	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) { FAIL; }
+
+	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer);
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size);
+	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer);
 
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }

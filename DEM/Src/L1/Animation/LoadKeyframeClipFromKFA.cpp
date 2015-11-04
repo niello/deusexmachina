@@ -61,8 +61,8 @@ bool LoadKeyframeClipFromKFA(IO::CStream& In, PKeyframeClip OutClip)
 
 bool LoadKeyframeClipFromKFA(const CString& FileName, PKeyframeClip OutClip)
 {
-	IO::CFileStream File;
-	return File.Open(FileName, IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
+	IO::CFileStream File(FileName);
+	return File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
 		LoadKeyframeClipFromKFA(File, OutClip);
 }
 //---------------------------------------------------------------------

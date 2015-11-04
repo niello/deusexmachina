@@ -21,8 +21,6 @@ struct CToolRenderStateDesc
 	DWORD				GeometryShader;
 	DWORD				PixelShader;
 
-	DWORD				InputSignature;
-
 	Data::CFlags		Flags; // For boolean variables, see enums below
 
 	// Rasterizer

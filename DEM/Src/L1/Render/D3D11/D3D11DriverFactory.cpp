@@ -139,6 +139,16 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType Dr
 }
 //---------------------------------------------------------------------
 
+//bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, const void* pData, UPTR Size)
+//{
+//}
+////---------------------------------------------------------------------
+//
+//bool CD3D11DriverFactory::GetShaderInputSignature(U32 ID, const void*& pOutData, UPTR& OutSize)
+//{
+//}
+////---------------------------------------------------------------------
+
 DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 {
 	switch (Format)

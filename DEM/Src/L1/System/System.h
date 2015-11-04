@@ -74,7 +74,8 @@ namespace Sys
 	#define DBG_ONLY(call)
 #endif
 
-#define NOT_IMPLEMENTED				do { Sys::Error(__FUNCTION__ ## "() > IMPLEMENT ME!!!\n"); } while(0)
+#define NOT_IMPLEMENTED				do { Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n"); } while(0)
+#define NOT_IMPLEMENTED_MSG(msg)	do { Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n" ## msg ## "\n"); } while(0)
 
 #endif
 

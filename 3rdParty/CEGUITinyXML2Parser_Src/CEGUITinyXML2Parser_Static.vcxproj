@@ -58,26 +58,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\..\..\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)..\..\lib\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CEGUITinyXML2Parser_Static.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CEGUITinyXML2Parser_Static_d</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\..\..\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)..\..\lib\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CEGUITinyXML2Parser_Static.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CEGUITinyXML2Parser_Static</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">..\..\..\..\..\..\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">$(SolutionDir)..\..\lib\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">CEGUITinyXML2Parser_Static.dir\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">CEGUITinyXML2Parser_Static</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">..\..\..\..\..\..\lib\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">$(SolutionDir)..\..\lib\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">CEGUITinyXML2Parser_Static.dir\RelWithDebInfo\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">CEGUITinyXML2Parser_Static</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.lib</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\..\TinyXML2\Src;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\build\VS2013\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include\XMLParserModules\TinyXML2;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\TinyXML2\Src;$(SolutionDir)cegui\include;$(SolutionDir)..\..\cegui\include;$(SolutionDir)..\..\cegui\include\XMLParserModules\TinyXML2;$(SolutionDir)..\..\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -107,7 +107,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\..\TinyXML2\Src;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\build\VS2013\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include\XMLParserModules\TinyXML2;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\TinyXML2\Src;$(SolutionDir)cegui\include;$(SolutionDir)..\..\cegui\include;$(SolutionDir)..\..\cegui\include\XMLParserModules\TinyXML2;$(SolutionDir)..\..\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -137,7 +137,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\..\TinyXML2\Src;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\build\VS2013\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include\XMLParserModules\TinyXML2;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\TinyXML2\Src;$(SolutionDir)cegui\include;$(SolutionDir)..\..\cegui\include;$(SolutionDir)..\..\cegui\include\XMLParserModules\TinyXML2;$(SolutionDir)..\..\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -167,7 +167,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\..\TinyXML2\Src;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\build\VS2013\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\cegui\include\XMLParserModules\TinyXML2;C:\Niello\Projects\GameDev\_Dev\Engine\3rdParty\CEGUI\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\TinyXML2\Src;$(SolutionDir)cegui\include;$(SolutionDir)..\..\cegui\include;$(SolutionDir)..\..\cegui\include\XMLParserModules\TinyXML2;$(SolutionDir)..\..\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -203,12 +203,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\cegui\include\CEGUI\XMLParserModules\TinyXML2\XMLParser.h" />
-    <ClInclude Include="..\..\..\..\..\..\cegui\include\CEGUI\XMLParserModules\TinyXML2\XMLParserModule.h" />
+    <ClInclude Include="..\..\..\..\..\cegui\include\CEGUI\XMLParserModules\TinyXML2\XMLParser.h" />
+    <ClInclude Include="..\..\..\..\..\cegui\include\CEGUI\XMLParserModules\TinyXML2\XMLParserModule.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\cegui\src\XMLParserModules\TinyXML2\XMLParser.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\cegui\src\XMLParserModules\TinyXML2\XMLParserModule.cpp" />
+    <ClCompile Include="..\..\..\..\..\cegui\src\XMLParserModules\TinyXML2\XMLParser.cpp" />
+    <ClCompile Include="..\..\..\..\..\cegui\src\XMLParserModules\TinyXML2\XMLParserModule.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -22,8 +22,8 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 		else FinalFilename = filename;
 	}
 
-	IO::CFileStream File;
-	if (File.Open(CString(FinalFilename.c_str()), IO::SAM_READ))
+	IO::CFileStream File(FinalFilename.c_str());
+	if (File.Open(IO::SAM_READ))
 	{
 		const long Size = File.GetSize();
 		unsigned char* const pBuffer = n_new_array(unsigned char, Size);
