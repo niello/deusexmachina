@@ -66,4 +66,4 @@ bool CInputMappingState::OnInputUpdated(Events::CEventDispatcher* pDispatcher, c
 }
 //---------------------------------------------------------------------
 
-} // namespace Input
+}

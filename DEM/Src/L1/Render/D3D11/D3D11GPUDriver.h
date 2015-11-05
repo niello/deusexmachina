@@ -111,7 +111,6 @@ protected:
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
-	//CDict<CStrID, Data::CBuffer>		ShaderInputSignatures; //!!!to D3D11 fct or resource mgr!
 	CArray<PD3D11RenderState>			RenderStates;
 	CArray<PD3D11Sampler>				Samplers;
 	//bool								IsInsideFrame;

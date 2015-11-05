@@ -28,6 +28,11 @@ void CD3D11DriverFactory::Close()
 {
 	AdapterCount = 0;
 	SAFE_RELEASE(pDXGIFactory);
+
+	for (IPTR i = 0; i < ShaderSignatures.GetCount(); ++i)
+		n_free(ShaderSignatures[i].pData);
+	ShaderSignatures.Clear();
+	ShaderSigIDToIndex.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -139,15 +144,25 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType Dr
 }
 //---------------------------------------------------------------------
 
-//bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, const void* pData, UPTR Size)
-//{
-//}
-////---------------------------------------------------------------------
-//
-//bool CD3D11DriverFactory::GetShaderInputSignature(U32 ID, const void*& pOutData, UPTR& OutSize)
-//{
-//}
-////---------------------------------------------------------------------
+// NB: Doesn't copy data, so pData must be dynamically allocated and must not be freed externally
+bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, void* pData, UPTR Size)
+{
+	CBinaryData* pBinary = ShaderSignatures.Reserve(1);
+	pBinary->pData = pData;
+	pBinary->Size = Size;
+	ShaderSigIDToIndex.Add(ID, ShaderSignatures.GetCount() - 1, true);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11DriverFactory::FindShaderInputSignature(UPTR ID, CBinaryData* pOutSigData) const
+{
+	UPTR Index;
+	if (!ShaderSigIDToIndex.Get(ID, Index)) FAIL;
+	if (pOutSigData) *pOutSigData = ShaderSignatures[Index];
+	OK;
+}
+//---------------------------------------------------------------------
 
 DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 {

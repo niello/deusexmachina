@@ -63,7 +63,8 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	// D3DCOMPILE_IEEE_STRICTNESS
 	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
 
-	DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR; // (more efficient, vec*mtx dots) //???does touch CPU-side const binding code?
+	//DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR; // (more efficient, vec*mtx dots) //???does touch CPU-side const binding code?
+	DWORD Flags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
 	if (Rec.Target >= 0x0400)
 	{
 		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Denies deprecated syntax

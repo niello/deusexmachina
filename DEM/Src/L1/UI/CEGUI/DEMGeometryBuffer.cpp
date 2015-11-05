@@ -21,7 +21,10 @@ CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner):
 	d_clipRect(0, 0, 0, 0),
 	d_clippingActive(true),
 	d_effect(NULL),
-	d_matrixValid(false)
+	d_matrixValid(false),
+	d_translation(0, 0, 0),
+	d_rotation(1, 0, 0, 0),
+	d_pivot(0, 0, 0)
 {
 }
 //--------------------------------------------------------------------
@@ -167,6 +170,7 @@ void CDEMGeometryBuffer::updateMatrix() const
 						0.f, 0.f, 1.f, 0.f,
 						d_pivot.d_x + d_translation.d_x, d_pivot.d_y + d_translation.d_y, d_pivot.d_z + d_translation.d_z, 1.f);
 	d_matrix.mult_simple(ToFinalPos);
+
 	d_matrixValid = true;
 }
 //--------------------------------------------------------------------

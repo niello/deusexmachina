@@ -502,9 +502,11 @@ matrix44::lookatRh(const vector3& at, const vector3& up)
     vector3 xaxis = up * zaxis;
     xaxis.norm();
     vector3 yaxis = zaxis * xaxis;
-    M11 = xaxis.x;  M12 = xaxis.y;  M13 = xaxis.z;  M14 = 0.0f;
-    M21 = yaxis.x;  M22 = yaxis.y;  M23 = yaxis.z;  M24 = 0.0f;
-    M31 = zaxis.x;  M32 = zaxis.y;  M33 = zaxis.z;  M34 = 0.0f;
+    M11 = xaxis.x;  M12 = yaxis.x;  M13 = zaxis.x;  M14 = 0.0f;
+    M21 = xaxis.y;  M22 = yaxis.y;  M23 = zaxis.y;  M24 = 0.0f;
+    M31 = xaxis.z;  M32 = yaxis.z;  M33 = zaxis.z;  M34 = 0.0f;
+	eye *= -1.f;
+    M41 = xaxis % eye; M42 = yaxis % eye; M43 = zaxis % eye; M44 = 1.0f;
 }
 
 //------------------------------------------------------------------------------

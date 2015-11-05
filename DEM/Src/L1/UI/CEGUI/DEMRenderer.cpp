@@ -110,8 +110,8 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 
 	hWorldMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("WorldMatrix"));
 	hProjMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("ProjectionMatrix"));
-	hCBOnResize = RPS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangeOnResize"));
-	hCBPerObject = RPS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangePerObject"));
+	hCBOnResize = RVS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangeOnResize"));
+	hCBPerObject = RVS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangePerObject"));
 	hTexture = RPS->GetObject()->As<Render::CShader>()->GetResourceHandle(CStrID("BoundTexture"));
 	hLinearSampler = RPS->GetObject()->As<Render::CShader>()->GetSamplerHandle(CStrID("LinearSampler"));
 

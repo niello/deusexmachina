@@ -121,7 +121,7 @@ static inline float operator %(const vector3& v0, const vector3& v1)
 // Cross product.
 static inline vector3 operator *(const vector3& v0, const vector3& v1)
 {
-	return vector3(v0.y * v1.z - v0.z * v1.y,
+	return vector3(	v0.y * v1.z - v0.z * v1.y,
 					v0.z * v1.x - v0.x * v1.z,
 					v0.x * v1.y - v0.y * v1.x);
 }

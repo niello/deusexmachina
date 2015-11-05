@@ -30,6 +30,12 @@ enum EFormatType
 	FmtType_Float
 };
 
+struct CBinaryData
+{
+	void*	pData;
+	UPTR	Size;
+};
+
 #define D3D11DrvFactory Render::CD3D11DriverFactory::Instance()
 
 class CD3D11DriverFactory: public CVideoDriverFactory
@@ -39,15 +45,16 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDXGIFactory1*					pDXGIFactory;
-	DWORD							AdapterCount;		// Valid during a lifetime of the DXGI factory object
-	//CHashTable<UPTR, Data::CBuffer>	ShaderSignatures;
+	IDXGIFactory1*			pDXGIFactory;
+	DWORD					AdapterCount;		// Valid during a lifetime of the DXGI factory object
+	CArray<CBinaryData>		ShaderSignatures;
+	CHashTable<UPTR, UPTR>	ShaderSigIDToIndex;
 
 public:
 
-	Data::CHandleManager			HandleMgr;			// Primarily for shader metadata handles
+	Data::CHandleManager	HandleMgr;			// Primarily for shader metadata handles
 
-	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0) { __ConstructSingleton; }
+	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0), ShaderSignatures(0, 16) { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
@@ -71,8 +78,8 @@ public:
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
-	bool					RegisterShaderInputSignature(UPTR ID, const void* pData, UPTR Size);
-	bool					GetShaderInputSignature(UPTR ID, const void*& pOutData, UPTR& OutSize);
+	bool					RegisterShaderInputSignature(UPTR ID, void* pData, UPTR Size);
+	bool					FindShaderInputSignature(UPTR ID, CBinaryData* pOutSigData = NULL) const;
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

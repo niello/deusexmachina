@@ -87,14 +87,15 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 
 	UPTR BinarySize = FileSize - BinaryOffset;
 	if (!BinarySize) FAIL;
-	void* pData = _malloca(BinarySize);
+	void* pData = n_malloc(BinarySize);
 	if (!pData) FAIL;
 	if (!IOStream.Seek(BinaryOffset, IO::Seek_Begin) || IOStream.Read(pData, BinarySize) != BinarySize)
 	{
-		_freea(pData);
+		n_free(pData);
 		FAIL;
 	}
 
+	void* pSigData = NULL;
 	if (ShaderType == Render::ShaderType_Vertex)
 	{
 		if (InputSignatureID)
@@ -107,48 +108,49 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 			// StrID = Shader URI
 		}
 
-		// try to find signature by ID, if found, do nothing
-
-		void* pSigData;
-		UPTR SigSize;
-		if (InputSignatureID == ShaderFileID)
+		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
 		{
-			pSigData = pData;
-			SigSize = BinarySize;
-		}
-		else
-		{
-			const char pDir[] = "Shaders:Bin/";
-			CString Path(pDir, sizeof(pDir) - 1, 32);
-			Path += StringUtils::FromInt(InputSignatureID);
-			Path += ".sig";
-			IO::CFileStream SigFile(Path);
-			if (!SigFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
+			UPTR SigSize;
+			if (InputSignatureID == ShaderFileID)
 			{
-				_freea(pData);
+				pSigData = pData;
+				SigSize = BinarySize;
+			}
+			else
+			{
+				const char pDir[] = "Shaders:Bin/";
+				CString Path(pDir, sizeof(pDir) - 1, 32);
+				Path += StringUtils::FromInt(InputSignatureID);
+				Path += ".sig";
+				IO::CFileStream SigFile(Path);
+				if (!SigFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
+				{
+					n_free(pData);
+					FAIL;
+				}
+				SigSize = SigFile.GetSize();
+				pSigData = n_malloc(SigSize);
+				if (SigFile.Read(pSigData, SigSize) != SigSize)
+				{
+					n_free(pData);
+					n_free(pSigData);
+					FAIL;
+				}
+			}
+
+			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, pSigData, SigSize))
+			{
+				n_free(pData);
+				n_free(pSigData);
 				FAIL;
 			}
-			SigSize = SigFile.GetSize();
-			pSigData = _malloca(SigSize);
-			if (SigFile.Read(pSigData, SigSize) != SigSize)
-			{
-				_freea(pData);
-				_freea(pSigData);
-				FAIL;
-			}
 		}
-
-		// register binary data with ID
-
-		if (pSigData && pSigData != pData) _freea(pSigData);
-
-		NOT_IMPLEMENTED_MSG("Input signature register or find already registered (write)");
 	}
 
 	Render::PD3D11Shader Shader = (Render::CD3D11Shader*)GPU->CreateShader(ShaderType, pData, BinarySize).GetUnsafe();
 	if (Shader.IsNullPtr()) FAIL;
 
-	_freea(pData);
+	if (pSigData != pData) n_free(pData);
 
 	Shader->InputSignatureID = InputSignatureID;
 

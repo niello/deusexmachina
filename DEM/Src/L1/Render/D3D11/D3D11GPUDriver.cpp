@@ -112,6 +112,8 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	CurrSR = n_new_array(RECT, MaxViewportCount);
 	VPSRSetFlags.ClearAll();
 
+	CurrVB.SetSize(D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT);
+	CurrVBOffset.SetSize(D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT);
 	CurrCB.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT);
 	CurrSS.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT);
 
@@ -182,7 +184,6 @@ void CD3D11GPUDriver::Release()
 	if (!pD3DDevice) return;
 
 	VertexLayouts.Clear();
-//!!!to drv fct!	ShaderInputSignatures.Clear();
 	RenderStates.Clear();
 	Samplers.Clear();
 
@@ -193,6 +194,8 @@ void CD3D11GPUDriver::Release()
 	SAFE_DELETE_ARRAY(CurrVP);
 	SAFE_DELETE_ARRAY(CurrSR);
 	CurrSRV.Clear();
+	CurrVB.SetSize(0);
+	CurrVBOffset.SetSize(0);
 	CurrCB.SetSize(0);
 	CurrSS.SetSize(0);
 	CurrRT.SetSize(0);
@@ -720,6 +723,29 @@ bool CD3D11GPUDriver::GetViewport(DWORD Index, CViewport& OutViewport)
 {
 	if (Index >= MaxViewportCount || (Index > 0 && VPSRSetFlags.IsNot(1 << Index))) FAIL;
 
+	// If default (0) viewport is not set, it is of the render target size.
+	// RT might be set but not applied, in that case read values from RT.
+	if (Index == 0 && VPSRSetFlags.IsNot(1 << Index) && CurrDirtyFlags.Is(GPU_Dirty_RT))
+	{
+		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		{
+			CD3D11RenderTarget* pRT = CurrRT[i].GetUnsafe();
+			if (pRT)
+			{
+				OutViewport.Left = 0.f;
+				OutViewport.Top = 0.f;
+				OutViewport.Width = (float)pRT->GetDesc().Width;
+				OutViewport.Height = (float)pRT->GetDesc().Height;
+				OutViewport.MinDepth = 0.f;
+				OutViewport.MaxDepth = 1.f;
+
+				OK;
+			}
+		}
+
+		FAIL;
+	}
+
 	D3D11_VIEWPORT& CurrViewport = CurrVP[Index];
 	OutViewport.Left = CurrViewport.TopLeftX;
 	OutViewport.Top = CurrViewport.TopLeftY;
@@ -750,7 +776,7 @@ bool CD3D11GPUDriver::SetScissorRect(DWORD Index, const Data::CRect* pScissorRec
 		}
 
 		CurrRect.left = pScissorRect->X;
-		CurrRect.top = pScissorRect->X;
+		CurrRect.top = pScissorRect->Y;
 		CurrRect.right = pScissorRect->Right();
 		CurrRect.bottom = pScissorRect->Bottom();
 
@@ -1444,15 +1470,22 @@ ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& Vertex
 	const D3D11_INPUT_ELEMENT_DESC* pD3DDesc = VertexLayout.GetCachedD3DLayoutDesc();
 	if (!pD3DDesc) return NULL;
 
-	if (!pSignature)
+	const void* pData;
+	UPTR Size;
+	if (pSignature)
 	{
-		NOT_IMPLEMENTED_MSG("Input signature find by ID (read)");
-		//int Idx = ShaderInputSignatures.FindIndex(ShaderInputSignatureID);
-		//if (Idx == INVALID_INDEX) FAIL;
-		//pSignature = &ShaderInputSignatures.ValueAt(Idx);
+		pData = pSignature->GetPtr();
+		Size = pSignature->GetSize();
+	}
+	else
+	{
+		CBinaryData Binary;
+		if (!D3D11DrvFactory->FindShaderInputSignature(ShaderInputSignatureID, &Binary)) FAIL;
+		pData = Binary.pData;
+		Size = Binary.Size;
 	}
 
-	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pSignature->GetPtr(), pSignature->GetSize(), &pLayout))) return NULL;
+	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pData, Size, &pLayout))) return NULL;
 
 	n_verify_dbg(VertexLayout.AddLayoutObject(ShaderInputSignatureID, pLayout));
 
@@ -2124,9 +2157,6 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 //not to duplicate states.
 PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
-	//!!!if VS loaded first time and has new input sig!
-	//!!!ShaderInputSignatures.Add(shader input sig blob)!
-
 	// Not supported (implement in D3D11 shaders):
 	// - Misc_AlphaTestEnable
 	// - AlphaTestRef
