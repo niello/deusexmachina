@@ -1804,9 +1804,14 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	pValues[CD3D9RenderState::D3D9_ALPHAREF] = Desc.AlphaTestRef;
 	pValues[CD3D9RenderState::D3D9_ALPHAFUNC] = GetD3DCmpFunc(Desc.AlphaTestFunc);
 
-n_assert(false);
-	pValues[CD3D9RenderState::D3D9_CLIPPLANEENABLE] = Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable) ? TRUE : FALSE;
-	//!!!D3DCLIPPLANEn
+	DWORD ClipPlanes = 0;
+	if (Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable << 0)) ClipPlanes |= D3DCLIPPLANE0;
+	if (Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable << 1)) ClipPlanes |= D3DCLIPPLANE1;
+	if (Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable << 2)) ClipPlanes |= D3DCLIPPLANE2;
+	if (Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable << 3)) ClipPlanes |= D3DCLIPPLANE3;
+	if (Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable << 4)) ClipPlanes |= D3DCLIPPLANE4;
+	if (Desc.Flags.Is(CRenderStateDesc::Misc_ClipPlaneEnable << 5)) ClipPlanes |= D3DCLIPPLANE5;
+	pValues[CD3D9RenderState::D3D9_CLIPPLANEENABLE] = ClipPlanes;
 
 	// Since render state creation should be load-time, it is not performance critical. If we
 	// skip this and create new CRenderState, sorting will consider them as different state sets.

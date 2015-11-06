@@ -24,6 +24,8 @@ namespace StringUtils
 	char*			LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, DWORD SubStrLen = 0);
 	bool			MatchesPattern(const char* pStr, const char* pPattern);
 	//CString			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true) const;
+
+	UPTR			StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/"); 
 }
 
 #endif

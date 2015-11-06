@@ -118,4 +118,58 @@ bool ToBool(const char* pStr)
 }
 //---------------------------------------------------------------------
 
+//!!!non-optimal, can rewrite in a reverse order to minimize memmove sizes!
+UPTR StripComments(char* pStr, const char* pSingleLineComment, const char* pMultiLineCommentStart, const char* pMultiLineCommentEnd)
+{
+	UPTR Len = strlen(pStr);
+
+	if (pMultiLineCommentStart && pMultiLineCommentEnd)
+	{
+		UPTR MLCSLen = strlen(pMultiLineCommentStart);
+		UPTR MLCELen = strlen(pMultiLineCommentEnd);
+		char* pFound;
+		while (pFound = strstr(pStr, pMultiLineCommentStart))
+		{
+			char* pEnd = strstr(pFound + MLCSLen, pMultiLineCommentEnd);
+			if (pEnd)
+			{
+				const char* pFirstValid = pEnd + MLCELen;
+				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
+				Len -= (pFirstValid - pFound);
+				pStr[Len] = 0;
+			}
+			else
+			{
+				*pFound = 0;
+				Len = pFound - pStr;
+			}
+		}
+	}
+
+	if (pSingleLineComment)
+	{
+		UPTR SLCLen = strlen(pSingleLineComment);
+		char* pFound;
+		while (pFound = strstr(pStr, pSingleLineComment))
+		{
+			char* pEnd = strpbrk(pFound + SLCLen, "\n\r");
+			if (pEnd)
+			{
+				const char* pFirstValid = pEnd + 1;
+				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
+				Len -= (pFirstValid - pFound);
+				pStr[Len] = 0;
+			}
+			else
+			{
+				*pFound = 0;
+				Len = pFound - pStr;
+			}
+		}
+	}
+
+	return Len;
+}
+//---------------------------------------------------------------------
+
 }

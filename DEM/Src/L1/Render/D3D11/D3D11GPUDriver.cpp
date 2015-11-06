@@ -2161,7 +2161,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	// - Misc_AlphaTestEnable
 	// - AlphaTestRef
 	// - AlphaTestFunc
-	// - Misc_ClipPlaneEnable
+	// - Misc_ClipPlaneEnable << 0 .. 5
 
 	// Convert absolute depth bias to D3D11-style.
 	// Depth buffer is always floating-point, let it be 32-bit, with 23 bits for mantissa.

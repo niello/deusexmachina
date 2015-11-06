@@ -78,7 +78,7 @@ void CString::Trim(const char* pCharSet, bool Left, bool Right)
 	{
 		DWORD NewLen = pStrEnd - pStrStart;
 		memmove(pString, pStrStart, NewLen);
-		*pStrEnd = 0;
+		pString[NewLen] = 0;
 		Length = NewLen;
 	}
 	else Clear();

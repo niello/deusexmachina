@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_D3D9_SHADER_H__
 
 #include <Render/Shader.h>
+#include <Data/FixedArray.h>
 
 // Direct3D9 shader object implementation
 
@@ -24,6 +25,40 @@ protected:
 	void		InternalDestroy();
 
 public:
+
+	// Don't change values
+	enum ERegisterSet
+	{
+		Reg_Float4	= 0,
+		Reg_Int4	= 1,
+		Reg_Bool	= 2
+	};
+
+	struct CRange
+	{
+		UPTR Start;
+		UPTR Count;
+	};
+
+	struct CBufferMeta
+	{
+		CStrID				Name;
+		CFixedArray<CRange>	Float4;
+		CFixedArray<CRange>	Int4;
+		CFixedArray<CRange>	Bool;
+	};
+
+	struct CConstMeta
+	{
+		CStrID				Name;
+		UPTR				BufferIndex;
+		ERegisterSet		RegSet;
+		UPTR				Offset;
+		UPTR				Size;
+	};
+
+	CFixedArray<CBufferMeta>	Buffers;
+	CFixedArray<CConstMeta>		Consts;
 
 	CD3D9Shader(): pD3DShader(NULL) {}
 	virtual ~CD3D9Shader() { InternalDestroy(); }

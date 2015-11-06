@@ -232,6 +232,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Sampler.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ShaderLoaders.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.h" />
@@ -476,6 +477,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Sampler.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ShaderLoaders.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9SwapChain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\DebugGeomRenderer.cpp" />

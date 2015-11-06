@@ -68,12 +68,12 @@ struct CRenderStateDesc
 
 	enum // For boolean variables
 	{
-		Blend_AlphaToCoverage		= 0x00010000,
-		Blend_Independent			= 0x00020000,	// If not, only RTBlend[0] is used
-		Blend_RTBlendEnable			= 0x00040000	// Use (Blend_RTBlendEnable << Index), Index = [0 .. 7]
-		// flags from				  0x00040000
-		//       to					  0x02000000
-		// inclusive are reserved for Blend_RTBlendEnable
+		Blend_AlphaToCoverage		= 0x00008000,
+		Blend_Independent			= 0x00010000,	// If not, only RTBlend[0] is used
+		Blend_RTBlendEnable			= 0x00020000	// Use (Blend_RTBlendEnable << Index), Index = [0 .. 7]
+		// flags from				  0x00020000
+		//       to					  0x01000000
+		// inclusive are reserved for Blend_RTBlendEnable, 8 bits total
 	};
 
 	struct CRTBlend
@@ -94,8 +94,11 @@ struct CRenderStateDesc
 
 	enum // For boolean variables
 	{
-		Misc_AlphaTestEnable		= 0x04000000,
-		Misc_ClipPlaneEnable		= 0x08000000 //!!!need 6 bits! or uchar/DWORD w/lower 6 bits
+		Misc_AlphaTestEnable		= 0x02000000,
+		Misc_ClipPlaneEnable		= 0x04000000
+		// flags from				  0x04000000
+		//       to					  0x80000000
+		// inclusive are reserved for Misc_ClipPlaneEnable, 6 bits total
 	};
 	unsigned char		AlphaTestRef;
 	ECmpFunc			AlphaTestFunc;
