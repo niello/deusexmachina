@@ -22,6 +22,7 @@ class CShaderLoader: public CResourceLoader
 public:
 
 	Render::PGPUDriver GPU;
+	//???shader type, Unknown as default?
 
 	//virtual ~CShaderLoader() {}
 

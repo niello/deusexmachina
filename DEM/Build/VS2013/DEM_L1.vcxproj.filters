@@ -902,6 +902,9 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ShaderLoaders.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">

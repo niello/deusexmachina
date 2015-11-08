@@ -4,6 +4,7 @@
 
 #include <Render/VideoDriverFactory.h>
 #include <Data/Singleton.h>
+#include <Data/HandleManager.h>
 
 // Central object to enumerate video hardware and obtain driver objects to control it.
 // This class should be subclassed and implemented via some video subsystem API like D3D9 or DXGI.
@@ -14,7 +15,7 @@ typedef enum _D3DMULTISAMPLE_TYPE D3DMULTISAMPLE_TYPE;
 
 namespace Render
 {
-#define D3D9DrvFactory CD3D9DriverFactory::Instance()
+#define D3D9DrvFactory Render::CD3D9DriverFactory::Instance()
 
 class CD3D9DriverFactory: public CVideoDriverFactory
 {
@@ -28,6 +29,8 @@ protected:
 	DWORD			AdapterCount;	// Valid during a lifetime of the D3D9 object
 
 public:
+
+	Data::CHandleManager	HandleMgr;			// Primarily for shader metadata handles
 
 	CD3D9DriverFactory(): pD3D9(NULL), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D9DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }

@@ -228,6 +228,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DriverFactory.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Fwd.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9GPUDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9RenderTarget.h" />

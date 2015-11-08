@@ -15,13 +15,16 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 {
 	switch (fmt)
 	{
-		case Texture::PF_RGBA:
-		case Texture::PF_RGB:		return Render::PixelFmt_R8G8B8A8; //???need inverse format to avoid blitFromSurface?
+		case Texture::PF_RGBA:		return Render::PixelFmt_B8G8R8A8;
+		case Texture::PF_RGB:		return Render::PixelFmt_B8G8R8X8;
 		case Texture::PF_RGBA_DXT1:	return Render::PixelFmt_DXT1;
 		case Texture::PF_RGBA_DXT3:	return Render::PixelFmt_DXT3;
 		case Texture::PF_RGBA_DXT5:	return Render::PixelFmt_DXT5;
 		default:					return Render::PixelFmt_Invalid;
 	}
+	//case Texture::PF_RGB_565:   return D3DFMT_R5G6B5;
+	//case Texture::PF_RGBA_4444: return D3DFMT_A4R4G4B4;
+	//return width * 2;
 }
 //--------------------------------------------------------------------
 
@@ -80,7 +83,7 @@ void CDEMTexture::createEmptyTexture(const Sizef& sz)
 	Desc.Depth = 0;
 	Desc.MipLevels = 1;
 	Desc.ArraySize = 1;
-	Desc.Format = Render::PixelFmt_R8G8B8A8;
+	Desc.Format = Render::PixelFmt_B8G8R8A8;
 	Desc.MSAAQuality = Render::MSAA_None;
 
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write);
@@ -109,9 +112,11 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	n_assert(isPixelFormatSupported(pixel_format));
 
 	const void* img_src = buffer;
+
+	// Invert to BGR(A), as DX9 doesn't support RGBA textures
 	if (pixel_format == PF_RGB)
 	{
-		const unsigned char* src = static_cast<const unsigned char*>(buffer);
+	/*	const unsigned char* src = static_cast<const unsigned char*>(buffer);
 		unsigned char* dest = n_new_array(unsigned char, static_cast<unsigned int>(buffer_size.d_width * buffer_size.d_height) * 4);
 
 		for (int i = 0; i < buffer_size.d_width * buffer_size.d_height; ++i)
@@ -120,9 +125,47 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 			dest[i * 4 + 1] = src[i * 3 + 1];
 			dest[i * 4 + 2] = src[i * 3 + 2];
 			dest[i * 4 + 3] = 0xFF;
+		}*/
+
+		UPTR W = static_cast<UPTR>(buffer_size.d_width);
+		UPTR H = static_cast<UPTR>(buffer_size.d_height);
+		U8* pImg = n_new_array(U8, W * H * 3);
+		const U8* pSrc = (const U8*)buffer;
+		U8* pDest = pImg;
+
+		for (UPTR i = 0; i < H; ++i)
+		{
+			for (UPTR j = 0; j < W; ++j)
+			{
+				*pDest++ = pSrc[2];
+				*pDest++ = pSrc[1];
+				*pDest++ = pSrc[0];
+				pSrc += 3;
+			}
 		}
 
-		img_src = dest;
+		img_src = pImg;
+	}
+	else if (pixel_format == PF_RGBA)
+	{
+		UPTR W = static_cast<UPTR>(buffer_size.d_width);
+		UPTR H = static_cast<UPTR>(buffer_size.d_height);
+		U32* pImg = n_new_array(U32, W * H);
+		const U32* pSrc = (U32*)buffer;
+		U32* pDest = pImg;
+
+		//!!!__mm_shuffle_epi8
+		for (UPTR i = 0; i < H; ++i)
+		{
+			for (UPTR j = 0; j < W; ++j)
+			{
+				const U32 Pixel = *pSrc++;
+				const U32 Tmp = Pixel & 0x00FF00FF;
+				*pDest++ = Pixel & 0xFF00FF00 | (Tmp << 16) | (Tmp >> 16);
+			}
+		}
+
+		img_src = pImg;
 	}
 
 	//!!!can reuse texture without recreation if desc is the same and not immutable!
@@ -141,7 +184,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	//can create immutable textures!
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write, img_src);
 
-	if (pixel_format == PF_RGB) n_delete_array(img_src);
+	if (img_src != buffer) n_delete_array(img_src);
 
 	n_assert(DEMTexture.IsValidPtr());
 

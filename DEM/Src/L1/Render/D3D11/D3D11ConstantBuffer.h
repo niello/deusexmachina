@@ -58,10 +58,7 @@ public:
 	//is it faster for float4, int4? is scalar SetFloat/SetInt realy so frequent in shaders?
 	//virtual bool				SetFloat(DWORD Offset, const float* pData, DWORD Count);
 	//virtual bool				SetInt(DWORD Offset, const int* pData, DWORD Count);
-	void						WriteData(DWORD Offset, const void* pData, DWORD Size);
-
-	void						OnBegin(void* pMappedVRAM = NULL);	// For internal use by the GPUDriver
-	void						OnCommit();							// For internal use by the GPUDriver
+	void						WriteData(UPTR Offset, const void* pData, UPTR Size);
 
 	ID3D11Buffer*				GetD3DBuffer() const { return pBuffer; }
 	ID3D11ShaderResourceView*	GetD3DSRView() const { return pSRView; }
@@ -71,11 +68,14 @@ public:
 	DWORD						GetSizeInBytes() const { return SizeInBytes; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
+
+	void						OnBegin(void* pMappedVRAM = NULL);	// For internal use by the GPUDriver
+	void						OnCommit();							// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 
-inline void CD3D11ConstantBuffer::WriteData(DWORD Offset, const void* pData, DWORD Size)
+inline void CD3D11ConstantBuffer::WriteData(UPTR Offset, const void* pData, UPTR Size)
 {
 	n_assert_dbg(pData && Size && pMapped && (Offset + Size <= SizeInBytes));
 	//!!!???PERF:?! at least must NEVER read from mapped VRAM!

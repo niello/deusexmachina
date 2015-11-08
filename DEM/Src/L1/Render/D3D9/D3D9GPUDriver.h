@@ -25,8 +25,10 @@ typedef Ptr<class CD3D9IndexBuffer> PD3D9IndexBuffer;
 typedef Ptr<class CD3D9RenderTarget> PD3D9RenderTarget;
 typedef Ptr<class CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
+typedef Ptr<class CD3D9ConstantBuffer> PD3D9ConstantBuffer;
 typedef Ptr<class CD3D9Sampler> PD3D9Sampler;
 typedef Ptr<class CD3D9Texture> PD3D9Texture;
+struct CD3D9ShaderBufferMeta;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -34,8 +36,25 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
-	static const DWORD SM30_PS_SamplerCount = 16;
-	static const DWORD SM30_VS_SamplerCount = 4;
+	static const UPTR SM30_PS_SamplerCount = 16;
+	static const UPTR SM30_VS_SamplerCount = 4;
+	static const UPTR CB_Slot_Count = 4;				// Pseudoregisters for CB binding
+
+	enum
+	{
+		CB_ApplyFloat4	= 0x01,
+		CB_ApplyInt4	= 0x02,
+		CB_ApplyBool	= 0x04,
+		CB_ApplyAll		= (CB_ApplyFloat4 | CB_ApplyInt4 | CB_ApplyBool)
+	};
+
+	struct CCBRec
+	{
+		PD3D9ConstantBuffer				CB;
+		Data::CFlags					ApplyFlags;
+		UPTR							NextRange;
+		const CD3D9ShaderBufferMeta*	pMeta;		// Request from handle before use, may not persist over the frame if host shader destroyed
+	};
 
 	PD3D9VertexLayout					CurrVL;
 	CFixedArray<PD3D9VertexBuffer>		CurrVB;
@@ -44,8 +63,9 @@ protected:
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
 	PD3D9RenderState					CurrRS;
-	CFixedArray<PD3D9Sampler>			CurrSS; // Pixel, then vertex
-	CFixedArray<PD3D9Texture>			CurrTex; // Pixel, then vertex
+	CFixedArray<CCBRec>					CurrCB;			// CB_Slot_Count vertex, then CB_Slot_Count pixel
+	CFixedArray<PD3D9Sampler>			CurrSS;			// Pixel, then vertex
+	CFixedArray<PD3D9Texture>			CurrTex;		// Pixel, then vertex
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
@@ -61,7 +81,7 @@ protected:
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
-	CD3D9GPUDriver();
+	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
 	bool						OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -172,13 +192,6 @@ public:
 };
 
 typedef Ptr<CD3D9GPUDriver> PD3D9GPUDriver;
-
-inline CD3D9GPUDriver::CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false)
-{
-	//???CurrVBOffset.SetSize()?
-	//memset(CurrVBOffset.GetPtr(), 0, sizeof(DWORD) * CurrVBOffset.GetCount());
-}
-//---------------------------------------------------------------------
 
 }
 

@@ -1,5 +1,6 @@
 #include "D3D9Shader.h"
 
+#include <Render/D3D9/D3D9DriverFactory.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -52,34 +53,111 @@ bool CD3D9Shader::Create(IDirect3DPixelShader9* pShader)
 void CD3D9Shader::InternalDestroy()
 {
 	SAFE_RELEASE(pD3DShader);
+
+	Data::CHandleManager& HandleMgr = D3D9DrvFactory->HandleMgr;
+
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	{
+		HHandle Handle = Consts[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Consts.Clear();
+
+	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	{
+		HHandle Handle = Buffers[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Buffers.Clear();
+
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		HHandle Handle = Samplers[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Samplers.Clear();
 }
 //---------------------------------------------------------------------
 
 HConst CD3D9Shader::GetConstHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return INVALID_INDEX;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	{
+		CD3D9ShaderConstMeta* pMeta = &Consts[i];
+		if (pMeta->Name == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
 HConstBuffer CD3D9Shader::GetConstBufferHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return INVALID_INDEX;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	{
+		CD3D9ShaderBufferMeta* pMeta = &Buffers[i];
+		if (pMeta->Name == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+
+	if (Buffers.GetCount())
+	{
+		// Default buffer
+		CD3D9ShaderBufferMeta* pMeta = &Buffers[0];
+		if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
+		return pMeta->Handle;
+	}
+
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
+HConstBuffer CD3D9Shader::GetConstBufferHandle(HConst hConst) const
+{
+	if (!hConst) return INVALID_HANDLE;
+	CD3D9ShaderConstMeta* pMeta = (CD3D9ShaderConstMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(hConst);
+	return pMeta ? pMeta->BufferHandle : INVALID_HANDLE;
+}
+//---------------------------------------------------------------------
+
+//???need Texture = Name + bits for sampler registers!?
 HResource CD3D9Shader::GetResourceHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return INVALID_INDEX;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		CD3D9ShaderRsrcMeta* pMeta = &Samplers[i];
+		if (pMeta->TextureName == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
 HSampler CD3D9Shader::GetSamplerHandle(CStrID ID) const
 {
-	NOT_IMPLEMENTED;
-	return INVALID_INDEX;
+	//???!!!implement binary search for fixed arrays?!
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		CD3D9ShaderRsrcMeta* pMeta = &Samplers[i];
+		if (pMeta->SamplerName == ID)
+		{
+			if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
+			return pMeta->Handle;
+		}
+	}
+	return INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 

@@ -144,8 +144,8 @@ enum EClipStatus
 
 struct CRational
 {
-	short	Numerator;
-	ushort	Denominator;
+	I16	Numerator;
+	U16	Denominator;
 
 	short	GetIntRounded() const { return Denominator ? Numerator / Denominator : 0; }
 	float	GetFloat() const { return Denominator ? (float)Numerator / (float)Denominator : 0.f; }
@@ -153,6 +153,12 @@ struct CRational
 
 	bool operator ==(const CRational& Other) const { return Numerator == Other.Numerator && Denominator == Other.Denominator; }
 	bool operator !=(const CRational& Other) const { return Numerator != Other.Numerator || Denominator != Other.Denominator; }
+};
+
+struct CRange
+{
+	UPTR Start;
+	UPTR Count;
 };
 
 #endif

@@ -108,16 +108,22 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
-	hWorldMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("WorldMatrix"));
-	hProjMatrix = RVS->GetObject()->As<Render::CShader>()->GetConstHandle(CStrID("ProjectionMatrix"));
-	hCBOnResize = RVS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangeOnResize"));
-	hCBPerObject = RVS->GetObject()->As<Render::CShader>()->GetConstBufferHandle(CStrID("ChangePerObject"));
-	hTexture = RPS->GetObject()->As<Render::CShader>()->GetResourceHandle(CStrID("BoundTexture"));
-	hLinearSampler = RPS->GetObject()->As<Render::CShader>()->GetSamplerHandle(CStrID("LinearSampler"));
+	Render::CShader* pVS = RVS->GetObject()->As<Render::CShader>();
+	Render::CShader* pPS = RPS->GetObject()->As<Render::CShader>();
 
-	//???or two buffers? proj matrix is far less frequently set than world!
-	CBOnResize = GPU->CreateConstantBuffer(hCBOnResize, Render::Access_GPU_Read | Render::Access_CPU_Write);
-	CBPerObject = GPU->CreateConstantBuffer(hCBPerObject, Render::Access_GPU_Read | Render::Access_CPU_Write);
+	hWorldMatrix = pVS->GetConstHandle(CStrID("WorldMatrix"));
+	hProjMatrix = pVS->GetConstHandle(CStrID("ProjectionMatrix"));
+
+	hWMCB = pVS->GetConstBufferHandle(hWorldMatrix);
+	hPMCB = pVS->GetConstBufferHandle(hProjMatrix);
+	n_assert(hWMCB && hPMCB);
+
+	WMCB = GPU->CreateConstantBuffer(hWMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
+	if (hWMCB == hPMCB) PMCB = WMCB;
+	else PMCB = GPU->CreateConstantBuffer(hPMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
+
+	hTexture = pPS->GetResourceHandle(CStrID("BoundTexture"));
+	hLinearSampler = pPS->GetSamplerHandle(CStrID("LinearSampler"));
 
 	Render::CSamplerDesc SampDesc;
 	SampDesc.SetDefaults();
@@ -152,8 +158,8 @@ CDEMRenderer::~CDEMRenderer()
 
 	hWorldMatrix = INVALID_HANDLE;
 	hProjMatrix = INVALID_HANDLE;
-	hCBOnResize = INVALID_HANDLE;
-	hCBPerObject = INVALID_HANDLE;
+	hWMCB = INVALID_HANDLE;
+	hPMCB = INVALID_HANDLE;
 	hTexture = INVALID_HANDLE;
 	hLinearSampler = INVALID_HANDLE;
 	VertexLayout = NULL;
@@ -161,8 +167,8 @@ CDEMRenderer::~CDEMRenderer()
 	NormalClipped = NULL;
 	PremultipliedUnclipped = NULL;
 	PremultipliedClipped = NULL;
-	CBOnResize = NULL;
-	CBPerObject = NULL;
+	WMCB = NULL;
+	PMCB = NULL;
 	LinearSampler = NULL;
 	GPU = NULL;
 }
@@ -235,28 +241,6 @@ void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
 		GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
 	else
 		GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
-}
-//--------------------------------------------------------------------
-
-void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
-{
-	if (CBPerObject.IsValidPtr())
-	{
-		GPU->BeginShaderConstants(*CBPerObject.GetUnsafe());
-		GPU->SetShaderConstant(*CBPerObject.GetUnsafe(), hWorldMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
-		GPU->CommitShaderConstants(*CBPerObject.GetUnsafe());
-	}
-}
-//--------------------------------------------------------------------
-
-void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
-{
-	if (CBOnResize.IsValidPtr())
-	{
-		GPU->BeginShaderConstants(*CBOnResize.GetUnsafe());
-		GPU->SetShaderConstant(*CBOnResize.GetUnsafe(), hProjMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
-		GPU->CommitShaderConstants(*CBOnResize.GetUnsafe());
-	}
 }
 //--------------------------------------------------------------------
 
@@ -357,11 +341,41 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 }
 //--------------------------------------------------------------------
 
+void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
+{
+	if (WMCB.IsValidPtr())
+		GPU->SetShaderConstant(*WMCB.GetUnsafe(), hWorldMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+}
+//--------------------------------------------------------------------
+
+void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
+{
+	if (PMCB.IsValidPtr())
+		GPU->SetShaderConstant(*PMCB.GetUnsafe(), hProjMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+}
+//--------------------------------------------------------------------
+
+void CDEMRenderer::commitChangedConsts()
+{
+	if (WMCB.IsValidPtr())
+		GPU->CommitShaderConstants(*WMCB.GetUnsafe());
+	if (hWMCB != hPMCB && PMCB.IsValidPtr())
+		GPU->CommitShaderConstants(*PMCB.GetUnsafe());
+}
+//--------------------------------------------------------------------
+
 void CDEMRenderer::beginRendering()
 {
 	GPU->SetVertexLayout(VertexLayout.GetUnsafe());
-	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hCBOnResize, CBOnResize.GetUnsafe());
-	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hCBPerObject, CBPerObject.GetUnsafe());
+
+	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hWMCB, WMCB.GetUnsafe());
+	GPU->BeginShaderConstants(*WMCB.GetUnsafe());
+	if (hWMCB != hPMCB)
+	{
+		GPU->BindConstantBuffer(Render::ShaderType_Vertex, hPMCB, PMCB.GetUnsafe());
+		GPU->BeginShaderConstants(*PMCB.GetUnsafe());
+	}
+
 	GPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.GetUnsafe());
 }
 //---------------------------------------------------------------------

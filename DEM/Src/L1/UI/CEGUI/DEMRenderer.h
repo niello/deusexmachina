@@ -45,11 +45,11 @@ protected:
 	Render::PRenderState				NormalClipped;
 	Render::PRenderState				PremultipliedUnclipped;
 	Render::PRenderState				PremultipliedClipped;
-	Render::PConstantBuffer				CBOnResize;
-	Render::PConstantBuffer				CBPerObject;
-	Render::HConstBuffer				hCBOnResize;
-	Render::HConstBuffer				hCBPerObject;
+	Render::PConstantBuffer				WMCB;
+	Render::PConstantBuffer				PMCB;
 	Render::PSampler					LinearSampler;
+	Render::HConstBuffer				hWMCB;
+	Render::HConstBuffer				hPMCB;
 	Render::HConst						hWorldMatrix;
 	Render::HConst						hProjMatrix;
 	Render::HResource					hTexture;
@@ -72,6 +72,7 @@ public:
 	Render::HResource		getTextureHandle() const { return hTexture; }
 	void					setWorldMatrix(const matrix44& Matrix);
 	void					setProjMatrix(const matrix44& Matrix);
+	void					commitChangedConsts();
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() { return *pDefaultRT; }

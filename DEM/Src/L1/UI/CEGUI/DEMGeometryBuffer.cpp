@@ -82,6 +82,7 @@ void CDEMGeometryBuffer::draw() const
 		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)
 		{
 			d_owner.setRenderState(d_blendMode, i->clip);
+			d_owner.commitChangedConsts();
 			d_owner.getGPUDriver()->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.GetUnsafe());
 			d_owner.getGPUDriver()->Draw(d_primGroup);
 			pos += i->vertexCount;

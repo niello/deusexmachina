@@ -11,6 +11,7 @@
 #include <Render/D3D9/D3D9RenderState.h>
 #include <Render/D3D9/D3D9Sampler.h>
 #include <Render/D3D9/D3D9Shader.h>
+#include <Render/D3D9/D3D9ConstantBuffer.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <Render/ImageUtils.h>
@@ -216,8 +217,11 @@ void CD3D9GPUDriver::Release()
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
 
+	CurrCB.SetSize(0);
 	CurrSS.SetSize(0);
-
+	CurrTex.SetSize(0);
+	CurrVB.SetSize(0);
+	CurrVBOffset.SetSize(0);
 	VertexLayouts.Clear();
 	CurrRT.SetSize(0);
 
@@ -394,7 +398,9 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 	}
 
 	CurrRT.SetSize(D3DCaps.NumSimultaneousRTs);
-
+	CurrVB.SetSize(D3DCaps.MaxStreams);
+	CurrVBOffset.SetSize(D3DCaps.MaxStreams);
+	CurrCB.SetSize(2 * CB_Slot_Count);
 	CurrSS.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 	CurrTex.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 
@@ -1064,14 +1070,38 @@ bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 
 bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
-	NOT_IMPLEMENTED;
+	if (!Handle) FAIL;
+	CD3D9ShaderBufferMeta* pMeta = (CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Handle);
+	if (!pMeta) FAIL;
+
+	UPTR Index;
+	switch (ShaderType)
+	{
+		case ShaderType_Vertex:	Index = pMeta->SlotIndex; break;
+		case ShaderType_Pixel:	Index = CB_Slot_Count + pMeta->SlotIndex; break;
+		default:				FAIL;
+	};
+
+	//???control user not to bound the same CB to different stages?
+
+	CCBRec& CurrCBRec = CurrCB[Index];
+	if (CurrCBRec.CB.GetUnsafe() == pCBuffer) OK;
+	CurrCBRec.CB = (CD3D9ConstantBuffer*)pCBuffer;
+	if (pCBuffer) CurrCBRec.ApplyFlags.Set(CB_ApplyAll);
+	else CurrCBRec.ApplyFlags.ClearAll();
+	CurrCBRec.pMeta = NULL;
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
-	DWORD Index = (DWORD)Handle;
+	if (!Handle) FAIL;
+	CD3D9ShaderRsrcMeta* pMeta = (CD3D9ShaderRsrcMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Handle);
+	if (!pMeta) FAIL;
+
+	UPTR Index = pMeta->Register;
 	DWORD D3DSamplerIndex;
 	if (ShaderType == ShaderType_Vertex)
 	{
@@ -1107,7 +1137,11 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.GetUnsafe();
 	n_assert_dbg(pD3DSampler);
 
-	DWORD Index = (DWORD)Handle;
+	if (!Handle) FAIL;
+	CD3D9ShaderRsrcMeta* pMeta = (CD3D9ShaderRsrcMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Handle);
+	if (!pMeta) FAIL;
+
+	UPTR Index = pMeta->Register;
 	DWORD D3DSSIndex;
 	if (ShaderType == ShaderType_Vertex)
 	{
@@ -1146,10 +1180,11 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 
 bool CD3D9GPUDriver::BeginFrame()
 {
-	return pD3DDevice && SUCCEEDED(pD3DDevice->BeginScene());
+	n_assert_dbg(!IsInsideFrame);
+	if (!pD3DDevice) FAIL;
+	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
+	return IsInsideFrame;
 
-//	n_assert(!IsInsideFrame);
-//
 //	PrimsRendered = 0;
 //	DIPsRendered = 0;
 //
@@ -1163,22 +1198,17 @@ bool CD3D9GPUDriver::BeginFrame()
 //		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
 //	}
 //
-//	// CEGUI overwrites this value without restoring it, so restore each frame
+//	// CEGUI D3D9 renderer overwrites this value without restoring it, so restore each frame
 //	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
-//
-//	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
-//	return IsInsideFrame;
 }
 //---------------------------------------------------------------------
 
 void CD3D9GPUDriver::EndFrame()
 {
-	pD3DDevice->EndScene();
+	n_assert_dbg(IsInsideFrame);
+	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
+	IsInsideFrame = false;
 
-//	n_assert(IsInsideFrame);
-//	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
-//	IsInsideFrame = false;
-//
 //	//???is all below necessary? PIX requires it for debugging frame
 //	for (int i = 0; i < MaxVertexStreamCount; ++i)
 //		CurrVB[i] = NULL;
@@ -1250,6 +1280,67 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 		case Prim_TriList:		D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
 		case Prim_TriStrip:		D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
 		default:				Sys::Error("CD3D9GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+	}
+
+	// Apply pending shader constants
+	//if (CBApplyFlags.IsAny())
+	{
+		// We must refresh cached metadata pointer before use, no persistence guaranteed
+		for (UPTR i = 0; i < CB_Slot_Count; ++i)
+		{
+			CCBRec& Rec = CurrCB[i];
+			if (Rec.ApplyFlags.IsAny())
+			{
+				Rec.pMeta = (const CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Rec.CB->GetHandle());
+				if (!Rec.pMeta)
+				{
+					// Unbind immediately if host shader is destroyed, because metadata is inaccessible
+					Rec.CB = NULL;
+					Rec.ApplyFlags.ClearAll();
+				}
+			}
+		}
+
+		// VS
+		UPTR CurrConst = 0;
+		UPTR MinNextStart = UINTPTR_MAX;
+		//UPTR FoundRangeSize = 0;
+		CCBRec* pFoundRec = NULL;
+		for (UPTR i = 0; i < CB_Slot_Count; ++i)
+		{
+			CCBRec& Rec = CurrCB[i];
+			if (Rec.ApplyFlags.IsNot(CB_ApplyFloat4)) continue;
+
+			const CFixedArray<CRange>& Ranges = Rec.pMeta->Float4;
+			for (UPTR j = Rec.NextRange; j < Ranges.GetCount(); ++j)
+			{
+				CRange& Range = Ranges[j];
+				if (Range.Start < MinNextStart)
+				{
+					MinNextStart = Range.Start;
+					//FoundRangeSize = Range.Count;
+					//pFoundRec = &Rec;
+					Rec.NextRange = j + 1;
+					break;
+				}
+			}
+
+			n_assert_dbg(MinNextStart >= CurrConst);
+			if (MinNextStart == CurrConst) break;
+		}
+
+		// if not found, MinNextStart == UINTPTR_MAX
+		CurrConst = MinNextStart;
+		// scan for the found range size, add changed values to the commit list
+
+		////////////////////////////////////////////////////////////////
+		// PS
+		for (UPTR i = CB_Slot_Count; i < 2 * CB_Slot_Count; ++i)
+		{
+		}
+		////////////////////////////////////////////////////////////////
+
+		NOT_IMPLEMENTED_MSG("CB Apply Flags");
 	}
 
 	HRESULT hr;
@@ -1467,11 +1558,15 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Index
 }
 //---------------------------------------------------------------------
 
-// Float, int, bool count and registers
 PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData)
 {
-	NOT_IMPLEMENTED;
-	return NULL;
+	if (!pD3DDevice || !hBuffer) return NULL;
+	CD3D9ShaderBufferMeta* pMeta = (CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(hBuffer);
+	if (!pMeta) return NULL;
+
+	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
+	if (!CB->Create(*pMeta)) return NULL;
+	return CB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -2334,21 +2429,76 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 
 bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 {
-	NOT_IMPLEMENTED;
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size)
 {
-	NOT_IMPLEMENTED;
-	OK;
+	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
+
+	if (!hConst) FAIL;
+	CD3D9ShaderConstMeta* pMeta = (CD3D9ShaderConstMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(hConst);
+	if (!pMeta) FAIL;
+
+	CD3D9ShaderBufferMeta* pBufferMeta = (CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(pMeta->BufferHandle);
+	if (!pBufferMeta) FAIL;
+
+	CFixedArray<CRange>* pRanges = NULL;
+	switch (pMeta->RegSet)
+	{
+		case Reg_Float4:	pRanges = &pBufferMeta->Float4; break;
+		case Reg_Int4:		pRanges = &pBufferMeta->Int4; break;
+		case Reg_Bool:		pRanges = &pBufferMeta->Bool; break;
+		default:			FAIL;
+	};
+
+	UPTR Offset = 0;
+	for (UPTR i = 0; i < pRanges->GetCount(); ++i)
+	{
+		CRange& Range = pRanges->operator[](i);
+		if (Range.Start > pMeta->Offset) FAIL; // As ranges are sorted ascending
+		if (Range.Start + Range.Count <= pMeta->Offset)
+		{
+			Offset += Range.Count;
+			continue;
+		}
+		n_assert(Range.Start + Range.Count >= pMeta->Offset + pMeta->Size);
+
+		Offset += pMeta->Offset - Range.Start;
+
+		CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
+		CB9.WriteData(pMeta->RegSet, Offset, pData, Size);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 {
-	NOT_IMPLEMENTED;
+	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
+
+	if (CB9.IsDirty())
+	{
+		// For now, the same CB can't be bound to different shader stages
+		for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+		{
+			CCBRec& Rec = CurrCB[i];
+			CD3D9ConstantBuffer* pCurrCB = Rec.CB.GetUnsafe();
+			if (pCurrCB == &CB9)
+			{
+				if (CB9.IsDirtyFloat4()) Rec.ApplyFlags.Set(CB_ApplyFloat4);
+				if (CB9.IsDirtyInt4()) Rec.ApplyFlags.Set(CB_ApplyInt4);
+				if (CB9.IsDirtyBool()) Rec.ApplyFlags.Set(CB_ApplyBool);
+				break;
+			}
+		}
+	}
+
+	CB9.OnCommit();
 	OK;
 }
 //---------------------------------------------------------------------

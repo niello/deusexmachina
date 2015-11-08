@@ -162,6 +162,14 @@ HConstBuffer CD3D11Shader::GetConstBufferHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+HConstBuffer CD3D11Shader::GetConstBufferHandle(HConst hConst) const
+{
+	if (!hConst) return INVALID_HANDLE;
+	CConstMeta* pMeta = (CConstMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hConst);
+	return pMeta ? pMeta->BufferHandle : INVALID_HANDLE;
+}
+//---------------------------------------------------------------------
+
 HResource CD3D11Shader::GetResourceHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!

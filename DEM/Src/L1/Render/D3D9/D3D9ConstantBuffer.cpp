@@ -10,35 +10,77 @@ namespace Render
 __ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
 
 //!!!???assert destroyed?!
-bool CD3D9ConstantBuffer::Create(/*pfloatregs, floatcount, pintregs, intcount*/)
+bool CD3D9ConstantBuffer::Create(const CD3D9ShaderBufferMeta& Meta)
 {
-	//if (!pCB || !pD3DDeviceCtx) FAIL;
+	Float4Count = 0;
+	const CFixedArray<CRange>& Float4 = Meta.Float4;
+	for (UPTR i = 0; i < Float4.GetCount(); ++i)
+		Float4Count += Float4[i].Count;
 
-	//!!!allocate one chunk of memory and setup pointers!
-	//sort by register, if !sorted
-	//can check if sorted or just always sort
+	Int4Count = 0;
+	const CFixedArray<CRange>& Int4 = Meta.Int4;
+	for (UPTR i = 0; i < Int4.GetCount(); ++i)
+		Int4Count += Int4[i].Count;
 
-	NOT_IMPLEMENTED;
+	BoolCount = 0;
+	const CFixedArray<CRange>& Bool = Meta.Bool;
+	for (UPTR i = 0; i < Bool.GetCount(); ++i)
+		BoolCount += Bool[i].Count;
+
+	UPTR Float4Size = Float4Count * sizeof(float) * 4;
+	UPTR Int4Size = Int4Count * sizeof(int) * 4;
+	UPTR BoolSize = BoolCount * sizeof(BOOL);
+	UPTR TotalSize = Float4Size + Int4Size + BoolSize;
+	if (!TotalSize) FAIL;
+
+	char* pData = (char*)n_malloc_aligned(TotalSize, 16);
+	if (!pData)
+	{
+		Float4Count = 0;
+		Int4Count = 0;
+		BoolCount = 0;
+		FAIL;
+	}
+
+	// Documented SM 3.0 defaults are 0, 0.f and FALSE
+	memset(pData, 0, TotalSize);
+
+	if (Float4Size)
+	{
+		pFloat4Data = (float*)pData;
+		pData += Float4Size;
+	}
+
+	if (Int4Size)
+	{
+		pInt4Data = (int*)pData;
+		pData += Int4Size;
+	}
+
+	if (BoolSize)
+	{
+		pBoolData = (BOOL*)pData;
+		pData += BoolSize;
+	}
+
+	Handle = Meta.Handle;
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CD3D9ConstantBuffer::InternalDestroy()
 {
-	if (pFloat4Data)
-	{
-		n_free(pFloat4Data);
-		pFloat4Data = NULL;
-	}
-	else if (pInt4Data)
-	{
-		n_free(pInt4Data);
-	}
-	pFloat4Registers = NULL;
-	Float4Count = 0;
+	if (pFloat4Data) n_free_aligned(pFloat4Data);
+	else if (pInt4Data) n_free_aligned(pInt4Data);
+	else if (pBoolData) n_free_aligned(pBoolData);
+	pFloat4Data = NULL;
 	pInt4Data = NULL;
-	pInt4Registers = NULL;
+	pBoolData = NULL;
+	Float4Count = 0;
 	Int4Count = 0;
+	BoolCount = 0;
+	Handle = INVALID_HANDLE;
 }
 //---------------------------------------------------------------------
 
