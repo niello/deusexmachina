@@ -53,6 +53,7 @@ protected:
 		PD3D9ConstantBuffer				CB;
 		Data::CFlags					ApplyFlags;
 		UPTR							NextRange;
+		UPTR							CurrRangeOffset;
 		const CD3D9ShaderBufferMeta*	pMeta;		// Request from handle before use, may not persist over the frame if host shader destroyed
 	};
 
@@ -63,9 +64,17 @@ protected:
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
 	PD3D9RenderState					CurrRS;
-	CFixedArray<CCBRec>					CurrCB;			// CB_Slot_Count vertex, then CB_Slot_Count pixel
-	CFixedArray<PD3D9Sampler>			CurrSS;			// Pixel, then vertex
-	CFixedArray<PD3D9Texture>			CurrTex;		// Pixel, then vertex
+	CFixedArray<CCBRec>					CurrCB;				// CB_Slot_Count vertex, then CB_Slot_Count pixel
+	CFixedArray<PD3D9Sampler>			CurrSS;				// Pixel, then vertex
+	CFixedArray<PD3D9Texture>			CurrTex;			// Pixel, then vertex
+
+	char*								pCurrShaderConsts;	// Main aligned pointer, for deallocation, next ones are offset pointers
+	float*								pCurrVSFloat4;		// D3DCaps.MaxVertexShaderConst * float4
+	int*								pCurrVSInt4;		// 16 * int4
+	BOOL*								pCurrVSBool;		// 16 * BOOL
+	float*								pCurrPSFloat4;		// 224 * float4
+	int*								pCurrPSInt4;		// 16 * int4
+	BOOL*								pCurrPSBool;		// 16 * BOOL
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
@@ -81,7 +90,7 @@ protected:
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
-	CD3D9GPUDriver(): SwapChains(1, 1), pD3DDevice(NULL), IsInsideFrame(false) {}
+	CD3D9GPUDriver();
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
 	bool						OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -192,6 +201,21 @@ public:
 };
 
 typedef Ptr<CD3D9GPUDriver> PD3D9GPUDriver;
+
+inline CD3D9GPUDriver::CD3D9GPUDriver():
+	SwapChains(1, 1),
+	pD3DDevice(NULL),
+	pCurrShaderConsts(NULL),
+	pCurrVSFloat4(NULL),
+	pCurrVSInt4(NULL),
+	pCurrVSBool(NULL),
+	pCurrPSFloat4(NULL),
+	pCurrPSInt4(NULL),
+	pCurrPSBool(NULL),
+	IsInsideFrame(false)
+{
+}
+//---------------------------------------------------------------------
 
 }
 

@@ -217,6 +217,14 @@ void CD3D9GPUDriver::Release()
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
 
+	SAFE_FREE_ALIGNED(pCurrShaderConsts);
+	pCurrVSFloat4 = NULL;
+	pCurrVSInt4 = NULL;
+	pCurrVSBool = NULL;
+	pCurrPSFloat4 = NULL;
+	pCurrPSInt4 = NULL;
+	pCurrPSBool = NULL;
+
 	CurrCB.SetSize(0);
 	CurrSS.SetSize(0);
 	CurrTex.SetSize(0);
@@ -403,6 +411,23 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 	CurrCB.SetSize(2 * CB_Slot_Count);
 	CurrSS.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 	CurrTex.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
+
+	UPTR ConstsSizeTotal = (D3DCaps.MaxVertexShaderConst + 224) * sizeof(float) * 4 + 32 * sizeof(int) * 4 + 32 * sizeof(BOOL);
+	pCurrShaderConsts = (char*)n_malloc_aligned(ConstsSizeTotal, 16);
+	n_assert(pCurrShaderConsts);
+	memset(pCurrShaderConsts, 0, ConstsSizeTotal);
+	char* pCurrOffsetPtr = pCurrShaderConsts;
+	pCurrVSFloat4 = (float*)pCurrOffsetPtr;
+	pCurrOffsetPtr += D3DCaps.MaxVertexShaderConst * sizeof(float) * 4;
+	pCurrVSInt4 = (int*)pCurrOffsetPtr;
+	pCurrOffsetPtr += 16 * sizeof(int) * 4;
+	pCurrVSBool = (BOOL*)pCurrOffsetPtr;
+	pCurrOffsetPtr += 16 * sizeof(BOOL) * 4;
+	pCurrPSFloat4 = (float*)pCurrOffsetPtr;
+	pCurrOffsetPtr += 224 * sizeof(float) * 4;
+	pCurrPSInt4 = (int*)pCurrOffsetPtr;
+	pCurrOffsetPtr += 16 * sizeof(int) * 4;
+	pCurrPSBool = (BOOL*)pCurrOffsetPtr;
 
 	OK;
 }
@@ -1285,53 +1310,114 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 	// Apply pending shader constants
 	//if (CBApplyFlags.IsAny())
 	{
-		// We must refresh cached metadata pointer before use, no persistence guaranteed
+		// Initialize supplementary fields
+		// Also we must refresh cached metadata pointer before use, no persistence guaranteed
 		for (UPTR i = 0; i < CB_Slot_Count; ++i)
 		{
 			CCBRec& Rec = CurrCB[i];
 			if (Rec.ApplyFlags.IsAny())
 			{
 				Rec.pMeta = (const CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Rec.CB->GetHandle());
-				if (!Rec.pMeta)
+				if (Rec.pMeta)
 				{
-					// Unbind immediately if host shader is destroyed, because metadata is inaccessible
+					Rec.NextRange = 0;
+					Rec.CurrRangeOffset = 0;
+				}
+				else
+				{
+					// Unbind this buffer immediately if metadata is inaccessible (host shader is destroyed)
 					Rec.CB = NULL;
 					Rec.ApplyFlags.ClearAll();
 				}
 			}
 		}
 
-		// VS
+		// VS, Float4
 		UPTR CurrConst = 0;
-		UPTR MinNextStart = UINTPTR_MAX;
-		//UPTR FoundRangeSize = 0;
-		CCBRec* pFoundRec = NULL;
-		for (UPTR i = 0; i < CB_Slot_Count; ++i)
+		UPTR CommitListSize = 0;
+		UPTR CommitListEnd = 0;
+		while (CurrConst < D3DCaps.MaxVertexShaderConst) //!!!float4 only!
 		{
-			CCBRec& Rec = CurrCB[i];
-			if (Rec.ApplyFlags.IsNot(CB_ApplyFloat4)) continue;
+			// Find next range of constants in active buffers
 
-			const CFixedArray<CRange>& Ranges = Rec.pMeta->Float4;
-			for (UPTR j = Rec.NextRange; j < Ranges.GetCount(); ++j)
+			UPTR FoundRangeStart = UINTPTR_MAX;
+			UPTR FoundRangeEnd = 0;
+			CCBRec* pFoundRec = NULL;
+			for (UPTR i = 0; i < CB_Slot_Count; ++i)
 			{
-				CRange& Range = Ranges[j];
-				if (Range.Start < MinNextStart)
+				CCBRec& Rec = CurrCB[i];
+				if (Rec.ApplyFlags.IsNot(CB_ApplyFloat4)) continue;
+
+				UPTR j;
+				const CFixedArray<CRange>& Ranges = Rec.pMeta->Float4;
+				for (j = Rec.NextRange; j < Ranges.GetCount(); ++j)
 				{
-					MinNextStart = Range.Start;
-					//FoundRangeSize = Range.Count;
-					//pFoundRec = &Rec;
-					Rec.NextRange = j + 1;
-					break;
+					CRange& Range = Ranges[j];
+					UPTR RangeEnd = Range.Start + Range.Count;
+					if (RangeEnd > CurrConst)
+					{
+						Rec.NextRange = j;
+						UPTR RangeStart = n_max(Range.Start, CurrConst);
+						if (RangeStart < FoundRangeStart)
+						{
+							FoundRangeStart = RangeStart;
+							FoundRangeEnd = RangeEnd;
+							pFoundRec = &Rec;
+						}
+						break;
+					}
+					else Rec.CurrRangeOffset += Range.Count;
+				}
+
+				if (j >= Ranges.GetCount()) Rec.ApplyFlags.Clear(CB_ApplyFloat4);
+
+				if (FoundRangeStart == CurrConst) break;
+			}
+
+			if (FoundRangeStart == UINTPTR_MAX) break;
+
+			float* pBufferRangeData = pFoundRec->CB->GetFloat4Data() + (pFoundRec->CurrRangeOffset * 4);
+
+			// Scan range found and commit changes
+			for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+			{
+				if (CurrConst > CommitListEnd && CommitListSize)
+				{
+					// delayed memcpy at the range break
+
+					// Commit pending list
+					UPTR CommitListStart = CommitListEnd - CommitListSize;
+					pD3DDevice->SetVertexShaderConstantF(CommitListStart, pCurrVSFloat4 + (CommitListStart * 4), CommitListSize);
+					CommitListSize = 0;
+				}
+
+				float* pCurrValue = pCurrVSFloat4 + (CurrConst * 4);
+				float* pBufferValue = pBufferRangeData + ((CurrConst - FoundRangeStart) * 4);
+				n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));
+				if (memcmp(pCurrValue, pBufferValue, sizeof(float) * 4) != 0) //!!!???write a16 optimized version, just a 2 float4 comparison?!
+				{
+					// Update changed value and add it to a commit list
+					memcpy(pCurrValue, pBufferValue, sizeof(float) * 4); //!!!PERF:can delay till break or range end, collect more data to copy!
+					if (!CommitListSize) CommitListEnd = CurrConst;
+					++CommitListEnd;
+					++CommitListSize;
 				}
 			}
 
-			n_assert_dbg(MinNextStart >= CurrConst);
-			if (MinNextStart == CurrConst) break;
+			// delayed memcpy at the range end
+
+			++pFoundRec->NextRange;
+			pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
 		}
 
-		// if not found, MinNextStart == UINTPTR_MAX
-		CurrConst = MinNextStart;
-		// scan for the found range size, add changed values to the commit list
+		if (CommitListSize)
+		{
+			// Commit the last pending list
+			UPTR CommitListStart = CommitListEnd - CommitListSize;
+			pD3DDevice->SetVertexShaderConstantF(CommitListStart, pCurrVSFloat4 + (CommitListStart * 4), CommitListSize);
+		}
+
+		////////// algorithm end //////////////////////
 
 		////////////////////////////////////////////////////////////////
 		// PS
@@ -1339,8 +1425,6 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 		{
 		}
 		////////////////////////////////////////////////////////////////
-
-		NOT_IMPLEMENTED_MSG("CB Apply Flags");
 	}
 
 	HRESULT hr;
