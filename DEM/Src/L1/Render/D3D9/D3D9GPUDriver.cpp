@@ -252,6 +252,513 @@ void CD3D9GPUDriver::Release()
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR CurrConst, UPTR ApplyFlag,
+											   UPTR& FoundRangeStart, UPTR& FoundRangeEnd, CCBRec*& pFoundRec)
+{
+	FoundRangeStart = UINTPTR_MAX;
+
+	for (UPTR i = BufStart; i < BufEnd; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.IsNot(ApplyFlag)) continue;
+		n_assert_dbg(Rec.CB.IsValidPtr());
+
+		UPTR j;
+		const CFixedArray<CRange>* pRanges;
+		switch (ApplyFlag)
+		{
+			case CB_ApplyFloat4:	pRanges = &Rec.pMeta->Float4; break;
+			case CB_ApplyInt4:		pRanges = &Rec.pMeta->Int4; break;
+			case CB_ApplyBool:		pRanges = &Rec.pMeta->Bool; break;
+			default:				FAIL;
+		};
+
+		for (j = Rec.NextRange; j < pRanges->GetCount(); ++j)
+		{
+			CRange& Range = pRanges->operator[](j);
+			UPTR RangeStart = Range.Start;
+			UPTR RangeEnd = RangeStart + Range.Count;
+			if (RangeEnd > CurrConst)
+			{
+				Rec.NextRange = j;
+
+				if (RangeStart < CurrConst)
+				{
+					// Skip already updated registers
+					Rec.CurrRangeOffset += CurrConst - RangeStart;
+					RangeStart = CurrConst;
+				}
+
+				if (RangeStart < FoundRangeStart)
+				{
+					FoundRangeStart = RangeStart;
+					FoundRangeEnd = RangeEnd;
+					pFoundRec = &Rec;
+				}
+						
+				break;
+			}
+			else Rec.CurrRangeOffset += Range.Count;
+		}
+
+		if (j >= pRanges->GetCount()) Rec.ApplyFlags.Clear(ApplyFlag);
+
+		if (FoundRangeStart == CurrConst) OK;
+	}
+
+	return FoundRangeStart != UINTPTR_MAX;
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::ApplyShaderConstChanges()
+{
+	// We must refresh cached metadata pointer before use, no persistence guaranteed
+	for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.IsAny())
+		{
+			Rec.pMeta = (const CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Rec.CB->GetHandle());
+			if (!Rec.pMeta)
+			{
+				// Unbind this buffer immediately if metadata is inaccessible (host shader is destroyed)
+				Rec.CB = NULL;
+				Rec.ApplyFlags.ClearAll();
+			}
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////
+	// VS Float4
+
+	// Initialize supplementary fields
+	for (UPTR i = 0; i < CB_Slot_Count; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.Is(CB_ApplyFloat4))
+		{
+			Rec.NextRange = 0;
+			Rec.CurrRangeOffset = 0;
+		}
+	}
+
+	UPTR CurrConst = 0;
+	UPTR CommitListSize = 0;
+	UPTR CommitListEnd = 0;
+
+	const UPTR MaxVSFloatConsts = D3DCaps.MaxVertexShaderConst;
+	while (CurrConst < MaxVSFloatConsts)
+	{
+		// Find next range of constants in active buffers
+		UPTR FoundRangeStart;
+		UPTR FoundRangeEnd;
+		CCBRec* pFoundRec;
+		if (!FindNextShaderConstRegion(0, CB_Slot_Count, CurrConst, CB_ApplyFloat4, FoundRangeStart, FoundRangeEnd, pFoundRec)) break;
+		n_assert_dbg(FoundRangeEnd <= MaxVSFloatConsts);
+
+		const float* pBufferRangeData = pFoundRec->CB->GetFloat4Data() + (pFoundRec->CurrRangeOffset * 4);
+
+		// Scan range found and commit changes
+		for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+		{
+			if (CurrConst > CommitListEnd && CommitListSize)
+			{
+				// Commit pending list
+				UPTR CommitListStart = CommitListEnd - CommitListSize;
+				pD3DDevice->SetVertexShaderConstantF(CommitListStart, pCurrVSFloat4 + (CommitListStart * 4), CommitListSize);
+				CommitListSize = 0;
+			}
+
+			float* pCurrValue = pCurrVSFloat4 + (CurrConst * 4);
+			const float* pBufferValue = pBufferRangeData + ((CurrConst - FoundRangeStart) * 4);
+			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			__m128 BufferValue = _mm_load_ps(pBufferValue);
+			if (_mm_movemask_ps(_mm_cmpneq_ps(_mm_load_ps(pCurrValue), BufferValue)))
+			{
+				// Update changed value and add it to a commit list
+				_mm_store_ps(pCurrValue, BufferValue);
+				if (CommitListSize)
+				{
+					++CommitListEnd;
+					++CommitListSize;
+				}
+				else
+				{
+					CommitListEnd = CurrConst + 1;
+					CommitListSize = 1;
+				}
+			}
+		}
+
+		++pFoundRec->NextRange;
+		pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
+	}
+
+	if (CommitListSize)
+	{
+		// Commit the last pending list
+		UPTR CommitListStart = CommitListEnd - CommitListSize;
+		pD3DDevice->SetVertexShaderConstantF(CommitListStart, pCurrVSFloat4 + (CommitListStart * 4), CommitListSize);
+	}
+
+	///////////////////////////////////////////////////////////////////
+	// VS Int4
+
+	// Initialize supplementary fields
+	for (UPTR i = 0; i < CB_Slot_Count; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.Is(CB_ApplyInt4))
+		{
+			Rec.NextRange = 0;
+			Rec.CurrRangeOffset = 0;
+		}
+	}
+
+	CurrConst = 0;
+	CommitListSize = 0;
+	CommitListEnd = 0;
+
+	while (CurrConst < SM30_VS_Int4Count)
+	{
+		// Find next range of constants in active buffers
+		UPTR FoundRangeStart;
+		UPTR FoundRangeEnd;
+		CCBRec* pFoundRec;
+		if (!FindNextShaderConstRegion(0, CB_Slot_Count, CurrConst, CB_ApplyInt4, FoundRangeStart, FoundRangeEnd, pFoundRec)) break;
+		n_assert_dbg(FoundRangeEnd <= SM30_VS_Int4Count);
+
+		const int* pBufferRangeData = pFoundRec->CB->GetInt4Data() + (pFoundRec->CurrRangeOffset * 4);
+
+		// Scan range found and commit changes
+		for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+		{
+			if (CurrConst > CommitListEnd && CommitListSize)
+			{
+				// Commit pending list
+				UPTR CommitListStart = CommitListEnd - CommitListSize;
+				pD3DDevice->SetVertexShaderConstantI(CommitListStart, pCurrVSInt4 + (CommitListStart * 4), CommitListSize);
+				CommitListSize = 0;
+			}
+
+			__m128i* pCurrValue = (__m128i*)(pCurrVSInt4 + (CurrConst * 4));
+			const __m128i* pBufferValue = (const __m128i*)(pBufferRangeData + ((CurrConst - FoundRangeStart) * 4));
+			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			__m128i BufferValue = _mm_load_si128(pBufferValue);
+			if (_mm_movemask_epi8(_mm_cmpeq_epi32(_mm_load_si128(pCurrValue), BufferValue)))
+			{
+				// Update changed value and add it to a commit list
+				_mm_store_si128(pCurrValue, BufferValue);
+				if (CommitListSize)
+				{
+					++CommitListEnd;
+					++CommitListSize;
+				}
+				else
+				{
+					CommitListEnd = CurrConst + 1;
+					CommitListSize = 1;
+				}
+			}
+		}
+
+		++pFoundRec->NextRange;
+		pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
+	}
+
+	if (CommitListSize)
+	{
+		// Commit the last pending list
+		UPTR CommitListStart = CommitListEnd - CommitListSize;
+		pD3DDevice->SetVertexShaderConstantI(CommitListStart, pCurrVSInt4 + (CommitListStart * 4), CommitListSize);
+	}
+
+	///////////////////////////////////////////////////////////////////
+	// VS Bool
+
+	// Initialize supplementary fields
+	for (UPTR i = 0; i < CB_Slot_Count; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.Is(CB_ApplyBool))
+		{
+			Rec.NextRange = 0;
+			Rec.CurrRangeOffset = 0;
+		}
+	}
+
+	CurrConst = 0;
+	CommitListSize = 0;
+	CommitListEnd = 0;
+
+	while (CurrConst < SM30_VS_BoolCount)
+	{
+		// Find next range of constants in active buffers
+		UPTR FoundRangeStart;
+		UPTR FoundRangeEnd;
+		CCBRec* pFoundRec;
+		if (!FindNextShaderConstRegion(0, CB_Slot_Count, CurrConst, CB_ApplyBool, FoundRangeStart, FoundRangeEnd, pFoundRec)) break;
+		n_assert_dbg(FoundRangeEnd <= SM30_VS_BoolCount);
+
+		const BOOL* pBufferRangeData = pFoundRec->CB->GetBoolData() + pFoundRec->CurrRangeOffset;
+
+		// Scan range found and commit changes
+		for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+		{
+			if (CurrConst > CommitListEnd && CommitListSize)
+			{
+				// Commit pending list
+				UPTR CommitListStart = CommitListEnd - CommitListSize;
+				pD3DDevice->SetVertexShaderConstantB(CommitListStart, pCurrVSBool + CommitListStart, CommitListSize);
+				CommitListSize = 0;
+			}
+
+			BOOL* pCurrValue = pCurrVSBool + CurrConst;
+			BOOL BufferValue = *(pBufferRangeData + (CurrConst - FoundRangeStart));
+			if (*pCurrValue != BufferValue)
+			{
+				// Update changed value and add it to a commit list
+				*pCurrValue = BufferValue;
+				if (CommitListSize)
+				{
+					++CommitListEnd;
+					++CommitListSize;
+				}
+				else
+				{
+					CommitListEnd = CurrConst + 1;
+					CommitListSize = 1;
+				}
+			}
+		}
+
+		++pFoundRec->NextRange;
+		pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
+	}
+
+	if (CommitListSize)
+	{
+		// Commit the last pending list
+		UPTR CommitListStart = CommitListEnd - CommitListSize;
+		pD3DDevice->SetVertexShaderConstantB(CommitListStart, pCurrVSBool + CommitListStart, CommitListSize);
+	}
+
+	///////////////////////////////////////////////////////////////////
+	// PS Float4
+
+	// Initialize supplementary fields
+	for (UPTR i = CB_Slot_Count; i < 2 * CB_Slot_Count; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.Is(CB_ApplyFloat4))
+		{
+			Rec.NextRange = 0;
+			Rec.CurrRangeOffset = 0;
+		}
+	}
+
+	CurrConst = 0;
+	CommitListSize = 0;
+	CommitListEnd = 0;
+
+	while (CurrConst < SM30_PS_Float4Count)
+	{
+		// Find next range of constants in active buffers
+		UPTR FoundRangeStart;
+		UPTR FoundRangeEnd;
+		CCBRec* pFoundRec;
+		if (!FindNextShaderConstRegion(CB_Slot_Count, 2 * CB_Slot_Count, CurrConst, CB_ApplyFloat4, FoundRangeStart, FoundRangeEnd, pFoundRec)) break;
+		n_assert_dbg(FoundRangeEnd <= SM30_PS_Float4Count);
+
+		const float* pBufferRangeData = pFoundRec->CB->GetFloat4Data() + (pFoundRec->CurrRangeOffset * 4);
+
+		// Scan range found and commit changes
+		for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+		{
+			if (CurrConst > CommitListEnd && CommitListSize)
+			{
+				// Commit pending list
+				UPTR CommitListStart = CommitListEnd - CommitListSize;
+				pD3DDevice->SetPixelShaderConstantF(CommitListStart, pCurrPSFloat4 + (CommitListStart * 4), CommitListSize);
+				CommitListSize = 0;
+			}
+
+			float* pCurrValue = pCurrPSFloat4 + (CurrConst * 4);
+			const float* pBufferValue = pBufferRangeData + ((CurrConst - FoundRangeStart) * 4);
+			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			__m128 BufferValue = _mm_load_ps(pBufferValue);
+			if (_mm_movemask_ps(_mm_cmpneq_ps(_mm_load_ps(pCurrValue), BufferValue)))
+			{
+				// Update changed value and add it to a commit list
+				_mm_store_ps(pCurrValue, BufferValue);
+				if (CommitListSize)
+				{
+					++CommitListEnd;
+					++CommitListSize;
+				}
+				else
+				{
+					CommitListEnd = CurrConst + 1;
+					CommitListSize = 1;
+				}
+			}
+		}
+
+		++pFoundRec->NextRange;
+		pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
+	}
+
+	if (CommitListSize)
+	{
+		// Commit the last pending list
+		UPTR CommitListStart = CommitListEnd - CommitListSize;
+		pD3DDevice->SetPixelShaderConstantF(CommitListStart, pCurrPSFloat4 + (CommitListStart * 4), CommitListSize);
+	}
+
+	///////////////////////////////////////////////////////////////////
+	// PS Int4
+
+	// Initialize supplementary fields
+	for (UPTR i = CB_Slot_Count; i < 2 * CB_Slot_Count; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.Is(CB_ApplyInt4))
+		{
+			Rec.NextRange = 0;
+			Rec.CurrRangeOffset = 0;
+		}
+	}
+
+	CurrConst = 0;
+	CommitListSize = 0;
+	CommitListEnd = 0;
+
+	while (CurrConst < SM30_PS_Int4Count)
+	{
+		// Find next range of constants in active buffers
+		UPTR FoundRangeStart;
+		UPTR FoundRangeEnd;
+		CCBRec* pFoundRec;
+		if (!FindNextShaderConstRegion(CB_Slot_Count, 2 * CB_Slot_Count, CurrConst, CB_ApplyInt4, FoundRangeStart, FoundRangeEnd, pFoundRec)) break;
+		n_assert_dbg(FoundRangeEnd <= SM30_PS_Int4Count);
+
+		const int* pBufferRangeData = pFoundRec->CB->GetInt4Data() + (pFoundRec->CurrRangeOffset * 4);
+
+		// Scan range found and commit changes
+		for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+		{
+			if (CurrConst > CommitListEnd && CommitListSize)
+			{
+				// Commit pending list
+				UPTR CommitListStart = CommitListEnd - CommitListSize;
+				pD3DDevice->SetPixelShaderConstantI(CommitListStart, pCurrPSInt4 + (CommitListStart * 4), CommitListSize);
+				CommitListSize = 0;
+			}
+
+			__m128i* pCurrValue = (__m128i*)(pCurrPSInt4 + (CurrConst * 4));
+			const __m128i* pBufferValue = (const __m128i*)(pBufferRangeData + ((CurrConst - FoundRangeStart) * 4));
+			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			__m128i BufferValue = _mm_load_si128(pBufferValue);
+			if (_mm_movemask_epi8(_mm_cmpeq_epi32(_mm_load_si128(pCurrValue), BufferValue)))
+			{
+				// Update changed value and add it to a commit list
+				_mm_store_si128(pCurrValue, BufferValue);
+				if (CommitListSize)
+				{
+					++CommitListEnd;
+					++CommitListSize;
+				}
+				else
+				{
+					CommitListEnd = CurrConst + 1;
+					CommitListSize = 1;
+				}
+			}
+		}
+
+		++pFoundRec->NextRange;
+		pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
+	}
+
+	if (CommitListSize)
+	{
+		// Commit the last pending list
+		UPTR CommitListStart = CommitListEnd - CommitListSize;
+		pD3DDevice->SetPixelShaderConstantI(CommitListStart, pCurrPSInt4 + (CommitListStart * 4), CommitListSize);
+	}
+
+	///////////////////////////////////////////////////////////////////
+	// PS Bool
+
+	// Initialize supplementary fields
+	for (UPTR i = CB_Slot_Count; i < 2 * CB_Slot_Count; ++i)
+	{
+		CCBRec& Rec = CurrCB[i];
+		if (Rec.ApplyFlags.Is(CB_ApplyBool))
+		{
+			Rec.NextRange = 0;
+			Rec.CurrRangeOffset = 0;
+		}
+	}
+
+	CurrConst = 0;
+	CommitListSize = 0;
+	CommitListEnd = 0;
+
+	while (CurrConst < SM30_PS_BoolCount)
+	{
+		// Find next range of constants in active buffers
+		UPTR FoundRangeStart;
+		UPTR FoundRangeEnd;
+		CCBRec* pFoundRec;
+		if (!FindNextShaderConstRegion(CB_Slot_Count, 2 * CB_Slot_Count, CurrConst, CB_ApplyBool, FoundRangeStart, FoundRangeEnd, pFoundRec)) break;
+		n_assert_dbg(FoundRangeEnd <= SM30_PS_BoolCount);
+
+		const BOOL* pBufferRangeData = pFoundRec->CB->GetBoolData() + pFoundRec->CurrRangeOffset;
+
+		// Scan range found and commit changes
+		for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
+		{
+			if (CurrConst > CommitListEnd && CommitListSize)
+			{
+				// Commit pending list
+				UPTR CommitListStart = CommitListEnd - CommitListSize;
+				pD3DDevice->SetPixelShaderConstantB(CommitListStart, pCurrPSBool + CommitListStart, CommitListSize);
+				CommitListSize = 0;
+			}
+
+			BOOL* pCurrValue = pCurrPSBool + CurrConst;
+			BOOL BufferValue = *(pBufferRangeData + (CurrConst - FoundRangeStart));
+			if (*pCurrValue != BufferValue)
+			{
+				// Update changed value and add it to a commit list
+				*pCurrValue = BufferValue;
+				if (CommitListSize)
+				{
+					++CommitListEnd;
+					++CommitListSize;
+				}
+				else
+				{
+					CommitListEnd = CurrConst + 1;
+					CommitListSize = 1;
+				}
+			}
+		}
+
+		++pFoundRec->NextRange;
+		pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
+	}
+
+	if (CommitListSize)
+	{
+		// Commit the last pending list
+		UPTR CommitListStart = CommitListEnd - CommitListSize;
+		pD3DDevice->SetPixelShaderConstantB(CommitListStart, pCurrPSBool + CommitListStart, CommitListSize);
+	}
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 {
 	n_assert(pD3DDevice);
@@ -412,7 +919,10 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 	CurrSS.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 	CurrTex.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 
-	UPTR ConstsSizeTotal = (D3DCaps.MaxVertexShaderConst + 224) * sizeof(float) * 4 + 32 * sizeof(int) * 4 + 32 * sizeof(BOOL);
+	UPTR ConstsSizeTotal =
+		(D3DCaps.MaxVertexShaderConst + SM30_PS_Float4Count) * sizeof(float) * 4 +
+		(SM30_VS_Int4Count + SM30_PS_Int4Count) * sizeof(int) * 4 +
+		(SM30_VS_BoolCount + SM30_PS_BoolCount) * sizeof(BOOL);
 	pCurrShaderConsts = (char*)n_malloc_aligned(ConstsSizeTotal, 16);
 	n_assert(pCurrShaderConsts);
 	memset(pCurrShaderConsts, 0, ConstsSizeTotal);
@@ -420,13 +930,13 @@ bool CD3D9GPUDriver::CreateD3DDevice(DWORD CurrAdapterID, EGPUDriverType CurrDri
 	pCurrVSFloat4 = (float*)pCurrOffsetPtr;
 	pCurrOffsetPtr += D3DCaps.MaxVertexShaderConst * sizeof(float) * 4;
 	pCurrVSInt4 = (int*)pCurrOffsetPtr;
-	pCurrOffsetPtr += 16 * sizeof(int) * 4;
+	pCurrOffsetPtr += SM30_VS_Int4Count * sizeof(int) * 4;
 	pCurrVSBool = (BOOL*)pCurrOffsetPtr;
-	pCurrOffsetPtr += 16 * sizeof(BOOL) * 4;
+	pCurrOffsetPtr += SM30_VS_BoolCount * sizeof(BOOL) * 4;
 	pCurrPSFloat4 = (float*)pCurrOffsetPtr;
-	pCurrOffsetPtr += 224 * sizeof(float) * 4;
+	pCurrOffsetPtr += SM30_PS_Float4Count * sizeof(float) * 4;
 	pCurrPSInt4 = (int*)pCurrOffsetPtr;
-	pCurrOffsetPtr += 16 * sizeof(int) * 4;
+	pCurrOffsetPtr += SM30_PS_Int4Count * sizeof(int) * 4;
 	pCurrPSBool = (BOOL*)pCurrOffsetPtr;
 
 	OK;
@@ -1307,125 +1817,7 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 		default:				Sys::Error("CD3D9GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
 	}
 
-	// Apply pending shader constants
-	//if (CBApplyFlags.IsAny())
-	{
-		// Initialize supplementary fields
-		// Also we must refresh cached metadata pointer before use, no persistence guaranteed
-		for (UPTR i = 0; i < CB_Slot_Count; ++i)
-		{
-			CCBRec& Rec = CurrCB[i];
-			if (Rec.ApplyFlags.IsAny())
-			{
-				Rec.pMeta = (const CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Rec.CB->GetHandle());
-				if (Rec.pMeta)
-				{
-					Rec.NextRange = 0;
-					Rec.CurrRangeOffset = 0;
-				}
-				else
-				{
-					// Unbind this buffer immediately if metadata is inaccessible (host shader is destroyed)
-					Rec.CB = NULL;
-					Rec.ApplyFlags.ClearAll();
-				}
-			}
-		}
-
-		// VS, Float4
-		UPTR CurrConst = 0;
-		UPTR CommitListSize = 0;
-		UPTR CommitListEnd = 0;
-		while (CurrConst < D3DCaps.MaxVertexShaderConst) //!!!float4 only!
-		{
-			// Find next range of constants in active buffers
-
-			UPTR FoundRangeStart = UINTPTR_MAX;
-			UPTR FoundRangeEnd = 0;
-			CCBRec* pFoundRec = NULL;
-			for (UPTR i = 0; i < CB_Slot_Count; ++i)
-			{
-				CCBRec& Rec = CurrCB[i];
-				if (Rec.ApplyFlags.IsNot(CB_ApplyFloat4)) continue;
-
-				UPTR j;
-				const CFixedArray<CRange>& Ranges = Rec.pMeta->Float4;
-				for (j = Rec.NextRange; j < Ranges.GetCount(); ++j)
-				{
-					CRange& Range = Ranges[j];
-					UPTR RangeEnd = Range.Start + Range.Count;
-					if (RangeEnd > CurrConst)
-					{
-						Rec.NextRange = j;
-						UPTR RangeStart = n_max(Range.Start, CurrConst);
-						if (RangeStart < FoundRangeStart)
-						{
-							FoundRangeStart = RangeStart;
-							FoundRangeEnd = RangeEnd;
-							pFoundRec = &Rec;
-						}
-						break;
-					}
-					else Rec.CurrRangeOffset += Range.Count;
-				}
-
-				if (j >= Ranges.GetCount()) Rec.ApplyFlags.Clear(CB_ApplyFloat4);
-
-				if (FoundRangeStart == CurrConst) break;
-			}
-
-			if (FoundRangeStart == UINTPTR_MAX) break;
-
-			float* pBufferRangeData = pFoundRec->CB->GetFloat4Data() + (pFoundRec->CurrRangeOffset * 4);
-
-			// Scan range found and commit changes
-			for (CurrConst = FoundRangeStart; CurrConst < FoundRangeEnd; ++CurrConst)
-			{
-				if (CurrConst > CommitListEnd && CommitListSize)
-				{
-					// delayed memcpy at the range break
-
-					// Commit pending list
-					UPTR CommitListStart = CommitListEnd - CommitListSize;
-					pD3DDevice->SetVertexShaderConstantF(CommitListStart, pCurrVSFloat4 + (CommitListStart * 4), CommitListSize);
-					CommitListSize = 0;
-				}
-
-				float* pCurrValue = pCurrVSFloat4 + (CurrConst * 4);
-				float* pBufferValue = pBufferRangeData + ((CurrConst - FoundRangeStart) * 4);
-				n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));
-				if (memcmp(pCurrValue, pBufferValue, sizeof(float) * 4) != 0) //!!!???write a16 optimized version, just a 2 float4 comparison?!
-				{
-					// Update changed value and add it to a commit list
-					memcpy(pCurrValue, pBufferValue, sizeof(float) * 4); //!!!PERF:can delay till break or range end, collect more data to copy!
-					if (!CommitListSize) CommitListEnd = CurrConst;
-					++CommitListEnd;
-					++CommitListSize;
-				}
-			}
-
-			// delayed memcpy at the range end
-
-			++pFoundRec->NextRange;
-			pFoundRec->CurrRangeOffset += (FoundRangeEnd - FoundRangeStart);
-		}
-
-		if (CommitListSize)
-		{
-			// Commit the last pending list
-			UPTR CommitListStart = CommitListEnd - CommitListSize;
-			pD3DDevice->SetVertexShaderConstantF(CommitListStart, pCurrVSFloat4 + (CommitListStart * 4), CommitListSize);
-		}
-
-		////////// algorithm end //////////////////////
-
-		////////////////////////////////////////////////////////////////
-		// PS
-		for (UPTR i = CB_Slot_Count; i < 2 * CB_Slot_Count; ++i)
-		{
-		}
-		////////////////////////////////////////////////////////////////
-	}
+	ApplyShaderConstChanges();
 
 	HRESULT hr;
 	if (PrimGroup.IndexCount > 0)

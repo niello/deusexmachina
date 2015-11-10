@@ -36,9 +36,14 @@ class CD3D9GPUDriver: public CGPUDriver
 
 protected:
 
-	static const UPTR SM30_PS_SamplerCount = 16;
-	static const UPTR SM30_VS_SamplerCount = 4;
 	static const UPTR CB_Slot_Count = 4;				// Pseudoregisters for CB binding
+	static const UPTR SM30_VS_Int4Count = 16;
+	static const UPTR SM30_VS_BoolCount = 16;
+	static const UPTR SM30_VS_SamplerCount = 4;
+	static const UPTR SM30_PS_Float4Count = 224;
+	static const UPTR SM30_PS_Int4Count = 16;
+	static const UPTR SM30_PS_BoolCount = 16;
+	static const UPTR SM30_PS_SamplerCount = 16;
 
 	enum
 	{
@@ -104,6 +109,8 @@ protected:
 	bool						InitSwapChainRenderTarget(CD3D9SwapChain& SC);
 	bool						Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD TargetSwapChainID);
 	void						Release();
+	bool						FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR CurrConst, UPTR ApplyFlag, UPTR& FoundRangeStart, UPTR& FoundRangeEnd, CCBRec*& pFoundRec);
+	void						ApplyShaderConstChanges();
 
 	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;

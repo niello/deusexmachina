@@ -55,7 +55,9 @@ public:
 	bool			IsDirtyInt4() const { return DirtyFlags.Is(CB9_DirtyInt4); }
 	bool			IsDirtyBool() const { return DirtyFlags.Is(CB9_DirtyBool); }
 	HConstBuffer	GetHandle() const { return Handle; }
-	float*			GetFloat4Data() const { return pFloat4Data; }
+	const float*	GetFloat4Data() const { return pFloat4Data; }
+	const int*		GetInt4Data() const { return pInt4Data; }
+	const BOOL*		GetBoolData() const { return pBoolData; }
 
 	void			OnCommit() { DirtyFlags.ClearAll(); }	// For internal use by the GPUDriver
 };
