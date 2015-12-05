@@ -23,12 +23,12 @@ protected:
 	};
 
 	CArray<CHandleRec>	HandleRecs;
-	DWORD				FirstFreeIndex;
-	DWORD				LastFreeIndex;
+	UPTR				FirstFreeIndex;
+	UPTR				LastFreeIndex;
 
 public:
 
-	CHandleManager(): HandleRecs(0, 128), FirstFreeIndex(INVALID_HALF_INDEX), LastFreeIndex(INVALID_HALF_INDEX) {}
+	CHandleManager(UPTR GrowSize = 128): HandleRecs(0, GrowSize), FirstFreeIndex(INVALID_HALF_INDEX), LastFreeIndex(INVALID_HALF_INDEX) {}
 
 	HHandle	OpenHandle(void* pData);
 	void*	GetHandleData(HHandle Handle) const;
@@ -38,8 +38,8 @@ public:
 
 inline void* CHandleManager::GetHandleData(HHandle Handle) const
 {
-	DWORD Index = UPTR_LOW_HALF(Handle);
-	if (Index >= (DWORD)HandleRecs.GetCount()) return NULL;
+	UPTR Index = UPTR_LOW_HALF(Handle);
+	if (Index >= (UPTR)HandleRecs.GetCount()) return NULL;
 	CHandleRec& Rec = HandleRecs[Index];
 	return UPTR_HIGH_HALF(Handle) == UPTR_HIGH_HALF(Rec.MagicAndNextFreeIndex) ? Rec.pData : NULL;
 }
@@ -47,9 +47,9 @@ inline void* CHandleManager::GetHandleData(HHandle Handle) const
 
 inline bool CHandleManager::IsHandleValid(HHandle Handle) const
 {
-	DWORD Index = UPTR_LOW_HALF(Handle);
+	UPTR Index = UPTR_LOW_HALF(Handle);
 	return
-		Index < (DWORD)HandleRecs.GetCount() &&
+		Index < (UPTR)HandleRecs.GetCount() &&
 		UPTR_HIGH_HALF(Handle) == UPTR_HIGH_HALF(HandleRecs[Index].MagicAndNextFreeIndex);
 }
 //---------------------------------------------------------------------

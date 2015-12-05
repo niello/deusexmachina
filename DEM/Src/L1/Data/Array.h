@@ -21,12 +21,12 @@ class CArray
 private:
 
 	T*		pData;
-	DWORD	Allocated;
-	DWORD	Count;
-	DWORD	GrowSize;
+	UPTR	Allocated;
+	UPTR	Count;
+	UPTR	GrowSize;
 
 	void	MakeIndexValid(DWORD Idx);
-	DWORD	GetActualGrowSize() { return (Flags.Is(Array_DoubleGrowSize) && Allocated) ? Allocated : GrowSize; }
+	UPTR	GetActualGrowSize() { return (Flags.Is(Array_DoubleGrowSize) && Allocated) ? Allocated : GrowSize; }
 	void	Grow();
 	void	GrowTo(DWORD NewCount);
 	void	Move(int FromIdx, int ToIdx);
@@ -38,8 +38,8 @@ public:
 	Data::CFlags	Flags; // CDict needs to access it
 
 	CArray(): pData(NULL), Allocated(0), Count(0), GrowSize(16), Flags(Array_KeepOrder) {}
-	CArray(DWORD _Count, DWORD _GrowSize);
-	CArray(DWORD _Count, DWORD _GrowSize, const T& Value);
+	CArray(UPTR _Count, UPTR _GrowSize);
+	CArray(UPTR _Count, UPTR _GrowSize, const T& Value);
 	CArray(const CArray<T>& Other): pData(NULL), Allocated(0), Count(0) { Copy(Other); }
 	~CArray();
 
@@ -107,7 +107,7 @@ public:
 
 // NB: '_GrowSize' can be zero to create a static preallocated array.
 template<class T>
-CArray<T>::CArray(DWORD _Count, DWORD _GrowSize):
+CArray<T>::CArray(UPTR _Count, UPTR _GrowSize):
 	GrowSize(_GrowSize),
 	Allocated(_Count),
 	Count(0),
@@ -118,7 +118,7 @@ CArray<T>::CArray(DWORD _Count, DWORD _GrowSize):
 //---------------------------------------------------------------------
 
 template<class T>
-CArray<T>::CArray(DWORD _Count, DWORD _GrowSize, const T& Value):
+CArray<T>::CArray(UPTR _Count, UPTR _GrowSize, const T& Value):
 	GrowSize(_GrowSize),
 	Allocated(_Count),
 	Count(_Count),

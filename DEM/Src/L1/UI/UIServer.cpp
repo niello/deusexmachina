@@ -14,6 +14,7 @@
 #include <UI/CEGUI/DEMLogger.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMResourceProvider.h>
+#include <UI/CEGUI/DEMViewportTarget.h>
 
 // CEGUI uses insecure function in a template class -_-
 #pragma warning(push)
@@ -48,6 +49,9 @@ CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char*
 
 	CEGUI::Logger::getSingleton().setLoggingLevel(CEGUI::Warnings);
 
+	//CEGUI::GUIContext& Ctx = CEGUISystem->createGUIContext(*n_new(CEGUI::CDEMViewportTarget(*Renderer)));
+	//Ctx.draw(); // renderer begin, ctx draw, renderer end, wnd mgr clean dead pool once per frame
+
 	//!!!to config!
 	ResourceProvider->setResourceGroupDirectory("schemes", "CEGUI:schemes/");
 	ResourceProvider->setResourceGroupDirectory("imagesets", "CEGUI:imagesets/");
@@ -61,6 +65,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char*
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
 
+	// CEGUI 0.7.x:
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
 	// as layout root with the MousePassThroughEnabled property set to true.
 	SUBSCRIBE_INPUT_EVENT(KeyDown, CUIServer, OnKeyDown, Input::InputPriority_UI);
@@ -84,7 +89,6 @@ CUIServer::~CUIServer()
 	CEGUI::System::destroy();
 	n_delete(XMLParser);
 	n_delete(ResourceProvider);
-	//!!!destroy resource provider etc (mb image codec)!
 	CEGUI::CDEMRenderer::destroy(*Renderer);
 	n_delete(Logger);
 

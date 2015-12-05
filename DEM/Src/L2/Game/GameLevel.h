@@ -3,9 +3,9 @@
 #define __DEM_L2_GAME_LEVEL_H__
 
 #include <Events/EventDispatcher.h>
-#include <Render/SPS.h>
+#include <Scene/SPS.h>
 #include <Scene/CameraManager.h> //!!!not Scene!
-#include <Render/Camera.h>
+#include <Frame/Camera.h>
 #include <Math/Rect.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).

@@ -86,6 +86,8 @@ bool CPropSceneNode::InternalActivate()
 		GetEntity()->FireEvent(CStrID("UpdateTransform"));
 	}
 
+	//???for each other active property of this entity call InitDependency(Prop)?
+	//switchcase of prop type and dependent code, centralized!
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) EnableSI(*pProp);
 
@@ -108,6 +110,7 @@ void CPropSceneNode::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(AfterTransforms);
 	UNSUBSCRIBE_EVENT(OnRenderDebug);
 
+	//???for each other active property of this entity call TermDependency(Prop)?
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
@@ -128,6 +131,7 @@ bool CPropSceneNode::OnPropActivated(Events::CEventDispatcher* pDispatcher, cons
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
 	if (!pProp) FAIL;
 
+	//???call InitDependency(Prop)?
 	if (pProp->IsA<CPropScriptable>())
 	{
 		EnableSI(*(CPropScriptable*)pProp);
@@ -144,6 +148,7 @@ bool CPropSceneNode::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, c
 	Game::CProperty* pProp = (Game::CProperty*)P->Get<PVOID>(CStrID("Prop"));
 	if (!pProp) FAIL;
 
+	//???call TermDependency(Prop)?
 	if (pProp->IsA<CPropScriptable>())
 	{
 		DisableSI(*(CPropScriptable*)pProp);

@@ -8,8 +8,6 @@
 
 // Declarations and utility functions
 
-//???different min, max and clamp functions here?
-
 #if defined(_MSC_VER) && (_MSC_VER < 1800) // Not tested with other versions
 #define isnan _isnan
 #define isinf _isinf

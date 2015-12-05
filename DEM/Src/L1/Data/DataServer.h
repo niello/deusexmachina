@@ -9,6 +9,7 @@
 #include <Data/HashTable.h>
 
 // Data server manages descs and data serialization schemes
+//!!!subject to removal!
 
 //???HRD/PRM - use loader objects or functions instead of server method?
 

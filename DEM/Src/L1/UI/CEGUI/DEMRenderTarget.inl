@@ -17,6 +17,13 @@ CDEMRenderTarget<T>::CDEMRenderTarget(CDEMRenderer& owner):
 //---------------------------------------------------------------------
 
 template <typename T>
+void CDEMRenderTarget<T>::draw(const GeometryBuffer& buffer)
+{
+	buffer.draw();
+}
+//---------------------------------------------------------------------
+
+template <typename T>
 void CDEMRenderTarget<T>::setArea(const Rectf& area)
 {
 	d_area = area;

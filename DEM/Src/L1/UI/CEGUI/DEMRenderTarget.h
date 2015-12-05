@@ -28,7 +28,7 @@ public:
 	CDEMRenderTarget(CDEMRenderer& owner);
 
 	// implement parts of RenderTarget interface
-	virtual void			draw(const GeometryBuffer& buffer) { buffer.draw(); }
+	virtual void			draw(const GeometryBuffer& buffer);
 	virtual void			draw(const RenderQueue& queue) { queue.draw(); }
 	virtual void			setArea(const Rectf& area);
 	virtual const Rectf&	getArea() const { return d_area; }

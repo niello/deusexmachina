@@ -12,6 +12,8 @@ class CAABB
 {
 public:
 
+	static const CAABB Empty;
+
 	enum
 	{
 		OUTSIDE     = 0,

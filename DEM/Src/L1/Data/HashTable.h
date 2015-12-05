@@ -103,7 +103,6 @@ public:
 
 	void		operator =(const CHashTable<TKey, TVal>& Other) { if (this != &Other) { Chains = Other.Chains; Count = Other.Count; } }
 	TVal&		operator [](const TKey& Key) const { return At(Key); }
-	//TVal&		operator[](const TKey& Key) { return At(Key); }
 };
 
 template<class TKey, class TVal>

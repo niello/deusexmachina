@@ -5,12 +5,10 @@
 #include <Math/AABB.h>
 #include <Data/FixedArray.h>
 
-//???write loose quadtree? Current variant is not so good.
-//???create child nodes on demand, using node pool?
-
 // Template quadtree spatial partitioning structure.
-// Define TObject and TStorage classes to get it working. TObject represents element placed in a
-// quadtree, TStorage stores that objects in a quadtree node, it can be a linked list, an array or smth.
+// Define TObject and TStorage classes to get it working.
+// TObject represents element placed in a quadtree.
+// TStorage stores that objects in a quadtree node. It can be a linked list, an array or smth.
 
 // TStorage interface requirements:
 // - typedef CIterator (defined as CHandle by a quadtree, is not necessary to use, but can be used for faster lookup in a storage)
@@ -18,6 +16,9 @@
 // - CIterator			Find(const TObject& Object);
 // - any-return-type	Remove(CIterator It);
 // - any-return-type	RemoveByValue(const TObject& Object);
+
+//!!!???write loose quadtree!? Current variant is not so good.
+//???create child nodes on demand, using node pool?
 
 namespace Data
 {
@@ -33,10 +34,10 @@ public:
 
 	vector2				Center;
 	vector2				Size;
-	uchar				Depth;
+	U8					Depth;
 	CFixedArray<CNode>	Nodes;
 
-	void	Build(ushort Col, ushort Row, uchar Level, CNode* pNode, CNode*& pFirstFreeNode);
+	void	Build(U16 Col, U16 Row, U8 Level, CNode* pNode, CNode*& pFirstFreeNode);
 	CNode*	RelocateAndUpdateCounters(CNode* pCurrNode, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const;
 
 public:
@@ -45,15 +46,15 @@ public:
 	{
 	protected:
 
-		DWORD							TotalObjCount;	// Total object count inside this node & its hierarchy
+		UPTR							TotalObjCount;	// Total object count inside this node & its hierarchy
 
 		CQuadTree<TObject, TStorage>*	pOwner;			// Now used only for getting position and size
 		CNode*							pParent;
 		CNode*							pChild;			// Pointer to the first element of CNode[4]
 
-		ushort							Col;
-		ushort							Row;
-		uchar							Level;
+		U16								Col;
+		U16								Row;
+		U8								Level;
 
 		template<class TObject, class TStorage> friend class CQuadTree;
 
@@ -70,24 +71,24 @@ public:
 		bool	SharesSpaceWith(const CNode& Other) const;
 		void	GetBounds(CAABB& Box) const;
 
-		uchar	GetLevel() const { return Level; }
+		U8		GetLevel() const { return Level; }
 		CNode*	GetParent() const { return pParent; }
-		CNode*	GetChild(DWORD Index) const { n_assert(Index < 4); return pChild + Index; }
-		DWORD	GetTotalObjCount() const { return TotalObjCount; }
+		CNode*	GetChild(UPTR Index) const { n_assert(Index < 4); return pChild + Index; }
+		UPTR	GetTotalObjCount() const { return TotalObjCount; }
 		bool	HasChildren() const { return pChild != NULL; }
 
 		//CQuadTree<TObject, TStorage>*	GetOwner() { return pOwner; }
 	};
 
 	CQuadTree() {}
-	CQuadTree(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth) { Build(CenterX, CenterZ, SizeX, SizeZ, TreeDepth); }
+	CQuadTree(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth) { Build(CenterX, CenterZ, SizeX, SizeZ, TreeDepth); }
 
-	void			Build(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth);
+	void			Build(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth);
 	void			AddObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pOutNode, CHandle* pOutHandle = NULL);
 	void			UpdateObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode, CHandle* pOutHandle = NULL);
 	void			UpdateHandle(CHandle& InOutHandle, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode);
 
-	CNode*			GetNode(ushort Col, ushort Row, uchar Level) const;
+	CNode*			GetNode(UPTR Col, UPTR Row, UPTR Level) const;
 	CNode*			GetRootNode() const { return &Nodes[0]; }
 	const vector2&	GetSize() const { return Size; }
 
@@ -190,7 +191,7 @@ void CQuadTree<TObject, TStorage>::CNode::GetBounds(CAABB& Box) const
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float SizeX, float SizeZ, uchar TreeDepth)
+void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth)
 {
 	n_assert(!Nodes.GetCount() && SizeX > 0.f && SizeZ > 0.f && TreeDepth > 0);
 
@@ -202,7 +203,7 @@ void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float Siz
 
 	Nodes.SetSize(0x55555555 & ((1 << (Depth << 1)) - 1));
 
-	for (DWORD i = 0; i < Nodes.GetCount(); ++i) Nodes[i].pOwner = this;
+	for (UPTR i = 0; i < Nodes.GetCount(); ++i) Nodes[i].pOwner = this;
 
 	CNode* pFirstFreeNode = &Nodes[1];
 	Nodes[0].pParent = NULL;
@@ -211,7 +212,7 @@ void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float Siz
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-void CQuadTree<TObject, TStorage>::Build(ushort Col, ushort Row, uchar Level, CNode* pNode, CNode*& pFirstFreeNode)
+void CQuadTree<TObject, TStorage>::Build(U16 Col, U16 Row, U8 Level, CNode* pNode, CNode*& pFirstFreeNode)
 {
 	pNode->Col = Col;
 	pNode->Row = Row;
@@ -222,7 +223,7 @@ void CQuadTree<TObject, TStorage>::Build(ushort Col, ushort Row, uchar Level, CN
 		pNode->pChild = pFirstFreeNode;
 		pFirstFreeNode += 4;
 
-		for (DWORD i = 0; i < 4; i++)
+		for (UPTR i = 0; i < 4; i++)
 			pNode->pChild[i].pParent = pNode;
 
 		Col <<= 1;
@@ -257,7 +258,7 @@ CQuadTree<TObject, TStorage>::RelocateAndUpdateCounters(typename CQuadTree<TObje
 
 	while (pNewNode->pChild)
 	{
-		DWORD i;
+		UPTR i;
 		for (i = 0; i < 4; ++i)
 			if (pNewNode->pChild[i].Contains(CenterX, CenterZ, HalfSizeX, HalfSizeZ))
 			{
@@ -319,7 +320,7 @@ void CQuadTree<TObject, TStorage>::UpdateHandle(typename CQuadTree<TObject, TSto
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-inline typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::GetNode(ushort Col, ushort Row, uchar Level) const
+inline typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::GetNode(UPTR Col, UPTR Row, UPTR Level) const
 {
 	// Don't ask. Just believe.
 	n_assert(Level < Depth);
