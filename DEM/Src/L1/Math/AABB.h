@@ -52,7 +52,7 @@ public:
 	void		TransformDivW(const matrix44& m);
 	void		TransformDivW(const matrix44& m, CAABB& Out) const;
 	void		ToMatrix44(matrix44& Out) const;
-	vector3		GetCorner(DWORD index) const;
+	vector3		GetCorner(UPTR index) const;
 	void		GetClipPlanes(const matrix44& ViewProj, plane outPlanes[6]) const;
 
 	bool		contains(const CAABB& box) const;
@@ -143,7 +143,7 @@ inline void CAABB::Extend(const CAABB& box)
 }
 //---------------------------------------------------------------------
 
-inline vector3 CAABB::GetCorner(DWORD index) const
+inline vector3 CAABB::GetCorner(UPTR index) const
 {
 	n_assert_dbg(index < 8);
 	switch (index)
@@ -291,12 +291,12 @@ inline EClipStatus CAABB::GetClipStatus(const CAABB& other) const
 // Check for intersection with a view volume defined by a view-projection matrix
 inline EClipStatus CAABB::GetClipStatus(const matrix44& ViewProj) const
 {
-	int ANDFlags = 0xffff;
-	int ORFlags = 0;
-	for (int i = 0; i < 8; ++i)
+	UPTR ANDFlags = 0xffff;
+	UPTR ORFlags = 0;
+	for (UPTR i = 0; i < 8; ++i)
 	{
 		vector4 CornerProj = ViewProj * vector4(GetCorner(i));
-		int ClipBits = 0;
+		UPTR ClipBits = 0;
 		if (CornerProj.x < -CornerProj.w)		ClipBits |= (1 << 0);	// Left
 		else if (CornerProj.x > CornerProj.w)	ClipBits |= (1 << 1);	// Right
 		if (CornerProj.y < -CornerProj.w)		ClipBits |= (1 << 2);	// Bottom

@@ -110,35 +110,46 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	// Cross-FS copying
 
-	if (IsFileReadOnly(AbsDestPath) && !SetFileReadOnly(AbsDestPath, false)) FAIL;
+	if (!SetFileReadOnly(AbsDestPath, false)) FAIL;
 
 	CFileStream Src(AbsSrcPath), Dest(AbsDestPath);
 	if (!Src.Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
 	if (!Dest.Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
 
-	DWORD Size = Src.GetSize();
-	void* pBuffer = n_malloc(Size);
-	int RealSize = Src.Read(pBuffer, Size);
-	n_assert(RealSize == Size);
+	bool Result = true;
+	U64 Size = Src.GetSize();
+	const U64 MaxBytesPerOp = 16 * 1024 * 1024; // 16 MB
+	void* pBuffer = n_malloc((UPTR)n_min(Size, MaxBytesPerOp));
+	while (Size > 0)
+	{
+		UPTR CurrOpBytes = (UPTR)n_min(Size, MaxBytesPerOp);
+		if (Src.Read(pBuffer, CurrOpBytes) != CurrOpBytes)
+		{
+			Result = false;
+			FAIL;
+		}
+		if (Dest.Write(pBuffer, CurrOpBytes) != CurrOpBytes)
+		{
+			Result = false;
+			FAIL;
+		}
+		Size -= CurrOpBytes;
+	}
 	Src.Close();
-
-	RealSize = Dest.Write(pBuffer, Size);
-	n_assert(RealSize == Size);
 	Dest.Close();
 	n_free(pBuffer);
 
-	OK;
+	return Result;
 }
 //---------------------------------------------------------------------
 
-//???QWORD?
-DWORD CIOServer::GetFileSize(const char* pPath) const
+U64 CIOServer::GetFileSize(const char* pPath) const
 {
 	PFileSystem FS;
 	void* hFile = OpenFile(FS, pPath, SAM_READ);
 	if (hFile)
 	{
-		DWORD Size = FS->GetFileSize(hFile);
+		U64 Size = FS->GetFileSize(hFile);
 		FS->CloseFile(hFile);
 		return Size;
 	}
@@ -317,7 +328,7 @@ bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
 {
 	CFileStream File(pFileName);
 	if (!File.Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	int FileSize = File.GetSize();
+	UPTR FileSize = (UPTR)File.GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
 	//Sys::Log("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());

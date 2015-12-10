@@ -27,17 +27,17 @@ public:
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();
-	virtual DWORD	Read(void* pData, DWORD Size);
-	virtual DWORD	Write(const void* pData, DWORD Size);
-	virtual bool	Seek(int Offset, ESeekOrigin Origin);
+	virtual UPTR	Read(void* pData, UPTR Size);
+	virtual UPTR	Write(const void* pData, UPTR Size);
+	virtual bool	Seek(I64 Offset, ESeekOrigin Origin);
 	virtual void	Flush();
 	virtual void*	Map();
 	virtual void	Unmap();
 
 	void			SetFileName(const char* pPath) { n_assert(!IsOpen()); FileName = pPath; }
 	const CString&	GetFileName() const { return FileName; }
-	virtual DWORD	GetSize() const;
-	virtual DWORD	GetPosition() const;
+	virtual U64		GetSize() const;
+	virtual U64		GetPosition() const;
 	virtual bool	IsEOF() const;
 	virtual bool	CanRead() const { OK; }
 	virtual bool	CanWrite() const { OK; }

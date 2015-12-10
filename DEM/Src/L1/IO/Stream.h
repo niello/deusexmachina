@@ -33,17 +33,17 @@ public:
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	Close() = 0;
-	virtual DWORD	Read(void* pData, DWORD Size) = 0;
-	virtual DWORD	Write(const void* pData, DWORD Size) = 0;
-	virtual bool	Seek(int Offset, ESeekOrigin Origin) = 0;
+	virtual UPTR	Read(void* pData, UPTR Size) = 0;
+	virtual UPTR	Write(const void* pData, UPTR Size) = 0;
+	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) = 0;
 	virtual void	Flush() = 0;
 	virtual void*	Map() { n_assert(!IsMapped()); return NULL; }
 	virtual void	Unmap() {}
 
 	bool			IsOpen() const { return Flags.Is(IS_OPEN); }
 	bool			IsMapped() const { return Flags.Is(IS_MAPPED); }
-	virtual DWORD	GetSize() const = 0;
-	virtual DWORD	GetPosition() const = 0;
+	virtual U64		GetSize() const = 0;
+	virtual U64		GetPosition() const = 0;
 	virtual bool	IsEOF() const = 0;
 	virtual bool	CanRead() const { FAIL; }
 	virtual bool	CanWrite() const { FAIL; }

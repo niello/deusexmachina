@@ -55,7 +55,7 @@ public:
 	bool			IsFileReadOnly(const char* pPath) const;
 	bool			SetFileReadOnly(const char* pPath, bool ReadOnly) const;
 	bool			DeleteFile(const char* pPath) const;
-	DWORD			GetFileSize(const char* pPath) const; //???QWORD?
+	U64				GetFileSize(const char* pPath) const;
 	DWORD			GetFileWriteTime(const char* pPath) const;
 	bool			CopyFile(const char* pSrcPath, const char* pDestPath);
 	bool			DirectoryExists(const char* pPath) const;

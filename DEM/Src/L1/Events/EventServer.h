@@ -3,7 +3,7 @@
 #define __DEM_L1_EVENT_MANAGER_H__
 
 #include <Events/EventDispatcher.h>
-#include <Data/Pool.h>
+#include <System/Allocators/PoolAllocator.h>
 #include <Data/Singleton.h>
 
 // Event server is a central coordination point for the event processing. It works as:

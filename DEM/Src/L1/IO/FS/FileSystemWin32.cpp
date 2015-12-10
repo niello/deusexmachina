@@ -24,25 +24,26 @@ CFileSystemWin32::~CFileSystemWin32()
 
 bool CFileSystemWin32::FileExists(const char* pPath)
 {
-	DWORD FileAttrs = GetFileAttributes(pPath);
+	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::IsFileReadOnly(const char* pPath)
 {
-	DWORD FileAttrs = GetFileAttributes(pPath);
+	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_READONLY);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::SetFileReadOnly(const char* pPath, bool ReadOnly)
 {
-	DWORD FileAttrs = GetFileAttributes(pPath);
+	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES) FAIL;
+	if ((FileAttrs & FILE_ATTRIBUTE_READONLY) == ReadOnly) OK;
 	if (ReadOnly) FileAttrs |= FILE_ATTRIBUTE_READONLY;
 	else FileAttrs &= ~FILE_ATTRIBUTE_READONLY;
-	return SetFileAttributes(pPath, FileAttrs) != FALSE;
+	return ::SetFileAttributes(pPath, FileAttrs) != FALSE;
 }
 //---------------------------------------------------------------------
 
@@ -66,14 +67,23 @@ bool CFileSystemWin32::CopyFile(const char* pSrcPath, const char* pDestPath)
 #else
 #define CopyFile  CopyFileA
 #endif
-	if (IsFileReadOnly(pDestPath) && !SetFileReadOnly(pDestPath, false)) FAIL;
+
+	// Make the file writable if it is not
+	DWORD FileAttrs = ::GetFileAttributes(pDestPath);
+	if (FileAttrs == INVALID_FILE_ATTRIBUTES) FAIL;
+	if (FileAttrs & FILE_ATTRIBUTE_READONLY)
+	{
+		FileAttrs &= ~FILE_ATTRIBUTE_READONLY;
+		if (::SetFileAttributes(pDestPath, FileAttrs) == FALSE) FAIL;
+	}
+
 	return ::CopyFile(pSrcPath, pDestPath, FALSE) != 0;
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::DirectoryExists(const char* pPath)
 {
-	DWORD FileAttrs = GetFileAttributes(pPath);
+	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
@@ -119,7 +129,7 @@ bool CFileSystemWin32::CreateDirectory(const char* pPath)
 
 bool CFileSystemWin32::DeleteDirectory(const char* pPath)
 {
-	if (RemoveDirectory(pPath) != FALSE) OK;
+	if (::RemoveDirectory(pPath) != FALSE) OK;
 
 	// Failed to delete, so clear directory contents before
 
@@ -131,7 +141,7 @@ bool CFileSystemWin32::DeleteDirectory(const char* pPath)
 	sprintf_s(pPathBuf, MAX_PATH - 1, "%s\\*", pPath);
 
 	WIN32_FIND_DATA FindData;
-	HANDLE hRec = FindFirstFile(pPathBuf, &FindData);
+	HANDLE hRec = ::FindFirstFile(pPathBuf, &FindData);
 
 	if (hRec == INVALID_HANDLE_VALUE) FAIL;
 
@@ -148,12 +158,12 @@ bool CFileSystemWin32::DeleteDirectory(const char* pPath)
 		}
 		else if (::DeleteFile(Name.CStr()) == FALSE) FAIL;
 	}
-	while (FindNextFile(hRec, &FindData) != FALSE);
+	while (::FindNextFile(hRec, &FindData) != FALSE);
 
-	if (GetLastError() != ERROR_NO_MORE_FILES) FAIL;
-	FindClose(hRec);
+	if (::GetLastError() != ERROR_NO_MORE_FILES) FAIL;
+	::FindClose(hRec);
 
-	return RemoveDirectory(pPath) != FALSE;
+	return ::RemoveDirectory(pPath) != FALSE;
 }
 //---------------------------------------------------------------------
 
@@ -162,13 +172,13 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
     char pRawPath[DEM_MAX_PATH];
 	if (Code == SF_TEMP)
 	{
-		if (!GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
+		if (!::GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
 		OutPath = pRawPath;
 		OutPath.Replace('\\', '/');
 	}
 	else if (Code == SF_HOME || Code == SF_BIN)
 	{
-		if (!GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
+		if (!::GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
 		CString PathToExe(pRawPath);
 		PathToExe.Replace('\\', '/');
 		OutPath = PathUtils::ExtractDirName(PathToExe);
@@ -184,7 +194,7 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 			default:			FAIL;
 		}
 
-		if (FAILED(SHGetFolderPath(0, CSIDL, NULL, 0, pRawPath))) FAIL;
+		if (FAILED(::SHGetFolderPath(0, CSIDL, NULL, 0, pRawPath))) FAIL;
 		OutPath = pRawPath;
 		OutPath.Replace('\\', '/');
 	}
@@ -195,7 +205,7 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 
 void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
-	DWORD FileAttrs = GetFileAttributes(pPath);
+	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 
 	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
@@ -204,7 +214,7 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 	SearchString.Add(pActualFilter, FilterLength);
 
 	WIN32_FIND_DATA FindData;
-	HANDLE hDir = FindFirstFile(SearchString.CStr(), &FindData);
+	HANDLE hDir = ::FindFirstFile(SearchString.CStr(), &FindData);
 
 	if (hDir == INVALID_HANDLE_VALUE)
 	{
@@ -214,7 +224,7 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 	}
 
 	while (!strcmp(FindData.cFileName, "..") || !strcmp(FindData.cFileName, "."))
-		if (!FindNextFile(hDir, &FindData))
+		if (!::FindNextFile(hDir, &FindData))
 		{
 			OutName.Clear();
 			OutType = FSE_NONE;
@@ -231,7 +241,7 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 void CFileSystemWin32::CloseDirectory(void* hDir)
 {
 	n_assert(hDir);
-	FindClose(hDir);
+	::FindClose(hDir);
 }
 //---------------------------------------------------------------------
 
@@ -239,7 +249,7 @@ bool CFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntry
 {
 	n_assert(hDir);
 	WIN32_FIND_DATA FindData;
-	if (FindNextFile(hDir, &FindData) != 0)
+	if (::FindNextFile(hDir, &FindData) != 0)
 	{
 		OutName = FindData.cFileName;
 		OutType = (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? FSE_DIR : FSE_FILE;
@@ -273,7 +283,7 @@ void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStr
 		case SAM_APPEND:	Disposition = OPEN_ALWAYS; break;
 	}
 
-	HANDLE hFile = CreateFile(	pPath,
+	HANDLE hFile = ::CreateFile(pPath,
 								Access,
 								ShareMode,
 								0,
@@ -283,7 +293,7 @@ void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStr
 
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		if (Mode == SAM_APPEND) SetFilePointer(hFile, 0, NULL, FILE_END);
+		if (Mode == SAM_APPEND) ::SetFilePointer(hFile, 0, NULL, FILE_END);
 		return hFile;
 	}
 
@@ -294,29 +304,29 @@ void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStr
 void CFileSystemWin32::CloseFile(void* hFile)
 {
 	n_assert(hFile);
-	CloseHandle(hFile);
+	::CloseHandle(hFile);
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemWin32::Read(void* hFile, void* pData, DWORD Size)
+UPTR CFileSystemWin32::Read(void* hFile, void* pData, UPTR Size)
 {
-	n_assert(hFile && pData && Size > 0);
+	n_assert(hFile && pData && Size > 0 && Size <= ULONG_MAX);
 	DWORD BytesRead;
-	BOOL Result = ReadFile(hFile, pData, Size, &BytesRead, NULL);
+	BOOL Result = ::ReadFile(hFile, pData, (DWORD)Size, &BytesRead, NULL);
 	return (Result == TRUE) ? BytesRead : 0;
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemWin32::Write(void* hFile, const void* pData, DWORD Size)
+UPTR CFileSystemWin32::Write(void* hFile, const void* pData, UPTR Size)
 {
-	n_assert(hFile && pData && Size > 0);
+	n_assert(hFile && pData && Size > 0 && Size <= ULONG_MAX);
 	DWORD BytesWritten;
-	BOOL Result = WriteFile(hFile, pData, Size, &BytesWritten, NULL);
+	BOOL Result = ::WriteFile(hFile, pData, (DWORD)Size, &BytesWritten, NULL);
 	return (Result == TRUE) ? BytesWritten : 0;
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::Seek(void* hFile, int Offset, ESeekOrigin Origin)
+bool CFileSystemWin32::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
 {
 	n_assert(hFile);
 	DWORD SeekOrigin;
@@ -326,35 +336,45 @@ bool CFileSystemWin32::Seek(void* hFile, int Offset, ESeekOrigin Origin)
 		case Seek_End:		SeekOrigin = FILE_END; break;
 		default:			SeekOrigin = FILE_BEGIN; break;
 	}
-	return SetFilePointer(hFile, Offset, NULL, SeekOrigin) != INVALID_SET_FILE_POINTER;
+	LARGE_INTEGER LIOffset;
+	LIOffset.QuadPart = Offset;
+	return ::SetFilePointerEx(hFile, LIOffset, NULL, SeekOrigin) != 0;
 }
 //---------------------------------------------------------------------
 
 void CFileSystemWin32::Flush(void* hFile)
 {
 	n_assert(hFile);
-	FlushFileBuffers(hFile);
+	::FlushFileBuffers(hFile);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemWin32::IsEOF(void* hFile) const
 {
 	n_assert(hFile);
-	return SetFilePointer(hFile, 0, NULL, FILE_CURRENT) >= ::GetFileSize(hFile, NULL);
+	LARGE_INTEGER Pos;
+	LARGE_INTEGER Size;
+	LARGE_INTEGER Zero;
+	Zero.QuadPart = 0LL;
+	if (!::SetFilePointerEx(hFile, Zero, &Pos, FILE_CURRENT)) OK;
+	if (!::GetFileSizeEx(hFile, &Size)) OK;
+	return Pos.QuadPart >= Size.QuadPart;
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemWin32::GetFileSize(void* hFile) const
+U64 CFileSystemWin32::GetFileSize(void* hFile) const
 {
-	n_assert(hFile);
-	return ::GetFileSize(hFile, NULL);
+	n_assert_dbg(hFile);
+	LARGE_INTEGER Size;
+	if (!::GetFileSizeEx(hFile, &Size)) return 0;
+	return (U64)Size.QuadPart;
 }
 //---------------------------------------------------------------------
 
 DWORD CFileSystemWin32::GetFileWriteTime(void* hFile) const
 {
 	FILETIME WriteTime;
-	if (!GetFileTime(hFile, NULL, NULL, &WriteTime)) return 0;
+	if (!::GetFileTime(hFile, NULL, NULL, &WriteTime)) return 0;
 
 	ULARGE_INTEGER UL;
 	UL.LowPart = WriteTime.dwLowDateTime;
@@ -364,10 +384,14 @@ DWORD CFileSystemWin32::GetFileWriteTime(void* hFile) const
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemWin32::Tell(void* hFile) const
+U64 CFileSystemWin32::Tell(void* hFile) const
 {
 	n_assert(hFile);
-	return SetFilePointer(hFile, 0, NULL, FILE_CURRENT);
+	LARGE_INTEGER Pos;
+	LARGE_INTEGER Zero;
+	Zero.QuadPart = 0LL;
+	if (!::SetFilePointerEx(hFile, Zero, &Pos, FILE_CURRENT)) return 0;
+	return (U64)Pos.QuadPart;
 }
 //---------------------------------------------------------------------
 

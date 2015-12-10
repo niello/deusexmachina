@@ -2,7 +2,7 @@
 
 #include <Game/EntityLoaderCommon.h>
 #include <AI/AIServer.h>
-#include <Render/SceneNodeValidateResources.h>
+#include <Frame/SceneNodeValidateResources.h>
 #include <Physics/PhysicsWorld.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
@@ -241,7 +241,7 @@ bool CGameServer::ValidateLevel(CGameLevel& Level)
 	
 	if (Level.GetSceneRoot())
 	{
-		Render::CSceneNodeValidateResources Visitor;
+		Frame::CSceneNodeValidateResources Visitor;
 		Result = Visitor.Visit(*Level.GetSceneRoot());
 	}
 	else Result = true; // Nothing to validate

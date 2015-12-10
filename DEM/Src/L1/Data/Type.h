@@ -85,29 +85,28 @@ public:
 	//convert, compare, save, load
 };
 
-template<class T> void CTypeImpl<T>::New(void** pObj) const
+template<class T> inline void CTypeImpl<T>::New(void** pObj) const
 {
-	//!!!check disassembly here (in Release)!
 	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(DefaultValue);
 	else *(T**)pObj = n_new(T)(DefaultValue);
 }
 //---------------------------------------------------------------------
 
-template<class T> void CTypeImpl<T>::New(void** pObj, void* const* pSrcObj) const
+template<class T> inline void CTypeImpl<T>::New(void** pObj, void* const* pSrcObj) const
 {
 	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(*(const T*)GetPtr(pSrcObj));
 	else *(T**)pObj = n_new(T)(*(const T*)GetPtr(pSrcObj));
 }
 //---------------------------------------------------------------------
 
-template<class T> void CTypeImpl<T>::NewT(void** pObj, const void* Value) const
+template<class T> inline void CTypeImpl<T>::NewT(void** pObj, const void* Value) const
 {
 	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(*(const T*)Value);
 	else *(T**)pObj = n_new(T)(*(const T*)Value);
 }
 //---------------------------------------------------------------------
 
-template<class T> void CTypeImpl<T>::Delete(void** pObj) const
+template<class T> inline void CTypeImpl<T>::Delete(void** pObj) const
 {
 	if (sizeof(T) <= sizeof(void*)) ((T*)pObj)->~T();
 	else
@@ -118,7 +117,7 @@ template<class T> void CTypeImpl<T>::Delete(void** pObj) const
 }
 //---------------------------------------------------------------------
 
-template<class T> void CTypeImpl<T>::Copy(void** pObj, void* const* pSrcObj) const
+template<class T> inline void CTypeImpl<T>::Copy(void** pObj, void* const* pSrcObj) const
 {
 	if (sizeof(T) <= sizeof(void*)) *(T*)pObj = *(T*)pSrcObj;
 	else
@@ -129,7 +128,7 @@ template<class T> void CTypeImpl<T>::Copy(void** pObj, void* const* pSrcObj) con
 }
 //---------------------------------------------------------------------
 
-template<class T> void CTypeImpl<T>::CopyT(void** pObj, const void* Value) const
+template<class T> inline void CTypeImpl<T>::CopyT(void** pObj, const void* Value) const
 {
 	if (sizeof(T) <= sizeof(void*)) *(T*)pObj = *(const T*)Value;
 	else

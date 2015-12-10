@@ -6,7 +6,7 @@
 #include <Data/StringID.h>
 #include <Data/HashTable.h>
 #include <Data/Singleton.h>
-//#include <Data/Pool.h>
+//#include <System/Allocators/PoolAllocator.h>
 #include <Core/RTTI.h>
 
 // Resource manager controls resource loading, lifetime, uniquity, and serves as

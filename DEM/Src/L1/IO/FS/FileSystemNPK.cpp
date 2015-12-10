@@ -221,24 +221,24 @@ void CFileSystemNPK::CloseFile(void* hFile)
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemNPK::Read(void* hFile, void* pData, DWORD Size)
+UPTR CFileSystemNPK::Read(void* hFile, void* pData, UPTR Size)
 {
 	n_assert(hFile && pData && Size > 0);
 
 	CNpkTOCEntry* pTE = ((CNPKFile*)hFile)->pTOCEntry;
-	DWORD Len = pTE->GetFileLength();
-	DWORD& Pos = ((CNPKFile*)hFile)->Offset;
-	DWORD EndPos = Pos + Size;
+	UPTR Len = pTE->GetFileLength();
+	UPTR& Pos = ((CNPKFile*)hFile)->Offset;
+	UPTR EndPos = Pos + Size;
 	if (EndPos >= Len) Size = Len - Pos;
 
 	pNPKData->Seek(pTE->GetFileOffset() + Pos, Seek_Begin);
-	DWORD BytesRead = pNPKData->Read(pData, Size);
+	UPTR BytesRead = pNPKData->Read(pData, Size);
 	Pos += BytesRead;
 	return BytesRead;
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemNPK::Write(void* hFile, const void* pData, DWORD Size)
+UPTR CFileSystemNPK::Write(void* hFile, const void* pData, UPTR Size)
 {
 	Sys::Error("CFileSystemNPK is read only");
 	return 0;
@@ -251,26 +251,27 @@ void CFileSystemNPK::Flush(void* hFile)
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemNPK::GetFileSize(void* hFile) const
+U64 CFileSystemNPK::GetFileSize(void* hFile) const
 {
 	n_assert(hFile);
-	return ((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
+	return (U64)((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::Seek(void* hFile, int Offset, ESeekOrigin Origin)
+bool CFileSystemNPK::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
 {
 	n_assert(hFile);
-	int SeekPos;
-	int Len = ((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
+	n_assert_dbg(sizeof(IPTR) > 4 || Offset == ((I32)Offset));
+	IPTR SeekPos;
+	UPTR Len = ((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
 	switch (Origin)
 	{
-		case Seek_Current:	SeekPos = ((CNPKFile*)hFile)->Offset + Offset; break;
-		case Seek_End:		SeekPos = Len + Offset; break;
-		default:			SeekPos = Offset; break;
+		case Seek_Current:	SeekPos = ((CNPKFile*)hFile)->Offset + (IPTR)Offset; break;
+		case Seek_End:		SeekPos = Len + (IPTR)Offset; break;
+		default:			SeekPos = (IPTR)Offset; break;
 	}
 
-	if (SeekPos >= Len)
+	if (SeekPos > 0 && ((UPTR)SeekPos) >= Len)
 	{
 		((CNPKFile*)hFile)->Offset = Len;
 		FAIL;
@@ -283,17 +284,17 @@ bool CFileSystemNPK::Seek(void* hFile, int Offset, ESeekOrigin Origin)
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemNPK::Tell(void* hFile) const
+U64 CFileSystemNPK::Tell(void* hFile) const
 {
 	n_assert(hFile);
-	return ((CNPKFile*)hFile)->Offset;
+	return (U64)((CNPKFile*)hFile)->Offset;
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNPK::IsEOF(void* hFile) const
 {
 	n_assert(hFile);
-	return ((CNPKFile*)hFile)->Offset >= (DWORD)((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
+	return ((CNPKFile*)hFile)->Offset >= ((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
 }
 //---------------------------------------------------------------------
 

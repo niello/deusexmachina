@@ -37,12 +37,12 @@ public:
 
 	virtual void*	OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	CloseFile(void* hFile) = 0;
-	virtual DWORD	Read(void* hFile, void* pData, DWORD Size) = 0;
-	virtual DWORD	Write(void* hFile, const void* pData, DWORD Size) = 0;
-	virtual DWORD	GetFileSize(void* hFile) const = 0;
+	virtual UPTR	Read(void* hFile, void* pData, UPTR Size) = 0;
+	virtual UPTR	Write(void* hFile, const void* pData, UPTR Size) = 0;
+	virtual U64		GetFileSize(void* hFile) const = 0;
 	virtual DWORD	GetFileWriteTime(void* hFile) const = 0;
-	virtual bool	Seek(void* hFile, int Offset, ESeekOrigin Origin) = 0;
-	virtual DWORD	Tell(void* hFile) const = 0;
+	virtual bool	Seek(void* hFile, I64 Offset, ESeekOrigin Origin) = 0;
+	virtual U64		Tell(void* hFile) const = 0;
 	virtual void	Flush(void* hFile) = 0; //???flush MMF views too right here?
 	virtual bool	IsEOF(void* hFile) const = 0;
 

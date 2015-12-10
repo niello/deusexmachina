@@ -28,21 +28,21 @@ void CFileStream::Close()
 }
 //---------------------------------------------------------------------
 
-DWORD CFileStream::Read(void* pData, DWORD Size)
+UPTR CFileStream::Read(void* pData, UPTR Size)
 {
 	n_assert(IsOpen() && !IsMapped() && hFile && (!Size || pData));
 	return (Size > 0) ? FS->Read(hFile, pData, Size) : 0;
 }
 //---------------------------------------------------------------------
 
-DWORD CFileStream::Write(const void* pData, DWORD Size)
+UPTR CFileStream::Write(const void* pData, UPTR Size)
 {
 	n_assert(IsOpen() && !IsMapped() && hFile && (!Size || pData));
 	return (Size > 0) ? FS->Write(hFile, pData, Size) : 0;
 }
 //---------------------------------------------------------------------
 
-bool CFileStream::Seek(int Offset, ESeekOrigin Origin)
+bool CFileStream::Seek(I64 Offset, ESeekOrigin Origin)
 {
 	n_assert(!IsMapped() && hFile);
 	return FS->Seek(hFile, Offset, Origin);
@@ -88,14 +88,14 @@ void CFileStream::Unmap()
 }
 //---------------------------------------------------------------------
 
-DWORD CFileStream::GetSize() const
+U64 CFileStream::GetSize() const
 {
 	n_assert(hFile);
 	return FS->GetFileSize(hFile);
 }
 //---------------------------------------------------------------------
 
-DWORD CFileStream::GetPosition() const
+U64 CFileStream::GetPosition() const
 {
 	n_assert(hFile);
 	return FS->Tell(hFile);

@@ -121,24 +121,43 @@ bool CModel::ValidateResources()
 void CModel::OnDetachFromNode()
 {
 //	//???do it on deactivation of an attribute? even it is not detached from node
-//	SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
+	if (pSPSRecord)
+	{
+		pSPS->RemoveRecord(pSPSRecord);
+		pSPSRecord = NULL;
+		pSPS = NULL;
+	}
 	CRenderObject::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 
 void CModel::UpdateInSPS(Scene::CSPS& SPS)
 {
+	if (pSPS != &SPS)
+	{
+		if (pSPS)
+		{
+			if (pSPSRecord)
+			{
+				pSPS->RemoveRecord(pSPSRecord);
+				pSPSRecord = NULL;
+			}
+			else pSPS->OversizedObjects.RemoveByValue(this);
+		}
+
+		pSPS = &SPS;
+	}
+
 	if (!pSPSRecord)
 	{
-		pSPSRecord = n_new(Scene::CSPSRecord);
-		pSPSRecord->pUserData = this;
-		GetGlobalAABB(pSPSRecord->GlobalBox); //???!!!LOD?!
-		SPS.AddObjectRecord(pSPSRecord);
+		CAABB Box;
+		GetGlobalAABB(pSPSRecord->GlobalBox); //???!!!LOD?! //???calc cached and reuse here?
+		pSPSRecord = SPS.AddRecord(Box, this);
 	}
 	else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed
 	{
 		GetGlobalAABB(pSPSRecord->GlobalBox); //???!!!LOD?!
-		SPS.UpdateObjectRecord(pSPSRecord);
+		SPS.UpdateRecord(pSPSRecord);
 		Flags.Clear(WorldMatrixChanged);
 	}
 }

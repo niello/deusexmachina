@@ -82,12 +82,12 @@ public:
 	T&			Front() const { n_assert_dbg(pFront); return pFront->Value; }
 	T&			Back() const { n_assert_dbg(pBack); return pBack->Value; }
 	CIterator	Begin() const { return CIterator(pFront); }
-	CIterator	End() const { return NULL; }
+	CIterator	End() const { return CIterator(NULL); }
 
 	CIterator	Find(const T& Val, CIterator ItStart = Begin()) const;
 
 	bool		IsEmpty() const { return !pFront; }
-	DWORD		GetCount() const { DWORD Size = 0; for (CIterator It = Begin(); It != End(); ++It) ++Size; return Size; }
+	UPTR		GetCount() const { UPTR Size = 0; for (CIterator It = Begin(); It != End(); ++It) ++Size; return Size; }
 
 	void operator =(const CList<T>& Other) { Clear(); AddList(); }
 };

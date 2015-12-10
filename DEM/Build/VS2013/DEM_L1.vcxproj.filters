@@ -88,6 +88,9 @@
     <Filter Include="Frame">
       <UniqueIdentifier>{ef7c08e9-267e-4473-9741-58385468a793}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Allocators">
+      <UniqueIdentifier>{1d9d4b06-07b0-4036-8a70-42faf5520543}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Src\L1\Data\Array.h">
@@ -154,9 +157,6 @@
       <Filter>Data</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\Params.h">
-      <Filter>Data</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Data\Pool.h">
       <Filter>Data</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\Ptr.h">
@@ -869,6 +869,12 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h">
       <Filter>Frame</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\System\Allocators\PoolAllocator.h">
+      <Filter>System\Allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\System\Allocators\StandardAllocator.h">
+      <Filter>System\Allocators</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1410,6 +1416,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp">
       <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\System\Allocators\StandardAllocator.cpp">
+      <Filter>System\Allocators</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

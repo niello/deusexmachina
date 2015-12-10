@@ -20,9 +20,9 @@ protected:
 		const char*	pConstBuffer;
 	};
 
-	DWORD	Pos;
-	DWORD	DataSize;
-	DWORD	AllocSize;
+	UPTR	Pos;
+	UPTR	DataSize;
+	UPTR	AllocSize;
 	bool	SelfAlloc;
 
 public:
@@ -34,15 +34,15 @@ public:
 	bool			Open(const void* pData, DWORD Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();
-	virtual DWORD	Read(void* pData, DWORD Size);
-	virtual DWORD	Write(const void* pData, DWORD Size);
-	virtual bool	Seek(int Offset, ESeekOrigin Origin);
+	virtual UPTR	Read(void* pData, UPTR Size);
+	virtual UPTR	Write(const void* pData, UPTR Size);
+	virtual bool	Seek(I64 Offset, ESeekOrigin Origin);
 	virtual void	Flush() {}
 	virtual void*	Map();
 
 	const char*		GetPtr() const { return pBuffer; }
-	virtual DWORD	GetSize() const { return DataSize; }
-	virtual DWORD	GetPosition() const { return Pos; }
+	virtual U64		GetSize() const { return DataSize; }
+	virtual U64		GetPosition() const { return Pos; }
 	virtual bool	IsEOF() const;
 	virtual bool	CanRead() const { OK; }
 	virtual bool	CanWrite() const { OK; }

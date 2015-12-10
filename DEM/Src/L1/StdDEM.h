@@ -62,13 +62,7 @@ typedef unsigned long       DWORD;
 typedef int                 BOOL;
 typedef unsigned char       BYTE;
 typedef unsigned short      WORD;
-typedef float               FLOAT;
-typedef int                 INT;
 typedef unsigned int        UINT;
-typedef unsigned __int64	QWORD;	//!!!???Large_integer?!
-//typedef LARGE_INTEGER		LINT;
-typedef DWORD				FOURCC;
-typedef long				HRESULT;
 typedef char*				LPSTR;
 typedef const char*			LPCSTR;
 typedef void*				PVOID;

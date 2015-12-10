@@ -12,10 +12,10 @@
 
 // TStorage interface requirements:
 // - typedef CIterator (defined as CHandle by a quadtree, is not necessary to use, but can be used for faster lookup in a storage)
-// - CIterator			Add(const TObject& Object);
-// - CIterator			Find(const TObject& Object);
+// - CIterator			Add(const TObject& Object); or (TObject Object)
+// - CIterator			Find(const TObject& Object); or (TObject Object)
 // - any-return-type	Remove(CIterator It);
-// - any-return-type	RemoveByValue(const TObject& Object);
+// - CIterator			End()
 
 //!!!???write loose quadtree!? Current variant is not so good.
 //???create child nodes on demand, using node pool?
@@ -32,13 +32,17 @@ public:
 
 	typedef typename TStorage::CIterator CHandle;
 
+protected:
+
 	vector2				Center;
 	vector2				Size;
 	U8					Depth;
 	CFixedArray<CNode>	Nodes;
 
-	void	Build(U16 Col, U16 Row, U8 Level, CNode* pNode, CNode*& pFirstFreeNode);
-	CNode*	RelocateAndUpdateCounters(CNode* pCurrNode, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const;
+	static CHandle	MoveElement(TStorage& From, TStorage& To, CHandle Handle);
+
+	void			Build(U16 Col, U16 Row, U8 Level, CNode* pNode, CNode*& pFirstFreeNode);
+	CNode*			RelocateAndUpdateCounters(CNode* pCurrNode, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const;
 
 public:
 
@@ -64,7 +68,7 @@ public:
 
 		CNode(): TotalObjCount(0) {}
 		
-		void	RemoveByValue(const TObject& Object);
+		void	RemoveByValue(const TObject& Object) { RemoveByHandle(Data.Find(Object)); }
 		void	RemoveByHandle(CHandle Handle);
 
 		bool	Contains(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const;
@@ -98,21 +102,9 @@ public:
 //---------------------------------------------------------------------
 
 template<class TObject, class TStorage>
-inline void CQuadTree<TObject, TStorage>::CNode::RemoveByValue(const TObject& Object)
-{
-	Data.RemoveByValue(Object);
-	CNode* pNode = this;
-	while (pNode)
-	{
-		--pNode->TotalObjCount;
-		pNode = pNode->pParent;
-	}
-}
-//---------------------------------------------------------------------
-
-template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::CNode::RemoveByHandle(typename CQuadTree<TObject, TStorage>::CHandle Handle)
 {
+	if (Handle == Data.End()) return;
 	Data.Remove(Handle);
 	CNode* pNode = this;
 	while (pNode)
@@ -123,7 +115,7 @@ inline void CQuadTree<TObject, TStorage>::CNode::RemoveByHandle(typename CQuadTr
 }
 //---------------------------------------------------------------------
 
-// Returns true if node contains the whole object (not only some its part!)
+// Returns true if node contains the whole object (not partially!)
 template<class TObject, class TStorage>
 inline bool CQuadTree<TObject, TStorage>::CNode::Contains(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const
 {
@@ -157,8 +149,12 @@ inline bool CQuadTree<TObject, TStorage>::CNode::SharesSpaceWith(const CNode& Ot
 		pMax = this;
 	}
 
-	while (pMax->Level > pMin->Level)
+	U8 LevelDiff = pMax->Level - pMin->Level;
+	while (LevelDiff)
+	{
 		pMax = pMax->pParent;
+		--LevelDiff;
+	}
 
 	return pMax == pMin;
 }
@@ -239,8 +235,8 @@ void CQuadTree<TObject, TStorage>::Build(U16 Col, U16 Row, U8 Level, CNode* pNod
 }
 //---------------------------------------------------------------------
 
-// Returns a node that contains given dimensions and updates counters like one object is moved from the current node to the new one.
-// If object is added (not moved), root node may be passed as a current node.
+// Returns a node that contains given dimensions and updates counters likewise one object is moved from the
+// current node to the new one. If object is added (not moved), root node should be passed as a current node.
 template<class TObject, class TStorage>
 typename CQuadTree<TObject, TStorage>::CNode*
 CQuadTree<TObject, TStorage>::RelocateAndUpdateCounters(typename CQuadTree<TObject, TStorage>::CNode* pCurrNode,
@@ -284,22 +280,39 @@ inline void CQuadTree<TObject, TStorage>::AddObject(const TObject& Object, float
 }
 //---------------------------------------------------------------------
 
+// Moves an element from one collection to another. This implementation is smart pointer safe and is suitable
+// for a majority of collections. Some collections, like linked lists with a shared node pool, require another implementation.
+template<class TObject, class TStorage>
+inline typename CQuadTree<TObject, TStorage>::CHandle CQuadTree<TObject, TStorage>::MoveElement(TStorage& From, TStorage& To, CHandle Handle)
+{
+	CHandle NewHandle = To.Add(*Handle);
+	From.Remove(Handle);		
+	return NewHandle;
+}
+//---------------------------------------------------------------------
+
 template<class TObject, class TStorage>
 void CQuadTree<TObject, TStorage>::UpdateObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ,
 												CNode*& pInOutNode, typename CQuadTree<TObject, TStorage>::CHandle* pOutHandle)
 {
-	CNode* pNewNode = RelocateAndUpdateCounters(pInOutNode, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
-
-	if (pNewNode == pInOutNode)
+	CNode* pCurrNode = pInOutNode;
+	if (pCurrNode)
 	{
-		if (pOutHandle) *pOutHandle = pNewNode->Data.Find(Object);
-		return;
+		CHandle CurrHandle = pCurrNode->Data.Find(Object);
+		if (CurrHandle == pCurrNode->Data.End()) return;
+		CNode* pNewNode = RelocateAndUpdateCounters(pCurrNode, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+		if (pNewNode == pCurrNode)
+		{
+			if (pOutHandle) *pOutHandle = CurrHandle;
+		}
+		else
+		{
+			CHandle NewHandle = MoveElement(pCurrNode->Data, pNewNode->Data, CurrHandle);
+			pInOutNode = pNewNode;
+			if (pOutHandle) *pOutHandle = NewHandle;
+		}
 	}
-
-	CHandle NewHandle = pNewNode->Data.Add(Object);
-	pInOutNode->Data.RemoveByValue(Object);	
-	pInOutNode = pNewNode;
-	if (pOutHandle) *pOutHandle = NewHandle;
+	else AddObject(Object, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pInOutNode, pOutHandle);
 }
 //---------------------------------------------------------------------
 
@@ -311,8 +324,7 @@ void CQuadTree<TObject, TStorage>::UpdateHandle(typename CQuadTree<TObject, TSto
 
 	if (pInOutNode != pNewNode)
 	{
-		CHandle NewHandle = pNewNode->Data.Add(*InOutHandle);
-		pInOutNode->Data.Remove(InOutHandle);		
+		CHandle NewHandle = MoveElement(pInOutNode->Data, pNewNode->Data, InOutHandle);
 		pInOutNode = pNewNode;
 		InOutHandle = NewHandle;
 	}

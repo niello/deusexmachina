@@ -30,6 +30,7 @@ class CModel: public CRenderObject
 
 protected:
 
+	Scene::CSPS*		pSPS;
 	Scene::CSPSRecord*	pSPSRecord;
 
 	virtual void	OnDetachFromNode();
@@ -48,7 +49,7 @@ public:
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 	//can use Flags field of CNodeAttribute
 
-	CModel(): pSPSRecord(NULL), MeshGroupIndex(0), FeatureFlags(0) {}
+	CModel(): pSPS(NULL), pSPSRecord(NULL), MeshGroupIndex(0), FeatureFlags(0) {}
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 

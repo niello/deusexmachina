@@ -29,26 +29,22 @@ protected:
 	{
 		// Active
 		// WorldMatrixChanged
-		AddedAsAlwaysVisible	= 0x04,	// To avoid searching in SPS AlwaysVisible array at each UpdateInSPS() call
-		DoOcclusionCulling		= 0x08,	// Don't use for directional lights
-		CastShadow				= 0x10
+		DoOcclusionCulling		= 0x04,	// Don't use for directional lights
+		CastShadow				= 0x08
 	};
 
 	// Point & Spot
-	float		Range;
-	float		InvRange;
+	float				Range;
+	float				InvRange;
 
 	// Spot
-	float		ConeInner;		// In radians, full angle (not half), Theta
-	float		ConeOuter;		// In radians, full angle (not half), Phi
-	float		CosHalfInner;
-	float		CosHalfOuter;
+	float				ConeInner;		// In radians, full angle (not half), Theta
+	float				ConeOuter;		// In radians, full angle (not half), Phi
+	float				CosHalfInner;
+	float				CosHalfOuter;
 
-	union
-	{
-		Scene::CSPSRecord*	pSPSRecord;	// If added to a spatial structure
-		Scene::CSPS*		pSPS;		// If added as oversized (directional)
-	};
+	Scene::CSPS*		pSPS;
+	Scene::CSPSRecord*	pSPSRecord;		// NULL if oversized
 
 public:
 
@@ -59,9 +55,9 @@ public:
 		Spot		= 2
 	};
 
-	EType		Type;
-	vector3		Color;		//???What with alpha color? place intensity there?
-	float		Intensity;
+	EType				Type;
+	vector3				Color;		//???What with alpha color? place intensity there?
+	float				Intensity;
 
 	CLight();
 
@@ -90,6 +86,7 @@ typedef Ptr<CLight> PLight;
 
 inline CLight::CLight():
 	Type(Directional),
+	pSPS(NULL),
 	pSPSRecord(NULL),
 	Color(1.f, 1.f, 1.f),
 	Intensity(0.5f),

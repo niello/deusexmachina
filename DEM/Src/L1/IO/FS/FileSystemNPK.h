@@ -17,7 +17,7 @@ protected:
 	struct CNPKFile
 	{
 		CNpkTOCEntry*	pTOCEntry;
-		DWORD			Offset;
+		UPTR			Offset;
 	};
 
 	struct CNPKDir
@@ -57,12 +57,12 @@ public:
 
 	virtual void*	OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	CloseFile(void* hFile);
-	virtual DWORD	Read(void* hFile, void* pData, DWORD Size);
-	virtual DWORD	Write(void* hFile, const void* pData, DWORD Size);
-	virtual DWORD	GetFileSize(void* hFile) const;
+	virtual UPTR	Read(void* hFile, void* pData, UPTR Size);
+	virtual UPTR	Write(void* hFile, const void* pData, UPTR Size);
+	virtual U64		GetFileSize(void* hFile) const;
 	virtual DWORD	GetFileWriteTime(void* hFile) const { return 0; }
-	virtual bool	Seek(void* hFile, int Offset, ESeekOrigin Origin);
-	virtual DWORD	Tell(void* hFile) const;
+	virtual bool	Seek(void* hFile, I64 Offset, ESeekOrigin Origin);
+	virtual U64		Tell(void* hFile) const;
 	virtual void	Flush(void* hFile);
 	virtual bool	IsEOF(void* hFile) const;
 };

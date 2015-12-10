@@ -29,8 +29,8 @@ private:
 	{
 		struct
 		{
-			int			Offset;
-			int			Length;
+			UPTR		Offset;
+			UPTR		Length;
 		};
 		CEntryTable*	pEntries;
 	};
@@ -38,11 +38,11 @@ private:
 public:
 
 	CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName);
-	CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName, int FileOffset, int FileLength);
+	CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName, UPTR FileOffset, UPTR FileLength);
 	~CNpkTOCEntry();
 
 	CNpkTOCEntry*				AddDirEntry(const char* pName);
-	CNpkTOCEntry*				AddFileEntry(const char* pName, int FileOffset, int FileLength);
+	CNpkTOCEntry*				AddFileEntry(const char* pName, UPTR FileOffset, UPTR FileLength);
 	CNpkTOCEntry*				FindEntry(const char* name);
 	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(NULL); }
 
@@ -52,8 +52,8 @@ public:
 	EFSEntryType				GetType() const { return Type; }
 	bool						IsFile() const { return Type == IO::FSE_FILE; }
 	bool						IsDir() const { return Type == IO::FSE_DIR; }
-	int							GetFileOffset() const { n_assert(IsFile()); return Offset; }
-	int							GetFileLength() const { n_assert(IsFile()); return Length; }
+	UPTR						GetFileOffset() const { n_assert(IsFile()); return Offset; }
+	UPTR						GetFileLength() const { n_assert(IsFile()); return Length; }
 	const char*					GetRootPath() const { return pRoot; }
 };
 
@@ -67,7 +67,7 @@ inline CNpkTOCEntry::CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEn
 }
 //---------------------------------------------------------------------
 
-inline CNpkTOCEntry::CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName, int FileOffset, int FileLength):
+inline CNpkTOCEntry::CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName, UPTR FileOffset, UPTR FileLength):
 	Name(pName),
 	pRoot(pRootPath),
 	pParent(pParentEntry),
@@ -100,7 +100,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddDirEntry(const char* pName)
 }
 //---------------------------------------------------------------------
 
-inline CNpkTOCEntry* CNpkTOCEntry::AddFileEntry(const char* pName, int FileOffset, int FileLength)
+inline CNpkTOCEntry* CNpkTOCEntry::AddFileEntry(const char* pName, UPTR FileOffset, UPTR FileLength)
 {
 	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);

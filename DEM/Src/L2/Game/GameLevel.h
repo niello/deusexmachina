@@ -66,13 +66,13 @@ protected:
 	//???shadow settings?
 
 	Scene::PSceneNode			SceneRoot;
-	Render::CSPS				SPS;			// Spatial partitioning structure
+	Scene::CSPS					SPS;			// Spatial partitioning structure
 	Physics::PPhysicsWorld		PhysWorld;
 	AI::PAILevel				AILevel;
 	Scene::PCameraManager		CameraManager;	//???!!!Render::?! //???manage cameras here in a level itself?
 
 	//!!!???if PCameraManager is really useful, move it there!
-	Render::PCamera				MainCamera;
+	Frame::PCamera				MainCamera;
 
 	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 

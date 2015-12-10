@@ -31,7 +31,7 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 	//!!!some streams don't support Seek and GetSize!
 	IO::CFileStream IOStream(Resource.GetUID().CStr());
 	if (!IOStream.Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-	DWORD FileSize = IOStream.GetSize();
+	U64 FileSize = IOStream.GetSize();
 
 	IO::CBinaryReader R(IOStream);
 
@@ -61,10 +61,9 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 	U32 ShaderFileID;
 	if (!R.Read(ShaderFileID)) FAIL;
 
-	//???U64?
-	UPTR MetadataOffset = IOStream.GetPosition();
+	U64 MetadataOffset = IOStream.GetPosition();
 
-	UPTR BinarySize = FileSize - BinaryOffset;
+	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
 	if (!BinarySize) FAIL;
 	void* pData = n_malloc(BinarySize);
 	if (!pData) FAIL;

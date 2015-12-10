@@ -4,7 +4,7 @@
 #include <Game/GameLevel.h>
 #include <Scripting/PropScriptable.h>
 #include <Scene/Events/SetTransform.h>
-#include <Render/Model.h>
+#include <Frame/Model.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>
 #include <Debug/DebugDraw.h>
@@ -210,11 +210,11 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
 	for (DWORD i = 0; i < Node->GetAttributeCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node->GetAttribute(i);
-		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Render::CModel>())
+		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CModel>())
 		{
 			CAABB AttrBox;
-			((Render::CRenderObject&)Attr).ValidateResources();
-			((Render::CModel&)Attr).GetGlobalAABB(AttrBox);
+			((Frame::CRenderObject&)Attr).ValidateResources();
+			((Frame::CModel&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
 		else if ((TypeFlags & AABB_Phys) && Attr.IsA<Physics::CNodeAttrCollision>())

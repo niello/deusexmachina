@@ -3,7 +3,71 @@
 namespace Scene
 {
 
-void CSPS::QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<void*>& OutObjects) const
+CSPSCell::CIterator CSPSCell::Add(CSPSRecord* Object)
+{
+	n_assert_dbg(Object && !Object->pPrev);
+	if (pFront) Object->pNext = pFront;
+	pFront = Object;
+	return CIterator(Object);
+}
+//---------------------------------------------------------------------
+
+void CSPSCell::Remove(CSPSRecord* pRec)
+{
+	n_assert_dbg(pRec);
+	CSPSRecord* pPrev = pRec->pPrev;
+	CSPSRecord* pNext = pRec->pNext;
+	if (pPrev) pPrev->pNext = pNext;
+	if (pNext) pNext->pPrev = pPrev;
+	if (pRec == pFront) pFront = pNext;
+	pRec->pNext = NULL;
+	pRec->pPrev = NULL;
+}
+//---------------------------------------------------------------------
+
+bool CSPSCell::RemoveByValue(CSPSRecord* Object)
+{
+	CSPSRecord* pRec = Object;
+	CSPSRecord* pCurr = pFront;
+	while (pCurr)
+	{
+		if (pCurr == pRec)
+		{
+			Remove(pCurr);
+			OK;
+		}
+		pCurr = pCurr->pNext;
+	}
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+CSPSCell::CIterator CSPSCell::Find(CSPSRecord* Object) const
+{
+	CSPSRecord* pRec = Object;
+	CSPSRecord* pCurr = pFront;
+	while (pCurr)
+	{
+		if (pCurr == pRec) return CIterator(pCurr);
+		pCurr = pCurr->pNext;
+	}
+	return CIterator(NULL);
+}
+//---------------------------------------------------------------------
+
+CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
+{
+	CSPSRecord* pRecord = RecordPool.Construct();
+	pRecord->GlobalBox = GlobalBox;
+	pRecord->pUserData = pUserData;
+	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
+	GetDimensions(GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
+	return pRecord;
+}
+//---------------------------------------------------------------------
+
+void CSPS::QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const
 {
 	if (OversizedObjects.GetCount())
 		OutObjects.AddArray(OversizedObjects);
@@ -14,7 +78,7 @@ void CSPS::QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<void*>& Ou
 }
 //---------------------------------------------------------------------
 
-void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<void*>& OutObjects, EClipStatus Clip) const
+void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const
 {
 	n_assert_dbg(pNode && pNode->GetTotalObjCount() && Clip != Outside);
 
@@ -26,21 +90,27 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 		NodeBox.Max.y = SceneMaxY;
 		Clip = NodeBox.GetClipStatus(ViewProj);
 		if (Clip == Outside) return;
-	}
-
-	if (pNode->Data.Objects.GetCount())
-	{
-		CArray<CSPSRecord*>::CIterator ItObj = pNode->Data.Objects.Begin();
 		if (Clip == Inside)
 		{
-			CArray<void*>::CIterator ppObj = OutObjects.Reserve(pNode->Data.Objects.GetCount());
-			for (; ItObj != pNode->Data.Objects.End(); ++ItObj, ++ppObj)
-				*ppObj = (*ItObj)->pUserData;
+			// Make room for all underlying objects, including those in child nodes
+			UPTR MinRoomRequired = OutObjects.GetCount() + pNode->GetTotalObjCount();
+			if (OutObjects.GetAllocSize() < MinRoomRequired)
+				OutObjects.Resize(MinRoomRequired);
+		}
+	}
+
+	if (!pNode->Data.IsEmpty())
+	{
+		CSPSCell::CIterator ItObj = pNode->Data.Begin();
+		CSPSCell::CIterator ItEnd = pNode->Data.End();
+		if (Clip == Inside)
+		{
+			for (; ItObj != ItEnd; ++ItObj)
+				OutObjects.Add((*ItObj)->pUserData);
 		}
 		else // Clipped
 		{
-			//???test against global AABB or transform to model space and test against local AABB which fits tighter?
-			for (; ItObj != pNode->Data.Objects.End(); ++ItObj)
+			for (; ItObj != ItEnd; ++ItObj)
 				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != Outside)
 					OutObjects.Add((*ItObj)->pUserData);
 		}

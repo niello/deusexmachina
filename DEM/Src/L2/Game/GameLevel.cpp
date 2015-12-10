@@ -3,7 +3,7 @@
 #include <Game/Entity.h>
 #include <Game/GameServer.h>
 #include <Scripting/ScriptObject.h>
-#include <Render/SceneNodeUpdateInSPS.h>
+#include <Frame/SceneNodeUpdateInSPS.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsWorld.h>

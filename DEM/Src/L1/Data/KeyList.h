@@ -7,7 +7,7 @@
 
 // KeyList is an array of linked lists, sorted by a curtain key attribute.
 // Elements are added to one of lists based on their key.
-// NB: if key value changes dynamically, element placing will not be adjusted automatically!
+// NB: if key value of already inserted element changes, element placing must be adjusted manually by reinserting!
 
 // Class TObject must implement following interface:
 // - TKey GetKey() const;
@@ -39,7 +39,7 @@ protected:
 	};
 
 	CDict<TKey, CList<TObject>*>	Lists;
-	//int							TotalCount;
+	//UPTR							TotalCount;
 
 public:
 
@@ -52,12 +52,13 @@ public:
 	bool		RemoveByValue(const TObject& Object);
 
 	CIterator	Find(const TObject& Object) const;
+	CIterator	End() const { return CIterator(NULL); }
 	TKey		GetKeyAt(int Idx) const { return Lists.KeyAt(Idx); }
 	CIterator	GetHead(TKey Key) const;
 	CIterator	GetHeadAt(int Idx) const { return Lists.ValueAt(Idx)->Begin(); }
-	DWORD		GetListCount() const { return (DWORD)Lists.GetCount(); }
-	DWORD		GetCount(TKey Key) const;
-	//DWORD		GetTotalCount() const { return TotalCount; }
+	UPTR		GetListCount() const { return (UPTR)Lists.GetCount(); }
+	UPTR		GetCount(TKey Key) const;
+	//UPTR		GetTotalCount() const { return TotalCount; }
 };
 //---------------------------------------------------------------------
 
@@ -136,7 +137,7 @@ inline typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::GetH
 //---------------------------------------------------------------------
 
 template<class TKey, class TObject>
-inline DWORD CKeyList<TKey, TObject>::GetCount(TKey Key) const
+inline UPTR CKeyList<TKey, TObject>::GetCount(TKey Key) const
 {	
 	int Idx = Lists.FindIndex(Key);
 	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->GetCount() : 0;

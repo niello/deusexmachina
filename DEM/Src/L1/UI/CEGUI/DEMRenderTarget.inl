@@ -40,10 +40,10 @@ void CDEMRenderTarget<T>::activate()
 	if (!d_matrixValid) updateMatrix();
 
 	Render::CViewport VP;
-	VP.Left = static_cast<FLOAT>(d_area.left());
-	VP.Top = static_cast<FLOAT>(d_area.top());
-	VP.Width = static_cast<FLOAT>(d_area.getWidth());
-	VP.Height = static_cast<FLOAT>(d_area.getHeight());
+	VP.Left = static_cast<float>(d_area.left());
+	VP.Top = static_cast<float>(d_area.top());
+	VP.Width = static_cast<float>(d_area.getWidth());
+	VP.Height = static_cast<float>(d_area.getHeight());
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	d_owner.getGPUDriver()->SetViewport(0, &VP);

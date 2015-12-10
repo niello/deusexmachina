@@ -54,13 +54,18 @@ bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 void CLight::OnDetachFromNode()
 {
 	//???do it on deactivation of an attribute? even it is not detached from node
-	if (Flags.Is(AddedAsAlwaysVisible))
+	if (pSPS)
 	{
-		pSPS->OversizedObjects.RemoveByValue(this);
-		Flags.Clear(AddedAsAlwaysVisible);
+		if (pSPSRecord)
+		{
+			pSPS->RemoveRecord(pSPSRecord);
+			pSPSRecord = NULL;
+		}
+		else pSPS->OversizedObjects.RemoveByValue(this);
+
 		pSPS = NULL;
 	}
-	else SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
+
 	CNodeAttribute::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
@@ -69,34 +74,45 @@ void CLight::UpdateInSPS(Scene::CSPS& SPS)
 {
 	if (Type == Directional)
 	{
-		if (Flags.IsNot(AddedAsAlwaysVisible))
+		if (pSPSRecord)
 		{
-			SAFE_DELETE(pSPSRecord); // Self-removal inside a destructor
+			pSPS->RemoveRecord(pSPSRecord);
+			pSPSRecord = NULL;
+		}
+
+		if (!pSPS)
+		{
 			pSPS = &SPS;
 			SPS.OversizedObjects.Add(this);
-			Flags.Set(AddedAsAlwaysVisible);
 		}
 	}
 	else
 	{
-		if (Flags.Is(AddedAsAlwaysVisible))
+		if (pSPS != &SPS)
 		{
-			pSPS->OversizedObjects.RemoveByValue(this);
-			Flags.Clear(AddedAsAlwaysVisible);
-			pSPS = NULL;
+			if (pSPS)
+			{
+				if (pSPSRecord)
+				{
+					pSPS->RemoveRecord(pSPSRecord);
+					pSPSRecord = NULL;
+				}
+				else pSPS->OversizedObjects.RemoveByValue(this);
+			}
+
+			pSPS = &SPS;
 		}
 		
 		if (!pSPSRecord)
 		{
-			pSPSRecord = n_new(Scene::CSPSRecord);
-			pSPSRecord->pUserData = this;
-			GetGlobalAABB(pSPSRecord->GlobalBox);
-			SPS.AddObjectRecord(pSPSRecord);
+			CAABB Box;
+			GetGlobalAABB(pSPSRecord->GlobalBox); //???calc cached and reuse here?
+			pSPSRecord = SPS.AddRecord(Box, this);
 		}
 		else if (Flags.Is(WorldMatrixChanged)) //!!! || Range/Cone changed
 		{
 			GetGlobalAABB(pSPSRecord->GlobalBox);
-			SPS.UpdateObjectRecord(pSPSRecord);
+			SPS.UpdateRecord(pSPSRecord);
 			Flags.Clear(WorldMatrixChanged);
 		}
 	}

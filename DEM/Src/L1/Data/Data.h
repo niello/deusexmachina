@@ -105,9 +105,9 @@ public:
 };
 //---------------------------------------------------------------------
 
-template<class T> T& CData::New()
+template<class T> inline T& CData::New()
 {
-	Clear();
+	if (Type) Type->Delete(&Value);
 	Type = DATA_TYPE(T);
 	DATA_TYPE_NV(T)::New(&Value);
 	return GetValue<T>();

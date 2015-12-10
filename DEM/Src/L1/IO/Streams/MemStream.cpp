@@ -26,10 +26,10 @@ void CMemStream::Close()
 }
 //---------------------------------------------------------------------
 
-DWORD CMemStream::Read(void* pData, DWORD Size)
+UPTR CMemStream::Read(void* pData, UPTR Size)
 {
 	n_assert(IsOpen() && pConstBuffer && !IsMapped() && (AccessMode & SAM_READ));
-	DWORD BytesToRead = n_min(Size, DataSize - Pos);
+	UPTR BytesToRead = n_min(Size, DataSize - Pos);
 	if (BytesToRead > 0)
 	{
 		memcpy(pData, pConstBuffer + Pos, BytesToRead);
@@ -39,7 +39,7 @@ DWORD CMemStream::Read(void* pData, DWORD Size)
 }
 //---------------------------------------------------------------------
 
-DWORD CMemStream::Write(const void* pData, DWORD Size)
+UPTR CMemStream::Write(const void* pData, UPTR Size)
 {
 	n_assert(IsOpen() && !IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
 
@@ -64,17 +64,17 @@ DWORD CMemStream::Write(const void* pData, DWORD Size)
 }
 //---------------------------------------------------------------------
 
-bool CMemStream::Seek(int Offset, ESeekOrigin Origin)
+bool CMemStream::Seek(I64 Offset, ESeekOrigin Origin)
 {
-	int SeekPos;
+	I64 SeekPos;
 	switch (Origin)
 	{
-		case Seek_Begin:		SeekPos = Offset; break;
+		case Seek_Begin:	SeekPos = Offset; break;
 		case Seek_Current:	SeekPos = Pos + Offset; break;
 		case Seek_End:		SeekPos = DataSize + Offset; break;
 		default:			Sys::Error("CMemStream::Seek -> Unknown origin");
 	}
-	Pos = Clamp<int>(SeekPos, 0, DataSize);
+	Pos = (IPTR)Clamp<I64>(SeekPos, 0, DataSize);
 	return Pos == SeekPos;
 }
 //---------------------------------------------------------------------

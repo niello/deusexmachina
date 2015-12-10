@@ -17,10 +17,10 @@ class CBuffer
 protected:
 
 	char*	pData;
-	int		DataSize;
-	int		Allocated;
+	UPTR	DataSize;
+	UPTR	Allocated;
 
-	void	Allocate(int DataSize);
+	void	Allocate(UPTR Size);
 	int		BinaryCompare(const CBuffer& Other) const;
 
 public:
@@ -31,18 +31,18 @@ public:
 	CBuffer(const CBuffer& Other): pData(NULL), DataSize(0), Allocated(0) { Set(Other.pData, Other.DataSize); }
 	~CBuffer() { if (pData) n_free(pData); }
 
-	void	Reserve(int Size);
+	void	Reserve(UPTR Size);
 	void	Clear();
-	void	Trim(int Size) { n_assert(Size <= DataSize); DataSize = Size; }
+	void	Trim(UPTR Size) { n_assert(Size <= DataSize); DataSize = Size; }
 	int		HashCode() const { Hash(pData, DataSize); }
 
 	bool	IsValid() const { return !!pData; }
 	void*	GetPtr() const { return pData; }
 	int		GetSize() const { return DataSize; }
 	int		GetCapacity() const { return Allocated; }
-	void	Set(const void* pSrc, int SrcSize);
-	void	Read(char* pDst, int StartIdx, int EndIdx);
-	void	Write(const char* pSrc, int StartIdx, int EndIdx);
+	void	Set(const void* pSrc, UPTR SrcSize);
+	void	Read(char* pDst, UPTR StartIdx, UPTR EndIdx);
+	void	Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx);
 
 	void operator =(const CBuffer& Other) { Set(Other.pData, Other.DataSize); }
 	bool operator ==(const CBuffer& Other) const { return !BinaryCompare(Other); }
@@ -53,7 +53,7 @@ public:
 	bool operator <=(const CBuffer& Other) const { return BinaryCompare(Other) <= 0; }
 };
 
-inline void CBuffer::Allocate(int Size)
+inline void CBuffer::Allocate(UPTR Size)
 {
 	n_assert(!IsValid());
 	pData = (char*)n_malloc(Size);
@@ -74,7 +74,7 @@ inline void CBuffer::Clear()
 }
 //---------------------------------------------------------------------
 
-inline void CBuffer::Set(const void* pSrc, int SrcSize)
+inline void CBuffer::Set(const void* pSrc, UPTR SrcSize)
 {
 	n_assert(pSrc || !SrcSize);
 
@@ -89,12 +89,10 @@ inline void CBuffer::Set(const void* pSrc, int SrcSize)
 }
 //---------------------------------------------------------------------
 
-inline void CBuffer::Read(char* pDst, int StartIdx, int EndIdx)
+inline void CBuffer::Read(char* pDst, UPTR StartIdx, UPTR EndIdx)
 {
 	n_assert(pDst &&
-		StartIdx >= 0 &&
 		StartIdx < Allocated &&
-		EndIdx >= 0 &&
 		EndIdx < Allocated &&
 		EndIdx >= StartIdx);
 
@@ -102,12 +100,10 @@ inline void CBuffer::Read(char* pDst, int StartIdx, int EndIdx)
 }
 //---------------------------------------------------------------------
 
-inline void CBuffer::Write(const char* pSrc, int StartIdx, int EndIdx)
+inline void CBuffer::Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx)
 {
 	n_assert(pSrc &&
-		StartIdx >= 0 &&
 		StartIdx < Allocated &&
-		EndIdx >= 0 &&
 		EndIdx < Allocated &&
 		EndIdx >= StartIdx);
 
@@ -116,7 +112,7 @@ inline void CBuffer::Write(const char* pSrc, int StartIdx, int EndIdx)
 }
 //---------------------------------------------------------------------
 
-inline void CBuffer::Reserve(int Size)
+inline void CBuffer::Reserve(UPTR Size)
 {
 	if (Allocated < Size)
 	{

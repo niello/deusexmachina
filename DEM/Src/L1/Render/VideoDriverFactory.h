@@ -37,14 +37,14 @@ public:
 	struct CAdapterInfo
 	{
 		CString	Description;
-		DWORD				VendorID;
-		DWORD				DeviceID;
-		DWORD				SubSysID;
-		DWORD				Revision;
-		QWORD				VideoMemBytes;
-		QWORD				DedicatedSystemMemBytes;
-		QWORD				SharedSystemMemBytes;
-		bool				IsSoftware;
+		U32		VendorID;
+		U32		DeviceID;
+		U32		SubSysID;
+		U32		Revision;
+		U64		VideoMemBytes;
+		U64		DedicatedSystemMemBytes;
+		U64		SharedSystemMemBytes;
+		bool	IsSoftware;
 	};
 
 protected:

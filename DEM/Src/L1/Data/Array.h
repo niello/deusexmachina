@@ -92,8 +92,8 @@ public:
 
 	bool		IsEmpty() const { return !Count; }
 	int			GetCount() const { return (int)Count; } //!!!FIXME make unsigned
-	int			GetAllocSize() const { return Allocated; }
-	void		SetGrowSize(int Grow) { GrowSize = Grow; }
+	UPTR		GetAllocSize() const { return Allocated; }
+	void		SetGrowSize(UPTR Grow) { GrowSize = Grow; }
 	void		SetDoubleGrow(bool Double) { Flags.SetTo(Array_DoubleGrowSize, Double); }
 	void		SetKeepOrder(bool Keep) { Flags.SetTo(Array_KeepOrder, Keep); }
 	bool		IsDoubleGrowing() const { return Flags.Is(Array_DoubleGrowSize); }

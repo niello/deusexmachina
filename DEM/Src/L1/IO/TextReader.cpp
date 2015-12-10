@@ -10,7 +10,7 @@ bool CTextReader::ReadLine(char* pOutValue, DWORD MaxLen)
 
 	if (Stream.IsEOF() || MaxLen < 2) FAIL;
 
-	DWORD StartPos = Stream.GetPosition();
+	U64 StartPos = Stream.GetPosition();
 
 	char* pCurr = pOutValue;
 	char* pEnd = pOutValue + MaxLen - 1;
@@ -27,7 +27,7 @@ bool CTextReader::ReadLine(char* pOutValue, DWORD MaxLen)
 				char Pair = (*pCurr == '\n') ? '\r' : '\n';
 				*pCurr = 0;
 				++pCurr;
-				DWORD SeekTo = StartPos + (pCurr - pOutValue);
+				U64 SeekTo = StartPos + (pCurr - pOutValue);
 				if (*pCurr == Pair)
 					++SeekTo;
 				Stream.Seek(SeekTo, Seek_Begin);
