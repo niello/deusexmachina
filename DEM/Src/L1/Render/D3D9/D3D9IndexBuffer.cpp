@@ -33,7 +33,7 @@ bool CD3D9IndexBuffer::Create(EIndexType Type, IDirect3DIndexBuffer9* pIB)
 	IndexCount = D3DDesc.Size / (DWORD)Type;
 	pBuffer = pIB;
 	Usage = D3DDesc.Usage;
-	LockCount = 0;
+	//LockCount = 0;
 
 	OK;
 }
@@ -41,7 +41,7 @@ bool CD3D9IndexBuffer::Create(EIndexType Type, IDirect3DIndexBuffer9* pIB)
 
 void CD3D9IndexBuffer::InternalDestroy()
 {
-	n_assert(!LockCount);
+	//n_assert(!LockCount);
 	SAFE_RELEASE(pBuffer);
 }
 //---------------------------------------------------------------------

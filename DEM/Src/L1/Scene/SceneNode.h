@@ -74,7 +74,7 @@ public:
 	CSceneNode*				GetChild(DWORD Idx) const { return Children.ValueAt(Idx); }
 	//???create and non-create () const; versions?
 	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
-	CSceneNode*				GetChild(LPCSTR pPath, bool Create = false);
+	CSceneNode*				GetChild(const char* pPath, bool Create = false);
 
 	bool					SetController(CNodeController* pCtlr);
 	CNodeController*		GetController() const { return Controller.GetUnsafe(); }

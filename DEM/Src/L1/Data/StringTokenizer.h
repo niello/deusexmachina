@@ -49,7 +49,7 @@ inline CStringTokenizer::CStringTokenizer(const char* String, char* Buffer, UPTR
 	else
 	{
 		BufferSize = strlen(String) + 1;
-		pBuffer = (LPSTR)n_malloc(BufferSize);
+		pBuffer = (char*)n_malloc(BufferSize);
 		FreeBuffer = true;
 	}
 
@@ -111,7 +111,7 @@ inline const char* CStringTokenizer::GetNextToken(const char* pSplitChars, char 
 {
 	if (!pCursor) return NULL;
 
-	LPSTR pBuf = pBuffer;
+	char* pBuf = pBuffer;
 
 	char Chr = *pCursor;
 	if (Chr)

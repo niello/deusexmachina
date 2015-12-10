@@ -30,7 +30,7 @@ public:
 	void	SetAlias(CStrID Alias, T Mask) { Flags.Add(Alias, Mask); }
 };
 
-typedef CDynamicEnumT<ushort> CDynamicEnum16;
+typedef CDynamicEnumT<U16> CDynamicEnum16;
 typedef CDynamicEnumT<DWORD> CDynamicEnum32;
 
 template<class T>

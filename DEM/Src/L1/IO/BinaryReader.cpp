@@ -10,11 +10,11 @@ namespace IO
 
 bool CBinaryReader::ReadString(char* OutValue, DWORD MaxLen)
 {
-	ushort Len;
+	U16 Len;
 	int SeekOfs;
 	if (!Read(Len)) FAIL;
 	SeekOfs = (DWORD)Len - (MaxLen - 1);
-	if (SeekOfs > 0) Len = (ushort)(MaxLen - 1);
+	if (SeekOfs > 0) Len = (U16)(MaxLen - 1);
 	if (Stream.Read(OutValue, Len) != Len) FAIL;
 	OutValue[Len] = 0;
 	if (SeekOfs > 0) Stream.Seek(SeekOfs, IO::Seek_Current);
@@ -24,7 +24,7 @@ bool CBinaryReader::ReadString(char* OutValue, DWORD MaxLen)
 
 bool CBinaryReader::ReadString(char*& OutValue)
 {
-	ushort Len;
+	U16 Len;
 	if (!Read(Len)) FAIL;
 	OutValue = n_new_array(char, Len + 1);
 	if (Stream.Read(OutValue, Len) != Len)
@@ -39,7 +39,7 @@ bool CBinaryReader::ReadString(char*& OutValue)
 
 bool CBinaryReader::ReadString(CString& OutValue)
 {
-	ushort Len;
+	U16 Len;
 	if (!Read(Len)) FAIL;
 
 	if (Len)

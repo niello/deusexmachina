@@ -1756,7 +1756,7 @@ void CD3D9GPUDriver::EndFrame()
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil)
+void CD3D9GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, U8 Stencil)
 {
 	if (!Flags) return;
 

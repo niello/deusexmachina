@@ -34,7 +34,7 @@ PParams CDataServer::ReloadHRD(const char* pFileName, bool Cache)
 
 	PParams Params;
 	CHRDParser Parser; //???static?
-	if (Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params))
+	if (Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Params))
 	{
 		if (Cache) HRDCache.Add(CString(pFileName), Params); //!!!???mangle/unmangle path to avoid duplicates?
 	}
@@ -109,7 +109,7 @@ PXMLDocument CDataServer::LoadXML(const char* pFileName) //, bool Cache)
 	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) FAIL;
 
 	PXMLDocument XML = n_new(CXMLDocument);
-	if (XML->Parse((LPCSTR)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)
+	if (XML->Parse((const char*)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)
 	{
 		//if (Cache) XMLCache.Add(FileName.CStr(), XML); //!!!???mangle/unmangle path to avoid duplicates?
 	}

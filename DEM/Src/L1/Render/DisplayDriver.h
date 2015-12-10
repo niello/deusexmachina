@@ -23,8 +23,8 @@ public:
 	{
 		short	Left;
 		short	Top;
-		ushort	Width;
-		ushort	Height;
+		U16	Width;
+		U16	Height;
 		bool	IsPrimary;
 		//bool	IsAttachedToDesktop; // D3D9: HMONITOR -> DISPLAY_DEVICE
 		//CString DeviceName; // D3D9 - from adapter info

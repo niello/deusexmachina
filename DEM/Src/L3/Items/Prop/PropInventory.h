@@ -38,7 +38,7 @@ protected:
 	virtual void	EnableSI(class CPropScriptable& Prop);
 	virtual void	DisableSI(class CPropScriptable& Prop);
 
-	WORD			RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan);
+	U16				RemoveItem(ItItemStack Stack, U16 Count, bool AsManyAsCan);
 
 	DECLARE_EVENT_HANDLER(OnPropActivated, OnPropActivated);
 	DECLARE_EVENT_HANDLER(OnPropDeactivating, OnPropDeactivating);
@@ -56,29 +56,29 @@ public:
 	CPropInventory(): MaxWeight(82.f), MaxVolume(146.f), CurrWeight(0.f), CurrVolume(0.f) {}
 	//virtual ~CPropInventory();
 
-	WORD			AddItem(PItem NewItem, WORD Count = 1, bool AsManyAsCan = false);
-	WORD			AddItem(CStrID ItemID, WORD Count = 1, bool AsManyAsCan = false);
-	WORD			AddItem(const CItemStack& Items, bool AsManyAsCan = false);
-	WORD			RemoveItem(PItem Item, WORD Count = 1, bool AsManyAsCan = false);
-	WORD			RemoveItem(CStrID ItemID, WORD Count = 1, bool AsManyAsCan = false);
-	bool			HasItem(CStrID ItemID, WORD Count = 1); //???GetItemCount(CStrID)?
+	U16				AddItem(PItem NewItem, U16 Count = 1, bool AsManyAsCan = false);
+	U16				AddItem(CStrID ItemID, U16 Count = 1, bool AsManyAsCan = false);
+	U16				AddItem(const CItemStack& Items, bool AsManyAsCan = false);
+	U16				RemoveItem(PItem Item, U16 Count = 1, bool AsManyAsCan = false);
+	U16				RemoveItem(CStrID ItemID, U16 Count = 1, bool AsManyAsCan = false);
+	bool			HasItem(CStrID ItemID, U16 Count = 1); //???GetItemCount(CStrID)?
 	CItemStack*		FindItemStack(const CItem* pItem);
 	CItemStack*		FindItemStack(CStrID ItemID);
-	bool			SplitItems(PItem Item, WORD Ñount, CItemStack& OutStack);
+	bool			SplitItems(PItem Item, U16 Ñount, CItemStack& OutStack);
 	void			MergeItems(PItem Item);
 
 	const CArray<CItemStack>& GetItems() const { return Items; }
 };
 //---------------------------------------------------------------------
 
-inline WORD CPropInventory::AddItem(CStrID ItemID, WORD Count, bool AsManyAsCan)
+inline U16 CPropInventory::AddItem(CStrID ItemID, U16 Count, bool AsManyAsCan)
 {
 	PItemTpl Tpl = ItemMgr->GetItemTpl(ItemID);
 	return Tpl.IsValidPtr() ? AddItem(Tpl->GetTemplateItem(), Count, AsManyAsCan) : 0;
 }
 //---------------------------------------------------------------------
 
-inline WORD CPropInventory::AddItem(const CItemStack& Items, bool AsManyAsCan)
+inline U16 CPropInventory::AddItem(const CItemStack& Items, bool AsManyAsCan)
 {
 	return AddItem(Items.GetItem(), Items.GetCount(), AsManyAsCan);
 }

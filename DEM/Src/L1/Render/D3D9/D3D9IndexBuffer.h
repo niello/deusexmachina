@@ -7,6 +7,7 @@
 // Direct3D9 implementation of an index buffer
 
 struct IDirect3DIndexBuffer9;
+typedef unsigned int UINT;
 
 namespace Render
 {
@@ -19,13 +20,13 @@ protected:
 
 	IDirect3DIndexBuffer9*	pBuffer;
 	UINT					Usage;
-	DWORD					LockCount;
+	//DWORD					LockCount;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9IndexBuffer(): pBuffer(NULL), LockCount(0) {}
+	CD3D9IndexBuffer(): pBuffer(NULL)/*, LockCount(0)*/ {}
 	virtual ~CD3D9IndexBuffer() { InternalDestroy(); }
 
 	bool					Create(EIndexType Type, IDirect3DIndexBuffer9* pIB);

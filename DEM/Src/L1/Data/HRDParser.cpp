@@ -44,7 +44,7 @@ CHRDParser::CHRDParser(): pErr(NULL)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result, CString* pErrors)
+bool CHRDParser::ParseBuffer(const char* Buffer, DWORD Length, PParams& Result, CString* pErrors)
 {
 	if (!Buffer) FAIL;
 

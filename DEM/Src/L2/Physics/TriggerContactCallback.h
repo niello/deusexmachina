@@ -16,7 +16,7 @@ protected:
 
 public:
 
-	CTriggerContactCallback(btCollisionObject* pMe, CArray<const btCollisionObject*>& Results, ushort Group, ushort Mask):
+	CTriggerContactCallback(btCollisionObject* pMe, CArray<const btCollisionObject*>& Results, U16 Group, U16 Mask):
 		pSelf(pMe), CollResults(Results)
 	{
 		m_collisionFilterGroup = Group;

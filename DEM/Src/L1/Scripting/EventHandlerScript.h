@@ -24,7 +24,7 @@ private:
 
 public:
 
-	CEventHandlerScript(Scripting::CScriptObject* Obj, const char* pFuncName, ushort _Priority = Priority_Default): CEventHandler(_Priority), pObject(Obj), Func(pFuncName) {}
+	CEventHandlerScript(Scripting::CScriptObject* Obj, const char* pFuncName, U16 _Priority = Priority_Default): CEventHandler(_Priority), pObject(Obj), Func(pFuncName) {}
 
 	virtual bool				Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event);
 

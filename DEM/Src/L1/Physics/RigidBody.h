@@ -29,7 +29,7 @@ public:
 	virtual ~CRigidBody() { InternalTerm(); }
 
 	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
-	bool			Init(CCollisionShape& CollShape, float BodyMass, ushort CollGroup, ushort CollMask, const vector3& Offset = vector3::Zero);
+	bool			Init(CCollisionShape& CollShape, float BodyMass, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
 	virtual void	Term();
 	virtual bool	AttachToLevel(CPhysicsWorld& World);
 	virtual void	RemoveFromLevel();

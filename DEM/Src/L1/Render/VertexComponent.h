@@ -46,19 +46,19 @@ enum EVertexComponentFormat
 
 struct CVertexComponent
 {
-	static LPCSTR SemanticNames[];
-	static LPCSTR FormatNames[];
+	static const char* SemanticNames[];
+	static const char* FormatNames[];
 
 	EVertexComponentSemantic	Semantic;
-	LPCSTR						UserDefinedName; // For UserDefined semantics
+	const char*					UserDefinedName; // For UserDefined semantics
 	DWORD						Index;
 	EVertexComponentFormat		Format;
 	DWORD						Stream;
 	DWORD						OffsetInVertex;
 
-	LPCSTR	GetSemanticString() const { n_assert_dbg(Semantic < VCSem_Invalid); return Semantic >= VCSem_UserDefined ? UserDefinedName : SemanticNames[Semantic]; }
-	LPCSTR	GetFormatString() const { n_assert_dbg(Format < VCFmt_Invalid); return FormatNames[Format]; }
-	DWORD	GetSize() const;
+	const char*	GetSemanticString() const { n_assert_dbg(Semantic < VCSem_Invalid); return Semantic >= VCSem_UserDefined ? UserDefinedName : SemanticNames[Semantic]; }
+	const char*	GetFormatString() const { n_assert_dbg(Format < VCFmt_Invalid); return FormatNames[Format]; }
+	DWORD		GetSize() const;
 };
 
 inline DWORD CVertexComponent::GetSize() const

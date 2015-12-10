@@ -44,7 +44,7 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsObject::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
+bool CPhysicsObject::Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset)
 {
 	n_assert(CollShape.IsResourceValid());
 	Shape = &CollShape;

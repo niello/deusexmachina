@@ -51,7 +51,7 @@ protected:
 	//DWORD							PrimsRendered;
 	//DWORD							DIPsRendered;
 
-	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UINT& Width, UINT& Height);
+	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UPTR& Width, UPTR& Height);
 
 public:
 
@@ -106,7 +106,7 @@ public:
 
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
-	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil) = 0;
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, U8 Stencil) = 0;
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
 

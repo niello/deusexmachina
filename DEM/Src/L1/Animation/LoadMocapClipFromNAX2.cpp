@@ -10,27 +10,27 @@ namespace Anim
 #pragma pack(push, 1)
 struct CNAX2Header
 {
-	uint magic;         // NAX2
-	uint numGroups;     // number of groups in file
-	uint numKeys;       // number of keys in file
+	UPTR magic;         // NAX2
+	UPTR numGroups;     // number of groups in file
+	UPTR numKeys;       // number of keys in file
 };
 
 struct CNAX2Group
 {
-	uint numCurves;         // number of curves in group
-	uint startKey;          // first key index
-	uint numKeys;           // number of keys in group
-	uint keyStride;         // key stride in key pool
+	UPTR numCurves;         // number of curves in group
+	UPTR startKey;          // first key index
+	UPTR numKeys;           // number of keys in group
+	UPTR keyStride;         // key stride in key pool
 	float keyTime;           // key duration
 	float fadeInFrames;      // number of fade in frames
-	uint loopType;          // nAnimation::LoopType
+	UPTR loopType;          // nAnimation::LoopType
 };
 
 struct CNAX2Curve
 {
-	uint ipolType;          // nAnimation::Curve::IpolType
+	UPTR ipolType;          // nAnimation::Curve::IpolType
 	int firstKeyIndex;     // index of first curve key in key pool (-1 if collapsed!)
-	uint isAnimated;        // flag, if the curve's joint is animated
+	UPTR isAnimated;        // flag, if the curve's joint is animated
 	vector4 collapsedKey;   // the key value if this is a collapsed curve
 };
 #pragma pack(pop)
@@ -49,7 +49,7 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 	Reader.Read(Group);
 
 	DWORD TotalCurves = Group.numCurves;
-	for (uint i = 1; i < Header.numGroups; ++i)
+	for (UPTR i = 1; i < Header.numGroups; ++i)
 	{
 		CNAX2Group TmpGroup;
 		Reader.Read(TmpGroup);
@@ -58,7 +58,7 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 
 	CArray<CMocapTrack> Tracks;
 	CArray<CStrID> TrackMapping;
-	for (uint i = 0; i < Group.numCurves; ++i)
+	for (UPTR i = 0; i < Group.numCurves; ++i)
 	{
 		CNAX2Curve Curve;
 		Reader.Read(Curve);
@@ -104,7 +104,7 @@ bool LoadMocapClipFromNAX2(IO::CStream& In, const CDict<int, CStrID>& BoneToNode
 		TrackMapping.Add(RelNodePath);
 	}
 
-	for (uint i = Group.numCurves; i < TotalCurves; ++i)
+	for (UPTR i = Group.numCurves; i < TotalCurves; ++i)
 		Reader.Read<CNAX2Curve>();
 
 	DWORD KeyCount = Group.numKeys * Group.keyStride;

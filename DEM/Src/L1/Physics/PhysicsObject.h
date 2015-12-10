@@ -30,13 +30,13 @@ protected:
 
 	PCollisionShape		Shape;
 	vector3				ShapeOffset;	// Offset between a center of mass and a graphics
-	ushort				Group;
-	ushort				Mask;
+	U16				Group;
+	U16				Mask;
 	btCollisionObject*	pBtCollObj;
 	CPhysicsWorld*		pWorld;
 	void*				pUserPtr;
 
-	bool				Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset = vector3::Zero);
+	bool				Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
 	void				InternalTerm();
 	virtual void		GetTransform(btTransform& Out) const;
 
@@ -60,8 +60,8 @@ public:
 	void				GetPhysicsAABB(CAABB& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
 	CPhysicsWorld*		GetWorld() const { return pWorld; }
-	ushort				GetCollisionGroup() const { return Group; }
-	ushort				GetCollisionMask() const { return Mask; }
+	U16				GetCollisionGroup() const { return Group; }
+	U16				GetCollisionMask() const { return Mask; }
 	const vector3&		GetShapeOffset() const { return ShapeOffset; }
 };
 

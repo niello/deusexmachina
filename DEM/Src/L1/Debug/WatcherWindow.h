@@ -72,7 +72,7 @@ public:
 	virtual void	SetVisible(bool Visible);
 	void			SetInputFocus() { ((CEGUI::Window*)pPatternEdit)->activate(); }
 
-	void			AddWatched(EVarType Type, LPCSTR Name);
+	void			AddWatched(EVarType Type, const char* Name);
 	void			AddAllGlobals();
 };
 

@@ -29,8 +29,8 @@ CPhysicsServer::CPhysicsServer(): _IsOpen(false)
 	// We can use not all Bullet flags
 	CollisionGroups.SetAlias(CStrID("DefaultFilter"), "Default");
 
-	ushort PickMask = CollisionGroups.GetMask("MousePick");
-	ushort PickTargetMask = CollisionGroups.GetMask("MousePickTarget");
+	U16 PickMask = CollisionGroups.GetMask("MousePick");
+	U16 PickTargetMask = CollisionGroups.GetMask("MousePickTarget");
 	CollisionGroups.SetAlias(CStrID("All"), ~PickTargetMask);
 	CollisionGroups.SetAlias(CStrID("AllNoPick"), (~PickTargetMask) & (~PickMask));
 }

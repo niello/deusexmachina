@@ -36,7 +36,7 @@ bool CDataScheme::Init(const CParams& Desc)
 			if (TypeIDVal->IsA<int>()) Rec.TypeID = *TypeIDVal;
 			else if (TypeIDVal->IsA<CString>())
 			{
-				LPCSTR pTypeString = TypeIDVal->GetValue<CString>().CStr();
+				const char* pTypeString = TypeIDVal->GetValue<CString>().CStr();
 
 				//???move somewhere as common? or even store map of string-to-ID
 				if (!n_stricmp(pTypeString, "bool")) Rec.TypeID = DATA_TYPE_ID(bool);

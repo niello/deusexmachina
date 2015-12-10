@@ -113,7 +113,7 @@ CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 }
 //---------------------------------------------------------------------
 
-CSceneNode* CSceneNode::GetChild(LPCSTR pPath, bool Create)
+CSceneNode* CSceneNode::GetChild(const char* pPath, bool Create)
 {
 	if (!pPath || !*pPath) return this;
 

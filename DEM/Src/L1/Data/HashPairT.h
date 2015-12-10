@@ -13,21 +13,21 @@ class CHashPairT
 {
 protected:
 
-	uint KeyHash;
+	UPTR KeyHash;
 	TKey Key;
 	TVal Value;
 
 public:
 
 	CHashPairT() {}
-	CHashPairT(const TKey& _Key, const TVal& _Value, uint _KeyHash):  Key(_Key), Value(_Value), KeyHash(_KeyHash) {}
+	CHashPairT(const TKey& _Key, const TVal& _Value, UPTR _KeyHash):  Key(_Key), Value(_Value), KeyHash(_KeyHash) {}
 	CHashPairT(const TKey& _Key, const TVal& _Value):  Key(_Key), Value(_Value), KeyHash(Hash(_Key)) {}
 	CHashPairT(const TKey& _Key): Key(_Key), KeyHash(Hash(_Key)) {}
 	CHashPairT(const CHashPairT<TKey, TVal>& Other): Key(Other.Key), Value(Other.Value), KeyHash(Other.KeyHash) {}
 	//CHashPairT(const CPairT<TKey, TVal>& Other): Key(Other.Key), Value(Other.Value), KeyHash(Hash(Other.Key)) {}
 
 	const TKey&	GetKey() const { return Key; }
-	uint		GetKeyHash() const { return KeyHash; }
+	UPTR		GetKeyHash() const { return KeyHash; }
 	const TVal&	GetValue() const { return Value; }
 	TVal&		GetValue() { return Value; }
 

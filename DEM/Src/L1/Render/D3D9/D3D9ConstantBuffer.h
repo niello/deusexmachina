@@ -9,6 +9,8 @@
 
 // A Direct3D9 implementation of a shader constant buffer.
 
+typedef int BOOL;
+
 namespace Render
 {
 

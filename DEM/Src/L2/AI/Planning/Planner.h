@@ -55,15 +55,15 @@ public:
 
 	CPlanner(): NewActIdx(0) {}
 
-	void				RegisterActionTpl(LPCSTR Name, Data::PParams Params = NULL);
+	void				RegisterActionTpl(const char* Name, Data::PParams Params = NULL);
 	void				EndActionTpls();
-	const CActionTpl*	FindActionTpl(LPCSTR Name) const;
+	const CActionTpl*	FindActionTpl(const char* Name) const;
 
 	PAction				BuildPlan(CActor* pActor, CGoal* pGoal);
 };
 //---------------------------------------------------------------------
 
-inline const CActionTpl* CPlanner::FindActionTpl(LPCSTR Name) const
+inline const CActionTpl* CPlanner::FindActionTpl(const char* Name) const
 {
 	CString ClassName = StrActTplPrefix + Name;
 	for (CArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ppTpl++)

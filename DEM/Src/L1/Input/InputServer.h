@@ -63,11 +63,11 @@ private:
 
 	bool	_IsOpen;
 
-	uchar	KeyState[KeyCount];
-	ushort	Chars[CharBufferSize];
+	U8	KeyState[KeyCount];
+	U16	Chars[CharBufferSize];
 	int		CharCount;
 
-	uchar	MouseBtnState[MouseBtnCount];
+	U8	MouseBtnState[MouseBtnCount];
 	int		WheelFwd;
 	int		WheelBack;
 	int		RawMouseMoveX;
@@ -110,14 +110,14 @@ public:
 	bool			IsKeyDown(EKey Key) const { return !!(KeyState[Key] & KEY_IS_DOWN); }
 	bool			IsKeyUp(EKey Key) const { return !!(KeyState[Key] & KEY_IS_UP); }
 	bool			IsKeyPressed(EKey Key) const { return !!(KeyState[Key] & KEY_IS_PRESSED); }
-	bool			CheckKeyState(EKey Key, uchar StateFlags) const { return !!(KeyState[Key] & StateFlags); }
-	const ushort*	GetCharInput() { n_assert(CharCount < CharBufferSize); Chars[CharCount] = 0; return Chars; }
+	bool			CheckKeyState(EKey Key, U8 StateFlags) const { return !!(KeyState[Key] & StateFlags); }
+	const U16*	GetCharInput() { n_assert(CharCount < CharBufferSize); Chars[CharCount] = 0; return Chars; }
 
 	bool			IsMouseBtnDown(EMouseButton Btn) const { return !!(MouseBtnState[Btn] & KEY_IS_DOWN); }
 	bool			IsMouseBtnUp(EMouseButton Btn) const { return !!(MouseBtnState[Btn] & KEY_IS_UP); }
 	bool			IsMouseBtnPressed(EMouseButton Btn) const { return !!(MouseBtnState[Btn] & KEY_IS_PRESSED); }
 	bool			IsMouseBtnDoubleClicked(EMouseButton Btn) const { return !!(MouseBtnState[Btn] & KEY_IS_DBL_CLICKED); }
-	bool			CheckMouseBtnState(EMouseButton Btn, uchar StateFlags) const { return !!(MouseBtnState[Btn] & StateFlags); }
+	bool			CheckMouseBtnState(EMouseButton Btn, U8 StateFlags) const { return !!(MouseBtnState[Btn] & StateFlags); }
 	int				GetMousePosX() const { return MouseXAbs; }
 	int				GetMousePosY() const { return MouseYAbs; }
 	void			GetMousePos(int& X, int& Y) const { X = MouseXAbs; Y = MouseYAbs; }

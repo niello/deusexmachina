@@ -44,7 +44,7 @@ bool CPropUIControl::InternalActivate()
 		if (Desc->Get<bool>(CStrID("Explorable"), false))
 		{
 			CStrID ID("Explore");
-			LPCSTR pUIName = UIActionNames.IsValidPtr() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
+			const char* pUIName = UIActionNames.IsValidPtr() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteExploreAction, 1, false));
 			CAction* pAct = GetActionByID(ID);
 			pAct->Enabled = UIDesc.IsValid();
@@ -54,7 +54,7 @@ bool CPropUIControl::InternalActivate()
 		if (Desc->Get<bool>(CStrID("Selectable"), false))
 		{
 			CStrID ID("Select");
-			LPCSTR pUIName = UIActionNames.IsValidPtr() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
+			const char* pUIName = UIActionNames.IsValidPtr() ? UIActionNames->Get<CString>(ID, CString::Empty).CStr() : ID.CStr();
 			n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSelectAction, Priority_Top, false));
 		}
 
@@ -75,8 +75,8 @@ bool CPropUIControl::InternalActivate()
 		}
 		Physics::PCollisionShape Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
 
-		ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
-		ushort Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
+		U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
+		U16 Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 
 		MousePickShape = n_new(Physics::CNodeAttrCollision);
 		MousePickShape->CollObj = n_new(Physics::CCollisionObjMoving);
@@ -202,7 +202,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 		const CPropSmartObject::CAction* pSOAction = SOActions.Get(ID);
 		if (!pSOAction) continue;
 
-		LPCSTR pUIName = Prm.GetValue<CString>().CStr();
+		const char* pUIName = Prm.GetValue<CString>().CStr();
 		n_assert(AddActionHandler(ID, pUIName, this, &CPropUIControl::OnExecuteSmartObjAction, Priority_Default, true));
 
 		CAction* pUIAction = GetActionByID(ID);
@@ -317,7 +317,7 @@ void CPropUIControl::HideTip()
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority, bool IsSOAction)
+bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, const char* ScriptFuncName, int Priority, bool IsSOAction)
 {
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
@@ -326,7 +326,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFun
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction)
+bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction)
 {
 	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
 		if (It->ID == ID) FAIL;

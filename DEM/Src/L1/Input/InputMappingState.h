@@ -47,7 +47,7 @@ private:
 					EKey			Key;
 					EMouseButton	MouseBtn;
 				};
-				uchar KeyBtnState;
+				U8 KeyBtnState;
 			};
 			bool WheelFwd;
 		};

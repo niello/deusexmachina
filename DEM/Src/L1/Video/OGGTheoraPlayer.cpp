@@ -380,14 +380,14 @@ COGGTheoraPlayer::Decode(CTime DeltaTime)
     n_assert(_IsOpen);
     // calculate how many frames need to be decoded
     currentTime += DeltaTime;
-    uint neededFrame = (uint)(currentTime * (CTime)ti.fps_numerator/(CTime)ti.fps_denominator);
-    uint framesToDo = neededFrame - decodedFrames;
+    UPTR neededFrame = (UPTR)(currentTime * (CTime)ti.fps_numerator/(CTime)ti.fps_denominator);
+    UPTR framesToDo = neededFrame - decodedFrames;
     // disable automatic updating of the texture
     // we only need to do that once
     bool oldTexUpdate = DoTextureUpdate;
     DoTextureUpdate = false;
     // now decode
-    uint i;
+    UPTR i;
     for (i = 0; i < framesToDo; i++)
     {
         if (!isPlaying) break;

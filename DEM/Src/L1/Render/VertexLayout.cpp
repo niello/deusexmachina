@@ -4,7 +4,7 @@ namespace Render
 {
 __ImplementClassNoFactory(Render::CVertexLayout, Core::CObject);
 
-LPCSTR CVertexComponent::SemanticNames[] =
+const char* CVertexComponent::SemanticNames[] =
 {
 	"Pos",
 	"Nrm",
@@ -16,7 +16,7 @@ LPCSTR CVertexComponent::SemanticNames[] =
 	"Bix"
 };
 
-LPCSTR CVertexComponent::FormatNames[] =
+const char* CVertexComponent::FormatNames[] =
 {
 	"F",
 	"F2",
@@ -30,7 +30,7 @@ LPCSTR CVertexComponent::FormatNames[] =
 	"S4N"
 };
 
-static LPCSTR IndexStrings[] =
+static const char* IndexStrings[] =
 {
 	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
 	"10", "11", "12", "13", "14", "15", "16", "17", "18", "19",

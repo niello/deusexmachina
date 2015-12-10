@@ -7,7 +7,7 @@
 
 namespace Util
 {
-	uint	CalcCRC(const uchar* pData, uint Size);
+	UPTR	CalcCRC(const U8* pData, UPTR Size);
 	float	GeneratePerlinNoise(float x, float y, float z);
 }
 

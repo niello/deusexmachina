@@ -78,7 +78,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 		int SPSHierarchyDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 
-		SPS.QuadTree.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (uchar)SPSHierarchyDepth);
+		SPS.QuadTree.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (U8)SPSHierarchyDepth);
 
 		CameraManager = n_new(Scene::CCameraManager);
 
@@ -459,8 +459,8 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	line3 Ray;
 	MainCamera->GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
 
-	ushort Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
-	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
+	U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
+	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
 	Physics::PPhysicsObj PhysObj;
 	if (!PhysWorld->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 
@@ -578,8 +578,8 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
 	//!!!can request closest contacts for Default and Terrain!
-	ushort Group = PhysicsSrv->CollisionGroups.GetMask("Default");
-	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All");
+	U16 Group = PhysicsSrv->CollisionGroups.GetMask("Default");
+	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All");
 	vector3 ContactPos;
 	if (!PhysWorld->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
 	Out.WorldHeight = ContactPos.y;

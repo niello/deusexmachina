@@ -151,7 +151,7 @@ bool CPropActorBrain::InternalActivate()
 			ActionTpls.Reallocate(ActionArray->GetCount(), 0);
 			for (int i = 0; i < ActionArray->GetCount(); ++i)
 			{
-				LPCSTR pActionName = ActionArray->At(i).GetValue<CString>().CStr();
+				const char* pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);
 				if (pTpl) ActionTpls.Add(pTpl);
 				else Sys::Log("AI,Warning: entity '%s' requested action template '%s' that is not registered\n",

@@ -20,9 +20,9 @@ protected:
 	friend class CStringIDStorage;
 	static class CStringIDStorage Storage;
 
-	LPCSTR String;
+	const char* String;
 
-	explicit CStringID(LPCSTR pString, int, int){ String = pString; }
+	explicit CStringID(const char* pString, int, int){ String = pString; }
 
 public:
 
@@ -32,15 +32,15 @@ public:
 #ifdef _DEBUG
 	explicit // So I can later search all static StrIDs and predefine them
 #endif
-	CStringID(LPCSTR pString, bool OnlyExisting = false);
-	explicit	CStringID(void* StrID): String((LPCSTR)StrID) {} // Direct constructor. Be careful.
-	explicit	CStringID(DWORD StrID): String((LPCSTR)StrID) {} // Direct constructor. Be careful.
+	CStringID(const char* pString, bool OnlyExisting = false);
+	explicit	CStringID(void* StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
+	explicit	CStringID(DWORD StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
 
 	DWORD		GetID() const { return (DWORD)String; }
-	LPCSTR		CStr() const { return String; }
+	const char*		CStr() const { return String; }
 
 	operator	DWORD() const { return (DWORD)String; }
-	operator	LPCSTR() const { return String; }
+	operator	const char*() const { return String; }
 	//operator	bool() const { return IsValid(); }
 
 	bool		IsValid() const { return String && *String; }
@@ -51,8 +51,8 @@ public:
 	bool		operator >=(const CStringID& Other) const { return String >= Other.String; }
 	bool		operator ==(const CStringID& Other) const { return String == Other.String; }
 	bool		operator !=(const CStringID& Other) const { return String != Other.String; }
-	bool		operator ==(LPCSTR Str) const { return !strcmp(String, Str); }
-	bool		operator !=(LPCSTR Str) const { return !!strcmp(String, Str); }
+	bool		operator ==(const char* Str) const { return !strcmp(String, Str); }
+	bool		operator !=(const char* Str) const { return !!strcmp(String, Str); }
 	CStringID&	operator =(const CStringID& Other) { String = Other.String; return *this; }
 };
 

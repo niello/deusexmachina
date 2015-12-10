@@ -28,14 +28,14 @@ protected:
 	struct BatchInfo
 	{
 		Render::PTexture	texture;
-		uint				vertexCount;
+		UPTR				vertexCount;
 		bool				clip;
 	};
 
 	CDEMRenderer&					d_owner;
 	CDEMTexture*					d_activeTexture;
 	mutable Render::PVertexBuffer	d_vertexBuffer;
-	mutable UINT					d_bufferSize;
+	mutable UPTR					d_bufferSize;
 	mutable bool					d_bufferIsSync;
 	mutable Render::CPrimitiveGroup	d_primGroup;
 	CArray<BatchInfo>				d_batches;

@@ -36,7 +36,7 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	n_assert(AdapterID == Adapter_AutoSelect || D3D11DrvFactory->AdapterExists(AdapterID));
 
 	//!!!fix if will be multithreaded, forex job-based!
-	UINT CreateFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
+	UPTR CreateFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
 #if !defined(_DEBUG) && (DEM_RENDER_DEBUG == 0)
 	// Prevents end-users from debugging an application
@@ -316,7 +316,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	for (int i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd) return ERR_CREATION_ERROR;
 
-	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
+	UPTR BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
 	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
 
 	// If VSync, use triple buffering by default, else double //!!! + 1 if front buffer must be included!
@@ -493,7 +493,7 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 
 	SC.BackBufferRT->Destroy();
 
-	UINT SCFlags = 0; //DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	UPTR SCFlags = 0; //DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	// Preserve the existing buffer count and format.
 	HRESULT hr = SC.pSwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SCFlags);
@@ -877,7 +877,7 @@ bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 //---------------------------------------------------------------------
 
 //!!!ID3D11ShaderResourceView* or PObject!
-bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UINT SlotIndex, ID3D11ShaderResourceView* pSRV)
+bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV)
 {
 	if (!pSRV || SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
 
@@ -978,7 +978,7 @@ void CD3D11GPUDriver::EndFrame()
 //---------------------------------------------------------------------
 
 // Even if RTs and DS set are still dirty (not bound), clear operation can be performed.
-void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil)
+void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, U8 Stencil)
 {
 	if (Flags & Clear_Color)
 	{
@@ -1054,7 +1054,7 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 	{
 		//!!!if InstanceCount < 2!
 //StartIndexLocation [in]
-//Type: UINT
+//Type: UPTR
 //The location of the first index read by the GPU from the index buffer.
 //BaseVertexLocation [in]
 //Type: INT
@@ -1065,7 +1065,7 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 	{
 		//!!!if InstanceCount < 2!
 //StartVertexLocation [in]
-//Type: UINT
+//Type: UPTR
 //Index of the first vertex, which is usually an offset in a vertex buffer.
 		pD3DImmContext->Draw(PrimGroup.VertexCount, PrimGroup.FirstVertex);
 	}
@@ -1325,13 +1325,13 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	{
 		const DWORD MaxVBCount = CurrVB.GetCount();
 		const DWORD PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
-		const DWORD UINTsSize = sizeof(UINT) * MaxVBCount;
+		const DWORD UINTsSize = sizeof(UPTR) * MaxVBCount;
 		char* pMem = (char*)_malloca(PtrsSize + UINTsSize + UINTsSize);
 		n_assert(pMem);
 
 		ID3D11Buffer** pVBs = (ID3D11Buffer**)pMem;
-		UINT* pStrides = (UINT*)(pMem + PtrsSize);
-		UINT* pOffsets = (UINT*)(pMem + PtrsSize + UINTsSize);
+		UPTR* pStrides = (UPTR*)(pMem + PtrsSize);
+		UPTR* pOffsets = (UPTR*)(pMem + PtrsSize + UINTsSize);
 
 		//???PERF: skip all NULL buffers prior to the first non-NULL and all NULL after the last non-NULL and reduce count?
 		for (DWORD i = 0; i < MaxVBCount; ++i)
@@ -1428,7 +1428,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	if (Update.Is(GPU_Dirty_VP) && CurrDirtyFlags.Is(GPU_Dirty_VP))
 	{
 		// Find the last set VP, as we must set all viewports from 0'th to it
-		UINT NumVP = 0;
+		UPTR NumVP = 0;
 		for (DWORD i = 0; i < MaxViewportCount; ++i)
 			if (VPSRSetFlags.Is(1 << i)) NumVP = i + 1;
 
@@ -1445,7 +1445,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	if (Update.Is(GPU_Dirty_SR) && CurrDirtyFlags.Is(GPU_Dirty_SR))
 	{
 		// Find the last set SR, as we must set all rects from 0'th to it
-		UINT NumSR = 0;
+		UPTR NumSR = 0;
 		for (DWORD i = 0; i < MaxViewportCount; ++i)
 			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + i))) NumSR = i + 1;
 
@@ -1573,7 +1573,7 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, D
 	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UINT CPUAccess;
+	UPTR CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	D3D11_BUFFER_DESC Desc;
@@ -1610,7 +1610,7 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Inde
 	if (!pD3DDevice || !IndexCount) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UINT CPUAccess;
+	UPTR CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	D3D11_BUFFER_DESC Desc;
@@ -1649,17 +1649,17 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, DWOR
 	if (!pMeta) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UINT CPUAccess;
+	UPTR CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	D3D11_BUFFER_DESC Desc;
 	Desc.Usage = Usage;
 	Desc.CPUAccessFlags = CPUAccess;
 
-	UINT TotalSize = pMeta->ElementSize * pMeta->ElementCount;
+	UPTR TotalSize = pMeta->ElementSize * pMeta->ElementCount;
 	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
 	{
-		UINT ElementCount = (TotalSize + 15) >> 4;
+		UPTR ElementCount = (TotalSize + 15) >> 4;
 		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return NULL;
 		Desc.ByteWidth = ElementCount << 4;
 		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -1734,7 +1734,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	if (Tex.IsNullPtr()) return NULL;
 
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
-	UINT QualityLvlCount = 0;
+	UPTR QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
 	{
 		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DXGIFormat, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
@@ -1742,13 +1742,13 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	}
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UINT CPUAccess;
+	UPTR CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	DWORD MipLevels = Desc.MipLevels;
 	DWORD ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize);
-	UINT MiscFlags = 0; //???if (MipLevels != 1) D3D11_RESOURCE_MISC_RESOURCE_CLAMP for ID3D11DeviceContext::SetResourceMinLOD()
-	UINT BindFlags = (Usage != D3D11_USAGE_STAGING) ? D3D11_BIND_SHADER_RESOURCE : 0;
+	UPTR MiscFlags = 0; //???if (MipLevels != 1) D3D11_RESOURCE_MISC_RESOURCE_CLAMP for ID3D11DeviceContext::SetResourceMinLOD()
+	UPTR BindFlags = (Usage != D3D11_USAGE_STAGING) ? D3D11_BIND_SHADER_RESOURCE : 0;
 
 	// Dynamic SRV: The resource can only be created with a single subresource.
 	// The resource cannot be a texture array. The resource cannot be a mipmap chain (c) Docs
@@ -1777,7 +1777,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		if (MipLevels > MAX_MIPS) MipLevels = MAX_MIPS;
 
 		//???texture and/or utility [inline] methods GetRowPitch(level, w, [h], fmt), GetSlicePitch(level, w, h, fmt OR rowpitch, h)?
-		UINT Pitch[MAX_MIPS], SlicePitch[MAX_MIPS];
+		UPTR Pitch[MAX_MIPS], SlicePitch[MAX_MIPS];
 		if (BlockSize == 1)
 		{
 			for (DWORD Mip = 0; Mip < MipLevels; ++Mip)
@@ -1990,7 +1990,7 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 {
 	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
 
-	UINT QualityLvlCount = 0;
+	UPTR QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
 		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
 
@@ -2071,7 +2071,7 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	else RsrcFmt = DSVFmt;
 
 	//???check DSV or texture fmt?
-	UINT QualityLvlCount = 0;
+	UPTR QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
 		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DSVFmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
 
@@ -2363,7 +2363,7 @@ bool CD3D11GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resourc
 	//???assert or check CPU access?! or Resource.CanMap()?
 
 	D3D11_MAP MapType;
-	UINT MapFlags;
+	UPTR MapFlags;
 	GetD3DMapTypeAndFlags(Mode, MapType, MapFlags);
 
 	D3D11_MAPPED_SUBRESOURCE D3DData;
@@ -2388,7 +2388,7 @@ bool CD3D11GPUDriver::MapResource(void** ppOutData, const CIndexBuffer& Resource
 	//???assert or check CPU access?! or Resource.CanMap()?
 
 	D3D11_MAP MapType;
-	UINT MapFlags;
+	UPTR MapFlags;
 	GetD3DMapTypeAndFlags(Mode, MapType, MapFlags);
 
 	D3D11_MAPPED_SUBRESOURCE D3DData;
@@ -2430,7 +2430,7 @@ bool CD3D11GPUDriver::MapResource(CImageData& OutData, const CTexture& Resource,
 */
 
 	D3D11_MAP MapType;
-	UINT MapFlags;
+	UPTR MapFlags;
 	GetD3DMapTypeAndFlags(Mode, MapType, MapFlags);
 
 	D3D11_MAPPED_SUBRESOURCE D3DData;
@@ -3012,7 +3012,7 @@ EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
+void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UPTR& OutCPUAccess)
 {
 	if (InAccessFlags == Access_GPU_Read || InAccessFlags == 0)
 	{
@@ -3038,7 +3038,7 @@ void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided,
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags)
+void CD3D11GPUDriver::GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UPTR& OutMapFlags)
 {
 	OutMapFlags = 0;
 	switch (MapMode)

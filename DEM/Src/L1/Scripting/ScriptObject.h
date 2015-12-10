@@ -43,32 +43,32 @@ protected:
 
 	CScriptObject() {}
 
-	DWORD	PrepareToLuaCall(LPCSTR pFuncName) const;
-	DWORD	RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const;
+	DWORD	PrepareToLuaCall(const char* pFuncName) const;
+	DWORD	RunFunctionInternal(const char* pFuncName, int ArgCount, Data::CData* pRetVal) const;
 
 public:
 
 	friend class CScriptServer;
 
-	CScriptObject(LPCSTR ObjName, LPCSTR TableName = NULL): Name(ObjName), Table(TableName) {}
+	CScriptObject(const char* ObjName, const char* TableName = NULL): Name(ObjName), Table(TableName) {}
 	virtual ~CScriptObject();
 
 	static CScriptObject* GetFromStack(lua_State* l, int StackIdx);
 
-	bool			Init(LPCSTR LuaClassName = "CScriptObject");
+	bool			Init(const char* LuaClassName = "CScriptObject");
 
 	DWORD			LoadScriptFile(const char* pFileName);
-	DWORD			LoadScript(LPCSTR Buffer, DWORD Length);
+	DWORD			LoadScript(const char* Buffer, DWORD Length);
 
-	DWORD			RunFunction(LPCSTR pFuncName, Data::CData* pRetVal = NULL) const;
-	DWORD			RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal, Data::CData* pRetVal = NULL) const;
-	DWORD			RunFunction(LPCSTR pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal = NULL) const;
-	DWORD			RunFunctionOneArg(LPCSTR FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunction(const char* pFuncName, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunction(const char* pFuncName, const char* ArgLuaGlobal, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunction(const char* pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal = NULL) const;
+	DWORD			RunFunctionOneArg(const char* FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
 
-	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority);
-	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const Events::CEventDispatcher* pDisp);
-	bool			SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Events::Priority_Default);
-	void			UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName);
+	bool			SubscribeEvent(CStrID EventID, const char* HandlerFuncName, Events::CEventDispatcher* pDisp, U16 Priority);
+	void			UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName, const Events::CEventDispatcher* pDisp);
+	bool			SubscribeEvent(CStrID EventID, const char* HandlerFuncName, U16 Priority = Events::Priority_Default);
+	void			UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName);
 
 	const CString&	GetName() const { return Name; }
 	const CString&	GetTable() const { return Table; }
@@ -76,13 +76,13 @@ public:
 	void			SetName(const char* NewName);
 
 	//???implement?
-	virtual int		GetField(LPCSTR Key) const { return 0; } //???is always const?
-	virtual bool	SetField(LPCSTR Key, const Data::CData& Value) { FAIL; }
+	virtual int		GetField(const char* Key) const { return 0; } //???is always const?
+	virtual bool	SetField(const char* Key, const Data::CData& Value) { FAIL; }
 };
 
 typedef Ptr<CScriptObject> PScriptObject;
 
-inline DWORD CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* pRetVal) const
+inline DWORD CScriptObject::RunFunction(const char* pFuncName, Data::CData* pRetVal) const
 {
 	DWORD Res = PrepareToLuaCall(pFuncName);
 	if (ExecResultIsError(Res)) return Res;

@@ -46,9 +46,9 @@ public:
 		Events::PSub	Sub;
 
 		CAction(): Enabled(true), Visible(true), IsSOAction(false) {}
-		CAction(CStrID _ID, LPCSTR Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority), Enabled(true), Visible(true) {}
+		CAction(CStrID _ID, const char* Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority), Enabled(true), Visible(true) {}
 
-		LPCSTR	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
+		const char*	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
 		bool	operator <(const CAction& Other) const { return (Enabled != Other.Enabled) ? Enabled : (Priority > Other.Priority); }
 		bool	operator >(const CAction& Other) const { return (Enabled != Other.Enabled) ? Other.Enabled : (Priority < Other.Priority); }
 		bool	operator ==(const CAction& Other) const { return ID == Other.ID; }
@@ -71,7 +71,7 @@ protected:
 	void			EnableSI(class CPropScriptable& Prop);
 	void			DisableSI(class CPropScriptable& Prop);
 
-	bool			AddActionHandler(CStrID ID, LPCSTR UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction = false);
+	bool			AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction = false);
 	bool			ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
 	bool			OnExecuteExploreAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool			OnExecuteSelectAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -97,10 +97,10 @@ public:
 	void					ShowTip();
 	void					HideTip();
 
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, Events::CEventCallback Callback, int Priority = Priority_Default, bool IsSOAction = false);
+	bool					AddActionHandler(CStrID ID, const char* UIName, Events::CEventCallback Callback, int Priority = Priority_Default, bool IsSOAction = false);
 	template<class T>
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, T* Object, bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&), int Priority = Priority_Default, bool IsSOAction = false);
-	bool					AddActionHandler(CStrID ID, LPCSTR UIName, LPCSTR ScriptFuncName, int Priority = Priority_Default, bool IsSOAction = false);
+	bool					AddActionHandler(CStrID ID, const char* UIName, T* Object, bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&), int Priority = Priority_Default, bool IsSOAction = false);
+	bool					AddActionHandler(CStrID ID, const char* UIName, const char* ScriptFuncName, int Priority = Priority_Default, bool IsSOAction = false);
 	void					RemoveActionHandler(CStrID ID);
 
 	bool					ExecuteAction(Game::CEntity* pActorEnt, CStrID ID);
@@ -112,7 +112,7 @@ public:
 	bool					IsSmartObjReflectionEnabled() const { return ReflectSOActions; }
 };
 
-inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
+inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName,
 											 Events::CEventCallback Callback,
 											 int Priority, bool IsSOAction)
 {
@@ -121,7 +121,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName,
 //---------------------------------------------------------------------
 
 template<class T>
-inline bool CPropUIControl::AddActionHandler(CStrID ID, LPCSTR UIName, T* Object,
+inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, T* Object,
 											 bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&),
 											 int Priority, bool IsSOAction)
 {

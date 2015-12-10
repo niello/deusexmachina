@@ -8,11 +8,11 @@ namespace Data
 
 //!!!int, float - rewrite better if possible!
 //???always use CTypeImpl<T>::ToString() { return Data::ValueToString<T>(); } and specialize that function?
-template<> inline LPCSTR CTypeImpl<bool>::ToString(const void* pObj) const { return pObj ? "true" : "false"; }
-template<> inline LPCSTR CTypeImpl<int>::ToString(const void* pObj) const { return StringUtils::FromInt(*((int*)&pObj)); }
-template<> inline LPCSTR CTypeImpl<float>::ToString(const void* pObj) const { return StringUtils::FromFloat(*((float*)&pObj)); }
-template<> inline LPCSTR CTypeImpl<CString>::ToString(const void* pObj) const { return ((CString*)pObj)->CStr(); }
-template<> inline LPCSTR CTypeImpl<CStrID>::ToString(const void* pObj) const { return (LPCSTR)pObj; }
+template<> inline const char* CTypeImpl<bool>::ToString(const void* pObj) const { return pObj ? "true" : "false"; }
+template<> inline const char* CTypeImpl<int>::ToString(const void* pObj) const { return StringUtils::FromInt(*((int*)&pObj)); }
+template<> inline const char* CTypeImpl<float>::ToString(const void* pObj) const { return StringUtils::FromFloat(*((float*)&pObj)); }
+template<> inline const char* CTypeImpl<CString>::ToString(const void* pObj) const { return ((CString*)pObj)->CStr(); }
+template<> inline const char* CTypeImpl<CStrID>::ToString(const void* pObj) const { return (const char*)pObj; }
 
 //DEFINE_TYPE(void)
 DEFINE_TYPE(bool, false)

@@ -48,36 +48,36 @@ public:
 	bool		LuaStackToData(Data::CData& Result, int StackIdx);
 
 	DWORD		RunScriptFile(const char* pFileName);
-	DWORD		RunScript(LPCSTR Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
+	DWORD		RunScript(const char* Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
 
-	DWORD		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, LPCSTR pDbgName = "<UNKNOWN>");
+	DWORD		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, const char* pDbgName = "<UNKNOWN>");
 	
-	//DWORD		RunFunction(LPCSTR pFuncName, int ArgsOnStack = 0);
-	//DWORD		RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal);
-	//DWORD		RunFunction(LPCSTR pFuncName, const CArray<LPCSTR>& LuaArgs);
-	//DWORD		RunFunction(LPCSTR pFuncName, PParams Args = NULL);
+	//DWORD		RunFunction(const char* pFuncName, int ArgsOnStack = 0);
+	//DWORD		RunFunction(const char* pFuncName, const char* ArgLuaGlobal);
+	//DWORD		RunFunction(const char* pFuncName, const CArray<const char*>& LuaArgs);
+	//DWORD		RunFunction(const char* pFuncName, PParams Args = NULL);
 
 	// Class registration, Mixing-in
-	bool		BeginClass(LPCSTR Name, LPCSTR BaseClass = NULL, DWORD FieldCount = 0);
-	bool		BeginExistingClass(LPCSTR Name);
+	bool		BeginClass(const char* Name, const char* BaseClass = NULL, DWORD FieldCount = 0);
+	bool		BeginExistingClass(const char* Name);
 	void		EndClass(bool IsScriptObjectSubclass);
 	bool		BeginMixin(CScriptObject* pObj);
 	void		EndMixin();
-	void		ExportCFunction(LPCSTR Name, lua_CFunction Function);
-	void		ExportIntegerConst(LPCSTR Name, int Value);
-	void		ClearField(LPCSTR Name);
+	void		ExportCFunction(const char* Name, lua_CFunction Function);
+	void		ExportIntegerConst(const char* Name, int Value);
+	void		ClearField(const char* Name);
 
-	bool		LoadClass(LPCSTR Name);
-	bool		ClassExists(LPCSTR Name);
+	bool		LoadClass(const char* Name);
+	bool		ClassExists(const char* Name);
 
 	//!!!can add functions to subscribe global functions to events!
 	
-	bool		CreateObject(CScriptObject& Obj, LPCSTR LuaClassName = "CScriptObject");
-	bool		CreateInterface(LPCSTR Name, LPCSTR TablePath, LPCSTR LuaClassName, void* pCppPtr);
-	bool		PlaceObjectOnStack(LPCSTR Name, LPCSTR Table = NULL);
-	bool		PlaceOnStack(LPCSTR FullPath, bool Create = false);
-	void		RemoveObject(LPCSTR Name, LPCSTR Table = NULL);
-	bool		ObjectExists(LPCSTR Name, LPCSTR Table = NULL);
+	bool		CreateObject(CScriptObject& Obj, const char* LuaClassName = "CScriptObject");
+	bool		CreateInterface(const char* Name, const char* TablePath, const char* LuaClassName, void* pCppPtr);
+	bool		PlaceObjectOnStack(const char* Name, const char* Table = NULL);
+	bool		PlaceOnStack(const char* FullPath, bool Create = false);
+	void		RemoveObject(const char* Name, const char* Table = NULL);
+	bool		ObjectExists(const char* Name, const char* Table = NULL);
 
 	bool		GetTableFieldsDebug(CArray<CString>& OutFields);
 };

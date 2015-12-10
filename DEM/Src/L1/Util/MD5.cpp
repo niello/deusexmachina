@@ -73,7 +73,7 @@ CString CMD5::String2MD5(const char* szString)
 
 
 /// PrintMD5: Converts a completed md5 digest into a string.
-CString CMD5::PrintMD5(uchar md5Digest[16])
+CString CMD5::PrintMD5(U8 md5Digest[16])
 {
     char chBuffer[256];
     char chEach[10];
@@ -107,7 +107,7 @@ void CMD5::Init()
 /// MD5 block update operation. Continues an MD5 message-digest
 /// operation, processing another message block, and updating the
 /// context.
-void CMD5::Update(uchar* chInput, uint4 nInputLen)
+void CMD5::Update(U8* chInput, uint4 nInputLen)
 {
     uint4 i, index, partLen;
 
@@ -145,7 +145,7 @@ void CMD5::Update(uchar* chInput, uint4 nInputLen)
 /// the message digest and zeroizing the context.
 void CMD5::Finalize()
 {
-    uchar bits[8];
+    U8 bits[8];
     uint4 index, padLen;
 
     // Save number of bits
@@ -164,12 +164,12 @@ void CMD5::Finalize()
 
     memset(m_Count, 0, 2 * sizeof(uint4));
     memset(m_State, 0, 4 * sizeof(uint4));
-    memset(m_Buffer,0, 64 * sizeof(uchar));
+    memset(m_Buffer,0, 64 * sizeof(U8));
 }
 
 /// md5::Transform
 /// MD5 basic transformation. Transforms state based on block.
-void CMD5::Transform (uchar* block)
+void CMD5::Transform (U8* block)
 {
   uint4 a = m_State[0], b = m_State[1], c = m_State[2], d = m_State[3], x[16];
 
@@ -256,9 +256,9 @@ void CMD5::Transform (uchar* block)
 }
 
 /// md5::Encode
-/// Encodes input (uint4) into output (uchar). Assumes nLength is
+/// Encodes input (uint4) into output (U8). Assumes nLength is
 /// a multiple of 4.
-void CMD5::Encode(uchar* dest, uint4* src, uint4 nLength)
+void CMD5::Encode(U8* dest, uint4* src, uint4 nLength)
 {
     uint4 i, j;
 
@@ -266,17 +266,17 @@ void CMD5::Encode(uchar* dest, uint4* src, uint4 nLength)
 
     for (i = 0, j = 0; j < nLength; i++, j += 4)
     {
-        dest[j] = (uchar)(src[i] & 0xff);
-        dest[j+1] = (uchar)((src[i] >> 8) & 0xff);
-        dest[j+2] = (uchar)((src[i] >> 16) & 0xff);
-        dest[j+3] = (uchar)((src[i] >> 24) & 0xff);
+        dest[j] = (U8)(src[i] & 0xff);
+        dest[j+1] = (U8)((src[i] >> 8) & 0xff);
+        dest[j+2] = (U8)((src[i] >> 16) & 0xff);
+        dest[j+3] = (U8)((src[i] >> 24) & 0xff);
     }
 }
 
 /// md5::Decode
-/// Decodes input (uchar) into output (uint4). Assumes nLength is
+/// Decodes input (U8) into output (uint4). Assumes nLength is
 /// a multiple of 4.
-void CMD5::Decode(uint4* dest, uchar* src, uint4 nLength)
+void CMD5::Decode(uint4* dest, U8* src, uint4 nLength)
 {
     uint4 i, j;
 

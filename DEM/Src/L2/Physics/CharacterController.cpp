@@ -32,8 +32,8 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 
 	vector3 Offset(0.f, (Hover + Height) * 0.5f, 0.f);
 
-	static const ushort MaskCharacter = PhysicsSrv->CollisionGroups.GetMask("Character");
-	static const ushort MaskAll = PhysicsSrv->CollisionGroups.GetMask("All");
+	static const U16 MaskCharacter = PhysicsSrv->CollisionGroups.GetMask("Character");
+	static const U16 MaskAll = PhysicsSrv->CollisionGroups.GetMask("All");
 
 	Body = n_new(CRigidBody);
 	Body->Init(*Shape, Mass, MaskCharacter, MaskAll, Offset);

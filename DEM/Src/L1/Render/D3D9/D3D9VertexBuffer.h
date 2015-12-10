@@ -7,6 +7,7 @@
 // Direct3D9 implementation of a vertex buffer
 
 struct IDirect3DVertexBuffer9;
+typedef unsigned int UINT;
 
 namespace Render
 {
@@ -19,13 +20,13 @@ protected:
 
 	IDirect3DVertexBuffer9*	pBuffer;
 	UINT					Usage;
-	DWORD					LockCount;
+	//UPTR					LockCount;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9VertexBuffer(): pBuffer(NULL), LockCount(0) {}
+	CD3D9VertexBuffer(): pBuffer(NULL)/*, LockCount(0)*/ {}
 	virtual ~CD3D9VertexBuffer() { InternalDestroy(); }
 
 	bool					Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB);

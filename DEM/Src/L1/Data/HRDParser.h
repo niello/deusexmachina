@@ -49,9 +49,9 @@ private:
 	CArray<CString>	TableDlm;
 	CArray<CData>	TableConst;
 
-	LPCSTR			LexerCursor;
-	LPCSTR			EndOfBuffer;
-	LPCSTR			TokenStart;
+	const char*		LexerCursor;
+	const char*		EndOfBuffer;
+	const char*		TokenStart;
 	
 	int				ZeroIdx;
 	
@@ -90,7 +90,7 @@ public:
 
 	CHRDParser();
 
-	bool ParseBuffer(LPCSTR Buffer, DWORD Length, PParams& Result, CString* pErrors = NULL);
+	bool ParseBuffer(const char* Buffer, DWORD Length, PParams& Result, CString* pErrors = NULL);
 };
 
 }

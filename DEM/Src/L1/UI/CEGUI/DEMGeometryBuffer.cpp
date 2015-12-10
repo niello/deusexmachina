@@ -122,7 +122,7 @@ void CDEMGeometryBuffer::appendGeometry(const Vertex* const vbuff, uint vertex_c
 	// buffer these vertices
 	D3DVertex vd;
 	const Vertex* vs = vbuff;
-	for (uint i = 0; i < vertex_count; ++i, ++vs)
+	for (UPTR i = 0; i < vertex_count; ++i, ++vs)
 	{
 		// copy vertex info the buffer, converting from CEGUI::Vertex to
 		// something directly usable by D3D as needed.

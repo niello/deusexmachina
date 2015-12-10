@@ -19,11 +19,11 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 	RootNode->SetRotation(Reader.Read<quaternion>());
 	RootNode->SetPosition(Reader.Read<vector3>());
 
-	ushort Count;
+	U16 Count;
 	Reader.Read(Count);
-	for (ushort i = 0; i < Count; ++i)
+	for (U16 i = 0; i < Count; ++i)
 	{
-		ushort DataBlockCount;
+		U16 DataBlockCount;
 		Reader.Read(DataBlockCount);
 		--DataBlockCount;
 
@@ -34,14 +34,14 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 
 		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
 		//may require to read data block count inside, or ignore it for such attrs.
-		for (ushort j = 0; j < DataBlockCount; ++j)
+		for (U16 j = 0; j < DataBlockCount; ++j)
 			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
 
 		RootNode->AddAttribute(*Attr);
 	}
 
 	Reader.Read(Count);
-	for (ushort i = 0; i < Count; ++i)
+	for (U16 i = 0; i < Count; ++i)
 	{
 		char ChildName[256];
 		n_assert(Reader.ReadString(ChildName, sizeof(ChildName)));

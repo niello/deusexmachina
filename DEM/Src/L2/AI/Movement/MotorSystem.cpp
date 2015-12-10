@@ -407,7 +407,7 @@ void CMotorSystem::RenderDebug()
 		DebugDraw->DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
 	}
 
-	LPCSTR pMvmt = NULL;
+	const char* pMvmt = NULL;
 	if (pActor->MvmtState == AIMvmt_Failed) pMvmt = "None";
 	else if (pActor->MvmtState == AIMvmt_Done) pMvmt = "Done";
 	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";

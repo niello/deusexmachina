@@ -12,7 +12,7 @@ static CArray<CActionTpl*> ActionsAdded;
 
 using namespace Data;
 
-void CPlanner::RegisterActionTpl(LPCSTR Name, Data::PParams Params)
+void CPlanner::RegisterActionTpl(const char* Name, Data::PParams Params)
 {
 	if (!FindActionTpl(Name))
 	{

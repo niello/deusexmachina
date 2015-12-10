@@ -178,7 +178,7 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
-	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
 

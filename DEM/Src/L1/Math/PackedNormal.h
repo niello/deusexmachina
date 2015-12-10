@@ -13,7 +13,7 @@
 
 //-------------------------------------------------------------------
 class pknorm3 {
-    ushort n;
+    U16 n;
 
 public:
     //--- pack each component into 5 bits ---------------------------
@@ -44,10 +44,10 @@ public:
     }
 
     //-- get/set packed representation ------------------------------
-    ushort getpacked() {
+    U16 getpacked() {
         return n;
     }
-    void setpacked(ushort _n) {
+    void setpacked(U16 _n) {
         n = _n;
     }
 };

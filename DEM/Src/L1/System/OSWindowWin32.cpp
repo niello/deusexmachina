@@ -352,7 +352,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			Event::OSInput Ev;
 			Ev.Type = (uMsg == WM_KEYDOWN) ? Event::OSInput::KeyDown : Event::OSInput::KeyUp;
-			Ev.KeyCode = (Input::EKey)((uchar*)&lParam)[2];
+			Ev.KeyCode = (Input::EKey)((U8*)&lParam)[2];
 			if (lParam & (1 << 24)) Ev.KeyCode = (Input::EKey)(Ev.KeyCode | 0x80);
 			FireEvent(Ev);
 			break;

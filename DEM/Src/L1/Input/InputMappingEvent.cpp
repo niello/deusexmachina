@@ -30,7 +30,7 @@ bool CInputMappingEvent::Init(CStrID Name, const Data::CParams& Desc)
 	else if (InEvent == "Char")
 	{
 		InEventID = &Event::CharInput::RTTI;
-		Char = (ushort)Desc.Get<int>(CStrID("Char"));
+		Char = (U16)Desc.Get<int>(CStrID("Char"));
 	}
 	else if (InEvent == "MouseBtnDown")
 	{

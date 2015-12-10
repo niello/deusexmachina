@@ -36,7 +36,7 @@ static void GetTextFromCell(tinyxml2::XMLElement* pCell, CString& Text)
 
 bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 							 Data::CTableT<CString>& Out,
-							 LPCSTR pWorksheetName,
+							 const char* pWorksheetName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
 {
@@ -147,7 +147,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 
 bool StringTableFromExcelXML(const CString& FileName,
 							 Data::CTableT<CString>& Out,
-							 LPCSTR pWorksheetName,
+							 const char* pWorksheetName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
 {

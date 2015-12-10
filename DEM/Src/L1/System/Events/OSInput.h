@@ -44,7 +44,7 @@ public:
 	union
 	{
 		Input::EKey	KeyCode;	// Keyboard scan code
-		ushort		Char;		// UTF-16 character
+		U16		Char;		// UTF-16 character
 		CMouseInfo	MouseInfo;
 		int			WheelDelta;
 	};

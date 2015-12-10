@@ -11,7 +11,7 @@ bool CNavData::LoadFromStream(IO::CStream& Stream)
 	Clear();
 
 	int NMDataSize = Stream.Get<int>();
-	uchar* pData = (uchar*)dtAlloc(NMDataSize, DT_ALLOC_PERM);
+	U8* pData = (U8*)dtAlloc(NMDataSize, DT_ALLOC_PERM);
 	int BytesRead = Stream.Read(pData, NMDataSize);
 	n_assert(BytesRead == NMDataSize);
 

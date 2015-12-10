@@ -55,7 +55,7 @@ inline void CFourCC::ToString(char* Out) const
 //---------------------------------------------------------------------
 
 // Thread-unsafe
-inline LPCSTR CFourCC::ToString() const
+inline const char* CFourCC::ToString() const
 {
 	static char GlobalFOURCC[5];
 	ToString(GlobalFOURCC);

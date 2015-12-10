@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_EVENT_MANAGER_H__
-#define __DEM_L1_EVENT_MANAGER_H__
+#ifndef __DEM_L1_EVENT_SERVER_H__
+#define __DEM_L1_EVENT_SERVER_H__
 
 #include <Events/EventDispatcher.h>
 #include <System/Allocators/PoolAllocator.h>

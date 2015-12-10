@@ -46,6 +46,9 @@ typedef uint32_t			U32;	// Unsigned 32-bit integer
 typedef int64_t				I64;	// Signed 64-bit integer
 typedef uint64_t			U64;	// Unsigned 64-bit integer
 
+typedef void*				PVOID;
+typedef double				CTime;
+
 const UPTR HalfRegisterBits	= sizeof(UPTR) << 2; // Bytes * 8 / 2
 const UPTR INVALID_HALF_INDEX = (1 << HalfRegisterBits) - 1;
 
@@ -59,18 +62,6 @@ typedef UPTR				HHandle;
 // Old types
 
 typedef unsigned long       DWORD;
-typedef int                 BOOL;
-typedef unsigned char       BYTE;
-typedef unsigned short      WORD;
-typedef unsigned int        UINT;
-typedef char*				LPSTR;
-typedef const char*			LPCSTR;
-typedef void*				PVOID;
-typedef unsigned long		ulong;
-typedef unsigned int		uint;
-typedef unsigned short		ushort;
-typedef unsigned char		uchar;
-typedef double				CTime;
 
 #ifndef MAX_DWORD
 #define MAX_DWORD			(0xffffffff)

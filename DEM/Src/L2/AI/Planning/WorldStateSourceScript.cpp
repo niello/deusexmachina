@@ -17,7 +17,7 @@ void CWorldStateSourceScript::Init(Data::PParams Desc)
 //---------------------------------------------------------------------
 
 //???to WorldState.h?
-static EWSProp GetPropKeyByName(LPCSTR KeyName)
+static EWSProp GetPropKeyByName(const char* KeyName)
 {
 	if (!strcmp(KeyName, "WSP_AtEntityPos")) return WSP_AtEntityPos;
 	if (!strcmp(KeyName, "WSP_UsingSmartObj")) return WSP_UsingSmartObj;
@@ -53,7 +53,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 					// Conversion from CString to CStrID may be wrong, fix if so
 					if (Prm.IsA<CString>())
 					{
-						LPCSTR Str = Prm.GetValue<CString>().CStr();
+						const char* Str = Prm.GetValue<CString>().CStr();
 						EWSProp Value = GetPropKeyByName(Str);
 						WS.SetProp(Key, (Value != WSP_Invalid) ? Data::CData(Value) : Data::CData(CStrID(Str)));
 					}

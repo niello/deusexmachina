@@ -82,7 +82,7 @@ void CWatcherWindow::SetVisible(bool Visible)
 }
 //---------------------------------------------------------------------
 
-void CWatcherWindow::AddWatched(EVarType Type, LPCSTR Name)
+void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 {
 	CWatched& Curr = *Watched.Reserve(1);
 	Curr.Type = Type;
@@ -129,7 +129,7 @@ void CWatcherWindow::AddAllGlobals()
 
 bool CWatcherWindow::OnNewWatchedAccept(const CEGUI::EventArgs& e)
 {
-	LPCSTR pName = pNewWatchEdit->getText().c_str();
+	const char* pName = pNewWatchEdit->getText().c_str();
 	if (!pName || !*pName) OK;
 
 	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild(pWnd->getName() + "/RBNEnv");

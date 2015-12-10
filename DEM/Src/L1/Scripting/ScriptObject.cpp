@@ -24,7 +24,7 @@ CScriptObject::~CScriptObject()
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::Init(LPCSTR LuaClassName)
+bool CScriptObject::Init(const char* LuaClassName)
 {
 	return ScriptSrv->CreateObject(*this, LuaClassName);
 }
@@ -52,7 +52,7 @@ int CScriptObject_Index(lua_State* l)
 	// If assertion failed, must process non-string keys
 	n_assert(lua_type(l, 2) == LUA_TSTRING);
 
-	LPCSTR Key = lua_tostring(l, 2);
+	const char* Key = lua_tostring(l, 2);
 
 	//???can return 'this' through __index?
 	//!!!use userdata objects as class instances, if possible! cpp_ptr is rewritable
@@ -90,7 +90,7 @@ int CScriptObject_NewIndex(lua_State* l)
 	// If assertion failed, must process non-string keys
 	n_assert(lua_type(l, 2) == LUA_TSTRING);
 
-	LPCSTR Key = lua_tostring(l, 2);
+	const char* Key = lua_tostring(l, 2);
 
 	n_assert_dbg(strcmp(Key, "cpp_ptr"));
 
@@ -147,11 +147,11 @@ DWORD CScriptObject::LoadScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return Error;
-	return LoadScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
+	return LoadScript((const char*)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
+DWORD CScriptObject::LoadScript(const char* Buffer, DWORD Length)
 {
 	lua_State* l = ScriptSrv->GetLuaState();
 
@@ -180,7 +180,7 @@ DWORD CScriptObject::LoadScript(LPCSTR Buffer, DWORD Length)
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
+DWORD CScriptObject::PrepareToLuaCall(const char* pFuncName) const
 {
 	n_assert(pFuncName);
 
@@ -205,7 +205,7 @@ DWORD CScriptObject::PrepareToLuaCall(LPCSTR pFuncName) const
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunctionInternal(const char* pFuncName, int ArgCount, Data::CData* pRetVal) const
 {
 	DWORD Result = ScriptSrv->PerformCall(ArgCount, pRetVal, (Name + "." + pFuncName).CStr());
 	if (ExecResultIsError(Result)) lua_pop(ScriptSrv->GetLuaState(), 1); // Object itself
@@ -213,7 +213,7 @@ DWORD CScriptObject::RunFunctionInternal(LPCSTR pFuncName, int ArgCount, Data::C
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunction(const char* pFuncName, const char* ArgLuaGlobal, Data::CData* pRetVal) const
 {
 	DWORD Res = PrepareToLuaCall(pFuncName);
 	if (ExecResultIsError(Res)) return Res;
@@ -222,7 +222,7 @@ DWORD CScriptObject::RunFunction(LPCSTR pFuncName, LPCSTR ArgLuaGlobal, Data::CD
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunction(const char* pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal) const
 {
 	DWORD Res = PrepareToLuaCall(pFuncName);
 	if (ExecResultIsError(Res)) return Res;
@@ -232,7 +232,7 @@ DWORD CScriptObject::RunFunction(LPCSTR pFuncName, Data::CData* Args, DWORD ArgC
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
+DWORD CScriptObject::RunFunctionOneArg(const char* pFuncName, const Data::CData& Arg, Data::CData* pRetVal) const
 {
 	DWORD Res = PrepareToLuaCall(pFuncName);
 	if (ExecResultIsError(Res)) return Res;
@@ -241,7 +241,7 @@ DWORD CScriptObject::RunFunctionOneArg(LPCSTR pFuncName, const Data::CData& Arg,
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Events::CEventDispatcher* pDisp, ushort Priority)
+bool CScriptObject::SubscribeEvent(CStrID EventID, const char* HandlerFuncName, Events::CEventDispatcher* pDisp, U16 Priority)
 {
 	Events::PSub Sub;
 	if (!pDisp->Subscribe(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority), &Sub)) FAIL;
@@ -250,7 +250,7 @@ bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, Event
 }
 //---------------------------------------------------------------------
 
-void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, const Events::CEventDispatcher* pDisp)
+void CScriptObject::UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName, const Events::CEventDispatcher* pDisp)
 {
 	for (int i = 0; i < Subscriptions.GetCount(); i++)
 	{
@@ -265,13 +265,13 @@ void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, con
 }
 //---------------------------------------------------------------------
 
-bool CScriptObject::SubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority)
+bool CScriptObject::SubscribeEvent(CStrID EventID, const char* HandlerFuncName, U16 Priority)
 {
 	return SubscribeEvent(EventID, HandlerFuncName, EventSrv, Priority);
 }
 //---------------------------------------------------------------------
 
-void CScriptObject::UnsubscribeEvent(CStrID EventID, LPCSTR HandlerFuncName)
+void CScriptObject::UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName)
 {
 	UnsubscribeEvent(EventID, HandlerFuncName, EventSrv);
 }

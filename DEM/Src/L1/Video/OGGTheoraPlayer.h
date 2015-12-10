@@ -48,7 +48,7 @@ protected:
 	bool				theoraLoaded;
 	bool				isPlaying;
 	CTime				currentTime;
-	uint				decodedFrames;
+	UPTR				decodedFrames;
 
 	int buffer_data(IO::CFileStream *in,ogg_sync_state *oy);
 	int queue_page(ogg_page *page);

@@ -14,15 +14,15 @@ class CEventHandler: public Core::CObject
 {
 protected:
 
-	ushort			Priority; //???int?
+	U16			Priority; //???int?
 
 public:
 
 	PEventHandler	Next;
 
-	CEventHandler(ushort _Priority = Priority_Default): Priority(_Priority) {}
+	CEventHandler(U16 _Priority = Priority_Default): Priority(_Priority) {}
 
-	ushort			GetPriority() const { return Priority; }
+	U16			GetPriority() const { return Priority; }
 	virtual bool	Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) = 0;
 
 	bool			operator()(CEventDispatcher* pDispatcher, const CEventBase& Event) { return Invoke(pDispatcher, Event); }
@@ -37,7 +37,7 @@ private:
 
 public:
 
-	CEventHandlerCallback(CEventCallback Func, ushort _Priority = Priority_Default): CEventHandler(_Priority), Handler(Func) {}
+	CEventHandlerCallback(CEventCallback Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(Func) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return (*Handler)(pDispatcher, Event); }
 };
@@ -55,7 +55,7 @@ private:
 
 public:
 
-	CEventHandlerMember(T* Obj, CMemberFunc Func, ushort _Priority = Priority_Default): CEventHandler(_Priority), Object(Obj), Handler(Func) {}
+	CEventHandlerMember(T* Obj, CMemberFunc Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Object(Obj), Handler(Func) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return (Object->*Handler)(pDispatcher, Event); }
 };

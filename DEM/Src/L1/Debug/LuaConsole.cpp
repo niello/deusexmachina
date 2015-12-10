@@ -38,7 +38,7 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 	//CLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();
 	//if (pLineBuffer)
 	//{
-	//	LPCSTR Lines[MAX_LINES_START];
+	//	const char* Lines[MAX_LINES_START];
 	//	int Count = pLineBuffer->GetLines(Lines, MAX_LINES_START);
 	//	while (--Count >= 0) Print(Lines[Count], 0xffb0b0b0);
 	//}
@@ -60,7 +60,7 @@ void CLuaConsole::Term()
 }
 //---------------------------------------------------------------------
 
-void CLuaConsole::Print(LPCSTR pMsg, DWORD Color)
+void CLuaConsole::Print(const char* pMsg, DWORD Color)
 {
 	CEGUI::ListboxTextItem* pNewItem;
 
@@ -94,7 +94,7 @@ bool CLuaConsole::OnLogMsg(Events::CEventDispatcher* pDispatcher, const Events::
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
 	DWORD Color = (P->Get<int>(CStrID("Type")) == Sys::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;
-	Print((LPCSTR)P->Get<PVOID>(CStrID("pMsg")), Color);
+	Print((const char*)P->Get<PVOID>(CStrID("pMsg")), Color);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -116,7 +116,7 @@ bool CLuaConsole::OnChar(const CEGUI::EventArgs& e)
 
 bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 {
-	LPCSTR pCmd = pInputLine->getText().c_str();
+	const char* pCmd = pInputLine->getText().c_str();
 
 	if (!pCmd || !*pCmd) OK;
 
@@ -135,7 +135,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	}
 	else if (!strncmp(pCmd, "dir ", 4) || !strncmp(pCmd, "ls ", 3))
 	{
-		LPCSTR pTable = pCmd + 3;
+		const char* pTable = pCmd + 3;
 		while (*pTable == 32) ++pTable;
 
 		CArray<CString> Contents;

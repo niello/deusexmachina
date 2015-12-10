@@ -73,7 +73,7 @@ bool CRenderPhase::Init(const Data::CParams& Desc, const CRenderPath& Owner)
 	int StencilVal;
 	if (Desc.Get(StencilVal, CStrID("ClearStencil")))
 	{
-		ClearStencil = (uchar)StencilVal;
+		ClearStencil = (U8)StencilVal;
 		ClearFlags |= Clear_Stencil;
 	}
 

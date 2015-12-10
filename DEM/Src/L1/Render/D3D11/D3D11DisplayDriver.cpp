@@ -191,10 +191,10 @@ bool CD3D11DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 	MONITORINFO Win32MonitorInfo = { sizeof(Win32MonitorInfo), 0 };
 	if (!::GetMonitorInfo(Desc.Monitor, &Win32MonitorInfo)) FAIL;
 
-	OutInfo.Left = (ushort)Win32MonitorInfo.rcMonitor.left;
-	OutInfo.Top = (ushort)Win32MonitorInfo.rcMonitor.top;
-	OutInfo.Width = (ushort)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
-	OutInfo.Height = (ushort)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
+	OutInfo.Left = (U16)Win32MonitorInfo.rcMonitor.left;
+	OutInfo.Top = (U16)Win32MonitorInfo.rcMonitor.top;
+	OutInfo.Width = (U16)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Height = (U16)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
 	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
 	//!!!device name can be obtained from adapter or MONITORINFOEX!
 

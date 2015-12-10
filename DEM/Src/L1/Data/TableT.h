@@ -35,14 +35,14 @@ public:
 	template<class TOut>
 	bool	Convert(Data::CTableT<TOut>& Out, bool(*Convertor)(const T&, TOut&));
 
-	T&		GetElm(uint Idx) const { return pData[Idx]; } // Mainly for internal use
+	T&		GetElm(UPTR Idx) const { return pData[Idx]; } // Mainly for internal use
 };
 
 template<class T> template<class TOut>
 bool CTableT<T>::Convert(Data::CTableT<TOut>& Out, bool(*Convertor)(const T&, TOut&))
 {
 	Out.SetSize(Width, Height);
-	for (uint i = 0; i < Width * Height; ++i)
+	for (UPTR i = 0; i < Width * Height; ++i)
 		if (!Convertor(pData[i], Out.GetElm(i))) FAIL;
 	OK;
 }

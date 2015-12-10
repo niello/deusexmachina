@@ -33,7 +33,7 @@ public:
 	//Data::CFlags				ClearFlags;
 	//CFixedArray<DWORD>			RTClearColors;		// 32-bit ARGB each
 	//float						DepthClearValue;	// 0.f .. 1.f
-	//uchar						StencilClearValue;
+	//U8						StencilClearValue;
 
 	//CRenderPhase(): ClearFlags(0), DepthClearValue(1.f), StencilClearValue(0) {}
 

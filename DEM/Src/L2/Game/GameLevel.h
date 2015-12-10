@@ -114,7 +114,7 @@ public:
 	const CString&			GetName() const { return Name; }
 
 	//!!!GetSceneNode() const and non-const variants w/ and w/out creation!
-	Scene::CSceneNode*		GetSceneNode(LPCSTR Path, bool Create = false) { return SceneRoot->GetChild(Path, Create); }
+	Scene::CSceneNode*		GetSceneNode(const char* Path, bool Create = false) { return SceneRoot->GetChild(Path, Create); }
 	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.GetUnsafe(); }
 	Physics::CPhysicsWorld*	GetPhysics() const { return PhysWorld.GetUnsafe(); }
 	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }

@@ -34,7 +34,7 @@ bool CPropInventory::InternalActivate()
 				//!!!load per-instance fields!
 			}
 			pStack->SetItem(Item);
-			pStack->SetCount((WORD)StackDesc->Get<int>(CStrID("Count")));
+			pStack->SetCount((U16)StackDesc->Get<int>(CStrID("Count")));
 			//???load EquippedCount?
 
 			CurrWeight += pStack->GetWeight();
@@ -165,7 +165,7 @@ bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const
 }
 //---------------------------------------------------------------------
 
-WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
+U16 CPropInventory::AddItem(PItem NewItem, U16 Count, bool AsManyAsCan)
 {
 	if (!Count) return 0;
 
@@ -180,9 +180,9 @@ WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
 	{
 		if (AsManyAsCan)
 		{
-			WORD ExcessCountW = (WORD)n_ceil(OverW / Tpl->Weight);
-			WORD ExcessCountV = (WORD)n_ceil(OverV / Tpl->Volume);
-			WORD ExcessCount = n_max(ExcessCountW, ExcessCountV);
+			U16 ExcessCountW = (U16)n_ceil(OverW / Tpl->Weight);
+			U16 ExcessCountV = (U16)n_ceil(OverV / Tpl->Volume);
+			U16 ExcessCount = n_max(ExcessCountW, ExcessCountV);
 			if (Count <= ExcessCount) return 0;
 			Count -= ExcessCount;
 			TotalW = Tpl->Weight * Count;
@@ -207,7 +207,7 @@ WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
 
 	if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields to avoid copying?!
 
-	Data::PParams P = n_new(Data::CParams);
+	Data::PParams P = n_new(Data::CParams)(3);
 	P->Set(CStrID("Item"), NewItem->GetID());
 	P->Set(CStrID("Count"), (int)Count);
 	P->Set(CStrID("Entity"), GetEntity()->GetUID());
@@ -217,13 +217,13 @@ WORD CPropInventory::AddItem(PItem NewItem, WORD Count, bool AsManyAsCan)
 }
 //---------------------------------------------------------------------
 
-WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
+U16 CPropInventory::RemoveItem(ItItemStack Stack, U16 Count, bool AsManyAsCan)
 {
 	if (Stack == Items.End()) FAIL;
 	
 	//???some flag AllowRemoveEquipped?
 
-	WORD ToRemove;
+	U16 ToRemove;
 	if (Stack->GetCount() >= Count) ToRemove = Count;
 	else if (AsManyAsCan) ToRemove = Stack->GetCount();
 	else return 0;
@@ -249,7 +249,7 @@ WORD CPropInventory::RemoveItem(ItItemStack Stack, WORD Count, bool AsManyAsCan)
 }
 //---------------------------------------------------------------------
 
-WORD CPropInventory::RemoveItem(PItem Item, WORD Count, bool AsManyAsCan)
+U16 CPropInventory::RemoveItem(PItem Item, U16 Count, bool AsManyAsCan)
 {
 	foreach_stack(Stack, Items)
 		if (Stack->GetItem()->IsEqual(Item)) break;
@@ -257,9 +257,9 @@ WORD CPropInventory::RemoveItem(PItem Item, WORD Count, bool AsManyAsCan)
 }
 //---------------------------------------------------------------------
 
-WORD CPropInventory::RemoveItem(CStrID ItemID, WORD Count, bool AsManyAsCan)
+U16 CPropInventory::RemoveItem(CStrID ItemID, U16 Count, bool AsManyAsCan)
 {
-	WORD LeftToRemove = Count;
+	U16 LeftToRemove = Count;
 	foreach_stack(Stack, Items)
 		if (Stack->GetItemID() == ItemID)
 		{
@@ -270,7 +270,7 @@ WORD CPropInventory::RemoveItem(CStrID ItemID, WORD Count, bool AsManyAsCan)
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::HasItem(CStrID ItemID, WORD Count)
+bool CPropInventory::HasItem(CStrID ItemID, U16 Count)
 {
 	foreach_stack(Stack, Items)
 		if (Stack->GetItemID() == ItemID)
@@ -282,7 +282,7 @@ bool CPropInventory::HasItem(CStrID ItemID, WORD Count)
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::SplitItems(PItem Item, WORD Count, CItemStack& OutStack)
+bool CPropInventory::SplitItems(PItem Item, U16 Count, CItemStack& OutStack)
 {
 	foreach_stack(Stack, Items)
 		if (Stack->GetItem()->IsEqual(Item)) break;

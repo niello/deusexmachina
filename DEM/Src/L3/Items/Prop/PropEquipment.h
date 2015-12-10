@@ -26,7 +26,7 @@ public:
 	{
 		CStrID		Type; //!!!need map: slot type => item types. Now 1:1.
 		CItemStack*	pStack;
-		WORD		Count;
+		U16			Count;
 		//WORD		MaxCount;
 
 		CSlot(): pStack(NULL), Count(0) {}
@@ -36,7 +36,7 @@ public:
 
 	CPropEquipment();
 
-	bool Equip(CStrID Slot, CItemStack* pStack, WORD Count = 1); //???for 0 or -1 count as many as possible?
+	bool Equip(CStrID Slot, CItemStack* pStack, U16 Count = 1); //???for 0 or -1 count as many as possible?
 	void Unequip(CStrID SlotID);
 };
 

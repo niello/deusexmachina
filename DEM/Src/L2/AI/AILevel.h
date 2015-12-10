@@ -34,7 +34,7 @@ public:
 
 	~CAILevel();
 
-	bool			Init(const CAABB& LevelBox, uchar QuadTreeDepth);
+	bool			Init(const CAABB& LevelBox, U8 QuadTreeDepth);
 	void			RenderDebug();
 
 	bool			LoadNavMesh(const char* pFileName);
@@ -44,11 +44,11 @@ public:
 	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
 	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);
 
-	bool			CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float ActorRadius = 0.f);
-	void			SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius = 0.f);
-	void			SetNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
-	void			ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius = 0.f);
-	void			SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius = 0.f);
+	bool			CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float ActorRadius = 0.f);
+	void			SwitchNavRegionFlags(CStrID ID, bool Set, U16 Flags, float ActorRadius = 0.f);
+	void			SetNavRegionFlags(CStrID ID, U16 Flags, float ActorRadius = 0.f);
+	void			ClearNavRegionFlags(CStrID ID, U16 Flags, float ActorRadius = 0.f);
+	void			SetNavRegionArea(CStrID ID, U8 Area, float ActorRadius = 0.f);
 
 	//bool			GetNearestValidLocation(const CActor& Actor, CStrID NavRegionID, float Range, vector3& OutPos) const; 
 	//bool			GetRandomValidLocation(float ActorRadius, const vector3& Center, float Range, vector3& OutPos) const;
@@ -82,13 +82,13 @@ inline dtNavMeshQuery* CAILevel::GetSyncNavQuery(float ActorRadius)
 }
 //---------------------------------------------------------------------
 
-inline void CAILevel::SetNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius)
+inline void CAILevel::SetNavRegionFlags(CStrID ID, U16 Flags, float ActorRadius)
 {
 	SwitchNavRegionFlags(ID, true, Flags, ActorRadius);
 }
 //---------------------------------------------------------------------
 
-inline void CAILevel::ClearNavRegionFlags(CStrID ID, ushort Flags, float ActorRadius)
+inline void CAILevel::ClearNavRegionFlags(CStrID ID, U16 Flags, float ActorRadius)
 {
 	SwitchNavRegionFlags(ID, false, Flags, ActorRadius);
 }

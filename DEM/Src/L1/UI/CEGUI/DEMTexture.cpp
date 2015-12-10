@@ -33,9 +33,9 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t source_pitch) //size_t dest_pitch - blitRGBAToD3DCOLORSurface
 {
 	//!!!__mm_shuffle_epi8
-	for (uint i = 0; i < sz.d_height; ++i)
+	for (UPTR i = 0; i < sz.d_height; ++i)
 	{
-		for (uint j = 0; j < sz.d_width; ++j)
+		for (UPTR j = 0; j < sz.d_width; ++j)
 		{
 			const uint32 pixel = src[j];
 			const uint32 tmp = pixel & 0x00FF00FF;
@@ -198,7 +198,7 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
 	if (DEMTexture.IsNullPtr()) return;
 
-	UINT SrcPitch = ((UINT)area.getWidth()) * 4;
+	uint32 SrcPitch = ((uint32)area.getWidth()) * 4;
 
 	//!!!convert only if format is not supported!
 	uint32* pBuf = n_new_array(uint32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));

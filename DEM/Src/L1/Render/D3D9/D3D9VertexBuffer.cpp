@@ -36,7 +36,7 @@ bool CD3D9VertexBuffer::Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pV
 	VertexCount = D3DDesc.Size / VertexSize;
 	pBuffer = pVB;
 	Usage = D3DDesc.Usage;
-	LockCount = 0;
+	//LockCount = 0;
 
 	OK;
 }
@@ -44,7 +44,7 @@ bool CD3D9VertexBuffer::Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pV
 
 void CD3D9VertexBuffer::InternalDestroy()
 {
-	n_assert(!LockCount); //???who must track and change this value?
+	//n_assert(!LockCount); //???who must track and change this value?
 	SAFE_RELEASE(pBuffer);
 }
 //---------------------------------------------------------------------

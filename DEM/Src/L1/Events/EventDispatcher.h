@@ -37,22 +37,22 @@ public:
 	DWORD					FireEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0) { return FireEvent(CEvent(ID, Flags, Params)); }
 
 	bool					Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub = NULL);
-	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, ushort Priority = Priority_Default);
-	template<class T> bool	Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub = NULL, ushort Priority = Priority_Default);
+	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, U16 Priority = Priority_Default);
+	template<class T> bool	Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub = NULL, U16 Priority = Priority_Default);
 	void					Unsubscribe(CEventID ID, CEventHandler* pHandler);
 	void					UnsubscribeAll() { Subscriptions.Clear(); }
 };
 
 typedef Ptr<CEventDispatcher> PEventDispatcher;
 
-inline bool CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub, ushort Priority)
+inline bool CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub, U16 Priority)
 {
 	return Subscribe(ID, n_new(CEventHandlerCallback)(Callback, Priority), pSub);
 }
 //---------------------------------------------------------------------
 
 template<class T>
-inline bool CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub, ushort Priority)
+inline bool CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub, U16 Priority)
 {
 	return Subscribe(ID, n_new(CEventHandlerMember<T>)(Object, Callback, Priority), pSub);
 }

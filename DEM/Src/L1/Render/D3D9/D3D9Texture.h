@@ -11,6 +11,7 @@ struct IDirect3DTexture9;
 struct IDirect3DVolumeTexture9;
 struct IDirect3DCubeTexture9;
 typedef enum _D3DPOOL D3DPOOL;
+typedef unsigned int UINT;
 
 namespace Render
 {

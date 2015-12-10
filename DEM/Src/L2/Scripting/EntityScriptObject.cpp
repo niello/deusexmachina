@@ -25,8 +25,8 @@ int CEntityScriptObject_SubscribeLocalEvent(lua_State* l)
 
 	if (This)
 	{
-		LPCSTR pHandlerName = (ArgCount < 4) ? lua_tostring(l, -2) : lua_tostring(l, 3);
-		ushort Priority = (ArgCount < 4) ? Events::Priority_Default : (ushort)lua_tointeger(l, 4);
+		const char* pHandlerName = (ArgCount < 4) ? lua_tostring(l, -2) : lua_tostring(l, 3);
+		U16 Priority = (ArgCount < 4) ? Events::Priority_Default : (U16)lua_tointeger(l, 4);
 		This->SubscribeLocalEvent(CStrID(lua_tostring(l, 2)), pHandlerName, Priority);
 	}
 	return 0;
@@ -110,7 +110,7 @@ int CEntityScriptObject_HasProperty(lua_State* l)
 	static const char* pPrefix = "Prop::CProp";
 
 	Game::CProperty* pProp;
-	LPCSTR pClassName = lua_tostring(l, 2);
+	const char* pClassName = lua_tostring(l, 2);
 	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
 		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
 	else
@@ -136,7 +136,7 @@ int CEntityScriptObject_IsPropertyActive(lua_State* l)
 	static const char* pPrefix = "Prop::CProp";
 
 	Game::CProperty* pProp;
-	LPCSTR pClassName = lua_tostring(l, 2);
+	const char* pClassName = lua_tostring(l, 2);
 	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
 		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
 	else
@@ -165,7 +165,7 @@ bool CEntityScriptObject::RegisterClass()
 }
 //---------------------------------------------------------------------
 
-int CEntityScriptObject::GetField(LPCSTR Key) const
+int CEntityScriptObject::GetField(const char* Key) const
 {
 	if (!strcmp(Key, "LevelID"))
 	{
@@ -184,7 +184,7 @@ int CEntityScriptObject::GetField(LPCSTR Key) const
 }
 //---------------------------------------------------------------------
 
-bool CEntityScriptObject::SetField(LPCSTR Key, const Data::CData& Value)
+bool CEntityScriptObject::SetField(const char* Key, const Data::CData& Value)
 {
 	// Read-only
 	if (!strcmp(Key, "Transform") || !strcmp(Key, "LevelID")) FAIL;
@@ -194,13 +194,13 @@ bool CEntityScriptObject::SetField(LPCSTR Key, const Data::CData& Value)
 }
 //---------------------------------------------------------------------
 
-bool CEntityScriptObject::SubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority)
+bool CEntityScriptObject::SubscribeLocalEvent(CStrID EventID, const char* HandlerFuncName, U16 Priority)
 {
 	return SubscribeEvent(EventID, HandlerFuncName, pEntity, Priority);
 }
 //---------------------------------------------------------------------
 
-void CEntityScriptObject::UnsubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName)
+void CEntityScriptObject::UnsubscribeLocalEvent(CStrID EventID, const char* HandlerFuncName)
 {
 	UnsubscribeEvent(EventID, HandlerFuncName, pEntity);
 }

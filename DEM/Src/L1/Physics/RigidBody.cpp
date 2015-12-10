@@ -20,7 +20,7 @@ bool CRigidBody::Init(const Data::CParams& Desc, const vector3& Offset)
 }
 //---------------------------------------------------------------------
 
-bool CRigidBody::Init(CCollisionShape& CollShape, float BodyMass, ushort CollGroup, ushort CollMask, const vector3& Offset)
+bool CRigidBody::Init(CCollisionShape& CollShape, float BodyMass, U16 CollGroup, U16 CollMask, const vector3& Offset)
 {
 	if (!CPhysicsObject::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
 	return InternalInit(BodyMass);

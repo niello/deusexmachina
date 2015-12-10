@@ -7,7 +7,7 @@ CStringIDStorage CStringID::Storage;
 
 const CStringID CStringID::Empty;
 
-CStringID::CStringID(LPCSTR pString, bool OnlyExisting)
+CStringID::CStringID(const char* pString, bool OnlyExisting)
 {
 	if (pString && *pString)
 		String = OnlyExisting ? Storage.Get(pString) : Storage.GetOrAdd(pString);

@@ -41,8 +41,8 @@ public:
 	void	Trigger(float FrameTime);
 	void	RenderDebug();
 
-	bool	GetClosestRayContact(const vector3& Start, const vector3& End, ushort Group, ushort Mask, vector3* pOutPos = NULL, PPhysicsObj* pOutObj = NULL) const;
-	DWORD	GetAllRayContacts(const vector3& Start, const vector3& End, ushort Group, ushort Mask) const;
+	bool	GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = NULL, PPhysicsObj* pOutObj = NULL) const;
+	DWORD	GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const;
 
 	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, CArray<PEntity>& Result);
 

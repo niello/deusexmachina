@@ -15,7 +15,7 @@ bool CCollisionObjStatic::Init(const Data::CParams& Desc, const vector3& Offset)
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObjStatic::Init(CCollisionShape& CollShape, ushort CollGroup, ushort CollMask, const vector3& Offset)
+bool CCollisionObjStatic::Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset)
 {
 	if (!CPhysicsObject::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
 	return InternalInit();

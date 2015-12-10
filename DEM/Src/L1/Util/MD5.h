@@ -39,7 +39,7 @@
 
 typedef unsigned       int uint4;
 typedef unsigned short int uint2;
-typedef unsigned      char uchar;
+typedef unsigned      char U8;
 
 class CMD5
 {
@@ -47,18 +47,18 @@ class CMD5
 public:
     CMD5() { Init(); }
     void    Init();
-    void    Update(uchar* chInput, uint4 nInputLen);
+    void    Update(U8* chInput, uint4 nInputLen);
     void    Finalize();
-    uchar*  Digest() { return m_Digest; }
+    U8*  Digest() { return m_Digest; }
 
     CString String2MD5(const char* szString);
-    CString PrintMD5(uchar md5Digest[16]);
+    CString PrintMD5(U8 md5Digest[16]);
 
 private:
 
-    void    Transform(uchar* block);
-    void    Encode(uchar* dest, uint4* src, uint4 nLength);
-    void    Decode(uint4* dest, uchar* src, uint4 nLength);
+    void    Transform(U8* block);
+    void    Encode(U8* dest, uint4* src, uint4 nLength);
+    void    Decode(uint4* dest, U8* src, uint4 nLength);
 
 
     inline  uint4   rotate_left(uint4 x, uint4 n)
@@ -92,8 +92,8 @@ private:
 private:
     uint4       m_State[4];
     uint4       m_Count[2];
-    uchar       m_Buffer[64];
-    uchar       m_Digest[16];
-    uchar       m_Finalized;
+    U8       m_Buffer[64];
+    U8       m_Digest[16];
+    U8       m_Finalized;
 
 };

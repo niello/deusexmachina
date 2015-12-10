@@ -124,7 +124,7 @@ void CPhysicsWorld::RemoveCollisionObject(CPhysicsObject& Obj)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End, ushort Group, ushort Mask, vector3* pOutPos, PPhysicsObj* pOutObj) const
+bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObj* pOutObj) const
 {
 	n_assert(pBtDynWorld);
 
@@ -145,7 +145,7 @@ bool CPhysicsWorld::GetClosestRayContact(const vector3& Start, const vector3& En
 }
 //---------------------------------------------------------------------
 
-DWORD CPhysicsWorld::GetAllRayContacts(const vector3& Start, const vector3& End, ushort Group, ushort Mask) const
+DWORD CPhysicsWorld::GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const
 {
 	n_assert(pBtDynWorld);
 

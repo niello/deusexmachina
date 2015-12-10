@@ -28,17 +28,17 @@ public:
 
 	friend class CScriptServer; //???why protected constructor?
 
-	CEntityScriptObject(Game::CEntity& Ent, LPCSTR ObjName, LPCSTR TableName = NULL):
+	CEntityScriptObject(Game::CEntity& Ent, const char* ObjName, const char* TableName = NULL):
 		CScriptObject(ObjName, TableName), pEntity(&Ent) {}
 	//virtual ~CEntityScriptObject();
 
 	static bool		RegisterClass();
 
-	virtual int		GetField(LPCSTR Key) const;
-	virtual bool	SetField(LPCSTR Key, const Data::CData& Value);
+	virtual int		GetField(const char* Key) const;
+	virtual bool	SetField(const char* Key, const Data::CData& Value);
 
-	bool			SubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName, ushort Priority = Events::Priority_Default);
-	void			UnsubscribeLocalEvent(CStrID EventID, LPCSTR HandlerFuncName);
+	bool			SubscribeLocalEvent(CStrID EventID, const char* HandlerFuncName, U16 Priority = Events::Priority_Default);
+	void			UnsubscribeLocalEvent(CStrID EventID, const char* HandlerFuncName);
 
 	void			SetEntity(Game::CEntity* pEnt) { pEntity = pEnt; }
 	Game::CEntity*	GetEntity() const { return pEntity; }

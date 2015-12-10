@@ -208,7 +208,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 		case Event::OSInput::KeyDown:
 		{
 			n_assert(Ev.KeyCode < KeyCount);
-			uchar& State = KeyState[Ev.KeyCode];
+			U8& State = KeyState[Ev.KeyCode];
 			if (!(State & KEY_IS_PRESSED)) State |= (KEY_IS_DOWN | KEY_IS_PRESSED);
 			FireEvent(Event::KeyDown(Ev.KeyCode), EV_TERM_ON_HANDLED);
 			break;

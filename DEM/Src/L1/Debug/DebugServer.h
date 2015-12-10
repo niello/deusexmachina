@@ -41,7 +41,7 @@ public:
 	CDebugServer();
 	~CDebugServer();
 
-	bool RegisterPlugin(CStrID Name, LPCSTR CppClassName, LPCSTR UIResource);
+	bool RegisterPlugin(CStrID Name, const char* CppClassName, const char* UIResource);
 	void AllowUI(bool Allow);
 	void Trigger();
 };

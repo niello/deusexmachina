@@ -18,7 +18,7 @@ protected:
 
 	struct CRecord
 	{
-		uint		Hash;
+		UPTR		Hash;
 		const char*	pStr;	// For already stored StrIDs it is a StrID-valid pointer, for new records it is a regular char*
 
 		bool operator ==(const CRecord& Other) const { return Hash == Other.Hash && strcmp(pStr, Other.pStr) == 0; }

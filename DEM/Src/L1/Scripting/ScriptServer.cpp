@@ -190,7 +190,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 				while (lua_next(l, StackIdx))
 					if (lua_type(l, -2) == LUA_TSTRING)
 					{
-						LPCSTR pStr = lua_tostring(l, -2);
+						const char* pStr = lua_tostring(l, -2);
 
 						// Prevent diving into possible self-references
 						if (strcmp(pStr, "__index") &&
@@ -223,11 +223,11 @@ DWORD CScriptServer::RunScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return Error;
-	return RunScript((LPCSTR)Buffer.GetPtr(), Buffer.GetSize());
+	return RunScript((const char*)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal)
+DWORD CScriptServer::RunScript(const char* Buffer, DWORD Length, Data::CData* pRetVal)
 {
 	DWORD Result;
 	if (luaL_loadbuffer(l, Buffer, ((Length > -1) ? Length : strlen(Buffer)), Buffer) != 0)
@@ -248,7 +248,7 @@ DWORD CScriptServer::RunScript(LPCSTR Buffer, DWORD Length, Data::CData* pRetVal
 //---------------------------------------------------------------------
 
 // Mainly for internal use
-DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCSTR pDbgName)
+DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, const char* pDbgName)
 {
 	int ResultCount = lua_gettop(l) - ArgCount - 1;
 
@@ -276,7 +276,7 @@ DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, LPCSTR pDbg
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::BeginClass(LPCSTR Name, LPCSTR BaseClass, DWORD FieldCount)
+bool CScriptServer::BeginClass(const char* Name, const char* BaseClass, DWORD FieldCount)
 {
 	n_assert2(Name && *Name, "Invalid class name to register");
 	n_assert2(CurrClass.IsEmpty(), "Already in class registration process!");
@@ -303,7 +303,7 @@ bool CScriptServer::BeginClass(LPCSTR Name, LPCSTR BaseClass, DWORD FieldCount)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::BeginExistingClass(LPCSTR Name)
+bool CScriptServer::BeginExistingClass(const char* Name)
 {
 	n_assert2(Name && *Name, "Invalid class name to register");
 	lua_getglobal(l, TBL_CLASSES);
@@ -366,28 +366,28 @@ void CScriptServer::EndMixin()
 }
 //---------------------------------------------------------------------
 
-void CScriptServer::ExportCFunction(LPCSTR Name, lua_CFunction Function)
+void CScriptServer::ExportCFunction(const char* Name, lua_CFunction Function)
 {
 	lua_pushcfunction(l, Function);
 	lua_setfield(l, -2, Name); //???rawset?
 }
 //---------------------------------------------------------------------
 
-void CScriptServer::ExportIntegerConst(LPCSTR Name, int Value)
+void CScriptServer::ExportIntegerConst(const char* Name, int Value)
 {
 	lua_pushinteger(l, Value);
 	lua_setfield(l, -2, Name); //???rawset?
 }
 //---------------------------------------------------------------------
 
-void CScriptServer::ClearField(LPCSTR Name)
+void CScriptServer::ClearField(const char* Name)
 {
 	lua_pushnil(l);
 	lua_setfield(l, -2, Name); //???rawset?
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::LoadClass(LPCSTR Name)
+bool CScriptServer::LoadClass(const char* Name)
 {
 	n_assert2(Name, "Invalid class name to register");
 
@@ -446,7 +446,7 @@ bool CScriptServer::LoadClass(LPCSTR Name)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::ClassExists(LPCSTR Name)
+bool CScriptServer::ClassExists(const char* Name)
 {
 	lua_getglobal(l, TBL_CLASSES);
 	lua_getfield(l, -1, Name);
@@ -456,7 +456,7 @@ bool CScriptServer::ClassExists(LPCSTR Name)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
+bool CScriptServer::CreateObject(CScriptObject& Obj, const char* LuaClassName)
 {
 	n_assert(Obj.Name.IsValid() && Obj.Table != TBL_CLASSES && !ObjectExists(Obj.Name.CStr(), Obj.Table.CStr()));
 	n_assert(LuaClassName && *LuaClassName && (ClassExists(LuaClassName) || LoadClass(LuaClassName)));
@@ -526,7 +526,7 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, LPCSTR LuaClassName)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::CreateInterface(LPCSTR Name, LPCSTR TablePath, LPCSTR LuaClassName, void* pCppPtr)
+bool CScriptServer::CreateInterface(const char* Name, const char* TablePath, const char* LuaClassName, void* pCppPtr)
 {
 	if (!pCppPtr) FAIL;
 
@@ -552,7 +552,7 @@ bool CScriptServer::CreateInterface(LPCSTR Name, LPCSTR TablePath, LPCSTR LuaCla
 //---------------------------------------------------------------------
 
 // Places object to -1 and optionally object's containing table to -2
-bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
+bool CScriptServer::PlaceObjectOnStack(const char* Name, const char* Table)
 {
 	if (!l) FAIL;
 
@@ -583,7 +583,7 @@ bool CScriptServer::PlaceObjectOnStack(LPCSTR Name, LPCSTR Table)
 //---------------------------------------------------------------------
 
 // Places any named Lua var on the top of the stack
-bool CScriptServer::PlaceOnStack(LPCSTR FullPath, bool Create)
+bool CScriptServer::PlaceOnStack(const char* FullPath, bool Create)
 {
 	if (!l || !FullPath) FAIL;
 
@@ -592,7 +592,7 @@ bool CScriptServer::PlaceOnStack(LPCSTR FullPath, bool Create)
 
 	lua_getglobal(l, "_G");
 
-	LPCSTR pTok;
+	const char* pTok;
 	while (pTok = StrTok.GetNextToken('.'))
 	{
 		if (!*pTok) continue;
@@ -621,7 +621,7 @@ bool CScriptServer::PlaceOnStack(LPCSTR FullPath, bool Create)
 }
 //---------------------------------------------------------------------
 
-void CScriptServer::RemoveObject(LPCSTR Name, LPCSTR Table)
+void CScriptServer::RemoveObject(const char* Name, const char* Table)
 {
 	if (PlaceObjectOnStack(Name, Table))
 	{
@@ -633,7 +633,7 @@ void CScriptServer::RemoveObject(LPCSTR Name, LPCSTR Table)
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::ObjectExists(LPCSTR Name, LPCSTR Table)
+bool CScriptServer::ObjectExists(const char* Name, const char* Table)
 {
 	if (!PlaceObjectOnStack(Name, Table)) FAIL;
 	lua_pop(l, (Table && *Table) ? 2 : 1);

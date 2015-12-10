@@ -18,7 +18,7 @@ CAILevel::~CAILevel()
 }
 //---------------------------------------------------------------------
 
-bool CAILevel::Init(const CAABB& LevelBox, uchar QuadTreeDepth)
+bool CAILevel::Init(const CAABB& LevelBox, U8 QuadTreeDepth)
 {
 	Box = LevelBox;
 	vector3 Center = LevelBox.Center();
@@ -66,7 +66,7 @@ void CAILevel::UnloadNavMesh()
 
 // Checks if all polys or any poly (AllPolys = false) of a nav. region contains specified flags.
 // Now it is enough to contain ANY flag, not all.
-bool CAILevel::CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float ActorRadius)
+bool CAILevel::CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;
 	for (int i = 0; i < NavData.GetCount(); ++i)
@@ -79,7 +79,7 @@ bool CAILevel::CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float
 			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
 			{
 				dtPolyRef Ref = (*pRegion)[j];
-				ushort PolyFlags;
+				U16 PolyFlags;
 				if (dtStatusSucceed(Data.pNavMesh->getPolyFlags(Ref, &PolyFlags)))
 				{
 					if (PolyFlags & Flags)
@@ -97,7 +97,7 @@ bool CAILevel::CheckNavRegionFlags(CStrID ID, ushort Flags, bool AllPolys, float
 }
 //---------------------------------------------------------------------
 
-void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float ActorRadius)
+void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, U16 Flags, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;
 	for (int i = 0; i < NavData.GetCount(); ++i)
@@ -110,7 +110,7 @@ void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float Act
 			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
 			{
 				dtPolyRef Ref = (*pRegion)[j];
-				ushort PolyFlags;
+				U16 PolyFlags;
 				if (dtStatusSucceed(Data.pNavMesh->getPolyFlags(Ref, &PolyFlags)))
 				{
 					if (Set) PolyFlags |= Flags;
@@ -124,7 +124,7 @@ void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, ushort Flags, float Act
 }
 //---------------------------------------------------------------------
 
-void CAILevel::SetNavRegionArea(CStrID ID, uchar Area, float ActorRadius)
+void CAILevel::SetNavRegionArea(CStrID ID, U8 Area, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;
 	for (int i = 0; i < NavData.GetCount(); ++i)

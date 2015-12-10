@@ -33,7 +33,7 @@ private:
 	union
 	{
 		EKey			Key;
-		ushort			Char;
+		U16			Char;
 		EMouseButton	MouseBtn;
 		bool			WheelFwd;	// true - forward, false - backward
 	};

@@ -23,7 +23,7 @@ bool CPropItem::InternalActivate()
 		//!!!load per-instance fields!
 	}
 	Items.SetItem(Item);
-	Items.SetCount((WORD)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
+	Items.SetCount((U16)GetEntity()->GetAttr<int>(CStrID("ItemCount")));
 
 	CPropUIControl* pPropUI = GetEntity()->GetProperty<CPropUIControl>();
 	if (pPropUI && pPropUI->IsActive()) pPropUI->SetUIName(Items.GetTpl()->UIName);

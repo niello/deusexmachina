@@ -500,8 +500,8 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 	const dtMeshTile* pTile;
 	const dtPoly* pPoly;
 	pNavMesh->getTileAndPolyByRefUnsafe(Ref, &pTile, &pPoly);
-	uchar PolyArea = pPoly->getArea();
-	ushort PolyFlags = pPoly->flags; //???need? area crossings - all crossings difference!
+	U8 PolyArea = pPoly->getArea();
+	U16 PolyFlags = pPoly->flags; //???need? area crossings - all crossings difference!
 
 	//!!!DBG TMP!
 	int EdgeType = -1; //!!!Some calcs from ?PolyArea? and PolyFlags!
@@ -885,7 +885,7 @@ void CNavSystem::RenderDebug()
 {
 	if (!pNavQuery) return;
 
-	LPCSTR pNavStr = NULL;
+	const char* pNavStr = NULL;
 	if (pActor->NavState == AINav_Done) pNavStr = "Done";
 	else if (pActor->NavState == AINav_Failed) pNavStr = "Failed";
 	else if (pActor->NavState == AINav_DestSet) pNavStr = "DestSet";

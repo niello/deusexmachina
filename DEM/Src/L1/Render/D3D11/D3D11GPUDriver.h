@@ -105,9 +105,9 @@ protected:
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11ConstantBuffer>	CurrCB;
 	CFixedArray<PD3D11Sampler>			CurrSS;
-	CDict<UINT, ID3D11ShaderResourceView*>	CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
+	CDict<UPTR, ID3D11ShaderResourceView*>	CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
 //!!!ID3D11ShaderResourceView* or PObject!
-	UINT								MaxSRVSlotIndex;
+	UPTR								MaxSRVSlotIndex;
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
@@ -132,8 +132,8 @@ protected:
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
 	static EGPUDriverType				GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
-	static void							GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
-	static void							GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UINT& OutMapFlags);
+	static void							GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UPTR& OutCPUAccess);
+	static void							GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UPTR& OutMapFlags);
 	static D3D11_COMPARISON_FUNC		GetD3DCmpFunc(ECmpFunc Func);
 	static D3D11_STENCIL_OP				GetD3DStencilOp(EStencilOp Operation);
 	static D3D11_BLEND					GetD3DBlendArg(EBlendArg Arg);
@@ -144,7 +144,7 @@ protected:
 	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset);
-	bool								BindSRV(EShaderType ShaderType, UINT SlotIndex, ID3D11ShaderResourceView* pSRV); //!!!ID3D11ShaderResourceView* or PObject!
+	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV); //!!!ID3D11ShaderResourceView* or PObject!
 
 	friend class CD3D11DriverFactory;
 
@@ -199,7 +199,7 @@ public:
 
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
-	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, uchar Stencil);
+	virtual void				Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup); //???instance count?
 

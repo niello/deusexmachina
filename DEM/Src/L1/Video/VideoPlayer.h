@@ -17,10 +17,10 @@ protected:
 	CString		FileName;
 	//nTexture2*	pTexture;
 
-	uint		videoWidth;
-	uint		videoHeight;
+	UPTR		videoWidth;
+	UPTR		videoHeight;
 	float		videoFpS;
-	uint		videoFrameCount;
+	UPTR		videoFrameCount;
 
 public:
 
@@ -44,10 +44,10 @@ public:
 	virtual void	DecodeNextFrame() = 0;
 	virtual void	Decode(CTime DeltaTime) = 0;
 
-	uint			GetWidth() const { return videoWidth; }
-	uint			GetHeight() const { return videoHeight; }
+	UPTR			GetWidth() const { return videoWidth; }
+	UPTR			GetHeight() const { return videoHeight; }
 	float			GetFpS() const { return videoFpS; }
-	uint			GetFrameCount() const { return videoFrameCount; }
+	UPTR			GetFrameCount() const { return videoFrameCount; }
 	void			SetFilename(const char* pFileName);
 	const CString&	GetFilename() const { return FileName; }
 	//void			SetTexture(nTexture2* pTex) { pTexture = pTex; }

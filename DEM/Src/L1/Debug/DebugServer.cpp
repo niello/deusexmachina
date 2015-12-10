@@ -38,7 +38,7 @@ CDebugServer::~CDebugServer()
 }
 //---------------------------------------------------------------------
 
-bool CDebugServer::RegisterPlugin(CStrID Name, LPCSTR CppClassName, LPCSTR UIResource)
+bool CDebugServer::RegisterPlugin(CStrID Name, const char* CppClassName, const char* UIResource)
 {
 	CPlugin New;
 	New.UIResource = UIResource;

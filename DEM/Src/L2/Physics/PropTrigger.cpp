@@ -39,8 +39,8 @@ bool CPropTrigger::InternalActivate()
 	}
 
 	CollObj = n_new(Physics::CCollisionObjStatic);
-	ushort Group = PhysicsSrv->CollisionGroups.GetMask("Trigger");
-	ushort Mask = PhysicsSrv->CollisionGroups.GetMask("All") & ~Group;
+	U16 Group = PhysicsSrv->CollisionGroups.GetMask("Trigger");
+	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All") & ~Group;
 	CollObj->Init(*Shape, Group, Mask); // Can specify offset
 	CollObj->GetBtObject()->setCollisionFlags(CollObj->GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
