@@ -208,10 +208,12 @@
     <ClInclude Include="..\..\Src\L1\Frame\Model.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderObject.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPath.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoader.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhase.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\View.h" />
     <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h" />
@@ -446,10 +448,12 @@
     <ClCompile Include="..\..\Src\L1\Frame\Model.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPath.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhase.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp" />

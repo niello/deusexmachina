@@ -6,8 +6,9 @@
 //#include <Render/SceneNodeUpdateInSPS.h>
 //#include <IO/IOServer.h>
 
-namespace Render
+namespace Frame
 {
+__ImplementClassNoFactory(Frame::CRenderPath, Resources::CResourceObject);
 
 /*
 bool CRenderPath::Init(CGPUDriver& Driver, const Data::CParams& Desc)

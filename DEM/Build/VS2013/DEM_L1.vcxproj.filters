@@ -875,6 +875,12 @@
     <ClInclude Include="..\..\Src\L1\System\Allocators\StandardAllocator.h">
       <Filter>System\Allocators</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\View.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoader.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1419,6 +1425,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\System\Allocators\StandardAllocator.cpp">
       <Filter>System\Allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\View.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoader.cpp">
+      <Filter>Frame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -97,6 +97,7 @@ public:
 	void		RemoveRecord(CSPSRecord* pRecord);
 
 	void		QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const;
+	//!!!add inside sphere for omni (point) lights!
 };
 
 inline void GetDimensions(const CAABB& Box, float& CenterX, float& CenterZ, float& HalfSizeX, float& HalfSizeZ)

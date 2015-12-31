@@ -58,6 +58,7 @@ public:
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
+	CSceneNode*				Clone(bool CloneChildren);
 	void					Remove() { if (pParent) pParent->RemoveChild(*this); }
 
 	bool					AcceptVisitor(INodeVisitor& Visitor);

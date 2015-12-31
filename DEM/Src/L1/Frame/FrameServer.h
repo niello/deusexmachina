@@ -6,24 +6,11 @@
 #include <Data/HandleManager.h>
 
 // Frame server controls frame rendering. Frame subsystem communicates with Scene and Render
-// subsystems, rendering scene views to viewports or intermediate render targets. View is
-// defined by a scene (what to render), a camera (from where), render target(s) (to where)
-// and a render path (how). NULL scene is valid and has meaning for example for GUI-only views.
-
-namespace Scene
-{
-// SPS or root node
-};
-
-namespace Render
-{
-	class CRenderTarget;
-};
+// subsystems, rendering scene views to viewports or intermediate render targets.
 
 namespace Frame
 {
-typedef HHandle HView;
-class CCamera;
+class CView;
 
 #define FrameSrv Frame::CFrameServer::Instance()
 
@@ -36,7 +23,7 @@ private:
 	// render path collection
 	// view collection - for iteration
 
-	Data::CHandleManager	HandleMgr;
+	Data::CHandleManager	HandleMgr; //???templated and store views, not ptrs?
 
 public:
 
@@ -46,9 +33,9 @@ public:
 	//???RPs as resources?
 	// LoadRenderPath() / GetRenderPath() //???ever need user access to RP object outside the frame subsys?
 
-	HView	RegisterView(/*SPS or root scene node, camera, RP, RT array ptr & count, opt depth-stencil buffer*/);
-	void	UnregisterView(HView hView);
-	bool	RenderView(HView hView);
+	HHandle	RegisterView(CView* pView); //???who controls view (de)allocation?
+	void	UnregisterView(HHandle hView);
+	bool	RenderView(HHandle hView);
 	bool	RenderAllViews();
 };
 
