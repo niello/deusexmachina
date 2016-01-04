@@ -67,10 +67,13 @@ void CGameServer::Trigger()
 }
 //---------------------------------------------------------------------
 
+//!!!need to know what view to test!
 void CGameServer::UpdateMouseIntersectionInfo()
 {
 	CStrID OldEntityUnderMouse = EntityUnderMouse;
 
+	NOT_IMPLEMENTED;
+	/*
 	if (UISrv->IsMouseOverGUI() || ActiveLevel.IsNullPtr()) HasMouseIsect = false;
 	else
 	{
@@ -78,6 +81,7 @@ void CGameServer::UpdateMouseIntersectionInfo()
 		InputSrv->GetMousePosRel(XRel, YRel);
 		HasMouseIsect = ActiveLevel->GetIntersectionAtScreenPos(XRel, YRel, &MousePos3D, &EntityUnderMouse);
 	}
+	*/
 
 	if (!HasMouseIsect)
 	{

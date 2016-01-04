@@ -25,10 +25,10 @@ private:
 	UPTR	Count;
 	UPTR	GrowSize;
 
-	void	MakeIndexValid(DWORD Idx);
+	void	MakeIndexValid(UPTR Idx);
 	UPTR	GetActualGrowSize() { return (Flags.Is(Array_DoubleGrowSize) && Allocated) ? Allocated : GrowSize; }
 	void	Grow();
-	void	GrowTo(DWORD NewCount);
+	void	GrowTo(UPTR NewCount);
 	void	Move(int FromIdx, int ToIdx);
 
 public:
@@ -46,14 +46,14 @@ public:
 	CIterator	Add(const T& Val);
 	CIterator	AddBefore(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) : 0, Val); }
 	CIterator	AddAfter(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) + 1 : 0, Val); }
-	CIterator	Reserve(DWORD Num, bool Grow = true);
+	CIterator	Reserve(UPTR Num, bool Grow = true);
 	CIterator	Insert(int Idx, const T& Val);
 	CIterator	InsertSorted(const T& Val) { return Insert(FindClosestIndexSorted(Val), Val); }
 	void		AddArray(const CArray<T>& Other);
-	void		AddArray(const T* pData, DWORD Size);
+	void		AddArray(const T* pData, UPTR Size);
 	void		Copy(const CArray<T>& Other);
-	void		Fill(int First, DWORD Num, const T& Val);
-	void		AllocateFixed(DWORD Size);
+	void		Fill(int First, UPTR Num, const T& Val);
+	void		AllocateFixed(UPTR Size);
 
 	void		Remove(CIterator It, T* pOutValue = NULL) { n_assert_dbg(It); RemoveAt(int(It - pData), pOutValue); }
 	void		RemoveAt(int Idx, T* pOutValue = NULL);
@@ -79,16 +79,16 @@ public:
 	int			FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;
 	bool		Contains(const T& Val) const { return FindIndex(Val) != INVALID_INDEX; }
 	bool		ContainsSorted(const T& Val) const { return FindIndexSorted(Val) != INVALID_INDEX; }
-	bool		IsIndexValid(int Idx) const { return ((DWORD)Idx) < Count; }
+	bool		IsIndexValid(int Idx) const { return ((UPTR)Idx) < Count; }
 
-	void		Resize(DWORD NewAllocSize);
-	void		Reallocate(DWORD NewAllocSize, DWORD NewGrowSize);
-	void		Truncate(DWORD TailCount);
+	void		Resize(UPTR NewAllocSize);
+	void		Reallocate(UPTR NewAllocSize, UPTR NewGrowSize);
+	void		Truncate(UPTR TailCount);
 
 	void		Sort() { std::sort(Begin(), End()); }
 	template<class TCmp>
 	void		Sort() { std::sort(Begin(), End(), TCmp()); }
-	DWORD		Difference(const CArray<T>& Other, CArray<T>& Out) const;
+	UPTR		Difference(const CArray<T>& Other, CArray<T>& Out) const;
 
 	bool		IsEmpty() const { return !Count; }
 	int			GetCount() const { return (int)Count; } //!!!FIXME make unsigned
@@ -127,7 +127,7 @@ CArray<T>::CArray(UPTR _Count, UPTR _GrowSize, const T& Value):
 	if (_Count > 0)
 	{
 		pData = (T*)n_malloc(sizeof(T) * Allocated);
-		for (DWORD i = 0; i < _Count; ++i) n_placement_new(pData + i, T)(Value);
+		for (UPTR i = 0; i < _Count; ++i) n_placement_new(pData + i, T)(Value);
 	}
 	else pData = NULL;
 }
@@ -138,7 +138,7 @@ CArray<T>::~CArray()
 {
 	if (pData)
 	{
-		for (DWORD i = 0; i < Count; ++i) pData[i].~T();
+		for (UPTR i = 0; i < Count; ++i) pData[i].~T();
 		n_free(pData);
 	}
 }
@@ -147,12 +147,12 @@ CArray<T>::~CArray()
 template<class T>
 void CArray<T>::Copy(const CArray<T>& Other)
 {
-	for (DWORD i = 0; i < Count; ++i) pData[i].~T();
+	for (UPTR i = 0; i < Count; ++i) pData[i].~T();
 
 	if (Allocated < Other.Allocated)
 		pData = (T*)n_realloc(pData, sizeof(T) * Other.Allocated);
 
-	for (DWORD i = 0; i < Other.Count; ++i)  n_placement_new(pData + i, T)(Other.pData[i]);
+	for (UPTR i = 0; i < Other.Count; ++i)  n_placement_new(pData + i, T)(Other.pData[i]);
 
 	Flags = Other.Flags;
 	GrowSize = Other.GrowSize;
@@ -162,14 +162,14 @@ void CArray<T>::Copy(const CArray<T>& Other)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::Fill(int First, DWORD Num, const T& Val)
+void CArray<T>::Fill(int First, UPTR Num, const T& Val)
 {
 	n_assert(IsIndexValid(First));
 
-	DWORD NewCount = First + Num;
+	UPTR NewCount = First + Num;
 	GrowTo(NewCount);
 
-	DWORD i = First;
+	UPTR i = First;
 	for (; i < Count; ++i) pData[i] = Val;
 	for (; i < NewCount; ++i) n_placement_new(pData + i, T)(Val);
 	Count = NewCount;
@@ -177,18 +177,18 @@ void CArray<T>::Fill(int First, DWORD Num, const T& Val)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::AllocateFixed(DWORD NewCount)
+void CArray<T>::AllocateFixed(UPTR NewCount)
 {
 	Reallocate(NewCount, 0);
 	Count = NewCount;
-	for (DWORD i = 0; i < Count; ++i) n_placement_new(pData + i, T);
+	for (UPTR i = 0; i < Count; ++i) n_placement_new(pData + i, T);
 }
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::Reallocate(DWORD NewAllocSize, DWORD NewGrowSize)
+void CArray<T>::Reallocate(UPTR NewAllocSize, UPTR NewGrowSize)
 {
-	for (DWORD i = 0; i < Count; ++i) pData[i].~T();
+	for (UPTR i = 0; i < Count; ++i) pData[i].~T();
 	GrowSize = NewGrowSize;
 	Allocated = NewAllocSize;
 	Count = 0;
@@ -200,11 +200,11 @@ void CArray<T>::Reallocate(DWORD NewAllocSize, DWORD NewGrowSize)
 // NB: this implementation can invoke raw memory copying through n_realloc,
 // that doesn't call constructors and destructors, but changes object location.
 template<class T>
-void CArray<T>::Resize(DWORD NewAllocSize)
+void CArray<T>::Resize(UPTR NewAllocSize)
 {
 	if (Allocated == NewAllocSize) return;
 
-	for (DWORD i = NewAllocSize; i < Count; ++i) pData[i].~T();
+	for (UPTR i = NewAllocSize; i < Count; ++i) pData[i].~T();
 
 	pData = (T*)n_realloc(pData, sizeof(T) * NewAllocSize);
 	n_assert_dbg(!NewAllocSize || pData);
@@ -237,10 +237,10 @@ void CArray<T>::Resize(DWORD NewAllocSize)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::Truncate(DWORD TailCount)
+void CArray<T>::Truncate(UPTR TailCount)
 {
 	int NewCount = (TailCount > Count) ? 0 : Count - TailCount;
-	for (DWORD i = NewCount; i < Count; ++i) pData[i].~T();
+	for (UPTR i = NewCount; i < Count; ++i) pData[i].~T();
 	Count = NewCount;
 }
 //---------------------------------------------------------------------
@@ -248,17 +248,17 @@ void CArray<T>::Truncate(DWORD TailCount)
 template<class T>
 void CArray<T>::Grow()
 {
-	DWORD CurrGrow = GetActualGrowSize();
+	UPTR CurrGrow = GetActualGrowSize();
 	n_assert2(CurrGrow, "Request to grow non-growable array");
 	Resize(Allocated + CurrGrow);
 }
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::GrowTo(DWORD NewCount)
+void CArray<T>::GrowTo(UPTR NewCount)
 {
 	if (NewCount <= Allocated) return;
-	DWORD NewAllocSize = Allocated;
+	UPTR NewAllocSize = Allocated;
 	NewAllocSize += GetActualGrowSize();
 	n_assert2(NewAllocSize > Allocated, "Request to grow non-growable array");
 	while (NewCount > NewAllocSize) NewAllocSize += GetActualGrowSize();
@@ -273,12 +273,12 @@ void CArray<T>::Move(int FromIdx, int ToIdx)
 
 	n_assert(IsIndexValid(FromIdx) && ToIdx >= 0);
 
-	DWORD MoveCount = Count - FromIdx;
+	UPTR MoveCount = Count - FromIdx;
 
 	// Fast way w/o constructors and destructors:
 	//memmove(pData + ToIdx, pData + FromIdx, sizeof(T) * MoveCount);
 
-	DWORD NewCount = ToIdx + MoveCount;
+	UPTR NewCount = ToIdx + MoveCount;
 	GrowTo(NewCount);
 
 	if (FromIdx > ToIdx) // Backwards
@@ -296,7 +296,7 @@ void CArray<T>::Move(int FromIdx, int ToIdx)
 	{
 		// NB Nebula2: Be aware of uninitialized slots between FromIdx and ToIdx
 
-		DWORD OldDataEndIdx = n_min(Count, ToIdx);
+		UPTR OldDataEndIdx = n_min(Count, ToIdx);
 
 		T* pDataSrc = pData + Count - 1;
 		T* pDataDest = pData + NewCount - 1;
@@ -331,7 +331,7 @@ template<class T>
 typename CArray<T>::CIterator CArray<T>::Insert(int Idx, const T& Val)
 {
 	n_assert2_dbg(Flags.Is(Array_KeepOrder), "Insertion has no much meaning if order isn't preserver, use Add(), it is faster!");
-	n_assert(((DWORD)Idx) <= Count);
+	n_assert(((UPTR)Idx) <= Count);
 	if (Idx == Count) return Add(Val);
 	else
 	{
@@ -345,21 +345,21 @@ typename CArray<T>::CIterator CArray<T>::Insert(int Idx, const T& Val)
 template<class T>
 void CArray<T>::AddArray(const CArray<T>& Other)
 {
-	DWORD NewCount = Count + Other.Count;
+	UPTR NewCount = Count + Other.Count;
 	if (NewCount > Allocated) Resize(NewCount);
 	T* pEnd = pData + Count;
-	for (DWORD i = 0; i < Other.Count; ++i)
+	for (UPTR i = 0; i < Other.Count; ++i)
 		n_placement_new(pEnd + i, T)(Other.pData[i]);
 	Count = NewCount;
 }
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::AddArray(const T* pData, DWORD Size)
+void CArray<T>::AddArray(const T* pData, UPTR Size)
 {
 	if (Count + Size > Allocated)
 		Resize(Count + Size);
-	for (DWORD i = 0; i < Size; ++i)
+	for (UPTR i = 0; i < Size; ++i)
 		Add(pData[i]);
 }
 //---------------------------------------------------------------------
@@ -368,11 +368,11 @@ void CArray<T>::AddArray(const T* pData, DWORD Size)
 // to the start of the reserved area. This can be (carefully!) used as a fast
 // shortcut to fill the array directly with data.
 template<class T>
-typename CArray<T>::CIterator CArray<T>::Reserve(DWORD Num, bool Grow)
+typename CArray<T>::CIterator CArray<T>::Reserve(UPTR Num, bool Grow)
 {
 	if (!Num) return NULL;
 
-	DWORD NewCount = Count + Num;
+	UPTR NewCount = Count + Num;
 	if (NewCount > Allocated)
 	{
 		if (Grow) GrowTo(NewCount);
@@ -380,14 +380,14 @@ typename CArray<T>::CIterator CArray<T>::Reserve(DWORD Num, bool Grow)
 	}
 
 	CIterator It = pData + Count;
-	for (DWORD i = Count; i < NewCount; ++i) n_placement_new(pData + i, T);
+	for (UPTR i = Count; i < NewCount; ++i) n_placement_new(pData + i, T);
 	Count = NewCount;
 	return It;
 }
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::MakeIndexValid(DWORD Idx)
+void CArray<T>::MakeIndexValid(UPTR Idx)
 {
 	if (Idx < Count) return;
 	if (Idx >= Allocated)
@@ -395,7 +395,7 @@ void CArray<T>::MakeIndexValid(DWORD Idx)
 		n_assert2(GrowSize, "Request to grow non-growable array");
 		Resize(Idx + GrowSize);
 	}
-	for (DWORD i = Count; i <= Idx; ++i) n_placement_new(pData + i, T);
+	for (UPTR i = Count; i <= Idx; ++i) n_placement_new(pData + i, T);
 	Count = Idx + 1;
 }
 //---------------------------------------------------------------------
@@ -404,7 +404,7 @@ template<class T>
 bool CArray<T>::operator ==(const CArray<T>& Other) const
 {
 	if (Other.Count != Count) FAIL;
-	for (DWORD i = 0; i < Count; ++i)
+	for (UPTR i = 0; i < Count; ++i)
 		if (pData[i] != Other.pData[i])
 			FAIL;
 	OK;
@@ -455,7 +455,7 @@ void CArray<T>::RemoveAt(int Idx, T* pOutValue)
 template<class T>
 void CArray<T>::Clear(bool FreeMemory)
 {
-	for (DWORD i = 0; i < Count; ++i) pData[i].~T();
+	for (UPTR i = 0; i < Count; ++i) pData[i].~T();
 	Count = 0;
 	if (FreeMemory && pData)
 	{
@@ -470,7 +470,7 @@ int CArray<T>::FindIndex(const T& Val) const
 {
 	int Idx = &Val - pData;
 	if (IsIndexValid(Idx)) return Idx;
-	for (DWORD i = 0; i < Count; ++i)
+	for (UPTR i = 0; i < Count; ++i)
 		if (pData[i] == Val) return i;
 	return INVALID_INDEX;
 }
@@ -568,10 +568,10 @@ int CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) cons
 // Returns a new array with all element which are in Other, but not in this.
 // Be careful, this method may be very slow with large arrays!
 template<class T>
-DWORD CArray<T>::Difference(const CArray<T>& Other, CArray<T>& Out) const
+UPTR CArray<T>::Difference(const CArray<T>& Other, CArray<T>& Out) const
 {
-	DWORD OutCount = Out.GetCount();
-	for (DWORD i = 0; i < Other.Count; ++i)
+	UPTR OutCount = Out.GetCount();
+	for (UPTR i = 0; i < Other.Count; ++i)
 		if (!Find(Other[i]))
 			Out.Add(Other[i]);
 	return Out.GetCount() - OutCount;

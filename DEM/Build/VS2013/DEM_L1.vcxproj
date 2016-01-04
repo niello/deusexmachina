@@ -302,6 +302,7 @@
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMTextureTarget.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.h" />
     <ClInclude Include="..\..\Src\L1\UI\RenderPhaseGUI.h" />
+    <ClInclude Include="..\..\Src\L1\UI\UIContext.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIServer.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIWindow.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\FmtLbTextItem.h" />
@@ -522,6 +523,7 @@
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMTextureTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\RenderPhaseGUI.cpp" />
+    <ClCompile Include="..\..\Src\L1\UI\UIContext.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIServer.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\UIWindow.cpp" />
     <ClCompile Include="..\..\Src\L1\UI\CEGUI\FmtLbTextItem.cpp" />

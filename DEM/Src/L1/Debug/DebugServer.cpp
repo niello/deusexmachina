@@ -102,6 +102,10 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 	if (!pPlugin) return;
 
 	UI::CUIWindow& UI = *pPlugin->Window;
+
+	NOT_IMPLEMENTED;
+
+	/*
 	if (UI.GetWnd() && UI.GetWnd()->getParent() == UISrv->GetRootScreen()->GetWnd())
 		UI.ToggleVisibility();
 	else
@@ -118,6 +122,8 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 			UI.Show();
 		}
 	}
+	*/
+
 	//UI.SetInputFocus();
 }
 //---------------------------------------------------------------------

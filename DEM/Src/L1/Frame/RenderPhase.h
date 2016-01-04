@@ -17,11 +17,7 @@ namespace Data
 
 namespace Frame
 {
-class CCamera;
-class CSPS;
-class CRenderPath;
-typedef Ptr<class CRenderTarget> PRenderTarget;
-typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
+class CView;
 
 class CRenderPhase: public Core::CObject //???need? lives only in RP!
 {
@@ -40,7 +36,7 @@ public:
 	virtual ~CRenderPhase() {}
 
 	//virtual bool Init(const Data::CParams& Desc, const CRenderPath& Owner);
-	//virtual bool Render(const CCamera& MainCamera, CSPS& SPS, const CRenderPath& Owner) = 0;
+	virtual bool Render(CView& View) = 0;
 };
 
 typedef Ptr<CRenderPhase> PRenderPhase;

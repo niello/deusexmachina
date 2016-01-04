@@ -881,6 +881,9 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoader.h">
       <Filter>Frame</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\UIContext.h">
+      <Filter>UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1431,6 +1434,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoader.cpp">
       <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\UI\UIContext.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

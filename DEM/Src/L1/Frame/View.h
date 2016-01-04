@@ -16,8 +16,14 @@ namespace Scene
 
 namespace Render
 {
+	typedef Ptr<class CGPUDriver> PGPUDriver;
 	typedef Ptr<class CRenderTarget> PRenderTarget;
 	typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
+};
+
+namespace UI
+{
+	typedef Ptr<class CUIContext> PUIContext;
 };
 
 namespace Frame
@@ -29,21 +35,30 @@ class CView
 {
 public:
 
-	HHandle								Handle;
+	//???add viewport settings here? to render multiple views into one RT
+
+	//HHandle								Handle;
 	Scene::CSPS*						pSPS;
-	CCamera*							pCamera;
+	CCamera*							pCamera; //???smart ptr?
+	UI::PUIContext						UIContext;
+
+	Render::PGPUDriver					GPU;
 	CFixedArray<Render::PRenderTarget>	RTs;
 	Render::PDepthStencilBuffer			DSBuffer;	//???or named? may require more than one in one view?
+
+	//???store here or outside?
 	PRenderPath							RenderPath;
+
+	CView(): pSPS(NULL), pCamera(NULL) {}
 
 	//visible objects cache
 	//visible lights cache (can separate by callback/visitor passed to SPS)
 	//named texture RTs and mb named readonly system textures and named shader vars
-	//!!!named resources in view bound to RP must be reolved by order number (index in array)
+	//!!!named resources in view bound to RP must be resolved by order number (index in array)
 	//instead of looking up by name every time!
 	//shadow cameras (?are generated from lights in a shadow phase?)
 	//shadow map buffers
-	//materials for early depth, occlusion, shadows (?or in phases, predetermined?)
+	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 };
 
 }

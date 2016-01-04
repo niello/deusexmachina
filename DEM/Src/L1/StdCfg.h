@@ -55,7 +55,7 @@ const int DEM_THREAD_COUNT = 1;
 #endif
 
 //------------------------------------------------------------------------------
-//  disable some VC warnings
+//  Disable some Visual C++ warnings
 //  NEVER add another warning ignores if you aren't the project lead
 //------------------------------------------------------------------------------
 #ifdef __VC__

@@ -14,6 +14,8 @@ class CRenderPhaseGUI: public CRenderPhase
 	__DeclareClass(CRenderPhaseGUI);
 
 public:
+
+	virtual bool Render(CView& View);
 };
 
 typedef Ptr<CRenderPhaseGUI> PRenderPhaseGUI;

@@ -30,7 +30,6 @@ protected:
 	static String						RendererID;
 
 	Render::PGPUDriver					GPU;
-	int									SwapChainID;
 
 	Sizef								DisplaySize;
 	Vector2f							DisplayDPI;

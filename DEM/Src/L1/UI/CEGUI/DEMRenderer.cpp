@@ -16,9 +16,6 @@
 #include "DEMTexture.h"
 #include "CEGUI/System.h"
 #include "CEGUI/Logger.h"
-//#include <algorithm>
-
-//#include "shader.txt"
 
 namespace CEGUI
 {
@@ -26,12 +23,10 @@ String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina en
 
 CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI):
 	GPU(&GPUDriver),
-	SwapChainID(SwapChain),
 	pDefaultRT(NULL),
 	DisplayDPI(96, 96)
 {
-	n_assert(GPU->SwapChainExists(SwapChainID));
-
+	//???some another way to determine? store here or per RT?
 	Render::CViewport VP;
 	n_assert(GPU->GetViewport(0, VP));
 	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);

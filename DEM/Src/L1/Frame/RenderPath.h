@@ -22,6 +22,7 @@ namespace Data
 
 namespace Frame
 {
+class CView;
 typedef Ptr<class CRenderPhase> PRenderPhase;
 
 class CRenderPath: public Resources::CResourceObject //???need to be a resource?
@@ -35,7 +36,7 @@ public:
 	CFixedArray<PRenderPhase>	Phases;
 
 	//bool Init(CGPUDriver& Driver, const Data::CParams& Desc);
-	//bool Render(const CCamera& MainCamera, CSPS& SPS);
+	bool Render(CView& View);
 
 	virtual bool IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
 };
