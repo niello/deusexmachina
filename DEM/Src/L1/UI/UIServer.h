@@ -57,7 +57,8 @@ private:
 
 public:
 
-	CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char* pVertexShaderURI, const char* pPixelShaderURI);
+	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
+	CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI);
 	~CUIServer();
 	
 	// Internal use, set by config
@@ -67,7 +68,7 @@ public:
 
 	void			Trigger(float FrameTime);
 
-	PUIContext		GetDefaultContext() const { return DefaultContext; } //???get rid of with CEGUI 1.0?
+	PUIContext		GetDefaultContext() const { return DefaultContext; } //???get rid of it with CEGUI 1.0?
 	PUIContext		CreateContext(); //!!!params!
 	void			DestroyContext(PUIContext Context); //!!!params!
 	

@@ -26,12 +26,12 @@ namespace UI
 __ImplementClassNoFactory(UI::CUIServer, Core::CObject);
 __ImplementSingleton(UI::CUIServer);
 
-CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, const char* pVertexShaderURI, const char* pPixelShaderURI)
+CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI)
 {
 	__ConstructSingleton;
 
 	Logger = n_new(CEGUI::CDEMLogger);
-	Renderer = &CEGUI::CDEMRenderer::create(GPUDriver, SwapChainID, pVertexShaderURI, pPixelShaderURI);
+	Renderer = &CEGUI::CDEMRenderer::create(GPUDriver, SwapChainID, DefaultContextWidth, DefaultContextHeight, pVertexShaderURI, pPixelShaderURI);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
 

@@ -9,8 +9,8 @@ namespace CEGUI
 template <typename T>
 CDEMRenderTarget<T>::CDEMRenderTarget(CDEMRenderer& owner):
 	d_owner(owner),
-	d_area(0, 0, 0, 0),
-	d_viewDistance(0),
+	d_area(0.f, 0.f, 0.f, 0.f),
+	d_viewDistance(0.f),
 	d_matrixValid(false)
 {
 }
@@ -26,6 +26,8 @@ void CDEMRenderTarget<T>::draw(const GeometryBuffer& buffer)
 template <typename T>
 void CDEMRenderTarget<T>::setArea(const Rectf& area)
 {
+	if (d_area == area) return;
+
 	d_area = area;
 	d_matrixValid = false;
 
@@ -121,7 +123,7 @@ void CDEMRenderTarget<T>::updateMatrix() const
 
 	d_matrix *= Perspective;
 
-	d_matrixValid = false;
+	d_matrixValid = true;
 }
 //---------------------------------------------------------------------
 

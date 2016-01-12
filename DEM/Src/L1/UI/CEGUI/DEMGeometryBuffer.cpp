@@ -31,6 +31,9 @@ CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner):
 
 void CDEMGeometryBuffer::draw() const
 {
+	Render::CGPUDriver* pGPU = d_owner.getGPUDriver();
+	n_assert_dbg(pGPU);
+
 	if (!d_bufferIsSync)
 	{
 		const DWORD vertex_count = (DWORD)d_vertices.GetCount();
@@ -47,7 +50,7 @@ void CDEMGeometryBuffer::draw() const
 			d_vertexBuffer = d_owner.createVertexBuffer(d_vertices.Begin(), vertex_count);
 			d_bufferSize = vertex_count;
 		}
-		else d_owner.getGPUDriver()->WriteToResource(*d_vertexBuffer, d_vertices.Begin(), sizeof(D3DVertex) * vertex_count);
+		else pGPU->WriteToResource(*d_vertexBuffer, d_vertices.Begin(), sizeof(D3DVertex) * vertex_count);
 
 		d_primGroup.FirstVertex = 0;
 		d_primGroup.VertexCount = vertex_count;
@@ -59,33 +62,32 @@ void CDEMGeometryBuffer::draw() const
 		d_bufferIsSync = true;
 	}
 
-	d_owner.getGPUDriver()->SetVertexBuffer(0, d_vertexBuffer.GetUnsafe());
+	pGPU->SetVertexBuffer(0, d_vertexBuffer.GetUnsafe());
 
 	Data::CRect SR;
 	SR.X = (int)d_clipRect.left();
 	SR.Y = (int)d_clipRect.top();
 	SR.W = (unsigned int)(d_clipRect.right() - d_clipRect.left());
 	SR.H = (unsigned int)(d_clipRect.bottom() - d_clipRect.top());
-	d_owner.getGPUDriver()->SetScissorRect(0, &SR);
+	pGPU->SetScissorRect(0, &SR);
 
 	if (!d_matrixValid) updateMatrix();
 	d_owner.setWorldMatrix(d_matrix);
 
 	//???where to bind, where to commit changes?
+	//!!!Docs: performPreRenderFunctions() must be called AFTER all state changes!
 
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
 	{
 		if (d_effect) d_effect->performPreRenderFunctions(pass);
 
-		size_t pos = 0;
 		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)
 		{
 			d_owner.setRenderState(d_blendMode, i->clip);
 			d_owner.commitChangedConsts();
-			d_owner.getGPUDriver()->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.GetUnsafe());
-			d_owner.getGPUDriver()->Draw(d_primGroup);
-			pos += i->vertexCount;
+			pGPU->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.GetUnsafe());
+			pGPU->Draw(d_primGroup);
 		}
 	}
 

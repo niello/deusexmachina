@@ -2,19 +2,19 @@
 #ifndef __DEM_L1_CEGUI_VIEWPORT_TARGET_H__
 #define __DEM_L1_CEGUI_VIEWPORT_TARGET_H__
 
-#include "DEMRenderTarget.h"
+#include <UI/CEGUI/DEMRenderTarget.h>
+#include <CEGUI/RenderTarget.h>
 
 namespace CEGUI
 {
 
-class CDEMViewportTarget: public CDEMRenderTarget<>
+class CDEMViewportTarget: public CDEMRenderTarget<RenderTarget>
 {
 public:
 
-	CDEMViewportTarget(CDEMRenderer& owner);
-	CDEMViewportTarget(CDEMRenderer& owner, const Rectf& area): CDEMRenderTarget<>(owner) { setArea(area); }
+	CDEMViewportTarget(CDEMRenderer& owner, const Rectf& area);
 
-	bool isImageryCache() const { return false; }
+	virtual bool isImageryCache() const { return false; }
 };
 
 }

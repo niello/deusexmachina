@@ -2,15 +2,15 @@
 #ifndef __DEM_L1_CEGUI_RENDER_TARGET_H__
 #define __DEM_L1_CEGUI_RENDER_TARGET_H__
 
-#include <CEGUI/RenderTarget.h>
 #include <CEGUI/RenderQueue.h>
+#include <CEGUI/Rect.h>
 #include <Math/Matrix44.h>
 
 namespace CEGUI
 {
 class CDEMRenderer;
 
-template <typename T = RenderTarget>
+template <typename T>
 class CDEMRenderTarget: public T
 {
 protected:

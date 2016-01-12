@@ -279,7 +279,6 @@
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SPS.h" />
     <ClInclude Include="..\..\Src\L1\System\Allocators\PoolAllocator.h" />
-    <ClInclude Include="..\..\Src\L1\System\Allocators\StandardAllocator.h" />
     <ClInclude Include="..\..\Src\L1\System\Events\OSInput.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindow.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindowClass.h" />
@@ -503,7 +502,6 @@
     <ClCompile Include="..\..\Src\L1\Resources\ResourceObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SPS.cpp" />
-    <ClCompile Include="..\..\Src\L1\System\Allocators\StandardAllocator.cpp" />
     <ClCompile Include="..\..\Src\L1\System\Events\OSInput.cpp" />
     <ClCompile Include="..\..\Src\L1\System\OSWindowClassWin32.cpp" />
     <ClCompile Include="..\..\Src\L1\System\OSWindowWin32.cpp" />

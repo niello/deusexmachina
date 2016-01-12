@@ -872,9 +872,6 @@
     <ClInclude Include="..\..\Src\L1\System\Allocators\PoolAllocator.h">
       <Filter>System\Allocators</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\System\Allocators\StandardAllocator.h">
-      <Filter>System\Allocators</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Frame\View.h">
       <Filter>Frame</Filter>
     </ClInclude>
@@ -1425,9 +1422,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp">
       <Filter>Frame</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\System\Allocators\StandardAllocator.cpp">
-      <Filter>System\Allocators</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp">
       <Filter>Frame</Filter>

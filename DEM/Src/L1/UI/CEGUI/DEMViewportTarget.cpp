@@ -7,18 +7,13 @@
 namespace CEGUI
 {
 
-CDEMViewportTarget::CDEMViewportTarget(CDEMRenderer& owner): CDEMRenderTarget<>(owner)
+// VC++ 2013 doesn't compile any symbols in this module if this is placed in a header
+CDEMViewportTarget::CDEMViewportTarget(CDEMRenderer& owner, const Rectf& area):
+	CDEMRenderTarget<RenderTarget>(owner)
 {
-	Render::CViewport VP;
-	n_assert(d_owner.getGPUDriver()->GetViewport(0, VP));
-
-	Rectf area(
-		Vector2f(static_cast<float>(VP.Left), static_cast<float>(VP.Top)),
-		Sizef(static_cast<float>(VP.Width), static_cast<float>(VP.Height)));
-
 	setArea(area);
 }
-//--------------------------------------------------------------------
+//---------------------------------------------------------------------
 
 }
 

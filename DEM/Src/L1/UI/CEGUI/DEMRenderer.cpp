@@ -21,16 +21,12 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI):
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI):
 	GPU(&GPUDriver),
 	pDefaultRT(NULL),
-	DisplayDPI(96, 96)
+	DisplayDPI(96, 96),
+	DisplaySize(DefaultContextWidth, DefaultContextHeight)
 {
-	//???some another way to determine? store here or per RT?
-	Render::CViewport VP;
-	n_assert(GPU->GetViewport(0, VP));
-	DisplaySize = Sizef((float)VP.Width, (float)VP.Height);
-
 	n_assert_dbg(pVertexShaderURI && pPixelShaderURI);
 
 	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
@@ -136,11 +132,11 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, const c
 	VertexLayout = GPU->CreateVertexLayout(Components, sizeof_array(Components));
 	n_assert(VertexLayout.IsValidPtr());
 
-	//???when to create actual layout? need some method to precreate actual value by passing a shader!
+	//!!!need some method to precreate actual vertex layout by passing a shader!
 	//but this may require knowledge about D3D11 nature of otherwise abstract GPU
 	//???call GPU->CreateRenderCache() and then reuse it?
 
-	pDefaultRT = n_new(CDEMViewportTarget)(*this);
+	pDefaultRT = n_new(CDEMViewportTarget)(*this, Rectf(0.f, 0.f, DefaultContextWidth, DefaultContextHeight));
 }
 //--------------------------------------------------------------------
 
@@ -169,10 +165,10 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, const char* pVertexShaderURI, const char* pPixelShaderURI, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, pVertexShaderURI, pPixelShaderURI);
+	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, pVertexShaderURI, pPixelShaderURI);
 }
 //--------------------------------------------------------------------
 

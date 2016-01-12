@@ -20,6 +20,7 @@ private:
 	CEGUI::GUIContext*					pCtx;
 	//!!!OS window! at least for input
 
+	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 	DECLARE_EVENT_HANDLER(KeyDown, OnKeyDown);
 	DECLARE_EVENT_HANDLER(KeyUp, OnKeyUp);
 	DECLARE_EVENT_HANDLER(CharInput, OnCharInput);
@@ -37,11 +38,14 @@ public:
 	void				Init(CEGUI::GUIContext* pContext);
 	//CEGUI::GUIContext*	GetCEGUIContext() const { return pCtx; }
 
-	bool				Render();
+	// Pass absolute viewport coordinates here
+	bool				Render(float Left, float Top, float Right, float Bottom);
+
+	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
+	void				UnsubscribeFromInput();
 
 	void				SetRootWindow(CUIWindow* pWindow);
 	CUIWindow*			GetRootWindow() const { return pRootWindow; }
-
 	void				ShowGUI();
 	void				HideGUI();
 	void				ShowMouseCursor();

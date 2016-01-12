@@ -154,12 +154,9 @@ bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 				Contexts.ValueAt(i)->Disable();
 
 	PControlLayout* ppCtx = Contexts.Get(Context);
-	if (ppCtx)
-	{
-		(*ppCtx)->Enable();
-		OK;
-	}
-	FAIL;
+	if (!ppCtx) FAIL;
+	(*ppCtx)->Enable();
+	OK;
 }
 //---------------------------------------------------------------------
 

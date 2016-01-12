@@ -9,6 +9,8 @@
 // Event dispatcher receives fired events and dispatches them to subordinate dispatchers and subscribers.
 // Subscribers can specify their priority, and higher priority subscriber receives event first.
 
+//???priority U16 or UPTR? does affect perf?
+
 namespace Data
 {
 	typedef Ptr<class CParams> PParams;

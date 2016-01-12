@@ -63,11 +63,11 @@ private:
 
 	bool	_IsOpen;
 
-	U8	KeyState[KeyCount];
-	U16	Chars[CharBufferSize];
+	U8		KeyState[KeyCount];
+	U16		Chars[CharBufferSize];
 	int		CharCount;
 
-	U8	MouseBtnState[MouseBtnCount];
+	U8		MouseBtnState[MouseBtnCount];
 	int		WheelFwd;
 	int		WheelBack;
 	int		RawMouseMoveX;

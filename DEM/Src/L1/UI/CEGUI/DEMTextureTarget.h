@@ -38,7 +38,7 @@ protected:
 
 public:
 
-	CDEMTextureTarget(CDEMRenderer& owner);
+	CDEMTextureTarget(CDEMRenderer& owner, const float size = DEFAULT_SIZE);
 	virtual ~CDEMTextureTarget();
 
 	// overrides from CDEMRenderTarget

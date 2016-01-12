@@ -11,13 +11,10 @@ namespace CEGUI
 const float CDEMTextureTarget::DEFAULT_SIZE = 128.0f;
 uint CDEMTextureTarget::s_textureNumber = 0;
 
-CDEMTextureTarget::CDEMTextureTarget(CDEMRenderer& owner): CDEMRenderTarget<TextureTarget>(owner)
+CDEMTextureTarget::CDEMTextureTarget(CDEMRenderer& owner, const float size): CDEMRenderTarget<TextureTarget>(owner)
 {
-	// this essentially creates a 'null' CEGUI::Texture
 	d_CEGUITexture = &static_cast<CDEMTexture&>(d_owner.createTexture(generateTextureName()));
-
-	// setup area and cause the initial texture to be generated.
-	declareRenderSize(Sizef(DEFAULT_SIZE, DEFAULT_SIZE));
+	declareRenderSize(Sizef(size, size));
 }
 //---------------------------------------------------------------------
 
@@ -57,9 +54,7 @@ Texture& CDEMTextureTarget::getTexture() const
 
 void CDEMTextureTarget::declareRenderSize(const Sizef& sz)
 {
-	// exit if current size is enough
-	if ((d_area.getWidth() >= sz.d_width) && (d_area.getHeight() >=sz.d_height)) return;
-
+	if ((d_area.getWidth() >= sz.d_width) && (d_area.getHeight() >= sz.d_height)) return;
 	setArea(Rectf(d_area.getPosition(), sz));
 	resizeRenderTexture();
 	clear();
