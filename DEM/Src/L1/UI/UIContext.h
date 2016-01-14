@@ -16,18 +16,10 @@ class CUIContext: public Core::CObject
 {
 private:
 
-	CUIWindow*							pRootWindow; //???smart ptr?
-	CEGUI::GUIContext*					pCtx;
-	//!!!OS window! at least for input
+	CUIWindow*			pRootWindow; //???smart ptr?
+	CEGUI::GUIContext*	pCtx;
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
-	DECLARE_EVENT_HANDLER(KeyDown, OnKeyDown);
-	DECLARE_EVENT_HANDLER(KeyUp, OnKeyUp);
-	DECLARE_EVENT_HANDLER(CharInput, OnCharInput);
-	DECLARE_EVENT_HANDLER(MouseMove, OnMouseMove);
-	DECLARE_EVENT_HANDLER(MouseBtnDown, OnMouseBtnDown);
-	DECLARE_EVENT_HANDLER(MouseBtnUp, OnMouseBtnUp);
-	DECLARE_EVENT_HANDLER(MouseWheel, OnMouseWheel);
 
 public:
 

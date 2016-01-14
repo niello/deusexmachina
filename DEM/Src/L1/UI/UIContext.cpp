@@ -54,13 +54,6 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
 	// as layout root with the MousePassThroughEnabled property set to true.
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, OSInput, CUIContext, OnOSWindowInput, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, KeyDown, CUIContext, OnKeyDown, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, KeyUp, CUIContext, OnKeyUp, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, CharInput, CUIContext, OnCharInput, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, MouseMove, CUIContext, OnMouseMove, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, MouseBtnDown, CUIContext, OnMouseBtnDown, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, MouseBtnUp, CUIContext, OnMouseBtnUp, Priority);
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, MouseWheel, CUIContext, OnMouseWheel, Priority);
 
 	OK;
 }
@@ -69,13 +62,6 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 void CUIContext::UnsubscribeFromInput()
 {
 	UNSUBSCRIBE_EVENT(OSInput);
-	UNSUBSCRIBE_EVENT(KeyDown);
-	UNSUBSCRIBE_EVENT(KeyUp);
-	UNSUBSCRIBE_EVENT(CharInput);
-	UNSUBSCRIBE_EVENT(MouseMove);
-	UNSUBSCRIBE_EVENT(MouseBtnDown);
-	UNSUBSCRIBE_EVENT(MouseBtnUp);
-	UNSUBSCRIBE_EVENT(MouseWheel);
 }
 //---------------------------------------------------------------------
 
@@ -162,52 +148,6 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 	}
 
 	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnKeyDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	return pCtx->injectKeyDown((CEGUI::Key::Scan)((const Event::KeyDown&)Event).ScanCode);
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnKeyUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	return pCtx->injectKeyUp((CEGUI::Key::Scan)((const Event::KeyDown&)Event).ScanCode);
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnCharInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	return pCtx->injectChar(((const Event::CharInput&)Event).Char);
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnMouseMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	const Event::MouseMove& Ev = (const Event::MouseMove&)Event;
-	return pCtx->injectMousePosition((float)Ev.X, (float)Ev.Y);
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnMouseBtnDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	CEGUI::MouseButton Btn = (CEGUI::MouseButton)(((const Event::MouseBtnDown&)Event).Button);
-	return pCtx->injectMouseButtonDown(Btn);
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnMouseBtnUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	CEGUI::MouseButton Btn = (CEGUI::MouseButton)(((const Event::MouseBtnUp&)Event).Button);
-	return pCtx->injectMouseButtonUp(Btn);
-}
-//---------------------------------------------------------------------
-
-bool CUIContext::OnMouseWheel(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	//???!!!mul by some coeff!?
-	return pCtx->injectMouseWheelChange((float)((const Event::MouseWheel&)Event).Delta);
 }
 //---------------------------------------------------------------------
 

@@ -80,28 +80,15 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 		SPS.QuadTree.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (U8)SPSHierarchyDepth);
 
+		//!!!if CameraManager is always present, may add there method CreateMainCamera() or smth like that
+		//and just call it here, or create main camera in a camera mgr constructor!
 		CameraManager = n_new(Scene::CCameraManager);
 
-		////!!!create in level. no default camera. fail to render view without camera being set! LODs use camera!
-		//???!!!if CameraManager is necessary, add there method CreateMainCamera() or smth like that and just call it here!
-		//!!!or do it in its constructor!
-		//CSceneNode* CameraNode = RootNode->CreateChild(CStrID("_DefaultCamera"));
-		//MainCamera = n_new(CCamera);
-		//CameraNode->AddAttr(*MainCamera);
-		//MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
-		//MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
-
-	//void		SetMainCamera(CCamera* pNewCamera);
-	//CCamera&	GetMainCamera() const { return *MainCamera; }
-//void CScene::SetMainCamera(CCamera* pNewCamera)
-//{
-//	MainCamera = pNewCamera;
-//	if (pNewCamera && AutoAdjustCameraAspect)
-//	{
-//		MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
-//		MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
-//	}
-//}
+		Scene::CSceneNode* pCameraNode = SceneRoot->CreateChild(CStrID("_DefaultCamera"));
+		MainCamera = n_new(Frame::CCamera);
+		pCameraNode->AddAttribute(*MainCamera);
+		MainCamera->SetWidth(800.f); //!!!(float)RenderSrv->GetBackBufferWidth());
+		MainCamera->SetHeight(600.f); //!!!(float)RenderSrv->GetBackBufferHeight());
 
 		Data::PParams CameraDesc;
 		if (SubDesc->Get(CameraDesc, CStrID("Camera")))

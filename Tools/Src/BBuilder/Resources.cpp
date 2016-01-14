@@ -1,6 +1,7 @@
 #include "Main.h"
 
 #include <IO/IOServer.h>
+#include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 
 //???get ID & dest from desc or from here? use some parameter in desc pathes?
@@ -9,9 +10,9 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 	//!!!check if aready was exported!
 
 	Data::PParams Desc = DataSrv->LoadHRD(RsrcFileName, false);
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
-	CString RsrcDir = RsrcFileName.ExtractDirName();
+	CString RsrcDir = PathUtils::ExtractDirName(RsrcFileName);
 
 	for (int i = 0; i < Desc->GetCount(); ++i)
 	{
@@ -23,14 +24,14 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 
 		if (Tool == CStrID("CFTerrain"))
 		{
-			CString InStr = IOSrv->ManglePath(RsrcDir + RsrcDesc->Get<CString>(CStrID("In")));
-			CString OutStr = IOSrv->ManglePath(ExportFileName);
+			CString InStr = IOSrv->ResolveAssigns(RsrcDir + RsrcDesc->Get<CString>(CStrID("In")));
+			CString OutStr = IOSrv->ResolveAssigns(ExportFileName);
 
 			int PatchSize = RsrcDesc->Get<int>(CStrID("PatchSize"), 8);
 			int LODCount = RsrcDesc->Get<int>(CStrID("LODCount"), 6);
 
-			if (InStr.FindCharIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
-			if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
+			if (InStr.FindIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
+			if (OutStr.FindIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 			char CmdLine[MAX_CMDLINE_CHARS];
 			sprintf_s(CmdLine, "-v %d -patch %d -lod %d -in %s -out %s",

@@ -2,6 +2,7 @@
 
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
+#include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 
 bool					ExportDescs;
@@ -46,22 +47,20 @@ int main(int argc, const char** argv)
 	ExternalVerbosity = Args.GetIntArg("-ev");
 
 	// Project directory, where all content is placed. Will be a base directory for all data.
-	CString ProjDir = Args.GetStringArg("-proj");
-	ProjDir.ConvertBackslashes();
-	ProjDir.StripTrailingSlash();
+	CString ProjDir(Args.GetStringArg("-proj"));
+	ProjDir.Trim(" \r\n\t\\/", false);
 	if (ProjDir.IsEmpty()) EXIT_APP_FAIL;
 
 	// Build directory, to where final data will be saved.
-	CString BuildDir = Args.GetStringArg("-build");
-	BuildDir.ConvertBackslashes();
-	BuildDir.StripTrailingSlash();
+	CString BuildDir(Args.GetStringArg("-build"));
+	BuildDir.Trim(" \r\n\t\\/", false);
 	if (BuildDir.IsEmpty()) EXIT_APP_FAIL;
 
 	n_msg(VL_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2013\n"SEP_LINE"\n");
 
 	IOServer = n_new(IO::CIOServer);
-	ProjDir = IOSrv->ManglePath(ProjDir);
-	BuildDir = IOSrv->ManglePath(BuildDir);
+	ProjDir = IOSrv->ResolveAssigns(ProjDir);
+	BuildDir = IOSrv->ResolveAssigns(BuildDir);
 	IOSrv->SetAssign("Proj", ProjDir);
 	IOSrv->SetAssign("Build", BuildDir);
 
@@ -70,18 +69,18 @@ int main(int argc, const char** argv)
 	DataServer = n_new(Data::CDataServer);
 
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
-	if (PathList.IsValid())
+	if (PathList.IsValidPtr())
 	{
 		for (int i = 0; i < PathList->GetCount(); ++i)
-			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
 		PathList = NULL;
 	}
 
 	PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
-	if (PathList.IsValid())
+	if (PathList.IsValidPtr())
 	{
 		for (int i = 0; i < PathList->GetCount(); ++i)
-			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ManglePath(PathList->Get<CString>(i)));
+			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
 		PathList = NULL;
 
 		IOSrv->CopyFile("Proj:PathList.hrd", "Build:PathList.hrd");
@@ -90,7 +89,7 @@ int main(int argc, const char** argv)
 	//???rewrite HRD/PRM to return CData? change root symbol in grammar, so could store array and anything else
 	Data::PParams PropCodesDesc = DataSrv->LoadHRD("Proj:PropCodes.hrd", false);
 	Data::PDataArray PropCodesList;
-	if (PropCodesDesc.IsValid() &&
+	if (PropCodesDesc.IsValidPtr() &&
 		PropCodesDesc->Get<Data::PDataArray>(PropCodesList, CStrID("List")) &&
 		PropCodesList->GetCount())
 	{
@@ -105,15 +104,15 @@ int main(int argc, const char** argv)
 
 	if (!DataSrv->LoadDataSchemes("Home:DataSchemes/SceneNodes.dss"))
 	{
-		n_msg(VL_ERROR, "BBuilder: Failed to read 'Home:DataSchemes/SceneNodes.dss'");
+		n_msg(VL_ERROR, "BBuilder: Failed to read 'Home:DataSchemes/SceneNodes.dss'\n");
 		EXIT_APP_FAIL;
 	}
 
 	// Process levels
 
-	n_printf("\n"SEP_LINE"Processing levels and entities:\n"SEP_LINE);
+	Sys::Log("\n"SEP_LINE"Processing levels and entities:\n"SEP_LINE);
 
-	CString ExportFilePath = "Game:Main.prm";
+	CString ExportFilePath("Game:Main.prm");
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
@@ -123,7 +122,7 @@ int main(int argc, const char** argv)
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath, false);
 
-	if (!Desc.IsValid())
+	if (!Desc.IsValidPtr())
 	{
 		n_msg(VL_ERROR, "Error loading main game desc\n");
 		EXIT_APP_FAIL;
@@ -142,10 +141,9 @@ int main(int argc, const char** argv)
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!Browser.GetCurrEntryName().CheckExtension(ExportDescs ? "hrd" : "prm")) continue;
+			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportDescs ? "hrd" : "prm")) continue;
 
-			CString FileNoExt = Browser.GetCurrEntryName();
-			FileNoExt.StripExtension();
+			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 			n_msg(VL_INFO, "Processing level '%s'...\n", FileNoExt.CStr());
 
 			ExportFilePath = "Levels:" + FileNoExt + ".prm";
@@ -171,7 +169,7 @@ int main(int argc, const char** argv)
 			}
 			else LevelDesc = DataSrv->LoadPRM(ExportFilePath, false);
 
-			if (!LevelDesc.IsValid())
+			if (!LevelDesc.IsValidPtr())
 			{
 				n_msg(VL_ERROR, "Error loading level '%s' desc\n", FileNoExt.CStr());
 				continue;
@@ -188,36 +186,36 @@ int main(int argc, const char** argv)
 	}
 	while (Browser.NextCurrDirEntry());
 
-	n_printf("\n"SEP_LINE"Processing entity templates:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
+	Sys::Log("\n"SEP_LINE"Processing entity templates:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
 
-	if (!ProcessEntityTplsInFolder(IOSrv->ManglePath("SrcEntityTpls:"), IOSrv->ManglePath("EntityTpls:")))
+	if (!ProcessEntityTplsInFolder(IOSrv->ResolveAssigns("SrcEntityTpls:"), IOSrv->ResolveAssigns("EntityTpls:")))
 	{
 		n_msg(VL_ERROR, "Error procesing entity templates!\n");
 		EXIT_APP_FAIL;
 	}
 
-	n_printf("\n"SEP_LINE"Processing items:\n"SEP_LINE);
+	Sys::Log("\n"SEP_LINE"Processing items:\n"SEP_LINE);
 
-	if (!ProcessDescsInFolder(IOSrv->ManglePath("SrcItems:"), IOSrv->ManglePath("Items:")))
+	if (!ProcessDescsInFolder(IOSrv->ResolveAssigns("SrcItems:"), IOSrv->ResolveAssigns("Items:")))
 	{
 		n_msg(VL_ERROR, "Error procesing items!\n");
 		EXIT_APP_FAIL;
 	}
 
-	n_printf("\n"SEP_LINE"Processing quests:\n"SEP_LINE);
+	Sys::Log("\n"SEP_LINE"Processing quests:\n"SEP_LINE);
 
-	if (!ProcessQuestsInFolder(IOSrv->ManglePath("SrcQuests:"), IOSrv->ManglePath("Quests:")))
+	if (!ProcessQuestsInFolder(IOSrv->ResolveAssigns("SrcQuests:"), IOSrv->ResolveAssigns("Quests:")))
 	{
 		n_msg(VL_ERROR, "Error procesing quests!\n");
 		EXIT_APP_FAIL;
 	}
 
-	n_printf("\n"SEP_LINE"Processing system data and resources:\n"SEP_LINE);
+	Sys::Log("\n"SEP_LINE"Processing system data and resources:\n"SEP_LINE);
 
-	if (IOSrv->DirectoryExists("Export:cegui") && !IsFileAdded("Export:cegui"))
-		FilesToPack.InsertSorted("Export:cegui");
+	if (IOSrv->DirectoryExists("Export:cegui") && !IsFileAdded(CString("Export:cegui")))
+		FilesToPack.InsertSorted(CString("Export:cegui"));
 
-	if (!ProcessDesc("SrcInput:Layouts.hrd", "Input:Layouts.prm"))
+	if (!ProcessDesc(CString("SrcInput:Layouts.hrd"), CString("Input:Layouts.prm")))
 	{
 		n_msg(VL_ERROR, "Error procesing input layouts desc!\n");
 		EXIT_APP_FAIL;
@@ -237,10 +235,9 @@ int main(int argc, const char** argv)
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!Browser.GetCurrEntryName().CheckExtension(ExportShaders ? "hrd" : "prm")) continue;
+			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportShaders ? "hrd" : "prm")) continue;
 
-			CString FileNoExt = Browser.GetCurrEntryName();
-			FileNoExt.StripExtension();
+			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 			n_msg(VL_INFO, "Processing frame shader '%s'...\n", FileNoExt.CStr());
 
 			ExportFilePath = "Shaders:" + FileNoExt + ".prm";
@@ -252,7 +249,7 @@ int main(int argc, const char** argv)
 			}
 			else ShdDesc = DataSrv->LoadPRM(ExportFilePath, false);
 
-			if (!ShdDesc.IsValid())
+			if (!ShdDesc.IsValidPtr())
 			{
 				n_msg(VL_ERROR, "Error loading frame shader '%s' desc\n", FileNoExt.CStr());
 				continue;
@@ -269,33 +266,33 @@ int main(int argc, const char** argv)
 	}
 	while (Browser.NextCurrDirEntry());
 
-	n_printf("\n"SEP_LINE"Running external tools:\n"SEP_LINE);
+	Sys::Log("\n"SEP_LINE"Running external tools:\n"SEP_LINE);
 
 	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
 	if (ExportShaders)
 	{
-		CString ShdRoot = IOSrv->ManglePath("SrcShaders:");
-		if (ShdRoot.FindCharIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
-		CString ExtraCmdLine = "-o 3 -root ";
+		CString ShdRoot = IOSrv->ResolveAssigns("SrcShaders:");
+		if (ShdRoot.FindIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
+		CString ExtraCmdLine("-o 3 -root ");
 		ExtraCmdLine += ShdRoot;
 		if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr()) != 0) EXIT_APP_FAIL;
 	}
 
-	n_printf("\n"SEP_LINE"Packing:\n"SEP_LINE);
+	Sys::Log("\n"SEP_LINE"Packing:\n"SEP_LINE);
 
 	for (int i = 0; i < FilesToPack.GetCount(); ++i)
 	{
-		 FilesToPack[i] = IOSrv->ManglePath(FilesToPack[i]);
+		 FilesToPack[i] = IOSrv->ResolveAssigns(FilesToPack[i]);
 		 FilesToPack[i].ToLower();
 	}
 	FilesToPack.Sort();
 
-	CString DestFile = "Build:Export.npk";
-	if (PackFiles(FilesToPack, DestFile, ProjDir, "Export"))
+	CString DestFile("Build:Export.npk");
+	if (PackFiles(FilesToPack, DestFile, ProjDir, CString("Export")))
 	{
 		n_msg(VL_INFO, "\nNPK file:      %s\nNPK file size: %.3f MB\n",
-			IOSrv->ManglePath(DestFile).CStr(),
+			IOSrv->ResolveAssigns(DestFile).CStr(),
 			IOSrv->GetFileSize(DestFile) / (1024.f * 1024.f));
 	}
 	else
@@ -314,7 +311,7 @@ int ExitApp(bool NoError, bool WaitKey)
 	if (!NoError) n_msg(VL_ERROR, "Building aborted due to errors.\n");
 	if (WaitKey)
 	{
-		n_printf("\nPress any key to exit...\n");
+		Sys::Log("\nPress any key to exit...\n");
 		_getch();
 	}
 

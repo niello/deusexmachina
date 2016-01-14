@@ -15,11 +15,11 @@ void BatchToolInOut(CStrID Name, const CString& InStr, const CString& OutStr)
 }
 //---------------------------------------------------------------------
 
-int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
+int RunExternalToolAsProcess(CStrID Name, char* pCmdLine, const char* pWorkingDir)
 {
 	n_msg(VL_DETAILS, "> %s %s\n", Name.CStr(), pCmdLine);
 
-	CString Path = IOSrv->ManglePath("Home:");
+	CString Path = IOSrv->ResolveAssigns("Home:");
 	Path += "\\..\\ContentForge\\";
 	Path += Name.CStr();
 	Path +=	".exe";
@@ -46,7 +46,7 @@ int RunExternalToolAsProcess(CStrID Name, LPSTR pCmdLine, LPCSTR pWorkingDir)
 }
 //---------------------------------------------------------------------
 
-int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWorkingDir)
+int RunExternalToolBatch(CStrID Tool, int Verb, const char* pExtraCmdLine, const char* pWorkingDir)
 {
 	int Idx = InFileLists.FindIndex(Tool);
 	if (Idx == INVALID_INDEX) return 0;
@@ -61,8 +61,8 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWo
 
 	for (int i = 0; i < InList.GetCount(); ++i)
 	{
-		InList[i] = IOSrv->ManglePath(InList[i]);
-		OutList[i] = IOSrv->ManglePath(OutList[i]);
+		InList[i] = IOSrv->ResolveAssigns(InList[i]);
+		OutList[i] = IOSrv->ResolveAssigns(OutList[i]);
 		//!!!GetRelativePath(Base) to reduce cmd line size!
 		//!!!don't forget to pass BasePath or override working directory in that case!
 		//!!!???use Curr/Overridden Working Directory as Base?!
@@ -72,11 +72,11 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWo
 
 	for (int i = 1; i < InList.GetCount(); ++i)
 	{
-		DWORD NextLength = 32 + InStr.Length() + OutStr.Length() + InList[i].Length() + OutList[i].Length();
+		DWORD NextLength = 32 + InStr.GetLength() + OutStr.GetLength() + InList[i].GetLength() + OutList[i].GetLength();
 		if (NextLength >= MAX_CMDLINE_CHARS)
 		{
-			if (InStr.FindCharIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
-			if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
+			if (InStr.FindIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
+			if (OutStr.FindIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 			char CmdLine[MAX_CMDLINE_CHARS];
 			sprintf_s(CmdLine, "-v %d -in %s -out %s %s", Verb, InStr.CStr(), OutStr.CStr(), pExtraCmdLine ? pExtraCmdLine : "");
@@ -95,8 +95,8 @@ int RunExternalToolBatch(CStrID Tool, int Verb, LPCSTR pExtraCmdLine, LPCSTR pWo
 		}
 	}
 
-	if (InStr.FindCharIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
-	if (OutStr.FindCharIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
+	if (InStr.FindIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
+	if (OutStr.FindIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
 	char CmdLine[MAX_CMDLINE_CHARS];
 	sprintf_s(CmdLine, "-v %d -in %s -out %s %s", Verb, InStr.CStr(), OutStr.CStr(), pExtraCmdLine ? pExtraCmdLine : "");

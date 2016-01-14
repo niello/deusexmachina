@@ -18,8 +18,8 @@ bool CAppFSM::Advance()
 
 	CStrID NewState = CurrStateHandler->OnFrame();
 
-	if (RequestedState.IsValid()) ChangeState(RequestedState);
-	else if (NewState != CurrStateHandler->GetID()) ChangeState(NewState);
+	if (RequestedState != CurrState) ChangeState(RequestedState);
+	else if (NewState != CurrState) ChangeState(NewState);
 
 	Sys::Sleep(0);
 
@@ -32,7 +32,7 @@ void CAppFSM::Clear()
 	UNSUBSCRIBE_EVENT(CloseApplication);
 
 	CurrState = CStrID::Empty;
-	RequestedState = CStrID::Empty;
+	RequestedState = CurrState;
 	CurrStateHandler = NULL;
 	TransitionParams = NULL;
 
@@ -54,7 +54,7 @@ void CAppFSM::ChangeState(CStrID NextState)
 		if (CurrStateHandler) CurrStateHandler->OnStateEnter(PrevState, TransitionParams);
 		else n_assert(CurrState == CStrID::Empty);
 	}
-	RequestedState = CStrID::Empty;
+	RequestedState = CurrState;
 	//???TransitionParams = NULL;?
 }
 //---------------------------------------------------------------------

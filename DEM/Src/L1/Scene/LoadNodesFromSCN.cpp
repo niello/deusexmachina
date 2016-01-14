@@ -27,10 +27,10 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 		Reader.Read(DataBlockCount);
 		--DataBlockCount;
 
-		char ClassName[256] = "Scene::C";
-		n_assert(Reader.ReadString(ClassName + 8, sizeof(ClassName) - 8));
-
-		PNodeAttribute Attr = (CNodeAttribute*)Factory->Create(CString(ClassName));
+		//???!!!use FOURCC?!
+		CString ClassName;
+		n_assert(Reader.ReadString(ClassName));
+		PNodeAttribute Attr = (CNodeAttribute*)Factory->Create(ClassName);
 
 		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
 		//may require to read data block count inside, or ignore it for such attrs.

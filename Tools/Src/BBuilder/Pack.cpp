@@ -2,6 +2,7 @@
 #include <IO/FS/NpkTOC.h>
 #include <IO/FSBrowser.h>
 #include <IO/Streams/FileStream.h>
+#include <IO/PathUtils.h>
 #include <Data/Buffer.h>
 #include <ConsoleApp.h>
 
@@ -12,11 +13,11 @@ void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
 	Str.Add((Entry.GetType() == IO::FSE_DIR) ? "+ " : "  ");
 	Str += Entry.GetName();
 
-	n_printf(Str.CStr());
+	Sys::Log(Str.CStr());
 
 	if (Entry.GetType() == IO::FSE_DIR)
 	{
-		n_printf("\n");
+		Sys::Log("\n");
 
 		IO::CNpkTOCEntry::CIterator ItSubEntry = Entry.GetEntryIterator();
 		while (ItSubEntry)
@@ -34,7 +35,7 @@ void PrintNpkTOCEntry(IO::CNpkTOCEntry& Entry, int Level)
 			++ItSubEntry;
 		}
 	}
-	else n_printf(" (%d B)\n", Entry.GetFileLength());
+	else Sys::Log(" (%d B)\n", Entry.GetFileLength());
 }
 //---------------------------------------------------------------------
 
@@ -42,7 +43,7 @@ bool AddDirectoryToTOC(CString DirName, IO::CNpkTOC& TOC) //, int& Offset)
 {
 	bool Result = true;
 
-	DirName.StripTrailingSlash();
+	DirName.Trim(" \r\n\t\\/", false);
 	DirName.ToLower();
 
 	if (DirName == ".svn") OK;
@@ -61,12 +62,12 @@ bool AddDirectoryToTOC(CString DirName, IO::CNpkTOC& TOC) //, int& Offset)
 				CString FullFilePath = FullDirName + Browser.GetCurrEntryName();
 				FilePart.ToLower();
 
-				IO::CFileStream File;
-				if (File.Open(FullFilePath, IO::SAM_READ))
+				IO::CFileStream File(FullFilePath);
+				if (File.Open(IO::SAM_READ))
 				{
-					int FileLength = File.GetSize();
+					U64 FileLength = File.GetSize();
 					File.Close();
-					TOC.AddFileEntry(FilePart.CStr(), 0, FileLength); //Offset, FileLength);
+					TOC.AddFileEntry(FilePart.CStr(), 0, (UPTR)FileLength); //Offset, FileLength);
 					//Offset += FileLength;
 				}
 				else n_msg(VL_ERROR, "Error reading file %s\n", FullFilePath.CStr());
@@ -101,9 +102,9 @@ void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int& Offs
 	if (pTOCEntry->GetType() == IO::FSE_DIR)
 	{
 		File.Put<int>('DIR_');
-		File.Put<int>(sizeof(short) + pTOCEntry->GetName().Length());
-		File.Put<ushort>((ushort)pTOCEntry->GetName().Length());
-		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().Length());
+		File.Put<int>(sizeof(short) + pTOCEntry->GetName().GetLength());
+		File.Put<U16>((U16)pTOCEntry->GetName().GetLength());
+		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().GetLength());
 
 		IO::CNpkTOCEntry::CIterator ItSubEntry = pTOCEntry->GetEntryIterator();
 		while (ItSubEntry)
@@ -118,7 +119,7 @@ void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int& Offs
 	else if (pTOCEntry->GetType() == IO::FSE_FILE)
 	{
 		File.Put<int>('FILE');
-		File.Put<int>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetName().Length());
+		File.Put<int>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetName().GetLength());
 
 		// CHashTable iterator doesn't keep insertion order due to hash table nature, so offset can't
 		// be calculated until all the TOC is formed. Now we can calculate real offset, which is
@@ -129,8 +130,8 @@ void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int& Offs
 		Offset += pTOCEntry->GetFileLength();
 
 		File.Put<int>(pTOCEntry->GetFileLength());
-		File.Put<ushort>((ushort)pTOCEntry->GetName().Length());
-		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().Length());
+		File.Put<U16>((U16)pTOCEntry->GetName().GetLength());
+		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().GetLength());
 	}
 }
 //---------------------------------------------------------------------
@@ -161,7 +162,7 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int Data
 		{
 			if (File.Write(Buffer.GetPtr(), Buffer.GetSize()) != pTOCEntry->GetFileLength())
 			{
-				n_printf("Error writing %s to NPK!\n", FullFileName.CStr());
+				Sys::Log("Error writing %s to NPK!\n", FullFileName.CStr());
 				FAIL;
 			}
 			DataSize += pTOCEntry->GetFileLength();
@@ -183,7 +184,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 	n_msg(VL_INFO, "Creating NPK TOC...\n");
 
-	CString RootPath = IOSrv->ManglePath(PkgRoot);
+	CString RootPath = IOSrv->ResolveAssigns(PkgRoot);
 	RootPath.ToLower();
 
 	PkgRootDir.ToLower();
@@ -194,8 +195,8 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 	for (; i < FilesToPack.GetCount(); ++i)
 	{
 		const CString& FileName = FilesToPack[i];
-		if (FileName.Length() <= RootDirPath.Length() + 1) continue;
-		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.Length()) >= 0) break;
+		if (FileName.GetLength() <= RootDirPath.GetLength() + 1) continue;
+		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.GetLength()) >= 0) break;
 		n_msg(VL_WARNING, "File is out of the export package scope:\n - %s\n", FileName.CStr());
 	}
 
@@ -210,17 +211,17 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 	for (; i < FilesToPack.GetCount(); ++i)
 	{
 		const CString& FileName = FilesToPack[i];
-		if (FileName.Length() <= RootDirPath.Length() + 1) continue;
-		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.Length()) > 0) break;
+		if (FileName.GetLength() <= RootDirPath.GetLength() + 1) continue;
+		if (strncmp(RootDirPath.CStr(), FileName.CStr(), RootDirPath.GetLength()) > 0) break;
 
-		CString RelFile = FileName.CStr() + RootDirPath.Length() + 1;
+		CString RelFile(FileName.CStr() + RootDirPath.GetLength() + 1);
 
 		int CurrStartChar = 0;
 		int DirCount = 0;
-		int RFLen = RelFile.Length();
+		int RFLen = RelFile.GetLength();
 		while (CurrStartChar < RFLen)
 		{
-			int DirSepChar = RelFile.FindCharIndex('/', CurrStartChar);
+			int DirSepChar = RelFile.FindIndex('/', CurrStartChar);
 			if (DirSepChar == INVALID_INDEX) break;
 
 			CString Dir = RelFile.SubString(CurrStartChar, DirSepChar - CurrStartChar);
@@ -250,7 +251,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 			TOC.EndDirEntry();
 		DirStack.Truncate(DirStack.GetCount() - DirCount);
 
-		CString FilePart = RelFile.ExtractFileName();
+		CString FilePart = PathUtils::ExtractFileName(RelFile);
 		CString FullFilePath = RootDirPath + "/" + RelFile;
 
 		if (IOSrv->DirectoryExists(FullFilePath))
@@ -260,12 +261,12 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 		}
 		else
 		{
-			IO::CFileStream File;
-			if (File.Open(FullFilePath, IO::SAM_READ))
+			IO::CFileStream File(FullFilePath);
+			if (File.Open(IO::SAM_READ))
 			{
-				int FileLength = File.GetSize();
+				U64 FileLength = File.GetSize();
 				File.Close();
-				TOC.AddFileEntry(FilePart.CStr(), 0, FileLength); //Offset, FileLength);
+				TOC.AddFileEntry(FilePart.CStr(), 0, (UPTR)FileLength); //Offset, FileLength);
 				//Offset += FileLength;
 			}
 			else n_msg(VL_ERROR, "Error reading file %s\n", FullFilePath.CStr());
@@ -281,17 +282,17 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 	n_msg(VL_INFO, "Writing NPK...\n");
 
-	IO::CFileStream File;
-	IOSrv->CreateDirectory(PkgFileName.ExtractDirName());
-	if (!File.Open(PkgFileName, IO::SAM_WRITE))
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(PkgFileName));
+	IO::CFileStream File(PkgFileName);
+	if (!File.Open(IO::SAM_WRITE))
 	{
 		n_msg(VL_ERROR, "Could not open file '%s' for writing!\n", PkgFileName.CStr());
 		FAIL;
 	}
 
-	File.Put<int>('NPK0');	// Magic
-	File.Put<int>(4);		// Block length
-	File.Put<int>(0);		// DataBlockStart (at 8, fixed later)
+	File.Put<U32>('NPK0');	// Magic
+	File.Put<U32>(4);		// Block length
+	File.Put<U32>(0);		// DataBlockStart (at 8, fixed later)
 
 	n_msg(VL_DETAILS, " - Writing TOC...\n");
 
@@ -300,19 +301,19 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 	n_msg(VL_DETAILS, " - Writing data...\n");
 	
-	int DataBlockStart = File.GetPosition();
-	int DataOffset = DataBlockStart + 4;
+	U64 DataBlockStart = File.GetPosition();
+	U64 DataOffset = DataBlockStart + 4;
 
-	File.Put<int>('DATA');
-	File.Put<int>(0);		// DataSize (at DataOffset, fixed later)
+	File.Put<U32>('DATA');
+	File.Put<U32>(0);		// DataSize (at DataOffset, fixed later)
 
 	int DataSize = 0;
 	if (WriteEntryData(File, TOC.GetRootEntry(), DataOffset + 4, DataSize))
 	{
 		File.Seek(8, IO::Seek_Begin);
-		File.Put<int>(DataBlockStart);
+		File.Put<U32>(DataBlockStart);
 		File.Seek(DataOffset, IO::Seek_Begin);
-		File.Put<int>(DataSize);
+		File.Put<U32>(DataSize);
 		File.Seek(0, IO::Seek_End);
 	}
 	else
@@ -327,7 +328,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 	if (TOC.GetRootEntry() && Verbose >= VL_DETAILS)
 	{
-		n_printf("\n"SEP_LINE"Package TOC:\n'+' = directory\n"SEP_LINE);
+		Sys::Log("\n"SEP_LINE"Package TOC:\n'+' = directory\n"SEP_LINE);
 		PrintNpkTOCEntry(*TOC.GetRootEntry(), 0);
 	}
 

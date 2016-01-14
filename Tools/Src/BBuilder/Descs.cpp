@@ -4,6 +4,7 @@
 #include <IO/FSBrowser.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryWriter.h>
+#include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -28,20 +29,20 @@ bool ProcessDialogue(const CString& SrcContext, const CString& ExportContext, co
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
 		Desc = DataSrv->LoadHRD(SrcContext + Name + ".hrd", false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
 	bool ScriptExported = false;
 
 	// Script can implements functions like OnStart(), so export anyway
-	const CString& ScriptFile = Desc->Get<CString>(CStrID("Script"), NULL);
+	const CString& ScriptFile = Desc->Get<CString>(CStrID("Script"), CString::Empty);
 	if (ScriptFile.IsValid())
 	{
 		ExportFilePath = CString("Scripts:") + ScriptFile + ".lua";
@@ -63,13 +64,13 @@ bool ProcessCollisionShape(const CString& SrcFilePath, const CString& ExportFile
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
 		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
@@ -84,7 +85,7 @@ bool ProcessCollisionShape(const CString& SrcFilePath, const CString& ExportFile
 				!ProcessResourceDesc("SrcTerrain:" + CDLODFile + ".cfd", CDLODFilePath) &&
 				!IOSrv->FileExists(CDLODFilePath))
 			{
-				n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", CDLODFilePath.GetExtension());
+				n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", PathUtils::GetExtension(CDLODFilePath));
 				FAIL;
 			}
 			FilesToPack.InsertSorted(CDLODFilePath);
@@ -102,13 +103,13 @@ bool ProcessPhysicsDesc(const CString& SrcFilePath, const CString& ExportFilePat
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
 		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
@@ -141,13 +142,13 @@ bool ProcessAnimDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
 		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
@@ -173,13 +174,13 @@ bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportCont
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
 		Desc = DataSrv->LoadHRD(SrcContext + Name + ".hrd", false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
@@ -188,22 +189,24 @@ bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportCont
 }
 //---------------------------------------------------------------------
 
-bool ProcessMaterialDesc(const CString& Name)
+bool ProcessMaterialDesc(const char* pName)
 {
-	CString ExportFilePath = "Materials:" + Name + ".prm";
+	CString ExportFilePath("Materials:");
+	ExportFilePath += pName;
+	ExportFilePath += ".prm";
 
 	if (IsFileAdded(ExportFilePath)) OK;
 
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		Desc = DataSrv->LoadHRD("SrcMaterials:" + Name + ".hrd", false);
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
+		Desc = DataSrv->LoadHRD(CString("SrcMaterials:") + pName + ".hrd", false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
@@ -264,7 +267,7 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 						!ProcessResourceDesc("SrcTerrain:" + pValue->GetValue<CString>() + ".cfd", CDLODFilePath) &&
 						!IOSrv->FileExists(CDLODFilePath))
 					{
-						n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", CDLODFilePath.GetExtension());
+						n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", PathUtils::GetExtension(CDLODFilePath));
 						FAIL;
 					}
 					FilesToPack.InsertSorted(CDLODFilePath);
@@ -288,13 +291,13 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 	if (IsFileAdded(ExportFilePath)) OK;
 
 	Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
-		IO::CFileStream File;
-		if (!File.Open(ExportFilePath, IO::SAM_WRITE)) FAIL;
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
+		IO::CFileStream File(ExportFilePath);
+		if (!File.Open(IO::SAM_WRITE)) FAIL;
 		IO::CBinaryWriter Writer(File);
 		Writer.WriteParams(*Desc, *DataSrv->GetDataScheme(CStrID("SceneNode")));
 		File.Close();
@@ -306,17 +309,17 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 }
 //---------------------------------------------------------------------
 
-bool ProcessDesc(const CString& SrcFilePath, const CString& ExportFilePath)
+bool ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath)
 {
 	// Some descs can be loaded twice or more from different IO path assigns, avoid it
-	CString RealExportFilePath = IOSrv->ManglePath(ExportFilePath);
+	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
 
 	if (IsFileAdded(RealExportFilePath)) OK;
 
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(RealExportFilePath.ExtractDirName());
-		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(SrcFilePath, false))) FAIL;
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
+		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(pSrcFilePath, false))) FAIL;
 	}
 	FilesToPack.InsertSorted(RealExportFilePath);
 
@@ -343,7 +346,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 
 	if (Attrs->Get<CString>(AttrValue, CStrID("ActorDesc")))
 	{
-		if (!ProcessDescWithParents("SrcActors:", "Actors:", AttrValue))
+		if (!ProcessDescWithParents(CString("SrcActors:"), CString("Actors:"), AttrValue))
 		{
 			n_msg(VL_ERROR, "Error processing AI actor desc '%s'\n", AttrValue.CStr());
 			FAIL;
@@ -371,7 +374,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 			FAIL;
 		}
 
-		if (!ProcessSOActionTplsDesc("SrcAI:AISOActionTpls.hrd", "AI:AISOActionTpls.prm"))
+		if (!ProcessSOActionTplsDesc(CString("SrcAI:AISOActionTpls.hrd"), CString("AI:AISOActionTpls.prm")))
 		{
 			n_msg(VL_ERROR, "Error processing shared smart object action templates desc\n");
 			FAIL;
@@ -448,7 +451,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		}
 
 	if (Attrs->Get<CString>(AttrValue, CStrID("Dialogue")))
-		if (!ProcessDialogue("SrcDlg:", "Dlg:", AttrValue))
+		if (!ProcessDialogue(CString("SrcDlg:"), CString("Dlg:"), AttrValue))
 		{
 			n_msg(VL_ERROR, "Error processing dialogue desc '%s'\n", AttrValue.CStr());
 			FAIL;
@@ -497,7 +500,7 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const CString& Name)
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
 			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
 			n_msg(VL_INFO, " Processing entity '%s'...\n", EntityPrm.GetName().CStr());
-			if (!EntityDesc.IsValid() || !ProcessEntity(*EntityDesc))
+			if (!EntityDesc.IsValidPtr() || !ProcessEntity(*EntityDesc))
 			{
 				n_msg(VL_ERROR, "Error processing entity '%s'\n", EntityPrm.GetName().CStr());
 				FAIL;
@@ -524,8 +527,7 @@ bool ProcessDescsInFolder(const CString& SrcPath, const CString& ExportPath)
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			CString DescName = Browser.GetCurrEntryName();
-			DescName.StripExtension();
+			CString DescName = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 
 			n_msg(VL_INFO, "Processing desc '%s'...\n", DescName.CStr());
 
@@ -562,20 +564,19 @@ bool ProcessEntityTplsInFolder(const CString& SrcPath, const CString& ExportPath
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			CString DescName = Browser.GetCurrEntryName();
-			DescName.StripExtension();
+			CString DescName = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 
 			n_msg(VL_INFO, "Processing entity tpl '%s'...\n", DescName.CStr());
 
 			CString SrcFilePath = Browser.GetCurrentPath() + "/" + Browser.GetCurrEntryName();
-			CString RealExportFilePath = IOSrv->ManglePath(ExportPath + "/" + DescName + ".prm");
+			CString RealExportFilePath = IOSrv->ResolveAssigns(ExportPath + "/" + DescName + ".prm");
 
 			if (IsFileAdded(RealExportFilePath)) continue;
 
 			if (ExportDescs)
 			{
 				Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
-				if (!Desc.IsValid())
+				if (!Desc.IsValidPtr())
 				{
 					n_msg(VL_ERROR, "Error loading entity tpl '%s'\n", DescName.CStr());
 					FAIL;
@@ -585,7 +586,7 @@ bool ProcessEntityTplsInFolder(const CString& SrcPath, const CString& ExportPath
 				if (Desc->Get<Data::PDataArray>(Props, CStrID("Props")) && Props->GetCount())
 					ConvertPropNamesToFourCC(Props);
 
-				IOSrv->CreateDirectory(RealExportFilePath.ExtractDirName());
+				IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
 				if (!DataSrv->SavePRM(RealExportFilePath, Desc))
 				{
 					n_msg(VL_ERROR, "Error saving entity tpl '%s'\n", DescName.CStr());
@@ -635,9 +636,8 @@ bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 			if (Verbose >= VL_INFO)
 			{
 				QuestName = Browser.GetCurrentPath();
-				QuestName.ConvertBackslashes();
-				QuestName.StripTrailingSlash();
-				QuestName = QuestName.ExtractFileName();
+				QuestName.Trim(" \r\n\t\\/", false);
+				QuestName = PathUtils::ExtractFileName(QuestName);
 			}
 
 			n_msg(VL_INFO, "Processing quest '%s'...\n", QuestName.CStr());
@@ -651,7 +651,7 @@ bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 			}
 			else Desc = DataSrv->LoadPRM(ExportFilePath, false);
 
-			if (!Desc.IsValid())
+			if (!Desc.IsValidPtr())
 			{
 				n_msg(VL_ERROR, "Error loading quest '%s' desc\n", QuestName.CStr());
 				continue;
@@ -664,7 +664,7 @@ bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 			{
 				for (int i = 0; i < Tasks->GetCount(); ++i)
 				{
-					CString Name = Tasks->Get(i).GetName().CStr();
+					CString Name(Tasks->Get(i).GetName().CStr());
 					ExportFilePath = ExportPath + "/" + Name + ".lua";
 					if (ExportDescs)
 					{
@@ -697,13 +697,13 @@ bool ProcessSOActionTplsDesc(const CString& SrcFilePath, const CString& ExportFi
 	Data::PParams Desc;
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(ExportFilePath.ExtractDirName());
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
 		Desc = DataSrv->LoadHRD(SrcFilePath, false);
 		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
 	}
 	else Desc = DataSrv->LoadPRM(ExportFilePath);
 
-	if (!Desc.IsValid()) FAIL;
+	if (!Desc.IsValidPtr()) FAIL;
 
 	FilesToPack.InsertSorted(ExportFilePath);
 

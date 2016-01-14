@@ -32,7 +32,7 @@ public:
 	~CNpkTOC() { if (pRootDir) n_delete(pRootDir); }
 
 	CNpkTOCEntry*	BeginDirEntry(const char* pDirName);
-	CNpkTOCEntry*	AddFileEntry(const char* pName, int Offset, int Length);
+	CNpkTOCEntry*	AddFileEntry(const char* pName, UPTR Offset, UPTR Length);
 	void			EndDirEntry() { n_assert(pCurrDir); pCurrDir = Pop(); }
 
 	CNpkTOCEntry*	FindEntry(const char* name);
@@ -62,7 +62,7 @@ inline CNpkTOCEntry* CNpkTOC::BeginDirEntry(const char* pDirName)
 }
 //---------------------------------------------------------------------
 
-inline CNpkTOCEntry* CNpkTOC::AddFileEntry(const char* pName, int Offset, int Length)
+inline CNpkTOCEntry* CNpkTOC::AddFileEntry(const char* pName, UPTR Offset, UPTR Length)
 {
 	n_assert_dbg(pName);
 	n_assert(pCurrDir);
