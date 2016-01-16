@@ -66,12 +66,14 @@ bool CPropUIControl::InternalActivate()
 	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
 	if (PickShapeID.IsValid() && GetEntity()->GetLevel()->GetPhysics())
 	{
-		Resources::PResource RShape = ResourceMgr->RegisterResource(PickShapeID);
+		CStrID PickShapeURI = CStrID(CString("Physics:") + PickShapeID.CStr() + ".prm");
+		Resources::PResource RShape = ResourceMgr->RegisterResource(PickShapeURI);
 		if (!RShape->IsLoaded())
 		{
 			Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
+			if (Loader.IsNullPtr()) FAIL;
 			ResourceMgr->LoadResourceSync(*RShape, *Loader);
-			n_assert(RShape->IsLoaded());
+			if (!RShape->IsLoaded()) FAIL;
 		}
 		Physics::PCollisionShape Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
 

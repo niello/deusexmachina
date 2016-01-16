@@ -74,8 +74,8 @@ int main(int argc, const char** argv)
 		CString OutPath = PathUtils::ExtractDirName(OutFileName);
 		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
 
-		IO::CFileStream OutFile;
-		if (!OutFile.Open(OutFileName, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		IO::CFileStream OutFile(OutFileName);
+		if (!OutFile.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
 			n_msg(VL_ERROR, "Can't open output file" );
 			return ExitApp(ERR_IO_WRITE, WaitKey);

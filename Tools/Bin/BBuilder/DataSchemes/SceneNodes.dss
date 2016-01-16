@@ -1,0 +1,57 @@
+// Data serialization scheme for DEM scene nodes and their attributes
+
+SceneNode
+{
+	Scale		{ Type = "vector3" Default = (1.0, 1.0, 1.0) }
+	Rotation	{ Type = "vector4" Default = (0.0, 0.0, 0.0, 1.0) }
+	Translation	{ Type = "vector3" Default = (0.0, 0.0, 0.0) }
+	Attrs		{ Scheme = 'SceneNodeAttr' Default = [] }
+	Children	{ Scheme = 'SceneNode' WriteChildKeys = true Default = {} }
+}
+
+SceneNodeAttr
+{
+	// Generic
+	Class			{ Type = "string" }
+	
+	// Any with animable shader vars (light, material)
+	Vars			{ FourCC = "VARS" WriteChildKeys = true } //???split to static and animable? or store only animable in nodes?
+	
+	// Light
+	LightType		{ FourCC = "LGHT" Type = "int" }
+	CastShadows		{ FourCC = "CSHD" Type = "bool" }
+	Intensity		{ FourCC = "LINT" Type = "float" }
+	Color			{ FourCC = "LCLR" Type = "vector3" }
+	Range			{ FourCC = "LRNG" Type = "float" }
+	ConeInner		{ FourCC = "LCIN" Type = "float" }
+	ConeOuter		{ FourCC = "LCOU" Type = "float" }
+	
+	// Camera
+	
+	// Mesh and material
+	Textures		{ FourCC = "TEXS" Type = "string" WriteChildKeys = true } // Shader vars too, but applicable only to material
+	//Shader			{ FourCC = "SHDR" Type = "string" }
+	Material		{ FourCC = "MTRL" Type = "string" }
+	Mesh			{ FourCC = "MESH" Type = "string" }
+	MeshGroupIndex	{ FourCC = "MSGR" Type = "int" }
+	BatchType		{ FourCC = "BTYP" Type = "string" }
+	FeatFlags		{ FourCC = "FFLG" Type = "string" }
+	JointPalette	{ FourCC = "JPLT" Type = "int" }		// Array
+	
+	// Bone
+	PoseT			{ FourCC = "PSET" Type = "vector3" }
+	PoseR			{ FourCC = "PSER" Type = "vector4" }
+	PoseS			{ FourCC = "PSES" Type = "vector3" }
+	BoneIndex		{ FourCC = "BIDX" Type = "int" }
+	BoneType		{ FourCC = "BNTP" Type = "string" }
+
+	// LODGroup
+	Thresholds		{ FourCC = "TRSH" Type = "float" }		// Array
+	MinDistance		{ FourCC = "DMIN" Type = "float" }
+	MaxDistance		{ FourCC = "DMAX" Type = "float" }
+
+	// Terrain
+	CDLODFile		{ FourCC = "CDLD" Type = "string" }
+	SplatSizeX		{ FourCC = "TSSX" Type = "float" }
+	SplatSizeZ		{ FourCC = "TSSZ" Type = "float" }
+}

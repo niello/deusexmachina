@@ -7,24 +7,35 @@ namespace Resources
 {
 __ImplementSingleton(CResourceManager);
 
-PResource CResourceManager::RegisterResource(CStrID URI) //???need? avoid recreating StrID, but mb create only here?
+PResource CResourceManager::RegisterResource(CStrID URI) //???need? avoid recreating StrID of already registered resource, but mb create only here?
 {
-	// If registered return it
-	// else create empty container
-	return NULL;
+	//!!!TODO!
+	//test if CStrID is a valid expanded URI! or no need?
+	PResource Rsrc;
+	if (!Registry.Get(URI, Rsrc))
+	{
+		Rsrc = n_new(CResource); //???pool? UID in constructor?
+		Rsrc->SetUID(URI);
+		Registry.Add(URI, Rsrc);
+	}
+	return Rsrc;
 }
 //---------------------------------------------------------------------
 
 PResource CResourceManager::RegisterResource(const char* pURI)
 {
+	//!!!TODO!
 	// Absolutize URI:
 	// - resolve assigns
 	// - if file system path, make relative to resource root (save space)
-	// Get CStrID
-	// If registered return it
-	// else create empty container
-	PResource Rsrc = n_new(CResource);
-	Rsrc->SetUID(CStrID(pURI));
+	CStrID UID = CStrID(pURI);
+	PResource Rsrc;
+	if (!Registry.Get(UID, Rsrc))
+	{
+		Rsrc = n_new(CResource); //???pool? UID in constructor?
+		Rsrc->SetUID(UID);
+		Registry.Add(UID, Rsrc);
+	}
 	return Rsrc;
 }
 //---------------------------------------------------------------------

@@ -232,6 +232,5 @@ DECLARE_TYPE(PVOID, 6)
 #define TVector3		DATA_TYPE(vector3)
 #define TVector4		DATA_TYPE(vector4)
 #define TMatrix44		DATA_TYPE(matrix44)
-#define TMatrixPtrArray	DATA_TYPE(CMatrixPtrArray)
 
 #endif

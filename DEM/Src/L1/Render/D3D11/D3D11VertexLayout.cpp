@@ -34,7 +34,7 @@ bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, DWORD Count
 	char* pEnd = pSemanticNames + SemanticNamesLen;
 	for (DWORD i = 0; i < Count; ++i)
 	{
-		LPCSTR pSemName = pD3DDesc[i].SemanticName;
+		const char* pSemName = pD3DDesc[i].SemanticName;
 		DWORD Len = strlen(pSemName);
 		if (memcpy_s(pCurr, pEnd - pCurr, pSemName, Len) != 0)
 		{

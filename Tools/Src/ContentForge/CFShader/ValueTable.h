@@ -41,7 +41,7 @@ private:
 	Data::CFlags				Flags;
 
 	void*						ValueBuffer;
-	uchar*						RowStateBuffer;
+	U8*						RowStateBuffer;
 
 	CArray<ColumnInfo>			Columns;
 	CDictionary<CStrID, int>	ColumnIndexMap;		// map attribute ID to column index
@@ -93,7 +93,7 @@ public:
 	void				DeleteAllRows() { for (int i = 0; i < NumRows; i++) DeleteRow(i); }
 	void				DeleteRowData(int RowIdx);
 
-	uchar				GetRowState(int RowIdx) const;
+	U8				GetRowState(int RowIdx) const;
 	bool				IsRowNew(int RowIdx) const;
 	bool				IsRowUpdated(int RowIdx) const;
 	bool				IsRowOnlyUpdated(int RowIdx) const;
@@ -179,7 +179,7 @@ inline bool CValueTable::IsRowModified(int RowIdx) const
 }
 //---------------------------------------------------------------------
 
-inline uchar CValueTable::GetRowState(int RowIdx) const
+inline U8 CValueTable::GetRowState(int RowIdx) const
 {
 	n_assert(RowIdx > -1 && RowIdx < NumRows);
 	return RowStateBuffer[RowIdx];

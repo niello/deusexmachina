@@ -158,7 +158,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 					else if (Type == TStrID)
 					{
 						n_assert(SQLITE_TEXT == ResultColType);
-						CStrID Val((LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx));
+						CStrID Val((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx));
 						pOutTable->Set<CStrID>(ColIdx, RowIdx, Val);
 					}
 					else if (Type == TBuffer)
@@ -183,7 +183,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 								pOutTable->Set<float>(ColIdx, RowIdx, (float)sqlite3_column_double(SQLiteStmt, ResultColIdx));
 								break;
 							case SQLITE_TEXT:
-								pOutTable->Set<CString>(ColIdx, RowIdx, CString((LPCSTR)sqlite3_column_text(SQLiteStmt, ResultColIdx)));
+								pOutTable->Set<CString>(ColIdx, RowIdx, CString((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx)));
 								break;
 							default: Sys::Error("ExecuteStatement() > unsupported variable-type DB column type!");
 						}
@@ -530,7 +530,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 				IO::CFileStream File(Path);
 				if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) continue;
 
-				DWORD FileSize = File.GetSize();
+				U64 FileSize = File.GetSize();
 
 				if (SkipHeader)
 				{
@@ -544,9 +544,9 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 				if (FileSize != InOut.Size) continue;
 
 				Data::CBuffer Buffer(FileSize);
-				if (File.Read(Buffer.GetPtr(), FileSize) != FileSize) continue;
+				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
 			
-				if (memcmp(pBinaryData, Buf.GetPtr(), FileSize) != 0) continue;
+				if (memcmp(pBinaryData, Buf.GetPtr(), (UPTR)FileSize) != 0) continue;
 			}
 
 			InOut.ID = Result.Get<int>(Col_ID, i);

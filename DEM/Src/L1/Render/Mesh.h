@@ -25,9 +25,9 @@ struct CMeshInitData
 	CVertexBuffer*		pVertexBuffer;
 	CIndexBuffer*		pIndexBuffer;
 	CPrimitiveGroup*	pMeshGroupData;	// Mesh groups and optional mapping data
-	DWORD				SubMeshCount;
-	DWORD				LODCount;
-	DWORD				RealGroupCount;	// If UseMapping is false, must be SubMeshCount * LODCount (0 also defaults to this value)
+	UPTR				SubMeshCount;
+	UPTR				LODCount;
+	UPTR				RealGroupCount;	// If UseMapping is false, must be SubMeshCount * LODCount (0 also defaults to this value)
 	bool				UseMapping;
 };
 

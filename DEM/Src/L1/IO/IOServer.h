@@ -22,7 +22,7 @@ namespace IO
 typedef Ptr<class IFileSystem> PFileSystem;
 
 #ifdef _EDITOR
-typedef bool (__stdcall *CDataPathCallback)(LPCSTR DataPath, LPSTR* MangledPath);
+typedef bool (__stdcall *CDataPathCallback)(const char* DataPath, char** MangledPath);
 typedef void (__stdcall *CReleaseMemoryCallback)(void* p);
 #endif
 

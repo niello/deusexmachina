@@ -21,7 +21,7 @@ public:
 
 	CDEMD3DInclude(const CString& ShdDir, const CString& ShdRootDir);
 
-    STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
+    STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, const char* pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
     STDMETHOD(Close)(THIS_ LPCVOID pData) { n_free((void*)pData); return S_OK; }
 };
 

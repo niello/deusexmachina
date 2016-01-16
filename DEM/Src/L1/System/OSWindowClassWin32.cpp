@@ -50,7 +50,7 @@ void COSWindowClassWin32::Destroy()
 {
 	if (aWndClass)
 	{
-		if (!UnregisterClass((LPCSTR)aWndClass, hInst))
+		if (!UnregisterClass((const char*)aWndClass, hInst))
 			Sys::Error("COSWindowClassWin32::Destroy(): UnregisterClass() failed!\n");
 		aWndClass = 0;
 	}

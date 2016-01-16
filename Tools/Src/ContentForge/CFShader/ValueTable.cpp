@@ -69,7 +69,7 @@ void CValueTable::Realloc(int NewPitch, int NewAllocRows)
 	RowPitch = NewPitch;
 
 	//???pad to 4 bytes (see buffer-wide operations & DWORD usage)?
-	RowStateBuffer = (uchar*)n_realloc(RowStateBuffer, NewAllocRows);
+	RowStateBuffer = (U8*)n_realloc(RowStateBuffer, NewAllocRows);
 	memset(RowStateBuffer + NumRows, 0, NewAllocRows - NumRows);
 }
 //---------------------------------------------------------------------

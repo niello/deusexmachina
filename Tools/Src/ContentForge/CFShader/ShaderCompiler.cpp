@@ -129,7 +129,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	Data::CBuffer In;
 	if (!IOSrv->LoadFileToBuffer(SrcPath, In)) return ERR_IO_READ;
 	DWORD CurrWriteTime = IOSrv->GetFileWriteTime(SrcPath);
-	DWORD SrcCRC = Util::CalcCRC((uchar*)In.GetPtr(), In.GetSize());
+	DWORD SrcCRC = Util::CalcCRC((U8*)In.GetPtr(), In.GetSize());
 
 	// Setup compiler flags
 
@@ -297,7 +297,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 									 &pInputSig)))
 		{
 			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
-			Rec.InputSigFile.CRC = Util::CalcCRC((uchar*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+			Rec.InputSigFile.CRC = Util::CalcCRC((U8*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
 			DWORD OldInputSigID = Rec.InputSigFile.ID;
 			bool ObjFound = FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false);
@@ -358,7 +358,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	}
 
 	Rec.ObjFile.Size = pFinalCode->GetBufferSize();
-	Rec.ObjFile.CRC = Util::CalcCRC((uchar*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+	Rec.ObjFile.CRC = Util::CalcCRC((U8*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 	// Try to find exactly the same binary and reuse it, or save our result
 
@@ -391,7 +391,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		W.Write(FileSig);
 
 		// Offset of a shader binary, will fill later
-		DWORD OffsetOffset = File.GetPosition();
+		U64 OffsetOffset = File.GetPosition();
 		W.Write<U32>(0);
 
 		W.Write<U32>(Rec.ObjFile.ID);
@@ -689,7 +689,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		}
 
 		// Save shader binary
-		DWORD BinaryOffset = File.GetPosition();
+		U64 BinaryOffset = File.GetPosition();
 		File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 		// Write binary data offset for fast skipping of metadata when reading
@@ -1150,7 +1150,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	Data::PParams Params;
 	{
 		Data::CHRDParser Parser;
-		if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), Params)) return ERR_IO_READ;
+		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Params)) return ERR_IO_READ;
 	}
 
 	Data::PParams Techs;

@@ -42,7 +42,7 @@ static int SaveLua(lua_State* L, const void* p, size_t sz, void* ud)
 }
 //---------------------------------------------------------------------
 
-bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
+bool LuaCompile(char* pData, U32 Size, const char* Name, const char* pFileOut)
 {
 	if (!l) LuaInit();
 
@@ -55,8 +55,8 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 
 	int Result = 1;
 
-	IO::CFileStream Out;
-	if (Out.Open(pFileOut, IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+	IO::CFileStream Out(pFileOut);
+	if (Out.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 	{
 		Result = lua_dump(l, SaveLua, (IO::CStream*)&Out);
 		Out.Close();
@@ -66,7 +66,7 @@ bool LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut)
 }
 //---------------------------------------------------------------------
 
-bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
+bool LuaCompileClass(Data::CParams& LoadedHRD, const char* Name, const char* pFileOut)
 {
 	CString Code = LoadedHRD.Get<CString>(CStrID("Code"), CString::Empty);
 
@@ -85,7 +85,7 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 		if (Out.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
 			Result = lua_dump(l, SaveLua, (IO::CStream*)&Out);
-			Data::CBuffer Buffer(Out.GetPtr(), Out.GetSize());
+			Data::CBuffer Buffer(Out.GetPtr(), (UPTR)Out.GetSize());
 			Out.Close();
 			if (Result != 0) FAIL;
 
@@ -94,8 +94,8 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut)
 		else FAIL;
 	}
 
-	IO::CFileStream File;
-	if (!File.Open(pFileOut, IO::SAM_WRITE)) FAIL;
+	IO::CFileStream File(pFileOut);
+	if (!File.Open(IO::SAM_WRITE)) FAIL;
 	IO::CBinaryWriter Writer(File);
 	return Writer.WriteParams(LoadedHRD);
 

@@ -11,9 +11,6 @@ bool					ExportShaders;
 int						Verbose = VL_ERROR;
 int						ExternalVerbosity = VL_ALWAYS;
 
-Ptr<IO::CIOServer>		IOServer;
-Ptr<Data::CDataServer>	DataServer;
-
 //!!!control duplicates on add! or sort before packing and skip dups!
 // Can optimize by calculating nearest index:
 //!!!if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
@@ -58,7 +55,7 @@ int main(int argc, const char** argv)
 
 	n_msg(VL_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2013\n"SEP_LINE"\n");
 
-	IOServer = n_new(IO::CIOServer);
+	IO::CIOServer IOServer;
 	ProjDir = IOSrv->ResolveAssigns(ProjDir);
 	BuildDir = IOSrv->ResolveAssigns(BuildDir);
 	IOSrv->SetAssign("Proj", ProjDir);
@@ -66,7 +63,7 @@ int main(int argc, const char** argv)
 
 	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
 
-	DataServer = n_new(Data::CDataServer);
+	Data::CDataServer DataServer;
 
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
 	if (PathList.IsValidPtr())
@@ -186,7 +183,7 @@ int main(int argc, const char** argv)
 	}
 	while (Browser.NextCurrDirEntry());
 
-	Sys::Log("\n"SEP_LINE"Processing entity templates:\n"SEP_LINE"!!!NOT IMPLEMENTED!!!\n");
+	Sys::Log("\n"SEP_LINE"Processing entity templates:\n");
 
 	if (!ProcessEntityTplsInFolder(IOSrv->ResolveAssigns("SrcEntityTpls:"), IOSrv->ResolveAssigns("EntityTpls:")))
 	{
@@ -272,11 +269,11 @@ int main(int argc, const char** argv)
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
 	if (ExportShaders)
 	{
-		CString ShdRoot = IOSrv->ResolveAssigns("SrcShaders:");
-		if (ShdRoot.FindIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
-		CString ExtraCmdLine("-o 3 -root ");
-		ExtraCmdLine += ShdRoot;
-		if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr()) != 0) EXIT_APP_FAIL;
+		//CString ShdRoot = IOSrv->ResolveAssigns("SrcShaders:");
+		//if (ShdRoot.FindIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
+		//CString ExtraCmdLine("-o 3 -root ");
+		//ExtraCmdLine += ShdRoot;
+		//if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr()) != 0) EXIT_APP_FAIL;
 	}
 
 	Sys::Log("\n"SEP_LINE"Packing:\n"SEP_LINE);
@@ -314,9 +311,6 @@ int ExitApp(bool NoError, bool WaitKey)
 		Sys::Log("\nPress any key to exit...\n");
 		_getch();
 	}
-
-	DataServer = NULL;
-	IOServer = NULL;
 
 	return NoError ? 0 : 1;
 }

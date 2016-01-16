@@ -15,8 +15,8 @@ int		Verbose = VL_ERROR;
 
 int		ExitApp(int Code, bool WaitKey);
 
-bool	LuaCompile(char* pData, uint Size, LPCSTR Name, LPCSTR pFileOut);
-bool	LuaCompileClass(Data::CParams& LoadedHRD, LPCSTR Name, LPCSTR pFileOut);
+bool	LuaCompile(char* pData, U32 Size, const char* Name, const char* pFileOut);
+bool	LuaCompileClass(Data::CParams& LoadedHRD, const char* Name, const char* pFileOut);
 void	LuaRelease();
 
 bool ProcessSingleFile(const CString& InFileName, const CString& OutFileName, bool CheckFileType = true, bool IsClass = false)
@@ -33,7 +33,7 @@ bool ProcessSingleFile(const CString& InFileName, const CString& OutFileName, bo
 	if (CheckFileType || IsClass)
 	{
 		Data::CHRDParser Parser;
-		IsClass = Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), ClassDesc);
+		IsClass = Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), ClassDesc);
 		if (!CheckFileType && !IsClass)
 		{
 			n_msg(VL_ERROR, "Class HDR parsing failed\n", InFileName.CStr());

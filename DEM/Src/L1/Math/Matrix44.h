@@ -108,9 +108,7 @@ public:
     vector3 mult_divw(const vector3& v) const;
 };
 
-//typedef CArray<const matrix44*> CMatrixPtrArray;			// Shader parameter type
 DECLARE_TYPE(matrix44, 8)
-//DECLARE_TYPE(CMatrixPtrArray, 15)
 
 //------------------------------------------------------------------------------
 /**

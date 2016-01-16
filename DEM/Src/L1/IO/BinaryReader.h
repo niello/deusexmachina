@@ -24,7 +24,7 @@ public:
 
 	CBinaryReader(CStream& SrcStream): CStreamReader(SrcStream) { }
 
-	bool				ReadString(char* OutValue, DWORD MaxLen);
+	bool				ReadString(char* OutValue, UPTR MaxLen);
 	bool				ReadString(char*& OutValue); // Allocates memory
 	bool				ReadString(CString& OutValue);
 	bool				ReadParams(Data::CParams& OutValue);

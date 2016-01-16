@@ -33,12 +33,12 @@ inline int GetLastDirSeparatorIndex(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-// Returns pointer to extension (without the dot), or NULL
+// Returns pointer to extension (without the dot), or empty string (not NULL, for CRT comparison)
 inline const char* GetExtension(const char* pPath)
 {
 	const char* pLastDirSep = GetLastDirSeparator(pPath);
 	const char* pStr = strrchr(pLastDirSep ? pLastDirSep + 1 : pPath, '.');
-	return (pStr && *(++pStr)) ? pStr : NULL;
+	return (pStr && *(++pStr)) ? pStr : "";
 }
 //---------------------------------------------------------------------
 

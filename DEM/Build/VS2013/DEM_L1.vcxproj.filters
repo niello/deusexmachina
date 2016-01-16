@@ -881,6 +881,18 @@
     <ClInclude Include="..\..\Src\L1\UI\UIContext.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\Terrain.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionShapeLoader.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\MeshLoader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\MeshLoaderNVX2.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1148,9 +1160,6 @@
       <Filter>Physics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\HeightfieldShape.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\NodeAttrCollision.cpp">
@@ -1431,6 +1440,18 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\UIContext.cpp">
       <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\Terrain.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\MeshLoader.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\MeshLoaderNVX2.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -16,7 +16,7 @@ public:
 	U32 Code;
 
 	CFourCC(): Code(0) {}
-	CFourCC(int IntCode): Code(IntCode) { }
+	CFourCC(I32 IntCode): Code(IntCode) { }
 	CFourCC(U32 IntCode): Code(IntCode) { }
 	CFourCC(const char* pString) { FromString(pString); }
 

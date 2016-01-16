@@ -213,8 +213,10 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\Terrain.h" />
     <ClInclude Include="..\..\Src\L1\Frame\View.h" />
     <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\CollisionShapeLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.h" />
@@ -257,6 +259,8 @@
     <ClInclude Include="..\..\Src\L1\Render\IndexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\Material.h" />
     <ClInclude Include="..\..\Src\L1\Render\Mesh.h" />
+    <ClInclude Include="..\..\Src\L1\Render\MeshLoader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\MeshLoaderNVX2.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderFwd.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderState.h" />
     <ClInclude Include="..\..\Src\L1\Render\RenderStateDesc.h" />
@@ -453,8 +457,10 @@
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.cpp" />
@@ -491,6 +497,8 @@
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Material.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Mesh.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\MeshLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\MeshLoaderNVX2.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderStateDesc.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SamplerDesc.cpp" />
@@ -594,7 +602,6 @@
     <ClCompile Include="..\..\Src\L1\Physics\CollisionObjStatic.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\CollisionShape.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\HeightfieldShape.cpp" />
-    <ClCompile Include="..\..\Src\L1\Physics\LoadCollisionShapeFromPRM.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\NodeAttrCollision.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\NodeControllerRigidBody.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp" />

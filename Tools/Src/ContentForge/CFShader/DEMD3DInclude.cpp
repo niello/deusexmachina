@@ -14,7 +14,7 @@ CDEMD3DInclude::CDEMD3DInclude(const CString& ShdDir, const CString& ShdRootDir)
 }
 //---------------------------------------------------------------------
 
-HRESULT CDEMD3DInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+HRESULT CDEMD3DInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, const char* pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
 	// Try absolute path first
 	IO::CFileStream File(pFileName);
@@ -41,7 +41,7 @@ HRESULT CDEMD3DInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNam
 		return E_FAIL;
 	}
 
-	int FileSize = File.GetSize();
+	UPTR FileSize = (UPTR)File.GetSize();
 	void* pBuf = n_malloc(FileSize);
 	if (!pBuf)
 	{

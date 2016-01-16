@@ -4,7 +4,10 @@
 #include <Scene/SceneNode.h>
 #include <Render/Mesh.h>
 #include <Render/Material.h>
+#include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <IO/PathUtils.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -15,69 +18,81 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
 	{
-//		case 'MTRL':
-//		{
-//			Material = RenderSrv->MaterialMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-//			OK;
-//		}
-//		case 'VARS':
-//		{
-//			short Count;
-//			if (!DataReader.Read(Count)) FAIL;
-//			for (short i = 0; i < Count; ++i)
-//			{
-//				CStrID VarName;
-//				DataReader.Read(VarName);
-//				CShaderVar& Var = ShaderVars.Add(VarName);
-//				Var.SetName(VarName);
-//				DataReader.Read(Var.Value);
-//				//???check type if bound? use SetValue for it?
-//				//Can set CData type at var creation and set value to it by SetValue, so type will be asserted
-//				//???WHERE? if (Material.IsValid()) Var.Bind(*Material->GetShader());
-//			}
-//			OK;
-//		}
-//		case 'TEXS':
-//		{
-//			short Count;
-//			if (!DataReader.Read(Count)) FAIL;
-//			for (short i = 0; i < Count; ++i)
-//			{
-//				CStrID VarName;
-//				DataReader.Read(VarName);
-//				CShaderVar& Var = ShaderVars.Add(VarName);
-//				Var.SetName(VarName);
-//				Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-//			}
-//			OK;
-//		}
-//		case 'JPLT':
-//		{
-//			short Count;
-//			if (!DataReader.Read(Count)) FAIL;
-//			BoneIndices.SetSize(Count);
-//			return DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) == Count * sizeof(int);
-//		}
-//		case 'MESH':
-//		{
-//			Mesh = RenderSrv->MeshMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-//			OK;
-//		}
-//		case 'MSGR':
-//		{
-//			return DataReader.Read(MeshGroupIndex);
-//		}
+		case 'MTRL':
+		{
+			//Material = RenderSrv->MaterialMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
+			CStrID URI = DataReader.Read<CStrID>();
+			OK;
+		}
+		case 'VARS':
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			for (short i = 0; i < Count; ++i)
+			{
+				CStrID VarName;
+				DataReader.Read(VarName);
+				//CShaderVar& Var = ShaderVars.Add(VarName);
+				//Var.SetName(VarName);
+				Data::CData Value = DataReader.Read<Data::CData>();
+				//???check type if bound? use SetValue for it?
+				//Can set CData type at var creation and set value to it by SetValue, so type will be asserted
+				//???WHERE? if (Material.IsValid()) Var.Bind(*Material->GetShader());
+			}
+			OK;
+		}
+		case 'TEXS':
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			for (short i = 0; i < Count; ++i)
+			{
+				CStrID VarName;
+				DataReader.Read(VarName);
+				//CShaderVar& Var = ShaderVars.Add(VarName);
+				//Var.SetName(VarName);
+				//Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
+				CStrID URI = DataReader.Read<CStrID>();
+			}
+			OK;
+		}
+		case 'JPLT':
+		{
+			short Count;
+			if (!DataReader.Read(Count)) FAIL;
+			BoneIndices.SetSize(Count);
+			return DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) == Count * sizeof(int);
+		}
+		case 'MESH':
+		{
+			CStrID MeshID = DataReader.Read<CStrID>();
+			CStrID MeshURI = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
+			Resources::PResource RMesh = ResourceMgr->RegisterResource(MeshURI);
+			if (!RMesh->IsLoaded())
+			{
+				Resources::PResourceLoader Loader = RMesh->GetLoader();
+				if (Loader.IsNullPtr())
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMesh>(PathUtils::GetExtension(MeshURI.CStr()));
+				ResourceMgr->LoadResourceSync(*RMesh, *Loader);
+				n_assert(RMesh->IsLoaded());
+			}
+			OK;
+		}
+		case 'MSGR':
+		{
+			return DataReader.Read(MeshGroupIndex);
+		}
 		case 'BTYP':
 		{
 			return DataReader.Read(BatchType);
 		}
-//		case 'FFLG':
-//		{
-//			CString FeatFlagsStr;
-//			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;
-//			FeatureFlags = RenderSrv->ShaderFeatures.GetMask(FeatFlagsStr);
-//			OK;
-//		}
+		case 'FFLG':
+		{
+			CString FeatFlagsStr;
+			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;
+			//FeatureFlags = RenderSrv->ShaderFeatures.GetMask(FeatFlagsStr);
+			OK;
+		}
 		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);
 	}
 }

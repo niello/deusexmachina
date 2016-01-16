@@ -59,7 +59,7 @@ bool COSWindowWin32::Open()
 	}
 
 	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
-							(LPCSTR)(DWORD_PTR)WndClass->GetWin32WindowClass(), WindowTitle.CStr(), WndStyle,
+							(const char*)(DWORD_PTR)WndClass->GetWin32WindowClass(), WindowTitle.CStr(), WndStyle,
 							r.left, r.top, r.right - r.left, r.bottom - r.top,
 							pParent ? pParent->GetHWND() : NULL, NULL, WndClass->GetWin32HInstance(), NULL);
 	if (!hWnd) FAIL;
@@ -362,7 +362,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_CHAR:
 		{
 			WCHAR CharUTF16[2];
-			MultiByteToWideChar(CP_ACP, 0, (LPCSTR)&wParam, 1, CharUTF16, 1);
+			MultiByteToWideChar(CP_ACP, 0, (const char*)&wParam, 1, CharUTF16, 1);
 
 			Event::OSInput Ev;
 			Ev.Type = Event::OSInput::CharInput;

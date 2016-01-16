@@ -71,7 +71,7 @@ int main(int argc, const char** argv)
 		if (IOSrv->LoadFileToBuffer("Proj:PathList.hrd", Buffer))
 		{
 			Data::PParams PathList;
-			if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
+			if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
 
 			if (PathList.IsValidPtr())
 				for (int i = 0; i < PathList->GetCount(); ++i)
@@ -81,7 +81,7 @@ int main(int argc, const char** argv)
 		if (IOSrv->LoadFileToBuffer("Proj:SrcPathList.hrd", Buffer))
 		{
 			Data::PParams PathList;
-			if (!Parser.ParseBuffer((LPCSTR)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
+			if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
 
 			if (PathList.IsValidPtr())
 				for (int i = 0; i < PathList->GetCount(); ++i)

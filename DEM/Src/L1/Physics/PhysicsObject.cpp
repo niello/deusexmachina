@@ -22,12 +22,14 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	n_assert(!pWorld);
 
 	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
-	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeID);
+	CStrID ShapeURI = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
+	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeURI);
 	if (!RShape->IsLoaded())
 	{
 		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
+		if (Loader.IsNullPtr()) FAIL;
 		ResourceMgr->LoadResourceSync(*RShape, *Loader);
-		n_assert(RShape->IsLoaded());
+		if (!RShape->IsLoaded()) FAIL;
 	}
 	Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
 

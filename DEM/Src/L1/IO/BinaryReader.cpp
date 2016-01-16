@@ -8,13 +8,12 @@
 namespace IO
 {
 
-bool CBinaryReader::ReadString(char* OutValue, DWORD MaxLen)
+bool CBinaryReader::ReadString(char* OutValue, UPTR MaxLen)
 {
 	U16 Len;
-	int SeekOfs;
 	if (!Read(Len)) FAIL;
-	SeekOfs = (DWORD)Len - (MaxLen - 1);
-	if (SeekOfs > 0) Len = (U16)(MaxLen - 1);
+	I64 SeekOfs = (I64)Len - (I64)MaxLen + 1;
+	if (SeekOfs > 0) Len = (U16)MaxLen - 1;
 	if (Stream.Read(OutValue, Len) != Len) FAIL;
 	OutValue[Len] = 0;
 	if (SeekOfs > 0) Stream.Seek(SeekOfs, IO::Seek_Current);

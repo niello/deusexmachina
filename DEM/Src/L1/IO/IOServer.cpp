@@ -341,7 +341,7 @@ bool CIOServer::QueryMangledPath(const char* pFileName, CString& MangledFileName
 {
 	if (!DataPathCB) FAIL;
 
-	LPSTR pMangledStr = NULL;
+	char* pMangledStr = NULL;
 	if (!DataPathCB(pFileName, &pMangledStr))
 	{
 		if (pMangledStr && ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);

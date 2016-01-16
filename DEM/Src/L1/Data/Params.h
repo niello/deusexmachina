@@ -35,7 +35,7 @@ public:
 	CParams(const CParams& Other): Params(Other.Params) {}
 	CParams(int InitialSize, int Grow = 4): Params(InitialSize, Grow) {}
 
-	//???LPCSTR/CString version?
+	//???const char*/CString version?
 	int							IndexOf(CStrID Name) const;
 	bool						Has(CStrID Name) const { return IndexOf(Name) != INVALID_INDEX; }
 	int							GetCount() const { return Params.GetCount(); }
@@ -238,7 +238,7 @@ CParam Params[Size];
 
 public:
 
-//???LPCSTR/CString versions?
+//???const char* / CString versions?
 inline const CParam* Get(CStrID Name) const;
 inline DWORD         IndexOf(CStrID Name) const;
 inline bool          Exists(CStrID Name) const {return IndexOf(Name)!=INVALID_INDEX;}
