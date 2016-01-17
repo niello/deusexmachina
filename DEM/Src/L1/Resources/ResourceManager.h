@@ -44,18 +44,24 @@ protected:
 		bool operator <(const CLoaderKey& Other) const { return Extension < Other.Extension || (Extension == Other.Extension && pRsrcType < Other.pRsrcType); }
 	};
 
+	struct CLoaderRec
+	{
+		PResourceLoader	Loader;
+		bool			CloneOnCreate;	// Set to true for loaders with state which can change per-resource
+	};
+
 	//!!!???CResource pool?! if pool, hash table can store weak ptrs. How to deallocate on destroy?
 
-	CString										RootPath;
-	CHashTable<CStrID, PResource>				Registry;
-	CHashTable<CLoaderKey, const Core::CRTTI*>	DefaultLoaders;
+	CString								RootPath;
+	CHashTable<CStrID, PResource>		Registry;
+	CHashTable<CLoaderKey, CLoaderRec>	DefaultLoaders;
 
 public:
 
 	CResourceManager(DWORD HashTableCapacity = 256): Registry(HashTableCapacity) { __ConstructSingleton; }
 	~CResourceManager() { __DestructSingleton; }
 
-	void			RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, const Core::CRTTI* pLoaderType);
+	void			RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, CResourceLoader* pLoader, bool CloneOnCreate = false);
 	PResourceLoader	CreateDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType = NULL);
 	template<class TRsrc>
 	PResourceLoader	CreateDefaultLoaderFor(const char* pFmtExtension) { return CreateDefaultLoader(pFmtExtension, &TRsrc::RTTI); }

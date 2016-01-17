@@ -26,7 +26,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		case 'VARS':
 		{
-			short Count;
+			U16 Count;
 			if (!DataReader.Read(Count)) FAIL;
 			for (short i = 0; i < Count; ++i)
 			{
@@ -43,7 +43,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		case 'TEXS':
 		{
-			short Count;
+			U16 Count;
 			if (!DataReader.Read(Count)) FAIL;
 			for (short i = 0; i < Count; ++i)
 			{
@@ -58,14 +58,15 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		case 'JPLT':
 		{
-			short Count;
+			U16 Count;
 			if (!DataReader.Read(Count)) FAIL;
 			BoneIndices.SetSize(Count);
 			return DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) == Count * sizeof(int);
 		}
 		case 'MESH':
 		{
-			CStrID MeshID = DataReader.Read<CStrID>();
+			//???!!!store the whole URI in a file?!
+			CString MeshID = DataReader.Read<CString>();
 			CStrID MeshURI = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
 			Resources::PResource RMesh = ResourceMgr->RegisterResource(MeshURI);
 			if (!RMesh->IsLoaded())
@@ -76,6 +77,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 				ResourceMgr->LoadResourceSync(*RMesh, *Loader);
 				n_assert(RMesh->IsLoaded());
 			}
+			Mesh = RMesh->GetObject()->As<Render::CMesh>();
 			OK;
 		}
 		case 'MSGR':

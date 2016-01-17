@@ -26,6 +26,8 @@ public:
 	virtual bool				Load(CResource& Resource) { return LoadImpl(Resource, Render::ShaderType_Unknown); }
 };
 
+typedef Ptr<CD3D9ShaderLoader> PD3D9ShaderLoader;
+
 }
 
 #endif

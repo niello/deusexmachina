@@ -893,6 +893,12 @@
     <ClInclude Include="..\..\Src\L1\Render\MeshLoaderNVX2.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\Skin.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SkinInfo.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1451,6 +1457,12 @@
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\MeshLoaderNVX2.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\Skin.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

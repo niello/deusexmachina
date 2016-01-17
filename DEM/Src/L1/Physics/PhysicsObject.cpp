@@ -21,7 +21,8 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	n_assert(!pWorld);
 
-	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
+	//???!!!store the whole URI in a file?!
+	CString ShapeID = Desc.Get<CString>(CStrID("Shape"));
 	CStrID ShapeURI = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
 	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeURI);
 	if (!RShape->IsLoaded())

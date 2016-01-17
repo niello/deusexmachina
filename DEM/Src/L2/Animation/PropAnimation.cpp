@@ -204,6 +204,7 @@ bool CPropAnimation::BeforeTransforms(Events::CEventDispatcher* pDispatcher, con
 			GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
 		}
 	}
+
 	OK;
 }
 //---------------------------------------------------------------------

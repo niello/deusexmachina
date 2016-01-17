@@ -19,11 +19,12 @@ public:
 
 	virtual ~CMeshLoaderNVX2() {}
 
-	virtual bool IsProvidedDataValid() const { OK; } //!!!implement properly!
-	virtual bool Load(CResource& Resource);
+	virtual PResourceLoader	Clone();
+	virtual bool			IsProvidedDataValid() const { OK; } //!!!implement properly!
+	virtual bool			Load(CResource& Resource);
 };
 
-typedef Ptr<CMeshLoader> PMeshLoader;
+typedef Ptr<CMeshLoaderNVX2> PMeshLoaderNVX2;
 
 }
 

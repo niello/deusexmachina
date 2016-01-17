@@ -63,6 +63,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_Position;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 	else if (Mask & Coord4)
 	{
@@ -71,6 +73,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_Position;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Normal)
@@ -80,6 +84,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_Normal;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Uv0)
@@ -89,6 +95,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Uv1)
@@ -98,6 +106,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 1;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Uv2)
@@ -107,6 +117,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 2;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Uv3)
@@ -116,6 +128,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 3;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Color)
@@ -125,6 +139,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_Color;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Tangent)
@@ -134,6 +150,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_Tangent;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Bitangent)
@@ -143,6 +161,8 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_Bitangent;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
 	if (Mask & Weights)
@@ -152,9 +172,11 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_BoneWeights;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
 
-	//???use ubyte4 for my geometry?
+	//???use ubyte4 for my geometry format?
 	if (Mask & JIndices)
 	{
 		Render::CVertexComponent& Cmp = *Components.Reserve(1);
@@ -162,7 +184,17 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Semantic = Render::VCSem_BoneIndices;
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.UserDefinedName = NULL;
 	}
+}
+//---------------------------------------------------------------------
+
+PResourceLoader CMeshLoaderNVX2::Clone()
+{
+	PMeshLoaderNVX2 NewLoader = n_new(CMeshLoaderNVX2);
+	NewLoader->GPU = GPU;
+	return NewLoader.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -199,11 +231,14 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 	n_assert_dbg(VertexLayout->GetVertexSizeInBytes() == (Header.vertexWidth * sizeof(float)));
 
 	//!!!map data through MMF instead!
-	UPTR VertexElementCount = Header.numVertices * Header.vertexWidth;
-	float* pVBData = n_new_array(float, VertexElementCount);
-	File.Read(pVBData, VertexElementCount * sizeof(float));
-	U16* pIBData = n_new_array(U16, Header.numIndices);
-	File.Read(pIBData, Header.numIndices * sizeof(U16));
+	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
+	float* pVBData = (float*)n_malloc_aligned(DataSize, 16);
+	File.Read(pVBData, DataSize);
+
+	//!!!map data through MMF instead!
+	DataSize = Header.numIndices * sizeof(U16);
+	U16* pIBData = (U16*)n_malloc_aligned(DataSize, 16);
+	File.Read(pIBData, DataSize);
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, Header.numVertices, Render::Access_GPU_Read, pVBData);
@@ -223,8 +258,8 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 		MeshGroup.AABB.EndExtend();
 	}
 
-	n_delete_array(pVBData);
-	n_delete_array(pIBData);
+	n_free_aligned(pVBData);
+	n_free_aligned(pIBData);
 
 	Render::CMeshInitData InitData;
 	InitData.pVertexBuffer = VB;

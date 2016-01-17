@@ -40,29 +40,42 @@ PResource CResourceManager::RegisterResource(const char* pURI)
 }
 //---------------------------------------------------------------------
 
-void CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, const Core::CRTTI* pLoaderType)
+void CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, CResourceLoader* pLoader, bool CloneOnCreate)
 {
 	CLoaderKey Key;
 	Key.Extension = CStrID(pFmtExtension);
 	Key.pRsrcType = pRsrcType;
-	DefaultLoaders.Add(Key, pLoaderType, true);
+	CLoaderRec Rec;
+	Rec.Loader = pLoader;
+	Rec.CloneOnCreate = CloneOnCreate;
+	DefaultLoaders.Add(Key, Rec, true);
 }
 //---------------------------------------------------------------------
 
-//!!!check IsDerivedFrom! select the best matching loader (minimal hierarchy offset from requested type)!
 PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType)
 {
 	CLoaderKey Key;
 	Key.Extension = CStrID(pFmtExtension);
-	Key.pRsrcType = pRsrcType;
-	const Core::CRTTI** ppRTTI = DefaultLoaders.Get(Key);
-	return ppRTTI ? (CResourceLoader*)(*ppRTTI)->CreateClassInstance() : NULL;
+
+	// Try to find loader for any resource in the class hierarchy
+	CLoaderRec* pRec = NULL;
+	while (!pRec)
+	{
+		Key.pRsrcType = pRsrcType;
+		pRec = DefaultLoaders.Get(Key);
+		if (!pRsrcType) break;
+		pRsrcType = pRsrcType->GetParent();
+	}
+
+	if (!pRec) return NULL;
+
+	return pRec->CloneOnCreate ? pRec->Loader->Clone() : pRec->Loader;
 }
 //---------------------------------------------------------------------
 
 void CResourceManager::LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader)
 {
-	//???process URI and IO here as common code?
+	//???process URI and IO here as common code? setup IO::CStream
 
 	Rsrc.SetState(Rsrc_LoadingInProgress);
 	if (Loader.Load(Rsrc)) Rsrc.SetState(Rsrc_Loaded);

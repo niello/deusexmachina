@@ -6,7 +6,6 @@
 #include <Render/RenderFwd.h>
 #include <Render/VertexBuffer.h>
 #include <Render/IndexBuffer.h>
-#include <Events/EventsFwd.h>
 
 // Mesh represents complete geometry information of a 3D model. It stores vertex buffer,
 // optional index buffer and a list of primitive groups (also known as mesh subsets).
@@ -62,7 +61,7 @@ public:
 	bool					Create(const CMeshInitData& InitData);
 	void					Destroy();
 
-	virtual bool			IsResourceValid() const { FAIL; }
+	virtual bool			IsResourceValid() const { return !!pGroups; }
 
 	PVertexBuffer			GetVertexBuffer() const { return VB; }
 	PIndexBuffer			GetIndexBuffer() const { return IB; }

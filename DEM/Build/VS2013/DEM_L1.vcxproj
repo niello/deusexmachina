@@ -213,6 +213,7 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\Skin.h" />
     <ClInclude Include="..\..\Src\L1\Frame\Terrain.h" />
     <ClInclude Include="..\..\Src\L1\Frame\View.h" />
     <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
@@ -270,6 +271,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\EffectTech.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SkinInfo.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h" />
@@ -457,6 +459,7 @@
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\Skin.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
@@ -503,6 +506,7 @@
     <ClCompile Include="..\..\Src\L1\Render\RenderTarget.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SamplerDesc.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ShaderLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />

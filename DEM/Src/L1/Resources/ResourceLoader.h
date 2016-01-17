@@ -17,6 +17,7 @@
 namespace Resources
 {
 typedef Ptr<class CResource> PResource;
+typedef Ptr<class CResourceLoader> PResourceLoader;
 
 class CResourceLoader: public Core::CObject
 {
@@ -26,13 +27,12 @@ public:
 
 	//virtual ~CResourceLoader() {}
 
+	virtual PResourceLoader		Clone() { return this; } // Reimplement for loaders with state
 	virtual const Core::CRTTI&	GetResultType() const = 0;
 	virtual bool				IsProvidedDataValid() const = 0;
 	virtual bool				Load(CResource& Resource) = 0; //???assert resource is NotLoaded? //???async? //!!!call Mgr->LoadResource!
 	//???Unload() - responsibility, ownership
 };
-
-typedef Ptr<CResourceLoader> PResourceLoader;
 
 }
 

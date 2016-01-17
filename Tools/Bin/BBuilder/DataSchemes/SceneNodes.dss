@@ -37,6 +37,9 @@ SceneNodeAttr
 	BatchType		{ FourCC = "BTYP" Type = "string" }
 	FeatFlags		{ FourCC = "FFLG" Type = "string" }
 	JointPalette	{ FourCC = "JPLT" Type = "int" }		// Array
+
+	// Skin
+	Mesh			{ FourCC = "SKIF" Type = "string" }
 	
 	// Bone
 	PoseT			{ FourCC = "PSET" Type = "vector3" }
