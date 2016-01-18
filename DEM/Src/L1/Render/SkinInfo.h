@@ -25,10 +25,10 @@ protected:
 public:
 
 	CSkinInfo(): pInvBindPose(NULL) {}
-	virtual ~CSkinInfo() { Destroy(); }
+	//virtual ~CSkinInfo() { Destroy(); }
 
-	bool					Create(const int& InitData);
-	void					Destroy();
+	//bool					Create(const int& InitData);
+	//void					Destroy();
 
 	virtual bool			IsResourceValid() const { return !!pInvBindPose; }
 

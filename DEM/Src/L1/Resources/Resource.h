@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RESOURCE_H__
 #define __DEM_L1_RESOURCE_H__
 
-#include <Data/RefCounted.h>
+#include <Resources/ResourceObject.h>
 #include <Data/StringID.h>
 
 // A container that wraps some actual resource object along with any information
@@ -11,7 +11,6 @@
 
 namespace Resources
 {
-typedef Ptr<class CResourceObject> PResourceObject;
 typedef Ptr<class CResourceLoader> PResourceLoader;
 
 enum EResourceState
@@ -42,8 +41,8 @@ public:
 	CResource(): ByteSize(0), State(Rsrc_NotLoaded) {}
 
 	CResourceObject*	GetObject() const;
-	//template<class T>
-	//T*					GetObject();
+	template<class T>
+	T*					GetObject() const;
 
 	CStrID				GetUID() const { return UID; }
 	DWORD				GetSizeInBytes() const { return ByteSize; }
@@ -59,14 +58,12 @@ public:
 
 typedef Ptr<CResource> PResource;
 
-/*
-template<class T> inline T* CResource::GetObject()
+template<class T> inline T* CResource::GetObject() const
 {
 	CResourceObject* pObj = GetObject();
-	return (pObject && pObject->IsA<T>()) ? pObject : NULL;
+	return (pObj && pObj->IsA<T>()) ? (T*)pObj : NULL;
 }
 //--------------------------------------------------------------------
-*/
 
 }
 

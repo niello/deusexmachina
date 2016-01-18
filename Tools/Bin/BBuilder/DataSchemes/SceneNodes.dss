@@ -39,7 +39,8 @@ SceneNodeAttr
 	JointPalette	{ FourCC = "JPLT" Type = "int" }		// Array
 
 	// Skin
-	Mesh			{ FourCC = "SKIF" Type = "string" }
+	SkinInfo		{ FourCC = "SKIF" Type = "string" }
+	AutocreateBones	{ FourCC = "ACBN" Type = "bool" }
 	
 	// Bone
 	PoseT			{ FourCC = "PSET" Type = "vector3" }

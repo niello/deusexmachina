@@ -1,7 +1,5 @@
 #include "Resource.h"
 
-#include <Resources/ResourceObject.h>
-
 namespace Resources
 {
 

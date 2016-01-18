@@ -75,7 +75,7 @@ bool CPropUIControl::InternalActivate()
 			ResourceMgr->LoadResourceSync(*RShape, *Loader);
 			if (!RShape->IsLoaded()) FAIL;
 		}
-		Physics::PCollisionShape Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
+		Physics::PCollisionShape Shape = RShape->GetObject<Physics::CCollisionShape>();
 
 		U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
 		U16 Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");

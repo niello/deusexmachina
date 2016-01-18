@@ -21,6 +21,13 @@ class CSkin: public Scene::CNodeAttribute
 
 protected:
 
+	enum // extends Scene::CNodeAttribute enum
+	{
+		// Active
+		// WorldMatrixChanged
+		AutocreateBones = 0x04
+	};
+
 	Render::PSkinInfo	SkinInfo;
 	matrix44*			pSkinPalette; //!!!allocate aligned skin palette!
 

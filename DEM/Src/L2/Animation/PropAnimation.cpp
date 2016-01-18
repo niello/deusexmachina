@@ -128,7 +128,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 				n_assert(RClip->IsLoaded());
 			}
 
-			Clips.Add(Prm.GetName(), RClip->GetObject()->As<Anim::CAnimClip>());
+			Clips.Add(Prm.GetName(), RClip->GetObject<Anim::CAnimClip>());
 		}
 	}
 //!!!to Activate() -

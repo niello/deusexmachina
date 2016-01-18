@@ -272,6 +272,7 @@
     <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\EffectTech.h" />
     <ClInclude Include="..\..\Src\L1\Render\SkinInfo.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h" />
@@ -507,6 +508,7 @@
     <ClCompile Include="..\..\Src\L1\Render\SamplerDesc.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ShaderLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />

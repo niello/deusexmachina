@@ -77,7 +77,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 				ResourceMgr->LoadResourceSync(*RMesh, *Loader);
 				n_assert(RMesh->IsLoaded());
 			}
-			Mesh = RMesh->GetObject()->As<Render::CMesh>();
+			Mesh = RMesh->GetObject<Render::CMesh>();
 			OK;
 		}
 		case 'MSGR':

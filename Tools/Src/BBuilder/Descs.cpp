@@ -257,6 +257,12 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 				if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 			}
 
+			if (AttrDesc->Get(pValue, CStrID("SkinInfo")))
+			{
+				CString FileName = CString("Scene:") + pValue->GetValue<CStrID>().CStr() + ".skn";
+				if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+			}
+
 			//!!!when export from src, find resource desc and add source BT to CFTerrain list!
 			if (AttrDesc->Get(pValue, CStrID("CDLODFile")))
 			{
@@ -322,6 +328,110 @@ bool ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath)
 		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(pSrcFilePath, false))) FAIL;
 	}
 	FilesToPack.InsertSorted(RealExportFilePath);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!TMP!
+#include <Math/Matrix44.h>
+#include <Math/TransformSRT.h>
+
+//!!!TMP!
+struct CBoneInfo
+{
+	matrix44	Pose;
+	CStrID		BoneID;
+	UPTR		ParentIndex;
+
+	CBoneInfo(): ParentIndex(INVALID_INDEX) {}
+};
+
+//!!!TMP!
+void GatherSkinInfo(CStrID NodeID, Data::PParams NodeDesc, CArray<CBoneInfo>& OutSkinInfo, UPTR ParentIndex)
+{
+	UPTR BoneIndex = ParentIndex;
+	Data::PDataArray Attrs;
+	if (NodeDesc->Get<Data::PDataArray>(Attrs, CStrID("Attrs")))
+	{
+		for (int i = 0; i < Attrs->GetCount(); ++i)
+		{
+			Data::PParams AttrDesc = Attrs->Get<Data::PParams>(i);
+			CString ClassName;
+			if (AttrDesc->Get<CString>(ClassName, CStrID("Class")) && ClassName == "Bone")
+			{
+				BoneIndex = (UPTR)AttrDesc->Get<int>(CStrID("BoneIndex"));
+				CBoneInfo& BoneInfo = OutSkinInfo.At(BoneIndex);
+
+				vector4 VRotate = AttrDesc->Get<vector4>(CStrID("PoseR"), vector4(0.f, 0.f, 0.f, 1.f));
+				Math::CTransformSRT SRTPoseLocal;
+				SRTPoseLocal.Scale = AttrDesc->Get<vector3>(CStrID("PoseS"), vector3(1.f, 1.f, 1.f));
+				SRTPoseLocal.Translation = AttrDesc->Get<vector3>(CStrID("PoseT"), vector3::Zero);
+				SRTPoseLocal.Rotation.set(VRotate.x, VRotate.y, VRotate.z, VRotate.w);
+
+				SRTPoseLocal.ToMatrix(BoneInfo.Pose);	
+				if (ParentIndex != INVALID_INDEX) BoneInfo.Pose.mult_simple(OutSkinInfo[ParentIndex].Pose);
+
+				BoneInfo.BoneID = NodeID;
+				BoneInfo.ParentIndex = ParentIndex;
+			}
+		}
+	}
+
+	Data::PParams Children;
+	if (NodeDesc->Get<Data::PParams>(Children, CStrID("Children")))
+		for (int i = 0; i < Children->GetCount(); ++i)
+		{
+			Data::CParam& Child = Children->Get(i);
+			GatherSkinInfo(Child.GetName(), Child.GetValue<Data::PParams>(), OutSkinInfo, BoneIndex);
+		}
+}
+//---------------------------------------------------------------------
+
+//!!!TMP!
+bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePath)
+{
+	if (IsFileAdded(ExportFilePath)) OK;
+
+	Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
+	if (!Desc.IsValidPtr()) FAIL;
+
+	CArray<CBoneInfo> SkinInfo;
+
+	GatherSkinInfo(CStrID::Empty, Desc, SkinInfo, INVALID_INDEX);
+
+	if (SkinInfo.GetCount())
+	{
+		IO::CFileStream File(ExportFilePath);
+		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) FAIL;
+		IO::CBinaryWriter Writer(File);
+
+		Writer.Write<U32>('SKIF');	// Magic
+		Writer.Write<U32>(1);		// Format version
+
+		Writer.Write<U32>(SkinInfo.GetCount());
+
+		// Write pose array
+		for (int i = 0; i < SkinInfo.GetCount(); ++i)
+		{
+			CBoneInfo& BoneInfo = SkinInfo[i];
+			matrix44 Pose;
+			BoneInfo.Pose.invert_simple(Pose);
+			Writer.Write(Pose);
+		}
+
+		// Write bone hierarchy
+		for (int i = 0; i < SkinInfo.GetCount(); ++i)
+		{
+			CBoneInfo& BoneInfo = SkinInfo[i];
+			Writer.Write(BoneInfo.ParentIndex);
+			Writer.Write(BoneInfo.BoneID);
+		}
+
+		File.Close();
+
+		FilesToPack.InsertSorted(ExportFilePath);
+	}
 
 	OK;
 }
@@ -458,11 +568,20 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 		}
 
 	if (Attrs->Get<CString>(AttrValue, CStrID("SceneFile")))
+	{
 		if (!ProcessSceneResource("SrcScene:" + AttrValue + ".hrd", "Scene:" + AttrValue + ".scn"))
 		{
 			n_msg(VL_ERROR, "Error processing scene resource '%s'\n", AttrValue.CStr());
 			FAIL;
 		}
+
+		//!!!TMP! Convert old skin info to new
+		if (!ConvertOldSkinInfo("SrcScene:" + AttrValue + ".hrd", "Scene:" + AttrValue + ".skn"))
+		{
+			n_msg(VL_ERROR, "Error processing scene resource skin info '%s'\n", AttrValue.CStr());
+			FAIL;
+		}
+	}
 
 	OK;
 }

@@ -22,7 +22,7 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	n_assert(!pWorld);
 
 	//???!!!store the whole URI in a file?!
-	CString ShapeID = Desc.Get<CString>(CStrID("Shape"));
+	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
 	CStrID ShapeURI = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
 	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeURI);
 	if (!RShape->IsLoaded())
@@ -32,7 +32,7 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 		ResourceMgr->LoadResourceSync(*RShape, *Loader);
 		if (!RShape->IsLoaded()) FAIL;
 	}
-	Shape = RShape->GetObject()->As<Physics::CCollisionShape>();
+	Shape = RShape->GetObject<Physics::CCollisionShape>();
 
 	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), CString("Default")));
 	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), CString("All")));

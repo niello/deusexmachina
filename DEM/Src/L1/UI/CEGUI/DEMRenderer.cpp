@@ -54,8 +54,8 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	Render::CRenderStateDesc RSDesc;
 	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
 	RSDesc.SetDefaults();
-	RSDesc.VertexShader = RVS->GetObject()->As<Render::CShader>();
-	RSDesc.PixelShader = RPS->GetObject()->As<Render::CShader>();
+	RSDesc.VertexShader = RVS->GetObject<Render::CShader>();
+	RSDesc.PixelShader = RPS->GetObject<Render::CShader>();
 	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
 	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
 					   Render::CRenderStateDesc::DS_DepthWriteEnable |
@@ -99,8 +99,8 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
-	Render::CShader* pVS = RVS->GetObject()->As<Render::CShader>();
-	Render::CShader* pPS = RPS->GetObject()->As<Render::CShader>();
+	Render::CShader* pVS = RVS->GetObject<Render::CShader>();
+	Render::CShader* pPS = RPS->GetObject<Render::CShader>();
 
 	hWorldMatrix = pVS->GetConstHandle(CStrID("WorldMatrix"));
 	hProjMatrix = pVS->GetConstHandle(CStrID("ProjectionMatrix"));

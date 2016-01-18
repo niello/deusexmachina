@@ -29,7 +29,12 @@ bool CSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
 				n_assert(Rsrc->IsLoaded());
 			}
-			SkinInfo = Rsrc->GetObject()->As<Render::CSkinInfo>();
+			SkinInfo = Rsrc->GetObject<Render::CSkinInfo>();
+			OK;
+		}
+		case 'AGBN':
+		{
+			Flags.SetTo(AutocreateBones, DataReader.Read<bool>());
 			OK;
 		}
 		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);
