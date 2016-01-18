@@ -54,7 +54,7 @@ public:
 	CSceneNode(CStrID NodeName);
 	virtual ~CSceneNode();
 
-	void					UpdateTransform(const vector3* pCOIArray, DWORD COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = NULL);
+	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = NULL);
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 

@@ -7,6 +7,8 @@
 
 // Skin attribute adds a skinned rendering capability to sibling models, providing the skin palette for them
 
+//!!!need post-load instance initialization to map/create bones and allocate a palette!
+
 namespace Render
 {
 	typedef Ptr<class CSkinInfo> PSkinInfo;
@@ -30,18 +32,17 @@ protected:
 
 	Render::PSkinInfo	SkinInfo;
 	matrix44*			pSkinPalette; //!!!allocate aligned skin palette!
-
-	//!!!need resolved nodes - array indexed by bone index with nodes found by bone IDs from a SkinInfo!
+	Scene::CSceneNode**	pBoneNodes; //???strong refs?
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets
 
 public:
 
-	CSkin(): pSkinPalette(NULL) {}
+	CSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	Update(const vector3* pCOIArray, DWORD COICount);
+	virtual void	Update(const vector3* pCOIArray, UPTR COICount);
 };
 
 typedef Ptr<CSkin> PSkin;

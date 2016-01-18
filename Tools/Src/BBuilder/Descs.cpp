@@ -424,7 +424,7 @@ bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePat
 		for (int i = 0; i < SkinInfo.GetCount(); ++i)
 		{
 			CBoneInfo& BoneInfo = SkinInfo[i];
-			Writer.Write(BoneInfo.ParentIndex);
+			Writer.Write<U16>(BoneInfo.ParentIndex); // Invalid index is converted correctly, all bits set
 			Writer.Write(BoneInfo.BoneID);
 		}
 

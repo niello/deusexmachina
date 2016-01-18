@@ -48,7 +48,7 @@ public:
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	Update(const vector3* pCOIArray, DWORD COICount);
+	virtual void	Update(const vector3* pCOIArray, UPTR COICount);
 
 	void			GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const;
 	void			GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const;

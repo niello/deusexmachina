@@ -1,6 +1,7 @@
 #include "Skin.h"
 
 #include <Render/SkinInfo.h>
+#include <Scene/SceneNode.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
@@ -32,7 +33,7 @@ bool CSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 			SkinInfo = Rsrc->GetObject<Render::CSkinInfo>();
 			OK;
 		}
-		case 'AGBN':
+		case 'ACBN':
 		{
 			Flags.SetTo(AutocreateBones, DataReader.Read<bool>());
 			OK;
@@ -101,12 +102,19 @@ bool CSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 //---------------------------------------------------------------------
 */
 
-void CSkin::Update(const vector3* pCOIArray, DWORD COICount)
+void CSkin::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
-	//!!!for each node in mapping! (resolve mapping once)
-	//if (pNode->IsWorldMatrixChanged())
-	//	SkinMatrix.mult2_simple(InvBindPose, pNode->GetWorldMatrix());
+
+	if (SkinInfo.IsNullPtr() || !pBoneNodes || !pSkinPalette) return;
+
+	UPTR BoneCount = SkinInfo->GetBoneCount();
+	for (UPTR i = 0; i < BoneCount; ++i)
+	{
+		Scene::CSceneNode* pBoneNode = pBoneNodes[i];
+		if (pBoneNode && pBoneNode->IsWorldMatrixChanged())
+			pSkinPalette[i].mult2_simple(SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
+	}
 }
 //---------------------------------------------------------------------
 

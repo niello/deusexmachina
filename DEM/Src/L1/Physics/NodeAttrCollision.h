@@ -24,7 +24,7 @@ public:
 
 	PCollisionObjMoving	CollObj;
 
-	virtual void	Update(const vector3* pCOIArray, DWORD COICount);
+	virtual void	Update(const vector3* pCOIArray, UPTR COICount);
 	void			GetGlobalAABB(CAABB& OutBox) const { CollObj->GetGlobalAABB(OutBox); }
 };
 

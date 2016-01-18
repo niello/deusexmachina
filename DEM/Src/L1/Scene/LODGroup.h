@@ -30,7 +30,7 @@ protected:
 public:
 
 	virtual bool LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void Update(const vector3* pCOIArray, DWORD COICount);
+	virtual void Update(const vector3* pCOIArray, UPTR COICount);
 };
 
 typedef Ptr<CLODGroup> PLODGroup;

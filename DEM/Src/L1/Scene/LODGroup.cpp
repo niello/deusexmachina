@@ -34,7 +34,7 @@ bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReade
 }
 //---------------------------------------------------------------------
 
-void CLODGroup::Update(const vector3* pCOIArray, DWORD COICount)
+void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	if (!pNode || !pCOIArray || !COICount) return;
 

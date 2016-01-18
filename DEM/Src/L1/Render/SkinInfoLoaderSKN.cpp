@@ -33,13 +33,20 @@ bool CSkinInfoLoaderSKN::Load(CResource& Resource)
 	U32 BoneCount;
 	if (!Reader.Read(BoneCount)) FAIL;
 
-	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
-
-	//File.Read(SkinInfo->pInvBindPose, BoneCount * sizeof(matrix44));
-
-	//???make members public to avoid copying bind pose twice?
 	//!!!may use MMF for bind pose matrices!
-	//SkinInfo->Create(InitData);
+	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
+	SkinInfo->Create(BoneCount);
+
+	File.Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
+
+	for (U32 i = 0; i < BoneCount; ++i)
+	{
+		Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(i);
+		U16 ParentIndex;
+		if (!Reader.Read(ParentIndex)) FAIL;
+		BoneInfo.ParentIndex = (ParentIndex == (U16)INVALID_INDEX) ? INVALID_INDEX : ParentIndex;
+		if (!Reader.Read(BoneInfo.ID)) FAIL;
+	}
 
 	Resource.Init(SkinInfo.GetUnsafe(), this);
 

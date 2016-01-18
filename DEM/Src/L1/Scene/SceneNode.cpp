@@ -23,7 +23,7 @@ CSceneNode::~CSceneNode()
 // then leave scene graph branch, perform physics simulation and finally update deffered rigidbody-controlled nodes.
 // NB: All deffered nodes are either processed or not, so there are at most two steps of scene graph updating -
 // 1st update down to first deffered node (non-inclusive) in each branch, 2nd update all nodes not updated in a 1st step.
-void CSceneNode::UpdateTransform(const vector3* pCOIArray, DWORD COICount,
+void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
 								 bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes)
 {
 	if (Controller.IsValidPtr() && Controller->IsActive())

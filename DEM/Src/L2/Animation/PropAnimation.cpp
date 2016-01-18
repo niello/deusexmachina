@@ -116,19 +116,22 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		{
 			Data::CParam& Prm = Desc->Get(i);
 
-			CStrID ClipRsrcID = Prm.GetValue<CStrID>();
+			CStrID RsrcURI = Prm.GetValue<CStrID>();
 			CString FileName("Anims:");
-			FileName += ClipRsrcID.CStr();
+			FileName += RsrcURI.CStr();
 
-			Resources::PResource RClip = ResourceMgr->RegisterResource(ClipRsrcID);
-			if (!RClip->IsLoaded())
-			{
-				Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(FileName));
-				ResourceMgr->LoadResourceSync(*RClip, *Loader);
-				n_assert(RClip->IsLoaded());
-			}
+			//!!!DBG TMP! Uncomment!
+			//Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI);
+			//if (!Rsrc->IsLoaded())
+			//{
+			//	Resources::PResourceLoader Loader = Rsrc->GetLoader();
+			//	if (Loader.IsNullPtr())
+			//		Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(RsrcURI.CStr()));
+			//	ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
+			//	n_assert(Rsrc->IsLoaded());
+			//}
 
-			Clips.Add(Prm.GetName(), RClip->GetObject<Anim::CAnimClip>());
+			//Clips.Add(Prm.GetName(), Rsrc->GetObject<Anim::CAnimClip>());
 		}
 	}
 //!!!to Activate() -
