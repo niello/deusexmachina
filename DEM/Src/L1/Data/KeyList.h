@@ -65,7 +65,7 @@ public:
 template<class TKey, class TObject>
 CKeyList<TKey,TObject>::~CKeyList()
 {
-	for (int i = 0; i < Lists.GetCount(); ++i)
+	for (UPTR i = 0; i < Lists.GetCount(); ++i)
 		n_delete(Lists.ValueAt(i));
 	Lists.Clear();
 }

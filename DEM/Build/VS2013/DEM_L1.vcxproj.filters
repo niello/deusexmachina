@@ -902,6 +902,12 @@
     <ClInclude Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\KeyframeClipLoaderKFA.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1103,12 +1109,6 @@
       <Filter>Animation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Animation\KeyframeTrack.cpp">
-      <Filter>Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Animation\LoadKeyframeClipFromKFA.cpp">
-      <Filter>Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Animation\LoadMocapClipFromNAX2.cpp">
       <Filter>Animation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Animation\MocapClip.cpp">
@@ -1470,6 +1470,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\KeyframeClipLoaderKFA.cpp">
+      <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.cpp">
+      <Filter>Animation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

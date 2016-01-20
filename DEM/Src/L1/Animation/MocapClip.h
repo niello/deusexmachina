@@ -22,8 +22,8 @@ protected:
 	CArray<CMocapTrack>	Tracks;		//???use fixed array?
 
 	float				InvKeyTime;
-	DWORD				KeysPerCurve;
-	DWORD				KeyStride;
+	UPTR				KeysPerCurve;
+	UPTR				KeyStride;
 
 	//???WrapIfBefore, WrapIfAfter? Loop?
 
@@ -34,10 +34,12 @@ public:
 
 	bool							Setup(	const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 											const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,
-											DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime);
+											UPTR _KeysPerCurve, UPTR _KeyStride, float _KeyTime);
 	virtual void					Unload();
 
-	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;
+	virtual bool					IsResourceValid() const { return !!pKeys; }
+
+	virtual Scene::PNodeController	CreateController(UPTR SamplerIdx) const;
 
 	void							GetSamplingParams(float CursorPos, bool Loop, int& KeyIndex, float& IpolFactor) const;
 	const vector4&					GetKey(int FirstKey, int Index) const;

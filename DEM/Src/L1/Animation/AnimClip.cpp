@@ -14,7 +14,7 @@ void CAnimClip::FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispat
 
 	if (!pDisp) pDisp = EventSrv;
 
-	for (int i = 0; i < EventTracks.GetCount(); ++i)
+	for (UPTR i = 0; i < EventTracks.GetCount(); ++i)
 	{
 		CEventTrack& Track = EventTracks[i];
 
@@ -46,7 +46,7 @@ void CAnimClip::FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, 
 
 	if (!pDisp) pDisp = EventSrv;
 
-	for (int i = 0; i < EventTracks.GetCount(); ++i)
+	for (UPTR i = 0; i < EventTracks.GetCount(); ++i)
 	{
 		CEventTrack& Track = EventTracks[i];
 

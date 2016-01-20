@@ -41,7 +41,7 @@ bool CSkinInfoLoaderSKN::Load(CResource& Resource)
 
 	for (U32 i = 0; i < BoneCount; ++i)
 	{
-		Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(i);
+		Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfoEditable(i);
 		U16 ParentIndex;
 		if (!Reader.Read(ParentIndex)) FAIL;
 		BoneInfo.ParentIndex = (ParentIndex == (U16)INVALID_INDEX) ? INVALID_INDEX : ParentIndex;

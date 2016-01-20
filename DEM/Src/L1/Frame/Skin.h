@@ -41,8 +41,10 @@ public:
 
 	CSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
 
-	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	Update(const vector3* pCOIArray, UPTR COICount);
+	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual void		Update(const vector3* pCOIArray, UPTR COICount);
+
+	Render::PSkinInfo	GetSkinInfo() const { return SkinInfo; }
 };
 
 typedef Ptr<CSkin> PSkin;

@@ -9,7 +9,7 @@ namespace Data
 
 bool CDataScheme::Init(const CParams& Desc)
 {
-	for (int i = 0; i < Desc.GetCount(); ++i)
+	for (UPTR i = 0; i < Desc.GetCount(); ++i)
 	{
 		const CParam& Prm = Desc.Get(i);
 		if (!Prm.IsA<PParams>()) FAIL;

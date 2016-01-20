@@ -41,7 +41,7 @@ void CQuestManager::Trigger()
 	//!!!tasks aren't deleted now
 	if (TasksToDelete.GetCount())
 	{
-		for (int i = 0; i < TasksToDelete.GetCount(); i++)
+		for (UPTR i = 0; i < TasksToDelete.GetCount(); i++)
 		{
 			if (TasksToDelete[i]->ScriptObj.IsValidPtr())
 			{
@@ -64,7 +64,7 @@ bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 	Quest->Description = QuestDesc->Get<CString>(CStrID("Desc"), CString("<No quest desc>"));
 
 	const Data::CParams& Tasks = *QuestDesc->Get<Data::PParams>(CStrID("Tasks"));
-	for (int i = 0; i < Tasks.GetCount(); i++)
+	for (UPTR i = 0; i < Tasks.GetCount(); i++)
 	{
 		const Data::CParam& TaskPrm = Tasks[i];
 		const Data::CParams& TaskDesc = *TaskPrm.GetValue<Data::PParams>();
@@ -175,7 +175,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 	if (TaskID == CStrID::Empty)
 	{
-		for (int i = 0; i < Quest->Tasks.GetCount(); i++)
+		for (UPTR i = 0; i < Quest->Tasks.GetCount(); i++)
 		{
 			CQuest::CTaskRec& Task = Quest->Tasks.ValueAt(i);
 			if (Task.Status == CQuest::Opened)
@@ -289,12 +289,12 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 	}
 
 	// Reset all loaded quests instead of clearing array to avoid reloading from descs
-	for (int i = 0; i < Quests.GetCount(); i++)
+	for (UPTR i = 0; i < Quests.GetCount(); i++)
 	{
 		CQuestRec& QuestRec = Quests.ValueAt(i);
 		QuestRec.Status = CQuest::No;
 		CDict<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
-		for (int j = 0; j < Tasks.GetCount(); j++)
+		for (UPTR j = 0; j < Tasks.GetCount(); j++)
 		{
 			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
 			TaskRec.Status = CQuest::No;
@@ -302,7 +302,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 		}
 	}
 
-	for (int i = 0; i < SGQuests->GetCount(); ++i)
+	for (UPTR i = 0; i < SGQuests->GetCount(); ++i)
 	{
 		Data::CData Element;
 		//Data::PParams SGQuest = Element.operator const Data::PParams&();
@@ -326,7 +326,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 		Data::PParams SGTasks;
 		if (SGQuest->Get(SGTasks, CStrID("Tasks")))
 		{
-			for (int j = 0; j < SGTasks->GetCount(); ++j)
+			for (UPTR j = 0; j < SGTasks->GetCount(); ++j)
 			{
 				CStrID TaskID = SGTasks->Get(j).GetName();
 				CQuest::CTaskRec& TaskRec = QuestRec->Quest->Tasks[TaskID];
@@ -361,7 +361,7 @@ bool CQuestManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Ev
 	Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
 
 	Data::PDataArray SGQuests = n_new(Data::CDataArray);
-	for (int i = 0; i < Quests.GetCount(); ++i)
+	for (UPTR i = 0; i < Quests.GetCount(); ++i)
 	{
 		CQuestRec& QuestRec = Quests.ValueAt(i);
 		if (QuestRec.Status == CQuest::No) continue;
@@ -375,7 +375,7 @@ bool CQuestManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Ev
 
 		Data::PParams SGTasks = n_new(Data::CParams);
 		CDict<CStrID, CQuest::CTaskRec>& Tasks = QuestRec.Quest->Tasks;
-		for (int j = 0; j < Tasks.GetCount(); j++)
+		for (UPTR j = 0; j < Tasks.GetCount(); j++)
 		{
 			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
 			if (TaskRec.Status == CQuest::No) continue;

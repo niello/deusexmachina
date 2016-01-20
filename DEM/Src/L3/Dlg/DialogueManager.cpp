@@ -20,7 +20,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 	PDlgGraph Dlg = n_new(CDlgGraph);
 
 	const Data::PParams& Nodes = Params.Get<Data::PParams>(CStrID("Nodes"));
-	for (int i = 0; i < Nodes->GetCount(); ++i)
+	for (UPTR i = 0; i < Nodes->GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Nodes->Get(i);
 		const Data::CParams& NodeDesc = *Prm.GetValue<Data::PParams>();
@@ -37,7 +37,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 	const CString& Script = Params.Get<CString>(CStrID("Script"), CString::Empty);
 	if (Script.IsValid()) Dlg->ScriptFile = CString("Scripts:") + Script + ".lua";
 
-	for (int i = 0; i < Nodes->GetCount(); ++i)
+	for (UPTR i = 0; i < Nodes->GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Nodes->Get(i);
 		const Data::CParams& NodeDesc = *Prm.GetValue<Data::PParams>();
@@ -48,7 +48,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 		CDlgNode* pFrom = LoadedNodes[Prm.GetName()].GetUnsafe();
 
 		CDlgNode::CLink* pLink = pFrom->Links.Reserve(Links->GetCount());
-		for (int j = 0; j < Links->GetCount(); ++j, ++pLink)
+		for (UPTR j = 0; j < Links->GetCount(); ++j, ++pLink)
 		{
 			const Data::CParams& LinkDesc = *Links->Get<Data::PParams>(j);
 
@@ -223,7 +223,7 @@ void CDialogueManager::CloseDialogue(CStrID ID)
 
 void CDialogueManager::Trigger()
 {
-	for (int i = 0; i < RunningDlgs.GetCount(); ++i)
+	for (UPTR i = 0; i < RunningDlgs.GetCount(); ++i)
 	{
 		CDlgContext& Ctx = RunningDlgs.ValueAt(i);
 		bool IsForeground = IsDialogueForeground(Ctx.Initiator);

@@ -91,7 +91,7 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	{
 		const Data::CDataArray& A = *Data.GetValue<Data::PDataArray>();
 		lua_createtable(l, A.GetCount(), 0);
-		for (int i = 0; i < A.GetCount();)
+		for (UPTR i = 0; i < A.GetCount();)
 			if (DataToLuaStack(A[i]) == 1)
 				lua_rawseti(l, -2, ++i);
 	}
@@ -99,7 +99,7 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 	{
 		const Data::CParams& P = *Data.GetValue<Data::PParams>();
 		lua_createtable(l, 0, P.GetCount());
-		for (int i = 0; i < P.GetCount(); ++i)
+		for (UPTR i = 0; i < P.GetCount(); ++i)
 		{
 			lua_pushstring(l, P[i].GetName().CStr());
 			if (DataToLuaStack(P[i].GetRawValue()) == 1) lua_rawset(l, -3);

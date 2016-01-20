@@ -116,7 +116,7 @@ void CPropTrigger::SetEnabled(bool Enable)
 	else
 	{
 		if (pScriptObj)
-			for (int i = 0; i < CurrInsiders.GetCount(); ++i)
+			for (UPTR i = 0; i < CurrInsiders.GetCount(); ++i)
 				pScriptObj->RunFunctionOneArg("OnTriggerLeave", CString(CurrInsiders[i].CStr()));
 		CurrInsiders.Clear();
 
@@ -137,7 +137,7 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 	// Sort to skip duplicates
 	Collisions.Sort();
 	const btCollisionObject* pCurrObj = NULL;
-	for (int i = 0; i < Collisions.GetCount(); ++i)
+	for (UPTR i = 0; i < Collisions.GetCount(); ++i)
 	{
 		if (Collisions[i] == pCurrObj) continue;
 		pCurrObj = Collisions[i];
@@ -158,7 +158,7 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 	NewInsiders.Sort();
 
 	if (pScriptObj)
-		for (int i = 0; i < CurrInsiders.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrInsiders.GetCount(); ++i)
 		{
 			CStrID EntityID = CurrInsiders[i];
 			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX && EntityMgr->EntityExists(EntityID))
@@ -171,7 +171,7 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 	if (Period > 0.f && NewTime - TimeLastTriggered >= Period)
 	{
 		if (pScriptObj)
-			for (int i = 0; i < CurrInsiders.GetCount(); ++i)
+			for (UPTR i = 0; i < CurrInsiders.GetCount(); ++i)
 				pScriptObj->RunFunctionOneArg("OnTriggerApply", CString(CurrInsiders[i].CStr()));
 		TimeLastTriggered = NewTime;
 	}

@@ -69,8 +69,8 @@ inline bool CBinaryWriter::WriteString(const CString& Value)
 
 inline bool CBinaryWriter::WriteParams(const Data::CParams& Value)
 {
-	if (!Write<short>(Value.GetCount())) FAIL;
-	for (int i = 0; i < Value.GetCount(); i++)
+	if (!Write<U16>(Value.GetCount())) FAIL;
+	for (UPTR i = 0; i < Value.GetCount(); i++)
 		if (!WriteParam(Value.Get(i))) FAIL;
 	OK;
 }

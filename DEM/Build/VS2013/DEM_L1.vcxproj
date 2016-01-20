@@ -160,6 +160,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Src\L1\Animation\KeyframeClipLoaderKFA.h" />
+    <ClInclude Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.h" />
     <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
@@ -433,6 +435,8 @@
     <ClInclude Include="..\..\Src\L1\StdDEM.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Src\L1\Animation\KeyframeClipLoaderKFA.cpp" />
+    <ClCompile Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.cpp" />
     <ClCompile Include="..\..\Src\L1\Core\RTTIBaseClass.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Data.cpp" />
@@ -586,8 +590,6 @@
     <ClCompile Include="..\..\Src\L1\Animation\AnimTask.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\KeyframeClip.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\KeyframeTrack.cpp" />
-    <ClCompile Include="..\..\Src\L1\Animation\LoadKeyframeClipFromKFA.cpp" />
-    <ClCompile Include="..\..\Src\L1\Animation\LoadMocapClipFromNAX2.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\MocapClip.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\MocapTrack.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\NodeControllerKeyframe.cpp" />

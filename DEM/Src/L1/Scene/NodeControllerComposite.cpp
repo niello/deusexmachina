@@ -8,7 +8,7 @@ bool CNodeControllerComposite::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 {
 	if (!CNodeController::OnAttachToNode(pSceneNode)) FAIL;
 	pNode = pSceneNode;
-	for (int i = 0; i < Sources.GetCount(); ++i)
+	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		Sources[i].Ctlr->OnAttachToNode(pSceneNode);
 	OK;
 }
@@ -16,7 +16,7 @@ bool CNodeControllerComposite::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 
 void CNodeControllerComposite::OnDetachFromNode()
 {
-	for (int i = 0; i < Sources.GetCount(); ++i)
+	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		Sources[i].Ctlr->OnDetachFromNode();
 	CNodeController::OnDetachFromNode();
 }
@@ -25,7 +25,7 @@ void CNodeControllerComposite::OnDetachFromNode()
 bool CNodeControllerComposite::AddSource(Scene::CNodeController& Ctlr, DWORD Priority, float Weight)
 {
 #ifdef _DEBUG
-	for (int i = 0; i < Sources.GetCount(); ++i)
+	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		n_assert(Sources[i].Ctlr.GetUnsafe() != &Ctlr);
 #endif
 
@@ -56,7 +56,7 @@ bool CNodeControllerComposite::AddSource(Scene::CNodeController& Ctlr, DWORD Pri
 
 bool CNodeControllerComposite::RemoveSource(const Scene::CNodeController& Ctlr)
 {
-	for (int i = 0; i < Sources.GetCount(); ++i)
+	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 	{
 		CSource& Src = Sources[i];
 		if (Src.Ctlr.GetUnsafe() == &Ctlr)
@@ -66,7 +66,7 @@ bool CNodeControllerComposite::RemoveSource(const Scene::CNodeController& Ctlr)
 			Sources.RemoveAt(i);
 
 			Channels.ClearAll();
-			for (int j = 0; j < Sources.GetCount(); ++j)
+			for (UPTR j = 0; j < Sources.GetCount(); ++j)
 				Channels.Set(Sources[j].Ctlr->GetChannels());
 
 			OK;

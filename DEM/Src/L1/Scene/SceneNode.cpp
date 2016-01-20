@@ -56,11 +56,11 @@ void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
 	else UpdateWorldFromLocal();
 
 	// LOD attrs may disable some children, so process attrs before children
-	for (int i = 0; i < Attrs.GetCount(); ++i)
+	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 		if (Attrs[i]->IsActive())
 			Attrs[i]->Update(pCOIArray, COICount);
 
-	for (int i = 0; i < Children.GetCount(); ++i)
+	for (UPTR i = 0; i < Children.GetCount(); ++i)
 		if (Children.ValueAt(i)->IsActive())
 			Children.ValueAt(i)->UpdateTransform(pCOIArray, COICount, ProcessDefferedController, pOutDefferedNodes);
 }

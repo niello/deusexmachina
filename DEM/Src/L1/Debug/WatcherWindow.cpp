@@ -117,11 +117,11 @@ void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 
 void CWatcherWindow::AddAllGlobals()
 {
-	int i = Watched.GetCount();
+	UPTR i = Watched.GetCount();
 	for (CHashTable<CString, CData>::CIterator It = CoreSrv->Globals.Begin(); It; ++It, ++i)
 		AddWatched(DEM, It.GetKey().CStr());
 
-	for (int j = i; j < Watched.GetCount(); ++j)
+	for (UPTR j = i; j < Watched.GetCount(); ++j)
 		Watched[j].Clear();
 	Watched.Resize(i);
 }
@@ -176,7 +176,7 @@ bool CWatcherWindow::OnListKeyDown(const CEGUI::EventArgs& e)
 bool CWatcherWindow::OnClearClick(const CEGUI::EventArgs& e)
 {
 	pList->resetList();
-	for (int i = 0; i < Watched.GetCount(); ++i)
+	for (UPTR i = 0; i < Watched.GetCount(); ++i)
 		Watched[i].Clear();
 	Watched.Clear();
 	OK;

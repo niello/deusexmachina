@@ -15,7 +15,7 @@ CEntityManager::~CEntityManager()
 
 	// Delete storages allocated in RegisterProperty and clear storage refs in prop's static fields.
 	// We don't need to deactivate and detach properties, DeleteAllEntities deleted all prop instances.
-	for (int i = 0; i < PropStorages.GetCount(); ++i)
+	for (UPTR i = 0; i < PropStorages.GetCount(); ++i)
 	{
 		n_assert_dbg(!(*PropStorages.ValueAt(i))->GetCount());
 		n_delete(*PropStorages.ValueAt(i));
@@ -72,7 +72,7 @@ void CEntityManager::DeleteEntity(int Idx)
 	if (Entity.IsActive()) Entity.Deactivate();
 
 	// Remove all properties of this entity
-	for (int i = 0; i < PropStorages.GetCount(); ++i)
+	for (UPTR i = 0; i < PropStorages.GetCount(); ++i)
 		(*PropStorages.ValueAt(i))->Remove(Entity.GetUID());
 
 	UIDToEntity.Remove(Entity.GetUID());
@@ -104,7 +104,7 @@ CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 
 void CEntityManager::GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity*>& Out) const
 {
-	for (int i = 0; i < Entities.GetCount(); ++i)
+	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i].GetUnsafe();
 		if (pEntity && pEntity->GetLevel() == pLevel)
@@ -190,7 +190,7 @@ CProperty* CEntityManager::GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI
 
 void CEntityManager::GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const
 {
-	for (int i = 0; i < PropStorages.GetCount(); ++i)
+	for (UPTR i = 0; i < PropStorages.GetCount(); ++i)
 	{
 		PProperty Prop;
 		if ((*PropStorages.ValueAt(i))->Get(EntityID, Prop))

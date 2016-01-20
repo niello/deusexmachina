@@ -35,7 +35,7 @@ public:
 
 	CDlgNode*	pCurrNode;
 	//float		NodeEnterTime;
-	int			LinkIdx;
+	UPTR		LinkIdx;
 	CArray<int>	ValidLinkIndices;	// For nodes with delayed link selection, like answer nodes
 
 	CDlgContext(): pCurrNode(NULL) {}

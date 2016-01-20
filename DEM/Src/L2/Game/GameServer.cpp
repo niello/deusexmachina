@@ -137,7 +137,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 	{
 		Level->FireEvent(CStrID("OnEntitiesLoading"));
 
-		for (int i = 0; i < SubDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < SubDesc->GetCount(); ++i)
 		{
 			const Data::CParam& EntityPrm = SubDesc->Get(i);
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
@@ -175,7 +175,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 
 	Data::PDataArray SelArray;
 	if (Desc.Get(SelArray, CStrID("SelectedEntities")))
-		for (int i = 0; i < SelArray->GetCount(); ++i)
+		for (UPTR i = 0; i < SelArray->GetCount(); ++i)
 			Level->AddToSelection(SelArray->Get<CStrID>(i));
 
 	EventSrv->FireEvent(CStrID("OnLevelLoaded"), P);
@@ -395,7 +395,7 @@ bool CGameServer::ContinueGame(const char* pFileName)
 	}
 	if (!LoadedLevels->Contains(ActiveLevelID)) LoadedLevels->Add(ActiveLevelID);
 
-	for (int i = 0; i < LoadedLevels->GetCount(); ++i)
+	for (UPTR i = 0; i < LoadedLevels->GetCount(); ++i)
 		n_verify(LoadGameLevel(LoadedLevels->Get<CStrID>(i)));
 
 	GameFileName = pFileName;
@@ -461,7 +461,7 @@ bool CGameServer::CommitContinueData()
 
 	//???!!!here or in Load/Unload level?
 	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
-	for (int i = 0; i < Levels.GetCount(); ++i)
+	for (UPTR i = 0; i < Levels.GetCount(); ++i)
 		LoadedLevels->Add(Levels.KeyAt(i));
 	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
@@ -505,7 +505,7 @@ bool CGameServer::CommitContinueData()
 	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
 
 	// Save diffs of each level
-	for (int i = 0; i < Levels.GetCount(); ++i)
+	for (UPTR i = 0; i < Levels.GetCount(); ++i)
 		n_verify(CommitLevelDiff(*Levels.ValueAt(i)));
 
 	OK;

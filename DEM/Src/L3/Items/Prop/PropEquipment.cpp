@@ -38,7 +38,7 @@ bool CPropEquipment::Equip(CStrID Slot, CItemStack* pStack, U16 Count)
 	else
 	{
 		// Find any appropriate slot
-		for (int i = 0; i < Slots.GetCount(); ++i)
+		for (UPTR i = 0; i < Slots.GetCount(); ++i)
 			if (Slots.ValueAt(i).Type == pStack->GetTpl()->GetType())
 			{
 				pSlot = &Slots.ValueAt(i);

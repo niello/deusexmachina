@@ -74,7 +74,7 @@ bool CPropActorBrain::InternalActivate()
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))
 		{
 			Perceptors.Reallocate(DescSection->GetCount(), 0);
-			for (int i = 0; i < DescSection->GetCount(); ++i)
+			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
 				PPerceptor New = (CPerceptor*)Factory->Create(StrPercPrefix + DescParam.GetName().CStr());
@@ -86,7 +86,7 @@ bool CPropActorBrain::InternalActivate()
 		if (Desc->Get<PParams>(DescSection, CStrID("Sensors")))
 		{
 			Sensors.Reallocate(DescSection->GetCount(), 0);
-			for (int i = 0; i < DescSection->GetCount(); ++i)
+			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
 				PSensor New = (CSensor*)Factory->Create(StrSensorPrefix + DescParam.GetName().CStr());
@@ -129,7 +129,7 @@ bool CPropActorBrain::InternalActivate()
 			//int HasIdleGoal = DescSection->Has(CStrID("Idle")) ? 1 : 0;
 
 			Goals.Reallocate(DescSection->GetCount() /*+ 1 - HasIdleGoal*/, 0);
-			for (int i = 0; i < DescSection->GetCount(); ++i)
+			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
 				PGoal New = (CGoal*)Factory->Create(StrGoalPrefix + DescParam.GetName().CStr());
@@ -149,7 +149,7 @@ bool CPropActorBrain::InternalActivate()
 		if (Desc->Get<PDataArray>(ActionArray, CStrID("Actions")))
 		{
 			ActionTpls.Reallocate(ActionArray->GetCount(), 0);
-			for (int i = 0; i < ActionArray->GetCount(); ++i)
+			for (UPTR i = 0; i < ActionArray->GetCount(); ++i)
 			{
 				const char* pActionName = ActionArray->At(i).GetValue<CString>().CStr();
 				const CActionTpl* pTpl = AISrv->GetPlanner().FindActionTpl(pActionName);

@@ -32,8 +32,8 @@ protected:
 	CEGUI::Event::Connection	ConnOnShow;
 	//CEGUI::Event::Connection	ConnOnChar;
 
-	CArray<CString>	CmdHistory;
-	int							CmdHistoryCursor;
+	CArray<CString>				CmdHistory;
+	IPTR						CmdHistoryCursor;
 
 	void Print(const char* pMsg, DWORD Color);
 

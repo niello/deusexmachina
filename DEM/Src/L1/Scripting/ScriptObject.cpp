@@ -252,7 +252,7 @@ bool CScriptObject::SubscribeEvent(CStrID EventID, const char* HandlerFuncName, 
 
 void CScriptObject::UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName, const Events::CEventDispatcher* pDisp)
 {
-	for (int i = 0; i < Subscriptions.GetCount(); i++)
+	for (UPTR i = 0; i < Subscriptions.GetCount(); ++i)
 	{
 		Events::PSub CurrSub = Subscriptions[i];
 		if (CurrSub->GetEvent() == EventID && CurrSub->GetDispatcher() == pDisp &&

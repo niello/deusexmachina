@@ -41,7 +41,7 @@ public:
 
 	matrix44*			GetInvBindPoseData() { return pInvBindPose; }
 	const matrix44&		GetInvBindPose(UPTR BoneIndex) const { return pInvBindPose[BoneIndex]; }
-	CBoneInfo&			GetBoneInfo(UPTR BoneIndex) { return Bones[BoneIndex]; }
+	CBoneInfo&			GetBoneInfoEditable(UPTR BoneIndex) { return Bones[BoneIndex]; }
 	const CBoneInfo&	GetBoneInfo(UPTR BoneIndex) const { return Bones[BoneIndex]; }
 	UPTR				GetBoneCount() const { return Bones.GetCount(); }
 };

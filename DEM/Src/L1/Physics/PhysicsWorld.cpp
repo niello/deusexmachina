@@ -75,7 +75,7 @@ void CPhysicsWorld::Term()
 {
 	if (pBtDynWorld)
 	{
-		for (int i = 0; i < Objects.GetCount(); ++i)
+		for (UPTR i = 0; i < Objects.GetCount(); ++i)
 			Objects[i]->RemoveFromLevel();
 
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();

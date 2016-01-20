@@ -65,7 +65,7 @@ protected:
 public:
 
 	//CWatcherWindow() {}
-	virtual ~CWatcherWindow() { for (int i = 0; i < Watched.GetCount(); ++i) Watched[i].Clear(); }
+	virtual ~CWatcherWindow() { for (UPTR i = 0; i < Watched.GetCount(); ++i) Watched[i].Clear(); }
 
 	virtual void	Init(CEGUI::Window* pWindow);
 	virtual void	Term();

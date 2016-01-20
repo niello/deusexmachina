@@ -43,7 +43,7 @@ bool CWorldManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Ev
 bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
 {
 	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
-	for (int i = 0; i < EntityIDs.GetCount(); ++i)
+	for (UPTR i = 0; i < EntityIDs.GetCount(); ++i)
 	{
 		Game::CEntity* pEnt = EntityMgr->GetEntity(EntityIDs[i]);
 		if (pEnt)
@@ -59,7 +59,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 
 	if (UnloadAllLevels)
 	{
-		for (int i = 0; i < Entities.GetCount(); ++i)
+		for (UPTR i = 0; i < Entities.GetCount(); ++i)
 			Entities[i]->SetLevel(NULL);
 		GameSrv->UnloadAllGameLevels();
 	}
@@ -81,9 +81,9 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 
 	Game::CGameLevel* pNewLevel = GameSrv->GetLevel(LevelID);
 	n_assert(pNewLevel);
-	for (int i = 0; i < Entities.GetCount(); ++i)
+	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->SetLevel(pNewLevel);
-	for (int i = 0; i < Entities.GetCount(); ++i)
+	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->Activate();
 
 	OK;

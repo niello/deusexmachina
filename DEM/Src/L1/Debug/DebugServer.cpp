@@ -66,7 +66,7 @@ void CDebugServer::AllowUI(bool Allow)
 		UNSUBSCRIBE_EVENT(ShowDebugConsole);
 		UNSUBSCRIBE_EVENT(ShowDebugWatcher);
 
-		for (int i = 0; i < Plugins.GetCount(); ++i)
+		for (UPTR i = 0; i < Plugins.GetCount(); ++i)
 			if (Plugins.ValueAt(i).UIResource.IsValid())
 				Plugins.ValueAt(i).Window->Term();
 	}

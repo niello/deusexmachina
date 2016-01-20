@@ -197,7 +197,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 
 	const CPropSmartObject::CActionList& SOActions = Prop.GetActions();
 
-	for (int i = 0; i < Desc->GetCount(); ++i)
+	for (UPTR i = 0; i < Desc->GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Desc->Get(i);
 		CStrID ID = Prm.GetName();
@@ -216,7 +216,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 
 void CPropUIControl::RemoveSOActions()
 {
-	for (int i = 0 ; i < Actions.GetCount(); )
+	for (UPTR i = 0 ; i < Actions.GetCount(); )
 	{
 		if (Actions[i].IsSOAction) Actions.RemoveAt(i);
 		else ++i;

@@ -57,7 +57,7 @@ bool CIOServer::FileExists(const char* pPath) const
 {
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->FileExists(AbsPath)) OK;
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->FileExists(AbsPath)) OK;
 	FAIL;
 }
@@ -68,7 +68,7 @@ bool CIOServer::IsFileReadOnly(const char* pPath) const
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->IsFileReadOnly(AbsPath);
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->FileExists(AbsPath))
 			return FS[i]->IsFileReadOnly(AbsPath);
 	FAIL;
@@ -80,7 +80,7 @@ bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->FileExists(AbsPath))
 		return DefaultFS->SetFileReadOnly(AbsPath, ReadOnly);
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->FileExists(AbsPath))
 			return FS[i]->SetFileReadOnly(AbsPath, ReadOnly);
 	FAIL;
@@ -91,7 +91,7 @@ bool CIOServer::DeleteFile(const char* pPath) const
 {
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->DeleteFile(AbsPath)) OK;
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DeleteFile(AbsPath)) OK;
 	FAIL;
 }
@@ -105,7 +105,7 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 	// Try to copy inside a single FS
 
 	if (DefaultFS->CopyFile(AbsSrcPath, AbsDestPath)) OK;
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->CopyFile(AbsSrcPath, AbsDestPath)) OK;
 
 	// Cross-FS copying
@@ -175,7 +175,7 @@ bool CIOServer::DirectoryExists(const char* pPath) const
 {
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->DirectoryExists(AbsPath)) OK;
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DirectoryExists(AbsPath)) OK;
 	FAIL;
 }
@@ -185,7 +185,7 @@ bool CIOServer::CreateDirectory(const char* pPath) const
 {
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->CreateDirectory(AbsPath)) OK;
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->CreateDirectory(AbsPath)) OK;
 	FAIL;
 }
@@ -195,7 +195,7 @@ bool CIOServer::DeleteDirectory(const char* pPath) const
 {
 	CString AbsPath = IOSrv->ResolveAssigns(pPath);
 	if (DefaultFS->DeleteDirectory(AbsPath)) OK;
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 		if (FS[i]->DeleteDirectory(AbsPath)) OK;
 	FAIL;
 }
@@ -240,7 +240,7 @@ void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMo
 		return hFile;
 	}
 
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 	{
 		hFile = FS[i]->OpenFile(AbsPath, Mode, Pattern);
 		if (hFile)
@@ -265,7 +265,7 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 		return hDir;
 	}
 
-	for (int i = 0; i < FS.GetCount(); ++i)
+	for (UPTR i = 0; i < FS.GetCount(); ++i)
 	{
 		hDir = FS[i]->OpenDirectory(AbsPath, pFilter, OutName, OutType);
 		if (hDir)

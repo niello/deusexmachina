@@ -81,11 +81,11 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	if (!Differs && Props.GetCount() && InitialProps.IsValidPtr())
 	{
 		// Quick difference detection is insufficient, do full comparison
-		for (int i = 0; i < Props.GetCount(); ++i)
+		for (UPTR i = 0; i < Props.GetCount(); ++i)
 		{
 			int ClassFourCC = (int)Props[i]->GetClassFourCC().Code;
 			const CString& ClassName = Props[i]->GetClassName();
-			int j;
+			UPTR j;
 			for (j = 0; j < InitialProps->GetCount(); ++j)
 			{
 				Data::CData& InitialProp = InitialProps->Get(j);
@@ -110,7 +110,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	if (Differs)
 	{
 		Data::PDataArray SGProps = n_new(Data::CDataArray);
-		for (int i = 0; i < Props.GetCount(); ++i)
+		for (UPTR i = 0; i < Props.GetCount(); ++i)
 			SGProps->Add((int)Props[i]->GetClassFourCC().Code);
 		OutDesc.Set(CStrID("Props"), SGProps);
 	}

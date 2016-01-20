@@ -133,7 +133,7 @@ inline bool CGameServer::ValidateLevel(CStrID ID)
 
 inline bool CGameServer::ValidateAllLevels()
 {
-	for (int i = 0; i < Levels.GetCount(); ++i)
+	for (UPTR i = 0; i < Levels.GetCount(); ++i)
 		if (!ValidateLevel(*Levels.ValueAt(i))) FAIL;
 	OK;
 }
@@ -142,7 +142,7 @@ inline bool CGameServer::ValidateAllLevels()
 template<class T>
 inline void CGameServer::SetGlobalAttr(CStrID ID, const T& Value)
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) Attrs.Add(ID, Value);
 	else Attrs.ValueAt(Idx).SetTypeValue(Value);
 }

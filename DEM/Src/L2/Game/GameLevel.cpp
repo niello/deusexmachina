@@ -172,7 +172,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 	// Save selection
 	Data::PDataArray SGSelection = n_new(Data::CDataArray);
-	for (int i = 0; i < SelectedEntities.GetCount(); ++i)
+	for (UPTR i = 0; i < SelectedEntities.GetCount(); ++i)
 		SGSelection->Add(SelectedEntities[i]);
 	OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
 
@@ -249,7 +249,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	Data::PParams InitialEntities;
 	if (pInitialDesc && pInitialDesc->Get(InitialEntities, CStrID("Entities")))
 	{
-		for (int i = 0; i < InitialEntities->GetCount(); ++i)
+		for (UPTR i = 0; i < InitialEntities->GetCount(); ++i)
 		{
 			CStrID EntityID = InitialEntities->Get(i).GetName();
 			CEntity* pEntity = EntityMgr->GetEntity(EntityID, false);
@@ -268,7 +268,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	EntityMgr->GetEntitiesByLevel(this, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
 	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
-	for (int i = 0; i < Entities.GetCount(); ++i)
+	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i];
 		if (SGEntity->GetCount()) SGEntity = n_new(Data::CParams);
@@ -312,7 +312,7 @@ void CGameLevel::Trigger()
 		FireEvent(CStrID("AfterPhysics"));
 	}
 
-	for (int i = 0; i < DefferedNodes.GetCount(); ++i)
+	for (UPTR i = 0; i < DefferedNodes.GetCount(); ++i)
 		DefferedNodes[i]->UpdateTransform(&CameraPos, 1, true, NULL);
 
 	FireEvent(CStrID("AfterTransforms"));

@@ -57,7 +57,7 @@ bool CAILevel::LoadNavMesh(const char* pFileName)
 
 void CAILevel::UnloadNavMesh()
 {
-	for (int i = 0; i < NavData.GetCount(); ++i)
+	for (UPTR i = 0; i < NavData.GetCount(); ++i)
 		NavData.ValueAt(i).Clear();
 	NavData.Clear();
 	EventSrv->FireEvent(CStrID("OnNavMeshDataChanged"));
@@ -69,7 +69,7 @@ void CAILevel::UnloadNavMesh()
 bool CAILevel::CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;
-	for (int i = 0; i < NavData.GetCount(); ++i)
+	for (UPTR i = 0; i < NavData.GetCount(); ++i)
 		if (ProcessAll || ActorRadius <= NavData.KeyAt(i))
 		{
 			CNavData& Data = NavData.ValueAt(i);
@@ -100,7 +100,7 @@ bool CAILevel::CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float Ac
 void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, U16 Flags, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;
-	for (int i = 0; i < NavData.GetCount(); ++i)
+	for (UPTR i = 0; i < NavData.GetCount(); ++i)
 		if (ProcessAll || ActorRadius <= NavData.KeyAt(i))
 		{
 			CNavData& Data = NavData.ValueAt(i);
@@ -127,7 +127,7 @@ void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, U16 Flags, float ActorR
 void CAILevel::SetNavRegionArea(CStrID ID, U8 Area, float ActorRadius)
 {
 	bool ProcessAll = ActorRadius <= 0.f;
-	for (int i = 0; i < NavData.GetCount(); ++i)
+	for (UPTR i = 0; i < NavData.GetCount(); ++i)
 		if (ProcessAll || ActorRadius <= NavData.KeyAt(i))
 		{
 			CNavData& Data = NavData.ValueAt(i);
@@ -145,7 +145,7 @@ void CAILevel::SetNavRegionArea(CStrID ID, U8 Area, float ActorRadius)
 CNavData* CAILevel::GetNavData(float ActorRadius)
 {
 	// NavData is assumed to be sorted by key (agent radius) in ascending order
-	for (int i = 0; i < NavData.GetCount(); ++i)
+	for (UPTR i = 0; i < NavData.GetCount(); ++i)
 		if (ActorRadius <= NavData.KeyAt(i))
 			return &NavData.ValueAt(i);
 

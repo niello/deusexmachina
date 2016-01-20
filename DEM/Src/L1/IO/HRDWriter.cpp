@@ -13,7 +13,7 @@ namespace IO
 bool CHRDWriter::WriteParams(const Data::CParams& Value)
 {
 	CurrTabLevel = 0;
-	for (int i = 0; i < Value.GetCount(); i++)
+	for (UPTR i = 0; i < Value.GetCount(); i++)
 	{
 		const Data::CParam& Prm = Value.Get(i);
 		if (!WriteParam(Prm)) FAIL;
@@ -128,7 +128,7 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 		WRITE_STATIC_STRING("[\n")
 		++CurrTabLevel;
 		const Data::CDataArray& A = *Value.GetValue<Data::PDataArray>();
-		for (int i = 0; i < A.GetCount(); i++)
+		for (UPTR i = 0; i < A.GetCount(); ++i)
 		{
 			const Data::CData& Elm = A[i];
 			if (!Elm.IsA<Data::PParams>() && !Elm.IsA<Data::PDataArray>())
@@ -147,7 +147,7 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 		WRITE_STATIC_STRING("{\n")
 		++CurrTabLevel;
 		Data::PParams P = Value.GetValue<Data::PParams>();
-		for (int i = 0; i < P->GetCount(); i++)
+		for (UPTR i = 0; i < P->GetCount(); ++i)
 		{
 			if (!WriteIndent()) FAIL;
 			if (!WriteParam(P->Get(i))) FAIL;

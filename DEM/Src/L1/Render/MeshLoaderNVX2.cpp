@@ -245,7 +245,7 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 	Render::PIndexBuffer IB = GPU->CreateIndexBuffer(Render::Index_16, Header.numIndices, Render::Access_GPU_Read, pIBData);
 
 	//!!!must be offline!
-	for (int i = 0; i < MeshGroups.GetCount(); ++i)
+	for (UPTR i = 0; i < MeshGroups.GetCount(); ++i)
 	{
 		Render::CPrimitiveGroup& MeshGroup = MeshGroups[i];
 		MeshGroup.AABB.BeginExtend();

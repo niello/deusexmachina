@@ -29,7 +29,7 @@ private:
 	UPTR	GetActualGrowSize() { return (Flags.Is(Array_DoubleGrowSize) && Allocated) ? Allocated : GrowSize; }
 	void	Grow();
 	void	GrowTo(UPTR NewCount);
-	void	Move(int FromIdx, int ToIdx);
+	void	Move(IPTR FromIdx, IPTR ToIdx);
 
 public:
 
@@ -47,16 +47,16 @@ public:
 	CIterator	AddBefore(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) : 0, Val); }
 	CIterator	AddAfter(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) + 1 : 0, Val); }
 	CIterator	Reserve(UPTR Num, bool Grow = true);
-	CIterator	Insert(int Idx, const T& Val);
+	CIterator	Insert(IPTR Idx, const T& Val);
 	CIterator	InsertSorted(const T& Val) { return Insert(FindClosestIndexSorted(Val), Val); }
 	void		AddArray(const CArray<T>& Other);
 	void		AddArray(const T* pData, UPTR Size);
 	void		Copy(const CArray<T>& Other);
-	void		Fill(int First, UPTR Num, const T& Val);
+	void		Fill(UPTR First, UPTR Num, const T& Val);
 	void		AllocateFixed(UPTR Size);
 
-	void		Remove(CIterator It, T* pOutValue = NULL) { n_assert_dbg(It); RemoveAt(int(It - pData), pOutValue); }
-	void		RemoveAt(int Idx, T* pOutValue = NULL);
+	void		Remove(CIterator It, T* pOutValue = NULL) { n_assert_dbg(It); RemoveAt(IPTR(It - pData), pOutValue); }
+	void		RemoveAt(IPTR Idx, T* pOutValue = NULL);
 	bool		RemoveByValue(const T& Val);
 	bool		RemoveByValueSorted(const T& Val);
 	void		Clear(bool FreeMemory = false);
@@ -65,21 +65,21 @@ public:
 	T&			Back() const { n_assert(pData && Count > 0); return pData[Count - 1]; }
 	CIterator	Begin() const { return pData; }
 	CIterator	End() const { return pData + Count; }
-	T&			At(int Idx) { MakeIndexValid(Idx); return pData[Idx]; }
-	T&			At(int Idx) const { n_assert(IsIndexValid(Idx)); return pData[Idx];}
-	CIterator	IteratorAt(int Idx) { MakeIndexValid(Idx); return pData + Idx; }
-	CIterator	IteratorAt(int Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
-	int			IndexOf(CIterator It) const { return It - pData; }
+	T&			At(IPTR Idx) { MakeIndexValid(Idx); return pData[Idx]; }
+	T&			At(IPTR Idx) const { n_assert(IsIndexValid(Idx)); return pData[Idx];}
+	CIterator	IteratorAt(IPTR Idx) { MakeIndexValid(Idx); return pData + Idx; }
+	CIterator	IteratorAt(IPTR Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
+	IPTR		IndexOf(CIterator It) const { return It - pData; }
 
-	CIterator	Find(const T& Val) const { int Idx = FindIndex(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
-	int			FindIndex(const T& Val) const;
-	CIterator	FindSorted(const T& Val) const { int Idx = FindIndexSorted(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
-	int			FindIndexSorted(const T& Val) const;
+	CIterator	Find(const T& Val) const { IPTR Idx = FindIndex(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
+	IPTR		FindIndex(const T& Val) const;
+	CIterator	FindSorted(const T& Val) const { IPTR Idx = FindIndexSorted(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
+	IPTR		FindIndexSorted(const T& Val) const;
 	CIterator	FindClosestSorted(const T& Val, bool* pHasEqualElement = NULL) const { return IteratorAt(FindClosestIndexSorted(Val, pHasEqualElement)); }
-	int			FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;
+	IPTR		FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;
 	bool		Contains(const T& Val) const { return FindIndex(Val) != INVALID_INDEX; }
 	bool		ContainsSorted(const T& Val) const { return FindIndexSorted(Val) != INVALID_INDEX; }
-	bool		IsIndexValid(int Idx) const { return ((UPTR)Idx) < Count; }
+	bool		IsIndexValid(IPTR Idx) const { return ((UPTR)Idx) < Count; }
 
 	void		Resize(UPTR NewAllocSize);
 	void		Reallocate(UPTR NewAllocSize, UPTR NewGrowSize);
@@ -91,7 +91,7 @@ public:
 	UPTR		Difference(const CArray<T>& Other, CArray<T>& Out) const;
 
 	bool		IsEmpty() const { return !Count; }
-	int			GetCount() const { return (int)Count; } //!!!FIXME make unsigned
+	UPTR		GetCount() const { return Count; }
 	UPTR		GetAllocSize() const { return Allocated; }
 	void		SetGrowSize(UPTR Grow) { GrowSize = Grow; }
 	void		SetDoubleGrow(bool Double) { Flags.SetTo(Array_DoubleGrowSize, Double); }
@@ -100,7 +100,7 @@ public:
 	bool		IsKeepingOrder() const { return Flags.Is(Array_KeepOrder); }
 
 	CArray<T>&	operator =(const CArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
-	T&			operator [](int Idx) const { return At(Idx); }
+	T&			operator [](IPTR Idx) const { return At(Idx); }
 	bool		operator ==(const CArray<T>& Other) const;
 	bool		operator !=(const CArray<T>& Other) const { return !(*this == Other); }
 };
@@ -162,7 +162,7 @@ void CArray<T>::Copy(const CArray<T>& Other)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::Fill(int First, UPTR Num, const T& Val)
+void CArray<T>::Fill(UPTR First, UPTR Num, const T& Val)
 {
 	n_assert(IsIndexValid(First));
 
@@ -217,11 +217,11 @@ void CArray<T>::Resize(UPTR NewAllocSize)
 
 	T* pNewData = (T*)n_malloc(sizeof(T) * NewAllocSize);
 
-	int NewSize = (NewAllocSize < Count) ? NewAllocSize : Count;
+	UPTR NewSize = (NewAllocSize < Count) ? NewAllocSize : Count;
 
 	if (pData)
 	{
-		for (int i = 0; i < NewSize; ++i)
+		for (UPTR i = 0; i < NewSize; ++i)
 		{
 			Construct(pNewData + i, pData[i]); //n_placement_new(pData + i, T)(Val)
 			pData[i].~T();
@@ -239,7 +239,7 @@ void CArray<T>::Resize(UPTR NewAllocSize)
 template<class T>
 void CArray<T>::Truncate(UPTR TailCount)
 {
-	int NewCount = (TailCount > Count) ? 0 : Count - TailCount;
+	UPTR NewCount = (TailCount > Count) ? 0 : Count - TailCount;
 	for (UPTR i = NewCount; i < Count; ++i) pData[i].~T();
 	Count = NewCount;
 }
@@ -267,7 +267,7 @@ void CArray<T>::GrowTo(UPTR NewCount)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::Move(int FromIdx, int ToIdx)
+void CArray<T>::Move(IPTR FromIdx, IPTR ToIdx)
 {
 	if (FromIdx == ToIdx) return;
 
@@ -328,7 +328,7 @@ typename CArray<T>::CIterator CArray<T>::Add(const T& Val)
 //---------------------------------------------------------------------
 
 template<class T>
-typename CArray<T>::CIterator CArray<T>::Insert(int Idx, const T& Val)
+typename CArray<T>::CIterator CArray<T>::Insert(IPTR Idx, const T& Val)
 {
 	n_assert2_dbg(Flags.Is(Array_KeepOrder), "Insertion has no much meaning if order isn't preserver, use Add(), it is faster!");
 	n_assert(((UPTR)Idx) <= Count);
@@ -414,7 +414,7 @@ bool CArray<T>::operator ==(const CArray<T>& Other) const
 template<class T>
 bool CArray<T>::RemoveByValue(const T& Val)
 {
-	int Idx = FindIndex(Val);
+	IPTR Idx = FindIndex(Val);
 	if (Idx == INVALID_INDEX) FAIL;
 	RemoveAt(Idx);
 	OK;
@@ -424,7 +424,7 @@ bool CArray<T>::RemoveByValue(const T& Val)
 template<class T>
 bool CArray<T>::RemoveByValueSorted(const T& Val)
 {
-	int Idx = FindIndexSorted(Val);
+	IPTR Idx = FindIndexSorted(Val);
 	if (Idx == INVALID_INDEX) FAIL;
 	RemoveAt(Idx);
 	OK;
@@ -432,7 +432,7 @@ bool CArray<T>::RemoveByValueSorted(const T& Val)
 //---------------------------------------------------------------------
 
 template<class T>
-void CArray<T>::RemoveAt(int Idx, T* pOutValue)
+void CArray<T>::RemoveAt(IPTR Idx, T* pOutValue)
 {
 	n_assert(IsIndexValid(Idx));
 	if (pOutValue) *pOutValue = pData[Idx];
@@ -466,9 +466,9 @@ void CArray<T>::Clear(bool FreeMemory)
 //---------------------------------------------------------------------
 
 template<class T>
-int CArray<T>::FindIndex(const T& Val) const
+IPTR CArray<T>::FindIndex(const T& Val) const
 {
-	int Idx = &Val - pData;
+	IPTR Idx = &Val - pData;
 	if (IsIndexValid(Idx)) return Idx;
 	for (UPTR i = 0; i < Count; ++i)
 		if (pData[i] == Val) return i;
@@ -477,20 +477,20 @@ int CArray<T>::FindIndex(const T& Val) const
 //---------------------------------------------------------------------
 
 template<class T>
-int CArray<T>::FindIndexSorted(const T& Val) const
+IPTR CArray<T>::FindIndexSorted(const T& Val) const
 {
 	if (!Count) return INVALID_INDEX;
 
-	int Idx = &Val - pData;
+	IPTR Idx = &Val - pData;
 	if (IsIndexValid(Idx)) return Idx;
 
-	int Num = Count, Low = 0, High = Num - 1;
+	IPTR Num = Count, Low = 0, High = Num - 1;
 	while (Low <= High)
 	{
-		int Half = (Num >> 1);
+		IPTR Half = (Num >> 1);
 		if (Half)
 		{
-			int Mid = Low + Half - 1 + (Num & 1);
+			IPTR Mid = Low + Half - 1 + (Num & 1);
 			if (Val < pData[Mid])
 			{
 				High = Mid - 1;
@@ -516,7 +516,7 @@ int CArray<T>::FindIndexSorted(const T& Val) const
 
 // Returns where this element should be inserted to keep array sorted
 template<class T>
-int CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) const
+IPTR CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) const
 {
 	if (!Count)
 	{
@@ -524,13 +524,13 @@ int CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) cons
 		return 0;
 	}
 
-	int Num = Count, Low = 0, High = Num - 1;
+	IPTR Num = Count, Low = 0, High = Num - 1;
 	while (Low <= High)
 	{
-		int Half = (Num >> 1);
+		IPTR Half = (Num >> 1);
 		if (Half)
 		{
-			int Mid = Low + Half - 1 + (Num & 1);
+			IPTR Mid = Low + Half - 1 + (Num & 1);
 			if (Val < pData[Mid])
 			{
 				High = Mid - 1;

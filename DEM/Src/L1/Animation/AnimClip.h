@@ -45,14 +45,12 @@ protected:
 
 public:
 
-	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const = 0;
-
-	virtual bool					IsResourceValid() const { FAIL; }
+	virtual Scene::PNodeController	CreateController(UPTR SamplerIdx) const = 0;
 
 	float	AdjustCursorPos(float Pos, bool Loop) const;
 	void	FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
 	void	FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
-	DWORD	GetSamplerCount() const { return Samplers.GetCount(); }
+	UPTR	GetSamplerCount() const { return Samplers.GetCount(); }
 	CStrID	GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
 	float	GetDuration() const { return Duration; }
 };

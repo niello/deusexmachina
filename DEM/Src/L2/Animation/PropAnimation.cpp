@@ -4,11 +4,12 @@
 #include <Game/GameServer.h> // For the time
 #include <Scripting/PropScriptable.h>
 #include <Scene/PropSceneNode.h>
-//#include <Render/Bone.h>
 #include <Scene/NodeControllerPriorityBlend.h>
 #include <Scene/NodeControllerStatic.h>
 #include <Animation/KeyframeClip.h>
 #include <Animation/MocapClip.h>
+#include <Animation/MocapClipLoaderNAX2.h> //!!!DBG TMP! NAX2 requires skin info!
+#include <Frame/Skin.h> //!!!DBG TMP! NAX2 requires skin info!
 #include <Animation/NodeControllerKeyframe.h>
 #include <Animation/NodeControllerMocap.h>
 #include <Resources/ResourceManager.h>
@@ -112,26 +113,33 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 	if (Desc.IsValidPtr())
 	{
-		for (int i = 0; i < Desc->GetCount(); ++i)
+		for (UPTR i = 0; i < Desc->GetCount(); ++i)
 		{
 			Data::CParam& Prm = Desc->Get(i);
 
-			CStrID RsrcURI = Prm.GetValue<CStrID>();
-			CString FileName("Anims:");
-			FileName += RsrcURI.CStr();
+			CStrID RsrcID = Prm.GetValue<CStrID>();
+			CString RsrcURI("Anims:");
+			RsrcURI += RsrcID.CStr();
 
-			//!!!DBG TMP! Uncomment!
-			//Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI);
-			//if (!Rsrc->IsLoaded())
-			//{
-			//	Resources::PResourceLoader Loader = Rsrc->GetLoader();
-			//	if (Loader.IsNullPtr())
-			//		Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(RsrcURI.CStr()));
-			//	ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-			//	n_assert(Rsrc->IsLoaded());
-			//}
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
+			if (!Rsrc->IsLoaded())
+			{
+				Resources::PResourceLoader Loader = Rsrc->GetLoader();
+				if (Loader.IsNullPtr())
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(RsrcURI.CStr()));
 
-			//Clips.Add(Prm.GetName(), Rsrc->GetObject<Anim::CAnimClip>());
+				//!!!DBG TMP!
+				if (Loader->IsA<Resources::CMocapClipLoaderNAX2>())
+				{
+					Frame::CSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CSkin>();
+					if (pSkin) ((Resources::CMocapClipLoaderNAX2*)Loader.GetUnsafe())->ReferenceSkinInfo = pSkin->GetSkinInfo();
+				}
+
+				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
+				n_assert(Rsrc->IsLoaded());
+			}
+
+			Clips.Add(Prm.GetName(), Rsrc->GetObject<Anim::CAnimClip>());
 		}
 	}
 //!!!to Activate() -
@@ -146,7 +154,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 void CPropAnimation::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
-	for (int i = 0; i < Tasks.GetCount(); ++i)
+	for (UPTR i = 0; i < Tasks.GetCount(); ++i)
 		Tasks[i].AnimTask.Stop(0.f);
 	Tasks.Clear();
 }
@@ -177,7 +185,7 @@ void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSc
 
 bool CPropAnimation::BeforeTransforms(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	for (int i = 0; i < Tasks.GetCount(); ++i)
+	for (UPTR i = 0; i < Tasks.GetCount(); ++i)
 	{
 		CTask& Task = Tasks[i];
 		Anim::CAnimTask& AnimTask = Task.AnimTask;
@@ -185,7 +193,7 @@ bool CPropAnimation::BeforeTransforms(Events::CEventDispatcher* pDispatcher, con
 		if (AnimTask.IsEmpty()) continue;
 
 		// Remove task if all its controllers were removed from target nodes
-		int j = 0;
+		UPTR j = 0;
 		for (; j < AnimTask.Ctlrs.GetCount(); ++j)
 			if (AnimTask.Ctlrs[j]->IsAttachedToNode()) break;
 
@@ -203,7 +211,7 @@ bool CPropAnimation::BeforeTransforms(Events::CEventDispatcher* pDispatcher, con
 		{
 			Data::PParams P = n_new(Data::CParams(2));
 			P->Set(CStrID("Clip"), Task.ClipID);
-			P->Set(CStrID("Task"), i);
+			P->Set<int>(CStrID("Task"), i);
 			GetEntity()->FireEvent(CStrID("OnAnimStop"), P);
 		}
 	}
@@ -225,9 +233,9 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, floa
 	CPropSceneNode* pPropNode = GetEntity()->GetProperty<CPropSceneNode>();
 	if (!pPropNode || !pPropNode->GetNode()) return INVALID_INDEX; // Nothing to animate
 
-	int TaskID = INVALID_INDEX;
+	IPTR TaskID = INVALID_INDEX;
 	CTask* pTask = NULL;
-	for (int i = 0; i < Tasks.GetCount(); ++i)
+	for (UPTR i = 0; i < Tasks.GetCount(); ++i)
 		if (Tasks[i].AnimTask.IsEmpty())
 		{
 			pTask = &Tasks[i];
@@ -244,11 +252,11 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, floa
 	bool NeedWeight = (Weight < 1.f || FadeInTime > 0.f || FadeOutTime > 0.f);
 	bool BlendingIsNotNecessary = (!NeedWeight && Priority == AnimPriority_Default);
 
-	int FreePoseLockerIdx = 0;
+	UPTR FreePoseLockerIdx = 0;
 
 	n_assert_dbg(!pTask->AnimTask.Ctlrs.GetCount());
 	Scene::PNodeController* ppCtlr = pTask->AnimTask.Ctlrs.Reserve(Clip->GetSamplerCount());
-	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i, ++ppCtlr)
+	for (UPTR i = 0; i < Clip->GetSamplerCount(); ++i, ++ppCtlr)
 	{
 		// Get controller target node
 		Scene::CSceneNode* pNode = pPropNode->GetChildNode(Clip->GetSamplerTarget(i));
@@ -305,7 +313,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, floa
 	pTask->AnimTask.pEventDisp = GetEntity();
 	pTask->AnimTask.Params = n_new(Data::CParams(2));
 	pTask->AnimTask.Params->Set(CStrID("Clip"), ClipID);
-	pTask->AnimTask.Params->Set(CStrID("Task"), TaskID);
+	pTask->AnimTask.Params->Set(CStrID("Task"), (int)TaskID);
 	pTask->AnimTask.Init(Clip, Loop, CursorOffset, Speed, Weight, FadeInTime, FadeOutTime);
 
 	GetEntity()->FireEvent(CStrID("OnAnimStart"), pTask->AnimTask.Params);

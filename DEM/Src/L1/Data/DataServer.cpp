@@ -148,7 +148,7 @@ bool CDataServer::LoadDataSchemes(const char* pFileName)
 	PParams SchemeDescs = LoadHRD(pFileName, false);
 	if (SchemeDescs.IsNullPtr()) FAIL;
 
-	for (int i = 0; i < SchemeDescs->GetCount(); ++i)
+	for (UPTR i = 0; i < SchemeDescs->GetCount(); ++i)
 	{
 		const CParam& Prm = SchemeDescs->Get(i);
 		if (!Prm.IsA<PParams>()) FAIL;

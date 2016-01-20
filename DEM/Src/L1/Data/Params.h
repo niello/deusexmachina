@@ -36,13 +36,13 @@ public:
 	CParams(int InitialSize, int Grow = 4): Params(InitialSize, Grow) {}
 
 	//???const char*/CString version?
-	int							IndexOf(CStrID Name) const;
+	IPTR						IndexOf(CStrID Name) const;
 	bool						Has(CStrID Name) const { return IndexOf(Name) != INVALID_INDEX; }
-	int							GetCount() const { return Params.GetCount(); }
+	UPTR						GetCount() const { return Params.GetCount(); }
 	
-	CParam&						Get(int Idx) { return Params[Idx]; }
-	const CParam&				Get(int Idx) const { return Params[Idx]; }
-	template<class T> const T&	Get(int Idx) const { return Params[Idx].GetValue<T>(); }
+	CParam&						Get(IPTR Idx) { return Params[Idx]; }
+	const CParam&				Get(IPTR Idx) const { return Params[Idx]; }
+	template<class T> const T&	Get(IPTR Idx) const { return Params[Idx].GetValue<T>(); }
 	CParam&						Get(CStrID Name); //???explicit specialization?
 	const CParam&				Get(CStrID Name) const; //???explicit specialization?
 	template<class T> const T&	Get(CStrID Name) const;
@@ -64,16 +64,16 @@ public:
 
 	//???also/instead of this: return CData? or even template class
 	const CParam&				operator [](CStrID Name) const { return Get(Name); }
-	const CParam&				operator [](int Idx) const { return Params[Idx]; }
+	const CParam&				operator [](IPTR Idx) const { return Params[Idx]; }
 
 	//Save Load binary
 	//Save Load text
 };
 //---------------------------------------------------------------------
 
-inline int CParams::IndexOf(CStrID Name) const
+inline IPTR CParams::IndexOf(CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name) return i;
 	return INVALID_INDEX;
 }
@@ -81,7 +81,7 @@ inline int CParams::IndexOf(CStrID Name) const
 
 inline CParam& CParams::Get(CStrID Name)
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name) return Params[i];
 	Sys::Error("Param \"%s\" does not exist", Name.CStr());
 	return *(n_new(CParam()));
@@ -90,7 +90,7 @@ inline CParam& CParams::Get(CStrID Name)
 
 inline const CParam& CParams::Get(CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name) return Params[i];
 	Sys::Error("Param \"%s\" does not exist", Name.CStr());
 	return *(n_new(CParam()));
@@ -100,7 +100,7 @@ inline const CParam& CParams::Get(CStrID Name) const
 //???what about nonconst?
 template<class T> inline const T& CParams::Get(CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>();
 	Sys::Error("Param \"%s\" does not exist", Name.CStr());
@@ -111,7 +111,7 @@ template<class T> inline const T& CParams::Get(CStrID Name) const
 //???what about nonconst?
 template<class T> inline const T& CParams::Get(CStrID Name, const T& Default) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>();
 	return Default;
@@ -120,7 +120,7 @@ template<class T> inline const T& CParams::Get(CStrID Name, const T& Default) co
 
 inline bool CParams::Get(CParam*& Dest, CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = &Params[i];
@@ -132,7 +132,7 @@ inline bool CParams::Get(CParam*& Dest, CStrID Name) const
 
 template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>(Dest);
 	FAIL;
@@ -142,7 +142,7 @@ template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 template<>
 inline bool CParams::Get<const CData*>(const CData*& Dest, CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = &Params[i].GetRawValue();
@@ -155,7 +155,7 @@ inline bool CParams::Get<const CData*>(const CData*& Dest, CStrID Name) const
 template<>
 inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = &Params[i].GetRawValue();
@@ -168,7 +168,7 @@ inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
 template<>
 inline bool CParams::Get<CData>(CData& Dest, CStrID Name) const
 {
-	for (int i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); i++)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = Params[i].GetRawValue();
@@ -180,7 +180,7 @@ inline bool CParams::Get<CData>(CData& Dest, CStrID Name) const
 
 inline void CParams::Set(const CParam& Param)
 {
-	int Idx = IndexOf(Param.GetName());
+	IPTR Idx = IndexOf(Param.GetName());
 	if (Idx != INVALID_INDEX) Params[Idx].SetValue(Param.GetRawValue());
 	else Params.Add(Param);
 }
@@ -188,7 +188,7 @@ inline void CParams::Set(const CParam& Param)
 
 inline void CParams::Set(CStrID Name, const CData& Value)
 {
-	int Idx = IndexOf(Name);
+	IPTR Idx = IndexOf(Name);
 	if (Idx != INVALID_INDEX) Params[Idx].SetValue(Value);
 	else Params.Add(CParam(Name, Value)); //???can avoid tmp obj creation?
 }

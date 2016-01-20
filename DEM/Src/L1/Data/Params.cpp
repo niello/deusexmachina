@@ -10,7 +10,7 @@ void CParams::FromDataDict(const CDataDict& Dict)
 {
 	Params.Clear();
 	CParam* pParam = Params.Reserve(Dict.GetCount());
-	for (int i = 0; i < Dict.GetCount(); ++i, ++pParam)
+	for (UPTR i = 0; i < Dict.GetCount(); ++i, ++pParam)
 		pParam->Set(Dict.KeyAt(i), Dict.ValueAt(i));
 }
 //---------------------------------------------------------------------
@@ -19,7 +19,7 @@ void CParams::ToDataDict(CDataDict& Dict) const
 {
 	Dict.Clear();
 	Dict.BeginAdd(Params.GetCount());
-	for (int i = 0; i < Params.GetCount(); ++i)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		Dict.Add(Params[i].GetName(), Params[i].GetRawValue());
 	Dict.EndAdd();
 }
@@ -27,7 +27,7 @@ void CParams::ToDataDict(CDataDict& Dict) const
 
 void CParams::Merge(const CParams& Other, int Method)
 {
-	for (int i = 0; i < Other.GetCount(); ++i)
+	for (UPTR i = 0; i < Other.GetCount(); ++i)
 	{
 		const CParam& Prm = Other.Get(i);
 		CParam* pMyPrm;
@@ -49,14 +49,14 @@ void CParams::Merge(const CParams& Other, int Method)
 void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 {
 	// Add new fields from diff
-	for (int i = 0; i < Diff.GetCount(); ++i)
+	for (UPTR i = 0; i < Diff.GetCount(); ++i)
 	{
 		const CParam& Prm = Diff[i];
 		if (!Prm.GetRawValue().IsVoid() && !Has(Prm.GetName()))
 			OutChangedData.Set(Prm);
 	}
 
-	for (int i = 0; i < Params.GetCount(); ++i)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 	{
 		const CParam& Prm = Params[i];
 		CParam* pDiffPrm;
@@ -81,14 +81,14 @@ void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 {
 	// Cnanged data no longer contains my param, set NULL as its new value in diff
-	for (int i = 0; i < GetCount(); ++i)
+	for (UPTR i = 0; i < GetCount(); ++i)
 	{
 		CStrID ID = Params[i].GetName();
 		if (!ChangedData.Has(ID)) OutDiff.Set(ID, Data::CData());
 	}
 
 	// Write fields added or changed in a changed data
-	for (int i = 0; i < ChangedData.GetCount(); ++i)
+	for (UPTR i = 0; i < ChangedData.GetCount(); ++i)
 	{
 		CStrID Key = ChangedData.Get(i).GetName();
 		const Data::CData& ChangedVal = ChangedData.Get(i).GetRawValue();
@@ -112,14 +112,14 @@ void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 void CParams::GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const
 {
 	// Cnanged data no longer contains my param, set NULL as its new value in diff
-	for (int i = 0; i < GetCount(); ++i)
+	for (UPTR i = 0; i < GetCount(); ++i)
 	{
 		CStrID ID = Params[i].GetName();
 		if (!ChangedData.Contains(ID)) OutDiff.Set(ID, Data::CData());
 	}
 
 	// Write fields added or changed in a changed data
-	for (int i = 0; i < ChangedData.GetCount(); ++i)
+	for (UPTR i = 0; i < ChangedData.GetCount(); ++i)
 	{
 		Data::CParam* pInitialParam;
 		bool IsNew = !Params.GetCount() || !Get(pInitialParam, ChangedData.KeyAt(i));

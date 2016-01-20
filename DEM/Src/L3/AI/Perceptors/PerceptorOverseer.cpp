@@ -25,7 +25,7 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
-		int i;
+		UPTR i;
 		for (i = 0; i < Overseers.GetCount(); ++i)
 			if (pStimulus->SourceEntityID == Overseers[i]) break;
 

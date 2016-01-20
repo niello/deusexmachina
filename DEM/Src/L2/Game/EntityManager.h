@@ -97,7 +97,7 @@ inline void CEntityManager::DeleteEntity(CStrID UID)
 
 inline void CEntityManager::DeferredDeleteEntities()
 {
-	for (int i = 0; i < EntitiesToDelete.GetCount(); ++i)
+	for (UPTR i = 0; i < EntitiesToDelete.GetCount(); ++i)
 		DeleteEntity(EntitiesToDelete[i]);
 	EntitiesToDelete.Clear();
 }

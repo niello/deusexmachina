@@ -44,7 +44,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSm
 		if (RetVal.IsA<Data::PParams>())
 		{
 			Data::PParams Ret = RetVal;
-			for (int i = 0; i < Ret->GetCount(); ++i)
+			for (UPTR i = 0; i < Ret->GetCount(); ++i)
 			{
 				Data::CParam& Prm = Ret->Get(i);
 				EWSProp Key = GetPropKeyByName(Prm.GetName().CStr());

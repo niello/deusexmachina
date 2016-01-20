@@ -91,7 +91,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	Prop.GetNode()->UpdateTransform(NULL, 0, true, NULL);
 
 	const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
-	for (int i = 0; i < Objects.GetCount(); ++i)
+	for (UPTR i = 0; i < Objects.GetCount(); ++i)
 	{
 		const Data::CParams& ObjDesc = *Objects.Get<Data::PParams>(i);
 
@@ -158,14 +158,14 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 
 	RootBody = NULL;
 
-	for (int i = 0; i < Ctlrs.GetCount(); ++i)
+	for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 	{
 		Ctlrs[i]->GetBody()->RemoveFromLevel();
 		Ctlrs[i]->RemoveFromNode();
 	}
 	Ctlrs.Clear(); //???create once and attach/detach?
 
-	for (int i = 0; i < Attrs.GetCount(); ++i)
+	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 	{
 		Attrs[i]->CollObj->RemoveFromLevel();
 		Attrs[i]->RemoveFromNode();
@@ -187,7 +187,7 @@ bool CPropPhysics::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const
 bool CPropPhysics::OnSetTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
-	for (int i = 0; i < Attrs.GetCount(); ++i)
+	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 		Attrs[i]->CollObj->SetTransform(Tfm);
 	OK;
 }

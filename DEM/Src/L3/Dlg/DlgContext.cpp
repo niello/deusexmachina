@@ -26,7 +26,7 @@ void CDlgContext::Trigger(bool IsForeground)
 
 			// Gather valid links
 			ValidLinkIndices.Clear();
-			for (int i = 0; i < pCurrNode->Links.GetCount() ; ++i)
+			for (UPTR i = 0; i < pCurrNode->Links.GetCount() ; ++i)
 			{
 				CDlgNode::CLink& Link = pCurrNode->Links[i];
 				if (!Link.Condition.IsValid() || Dlg->ScriptObj->RunFunction(Link.Condition.CStr()) == Success)

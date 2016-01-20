@@ -33,8 +33,8 @@ bool CBinaryWriter::WriteData(const CData& Value)
 
 template<> bool CBinaryWriter::Write<CDataArray>(const CDataArray& Value)
 {
-	if (!Write<short>(Value.GetCount())) FAIL;
-	for (int i = 0; i < Value.GetCount(); i++)
+	if (!Write<U16>(Value.GetCount())) FAIL;
+	for (UPTR i = 0; i < Value.GetCount(); i++)
 		if (!WriteData(Value[i])) FAIL;
 	OK;
 }
@@ -42,7 +42,7 @@ template<> bool CBinaryWriter::Write<CDataArray>(const CDataArray& Value)
 
 template<> bool CBinaryWriter::Write<CBuffer>(const CBuffer& Value)
 {
-	return Write<int>(Value.GetSize()) && (!Value.GetSize() || Stream.Write(Value.GetPtr(), Value.GetSize()));
+	return Write<U32>(Value.GetSize()) && (!Value.GetSize() || Stream.Write(Value.GetPtr(), Value.GetSize()));
 }
 //---------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 {
 	Written = 0;
 
-	for (int i = 0; i < Scheme.Records.GetCount(); ++i)
+	for (UPTR i = 0; i < Scheme.Records.GetCount(); ++i)
 	{
 		const CDataScheme::CRecord& Rec = Scheme.Records[i];
 
@@ -119,7 +119,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 						Stream.Seek(CurrPos, IO::Seek_Begin);
 					}
 				}
-				else for (int j = 0; j < PrmParams.GetCount(); ++j)
+				else for (UPTR j = 0; j < PrmParams.GetCount(); ++j)
 				{
 					// Apply scheme on children, iterate over them one by one
 					const CParam& SubPrm = PrmParams.Get(j);
@@ -168,7 +168,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 							if (!Write<short>(SubPrmArray.GetCount())) FAIL;
 
 						// Write array elements one-by-one
-						for (int k = 0; k < SubPrmArray.GetCount(); ++k)
+						for (UPTR k = 0; k < SubPrmArray.GetCount(); ++k)
 							if (!WriteDataAsOfType(SubPrmArray[k], Rec.TypeID, Rec.Flags)) FAIL;
 					}
 					else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) FAIL;
@@ -184,7 +184,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 					if (!Write<short>(PrmArray.GetCount())) FAIL;
 
 				// Write array elements one-by-one
-				for (int j = 0; j < PrmArray.GetCount(); ++j)
+				for (UPTR j = 0; j < PrmArray.GetCount(); ++j)
 				{
 					const CData& Element = PrmArray[j];
 					if (SubScheme.IsValidPtr() && Element.IsA<PParams>())

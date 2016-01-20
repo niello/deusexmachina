@@ -9,7 +9,7 @@ __ImplementClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
 
 bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 					   const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,
-					   DWORD _KeysPerCurve, DWORD _KeyStride, float _KeyTime)
+					   UPTR _KeysPerCurve, UPTR _KeyStride, float _KeyTime)
 {
 	n_assert(_pKeys);
 
@@ -25,7 +25,7 @@ bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>&
 	InvKeyTime = 1.f / _KeyTime;
 	Duration = (KeysPerCurve - 1) * _KeyTime;
 
-	for (int i = 0; i < Tracks.GetCount(); ++i)
+	for (UPTR i = 0; i < Tracks.GetCount(); ++i)
 	{
 		Tracks[i].pOwnerClip = this;
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
@@ -53,7 +53,7 @@ void CMocapClip::Unload()
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeController CMocapClip::CreateController(DWORD SamplerIdx) const
+Scene::PNodeController CMocapClip::CreateController(UPTR SamplerIdx) const
 {
 	Anim::PNodeControllerMocap Ctlr = n_new(Anim::CNodeControllerMocap);
 	Ctlr->SetSampler(&Samplers.ValueAt(SamplerIdx));

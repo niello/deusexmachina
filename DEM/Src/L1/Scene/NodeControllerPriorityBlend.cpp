@@ -10,7 +10,7 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 	if (!Sources.GetCount() || !Channels.IsAny(Tfm_Scaling | Tfm_Rotation | Tfm_Translation)) FAIL;
 
 	bool HasActiveSrcs = false;
-	for (int i = 0; i < Sources.GetCount(); ++i)
+	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 	{
 		CSource& Src = Sources[i];
 		if (Src.Ctlr->IsActive() && Src.Ctlr->ApplyTo(Src.SRT))
@@ -52,7 +52,7 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 	{
 		DestTfm.Scale.set(0.f, 0.f, 0.f);
 		float TotalWeight = 0.f;
-		for (int i = 0; i < Sources.GetCount(); ++i)
+		for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		{
 			CSource& Src = Sources[i];
 			if (!Src.Ctlr->IsActive() || !Src.Ctlr->HasChannel(Tfm_Scaling) || Src.Weight == 0.f) continue;
@@ -73,7 +73,7 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 	{
 		DestTfm.Rotation.set(0.f, 0.f, 0.f, 1.f);
 		float TotalWeight = 0.f;
-		for (int i = 0; i < Sources.GetCount(); ++i)
+		for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		{
 			CSource& Src = Sources[i];
 			if (!Src.Ctlr->IsActive() || !Src.Ctlr->HasChannel(Tfm_Rotation) || Src.Weight == 0.f) continue;
@@ -101,7 +101,7 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 	{
 		DestTfm.Translation.set(0.f, 0.f, 0.f);
 		float TotalWeight = 0.f;
-		for (int i = 0; i < Sources.GetCount(); ++i)
+		for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		{
 			CSource& Src = Sources[i];
 			if (!Src.Ctlr->IsActive() || !Src.Ctlr->HasChannel(Tfm_Translation) || Src.Weight == 0.f) continue;

@@ -23,7 +23,7 @@ CFactionManager::~CFactionManager()
 	UNSUBSCRIBE_EVENT(OnGameSaving);
 
 	//???!!!make more implicit and/or safe!?
-	for (int i = 0; i < Factions.GetCount(); ++i)
+	for (UPTR i = 0; i < Factions.GetCount(); ++i)
 		ScriptSrv->RemoveObject(Factions.KeyAt(i).CStr(), "Factions");
 	Factions.Clear();
 
@@ -34,7 +34,7 @@ CFactionManager::~CFactionManager()
 bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//???!!!make more implicit and/or safe!?
-	for (int i = 0; i < Factions.GetCount(); ++i)
+	for (UPTR i = 0; i < Factions.GetCount(); ++i)
 		ScriptSrv->RemoveObject(Factions.KeyAt(i).CStr(), "Factions");
 	Factions.Clear();
 
@@ -43,7 +43,7 @@ bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, co
 	if (!GameDesc->Get(SGFactions, CStrID("Factions")) || !SGFactions->GetCount()) OK;
 
 	Factions.BeginAdd();
-	for (int i = 0; i < SGFactions->GetCount(); ++i)
+	for (UPTR i = 0; i < SGFactions->GetCount(); ++i)
 	{
 		Data::CParam& Prm = SGFactions->Get(i);
 		Data::PParams FactionDesc = Prm.GetValue<Data::PParams>();
@@ -58,7 +58,7 @@ bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, co
 
 		Data::PParams Members;
 		if (FactionDesc->Get(Members, CStrID("Members")))
-			for (int j = 0; j < Members->GetCount(); ++j)
+			for (UPTR j = 0; j < Members->GetCount(); ++j)
 			{
 				Data::CParam& MemberRec = Members->Get(j);
 				Faction->AdoptMember(MemberRec.GetName(), MemberRec.GetValue<int>());
@@ -77,7 +77,7 @@ bool CFactionManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const 
 	Data::PParams SGCommon = ((const Events::CEvent&)Event).Params;
 
 	Data::PParams SGFactions = n_new(Data::CParams);
-	for (int i = 0; i < Factions.GetCount(); ++i)
+	for (UPTR i = 0; i < Factions.GetCount(); ++i)
 	{
 		CFaction* pFaction = Factions.ValueAt(i).GetUnsafe();
 

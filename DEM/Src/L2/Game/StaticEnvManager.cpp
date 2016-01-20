@@ -55,7 +55,7 @@ void CStaticEnvManager::DeleteStaticObjects(const CGameLevel& Level)
 
 void CStaticEnvManager::DeleteAllStaticObjects()
 {
-	for (int i = 0; i < Objects.GetCount(); ++i)
+	for (UPTR i = 0; i < Objects.GetCount(); ++i)
 		if (Objects.ValueAt(i)->IsValidPtr())
 			Objects.ValueAt(i)->Term();
 	Objects.Clear();

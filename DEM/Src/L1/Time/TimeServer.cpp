@@ -30,7 +30,7 @@ void CTimeServer::Save(Data::CParams& TimeParams)
 	if (TimeSources.GetCount())
 	{
 		Data::PParams SGTimeSrcs = n_new(Data::CParams);
-		for (int i = 0; i < TimeSources.GetCount(); ++i)
+		for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
 		{
 			CTimeSource* pSrc = TimeSources.ValueAt(i);
 			Data::PParams SGTimeSrc = n_new(Data::CParams);
@@ -46,7 +46,7 @@ void CTimeServer::Save(Data::CParams& TimeParams)
 	if (Timers.GetCount())
 	{
 		Data::PParams SGTimers = n_new(Data::CParams);
-		for (int i = 0; i < Timers.GetCount(); ++i)
+		for (UPTR i = 0; i < Timers.GetCount(); ++i)
 		{
 			CTimer& Timer = Timers.ValueAt(i);
 			Data::PParams SGTimer = n_new(Data::CParams);
@@ -69,7 +69,7 @@ void CTimeServer::Load(const Data::CParams& TimeParams)
 	Data::PParams SubSection;
 	if (TimeParams.Get<Data::PParams>(SubSection, CStrID("TimeSources")) && SubSection->GetCount())
 	{
-		for (int i = 0; i < SubSection->GetCount(); ++i)
+		for (UPTR i = 0; i < SubSection->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
 			Data::PParams TimeSrcDesc = Prm.GetValue<Data::PParams>();
@@ -84,7 +84,7 @@ void CTimeServer::Load(const Data::CParams& TimeParams)
 	Timers.Clear();
 	if (TimeParams.Get<Data::PParams>(SubSection, CStrID("Timers")) && SubSection->GetCount())
 	{
-		for (int i = 0; i < SubSection->GetCount(); ++i)
+		for (UPTR i = 0; i < SubSection->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
 			Data::PParams TimerDesc = Prm.GetValue<Data::PParams>();
@@ -135,10 +135,10 @@ void CTimeServer::Trigger()
 	PrevTime = CurrTime;
 	Time += FrameTime;
 
-	for (int i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAt(i)->Update((float)FrameTime);
 
-	for (int i = 0; i < Timers.GetCount(); i++)
+	for (UPTR i = 0; i < Timers.GetCount(); i++)
 	{
 		CTimer& Timer = Timers.ValueAt(i);
 		if (Timer.Active && !IsPaused(Timer.TimeSrc))

@@ -50,7 +50,7 @@ bool CRenderPathLoader::Load(CResource& Resource)
 	{
 		Data::CParams& PhaseList = *pSubDesc->GetValue<Data::PParams>();
 		RP->Phases.SetSize(PhaseList.GetCount());
-		for (int i = 0; i < PhaseList.GetCount(); ++i)
+		for (UPTR i = 0; i < PhaseList.GetCount(); ++i)
 		{
 			const Data::CParam& Prm = PhaseList[i];
 			Data::CParams& PhaseDesc = *Prm.GetValue<Data::PParams>();

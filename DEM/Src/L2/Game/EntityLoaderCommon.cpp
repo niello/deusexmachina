@@ -18,7 +18,7 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, const Data::CParam
 	if (Desc.Get(SubDesc, CStrID("Attrs")) && SubDesc->GetCount())
 	{
 		Entity->BeginNewAttrs(SubDesc->GetCount());
-		for (int i = 0; i < SubDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < SubDesc->GetCount(); ++i)
 		{
 			const Data::CParam& Attr = SubDesc->Get(i);
 			Entity->AddNewAttr(Attr.GetName(), Attr.GetRawValue());
@@ -28,7 +28,7 @@ bool CEntityLoaderCommon::Load(CStrID UID, CGameLevel& Level, const Data::CParam
 
 	Data::PDataArray Props;
 	if (Desc.Get(Props, CStrID("Props")))
-		for (int i = 0; i < Props->GetCount(); ++i)
+		for (UPTR i = 0; i < Props->GetCount(); ++i)
 		{
 			const Data::CData& PropID = Props->Get(i);
 			if (PropID.IsA<int>()) EntityMgr->AttachProperty(*Entity, (Data::CFourCC)PropID.GetValue<int>());

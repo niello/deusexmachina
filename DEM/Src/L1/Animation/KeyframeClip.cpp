@@ -18,7 +18,7 @@ bool CKeyframeClip::Setup(const CArray<CKeyframeTrack>& _Tracks, const CArray<CS
 
 	Duration = Length;
 
-	for (int i = 0; i < Tracks.GetCount(); ++i)
+	for (UPTR i = 0; i < Tracks.GetCount(); ++i)
 	{
 		CSampler& Sampler = Samplers.GetOrAdd(TrackMapping[i]);
 		switch (Tracks[i].Channel)
@@ -44,7 +44,7 @@ void CKeyframeClip::Unload()
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeController CKeyframeClip::CreateController(DWORD SamplerIdx) const
+Scene::PNodeController CKeyframeClip::CreateController(UPTR SamplerIdx) const
 {
 	Anim::PNodeControllerKeyframe Ctlr = n_new(Anim::CNodeControllerKeyframe);
 	Ctlr->SetSampler(&Samplers.ValueAt(SamplerIdx));

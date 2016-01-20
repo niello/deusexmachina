@@ -149,7 +149,7 @@ CControlLayout* CInputServer::GetContextLayout(CStrID Context) const
 bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 {
 	if (DisableOthers)
-		for (int i = 0; i < Contexts.GetCount(); ++i)
+		for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 			if (Contexts.KeyAt(i) != Context)
 				Contexts.ValueAt(i)->Disable();
 

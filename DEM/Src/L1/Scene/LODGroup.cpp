@@ -49,7 +49,7 @@ void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 	}
 
 	CStrID SelectedChild;
-	for (int i = 0; i < SqThresholds.GetCount(); ++i)
+	for (UPTR i = 0; i < SqThresholds.GetCount(); ++i)
 		if (SqThresholds.KeyAt(i) > SqDistance) SelectedChild = SqThresholds.ValueAt(i);
 		else break;
 

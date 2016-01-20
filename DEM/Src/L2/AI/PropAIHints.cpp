@@ -46,7 +46,7 @@ void CPropAIHints::InternalDeactivate()
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
-	for (int i = 0; i < Hints.GetCount(); ++i)
+	for (UPTR i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 		if (Rec.QTNode)
@@ -107,7 +107,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 
 		Hints.Clear();
 		Hints.BeginAdd();
-		for (int i = 0; i < Desc->GetCount(); i++)
+		for (UPTR i = 0; i < Desc->GetCount(); i++)
 		{
 			const CParam& Prm = Desc->Get(i);
 			PParams PrmVal = Prm.GetValue<PParams>();
@@ -199,7 +199,7 @@ bool CPropAIHints::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, cons
 {
 	const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
 	
-	for (int i = 0; i < Hints.GetCount(); ++i)
+	for (UPTR i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
@@ -217,7 +217,7 @@ bool CPropAIHints::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Ev
 	static const vector4 ColorOther(0.5f, 0.25f, 0.0f, 0.5f);
 	static const vector4 ColorDisabled(0.5f, 0.5f, 0.5f, 0.5f);
 
-	for (int i = 0; i < Hints.GetCount(); ++i)
+	for (UPTR i = 0; i < Hints.GetCount(); ++i)
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 

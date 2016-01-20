@@ -60,11 +60,11 @@ void CVideoServer::Trigger()
 	// Rewind players on time reset
 	// Now can't happen due to the wrapping in the TimeSrv
 	if (FrameTime < 0.f)
-		for (int i = 0; i < Players.GetCount(); ++i)
+		for (UPTR i = 0; i < Players.GetCount(); ++i)
 			if (Players[i]->IsOpen()) Players[i]->Rewind();
 
 	//???else? see right above.
-	for (int i = 0; i < Players.GetCount(); ++i)
+	for (UPTR i = 0; i < Players.GetCount(); ++i)
 		if (Players[i]->IsOpen()) Players[i]->Decode(FrameTime);
 
 	if (_IsPlaying)
@@ -185,7 +185,7 @@ CVideoPlayer* CVideoServer::NewVideoPlayer(const char* pName)
 void CVideoServer::DeleteVideoPlayer(CVideoPlayer* pPlayer)
 {
 	n_assert(pPlayer);
-	for (int i = 0; i < Players.GetCount(); i++)
+	for (UPTR i = 0; i < Players.GetCount(); i++)
 		if (Players[i] == pPlayer)
 		{
 			Players.RemoveAt(i);

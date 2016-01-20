@@ -52,7 +52,7 @@ typedef Ptr<CNodeControllerComposite> PNodeControllerComposite;
 
 inline int CNodeControllerComposite::GetSourceIndex(Scene::CNodeController& Ctlr) const
 {
-	for (int i = 0; i < Sources.GetCount(); ++i)
+	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		if (Sources[i].Ctlr.GetUnsafe() == &Ctlr) return i;
 	return INVALID_INDEX;
 }

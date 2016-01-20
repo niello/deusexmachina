@@ -11,7 +11,7 @@ __ImplementClass(AI::CActionSequence, 'ASEQ', AI::CAction)
 void CActionSequence::Init(const Data::CParams& Desc)
 {
 	const Data::CDataArray& ChildDescs = *Desc.Get<Data::PDataArray>(CStrID("Child"));
-	for (int i = 0; i < ChildDescs.GetCount(); ++i)
+	for (UPTR i = 0; i < ChildDescs.GetCount(); ++i)
 		AddChild(AI::CAIServer::CreatePlanFromDesc(ChildDescs.Get<Data::PParams>(i)));
 }
 //---------------------------------------------------------------------

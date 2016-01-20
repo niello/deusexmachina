@@ -45,10 +45,10 @@ CAIServer::~CAIServer()
 {
 	n_delete(pDebugFilter);
 
-	for (int i = 0; i < NavQueryFilters.GetCount(); ++i)
+	for (UPTR i = 0; i < NavQueryFilters.GetCount(); ++i)
 		n_delete(NavQueryFilters.ValueAt(i));
 
-	for (int i = 0; i < ObstacleAvoidanceParams.GetCount(); ++i)
+	for (UPTR i = 0; i < ObstacleAvoidanceParams.GetCount(); ++i)
 		n_delete(ObstacleAvoidanceParams.ValueAt(i));
 
 	__DestructSingleton;

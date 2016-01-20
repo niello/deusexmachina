@@ -67,7 +67,7 @@ bool CPropSceneNode::InternalActivate()
 			Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), NULL);
 			if (ChildTfms.IsValidPtr() && ChildTfms->GetCount())
 			{
-				for (int i = 0; i < ChildTfms->GetCount(); ++i)
+				for (UPTR i = 0; i < ChildTfms->GetCount(); ++i)
 				{
 					Data::PParams ChildTfm = ChildTfms->Get<Data::PParams>(i);
 					CStrID ChildID = ChildTfm->Get<CStrID>(CStrID("ID"));
@@ -166,7 +166,7 @@ bool CPropSceneNode::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const 
 	GetEntity()->SetAttr<Data::PDataArray>(CStrID("ChildTransforms"), ChildTfms);
 
 	Data::CData* pData = ChildTfms->Reserve(ChildrenToSave.GetCount());
-	for (int i = 0; i < ChildrenToSave.GetCount(); ++i)
+	for (UPTR i = 0; i < ChildrenToSave.GetCount(); ++i)
 	{
 		CStrID ChildID = ChildrenToSave[i];
 		Scene::CSceneNode* pNode = GetChildNode(ChildID);

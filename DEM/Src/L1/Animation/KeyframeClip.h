@@ -28,7 +28,9 @@ public:
 											const CArray<CEventTrack>* _EventTracks, float Length);
 	virtual void					Unload();
 
-	virtual Scene::PNodeController	CreateController(DWORD SamplerIdx) const;
+	virtual bool					IsResourceValid() const { return !!Tracks.GetCount(); }
+
+	virtual Scene::PNodeController	CreateController(UPTR SamplerIdx) const;
 };
 
 typedef Ptr<CKeyframeClip> PKeyframeClip;

@@ -76,7 +76,7 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 		if (PhysicsDesc.IsValidPtr())
 		{
 			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
-			for (int i = 0; i < Objects.GetCount(); ++i)
+			for (UPTR i = 0; i < Objects.GetCount(); ++i)
 			{
 				//???allow moving collision objects and rigid bodies?
 

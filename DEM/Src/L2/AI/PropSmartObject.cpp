@@ -32,7 +32,7 @@ bool CPropSmartObject::InternalActivate()
 		if (Desc->Get<Data::PParams>(DescSection, CStrID("Actions")))
 		{
 			Actions.BeginAdd(DescSection->GetCount());
-			for (int i = 0; i < DescSection->GetCount(); i++)
+			for (UPTR i = 0; i < DescSection->GetCount(); i++)
 			{
 				const Data::CParam& Prm = DescSection->Get(i);
 				const AI::CSmartAction* pTpl = AISrv->GetSmartAction(Prm.GetValue<CStrID>());
@@ -204,7 +204,7 @@ bool CPropSmartObject::OnLevelSaving(Events::CEventDispatcher* pDispatcher, cons
 
 	// Need to recreate params because else we may rewrite initial level desc in the HRD cache
 	Data::PParams P = n_new(Data::CParams(Actions.GetCount()));
-	for (int i = 0; i < Actions.GetCount(); ++i)
+	for (UPTR i = 0; i < Actions.GetCount(); ++i)
 		P->Set(Actions.KeyAt(i), Actions.ValueAt(i).Enabled);
 	GetEntity()->SetAttr(CStrID("SOActionsEnabled"), P);
 	OK;
@@ -225,7 +225,7 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 	if (Desc->Get<Data::PDataArray>(AnimsDesc, CStrID("Anims")))
 	{
 		CAnimInfo* pAnimInfo = Anims.Reserve(AnimsDesc->GetCount());
-		for (int i = 0; i < AnimsDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < AnimsDesc->GetCount(); ++i)
 		{
 			const Data::CParams& SubDesc = *AnimsDesc->Get<Data::PParams>(i);
 			pAnimInfo->ClipID = SubDesc.Get<CStrID>(CStrID("Clip"), CStrID::Empty);
@@ -245,11 +245,11 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 	Data::PParams AnimRefDesc;
 	if (Desc->Get<Data::PParams>(AnimRefDesc, CStrID("ActionAnims")))
 	{
-		for (int i = 0; i < AnimRefDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < AnimRefDesc->GetCount(); ++i)
 		{
 			Data::CParam& Prm = AnimRefDesc->Get(i);
-			int Idx = Prm.GetValue<int>();
-			if (Idx <= Anims.GetCount()) ActionAnimIndices.Add(Prm.GetName(), Idx);
+			IPTR Idx = (IPTR)Prm.GetValue<int>();
+			if (Idx <= (IPTR)Anims.GetCount()) ActionAnimIndices.Add(Prm.GetName(), Idx);
 			else Sys::Log("AI,SO,Warning: entity '%s', action anim '%s' = '%d' idx is out of range, skipped\n",
 					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
 		}
@@ -257,11 +257,11 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 
 	if (Desc->Get<Data::PParams>(AnimRefDesc, CStrID("StateAnims")))
 	{
-		for (int i = 0; i < AnimRefDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < AnimRefDesc->GetCount(); ++i)
 		{
 			Data::CParam& Prm = AnimRefDesc->Get(i);
-			int Idx = Prm.GetValue<int>();
-			if (Idx <= Anims.GetCount()) StateAnimIndices.Add(Prm.GetName(), Idx);
+			IPTR Idx = (IPTR)Prm.GetValue<int>();
+			if (Idx <= (IPTR)Anims.GetCount()) StateAnimIndices.Add(Prm.GetName(), Idx);
 			else Sys::Log("AI,SO,Warning: entity '%s', state anim '%s' = '%d' idx is out of range, skipped\n",
 					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
 		}
@@ -269,13 +269,13 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 
 	if (IsInTransition())
 	{
-		int Idx = ActionAnimIndices.FindIndex(CurrState);
+		IPTR Idx = ActionAnimIndices.FindIndex(CurrState);
 		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : NULL);
 		UpdateAnimationCursor();
 	}
 	else
 	{
-		int Idx = StateAnimIndices.FindIndex(CurrState);
+		IPTR Idx = StateAnimIndices.FindIndex(CurrState);
 		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
 	}
 }
@@ -567,7 +567,7 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 
 	if (pNavCache)
 	{
-		for (int i = 0; i < pNavCache->GetCount(); ++i)
+		for (UPTR i = 0; i < pNavCache->GetCount(); ++i)
 			if (!pActor->GetNavSystem().IsPolyValid(pNavCache->At(i)))
 			{
 				UpdateCache = true;

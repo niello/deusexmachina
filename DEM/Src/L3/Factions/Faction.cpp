@@ -17,7 +17,7 @@ CStrID CFaction::GetLeader() const
 
 	CStrID Leader;
 	int MaxRank = 0;
-	for (int i = 0; i < Members.GetCount(); ++i)
+	for (UPTR i = 0; i < Members.GetCount(); ++i)
 	{
 		int Rank = Members.ValueAt(i);
 		if (Rank > MaxRank)
@@ -37,9 +37,9 @@ CStrID CFaction::GetGroupLeader(const CArray<CStrID>& Group) const
 
 	CStrID GroupLeader;
 	int MaxRank = 0;
-	for (int i = 0; i < Group.GetCount(); ++i)
+	for (UPTR i = 0; i < Group.GetCount(); ++i)
 	{
-		int Idx = Members.FindIndex(Group[i]);
+		IPTR Idx = Members.FindIndex(Group[i]);
 		if (Idx != INVALID_INDEX)
 		{
 			int Rank = Members.ValueAt(Idx);

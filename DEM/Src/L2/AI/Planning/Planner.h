@@ -43,7 +43,7 @@ private:
 	CPoolAllocator<CNode, 32>	NodePool;
 	CArray<PActionTpl>			ActionTpls;
 	CArray<CActionTpl*>			EffectToActions[WSP_Count];
-	int							NewActIdx;
+	UPTR						NewActIdx;
 
 	static int CmpPlannerNodes(const void* First, const void* Second);
 

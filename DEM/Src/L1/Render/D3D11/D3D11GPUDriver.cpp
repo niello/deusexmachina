@@ -188,7 +188,7 @@ void CD3D11GPUDriver::Release()
 	Samplers.Clear();
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
-	for (int i = 0; i < SwapChains.GetCount() ; ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount() ; ++i)
 		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
 
 	SAFE_DELETE_ARRAY(CurrVP);
@@ -313,7 +313,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	n_assert(pWnd);
 
 	//???or destroy and recreate with new params?
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd) return ERR_CREATION_ERROR;
 
 	UPTR BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
@@ -1255,7 +1255,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 			bool SkipShaderType = false;
 			DWORD FirstSRVSlot;
 			DWORD CurrSRVSlot;
-			for (int i = 0; ; ++i)
+			for (UPTR i = 0; ; ++i)
 			{
 				DWORD ShaderType;
 				DWORD SRVSlot;
@@ -1966,7 +1966,7 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	// Since sampler creation should be load-time, it is not performance critical.
 	// We can omit it and allow to create duplicate samplers, but maintaining uniquity
 	// serves both for memory saving and early exits on redundant binding.
-	for (int i = 0; i < Samplers.GetCount(); ++i)
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
 		CD3D11Sampler* pSamp = Samplers[i].GetUnsafe();
 		if (pSamp->GetD3DSampler() == pD3DSamplerState) return pSamp; //???release pD3DSamplerState?
@@ -2241,7 +2241,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 	// Since render state creation should be load-time, it is not performance critical. If we
 	// skip this and create new CRenderState, sorting will consider them as different state sets.
-	for (int i = 0; i < RenderStates.GetCount(); ++i)
+	for (UPTR i = 0; i < RenderStates.GetCount(); ++i)
 	{
 		CD3D11RenderState* pRS = RenderStates[i].GetUnsafe();
 		if (pRS->VS == Desc.VertexShader &&
@@ -3191,7 +3191,7 @@ D3D11_FILTER CD3D11GPUDriver::GetD3DTexFilter(ETexFilter Filter, bool Comparison
 bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D11SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
@@ -3207,7 +3207,7 @@ bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, c
 bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D11SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
@@ -3223,7 +3223,7 @@ bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatche
 bool CD3D11GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D11SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)

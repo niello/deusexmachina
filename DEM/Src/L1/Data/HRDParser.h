@@ -58,7 +58,7 @@ private:
 	DWORD			Line,
 					Col;
 					
-	int				ParserCursor;
+	UPTR			ParserCursor;
 
 	CString*		pErr;
 	

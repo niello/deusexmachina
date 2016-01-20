@@ -21,7 +21,7 @@ bool CControlLayout::Init(const Data::CParams& Desc)
 	if (Desc.Get<Data::PParams>(Mappings, CStrID("Events")) && Mappings->GetCount())
 	{
 		CInputMappingEvent* pNew = EventMappings.Reserve(Mappings->GetCount());
-		for (int i = 0; i < Mappings->GetCount(); ++i, ++pNew)
+		for (UPTR i = 0; i < Mappings->GetCount(); ++i, ++pNew)
 		{
 			Data::CParam& Prm = Mappings->Get(i);
 			if (Prm.IsA<int>())
@@ -37,7 +37,7 @@ bool CControlLayout::Init(const Data::CParams& Desc)
 	if (Desc.Get<Data::PParams>(Mappings, CStrID("States")) && Mappings->GetCount())
 	{
 		CInputMappingState* pNew = StateMappings.Reserve(Mappings->GetCount());
-		for (int i = 0; i < Mappings->GetCount(); ++i, ++pNew)
+		for (UPTR i = 0; i < Mappings->GetCount(); ++i, ++pNew)
 		{
 			Data::CParam& Prm = Mappings->Get(i);
 			if (!pNew->Init(Prm.GetName(), *Prm.GetValue<Data::PParams>())) FAIL;

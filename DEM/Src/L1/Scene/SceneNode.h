@@ -136,7 +136,7 @@ inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
 
 template<class T> inline T* CSceneNode::FindFirstAttribute() const
 {
-	for (int i = 0; i < Attrs.GetCount(); ++i)
+	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 	{
 		CNodeAttribute* pAttr = Attrs[i];
 		if (pAttr->IsA(T::RTTI)) return (T*)pAttr;
@@ -165,7 +165,7 @@ inline void CSceneNode::SetWorldTransform(const matrix44& Transform)
 inline bool CSceneNode::AcceptVisitor(INodeVisitor& Visitor)
 {
 	if (!Visitor.Visit(*this)) FAIL;
-	for (int i = 0; i < Children.GetCount(); ++i)
+	for (UPTR i = 0; i < Children.GetCount(); ++i)
 		if (!Children.ValueAt(i)->AcceptVisitor(Visitor)) FAIL;
 	OK;
 }

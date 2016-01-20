@@ -21,7 +21,7 @@ bool CPropInventory::InternalActivate()
 	if (GetEntity()->GetAttr<Data::PDataArray>(InvDesc, CStrID("Inventory")) && InvDesc->GetCount())
 	{
 		CItemStack* pStack = Items.Reserve(InvDesc->GetCount());
-		for (int i = 0; i < InvDesc->GetCount(); ++i, ++pStack)
+		for (UPTR i = 0; i < InvDesc->GetCount(); ++i, ++pStack)
 		{
 			Data::PParams StackDesc = InvDesc->Get<Data::PParams>(i);
 

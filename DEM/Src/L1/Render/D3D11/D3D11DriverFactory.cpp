@@ -29,7 +29,7 @@ void CD3D11DriverFactory::Close()
 	AdapterCount = 0;
 	SAFE_RELEASE(pDXGIFactory);
 
-	for (IPTR i = 0; i < ShaderSignatures.GetCount(); ++i)
+	for (UPTR i = 0; i < ShaderSignatures.GetCount(); ++i)
 		n_free(ShaderSignatures[i].pData);
 	ShaderSignatures.Clear();
 	ShaderSigIDToIndex.Clear();

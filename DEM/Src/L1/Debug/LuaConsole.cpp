@@ -144,7 +144,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		{
 			ScriptSrv->GetTableFieldsDebug(Contents);
 			Sys::Log("----------\n");
-			for (int i = 0; i < Contents.GetCount(); ++i)
+			for (UPTR i = 0; i < Contents.GetCount(); ++i)
 				Print(Contents[i].CStr(), 0xffb0b0b0);
 			Sys::Log("----------\n");
 		}
@@ -180,7 +180,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 	{
 		if (CmdHistory.GetCount())
 		{
-			if (++CmdHistoryCursor >= CmdHistory.GetCount())
+			if (++CmdHistoryCursor >= (IPTR)CmdHistory.GetCount())
 				CmdHistoryCursor = CmdHistory.GetCount() - 1;
 			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
 			pInputLine->setCaretIndex(pInputLine->getText().length());

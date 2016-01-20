@@ -121,7 +121,7 @@ void CHashTable<TKey, TVal>::Grow(DWORD NewCapacity)
 	CChain Tmp;
 	CopyToArray(Tmp);
 	Chains.SetSize(NewCapacity);
-	for (int i = 0; i < Tmp.GetCount(); ++i) Add(Tmp[i]);
+	for (UPTR i = 0; i < Tmp.GetCount(); ++i) Add(Tmp[i]);
 }
 //---------------------------------------------------------------------
 

@@ -29,7 +29,7 @@ void CPlanner::EndActionTpls()
 	{
 		const CWorldState& Effects = ActionTpls[NewActIdx]->GetEffects();
 
-		for (DWORD i = 0; i < WSP_Count; ++i)
+		for (UPTR i = 0; i < WSP_Count; ++i)
 			if (Effects.IsPropSet((EWSProp)i))
 				EffectToActions[i].Add(ActionTpls[NewActIdx]);
 	}
@@ -239,7 +239,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 
 		FillNeighbors(pActor, *pCurrNode, Neighbors);
 
-		for (int i = 0; i < Neighbors.GetCount(); ++i)
+		for (UPTR i = 0; i < Neighbors.GetCount(); ++i)
 		{
 			CNode* pNeighbor = Neighbors[i];
 

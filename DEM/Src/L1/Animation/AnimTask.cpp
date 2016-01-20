@@ -73,7 +73,7 @@ void CAnimTask::Update()
 	float PrevCursorPos = CursorPos;
 	if (State == Task_Starting)
 	{
-		for (int i = 0; i < Ctlrs.GetCount(); ++i)
+		for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 			Ctlrs[i]->Activate(true);
 		State = Loop ? Task_Looping : Task_Running;
 		PrevRealWeight = 1.f; // Ensure the weight will be applied if it is not 1.f
@@ -113,7 +113,7 @@ void CAnimTask::Update()
 	// Apply weight, if it has changed
 	if (PrevRealWeight != RealWeight)
 	{
-		for (int i = 0; i < Ctlrs.GetCount(); ++i)
+		for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 		{
 			Scene::CNodeController* pCtlr = Ctlrs[i];
 			if (!pCtlr->IsAttachedToNode()) continue;
@@ -132,13 +132,13 @@ void CAnimTask::Update()
 		int KeyIndex;
 		float IpolFactor;
 		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CursorPos, Loop, KeyIndex, IpolFactor);
-		for (int i = 0; i < Ctlrs.GetCount(); ++i)
+		for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 			((Anim::CNodeControllerMocap*)Ctlrs[i].GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 	else if (Clip->IsA<Anim::CKeyframeClip>())
 	{
 		float Time = Clip->AdjustCursorPos(CursorPos, Loop);
-		for (int i = 0; i < Ctlrs.GetCount(); ++i)
+		for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 			((Anim::CNodeControllerKeyframe*)Ctlrs[i].GetUnsafe())->SetTime(Time);
 	}
 
@@ -186,7 +186,7 @@ void CAnimTask::Clear()
 	pEventDisp = NULL;
 	Params = NULL;
 	Clip = NULL;
-	for (int i = 0; i < Ctlrs.GetCount(); ++i)
+	for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 	{
 		Ctlrs[i]->RemoveFromNode();
 		n_assert_dbg(Ctlrs[i]->GetRefCount() == 1); // Could be stored in detached blend controller, if it is stored somewhere

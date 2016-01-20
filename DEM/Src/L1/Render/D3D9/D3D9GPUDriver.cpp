@@ -99,7 +99,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Target
 		CurrDS = NULL;
 	}
 
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		SwapChains[i].Release();
 
 	//!!!ReleaseQueries();
@@ -141,7 +141,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Target
 	bool IsFullscreenNow = (D3DPresentParams.Windowed == FALSE);
 	bool Failed = false;
 
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
 
@@ -234,7 +234,7 @@ void CD3D9GPUDriver::Release()
 	CurrRT.SetSize(0);
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
 
 	//for (int i = 1; i < MaxRenderTargetCount; i++)
@@ -1050,7 +1050,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 	n_assert(pWnd);
 
 	//???or destroy and recreate with new params?
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd) return ERR_CREATION_ERROR;
 
 	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
@@ -1562,7 +1562,7 @@ bool CD3D9GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 	if (!pRT && Index == 0)
 	{
 		// Invalid case for D3D9. Restore main RT to default backbuffer.
-		for (int i = 0; i < SwapChains.GetCount(); ++i)
+		for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		{
 			CD3D9SwapChain& SC = SwapChains[i];
 			if (SC.IsValid() && !SC.pSwapChain)
@@ -2169,7 +2169,7 @@ PSampler CD3D9GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	// Since sampler creation should be load-time, it is not performance critical.
 	// We can omit it and allow to create duplicate samplers, but maintaining uniquity
 	// serves both for memory saving and early exits on redundant binding.
-	for (int i = 0; i < Samplers.GetCount(); ++i)
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
 		CD3D9Sampler* pSamp = Samplers[i].GetUnsafe();
 		if (memcmp(pSamp->D3DStateValues, pValues, sizeof(pSamp->D3DStateValues)) == 0) return pSamp;
@@ -2386,7 +2386,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 	// Since render state creation should be load-time, it is not performance critical. If we
 	// skip this and create new CRenderState, sorting will consider them as different state sets.
-	for (int i = 0; i < RenderStates.GetCount(); ++i)
+	for (UPTR i = 0; i < RenderStates.GetCount(); ++i)
 	{
 		CD3D9RenderState* pRS = RenderStates[i].GetUnsafe();
 		if (pRS->VS == Desc.VertexShader &&
@@ -3226,7 +3226,7 @@ bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMU
 bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
@@ -3242,7 +3242,7 @@ bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, co
 bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
@@ -3262,7 +3262,7 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
@@ -3281,7 +3281,7 @@ bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, cons
 #ifdef _DEBUG // Check that it is fullscreen and SC is implicit
 	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
 	Sys::DbgOut("CD3D9GPUDriver::OnOSWindowPaint() from %s\n", pWnd->GetTitle());
-	for (int i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)

@@ -98,7 +98,7 @@ inline CTimeServer::~CTimeServer()
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::ResetAll()
 {
-	for (int i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAt(i)->Reset();
 }
 //---------------------------------------------------------------------
@@ -108,7 +108,7 @@ inline void CTimeServer::ResetAll()
 // it, when the pause counter is != 0 it means, pause is activated.
 inline void CTimeServer::PauseAll()
 {
-	for (int i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAt(i)->Pause();
 }
 //---------------------------------------------------------------------
@@ -116,14 +116,14 @@ inline void CTimeServer::PauseAll()
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::UnpauseAll()
 {
-	for (int i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
 		TimeSources.ValueAt(i)->Unpause();
 }
 //---------------------------------------------------------------------
 
 inline CTimeSource* CTimeServer::GetTimeSource(CStrID Name) const
 {
-	int Idx = TimeSources.FindIndex(Name);
+	IPTR Idx = TimeSources.FindIndex(Name);
 	return (Idx != INVALID_INDEX) ? TimeSources.ValueAt(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
@@ -148,14 +148,14 @@ inline bool CTimeServer::IsPaused(CStrID SrcName) const
 
 inline void CTimeServer::PauseNamedTimer(CStrID Name, bool Pause)
 {
-	int Idx = Timers.FindIndex(Name);
+	IPTR Idx = Timers.FindIndex(Name);
 	if (Idx != INVALID_INDEX) Timers[Name].Active = !Pause;
 }
 //---------------------------------------------------------------------
 
 inline void CTimeServer::DestroyNamedTimer(CStrID Name)
 {
-	int Idx = Timers.FindIndex(Name);
+	IPTR Idx = Timers.FindIndex(Name);
 	if (Idx != INVALID_INDEX) Timers.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
