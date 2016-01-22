@@ -4,9 +4,9 @@ namespace Render
 {
 __ImplementClassNoFactory(Render::CTexture, Resources::CResourceObject);
 
-DWORD CTexture::GetPixelCount(bool IncludeSubsequentMips) const
+UPTR CTexture::GetPixelCount(bool IncludeSubsequentMips) const
 {
-	DWORD BaseCount;
+	UPTR BaseCount;
 	switch (Desc.Type)
 	{
 		case Texture_2D:	BaseCount = Desc.Width * Desc.Height;
@@ -17,9 +17,9 @@ DWORD CTexture::GetPixelCount(bool IncludeSubsequentMips) const
 
 	if (!IncludeSubsequentMips) return BaseCount;
 
-	DWORD DivShift = ((Desc.Type == Texture_3D) ? 3 : 2); // Divide by 8 or 4
-	DWORD Accum = BaseCount;
-	for (DWORD i = 1; i < Desc.MipLevels; ++i)
+	const UPTR DivShift = ((Desc.Type == Texture_3D) ? 3 : 2); // Divide by 8 or 4
+	UPTR Accum = BaseCount;
+	for (UPTR i = 1; i < Desc.MipLevels; ++i)
 	{
 		BaseCount >>= DivShift;
 		Accum += BaseCount;

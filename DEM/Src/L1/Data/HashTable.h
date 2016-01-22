@@ -25,9 +25,9 @@ protected:
 	#define GROW_THRESHOLD 1.5f
 
 	CFixedArray<CChain>	Chains;
-	DWORD				Count;
+	UPTR				Count;
 
-	void Grow(DWORD NewCapacity);
+	void Grow(UPTR NewCapacity);
 
 public:
 
@@ -77,9 +77,9 @@ public:
 		}
 	};
 
-	static const DWORD DEFAULT_SIZE = 64;
+	static const UPTR DEFAULT_SIZE = 64;
 
-	CHashTable(DWORD Capacity = DEFAULT_SIZE);
+	CHashTable(UPTR Capacity = DEFAULT_SIZE);
 	CHashTable(const CHashTable<TKey, TVal>& Other): Chains(Other.Chains), Count(Other.Count) {}
 
 	void		Add(const CPair& Pair, bool Replace = false);
@@ -97,8 +97,8 @@ public:
 	CIterator	Begin() { return CIterator(this); }
 	CIterator	End() { return CIterator(NULL); }
 
-	int			GetCount() const { return Count; }
-	int			Capacity() const { return Chains.GetCount(); }
+	UPTR		GetCount() const { return Count; }
+	UPTR		Capacity() const { return Chains.GetCount(); }
 	bool		IsEmpty() const { return !Count; }
 
 	void		operator =(const CHashTable<TKey, TVal>& Other) { if (this != &Other) { Chains = Other.Chains; Count = Other.Count; } }
@@ -106,16 +106,16 @@ public:
 };
 
 template<class TKey, class TVal>
-inline CHashTable<TKey, TVal>::CHashTable(DWORD Capacity = DEFAULT_SIZE): Chains(Capacity), Count(0)
+inline CHashTable<TKey, TVal>::CHashTable(UPTR Capacity = DEFAULT_SIZE): Chains(Capacity), Count(0)
 {
 	// Since collision is more of exception, set grow size to 1 to economy memory
-	for (DWORD i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.GetCount(); ++i)
 		Chains[i].SetGrowSize(1);
 }
 //---------------------------------------------------------------------
 
 template<class TKey, class TVal>
-void CHashTable<TKey, TVal>::Grow(DWORD NewCapacity)
+void CHashTable<TKey, TVal>::Grow(UPTR NewCapacity)
 {
 	if (NewCapacity == Chains.GetCount()) return;
 	CChain Tmp;
@@ -128,11 +128,11 @@ void CHashTable<TKey, TVal>::Grow(DWORD NewCapacity)
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Add(const CPair& Pair, bool Replace)
 {
-	if (Count >= (DWORD)(Chains.GetCount() * GROW_THRESHOLD))
-		Grow((DWORD)(Chains.GetCount() * GROW_FACTOR));
+	if (Count >= (UPTR)(Chains.GetCount() * GROW_THRESHOLD))
+		Grow((UPTR)(Chains.GetCount() * GROW_FACTOR));
 	CChain& Chain = Chains[Pair.GetKeyHash() % Chains.GetCount()];
 	bool HasEqual;
-	int Idx = Chain.FindClosestIndexSorted(Pair, &HasEqual);
+	IPTR Idx = Chain.FindClosestIndexSorted(Pair, &HasEqual);
 	if (HasEqual)
 	{
 		if (Replace) Chain[Idx] = Pair;
@@ -161,7 +161,7 @@ bool CHashTable<TKey, TVal>::Remove(const TKey& Key)
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Clear()
 {
-	for (DWORD i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.GetCount(); ++i)
 		Chains[i].Clear();
 	Count = 0;
 }
@@ -199,8 +199,8 @@ TVal* CHashTable<TKey, TVal>::Get(const TKey& Key) const
 		}
 		else if (Chain.GetCount() > 1)
 		{
-			int ElmIdx = Chain.FindIndexSorted(HashedKey);
-			if (ElmIdx != INVALID_INDEX) return &Chain[ElmIdx].GetValue();
+			IPTR Idx = Chain.FindIndexSorted(HashedKey);
+			if (Idx != INVALID_INDEX) return &Chain[Idx].GetValue();
 		}
 	}
 	return NULL;
@@ -213,7 +213,7 @@ TVal& CHashTable<TKey, TVal>::At(const TKey& Key)
 	CPair HashedKey(Key);
 	CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.GetCount()];
 
-	int Idx = 0;
+	IPTR Idx = 0;
 	if (Count > 0)
 	{
 		if (Chain.GetCount() == 1)
@@ -233,9 +233,9 @@ TVal& CHashTable<TKey, TVal>::At(const TKey& Key)
 	CChain::CIterator It = Chain.Insert(Idx, HashedKey);
 	++Count;
 
-	if (Count >= (DWORD)(Chains.GetCount() * GROW_THRESHOLD))
+	if (Count >= (UPTR)(Chains.GetCount() * GROW_THRESHOLD))
 	{
-		Grow((DWORD)(Chains.GetCount() * GROW_FACTOR));
+		Grow((UPTR)(Chains.GetCount() * GROW_FACTOR));
 		TVal* pVal = Get(Key);
 		n_assert(pVal);
 		return *pVal;
@@ -249,7 +249,7 @@ void CHashTable<TKey, TVal>::CopyToArray(CChain& OutData) const
 {
 	if (!Count) return;
 	OutData.Resize(OutData.GetCount() + Count);
-	for (DWORD i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.GetCount(); ++i)
 	{
 		CChain& Chain = Chains[i];
 		for (CChain::CIterator It = Chain.Begin(); It != Chain.End(); ++It)

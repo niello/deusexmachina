@@ -46,7 +46,7 @@ template<> bool CBinaryWriter::Write<CBuffer>(const CBuffer& Value)
 }
 //---------------------------------------------------------------------
 
-bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme& Scheme, DWORD& Written)
+bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme& Scheme, UPTR& Written)
 {
 	Written = 0;
 
@@ -108,7 +108,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 				if (SubScheme.IsValidPtr() && Rec.Flags.Is(CDataScheme::APPLY_SCHEME_TO_SELF))
 				{
 					// Apply scheme on self, then fix element count of self
-					DWORD Count;
+					UPTR Count;
 					if (!WriteParamsByScheme(PrmParams, *SubScheme, Count)) FAIL;
 
 					if (Rec.Flags.Is(CDataScheme::WRITE_COUNT) && Count != CountWritten)
@@ -145,7 +145,7 @@ bool CBinaryWriter::WriteParamsByScheme(const CParams& Value, const CDataScheme&
 						if (SubScheme.IsValidPtr())
 						{
 							// If subscheme is declared, write this child by subscheme and fix its element count
-							DWORD Count;
+							UPTR Count;
 							if (!WriteParamsByScheme(SubPrmParams, *SubScheme, Count)) FAIL;
 
 							if (Rec.Flags.Is(CDataScheme::WRITE_CHILD_COUNT) && Count != CountWritten)

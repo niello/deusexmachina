@@ -109,13 +109,13 @@ inline bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) 
 
 // Execution results
 
-const DWORD Failure = 0;
-const DWORD Success = 1;
-const DWORD Running = 2;
-const DWORD Error = 3;
+const UPTR Failure = 0;
+const UPTR Success = 1;
+const UPTR Running = 2;
+const UPTR Error = 3;
 // Use values bigger than Error to specify errors
 
-inline bool ExecResultIsError(DWORD Result) { return Result >= Error; }
+inline bool ExecResultIsError(UPTR Result) { return Result >= Error; }
 
 //
 

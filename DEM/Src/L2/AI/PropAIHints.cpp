@@ -171,7 +171,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 
 void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 {
-	int Idx = Hints.FindIndex(Name);
+	IPTR Idx = Hints.FindIndex(Name);
 	if (Idx != INVALID_INDEX)
 	{
 		CRecord& Rec = Hints.ValueAt(Idx);

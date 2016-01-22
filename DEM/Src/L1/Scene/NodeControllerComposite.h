@@ -21,7 +21,7 @@ protected:
 	struct CSource
 	{
 		PNodeController		Ctlr;
-		DWORD				Priority;
+		UPTR				Priority;
 		float				Weight;
 		Math::CTransformSRT	SRT;	//???!!!revisit?! Store only because Ctlr.ApplyTo may return false for unchanged tfm, which must be cached
 
@@ -38,19 +38,19 @@ public:
 	virtual bool	OnAttachToNode(Scene::CSceneNode* pSceneNode);
 	virtual void	OnDetachFromNode();
 
-	bool			AddSource(Scene::CNodeController& Ctlr, DWORD Priority, float Weight);
+	bool			AddSource(Scene::CNodeController& Ctlr, UPTR Priority, float Weight);
 	bool			RemoveSource(const Scene::CNodeController& Ctlr);
 	void			Clear();
 
-	DWORD			GetSourceCount() const { return Sources.GetCount(); }
-	int				GetSourceIndex(Scene::CNodeController& Ctlr) const;
-	void			SetPriority(int CtlrIdx, DWORD Priority) { Sources[CtlrIdx].Priority = Priority; Sources.Sort(); }
+	UPTR			GetSourceCount() const { return Sources.GetCount(); }
+	IPTR			GetSourceIndex(Scene::CNodeController& Ctlr) const;
+	void			SetPriority(int CtlrIdx, UPTR Priority) { Sources[CtlrIdx].Priority = Priority; Sources.Sort(); }
 	void			SetWeight(int CtlrIdx, float Weight) { n_assert(Weight >= 0.f && Weight <= 1.f); Sources[CtlrIdx].Weight = Weight; }
 };
 
 typedef Ptr<CNodeControllerComposite> PNodeControllerComposite;
 
-inline int CNodeControllerComposite::GetSourceIndex(Scene::CNodeController& Ctlr) const
+inline IPTR CNodeControllerComposite::GetSourceIndex(Scene::CNodeController& Ctlr) const
 {
 	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 		if (Sources[i].Ctlr.GetUnsafe() == &Ctlr) return i;

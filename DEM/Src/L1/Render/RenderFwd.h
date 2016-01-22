@@ -29,11 +29,11 @@ typedef Ptr<class CConstantBuffer> PConstantBuffer;
 typedef Ptr<class CTexture> PTexture;
 typedef Ptr<class CSampler> PSampler;
 
-const DWORD Adapter_AutoSelect = (DWORD)-2;
-const DWORD Adapter_None = (DWORD)-1;
-const DWORD Adapter_Primary = 0;
-const DWORD Adapter_Secondary = 1;
-const DWORD Output_None = (DWORD)-1;
+const UPTR Adapter_AutoSelect = (UPTR)-2;
+const UPTR Adapter_None = (UPTR)-1;
+const UPTR Adapter_Primary = 0;
+const UPTR Adapter_Secondary = 1;
+const UPTR Output_None = (UPTR)-1;
 
 // Binding handlers for shader parameters
 typedef HHandle HConst;
@@ -255,17 +255,17 @@ enum ETexFilter
 struct CImageData
 {
 	char*	pData;			// Data sequentially placed in memory
-	DWORD	RowPitch;		// Distance in bytes between first bytes of two rows (undefined for 1D)
-	DWORD	SlicePitch;		// Distance in bytes between first bytes of two depth slices (undefined for 1D & 2D)
+	UPTR	RowPitch;		// Distance in bytes between first bytes of two rows (undefined for 1D)
+	UPTR	SlicePitch;		// Distance in bytes between first bytes of two depth slices (undefined for 1D & 2D)
 };
 
 struct CRenderTargetDesc
 {
-	DWORD			Width;
-	DWORD			Height;
+	UPTR			Width;
+	UPTR			Height;
 	EPixelFormat	Format;
 	EMSAAQuality	MSAAQuality;
-	DWORD			MipLevels;			// Has meaning only for texture RTs (UseAsShaderInput = true, not depth-stencil)
+	UPTR			MipLevels;			// Has meaning only for texture RTs (UseAsShaderInput = true, not depth-stencil)
 	bool			UseAsShaderInput;
 };
 
@@ -281,22 +281,22 @@ struct CViewport
 
 struct CPrimitiveGroup
 {
-	DWORD				FirstVertex;
-	DWORD				VertexCount;
-	DWORD				FirstIndex;
-	DWORD				IndexCount;
+	UPTR				FirstVertex;
+	UPTR				VertexCount;
+	UPTR				FirstIndex;
+	UPTR				IndexCount;
 	EPrimitiveTopology	Topology;
 	CAABB				AABB;
 };
 
 // Error codes
-#define ERR_CREATION_ERROR ((DWORD)-1);
-#define ERR_DRIVER_TYPE_NOT_SUPPORTED ((DWORD)-2);
+#define ERR_CREATION_ERROR ((UPTR)-1);
+#define ERR_DRIVER_TYPE_NOT_SUPPORTED ((UPTR)-2);
 
-inline DWORD GetMipLevelCount(DWORD Width, DWORD Height, DWORD BlockSize = 1)
+inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 {
-	DWORD MaxDim = n_max(Width, Height);
-	DWORD MipLevels = 1;
+	UPTR MaxDim = n_max(Width, Height);
+	UPTR MipLevels = 1;
 	while (MaxDim > BlockSize)
 	{
 		MaxDim >>= 1;

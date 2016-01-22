@@ -38,26 +38,26 @@ static const char* IndexStrings[] =
 	"30", "31"
 };
 
-CStrID CVertexLayout::BuildSignature(const CVertexComponent* pComponents, DWORD Count)
+CStrID CVertexLayout::BuildSignature(const CVertexComponent* pComponents, UPTR Count)
 {
 	if (!pComponents || !Count) return CStrID::Empty;
 
 	// Provide buffer large enough to store any reasonable layout ID
 	//???to some wrapper class like a string tokenizer? May write StringBuilder!
-	const DWORD BUFFER_SIZE = 1024;
+	const UPTR BUFFER_SIZE = 1024;
 	char pBuf[BUFFER_SIZE];
 	char* pCurr = pBuf;
 	char* pEnd = pBuf + BUFFER_SIZE - 1; // Store 1 guaranteed byte for a terminating 0
-	for (DWORD i = 0; i < Count; ++i)
+	for (UPTR i = 0; i < Count; ++i)
 	{
 		const CVertexComponent& Cmp = pComponents[i];
 
 		const char* pSrc = Cmp.GetSemanticString();
-		DWORD Len = strlen(pSrc);
+		UPTR Len = strlen(pSrc);
 		if (memcpy_s(pCurr, pEnd - pCurr, pSrc, Len) != 0) break;
 		pCurr += Len;
 
-		DWORD CmpIdx = Cmp.Index;
+		UPTR CmpIdx = Cmp.Index;
 		if (CmpIdx > 0)
 		{
 			n_assert_dbg(CmpIdx < sizeof_array(IndexStrings));
@@ -72,7 +72,7 @@ CStrID CVertexLayout::BuildSignature(const CVertexComponent* pComponents, DWORD 
 		if (memcpy_s(pCurr, pEnd - pCurr, pSrc, Len) != 0) break;
 		pCurr += Len;
 
-		DWORD CmpStream = Cmp.Stream;
+		UPTR CmpStream = Cmp.Stream;
 		if (CmpStream > 0)
 		{
 			if (memcpy_s(pCurr, pEnd - pCurr, "s", 1) != 0) break;

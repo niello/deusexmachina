@@ -53,7 +53,7 @@ public:
 	CGameLevel*					GetLevel() const { return Level.GetUnsafe(); }
 
 	//???!!!need GetAttr with default?!
-	void						BeginNewAttrs(DWORD Count) { Attrs.BeginAdd(Count); }
+	void						BeginNewAttrs(UPTR Count) { Attrs.BeginAdd(Count); }
 	template<class T> void		AddNewAttr(CStrID ID, const T& Value) { Attrs.Add(ID, Value); }
 	void						EndNewAttrs() { Attrs.EndAdd(); }
 	bool						DeleteAttr(CStrID ID) { return Attrs.Remove(ID); }
@@ -85,7 +85,7 @@ T* CEntity::GetProperty() const
 template<class T>
 inline void CEntity::SetAttr(CStrID ID, const T& Value)
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) Attrs.Add(ID, Value);
 	else Attrs.ValueAt(Idx).SetTypeValue(Value);
 }
@@ -101,7 +101,7 @@ template<> void CEntity::SetAttr(CStrID ID, const Data::CData& Value)
 template<class T>
 inline const T& CEntity::GetAttr(CStrID ID, const T& Default) const
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) return Default;
 	return Attrs.ValueAt(Idx).GetValue<T>();
 }
@@ -111,7 +111,7 @@ inline const T& CEntity::GetAttr(CStrID ID, const T& Default) const
 template<class T>
 inline bool CEntity::GetAttr(T& Out, CStrID ID) const
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	return Attrs.ValueAt(Idx).GetValue<T>(Out);
 }
@@ -121,7 +121,7 @@ inline bool CEntity::GetAttr(T& Out, CStrID ID) const
 template<>
 inline bool CEntity::GetAttr(Data::CData& Out, CStrID ID) const
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	Out = Attrs.ValueAt(Idx);
 	OK;

@@ -17,8 +17,8 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 	if (resourceGroup.empty()) FinalFilename = d_defaultResourceGroup + filename;
 	else
 	{
-		int Idx = ResourceGroups.FindIndex(resourceGroup);
-		if (Idx != -1) FinalFilename = ResourceGroups.ValueAt(Idx) + filename;
+		IPTR Idx = ResourceGroups.FindIndex(resourceGroup);
+		if (Idx != INVALID_INDEX) FinalFilename = ResourceGroups.ValueAt(Idx) + filename;
 		else FinalFilename = filename;
 	}
 
@@ -80,8 +80,8 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
 	if (resource_group.empty()) DirName = d_defaultResourceGroup;
 	else
 	{
-		int Idx = ResourceGroups.FindIndex(resource_group);
-		if (Idx != -1) DirName = ResourceGroups.ValueAt(Idx);
+		IPTR Idx = ResourceGroups.FindIndex(resource_group);
+		if (Idx != INVALID_INDEX) DirName = ResourceGroups.ValueAt(Idx);
 		else DirName = "./";
 	}
 

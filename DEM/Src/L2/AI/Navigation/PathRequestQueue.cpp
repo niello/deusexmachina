@@ -80,7 +80,7 @@ void CPathRequestQueue::Update(int MaxIters)
 }
 //---------------------------------------------------------------------
 
-DWORD CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* pStart,
+UPTR CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* pStart,
 								 const float* pEnd, dtNavMeshQuery* pNavQuery, const dtQueryFilter* pFilter)
 {
 	n_assert(pStart && pEnd && pNavQuery);
@@ -114,7 +114,7 @@ DWORD CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* 
 }
 //---------------------------------------------------------------------
 
-void CPathRequestQueue::CancelRequest(DWORD RequestID)
+void CPathRequestQueue::CancelRequest(UPTR RequestID)
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == RequestID)
@@ -126,7 +126,7 @@ void CPathRequestQueue::CancelRequest(DWORD RequestID)
 }
 //---------------------------------------------------------------------
 
-dtStatus CPathRequestQueue::GetRequestStatus(DWORD RequestID) const
+dtStatus CPathRequestQueue::GetRequestStatus(UPTR RequestID) const
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == RequestID)
@@ -135,7 +135,7 @@ dtStatus CPathRequestQueue::GetRequestStatus(DWORD RequestID) const
 }
 //---------------------------------------------------------------------
 
-dtStatus CPathRequestQueue::GetPathResult(DWORD RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath)
+dtStatus CPathRequestQueue::GetPathResult(UPTR RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath)
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == RequestID)

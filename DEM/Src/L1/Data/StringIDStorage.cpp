@@ -59,7 +59,7 @@ CStringID CStringIDStorage::Get(const char* pString) const
 		CRecord CmpRec;
 		CmpRec.Hash = HashValue;
 		CmpRec.pStr = pString;
-		int Idx = Chain.FindIndexSorted(CmpRec);
+		IPTR Idx = Chain.FindIndexSorted(CmpRec);
 		if (Idx != INVALID_INDEX) return CStringID(Chain[Idx].pStr, 0, 0);
 	}
 	return CStringID::Empty;
@@ -70,7 +70,7 @@ CStringID CStringIDStorage::GetOrAdd(const char* pString)
 {
 	unsigned int HashValue = Hash(pString);
 	CArray<CRecord>& Chain = Chains[HashValue % Chains.GetCount()];
-	int Idx = 0;
+	IPTR Idx = 0;
 	if (Chain.GetCount() == 1)
 	{
 		CRecord& Rec = Chain[0];

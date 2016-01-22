@@ -19,7 +19,7 @@ void CAnimClip::FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispat
 		CEventTrack& Track = EventTracks[i];
 
 		// [ExactCursorPos, ExactCursorPos]
-		DWORD j = 0;
+		UPTR j = 0;
 		for (; j < Track.Keys.GetCount(); ++j)
 			if (Track.Keys[j].Time >= ExactCursorPos) break;
 
@@ -57,7 +57,7 @@ void CAnimClip::FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, 
 			if (StartCursorPos > EndCursorPos)
 			{
 				// (StartCursorPos, Duration]
-				DWORD j = 0;
+				UPTR j = 0;
 				for (; j < Track.Keys.GetCount(); ++j)
 					if (Track.Keys[j].Time > StartCursorPos) break;
 
@@ -78,7 +78,7 @@ void CAnimClip::FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, 
 			else
 			{
 				// (StartCursorPos, EndCursorPos]
-				DWORD j = 0;
+				UPTR j = 0;
 				for (; j < Track.Keys.GetCount(); ++j)
 					if (Track.Keys[j].Time > StartCursorPos) break;
 

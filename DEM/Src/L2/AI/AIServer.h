@@ -57,7 +57,7 @@ public:
 	const COAParams*		GetObstacleAvoidanceParams(CStrID ID) const;
 	const COAParams*		GetDefaultObstacleAvoidanceParams() const { return GetObstacleAvoidanceParams(CStrID::Empty); }
 
-	CPathRequestQueue*		GetPathQueue(DWORD ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
+	CPathRequestQueue*		GetPathQueue(UPTR ThreadID = 0) { n_assert(ThreadID < DEM_THREAD_COUNT); return PathQueues + ThreadID; }
 
 	CPlanner&				GetPlanner() { return Planner; } //???or singleton?
 	static PAction			CreatePlanFromDesc(Data::PParams Desc);
@@ -65,14 +65,14 @@ public:
 
 inline const dtQueryFilter* CAIServer::GetNavQueryFilter(CStrID ID) const
 {
-	int Idx = NavQueryFilters.FindIndex(ID);
+	IPTR Idx = NavQueryFilters.FindIndex(ID);
 	return Idx != INVALID_INDEX ? NavQueryFilters.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 
 inline const COAParams* CAIServer::GetObstacleAvoidanceParams(CStrID ID) const
 {
-	int Idx = ObstacleAvoidanceParams.FindIndex(ID);
+	IPTR Idx = ObstacleAvoidanceParams.FindIndex(ID);
 	return Idx != INVALID_INDEX ? ObstacleAvoidanceParams.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------

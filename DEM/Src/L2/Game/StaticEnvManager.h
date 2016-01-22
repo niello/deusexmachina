@@ -25,7 +25,7 @@ private:
 
 	CDict<CStrID, PStaticObject> Objects;
 
-	void DeleteStaticObject(int Idx);
+	void DeleteStaticObject(IPTR Idx);
 
 public:
 
@@ -43,7 +43,7 @@ public:
 	void			DeleteAllStaticObjects();
 
 	int				GetStaticObjectCount() const { return Objects.GetCount(); }
-	CStaticObject*	GetStaticObject(int Idx) const { return Objects.ValueAt(Idx).GetUnsafe(); }
+	CStaticObject*	GetStaticObject(IPTR Idx) const { return Objects.ValueAt(Idx).GetUnsafe(); }
 	CStaticObject*	GetStaticObject(CStrID UID) const;
 	bool			StaticObjectExists(CStrID UID) const { return !!GetStaticObject(UID); }
 };
@@ -52,7 +52,7 @@ typedef Ptr<CStaticEnvManager> PStaticEnvManager;
 
 inline CStaticObject* CStaticEnvManager::GetStaticObject(CStrID UID) const
 {
-	int Idx = Objects.FindIndex(UID);
+	IPTR Idx = Objects.FindIndex(UID);
 	return (Idx != INVALID_INDEX) ? Objects.ValueAt(Idx).GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------
@@ -65,7 +65,7 @@ inline void CStaticEnvManager::DeleteStaticObject(CStaticObject& Entity)
 
 inline void CStaticEnvManager::DeleteStaticObject(CStrID UID)
 {
-	int Idx = Objects.FindIndex(UID);
+	IPTR Idx = Objects.FindIndex(UID);
 	if (Idx != INVALID_INDEX) DeleteStaticObject(Idx);
 }
 //---------------------------------------------------------------------

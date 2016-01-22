@@ -304,7 +304,7 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 	CString PathString(pPath);
 	PathString.Replace('\\', '/');
 
-	int ColonIdx;
+	IPTR ColonIdx;
 
 	// Ignore one character "assigns" because they are really DOS drive letters
 	while ((ColonIdx = PathString.FindIndex(':')) > 1)

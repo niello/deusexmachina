@@ -28,7 +28,7 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-DWORD CActionGotoSmartObj::Update(CActor* pActor)
+UPTR CActionGotoSmartObj::Update(CActor* pActor)
 {
 	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
 	if (!pEnt) return Failure;

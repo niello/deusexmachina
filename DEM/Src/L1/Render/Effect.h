@@ -42,7 +42,7 @@ typedef Ptr<CEffect> PEffect;
 
 inline const CEffectTech* CEffect::GetTechByID(CStrID ID) const
 {
-	int Idx = Techs.FindIndex(ID);
+	IPTR Idx = Techs.FindIndex(ID);
 	return Idx == INVALID_INDEX ? NULL : &Techs.ValueAt(Idx);
 }
 //---------------------------------------------------------------------

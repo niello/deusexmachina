@@ -19,7 +19,7 @@ class CIndexBuffer: public Core::CObject
 protected:
 
 	EIndexType		IndexType;
-	DWORD			IndexCount;
+	UPTR			IndexCount;
 	Data::CFlags	Access;
 
 	void InternalDestroy() { IndexCount = 0; Access.ClearAll(); }
@@ -34,8 +34,8 @@ public:
 
 	Data::CFlags	GetAccess() const { return Access; }
 	EIndexType		GetIndexType() const { return IndexType; }
-	DWORD			GetIndexCount() const { return IndexCount; }
-	DWORD			GetSizeInBytes() const { return IndexCount * (DWORD)IndexType; }
+	UPTR			GetIndexCount() const { return IndexCount; }
+	UPTR			GetSizeInBytes() const { return IndexCount * (UPTR)IndexType; }
 };
 
 typedef Ptr<CIndexBuffer> PIndexBuffer;

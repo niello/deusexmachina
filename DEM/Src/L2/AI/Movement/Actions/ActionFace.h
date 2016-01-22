@@ -17,8 +17,8 @@ class CActionFace: public CAction
 
 public:
 
-	virtual DWORD	Update(CActor* pActor);
-	virtual void		Deactivate(CActor* pActor);
+	virtual UPTR	Update(CActor* pActor);
+	virtual void	Deactivate(CActor* pActor);
 };
 
 typedef Ptr<CActionFace> PActionFace;

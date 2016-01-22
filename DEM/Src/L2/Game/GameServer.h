@@ -106,7 +106,7 @@ public:
 
 	CTime			GetTime() const { return GameTimeSrc->GetTime(); }
 	CTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
-	DWORD			GetFrameID() const { return GameTimeSrc->GetFrameID(); }
+	UPTR			GetFrameID() const { return GameTimeSrc->GetFrameID(); }
 	bool			IsGamePaused() const { return GameTimeSrc->IsPaused(); }
 	void			PauseGame(bool Pause = true) const;
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }
@@ -119,7 +119,7 @@ public:
 
 inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
 {
-	int Idx = Levels.FindIndex(ID);
+	IPTR Idx = Levels.FindIndex(ID);
 	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
@@ -153,7 +153,7 @@ template<> void CGameServer::SetGlobalAttr(CStrID ID, const Data::CData& Value)
 	if (Value.IsValid()) Attrs.Set(ID, Value);
 	else
 	{
-		int Idx = Attrs.FindIndex(ID);
+		IPTR Idx = Attrs.FindIndex(ID);
 		if (Idx != INVALID_INDEX) Attrs.Remove(ID);
 	}
 }
@@ -162,7 +162,7 @@ template<> void CGameServer::SetGlobalAttr(CStrID ID, const Data::CData& Value)
 template<class T>
 inline const T& CGameServer::GetGlobalAttr(CStrID ID, const T& Default) const
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) return Default;
 	return Attrs.ValueAt(Idx).GetValue<T>();
 }
@@ -172,7 +172,7 @@ inline const T& CGameServer::GetGlobalAttr(CStrID ID, const T& Default) const
 template<class T>
 inline bool CGameServer::GetGlobalAttr(T& Out, CStrID ID) const
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	return Attrs.ValueAt(Idx).GetValue<T>(Out);
 }
@@ -182,7 +182,7 @@ inline bool CGameServer::GetGlobalAttr(T& Out, CStrID ID) const
 template<>
 inline bool CGameServer::GetGlobalAttr(Data::CData& Out, CStrID ID) const
 {
-	int Idx = Attrs.FindIndex(ID);
+	IPTR Idx = Attrs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	Out = Attrs.ValueAt(Idx);
 	OK;

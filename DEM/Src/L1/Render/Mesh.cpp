@@ -21,7 +21,7 @@ bool CMesh::Create(const CMeshInitData& InitData)
 	SubMeshCount = InitData.SubMeshCount;
 	LODCount = InitData.LODCount;
 
-	DWORD TotalSize;
+	UPTR TotalSize;
 	if (InitData.UseMapping)
 	{
 		GroupCount = InitData.RealGroupCount;

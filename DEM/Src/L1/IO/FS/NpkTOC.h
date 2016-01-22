@@ -76,8 +76,8 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 
 	if (_strnicmp(RootPath.CStr(), pAbsPath, RootPath.GetLength())) return NULL;
 
-	DWORD PathLen = strlen(pAbsPath);
-	DWORD RootPathLen = RootPath.GetLength() + 1; // 1 is for a directory separator
+	UPTR PathLen = strlen(pAbsPath);
+	UPTR RootPathLen = RootPath.GetLength() + 1; // 1 is for a directory separator
 	if (PathLen <= RootPathLen) return NULL;
 	PathLen = PathLen - RootPathLen + 1; // 1 is for a terminating null
 	char* pLocalPath = (char*)_malloca(PathLen);

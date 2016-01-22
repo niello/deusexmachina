@@ -56,12 +56,12 @@ public:
 	CVideoDriverFactory() { }
 	virtual ~CVideoDriverFactory() { }
 
-	virtual bool			AdapterExists(DWORD Adapter) const = 0;
-	virtual DWORD			GetAdapterCount() const = 0;
-	virtual bool			GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const = 0;
-	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const = 0;
-	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0) = 0;
-	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect) = 0;
+	virtual bool			AdapterExists(UPTR Adapter) const = 0;
+	virtual UPTR			GetAdapterCount() const = 0;
+	virtual bool			GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) const = 0;
+	virtual UPTR			GetAdapterOutputCount(UPTR Adapter) const = 0;
+	virtual PDisplayDriver	CreateDisplayDriver(UPTR Adapter = 0, UPTR Output = 0) = 0;
+	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect) = 0;
 };
 
 typedef Ptr<CVideoDriverFactory> PVideoDriverFactory;

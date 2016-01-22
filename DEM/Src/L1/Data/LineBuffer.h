@@ -44,7 +44,7 @@ public:
 	~CLineBuffer() { if (pBuffer) n_free(pBuffer); }
 
 	void		Put(const char* pString);
-	const char*	GetLine(DWORD Idx) const { n_assert(Idx < MAX_LINES); return Lines[Idx].pString; }
+	const char*	GetLine(UPTR Idx) const { n_assert(Idx < MAX_LINES); return Lines[Idx].pString; }
 	int			GetLines(const char** OutLines, int MaxCount) const;
 	int			GetHeadLine() const { return HeadLine; }
 	int			GetTailLine() const { return TailLine; }

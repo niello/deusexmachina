@@ -121,7 +121,7 @@ int CPropActorBrain_AbortCurrAction(lua_State* l)
 {
 	//args: EntityScriptObject's this table, [Result = Success]
 	SETUP_ENT_SI_ARGS(1);
-	This->GetEntity()->GetProperty<CPropActorBrain>()->AbortCurrAction((ArgCount > 1) ? (DWORD)lua_tonumber(l, 2) : Success);
+	This->GetEntity()->GetProperty<CPropActorBrain>()->AbortCurrAction((ArgCount > 1) ? (UPTR)lua_tonumber(l, 2) : Success);
 	return 0;
 }
 //---------------------------------------------------------------------

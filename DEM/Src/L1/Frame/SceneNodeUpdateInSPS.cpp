@@ -9,7 +9,7 @@ namespace Frame
 
 bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 {
-	for (DWORD i = 0; i < Node.GetAttributeCount(); ++i)
+	for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (Attr.IsActive())

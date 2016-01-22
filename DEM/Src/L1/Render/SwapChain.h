@@ -44,7 +44,7 @@ struct CSwapChainDesc
 {
 	Data::CFlags		Flags;
 	ESwapMode			SwapMode;
-	DWORD				BackBufferCount;
+	UPTR				BackBufferCount;
 
 	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync) {}
 };
@@ -61,7 +61,7 @@ public:
 	CSwapChainDesc	Desc;
 
 	//???need? what about other statistics?
-	DWORD			FrameID;
+	UPTR			FrameID;
 
 	CSwapChain(): FrameID(0) {}
 

@@ -31,7 +31,7 @@ bool CPropEquipment::Equip(CStrID Slot, CItemStack* pStack, U16 Count)
 
 	if (Slot.IsValid())
 	{
-		int Idx = Slots.FindIndex(Slot);
+		IPTR Idx = Slots.FindIndex(Slot);
 		if (Idx != INVALID_INDEX && Slots.ValueAt(Idx).Type == pStack->GetTpl()->GetType())
 			pSlot = &Slots.ValueAt(Idx);
 	}

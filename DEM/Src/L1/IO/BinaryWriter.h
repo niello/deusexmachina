@@ -24,7 +24,7 @@ class CBinaryWriter: public CStreamWriter
 {
 protected:
 
-	bool WriteParamsByScheme(const Data::CParams& Value, const Data::CDataScheme& Scheme, DWORD& Written);
+	bool WriteParamsByScheme(const Data::CParams& Value, const Data::CDataScheme& Scheme, UPTR& Written);
 	bool WriteDataAsOfType(const Data::CData& Value, int TypeID, Data::CFlags Flags);
 
 public:
@@ -34,7 +34,7 @@ public:
 	bool				WriteString(const char* Value);
 	bool				WriteString(const CString& Value);
 	bool				WriteParams(const Data::CParams& Value);
-	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme) { DWORD Dummy; return WriteParamsByScheme(Value, Scheme, Dummy); }
+	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme) { UPTR Dummy; return WriteParamsByScheme(Value, Scheme, Dummy); }
 	bool				WriteParam(const Data::CParam& Value) { return Write(Value.GetName()) && Write(Value.GetRawValue()); }
 	bool				WriteData(const Data::CData& Value);
 

@@ -300,7 +300,7 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 		//!!!if not bidirectional, exit (x->y)->x here because it becomes (x->x)->x!
 	}
 
-	int Idx = ActionAnimIndices.FindIndex(ActionID);
+	IPTR Idx = ActionAnimIndices.FindIndex(ActionID);
 	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : NULL;
 	if (TransitionDuration < 0.f)
 		TransitionDuration = (pAnimInfo && pAnimInfo->Speed != 0.f) ? pAnimInfo->Duration / n_fabs(pAnimInfo->Speed) : 0.f;
@@ -348,7 +348,7 @@ void CPropSmartObject::CompleteTransition()
 {
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
-	int Idx = StateAnimIndices.FindIndex(TargetState);
+	IPTR Idx = StateAnimIndices.FindIndex(TargetState);
 	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
 
 	Data::PParams P = n_new(Data::CParams(2));
@@ -387,7 +387,7 @@ void CPropSmartObject::AbortTransition(float Duration)
 	//???interchange curr and target and complete transition?
 	//???only if bidirectional transition available for this state pair?
 
-	int Idx = StateAnimIndices.FindIndex(CurrState);
+	IPTR Idx = StateAnimIndices.FindIndex(CurrState);
 	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
 
 	TargetState = CurrState;
@@ -443,7 +443,7 @@ void CPropSmartObject::UpdateAnimationCursor()
 
 void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 {
-	int Idx = Actions.FindIndex(ID);
+	IPTR Idx = Actions.FindIndex(ID);
 	if (Idx == INVALID_INDEX) return;
 
 	CAction& Action = Actions.ValueAt(Idx);
@@ -459,7 +459,7 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 
 bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) const
 {
-	int Idx = Actions.FindIndex(ID);
+	IPTR Idx = Actions.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 
 	const CAction& Action = Actions.ValueAt(Idx);
@@ -473,7 +473,7 @@ bool CPropSmartObject::IsActionAvailable(CStrID ID, const AI::CActor* pActor) co
 	Prop::CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	if (!pScriptable || pScriptable->GetScriptObject().IsNullPtr()) return !!pActor; //???or OK?
 	Data::CData Args[] = { ID, pActor ? pActor->GetEntity()->GetUID() : CStrID::Empty };
-	DWORD Res = pScriptable->GetScriptObject()->RunFunction("IsActionAvailableCallback", Args, 2);
+	UPTR Res = pScriptable->GetScriptObject()->RunFunction("IsActionAvailableCallback", Args, 2);
 	if (Res == Error_Scripting_NoFunction) return !!pActor; //???or OK?
 	return Res == Success;
 }
@@ -515,7 +515,7 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 			float C = Dist.SqLength2D();
 			float Time1, Time2;
 
-			DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &Time1, &Time2);
+			UPTR RootCount = Math::SolveQuadraticEquation(A, B, C, &Time1, &Time2);
 			if (!RootCount) FAIL; //!!!keep a prev point some time! or use current pos?
 			Time = (RootCount == 1 || (Time1 < Time2 && Time1 > 0.f)) ? Time1 : Time2;
 

@@ -41,29 +41,29 @@ public:
 
 	virtual Scene::PNodeController	CreateController(UPTR SamplerIdx) const;
 
-	void							GetSamplingParams(float CursorPos, bool Loop, int& KeyIndex, float& IpolFactor) const;
-	const vector4&					GetKey(int FirstKey, int Index) const;
+	void							GetSamplingParams(float CursorPos, bool Loop, IPTR& KeyIndex, float& IpolFactor) const;
+	const vector4&					GetKey(IPTR FirstKey, IPTR Index) const;
 };
 
 typedef Ptr<CMocapClip> PMocapClip;
 
-inline const vector4& CMocapClip::GetKey(int FirstKey, int Index) const
+inline const vector4& CMocapClip::GetKey(IPTR FirstKey, IPTR Index) const
 {
-	int Idx = FirstKey + Index * KeyStride;
+	IPTR Idx = FirstKey + Index * KeyStride;
 	n_assert_dbg(pKeys && Idx >= 0 && Idx < (int)KeysPerCurve * (int)KeyStride);
 	return pKeys[Idx];
 }
 //---------------------------------------------------------------------
 
-inline void CMocapClip::GetSamplingParams(float CursorPos, bool Loop, int& OutKeyIndex, float& OutIpolFactor) const
+inline void CMocapClip::GetSamplingParams(float CursorPos, bool Loop, IPTR& OutKeyIndex, float& OutIpolFactor) const
 {
 	float KeyIdx = AdjustCursorPos(CursorPos, Loop) * InvKeyTime;
 	OutKeyIndex = (int)KeyIdx;
 	OutIpolFactor = KeyIdx - (float)OutKeyIndex;
 
-	n_assert_dbg(OutKeyIndex >= 0 && OutKeyIndex < (int)KeysPerCurve);
+	n_assert_dbg(OutKeyIndex >= 0 && OutKeyIndex < (IPTR)KeysPerCurve);
 	n_assert_dbg(OutIpolFactor >= 0.f && OutIpolFactor < 1.f);
-	n_assert_dbg(OutIpolFactor == 0.f || OutKeyIndex < (int)(KeysPerCurve - 1)); // Never interpolate next the last key
+	n_assert_dbg(OutIpolFactor == 0.f || OutKeyIndex < (IPTR)(KeysPerCurve - 1)); // Never interpolate next the last key
 }
 //---------------------------------------------------------------------
 

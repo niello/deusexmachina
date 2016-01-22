@@ -71,7 +71,7 @@ void* CFileStream::Map()
 	//n_assert(size > 0);
 	//mappedContent = Memory::Alloc(Memory::ScratchHeap, size);
 	//Seek(0, Begin);
-	//DWORD readSize = Read(mappedContent, size);
+	//UPTR readSize = Read(mappedContent, size);
 	//n_assert(readSize == size);
 	//Stream::Map();
 	//return mappedContent;

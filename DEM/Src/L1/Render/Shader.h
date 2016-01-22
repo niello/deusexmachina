@@ -41,7 +41,7 @@ public:
 	virtual HConstBuffer	GetConstBufferHandle(HConst hConst) const = 0;
 	virtual HResource		GetResourceHandle(CStrID ID) const = 0;
 	virtual HSampler		GetSamplerHandle(CStrID ID) const = 0;
-	//virtual DWORD		GetConstAddress(CStrID ID, HConstBuffer& OutHostBuffer) = 0;
+	//virtual UPTR		GetConstAddress(CStrID ID, HConstBuffer& OutHostBuffer) = 0;
 
 	EShaderType				GetType() const { return Type; }
 };

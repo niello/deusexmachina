@@ -53,9 +53,9 @@ public:
 
 	CIterator	Find(const TObject& Object) const;
 	CIterator	End() const { return CIterator(NULL); }
-	TKey		GetKeyAt(int Idx) const { return Lists.KeyAt(Idx); }
+	TKey		GetKeyAt(IPTR Idx) const { return Lists.KeyAt(Idx); }
 	CIterator	GetHead(TKey Key) const;
-	CIterator	GetHeadAt(int Idx) const { return Lists.ValueAt(Idx)->Begin(); }
+	CIterator	GetHeadAt(IPTR Idx) const { return Lists.ValueAt(Idx)->Begin(); }
 	UPTR		GetListCount() const { return (UPTR)Lists.GetCount(); }
 	UPTR		GetCount(TKey Key) const;
 	//UPTR		GetTotalCount() const { return TotalCount; }
@@ -77,7 +77,7 @@ typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey,TObject>::Add(const TO
 	CList<TObject>* pList;
 
 	TKey Key = ObjTraits<TObject>::GetKey(Object);
-	int Idx = Lists.FindIndex(Key);
+	IPTR Idx = Lists.FindIndex(Key);
 	if (Idx == INVALID_INDEX)
 	{
 		pList = n_new(CList<TObject>);
@@ -92,7 +92,7 @@ typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey,TObject>::Add(const TO
 template<class TKey, class TObject>
 inline void CKeyList<TKey, TObject>::Remove(typename CKeyList<TKey, TObject>::CIterator It, TObject* pOutValue)
 {	
-	int Idx = Lists.FindIndex((*It)->GetKey());
+	IPTR Idx = Lists.FindIndex((*It)->GetKey());
 	if (Idx != INVALID_INDEX) Lists.ValueAt(Idx)->Remove(It, pOutValue);
 }
 //---------------------------------------------------------------------
@@ -101,7 +101,7 @@ template<class TKey, class TObject>
 bool CKeyList<TKey, TObject>::RemoveByValue(const TObject& Object)
 {	
 	TKey Key = ObjTraits<TObject>::GetKey(Object);
-	int Idx = Lists.FindIndex(Key);
+	IPTR Idx = Lists.FindIndex(Key);
 	if (Idx != INVALID_INDEX)
 	{
 		CList<TObject>* pList = Lists.ValueAt(Idx);
@@ -121,7 +121,7 @@ template<class TKey, class TObject>
 typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::Find(const TObject& Object) const
 {
 	TKey Key = ObjTraits<TObject>::GetKey(Object);
-	int Idx = Lists.FindIndex(Key);
+	IPTR Idx = Lists.FindIndex(Key);
 	if (Idx == INVALID_INDEX) return NULL;
 	CList<TObject>* pList = Lists.ValueAt(Idx);
 	return pList->Find(Object, pList->Begin());
@@ -131,7 +131,7 @@ typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::Find(const 
 template<class TKey, class TObject>
 inline typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::GetHead(TKey Key) const
 {	
-	int Idx = Lists.FindIndex(Key);
+	IPTR Idx = Lists.FindIndex(Key);
 	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->Begin() : NULL;
 }
 //---------------------------------------------------------------------
@@ -139,7 +139,7 @@ inline typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::GetH
 template<class TKey, class TObject>
 inline UPTR CKeyList<TKey, TObject>::GetCount(TKey Key) const
 {	
-	int Idx = Lists.FindIndex(Key);
+	IPTR Idx = Lists.FindIndex(Key);
 	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->GetCount() : 0;
 }
 //---------------------------------------------------------------------

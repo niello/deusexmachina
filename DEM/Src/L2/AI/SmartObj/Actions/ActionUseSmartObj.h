@@ -29,13 +29,13 @@ private:
 	float	Progress;
 	bool	WasDone;
 
-	DWORD			SetDone(CActor* pActor, Prop::CPropSmartObject* pSO, const class CSmartAction& ActTpl);
+	UPTR			SetDone(CActor* pActor, Prop::CPropSmartObject* pSO, const class CSmartAction& ActTpl);
 
 public:
 
 	void			Init(CStrID Target, CStrID Action) { TargetID = Target; ActionID = Action; }
 	virtual bool	Activate(CActor* pActor);
-	virtual DWORD	Update(CActor* pActor);
+	virtual UPTR	Update(CActor* pActor);
 	virtual void	Deactivate(CActor* pActor);
 	virtual bool	IsValid(CActor* pActor) const;
 

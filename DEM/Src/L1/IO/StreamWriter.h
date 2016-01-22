@@ -26,7 +26,7 @@ public:
 
 inline bool CStreamWriter::WriteCharString(const char* pString)
 {
-	DWORD Len = pString ? strlen(pString) : 0;
+	UPTR Len = pString ? strlen(pString) : 0;
 	return Stream.Write(pString, Len) == Len;
 }
 //---------------------------------------------------------------------

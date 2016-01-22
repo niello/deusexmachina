@@ -20,7 +20,7 @@ void CTimeServer::AttachTimeSource(CStrID Name, PTimeSource TimeSrc)
 
 void CTimeServer::RemoveTimeSource(CStrID Name)
 {
-	int Idx = TimeSources.FindIndex(Name);
+	IPTR Idx = TimeSources.FindIndex(Name);
 	if (Idx != INVALID_INDEX) TimeSources.RemoveAt(Idx);
 }
 //---------------------------------------------------------------------
@@ -102,7 +102,7 @@ void CTimeServer::Load(const Data::CParams& TimeParams)
 
 bool CTimeServer::CreateNamedTimer(CStrID Name, float Time, bool Loop, CStrID Event, CStrID TimeSrc)
 {
-	int Idx = Timers.FindIndex(Name);
+	IPTR Idx = Timers.FindIndex(Name);
 	if (Idx == INVALID_INDEX)
 	{
 		CTimer New;

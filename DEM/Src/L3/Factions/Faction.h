@@ -29,10 +29,10 @@ public:
 	bool	AdoptMember(CStrID ID, int Rank); //???bool IsNativeMember or use sign of rank?
 	bool	ExpelMember(CStrID ID);
 
-	DWORD	SplitByMembership(const CArray<CStrID>& Group, CArray<CStrID>* pMembers = NULL, CArray<CStrID>* pNonMembers = NULL) const;
+	UPTR	SplitByMembership(const CArray<CStrID>& Group, CArray<CStrID>* pMembers = NULL, CArray<CStrID>* pNonMembers = NULL) const;
 
-	DWORD	GetMemberCount() const { return Members.GetCount(); }
-	CStrID	GetMember(DWORD Idx) const { return Members.KeyAt(Idx); }
+	UPTR	GetMemberCount() const { return Members.GetCount(); }
+	CStrID	GetMember(IPTR Idx) const { return Members.KeyAt(Idx); }
 	bool	IsMember(CStrID ID) const { return Members.Contains(ID); }
 	int		GetMemberRank(CStrID ID) const;
 	int		SetMemberRank(CStrID ID, int Rank) const; // Ret prev value
@@ -50,7 +50,7 @@ typedef Ptr<CFaction> PFaction;
 
 inline int CFaction::GetMemberRank(CStrID ID) const
 {
-	int Idx = Members.FindIndex(ID);
+	IPTR Idx = Members.FindIndex(ID);
 	return (Idx == INVALID_INDEX) ? 0 : Members.ValueAt(Idx);
 }
 //---------------------------------------------------------------------

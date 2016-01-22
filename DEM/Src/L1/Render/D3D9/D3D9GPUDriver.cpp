@@ -86,7 +86,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, DWORD Target
 	//}
 	//VertexLayouts.Clear();
 
-	for (DWORD i = 0; i < CurrRT.GetCount() ; ++i)
+	for (UPTR i = 0; i < CurrRT.GetCount() ; ++i)
 		if (CurrRT[i].IsValidPtr())
 		{
 			CurrRT[i]->Destroy();
@@ -1036,7 +1036,7 @@ void CD3D9GPUDriver::SetDefaultSamplers()
 		Samplers.Add(DefaultSampler);
 	}
 
-	for (DWORD i = 0; i < CurrSS.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrSS.GetCount(); ++i)
 		CurrSS[i] = DefaultSampler;
 }
 //---------------------------------------------------------------------
@@ -1096,8 +1096,8 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 		bool DeviceCreated = false;
 		if (AdapterID == Adapter_AutoSelect)
 		{
-			DWORD AdapterCount = D3D9DrvFactory->GetAdapterCount();
-			for (DWORD CurrAdapterID = 0; CurrAdapterID < AdapterCount; ++CurrAdapterID)
+			UPTR AdapterCount = D3D9DrvFactory->GetAdapterCount();
+			for (UPTR CurrAdapterID = 0; CurrAdapterID < AdapterCount; ++CurrAdapterID)
 			{
 				DeviceCreated = CreateD3DDevice(CurrAdapterID, Type, D3DPresentParams);
 				if (DeviceCreated)
@@ -1155,7 +1155,7 @@ bool CD3D9GPUDriver::DestroySwapChain(DWORD SwapChainID)
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
 	// Never unset 0'th RT
-	for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 1; i < CurrRT.GetCount(); ++i)
 		if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
 			SetRenderTarget(i, NULL);
 
@@ -1782,20 +1782,20 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 {
 	if (!RT.IsValid()) return;
 
-	DWORD ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
+	const D3DCOLOR ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
 
 	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
 	pD3DDevice->ColorFill(D3D9RT.GetD3DSurface(), NULL, ColorARGB);
 
 	//pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
 
-	//for (DWORD i = 1; i < CurrRT.GetCount(); ++i)
+	//for (UPTR i = 1; i < CurrRT.GetCount(); ++i)
 	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
 	//		pD3DDevice->SetRenderTarget(i, NULL);
 
 	//Clear(Clear_Color, ColorRGBA, 1.f, 0);
 
-	//for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+	//for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
 	//		pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
 }
@@ -1844,23 +1844,23 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 }
 //---------------------------------------------------------------------
 
-PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count)
+PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count)
 {
-	const DWORD MAX_VERTEX_COMPONENTS = 32;
+	const UPTR MAX_VERTEX_COMPONENTS = 32;
 
 	if (!pComponents || !Count || Count > MAX_VERTEX_COMPONENTS) return NULL;
 
 	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
 
-	int Idx = VertexLayouts.FindIndex(Signature);
+	IPTR Idx = VertexLayouts.FindIndex(Signature);
 	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).GetUnsafe();
 
 	D3DVERTEXELEMENT9 DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
 
-	DWORD* StreamOffset = (DWORD*)_malloca(D3DCaps.MaxStreams * sizeof(DWORD));
-	ZeroMemory(StreamOffset, D3DCaps.MaxStreams * sizeof(DWORD));
+	UPTR* StreamOffset = (UPTR*)_malloca(D3DCaps.MaxStreams * sizeof(UPTR));
+	ZeroMemory(StreamOffset, D3DCaps.MaxStreams * sizeof(UPTR));
 
-	DWORD i = 0;
+	UPTR i = 0;
 	for (i = 0; i < Count; i++)
 	{
 		const CVertexComponent& Component = pComponents[i];
@@ -2773,23 +2773,23 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 	n_assert_dbg(Resource.IsA<CD3D9Texture>());
 
 	const CTextureDesc& Desc = Resource.GetDesc();
-	DWORD Dims = Resource.GetDimensionCount();
+	UPTR Dims = Resource.GetDimensionCount();
 	if (!SrcData.pData || !Dims || MipLevel >= Desc.MipLevels || (Desc.Type == Texture_Cube && ArraySlice > 5)) FAIL;
 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 
 	// No format conversion for now, src & dest texel formats must match
-	DWORD BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
+	UPTR BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
 	if (!BPP) FAIL;
 
-	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 	Params.BitsPerPixel = BPP;
 
-	DWORD OffsetX, OffsetY, SizeX, SizeY;
+	UPTR OffsetX, OffsetY, SizeX, SizeY;
 	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
 							  OffsetX, OffsetY, Params.Offset[2], SizeX, SizeY, Params.CopySize[2]))
 	{

@@ -41,24 +41,24 @@ protected:
 		struct
 		{
 			char		ID[10];
-			DWORD		Width;		// Columns
-			DWORD		Height;		// Rows
-			short		DataSize;
-			short		IsFloat;
+			U32			Width;		// Columns
+			U32			Height;		// Rows
+			U16			DataSize;
+			U16			IsFloat;
 			union
 			{
-				short	HorzUnits;	// BT 1.3
-				short	Projection;	// BT 1.1 and 1.2
+				I16		HorzUnits;	// BT 1.3
+				I16		Projection;	// BT 1.1 and 1.2
 			};
-			short		UTMZone;
-			short		Datum;
+			I16			UTMZone;
+			I16			Datum;
 			double		LeftExtent;
 			double		RightExtent;
 			double		BottomExtent;
 			double		TopExtent;
 
 			// BT 1.2
-			short		IsProjExternal;
+			U16			IsProjExternal;
 
 			// BT 1.3
 			float		VerticalScale;
@@ -86,16 +86,14 @@ public:
 
 	CBTFile(): Header(NULL), HeightsF(NULL), SelfAllocated(false), MinHeight(NoDataF), MaxHeight(NoDataF) {}
 	CBTFile(const void* Data);
-	//CBTFile(const CStream& File) {}
-	//CBTFile(const char* pFileName) {}
 	~CBTFile() { if (SelfAllocated && Header) n_free(Header); }
 
 	EVersion	GetFileVersion() const { return Version; }
-	DWORD		GetFileSize() const { return sizeof(Header->_Header) + Header->Width * Header->Height * Header->DataSize; }
-	DWORD		GetHeightCount() const { return Header->Width * Header->Height; }
-	DWORD		GetHFDataSize() const { return Header->Width * Header->Height * Header->DataSize; }
-	DWORD		GetWidth() const { return Header->Width; }
-	DWORD		GetHeight() const { return Header->Height; }
+	U64			GetFileSize() const { return sizeof(Header->_Header) + Header->Width * Header->Height * Header->DataSize; }
+	UPTR		GetHeightCount() const { return Header->Width * Header->Height; }
+	U64			GetHFDataSize() const { return Header->Width * Header->Height * Header->DataSize; }
+	UPTR		GetWidth() const { return Header->Width; }
+	UPTR		GetHeight() const { return Header->Height; }
 	float		GetMinHeight();
 	float		GetMaxHeight();
 	double		GetLeftExtent() const { return Header->LeftExtent; }
@@ -104,10 +102,10 @@ public:
 	double		GetTopExtent() const { return Header->TopExtent; }
 	bool		IsFloatData() const { return Header->IsFloat != 0; }
 	float		GetVerticalScale() const { return (Header->VerticalScale > 0.f) ? Header->VerticalScale : 1.f; }
-	float		GetHeightF(DWORD X, DWORD Z) const { return HeightsF[Z * Header->Width + X]; }
-	short		GetHeightS(DWORD X, DWORD Z) const { return HeightsS[Z * Header->Width + X]; }
-	float		GetHeight(DWORD X, DWORD Z) const;
-	void		GetHeights(float* OutFloats, DWORD X = 0, DWORD Z = 0, DWORD W = 0, DWORD H = 0);
+	float		GetHeightF(UPTR X, UPTR Z) const { return HeightsF[Z * Header->Width + X]; }
+	short		GetHeightS(UPTR X, UPTR Z) const { return HeightsS[Z * Header->Width + X]; }
+	float		GetHeight(UPTR X, UPTR Z) const;
+	void		GetHeights(float* OutFloats, UPTR X = 0, UPTR Z = 0, UPTR W = 0, UPTR H = 0);
 
 	const short*	GetHeightsS() { n_assert(!IsFloatData()); return HeightsS; }
 };

@@ -41,7 +41,7 @@ public:
 	CDlgContext(): pCurrNode(NULL) {}
 
 	void Trigger(bool IsForeground);
-	void SelectValidLink(int Idx);
+	void SelectValidLink(UPTR Idx);
 };
 
 }

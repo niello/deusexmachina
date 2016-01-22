@@ -82,7 +82,7 @@ void CDlgContext::Trigger(bool IsForeground)
 			else
 			{
 				CDlgNode::CLink& Link = pCurrNode->Links[LinkIdx];
-				DWORD Result = Link.Action.IsValid() ? Dlg->ScriptObj->RunFunction(Link.Action.CStr()) : Success;
+				UPTR Result = Link.Action.IsValid() ? Dlg->ScriptObj->RunFunction(Link.Action.CStr()) : Success;
 				switch (Result)
 				{
 					case Running: break;
@@ -104,7 +104,7 @@ void CDlgContext::Trigger(bool IsForeground)
 
 			if (State == DlgState_Finished || State == DlgState_Aborted)
 			{
-				Data::PParams P = n_new(Data::CParams(3));
+				Data::PParams P = n_new(Data::CParams(4));
 				P->Set(CStrID("Initiator"), Initiator);
 				P->Set(CStrID("Target"), Target);
 				P->Set(CStrID("IsForeground"), IsForeground);
@@ -116,7 +116,7 @@ void CDlgContext::Trigger(bool IsForeground)
 }
 //---------------------------------------------------------------------
 
-void CDlgContext::SelectValidLink(int Idx)
+void CDlgContext::SelectValidLink(UPTR Idx)
 {
 	n_assert(State == DlgState_Waiting);
 	LinkIdx = ValidLinkIndices[Idx];

@@ -22,7 +22,7 @@ bool CFSBrowser::SetRelativePath(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, DWORD EntryTypes, const char* pFilter)
+bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, UPTR EntryTypes, const char* pFilter)
 {
 	AtFirstEntry = false;
 

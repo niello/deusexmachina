@@ -5,7 +5,7 @@
 namespace Math
 {
 
-inline void GetDecompositionOrder(float Scales[3], DWORD& First, DWORD& Second, DWORD& Third)
+inline void GetDecompositionOrder(float Scales[3], UPTR& First, UPTR& Second, UPTR& Third)
 {
 	if (Scales[0] < Scales[1])   
 	{    
@@ -79,7 +79,7 @@ bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 	pScales[1] = pBasis[1]->Length();
 	pScales[2] = pBasis[2]->Length();
 
-	DWORD a, b, c;
+	UPTR a, b, c;
 	GetDecompositionOrder(pScales, a, b, c);
 
 	const float DECOMPOSE_EPSILON = 0.0001f;
@@ -94,7 +94,7 @@ bool CTransformSRT::FromMatrix(const matrix44& Tfm)
 		BasisAAbs[1] = n_fabs(pBasis[a]->y);
 		BasisAAbs[2] = n_fabs(pBasis[a]->z);
 
-		DWORD aa, bb, cc;
+		UPTR aa, bb, cc;
 		GetDecompositionOrder(BasisAAbs, aa, bb, cc);
 
 		*pBasis[b] = (*pBasis[a]) * (*pCanonicalBasis[cc]); // Cross

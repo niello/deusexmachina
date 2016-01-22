@@ -9,7 +9,7 @@
 //
 //bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
 //
-//bool CMaterial::Setup(CShader* pShader, DWORD ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
+//bool CMaterial::Setup(CShader* pShader, UPTR ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
 //{
 //	if (!pShader) FAIL;
 //	Shader = pShader;

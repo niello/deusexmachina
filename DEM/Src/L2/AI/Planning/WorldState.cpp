@@ -10,9 +10,9 @@ namespace AI
 
 int CWorldState::GetDiffCount(const CWorldState& Other) const
 {
-	DWORD DiffCount = 0;
+	UPTR DiffCount = 0;
 
-	for (int i = 0; i < WSP_Count; ++i)
+	for (UPTR i = 0; i < WSP_Count; ++i)
 	{
 		bool IsSetSelf = Props[i].IsValid();
 		bool IsSetOther = Other.Props[i].IsValid();

@@ -44,8 +44,8 @@ public:
 
 	void		ScheduleEvent(CEventBase& Event, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
 	void		ScheduleEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
-	DWORD		RemoveScheduledEvents(CEventDispatcher* pDisp);
-	DWORD		RemoveAllScheduledEvents();
+	UPTR		RemoveScheduledEvents(CEventDispatcher* pDisp);
+	UPTR		RemoveAllScheduledEvents();
 
 	void		ProcessPendingEvents();
 

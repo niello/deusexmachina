@@ -17,8 +17,8 @@ bool CD3D9VertexLayout::Create(const CVertexComponent* pComponents, DWORD Count,
 	// Since user-defined semantic names are not supported for D3D9, values are
 	// always NULL and we don't need to allocate memory for that names.
 	Components.RawCopyFrom(pComponents, Count);
-	DWORD VSize = 0;
-	for (DWORD i = 0; i < Count; ++i)
+	UPTR VSize = 0;
+	for (UPTR i = 0; i < Count; ++i)
 		VSize += Components[i].GetSize();
 	VertexSize = VSize;
 	pDecl = pD3DDecl;

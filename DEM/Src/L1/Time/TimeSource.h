@@ -23,7 +23,7 @@ protected:
 	float	Time;
 	float	FrameTime;
 	float	TimeFactor;
-	DWORD	FrameID;
+	UPTR	FrameID;
 	int		PauseCounter;
 
 public:
@@ -43,7 +43,7 @@ public:
 	float	GetFactor() const { return TimeFactor; }
 	float	GetTime() const { return Time; }
 	float	GetFrameTime() const { return IsPaused() ? 0.f : FrameTime; }
-	DWORD	GetFrameID() const { return FrameID; }
+	UPTR	GetFrameID() const { return FrameID; }
 };
 
 typedef Ptr<CTimeSource> PTimeSource;

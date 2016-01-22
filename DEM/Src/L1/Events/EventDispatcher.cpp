@@ -6,9 +6,9 @@ namespace Events
 {
 int CEventDispatcher::EventsFiredTotal = 0;
 
-DWORD CEventDispatcher::FireEvent(const CEventBase& Event)
+UPTR CEventDispatcher::FireEvent(const CEventBase& Event)
 {
-	DWORD HandledCounter = 0;
+	UPTR HandledCounter = 0;
 	PEventHandler Sub;
 	CEventID EvID = Event.GetID();
 

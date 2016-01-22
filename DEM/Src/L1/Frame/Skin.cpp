@@ -66,7 +66,7 @@ bool CSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 
 	static CStrID sidJointPalette("JointPalette");
 	// Find all models in model node and setup matrix pointers in a JointPalette shader var
-	for (DWORD i = 0; i < pModelNode->GetAttributeCount(); ++i)
+	for (UPTR i = 0; i < pModelNode->GetAttributeCount(); ++i)
 	{
 		CNodeAttribute* pAttr = pModelNode->GetAttribute(i);
 		if (pAttr->IsA(CModel::RTTI) &&
@@ -74,7 +74,7 @@ bool CSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 			((CModel*)pAttr)->Material.IsValid())
 		{
 			CModel* pModel = (CModel*)pAttr;
-			int PaletteIdx = pModel->ShaderVars.FindIndex(sidJointPalette);
+			IPTR PaletteIdx = pModel->ShaderVars.FindIndex(sidJointPalette);
 			CMatrixPtrArray* pPalette;
 			if (PaletteIdx == INVALID_INDEX)
 			{
@@ -89,7 +89,7 @@ bool CSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 			if (!pModel->BoneIndices.GetCount())
 				pPalette->At(Index) = &SkinMatrix;
 			else
-				for (DWORD j = 0; j < pModel->BoneIndices.GetCount(); ++j)
+				for (UPTR j = 0; j < pModel->BoneIndices.GetCount(); ++j)
 					if (pModel->BoneIndices[j] == Index)
 					{
 						pPalette->At(j) = &SkinMatrix;

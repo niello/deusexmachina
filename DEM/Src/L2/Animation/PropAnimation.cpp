@@ -162,7 +162,7 @@ void CPropAnimation::TermSceneNodeModifiers(CPropSceneNode& Prop)
 
 void CPropAnimation::AddChildrenToMapping(Scene::CSceneNode* pParent, Scene::CSceneNode* pRoot, CDict<int, CStrID>& Bones)
 {
-	for (DWORD i = 0; i < pParent->GetChildCount(); ++i)
+	for (UPTR i = 0; i < pParent->GetChildCount(); ++i)
 	{
 		Scene::CSceneNode* pNode = pParent->GetChild(i);
 		/*Render::CBone* pBone = pNode->FindFirstAttribute<Render::CBone>();
@@ -220,11 +220,11 @@ bool CPropAnimation::BeforeTransforms(Events::CEventDispatcher* pDispatcher, con
 }
 //---------------------------------------------------------------------
 
-int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, float Speed, bool ManualControl,
-							  DWORD Priority, float Weight, float FadeInTime, float FadeOutTime)
+IPTR CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, float Speed, bool ManualControl,
+							  UPTR Priority, float Weight, float FadeInTime, float FadeOutTime)
 {
 	if (Speed == 0.f || Weight <= 0.f || Weight > 1.f || FadeInTime < 0.f || FadeOutTime < 0.f) return INVALID_INDEX;
-	int ClipIdx = Clips.FindIndex(ClipID);
+	IPTR ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return INVALID_INDEX; // Invalid task ID
 	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
 	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) return INVALID_INDEX;
@@ -322,7 +322,7 @@ int CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, floa
 }
 //---------------------------------------------------------------------
 
-void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
+void CPropAnimation::StopAnim(UPTR TaskID, float FadeOutTime)
 {
 	CTask& Task = Tasks[TaskID];
 	Task.AnimTask.Stop(FadeOutTime);
@@ -339,7 +339,7 @@ void CPropAnimation::StopAnim(DWORD TaskID, float FadeOutTime)
 // Doesn't support weights and blending for now, use animation tasks for that
 bool CPropAnimation::SetPose(CStrID ClipID, float CursorPos, bool WrapPos) const
 {
-	int ClipIdx = Clips.FindIndex(ClipID);
+	IPTR ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) FAIL;
 	Anim::PAnimClip Clip = Clips.ValueAt(ClipIdx);
 	if (!Clip->GetSamplerCount() || !Clip->GetDuration()) FAIL;
@@ -356,7 +356,7 @@ bool CPropAnimation::SetPose(CStrID ClipID, float CursorPos, bool WrapPos) const
 	else if (IsKeyframe)
 		AdjTime = Clip->AdjustCursorPos(CursorPos, WrapPos);
 
-	for (DWORD i = 0; i < Clip->GetSamplerCount(); ++i)
+	for (UPTR i = 0; i < Clip->GetSamplerCount(); ++i)
 	{
 		Scene::CSceneNode* pNode = pPropNode->GetChildNode(Clip->GetSamplerTarget(i));
 		if (!pNode) continue;
@@ -380,7 +380,7 @@ bool CPropAnimation::SetPose(CStrID ClipID, float CursorPos, bool WrapPos) const
 
 float CPropAnimation::GetAnimLength(CStrID ClipID) const
 {
-	int ClipIdx = Clips.FindIndex(ClipID);
+	IPTR ClipIdx = Clips.FindIndex(ClipID);
 	if (ClipIdx == INVALID_INDEX) return 0.f;
 	return Clips.ValueAt(ClipIdx)->GetDuration();
 }

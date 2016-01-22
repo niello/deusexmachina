@@ -44,7 +44,7 @@ CHRDParser::CHRDParser(): pErr(NULL)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::ParseBuffer(const char* Buffer, DWORD Length, PParams& Result, CString* pErrors)
+bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, CString* pErrors)
 {
 	if (!Buffer) FAIL;
 
@@ -241,7 +241,7 @@ bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
 	CString NewID;
 	NewID.Set(TokenStart, LexerCursor - TokenStart);
 	
-	int Idx = TableRW.FindIndexSorted(NewID);
+	IPTR Idx = TableRW.FindIndexSorted(NewID);
 	if (Idx != INVALID_INDEX)
 	{
 		Tokens.Add(CToken(TBL_RW, Idx, Line, Col));
@@ -639,7 +639,7 @@ void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Ty
 		default:		Sys::Error("Unknown data type\n");
 	}
 	
-	int Idx = TableConst.FindIndex(Data);
+	IPTR Idx = TableConst.FindIndex(Data);
 	if (Idx == INVALID_INDEX)
 	{
 		Idx = TableConst.GetCount();

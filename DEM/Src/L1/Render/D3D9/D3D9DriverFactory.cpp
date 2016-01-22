@@ -30,7 +30,7 @@ void CD3D9DriverFactory::Close()
 }
 //---------------------------------------------------------------------
 
-bool CD3D9DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const
+bool CD3D9DriverFactory::GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) const
 {
 	if (Adapter >= AdapterCount) FAIL;
 	D3DADAPTER_IDENTIFIER9 D3DAdapterInfo;
@@ -48,7 +48,7 @@ bool CD3D9DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) co
 }
 //---------------------------------------------------------------------
 
-PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Output)
+PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Output)
 {
 	// No support for multihead devices, you may add it if you need
 	n_assert2(Output == 0, "D3D9 supports only one output (0) per video adapter");
@@ -58,7 +58,7 @@ PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Outp
 }
 //---------------------------------------------------------------------
 
-PGPUDriver CD3D9DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType DriverType)
+PGPUDriver CD3D9DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType DriverType)
 {
 	n_assert(pD3D9);
 
@@ -132,7 +132,7 @@ EPixelFormat CD3D9DriverFactory::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
+UPTR CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -183,7 +183,7 @@ DWORD CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D9DriverFactory::D3DFormatBlockSize(D3DFORMAT D3DFormat)
+UPTR CD3D9DriverFactory::D3DFormatBlockSize(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -197,7 +197,7 @@ DWORD CD3D9DriverFactory::D3DFormatBlockSize(D3DFORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D9DriverFactory::D3DFormatDepthBits(D3DFORMAT D3DFormat)
+UPTR CD3D9DriverFactory::D3DFormatDepthBits(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -215,7 +215,7 @@ DWORD CD3D9DriverFactory::D3DFormatDepthBits(D3DFORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D9DriverFactory::D3DFormatStencilBits(D3DFORMAT D3DFormat)
+UPTR CD3D9DriverFactory::D3DFormatStencilBits(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -228,7 +228,7 @@ DWORD CD3D9DriverFactory::D3DFormatStencilBits(D3DFORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-EMSAAQuality CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE MultiSampleType, DWORD MultiSampleQuality)
+EMSAAQuality CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE MultiSampleType, UPTR MultiSampleQuality)
 {
 	switch (MultiSampleType)
 	{

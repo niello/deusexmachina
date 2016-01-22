@@ -5,7 +5,7 @@
 
 const CString CString::Empty;
 
-void CString::Reallocate(DWORD NewMaxLength)
+void CString::Reallocate(UPTR NewMaxLength)
 {
 	if (NewMaxLength == MaxLength) return;
 
@@ -37,10 +37,10 @@ void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
 {
 	va_list ArgList;
 	va_copy(ArgList, Args);
-	DWORD ReqLength = _vscprintf(pFormatStr, ArgList);
+	UPTR ReqLength = _vscprintf(pFormatStr, ArgList);
 	va_end(ArgList);
 
-	DWORD BufferSize = ReqLength + 1;
+	UPTR BufferSize = ReqLength + 1;
 	if (ReqLength > MaxLength)
 		pString = (char*)n_realloc(pString, BufferSize);
 	_vsnprintf_s(pString, BufferSize, BufferSize, pFormatStr, Args);
@@ -76,7 +76,7 @@ void CString::Trim(const char* pCharSet, bool Left, bool Right)
 	}
 	else if (pStrEnd > pStrStart)
 	{
-		DWORD NewLen = pStrEnd - pStrStart;
+		UPTR NewLen = pStrEnd - pStrStart;
 		memmove(pString, pStrStart, NewLen);
 		pString[NewLen] = 0;
 		Length = NewLen;
@@ -92,8 +92,8 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 	char* pCurr = strstr(pString, pSubStr);
 	if (!pCurr) return;
 
-	DWORD SrcLen = strlen(pSubStr);
-	DWORD ReplaceLen = pReplaceWith ? strlen(pReplaceWith) : 0;
+	UPTR SrcLen = strlen(pSubStr);
+	UPTR ReplaceLen = pReplaceWith ? strlen(pReplaceWith) : 0;
 	char* pEnd = pString + Length;
 
 	if (ReplaceLen < SrcLen)
@@ -101,8 +101,8 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 		char* pDest = pCurr;
 		char* pPrev;
 
-		DWORD NewLength = Length;
-		DWORD LengthDiff = SrcLen - ReplaceLen;
+		UPTR NewLength = Length;
+		UPTR LengthDiff = SrcLen - ReplaceLen;
 		do
 		{
 			if (ReplaceLen)
@@ -116,7 +116,7 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 			if (!pCurr) pCurr = pEnd;
 			if (pPrev < pCurr)
 			{
-				DWORD MidLen = pCurr - pPrev;
+				UPTR MidLen = pCurr - pPrev;
 				memmove(pDest, pPrev, MidLen);
 				pDest += MidLen;
 			}
@@ -138,7 +138,7 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 	else
 	{
 		// We may need to reallocate string. Calc the room required.
-		DWORD ReplaceCount = 0;
+		UPTR ReplaceCount = 0;
 		do
 		{
 			++ReplaceCount;
@@ -146,7 +146,7 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 		}
 		while (pCurr);
 
-		DWORD NewLength = Length + ReplaceCount * (ReplaceLen - SrcLen);
+		UPTR NewLength = Length + ReplaceCount * (ReplaceLen - SrcLen);
 		char* pNewString = (NewLength > MaxLength) ? (char*)n_malloc(NewLength + 1) : pString;
 
 		pCurr = pEnd;
@@ -161,7 +161,7 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 			const char* pIntactStart = pCurr + SrcLen;
 			if (pIntactStart < pPrev)
 			{
-				DWORD IntactLen = pPrev - pIntactStart;
+				UPTR IntactLen = pPrev - pIntactStart;
 				pDestEnd -= IntactLen;
 				memmove(pDestEnd, pIntactStart, IntactLen);
 			}

@@ -64,8 +64,8 @@ void CDEMTextureTarget::declareRenderSize(const Sizef& sz)
 void CDEMTextureTarget::initialiseRenderTexture()
 {
 	Render::CRenderTargetDesc RTDesc;
-	RTDesc.Width = (DWORD)d_area.getSize().d_width;
-	RTDesc.Height = (DWORD)d_area.getSize().d_height;
+	RTDesc.Width = (UPTR)d_area.getSize().d_width;
+	RTDesc.Height = (UPTR)d_area.getSize().d_height;
 	RTDesc.Format = Render::PixelFmt_R8G8B8A8;
 	RTDesc.MSAAQuality = Render::MSAA_None;
 	RTDesc.UseAsShaderInput = true;
@@ -101,8 +101,8 @@ void CDEMTextureTarget::enableRenderTexture()
 	//???don't store prev?
 	//d_device.d_context->OMGetRenderTargets(1, &d_previousRenderTargetView, &d_previousDepthStencilView);
 	d_owner.getGPUDriver()->SetRenderTarget(0, RT.GetUnsafe());
-	DWORD MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
-	for (DWORD i = 1; i < MaxRT; ++i)
+	UPTR MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
+	for (UPTR i = 1; i < MaxRT; ++i)
 		d_owner.getGPUDriver()->SetRenderTarget(i, NULL);
 	d_owner.getGPUDriver()->SetDepthStencilBuffer(NULL);
 }

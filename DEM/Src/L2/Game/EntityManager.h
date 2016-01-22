@@ -30,7 +30,7 @@ protected:
 	CDict<CStrID, CStrID>							Aliases;
 	CArray<CStrID>									EntitiesToDelete;
 
-	void		DeleteEntity(int Idx);
+	void		DeleteEntity(IPTR Idx);
 
 public:
 
@@ -48,7 +48,7 @@ public:
 	void		DeferredDeleteEntities();
 
 	int			GetEntityCount() const { return Entities.GetCount(); }
-	CEntity*	GetEntity(int Idx) const { return Entities[Idx].GetUnsafe(); }
+	CEntity*	GetEntity(IPTR Idx) const { return Entities[Idx].GetUnsafe(); }
 	CEntity*	GetEntity(CStrID UID, bool SearchInAliases = false) const;
 	bool		EntityExists(CStrID UID, bool SearchInAliases = false) const { return !!GetEntity(UID, SearchInAliases); }
 
@@ -62,7 +62,7 @@ public:
 	void		RemoveEntityAlias(CStrID Alias) { Aliases.Remove(Alias); }
 
 	template<class T>
-	bool		RegisterProperty(DWORD TableCapacity = 32);
+	bool		RegisterProperty(UPTR TableCapacity = 32);
 	template<class T>
 	bool		UnregisterProperty();
 	CProperty*	AttachProperty(CEntity& Entity, const char* pClassName) const { return AttachProperty(Entity, Factory->GetRTTI(pClassName)); }
@@ -83,7 +83,7 @@ typedef Ptr<CEntityManager> PEntityManager;
 
 inline void CEntityManager::DeleteEntity(CEntity& Entity)
 {
-	int Idx = Entities.FindIndex(&Entity);
+	IPTR Idx = Entities.FindIndex(&Entity);
 	if (Idx != INVALID_INDEX) DeleteEntity(Idx);
 }
 //---------------------------------------------------------------------
@@ -104,7 +104,7 @@ inline void CEntityManager::DeferredDeleteEntities()
 //---------------------------------------------------------------------
 
 template<class T>
-bool CEntityManager::RegisterProperty(DWORD TableCapacity)
+bool CEntityManager::RegisterProperty(UPTR TableCapacity)
 {
 	n_assert_dbg(T::RTTI.IsDerivedFrom(CProperty::RTTI));
 	if (T::pStorage) FAIL;

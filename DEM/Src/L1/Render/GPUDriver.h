@@ -73,10 +73,10 @@ public:
 	virtual bool				IsFullscreen(DWORD SwapChainID) const = 0;
 	virtual PRenderTarget		GetSwapChainRenderTarget(DWORD SwapChainID) const = 0;
 	virtual bool				Present(DWORD SwapChainID) = 0;
-	bool						PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA);
+	bool						PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA);
 	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const = 0;
 
-	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count) = 0;
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count) = 0;
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
@@ -131,9 +131,9 @@ public:
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
 	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice = 0, DWORD MipLevel = 0, const Data::CBox* pRegion = NULL) = 0;
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, DWORD Size = 0, DWORD Offset = 0) = 0;
-	//virtual PVertexBuffer		CopyResource(const CVertexBuffer& Source, DWORD NewAccessFlags) = 0;
-	//virtual PIndexBuffer		CopyResource(const CIndexBuffer& Source, DWORD NewAccessFlags) = 0;
-	//virtual PTexture			CopyResource(const CTexture& Source, DWORD NewAccessFlags) = 0;
+	//virtual PVertexBuffer		CopyResource(const CVertexBuffer& Source, UPTR NewAccessFlags) = 0;
+	//virtual PIndexBuffer		CopyResource(const CIndexBuffer& Source, UPTR NewAccessFlags) = 0;
+	//virtual PTexture			CopyResource(const CTexture& Source, UPTR NewAccessFlags) = 0;
 
 	//???or auto-begin if not?!
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) = 0;
@@ -145,7 +145,7 @@ public:
 
 typedef Ptr<CGPUDriver> PGPUDriver;
 
-inline bool CGPUDriver::PresentBlankScreen(DWORD SwapChainID, const vector4& ColorRGBA)
+inline bool CGPUDriver::PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA)
 {
 	if (BeginFrame())
 	{

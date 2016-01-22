@@ -45,7 +45,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	for (; It; ++It)
 	{
 		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)It->Get();
-		int Idx = WorkActionMap.FindIndex(pSOFact->TypeID);
+		IPTR Idx = WorkActionMap.FindIndex(pSOFact->TypeID);
 		if (Idx != INVALID_INDEX)
 		{
 			Game::PEntity Ent = EntityMgr->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);

@@ -66,7 +66,7 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }
-	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, DWORD VertexCount);
+	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, UPTR VertexCount);
 	void					setRenderState(BlendMode BlendMode, bool Clipped);
 	Render::HResource		getTextureHandle() const { return hTexture; }
 	void					setWorldMatrix(const matrix44& Matrix);

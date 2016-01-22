@@ -30,7 +30,7 @@ public:
 	CD3D11VertexLayout(): pD3DDesc(NULL), pSemanticNames(NULL) {}
 	virtual ~CD3D11VertexLayout() { InternalDestroy(); }
 
-	bool							Create(const CVertexComponent* pComponents, DWORD Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc);
+	bool							Create(const CVertexComponent* pComponents, UPTR Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc);
 	virtual void					Destroy() { InternalDestroy(); CVertexLayout::InternalDestroy(); }
 	virtual bool					IsValid() const { return !!pD3DDesc; }
 
@@ -44,7 +44,7 @@ typedef Ptr<CD3D11VertexLayout> PD3D11VertexLayout;
 inline bool CD3D11VertexLayout::AddLayoutObject(UPTR ShaderInputSignatureID, ID3D11InputLayout* pD3DLayout)
 {
 	if (!pD3DLayout) FAIL; //???or destroy if found existing?
-	int Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
+	IPTR Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
 	if (Idx == INVALID_INDEX) ShaderSignatureToLayout.Add(ShaderInputSignatureID, pD3DLayout);
 	OK;
 }
@@ -52,7 +52,7 @@ inline bool CD3D11VertexLayout::AddLayoutObject(UPTR ShaderInputSignatureID, ID3
 
 inline ID3D11InputLayout* CD3D11VertexLayout::GetD3DInputLayout(UPTR ShaderInputSignatureID) const
 {
-	int Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
+	IPTR Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
 	return Idx == INVALID_INDEX ? NULL : ShaderSignatureToLayout.ValueAt(Idx);
 }
 //---------------------------------------------------------------------

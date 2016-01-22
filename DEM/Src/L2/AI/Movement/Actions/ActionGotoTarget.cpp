@@ -20,7 +20,7 @@ bool CActionGotoTarget::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-DWORD CActionGotoTarget::Update(CActor* pActor)
+UPTR CActionGotoTarget::Update(CActor* pActor)
 {
 	//!!!can use intercept instead of pursue! see goto SO, extract
 	//prediction from CPropSmartObject::GetRequiredActorPosition()

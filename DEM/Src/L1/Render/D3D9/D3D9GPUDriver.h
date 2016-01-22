@@ -148,7 +148,7 @@ public:
 	virtual bool				Present(DWORD SwapChainID);
 	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
 
-	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);

@@ -21,7 +21,7 @@ public:
 
 	virtual void	Init(const Data::CParams& Desc) { }
 	virtual bool	Activate(CActor* pActor) { /*validate preconditions here*/ OK; }
-	virtual DWORD	Update(CActor* pActor) { /*check IsComplete*/ return Success; }
+	virtual UPTR	Update(CActor* pActor) { /*check IsComplete*/ return Success; }
 	virtual void	Deactivate(CActor* pActor) { }
 	
 	virtual bool	IsValid(CActor* pActor) const { OK; }

@@ -9,7 +9,7 @@ namespace Render
 __ImplementClass(Render::CD3D11VertexLayout, 'VL11', Render::CVertexLayout);
 
 //!!!???assert destroyed?!
-bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, DWORD Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc)
+bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, UPTR Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc)
 {
 	if (!pComponents || !Count || !pD3DElementDesc) FAIL;
 
@@ -17,9 +17,9 @@ bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, DWORD Count
 	SAFE_FREE(pSemanticNames);
 
 	Components.RawCopyFrom(pComponents, Count);
-	DWORD VSize = 0;
-	DWORD SemanticNamesLen = Count; // Reserve bytes for terminating NULL-characters
-	for (DWORD i = 0; i < Count; ++i)
+	UPTR VSize = 0;
+	UPTR SemanticNamesLen = Count; // Reserve bytes for terminating NULL-characters
+	for (UPTR i = 0; i < Count; ++i)
 	{
 		VSize += Components[i].GetSize();
 		SemanticNamesLen += strlen(pD3DElementDesc[i].SemanticName);
@@ -32,10 +32,10 @@ bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, DWORD Count
 	pSemanticNames = (char*)n_malloc(SemanticNamesLen);
 	char* pCurr = pSemanticNames;
 	char* pEnd = pSemanticNames + SemanticNamesLen;
-	for (DWORD i = 0; i < Count; ++i)
+	for (UPTR i = 0; i < Count; ++i)
 	{
 		const char* pSemName = pD3DDesc[i].SemanticName;
-		DWORD Len = strlen(pSemName);
+		UPTR Len = strlen(pSemName);
 		if (memcpy_s(pCurr, pEnd - pCurr, pSemName, Len) != 0)
 		{
 			SAFE_DELETE_ARRAY(pD3DDesc);

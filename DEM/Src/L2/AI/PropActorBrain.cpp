@@ -251,14 +251,14 @@ void CPropActorBrain::ClearTaskQueue()
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::AbortCurrAction(DWORD Result)
+void CPropActorBrain::AbortCurrAction(UPTR Result)
 {
 	SetPlan(NULL, CurrGoal.GetUnsafe(), Running);
 	RequestBehaviourUpdate();
 }
 //---------------------------------------------------------------------
 
-void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanResult)
+void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, UPTR PrevPlanResult)
 {
 	if (Plan == NewPlan) return;
 
@@ -414,7 +414,7 @@ bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const 
 
 	if (Plan.IsValidPtr())
 	{
-		DWORD PlanResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
+		UPTR PlanResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
 		if (PlanResult != Running)
 		{
 			SetPlan(NULL, CurrGoal.GetUnsafe(), PlanResult);

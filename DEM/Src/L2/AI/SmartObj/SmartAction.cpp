@@ -61,7 +61,7 @@ bool CSmartAction::IsValid(CStrID ActorID, CStrID SOID) const
 {
 	if (ScriptObj.IsNullPtr()) OK;
 	Data::CData Args[] = { ActorID, SOID };
-	DWORD Res = ScriptObj->RunFunction("IsValid", Args, 2);
+	UPTR Res = ScriptObj->RunFunction("IsValid", Args, 2);
 	return Res == Success || Res == Error_Scripting_NoFunction;
 }
 //---------------------------------------------------------------------
@@ -72,7 +72,7 @@ float CSmartAction::GetDuration(CStrID ActorID, CStrID SOID) const
 	{
 		Data::CData Args[] = { ActorID, SOID };
 		Data::CData RetVal;
-		DWORD Res = ScriptObj->RunFunction("GetDuration", Args, 2, &RetVal);
+		UPTR Res = ScriptObj->RunFunction("GetDuration", Args, 2, &RetVal);
 		if (Res != Error_Scripting_NoFunction)
 		{
 			//!!!need conversion!
@@ -85,13 +85,13 @@ float CSmartAction::GetDuration(CStrID ActorID, CStrID SOID) const
 }
 //---------------------------------------------------------------------
 
-DWORD CSmartAction::Update(CStrID ActorID, CStrID SOID) const
+UPTR CSmartAction::Update(CStrID ActorID, CStrID SOID) const
 {
 	if (ScriptObj.IsValidPtr())
 	{
 		Data::CData Args[] = { ActorID, SOID };
 		Data::CData RetVal;
-		DWORD Res = ScriptObj->RunFunction("Update", Args, 2, &RetVal);
+		UPTR Res = ScriptObj->RunFunction("Update", Args, 2, &RetVal);
 		if (Res != Error_Scripting_NoFunction)
 			return RetVal.GetValue<int>();
 	}

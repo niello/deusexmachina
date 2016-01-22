@@ -68,11 +68,11 @@ public:
 	CSceneNode*				CreateChild(CStrID ChildName);
 	void					AddChild(CSceneNode& Node);
 	void					RemoveChild(CSceneNode& Node);
-	void					RemoveChild(DWORD Idx);
+	void					RemoveChild(UPTR Idx);
 	void					RemoveChild(CStrID ChildName);
 	CSceneNode*				GetParent() const { return pParent; }
-	DWORD					GetChildCount() const { return Children.GetCount(); }
-	CSceneNode*				GetChild(DWORD Idx) const { return Children.ValueAt(Idx); }
+	UPTR					GetChildCount() const { return Children.GetCount(); }
+	CSceneNode*				GetChild(UPTR Idx) const { return Children.ValueAt(Idx); }
 	//???create and non-create () const; versions?
 	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
 	CSceneNode*				GetChild(const char* pPath, bool Create = false);
@@ -82,9 +82,9 @@ public:
 
 	bool					AddAttribute(CNodeAttribute& Attr);
 	void					RemoveAttribute(CNodeAttribute& Attr);
-	void					RemoveAttribute(DWORD Idx);
-	DWORD					GetAttributeCount() const { return Attrs.GetCount(); }
-	CNodeAttribute*			GetAttribute(DWORD Idx) const { return Attrs[Idx]; }
+	void					RemoveAttribute(UPTR Idx);
+	UPTR					GetAttributeCount() const { return Attrs.GetCount(); }
+	CNodeAttribute*			GetAttribute(IPTR Idx) const { return Attrs[Idx]; }
 	template<class T> T*	FindFirstAttribute() const;
 
 	bool					IsRoot() const { return !pParent; }
@@ -128,7 +128,7 @@ inline void CSceneNode::RemoveChild(CSceneNode& Node)
 
 inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
 {
-	int Idx = Children.FindIndex(ChildName);
+	IPTR Idx = Children.FindIndex(ChildName);
 	if (Idx == INVALID_INDEX) return Create ? CreateChild(ChildName) : NULL;
 	return GetChild(Idx);
 }

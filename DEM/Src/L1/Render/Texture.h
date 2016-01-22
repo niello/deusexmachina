@@ -14,11 +14,11 @@ namespace Render
 struct CTextureDesc
 {
 	ETextureType	Type;
-	DWORD			Width;
-	DWORD			Height;
-	DWORD			Depth;
-	DWORD			MipLevels;
-	DWORD			ArraySize;
+	UPTR			Width;
+	UPTR			Height;
+	UPTR			Depth;
+	UPTR			MipLevels;
+	UPTR			ArraySize;
 	EPixelFormat	Format;
 	EMSAAQuality	MSAAQuality;
 };
@@ -27,25 +27,14 @@ class CTexture: public Resources::CResourceObject
 {
 	__DeclareClassNoFactory;
 
-public:
-
-	struct CMapInfo
-	{        
-		void*	pData;
-		int		RowPitch;
-		int		DepthPitch;
-
-		CMapInfo(): pData(NULL), RowPitch(0), DepthPitch(0) {}
-	};
-
 protected:
 
 	CTextureDesc	Desc;
 	Data::CFlags	Access;
-	DWORD			RowPitch;
-	DWORD			SlicePitch;
+	UPTR			RowPitch;
+	UPTR			SlicePitch;
 
-	//DWORD			LockCount;
+	//UPTR			LockCount;
 
 public:
 
@@ -53,17 +42,17 @@ public:
 
 	virtual void		Destroy() = 0;
 
-	DWORD				GetPixelCount(bool IncludeSubsequentMips) const;
+	UPTR				GetPixelCount(bool IncludeSubsequentMips) const;
 	const CTextureDesc&	GetDesc() const { return Desc; }
 	Data::CFlags		GetAccess() const { return Access; }
-	DWORD				GetDimensionCount() const;
-	DWORD				GetRowPitch() const { return RowPitch; }
-	DWORD				GetSlicePitch() const { return SlicePitch; }
+	UPTR				GetDimensionCount() const;
+	UPTR				GetRowPitch() const { return RowPitch; }
+	UPTR				GetSlicePitch() const { return SlicePitch; }
 };
 
 typedef Ptr<CTexture> PTexture;
 
-inline DWORD CTexture::GetDimensionCount() const
+inline UPTR CTexture::GetDimensionCount() const
 {
 	switch (Desc.Type)
 	{

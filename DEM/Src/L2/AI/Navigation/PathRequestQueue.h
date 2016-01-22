@@ -24,7 +24,7 @@ protected:
 
 	struct CPathQuery
 	{
-		DWORD					RequestID;
+		UPTR					RequestID;
 		float					StartPos[3];
 		float					EndPos[3];
 		dtPolyRef				StartRef;
@@ -40,7 +40,7 @@ protected:
 	static const int MAX_QUEUE = 8;
 
 	CPathQuery	Queue[MAX_QUEUE];
-	DWORD		NextRequestID;
+	UPTR		NextRequestID;
 	int			MaxPathSize;
 	int			QueueHead;
 	
@@ -53,10 +53,10 @@ public:
 
 	bool		Init(int MaxPath);
 	void		Update(int MaxIters);
-	DWORD		Request(dtPolyRef RStart, dtPolyRef REnd, const float* pStart, const float* pEnd, dtNavMeshQuery* pNavQuery, const dtQueryFilter* pFilter);
-	void		CancelRequest(DWORD RequestID);
-	dtStatus	GetRequestStatus(DWORD RequestID) const;
-	dtStatus	GetPathResult(DWORD RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath);
+	UPTR		Request(dtPolyRef RStart, dtPolyRef REnd, const float* pStart, const float* pEnd, dtNavMeshQuery* pNavQuery, const dtQueryFilter* pFilter);
+	void		CancelRequest(UPTR RequestID);
+	dtStatus	GetRequestStatus(UPTR RequestID) const;
+	dtStatus	GetPathResult(UPTR RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath);
 };
 
 inline CPathRequestQueue::CPathRequestQueue(): NextRequestID(1)

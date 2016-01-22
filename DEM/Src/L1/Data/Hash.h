@@ -25,7 +25,7 @@ inline unsigned int Hash(const char* pStr)
 
 template<class T> inline unsigned int Hash(const T& Key)
 {
-	//???what about smaller than DWORD?
+	//???what about smaller than int?
 	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
 	else return Hash(&Key, sizeof(T));
 }

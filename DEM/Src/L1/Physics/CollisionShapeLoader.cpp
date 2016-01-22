@@ -83,7 +83,7 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 		FileName = "Terrain:" + FileName + ".cdlod";
 
 		void* pHFData = NULL;
-		DWORD HFWidth, HFHeight;
+		U32 HFWidth, HFHeight;
 		float HScale;
 		CAABB AABB;
 
@@ -94,14 +94,14 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 			if (!CDLODFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
 			IO::CBinaryReader Reader(CDLODFile);
 
-			n_assert(Reader.Read<int>() == 'CDLD');	// Magic
-			n_assert(Reader.Read<int>() == 1);		// Version
+			n_assert(Reader.Read<U32>() == 'CDLD');	// Magic
+			n_assert(Reader.Read<U32>() == 1);		// Version
 
 			Reader.Read(HFWidth);
 			Reader.Read(HFHeight);
-			Reader.Read<DWORD>(); // PatchSize
-			Reader.Read<DWORD>(); // LODCount
-			Reader.Read<DWORD>(); // MinMaxDataSize
+			Reader.Read<U32>(); // PatchSize
+			Reader.Read<U32>(); // LODCount
+			Reader.Read<U32>(); // MinMaxDataSize
 			Reader.Read(HScale);
 			Reader.Read(AABB.Min.x);
 			Reader.Read(AABB.Min.y);
@@ -110,7 +110,7 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 			Reader.Read(AABB.Max.y);
 			Reader.Read(AABB.Max.z);
 
-			DWORD DataSize = HFWidth * HFHeight * sizeof(unsigned short);
+			UPTR DataSize = HFWidth * HFHeight * sizeof(U16);
 			pHFData = n_malloc(DataSize);
 			CDLODFile.Read(pHFData, DataSize);
 

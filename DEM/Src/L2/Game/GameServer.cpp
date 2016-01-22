@@ -116,7 +116,7 @@ void CGameServer::ClearEntityLoader(CStrID Group)
 
 bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 {
-	int LevelIdx = Levels.FindIndex(ID);
+	IPTR LevelIdx = Levels.FindIndex(ID);
 	if (LevelIdx != INVALID_INDEX)
 	{
 		//???update already existing objects or unload the level?
@@ -146,7 +146,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 			//!!!move to separate function to allow creating entities after level is loaded!
 
 			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
-			int LoaderIdx = Loaders.FindIndex(LoadingGroup);
+			IPTR LoaderIdx = Loaders.FindIndex(LoadingGroup);
 			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAt(LoaderIdx);
 			if (Loader.IsNullPtr()) continue;
 
@@ -186,7 +186,7 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 
 void CGameServer::UnloadLevel(CStrID ID)
 {
-	int LevelIdx = Levels.FindIndex(ID);
+	IPTR LevelIdx = Levels.FindIndex(ID);
 	if (ID == INVALID_INDEX) return;
 
 	PGameLevel Level = Levels.ValueAt(LevelIdx);
@@ -217,7 +217,7 @@ bool CGameServer::SetActiveLevel(CStrID ID)
 	PGameLevel NewLevel;
 	if (ID.IsValid())
 	{
-		int LevelIdx = Levels.FindIndex(ID);
+		IPTR LevelIdx = Levels.FindIndex(ID);
 		if (LevelIdx == INVALID_INDEX) FAIL;
 		NewLevel = Levels.ValueAt(LevelIdx);
 	}
@@ -432,7 +432,7 @@ bool CGameServer::LoadGameLevel(CStrID ID)
 
 void CGameServer::UnloadGameLevel(CStrID ID)
 {
-	int LevelIdx = Levels.FindIndex(ID);
+	IPTR LevelIdx = Levels.FindIndex(ID);
 	if (ID == INVALID_INDEX) return;
 	n_assert(CurrProfile.IsValid());
 	n_verify(CommitLevelDiff(*Levels.ValueAt(LevelIdx)));

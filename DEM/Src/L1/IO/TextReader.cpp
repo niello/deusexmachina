@@ -4,7 +4,7 @@ namespace IO
 {
 
 //!!!TEST different cases, especially last line reading!
-bool CTextReader::ReadLine(char* pOutValue, DWORD MaxLen)
+bool CTextReader::ReadLine(char* pOutValue, UPTR MaxLen)
 {
 	const int READ_BLOCK_SIZE = 64;
 

@@ -27,7 +27,7 @@ public:
 	//PDepthStencilBuffer			DepthStencil;
 
 	//Data::CFlags				ClearFlags;
-	//CFixedArray<DWORD>			RTClearColors;		// 32-bit ARGB each
+	//CFixedArray<U32>			RTClearColors;		// 32-bit ARGB each
 	//float						DepthClearValue;	// 0.f .. 1.f
 	//U8						StencilClearValue;
 

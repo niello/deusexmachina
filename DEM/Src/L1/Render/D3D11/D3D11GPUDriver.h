@@ -100,7 +100,7 @@ protected:
 	PD3D11RenderState					NewRS;
 	D3D11_VIEWPORT*						CurrVP;
 	RECT*								CurrSR;				//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
-	DWORD								MaxViewportCount;
+	UPTR								MaxViewportCount;
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const DWORD					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11ConstantBuffer>	CurrCB;
@@ -169,7 +169,7 @@ public:
 	virtual bool				Present(DWORD SwapChainID);
 	virtual bool				CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const;
 
-	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count);
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);

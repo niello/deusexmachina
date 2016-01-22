@@ -74,7 +74,7 @@ void CAIServer::AddSmartAction(CStrID ID, const Data::CParams& Desc)
 
 const CSmartAction* CAIServer::GetSmartAction(CStrID ID) const
 {
-	int Idx = SOActTpls.FindIndex(ID);
+	IPTR Idx = SOActTpls.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------

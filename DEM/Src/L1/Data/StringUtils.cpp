@@ -3,14 +3,14 @@
 namespace StringUtils
 {
 
-char* LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, DWORD SubStrLen)
+char* LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, UPTR SubStrLen)
 {
 	if (!pStrStart || !pSubStr || !*pStrStart || !*pSubStr) return NULL;
 
 	if (!pStrEnd) pStrEnd = pStrStart + strlen(pStrStart);
 	else if (pStrEnd <= pStrStart) return NULL;
 
-	DWORD SubStrLastIdx = (SubStrLen ? SubStrLen : strlen(pSubStr)) - 1;
+	UPTR SubStrLastIdx = (SubStrLen ? SubStrLen : strlen(pSubStr)) - 1;
 
 	const char LastChar = pSubStr[SubStrLastIdx];
 	const char* pCurr = pStrEnd;

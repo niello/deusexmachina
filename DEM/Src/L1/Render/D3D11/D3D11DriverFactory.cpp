@@ -36,7 +36,7 @@ void CD3D11DriverFactory::Close()
 }
 //---------------------------------------------------------------------
 
-bool CD3D11DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const
+bool CD3D11DriverFactory::GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) const
 {
 	if (Adapter >= AdapterCount) FAIL;
 
@@ -73,7 +73,7 @@ bool CD3D11DriverFactory::GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) c
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11DriverFactory::GetAdapterOutputCount(DWORD Adapter) const
+UPTR CD3D11DriverFactory::GetAdapterOutputCount(UPTR Adapter) const
 {
 	if (Adapter >= AdapterCount) FAIL;
 
@@ -94,7 +94,7 @@ DWORD CD3D11DriverFactory::GetAdapterOutputCount(DWORD Adapter) const
 }
 //---------------------------------------------------------------------
 
-PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(DWORD Adapter, DWORD Output)
+PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Output)
 {
 	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
 	if (!Driver->Init(Adapter, Output)) Driver = NULL;
@@ -115,7 +115,7 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(IDXGIOutput* pOutput)
 
 // If adapter is specified, driver type will be automatically set to the type of that adapter.
 // If adapter is not specified, adapter will be selected automatically.
-PGPUDriver CD3D11DriverFactory::CreateGPUDriver(DWORD Adapter, EGPUDriverType DriverType)
+PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType DriverType)
 {
 	n_assert(pDXGIFactory);
 
@@ -208,7 +208,7 @@ EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat)
+UPTR CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -333,7 +333,7 @@ DWORD CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11DriverFactory::DXGIFormatDepthBits(DXGI_FORMAT D3DFormat)
+UPTR CD3D11DriverFactory::DXGIFormatDepthBits(DXGI_FORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -346,7 +346,7 @@ DWORD CD3D11DriverFactory::DXGIFormatDepthBits(DXGI_FORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11DriverFactory::DXGIFormatStencilBits(DXGI_FORMAT D3DFormat)
+UPTR CD3D11DriverFactory::DXGIFormatStencilBits(DXGI_FORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
@@ -357,7 +357,7 @@ DWORD CD3D11DriverFactory::DXGIFormatStencilBits(DXGI_FORMAT D3DFormat)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11DriverFactory::DXGIFormatBlockSize(DXGI_FORMAT D3DFormat)
+UPTR CD3D11DriverFactory::DXGIFormatBlockSize(DXGI_FORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{

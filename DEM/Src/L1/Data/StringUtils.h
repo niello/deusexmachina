@@ -21,7 +21,7 @@ namespace StringUtils
 	inline float	ToFloat(const char* pStr) { return (float)atof(pStr); }
 	bool			ToBool(const char* pStr);
 
-	char*			LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, DWORD SubStrLen = 0);
+	char*			LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, UPTR SubStrLen = 0);
 	bool			MatchesPattern(const char* pStr, const char* pPattern);
 	//CString			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true) const;
 

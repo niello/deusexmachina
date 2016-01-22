@@ -78,8 +78,8 @@ void CDEMTexture::createEmptyTexture(const Sizef& sz)
 {
 	Render::CTextureDesc Desc;
 	Desc.Type = Render::Texture_2D;
-	Desc.Width = (DWORD)sz.d_width;
-	Desc.Height = (DWORD)sz.d_height;
+	Desc.Width = (UPTR)sz.d_width;
+	Desc.Height = (UPTR)sz.d_height;
 	Desc.Depth = 0;
 	Desc.MipLevels = 1;
 	Desc.ArraySize = 1;
@@ -172,8 +172,8 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 
 	Render::CTextureDesc Desc;
 	Desc.Type = Render::Texture_2D;
-	Desc.Width = (DWORD)buffer_size.d_width;
-	Desc.Height = (DWORD)buffer_size.d_height;
+	Desc.Width = (UPTR)buffer_size.d_width;
+	Desc.Height = (UPTR)buffer_size.d_height;
 	Desc.Depth = 0;
 	Desc.MipLevels = 1;
 	Desc.ArraySize = 1;

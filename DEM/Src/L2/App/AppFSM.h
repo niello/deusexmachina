@@ -39,7 +39,7 @@ public:
 
 	CStateHandler*	FindStateHandlerByID(CStrID ID) const;
 	CStateHandler*	FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const;
-	CStateHandler*	GetStateHandlerAt(int Idx) const { return StateHandlers[Idx]; }
+	CStateHandler*	GetStateHandlerAt(IPTR Idx) const { return StateHandlers[Idx]; }
 	CStateHandler*	GetCurrentStateHandler() const { return CurrStateHandler; }
 	CStrID			GetCurrentStateID() const { return CurrState; }
 };

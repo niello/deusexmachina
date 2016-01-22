@@ -78,7 +78,7 @@ bool CSensorVision::ValidatesFactType(const Core::CRTTI& Type) const
 }
 //---------------------------------------------------------------------
 
-DWORD CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) const
+UPTR CSensorVision::ValidateFact(CActor* pActor, const CMemFact& Fact) const
 {
 	const CMemFactObstacle& Obstacle = (const CMemFactObstacle&)Fact;
 

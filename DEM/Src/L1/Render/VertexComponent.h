@@ -42,7 +42,7 @@ enum EVertexComponentFormat
 	VCFmt_Invalid
 };
 
-#define DEM_VERTEX_COMPONENT_OFFSET_DEFAULT ((DWORD)-1)
+#define DEM_VERTEX_COMPONENT_OFFSET_DEFAULT ((UPTR)-1)
 
 struct CVertexComponent
 {
@@ -51,17 +51,17 @@ struct CVertexComponent
 
 	EVertexComponentSemantic	Semantic;
 	const char*					UserDefinedName; // For UserDefined semantics
-	DWORD						Index;
+	UPTR						Index;
 	EVertexComponentFormat		Format;
-	DWORD						Stream;
-	DWORD						OffsetInVertex;
+	UPTR						Stream;
+	UPTR						OffsetInVertex;
 
 	const char*	GetSemanticString() const { n_assert_dbg(Semantic < VCSem_Invalid); return Semantic >= VCSem_UserDefined ? UserDefinedName : SemanticNames[Semantic]; }
 	const char*	GetFormatString() const { n_assert_dbg(Format < VCFmt_Invalid); return FormatNames[Format]; }
-	DWORD		GetSize() const;
+	UPTR		GetSize() const;
 };
 
-inline DWORD CVertexComponent::GetSize() const
+inline UPTR CVertexComponent::GetSize() const
 {
 	switch (Format)
 	{

@@ -7,7 +7,7 @@ namespace AI
 {
 __ImplementClass(AI::CActionGoto, 'AGTO', AI::CAction);
 
-DWORD CActionGoto::Update(CActor* pActor)
+UPTR CActionGoto::Update(CActor* pActor)
 {
 	switch (pActor->NavState)
 	{
@@ -43,12 +43,12 @@ bool CActionGoto::IsValid(CActor* pActor) const
 }
 //---------------------------------------------------------------------
 
-DWORD CActionGoto::AdvancePath(CActor* pActor)
+UPTR CActionGoto::AdvancePath(CActor* pActor)
 {
 	//???don't request edges every tick? Path remains valid until something happens!
 	//???smth like NavSys->HasPathChanged()? set to false in GetPathEdges, to true when path changes
 	bool OffMesh = pActor->GetNavSystem().IsTraversingOffMesh();
-	DWORD EdgeCount;
+	UPTR EdgeCount;
 	//???request one edge when recover to avoid smoothing?
 	if (!pActor->GetNavSystem().GetPathEdges(Path, OffMesh ? 1 : 2, EdgeCount)) return Failure;
 	if (!EdgeCount) return Running;
@@ -73,7 +73,7 @@ DWORD CActionGoto::AdvancePath(CActor* pActor)
 	}
 
 	SubAction->UpdatePathEdge(pActor, &Path[0], (EdgeCount > 1 && NewActionID == Path[1].Action) ? &Path[1] : NULL);
-	DWORD Result = SubAction->Update(pActor);
+	UPTR Result = SubAction->Update(pActor);
 	if (Result != Running)
 	{
 		SubAction->Deactivate(pActor);

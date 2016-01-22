@@ -202,7 +202,7 @@ GeometryBuffer& CDEMRenderer::createGeometryBuffer()
 
 void CDEMRenderer::destroyGeometryBuffer(const GeometryBuffer& buffer)
 {
-	int Idx = GeomBuffers.FindIndex((CDEMGeometryBuffer*)&buffer);
+	IPTR Idx = GeomBuffers.FindIndex((CDEMGeometryBuffer*)&buffer);
 	if (Idx != INVALID_INDEX)
 	{
 		GeomBuffers.RemoveAt(Idx);
@@ -219,7 +219,7 @@ void CDEMRenderer::destroyAllGeometryBuffers()
 }
 //--------------------------------------------------------------------
 
-Render::PVertexBuffer CDEMRenderer::createVertexBuffer(D3DVertex* pVertexData, DWORD VertexCount)
+Render::PVertexBuffer CDEMRenderer::createVertexBuffer(D3DVertex* pVertexData, UPTR VertexCount)
 {
 	if (!pVertexData || !VertexCount || VertexLayout.IsNullPtr()) return NULL;
 	return GPU->CreateVertexBuffer(*VertexLayout, VertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
@@ -245,7 +245,7 @@ TextureTarget* CDEMRenderer::createTextureTarget()
 
 void CDEMRenderer::destroyTextureTarget(TextureTarget* target)
 {
-	int Idx = TexTargets.FindIndex((CDEMTextureTarget*)target);
+	IPTR Idx = TexTargets.FindIndex((CDEMTextureTarget*)target);
 	if (Idx != INVALID_INDEX)
 	{
 		TexTargets.RemoveAt(Idx);

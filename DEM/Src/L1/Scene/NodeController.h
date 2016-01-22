@@ -56,7 +56,7 @@ public:
 	bool			IsDeffered() const { return Flags.Is(Deffered); }
 	bool			NeedToUpdateLocalSpace() const { return Flags.Is(UpdateLocalSpace); }
 	bool			HasChannel(ETransformChannel Channel) const { return Channels.Is(Channel); }
-	DWORD			GetChannels() const { return Channels.GetMask(); }
+	UPTR			GetChannels() const { return Channels.GetMask(); }
 };
 
 typedef Ptr<CNodeController> PNodeController;

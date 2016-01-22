@@ -288,7 +288,7 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 //void
 //nD3D9Mesh::OptimizeFaces(U16* indices, int numFaces, int numVertices)
 //{
-//    DWORD* pdwRemap = n_new_array(DWORD, numFaces);
+//    UPTR* pdwRemap = n_new_array(UPTR, numFaces);
 //    D3DXOptimizeFaces(indices, numFaces, numVertices, FALSE, pdwRemap);
 //
 //    U16* dstIndices = n_new_array(U16, numFaces * 3);
@@ -309,7 +309,7 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 //void
 //nD3D9Mesh::OptimizeVertices(float* vertices, U16* indices, int numVertices, int numFaces)
 //{
-//    DWORD* pdwRemap = n_new_array(DWORD, numVertices);
+//    UPTR* pdwRemap = n_new_array(UPTR, numVertices);
 //
 //    D3DXOptimizeVertices(indices, numFaces, numVertices, FALSE, pdwRemap);
 //

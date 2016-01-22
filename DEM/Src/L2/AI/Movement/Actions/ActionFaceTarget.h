@@ -26,7 +26,7 @@ public:
 	void			Init(CStrID Target) { TargetID = Target; }
 
 	virtual bool	Activate(CActor* pActor);
-	virtual DWORD	Update(CActor* pActor);
+	virtual UPTR	Update(CActor* pActor);
 };
 
 typedef Ptr<CActionFaceTarget> PActionFaceTarget;

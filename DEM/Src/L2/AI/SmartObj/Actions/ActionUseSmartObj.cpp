@@ -12,7 +12,7 @@ __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 using namespace Prop;
 using namespace Data;
 
-DWORD CActionUseSmartObj::SetDone(CActor* pActor, CPropSmartObject* pSO, const CSmartAction& ActTpl)
+UPTR CActionUseSmartObj::SetDone(CActor* pActor, CPropSmartObject* pSO, const CSmartAction& ActTpl)
 {
 	WasDone = true;
 
@@ -91,7 +91,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-DWORD CActionUseSmartObj::Update(CActor* pActor)
+UPTR CActionUseSmartObj::Update(CActor* pActor)
 {
 	//!!!IsValid() checks that values, second test may be not necessary!
 	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
@@ -102,7 +102,7 @@ DWORD CActionUseSmartObj::Update(CActor* pActor)
 	if (!pSOAction) return Failure;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
-	DWORD Result = ActTpl.Update(pActor->GetEntity()->GetUID(), TargetID);
+	UPTR Result = ActTpl.Update(pActor->GetEntity()->GetUID(), TargetID);
 	if (Result == Failure || ExecResultIsError(Result)) return Result;
 	if (WasDone) return ActTpl.EndOnDone() ? Success : Running;
 	if (Result == Success) return SetDone(pActor, pSO, ActTpl);

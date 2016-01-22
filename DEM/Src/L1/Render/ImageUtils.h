@@ -25,31 +25,31 @@ enum ECopyImageFlags
 
 struct CCopyImageParams
 {
-	DWORD BitsPerPixel;		// For both source and destination formats
-	DWORD Offset[3];		// Destination offset X, Y, Z in pixels
-	DWORD CopySize[3];		// Size to copy X, Y, Z in pixels
-	DWORD TotalSize[2];		// Destination dimensions X, Y (to detect whole slice / whole row copy)
+	UPTR BitsPerPixel;		// For both source and destination formats
+	UPTR Offset[3];		// Destination offset X, Y, Z in pixels
+	UPTR CopySize[3];		// Size to copy X, Y, Z in pixels
+	UPTR TotalSize[2];		// Destination dimensions X, Y (to detect whole slice / whole row copy)
 };
 
 // Source and destination formats must match, no conversion occurs //!!!can use custom memcpy substitutes as arg to allow conversion algorithms!
-void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD Flags, const CCopyImageParams& Params);
+void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Flags, const CCopyImageParams& Params);
 
 // pInRegion may be NULL, which means that region covers the whole image
 // Dimensions is a number of image dimensions from 1 to 3
 // If region requested is degenerate, function returns false not finishing calculations
-bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, DWORD Dimensions,
-									 DWORD ImageWidth, DWORD ImageHeight, DWORD ImageDepth,
-									 DWORD& OutOffsetX, DWORD& OutOffsetY, DWORD& OutOffsetZ,
-									 DWORD& OutSizeX, DWORD& OutSizeY, DWORD& OutSizeZ);
+bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, UPTR Dimensions,
+									 UPTR ImageWidth, UPTR ImageHeight, UPTR ImageDepth,
+									 UPTR& OutOffsetX, UPTR& OutOffsetY, UPTR& OutOffsetZ,
+									 UPTR& OutSizeX, UPTR& OutSizeY, UPTR& OutSizeZ);
 
-inline DWORD __fastcall CalcImageRowPitch(DWORD BitsPerPixel, DWORD Width, bool IsBlockCompressed = false)
+inline UPTR __fastcall CalcImageRowPitch(UPTR BitsPerPixel, UPTR Width, bool IsBlockCompressed = false)
 {
 	if (IsBlockCompressed) return (((Width + 3) >> 2) * BitsPerPixel) << 1;
 	else return (Width * BitsPerPixel + 7) >> 3;
 }
 //---------------------------------------------------------------------
 
-inline DWORD __fastcall CalcImageSlicePitch(DWORD RowPitch, DWORD Height, bool IsBlockCompressed = false)
+inline UPTR __fastcall CalcImageSlicePitch(UPTR RowPitch, UPTR Height, bool IsBlockCompressed = false)
 {
 	if (IsBlockCompressed) return ((Height + 3) >> 2) * RowPitch;
 	else return Height * RowPitch;

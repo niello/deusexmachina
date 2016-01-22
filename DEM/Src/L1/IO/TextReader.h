@@ -19,7 +19,7 @@ public:
 
 	CTextReader(CStream& SrcStream): CStreamReader(SrcStream) { }
 
-	bool ReadLine(char* pOutValue, DWORD MaxLen = MAX_DWORD);
+	bool ReadLine(char* pOutValue, UPTR MaxLen = MAX_DWORD);
 	bool ReadLine(CString& OutValue);
 	bool ReadLines(CArray<CString>& OutValues, int Count = -1);
 	bool ReadAll(CString& OutValue);

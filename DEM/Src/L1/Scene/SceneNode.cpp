@@ -117,7 +117,7 @@ CSceneNode* CSceneNode::GetChild(const char* pPath, bool Create)
 {
 	if (!pPath || !*pPath) return this;
 
-	const DWORD MAX_NODE_NAME = 64;
+	const UPTR MAX_NODE_NAME = 64;
 	char Name[MAX_NODE_NAME];
 	const char* pSrcCurr = pPath;
 	char* pDstCurr = Name;
@@ -133,7 +133,7 @@ CSceneNode* CSceneNode::GetChild(const char* pPath, bool Create)
 	PSceneNode SelChild;
 
 	CStrID NameID(Name);
-	int Idx = Children.FindIndex(NameID);
+	IPTR Idx = Children.FindIndex(NameID);
 	if (Idx == INVALID_INDEX)
 	{
 		if (!Create) return NULL;
@@ -180,9 +180,9 @@ void CSceneNode::RemoveAttribute(CNodeAttribute& Attr)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::RemoveAttribute(DWORD Idx)
+void CSceneNode::RemoveAttribute(UPTR Idx)
 {
-	n_assert(Idx < (DWORD)Attrs.GetCount());
+	n_assert(Idx < Attrs.GetCount());
 	CNodeAttribute& Attr = *Attrs[Idx];
 	Attr.OnDetachFromNode();
 	Attrs.RemoveAt(Idx);

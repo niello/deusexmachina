@@ -19,7 +19,7 @@ class CDynamicEnumT
 protected:
 
 	CDict<CStrID, T>	Flags;
-	DWORD				BitsUsed;
+	UPTR				BitsUsed;
 
 public:
 
@@ -31,7 +31,7 @@ public:
 };
 
 typedef CDynamicEnumT<U16> CDynamicEnum16;
-typedef CDynamicEnumT<DWORD> CDynamicEnum32;
+typedef CDynamicEnumT<U32> CDynamicEnum32;
 
 template<class T>
 T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
@@ -42,13 +42,13 @@ T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
 	while (StrTok.GetNextToken("\t |") && *StrTok.GetCurrToken())
 	{
 		CStrID Flag = CStrID(StrTok.GetCurrToken());
-		int Idx = Flags.FindIndex(Flag);
+		IPTR Idx = Flags.FindIndex(Flag);
 		if (Idx != INVALID_INDEX) Mask |= Flags.ValueAt(Idx);
 		else
 		{
 			if (BitsUsed >= (sizeof(T) << 3))
 			{
-				Sys::Error("CDynamicEnumT: overflow, flag %s would be %d-th", Flag.CStr(), BitsUsed + 1);
+				Sys::Error("CDynamicEnumT: overflow, flag '%s' would be %d-th", Flag.CStr(), BitsUsed + 1);
 				return 0;
 			}
 			Mask |= Flags.Add(Flag, (1 << BitsUsed));

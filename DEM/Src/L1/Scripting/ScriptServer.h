@@ -47,18 +47,18 @@ public:
 	int			DataToLuaStack(const Data::CData& Data);
 	bool		LuaStackToData(Data::CData& Result, int StackIdx);
 
-	DWORD		RunScriptFile(const char* pFileName);
-	DWORD		RunScript(const char* Buffer, DWORD Length = -1, Data::CData* pRetVal = NULL);
+	UPTR		RunScriptFile(const char* pFileName);
+	UPTR		RunScript(const char* Buffer, UPTR Length = -1, Data::CData* pRetVal = NULL);
 
-	DWORD		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, const char* pDbgName = "<UNKNOWN>");
+	UPTR		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, const char* pDbgName = "<UNKNOWN>");
 	
-	//DWORD		RunFunction(const char* pFuncName, int ArgsOnStack = 0);
-	//DWORD		RunFunction(const char* pFuncName, const char* ArgLuaGlobal);
-	//DWORD		RunFunction(const char* pFuncName, const CArray<const char*>& LuaArgs);
-	//DWORD		RunFunction(const char* pFuncName, PParams Args = NULL);
+	//UPTR		RunFunction(const char* pFuncName, int ArgsOnStack = 0);
+	//UPTR		RunFunction(const char* pFuncName, const char* ArgLuaGlobal);
+	//UPTR		RunFunction(const char* pFuncName, const CArray<const char*>& LuaArgs);
+	//UPTR		RunFunction(const char* pFuncName, PParams Args = NULL);
 
 	// Class registration, Mixing-in
-	bool		BeginClass(const char* Name, const char* BaseClass = NULL, DWORD FieldCount = 0);
+	bool		BeginClass(const char* Name, const char* BaseClass = NULL, UPTR FieldCount = 0);
 	bool		BeginExistingClass(const char* Name);
 	void		EndClass(bool IsScriptObjectSubclass);
 	bool		BeginMixin(CScriptObject* pObj);

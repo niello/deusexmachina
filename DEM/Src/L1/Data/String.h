@@ -13,8 +13,8 @@ class CString
 protected:
 
 	char*	pString;
-	DWORD	Length;		// Used space, NOT including terminating '\0'
-	DWORD	MaxLength;	// Allocated space, NOT including terminating '\0'
+	UPTR	Length;		// Used space, NOT including terminating '\0'
+	UPTR	MaxLength;	// Allocated space, NOT including terminating '\0'
 
 public:
 
@@ -22,15 +22,15 @@ public:
 
 	CString(): pString(NULL), Length(0), MaxLength(0) {}
 	explicit CString(const char* pSrc);
-	explicit CString(const char* pSrc, DWORD SrcLength, DWORD PreallocatedFreeSpace = 0);
-	CString(const CString& Other, DWORD PreallocatedFreeSpace = 0): CString(Other.CStr(), Other.GetLength(), PreallocatedFreeSpace) { }
+	explicit CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace = 0);
+	CString(const CString& Other, UPTR PreallocatedFreeSpace = 0): CString(Other.CStr(), Other.GetLength(), PreallocatedFreeSpace) { }
 	~CString() { if (pString) n_free(pString); }
 
-	void			Reallocate(DWORD NewMaxLength);
-	void			Reserve(DWORD Bytes) { if (Length + Bytes > MaxLength) Reallocate(Length + Bytes); }
+	void			Reallocate(UPTR NewMaxLength);
+	void			Reserve(UPTR Bytes) { if (Length + Bytes > MaxLength) Reallocate(Length + Bytes); }
 	void			FreeUnusedMemory() { Reallocate(Length); }
 
-	void			Set(const char* pSrc, DWORD SrcLength, DWORD PreallocatedFreeSpace = 0);
+	void			Set(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace = 0);
 	void			Set(const char* pSrc) { Set(pSrc, pSrc ? strlen(pSrc) : 0); }
 	void			Set(const CString& Src) { Set(Src.CStr(), Src.GetLength()); }
 	void			Clear();
@@ -38,15 +38,15 @@ public:
 	void			FormatWithArgs(const char* pFormatStr, va_list args);
 	//???Wrap(const char* pSrc)? - wrap NULL-terminated string w/out ownership
 
-	void			Add(const char* pStr, DWORD StrLength);
+	void			Add(const char* pStr, UPTR StrLength);
 	void			Add(char Chr);
 	void			Add(const char* pStr) { Add(pStr, strlen(pStr)); }
 	void			Add(const CString& Str) { Add(Str.CStr(), Str.GetLength()); }
 	//Insert
 	//Remove idx + size / char / charset / substring
-	//SetLength(DWORD NewLength)
+	//SetLength(UPTR NewLength)
 	void			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true);
-	CString			SubString(DWORD Start, DWORD Size = 0) const;
+	CString			SubString(UPTR Start, UPTR Size = 0) const;
 
 	void			Replace(char CurrChar, char NewChar);
 	void			Replace(const char* pCurrCharSet, char NewChar);
@@ -54,13 +54,13 @@ public:
 	void			ToLower() { if (pString) _strlwr_s(pString, Length + 1); }
 	void			ToUpper() { if (pString) _strupr_s(pString, Length + 1); }
 
-	int				FindIndex(char Chr, DWORD StartIdx = 0) const;
-	int				FindIndex(const char* pStr, DWORD StartIdx = 0) const;
+	int				FindIndex(char Chr, UPTR StartIdx = 0) const;
+	int				FindIndex(const char* pStr, UPTR StartIdx = 0) const;
 	bool			ContainsAny(const char* pCharSet) const { return pCharSet && pString && !!strpbrk(pString, pCharSet); }
 	bool			ContainsOnly(const char* pCharSet) const;
 
 	const char*		CStr() const { return pString; }
-	DWORD			GetLength() const { return Length; }
+	UPTR			GetLength() const { return Length; }
 	bool			IsEmpty() const { return !pString || !*pString; }
 	bool			IsValid() const { return pString && *pString; }
 
@@ -96,7 +96,7 @@ inline CString::CString(const char* pSrc)
 {
 	if (pSrc)
 	{
-		DWORD SrcLength = strlen(pSrc);
+		UPTR SrcLength = strlen(pSrc);
 		if (SrcLength)
 		{
 			pString = (char*)n_malloc(SrcLength + 1);
@@ -113,7 +113,7 @@ inline CString::CString(const char* pSrc)
 }
 //---------------------------------------------------------------------
 
-inline CString::CString(const char* pSrc, DWORD SrcLength, DWORD PreallocatedFreeSpace)
+inline CString::CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace)
 {
 	if (pSrc && SrcLength)
 	{
@@ -131,11 +131,11 @@ inline CString::CString(const char* pSrc, DWORD SrcLength, DWORD PreallocatedFre
 }
 //---------------------------------------------------------------------
 
-inline void CString::Set(const char* pSrc, DWORD SrcLength, DWORD PreallocatedFreeSpace)
+inline void CString::Set(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace)
 {
 	if (pSrc && SrcLength)
 	{
-		DWORD ReqLength = SrcLength + PreallocatedFreeSpace;
+		UPTR ReqLength = SrcLength + PreallocatedFreeSpace;
 		if (ReqLength > MaxLength)
 			pString = (char*)n_realloc(pString, ReqLength + 1);
 		memmove(pString, pSrc, SrcLength);
@@ -164,7 +164,7 @@ inline void __cdecl CString::Format(const char* pFormatStr, ...)
 }
 //---------------------------------------------------------------------
 
-inline void CString::Add(const char* pStr, DWORD StrLength)
+inline void CString::Add(const char* pStr, UPTR StrLength)
 {
 	if (!pStr || !StrLength) return;
 	Reserve(StrLength);
@@ -182,7 +182,7 @@ inline void CString::Add(char Chr)
 }
 //---------------------------------------------------------------------
 
-inline CString CString::SubString(DWORD Start, DWORD Size) const
+inline CString CString::SubString(UPTR Start, UPTR Size) const
 {
 	if (Start >= Length) return CString();
 	if (!Size || Start + Size > Length) Size = Length - Start;
@@ -216,7 +216,7 @@ inline void CString::Replace(const char* pCurrCharSet, char NewChar)
 }
 //---------------------------------------------------------------------
 
-inline int CString::FindIndex(char Chr, DWORD StartIdx) const
+inline int CString::FindIndex(char Chr, UPTR StartIdx) const
 {
 	if (StartIdx >= Length) return INVALID_INDEX;
 	const char* pChar = strchr(pString + StartIdx, Chr);
@@ -224,7 +224,7 @@ inline int CString::FindIndex(char Chr, DWORD StartIdx) const
 }
 //---------------------------------------------------------------------
 
-inline int CString::FindIndex(const char* pStr, DWORD StartIdx) const
+inline int CString::FindIndex(const char* pStr, UPTR StartIdx) const
 {
 	if (StartIdx >= Length) return INVALID_INDEX;
 	const char* pChar = strstr(pString + StartIdx, pStr);
@@ -257,7 +257,7 @@ static inline CString operator +(const CString& Str1, const char* pStr2)
 {
 	if (pStr2)
 	{
-		DWORD Len2 = strlen(pStr2);
+		UPTR Len2 = strlen(pStr2);
 		CString Result(Str1, Len2);
 		Result.Add(pStr2, Len2);
 		return Result;
@@ -304,7 +304,7 @@ static inline CString operator +(char Char, const CString& Str)
 
 /*
 	static CString	Concatenate(const CArray<CString>& Strings, const CString& WhiteSpace);
-	void			Strip(DWORD Idx);
+	void			Strip(UPTR Idx);
 	void			Strip(const char* CharSet);
 
 inline CString CString::Trim(const char* CharSet, bool Left, bool Right) const
@@ -316,9 +316,9 @@ inline CString CString::Trim(const char* CharSet, bool Left, bool Right) const
 }
 //---------------------------------------------------------------------
 
-inline void CString::Strip(DWORD Idx)
+inline void CString::Strip(UPTR Idx)
 {
-	n_assert(Idx < (DWORD)Length());
+	n_assert(Idx < (UPTR)Length());
 	char* pStr = pString ? pString : pLocalString;
 	pStr[Idx] = 0;
 	SetLength(Idx);

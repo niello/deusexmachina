@@ -34,7 +34,7 @@ void CBTFile::InitVersion()
 float CBTFile::GetMinHeight()
 {
 	n_assert(Header);
-	DWORD HCount = GetHeightCount();
+	UPTR HCount = GetHeightCount();
 	if (!HCount) return NoDataF;
 
 	if (MinHeight == NoDataF)
@@ -67,7 +67,7 @@ float CBTFile::GetMinHeight()
 float CBTFile::GetMaxHeight()
 {
 	n_assert(Header);
-	DWORD HCount = GetHeightCount();
+	UPTR HCount = GetHeightCount();
 	if (!HCount) return NoDataF;
 
 	if (MaxHeight == NoDataF)
@@ -97,7 +97,7 @@ float CBTFile::GetMaxHeight()
 }
 //---------------------------------------------------------------------
 
-float CBTFile::GetHeight(DWORD X, DWORD Z) const
+float CBTFile::GetHeight(UPTR X, UPTR Z) const
 {
 	n_assert(Header);
 	n_assert(X < Header->Width);
@@ -113,7 +113,7 @@ float CBTFile::GetHeight(DWORD X, DWORD Z) const
 
 // OutFloats must be preallocated
 // BT stores south-to-north column-major, but we return N-to-S row-major here
-void CBTFile::GetHeights(float* OutFloats, DWORD X, DWORD Z, DWORD W, DWORD H)
+void CBTFile::GetHeights(float* OutFloats, UPTR X, UPTR Z, UPTR W, UPTR H)
 {
 	n_assert(Header);
 	n_assert(OutFloats);
@@ -129,8 +129,8 @@ void CBTFile::GetHeights(float* OutFloats, DWORD X, DWORD Z, DWORD W, DWORD H)
 	if (IsFloatData())
 	{
 		n_assert(Header->DataSize == sizeof(float));
-		for (DWORD Row = Z; Row < Z + H; Row++)
-			for (DWORD Col = X; Col < X + W; Col++)
+		for (UPTR Row = Z; Row < Z + H; Row++)
+			for (UPTR Col = X; Col < X + W; Col++)
 				Dest[Row * Header->Width + Col] =
 					HeightsF[Col * Header->Height + Header->Height - 1 - Row];
 	}
@@ -138,8 +138,8 @@ void CBTFile::GetHeights(float* OutFloats, DWORD X, DWORD Z, DWORD W, DWORD H)
 	{
 		n_assert(Header->DataSize == sizeof(short));
 		float VScale = GetVerticalScale();
-		for (DWORD Row = Z; Row < Z + H; Row++)
-			for (DWORD Col = X; Col < X + W; Col++)
+		for (UPTR Row = Z; Row < Z + H; Row++)
+			for (UPTR Col = X; Col < X + W; Col++)
 			{
 				short Src = HeightsS[Col * Header->Height + Header->Height - 1 - Row];
 				Dest[Row * Header->Width + Col] = (Src == NoDataS) ? NoDataF : Src * VScale;

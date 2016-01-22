@@ -72,7 +72,7 @@ public:
 
 	bool	IsValid(CStrID ActorID, CStrID SOID) const;
 	float	GetDuration(CStrID ActorID, CStrID SOID) const;
-	DWORD	Update(CStrID ActorID, CStrID SOID) const;
+	UPTR	Update(CStrID ActorID, CStrID SOID) const;
 
 	CStrID	GetID() const { return ID; }
 	bool	EndOnDone() const { return Flags.Is(CSmartAction::END_ON_DONE); }

@@ -24,7 +24,7 @@ void CActionSteerToPosition::UpdatePathEdge(CActor* pActor, const CPathEdge* pEd
 }
 //---------------------------------------------------------------------
 
-DWORD CActionSteerToPosition::Update(CActor* pActor)
+UPTR CActionSteerToPosition::Update(CActor* pActor)
 {
 	switch (pActor->MvmtState)
 	{

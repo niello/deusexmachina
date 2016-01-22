@@ -22,7 +22,7 @@ void CNodeControllerComposite::OnDetachFromNode()
 }
 //---------------------------------------------------------------------
 
-bool CNodeControllerComposite::AddSource(Scene::CNodeController& Ctlr, DWORD Priority, float Weight)
+bool CNodeControllerComposite::AddSource(Scene::CNodeController& Ctlr, UPTR Priority, float Weight)
 {
 #ifdef _DEBUG
 	for (UPTR i = 0; i < Sources.GetCount(); ++i)

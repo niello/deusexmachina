@@ -63,7 +63,7 @@ PEntity CEntityManager::CloneEntity(const CEntity& Entity, CStrID UID)
 }
 //---------------------------------------------------------------------
 
-void CEntityManager::DeleteEntity(int Idx)
+void CEntityManager::DeleteEntity(IPTR Idx)
 {
 	CEntity& Entity = *Entities[Idx];
 
@@ -92,7 +92,7 @@ CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
 {
 	if (SearchInAliases)
 	{
-		int Idx = Aliases.FindIndex(UID);
+		IPTR Idx = Aliases.FindIndex(UID);
 		if (Idx != INVALID_INDEX) UID = Aliases.ValueAt(Idx);
 	}
 
@@ -122,7 +122,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 	const Core::CRTTI* pCurrRTTI = pRTTI;
 	while (pCurrRTTI)
 	{
-		int Idx = PropStorages.FindIndex(pRTTI);
+		IPTR Idx = PropStorages.FindIndex(pRTTI);
 		if (Idx != INVALID_INDEX)
 		{
 			pStorage = *PropStorages.ValueAt(Idx);
@@ -148,7 +148,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
 {
 	if (!pRTTI) return;
-	int Idx = PropStorages.FindIndex(pRTTI);
+	IPTR Idx = PropStorages.FindIndex(pRTTI);
 	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
 	if (Idx == INVALID_INDEX) return;
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
@@ -168,7 +168,7 @@ void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) c
 CProperty* CEntityManager::GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
 {
 	if (!pRTTI) return NULL;
-	int Idx = PropStorages.FindIndex(pRTTI);
+	IPTR Idx = PropStorages.FindIndex(pRTTI);
 
 	const Core::CRTTI* pStorageRTTI = pRTTI;
 	while (Idx == INVALID_INDEX && pStorageRTTI && pStorageRTTI != &CProperty::RTTI)

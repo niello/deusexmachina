@@ -76,7 +76,7 @@ bool CAILevel::CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float Ac
 			CNavRegion* pRegion = Data.Regions.Get(ID);
 			if (!pRegion) continue;
 
-			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
+			for (UPTR j = 0; j < pRegion->GetCount(); ++j)
 			{
 				dtPolyRef Ref = (*pRegion)[j];
 				U16 PolyFlags;
@@ -107,7 +107,7 @@ void CAILevel::SwitchNavRegionFlags(CStrID ID, bool Set, U16 Flags, float ActorR
 			CNavRegion* pRegion = Data.Regions.Get(ID);
 			if (!pRegion) continue;
 
-			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
+			for (UPTR j = 0; j < pRegion->GetCount(); ++j)
 			{
 				dtPolyRef Ref = (*pRegion)[j];
 				U16 PolyFlags;
@@ -134,7 +134,7 @@ void CAILevel::SetNavRegionArea(CStrID ID, U8 Area, float ActorRadius)
 			CNavRegion* pRegion = Data.Regions.Get(ID);
 			if (!pRegion) continue;
 
-			for (DWORD j = 0; j < pRegion->GetCount(); ++j)
+			for (UPTR j = 0; j < pRegion->GetCount(); ++j)
 				Data.pNavMesh->setPolyArea((*pRegion)[j], Area);
 
 			if (!ProcessAll) break;
@@ -159,7 +159,7 @@ bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, C
 	if (!pNav) FAIL;
 
 	//!!!Select least loaded thread...
-	DWORD ThreadID = 0;
+	UPTR ThreadID = 0;
 
 	pOutQuery = pNav->pNavMeshQuery[ThreadID];
 	pOutQueue = AISrv->GetPathQueue(ThreadID);
@@ -208,7 +208,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 
 	if (EClipStatus == Outside) return;
 
-	for (DWORD i = 0; i < pNode->Data.GetListCount(); ++i)
+	for (UPTR i = 0; i < pNode->Data.GetListCount(); ++i)
 		if (pSensor->AcceptsStimulusType(*pNode->Data.GetKeyAt(i)))
 		{
 			CStimulusListSet::CIterator It = pNode->Data.GetHeadAt(i);
@@ -216,7 +216,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 		}
 
 	if (pNode->HasChildren())
-		for (DWORD i = 0; i < 4; i++)
+		for (UPTR i = 0; i < 4; ++i)
 			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, EClipStatus);
 }
 //---------------------------------------------------------------------

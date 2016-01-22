@@ -219,7 +219,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptServer::RunScriptFile(const char* pFileName)
+UPTR CScriptServer::RunScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return Error;
@@ -227,9 +227,9 @@ DWORD CScriptServer::RunScriptFile(const char* pFileName)
 }
 //---------------------------------------------------------------------
 
-DWORD CScriptServer::RunScript(const char* Buffer, DWORD Length, Data::CData* pRetVal)
+UPTR CScriptServer::RunScript(const char* Buffer, UPTR Length, Data::CData* pRetVal)
 {
-	DWORD Result;
+	UPTR Result;
 	if (luaL_loadbuffer(l, Buffer, ((Length > -1) ? Length : strlen(Buffer)), Buffer) != 0)
 	{
 		Sys::Log("Error parsing script for ScriptSrv: %s\n", lua_tostring(l, -1));
@@ -248,7 +248,7 @@ DWORD CScriptServer::RunScript(const char* Buffer, DWORD Length, Data::CData* pR
 //---------------------------------------------------------------------
 
 // Mainly for internal use
-DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, const char* pDbgName)
+UPTR CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, const char* pDbgName)
 {
 	int ResultCount = lua_gettop(l) - ArgCount - 1;
 
@@ -270,13 +270,13 @@ DWORD CScriptServer::PerformCall(int ArgCount, Data::CData* pRetVal, const char*
 		LuaStackToData(*pRetVal, -1);
 	}
 
-	DWORD Result = lua_toboolean(l, -1) ? Success : Failure;
+	UPTR Result = lua_toboolean(l, -1) ? Success : Failure;
 	lua_pop(l, ResultCount);
 	return Result;
 }
 //---------------------------------------------------------------------
 
-bool CScriptServer::BeginClass(const char* Name, const char* BaseClass, DWORD FieldCount)
+bool CScriptServer::BeginClass(const char* Name, const char* BaseClass, UPTR FieldCount)
 {
 	n_assert2(Name && *Name, "Invalid class name to register");
 	n_assert2(CurrClass.IsEmpty(), "Already in class registration process!");
@@ -399,7 +399,7 @@ bool CScriptServer::LoadClass(const char* Name)
 	if (!BeginClass(Name, BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;
 
 	const char* pData = NULL;
-	DWORD Size = 0;
+	UPTR Size = 0;
 
 	Data::CParam* pCodePrm;
 	if (ClassDesc->Get(pCodePrm, CStrID("Code")))

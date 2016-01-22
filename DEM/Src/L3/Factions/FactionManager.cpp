@@ -84,7 +84,7 @@ bool CFactionManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const 
 		//???to pFaction->Save()?
 		Data::PParams SGFaction = n_new(Data::CParams);
 		Data::PParams SGMembers = n_new(Data::CParams);
-		for (DWORD j = 0; j < pFaction->GetMemberCount(); ++j)
+		for (UPTR j = 0; j < pFaction->GetMemberCount(); ++j)
 		{
 			CStrID MID = pFaction->GetMember(i);
 			SGMembers->Set(MID, pFaction->GetMemberRank(MID));

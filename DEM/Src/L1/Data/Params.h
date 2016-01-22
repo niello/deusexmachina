@@ -240,10 +240,10 @@ public:
 
 //???const char* / CString versions?
 inline const CParam* Get(CStrID Name) const;
-inline DWORD         IndexOf(CStrID Name) const;
+inline UPTR         IndexOf(CStrID Name) const;
 inline bool          Exists(CStrID Name) const {return IndexOf(Name)!=INVALID_INDEX;}
 
-const CParam& operator[](DWORD Index) const
+const CParam& operator[](UPTR Index) const
 {
 assert((Index<Size)&&"Get invalid parameter!");
 return Params[Index];
@@ -264,15 +264,15 @@ return Tmp;
 
 template<int Size> inline const CParam* CStaticParams<Size>::Get(CStrID Name) const
 {
-for (DWORD i=0; i<Size; i++)
+for (UPTR i=0; i<Size; i++)
 if (Params[i].GetName()==Name) return Params[i];
 return NULL;
 }
 //---------------------------------------------------------------------
 
-template<int Size> inline DWORD CStaticParams<Size>::IndexOf(CStrID Name) const
+template<int Size> inline UPTR CStaticParams<Size>::IndexOf(CStrID Name) const
 {
-for (DWORD i=0; i<Size; i++)
+for (UPTR i=0; i<Size; i++)
 if (Params[i].GetName()==Name) return i;
 return INVALID_INDEX;
 }

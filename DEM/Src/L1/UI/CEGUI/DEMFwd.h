@@ -11,9 +11,9 @@ namespace CEGUI
 
 struct D3DVertex
 {
-	float x, y, z; // Transformed
-	DWORD diffuse;
-	float tu, tv;
+	float	x, y, z; // Transformed
+	UPTR	diffuse;
+	float	tu, tv;
 };
 
 }

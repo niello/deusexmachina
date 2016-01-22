@@ -10,9 +10,9 @@
 
 //???!!!in script srv cache object on stack?!
 
-const DWORD Error_Scripting_NoObject = Error + 1;
-const DWORD Error_Scripting_NoFunction = Error + 2;
-const DWORD Error_Scripting_Parsing = Error + 3;
+const UPTR Error_Scripting_NoObject = Error + 1;
+const UPTR Error_Scripting_NoFunction = Error + 2;
+const UPTR Error_Scripting_Parsing = Error + 3;
 
 struct lua_State;
 
@@ -43,8 +43,8 @@ protected:
 
 	CScriptObject() {}
 
-	DWORD	PrepareToLuaCall(const char* pFuncName) const;
-	DWORD	RunFunctionInternal(const char* pFuncName, int ArgCount, Data::CData* pRetVal) const;
+	UPTR	PrepareToLuaCall(const char* pFuncName) const;
+	UPTR	RunFunctionInternal(const char* pFuncName, int ArgCount, Data::CData* pRetVal) const;
 
 public:
 
@@ -57,13 +57,13 @@ public:
 
 	bool			Init(const char* LuaClassName = "CScriptObject");
 
-	DWORD			LoadScriptFile(const char* pFileName);
-	DWORD			LoadScript(const char* Buffer, DWORD Length);
+	UPTR			LoadScriptFile(const char* pFileName);
+	UPTR			LoadScript(const char* Buffer, UPTR Length);
 
-	DWORD			RunFunction(const char* pFuncName, Data::CData* pRetVal = NULL) const;
-	DWORD			RunFunction(const char* pFuncName, const char* ArgLuaGlobal, Data::CData* pRetVal = NULL) const;
-	DWORD			RunFunction(const char* pFuncName, Data::CData* Args, DWORD ArgCount, Data::CData* pRetVal = NULL) const;
-	DWORD			RunFunctionOneArg(const char* FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
+	UPTR			RunFunction(const char* pFuncName, Data::CData* pRetVal = NULL) const;
+	UPTR			RunFunction(const char* pFuncName, const char* ArgLuaGlobal, Data::CData* pRetVal = NULL) const;
+	UPTR			RunFunction(const char* pFuncName, Data::CData* Args, UPTR ArgCount, Data::CData* pRetVal = NULL) const;
+	UPTR			RunFunctionOneArg(const char* FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
 
 	bool			SubscribeEvent(CStrID EventID, const char* HandlerFuncName, Events::CEventDispatcher* pDisp, U16 Priority);
 	void			UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName, const Events::CEventDispatcher* pDisp);
@@ -82,9 +82,9 @@ public:
 
 typedef Ptr<CScriptObject> PScriptObject;
 
-inline DWORD CScriptObject::RunFunction(const char* pFuncName, Data::CData* pRetVal) const
+inline UPTR CScriptObject::RunFunction(const char* pFuncName, Data::CData* pRetVal) const
 {
-	DWORD Res = PrepareToLuaCall(pFuncName);
+	UPTR Res = PrepareToLuaCall(pFuncName);
 	if (ExecResultIsError(Res)) return Res;
 	return RunFunctionInternal(pFuncName, 0, pRetVal);
 }

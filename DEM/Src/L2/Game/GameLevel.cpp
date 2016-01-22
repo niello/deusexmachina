@@ -301,8 +301,7 @@ void CGameLevel::Trigger()
 
 	const vector3& CameraPos = MainCamera->GetPosition();
 
-	//!!!cache as member to avoid dynamic allocation per-frame!
-	CArray<Scene::CSceneNode*> DefferedNodes;
+	DefferedNodes.Clear(false);
 	if (SceneRoot.IsValidPtr()) SceneRoot->UpdateTransform(&CameraPos, 1, false, &DefferedNodes);
 
 	if (PhysWorld.IsValidPtr())
@@ -461,7 +460,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 }
 //---------------------------------------------------------------------
 
-DWORD CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const
+UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const
 {
 	// calc frustum
 	// query SPS with this frustum
@@ -524,7 +523,7 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 	Out.v1 = Out.v0;
 
 	vector2 ScreenPos;
-	for (DWORD i = 1; i < 8; i++)
+	for (UPTR i = 1; i < 8; i++)
 	{
 		MainCamera->GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
 
@@ -539,7 +538,7 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 }
 //---------------------------------------------------------------------
 
-DWORD CGameLevel::GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const
+UPTR CGameLevel::GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const
 {
 	// request physics level for shapes and bodies
 	// select ones that are attached to entities
@@ -549,7 +548,7 @@ DWORD CGameLevel::GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OB
 }
 //---------------------------------------------------------------------
 
-DWORD CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const
+UPTR CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const
 {
 	// request physics level for shapes and bodies
 	// select ones that are attached to entities

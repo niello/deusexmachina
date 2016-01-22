@@ -37,7 +37,7 @@ PStaticObject CStaticEnvManager::CreateStaticObject(CStrID UID, CGameLevel& Leve
 }
 //---------------------------------------------------------------------
 
-void CStaticEnvManager::DeleteStaticObject(int Idx)
+void CStaticEnvManager::DeleteStaticObject(IPTR Idx)
 {
 	CStaticObject& Obj = *Objects.ValueAt(Idx);
 	if (Obj.IsValidPtr()) Obj.Term();

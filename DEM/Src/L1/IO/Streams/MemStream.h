@@ -30,8 +30,8 @@ public:
 	CMemStream(): pBuffer(NULL), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
 	virtual ~CMemStream() { if (IsOpen()) Close(); }
 
-	bool			Open(void* pData, DWORD Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
-	bool			Open(const void* pData, DWORD Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
+	bool			Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
+	bool			Open(const void* pData, UPTR Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();
 	virtual UPTR	Read(void* pData, UPTR Size);
@@ -50,7 +50,7 @@ public:
 	virtual bool	CanBeMapped() const { OK; }
 };
 
-inline bool CMemStream::Open(void* pData, DWORD Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+inline bool CMemStream::Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
 	pBuffer = (char*)pData;
 	DataSize = Size;
@@ -58,7 +58,7 @@ inline bool CMemStream::Open(void* pData, DWORD Size, EStreamAccessMode Mode, ES
 }
 //---------------------------------------------------------------------
 
-inline bool CMemStream::Open(const void* pData, DWORD Size, EStreamAccessPattern Pattern)
+inline bool CMemStream::Open(const void* pData, UPTR Size, EStreamAccessPattern Pattern)
 {
 	pConstBuffer = (const char*)pData;
 	DataSize = Size;

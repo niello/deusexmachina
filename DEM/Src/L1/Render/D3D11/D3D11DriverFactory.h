@@ -46,7 +46,7 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 protected:
 
 	IDXGIFactory1*			pDXGIFactory;
-	DWORD					AdapterCount;		// Valid during a lifetime of the DXGI factory object
+	UPTR					AdapterCount;		// Valid during a lifetime of the DXGI factory object
 	CArray<CBinaryData>		ShaderSignatures;
 	CHashTable<UPTR, UPTR>	ShaderSigIDToIndex;
 
@@ -59,10 +59,10 @@ public:
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
 	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);
-	static DWORD			DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat);
-	static DWORD			DXGIFormatDepthBits(DXGI_FORMAT D3DFormat);
-	static DWORD			DXGIFormatStencilBits(DXGI_FORMAT D3DFormat);
-	static DWORD			DXGIFormatBlockSize(DXGI_FORMAT D3DFormat);
+	static UPTR				DXGIFormatBitsPerPixel(DXGI_FORMAT D3DFormat);
+	static UPTR				DXGIFormatDepthBits(DXGI_FORMAT D3DFormat);
+	static UPTR				DXGIFormatStencilBits(DXGI_FORMAT D3DFormat);
+	static UPTR				DXGIFormatBlockSize(DXGI_FORMAT D3DFormat);
 	static DXGI_FORMAT		GetCorrespondingFormat(DXGI_FORMAT D3DFormat, EFormatType Type, bool PreferSRGB = false);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc);
 
@@ -70,13 +70,13 @@ public:
 	void					Close();
 	bool					IsOpened() const { return !!pDXGIFactory; }
 
-	virtual bool			AdapterExists(DWORD Adapter) const { return Adapter < AdapterCount; }
-	virtual DWORD			GetAdapterCount() const { return AdapterCount; }
-	virtual bool			GetAdapterInfo(DWORD Adapter, CAdapterInfo& OutInfo) const;
-	virtual DWORD			GetAdapterOutputCount(DWORD Adapter) const;
-	virtual PDisplayDriver	CreateDisplayDriver(DWORD Adapter = 0, DWORD Output = 0);
+	virtual bool			AdapterExists(UPTR Adapter) const { return Adapter < AdapterCount; }
+	virtual UPTR			GetAdapterCount() const { return AdapterCount; }
+	virtual bool			GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) const;
+	virtual UPTR			GetAdapterOutputCount(UPTR Adapter) const;
+	virtual PDisplayDriver	CreateDisplayDriver(UPTR Adapter = 0, UPTR Output = 0);
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
-	virtual PGPUDriver		CreateGPUDriver(DWORD Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
+	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
 	bool					RegisterShaderInputSignature(UPTR ID, void* pData, UPTR Size);
 	bool					FindShaderInputSignature(UPTR ID, CBinaryData* pOutSigData = NULL) const;

@@ -21,7 +21,7 @@ class CVertexLayout: public Core::CObject
 protected:
 
 	CFixedArray<CVertexComponent>	Components;
-	DWORD							VertexSize;
+	UPTR							VertexSize;
 
 	void InternalDestroy() { Components.Clear(); VertexSize = 0; }
 
@@ -30,14 +30,14 @@ public:
 	CVertexLayout(): VertexSize(0) {}
 	virtual ~CVertexLayout() { InternalDestroy(); }
 
-	static CStrID					BuildSignature(const CVertexComponent* pComponents, DWORD Count);
+	static CStrID					BuildSignature(const CVertexComponent* pComponents, UPTR Count);
 
 	virtual void					Destroy() { InternalDestroy(); }
 	virtual bool					IsValid() const = 0;
 
-	const CVertexComponent*			GetComponent(DWORD Index) const { return Index < Components.GetCount() ? &Components[Index] : NULL; }
-	DWORD							GetComponentCount() const { return Components.GetCount(); }
-	DWORD							GetVertexSizeInBytes() const { return VertexSize; }
+	const CVertexComponent*			GetComponent(UPTR Index) const { return Index < Components.GetCount() ? &Components[Index] : NULL; }
+	UPTR							GetComponentCount() const { return Components.GetCount(); }
+	UPTR							GetVertexSizeInBytes() const { return VertexSize; }
 };
 
 typedef Ptr<CVertexLayout> PVertexLayout;

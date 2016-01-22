@@ -34,8 +34,8 @@ public:
 
 protected:
 
-	DWORD			AdapterID;
-	DWORD			OutputID;
+	UPTR			AdapterID;
+	UPTR			OutputID;
 
 public:
 
@@ -51,8 +51,8 @@ public:
 	virtual bool			GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const = 0;
 	//???find closest display mode? may be non-virtual with my own algorithm, but DXGI has its own implementation
 
-	DWORD					GetAdapterID() const {return AdapterID; }
-	DWORD					GetAdapterOutputID() const {return OutputID; }
+	UPTR					GetAdapterID() const {return AdapterID; }
+	UPTR					GetAdapterOutputID() const {return OutputID; }
 	bool					IsInitialized() const { return AdapterID != Adapter_None; }
 };
 

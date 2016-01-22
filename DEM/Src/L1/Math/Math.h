@@ -226,7 +226,7 @@ namespace Math
 {
 
 // Solves ax^2 + bx + c = 0 equation. Returns a number of real roots and optionally root values.
-inline DWORD SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = NULL, float* pOutX2 = NULL)
+inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = NULL, float* pOutX2 = NULL)
 {
 	float D = b * b - 4.f * a * c;
 

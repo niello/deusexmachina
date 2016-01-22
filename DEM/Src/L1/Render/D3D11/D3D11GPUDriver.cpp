@@ -434,7 +434,7 @@ bool CD3D11GPUDriver::DestroySwapChain(DWORD SwapChainID)
 	
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
-	for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
 		{
 			SetRenderTarget(i, NULL);
@@ -856,7 +856,7 @@ bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
 
 #ifdef _DEBUG // Can't set the same RT to more than one slot
 	if (pRT)
-		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 			if (CurrRT[i].GetUnsafe() == pRT) FAIL;
 #endif
 
@@ -884,7 +884,7 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	if (MaxSRVSlotIndex < SlotIndex) MaxSRVSlotIndex = SlotIndex;
 	SlotIndex |= (ShaderType << 16); // Encode shader type in a high word
 
-	int DictIdx = CurrSRV.FindIndex(SlotIndex);
+	IPTR DictIdx = CurrSRV.FindIndex(SlotIndex);
 	if (DictIdx != INVALID_INDEX)
 	{
 		ID3D11ShaderResourceView*& pCurrSRV = CurrSRV.ValueAt(DictIdx);
@@ -982,7 +982,7 @@ void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, 
 {
 	if (Flags & Clear_Color)
 	{
-		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		{
 			CD3D11RenderTarget* pRT = CurrRT[i].GetUnsafe();
 			if (pRT && pRT->IsValid())
@@ -1164,13 +1164,13 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	if (Update.Is(GPU_Dirty_CB) && CurrDirtyFlags.Is(GPU_Dirty_CB))
 	{
 		ID3D11Buffer* D3DBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
-		DWORD Offset = 0;
-		for (DWORD Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
+		UPTR Offset = 0;
+		for (UPTR Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
 		{
-			DWORD ShdDirtyFlag = (1 << (Shader_Dirty_CBuffers + Sh));
+			UPTR ShdDirtyFlag = (1 << (Shader_Dirty_CBuffers + Sh));
 			if (ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag)) continue;
 
-			for (DWORD i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
+			for (UPTR i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
 			{
 				const CD3D11ConstantBuffer* pCB = CurrCB[Offset + i].GetUnsafe();
 				D3DBuffers[i] = pCB ? pCB->GetD3DBuffer() : NULL;
@@ -1205,12 +1205,12 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	{
 		ID3D11SamplerState* D3DSamplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 		DWORD Offset = 0;
-		for (DWORD Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
+		for (UPTR Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
 		{
 			DWORD ShdDirtyFlag = (1 << (Shader_Dirty_Samplers + Sh));
 			if (ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag)) continue;
 
-			for (DWORD i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
+			for (UPTR i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
 			{
 				const CD3D11Sampler* pSamp = CurrSS[Offset + i].GetUnsafe();
 				D3DSamplers[i] = pSamp ? pSamp->GetD3DSampler() : NULL;
@@ -1323,9 +1323,9 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 
 	if (Update.Is(GPU_Dirty_VB) && CurrDirtyFlags.Is(GPU_Dirty_VB))
 	{
-		const DWORD MaxVBCount = CurrVB.GetCount();
-		const DWORD PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
-		const DWORD UINTsSize = sizeof(UPTR) * MaxVBCount;
+		const UPTR MaxVBCount = CurrVB.GetCount();
+		const UPTR PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
+		const UPTR UINTsSize = sizeof(UPTR) * MaxVBCount;
 		char* pMem = (char*)_malloca(PtrsSize + UINTsSize + UINTsSize);
 		n_assert(pMem);
 
@@ -1334,7 +1334,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		UPTR* pOffsets = (UPTR*)(pMem + PtrsSize + UINTsSize);
 
 		//???PERF: skip all NULL buffers prior to the first non-NULL and all NULL after the last non-NULL and reduce count?
-		for (DWORD i = 0; i < MaxVBCount; ++i)
+		for (UPTR i = 0; i < MaxVBCount; ++i)
 		{
 			CD3D11VertexBuffer* pVB = CurrVB[i].GetUnsafe();
 			if (pVB)
@@ -1376,7 +1376,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	{
 		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)_malloca(sizeof(ID3D11RenderTargetView*) * CurrRT.GetCount());
 		n_assert(pRTV);
-		for (DWORD i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		{
 			CD3D11RenderTarget* pRT = CurrRT[i].GetUnsafe();
 			if (pRT)
@@ -1399,10 +1399,10 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 		// If no valid RTs are set, we cancel VP updating as it has no meaning.
 		if (pValidRT)
 		{
-			DWORD RTWidth = pValidRT->GetDesc().Width;
-			DWORD RTHeight = pValidRT->GetDesc().Height;
+			UPTR RTWidth = pValidRT->GetDesc().Width;
+			UPTR RTHeight = pValidRT->GetDesc().Height;
 			bool UnsetVPFound = false;
-			for (DWORD i = 0; i < MaxViewportCount; ++i)
+			for (UPTR i = 0; i < MaxViewportCount; ++i)
 			{
 				if (VPSRSetFlags.Is(1 << i)) continue;
 				
@@ -1429,7 +1429,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	{
 		// Find the last set VP, as we must set all viewports from 0'th to it
 		UPTR NumVP = 0;
-		for (DWORD i = 0; i < MaxViewportCount; ++i)
+		for (UPTR i = 0; i < MaxViewportCount; ++i)
 			if (VPSRSetFlags.Is(1 << i)) NumVP = i + 1;
 
 		// At least one default viewport must be specified
@@ -1446,7 +1446,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	{
 		// Find the last set SR, as we must set all rects from 0'th to it
 		UPTR NumSR = 0;
-		for (DWORD i = 0; i < MaxViewportCount; ++i)
+		for (UPTR i = 0; i < MaxViewportCount; ++i)
 			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + i))) NumSR = i + 1;
 
 		if (NumSR) pD3DImmContext->RSSetScissorRects(NumSR, CurrSR);
@@ -1494,25 +1494,25 @@ ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& Vertex
 //---------------------------------------------------------------------
 
 // Creates transparent user object
-PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, DWORD Count)
+PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count)
 {
-	const DWORD MAX_VERTEX_COMPONENTS = 32;
+	const UPTR MAX_VERTEX_COMPONENTS = 32;
 
 	if (!pComponents || !Count || Count > MAX_VERTEX_COMPONENTS) return NULL;
 
 	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
 
-	int Idx = VertexLayouts.FindIndex(Signature);
+	IPTR Idx = VertexLayouts.FindIndex(Signature);
 	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).GetUnsafe();
 
-	DWORD MaxVertexStreams = GetMaxVertexStreams();
+	UPTR MaxVertexStreams = GetMaxVertexStreams();
 
 	D3D11_INPUT_ELEMENT_DESC DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
-	for (DWORD i = 0; i < Count; i++)
+	for (UPTR i = 0; i < Count; ++i)
 	{
 		const CVertexComponent& Component = pComponents[i];
 
-		DWORD StreamIndex = Component.Stream;
+		UPTR StreamIndex = Component.Stream;
 		if (StreamIndex >= MaxVertexStreams) return NULL;
 
 		D3D11_INPUT_ELEMENT_DESC& DeclElement = DeclData[i];
@@ -1745,8 +1745,8 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	UPTR CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
-	DWORD MipLevels = Desc.MipLevels;
-	DWORD ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize);
+	UPTR MipLevels = Desc.MipLevels;
+	UPTR ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize);
 	UPTR MiscFlags = 0; //???if (MipLevels != 1) D3D11_RESOURCE_MISC_RESOURCE_CLAMP for ID3D11DeviceContext::SetResourceMinLOD()
 	UPTR BindFlags = (Usage != D3D11_USAGE_STAGING) ? D3D11_BIND_SHADER_RESOURCE : 0;
 
@@ -1764,15 +1764,15 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
 	if (pData)
 	{
-		DWORD BlockSize = CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat);
+		UPTR BlockSize = CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat);
 
 		if (!MipLevels) MipLevels = GetMipLevelCount(Desc.Width, Desc.Height, BlockSize);
 
-		DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
+		UPTR BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 		n_assert_dbg(BPP > 0);
 
 		// To avoid dynamic allocation of pitch arrays
-		const DWORD MAX_MIPS = 16;
+		const UPTR MAX_MIPS = 16;
 		n_assert_dbg(MipLevels <= MAX_MIPS);
 		if (MipLevels > MAX_MIPS) MipLevels = MAX_MIPS;
 
@@ -1780,7 +1780,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		UPTR Pitch[MAX_MIPS], SlicePitch[MAX_MIPS];
 		if (BlockSize == 1)
 		{
-			for (DWORD Mip = 0; Mip < MipLevels; ++Mip)
+			for (UPTR Mip = 0; Mip < MipLevels; ++Mip)
 			{
 				Pitch[Mip] = ((Desc.Width >> Mip) * BPP) >> 3;
 				SlicePitch[Mip] = Pitch[Mip] * (Desc.Height >> Mip);
@@ -1788,10 +1788,10 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		}
 		else
 		{
-			for (DWORD Mip = 0; Mip < MipLevels; ++Mip)
+			for (UPTR Mip = 0; Mip < MipLevels; ++Mip)
 			{
-				DWORD BlockCountW = ((Desc.Width >> Mip) + BlockSize - 1) / BlockSize;
-				DWORD BlockCountH = ((Desc.Height >> Mip) + BlockSize - 1) / BlockSize;
+				UPTR BlockCountW = ((Desc.Width >> Mip) + BlockSize - 1) / BlockSize;
+				UPTR BlockCountH = ((Desc.Height >> Mip) + BlockSize - 1) / BlockSize;
 				Pitch[Mip] = (BlockCountW * BlockSize * BlockSize * BPP) >> 3;
 				SlicePitch[Mip] = Pitch[Mip] * BlockCountH;
 			}
@@ -1817,14 +1817,14 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 		pInitData = (D3D11_SUBRESOURCE_DATA*)_malloca(MipLevels * ArraySize * sizeof(D3D11_SUBRESOURCE_DATA));
 		D3D11_SUBRESOURCE_DATA* pCurrInitData = pInitData;
 		char* pCurrData = (char*)pData;
-		for (DWORD Elm = 0; Elm < ArraySize; ++Elm, ++pCurrInitData)
+		for (UPTR Elm = 0; Elm < ArraySize; ++Elm, ++pCurrInitData)
 		{
 			pCurrInitData->pSysMem = pCurrData;
 			pCurrInitData->SysMemPitch = Pitch[0];
 			pCurrInitData->SysMemSlicePitch = SlicePitch[0];
 			pCurrData += SlicePitch[0];
 
-			for (DWORD Mip = 1; Mip < MipLevels; ++Mip, ++pCurrInitData)
+			for (UPTR Mip = 1; Mip < MipLevels; ++Mip, ++pCurrInitData)
 			{
 				if (MipDataProvided)
 				{
@@ -2208,7 +2208,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	D3D11_BLEND_DESC BDesc;
 	BDesc.IndependentBlendEnable = Desc.Flags.Is(CRenderStateDesc::Blend_Independent);
 	BDesc.AlphaToCoverageEnable = Desc.Flags.Is(CRenderStateDesc::Blend_AlphaToCoverage);
-	for (DWORD i = 0; i < 8; ++i)
+	for (UPTR i = 0; i < 8; ++i)
 	{
 		D3D11_RENDER_TARGET_BLEND_DESC& RTDesc = BDesc.RenderTarget[i];
 		if (i == 0 || BDesc.IndependentBlendEnable)
@@ -2764,16 +2764,16 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
 	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
 	D3D11_USAGE Usage = Tex11.GetD3DUsage();
-	DWORD Dims = Resource.GetDimensionCount();
+	UPTR Dims = Resource.GetDimensionCount();
 	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !Dims) FAIL;
 
-	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 
-	DWORD OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
+	UPTR OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ;
 	if (!CalcValidImageRegion(pRegion, Dims, TotalSizeX, TotalSizeY, TotalSizeZ,
 							  OffsetX, OffsetY, OffsetZ, SizeX, SizeY, SizeZ))
 	{

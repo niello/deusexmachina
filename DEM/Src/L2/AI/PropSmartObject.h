@@ -57,7 +57,7 @@ protected:
 	float				TrDuration;
 	CStrID				TrActionID;
 	bool				TrManualControl;
-	DWORD				AnimTaskID;
+	UPTR				AnimTaskID;
 	const CAnimInfo*	pCurrAnimInfo;
 
 	// Game object stuff
@@ -110,21 +110,21 @@ public:
 
 inline CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
 {
-	int Idx = Actions.FindIndex(ID);
+	IPTR Idx = Actions.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 
 inline const CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID) const
 {
-	int Idx = Actions.FindIndex(ID);
+	IPTR Idx = Actions.FindIndex(ID);
 	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
 }
 //---------------------------------------------------------------------
 
 inline bool CPropSmartObject::IsActionEnabled(CStrID ID) const
 {
-	int Idx = Actions.FindIndex(ID);
+	IPTR Idx = Actions.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	const CAction& Action = Actions.ValueAt(Idx);
 	return Action.Enabled && Action.pTpl;

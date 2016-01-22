@@ -188,7 +188,7 @@ bool CPropSceneNode::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const 
 
 void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const char* pPath)
 {
-	for (DWORD i = 0; i < pNode->GetChildCount(); ++i)
+	for (UPTR i = 0; i < pNode->GetChildCount(); ++i)
 	{
 		Scene::CSceneNode* pChild = pNode->GetChild(i);
 		CString FullName(pPath);
@@ -202,12 +202,12 @@ void CPropSceneNode::FillSaveLoadList(Scene::CSceneNode* pNode, const char* pPat
 //---------------------------------------------------------------------
 
 //???to some scene utils? recurse to subnodes?
-void CPropSceneNode::GetAABB(CAABB& OutBox, DWORD TypeFlags) const
+void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 {
 	if (Node.IsNullPtr() || !Node->GetAttributeCount()) return;
 
 	OutBox.BeginExtend();
-	for (DWORD i = 0; i < Node->GetAttributeCount(); ++i)
+	for (UPTR i = 0; i < Node->GetAttributeCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node->GetAttribute(i);
 		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CModel>())

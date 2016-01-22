@@ -51,7 +51,7 @@ public:
 	void	FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
 	void	FireEvents(float StartCursorPos, float EndCursorPos, bool Loop, Events::CEventDispatcher* pDisp = NULL, Data::PParams Params = NULL) const;
 	UPTR	GetSamplerCount() const { return Samplers.GetCount(); }
-	CStrID	GetSamplerTarget(DWORD Idx) const { return Samplers.KeyAt(Idx); }
+	CStrID	GetSamplerTarget(IPTR Idx) const { return Samplers.KeyAt(Idx); }
 	float	GetDuration() const { return Duration; }
 };
 

@@ -60,7 +60,7 @@ protected:
 	float					ReplanTime;
 	float					TopologyOptTime;
 	CPathRequestQueue*		pProcessingQueue;
-	DWORD					PathRequestID;
+	UPTR					PathRequestID;
 
 	//???personal or template?
 	CDict<int, CStrID>		EdgeTypeToAction;
@@ -86,11 +86,11 @@ public:
 
 	void			UpdatePosition();
 	void			EndEdgeTraversal();
-	bool			GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count);
+	bool			GetPathEdges(CPathEdge* pOutPath, UPTR MaxCount, UPTR& Count);
 	void			GetObstacles(float Range, dtObstacleAvoidanceQuery& Query);
 
 	bool			IsPolyValid(dtPolyRef Poly) const { return pNavQuery && pNavQuery->isValidPolyRef(Poly, pNavFilter); }
-	DWORD			GetValidPolys(const vector3& Center, float MinRange, float MaxRange, CArray<dtPolyRef>& Polys) const;
+	UPTR			GetValidPolys(const vector3& Center, float MinRange, float MaxRange, CArray<dtPolyRef>& Polys) const;
 
 	bool			IsLocationValid(const vector3& Point) const;
 	bool			GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const;

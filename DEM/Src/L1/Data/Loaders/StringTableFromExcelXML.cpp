@@ -61,8 +61,8 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 	Out.RowMap.Clear();
 
 	// Count columns and optionally save column name to index mapping
-	DWORD ColCount = 0;
-	DWORD TableW = 0;
+	UPTR ColCount = 0;
+	UPTR TableW = 0;
 	tinyxml2::XMLHandle hTable(pTable);
 	tinyxml2::XMLElement* pCell = hTable.FirstChildElement("Row").FirstChildElement("Cell").ToElement();
 	
@@ -87,7 +87,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 	}
 
 	// Count rows
-	DWORD RowCount = 0;
+	UPTR RowCount = 0;
 	tinyxml2::XMLElement* pRow = pTable->FirstChildElement("Row");
 
 	if (FirstRowAsColNames)
@@ -103,7 +103,7 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 		else break;
 	}
 
-	DWORD TableH = FirstRowAsColNames ? RowCount - 1 : RowCount;
+	UPTR TableH = FirstRowAsColNames ? RowCount - 1 : RowCount;
 
 	if (!ColCount || !RowCount || !TableW || !TableH)
 	{
@@ -116,11 +116,11 @@ bool StringTableFromExcelXML(Data::PXMLDocument Doc,
 	pRow = pTable->FirstChildElement("Row");
 	if (FirstRowAsColNames) pRow = pRow->NextSiblingElement("Row");
 
-	for (DWORD CurrRow = 0; pRow && (CurrRow < TableH); ++CurrRow, pRow = pRow->NextSiblingElement("Row"))
+	for (UPTR CurrRow = 0; pRow && (CurrRow < TableH); ++CurrRow, pRow = pRow->NextSiblingElement("Row"))
 	{
 		tinyxml2::XMLElement* pCell = pRow->FirstChildElement("Cell");
 
-		DWORD CurrCol = 0;
+		UPTR CurrCol = 0;
 		if (FirstColAsRowNames)
 		{
 			GetTextFromCell(pCell, CellText);

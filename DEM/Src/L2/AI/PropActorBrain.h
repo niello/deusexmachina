@@ -87,7 +87,7 @@ protected:
 	void				EnableSI(class CPropScriptable& Prop);
 	void				DisableSI(class CPropScriptable& Prop);
 	void				UpdateBehaviour();
-	void				SetPlan(PAction NewPlan, CGoal* pPrevGoal, DWORD PrevPlanResult);
+	void				SetPlan(PAction NewPlan, CGoal* pPrevGoal, UPTR PrevPlanResult);
 
 	DECLARE_EVENT_HANDLER(OnBeginFrame, OnBeginFrame);
 	DECLARE_EVENT_HANDLER(OnRenderDebug, OnRenderDebug);
@@ -134,7 +134,7 @@ public:
 	void				ClearTaskQueue();
 
 	//???rename? redesign logic!
-	void				AbortCurrAction(DWORD Result); //???to event, like QueueTask?
+	void				AbortCurrAction(UPTR Result); //???to event, like QueueTask?
 	//DequeueTask(PTask or iterator, begin() by default)
 
 	void				RequestBehaviourUpdate() { Flags.Set(AIMind_SelectAction); }

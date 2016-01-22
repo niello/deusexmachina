@@ -511,14 +511,14 @@ CStrID CNavSystem::GetPolyAction(const dtNavMesh* pNavMesh, dtPolyRef Ref)
 		EdgeType = 0;
 	}
 
-	//int Idx = EdgeTypeToAction.FindIndex(EdgeType);
+	//IPTR Idx = EdgeTypeToAction.FindIndex(EdgeType);
 	//return Idx == INVALID_INDEX ? CStrID::Empty : EdgeTypeToAction.ValueAt(Idx);
 
 	return EdgeTypeToAction[EdgeType];
 }
 //---------------------------------------------------------------------
 
-bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, DWORD MaxCount, DWORD& Count)
+bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, UPTR MaxCount, UPTR& Count)
 {
 	if (!pOutPath || !MaxCount) FAIL;
 	if (!pNavQuery || (pActor->NavState != AINav_Planning && pActor->NavState != AINav_Following)) FAIL;
@@ -695,7 +695,7 @@ dtPolyRef CNavSystem::GetNearestPoly(dtPolyRef* pPolys, int PolyCount, vector3& 
 }
 //---------------------------------------------------------------------
 
-DWORD CNavSystem::GetValidPolys(const vector3& Center, float MinRange, float MaxRange, CArray<dtPolyRef>& Polys) const
+UPTR CNavSystem::GetValidPolys(const vector3& Center, float MinRange, float MaxRange, CArray<dtPolyRef>& Polys) const
 {
 	if (!pNavQuery || MinRange > MaxRange) return 0;
 
@@ -714,7 +714,7 @@ DWORD CNavSystem::GetValidPolys(const vector3& Center, float MinRange, float Max
 		return 1;
 	}
 
-	const DWORD MAX_POLYS = 32; //!!!???to settings?!
+	const UPTR MAX_POLYS = 32; //!!!???to settings?!
 	Polys.AllocateFixed(MAX_POLYS);
 	int NearCount;
 	if (!dtStatusSucceed(pNavQuery->findPolysAroundCircle(Ref, Pt.v, MaxRange, pNavFilter, Polys.Begin(), NULL, NULL, &NearCount, MAX_POLYS))) return 0;
@@ -790,7 +790,7 @@ bool CNavSystem::GetNearestValidLocation(CStrID NavRegionID, float Range, vector
 	CNavData* pNav = pActor->GetEntity()->GetLevel()->GetAI()->GetNavData(pActor->Radius);
 	if (!pNav) FAIL;
 
-	int Idx = pNav->Regions.FindIndex(NavRegionID);
+	IPTR Idx = pNav->Regions.FindIndex(NavRegionID);
 	if (Idx == INVALID_INDEX) FAIL;
 	CNavRegion& Region = pNav->Regions.ValueAt(Idx);
 
@@ -871,7 +871,7 @@ bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, const
 	float B = 2.f * RelProjCenter.Dot2D(SegDir);
 	float C = RelProjCenter.SqLength2D() - SqRange;
 	float t1, t2;
-	DWORD RootCount = Math::SolveQuadraticEquation(A, B, C, &t1, &t2);
+	UPTR RootCount = Math::SolveQuadraticEquation(A, B, C, &t1, &t2);
 	n_assert2(RootCount, "No solution found for the closest point though theoretically there must be one");
 	float t = (RootCount == 1 || t1 > t2) ? t1 : t2; // Greater t is closer to actor, which is desired
 	n_assert_dbg(t >= 0.f && t <= 1.f);

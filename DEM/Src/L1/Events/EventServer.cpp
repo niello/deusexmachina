@@ -58,10 +58,10 @@ void CEventServer::ScheduleEvent(CEventBase& Event, CEventDispatcher* pDisp, flo
 }
 //---------------------------------------------------------------------
 
-DWORD CEventServer::RemoveScheduledEvents(CEventDispatcher* pDisp)
+UPTR CEventServer::RemoveScheduledEvents(CEventDispatcher* pDisp)
 {
 	CEventDispatcher* pRealDisp = pDisp ? pDisp : this;
-	DWORD Total = 0;
+	UPTR Total = 0;
 
 	Sys::Error("CEventServer::RemoveScheduledEvents() > IMPLEMENT ME!!!");
 
@@ -85,9 +85,9 @@ DWORD CEventServer::RemoveScheduledEvents(CEventDispatcher* pDisp)
 }
 //---------------------------------------------------------------------
 
-DWORD CEventServer::RemoveAllScheduledEvents()
+UPTR CEventServer::RemoveAllScheduledEvents()
 {
-	DWORD Total = 0;
+	UPTR Total = 0;
 
 	while (PendingEventsHead)
 	{

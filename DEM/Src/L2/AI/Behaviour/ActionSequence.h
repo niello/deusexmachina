@@ -28,7 +28,7 @@ public:
 
 	virtual void	Init(const Data::CParams& Desc);
 	virtual bool	Activate(CActor* pActor);
-	virtual DWORD	Update(CActor* pActor);
+	virtual UPTR	Update(CActor* pActor);
 	virtual void	Deactivate(CActor* pActor);
 	
 	virtual bool	IsValid(CActor* pActor) const { return ppCurrChild && (*ppCurrChild)->IsValid(pActor); }

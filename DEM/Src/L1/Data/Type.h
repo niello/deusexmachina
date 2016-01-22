@@ -15,7 +15,7 @@
 
 namespace Data
 {
-//if const void* Value <=> const void** pSrcObj ambiguity, use forex DWORD** instead of void**
+//if const void* Value <=> const void** pSrcObj ambiguity, use forex UPTR** instead of void**
 
 class CType
 {

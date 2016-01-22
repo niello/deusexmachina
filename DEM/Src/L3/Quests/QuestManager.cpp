@@ -100,7 +100,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 
 	Ptr<CQuest> Quest;
 
-	int Idx = Quests.FindIndex(QuestID);
+	IPTR Idx = Quests.FindIndex(QuestID);
 	if (Idx == INVALID_INDEX) //???or found & status = No?
 	{
 		if (!LoadQuest(QuestID, (TaskID == CStrID::Empty) ? &TaskID : NULL)) FAIL;
@@ -164,7 +164,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 //!!!CODE DUPLICATIONS!
 bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 {
-	int Idx = Quests.FindIndex(QuestID);
+	IPTR Idx = Quests.FindIndex(QuestID);
 	if (Idx == INVALID_INDEX) FAIL;
 
 	Ptr<CQuest> Quest = Quests.ValueAt(Idx).Quest;
@@ -257,7 +257,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 CQuest::EStatus CQuestManager::GetQuestStatus(CStrID QuestID, CStrID TaskID)
 {
-	int Idx = Quests.FindIndex(QuestID);
+	IPTR Idx = Quests.FindIndex(QuestID);
 	if (Idx == INVALID_INDEX) return CQuest::No;
 	if (TaskID == CStrID::Empty) //|| Quests.ValueAt(Idx).Status != CQuest::Opened)
 		return Quests.ValueAt(Idx).Status;
@@ -313,7 +313,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 
 		CQuestRec* QuestRec;
 
-		int Idx = Quests.FindIndex(QuestID);
+		IPTR Idx = Quests.FindIndex(QuestID);
 		if (Idx == INVALID_INDEX)
 		{
 			if (!LoadQuest(QuestID)) FAIL;

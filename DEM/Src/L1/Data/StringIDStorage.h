@@ -33,8 +33,8 @@ protected:
 	int								BlockPosition;
 
 #ifdef _DEBUG
-	DWORD							Stats_RecordCount;
-	DWORD							Stats_CollisionCount;
+	UPTR							Stats_RecordCount;
+	UPTR							Stats_CollisionCount;
 #endif
 
 	const char*	StoreString(const char* pString);

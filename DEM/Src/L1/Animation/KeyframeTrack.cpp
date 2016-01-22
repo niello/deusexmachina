@@ -17,8 +17,8 @@ void CKeyframeTrack::Sample(float Time, vector3& Out)
 
 	//!!!perform binary search for the closest less or equal
 	//???or search from last key in direction dependent on Time - LastTime sign?
-	DWORD i = 0;
-	for (; i < Keys.GetCount(); ++i)
+	IPTR i = 0;
+	for (; i < (IPTR)Keys.GetCount(); ++i)
 		if (Keys[i].Time > Time) break;
 	--i;
 
@@ -50,8 +50,8 @@ void CKeyframeTrack::Sample(float Time, vector4& Out)
 
 	//!!!perform binary search for the closest less or equal
 	//???or search from last key in direction dependent on Time - LastTime sign?
-	DWORD i = 0;
-	for (; i < Keys.GetCount(); ++i)
+	IPTR i = 0;
+	for (; i < (IPTR)Keys.GetCount(); ++i)
 		if (Keys[i].Time > Time) break;
 	--i;
 
@@ -83,8 +83,8 @@ void CKeyframeTrack::Sample(float Time, quaternion& Out)
 
 	//!!!perform binary search for the closest less or equal
 	//???or search from last key in direction dependent on Time - LastTime sign?
-	DWORD i = 0;
-	for (; i < Keys.GetCount(); ++i)
+	IPTR i = 0;
+	for (; i < (IPTR)Keys.GetCount(); ++i)
 		if (Keys[i].Time > Time) break;
 	--i;
 

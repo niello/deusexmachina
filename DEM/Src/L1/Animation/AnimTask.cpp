@@ -119,7 +119,7 @@ void CAnimTask::Update()
 			if (!pCtlr->IsAttachedToNode()) continue;
 			n_assert_dbg(pCtlr->GetNode()->GetController()->IsA<Scene::CNodeControllerComposite>());
 			Scene::CNodeControllerComposite* pBlendCtlr = (Scene::CNodeControllerComposite*)pCtlr->GetNode()->GetController();
-			int Idx = ((Scene::CNodeControllerComposite*)pBlendCtlr)->GetSourceIndex(*pCtlr);
+			IPTR Idx = ((Scene::CNodeControllerComposite*)pBlendCtlr)->GetSourceIndex(*pCtlr);
 			n_assert_dbg(Idx != INVALID_INDEX);
 			pBlendCtlr->SetWeight(Idx, RealWeight); //???mb store task ptr in controller?
 		}

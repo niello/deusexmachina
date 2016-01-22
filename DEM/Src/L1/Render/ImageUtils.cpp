@@ -6,11 +6,11 @@
 namespace Render
 {
 
-void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD Flags, const CCopyImageParams& Params)
+void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Flags, const CCopyImageParams& Params)
 {
-	const int X = 0, Y = 1, Z = 2;
+	const IPTR X = 0, Y = 1, Z = 2;
 
-	DWORD BitsPerBlock, OffsetBytesX, OffsetBlocksY, CopyBlocksW, CopyBlocksH, TotalBlocksW, TotalBlocksH;
+	UPTR BitsPerBlock, OffsetBytesX, OffsetBlocksY, CopyBlocksW, CopyBlocksH, TotalBlocksW, TotalBlocksH;
 	if (Flags & CopyImage_BlockCompressed)
 	{
 		// Here was universal BlockSize-based code, look at revisions near r420 if you need it
@@ -47,18 +47,18 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD F
 		Sys::DbgOut("Render::CopyImage() > Either pSrc or pDest is not aligned at 16 bytes boundary. Align your pointers to achieve MUCH faster copying.\n");
 #endif
 
-	DWORD Depth = Params.CopySize[Z];
+	UPTR Depth = Params.CopySize[Z];
 	const bool WholeRow = (CopyBlocksW == TotalBlocksW && Src.RowPitch == Dest.RowPitch);
 	const bool WholeSlice = (WholeRow && (Flags & CopyImage_3DImage) && CopyBlocksH == TotalBlocksH && Src.SlicePitch == Dest.SlicePitch);
 	if (WholeSlice)
 	{
-		DWORD DataSize = Src.SlicePitch * Depth;
+		UPTR DataSize = Src.SlicePitch * Depth;
 		memcpy(pDest, pSrc, DataSize);
 	}
 	else if (WholeRow)
 	{
-		DWORD SlicePartSize = Src.RowPitch * CopyBlocksH;
-		for (DWORD i = 0; i < Depth; ++i)
+		UPTR SlicePartSize = Src.RowPitch * CopyBlocksH;
+		for (UPTR i = 0; i < Depth; ++i)
 		{
 			memcpy(pDest, pSrc, SlicePartSize);
 			pSrc += Src.SlicePitch;
@@ -67,12 +67,12 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD F
 	}
 	else
 	{
-		DWORD RowPartSize = (BitsPerBlock * CopyBlocksW) >> 3;
-		for (DWORD i = 0; i < Depth; ++i)
+		UPTR RowPartSize = (BitsPerBlock * CopyBlocksW) >> 3;
+		for (UPTR i = 0; i < Depth; ++i)
 		{
 			const char* pSrcRow = pSrc;
 			char* pDestRow = pDest;
-			for (DWORD j = 0; j < CopyBlocksH; ++j)
+			for (UPTR j = 0; j < CopyBlocksH; ++j)
 			{
 				memcpy(pDest, pSrc, RowPartSize);
 				pSrcRow += Src.RowPitch;
@@ -86,10 +86,10 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, DWORD F
 }
 //---------------------------------------------------------------------
 
-bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, DWORD Dimensions,
-									 DWORD ImageWidth, DWORD ImageHeight, DWORD ImageDepth,
-									 DWORD& OutOffsetX, DWORD& OutOffsetY, DWORD& OutOffsetZ,
-									 DWORD& OutSizeX, DWORD& OutSizeY, DWORD& OutSizeZ)
+bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, UPTR Dimensions,
+									 UPTR ImageWidth, UPTR ImageHeight, UPTR ImageDepth,
+									 UPTR& OutOffsetX, UPTR& OutOffsetY, UPTR& OutOffsetZ,
+									 UPTR& OutSizeX, UPTR& OutSizeY, UPTR& OutSizeZ)
 {
 	if (pInRegion)
 	{

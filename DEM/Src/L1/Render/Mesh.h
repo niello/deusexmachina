@@ -43,9 +43,9 @@ protected:
 	PVertexBuffer		VB;
 	PIndexBuffer		IB;
 
-	DWORD				SubMeshCount;
-	DWORD				LODCount;
-	DWORD				GroupCount;
+	UPTR				SubMeshCount;
+	UPTR				LODCount;
+	UPTR				GroupCount;
 
 	// To maintain cache coherency and reduce number of allocations, these two are essentially one piece of memory,
 	// where pGroups is at Offset = 0 and pGroupLODMapping is at Offset = sizeof(CPrimitiveGroup) * GroupCount
@@ -65,14 +65,14 @@ public:
 
 	PVertexBuffer			GetVertexBuffer() const { return VB; }
 	PIndexBuffer			GetIndexBuffer() const { return IB; }
-	DWORD					GetSubMeshCount() const { return SubMeshCount; }
-	const CPrimitiveGroup*	GetGroup(DWORD SubMeshIdx, DWORD LOD = 0) const;
+	UPTR					GetSubMeshCount() const { return SubMeshCount; }
+	const CPrimitiveGroup*	GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
 };
 
 typedef Ptr<CMesh> PMesh;
 
 // Can return NULL, which means that nothing sould be rendered
-inline const CPrimitiveGroup* CMesh::GetGroup(DWORD SubMeshIdx, DWORD LOD) const
+inline const CPrimitiveGroup* CMesh::GetGroup(UPTR SubMeshIdx, UPTR LOD) const
 {
 	n_assert(LOD < LODCount && SubMeshIdx < SubMeshCount);
 	if (pGroupLODMapping) return pGroupLODMapping[LOD * SubMeshCount + SubMeshIdx];

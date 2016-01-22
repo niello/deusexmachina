@@ -41,7 +41,7 @@ void CPlanner::EndActionTpls()
 // Determine the current world state values for world state properties.
 void CPlanner::MergeWorldStates(CWorldState& WSCurr, const CWorldState& WSGoal, const CWorldState& WSActor)
 {
-	for (DWORD i = 0; i < WSP_Count; ++i)
+	for (UPTR i = 0; i < WSP_Count; ++i)
 		if (WSGoal.IsPropSet((EWSProp)i) && !WSCurr.IsPropSet((EWSProp)i))
 			WSCurr.SetPropFrom((EWSProp)i, WSActor);
 }
@@ -64,7 +64,7 @@ bool CPlanner::IsPlanValid(CActor* pActor, CNode* pNode, const CWorldState& WSAc
 		// Validate world state effects
 		// Action is valid is there are effects not met in the current world state
 		bool Valid = false;
-		for (DWORD i = 0; i < WSP_Count; ++i)
+		for (UPTR i = 0; i < WSP_Count; ++i)
 		{
 			const CData& Effect = pAction->GetEffects().GetProp((EWSProp)i);
 
@@ -95,7 +95,7 @@ bool CPlanner::IsPlanValid(CActor* pActor, CNode* pNode, const CWorldState& WSAc
 
 		// Validate world state preconditions
 		if (pNode->HasPreconditions)
-			for (DWORD i = 0; i < WSP_Count; ++i)
+			for (UPTR i = 0; i < WSP_Count; ++i)
 			{
 				const CData& Precondition = pNode->WSPreconditions.GetProp((EWSProp)i);
 
@@ -122,7 +122,7 @@ bool CPlanner::IsPlanValid(CActor* pActor, CNode* pNode, const CWorldState& WSAc
 		//!!!Probability was checked here!
 
 		// Apply world state effects
-		for (DWORD i = 0; i < WSP_Count; ++i)
+		for (UPTR i = 0; i < WSP_Count; ++i)
 		{
 			const CData& Effect = pAction->GetEffects().GetProp((EWSProp)i);
 
@@ -141,7 +141,7 @@ bool CPlanner::IsPlanValid(CActor* pActor, CNode* pNode, const CWorldState& WSAc
 	}
 
 	// Check does the WorldState satisfy the goal world state
-	for (DWORD i = 0; i < WSP_Count; ++i)
+	for (UPTR i = 0; i < WSP_Count; ++i)
 		if (pNodeParent->WSGoal.IsPropSet((EWSProp)i) &&
 			(!WorldState.IsPropSet((EWSProp)i) ||
 			pNodeParent->WSGoal.GetProp((EWSProp)i) != WorldState.GetProp((EWSProp)i)))
@@ -165,7 +165,7 @@ void CPlanner::FillNeighbors(CActor* pActor, const CNode& Node, CArray<CNode*>& 
 	OutNeighbors.Clear();
 	ActionsAdded.Clear();
 
-	for (DWORD i = 0; i < WSP_Count; ++i)
+	for (UPTR i = 0; i < WSP_Count; ++i)
 	{
 		// Neighbor satisfies property if it is set in both Curr & Goal WS and Curr value != Goal value
 		if (!Node.WSCurr.IsPropSet((EWSProp)i) ||
@@ -250,7 +250,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 
 			// Apply effects from goal. Solve properties of the world state that need to 
 			// be satisfied that match the action's effects
-			for (DWORD i = 0; i < WSP_Count; ++i)
+			for (UPTR i = 0; i < WSP_Count; ++i)
 			{
 				const CData& Effect = pNeighbor->pAction->GetEffects().GetProp((EWSProp)i);
 
@@ -268,7 +268,7 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 			// Apply preconditions
 			if (pNeighbor->HasPreconditions)
 			{
-				for (DWORD i = 0; i < WSP_Count; ++i)
+				for (UPTR i = 0; i < WSP_Count; ++i)
 				{
 					const CData& Precondition = pNeighbor->WSPreconditions.GetProp((EWSProp)i);
 					if (!Precondition.IsValid()) continue;

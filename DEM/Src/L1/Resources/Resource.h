@@ -31,7 +31,7 @@ protected:
 
 	CStrID					UID;			// If resource is not created manually, UID stores URI that locates resource data
 	mutable EResourceState	State;
-	DWORD					ByteSize;
+	UPTR					ByteSize;
 	PResourceObject			Object;			// Actual object, such as a texture or a game object description
 	//???PResourceObject		Placeholder; //???here or register per RTTI in Mgr?
 	PResourceLoader			Loader;			// Optional, for recreation of lost resource object
@@ -45,7 +45,7 @@ public:
 	T*					GetObject() const;
 
 	CStrID				GetUID() const { return UID; }
-	DWORD				GetSizeInBytes() const { return ByteSize; }
+	UPTR				GetSizeInBytes() const { return ByteSize; }
 	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
 	bool				IsLoaded() const { return State == Rsrc_Loaded; }
 	CResourceLoader*	GetLoader() const { return Loader.GetUnsafe(); }

@@ -94,7 +94,7 @@ void CInputServer::Trigger()
 
 CControlLayout* CInputServer::GetControlLayout(CStrID Name)
 {
-	int Idx = Layouts.FindIndex(Name);
+	IPTR Idx = Layouts.FindIndex(Name);
 	if (Idx == INVALID_INDEX) return LoadControlLayout(Name);
 	else return Layouts.ValueAt(Idx);
 }

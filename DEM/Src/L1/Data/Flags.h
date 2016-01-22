@@ -45,7 +45,7 @@ public:
 //???is usable for non-32-bit flags? if less, will be adjusted with 0 bits, but what if more?
 inline U32 CFlags::NumberOfSetBits() const
 {
-	DWORD Tmp = Flags - ((Flags >> 1) & 0x55555555);
+	UPTR Tmp = Flags - ((Flags >> 1) & 0x55555555);
 	Tmp = (Tmp & 0x33333333) + ((Tmp >> 2) & 0x33333333);
 	return (((Tmp + (Tmp >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }

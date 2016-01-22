@@ -62,7 +62,7 @@ bool CActionWander::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-DWORD CActionWander::Update(CActor* pActor)
+UPTR CActionWander::Update(CActor* pActor)
 {
 	if ((CurrAction.IsValidPtr() && CurrAction->Update(pActor) == Running) ||
 		NextActSelectioCTime > (float)GameSrv->GetTime())

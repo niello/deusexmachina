@@ -66,7 +66,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 
 PDlgGraph CDialogueManager::GetDialogueGraph(CStrID ID)
 {
-	int Idx = DlgRegistry.FindIndex(ID);
+	IPTR Idx = DlgRegistry.FindIndex(ID);
 	if (Idx > -1) return DlgRegistry.ValueAt(Idx);
 	else
 	{
@@ -176,7 +176,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 bool CDialogueManager::AcceptDialogue(CStrID ID, CStrID Target)
 {
-	int Idx = RunningDlgs.FindIndex(ID);
+	IPTR Idx = RunningDlgs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	CDlgContext& Ctx = RunningDlgs.ValueAt(Idx);
 	if (Ctx.Target != Target) FAIL;
@@ -198,7 +198,7 @@ bool CDialogueManager::AcceptDialogue(CStrID ID, CStrID Target)
 
 bool CDialogueManager::RejectDialogue(CStrID ID, CStrID Target)
 {
-	int Idx = RunningDlgs.FindIndex(ID);
+	IPTR Idx = RunningDlgs.FindIndex(ID);
 	if (Idx == INVALID_INDEX) FAIL;
 	CDlgContext& Ctx = RunningDlgs.ValueAt(Idx);
 	if (Ctx.Target != Target) FAIL;

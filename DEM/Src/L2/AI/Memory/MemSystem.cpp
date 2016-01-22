@@ -16,7 +16,7 @@ void CMemSystem::Update()
 	// sensor activity session. Facts will be accepted or rejected by sensors where
 	// it is possible. Some sort of prediction can be applied to remaining facts.
 
-	for (DWORD i = 0; i < Facts.GetListCount(); ++i)
+	for (UPTR i = 0; i < Facts.GetListCount(); ++i)
 	{
 		//!!!can avoid second dictionary lookup, index will always be i!
 		//???!!!cache sensor lists?!
@@ -31,7 +31,7 @@ void CMemSystem::Update()
 
 			if (pFact->LastUpdateTime < Now)
 			{
-				DWORD Result = Running;
+				UPTR Result = Running;
 
 				CArray<CSensor*>::CIterator It = ValidationSensors.Begin();
 				for (; It != ValidationSensors.End(); It++)

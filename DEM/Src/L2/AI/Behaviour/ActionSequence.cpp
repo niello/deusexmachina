@@ -25,13 +25,13 @@ bool CActionSequence::Activate(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-DWORD CActionSequence::Update(CActor* pActor)
+UPTR CActionSequence::Update(CActor* pActor)
 {
 	n_assert(ppCurrChild);
 
 	while (true)
 	{
-		DWORD Result = (*ppCurrChild)->Update(pActor);
+		UPTR Result = (*ppCurrChild)->Update(pActor);
 
 		if (Result == Running) return Running;
 

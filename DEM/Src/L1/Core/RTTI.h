@@ -22,7 +22,7 @@ private:
 
 	CString			Name; //???use CString?
 	Data::CFourCC	FourCC;
-	DWORD			InstanceSize;
+	UPTR			InstanceSize;
 
 	const CRTTI*	pParent;
 	CFactoryFunc	pFactoryFunc;
@@ -30,7 +30,7 @@ private:
 public:
 
 
-	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize);
+	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, UPTR InstSize);
 
 	CRTTIBaseClass*	CreateClassInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
 	//void*			AllocInstanceMemory() const { return n_malloc(InstanceSize); }
@@ -39,7 +39,7 @@ public:
 	const CString&	GetName() const { return Name; }
 	Data::CFourCC	GetFourCC() const { return FourCC; }
 	const CRTTI*	GetParent() const { return pParent; }
-	DWORD			GetInstanceSize() const;
+	UPTR			GetInstanceSize() const;
 	bool			IsDerivedFrom(const CRTTI& Other) const;
 	bool			IsDerivedFrom(Data::CFourCC OtherFourCC) const;
 	bool			IsDerivedFrom(const char* pOtherName) const;
@@ -48,7 +48,7 @@ public:
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
 };
 
-inline CRTTI::CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, DWORD InstSize):
+inline CRTTI::CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, UPTR InstSize):
 	Name(pClassName),
 	FourCC(ClassFourCC),
 	InstanceSize(InstSize),

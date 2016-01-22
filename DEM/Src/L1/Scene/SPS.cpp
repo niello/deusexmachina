@@ -117,7 +117,7 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 	}
 
 	if (pNode->HasChildren())
-		for (DWORD i = 0; i < 4; ++i)
+		for (UPTR i = 0; i < 4; ++i)
 		{
 			CSPSNode* pChildNode = pNode->GetChild(i);
 			if (pChildNode->GetTotalObjCount())

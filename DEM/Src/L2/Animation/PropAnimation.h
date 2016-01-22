@@ -56,17 +56,17 @@ public:
 
 	CPropAnimation(): Tasks(1, 1) { Tasks.SetKeepOrder(false); }
 
-	int				StartAnim(CStrID ClipID, bool Loop = false, float CursorOffset = 0.f, float Speed = 1.f, bool ManualControl = false, DWORD Priority = AnimPriority_Default, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
-	void			PauseAnim(DWORD TaskID, bool Pause) { if (TaskID < (DWORD)Tasks.GetCount()) Tasks[TaskID].Paused = Pause; }
-	void			StopAnim(DWORD TaskID, float FadeOutTime = -1.f);
-	void			SetAnimCursorPos(DWORD TaskID, float Pos);
+	IPTR			StartAnim(CStrID ClipID, bool Loop = false, float CursorOffset = 0.f, float Speed = 1.f, bool ManualControl = false, UPTR Priority = AnimPriority_Default, float Weight = 1.f, float FadeInTime = 0.f, float FadeOutTime = 0.f);
+	void			PauseAnim(UPTR TaskID, bool Pause) { if (TaskID < Tasks.GetCount()) Tasks[TaskID].Paused = Pause; }
+	void			StopAnim(UPTR TaskID, float FadeOutTime = -1.f);
+	void			SetAnimCursorPos(UPTR TaskID, float Pos);
 	bool			SetPose(CStrID ClipID, float CursorPos, bool WrapPos = false) const;
 	float			GetAnimLength(CStrID ClipID) const;
 };
 
-inline void CPropAnimation::SetAnimCursorPos(DWORD TaskID, float Pos)
+inline void CPropAnimation::SetAnimCursorPos(UPTR TaskID, float Pos)
 {
-	if (TaskID < (DWORD)Tasks.GetCount() && Tasks[TaskID].ManualControl)
+	if (TaskID < Tasks.GetCount() && Tasks[TaskID].ManualControl)
 		Tasks[TaskID].AnimTask.SetCursorPos(Pos);
 }
 //---------------------------------------------------------------------

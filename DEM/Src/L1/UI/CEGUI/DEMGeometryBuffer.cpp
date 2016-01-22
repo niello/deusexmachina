@@ -36,7 +36,7 @@ void CDEMGeometryBuffer::draw() const
 
 	if (!d_bufferIsSync)
 	{
-		const DWORD vertex_count = (DWORD)d_vertices.GetCount();
+		const UPTR vertex_count = d_vertices.GetCount();
 		if (!vertex_count)
 		{
 			d_vertexBuffer = NULL;

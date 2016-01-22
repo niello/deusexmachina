@@ -45,7 +45,7 @@ public:
 
 	virtual ~CMaterial();// { if (IsLoaded()) Unload(); }
 
-	bool					Setup(CShader* pShader, DWORD ShaderFeatureFlags); //, const CShaderVarMap& StaticShaderVars);
+	bool					Setup(CShader* pShader, UPTR ShaderFeatureFlags); //, const CShaderVarMap& StaticShaderVars);
 	virtual void			Unload();
 
 	virtual bool			IsResourceValid() const { FAIL; }

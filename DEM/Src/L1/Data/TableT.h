@@ -17,15 +17,15 @@ class CTableT: public CArray2<T>
 public:
 
 	// Made public for loader access
-	CString		Name;
+	CString				Name;
 	CDict<CStrID, int>	ColMap;
 	CDict<CStrID, int>	RowMap;
 
 	CTableT() {}
-	CTableT(DWORD Cols, DWORD Rows): CArray2(Cols, Rows) {}
+	CTableT(UPTR Cols, UPTR Rows): CArray2(Cols, Rows) {}
 
-	DWORD	GetColumnCount() const { return Width; }
-	DWORD	GetRowCount() const { return Height; }
+	UPTR	GetColumnCount() const { return Width; }
+	UPTR	GetRowCount() const { return Height; }
 
 	T&		Cell(CStrID ColName, CStrID RowName) const { return At(ColMap.FindIndex(ColName), RowMap.FindIndex(RowName)); }
 	T&		Cell(CStrID ColName, DWORD RowIdx) const { return At(ColMap.FindIndex(ColName), RowIdx); }

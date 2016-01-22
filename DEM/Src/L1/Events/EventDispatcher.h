@@ -29,14 +29,14 @@ protected:
 
 public:
 
-	CEventDispatcher(int HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE): Subscriptions(HashTableCapacity) {}
+	CEventDispatcher(UPTR HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE): Subscriptions(HashTableCapacity) {}
 
 	static int				GetFiredEventsCount() { return EventsFiredTotal; }
 
 	// Returns handled counter (how much handlers have signed that they handled this event)
-	DWORD					FireEvent(const CEventBase& Event);
-	DWORD					FireEvent(CEventBase& Event, char Flags) { Event.Flags = Flags; return FireEvent(Event); }
-	DWORD					FireEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0) { return FireEvent(CEvent(ID, Flags, Params)); }
+	UPTR					FireEvent(const CEventBase& Event);
+	UPTR					FireEvent(CEventBase& Event, char Flags) { Event.Flags = Flags; return FireEvent(Event); }
+	UPTR					FireEvent(CStrID ID, Data::PParams Params = NULL, char Flags = 0) { return FireEvent(CEvent(ID, Flags, Params)); }
 
 	bool					Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub = NULL);
 	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, U16 Priority = Priority_Default);

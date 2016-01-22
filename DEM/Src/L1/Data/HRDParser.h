@@ -55,7 +55,7 @@ private:
 	
 	int				ZeroIdx;
 	
-	DWORD			Line,
+	UPTR			Line,
 					Col;
 					
 	UPTR			ParserCursor;
@@ -90,7 +90,7 @@ public:
 
 	CHRDParser();
 
-	bool ParseBuffer(const char* Buffer, DWORD Length, PParams& Result, CString* pErrors = NULL);
+	bool ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, CString* pErrors = NULL);
 };
 
 }

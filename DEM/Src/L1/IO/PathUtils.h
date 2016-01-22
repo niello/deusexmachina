@@ -11,7 +11,7 @@ namespace PathUtils
 
 // Get a pointer to the last directory separator.
 //!!!use FindLastIndex(pCharSet)!
-inline const char* GetLastDirSeparator(const char* pPath, DWORD PathLen = 0)
+inline const char* GetLastDirSeparator(const char* pPath, UPTR PathLen = 0)
 {
 	if (!pPath) return NULL;
 	if (!PathLen) PathLen = strlen(pPath);
@@ -71,7 +71,7 @@ inline CString ExtractFileNameWithoutExtension(const char* pPath)
 // Return a CString object containing the last directory of the path
 inline CString ExtractLastDirName(const char* pPath)
 {
-	DWORD PathLen = strlen(pPath);
+	UPTR PathLen = strlen(pPath);
 	const char* pLastDirSep = GetLastDirSeparator(pPath, PathLen);
 
 	if (pLastDirSep)
@@ -99,7 +99,7 @@ inline CString ExtractLastDirName(const char* pPath)
 // Return a CString object containing the part before the last directory separator.
 // NOTE (floh): I left my fix in that returns the last slash (or colon), this was
 // necessary to tell if a dirname is a normal directory or an assign.
-inline CString ExtractDirName(const char* pPath, DWORD PathLength = 0)
+inline CString ExtractDirName(const char* pPath, UPTR PathLength = 0)
 {
 	if (!pPath) return CString::Empty;
 

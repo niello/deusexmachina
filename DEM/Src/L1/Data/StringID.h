@@ -22,7 +22,7 @@ protected:
 
 	const char* String;
 
-	explicit CStringID(const char* pString, int, int){ String = pString; }
+	explicit CStringID(const char* pString, int, int) { String = pString; }
 
 public:
 
@@ -33,13 +33,13 @@ public:
 	explicit // So I can later search all static StrIDs and predefine them
 #endif
 	CStringID(const char* pString, bool OnlyExisting = false);
-	explicit	CStringID(void* StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
-	explicit	CStringID(DWORD StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
+	explicit CStringID(void* StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
+	explicit CStringID(UPTR StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
 
-	DWORD		GetID() const { return (DWORD)String; }
-	const char*		CStr() const { return String; }
+	UPTR		GetID() const { return (UPTR)String; }
+	const char*	CStr() const { return String; }
 
-	operator	DWORD() const { return (DWORD)String; }
+	operator	UPTR() const { return (UPTR)String; }
 	operator	const char*() const { return String; }
 	//operator	bool() const { return IsValid(); }
 

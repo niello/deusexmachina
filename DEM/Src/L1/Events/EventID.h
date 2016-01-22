@@ -34,7 +34,7 @@ struct CEventID
 	bool operator <=(const CEventID& Other) const { return ID <= Other.ID; }
 	bool operator >=(const CEventID& Other) const { return ID >= Other.ID; }
 
-	operator DWORD() const { return (DWORD)ID; }
+	operator UPTR() const { return (UPTR)ID; }
 	operator CStrID() const { return *(CStrID*)&ID; }
 	operator const Core::CRTTI*() const { return RTTI; }
 	operator const Core::CRTTI&() const { return *RTTI; }

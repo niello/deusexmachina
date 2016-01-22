@@ -41,7 +41,7 @@ void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 	// Select minimal distance, if there are multiple COIs
 	const vector3& NodePos = pNode->GetWorldPosition();
 	float SqDistance = FLT_MAX;
-	for (DWORD i = 0; i < COICount; ++i)
+	for (UPTR i = 0; i < COICount; ++i)
 	{
 		vector3 DistanceVector = NodePos - pCOIArray[i];
 		float SqDist = DistanceVector.SqLength();
@@ -53,7 +53,7 @@ void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 		if (SqThresholds.KeyAt(i) > SqDistance) SelectedChild = SqThresholds.ValueAt(i);
 		else break;
 
-	for (DWORD i = 0; i < pNode->GetChildCount(); ++i)
+	for (UPTR i = 0; i < pNode->GetChildCount(); ++i)
 	{
 		CSceneNode& Node = *pNode->GetChild(i);
 		Node.Activate(Node.GetName() == SelectedChild);

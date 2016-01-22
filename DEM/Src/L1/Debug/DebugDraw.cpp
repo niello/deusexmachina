@@ -101,24 +101,24 @@ __ImplementSingleton(CDebugDraw);
 //
 //	CArray<CPrimitiveGroup> Groups(ShapeCount, 0);
 //
-//	DWORD VertexOffset = 0, IndexOffset = 0;
+//	UPTR VertexOffset = 0, IndexOffset = 0;
 //	vector3* pVBData = (vector3*)VB->Map(Map_Setup);
 //	U16* pIBData = (U16*)IB->Map(Map_Setup);
 //	CPrimitiveGroup* pGroup = Groups.Reserve(ShapeCount);
-//	for (int i = 0; i < ShapeCount; ++i)
+//	for (UPTR i = 0; i < ShapeCount; ++i)
 //	{
-//		DWORD VertexCount = pDXMesh[i]->GetNumVertices();
-//		DWORD IndexCount = pDXMesh[i]->GetNumFaces() * 3;
+//		UPTR VertexCount = pDXMesh[i]->GetNumVertices();
+//		UPTR IndexCount = pDXMesh[i]->GetNumFaces() * 3;
 //
 //		char* pDXVB;
 //		n_assert(SUCCEEDED(pDXMesh[i]->LockVertexBuffer(0, (LPVOID*)&pDXVB)));
-//		for (DWORD j = 0; j < VertexCount; ++j, pDXVB += pDXMesh[i]->GetNumBytesPerVertex())
+//		for (UPTR j = 0; j < VertexCount; ++j, pDXVB += pDXMesh[i]->GetNumBytesPerVertex())
 //			*pVBData++ = *(vector3*)pDXVB;
 //		pDXMesh[i]->UnlockVertexBuffer();
 //
 //		U16* pDXIB;
 //		n_assert(SUCCEEDED(pDXMesh[i]->LockIndexBuffer(0, (LPVOID*)&pDXIB)));
-//		for (DWORD j = 0; j < IndexCount; ++j, ++pDXIB)
+//		for (UPTR j = 0; j < IndexCount; ++j, ++pDXIB)
 //			*pIBData++ = (*pDXIB) + (U16)VertexOffset;
 //		pDXMesh[i]->UnlockIndexBuffer();
 //

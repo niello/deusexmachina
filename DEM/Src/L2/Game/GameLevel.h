@@ -70,6 +70,7 @@ protected:
 	Physics::PPhysicsWorld		PhysWorld;
 	AI::PAILevel				AILevel;
 	Scene::PCameraManager		CameraManager;	//???!!!Render::?! //???manage cameras here in a level itself?
+	CArray<Scene::CSceneNode*>	DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
 	//!!!???if PCameraManager is really useful, move it there!
 	Frame::PCamera				MainCamera;
@@ -93,21 +94,21 @@ public:
 	//!!!ensure there are SPS-accelerated queries!
 	// Screen queries
 	bool					GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
-	DWORD					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const;
+	UPTR					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const;
 	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
 	bool					GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 
 	// Physics-based queries
-	DWORD					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
-	DWORD					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
+	UPTR					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
+	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
 
 	void					AddToSelection(CStrID EntityID);
 	bool					RemoveFromSelection(CStrID EntityID);
 	void					ClearSelection() { SelectedEntities.Clear(); }
 	const CArray<CStrID>&	GetSelection() const { return SelectedEntities; }
-	DWORD					GetSelectedCount() const { return SelectedEntities.GetCount(); }
+	UPTR					GetSelectedCount() const { return SelectedEntities.GetCount(); }
 	bool					IsSelected(CStrID EntityID) const { return SelectedEntities.Contains(EntityID); }
 
 	CStrID					GetID() const { return ID; }

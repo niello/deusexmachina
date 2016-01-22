@@ -19,7 +19,7 @@ class CVertexBuffer: public Core::CObject
 protected:
 
 	PVertexLayout	VertexLayout;
-	DWORD			VertexCount;
+	UPTR			VertexCount;
 	Data::CFlags	Access;
 
 	void InternalDestroy() { VertexLayout = NULL; VertexCount = 0; Access.ClearAll(); }
@@ -32,9 +32,9 @@ public:
 	virtual void	Destroy() { InternalDestroy(); }
 
 	CVertexLayout*	GetVertexLayout() const { return VertexLayout.GetUnsafe(); }
-	DWORD			GetVertexCount() const { return VertexCount; }
+	UPTR			GetVertexCount() const { return VertexCount; }
 	Data::CFlags	GetAccess() const { return Access; }
-	DWORD			GetSizeInBytes() const { return VertexLayout.IsValidPtr() ? VertexLayout->GetVertexSizeInBytes() * VertexCount : 0; }
+	UPTR			GetSizeInBytes() const { return VertexLayout.IsValidPtr() ? VertexLayout->GetVertexSizeInBytes() * VertexCount : 0; }
 	bool			IsValid() const { VertexLayout.IsValidPtr(); }
 };
 
