@@ -204,7 +204,7 @@ void CD3D11GPUDriver::Release()
 	//!!!UnbindD3DResources();
 	//!!!can call the same event as on lost device!
 
-	//for (int i = 1; i < MaxRenderTargetCount; i++)
+	//for (int i = 1; i < MaxRenderTargetCount; ++i)
 	//	pD3DDevice->SetRenderTarget(i, NULL);
 	//pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
 

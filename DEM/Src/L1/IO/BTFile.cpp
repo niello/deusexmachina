@@ -129,8 +129,8 @@ void CBTFile::GetHeights(float* OutFloats, UPTR X, UPTR Z, UPTR W, UPTR H)
 	if (IsFloatData())
 	{
 		n_assert(Header->DataSize == sizeof(float));
-		for (UPTR Row = Z; Row < Z + H; Row++)
-			for (UPTR Col = X; Col < X + W; Col++)
+		for (UPTR Row = Z; Row < Z + H; ++Row)
+			for (UPTR Col = X; Col < X + W; ++Col)
 				Dest[Row * Header->Width + Col] =
 					HeightsF[Col * Header->Height + Header->Height - 1 - Row];
 	}
@@ -138,8 +138,8 @@ void CBTFile::GetHeights(float* OutFloats, UPTR X, UPTR Z, UPTR W, UPTR H)
 	{
 		n_assert(Header->DataSize == sizeof(short));
 		float VScale = GetVerticalScale();
-		for (UPTR Row = Z; Row < Z + H; Row++)
-			for (UPTR Col = X; Col < X + W; Col++)
+		for (UPTR Row = Z; Row < Z + H; ++Row)
+			for (UPTR Col = X; Col < X + W; ++Col)
 			{
 				short Src = HeightsS[Col * Header->Height + Header->Height - 1 - Row];
 				Dest[Row * Header->Width + Col] = (Src == NoDataS) ? NoDataF : Src * VScale;

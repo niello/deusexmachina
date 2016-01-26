@@ -121,7 +121,7 @@ void CDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
 template<class TKey, class TValue>
 void CDictionary<TKey, TValue>::CopyToArray(CArray<TValue>& Out) const
 {
-	for (UPTR i = 0; i < Pairs.GetCount(); i++)
+	for (UPTR i = 0; i < Pairs.GetCount(); ++i)
 		Out.Add(Pairs[i].GetValue());
 }
 //---------------------------------------------------------------------

@@ -131,7 +131,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, T* O
 
 inline CPropUIControl::CAction* CPropUIControl::GetActionByID(CStrID ID)
 {
-	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); ++It)
 		if (It->ID == ID) return It;
 	return NULL;
 }

@@ -98,13 +98,13 @@ bool CPropActorBrain::InternalActivate()
 				if (Percs.IsValidPtr())
 				{
 					CDataArray::CIterator ItPercName;
-					for (ItPercName = Percs->Begin(); ItPercName != Percs->End(); ItPercName++)
+					for (ItPercName = Percs->Begin(); ItPercName != Percs->End(); ++ItPercName)
 					{
 						CString PercClass = StrPercPrefix + ItPercName->GetValue<CString>();
 						bool Found = false;
 
 						CArray<PPerceptor>::CIterator ItPerc;
-						for (ItPerc = Perceptors.Begin(); ItPerc != Perceptors.End(); ItPerc++)
+						for (ItPerc = Perceptors.Begin(); ItPerc != Perceptors.End(); ++ItPerc)
 						{
 							//???store class name as CStrID to compare faster?
 							if ((*ItPerc)->GetClassName() == PercClass)

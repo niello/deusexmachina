@@ -9,7 +9,7 @@
 #include <AI/Navigation/NavData.h>
 #include <AI/Navigation/PathRequestQueue.h>
 
-// AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysWorld),
+// AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysicsLevel),
 // that contains stimuli, AI hints and other AI-related world info. Also AILevel serves as
 // a navigation manager.
 

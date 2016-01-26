@@ -185,7 +185,7 @@ CVideoPlayer* CVideoServer::NewVideoPlayer(const char* pName)
 void CVideoServer::DeleteVideoPlayer(CVideoPlayer* pPlayer)
 {
 	n_assert(pPlayer);
-	for (UPTR i = 0; i < Players.GetCount(); i++)
+	for (UPTR i = 0; i < Players.GetCount(); ++i)
 		if (Players[i] == pPlayer)
 		{
 			Players.RemoveAt(i);

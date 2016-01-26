@@ -20,12 +20,12 @@ bool CPropInventory::InternalActivate()
 	Data::PDataArray InvDesc;
 	if (GetEntity()->GetAttr<Data::PDataArray>(InvDesc, CStrID("Inventory")) && InvDesc->GetCount())
 	{
-		CItemStack* pStack = Items.Reserve(InvDesc->GetCount());
+		Items::CItemStack* pStack = Items.Reserve(InvDesc->GetCount());
 		for (UPTR i = 0; i < InvDesc->GetCount(); ++i, ++pStack)
 		{
 			Data::PParams StackDesc = InvDesc->Get<Data::PParams>(i);
 
-			PItem Item = ItemMgr->GetItemTpl(StackDesc->Get<CStrID>(CStrID("ID")))->GetTemplateItem();
+			Items::PItem Item = ItemMgr->GetItemTpl(StackDesc->Get<CStrID>(CStrID("ID")))->GetTemplateItem();
 			Data::PParams ItemInst = StackDesc->Get<Data::PParams>(CStrID("Instance"), NULL);
 			if (ItemInst.IsValidPtr())
 			{
@@ -165,11 +165,11 @@ bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const
 }
 //---------------------------------------------------------------------
 
-U16 CPropInventory::AddItem(PItem NewItem, U16 Count, bool AsManyAsCan)
+U16 CPropInventory::AddItem(Items::PItem NewItem, U16 Count, bool AsManyAsCan)
 {
 	if (!Count) return 0;
 
-	PItemTpl Tpl = NewItem->GetTpl();
+	Items::PItemTpl Tpl = NewItem->GetTpl();
 	float TotalW = Tpl->Weight * Count;
 	float TotalV = Tpl->Volume * Count;
 
@@ -205,7 +205,7 @@ U16 CPropInventory::AddItem(PItem NewItem, U16 Count, bool AsManyAsCan)
 			break;
 		}
 
-	if (Stack == Items.End()) Items.Add(CItemStack(NewItem, Count)); //???!!!preallocate & set fields to avoid copying?!
+	if (Stack == Items.End()) Items.Add(Items::CItemStack(NewItem, Count)); //???!!!preallocate & set fields to avoid copying?!
 
 	Data::PParams P = n_new(Data::CParams)(3);
 	P->Set(CStrID("Item"), NewItem->GetID());
@@ -249,7 +249,7 @@ U16 CPropInventory::RemoveItem(ItItemStack Stack, U16 Count, bool AsManyAsCan)
 }
 //---------------------------------------------------------------------
 
-U16 CPropInventory::RemoveItem(PItem Item, U16 Count, bool AsManyAsCan)
+U16 CPropInventory::RemoveItem(Items::PItem Item, U16 Count, bool AsManyAsCan)
 {
 	foreach_stack(Stack, Items)
 		if (Stack->GetItem()->IsEqual(Item)) break;
@@ -282,7 +282,7 @@ bool CPropInventory::HasItem(CStrID ItemID, U16 Count)
 }
 //---------------------------------------------------------------------
 
-bool CPropInventory::SplitItems(PItem Item, U16 Count, CItemStack& OutStack)
+bool CPropInventory::SplitItems(Items::PItem Item, U16 Count, Items::CItemStack& OutStack)
 {
 	foreach_stack(Stack, Items)
 		if (Stack->GetItem()->IsEqual(Item)) break;
@@ -308,7 +308,7 @@ bool CPropInventory::SplitItems(PItem Item, U16 Count, CItemStack& OutStack)
 //---------------------------------------------------------------------
 
 // Merge all items into one stack
-void CPropInventory::MergeItems(PItem Item)
+void CPropInventory::MergeItems(Items::PItem Item)
 {
 	foreach_stack(MainStack, Items)
 		if (MainStack->GetItem()->IsEqual(Item)) break;

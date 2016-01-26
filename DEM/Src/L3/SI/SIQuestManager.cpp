@@ -13,7 +13,6 @@ extern "C"
 
 namespace SI
 {
-using namespace Story;
 
 int CQuestMgr_StartQuest(lua_State* l)
 {
@@ -79,10 +78,10 @@ bool RegisterQuestSystem()
 	ScriptSrv->ExportCFunction("CompleteQuest", CQuestMgr_CompleteQuest);
 	ScriptSrv->ExportCFunction("GetQuestStatus", CQuestMgr_GetQuestStatus);
 
-	ScriptSrv->ExportIntegerConst("QSNo", CQuest::No);
-	ScriptSrv->ExportIntegerConst("QSOpened", CQuest::Opened);
-	ScriptSrv->ExportIntegerConst("QSDone", CQuest::Done);
-	ScriptSrv->ExportIntegerConst("QSFailed", CQuest::Failed);
+	ScriptSrv->ExportIntegerConst("QSNo", Story::CQuest::No);
+	ScriptSrv->ExportIntegerConst("QSOpened", Story::CQuest::Opened);
+	ScriptSrv->ExportIntegerConst("QSDone", Story::CQuest::Done);
+	ScriptSrv->ExportIntegerConst("QSFailed", Story::CQuest::Failed);
 
 	lua_setglobal(l, "QuestMgr");
 

@@ -237,7 +237,7 @@ void CD3D9GPUDriver::Release()
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
 
-	//for (int i = 1; i < MaxRenderTargetCount; i++)
+	//for (int i = 1; i < MaxRenderTargetCount; ++i)
 	//	pD3DDevice->SetRenderTarget(i, NULL);
 	pD3DDevice->SetDepthStencilSurface(NULL);
 
@@ -1861,7 +1861,7 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 	ZeroMemory(StreamOffset, D3DCaps.MaxStreams * sizeof(UPTR));
 
 	UPTR i = 0;
-	for (i = 0; i < Count; i++)
+	for (i = 0; i < Count; ++i)
 	{
 		const CVertexComponent& Component = pComponents[i];
 

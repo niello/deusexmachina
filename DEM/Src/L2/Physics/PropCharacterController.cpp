@@ -54,7 +54,7 @@ void CPropCharacterController::InternalDeactivate()
 
 void CPropCharacterController::CreateController()
 {
-	Physics::CPhysicsWorld* pPhysWorld = GetEntity()->GetLevel()->GetPhysics();
+	Physics::CPhysicsLevel* pPhysWorld = GetEntity()->GetLevel()->GetPhysics();
 	if (!pPhysWorld) return;
 
 	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), CString::Empty);    

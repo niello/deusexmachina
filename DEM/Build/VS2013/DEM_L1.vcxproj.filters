@@ -540,9 +540,6 @@
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsServer.h">
       <Filter>Physics</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Physics\PhysicsWorld.h">
-      <Filter>Physics</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Physics\RigidBody.h">
       <Filter>Physics</Filter>
     </ClInclude>
@@ -908,6 +905,9 @@
     <ClInclude Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.h">
       <Filter>Animation</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsLevel.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1181,9 +1181,6 @@
       <Filter>Physics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsServer.cpp">
-      <Filter>Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Physics\PhysicsWorld.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\RigidBody.cpp">
@@ -1476,6 +1473,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.cpp">
       <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsLevel.cpp">
+      <Filter>Physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

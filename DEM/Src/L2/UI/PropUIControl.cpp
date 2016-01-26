@@ -330,7 +330,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, const char*
 
 bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction)
 {
-	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); ++It)
 		if (It->ID == ID) FAIL;
 
 	CAction Act(ID, UIName, Priority);
@@ -350,7 +350,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, Events::PEv
 
 void CPropUIControl::RemoveActionHandler(CStrID ID)
 {
-	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); ++It)
 		if (It->ID == ID)
 		{
 			Actions.Remove(It);
@@ -407,7 +407,7 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	}
 
 	CAction* pTopAction = Actions.Begin();
-	for (CArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (CArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); ++It)
 	{
 		if (It->IsSOAction)
 		{
@@ -440,7 +440,7 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 	}
 
 	int VisibleCount = 0;
-	for (CArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); It++)
+	for (CArray<CPropUIControl::CAction>::CIterator It = Actions.Begin(); It != Actions.End(); ++It)
 		if (It->Visible)
 		{
 			if (It->IsSOAction)

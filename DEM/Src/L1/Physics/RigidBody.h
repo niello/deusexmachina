@@ -31,7 +31,7 @@ public:
 	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	bool			Init(CCollisionShape& CollShape, float BodyMass, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
 	virtual void	Term();
-	virtual bool	AttachToLevel(CPhysicsWorld& World);
+	virtual bool	AttachToLevel(CPhysicsLevel& World);
 	virtual void	RemoveFromLevel();
 
 	virtual void	SetTransform(const matrix44& Tfm);

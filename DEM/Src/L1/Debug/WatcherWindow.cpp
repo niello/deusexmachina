@@ -25,8 +25,6 @@ namespace Debug
 {
 __ImplementClass(Debug::CWatcherWindow, 'DWWW', UI::CUIWindow);
 
-using namespace Data;
-
 void CWatcherWindow::Init(CEGUI::Window* pWindow)
 {
 	CUIWindow::Init(pWindow);
@@ -118,7 +116,7 @@ void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 void CWatcherWindow::AddAllGlobals()
 {
 	UPTR i = Watched.GetCount();
-	for (CHashTable<CString, CData>::CIterator It = CoreSrv->Globals.Begin(); It; ++It, ++i)
+	for (CHashTable<CString, Data::CData>::CIterator It = CoreSrv->Globals.Begin(); It; ++It, ++i)
 		AddWatched(DEM, It.GetKey().CStr());
 
 	for (UPTR j = i; j < Watched.GetCount(); ++j)
@@ -157,7 +155,7 @@ bool CWatcherWindow::OnListKeyDown(const CEGUI::EventArgs& e)
 				pList->setItemSelectState(CEGUI::MCLGridRef(RowIdx, COL_NAME), true);
 			}
 			
-			for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++)
+			for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); ++It)
 				if (pSel == It->pNameItem)
 				{
 					It->Clear();
@@ -202,7 +200,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 		{
 			if (It->Type == DEM)
 			{
-				CData CurrVar;
+				Data::CData CurrVar;
 
 				if (CoreSrv->GetGlobal(CString(It->VarName.CStr()), CurrVar))
 				{
@@ -248,7 +246,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 			{
 				char Script[256];	
 				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName);
-				CData Output;
+				Data::CData Output;
 				ScriptSrv->RunScript(Script, -1, &Output);
 
 				//!!!Data.ToString!
@@ -287,12 +285,12 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 					It->pTypeItem->setText("Lua userdata");
 					It->pValueItem->setText(StringUtils::FromInt((int)Output.GetValue<PVOID>()).CStr());
 				}
-				else if (Output.IsA<PDataArray>())
+				else if (Output.IsA<Data::PDataArray>())
 				{
 					It->pTypeItem->setText("Lua array");
 					It->pValueItem->setText("[...]");
 				}
-				else if (Output.IsA<PParams>())
+				else if (Output.IsA<Data::PParams>())
 				{
 					It->pTypeItem->setText("Lua table");
 					It->pValueItem->setText("{...}");

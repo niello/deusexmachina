@@ -3,10 +3,11 @@
 #include <Game/Entity.h>
 #include <Game/GameServer.h>
 #include <Scripting/ScriptObject.h>
+#include <Frame/Camera.h>
 #include <Frame/SceneNodeUpdateInSPS.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/PhysicsServer.h>
 #include <AI/AILevel.h>
 #include <Events/EventServer.h>
@@ -17,12 +18,6 @@
 
 namespace Game
 {
-
-CGameLevel::~CGameLevel()
-{
-	Term();
-}
-//---------------------------------------------------------------------
 
 void PhysicsPreTick(btDynamicsWorld* world, btScalar timeStep)
 {
@@ -79,37 +74,6 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		int SPSHierarchyDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 
 		SPS.QuadTree.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (U8)SPSHierarchyDepth);
-
-		//!!!if CameraManager is always present, may add there method CreateMainCamera() or smth like that
-		//and just call it here, or create main camera in a camera mgr constructor!
-		CameraManager = n_new(Scene::CCameraManager);
-
-		Scene::CSceneNode* pCameraNode = SceneRoot->CreateChild(CStrID("_DefaultCamera"));
-		MainCamera = n_new(Frame::CCamera);
-		pCameraNode->AddAttribute(*MainCamera);
-		MainCamera->SetWidth(800.f); //!!!(float)RenderSrv->GetBackBufferWidth());
-		MainCamera->SetHeight(600.f); //!!!(float)RenderSrv->GetBackBufferHeight());
-
-		Data::PParams CameraDesc;
-		if (SubDesc->Get(CameraDesc, CStrID("Camera")))
-		{
-			bool IsThirdPerson = CameraDesc->Get(CStrID("ThirdPerson"), true);
-			n_assert(IsThirdPerson); // Until a first person camera is implemented
-
-			if (IsThirdPerson)
-			{
-				CameraManager->InitThirdPersonCamera(*MainCamera->GetNode());
-				Scene::CNodeControllerThirdPerson* pCtlr = (Scene::CNodeControllerThirdPerson*)CameraManager->GetCameraController();
-				if (pCtlr)
-				{
-					pCtlr->SetVerticalAngleLimits(n_deg2rad(CameraDesc->Get(CStrID("MinVAngle"), 0.0f)), n_deg2rad(CameraDesc->Get(CStrID("MaxVAngle"), 89.999f)));
-					pCtlr->SetDistanceLimits(CameraDesc->Get(CStrID("MinDistance"), 0.0f), CameraDesc->Get(CStrID("MaxDistance"), 10000.0f));
-					pCtlr->SetCOI(CameraDesc->Get(CStrID("COI"), vector3::Zero));
-					pCtlr->SetAngles(n_deg2rad(CameraDesc->Get(CStrID("VAngle"), 0.0f)), n_deg2rad(CameraDesc->Get(CStrID("HAngle"), 0.0f)));
-					pCtlr->SetDistance(CameraDesc->Get(CStrID("Distance"), 20.0f));
-				}
-			}
-		}
 	}
 
 	if (Desc.Get(SubDesc, CStrID("Physics")))
@@ -118,11 +82,11 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 		CAABB Bounds(Center, Extents);
 
-		PhysWorld = n_new(Physics::CPhysicsWorld);
-		if (!PhysWorld->Init(Bounds)) FAIL;
+		PhysicsLevel = n_new(Physics::CPhysicsLevel);
+		if (!PhysicsLevel->Init(Bounds)) FAIL;
 
-		PhysWorld->GetBtWorld()->setInternalTickCallback(PhysicsPreTick, this, true);
-		PhysWorld->GetBtWorld()->setInternalTickCallback(PhysicsTick, this, false);
+		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsPreTick, this, true);
+		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsTick, this, false);
 	}
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
@@ -156,10 +120,11 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 void CGameLevel::Term()
 {
+	for (UPTR i = 0; i < Views.GetCount(); ++i) n_delete(Views[i]);
+	Views.Clear();
 	GlobalSub = NULL;
-	CameraManager = NULL;
 	AILevel = NULL;
-	PhysWorld = NULL;
+	PhysicsLevel = NULL;
 	SceneRoot = NULL;
 	Script = NULL;
 }
@@ -175,48 +140,6 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	for (UPTR i = 0; i < SelectedEntities.GetCount(); ++i)
 		SGSelection->Add(SelectedEntities[i]);
 	OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
-
-	// Save camera state
-	if (CameraManager.IsValidPtr())
-	{
-		Data::PParams SGScene = n_new(Data::CParams);
-
-		bool IsThirdPerson = CameraManager->IsCameraThirdPerson();
-		n_assert(IsThirdPerson); // Until a first person camera is implemented
-
-		Data::PParams CurrCameraDesc = n_new(Data::CParams);
-		CurrCameraDesc->Set(CStrID("ThirdPerson"), IsThirdPerson);
-
-		if (IsThirdPerson)
-		{
-			Scene::CNodeControllerThirdPerson* pCtlr = (Scene::CNodeControllerThirdPerson*)CameraManager->GetCameraController();
-			if (pCtlr)
-			{
-				CurrCameraDesc->Set(CStrID("MinVAngle"), n_rad2deg(pCtlr->GetVerticalAngleMin()));
-				CurrCameraDesc->Set(CStrID("MaxVAngle"), n_rad2deg(pCtlr->GetVerticalAngleMax()));
-				CurrCameraDesc->Set(CStrID("MinDistance"), pCtlr->GetDistanceMin());
-				CurrCameraDesc->Set(CStrID("MaxDistance"), pCtlr->GetDistanceMax());
-				CurrCameraDesc->Set(CStrID("COI"), pCtlr->GetCOI());
-				CurrCameraDesc->Set(CStrID("HAngle"), n_rad2deg(pCtlr->GetAngles().Phi));
-				CurrCameraDesc->Set(CStrID("VAngle"), n_rad2deg(pCtlr->GetAngles().Theta));
-				CurrCameraDesc->Set(CStrID("Distance"), pCtlr->GetDistance());
-			}
-		}
-
-		Data::PParams InitialScene;
-		Data::PParams InitialCamera;
-		if (pInitialDesc &&
-			pInitialDesc->Get(InitialScene, CStrID("Scene")) &&
-			InitialScene->Get(InitialCamera, CStrID("Camera")))
-		{
-			Data::PParams SGCamera = n_new(Data::CParams);
-			InitialCamera->GetDiff(*SGCamera, *CurrCameraDesc);
-			if (SGCamera->GetCount()) SGScene->Set(CStrID("Camera"), SGCamera);
-		}
-		else SGScene->Set(CStrID("Camera"), CurrCameraDesc);
-
-		if (SGScene->GetCount()) OutDesc.Set(CStrID("Scene"), SGScene);
-	}
 
 	// Save nav. regions status
 	// No iterator, no consistency. Needs redesign.
@@ -297,38 +220,123 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 void CGameLevel::Trigger()
 {
+	//per-view
+	//!!!UpdateMouseIntersectionInfo();
+
 	FireEvent(CStrID("BeforeTransforms"));
 
-	const vector3& CameraPos = MainCamera->GetPosition();
+	UPTR ViewCount = Views.GetCount();
+	UPTR COICount = 0;
+	vector3* pCOIArray = (vector3*)_malloca(sizeof(vector3) * ViewCount);
+	for (UPTR i = 0; i < ViewCount; ++i)
+	{
+		Frame::CView* pView = Views[i];
+		if (pView && pView->pCamera)
+			pCOIArray[COICount++] = pView->pCamera->GetNode()->GetWorldPosition();
+	}
 
 	DefferedNodes.Clear(false);
-	if (SceneRoot.IsValidPtr()) SceneRoot->UpdateTransform(&CameraPos, 1, false, &DefferedNodes);
+	if (SceneRoot.IsValidPtr()) SceneRoot->UpdateTransform(pCOIArray, COICount, false, &DefferedNodes);
 
-	if (PhysWorld.IsValidPtr())
+	if (PhysicsLevel.IsValidPtr())
 	{
 		FireEvent(CStrID("BeforePhysics"));
-		PhysWorld->Trigger((float)GameSrv->GetFrameTime());
+		PhysicsLevel->Trigger((float)GameSrv->GetFrameTime());
 		FireEvent(CStrID("AfterPhysics"));
 	}
 
 	for (UPTR i = 0; i < DefferedNodes.GetCount(); ++i)
-		DefferedNodes[i]->UpdateTransform(&CameraPos, 1, true, NULL);
+		DefferedNodes[i]->UpdateTransform(pCOIArray, COICount, true, NULL);
 
 	FireEvent(CStrID("AfterTransforms"));
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+/*
+//!!!need to know what view to test!
+void CGameServer::UpdateMouseIntersectionInfo()
 {
-	CStrID EvID = ((Events::CEvent&)Event).ID;
+	//!!!DBG TMP!
+	return;
 
-	if (AutoAdjustCameraAspect && MainCamera.IsValidPtr() && EvID == CStrID("OnRenderDeviceReset"))
+	CStrID OldEntityUnderMouse = EntityUnderMouse;
+
+	if (UISrv->IsMouseOverGUI() || ActiveLevel.IsNullPtr()) HasMouseIsect = false;
+	else
 	{
-		//MainCamera->SetWidth((float)RenderSrv->GetBackBufferWidth());
-		//MainCamera->SetHeight((float)RenderSrv->GetBackBufferHeight());
+		float XRel, YRel;
+		InputSrv->GetMousePosRel(XRel, YRel);
+		HasMouseIsect = ActiveLevel->GetIntersectionAtScreenPos(XRel, YRel, &MousePos3D, &EntityUnderMouse);
 	}
 
+	if (!HasMouseIsect)
+	{
+		EntityUnderMouse = CStrID::Empty;
+		MousePos3D.set(0.0f, 0.0f, 0.0f);
+	}
+
+	if (OldEntityUnderMouse != EntityUnderMouse)
+	{
+		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
+		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseLeave"));
+		pEntityUnderMouse = GetEntityUnderMouse();
+		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseEnter"));
+	}
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::SetActiveLevel(CStrID ID)
+{
+	PGameLevel NewLevel;
+	if (ID.IsValid())
+	{
+		IPTR LevelIdx = Levels.FindIndex(ID);
+		if (LevelIdx == INVALID_INDEX) FAIL;
+		NewLevel = Levels.ValueAt(LevelIdx);
+	}
+
+	if (NewLevel != ActiveLevel)
+	{
+		EventSrv->FireEvent(CStrID("OnActiveLevelChanging"));
+		ActiveLevel = NewLevel;
+		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValidPtr() ? ID : CStrID::Empty);
+
+		EntityUnderMouse = CStrID::Empty;
+		HasMouseIsect = false;
+		UpdateMouseIntersectionInfo();
+
+		EventSrv->FireEvent(CStrID("OnActiveLevelChanged"));
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+*/
+
+bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
 	return !!FireEvent(Event);
+}
+//---------------------------------------------------------------------
+
+//???use handle manager or array with empty unused records instead of an array of pointers?
+Frame::CView* CGameLevel::CreateView(/*const char* pCameraNodePath*/)
+{
+	Frame::CView* pView = n_new(Frame::CView);
+	pView->pSPS = &SPS;
+	Views.Add(pView);
+	return pView;
+}
+//---------------------------------------------------------------------
+
+void CGameLevel::DestroyView(Frame::CView* pView)
+{
+	IPTR Idx = Views.FindIndex(pView);
+	if (Idx != INVALID_INDEX)
+	{
+		Views.RemoveAt(Idx);
+		n_delete(pView);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -425,7 +433,7 @@ void CGameLevel::RenderScene()
 //!!!???bool flags what subsystems to render?
 void CGameLevel::RenderDebug()
 {
-	PhysWorld->RenderDebug();
+	PhysicsLevel->RenderDebug();
 
 	FireEvent(CStrID("OnRenderDebug"));
 
@@ -440,7 +448,8 @@ void CGameLevel::RenderDebug()
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	if (MainCamera.IsNullPtr() || PhysWorld.IsNullPtr()) FAIL;
+	Frame::PCamera MainCamera; //!!!DBG TMP!
+	if (MainCamera.IsNullPtr() || PhysicsLevel.IsNullPtr()) FAIL;
 
 	line3 Ray;
 	MainCamera->GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
@@ -448,7 +457,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 	U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
 	Physics::PPhysicsObj PhysObj;
-	if (!PhysWorld->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
+	if (!PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 
 	if (pOutEntityUID)
 	{
@@ -473,6 +482,7 @@ UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle&
 
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
+	Frame::PCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
 	if (Offset) EntityPos += *Offset;
@@ -483,6 +493,7 @@ bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, c
 
 bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
 {
+	Frame::PCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
@@ -498,6 +509,7 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 
 bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
+	Frame::PCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
@@ -523,7 +535,7 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 	Out.v1 = Out.v0;
 
 	vector2 ScreenPos;
-	for (UPTR i = 1; i < 8; i++)
+	for (UPTR i = 1; i < 8; ++i)
 	{
 		MainCamera->GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
 
@@ -567,7 +579,7 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	U16 Group = PhysicsSrv->CollisionGroups.GetMask("Default");
 	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All");
 	vector3 ContactPos;
-	if (!PhysWorld->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
+	if (!PhysicsLevel->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
 	Out.WorldHeight = ContactPos.y;
 
 	//!!!material from CPhysicsObject!

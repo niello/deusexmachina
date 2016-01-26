@@ -34,7 +34,7 @@ void CMemSystem::Update()
 				UPTR Result = Running;
 
 				CArray<CSensor*>::CIterator It = ValidationSensors.Begin();
-				for (; It != ValidationSensors.End(); It++)
+				for (; It != ValidationSensors.End(); ++It)
 				{
 					// Since we validate only facts not updated this frame, we definitely know here,
 					// that sensor didn't sense stimulus that produced this fact

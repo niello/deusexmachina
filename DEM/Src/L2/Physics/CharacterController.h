@@ -20,7 +20,7 @@ namespace Data
 namespace Physics
 {
 typedef Ptr<class CRigidBody> PRigidBody;
-class CPhysicsWorld;
+class CPhysicsLevel;
 
 enum ECharacterState
 {
@@ -62,7 +62,7 @@ public:
 
 	bool			Init(const Data::CParams& Desc);
 	void			Term();
-	bool			AttachToLevel(CPhysicsWorld& World);
+	bool			AttachToLevel(CPhysicsLevel& World);
 	void			RemoveFromLevel();
 	bool			IsAttachedToLevel() const;
 

@@ -45,8 +45,8 @@ protected:
 	matrix44					WorldMatrix;
 
 	CSceneNode*					pParent;
-	CDict<CStrID, PSceneNode>	Children;
 	PNodeController				Controller;
+	CDict<CStrID, PSceneNode>	Children;	//???or sorted array? don't store IDs twice if possible
 	CArray<PNodeAttribute>		Attrs; //???or list? List seems to be better //???WHY?
 
 public:
@@ -66,6 +66,7 @@ public:
 	CStrID					GetName() const { return Name; }
 
 	CSceneNode*				CreateChild(CStrID ChildName);
+	CSceneNode*				CreateChildChain(const char* pPath);
 	void					AddChild(CSceneNode& Node);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(UPTR Idx);
@@ -73,9 +74,9 @@ public:
 	CSceneNode*				GetParent() const { return pParent; }
 	UPTR					GetChildCount() const { return Children.GetCount(); }
 	CSceneNode*				GetChild(UPTR Idx) const { return Children.ValueAt(Idx); }
-	//???create and non-create () const; versions?
-	CSceneNode*				GetChild(CStrID ChildName, bool Create = false);
-	CSceneNode*				GetChild(const char* pPath, bool Create = false);
+	CSceneNode*				GetChild(CStrID ChildName) const;
+	CSceneNode*				GetChild(const char* pPath) const;
+	CSceneNode*				FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const;
 
 	bool					SetController(CNodeController* pCtlr);
 	CNodeController*		GetController() const { return Controller.GetUnsafe(); }
@@ -126,11 +127,18 @@ inline void CSceneNode::RemoveChild(CSceneNode& Node)
 }
 //---------------------------------------------------------------------
 
-inline CSceneNode* CSceneNode::GetChild(CStrID ChildName, bool Create)
+inline CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
 {
 	IPTR Idx = Children.FindIndex(ChildName);
-	if (Idx == INVALID_INDEX) return Create ? CreateChild(ChildName) : NULL;
-	return GetChild(Idx);
+	return Idx == INVALID_INDEX ? NULL : Children.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
+
+inline CSceneNode* CSceneNode::GetChild(const char* pPath) const
+{
+	const char* pUnprocessed;
+	CSceneNode* pNode = FindDeepestChild(pPath, pUnprocessed);
+	return pUnprocessed ? NULL : pNode;
 }
 //---------------------------------------------------------------------
 

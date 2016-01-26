@@ -107,7 +107,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 
 		Hints.Clear();
 		Hints.BeginAdd();
-		for (UPTR i = 0; i < Desc->GetCount(); i++)
+		for (UPTR i = 0; i < Desc->GetCount(); ++i)
 		{
 			const CParam& Prm = Desc->Get(i);
 			PParams PrmVal = Prm.GetValue<PParams>();

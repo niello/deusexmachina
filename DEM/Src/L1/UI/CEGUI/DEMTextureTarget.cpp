@@ -66,7 +66,7 @@ void CDEMTextureTarget::initialiseRenderTexture()
 	Render::CRenderTargetDesc RTDesc;
 	RTDesc.Width = (UPTR)d_area.getSize().d_width;
 	RTDesc.Height = (UPTR)d_area.getSize().d_height;
-	RTDesc.Format = Render::PixelFmt_R8G8B8A8;
+	RTDesc.Format = Render::PixelFmt_B8G8R8A8;
 	RTDesc.MSAAQuality = Render::MSAA_None;
 	RTDesc.UseAsShaderInput = true;
 	RTDesc.MipLevels = 1; // Can test 0 = full mipmap chain

@@ -10,11 +10,9 @@ namespace Prop
 __ImplementClass(Prop::CPropItem, 'PITM', Game::CProperty);
 __ImplementPropertyStorage(CPropItem);
 
-using namespace Items;
-
 bool CPropItem::InternalActivate()
 {
-	PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
+	Items::PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
 	Data::PParams ItemInst = GetEntity()->GetAttr<Data::PParams>(CStrID("ItemInstance"), NULL);
 	if (ItemInst.IsValidPtr())
 	{

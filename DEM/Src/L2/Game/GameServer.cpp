@@ -3,7 +3,7 @@
 #include <Game/EntityLoaderCommon.h>
 #include <AI/AIServer.h>
 #include <Frame/SceneNodeValidateResources.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <UI/UIServer.h>
@@ -54,48 +54,14 @@ void CGameServer::Trigger()
 {
 	EntityMgr->DeferredDeleteEntities();
 
-	UpdateMouseIntersectionInfo();
-
 	EventSrv->FireEvent(CStrID("OnBeginFrame"));
 
 	AISrv->Trigger(); // Pathfinding queries inside
 
-	//!!!trigger all levels, but send to the audio, video, scene and debug rendering only data from the active level!
-	if (ActiveLevel.IsValidPtr()) ActiveLevel->Trigger();
+	for (UPTR i = 0; i < Levels.GetCount(); ++i)
+		Levels.ValueAt(i)->Trigger();
 
 	EventSrv->FireEvent(CStrID("OnEndFrame"));
-}
-//---------------------------------------------------------------------
-
-//!!!need to know what view to test!
-void CGameServer::UpdateMouseIntersectionInfo()
-{
-	CStrID OldEntityUnderMouse = EntityUnderMouse;
-
-	NOT_IMPLEMENTED;
-	/*
-	if (UISrv->IsMouseOverGUI() || ActiveLevel.IsNullPtr()) HasMouseIsect = false;
-	else
-	{
-		float XRel, YRel;
-		InputSrv->GetMousePosRel(XRel, YRel);
-		HasMouseIsect = ActiveLevel->GetIntersectionAtScreenPos(XRel, YRel, &MousePos3D, &EntityUnderMouse);
-	}
-	*/
-
-	if (!HasMouseIsect)
-	{
-		EntityUnderMouse = CStrID::Empty;
-		MousePos3D.set(0.0f, 0.0f, 0.0f);
-	}
-
-	if (OldEntityUnderMouse != EntityUnderMouse)
-	{
-		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
-		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseLeave"));
-		pEntityUnderMouse = GetEntityUnderMouse();
-		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseEnter"));
-	}
 }
 //---------------------------------------------------------------------
 
@@ -191,9 +157,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 
 	PGameLevel Level = Levels.ValueAt(LevelIdx);
 
-	if (ActiveLevel == Level) SetActiveLevel(CStrID::Empty);
-
-	Data::PParams P = n_new(Data::CParams);
+	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("ID"), ID);
 	EventSrv->FireEvent(CStrID("OnLevelUnloading"), P);
 
@@ -206,36 +170,9 @@ void CGameServer::UnloadLevel(CStrID ID)
 
 	Level->Term();
 
-	EventSrv->FireEvent(CStrID("OnLevelUnloaded"), P); //???or before a level is removed, but entities are unloaded?
+	EventSrv->FireEvent(CStrID("OnLevelUnloaded"), P);
 
 	n_assert_dbg(Level->GetRefCount() == 1);
-}
-//---------------------------------------------------------------------
-
-bool CGameServer::SetActiveLevel(CStrID ID)
-{
-	PGameLevel NewLevel;
-	if (ID.IsValid())
-	{
-		IPTR LevelIdx = Levels.FindIndex(ID);
-		if (LevelIdx == INVALID_INDEX) FAIL;
-		NewLevel = Levels.ValueAt(LevelIdx);
-	}
-
-	if (NewLevel != ActiveLevel)
-	{
-		EventSrv->FireEvent(CStrID("OnActiveLevelChanging"));
-		ActiveLevel = NewLevel;
-		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValidPtr() ? ID : CStrID::Empty);
-
-		EntityUnderMouse = CStrID::Empty;
-		HasMouseIsect = false;
-		UpdateMouseIntersectionInfo();
-
-		EventSrv->FireEvent(CStrID("OnActiveLevelChanged"));
-	}
-
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -386,14 +323,12 @@ bool CGameServer::ContinueGame(const char* pFileName)
 	// Allow custom gameplay managers to load their data
 	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc->Get<Data::PParams>(CStrID("Managers"), NULL));
 
-	CStrID ActiveLevelID = GetGlobalAttr<CStrID>(CStrID("ActiveLevel"));
 	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
 	if (LoadedLevels.IsNullPtr())
 	{
 		LoadedLevels = n_new(Data::CDataArray);
 		SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 	}
-	if (!LoadedLevels->Contains(ActiveLevelID)) LoadedLevels->Add(ActiveLevelID);
 
 	for (UPTR i = 0; i < LoadedLevels->GetCount(); ++i)
 		n_verify(LoadGameLevel(LoadedLevels->Get<CStrID>(i)));
@@ -402,7 +337,7 @@ bool CGameServer::ContinueGame(const char* pFileName)
 
 	EventSrv->FireEvent(CStrID("OnGameLoaded"), GameDesc);
 
-	return SetActiveLevel(ActiveLevelID);
+	OK;
 }
 //---------------------------------------------------------------------
 

@@ -420,7 +420,7 @@
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsDebugDraw.h" />
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsObject.h" />
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsServer.h" />
-    <ClInclude Include="..\..\Src\L1\Physics\PhysicsWorld.h" />
+    <ClInclude Include="..\..\Src\L1\Physics\PhysicsLevel.h" />
     <ClInclude Include="..\..\Src\L1\Physics\RigidBody.h" />
     <ClInclude Include="..\..\Src\L1\Physics\StaticMeshShape.h" />
     <ClInclude Include="..\..\Src\L1\Util\MD5.h" />
@@ -615,7 +615,7 @@
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsDebugDraw.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsServer.cpp" />
-    <ClCompile Include="..\..\Src\L1\Physics\PhysicsWorld.cpp" />
+    <ClCompile Include="..\..\Src\L1\Physics\PhysicsLevel.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\RigidBody.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\StaticMeshShape.cpp" />
     <ClCompile Include="..\..\Src\L1\Util\CRC.cpp" />

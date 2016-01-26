@@ -73,7 +73,7 @@ public:
 
 inline IPTR CParams::IndexOf(CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name) return i;
 	return INVALID_INDEX;
 }
@@ -81,7 +81,7 @@ inline IPTR CParams::IndexOf(CStrID Name) const
 
 inline CParam& CParams::Get(CStrID Name)
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name) return Params[i];
 	Sys::Error("Param \"%s\" does not exist", Name.CStr());
 	return *(n_new(CParam()));
@@ -90,7 +90,7 @@ inline CParam& CParams::Get(CStrID Name)
 
 inline const CParam& CParams::Get(CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name) return Params[i];
 	Sys::Error("Param \"%s\" does not exist", Name.CStr());
 	return *(n_new(CParam()));
@@ -100,7 +100,7 @@ inline const CParam& CParams::Get(CStrID Name) const
 //???what about nonconst?
 template<class T> inline const T& CParams::Get(CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>();
 	Sys::Error("Param \"%s\" does not exist", Name.CStr());
@@ -111,7 +111,7 @@ template<class T> inline const T& CParams::Get(CStrID Name) const
 //???what about nonconst?
 template<class T> inline const T& CParams::Get(CStrID Name, const T& Default) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>();
 	return Default;
@@ -120,7 +120,7 @@ template<class T> inline const T& CParams::Get(CStrID Name, const T& Default) co
 
 inline bool CParams::Get(CParam*& Dest, CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = &Params[i];
@@ -132,7 +132,7 @@ inline bool CParams::Get(CParam*& Dest, CStrID Name) const
 
 template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>(Dest);
 	FAIL;
@@ -142,7 +142,7 @@ template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 template<>
 inline bool CParams::Get<const CData*>(const CData*& Dest, CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = &Params[i].GetRawValue();
@@ -155,7 +155,7 @@ inline bool CParams::Get<const CData*>(const CData*& Dest, CStrID Name) const
 template<>
 inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = &Params[i].GetRawValue();
@@ -168,7 +168,7 @@ inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
 template<>
 inline bool CParams::Get<CData>(CData& Dest, CStrID Name) const
 {
-	for (UPTR i = 0; i < Params.GetCount(); i++)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 		{
 			Dest = Params[i].GetRawValue();
@@ -264,7 +264,7 @@ return Tmp;
 
 template<int Size> inline const CParam* CStaticParams<Size>::Get(CStrID Name) const
 {
-for (UPTR i=0; i<Size; i++)
+for (UPTR i=0; i<Size; ++i)
 if (Params[i].GetName()==Name) return Params[i];
 return NULL;
 }
@@ -272,7 +272,7 @@ return NULL;
 
 template<int Size> inline UPTR CStaticParams<Size>::IndexOf(CStrID Name) const
 {
-for (UPTR i=0; i<Size; i++)
+for (UPTR i=0; i<Size; ++i)
 if (Params[i].GetName()==Name) return i;
 return INVALID_INDEX;
 }

@@ -22,7 +22,7 @@ public:
 
 	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	bool			Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
-	virtual bool	AttachToLevel(CPhysicsWorld& World);
+	virtual bool	AttachToLevel(CPhysicsLevel& World);
 	virtual void	RemoveFromLevel();
 };
 

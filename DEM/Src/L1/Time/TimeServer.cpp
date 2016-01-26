@@ -135,10 +135,10 @@ void CTimeServer::Trigger()
 	PrevTime = CurrTime;
 	Time += FrameTime;
 
-	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
 		TimeSources.ValueAt(i)->Update((float)FrameTime);
 
-	for (UPTR i = 0; i < Timers.GetCount(); i++)
+	for (UPTR i = 0; i < Timers.GetCount(); ++i)
 	{
 		CTimer& Timer = Timers.ValueAt(i);
 		if (Timer.Active && !IsPaused(Timer.TimeSrc))

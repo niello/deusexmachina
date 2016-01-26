@@ -88,7 +88,7 @@ void* CPoolAllocator<T, ChunkSize, MaxChunks>::Allocate()
 		if (ChunkSize > 1)
 		{
 			Curr->Next = FreeRecords;
-			for (; Curr < End; Curr++)
+			for (; Curr < End; ++Curr)
 				(Curr + 1)->Next = Curr;
 			FreeRecords = End;
 		}

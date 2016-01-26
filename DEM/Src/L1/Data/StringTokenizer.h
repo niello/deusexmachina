@@ -28,6 +28,7 @@ public:
 	void		ResetCursor() { pCursor = pString; }
 	const char*	GetCurrToken() const { return pBuffer; }
 	char		GetCurrDelimiter() const { return CurrDelimiter; }
+	const char*	GetCursor() const { return pCursor; }
 	const char*	GetNextToken(const char* pSplitChars);
 	const char*	GetNextToken(char SplitChar);
 	const char*	GetNextToken(const char* pSplitChars, char Fence);

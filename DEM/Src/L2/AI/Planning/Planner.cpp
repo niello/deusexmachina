@@ -174,7 +174,7 @@ void CPlanner::FillNeighbors(CActor* pActor, const CNode& Node, CArray<CNode*>& 
 			continue;
 
 		CArray<CActionTpl*>& Actions = EffectToActions[i];
-		for (CArray<CActionTpl*>::CIterator ppAction = Actions.Begin(); ppAction != Actions.End(); ppAction++)
+		for (CArray<CActionTpl*>::CIterator ppAction = Actions.Begin(); ppAction != Actions.End(); ++ppAction)
 			if (ActionsAdded.FindIndexSorted(*ppAction) == INVALID_INDEX &&
 				pActor->IsActionAvailable(*ppAction) &&
 				(*ppAction)->ValidateContextPreconditions(pActor, Node.WSGoal))

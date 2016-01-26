@@ -580,7 +580,7 @@ void CHRDParser::DlmMatchChar(char Char, int Index, int Start, int End, int& Mat
 {
 	MatchStart = INVALID_INDEX;
 	int i = Start;
-	for (; i < End; i++)
+	for (; i < End; ++i)
 	{
 		if ((int)TableDlm[i].GetLength() < Index) continue;
 

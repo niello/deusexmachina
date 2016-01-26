@@ -36,7 +36,6 @@ protected:
 	PStaticEnvManager				StaticEnvManager;
 
 	CDict<CStrID, PGameLevel>		Levels;
-	PGameLevel						ActiveLevel;
 
 	CDict<CStrID, PEntityLoader>	Loaders;
 	PEntityLoader					DefaultLoader;
@@ -64,12 +63,9 @@ public:
 
 	bool			LoadLevel(CStrID ID, const Data::CParams& Desc);
 	void			UnloadLevel(CStrID ID);
-	bool			SetActiveLevel(CStrID ID);
-	CGameLevel*		GetActiveLevel() const { return ActiveLevel.GetUnsafe(); }
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
 	bool			ValidateLevel(CStrID ID);
-	bool			ValidateActiveLevel() { return ActiveLevel.IsNullPtr() || ValidateLevel(*ActiveLevel); }
 	bool			ValidateAllLevels();
 
 	void			EnumProfiles(CArray<CString>& Out) const;
@@ -90,6 +86,7 @@ public:
 	void			ExitGame();
 	bool			IsGameStarted() const { return GameFileName.IsValid(); }
 
+	//???need or use core server constants?
 	template<class T>
 	void			SetGlobalAttr(CStrID ID, const T& Value);
 	template<>
@@ -111,6 +108,7 @@ public:
 	void			PauseGame(bool Pause = true) const;
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }
 
+	//!!!per-view!
 	bool			HasMouseIntersection() const { return HasMouseIsect; }
 	CEntity*		GetEntityUnderMouse() const { return EntityUnderMouse.IsValid() ? EntityManager->GetEntity(EntityUnderMouse) : NULL; }
 	CStrID			GetEntityUnderMouseUID() const { return EntityUnderMouse; }

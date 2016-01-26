@@ -1,8 +1,9 @@
 #include "StaticObject.h"
 
 #include <Game/GameLevel.h>
+#include <Scene/SceneNode.h>
 #include <Physics/CollisionObjStatic.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
 
@@ -52,10 +53,10 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 
 	if (NodePath.IsValid())
 	{
-		//???optimize duplicate search?
-		Node = Level->GetSceneNode(NodePath.CStr(), false);
-		ExistingNode = Node.IsValidPtr();
-		if (!ExistingNode) Node = Level->GetSceneNode(NodePath.CStr(), true);
+		const char* pUnresolved;
+		Node = Level->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
+		ExistingNode = !pUnresolved;
+		if (pUnresolved) Node = Node->CreateChildChain(pUnresolved);
 		n_assert(Node.IsValidPtr());
 
 		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));

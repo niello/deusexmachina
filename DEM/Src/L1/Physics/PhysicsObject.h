@@ -20,7 +20,7 @@ namespace Data
 
 namespace Physics
 {
-class CPhysicsWorld;
+class CPhysicsLevel;
 
 class CPhysicsObject: public Core::CObject
 {
@@ -33,7 +33,7 @@ protected:
 	U16				Group;
 	U16				Mask;
 	btCollisionObject*	pBtCollObj;
-	CPhysicsWorld*		pWorld;
+	CPhysicsLevel*		pWorld;
 	void*				pUserPtr;
 
 	bool				Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
@@ -47,7 +47,7 @@ public:
 
 	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	virtual void		Term();
-	virtual bool		AttachToLevel(CPhysicsWorld& World);
+	virtual bool		AttachToLevel(CPhysicsLevel& World);
 	virtual void		RemoveFromLevel();
 	bool				IsInitialized() const { return Shape.IsValidPtr() && pBtCollObj; }
 	bool				IsAttachedToLevel() const { return !!pWorld; }
@@ -59,7 +59,7 @@ public:
 	void				GetGlobalAABB(CAABB& OutBox) const;
 	void				GetPhysicsAABB(CAABB& OutBox) const;
 	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
-	CPhysicsWorld*		GetWorld() const { return pWorld; }
+	CPhysicsLevel*		GetWorld() const { return pWorld; }
 	U16				GetCollisionGroup() const { return Group; }
 	U16				GetCollisionMask() const { return Mask; }
 	const vector3&		GetShapeOffset() const { return ShapeOffset; }

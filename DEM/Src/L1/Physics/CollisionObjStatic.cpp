@@ -1,6 +1,6 @@
 #include "CollisionObjStatic.h"
 
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/HeightfieldShape.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
@@ -39,7 +39,7 @@ bool CCollisionObjStatic::InternalInit()
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObjStatic::AttachToLevel(CPhysicsWorld& World)
+bool CCollisionObjStatic::AttachToLevel(CPhysicsLevel& World)
 {
 	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
 	pWorld->GetBtWorld()->addCollisionObject(pBtCollObj, Group, Mask);

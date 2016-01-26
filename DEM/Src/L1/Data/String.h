@@ -342,7 +342,7 @@ inline void CString::Strip(const char* CharSet)
 inline CString CString::Concatenate(const CArray<CString>& Strings, const CString& WhiteSpace)
 {
 	CString Result;
-	for (int i = 0; i < Strings.GetCount(); i++)
+	for (int i = 0; i < Strings.GetCount(); ++i)
 	{
 		Result.Add(Strings[i]);
 		if (i < Strings.GetCount() - 1)

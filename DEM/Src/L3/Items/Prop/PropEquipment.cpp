@@ -21,7 +21,7 @@ CPropEquipment::CPropEquipment()
 }
 //---------------------------------------------------------------------
 
-bool CPropEquipment::Equip(CStrID Slot, CItemStack* pStack, U16 Count)
+bool CPropEquipment::Equip(CStrID Slot, Items::CItemStack* pStack, U16 Count)
 {
 	if (!pStack || !pStack->IsValid()) FAIL;
 

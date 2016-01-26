@@ -98,7 +98,7 @@ inline CTimeServer::~CTimeServer()
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::ResetAll()
 {
-	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
 		TimeSources.ValueAt(i)->Reset();
 }
 //---------------------------------------------------------------------
@@ -108,7 +108,7 @@ inline void CTimeServer::ResetAll()
 // it, when the pause counter is != 0 it means, pause is activated.
 inline void CTimeServer::PauseAll()
 {
-	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
 		TimeSources.ValueAt(i)->Pause();
 }
 //---------------------------------------------------------------------
@@ -116,7 +116,7 @@ inline void CTimeServer::PauseAll()
 // This is usually called at the beginning of an application state.
 inline void CTimeServer::UnpauseAll()
 {
-	for (UPTR i = 0; i < TimeSources.GetCount(); i++)
+	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
 		TimeSources.ValueAt(i)->Unpause();
 }
 //---------------------------------------------------------------------

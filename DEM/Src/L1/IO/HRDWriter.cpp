@@ -13,7 +13,7 @@ namespace IO
 bool CHRDWriter::WriteParams(const Data::CParams& Value)
 {
 	CurrTabLevel = 0;
-	for (UPTR i = 0; i < Value.GetCount(); i++)
+	for (UPTR i = 0; i < Value.GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Value.Get(i);
 		if (!WriteParam(Prm)) FAIL;
@@ -164,7 +164,7 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 
 bool CHRDWriter::WriteIndent()
 {
-	for (int i = 0; i < CurrTabLevel; i++)
+	for (int i = 0; i < CurrTabLevel; ++i)
 		WRITE_STATIC_STRING("\t") //!!!or any other custom indentation sequence!
 	OK;
 }

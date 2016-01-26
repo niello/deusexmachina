@@ -25,7 +25,7 @@ PResource CResourceManager::RegisterResource(CStrID URI) //???need? avoid recrea
 PResource CResourceManager::RegisterResource(const char* pURI)
 {
 	//!!!TODO!
-	// Absolutize URI:
+	// Absolutize (expand) URI:
 	// - resolve assigns
 	// - if file system path, make relative to resource root (save space)
 	CStrID UID = CStrID(pURI);
@@ -40,15 +40,24 @@ PResource CResourceManager::RegisterResource(const char* pURI)
 }
 //---------------------------------------------------------------------
 
-void CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, CResourceLoader* pLoader, bool CloneOnCreate)
+bool CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, CResourceLoader* pLoader, bool CloneOnCreate)
 {
+	if (pRsrcType && pLoader && !pLoader->GetResultType().IsDerivedFrom(*pRsrcType)) FAIL;
+
 	CLoaderKey Key;
 	Key.Extension = CStrID(pFmtExtension);
 	Key.pRsrcType = pRsrcType;
-	CLoaderRec Rec;
-	Rec.Loader = pLoader;
-	Rec.CloneOnCreate = CloneOnCreate;
-	DefaultLoaders.Add(Key, Rec, true);
+
+	if (pLoader)
+	{
+		CLoaderRec Rec;
+		Rec.Loader = pLoader;
+		Rec.CloneOnCreate = CloneOnCreate;
+		DefaultLoaders.Add(Key, Rec, true);
+	}
+	else DefaultLoaders.Remove(Key);
+
+	OK;
 }
 //---------------------------------------------------------------------
 

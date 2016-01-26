@@ -341,7 +341,7 @@ inline
 void
 matrix44::mult_simple(const matrix44& m1)
 {
-    for (int i=0; i<4; i++)
+    for (UPTR i = 0; i < 4; ++i)
     {
         float mi0 = m[i][0];
         float mi1 = m[i][1];
@@ -479,7 +479,7 @@ inline
 void
 matrix44::scale(const vector3& s)
 {
-    for (int i=0; i<4; i++)
+    for (UPTR i = 0; i < 4; ++i)
     {
         m[i][0] *= s.x;
         m[i][1] *= s.y;
@@ -730,8 +730,7 @@ inline
 void
 matrix44::operator *= (const matrix44& m1)
 {
-    int i;
-    for (i=0; i<4; i++)
+    for (UPTR i = 0; i < 4; ++i)
     {
         float mi0 = m[i][0];
         float mi1 = m[i][1];

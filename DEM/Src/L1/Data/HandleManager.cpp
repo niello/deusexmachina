@@ -36,6 +36,18 @@ HHandle CHandleManager::OpenHandle(void* pData)
 }
 //---------------------------------------------------------------------
 
+HHandle CHandleManager::FindHandle(void* pData) const
+{
+	for (UPTR i = 0; i < HandleRecs.GetCount(); ++i)
+		if (HandleRecs[i].pData == pData)
+		{
+			NOT_IMPLEMENTED;
+		}
+
+	return INVALID_HANDLE;
+}
+//---------------------------------------------------------------------
+
 void CHandleManager::CloseHandle(HHandle Handle)
 {
 	UPTR Index = UPTR_LOW_HALF(Handle);

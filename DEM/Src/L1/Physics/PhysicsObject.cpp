@@ -2,10 +2,11 @@
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/Params.h>
+#include <IO/PathUtils.h>
 #include <Math/AABB.h>
 #include <Math/Matrix44.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
@@ -14,8 +15,6 @@
 namespace Physics
 {
 __ImplementClassNoFactory(Physics::CPhysicsObject, Core::CObject);
-
-PCollisionShape LoadCollisionShapeFromPRM(CStrID UID, const CString& FileName);
 
 bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 {
@@ -27,7 +26,7 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeURI);
 	if (!RShape->IsLoaded())
 	{
-		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
+		Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>(PathUtils::GetExtension(ShapeURI.CStr()));
 		if (Loader.IsNullPtr()) FAIL;
 		ResourceMgr->LoadResourceSync(*RShape, *Loader);
 		if (!RShape->IsLoaded()) FAIL;
@@ -86,7 +85,7 @@ void CPhysicsObject::Term()
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsObject::AttachToLevel(CPhysicsWorld& World)
+bool CPhysicsObject::AttachToLevel(CPhysicsLevel& World)
 {
 	if (!pBtCollObj) FAIL;
 

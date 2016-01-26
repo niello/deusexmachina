@@ -444,8 +444,8 @@ inline
 void
 matrix33::scale(const vector3& s)
 {
-    int i;
-    for (i=0; i<3; i++) {
+    for (UPTR i = 0; i < 3; ++i)
+	{
         m[i][0] *= s.x;
         m[i][1] *= s.y;
         m[i][2] *= s.z;
@@ -614,8 +614,8 @@ inline
 void
 matrix33::operator *= (const matrix33& m1)
 {
-    int i;
-    for (i=0; i<3; i++) {
+    for (UPTR i = 0; i < 3; ++i)
+	{
         float mi0 = m[i][0];
         float mi1 = m[i][1];
         float mi2 = m[i][2];

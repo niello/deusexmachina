@@ -1,9 +1,11 @@
 #include "SceneNode.h"
 
 #include <Scene/NodeController.h>
+#include <Data/StringTokenizer.h>
 
 namespace Scene
 {
+const UPTR MAX_NODE_NAME_LEN = 64;
 
 CSceneNode::~CSceneNode()
 {
@@ -20,9 +22,9 @@ CSceneNode::~CSceneNode()
 // Some nodes may be driven by a deffered controller, i.e. a controller that is driven by some closed external system
 // like a physics simulation, but is dependent on a parent node transform. Example is a rigid body carried by an
 // animated character. So, we update character animation, those providing correct physical constraint position,
-// then leave scene graph branch, perform physics simulation and finally update deffered rigidbody-controlled nodes.
+// then leave scene graph branch, perform physics simulation and finally update deffered rigid-body-controlled nodes.
 // NB: All deffered nodes are either processed or not, so there are at most two steps of scene graph updating -
-// 1st update down to first deffered node (non-inclusive) in each branch, 2nd update all nodes not updated in a 1st step.
+// 1st update down to first deffered node (not inclusive) in each branch, 2nd update all nodes not updated in a 1st step.
 void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
 								 bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes)
 {
@@ -55,7 +57,7 @@ void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
 	}
 	else UpdateWorldFromLocal();
 
-	// LOD attrs may disable some children, so process attrs before children
+	// LOD attrs may disable some children, so process attributes before children
 	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 		if (Attrs[i]->IsActive())
 			Attrs[i]->Update(pCOIArray, COICount);
@@ -113,35 +115,51 @@ CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 }
 //---------------------------------------------------------------------
 
-CSceneNode* CSceneNode::GetChild(const char* pPath, bool Create)
+CSceneNode* CSceneNode::CreateChildChain(const char* pPath)
 {
-	if (!pPath || !*pPath) return this;
+	CSceneNode* pCurrNode = this;
 
-	const UPTR MAX_NODE_NAME = 64;
-	char Name[MAX_NODE_NAME];
-	const char* pSrcCurr = pPath;
-	char* pDstCurr = Name;
-	while (*pSrcCurr != '.' && *pSrcCurr)
+	if (!pPath || !*pPath) return pCurrNode;
+
+	char Buffer[MAX_NODE_NAME_LEN];
+	Data::CStringTokenizer StrTok(pPath, Buffer, MAX_NODE_NAME_LEN);
+	while (StrTok.GetNextToken('.'))
+		pCurrNode = pCurrNode->CreateChild(CStrID(StrTok.GetCurrToken()));
+
+	return pCurrNode;
+}
+//---------------------------------------------------------------------
+
+// NB: no data is changed inside this method, but const_cast is required to return non-const node pointer.
+// If pUnresolvedPathPart == NULL, the child node is found, return this node. Else the deepest found node is returned.
+CSceneNode* CSceneNode::FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const
+{
+	const CSceneNode* pCurrNode = this;
+
+	if (!pPath || !*pPath)
 	{
-		*pDstCurr++ = *pSrcCurr++;
-		n_assert(pDstCurr < Name + MAX_NODE_NAME);
+		pUnresolvedPathPart = NULL;
+		return const_cast<CSceneNode*>(pCurrNode);
 	}
-	n_assert_dbg(pDstCurr > Name + 1);
-	*pDstCurr = 0;
-	while (*pSrcCurr == '.') ++pSrcCurr;
 
-	PSceneNode SelChild;
+	pUnresolvedPathPart = pPath;
 
-	CStrID NameID(Name);
-	IPTR Idx = Children.FindIndex(NameID);
-	if (Idx == INVALID_INDEX)
+	char Buffer[MAX_NODE_NAME_LEN];
+	Data::CStringTokenizer StrTok(pPath, Buffer, MAX_NODE_NAME_LEN);
+	while (StrTok.GetNextToken('.'))
 	{
-		if (!Create) return NULL;
-		SelChild = CreateChild(NameID);
+		CStrID ChildID(StrTok.GetCurrToken());
+		IPTR Idx = pCurrNode->Children.FindIndex(ChildID);
+		if (Idx == INVALID_INDEX) return const_cast<CSceneNode*>(pCurrNode);
+		else
+		{
+			pUnresolvedPathPart = StrTok.GetCursor();
+			pCurrNode = pCurrNode->Children.ValueAt(Idx);
+		}
 	}
-	else SelChild = GetChild(Idx);
 
-	return *pSrcCurr ? SelChild->GetChild(pSrcCurr, Create) : SelChild;
+	pUnresolvedPathPart = NULL;
+	return const_cast<CSceneNode*>(pCurrNode);
 }
 //---------------------------------------------------------------------
 

@@ -13,14 +13,13 @@ extern "C"
 
 namespace SI
 {
-using namespace Story;
 
 int CDlgMgr_GetDialogueState(lua_State* l)
 {
 	//args: dlg ID
 	//ret:	state as int
 	int ArgCount = lua_gettop(l);
-	if (!ArgCount || !lua_isstring(l, 1)) lua_pushinteger(l, DlgState_None);
+	if (!ArgCount || !lua_isstring(l, 1)) lua_pushinteger(l, Story::DlgState_None);
 	else lua_pushinteger(l, DlgMgr->GetDialogueState(CStrID(lua_tostring(l, 1))));
 	return 1;
 }
@@ -70,13 +69,13 @@ bool RegisterDlgSystem()
 	ScriptSrv->ExportCFunction("RejectDialogue", CDlgMgr_RejectDialogue);
 	ScriptSrv->ExportCFunction("CloseDialogue", CDlgMgr_CloseDialogue);
 
-	ScriptSrv->ExportIntegerConst("DlgState_None", DlgState_None);
-	ScriptSrv->ExportIntegerConst("DlgState_Requested", DlgState_Requested);
-	ScriptSrv->ExportIntegerConst("DlgState_InNode", DlgState_InNode);
-	ScriptSrv->ExportIntegerConst("DlgState_Waiting", DlgState_Waiting);
-	ScriptSrv->ExportIntegerConst("DlgState_InLink", DlgState_InLink);
-	ScriptSrv->ExportIntegerConst("DlgState_Finished", DlgState_Finished);
-	ScriptSrv->ExportIntegerConst("DlgState_Aborted", DlgState_Aborted);
+	ScriptSrv->ExportIntegerConst("DlgState_None", Story::DlgState_None);
+	ScriptSrv->ExportIntegerConst("DlgState_Requested", Story::DlgState_Requested);
+	ScriptSrv->ExportIntegerConst("DlgState_InNode", Story::DlgState_InNode);
+	ScriptSrv->ExportIntegerConst("DlgState_Waiting", Story::DlgState_Waiting);
+	ScriptSrv->ExportIntegerConst("DlgState_InLink", Story::DlgState_InLink);
+	ScriptSrv->ExportIntegerConst("DlgState_Finished", Story::DlgState_Finished);
+	ScriptSrv->ExportIntegerConst("DlgState_Aborted", Story::DlgState_Aborted);
 
 	lua_setglobal(l, "DlgMgr");
 

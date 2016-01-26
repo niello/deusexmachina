@@ -1,7 +1,7 @@
 #include "RigidBody.h"
 
 #include <Physics/BulletConv.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/MotionStateDynamic.h>
 #include <Data/Params.h>
 #include <Math/AABB.h>
@@ -65,7 +65,7 @@ void CRigidBody::InternalTerm()
 }
 //---------------------------------------------------------------------
 
-bool CRigidBody::AttachToLevel(CPhysicsWorld& World)
+bool CRigidBody::AttachToLevel(CPhysicsLevel& World)
 {
 	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
 

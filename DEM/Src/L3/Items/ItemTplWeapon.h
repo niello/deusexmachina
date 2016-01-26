@@ -11,8 +11,6 @@
 namespace Items
 {
 
-using namespace Dmg;
-
 class CItemTplWeapon: public CItemTpl
 {
 	__DeclareClass(CItemTplWeapon);
@@ -22,18 +20,18 @@ protected:
 public:
 
 	//???what of this can change per instance? (Sharpness or smth)
-	CStrID		WpnClass;	//???or store class ptr if WpnClass is structure? now it isn't, need only for role system
-	CStrID		AmmoItemID;	// If empty, need not ammo
-	float		RangeMin,
-				RangeMax;
-	float		ROF;		// Rate Of Fire, (milli?)seconds between two strikes. May depend on skill!
-	bool		Ranged;		// Does emit projectiles? //???is wpnclass prop?
-	bool		TwoHanded;	//???is wpnclass prop? per-item is more flexible
+	CStrID			WpnClass;	//???or store class ptr if WpnClass is structure? now it isn't, need only for role system
+	CStrID			AmmoItemID;	// If empty, need not ammo
+	float			RangeMin,
+					RangeMax;
+	float			ROF;		// Rate Of Fire, (milli?)seconds between two strikes. May depend on skill!
+	bool			Ranged;		// Does emit projectiles? //???is wpnclass prop?
+	bool			TwoHanded;	//???is wpnclass prop? per-item is more flexible
 	
 	//!!!???dmg to structure? is it dmgeffect or other struct?
 	//!!!Dmg will be much more flexible & rule-based. now temporary solution:
-	EDmgType	DmgType;
-	int			x, y, z;	// Damage value, calculated as xdy+z
+	Dmg::EDmgType	DmgType;
+	int				x, y, z;	// Damage value, calculated as xdy+z
 	
 	virtual void Init(CStrID SID, const Data::CParams& Params);
 };

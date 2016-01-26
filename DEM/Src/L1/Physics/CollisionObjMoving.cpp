@@ -1,7 +1,7 @@
 #include "CollisionObjMoving.h"
 
 #include <Physics/BulletConv.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/MotionStateKinematic.h>
 #include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
@@ -64,7 +64,7 @@ void CCollisionObjMoving::InternalTerm()
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObjMoving::AttachToLevel(CPhysicsWorld& World)
+bool CCollisionObjMoving::AttachToLevel(CPhysicsLevel& World)
 {
 	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
 

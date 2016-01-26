@@ -219,7 +219,7 @@ void CQuadTree<TObject, TStorage>::Build(U16 Col, U16 Row, U8 Level, CNode* pNod
 		pNode->pChild = pFirstFreeNode;
 		pFirstFreeNode += 4;
 
-		for (UPTR i = 0; i < 4; i++)
+		for (UPTR i = 0; i < 4; ++i)
 			pNode->pChild[i].pParent = pNode;
 
 		Col <<= 1;

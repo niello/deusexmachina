@@ -303,7 +303,7 @@ COGGTheoraPlayer::UpdateTexture()
     unsigned char* surfPtr=(unsigned char*)info.surfPointer;
     // update texture
     int i;
-    for (i = 0; i < height; i++)
+    for (i = 0; i < height; ++i)
         memcpy(&surfPtr[i*info.surfPitch],&rgbBuffer[i*videoWidth*4],line*4);
     // and unlock it
     pTexture->Unlock(0);
@@ -388,7 +388,7 @@ COGGTheoraPlayer::Decode(CTime DeltaTime)
     DoTextureUpdate = false;
     // now decode
     UPTR i;
-    for (i = 0; i < framesToDo; i++)
+    for (i = 0; i < framesToDo; ++i)
     {
         if (!isPlaying) break;
         DecodeNextFrame();

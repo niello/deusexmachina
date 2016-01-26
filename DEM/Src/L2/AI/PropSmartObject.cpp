@@ -32,7 +32,7 @@ bool CPropSmartObject::InternalActivate()
 		if (Desc->Get<Data::PParams>(DescSection, CStrID("Actions")))
 		{
 			Actions.BeginAdd(DescSection->GetCount());
-			for (UPTR i = 0; i < DescSection->GetCount(); i++)
+			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const Data::CParam& Prm = DescSection->Get(i);
 				const AI::CSmartAction* pTpl = AISrv->GetSmartAction(Prm.GetValue<CStrID>());

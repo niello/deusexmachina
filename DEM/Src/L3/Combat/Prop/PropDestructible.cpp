@@ -9,8 +9,6 @@ namespace Prop
 __ImplementClass(Prop::CPropDestructible, 'PDST', Game::CProperty);
 __ImplementPropertyStorage(CPropDestructible);
 
-using namespace Event;
-
 bool CPropDestructible::InternalActivate()
 {
 	//!!!!!DBG!
@@ -27,9 +25,9 @@ void CPropDestructible::InternalDeactivate()
 }
 //---------------------------------------------------------------------
 
-bool CPropDestructible::OnObjDamageDone(CEventDispatcher* pDispatcher, const CEventBase& Event)
+bool CPropDestructible::OnObjDamageDone(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	const ObjDamageDone& e = (const ObjDamageDone&)Event;
+	const Event::ObjDamageDone& e = (const Event::ObjDamageDone&)Event;
 
 	HP -= e.Amount;
 	Sys::Log("CEntity \"%s\": Fucking shit! I was damaged. HP:%d/%d\n",

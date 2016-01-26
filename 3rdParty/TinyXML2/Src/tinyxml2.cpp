@@ -26,12 +26,14 @@ distribution.
 #include <new>		// yes, this one new style header, is in the Android SDK.
 #if defined(ANDROID_NDK) || defined(__QNXNTO__)
 #   include <stddef.h>
+#   include <stdarg.h>
 #else
 #   include <cstddef>
+#   include <cstdarg>
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400 ) && (!defined WINCE)
-	// Microsoft visual studio, version 2005 and higher. Not WinCE.
+	// Microsoft Visual Studio, version 2005 and higher. Not WinCE.
 	/*int _snprintf_s(
 	   char *buffer,
 	   size_t sizeOfBuffer,
@@ -39,7 +41,7 @@ distribution.
 	   const char *format [,
 		  argument] ...
 	);*/
-	inline int TIXML_SNPRINTF( char* buffer, size_t size, const char* format, ... )
+	static inline int TIXML_SNPRINTF( char* buffer, size_t size, const char* format, ... )
 	{
 		va_list va;
 		va_start( va, format );
@@ -48,7 +50,7 @@ distribution.
 		return result;
 	}
 
-	inline int TIXML_VSNPRINTF( char* buffer, size_t size, const char* format, va_list va )
+	static inline int TIXML_VSNPRINTF( char* buffer, size_t size, const char* format, va_list va )
 	{
 		int result = vsnprintf_s( buffer, size, _TRUNCATE, format, va );
 		return result;
@@ -66,7 +68,7 @@ distribution.
 		#define TIXML_VSCPRINTF   _vscprintf // VS2003's C runtime has this, but VC6 C runtime or WinCE SDK doesn't have.
 	#else
 		// Microsoft Visual Studio 2003 and earlier or WinCE.
-		inline int TIXML_VSCPRINTF( const char* format, va_list va )
+		static inline int TIXML_VSCPRINTF( const char* format, va_list va )
 		{
 			int len = 512;
 			for (;;) {
@@ -75,10 +77,12 @@ distribution.
 				const int required = _vsnprintf(str, len, format, va);
 				delete[] str;
 				if ( required != -1 ) {
+					TIXMLASSERT( required >= 0 );
 					len = required;
 					break;
 				}
 			}
+			TIXMLASSERT( len >= 0 );
 			return len;
 		}
 	#endif
@@ -87,9 +91,10 @@ distribution.
 	//#warning( "Using sn* functions." )
 	#define TIXML_SNPRINTF	snprintf
 	#define TIXML_VSNPRINTF	vsnprintf
-	inline int TIXML_VSCPRINTF( const char* format, va_list va )
+	static inline int TIXML_VSCPRINTF( const char* format, va_list va )
 	{
 		int len = vsnprintf( 0, 0, format, va );
+		TIXMLASSERT( len >= 0 );
 		return len;
 	}
 	#define TIXML_SSCANF   sscanf
@@ -172,8 +177,10 @@ void StrPair::Reset()
 
 void StrPair::SetStr( const char* str, int flags )
 {
+    TIXMLASSERT( str );
     Reset();
     size_t len = strlen( str );
+    TIXMLASSERT( _start == 0 );
     _start = new char[ len+1 ];
     memcpy( _start, str, len+1 );
     _end = _start + len;
@@ -769,6 +776,7 @@ void XMLNode::DeleteChild( XMLNode* node )
     TIXMLASSERT( node );
     TIXMLASSERT( node->_document == _document );
     TIXMLASSERT( node->_parent == this );
+    Unlink( node );
     DeleteNode( node );
 }
 
@@ -865,12 +873,12 @@ XMLNode* XMLNode::InsertAfterChild( XMLNode* afterThis, XMLNode* addThis )
 
 
 
-const XMLElement* XMLNode::FirstChildElement( const char* value ) const
+const XMLElement* XMLNode::FirstChildElement( const char* name ) const
 {
     for( const XMLNode* node = _firstChild; node; node = node->_next ) {
         const XMLElement* element = node->ToElement();
         if ( element ) {
-            if ( !value || XMLUtil::StringEqual( element->Name(), value ) ) {
+            if ( !name || XMLUtil::StringEqual( element->Name(), name ) ) {
                 return element;
             }
         }
@@ -879,12 +887,12 @@ const XMLElement* XMLNode::FirstChildElement( const char* value ) const
 }
 
 
-const XMLElement* XMLNode::LastChildElement( const char* value ) const
+const XMLElement* XMLNode::LastChildElement( const char* name ) const
 {
     for( const XMLNode* node = _lastChild; node; node = node->_prev ) {
         const XMLElement* element = node->ToElement();
         if ( element ) {
-            if ( !value || XMLUtil::StringEqual( element->Name(), value ) ) {
+            if ( !name || XMLUtil::StringEqual( element->Name(), name ) ) {
                 return element;
             }
         }
@@ -893,12 +901,12 @@ const XMLElement* XMLNode::LastChildElement( const char* value ) const
 }
 
 
-const XMLElement* XMLNode::NextSiblingElement( const char* value ) const
+const XMLElement* XMLNode::NextSiblingElement( const char* name ) const
 {
     for( const XMLNode* node = _next; node; node = node->_next ) {
         const XMLElement* element = node->ToElement();
         if ( element
-                && (!value || XMLUtil::StringEqual( value, node->Value() ))) {
+                && (!name || XMLUtil::StringEqual( name, element->Name() ))) {
             return element;
         }
     }
@@ -906,12 +914,12 @@ const XMLElement* XMLNode::NextSiblingElement( const char* value ) const
 }
 
 
-const XMLElement* XMLNode::PreviousSiblingElement( const char* value ) const
+const XMLElement* XMLNode::PreviousSiblingElement( const char* name ) const
 {
     for( const XMLNode* node = _prev; node; node = node->_prev ) {
         const XMLElement* element = node->ToElement();
         if ( element
-                && (!value || XMLUtil::StringEqual( value, node->Value() ))) {
+                && (!name || XMLUtil::StringEqual( name, element->Name() ))) {
             return element;
         }
     }
@@ -991,12 +999,12 @@ char* XMLNode::ParseDeep( char* p, StrPair* parentEnd )
                 if ( ele->ClosingType() != XMLElement::OPEN ) {
                     mismatch = true;
                 }
-                else if ( !XMLUtil::StringEqual( endTag.GetStr(), node->Value() ) ) {
+                else if ( !XMLUtil::StringEqual( endTag.GetStr(), ele->Name() ) ) {
                     mismatch = true;
                 }
             }
             if ( mismatch ) {
-                _document->SetError( XML_ERROR_MISMATCHED_ELEMENT, node->Value(), 0 );
+                _document->SetError( XML_ERROR_MISMATCHED_ELEMENT, ele->Name(), 0 );
                 DeleteNode( node );
                 break;
             }
@@ -1696,7 +1704,7 @@ bool XMLElement::ShallowEqual( const XMLNode* compare ) const
 {
     TIXMLASSERT( compare );
     const XMLElement* other = compare->ToElement();
-    if ( other && XMLUtil::StringEqual( other->Value(), Value() )) {
+    if ( other && XMLUtil::StringEqual( other->Name(), Name() )) {
 
         const XMLAttribute* a=FirstAttribute();
         const XMLAttribute* b=other->FirstAttribute();
@@ -1769,7 +1777,8 @@ XMLDocument::XMLDocument( bool processEntities, Whitespace whitespace ) :
     _errorStr2( 0 ),
     _charBuffer( 0 )
 {
-    _document = this;	// avoid warning about 'this' in initializer list
+    // avoid VC++ C4355 warning about 'this' in initializer list (C4355 is off by default in VS2012+)
+    _document = this;
 }
 
 
@@ -1907,6 +1916,26 @@ XMLError XMLDocument::LoadFile( const char* filename )
     return _errorID;
 }
 
+// This is likely overengineered template art to have a check that unsigned long value incremented
+// by one still fits into size_t. If size_t type is larger than unsigned long type
+// (x86_64-w64-mingw32 target) then the check is redundant and gcc and clang emit
+// -Wtype-limits warning. This piece makes the compiler select code with a check when a check
+// is useful and code with no check when a check is redundant depending on how size_t and unsigned long
+// types sizes relate to each other.
+template
+<bool = (sizeof(unsigned long) >= sizeof(size_t))>
+struct LongFitsIntoSizeTMinusOne {
+    static bool Fits( unsigned long value )
+    {
+        return value < (size_t)-1;
+    }
+};
+
+template <>
+bool LongFitsIntoSizeTMinusOne<false>::Fits( unsigned long /*value*/ )
+{
+    return true;
+}
 
 XMLError XMLDocument::LoadFile( FILE* fp )
 {
@@ -1926,7 +1955,7 @@ XMLError XMLDocument::LoadFile( FILE* fp )
         return _errorID;
     }
 
-    if ( (unsigned long)filelength >= (size_t)-1 ) {
+    if ( !LongFitsIntoSizeTMinusOne<>::Fits( filelength ) ) {
         // Cannot handle files which won't fit in buffer together with null terminator
         SetError( XML_ERROR_FILE_READ_ERROR, 0, 0 );
         return _errorID;
@@ -1938,6 +1967,7 @@ XMLError XMLDocument::LoadFile( FILE* fp )
     }
 
     const size_t size = filelength;
+    TIXMLASSERT( _charBuffer == 0 );
     _charBuffer = new char[size+1];
     size_t read = fread( _charBuffer, 1, size, fp );
     if ( read != size ) {
@@ -1987,6 +2017,7 @@ XMLError XMLDocument::Parse( const char* p, size_t len )
     if ( len == (size_t)(-1) ) {
         len = strlen( p );
     }
+    TIXMLASSERT( _charBuffer == 0 );
     _charBuffer = new char[ len+1 ];
     memcpy( _charBuffer, p, len );
     _charBuffer[len] = 0;
@@ -2104,9 +2135,10 @@ void XMLPrinter::Print( const char* format, ... )
         vfprintf( _fp, format, va );
     }
     else {
-        int len = TIXML_VSCPRINTF( format, va );
+        const int len = TIXML_VSCPRINTF( format, va );
         // Close out and re-start the va-args
         va_end( va );
+        TIXMLASSERT( len >= 0 );
         va_start( va, format );
         TIXMLASSERT( _buffer.Size() > 0 && _buffer[_buffer.Size() - 1] == 0 );
         char* p = _buffer.PushArr( len ) - 1;	// back up over the null terminator.
@@ -2142,15 +2174,21 @@ void XMLPrinter::PrintString( const char* p, bool restricted )
                     while ( p < q ) {
                         const size_t delta = q - p;
                         // %.*s accepts type int as "precision"
-                        const int toPrint = ( INT_MAX < delta ) ? INT_MAX : delta;
+                        const int toPrint = ( INT_MAX < delta ) ? INT_MAX : (int)delta;
                         Print( "%.*s", toPrint, p );
                         p += toPrint;
                     }
+                    bool entityPatternPrinted = false;
                     for( int i=0; i<NUM_ENTITIES; ++i ) {
                         if ( entities[i].value == *q ) {
                             Print( "&%s;", entities[i].pattern );
+                            entityPatternPrinted = true;
                             break;
                         }
+                    }
+                    if ( !entityPatternPrinted ) {
+                        // TIXMLASSERT( entityPatternPrinted ) causes gcc -Wunused-but-set-variable in release
+                        TIXMLASSERT( false );
                     }
                     ++p;
                 }

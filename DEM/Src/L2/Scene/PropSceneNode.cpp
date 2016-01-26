@@ -36,10 +36,10 @@ bool CPropSceneNode::InternalActivate()
 	
 	if (NodePath.IsValid())
 	{
-		//???PERF: optimize duplicate search?
-		Node = GetEntity()->GetLevel()->GetSceneNode(NodePath.CStr(), false);
-		ExistingNode = Node.IsValidPtr();
-		if (!ExistingNode) Node = GetEntity()->GetLevel()->GetSceneNode(NodePath.CStr(), true);
+		const char* pUnresolved;
+		Node = GetEntity()->GetLevel()->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
+		ExistingNode = !pUnresolved;
+		if (pUnresolved) Node = Node->CreateChildChain(pUnresolved);
 		n_assert(Node.IsValidPtr());
 
 		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));

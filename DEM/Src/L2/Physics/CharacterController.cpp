@@ -2,7 +2,7 @@
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
-#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/ClosestNotMeRayResultCallback.h>
 #include <Data/Params.h>
@@ -53,7 +53,7 @@ void CCharacterController::Term()
 }
 //---------------------------------------------------------------------
 
-bool CCharacterController::AttachToLevel(CPhysicsWorld& World)
+bool CCharacterController::AttachToLevel(CPhysicsLevel& World)
 {
 	return Body.IsValidPtr() && Body->AttachToLevel(World);
 }

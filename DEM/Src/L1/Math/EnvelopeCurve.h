@@ -180,8 +180,7 @@ inline
 float nEnvelopeCurve::GetMaxPossibleValue() const
 {
     float maxVal = this->keyFrameValues[0];
-    int keyFrame;
-    for (keyFrame = 1; keyFrame < NumValues; keyFrame++)
+    for (UPTR keyFrame = 1; keyFrame < NumValues; ++keyFrame)
     {
         maxVal = n_max(maxVal, this->keyFrameValues[keyFrame]);
     }

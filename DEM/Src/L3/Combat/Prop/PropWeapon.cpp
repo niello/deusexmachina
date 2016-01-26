@@ -75,7 +75,7 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 	//calc rule may involve target params, like "relative" that damages in % of target's health
 
 	Event.Amount = z;
-	for (int i = 0; i < x; i++)
+	for (int i = 0; i < x; ++i)
 		Event.Amount += n_rand_int(1, y);
 
 	//!!!set flags like SuppresResistance etc!
