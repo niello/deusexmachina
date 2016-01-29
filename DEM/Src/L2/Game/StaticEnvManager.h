@@ -12,13 +12,14 @@
 
 //!!!DEBUG RENDER OF ACTIVE LEVEL!
 
+//!!!???instead of managing statics, may load pure scene nodes and physics objects without entities for static geometry!?
+
 namespace Game
 {
 #define StaticEnvMgr Game::CStaticEnvManager::Instance()
 
-class CStaticEnvManager: public Core::CObject
+class CStaticEnvManager
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CStaticEnvManager);
 
 private:
@@ -47,8 +48,6 @@ public:
 	CStaticObject*	GetStaticObject(CStrID UID) const;
 	bool			StaticObjectExists(CStrID UID) const { return !!GetStaticObject(UID); }
 };
-
-typedef Ptr<CStaticEnvManager> PStaticEnvManager;
 
 inline CStaticObject* CStaticEnvManager::GetStaticObject(CStrID UID) const
 {

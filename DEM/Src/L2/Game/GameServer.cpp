@@ -1,8 +1,11 @@
 #include "GameServer.h"
 
 #include <Game/EntityLoaderCommon.h>
+#include <Game/GameLevelView.h>
 #include <AI/AIServer.h>
 #include <Frame/SceneNodeValidateResources.h>
+#include <Frame/SceneNodeUpdateInSPS.h>
+#include <Frame/Camera.h>
 #include <Physics/PhysicsLevel.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
@@ -26,9 +29,6 @@ bool CGameServer::Open()
 	GameTimeSrc = n_new(Time::CTimeSource);
 	TimeSrv->AttachTimeSource(CStrID("Game"), GameTimeSrc);
 
-	EntityManager = n_new(CEntityManager);
-	StaticEnvManager = n_new(CStaticEnvManager);
-
 	if (DefaultLoader.IsNullPtr()) DefaultLoader = n_new(CEntityLoaderCommon);
 
 	IsOpen = true;
@@ -40,11 +40,12 @@ void CGameServer::Close()
 {
 	n_assert(IsOpen);
 
+	for (UPTR i = 0; i < LevelViews.GetCount(); ++i) n_delete(LevelViews[i]);
+	LevelViews.Clear();
+	LevelViewHandles.Clear();
+
 	TimeSrv->RemoveTimeSource(CStrID("Game"));
 	GameTimeSrc = NULL;
-
-	StaticEnvManager = NULL;
-	EntityManager = NULL;
 
 	IsOpen = false;
 }
@@ -58,8 +59,52 @@ void CGameServer::Trigger()
 
 	AISrv->Trigger(); // Pathfinding queries inside
 
+	float FrameTime = (float)GameTimeSrc->GetFrameTime();
+
+	UPTR ViewCount = LevelViews.GetCount();
+	vector3* pCOIArray = ViewCount ? (vector3*)_malloca(sizeof(vector3) * ViewCount) : NULL;
+
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
-		Levels.ValueAt(i)->Trigger();
+	{
+		CGameLevel* pLevel = Levels.ValueAt(i);
+
+		pLevel->FireEvent(CStrID("BeforeTransforms"));
+
+		UPTR COICount = 0;
+		for (UPTR i = 0; i < ViewCount; ++i)
+		{
+			CGameLevelView* pView = LevelViews[i];
+			if (pView->GetLevel() == pLevel)
+				pCOIArray[COICount++] = pView->GetCenterOfInterest();
+		}
+
+		Scene::CSceneNode* pSceneRoot = pLevel->GetSceneRoot();
+
+		DefferedNodes.Clear(false);
+		if (pSceneRoot) pSceneRoot->UpdateTransform(pCOIArray, COICount, false, &DefferedNodes);
+
+		Physics::CPhysicsLevel* pPhysLvl = pLevel->GetPhysics();
+		if (pPhysLvl)
+		{
+			pLevel->FireEvent(CStrID("BeforePhysics"));
+			pPhysLvl->Trigger(FrameTime);
+			pLevel->FireEvent(CStrID("AfterPhysics"));
+		}
+
+		for (UPTR i = 0; i < DefferedNodes.GetCount(); ++i)
+			DefferedNodes[i]->UpdateTransform(pCOIArray, COICount, true, NULL);
+
+		pLevel->FireEvent(CStrID("AfterTransforms"));
+
+		if (pSceneRoot && COICount > 0)
+		{
+			Frame::CSceneNodeUpdateInSPS Visitor;
+			Visitor.pSPS = pLevel->GetSPS();
+			pSceneRoot->AcceptVisitor(Visitor);
+		}
+	}
+
+	if (pCOIArray) _freea(pCOIArray);
 
 	EventSrv->FireEvent(CStrID("OnEndFrame"));
 }
@@ -139,10 +184,11 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 		Level->FireEvent(CStrID("OnEntitiesLoaded"));
 	}
 
-	Data::PDataArray SelArray;
-	if (Desc.Get(SelArray, CStrID("SelectedEntities")))
-		for (UPTR i = 0; i < SelArray->GetCount(); ++i)
-			Level->AddToSelection(SelArray->Get<CStrID>(i));
+	//!!!to view loading!
+	//Data::PDataArray SelArray;
+	//if (Desc.Get(SelArray, CStrID("SelectedEntities")))
+	//	for (UPTR i = 0; i < SelArray->GetCount(); ++i)
+	//		Level->AddToSelection(SelArray->Get<CStrID>(i));
 
 	EventSrv->FireEvent(CStrID("OnLevelLoaded"), P);
 
@@ -160,6 +206,19 @@ void CGameServer::UnloadLevel(CStrID ID)
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("ID"), ID);
 	EventSrv->FireEvent(CStrID("OnLevelUnloading"), P);
+
+	UPTR i = 0;
+	while (i < LevelViews.GetCount())
+	{
+		CGameLevelView* pView = LevelViews[i];
+		if (pView->GetLevel() == Level)
+		{
+			LevelViewHandles.CloseHandle(pView->GetHandle());
+			LevelViews.RemoveAt(i);
+			n_delete(pView);
+		}
+		else ++i;
+	}
 
 	Level->FireEvent(CStrID("OnEntitiesUnloading"));
 	EntityMgr->DeleteEntities(*Level);
@@ -183,7 +242,7 @@ bool CGameServer::ValidateLevel(CGameLevel& Level)
 	if (Level.GetSceneRoot())
 	{
 		Frame::CSceneNodeValidateResources Visitor;
-		Result = Visitor.Visit(*Level.GetSceneRoot());
+		Result = Level.GetSceneRoot()->AcceptVisitor(Visitor);
 	}
 	else Result = true; // Nothing to validate
 
@@ -193,6 +252,45 @@ bool CGameServer::ValidateLevel(CGameLevel& Level)
 	P->Set(CStrID("ID"), Level.GetID());
 	EventSrv->FireEvent(CStrID("OnLevelValidated"), P);
 	return Result;
+}
+//---------------------------------------------------------------------
+
+HHandle CGameServer::CreateLevelView(CStrID LevelID)
+{
+	IPTR Idx = Levels.FindIndex(LevelID);
+	if (Idx == INVALID_INDEX) return INVALID_HANDLE;
+
+	CGameLevel* pLevel = Levels.ValueAt(Idx);
+	if (!pLevel) return INVALID_HANDLE;
+
+	CGameLevelView* pView = n_new(CGameLevelView);
+
+	HHandle hView = LevelViewHandles.OpenHandle(pView);
+	if (hView == INVALID_HANDLE)
+	{
+		n_delete(pView);
+		return INVALID_HANDLE;
+	}
+
+	if (!pView->Setup(*pLevel, hView))
+	{
+		LevelViewHandles.CloseHandle(hView);
+		n_delete(pView);
+		return INVALID_HANDLE;
+	}
+
+	LevelViews.Add(pView);
+	return hView;
+}
+//---------------------------------------------------------------------
+
+void CGameServer::DestroyLevelView(HHandle hView)
+{
+	CGameLevelView* pView = (CGameLevelView*)LevelViewHandles.GetHandleData(hView);
+	if (!pView) return;
+	LevelViewHandles.CloseHandle(hView);
+	LevelViews.RemoveByValue(pView);
+	n_delete(pView);
 }
 //---------------------------------------------------------------------
 
@@ -392,7 +490,7 @@ void CGameServer::PauseGame(bool Pause) const
 
 bool CGameServer::CommitContinueData()
 {
-	EntityManager->DeferredDeleteEntities();
+	EntityManager.DeferredDeleteEntities();
 
 	//???!!!here or in Load/Unload level?
 	Data::PDataArray LoadedLevels = n_new(Data::CDataArray);
@@ -449,7 +547,7 @@ bool CGameServer::CommitContinueData()
 
 bool CGameServer::CommitLevelDiff(CGameLevel& Level)
 {
-	EntityManager->DeferredDeleteEntities();
+	EntityManager.DeferredDeleteEntities();
 
 	Data::PParams SGLevel = n_new(Data::CParams);
 	Data::PParams LevelDesc = DataSrv->LoadPRM(CString("Levels:") + Level.GetID().CStr() + ".prm");

@@ -60,6 +60,8 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	CSPSRecord* pRecord = RecordPool.Construct();
 	pRecord->GlobalBox = GlobalBox;
 	pRecord->pUserData = pUserData;
+	pRecord->pPrev = NULL;
+	pRecord->pNext = NULL;
 	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
 	GetDimensions(GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);

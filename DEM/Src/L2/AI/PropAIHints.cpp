@@ -52,7 +52,7 @@ void CPropAIHints::InternalDeactivate()
 		if (Rec.QTNode)
 		{
 			(*Rec.QTNode)->pQTNode->RemoveByHandle(Rec.QTNode);
-			(*Rec.QTNode)->pQTNode = NULL;
+			Rec.QTNode = NULL;
 		}
 	}
 

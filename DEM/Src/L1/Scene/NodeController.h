@@ -41,7 +41,7 @@ public:
 
 	CNodeController(): pNode(NULL) {}
 
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (!pNode) FAIL; pNode = pSceneNode; return !!pNode; }
+	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; return !!pNode; }
 	virtual void	OnDetachFromNode() { pNode = NULL; }
 
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;

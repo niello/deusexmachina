@@ -7,6 +7,8 @@
 
 // Associative container, internally implemented as an array of key-value pairs sorted by key
 
+//!!!FIXME: test RemoveAt without a KeepOrder flag! must be a bug!
+
 // Extension of CArray flags
 enum
 {

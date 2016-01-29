@@ -107,6 +107,9 @@ void CSceneNode::UpdateLocalFromWorld()
 
 CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 {
+	IPTR Idx = Children.FindIndex(ChildName);
+	if (Idx != INVALID_INDEX) return Children.ValueAt(Idx);
+
 	//!!!USE POOL!
 	PSceneNode Node = n_new(CSceneNode)(ChildName);
 	Node->pParent = this;

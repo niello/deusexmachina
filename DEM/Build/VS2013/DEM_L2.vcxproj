@@ -201,6 +201,7 @@
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\Action.h" />
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\ActionIdle.h" />
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\ActionSequence.h" />
+    <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h" />
     <ClInclude Include="..\..\Src\L2\Scripting\EntityScriptObject.h" />
     <ClInclude Include="..\..\Src\L2\Scripting\PropScriptable.h" />
     <ClInclude Include="..\..\Src\L2\UI\PropUIControl.h" />
@@ -270,6 +271,7 @@
     <ClCompile Include="..\..\Src\L2\AI\SmartObj\ActionTpls\ActionTplUseSmartObj.cpp" />
     <ClCompile Include="..\..\Src\L2\AI\Behaviour\ActionIdle.cpp" />
     <ClCompile Include="..\..\Src\L2\AI\Behaviour\ActionSequence.cpp" />
+    <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp" />
     <ClCompile Include="..\..\Src\L2\Scripting\EntityScriptObject.cpp" />
     <ClCompile Include="..\..\Src\L2\Scripting\PropScriptable.cpp" />
     <ClCompile Include="..\..\Src\L2\Scripting\ScriptObjectSIEx.cpp" />

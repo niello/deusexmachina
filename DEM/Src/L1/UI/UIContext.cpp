@@ -67,7 +67,7 @@ void CUIContext::UnsubscribeFromInput()
 
 void CUIContext::SetRootWindow(CUIWindow* pWindow)
 {
-	pRootWindow = pWindow;
+	RootWindow = pWindow;
 	if (pCtx)
 	{
 		pCtx->setRootWindow(pWindow ? pWindow->GetWnd() : NULL);

@@ -12,6 +12,8 @@ namespace Frame
 
 class CRenderPhaseGeometry: public CRenderPhase
 {
+	__DeclareClass(CRenderPhaseGeometry);
+
 protected:
 
 	//CArray<PRenderer>	BatchRenderers;
@@ -23,8 +25,10 @@ protected:
 
 public:
 
-	//virtual bool Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets);
-	//virtual void Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights);
+	//virtual ~CRenderPhaseGeometry() {}
+
+	//virtual bool Init(const Data::CParams& Desc, const CRenderPath& Owner);
+	virtual bool Render(CView& View);
 };
 
 }

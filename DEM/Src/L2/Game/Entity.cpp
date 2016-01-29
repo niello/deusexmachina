@@ -56,7 +56,8 @@ void CEntity::Deactivate()
 	n_assert(IsActive());
 	Flags.Set(ChangingActivity);
 
-	Level->RemoveFromSelection(UID);
+	NOT_IMPLEMENTED;
+	//Level->RemoveFromSelection(UID); //???fire event Level->OnEntityRemoved and react in views?
 	FireEvent(CStrID("OnEntityDeactivated"));
 
 	Flags.Clear(Active | ChangingActivity);

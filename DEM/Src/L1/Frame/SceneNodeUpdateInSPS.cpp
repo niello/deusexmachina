@@ -9,6 +9,8 @@ namespace Frame
 
 bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 {
+	n_assert_dbg(pSPS);
+
 	for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);

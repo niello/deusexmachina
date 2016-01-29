@@ -4,10 +4,10 @@
 
 #include <Time/TimeSource.h>
 #include <Game/GameLevel.h>
-#include <Game/EntityLoader.h>
-#include <Game/EntityManager.h>
-#include <Game/StaticEnvManager.h>
-#include <Animation/AnimClip.h>
+#include <Game/EntityLoader.h> //???really need? or maybe write one loader for entities and static objects?
+#include <Game/EntityManager.h>	//???need to be a singleton?
+#include <Game/StaticEnvManager.h>	//???need to be a singleton?
+#include <Data/HandleManager.h>
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
@@ -17,9 +17,11 @@
 
 namespace Game
 {
+class CGameLevelView;
+
 #define GameSrv Game::CGameServer::Instance()
 
-class CGameServer: public Core::CObject
+class CGameServer
 {
 	__DeclareClassNoFactory;
 	__DeclareSingleton(CGameServer);
@@ -32,26 +34,24 @@ protected:
 	CDataDict						Attrs;
 
 	Time::PTimeSource				GameTimeSrc;
-	PEntityManager					EntityManager;
-	PStaticEnvManager				StaticEnvManager;
-
-	CDict<CStrID, PGameLevel>		Levels;
-
+	CEntityManager					EntityManager;
+	CStaticEnvManager				StaticEnvManager;
+	//CCameraManager				CameraManager;
 	CDict<CStrID, PEntityLoader>	Loaders;
 	PEntityLoader					DefaultLoader;
 
-	CStrID							EntityUnderMouse;
-	bool							HasMouseIsect;
-	vector3							MousePos3D;
+	CDict<CStrID, PGameLevel>		Levels;
+	CArray<CGameLevelView*>			LevelViews;
+	Data::CHandleManager			LevelViewHandles;
+	CArray<Scene::CSceneNode*>		DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
 	bool ValidateLevel(CGameLevel& Level);
-	void UpdateMouseIntersectionInfo();
 	bool CommitContinueData();
 	bool CommitLevelDiff(CGameLevel& Level);
 
 public:
 
-	CGameServer(): IsOpen(false) { __ConstructSingleton; }
+	CGameServer(): IsOpen(false), LevelViews(0, 1), LevelViewHandles(1) { __ConstructSingleton; }
 	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
 
 	bool			Open();
@@ -67,6 +67,10 @@ public:
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
 	bool			ValidateLevel(CStrID ID);
 	bool			ValidateAllLevels();
+
+	HHandle			CreateLevelView(CStrID LevelID);
+	void			DestroyLevelView(HHandle hView);
+	CGameLevelView*	GetLevelView(HHandle hView) { return (CGameLevelView*)LevelViewHandles.GetHandleData(hView); }
 
 	void			EnumProfiles(CArray<CString>& Out) const;
 	bool			CreateProfile(const char* pName) const;
@@ -107,12 +111,6 @@ public:
 	bool			IsGamePaused() const { return GameTimeSrc->IsPaused(); }
 	void			PauseGame(bool Pause = true) const;
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }
-
-	//!!!per-view!
-	bool			HasMouseIntersection() const { return HasMouseIsect; }
-	CEntity*		GetEntityUnderMouse() const { return EntityUnderMouse.IsValid() ? EntityManager->GetEntity(EntityUnderMouse) : NULL; }
-	CStrID			GetEntityUnderMouseUID() const { return EntityUnderMouse; }
-	const vector3&	GetMousePos3D() const { return MousePos3D; }
 };
 
 inline CGameLevel* CGameServer::GetLevel(CStrID ID) const

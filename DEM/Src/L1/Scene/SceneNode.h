@@ -89,6 +89,7 @@ public:
 	template<class T> T*	FindFirstAttribute() const;
 
 	bool					IsRoot() const { return !pParent; }
+	bool					IsChild(const CSceneNode* pParentNode) const;
 	bool					IsActive() const { return Flags.Is(Active); }
 	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool					IsLocalTransformValid() const { return Flags.Is(LocalTransformValid); }
@@ -176,6 +177,18 @@ inline bool CSceneNode::AcceptVisitor(INodeVisitor& Visitor)
 	for (UPTR i = 0; i < Children.GetCount(); ++i)
 		if (!Children.ValueAt(i)->AcceptVisitor(Visitor)) FAIL;
 	OK;
+}
+//---------------------------------------------------------------------
+
+inline bool CSceneNode::IsChild(const CSceneNode* pParentNode) const
+{
+	const CSceneNode* pCurr = pParent;
+	while (pCurr)
+	{
+		if (pCurr == pParentNode) OK;
+		pCurr = pCurr->pParent;
+	}
+	FAIL;
 }
 //---------------------------------------------------------------------
 

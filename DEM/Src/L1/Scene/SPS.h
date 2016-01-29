@@ -92,6 +92,7 @@ public:
 	float					SceneMinY;
 	float					SceneMaxY;
 
+	void		Init(const vector3& Center, const vector3& Size, UPTR HierarchyDepth);
 	CSPSRecord*	AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData);
 	void		UpdateRecord(CSPSRecord* pRecord);
 	void		RemoveRecord(CSPSRecord* pRecord);
@@ -144,6 +145,14 @@ inline CSPSCell::CIterator CSPSCell::CIterator::operator --(int)
 	CIterator Tmp(pNode);
 	pNode = pNode->pPrev;
 	return Tmp;
+}
+//---------------------------------------------------------------------
+
+inline void CSPS::Init(const vector3& Center, const vector3& Size, UPTR HierarchyDepth)
+{
+	SceneMinY = Center.y - Size.y * 0.5f;
+	SceneMaxY = Center.y + Size.y * 0.5f;
+	QuadTree.Build(Center.x, Center.z, Size.x, Size.z, HierarchyDepth);
 }
 //---------------------------------------------------------------------
 

@@ -17,9 +17,8 @@ namespace Game
 {
 #define EntityMgr Game::CEntityManager::Instance()
 
-class CEntityManager: public Core::CObject
+class CEntityManager
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CEntityManager);
 
 protected:
@@ -78,8 +77,6 @@ public:
 	CProperty*	GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
 };
-
-typedef Ptr<CEntityManager> PEntityManager;
 
 inline void CEntityManager::DeleteEntity(CEntity& Entity)
 {

@@ -273,6 +273,9 @@
     <ClInclude Include="..\..\Src\L2\Animation\PropAnimation.h">
       <Filter>Animation</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L2\AI\AILevel.cpp">
@@ -493,6 +496,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Animation\PropAnimationSI.cpp">
       <Filter>Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

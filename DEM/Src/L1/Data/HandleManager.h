@@ -30,11 +30,12 @@ public:
 
 	CHandleManager(UPTR GrowSize = 128): HandleRecs(0, GrowSize), FirstFreeIndex(INVALID_HALF_INDEX), LastFreeIndex(INVALID_HALF_INDEX) {}
 
-	HHandle	OpenHandle(void* pData);
-	HHandle	FindHandle(void* pData) const;
-	void*	GetHandleData(HHandle Handle) const;
-	bool	IsHandleValid(HHandle Handle) const;
-	void	CloseHandle(HHandle Handle);
+	HHandle		OpenHandle(void* pData);
+	HHandle		FindHandle(void* pData) const;
+	void*		GetHandleData(HHandle Handle) const;
+	bool		IsHandleValid(HHandle Handle) const;
+	void		CloseHandle(HHandle Handle);
+	void		Clear();
 };
 
 inline void* CHandleManager::GetHandleData(HHandle Handle) const
@@ -52,6 +53,14 @@ inline bool CHandleManager::IsHandleValid(HHandle Handle) const
 	return
 		Index < HandleRecs.GetCount() &&
 		UPTR_HIGH_HALF(Handle) == UPTR_HIGH_HALF(HandleRecs[Index].MagicAndNextFreeIndex);
+}
+//---------------------------------------------------------------------
+
+inline void CHandleManager::Clear()
+{
+	HandleRecs.Clear();
+	FirstFreeIndex = INVALID_HALF_INDEX;
+	LastFreeIndex = INVALID_HALF_INDEX;
 }
 //---------------------------------------------------------------------
 

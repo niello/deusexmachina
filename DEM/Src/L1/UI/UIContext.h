@@ -16,7 +16,7 @@ class CUIContext: public Core::CObject
 {
 private:
 
-	CUIWindow*			pRootWindow; //???smart ptr?
+	PUIWindow			RootWindow;
 	CEGUI::GUIContext*	pCtx;
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
@@ -24,7 +24,7 @@ private:
 public:
 
 	//!!!pass OS window and render target params, either intermediate RT or swap chain index! or unify?
-	CUIContext(): pCtx(NULL), pRootWindow(NULL) {}
+	CUIContext(): pCtx(NULL) {}
 	~CUIContext();
 
 	void				Init(CEGUI::GUIContext* pContext);
@@ -37,7 +37,7 @@ public:
 	void				UnsubscribeFromInput();
 
 	void				SetRootWindow(CUIWindow* pWindow);
-	CUIWindow*			GetRootWindow() const { return pRootWindow; }
+	CUIWindow*			GetRootWindow() const { return RootWindow.GetUnsafe(); }
 	void				ShowGUI();
 	void				HideGUI();
 	void				ShowMouseCursor();

@@ -6,7 +6,6 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CEntityManager, Core::CObject);
 __ImplementSingleton(Game::CEntityManager);
 
 CEntityManager::~CEntityManager()

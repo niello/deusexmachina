@@ -371,7 +371,6 @@
     <ClInclude Include="..\..\Src\L1\Math\Plane.h" />
     <ClInclude Include="..\..\Src\L1\Math\Polar.h" />
     <ClInclude Include="..\..\Src\L1\Math\Quaternion.h" />
-    <ClInclude Include="..\..\Src\L1\Math\Rect.h" />
     <ClInclude Include="..\..\Src\L1\Math\Sphere.h" />
     <ClInclude Include="..\..\Src\L1\Math\TransformSRT.h" />
     <ClInclude Include="..\..\Src\L1\Math\Triangle.h" />

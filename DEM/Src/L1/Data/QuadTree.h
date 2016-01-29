@@ -274,8 +274,11 @@ template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::AddObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ,
 													CNode*& pOutNode, CHandle* pOutHandle)
 {
-	pOutNode = RelocateAndUpdateCounters(GetRootNode(), CenterX, CenterZ, HalfSizeX, HalfSizeZ);
-	CHandle Handle = pOutNode->Data.Add(Object);
+	CNode* pNode = GetRootNode();
+	++pNode->TotalObjCount;
+	pNode = RelocateAndUpdateCounters(pNode, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	CHandle Handle = pNode->Data.Add(Object);
+	pOutNode = pNode;
 	if (pOutHandle) *pOutHandle = Handle;
 }
 //---------------------------------------------------------------------

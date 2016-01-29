@@ -168,7 +168,7 @@ void CModel::UpdateInSPS(Scene::CSPS& SPS)
 	if (!pSPSRecord)
 	{
 		CAABB Box;
-		GetGlobalAABB(pSPSRecord->GlobalBox); //???!!!LOD?! //???calc cached and reuse here?
+		GetGlobalAABB(Box); //???!!!LOD?! //???calc cached and reuse here?
 		pSPSRecord = SPS.AddRecord(Box, this);
 	}
 	else if (pNode->IsWorldMatrixChanged()) //!!! || Group.LocalBox changed

@@ -15,16 +15,15 @@ private:
 	T*		pData;
 	UPTR	Count;
 
-	void	Allocate(UPTR NewSize);
 	void	Copy(const CFixedArray<T>& src);
-	void	Delete();
+	void	Delete() { SAFE_DELETE_ARRAY(pData); Count = 0; }
 
 public:
 
 	typedef T* CIterator;
 
 	CFixedArray(): Count(0), pData(NULL) {}
-	CFixedArray(UPTR _Size): Count(0), pData(NULL) { Allocate(_Size); }
+	CFixedArray(UPTR _Size): Count(0), pData(NULL) { SetSize(_Size); }
 	CFixedArray(const CFixedArray<T>& Other): Count(0), pData(NULL) { Copy(Other); }
 	~CFixedArray() { if (pData) n_delete_array(pData); }
 
@@ -39,7 +38,7 @@ public:
 	template<class TCmp>
 	void		Sort() { std::sort(pData, pData + Count, TCmp()); }
 
-	void		SetSize(UPTR NewSize) { Allocate(NewSize); }
+	void		SetSize(UPTR NewSize, bool KeepValues = false);
 	UPTR		GetCount() const { return Count; }
 	T*			GetPtr() { return pData; }
 
@@ -49,19 +48,32 @@ public:
 	T&			operator [](UPTR Index) const;
 };
 
-template<class T> void CFixedArray<T>::Allocate(UPTR NewSize)
+template<class T> void CFixedArray<T>::SetSize(UPTR NewSize, bool KeepValues)
 {
 	if (NewSize == Count) return;
-	if (pData) n_delete_array(pData);
+
+	if (KeepValues)
+	{
+		T* pOldData = pData;
+		pData = (NewSize > 0) ? n_new_array(T, NewSize) : NULL;
+		UPTR MinSize = n_min(NewSize, Count);
+		for (UPTR i = 0; i < MinSize; ++i) pData[i] = pOldData[i];
+		if (pOldData) n_delete_array(pOldData);
+	}
+	else
+	{
+		if (pData) n_delete_array(pData);
+		pData = (NewSize > 0) ? n_new_array(T, NewSize) : NULL;
+	}
+
 	Count = NewSize;
-	pData = (NewSize > 0) ? n_new_array(T, NewSize) : NULL;
 }
 //---------------------------------------------------------------------
 
 template<class T> void CFixedArray<T>::Copy(const CFixedArray<T>& Other)
 {
 	if (this == &Other) return;
-	Allocate(Other.Count);
+	SetSize(Other.Count);
 	for (UPTR i = 0; i < Count; ++i) pData[i] = Other.pData[i];
 }
 //---------------------------------------------------------------------
@@ -70,15 +82,8 @@ template<class T> void CFixedArray<T>::Copy(const CFixedArray<T>& Other)
 template<class T> void CFixedArray<T>::RawCopyFrom(const T* pSrc, UPTR SrcCount)
 {
 	if (!pSrc) return;
-	Allocate(SrcCount);
+	SetSize(SrcCount);
 	if (SrcCount) memcpy(pData, pSrc, SrcCount * sizeof(T));
-}
-//---------------------------------------------------------------------
-
-template<class T> void CFixedArray<T>::Delete()
-{
-	SAFE_DELETE_ARRAY(pData);
-	Count = 0;
 }
 //---------------------------------------------------------------------
 
@@ -90,7 +95,7 @@ template<class T> int CFixedArray<T>::FindIndex(const T& Elm) const
 }
 //---------------------------------------------------------------------
 
-template<class T> T& CFixedArray<T>::operator [](UPTR Index) const
+template<class T> inline T& CFixedArray<T>::operator [](UPTR Index) const
 {
 	n_assert(pData && Index < Count);
 	return pData[Index];

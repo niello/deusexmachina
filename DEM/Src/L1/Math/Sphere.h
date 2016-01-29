@@ -2,7 +2,7 @@
 #define N_SPHERE_H
 
 #include <Math/AABB.h>
-#include <Math/Rect.h>
+#include <Data/Regions.h>
 
 // A 3-dimensional sphere.
 // (C) 2004 RadonLabs GmbH
@@ -27,7 +27,7 @@ public:
 	bool		intersects(const sphere& s) const;
 	EClipStatus	GetClipStatus(const CAABB& box) const;
 	bool		intersect_sweep(const vector3& va, const sphere& sb, const vector3& vb, float& u0, float& u1) const;
-	rectangle	project_screen_rh(const matrix44& modelView, const matrix44& projection, float nearZ) const;
+	Data::CRect	project_screen_rh(const matrix44& modelView, const matrix44& projection, float nearZ) const;
 };
 
 inline bool sphere::intersects(const sphere& s) const
@@ -161,7 +161,7 @@ inline bool sphere::intersect_sweep(const vector3& va, const sphere&  sb, const 
 
 // Project the sphere (defined in global space) to a screen space rectangle, given the current right-handed
 // View and Projection matrices. The method assumes that the sphere is at least partially visible.
-inline rectangle sphere::project_screen_rh(const matrix44& view, const matrix44& projection, float nearZ) const
+inline Data::CRect sphere::project_screen_rh(const matrix44& view, const matrix44& projection, float nearZ) const
 {
     // compute center point of the sphere in view space
     vector3 viewPos = view * this->p;
@@ -179,7 +179,7 @@ inline rectangle sphere::project_screen_rh(const matrix44& view, const matrix44&
     float top    = Saturate(0.5f * (1.0f + (screenPos.y + screenSize.y)));
     float bottom = Saturate(0.5f * (1.0f + (screenPos.y - screenSize.y)));
 
-    return rectangle(vector2(left, top), vector2(right, bottom));
+    return Data::CRect((IPTR)left, (IPTR)top, (UPTR)(right - left), (UPTR)(bottom - top));
 }
 //---------------------------------------------------------------------
 

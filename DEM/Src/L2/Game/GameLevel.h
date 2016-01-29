@@ -4,11 +4,10 @@
 
 #include <Events/EventDispatcher.h>
 #include <Scene/SPS.h>
-#include <Frame/View.h>
-#include <Math/Rect.h>
+#include <Data/Regions.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
-// Game level also allows to perform different queries on a location.
+// In MVC pattern level would be a Model.
 
 namespace Data
 {
@@ -60,20 +59,13 @@ protected:
 	CAABB						BBox;			// Now primarily for culling through a spatial partitioning structure
 	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
-	CArray<CStrID>				SelectedEntities;
 
 	Scene::PSceneNode			SceneRoot;
 	Scene::CSPS					SPS;			// Spatial partitioning structure
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
-	CArray<Scene::CSceneNode*>	DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
-	CArray<Frame::CView*>		Views;
 	vector4						AmbientLight;
-	//!!!???if PCameraManager is really useful, move it there!
-	//Scene::PCameraManager		CameraManager;	//???!!!Render::?! //???manage cameras here in a level itself?
-	//Frame::PCamera				MainCamera;
-	bool						AutoAdjustCameraAspect;
 	//Fog settings
 	//???shadow settings?
 	//!!!to World::CNatureManager or smth like (weather, time of day etc) and set to the render server directly!
@@ -82,48 +74,39 @@ protected:
 
 public:
 
-	CGameLevel(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f), AutoAdjustCameraAspect(true) {}
+	CGameLevel(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f) {}
 	virtual ~CGameLevel() { Term(); }
 
 	bool					Init(CStrID LevelID, const Data::CParams& Desc);
 	void					Term();
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
-	void					Trigger();
-
-	void					RenderScene();
-	void					RenderDebug();
-
-	//???view ID?
-	Frame::CView*			CreateView(/*const char* pCameraNodePath, mb also camera attr order number, 0 by default*/);
-	void					DestroyView(Frame::CView* pView);
+	//void					RenderDebug();
 
 	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
 
 	//!!!ensure there are SPS-accelerated queries!
-	// Screen queries //???pass CCamera or CView ID?
+	// Screen queries
+	//???pass camera? or move to view? here is more universal, but may need renaming as there is no "screen" at the server part
+	//can add shortcut methods to a View, with these names, calling renamed level methods with a view camera
 	bool					GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
-	UPTR					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const;
+	UPTR					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const;
 	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
-	bool					GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+	bool					GetEntityScreenRect(Data::CRect& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 
 	// Physics-based queries
 	UPTR					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
 	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
 
-	//???central or per-client / view?
-	void					AddToSelection(CStrID EntityID);
-	bool					RemoveFromSelection(CStrID EntityID);
-	void					ClearSelection() { SelectedEntities.Clear(); }
-	const CArray<CStrID>&	GetSelection() const { return SelectedEntities; }
-	UPTR					GetSelectedCount() const { return SelectedEntities.GetCount(); }
-	bool					IsSelected(CStrID EntityID) const { return SelectedEntities.Contains(EntityID); }
+	//Other queries
+	bool					HostsEntity(CStrID EntityID) const;
 
 	CStrID					GetID() const { return ID; }
 	const CString&			GetName() const { return Name; }
 
 	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.GetUnsafe(); }
+	Scene::CSPS*			GetSPS() { return &SPS; }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.GetUnsafe(); }
 	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }
 };

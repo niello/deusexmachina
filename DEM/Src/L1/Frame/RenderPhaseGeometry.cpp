@@ -2,10 +2,29 @@
 
 //#include <Data/Params.h>
 //#include <Data/DataArray.h>
-//#include <Core/Factory.h>
+#include <Frame/View.h>
+#include <Core/Factory.h>
 
 namespace Frame
 {
+__ImplementClass(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
+
+bool CRenderPhaseGeometry::Render(CView& View)
+{
+	if (!View.pSPS || !View.pCamera) OK;
+
+	View.UpdateVisibilityCache();
+	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
+
+	// Build render queue of objects of interest (renderers, materials, shaders/techs)
+	// Sort render queue if necessary
+	// Setup render target etc
+	// Render the queue, calling renderers for batch-processing a queue from the curr head, returning a new head
+	//   May store and compare renderer ptr or ID
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 //bool CPassGeometry::Init(CStrID PassName, const Data::CParams& Desc, const CDict<CStrID, PRenderTarget>& RenderTargets)
 //{

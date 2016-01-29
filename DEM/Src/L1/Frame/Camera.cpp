@@ -56,10 +56,11 @@ void CCamera::Update(const vector3* pCOIArray, UPTR COICount)
 void CCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const
 {
 	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
-	vector3 LocalMousePos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
-	LocalMousePos.y = -LocalMousePos.y;
-	OutRay.Start = GetInvViewMatrix() * LocalMousePos;
-	OutRay.Vector = OutRay.Start - GetInvViewMatrix().Translation();
+	vector3 ViewLocalPos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
+	ViewLocalPos.y = -ViewLocalPos.y;
+	const matrix44&	InvView = GetInvViewMatrix();
+	OutRay.Start = InvView * ViewLocalPos;
+	OutRay.Vector = OutRay.Start - InvView.Translation();
 	OutRay.Vector *= (Length / OutRay.Length());
 }
 //---------------------------------------------------------------------
@@ -70,7 +71,7 @@ void CCamera::GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY)
 	WorldPos.w = 0.f;
 	WorldPos = Proj * WorldPos;
 	WorldPos /= WorldPos.w;
-	OutRelX = WorldPos.x * 0.5f + 0.5f;
+	OutRelX = 0.5f + WorldPos.x * 0.5f;
 	OutRelY = 0.5f - WorldPos.y * 0.5f;
 }
 //---------------------------------------------------------------------

@@ -106,7 +106,7 @@ void CLight::UpdateInSPS(Scene::CSPS& SPS)
 		if (!pSPSRecord)
 		{
 			CAABB Box;
-			GetGlobalAABB(pSPSRecord->GlobalBox); //???calc cached and reuse here?
+			GetGlobalAABB(Box); //???calc cached and reuse here?
 			pSPSRecord = SPS.AddRecord(Box, this);
 		}
 		else if (Flags.Is(WorldMatrixChanged)) //!!! || Range/Cone changed

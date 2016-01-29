@@ -232,6 +232,8 @@ void CAILevel::RenderDebug()
 		duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
 		//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
 
+		NOT_IMPLEMENTED;
+		/*
 		if (GameSrv->HasMouseIntersection())
 		{
 			const float Extents[3] = { 0.f, 1.f, 0.f };
@@ -247,6 +249,7 @@ void CAILevel::RenderDebug()
 				duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Ref, duRGBA(224, 224, 224, 32));
 			}
 		}
+		*/
 	}
 }
 //---------------------------------------------------------------------

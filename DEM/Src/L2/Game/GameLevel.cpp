@@ -1,10 +1,12 @@
 #include "GameLevel.h"
 
-#include <Game/Entity.h>
-#include <Game/GameServer.h>
-#include <Scripting/ScriptObject.h>
+#include <Frame/View.h>
 #include <Frame/Camera.h>
-#include <Frame/SceneNodeUpdateInSPS.h>
+#include <Game/EntityManager.h>
+#include <Game/StaticEnvManager.h>
+#include <Game/Entity.h>
+#include <Game/StaticObject.h>
+#include <Scripting/ScriptObject.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsLevel.h>
@@ -73,7 +75,7 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 		int SPSHierarchyDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
 
-		SPS.QuadTree.Build(Center.x, Center.z, Extents.x * 2.f, Extents.z * 2.f, (U8)SPSHierarchyDepth);
+		SPS.Init(Center, Extents * 2.f, (U8)SPSHierarchyDepth);
 	}
 
 	if (Desc.Get(SubDesc, CStrID("Physics")))
@@ -120,8 +122,6 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 
 void CGameLevel::Term()
 {
-	for (UPTR i = 0; i < Views.GetCount(); ++i) n_delete(Views[i]);
-	Views.Clear();
 	GlobalSub = NULL;
 	AILevel = NULL;
 	PhysicsLevel = NULL;
@@ -136,10 +136,11 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	FireEvent(CStrID("OnLevelSaving")); //, &OutDesc);
 
 	// Save selection
-	Data::PDataArray SGSelection = n_new(Data::CDataArray);
-	for (UPTR i = 0; i < SelectedEntities.GetCount(); ++i)
-		SGSelection->Add(SelectedEntities[i]);
-	OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
+	//!!!in views saving!
+	//Data::PDataArray SGSelection = n_new(Data::CDataArray);
+	//for (UPTR i = 0; i < SelectedEntities.GetCount(); ++i)
+	//	SGSelection->Add(SelectedEntities[i]);
+	//OutDesc.Set(CStrID("SelectedEntities"), SGSelection);
 
 	// Save nav. regions status
 	// No iterator, no consistency. Needs redesign.
@@ -218,40 +219,6 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 }
 //---------------------------------------------------------------------
 
-void CGameLevel::Trigger()
-{
-	//per-view
-	//!!!UpdateMouseIntersectionInfo();
-
-	FireEvent(CStrID("BeforeTransforms"));
-
-	UPTR ViewCount = Views.GetCount();
-	UPTR COICount = 0;
-	vector3* pCOIArray = (vector3*)_malloca(sizeof(vector3) * ViewCount);
-	for (UPTR i = 0; i < ViewCount; ++i)
-	{
-		Frame::CView* pView = Views[i];
-		if (pView && pView->pCamera)
-			pCOIArray[COICount++] = pView->pCamera->GetNode()->GetWorldPosition();
-	}
-
-	DefferedNodes.Clear(false);
-	if (SceneRoot.IsValidPtr()) SceneRoot->UpdateTransform(pCOIArray, COICount, false, &DefferedNodes);
-
-	if (PhysicsLevel.IsValidPtr())
-	{
-		FireEvent(CStrID("BeforePhysics"));
-		PhysicsLevel->Trigger((float)GameSrv->GetFrameTime());
-		FireEvent(CStrID("AfterPhysics"));
-	}
-
-	for (UPTR i = 0; i < DefferedNodes.GetCount(); ++i)
-		DefferedNodes[i]->UpdateTransform(pCOIArray, COICount, true, NULL);
-
-	FireEvent(CStrID("AfterTransforms"));
-}
-//---------------------------------------------------------------------
-
 /*
 //!!!need to know what view to test!
 void CGameServer::UpdateMouseIntersectionInfo()
@@ -319,59 +286,12 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 }
 //---------------------------------------------------------------------
 
-//???use handle manager or array with empty unused records instead of an array of pointers?
-Frame::CView* CGameLevel::CreateView(/*const char* pCameraNodePath*/)
+/*void CGameLevel::RenderScene()
 {
-	Frame::CView* pView = n_new(Frame::CView);
-	pView->pSPS = &SPS;
-	Views.Add(pView);
-	return pView;
-}
-//---------------------------------------------------------------------
-
-void CGameLevel::DestroyView(Frame::CView* pView)
-{
-	IPTR Idx = Views.FindIndex(pView);
-	if (Idx != INVALID_INDEX)
-	{
-		Views.RemoveAt(Idx);
-		n_delete(pView);
-	}
-}
-//---------------------------------------------------------------------
-
-void CGameLevel::RenderScene()
-{/*
-	Render::PFrameShader ScreenFrameShader = RenderSrv->GetScreenFrameShader();
-	if (!ScreenFrameShader.IsValid()) return;
-
-	//???!!!if camera manager is useful, get from it instead of storing MainCamera?!
-	if (!MainCamera.IsValid()) return;
-
-	CArray<Render::CRenderObject*>	VisibleObjects;	//PERF: //???use buckets instead? may be it will be faster
-	CArray<Render::CLight*>			VisibleLights;
-
-	Render::CSceneNodeUpdateInSPS Visitor;
-	Visitor.pSPS = &SPS;
-	Visitor.pVisibleObjects = &VisibleObjects;
-	Visitor.pVisibleLights = &VisibleLights;
-	if (SceneRoot.IsValid()) Visitor.Visit(*SceneRoot);
-
-	//!!!FrameShader OPTIONS!
-	bool FrameShaderUsesLights = true;
-	//!!!filters (ShadowCasters etc)!
-
-	const matrix44& ViewProj = MainCamera->GetViewProjMatrix();
-
-	//!!!filter flags (from frame shader - or-sum of pass flags, each pass will check requirements inside itself)
-	CArray<Render::CLight*>* pVisibleLights = FrameShaderUsesLights ? &VisibleLights : NULL;
-	SPSCollectVisibleObjects(SPS.GetRootNode(), ViewProj, BBox, &VisibleObjects, pVisibleLights);
-
+//???add to each view variables?
 	RenderSrv->SetAmbientLight(AmbientLight);
 	RenderSrv->SetCameraPosition(MainCamera->GetPosition());
 	RenderSrv->SetViewProjection(ViewProj);
-
-	ScreenFrameShader->Render(&VisibleObjects, pVisibleLights);
 */
 // Dependent cameras:
 	// Some shapes may request textures that are RTs of specific cameras
@@ -427,9 +347,10 @@ void CGameLevel::RenderScene()
 	//    (link meshes and lights(here?), sort meshes, batch instances, select lighting code,
 	//     set shared state of instance sets)
 	// - end pass
-}
-//---------------------------------------------------------------------
+//}
+////---------------------------------------------------------------------
 
+/*
 //!!!???bool flags what subsystems to render?
 void CGameLevel::RenderDebug()
 {
@@ -444,6 +365,7 @@ void CGameLevel::RenderDebug()
 	}
 }
 //---------------------------------------------------------------------
+*/
 
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
@@ -469,7 +391,7 @@ bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOu
 }
 //---------------------------------------------------------------------
 
-UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const rectangle& RelRect) const
+UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const
 {
 	// calc frustum
 	// query SPS with this frustum
@@ -507,7 +429,7 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity, const vector3* Offset) const
+bool CGameLevel::GetEntityScreenRect(Data::CRect& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
 	Frame::PCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
@@ -517,8 +439,12 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 	{
 		matrix44 Tfm;
 		if (!Entity.GetAttr(Tfm, CStrID("Transform"))) FAIL;
-		MainCamera->GetPoint2D(Tfm.Translation(), Out.v0.x, Out.v0.y);
-		Out.v1 = Out.v0;
+		float X, Y;
+		MainCamera->GetPoint2D(Tfm.Translation(), X, Y);
+		Out.X = (IPTR)X;
+		Out.Y = (IPTR)Y;
+		Out.W = 0;
+		Out.H = 0;
 		OK;
 	}
 
@@ -531,20 +457,26 @@ bool CGameLevel::GetEntityScreenRect(rectangle& Out, const Game::CEntity& Entity
 		AABB.Min += *Offset;
 	}
 
-	MainCamera->GetPoint2D(AABB.GetCorner(0), Out.v0.x, Out.v0.y);
-	Out.v1 = Out.v0;
+	float X, Y;
+	MainCamera->GetPoint2D(AABB.GetCorner(0), X, Y);
 
+	float Right = X, Top = Y;
 	vector2 ScreenPos;
 	for (UPTR i = 1; i < 8; ++i)
 	{
 		MainCamera->GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
 
-		if (ScreenPos.x < Out.v0.x) Out.v0.x = ScreenPos.x;
-		else if (ScreenPos.x > Out.v1.x) Out.v1.x = ScreenPos.x;
+		if (ScreenPos.x < X) X = ScreenPos.x;
+		else if (ScreenPos.x > Right) Right = ScreenPos.x;
 
-		if (ScreenPos.y < Out.v0.y) Out.v0.y = ScreenPos.y;
-		else if (ScreenPos.y > Out.v1.y) Out.v1.y = ScreenPos.y;
+		if (ScreenPos.y < Y) Y = ScreenPos.y;
+		else if (ScreenPos.y > Top) Top = ScreenPos.y;
 	}
+
+	Out.X = (IPTR)X;
+	Out.Y = (IPTR)Y;
+	Out.W = (UPTR)(Right - X);
+	Out.H = (UPTR)(Top - Y);
 
 	OK;
 }
@@ -588,27 +520,10 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 }
 //---------------------------------------------------------------------
 
-void CGameLevel::AddToSelection(CStrID EntityID)
+bool CGameLevel::HostsEntity(CStrID EntityID) const
 {
-	if (IsSelected(EntityID) || !EntityID.IsValid()) return;
 	CEntity* pEnt = EntityMgr->GetEntity(EntityID);
-	if (pEnt && pEnt->GetLevel() == this) //???only if IsActive?
-	{
-		SelectedEntities.Add(EntityID);
-		Data::PParams P = n_new(Data::CParams(1));
-		P->Set(CStrID("EntityID"), EntityID);
-		FireEvent(CStrID("OnEntitySelected"), P);
-	}
-}
-//---------------------------------------------------------------------
-
-bool CGameLevel::RemoveFromSelection(CStrID EntityID)
-{
-	if (!SelectedEntities.RemoveByValue(EntityID)) FAIL; 
-	Data::PParams P = n_new(Data::CParams(1));
-	P->Set(CStrID("EntityID"), EntityID);
-	FireEvent(CStrID("OnEntityDeselected"), P);
-	OK;
+	return pEnt && pEnt->GetLevel() == this;
 }
 //---------------------------------------------------------------------
 

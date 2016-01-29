@@ -475,7 +475,8 @@ bool CPropUIControl::OnExecuteExploreAction(Events::CEventDispatcher* pDispatche
 
 bool CPropUIControl::OnExecuteSelectAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	GetEntity()->GetLevel()->AddToSelection(GetEntity()->GetUID());
+	NOT_IMPLEMENTED;
+	//GetEntity()->GetLevel()->AddToSelection(GetEntity()->GetUID());
 	OK;
 }
 //---------------------------------------------------------------------

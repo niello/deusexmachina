@@ -396,9 +396,6 @@
     <ClInclude Include="..\..\Src\L1\Math\Quaternion.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Math\Rect.h">
-      <Filter>Math</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Math\Sphere.h">
       <Filter>Math</Filter>
     </ClInclude>
