@@ -42,10 +42,10 @@ public:
 	CDisplayDriver(): AdapterID(Adapter_None), OutputID(Output_None) {}
 	virtual ~CDisplayDriver() {}
 
-	virtual bool			Init(DWORD AdapterNumber, DWORD OutputNumber) { AdapterID = AdapterNumber; OutputID = OutputNumber; OK; }
+	virtual bool			Init(UPTR AdapterNumber, UPTR OutputNumber) { AdapterID = AdapterNumber; OutputID = OutputNumber; OK; }
 	virtual void			Term() { AdapterID = Adapter_None; OutputID = Output_None; }
 
-	virtual DWORD			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
+	virtual UPTR			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
 	virtual bool			SupportsDisplayMode(const CDisplayMode& Mode) const = 0;
 	virtual bool			GetCurrentDisplayMode(CDisplayMode& OutMode) const = 0;
 	virtual bool			GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const = 0;

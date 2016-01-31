@@ -56,7 +56,7 @@ public:
 	bool			SetFileReadOnly(const char* pPath, bool ReadOnly) const;
 	bool			DeleteFile(const char* pPath) const;
 	U64				GetFileSize(const char* pPath) const;
-	DWORD			GetFileWriteTime(const char* pPath) const;
+	U64				GetFileWriteTime(const char* pPath) const;
 	bool			CopyFile(const char* pSrcPath, const char* pDestPath);
 	bool			DirectoryExists(const char* pPath) const;
 	bool			CreateDirectory(const char* pPath) const;

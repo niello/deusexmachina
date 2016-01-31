@@ -13,7 +13,7 @@ bool CD3D11VertexBuffer::Create(CVertexLayout& Layout, ID3D11Buffer* pVB)
 {
 	if (!pVB) FAIL;
 
-	DWORD VertexSize = Layout.GetVertexSizeInBytes();
+	UPTR VertexSize = Layout.GetVertexSizeInBytes();
 	if (!VertexSize) FAIL;
 
 	D3D11_BUFFER_DESC D3DDesc;

@@ -2,9 +2,9 @@
 #ifndef __DEM_L1_FRAME_VIEW_H__
 #define __DEM_L1_FRAME_VIEW_H__
 
+#include <Frame/RenderNode.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
-#include <Data/RefCounted.h>
 
 // View is a data required to render a frame. It is defined by a scene (what to render),
 // a camera (from where), render target(s) (to where), a render path (how) and some other
@@ -55,6 +55,7 @@ public:
 
 	//???store here or outside?
 	PRenderPath							RenderPath;
+	CArray<CRenderNode>					RenderQueue;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true) {}
 
@@ -69,7 +70,7 @@ public:
 
 	bool							SetCamera(CCamera* pNewCamera);
 	void							UpdateVisibilityCache();
-	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
+	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; } //???if dirty update right here?
 	bool							Render();
 };
 

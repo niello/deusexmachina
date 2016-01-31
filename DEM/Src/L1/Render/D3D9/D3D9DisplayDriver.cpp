@@ -10,7 +10,7 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9DisplayDriver, 'D9DD', Render::CDisplayDriver);
 
-bool CD3D9DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
+bool CD3D9DisplayDriver::Init(UPTR AdapterNumber, UPTR OutputNumber)
 {
 	n_assert2(OutputNumber == 0, "D3D9 supports only one output (0) per video adapter");
 	return CDisplayDriver::Init(AdapterNumber, OutputNumber);
@@ -18,12 +18,12 @@ bool CD3D9DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
 //---------------------------------------------------------------------
 
 // We don't cache available display modes since they can change after display driver was created
-DWORD CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+UPTR CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
 {
 	D3DDISPLAYMODE D3DDisplayMode = { 0 };
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Format);
 	UINT ModeCount = D3D9DrvFactory->GetDirect3D9()->GetAdapterModeCount(AdapterID, D3DFormat);
-	DWORD Total = 0;
+	UPTR Total = 0;
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
 		if (!SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->EnumAdapterModes(AdapterID, D3DFormat, i, &D3DDisplayMode))) continue;
@@ -103,7 +103,7 @@ bool CD3D9DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 			DisplayMode.PixelFormat = D3DFMT_X8R8G8B8;
 
 		CArray<CDisplayMode> Modes;
-		Display.GetAvailableDisplayModes((CDisplay::DWORD)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
+		Display.GetAvailableDisplayModes((UPTR)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
 		if (Modes.FindIndex(DisplayMode) == INVALID_INDEX)
 		{
 			// Find available mode the most close to the requested one

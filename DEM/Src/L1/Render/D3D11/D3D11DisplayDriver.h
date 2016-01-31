@@ -25,7 +25,7 @@ protected:
 
 	CD3D11DisplayDriver(): pDXGIOutput(NULL) {}
 
-	virtual bool	Init(DWORD AdapterNumber, DWORD OutputNumber);
+	virtual bool	Init(UPTR AdapterNumber, UPTR OutputNumber);
 	virtual void	Term() { InternalTerm(); CDisplayDriver::Term(); } //???need? or never manually-destructible?
 	void			InternalTerm();
 
@@ -33,7 +33,7 @@ public:
 
 	virtual ~CD3D11DisplayDriver() { InternalTerm(); }
 
-	virtual DWORD		GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
+	virtual UPTR		GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
 	virtual bool		SupportsDisplayMode(const CDisplayMode& Mode) const;
 	virtual bool		GetCurrentDisplayMode(CDisplayMode& OutMode) const;
 	virtual bool		GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const;

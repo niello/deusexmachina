@@ -37,7 +37,7 @@ protected:
 	char*						pMapped;
 	D3D11_USAGE					D3DUsage;
 	Data::CFlags				Flags;
-	DWORD						SizeInBytes;
+	UPTR						SizeInBytes;
 
 	void InternalDestroy();
 
@@ -56,8 +56,8 @@ public:
 
 	//???need int and float? is *(*float)pData = X faster than memcpy(pData, &X, sizeof(float))? same for int?
 	//is it faster for float4, int4? is scalar SetFloat/SetInt realy so frequent in shaders?
-	//virtual bool				SetFloat(DWORD Offset, const float* pData, DWORD Count);
-	//virtual bool				SetInt(DWORD Offset, const int* pData, DWORD Count);
+	//virtual bool				SetFloat(UPTR Offset, const float* pData, UPTR Count);
+	//virtual bool				SetInt(UPTR Offset, const int* pData, UPTR Count);
 	void						WriteData(UPTR Offset, const void* pData, UPTR Size);
 
 	ID3D11Buffer*				GetD3DBuffer() const { return pBuffer; }
@@ -65,7 +65,7 @@ public:
 	char*						GetMappedVRAM() { return Flags.Is(CB11_UsesRAMCopy) ? NULL : pMapped; }
 	char*						GetRAMCopy() { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
 	D3D11_USAGE					GetD3DUsage() const { return D3DUsage; }
-	DWORD						GetSizeInBytes() const { return SizeInBytes; }
+	UPTR						GetSizeInBytes() const { return SizeInBytes; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
 

@@ -830,9 +830,6 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPath.h">
       <Filter>Frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\FrameServer.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Frame\Camera.h">
       <Filter>Frame</Filter>
     </ClInclude>
@@ -904,6 +901,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsLevel.h">
       <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\RenderNode.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\Renderer.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\ModelRenderer.h">
+      <Filter>Frame</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1399,9 +1405,6 @@
     <ClCompile Include="..\..\Src\L1\Frame\RenderPath.cpp">
       <Filter>Frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\FrameServer.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\Camera.cpp">
       <Filter>Frame</Filter>
     </ClCompile>
@@ -1473,6 +1476,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsLevel.cpp">
       <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\RenderNode.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\ModelRenderer.cpp">
+      <Filter>Frame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

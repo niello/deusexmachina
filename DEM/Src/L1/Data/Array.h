@@ -43,6 +43,7 @@ public:
 	CArray(const CArray<T>& Other): pData(NULL), Allocated(0), Count(0) { Copy(Other); }
 	~CArray();
 
+	CIterator	Add();
 	CIterator	Add(const T& Val);
 	CIterator	AddBefore(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) : 0, Val); }
 	CIterator	AddAfter(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) + 1 : 0, Val); }
@@ -53,7 +54,7 @@ public:
 	void		AddArray(const T* pData, UPTR Size);
 	void		Copy(const CArray<T>& Other);
 	void		Fill(UPTR First, UPTR Num, const T& Val);
-	void		AllocateFixed(UPTR Size);
+	void		AllocateFixed(UPTR NewCount);
 
 	void		Remove(CIterator It, T* pOutValue = NULL) { n_assert_dbg(It); RemoveAt(IPTR(It - pData), pOutValue); }
 	void		RemoveAt(IPTR Idx, T* pOutValue = NULL);
@@ -314,6 +315,16 @@ void CArray<T>::Move(IPTR FromIdx, IPTR ToIdx)
 	}
 
 	Count = NewCount;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+typename CArray<T>::CIterator CArray<T>::Add()
+{
+	if (Count == Allocated) Grow();
+	n_placement_new(pData + Count, T);
+	++Count;
+	return pData + Count - 1;
 }
 //---------------------------------------------------------------------
 

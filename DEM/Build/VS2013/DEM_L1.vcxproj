@@ -205,9 +205,11 @@
     <ClInclude Include="..\..\Src\L1\Data\XMLDocument.h" />
     <ClInclude Include="..\..\Src\L1\Debug\DebugDraw.h" />
     <ClInclude Include="..\..\Src\L1\Frame\Camera.h" />
-    <ClInclude Include="..\..\Src\L1\Frame\FrameServer.h" />
     <ClInclude Include="..\..\Src\L1\Frame\Light.h" />
     <ClInclude Include="..\..\Src\L1\Frame\Model.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\ModelRenderer.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\Renderer.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\RenderNode.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderObject.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPath.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoader.h" />
@@ -453,9 +455,10 @@
     <ClCompile Include="..\..\Src\L1\Data\StringUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\Camera.cpp" />
-    <ClCompile Include="..\..\Src\L1\Frame\FrameServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\Light.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\Model.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\ModelRenderer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\RenderNode.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderObject.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPath.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoader.cpp" />

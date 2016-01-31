@@ -1,14 +1,9 @@
-//#include "Material.h"
-//
-//#include <Render/Materials/ShaderVar.h>
-//#include <Core/Factory.h>
-//
-//namespace Render
-//{
-//__ImplementClass(Render::CMaterial, 'MTRL', Resources::CResourceObject);
-//
-//bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
-//
+#include "Material.h"
+
+namespace Render
+{
+__ImplementClassNoFactory(Render::CMaterial, /*'MTRL', */Resources::CResourceObject);
+
 //bool CMaterial::Setup(CShader* pShader, UPTR ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
 //{
 //	if (!pShader) FAIL;
@@ -61,5 +56,5 @@
 //	State = Resources::Rsrc_NotLoaded;
 //}
 ////---------------------------------------------------------------------
-//
-//}
+
+}

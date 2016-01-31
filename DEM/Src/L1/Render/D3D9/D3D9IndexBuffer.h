@@ -20,7 +20,7 @@ protected:
 
 	IDirect3DIndexBuffer9*	pBuffer;
 	UINT					Usage;
-	//DWORD					LockCount;
+	//UPTR					LockCount;
 
 	void InternalDestroy();
 

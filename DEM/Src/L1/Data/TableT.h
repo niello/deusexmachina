@@ -28,9 +28,9 @@ public:
 	UPTR	GetRowCount() const { return Height; }
 
 	T&		Cell(CStrID ColName, CStrID RowName) const { return At(ColMap.FindIndex(ColName), RowMap.FindIndex(RowName)); }
-	T&		Cell(CStrID ColName, DWORD RowIdx) const { return At(ColMap.FindIndex(ColName), RowIdx); }
-	T&		Cell(DWORD ColIdx, CStrID RowName) const { return At(ColIdx, RowMap.FindIndex(RowName)); }
-	T&		Cell(DWORD ColIdx, DWORD RowIdx) const { return At(ColIdx, RowIdx); }
+	T&		Cell(CStrID ColName, UPTR RowIdx) const { return At(ColMap.FindIndex(ColName), RowIdx); }
+	T&		Cell(UPTR ColIdx, CStrID RowName) const { return At(ColIdx, RowMap.FindIndex(RowName)); }
+	T&		Cell(UPTR ColIdx, UPTR RowIdx) const { return At(ColIdx, RowIdx); }
 
 	template<class TOut>
 	bool	Convert(Data::CTableT<TOut>& Out, bool(*Convertor)(const T&, TOut&));

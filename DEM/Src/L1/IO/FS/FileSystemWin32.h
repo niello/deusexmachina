@@ -42,7 +42,7 @@ public:
 	virtual UPTR	Read(void* hFile, void* pData, UPTR Size);
 	virtual UPTR	Write(void* hFile, const void* pData, UPTR Size);
 	virtual U64		GetFileSize(void* hFile) const;
-	virtual DWORD	GetFileWriteTime(void* hFile) const;
+	virtual U64		GetFileWriteTime(void* hFile) const;
 	virtual bool	Seek(void* hFile, I64 Offset, ESeekOrigin Origin);
 	virtual U64		Tell(void* hFile) const;
 	virtual void	Flush(void* hFile);

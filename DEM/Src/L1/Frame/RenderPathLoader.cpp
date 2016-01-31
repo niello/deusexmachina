@@ -60,7 +60,7 @@ bool CRenderPathLoader::Load(CResource& Resource)
 			CString ClassName = "Frame::CRenderPhase" + PhaseType;
 			Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
 
-			//if (!CurrPhase->Init(Prm.GetName(), PhaseDesc)) FAIL;
+			if (!CurrPhase->Init(Prm.GetName(), PhaseDesc)) FAIL;
 
 			RP->Phases[i] = CurrPhase;
 		}

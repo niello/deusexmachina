@@ -45,4 +45,4 @@ bool CTextReader::ReadLine(char* pOutValue, UPTR MaxLen)
 }
 //---------------------------------------------------------------------
 
-} //namespace IO
+}

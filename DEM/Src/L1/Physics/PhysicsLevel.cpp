@@ -145,7 +145,7 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 }
 //---------------------------------------------------------------------
 
-DWORD CPhysicsLevel::GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const
+UPTR CPhysicsLevel::GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const
 {
 	n_assert(pBtDynWorld);
 

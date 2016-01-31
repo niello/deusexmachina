@@ -1,8 +1,12 @@
 #include "RenderPhaseGeometry.h"
 
-//#include <Data/Params.h>
-//#include <Data/DataArray.h>
 #include <Frame/View.h>
+#include <Frame/Renderer.h>
+#include <Frame/RenderNode.h>
+#include <Frame/RenderObject.h>
+#include <Scene/NodeAttribute.h>
+#include <Data/Params.h>
+#include <Data/DataArray.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -16,11 +20,84 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	View.UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
-	// Build render queue of objects of interest (renderers, materials, shaders/techs)
+	//!!!can query correct squared distance to camera and/or screen size from an SPS along with object pointers!
+	//!!!mb better to use array, not linked list! pool is good for single object reallocations,
+	//here the whole array will be freed at the end of a phase
+
+	CArray<CRenderNode>& RenderQueue = View.RenderQueue;
+	RenderQueue.Resize(VisibleObjects.GetCount());
+
+	//CRenderNode* pRenderQueueHead = NULL;
+	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
+	{
+		Scene::CNodeAttribute* pAttr = *It;
+		const Core::CRTTI* pAttrType = pAttr->GetRTTI();
+		if (!pAttrType->IsDerivedFrom(Frame::CRenderObject::RTTI)) continue; //!!!also need a light list!
+
+		IPTR Idx = Renderers.FindIndex(pAttrType);
+		if (Idx == INVALID_INDEX) continue;
+		IRenderer* pRenderer = Renderers.ValueAt(Idx);
+		if (!pRenderer) continue;
+
+		//CRenderNode* pNode = CRenderNode::Pool.Construct();
+		//pNode->pNext = pRenderQueueHead;
+		CRenderNode* pNode = RenderQueue.Add();
+		pNode->RenderObject = (Frame::CRenderObject*)pAttr;
+		pNode->pRenderer = pRenderer;
+		//pNode->LOD = 0; //!!!determine based on sq camera or screen size! in renderers? sphere screen size may be reduced to 2 points = len of square
+
+		//pRenderQueueHead = pNode;
+	}
+
 	// Sort render queue if necessary
-	// Setup render target etc
-	// Render the queue, calling renderers for batch-processing a queue from the curr head, returning a new head
-	//   May store and compare renderer ptr or ID
+	//???or sort in renderers? or build tree and sort each branch as required
+	//may write complex sorter which takes into account alpha
+
+	// Bind and clear render target etc
+
+	//CRenderNode* pCurrHead = pRenderQueueHead;
+	//while (pCurrHead)
+	//	pCurrHead = pCurrHead->pRenderer->Render(pCurrHead);
+	CArray<CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
+	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
+	while (ItCurr != ItEnd)
+		ItCurr = ItCurr->pRenderer->Render(RenderQueue, ItCurr);
+
+	RenderQueue.Clear(false);
+	//???may store render queue in cache for other phases? or completely unreusable? some info like a distance to a camera may be shared
+	//while (pRenderQueueHead)
+	//{
+	//	CRenderNode* pNext = pRenderQueueHead->pNext;
+	//	CRenderNode::Pool.Destroy(pRenderQueueHead);
+	//	pRenderQueueHead = pNext;
+	//}
+
+	// Unbind render target etc
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
+{
+	if (!CRenderPhase::Init(PhaseName, Desc)) FAIL;
+
+	Data::CDataArray& RenderersDesc = *Desc.Get<Data::PDataArray>(CStrID("Renderers"));
+	for (UPTR i = 0; i < RenderersDesc.GetCount(); ++i)
+	{
+		Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
+		const Core::CRTTI* pObjType = Factory->GetRTTI(RendererDesc.Get<CString>(CStrID("Object")));
+		const Core::CRTTI* pRendererType = Factory->GetRTTI(RendererDesc.Get<CString>(CStrID("Renderer")));
+		IRenderer* pRenderer = NULL;
+		for (UPTR j = 0; j < Renderers.GetCount(); ++j)
+			if (Renderers.ValueAt(j)->GetRTTI() == pRendererType)
+			{
+				pRenderer = Renderers.ValueAt(j);
+				break;
+			}
+		if (!pRenderer) pRenderer = (IRenderer*)pRendererType->CreateClassInstance();
+		if (pObjType && pRenderer) Renderers.Add(pObjType, pRenderer);
+	}
 
 	OK;
 }

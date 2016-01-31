@@ -12,6 +12,7 @@
 // implementing a switch-case method like GetIndexForD3D9RenderStateKey().
 
 typedef enum _D3DRENDERSTATETYPE D3DRENDERSTATETYPE;
+typedef unsigned long DWORD;
 
 //???!!! D3D9-only:
 //D3DRS_SRGBWRITEENABLE             = 194,

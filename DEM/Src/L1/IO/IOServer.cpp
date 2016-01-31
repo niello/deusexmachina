@@ -157,13 +157,13 @@ U64 CIOServer::GetFileSize(const char* pPath) const
 }
 //---------------------------------------------------------------------
 
-DWORD CIOServer::GetFileWriteTime(const char* pPath) const
+U64 CIOServer::GetFileWriteTime(const char* pPath) const
 {
 	PFileSystem FS;
 	void* hFile = OpenFile(FS, pPath, SAM_READ);
 	if (hFile)
 	{
-		DWORD Time = FS->GetFileWriteTime(hFile);
+		U64 Time = FS->GetFileWriteTime(hFile);
 		FS->CloseFile(hFile);
 		return Time;
 	}

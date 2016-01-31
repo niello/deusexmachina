@@ -26,7 +26,7 @@ public:
 	CD3D9VertexLayout(): pDecl(NULL) {}
 	virtual ~CD3D9VertexLayout() { InternalDestroy(); }
 
-	bool							Create(const CVertexComponent* pComponents, DWORD Count, IDirect3DVertexDeclaration9* pD3DDecl);
+	bool							Create(const CVertexComponent* pComponents, UPTR Count, IDirect3DVertexDeclaration9* pD3DDecl);
 	virtual void					Destroy() { InternalDestroy(); CVertexLayout::InternalDestroy(); }
 	virtual bool					IsValid() const { return !!pDecl; }
 

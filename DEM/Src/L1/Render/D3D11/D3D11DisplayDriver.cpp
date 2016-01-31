@@ -9,7 +9,7 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11DisplayDriver, 'D1DD', Render::CDisplayDriver);
 
-bool CD3D11DisplayDriver::Init(DWORD AdapterNumber, DWORD OutputNumber)
+bool CD3D11DisplayDriver::Init(UPTR AdapterNumber, UPTR OutputNumber)
 {
 	if (!CDisplayDriver::Init(AdapterNumber, OutputNumber)) FAIL;
 
@@ -38,7 +38,7 @@ void CD3D11DisplayDriver::InternalTerm()
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
 {
 	if (!pDXGIOutput) return 0;
 

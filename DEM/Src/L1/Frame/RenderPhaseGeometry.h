@@ -3,12 +3,14 @@
 #define __DEM_L1_FRAME_PHASE_GEOMETRY_H__
 
 #include <Frame/RenderPhase.h>
+#include <Data/Dictionary.h>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
 // Batches are designed to minimize shader state switches.
 
 namespace Frame
 {
+class IRenderer;
 
 class CRenderPhaseGeometry: public CRenderPhase
 {
@@ -16,18 +18,13 @@ class CRenderPhaseGeometry: public CRenderPhase
 
 protected:
 
-	//CArray<PRenderer>	BatchRenderers;
-
-// Input:
-// Geometry, lights (if lighting is enabled)
-// Output:
-// Intermediate RT or swap chain RT (backbuffer), DSV
+	CDict<const Core::CRTTI*, IRenderer*> Renderers;
 
 public:
 
 	//virtual ~CRenderPhaseGeometry() {}
 
-	//virtual bool Init(const Data::CParams& Desc, const CRenderPath& Owner);
+	virtual bool Init(CStrID PhaseName, const Data::CParams& Desc);
 	virtual bool Render(CView& View);
 };
 

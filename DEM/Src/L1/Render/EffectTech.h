@@ -35,13 +35,13 @@ public:
 //	//SetResource
 //	//SetSampler
 //	//ApplyParams
-//	virtual void			SetBool(HShaderParam Handle, const bool* pValues, DWORD Count) = 0;
-//	virtual void			SetIntAsBool(HShaderParam Handle, const int* pValues, DWORD Count) = 0;
-//	virtual void			SetInt(HShaderParam Handle, const int* pValues, DWORD Count) = 0;
-//	virtual void			SetFloat(HShaderParam Handle, const float* pValues, DWORD Count) = 0;
-//	virtual void			SetVector4(HShaderParam Handle, const vector4* pValues, DWORD Count) = 0;
-//	virtual void			SetMatrix44(HShaderParam Handle, const matrix44* pValues, DWORD Count) = 0;
-//	//???need? virtual void			SetMatrix44Transpose(HShaderParam Handle, const matrix44* pValues, DWORD Count) = 0;
+//	virtual void			SetBool(HShaderParam Handle, const bool* pValues, UPTR Count) = 0;
+//	virtual void			SetIntAsBool(HShaderParam Handle, const int* pValues, UPTR Count) = 0;
+//	virtual void			SetInt(HShaderParam Handle, const int* pValues, UPTR Count) = 0;
+//	virtual void			SetFloat(HShaderParam Handle, const float* pValues, UPTR Count) = 0;
+//	virtual void			SetVector4(HShaderParam Handle, const vector4* pValues, UPTR Count) = 0;
+//	virtual void			SetMatrix44(HShaderParam Handle, const matrix44* pValues, UPTR Count) = 0;
+//	//???need? virtual void			SetMatrix44Transpose(HShaderParam Handle, const matrix44* pValues, UPTR Count) = 0;
 ////	virtual void			SetTexture(HShaderParam Handle, CTexture* pTexture) = 0;
 //	//???virtual void			SetBuffer(HShaderParam Handle, CTexture* pTexture) = 0;
 ////	virtual void			SetSamplerState(HShaderParam Handle, CSamplerState* pSamplerState) = 0;

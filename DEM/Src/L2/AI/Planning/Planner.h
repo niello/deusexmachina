@@ -37,7 +37,7 @@ private:
 		int			Fitness;	// Goal + Heuristic
 		CNode*		pParent;
 
-		CNode(): pAction(NULL), pParent(NULL), Fitness(MAX_SDWORD) {}
+		CNode(): pAction(NULL), pParent(NULL), Fitness(I32_MAX) {}
 	};
 
 	CPoolAllocator<CNode, 32>	NodePool;

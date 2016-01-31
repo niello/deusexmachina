@@ -30,7 +30,7 @@ bool CD3D9IndexBuffer::Create(EIndexType Type, IDirect3DIndexBuffer9* pIB)
 	}
 
 	IndexType = Type;
-	IndexCount = D3DDesc.Size / (DWORD)Type;
+	IndexCount = D3DDesc.Size / (UPTR)Type;
 	pBuffer = pIB;
 	Usage = D3DDesc.Usage;
 	//LockCount = 0;

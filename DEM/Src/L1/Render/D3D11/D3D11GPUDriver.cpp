@@ -29,7 +29,7 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11GPUDriver, '11GD', Render::CGPUDriver);
 
-bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
+bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 {
 	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;
 
@@ -64,7 +64,7 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 		D3D_FEATURE_LEVEL_10_1,
 		D3D_FEATURE_LEVEL_10_0
 	};
-	DWORD FeatureLevelCount = sizeof_array(FeatureLevels);
+	UPTR FeatureLevelCount = sizeof_array(FeatureLevels);
 
 	D3D_FEATURE_LEVEL FeatureLevel; //???to member or always get from device?
 
@@ -91,7 +91,7 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 
 	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)FeatureLevel);
 
-	DWORD MRTCount = 0;
+	UPTR MRTCount = 0;
 	if (FeatureLevel >= D3D_FEATURE_LEVEL_11_0) MRTCount = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
 	else if (FeatureLevel >= D3D_FEATURE_LEVEL_10_0) MRTCount = D3D10_SIMULTANEOUS_RENDER_TARGET_COUNT;
 	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_3) MRTCount = D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT;
@@ -104,7 +104,7 @@ bool CD3D11GPUDriver::Init(DWORD AdapterNumber, EGPUDriverType DriverType)
 	//???and also one dirty flag? when set VP do D3D11 remember its SR or it resets SR size?
 	//!!!need static assert!
 	n_assert_dbg(sizeof(VPSRSetFlags) * 4 >= VP_OR_SR_SET_FLAG_COUNT);
-	DWORD MaxViewportCountCaps = 1;
+	UPTR MaxViewportCountCaps = 1;
 	if (FeatureLevel >= D3D_FEATURE_LEVEL_11_0) MaxViewportCountCaps = D3D10_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
 	else if (FeatureLevel >= D3D_FEATURE_LEVEL_10_0) MaxViewportCountCaps = D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
 	MaxViewportCount = n_min(MaxViewportCountCaps, VP_OR_SR_SET_FLAG_COUNT);
@@ -238,7 +238,7 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11GPUDriver::GetMaxVertexStreams()
+UPTR CD3D11GPUDriver::GetMaxVertexStreams()
 {
 	D3D_FEATURE_LEVEL FeatLevel = pD3DDevice->GetFeatureLevel();
 	if (FeatLevel >= D3D_FEATURE_LEVEL_11_0) return D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
@@ -247,7 +247,7 @@ DWORD CD3D11GPUDriver::GetMaxVertexStreams()
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11GPUDriver::GetMaxTextureSize(ETextureType Type)
+UPTR CD3D11GPUDriver::GetMaxTextureSize(ETextureType Type)
 {
 	switch (pD3DDevice->GetFeatureLevel())
 	{
@@ -320,7 +320,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
 
 	// If VSync, use triple buffering by default, else double //!!! + 1 if front buffer must be included!
-	DWORD BackBufferCount = SwapChainDesc.BackBufferCount ?
+	UPTR BackBufferCount = SwapChainDesc.BackBufferCount ?
 		SwapChainDesc.BackBufferCount :
 		(SwapChainDesc.Flags.Is(SwapChain_VSync) ? 2 : 1);
 
@@ -428,7 +428,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::DestroySwapChain(DWORD SwapChainID)
+bool CD3D11GPUDriver::DestroySwapChain(UPTR SwapChainID)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	
@@ -447,9 +447,9 @@ bool CD3D11GPUDriver::DestroySwapChain(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SwapChainExists(DWORD SwapChainID) const
+bool CD3D11GPUDriver::SwapChainExists(UPTR SwapChainID) const
 {
-	return SwapChainID < (DWORD)SwapChains.GetCount() && SwapChains[SwapChainID].IsValid();
+	return SwapChainID < SwapChains.GetCount() && SwapChains[SwapChainID].IsValid();
 }
 //---------------------------------------------------------------------
 
@@ -457,7 +457,7 @@ bool CD3D11GPUDriver::SwapChainExists(DWORD SwapChainID) const
 //!!!use what is written now to respond do changes!
 // Does not resize an OS window, since often is called in response to an OS window resize
 //???bool ResizeOSWindow?
-bool CD3D11GPUDriver::ResizeSwapChain(DWORD SwapChainID, unsigned int Width, unsigned int Height)
+bool CD3D11GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 
@@ -482,7 +482,7 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 	//???or this method must resize target? in fact, need two swap chain resizing methods?
 	//one as command (ResizeTarget), one as handler (ResizeBuffers), second can be OnOSWindowSizeChanged handler
 
-	DWORD RemovedRTIdx;
+	UPTR RemovedRTIdx;
 	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.GetCount(); ++RemovedRTIdx)
 		if (CurrRT[RemovedRTIdx] == SC.BackBufferRT)
 		{
@@ -513,7 +513,7 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SwitchToFullscreen(DWORD SwapChainID, CDisplayDriver* pDisplay, const CDisplayMode* pMode)
+bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisplay, const CDisplayMode* pMode)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	if (pDisplay && AdapterID != pDisplay->GetAdapterID()) FAIL;
@@ -613,7 +613,7 @@ Sys::DbgOut("After Wnd -> Full, Window flags = %ld\n", SC.TargetWindow->GetWin32
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SwitchToWindowed(DWORD SwapChainID, const Data::CRect* pWindowRect)
+bool CD3D11GPUDriver::SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWindowRect)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 
@@ -641,13 +641,13 @@ Sys::DbgOut("After Full -> Wnd, Window flags = %ld\n", SC.TargetWindow->GetWin32
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::IsFullscreen(DWORD SwapChainID) const
+bool CD3D11GPUDriver::IsFullscreen(UPTR SwapChainID) const
 {
 	return SwapChainExists(SwapChainID) && SwapChains[SwapChainID].IsFullscreen();
 }
 //---------------------------------------------------------------------
 
-PRenderTarget CD3D11GPUDriver::GetSwapChainRenderTarget(DWORD SwapChainID) const
+PRenderTarget CD3D11GPUDriver::GetSwapChainRenderTarget(UPTR SwapChainID) const
 {
 	return SwapChainExists(SwapChainID) ? SwapChains[SwapChainID].BackBufferRT : PRenderTarget();
 }
@@ -655,7 +655,7 @@ PRenderTarget CD3D11GPUDriver::GetSwapChainRenderTarget(DWORD SwapChainID) const
 
 // NB: Present() should be called as late as possible after EndFrame()
 // to improve parallelism between the GPU and the CPU
-bool CD3D11GPUDriver::Present(DWORD SwapChainID)
+bool CD3D11GPUDriver::Present(UPTR SwapChainID)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
@@ -663,7 +663,7 @@ bool CD3D11GPUDriver::Present(DWORD SwapChainID)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStream) const
+bool CD3D11GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const
 {
 	Sys::Error("IMPLEMENT ME!!! CD3D11GPUDriver::CaptureScreenshot()\n");
 	FAIL;
@@ -672,12 +672,12 @@ bool CD3D11GPUDriver::CaptureScreenshot(DWORD SwapChainID, IO::CStream& OutStrea
 
 //!!!!!!!!!!!!???how to handle set viewport and then set another RT?
 
-bool CD3D11GPUDriver::SetViewport(DWORD Index, const CViewport* pViewport)
+bool CD3D11GPUDriver::SetViewport(UPTR Index, const CViewport* pViewport)
 {
 	if (Index >= MaxViewportCount) FAIL;
 
 	D3D11_VIEWPORT& CurrViewport = CurrVP[Index];
-	DWORD IsSetBit = (1 << Index);
+	UPTR IsSetBit = (1 << Index);
 	if (pViewport)
 	{
 		if (VPSRSetFlags.Is(IsSetBit) &&
@@ -719,7 +719,7 @@ bool CD3D11GPUDriver::SetViewport(DWORD Index, const CViewport* pViewport)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::GetViewport(DWORD Index, CViewport& OutViewport)
+bool CD3D11GPUDriver::GetViewport(UPTR Index, CViewport& OutViewport)
 {
 	if (Index >= MaxViewportCount || (Index > 0 && VPSRSetFlags.IsNot(1 << Index))) FAIL;
 
@@ -758,12 +758,12 @@ bool CD3D11GPUDriver::GetViewport(DWORD Index, CViewport& OutViewport)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SetScissorRect(DWORD Index, const Data::CRect* pScissorRect)
+bool CD3D11GPUDriver::SetScissorRect(UPTR Index, const Data::CRect* pScissorRect)
 {
 	if (Index >= MaxViewportCount) FAIL;
 
 	RECT& CurrRect = CurrSR[Index];
-	DWORD IsSetBit = (1 << (VP_OR_SR_SET_FLAG_COUNT + Index)); // Use higher half of bits for SR
+	UPTR IsSetBit = (1 << (VP_OR_SR_SET_FLAG_COUNT + Index)); // Use higher half of bits for SR
 	if (pScissorRect)
 	{
 		if (VPSRSetFlags.Is(IsSetBit) &&
@@ -799,7 +799,7 @@ bool CD3D11GPUDriver::SetScissorRect(DWORD Index, const Data::CRect* pScissorRec
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::GetScissorRect(DWORD Index, Data::CRect& OutScissorRect)
+bool CD3D11GPUDriver::GetScissorRect(UPTR Index, Data::CRect& OutScissorRect)
 {
 	if (Index >= MaxViewportCount || VPSRSetFlags.IsNot(1 << (VP_OR_SR_SET_FLAG_COUNT + Index))) FAIL;
 	RECT& CurrRect = CurrSR[Index];
@@ -820,7 +820,7 @@ bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SetVertexBuffer(DWORD Index, CVertexBuffer* pVB, DWORD OffsetVertex)
+bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
 {
 	if (Index >= CurrVB.GetCount()) FAIL;
 	if (CurrVB[Index].GetUnsafe() == pVB) OK;
@@ -849,7 +849,7 @@ bool CD3D11GPUDriver::SetRenderState(CRenderState* pState)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SetRenderTarget(DWORD Index, CRenderTarget* pRT)
+bool CD3D11GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 {
 	if (Index >= CurrRT.GetCount()) FAIL;
 	if (CurrRT[Index].GetUnsafe() == pRT) OK;
@@ -909,13 +909,13 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 	CD3D11Shader::CBufferMeta* pMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
-	DWORD Index = pMeta->Register;
+	UPTR Index = pMeta->Register;
 
 	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
 	{
 		if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
-		Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
+		Index += ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
 		const CD3D11ConstantBuffer* pCurrCB = CurrCB[Index].GetUnsafe();
 		if (pCurrCB == pCBuffer) OK;
 
@@ -950,10 +950,10 @@ bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSamp
 	CD3D11Shader::CRsrcMeta* pMeta = (CD3D11Shader::CRsrcMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
-	DWORD Index = pMeta->Register;
+	UPTR Index = pMeta->Register;
 	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
 
-	Index += ((DWORD)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+	Index += ((UPTR)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
 	const CD3D11Sampler* pCurrSamp = CurrSS[Index].GetUnsafe();
 	if (pCurrSamp == pSampler) OK;
 	if (pCurrSamp && pSampler && pCurrSamp->GetD3DSampler() == ((const CD3D11Sampler*)pSampler)->GetD3DSampler()) OK;
@@ -978,7 +978,7 @@ void CD3D11GPUDriver::EndFrame()
 //---------------------------------------------------------------------
 
 // Even if RTs and DS set are still dirty (not bound), clear operation can be performed.
-void CD3D11GPUDriver::Clear(DWORD Flags, const vector4& ColorRGBA, float Depth, U8 Stencil)
+void CD3D11GPUDriver::Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil)
 {
 	if (Flags & Clear_Color)
 	{
@@ -1017,7 +1017,8 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 {
 	n_assert_dbg(pD3DDevice); // && IsInsideFrame);
 
-	DWORD PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
+	//!!!not used by Draw(), statistics only! wrap with _DEBUG/DEM_STATS!
+	UPTR PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
 	if (CurrPT != PrimGroup.Topology)
 	{
 		D3D11_PRIMITIVE_TOPOLOGY D3DPrimType;
@@ -1077,10 +1078,10 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 }
 //---------------------------------------------------------------------
 
-DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
+UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 {
 	const Data::CFlags Update(ChangesToUpdate);
-	DWORD Errors = 0;
+	UPTR Errors = 0;
 
 	bool InputLayoutDirty = false;
 	if (Update.Is(GPU_Dirty_RS) && CurrDirtyFlags.Is(GPU_Dirty_RS))
@@ -1204,10 +1205,10 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	if (Update.Is(GPU_Dirty_SS) && CurrDirtyFlags.Is(GPU_Dirty_SS))
 	{
 		ID3D11SamplerState* D3DSamplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
-		DWORD Offset = 0;
+		UPTR Offset = 0;
 		for (UPTR Sh = 0; Sh < ShaderType_COUNT; ++Sh, Offset += D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
 		{
-			DWORD ShdDirtyFlag = (1 << (Shader_Dirty_Samplers + Sh));
+			UPTR ShdDirtyFlag = (1 << (Shader_Dirty_Samplers + Sh));
 			if (ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag)) continue;
 
 			for (UPTR i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
@@ -1250,19 +1251,19 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 			const UPTR SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
 			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)_malloca(SRVArrayMemSize);
 
-			DWORD CurrShaderType = ShaderType_Invalid;
-			DWORD ShdDirtyFlag = 0;
+			UPTR CurrShaderType = ShaderType_Invalid;
+			UPTR ShdDirtyFlag = 0;
 			bool SkipShaderType = false;
-			DWORD FirstSRVSlot;
-			DWORD CurrSRVSlot;
+			UPTR FirstSRVSlot;
+			UPTR CurrSRVSlot;
 			for (UPTR i = 0; ; ++i)
 			{
-				DWORD ShaderType;
-				DWORD SRVSlot;
+				UPTR ShaderType;
+				UPTR SRVSlot;
 				bool AtTheEnd = (i >= CurrSRV.GetCount());
 				if (!AtTheEnd)
 				{
-					const DWORD CurrKey = CurrSRV.KeyAt(i);
+					const UPTR CurrKey = CurrSRV.KeyAt(i);
 					ShaderType = (CurrKey >> 16);
 					SRVSlot = (CurrKey & 0x0000ffff);
 				}
@@ -1325,13 +1326,13 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 	{
 		const UPTR MaxVBCount = CurrVB.GetCount();
 		const UPTR PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
-		const UPTR UINTsSize = sizeof(UPTR) * MaxVBCount;
+		const UPTR UINTsSize = sizeof(UINT) * MaxVBCount;
 		char* pMem = (char*)_malloca(PtrsSize + UINTsSize + UINTsSize);
 		n_assert(pMem);
 
 		ID3D11Buffer** pVBs = (ID3D11Buffer**)pMem;
-		UPTR* pStrides = (UPTR*)(pMem + PtrsSize);
-		UPTR* pOffsets = (UPTR*)(pMem + PtrsSize + UINTsSize);
+		UINT* pStrides = (UINT*)(pMem + PtrsSize);
+		UINT* pOffsets = (UINT*)(pMem + PtrsSize + UINTsSize);
 
 		//???PERF: skip all NULL buffers prior to the first non-NULL and all NULL after the last non-NULL and reduce count?
 		for (UPTR i = 0; i < MaxVBCount; ++i)
@@ -1340,14 +1341,15 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 			if (pVB)
 			{
 				pVBs[i] = pVB->GetD3DBuffer();
-				pStrides[i] = pVB->GetVertexLayout()->GetVertexSizeInBytes();
+				pStrides[i] = (UINT)pVB->GetVertexLayout()->GetVertexSizeInBytes();
+				pOffsets[i] = (UINT)CurrVBOffset[i];
 			}
 			else
 			{
 				pVBs[i] = NULL;
 				pStrides[i] = 0;
+				pOffsets[i] = 0;
 			}
-			pOffsets[i] = 0;
 		}
 
 		pD3DImmContext->IASetVertexBuffers(0, MaxVBCount, pVBs, pStrides, pOffsets);
@@ -1410,7 +1412,7 @@ DWORD CD3D11GPUDriver::ApplyChanges(DWORD ChangesToUpdate)
 				if (!UnsetVPFound)
 				{
 					// All other default values are fixed: X = 0, Y = 0, MinDepth = 0.f, MaxDepth = 1.f
-					if ((DWORD)D3DVP.Width == RTWidth && (DWORD)D3DVP.Height == RTHeight) break;
+					if ((UPTR)D3DVP.Width == RTWidth && (UPTR)D3DVP.Height == RTHeight) break;
 					UnsetVPFound = true;
 					CurrDirtyFlags.Set(GPU_Dirty_VP);
 				}
@@ -1568,12 +1570,12 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 }
 //---------------------------------------------------------------------
 
-PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, DWORD VertexCount, DWORD AccessFlags, const void* pData)
+PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData)
 {
 	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UPTR CPUAccess;
+	UINT CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	D3D11_BUFFER_DESC Desc;
@@ -1605,17 +1607,17 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, D
 }
 //---------------------------------------------------------------------
 
-PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD IndexCount, DWORD AccessFlags, const void* pData)
+PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData)
 {
 	if (!pD3DDevice || !IndexCount) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UPTR CPUAccess;
+	UINT CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	D3D11_BUFFER_DESC Desc;
 	Desc.Usage = Usage;
-	Desc.ByteWidth = IndexCount * (DWORD)IndexType;
+	Desc.ByteWidth = IndexCount * (UPTR)IndexType;
 	Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	Desc.CPUAccessFlags = CPUAccess;
 	Desc.MiscFlags = 0;
@@ -1642,14 +1644,14 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, DWORD Inde
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, DWORD AccessFlags, const Data::CParams* pData)
+PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const Data::CParams* pData)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CD3D11Shader::CBufferMeta* pMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hBuffer);
 	if (!pMeta) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UPTR CPUAccess;
+	UINT CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	D3D11_BUFFER_DESC Desc;
@@ -1726,7 +1728,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, DWOR
 // pData - initial data to be uploaded to a texture.
 // if MipDataProvided, order is ArrayElement[0] { Mip[0] ... Mip[N] } ... ArrayElement[M] { Mip[0] ... Mip[N] },
 // else order is ArrayElement[0] { Mip[0] } ... ArrayElement[M] { Mip[0] }, where Mip[0] is an original data.
-PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFlags, const void* pData, bool MipDataProvided)
+PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData, bool MipDataProvided)
 {
 	if (!pD3DDevice || !Desc.Width || !Desc.Height) return NULL;
 
@@ -1742,7 +1744,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, DWORD AccessFl
 	}
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
-	UPTR CPUAccess;
+	UINT CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
 
 	UPTR MipLevels = Desc.MipLevels;
@@ -2290,7 +2292,7 @@ ProcessFailure:
 }
 //---------------------------------------------------------------------
 
-PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, DWORD Size)
+PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, UPTR Size)
 {
 	if (!pData || !Size) return NULL;
 
@@ -2400,7 +2402,7 @@ bool CD3D11GPUDriver::MapResource(void** ppOutData, const CIndexBuffer& Resource
 //---------------------------------------------------------------------
 
 // Pointer will be 16-byte aligned
-bool CD3D11GPUDriver::MapResource(CImageData& OutData, const CTexture& Resource, EResourceMapMode Mode, DWORD ArraySlice, DWORD MipLevel)
+bool CD3D11GPUDriver::MapResource(CImageData& OutData, const CTexture& Resource, EResourceMapMode Mode, UPTR ArraySlice, UPTR MipLevel)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 	ID3D11Resource* pD3DTexRsrc = ((const CD3D11Texture&)Resource).GetD3DResource();
@@ -2415,8 +2417,8 @@ bool CD3D11GPUDriver::MapResource(CImageData& OutData, const CTexture& Resource,
 	// Perform cubemap face mapping, if necesary. Can avoid it if cubemap faces are loaded in ECubeMapFace order.
 	if (TexDesc.Type == Texture_Cube)
 	{
-		DWORD ArrayIndex = ArraySlice / 6;
-		DWORD Face = ArraySlice - (ArrayIndex * 6);
+		UPTR ArrayIndex = ArraySlice / 6;
+		UPTR Face = ArraySlice - (ArrayIndex * 6);
 		switch ((ECubeMapFace)Face)
 		{
 			case CubeFace_PosX:	return D3DCUBEMAP_FACE_POSITIVE_X;
@@ -2466,7 +2468,7 @@ bool CD3D11GPUDriver::UnmapResource(const CIndexBuffer& Resource)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, DWORD MipLevel)
+bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, UPTR ArraySlice, UPTR MipLevel)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 	ID3D11Resource* pD3DTexRsrc = ((const CD3D11Texture&)Resource).GetD3DResource();
@@ -2478,8 +2480,8 @@ bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, 
 	// Perform cubemap face mapping, if necesary. Can avoid it if cubemap faces are loaded in ECubeMapFace order.
 	if (TexDesc.Type == Texture_Cube)
 	{
-		DWORD ArrayIndex = ArraySlice / 6;
-		DWORD Face = ArraySlice - (ArrayIndex * 6);
+		UPTR ArrayIndex = ArraySlice / 6;
+		UPTR Face = ArraySlice - (ArrayIndex * 6);
 		switch ((ECubeMapFace)Face)
 		{
 			case CubeFace_PosX:	return D3DCUBEMAP_FACE_POSITIVE_X;
@@ -2497,12 +2499,12 @@ bool CD3D11GPUDriver::UnmapResource(const CTexture& Resource, DWORD ArraySlice, 
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, UPTR Size, UPTR Offset)
 {
 	if (!pDest || !pBuf || !BufferSize) FAIL;
 
-	DWORD RequestedSize = Size ? Size : BufferSize;
-	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR RequestedSize = Size ? Size : BufferSize;
+	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
@@ -2541,7 +2543,7 @@ bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_U
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource, UPTR Size, UPTR Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
 	const CD3D11VertexBuffer& VB11 = (const CD3D11VertexBuffer&)Resource;
@@ -2549,7 +2551,7 @@ bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resourc
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource, UPTR Size, UPTR Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
 	const CD3D11IndexBuffer& IB11 = (const CD3D11IndexBuffer&)Resource;
@@ -2557,29 +2559,29 @@ bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Resource, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice, UPTR MipLevel, const Data::CBox* pRegion)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 
 	const CTextureDesc& Desc = Resource.GetDesc();
 	if (!Dest.pData || MipLevel >= Desc.MipLevels) FAIL;
 
-	DWORD RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
+	UPTR RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
 	if (ArraySlice >= RealArraySize) FAIL;
 
 	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
 	ID3D11Resource* pTexRsrc = Tex11.GetD3DResource();
 	D3D11_USAGE Usage = Tex11.GetD3DUsage();
-	DWORD Dims = Resource.GetDimensionCount();
+	UPTR Dims = Resource.GetDimensionCount();
 	if (!pTexRsrc || !Dims) FAIL;
 
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
-	DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
+	UPTR BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 	if (!BPP) FAIL;
 
-	DWORD TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	DWORD TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	DWORD TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 	Params.BitsPerPixel = BPP;
@@ -2593,7 +2595,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 
 	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
 
-	DWORD ImageCopyFlags = CopyImage_AdjustSrc;
+	UPTR ImageCopyFlags = CopyImage_AdjustSrc;
 
 	ID3D11Resource* pRsrcToMap = NULL;
 	if (IsNonMappable)
@@ -2697,12 +2699,12 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DWORD BufferSize, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset)
 {
 	if (!pBuf || Usage == D3D11_USAGE_IMMUTABLE || !pData || !BufferSize) FAIL;
 
-	DWORD RequestedSize = Size ? Size : BufferSize;
-	DWORD SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR RequestedSize = Size ? Size : BufferSize;
+	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
@@ -2735,7 +2737,7 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, DW
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData, UPTR Size, UPTR Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11VertexBuffer>());
 	const CD3D11VertexBuffer& VB11 = (const CD3D11VertexBuffer&)Resource;
@@ -2743,7 +2745,7 @@ bool CD3D11GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, UPTR Size, UPTR Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11IndexBuffer>());
 	const CD3D11IndexBuffer& IB11 = (const CD3D11IndexBuffer&)Resource;
@@ -2751,14 +2753,14 @@ bool CD3D11GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData,
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcData, DWORD ArraySlice, DWORD MipLevel, const Data::CBox* pRegion)
+bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice, UPTR MipLevel, const Data::CBox* pRegion)
 {
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 
 	const CTextureDesc& Desc = Resource.GetDesc();
 	if (!SrcData.pData || MipLevel >= Desc.MipLevels) FAIL;
 
-	DWORD RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
+	UPTR RealArraySize = (Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize;
 	if (ArraySlice >= RealArraySize) FAIL;
 
 	const CD3D11Texture& Tex11 = (const CD3D11Texture&)Resource;
@@ -2801,7 +2803,7 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
 
 	// No format conversion for now, src & dest texel formats must match
-	DWORD BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
+	UPTR BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 	if (!BPP) FAIL;
 
 	D3D11_MAP MapType;
@@ -2830,7 +2832,7 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 	Params.TotalSize[0] = TotalSizeX;
 	Params.TotalSize[1] = TotalSizeY;
 
-	DWORD ImageCopyFlags = CopyImage_AdjustDest;
+	UPTR ImageCopyFlags = CopyImage_AdjustDest;
 	if (CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat) > 1)
 		ImageCopyFlags |= CopyImage_BlockCompressed;
 	if (Desc.Type == Texture_3D) ImageCopyFlags |= CopyImage_3DImage;
@@ -2844,7 +2846,7 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 //---------------------------------------------------------------------
 
 // Especially useful for VRAM-only D3D11_USAGE_DEFAULT buffers. May not support partial updates.
-bool CD3D11GPUDriver::WriteToResource(CConstantBuffer& Resource, const void* pData, DWORD Size, DWORD Offset)
+bool CD3D11GPUDriver::WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size, UPTR Offset)
 {
 	n_assert_dbg(Resource.IsA<CD3D11ConstantBuffer>());
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Resource;
@@ -3012,7 +3014,7 @@ EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::GetUsageAccess(DWORD InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UPTR& OutCPUAccess)
+void CD3D11GPUDriver::GetUsageAccess(UPTR InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
 {
 	if (InAccessFlags == Access_GPU_Read || InAccessFlags == 0)
 	{

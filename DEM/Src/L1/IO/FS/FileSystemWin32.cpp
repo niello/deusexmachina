@@ -209,7 +209,7 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
 
 	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
-	DWORD FilterLength = strlen(pActualFilter);
+	UPTR FilterLength = strlen(pActualFilter);
 	CString SearchString(pPath, strlen(pPath), FilterLength);
 	SearchString.Add(pActualFilter, FilterLength);
 
@@ -371,7 +371,7 @@ U64 CFileSystemWin32::GetFileSize(void* hFile) const
 }
 //---------------------------------------------------------------------
 
-DWORD CFileSystemWin32::GetFileWriteTime(void* hFile) const
+U64 CFileSystemWin32::GetFileWriteTime(void* hFile) const
 {
 	FILETIME WriteTime;
 	if (!::GetFileTime(hFile, NULL, NULL, &WriteTime)) return 0;
@@ -380,7 +380,7 @@ DWORD CFileSystemWin32::GetFileWriteTime(void* hFile) const
 	UL.LowPart = WriteTime.dwLowDateTime;
 	UL.HighPart = WriteTime.dwHighDateTime;
 	UL.QuadPart /= 10000000; // To seconds
-	return (DWORD)(UL.QuadPart - 11644473600LL); // Seconds from Win file time base to unix epoch base
+	return (U64)(UL.QuadPart - 11644473600ULL); // Seconds from Win file time base to unix epoch base
 }
 //---------------------------------------------------------------------
 

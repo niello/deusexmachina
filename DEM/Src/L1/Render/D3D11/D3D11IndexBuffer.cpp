@@ -24,7 +24,7 @@ bool CD3D11IndexBuffer::Create(EIndexType Type, ID3D11Buffer* pIB)
 	if (D3DDesc.Usage == D3D11_USAGE_DEFAULT || D3DDesc.Usage == D3D11_USAGE_STAGING) Access.Set(Access_GPU_Write); //???staging to?
 
 	IndexType = Type;
-	IndexCount = D3DDesc.ByteWidth / (DWORD)Type;
+	IndexCount = D3DDesc.ByteWidth / (UPTR)Type;
 	pBuffer = pIB;
 	D3DUsage = D3DDesc.Usage;
 

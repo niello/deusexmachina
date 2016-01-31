@@ -12,6 +12,7 @@
 // implementing a switch-case method like GetIndexForD3D9SamplerStateKey().
 
 typedef enum _D3DSAMPLERSTATETYPE D3DSAMPLERSTATETYPE;
+typedef unsigned long DWORD;
 
 namespace Render
 {

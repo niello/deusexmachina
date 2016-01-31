@@ -35,7 +35,7 @@ protected:
 	CArray<CString>				CmdHistory;
 	IPTR						CmdHistoryCursor;
 
-	void Print(const char* pMsg, DWORD Color);
+	void Print(const char* pMsg, U32 ColorARGB);
 
 	bool OnShow(const CEGUI::EventArgs& e);
 	bool OnChar(const CEGUI::EventArgs& e);

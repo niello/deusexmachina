@@ -73,7 +73,7 @@ __ImplementSingleton(CDebugDraw);
 //	n_assert(SUCCEEDED(D3DXCreateSphere(RenderSrv->GetD3DDevice(), 1.0f, 12, 6, &pDXMesh[1], NULL)));
 //	n_assert(SUCCEEDED(D3DXCreateCylinder(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, 18, 1, &pDXMesh[2], NULL)));
 //
-//	DWORD VCount = 0, ICount = 0;
+//	UPTR VCount = 0, ICount = 0;
 //	for (int i = 0; i < ShapeCount; ++i)
 //	{
 //		VCount += pDXMesh[i]->GetNumVertices();
@@ -163,7 +163,7 @@ __ImplementSingleton(CDebugDraw);
 //	if (!InstanceBuffer->IsValid())
 //		n_assert(InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write));
 //
-//	DWORD TotalShapeCount = 0;
+//	UPTR TotalShapeCount = 0;
 //	for (int i = 0; i < ShapeCount; ++i)
 //		TotalShapeCount += ShapeInsts[i].GetCount();
 //
@@ -184,10 +184,10 @@ __ImplementSingleton(CDebugDraw);
 //
 //			RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
 //
-//			DWORD Remain = Insts.GetCount();
+//			UPTR Remain = Insts.GetCount();
 //			while (Remain > 0)
 //			{
-//				DWORD Count = n_min(MaxShapesPerDIP, Remain);
+//				UPTR Count = n_min(MaxShapesPerDIP, Remain);
 //				Remain -= Count;
 //				void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
 //				memcpy(pInstData, Insts.Begin(), Count * sizeof(CDDShapeInst));
@@ -212,7 +212,7 @@ __ImplementSingleton(CDebugDraw);
 //
 //	if (Lines.GetCount() || Tris.GetCount())
 //	{
-//		DWORD FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
+//		UPTR FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
 //		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlagDefault));
 //
 //		n_assert(ShapeShader->Begin(true) == 1);
@@ -236,7 +236,7 @@ __ImplementSingleton(CDebugDraw);
 //
 //	if (Points.GetCount())
 //	{
-//		DWORD FeatFlag = RenderSrv->ShaderFeatures.GetMask("Point");
+//		UPTR FeatFlag = RenderSrv->ShaderFeatures.GetMask("Point");
 //		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlag));
 //
 //		n_assert(ShapeShader->Begin(true) == 1);

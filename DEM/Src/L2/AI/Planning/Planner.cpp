@@ -288,8 +288,8 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 			pNeighbor->Fitness = pNeighbor->Goal + pNeighbor->WSCurr.GetDiffCount(pNeighbor->WSGoal);
 			pNeighbor->pParent = pCurrNode;
 
-			n_assert(pNeighbor->Fitness < MAX_SDWORD);
-			//if (pNeighbor->Fitness == MAX_SDWORD) NodePool.Destroy(pNeighbor);
+			n_assert(pNeighbor->Fitness < I32_MAX);
+			//if (pNeighbor->Fitness == I32_MAX) NodePool.Destroy(pNeighbor);
 
 			OpenList.AddFront(pNeighbor);
 		}

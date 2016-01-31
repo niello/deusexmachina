@@ -63,11 +63,12 @@ inline CRTTI::CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryF
 inline bool CRTTI::IsDerivedFrom(const CRTTI& Other) const
 {
 	const CRTTI* pCurr = this;
-	while (pCurr)
+	do
 	{
 		if (pCurr == &Other) OK;
 		pCurr = pCurr->pParent;
 	}
+	while (pCurr);
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -75,11 +76,12 @@ inline bool CRTTI::IsDerivedFrom(const CRTTI& Other) const
 inline bool CRTTI::IsDerivedFrom(Data::CFourCC OtherFourCC) const
 {
 	const CRTTI* pCurr = this;
-	while (pCurr)
+	do
 	{
 		if (pCurr->FourCC == OtherFourCC) OK;
 		pCurr = pCurr->pParent;
 	}
+	while (pCurr);
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -87,11 +89,12 @@ inline bool CRTTI::IsDerivedFrom(Data::CFourCC OtherFourCC) const
 inline bool CRTTI::IsDerivedFrom(const char* pOtherName) const
 {
 	const CRTTI* pCurr = this;
-	while (pCurr)
+	do
 	{
 		if (pCurr->Name == pOtherName) OK;
 		pCurr = pCurr->pParent;
 	}
+	while (pCurr);
 	FAIL;
 }
 //---------------------------------------------------------------------

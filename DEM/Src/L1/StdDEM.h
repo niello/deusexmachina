@@ -59,16 +59,9 @@ const UPTR INVALID_HALF_INDEX = (1 << HalfRegisterBits) - 1;
 typedef UPTR				HHandle;
 #define INVALID_HANDLE		((HHandle)(0))
 
-// Old types
-
-typedef unsigned long       DWORD;
-
-#ifndef MAX_DWORD
-#define MAX_DWORD			(0xffffffff)
-#endif
-
-#ifndef MAX_SDWORD
-#define MAX_SDWORD			(0x7fffffff)
+//???use template C++ std facility?
+#ifndef I32_MAX
+#define I32_MAX				(0x7fffffff)
 #endif
 
 //---------------------------------------------------------------------

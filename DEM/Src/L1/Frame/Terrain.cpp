@@ -1,7 +1,6 @@
 #include "Terrain.h"
 
-//#include <Render/RenderServer.h>
-//#include <Render/SPS.h>
+#include <Scene/SPS.h>
 //#include <Scene/SceneNode.h> // for AABB only
 //#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
@@ -10,8 +9,6 @@
 
 namespace Frame
 {
-//bool LoadTextureUsingD3DX(const CString& FileName, PTexture OutTexture);
-
 __ImplementClass(Frame::CTerrain, 'TERR', Frame::CRenderObject);
 
 bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
@@ -218,24 +215,25 @@ void CTerrain::OnDetachFromNode()
 //	MinMaxMaps.Clear();
 //	SAFE_FREE(pMinMaxData);
 //	//HeightMap->Unload(); //???unload or leave in resource manager? leaving is good for save-load
-//	if (pSPS)
-//	{
-//		pSPS->AlwaysVisibleObjects.RemoveByValue(this);
-//		pSPS = NULL;
-//	}
-//	CRenderObject::OnDetachFromNode();
+	if (pSPS)
+	{
+		pSPS->OversizedObjects.RemoveByValue(this);
+		pSPS = NULL;
+	}
+
+	CRenderObject::OnDetachFromNode();
 }
 //---------------------------------------------------------------------
 
 void CTerrain::UpdateInSPS(Scene::CSPS& SPS)
 {
-//	//!!!can check global Box before adding! if so, recalc it on world matrix changed!
-//	Flags.Clear(WorldMatrixChanged);
-//	if (!pSPS)
-//	{
-//		pSPS = &SPS;
-//		SPS.AlwaysVisibleObjects.Add(this);
-//	}
+	//!!!can check global Box before adding! if so, recalc it on world matrix changed!
+	Flags.Clear(WorldMatrixChanged);
+	if (!pSPS)
+	{
+		pSPS = &SPS;
+		SPS.OversizedObjects.Add(this);
+	}
 }
 //---------------------------------------------------------------------
 

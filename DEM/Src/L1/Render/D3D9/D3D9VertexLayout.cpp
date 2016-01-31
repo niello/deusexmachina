@@ -10,7 +10,7 @@ namespace Render
 __ImplementClass(Render::CD3D9VertexLayout, 'VL09', Render::CVertexLayout);
 
 //!!!???assert destroyed?!
-bool CD3D9VertexLayout::Create(const CVertexComponent* pComponents, DWORD Count, IDirect3DVertexDeclaration9* pD3DDecl)
+bool CD3D9VertexLayout::Create(const CVertexComponent* pComponents, UPTR Count, IDirect3DVertexDeclaration9* pD3DDecl)
 {
 	if (!pD3DDecl || !pComponents || !Count) FAIL;
 

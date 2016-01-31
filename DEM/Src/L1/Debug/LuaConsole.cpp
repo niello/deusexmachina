@@ -60,7 +60,7 @@ void CLuaConsole::Term()
 }
 //---------------------------------------------------------------------
 
-void CLuaConsole::Print(const char* pMsg, DWORD Color)
+void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 {
 	CEGUI::ListboxTextItem* pNewItem;
 
@@ -82,7 +82,7 @@ void CLuaConsole::Print(const char* pMsg, DWORD Color)
 		pNewItem->setTextParsingEnabled(false);
 	}
 
-	pNewItem->setTextColours(CEGUI::Colour(Color));
+	pNewItem->setTextColours(CEGUI::Colour(ColorARGB));
 
 	bool ShouldScroll = (pVertScroll->getScrollPosition() >= pVertScroll->getDocumentSize() - pVertScroll->getPageSize());
 	pOutputWnd->addItem(pNewItem);
@@ -93,8 +93,8 @@ void CLuaConsole::Print(const char* pMsg, DWORD Color)
 bool CLuaConsole::OnLogMsg(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	Data::PParams P = ((const Events::CEvent&)Event).Params;
-	DWORD Color = (P->Get<int>(CStrID("Type")) == Sys::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;
-	Print((const char*)P->Get<PVOID>(CStrID("pMsg")), Color);
+	U32 ColorARGB = (P->Get<int>(CStrID("Type")) == Sys::MsgType_Error) ? 0xfff0c0c0 : 0xffb0b0b0;
+	Print((const char*)P->Get<PVOID>(CStrID("pMsg")), ColorARGB);
 	OK;
 }
 //---------------------------------------------------------------------

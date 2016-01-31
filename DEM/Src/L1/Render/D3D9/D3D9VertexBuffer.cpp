@@ -14,7 +14,7 @@ bool CD3D9VertexBuffer::Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pV
 {
 	if (!pVB) FAIL;
 
-	DWORD VertexSize = Layout.GetVertexSizeInBytes();
+	UPTR VertexSize = Layout.GetVertexSizeInBytes();
 	if (!VertexSize) FAIL;
 
 	D3DVERTEXBUFFER_DESC D3DDesc;

@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
+#include <Data/StringID.h>
 #include <Data/Flags.h>
 
 // Frame rendering phase implements a single algorithm in a render path.
@@ -21,6 +22,12 @@ class CView;
 
 class CRenderPhase: public Core::CObject //???need? lives only in RP!
 {
+	__DeclareClassNoFactory;
+
+protected:
+
+	CStrID Name;
+
 public:
 
 	//CFixedArray<PRenderTarget>	RenderTargets;
@@ -35,7 +42,7 @@ public:
 
 	virtual ~CRenderPhase() {}
 
-	//virtual bool Init(const Data::CParams& Desc, const CRenderPath& Owner);
+	virtual bool Init(CStrID PhaseName, const Data::CParams& Desc) { Name = PhaseName; OK; }
 	virtual bool Render(CView& View) = 0;
 };
 
