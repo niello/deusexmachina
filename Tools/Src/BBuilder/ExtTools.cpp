@@ -59,7 +59,7 @@ int RunExternalToolBatch(CStrID Tool, int Verb, const char* pExtraCmdLine, const
 	if (InList.GetCount() != OutList.GetCount()) return -1;
 	if (InList.GetCount() == 0) return 0;
 
-	for (int i = 0; i < InList.GetCount(); ++i)
+	for (UPTR i = 0; i < InList.GetCount(); ++i)
 	{
 		InList[i] = IOSrv->ResolveAssigns(InList[i]);
 		OutList[i] = IOSrv->ResolveAssigns(OutList[i]);
@@ -70,7 +70,7 @@ int RunExternalToolBatch(CStrID Tool, int Verb, const char* pExtraCmdLine, const
 
 	CString InStr = InList[0], OutStr = OutList[0];
 
-	for (int i = 1; i < InList.GetCount(); ++i)
+	for (UPTR i = 1; i < InList.GetCount(); ++i)
 	{
 		DWORD NextLength = 32 + InStr.GetLength() + OutStr.GetLength() + InList[i].GetLength() + OutList[i].GetLength();
 		if (NextLength >= MAX_CMDLINE_CHARS)

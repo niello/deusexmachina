@@ -1,7 +1,7 @@
 #include "GameLevelView.h"
 
 #include <Game/GameLevel.h>
-#include <Frame/Camera.h>
+#include <Frame/NodeAttrCamera.h>
 
 namespace Game
 {

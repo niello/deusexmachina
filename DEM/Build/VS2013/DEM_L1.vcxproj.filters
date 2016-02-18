@@ -791,9 +791,6 @@
     <ClInclude Include="..\..\Src\L1\Data\MurmurHash3.h">
       <Filter>Data</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Render\EffectTech.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\Effect.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -830,20 +827,8 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPath.h">
       <Filter>Frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\Camera.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\Light.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\Model.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Scene\SPS.h">
       <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\RenderObject.h">
-      <Filter>Frame</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h">
       <Filter>Frame</Filter>
@@ -872,9 +857,6 @@
     <ClInclude Include="..\..\Src\L1\UI\UIContext.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\Terrain.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Physics\CollisionShapeLoader.h">
       <Filter>Physics</Filter>
     </ClInclude>
@@ -883,9 +865,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\MeshLoaderNVX2.h">
       <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\Skin.h">
-      <Filter>Frame</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Render\SkinInfo.h">
       <Filter>Render</Filter>
@@ -902,13 +881,40 @@
     <ClInclude Include="..\..\Src\L1\Physics\PhysicsLevel.h">
       <Filter>Physics</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\RenderNode.h">
+    <ClInclude Include="..\..\Src\L1\Render\Technique.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Light.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\NodeAttrLight.h">
       <Filter>Frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\Renderer.h">
+    <ClInclude Include="..\..\Src\L1\Render\Renderable.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\NodeAttrRenderable.h">
       <Filter>Frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\ModelRenderer.h">
+    <ClInclude Include="..\..\Src\L1\Render\Terrain.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Model.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\RenderNode.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Renderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\NodeAttrSkin.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ModelRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\NodeAttrCamera.h">
       <Filter>Frame</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1405,20 +1411,8 @@
     <ClCompile Include="..\..\Src\L1\Frame\RenderPath.cpp">
       <Filter>Frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\Camera.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\Light.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\Model.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\SPS.cpp">
       <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\RenderObject.cpp">
-      <Filter>Frame</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp">
       <Filter>Math</Filter>
@@ -1447,9 +1441,6 @@
     <ClCompile Include="..\..\Src\L1\UI\UIContext.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\Terrain.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
@@ -1458,9 +1449,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\MeshLoaderNVX2.cpp">
       <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\Skin.cpp">
-      <Filter>Frame</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp">
       <Filter>Render</Filter>
@@ -1477,11 +1465,35 @@
     <ClCompile Include="..\..\Src\L1\Physics\PhysicsLevel.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\RenderNode.cpp">
+    <ClCompile Include="..\..\Src\L1\Render\Light.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\NodeAttrLight.cpp">
       <Filter>Frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\ModelRenderer.cpp">
+    <ClCompile Include="..\..\Src\L1\Render\Renderable.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\NodeAttrRenderable.cpp">
       <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Model.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\NodeAttrSkin.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\ModelRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\NodeAttrCamera.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

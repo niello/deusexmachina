@@ -13,6 +13,9 @@ SceneNodeAttr
 {
 	// Generic
 	Class			{ Type = "string" }
+
+	// Renderable
+	RenderableClass	{ FourCC = "RCLS" Type = "string" }
 	
 	// Any with animable shader vars (light, material)
 	Vars			{ FourCC = "VARS" WriteChildKeys = true } //???split to static and animable? or store only animable in nodes?

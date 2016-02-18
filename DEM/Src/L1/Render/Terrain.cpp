@@ -1,15 +1,11 @@
 #include "Terrain.h"
 
-#include <Scene/SPS.h>
-//#include <Scene/SceneNode.h> // for AABB only
-//#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
-//#include <Data/DataServer.h>
 #include <Core/Factory.h>
 
-namespace Frame
+namespace Render
 {
-__ImplementClass(Frame::CTerrain, 'TERR', Frame::CRenderObject);
+__ImplementClass(Render::CTerrain, 'TERR', Render::IRenderable);
 
 bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -209,40 +205,5 @@ bool CTerrain::ValidateResources()
 	OK;
 }
 //---------------------------------------------------------------------
-
-void CTerrain::OnDetachFromNode()
-{
-//	MinMaxMaps.Clear();
-//	SAFE_FREE(pMinMaxData);
-//	//HeightMap->Unload(); //???unload or leave in resource manager? leaving is good for save-load
-	if (pSPS)
-	{
-		pSPS->OversizedObjects.RemoveByValue(this);
-		pSPS = NULL;
-	}
-
-	CRenderObject::OnDetachFromNode();
-}
-//---------------------------------------------------------------------
-
-void CTerrain::UpdateInSPS(Scene::CSPS& SPS)
-{
-	//!!!can check global Box before adding! if so, recalc it on world matrix changed!
-	Flags.Clear(WorldMatrixChanged);
-	if (!pSPS)
-	{
-		pSPS = &SPS;
-		SPS.OversizedObjects.Add(this);
-	}
-}
-//---------------------------------------------------------------------
-
-//void CTerrain::GetGlobalAABB(CAABB& Out) const
-//{
-//	const vector3& Translation = pNode->GetWorldPosition();
-//	Out.Min = Box.Min + Translation;
-//	Out.Max = Box.Max + Translation;
-//}
-////---------------------------------------------------------------------
 
 }

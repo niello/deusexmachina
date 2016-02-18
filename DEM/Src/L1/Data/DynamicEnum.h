@@ -32,6 +32,7 @@ public:
 
 typedef CDynamicEnumT<U16> CDynamicEnum16;
 typedef CDynamicEnumT<U32> CDynamicEnum32;
+typedef CDynamicEnumT<UPTR> CDynamicEnum;
 
 template<class T>
 T CDynamicEnumT<T>::GetMask(const char* pFlagStr)

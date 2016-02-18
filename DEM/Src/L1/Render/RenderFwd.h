@@ -3,6 +3,8 @@
 #define __DEM_L1_RENDER_H__
 
 #include <Data/Ptr.h>
+#include <Data/Dictionary.h>
+#include <Data/StringID.h>
 #include <Math/AABB.h>
 
 // Render system definitions and forward declarations
@@ -40,6 +42,9 @@ typedef HHandle HConst;
 typedef HHandle HConstBuffer;
 typedef HHandle HResource;
 typedef HHandle HSampler;
+
+// Named data flow conventions between CPU and GPU, see Renderer.cpp for implementation and details
+UPTR GetShaderInputSetID(CStrID InputSetName);
 
 enum EGPUDriverType
 {

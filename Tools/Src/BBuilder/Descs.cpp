@@ -10,7 +10,7 @@
 
 void ConvertPropNamesToFourCC(Data::PDataArray Props)
 {
-	for (int i = 0; i < Props->GetCount(); ++i)
+	for (UPTR i = 0; i < Props->GetCount(); ++i)
 	{
 		if (!Props->Get(i).IsA<CString>()) continue;
 		const CString& Name = Props->Get<CString>(i);
@@ -116,7 +116,7 @@ bool ProcessPhysicsDesc(const CString& SrcFilePath, const CString& ExportFilePat
 	Data::PDataArray Objects;
 	if (Desc->Get(Objects, CStrID("Objects")))
 	{
-		for (int i = 0; i < Objects->GetCount(); ++i)
+		for (UPTR i = 0; i < Objects->GetCount(); ++i)
 		{
 			Data::PParams ObjDesc = Objects->Get<Data::PParams>(i);
 			CStrID PickShape = ObjDesc->Get<CStrID>(CStrID("Shape"), CStrID::Empty);
@@ -152,7 +152,7 @@ bool ProcessAnimDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
-	for (int i = 0; i < Desc->GetCount(); ++i)
+	for (UPTR i = 0; i < Desc->GetCount(); ++i)
 	{
 		//???!!!allow compile or batch-compile?
 		// can add Model resource description, associated with this anim, to CFModel list
@@ -214,7 +214,7 @@ bool ProcessMaterialDesc(const char* pName)
 	if (Desc->Get(Textures, CStrID("Textures")))
 	{
 		//!!!when export from src, find resource desc and add source texture to CFTexture list!
-		for (int i = 0; i < Textures->GetCount(); ++i)
+		for (UPTR i = 0; i < Textures->GetCount(); ++i)
 		{
 			CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
 			if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
@@ -230,7 +230,7 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 	Data::PDataArray Attrs;
 	if (NodeDesc.Get(Attrs, CStrID("Attrs")))
 	{
-		for (int i = 0; i < Attrs->GetCount(); ++i)
+		for (UPTR i = 0; i < Attrs->GetCount(); ++i)
 		{
 			Data::PParams AttrDesc = Attrs->Get<Data::PParams>(i);
 
@@ -238,7 +238,7 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 			if (AttrDesc->Get(Textures, CStrID("Textures")))
 			{
 				//!!!when export from src, find resource desc and add source texture to CFTexture list!
-				for (int i = 0; i < Textures->GetCount(); ++i)
+				for (UPTR i = 0; i < Textures->GetCount(); ++i)
 				{
 					CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
 					if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
@@ -284,7 +284,7 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 
 	Data::PParams Children;
 	if (NodeDesc.Get(Children, CStrID("Children")))
-		for (int i = 0; i < Children->GetCount(); ++i)
+		for (UPTR i = 0; i < Children->GetCount(); ++i)
 			if (!ProcessSceneNodeRefs(*Children->Get(i).GetValue<Data::PParams>())) FAIL;
 
 	OK;
@@ -354,7 +354,7 @@ void GatherSkinInfo(CStrID NodeID, Data::PParams NodeDesc, CArray<CBoneInfo>& Ou
 	Data::PDataArray Attrs;
 	if (NodeDesc->Get<Data::PDataArray>(Attrs, CStrID("Attrs")))
 	{
-		for (int i = 0; i < Attrs->GetCount(); ++i)
+		for (UPTR i = 0; i < Attrs->GetCount(); ++i)
 		{
 			Data::PParams AttrDesc = Attrs->Get<Data::PParams>(i);
 			CString ClassName;
@@ -380,7 +380,7 @@ void GatherSkinInfo(CStrID NodeID, Data::PParams NodeDesc, CArray<CBoneInfo>& Ou
 
 	Data::PParams Children;
 	if (NodeDesc->Get<Data::PParams>(Children, CStrID("Children")))
-		for (int i = 0; i < Children->GetCount(); ++i)
+		for (UPTR i = 0; i < Children->GetCount(); ++i)
 		{
 			Data::CParam& Child = Children->Get(i);
 			GatherSkinInfo(Child.GetName(), Child.GetValue<Data::PParams>(), OutSkinInfo, BoneIndex);
@@ -412,7 +412,7 @@ bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePat
 		Writer.Write<U32>(SkinInfo.GetCount());
 
 		// Write pose array
-		for (int i = 0; i < SkinInfo.GetCount(); ++i)
+		for (UPTR i = 0; i < SkinInfo.GetCount(); ++i)
 		{
 			CBoneInfo& BoneInfo = SkinInfo[i];
 			matrix44 Pose;
@@ -421,7 +421,7 @@ bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePat
 		}
 
 		// Write bone hierarchy
-		for (int i = 0; i < SkinInfo.GetCount(); ++i)
+		for (UPTR i = 0; i < SkinInfo.GetCount(); ++i)
 		{
 			CBoneInfo& BoneInfo = SkinInfo[i];
 			Writer.Write<U16>(BoneInfo.ParentIndex); // Invalid index is converted correctly, all bits set
@@ -502,7 +502,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 	Data::PDataArray Inventory;
 	if (Attrs->Get<Data::PDataArray>(Inventory, CStrID("Inventory")))
 	{
-		for (int i = 0; i < Inventory->GetCount(); ++i)
+		for (UPTR i = 0; i < Inventory->GetCount(); ++i)
 		{
 			ItemID = Inventory->Get<Data::PParams>(i)->Get<CStrID>(CStrID("ID"), CStrID::Empty);
 			if (ItemID.IsValid() &&
@@ -613,7 +613,7 @@ bool ProcessLevel(const Data::CParams& LevelDesc, const CString& Name)
 	Data::PParams SubDesc;
 	if (LevelDesc.Get(SubDesc, CStrID("Entities")))
 	{
-		for (int i = 0; i < SubDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < SubDesc->GetCount(); ++i)
 		{
 			const Data::CParam& EntityPrm = SubDesc->Get(i);
 			if (!EntityPrm.IsA<Data::PParams>()) continue;
@@ -781,7 +781,7 @@ bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 			Data::PParams Tasks;
 			if (Desc->Get(Tasks, CStrID("Tasks")))
 			{
-				for (int i = 0; i < Tasks->GetCount(); ++i)
+				for (UPTR i = 0; i < Tasks->GetCount(); ++i)
 				{
 					CString Name(Tasks->Get(i).GetName().CStr());
 					ExportFilePath = ExportPath + "/" + Name + ".lua";
@@ -826,7 +826,7 @@ bool ProcessSOActionTplsDesc(const CString& SrcFilePath, const CString& ExportFi
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
-	for (int i = 0; i < Desc->GetCount(); ++i)
+	for (UPTR i = 0; i < Desc->GetCount(); ++i)
 	{
 		const Data::CParams& ActTpl = *Desc->Get<Data::PParams>(i);
 

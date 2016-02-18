@@ -17,9 +17,9 @@ namespace Render
 namespace Frame
 {
 
-class CSkin: public Scene::CNodeAttribute
+class CNodeAttrSkin: public Scene::CNodeAttribute
 {
-	__DeclareClass(CSkin);
+	__DeclareClass(CNodeAttrSkin);
 
 protected:
 
@@ -39,7 +39,7 @@ protected:
 
 public:
 
-	CSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
+	CNodeAttrSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
 
 	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual void		Update(const vector3* pCOIArray, UPTR COICount);
@@ -47,7 +47,7 @@ public:
 	Render::PSkinInfo	GetSkinInfo() const { return SkinInfo; }
 };
 
-typedef Ptr<CSkin> PSkin;
+typedef Ptr<CNodeAttrSkin> PSkin;
 
 }
 

@@ -5,7 +5,7 @@
 //#include <Core/Object.h>
 #include <Data/Singleton.h>
 #include <Scene/NodeControllerThirdPerson.h>
-//#include <Scene/Camera.h>
+//#include <Frame/NodeAttrCamera.h>
 //#include <Util/PFLoop.h>
 
 // Manages the current camera of the game level. Provides interface for driving camera

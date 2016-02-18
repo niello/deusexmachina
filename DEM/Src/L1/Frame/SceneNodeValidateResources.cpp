@@ -1,7 +1,8 @@
 #include "SceneNodeValidateResources.h"
 
 #include <Scene/SceneNode.h>
-#include <Frame/RenderObject.h>
+#include <Frame/NodeAttrRenderable.h>
+#include <Render/Renderable.h>
 
 namespace Frame
 {
@@ -12,8 +13,8 @@ bool CSceneNodeValidateResources::Visit(Scene::CSceneNode& Node)
 	for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
-		if (Attr.IsA<CRenderObject>())
-			if (!((CRenderObject&)Attr).ValidateResources()) FAIL;
+		if (Attr.IsA<CNodeAttrRenderable>())
+			if (!((CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources()) FAIL;
 	}
 
 	OK;

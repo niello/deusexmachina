@@ -1,7 +1,5 @@
 #include "Model.h"
 
-#include <Scene/SPS.h>
-#include <Scene/SceneNode.h>
 #include <Render/Mesh.h>
 #include <Render/Material.h>
 #include <Resources/Resource.h>
@@ -10,9 +8,9 @@
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
 
-namespace Frame
+namespace Render
 {
-__ImplementClass(Frame::CModel, 'MODL', Frame::CRenderObject);
+__ImplementClass(Render::CModel, 'MODL', Render::IRenderable);
 
 bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -66,6 +64,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MESH':
 		{
 			//???!!!store the whole URI in a file?!
+			//???store RMesh in a CModel? to allow resource validation. Or really no need?
 			CString MeshID = DataReader.Read<CString>();
 			CStrID MeshURI = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
 			Resources::PResource RMesh = ResourceMgr->RegisterResource(MeshURI);
@@ -86,6 +85,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		case 'BTYP':
 		{
+			CStrID BatchType;
 			return DataReader.Read(BatchType);
 		}
 		case 'FFLG':
@@ -95,7 +95,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 			//FeatureFlags = RenderSrv->ShaderFeatures.GetMask(FeatFlagsStr);
 			OK;
 		}
-		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);
+		default: FAIL;
 	}
 }
 //---------------------------------------------------------------------
@@ -132,75 +132,16 @@ bool CModel::ValidateResources()
 }
 //---------------------------------------------------------------------
 
-// Now resources are shared and aren't unloaded
-// If it is necessary to unload resources (decrement refcount), resource IDs must be saved,
-// so pointers can be cleared, but model is able to reload resources from IDs
-void CModel::OnDetachFromNode()
+bool CModel::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
-//	//???do it on deactivation of an attribute? even it is not detached from node
-	if (pSPSRecord)
-	{
-		pSPS->RemoveRecord(pSPSRecord);
-		pSPSRecord = NULL;
-		pSPS = NULL;
-	}
-	CRenderObject::OnDetachFromNode();
-}
-//---------------------------------------------------------------------
-
-void CModel::UpdateInSPS(Scene::CSPS& SPS)
-{
-	if (pSPS != &SPS)
-	{
-		if (pSPS)
-		{
-			if (pSPSRecord)
-			{
-				pSPS->RemoveRecord(pSPSRecord);
-				pSPSRecord = NULL;
-			}
-			else pSPS->OversizedObjects.RemoveByValue(this);
-		}
-
-		pSPS = &SPS;
-	}
-
-	if (!pSPSRecord)
-	{
-		CAABB Box;
-		GetGlobalAABB(Box); //???!!!LOD?! //???calc cached and reuse here?
-		pSPSRecord = SPS.AddRecord(Box, this);
-	}
-	else if (Flags.Is(WorldMatrixChanged)) //!!! || Group.LocalBox changed
-	{
-		GetGlobalAABB(pSPSRecord->GlobalBox); //???!!!LOD?!
-		SPS.UpdateRecord(pSPSRecord);
-		Flags.Clear(WorldMatrixChanged);
-	}
-}
-//---------------------------------------------------------------------
-
-const CAABB& CModel::GetLocalAABB(UPTR LOD) const
-{
-	const Render::CPrimitiveGroup* pGroup = Mesh->GetGroup(MeshGroupIndex, LOD);
-	return pGroup ? pGroup->AABB : CAABB::Empty;
-}
-//---------------------------------------------------------------------
-
-//!!!differ between CalcBox - primary source, and GetGlobalAABB - return cached box from spatial record!
-//???inline?
-void CModel::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
-{
-	// If local params changed, recompute AABB
-	// If transform of host node changed, update global space AABB (rotate, scale)
 	n_assert_dbg(Mesh->IsResourceValid());
 	const Render::CPrimitiveGroup* pGroup = Mesh->GetGroup(MeshGroupIndex, LOD);
 	if (pGroup)
 	{
 		OutBox = pGroup->AABB;
-		OutBox.Transform(pNode->GetWorldMatrix());
+		OK;
 	}
-	else OutBox = CAABB::Empty;
+	else FAIL;
 }
 //---------------------------------------------------------------------
 

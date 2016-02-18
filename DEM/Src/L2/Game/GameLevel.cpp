@@ -1,7 +1,7 @@
 #include "GameLevel.h"
 
 #include <Frame/View.h>
-#include <Frame/Camera.h>
+#include <Frame/NodeAttrCamera.h>
 #include <Game/EntityManager.h>
 #include <Game/StaticEnvManager.h>
 #include <Game/Entity.h>
@@ -370,7 +370,7 @@ void CGameLevel::RenderDebug()
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	Frame::PCamera MainCamera; //!!!DBG TMP!
+	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr() || PhysicsLevel.IsNullPtr()) FAIL;
 
 	line3 Ray;
@@ -404,7 +404,7 @@ UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRec
 
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	Frame::PCamera MainCamera; //!!!DBG TMP!
+	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
 	if (Offset) EntityPos += *Offset;
@@ -415,7 +415,7 @@ bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, c
 
 bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
 {
-	Frame::PCamera MainCamera; //!!!DBG TMP!
+	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
@@ -431,7 +431,7 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 
 bool CGameLevel::GetEntityScreenRect(Data::CRect& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	Frame::PCamera MainCamera; //!!!DBG TMP!
+	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();

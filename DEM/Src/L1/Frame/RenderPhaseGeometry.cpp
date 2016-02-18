@@ -1,10 +1,12 @@
 #include "RenderPhaseGeometry.h"
 
 #include <Frame/View.h>
-#include <Frame/Renderer.h>
-#include <Frame/RenderNode.h>
-#include <Frame/RenderObject.h>
-#include <Scene/NodeAttribute.h>
+#include <Frame/NodeAttrRenderable.h>
+#include <Frame/NodeAttrSkin.h>
+#include <Scene/SceneNode.h>
+#include <Render/Renderable.h>
+#include <Render/Renderer.h>
+#include <Render/RenderNode.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Core/Factory.h>
@@ -24,7 +26,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	//!!!mb better to use array, not linked list! pool is good for single object reallocations,
 	//here the whole array will be freed at the end of a phase
 
-	CArray<CRenderNode>& RenderQueue = View.RenderQueue;
+	CArray<Render::CRenderNode>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
 
 	//CRenderNode* pRenderQueueHead = NULL;
@@ -32,19 +34,27 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		Scene::CNodeAttribute* pAttr = *It;
 		const Core::CRTTI* pAttrType = pAttr->GetRTTI();
-		if (!pAttrType->IsDerivedFrom(Frame::CRenderObject::RTTI)) continue; //!!!also need a light list!
+		if (!pAttrType->IsDerivedFrom(Frame::CNodeAttrRenderable::RTTI)) continue; //!!!also need a light list!
 
-		IPTR Idx = Renderers.FindIndex(pAttrType);
+		Render::IRenderable* pRenderable = ((Frame::CNodeAttrRenderable*)pAttr)->GetRenderable();
+
+		IPTR Idx = Renderers.FindIndex(pRenderable->GetRTTI());
 		if (Idx == INVALID_INDEX) continue;
-		IRenderer* pRenderer = Renderers.ValueAt(Idx);
+		Render::IRenderer* pRenderer = Renderers.ValueAt(Idx);
 		if (!pRenderer) continue;
 
 		//CRenderNode* pNode = CRenderNode::Pool.Construct();
 		//pNode->pNext = pRenderQueueHead;
-		CRenderNode* pNode = RenderQueue.Add();
-		pNode->RenderObject = (Frame::CRenderObject*)pAttr;
+		Render::CRenderNode* pNode = RenderQueue.Add();
+		pNode->pRenderable = pRenderable;
 		pNode->pRenderer = pRenderer;
+		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
 		//pNode->LOD = 0; //!!!determine based on sq camera or screen size! in renderers? sphere screen size may be reduced to 2 points = len of square
+		Frame::CNodeAttrSkin* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
+		if (pSkinAttr)
+		{
+			//!!!add skin palette to a render node!
+		}
 
 		//pRenderQueueHead = pNode;
 	}
@@ -58,8 +68,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	//CRenderNode* pCurrHead = pRenderQueueHead;
 	//while (pCurrHead)
 	//	pCurrHead = pCurrHead->pRenderer->Render(pCurrHead);
-	CArray<CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
-	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
+	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
+	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
 		ItCurr = ItCurr->pRenderer->Render(RenderQueue, ItCurr);
 
@@ -88,14 +98,14 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 		Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
 		const Core::CRTTI* pObjType = Factory->GetRTTI(RendererDesc.Get<CString>(CStrID("Object")));
 		const Core::CRTTI* pRendererType = Factory->GetRTTI(RendererDesc.Get<CString>(CStrID("Renderer")));
-		IRenderer* pRenderer = NULL;
+		Render::IRenderer* pRenderer = NULL;
 		for (UPTR j = 0; j < Renderers.GetCount(); ++j)
 			if (Renderers.ValueAt(j)->GetRTTI() == pRendererType)
 			{
 				pRenderer = Renderers.ValueAt(j);
 				break;
 			}
-		if (!pRenderer) pRenderer = (IRenderer*)pRendererType->CreateClassInstance();
+		if (!pRenderer) pRenderer = (Render::IRenderer*)pRendererType->CreateClassInstance();
 		if (pObjType && pRenderer) Renderers.Add(pObjType, pRenderer);
 	}
 
@@ -120,7 +130,7 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 //}
 ////---------------------------------------------------------------------
 //
-//void CPassGeometry::Render(const CArray<CRenderObject*>* pObjects, const CArray<CLight*>* pLights)
+//void CPassGeometry::Render(const CArray<IRenderable*>* pObjects, const CArray<CLight*>* pLights)
 //{
 //	if (Shader.IsValid())
 //	{

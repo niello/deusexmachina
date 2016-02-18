@@ -1,4 +1,4 @@
-#include "Skin.h"
+#include "NodeAttrSkin.h"
 
 #include <Render/SkinInfo.h>
 #include <Scene/SceneNode.h>
@@ -10,9 +10,9 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CSkin, 'SKIN', Scene::CNodeAttribute);
+__ImplementClass(Frame::CNodeAttrSkin, 'SKIN', Scene::CNodeAttribute);
 
-bool CSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
 	{
@@ -44,7 +44,7 @@ bool CSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 //---------------------------------------------------------------------
 
 /*
-bool CSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
+bool CNodeAttrSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 {
 	if (!CNodeAttribute::OnAttachToNode(pSceneNode)) FAIL;
 
@@ -102,7 +102,7 @@ bool CSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 //---------------------------------------------------------------------
 */
 
-void CSkin::Update(const vector3* pCOIArray, UPTR COICount)
+void CNodeAttrSkin::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
 

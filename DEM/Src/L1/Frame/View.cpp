@@ -1,6 +1,6 @@
 #include "View.h"
 
-#include <Frame/Camera.h>
+#include <Frame/NodeAttrCamera.h>
 #include <Frame/RenderPath.h>
 #include <Scene/SPS.h>
 #include <Render/GPUDriver.h>
@@ -8,7 +8,7 @@
 namespace Frame
 {
 
-bool CView::SetCamera(CCamera* pNewCamera)
+bool CView::SetCamera(CNodeAttrCamera* pNewCamera)
 {
 	if (pCamera == pNewCamera) OK;
 	if (!pNewCamera)

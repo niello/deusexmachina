@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_FRAME_VIEW_H__
 #define __DEM_L1_FRAME_VIEW_H__
 
-#include <Frame/RenderNode.h>
+#include <Render/RenderNode.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 
@@ -30,7 +30,7 @@ namespace UI
 
 namespace Frame
 {
-class CCamera;
+class CNodeAttrCamera;
 typedef Ptr<class CRenderPath> PRenderPath;
 
 class CView
@@ -46,7 +46,7 @@ public:
 
 	//???scene start node? if NULL, render all nodes, else only that and its children
 	Scene::CSPS*						pSPS;
-	CCamera*							pCamera; //???smart ptr?
+	CNodeAttrCamera*							pCamera; //???smart ptr?
 	UI::PUIContext						UIContext;
 
 	Render::PGPUDriver					GPU;
@@ -55,7 +55,7 @@ public:
 
 	//???store here or outside?
 	PRenderPath							RenderPath;
-	CArray<CRenderNode>					RenderQueue;	// Cached to avoid per-frame allocations
+	CArray<Render::CRenderNode>			RenderQueue;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true) {}
 
@@ -68,7 +68,7 @@ public:
 	//shadow map buffers
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
-	bool							SetCamera(CCamera* pNewCamera);
+	bool							SetCamera(CNodeAttrCamera* pNewCamera);
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; } //???if dirty update right here?
 	bool							Render();

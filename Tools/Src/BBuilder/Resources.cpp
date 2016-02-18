@@ -14,7 +14,7 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 
 	CString RsrcDir = PathUtils::ExtractDirName(RsrcFileName);
 
-	for (int i = 0; i < Desc->GetCount(); ++i)
+	for (UPTR i = 0; i < Desc->GetCount(); ++i)
 	{
 		Data::PParams RsrcDesc = Desc->Get<Data::PParams>(i);
 
@@ -59,7 +59,7 @@ bool ProcessFrameShader(const Data::CParams& Desc)
 	Data::PParams ShaderList;
 	if (Desc.Get(ShaderList, CStrID("Shaders")))
 	{
-		for (int i = 0; i < ShaderList->GetCount(); ++i)
+		for (UPTR i = 0; i < ShaderList->GetCount(); ++i)
 		{
 			CString ExportFilePath = "Shaders:" + ShaderList->Get<CString>(i) + ".fxo";
 

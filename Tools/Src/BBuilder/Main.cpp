@@ -68,7 +68,7 @@ int main(int argc, const char** argv)
 	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
 	if (PathList.IsValidPtr())
 	{
-		for (int i = 0; i < PathList->GetCount(); ++i)
+		for (UPTR i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
 		PathList = NULL;
 	}
@@ -76,7 +76,7 @@ int main(int argc, const char** argv)
 	PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
 	if (PathList.IsValidPtr())
 	{
-		for (int i = 0; i < PathList->GetCount(); ++i)
+		for (UPTR i = 0; i < PathList->GetCount(); ++i)
 			IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
 		PathList = NULL;
 
@@ -90,7 +90,7 @@ int main(int argc, const char** argv)
 		PropCodesDesc->Get<Data::PDataArray>(PropCodesList, CStrID("List")) &&
 		PropCodesList->GetCount())
 	{
-		for (int i = 0; i < PropCodesList->GetCount(); ++i)
+		for (UPTR i = 0; i < PropCodesList->GetCount(); ++i)
 		{
 			Data::PParams Prm = PropCodesList->Get<Data::PParams>(i);
 			PropCodes.Add(Prm->Get<CString>(CStrID("Name")), Data::CFourCC(Prm->Get<CString>(CStrID("Code")).CStr()));
@@ -153,7 +153,7 @@ int main(int argc, const char** argv)
 				Data::PParams SubDesc;
 				if (LevelDesc->Get<Data::PParams>(SubDesc, CStrID("Entities")))
 				{
-					for (int i = 0; i < SubDesc->GetCount(); ++i)
+					for (UPTR i = 0; i < SubDesc->GetCount(); ++i)
 					{
 						Data::PParams EntityDesc = SubDesc->Get<Data::PParams>(i);
 						Data::PDataArray Props;
@@ -278,7 +278,7 @@ int main(int argc, const char** argv)
 
 	Sys::Log("\n"SEP_LINE"Packing:\n"SEP_LINE);
 
-	for (int i = 0; i < FilesToPack.GetCount(); ++i)
+	for (UPTR i = 0; i < FilesToPack.GetCount(); ++i)
 	{
 		 FilesToPack[i] = IOSrv->ResolveAssigns(FilesToPack[i]);
 		 FilesToPack[i].ToLower();

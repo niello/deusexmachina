@@ -136,7 +136,7 @@ void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int& Offs
 }
 //---------------------------------------------------------------------
 
-bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int DataOffset, int& DataSize)
+bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, U64 DataOffset, U64& DataSize)
 {
 	n_assert(pTOCEntry);
 
@@ -191,7 +191,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 	CString RootDirPath = RootPath + "/" + PkgRootDir;
 
-	int i = 0;
+	UPTR i = 0;
 	for (; i < FilesToPack.GetCount(); ++i)
 	{
 		const CString& FileName = FilesToPack[i];
@@ -216,9 +216,9 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 		CString RelFile(FileName.CStr() + RootDirPath.GetLength() + 1);
 
-		int CurrStartChar = 0;
-		int DirCount = 0;
-		int RFLen = RelFile.GetLength();
+		UPTR CurrStartChar = 0;
+		UPTR DirCount = 0;
+		UPTR RFLen = RelFile.GetLength();
 		while (CurrStartChar < RFLen)
 		{
 			int DirSepChar = RelFile.FindIndex('/', CurrStartChar);
@@ -229,7 +229,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 			{
 				if (Dir != DirStack[DirCount])
 				{
-					for (int StackIdx = DirCount; StackIdx < DirStack.GetCount(); ++StackIdx)
+					for (UPTR StackIdx = DirCount; StackIdx < DirStack.GetCount(); ++StackIdx)
 						TOC.EndDirEntry();
 					DirStack.Truncate(DirStack.GetCount() - DirCount);
 					TOC.BeginDirEntry(Dir.CStr());
@@ -247,7 +247,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 			CurrStartChar = DirSepChar + 1;
 		}
 
-		for (int StackIdx = DirCount; StackIdx < DirStack.GetCount(); ++StackIdx)
+		for (UPTR StackIdx = DirCount; StackIdx < DirStack.GetCount(); ++StackIdx)
 			TOC.EndDirEntry();
 		DirStack.Truncate(DirStack.GetCount() - DirCount);
 
@@ -307,7 +307,7 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 	File.Put<U32>('DATA');
 	File.Put<U32>(0);		// DataSize (at DataOffset, fixed later)
 
-	int DataSize = 0;
+	U64 DataSize = 0;
 	if (WriteEntryData(File, TOC.GetRootEntry(), DataOffset + 4, DataSize))
 	{
 		File.Seek(8, IO::Seek_Begin);

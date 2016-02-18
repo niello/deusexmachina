@@ -4,7 +4,7 @@
 
 #include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
-#include <Math/line.h>
+#include <Math/Line.h>
 
 // Camera is a scene node attribute describing camera properties.
 // Note - W and H are necessary for orthogonal projection matrix,
@@ -13,9 +13,9 @@
 namespace Frame
 {
 
-class CCamera: public Scene::CNodeAttribute
+class CNodeAttrCamera: public Scene::CNodeAttribute
 {
-	__DeclareClass(CCamera);
+	__DeclareClass(CNodeAttrCamera);
 
 protected:
 
@@ -40,11 +40,11 @@ protected:
 
 public:
 
-	CCamera(): FOV(n_deg2rad(60.0f)), Width(1024.f), Height(768.f), NearPlane(0.1f), FarPlane(5000.f) { Flags.Set(ProjDirty); }
+	CNodeAttrCamera(): FOV(n_deg2rad(60.0f)), Width(1024.f), Height(768.f), NearPlane(0.1f), FarPlane(5000.f) { Flags.Set(ProjDirty); }
 
 	//background color
 	//???clip planes computing? or from any matrix?
-	//???bool ProjMatrixWasSetDirectly?
+	//???flag ManualProjMatrix? Perspective, Orthogonal, Manual
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
@@ -75,7 +75,7 @@ public:
 	const matrix44&	GetViewProjMatrix() const { return ViewProj; }
 };
 
-typedef Ptr<CCamera> PCamera;
+typedef Ptr<CNodeAttrCamera> PNodeAttrCamera;
 
 }
 

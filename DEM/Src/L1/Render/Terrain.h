@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_FRAME_TERRAIN_H__
 #define __DEM_L1_FRAME_TERRAIN_H__
 
-#include <Frame/RenderObject.h>
+#include <Render/Renderable.h>
 //#include <Render/Materials/ShaderVar.h>
 #include <Render/Mesh.h>
 #include <Data/Array.h>
@@ -10,10 +10,10 @@
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
 
-namespace Frame
+namespace Render
 {
 
-class CTerrain: public CRenderObject
+class CTerrain: public IRenderable
 {
 	__DeclareClass(CTerrain);
 
@@ -38,30 +38,24 @@ protected:
 	short*				pMinMaxData;
 	CArray<CMinMaxMap>	MinMaxMaps;
 
-	Render::PMesh		PatchMesh;
-	Render::PMesh		QuarterPatchMesh;
-	Render::PTexture	HeightMap;
+	PMesh				PatchMesh;
+	PMesh				QuarterPatchMesh;
+	PTexture			HeightMap;
 
 	float				InvSplatSizeX;
 	float				InvSplatSizeZ;
 
-	Scene::CSPS*		pSPS;
-
-	virtual void		OnDetachFromNode();
 	virtual bool		ValidateResources();
-	Render::CMesh*		GetPatchMesh(UPTR Size);
+	CMesh*				GetPatchMesh(UPTR Size);
 
 public:
 
 	//Render::CShaderVarMap	ShaderVars;
 
-	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f), pSPS(NULL) {}
+	CTerrain(): MinMaxMaps(2, 1), pMinMaxData(NULL), InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) {}
 
 	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-
-	virtual void		UpdateInSPS(Scene::CSPS& SPS);
-	const CAABB&		GetLocalAABB() const { return Box; }
-	void				GetGlobalAABB(CAABB& Out) const;
+	virtual bool		GetLocalAABB(CAABB& OutBox, UPTR LOD) const { OutBox = Box; OK; }
 
 	UPTR				GetHeightMapWidth() const { return HFWidth; }
 	UPTR				GetHeightMapHeight() const { return HFHeight; }

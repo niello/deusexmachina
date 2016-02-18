@@ -3,7 +3,7 @@
 #define __DEM_L1_RENDER_EFFECT_H__
 
 #include <Core/Object.h>
-#include <Render/EffectTech.h>
+#include <Render/Technique.h>
 #include <Data/StringID.h>
 #include <Data/Dictionary.h>
 
@@ -24,7 +24,7 @@ protected:
 	//???need this all per-shader or can store in driver? dynamic buffers one per size.
 	//CArray<PConstantBuffer>	DynamicBuffers;		// Map-Discard with mutable content, for frequent updating (per-object data)
 
-	CDict<CStrID, CEffectTech>	Techs;
+	CDict<CStrID, CTechnique>	Techs;
 
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
@@ -34,24 +34,24 @@ protected:
 
 public:
 
-	const CEffectTech*	GetTechByID(CStrID ID) const;
-	const CEffectTech*	GetTechByFeatures(CFeatureFlags FFlags) const;
+	const CTechnique*	GetTechByID(CStrID ID) const;
+	const CTechnique*	GetTechByFeatures(CFeatureFlags FFlags) const;
 };
 
 typedef Ptr<CEffect> PEffect;
 
-inline const CEffectTech* CEffect::GetTechByID(CStrID ID) const
+inline const CTechnique* CEffect::GetTechByID(CStrID ID) const
 {
 	IPTR Idx = Techs.FindIndex(ID);
 	return Idx == INVALID_INDEX ? NULL : &Techs.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 
-inline const CEffectTech* CEffect::GetTechByFeatures(CFeatureFlags FFlags) const
+inline const CTechnique* CEffect::GetTechByFeatures(CFeatureFlags FFlags) const
 {
 	for (int i = 0; i < Techs.GetCount(); ++i)
 	{
-		const CEffectTech& Tech = Techs.ValueAt(i);
+		const CTechnique& Tech = Techs.ValueAt(i);
 		if (Tech.IsMatching(FFlags)) return &Tech;
 	}
 	return NULL;

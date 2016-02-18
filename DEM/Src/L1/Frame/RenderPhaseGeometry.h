@@ -8,9 +8,13 @@
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
 // Batches are designed to minimize shader state switches.
 
+namespace Render
+{
+	class IRenderer;
+}
+
 namespace Frame
 {
-class IRenderer;
 
 class CRenderPhaseGeometry: public CRenderPhase
 {
@@ -18,7 +22,7 @@ class CRenderPhaseGeometry: public CRenderPhase
 
 protected:
 
-	CDict<const Core::CRTTI*, IRenderer*> Renderers;
+	CDict<const Core::CRTTI*, Render::IRenderer*> Renderers;
 
 public:
 

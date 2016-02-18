@@ -1,37 +1,39 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_LIGHT_H__
-#define __DEM_L1_FRAME_LIGHT_H__
+#ifndef __DEM_L1_RENDER_LIGHT_H__
+#define __DEM_L1_RENDER_LIGHT_H__
 
-#include <Scene/NodeAttribute.h>
-#include <Scene/SceneNode.h>
+#include <Data/Flags.h>
+#include <Data/FourCC.h>
+#include <Math/Vector3.h>
 
-// Light is a scene node attribute describing light source properties, including type,
-// color, range, shadow casting flags etc
+// Light describes light source properties, including type, color, range, shadow casting flags etc
 
-class CAABB;
-
-namespace Scene
+namespace IO
 {
-	class CSPS;
-	struct CSPSRecord;
+	class CBinaryReader;
 }
 
-namespace Frame
+namespace Render
 {
 
-class CLight: public Scene::CNodeAttribute
+enum ELightType
 {
-	__DeclareClass(CLight);
+	Light_Directional	= 0,
+	Light_Point			= 1,
+	Light_Spot			= 2
+};
 
+class CLight
+{
 protected:
 
-	enum // extends Scene::CNodeAttribute enum
+	enum
 	{
-		// Active
-		// WorldMatrixChanged
 		DoOcclusionCulling		= 0x04,	// Don't use for directional lights
 		CastShadow				= 0x08
 	};
+
+	Data::CFlags		Flags;
 
 	// Point & Spot
 	float				Range;
@@ -43,37 +45,19 @@ protected:
 	float				CosHalfInner;
 	float				CosHalfOuter;
 
-	Scene::CSPS*		pSPS;
-	Scene::CSPSRecord*	pSPSRecord;		// NULL if oversized
-
 public:
 
-	enum EType
-	{
-		Directional	= 0,
-		Point		= 1,
-		Spot		= 2
-	};
-
-	EType				Type;
+	ELightType			Type;
 	vector3				Color;		//???What with alpha color? place intensity there?
 	float				Intensity;
 
 	CLight();
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void	OnDetachFromNode();
-
-	void			UpdateInSPS(Scene::CSPS& SPS);
-	void			CalcFrustum(matrix44& OutFrustum);
-	bool			GetGlobalAABB(CAABB& OutBox) const;
 
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);
 	void			SetSpotOuterAngle(float NewAngle);
-	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().Translation(); }
-	vector3			GetDirection() const { return -pNode->GetWorldMatrix().AxisZ(); }
-	const vector3&	GetReverseDirection() const { return pNode->GetWorldMatrix().AxisZ(); }
 	float			GetRange() const { return Range; }
 	float			GetInvRange() const { return InvRange; }
 	float			GetSpotInnerAngle() const { return ConeInner; }
@@ -82,12 +66,8 @@ public:
 	float			GetCosHalfPhi() const { return CosHalfOuter; }
 };
 
-typedef Ptr<CLight> PLight;
-
 inline CLight::CLight():
-	Type(Directional),
-	pSPS(NULL),
-	pSPSRecord(NULL),
+	Type(Light_Directional),
 	Color(1.f, 1.f, 1.f),
 	Intensity(0.5f),
 	Range(1.f),

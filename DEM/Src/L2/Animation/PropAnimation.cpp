@@ -9,7 +9,7 @@
 #include <Animation/KeyframeClip.h>
 #include <Animation/MocapClip.h>
 #include <Animation/MocapClipLoaderNAX2.h> //!!!DBG TMP! NAX2 requires skin info!
-#include <Frame/Skin.h> //!!!DBG TMP! NAX2 requires skin info!
+#include <Frame/NodeAttrSkin.h> //!!!DBG TMP! NAX2 requires skin info!
 #include <Animation/NodeControllerKeyframe.h>
 #include <Animation/NodeControllerMocap.h>
 #include <Resources/ResourceManager.h>
@@ -131,7 +131,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 				//!!!DBG TMP!
 				if (Loader->IsA<Resources::CMocapClipLoaderNAX2>())
 				{
-					Frame::CSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CSkin>();
+					Frame::CNodeAttrSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
 					if (pSkin) ((Resources::CMocapClipLoaderNAX2*)Loader.GetUnsafe())->ReferenceSkinInfo = pSkin->GetSkinInfo();
 				}
 

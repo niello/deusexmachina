@@ -5,7 +5,7 @@
 #include <AI/AIServer.h>
 #include <Frame/SceneNodeValidateResources.h>
 #include <Frame/SceneNodeUpdateInSPS.h>
-#include <Frame/Camera.h>
+#include <Frame/NodeAttrCamera.h>
 #include <Physics/PhysicsLevel.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
