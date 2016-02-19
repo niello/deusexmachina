@@ -6,19 +6,19 @@ namespace DB
 void CValueTable::Clear()
 {
 	// This is much like a DeleteRowData() but checks type only once per column
-	for (int ColIdx = 0; ColIdx < Columns.GetCount(); ++ColIdx)
+	for (UPTR ColIdx = 0; ColIdx < Columns.GetCount(); ++ColIdx)
 	{
 		const Data::CType* Type = GetColumnValueType(ColIdx);
 
 		//???use Type->Delete()? virtual call even if type will call empty destructor like !int()
 		if (Type == TString)
-			for (int RowIdx = 0; RowIdx < NumRows; RowIdx++)
+			for (UPTR RowIdx = 0; RowIdx < NumRows; RowIdx++)
 				DATA_TYPE_NV(CString)::Delete(GetValuePtr(ColIdx, RowIdx));
 		else if (Type == DATA_TYPE(Data::CBuffer))
-			for (int RowIdx = 0; RowIdx < NumRows; RowIdx++)
+			for (UPTR RowIdx = 0; RowIdx < NumRows; RowIdx++)
 				DATA_TYPE_NV(Data::CBuffer)::Delete(GetValuePtr(ColIdx, RowIdx));
 		else if (!Type)
-			for (int RowIdx = 0; RowIdx < NumRows; RowIdx++)
+			for (UPTR RowIdx = 0; RowIdx < NumRows; RowIdx++)
 				((Data::CData*)GetValuePtr(ColIdx, RowIdx))->Clear();
 	}
 
@@ -29,9 +29,9 @@ void CValueTable::Clear()
 	AllocatedRows = 0;
 
 	//???need?
-/*	FirstNewRowIndex = MAX_SDWORD;
+/*	FirstNewRowIndex = INTPTR_MAX;
 	NewRowsCount = 0;
-	FirstDeletedRowIndex = MAX_SDWORD;
+	FirstDeletedRowIndex = INTPTR_MAX;
 	DeletedRowsCount = 0;
 */
 	Flags.Clear(_IsModified);
@@ -39,7 +39,7 @@ void CValueTable::Clear()
 }
 //---------------------------------------------------------------------
 
-void CValueTable::Realloc(int NewPitch, int NewAllocRows)
+void CValueTable::Realloc(UPTR NewPitch, UPTR NewAllocRows)
 {
 	n_assert(NewAllocRows >= NumRows);
 	n_assert(NewPitch >= RowPitch);
@@ -50,7 +50,7 @@ void CValueTable::Realloc(int NewPitch, int NewAllocRows)
 
 	if (NewPitch != RowPitch)
 	{
-		int RowIdx = NumRows - 1;
+		UPTR RowIdx = NumRows - 1;
 		int PitchDiff = NewPitch - RowPitch;
 		char* FromPtr = (char*)ValueBuffer + RowIdx * RowPitch;
 		char* ToPtr = (char*)ValueBuffer + RowIdx * NewPitch;
@@ -77,7 +77,7 @@ void CValueTable::Realloc(int NewPitch, int NewAllocRows)
 int CValueTable::UpdateColumnOffsets()
 {
 	int CurrOffset = 0;
-	for (int i = 0; i < Columns.GetCount(); ++i)
+	for (UPTR i = 0; i < Columns.GetCount(); ++i)
 	{
 		Columns[i].ByteOffset = CurrOffset;
 		const Data::CType* Type = GetColumnValueType(i);
@@ -132,12 +132,12 @@ void CValueTable::EndAddColumns()
 	Flags.Clear(_InBeginAddColumns);
 	ColumnIndexMap.EndAdd();
 
-	if (FirstAddedColIndex < Columns.GetCount())
+	if ((UPTR)FirstAddedColIndex < Columns.GetCount())
 	{
 		if (NumRows > 0) Realloc(UpdateColumnOffsets(), NumRows);
 		else RowPitch = UpdateColumnOffsets();
 
-		for (int ColIdx = FirstAddedColIndex; ColIdx < Columns.GetCount(); ++ColIdx)
+		for (UPTR ColIdx = FirstAddedColIndex; ColIdx < Columns.GetCount(); ++ColIdx)
 			SetColumnToDefaultValues(ColIdx);
 	}
 }
@@ -146,7 +146,7 @@ void CValueTable::EndAddColumns()
 // This marks a row for deletion. Note that the row will only be marked
 // for deletion, deleted row indices are returned with the GetDeletedRowIndices()
 // call. The row will never be physically removed from memory!
-void CValueTable::DeleteRow(int RowIdx)
+void CValueTable::DeleteRow(UPTR RowIdx)
 {
 	n_assert(IsRowValid(RowIdx));
 	if (Flags.Is(_TrackModifications))
@@ -168,7 +168,7 @@ void CValueTable::DeleteRow(int RowIdx)
 }
 //---------------------------------------------------------------------
 
-void CValueTable::SetValue(int ColIdx, int RowIdx, const Data::CData& Val)
+void CValueTable::SetValue(UPTR ColIdx, UPTR RowIdx, const Data::CData& Val)
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
 	n_assert(!Type || Type == Val.GetType());
@@ -189,12 +189,12 @@ void CValueTable::SetValue(int ColIdx, int RowIdx, const Data::CData& Val)
 
 // This creates a new row as a copy of an existing row. Returns the index of the new row.
 // NOTE: the user data will be initialized to NULL for the new row!
-int CValueTable::CopyRow(int FromRowIdx)
+int CValueTable::CopyRow(UPTR FromRowIdx)
 {
 	n_assert(FromRowIdx < NumRows);
 	int ToRowIdx = AddRow();
 	Data::CData Value; //???or inside the loop?
-	for (int ColIdx = 0; ColIdx < Columns.GetCount(); ColIdx++)
+	for (UPTR ColIdx = 0; ColIdx < Columns.GetCount(); ColIdx++)
 	{
 		GetValue(ColIdx, FromRowIdx, Value);
 		SetValue(ColIdx, ToRowIdx, Value);
@@ -207,13 +207,13 @@ int CValueTable::CopyRow(int FromRowIdx)
 // Create a new row as a copy of a row in another value table. The layouts of the value tables
 // must not match, since only matching Columns will be considered.
 // NOTE: the user data will be initialised to NULL for the new row.
-int CValueTable::CopyExtRow(CValueTable* pOther, int OtherRowIdx, bool CreateMissingCols)
+int CValueTable::CopyExtRow(CValueTable* pOther, UPTR OtherRowIdx, bool CreateMissingCols)
 {
 	n_assert(pOther);
 	n_assert(OtherRowIdx < pOther->GetRowCount());
 	int MyRowIdx = AddRow();
 	Data::CData Value;
-	for (int OtherColIdx = 0; OtherColIdx < pOther->GetColumnCount(); OtherColIdx++)
+	for (UPTR OtherColIdx = 0; OtherColIdx < pOther->GetColumnCount(); OtherColIdx++)
 	{
 		const ColumnInfo& ColInfo = Columns[OtherColIdx];
 		if (CreateMissingCols) AddColumn(ColInfo.ID, ColInfo.Type);
@@ -259,10 +259,10 @@ int CValueTable::AddRow()
 CArray<int> CValueTable::InternalFindRowIndicesByAttr(CStrID AttrID, const Data::CData& Value, bool FirstMatchOnly) const
 {
 	CArray<int> Result;
-	int ColIdx = GetColumnIndex(AttrID);
+	UPTR ColIdx = GetColumnIndex(AttrID);
 	const Data::CType* Type = GetColumnValueType(ColIdx);
 	n_assert(Type == Value.GetType());
-	for (int RowIdx = 0; RowIdx < GetRowCount(); RowIdx++)
+	for (UPTR RowIdx = 0; RowIdx < GetRowCount(); RowIdx++)
 	{
 		if (IsRowValid(RowIdx))
 		{
@@ -279,9 +279,9 @@ CArray<int> CValueTable::InternalFindRowIndicesByAttr(CStrID AttrID, const Data:
 //---------------------------------------------------------------------
 
 // Clears all data associated with cells of one row (string, blob and guid)    
-void CValueTable::DeleteRowData(int RowIdx)
+void CValueTable::DeleteRowData(UPTR RowIdx)
 {
-	for (int ColIdx = 0; ColIdx < Columns.GetCount(); ++ColIdx)
+	for (UPTR ColIdx = 0; ColIdx < Columns.GetCount(); ++ColIdx)
 	{
 		const Data::CType* Type = GetColumnValueType(ColIdx);
 
@@ -297,7 +297,7 @@ void CValueTable::DeleteRowData(int RowIdx)
 
 void CValueTable::ClearDeletedRows()
 {
-	for (int RowIdx = FirstDeletedRowIndex; RowIdx < NumRows && DeletedRowsCount > 0; RowIdx++)
+	for (UPTR RowIdx = FirstDeletedRowIndex; RowIdx < NumRows && DeletedRowsCount > 0; RowIdx++)
 		if (IsRowDeleted(RowIdx))
 		{
 			--DeletedRowsCount;
@@ -307,7 +307,7 @@ void CValueTable::ClearDeletedRows()
 
 	n_assert(!DeletedRowsCount);
 
-	FirstDeletedRowIndex = MAX_SDWORD;
+	FirstDeletedRowIndex = INTPTR_MAX;
 }
 //---------------------------------------------------------------------
 

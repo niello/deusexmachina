@@ -2,45 +2,71 @@
 #ifndef __DEM_L1_RENDER_TECHNIQUE_H__
 #define __DEM_L1_RENDER_TECHNIQUE_H__
 
-#include <Data/Array.h>
+#include <Data/FixedArray.h>
+#include <Data/StringID.h>
+#include <Data/Dictionary.h>
 #include <Data/RefCounted.h>
 
-// A particular implementation of an effect for a specific input data. It includes geometry
-// specifics (static/skinned), environment (light count, fog) and may be some others. A
-// combination of input states is represented as a set of feature flags. Technique can accept
-// different combinations of these flags, though ones close to each other. So, instead of storing
-// each particular combination, we specify what flags should be set and what should be
-// unset, and allow other flags to have any state.
+// A particular implementation of an effect for a specific input data. It includes
+// geometry specifics (static/skinned), environment (light count, fog) and may be
+// some others. A combination of input states is represented as a shader input set.
+// When IRenderer renders some object, it chooses a technique whose input set ID
+// matches an ID of input set the renderer provides.
 
 namespace Render
 {
-typedef Data::CFlags CFeatureFlags;
 typedef Ptr<class CRenderState> PRenderState;
-
-enum
-{
-	Tech_Skinned	= 0x01,
-	Tech_Instanced	= 0x02
-};
+typedef CFixedArray<PRenderState> CPassList;
 
 class CTechnique
 {
+private:
+
+	CStrID					Name;				//???here or only as a key in an association inside a CEffect?
+	UPTR					ShaderInputSetID;	//???here or only as a key in an association inside a CEffect?
+	CFixedArray<CPassList>	PassesByLightCount;
+
+	UPTR					ShaderTypeCount;	// Not to store constants for all 5 shader types where some of them aren't present
+	HHandle*				pConstantTable;
+	CDict<CStrID, HHandle*>	ConstNameToHandles;
+
+	void				BuildConstantTable();
+
 public:
 
-	//???CStrID Name;?
+	CTechnique(): ShaderInputSetID(INVALID_INDEX), ShaderTypeCount(0), pConstantTable(NULL) {}
 
-	CFeatureFlags			IncludedFFlags;		// Feature flags that must be set to use this tech
-	CFeatureFlags			ExcludedFFlags;		// Feature flags that must be unset to use this tech
-	//UPTR					LightCount;			// Light count supported by this tech, 0 for unlit
+	CStrID				GetName() const { return Name; }
+	UPTR				GetShaderInputSetID() const { return ShaderInputSetID; }
+	IPTR				GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
+	const CPassList*	GetPasses(UPTR& LightCount) const;
+	IPTR				GetConstantIndex(CStrID ConstantName) const { return ConstNameToHandles.FindIndex(ConstantName); }
+};
 
-	//???store atest/alpha/solid, shadowed here or in material?
+inline const CPassList*	CTechnique::GetPasses(UPTR& LightCount) const
+{
+	UPTR DifferentLightCounts = PassesByLightCount.GetCount();
+	if (!DifferentLightCounts) return NULL;
 
-	CArray<PRenderState>	Passes;
+	UPTR Idx = LightCount;
+	if (Idx >= PassesByLightCount.GetCount()) Idx = PassesByLightCount.GetCount() - 1;
 
-	//PShaderParamsDesc		ParamsDesc;
-	//CArray<PConstantBuffer>	ConstBuffers;		// References to constant buffers used by this tech, not used buffers are NULL
+	// If the exact light count requested is not supported, find any supported count less than that
+	while (Idx > 0 && !PassesByLightCount[Idx].GetCount()) --Idx;
 
-	bool					IsMatching(CFeatureFlags FFlags) const { return FFlags.Is(IncludedFFlags) && FFlags.IsNot(ExcludedFFlags); }
+	if (!PassesByLightCount[Idx].GetCount()) return NULL;
+
+	LightCount = Idx;
+	return &PassesByLightCount[Idx];
+}
+//---------------------------------------------------------------------
+
+}
+
+#endif
+
+//PShaderParamsDesc		ParamsDesc;
+//CArray<PConstantBuffer>	ConstBuffers;		// References to constant buffers used by this tech, not used buffers are NULL
 
 //	//SetConst
 //	//SetResource
@@ -56,8 +82,3 @@ public:
 ////	virtual void			SetTexture(HShaderParam Handle, CTexture* pTexture) = 0;
 //	//???virtual void			SetBuffer(HShaderParam Handle, CTexture* pTexture) = 0;
 ////	virtual void			SetSamplerState(HShaderParam Handle, CSamplerState* pSamplerState) = 0;
-};
-
-}
-
-#endif

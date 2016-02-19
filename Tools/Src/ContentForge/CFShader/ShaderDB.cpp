@@ -37,7 +37,7 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 	if (!SQLiteStmt || sqlite3_reset(SQLiteStmt) != SQLITE_OK) FAIL;
 
 	CString ParamName(NULL, 0, 64);
-	for (int i = 0; i < Params.GetCount(); ++i)
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Params.Get(i);
 
@@ -398,14 +398,14 @@ bool FindShaderRec(CShaderDBRec& InOut)
 	bool Found = false;
 
 	int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
-	for (int ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
+	for (UPTR ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
 	{
 		DefineParams.Set(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
 		if (!ExecuteStatement(SQLGetDefines, &Defines, &DefineParams)) FAIL;
 
 		// Local defines store terminating { NULL, NULL }, so sub 1 from its count
-		DWORD DBDefineCount = Defines.GetRowCount();
-		DWORD LocalDefineCount = InOut.Defines.GetCount() ? InOut.Defines.GetCount() - 1 : 0;
+		UPTR DBDefineCount = Defines.GetRowCount();
+		UPTR LocalDefineCount = InOut.Defines.GetCount() ? InOut.Defines.GetCount() - 1 : 0;
 		if (DBDefineCount != LocalDefineCount)
 		{
 			Found = false;
@@ -416,12 +416,12 @@ bool FindShaderRec(CShaderDBRec& InOut)
 
 		int Col_Name = Defines.GetColumnIndex(CStrID("Name"));
 		int Col_Value = Defines.GetColumnIndex(CStrID("Value"));
-		for (int DefIdx = 0; DefIdx < Defines.GetRowCount(); ++DefIdx)
+		for (UPTR DefIdx = 0; DefIdx < Defines.GetRowCount(); ++DefIdx)
 		{
 			const char* pName = Defines.Get<CString>(Col_Name, DefIdx).CStr();
 			n_assert(pName && *pName);
 
-			for (int NewDefIdx = 0; NewDefIdx < InOut.Defines.GetCount(); ++NewDefIdx)
+			for (UPTR NewDefIdx = 0; NewDefIdx < InOut.Defines.GetCount(); ++NewDefIdx)
 			{
 				CMacroDBRec& Macro = InOut.Defines[NewDefIdx];
 				if (!strcmp(Macro.Name, pName))
@@ -465,11 +465,11 @@ bool FindShaderRec(CShaderDBRec& InOut)
 
 bool WriteShaderRec(CShaderDBRec& InOut)
 {
-	DWORD ID;
+	U32 ID;
 	if (InOut.ID == 0)
 	{
 		if (!ExecuteStatement(SQLInsertNewShaderRec)) FAIL;
-		ID = (DWORD)sqlite3_last_insert_rowid(SQLiteHandle);
+		ID = (U32)sqlite3_last_insert_rowid(SQLiteHandle);
 	}
 	else ID = InOut.ID;
 
@@ -494,7 +494,7 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 	Params.Set(CStrID("ShaderID"), (int)InOut.ID);
 	if (!ExecuteStatement(SQLClearDefines, NULL, &Params)) FAIL;
 
-	for (int i = 0; i < InOut.Defines.GetCount(); ++i)
+	for (UPTR i = 0; i < InOut.Defines.GetCount(); ++i)
 	{
 		CMacroDBRec& Macro = InOut.Defines[i];
 		if (!Macro.Name || !*Macro.Name) continue;
@@ -521,7 +521,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 		Data::CBuffer Buf;
 		int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 		int Col_Path = Result.GetColumnIndex(CStrID("Path"));
-		for (int i = 0; i < Result.GetRowCount(); ++i)
+		for (UPTR i = 0; i < Result.GetRowCount(); ++i)
 		{
 			CString Path = Result.Get<CString>(Col_Path, i);
 
@@ -543,7 +543,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 
 				if (FileSize != InOut.Size) continue;
 
-				Data::CBuffer Buffer(FileSize);
+				Data::CBuffer Buffer((UPTR)FileSize);
 				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
 			
 				if (memcmp(pBinaryData, Buf.GetPtr(), (UPTR)FileSize) != 0) continue;
@@ -564,7 +564,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 
 bool RegisterObjFile(CFileData& InOut, const char* Extension)
 {
-	DWORD ID;
+	U32 ID;
 	if (InOut.ID == 0)
 	{
 		DB::CValueTable Result;
@@ -577,7 +577,7 @@ bool RegisterObjFile(CFileData& InOut, const char* Extension)
 		else
 		{
 			if (!ExecuteStatement(SQLInsertNewObjFileRec)) FAIL;
-			ID = (DWORD)sqlite3_last_insert_rowid(SQLiteHandle);
+			ID = (U32)sqlite3_last_insert_rowid(SQLiteHandle);
 		}
 	}
 	else ID = InOut.ID;
@@ -601,7 +601,7 @@ bool RegisterObjFile(CFileData& InOut, const char* Extension)
 }
 //---------------------------------------------------------------------
 
-bool ReleaseObjFile(DWORD ID, CString& OutPath)
+bool ReleaseObjFile(U32 ID, CString& OutPath)
 {
 	if (ID == 0) FAIL;
 

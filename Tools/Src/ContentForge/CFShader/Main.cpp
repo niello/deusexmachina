@@ -74,7 +74,7 @@ int main(int argc, const char** argv)
 			if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
 
 			if (PathList.IsValidPtr())
-				for (int i = 0; i < PathList->GetCount(); ++i)
+				for (UPTR i = 0; i < PathList->GetCount(); ++i)
 					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
 		}
 
@@ -84,7 +84,7 @@ int main(int argc, const char** argv)
 			if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
 
 			if (PathList.IsValidPtr())
-				for (int i = 0; i < PathList->GetCount(); ++i)
+				for (UPTR i = 0; i < PathList->GetCount(); ++i)
 					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
 		}
 	}
@@ -122,7 +122,7 @@ int main(int argc, const char** argv)
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
-	for (int i = 0; i < InList.GetCount(); ++i)
+	for (UPTR i = 0; i < InList.GetCount(); ++i)
 	{
 		const CString& InRec = InList[i];
 		const CString& OutRec = OutList[i];

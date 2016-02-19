@@ -34,7 +34,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		Scene::CNodeAttribute* pAttr = *It;
 		const Core::CRTTI* pAttrType = pAttr->GetRTTI();
-		if (!pAttrType->IsDerivedFrom(Frame::CNodeAttrRenderable::RTTI)) continue; //!!!also need a light list!
+		if (!pAttrType->IsDerivedFrom(Frame::CNodeAttrRenderable::RTTI)) continue; //!!!also need a light list! at the visibility cache construction?
 
 		Render::IRenderable* pRenderable = ((Frame::CNodeAttrRenderable*)pAttr)->GetRenderable();
 

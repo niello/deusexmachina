@@ -16,7 +16,7 @@ __ImplementClassNoFactory(Render::IRenderer, Core::CRTTIBaseClass);
 // later I'll figure out a better solution. Multithreading support also must be added.
 CDict<CStrID, UPTR> ShaderInputSets;
 
-UPTR GetShaderInputSetID(CStrID InputSetName)
+UPTR RegisterShaderInputSetID(CStrID InputSetName)
 {
 	//!!!MT-unsafe!
 	IPTR Idx = ShaderInputSets.FindIndex(InputSetName);

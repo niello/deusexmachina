@@ -7,14 +7,14 @@
 
 namespace Render
 {
-__ImplementClass(Render::CModelRenderer, 'MDLR', Core::CRTTIBaseClass); //Render::IRenderer);
+__ImplementClass(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
 CModelRenderer::CModelRenderer()
 {
 	// Setup dynamic enumeration
-	InputSet_Model = GetShaderInputSetID(CStrID("Model"));
-	InputSet_ModelSkinned = GetShaderInputSetID(CStrID("ModelSkinned"));
-	InputSet_ModelInstanced = GetShaderInputSetID(CStrID("ModelInstanced"));
+	InputSet_Model = RegisterShaderInputSetID(CStrID("Model"));
+	InputSet_ModelSkinned = RegisterShaderInputSetID(CStrID("ModelSkinned"));
+	InputSet_ModelInstanced = RegisterShaderInputSetID(CStrID("ModelInstanced"));
 }
 //---------------------------------------------------------------------
 

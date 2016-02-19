@@ -39,7 +39,7 @@ int main(int argc, const char** argv)
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
-	for (int i = 0; i < InList.GetCount(); ++i)
+	for (UPTR i = 0; i < InList.GetCount(); ++i)
 	{
 		const CString& InRec = InList[i];
 		const CString& OutRec = OutList[i];

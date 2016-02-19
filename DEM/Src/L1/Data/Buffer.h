@@ -27,7 +27,7 @@ public:
 
 	CBuffer(): pData(NULL), DataSize(0), Allocated(0) {}
 	CBuffer(const void* pSrc, UPTR SrcSize): pData(NULL), DataSize(0), Allocated(0) { Set(pSrc, SrcSize); }
-	CBuffer(int Size): pData(NULL), DataSize(0), Allocated(0) { Allocate(Size); }
+	CBuffer(UPTR Size): pData(NULL), DataSize(0), Allocated(0) { Allocate(Size); }
 	CBuffer(const CBuffer& Other): pData(NULL), DataSize(0), Allocated(0) { Set(Other.pData, Other.DataSize); }
 	~CBuffer() { if (pData) n_free(pData); }
 

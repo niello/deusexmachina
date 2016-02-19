@@ -15,11 +15,11 @@ struct CToolRenderStateDesc
 {
 	// Shaders
 
-	DWORD				VertexShader;
-	DWORD				HullShader;
-	DWORD				DomainShader;
-	DWORD				GeometryShader;
-	DWORD				PixelShader;
+	U32					VertexShader;
+	U32					HullShader;
+	U32					DomainShader;
+	U32					GeometryShader;
+	U32					PixelShader;
 
 	Data::CFlags		Flags; // For boolean variables, see enums below
 

@@ -1,6 +1,7 @@
 #include "Terrain.h"
 
 #include <IO/BinaryReader.h>
+#include <IO/Streams/FileStream.h> //???!!!move CDLOD reading into a loader!?
 #include <Core/Factory.h>
 
 namespace Render
@@ -14,7 +15,7 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 		case 'CDLD':
 		{
 			//HeightMap = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-			CStrID URI = DataReader.Read<CStrID>();
+			HeightMapUID = DataReader.Read<CStrID>();
 			OK;
 		}
 		case 'TSSX':
@@ -130,26 +131,26 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 
 bool CTerrain::ValidateResources()
 {
-//	IO::CFileStream CDLODFile;
-//	if (!CDLODFile.Open(CString("Terrain:") + HeightMap->GetUID().CStr() + ".cdlod", IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-//	IO::CBinaryReader Reader(CDLODFile);
-//
-//	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
-//	n_assert(Reader.Read<int>() == 1);		// Version
-//
-//	Reader.Read(HFWidth);
-//	Reader.Read(HFHeight);
-//	Reader.Read(PatchSize);
-//	Reader.Read(LODCount);
-//	UPTR MinMaxDataSize = Reader.Read<UPTR>();
-//	Reader.Read(VerticalScale);
-//	Reader.Read(Box.Min.x);
-//	Reader.Read(Box.Min.y);
-//	Reader.Read(Box.Min.z);
-//	Reader.Read(Box.Max.x);
-//	Reader.Read(Box.Max.y);
-//	Reader.Read(Box.Max.z);
-//
+	IO::CFileStream CDLODFile(CString("Terrain:") + HeightMapUID.CStr() + ".cdlod");
+	if (!CDLODFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(CDLODFile);
+
+	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
+	n_assert(Reader.Read<int>() == 1);		// Version
+
+	Reader.Read(HFWidth);
+	Reader.Read(HFHeight);
+	Reader.Read(PatchSize);
+	Reader.Read(LODCount);
+	UPTR MinMaxDataSize = Reader.Read<UPTR>();
+	Reader.Read(VerticalScale);
+	Reader.Read(Box.Min.x);
+	Reader.Read(Box.Min.y);
+	Reader.Read(Box.Min.z);
+	Reader.Read(Box.Max.x);
+	Reader.Read(Box.Max.y);
+	Reader.Read(Box.Max.z);
+
 //	if (!HeightMap->IsLoaded())
 //	{
 //		//!!!write R32F variant!

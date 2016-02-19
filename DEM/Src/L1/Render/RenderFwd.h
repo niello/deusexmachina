@@ -44,7 +44,7 @@ typedef HHandle HResource;
 typedef HHandle HSampler;
 
 // Named data flow conventions between CPU and GPU, see Renderer.cpp for implementation and details
-UPTR GetShaderInputSetID(CStrID InputSetName);
+UPTR RegisterShaderInputSetID(CStrID InputSetName);
 
 enum EGPUDriverType
 {
@@ -60,7 +60,7 @@ enum EGPUDriverType
 
 enum EShaderType
 {
-	ShaderType_Vertex = 0,
+	ShaderType_Vertex = 0,	// Don't change order and starting index
 	ShaderType_Pixel,
 	ShaderType_Geometry,
 	ShaderType_Hull,

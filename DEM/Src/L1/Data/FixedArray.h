@@ -31,7 +31,7 @@ public:
 	CIterator	End() const { return pData + Count; }
 
 	void		Clear(T Elm = T()) { for (UPTR i = 0; i < Count; ++i) pData[i] = Elm; }
-	int			FindIndex(const T& Elm) const;
+	IPTR		FindIndex(const T& Elm) const;
 	//!!!need find sorted!
 	bool		Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
 	void		Sort() { std::sort(pData, pData + Count); }
@@ -87,7 +87,7 @@ template<class T> void CFixedArray<T>::RawCopyFrom(const T* pSrc, UPTR SrcCount)
 }
 //---------------------------------------------------------------------
 
-template<class T> int CFixedArray<T>::FindIndex(const T& Elm) const
+template<class T> IPTR CFixedArray<T>::FindIndex(const T& Elm) const
 {
 	for (UPTR i = 0; i < Count; ++i)
 		if (Elm == pData[i]) return i;

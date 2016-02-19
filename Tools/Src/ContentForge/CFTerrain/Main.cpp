@@ -8,7 +8,7 @@
 
 #define TOOL_NAME		"CFTerrain"
 #define VERSION			"1.0"
-#define CDLOD_VERSION	((DWORD)1)
+#define CDLOD_VERSION	((UPTR)1)
 
 int Verbose = VL_ERROR;
 
@@ -39,8 +39,8 @@ int main(int argc, const char** argv)
 
 	CString InFileName(Args.GetStringArg("-in"));
 	CString OutFileName(Args.GetStringArg("-out"));
-	DWORD PatchSize = Args.GetIntArg("-patch");
-	DWORD LODCount = Args.GetIntArg("-lod");
+	UPTR PatchSize = Args.GetIntArg("-patch");
+	UPTR LODCount = Args.GetIntArg("-lod");
 
 	if (InFileName.IsEmpty() || OutFileName.IsEmpty())
 	{
@@ -68,8 +68,8 @@ int main(int argc, const char** argv)
 		IOSrv->LoadFileToBuffer(InFileName, Buffer);
 		IO::CBTFile BTFile(Buffer.GetPtr());
 		n_assert(BTFile.GetFileSize() == Buffer.GetSize());
-		DWORD Width = BTFile.GetWidth();
-		DWORD Height = BTFile.GetHeight();
+		UPTR Width = BTFile.GetWidth();
+		UPTR Height = BTFile.GetHeight();
 
 		CString OutPath = PathUtils::ExtractDirName(OutFileName);
 		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
@@ -81,10 +81,10 @@ int main(int argc, const char** argv)
 			return ExitApp(ERR_IO_WRITE, WaitKey);
 		}
 
-		DWORD PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
-		DWORD PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
-		DWORD TotalMinMaxDataSize = PatchesW * PatchesH;
-		for (DWORD LOD = 1; LOD < LODCount; ++LOD)
+		UPTR PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
+		UPTR PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
+		UPTR TotalMinMaxDataSize = PatchesW * PatchesH;
+		for (UPTR LOD = 1; LOD < LODCount; ++LOD)
 		{
 			PatchesW = (PatchesW + 1) / 2;
 			PatchesH = (PatchesH + 1) / 2;
@@ -109,17 +109,17 @@ int main(int argc, const char** argv)
 		Writer.Write((float)BTFile.GetTopExtent());		// Max Z
 
 		// S->N col-major to N->S row-major
-		DWORD HeightDataSize = BTFile.GetHFDataSize();
+		UPTR HeightDataSize = (UPTR)BTFile.GetHFDataSize();
 		short* pHeights = (short*)n_malloc(HeightDataSize);
-		for (DWORD Row = 0; Row < Height; ++Row)
-			for (DWORD Col = 0; Col < Width; ++Col)
+		for (UPTR Row = 0; Row < Height; ++Row)
+			for (UPTR Col = 0; Col < Width; ++Col)
 				pHeights[Row * Width + Col] = BTFile.GetHeightsS()[Col * Height + Height - 1 - Row];
 
 		bool FormatL16 = true;
 		if (FormatL16)
 		{
 			unsigned short* pHFL16 = (unsigned short*)n_malloc(HeightDataSize);
-			for (DWORD i = 0; i < BTFile.GetHeightCount(); ++i)
+			for (UPTR i = 0; i < BTFile.GetHeightCount(); ++i)
 				pHFL16[i] = pHeights[i] + 32768;
 			OutFile.Write(pHFL16, HeightDataSize);
 			n_free(pHFL16);
@@ -129,23 +129,23 @@ int main(int argc, const char** argv)
 		PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
 		PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
 
-		DWORD MinMaxDataSize = PatchesW * PatchesH * 2 * sizeof(short);
+		UPTR MinMaxDataSize = PatchesW * PatchesH * 2 * sizeof(short);
 		short* pMinMaxBuffer = (short*)n_malloc(MinMaxDataSize);
 
 		// Generate top-level minmax map
 
-		for (DWORD Row = 0; Row < PatchesH; ++Row)
+		for (UPTR Row = 0; Row < PatchesH; ++Row)
 		{
-			DWORD StopAtZ = n_min((Row + 1) * PatchSize + 1, Height);
+			UPTR StopAtZ = n_min((Row + 1) * PatchSize + 1, Height);
 
-			for (DWORD Col = 0; Col < PatchesW; ++Col)
+			for (UPTR Col = 0; Col < PatchesW; ++Col)
 			{
-				DWORD StopAtX = n_min((Col + 1) * PatchSize + 1, Width);
+				UPTR StopAtX = n_min((Col + 1) * PatchSize + 1, Width);
 
 				short MinHeight = pHeights[Row * PatchSize * Width + Col * PatchSize];
 				short MaxHeight = MinHeight;
-				for (DWORD Z = Row * PatchSize; Z < StopAtZ; ++Z)
-					for (DWORD X = Col * PatchSize; X < StopAtX; ++X)
+				for (UPTR Z = Row * PatchSize; Z < StopAtZ; ++Z)
+					for (UPTR X = Col * PatchSize; X < StopAtX; ++X)
 					{
 						short CurrHeight = pHeights[Z * Width + X];
 						if (CurrHeight != IO::CBTFile::NoDataS)
@@ -154,7 +154,7 @@ int main(int argc, const char** argv)
 							else if (CurrHeight > MaxHeight) MaxHeight = CurrHeight;
 						}
 					}
-				DWORD Idx = Row * PatchesW + Col;
+				UPTR Idx = Row * PatchesW + Col;
 				pMinMaxBuffer[Idx * 2] = MinHeight;
 				pMinMaxBuffer[Idx * 2 + 1] = MaxHeight;
 			}
@@ -167,14 +167,14 @@ int main(int argc, const char** argv)
 		// Generate minmax map hierarchy
 
 		short* pPrevData = pMinMaxBuffer;
-		DWORD PrevPatchesW = PatchesW;
-		DWORD PrevPatchesH = PatchesH;
-		for (DWORD LOD = 1; LOD < LODCount; ++LOD)
+		UPTR PrevPatchesW = PatchesW;
+		UPTR PrevPatchesH = PatchesH;
+		for (UPTR LOD = 1; LOD < LODCount; ++LOD)
 		{
 			PatchesW = (PrevPatchesW + 1) / 2;
 			PatchesH = (PrevPatchesH + 1) / 2;
 
-			DWORD MinMaxDataSize = PatchesW * PatchesH * 2 * sizeof(short);
+			UPTR MinMaxDataSize = PatchesW * PatchesH * 2 * sizeof(short);
 			short* pMinMaxBuffer = (short*)n_malloc(MinMaxDataSize);
 
 			short* pSrc = pPrevData;
@@ -182,15 +182,15 @@ int main(int argc, const char** argv)
 
 			// Algorithm from the original CDLOD code
 
-			for (DWORD i = 0; i < PatchesW * PatchesH * 2; i += 2)
+			for (UPTR i = 0; i < PatchesW * PatchesH * 2; i += 2)
 			{
 				pMinMaxBuffer[i] = 32767;
 				pMinMaxBuffer[i + 1] = -32767;
 			}
 
-			for (DWORD Z = 0; Z < PrevPatchesH; ++Z)
+			for (UPTR Z = 0; Z < PrevPatchesH; ++Z)
 			{
-				for (DWORD X = 0; X < PrevPatchesW; ++X)
+				for (UPTR X = 0; X < PrevPatchesW; ++X)
 				{
 					const int Idx = (X / 2) * 2;
 					pDst[Idx] = n_min(pDst[Idx], pSrc[X * 2]);

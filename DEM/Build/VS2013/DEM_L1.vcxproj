@@ -280,6 +280,7 @@
     <ClInclude Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.h" />
     <ClInclude Include="..\..\Src\L1\Render\SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\Terrain.h" />
+    <ClInclude Include="..\..\Src\L1\Render\TerrainRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexBuffer.h" />
@@ -518,7 +519,9 @@
     <ClCompile Include="..\..\Src\L1\Render\ShaderLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Technique.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\TerrainRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />

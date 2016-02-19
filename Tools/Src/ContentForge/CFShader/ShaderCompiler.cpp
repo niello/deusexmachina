@@ -7,6 +7,7 @@
 #include <Data/DataArray.h>
 #include <Data/HRDParser.h>
 #include <Data/StringTokenizer.h>
+#include <Data/StringUtils.h>
 #include <Util/UtilFwd.h> // CRC
 #include <ToolRenderStateDesc.h>
 #include <ConsoleApp.h>
@@ -85,14 +86,14 @@ struct CD3D11ShaderRsrcMeta
 
 void WriteRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
 {
-	U32 RangeCountOffset = W.GetStream().GetPosition();
+	U64 RangeCountOffset = W.GetStream().GetPosition();
 	W.Write<U32>(0);
 
 	if (!UsedRegs.GetCount()) return;
 
 	U32 RangeCount = 0;
 	UPTR CurrStart = UsedRegs[0], CurrCount = 1;
-	for (int r = 1; r < UsedRegs.GetCount(); ++r)
+	for (UPTR r = 1; r < UsedRegs.GetCount(); ++r)
 	{
 		UPTR Reg = UsedRegs[r];
 		if (Reg == CurrStart + CurrCount) ++CurrCount;
@@ -116,7 +117,7 @@ void WriteRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const cha
 		n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
 	}
 
-	U32 EndOffset = W.GetStream().GetPosition();
+	U64 EndOffset = W.GetStream().GetPosition();
 	W.GetStream().Seek(RangeCountOffset, IO::Seek_Begin);
 	W.Write<U32>(RangeCount);
 	W.GetStream().Seek(EndOffset, IO::Seek_Begin);
@@ -128,8 +129,8 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	CString SrcPath = RootPath + Rec.SrcFile.Path;
 	Data::CBuffer In;
 	if (!IOSrv->LoadFileToBuffer(SrcPath, In)) return ERR_IO_READ;
-	DWORD CurrWriteTime = IOSrv->GetFileWriteTime(SrcPath);
-	DWORD SrcCRC = Util::CalcCRC((U8*)In.GetPtr(), In.GetSize());
+	U64 CurrWriteTime = IOSrv->GetFileWriteTime(SrcPath);
+	UPTR SrcCRC = Util::CalcCRC((U8*)In.GetPtr(), In.GetSize());
 
 	// Setup compiler flags
 
@@ -247,7 +248,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	D3D_SHADER_MACRO* pDefines;
 	if (Rec.Defines.GetCount())
 	{
-		for (int i = 0; i < Rec.Defines.GetCount(); ++i)
+		for (UPTR i = 0; i < Rec.Defines.GetCount(); ++i)
 		{
 			const CMacroDBRec& Macro = Rec.Defines[i];
 			D3D_SHADER_MACRO D3DMacro = { Macro.Name, Macro.Value };
@@ -299,7 +300,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
 			Rec.InputSigFile.CRC = Util::CalcCRC((U8*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
-			DWORD OldInputSigID = Rec.InputSigFile.ID;
+			U32 OldInputSigID = Rec.InputSigFile.ID;
 			bool ObjFound = FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false);
 			if (!ObjFound)
 			{
@@ -522,7 +523,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			pReflector->Release();
 
 			W.Write<U32>(Buffers.GetCount());
-			for (int i = 0; i < Buffers.GetCount(); ++i)
+			for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 			{
 				const CD3D11ShaderBufferMeta& B = Buffers[i];
 				W.Write(B.Name);
@@ -532,7 +533,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			}
 
 			W.Write<U32>(Consts.GetCount());
-			for (int i = 0; i < Consts.GetCount(); ++i)
+			for (UPTR i = 0; i < Consts.GetCount(); ++i)
 			{
 				const CD3D11ShaderConstMeta& B = Consts[i];
 				W.Write(B.Name);
@@ -542,7 +543,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			}
 
 			W.Write<U32>(Resources.GetCount());
-			for (int i = 0; i < Resources.GetCount(); ++i)
+			for (UPTR i = 0; i < Resources.GetCount(); ++i)
 			{
 				const CD3D11ShaderRsrcMeta& B = Resources[i];
 				W.Write(B.Name);
@@ -550,7 +551,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			}
 
 			W.Write<U32>(Samplers.GetCount());
-			for (int i = 0; i < Samplers.GetCount(); ++i)
+			for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 			{
 				const CD3D11ShaderRsrcMeta& B = Samplers[i];
 				W.Write(B.Name);
@@ -581,7 +582,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			CD3D9ShaderBufferMeta* pMeta = Buffers.Reserve(1);
 			pMeta->Name = "$Global";
 
-			for (int i = 0; i < D3D9Consts.GetCount(); ++i)
+			for (UPTR i = 0; i < D3D9Consts.GetCount(); ++i)
 			{
 				CD3D9ConstantDesc& D3D9ConstDesc = D3D9Consts[i];
 
@@ -615,7 +616,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 				}
 			}
 
-			int i = 0;
+			UPTR i = 0;
 			while (i < Buffers.GetCount())
 			{
 				CD3D9ShaderBufferMeta& B = Buffers[i];
@@ -629,7 +630,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			};
 
 			W.Write<U32>(Buffers.GetCount());
-			for (int i = 0; i < Buffers.GetCount(); ++i)
+			for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 			{
 				CD3D9ShaderBufferMeta& B = Buffers[i];
 				B.UsedFloat4.Sort();
@@ -646,7 +647,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			}
 
 			W.Write<U32>(Consts.GetCount());
-			for (int i = 0; i < Consts.GetCount(); ++i)
+			for (UPTR i = 0; i < Consts.GetCount(); ++i)
 			{
 				const CD3D9ShaderConstMeta& Meta = Consts[i];
 
@@ -677,7 +678,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			}
 
 			W.Write<U32>(Samplers.GetCount());
-			for (int i = 0; i < Samplers.GetCount(); ++i)
+			for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 			{
 				const CD3D9ShaderRsrcMeta& Meta = Samplers[i];
 				W.Write(Meta.SamplerName);
@@ -694,7 +695,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 		// Write binary data offset for fast skipping of metadata when reading
 		File.Seek(OffsetOffset, IO::Seek_Begin);
-		W.Write<U32>(BinaryOffset);
+		W.Write<U32>((U32)BinaryOffset);
 
 		File.Close();
 	}
@@ -772,7 +773,7 @@ Render::EBlendOp StringToBlendOp(const CString& Str)
 }
 //---------------------------------------------------------------------
 
-bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, DWORD& OutShaderID)
+bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, U32& OutShaderID)
 {
 	Data::PParams ShaderSection;
 	if (!RenderState->Get(ShaderSection, SectionID)) OK;
@@ -846,6 +847,19 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 			Rec.Defines.Add(CurrMacro); // Both NULLs in all control pathes
 		}
 	}
+
+	//???here or in tech or in pass?
+	/*
+	int MaxLightCount = 0;
+	if (ShaderSection->Get(MaxLightCount, CStrID("MaxLightCount")) && MaxLightCount > 0)
+	{
+		for (int i = 0; i <= MaxLightCount; ++i)
+		CMacroDBRec LightMacro;
+		LightMacro.Name = "LIGHT_COUNT";
+		LightMacro.Value = StringUtils::FromInt(MaxLightCount);
+		Rec.Defines.Add(LightMacro);
+	}
+	*/
 
 	Rec.SrcFile.Path = IOSrv->ResolveAssigns(Rec.SrcFile.Path);
 	Rec.SrcFile.Path.Replace(RootPath, "");
@@ -1085,7 +1099,7 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 		{
 			Data::PDataArray BlendArray = pBlend->GetValue<Data::PDataArray>();
 			Desc.Flags.Set(Render::CToolRenderStateDesc::Blend_Independent);
-			for (int BlendIdx = 0; BlendIdx < BlendArray->GetCount(); ++BlendIdx)
+			for (UPTR BlendIdx = 0; BlendIdx < BlendArray->GetCount(); ++BlendIdx)
 			{
 				Data::PParams BlendSection = BlendArray->Get<Data::PParams>(BlendIdx);
 				if (!ProcessBlendSection(BlendSection, BlendIdx, Desc)) FAIL;
@@ -1124,10 +1138,10 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 		{
 			Data::CDataArray& CP = *ClipPlanes.GetValue<Data::PDataArray>();
 			
-			for (int i = 0; i < 5; ++i)
+			for (UPTR i = 0; i < 5; ++i)
 				Desc.Flags.Clear(Render::CToolRenderStateDesc::Misc_ClipPlaneEnable << i);
 			
-			for (int i = 0; i < CP.GetCount(); ++i)
+			for (UPTR i = 0; i < CP.GetCount(); ++i)
 			{
 				Data::CData& Val = CP[i];
 				if (!Val.IsA<int>()) continue;
@@ -1174,7 +1188,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	if (!W.Write(Techs->GetCount())) return ERR_IO_WRITE;
 
 	CArray<CStrID> UsedRenderStates;
-	for (int TechIdx = 0; TechIdx < Techs->GetCount(); ++TechIdx)
+	for (UPTR TechIdx = 0; TechIdx < Techs->GetCount(); ++TechIdx)
 	{
 		Data::CParam& Tech = Techs->Get(TechIdx);
 		Data::PDataArray Passes;
@@ -1183,7 +1197,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write(Tech.GetName())) return ERR_IO_WRITE;
 		if (!W.Write(Passes->GetCount())) return ERR_IO_WRITE;
 
-		for (int PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
+		for (UPTR PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
 		{
 			CStrID PassID = Passes->Get<CStrID>(PassIdx);
 			n_msg(VL_DETAILS, "Tech %s, Pass %d: %s\n", Tech.GetName().CStr(), PassIdx, PassID.CStr());
@@ -1198,7 +1212,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	if (!W.Write(UsedRenderStates.GetCount())) return ERR_IO_WRITE;
 
-	for (int i = 0; i < UsedRenderStates.GetCount(); ++i)
+	for (UPTR i = 0; i < UsedRenderStates.GetCount(); ++i)
 	{
 		CStrID ID = UsedRenderStates[i];
 		Render::CToolRenderStateDesc Desc;

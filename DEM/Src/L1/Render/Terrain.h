@@ -41,6 +41,7 @@ protected:
 	PMesh				PatchMesh;
 	PMesh				QuarterPatchMesh;
 	PTexture			HeightMap;
+	CStrID				HeightMapUID; //!!!DBG TMP!
 
 	float				InvSplatSizeX;
 	float				InvSplatSizeZ;

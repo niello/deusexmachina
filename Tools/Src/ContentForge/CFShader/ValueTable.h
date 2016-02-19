@@ -41,31 +41,31 @@ private:
 	Data::CFlags				Flags;
 
 	void*						ValueBuffer;
-	U8*						RowStateBuffer;
+	U8*							RowStateBuffer;
 
 	CArray<ColumnInfo>			Columns;
 	CDictionary<CStrID, int>	ColumnIndexMap;		// map attribute ID to column index
 	CArray<int>					NewColumnIndices;	// indices of new Columns since last ResetModifiedState
 
 	int							FirstAddedColIndex;
-	int							FirstNewRowIndex;
-	int							NewRowsCount;
-	int							FirstDeletedRowIndex;
+	UPTR						FirstNewRowIndex;
+	UPTR						NewRowsCount;
+	UPTR						FirstDeletedRowIndex;
 	int							DeletedRowsCount;
 
-	int							RowPitch;			// pitch of a row in bytes
-	int							NumRows;			// number of rows
-	int							AllocatedRows;		// number of allocated rows
+	UPTR						RowPitch;			// pitch of a row in bytes
+	UPTR						NumRows;			// number of rows
+	UPTR						AllocatedRows;		// number of allocated rows
 
-	void		Realloc(int NewPitch, int NewAllocRows);
+	void		Realloc(UPTR NewPitch, UPTR NewAllocRows);
 	int			UpdateColumnOffsets();
 
-	void**		GetValuePtr(int ColIdx, int RowIdx) const;
+	void**		GetValuePtr(UPTR ColIdx, UPTR RowIdx) const;
 
 	CArray<int>	InternalFindRowIndicesByAttr(CStrID AttrID, const Data::CData& Value, bool FirstMatchOnly) const;
 
-	void		SetColumnToDefaultValues(int ColIdx);
-	void		SetRowToDefaultValues(int RowIdx);
+	void		SetColumnToDefaultValues(UPTR ColIdx);
+	void		SetRowToDefaultValues(UPTR RowIdx);
 
 	bool		IsSpecialType(const Data::CType* T) const { FAIL; } // { return T == TVector4 || T == TMatrix44; }
 
@@ -79,37 +79,37 @@ public:
 	void				EndAddColumns();
 	bool				HasColumn(CStrID ID) const { return ColumnIndexMap.Contains(ID); }
 	int					GetColumnIndex(CStrID ID) const;
-	int					GetColumnCount() const { return Columns.GetCount(); }
-	CStrID				GetColumnID(int ColIdx) const { return Columns[ColIdx].ID; }
-	const Data::CType*	GetColumnValueType(int ColIdx) const { return Columns[ColIdx].Type; }
+	UPTR				GetColumnCount() const { return Columns.GetCount(); }
+	CStrID				GetColumnID(UPTR ColIdx) const { return Columns[ColIdx].ID; }
+	const Data::CType*	GetColumnValueType(UPTR ColIdx) const { return Columns[ColIdx].Type; }
 	const CArray<int>&	GetNewColumnIndices() { return NewColumnIndices; }
 
 	void				Clear();
-	void				ReserveRows(int NumRows) { n_assert(NumRows > 0); Realloc(RowPitch, AllocatedRows + NumRows); }
+	void				ReserveRows(UPTR NumRows) { n_assert(NumRows > 0); Realloc(RowPitch, AllocatedRows + NumRows); }
 	int					AddRow();
-	int					CopyRow(int FromRowIdx);
-	int					CopyExtRow(CValueTable* pOther, int OtherRowIdx, bool CreateMissingCols = false);
-	void				DeleteRow(int RowIdx);
-	void				DeleteAllRows() { for (int i = 0; i < NumRows; i++) DeleteRow(i); }
-	void				DeleteRowData(int RowIdx);
+	int					CopyRow(UPTR FromRowIdx);
+	int					CopyExtRow(CValueTable* pOther, UPTR OtherRowIdx, bool CreateMissingCols = false);
+	void				DeleteRow(UPTR RowIdx);
+	void				DeleteAllRows() { for (UPTR i = 0; i < NumRows; i++) DeleteRow(i); }
+	void				DeleteRowData(UPTR RowIdx);
 
-	U8				GetRowState(int RowIdx) const;
-	bool				IsRowNew(int RowIdx) const;
-	bool				IsRowUpdated(int RowIdx) const;
-	bool				IsRowOnlyUpdated(int RowIdx) const;
-	bool				IsRowDeleted(int RowIdx) const;
-	bool				IsRowValid(int RowIdx) const;
-	bool				IsRowUntouched(int RowIdx) const;
-	bool				IsRowModified(int RowIdx) const;
+	U8					GetRowState(UPTR RowIdx) const;
+	bool				IsRowNew(UPTR RowIdx) const;
+	bool				IsRowUpdated(UPTR RowIdx) const;
+	bool				IsRowOnlyUpdated(UPTR RowIdx) const;
+	bool				IsRowDeleted(UPTR RowIdx) const;
+	bool				IsRowValid(UPTR RowIdx) const;
+	bool				IsRowUntouched(UPTR RowIdx) const;
+	bool				IsRowModified(UPTR RowIdx) const;
 	bool				IsModified() const { return Flags.Is(_IsModified); }
 	bool				HasModifiedRows() const { return Flags.Is(_HasModifiedRows); }
 	void				TrackModifications(bool Track) { Flags.SetTo(_TrackModifications, Track); }
 	bool				IsTrackingModifications() const { return Flags.Is(_TrackModifications); }
 	void				ClearNewRowStats();
 	void				ClearDeletedRows();
-	void				ClearRowFlags(int RowIdx);
+	void				ClearRowFlags(UPTR RowIdx);
 	void				ResetModifiedState();
-	int					GetRowCount() const { return NumRows; }
+	UPTR				GetRowCount() const { return NumRows; }
 	int					GetFirstNewRowIndex() const { return FirstNewRowIndex; }
 	int					GetNewRowsCount() const { return NewRowsCount; }
 	int					GetFirstDeletedRowIndex() const { return FirstDeletedRowIndex; }
@@ -118,27 +118,27 @@ public:
 	CArray<int>			FindRowIndicesByValue(CStrID AttrID, const Data::CData& Value, bool FirstMatchOnly) const;
 	int					FindRowIndexByValue(CStrID AttrID, const Data::CData& Value) const;
 
-	void				GetValue(int ColIdx, int RowIdx, Data::CData& Val) const;
-	void				GetValue(CStrID AttrID, int RowIdx, Data::CData& Val) const { GetValue(ColumnIndexMap[AttrID], RowIdx, Val); }
+	void				GetValue(UPTR ColIdx, UPTR RowIdx, Data::CData& Val) const;
+	void				GetValue(CStrID AttrID, UPTR RowIdx, Data::CData& Val) const { GetValue(ColumnIndexMap[AttrID], RowIdx, Val); }
 	template<class T>
-	const T&			Get(int ColIdx, int RowIdx) const;
+	const T&			Get(UPTR ColIdx, UPTR RowIdx) const;
 	template<class T>
-	const T&			Get(CStrID AttrID, int RowIdx) const { return Get<T>(ColumnIndexMap[AttrID], RowIdx); }
-	void				SetValue(int ColIdx, int RowIdx, const Data::CData& Val);
-	void				SetValue(CStrID AttrID, int RowIdx, const Data::CData& Val) { SetValue(ColumnIndexMap[AttrID], RowIdx, Val); }
+	const T&			Get(CStrID AttrID, UPTR RowIdx) const { return Get<T>(ColumnIndexMap[AttrID], RowIdx); }
+	void				SetValue(UPTR ColIdx, UPTR RowIdx, const Data::CData& Val);
+	void				SetValue(CStrID AttrID, UPTR RowIdx, const Data::CData& Val) { SetValue(ColumnIndexMap[AttrID], RowIdx, Val); }
 	template<class T>
-	void				Set(int ColIdx, int RowIdx, const T& Val);
+	void				Set(UPTR ColIdx, UPTR RowIdx, const T& Val);
 	template<class T>
-	void				Set(CStrID AttrID, int RowIdx, const T& Val) { Set(ColumnIndexMap[AttrID], RowIdx, Val); }
+	void				Set(CStrID AttrID, UPTR RowIdx, const T& Val) { Set(ColumnIndexMap[AttrID], RowIdx, Val); }
 };
 
 inline CValueTable::CValueTable():
 	Columns(12, 4),
 	NewColumnIndices(8, 8),
 	FirstAddedColIndex(INVALID_INDEX),
-	FirstNewRowIndex(MAX_SDWORD),
+	FirstNewRowIndex(INTPTR_MAX),
 	NewRowsCount(0),
-	FirstDeletedRowIndex(MAX_SDWORD),
+	FirstDeletedRowIndex(INTPTR_MAX),
 	DeletedRowsCount(0),
 	RowPitch(0),
 	NumRows(0),
@@ -152,15 +152,15 @@ inline CValueTable::CValueTable():
 
 inline void CValueTable::ClearNewRowStats()
 {
-	FirstNewRowIndex = MAX_SDWORD;
+	FirstNewRowIndex = INTPTR_MAX;
 	NewRowsCount = 0;
 }
 //---------------------------------------------------------------------
 
 // Doesn't update modification statistics
-inline void CValueTable::ClearRowFlags(int RowIdx)
+inline void CValueTable::ClearRowFlags(UPTR RowIdx)
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	RowStateBuffer[RowIdx] = 0;
 }
 //---------------------------------------------------------------------
@@ -172,59 +172,59 @@ inline void CValueTable::ResetModifiedState()
 }
 //---------------------------------------------------------------------
 
-inline bool CValueTable::IsRowModified(int RowIdx) const
+inline bool CValueTable::IsRowModified(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	return RowStateBuffer[RowIdx] != 0;
 }
 //---------------------------------------------------------------------
 
-inline U8 CValueTable::GetRowState(int RowIdx) const
+inline U8 CValueTable::GetRowState(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	return RowStateBuffer[RowIdx];
 }
 //---------------------------------------------------------------------
 
-inline bool CValueTable::IsRowNew(int RowIdx) const
+inline bool CValueTable::IsRowNew(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	return (RowStateBuffer[RowIdx] & NewRow) != 0;
 }
 //---------------------------------------------------------------------
 
-inline bool CValueTable::IsRowUpdated(int RowIdx) const
+inline bool CValueTable::IsRowUpdated(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	return (RowStateBuffer[RowIdx] & UpdatedRow) != 0;
 }
 //---------------------------------------------------------------------
 
-inline bool CValueTable::IsRowOnlyUpdated(int RowIdx) const
+inline bool CValueTable::IsRowOnlyUpdated(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	return RowStateBuffer[RowIdx] == UpdatedRow;
 }
 //---------------------------------------------------------------------
 
-inline bool CValueTable::IsRowDeleted(int RowIdx) const
+inline bool CValueTable::IsRowDeleted(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows);
+	n_assert(RowIdx < NumRows);
 	return (RowStateBuffer[RowIdx] & DeletedRow) != 0;
 }
 //---------------------------------------------------------------------
 
 // Returns true if row isn't deleted or destroyed
-inline bool CValueTable::IsRowValid(int RowIdx) const
+inline bool CValueTable::IsRowValid(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows); //???incorporate into return value?
+	n_assert(RowIdx < NumRows); //???incorporate into return value?
 	return (RowStateBuffer[RowIdx] & (DeletedRow | DestroyedRow)) == 0;
 }
 //---------------------------------------------------------------------
 
-inline bool CValueTable::IsRowUntouched(int RowIdx) const
+inline bool CValueTable::IsRowUntouched(UPTR RowIdx) const
 {
-	n_assert(RowIdx > -1 && RowIdx < NumRows); //???incorporate into return value?
+	n_assert(RowIdx < NumRows); //???incorporate into return value?
 	return RowStateBuffer[RowIdx] == 0;
 }
 //---------------------------------------------------------------------
@@ -236,14 +236,14 @@ inline int CValueTable::GetColumnIndex(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-inline void** CValueTable::GetValuePtr(int ColIdx, int RowIdx) const
+inline void** CValueTable::GetValuePtr(UPTR ColIdx, UPTR RowIdx) const
 {
-	n_assert(ColIdx < Columns.GetCount() && RowIdx > -1 && RowIdx < NumRows);
+	n_assert(ColIdx < Columns.GetCount() && RowIdx < NumRows);
 	return (void**)((char*)ValueBuffer + RowIdx * RowPitch + Columns[ColIdx].ByteOffset);
 }
 //---------------------------------------------------------------------
 
-template<class T> inline void CValueTable::Set(int ColIdx, int RowIdx, const T& Val)
+template<class T> inline void CValueTable::Set(UPTR ColIdx, UPTR RowIdx, const T& Val)
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
 	n_assert(!Type || Type == DATA_TYPE(T));
@@ -262,7 +262,7 @@ template<class T> inline void CValueTable::Set(int ColIdx, int RowIdx, const T& 
 }
 //---------------------------------------------------------------------
 
-inline void CValueTable::GetValue(int ColIdx, int RowIdx, Data::CData& Val) const
+inline void CValueTable::GetValue(UPTR ColIdx, UPTR RowIdx, Data::CData& Val) const
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
 	void** pObj = GetValuePtr(ColIdx, RowIdx);
@@ -271,7 +271,7 @@ inline void CValueTable::GetValue(int ColIdx, int RowIdx, Data::CData& Val) cons
 }
 //---------------------------------------------------------------------
 
-template<class T> inline const T& CValueTable::Get(int ColIdx, int RowIdx) const
+template<class T> inline const T& CValueTable::Get(UPTR ColIdx, UPTR RowIdx) const
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
 	n_assert(!Type || Type == DATA_TYPE(T));
@@ -316,17 +316,17 @@ inline int CValueTable::FindRowIndexByValue(CStrID AttrID, const Data::CData& Va
 //}
 ////---------------------------------------------------------------------
 
-inline void CValueTable::SetRowToDefaultValues(int RowIdx)
+inline void CValueTable::SetRowToDefaultValues(UPTR RowIdx)
 {
-	for (int ColIdx = 0; ColIdx < GetColumnCount(); ++ColIdx)
+	for (UPTR ColIdx = 0; ColIdx < GetColumnCount(); ++ColIdx)
 		SetValue(ColIdx, RowIdx, Data::CData(GetColumnValueType(ColIdx)));
 }
 //---------------------------------------------------------------------
 
-inline void CValueTable::SetColumnToDefaultValues(int ColIdx)
+inline void CValueTable::SetColumnToDefaultValues(UPTR ColIdx)
 {
 	Data::CData DefVal(GetColumnValueType(ColIdx));
-	for (int RowIdx = 0; RowIdx < GetRowCount(); ++RowIdx)
+	for (UPTR RowIdx = 0; RowIdx < GetRowCount(); ++RowIdx)
 		SetValue(ColIdx, RowIdx, DefVal);
 }
 //---------------------------------------------------------------------

@@ -7,9 +7,9 @@
 
 struct CFileData
 {
-	DWORD	ID;
-	DWORD	Size;
-	DWORD	CRC;
+	U32		ID;
+	U64		Size;
+	U32		CRC;
 	CString	Path;
 };
 
@@ -23,13 +23,13 @@ struct CMacroDBRec
 
 struct CShaderDBRec
 {
-	DWORD				ID;
-	DWORD				ShaderType;
-	DWORD				Target;
-	DWORD				CompilerFlags;
+	U32					ID;
+	U32					ShaderType;
+	U32					Target;
+	U32					CompilerFlags;
 	CString				EntryPoint;
 	CFileData			SrcFile;
-	DWORD				SrcModifyTimestamp;
+	U64					SrcModifyTimestamp;
 	CFileData			ObjFile;
 	CFileData			InputSigFile;
 	char*				pDefineString;
@@ -45,6 +45,6 @@ bool FindShaderRec(CShaderDBRec& InOut);
 bool WriteShaderRec(CShaderDBRec& InOut);
 bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader);
 bool RegisterObjFile(CFileData& InOut, const char* Extension);
-bool ReleaseObjFile(DWORD ID, CString& OutPath);
+bool ReleaseObjFile(U32 ID, CString& OutPath);
 
 #endif
