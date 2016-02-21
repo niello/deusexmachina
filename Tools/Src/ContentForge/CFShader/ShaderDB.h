@@ -32,11 +32,9 @@ struct CShaderDBRec
 	U64					SrcModifyTimestamp;
 	CFileData			ObjFile;
 	CFileData			InputSigFile;
-	char*				pDefineString;
 	CArray<CMacroDBRec>	Defines;
 
-	CShaderDBRec(): ID(0), pDefineString(NULL) {}
-	~CShaderDBRec() { SAFE_FREE(pDefineString); }
+	CShaderDBRec(): ID(0), Target(0) {}
 };
 
 bool OpenDB(const char* pURI);

@@ -7,7 +7,7 @@
 #include <ShaderDB.h>
 
 // Debug args:
-// -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_4_0\CEGUI.eff"
+// -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\PBR.hrd" -out "Shaders:SM_4_0\PBR.eff"
 // -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_3_0\CEGUI.hrd" -out "Shaders:SM_3_0\CEGUI.eff"
 // -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_3_0\CEGUI.hrd;SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_3_0\CEGUI.eff;Shaders:SM_4_0\CEGUI.eff"
 

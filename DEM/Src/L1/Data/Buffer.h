@@ -37,6 +37,7 @@ public:
 	int		HashCode() const { Hash(pData, DataSize); }
 
 	bool	IsValid() const { return !!pData; }
+	bool	IsEmpty() const { return !pData || !DataSize; }
 	void*	GetPtr() const { return pData; }
 	int		GetSize() const { return DataSize; }
 	int		GetCapacity() const { return Allocated; }

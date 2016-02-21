@@ -518,7 +518,6 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 		DB::CValueTable Result;
 		if (!ExecuteStatement(SQLFindObjFile, &Result, &Params)) FAIL;
 
-		Data::CBuffer Buf;
 		int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 		int Col_Path = Result.GetColumnIndex(CStrID("Path"));
 		for (UPTR i = 0; i < Result.GetRowCount(); ++i)
@@ -546,7 +545,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 				Data::CBuffer Buffer((UPTR)FileSize);
 				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
 			
-				if (memcmp(pBinaryData, Buf.GetPtr(), (UPTR)FileSize) != 0) continue;
+				if (Buffer.IsEmpty() || (pBinaryData, Buffer.GetPtr(), (UPTR)FileSize) != 0) continue;
 			}
 
 			InOut.ID = Result.Get<int>(Col_ID, i);

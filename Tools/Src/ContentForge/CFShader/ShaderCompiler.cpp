@@ -84,6 +84,28 @@ struct CD3D11ShaderRsrcMeta
 	U32		Register;
 };
 
+struct CTechInfo
+{
+	CStrID			ID;
+	CStrID			InputSet;
+	U8				MaxLights;
+	CArray<CStrID>	Passes;
+};
+
+struct CRenderStateRef
+{
+	CStrID							ID;
+	UPTR							MaxLights;
+	Render::CToolRenderStateDesc	Desc;
+	bool							UsesShader[Render::ShaderType_COUNT];
+	U32*							ShaderIDs;	// Per shader type, per light count
+
+	CRenderStateRef(): ShaderIDs(NULL) {}
+	~CRenderStateRef() { if (ShaderIDs) n_free(ShaderIDs); }
+
+	bool operator ==(const CRenderStateRef& Other) { return ID == Other.ID; }
+};
+
 void WriteRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
 {
 	U64 RangeCountOffset = W.GetStream().GetPosition();
@@ -124,6 +146,7 @@ void WriteRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const cha
 }
 //---------------------------------------------------------------------
 
+//???!!!decouple DB and compilation?! to allow compilation without DB tracking, for CFD shaders like CEGUI.
 int CompileShader(CShaderDBRec& Rec, bool Debug)
 {
 	CString SrcPath = RootPath + Rec.SrcFile.Path;
@@ -254,6 +277,10 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			D3D_SHADER_MACRO D3DMacro = { Macro.Name, Macro.Value };
 			Defines.Add(D3DMacro);
 		}
+
+		// Terminating macro
+		D3D_SHADER_MACRO D3DMacro = { NULL, NULL };
+		Defines.Add(D3DMacro);
 
 		pDefines = &Defines[0];
 	}
@@ -773,34 +800,40 @@ Render::EBlendOp StringToBlendOp(const CString& Str)
 }
 //---------------------------------------------------------------------
 
-bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::EShaderType ShaderType, bool Debug, U32& OutShaderID)
+bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType ShaderType, bool Debug, CRenderStateRef& RSRef)
 {
-	Data::PParams ShaderSection;
-	if (!RenderState->Get(ShaderSection, SectionID)) OK;
+	// Set invalid shader ID (no shader)
+	for (UPTR LightCount = 0; LightCount <= RSRef.MaxLights; ++LightCount)
+		RSRef.ShaderIDs[ShaderType * RSRef.MaxLights + LightCount] = 0;
 
-	OutShaderID = 0;
+	RSRef.UsesShader[ShaderType] = ShaderSection.IsValidPtr();
+	if (!RSRef.UsesShader[ShaderType]) OK;
 
-	int IntValue;
+	CString SrcPath;
+	ShaderSection->Get(SrcPath, CStrID("In"));
+	CString EntryPoint;
+	ShaderSection->Get(EntryPoint, CStrID("Entry"));
+	int Target = 0;
+	ShaderSection->Get(Target, CStrID("Target"));
 
-	CShaderDBRec Rec;
-	Rec.ShaderType = ShaderType;
-	ShaderSection->Get(Rec.SrcFile.Path, CStrID("Src"));
-	ShaderSection->Get(Rec.EntryPoint, CStrID("Entry"));
-	if (ShaderSection->Get(IntValue, CStrID("Target"))) Rec.Target = IntValue;
+	SrcPath = IOSrv->ResolveAssigns(SrcPath);
+	SrcPath.Replace(RootPath, "");
 
 	CString Defines;
+	char* pDefineString = NULL;
+	CArray<CMacroDBRec> Macros;
 	if (ShaderSection->Get(Defines, CStrID("Defines"))) // NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]
 	{
 		Defines.Trim();
 
 		if (Defines.GetLength())
 		{
-			Rec.pDefineString = (char*)n_malloc(Defines.GetLength() + 1);
-			strcpy_s(Rec.pDefineString, Defines.GetLength() + 1, Defines.CStr());
+			pDefineString = (char*)n_malloc(Defines.GetLength() + 1);
+			strcpy_s(pDefineString, Defines.GetLength() + 1, Defines.CStr());
 
 			CMacroDBRec CurrMacro = { 0 };
 
-			char* pCurrPos = Rec.pDefineString;
+			char* pCurrPos = pDefineString;
 			const char* pBothDlms = "=;";
 			const char* pSemicolonOnly = ";";
 			const char* pCurrDlms = pBothDlms;
@@ -814,7 +847,7 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 					{
 						CurrMacro.Name = pCurrPos;
 						CurrMacro.Value = pDlm + 1;
-						Rec.Defines.Add(CurrMacro);
+						Macros.Add(CurrMacro);
 						pCurrDlms = pSemicolonOnly;
 					}
 					else // ';'
@@ -823,7 +856,7 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 						if (!CurrMacro.Name)
 						{
 							CurrMacro.Name = pCurrPos;
-							Rec.Defines.Add(CurrMacro);
+							Macros.Add(CurrMacro);
 						}
 						CurrMacro.Name = NULL;
 						pCurrDlms = pBothDlms;
@@ -837,37 +870,38 @@ bool ProcessShaderSection(Data::PParams RenderState, CStrID SectionID, Render::E
 					if (!CurrMacro.Name)
 					{
 						CurrMacro.Name = pCurrPos;
-						Rec.Defines.Add(CurrMacro);
+						Macros.Add(CurrMacro);
 					}
 					CurrMacro.Name = NULL;
 					break;
 				}
 			}
 
-			Rec.Defines.Add(CurrMacro); // Both NULLs in all control pathes
+			// CurrMacro is both NULLs in all control pathes here, but we don't add it.
+			// CompileShader() method takes care of it.
 		}
 	}
 
-	//???here or in tech or in pass?
-	/*
-	int MaxLightCount = 0;
-	if (ShaderSection->Get(MaxLightCount, CStrID("MaxLightCount")) && MaxLightCount > 0)
-	{
-		for (int i = 0; i <= MaxLightCount; ++i)
+	for (UPTR LightCount = 0; LightCount <= RSRef.MaxLights; ++LightCount)
+	{		
+		CShaderDBRec Rec;
+		Rec.ShaderType = ShaderType;
+		Rec.SrcFile.Path = SrcPath;
+		Rec.EntryPoint = EntryPoint;
+		Rec.Target = Target;
+		Rec.Defines = Macros;
+
+		CString StrLightCount = StringUtils::FromInt(LightCount);
 		CMacroDBRec LightMacro;
-		LightMacro.Name = "LIGHT_COUNT";
-		LightMacro.Value = StringUtils::FromInt(MaxLightCount);
+		LightMacro.Name = "DEM_LIGHT_COUNT";
+		LightMacro.Value = StrLightCount.CStr();
 		Rec.Defines.Add(LightMacro);
+
+		int Result = CompileShader(Rec, Debug);
+		RSRef.ShaderIDs[ShaderType * RSRef.MaxLights + LightCount] = (Result == SUCCESS) ? Rec.ObjFile.ID : 0;
 	}
-	*/
 
-	Rec.SrcFile.Path = IOSrv->ResolveAssigns(Rec.SrcFile.Path);
-	Rec.SrcFile.Path.Replace(RootPath, "");
-
-	int Result = CompileShader(Rec, Debug);
-	if (Result != SUCCESS) FAIL;
-
-	OutShaderID = Rec.ObjFile.ID;
+	if (pDefineString) n_free(pDefineString);
 
 	OK;
 }
@@ -937,7 +971,7 @@ bool ProcessBlendSection(Data::PParams BlendSection, int Index, Render::CToolRen
 }
 //---------------------------------------------------------------------
 
-bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRenderStateDesc& Desc, bool Debug, bool Leaf)
+bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRenderStateDesc& Desc, Data::PParams* ShaderSections)
 {
 	Data::PParams RS;
 	if (!RenderStates->Get(RS, ID)) FAIL;
@@ -946,22 +980,31 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 	Data::CParam* pPrmBaseID;
 	if (RS->Get(pPrmBaseID, CStrID("Base")))
 	{
-		if (!ReadRenderStateDesc(RenderStates, pPrmBaseID->GetValue<CStrID>(), Desc, Debug, false)) FAIL;
+		if (!ReadRenderStateDesc(RenderStates, pPrmBaseID->GetValue<CStrID>(), Desc, ShaderSections)) FAIL;
 	}
 
-	//for that need to store defaults in a blend desc
-	//if (Leaf) //!!!merge shader descs (partial in base, final in a leaf)
-	//{
-		if (!ProcessShaderSection(RS, CStrID("VS"), Render::ShaderType_Vertex, Debug, Desc.VertexShader)) FAIL;
-		if (!ProcessShaderSection(RS, CStrID("PS"), Render::ShaderType_Pixel, Debug, Desc.PixelShader)) FAIL;
-		if (!ProcessShaderSection(RS, CStrID("GS"), Render::ShaderType_Geometry, Debug, Desc.GeometryShader)) FAIL;
-		if (!ProcessShaderSection(RS, CStrID("HS"), Render::ShaderType_Hull, Debug, Desc.HullShader)) FAIL;
-		if (!ProcessShaderSection(RS, CStrID("DS"), Render::ShaderType_Domain, Debug, Desc.DomainShader)) FAIL;
-	//}
+	// Shaders
+
+	const char* pShaderSectionName[] = { "VS", "PS", "GS", "HS", "DS" };
+
+	Data::PParams ShaderSection;
+	for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+	{
+		if (RS->Get(ShaderSection, CStrID(pShaderSectionName[ShaderType])))
+		{
+			if (!ShaderSections) return ERR_MAIN_FAILED;
+			Data::PParams CurrShaderSection = ShaderSections[ShaderType];
+			if (CurrShaderSection.IsValidPtr() && CurrShaderSection->GetCount())
+				CurrShaderSection->Merge(*ShaderSection, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep);
+			else
+				ShaderSections[ShaderType] = ShaderSection;
+		}
+	}
+
+	// States
 
 	CString StrValue;
 	int IntValue;
-	//float FloatValue;
 	bool FlagValue;
 	vector4 Vector4Value;
 
@@ -1158,6 +1201,8 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 {
+	// Read effect source file
+
 	Data::CBuffer Buffer;
 	if (!IOSrv->LoadFileToBuffer(pInFilePath, Buffer)) return ERR_IO_READ;
 
@@ -1172,6 +1217,83 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	if (!Params->Get(Techs, CStrID("Techniques"))) return ERR_INVALID_DATA;
 	if (!Params->Get(RenderStates, CStrID("RenderStates"))) return ERR_INVALID_DATA;
 
+	// Collect techs and render states they use
+
+	CArray<CTechInfo> UsedTechs;
+	CDict<CStrID, CRenderStateRef> UsedRenderStates;
+	for (UPTR TechIdx = 0; TechIdx < Techs->GetCount(); ++TechIdx)
+	{
+		Data::CParam& Tech = Techs->Get(TechIdx);
+		Data::PParams TechDesc = Tech.GetValue<Data::PParams>();
+
+		Data::PDataArray Passes;
+		if (!TechDesc->Get(Passes, CStrID("Passes"))) continue;
+		CStrID InputSet = TechDesc->Get(CStrID("InputSet"), CStrID::Empty);
+		if (!InputSet.IsValid()) continue;
+		UPTR MaxLights = (UPTR)n_max(TechDesc->Get<int>(CStrID("MaxLights"), 0), 0);
+
+		CTechInfo* pTechInfo = UsedTechs.Add();
+		pTechInfo->ID = Tech.GetName();
+		pTechInfo->InputSet = InputSet;
+		pTechInfo->MaxLights = (U8)MaxLights;
+
+		for (UPTR PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
+		{
+			CStrID PassID = Passes->Get<CStrID>(PassIdx);
+			pTechInfo->Passes.Add(PassID);
+			n_msg(VL_DETAILS, "Tech %s, Pass %d: %s, MaxLights: %d\n", Tech.GetName().CStr(), PassIdx, PassID.CStr(), MaxLights);
+			IPTR Idx = UsedRenderStates.FindIndex(PassID);
+			if (Idx == INVALID_INDEX)
+			{
+				CRenderStateRef& NewPass = UsedRenderStates.Add(PassID);
+				NewPass.ID = PassID;
+				NewPass.MaxLights = MaxLights;
+				NewPass.ShaderIDs = (U32*)n_malloc(Render::ShaderType_COUNT * MaxLights);
+			}
+			else
+			{
+				CRenderStateRef& Pass = UsedRenderStates.ValueAt(Idx);
+				if (MaxLights > Pass.MaxLights)
+				{
+					Pass.MaxLights = MaxLights;
+					Pass.ShaderIDs = (U32*)n_realloc(Pass.ShaderIDs, Render::ShaderType_COUNT * MaxLights);
+				}
+			}
+		}
+	}
+
+	// Compile and validate used render states, unwinding their hierarchy
+
+	for (UPTR i = 0; i < UsedRenderStates.GetCount(); ++i)
+	{
+		Data::PParams ShaderSections[Render::ShaderType_COUNT];
+
+		// Load states only, collect shader sections
+		CRenderStateRef& RSRef = UsedRenderStates.ValueAt(i);
+		RSRef.Desc.SetDefaults();
+		bool Loaded = ReadRenderStateDesc(RenderStates, RSRef.ID, RSRef.Desc, ShaderSections);
+
+		// Compile shaders from collected section for each light count variation
+		if (Loaded)
+			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+				ProcessShaderSection(ShaderSections[ShaderType], (Render::EShaderType)ShaderType, Debug, RSRef);
+	}
+
+	// Resolve pass refs in techs, discard light count variations and whole techs where at least one render state failed to compile
+
+	//...
+	int testtest = 0;
+
+	// Discard an effect if there are no valid techs
+
+	//...
+
+	// Build and validate material and tech constant maps
+
+	//...
+
+	// Write result to a file
+
 	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
 	
 	IO::CFileStream File(pOutFilePath);
@@ -1179,7 +1301,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	IO::CBinaryWriter W(File);
 
 	if (!W.Write('SHFX')) return ERR_IO_WRITE;
-	if (!W.Write(0x0100)) return ERR_IO_WRITE;
+	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
 
 	// Save techs, collect used render state references
 
@@ -1187,24 +1309,23 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	if (!W.Write(Techs->GetCount())) return ERR_IO_WRITE;
 
-	CArray<CStrID> UsedRenderStates;
-	for (UPTR TechIdx = 0; TechIdx < Techs->GetCount(); ++TechIdx)
+	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
-		Data::CParam& Tech = Techs->Get(TechIdx);
-		Data::PDataArray Passes;
-		if (!Tech.GetValue<Data::PParams>()->Get(Passes, CStrID("Passes"))) continue;
+		CTechInfo& TechInfo = UsedTechs[TechIdx];
 
-		if (!W.Write(Tech.GetName())) return ERR_IO_WRITE;
-		if (!W.Write(Passes->GetCount())) return ERR_IO_WRITE;
+		if (!W.Write(TechInfo.ID)) return ERR_IO_WRITE;
+		if (!W.Write(TechInfo.InputSet)) return ERR_IO_WRITE;
+		if (!W.Write(TechInfo.MaxLights)) return ERR_IO_WRITE;
+		if (!W.Write(TechInfo.Passes.GetCount())) return ERR_IO_WRITE;
 
-		for (UPTR PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
+		for (int LightCount = 0; LightCount <= TechInfo.MaxLights; ++LightCount)
 		{
-			CStrID PassID = Passes->Get<CStrID>(PassIdx);
-			n_msg(VL_DETAILS, "Tech %s, Pass %d: %s\n", Tech.GetName().CStr(), PassIdx, PassID.CStr());
-			if (!UsedRenderStates.Contains(PassID)) UsedRenderStates.Add(PassID);
-			if (!W.Write(PassID)) return ERR_IO_WRITE;
+			for (UPTR PassIdx = 0; PassIdx < TechInfo.Passes.GetCount(); ++PassIdx)
+			{
+				//if (!W.Write(NewPass.ID)) return ERR_IO_WRITE;
 
-			//???reference passes by UsedRenderStates index, not by name? slightly smaller file and faster init.
+				//???reference passes by UsedRenderStates index, not by name? slightly smaller file and faster init.
+			}
 		}
 	}
 
@@ -1212,6 +1333,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	if (!W.Write(UsedRenderStates.GetCount())) return ERR_IO_WRITE;
 
+	/*
 	for (UPTR i = 0; i < UsedRenderStates.GetCount(); ++i)
 	{
 		CStrID ID = UsedRenderStates[i];
@@ -1281,6 +1403,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write(Desc.AlphaTestRef)) return ERR_IO_WRITE;
 		if (!W.Write((int)Desc.AlphaTestFunc)) return ERR_IO_WRITE;
 	};
+	*/
 
 	File.Close();
 
