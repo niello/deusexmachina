@@ -86,10 +86,12 @@ struct CD3D11ShaderRsrcMeta
 
 struct CTechInfo
 {
-	CStrID			ID;
-	CStrID			InputSet;
-	U8				MaxLights;
-	CArray<CStrID>	Passes;
+	CStrID				ID;
+	CStrID				InputSet;
+	UPTR				MaxLights;
+	CArray<CStrID>		Passes;
+	CFixedArray<bool>	VariationValid;
+	CFixedArray<UPTR>	PassIndices;
 };
 
 struct CRenderStateRef
@@ -802,9 +804,11 @@ Render::EBlendOp StringToBlendOp(const CString& Str)
 
 bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType ShaderType, bool Debug, CRenderStateRef& RSRef)
 {
+	UPTR LightVariationCount = RSRef.MaxLights + 1;
+
 	// Set invalid shader ID (no shader)
-	for (UPTR LightCount = 0; LightCount <= RSRef.MaxLights; ++LightCount)
-		RSRef.ShaderIDs[ShaderType * RSRef.MaxLights + LightCount] = 0;
+	for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+		RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] = 0;
 
 	RSRef.UsesShader[ShaderType] = ShaderSection.IsValidPtr();
 	if (!RSRef.UsesShader[ShaderType]) OK;
@@ -882,7 +886,7 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 		}
 	}
 
-	for (UPTR LightCount = 0; LightCount <= RSRef.MaxLights; ++LightCount)
+	for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 	{		
 		CShaderDBRec Rec;
 		Rec.ShaderType = ShaderType;
@@ -898,7 +902,7 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 		Rec.Defines.Add(LightMacro);
 
 		int Result = CompileShader(Rec, Debug);
-		RSRef.ShaderIDs[ShaderType * RSRef.MaxLights + LightCount] = (Result == SUCCESS) ? Rec.ObjFile.ID : 0;
+		RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] = (Result == SUCCESS) ? Rec.ObjFile.ID : 0;
 	}
 
 	if (pDefineString) n_free(pDefineString);
@@ -1231,11 +1235,12 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		CStrID InputSet = TechDesc->Get(CStrID("InputSet"), CStrID::Empty);
 		if (!InputSet.IsValid()) continue;
 		UPTR MaxLights = (UPTR)n_max(TechDesc->Get<int>(CStrID("MaxLights"), 0), 0);
+		UPTR LightVariationCount = MaxLights + 1;
 
 		CTechInfo* pTechInfo = UsedTechs.Add();
 		pTechInfo->ID = Tech.GetName();
 		pTechInfo->InputSet = InputSet;
-		pTechInfo->MaxLights = (U8)MaxLights;
+		pTechInfo->MaxLights = MaxLights;
 
 		for (UPTR PassIdx = 0; PassIdx < Passes->GetCount(); ++PassIdx)
 		{
@@ -1248,7 +1253,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				CRenderStateRef& NewPass = UsedRenderStates.Add(PassID);
 				NewPass.ID = PassID;
 				NewPass.MaxLights = MaxLights;
-				NewPass.ShaderIDs = (U32*)n_malloc(Render::ShaderType_COUNT * MaxLights);
+				NewPass.ShaderIDs = (U32*)n_malloc(Render::ShaderType_COUNT * LightVariationCount * sizeof(U32));
 			}
 			else
 			{
@@ -1256,7 +1261,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				if (MaxLights > Pass.MaxLights)
 				{
 					Pass.MaxLights = MaxLights;
-					Pass.ShaderIDs = (U32*)n_realloc(Pass.ShaderIDs, Render::ShaderType_COUNT * MaxLights);
+					Pass.ShaderIDs = (U32*)n_realloc(Pass.ShaderIDs, Render::ShaderType_COUNT * LightVariationCount * sizeof(U32));
 				}
 			}
 		}
@@ -1264,29 +1269,123 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	// Compile and validate used render states, unwinding their hierarchy
 
-	for (UPTR i = 0; i < UsedRenderStates.GetCount(); ++i)
+	for (UPTR i = 0; i < UsedRenderStates.GetCount(); )
 	{
 		Data::PParams ShaderSections[Render::ShaderType_COUNT];
 
 		// Load states only, collect shader sections
 		CRenderStateRef& RSRef = UsedRenderStates.ValueAt(i);
 		RSRef.Desc.SetDefaults();
-		bool Loaded = ReadRenderStateDesc(RenderStates, RSRef.ID, RSRef.Desc, ShaderSections);
+		if (!ReadRenderStateDesc(RenderStates, RSRef.ID, RSRef.Desc, ShaderSections))
+		{
+			// Loading failed, discard this render state
+			n_msg(VL_WARNING, "Render state '%s' parsing failed\n", UsedRenderStates.KeyAt(i).CStr());
+			UsedRenderStates.RemoveAt(i);
+			continue;
+		}
 
+		UPTR LightVariationCount = RSRef.MaxLights + 1;
+		
 		// Compile shaders from collected section for each light count variation
-		if (Loaded)
-			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
-				ProcessShaderSection(ShaderSections[ShaderType], (Render::EShaderType)ShaderType, Debug, RSRef);
+		for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+		{
+			ProcessShaderSection(ShaderSections[ShaderType], (Render::EShaderType)ShaderType, Debug, RSRef);
+
+			// If some of used shaders failed to load in all variations, discard this render state
+			if (RSRef.UsesShader[ShaderType])
+			{
+				UPTR LightCount;
+				for (LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+					if (RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] != 0) break;
+
+				if (LightCount == LightVariationCount)
+				{
+					const char* pShaderNames[] = { "vertex", "pixel", "geometry", "hull", "domain" };
+					n_msg(VL_WARNING, "Render state '%s' %s shader compilation failed for all variations\n", UsedRenderStates.KeyAt(i).CStr(), pShaderNames[ShaderType]);
+					UsedRenderStates.RemoveAt(i);
+					continue;
+				}
+			}
+		}
+
+		++i;
 	}
 
 	// Resolve pass refs in techs, discard light count variations and whole techs where at least one render state failed to compile
+	// Reduce MaxLights if all variations above a value are invalid
 
-	//...
-	int testtest = 0;
+	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount();)
+	{
+		CTechInfo& TechInfo = UsedTechs[TechIdx];
+
+		UPTR LightVariationCount = TechInfo.MaxLights + 1;
+		UPTR LastValidVariation = INVALID_INDEX;
+
+		TechInfo.PassIndices.SetSize(TechInfo.Passes.GetCount());
+		TechInfo.VariationValid.SetSize(LightVariationCount);
+
+		bool DiscardTech = false;
+
+		// Cache pass render state indices, discard tech if any pass was discarded
+		for (UPTR PassIdx = 0; PassIdx < TechInfo.Passes.GetCount(); ++PassIdx)
+		{
+			IPTR Idx = UsedRenderStates.FindIndex(TechInfo.Passes[PassIdx]);
+			if (Idx == INVALID_INDEX)
+			{
+				DiscardTech = true;
+				break;
+			}
+			else TechInfo.PassIndices[PassIdx] = (UPTR)Idx;
+		}
+
+		if (DiscardTech)
+		{
+			n_msg(VL_WARNING, "Tech '%s' discarded due to discarded passes\n", TechInfo.ID.CStr());
+			UsedTechs.RemoveAt(TechIdx);
+			continue;
+		}
+
+		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+		{
+			TechInfo.VariationValid[LightCount] = true;
+
+			// If variation uses shader that failed to compile, discard variation
+			for (UPTR PassIdx = 0; PassIdx < TechInfo.Passes.GetCount(); ++PassIdx)
+			{
+				CRenderStateRef& RSRef = UsedRenderStates.ValueAt(TechInfo.PassIndices[PassIdx]);
+				for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+				{
+					if (RSRef.UsesShader[ShaderType] && RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] == 0)
+					{
+						TechInfo.VariationValid[LightCount] = false;
+						break;
+					}
+				}
+			}
+
+			if (TechInfo.VariationValid[LightCount]) LastValidVariation = LightCount;
+		}
+
+		// Discard tech without valid variations
+		if (LastValidVariation == INVALID_INDEX)
+		{
+			n_msg(VL_WARNING, "Tech '%s' discarded as it has no valid variations\n", TechInfo.ID.CStr());
+			UsedTechs.RemoveAt(TechIdx);
+			continue;
+		}
+
+		TechInfo.MaxLights = LastValidVariation;
+
+		++TechIdx;
+	}
 
 	// Discard an effect if there are no valid techs
 
-	//...
+	if (!UsedTechs.GetCount())
+	{
+		n_msg(VL_WARNING, "Effect '%s' is not compiled, because it has no valid techs\n", pInFilePath);
+		return ERR_INVALID_DATA;
+	}
 
 	// Build and validate material and tech constant maps
 
@@ -1303,11 +1402,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	if (!W.Write('SHFX')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
 
-	// Save techs, collect used render state references
-
-	//???exclude all techs not compiled as invalid techs here?
-
-	if (!W.Write(Techs->GetCount())) return ERR_IO_WRITE;
+	if (!W.Write(UsedTechs.GetCount())) return ERR_IO_WRITE;
 
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
@@ -1318,7 +1413,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write(TechInfo.MaxLights)) return ERR_IO_WRITE;
 		if (!W.Write(TechInfo.Passes.GetCount())) return ERR_IO_WRITE;
 
-		for (int LightCount = 0; LightCount <= TechInfo.MaxLights; ++LightCount)
+		// Save matrix of [render state ID + shader IDs] per-variation, per-pass
+		// Save just one INVALID_INDEX for unsupported variations
+		for (UPTR LightCount = 0; LightCount <= TechInfo.MaxLights; ++LightCount)
 		{
 			for (UPTR PassIdx = 0; PassIdx < TechInfo.Passes.GetCount(); ++PassIdx)
 			{
@@ -1328,8 +1425,6 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			}
 		}
 	}
-
-	// Unwind render state hierarchy and save leaf states
 
 	if (!W.Write(UsedRenderStates.GetCount())) return ERR_IO_WRITE;
 

@@ -392,7 +392,6 @@ bool FindShaderRec(CShaderDBRec& InOut)
 	DB::CValueTable Shaders;
 	if (!ExecuteStatement(SQLFindShader, &Shaders, &Params)) FAIL;
 
-	DB::CValueTable Defines;
 	Data::CParams DefineParams(1);
 
 	bool Found = false;
@@ -401,11 +400,12 @@ bool FindShaderRec(CShaderDBRec& InOut)
 	for (UPTR ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
 	{
 		DefineParams.Set(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
+
+		DB::CValueTable Defines;
 		if (!ExecuteStatement(SQLGetDefines, &Defines, &DefineParams)) FAIL;
 
-		// Local defines store terminating { NULL, NULL }, so sub 1 from its count
 		UPTR DBDefineCount = Defines.GetRowCount();
-		UPTR LocalDefineCount = InOut.Defines.GetCount() ? InOut.Defines.GetCount() - 1 : 0;
+		UPTR LocalDefineCount = InOut.Defines.GetCount();
 		if (DBDefineCount != LocalDefineCount)
 		{
 			Found = false;
@@ -428,7 +428,9 @@ bool FindShaderRec(CShaderDBRec& InOut)
 				{
 					Data::CData Value;
 					Defines.GetValue(Col_Value, DefIdx, Value);
-					if ((!Macro.Value) != Value.IsNull() && strcmp(Macro.Value, Value.GetValue<CString>().CStr()))
+					bool IsNoLocalValue = !Macro.Value;
+					bool IsNoDBValue = Value.IsNull();
+					if (IsNoLocalValue != IsNoDBValue || strcmp(Macro.Value, Value.GetValue<CString>().CStr()))
 					{
 						Found = false;
 					}
@@ -545,7 +547,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 				Data::CBuffer Buffer((UPTR)FileSize);
 				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
 			
-				if (Buffer.IsEmpty() || (pBinaryData, Buffer.GetPtr(), (UPTR)FileSize) != 0) continue;
+				if (Buffer.IsEmpty() || memcmp(pBinaryData, Buffer.GetPtr(), (UPTR)FileSize) != 0) continue;
 			}
 
 			InOut.ID = Result.Get<int>(Col_ID, i);
