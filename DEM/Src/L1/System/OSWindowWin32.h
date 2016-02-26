@@ -65,7 +65,7 @@ public:
 	const char*				GetIcon() const { return IconName; }
 
 	bool					IsOpen() const { return Flags.Is(Wnd_Open); }
-	bool					IsMinimized() const { return Flags.Is(Wnd_Minimized); }
+	bool					(IsMinimized)() const { return Flags.Is(Wnd_Minimized); }
 	bool					IsTopmost() const { return Flags.Is(Wnd_Topmost); }
 	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
 	bool					IsChild() const { return !!pParent; }
