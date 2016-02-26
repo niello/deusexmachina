@@ -15,6 +15,9 @@ DEM/Lib/
 DEM/Obj/
 Tools/Obj/
 
+#Debug executables
+*_d.exe
+
 #3rdParty
 3rdParty/3rdPartyHelper/*
 3rdParty/Bullet/*
