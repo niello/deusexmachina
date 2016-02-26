@@ -19,9 +19,11 @@ namespace CEGUI
     void TinyXML2Parser::parseXML(XMLHandler& handler, const RawDataContainer& source, const String& schemaName)
     {
         tinyxml2::XMLDocument doc;
+		tinyxml2::XMLError Result = doc.Parse((const char*)source.getDataPtr(), source.getSize());
+		if (Result == tinyxml2::XML_ERROR_EMPTY_DOCUMENT) return;
 
         // Parse the document
-		if (doc.Parse((const char*)source.getDataPtr(), source.getSize()) != tinyxml2::XML_SUCCESS)
+		if (Result != tinyxml2::XML_SUCCESS)
 		{
 			CEGUI_THROW(FileIOException("TinyXML2Parser: an error occurred while "
                 "parsing the XML document '...' - check it for potential errors!"));

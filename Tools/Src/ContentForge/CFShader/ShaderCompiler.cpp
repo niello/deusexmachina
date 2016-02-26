@@ -1389,7 +1389,70 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	// Build and validate material and tech constant maps
 
-	//...
+	//!!!NB: if the same param is used in different stages and in different CBs, setting it
+	//in a tech requires passing CB instance per stage! May be restrict to use one param only
+	//in the same CB in all stages or even use one param only in one stage instead.
+
+	// Tech param is a param met in any pass, in any variation, in any shader stage
+	// Inside one tech, a param for each pass must be the same or not defined
+	// If one param in one tech is defined differently in different passes, FAIL
+	// Each shader stage that param uses may define a param differently
+	// Usage of one param more than in one shader stage should be generally avoided
+	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
+	{
+		CTechInfo& TechInfo = UsedTechs[TechIdx];
+		UPTR LightVariationCount = TechInfo.MaxLights + 1;
+
+		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+		{
+			for (UPTR PassIdx = 0; PassIdx < TechInfo.Passes.GetCount(); ++PassIdx)
+			{
+				CRenderStateRef& RSRef = UsedRenderStates.ValueAt(TechInfo.PassIndices[PassIdx]);
+				for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+				{
+					if (RSRef.UsesShader[ShaderType])
+					{
+						U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
+						// If this shader is not processed yet (may appear more than once in a tech)
+						// Load shader metadata
+						// For each param of this shader
+						// If not yet added, add new tech param
+						// If first occurrence in this stage, store its metadata for a shader stage
+						// Warn if there are more than one stage that parameter uses (warn once, when we add second stage to a param desc)
+						// If already added, ensure metadata at this stage is the same
+						// Also ensure CBs are the same for SM4.0+ (CB register and size)
+					}
+				}
+			}
+		}
+	}
+	// If we are here, it is guaranteed that all tech params are gathered and valid
+
+	Data::PParams ParamsDesc;
+	if (Params->Get(Techs, CStrID("GlobalParams")))
+	{
+		//
+	}
+
+	if (Params->Get(Techs, CStrID("MaterialParams")))
+	{
+		for (UPTR ParamIdx = 0; ParamIdx < ParamsDesc->GetCount(); ++ParamIdx)
+		{
+			Data::CParam& ShaderParam = ParamsDesc->Get(ParamIdx);
+			for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
+			{
+				// Find current param in tech
+				// If not found, OK, anyway material will set it
+				// For each shader stage which uses this param
+				// If [Name, Stage] first introduced, save its metadata and default value
+				// Else compare its metadata against a stored one (including CB name, register & size for SM4.0+)
+				// If different, fail, as materials can't be used in this case
+			}
+		}
+
+		// After all, save material table
+		// Name, DefaultValue, [stages?]
+	}
 
 	// Write result to a file
 
