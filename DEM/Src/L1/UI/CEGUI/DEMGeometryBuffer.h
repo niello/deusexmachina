@@ -37,7 +37,6 @@ protected:
 	mutable Render::PVertexBuffer	d_vertexBuffer;
 	mutable UPTR					d_bufferSize;
 	mutable bool					d_bufferIsSync;
-	mutable Render::CPrimitiveGroup	d_primGroup;
 	CArray<BatchInfo>				d_batches;
 	CArray<D3DVertex>				d_vertices;
 	Rectf							d_clipRect;

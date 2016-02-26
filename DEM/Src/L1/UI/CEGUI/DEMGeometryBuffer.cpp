@@ -52,13 +52,6 @@ void CDEMGeometryBuffer::draw() const
 		}
 		else pGPU->WriteToResource(*d_vertexBuffer, d_vertices.Begin(), sizeof(D3DVertex) * vertex_count);
 
-		d_primGroup.FirstVertex = 0;
-		d_primGroup.VertexCount = vertex_count;
-		d_primGroup.FirstIndex = 0;
-		d_primGroup.IndexCount = 0;
-		d_primGroup.Topology = Render::Prim_TriList;
-		// We don't use AABB, so we don't update it
-
 		d_bufferIsSync = true;
 	}
 
@@ -77,6 +70,13 @@ void CDEMGeometryBuffer::draw() const
 	//???where to bind, where to commit changes?
 	//!!!Docs: performPreRenderFunctions() must be called AFTER all state changes!
 
+	Render::CPrimitiveGroup	primGroup;
+	primGroup.FirstVertex = 0;
+	primGroup.FirstIndex = 0;
+	primGroup.IndexCount = 0;
+	primGroup.Topology = Render::Prim_TriList;
+	// We don't use AABB
+
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
 	{
@@ -84,10 +84,12 @@ void CDEMGeometryBuffer::draw() const
 
 		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)
 		{
+			primGroup.VertexCount = i->vertexCount;
 			d_owner.setRenderState(d_blendMode, i->clip);
 			d_owner.commitChangedConsts();
 			pGPU->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.GetUnsafe());
-			pGPU->Draw(d_primGroup);
+			pGPU->Draw(primGroup);
+			primGroup.FirstVertex += primGroup.VertexCount;
 		}
 	}
 
